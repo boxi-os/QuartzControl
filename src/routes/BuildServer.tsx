@@ -1,0 +1,154 @@
+import { useEffect, useState } from 'react'
+import { useProject } from './ProjectLayout'
+import type { LogLine, ServerOptions, ServerStatus, BuildResult } from '@shared/ipc-contract'
+import { Badge, Button, Card, Checkbox, Field, TextInput } from '../components/ui'
+import { LogConsole } from '../components/LogConsole'
+
+const DEFAULT_OPTIONS: ServerOptions = { port: 8080, wsPort: 3001, host: 'localhost', watch: true }
+
+const SERVER_LABEL: Record<ServerStatus['state'], string> = {
+  stopped: 'Gestoppt',
+  starting: 'Startet…',
+  running: 'Läuft',
+  stopping: 'Stoppt…',
+  error: 'Fehler'
+}
+
+export default function BuildServer(): JSX.Element {
+  const project = useProject()
+  const [status, setStatus] = useState<ServerStatus>({ state: 'stopped' })
+  const [options, setOptions] = useState<ServerOptions>(DEFAULT_OPTIONS)
+  const [logs, setLogs] = useState<LogLine[]>([])
+  const [buildLogs, setBuildLogs] = useState<LogLine[]>([])
+  const [buildResult, setBuildResult] = useState<BuildResult | null>(null)
+  const [building, setBuilding] = useState(false)
+
+  useEffect(() => {
+    window.quartzGui.server.status(project.id).then(setStatus)
+    const offStatus = window.quartzGui.server.onStatus((projectId, s) => {
+      if (projectId === project.id) setStatus(s)
+    })
+    const offLog = window.quartzGui.server.onLog((line) => {
+      if (line.projectId === project.id) setLogs((prev) => [...prev.slice(-999), line])
+    })
+    const offBuildLog = window.quartzGui.build.onLog((line) => {
+      if (line.projectId === project.id) setBuildLogs((prev) => [...prev.slice(-999), line])
+    })
+    return () => {
+      offStatus()
+      offLog()
+      offBuildLog()
+    }
+  }, [project.id])
+
+  const busy = status.state === 'starting' || status.state === 'stopping'
+
+  async function start(): Promise<void> {
+    setLogs([])
+    setStatus(await window.quartzGui.server.start(project.id, project.path, options))
+  }
+
+  async function stop(): Promise<void> {
+    await window.quartzGui.server.stop(project.id)
+  }
+
+  async function restart(): Promise<void> {
+    setLogs([])
+    setStatus(await window.quartzGui.server.restart(project.id, project.path, options))
+  }
+
+  async function runBuild(): Promise<void> {
+    setBuilding(true)
+    setBuildLogs([])
+    setBuildResult(null)
+    const result = await window.quartzGui.build.run(project.id, project.path)
+    setBuildResult(result)
+    setBuilding(false)
+  }
+
+  return (
+    <div className="grid max-w-3xl gap-6">
+      <Card>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="font-medium">Dev-Server</h2>
+          <Badge tone={status.state === 'running' ? 'green' : status.state === 'error' ? 'red' : 'slate'}>
+            {SERVER_LABEL[status.state]}
+          </Badge>
+        </div>
+
+        <div className="mb-3 grid grid-cols-4 gap-3">
+          <Field label="Port">
+            <TextInput
+              type="number"
+              value={options.port}
+              onChange={(e) => setOptions({ ...options, port: Number(e.target.value) })}
+              disabled={status.state !== 'stopped'}
+            />
+          </Field>
+          <Field label="WS-Port">
+            <TextInput
+              type="number"
+              value={options.wsPort}
+              onChange={(e) => setOptions({ ...options, wsPort: Number(e.target.value) })}
+              disabled={status.state !== 'stopped'}
+            />
+          </Field>
+          <Field label="Host">
+            <TextInput
+              value={options.host}
+              onChange={(e) => setOptions({ ...options, host: e.target.value })}
+              disabled={status.state !== 'stopped'}
+            />
+          </Field>
+          <div className="flex items-end pb-1.5">
+            <Checkbox
+              label="Watch"
+              checked={options.watch}
+              onChange={(e) => setOptions({ ...options, watch: e.target.checked })}
+              disabled={status.state !== 'stopped'}
+            />
+          </div>
+        </div>
+
+        <div className="mb-3 flex gap-2">
+          <Button onClick={start} disabled={busy || status.state === 'running'}>
+            Starten
+          </Button>
+          <Button variant="ghost" onClick={restart} disabled={busy || status.state !== 'running'}>
+            Neustarten
+          </Button>
+          <Button variant="danger" onClick={stop} disabled={busy || status.state !== 'running'}>
+            Stoppen
+          </Button>
+          {status.state === 'running' && status.options && (
+            <a
+              href={`http://${status.options.host}:${status.options.port}`}
+              target="_blank"
+              rel="noreferrer"
+              className="ml-auto self-center text-sm text-slate-600 hover:underline"
+            >
+              Im Browser öffnen ↗
+            </a>
+          )}
+        </div>
+
+        <LogConsole lines={logs} />
+      </Card>
+
+      <Card>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="font-medium">Einmaliger Build</h2>
+          <Button onClick={runBuild} disabled={building}>
+            {building ? 'Baue…' : 'Jetzt bauen'}
+          </Button>
+        </div>
+        {buildResult && (
+          <p className={`mb-3 text-sm ${buildResult.success ? 'text-green-600' : 'text-red-600'}`}>
+            {buildResult.success ? 'Erfolgreich' : 'Fehlgeschlagen'} in {(buildResult.durationMs / 1000).toFixed(1)}s
+          </p>
+        )}
+        <LogConsole lines={buildLogs} />
+      </Card>
+    </div>
+  )
+}

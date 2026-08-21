@@ -63,7 +63,7 @@ export default function Settings(): JSX.Element {
           >
             Speichern
           </Button>
-          {saved && <span className="text-sm text-green-600">Gespeichert.</span>}
+          {saved && <span className="text-sm text-green-600 dark:text-green-400">Gespeichert.</span>}
         </div>
       </Card>
     </div>

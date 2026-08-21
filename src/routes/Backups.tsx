@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useProject } from './ProjectLayout'
 import type { BackupEntry } from '@shared/ipc-contract'
-import { Button, Card } from '../components/ui'
+import { Button, Card, SegmentedControl } from '../components/ui'
 
 export default function Backups(): JSX.Element {
   const project = useProject()
@@ -34,18 +34,15 @@ export default function Backups(): JSX.Element {
 
   return (
     <div className="max-w-3xl">
-      <div className="mb-4 flex gap-1">
-        {(['config', 'content'] as const).map((k) => (
-          <button
-            key={k}
-            onClick={() => setKind(k)}
-            className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-              kind === k ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
-            }`}
-          >
-            {k === 'config' ? 'Konfiguration' : 'Content-Ordner'}
-          </button>
-        ))}
+      <div className="mb-6">
+        <SegmentedControl
+          value={kind}
+          onChange={setKind}
+          options={[
+            { value: 'config', label: 'Konfiguration' },
+            { value: 'content', label: 'Content-Ordner' }
+          ]}
+        />
       </div>
 
       <div className="flex flex-col gap-3">

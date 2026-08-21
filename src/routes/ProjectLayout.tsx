@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink, Outlet, useOutletContext, useParams } from 'react-router-dom'
+import { NavLink, Outlet, useOutletContext, useParams } from 'react-router-dom'
 import type { Project } from '@shared/ipc-contract'
 
 const TABS = [
@@ -26,28 +26,32 @@ export default function ProjectLayout(): JSX.Element {
   }, [id])
 
   if (!project) {
-    return <div className="p-10 text-sm text-slate-500">Lade Projekt…</div>
+    return <div className="titlebar-drag flex h-screen items-center justify-center text-sm text-slate-500">Lade Projekt…</div>
   }
 
   return (
-    <div className="flex h-screen flex-col">
-      <header className="border-b border-slate-200 bg-white px-6 py-3">
-        <Link to="/" className="text-xs text-slate-500 hover:text-slate-800">
-          ← Alle Projekte
-        </Link>
-        <div className="flex items-baseline gap-3">
-          <h1 className="text-lg font-semibold">{project.name}</h1>
-          <span className="text-xs text-slate-400">{project.path}</span>
+    <div className="flex h-screen">
+      <aside className="flex w-56 shrink-0 flex-col border-r border-black/[0.06] bg-black/[0.02] dark:border-white/10 dark:bg-white/[0.03]">
+        <div className="titlebar-drag flex h-12 shrink-0 items-center pl-[84px]">
+          <NavLink to="/" className="titlebar-no-drag text-[13px] text-slate-500 hover:text-slate-900 dark:hover:text-white">
+            ← Projekte
+          </NavLink>
         </div>
-        <nav className="mt-3 flex gap-1">
+        <div className="px-4 pb-3">
+          <h1 className="truncate text-[13px] font-semibold">{project.name}</h1>
+          <p className="truncate text-[11px] text-slate-400">{project.path}</p>
+        </div>
+        <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2 pb-4">
           {TABS.map((tab) => (
             <NavLink
               key={tab.to}
               to={tab.to}
               end={tab.end}
               className={({ isActive }) =>
-                `rounded-md px-3 py-1.5 text-sm font-medium ${
-                  isActive ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
+                `rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium transition-colors ${
+                  isActive
+                    ? 'bg-blue-600 text-white'
+                    : 'text-slate-700 hover:bg-black/[0.05] dark:text-slate-200 dark:hover:bg-white/10'
                 }`
               }
             >
@@ -55,10 +59,13 @@ export default function ProjectLayout(): JSX.Element {
             </NavLink>
           ))}
         </nav>
-      </header>
-      <main className="flex-1 overflow-y-auto px-6 py-6">
-        <Outlet context={project} />
-      </main>
+      </aside>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="titlebar-drag h-12 shrink-0" />
+        <main className="flex-1 overflow-y-auto px-8 pb-8">
+          <Outlet context={project} />
+        </main>
+      </div>
     </div>
   )
 }

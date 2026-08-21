@@ -26,39 +26,42 @@ export default function Home(): JSX.Element {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-10">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Quartz GUI</h1>
-        <Link to="/settings" className="text-sm text-slate-500 hover:text-slate-800">
-          Einstellungen
-        </Link>
-      </div>
+    <div className="flex h-screen flex-col">
+      <div className="titlebar-drag h-12 shrink-0" />
+      <div className="mx-auto w-full max-w-3xl flex-1 overflow-y-auto px-6 pb-10">
+        <div className="mb-6 flex items-center justify-between">
+          <h1 className="text-2xl font-semibold">Quartz GUI</h1>
+          <Link to="/settings" className="text-[13px] text-slate-500 hover:text-slate-900 dark:hover:text-white">
+            Einstellungen
+          </Link>
+        </div>
 
-      <div className="mb-6 flex gap-3">
-        <Button onClick={openExisting}>Vorhandenes Projekt öffnen</Button>
-        <Button variant="ghost" onClick={() => setShowWizard(true)}>
-          Neues Projekt erstellen
-        </Button>
-      </div>
+        <div className="mb-6 flex gap-3">
+          <Button onClick={openExisting}>Vorhandenes Projekt öffnen</Button>
+          <Button variant="ghost" onClick={() => setShowWizard(true)}>
+            Neues Projekt erstellen
+          </Button>
+        </div>
 
-      <div className="flex flex-col gap-3">
-        {projects.length === 0 && <p className="text-sm text-slate-500">Noch keine Projekte hinzugefügt.</p>}
-        {projects.map((project) => (
-          <Card key={project.id} className="flex items-center justify-between">
-            <div>
-              <button
-                className="text-left text-base font-medium hover:underline"
-                onClick={() => navigate(`/project/${project.id}`)}
-              >
-                {project.name}
-              </button>
-              <p className="text-xs text-slate-500">{project.path}</p>
-            </div>
-            <Button variant="ghost" onClick={() => removeProject(project.id)}>
-              Entfernen
-            </Button>
-          </Card>
-        ))}
+        <div className="flex flex-col gap-3">
+          {projects.length === 0 && <p className="text-sm text-slate-500">Noch keine Projekte hinzugefügt.</p>}
+          {projects.map((project) => (
+            <Card key={project.id} className="flex items-center justify-between">
+              <div>
+                <button
+                  className="text-left text-[15px] font-medium hover:underline"
+                  onClick={() => navigate(`/project/${project.id}`)}
+                >
+                  {project.name}
+                </button>
+                <p className="text-xs text-slate-400">{project.path}</p>
+              </div>
+              <Button variant="ghost" onClick={() => removeProject(project.id)}>
+                Entfernen
+              </Button>
+            </Card>
+          ))}
+        </div>
       </div>
 
       {showWizard && (
@@ -115,7 +118,7 @@ function CreateWizard({
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/30 p-6">
+    <div className="fixed inset-0 flex items-center justify-center bg-black/30 p-6 backdrop-blur-sm">
       <Card className="w-full max-w-lg">
         <h2 className="mb-4 text-lg font-semibold">Neues Quartz-Projekt</h2>
         <div className="flex flex-col gap-3">
@@ -170,7 +173,7 @@ function CreateWizard({
           </Field>
 
           {error && (
-            <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-md bg-red-50 p-2 text-xs text-red-700">
+            <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-md bg-red-50 p-2 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-400">
               {error}
             </pre>
           )}

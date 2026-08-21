@@ -34,7 +34,7 @@ export default function GitSync(): JSX.Element {
         </div>
         {output != null && (
           <div>
-            <p className={`mb-2 text-sm ${success ? 'text-green-600' : 'text-red-600'}`}>
+            <p className={`mb-2 text-sm ${success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
               {success ? 'Erfolgreich.' : 'Fehlgeschlagen.'}
             </p>
             <pre className="max-h-72 overflow-y-auto rounded-md bg-slate-950 p-3 font-mono text-xs text-slate-200">

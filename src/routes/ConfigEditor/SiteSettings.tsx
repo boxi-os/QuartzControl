@@ -1,5 +1,5 @@
 import type { QuartzConfig } from '@shared/ipc-contract'
-import { Checkbox, Field, TextInput } from '../../components/ui'
+import { Field, TextInput, Toggle } from '../../components/ui'
 
 type Configuration = QuartzConfig['configuration']
 
@@ -33,20 +33,20 @@ export default function SiteSettings({
         <TextInput value={configuration.locale ?? ''} onChange={(e) => set('locale', e.target.value)} placeholder="en-US" />
       </Field>
       <div className="flex gap-6">
-        <Checkbox
+        <Toggle
           label="Single-Page-App-Routing"
           checked={configuration.enableSPA ?? false}
-          onChange={(e) => set('enableSPA', e.target.checked)}
+          onChange={(checked) => set('enableSPA', checked)}
         />
-        <Checkbox
+        <Toggle
           label="Popover-Vorschauen"
           checked={configuration.enablePopovers ?? false}
-          onChange={(e) => set('enablePopovers', e.target.checked)}
+          onChange={(checked) => set('enablePopovers', checked)}
         />
       </div>
       <Field label="Ignore-Patterns (eine Zeile pro Muster)">
         <textarea
-          className="min-h-32 rounded-md border border-slate-300 px-2.5 py-1.5 font-mono text-sm focus:border-slate-500 focus:outline-none"
+          className="min-h-32 rounded-[7px] border border-black/10 bg-white px-2.5 py-1.5 font-mono text-[13px] shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
           value={(configuration.ignorePatterns ?? []).join('\n')}
           onChange={(e) =>
             set(

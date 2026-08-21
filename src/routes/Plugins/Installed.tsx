@@ -87,7 +87,7 @@ export default function PluginsInstalled(): JSX.Element {
         </Link>
       </div>
 
-      {message && <p className="mb-4 text-sm text-red-600">{message}</p>}
+      {message && <p className="mb-4 text-sm text-red-600 dark:text-red-400">{message}</p>}
 
       <div className="flex flex-col gap-3">
         {config?.plugins.length === 0 && <p className="text-sm text-slate-500">Keine Plugins installiert.</p>}

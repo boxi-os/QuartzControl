@@ -60,7 +60,7 @@ export default function Content(): JSX.Element {
             </div>
             <p className="text-slate-500">{status.path}</p>
             {status.isSymlink && (
-              <p className={status.targetExists ? 'text-slate-500' : 'text-red-600'}>
+              <p className={status.targetExists ? 'text-slate-500' : 'text-red-600 dark:text-red-400'}>
                 → {status.symlinkTarget}
                 {!status.targetExists && ' (Ziel existiert nicht)'}
               </p>
@@ -73,10 +73,10 @@ export default function Content(): JSX.Element {
       </Card>
 
       {showDialog && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/30 p-6">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/30 p-6 backdrop-blur-sm">
           <Card className="w-full max-w-lg">
             <h3 className="mb-1 text-lg font-semibold">Content-Quelle ändern</h3>
-            <p className="mb-4 text-sm text-amber-700">
+            <p className="mb-4 text-sm text-amber-700 dark:text-amber-400">
               Der aktuelle content/-Ordner wird vor der Änderung nach .quartz-gui/content-backups/ verschoben und kann
               über die Backups-Ansicht wiederhergestellt werden.
             </p>
@@ -101,7 +101,7 @@ export default function Content(): JSX.Element {
                   {progress.processed} / {progress.total} Dateien kopiert…
                 </p>
               )}
-              {error && <p className="text-sm text-red-600">{error}</p>}
+              {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
               <div className="mt-2 flex justify-end gap-2">
                 <Button variant="ghost" onClick={() => setShowDialog(false)} disabled={busy}>

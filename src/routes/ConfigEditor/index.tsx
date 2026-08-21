@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useProject } from '../ProjectLayout'
 import type { QuartzConfig } from '@shared/ipc-contract'
-import { Button } from '../../components/ui'
+import { Button, SegmentedControl } from '../../components/ui'
 import SiteSettings from './SiteSettings'
 import ThemeEditor from './ThemeEditor'
 
@@ -34,23 +34,18 @@ export default function ConfigEditor(): JSX.Element {
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex gap-1">
-          {(['site', 'theme'] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium ${
-                tab === t ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              {t === 'site' ? 'Website' : 'Theme'}
-            </button>
-          ))}
-        </div>
+      <div className="mb-6 flex items-center justify-between">
+        <SegmentedControl
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: 'site', label: 'Website' },
+            { value: 'theme', label: 'Theme' }
+          ]}
+        />
         <div className="flex items-center gap-3">
-          {status === 'saved' && <span className="text-sm text-green-600">Gespeichert.</span>}
-          {status === 'error' && <span className="text-sm text-red-600">{error}</span>}
+          {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">Gespeichert.</span>}
+          {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{error}</span>}
           <Button onClick={save} disabled={status === 'saving'}>
             {status === 'saving' ? 'Speichere…' : 'Speichern'}
           </Button>

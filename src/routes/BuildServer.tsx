@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useProject } from './ProjectLayout'
 import type { LogLine, ServerOptions, ServerStatus, BuildResult } from '@shared/ipc-contract'
-import { Badge, Button, Card, Checkbox, Field, TextInput } from '../components/ui'
+import { Badge, Button, Card, Field, TextInput, Toggle } from '../components/ui'
 import { LogConsole } from '../components/LogConsole'
 
 const DEFAULT_OPTIONS: ServerOptions = { port: 8080, wsPort: 3001, host: 'localhost', watch: true }
@@ -101,10 +101,10 @@ export default function BuildServer(): JSX.Element {
             />
           </Field>
           <div className="flex items-end pb-1.5">
-            <Checkbox
+            <Toggle
               label="Watch"
               checked={options.watch}
-              onChange={(e) => setOptions({ ...options, watch: e.target.checked })}
+              onChange={(checked) => setOptions({ ...options, watch: checked })}
               disabled={status.state !== 'stopped'}
             />
           </div>
@@ -125,7 +125,7 @@ export default function BuildServer(): JSX.Element {
               href={`http://${status.options.host}:${status.options.port}`}
               target="_blank"
               rel="noreferrer"
-              className="ml-auto self-center text-sm text-slate-600 hover:underline"
+              className="ml-auto self-center text-sm text-slate-600 hover:underline dark:text-slate-300"
             >
               Im Browser öffnen ↗
             </a>
@@ -143,7 +143,7 @@ export default function BuildServer(): JSX.Element {
           </Button>
         </div>
         {buildResult && (
-          <p className={`mb-3 text-sm ${buildResult.success ? 'text-green-600' : 'text-red-600'}`}>
+          <p className={`mb-3 text-sm ${buildResult.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
             {buildResult.success ? 'Erfolgreich' : 'Fehlgeschlagen'} in {(buildResult.durationMs / 1000).toFixed(1)}s
           </p>
         )}

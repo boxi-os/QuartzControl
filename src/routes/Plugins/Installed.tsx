@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
 import { Link } from 'react-router-dom'
 import { useProject } from '../ProjectLayout'
-import type { PluginEntry, PluginOptionField, QuartzConfig } from '@shared/ipc-contract'
+import type { PluginEntry, PluginLayoutDeclaration, PluginOptionField, QuartzConfig } from '@shared/ipc-contract'
 import { Badge, Button, Card, Select, TextInput, Toggle } from '../../components/ui'
 
 // Quartz plugins fall into distinct kinds - transformers, filters, page types, emitters,
@@ -15,15 +15,7 @@ import { Badge, Button, Card, Select, TextInput, Toggle } from '../../components
 // Component - so that's the one structural split this view draws. Everything else (transformer/
 // filter/emitter/page-type) is shown together as "Verarbeitung" since they can't be told apart
 // from the config alone.
-interface PluginLayout {
-  position?: string
-  priority?: number
-  display?: string
-  condition?: string
-  group?: string
-  groupOptions?: Record<string, unknown>
-  [key: string]: unknown
-}
+type PluginLayout = PluginLayoutDeclaration
 
 // Straight from quartz's own plugin-config JSON schema (quartz/plugins/quartz-plugins.schema.json)
 // plus "footer" (seen in real generated configs but missing from that schema) - this is fixed
@@ -37,7 +29,9 @@ function buildLayoutFields(t: TFunction): PluginOptionField[] {
       name: 'position',
       kind: 'enum',
       optional: true,
-      enumValues: ['left', 'right', 'beforeBody', 'afterBody', 'body', 'footer'],
+      // Verified against quartz/plugins/loader/config-loader.ts's `buildLayoutForEntries`: the
+      // real position map has exactly these 6 keys (no "body" - that's the fixed page content).
+      enumValues: ['header', 'left', 'right', 'beforeBody', 'afterBody', 'footer'],
       description: t('pluginsInstalled.layoutFields.position')
     },
     { name: 'priority', kind: 'number', optional: true, description: t('pluginsInstalled.layoutFields.priority') },
@@ -243,7 +237,9 @@ export default function PluginsInstalled(): JSX.Element {
     reordered.forEach((item, i) => {
       const value = (i + 1) * 10
       plugins[item.index] =
-        field === 'order' ? { ...item.plugin, order: value } : { ...item.plugin, layout: { ...getLayout(item.plugin), priority: value } }
+        field === 'order'
+          ? { ...item.plugin, order: value }
+          : { ...item.plugin, layout: { ...getLayout(item.plugin)!, priority: value } }
     })
     await window.quartzGui.config.save(project.path, { ...config, plugins })
     await reload()
@@ -493,7 +489,7 @@ function PluginRow({
         <div className="mt-3 border-t border-black/10 pt-3 dark:border-white/10">
           <FieldGroup
             fields={buildLayoutFields(t)}
-            values={layout}
+            values={layout as unknown as Record<string, unknown>}
             onChange={(name, value) => updateField(index, ['layout', name], value)}
           />
           {/* groupOptions only makes sense once the plugin is actually placed in a group */}

@@ -49,6 +49,7 @@ export default {
     tabs: {
       overview: 'Overview',
       config: 'Configuration',
+      layout: 'Layout',
       themes: 'Themes',
       plugins: 'Plugins',
       content: 'Content folder',
@@ -261,7 +262,7 @@ export default {
     summaryPosPriority: 'position: {{position}} · priority: {{priority}}',
     summaryOrder: 'order: {{order}}',
     layoutFields: {
-      position: 'left/right = sidebar, beforeBody/afterBody = around the content, body = inside the content, footer = footer',
+      position: 'header = top header, left/right = sidebar, beforeBody/afterBody = around the content, footer = footer',
       priority: 'Order within the position — smaller first',
       display: 'all = all devices, mobile-only = mobile only, desktop-only = desktop only',
       condition: 'Free-text condition, e.g. "not-index"',
@@ -326,6 +327,55 @@ export default {
     assets: 'Copies all non-markdown files (images, videos, …) into the output.',
     static: 'Copies static resources like fonts and fixed images into the output.',
     'component-resources': 'Includes the CSS and JS resources that the theme and components need.'
+  },
+  layoutEditor: {
+    title: 'Layout Editor',
+    tabGlobal: 'Global',
+    loading: 'Loading layout…',
+    positions: {
+      header: 'Header',
+      left: 'Left',
+      right: 'Right',
+      beforeBody: 'Before content',
+      afterBody: 'After content',
+      footer: 'Footer'
+    },
+    emptySlot: 'Empty — drag here',
+    groupLabel: 'Group',
+    noGroup: '— none —',
+    groupsPanel: {
+      title: 'Flex groups',
+      description:
+        'Components sharing the same group are rendered side by side (or stacked) in a flexbox instead of individually one after another.',
+      none: 'No flex groups defined yet.',
+      newGroupPlaceholder: 'New group name',
+      add: 'Add',
+      direction: 'Direction',
+      gap: 'Gap',
+      priority: 'Priority (optional)',
+      delete: 'Delete'
+    },
+    pageTypes: {
+      '404': '404 page',
+      content: 'Content pages',
+      folder: 'Folder pages',
+      tag: 'Tag pages',
+      canvas: 'Canvas pages',
+      bases: 'Bases pages'
+    },
+    addOverridePlaceholder: 'Choose a page type…',
+    addOverride: 'Add override',
+    removeOverride: 'Remove override',
+    excludeHeading: 'Excluded components',
+    excludeDescription: 'These components are not shown on pages of this type.',
+    template: 'Frame/template',
+    templateDefault: 'Default',
+    templateFullWidth: 'Full width',
+    templateMinimal: 'Minimal',
+    templateCustom: 'Custom frame name',
+    templateCustomPlaceholder: 'e.g. my-custom-frame',
+    clearSlotsHeading: 'Clear slots for this page type',
+    clearSlotsDescription: 'Enabled slots always stay empty for this page type, regardless of the global layout.'
   },
   pluginsMarketplace: {
     backToInstalled: '← Installed plugins',

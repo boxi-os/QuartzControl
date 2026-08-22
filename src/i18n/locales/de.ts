@@ -49,6 +49,7 @@ export default {
     tabs: {
       overview: 'Übersicht',
       config: 'Konfiguration',
+      layout: 'Layout',
       themes: 'Themes',
       plugins: 'Plugins',
       content: 'Content-Ordner',
@@ -261,7 +262,7 @@ export default {
     summaryPosPriority: 'position: {{position}} · priority: {{priority}}',
     summaryOrder: 'order: {{order}}',
     layoutFields: {
-      position: 'left/right = Sidebar, beforeBody/afterBody = um den Inhalt herum, body = im Inhalt, footer = Fußzeile',
+      position: 'header = Kopfbereich, left/right = Sidebar, beforeBody/afterBody = um den Inhalt herum, footer = Fußzeile',
       priority: 'Reihenfolge innerhalb der Position — kleiner zuerst',
       display: 'all = alle Geräte, mobile-only = nur mobil, desktop-only = nur Desktop',
       condition: 'Freitext-Bedingung, z. B. "not-index"',
@@ -326,6 +327,55 @@ export default {
     assets: 'Kopiert alle Nicht-Markdown-Dateien (Bilder, Videos, …) in die Ausgabe.',
     static: 'Kopiert statische Ressourcen wie Schriften und feste Bilder in die Ausgabe.',
     'component-resources': 'Bindet die CSS- und JS-Ressourcen ein, die Theme und Components benötigen.'
+  },
+  layoutEditor: {
+    title: 'Layout-Editor',
+    tabGlobal: 'Global',
+    loading: 'Lade Layout…',
+    positions: {
+      header: 'Header',
+      left: 'Links',
+      right: 'Rechts',
+      beforeBody: 'Vor dem Inhalt',
+      afterBody: 'Nach dem Inhalt',
+      footer: 'Footer'
+    },
+    emptySlot: 'Leer — hierher ziehen',
+    groupLabel: 'Gruppe',
+    noGroup: '— keine —',
+    groupsPanel: {
+      title: 'Flex-Gruppen',
+      description:
+        'Komponenten mit derselben Gruppe werden nebeneinander (oder untereinander) in einer Flexbox gerendert, statt einzeln untereinander.',
+      none: 'Keine Flex-Gruppen definiert.',
+      newGroupPlaceholder: 'Name der neuen Gruppe',
+      add: 'Hinzufügen',
+      direction: 'Richtung',
+      gap: 'Abstand',
+      priority: 'Priorität (optional)',
+      delete: 'Löschen'
+    },
+    pageTypes: {
+      '404': '404-Seite',
+      content: 'Inhaltsseiten',
+      folder: 'Ordnerseiten',
+      tag: 'Tag-Seiten',
+      canvas: 'Canvas-Seiten',
+      bases: 'Bases-Seiten'
+    },
+    addOverridePlaceholder: 'Seitentyp wählen…',
+    addOverride: 'Override hinzufügen',
+    removeOverride: 'Override entfernen',
+    excludeHeading: 'Ausgeschlossene Komponenten',
+    excludeDescription: 'Diese Komponenten werden auf Seiten dieses Typs nicht angezeigt.',
+    template: 'Frame/Template',
+    templateDefault: 'Standard',
+    templateFullWidth: 'Volle Breite',
+    templateMinimal: 'Minimal',
+    templateCustom: 'Eigener Frame-Name',
+    templateCustomPlaceholder: 'z.B. mein-custom-frame',
+    clearSlotsHeading: 'Bereiche für diesen Seitentyp leeren',
+    clearSlotsDescription: 'Aktivierte Bereiche bleiben für diesen Seitentyp immer leer, unabhängig von der globalen Belegung.'
   },
   pluginsMarketplace: {
     backToInstalled: '← Installierte Plugins',

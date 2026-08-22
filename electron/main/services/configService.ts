@@ -2,7 +2,7 @@ import { existsSync } from 'fs'
 import { readFile, writeFile, rename } from 'fs/promises'
 import { join } from 'path'
 import { parseDocument, Document } from 'yaml'
-import type { QuartzConfig, PluginEntry, PluginSource } from '@shared/ipc-contract'
+import type { QuartzConfig, PluginEntry, PluginSource, LayoutConfig } from '@shared/ipc-contract'
 import { snapshotConfig } from './backupService'
 
 function configPath(projectPath: string): string {
@@ -27,6 +27,7 @@ export async function readConfig(projectPath: string): Promise<QuartzConfig> {
     // extra fields (e.g. `layout`) beyond source/enabled/order/options that must round-trip
     configuration?: (QuartzConfig['configuration'] & { theme?: QuartzConfig['theme'] }) | undefined
     plugins?: Array<Record<string, unknown> & { source: PluginSource; enabled?: boolean }>
+    layout?: LayoutConfig
   }
   const { theme, ...configuration } = json.configuration ?? {}
   const plugins: PluginEntry[] = (json.plugins ?? []).map((p) => ({
@@ -37,7 +38,8 @@ export async function readConfig(projectPath: string): Promise<QuartzConfig> {
   return {
     configuration,
     theme: theme ?? {},
-    plugins
+    plugins,
+    layout: json.layout
   }
 }
 
@@ -64,6 +66,14 @@ export async function writeConfig(projectPath: string, config: QuartzConfig): Pr
     'plugins',
     config.plugins.map(({ name: _name, ...rest }) => rest)
   )
+  // Only touch the top-level `layout:` node when the in-memory config actually carries one -
+  // every tab's save() round-trips whatever it loaded unchanged, so this only creates a new
+  // `layout:` block the first time the Layout Editor itself initializes one on a project that
+  // didn't have it yet, never as a side effect of saving from an unrelated tab.
+  if (config.layout !== undefined) {
+    doc.setIn(['layout', 'groups'], config.layout.groups ?? {})
+    doc.setIn(['layout', 'byPageType'], config.layout.byPageType ?? {})
+  }
 
   const serialized = doc.toString()
   if (existingRaw) await snapshotConfig(projectPath, existingRaw)

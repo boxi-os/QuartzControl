@@ -14,15 +14,65 @@ export interface Project {
 // through the yaml.Document — the known fields below are just what the editor tabs bind to.
 export type PluginSource = string | { repo: string; subdir?: string; ref?: string; name?: string }
 
+// The 6 slots a component-providing plugin can render into - verified against
+// quartz/plugins/loader/config-loader.ts's `buildLayoutForEntries` (the actual position map it
+// builds has exactly these 6 keys; there is no "body" position - that's the fixed page content).
+export type LayoutPosition = 'header' | 'left' | 'right' | 'beforeBody' | 'afterBody' | 'footer'
+
+// Mirrors quartz's own `PluginLayoutDeclaration` (plugins/loader/types.ts) - the shape of a
+// component plugin entry's `layout` field in quartz.config.yaml.
+export interface PluginLayoutDeclaration {
+  position: LayoutPosition
+  priority: number
+  display?: 'all' | 'mobile-only' | 'desktop-only'
+  condition?: string
+  group?: string
+  groupOptions?: {
+    grow?: boolean
+    shrink?: boolean
+    basis?: string
+    order?: number
+    align?: 'start' | 'end' | 'center' | 'stretch'
+    justify?: 'start' | 'end' | 'center' | 'between' | 'around'
+  }
+}
+
 export interface PluginEntry {
   name: string
   source: PluginSource
   enabled: boolean
   order?: number
   options?: Record<string, unknown>
-  // plugin entries can carry other keys (e.g. `layout` for position/priority) that must
-  // round-trip through save even though the editor UI doesn't surface them yet
+  layout?: PluginLayoutDeclaration
+  // plugin entries can carry other keys beyond the ones above that must round-trip through
+  // save even though the editor UI doesn't surface them yet
   [key: string]: unknown
+}
+
+// A named flex-group definition under the top-level `layout.groups` key - members opt in via
+// their own `layout.group` field (see PluginLayoutDeclaration.group). Verified against
+// quartz/plugins/loader/types.ts's `FlexGroupConfig` and `resolveGroups()`'s consumption of it.
+export interface FlexGroupConfig {
+  priority?: number
+  direction?: 'row' | 'row-reverse' | 'column' | 'column-reverse'
+  wrap?: 'nowrap' | 'wrap' | 'wrap-reverse'
+  gap?: string
+}
+
+// Per-page-type override under `layout.byPageType.<pageType>`. `positions` is only meaningful
+// as an empty array (clears that slot for this page type) - verified against
+// config-loader.ts's `loadQuartzLayout`, which only ever checks `components.length === 0` and
+// otherwise ignores non-empty `positions` arrays entirely (a currently-inert part of the schema).
+export interface PageTypeLayoutOverride {
+  exclude?: string[]
+  positions?: Partial<Record<LayoutPosition, unknown[]>>
+  template?: string
+}
+
+// Top-level `layout:` key of quartz.config.yaml, sibling to `configuration`/`plugins`/`theme`.
+export interface LayoutConfig {
+  groups?: Record<string, FlexGroupConfig>
+  byPageType?: Record<string, PageTypeLayoutOverride>
 }
 
 // Extracted from an installed plugin's compiled .d.ts (see pluginSchemaService in main) so the
@@ -104,6 +154,10 @@ export interface QuartzConfig {
     colors?: Record<string, unknown>
   }
   plugins: PluginEntry[]
+  // undefined when the project's quartz.config.yaml has no top-level `layout:` key at all -
+  // left untouched on save in that case (see configService.writeConfig) rather than injecting an
+  // empty one on every unrelated save from another tab.
+  layout?: LayoutConfig
 }
 
 export interface LogLine {

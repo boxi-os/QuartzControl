@@ -4,6 +4,7 @@ import Settings from './routes/Settings'
 import ProjectLayout from './routes/ProjectLayout'
 import ProjectDashboard from './routes/ProjectDashboard'
 import ConfigEditor from './routes/ConfigEditor'
+import LayoutEditor from './routes/LayoutEditor'
 import Themes from './routes/Themes'
 import PluginsInstalled from './routes/Plugins/Installed'
 import PluginsMarketplace from './routes/Plugins/Marketplace'
@@ -20,6 +21,7 @@ export default function App(): JSX.Element {
       <Route path="/project/:id" element={<ProjectLayout />}>
         <Route index element={<ProjectDashboard />} />
         <Route path="config" element={<ConfigEditor />} />
+        <Route path="layout" element={<LayoutEditor />} />
         <Route path="themes" element={<Themes />} />
         <Route path="plugins" element={<PluginsInstalled />} />
         <Route path="plugins/marketplace" element={<PluginsMarketplace />} />

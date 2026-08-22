@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAppStore } from '../state/store'
 import { Button, Card, Field, Select, TextInput } from '../components/ui'
 import type { CreateProjectOptions } from '@shared/ipc-contract'
+import appIcon from '../assets/app-icon.png'
 
 const TEMPLATES: NonNullable<CreateProjectOptions['template']>[] = ['default', 'obsidian', 'ttrpg', 'blog']
 const STRATEGIES: NonNullable<CreateProjectOptions['strategy']>[] = ['new', 'copy', 'symlink']
@@ -29,9 +30,22 @@ export default function Home(): JSX.Element {
     <div className="flex h-screen flex-col">
       <div className="titlebar-drag h-12 shrink-0" />
       <div className="mx-auto w-full max-w-3xl flex-1 overflow-y-auto px-6 pb-10">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">QuartzControl</h1>
-          <Link to="/settings" className="text-[13px] text-slate-500 hover:text-slate-900 dark:hover:text-white">
+        <div className="mb-6 flex items-start justify-between">
+          <div className="flex items-center gap-4">
+            <img src={appIcon} alt="" className="h-14 w-14 rounded-2xl shadow-sm" />
+            <div>
+              <h1 className="text-2xl font-semibold">QuartzControl</h1>
+              <p className="mt-0.5 max-w-md text-[13px] text-slate-500 dark:text-slate-400">
+                Verwalte deine Quartz-5-Projekte an einem Ort: Konfiguration und Themes bearbeiten, Plugins
+                installieren, den Content-Ordner mit einem Obsidian-Vault verknüpfen und Builds sowie den lokalen
+                Dev-Server steuern.
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/settings"
+            className="shrink-0 pt-1 text-[13px] text-slate-500 hover:text-slate-900 dark:hover:text-white"
+          >
             Einstellungen
           </Link>
         </div>

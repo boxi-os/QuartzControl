@@ -47,6 +47,64 @@ const LAYOUT_FIELDS: PluginOptionField[] = [
   { name: 'condition', kind: 'string', optional: true, description: 'Freitext-Bedingung, z. B. "not-index"' },
   { name: 'group', kind: 'string', optional: true, description: 'Name einer Toolbar-Gruppe, z. B. "toolbar"' }
 ]
+// Short descriptions for the official @quartz-community/* (and @quartz-themes/core) plugins,
+// compiled from quartz's own docs/plugins/*.md - there's no description field in
+// quartz.config.yaml or the compiled .d.ts to read this from at runtime. Keyed by the derived
+// display name (deriveName() in configService - last path segment of the source), same key
+// PluginRow already uses. Custom/marketplace plugins not in this list simply show no description
+// rather than a guessed one.
+const PLUGIN_DESCRIPTIONS: Record<string, string> = {
+  'created-modified-date': 'Ermittelt Erstellungs-, Änderungs- und Veröffentlichungsdatum aus Frontmatter, Git-Historie oder Dateisystem.',
+  'syntax-highlighting': 'Hebt Code-Blöcke farblich hervor.',
+  'obsidian-flavored-markdown': 'Unterstützt Obsidian-spezifische Markdown-Syntax (Wikilinks, Callouts, Embeds, …).',
+  'github-flavored-markdown': 'Erweitert Markdown um GitHub-Funktionen wie Fußnoten, Tabellen und Tasklisten.',
+  'table-of-contents': 'Erzeugt ein Inhaltsverzeichnis für jede Seite.',
+  'crawl-links': 'Verarbeitet Links, damit sie auf die richtigen Zielseiten zeigen.',
+  description: 'Erzeugt Beschreibungstexte für Meta-Tags, RSS und Listenansichten.',
+  latex: 'Fügt LaTeX-Unterstützung für mathematische Formeln hinzu.',
+  citations: 'Fügt Unterstützung für Zitate und Literaturverweise hinzu.',
+  'hard-line-breaks': 'Wandelt einzelne Zeilenumbrüche in harte Umbrüche um (Obsidian-Verhalten).',
+  'ox-hugo': 'Unterstützt mit ox-hugo exportierte Markdown-Dateien.',
+  roam: 'Unterstützt aus Roam Research exportierte Notizen.',
+  'quartz-fonts': 'Steuert Schriftarten pro Überschriftenebene, inkl. Google-Fonts-Integration.',
+  core: 'Wendet das gewählte Theme (Farben, Typografie, Darstellung) auf die Seite an.',
+  'remove-draft': 'Blendet Seiten mit „draft: true" im Frontmatter aus.',
+  'explicit-publish': 'Veröffentlicht nur Seiten, die im Frontmatter explizit mit „publish: true" markiert sind.',
+  'unlisted-pages':
+    'Blendet Seiten mit „unlisted: true" aus allen Listen (Suche, Graph, Explorer, …) aus — bleiben aber über die URL erreichbar.',
+  'encrypted-pages': 'Verschlüsselt einzelne Seiten passwortgeschützt (AES-256-GCM).',
+  'stacked-pages': 'Öffnet interne Links als nebeneinander gestapelte Panes (Andy-Matuschak-Stil).',
+  'alias-redirects': 'Erzeugt Weiterleitungsseiten für Alias-URLs.',
+  'content-index': 'Erzeugt RSS-Feed, Sitemap und die contentIndex.json für Suche und Graph.',
+  favicon: 'Erzeugt das Favicon aus quartz/static/icon.png.',
+  'og-image': 'Erzeugt Social-Media-Vorschaubilder (Open-Graph-Images) pro Seite.',
+  cname: 'Schreibt eine CNAME-Datei für eine eigene Domain.',
+  'canvas-page': 'Rendert Obsidian-Canvas-Dateien als interaktive, zoombare Seiten.',
+  'content-page': 'Erzeugt die vollständige HTML-Seite für jede Markdown-Datei.',
+  'folder-page': 'Erzeugt Übersichtsseiten für Ordner mit mehreren Inhalten.',
+  'tag-page': 'Erzeugt eine eigene Seite je Tag.',
+  'bases-page': 'Rendert Obsidian-Bases-(.base)-Dateien als Tabellen-, Karten- oder Listenansichten.',
+  explorer: 'Datei-Baum-Navigation in der Seitenleiste.',
+  graph: 'Interaktive Graph-Visualisierung der verlinkten Notizen.',
+  search: 'Volltextsuche über alle Inhalte.',
+  backlinks: 'Zeigt Seiten an, die auf die aktuelle Seite verlinken.',
+  'article-title': 'Zeigt den Seitentitel als Überschrift über dem Inhalt.',
+  'content-meta': 'Zeigt Metadaten wie Erstellungsdatum und Lesezeit unter dem Titel.',
+  'tag-list': 'Zeigt die Tags einer Seite als klickbare Liste.',
+  'page-title': 'Zeigt den Website-Titel als Link zur Startseite, meist in der Seitenleiste.',
+  darkmode: 'Umschalter für Hell-/Dunkelmodus.',
+  'reader-mode': 'Ablenkungsfreier Lesemodus.',
+  breadcrumbs: 'Zeigt den Navigationspfad (Breadcrumbs) oberhalb des Inhalts.',
+  comments: 'Bindet ein Kommentarsystem ein (z. B. giscus, utterances).',
+  footer: 'Zeigt eine Fußzeile mit konfigurierbaren Links.',
+  'recent-notes': 'Zeigt zuletzt geänderte Notizen an.',
+  spacer: 'Flexibler Platzhalter, der Elemente in einer Toolbar-Gruppe auseinanderschiebt.',
+  'note-properties': 'Zeigt ausgewählte Frontmatter-Eigenschaften in einem einklappbaren Panel.',
+  assets: 'Kopiert alle Nicht-Markdown-Dateien (Bilder, Videos, …) in die Ausgabe.',
+  static: 'Kopiert statische Ressourcen wie Schriften und feste Bilder in die Ausgabe.',
+  'component-resources': 'Bindet die CSS- und JS-Ressourcen ein, die Theme und Components benötigen.'
+}
+
 const GROUP_OPTIONS_FIELDS: PluginOptionField[] = [
   { name: 'grow', kind: 'boolean', optional: true, description: 'Element wächst, um freien Platz in der Gruppe zu füllen' },
   { name: 'shrink', kind: 'boolean', optional: true, description: 'Element darf bei Platzmangel schrumpfen' },
@@ -59,6 +117,16 @@ const GROUP_OPTIONS_FIELDS: PluginOptionField[] = [
 function getLayout(plugin: PluginEntry): PluginLayout | null {
   const layout = plugin.layout
   return layout && typeof layout === 'object' ? (layout as PluginLayout) : null
+}
+
+// Quartz's own plugin loader sorts every plugin "by order within each category" (transformer/
+// filter/emitter/pageType - verified in quartz/plugins/loader/config-loader.ts), and every
+// built-in page-type plugin's derived name ends in "-page" (content-page, folder-page, tag-page,
+// canvas-page, bases-page - verified against quartz.config.yaml). So splitting this group by that
+// suffix, and reordering each split independently, actually matches quartz's real per-category
+// ordering better than treating all non-Component plugins as one flat sequence.
+function isPageType(plugin: PluginEntry): boolean {
+  return plugin.name.endsWith('-page')
 }
 
 function sourceLabel(source: PluginEntry['source']): string {
@@ -182,6 +250,8 @@ export default function PluginsInstalled(): JSX.Element {
   const processingItems = [...items.filter(({ plugin }) => getLayout(plugin) === null)].sort(
     (a, b) => (Number(a.plugin.order) || 0) - (Number(b.plugin.order) || 0)
   )
+  const pageTypeItems = processingItems.filter(({ plugin }) => isPageType(plugin))
+  const otherProcessingItems = processingItems.filter(({ plugin }) => !isPageType(plugin))
 
   const byPosition = new Map<string, IndexedPlugin[]>()
   for (const item of componentItems) {
@@ -257,20 +327,50 @@ export default function PluginsInstalled(): JSX.Element {
         <section>
           <h2 className="mb-1 text-sm font-semibold">Verarbeitung</h2>
           <p className="mb-3 text-xs text-slate-400">
-            Transformer, Filter, Emitter und Seitentypen — aus der Konfiguration allein nicht zuverlässig weiter
-            unterscheidbar.
+            Transformer, Filter und Emitter — aus der Konfiguration allein nicht zuverlässig weiter unterscheidbar.
+            Seitentypen (Plugins, die eine eigene Seitenart erzeugen) werden separat aufgeführt.
           </p>
-          <div className="flex flex-col gap-2">
-            {processingItems.map((item, localIndex) => (
-              <PluginRow
-                key={item.index}
-                item={item}
-                groupKey="processing"
-                localIndex={localIndex}
-                onReorder={(from, to) => reorderGroup(processingItems, from, to, 'order')}
-                {...cardProps}
-              />
-            ))}
+          <div className="flex flex-col gap-5">
+            {pageTypeItems.length > 0 && (
+              <div>
+                <h3 className="mb-2 font-mono text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Seitentypen ({pageTypeItems.length})
+                </h3>
+                <div className="flex flex-col gap-2">
+                  {pageTypeItems.map((item, localIndex) => (
+                    <PluginRow
+                      key={item.index}
+                      item={item}
+                      groupKey="pageTypes"
+                      localIndex={localIndex}
+                      onReorder={(from, to) => reorderGroup(pageTypeItems, from, to, 'order')}
+                      {...cardProps}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            {otherProcessingItems.length > 0 && (
+              <div>
+                {pageTypeItems.length > 0 && (
+                  <h3 className="mb-2 font-mono text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Transformer, Filter &amp; Emitter ({otherProcessingItems.length})
+                  </h3>
+                )}
+                <div className="flex flex-col gap-2">
+                  {otherProcessingItems.map((item, localIndex) => (
+                    <PluginRow
+                      key={item.index}
+                      item={item}
+                      groupKey="processing"
+                      localIndex={localIndex}
+                      onReorder={(from, to) => reorderGroup(otherProcessingItems, from, to, 'order')}
+                      {...cardProps}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </section>
       )}
@@ -302,10 +402,31 @@ function PluginRow({
   removePlugin: (plugin: PluginEntry) => void
   updateField: (index: number, path: string[], value: unknown) => void
 }): JSX.Element {
+  const project = useProject()
   const { plugin, index } = item
   const layout = getLayout(plugin)
   const isDragging = dragging?.group === groupKey && dragging.index === localIndex
   const [expanded, setExpanded] = useState(false)
+  const description = PLUGIN_DESCRIPTIONS[plugin.name]
+
+  // Components always have layout fields (position/priority/...) to edit, so their button is
+  // always shown. Processing plugins (no layout) may genuinely have nothing to configure, so the
+  // schema is fetched eagerly here (not lazily on expand, like PluginOptions used to) to decide
+  // whether the button is worth showing at all - and passed down to avoid re-fetching it there.
+  const [processingSchema, setProcessingSchema] = useState<PluginOptionField[] | null | 'loading'>('loading')
+  useEffect(() => {
+    if (layout) return
+    setProcessingSchema('loading')
+    window.quartzGui.plugins.optionsSchema(project.path, plugin.name).then(setProcessingSchema)
+  }, [project.path, plugin.name, layout])
+
+  const hasOptions = layout
+    ? true
+    : processingSchema === 'loading'
+      ? false
+      : processingSchema
+        ? processingSchema.some((f) => f.kind !== 'unsupported')
+        : Object.keys(plugin.options ?? {}).length > 0
 
   const summary = layout
     ? `position: ${layout.position ?? '–'} · priority: ${layout.priority ?? '–'}`
@@ -333,14 +454,17 @@ function PluginRow({
           <div>
             <p className="font-medium">{plugin.name}</p>
             <p className="text-xs text-slate-500">{sourceLabel(plugin.source)}</p>
+            {description && <p className="mt-0.5 max-w-md text-xs text-slate-400">{description}</p>}
             {!expanded && summary && <p className="mt-0.5 font-mono text-[11px] text-slate-400">{summary}</p>}
           </div>
         </div>
         <div className="flex items-center gap-3">
           <Badge tone={plugin.enabled ? 'green' : 'slate'}>{plugin.enabled ? 'Aktiv' : 'Deaktiviert'}</Badge>
-          <Button variant="ghost" onClick={() => setExpanded((v) => !v)}>
-            {expanded ? 'Optionen einklappen' : 'Optionen anzeigen'}
-          </Button>
+          {hasOptions && (
+            <Button variant="ghost" onClick={() => setExpanded((v) => !v)}>
+              {expanded ? 'Optionen einklappen' : 'Optionen anzeigen'}
+            </Button>
+          )}
           <Button variant="ghost" onClick={() => toggleEnabled(index)} disabled={busy}>
             {plugin.enabled ? 'Deaktivieren' : 'Aktivieren'}
           </Button>
@@ -367,7 +491,9 @@ function PluginRow({
         </div>
       )}
 
-      {expanded && <PluginOptions plugin={plugin} index={index} updateField={updateField} />}
+      {expanded && (
+        <PluginOptions plugin={plugin} index={index} updateField={updateField} preloadedSchema={layout ? undefined : processingSchema} />
+      )}
     </Card>
   )
 }
@@ -375,19 +501,28 @@ function PluginRow({
 function PluginOptions({
   plugin,
   index,
-  updateField
+  updateField,
+  preloadedSchema
 }: {
   plugin: PluginEntry
   index: number
   updateField: (index: number, path: string[], value: unknown) => void
+  // Processing rows already fetched this in PluginRow (to decide whether to show the "Optionen
+  // anzeigen" button at all) - reuse it here instead of fetching a second time. Components don't
+  // fetch eagerly (their button is always shown), so this stays undefined for them and this
+  // component fetches its own copy, same as before.
+  preloadedSchema?: PluginOptionField[] | null | 'loading'
 }): JSX.Element | null {
   const project = useProject()
-  const [schema, setSchema] = useState<PluginOptionField[] | null | 'loading'>('loading')
+  const [fetchedSchema, setFetchedSchema] = useState<PluginOptionField[] | null | 'loading'>('loading')
 
   useEffect(() => {
-    setSchema('loading')
-    window.quartzGui.plugins.optionsSchema(project.path, plugin.name).then(setSchema)
-  }, [project.path, plugin.name])
+    if (preloadedSchema !== undefined) return
+    setFetchedSchema('loading')
+    window.quartzGui.plugins.optionsSchema(project.path, plugin.name).then(setFetchedSchema)
+  }, [project.path, plugin.name, preloadedSchema])
+
+  const schema = preloadedSchema !== undefined ? preloadedSchema : fetchedSchema
 
   if (schema === 'loading') return null
 

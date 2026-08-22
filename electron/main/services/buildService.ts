@@ -101,10 +101,12 @@ export async function restartServer(
   return startServer(projectId, projectPath, previousOptions)
 }
 
-export function runBuild(projectId: string, projectPath: string): Promise<BuildResult> {
+export function runBuild(projectId: string, projectPath: string, outputDir?: string): Promise<BuildResult> {
   const start = Date.now()
+  const args = ['quartz', 'build']
+  if (outputDir) args.push('--output', outputDir)
   return new Promise((resolvePromise) => {
-    const child = spawn('npx', ['quartz', 'build'], {
+    const child = spawn('npx', args, {
       cwd: projectPath,
       shell: process.platform === 'win32',
       stdio: ['ignore', 'pipe', 'pipe']

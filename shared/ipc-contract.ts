@@ -295,7 +295,7 @@ export interface QuartzGuiApi {
     onStatus(cb: (projectId: string, status: ServerStatus) => void): () => void
   }
   build: {
-    run(projectId: string, projectPath: string): Promise<BuildResult>
+    run(projectId: string, projectPath: string, outputDir?: string): Promise<BuildResult>
     onLog(cb: (line: LogLine) => void): () => void
   }
   sync: {

@@ -28,6 +28,7 @@ export default function BuildServer(): JSX.Element {
   const [buildLogs, setBuildLogs] = useState<LogLine[]>([])
   const [buildResult, setBuildResult] = useState<BuildResult | null>(null)
   const [building, setBuilding] = useState(false)
+  const [exportDir, setExportDir] = useState('')
 
   useEffect(() => {
     window.quartzGui.server.status(project.id).then(setStatus)
@@ -67,9 +68,14 @@ export default function BuildServer(): JSX.Element {
     setBuilding(true)
     setBuildLogs([])
     setBuildResult(null)
-    const result = await window.quartzGui.build.run(project.id, project.path)
+    const result = await window.quartzGui.build.run(project.id, project.path, exportDir || undefined)
     setBuildResult(result)
     setBuilding(false)
+  }
+
+  async function pickExportDir(): Promise<void> {
+    const folder = await window.quartzGui.dialog.pickFolder()
+    if (folder) setExportDir(folder)
   }
 
   return (
@@ -149,9 +155,33 @@ export default function BuildServer(): JSX.Element {
             {building ? 'Baue…' : 'Jetzt bauen'}
           </Button>
         </div>
+
+        <div className="mb-3">
+          <Field label="Export-Ordner (optional)">
+            <div className="flex gap-2">
+              <TextInput
+                value={exportDir}
+                onChange={(e) => setExportDir(e.target.value)}
+                placeholder="Standard: public/ im Projekt"
+                disabled={building}
+                className="flex-1"
+              />
+              <Button variant="ghost" onClick={pickExportDir} disabled={building}>
+                Auswählen
+              </Button>
+              {exportDir && (
+                <Button variant="ghost" onClick={() => setExportDir('')} disabled={building}>
+                  Zurücksetzen
+                </Button>
+              )}
+            </div>
+          </Field>
+        </div>
+
         {buildResult && (
           <p className={`mb-3 text-sm ${buildResult.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
             {buildResult.success ? 'Erfolgreich' : 'Fehlgeschlagen'} in {(buildResult.durationMs / 1000).toFixed(1)}s
+            {buildResult.success && exportDir && ` · exportiert nach ${exportDir}`}
           </p>
         )}
         <LogConsole lines={buildLogs} />

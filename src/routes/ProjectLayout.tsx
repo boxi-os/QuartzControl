@@ -33,16 +33,20 @@ export default function ProjectLayout(): JSX.Element {
   return (
     <div className="flex h-screen">
       <aside className="flex w-56 shrink-0 flex-col border-r border-black/[0.06] bg-black/[0.02] dark:border-white/10 dark:bg-white/[0.03]">
-        <div className="titlebar-drag flex h-12 shrink-0 items-center pl-[84px]">
-          <NavLink to="/" className="titlebar-no-drag text-[13px] text-slate-500 hover:text-slate-900 dark:hover:text-white">
-            ← Projekte
+        <div className="titlebar-drag h-12 shrink-0" />
+        <div className="px-2 pb-2">
+          <NavLink
+            to="/"
+            className="titlebar-no-drag flex items-center gap-1.5 rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium text-slate-700 transition-colors hover:bg-black/[0.05] dark:text-slate-200 dark:hover:bg-white/10"
+          >
+            <span aria-hidden>←</span> Alle Projekte
           </NavLink>
         </div>
-        <div className="px-4 pb-3">
+        <div className="border-b border-black/[0.06] px-4 pb-3 dark:border-white/10">
           <h1 className="truncate text-[13px] font-semibold">{project.name}</h1>
           <p className="truncate text-[11px] text-slate-400">{project.path}</p>
         </div>
-        <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2 pb-4">
+        <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2 pb-4 pt-2">
           {TABS.map((tab) => (
             <NavLink
               key={tab.to}

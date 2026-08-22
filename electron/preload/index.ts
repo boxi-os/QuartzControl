@@ -66,7 +66,8 @@ const api: QuartzGuiApi = {
       onEvent<[string, ServerStatus]>(IPC.serverStatusChanged, cb)
   },
   build: {
-    run: (projectId: string, projectPath: string) => ipcRenderer.invoke(IPC.buildRun, projectId, projectPath),
+    run: (projectId: string, projectPath: string, outputDir?: string) =>
+      ipcRenderer.invoke(IPC.buildRun, projectId, projectPath, outputDir),
     onLog: (cb: (line: LogLine) => void) => onEvent<[LogLine]>(IPC.buildLog, cb)
   },
   sync: {

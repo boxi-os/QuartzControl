@@ -102,8 +102,8 @@ export function registerIpcHandlers(): void {
   )
   ipcMain.handle(IPC.serverStatus, (_e, projectId: string) => buildService.getServerStatus(projectId))
 
-  ipcMain.handle(IPC.buildRun, (_e, projectId: string, projectPath: string) =>
-    buildService.runBuild(projectId, projectPath)
+  ipcMain.handle(IPC.buildRun, (_e, projectId: string, projectPath: string, outputDir?: string) =>
+    buildService.runBuild(projectId, projectPath, outputDir)
   )
 
   ipcMain.handle(IPC.syncRun, (_e, projectPath: string, direction?: 'push' | 'pull' | 'both') =>

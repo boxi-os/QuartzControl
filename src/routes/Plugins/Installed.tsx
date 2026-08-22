@@ -9,6 +9,10 @@ function sourceLabel(source: PluginEntry['source']): string {
   return [source.repo, source.ref ? `#${source.ref}` : '', source.subdir ? ` (${source.subdir})` : ''].join('')
 }
 
+function optionValueToText(value: unknown): string {
+  return typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value)
+}
+
 export default function PluginsInstalled(): JSX.Element {
   const project = useProject()
   const [config, setConfig] = useState<QuartzConfig | null>(null)
@@ -40,15 +44,16 @@ export default function PluginsInstalled(): JSX.Element {
     await reload()
   }
 
-  async function toggleEnabled(plugin: PluginEntry): Promise<void> {
-    // written directly to quartz.config.yaml rather than via `quartz plugin enable/disable`:
-    // that CLI command only recognizes plugins tracked as "installed" (.quartz/plugins +
-    // quartz.lock.json) and silently no-ops with exit code 0 for built-in-style config
-    // entries that were never `plugin add`ed - which some templates ship as enabled by
-    // default (e.g. "obsidian"'s obsidian-plugin-excalidraw), making the CLI unreliable here
+  // Two config entries can derive the same display name (e.g. a built-in "@quartz-community/explorer"
+  // alongside a separately `plugin add`ed "github:quartz-community/explorer"), so any mutation that
+  // writes the config array directly targets the array index, not the derived name, to avoid touching
+  // the wrong (or both) entries. CLI-based actions (remove/configure) stay name-based - verified that
+  // `quartz plugin remove/config <name>` only ever affects the actually-tracked-installed entry, not
+  // a same-named built-in one.
+  async function toggleEnabled(index: number): Promise<void> {
     if (!config) return
     setBusy(true)
-    const plugins = config.plugins.map((p) => (p.name === plugin.name ? { ...p, enabled: !p.enabled } : p))
+    const plugins = config.plugins.map((p, i) => (i === index ? { ...p, enabled: !p.enabled } : p))
     await window.quartzGui.config.save(project.path, { ...config, plugins })
     setBusy(false)
     await reload()
@@ -63,9 +68,9 @@ export default function PluginsInstalled(): JSX.Element {
     await reload()
   }
 
-  async function setOrder(plugin: PluginEntry, order: number): Promise<void> {
+  async function setOrder(index: number, order: number): Promise<void> {
     if (!config) return
-    const plugins = config.plugins.map((p) => (p.name === plugin.name ? { ...p, order } : p))
+    const plugins = config.plugins.map((p, i) => (i === index ? { ...p, order } : p))
     await window.quartzGui.config.save(project.path, { ...config, plugins })
     await reload()
   }
@@ -103,7 +108,7 @@ export default function PluginsInstalled(): JSX.Element {
             Hinzufügen
           </Button>
         </div>
-        <Link to="marketplace" className="text-sm text-slate-600 hover:underline">
+        <Link to="marketplace" className="text-sm text-slate-600 hover:underline dark:text-slate-300">
           Marktplatz durchsuchen →
         </Link>
       </div>
@@ -112,8 +117,8 @@ export default function PluginsInstalled(): JSX.Element {
 
       <div className="flex flex-col gap-3">
         {config?.plugins.length === 0 && <p className="text-sm text-slate-500">Keine Plugins installiert.</p>}
-        {config?.plugins.map((plugin) => (
-          <Card key={plugin.name}>
+        {config?.plugins.map((plugin, index) => (
+          <Card key={index}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium">{plugin.name}</p>
@@ -126,11 +131,11 @@ export default function PluginsInstalled(): JSX.Element {
                   <input
                     type="number"
                     defaultValue={plugin.order ?? 0}
-                    onBlur={(e) => setOrder(plugin, Number(e.target.value))}
-                    className="w-16 rounded border border-slate-300 px-1.5 py-0.5"
+                    onBlur={(e) => setOrder(index, Number(e.target.value))}
+                    className="w-16 rounded border border-black/10 bg-white px-1.5 py-0.5 dark:border-white/10 dark:bg-white/5"
                   />
                 </label>
-                <Button variant="ghost" onClick={() => toggleEnabled(plugin)} disabled={busy}>
+                <Button variant="ghost" onClick={() => toggleEnabled(index)} disabled={busy}>
                   {plugin.enabled ? 'Deaktivieren' : 'Aktivieren'}
                 </Button>
                 <Button variant="danger" onClick={() => removePlugin(plugin)} disabled={busy}>
@@ -154,31 +159,40 @@ function OptionsEditor({
   plugin: PluginEntry
   onSave: (key: string, value: string) => void
 }): JSX.Element {
-  const [key, setKey] = useState('')
-  const [value, setValue] = useState('')
+  const [newKey, setNewKey] = useState('')
+  const [newValue, setNewValue] = useState('')
   const options = plugin.options ?? {}
 
   return (
-    <div className="mt-3 border-t border-slate-100 pt-3">
-      {Object.entries(options).map(([k, v]) => (
-        <div key={k} className="mb-1 flex items-center gap-2 text-xs text-slate-600">
-          <span className="w-32 font-mono">{k}</span>
-          <span className="font-mono">{String(v)}</span>
-        </div>
-      ))}
+    <div className="mt-3 border-t border-black/10 pt-3 dark:border-white/10">
+      {Object.entries(options).map(([key, value]) => {
+        const initial = optionValueToText(value)
+        return (
+          <div key={key} className="mb-1.5 flex items-center gap-2 text-xs">
+            <span className="w-40 shrink-0 truncate font-mono text-slate-500">{key}</span>
+            <TextInput
+              defaultValue={initial}
+              onBlur={(e) => {
+                if (e.target.value !== initial) onSave(key, e.target.value)
+              }}
+              className="w-56 font-mono"
+            />
+          </div>
+        )
+      })}
       <div className="mt-2 flex gap-2">
-        <TextInput placeholder="Option" value={key} onChange={(e) => setKey(e.target.value)} className="w-32" />
-        <TextInput placeholder="Wert" value={value} onChange={(e) => setValue(e.target.value)} className="w-32" />
+        <TextInput placeholder="Neue Option" value={newKey} onChange={(e) => setNewKey(e.target.value)} className="w-40" />
+        <TextInput placeholder="Wert" value={newValue} onChange={(e) => setNewValue(e.target.value)} className="w-40" />
         <Button
           variant="ghost"
-          disabled={!key.trim()}
+          disabled={!newKey.trim()}
           onClick={() => {
-            onSave(key.trim(), value)
-            setKey('')
-            setValue('')
+            onSave(newKey.trim(), newValue)
+            setNewKey('')
+            setNewValue('')
           }}
         >
-          Setzen
+          Hinzufügen
         </Button>
       </div>
     </div>

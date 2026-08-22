@@ -50,12 +50,6 @@ export function registerIpcHandlers(): void {
   ipcMain.handle(IPC.pluginRemove, (_e, projectPath: string, name: string) =>
     pluginService.removePlugin(projectPath, name)
   )
-  ipcMain.handle(IPC.pluginEnable, (_e, projectPath: string, name: string) =>
-    pluginService.enablePlugin(projectPath, name)
-  )
-  ipcMain.handle(IPC.pluginDisable, (_e, projectPath: string, name: string) =>
-    pluginService.disablePlugin(projectPath, name)
-  )
   ipcMain.handle(IPC.pluginConfigure, (_e, projectPath: string, name: string, key: string, value: string) =>
     pluginService.configurePlugin(projectPath, name, key, value)
   )

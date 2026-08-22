@@ -11,9 +11,11 @@ export default function ConfigEditor(): JSX.Element {
   const [tab, setTab] = useState<'site' | 'theme'>('site')
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [error, setError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
-    window.quartzGui.config.get(project.path).then(setConfig)
+    setLoadError(null)
+    window.quartzGui.config.get(project.path).then(setConfig).catch((err) => setLoadError(String(err)))
   }, [project.path])
 
   async function save(): Promise<void> {
@@ -28,6 +30,21 @@ export default function ConfigEditor(): JSX.Element {
       setStatus('error')
       setError(String(err))
     }
+  }
+
+  if (loadError) {
+    return (
+      <div className="max-w-xl">
+        <p className="mb-2 text-sm font-medium text-red-600 dark:text-red-400">quartz.config.yaml konnte nicht gelesen werden.</p>
+        <pre className="whitespace-pre-wrap rounded-md bg-red-50 p-3 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-400">
+          {loadError}
+        </pre>
+        <p className="mt-2 text-sm text-slate-500">
+          Existiert die Datei im Projektordner? Ein neu erstelltes Projekt braucht dafür einen erfolgreich
+          durchgelaufenen Setup-Assistenten.
+        </p>
+      </div>
+    )
   }
 
   if (!config) return <p className="text-sm text-slate-500">Lade Konfiguration…</p>

@@ -50,16 +50,33 @@ export async function createProject(options: CreateProjectOptions): Promise<Crea
     '-X',
     options.strategy ?? 'new',
     '-l',
-    options.linkResolution ?? 'shortest'
+    options.linkResolution ?? 'shortest',
+    // -b is unconditionally interactive when omitted (or passed as an empty string) - just
+    // like -l, an unanswered prompt here exits 0 without writing quartz.config.yaml. baseUrl
+    // is trivially editable later in the config editor, so a placeholder default is safe.
+    '-b',
+    options.baseUrl || 'localhost'
   ]
   if (options.source) args.push('-s', options.source)
-  if (options.baseUrl) args.push('-b', options.baseUrl)
 
   const create = await run('npx', args, options.targetDirectory)
   const configWritten = existsSync(join(options.targetDirectory, 'quartz.config.yaml'))
+
+  // Some templates (e.g. "obsidian") enable plugins that lazily `npm install` an extra
+  // package on first build and then try to require() it in the same process - which fails
+  // (Node can't see a package installed mid-process without a restart), even though the
+  // package is now actually on disk and a *second*, freshly-spawned build succeeds cleanly.
+  // Verified against the real "obsidian" template. Absorb that one-time hiccup here so the
+  // user's first click on Start/Build in the GUI doesn't appear to fail for no reason.
+  let warmupOutput = ''
+  if (create.success && configWritten) {
+    const warmup = await run('npx', ['quartz', 'build'], options.targetDirectory)
+    warmupOutput = warmup.success ? '' : `\n\nAufwärm-Build:\n${warmup.output}`
+  }
+
   return {
     success: create.success && configWritten,
-    output: `${clone.output}\n${install.output}\n${create.output}${
+    output: `${clone.output}\n${install.output}\n${create.output}${warmupOutput}${
       create.success && !configWritten
         ? '\n\nDer Setup-Assistent hat quartz.config.yaml nicht geschrieben (vermutlich fehlt eine Antwort auf eine interaktive Rückfrage oben).'
         : ''

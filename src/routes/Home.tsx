@@ -105,7 +105,7 @@ function CreateWizard({
   const [source, setSource] = useState('')
   const [strategy, setStrategy] = useState<NonNullable<CreateProjectOptions['strategy']>>('new')
   const [linkResolution, setLinkResolution] = useState<NonNullable<CreateProjectOptions['linkResolution']>>('shortest')
-  const [baseUrl, setBaseUrl] = useState('')
+  const [baseUrl, setBaseUrl] = useState('localhost')
 
   async function pickTarget(): Promise<void> {
     const folder = await window.quartzGui.dialog.pickFolder()
@@ -168,7 +168,7 @@ function CreateWizard({
             </Select>
           </Field>
 
-          <Field label="Base URL (optional)">
+          <Field label="Base URL (später in der Konfiguration änderbar)">
             <TextInput value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="example.com" />
           </Field>
 

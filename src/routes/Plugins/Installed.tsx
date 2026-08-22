@@ -15,9 +15,15 @@ export default function PluginsInstalled(): JSX.Element {
   const [newSource, setNewSource] = useState('')
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   async function reload(): Promise<void> {
-    setConfig(await window.quartzGui.config.get(project.path))
+    try {
+      setConfig(await window.quartzGui.config.get(project.path))
+      setLoadError(null)
+    } catch (err) {
+      setLoadError(String(err))
+    }
   }
 
   useEffect(() => {
@@ -35,12 +41,16 @@ export default function PluginsInstalled(): JSX.Element {
   }
 
   async function toggleEnabled(plugin: PluginEntry): Promise<void> {
+    // written directly to quartz.config.yaml rather than via `quartz plugin enable/disable`:
+    // that CLI command only recognizes plugins tracked as "installed" (.quartz/plugins +
+    // quartz.lock.json) and silently no-ops with exit code 0 for built-in-style config
+    // entries that were never `plugin add`ed - which some templates ship as enabled by
+    // default (e.g. "obsidian"'s obsidian-plugin-excalidraw), making the CLI unreliable here
+    if (!config) return
     setBusy(true)
-    const result = plugin.enabled
-      ? await window.quartzGui.plugins.disable(project.path, plugin.name)
-      : await window.quartzGui.plugins.enable(project.path, plugin.name)
+    const plugins = config.plugins.map((p) => (p.name === plugin.name ? { ...p, enabled: !p.enabled } : p))
+    await window.quartzGui.config.save(project.path, { ...config, plugins })
     setBusy(false)
-    setMessage(result.success ? null : result.output)
     await reload()
   }
 
@@ -66,6 +76,17 @@ export default function PluginsInstalled(): JSX.Element {
     setBusy(false)
     setMessage(result.success ? null : result.output)
     await reload()
+  }
+
+  if (loadError) {
+    return (
+      <div className="max-w-xl">
+        <p className="mb-2 text-sm font-medium text-red-600 dark:text-red-400">quartz.config.yaml konnte nicht gelesen werden.</p>
+        <pre className="whitespace-pre-wrap rounded-md bg-red-50 p-3 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-400">
+          {loadError}
+        </pre>
+      </div>
+    )
   }
 
   return (

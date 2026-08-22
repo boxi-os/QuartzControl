@@ -28,14 +28,6 @@ export function removePlugin(projectPath: string, name: string): Promise<PluginA
   return runQuartzCli(projectPath, ['plugin', 'remove', name])
 }
 
-export function enablePlugin(projectPath: string, name: string): Promise<PluginActionResult> {
-  return runQuartzCli(projectPath, ['plugin', 'enable', name])
-}
-
-export function disablePlugin(projectPath: string, name: string): Promise<PluginActionResult> {
-  return runQuartzCli(projectPath, ['plugin', 'disable', name])
-}
-
 export function configurePlugin(
   projectPath: string,
   name: string,

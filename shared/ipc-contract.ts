@@ -124,11 +124,8 @@ export const IPC = {
   configGet: 'config:get',
   configSave: 'config:save',
 
-  pluginList: 'plugin:list',
   pluginAdd: 'plugin:add',
   pluginRemove: 'plugin:remove',
-  pluginEnable: 'plugin:enable',
-  pluginDisable: 'plugin:disable',
   pluginConfigure: 'plugin:configure',
   pluginInstallFromLock: 'plugin:installFromLock',
   pluginPrune: 'plugin:prune',
@@ -202,8 +199,6 @@ export interface QuartzGuiApi {
   plugins: {
     add(projectPath: string, source: string): Promise<PluginActionResult>
     remove(projectPath: string, name: string): Promise<PluginActionResult>
-    enable(projectPath: string, name: string): Promise<PluginActionResult>
-    disable(projectPath: string, name: string): Promise<PluginActionResult>
     configure(projectPath: string, name: string, key: string, value: string): Promise<PluginActionResult>
     installFromLock(projectPath: string): Promise<PluginActionResult>
     prune(projectPath: string): Promise<PluginActionResult>

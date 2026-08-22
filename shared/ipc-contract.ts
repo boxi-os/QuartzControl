@@ -25,6 +25,17 @@ export interface PluginEntry {
   [key: string]: unknown
 }
 
+// Extracted from an installed plugin's compiled .d.ts (see pluginSchemaService in main) so the
+// options editor can offer only the fields/values a plugin actually supports, instead of free
+// text. Not available for built-in config entries - see optionsSchema() for details.
+export interface PluginOptionField {
+  name: string
+  description?: string
+  optional: boolean
+  kind: 'boolean' | 'string' | 'number' | 'enum' | 'unsupported'
+  enumValues?: string[]
+}
+
 export interface QuartzConfig {
   configuration: Record<string, unknown> & {
     pageTitle?: string
@@ -126,7 +137,7 @@ export const IPC = {
 
   pluginAdd: 'plugin:add',
   pluginRemove: 'plugin:remove',
-  pluginConfigure: 'plugin:configure',
+  pluginOptionsSchema: 'plugin:optionsSchema',
   pluginInstallFromLock: 'plugin:installFromLock',
   pluginPrune: 'plugin:prune',
 
@@ -199,7 +210,7 @@ export interface QuartzGuiApi {
   plugins: {
     add(projectPath: string, source: string): Promise<PluginActionResult>
     remove(projectPath: string, name: string): Promise<PluginActionResult>
-    configure(projectPath: string, name: string, key: string, value: string): Promise<PluginActionResult>
+    optionsSchema(projectPath: string, name: string): Promise<PluginOptionField[] | null>
     installFromLock(projectPath: string): Promise<PluginActionResult>
     prune(projectPath: string): Promise<PluginActionResult>
   }

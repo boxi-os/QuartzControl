@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, InputHTMLAttributes, LabelHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react'
+import type { ButtonHTMLAttributes, HTMLAttributes, InputHTMLAttributes, LabelHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react'
 
 const VARIANTS = {
   primary: 'bg-blue-600 text-white hover:bg-blue-500 disabled:bg-blue-300 dark:disabled:bg-blue-900/50 shadow-sm',
@@ -71,9 +71,13 @@ export function Toggle({
           checked ? 'bg-blue-600' : 'bg-black/15 dark:bg-white/20'
         }`}
       >
+        {/* left-[2px] is a required, explicit anchor: without it, an absolutely positioned
+            element with no left/right gets a browser-computed "static position" fallback
+            (centered under this button, not flush left) that translate-x then offsets from,
+            pushing the knob mostly outside the track - confirmed via computed styles */}
         <span
-          className={`absolute top-[2px] h-[16px] w-[16px] rounded-full bg-white shadow transition-transform ${
-            checked ? 'translate-x-[16px]' : 'translate-x-[2px]'
+          className={`absolute left-[2px] top-[2px] h-[16px] w-[16px] rounded-full bg-white shadow transition-transform ${
+            checked ? 'translate-x-[14px]' : 'translate-x-0'
           }`}
         />
       </button>
@@ -111,9 +115,10 @@ export function SegmentedControl<T extends string>({
   )
 }
 
-export function Card({ children, className = '' }: { children: ReactNode; className?: string }): JSX.Element {
+export function Card({ children, className = '', ...props }: HTMLAttributes<HTMLDivElement>): JSX.Element {
   return (
     <div
+      {...props}
       className={`rounded-[10px] border border-black/[0.06] bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.04] ${className}`}
     >
       {children}

@@ -33,8 +33,7 @@ const api: QuartzGuiApi = {
   plugins: {
     add: (projectPath: string, source: string) => ipcRenderer.invoke(IPC.pluginAdd, projectPath, source),
     remove: (projectPath: string, name: string) => ipcRenderer.invoke(IPC.pluginRemove, projectPath, name),
-    configure: (projectPath: string, name: string, key: string, value: string) =>
-      ipcRenderer.invoke(IPC.pluginConfigure, projectPath, name, key, value),
+    optionsSchema: (projectPath: string, name: string) => ipcRenderer.invoke(IPC.pluginOptionsSchema, projectPath, name),
     installFromLock: (projectPath: string) => ipcRenderer.invoke(IPC.pluginInstallFromLock, projectPath),
     prune: (projectPath: string) => ipcRenderer.invoke(IPC.pluginPrune, projectPath)
   },

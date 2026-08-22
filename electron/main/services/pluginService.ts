@@ -28,15 +28,6 @@ export function removePlugin(projectPath: string, name: string): Promise<PluginA
   return runQuartzCli(projectPath, ['plugin', 'remove', name])
 }
 
-export function configurePlugin(
-  projectPath: string,
-  name: string,
-  key: string,
-  value: string
-): Promise<PluginActionResult> {
-  return runQuartzCli(projectPath, ['plugin', 'config', name, '--set', `${key}=${value}`])
-}
-
 export function installFromLock(projectPath: string): Promise<PluginActionResult> {
   return runQuartzCli(projectPath, ['plugin', 'install'])
 }

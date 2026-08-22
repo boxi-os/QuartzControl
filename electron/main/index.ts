@@ -1,7 +1,8 @@
-import { app, BrowserWindow, shell, Menu, nativeTheme, type MenuItemConstructorOptions } from 'electron'
+import { app, BrowserWindow, dialog, shell, Menu, nativeTheme, type MenuItemConstructorOptions } from 'electron'
 import { join } from 'path'
 import { registerIpcHandlers } from './ipc/handlers'
-import { killAllServers } from './services/buildService'
+import { killAllServers, detectOrphanedServers, killOrphanedServers } from './services/buildService'
+import { getProject } from './services/projectStore'
 
 const isMac = process.platform === 'darwin'
 
@@ -104,9 +105,36 @@ function buildMenu(): void {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }
 
-app.whenReady().then(() => {
+// Servers left running by a previous non-graceful exit (before-quit below only fires on a
+// clean quit) might have been deliberately left running by the user, so this asks rather than
+// silently killing them - it could just as well be a server the user still wants to browse.
+async function promptForOrphanedServers(): Promise<void> {
+  const orphaned = await detectOrphanedServers()
+  if (orphaned.length === 0) return
+
+  const lines = await Promise.all(
+    orphaned.map(async (o) => {
+      const project = await getProject(o.projectId)
+      return `${project?.name ?? o.projectId} — Port ${o.port}`
+    })
+  )
+
+  const { response } = await dialog.showMessageBox({
+    type: 'question',
+    buttons: ['Beenden', 'Weiterlaufen lassen'],
+    defaultId: 0,
+    cancelId: 1,
+    title: 'Laufende Server gefunden',
+    message: 'Von einer vorherigen Sitzung laufen noch Dev-Server im Hintergrund:',
+    detail: lines.join('\n')
+  })
+  if (response === 0) killOrphanedServers(orphaned)
+}
+
+app.whenReady().then(async () => {
   buildMenu()
   registerIpcHandlers()
+  await promptForOrphanedServers()
   createWindow()
 
   app.on('activate', () => {

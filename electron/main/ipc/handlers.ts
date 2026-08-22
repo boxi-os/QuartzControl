@@ -4,6 +4,7 @@ import type { QuartzConfig, ServerOptions, ContentStrategy, Settings, CreateProj
 import * as projectStore from '../services/projectStore'
 import * as configService from '../services/configService'
 import * as pluginService from '../services/pluginService'
+import * as pluginSchemaService from '../services/pluginSchemaService'
 import * as marketplaceService from '../services/marketplaceService'
 import * as buildService from '../services/buildService'
 import * as syncService from '../services/syncService'
@@ -50,8 +51,8 @@ export function registerIpcHandlers(): void {
   ipcMain.handle(IPC.pluginRemove, (_e, projectPath: string, name: string) =>
     pluginService.removePlugin(projectPath, name)
   )
-  ipcMain.handle(IPC.pluginConfigure, (_e, projectPath: string, name: string, key: string, value: string) =>
-    pluginService.configurePlugin(projectPath, name, key, value)
+  ipcMain.handle(IPC.pluginOptionsSchema, (_e, projectPath: string, name: string) =>
+    pluginSchemaService.getPluginOptionsSchema(projectPath, name)
   )
   ipcMain.handle(IPC.pluginInstallFromLock, (_e, projectPath: string) => pluginService.installFromLock(projectPath))
   ipcMain.handle(IPC.pluginPrune, (_e, projectPath: string) => pluginService.prunePlugins(projectPath))

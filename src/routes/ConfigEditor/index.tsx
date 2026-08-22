@@ -75,7 +75,9 @@ export default function ConfigEditor(): JSX.Element {
           onChange={(configuration) => setConfig({ ...config, configuration })}
         />
       )}
-      {tab === 'theme' && <ThemeEditor theme={config.theme} onChange={(theme) => setConfig({ ...config, theme })} />}
+      {tab === 'theme' && (
+        <ThemeEditor theme={config.theme} plugins={config.plugins} onChange={(theme) => setConfig({ ...config, theme })} />
+      )}
     </div>
   )
 }

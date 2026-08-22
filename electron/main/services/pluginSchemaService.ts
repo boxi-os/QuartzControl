@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs'
 import { join } from 'path'
 import ts from 'typescript'
-import type { PluginOptionField } from '@shared/ipc-contract'
+import type { PluginOptionField, ThemeDetail, ThemeStyleSettingsInfo } from '@shared/ipc-contract'
 
 // Only plugins actually installed under .quartz/plugins/<name> (via `quartz plugin add`) ship
 // compiled .d.ts/.js files we can introspect. Built-in "@quartz-community/x" config entries live
@@ -23,6 +23,59 @@ export function getPluginOptionsSchema(projectPath: string, pluginName: string):
 
 export function invalidatePluginSchemaCache(projectPath: string, pluginName: string): void {
   cache.delete(`${projectPath}::${pluginName}`)
+}
+
+// @quartz-themes/<themeId> packages (used by the @quartz-themes/core plugin) ship a theme.json
+// with meta.styleSettingsId - the Obsidian "Style Settings" root id(s) the theme's original CSS
+// declared, carried over verbatim from the ported theme. Only present for themes actually ported
+// from a real Obsidian community theme that had a `/* @settings */` block; Quartz-native themes
+// (e.g. "default") have none, and @quartz-themes/core itself skips styleSettings entirely at
+// runtime when it's absent (verified against its compiled dist/index.js: it logs
+// "theme ... has no Style Settings id. Style Settings overrides will be ignored." and never emits
+// the override CSS layer). classSettings keys are the only per-setting identifiers ever shipped -
+// there's no title/type/enum metadata alongside them (theme.json only carries compiled CSS per
+// key, not the original @settings YAML), so the caller can only offer raw boolean toggles per key
+// plus free-form CSS variable overrides, not a fully labeled form.
+export function getThemeStyleSettingsInfo(projectPath: string, themeId: string): ThemeStyleSettingsInfo | null {
+  const local = readLocalThemeJson(projectPath, themeId)
+  if (!local) return null
+  const styleSettingsId = normalizeStyleSettingsId(local.meta?.styleSettingsId)
+  if (styleSettingsId.length === 0) return { styleSettingsId: [], classSettingKeys: [] }
+  return { styleSettingsId, classSettingKeys: Object.keys(local.classSettings ?? {}) }
+}
+
+interface RawThemeJson {
+  meta?: { styleSettingsId?: string | string[]; modes?: string[]; variations?: string[]; fonts?: string[] }
+  classSettings?: Record<string, unknown>
+}
+
+function readLocalThemeJson(projectPath: string, themeId: string): RawThemeJson | null {
+  const themeJsonPath = join(projectPath, 'node_modules', '@quartz-themes', themeId, 'theme.json')
+  if (!existsSync(themeJsonPath)) return null
+  try {
+    return JSON.parse(readFileSync(themeJsonPath, 'utf-8')) as RawThemeJson
+  } catch {
+    return null
+  }
+}
+
+function normalizeStyleSettingsId(rawId: string | string[] | undefined): string[] {
+  return rawId == null ? [] : Array.isArray(rawId) ? rawId : [rawId]
+}
+
+// Same theme.json, but the fuller shape used by the catalog's on-demand detail panel (modes,
+// variations, fonts) rather than just the style-settings slice above. Local-only (fast path) -
+// themeMarketplaceService.getThemeDetail() falls back to fetching the same file from jsdelivr for
+// a theme that isn't installed yet.
+export function getLocalThemeDetail(projectPath: string, themeId: string): ThemeDetail | null {
+  const local = readLocalThemeJson(projectPath, themeId)
+  if (!local) return null
+  return {
+    modes: local.meta?.modes ?? [],
+    variations: local.meta?.variations ?? [],
+    styleSettingsId: normalizeStyleSettingsId(local.meta?.styleSettingsId),
+    fonts: local.meta?.fonts ?? []
+  }
 }
 
 function walkFiles(dir: string, extension: string): string[] {

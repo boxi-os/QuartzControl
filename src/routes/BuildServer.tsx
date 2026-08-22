@@ -4,7 +4,13 @@ import type { LogLine, ServerOptions, ServerStatus, BuildResult } from '@shared/
 import { Badge, Button, Card, Field, TextInput, Toggle } from '../components/ui'
 import { LogConsole } from '../components/LogConsole'
 
-const DEFAULT_OPTIONS: ServerOptions = { port: 8080, wsPort: 3001, host: 'localhost', watch: true }
+// `host` is only meaningful as Quartz's `--remoteDevHost`: an override for the live-reload
+// websocket URL when previewing through a tunnel/remote host, which makes the browser connect
+// via `wss://` instead of `ws://`. There's no TLS termination on that plain websocket server, so
+// defaulting this to 'localhost' (as if it were a bind address) broke live-reload for every local
+// session - the browser tried a TLS handshake against a plaintext socket and silently never
+// connected. Leave it empty unless the user is actually serving through a tunnel.
+const DEFAULT_OPTIONS: ServerOptions = { port: 8080, wsPort: 3001, host: '', watch: true }
 
 const SERVER_LABEL: Record<ServerStatus['state'], string> = {
   stopped: 'Gestoppt',
@@ -93,9 +99,10 @@ export default function BuildServer(): JSX.Element {
               disabled={status.state !== 'stopped'}
             />
           </Field>
-          <Field label="Host">
+          <Field label="Remote-Dev-Host (optional)">
             <TextInput
               value={options.host}
+              placeholder="nur für Tunnel/Remote-Vorschau"
               onChange={(e) => setOptions({ ...options, host: e.target.value })}
               disabled={status.state !== 'stopped'}
             />
@@ -122,7 +129,7 @@ export default function BuildServer(): JSX.Element {
           </Button>
           {status.state === 'running' && status.options && (
             <a
-              href={`http://${status.options.host}:${status.options.port}`}
+              href={`http://${status.options.host || 'localhost'}:${status.options.port}`}
               target="_blank"
               rel="noreferrer"
               className="ml-auto self-center text-sm text-slate-600 hover:underline dark:text-slate-300"

@@ -36,6 +36,56 @@ export interface PluginOptionField {
   enumValues?: string[]
 }
 
+// Describes whether an installed @quartz-themes/<id> theme package (used by the
+// @quartz-themes/core plugin) supports Obsidian-style "Style Settings" overrides. An empty
+// styleSettingsId means the theme has none (its own colors/toggles can't be overridden this way -
+// see pluginSchemaService.getThemeStyleSettingsInfo for how this was verified). classSettingKeys
+// are raw setting identifiers with no title/type metadata attached.
+export interface ThemeStyleSettingsInfo {
+  styleSettingsId: string[]
+  classSettingKeys: string[]
+}
+
+// One entry from the @quartz-themes/* npm scope (id is the package name without the
+// "@quartz-themes/" prefix, e.g. "tokyo-night" for @quartz-themes/tokyo-night). stars/topics come
+// from the github.com/quartz-themes org (bulk-fetched, cached) and are commonly absent - most of
+// these repos ship no topics and near-zero stars, verified by sampling several real repos.
+export interface QuartzThemeListing {
+  id: string
+  description?: string
+  stars?: number
+  topics?: string[]
+  githubDescription?: string
+}
+
+// Richer per-theme detail, read from the theme's own theme.json - either the locally installed
+// copy (fast, no network) or fetched from jsdelivr for a theme not yet installed. Superset of
+// ThemeStyleSettingsInfo; used by the catalog's on-demand detail panel before installing.
+export interface ThemeDetail {
+  modes: string[]
+  variations: string[]
+  styleSettingsId: string[]
+  fonts: string[]
+}
+
+// A locally saved, reusable set of @quartz-themes/core plugin options - the "modify and save as a
+// new theme" mechanism (a named preset, not a redistributable theme.json package - see
+// pluginSchemaService/themeMarketplaceService for why that format can't be authored by this app).
+export interface ThemePreset {
+  id: string
+  name: string
+  createdAt: string
+  baseThemeId: string
+  options: {
+    theme: string
+    mode: string
+    variation?: string
+    calloutStyle?: string
+    fonts?: Record<string, string>
+    styleSettings?: Record<string, string | number | boolean>
+  }
+}
+
 export interface QuartzConfig {
   configuration: Record<string, unknown> & {
     pageTitle?: string
@@ -138,6 +188,13 @@ export const IPC = {
   pluginAdd: 'plugin:add',
   pluginRemove: 'plugin:remove',
   pluginOptionsSchema: 'plugin:optionsSchema',
+  pluginThemeStyleSettingsInfo: 'plugin:themeStyleSettingsInfo',
+  themeMarketplaceList: 'themeMarketplace:list',
+  themeMarketplaceInstall: 'themeMarketplace:install',
+  themeMarketplaceDetail: 'themeMarketplace:detail',
+  themePresetList: 'themePreset:list',
+  themePresetSave: 'themePreset:save',
+  themePresetDelete: 'themePreset:delete',
   pluginInstallFromLock: 'plugin:installFromLock',
   pluginPrune: 'plugin:prune',
 
@@ -211,8 +268,19 @@ export interface QuartzGuiApi {
     add(projectPath: string, source: string): Promise<PluginActionResult>
     remove(projectPath: string, name: string): Promise<PluginActionResult>
     optionsSchema(projectPath: string, name: string): Promise<PluginOptionField[] | null>
+    themeStyleSettingsInfo(projectPath: string, themeId: string): Promise<ThemeStyleSettingsInfo | null>
     installFromLock(projectPath: string): Promise<PluginActionResult>
     prune(projectPath: string): Promise<PluginActionResult>
+  }
+  themeMarketplace: {
+    list(githubToken?: string): Promise<QuartzThemeListing[]>
+    install(projectPath: string, themeId: string): Promise<PluginActionResult>
+    detail(projectPath: string, themeId: string): Promise<ThemeDetail | null>
+  }
+  themePresets: {
+    list(projectPath: string): Promise<ThemePreset[]>
+    save(projectPath: string, preset: ThemePreset): Promise<void>
+    delete(projectPath: string, id: string): Promise<void>
   }
   marketplace: {
     search(query: string, githubToken?: string): Promise<MarketplacePlugin[]>

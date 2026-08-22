@@ -33,7 +33,7 @@ export default function ProjectDashboard(): JSX.Element {
             <h2 className="font-medium">Dev-Server</h2>
             <p className="text-sm text-slate-500">
               {server.state === 'running' && server.options
-                ? `http://${server.options.host}:${server.options.port}`
+                ? `http://${server.options.host || 'localhost'}:${server.options.port}`
                 : 'Nicht erreichbar'}
             </p>
           </div>

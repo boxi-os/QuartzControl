@@ -5,6 +5,7 @@ import type { Project } from '@shared/ipc-contract'
 const TABS = [
   { to: '', label: 'Übersicht', end: true },
   { to: 'config', label: 'Konfiguration' },
+  { to: 'themes', label: 'Themes' },
   { to: 'plugins', label: 'Plugins' },
   { to: 'content', label: 'Content-Ordner' },
   { to: 'server', label: 'Build & Server' },

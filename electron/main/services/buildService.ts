@@ -12,7 +12,8 @@ interface RunningServer {
 const runningServers = new Map<string, RunningServer>()
 export const serverEvents = new EventEmitter()
 
-const DEFAULT_OPTIONS: ServerOptions = { port: 8080, wsPort: 3001, host: 'localhost', watch: true }
+// host is Quartz's --remoteDevHost, not a bind address - leave it empty locally, see BuildServer.tsx
+const DEFAULT_OPTIONS: ServerOptions = { port: 8080, wsPort: 3001, host: '', watch: true }
 
 function emitLog(projectId: string, stream: 'stdout' | 'stderr', text: string): void {
   serverEvents.emit('log', { projectId, stream, text, timestamp: new Date().toISOString() } satisfies LogLine)
@@ -77,9 +78,15 @@ export function stopServer(projectId: string): Promise<void> {
   running.status.state = 'stopping'
   emitStatus(projectId)
   return new Promise((resolvePromise, rejectPromise) => {
+    // Wait for the process's actual 'exit' event, not just for the kill signal to be sent -
+    // startServer() no-ops if an entry for this projectId is still in runningServers, and that
+    // entry is only removed by the 'exit' handler registered in startServer(). Resolving as soon
+    // as treeKill's callback fires (i.e. signal delivered) raced ahead of that removal, so a
+    // restart's startServer() call would see the still-"stopping" entry and return it unchanged
+    // instead of spawning a new process.
+    running.process.once('exit', () => resolvePromise())
     treeKill(running.process.pid!, 'SIGTERM', (err) => {
       if (err) rejectPromise(err)
-      else resolvePromise()
     })
   })
 }

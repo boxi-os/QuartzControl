@@ -9,7 +9,8 @@ import type {
   ServerOptions,
   ContentStrategy,
   Settings,
-  CreateProjectOptions
+  CreateProjectOptions,
+  ThemePreset
 } from '@shared/ipc-contract'
 
 function onEvent<Args extends unknown[]>(channel: string, cb: (...args: Args) => void): () => void {
@@ -34,8 +35,20 @@ const api: QuartzGuiApi = {
     add: (projectPath: string, source: string) => ipcRenderer.invoke(IPC.pluginAdd, projectPath, source),
     remove: (projectPath: string, name: string) => ipcRenderer.invoke(IPC.pluginRemove, projectPath, name),
     optionsSchema: (projectPath: string, name: string) => ipcRenderer.invoke(IPC.pluginOptionsSchema, projectPath, name),
+    themeStyleSettingsInfo: (projectPath: string, themeId: string) =>
+      ipcRenderer.invoke(IPC.pluginThemeStyleSettingsInfo, projectPath, themeId),
     installFromLock: (projectPath: string) => ipcRenderer.invoke(IPC.pluginInstallFromLock, projectPath),
     prune: (projectPath: string) => ipcRenderer.invoke(IPC.pluginPrune, projectPath)
+  },
+  themeMarketplace: {
+    list: (githubToken?: string) => ipcRenderer.invoke(IPC.themeMarketplaceList, githubToken),
+    install: (projectPath: string, themeId: string) => ipcRenderer.invoke(IPC.themeMarketplaceInstall, projectPath, themeId),
+    detail: (projectPath: string, themeId: string) => ipcRenderer.invoke(IPC.themeMarketplaceDetail, projectPath, themeId)
+  },
+  themePresets: {
+    list: (projectPath: string) => ipcRenderer.invoke(IPC.themePresetList, projectPath),
+    save: (projectPath: string, preset: ThemePreset) => ipcRenderer.invoke(IPC.themePresetSave, projectPath, preset),
+    delete: (projectPath: string, id: string) => ipcRenderer.invoke(IPC.themePresetDelete, projectPath, id)
   },
   marketplace: {
     search: (query: string, githubToken?: string) => ipcRenderer.invoke(IPC.marketplaceSearch, query, githubToken),

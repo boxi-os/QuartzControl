@@ -1,10 +1,19 @@
 import { ipcMain, BrowserWindow, dialog } from 'electron'
 import { IPC } from '@shared/ipc-contract'
-import type { QuartzConfig, ServerOptions, ContentStrategy, Settings, CreateProjectOptions } from '@shared/ipc-contract'
+import type {
+  QuartzConfig,
+  ServerOptions,
+  ContentStrategy,
+  Settings,
+  CreateProjectOptions,
+  ThemePreset
+} from '@shared/ipc-contract'
 import * as projectStore from '../services/projectStore'
 import * as configService from '../services/configService'
 import * as pluginService from '../services/pluginService'
 import * as pluginSchemaService from '../services/pluginSchemaService'
+import * as themeMarketplaceService from '../services/themeMarketplaceService'
+import * as themePresetsService from '../services/themePresetsService'
 import * as marketplaceService from '../services/marketplaceService'
 import * as buildService from '../services/buildService'
 import * as syncService from '../services/syncService'
@@ -54,6 +63,26 @@ export function registerIpcHandlers(): void {
   ipcMain.handle(IPC.pluginOptionsSchema, (_e, projectPath: string, name: string) =>
     pluginSchemaService.getPluginOptionsSchema(projectPath, name)
   )
+  ipcMain.handle(IPC.pluginThemeStyleSettingsInfo, (_e, projectPath: string, themeId: string) =>
+    pluginSchemaService.getThemeStyleSettingsInfo(projectPath, themeId)
+  )
+
+  ipcMain.handle(IPC.themeMarketplaceList, (_e, githubToken?: string) => themeMarketplaceService.listThemes(githubToken))
+  ipcMain.handle(IPC.themeMarketplaceInstall, (_e, projectPath: string, themeId: string) =>
+    themeMarketplaceService.installTheme(projectPath, themeId)
+  )
+  ipcMain.handle(IPC.themeMarketplaceDetail, (_e, projectPath: string, themeId: string) =>
+    themeMarketplaceService.getThemeDetail(projectPath, themeId)
+  )
+
+  ipcMain.handle(IPC.themePresetList, (_e, projectPath: string) => themePresetsService.listPresets(projectPath))
+  ipcMain.handle(IPC.themePresetSave, (_e, projectPath: string, preset: ThemePreset) =>
+    themePresetsService.savePreset(projectPath, preset)
+  )
+  ipcMain.handle(IPC.themePresetDelete, (_e, projectPath: string, id: string) =>
+    themePresetsService.deletePreset(projectPath, id)
+  )
+
   ipcMain.handle(IPC.pluginInstallFromLock, (_e, projectPath: string) => pluginService.installFromLock(projectPath))
   ipcMain.handle(IPC.pluginPrune, (_e, projectPath: string) => pluginService.prunePlugins(projectPath))
 

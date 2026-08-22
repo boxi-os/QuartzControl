@@ -1,5 +1,6 @@
 {
   "name": "quartz-gui",
+  "productName": "QuartzControl",
   "version": "0.1.0",
   "description": "Desktop GUI for managing Quartz 5 sites: config, plugins, content source, builds and the local dev server.",
   "main": "./out/main/index.js",
@@ -10,7 +11,8 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "start": "electron-vite preview",
-    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json"
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "postinstall": "node scripts/brand-electron.mjs"
   },
   "dependencies": {
     "diff": "^7.0.0",

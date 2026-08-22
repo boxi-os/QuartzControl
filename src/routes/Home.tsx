@@ -30,7 +30,7 @@ export default function Home(): JSX.Element {
       <div className="titlebar-drag h-12 shrink-0" />
       <div className="mx-auto w-full max-w-3xl flex-1 overflow-y-auto px-6 pb-10">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">Quartz GUI</h1>
+          <h1 className="text-2xl font-semibold">QuartzControl</h1>
           <Link to="/settings" className="text-[13px] text-slate-500 hover:text-slate-900 dark:hover:text-white">
             Einstellungen
           </Link>

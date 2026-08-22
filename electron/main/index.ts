@@ -1,23 +1,48 @@
-import { app, BrowserWindow, dialog, shell, Menu, nativeTheme, type MenuItemConstructorOptions } from 'electron'
+import { app, BrowserWindow, dialog, shell, Menu, nativeImage, nativeTheme, type MenuItemConstructorOptions } from 'electron'
+import { existsSync } from 'fs'
 import { join } from 'path'
 import { registerIpcHandlers } from './ipc/handlers'
 import { killAllServers, detectOrphanedServers, killOrphanedServers } from './services/buildService'
 import { getProject } from './services/projectStore'
 
 const isMac = process.platform === 'darwin'
+const APP_NAME = 'QuartzControl'
+
+// Set before whenReady so Electron picks it up for the macOS app menu / About panel -
+// on macOS that top-level menu label always tracks app.name, the Menu template's own
+// `label` for that item is ignored. When run unpackaged this only takes effect because we
+// call it explicitly; a packaged build would also get it from package.json's `productName`.
+app.setName(APP_NAME)
+
+// build/icon.png (1024px, generated from build/icon.icns's source) - present both in the repo
+// (dev, `npm run dev` runs from the project root) and, once an electron-builder config exists,
+// copied next to the packaged app; check both locations rather than assuming one.
+function resolveIconPath(): string | undefined {
+  const candidates = [
+    join(app.getAppPath(), 'build/icon.png'),
+    join(__dirname, '../../build/icon.png')
+  ]
+  return candidates.find((p) => existsSync(p))
+}
 
 function createWindow(): void {
+  const iconPath = resolveIconPath()
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
     minWidth: 960,
     minHeight: 600,
     show: false,
+    title: APP_NAME,
     // inset traffic lights over a custom header instead of a native OS title bar,
     // matching how most modern macOS apps (Mail, Notes, Slack) present their chrome
     titleBarStyle: isMac ? 'hiddenInset' : 'default',
     trafficLightPosition: isMac ? { x: 16, y: 16 } : undefined,
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#1e1e1e' : '#f5f5f7',
+    // affects the Windows/Linux taskbar icon and the dev-mode dock icon on Linux; on macOS the
+    // Dock icon is set separately below via app.dock.setIcon since BrowserWindow's `icon` option
+    // has no effect there
+    icon: iconPath,
     webPreferences: {
       preload: join(__dirname, '../preload/index.mjs'),
       sandbox: false
@@ -44,7 +69,7 @@ function buildMenu(): void {
     ...(isMac
       ? ([
           {
-            label: 'Quartz GUI',
+            label: APP_NAME,
             submenu: [
               { role: 'about' },
               { type: 'separator' },
@@ -132,6 +157,10 @@ async function promptForOrphanedServers(): Promise<void> {
 }
 
 app.whenReady().then(async () => {
+  if (isMac && app.dock) {
+    const iconPath = resolveIconPath()
+    if (iconPath) app.dock.setIcon(nativeImage.createFromPath(iconPath))
+  }
   buildMenu()
   registerIpcHandlers()
   await promptForOrphanedServers()

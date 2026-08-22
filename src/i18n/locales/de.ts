@@ -7,6 +7,7 @@ export default {
     cancel: 'Abbrechen',
     select: 'Auswählen',
     remove: 'Entfernen',
+    edit: 'Bearbeiten',
     loading: 'Lade…',
     openInBrowser: 'Im Browser öffnen ↗',
     serverState: {
@@ -331,12 +332,14 @@ export default {
   layoutEditor: {
     title: 'Layout-Editor',
     tabGlobal: 'Global',
+    tabFrames: 'Eigene Frames',
     loading: 'Lade Layout…',
     positions: {
       header: 'Header',
       left: 'Links',
       right: 'Rechts',
       beforeBody: 'Vor dem Inhalt',
+      pageBody: 'Seiteninhalt',
       afterBody: 'Nach dem Inhalt',
       footer: 'Footer'
     },
@@ -375,7 +378,29 @@ export default {
     templateCustom: 'Eigener Frame-Name',
     templateCustomPlaceholder: 'z.B. mein-custom-frame',
     clearSlotsHeading: 'Bereiche für diesen Seitentyp leeren',
-    clearSlotsDescription: 'Aktivierte Bereiche bleiben für diesen Seitentyp immer leer, unabhängig von der globalen Belegung.'
+    clearSlotsDescription: 'Aktivierte Bereiche bleiben für diesen Seitentyp immer leer, unabhängig von der globalen Belegung.',
+    frameBuilder: {
+      description: 'Erstellen Sie eigene Grid-Layouts als neue Frames. Sie werden bei den Seitentyp-Overrides als Frame/Template auswählbar.',
+      newFrame: 'Neuer Frame',
+      none: 'Noch keine eigenen Frames erstellt.',
+      gridSummary: '{{rows}}×{{cols}}-Raster, {{areas}} Bereich(e)',
+      frameName: 'Frame-Name',
+      rows: 'Zeilen',
+      cols: 'Spalten',
+      gap: 'Abstand',
+      hintStartSelection: 'Klicken Sie eine leere Zelle an, um einen neuen Bereich zu beginnen.',
+      hintFinishSelection: 'Klicken Sie eine zweite Zelle an, um den Bereich abzuschließen.',
+      areaName: 'Bereichsname',
+      areaSlot: 'Belegung',
+      addArea: 'Hinzufügen',
+      removeArea: 'Bereich löschen',
+      overlapError: 'Dieser Bereich überschneidet sich mit einem bestehenden Bereich.',
+      unassignedWarning: 'Nicht zugewiesen: {{slots}}. Komponenten für diese Positionen werden in diesem Frame nicht angezeigt.',
+      nameRequired: 'Bitte einen Frame-Namen vergeben.',
+      nameCollision: 'Dieser Name ist bereits vergeben (Standard-Templates oder ein anderer eigener Frame).',
+      deleteFrame: 'Diesen Frame löschen',
+      deleteConfirm: 'Frame "{{name}}" wirklich löschen? Seitentypen, die ihn referenzieren, fallen dann auf das Standard-Template zurück.'
+    }
   },
   pluginsMarketplace: {
     backToInstalled: '← Installierte Plugins',

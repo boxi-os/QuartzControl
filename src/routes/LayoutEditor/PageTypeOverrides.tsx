@@ -9,11 +9,13 @@ const KNOWN_TEMPLATES = ['default', 'full-width', 'minimal']
 export default function PageTypeOverrides({
   config,
   pageType,
-  onChange
+  onChange,
+  customTemplates = []
 }: {
   config: QuartzConfig
   pageType: string
   onChange: (next: QuartzConfig) => void
+  customTemplates?: string[]
 }): JSX.Element {
   const { t } = useTranslation()
   const override: PageTypeLayoutOverride = config.layout?.byPageType?.[pageType] ?? {}
@@ -38,7 +40,8 @@ export default function PageTypeOverrides({
     update({ positions })
   }
 
-  const isCustomTemplate = override.template != null && !KNOWN_TEMPLATES.includes(override.template)
+  const isCustomTemplate =
+    override.template != null && !KNOWN_TEMPLATES.includes(override.template) && !customTemplates.includes(override.template)
   const showCustomInput = customTemplate || isCustomTemplate
 
   return (
@@ -61,6 +64,11 @@ export default function PageTypeOverrides({
             <option value="default">{t('layoutEditor.templateDefault')}</option>
             <option value="full-width">{t('layoutEditor.templateFullWidth')}</option>
             <option value="minimal">{t('layoutEditor.templateMinimal')}</option>
+            {customTemplates.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
             <option value="custom">{t('layoutEditor.templateCustom')}</option>
           </Select>
           {showCustomInput && (

@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProject } from '../ProjectLayout'
-import type { QuartzConfig } from '@shared/ipc-contract'
+import type { GridFrameDefinition, QuartzConfig } from '@shared/ipc-contract'
 import { Button, Select } from '../../components/ui'
 import GlobalBoard from './GlobalBoard'
 import PageTypeOverrides from './PageTypeOverrides'
+import FrameBuilder from './FrameBuilder'
 import { derivePageTypes } from './utils'
 
 export default function LayoutEditor(): JSX.Element {
@@ -15,10 +16,24 @@ export default function LayoutEditor(): JSX.Element {
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [error, setError] = useState<string | null>(null)
   const [addingType, setAddingType] = useState('')
+  const [customFrames, setCustomFrames] = useState<GridFrameDefinition[]>([])
 
   useEffect(() => {
     window.quartzGui.config.get(project.path).then(setConfig)
   }, [project.path])
+
+  useEffect(() => {
+    if (tab !== 'frames') window.quartzGui.layoutFrames.list(project.path).then(setCustomFrames)
+  }, [project.path, tab])
+
+  // Creating/deleting a frame mutates quartz.config.yaml's plugins array out-of-band (via the
+  // `quartz plugin add/remove` CLI in layoutFrameService), so the in-memory `config.plugins` this
+  // editor holds goes stale the moment that happens. Re-syncing only `plugins` (not the whole
+  // config) preserves any unsaved layout edits already queued up in other tabs.
+  async function syncPluginsFromDisk(): Promise<void> {
+    const fresh = await window.quartzGui.config.get(project.path)
+    setConfig((prev) => (prev ? { ...prev, plugins: fresh.plugins } : fresh))
+  }
 
   async function save(): Promise<void> {
     if (!config) return
@@ -83,14 +98,26 @@ export default function LayoutEditor(): JSX.Element {
               {t(`layoutEditor.pageTypes.${pt}`, pt)}
             </button>
           ))}
+          <button
+            onClick={() => setTab('frames')}
+            className={`rounded-[6px] px-3 py-1 text-[13px] font-medium transition-colors ${
+              tab === 'frames'
+                ? 'bg-white text-slate-900 shadow-sm dark:bg-white/20 dark:text-white'
+                : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+            }`}
+          >
+            {t('layoutEditor.tabFrames')}
+          </button>
         </div>
-        <div className="flex items-center gap-3">
-          {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
-          {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{error}</span>}
-          <Button onClick={save} disabled={status === 'saving'}>
-            {status === 'saving' ? t('common.saving') : t('common.save')}
-          </Button>
-        </div>
+        {tab !== 'frames' && (
+          <div className="flex items-center gap-3">
+            {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
+            {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{error}</span>}
+            <Button onClick={save} disabled={status === 'saving'}>
+              {status === 'saving' ? t('common.saving') : t('common.save')}
+            </Button>
+          </div>
+        )}
       </div>
 
       {tab === 'global' && (
@@ -114,14 +141,21 @@ export default function LayoutEditor(): JSX.Element {
         </>
       )}
 
-      {tab !== 'global' && (
+      {tab === 'frames' && <FrameBuilder projectPath={project.path} onFramesChanged={syncPluginsFromDisk} />}
+
+      {tab !== 'global' && tab !== 'frames' && (
         <>
           <div className="mb-4 flex justify-end">
             <button type="button" onClick={() => removeOverride(tab)} className="text-xs text-slate-500 underline">
               {t('layoutEditor.removeOverride')}
             </button>
           </div>
-          <PageTypeOverrides config={config} pageType={tab} onChange={setConfig} />
+          <PageTypeOverrides
+            config={config}
+            pageType={tab}
+            onChange={setConfig}
+            customTemplates={customFrames.map((f) => f.frameName)}
+          />
         </>
       )}
     </div>

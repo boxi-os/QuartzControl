@@ -6,7 +6,8 @@ import type {
   ContentStrategy,
   Settings,
   CreateProjectOptions,
-  ThemePreset
+  ThemePreset,
+  GridFrameDefinition
 } from '@shared/ipc-contract'
 import * as projectStore from '../services/projectStore'
 import * as configService from '../services/configService'
@@ -14,6 +15,7 @@ import * as pluginService from '../services/pluginService'
 import * as pluginSchemaService from '../services/pluginSchemaService'
 import * as themeMarketplaceService from '../services/themeMarketplaceService'
 import * as themePresetsService from '../services/themePresetsService'
+import * as layoutFrameService from '../services/layoutFrameService'
 import * as marketplaceService from '../services/marketplaceService'
 import * as buildService from '../services/buildService'
 import * as syncService from '../services/syncService'
@@ -85,6 +87,12 @@ export function registerIpcHandlers(): void {
 
   ipcMain.handle(IPC.pluginInstallFromLock, (_e, projectPath: string) => pluginService.installFromLock(projectPath))
   ipcMain.handle(IPC.pluginPrune, (_e, projectPath: string) => pluginService.prunePlugins(projectPath))
+
+  ipcMain.handle(IPC.layoutFrameList, (_e, projectPath: string) => layoutFrameService.listFrames(projectPath))
+  ipcMain.handle(IPC.layoutFrameSave, (_e, projectPath: string, def: GridFrameDefinition) =>
+    layoutFrameService.saveFrame(projectPath, def)
+  )
+  ipcMain.handle(IPC.layoutFrameDelete, (_e, projectPath: string, id: string) => layoutFrameService.deleteFrame(projectPath, id))
 
   ipcMain.handle(IPC.marketplaceSearch, (_e, query: string, githubToken?: string) =>
     marketplaceService.searchPlugins(query, githubToken)

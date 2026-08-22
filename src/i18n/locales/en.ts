@@ -7,6 +7,7 @@ export default {
     cancel: 'Cancel',
     select: 'Select',
     remove: 'Remove',
+    edit: 'Edit',
     loading: 'Loading…',
     openInBrowser: 'Open in browser ↗',
     serverState: {
@@ -331,12 +332,14 @@ export default {
   layoutEditor: {
     title: 'Layout Editor',
     tabGlobal: 'Global',
+    tabFrames: 'Custom frames',
     loading: 'Loading layout…',
     positions: {
       header: 'Header',
       left: 'Left',
       right: 'Right',
       beforeBody: 'Before content',
+      pageBody: 'Page content',
       afterBody: 'After content',
       footer: 'Footer'
     },
@@ -375,7 +378,29 @@ export default {
     templateCustom: 'Custom frame name',
     templateCustomPlaceholder: 'e.g. my-custom-frame',
     clearSlotsHeading: 'Clear slots for this page type',
-    clearSlotsDescription: 'Enabled slots always stay empty for this page type, regardless of the global layout.'
+    clearSlotsDescription: 'Enabled slots always stay empty for this page type, regardless of the global layout.',
+    frameBuilder: {
+      description: 'Build custom grid layouts as new frames. They become selectable as a Frame/template on page type overrides.',
+      newFrame: 'New frame',
+      none: 'No custom frames created yet.',
+      gridSummary: '{{rows}}×{{cols}} grid, {{areas}} area(s)',
+      frameName: 'Frame name',
+      rows: 'Rows',
+      cols: 'Columns',
+      gap: 'Gap',
+      hintStartSelection: 'Click an empty cell to start a new area.',
+      hintFinishSelection: 'Click a second cell to finish the area.',
+      areaName: 'Area name',
+      areaSlot: 'Slot',
+      addArea: 'Add',
+      removeArea: 'Remove area',
+      overlapError: 'This area overlaps an existing area.',
+      unassignedWarning: 'Not assigned: {{slots}}. Components for these slots will not render in this frame.',
+      nameRequired: 'Please give the frame a name.',
+      nameCollision: 'This name is already taken (a built-in template or another custom frame).',
+      deleteFrame: 'Delete this frame',
+      deleteConfirm: 'Really delete frame "{{name}}"? Page types referencing it will fall back to the default template.'
+    }
   },
   pluginsMarketplace: {
     backToInstalled: '← Installed plugins',

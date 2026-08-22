@@ -75,6 +75,39 @@ export interface LayoutConfig {
   byPageType?: Record<string, PageTypeLayoutOverride>
 }
 
+// A grid-frame area is rendered into one of the 6 real component slots, or "pageBody" - the
+// fixed page content itself (PageFrameProps.pageBody in quartz/components/frames/types.ts,
+// a single component rather than a list like the other 6).
+export type FrameSlot = LayoutPosition | 'pageBody'
+
+// One rectangular region of a generated grid frame. row/col are 1-based, matching CSS
+// grid-row/grid-column line numbers directly so the main-process codegen can pass them straight
+// through into a generated `grid-template-areas` declaration.
+export interface GridFrameArea {
+  id: string
+  name: string
+  slot: FrameSlot
+  row: number
+  col: number
+  rowSpan: number
+  colSpan: number
+}
+
+// Authored via the Layout Editor's Frame Builder (Phase 1b) and compiled into a generated local
+// companion plugin under <project>/.quartz-gui/authored-frames/<id> - see layoutFrameService.
+// `id` doubles as the generated plugin's directory name and its registered plugin name (`quartz
+// plugin add` derives the plugin name from the local source path's basename - verified against
+// quartz/cli/plugin-data.js's parseGitSource). `frameName` is the PageFrame.name value that
+// becomes selectable in layout.byPageType.<type>.template.
+export interface GridFrameDefinition {
+  id: string
+  frameName: string
+  rows: number
+  cols: number
+  gap: string
+  areas: GridFrameArea[]
+}
+
 // Extracted from an installed plugin's compiled .d.ts (see pluginSchemaService in main) so the
 // options editor can offer only the fields/values a plugin actually supports, instead of free
 // text. Not available for built-in config entries - see optionsSchema() for details.
@@ -252,6 +285,10 @@ export const IPC = {
   pluginInstallFromLock: 'plugin:installFromLock',
   pluginPrune: 'plugin:prune',
 
+  layoutFrameList: 'layoutFrame:list',
+  layoutFrameSave: 'layoutFrame:save',
+  layoutFrameDelete: 'layoutFrame:delete',
+
   marketplaceSearch: 'marketplace:search',
   marketplaceRefresh: 'marketplace:refresh',
 
@@ -327,6 +364,11 @@ export interface QuartzGuiApi {
     themeStyleSettingsInfo(projectPath: string, themeId: string): Promise<ThemeStyleSettingsInfo | null>
     installFromLock(projectPath: string): Promise<PluginActionResult>
     prune(projectPath: string): Promise<PluginActionResult>
+  }
+  layoutFrames: {
+    list(projectPath: string): Promise<GridFrameDefinition[]>
+    save(projectPath: string, definition: GridFrameDefinition): Promise<PluginActionResult>
+    delete(projectPath: string, id: string): Promise<PluginActionResult>
   }
   themeMarketplace: {
     list(githubToken?: string): Promise<QuartzThemeListing[]>

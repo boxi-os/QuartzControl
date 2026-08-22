@@ -10,7 +10,8 @@ import type {
   ContentStrategy,
   Settings,
   CreateProjectOptions,
-  ThemePreset
+  ThemePreset,
+  GridFrameDefinition
 } from '@shared/ipc-contract'
 
 function onEvent<Args extends unknown[]>(channel: string, cb: (...args: Args) => void): () => void {
@@ -39,6 +40,11 @@ const api: QuartzGuiApi = {
       ipcRenderer.invoke(IPC.pluginThemeStyleSettingsInfo, projectPath, themeId),
     installFromLock: (projectPath: string) => ipcRenderer.invoke(IPC.pluginInstallFromLock, projectPath),
     prune: (projectPath: string) => ipcRenderer.invoke(IPC.pluginPrune, projectPath)
+  },
+  layoutFrames: {
+    list: (projectPath: string) => ipcRenderer.invoke(IPC.layoutFrameList, projectPath),
+    save: (projectPath: string, definition: GridFrameDefinition) => ipcRenderer.invoke(IPC.layoutFrameSave, projectPath, definition),
+    delete: (projectPath: string, id: string) => ipcRenderer.invoke(IPC.layoutFrameDelete, projectPath, id)
   },
   themeMarketplace: {
     list: (githubToken?: string) => ipcRenderer.invoke(IPC.themeMarketplaceList, githubToken),

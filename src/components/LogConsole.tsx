@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { LogLine } from '@shared/ipc-contract'
 
 export function LogConsole({ lines }: { lines: LogLine[] }): JSX.Element {
+  const { t } = useTranslation()
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -13,7 +15,7 @@ export function LogConsole({ lines }: { lines: LogLine[] }): JSX.Element {
       ref={ref}
       className="h-72 overflow-y-auto rounded-md bg-slate-950 p-3 font-mono text-xs leading-relaxed text-slate-200"
     >
-      {lines.length === 0 && <p className="text-slate-500">Noch keine Ausgabe.</p>}
+      {lines.length === 0 && <p className="text-slate-500">{t('logConsole.noOutput')}</p>}
       {lines.map((line, idx) => (
         <div key={idx} className={line.stream === 'stderr' ? 'text-red-400' : undefined}>
           {line.text.replace(/\n+$/, '')}

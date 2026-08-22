@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import type { PluginEntry, QuartzConfig } from '@shared/ipc-contract'
 import { Field, Select, TextInput } from '../../components/ui'
@@ -22,6 +23,7 @@ export default function ThemeEditor({
   plugins: PluginEntry[]
   onChange: (next: Theme) => void
 }): JSX.Element {
+  const { t } = useTranslation()
   function set(key: string, value: unknown): void {
     onChange({ ...theme, [key]: value })
   }
@@ -36,29 +38,30 @@ export default function ThemeEditor({
     <div className="grid max-w-xl gap-6">
       {overridingPlugin && (
         <p className="rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
-          Das Theme-Plugin <code className="font-mono">{String(overridingPlugin.source)}</code> ist aktiv und kann
-          diese Farben in der Vorschau überschreiben.{' '}
+          {t('themeEditor.overrideWarningPrefix')}
+          <code className="font-mono">{String(overridingPlugin.source)}</code>
+          {t('themeEditor.overrideWarningSuffix')}{' '}
           <Link to="../themes" className="underline">
-            Zu Themes
+            {t('themeEditor.goToThemes')}
           </Link>
         </p>
       )}
       <div className="grid gap-4">
-        <Field label="Font-Quelle">
+        <Field label={t('themeEditor.fontSource')}>
           <Select value={(theme.fontOrigin as string) ?? 'googleFonts'} onChange={(e) => set('fontOrigin', e.target.value)}>
-            <option value="googleFonts">Google Fonts</option>
-            <option value="local">Lokal</option>
+            <option value="googleFonts">{t('themeEditor.googleFonts')}</option>
+            <option value="local">{t('themeEditor.local')}</option>
           </Select>
         </Field>
         {TYPOGRAPHY_KEYS.map((key) => (
-          <Field key={key} label={`Schriftart (${key})`}>
+          <Field key={key} label={t('themeEditor.fontFor', { slot: key })}>
             <TextInput value={theme.typography?.[key] ?? ''} onChange={(e) => setTypography(key, e.target.value)} />
           </Field>
         ))}
       </div>
 
       <div>
-        <h3 className="mb-2 text-sm font-semibold text-slate-700">Farben</h3>
+        <h3 className="mb-2 text-sm font-semibold text-slate-700">{t('themeEditor.colors')}</h3>
         <ColorGroup
           value={(theme.colors as Record<string, unknown>) ?? {}}
           onChange={(colors) => set('colors', colors)}

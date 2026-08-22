@@ -4,6 +4,7 @@ import { join } from 'path'
 import { registerIpcHandlers } from './ipc/handlers'
 import { killAllServers, detectOrphanedServers, killOrphanedServers } from './services/buildService'
 import { getProject } from './services/projectStore'
+import { resolveMainStrings, type MainStrings } from './i18n'
 
 const isMac = process.platform === 'darwin'
 const APP_NAME = 'QuartzControl'
@@ -64,7 +65,7 @@ function createWindow(): void {
 
 // A tailored native menu, not just so it looks right, but because Electron only wires up
 // Cmd+C/Cmd+V/Cmd+Z etc. in text fields when a menu with those roles is actually installed.
-function buildMenu(): void {
+function buildMenu(strings: MainStrings): void {
   const template: MenuItemConstructorOptions[] = [
     ...(isMac
       ? ([
@@ -85,11 +86,11 @@ function buildMenu(): void {
         ] satisfies MenuItemConstructorOptions[])
       : []),
     {
-      label: 'Datei',
+      label: strings.menuFile,
       submenu: [isMac ? { role: 'close' } : { role: 'quit' }]
     },
     {
-      label: 'Bearbeiten',
+      label: strings.menuEdit,
       submenu: [
         { role: 'undo' },
         { role: 'redo' },
@@ -103,7 +104,7 @@ function buildMenu(): void {
       ]
     },
     {
-      label: 'Ansicht',
+      label: strings.menuView,
       submenu: [
         { role: 'reload' },
         { role: 'forceReload' },
@@ -117,7 +118,7 @@ function buildMenu(): void {
       ]
     },
     {
-      label: 'Fenster',
+      label: strings.menuWindow,
       submenu: [
         { role: 'minimize' },
         { role: 'zoom' },
@@ -133,7 +134,7 @@ function buildMenu(): void {
 // Servers left running by a previous non-graceful exit (before-quit below only fires on a
 // clean quit) might have been deliberately left running by the user, so this asks rather than
 // silently killing them - it could just as well be a server the user still wants to browse.
-async function promptForOrphanedServers(): Promise<void> {
+async function promptForOrphanedServers(strings: MainStrings): Promise<void> {
   const orphaned = await detectOrphanedServers()
   if (orphaned.length === 0) return
 
@@ -146,11 +147,11 @@ async function promptForOrphanedServers(): Promise<void> {
 
   const { response } = await dialog.showMessageBox({
     type: 'question',
-    buttons: ['Beenden', 'Weiterlaufen lassen'],
+    buttons: [strings.orphanQuit, strings.orphanKeepRunning],
     defaultId: 0,
     cancelId: 1,
-    title: 'Laufende Server gefunden',
-    message: 'Von einer vorherigen Sitzung laufen noch Dev-Server im Hintergrund:',
+    title: strings.orphanTitle,
+    message: strings.orphanMessage,
     detail: lines.join('\n')
   })
   if (response === 0) killOrphanedServers(orphaned)
@@ -161,9 +162,10 @@ app.whenReady().then(async () => {
     const iconPath = resolveIconPath()
     if (iconPath) app.dock.setIcon(nativeImage.createFromPath(iconPath))
   }
-  buildMenu()
+  const strings = await resolveMainStrings()
+  buildMenu(strings)
   registerIpcHandlers()
-  await promptForOrphanedServers()
+  await promptForOrphanedServers(strings)
   createWindow()
 
   app.on('activate', () => {

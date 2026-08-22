@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useProject } from './ProjectLayout'
 import type { BackupEntry } from '@shared/ipc-contract'
 import { Button, Card, SegmentedControl } from '../components/ui'
 
 export default function Backups(): JSX.Element {
+  const { t, i18n } = useTranslation()
   const project = useProject()
   const [kind, setKind] = useState<'config' | 'content'>('config')
   const [entries, setEntries] = useState<BackupEntry[]>([])
@@ -25,7 +27,7 @@ export default function Backups(): JSX.Element {
   }
 
   async function restore(entry: BackupEntry): Promise<void> {
-    if (!confirm('Diesen Stand wiederherstellen? Der aktuelle Stand wird vorher gesichert.')) return
+    if (!confirm(t('backups.confirmRestore'))) return
     setBusy(true)
     await window.quartzGui.backups.restore(project.path, kind, entry.id)
     setBusy(false)
@@ -39,32 +41,32 @@ export default function Backups(): JSX.Element {
           value={kind}
           onChange={setKind}
           options={[
-            { value: 'config', label: 'Konfiguration' },
-            { value: 'content', label: 'Content-Ordner' }
+            { value: 'config', label: t('backups.config') },
+            { value: 'content', label: t('backups.content') }
           ]}
         />
       </div>
 
       <div className="flex flex-col gap-3">
-        {entries.length === 0 && <p className="text-sm text-slate-500">Keine Backups vorhanden.</p>}
+        {entries.length === 0 && <p className="text-sm text-slate-500">{t('backups.none')}</p>}
         {entries.map((entry) => (
           <Card key={entry.id}>
             <div className="flex items-center justify-between">
-              <p className="text-sm">{new Date(entry.createdAt).toLocaleString('de-DE')}</p>
+              <p className="text-sm">{new Date(entry.createdAt).toLocaleString(i18n.language)}</p>
               <div className="flex gap-2">
                 {kind === 'config' && (
                   <Button variant="ghost" onClick={() => showDiff(entry)}>
-                    Diff ansehen
+                    {t('backups.viewDiff')}
                   </Button>
                 )}
                 <Button variant="ghost" onClick={() => restore(entry)} disabled={busy}>
-                  Wiederherstellen
+                  {t('backups.restore')}
                 </Button>
               </div>
             </div>
             {diff?.id === entry.id && (
               <pre className="mt-3 max-h-72 overflow-y-auto rounded-md bg-slate-950 p-3 font-mono text-xs text-slate-200">
-                {diff.text || 'Keine Unterschiede.'}
+                {diff.text || t('backups.noDiff')}
               </pre>
             )}
           </Card>

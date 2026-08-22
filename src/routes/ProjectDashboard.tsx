@@ -1,17 +1,10 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import type { ContentStatus, LogLine, PluginEntry, QuartzConfig, ServerStatus } from '@shared/ipc-contract'
 import { useProject } from './ProjectLayout'
 import { Badge, Button, Card } from '../components/ui'
 import { LogConsole } from '../components/LogConsole'
-
-const SERVER_LABEL: Record<ServerStatus['state'], string> = {
-  stopped: 'Gestoppt',
-  starting: 'Startet…',
-  running: 'Läuft',
-  stopping: 'Stoppt…',
-  error: 'Fehler'
-}
 
 // Same detection quartz-themes/core convention as Themes/index.tsx - the active theme isn't its
 // own config field, it's read off whichever @quartz-themes/* plugin entry is enabled.
@@ -20,6 +13,7 @@ function findOverridingThemePluginIndex(plugins: PluginEntry[]): number {
 }
 
 export default function ProjectDashboard(): JSX.Element {
+  const { t } = useTranslation()
   const project = useProject()
   const [server, setServer] = useState<ServerStatus>({ state: 'stopped' })
   const [content, setContent] = useState<ContentStatus | null>(null)
@@ -69,24 +63,24 @@ export default function ProjectDashboard(): JSX.Element {
       <Card>
         <div className="mb-3 flex items-center justify-between">
           <div>
-            <h2 className="font-medium">Dev-Server</h2>
+            <h2 className="font-medium">{t('dashboard.devServer')}</h2>
             <p className="text-sm text-slate-500">
               {server.state === 'running' && server.options
                 ? `http://${server.options.host || 'localhost'}:${server.options.port}`
-                : 'Nicht erreichbar'}
+                : t('dashboard.notReachable')}
             </p>
           </div>
           <Badge tone={server.state === 'running' ? 'green' : server.state === 'error' ? 'red' : 'slate'}>
-            {SERVER_LABEL[server.state]}
+            {t(`common.serverState.${server.state}`)}
           </Badge>
         </div>
 
         <div className="mb-3 flex items-center gap-2">
           <Button onClick={start} disabled={busy || transitioning || server.state === 'running'}>
-            Starten
+            {t('dashboard.start')}
           </Button>
           <Button variant="danger" onClick={stop} disabled={busy || transitioning || server.state !== 'running'}>
-            Stoppen
+            {t('dashboard.stop')}
           </Button>
           {server.state === 'running' && server.options && (
             <a
@@ -95,11 +89,11 @@ export default function ProjectDashboard(): JSX.Element {
               rel="noreferrer"
               className="text-sm text-slate-600 hover:underline dark:text-slate-300"
             >
-              Im Browser öffnen ↗
+              {t('common.openInBrowser')}
             </a>
           )}
           <Link to="server" className="ml-auto text-sm text-slate-600 hover:underline dark:text-slate-300">
-            Details & Optionen →
+            {t('dashboard.detailsOptions')}
           </Link>
         </div>
 
@@ -107,66 +101,68 @@ export default function ProjectDashboard(): JSX.Element {
       </Card>
 
       <Card>
-        <h2 className="mb-3 font-medium">Konfiguration</h2>
+        <h2 className="mb-3 font-medium">{t('dashboard.config')}</h2>
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
-            <p className="text-xs text-slate-400">Seitentitel</p>
+            <p className="text-xs text-slate-400">{t('dashboard.pageTitle')}</p>
             <p className="truncate">{config?.configuration.pageTitle || '–'}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-400">Base URL</p>
+            <p className="text-xs text-slate-400">{t('dashboard.baseUrl')}</p>
             <p className="truncate">{config?.configuration.baseUrl || '–'}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-400">Theme</p>
-            <p className="truncate">{activeThemeId ?? 'Standard'}</p>
+            <p className="text-xs text-slate-400">{t('dashboard.theme')}</p>
+            <p className="truncate">{activeThemeId ?? t('dashboard.default')}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-400">Plugins</p>
-            <p>
-              {activePlugins} aktiv · {totalPlugins} gesamt
-            </p>
+            <p className="text-xs text-slate-400">{t('dashboard.plugins')}</p>
+            <p>{t('dashboard.pluginsActiveTotal', { active: activePlugins, total: totalPlugins })}</p>
           </div>
         </div>
         <Link to="config" className="mt-3 inline-block text-sm text-slate-600 hover:underline dark:text-slate-300">
-          Konfiguration bearbeiten →
+          {t('dashboard.editConfig')}
         </Link>
       </Card>
 
       <Card>
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="font-medium">Content-Ordner</h2>
+            <h2 className="font-medium">{t('dashboard.contentFolder')}</h2>
             <p className="text-sm text-slate-500">
-              {!content?.exists && 'Nicht vorhanden'}
-              {content?.exists && !content.isSymlink && `Echter Ordner${content.fileCount != null ? ` · ${content.fileCount} Dateien` : ''}`}
-              {content?.exists && content.isSymlink && `Symlink → ${content.symlinkTarget}`}
+              {!content?.exists && t('dashboard.notPresent')}
+              {content?.exists &&
+                !content.isSymlink &&
+                `${t('dashboard.realFolder')}${content.fileCount != null ? t('dashboard.filesSuffix', { count: content.fileCount }) : ''}`}
+              {content?.exists && content.isSymlink && t('dashboard.symlinkTo', { target: content.symlinkTarget })}
             </p>
           </div>
           {content?.isSymlink && (
-            <Badge tone={content.targetExists ? 'slate' : 'red'}>{content.targetExists ? 'Symlink' : 'Ziel fehlt'}</Badge>
+            <Badge tone={content.targetExists ? 'slate' : 'red'}>
+              {content.targetExists ? t('dashboard.symlink') : t('dashboard.targetMissing')}
+            </Badge>
           )}
         </div>
         <Link to="content" className="mt-2 inline-block text-sm text-slate-600 hover:underline">
-          Content-Ordner verwalten →
+          {t('dashboard.manageContentFolder')}
         </Link>
       </Card>
 
       <div className="grid grid-cols-3 gap-4">
         <Link to="config">
-          <Card className="hover:border-slate-400">Konfiguration</Card>
+          <Card className="hover:border-slate-400">{t('dashboard.config')}</Card>
         </Link>
         <Link to="themes">
-          <Card className="hover:border-slate-400">Themes</Card>
+          <Card className="hover:border-slate-400">{t('projectLayout.tabs.themes')}</Card>
         </Link>
         <Link to="plugins">
-          <Card className="hover:border-slate-400">Plugins verwalten</Card>
+          <Card className="hover:border-slate-400">{t('dashboard.managePlugins')}</Card>
         </Link>
         <Link to="sync">
-          <Card className="hover:border-slate-400">Git-Sync</Card>
+          <Card className="hover:border-slate-400">{t('dashboard.gitSync')}</Card>
         </Link>
         <Link to="backups">
-          <Card className="hover:border-slate-400">Backups ansehen</Card>
+          <Card className="hover:border-slate-400">{t('dashboard.viewBackups')}</Card>
         </Link>
       </div>
     </div>

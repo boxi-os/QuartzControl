@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAppStore } from '../state/store'
 import { Button, Card, Field, Select, TextInput } from '../components/ui'
@@ -9,6 +10,7 @@ const TEMPLATES: NonNullable<CreateProjectOptions['template']>[] = ['default', '
 const STRATEGIES: NonNullable<CreateProjectOptions['strategy']>[] = ['new', 'copy', 'symlink']
 
 export default function Home(): JSX.Element {
+  const { t } = useTranslation()
   const { projects, loadProjects, addProject, removeProject } = useAppStore()
   const [showWizard, setShowWizard] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -35,30 +37,26 @@ export default function Home(): JSX.Element {
             <img src={appIcon} alt="" className="h-14 w-14 rounded-2xl shadow-sm" />
             <div>
               <h1 className="text-2xl font-semibold">QuartzControl</h1>
-              <p className="mt-0.5 max-w-md text-[13px] text-slate-500 dark:text-slate-400">
-                Verwalte deine Quartz-5-Projekte an einem Ort: Konfiguration und Themes bearbeiten, Plugins
-                installieren, den Content-Ordner mit einem Obsidian-Vault verknüpfen und Builds sowie den lokalen
-                Dev-Server steuern.
-              </p>
+              <p className="mt-0.5 max-w-md text-[13px] text-slate-500 dark:text-slate-400">{t('home.subtitle')}</p>
             </div>
           </div>
           <Link
             to="/settings"
             className="shrink-0 pt-1 text-[13px] text-slate-500 hover:text-slate-900 dark:hover:text-white"
           >
-            Einstellungen
+            {t('home.settings')}
           </Link>
         </div>
 
         <div className="mb-6 flex gap-3">
-          <Button onClick={openExisting}>Vorhandenes Projekt öffnen</Button>
+          <Button onClick={openExisting}>{t('home.openExisting')}</Button>
           <Button variant="ghost" onClick={() => setShowWizard(true)}>
-            Neues Projekt erstellen
+            {t('home.createNew')}
           </Button>
         </div>
 
         <div className="flex flex-col gap-3">
-          {projects.length === 0 && <p className="text-sm text-slate-500">Noch keine Projekte hinzugefügt.</p>}
+          {projects.length === 0 && <p className="text-sm text-slate-500">{t('home.noProjects')}</p>}
           {projects.map((project) => (
             <Card key={project.id} className="flex items-center justify-between">
               <div>
@@ -71,7 +69,7 @@ export default function Home(): JSX.Element {
                 <p className="text-xs text-slate-400">{project.path}</p>
               </div>
               <Button variant="ghost" onClick={() => removeProject(project.id)}>
-                Entfernen
+                {t('common.remove')}
               </Button>
             </Card>
           ))}
@@ -89,7 +87,7 @@ export default function Home(): JSX.Element {
             const result = await window.quartzGui.projects.create(options)
             setBusy(false)
             if (!result.success) {
-              setError(result.output || 'Projekt konnte nicht erstellt werden.')
+              setError(result.output || t('home.wizard.createFailed'))
               return
             }
             await loadProjects()
@@ -114,6 +112,7 @@ function CreateWizard({
   onCancel: () => void
   onCreate: (options: CreateProjectOptions) => void
 }): JSX.Element {
+  const { t } = useTranslation()
   const [targetDirectory, setTargetDirectory] = useState('')
   const [template, setTemplate] = useState<NonNullable<CreateProjectOptions['template']>>('default')
   const [source, setSource] = useState('')
@@ -134,55 +133,55 @@ function CreateWizard({
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/30 p-6 backdrop-blur-sm">
       <Card className="w-full max-w-lg">
-        <h2 className="mb-4 text-lg font-semibold">Neues Quartz-Projekt</h2>
+        <h2 className="mb-4 text-lg font-semibold">{t('home.wizard.title')}</h2>
         <div className="flex flex-col gap-3">
-          <Field label="Zielverzeichnis">
+          <Field label={t('home.wizard.targetDirectory')}>
             <div className="flex gap-2">
               <TextInput value={targetDirectory} onChange={(e) => setTargetDirectory(e.target.value)} className="flex-1" />
               <Button variant="ghost" onClick={pickTarget}>
-                Auswählen
+                {t('common.select')}
               </Button>
             </div>
           </Field>
 
-          <Field label="Template">
+          <Field label={t('home.wizard.template')}>
             <Select value={template} onChange={(e) => setTemplate(e.target.value as typeof template)}>
-              {TEMPLATES.map((t) => (
-                <option key={t} value={t}>
-                  {t}
+              {TEMPLATES.map((tpl) => (
+                <option key={tpl} value={tpl}>
+                  {tpl}
                 </option>
               ))}
             </Select>
           </Field>
 
-          <Field label="Content-Strategie">
+          <Field label={t('home.wizard.contentStrategy')}>
             <Select value={strategy} onChange={(e) => setStrategy(e.target.value as typeof strategy)}>
-              <option value="new">Neu (leerer Ordner)</option>
-              <option value="copy">Kopieren (echter Ordner)</option>
-              <option value="symlink">Verknüpfen (symbolischer Link)</option>
+              <option value="new">{t('home.wizard.strategyNew')}</option>
+              <option value="copy">{t('home.wizard.strategyCopy')}</option>
+              <option value="symlink">{t('home.wizard.strategySymlink')}</option>
             </Select>
           </Field>
 
           {strategy !== 'new' && (
-            <Field label="Quellordner (z. B. Obsidian-Vault)">
+            <Field label={t('home.wizard.sourceFolder')}>
               <div className="flex gap-2">
                 <TextInput value={source} onChange={(e) => setSource(e.target.value)} className="flex-1" />
                 <Button variant="ghost" onClick={pickSource}>
-                  Auswählen
+                  {t('common.select')}
                 </Button>
               </div>
             </Field>
           )}
 
-          <Field label="Link-Auflösung">
+          <Field label={t('home.wizard.linkResolution')}>
             <Select value={linkResolution} onChange={(e) => setLinkResolution(e.target.value as typeof linkResolution)}>
-              <option value="shortest">Kürzeste (wie Obsidian)</option>
-              <option value="absolute">Absolut</option>
-              <option value="relative">Relativ</option>
+              <option value="shortest">{t('home.wizard.linkShortest')}</option>
+              <option value="absolute">{t('home.wizard.linkAbsolute')}</option>
+              <option value="relative">{t('home.wizard.linkRelative')}</option>
             </Select>
           </Field>
 
-          <Field label="Base URL (später in der Konfiguration änderbar)">
+          <Field label={t('home.wizard.baseUrl')}>
             <TextInput value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="example.com" />
           </Field>
 
@@ -194,7 +193,7 @@ function CreateWizard({
 
           <div className="mt-2 flex justify-end gap-2">
             <Button variant="ghost" onClick={onCancel} disabled={busy}>
-              Abbrechen
+              {t('common.cancel')}
             </Button>
             <Button
               disabled={busy || !targetDirectory || (strategy !== 'new' && !source)}
@@ -209,7 +208,7 @@ function CreateWizard({
                 })
               }
             >
-              {busy ? 'Erstelle… (Klonen + npm install kann etwas dauern)' : 'Erstellen'}
+              {busy ? t('home.wizard.creating') : t('home.wizard.create')}
             </Button>
           </div>
         </div>

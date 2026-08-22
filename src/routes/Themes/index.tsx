@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useProject } from '../ProjectLayout'
 import type { PluginEntry, QuartzConfig, QuartzThemeListing, ThemeDetail, ThemePreset, ThemeStyleSettingsInfo } from '@shared/ipc-contract'
 import { Badge, Button, Card, TextInput, Toggle } from '../../components/ui'
@@ -14,6 +15,7 @@ function findOverridingThemePluginIndex(plugins: PluginEntry[]): number {
 const VISIBLE_THEME_LIMIT = 30
 
 export default function Themes(): JSX.Element {
+  const { t } = useTranslation()
   const project = useProject()
   const [config, setConfig] = useState<QuartzConfig | null>(null)
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
@@ -46,7 +48,7 @@ export default function Themes(): JSX.Element {
     }
   }
 
-  if (!config) return <p className="text-sm text-slate-500">Lade Themes…</p>
+  if (!config) return <p className="text-sm text-slate-500">{t('themes.loading')}</p>
 
   const overridingIndex = findOverridingThemePluginIndex(config.plugins)
   const overridingPlugin = overridingIndex === -1 ? undefined : config.plugins[overridingIndex]
@@ -79,12 +81,12 @@ export default function Themes(): JSX.Element {
   return (
     <div className="grid max-w-3xl gap-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Themes</h2>
+        <h2 className="text-lg font-semibold">{t('themes.title')}</h2>
         <div className="flex items-center gap-3">
-          {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">Gespeichert.</span>}
+          {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
           {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{error}</span>}
           <Button onClick={save} disabled={status === 'saving'}>
-            {status === 'saving' ? 'Speichere…' : 'Speichern'}
+            {status === 'saving' ? t('common.saving') : t('common.save')}
           </Button>
         </div>
       </div>
@@ -135,6 +137,7 @@ function ActiveThemeSection({
   projectPath: string
   onSavedAsPreset: () => void
 }): JSX.Element {
+  const { t } = useTranslation()
   const themeId = typeof plugin?.options?.theme === 'string' ? plugin.options.theme : undefined
   const [info, setInfo] = useState<ThemeStyleSettingsInfo | null | undefined>(undefined)
   const [savingName, setSavingName] = useState<string | null>(null)
@@ -151,10 +154,8 @@ function ActiveThemeSection({
   if (!plugin) {
     return (
       <Card>
-        <h3 className="mb-1 text-sm font-semibold">Aktuelles Theme</h3>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
-          Kein Theme-Plugin aktiv. Installiere unten eines aus dem Katalog, um loszulegen.
-        </p>
+        <h3 className="mb-1 text-sm font-semibold">{t('themes.active.title')}</h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400">{t('themes.active.none')}</p>
       </Card>
     )
   }
@@ -194,53 +195,43 @@ function ActiveThemeSection({
   return (
     <Card>
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">
-          Aktuelles Theme: <code className="font-mono">{themeId}</code>
-        </h3>
+        <h3 className="text-sm font-semibold">{t('themes.active.heading', { themeId })}</h3>
         {savingName === null ? (
           <Button variant="ghost" onClick={() => setSavingName('')}>
-            Als Preset speichern
+            {t('themes.active.saveAsPreset')}
           </Button>
         ) : (
           <div className="flex items-center gap-2">
             <TextInput
               value={savingName}
               onChange={(e) => setSavingName(e.target.value)}
-              placeholder="Name für das Preset"
+              placeholder={t('themes.active.presetNamePlaceholder')}
               className="w-40 text-xs"
               autoFocus
             />
             <Button variant="ghost" onClick={confirmSavePreset} disabled={!savingName.trim()}>
-              Speichern
+              {t('common.save')}
             </Button>
             <button type="button" onClick={() => setSavingName(null)} className="text-xs text-slate-500 underline">
-              Abbrechen
+              {t('common.cancel')}
             </button>
           </div>
         )}
       </div>
       <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-        Dieses Plugin (<code className="font-mono">{String(plugin.source)}</code>) kann die klassischen
-        Farbeinstellungen auf dem Konfiguration-Tab überschreiben. Änderungen unten wirken sich direkt auf die
-        Vorschau aus.
+        {t('themes.active.overrideNote', { source: String(plugin.source) })}
       </p>
 
-      {info === undefined && <p className="mt-2 text-xs text-slate-500">Prüfe Style-Settings des Themes…</p>}
+      {info === undefined && <p className="mt-2 text-xs text-slate-500">{t('themes.active.checkingStyleSettings')}</p>}
 
       {info !== undefined && !hasStyleSettings && themeId && (
-        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-          Das Theme <code className="font-mono">{themeId}</code> bringt keine eigenen Style-Settings mit (keine{' '}
-          <code className="font-mono">styleSettingsId</code> im Theme-Paket). Das ist keine Einschränkung dieser App:
-          <code className="font-mono"> @quartz-themes/core</code> ignoriert für solche Themes jeden Override
-          vollständig, egal welchen Wert man setzt — es gibt aktuell keinen Weg, einzelne Farben dieses Themes
-          anzupassen.
-        </p>
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('themes.active.noStyleSettingsNote', { themeId })}</p>
       )}
 
       {hasStyleSettings && info && (
         <div className="mt-3 rounded-md border border-black/[0.06] bg-black/[0.02] p-3 dark:border-white/10 dark:bg-white/[0.03]">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Style-Settings ({info.styleSettingsId.join(', ')})
+            {t('themes.active.styleSettingsHeading', { ids: info.styleSettingsId.join(', ') })}
           </p>
           {info.classSettingKeys.length > 0 && (
             <div className="mb-3 flex flex-col gap-1.5">
@@ -286,6 +277,7 @@ function CustomStyleSettingsRows({
   classSettingKeys: string[]
   onSet: (fullKey: string, value: unknown) => void
 }): JSX.Element {
+  const { t } = useTranslation()
   const classSettingKeySet = new Set(classSettingKeys)
   const customEntries = Object.entries(styleSettings).filter(([fullKey]) => {
     const suffix = parseStyleSettingsSuffix(styleSettingsId, fullKey)
@@ -297,7 +289,7 @@ function CustomStyleSettingsRows({
 
   return (
     <div>
-      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">CSS-Variablen überschreiben</p>
+      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">{t('themes.active.cssVarsHeading')}</p>
       <div className="flex flex-col gap-1.5">
         {customEntries.map(([fullKey, value]) => {
           const suffix = parseStyleSettingsSuffix(styleSettingsId, fullKey) ?? fullKey
@@ -312,7 +304,7 @@ function CustomStyleSettingsRows({
                 className="w-32 text-xs"
               />
               <button type="button" onClick={() => onSet(fullKey, undefined)} className="text-xs text-slate-500 underline">
-                Entfernen
+                {t('themes.active.removeLink')}
               </button>
             </div>
           )
@@ -322,10 +314,15 @@ function CustomStyleSettingsRows({
         <TextInput
           value={draftKey}
           onChange={(e) => setDraftKey(e.target.value)}
-          placeholder="z.B. secondary oder secondary@@dark"
+          placeholder={t('themes.active.keyPlaceholder')}
           className="w-40 text-xs"
         />
-        <TextInput value={draftValue} onChange={(e) => setDraftValue(e.target.value)} placeholder="Wert" className="w-32 text-xs" />
+        <TextInput
+          value={draftValue}
+          onChange={(e) => setDraftValue(e.target.value)}
+          placeholder={t('themes.active.valuePlaceholder')}
+          className="w-32 text-xs"
+        />
         <Button
           variant="ghost"
           onClick={() => {
@@ -335,7 +332,7 @@ function CustomStyleSettingsRows({
             setDraftValue('')
           }}
         >
-          Hinzufügen
+          {t('themes.active.addButton')}
         </Button>
       </div>
     </div>
@@ -355,6 +352,7 @@ function PresetsSection({
   onApply: (preset: ThemePreset) => void
   onDeleted: () => void
 }): JSX.Element {
+  const { t } = useTranslation()
   async function remove(id: string): Promise<void> {
     await window.quartzGui.themePresets.delete(projectPath, id)
     onDeleted()
@@ -362,12 +360,9 @@ function PresetsSection({
 
   return (
     <Card>
-      <h3 className="mb-1 text-sm font-semibold">Meine Presets</h3>
-      <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
-        Eigene, gespeicherte Anpassungen eines Basis-Themes. Um ein neues Theme zu erstellen: unten im Katalog ein
-        Basis-Theme installieren &amp; aktivieren, oben anpassen, dann als Preset speichern.
-      </p>
-      {presets.length === 0 && <p className="text-xs text-slate-500">Noch keine Presets gespeichert.</p>}
+      <h3 className="mb-1 text-sm font-semibold">{t('themes.presets.title')}</h3>
+      <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('themes.presets.description')}</p>
+      {presets.length === 0 && <p className="text-xs text-slate-500">{t('themes.presets.none')}</p>}
       <div className="flex flex-col gap-1.5">
         {presets.map((preset) => (
           <div
@@ -376,18 +371,18 @@ function PresetsSection({
           >
             <div>
               <span className="font-medium">{preset.name}</span>{' '}
-              <span className="text-xs text-slate-500">(Basis: {preset.baseThemeId})</span>
+              <span className="text-xs text-slate-500">{t('themes.presets.basisLabel', { base: preset.baseThemeId })}</span>
             </div>
             <div className="flex items-center gap-2">
               {preset.options.theme === activeThemeId ? (
-                <Badge tone="green">Aktiv</Badge>
+                <Badge tone="green">{t('themes.presets.active')}</Badge>
               ) : (
                 <Button variant="ghost" onClick={() => onApply(preset)}>
-                  Anwenden
+                  {t('themes.presets.apply')}
                 </Button>
               )}
               <button type="button" onClick={() => remove(preset.id)} className="text-xs text-slate-500 underline">
-                Löschen
+                {t('themes.presets.delete')}
               </button>
             </div>
           </div>
@@ -406,6 +401,7 @@ function ThemeCatalog({
   activeThemeId?: string
   onActivate: (themeId: string) => void
 }): JSX.Element {
+  const { t } = useTranslation()
   const [themes, setThemes] = useState<QuartzThemeListing[]>([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
@@ -434,9 +430,9 @@ function ThemeCatalog({
     setInstallingId(null)
     if (result.success) {
       onActivate(themeId)
-      setMessage(`"${themeId}" installiert und aktiviert — nicht vergessen, oben auf "Speichern" zu klicken.`)
+      setMessage(t('themes.catalog.installSuccess', { id: themeId }))
     } else {
-      setMessage(`Installation von "${themeId}" fehlgeschlagen: ${result.output.slice(0, 300)}`)
+      setMessage(t('themes.catalog.installFailed', { id: themeId, output: result.output.slice(0, 300) }))
     }
   }
 
@@ -446,58 +442,59 @@ function ThemeCatalog({
 
   return (
     <Card>
-      <h3 className="mb-1 text-sm font-semibold">Katalog</h3>
-      <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
-        Vorgefertigte Farbschemata aus dem <code className="font-mono">@quartz-themes</code>-Ökosystem (installiert
-        und aktiviert das Plugin <code className="font-mono">@quartz-themes/core</code> mit dem gewählten Theme).
-      </p>
+      <h3 className="mb-1 text-sm font-semibold">{t('themes.catalog.title')}</h3>
+      <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('themes.catalog.description')}</p>
       <TextInput
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="Theme suchen (z.B. tokyo-night, catppuccin, nord)…"
+        placeholder={t('themes.catalog.searchPlaceholder')}
         className="w-full"
       />
       <div className="mt-2 max-h-80 overflow-y-auto rounded-md border border-black/[0.06] dark:border-white/10">
-        {visible.map((t) => {
-          const isActive = t.id === activeThemeId
-          const isExpanded = expandedId === t.id
+        {visible.map((listing) => {
+          const isActive = listing.id === activeThemeId
+          const isExpanded = expandedId === listing.id
           return (
-            <div key={t.id} className="border-b border-black/[0.04] last:border-b-0 dark:border-white/5">
+            <div key={listing.id} className="border-b border-black/[0.04] last:border-b-0 dark:border-white/5">
               <div className="flex items-center justify-between px-2.5 py-1.5 text-sm">
                 <button
                   type="button"
-                  onClick={() => setExpandedId(isExpanded ? null : t.id)}
+                  onClick={() => setExpandedId(isExpanded ? null : listing.id)}
                   className="flex items-center gap-2 font-mono text-xs hover:underline"
                 >
-                  {t.id}
-                  {t.stars !== undefined && t.stars > 0 && (
-                    <span className="text-[11px] text-slate-400">★ {t.stars}</span>
+                  {listing.id}
+                  {listing.stars !== undefined && listing.stars > 0 && (
+                    <span className="text-[11px] text-slate-400">★ {listing.stars}</span>
                   )}
                 </button>
                 <div className="flex items-center gap-2">
-                  {t.topics?.map((topic) => (
+                  {listing.topics?.map((topic) => (
                     <Badge key={topic}>{topic}</Badge>
                   ))}
                   {isActive ? (
-                    <Badge tone="green">Aktiv</Badge>
+                    <Badge tone="green">{t('themes.catalog.active')}</Badge>
                   ) : (
-                    <Button variant="ghost" onClick={() => install(t.id)} disabled={installingId === t.id}>
-                      {installingId === t.id ? 'Installiere…' : 'Installieren & aktivieren'}
+                    <Button variant="ghost" onClick={() => install(listing.id)} disabled={installingId === listing.id}>
+                      {installingId === listing.id ? t('themes.catalog.installing') : t('themes.catalog.install')}
                     </Button>
                   )}
                 </div>
               </div>
               {isExpanded && (
                 <div className="border-t border-black/[0.04] bg-black/[0.02] px-2.5 py-2 text-xs dark:border-white/5 dark:bg-white/[0.02]">
-                  {detail === undefined && <p className="text-slate-500">Lade Details…</p>}
-                  {detail === null && <p className="text-slate-500">Keine Details verfügbar.</p>}
+                  {detail === undefined && <p className="text-slate-500">{t('themes.catalog.detailLoading')}</p>}
+                  {detail === null && <p className="text-slate-500">{t('themes.catalog.detailNone')}</p>}
                   {detail && (
                     <div className="flex flex-col gap-1 text-slate-600 dark:text-slate-300">
-                      <p>Modi: {detail.modes.join(', ') || '—'}</p>
-                      <p>Varianten: {detail.variations.join(', ') || '—'}</p>
-                      <p>Eigene Farben anpassbar: {detail.styleSettingsId.length > 0 ? 'Ja' : 'Nein'}</p>
-                      <p>Schriftarten: {detail.fonts.join(', ') || '—'}</p>
-                      {t.githubDescription && <p>GitHub: {t.githubDescription}</p>}
+                      <p>{t('themes.catalog.modes', { modes: detail.modes.join(', ') || '—' })}</p>
+                      <p>{t('themes.catalog.variations', { variations: detail.variations.join(', ') || '—' })}</p>
+                      <p>
+                        {t('themes.catalog.customColorsLabel', {
+                          value: detail.styleSettingsId.length > 0 ? t('themes.catalog.yes') : t('themes.catalog.no')
+                        })}
+                      </p>
+                      <p>{t('themes.catalog.fonts', { fonts: detail.fonts.join(', ') || '—' })}</p>
+                      {listing.githubDescription && <p>{t('themes.catalog.github', { text: listing.githubDescription })}</p>}
                     </div>
                   )}
                 </div>
@@ -506,12 +503,12 @@ function ThemeCatalog({
           )
         })}
         {visible.length === 0 && (
-          <p className="p-2 text-xs text-slate-500">{loading ? 'Lade Themes…' : 'Keine Treffer.'}</p>
+          <p className="p-2 text-xs text-slate-500">{loading ? t('themes.loading') : t('themes.catalog.noResults')}</p>
         )}
       </div>
       {filtered.length > visible.length && (
         <p className="mt-1 text-xs text-slate-500">
-          {filtered.length - visible.length} weitere Treffer — weiter tippen zum Filtern.
+          {t('themes.catalog.moreResults', { count: filtered.length - visible.length })}
         </p>
       )}
       {message && <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">{message}</p>}

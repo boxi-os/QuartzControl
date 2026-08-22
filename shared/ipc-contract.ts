@@ -230,6 +230,8 @@ export const IPC = {
 export interface Settings {
   githubToken?: string
   defaultProjectDirectory?: string
+  // 'system' (default) follows the OS locale with an English fallback; 'de'/'en' pin the language.
+  language?: 'system' | 'de' | 'en'
 }
 
 export interface PluginActionResult {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { useProject } from '../ProjectLayout'
 import { useAppStore } from '../../state/store'
@@ -21,6 +22,7 @@ function normalizedRepoId(source: PluginEntry['source']): string | null {
 }
 
 export default function PluginsMarketplace(): JSX.Element {
+  const { t } = useTranslation()
   const project = useProject()
   const { settings, loadSettings } = useAppStore()
   const [query, setQuery] = useState('')
@@ -48,20 +50,20 @@ export default function PluginsMarketplace(): JSX.Element {
     setInstalling(plugin.fullName)
     const result = await window.quartzGui.plugins.add(project.path, `github:${plugin.fullName}`)
     setInstalling(null)
-    setMessage(result.success ? `${plugin.name} installiert.` : result.output)
+    setMessage(result.success ? t('pluginsMarketplace.installedMessage', { name: plugin.name }) : result.output)
     if (result.success) await loadInstalled()
   }
 
   return (
     <div className="max-w-3xl">
       <Link to=".." relative="path" className="text-sm text-slate-500 hover:text-slate-800 dark:hover:text-white">
-        ← Installierte Plugins
+        {t('pluginsMarketplace.backToInstalled')}
       </Link>
       <div className="my-4">
         <TextInput
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Plugins durchsuchen…"
+          placeholder={t('pluginsMarketplace.searchPlaceholder')}
           className="w-full"
         />
       </div>
@@ -75,7 +77,7 @@ export default function PluginsMarketplace(): JSX.Element {
             <Card key={plugin.fullName}>
               <div className="flex items-start justify-between gap-2">
                 <p className="font-medium">{plugin.name}</p>
-                {isInstalled && <Badge tone="green">Installiert</Badge>}
+                {isInstalled && <Badge tone="green">{t('pluginsMarketplace.installed')}</Badge>}
               </div>
               <p className="text-xs text-slate-500">{plugin.fullName}</p>
               {plugin.description && <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{plugin.description}</p>}
@@ -86,13 +88,17 @@ export default function PluginsMarketplace(): JSX.Element {
                   onClick={() => install(plugin)}
                   disabled={installing === plugin.fullName || isInstalled}
                 >
-                  {isInstalled ? 'Installiert' : installing === plugin.fullName ? 'Installiere…' : 'Installieren'}
+                  {isInstalled
+                    ? t('pluginsMarketplace.installed')
+                    : installing === plugin.fullName
+                      ? t('pluginsMarketplace.installing')
+                      : t('pluginsMarketplace.install')}
                 </Button>
               </div>
             </Card>
           )
         })}
-        {results.length === 0 && <p className="text-sm text-slate-500">Keine Ergebnisse.</p>}
+        {results.length === 0 && <p className="text-sm text-slate-500">{t('pluginsMarketplace.noResults')}</p>}
       </div>
     </div>
   )

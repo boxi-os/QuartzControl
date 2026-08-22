@@ -1,4 +1,6 @@
 import { useEffect, useState, type DragEvent } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { Link } from 'react-router-dom'
 import { useProject } from '../ProjectLayout'
 import type { PluginEntry, PluginOptionField, QuartzConfig } from '@shared/ipc-contract'
@@ -26,93 +28,105 @@ interface PluginLayout {
 // Straight from quartz's own plugin-config JSON schema (quartz/plugins/quartz-plugins.schema.json)
 // plus "footer" (seen in real generated configs but missing from that schema) - this is fixed
 // across every plugin, unlike `options` which is plugin-specific, so it's just a static list
-// rather than something extracted at runtime. Field names/values are kept as Quartz writes them
-// (English, camelCase) rather than translated, so they match what's actually in the YAML.
-const LAYOUT_FIELDS: PluginOptionField[] = [
-  {
-    name: 'position',
-    kind: 'enum',
-    optional: true,
-    enumValues: ['left', 'right', 'beforeBody', 'afterBody', 'body', 'footer'],
-    description: 'left/right = Sidebar, beforeBody/afterBody = um den Inhalt herum, body = im Inhalt, footer = Fußzeile'
-  },
-  { name: 'priority', kind: 'number', optional: true, description: 'Reihenfolge innerhalb der Position — kleiner zuerst' },
-  {
-    name: 'display',
-    kind: 'enum',
-    optional: true,
-    enumValues: ['all', 'mobile-only', 'desktop-only'],
-    description: 'all = alle Geräte, mobile-only = nur mobil, desktop-only = nur Desktop'
-  },
-  { name: 'condition', kind: 'string', optional: true, description: 'Freitext-Bedingung, z. B. "not-index"' },
-  { name: 'group', kind: 'string', optional: true, description: 'Name einer Toolbar-Gruppe, z. B. "toolbar"' }
-]
+// rather than something extracted at runtime. Field names/values (position/kind/enumValues) are
+// kept as Quartz writes them (English, camelCase) rather than translated, so they match what's
+// actually in the YAML - only the human-facing `description` is looked up via t().
+function buildLayoutFields(t: TFunction): PluginOptionField[] {
+  return [
+    {
+      name: 'position',
+      kind: 'enum',
+      optional: true,
+      enumValues: ['left', 'right', 'beforeBody', 'afterBody', 'body', 'footer'],
+      description: t('pluginsInstalled.layoutFields.position')
+    },
+    { name: 'priority', kind: 'number', optional: true, description: t('pluginsInstalled.layoutFields.priority') },
+    {
+      name: 'display',
+      kind: 'enum',
+      optional: true,
+      enumValues: ['all', 'mobile-only', 'desktop-only'],
+      description: t('pluginsInstalled.layoutFields.display')
+    },
+    { name: 'condition', kind: 'string', optional: true, description: t('pluginsInstalled.layoutFields.condition') },
+    { name: 'group', kind: 'string', optional: true, description: t('pluginsInstalled.layoutFields.group') }
+  ]
+}
+
+// Keys straight from pluginDescriptions in the translation resources - kept as a plain list here
+// (rather than re-deriving from the resource object) so this file doesn't need a runtime import of
+// the locale JSON just to know which plugin names have a description at all.
+const KNOWN_PLUGIN_DESCRIPTION_KEYS = new Set([
+  'created-modified-date',
+  'syntax-highlighting',
+  'obsidian-flavored-markdown',
+  'github-flavored-markdown',
+  'table-of-contents',
+  'crawl-links',
+  'description',
+  'latex',
+  'citations',
+  'hard-line-breaks',
+  'ox-hugo',
+  'roam',
+  'quartz-fonts',
+  'core',
+  'remove-draft',
+  'explicit-publish',
+  'unlisted-pages',
+  'encrypted-pages',
+  'stacked-pages',
+  'alias-redirects',
+  'content-index',
+  'favicon',
+  'og-image',
+  'cname',
+  'canvas-page',
+  'content-page',
+  'folder-page',
+  'tag-page',
+  'bases-page',
+  'explorer',
+  'graph',
+  'search',
+  'backlinks',
+  'article-title',
+  'content-meta',
+  'tag-list',
+  'page-title',
+  'darkmode',
+  'reader-mode',
+  'breadcrumbs',
+  'comments',
+  'footer',
+  'recent-notes',
+  'spacer',
+  'note-properties',
+  'assets',
+  'static',
+  'component-resources'
+])
+
 // Short descriptions for the official @quartz-community/* (and @quartz-themes/core) plugins,
 // compiled from quartz's own docs/plugins/*.md - there's no description field in
 // quartz.config.yaml or the compiled .d.ts to read this from at runtime. Keyed by the derived
 // display name (deriveName() in configService - last path segment of the source), same key
 // PluginRow already uses. Custom/marketplace plugins not in this list simply show no description
 // rather than a guessed one.
-const PLUGIN_DESCRIPTIONS: Record<string, string> = {
-  'created-modified-date': 'Ermittelt Erstellungs-, Änderungs- und Veröffentlichungsdatum aus Frontmatter, Git-Historie oder Dateisystem.',
-  'syntax-highlighting': 'Hebt Code-Blöcke farblich hervor.',
-  'obsidian-flavored-markdown': 'Unterstützt Obsidian-spezifische Markdown-Syntax (Wikilinks, Callouts, Embeds, …).',
-  'github-flavored-markdown': 'Erweitert Markdown um GitHub-Funktionen wie Fußnoten, Tabellen und Tasklisten.',
-  'table-of-contents': 'Erzeugt ein Inhaltsverzeichnis für jede Seite.',
-  'crawl-links': 'Verarbeitet Links, damit sie auf die richtigen Zielseiten zeigen.',
-  description: 'Erzeugt Beschreibungstexte für Meta-Tags, RSS und Listenansichten.',
-  latex: 'Fügt LaTeX-Unterstützung für mathematische Formeln hinzu.',
-  citations: 'Fügt Unterstützung für Zitate und Literaturverweise hinzu.',
-  'hard-line-breaks': 'Wandelt einzelne Zeilenumbrüche in harte Umbrüche um (Obsidian-Verhalten).',
-  'ox-hugo': 'Unterstützt mit ox-hugo exportierte Markdown-Dateien.',
-  roam: 'Unterstützt aus Roam Research exportierte Notizen.',
-  'quartz-fonts': 'Steuert Schriftarten pro Überschriftenebene, inkl. Google-Fonts-Integration.',
-  core: 'Wendet das gewählte Theme (Farben, Typografie, Darstellung) auf die Seite an.',
-  'remove-draft': 'Blendet Seiten mit „draft: true" im Frontmatter aus.',
-  'explicit-publish': 'Veröffentlicht nur Seiten, die im Frontmatter explizit mit „publish: true" markiert sind.',
-  'unlisted-pages':
-    'Blendet Seiten mit „unlisted: true" aus allen Listen (Suche, Graph, Explorer, …) aus — bleiben aber über die URL erreichbar.',
-  'encrypted-pages': 'Verschlüsselt einzelne Seiten passwortgeschützt (AES-256-GCM).',
-  'stacked-pages': 'Öffnet interne Links als nebeneinander gestapelte Panes (Andy-Matuschak-Stil).',
-  'alias-redirects': 'Erzeugt Weiterleitungsseiten für Alias-URLs.',
-  'content-index': 'Erzeugt RSS-Feed, Sitemap und die contentIndex.json für Suche und Graph.',
-  favicon: 'Erzeugt das Favicon aus quartz/static/icon.png.',
-  'og-image': 'Erzeugt Social-Media-Vorschaubilder (Open-Graph-Images) pro Seite.',
-  cname: 'Schreibt eine CNAME-Datei für eine eigene Domain.',
-  'canvas-page': 'Rendert Obsidian-Canvas-Dateien als interaktive, zoombare Seiten.',
-  'content-page': 'Erzeugt die vollständige HTML-Seite für jede Markdown-Datei.',
-  'folder-page': 'Erzeugt Übersichtsseiten für Ordner mit mehreren Inhalten.',
-  'tag-page': 'Erzeugt eine eigene Seite je Tag.',
-  'bases-page': 'Rendert Obsidian-Bases-(.base)-Dateien als Tabellen-, Karten- oder Listenansichten.',
-  explorer: 'Datei-Baum-Navigation in der Seitenleiste.',
-  graph: 'Interaktive Graph-Visualisierung der verlinkten Notizen.',
-  search: 'Volltextsuche über alle Inhalte.',
-  backlinks: 'Zeigt Seiten an, die auf die aktuelle Seite verlinken.',
-  'article-title': 'Zeigt den Seitentitel als Überschrift über dem Inhalt.',
-  'content-meta': 'Zeigt Metadaten wie Erstellungsdatum und Lesezeit unter dem Titel.',
-  'tag-list': 'Zeigt die Tags einer Seite als klickbare Liste.',
-  'page-title': 'Zeigt den Website-Titel als Link zur Startseite, meist in der Seitenleiste.',
-  darkmode: 'Umschalter für Hell-/Dunkelmodus.',
-  'reader-mode': 'Ablenkungsfreier Lesemodus.',
-  breadcrumbs: 'Zeigt den Navigationspfad (Breadcrumbs) oberhalb des Inhalts.',
-  comments: 'Bindet ein Kommentarsystem ein (z. B. giscus, utterances).',
-  footer: 'Zeigt eine Fußzeile mit konfigurierbaren Links.',
-  'recent-notes': 'Zeigt zuletzt geänderte Notizen an.',
-  spacer: 'Flexibler Platzhalter, der Elemente in einer Toolbar-Gruppe auseinanderschiebt.',
-  'note-properties': 'Zeigt ausgewählte Frontmatter-Eigenschaften in einem einklappbaren Panel.',
-  assets: 'Kopiert alle Nicht-Markdown-Dateien (Bilder, Videos, …) in die Ausgabe.',
-  static: 'Kopiert statische Ressourcen wie Schriften und feste Bilder in die Ausgabe.',
-  'component-resources': 'Bindet die CSS- und JS-Ressourcen ein, die Theme und Components benötigen.'
+function getPluginDescription(t: TFunction, name: string): string | undefined {
+  return KNOWN_PLUGIN_DESCRIPTION_KEYS.has(name) ? t(`pluginDescriptions.${name}`) : undefined
 }
 
-const GROUP_OPTIONS_FIELDS: PluginOptionField[] = [
-  { name: 'grow', kind: 'boolean', optional: true, description: 'Element wächst, um freien Platz in der Gruppe zu füllen' },
-  { name: 'shrink', kind: 'boolean', optional: true, description: 'Element darf bei Platzmangel schrumpfen' },
-  { name: 'basis', kind: 'string', optional: true, description: 'Flex-Basisgröße, z. B. "auto" oder "100px"' },
-  { name: 'order', kind: 'number', optional: true, description: 'Reihenfolge innerhalb der Gruppe — kleiner zuerst' },
-  { name: 'align', kind: 'string', optional: true, description: 'CSS align-items, z. B. "center"' },
-  { name: 'justify', kind: 'string', optional: true, description: 'CSS justify-content, z. B. "space-between"' }
-]
+function buildGroupOptionsFields(t: TFunction): PluginOptionField[] {
+  return [
+    { name: 'grow', kind: 'boolean', optional: true, description: t('pluginsInstalled.groupOptionsFields.grow') },
+    { name: 'shrink', kind: 'boolean', optional: true, description: t('pluginsInstalled.groupOptionsFields.shrink') },
+    { name: 'basis', kind: 'string', optional: true, description: t('pluginsInstalled.groupOptionsFields.basis') },
+    { name: 'order', kind: 'number', optional: true, description: t('pluginsInstalled.groupOptionsFields.order') },
+    { name: 'align', kind: 'string', optional: true, description: t('pluginsInstalled.groupOptionsFields.align') },
+    { name: 'justify', kind: 'string', optional: true, description: t('pluginsInstalled.groupOptionsFields.justify') }
+  ]
+}
 
 function getLayout(plugin: PluginEntry): PluginLayout | null {
   const layout = plugin.layout
@@ -153,6 +167,7 @@ interface DragTarget {
 }
 
 export default function PluginsInstalled(): JSX.Element {
+  const { t } = useTranslation()
   const project = useProject()
   const [config, setConfig] = useState<QuartzConfig | null>(null)
   const [newSource, setNewSource] = useState('')
@@ -205,7 +220,7 @@ export default function PluginsInstalled(): JSX.Element {
   }
 
   async function removePlugin(plugin: PluginEntry): Promise<void> {
-    if (!confirm(`Plugin "${plugin.name}" wirklich entfernen?`)) return
+    if (!confirm(t('pluginsInstalled.removeConfirm', { name: plugin.name }))) return
     setBusy(true)
     // still CLI-based: `quartz plugin remove <name>` also cleans up .quartz/plugins/<name> on
     // disk and quartz.lock.json, which a plain config.yaml edit wouldn't do
@@ -237,7 +252,7 @@ export default function PluginsInstalled(): JSX.Element {
   if (loadError) {
     return (
       <div className="max-w-xl">
-        <p className="mb-2 text-sm font-medium text-red-600 dark:text-red-400">quartz.config.yaml konnte nicht gelesen werden.</p>
+        <p className="mb-2 text-sm font-medium text-red-600 dark:text-red-400">{t('configEditor.loadError')}</p>
         <pre className="whitespace-pre-wrap rounded-md bg-red-50 p-3 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-400">
           {loadError}
         </pre>
@@ -261,7 +276,7 @@ export default function PluginsInstalled(): JSX.Element {
   for (const group of byPosition.values()) {
     group.sort((a, b) => (getLayout(a.plugin)?.priority ?? 0) - (getLayout(b.plugin)?.priority ?? 0))
   }
-  const knownPositionOrder = LAYOUT_FIELDS.find((f) => f.name === 'position')?.enumValues ?? []
+  const knownPositionOrder = buildLayoutFields(t).find((f) => f.name === 'position')?.enumValues ?? []
   const positionKeys = [
     ...knownPositionOrder.filter((p) => byPosition.has(p)),
     ...[...byPosition.keys()].filter((p) => !knownPositionOrder.includes(p))
@@ -276,26 +291,26 @@ export default function PluginsInstalled(): JSX.Element {
           <TextInput
             value={newSource}
             onChange={(e) => setNewSource(e.target.value)}
-            placeholder="github:owner/repo"
+            placeholder={t('pluginsInstalled.addPlaceholder')}
             className="w-72"
           />
           <Button onClick={addPlugin} disabled={busy || !newSource.trim()}>
-            Hinzufügen
+            {t('pluginsInstalled.add')}
           </Button>
         </div>
         <Link to="marketplace" className="text-sm text-slate-600 hover:underline dark:text-slate-300">
-          Marktplatz durchsuchen →
+          {t('pluginsInstalled.marketplaceLink')}
         </Link>
       </div>
 
       {message && <p className="mb-4 text-sm text-red-600 dark:text-red-400">{message}</p>}
 
-      {items.length === 0 && <p className="text-sm text-slate-500">Keine Plugins installiert.</p>}
+      {items.length === 0 && <p className="text-sm text-slate-500">{t('pluginsInstalled.none')}</p>}
 
       {componentItems.length > 0 && (
         <section className="mb-8">
-          <h2 className="mb-1 text-sm font-semibold">Components</h2>
-          <p className="mb-3 text-xs text-slate-400">Werden im Seiten-Layout an einer festen Position dargestellt.</p>
+          <h2 className="mb-1 text-sm font-semibold">{t('pluginsInstalled.componentsHeading')}</h2>
+          <p className="mb-3 text-xs text-slate-400">{t('pluginsInstalled.componentsDescription')}</p>
           <div className="flex flex-col gap-5">
             {positionKeys.map((position) => {
               const group = byPosition.get(position)!
@@ -325,16 +340,13 @@ export default function PluginsInstalled(): JSX.Element {
 
       {processingItems.length > 0 && (
         <section>
-          <h2 className="mb-1 text-sm font-semibold">Verarbeitung</h2>
-          <p className="mb-3 text-xs text-slate-400">
-            Transformer, Filter und Emitter — aus der Konfiguration allein nicht zuverlässig weiter unterscheidbar.
-            Seitentypen (Plugins, die eine eigene Seitenart erzeugen) werden separat aufgeführt.
-          </p>
+          <h2 className="mb-1 text-sm font-semibold">{t('pluginsInstalled.processingHeading')}</h2>
+          <p className="mb-3 text-xs text-slate-400">{t('pluginsInstalled.processingDescription')}</p>
           <div className="flex flex-col gap-5">
             {pageTypeItems.length > 0 && (
               <div>
                 <h3 className="mb-2 font-mono text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Seitentypen ({pageTypeItems.length})
+                  {t('pluginsInstalled.pageTypesHeading', { count: pageTypeItems.length })}
                 </h3>
                 <div className="flex flex-col gap-2">
                   {pageTypeItems.map((item, localIndex) => (
@@ -354,7 +366,7 @@ export default function PluginsInstalled(): JSX.Element {
               <div>
                 {pageTypeItems.length > 0 && (
                   <h3 className="mb-2 font-mono text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Transformer, Filter &amp; Emitter ({otherProcessingItems.length})
+                    {t('pluginsInstalled.otherProcessingHeading', { count: otherProcessingItems.length })}
                   </h3>
                 )}
                 <div className="flex flex-col gap-2">
@@ -402,12 +414,13 @@ function PluginRow({
   removePlugin: (plugin: PluginEntry) => void
   updateField: (index: number, path: string[], value: unknown) => void
 }): JSX.Element {
+  const { t } = useTranslation()
   const project = useProject()
   const { plugin, index } = item
   const layout = getLayout(plugin)
   const isDragging = dragging?.group === groupKey && dragging.index === localIndex
   const [expanded, setExpanded] = useState(false)
-  const description = PLUGIN_DESCRIPTIONS[plugin.name]
+  const description = getPluginDescription(t, plugin.name)
 
   // Components always have layout fields (position/priority/...) to edit, so their button is
   // always shown. Processing plugins (no layout) may genuinely have nothing to configure, so the
@@ -429,9 +442,9 @@ function PluginRow({
         : Object.keys(plugin.options ?? {}).length > 0
 
   const summary = layout
-    ? `position: ${layout.position ?? '–'} · priority: ${layout.priority ?? '–'}`
+    ? t('pluginsInstalled.summaryPosPriority', { position: layout.position ?? '–', priority: layout.priority ?? '–' })
     : plugin.order != null
-      ? `order: ${String(plugin.order)}`
+      ? t('pluginsInstalled.summaryOrder', { order: String(plugin.order) })
       : null
 
   return (
@@ -448,7 +461,7 @@ function PluginRow({
     >
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-2">
-          <span className="select-none pt-0.5 text-slate-300 dark:text-slate-600" title="Ziehen zum Umsortieren">
+          <span className="select-none pt-0.5 text-slate-300 dark:text-slate-600" title={t('pluginsInstalled.dragHint')}>
             ⠿
           </span>
           <div>
@@ -459,30 +472,36 @@ function PluginRow({
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Badge tone={plugin.enabled ? 'green' : 'slate'}>{plugin.enabled ? 'Aktiv' : 'Deaktiviert'}</Badge>
+          <Badge tone={plugin.enabled ? 'green' : 'slate'}>
+            {plugin.enabled ? t('pluginsInstalled.active') : t('pluginsInstalled.disabled')}
+          </Badge>
           {hasOptions && (
             <Button variant="ghost" onClick={() => setExpanded((v) => !v)}>
-              {expanded ? 'Optionen einklappen' : 'Optionen anzeigen'}
+              {expanded ? t('pluginsInstalled.hideOptions') : t('pluginsInstalled.showOptions')}
             </Button>
           )}
           <Button variant="ghost" onClick={() => toggleEnabled(index)} disabled={busy}>
-            {plugin.enabled ? 'Deaktivieren' : 'Aktivieren'}
+            {plugin.enabled ? t('pluginsInstalled.disable') : t('pluginsInstalled.enable')}
           </Button>
           <Button variant="danger" onClick={() => removePlugin(plugin)} disabled={busy}>
-            Entfernen
+            {t('common.remove')}
           </Button>
         </div>
       </div>
 
       {expanded && layout && (
         <div className="mt-3 border-t border-black/10 pt-3 dark:border-white/10">
-          <FieldGroup fields={LAYOUT_FIELDS} values={layout} onChange={(name, value) => updateField(index, ['layout', name], value)} />
+          <FieldGroup
+            fields={buildLayoutFields(t)}
+            values={layout}
+            onChange={(name, value) => updateField(index, ['layout', name], value)}
+          />
           {/* groupOptions only makes sense once the plugin is actually placed in a group */}
           {layout.group && (
             <div className="mt-2 border-t border-dashed border-black/10 pt-2 dark:border-white/10">
               <p className="mb-1 font-mono text-[11px] text-slate-400">groupOptions</p>
               <FieldGroup
-                fields={GROUP_OPTIONS_FIELDS}
+                fields={buildGroupOptionsFields(t)}
                 values={layout.groupOptions ?? {}}
                 onChange={(name, value) => updateField(index, ['layout', 'groupOptions', name], value)}
               />
@@ -513,6 +532,7 @@ function PluginOptions({
   // component fetches its own copy, same as before.
   preloadedSchema?: PluginOptionField[] | null | 'loading'
 }): JSX.Element | null {
+  const { t } = useTranslation()
   const project = useProject()
   const [fetchedSchema, setFetchedSchema] = useState<PluginOptionField[] | null | 'loading'>('loading')
 
@@ -533,9 +553,12 @@ function PluginOptions({
     return (
       <div className="mt-3 border-t border-black/10 pt-3 dark:border-white/10">
         <p className="mb-2 text-[11px] text-slate-400">
-          <span className="font-medium">Verfügbare Optionen:</span>{' '}
+          <span className="font-medium">{t('pluginsInstalled.availableOptions')}</span>{' '}
           {schema
-            .map((f) => `${f.name} (${f.kind === 'enum' ? f.enumValues?.join('|') : f.kind}${f.kind === 'unsupported' ? ', nur per YAML' : ''})`)
+            .map(
+              (f) =>
+                `${f.name} (${f.kind === 'enum' ? f.enumValues?.join('|') : f.kind}${f.kind === 'unsupported' ? t('pluginsInstalled.onlyViaYaml') : ''})`
+            )
             .join(', ')}
         </p>
         <FieldGroup fields={schema.filter((f) => f.kind !== 'unsupported')} values={options} onChange={onChange} />
@@ -550,9 +573,7 @@ function PluginOptions({
   if (keys.length === 0) return null
   return (
     <div className="mt-3 border-t border-black/10 pt-3 dark:border-white/10">
-      <p className="mb-2 text-[11px] text-slate-400">
-        Keine Options-Schema-Information für dieses Plugin gefunden — nur vorhandene Werte bearbeitbar.
-      </p>
+      <p className="mb-2 text-[11px] text-slate-400">{t('pluginsInstalled.noSchemaInfo')}</p>
       <div className="flex flex-col gap-2">
         {keys.map((key) => (
           <InferredFieldRow key={key} name={key} value={options[key]} onChange={(v) => onChange(key, v)} />
@@ -589,6 +610,7 @@ function FieldRow({
   value: unknown
   onChange: (value: unknown) => void
 }): JSX.Element {
+  const { t } = useTranslation()
   const currentText = value == null ? '' : String(value)
   return (
     <div className="flex items-center gap-3">
@@ -607,7 +629,7 @@ function FieldRow({
             className="w-40"
           >
             <option value="" disabled>
-              nicht gesetzt
+              {t('pluginsInstalled.notSet')}
             </option>
             {field.enumValues?.map((v) => (
               <option key={v} value={v}>

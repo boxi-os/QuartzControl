@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useProject } from './ProjectLayout'
 import type { LogLine, ServerOptions, ServerStatus, BuildResult } from '@shared/ipc-contract'
 import { Badge, Button, Card, Field, TextInput, Toggle } from '../components/ui'
@@ -12,15 +13,8 @@ import { LogConsole } from '../components/LogConsole'
 // connected. Leave it empty unless the user is actually serving through a tunnel.
 const DEFAULT_OPTIONS: ServerOptions = { port: 8080, wsPort: 3001, host: '', watch: true }
 
-const SERVER_LABEL: Record<ServerStatus['state'], string> = {
-  stopped: 'Gestoppt',
-  starting: 'Startet…',
-  running: 'Läuft',
-  stopping: 'Stoppt…',
-  error: 'Fehler'
-}
-
 export default function BuildServer(): JSX.Element {
+  const { t } = useTranslation()
   const project = useProject()
   const [status, setStatus] = useState<ServerStatus>({ state: 'stopped' })
   const [options, setOptions] = useState<ServerOptions>(DEFAULT_OPTIONS)
@@ -82,14 +76,14 @@ export default function BuildServer(): JSX.Element {
     <div className="grid max-w-3xl gap-6">
       <Card>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-medium">Dev-Server</h2>
+          <h2 className="font-medium">{t('buildServer.devServer')}</h2>
           <Badge tone={status.state === 'running' ? 'green' : status.state === 'error' ? 'red' : 'slate'}>
-            {SERVER_LABEL[status.state]}
+            {t(`common.serverState.${status.state}`)}
           </Badge>
         </div>
 
         <div className="mb-3 grid grid-cols-4 gap-3">
-          <Field label="Port">
+          <Field label={t('buildServer.port')}>
             <TextInput
               type="number"
               value={options.port}
@@ -97,7 +91,7 @@ export default function BuildServer(): JSX.Element {
               disabled={status.state !== 'stopped'}
             />
           </Field>
-          <Field label="WS-Port">
+          <Field label={t('buildServer.wsPort')}>
             <TextInput
               type="number"
               value={options.wsPort}
@@ -105,17 +99,17 @@ export default function BuildServer(): JSX.Element {
               disabled={status.state !== 'stopped'}
             />
           </Field>
-          <Field label="Remote-Dev-Host (optional)">
+          <Field label={t('buildServer.remoteDevHost')}>
             <TextInput
               value={options.host}
-              placeholder="nur für Tunnel/Remote-Vorschau"
+              placeholder={t('buildServer.remoteDevHostPlaceholder')}
               onChange={(e) => setOptions({ ...options, host: e.target.value })}
               disabled={status.state !== 'stopped'}
             />
           </Field>
           <div className="flex items-end pb-1.5">
             <Toggle
-              label="Watch"
+              label={t('buildServer.watch')}
               checked={options.watch}
               onChange={(checked) => setOptions({ ...options, watch: checked })}
               disabled={status.state !== 'stopped'}
@@ -125,13 +119,13 @@ export default function BuildServer(): JSX.Element {
 
         <div className="mb-3 flex gap-2">
           <Button onClick={start} disabled={busy || status.state === 'running'}>
-            Starten
+            {t('buildServer.start')}
           </Button>
           <Button variant="ghost" onClick={restart} disabled={busy || status.state !== 'running'}>
-            Neustarten
+            {t('buildServer.restart')}
           </Button>
           <Button variant="danger" onClick={stop} disabled={busy || status.state !== 'running'}>
-            Stoppen
+            {t('buildServer.stop')}
           </Button>
           {status.state === 'running' && status.options && (
             <a
@@ -140,7 +134,7 @@ export default function BuildServer(): JSX.Element {
               rel="noreferrer"
               className="ml-auto self-center text-sm text-slate-600 hover:underline dark:text-slate-300"
             >
-              Im Browser öffnen ↗
+              {t('common.openInBrowser')}
             </a>
           )}
         </div>
@@ -150,28 +144,28 @@ export default function BuildServer(): JSX.Element {
 
       <Card>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-medium">Einmaliger Build</h2>
+          <h2 className="font-medium">{t('buildServer.oneOffBuild')}</h2>
           <Button onClick={runBuild} disabled={building}>
-            {building ? 'Baue…' : 'Jetzt bauen'}
+            {building ? t('buildServer.building') : t('buildServer.buildNow')}
           </Button>
         </div>
 
         <div className="mb-3">
-          <Field label="Export-Ordner (optional)">
+          <Field label={t('buildServer.exportDir')}>
             <div className="flex gap-2">
               <TextInput
                 value={exportDir}
                 onChange={(e) => setExportDir(e.target.value)}
-                placeholder="Standard: public/ im Projekt"
+                placeholder={t('buildServer.exportDirPlaceholder')}
                 disabled={building}
                 className="flex-1"
               />
               <Button variant="ghost" onClick={pickExportDir} disabled={building}>
-                Auswählen
+                {t('common.select')}
               </Button>
               {exportDir && (
                 <Button variant="ghost" onClick={() => setExportDir('')} disabled={building}>
-                  Zurücksetzen
+                  {t('buildServer.reset')}
                 </Button>
               )}
             </div>
@@ -180,8 +174,11 @@ export default function BuildServer(): JSX.Element {
 
         {buildResult && (
           <p className={`mb-3 text-sm ${buildResult.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-            {buildResult.success ? 'Erfolgreich' : 'Fehlgeschlagen'} in {(buildResult.durationMs / 1000).toFixed(1)}s
-            {buildResult.success && exportDir && ` · exportiert nach ${exportDir}`}
+            {t('buildServer.resultLine', {
+              status: buildResult.success ? t('buildServer.success') : t('buildServer.failed'),
+              seconds: (buildResult.durationMs / 1000).toFixed(1)
+            })}
+            {buildResult.success && exportDir && t('buildServer.exportedTo', { dir: exportDir })}
           </p>
         )}
         <LogConsole lines={buildLogs} />

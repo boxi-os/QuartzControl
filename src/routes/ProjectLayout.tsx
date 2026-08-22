@@ -1,25 +1,27 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet, useOutletContext, useParams } from 'react-router-dom'
 import type { Project } from '@shared/ipc-contract'
-
-const TABS = [
-  { to: '', label: 'Übersicht', end: true },
-  { to: 'config', label: 'Konfiguration' },
-  { to: 'themes', label: 'Themes' },
-  { to: 'plugins', label: 'Plugins' },
-  { to: 'content', label: 'Content-Ordner' },
-  { to: 'server', label: 'Build & Server' },
-  { to: 'sync', label: 'Git-Sync' },
-  { to: 'backups', label: 'Backups' }
-]
 
 export function useProject(): Project {
   return useOutletContext<Project>()
 }
 
 export default function ProjectLayout(): JSX.Element {
+  const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const [project, setProject] = useState<Project | null>(null)
+
+  const TABS = [
+    { to: '', label: t('projectLayout.tabs.overview'), end: true },
+    { to: 'config', label: t('projectLayout.tabs.config') },
+    { to: 'themes', label: t('projectLayout.tabs.themes') },
+    { to: 'plugins', label: t('projectLayout.tabs.plugins') },
+    { to: 'content', label: t('projectLayout.tabs.content') },
+    { to: 'server', label: t('projectLayout.tabs.server') },
+    { to: 'sync', label: t('projectLayout.tabs.sync') },
+    { to: 'backups', label: t('projectLayout.tabs.backups') }
+  ]
 
   useEffect(() => {
     if (!id) return
@@ -27,7 +29,11 @@ export default function ProjectLayout(): JSX.Element {
   }, [id])
 
   if (!project) {
-    return <div className="titlebar-drag flex h-screen items-center justify-center text-sm text-slate-500">Lade Projekt…</div>
+    return (
+      <div className="titlebar-drag flex h-screen items-center justify-center text-sm text-slate-500">
+        {t('projectLayout.loading')}
+      </div>
+    )
   }
 
   return (
@@ -39,7 +45,7 @@ export default function ProjectLayout(): JSX.Element {
             to="/"
             className="titlebar-no-drag flex items-center gap-1.5 rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium text-slate-700 transition-colors hover:bg-black/[0.05] dark:text-slate-200 dark:hover:bg-white/10"
           >
-            <span aria-hidden>←</span> Alle Projekte
+            <span aria-hidden>←</span> {t('projectLayout.allProjects')}
           </NavLink>
         </div>
         <div className="border-b border-black/[0.06] px-4 pb-3 dark:border-white/10">

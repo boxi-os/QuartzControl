@@ -59,7 +59,8 @@ export default {
       server: 'Build & server',
       sync: 'Git sync',
       backups: 'Backups',
-      updates: 'Updates'
+      updates: 'Updates',
+      publish: 'Publish'
     }
   },
   dashboard: {
@@ -465,6 +466,49 @@ export default {
       restore: 'Restore',
       confirmRestore: 'Reset the project to snapshot "{{tag}}"? Everything since then will be lost.'
     }
+  },
+  publish: {
+    title: 'Publish',
+    description: 'Builds the project and uploads only changed files to SFTP/FTP or GitHub Pages.',
+    baseUrlWarning: 'configuration.baseUrl is still set to "{{baseUrl}}" — set it to the real domain before publishing.',
+    targetHeading: 'Target',
+    githubPages: 'GitHub Pages',
+    githubBranch: 'Branch',
+    githubPagesHint: 'Uses the already-configured "origin" remote (the same one Git-Sync uses).',
+    newConnection: '+ New connection',
+    noSecretWarning: '(no password/key stored)',
+    confirmDeleteConnection: 'Really delete this connection?',
+    connectionForm: {
+      heading: 'Connection',
+      name: 'Name',
+      protocol: 'Protocol',
+      host: 'Host',
+      port: 'Port',
+      username: 'Username',
+      remotePath: 'Remote path',
+      authMethod: 'Authentication',
+      authPassword: 'Password',
+      authPrivateKey: 'Private key',
+      secure: 'FTPS (encrypted)',
+      password: 'Password',
+      privateKey: 'Private key (contents)',
+      secretUnchangedPlaceholder: 'leave unchanged'
+    },
+    diffHeading: 'Changes',
+    buildNow: 'Build now',
+    refreshDiff: 'Refresh diff',
+    noDiffYet: 'No diff computed yet — build or refresh the diff first.',
+    noChanges: 'No changes since the last deploy.',
+    status: {
+      added: 'Added',
+      changed: 'Changed',
+      removed: 'Removed'
+    },
+    deployHeading: 'Publish',
+    deployButton: 'Publish now',
+    progress: '{{processed}}/{{total}} — {{file}}',
+    deploySuccess: 'Published successfully.',
+    deployFailed: 'Publish failed.'
   },
   pluginsMarketplace: {
     backToInstalled: '← Installed plugins',

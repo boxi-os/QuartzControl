@@ -7,7 +7,9 @@ import type {
   Settings,
   CreateProjectOptions,
   ThemePreset,
-  GridFrameDefinition
+  GridFrameDefinition,
+  SaveDeployConnectionInput,
+  GithubPagesDeployOptions
 } from '@shared/ipc-contract'
 import * as projectStore from '../services/projectStore'
 import * as configService from '../services/configService'
@@ -20,6 +22,9 @@ import * as styleService from '../services/styleService'
 import * as fontService from '../services/fontService'
 import * as localizationService from '../services/localizationService'
 import * as updateService from '../services/updateService'
+import * as secretsService from '../services/secretsService'
+import * as deployService from '../services/deployService'
+import * as githubPagesService from '../services/githubPagesService'
 import * as marketplaceService from '../services/marketplaceService'
 import * as buildService from '../services/buildService'
 import * as syncService from '../services/syncService'
@@ -43,6 +48,7 @@ export function registerIpcHandlers(): void {
   buildService.serverEvents.on('log', (line) => broadcast(IPC.serverLog, line))
   buildService.serverEvents.on('buildLog', (line) => broadcast(IPC.buildLog, line))
   buildService.serverEvents.on('status', (projectId, status) => broadcast(IPC.serverStatusChanged, projectId, status))
+  deployService.deployEvents.on('progress', (event) => broadcast(IPC.deployProgress, event))
 
   ipcMain.handle(IPC.projectList, () => projectStore.listProjects())
   ipcMain.handle(IPC.projectAdd, (_e, path: string) => projectStore.addProject(path))
@@ -132,6 +138,17 @@ export function registerIpcHandlers(): void {
   ipcMain.handle(IPC.updatePluginRun, (_e, projectPath: string, name?: string) => updateService.updatePlugin(projectPath, name))
   ipcMain.handle(IPC.updateSnapshotList, (_e, projectPath: string) => updateService.listSnapshots(projectPath))
   ipcMain.handle(IPC.updateSnapshotRestore, (_e, projectPath: string, tag: string) => updateService.restoreSnapshot(projectPath, tag))
+
+  ipcMain.handle(IPC.deployConnectionsList, (_e, projectPath: string) => secretsService.listConnections(projectPath))
+  ipcMain.handle(IPC.deployConnectionSave, (_e, input: SaveDeployConnectionInput) => secretsService.saveConnection(input))
+  ipcMain.handle(IPC.deployConnectionDelete, (_e, id: string) => secretsService.deleteConnection(id))
+  ipcMain.handle(IPC.deployDiff, (_e, projectPath: string, outputDir?: string) => deployService.diffBuildOutput(projectPath, outputDir))
+  ipcMain.handle(IPC.deployRun, (_e, connectionId: string, outputDir: string | undefined, excludePaths: string[]) =>
+    deployService.runDeploy(connectionId, outputDir, excludePaths)
+  )
+  ipcMain.handle(IPC.deployGithubPagesRun, (_e, projectPath: string, outputDir: string | undefined, options: GithubPagesDeployOptions) =>
+    githubPagesService.deployGithubPages(projectPath, outputDir, options)
+  )
 
   ipcMain.handle(IPC.marketplaceSearch, (_e, query: string, githubToken?: string) =>
     marketplaceService.searchPlugins(query, githubToken)

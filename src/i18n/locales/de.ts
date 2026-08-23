@@ -59,7 +59,8 @@ export default {
       server: 'Build & Server',
       sync: 'Git-Sync',
       backups: 'Backups',
-      updates: 'Updates'
+      updates: 'Updates',
+      publish: 'Veröffentlichen'
     }
   },
   dashboard: {
@@ -465,6 +466,49 @@ export default {
       restore: 'Wiederherstellen',
       confirmRestore: 'Projekt auf Snapshot "{{tag}}" zurücksetzen? Alle Änderungen seitdem gehen verloren.'
     }
+  },
+  publish: {
+    title: 'Veröffentlichen',
+    description: 'Baut das Projekt und lädt nur geänderte Dateien zu SFTP/FTP oder GitHub Pages hoch.',
+    baseUrlWarning: 'configuration.baseUrl steht noch auf "{{baseUrl}}" — vor dem Veröffentlichen auf die echte Domain setzen.',
+    targetHeading: 'Ziel',
+    githubPages: 'GitHub Pages',
+    githubBranch: 'Branch',
+    githubPagesHint: 'Nutzt das bereits konfigurierte "origin"-Remote (dasselbe wie bei Git-Sync).',
+    newConnection: '+ Neue Verbindung',
+    noSecretWarning: '(kein Passwort/Key hinterlegt)',
+    confirmDeleteConnection: 'Diese Verbindung wirklich löschen?',
+    connectionForm: {
+      heading: 'Verbindung',
+      name: 'Name',
+      protocol: 'Protokoll',
+      host: 'Host',
+      port: 'Port',
+      username: 'Benutzername',
+      remotePath: 'Remote-Pfad',
+      authMethod: 'Authentifizierung',
+      authPassword: 'Passwort',
+      authPrivateKey: 'Privater Schlüssel',
+      secure: 'FTPS (verschlüsselt)',
+      password: 'Passwort',
+      privateKey: 'Privater Schlüssel (Inhalt)',
+      secretUnchangedPlaceholder: 'unverändert lassen'
+    },
+    diffHeading: 'Änderungen',
+    buildNow: 'Jetzt bauen',
+    refreshDiff: 'Diff aktualisieren',
+    noDiffYet: 'Noch kein Diff berechnet — zuerst bauen oder Diff aktualisieren.',
+    noChanges: 'Keine Änderungen seit dem letzten Deploy.',
+    status: {
+      added: 'Neu',
+      changed: 'Geändert',
+      removed: 'Entfernt'
+    },
+    deployHeading: 'Veröffentlichen',
+    deployButton: 'Jetzt veröffentlichen',
+    progress: '{{processed}}/{{total}} — {{file}}',
+    deploySuccess: 'Veröffentlichung erfolgreich.',
+    deployFailed: 'Veröffentlichung fehlgeschlagen.'
   },
   pluginsMarketplace: {
     backToInstalled: '← Installierte Plugins',

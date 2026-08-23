@@ -11,7 +11,10 @@ import type {
   Settings,
   CreateProjectOptions,
   ThemePreset,
-  GridFrameDefinition
+  GridFrameDefinition,
+  SaveDeployConnectionInput,
+  GithubPagesDeployOptions,
+  DeployProgressEvent
 } from '@shared/ipc-contract'
 
 function onEvent<Args extends unknown[]>(channel: string, cb: (...args: Args) => void): () => void {
@@ -72,6 +75,17 @@ const api: QuartzGuiApi = {
     updatePlugin: (projectPath: string, name?: string) => ipcRenderer.invoke(IPC.updatePluginRun, projectPath, name),
     listSnapshots: (projectPath: string) => ipcRenderer.invoke(IPC.updateSnapshotList, projectPath),
     restoreSnapshot: (projectPath: string, tag: string) => ipcRenderer.invoke(IPC.updateSnapshotRestore, projectPath, tag)
+  },
+  deploy: {
+    listConnections: (projectPath: string) => ipcRenderer.invoke(IPC.deployConnectionsList, projectPath),
+    saveConnection: (input: SaveDeployConnectionInput) => ipcRenderer.invoke(IPC.deployConnectionSave, input),
+    deleteConnection: (id: string) => ipcRenderer.invoke(IPC.deployConnectionDelete, id),
+    diff: (projectPath: string, outputDir?: string) => ipcRenderer.invoke(IPC.deployDiff, projectPath, outputDir),
+    run: (connectionId: string, outputDir: string | undefined, excludePaths: string[]) =>
+      ipcRenderer.invoke(IPC.deployRun, connectionId, outputDir, excludePaths),
+    runGithubPages: (projectPath: string, outputDir: string | undefined, options: GithubPagesDeployOptions) =>
+      ipcRenderer.invoke(IPC.deployGithubPagesRun, projectPath, outputDir, options),
+    onProgress: (cb: (event: DeployProgressEvent) => void) => onEvent<[DeployProgressEvent]>(IPC.deployProgress, cb)
   },
   themeMarketplace: {
     list: (githubToken?: string) => ipcRenderer.invoke(IPC.themeMarketplaceList, githubToken),

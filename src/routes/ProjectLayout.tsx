@@ -24,7 +24,8 @@ export default function ProjectLayout(): JSX.Element {
     { to: 'server', label: t('projectLayout.tabs.server') },
     { to: 'sync', label: t('projectLayout.tabs.sync') },
     { to: 'backups', label: t('projectLayout.tabs.backups') },
-    { to: 'updates', label: t('projectLayout.tabs.updates') }
+    { to: 'updates', label: t('projectLayout.tabs.updates') },
+    { to: 'publish', label: t('projectLayout.tabs.publish') }
   ]
 
   useEffect(() => {

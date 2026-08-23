@@ -332,6 +332,66 @@ export interface UpdateResult {
   conflicts?: string[]
 }
 
+// A saved SFTP/FTP connection profile. The renderer never sees the actual secret (password or
+// private-key contents) - only whether one is stored (`hasSecret`). It's encrypted at rest via
+// Electron's safeStorage (OS keychain-backed) in secretsService.ts, kept in Electron's userData
+// dir rather than the project - these are machine-local credentials, not something that should
+// ever end up inside the project's own git repo.
+export interface DeployConnectionProfile {
+  id: string
+  projectPath: string
+  name: string
+  protocol: 'sftp' | 'ftp'
+  host: string
+  port: number
+  username: string
+  remotePath: string
+  authMethod: 'password' | 'privateKey'
+  secure?: boolean
+  hasSecret: boolean
+}
+
+// `secret` is the plaintext password or private-key contents - only ever sent renderer->main when
+// saving (to be encrypted immediately), never the other direction. Omit to keep the existing
+// stored secret unchanged when just editing other fields of an existing profile.
+export interface SaveDeployConnectionInput {
+  id?: string
+  projectPath: string
+  name: string
+  protocol: 'sftp' | 'ftp'
+  host: string
+  port: number
+  username: string
+  remotePath: string
+  authMethod: 'password' | 'privateKey'
+  secure?: boolean
+  secret?: string
+}
+
+// One entry in the local build-output manifest (.quartz-gui/deploy-manifest.json), keyed by the
+// file's path relative to the build directory. Compared against a fresh hash of the current build
+// output to compute the changed/added/removed diff shown before a deploy.
+export interface DeployDiffEntry {
+  path: string
+  status: 'added' | 'changed' | 'removed'
+}
+
+export interface DeployProgressEvent {
+  connectionId: string
+  processed: number
+  total: number
+  currentFile?: string
+}
+
+export interface DeployResult {
+  success: boolean
+  output: string
+}
+
+export interface GithubPagesDeployOptions {
+  branch: string
+}
+
 // A read-only reference file (an installed plugin's own *.scss) shown alongside the editor so the
 // user can see the original selectors they're overriding. Only available for CLI-installed
 // plugins (a real directory under .quartz/plugins/<name>) - built-in @quartz-community/x entries
@@ -389,6 +449,14 @@ export const IPC = {
   updatePluginRun: 'update:pluginRun',
   updateSnapshotList: 'update:snapshotList',
   updateSnapshotRestore: 'update:snapshotRestore',
+
+  deployConnectionsList: 'deploy:connectionsList',
+  deployConnectionSave: 'deploy:connectionSave',
+  deployConnectionDelete: 'deploy:connectionDelete',
+  deployDiff: 'deploy:diff',
+  deployRun: 'deploy:run',
+  deployGithubPagesRun: 'deploy:githubPagesRun',
+  deployProgress: 'deploy:progress',
   dialogPickFile: 'dialog:pickFile',
   dialogOpenPath: 'dialog:openPath',
 
@@ -497,6 +565,15 @@ export interface QuartzGuiApi {
     updatePlugin(projectPath: string, name?: string): Promise<PluginActionResult>
     listSnapshots(projectPath: string): Promise<ProjectSnapshot[]>
     restoreSnapshot(projectPath: string, tag: string): Promise<PluginActionResult>
+  }
+  deploy: {
+    listConnections(projectPath: string): Promise<DeployConnectionProfile[]>
+    saveConnection(input: SaveDeployConnectionInput): Promise<DeployConnectionProfile>
+    deleteConnection(id: string): Promise<void>
+    diff(projectPath: string, outputDir?: string): Promise<DeployDiffEntry[]>
+    run(connectionId: string, outputDir: string | undefined, excludePaths: string[]): Promise<DeployResult>
+    runGithubPages(projectPath: string, outputDir: string | undefined, options: GithubPagesDeployOptions): Promise<DeployResult>
+    onProgress(cb: (event: DeployProgressEvent) => void): () => void
   }
   themeMarketplace: {
     list(githubToken?: string): Promise<QuartzThemeListing[]>

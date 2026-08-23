@@ -1,29 +1,22 @@
-import { spawn } from 'child_process'
+import { runCommand as run } from './runCommand'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
 import type { CoreUpdateStatus, PluginActionResult, PluginUpdateStatus, ProjectSnapshot, UpdateResult } from '@shared/ipc-contract'
 import { TEMPLATE_REPO } from './createService'
 
-function run(command: string, args: string[], cwd?: string): Promise<{ success: boolean; output: string }> {
-  return new Promise((resolvePromise) => {
-    const child = spawn(command, args, {
-      cwd,
-      shell: process.platform === 'win32',
-      stdio: ['ignore', 'pipe', 'pipe']
-    })
-    let output = ''
-    child.stdout?.on('data', (chunk: Buffer) => (output += chunk.toString()))
-    child.stderr?.on('data', (chunk: Buffer) => (output += chunk.toString()))
-    child.on('exit', (code) => resolvePromise({ success: code === 0, output }))
-    child.on('error', (err) => resolvePromise({ success: false, output: String(err) }))
-  })
-}
 
 // `git ls-remote <url> HEAD` returns "<commit>\tHEAD" for the remote's current default branch,
 // without needing to know its name (jackyzha0/quartz's branch naming isn't guaranteed stable) and
 // without any GitHub API call/token - works for any public git remote.
+//
+// The "--" is load-bearing, not decoration. `url` and `ref` come out of the project's
+// quartz.lock.json, i.e. from whatever plugin sources have been installed - and git reads a
+// leading-dash argument as an option wherever it appears. Verified against real git: without the
+// separator, `git ls-remote --upload-pack=<cmd> <repo> HEAD` *executes* <cmd>; with it, git
+// refuses ("fatal: strange pathname ... blocked"). getPluginsUpdateStatus calls this for every
+// entry in the lockfile on opening the Updates tab, with no user action in between.
 async function lsRemoteHead(url: string, ref = 'HEAD'): Promise<string | null> {
-  const result = await run('git', ['ls-remote', url, ref])
+  const result = await run('git', ['ls-remote', '--', url, ref])
   if (!result.success) return null
   const line = result.output.split('\n').find((l) => l.trim().length > 0)
   return line ? line.split('\t')[0].trim() : null

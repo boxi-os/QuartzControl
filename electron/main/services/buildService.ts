@@ -1,7 +1,8 @@
-import { spawn, execSync, type ChildProcess } from 'child_process'
+import { spawn, execFileSync, type ChildProcess } from 'child_process'
 import treeKill from 'tree-kill'
 import { EventEmitter } from 'events'
 import type { LogLine, ServerOptions, ServerStatus, BuildResult } from '@shared/ipc-contract'
+import { needsShell } from './runCommand'
 import * as runningServersStore from './runningServersStore'
 
 interface RunningServer {
@@ -49,7 +50,7 @@ export async function startServer(
 
   const child = spawn('npx', args, {
     cwd: projectPath,
-    shell: process.platform === 'win32',
+    shell: needsShell('npx'),
     stdio: ['ignore', 'pipe', 'pipe']
   })
   const status: ServerStatus = { state: 'starting', options, pid: child.pid, startedAt: new Date().toISOString() }
@@ -130,7 +131,7 @@ export function runBuild(projectId: string, projectPath: string, outputDir?: str
   return new Promise((resolvePromise) => {
     const child = spawn('npx', args, {
       cwd: projectPath,
-      shell: process.platform === 'win32',
+      shell: needsShell('npx'),
       stdio: ['ignore', 'pipe', 'pipe']
     })
     child.stdout?.on('data', (chunk: Buffer) =>
@@ -184,7 +185,10 @@ function isAlive(pid: number): boolean {
 function looksLikeQuartzServer(pid: number): boolean {
   if (process.platform === 'win32') return true // best effort: no cheap command-line check here
   try {
-    const output = execSync(`ps -p ${pid} -o command=`, { encoding: 'utf-8' })
+    // execFileSync, not execSync with a template string: `pid` is read back from a JSON file in
+    // userData, so interpolating it into a shell command line made a tampered file enough to run
+    // arbitrary commands. Passing argv directly means there is no shell to interpret anything.
+    const output = execFileSync('ps', ['-p', String(pid), '-o', 'command='], { encoding: 'utf-8' })
     return output.includes('quartz') && output.includes('--serve')
   } catch {
     return false

@@ -1,23 +1,11 @@
-import { spawn } from 'child_process'
+import { runCommand } from './runCommand'
 import { existsSync } from 'fs'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
 import type { PluginActionResult } from '@shared/ipc-contract'
 
 function runQuartzCli(projectPath: string, args: string[]): Promise<PluginActionResult> {
-  return new Promise((resolvePromise) => {
-    const child = spawn('npx', ['quartz', ...args], {
-      cwd: projectPath,
-      shell: process.platform === 'win32',
-      // closed stdin makes an unexpected interactive prompt fail fast instead of hanging forever
-      stdio: ['ignore', 'pipe', 'pipe']
-    })
-    let output = ''
-    child.stdout?.on('data', (chunk: Buffer) => (output += chunk.toString()))
-    child.stderr?.on('data', (chunk: Buffer) => (output += chunk.toString()))
-    child.on('exit', (code) => resolvePromise({ success: code === 0, output }))
-    child.on('error', (err) => resolvePromise({ success: false, output: String(err) }))
-  })
+  return runCommand('npx', ['quartz', ...args], projectPath)
 }
 
 export function addPlugin(projectPath: string, source: string): Promise<PluginActionResult> {

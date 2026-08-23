@@ -1,4 +1,5 @@
 import { spawn } from 'child_process'
+import { needsShell, runCommand } from './runCommand'
 import type { PluginActionResult, QuartzThemeListing, ThemeDetail } from '@shared/ipc-contract'
 import { getLocalThemeDetail } from './pluginSchemaService'
 
@@ -40,7 +41,7 @@ interface NpmSearchResult {
 function fetchFromNpm(): Promise<QuartzThemeListing[]> {
   return new Promise((resolvePromise) => {
     const child = spawn('npm', ['search', '@quartz-themes', '--json', '--searchlimit=250'], {
-      shell: process.platform === 'win32',
+      shell: needsShell('npm'),
       stdio: ['ignore', 'pipe', 'ignore']
     })
     let output = ''
@@ -163,16 +164,5 @@ export async function getThemeDetail(projectPath: string, themeId: string): Prom
 // dependency - npm just no-ops on a version it already has) since a theme package alone does
 // nothing without the transformer plugin that consumes it.
 export function installTheme(projectPath: string, themeId: string): Promise<PluginActionResult> {
-  return new Promise((resolvePromise) => {
-    const child = spawn('npm', ['install', '@quartz-themes/core', `@quartz-themes/${themeId}`], {
-      cwd: projectPath,
-      shell: process.platform === 'win32',
-      stdio: ['ignore', 'pipe', 'pipe']
-    })
-    let output = ''
-    child.stdout?.on('data', (chunk: Buffer) => (output += chunk.toString()))
-    child.stderr?.on('data', (chunk: Buffer) => (output += chunk.toString()))
-    child.on('exit', (code) => resolvePromise({ success: code === 0, output }))
-    child.on('error', (err) => resolvePromise({ success: false, output: String(err) }))
-  })
+  return runCommand('npm', ['install', '@quartz-themes/core', `@quartz-themes/${themeId}`], projectPath)
 }

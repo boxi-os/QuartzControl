@@ -1,23 +1,9 @@
-import { spawn } from 'child_process'
+import { runCommand as run } from './runCommand'
 import { cp, mkdir, readdir, rm } from 'fs/promises'
 import { join } from 'path'
 import type { DeployResult, GithubPagesDeployOptions } from '@shared/ipc-contract'
 import { quartzGuiDir } from './projectDirs'
 
-function run(command: string, args: string[], cwd?: string): Promise<{ success: boolean; output: string }> {
-  return new Promise((resolvePromise) => {
-    const child = spawn(command, args, {
-      cwd,
-      shell: process.platform === 'win32',
-      stdio: ['ignore', 'pipe', 'pipe']
-    })
-    let output = ''
-    child.stdout?.on('data', (chunk: Buffer) => (output += chunk.toString()))
-    child.stderr?.on('data', (chunk: Buffer) => (output += chunk.toString()))
-    child.on('exit', (code) => resolvePromise({ success: code === 0, output }))
-    child.on('error', (err) => resolvePromise({ success: false, output: String(err) }))
-  })
-}
 
 async function clearWorktreeContents(worktreeDir: string): Promise<void> {
   const entries = await readdir(worktreeDir)

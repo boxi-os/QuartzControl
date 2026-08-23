@@ -1,28 +1,14 @@
-import { spawn } from 'child_process'
+// runCommand closes stdin, so an unanswered interactive prompt (e.g. a missing wizard flag)
+// fails fast instead of hanging forever - verified against the real quartz create wizard, which
+// then exits 0 without writing quartz.config.yaml. That is why success below is re-checked
+// against the file actually existing rather than trusting the exit code alone.
+import { runCommand as run } from './runCommand'
 import { existsSync } from 'fs'
 import { join } from 'path'
 import type { CreateProjectOptions, CreateProjectResult } from '@shared/ipc-contract'
 
 export const TEMPLATE_REPO = 'https://github.com/jackyzha0/quartz.git'
 
-function run(command: string, args: string[], cwd?: string): Promise<{ success: boolean; output: string }> {
-  return new Promise((resolvePromise) => {
-    const child = spawn(command, args, {
-      cwd,
-      shell: process.platform === 'win32',
-      // closed stdin makes an unanswered interactive prompt (e.g. a missing wizard flag)
-      // fail fast instead of hanging forever - verified against the real quartz create wizard,
-      // which then exits 0 without writing quartz.config.yaml, which is why success below is
-      // re-checked against the file actually existing rather than trusting the exit code alone
-      stdio: ['ignore', 'pipe', 'pipe']
-    })
-    let output = ''
-    child.stdout?.on('data', (chunk: Buffer) => (output += chunk.toString()))
-    child.stderr?.on('data', (chunk: Buffer) => (output += chunk.toString()))
-    child.on('exit', (code) => resolvePromise({ success: code === 0, output }))
-    child.on('error', (err) => resolvePromise({ success: false, output: String(err) }))
-  })
-}
 
 // There is no single CLI command that scaffolds a brand-new Quartz project from an arbitrary
 // empty directory: `quartz` is a private, never-published package, and `quartz create` only

@@ -1,17 +1,16 @@
 import { ipcMain, BrowserWindow, dialog, shell } from 'electron'
+import { resolve, sep } from 'path'
+import { z } from 'zod'
 import { IPC } from '@shared/ipc-contract'
 import type {
-  QuartzConfig,
-  ServerOptions,
-  ContentStrategy,
-  Settings,
   CreateProjectOptions,
-  ThemePreset,
-  GridFrameDefinition,
-  SaveDeployConnectionInput,
   GithubPagesDeployOptions,
-  CssVariableOverride,
-  TemplatePackageCategory
+  GridFrameDefinition,
+  QuartzConfig,
+  SaveDeployConnectionInput,
+  ServerOptions,
+  Settings,
+  ThemePreset
 } from '@shared/ipc-contract'
 import * as projectStore from '../services/projectStore'
 import * as configService from '../services/configService'
@@ -35,11 +34,41 @@ import * as contentService from '../services/contentService'
 import * as createService from '../services/createService'
 import * as settingsService from '../services/settingsService'
 import * as templatePackageService from '../services/templatePackageService'
+import { handle, handleNoArgs } from './handle'
+import * as s from './schemas'
+
+const t = z.tuple
+
+// Why the `as` casts on the payload handlers below: the schemas in schemas.ts are deliberately
+// *looser* than the contract types - they use looseObject/record so unknown keys survive a
+// round-trip to disk (see the note at the top of schemas.ts). Writing a zod mirror of every
+// contract type precise enough to infer identically would duplicate ipc-contract.ts, which
+// CLAUDE.md designates the single source of truth, and the copy would drift. So the schema
+// enforces the security-relevant shape at runtime and the cast restates the contract's own type,
+// which the renderer already had to satisfy to call the API at all.
 
 function broadcast(channel: string, ...args: unknown[]): void {
   for (const win of BrowserWindow.getAllWindows()) {
     win.webContents.send(channel, ...args)
   }
+}
+
+// shell.openPath hands the path to the OS, which happily launches an .app bundle or an executable.
+// Both renderer call sites (StyleEditor's "extern öffnen") pass a file inside the open project, so
+// restricting it to registered project directories costs nothing and stops the channel from being
+// a general "run anything on this machine" primitive.
+async function openPathWithinProject(path: string): Promise<string> {
+  const target = resolve(path)
+  const projects = await projectStore.listProjects()
+  const allowed = projects.some((p) => {
+    const root = resolve(p.path)
+    return target === root || target.startsWith(root + sep)
+  })
+  if (!allowed) {
+    console.error(`[ipc] openPath außerhalb jedes registrierten Projekts abgelehnt: ${target}`)
+    throw new Error('Pfad liegt außerhalb der registrierten Projekte.')
+  }
+  return shell.openPath(target)
 }
 
 let handlersRegistered = false
@@ -53,178 +82,209 @@ export function registerIpcHandlers(): void {
   buildService.serverEvents.on('status', (projectId, status) => broadcast(IPC.serverStatusChanged, projectId, status))
   deployService.deployEvents.on('progress', (event) => broadcast(IPC.deployProgress, event))
 
-  ipcMain.handle(IPC.projectList, () => projectStore.listProjects())
-  ipcMain.handle(IPC.projectAdd, (_e, path: string) => projectStore.addProject(path))
-  ipcMain.handle(IPC.projectOpen, async (_e, id: string) => {
+  handleNoArgs(IPC.projectList, () => projectStore.listProjects())
+  handle(IPC.projectAdd, t([s.absolutePath]), (path) => projectStore.addProject(path))
+  handle(IPC.projectOpen, t([s.uuid]), async (id) => {
     await projectStore.touchProject(id)
     return projectStore.getProject(id)
   })
-  ipcMain.handle(IPC.projectRemove, (_e, id: string) => projectStore.removeProject(id))
-  ipcMain.handle(IPC.projectCreate, async (_e, options: CreateProjectOptions) => {
-    const result = await createService.createProject(options)
+  handle(IPC.projectRemove, t([s.uuid]), (id) => projectStore.removeProject(id))
+  handle(IPC.projectCreate, t([s.createProjectOptions]), async (options) => {
+    const result = await createService.createProject(options as CreateProjectOptions)
     if (result.success) await projectStore.addProject(options.targetDirectory)
     return result
   })
 
-  ipcMain.handle(IPC.configGet, (_e, projectPath: string) => configService.readConfig(projectPath))
-  ipcMain.handle(IPC.configSave, (_e, projectPath: string, config: QuartzConfig) =>
-    configService.writeConfig(projectPath, config)
+  handle(IPC.configGet, t([s.absolutePath]), (projectPath) => configService.readConfig(projectPath))
+  handle(IPC.configSave, t([s.absolutePath, s.quartzConfig]), (projectPath, config) =>
+    configService.writeConfig(projectPath, config as QuartzConfig)
   )
 
-  ipcMain.handle(IPC.pluginAdd, (_e, projectPath: string, source: string) => pluginService.addPlugin(projectPath, source))
-  ipcMain.handle(IPC.pluginRemove, (_e, projectPath: string, name: string) =>
+  handle(IPC.pluginAdd, t([s.absolutePath, s.pluginSource]), (projectPath, source) =>
+    pluginService.addPlugin(projectPath, source)
+  )
+  handle(IPC.pluginRemove, t([s.absolutePath, s.pluginName]), (projectPath, name) =>
     pluginService.removePlugin(projectPath, name)
   )
-  ipcMain.handle(IPC.pluginOptionsSchema, (_e, projectPath: string, name: string) =>
+  handle(IPC.pluginOptionsSchema, t([s.absolutePath, s.pluginName]), (projectPath, name) =>
     pluginSchemaService.getPluginOptionsSchema(projectPath, name)
   )
-  ipcMain.handle(IPC.pluginThemeStyleSettingsInfo, (_e, projectPath: string, themeId: string) =>
+  handle(IPC.pluginThemeStyleSettingsInfo, t([s.absolutePath, s.themeId]), (projectPath, themeId) =>
     pluginSchemaService.getThemeStyleSettingsInfo(projectPath, themeId)
   )
 
-  ipcMain.handle(IPC.themeMarketplaceList, (_e, githubToken?: string) => themeMarketplaceService.listThemes(githubToken))
-  ipcMain.handle(IPC.themeMarketplaceInstall, (_e, projectPath: string, themeId: string) =>
+  handle(IPC.themeMarketplaceList, t([s.shortText.optional()]), (githubToken) =>
+    themeMarketplaceService.listThemes(githubToken)
+  )
+  handle(IPC.themeMarketplaceInstall, t([s.absolutePath, s.themeId]), (projectPath, themeId) =>
     themeMarketplaceService.installTheme(projectPath, themeId)
   )
-  ipcMain.handle(IPC.themeMarketplaceDetail, (_e, projectPath: string, themeId: string) =>
+  handle(IPC.themeMarketplaceDetail, t([s.absolutePath, s.themeId]), (projectPath, themeId) =>
     themeMarketplaceService.getThemeDetail(projectPath, themeId)
   )
 
-  ipcMain.handle(IPC.themePresetList, (_e, projectPath: string) => themePresetsService.listPresets(projectPath))
-  ipcMain.handle(IPC.themePresetSave, (_e, projectPath: string, preset: ThemePreset) =>
-    themePresetsService.savePreset(projectPath, preset)
+  handle(IPC.themePresetList, t([s.absolutePath]), (projectPath) => themePresetsService.listPresets(projectPath))
+  handle(IPC.themePresetSave, t([s.absolutePath, s.themePreset]), (projectPath, preset) =>
+    themePresetsService.savePreset(projectPath, preset as ThemePreset)
   )
-  ipcMain.handle(IPC.themePresetDelete, (_e, projectPath: string, id: string) =>
+  handle(IPC.themePresetDelete, t([s.absolutePath, s.shortText]), (projectPath, id) =>
     themePresetsService.deletePreset(projectPath, id)
   )
 
-  ipcMain.handle(IPC.pluginInstallFromLock, (_e, projectPath: string) => pluginService.installFromLock(projectPath))
-  ipcMain.handle(IPC.pluginPrune, (_e, projectPath: string) => pluginService.prunePlugins(projectPath))
+  handle(IPC.pluginInstallFromLock, t([s.absolutePath]), (projectPath) => pluginService.installFromLock(projectPath))
+  handle(IPC.pluginPrune, t([s.absolutePath]), (projectPath) => pluginService.prunePlugins(projectPath))
 
-  ipcMain.handle(IPC.layoutFrameList, (_e, projectPath: string) => layoutFrameService.listFrames(projectPath))
-  ipcMain.handle(IPC.layoutFrameSave, (_e, projectPath: string, def: GridFrameDefinition) =>
-    layoutFrameService.saveFrame(projectPath, def)
+  handle(IPC.layoutFrameList, t([s.absolutePath]), (projectPath) => layoutFrameService.listFrames(projectPath))
+  handle(IPC.layoutFrameSave, t([s.absolutePath, s.gridFrameDefinition]), (projectPath, def) =>
+    layoutFrameService.saveFrame(projectPath, def as GridFrameDefinition)
   )
-  ipcMain.handle(IPC.layoutFrameDelete, (_e, projectPath: string, id: string) => layoutFrameService.deleteFrame(projectPath, id))
+  handle(IPC.layoutFrameDelete, t([s.absolutePath, s.frameId]), (projectPath, id) =>
+    layoutFrameService.deleteFrame(projectPath, id)
+  )
 
-  ipcMain.handle(IPC.stylesGet, (_e, projectPath: string) => styleService.readCustomScss(projectPath))
-  ipcMain.handle(IPC.stylesSave, (_e, projectPath: string, content: string) => styleService.writeCustomScss(projectPath, content))
-  ipcMain.handle(IPC.stylesReference, (_e, projectPath: string, pluginName: string) =>
+  handle(IPC.stylesGet, t([s.absolutePath]), (projectPath) => styleService.readCustomScss(projectPath))
+  handle(IPC.stylesSave, t([s.absolutePath, s.longText]), (projectPath, content) =>
+    styleService.writeCustomScss(projectPath, content)
+  )
+  handle(IPC.stylesReference, t([s.absolutePath, s.pluginName]), (projectPath, pluginName) =>
     styleService.getStyleReferences(projectPath, pluginName)
   )
-  ipcMain.handle(IPC.stylesImportFile, (_e, projectPath: string, sourcePath: string) =>
+  handle(IPC.stylesImportFile, t([s.absolutePath, s.absolutePath]), (projectPath, sourcePath) =>
     styleService.importStyleFile(projectPath, sourcePath)
   )
-  ipcMain.handle(IPC.stylesGetVariableOverrides, (_e, projectPath: string) => styleService.getVariableOverrides(projectPath))
-  ipcMain.handle(IPC.stylesSaveVariableOverrides, (_e, projectPath: string, overrides: CssVariableOverride[]) =>
-    styleService.saveVariableOverrides(projectPath, overrides)
+  handle(IPC.stylesGetVariableOverrides, t([s.absolutePath]), (projectPath) =>
+    styleService.getVariableOverrides(projectPath)
   )
-  ipcMain.handle(IPC.stylesScanBuildOutputVariables, (_e, projectPath: string, outputDir?: string) =>
+  handle(
+    IPC.stylesSaveVariableOverrides,
+    t([s.absolutePath, z.array(s.cssVariableOverride).max(1000)]),
+    (projectPath, overrides) => styleService.saveVariableOverrides(projectPath, overrides)
+  )
+  handle(IPC.stylesScanBuildOutputVariables, t([s.absolutePath, s.relativeSubPath.optional()]), (projectPath, outputDir) =>
     styleService.scanBuildOutputVariables(projectPath, outputDir)
   )
 
-  ipcMain.handle(IPC.fontsImportFile, (_e, projectPath: string, sourcePath: string, family: string) =>
+  handle(IPC.fontsImportFile, t([s.absolutePath, s.absolutePath, s.shortText]), (projectPath, sourcePath, family) =>
     fontService.importFontFile(projectPath, sourcePath, family)
   )
 
-  ipcMain.handle(IPC.localizationList, (_e, projectPath: string) => localizationService.listLocales(projectPath))
-  ipcMain.handle(IPC.localizationGetEntries, (_e, projectPath: string, code: string) =>
+  handle(IPC.localizationList, t([s.absolutePath]), (projectPath) => localizationService.listLocales(projectPath))
+  handle(IPC.localizationGetEntries, t([s.absolutePath, s.localeCode]), (projectPath, code) =>
     localizationService.getLocaleEntries(projectPath, code)
   )
-  ipcMain.handle(
+  handle(
     IPC.localizationSaveEntry,
-    (_e, projectPath: string, code: string, path: string[], kind: 'string' | 'template', value: string) =>
-      localizationService.saveLocaleEntry(projectPath, code, path, kind, value)
+    t([s.absolutePath, s.localeCode, z.array(z.string().max(200)).min(1).max(20), z.enum(['string', 'template']), s.longText]),
+    (projectPath, code, path, kind, value) => localizationService.saveLocaleEntry(projectPath, code, path, kind, value)
   )
-  ipcMain.handle(IPC.localizationGitAttributesStatus, (_e, projectPath: string) =>
+  handle(IPC.localizationGitAttributesStatus, t([s.absolutePath]), (projectPath) =>
     localizationService.getGitAttributesStatus(projectPath)
   )
-  ipcMain.handle(IPC.localizationEnsureGitAttributes, (_e, projectPath: string) => localizationService.ensureGitAttributes(projectPath))
-
-  ipcMain.handle(IPC.updateCoreStatus, (_e, projectPath: string) => updateService.getCoreUpdateStatus(projectPath))
-  ipcMain.handle(IPC.updateCoreRun, (_e, projectPath: string) => updateService.runCoreUpdate(projectPath))
-  ipcMain.handle(IPC.updateCoreAbort, (_e, projectPath: string) => updateService.abortCoreMerge(projectPath))
-  ipcMain.handle(IPC.updatePluginsStatus, (_e, projectPath: string) => updateService.getPluginsUpdateStatus(projectPath))
-  ipcMain.handle(IPC.updatePluginRun, (_e, projectPath: string, name?: string) => updateService.updatePlugin(projectPath, name))
-  ipcMain.handle(IPC.updateSnapshotList, (_e, projectPath: string) => updateService.listSnapshots(projectPath))
-  ipcMain.handle(IPC.updateSnapshotRestore, (_e, projectPath: string, tag: string) => updateService.restoreSnapshot(projectPath, tag))
-
-  ipcMain.handle(IPC.deployConnectionsList, (_e, projectPath: string) => secretsService.listConnections(projectPath))
-  ipcMain.handle(IPC.deployConnectionSave, (_e, input: SaveDeployConnectionInput) => secretsService.saveConnection(input))
-  ipcMain.handle(IPC.deployConnectionDelete, (_e, id: string) => secretsService.deleteConnection(id))
-  ipcMain.handle(IPC.deployDiff, (_e, projectPath: string, outputDir?: string) => deployService.diffBuildOutput(projectPath, outputDir))
-  ipcMain.handle(IPC.deployRun, (_e, connectionId: string, outputDir: string | undefined, excludePaths: string[]) =>
-    deployService.runDeploy(connectionId, outputDir, excludePaths)
-  )
-  ipcMain.handle(IPC.deployGithubPagesRun, (_e, projectPath: string, outputDir: string | undefined, options: GithubPagesDeployOptions) =>
-    githubPagesService.deployGithubPages(projectPath, outputDir, options)
+  handle(IPC.localizationEnsureGitAttributes, t([s.absolutePath]), (projectPath) =>
+    localizationService.ensureGitAttributes(projectPath)
   )
 
-  ipcMain.handle(IPC.templatePackageExport, (_e, projectPath: string, destDir: string, name: string, categories: TemplatePackageCategory[]) =>
-    templatePackageService.exportPackage(projectPath, destDir, name, categories)
+  handle(IPC.updateCoreStatus, t([s.absolutePath]), (projectPath) => updateService.getCoreUpdateStatus(projectPath))
+  handle(IPC.updateCoreRun, t([s.absolutePath]), (projectPath) => updateService.runCoreUpdate(projectPath))
+  handle(IPC.updateCoreAbort, t([s.absolutePath]), (projectPath) => updateService.abortCoreMerge(projectPath))
+  handle(IPC.updatePluginsStatus, t([s.absolutePath]), (projectPath) => updateService.getPluginsUpdateStatus(projectPath))
+  handle(IPC.updatePluginRun, t([s.absolutePath, s.pluginName.optional()]), (projectPath, name) =>
+    updateService.updatePlugin(projectPath, name)
   )
-  ipcMain.handle(IPC.templatePackagePreview, (_e, sourceDir: string) => templatePackageService.previewPackage(sourceDir))
-  ipcMain.handle(IPC.templatePackageImport, (_e, projectPath: string, sourceDir: string, categories: TemplatePackageCategory[]) =>
-    templatePackageService.importPackage(projectPath, sourceDir, categories)
+  handle(IPC.updateSnapshotList, t([s.absolutePath]), (projectPath) => updateService.listSnapshots(projectPath))
+  handle(IPC.updateSnapshotRestore, t([s.absolutePath, s.snapshotTag]), (projectPath, tag) =>
+    updateService.restoreSnapshot(projectPath, tag)
   )
 
-  ipcMain.handle(IPC.marketplaceSearch, (_e, query: string, githubToken?: string) =>
+  handle(IPC.deployConnectionsList, t([s.absolutePath]), (projectPath) => secretsService.listConnections(projectPath))
+  handle(IPC.deployConnectionSave, t([s.saveDeployConnectionInput]), (input) => secretsService.saveConnection(input as SaveDeployConnectionInput))
+  handle(IPC.deployConnectionDelete, t([s.uuid]), (id) => secretsService.deleteConnection(id))
+  handle(IPC.deployDiff, t([s.absolutePath, s.relativeSubPath.optional()]), (projectPath, outputDir) =>
+    deployService.diffBuildOutput(projectPath, outputDir)
+  )
+  handle(
+    IPC.deployRun,
+    t([s.uuid, s.relativeSubPath.optional(), z.array(z.string().max(4096)).max(100_000)]),
+    (connectionId, outputDir, excludePaths) => deployService.runDeploy(connectionId, outputDir, excludePaths)
+  )
+  handle(
+    IPC.deployGithubPagesRun,
+    t([s.absolutePath, s.relativeSubPath.optional(), s.githubPagesDeployOptions]),
+    (projectPath, outputDir, options) => githubPagesService.deployGithubPages(projectPath, outputDir, options as GithubPagesDeployOptions)
+  )
+
+  handle(
+    IPC.templatePackageExport,
+    t([s.absolutePath, s.absolutePath, z.string().min(1).max(200), z.array(s.templatePackageCategory).max(6)]),
+    (projectPath, destDir, name, categories) => templatePackageService.exportPackage(projectPath, destDir, name, categories)
+  )
+  handle(IPC.templatePackagePreview, t([s.absolutePath]), (sourceDir) => templatePackageService.previewPackage(sourceDir))
+  handle(
+    IPC.templatePackageImport,
+    t([s.absolutePath, s.absolutePath, z.array(s.templatePackageCategory).max(6)]),
+    (projectPath, sourceDir, categories) => templatePackageService.importPackage(projectPath, sourceDir, categories)
+  )
+
+  handle(IPC.marketplaceSearch, t([s.shortText, s.shortText.optional()]), (query, githubToken) =>
     marketplaceService.searchPlugins(query, githubToken)
   )
-  ipcMain.handle(IPC.marketplaceRefresh, () => {
+  handleNoArgs(IPC.marketplaceRefresh, () => {
     marketplaceService.invalidateCache()
   })
 
-  ipcMain.handle(IPC.serverStart, (_e, projectId: string, projectPath: string, options?: ServerOptions) =>
-    buildService.startServer(projectId, projectPath, options)
+  handle(IPC.serverStart, t([s.uuid, s.absolutePath, s.serverOptions.optional()]), (projectId, projectPath, options) =>
+    buildService.startServer(projectId, projectPath, options as ServerOptions | undefined)
   )
-  ipcMain.handle(IPC.serverStop, (_e, projectId: string) => buildService.stopServer(projectId))
-  ipcMain.handle(IPC.serverRestart, (_e, projectId: string, projectPath: string, options?: ServerOptions) =>
-    buildService.restartServer(projectId, projectPath, options)
+  handle(IPC.serverStop, t([s.uuid]), (projectId) => buildService.stopServer(projectId))
+  handle(IPC.serverRestart, t([s.uuid, s.absolutePath, s.serverOptions.optional()]), (projectId, projectPath, options) =>
+    buildService.restartServer(projectId, projectPath, options as ServerOptions | undefined)
   )
-  ipcMain.handle(IPC.serverStatus, (_e, projectId: string) => buildService.getServerStatus(projectId))
+  handle(IPC.serverStatus, t([s.uuid]), (projectId) => buildService.getServerStatus(projectId))
 
-  ipcMain.handle(IPC.buildRun, (_e, projectId: string, projectPath: string, outputDir?: string) =>
+  handle(IPC.buildRun, t([s.uuid, s.absolutePath, s.relativeSubPath.optional()]), (projectId, projectPath, outputDir) =>
     buildService.runBuild(projectId, projectPath, outputDir)
   )
 
-  ipcMain.handle(IPC.syncRun, (_e, projectPath: string, direction?: 'push' | 'pull' | 'both') =>
+  handle(IPC.syncRun, t([s.absolutePath, s.syncDirection.optional()]), (projectPath, direction) =>
     syncService.runSync(projectPath, direction)
   )
 
-  ipcMain.handle(IPC.backupList, (_e, projectPath: string, kind: 'config' | 'content') =>
+  handle(IPC.backupList, t([s.absolutePath, s.backupKind]), (projectPath, kind) =>
     kind === 'config' ? backupService.listConfigBackups(projectPath) : backupService.listContentBackups(projectPath)
   )
-  ipcMain.handle(IPC.backupDiff, (_e, projectPath: string, id: string) => backupService.diffConfigBackup(projectPath, id))
-  ipcMain.handle(IPC.backupRestore, (_e, projectPath: string, kind: 'config' | 'content', id: string) =>
+  handle(IPC.backupDiff, t([s.absolutePath, s.backupId]), (projectPath, id) =>
+    backupService.diffConfigBackup(projectPath, id)
+  )
+  handle(IPC.backupRestore, t([s.absolutePath, s.backupKind, s.backupId]), (projectPath, kind, id) =>
     kind === 'config'
       ? backupService.restoreConfigBackup(projectPath, id)
       : backupService.restoreContentBackup(projectPath, contentService.contentDirPath(projectPath), id)
   )
 
-  ipcMain.handle(IPC.contentStatus, (_e, projectPath: string) => contentService.getContentStatus(projectPath))
-  ipcMain.handle(
+  handle(IPC.contentStatus, t([s.absolutePath]), (projectPath) => contentService.getContentStatus(projectPath))
+  handle(
     IPC.contentChange,
-    (_e, projectId: string, projectPath: string, sourcePath: string, strategy: ContentStrategy) =>
+    t([s.uuid, s.absolutePath, s.absolutePath, s.contentStrategy]),
+    (projectId, projectPath, sourcePath, strategy) =>
       contentService.changeContentSource(projectPath, sourcePath, strategy, (processed, total, currentFile) =>
         broadcast(IPC.contentProgress, { projectId, processed, total, currentFile })
       )
   )
 
-  ipcMain.handle(IPC.settingsGet, () => settingsService.getSettings())
-  ipcMain.handle(IPC.settingsSave, (_e, settings: Settings) => settingsService.saveSettings(settings))
+  handleNoArgs(IPC.settingsGet, () => settingsService.getSettings())
+  handle(IPC.settingsSave, t([s.settings]), (next) => settingsService.saveSettings(next as Settings))
 
-  ipcMain.handle(IPC.dialogPickFolder, async () => {
+  handleNoArgs(IPC.dialogPickFolder, async () => {
     const result = await dialog.showOpenDialog({ properties: ['openDirectory', 'createDirectory'] })
     if (result.canceled || result.filePaths.length === 0) return null
     return result.filePaths[0]
   })
 
-  ipcMain.handle(IPC.dialogPickFile, async (_e, filters?: { name: string; extensions: string[] }[]) => {
+  handle(IPC.dialogPickFile, t([s.dialogFileFilters.optional()]), async (filters) => {
     const result = await dialog.showOpenDialog({ properties: ['openFile'], filters })
     if (result.canceled || result.filePaths.length === 0) return null
     return result.filePaths[0]
   })
 
-  ipcMain.handle(IPC.dialogOpenPath, (_e, path: string) => shell.openPath(path))
+  handle(IPC.dialogOpenPath, t([s.absolutePath]), (path) => openPathWithinProject(path))
 }

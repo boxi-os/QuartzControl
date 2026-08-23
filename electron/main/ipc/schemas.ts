@@ -1,0 +1,225 @@
+import { isAbsolute } from 'path'
+import { z } from 'zod'
+
+// Validation for everything crossing the IPC boundary. The renderer is not a trust boundary the
+// main process can rely on: contextIsolation keeps *our* preload honest, but any script execution
+// in the renderer (the Marketplace and Themes tabs render data fetched from GitHub) would
+// otherwise reach services that spawn processes, delete directories and write files at arbitrary
+// paths. Every handler therefore declares the exact shape of its arguments; see handlers.ts.
+//
+// IMPORTANT: anything that is written back to disk must preserve keys this app does not know
+// about. z.object() STRIPS unknown keys, which would silently drop a plugin entry's `layout`
+// field on the next save - the exact round-trip configService.ts goes out of its way to protect.
+// Use z.looseObject()/z.record() for those payloads, never a plain z.object().
+
+// ── primitives ──────────────────────────────────────────────────────────────
+
+// Every path reaching the main process originates from a native dialog or the project store, so
+// it is always absolute. Requiring that rules out relative traversal tricks up front.
+export const absolutePath = z
+  .string()
+  .min(1)
+  .max(4096)
+  .refine((p) => isAbsolute(p), { message: 'Pfad muss absolut sein' })
+
+// A path fragment joined onto a project directory (e.g. the build output dir). Must stay inside.
+export const relativeSubPath = z
+  .string()
+  .min(1)
+  .max(1024)
+  .refine((p) => !isAbsolute(p), { message: 'Pfad darf nicht absolut sein' })
+  .refine((p) => !p.split(/[\\/]/).includes('..'), { message: 'Pfad darf kein ".." enthalten' })
+
+// One filesystem name: no separators, no "."/".." - safe to join onto a directory.
+export const safeSegment = z
+  .string()
+  .min(1)
+  .max(128)
+  .regex(/^[A-Za-z0-9._-]+$/, 'nur Buchstaben, Ziffern, Punkt, Unterstrich und Bindestrich')
+  .refine((s) => s !== '.' && s !== '..', { message: '"." und ".." sind nicht erlaubt' })
+
+// backupService derives these from timestampId(): "2026-08-23T10-00-00-000Z". They are joined onto
+// the backups directory (and get ".yaml" appended), so the exact generated format is enforced
+// rather than a loose slug.
+export const backupId = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z$/, 'kein gültiger Backup-Bezeichner')
+
+// updateService tags snapshots as `quartz-gui-backup-<timestamp>` and passes the tag to
+// `git reset --hard <tag>`; pinning the prefix also stops a value starting with "-" from being
+// read as a git flag.
+export const snapshotTag = z
+  .string()
+  .regex(/^quartz-gui-backup-[\dTZ-]{1,40}$/, 'kein gültiger Snapshot-Tag')
+
+// npm package name segment - becomes a path segment (node_modules/@quartz-themes/<id>) and an
+// `npm install` argument.
+export const themeId = z
+  .string()
+  .min(1)
+  .max(128)
+  .regex(/^[a-z0-9][a-z0-9._-]*$/, 'kein gültiger Theme-Bezeichner')
+
+// A plugin's display name, optionally npm-scoped ("@quartz-community/explorer"). Used both as a
+// CLI argument and as a path segment under .quartz/plugins/.
+export const pluginName = z
+  .string()
+  .min(1)
+  .max(214)
+  .regex(/^(@[A-Za-z0-9._-]+\/)?[A-Za-z0-9._-]+$/, 'kein gültiger Plugin-Name')
+  .refine((n) => !n.split('/').includes('..'), { message: '".." ist nicht erlaubt' })
+
+// What `quartz plugin add` accepts: github:/git+/https:/ a local absolute path / a bare npm name.
+// Leading "-" is refused so a source can never be read as a CLI flag.
+export const pluginSource = z
+  .string()
+  .min(1)
+  .max(2048)
+  .refine((s) => !s.startsWith('-'), { message: 'Quelle darf nicht mit "-" beginnen' })
+
+// Locale file basename under quartz/i18n/locales (e.g. "de-DE").
+export const localeCode = z
+  .string()
+  .min(2)
+  .max(35)
+  .regex(/^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/, 'kein gültiger Locale-Code')
+
+// A git branch name for the Pages deploy. Refuses the characters git itself rejects, plus a
+// leading "-" (flag injection). The "don't overwrite main" rule lives in githubPagesService,
+// which is the only place that can resolve what the default branch actually is.
+export const branchName = z
+  .string()
+  .min(1)
+  .max(255)
+  .regex(/^[A-Za-z0-9][A-Za-z0-9._\/-]*$/, 'kein gültiger Branch-Name')
+  .refine((b) => !b.includes('..') && !b.endsWith('.lock'), { message: 'kein gültiger Branch-Name' })
+
+// Frame ids and CSS area names end up in generated CSS/JS - keep them to plain identifiers.
+// layoutFrameService enforces the same id rule again at its own boundary.
+export const frameId = z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/i, 'kein gültiger Frame-Bezeichner')
+export const cssIdent = z.string().regex(/^[A-Za-z_][A-Za-z0-9_-]{0,63}$/, 'kein gültiger CSS-Bezeichner')
+
+export const uuid = z.uuid()
+export const shortText = z.string().max(512)
+export const longText = z.string().max(5_000_000) // custom.scss and locale values
+
+// ── enums ───────────────────────────────────────────────────────────────────
+
+export const contentStrategy = z.enum(['copy', 'symlink'])
+export const backupKind = z.enum(['config', 'content'])
+export const syncDirection = z.enum(['push', 'pull', 'both'])
+export const layoutPosition = z.enum(['header', 'left', 'right', 'beforeBody', 'afterBody', 'footer'])
+export const frameSlot = z.enum([...layoutPosition.options, 'pageBody'])
+export const templatePackageCategory = z.enum(['layout', 'colors', 'plugins', 'frames', 'styles', 'fonts'])
+
+// ── payloads ────────────────────────────────────────────────────────────────
+
+// Loose on purpose: configuration/theme are open records in the contract, and a plugin entry
+// carries extra keys (layout, order, options) that must survive a save untouched.
+export const quartzConfig = z.looseObject({
+  configuration: z.record(z.string(), z.unknown()),
+  theme: z.record(z.string(), z.unknown()),
+  plugins: z.array(
+    z.looseObject({
+      // readConfig always derives `name` and defaults `enabled`, and writeConfig strips `name`
+      // back off again - so both are genuinely always present on the way back in.
+      name: pluginName,
+      source: z.union([z.string().max(2048), z.looseObject({ repo: z.string().min(1).max(2048) })]),
+      enabled: z.boolean()
+    })
+  ),
+  layout: z
+    .looseObject({
+      groups: z.record(z.string(), z.unknown()).optional(),
+      byPageType: z.record(z.string(), z.unknown()).optional()
+    })
+    .optional()
+})
+
+export const gridFrameDefinition = z.looseObject({
+  id: frameId,
+  frameName: z.string().min(1).max(120),
+  rows: z.number().int().min(1).max(50),
+  cols: z.number().int().min(1).max(50),
+  gap: z.string().max(40).regex(/^[A-Za-z0-9.%\s()+*/-]*$/, 'kein gültiger CSS-Abstandswert'),
+  areas: z
+    .array(
+      z.looseObject({
+        id: z.string().max(128),
+        name: cssIdent,
+        slot: frameSlot,
+        row: z.number().int().min(1).max(50),
+        col: z.number().int().min(1).max(50),
+        rowSpan: z.number().int().min(1).max(50),
+        colSpan: z.number().int().min(1).max(50)
+      })
+    )
+    .max(200)
+})
+
+export const themePreset = z.looseObject({
+  id: z.string().min(1).max(128),
+  name: z.string().min(1).max(200),
+  createdAt: z.string().max(64),
+  baseThemeId: z.string().max(128),
+  options: z.looseObject({ theme: z.string().max(128), mode: z.string().max(64) })
+})
+
+// A raw value is written straight into custom.scss, so a "}" or a comment opener would break out
+// of the generated block and corrupt the stylesheet (and thus the build). Braces, semicolons and
+// comment markers are refused; "/" itself stays legal because CSS needs it (rgb(0 0 0 / 50%),
+// font shorthand), as do parentheses and commas.
+const cssValue = z
+  .string()
+  .max(512)
+  .refine((v) => !/[{};]/.test(v) && !v.includes('/*') && !v.includes('*/') && !v.includes('\\'), {
+    message: 'unerlaubtes Zeichen im CSS-Wert'
+  })
+
+export const cssVariableOverride = z.object({
+  key: z.string().regex(/^[A-Za-z0-9_-]{1,128}$/, 'kein gültiger CSS-Variablenname'),
+  light: cssValue,
+  dark: cssValue.optional()
+})
+
+export const saveDeployConnectionInput = z.looseObject({
+  id: uuid.optional(),
+  projectPath: absolutePath,
+  name: z.string().min(1).max(200),
+  protocol: z.enum(['sftp', 'ftp']),
+  host: z.string().min(1).max(255),
+  port: z.number().int().min(1).max(65535),
+  username: z.string().max(255),
+  remotePath: z.string().min(1).max(4096),
+  authMethod: z.enum(['password', 'privateKey']),
+  secure: z.boolean().optional(),
+  secret: z.string().max(100_000).optional()
+})
+
+export const serverOptions = z.looseObject({
+  port: z.number().int().min(1).max(65535),
+  wsPort: z.number().int().min(1).max(65535),
+  host: z.string().max(255),
+  watch: z.boolean()
+})
+
+export const createProjectOptions = z.looseObject({
+  targetDirectory: absolutePath,
+  template: z.enum(['default', 'obsidian', 'ttrpg', 'blog']).optional(),
+  source: absolutePath.optional(),
+  strategy: z.enum(['copy', 'symlink', 'new']).optional(),
+  linkResolution: z.enum(['absolute', 'shortest', 'relative']).optional(),
+  baseUrl: z.string().max(255).optional()
+})
+
+export const settings = z.looseObject({
+  githubToken: z.string().max(512).optional(),
+  defaultProjectDirectory: absolutePath.optional(),
+  language: z.enum(['system', 'de', 'en']).optional()
+})
+
+export const githubPagesDeployOptions = z.looseObject({ branch: branchName })
+
+export const dialogFileFilters = z
+  .array(z.object({ name: z.string().max(120), extensions: z.array(z.string().max(20)).max(50) }))
+  .max(20)

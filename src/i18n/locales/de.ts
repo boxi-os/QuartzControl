@@ -53,6 +53,7 @@ export default {
       layout: 'Layout',
       styles: 'Styles',
       themes: 'Themes',
+      localization: 'Übersetzungen',
       plugins: 'Plugins',
       content: 'Content-Ordner',
       server: 'Build & Server',
@@ -421,6 +422,19 @@ export default {
     componentHint: 'Fügt einen Selektor für die gewählte Komponente an der Cursor-Position ein.',
     insertSelector: 'Selektor einfügen',
     referenceHeading: 'Original-Styles (nur lesend)'
+  },
+  localization: {
+    title: 'Übersetzungen',
+    description:
+      'Bearbeitet die eingebauten Übersetzungstexte von Quartz direkt in quartz/i18n/locales/*.ts. Nur Kern-Texte — eigene Plugin-Texte werden hier nicht erfasst.',
+    none: 'Keine Locale-Dateien gefunden (quartz/i18n/locales fehlt).',
+    searchPlaceholder: 'Nach Schlüssel oder Text suchen…',
+    unsavedCount: '{{count}} ungespeichert',
+    saveError: 'Speichern fehlgeschlagen.',
+    noResults: 'Keine Treffer.',
+    advancedBadge: 'JS',
+    gitAttributesOk: 'Update-Schutz aktiv (.gitattributes: merge=ours)',
+    gitAttributesMissing: 'Update-Schutz wird beim nächsten Speichern automatisch aktiviert'
   },
   pluginsMarketplace: {
     backToInstalled: '← Installierte Plugins',

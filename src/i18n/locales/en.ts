@@ -53,6 +53,7 @@ export default {
       layout: 'Layout',
       styles: 'Styles',
       themes: 'Themes',
+      localization: 'Localization',
       plugins: 'Plugins',
       content: 'Content folder',
       server: 'Build & server',
@@ -421,6 +422,19 @@ export default {
     componentHint: 'Inserts a selector for the chosen component at the cursor position.',
     insertSelector: 'Insert selector',
     referenceHeading: 'Original styles (read-only)'
+  },
+  localization: {
+    title: 'Localization',
+    description:
+      "Edit Quartz's built-in translation texts directly in quartz/i18n/locales/*.ts. Core texts only — plugin-owned strings aren't covered here.",
+    none: 'No locale files found (quartz/i18n/locales is missing).',
+    searchPlaceholder: 'Search by key or text…',
+    unsavedCount: '{{count}} unsaved',
+    saveError: 'Save failed.',
+    noResults: 'No matches.',
+    advancedBadge: 'JS',
+    gitAttributesOk: 'Update protection active (.gitattributes: merge=ours)',
+    gitAttributesMissing: 'Update protection will be enabled automatically on the next save'
   },
   pluginsMarketplace: {
     backToInstalled: '← Installed plugins',

@@ -7,6 +7,7 @@ import ConfigEditor from './routes/ConfigEditor'
 import LayoutEditor from './routes/LayoutEditor'
 import StyleEditor from './routes/StyleEditor'
 import Themes from './routes/Themes'
+import Localization from './routes/Localization'
 import PluginsInstalled from './routes/Plugins/Installed'
 import PluginsMarketplace from './routes/Plugins/Marketplace'
 import BuildServer from './routes/BuildServer'
@@ -25,6 +26,7 @@ export default function App(): JSX.Element {
         <Route path="layout" element={<LayoutEditor />} />
         <Route path="styles" element={<StyleEditor />} />
         <Route path="themes" element={<Themes />} />
+        <Route path="localization" element={<Localization />} />
         <Route path="plugins" element={<PluginsInstalled />} />
         <Route path="plugins/marketplace" element={<PluginsMarketplace />} />
         <Route path="content" element={<Content />} />

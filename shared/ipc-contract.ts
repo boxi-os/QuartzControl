@@ -271,6 +271,30 @@ export interface StylesInfo {
   content: string
 }
 
+// One shipped locale file under quartz/i18n/locales/*.ts (excluding definition.ts). `code` is the
+// filename-derived locale (e.g. "de-DE") - some runtime locale codes share one file (see
+// quartz/i18n/index.ts's TRANSLATIONS map, e.g. every "ar-*" variant points at ar-SA.ts), so
+// editing is scoped to the file, not every code that happens to resolve to it.
+export interface LocaleFile {
+  code: string
+}
+
+// One leaf value inside a locale file's default-exported translation object, found by walking its
+// AST (see localizationService.ts). Plain string literals are freely editable; anything else
+// (an arrow function, often with real pluralization logic - e.g. `({count}) => count === 1 ? ...
+// : ...`) is exposed as its raw source text for direct (advanced) editing rather than attempting a
+// lossy form-ified representation of arbitrary JS.
+export interface LocaleEntry {
+  path: string[]
+  kind: 'string' | 'template'
+  value: string
+}
+
+export interface LocaleSaveResult {
+  success: boolean
+  error?: string
+}
+
 // A read-only reference file (an installed plugin's own *.scss) shown alongside the editor so the
 // user can see the original selectors they're overriding. Only available for CLI-installed
 // plugins (a real directory under .quartz/plugins/<name>) - built-in @quartz-community/x entries
@@ -314,6 +338,12 @@ export const IPC = {
   stylesImportFile: 'styles:importFile',
 
   fontsImportFile: 'fonts:importFile',
+
+  localizationList: 'localization:list',
+  localizationGetEntries: 'localization:getEntries',
+  localizationSaveEntry: 'localization:saveEntry',
+  localizationGitAttributesStatus: 'localization:gitAttributesStatus',
+  localizationEnsureGitAttributes: 'localization:ensureGitAttributes',
   dialogPickFile: 'dialog:pickFile',
   dialogOpenPath: 'dialog:openPath',
 
@@ -406,6 +436,13 @@ export interface QuartzGuiApi {
   }
   fonts: {
     importFile(projectPath: string, sourcePath: string, family: string): Promise<{ fileName: string }>
+  }
+  localization: {
+    list(projectPath: string): Promise<LocaleFile[]>
+    getEntries(projectPath: string, code: string): Promise<LocaleEntry[]>
+    saveEntry(projectPath: string, code: string, path: string[], kind: 'string' | 'template', value: string): Promise<LocaleSaveResult>
+    gitAttributesStatus(projectPath: string): Promise<boolean>
+    ensureGitAttributes(projectPath: string): Promise<void>
   }
   themeMarketplace: {
     list(githubToken?: string): Promise<QuartzThemeListing[]>

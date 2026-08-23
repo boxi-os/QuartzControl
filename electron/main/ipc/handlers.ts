@@ -18,6 +18,7 @@ import * as themePresetsService from '../services/themePresetsService'
 import * as layoutFrameService from '../services/layoutFrameService'
 import * as styleService from '../services/styleService'
 import * as fontService from '../services/fontService'
+import * as localizationService from '../services/localizationService'
 import * as marketplaceService from '../services/marketplaceService'
 import * as buildService from '../services/buildService'
 import * as syncService from '../services/syncService'
@@ -108,6 +109,20 @@ export function registerIpcHandlers(): void {
   ipcMain.handle(IPC.fontsImportFile, (_e, projectPath: string, sourcePath: string, family: string) =>
     fontService.importFontFile(projectPath, sourcePath, family)
   )
+
+  ipcMain.handle(IPC.localizationList, (_e, projectPath: string) => localizationService.listLocales(projectPath))
+  ipcMain.handle(IPC.localizationGetEntries, (_e, projectPath: string, code: string) =>
+    localizationService.getLocaleEntries(projectPath, code)
+  )
+  ipcMain.handle(
+    IPC.localizationSaveEntry,
+    (_e, projectPath: string, code: string, path: string[], kind: 'string' | 'template', value: string) =>
+      localizationService.saveLocaleEntry(projectPath, code, path, kind, value)
+  )
+  ipcMain.handle(IPC.localizationGitAttributesStatus, (_e, projectPath: string) =>
+    localizationService.getGitAttributesStatus(projectPath)
+  )
+  ipcMain.handle(IPC.localizationEnsureGitAttributes, (_e, projectPath: string) => localizationService.ensureGitAttributes(projectPath))
 
   ipcMain.handle(IPC.marketplaceSearch, (_e, query: string, githubToken?: string) =>
     marketplaceService.searchPlugins(query, githubToken)

@@ -199,6 +199,7 @@ export function registerIpcHandlers(): void {
   handle(IPC.deployConnectionsList, t([s.absolutePath]), (projectPath) => secretsService.listConnections(projectPath))
   handle(IPC.deployConnectionSave, t([s.saveDeployConnectionInput]), (input) => secretsService.saveConnection(input as SaveDeployConnectionInput))
   handle(IPC.deployConnectionDelete, t([s.uuid]), (id) => secretsService.deleteConnection(id))
+  handle(IPC.deployForgetHostKey, t([s.uuid]), (id) => secretsService.forgetHostKey(id))
   handle(IPC.deployDiff, t([s.absolutePath, s.relativeSubPath.optional()]), (projectPath, outputDir) =>
     deployService.diffBuildOutput(projectPath, outputDir)
   )

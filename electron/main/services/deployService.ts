@@ -1,3 +1,4 @@
+import { dialog } from 'electron'
 import { createHash } from 'crypto'
 import { EventEmitter } from 'events'
 import { readFile, readdir, stat, writeFile } from 'fs/promises'
@@ -113,6 +114,64 @@ function emitProgress(connectionId: string, processed: number, total: number, cu
   deployEvents.emit('progress', event)
 }
 
+// OpenSSH's fingerprint format: base64 of the SHA-256 over the raw public-key blob, unpadded.
+// Same bytes `ssh-keygen -lf` hashes, so this string can be compared 1:1 against what the user
+// sees from ssh-keyscan or in their known_hosts.
+export function fingerprintOf(hostKey: Buffer): string {
+  return `SHA256:${createHash('sha256').update(hostKey).digest('base64').replace(/=+$/, '')}`
+}
+
+// Without a hostVerifier, ssh2 accepts ANY host key - verified in its own source
+// (lib/protocol/kex.js: "Host accepted by default (no verification)"), which makes the connection
+// trivially interceptable. This is trust-on-first-use, the same model OpenSSH and GUI clients like
+// FileZilla use: ask once, showing the fingerprint, then pin it.
+//
+// A later mismatch is refused outright rather than re-prompting. A "the key changed, continue?"
+// dialog is exactly the moment a user clicks through, and a changed key is either a rebuilt server
+// or an active interception - the two cases are indistinguishable from here. Clearing the pin
+// (deploy.forgetHostKey, an explicit button) is the way back, taken deliberately and not under
+// pressure mid-deploy.
+export function makeHostVerifier(profile: DeployConnectionProfile, onRejected: (message: string) => void) {
+  return (hostKey: Buffer, accept: (ok: boolean) => void): void => {
+    const fingerprint = fingerprintOf(hostKey)
+
+    if (profile.hostKeyFingerprint) {
+      if (profile.hostKeyFingerprint === fingerprint) return accept(true)
+      onRejected(
+        `Der Host-Key von ${profile.host} hat sich geändert!\n\n` +
+          `erwartet:  ${profile.hostKeyFingerprint}\n` +
+          `empfangen: ${fingerprint}\n\n` +
+          'Die Verbindung wurde abgebrochen. Das kann ein neu aufgesetzter Server sein - oder ein ' +
+          'Angriff. Prüfe den Fingerprint beim Anbieter und setze ihn erst danach über ' +
+          '"Host-Key vergessen" zurück.'
+      )
+      return accept(false)
+    }
+
+    void dialog
+      .showMessageBox({
+        type: 'warning',
+        buttons: ['Verbinden und merken', 'Abbrechen'],
+        defaultId: 1,
+        cancelId: 1,
+        title: 'Unbekannter Server',
+        message: `${profile.host} ist zum ersten Mal kontaktiert worden.`,
+        detail:
+          `Fingerprint des Servers:\n${fingerprint}\n\n` +
+          'Vergleiche ihn mit dem, den dein Anbieter angibt (oder mit `ssh-keyscan -t rsa,ed25519 ' +
+          `${profile.host} | ssh-keygen -lf -\`). Nur bei Übereinstimmung verbinden.`
+      })
+      .then(async ({ response }) => {
+        if (response !== 0) {
+          onRejected('Verbindung abgebrochen - der Host-Key wurde nicht bestätigt.')
+          return accept(false)
+        }
+        await secretsService.rememberHostKey(profile.id, fingerprint)
+        accept(true)
+      })
+  }
+}
+
 async function deployViaSftp(
   profile: DeployConnectionProfile,
   secret: string | null,
@@ -122,11 +181,16 @@ async function deployViaSftp(
 ): Promise<DeployResult> {
   const client = new SftpClient()
   let output = ''
+  // ssh2 surfaces a rejected host key as a generic "All configured authentication methods
+  // failed"-style error, which would hide the real reason - so the verifier records it here and
+  // the catch below prefers this message.
+  let hostKeyRejection: string | null = null
   try {
     await client.connect({
       host: profile.host,
       port: profile.port,
       username: profile.username,
+      hostVerifier: makeHostVerifier(profile, (message) => (hostKeyRejection = message)),
       ...(profile.authMethod === 'privateKey' ? { privateKey: secret ?? undefined } : { password: secret ?? undefined })
     })
 
@@ -161,7 +225,8 @@ async function deployViaSftp(
 
     return { success: true, output }
   } catch (err) {
-    return { success: false, output: `${output}\n${String(err)}` }
+    // the host-key message explains what actually happened; ssh2's own error does not
+    return { success: false, output: `${output}\n${hostKeyRejection ?? String(err)}` }
   } finally {
     client.end().catch(() => {})
   }

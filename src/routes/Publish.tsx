@@ -112,6 +112,14 @@ export default function Publish(): JSX.Element {
     setTarget({ kind: 'connection', id: saved.id })
   }
 
+  // Deliberately a separate, confirmed action rather than an option in the mismatch dialog - see
+  // deployService's hostVerifier for why a "key changed, continue?" prompt is the wrong shape.
+  async function forgetHostKey(connection: DeployConnectionProfile): Promise<void> {
+    if (!confirm(t('publish.confirmForgetHostKey', { host: connection.host }))) return
+    await window.quartzGui.deploy.forgetHostKey(connection.id)
+    await reloadConnections()
+  }
+
   async function deleteConnection(id: string): Promise<void> {
     if (!confirm(t('publish.confirmDeleteConnection'))) return
     await window.quartzGui.deploy.deleteConnection(id)
@@ -191,6 +199,13 @@ export default function Publish(): JSX.Element {
               {!activeConnection.hasSecret && (
                 <span className="ml-2 text-amber-600 dark:text-amber-400">{t('publish.noSecretWarning')}</span>
               )}
+              {activeConnection.protocol === 'sftp' && (
+                <span className="mt-1 block font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                  {activeConnection.hostKeyFingerprint
+                    ? `${t('publish.hostKeyPinned')}: ${activeConnection.hostKeyFingerprint}`
+                    : t('publish.hostKeyUnknown')}
+                </span>
+              )}
             </span>
             <div className="flex gap-2">
               <button
@@ -200,6 +215,11 @@ export default function Publish(): JSX.Element {
               >
                 {t('common.edit')}
               </button>
+              {activeConnection.protocol === 'sftp' && activeConnection.hostKeyFingerprint && (
+                <button type="button" className="text-slate-500 underline" onClick={() => forgetHostKey(activeConnection)}>
+                  {t('publish.forgetHostKey')}
+                </button>
+              )}
               <button type="button" className="text-red-600 underline dark:text-red-400" onClick={() => deleteConnection(activeConnection.id)}>
                 {t('common.remove')}
               </button>

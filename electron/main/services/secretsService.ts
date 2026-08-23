@@ -27,6 +27,10 @@ interface StoredProfile {
   authMethod: 'password' | 'privateKey'
   secure?: boolean
   encryptedSecret?: string // base64 of safeStorage.encryptString() output
+  // Not a secret (a host's public-key fingerprint is public by nature), so it is stored in the
+  // clear alongside the profile - it only has to be *tamper-evident within this file*, which is
+  // the same protection every other field here gets.
+  hostKeyFingerprint?: string
 }
 
 function secretsPath(): string {
@@ -59,7 +63,8 @@ function toPublic(p: StoredProfile): DeployConnectionProfile {
     remotePath: p.remotePath,
     authMethod: p.authMethod,
     secure: p.secure,
-    hasSecret: !!p.encryptedSecret
+    hasSecret: !!p.encryptedSecret,
+    hostKeyFingerprint: p.hostKeyFingerprint
   }
 }
 
@@ -91,7 +96,9 @@ export async function saveConnection(input: SaveDeployConnectionInput): Promise<
     remotePath: input.remotePath,
     authMethod: input.authMethod,
     secure: input.secure,
-    encryptedSecret
+    encryptedSecret,
+    // Carried over on edit: changing a password doesn't change which server we trust.
+    hostKeyFingerprint: existing?.hostKeyFingerprint
   }
 
   if (index !== -1) all[index] = stored
@@ -117,6 +124,25 @@ export async function getDecryptedSecret(id: string): Promise<string | null> {
   } catch {
     return null
   }
+}
+
+// Recorded the first time the user confirms a server's key (see deployService's hostVerifier).
+export async function rememberHostKey(id: string, fingerprint: string): Promise<void> {
+  const all = await readAll()
+  const profile = all.find((p) => p.id === id)
+  if (!profile) return
+  profile.hostKeyFingerprint = fingerprint
+  await writeAll(all)
+}
+
+// The deliberate opt-out for a server that legitimately changed keys - the next connection then
+// prompts again instead of being refused. Only ever reached through an explicit UI action.
+export async function forgetHostKey(id: string): Promise<void> {
+  const all = await readAll()
+  const profile = all.find((p) => p.id === id)
+  if (!profile?.hostKeyFingerprint) return
+  delete profile.hostKeyFingerprint
+  await writeAll(all)
 }
 
 export async function getConnection(id: string): Promise<DeployConnectionProfile | null> {

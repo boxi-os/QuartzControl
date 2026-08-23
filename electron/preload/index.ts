@@ -87,6 +87,7 @@ const api: QuartzGuiApi = {
     listConnections: (projectPath: string) => ipcRenderer.invoke(IPC.deployConnectionsList, projectPath),
     saveConnection: (input: SaveDeployConnectionInput) => ipcRenderer.invoke(IPC.deployConnectionSave, input),
     deleteConnection: (id: string) => ipcRenderer.invoke(IPC.deployConnectionDelete, id),
+    forgetHostKey: (id: string) => ipcRenderer.invoke(IPC.deployForgetHostKey, id),
     diff: (projectPath: string, outputDir?: string) => ipcRenderer.invoke(IPC.deployDiff, projectPath, outputDir),
     run: (connectionId: string, outputDir: string | undefined, excludePaths: string[]) =>
       ipcRenderer.invoke(IPC.deployRun, connectionId, outputDir, excludePaths),

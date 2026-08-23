@@ -363,6 +363,11 @@ export interface DeployConnectionProfile {
   authMethod: 'password' | 'privateKey'
   secure?: boolean
   hasSecret: boolean
+  // SFTP only: the server's public-key fingerprint in OpenSSH's "SHA256:<base64>" form, recorded
+  // the first time the user confirmed it. A later connection whose key doesn't match is refused
+  // outright rather than re-prompting; clearing it (deploy.forgetHostKey) is the deliberate
+  // opt-out for a server that legitimately changed keys.
+  hostKeyFingerprint?: string
 }
 
 // `secret` is the plaintext password or private-key contents - only ever sent renderer->main when
@@ -506,6 +511,7 @@ export const IPC = {
   deployConnectionsList: 'deploy:connectionsList',
   deployConnectionSave: 'deploy:connectionSave',
   deployConnectionDelete: 'deploy:connectionDelete',
+  deployForgetHostKey: 'deploy:forgetHostKey',
   deployDiff: 'deploy:diff',
   deployRun: 'deploy:run',
   deployGithubPagesRun: 'deploy:githubPagesRun',
@@ -630,6 +636,7 @@ export interface QuartzGuiApi {
     listConnections(projectPath: string): Promise<DeployConnectionProfile[]>
     saveConnection(input: SaveDeployConnectionInput): Promise<DeployConnectionProfile>
     deleteConnection(id: string): Promise<void>
+    forgetHostKey(id: string): Promise<void>
     diff(projectPath: string, outputDir?: string): Promise<DeployDiffEntry[]>
     run(connectionId: string, outputDir: string | undefined, excludePaths: string[]): Promise<DeployResult>
     runGithubPages(projectPath: string, outputDir: string | undefined, options: GithubPagesDeployOptions): Promise<DeployResult>

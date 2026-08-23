@@ -489,6 +489,11 @@ export default {
     githubPagesHint: 'Uses the already-configured "origin" remote (the same one Git-Sync uses).',
     newConnection: '+ New connection',
     noSecretWarning: '(no password/key stored)',
+    hostKeyPinned: 'Host key confirmed',
+    hostKeyUnknown: 'Host key not confirmed yet — you will be asked on first connect',
+    forgetHostKey: 'Forget host key',
+    confirmForgetHostKey:
+      'Discard the stored host key for {{host}}?\n\nYou will be asked to confirm the fingerprint again on the next connect. Only do this if the server was genuinely rebuilt.',
     confirmDeleteConnection: 'Really delete this connection?',
     confirmDeployGithubPages:
       'Publish to GitHub Pages?\n\nBranch "{{branch}}" will be replaced entirely by the current build (force push).',

@@ -490,6 +490,11 @@ export default {
     githubPagesHint: 'Nutzt das bereits konfigurierte "origin"-Remote (dasselbe wie bei Git-Sync).',
     newConnection: '+ Neue Verbindung',
     noSecretWarning: '(kein Passwort/Key hinterlegt)',
+    hostKeyPinned: 'Host-Key bestätigt',
+    hostKeyUnknown: 'Host-Key noch nicht bestätigt — wird beim ersten Verbinden abgefragt',
+    forgetHostKey: 'Host-Key vergessen',
+    confirmForgetHostKey:
+      'Gespeicherten Host-Key für {{host}} verwerfen?\n\nBeim nächsten Verbinden wird der Fingerprint erneut abgefragt. Nur tun, wenn der Server nachweislich neu aufgesetzt wurde.',
     confirmDeleteConnection: 'Diese Verbindung wirklich löschen?',
     confirmDeployGithubPages:
       'Veröffentlichen nach GitHub Pages?\n\nDer Branch "{{branch}}" wird dabei vollständig durch den aktuellen Build ersetzt (force-push).',

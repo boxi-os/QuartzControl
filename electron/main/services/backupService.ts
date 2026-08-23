@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync } from 'fs'
-import { readdir, readFile, writeFile, rename, rm, lstat, readlink, symlink } from 'fs/promises'
+import { cp, readdir, readFile, writeFile, rename, rm, lstat, readlink, symlink } from 'fs/promises'
 import { join } from 'path'
 import { diffLines } from 'diff'
 import type { BackupEntry } from '@shared/ipc-contract'
@@ -13,9 +13,11 @@ function timestampId(): string {
   return new Date().toISOString().replace(/[:.]/g, '-')
 }
 
+const TIMESTAMP_ID_RE = /^(\d{4}-\d{2}-\d{2}T\d{2})-(\d{2})-(\d{2})-(\d{3})Z$/
+
 // reverses timestampId(): "2026-08-22T10-00-00-000Z" -> "2026-08-22T10:00:00.000Z"
 function idToIso(id: string): string {
-  const match = id.match(/^(\d{4}-\d{2}-\d{2}T\d{2})-(\d{2})-(\d{2})-(\d{3})Z$/)
+  const match = id.match(TIMESTAMP_ID_RE)
   if (!match) return id
   const [, prefix, mm, ss, ms] = match
   return `${prefix}:${mm}:${ss}.${ms}Z`
@@ -82,9 +84,13 @@ export async function snapshotContent(projectPath: string, contentDir: string): 
 }
 
 export async function listContentBackups(projectPath: string): Promise<BackupEntry[]> {
-  const entries = await readdir(backupsRoot(projectPath, 'content'))
+  const entries = await readdir(backupsRoot(projectPath, 'content'), { withFileTypes: true })
   return entries
-    .map((id) => ({ id, createdAt: idToIso(id), kind: 'content' as const }))
+    // Only real snapshot directories: a stray file (.DS_Store, which macOS drops into any folder
+    // the user opens in Finder) was otherwise listed as a backup whose date rendered as
+    // "Invalid Date" and whose restore could only fail.
+    .filter((e) => e.isDirectory() && TIMESTAMP_ID_RE.test(e.name))
+    .map((e) => ({ id: e.name, createdAt: idToIso(e.name), kind: 'content' as const }))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 }
 
@@ -100,5 +106,7 @@ export async function restoreContentBackup(projectPath: string, contentDir: stri
     await symlink(target, contentDir, 'dir')
     return
   }
-  await rename(join(dir, 'content'), contentDir)
+  // Copy, don't move: a rename emptied the snapshot directory, so the entry stayed in the list but
+  // restoring it a second time failed with ENOENT. A backup has to survive being used.
+  await cp(join(dir, 'content'), contentDir, { recursive: true })
 }

@@ -1,7 +1,7 @@
 import { existsSync } from 'fs'
 import { readFile, writeFile, rename } from 'fs/promises'
 import { join } from 'path'
-import { parseDocument, Document } from 'yaml'
+import { parseDocument, Document, isMap } from 'yaml'
 import type { QuartzConfig, PluginEntry, PluginSource, LayoutConfig } from '@shared/ipc-contract'
 import { snapshotConfig } from './backupService'
 
@@ -50,17 +50,37 @@ async function atomicWrite(path: string, contents: string): Promise<void> {
   await rename(tmpPath, path)
 }
 
+// setIn alone can only add or update, so a key the user removed in the editor would survive every
+// save forever. This reconciles a mapping node with the incoming object: keys absent from `next`
+// are deleted, the rest are set field-by-field so surrounding YAML comments stay intact.
+// `keep` exempts keys that live under the same node but are managed elsewhere.
+function syncMapping(doc: Document, nodePath: string[], next: Record<string, unknown>, keep: string[] = []): void {
+  const node = doc.getIn(nodePath)
+  if (isMap(node)) {
+    const exempt = new Set(keep)
+    const stale = node.items
+      .map((item) => String(item.key))
+      .filter((key) => !exempt.has(key) && !(key in next))
+    for (const key of stale) doc.deleteIn([...nodePath, key])
+  }
+  for (const [key, value] of Object.entries(next)) {
+    doc.setIn([...nodePath, key], value)
+  }
+}
+
 export async function writeConfig(projectPath: string, config: QuartzConfig): Promise<void> {
   const path = configPath(projectPath)
   const existingRaw = existsSync(path) ? await readFile(path, 'utf-8') : ''
   // field-level setIn (rather than replacing whole subtrees) keeps existing YAML comments intact
   const doc = existingRaw ? parseDocument(existingRaw) : new Document({})
 
-  for (const [key, value] of Object.entries(config.configuration)) {
-    doc.setIn(['configuration', key], value)
-  }
-  for (const [key, value] of Object.entries(config.theme)) {
-    doc.setIn(['configuration', 'theme', key], value)
+  // `theme` is exempt: readConfig splits it out of `configuration` into its own field, so it is
+  // never a key of config.configuration and would otherwise be deleted as stale on every save.
+  syncMapping(doc, ['configuration'], config.configuration, ['theme'])
+  // Only reconcile the theme block if it already exists or the config actually carries one, so an
+  // empty theme never creates a bare `theme:` node on a project that never had one.
+  if (isMap(doc.getIn(['configuration', 'theme'])) || Object.keys(config.theme).length > 0) {
+    syncMapping(doc, ['configuration', 'theme'], config.theme)
   }
   doc.set(
     'plugins',

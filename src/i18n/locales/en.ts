@@ -490,6 +490,10 @@ export default {
     newConnection: '+ New connection',
     noSecretWarning: '(no password/key stored)',
     confirmDeleteConnection: 'Really delete this connection?',
+    confirmDeployGithubPages:
+      'Publish to GitHub Pages?\n\nBranch "{{branch}}" will be replaced entirely by the current build (force push).',
+    confirmDeployConnection:
+      'Publish to {{target}}?\n\n{{uploads}} file(s) will be uploaded, {{deletions}} file(s) will be deleted on the server.',
     connectionForm: {
       heading: 'Connection',
       name: 'Name',

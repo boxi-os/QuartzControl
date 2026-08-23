@@ -491,6 +491,10 @@ export default {
     newConnection: '+ Neue Verbindung',
     noSecretWarning: '(kein Passwort/Key hinterlegt)',
     confirmDeleteConnection: 'Diese Verbindung wirklich löschen?',
+    confirmDeployGithubPages:
+      'Veröffentlichen nach GitHub Pages?\n\nDer Branch "{{branch}}" wird dabei vollständig durch den aktuellen Build ersetzt (force-push).',
+    confirmDeployConnection:
+      'Nach {{target}} veröffentlichen?\n\n{{uploads}} Datei(en) werden hochgeladen, {{deletions}} Datei(en) werden auf dem Server gelöscht.',
     connectionForm: {
       heading: 'Verbindung',
       name: 'Name',

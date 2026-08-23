@@ -10,6 +10,12 @@ interface RunningServer {
 }
 
 const runningServers = new Map<string, RunningServer>()
+// Why a second map: runningServers only ever holds *live* processes, and both the exit and error
+// handlers below have to remove their entry so a restart isn't blocked by a stale one. Writing the
+// failure into that just-deleted entry's `status` object loses it - getServerStatus would fall
+// straight through to "stopped", so a dev server that died on its own looked cleanly stopped in
+// the UI and its exit code was never shown. Terminal states therefore outlive the entry here.
+const lastTerminalStatus = new Map<string, ServerStatus>()
 export const serverEvents = new EventEmitter()
 
 // host is Quartz's --remoteDevHost, not a bind address - leave it empty locally, see BuildServer.tsx
@@ -24,7 +30,7 @@ function emitStatus(projectId: string): void {
 }
 
 export function getServerStatus(projectId: string): ServerStatus {
-  return runningServers.get(projectId)?.status ?? { state: 'stopped' }
+  return runningServers.get(projectId)?.status ?? lastTerminalStatus.get(projectId) ?? { state: 'stopped' }
 }
 
 export async function startServer(
@@ -34,6 +40,8 @@ export async function startServer(
 ): Promise<ServerStatus> {
   const existing = runningServers.get(projectId)
   if (existing) return existing.status
+  // a fresh attempt supersedes whatever the previous run ended as
+  lastTerminalStatus.delete(projectId)
 
   const args = ['quartz', 'build', '--serve', '--port', String(options.port), '--wsPort', String(options.wsPort)]
   if (options.host) args.push('--remoteDevHost', options.host)
@@ -59,12 +67,26 @@ export async function startServer(
     }
   })
   child.stderr?.on('data', (chunk: Buffer) => emitLog(projectId, 'stderr', chunk.toString()))
-  child.on('exit', (code) => {
-    const running = runningServers.get(projectId)
+  // Without this listener a failed spawn (e.g. npx missing from PATH) makes the ChildProcess
+  // emit an unhandled 'error', which EventEmitter rethrows and takes the whole main process
+  // down - and 'exit' never fires, so the status would otherwise stay stuck on "starting".
+  child.on('error', (err) => {
+    emitLog(projectId, 'stderr', `${err.message}\n`)
     runningServers.delete(projectId)
     void runningServersStore.remove(projectId)
-    if (running && running.status.state !== 'stopping') {
-      running.status = { state: 'error', error: `Prozess beendet mit Code ${code}` }
+    lastTerminalStatus.set(projectId, { state: 'error', error: err.message })
+    emitStatus(projectId)
+  })
+  child.on('exit', (code) => {
+    const running = runningServers.get(projectId)
+    const wasStopping = running?.status.state === 'stopping'
+    runningServers.delete(projectId)
+    void runningServersStore.remove(projectId)
+    // an explicit stop ends as "stopped"; anything else means the process died on its own
+    if (running && !wasStopping) {
+      lastTerminalStatus.set(projectId, { state: 'error', error: `Prozess beendet mit Code ${code}` })
+    } else {
+      lastTerminalStatus.delete(projectId)
     }
     emitStatus(projectId)
   })
@@ -127,6 +149,17 @@ export function runBuild(projectId: string, projectPath: string, outputDir?: str
         timestamp: new Date().toISOString()
       } satisfies LogLine)
     )
+    // Same reasoning as startServer's handler: an unhandled 'error' crashes the main process,
+    // and without it this promise would never settle, leaving the caller's UI stuck on "building".
+    child.on('error', (err) => {
+      serverEvents.emit('buildLog', {
+        projectId,
+        stream: 'stderr',
+        text: `${err.message}\n`,
+        timestamp: new Date().toISOString()
+      } satisfies LogLine)
+      resolvePromise({ success: false, durationMs: Date.now() - start, exitCode: null })
+    })
     child.on('exit', (code) => resolvePromise({ success: code === 0, durationMs: Date.now() - start, exitCode: code }))
   })
 }

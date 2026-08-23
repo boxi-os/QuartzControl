@@ -26,9 +26,13 @@ async function clearWorktreeContents(worktreeDir: string): Promise<void> {
 // No syncService.ts reuse here - that only wraps `quartz sync`, which has no git primitives for
 // an orphan/squash branch push. Uses the project's existing "origin" remote (the same one
 // Git-Sync pushes to) rather than a separate concept, since it's the same repo, just a different
-// branch - reuses a git worktree (not a second clone) checked out to the Pages branch, squashing
-// every deploy into a single commit (the standard technique tools like the "gh-pages" npm package
-// use), force-pushed since a Pages branch's history isn't meant to accumulate.
+// branch - reuses a git worktree (not a second clone) checked out to the Pages branch.
+//
+// NB: each deploy adds one commit on top of the existing branch, it does NOT squash to a single
+// root commit (verified against local bare repos: three deploys leave three commits). The branch
+// is fetched first and the worktree is based on that tip, so a commit pushed there by someone
+// else stays reachable as an ancestor rather than being discarded. Only the orphan case below
+// (branch does not exist remotely yet) starts a fresh history.
 export async function deployGithubPages(
   projectPath: string,
   outputDir: string | undefined,
@@ -46,6 +50,24 @@ export async function deployGithubPages(
     }
   }
 
+  // The branch name is a free-text field in the UI, and every deploy force-pushes over whatever
+  // it names - so a typo like "main" would otherwise overwrite the site's own history
+  // irrecoverably. Both the checked-out branch and origin's default branch are refused outright;
+  // a Pages branch is never either of those.
+  const currentBranch = await run('git', ['rev-parse', '--abbrev-ref', 'HEAD'], projectPath)
+  const originHead = await run('git', ['symbolic-ref', '--short', 'refs/remotes/origin/HEAD'], projectPath)
+  const protectedBranches = new Set<string>()
+  if (currentBranch.success) protectedBranches.add(currentBranch.output.trim())
+  // "origin/main" -> "main"; absent unless the remote HEAD was ever resolved locally, hence the
+  // current branch above as the always-available second guard
+  if (originHead.success) protectedBranches.add(originHead.output.trim().replace(/^origin\//, ''))
+  if (protectedBranches.has(branch)) {
+    return {
+      success: false,
+      output: `"${branch}" ist der aktuelle bzw. der Standard-Branch dieses Repos. Ein Pages-Deploy überschreibt den Ziel-Branch vollständig (force-push) - bitte einen separaten Branch wie "gh-pages" verwenden.`
+    }
+  }
+
   const worktreeDir = join(projectPath, '.quartz-gui', 'gh-pages-worktree')
 
   // Clean up any stale worktree registration/directory from a previous (e.g. interrupted) deploy
@@ -55,6 +77,9 @@ export async function deployGithubPages(
 
   const fetchBranch = await run('git', ['fetch', 'origin', branch], projectPath)
   const branchExists = fetchBranch.success
+  // The remote tip we just fetched, used as the explicit lease below. Read from FETCH_HEAD rather
+  // than refs/remotes/origin/<branch>, which a single-branch fetch only updates opportunistically.
+  const remoteTip = branchExists ? (await run('git', ['rev-parse', 'FETCH_HEAD'], projectPath)).output.trim() : ''
 
   let addWorktree: { success: boolean; output: string }
   if (branchExists) {
@@ -86,7 +111,15 @@ export async function deployGithubPages(
     if (!commit.success && !nothingToCommit) return { success: false, output }
 
     if (!nothingToCommit) {
-      const push = await run('git', ['push', 'origin', `HEAD:${branch}`, '--force'], worktreeDir)
+      // --force-with-lease pinned to the tip fetched above. The fetch happens at the start of
+      // this function, so the lease only covers the window between fetch and push (a push landing
+      // mid-deploy) - it is not broad protection, but it is strictly narrower than a bare --force
+      // and costs nothing. A branch that doesn't exist remotely yet needs no force at all.
+      const pushArgs =
+        remoteTip.length > 0
+          ? ['push', `--force-with-lease=refs/heads/${branch}:${remoteTip}`, 'origin', `HEAD:${branch}`]
+          : ['push', 'origin', `HEAD:${branch}`]
+      const push = await run('git', pushArgs, worktreeDir)
       output += push.output
       if (!push.success) return { success: false, output }
     }

@@ -7,8 +7,9 @@ import type { DeployConnectionProfile, SaveDeployConnectionInput } from '@shared
 
 // Kept in Electron's userData (like settingsService.ts), never inside the project - these are
 // machine-local credentials, and must never risk ending up committed into the project's own git
-// repo. Unlike settingsService.ts's plaintext GitHub token, the secret itself is encrypted at rest
-// via safeStorage (OS keychain-backed: Keychain on macOS, DPAPI on Windows, libsecret on Linux).
+// repo. The secret itself is encrypted at rest via safeStorage (OS keychain-backed: Keychain on
+// macOS, DPAPI on Windows, libsecret on Linux) - the same treatment settingsService.ts gives the
+// GitHub token.
 //
 // This project's pinned Electron version (33.x) only ships the sync encryptString/decryptString
 // API - verified directly against node_modules/electron/electron.d.ts, since Electron's current

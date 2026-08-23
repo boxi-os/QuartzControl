@@ -12,6 +12,7 @@ export default function Settings(): JSX.Element {
   const [defaultProjectDirectory, setDefaultProjectDirectory] = useState('')
   const [language, setLanguage] = useState<'system' | 'de' | 'en'>('system')
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
     loadSettings()
@@ -76,18 +77,25 @@ export default function Settings(): JSX.Element {
         <div className="flex items-center gap-3">
           <Button
             onClick={async () => {
-              await saveSettings({
-                githubToken: githubToken || undefined,
-                defaultProjectDirectory: defaultProjectDirectory || undefined,
-                language
-              })
-              setSaved(true)
-              setTimeout(() => setSaved(false), 2000)
+              setSaveError(null)
+              try {
+                await saveSettings({
+                  githubToken: githubToken || undefined,
+                  defaultProjectDirectory: defaultProjectDirectory || undefined,
+                  language
+                })
+                setSaved(true)
+                setTimeout(() => setSaved(false), 2000)
+              } catch (err) {
+                // e.g. the OS keychain is unavailable, so the token cannot be encrypted at rest
+                setSaveError(err instanceof Error ? err.message : String(err))
+              }
             }}
           >
             {t('common.save')}
           </Button>
           {saved && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
+          {saveError && <span className="text-sm text-red-600 dark:text-red-400">{saveError}</span>}
         </div>
       </Card>
     </div>

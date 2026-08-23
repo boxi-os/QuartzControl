@@ -16,7 +16,17 @@ function framesDir(projectPath: string): string {
   return dir
 }
 
+// A frame id becomes a directory name under .quartz-gui/authored-frames/ and is also handed to
+// `quartz plugin add <path>` (which derives the plugin name from the path's basename), so it has
+// to be a plain slug. Unvalidated, an id from the renderer escapes the project entirely - ".."
+// segments resolve upward through join(), and deleteFrame() then rmSync's that path recursively.
+// Dots and separators are excluded outright rather than filtered, so there is nothing to escape.
+const FRAME_ID_RE = /^[a-z0-9][a-z0-9-]{0,63}$/i
+
 function frameDir(projectPath: string, id: string): string {
+  if (!FRAME_ID_RE.test(id)) {
+    throw new Error(`Ungültige Frame-ID "${id}" - erlaubt sind nur Buchstaben, Ziffern und Bindestriche.`)
+  }
   return join(framesDir(projectPath), id)
 }
 
@@ -135,7 +145,10 @@ export async function saveFrame(projectPath: string, def: GridFrameDefinition): 
 }
 
 export async function deleteFrame(projectPath: string, id: string): Promise<PluginActionResult> {
+  // resolved (and therefore validated) before removePlugin shells out, so an invalid id never
+  // reaches the CLI either
+  const dir = frameDir(projectPath, id)
   const result = await pluginService.removePlugin(projectPath, id)
-  rmSync(frameDir(projectPath, id), { recursive: true, force: true })
+  rmSync(dir, { recursive: true, force: true })
   return result
 }

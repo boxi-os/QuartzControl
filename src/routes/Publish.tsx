@@ -80,6 +80,18 @@ export default function Publish(): JSX.Element {
   }
 
   async function deploy(): Promise<void> {
+    // A deploy is not reversible from inside the app: it force-pushes over the Pages branch, or
+    // uploads to and deletes files on a remote server. Deleting a mere connection profile already
+    // asks, so the destructive action has to as well.
+    if (target.kind === 'github-pages') {
+      if (!confirm(t('publish.confirmDeployGithubPages', { branch: githubBranch }))) return
+    } else {
+      const uploads = (diff ?? []).filter((e) => e.status !== 'removed' && !excluded.has(e.path)).length
+      const deletions = (diff ?? []).filter((e) => e.status === 'removed' && !excluded.has(e.path)).length
+      const label = activeConnection ? `${activeConnection.host}:${activeConnection.remotePath}` : ''
+      if (!confirm(t('publish.confirmDeployConnection', { target: label, uploads, deletions }))) return
+    }
+
     setDeploying(true)
     setDeployResult(null)
     setProgress(null)

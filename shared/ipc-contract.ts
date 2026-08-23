@@ -406,6 +406,34 @@ export interface GithubPagesDeployOptions {
   branch: string
 }
 
+// The six independent slices a Template-Paket can carry - each maps to one export function's
+// output file(s) in templatePackageService.ts (layout.json/colors.json/plugins.json/frames.json/
+// custom.scss+imported/*/fonts/*) and one checkbox in the Templates route. Import (Phase 3c) can
+// select any subset independently of what was exported, driven by which categories the source
+// package's manifest.json actually contains.
+export type TemplatePackageCategory = 'layout' | 'colors' | 'plugins' | 'frames' | 'styles' | 'fonts'
+
+// Written as manifest.json at the root of an exported package folder. `stats` are best-effort
+// counts shown in the import preview before committing to anything - absent for categories that
+// weren't exported.
+export interface TemplatePackageManifest {
+  name: string
+  createdAt: string
+  categories: TemplatePackageCategory[]
+  stats: {
+    pluginCount?: number
+    frameCount?: number
+    fontCount?: number
+  }
+}
+
+// Returned by previewPackage() so the Import UI can show what a chosen source folder actually
+// contains before the user picks which categories to import - null if the folder has no readable
+// manifest.json (not a Template-Paket, or corrupted).
+export interface TemplatePackagePreview {
+  manifest: TemplatePackageManifest
+}
+
 // A read-only reference file (an installed plugin's own *.scss) shown alongside the editor so the
 // user can see the original selectors they're overriding. Only available for CLI-installed
 // plugins (a real directory under .quartz/plugins/<name>) - built-in @quartz-community/x entries
@@ -476,6 +504,9 @@ export const IPC = {
   deployProgress: 'deploy:progress',
   dialogPickFile: 'dialog:pickFile',
   dialogOpenPath: 'dialog:openPath',
+
+  templatePackageExport: 'templatePackage:export',
+  templatePackagePreview: 'templatePackage:preview',
 
   marketplaceSearch: 'marketplace:search',
   marketplaceRefresh: 'marketplace:refresh',
@@ -594,6 +625,10 @@ export interface QuartzGuiApi {
     run(connectionId: string, outputDir: string | undefined, excludePaths: string[]): Promise<DeployResult>
     runGithubPages(projectPath: string, outputDir: string | undefined, options: GithubPagesDeployOptions): Promise<DeployResult>
     onProgress(cb: (event: DeployProgressEvent) => void): () => void
+  }
+  templatePackage: {
+    export(projectPath: string, destDir: string, name: string, categories: TemplatePackageCategory[]): Promise<{ packageDir: string }>
+    preview(sourceDir: string): Promise<TemplatePackagePreview | null>
   }
   themeMarketplace: {
     list(githubToken?: string): Promise<QuartzThemeListing[]>

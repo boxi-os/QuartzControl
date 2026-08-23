@@ -60,7 +60,8 @@ export default {
       sync: 'Git sync',
       backups: 'Backups',
       updates: 'Updates',
-      publish: 'Publish'
+      publish: 'Publish',
+      templates: 'Templates'
     }
   },
   dashboard: {
@@ -520,6 +521,24 @@ export default {
     progress: '{{processed}}/{{total}} — {{file}}',
     deploySuccess: 'Published successfully.',
     deployFailed: 'Publish failed.'
+  },
+  templates: {
+    title: 'Templates',
+    description: 'Exports layout, colors, plugins, frames, styles and fonts as a reusable template package — partial exports supported too.',
+    exportHeading: 'Export',
+    nameLabel: 'Name',
+    categoriesHeading: 'Included categories',
+    categories: {
+      layout: 'Layout',
+      colors: 'Colors (incl. CSS variables)',
+      plugins: 'Plugins',
+      frames: 'Custom frames',
+      styles: 'Styles (custom.scss)',
+      fonts: 'Fonts'
+    },
+    pickDestDir: 'Choose destination folder…',
+    exportButton: 'Export package',
+    exportSuccess: 'Package exported to: {{path}}'
   },
   pluginsMarketplace: {
     backToInstalled: '← Installed plugins',

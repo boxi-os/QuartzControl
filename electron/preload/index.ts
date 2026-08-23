@@ -15,7 +15,8 @@ import type {
   SaveDeployConnectionInput,
   GithubPagesDeployOptions,
   DeployProgressEvent,
-  CssVariableOverride
+  CssVariableOverride,
+  TemplatePackageCategory
 } from '@shared/ipc-contract'
 
 function onEvent<Args extends unknown[]>(channel: string, cb: (...args: Args) => void): () => void {
@@ -92,6 +93,11 @@ const api: QuartzGuiApi = {
     runGithubPages: (projectPath: string, outputDir: string | undefined, options: GithubPagesDeployOptions) =>
       ipcRenderer.invoke(IPC.deployGithubPagesRun, projectPath, outputDir, options),
     onProgress: (cb: (event: DeployProgressEvent) => void) => onEvent<[DeployProgressEvent]>(IPC.deployProgress, cb)
+  },
+  templatePackage: {
+    export: (projectPath: string, destDir: string, name: string, categories: TemplatePackageCategory[]) =>
+      ipcRenderer.invoke(IPC.templatePackageExport, projectPath, destDir, name, categories),
+    preview: (sourceDir: string) => ipcRenderer.invoke(IPC.templatePackagePreview, sourceDir)
   },
   themeMarketplace: {
     list: (githubToken?: string) => ipcRenderer.invoke(IPC.themeMarketplaceList, githubToken),

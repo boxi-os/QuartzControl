@@ -16,6 +16,7 @@ import GitSync from './routes/GitSync'
 import Backups from './routes/Backups'
 import Updates from './routes/Updates'
 import Publish from './routes/Publish'
+import Templates from './routes/Templates'
 
 export default function App(): JSX.Element {
   return (
@@ -37,6 +38,7 @@ export default function App(): JSX.Element {
         <Route path="backups" element={<Backups />} />
         <Route path="updates" element={<Updates />} />
         <Route path="publish" element={<Publish />} />
+        <Route path="templates" element={<Templates />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

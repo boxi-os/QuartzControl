@@ -10,7 +10,8 @@ import type {
   GridFrameDefinition,
   SaveDeployConnectionInput,
   GithubPagesDeployOptions,
-  CssVariableOverride
+  CssVariableOverride,
+  TemplatePackageCategory
 } from '@shared/ipc-contract'
 import * as projectStore from '../services/projectStore'
 import * as configService from '../services/configService'
@@ -33,6 +34,7 @@ import * as backupService from '../services/backupService'
 import * as contentService from '../services/contentService'
 import * as createService from '../services/createService'
 import * as settingsService from '../services/settingsService'
+import * as templatePackageService from '../services/templatePackageService'
 
 function broadcast(channel: string, ...args: unknown[]): void {
   for (const win of BrowserWindow.getAllWindows()) {
@@ -157,6 +159,11 @@ export function registerIpcHandlers(): void {
   ipcMain.handle(IPC.deployGithubPagesRun, (_e, projectPath: string, outputDir: string | undefined, options: GithubPagesDeployOptions) =>
     githubPagesService.deployGithubPages(projectPath, outputDir, options)
   )
+
+  ipcMain.handle(IPC.templatePackageExport, (_e, projectPath: string, destDir: string, name: string, categories: TemplatePackageCategory[]) =>
+    templatePackageService.exportPackage(projectPath, destDir, name, categories)
+  )
+  ipcMain.handle(IPC.templatePackagePreview, (_e, sourceDir: string) => templatePackageService.previewPackage(sourceDir))
 
   ipcMain.handle(IPC.marketplaceSearch, (_e, query: string, githubToken?: string) =>
     marketplaceService.searchPlugins(query, githubToken)

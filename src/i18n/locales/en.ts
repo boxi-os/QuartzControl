@@ -58,7 +58,8 @@ export default {
       content: 'Content folder',
       server: 'Build & server',
       sync: 'Git sync',
-      backups: 'Backups'
+      backups: 'Backups',
+      updates: 'Updates'
     }
   },
   dashboard: {
@@ -435,6 +436,35 @@ export default {
     advancedBadge: 'JS',
     gitAttributesOk: 'Update protection active (.gitattributes: merge=ours)',
     gitAttributesMissing: 'Update protection will be enabled automatically on the next save'
+  },
+  updates: {
+    title: 'Updates',
+    description: "Bring Quartz's core and installed plugins up to date. A restorable snapshot is created automatically before every core update.",
+    upToDate: 'Up to date',
+    updateAvailable: 'Update available',
+    core: {
+      heading: 'Quartz core',
+      commits: 'Installed: {{current}} · Latest: {{latest}}',
+      runUpdate: 'Run update',
+      confirm:
+        "Update Quartz's core? A snapshot is created automatically first. This fetches changes from jackyzha0/quartz, runs npm install, and may require manual intervention on conflicts.",
+      abortMerge: 'Abort merge',
+      conflictHeading: 'Conflicts in these files (aside from the locale files .gitattributes protects):'
+    },
+    plugins: {
+      heading: 'Plugins',
+      updateAll: 'Update all',
+      update: 'Update',
+      local: 'Local',
+      none: 'No plugins with a quartz.lock.json entry found.'
+    },
+    snapshots: {
+      heading: 'Snapshots',
+      description: 'Created automatically before every core update. Restoring resets the project completely to that point (discarding later changes).',
+      none: 'No snapshots yet.',
+      restore: 'Restore',
+      confirmRestore: 'Reset the project to snapshot "{{tag}}"? Everything since then will be lost.'
+    }
   },
   pluginsMarketplace: {
     backToInstalled: '← Installed plugins',

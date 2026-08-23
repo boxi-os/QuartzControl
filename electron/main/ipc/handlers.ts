@@ -19,6 +19,7 @@ import * as layoutFrameService from '../services/layoutFrameService'
 import * as styleService from '../services/styleService'
 import * as fontService from '../services/fontService'
 import * as localizationService from '../services/localizationService'
+import * as updateService from '../services/updateService'
 import * as marketplaceService from '../services/marketplaceService'
 import * as buildService from '../services/buildService'
 import * as syncService from '../services/syncService'
@@ -123,6 +124,14 @@ export function registerIpcHandlers(): void {
     localizationService.getGitAttributesStatus(projectPath)
   )
   ipcMain.handle(IPC.localizationEnsureGitAttributes, (_e, projectPath: string) => localizationService.ensureGitAttributes(projectPath))
+
+  ipcMain.handle(IPC.updateCoreStatus, (_e, projectPath: string) => updateService.getCoreUpdateStatus(projectPath))
+  ipcMain.handle(IPC.updateCoreRun, (_e, projectPath: string) => updateService.runCoreUpdate(projectPath))
+  ipcMain.handle(IPC.updateCoreAbort, (_e, projectPath: string) => updateService.abortCoreMerge(projectPath))
+  ipcMain.handle(IPC.updatePluginsStatus, (_e, projectPath: string) => updateService.getPluginsUpdateStatus(projectPath))
+  ipcMain.handle(IPC.updatePluginRun, (_e, projectPath: string, name?: string) => updateService.updatePlugin(projectPath, name))
+  ipcMain.handle(IPC.updateSnapshotList, (_e, projectPath: string) => updateService.listSnapshots(projectPath))
+  ipcMain.handle(IPC.updateSnapshotRestore, (_e, projectPath: string, tag: string) => updateService.restoreSnapshot(projectPath, tag))
 
   ipcMain.handle(IPC.marketplaceSearch, (_e, query: string, githubToken?: string) =>
     marketplaceService.searchPlugins(query, githubToken)

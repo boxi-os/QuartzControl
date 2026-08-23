@@ -64,6 +64,15 @@ const api: QuartzGuiApi = {
     gitAttributesStatus: (projectPath: string) => ipcRenderer.invoke(IPC.localizationGitAttributesStatus, projectPath),
     ensureGitAttributes: (projectPath: string) => ipcRenderer.invoke(IPC.localizationEnsureGitAttributes, projectPath)
   },
+  updates: {
+    coreStatus: (projectPath: string) => ipcRenderer.invoke(IPC.updateCoreStatus, projectPath),
+    runCoreUpdate: (projectPath: string) => ipcRenderer.invoke(IPC.updateCoreRun, projectPath),
+    abortCoreMerge: (projectPath: string) => ipcRenderer.invoke(IPC.updateCoreAbort, projectPath),
+    pluginsStatus: (projectPath: string) => ipcRenderer.invoke(IPC.updatePluginsStatus, projectPath),
+    updatePlugin: (projectPath: string, name?: string) => ipcRenderer.invoke(IPC.updatePluginRun, projectPath, name),
+    listSnapshots: (projectPath: string) => ipcRenderer.invoke(IPC.updateSnapshotList, projectPath),
+    restoreSnapshot: (projectPath: string, tag: string) => ipcRenderer.invoke(IPC.updateSnapshotRestore, projectPath, tag)
+  },
   themeMarketplace: {
     list: (githubToken?: string) => ipcRenderer.invoke(IPC.themeMarketplaceList, githubToken),
     install: (projectPath: string, themeId: string) => ipcRenderer.invoke(IPC.themeMarketplaceInstall, projectPath, themeId),

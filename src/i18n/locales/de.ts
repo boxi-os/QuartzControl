@@ -58,7 +58,8 @@ export default {
       content: 'Content-Ordner',
       server: 'Build & Server',
       sync: 'Git-Sync',
-      backups: 'Backups'
+      backups: 'Backups',
+      updates: 'Updates'
     }
   },
   dashboard: {
@@ -435,6 +436,35 @@ export default {
     advancedBadge: 'JS',
     gitAttributesOk: 'Update-Schutz aktiv (.gitattributes: merge=ours)',
     gitAttributesMissing: 'Update-Schutz wird beim nächsten Speichern automatisch aktiviert'
+  },
+  updates: {
+    title: 'Updates',
+    description: 'Quartz-Kern und installierte Plugins auf den neuesten Stand bringen. Vor jedem Kern-Update wird automatisch ein wiederherstellbarer Snapshot angelegt.',
+    upToDate: 'Aktuell',
+    updateAvailable: 'Update verfügbar',
+    core: {
+      heading: 'Quartz-Kern',
+      commits: 'Installiert: {{current}} · Neueste Version: {{latest}}',
+      runUpdate: 'Update durchführen',
+      confirm:
+        'Quartz-Kern aktualisieren? Ein Snapshot wird zuerst automatisch angelegt. Der Vorgang holt Änderungen von jackyzha0/quartz, führt npm install aus und kann bei Konflikten manuelles Eingreifen erfordern.',
+      abortMerge: 'Merge abbrechen',
+      conflictHeading: 'Konflikte in folgenden Dateien (außer den durch .gitattributes geschützten Locale-Dateien):'
+    },
+    plugins: {
+      heading: 'Plugins',
+      updateAll: 'Alle aktualisieren',
+      update: 'Aktualisieren',
+      local: 'Lokal',
+      none: 'Keine Plugins mit quartz.lock.json-Eintrag gefunden.'
+    },
+    snapshots: {
+      heading: 'Snapshots',
+      description: 'Automatisch vor jedem Kern-Update angelegt. Wiederherstellen setzt das Projekt komplett auf diesen Stand zurück (verwirft spätere Änderungen).',
+      none: 'Noch keine Snapshots vorhanden.',
+      restore: 'Wiederherstellen',
+      confirmRestore: 'Projekt auf Snapshot "{{tag}}" zurücksetzen? Alle Änderungen seitdem gehen verloren.'
+    }
   },
   pluginsMarketplace: {
     backToInstalled: '← Installierte Plugins',

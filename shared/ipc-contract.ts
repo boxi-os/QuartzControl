@@ -295,6 +295,43 @@ export interface LocaleSaveResult {
   error?: string
 }
 
+// The project's own quartz/ clone is a real git repo (createService.ts clones it, then removes
+// "origin" so Git-Sync never pushes to jackyzha0/quartz - see CLAUDE.md). Core-update status
+// compares its current HEAD against upstream's default branch via a plain `git ls-remote` (no
+// GitHub API/token needed, works for any public repo).
+export interface CoreUpdateStatus {
+  currentCommit: string
+  latestCommit: string
+  upToDate: boolean
+}
+
+// One quartz.lock.json entry's update status. `commit: "local"` entries (Phase 1b's generated
+// frame plugins) have no remote to check against, so isLocal is reported instead of a commit
+// comparison. latestCommit is null when the check itself failed (e.g. network unreachable).
+export interface PluginUpdateStatus {
+  name: string
+  isLocal: boolean
+  installedCommit?: string
+  latestCommit?: string | null
+  upToDate: boolean
+}
+
+// A git tag pointing at a `git stash create` commit (or bare HEAD on a clean tree) - a
+// non-destructive snapshot of the project's tracked-file state, taken automatically before a core
+// update. Does NOT capture untracked files (git stash create has no --include-untracked option) -
+// backupService.ts's config/content snapshots are the complementary safety net for those.
+export interface ProjectSnapshot {
+  tag: string
+  createdAt: string
+}
+
+export interface UpdateResult {
+  success: boolean
+  output: string
+  snapshotTag?: string
+  conflicts?: string[]
+}
+
 // A read-only reference file (an installed plugin's own *.scss) shown alongside the editor so the
 // user can see the original selectors they're overriding. Only available for CLI-installed
 // plugins (a real directory under .quartz/plugins/<name>) - built-in @quartz-community/x entries
@@ -344,6 +381,14 @@ export const IPC = {
   localizationSaveEntry: 'localization:saveEntry',
   localizationGitAttributesStatus: 'localization:gitAttributesStatus',
   localizationEnsureGitAttributes: 'localization:ensureGitAttributes',
+
+  updateCoreStatus: 'update:coreStatus',
+  updateCoreRun: 'update:coreRun',
+  updateCoreAbort: 'update:coreAbort',
+  updatePluginsStatus: 'update:pluginsStatus',
+  updatePluginRun: 'update:pluginRun',
+  updateSnapshotList: 'update:snapshotList',
+  updateSnapshotRestore: 'update:snapshotRestore',
   dialogPickFile: 'dialog:pickFile',
   dialogOpenPath: 'dialog:openPath',
 
@@ -443,6 +488,15 @@ export interface QuartzGuiApi {
     saveEntry(projectPath: string, code: string, path: string[], kind: 'string' | 'template', value: string): Promise<LocaleSaveResult>
     gitAttributesStatus(projectPath: string): Promise<boolean>
     ensureGitAttributes(projectPath: string): Promise<void>
+  }
+  updates: {
+    coreStatus(projectPath: string): Promise<CoreUpdateStatus>
+    runCoreUpdate(projectPath: string): Promise<UpdateResult>
+    abortCoreMerge(projectPath: string): Promise<PluginActionResult>
+    pluginsStatus(projectPath: string): Promise<PluginUpdateStatus[]>
+    updatePlugin(projectPath: string, name?: string): Promise<PluginActionResult>
+    listSnapshots(projectPath: string): Promise<ProjectSnapshot[]>
+    restoreSnapshot(projectPath: string, tag: string): Promise<PluginActionResult>
   }
   themeMarketplace: {
     list(githubToken?: string): Promise<QuartzThemeListing[]>

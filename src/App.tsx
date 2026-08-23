@@ -14,6 +14,7 @@ import BuildServer from './routes/BuildServer'
 import Content from './routes/Content'
 import GitSync from './routes/GitSync'
 import Backups from './routes/Backups'
+import Updates from './routes/Updates'
 
 export default function App(): JSX.Element {
   return (
@@ -33,6 +34,7 @@ export default function App(): JSX.Element {
         <Route path="server" element={<BuildServer />} />
         <Route path="sync" element={<GitSync />} />
         <Route path="backups" element={<Backups />} />
+        <Route path="updates" element={<Updates />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

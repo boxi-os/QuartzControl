@@ -3,7 +3,7 @@ import { existsSync } from 'fs'
 import { join } from 'path'
 import type { CreateProjectOptions, CreateProjectResult } from '@shared/ipc-contract'
 
-const TEMPLATE_REPO = 'https://github.com/jackyzha0/quartz.git'
+export const TEMPLATE_REPO = 'https://github.com/jackyzha0/quartz.git'
 
 function run(command: string, args: string[], cwd?: string): Promise<{ success: boolean; output: string }> {
   return new Promise((resolvePromise) => {

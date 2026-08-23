@@ -7,7 +7,7 @@ import SftpClient from 'ssh2-sftp-client'
 import { Client as FtpClient } from 'basic-ftp'
 import type { DeployConnectionProfile, DeployDiffEntry, DeployProgressEvent, DeployResult } from '@shared/ipc-contract'
 import * as secretsService from './secretsService'
-import { quartzGuiDir } from './projectDirs'
+import { quartzGuiDir, resolveBuildDir } from './projectDirs'
 
 export const deployEvents = new EventEmitter()
 
@@ -59,13 +59,6 @@ async function buildCurrentManifest(buildDir: string): Promise<Manifest> {
     })
   )
   return manifest
-}
-
-// `quartz build`'s own default output dir is "public" (verified against quartz/cli/args.js's
-// BuildArgv) - resolved here rather than in the renderer so callers only ever pass a project path
-// and stay OS-path-separator-agnostic.
-function resolveBuildDir(projectPath: string, outputDir?: string): string {
-  return join(projectPath, outputDir || 'public')
 }
 
 export async function diffBuildOutput(projectPath: string, outputDir?: string): Promise<DeployDiffEntry[]> {

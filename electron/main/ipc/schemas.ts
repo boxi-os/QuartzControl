@@ -30,6 +30,11 @@ export const relativeSubPath = z
   .refine((p) => !isAbsolute(p), { message: 'Pfad darf nicht absolut sein' })
   .refine((p) => !p.split(/[\\/]/).includes('..'), { message: 'Pfad darf kein ".." enthalten' })
 
+// A build output directory may be either: relative to the project ("dist", the common case) or
+// an absolute path the user picked from the folder dialog in BuildServer's one-off export. Both
+// have to pass, and resolveBuildDir() in projectDirs.ts is what interprets them consistently.
+export const buildOutputDir = z.union([absolutePath, relativeSubPath])
+
 // One filesystem name: no separators, no "."/".." - safe to join onto a directory.
 export const safeSegment = z
   .string()

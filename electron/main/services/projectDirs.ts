@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
-import { join } from 'path'
+import { isAbsolute, join } from 'path'
 
 // The single place that creates <project>/.quartz-gui/ - this app's own scratch area inside the
 // user's project (backups, theme presets, authored frames, the deploy manifest, the Pages
@@ -36,4 +36,15 @@ export function quartzGuiDir(projectPath: string, ...sub: string[]): string {
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
   ensureIgnored(projectPath)
   return dir
+}
+
+// `quartz build`'s own default output dir is "public" (verified against quartz/cli/args.js's
+// BuildArgv). An outputDir may also be absolute - BuildServer's one-off export lets the user pick
+// a folder from the native dialog, which always yields an absolute path. A plain join() would
+// silently mis-resolve that (join('/projekt', '/export') === '/projekt/export'), so absolute
+// paths are passed through untouched. Shared by deployService and styleService so both agree on
+// where the build output actually is.
+export function resolveBuildDir(projectPath: string, outputDir?: string): string {
+  if (!outputDir) return join(projectPath, 'public')
+  return isAbsolute(outputDir) ? outputDir : join(projectPath, outputDir)
 }

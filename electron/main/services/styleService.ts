@@ -2,6 +2,7 @@ import { existsSync, mkdirSync } from 'fs'
 import { copyFile, readFile, readdir, writeFile } from 'fs/promises'
 import { basename, join, relative } from 'path'
 import type { CssVariableOverride, StyleReferenceFile, StylesInfo } from '@shared/ipc-contract'
+import { resolveBuildDir } from './projectDirs'
 
 // The file Quartz's build imports directly (quartz/plugins/emitters/componentResources.ts) -
 // verified against a real clone. Already inside the dev server's esbuild watch graph, so saving
@@ -173,7 +174,7 @@ function stripManagedBlock(content: string, markerId: string): string {
 // authored variables (which have no fixed catalog - any plugin can bring its own) can still be
 // discovered without a hardcoded list. Best-effort: returns [] if no build output exists yet.
 export async function scanBuildOutputVariables(projectPath: string, outputDir?: string): Promise<string[]> {
-  const buildDir = join(projectPath, outputDir || 'public')
+  const buildDir = resolveBuildDir(projectPath, outputDir)
   if (!existsSync(buildDir)) return []
   const cssFiles = (await findCssFiles(buildDir)).slice(0, 50)
   const found = new Set<string>()

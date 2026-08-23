@@ -35,6 +35,11 @@ export default function Publish(): JSX.Element {
   const [connections, setConnections] = useState<DeployConnectionProfile[]>([])
   const [target, setTarget] = useState<Target>({ kind: 'github-pages' })
   const [githubBranch, setGithubBranch] = useState('gh-pages')
+  // Which directory gets published. Empty means quartz's own default, public/. Kept explicit
+  // rather than assumed: BuildServer's one-off export can write somewhere else entirely, and
+  // silently diffing a stale public/ against the server is exactly the kind of wrong that looks
+  // like it worked.
+  const [outputDir, setOutputDir] = useState('')
   const [editingDraft, setEditingDraft] = useState<SaveDeployConnectionInput | null>(null)
   const [diff, setDiff] = useState<DeployDiffEntry[] | null>(null)
   const [excluded, setExcluded] = useState<Set<string>>(new Set())
@@ -57,14 +62,14 @@ export default function Publish(): JSX.Element {
   // "Speichere…" for good, with nothing on screen saying why.
   const diffAction = useAsyncAction(async () => {
     setDeployResult(null)
-    const result = await window.quartzGui.deploy.diff(project.path)
+    const result = await window.quartzGui.deploy.diff(project.path, outputDir || undefined)
     setDiff(result)
     setExcluded(new Set())
   })
   const refreshDiff = diffAction.run
 
   const buildAction = useAsyncAction(async () => {
-    await window.quartzGui.build.run(project.id, project.path)
+    await window.quartzGui.build.run(project.id, project.path, outputDir || undefined)
     await refreshDiff()
   })
 
@@ -98,8 +103,8 @@ export default function Publish(): JSX.Element {
     setProgress(null)
     const result =
       target.kind === 'github-pages'
-        ? await window.quartzGui.deploy.runGithubPages(project.path, undefined, { branch: githubBranch })
-        : await window.quartzGui.deploy.run(target.id, undefined, Array.from(excluded))
+        ? await window.quartzGui.deploy.runGithubPages(project.path, outputDir || undefined, { branch: githubBranch })
+        : await window.quartzGui.deploy.run(target.id, outputDir || undefined, Array.from(excluded))
     setDeployResult(result)
     if (result.success) await refreshDiff()
   })
@@ -325,6 +330,17 @@ export default function Publish(): JSX.Element {
               {diffAction.pending ? t('common.saving') : t('publish.refreshDiff')}
             </Button>
           </div>
+        </div>
+
+        <div className="mt-3">
+          <Field label={t('publish.outputDir')}>
+            <TextInput
+              value={outputDir}
+              onChange={(e) => setOutputDir(e.target.value)}
+              placeholder={t('publish.outputDirPlaceholder')}
+              className="max-w-md"
+            />
+          </Field>
         </div>
 
         {(diffAction.error || buildAction.error) && (

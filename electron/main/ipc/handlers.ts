@@ -160,7 +160,7 @@ export function registerIpcHandlers(): void {
     t([s.absolutePath, z.array(s.cssVariableOverride).max(1000)]),
     (projectPath, overrides) => styleService.saveVariableOverrides(projectPath, overrides)
   )
-  handle(IPC.stylesScanBuildOutputVariables, t([s.absolutePath, s.relativeSubPath.optional()]), (projectPath, outputDir) =>
+  handle(IPC.stylesScanBuildOutputVariables, t([s.absolutePath, s.buildOutputDir.optional()]), (projectPath, outputDir) =>
     styleService.scanBuildOutputVariables(projectPath, outputDir)
   )
 
@@ -200,17 +200,17 @@ export function registerIpcHandlers(): void {
   handle(IPC.deployConnectionSave, t([s.saveDeployConnectionInput]), (input) => secretsService.saveConnection(input as SaveDeployConnectionInput))
   handle(IPC.deployConnectionDelete, t([s.uuid]), (id) => secretsService.deleteConnection(id))
   handle(IPC.deployForgetHostKey, t([s.uuid]), (id) => secretsService.forgetHostKey(id))
-  handle(IPC.deployDiff, t([s.absolutePath, s.relativeSubPath.optional()]), (projectPath, outputDir) =>
+  handle(IPC.deployDiff, t([s.absolutePath, s.buildOutputDir.optional()]), (projectPath, outputDir) =>
     deployService.diffBuildOutput(projectPath, outputDir)
   )
   handle(
     IPC.deployRun,
-    t([s.uuid, s.relativeSubPath.optional(), z.array(z.string().max(4096)).max(100_000)]),
+    t([s.uuid, s.buildOutputDir.optional(), z.array(z.string().max(4096)).max(100_000)]),
     (connectionId, outputDir, excludePaths) => deployService.runDeploy(connectionId, outputDir, excludePaths)
   )
   handle(
     IPC.deployGithubPagesRun,
-    t([s.absolutePath, s.relativeSubPath.optional(), s.githubPagesDeployOptions]),
+    t([s.absolutePath, s.buildOutputDir.optional(), s.githubPagesDeployOptions]),
     (projectPath, outputDir, options) => githubPagesService.deployGithubPages(projectPath, outputDir, options as GithubPagesDeployOptions)
   )
 
@@ -242,7 +242,7 @@ export function registerIpcHandlers(): void {
   )
   handle(IPC.serverStatus, t([s.uuid]), (projectId) => buildService.getServerStatus(projectId))
 
-  handle(IPC.buildRun, t([s.uuid, s.absolutePath, s.relativeSubPath.optional()]), (projectId, projectPath, outputDir) =>
+  handle(IPC.buildRun, t([s.uuid, s.absolutePath, s.buildOutputDir.optional()]), (projectId, projectPath, outputDir) =>
     buildService.runBuild(projectId, projectPath, outputDir)
   )
 

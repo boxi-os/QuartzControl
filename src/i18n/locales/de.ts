@@ -516,6 +516,8 @@ export default {
       privateKey: 'Privater Schlüssel (Inhalt)',
       secretUnchangedPlaceholder: 'unverändert lassen'
     },
+    outputDir: 'Ausgabeverzeichnis',
+    outputDirPlaceholder: 'Standard: public/ im Projekt',
     diffHeading: 'Änderungen',
     buildNow: 'Jetzt bauen',
     refreshDiff: 'Diff aktualisieren',

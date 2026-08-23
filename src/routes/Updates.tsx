@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useProject } from './ProjectLayout'
 import type { CoreUpdateStatus, PluginUpdateStatus, ProjectSnapshot, UpdateResult } from '@shared/ipc-contract'
 import { Badge, Button, Card } from '../components/ui'
+import { formatIpcError } from '../components/ErrorSurface'
 
 function shortCommit(commit?: string | null): string {
   return commit ? commit.slice(0, 7) : '—'
@@ -30,39 +31,61 @@ export default function Updates(): JSX.Element {
     reload()
   }, [project.path])
 
+  // Every handler here resets its busy flag in a finally: these are the longest-running actions
+  // in the app (a core update runs git merge + npm install + a warm-up build), and a rejected
+  // invoke used to leave the button disabled with no way back except leaving the page.
   async function runCoreUpdate(): Promise<void> {
     if (!confirm(t('updates.core.confirm'))) return
     setCoreBusy(true)
     setCoreResult(null)
-    const result = await window.quartzGui.updates.runCoreUpdate(project.path)
-    setCoreResult(result)
-    setCoreBusy(false)
-    reload()
+    try {
+      setCoreResult(await window.quartzGui.updates.runCoreUpdate(project.path))
+    } catch (err) {
+      setCoreResult({ success: false, output: formatIpcError(err) })
+    } finally {
+      setCoreBusy(false)
+      reload()
+    }
   }
 
   async function abortMerge(): Promise<void> {
     setCoreBusy(true)
-    await window.quartzGui.updates.abortCoreMerge(project.path)
-    setCoreResult(null)
-    setCoreBusy(false)
-    reload()
+    try {
+      await window.quartzGui.updates.abortCoreMerge(project.path)
+      setCoreResult(null)
+    } catch (err) {
+      setCoreResult({ success: false, output: formatIpcError(err) })
+    } finally {
+      setCoreBusy(false)
+      reload()
+    }
   }
 
   async function updatePlugin(name?: string): Promise<void> {
     setPluginBusy(name ?? '__all__')
     setPluginMessage(null)
-    const result = await window.quartzGui.updates.updatePlugin(project.path, name)
-    setPluginMessage(result.output.slice(-2000))
-    setPluginBusy(null)
-    window.quartzGui.updates.pluginsStatus(project.path).then(setPluginStatuses)
+    try {
+      const result = await window.quartzGui.updates.updatePlugin(project.path, name)
+      setPluginMessage(result.output.slice(-2000))
+    } catch (err) {
+      setPluginMessage(formatIpcError(err))
+    } finally {
+      setPluginBusy(null)
+      window.quartzGui.updates.pluginsStatus(project.path).then(setPluginStatuses)
+    }
   }
 
   async function restoreSnapshot(tag: string): Promise<void> {
     if (!confirm(t('updates.snapshots.confirmRestore', { tag }))) return
     setRestoreBusy(tag)
-    await window.quartzGui.updates.restoreSnapshot(project.path, tag)
-    setRestoreBusy(null)
-    reload()
+    try {
+      await window.quartzGui.updates.restoreSnapshot(project.path, tag)
+    } catch (err) {
+      setCoreResult({ success: false, output: formatIpcError(err) })
+    } finally {
+      setRestoreBusy(null)
+      reload()
+    }
   }
 
   const outdatedPlugins = (pluginStatuses ?? []).filter((p) => !p.isLocal && !p.upToDate)

@@ -23,9 +23,25 @@ function idToIso(id: string): string {
   return `${prefix}:${mm}:${ss}.${ms}Z`
 }
 
+// Every writeConfig() snapshots the previous file, and the editor tabs save often - a session of
+// tweaking colors can leave dozens of near-identical copies. Config backups are a short-term undo,
+// not an archive (git is the archive), so only the newest are kept. Content backups are NOT pruned:
+// each one holds a whole content directory the user may have moved away, which is not something to
+// delete behind their back.
+const MAX_CONFIG_BACKUPS = 50
+
+async function pruneConfigBackups(projectPath: string): Promise<void> {
+  const dir = backupsRoot(projectPath, 'config')
+  const files = (await readdir(dir)).filter((f) => f.endsWith('.yaml')).sort()
+  // sorted ascending, and the timestamp format sorts lexicographically == chronologically
+  const stale = files.slice(0, Math.max(0, files.length - MAX_CONFIG_BACKUPS))
+  await Promise.all(stale.map((f) => rm(join(dir, f), { force: true })))
+}
+
 export async function snapshotConfig(projectPath: string, rawYaml: string): Promise<BackupEntry> {
   const id = timestampId()
   await writeFile(join(backupsRoot(projectPath, 'config'), `${id}.yaml`), rawYaml, 'utf-8')
+  await pruneConfigBackups(projectPath)
   return { id, createdAt: new Date().toISOString(), kind: 'config' }
 }
 

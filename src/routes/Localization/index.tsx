@@ -55,6 +55,17 @@ export default function Localization(): JSX.Element {
   async function saveAll(): Promise<void> {
     if (!entries) return
     setSaving(true)
+    try {
+      await saveDirtyEntries()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Split out so saveAll's finally stays readable: a rejected save used to skip setSaving(false)
+  // and leave the Save button disabled with a page full of unsaved edits.
+  async function saveDirtyEntries(): Promise<void> {
+    if (!entries) return
     const nextErrors: Record<string, string> = {}
     for (const entry of entries) {
       const key = keyOf(entry.path)
@@ -74,7 +85,6 @@ export default function Localization(): JSX.Element {
       return next
     })
     setGitAttrOk(await window.quartzGui.localization.gitAttributesStatus(project.path))
-    setSaving(false)
   }
 
   const q = query.trim().toLowerCase()

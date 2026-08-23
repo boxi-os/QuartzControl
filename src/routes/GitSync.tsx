@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProject } from './ProjectLayout'
 import { Button, Card } from '../components/ui'
+import { formatIpcError } from '../components/ErrorSurface'
 
 export default function GitSync(): JSX.Element {
   const { t } = useTranslation()
@@ -13,10 +14,18 @@ export default function GitSync(): JSX.Element {
   async function run(direction: 'push' | 'pull' | 'both'): Promise<void> {
     setBusy(direction)
     setOutput(null)
-    const result = await window.quartzGui.sync.run(project.path, direction)
-    setBusy(null)
-    setSuccess(result.success)
-    setOutput(result.output)
+    try {
+      const result = await window.quartzGui.sync.run(project.path, direction)
+      setSuccess(result.success)
+      setOutput(result.output)
+    } catch (err) {
+      // A rejected invoke used to skip setBusy(null) below, leaving all three buttons disabled
+      // for good. Reported through the existing output panel rather than a separate error slot.
+      setSuccess(false)
+      setOutput(formatIpcError(err))
+    } finally {
+      setBusy(null)
+    }
   }
 
   return (

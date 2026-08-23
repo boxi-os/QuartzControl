@@ -5,6 +5,7 @@ import { useProject } from '../ProjectLayout'
 import { useAppStore } from '../../state/store'
 import type { MarketplacePlugin, PluginEntry } from '@shared/ipc-contract'
 import { Badge, Button, Card, TextInput } from '../../components/ui'
+import { formatIpcError } from '../../components/ErrorSurface'
 
 // Normalizes any plugin source form (github: string, {repo} object, or the built-in
 // "@quartz-community/x" shorthand - which really is the quartz-community/x repo, just
@@ -48,10 +49,15 @@ export default function PluginsMarketplace(): JSX.Element {
 
   async function install(plugin: MarketplacePlugin): Promise<void> {
     setInstalling(plugin.fullName)
-    const result = await window.quartzGui.plugins.add(project.path, `github:${plugin.fullName}`)
-    setInstalling(null)
-    setMessage(result.success ? t('pluginsMarketplace.installedMessage', { name: plugin.name }) : result.output)
-    if (result.success) await loadInstalled()
+    try {
+      const result = await window.quartzGui.plugins.add(project.path, `github:${plugin.fullName}`)
+      setMessage(result.success ? t('pluginsMarketplace.installedMessage', { name: plugin.name }) : result.output)
+      if (result.success) await loadInstalled()
+    } catch (err) {
+      setMessage(formatIpcError(err))
+    } finally {
+      setInstalling(null)
+    }
   }
 
   return (

@@ -495,6 +495,7 @@ export default {
     forgetHostKey: 'Host-Key vergessen',
     confirmForgetHostKey:
       'Gespeicherten Host-Key für {{host}} verwerfen?\n\nBeim nächsten Verbinden wird der Fingerprint erneut abgefragt. Nur tun, wenn der Server nachweislich neu aufgesetzt wurde.',
+    ftpPlaintextWarning: 'FTP überträgt Passwort und Dateien im Klartext. Ohne FTPS kann jeder im selben Netz mitlesen — falls dein Anbieter es unterstützt, unbedingt aktivieren (oder besser SFTP nutzen).',
     confirmDeleteConnection: 'Diese Verbindung wirklich löschen?',
     confirmDeployGithubPages:
       'Veröffentlichen nach GitHub Pages?\n\nDer Branch "{{branch}}" wird dabei vollständig durch den aktuellen Build ersetzt (force-push).',

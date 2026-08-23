@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { FrameSlot, GridFrameArea, GridFrameDefinition } from '@shared/ipc-contract'
 import { Button, Card, Field, Select, TextInput } from '../../components/ui'
+import { formatIpcError } from '../../components/ErrorSurface'
 
 const RESERVED_FRAME_NAMES = ['default', 'full-width', 'minimal']
 const SLOTS: FrameSlot[] = ['header', 'left', 'right', 'beforeBody', 'pageBody', 'afterBody', 'footer']
@@ -153,15 +154,21 @@ export default function FrameBuilder({
       return
     }
     setSaving(true)
-    const result = await window.quartzGui.layoutFrames.save(projectPath, editing)
-    setSaving(false)
-    if (!result.success) {
-      setMessage(result.output)
-      return
+    try {
+      const result = await window.quartzGui.layoutFrames.save(projectPath, editing)
+      if (!result.success) {
+        setMessage(result.output)
+        return
+      }
+      refresh()
+      onFramesChanged()
+      closeEditor()
+    } catch (err) {
+      // e.g. an area name the validation layer refuses because it would break the generated CSS
+      setMessage(formatIpcError(err))
+    } finally {
+      setSaving(false)
     }
-    refresh()
-    onFramesChanged()
-    closeEditor()
   }
 
   async function remove(def: GridFrameDefinition): Promise<void> {

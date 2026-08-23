@@ -42,14 +42,21 @@ export default function ProjectDashboard(): JSX.Element {
   async function start(): Promise<void> {
     setBusy(true)
     setLogs([])
-    setServer(await window.quartzGui.server.start(project.id, project.path))
-    setBusy(false)
+    try {
+      setServer(await window.quartzGui.server.start(project.id, project.path))
+    } finally {
+      // the global toast reports the failure; this only has to un-stick the button
+      setBusy(false)
+    }
   }
 
   async function stop(): Promise<void> {
     setBusy(true)
-    await window.quartzGui.server.stop(project.id)
-    setBusy(false)
+    try {
+      await window.quartzGui.server.stop(project.id)
+    } finally {
+      setBusy(false)
+    }
   }
 
   const overridingIndex = config ? findOverridingThemePluginIndex(config.plugins) : -1

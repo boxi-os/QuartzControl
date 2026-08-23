@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useProject } from '../ProjectLayout'
 import type { PluginEntry, QuartzConfig, QuartzThemeListing, ThemeDetail, ThemePreset, ThemeStyleSettingsInfo } from '@shared/ipc-contract'
 import { Badge, Button, Card, TextInput, Toggle } from '../../components/ui'
+import { formatIpcError } from '../../components/ErrorSurface'
 
 // @quartz-themes/* (e.g. @quartz-themes/core) is a third-party Obsidian-style theming engine,
 // separate from Quartz's built-in configuration.theme.colors. It injects its own CSS variables
@@ -426,13 +427,18 @@ function ThemeCatalog({
   async function install(themeId: string): Promise<void> {
     setInstallingId(themeId)
     setMessage(null)
-    const result = await window.quartzGui.themeMarketplace.install(projectPath, themeId)
-    setInstallingId(null)
-    if (result.success) {
-      onActivate(themeId)
-      setMessage(t('themes.catalog.installSuccess', { id: themeId }))
-    } else {
-      setMessage(t('themes.catalog.installFailed', { id: themeId, output: result.output.slice(0, 300) }))
+    try {
+      const result = await window.quartzGui.themeMarketplace.install(projectPath, themeId)
+      if (result.success) {
+        onActivate(themeId)
+        setMessage(t('themes.catalog.installSuccess', { id: themeId }))
+      } else {
+        setMessage(t('themes.catalog.installFailed', { id: themeId, output: result.output.slice(0, 300) }))
+      }
+    } catch (err) {
+      setMessage(formatIpcError(err))
+    } finally {
+      setInstallingId(null)
     }
   }
 

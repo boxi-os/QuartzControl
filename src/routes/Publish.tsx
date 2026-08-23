@@ -285,6 +285,11 @@ export default function Publish(): JSX.Element {
                 />
               </div>
             )}
+            {editingDraft.protocol === 'ftp' && !editingDraft.secure && (
+              <p className="col-span-2 rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+                {t('publish.ftpPlaintextWarning')}
+              </p>
+            )}
             <Field
               label={
                 editingDraft.authMethod === 'password' ? t('publish.connectionForm.password') : t('publish.connectionForm.privateKey')

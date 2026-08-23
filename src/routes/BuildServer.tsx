@@ -4,6 +4,7 @@ import { useProject } from './ProjectLayout'
 import type { LogLine, ServerOptions, ServerStatus, BuildResult } from '@shared/ipc-contract'
 import { Badge, Button, Card, Field, TextInput, Toggle } from '../components/ui'
 import { LogConsole } from '../components/LogConsole'
+import { formatIpcError } from '../components/ErrorSurface'
 
 // `host` is only meaningful as Quartz's `--remoteDevHost`: an override for the live-reload
 // websocket URL when previewing through a tunnel/remote host, which makes the browser connect
@@ -62,9 +63,15 @@ export default function BuildServer(): JSX.Element {
     setBuilding(true)
     setBuildLogs([])
     setBuildResult(null)
-    const result = await window.quartzGui.build.run(project.id, project.path, exportDir || undefined)
-    setBuildResult(result)
-    setBuilding(false)
+    try {
+      setBuildResult(await window.quartzGui.build.run(project.id, project.path, exportDir || undefined))
+    } catch (err) {
+      // e.g. an export directory the validation layer rejects - shown in the build log panel,
+      // which is where the user is already looking
+      setBuildLogs((prev) => [...prev, { projectId: project.id, stream: 'stderr', text: formatIpcError(err), timestamp: new Date().toISOString() }])
+    } finally {
+      setBuilding(false)
+    }
   }
 
   async function pickExportDir(): Promise<void> {

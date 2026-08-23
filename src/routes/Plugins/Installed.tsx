@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { useProject } from '../ProjectLayout'
 import type { PluginEntry, PluginLayoutDeclaration, PluginOptionField, QuartzConfig } from '@shared/ipc-contract'
 import { Badge, Button, Card, Select, TextInput, Toggle } from '../../components/ui'
+import { formatIpcError } from '../../components/ErrorSurface'
 
 // Quartz plugins fall into distinct kinds - transformers, filters, page types, emitters,
 // components (see https://quartz.jzhao.xyz/plugins/) - but that exact category isn't stored
@@ -186,11 +187,16 @@ export default function PluginsInstalled(): JSX.Element {
   async function addPlugin(): Promise<void> {
     if (!newSource.trim()) return
     setBusy(true)
-    const result = await window.quartzGui.plugins.add(project.path, newSource.trim())
-    setBusy(false)
-    setMessage(result.success ? null : result.output)
-    setNewSource('')
-    await reload()
+    try {
+      const result = await window.quartzGui.plugins.add(project.path, newSource.trim())
+      setMessage(result.success ? null : result.output)
+      setNewSource('')
+    } catch (err) {
+      setMessage(formatIpcError(err))
+    } finally {
+      setBusy(false)
+      await reload()
+    }
   }
 
   // Two config entries can derive the same display name (e.g. a built-in "@quartz-community/explorer"
@@ -208,9 +214,14 @@ export default function PluginsInstalled(): JSX.Element {
     if (!config) return
     setBusy(true)
     const plugins = config.plugins.map((p, i) => (i === index ? { ...p, enabled: !p.enabled } : p))
-    await window.quartzGui.config.save(project.path, { ...config, plugins })
-    setBusy(false)
-    await reload()
+    try {
+      await window.quartzGui.config.save(project.path, { ...config, plugins })
+    } catch (err) {
+      setMessage(formatIpcError(err))
+    } finally {
+      setBusy(false)
+      await reload()
+    }
   }
 
   async function removePlugin(plugin: PluginEntry): Promise<void> {
@@ -218,10 +229,15 @@ export default function PluginsInstalled(): JSX.Element {
     setBusy(true)
     // still CLI-based: `quartz plugin remove <name>` also cleans up .quartz/plugins/<name> on
     // disk and quartz.lock.json, which a plain config.yaml edit wouldn't do
-    const result = await window.quartzGui.plugins.remove(project.path, plugin.name)
-    setBusy(false)
-    setMessage(result.success ? null : result.output)
-    await reload()
+    try {
+      const result = await window.quartzGui.plugins.remove(project.path, plugin.name)
+      setMessage(result.success ? null : result.output)
+    } catch (err) {
+      setMessage(formatIpcError(err))
+    } finally {
+      setBusy(false)
+      await reload()
+    }
   }
 
   // Components are only reordered against siblings in the same layout position (their

@@ -3,11 +3,10 @@ import { readdir, readFile, writeFile, rename, rm, lstat, readlink, symlink } fr
 import { join } from 'path'
 import { diffLines } from 'diff'
 import type { BackupEntry } from '@shared/ipc-contract'
+import { quartzGuiDir } from './projectDirs'
 
 function backupsRoot(projectPath: string, kind: 'config' | 'content'): string {
-  const dir = join(projectPath, '.quartz-gui', kind === 'config' ? 'backups' : 'content-backups')
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-  return dir
+  return quartzGuiDir(projectPath, kind === 'config' ? 'backups' : 'content-backups')
 }
 
 function timestampId(): string {

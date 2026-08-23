@@ -3,6 +3,7 @@ import { readFile, readdir, writeFile } from 'fs/promises'
 import { join } from 'path'
 import type { GridFrameArea, GridFrameDefinition, PluginActionResult } from '@shared/ipc-contract'
 import * as pluginService from './pluginService'
+import { quartzGuiDir } from './projectDirs'
 
 // Authored frames live inside the project (.quartz-gui/, same convention as
 // themePresetsService.ts/backupService.ts) so they travel with the project, not the app install.
@@ -11,9 +12,7 @@ import * as pluginService from './pluginService'
 // symlinked, not copied, and the plugin name is derived from the source path's basename - see
 // quartz/cli/plugin-git-handlers.js's handlePluginAdd + plugin-data.js's parseGitSource).
 function framesDir(projectPath: string): string {
-  const dir = join(projectPath, '.quartz-gui', 'authored-frames')
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-  return dir
+  return quartzGuiDir(projectPath, 'authored-frames')
 }
 
 // A frame id becomes a directory name under .quartz-gui/authored-frames/ and is also handed to

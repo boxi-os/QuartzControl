@@ -1,12 +1,12 @@
 import { createHash } from 'crypto'
 import { EventEmitter } from 'events'
-import { existsSync, mkdirSync } from 'fs'
 import { readFile, readdir, stat, writeFile } from 'fs/promises'
 import { join, relative, posix } from 'path'
 import SftpClient from 'ssh2-sftp-client'
 import { Client as FtpClient } from 'basic-ftp'
 import type { DeployConnectionProfile, DeployDiffEntry, DeployProgressEvent, DeployResult } from '@shared/ipc-contract'
 import * as secretsService from './secretsService'
+import { quartzGuiDir } from './projectDirs'
 
 export const deployEvents = new EventEmitter()
 
@@ -16,9 +16,7 @@ export const deployEvents = new EventEmitter()
 // SFTP/FTP/GitHub Pages make cheap; this manifest instead tracks "what we last deployed from here"
 // which is the only diff Quartz-GUI itself can know without a remote round-trip.
 function manifestPath(projectPath: string): string {
-  const dir = join(projectPath, '.quartz-gui')
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-  return join(dir, 'deploy-manifest.json')
+  return join(quartzGuiDir(projectPath), 'deploy-manifest.json')
 }
 
 type Manifest = Record<string, string>

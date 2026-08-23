@@ -1,15 +1,13 @@
-import { existsSync, mkdirSync } from 'fs'
 import { readFile, writeFile } from 'fs/promises'
 import { join } from 'path'
 import type { ThemePreset } from '@shared/ipc-contract'
+import { quartzGuiDir } from './projectDirs'
 
 // Presets live inside the project (.quartz-gui/, same convention as backupService.ts's
 // backups/content-backups folders) rather than Electron's userData, since a preset is tied to a
 // specific project's installed themes/plugins and should travel with it, not with the app install.
 function presetsPath(projectPath: string): string {
-  const dir = join(projectPath, '.quartz-gui')
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-  return join(dir, 'theme-presets.json')
+  return join(quartzGuiDir(projectPath), 'theme-presets.json')
 }
 
 async function readAll(projectPath: string): Promise<ThemePreset[]> {

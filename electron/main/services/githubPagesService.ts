@@ -2,6 +2,7 @@ import { spawn } from 'child_process'
 import { cp, mkdir, readdir, rm } from 'fs/promises'
 import { join } from 'path'
 import type { DeployResult, GithubPagesDeployOptions } from '@shared/ipc-contract'
+import { quartzGuiDir } from './projectDirs'
 
 function run(command: string, args: string[], cwd?: string): Promise<{ success: boolean; output: string }> {
   return new Promise((resolvePromise) => {
@@ -76,7 +77,7 @@ export async function deployGithubPages(
     }
   }
 
-  const worktreeDir = join(projectPath, '.quartz-gui', 'gh-pages-worktree')
+  const worktreeDir = join(quartzGuiDir(projectPath), 'gh-pages-worktree')
 
   // Clean up any stale worktree registration/directory from a previous (e.g. interrupted) deploy
   // before adding a fresh one - `git worktree add` fails outright if the path is already registered.

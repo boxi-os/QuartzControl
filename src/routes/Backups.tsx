@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useProject } from './ProjectLayout'
 import type { BackupEntry } from '@shared/ipc-contract'
 import { Button, Card, SegmentedControl } from '../components/ui'
+import { useAsyncAction } from '../hooks/useAsyncAction'
 
 export default function Backups(): JSX.Element {
   const { t, i18n } = useTranslation()
@@ -10,7 +11,6 @@ export default function Backups(): JSX.Element {
   const [kind, setKind] = useState<'config' | 'content'>('config')
   const [entries, setEntries] = useState<BackupEntry[]>([])
   const [diff, setDiff] = useState<{ id: string; text: string } | null>(null)
-  const [busy, setBusy] = useState(false)
 
   async function reload(): Promise<void> {
     setEntries(await window.quartzGui.backups.list(project.path, kind))
@@ -21,17 +21,21 @@ export default function Backups(): JSX.Element {
     reload()
   }, [project.path, kind])
 
-  async function showDiff(entry: BackupEntry): Promise<void> {
+  const diffAction = useAsyncAction(async (entry: BackupEntry) => {
     const text = await window.quartzGui.backups.diff(project.path, entry.id)
     setDiff({ id: entry.id, text })
-  }
+  })
+
+  // A restore can fail for real reasons - a content backup whose directory a previous restore
+  // already consumed, for one - so the row must come back out of its disabled state and say so.
+  const restoreAction = useAsyncAction(async (entry: BackupEntry) => {
+    await window.quartzGui.backups.restore(project.path, kind, entry.id)
+    await reload()
+  })
 
   async function restore(entry: BackupEntry): Promise<void> {
     if (!confirm(t('backups.confirmRestore'))) return
-    setBusy(true)
-    await window.quartzGui.backups.restore(project.path, kind, entry.id)
-    setBusy(false)
-    await reload()
+    await restoreAction.run(entry)
   }
 
   return (
@@ -47,6 +51,12 @@ export default function Backups(): JSX.Element {
         />
       </div>
 
+      {(restoreAction.error || diffAction.error) && (
+        <p className="mb-3 whitespace-pre-wrap break-words text-sm text-red-600 dark:text-red-400">
+          {restoreAction.error ?? diffAction.error}
+        </p>
+      )}
+
       <div className="flex flex-col gap-3">
         {entries.length === 0 && <p className="text-sm text-slate-500">{t('backups.none')}</p>}
         {entries.map((entry) => (
@@ -55,11 +65,11 @@ export default function Backups(): JSX.Element {
               <p className="text-sm">{new Date(entry.createdAt).toLocaleString(i18n.language)}</p>
               <div className="flex gap-2">
                 {kind === 'config' && (
-                  <Button variant="ghost" onClick={() => showDiff(entry)}>
+                  <Button variant="ghost" onClick={() => diffAction.run(entry)} disabled={diffAction.pending}>
                     {t('backups.viewDiff')}
                   </Button>
                 )}
-                <Button variant="ghost" onClick={() => restore(entry)} disabled={busy}>
+                <Button variant="ghost" onClick={() => restore(entry)} disabled={restoreAction.pending}>
                   {t('backups.restore')}
                 </Button>
               </div>

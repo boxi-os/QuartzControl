@@ -10,6 +10,7 @@ import type {
   SaveDeployConnectionInput
 } from '@shared/ipc-contract'
 import { Badge, Button, Card, Field, Select, TextInput, Toggle } from '../components/ui'
+import { useAsyncAction } from '../hooks/useAsyncAction'
 
 type Target = { kind: 'github-pages' } | { kind: 'connection'; id: string }
 
@@ -37,9 +38,6 @@ export default function Publish(): JSX.Element {
   const [editingDraft, setEditingDraft] = useState<SaveDeployConnectionInput | null>(null)
   const [diff, setDiff] = useState<DeployDiffEntry[] | null>(null)
   const [excluded, setExcluded] = useState<Set<string>>(new Set())
-  const [building, setBuilding] = useState(false)
-  const [diffing, setDiffing] = useState(false)
-  const [deploying, setDeploying] = useState(false)
   const [deployResult, setDeployResult] = useState<DeployResult | null>(null)
   const [progress, setProgress] = useState<DeployProgressEvent | null>(null)
 
@@ -54,21 +52,21 @@ export default function Publish(): JSX.Element {
 
   useEffect(() => window.quartzGui.deploy.onProgress(setProgress), [])
 
-  async function runBuild(): Promise<void> {
-    setBuilding(true)
-    await window.quartzGui.build.run(project.id, project.path)
-    setBuilding(false)
-    await refreshDiff()
-  }
-
-  async function refreshDiff(): Promise<void> {
-    setDiffing(true)
+  // The diff reads the build output directory, which simply doesn't exist until the first build -
+  // the call then rejects, and before this hook the "Diff aktualisieren" button stayed disabled on
+  // "Speichere…" for good, with nothing on screen saying why.
+  const diffAction = useAsyncAction(async () => {
     setDeployResult(null)
     const result = await window.quartzGui.deploy.diff(project.path)
     setDiff(result)
     setExcluded(new Set())
-    setDiffing(false)
-  }
+  })
+  const refreshDiff = diffAction.run
+
+  const buildAction = useAsyncAction(async () => {
+    await window.quartzGui.build.run(project.id, project.path)
+    await refreshDiff()
+  })
 
   function toggleExclude(path: string): void {
     setExcluded((prev) => {
@@ -92,7 +90,10 @@ export default function Publish(): JSX.Element {
       if (!confirm(t('publish.confirmDeployConnection', { target: label, uploads, deletions }))) return
     }
 
-    setDeploying(true)
+    await deployAction.run()
+  }
+
+  const deployAction = useAsyncAction(async () => {
     setDeployResult(null)
     setProgress(null)
     const result =
@@ -100,9 +101,8 @@ export default function Publish(): JSX.Element {
         ? await window.quartzGui.deploy.runGithubPages(project.path, undefined, { branch: githubBranch })
         : await window.quartzGui.deploy.run(target.id, undefined, Array.from(excluded))
     setDeployResult(result)
-    setDeploying(false)
     if (result.success) await refreshDiff()
-  }
+  })
 
   async function saveConnection(): Promise<void> {
     if (!editingDraft) return
@@ -298,16 +298,22 @@ export default function Publish(): JSX.Element {
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold">{t('publish.diffHeading')}</h2>
           <div className="flex gap-2">
-            <Button variant="ghost" onClick={runBuild} disabled={building}>
-              {building ? t('common.saving') : t('publish.buildNow')}
+            <Button variant="ghost" onClick={() => buildAction.run()} disabled={buildAction.pending}>
+              {buildAction.pending ? t('common.saving') : t('publish.buildNow')}
             </Button>
-            <Button variant="ghost" onClick={refreshDiff} disabled={diffing}>
-              {diffing ? t('common.saving') : t('publish.refreshDiff')}
+            <Button variant="ghost" onClick={() => refreshDiff()} disabled={diffAction.pending}>
+              {diffAction.pending ? t('common.saving') : t('publish.refreshDiff')}
             </Button>
           </div>
         </div>
 
-        {diff === null && <p className="mt-2 text-xs text-slate-500">{t('publish.noDiffYet')}</p>}
+        {(diffAction.error || buildAction.error) && (
+          <p className="mt-2 whitespace-pre-wrap break-words text-xs text-red-600 dark:text-red-400">
+            {diffAction.error ?? buildAction.error}
+          </p>
+        )}
+
+        {diff === null && !diffAction.error && <p className="mt-2 text-xs text-slate-500">{t('publish.noDiffYet')}</p>}
         {diff && diff.length === 0 && <p className="mt-2 text-xs text-slate-500">{t('publish.noChanges')}</p>}
 
         {diff && diff.length > 0 && (
@@ -341,10 +347,13 @@ export default function Publish(): JSX.Element {
       <Card>
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold">{t('publish.deployHeading')}</h2>
-          <Button onClick={deploy} disabled={deploying || !canDeploy || !diff}>
-            {deploying ? t('common.saving') : t('publish.deployButton')}
+          <Button onClick={deploy} disabled={deployAction.pending || !canDeploy || !diff}>
+            {deployAction.pending ? t('common.saving') : t('publish.deployButton')}
           </Button>
         </div>
+        {deployAction.error && (
+          <p className="mt-2 whitespace-pre-wrap break-words text-xs text-red-600 dark:text-red-400">{deployAction.error}</p>
+        )}
         {progress && (
           <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
             {t('publish.progress', { processed: progress.processed, total: progress.total, file: progress.currentFile ?? '' })}

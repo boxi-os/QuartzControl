@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow, dialog } from 'electron'
+import { ipcMain, BrowserWindow, dialog, shell } from 'electron'
 import { IPC } from '@shared/ipc-contract'
 import type {
   QuartzConfig,
@@ -16,6 +16,7 @@ import * as pluginSchemaService from '../services/pluginSchemaService'
 import * as themeMarketplaceService from '../services/themeMarketplaceService'
 import * as themePresetsService from '../services/themePresetsService'
 import * as layoutFrameService from '../services/layoutFrameService'
+import * as styleService from '../services/styleService'
 import * as marketplaceService from '../services/marketplaceService'
 import * as buildService from '../services/buildService'
 import * as syncService from '../services/syncService'
@@ -94,6 +95,15 @@ export function registerIpcHandlers(): void {
   )
   ipcMain.handle(IPC.layoutFrameDelete, (_e, projectPath: string, id: string) => layoutFrameService.deleteFrame(projectPath, id))
 
+  ipcMain.handle(IPC.stylesGet, (_e, projectPath: string) => styleService.readCustomScss(projectPath))
+  ipcMain.handle(IPC.stylesSave, (_e, projectPath: string, content: string) => styleService.writeCustomScss(projectPath, content))
+  ipcMain.handle(IPC.stylesReference, (_e, projectPath: string, pluginName: string) =>
+    styleService.getStyleReferences(projectPath, pluginName)
+  )
+  ipcMain.handle(IPC.stylesImportFile, (_e, projectPath: string, sourcePath: string) =>
+    styleService.importStyleFile(projectPath, sourcePath)
+  )
+
   ipcMain.handle(IPC.marketplaceSearch, (_e, query: string, githubToken?: string) =>
     marketplaceService.searchPlugins(query, githubToken)
   )
@@ -145,4 +155,12 @@ export function registerIpcHandlers(): void {
     if (result.canceled || result.filePaths.length === 0) return null
     return result.filePaths[0]
   })
+
+  ipcMain.handle(IPC.dialogPickFile, async (_e, filters?: { name: string; extensions: string[] }[]) => {
+    const result = await dialog.showOpenDialog({ properties: ['openFile'], filters })
+    if (result.canceled || result.filePaths.length === 0) return null
+    return result.filePaths[0]
+  })
+
+  ipcMain.handle(IPC.dialogOpenPath, (_e, path: string) => shell.openPath(path))
 }

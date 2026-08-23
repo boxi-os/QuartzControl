@@ -46,6 +46,12 @@ const api: QuartzGuiApi = {
     save: (projectPath: string, definition: GridFrameDefinition) => ipcRenderer.invoke(IPC.layoutFrameSave, projectPath, definition),
     delete: (projectPath: string, id: string) => ipcRenderer.invoke(IPC.layoutFrameDelete, projectPath, id)
   },
+  styles: {
+    get: (projectPath: string) => ipcRenderer.invoke(IPC.stylesGet, projectPath),
+    save: (projectPath: string, content: string) => ipcRenderer.invoke(IPC.stylesSave, projectPath, content),
+    reference: (projectPath: string, pluginName: string) => ipcRenderer.invoke(IPC.stylesReference, projectPath, pluginName),
+    importFile: (projectPath: string, sourcePath: string) => ipcRenderer.invoke(IPC.stylesImportFile, projectPath, sourcePath)
+  },
   themeMarketplace: {
     list: (githubToken?: string) => ipcRenderer.invoke(IPC.themeMarketplaceList, githubToken),
     install: (projectPath: string, themeId: string) => ipcRenderer.invoke(IPC.themeMarketplaceInstall, projectPath, themeId),
@@ -97,7 +103,9 @@ const api: QuartzGuiApi = {
     save: (settings: Settings) => ipcRenderer.invoke(IPC.settingsSave, settings)
   },
   dialog: {
-    pickFolder: () => ipcRenderer.invoke(IPC.dialogPickFolder)
+    pickFolder: () => ipcRenderer.invoke(IPC.dialogPickFolder),
+    pickFile: (filters?: { name: string; extensions: string[] }[]) => ipcRenderer.invoke(IPC.dialogPickFile, filters),
+    openPath: (path: string) => ipcRenderer.invoke(IPC.dialogOpenPath, path)
   }
 }
 

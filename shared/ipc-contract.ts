@@ -262,6 +262,25 @@ export interface SyncResult {
   output: string
 }
 
+// The whole-file content of quartz/styles/custom.scss - verified to be the actual file Quartz's
+// build imports directly (quartz/plugins/emitters/componentResources.ts: `import customStyles
+// from "../../styles/custom.scss"`), so editing it needs no separate live-reload wiring: it's
+// already inside the esbuild watch graph the dev server's own hot-reload websocket covers.
+export interface StylesInfo {
+  path: string
+  content: string
+}
+
+// A read-only reference file (an installed plugin's own *.scss) shown alongside the editor so the
+// user can see the original selectors they're overriding. Only available for CLI-installed
+// plugins (a real directory under .quartz/plugins/<name>) - built-in @quartz-community/x entries
+// have no discoverable source on disk, same limitation as pluginSchemaService's options schema.
+export interface StyleReferenceFile {
+  label: string
+  path: string
+  content: string
+}
+
 export const IPC = {
   projectList: 'project:list',
   projectAdd: 'project:add',
@@ -288,6 +307,13 @@ export const IPC = {
   layoutFrameList: 'layoutFrame:list',
   layoutFrameSave: 'layoutFrame:save',
   layoutFrameDelete: 'layoutFrame:delete',
+
+  stylesGet: 'styles:get',
+  stylesSave: 'styles:save',
+  stylesReference: 'styles:reference',
+  stylesImportFile: 'styles:importFile',
+  dialogPickFile: 'dialog:pickFile',
+  dialogOpenPath: 'dialog:openPath',
 
   marketplaceSearch: 'marketplace:search',
   marketplaceRefresh: 'marketplace:refresh',
@@ -370,6 +396,12 @@ export interface QuartzGuiApi {
     save(projectPath: string, definition: GridFrameDefinition): Promise<PluginActionResult>
     delete(projectPath: string, id: string): Promise<PluginActionResult>
   }
+  styles: {
+    get(projectPath: string): Promise<StylesInfo>
+    save(projectPath: string, content: string): Promise<void>
+    reference(projectPath: string, pluginName: string): Promise<StyleReferenceFile[]>
+    importFile(projectPath: string, sourcePath: string): Promise<{ importLine: string; relativePath: string }>
+  }
   themeMarketplace: {
     list(githubToken?: string): Promise<QuartzThemeListing[]>
     install(projectPath: string, themeId: string): Promise<PluginActionResult>
@@ -415,5 +447,7 @@ export interface QuartzGuiApi {
   }
   dialog: {
     pickFolder(): Promise<string | null>
+    pickFile(filters?: { name: string; extensions: string[] }[]): Promise<string | null>
+    openPath(path: string): Promise<void>
   }
 }

@@ -51,6 +51,7 @@ export default {
       overview: 'Übersicht',
       config: 'Konfiguration',
       layout: 'Layout',
+      styles: 'Styles',
       themes: 'Themes',
       plugins: 'Plugins',
       content: 'Content-Ordner',
@@ -401,6 +402,15 @@ export default {
       deleteFrame: 'Diesen Frame löschen',
       deleteConfirm: 'Frame "{{name}}" wirklich löschen? Seitentypen, die ihn referenzieren, fallen dann auf das Standard-Template zurück.'
     }
+  },
+  styleEditor: {
+    title: 'CSS-Anpassungen',
+    openExternally: 'Extern öffnen',
+    importFile: 'Datei importieren…',
+    componentPlaceholder: 'Komponente wählen…',
+    componentHint: 'Fügt einen Selektor für die gewählte Komponente an der Cursor-Position ein.',
+    insertSelector: 'Selektor einfügen',
+    referenceHeading: 'Original-Styles (nur lesend)'
   },
   pluginsMarketplace: {
     backToInstalled: '← Installierte Plugins',

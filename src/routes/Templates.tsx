@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProject } from './ProjectLayout'
-import type { TemplatePackageCategory } from '@shared/ipc-contract'
+import type { Project, TemplatePackageCategory, TemplatePackagePreview } from '@shared/ipc-contract'
 import { Button, Card, Field, TextInput } from '../components/ui'
 
 const CATEGORIES: TemplatePackageCategory[] = ['layout', 'colors', 'plugins', 'frames', 'styles', 'fonts']
@@ -89,6 +89,107 @@ export default function Templates(): JSX.Element {
           </p>
         )}
       </Card>
+
+      <ImportSection project={project} />
     </div>
+  )
+}
+
+function ImportSection({ project }: { project: Project }): JSX.Element {
+  const { t } = useTranslation()
+  const [sourceDir, setSourceDir] = useState<string | null>(null)
+  const [preview, setPreview] = useState<TemplatePackagePreview | null>(null)
+  const [previewError, setPreviewError] = useState(false)
+  const [selected, setSelected] = useState<Set<TemplatePackageCategory>>(new Set())
+  const [importing, setImporting] = useState(false)
+  const [warnings, setWarnings] = useState<string[] | null>(null)
+
+  async function pickSourceDir(): Promise<void> {
+    const picked = await window.quartzGui.dialog.pickFolder()
+    if (!picked) return
+    setSourceDir(picked)
+    setWarnings(null)
+    const result = await window.quartzGui.templatePackage.preview(picked)
+    setPreview(result)
+    setPreviewError(!result)
+    setSelected(new Set(result?.manifest.categories ?? []))
+  }
+
+  function toggleCategory(category: TemplatePackageCategory): void {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(category)) next.delete(category)
+      else next.add(category)
+      return next
+    })
+  }
+
+  async function runImport(): Promise<void> {
+    if (!sourceDir || selected.size === 0) return
+    if (!confirm(t('templates.confirmImport', { count: selected.size }))) return
+    setImporting(true)
+    setWarnings(null)
+    try {
+      const result = await window.quartzGui.templatePackage.import(project.path, sourceDir, Array.from(selected))
+      setWarnings(result.warnings.length > 0 ? result.warnings : [t('templates.importSuccessNoWarnings')])
+    } catch (err) {
+      setWarnings([String(err)])
+    }
+    setImporting(false)
+  }
+
+  const canImport = !!preview && selected.size > 0
+
+  return (
+    <Card>
+      <h2 className="mb-2 text-sm font-semibold">{t('templates.importHeading')}</h2>
+
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" onClick={pickSourceDir}>
+          {t('templates.pickSourceDir')}
+        </Button>
+        {sourceDir && <span className="truncate text-xs text-slate-500 dark:text-slate-400">{sourceDir}</span>}
+      </div>
+
+      {previewError && <p className="mt-3 text-xs text-red-600 dark:text-red-400">{t('templates.previewError')}</p>}
+
+      {preview && (
+        <>
+          <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+            {t('templates.previewHeading', { name: preview.manifest.name })}
+          </p>
+          <div className="mt-2 flex flex-col gap-1.5">
+            {CATEGORIES.map((category) => {
+              const available = preview.manifest.categories.includes(category)
+              return (
+                <label key={category} className={`flex items-center gap-2 text-sm ${available ? '' : 'text-slate-400 dark:text-slate-600'}`}>
+                  <input
+                    type="checkbox"
+                    disabled={!available}
+                    checked={selected.has(category)}
+                    onChange={() => toggleCategory(category)}
+                  />
+                  <span>{t(`templates.categories.${category}`)}</span>
+                </label>
+              )
+            })}
+          </div>
+
+          <div className="mt-4">
+            <Button onClick={runImport} disabled={!canImport || importing}>
+              {importing ? t('common.saving') : t('templates.importButton')}
+            </Button>
+          </div>
+        </>
+      )}
+
+      {warnings && (
+        <ul className="mt-3 flex flex-col gap-1 text-xs text-amber-700 dark:text-amber-400">
+          {warnings.map((w, i) => (
+            <li key={i}>{w}</li>
+          ))}
+        </ul>
+      )}
+    </Card>
   )
 }

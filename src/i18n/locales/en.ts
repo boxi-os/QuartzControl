@@ -538,7 +538,14 @@ export default {
     },
     pickDestDir: 'Choose destination folder…',
     exportButton: 'Export package',
-    exportSuccess: 'Package exported to: {{path}}'
+    exportSuccess: 'Package exported to: {{path}}',
+    importHeading: 'Import',
+    pickSourceDir: 'Choose package folder…',
+    previewError: 'No valid template package found in this folder (no manifest.json).',
+    previewHeading: 'Package: {{name}} — available categories are checkable, missing ones are grayed out.',
+    importButton: 'Import selected categories',
+    confirmImport: 'Really import {{count}} categorie(s)? Existing plugins/frames/files are skipped, never overwritten.',
+    importSuccessNoWarnings: 'Import complete, no conflicts.'
   },
   pluginsMarketplace: {
     backToInstalled: '← Installed plugins',

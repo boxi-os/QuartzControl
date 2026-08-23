@@ -539,7 +539,14 @@ export default {
     },
     pickDestDir: 'Zielordner wählen…',
     exportButton: 'Paket exportieren',
-    exportSuccess: 'Paket exportiert nach: {{path}}'
+    exportSuccess: 'Paket exportiert nach: {{path}}',
+    importHeading: 'Importieren',
+    pickSourceDir: 'Paket-Ordner wählen…',
+    previewError: 'Kein gültiges Template-Paket in diesem Ordner gefunden (keine manifest.json).',
+    previewHeading: 'Paket: {{name}} — verfügbare Kategorien ankreuzbar, fehlende sind ausgegraut.',
+    importButton: 'Ausgewählte Kategorien importieren',
+    confirmImport: '{{count}} Kategorie(n) wirklich importieren? Vorhandene Plugins/Frames/Dateien werden dabei übersprungen, nicht überschrieben.',
+    importSuccessNoWarnings: 'Import abgeschlossen, keine Konflikte.'
   },
   pluginsMarketplace: {
     backToInstalled: '← Installierte Plugins',

@@ -164,6 +164,9 @@ export function registerIpcHandlers(): void {
     templatePackageService.exportPackage(projectPath, destDir, name, categories)
   )
   ipcMain.handle(IPC.templatePackagePreview, (_e, sourceDir: string) => templatePackageService.previewPackage(sourceDir))
+  ipcMain.handle(IPC.templatePackageImport, (_e, projectPath: string, sourceDir: string, categories: TemplatePackageCategory[]) =>
+    templatePackageService.importPackage(projectPath, sourceDir, categories)
+  )
 
   ipcMain.handle(IPC.marketplaceSearch, (_e, query: string, githubToken?: string) =>
     marketplaceService.searchPlugins(query, githubToken)

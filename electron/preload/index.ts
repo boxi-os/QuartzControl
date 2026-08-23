@@ -97,7 +97,9 @@ const api: QuartzGuiApi = {
   templatePackage: {
     export: (projectPath: string, destDir: string, name: string, categories: TemplatePackageCategory[]) =>
       ipcRenderer.invoke(IPC.templatePackageExport, projectPath, destDir, name, categories),
-    preview: (sourceDir: string) => ipcRenderer.invoke(IPC.templatePackagePreview, sourceDir)
+    preview: (sourceDir: string) => ipcRenderer.invoke(IPC.templatePackagePreview, sourceDir),
+    import: (projectPath: string, sourceDir: string, categories: TemplatePackageCategory[]) =>
+      ipcRenderer.invoke(IPC.templatePackageImport, projectPath, sourceDir, categories)
   },
   themeMarketplace: {
     list: (githubToken?: string) => ipcRenderer.invoke(IPC.themeMarketplaceList, githubToken),

@@ -434,6 +434,14 @@ export interface TemplatePackagePreview {
   manifest: TemplatePackageManifest
 }
 
+// Collision handling during import is always skip-and-warn, never overwrite (an existing plugin/
+// frame/style-file/font wins) - warnings surface exactly which entries were skipped and why, so
+// the import never silently clobbers something the target project already has.
+export interface TemplatePackageImportResult {
+  success: boolean
+  warnings: string[]
+}
+
 // A read-only reference file (an installed plugin's own *.scss) shown alongside the editor so the
 // user can see the original selectors they're overriding. Only available for CLI-installed
 // plugins (a real directory under .quartz/plugins/<name>) - built-in @quartz-community/x entries
@@ -507,6 +515,7 @@ export const IPC = {
 
   templatePackageExport: 'templatePackage:export',
   templatePackagePreview: 'templatePackage:preview',
+  templatePackageImport: 'templatePackage:import',
 
   marketplaceSearch: 'marketplace:search',
   marketplaceRefresh: 'marketplace:refresh',
@@ -629,6 +638,7 @@ export interface QuartzGuiApi {
   templatePackage: {
     export(projectPath: string, destDir: string, name: string, categories: TemplatePackageCategory[]): Promise<{ packageDir: string }>
     preview(sourceDir: string): Promise<TemplatePackagePreview | null>
+    import(projectPath: string, sourceDir: string, categories: TemplatePackageCategory[]): Promise<TemplatePackageImportResult>
   }
   themeMarketplace: {
     list(githubToken?: string): Promise<QuartzThemeListing[]>

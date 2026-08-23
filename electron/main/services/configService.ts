@@ -9,7 +9,7 @@ function configPath(projectPath: string): string {
   return join(projectPath, 'quartz.config.yaml')
 }
 
-function deriveName(source: PluginSource): string {
+export function deriveName(source: PluginSource): string {
   if (typeof source === 'string') {
     const withoutRef = source.replace(/^github:/, '').replace(/^git\+/, '').split('#')[0]
     const parts = withoutRef.split('/')

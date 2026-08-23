@@ -181,6 +181,16 @@ export default {
     googleFonts: 'Google Fonts',
     local: 'Lokal',
     fontFor: 'Schriftart ({{slot}})',
+    gdprHint:
+      'Google Fonts wird bei dieser Einstellung direkt von Google geladen (Besucher-IPs werden an Google übertragen). Quartz kann Schriftarten auch automatisch selbst hosten (DSGVO-konform) — dafür "Lokal" wählen.',
+    localFontHeading: 'Eigene Schriftart importieren',
+    localFontDescription: 'Lädt eine .ttf/.otf/.woff/.woff2-Datei ins Projekt und erzeugt die passende @font-face-Regel in custom.scss.',
+    localFontPick: 'Datei auswählen…',
+    localFontFamily: 'Font-Familienname',
+    localFontSlot: 'Direkt verwenden für',
+    localFontNoSlot: '— keins —',
+    localFontConfirm: 'Importieren',
+    fontImportSuccess: '"{{family}}" importiert.',
     colors: 'Farben'
   },
   themes: {

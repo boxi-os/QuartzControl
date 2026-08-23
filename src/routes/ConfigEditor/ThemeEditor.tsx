@@ -1,10 +1,13 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import type { PluginEntry, QuartzConfig } from '@shared/ipc-contract'
-import { Field, Select, TextInput } from '../../components/ui'
+import { Button, Field, Select, TextInput } from '../../components/ui'
+import { CURATED_GOOGLE_FONTS } from '../../data/googleFonts'
 
 type Theme = QuartzConfig['theme']
 const TYPOGRAPHY_KEYS = ['header', 'body', 'code'] as const
+const GOOGLE_FONTS_DATALIST_ID = 'quartz-gui-google-fonts'
 
 // @quartz-themes/* (e.g. @quartz-themes/core) is a third-party Obsidian-style theming engine,
 // separate from Quartz's built-in configuration.theme.colors, that can override these colors in
@@ -17,10 +20,12 @@ function findOverridingThemePlugin(plugins: PluginEntry[]): PluginEntry | undefi
 export default function ThemeEditor({
   theme,
   plugins,
+  projectPath,
   onChange
 }: {
   theme: Theme
   plugins: PluginEntry[]
+  projectPath: string
   onChange: (next: Theme) => void
 }): JSX.Element {
   const { t } = useTranslation()
@@ -33,6 +38,7 @@ export default function ThemeEditor({
   }
 
   const overridingPlugin = findOverridingThemePlugin(plugins)
+  const fontOrigin = (theme.fontOrigin as string) ?? 'googleFonts'
 
   return (
     <div className="grid max-w-xl gap-6">
@@ -48,17 +54,38 @@ export default function ThemeEditor({
       )}
       <div className="grid gap-4">
         <Field label={t('themeEditor.fontSource')}>
-          <Select value={(theme.fontOrigin as string) ?? 'googleFonts'} onChange={(e) => set('fontOrigin', e.target.value)}>
+          <Select value={fontOrigin} onChange={(e) => set('fontOrigin', e.target.value)}>
             <option value="googleFonts">{t('themeEditor.googleFonts')}</option>
             <option value="local">{t('themeEditor.local')}</option>
           </Select>
         </Field>
+        {fontOrigin === 'googleFonts' && (
+          <p className="rounded-md border border-blue-200 bg-blue-50 p-2.5 text-xs text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300">
+            {t('themeEditor.gdprHint')}
+          </p>
+        )}
+        <datalist id={GOOGLE_FONTS_DATALIST_ID}>
+          {CURATED_GOOGLE_FONTS.map((name) => (
+            <option key={name} value={name} />
+          ))}
+        </datalist>
         {TYPOGRAPHY_KEYS.map((key) => (
           <Field key={key} label={t('themeEditor.fontFor', { slot: key })}>
-            <TextInput value={theme.typography?.[key] ?? ''} onChange={(e) => setTypography(key, e.target.value)} />
+            <TextInput
+              list={GOOGLE_FONTS_DATALIST_ID}
+              value={theme.typography?.[key] ?? ''}
+              onChange={(e) => setTypography(key, e.target.value)}
+            />
           </Field>
         ))}
       </div>
+
+      <LocalFontImport
+        projectPath={projectPath}
+        onImported={(family, slot) => {
+          if (slot) setTypography(slot, family)
+        }}
+      />
 
       <div>
         <h3 className="mb-2 text-sm font-semibold text-slate-700">{t('themeEditor.colors')}</h3>
@@ -67,6 +94,87 @@ export default function ThemeEditor({
           onChange={(colors) => set('colors', colors)}
         />
       </div>
+    </div>
+  )
+}
+
+function LocalFontImport({
+  projectPath,
+  onImported
+}: {
+  projectPath: string
+  onImported: (family: string, slot: (typeof TYPOGRAPHY_KEYS)[number] | '') => void
+}): JSX.Element {
+  const { t } = useTranslation()
+  const [pendingPath, setPendingPath] = useState<string | null>(null)
+  const [family, setFamily] = useState('')
+  const [slot, setSlot] = useState<(typeof TYPOGRAPHY_KEYS)[number] | ''>('')
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+
+  async function pickFile(): Promise<void> {
+    setMessage(null)
+    const picked = await window.quartzGui.dialog.pickFile([{ name: 'Fonts', extensions: ['ttf', 'otf', 'woff', 'woff2'] }])
+    if (!picked) return
+    const base = picked.split(/[/\\]/).pop() ?? picked
+    const suggested = base
+      .replace(/\.(ttf|otf|woff2?|)$/i, '')
+      .replace(/[-_]+/g, ' ')
+      .trim()
+    setPendingPath(picked)
+    setFamily(suggested)
+  }
+
+  async function confirmImport(): Promise<void> {
+    if (!pendingPath || !family.trim()) return
+    setBusy(true)
+    setMessage(null)
+    try {
+      await window.quartzGui.fonts.importFile(projectPath, pendingPath, family.trim())
+      onImported(family.trim(), slot)
+      setMessage(t('themeEditor.fontImportSuccess', { family: family.trim() }))
+      setPendingPath(null)
+      setFamily('')
+      setSlot('')
+    } catch (err) {
+      setMessage(String(err))
+    }
+    setBusy(false)
+  }
+
+  return (
+    <div className="rounded-md border border-black/[0.06] p-3 dark:border-white/10">
+      <h3 className="mb-1 text-sm font-semibold">{t('themeEditor.localFontHeading')}</h3>
+      <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">{t('themeEditor.localFontDescription')}</p>
+      {!pendingPath && (
+        <Button variant="ghost" onClick={pickFile}>
+          {t('themeEditor.localFontPick')}
+        </Button>
+      )}
+      {pendingPath && (
+        <div className="flex flex-wrap items-end gap-2">
+          <Field label={t('themeEditor.localFontFamily')}>
+            <TextInput value={family} onChange={(e) => setFamily(e.target.value)} className="w-48" />
+          </Field>
+          <Field label={t('themeEditor.localFontSlot')}>
+            <Select value={slot} onChange={(e) => setSlot(e.target.value as typeof slot)} className="w-40">
+              <option value="">{t('themeEditor.localFontNoSlot')}</option>
+              {TYPOGRAPHY_KEYS.map((key) => (
+                <option key={key} value={key}>
+                  {t('themeEditor.fontFor', { slot: key })}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Button onClick={confirmImport} disabled={busy || !family.trim()}>
+            {busy ? t('common.saving') : t('themeEditor.localFontConfirm')}
+          </Button>
+          <Button variant="ghost" onClick={() => setPendingPath(null)}>
+            {t('common.cancel')}
+          </Button>
+        </div>
+      )}
+      {message && <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">{message}</p>}
     </div>
   )
 }

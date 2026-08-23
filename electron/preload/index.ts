@@ -52,6 +52,10 @@ const api: QuartzGuiApi = {
     reference: (projectPath: string, pluginName: string) => ipcRenderer.invoke(IPC.stylesReference, projectPath, pluginName),
     importFile: (projectPath: string, sourcePath: string) => ipcRenderer.invoke(IPC.stylesImportFile, projectPath, sourcePath)
   },
+  fonts: {
+    importFile: (projectPath: string, sourcePath: string, family: string) =>
+      ipcRenderer.invoke(IPC.fontsImportFile, projectPath, sourcePath, family)
+  },
   themeMarketplace: {
     list: (githubToken?: string) => ipcRenderer.invoke(IPC.themeMarketplaceList, githubToken),
     install: (projectPath: string, themeId: string) => ipcRenderer.invoke(IPC.themeMarketplaceInstall, projectPath, themeId),

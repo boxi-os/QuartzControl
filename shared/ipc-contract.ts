@@ -312,6 +312,8 @@ export const IPC = {
   stylesSave: 'styles:save',
   stylesReference: 'styles:reference',
   stylesImportFile: 'styles:importFile',
+
+  fontsImportFile: 'fonts:importFile',
   dialogPickFile: 'dialog:pickFile',
   dialogOpenPath: 'dialog:openPath',
 
@@ -401,6 +403,9 @@ export interface QuartzGuiApi {
     save(projectPath: string, content: string): Promise<void>
     reference(projectPath: string, pluginName: string): Promise<StyleReferenceFile[]>
     importFile(projectPath: string, sourcePath: string): Promise<{ importLine: string; relativePath: string }>
+  }
+  fonts: {
+    importFile(projectPath: string, sourcePath: string, family: string): Promise<{ fileName: string }>
   }
   themeMarketplace: {
     list(githubToken?: string): Promise<QuartzThemeListing[]>

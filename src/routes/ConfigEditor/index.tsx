@@ -75,7 +75,12 @@ export default function ConfigEditor(): JSX.Element {
         />
       )}
       {tab === 'theme' && (
-        <ThemeEditor theme={config.theme} plugins={config.plugins} onChange={(theme) => setConfig({ ...config, theme })} />
+        <ThemeEditor
+          theme={config.theme}
+          plugins={config.plugins}
+          projectPath={project.path}
+          onChange={(theme) => setConfig({ ...config, theme })}
+        />
       )}
     </div>
   )

@@ -17,6 +17,7 @@ import * as themeMarketplaceService from '../services/themeMarketplaceService'
 import * as themePresetsService from '../services/themePresetsService'
 import * as layoutFrameService from '../services/layoutFrameService'
 import * as styleService from '../services/styleService'
+import * as fontService from '../services/fontService'
 import * as marketplaceService from '../services/marketplaceService'
 import * as buildService from '../services/buildService'
 import * as syncService from '../services/syncService'
@@ -102,6 +103,10 @@ export function registerIpcHandlers(): void {
   )
   ipcMain.handle(IPC.stylesImportFile, (_e, projectPath: string, sourcePath: string) =>
     styleService.importStyleFile(projectPath, sourcePath)
+  )
+
+  ipcMain.handle(IPC.fontsImportFile, (_e, projectPath: string, sourcePath: string, family: string) =>
+    fontService.importFontFile(projectPath, sourcePath, family)
   )
 
   ipcMain.handle(IPC.marketplaceSearch, (_e, query: string, githubToken?: string) =>

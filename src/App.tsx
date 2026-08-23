@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import { Route, Routes, Navigate } from 'react-router-dom'
 import { ErrorToasts, RouteErrorBoundary } from './components/ErrorSurface'
+import { useLogStore } from './state/store'
 import Home from './routes/Home'
 import Settings from './routes/Settings'
 import ProjectLayout from './routes/ProjectLayout'
@@ -20,6 +22,20 @@ import Publish from './routes/Publish'
 import Templates from './routes/Templates'
 
 export default function App(): JSX.Element {
+  const appendServerLog = useLogStore((s) => s.appendServerLog)
+  const appendBuildLog = useLogStore((s) => s.appendBuildLog)
+
+  // Installed once, for the app's whole lifetime, independent of which page/project is currently
+  // shown - a page-local subscription would miss lines emitted while the user is on another tab.
+  useEffect(() => {
+    const offServer = window.quartzGui.server.onLog(appendServerLog)
+    const offBuild = window.quartzGui.build.onLog(appendBuildLog)
+    return () => {
+      offServer()
+      offBuild()
+    }
+  }, [appendServerLog, appendBuildLog])
+
   return (
     <RouteErrorBoundary>
       <Routes>

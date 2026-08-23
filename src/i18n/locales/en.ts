@@ -633,6 +633,7 @@ export default {
     installedMessage: '{{name}} installed.'
   },
   logConsole: {
-    noOutput: 'No output yet.'
+    noOutput: 'No output yet.',
+    clear: 'Clear output'
   }
 } as const

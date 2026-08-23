@@ -634,6 +634,7 @@ export default {
     installedMessage: '{{name}} installiert.'
   },
   logConsole: {
-    noOutput: 'Noch keine Ausgabe.'
+    noOutput: 'Noch keine Ausgabe.',
+    clear: 'Ausgabe leeren'
   }
 } as const

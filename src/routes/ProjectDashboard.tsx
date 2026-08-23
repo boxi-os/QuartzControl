@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import type { ContentStatus, LogLine, PluginEntry, QuartzConfig, ServerStatus } from '@shared/ipc-contract'
+import type { ContentStatus, PluginEntry, QuartzConfig, ServerStatus } from '@shared/ipc-contract'
 import { useProject } from './ProjectLayout'
 import { Badge, Button, Card, PageHeader } from '../components/ui'
 import { LogConsole } from '../components/LogConsole'
 import { TAB_ICONS } from './navConfig'
+import { EMPTY_LOG_LINES, useLogStore } from '../state/store'
 
 // Same detection quartz-themes/core convention as Themes/index.tsx - the active theme isn't its
 // own config field, it's read off whichever @quartz-themes/* plugin entry is enabled.
@@ -19,8 +20,9 @@ export default function ProjectDashboard(): JSX.Element {
   const [server, setServer] = useState<ServerStatus>({ state: 'stopped' })
   const [content, setContent] = useState<ContentStatus | null>(null)
   const [config, setConfig] = useState<QuartzConfig | null>(null)
-  const [logs, setLogs] = useState<LogLine[]>([])
   const [busy, setBusy] = useState(false)
+  const logs = useLogStore((s) => s.serverLogs[project.id] ?? EMPTY_LOG_LINES)
+  const clearLogs = useLogStore((s) => s.clearServerLog)
 
   useEffect(() => {
     window.quartzGui.server.status(project.id).then(setServer)
@@ -29,12 +31,8 @@ export default function ProjectDashboard(): JSX.Element {
     const offStatus = window.quartzGui.server.onStatus((projectId, status) => {
       if (projectId === project.id) setServer(status)
     })
-    const offLog = window.quartzGui.server.onLog((line) => {
-      if (line.projectId === project.id) setLogs((prev) => [...prev.slice(-199), line])
-    })
     return () => {
       offStatus()
-      offLog()
     }
   }, [project.id, project.path])
 
@@ -42,7 +40,6 @@ export default function ProjectDashboard(): JSX.Element {
 
   async function start(): Promise<void> {
     setBusy(true)
-    setLogs([])
     try {
       setServer(await window.quartzGui.server.start(project.id, project.path))
     } finally {
@@ -110,7 +107,7 @@ export default function ProjectDashboard(): JSX.Element {
           </Link>
         </div>
 
-        <LogConsole lines={logs} />
+        <LogConsole lines={logs} onClear={() => clearLogs(project.id)} />
       </Card>
 
       <Card>

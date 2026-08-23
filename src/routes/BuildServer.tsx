@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProject } from './ProjectLayout'
-import type { LogLine, ServerOptions, ServerStatus, BuildResult } from '@shared/ipc-contract'
+import type { ServerOptions, ServerStatus, BuildResult } from '@shared/ipc-contract'
 import { Badge, Button, Card, Field, PageHeader, TextInput, Toggle } from '../components/ui'
 import { LogConsole } from '../components/LogConsole'
 import { formatIpcError } from '../components/ErrorSurface'
 import { TAB_ICONS } from './navConfig'
+import { EMPTY_LOG_LINES, useLogStore } from '../state/store'
 
 // `host` is only meaningful as Quartz's `--remoteDevHost`: an override for the live-reload
 // websocket URL when previewing through a tunnel/remote host, which makes the browser connect
@@ -20,34 +21,28 @@ export default function BuildServer(): JSX.Element {
   const project = useProject()
   const [status, setStatus] = useState<ServerStatus>({ state: 'stopped' })
   const [options, setOptions] = useState<ServerOptions>(DEFAULT_OPTIONS)
-  const [logs, setLogs] = useState<LogLine[]>([])
-  const [buildLogs, setBuildLogs] = useState<LogLine[]>([])
   const [buildResult, setBuildResult] = useState<BuildResult | null>(null)
   const [building, setBuilding] = useState(false)
   const [exportDir, setExportDir] = useState('')
+  const logs = useLogStore((s) => s.serverLogs[project.id] ?? EMPTY_LOG_LINES)
+  const buildLogs = useLogStore((s) => s.buildLogs[project.id] ?? EMPTY_LOG_LINES)
+  const clearServerLog = useLogStore((s) => s.clearServerLog)
+  const clearBuildLog = useLogStore((s) => s.clearBuildLog)
+  const appendBuildLog = useLogStore((s) => s.appendBuildLog)
 
   useEffect(() => {
     window.quartzGui.server.status(project.id).then(setStatus)
     const offStatus = window.quartzGui.server.onStatus((projectId, s) => {
       if (projectId === project.id) setStatus(s)
     })
-    const offLog = window.quartzGui.server.onLog((line) => {
-      if (line.projectId === project.id) setLogs((prev) => [...prev.slice(-999), line])
-    })
-    const offBuildLog = window.quartzGui.build.onLog((line) => {
-      if (line.projectId === project.id) setBuildLogs((prev) => [...prev.slice(-999), line])
-    })
     return () => {
       offStatus()
-      offLog()
-      offBuildLog()
     }
   }, [project.id])
 
   const busy = status.state === 'starting' || status.state === 'stopping'
 
   async function start(): Promise<void> {
-    setLogs([])
     setStatus(await window.quartzGui.server.start(project.id, project.path, options))
   }
 
@@ -56,20 +51,18 @@ export default function BuildServer(): JSX.Element {
   }
 
   async function restart(): Promise<void> {
-    setLogs([])
     setStatus(await window.quartzGui.server.restart(project.id, project.path, options))
   }
 
   async function runBuild(): Promise<void> {
     setBuilding(true)
-    setBuildLogs([])
     setBuildResult(null)
     try {
       setBuildResult(await window.quartzGui.build.run(project.id, project.path, exportDir || undefined))
     } catch (err) {
       // e.g. an export directory the validation layer rejects - shown in the build log panel,
       // which is where the user is already looking
-      setBuildLogs((prev) => [...prev, { projectId: project.id, stream: 'stderr', text: formatIpcError(err), timestamp: new Date().toISOString() }])
+      appendBuildLog({ projectId: project.id, stream: 'stderr', text: formatIpcError(err), timestamp: new Date().toISOString() })
     } finally {
       setBuilding(false)
     }
@@ -153,7 +146,7 @@ export default function BuildServer(): JSX.Element {
           )}
         </div>
 
-        <LogConsole lines={logs} />
+        <LogConsole lines={logs} onClear={() => clearServerLog(project.id)} />
       </Card>
 
       <Card>
@@ -196,7 +189,7 @@ export default function BuildServer(): JSX.Element {
             {buildResult.success && exportDir && t('buildServer.exportedTo', { dir: exportDir })}
           </p>
         )}
-        <LogConsole lines={buildLogs} />
+        <LogConsole lines={buildLogs} onClear={() => clearBuildLog(project.id)} />
       </Card>
     </div>
   )

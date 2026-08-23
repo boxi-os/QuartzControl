@@ -194,7 +194,19 @@ export default {
     localFontNoSlot: '— keins —',
     localFontConfirm: 'Importieren',
     fontImportSuccess: '"{{family}}" importiert.',
-    colors: 'Farben'
+    colors: 'Farben',
+    cssVars: {
+      heading: 'CSS-Variablen überschreiben',
+      description:
+        'Diese Variablen leiten sich normalerweise automatisch von den obigen Farben ab. Aktivieren, um einzelne davon gezielt zu überschreiben.',
+      scanButton: 'Build-Output scannen',
+      scanNoneFound: 'Keine zusätzlichen Variablen im Build-Output gefunden.',
+      scanFound: '{{count}} zusätzliche Variable(n) im Build-Output gefunden.',
+      discoveredGroup: 'Im Build-Output gefunden',
+      light: 'Hell',
+      dark: 'Dunkel',
+      saved: 'Gespeichert.'
+    }
   },
   themes: {
     loading: 'Lade Themes…',

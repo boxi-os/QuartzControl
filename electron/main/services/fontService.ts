@@ -1,7 +1,7 @@
 import { mkdirSync } from 'fs'
 import { copyFile } from 'fs/promises'
 import { basename, extname, join } from 'path'
-import { readCustomScss, writeCustomScss } from './styleService'
+import { getManagedBlock, readCustomScss, upsertManagedBlock, writeCustomScss } from './styleService'
 
 const FORMAT_MAP: Record<string, string> = { ttf: 'truetype', otf: 'opentype', woff: 'woff', woff2: 'woff2' }
 
@@ -12,12 +12,14 @@ function fontsDir(projectPath: string): string {
   return join(projectPath, 'quartz', 'static', 'fonts')
 }
 
-const MANAGED_MARKER = '/* --- Quartz-GUI: local @font-face rules (generated on font import) --- */'
+const FONTS_MARKER = 'fonts'
 
-// Copies the font file into quartz/static/ and appends a generated @font-face rule to
-// custom.scss under a recognizable marker comment - unlike the interactive style editor (a
-// whole-file edit surface the user owns), this is a one-shot programmatic append, so a clearly
-// delineated managed section is appropriate here.
+// Copies the font file into quartz/static/ and appends a generated @font-face rule into
+// custom.scss's managed "fonts" section - unlike the interactive style editor (a whole-file edit
+// surface the user owns), this is a one-shot programmatic append, so a clearly delineated managed
+// section (shared upsertManagedBlock/getManagedBlock helpers, see styleService.ts) is appropriate
+// here. Reads the section's current body first so importing a second font accumulates onto the
+// first rather than replacing it.
 export async function importFontFile(projectPath: string, sourcePath: string, family: string): Promise<{ fileName: string }> {
   const ext = extname(sourcePath).slice(1).toLowerCase()
   const format = FORMAT_MAP[ext] ?? ext
@@ -28,10 +30,9 @@ export async function importFontFile(projectPath: string, sourcePath: string, fa
   const cssBlock = `@font-face {\n  font-family: "${family}";\n  src: url("/static/fonts/${fileName}") format("${format}");\n  font-display: swap;\n}`
 
   const info = await readCustomScss(projectPath)
-  const next = info.content.includes(MANAGED_MARKER)
-    ? `${info.content}\n\n${cssBlock}`
-    : `${info.content}\n\n${MANAGED_MARKER}\n${cssBlock}`
-  await writeCustomScss(projectPath, next)
+  const existingBody = getManagedBlock(info.content, FONTS_MARKER)
+  const nextBody = existingBody ? `${existingBody}\n\n${cssBlock}` : cssBlock
+  await writeCustomScss(projectPath, upsertManagedBlock(info.content, FONTS_MARKER, nextBody))
 
   return { fileName }
 }

@@ -14,7 +14,8 @@ import type {
   GridFrameDefinition,
   SaveDeployConnectionInput,
   GithubPagesDeployOptions,
-  DeployProgressEvent
+  DeployProgressEvent,
+  CssVariableOverride
 } from '@shared/ipc-contract'
 
 function onEvent<Args extends unknown[]>(channel: string, cb: (...args: Args) => void): () => void {
@@ -53,7 +54,12 @@ const api: QuartzGuiApi = {
     get: (projectPath: string) => ipcRenderer.invoke(IPC.stylesGet, projectPath),
     save: (projectPath: string, content: string) => ipcRenderer.invoke(IPC.stylesSave, projectPath, content),
     reference: (projectPath: string, pluginName: string) => ipcRenderer.invoke(IPC.stylesReference, projectPath, pluginName),
-    importFile: (projectPath: string, sourcePath: string) => ipcRenderer.invoke(IPC.stylesImportFile, projectPath, sourcePath)
+    importFile: (projectPath: string, sourcePath: string) => ipcRenderer.invoke(IPC.stylesImportFile, projectPath, sourcePath),
+    getVariableOverrides: (projectPath: string) => ipcRenderer.invoke(IPC.stylesGetVariableOverrides, projectPath),
+    saveVariableOverrides: (projectPath: string, overrides: CssVariableOverride[]) =>
+      ipcRenderer.invoke(IPC.stylesSaveVariableOverrides, projectPath, overrides),
+    scanBuildOutputVariables: (projectPath: string, outputDir?: string) =>
+      ipcRenderer.invoke(IPC.stylesScanBuildOutputVariables, projectPath, outputDir)
   },
   fonts: {
     importFile: (projectPath: string, sourcePath: string, family: string) =>

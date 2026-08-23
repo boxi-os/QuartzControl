@@ -271,6 +271,20 @@ export interface StylesInfo {
   content: string
 }
 
+// One derived CSS custom property (see src/data/cssVariables.ts for the curated catalog sourced
+// from quartz/util/theme.ts's joinStyles()) the user has chosen to override, stored in
+// custom.scss's managed "css-vars" section. custom.scss is emitted unlayered while Quartz's own
+// generated theme CSS lives inside `@layer quartz-base` (componentResources.ts), so an unlayered
+// `:root { --x: ... }` rule always wins regardless of selector specificity or source order - a
+// `dark` override is therefore only written when explicitly set; omitting it means the light
+// value applies in both modes (there is no unlayered rule left to defer back to the theme's own
+// per-mode derivation).
+export interface CssVariableOverride {
+  key: string
+  light: string
+  dark?: string
+}
+
 // One shipped locale file under quartz/i18n/locales/*.ts (excluding definition.ts). `code` is the
 // filename-derived locale (e.g. "de-DE") - some runtime locale codes share one file (see
 // quartz/i18n/index.ts's TRANSLATIONS map, e.g. every "ar-*" variant points at ar-SA.ts), so
@@ -433,6 +447,9 @@ export const IPC = {
   stylesSave: 'styles:save',
   stylesReference: 'styles:reference',
   stylesImportFile: 'styles:importFile',
+  stylesGetVariableOverrides: 'styles:getVariableOverrides',
+  stylesSaveVariableOverrides: 'styles:saveVariableOverrides',
+  stylesScanBuildOutputVariables: 'styles:scanBuildOutputVariables',
 
   fontsImportFile: 'fonts:importFile',
 
@@ -546,6 +563,9 @@ export interface QuartzGuiApi {
     save(projectPath: string, content: string): Promise<void>
     reference(projectPath: string, pluginName: string): Promise<StyleReferenceFile[]>
     importFile(projectPath: string, sourcePath: string): Promise<{ importLine: string; relativePath: string }>
+    getVariableOverrides(projectPath: string): Promise<CssVariableOverride[]>
+    saveVariableOverrides(projectPath: string, overrides: CssVariableOverride[]): Promise<void>
+    scanBuildOutputVariables(projectPath: string, outputDir?: string): Promise<string[]>
   }
   fonts: {
     importFile(projectPath: string, sourcePath: string, family: string): Promise<{ fileName: string }>

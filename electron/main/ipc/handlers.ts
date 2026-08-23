@@ -9,7 +9,8 @@ import type {
   ThemePreset,
   GridFrameDefinition,
   SaveDeployConnectionInput,
-  GithubPagesDeployOptions
+  GithubPagesDeployOptions,
+  CssVariableOverride
 } from '@shared/ipc-contract'
 import * as projectStore from '../services/projectStore'
 import * as configService from '../services/configService'
@@ -111,6 +112,13 @@ export function registerIpcHandlers(): void {
   )
   ipcMain.handle(IPC.stylesImportFile, (_e, projectPath: string, sourcePath: string) =>
     styleService.importStyleFile(projectPath, sourcePath)
+  )
+  ipcMain.handle(IPC.stylesGetVariableOverrides, (_e, projectPath: string) => styleService.getVariableOverrides(projectPath))
+  ipcMain.handle(IPC.stylesSaveVariableOverrides, (_e, projectPath: string, overrides: CssVariableOverride[]) =>
+    styleService.saveVariableOverrides(projectPath, overrides)
+  )
+  ipcMain.handle(IPC.stylesScanBuildOutputVariables, (_e, projectPath: string, outputDir?: string) =>
+    styleService.scanBuildOutputVariables(projectPath, outputDir)
   )
 
   ipcMain.handle(IPC.fontsImportFile, (_e, projectPath: string, sourcePath: string, family: string) =>

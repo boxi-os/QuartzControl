@@ -194,7 +194,18 @@ export default {
     localFontNoSlot: '— none —',
     localFontConfirm: 'Import',
     fontImportSuccess: '"{{family}}" imported.',
-    colors: 'Colors'
+    colors: 'Colors',
+    cssVars: {
+      heading: 'Override CSS variables',
+      description: 'These variables are normally derived automatically from the colors above. Enable one to override it directly.',
+      scanButton: 'Scan build output',
+      scanNoneFound: 'No additional variables found in the build output.',
+      scanFound: 'Found {{count}} additional variable(s) in the build output.',
+      discoveredGroup: 'Found in build output',
+      light: 'Light',
+      dark: 'Dark',
+      saved: 'Saved.'
+    }
   },
   themes: {
     loading: 'Loading themes…',

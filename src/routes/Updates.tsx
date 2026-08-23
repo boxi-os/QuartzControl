@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProject } from './ProjectLayout'
 import type { CoreUpdateStatus, PluginUpdateStatus, ProjectSnapshot, UpdateResult } from '@shared/ipc-contract'
-import { Badge, Button, Card } from '../components/ui'
+import { Badge, Button, Card, PageHeader } from '../components/ui'
 import { formatIpcError } from '../components/ErrorSurface'
+import { TAB_ICONS } from './navConfig'
 
 function shortCommit(commit?: string | null): string {
   return commit ? commit.slice(0, 7) : '—'
@@ -92,10 +93,7 @@ export default function Updates(): JSX.Element {
 
   return (
     <div className="flex max-w-3xl flex-col gap-6">
-      <div>
-        <h1 className="text-lg font-semibold">{t('updates.title')}</h1>
-        <p className="text-xs text-slate-500 dark:text-slate-400">{t('updates.description')}</p>
-      </div>
+      <PageHeader icon={TAB_ICONS.updates} title={t('updates.title')} description={t('updates.description')} />
 
       <Card>
         <div className="flex items-center justify-between">
@@ -144,6 +142,7 @@ export default function Updates(): JSX.Element {
             {pluginBusy === '__all__' ? t('common.saving') : t('updates.plugins.updateAll')}
           </Button>
         </div>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('updates.plugins.hint')}</p>
         {pluginStatuses === null && <p className="mt-2 text-xs text-slate-500">{t('common.loading')}</p>}
         {pluginStatuses && pluginStatuses.length === 0 && <p className="mt-2 text-xs text-slate-500">{t('updates.plugins.none')}</p>}
         <div className="mt-2 flex flex-col gap-1.5">

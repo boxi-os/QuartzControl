@@ -52,7 +52,7 @@ export default {
       config: 'Configuration',
       layout: 'Layout',
       styles: 'Styles',
-      themes: 'Themes',
+      themes: 'Community Themes',
       localization: 'Localization',
       plugins: 'Plugins',
       content: 'Content folder',
@@ -62,6 +62,28 @@ export default {
       updates: 'Updates',
       publish: 'Publish',
       templates: 'Templates'
+    },
+    groups: {
+      design: 'Design',
+      content: 'Content',
+      plugins: 'Plugins',
+      publish: 'Publishing'
+    },
+    descriptions: {
+      overview: 'The overview for this project: server status, key settings, and quick links to every area.',
+      config: 'Basic settings for your site — title, address, and language — plus the classic colors and fonts.',
+      layout: 'Decides which building blocks (e.g. search, table of contents, navigation) appear where on the page.',
+      styles: 'For advanced users: write your own CSS to customize the look beyond the built-in settings.',
+      themes: 'Optional, community-maintained color schemes. Can be turned off any time — the classic theme from "Configuration → Theme" then applies again.',
+      templates: 'Export your design — layout, colors, plugins, fonts — as a reusable package, or import one into another project.',
+      content: 'Manages the folder with your Markdown notes — as a real copy, or linked to an existing folder, e.g. your Obsidian vault.',
+      localization: 'Edits the site’s built-in text labels (e.g. "Search", "Last modified") in the available languages.',
+      plugins: 'Extends Quartz with extra functionality — from full-text search to comments.',
+      updates: 'Keeps Quartz itself and the installed plugins up to date.',
+      server: 'Previews your site locally, and can produce a one-off build for export.',
+      sync: 'Syncs your local changes with the Git repository: uploading (push) and downloading (pull).',
+      backups: 'Automatically saved snapshots of your configuration and content folder — to compare and restore.',
+      publish: 'Builds the site and uploads only the changed files to your web space or GitHub Pages.'
     }
   },
   dashboard: {
@@ -112,6 +134,8 @@ export default {
   },
   buildServer: {
     devServer: 'Dev server',
+    devServerHint: 'Shows your site live in the browser, reloading automatically on changes — great for trying things out.',
+    oneOffBuildHint: 'Produces the finished HTML files once, e.g. to upload manually or check before you publish.',
     port: 'Port',
     wsPort: 'WS port',
     remoteDevHost: 'Remote dev host (optional)',
@@ -133,6 +157,7 @@ export default {
   },
   gitSync: {
     title: 'Git sync',
+    explainer: 'Pull fetches changes from the repository. Push uploads your local changes to it.',
     pull: 'Pull',
     pullRunning: 'Pull running…',
     push: 'Push',
@@ -179,8 +204,8 @@ export default {
   },
   themeEditor: {
     overrideWarningPrefix: 'The theme plugin ',
-    overrideWarningSuffix: ' is active and can override these colors in the preview.',
-    goToThemes: 'Go to Themes',
+    overrideWarningSuffix: ' is active and can override these colors in the preview. It can also be turned off there.',
+    goToThemes: 'Go to Community Themes',
     fontSource: 'Font source',
     googleFonts: 'Google Fonts',
     local: 'Local',
@@ -209,19 +234,25 @@ export default {
     }
   },
   themes: {
-    loading: 'Loading themes…',
-    title: 'Themes',
+    loading: 'Loading community themes…',
+    title: 'Community Themes',
+    disableAll: 'Disable community themes',
+    allDisabled: 'Community themes disabled',
     active: {
       title: 'Current theme',
-      none: 'No theme plugin active. Install one from the catalog below to get started.',
+      none: 'No community theme active — the classic theme from "Configuration → Theme" applies. Install one from the catalog below to get started.',
       heading: 'Current theme: {{themeId}}',
       saveAsPreset: 'Save as preset',
       presetNamePlaceholder: 'Name for the preset',
       overrideNote:
         'This plugin ({{source}}) can override the classic color settings on the Configuration tab. Changes below take effect immediately in the preview.',
+      disabledHeading: 'Community theme disabled ({{themeId}})',
+      disabledNote:
+        'The classic theme from "Configuration → Theme" applies again now. This community theme\'s settings are kept and can be turned back on any time.',
+      reactivate: 'Turn back on',
       checkingStyleSettings: "Checking the theme's style settings…",
       noStyleSettingsNote:
-        "The theme {{themeId}} doesn't ship its own style settings (no styleSettingsId in the theme package). This isn't a limitation of this app: @quartz-themes/core completely ignores any override for such themes no matter what value is set — there is currently no way to adjust individual colors of this theme.",
+        "The theme {{themeId}} doesn't offer its own color settings — there's nothing to customize here for this theme. That's down to the theme itself, not this app: changes would simply be ignored by Quartz.",
       styleSettingsHeading: 'Style settings ({{ids}})',
       cssVarsHeading: 'Override CSS variables',
       keyPlaceholder: 'e.g. secondary or secondary@@dark',
@@ -268,10 +299,10 @@ export default {
     marketplaceLink: 'Browse marketplace →',
     none: 'No plugins installed.',
     componentsHeading: 'Components',
-    componentsDescription: 'Rendered at a fixed position in the page layout.',
+    componentsDescription: 'These plugins are visible on the page — e.g. in the header, sidebar, or footer.',
     processingHeading: 'Processing',
     processingDescription:
-      "Transformers, filters and emitters — not reliably distinguishable further from the config alone. Page types (plugins that create their own page kind) are listed separately.",
+      "These plugins change your content behind the scenes (e.g. formatting, links, images) and aren't visible on the page themselves. Page types — plugins that create their own kind of page, e.g. tag pages — are listed separately below.",
     pageTypesHeading: 'Page types ({{count}})',
     otherProcessingHeading: 'Transformers, filters & emitters ({{count}})',
     dragHint: 'Drag to reorder',
@@ -372,6 +403,9 @@ export default {
     emptySlot: 'Empty — drag here',
     groupLabel: 'Group',
     noGroup: '— none —',
+    displayAll: 'Always',
+    displayDesktopOnly: 'Desktop only',
+    displayMobileOnly: 'Mobile only',
     groupsPanel: {
       title: 'Flex groups',
       description:
@@ -414,18 +448,45 @@ export default {
       rows: 'Rows',
       cols: 'Columns',
       gap: 'Gap',
+      rowGap: 'Row gap',
+      columnGap: 'Column gap',
+      resetTracks: 'Reset track sizes',
+      columnSizesLabel: 'Column widths (blank = 1fr)',
+      rowSizesLabel: 'Row heights (blank = auto)',
+      lineNamesLabel: 'Named grid lines (optional)',
+      columnLinesLabel: 'Column lines',
+      rowLinesLabel: 'Row lines',
+      copyLayoutTo: 'Copy to {{target}}',
+      breakpoint: {
+        desktop: 'Desktop',
+        tablet: 'Tablet',
+        mobile: 'Mobile'
+      },
+      modeEdit: 'Edit',
+      modePreview: 'Preview',
+      unplacedLabel: 'Not placed:',
       hintStartSelection: 'Click an empty cell to start a new area.',
       hintFinishSelection: 'Click a second cell to finish the area.',
+      hintPlaceArmed: '"{{name}}" is selected — click a start and end cell to place it on this breakpoint.',
       areaName: 'Area name',
       areaSlot: 'Slot',
       addArea: 'Add',
       removeArea: 'Remove area',
+      visibleOnBreakpoint: 'Visible on {{breakpoint}}',
       overlapError: 'This area overlaps an existing area.',
       unassignedWarning: 'Not assigned: {{slots}}. Components for these slots will not render in this frame.',
+      neverVisibleWarning: 'Not visible on any breakpoint: {{areas}}. These areas will not render anywhere.',
       nameRequired: 'Please give the frame a name.',
       nameCollision: 'This name is already taken (a built-in template or another custom frame).',
       deleteFrame: 'Delete this frame',
-      deleteConfirm: 'Really delete frame "{{name}}"? Page types referencing it will fall back to the default template.'
+      deleteConfirm: 'Really delete frame "{{name}}"? Page types referencing it will fall back to the default template.',
+      preview: {
+        pageContent: 'Page content',
+        empty: '— empty —',
+        none: 'No area is visible on this breakpoint.',
+        hiddenLabel: 'Hidden on this breakpoint:',
+        hidden: 'hidden'
+      }
     }
   },
   styleEditor: {
@@ -466,10 +527,11 @@ export default {
     },
     plugins: {
       heading: 'Plugins',
+      hint: "Only shows plugins you added via the marketplace or command line. Built-in plugins (most of them in a new project) update automatically with the Quartz core above.",
       updateAll: 'Update all',
       update: 'Update',
       local: 'Local',
-      none: 'No plugins with a quartz.lock.json entry found.'
+      none: 'No plugins added via the marketplace or command line were found.'
     },
     snapshots: {
       heading: 'Snapshots',
@@ -560,6 +622,8 @@ export default {
     importSuccessNoWarnings: 'Import complete, no conflicts.'
   },
   pluginsMarketplace: {
+    title: 'Marketplace',
+    description: 'Browse plugins the community has published on GitHub, in addition to the built-in ones.',
     backToInstalled: '← Installed plugins',
     searchPlaceholder: 'Search plugins…',
     installed: 'Installed',

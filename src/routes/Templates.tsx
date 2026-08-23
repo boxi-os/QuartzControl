@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProject } from './ProjectLayout'
 import type { Project, TemplatePackageCategory, TemplatePackagePreview } from '@shared/ipc-contract'
-import { Button, Card, Field, TextInput } from '../components/ui'
+import { Button, Card, Field, PageHeader, TextInput } from '../components/ui'
+import { TAB_ICONS } from './navConfig'
 
 const CATEGORIES: TemplatePackageCategory[] = ['layout', 'colors', 'plugins', 'frames', 'styles', 'fonts']
 
@@ -46,10 +47,7 @@ export default function Templates(): JSX.Element {
 
   return (
     <div className="flex max-w-2xl flex-col gap-6">
-      <div>
-        <h1 className="text-lg font-semibold">{t('templates.title')}</h1>
-        <p className="text-xs text-slate-500 dark:text-slate-400">{t('templates.description')}</p>
-      </div>
+      <PageHeader icon={TAB_ICONS.templates} title={t('templates.title')} description={t('templates.description')} />
 
       <Card>
         <h2 className="mb-2 text-sm font-semibold">{t('templates.exportHeading')}</h2>

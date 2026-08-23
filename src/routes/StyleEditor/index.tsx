@@ -5,8 +5,9 @@ import { css } from '@codemirror/lang-css'
 import type { EditorView } from '@codemirror/view'
 import { useProject } from '../ProjectLayout'
 import type { QuartzConfig, StyleReferenceFile } from '@shared/ipc-contract'
-import { Button, Card, Select } from '../../components/ui'
+import { Button, Card, PageHeader, Select } from '../../components/ui'
 import { componentItems } from '../LayoutEditor/utils'
+import { TAB_ICONS } from '../navConfig'
 
 // Tailwind's darkMode:'media' means there's no manual theme class to read - CodeMirror's own
 // theme prop needs an explicit 'light'/'dark' string, so this mirrors the same media query.
@@ -100,25 +101,27 @@ export default function StyleEditor(): JSX.Element {
 
   return (
     <div className="flex max-w-5xl flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">{t('styleEditor.title')}</h1>
-          <p className="truncate text-xs text-slate-500 dark:text-slate-400">{path}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
-          {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{message}</span>}
-          <Button variant="ghost" onClick={() => openExternally(path)}>
-            {t('styleEditor.openExternally')}
-          </Button>
-          <Button variant="ghost" onClick={importFile}>
-            {t('styleEditor.importFile')}
-          </Button>
-          <Button onClick={save} disabled={status === 'saving'}>
-            {status === 'saving' ? t('common.saving') : t('common.save')}
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        icon={TAB_ICONS.styles}
+        title={t('styleEditor.title')}
+        description={t('projectLayout.descriptions.styles')}
+        actions={
+          <>
+            {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
+            {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{message}</span>}
+            <Button variant="ghost" onClick={() => openExternally(path)}>
+              {t('styleEditor.openExternally')}
+            </Button>
+            <Button variant="ghost" onClick={importFile}>
+              {t('styleEditor.importFile')}
+            </Button>
+            <Button onClick={save} disabled={status === 'saving'}>
+              {status === 'saving' ? t('common.saving') : t('common.save')}
+            </Button>
+          </>
+        }
+      />
+      <p className="-mt-3 truncate text-xs text-slate-500 dark:text-slate-400">{path}</p>
 
       <Card className="flex items-center gap-2">
         <Select value={selectedComponent} onChange={(e) => setSelectedComponent(e.target.value)} className="w-56">

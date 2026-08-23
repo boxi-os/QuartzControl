@@ -4,8 +4,9 @@ import { Link } from 'react-router-dom'
 import { useProject } from '../ProjectLayout'
 import { useAppStore } from '../../state/store'
 import type { MarketplacePlugin, PluginEntry } from '@shared/ipc-contract'
-import { Badge, Button, Card, TextInput } from '../../components/ui'
+import { Badge, Button, Card, PageHeader, TextInput } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
+import { Store } from 'lucide-react'
 
 // Normalizes any plugin source form (github: string, {repo} object, or the built-in
 // "@quartz-community/x" shorthand - which really is the quartz-community/x repo, just
@@ -65,6 +66,7 @@ export default function PluginsMarketplace(): JSX.Element {
       <Link to=".." relative="path" className="text-sm text-slate-500 hover:text-slate-800 dark:hover:text-white">
         {t('pluginsMarketplace.backToInstalled')}
       </Link>
+      <PageHeader icon={Store} title={t('pluginsMarketplace.title')} description={t('pluginsMarketplace.description')} />
       <div className="my-4">
         <TextInput
           value={query}

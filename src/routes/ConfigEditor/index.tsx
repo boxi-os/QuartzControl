@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProject } from '../ProjectLayout'
 import type { QuartzConfig } from '@shared/ipc-contract'
-import { Button, SegmentedControl } from '../../components/ui'
+import { Button, PageHeader, SegmentedControl } from '../../components/ui'
+import { TAB_ICONS } from '../navConfig'
 import SiteSettings from './SiteSettings'
 import ThemeEditor from './ThemeEditor'
 
@@ -50,6 +51,11 @@ export default function ConfigEditor(): JSX.Element {
 
   return (
     <div>
+      <PageHeader
+        icon={TAB_ICONS.config}
+        title={t('projectLayout.tabs.config')}
+        description={t('projectLayout.descriptions.config')}
+      />
       <div className="mb-6 flex items-center justify-between">
         <SegmentedControl
           value={tab}

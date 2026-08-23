@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProject } from './ProjectLayout'
 import type { BackupEntry } from '@shared/ipc-contract'
-import { Button, Card, SegmentedControl } from '../components/ui'
+import { Button, Card, PageHeader, SegmentedControl } from '../components/ui'
 import { useAsyncAction } from '../hooks/useAsyncAction'
+import { TAB_ICONS } from './navConfig'
 
 export default function Backups(): JSX.Element {
   const { t, i18n } = useTranslation()
@@ -40,6 +41,11 @@ export default function Backups(): JSX.Element {
 
   return (
     <div className="max-w-3xl">
+      <PageHeader
+        icon={TAB_ICONS.backups}
+        title={t('projectLayout.tabs.backups')}
+        description={t('projectLayout.descriptions.backups')}
+      />
       <div className="mb-6">
         <SegmentedControl
           value={kind}

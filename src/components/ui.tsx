@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, HTMLAttributes, InputHTMLAttributes, LabelHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react'
+import type { LucideIcon } from 'lucide-react'
 
 const VARIANTS = {
   primary: 'bg-blue-600 text-white hover:bg-blue-500 disabled:bg-blue-300 dark:disabled:bg-blue-900/50 shadow-sm',
@@ -140,6 +141,37 @@ export function Badge({
     amber: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400'
   }
   return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${tones[tone]}`}>{children}</span>
+}
+
+// The consistent "where am I" headline at the top of every project area: an icon that echoes
+// the sidebar entry, the section title, and a plain-language explanation of what it's for -
+// aimed at users who don't already know Quartz's terminology. `actions` holds whatever
+// page-specific buttons used to sit next to a hand-rolled <h1> (save button, status text, ...).
+export function PageHeader({
+  icon: Icon,
+  title,
+  description,
+  actions
+}: {
+  icon: LucideIcon
+  title: string
+  description?: string
+  actions?: ReactNode
+}): JSX.Element {
+  return (
+    <div className="mb-6 flex items-start justify-between gap-4">
+      <div className="flex items-start gap-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] bg-blue-600/10 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400">
+          <Icon size={18} strokeWidth={2} aria-hidden />
+        </div>
+        <div>
+          <h1 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h1>
+          {description && <p className="mt-0.5 max-w-xl text-[13px] text-slate-500 dark:text-slate-400">{description}</p>}
+        </div>
+      </div>
+      {actions && <div className="flex shrink-0 items-center gap-3 pt-1">{actions}</div>}
+    </div>
+  )
 }
 
 export function LabelText(props: LabelHTMLAttributes<HTMLLabelElement>): JSX.Element {

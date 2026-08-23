@@ -213,13 +213,13 @@ function CssVariablesEditor({ projectPath, theme }: { projectPath: string; theme
                 const active = def.key in overrides
                 const value = overrides[def.key]
                 return (
-                  <div key={def.key} className="flex flex-wrap items-center gap-2">
-                    <label className="flex w-56 items-center gap-2 text-xs">
+                  <div key={def.key} className="flex flex-col gap-1.5">
+                    <label className="flex items-center gap-2 text-xs">
                       <input type="checkbox" checked={active} onChange={(e) => toggle(def, e.target.checked)} />
                       <code className="font-mono">--{def.key}</code>
                     </label>
                     {active && value && (
-                      <>
+                      <div className="ml-[7px] flex flex-wrap items-center gap-3 border-l-2 border-black/[0.08] py-0.5 pl-3 dark:border-white/10">
                         <CssVarValueInput
                           kind={def.kind}
                           label={t('themeEditor.cssVars.light')}
@@ -232,7 +232,7 @@ function CssVariablesEditor({ projectPath, theme }: { projectPath: string; theme
                           value={value.dark}
                           onChange={(v) => setValue(def.key, 'dark', v)}
                         />
-                      </>
+                      </div>
                     )}
                   </div>
                 )

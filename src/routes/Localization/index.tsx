@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProject } from '../ProjectLayout'
 import type { LocaleEntry, LocaleFile } from '@shared/ipc-contract'
-import { Badge, Button, Select, TextInput } from '../../components/ui'
+import { Badge, Button, PageHeader, Select, TextInput } from '../../components/ui'
+import { TAB_ICONS } from '../navConfig'
 
 export default function Localization(): JSX.Element {
   const { t } = useTranslation()
@@ -97,20 +98,21 @@ export default function Localization(): JSX.Element {
 
   return (
     <div className="flex max-w-4xl flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">{t('localization.title')}</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400">{t('localization.description')}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          {dirtyKeys.length > 0 && (
-            <span className="text-xs text-slate-500 dark:text-slate-400">{t('localization.unsavedCount', { count: dirtyKeys.length })}</span>
-          )}
-          <Button onClick={saveAll} disabled={saving || dirtyKeys.length === 0}>
-            {saving ? t('common.saving') : t('common.save')}
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        icon={TAB_ICONS.localization}
+        title={t('localization.title')}
+        description={t('localization.description')}
+        actions={
+          <>
+            {dirtyKeys.length > 0 && (
+              <span className="text-xs text-slate-500 dark:text-slate-400">{t('localization.unsavedCount', { count: dirtyKeys.length })}</span>
+            )}
+            <Button onClick={saveAll} disabled={saving || dirtyKeys.length === 0}>
+              {saving ? t('common.saving') : t('common.save')}
+            </Button>
+          </>
+        }
+      />
 
       <p className="text-xs text-slate-500 dark:text-slate-400">
         {gitAttrOk ? (

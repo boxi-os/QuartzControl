@@ -9,8 +9,9 @@ import type {
   QuartzConfig,
   SaveDeployConnectionInput
 } from '@shared/ipc-contract'
-import { Badge, Button, Card, Field, Select, TextInput, Toggle } from '../components/ui'
+import { Badge, Button, Card, Field, PageHeader, Select, TextInput, Toggle } from '../components/ui'
 import { useAsyncAction } from '../hooks/useAsyncAction'
+import { TAB_ICONS } from './navConfig'
 
 type Target = { kind: 'github-pages' } | { kind: 'connection'; id: string }
 
@@ -146,10 +147,7 @@ export default function Publish(): JSX.Element {
 
   return (
     <div className="flex max-w-4xl flex-col gap-6">
-      <div>
-        <h1 className="text-lg font-semibold">{t('publish.title')}</h1>
-        <p className="text-xs text-slate-500 dark:text-slate-400">{t('publish.description')}</p>
-      </div>
+      <PageHeader icon={TAB_ICONS.publish} title={t('publish.title')} description={t('publish.description')} />
 
       {baseUrlWarning && (
         <p className="rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">

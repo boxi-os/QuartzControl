@@ -4,8 +4,9 @@ import type { TFunction } from 'i18next'
 import { Link } from 'react-router-dom'
 import { useProject } from '../ProjectLayout'
 import type { PluginEntry, PluginLayoutDeclaration, PluginOptionField, QuartzConfig } from '@shared/ipc-contract'
-import { Badge, Button, Card, Select, TextInput, Toggle } from '../../components/ui'
+import { Badge, Button, Card, PageHeader, Select, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
+import { TAB_ICONS } from '../navConfig'
 
 // Quartz plugins fall into distinct kinds - transformers, filters, page types, emitters,
 // components (see https://quartz.jzhao.xyz/plugins/) - but that exact category isn't stored
@@ -298,6 +299,11 @@ export default function PluginsInstalled(): JSX.Element {
 
   return (
     <div className="max-w-3xl">
+      <PageHeader
+        icon={TAB_ICONS.plugins}
+        title={t('projectLayout.tabs.plugins')}
+        description={t('projectLayout.descriptions.plugins')}
+      />
       <div className="mb-4 flex items-center justify-between">
         <div className="flex gap-2">
           <TextInput

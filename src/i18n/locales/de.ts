@@ -52,7 +52,7 @@ export default {
       config: 'Konfiguration',
       layout: 'Layout',
       styles: 'Styles',
-      themes: 'Themes',
+      themes: 'Community-Themes',
       localization: 'Übersetzungen',
       plugins: 'Plugins',
       content: 'Content-Ordner',
@@ -62,6 +62,28 @@ export default {
       updates: 'Updates',
       publish: 'Veröffentlichen',
       templates: 'Vorlagen'
+    },
+    groups: {
+      design: 'Gestaltung',
+      content: 'Inhalte',
+      plugins: 'Plugins',
+      publish: 'Veröffentlichung'
+    },
+    descriptions: {
+      overview: 'Der Überblick über dieses Projekt: Server-Status, wichtigste Einstellungen und Schnellzugriffe auf alle Bereiche.',
+      config: 'Grundeinstellungen deiner Website — Titel, Adresse und Sprache — sowie die klassischen Farben und Schriften.',
+      layout: 'Legt fest, welche Bausteine (z. B. Suche, Inhaltsverzeichnis, Navigation) wo auf der Seite erscheinen.',
+      styles: 'Für Fortgeschrittene: eigenes CSS schreiben, um das Aussehen über die Standardeinstellungen hinaus anzupassen.',
+      themes: 'Optionale, von der Community gepflegte Farbschemata. Lassen sich jederzeit deaktivieren — dann gilt wieder das klassische Theme aus „Konfiguration → Theme".',
+      templates: 'Deine Gestaltung — Layout, Farben, Plugins, Schriften — als wiederverwendbares Paket exportieren oder in ein anderes Projekt importieren.',
+      content: 'Verwaltet den Ordner mit deinen Markdown-Notizen — als echte Kopie oder verknüpft mit einem bestehenden Ordner, z. B. deinem Obsidian-Vault.',
+      localization: 'Bearbeitet feste Textbausteine der Website (z. B. „Suche“, „Zuletzt geändert“) in den verfügbaren Sprachen.',
+      plugins: 'Erweitert Quartz um zusätzliche Funktionen — von Volltextsuche bis Kommentaren.',
+      updates: 'Hält Quartz selbst und die installierten Plugins auf dem neuesten Stand.',
+      server: 'Zeigt deine Website lokal in der Vorschau an und erstellt bei Bedarf einen einmaligen Build zum Exportieren.',
+      sync: 'Gleicht deine lokalen Änderungen mit dem Git-Repository ab: Hochladen (Push) und Herunterladen (Pull).',
+      backups: 'Automatisch gesicherte Stände deiner Konfiguration und deines Content-Ordners — zum Vergleichen und Wiederherstellen.',
+      publish: 'Baut die Website und lädt nur die geänderten Dateien auf deinen Webspace oder zu GitHub Pages hoch.'
     }
   },
   dashboard: {
@@ -112,6 +134,8 @@ export default {
   },
   buildServer: {
     devServer: 'Dev-Server',
+    devServerHint: 'Zeigt deine Website live im Browser an, mit automatischem Neuladen bei Änderungen — ideal zum Ausprobieren.',
+    oneOffBuildHint: 'Erstellt einmalig die fertigen HTML-Dateien, z. B. um sie manuell hochzuladen oder zu prüfen, bevor du veröffentlichst.',
     port: 'Port',
     wsPort: 'WS-Port',
     remoteDevHost: 'Remote-Dev-Host (optional)',
@@ -133,6 +157,7 @@ export default {
   },
   gitSync: {
     title: 'Git-Sync',
+    explainer: 'Pull holt Änderungen aus dem Repository ab. Push lädt deine lokalen Änderungen dorthin hoch.',
     pull: 'Pull',
     pullRunning: 'Pull läuft…',
     push: 'Push',
@@ -179,8 +204,8 @@ export default {
   },
   themeEditor: {
     overrideWarningPrefix: 'Das Theme-Plugin ',
-    overrideWarningSuffix: ' ist aktiv und kann diese Farben in der Vorschau überschreiben.',
-    goToThemes: 'Zu Themes',
+    overrideWarningSuffix: ' ist aktiv und kann diese Farben in der Vorschau überschreiben. Dort lässt es sich auch wieder deaktivieren.',
+    goToThemes: 'Zu Community-Themes',
     fontSource: 'Font-Quelle',
     googleFonts: 'Google Fonts',
     local: 'Lokal',
@@ -210,19 +235,25 @@ export default {
     }
   },
   themes: {
-    loading: 'Lade Themes…',
-    title: 'Themes',
+    loading: 'Lade Community-Themes…',
+    title: 'Community-Themes',
+    disableAll: 'Community-Themes deaktivieren',
+    allDisabled: 'Community-Themes deaktiviert',
     active: {
       title: 'Aktuelles Theme',
-      none: 'Kein Theme-Plugin aktiv. Installiere unten eines aus dem Katalog, um loszulegen.',
+      none: 'Kein Community-Theme aktiv — es gilt das klassische Theme aus „Konfiguration → Theme". Installiere unten eines aus dem Katalog, um loszulegen.',
       heading: 'Aktuelles Theme: {{themeId}}',
       saveAsPreset: 'Als Preset speichern',
       presetNamePlaceholder: 'Name für das Preset',
       overrideNote:
         'Dieses Plugin ({{source}}) kann die klassischen Farbeinstellungen auf dem Konfiguration-Tab überschreiben. Änderungen unten wirken sich direkt auf die Vorschau aus.',
+      disabledHeading: 'Community-Theme deaktiviert ({{themeId}})',
+      disabledNote:
+        'Es gilt jetzt wieder das klassische Theme aus „Konfiguration → Theme". Die Einstellungen dieses Community-Themes bleiben erhalten und lassen sich jederzeit wieder aktivieren.',
+      reactivate: 'Wieder aktivieren',
       checkingStyleSettings: 'Prüfe Style-Settings des Themes…',
       noStyleSettingsNote:
-        'Das Theme {{themeId}} bringt keine eigenen Style-Settings mit (keine styleSettingsId im Theme-Paket). Das ist keine Einschränkung dieser App: @quartz-themes/core ignoriert für solche Themes jeden Override vollständig, egal welchen Wert man setzt — es gibt aktuell keinen Weg, einzelne Farben dieses Themes anzupassen.',
+        'Das Theme {{themeId}} bietet keine eigenen Farbeinstellungen an — hier lässt sich für dieses Theme nichts anpassen. Das liegt am Theme selbst, nicht an dieser App: Änderungen würden von Quartz schlicht ignoriert.',
       styleSettingsHeading: 'Style-Settings ({{ids}})',
       cssVarsHeading: 'CSS-Variablen überschreiben',
       keyPlaceholder: 'z.B. secondary oder secondary@@dark',
@@ -269,10 +300,10 @@ export default {
     marketplaceLink: 'Marktplatz durchsuchen →',
     none: 'Keine Plugins installiert.',
     componentsHeading: 'Components',
-    componentsDescription: 'Werden im Seiten-Layout an einer festen Position dargestellt.',
+    componentsDescription: 'Diese Plugins sind sichtbar auf der Seite — z. B. im Kopfbereich, in der Seitenleiste oder im Footer.',
     processingHeading: 'Verarbeitung',
     processingDescription:
-      'Transformer, Filter und Emitter — aus der Konfiguration allein nicht zuverlässig weiter unterscheidbar. Seitentypen (Plugins, die eine eigene Seitenart erzeugen) werden separat aufgeführt.',
+      'Diese Plugins verändern deine Inhalte im Hintergrund (z. B. Formatierung, Links, Bilder) und erscheinen selbst nicht sichtbar auf der Seite. Seitentypen — Plugins, die eine eigene Art von Seite erzeugen, z. B. Tag-Seiten — werden unten separat aufgeführt.',
     pageTypesHeading: 'Seitentypen ({{count}})',
     otherProcessingHeading: 'Transformer, Filter & Emitter ({{count}})',
     dragHint: 'Ziehen zum Umsortieren',
@@ -373,6 +404,9 @@ export default {
     emptySlot: 'Leer — hierher ziehen',
     groupLabel: 'Gruppe',
     noGroup: '— keine —',
+    displayAll: 'Immer',
+    displayDesktopOnly: 'Nur Desktop',
+    displayMobileOnly: 'Nur Mobil',
     groupsPanel: {
       title: 'Flex-Gruppen',
       description:
@@ -415,18 +449,45 @@ export default {
       rows: 'Zeilen',
       cols: 'Spalten',
       gap: 'Abstand',
+      rowGap: 'Zeilenabstand',
+      columnGap: 'Spaltenabstand',
+      resetTracks: 'Spurgrößen zurücksetzen',
+      columnSizesLabel: 'Spaltenbreiten (leer = 1fr)',
+      rowSizesLabel: 'Zeilenhöhen (leer = auto)',
+      lineNamesLabel: 'Benannte Grid-Lines (optional)',
+      columnLinesLabel: 'Spalten-Lines',
+      rowLinesLabel: 'Zeilen-Lines',
+      copyLayoutTo: 'Auf {{target}} kopieren',
+      breakpoint: {
+        desktop: 'Desktop',
+        tablet: 'Tablet',
+        mobile: 'Mobil'
+      },
+      modeEdit: 'Bearbeiten',
+      modePreview: 'Vorschau',
+      unplacedLabel: 'Nicht platziert:',
       hintStartSelection: 'Klicken Sie eine leere Zelle an, um einen neuen Bereich zu beginnen.',
       hintFinishSelection: 'Klicken Sie eine zweite Zelle an, um den Bereich abzuschließen.',
+      hintPlaceArmed: '„{{name}}" ist ausgewählt — klicken Sie eine Start- und Endzelle an, um den Bereich auf diesem Breakpoint zu platzieren.',
       areaName: 'Bereichsname',
       areaSlot: 'Belegung',
       addArea: 'Hinzufügen',
       removeArea: 'Bereich löschen',
+      visibleOnBreakpoint: 'Sichtbar auf {{breakpoint}}',
       overlapError: 'Dieser Bereich überschneidet sich mit einem bestehenden Bereich.',
       unassignedWarning: 'Nicht zugewiesen: {{slots}}. Komponenten für diese Positionen werden in diesem Frame nicht angezeigt.',
+      neverVisibleWarning: 'Auf keinem Breakpoint sichtbar: {{areas}}. Diese Bereiche werden nirgends gerendert.',
       nameRequired: 'Bitte einen Frame-Namen vergeben.',
       nameCollision: 'Dieser Name ist bereits vergeben (Standard-Templates oder ein anderer eigener Frame).',
       deleteFrame: 'Diesen Frame löschen',
-      deleteConfirm: 'Frame "{{name}}" wirklich löschen? Seitentypen, die ihn referenzieren, fallen dann auf das Standard-Template zurück.'
+      deleteConfirm: 'Frame "{{name}}" wirklich löschen? Seitentypen, die ihn referenzieren, fallen dann auf das Standard-Template zurück.',
+      preview: {
+        pageContent: 'Seiteninhalt',
+        empty: '— leer —',
+        none: 'Auf diesem Breakpoint ist kein Bereich sichtbar.',
+        hiddenLabel: 'Ausgeblendet auf diesem Breakpoint:',
+        hidden: 'ausgeblendet'
+      }
     }
   },
   styleEditor: {
@@ -467,10 +528,11 @@ export default {
     },
     plugins: {
       heading: 'Plugins',
+      hint: 'Zeigt nur Plugins, die du über den Marktplatz oder per Kommandozeile hinzugefügt hast. Eingebaute Plugins (die meisten in einem neuen Projekt) werden automatisch mit dem Quartz-Kern oben aktualisiert.',
       updateAll: 'Alle aktualisieren',
       update: 'Aktualisieren',
       local: 'Lokal',
-      none: 'Keine Plugins mit quartz.lock.json-Eintrag gefunden.'
+      none: 'Keine über den Marktplatz oder per Kommandozeile hinzugefügten Plugins gefunden.'
     },
     snapshots: {
       heading: 'Snapshots',
@@ -561,6 +623,8 @@ export default {
     importSuccessNoWarnings: 'Import abgeschlossen, keine Konflikte.'
   },
   pluginsMarketplace: {
+    title: 'Marktplatz',
+    description: 'Durchsucht Plugins, die die Community auf GitHub veröffentlicht hat — zusätzlich zu den mitgelieferten.',
     backToInstalled: '← Installierte Plugins',
     searchPlaceholder: 'Plugins durchsuchen…',
     installed: 'Installiert',

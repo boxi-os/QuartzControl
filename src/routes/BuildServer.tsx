@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProject } from './ProjectLayout'
 import type { LogLine, ServerOptions, ServerStatus, BuildResult } from '@shared/ipc-contract'
-import { Badge, Button, Card, Field, TextInput, Toggle } from '../components/ui'
+import { Badge, Button, Card, Field, PageHeader, TextInput, Toggle } from '../components/ui'
 import { LogConsole } from '../components/LogConsole'
 import { formatIpcError } from '../components/ErrorSurface'
+import { TAB_ICONS } from './navConfig'
 
 // `host` is only meaningful as Quartz's `--remoteDevHost`: an override for the live-reload
 // websocket URL when previewing through a tunnel/remote host, which makes the browser connect
@@ -81,13 +82,19 @@ export default function BuildServer(): JSX.Element {
 
   return (
     <div className="grid max-w-3xl gap-6">
+      <PageHeader
+        icon={TAB_ICONS.server}
+        title={t('projectLayout.tabs.server')}
+        description={t('projectLayout.descriptions.server')}
+      />
       <Card>
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-1 flex items-center justify-between">
           <h2 className="font-medium">{t('buildServer.devServer')}</h2>
           <Badge tone={status.state === 'running' ? 'green' : status.state === 'error' ? 'red' : 'slate'}>
             {t(`common.serverState.${status.state}`)}
           </Badge>
         </div>
+        <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('buildServer.devServerHint')}</p>
 
         <div className="mb-3 grid grid-cols-4 gap-3">
           <Field label={t('buildServer.port')}>
@@ -150,12 +157,13 @@ export default function BuildServer(): JSX.Element {
       </Card>
 
       <Card>
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-1 flex items-center justify-between">
           <h2 className="font-medium">{t('buildServer.oneOffBuild')}</h2>
           <Button onClick={runBuild} disabled={building}>
             {building ? t('buildServer.building') : t('buildServer.buildNow')}
           </Button>
         </div>
+        <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('buildServer.oneOffBuildHint')}</p>
 
         <div className="mb-3">
           <Field label={t('buildServer.exportDir')}>

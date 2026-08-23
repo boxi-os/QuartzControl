@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProject } from './ProjectLayout'
 import type { ContentProgress, ContentStatus, ContentStrategy } from '@shared/ipc-contract'
-import { Badge, Button, Card, Field, Select, TextInput } from '../components/ui'
+import { Badge, Button, Card, Field, PageHeader, Select, TextInput } from '../components/ui'
+import { TAB_ICONS } from './navConfig'
 
 export default function Content(): JSX.Element {
   const { t } = useTranslation()
@@ -48,6 +49,11 @@ export default function Content(): JSX.Element {
 
   return (
     <div className="max-w-2xl">
+      <PageHeader
+        icon={TAB_ICONS.content}
+        title={t('projectLayout.tabs.content')}
+        description={t('projectLayout.descriptions.content')}
+      />
       <Card>
         <h2 className="mb-3 font-medium">{t('content.currentFolder')}</h2>
         {!status && <p className="text-sm text-slate-500">{t('content.loading')}</p>}

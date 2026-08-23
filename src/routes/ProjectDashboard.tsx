@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import type { ContentStatus, LogLine, PluginEntry, QuartzConfig, ServerStatus } from '@shared/ipc-contract'
 import { useProject } from './ProjectLayout'
-import { Badge, Button, Card } from '../components/ui'
+import { Badge, Button, Card, PageHeader } from '../components/ui'
 import { LogConsole } from '../components/LogConsole'
+import { TAB_ICONS } from './navConfig'
 
 // Same detection quartz-themes/core convention as Themes/index.tsx - the active theme isn't its
 // own config field, it's read off whichever @quartz-themes/* plugin entry is enabled.
@@ -67,6 +68,11 @@ export default function ProjectDashboard(): JSX.Element {
 
   return (
     <div className="grid max-w-3xl gap-4">
+      <PageHeader
+        icon={TAB_ICONS.overview}
+        title={t('projectLayout.tabs.overview')}
+        description={t('projectLayout.descriptions.overview')}
+      />
       <Card>
         <div className="mb-3 flex items-center justify-between">
           <div>

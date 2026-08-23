@@ -2,15 +2,20 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProject } from '../ProjectLayout'
 import type { PluginEntry, QuartzConfig, QuartzThemeListing, ThemeDetail, ThemePreset, ThemeStyleSettingsInfo } from '@shared/ipc-contract'
-import { Badge, Button, Card, TextInput, Toggle } from '../../components/ui'
+import { Badge, Button, Card, PageHeader, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
+import { TAB_ICONS } from '../navConfig'
 
 // @quartz-themes/* (e.g. @quartz-themes/core) is a third-party Obsidian-style theming engine,
 // separate from Quartz's built-in configuration.theme.colors. It injects its own CSS variables
 // later in the cascade and overrides the classic colors outright. Detected by source prefix since
 // it's a whole npm scope of theme packages, not a single fixed plugin name.
-function findOverridingThemePluginIndex(plugins: PluginEntry[]): number {
-  return plugins.findIndex((p) => p.enabled && typeof p.source === 'string' && p.source.startsWith('@quartz-themes/'))
+//
+// Matches regardless of `enabled` - unlike the same-named check elsewhere (ProjectDashboard,
+// ThemeEditor), this page needs to find a *disabled* entry too, to offer turning it back on
+// rather than just showing "no theme installed" once it's off.
+function findThemePluginIndex(plugins: PluginEntry[]): number {
+  return plugins.findIndex((p) => typeof p.source === 'string' && p.source.startsWith('@quartz-themes/'))
 }
 
 const VISIBLE_THEME_LIMIT = 30
@@ -51,20 +56,21 @@ export default function Themes(): JSX.Element {
 
   if (!config) return <p className="text-sm text-slate-500">{t('themes.loading')}</p>
 
-  const overridingIndex = findOverridingThemePluginIndex(config.plugins)
-  const overridingPlugin = overridingIndex === -1 ? undefined : config.plugins[overridingIndex]
-  const activeThemeId = typeof overridingPlugin?.options?.theme === 'string' ? overridingPlugin.options.theme : undefined
+  const themePluginIndex = findThemePluginIndex(config.plugins)
+  const themePlugin = themePluginIndex === -1 ? undefined : config.plugins[themePluginIndex]
+  const activeThemeId =
+    themePlugin?.enabled && typeof themePlugin.options?.theme === 'string' ? themePlugin.options.theme : undefined
 
   function updatePlugin(next: PluginEntry): void {
     if (!config) return
     const nextPlugins = [...config.plugins]
-    if (overridingIndex === -1) nextPlugins.push(next)
-    else nextPlugins[overridingIndex] = next
+    if (themePluginIndex === -1) nextPlugins.push(next)
+    else nextPlugins[themePluginIndex] = next
     setConfig({ ...config, plugins: nextPlugins })
   }
 
   function activateTheme(themeId: string, extraOptions?: Record<string, unknown>): void {
-    const base: PluginEntry = overridingPlugin ?? {
+    const base: PluginEntry = themePlugin ?? {
       name: themeId,
       source: '@quartz-themes/core',
       enabled: true,
@@ -75,25 +81,41 @@ export default function Themes(): JSX.Element {
 
   async function applyPreset(preset: ThemePreset): Promise<void> {
     await window.quartzGui.themeMarketplace.install(project.path, preset.baseThemeId)
-    const base: PluginEntry = overridingPlugin ?? { name: preset.baseThemeId, source: '@quartz-themes/core', enabled: true }
+    const base: PluginEntry = themePlugin ?? { name: preset.baseThemeId, source: '@quartz-themes/core', enabled: true }
     updatePlugin({ ...base, enabled: true, options: { ...preset.options } })
   }
 
   return (
     <div className="grid max-w-3xl gap-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">{t('themes.title')}</h2>
-        <div className="flex items-center gap-3">
-          {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
-          {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{error}</span>}
-          <Button onClick={save} disabled={status === 'saving'}>
-            {status === 'saving' ? t('common.saving') : t('common.save')}
-          </Button>
+      <PageHeader
+        icon={TAB_ICONS.themes}
+        title={t('themes.title')}
+        description={t('projectLayout.descriptions.themes')}
+        actions={
+          <>
+            {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
+            {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{error}</span>}
+            <Button onClick={save} disabled={status === 'saving'}>
+              {status === 'saving' ? t('common.saving') : t('common.save')}
+            </Button>
+          </>
+        }
+      />
+
+      {themePlugin && (
+        <div className="-mt-4">
+          {themePlugin.enabled ? (
+            <Button variant="ghost" onClick={() => updatePlugin({ ...themePlugin, enabled: false })}>
+              {t('themes.disableAll')}
+            </Button>
+          ) : (
+            <Badge>{t('themes.allDisabled')}</Badge>
+          )}
         </div>
-      </div>
+      )}
 
       <ActiveThemeSection
-        plugin={overridingPlugin}
+        plugin={themePlugin}
         onChange={updatePlugin}
         projectPath={project.path}
         onSavedAsPreset={refreshPresets}
@@ -144,19 +166,35 @@ function ActiveThemeSection({
   const [savingName, setSavingName] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!themeId) {
+    if (!themeId || !plugin?.enabled) {
       setInfo(null)
       return
     }
     setInfo(undefined)
     window.quartzGui.plugins.themeStyleSettingsInfo(projectPath, themeId).then(setInfo)
-  }, [projectPath, themeId])
+  }, [projectPath, themeId, plugin?.enabled])
 
   if (!plugin) {
     return (
       <Card>
         <h3 className="mb-1 text-sm font-semibold">{t('themes.active.title')}</h3>
         <p className="text-xs text-slate-500 dark:text-slate-400">{t('themes.active.none')}</p>
+      </Card>
+    )
+  }
+
+  // Kept as a plugin entry with enabled:false rather than removed, so the theme choice and all
+  // its style settings survive being turned off - re-enabling restores exactly what was there.
+  if (!plugin.enabled) {
+    return (
+      <Card>
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold">{t('themes.active.disabledHeading', { themeId: themeId ?? '—' })}</h3>
+          <Button variant="ghost" onClick={() => onChange({ ...plugin, enabled: true })}>
+            {t('themes.active.reactivate')}
+          </Button>
+        </div>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('themes.active.disabledNote')}</p>
       </Card>
     )
   }

@@ -72,11 +72,16 @@ function findContainer(positions: Record<LayoutPosition, number[]>, id: string):
 export default function GlobalBoard({
   projectPath,
   config,
-  onChange
+  onChange,
+  builtinPageTypeFrames = {}
 }: {
   projectPath: string
   config: QuartzConfig
   onChange: (next: QuartzConfig) => void
+  // Frame names built-in pageType plugins (e.g. canvas-page) default to, keyed by plugin display
+  // name - see LayoutEditor/index.tsx. Needed so the mockup below doesn't claim the literal
+  // 3-column default frame for a page type whose plugin actually renders something else.
+  builtinPageTypeFrames?: Record<string, string>
 }): JSX.Element {
   const { t } = useTranslation()
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -122,6 +127,15 @@ export default function GlobalBoard({
     ? new Set(activeAreas.map((a) => a.slot).filter((s): s is LayoutPosition => s !== 'pageBody'))
     : null
   const activeUnassignedSlots = activeUsedSlots ? POSITIONS.filter((p) => !activeUsedSlots.has(p)) : []
+
+  // Quartz resolves the frame as `override.template ?? pageType.frame ?? "default"` (dispatcher.ts)
+  // - so when there's no explicit override AND this page type's own plugin declares its own default
+  // frame (e.g. canvas-page -> "canvas"), the real rendered layout is that plugin's frame, not the
+  // literal 3-column default this mockup otherwise falls back to. We have no declarative shape for
+  // an arbitrary plugin-rendered frame (unlike our own authored GridFrameDefinitions), so the best
+  // honest answer here is a placeholder, not a mockup that's simply wrong.
+  const builtinDefaultFrame = builtinPageTypeFrames[`${previewPageType}-page`]
+  const unknownPluginFrame = !activeFrameName && !activeFrame && builtinDefaultFrame != null && builtinDefaultFrame !== 'default'
 
   function handleDragStart(event: DragStartEvent): void {
     setActiveId(String(event.active.id))
@@ -262,7 +276,11 @@ export default function GlobalBoard({
             ))}
           </Select>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            {activeFrame ? t('layoutEditor.activeFrameLabel', { name: activeFrame.frameName }) : t('layoutEditor.activeFrameDefault')}
+            {activeFrame
+              ? t('layoutEditor.activeFrameLabel', { name: activeFrame.frameName })
+              : unknownPluginFrame
+                ? t('layoutEditor.activeFrameLabel', { name: builtinDefaultFrame })
+                : t('layoutEditor.activeFrameDefault')}
           </p>
         </div>
       </div>
@@ -301,6 +319,10 @@ export default function GlobalBoard({
                   </AreaBox>
                 </div>
               ))}
+            </div>
+          ) : unknownPluginFrame ? (
+            <div className="rounded-[6px] border border-dashed border-amber-400/50 bg-amber-50/50 px-4 py-6 text-center text-sm text-amber-700 dark:border-amber-400/30 dark:bg-amber-950/20 dark:text-amber-400">
+              {t('layoutEditor.pluginFrameUnknownLayout', { frame: builtinDefaultFrame })}
             </div>
           ) : (
             <div

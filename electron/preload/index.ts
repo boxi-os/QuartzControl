@@ -12,6 +12,7 @@ import type {
   CreateProjectOptions,
   ThemePreset,
   GridFrameDefinition,
+  PluginEntry,
   SaveDeployConnectionInput,
   GithubPagesDeployOptions,
   DeployProgressEvent,
@@ -49,7 +50,9 @@ const api: QuartzGuiApi = {
   layoutFrames: {
     list: (projectPath: string) => ipcRenderer.invoke(IPC.layoutFrameList, projectPath),
     save: (projectPath: string, definition: GridFrameDefinition) => ipcRenderer.invoke(IPC.layoutFrameSave, projectPath, definition),
-    delete: (projectPath: string, id: string) => ipcRenderer.invoke(IPC.layoutFrameDelete, projectPath, id)
+    delete: (projectPath: string, id: string) => ipcRenderer.invoke(IPC.layoutFrameDelete, projectPath, id),
+    builtinPageTypeFrames: (projectPath: string, plugins: PluginEntry[]) =>
+      ipcRenderer.invoke(IPC.layoutFrameBuiltinPageTypeFrames, projectPath, plugins)
   },
   styles: {
     get: (projectPath: string) => ipcRenderer.invoke(IPC.stylesGet, projectPath),

@@ -141,6 +141,17 @@ export const quartzConfig = z.looseObject({
     .optional()
 })
 
+// Only `name`/`source` are read (see discoverBuiltinPageTypeFrames) - loose for the same reason
+// quartzConfig.plugins is: a plugin entry carries extra keys the caller isn't sending back here.
+export const pluginSourceList = z
+  .array(
+    z.looseObject({
+      name: pluginName,
+      source: z.union([z.string().max(2048), z.looseObject({ repo: z.string().min(1).max(2048) })])
+    })
+  )
+  .max(500)
+
 const cssTrackValue = z.string().max(40).regex(/^[A-Za-z0-9.%\s()+*/[\]_-]*$/, 'kein gültiger CSS-Trackwert')
 const cssGapValue = z.string().max(40).regex(/^[A-Za-z0-9.%\s()+*/-]*$/, 'kein gültiger CSS-Abstandswert')
 const gridLineName = z.string().regex(/^[A-Za-z0-9_-]{1,40}$/, 'kein gültiger Grid-Line-Name')

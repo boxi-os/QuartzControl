@@ -526,6 +526,7 @@ export const IPC = {
   layoutFrameList: 'layoutFrame:list',
   layoutFrameSave: 'layoutFrame:save',
   layoutFrameDelete: 'layoutFrame:delete',
+  layoutFrameBuiltinPageTypeFrames: 'layoutFrame:builtinPageTypeFrames',
 
   stylesGet: 'styles:get',
   stylesSave: 'styles:save',
@@ -646,6 +647,11 @@ export interface QuartzGuiApi {
     list(projectPath: string): Promise<GridFrameDefinition[]>
     save(projectPath: string, definition: GridFrameDefinition): Promise<PluginActionResult>
     delete(projectPath: string, id: string): Promise<PluginActionResult>
+    // Frame names that built-in pageType plugins (e.g. @quartz-community/canvas-page) bring as
+    // their own default - discovered from the project's node_modules, not quartz.config.yaml (see
+    // pluginSchemaService.discoverBuiltinPageTypeFrames). Keyed by the plugin's derived display
+    // name (e.g. "canvas-page"), matching derivePageTypes()'s "-page" stripping convention.
+    builtinPageTypeFrames(projectPath: string, plugins: PluginEntry[]): Promise<Record<string, string>>
   }
   styles: {
     get(projectPath: string): Promise<StylesInfo>

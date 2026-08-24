@@ -137,6 +137,113 @@ function getJsDocComment(node: ts.Node): string | undefined {
   return undefined
 }
 
+// A pageType plugin (e.g. @quartz-community/canvas-page) can set its own default frame -
+// quartz/plugins/pageTypes/dispatcher.ts resolves `overrides.frame ?? pageType.frame ?? "default"`,
+// where `overrides.frame` is the user's `layout.byPageType.<type>.template` and `pageType.frame` is
+// a literal baked into the plugin's own compiled output, invisible to quartz.config.yaml whenever
+// the user hasn't set an explicit override. Unlike CLI-`quartz plugin add`-installed plugins (see
+// getPluginOptionsSchema above), these "@quartz-community/x" built-ins are ordinary npm dependencies
+// under the project's own node_modules/, not `.quartz/plugins/<name>` - verified against a real
+// project: `node_modules/@quartz-community/canvas-page/package.json` carries `quartz.category:
+// ["pageType", "component"]` and its compiled dist/index.js has `frame: "canvas"` sitting inside the
+// same returned object literal as `match: canvasMatcher`. That object shape (has both `match` and a
+// string-literal `frame` property) is what's searched for here, rather than a blind text search -
+// the bundle has many unrelated `frame`/`"frame"` occurrences from vendored HTML-schema code (e.g.
+// `frame: null` from a rehype property list, `"iframe"`/`"noframes"` tag name arrays).
+const pageTypeFrameCache = new Map<string, string | null>()
+
+export function getBuiltinPageTypeFrame(projectPath: string, packageSource: string): string | null {
+  const cacheKey = `${projectPath}::${packageSource}`
+  if (pageTypeFrameCache.has(cacheKey)) return pageTypeFrameCache.get(cacheKey) ?? null
+
+  const frameName = resolveBuiltinPageTypeFrame(projectPath, packageSource)
+  pageTypeFrameCache.set(cacheKey, frameName)
+  return frameName
+}
+
+export function invalidateBuiltinPageTypeFrameCache(projectPath: string, packageSource: string): void {
+  pageTypeFrameCache.delete(`${projectPath}::${packageSource}`)
+}
+
+interface PageTypePackageJson {
+  quartz?: { category?: string[] }
+  main?: string
+  exports?: Record<string, unknown>
+}
+
+function resolveBuiltinPageTypeFrame(projectPath: string, packageSource: string): string | null {
+  const pkgDir = join(projectPath, 'node_modules', packageSource)
+  const pkgJsonPath = join(pkgDir, 'package.json')
+  if (!existsSync(pkgJsonPath)) return null
+
+  let pkg: PageTypePackageJson
+  try {
+    pkg = JSON.parse(readFileSync(pkgJsonPath, 'utf-8')) as PageTypePackageJson
+  } catch {
+    return null
+  }
+  if (!pkg.quartz?.category?.includes('pageType')) return null
+
+  const entryFile = resolvePackageEntryFile(pkgDir, pkg)
+  if (!entryFile || !existsSync(entryFile)) return null
+  return findPageTypeFrameLiteral(entryFile)
+}
+
+function resolvePackageEntryFile(pkgDir: string, pkg: PageTypePackageJson): string | null {
+  const dotExport = pkg.exports?.['.']
+  const importPath =
+    typeof dotExport === 'string'
+      ? dotExport
+      : typeof dotExport === 'object' && dotExport !== null && 'import' in dotExport
+        ? (dotExport as { import?: string }).import
+        : undefined
+  const rel = importPath ?? pkg.main
+  return rel ? join(pkgDir, rel) : null
+}
+
+function findPageTypeFrameLiteral(file: string): string | null {
+  let source: ts.SourceFile
+  try {
+    source = ts.createSourceFile(file, readFileSync(file, 'utf-8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.JS)
+  } catch {
+    return null
+  }
+
+  let result: string | null = null
+  const visit = (node: ts.Node): void => {
+    if (result) return
+    if (ts.isObjectLiteralExpression(node)) {
+      const hasMatchProp = node.properties.some((p) => ts.isPropertyAssignment(p) && propName(p.name) === 'match')
+      const frameProp = node.properties.find((p) => ts.isPropertyAssignment(p) && propName(p.name) === 'frame')
+      if (hasMatchProp && frameProp && ts.isPropertyAssignment(frameProp) && ts.isStringLiteral(frameProp.initializer)) {
+        result = frameProp.initializer.text
+        return
+      }
+    }
+    ts.forEachChild(node, visit)
+  }
+  ts.forEachChild(source, visit)
+  return result
+}
+
+function propName(name: ts.PropertyName): string | null {
+  return ts.isIdentifier(name) || ts.isStringLiteral(name) ? name.text : null
+}
+
+// Batch form for the Layout Editor: given the project's current plugin list, which of them are
+// built-in pageType plugins with a discoverable default frame? Keyed by the plugin's derived
+// display name (e.g. "canvas-page"), matching derivePageTypes()'s "-page" stripping convention in
+// src/routes/LayoutEditor/utils.ts, so the renderer can look up `discovered[pageType + "-page"]`.
+export function discoverBuiltinPageTypeFrames(projectPath: string, plugins: { name: string; source: unknown }[]): Record<string, string> {
+  const result: Record<string, string> = {}
+  for (const plugin of plugins) {
+    if (typeof plugin.source !== 'string') continue
+    const frameName = getBuiltinPageTypeFrame(projectPath, plugin.source)
+    if (frameName) result[plugin.name] = frameName
+  }
+  return result
+}
+
 // Plugin authors' compiled output (tsup/esbuild) typically keeps a literal
 // `var defaultOptions = { ... }`-shaped object readable in the bundled JS, even though the type
 // declarations never carry default values. Rather than assume that exact name, this scans every

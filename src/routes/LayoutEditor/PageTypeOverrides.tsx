@@ -10,12 +10,17 @@ export default function PageTypeOverrides({
   config,
   pageType,
   onChange,
-  customTemplates = []
+  customTemplates = [],
+  builtinFrameName
 }: {
   config: QuartzConfig
   pageType: string
   onChange: (next: QuartzConfig) => void
   customTemplates?: string[]
+  // The frame this page type's own pageType plugin defaults to when no `template` override is set
+  // (e.g. "canvas" for canvas-page) - see LayoutEditor/index.tsx's builtinPageTypeFrames. Not
+  // necessarily in KNOWN_TEMPLATES or customTemplates, so it needs its own dropdown entry.
+  builtinFrameName?: string
 }): JSX.Element {
   const { t } = useTranslation()
   const override: PageTypeLayoutOverride = config.layout?.byPageType?.[pageType] ?? {}
@@ -41,8 +46,19 @@ export default function PageTypeOverrides({
     update({ positions })
   }
 
+  // Quartz resolves the actual frame as `override.template ?? pageType.frame ?? "default"` (see
+  // dispatcher.ts) - so when this page type's own plugin declares a default frame (e.g. "canvas"
+  // for canvas-page), leaving `template` unset does NOT mean the literal 3-column default, it means
+  // that plugin's frame. The dropdown's "no override" slot has to represent *that* frame, not
+  // "default" - and forcing the literal default now needs its own explicit entry, since selecting
+  // it must write `template: "default"` (a real string), not merely clear the override.
+  const hasBuiltinDefault = builtinFrameName != null && builtinFrameName !== 'default'
+  const noOverrideValue = hasBuiltinDefault ? builtinFrameName! : 'default'
   const isCustomTemplate =
-    override.template != null && !KNOWN_TEMPLATES.includes(override.template) && !customTemplates.includes(override.template)
+    override.template != null &&
+    !KNOWN_TEMPLATES.includes(override.template) &&
+    !customTemplates.includes(override.template) &&
+    override.template !== builtinFrameName
   const showCustomInput = customTemplate || isCustomTemplate
 
   return (
@@ -51,17 +67,18 @@ export default function PageTypeOverrides({
         <h3 className="mb-1 text-sm font-semibold">{t('layoutEditor.template')}</h3>
         <div className="flex items-center gap-2">
           <Select
-            value={showCustomInput ? 'custom' : (override.template ?? 'default')}
+            value={showCustomInput ? 'custom' : (override.template ?? noOverrideValue)}
             onChange={(e) => {
               if (e.target.value === 'custom') {
                 setCustomTemplate(true)
                 return
               }
               setCustomTemplate(false)
-              update({ template: e.target.value === 'default' ? undefined : e.target.value })
+              update({ template: e.target.value === noOverrideValue ? undefined : e.target.value })
             }}
             className="w-48"
           >
+            {hasBuiltinDefault && <option value={builtinFrameName}>{t('layoutEditor.templatePluginDefault', { frame: builtinFrameName })}</option>}
             <option value="default">{t('layoutEditor.templateDefault')}</option>
             <option value="full-width">{t('layoutEditor.templateFullWidth')}</option>
             <option value="minimal">{t('layoutEditor.templateMinimal')}</option>

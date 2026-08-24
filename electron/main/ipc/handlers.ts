@@ -141,6 +141,9 @@ export function registerIpcHandlers(): void {
   handle(IPC.layoutFrameDelete, t([s.absolutePath, s.frameId]), (projectPath, id) =>
     layoutFrameService.deleteFrame(projectPath, id)
   )
+  handle(IPC.layoutFrameBuiltinPageTypeFrames, t([s.absolutePath, s.pluginSourceList]), (projectPath, plugins) =>
+    pluginSchemaService.discoverBuiltinPageTypeFrames(projectPath, plugins as { name: string; source: unknown }[])
+  )
 
   handle(IPC.stylesGet, t([s.absolutePath]), (projectPath) => styleService.readCustomScss(projectPath))
   handle(IPC.stylesSave, t([s.absolutePath, s.longText]), (projectPath, content) =>

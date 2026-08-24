@@ -20,6 +20,12 @@ export default function LayoutEditor(): JSX.Element {
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [error, setError] = useState<string | null>(null)
   const [customFrames, setCustomFrames] = useState<GridFrameDefinition[]>([])
+  // Frame names built-in pageType plugins (e.g. canvas-page) bring as their own default, keyed by
+  // plugin display name - see IPC.layoutFrameBuiltinPageTypeFrames. Config.yaml never records
+  // these, so without this lookup the "Frame/Template" dropdown and Global's preview both silently
+  // assumed "no override" meant the literal 3-column default frame, which is wrong for e.g. canvas
+  // pages (canvas-page's PageType instance defaults to its own fullscreen "canvas" frame).
+  const [builtinPageTypeFrames, setBuiltinPageTypeFrames] = useState<Record<string, string>>({})
 
   useEffect(() => {
     window.quartzGui.config.get(project.path).then(setConfig)
@@ -28,6 +34,18 @@ export default function LayoutEditor(): JSX.Element {
   useEffect(() => {
     if (tab !== 'frames') window.quartzGui.layoutFrames.list(project.path).then(setCustomFrames)
   }, [project.path, tab])
+
+  // Keyed off the plugins' identity (name+source), not the whole `config` object, so dragging
+  // components around in Global (which mutates config.plugins' order/layout) doesn't re-trigger
+  // this node_modules scan on every drop.
+  const pluginSourcesKey = useMemo(() => JSON.stringify((config?.plugins ?? []).map((p) => [p.name, p.source])), [config])
+
+  useEffect(() => {
+    if (tab === 'frames' || !config) return
+    window.quartzGui.layoutFrames.builtinPageTypeFrames(project.path, config.plugins).then(setBuiltinPageTypeFrames)
+    // config is intentionally omitted - pluginSourcesKey is the stable proxy for its relevant part
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project.path, tab, pluginSourcesKey])
 
   // Creating/deleting a frame mutates quartz.config.yaml's plugins array out-of-band (via the
   // `quartz plugin add/remove` CLI in layoutFrameService), so the in-memory `config.plugins` this
@@ -55,12 +73,12 @@ export default function LayoutEditor(): JSX.Element {
   const availablePageTypes = useMemo(() => (config ? derivePageTypes(config.plugins) : []), [config])
   const overrideTypes = Object.keys(config?.layout?.byPageType ?? {})
 
+  // Just switches which page type's override panel is shown - does NOT write anything to
+  // config.layout.byPageType. Merely viewing a page type must not count as customizing it; the
+  // override entry is created lazily by PageTypeOverrides.update() the moment the user actually
+  // changes a field (reproduced by hand: every page type ever clicked once got permanently marked
+  // "Angepasst" and, on save, wrote an empty `{}` override into quartz.config.yaml).
   function selectPageType(pageType: string): void {
-    if (!config) return
-    if (!overrideTypes.includes(pageType)) {
-      const byPageType = { ...(config.layout?.byPageType ?? {}), [pageType]: {} }
-      setConfig({ ...config, layout: { ...config.layout, byPageType } })
-    }
     setActivePageType(pageType)
   }
 
@@ -132,7 +150,9 @@ export default function LayoutEditor(): JSX.Element {
         </div>
       )}
 
-      {tab === 'global' && <GlobalBoard projectPath={project.path} config={config} onChange={setConfig} />}
+      {tab === 'global' && (
+        <GlobalBoard projectPath={project.path} config={config} onChange={setConfig} builtinPageTypeFrames={builtinPageTypeFrames} />
+      )}
 
       {tab === 'frames' && <FrameBuilder projectPath={project.path} onFramesChanged={syncPluginsFromDisk} />}
 
@@ -143,6 +163,7 @@ export default function LayoutEditor(): JSX.Element {
             pageType={activePageType}
             onChange={setConfig}
             customTemplates={customFrames.map((f) => f.frameName)}
+            builtinFrameName={builtinPageTypeFrames[`${activePageType}-page`]}
           />
         ) : (
           <p className="text-sm text-slate-500 dark:text-slate-400">{t('layoutEditor.pageTypesHint')}</p>

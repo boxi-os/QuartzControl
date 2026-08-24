@@ -444,6 +444,9 @@ export default {
     templateMinimal: 'Minimal',
     templateCustom: 'Custom frame name',
     templateCustomPlaceholder: 'e.g. my-custom-frame',
+    templatePluginDefault: '"{{frame}}" (plugin default, active)',
+    pluginFrameUnknownLayout:
+      'This page type automatically uses the "{{frame}}" frame provided by its plugin. Its exact grid structure can\'t be previewed here, since the plugin renders it itself — this is not the standard layout.',
     clearSlotsHeading: 'Clear slots for this page type',
     clearSlotsDescription: 'Enabled slots always stay empty for this page type, regardless of the global layout.',
     frameBuilder: {

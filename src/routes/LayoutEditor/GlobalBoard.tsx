@@ -26,6 +26,7 @@ import { FRAME_BREAKPOINTS, buildGridStyle } from '@shared/gridFrameCss'
 import { Badge, Button, Card, SegmentedControl, Select, TextInput } from '../../components/ui'
 import { ItemCard, PaletteChip, GROUP_COLORS } from './ComponentPill'
 import {
+  BUILTIN_FRAME_LAYOUT,
   DEFAULT_FRAME_GRID,
   POSITIONS,
   appendDuplicateToPosition,
@@ -109,9 +110,6 @@ export default function GlobalBoard({
   // page type's assigned template the grid mockup illustrates (and, as a side effect, which
   // positions that template leaves "unassigned" below) - it does NOT apply that page type's own
   // exclude/positions overrides (that stays a Seitentypen-tab concern, PageTypeOverrides.tsx).
-  // Falls back to the fixed built-in shape when no override is set for the selected type, or when
-  // it points at a built-in template ('default'/'full-width'/'minimal') this app doesn't have real
-  // per-breakpoint geometry for.
   const activeFrameName = config.layout?.byPageType?.[previewPageType]?.template
   const activeFrame = activeFrameName ? (frames.find((f) => f.frameName === activeFrameName) ?? null) : null
   const activeLayout = activeFrame?.breakpoints[breakpoint] ?? null
@@ -126,14 +124,23 @@ export default function GlobalBoard({
   const activeUsedSlots = activeAreas
     ? new Set(activeAreas.map((a) => a.slot).filter((s): s is LayoutPosition => s !== 'pageBody'))
     : null
-  const activeUnassignedSlots = activeUsedSlots ? POSITIONS.filter((p) => !activeUsedSlots.has(p)) : []
+
+  // "full-width"/"minimal" are the two other built-in frames (besides the unnamed/"default" one
+  // DEFAULT_FRAME_GRID depicts) - real, fixed single-column shapes, not a custom authored frame, so
+  // they're looked up in BUILTIN_FRAME_LAYOUT rather than the `frames` list.
+  const builtinFrame =
+    activeFrameName && activeFrameName in BUILTIN_FRAME_LAYOUT ? BUILTIN_FRAME_LAYOUT[activeFrameName as 'full-width' | 'minimal'] : null
+
+  const visibleSlots = activeUsedSlots ?? (builtinFrame ? new Set(builtinFrame.visibleSlots) : null)
+  const activeUnassignedSlots = visibleSlots ? POSITIONS.filter((p) => !visibleSlots.has(p)) : []
 
   // Quartz resolves the frame as `override.template ?? pageType.frame ?? "default"` (dispatcher.ts)
   // - so when there's no explicit override AND this page type's own plugin declares its own default
   // frame (e.g. canvas-page -> "canvas"), the real rendered layout is that plugin's frame, not the
   // literal 3-column default this mockup otherwise falls back to. We have no declarative shape for
-  // an arbitrary plugin-rendered frame (unlike our own authored GridFrameDefinitions), so the best
-  // honest answer here is a placeholder, not a mockup that's simply wrong.
+  // an arbitrary plugin-rendered frame (unlike our own authored GridFrameDefinitions or the two
+  // other built-ins above), so the best honest answer here is a placeholder, not a mockup that's
+  // simply wrong.
   const builtinDefaultFrame = builtinPageTypeFrames[`${previewPageType}-page`]
   const unknownPluginFrame = !activeFrameName && !activeFrame && builtinDefaultFrame != null && builtinDefaultFrame !== 'default'
 
@@ -278,9 +285,13 @@ export default function GlobalBoard({
           <p className="text-xs text-slate-500 dark:text-slate-400">
             {activeFrame
               ? t('layoutEditor.activeFrameLabel', { name: activeFrame.frameName })
-              : unknownPluginFrame
-                ? t('layoutEditor.activeFrameLabel', { name: builtinDefaultFrame })
-                : t('layoutEditor.activeFrameDefault')}
+              : builtinFrame
+                ? t('layoutEditor.activeFrameLabel', {
+                    name: t(`layoutEditor.template${activeFrameName === 'full-width' ? 'FullWidth' : 'Minimal'}`)
+                  })
+                : unknownPluginFrame
+                  ? t('layoutEditor.activeFrameLabel', { name: builtinDefaultFrame })
+                  : t('layoutEditor.activeFrameDefault')}
           </p>
         </div>
       </div>
@@ -319,6 +330,50 @@ export default function GlobalBoard({
                   </AreaBox>
                 </div>
               ))}
+            </div>
+          ) : builtinFrame ? (
+            <div
+              className="grid gap-3"
+              style={{
+                gridTemplateColumns: 'auto',
+                gridTemplateRows: `repeat(${builtinFrame.visibleSlots.length + 1}, auto)`,
+                gridTemplateAreas: builtinFrame.areas
+              }}
+            >
+              {builtinFrame.visibleSlots.includes('header') && (
+                <div style={{ gridArea: 'header' }}>
+                  <AreaBox label={t('layoutEditor.positions.header')}>
+                    <PositionSlot position="header" indices={positions.header} direction="column" {...slotProps} />
+                  </AreaBox>
+                </div>
+              )}
+              {builtinFrame.visibleSlots.includes('beforeBody') && (
+                <div style={{ gridArea: 'beforeBody' }}>
+                  <AreaBox label={t('layoutEditor.positions.beforeBody')}>
+                    <PositionSlot position="beforeBody" indices={positions.beforeBody} direction="column" {...slotProps} />
+                  </AreaBox>
+                </div>
+              )}
+              <div
+                style={{ gridArea: 'center' }}
+                className="rounded-[4px] border border-dashed border-black/10 px-2 py-3 text-center text-slate-400 dark:border-white/10"
+              >
+                {t('layoutEditor.frameBuilder.preview.pageContent')}
+              </div>
+              {builtinFrame.visibleSlots.includes('afterBody') && (
+                <div style={{ gridArea: 'afterBody' }}>
+                  <AreaBox label={t('layoutEditor.positions.afterBody')}>
+                    <PositionSlot position="afterBody" indices={positions.afterBody} direction="column" {...slotProps} />
+                  </AreaBox>
+                </div>
+              )}
+              {builtinFrame.visibleSlots.includes('footer') && (
+                <div style={{ gridArea: 'footer' }}>
+                  <AreaBox label={t('layoutEditor.positions.footer')}>
+                    <PositionSlot position="footer" indices={positions.footer} direction="column" {...slotProps} />
+                  </AreaBox>
+                </div>
+              )}
             </div>
           ) : unknownPluginFrame ? (
             <div className="rounded-[6px] border border-dashed border-amber-400/50 bg-amber-50/50 px-4 py-6 text-center text-sm text-amber-700 dark:border-amber-400/30 dark:bg-amber-950/20 dark:text-amber-400">
@@ -362,7 +417,7 @@ export default function GlobalBoard({
               </div>
             </div>
           )}
-          {activeFrame && activeUnassignedSlots.length > 0 && (
+          {(activeFrame || builtinFrame) && activeUnassignedSlots.length > 0 && (
             <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
               {t('layoutEditor.frameBuilder.unassignedWarning', {
                 slots: activeUnassignedSlots.map((s) => t(`layoutEditor.positions.${s}`, s)).join(', ')

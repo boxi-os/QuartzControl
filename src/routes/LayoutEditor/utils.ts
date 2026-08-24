@@ -42,6 +42,25 @@ export const DEFAULT_FRAME_GRID: Record<FrameBreakpoint, { columns: string; rows
   }
 }
 
+// Quartz's other two built-in frames (quartz/components/frames/FullWidthFrame.tsx,
+// MinimalFrame.tsx) render a single column with no sidebars, verified against base.scss's own
+// `.page[data-frame="full-width"/"minimal"] > #quartz-body` overrides (grid-template-columns:
+// auto at every breakpoint - unlike DEFAULT_FRAME_GRID there's no $tablet/$mobile respecification
+// to track). Critically, `left`/`right` aren't just visually hidden here - FullWidthFrame/
+// MinimalFrame's render() never destructures or renders those PageFrameProps at all, so any
+// component assigned to those positions (Explorer, Search, Graph, ...) is silently dropped on a
+// page using one of these templates, same as an unassigned slot on a custom authored frame.
+export const BUILTIN_FRAME_LAYOUT: Record<'full-width' | 'minimal', { areas: string; visibleSlots: LayoutPosition[] }> = {
+  'full-width': {
+    areas: '"header" "beforeBody" "center" "afterBody" "footer"',
+    visibleSlots: ['header', 'beforeBody', 'afterBody', 'footer']
+  },
+  minimal: {
+    areas: '"center" "footer"',
+    visibleSlots: ['footer']
+  }
+}
+
 // `.sidebar.left` only reflows to a horizontal row on mobile; `.sidebar.right` reflows on both
 // tablet and mobile (verified against the same base.scss rules cited above) - everything else
 // (header/beforeBody/afterBody/footer) is always a vertical stack of components.

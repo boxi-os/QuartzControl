@@ -8,6 +8,7 @@ import type { QuartzConfig, StyleReferenceFile } from '@shared/ipc-contract'
 import { Button, Card, PageHeader, Select } from '../../components/ui'
 import { componentItems } from '../LayoutEditor/utils'
 import { TAB_ICONS } from '../navConfig'
+import CssVariableReference from './CssVariableReference'
 
 // Tailwind's darkMode:'media' means there's no manual theme class to read - CodeMirror's own
 // theme prop needs an explicit 'light'/'dark' string, so this mirrors the same media query.
@@ -71,17 +72,20 @@ export default function StyleEditor(): JSX.Element {
   // placed the cursor deliberately) - otherwise the cursor defaults to position 0, and inserting
   // there would shove the snippet in front of the file's leading `@use` imports. Unfocused (the
   // common case, since this is triggered from a toolbar button) appends at the end instead.
-  function insertSnippet(name: string): void {
-    const snippet = `\n.${name} {\n  \n}\n`
+  function insertAtCursor(text: string): void {
     const view = viewRef.current
     if (view?.hasFocus) {
-      view.dispatch(view.state.replaceSelection(snippet))
+      view.dispatch(view.state.replaceSelection(text))
     } else if (view) {
-      view.dispatch({ changes: { from: view.state.doc.length, insert: snippet } })
+      view.dispatch({ changes: { from: view.state.doc.length, insert: text } })
     } else {
-      setContent((prev) => (prev ?? '') + snippet)
+      setContent((prev) => (prev ?? '') + text)
     }
     view?.focus()
+  }
+
+  function insertSnippet(name: string): void {
+    insertAtCursor(`\n.${name} {\n  \n}\n`)
   }
 
   async function openExternally(targetPath: string): Promise<void> {
@@ -152,26 +156,30 @@ export default function StyleEditor(): JSX.Element {
           />
         </Card>
 
-        {references.length > 0 && (
-          <div className="flex flex-col gap-3 overflow-y-auto" style={{ maxHeight: '65vh' }}>
-            <h2 className="text-sm font-semibold">{t('styleEditor.referenceHeading')}</h2>
-            {references.map((ref) => (
-              <Card key={ref.path} className="!p-0 overflow-hidden">
-                <div className="flex items-center justify-between border-b border-black/[0.06] px-3 py-1.5 dark:border-white/10">
-                  <span className="truncate text-xs font-medium">{ref.label}</span>
-                  <button
-                    type="button"
-                    className="shrink-0 text-xs text-slate-500 underline"
-                    onClick={() => openExternally(ref.path)}
-                  >
-                    {t('styleEditor.openExternally')}
-                  </button>
-                </div>
-                <CodeMirror value={ref.content} height="200px" theme={scheme} extensions={[css()]} editable={false} />
-              </Card>
-            ))}
-          </div>
-        )}
+        <div className="flex flex-col gap-4 overflow-y-auto" style={{ maxHeight: '65vh' }}>
+          {config && <CssVariableReference theme={config.theme} projectPath={project.path} onInsert={insertAtCursor} />}
+
+          {references.length > 0 && (
+            <div className="flex flex-col gap-3">
+              <h2 className="text-sm font-semibold">{t('styleEditor.referenceHeading')}</h2>
+              {references.map((ref) => (
+                <Card key={ref.path} className="!p-0 overflow-hidden">
+                  <div className="flex items-center justify-between border-b border-black/[0.06] px-3 py-1.5 dark:border-white/10">
+                    <span className="truncate text-xs font-medium">{ref.label}</span>
+                    <button
+                      type="button"
+                      className="shrink-0 text-xs text-slate-500 underline"
+                      onClick={() => openExternally(ref.path)}
+                    >
+                      {t('styleEditor.openExternally')}
+                    </button>
+                  </div>
+                  <CodeMirror value={ref.content} height="200px" theme={scheme} extensions={[css()]} editable={false} />
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

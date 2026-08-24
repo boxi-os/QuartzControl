@@ -513,7 +513,23 @@ export default {
     componentPlaceholder: 'Komponente wählen…',
     componentHint: 'Fügt einen Selektor für die gewählte Komponente an der Cursor-Position ein.',
     insertSelector: 'Selektor einfügen',
-    referenceHeading: 'Original-Styles (nur lesend)'
+    referenceHeading: 'Original-Styles (nur lesend)',
+    cssVars: {
+      heading: 'Verfügbare CSS-Variablen',
+      description:
+        'Diese Variablen sind an dieser Stelle nutzbar (z.B. var(--text-normal)). Die Werte zeigen den aktuellen Stand aus der Konfiguration, hell/dunkel.',
+      searchPlaceholder: 'Variable suchen…',
+      insertHint: 'Klicken, um die Variable an der Cursor-Position einzufügen.',
+      scanButton: 'Build-Output scannen',
+      scanNoneFound: 'Keine zusätzlichen Variablen im Build-Output gefunden.',
+      scanFound: '{{count}} zusätzliche Variable(n) im Build-Output gefunden.',
+      discoveredGroup: 'Im Build-Output gefunden',
+      noResults: 'Keine Treffer.',
+      calloutsHeading: 'Callout-Farben',
+      calloutsDescription:
+        'Jeder Callout-Typ ([!note], [!warning], …) hat eigene --color/--border/--bg-Variablen — aber nur innerhalb von .callout[data-callout="…"] gültig, kein globales var(--color). Klick fügt das passende Grundgerüst mit den echten Werten ein.',
+      calloutsInsertHint: 'Klicken, um das Override-Grundgerüst für diesen Callout-Typ einzufügen.'
+    }
   },
   localization: {
     title: 'Übersetzungen',

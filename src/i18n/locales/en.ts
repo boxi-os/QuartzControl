@@ -512,7 +512,22 @@ export default {
     componentPlaceholder: 'Choose a component…',
     componentHint: 'Inserts a selector for the chosen component at the cursor position.',
     insertSelector: 'Insert selector',
-    referenceHeading: 'Original styles (read-only)'
+    referenceHeading: 'Original styles (read-only)',
+    cssVars: {
+      heading: 'Available CSS variables',
+      description: 'These variables are usable at this point (e.g. var(--text-normal)). Values reflect the current configuration, light/dark.',
+      searchPlaceholder: 'Search variable…',
+      insertHint: 'Click to insert the variable at the cursor position.',
+      scanButton: 'Scan build output',
+      scanNoneFound: 'No additional variables found in the build output.',
+      scanFound: 'Found {{count}} additional variable(s) in the build output.',
+      discoveredGroup: 'Found in build output',
+      noResults: 'No matches.',
+      calloutsHeading: 'Callout colors',
+      calloutsDescription:
+        'Each callout type ([!note], [!warning], …) has its own --color/--border/--bg variables - but only valid inside .callout[data-callout="…"], not as a global var(--color). Click inserts the matching scaffold prefilled with the real values.',
+      calloutsInsertHint: 'Click to insert the override scaffold for this callout type.'
+    }
   },
   localization: {
     title: 'Localization',

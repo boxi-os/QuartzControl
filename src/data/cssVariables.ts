@@ -1,10 +1,12 @@
 // Curated catalog of the CSS custom properties Quartz's own quartz/util/theme.ts::joinStyles()
-// derives from the 9 classic colors (+ typography) already editable above this section in
-// ThemeEditor.tsx. Verified against the real function: every entry below is either a straight
-// `var(--<source>)` alias of one of the 9 classic colors, a typography-slot alias, or (the
-// accent-h/s/l trio) computed from `secondary` via the same hexToHsl() ported below. Anything a
-// plugin brings that isn't in this list has no fixed catalog - it can only be found by scanning
-// compiled build-output CSS (see the "scan build output" flow in ThemeEditor.tsx).
+// emits - verified against the real function (fetched from jackyzha0/quartz on GitHub). Two kinds
+// of entry: the 9 classic colors + 4 font slots are written directly from theme.colors/typography
+// (`--secondary: ${theme.colors.lightMode.secondary}`, ...), while everything after that is a
+// `var(--<source>)` alias of one of those (or, for the accent-h/s/l trio, computed from `secondary`
+// via the same hexToHsl() ported below) - both kinds resolve through the same `source` field here,
+// since an alias's default value is identical to its source variable's value. Anything a plugin
+// brings that isn't in this list has no fixed catalog - it can only be found by scanning compiled
+// build-output CSS (see the "scan build output" flow in ThemeEditor.tsx / CssVariableReference.tsx).
 export type ClassicColorKey = 'light' | 'lightgray' | 'gray' | 'darkgray' | 'dark' | 'secondary' | 'tertiary' | 'highlight' | 'textHighlight'
 
 export interface CssVariableDef {
@@ -15,6 +17,18 @@ export interface CssVariableDef {
 }
 
 export const CSS_VARIABLES: CssVariableDef[] = [
+  // The 9 classic colors themselves, written verbatim to --light/--secondary/etc. - everything
+  // below is an alias of one of these, not a separate source of truth.
+  { key: 'light', group: 'Grundfarben', kind: 'color', source: 'light' },
+  { key: 'lightgray', group: 'Grundfarben', kind: 'color', source: 'lightgray' },
+  { key: 'gray', group: 'Grundfarben', kind: 'color', source: 'gray' },
+  { key: 'darkgray', group: 'Grundfarben', kind: 'color', source: 'darkgray' },
+  { key: 'dark', group: 'Grundfarben', kind: 'color', source: 'dark' },
+  { key: 'secondary', group: 'Grundfarben', kind: 'color', source: 'secondary' },
+  { key: 'tertiary', group: 'Grundfarben', kind: 'color', source: 'tertiary' },
+  { key: 'highlight', group: 'Grundfarben', kind: 'color', source: 'highlight' },
+  { key: 'textHighlight', group: 'Grundfarben', kind: 'color', source: 'textHighlight' },
+
   // Surface colors
   { key: 'background-primary', group: 'Oberflächen', kind: 'color', source: 'light' },
   { key: 'background-primary-alt', group: 'Oberflächen', kind: 'color', source: 'light' },
@@ -53,6 +67,14 @@ export const CSS_VARIABLES: CssVariableDef[] = [
   { key: 'color-base-60', group: 'Basis-Skala', kind: 'color', source: 'gray' },
   { key: 'color-base-70', group: 'Basis-Skala', kind: 'color', source: 'darkgray' },
   { key: 'color-base-100', group: 'Basis-Skala', kind: 'color', source: 'dark' },
+
+  // Font slots written directly by joinStyles() - titleFont has no separate GUI-managed slot
+  // (theme.ts falls back to the header font when title is unset, same as here) and, like the other
+  // three, is mode-independent (joinStyles only ever writes it into the light-mode :root block).
+  { key: 'titleFont', group: 'Schriften', kind: 'font', source: 'header' },
+  { key: 'headerFont', group: 'Schriften', kind: 'font', source: 'header' },
+  { key: 'bodyFont', group: 'Schriften', kind: 'font', source: 'body' },
+  { key: 'codeFont', group: 'Schriften', kind: 'font', source: 'code' },
 
   // Font aliases (typography, not color)
   { key: 'font-text', group: 'Schriften', kind: 'font', source: 'body' },
@@ -118,6 +140,56 @@ export function hexToHsl(hex: string): { h: number; s: number; l: number } {
   }
 
   return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) }
+}
+
+// quartz/styles/callouts.scss's second, structurally different source of variables (verified
+// against the real file on jackyzha0/quartz): --color/--border/--bg are only ever declared inside
+// `.callout[data-callout="<type>"]` - i.e. the *same* variable name is redefined per type, scoped
+// to that selector, not a global :root set like CSS_VARIABLES above. A bare `var(--color)` outside
+// a matching .callout block resolves to nothing, so these can't share CSS_VARIABLES' flat
+// name->value shape; CssVariableReference renders them as their own section and inserts a whole
+// override scaffold (the selector plus its three properties), not a bare var() reference.
+// `quote` doesn't redeclare --bg in the source, so it falls through to the unscoped default
+// `&[data-callout]` rule earlier in the same file (#448aff10, i.e. note's bg) - not a bug, just
+// left out here as `bg: undefined` so the panel can show that honestly instead of inventing a
+// value quartz itself never sets for that type.
+export interface CalloutColorDef {
+  type: string
+  color: string
+  border: string
+  bg?: string
+}
+
+export const CALLOUT_COLORS: CalloutColorDef[] = [
+  { type: 'note', color: '#448aff', border: '#448aff44', bg: '#448aff10' },
+  { type: 'abstract', color: '#00b0ff', border: '#00b0ff44', bg: '#00b0ff10' },
+  { type: 'info', color: '#00b8d4', border: '#00b8d444', bg: '#00b8d410' },
+  { type: 'todo', color: '#00b8d4', border: '#00b8d444', bg: '#00b8d410' },
+  { type: 'tip', color: '#00bfa5', border: '#00bfa544', bg: '#00bfa510' },
+  { type: 'success', color: '#09ad7a', border: '#09ad7144', bg: '#09ad7110' },
+  { type: 'question', color: '#dba642', border: '#dba64244', bg: '#dba64210' },
+  { type: 'warning', color: '#db8942', border: '#db894244', bg: '#db894210' },
+  { type: 'failure', color: '#db4242', border: '#db424244', bg: '#db424210' },
+  { type: 'danger', color: '#db4242', border: '#db424244', bg: '#db424210' },
+  { type: 'bug', color: '#db4242', border: '#db424244', bg: '#db424210' },
+  { type: 'example', color: '#7a43b5', border: '#7a43b544', bg: '#7a43b510' },
+  { type: 'quote', color: 'var(--secondary)', border: 'var(--lightgray)' }
+]
+
+// Resolves a callout color entry's literal display value - most are already a raw hex, but
+// `quote` deliberately aliases the classic colors (see CALLOUT_COLORS above) so it tracks the
+// user's theme instead of a fixed color; this looks that alias up the same way defaultValueFor
+// does, so the swatch shown next to it is the real current color instead of a var() string.
+export function resolveCalloutColorValue(
+  value: string | undefined,
+  colors: { lightMode?: Record<string, string>; darkMode?: Record<string, string> },
+  mode: 'light' | 'dark'
+): string {
+  if (!value) return ''
+  const match = /^var\(--(\w+)\)$/.exec(value)
+  if (!match) return value
+  const palette = (mode === 'light' ? colors.lightMode : colors.darkMode) ?? {}
+  return palette[match[1]] ?? ''
 }
 
 // Computes the value this variable would resolve to today, absent any override - used to prefill

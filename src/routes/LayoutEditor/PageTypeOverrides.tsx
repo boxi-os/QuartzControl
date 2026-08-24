@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LayoutPosition, PageTypeLayoutOverride, QuartzConfig } from '@shared/ipc-contract'
 import { Card, Select, TextInput, Toggle } from '../../components/ui'
-import { POSITIONS, distinctComponentChips, duplicateNameCounts } from './utils'
+import { POSITIONS, distinctComponentChips, duplicateNameCounts, hasPageTypeOverride } from './utils'
 
 const KNOWN_TEMPLATES = ['default', 'full-width', 'minimal']
 
@@ -27,8 +27,16 @@ export default function PageTypeOverrides({
   const [customTemplate, setCustomTemplate] = useState(false)
   const nameCounts = duplicateNameCounts(config.plugins)
 
+  // Undoing every individual customization for this page type one at a time (last excluded
+  // component re-included, last cleared slot un-cleared, template reset) must leave no trace - an
+  // empty `{}` (or `{ exclude: [], positions: {} }`) sitting under byPageType is functionally a
+  // no-op but would still flag the page type as "customized" (see index.tsx's hasPageTypeOverride
+  // filter) and get written to quartz.config.yaml on save.
   function update(patch: Partial<PageTypeLayoutOverride>): void {
-    const byPageType = { ...(config.layout?.byPageType ?? {}), [pageType]: { ...override, ...patch } }
+    const merged = { ...override, ...patch }
+    const byPageType = { ...(config.layout?.byPageType ?? {}) }
+    if (hasPageTypeOverride(merged)) byPageType[pageType] = merged
+    else delete byPageType[pageType]
     onChange({ ...config, layout: { ...config.layout, byPageType } })
   }
 

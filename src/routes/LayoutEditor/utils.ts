@@ -1,6 +1,20 @@
-import type { FrameBreakpoint, LayoutPosition, PluginEntry, PluginLayoutDeclaration } from '@shared/ipc-contract'
+import type { FrameBreakpoint, LayoutPosition, PageTypeLayoutOverride, PluginEntry, PluginLayoutDeclaration } from '@shared/ipc-contract'
 
 export const POSITIONS: LayoutPosition[] = ['header', 'left', 'right', 'beforeBody', 'afterBody', 'footer']
+
+// A page type can have a key under layout.byPageType without actually customizing anything - e.g.
+// `{}` (an empty object; historically written just by clicking a page type pill, before that got
+// fixed) or `{ exclude: [], positions: {} }` (every individual toggle undone one at a time, leaving
+// the empty containers behind instead of deleting the key). `positions` is the one exception where
+// an empty *value* still counts: `{ beforeBody: [] }` is toggleClearSlot's deliberate "force this
+// slot empty" state, so it's the key's presence, not its array length, that matters there.
+export function hasPageTypeOverride(override: PageTypeLayoutOverride | undefined): boolean {
+  if (!override) return false
+  if (override.template) return true
+  if (override.exclude && override.exclude.length > 0) return true
+  if (override.positions && Object.keys(override.positions).length > 0) return true
+  return false
+}
 
 // Real per-breakpoint grid shape of Quartz's own DefaultFrame, verified against
 // quartz/styles/variables.scss's $mobileGrid/$tabletGrid/$desktopGrid ($sidePanelWidth: 320px) and

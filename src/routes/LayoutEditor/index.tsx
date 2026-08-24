@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { SlidersHorizontal } from 'lucide-react'
 import { useProject } from '../ProjectLayout'
 import type { GridFrameDefinition, QuartzConfig } from '@shared/ipc-contract'
-import { Badge, Button, PageHeader } from '../../components/ui'
+import { Button, PageHeader } from '../../components/ui'
 import { TAB_ICONS } from '../navConfig'
 import GlobalBoard from './GlobalBoard'
 import PageTypeOverrides from './PageTypeOverrides'
 import FrameBuilder from './FrameBuilder'
-import { derivePageTypes } from './utils'
+import { derivePageTypes, hasPageTypeOverride } from './utils'
 
 type Tab = 'global' | 'pagetypes' | 'frames'
 
@@ -71,7 +72,13 @@ export default function LayoutEditor(): JSX.Element {
   }
 
   const availablePageTypes = useMemo(() => (config ? derivePageTypes(config.plugins) : []), [config])
+  // Raw keys present under layout.byPageType, regardless of whether they actually customize
+  // anything - still lets "Override entfernen" clean up a stray empty entry left over from before
+  // the selectPageType fix below, or from every individual toggle for a type being undone one at a
+  // time (see PageTypeOverrides.update()).
   const overrideTypes = Object.keys(config?.layout?.byPageType ?? {})
+  // Which of those are worth flagging to the user - see hasPageTypeOverride's doc comment.
+  const customizedTypes = overrideTypes.filter((pt) => hasPageTypeOverride(config?.layout?.byPageType?.[pt]))
 
   // Just switches which page type's override panel is shown - does NOT write anything to
   // config.layout.byPageType. Merely viewing a page type must not count as customizing it; the
@@ -139,7 +146,11 @@ export default function LayoutEditor(): JSX.Element {
               }`}
             >
               {t(`layoutEditor.pageTypes.${pt}`, pt)}
-              {overrideTypes.includes(pt) && activePageType !== pt && <Badge tone="slate">{t('layoutEditor.pageTypeHasOverride')}</Badge>}
+              {customizedTypes.includes(pt) && activePageType !== pt && (
+                <span title={t('layoutEditor.pageTypeHasOverride')} className="shrink-0 opacity-70">
+                  <SlidersHorizontal size={12} aria-hidden="true" />
+                </span>
+              )}
             </button>
           ))}
           {activePageType && overrideTypes.includes(activePageType) && (

@@ -1,8 +1,19 @@
 import { useEffect, useState } from 'react'
+import type { DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { FrameSlot, GridFrameArea, GridFrameDefinition } from '@shared/ipc-contract'
-import { Button, Card, Field, Select, TextInput } from '../../components/ui'
+import type {
+  FrameBreakpoint,
+  FrameSlot,
+  GridAreaPlacement,
+  GridBreakpointLayout,
+  GridFrameArea,
+  GridFrameDefinition,
+  QuartzConfig
+} from '@shared/ipc-contract'
+import { FRAME_BREAKPOINTS, buildGridStyle } from '@shared/gridFrameCss'
+import { Button, Card, Field, SegmentedControl, Select, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
+import FramePreview from './FramePreview'
 
 const RESERVED_FRAME_NAMES = ['default', 'full-width', 'minimal']
 const SLOTS: FrameSlot[] = ['header', 'left', 'right', 'beforeBody', 'pageBody', 'afterBody', 'footer']
@@ -17,41 +28,102 @@ function slugify(text: string): string {
   )
 }
 
+function defaultBreakpointLayout(rows: number, cols: number): GridBreakpointLayout {
+  return { rows, cols, rowGap: '1rem', columnGap: '1rem', placements: {} }
+}
+
+// "beforeBody" -> "before-body" - kebab-cases a slot name into a readable default area name,
+// derived from SLOTS rather than a separately maintained list.
+function slotToName(slot: FrameSlot): string {
+  return slot.replace(/([A-Z])/g, '-$1').toLowerCase()
+}
+
+// A brand-new frame starts with one area per real component slot (including pageBody, the actual
+// page content - almost every frame needs it), all unplaced. That way the "available areas" tray
+// has something to drag onto the grid immediately, instead of an empty editor that only gains
+// draggable boxes once the user has already created one by hand via "+ Bereich hinzufügen".
+function defaultAreas(): GridFrameArea[] {
+  return SLOTS.map((slot) => ({ id: `area-${slot}`, name: slotToName(slot), slot }))
+}
+
 function emptyDraft(): GridFrameDefinition {
-  return { id: `frame-${Date.now()}`, frameName: '', rows: 2, cols: 2, gap: '1rem', areas: [] }
+  return {
+    id: `frame-${Date.now()}`,
+    frameName: '',
+    areas: defaultAreas(),
+    breakpoints: {
+      desktop: defaultBreakpointLayout(2, 2),
+      tablet: defaultBreakpointLayout(2, 2),
+      mobile: defaultBreakpointLayout(2, 2)
+    }
+  }
 }
 
-function areaAt(areas: GridFrameArea[], row: number, col: number): GridFrameArea | undefined {
-  return areas.find((a) => row >= a.row && row < a.row + a.rowSpan && col >= a.col && col < a.col + a.colSpan)
+function placementAt(layout: GridBreakpointLayout, areas: GridFrameArea[], row: number, col: number): GridFrameArea | undefined {
+  return areas.find((a) => {
+    const p = layout.placements[a.id]
+    return p && !p.hidden && row >= p.row && row < p.row + p.rowSpan && col >= p.col && col < p.col + p.colSpan
+  })
 }
 
-function overlaps(areas: GridFrameArea[], row: number, col: number, rowSpan: number, colSpan: number, excludeId?: string): boolean {
+function overlaps(
+  layout: GridBreakpointLayout,
+  areas: GridFrameArea[],
+  row: number,
+  col: number,
+  rowSpan: number,
+  colSpan: number,
+  excludeId?: string
+): boolean {
   for (let r = row; r < row + rowSpan; r++) {
     for (let c = col; c < col + colSpan; c++) {
-      const hit = areaAt(areas, r, c)
+      const hit = placementAt(layout, areas, r, c)
       if (hit && hit.id !== excludeId) return true
     }
   }
   return false
 }
 
+function withPlacement(def: GridFrameDefinition, breakpoint: FrameBreakpoint, areaId: string, placement: GridAreaPlacement): GridFrameDefinition {
+  const layout = def.breakpoints[breakpoint]
+  return {
+    ...def,
+    breakpoints: { ...def.breakpoints, [breakpoint]: { ...layout, placements: { ...layout.placements, [areaId]: placement } } }
+  }
+}
+
+// The one thing dataTransfer needs to carry across a native HTML5 drag - the id of whichever area
+// (palette chip or already-placed box) the drag started from.
+const DRAG_MIME = 'text/plain'
+
 export default function FrameBuilder({
   projectPath,
+  config,
   onFramesChanged
 }: {
   projectPath: string
+  config: QuartzConfig
   onFramesChanged: () => void
 }): JSX.Element {
   const { t } = useTranslation()
   const [frames, setFrames] = useState<GridFrameDefinition[] | null>(null)
   const [editing, setEditing] = useState<GridFrameDefinition | null>(null)
   const [isNewDraft, setIsNewDraft] = useState(false)
-  const [pendingStart, setPendingStart] = useState<{ row: number; col: number } | null>(null)
-  const [pendingRect, setPendingRect] = useState<{ row: number; col: number; rowSpan: number; colSpan: number } | null>(null)
-  const [areaForm, setAreaForm] = useState<{ name: string; slot: FrameSlot } | null>(null)
-  const [editingAreaId, setEditingAreaId] = useState<string | null>(null)
+  const [activeBreakpoint, setActiveBreakpoint] = useState<FrameBreakpoint>('desktop')
+  const [mode, setMode] = useState<'edit' | 'preview'>('edit')
+  // Which area's settings panel is showing - drives both the panel below and the "selected"
+  // highlight on that area's box in the grid/palette. All edits made through the panel write
+  // straight into `editing` as they happen (see updateArea*), so there's nothing buffered here.
+  const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null)
+  // The name field is the one exception: it needs to hold whatever the user is literally typing,
+  // not the slugified value committed into `editing` on every keystroke (mid-word that value can
+  // have its trailing "-" stripped, which would fight typing a multi-word name). Reset only when
+  // the *selection* changes, not on every edit - see the effect below.
+  const [nameDraft, setNameDraft] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [dragAreaId, setDragAreaId] = useState<string | null>(null)
+  const [dropCell, setDropCell] = useState<{ row: number; col: number } | null>(null)
 
   function refresh(): void {
     window.quartzGui.layoutFrames.list(projectPath).then(setFrames)
@@ -61,24 +133,35 @@ export default function FrameBuilder({
     refresh()
   }, [projectPath])
 
+  useEffect(() => {
+    const area = selectedAreaId ? (editing?.areas.find((a) => a.id === selectedAreaId) ?? null) : null
+    setNameDraft(area?.name ?? '')
+    // Deliberately only re-syncs when the *selection* changes, not on every `editing` update -
+    // otherwise each live-committed (slugified) keystroke would snap the field back over the raw
+    // text the user is still typing.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedAreaId])
+
   function startNewFrame(): void {
     setEditing(emptyDraft())
     setIsNewDraft(true)
+    setActiveBreakpoint('desktop')
+    setMode('edit')
     setMessage(null)
   }
 
   function startEditFrame(def: GridFrameDefinition): void {
     setEditing(def)
     setIsNewDraft(false)
+    setActiveBreakpoint('desktop')
+    setMode('edit')
     setMessage(null)
   }
 
   function closeEditor(): void {
     setEditing(null)
-    setPendingStart(null)
-    setPendingRect(null)
-    setAreaForm(null)
-    setEditingAreaId(null)
+    setSelectedAreaId(null)
+    endDrag()
   }
 
   function nameCollision(def: GridFrameDefinition): boolean {
@@ -86,61 +169,161 @@ export default function FrameBuilder({
     return (frames ?? []).some((f) => f.id !== def.id && f.frameName === def.frameName)
   }
 
-  function handleCellClick(row: number, col: number): void {
+  function updateLayout(patch: Partial<GridBreakpointLayout>): void {
     if (!editing) return
-    const existing = areaAt(editing.areas, row, col)
-    if (existing) {
-      setPendingStart(null)
-      setPendingRect(null)
-      setEditingAreaId(existing.id)
-      setAreaForm({ name: existing.name, slot: existing.slot })
-      return
-    }
-    if (!pendingStart) {
-      setPendingStart({ row, col })
-      return
-    }
-    const rowSpan = Math.abs(row - pendingStart.row) + 1
-    const colSpan = Math.abs(col - pendingStart.col) + 1
-    const rect = { row: Math.min(row, pendingStart.row), col: Math.min(col, pendingStart.col), rowSpan, colSpan }
-    setPendingStart(null)
-    if (overlaps(editing.areas, rect.row, rect.col, rect.rowSpan, rect.colSpan)) {
+    const layout = editing.breakpoints[activeBreakpoint]
+    setEditing({ ...editing, breakpoints: { ...editing.breakpoints, [activeBreakpoint]: { ...layout, ...patch } } })
+  }
+
+  function setColumnSize(index: number, value: string): void {
+    if (!editing) return
+    const layout = editing.breakpoints[activeBreakpoint]
+    const sizes = [...(layout.columnSizes ?? [])]
+    sizes[index] = value
+    updateLayout({ columnSizes: sizes })
+  }
+
+  function setRowSize(index: number, value: string): void {
+    if (!editing) return
+    const layout = editing.breakpoints[activeBreakpoint]
+    const sizes = [...(layout.rowSizes ?? [])]
+    sizes[index] = value
+    updateLayout({ rowSizes: sizes })
+  }
+
+  function setColumnLineName(index: number, value: string): void {
+    if (!editing) return
+    const layout = editing.breakpoints[activeBreakpoint]
+    const names = { ...(layout.columnLineNames ?? {}) }
+    if (value.trim()) names[index] = [value.trim()]
+    else delete names[index]
+    updateLayout({ columnLineNames: names })
+  }
+
+  function setRowLineName(index: number, value: string): void {
+    if (!editing) return
+    const layout = editing.breakpoints[activeBreakpoint]
+    const names = { ...(layout.rowLineNames ?? {}) }
+    if (value.trim()) names[index] = [value.trim()]
+    else delete names[index]
+    updateLayout({ rowLineNames: names })
+  }
+
+  function copyLayoutTo(target: FrameBreakpoint): void {
+    if (!editing) return
+    const layout = editing.breakpoints[activeBreakpoint]
+    setEditing({
+      ...editing,
+      breakpoints: { ...editing.breakpoints, [target]: { ...layout, placements: { ...layout.placements } } }
+    })
+  }
+
+  // Always a plain single-point placement: the area lands at exactly the cell dropped on, keeping
+  // whatever span it already had (or 1x1 for a brand-new one). An earlier version tried to also
+  // let a drag *across* several cells before releasing draw a rectangle spanning them - dropped
+  // again after real-world testing: a real mouse drag easily grazes an unrelated cell (occupied or
+  // not) on the way to the intended target, silently expanding/moving the placement from wherever
+  // that graze happened rather than from where the drag started. Span is set exclusively through
+  // the row/col span number fields in the area form below, which don't have that failure mode.
+  function handleDrop(areaId: string, row: number, col: number): void {
+    if (!editing) return
+    const layout = editing.breakpoints[activeBreakpoint]
+    const area = editing.areas.find((a) => a.id === areaId)
+    if (!area) return
+    const existing = layout.placements[areaId]
+    const rowSpan = Math.min(existing?.rowSpan ?? 1, layout.rows - row + 1)
+    const colSpan = Math.min(existing?.colSpan ?? 1, layout.cols - col + 1)
+    if (overlaps(layout, editing.areas, row, col, rowSpan, colSpan, areaId)) {
       setMessage(t('layoutEditor.frameBuilder.overlapError'))
       return
     }
-    setPendingRect(rect)
-    setEditingAreaId(null)
-    setAreaForm({ name: '', slot: 'left' })
+    setEditing((prev) => (prev ? withPlacement(prev, activeBreakpoint, areaId, { row, col, rowSpan, colSpan, hidden: false }) : prev))
+    setSelectedAreaId(areaId)
+    setMessage(null)
   }
 
-  function confirmArea(): void {
-    if (!editing || !areaForm) return
-    const name = slugify(areaForm.name)
-    if (editingAreaId) {
-      setEditing({
-        ...editing,
-        areas: editing.areas.map((a) => (a.id === editingAreaId ? { ...a, name, slot: areaForm.slot } : a))
-      })
-    } else if (pendingRect) {
-      const newArea: GridFrameArea = { id: `area-${Date.now()}`, name, slot: areaForm.slot, ...pendingRect }
-      setEditing({ ...editing, areas: [...editing.areas, newArea] })
+  function beginDrag(e: DragEvent<HTMLElement>, areaId: string): void {
+    e.dataTransfer.setData(DRAG_MIME, areaId)
+    e.dataTransfer.effectAllowed = 'move'
+    setDragAreaId(areaId)
+  }
+
+  function endDrag(): void {
+    setDragAreaId(null)
+    setDropCell(null)
+  }
+
+  // Created immediately (not as a buffered draft) so it's live the moment it exists: it shows up
+  // in the "available areas" tray right away and is pre-selected, ready to rename/place.
+  function addNewArea(): void {
+    if (!editing) return
+    const id = `area-${Date.now()}`
+    const newArea: GridFrameArea = { id, name: `custom-${editing.areas.length + 1}`, slot: 'left' }
+    setEditing({ ...editing, areas: [...editing.areas, newArea] })
+    setSelectedAreaId(id)
+    setMessage(null)
+  }
+
+  // Every update* below writes straight into `editing`, so the grid reflects each change as it
+  // happens - no separate "confirm" step. `updateAreaName` is the one that also updates the raw
+  // `nameDraft` the input displays (see the effect above for why the two are kept separate).
+  function updateAreaName(id: string, rawName: string): void {
+    if (!editing) return
+    setNameDraft(rawName)
+    const name = slugify(rawName)
+    setEditing({ ...editing, areas: editing.areas.map((a) => (a.id === id ? { ...a, name } : a)) })
+  }
+
+  function updateAreaSlot(id: string, slot: FrameSlot): void {
+    if (!editing) return
+    setEditing({ ...editing, areas: editing.areas.map((a) => (a.id === id ? { ...a, slot } : a)) })
+  }
+
+  function updateAreaSpan(id: string, patch: { rowSpan?: number; colSpan?: number }): void {
+    if (!editing) return
+    const layout = editing.breakpoints[activeBreakpoint]
+    const existing = layout.placements[id]
+    if (!existing) return
+    const rowSpan = patch.rowSpan !== undefined ? Math.min(Math.max(1, patch.rowSpan), layout.rows - existing.row + 1) : existing.rowSpan
+    const colSpan = patch.colSpan !== undefined ? Math.min(Math.max(1, patch.colSpan), layout.cols - existing.col + 1) : existing.colSpan
+    if (overlaps(layout, editing.areas, existing.row, existing.col, rowSpan, colSpan, id)) {
+      setMessage(t('layoutEditor.frameBuilder.overlapError'))
+      return
     }
-    setPendingRect(null)
-    setEditingAreaId(null)
-    setAreaForm(null)
+    setEditing(withPlacement(editing, activeBreakpoint, id, { ...existing, rowSpan, colSpan }))
+    setMessage(null)
   }
 
-  function deleteArea(): void {
-    if (!editing || !editingAreaId) return
-    setEditing({ ...editing, areas: editing.areas.filter((a) => a.id !== editingAreaId) })
-    setEditingAreaId(null)
-    setAreaForm(null)
+  function updateAreaHidden(id: string, hidden: boolean): void {
+    if (!editing) return
+    const layout = editing.breakpoints[activeBreakpoint]
+    const existing = layout.placements[id]
+    if (!existing) return
+    setEditing(withPlacement(editing, activeBreakpoint, id, { ...existing, hidden }))
   }
 
-  function cancelAreaForm(): void {
-    setPendingRect(null)
-    setEditingAreaId(null)
-    setAreaForm(null)
+  // Removes just this breakpoint's placement, sending the area back to the "available areas"
+  // tray without touching its placements on other breakpoints or deleting it outright. Reachable
+  // both from the panel's own button and by dragging a placed box back onto the tray.
+  function unplaceAreaById(id: string): void {
+    if (!editing) return
+    const layout = editing.breakpoints[activeBreakpoint]
+    if (!layout.placements[id]) return
+    const placements = { ...layout.placements }
+    delete placements[id]
+    setEditing({ ...editing, breakpoints: { ...editing.breakpoints, [activeBreakpoint]: { ...layout, placements } } })
+  }
+
+  function deleteAreaById(id: string): void {
+    if (!editing) return
+    const breakpoints = { ...editing.breakpoints }
+    for (const bp of FRAME_BREAKPOINTS) {
+      const placements = { ...breakpoints[bp].placements }
+      delete placements[id]
+      breakpoints[bp] = { ...breakpoints[bp], placements }
+    }
+    setEditing({ ...editing, areas: editing.areas.filter((a) => a.id !== id), breakpoints })
+    setSelectedAreaId((prev) => (prev === id ? null : prev))
   }
 
   async function save(): Promise<void> {
@@ -180,9 +363,6 @@ export default function FrameBuilder({
     if (editing?.id === def.id) closeEditor()
   }
 
-  const usedSlots = new Set((editing?.areas ?? []).map((a) => a.slot))
-  const unassignedSlots = SLOTS.filter((s) => s !== 'pageBody' && !usedSlots.has(s))
-
   if (!frames) return <p className="text-sm text-slate-500">{t('layoutEditor.loading')}</p>
 
   if (!editing) {
@@ -200,7 +380,11 @@ export default function FrameBuilder({
               <div>
                 <p className="text-sm font-medium">{def.frameName}</p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {t('layoutEditor.frameBuilder.gridSummary', { rows: def.rows, cols: def.cols, areas: def.areas.length })}
+                  {t('layoutEditor.frameBuilder.gridSummary', {
+                    rows: def.breakpoints.desktop.rows,
+                    cols: def.breakpoints.desktop.cols,
+                    areas: def.areas.length
+                  })}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -218,9 +402,49 @@ export default function FrameBuilder({
     )
   }
 
+  const layout = editing.breakpoints[activeBreakpoint]
+  const gridStyle = buildGridStyle(layout, editing.areas)
+  const usedSlots = new Set(
+    editing.areas.filter((a) => {
+      const p = layout.placements[a.id]
+      return p && !p.hidden
+    }).map((a) => a.slot)
+  )
+  const unassignedSlots = SLOTS.filter((s) => s !== 'pageBody' && !usedSlots.has(s))
+  const unplacedAreas = editing.areas.filter((a) => {
+    const p = layout.placements[a.id]
+    return !p || p.hidden
+  })
+  const neverVisibleAreas = editing.areas.filter((a) =>
+    FRAME_BREAKPOINTS.every((bp) => {
+      const p = editing.breakpoints[bp].placements[a.id]
+      return !p || p.hidden
+    })
+  )
+  const selectedArea = selectedAreaId ? (editing.areas.find((a) => a.id === selectedAreaId) ?? null) : null
+  const selectedPlacement = selectedArea ? layout.placements[selectedArea.id] : undefined
+
+  const breakpointOptions = FRAME_BREAKPOINTS.map((bp) => ({
+    value: bp,
+    label: t(`layoutEditor.frameBuilder.breakpoint.${bp}`)
+  }))
+
   return (
     <div className="flex flex-col gap-4">
       {message && <p className="text-sm text-red-600 dark:text-red-400">{message}</p>}
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <SegmentedControl value={activeBreakpoint} onChange={setActiveBreakpoint} options={breakpointOptions} />
+        <SegmentedControl
+          value={mode}
+          onChange={setMode}
+          options={[
+            { value: 'edit', label: t('layoutEditor.frameBuilder.modeEdit') },
+            { value: 'preview', label: t('layoutEditor.frameBuilder.modePreview') }
+          ]}
+        />
+      </div>
+
       <Card>
         <div className="mb-3 grid grid-cols-4 gap-3">
           <Field label={t('layoutEditor.frameBuilder.frameName')}>
@@ -230,104 +454,332 @@ export default function FrameBuilder({
               placeholder={t('layoutEditor.templateCustomPlaceholder')}
             />
           </Field>
-          <Field label={t('layoutEditor.frameBuilder.rows')}>
-            <TextInput
-              type="number"
-              min={1}
-              max={12}
-              value={editing.rows}
-              onChange={(e) => setEditing({ ...editing, rows: Math.max(1, Number(e.target.value) || 1) })}
-            />
-          </Field>
-          <Field label={t('layoutEditor.frameBuilder.cols')}>
-            <TextInput
-              type="number"
-              min={1}
-              max={12}
-              value={editing.cols}
-              onChange={(e) => setEditing({ ...editing, cols: Math.max(1, Number(e.target.value) || 1) })}
-            />
-          </Field>
-          <Field label={t('layoutEditor.frameBuilder.gap')}>
-            <TextInput value={editing.gap} onChange={(e) => setEditing({ ...editing, gap: e.target.value })} />
-          </Field>
         </div>
 
-        <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
-          {pendingStart ? t('layoutEditor.frameBuilder.hintFinishSelection') : t('layoutEditor.frameBuilder.hintStartSelection')}
-        </p>
-
-        <div
-          className="relative grid gap-1"
-          style={{ gridTemplateColumns: `repeat(${editing.cols}, minmax(64px, 1fr))`, gridTemplateRows: `repeat(${editing.rows}, 48px)` }}
-        >
-          {Array.from({ length: editing.rows }, (_, r) =>
-            Array.from({ length: editing.cols }, (_, c) => {
-              const row = r + 1
-              const col = c + 1
-              const isPendingStart = pendingStart?.row === row && pendingStart?.col === col
-              return (
-                <button
-                  key={`${row}-${col}`}
-                  type="button"
-                  onClick={() => handleCellClick(row, col)}
-                  className={`rounded-[6px] border text-[11px] ${
-                    isPendingStart
-                      ? 'border-blue-500 bg-blue-100 dark:bg-blue-900/40'
-                      : 'border-dashed border-black/15 bg-black/[0.02] hover:bg-black/[0.05] dark:border-white/15 dark:bg-white/[0.02]'
-                  }`}
-                />
-              )
-            })
-          )}
-          {editing.areas.map((area) => (
-            <button
-              key={area.id}
-              type="button"
-              onClick={() => handleCellClick(area.row, area.col)}
-              className="z-10 flex flex-col items-center justify-center gap-0.5 rounded-[6px] border border-blue-400 bg-blue-50 px-1 text-center text-[11px] shadow-sm dark:border-blue-500/50 dark:bg-blue-500/10"
-              style={{ gridRow: `${area.row} / span ${area.rowSpan}`, gridColumn: `${area.col} / span ${area.colSpan}` }}
-            >
-              <span className="font-medium">{area.name}</span>
-              <span className="text-slate-500 dark:text-slate-400">{t(`layoutEditor.positions.${area.slot}`, area.slot)}</span>
-            </button>
-          ))}
-        </div>
-
-        {areaForm && (
-          <div className="mt-4 flex items-end gap-2 rounded-[8px] border border-black/10 p-3 dark:border-white/10">
-            <Field label={t('layoutEditor.frameBuilder.areaName')}>
-              <TextInput value={areaForm.name} onChange={(e) => setAreaForm({ ...areaForm, name: e.target.value })} />
-            </Field>
-            <Field label={t('layoutEditor.frameBuilder.areaSlot')}>
-              <Select value={areaForm.slot} onChange={(e) => setAreaForm({ ...areaForm, slot: e.target.value as FrameSlot })}>
-                {SLOTS.map((slot) => (
-                  <option key={slot} value={slot}>
-                    {t(`layoutEditor.positions.${slot}`, slot)}
-                  </option>
+        {mode === 'preview' ? (
+          <FramePreview frame={editing} plugins={config.plugins} />
+        ) : (
+          <>
+            <div className="mb-4 flex flex-col gap-3 rounded-[8px] border border-black/[0.06] p-3 dark:border-white/10">
+              <div className="flex flex-wrap items-end gap-3">
+                <Field label={t('layoutEditor.frameBuilder.rows')}>
+                  <TextInput
+                    type="number"
+                    min={1}
+                    max={12}
+                    value={layout.rows}
+                    onChange={(e) => updateLayout({ rows: Math.max(1, Number(e.target.value) || 1) })}
+                    className="w-20"
+                  />
+                </Field>
+                <Field label={t('layoutEditor.frameBuilder.cols')}>
+                  <TextInput
+                    type="number"
+                    min={1}
+                    max={12}
+                    value={layout.cols}
+                    onChange={(e) => updateLayout({ cols: Math.max(1, Number(e.target.value) || 1) })}
+                    className="w-20"
+                  />
+                </Field>
+                <Field label={t('layoutEditor.frameBuilder.rowGap')}>
+                  <TextInput value={layout.rowGap} onChange={(e) => updateLayout({ rowGap: e.target.value })} className="w-24" />
+                </Field>
+                <Field label={t('layoutEditor.frameBuilder.columnGap')}>
+                  <TextInput value={layout.columnGap} onChange={(e) => updateLayout({ columnGap: e.target.value })} className="w-24" />
+                </Field>
+                <Button variant="ghost" onClick={() => updateLayout({ columnSizes: undefined, rowSizes: undefined })}>
+                  {t('layoutEditor.frameBuilder.resetTracks')}
+                </Button>
+                {FRAME_BREAKPOINTS.filter((bp) => bp !== activeBreakpoint).map((bp) => (
+                  <Button key={bp} variant="ghost" onClick={() => copyLayoutTo(bp)}>
+                    {t('layoutEditor.frameBuilder.copyLayoutTo', { target: t(`layoutEditor.frameBuilder.breakpoint.${bp}`) })}
+                  </Button>
                 ))}
-              </Select>
-            </Field>
-            <Button onClick={confirmArea} disabled={!areaForm.name.trim()}>
-              {editingAreaId ? t('common.save') : t('layoutEditor.frameBuilder.addArea')}
-            </Button>
-            {editingAreaId && (
-              <Button variant="danger" onClick={deleteArea}>
-                {t('layoutEditor.frameBuilder.removeArea')}
-              </Button>
-            )}
-            <Button variant="ghost" onClick={cancelAreaForm}>
-              {t('common.cancel')}
-            </Button>
-          </div>
-        )}
+              </div>
 
-        {unassignedSlots.length > 0 && (
-          <p className="mt-4 text-xs text-amber-600 dark:text-amber-400">
-            {t('layoutEditor.frameBuilder.unassignedWarning', {
-              slots: unassignedSlots.map((s) => t(`layoutEditor.positions.${s}`, s)).join(', ')
-            })}
-          </p>
+              <div>
+                <p className="mb-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                  {t('layoutEditor.frameBuilder.columnSizesLabel')}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {Array.from({ length: layout.cols }, (_, i) => (
+                    <TextInput
+                      key={i}
+                      value={layout.columnSizes?.[i] ?? ''}
+                      placeholder="1fr"
+                      onChange={(e) => setColumnSize(i, e.target.value)}
+                      className="w-16"
+                    />
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                  {t('layoutEditor.frameBuilder.rowSizesLabel')}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {Array.from({ length: layout.rows }, (_, i) => (
+                    <TextInput
+                      key={i}
+                      value={layout.rowSizes?.[i] ?? ''}
+                      placeholder="auto"
+                      onChange={(e) => setRowSize(i, e.target.value)}
+                      className="w-16"
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <details>
+                <summary className="cursor-pointer text-[12px] text-slate-500 dark:text-slate-400">
+                  {t('layoutEditor.frameBuilder.lineNamesLabel')}
+                </summary>
+                <div className="mt-2 flex flex-col gap-2">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.lineNamesHint')}</p>
+                  <div>
+                    <p className="mb-1 text-[11px] text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.columnLinesLabel')}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {Array.from({ length: layout.cols + 1 }, (_, i) => (
+                        <TextInput
+                          key={i}
+                          value={layout.columnLineNames?.[i]?.[0] ?? ''}
+                          placeholder={`L${i}`}
+                          onChange={(e) => setColumnLineName(i, e.target.value)}
+                          className="w-16"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="mb-1 text-[11px] text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.rowLinesLabel')}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {Array.from({ length: layout.rows + 1 }, (_, i) => (
+                        <TextInput
+                          key={i}
+                          value={layout.rowLineNames?.[i]?.[0] ?? ''}
+                          placeholder={`L${i}`}
+                          onChange={(e) => setRowLineName(i, e.target.value)}
+                          className="w-16"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </details>
+            </div>
+
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.availableAreasLabel')}</p>
+              <Button variant="ghost" onClick={addNewArea}>
+                {t('layoutEditor.frameBuilder.newArea')}
+              </Button>
+            </div>
+            <div
+              onDragOver={(e) => {
+                e.preventDefault()
+              }}
+              onDrop={(e) => {
+                e.preventDefault()
+                const areaId = e.dataTransfer.getData(DRAG_MIME)
+                endDrag()
+                if (areaId) {
+                  unplaceAreaById(areaId)
+                  setSelectedAreaId(areaId)
+                }
+              }}
+              className={`mb-3 flex min-h-[44px] flex-wrap items-center gap-2 rounded-[8px] border border-dashed p-2 transition-colors ${
+                dragAreaId ? 'border-blue-400 bg-blue-50/50 dark:border-blue-500/40 dark:bg-blue-500/5' : 'border-transparent'
+              }`}
+            >
+              {unplacedAreas.length === 0 && <span className="px-1 text-[11px] text-slate-400">{t('layoutEditor.frameBuilder.allPlaced')}</span>}
+              {unplacedAreas.map((a) => {
+                const isSelected = selectedAreaId === a.id
+                return (
+                  <div
+                    key={a.id}
+                    role="button"
+                    tabIndex={0}
+                    draggable
+                    onDragStart={(e) => beginDrag(e, a.id)}
+                    onDragEnd={endDrag}
+                    onClick={() => setSelectedAreaId(a.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        setSelectedAreaId(a.id)
+                      }
+                    }}
+                    className={`flex cursor-grab flex-col items-center justify-center gap-0.5 rounded-[6px] border border-dashed px-2.5 py-1.5 text-center text-[11px] active:cursor-grabbing ${
+                      isSelected
+                        ? 'border-blue-500 bg-blue-100 ring-2 ring-blue-500/40 dark:border-blue-400 dark:bg-blue-500/20'
+                        : 'border-blue-300 bg-blue-50/60 dark:border-blue-500/40 dark:bg-blue-500/10'
+                    } ${dragAreaId === a.id ? 'opacity-30' : ''}`}
+                  >
+                    <span className="font-medium">{a.name}</span>
+                    <span className="text-slate-500 dark:text-slate-400">{t(`layoutEditor.positions.${a.slot}`, a.slot)}</span>
+                  </div>
+                )
+              })}
+            </div>
+
+            <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.hintDragToPlace')}</p>
+
+            <div
+              className="relative grid gap-1"
+              style={{
+                gridTemplateColumns: gridStyle.gridTemplateColumns,
+                gridTemplateRows: gridStyle.gridTemplateRows,
+                rowGap: gridStyle.rowGap,
+                columnGap: gridStyle.columnGap
+              }}
+            >
+              {Array.from({ length: layout.rows }, (_, r) =>
+                Array.from({ length: layout.cols }, (_, c) => {
+                  const row = r + 1
+                  const col = c + 1
+                  const isDropTarget = dropCell?.row === row && dropCell?.col === col
+                  return (
+                    <div
+                      key={`${row}-${col}`}
+                      onDragOver={(e) => {
+                        e.preventDefault()
+                        setDropCell({ row, col })
+                      }}
+                      onDragLeave={() => setDropCell((c) => (c?.row === row && c?.col === col ? null : c))}
+                      onDrop={(e) => {
+                        e.preventDefault()
+                        const areaId = e.dataTransfer.getData(DRAG_MIME)
+                        if (areaId) handleDrop(areaId, row, col)
+                        endDrag()
+                      }}
+                      className={`min-h-[40px] rounded-[6px] border transition-colors ${
+                        isDropTarget
+                          ? 'border-blue-500 bg-blue-100 dark:bg-blue-900/40'
+                          : 'border-dashed border-black/15 bg-black/[0.02] dark:border-white/15 dark:bg-white/[0.02]'
+                      }`}
+                      style={{ gridRow: `${row} / span 1`, gridColumn: `${col} / span 1` }}
+                    />
+                  )
+                })
+              )}
+              {editing.areas.map((area) => {
+                const placement = layout.placements[area.id]
+                if (!placement || placement.hidden) return null
+                const isSelected = selectedAreaId === area.id
+                return (
+                  <div
+                    key={area.id}
+                    role="button"
+                    tabIndex={0}
+                    draggable
+                    onDragStart={(e) => beginDrag(e, area.id)}
+                    onDragEnd={endDrag}
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      setDropCell({ row: placement.row, col: placement.col })
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      const areaId = e.dataTransfer.getData(DRAG_MIME)
+                      if (areaId) handleDrop(areaId, placement.row, placement.col)
+                      endDrag()
+                    }}
+                    onClick={() => setSelectedAreaId(area.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        setSelectedAreaId(area.id)
+                      }
+                    }}
+                    className={`flex min-h-[40px] cursor-grab flex-col items-center justify-center gap-0.5 rounded-[6px] border px-1 text-center text-[11px] active:cursor-grabbing ${
+                      isSelected
+                        ? 'border-blue-600 bg-blue-100 shadow-md ring-2 ring-blue-500/50 dark:border-blue-400 dark:bg-blue-500/20'
+                        : 'border-slate-300 bg-white shadow-sm hover:border-blue-300 dark:border-white/15 dark:bg-white/[0.03] dark:hover:border-blue-500/30'
+                    } ${dragAreaId === area.id ? 'opacity-30' : ''}`}
+                    style={{ gridRow: `${placement.row} / span ${placement.rowSpan}`, gridColumn: `${placement.col} / span ${placement.colSpan}` }}
+                  >
+                    <span className="font-medium">{area.name}</span>
+                    <span className="text-slate-500 dark:text-slate-400">{t(`layoutEditor.positions.${area.slot}`, area.slot)}</span>
+                  </div>
+                )
+              })}
+            </div>
+
+            {selectedArea && (
+              <div className="mt-4 flex flex-wrap items-end gap-2 rounded-[8px] border border-blue-300 bg-blue-50/40 p-3 dark:border-blue-500/40 dark:bg-blue-500/5">
+                <Field label={t('layoutEditor.frameBuilder.areaName')}>
+                  <TextInput value={nameDraft} onChange={(e) => updateAreaName(selectedArea.id, e.target.value)} autoFocus />
+                </Field>
+                <Field label={t('layoutEditor.frameBuilder.areaSlot')}>
+                  <Select value={selectedArea.slot} onChange={(e) => updateAreaSlot(selectedArea.id, e.target.value as FrameSlot)}>
+                    {SLOTS.map((slot) => (
+                      <option key={slot} value={slot}>
+                        {t(`layoutEditor.positions.${slot}`, slot)}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                {selectedPlacement && (
+                  <>
+                    <Field label={t('layoutEditor.frameBuilder.rowSpanLabel')}>
+                      <TextInput
+                        type="number"
+                        min={1}
+                        max={layout.rows}
+                        value={selectedPlacement.rowSpan}
+                        onChange={(e) => updateAreaSpan(selectedArea.id, { rowSpan: Number(e.target.value) || 1 })}
+                        className="w-16"
+                      />
+                    </Field>
+                    <Field label={t('layoutEditor.frameBuilder.colSpanLabel')}>
+                      <TextInput
+                        type="number"
+                        min={1}
+                        max={layout.cols}
+                        value={selectedPlacement.colSpan}
+                        onChange={(e) => updateAreaSpan(selectedArea.id, { colSpan: Number(e.target.value) || 1 })}
+                        className="w-16"
+                      />
+                    </Field>
+                    <Toggle
+                      label={t('layoutEditor.frameBuilder.visibleOnBreakpoint', {
+                        breakpoint: t(`layoutEditor.frameBuilder.breakpoint.${activeBreakpoint}`)
+                      })}
+                      checked={!selectedPlacement.hidden}
+                      onChange={(checked) => updateAreaHidden(selectedArea.id, !checked)}
+                    />
+                  </>
+                )}
+                {selectedPlacement && (
+                  <Button variant="ghost" onClick={() => unplaceAreaById(selectedArea.id)}>
+                    {t('layoutEditor.frameBuilder.unplace')}
+                  </Button>
+                )}
+                <Button variant="danger" onClick={() => deleteAreaById(selectedArea.id)}>
+                  {t('layoutEditor.frameBuilder.removeArea')}
+                </Button>
+                <Button variant="ghost" onClick={() => setSelectedAreaId(null)}>
+                  {t('common.close')}
+                </Button>
+              </div>
+            )}
+
+            {unassignedSlots.length > 0 && (
+              <p className="mt-4 text-xs text-amber-600 dark:text-amber-400">
+                {t('layoutEditor.frameBuilder.unassignedWarning', {
+                  slots: unassignedSlots.map((s) => t(`layoutEditor.positions.${s}`, s)).join(', ')
+                })}
+              </p>
+            )}
+            {neverVisibleAreas.length > 0 && (
+              <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                {t('layoutEditor.frameBuilder.neverVisibleWarning', {
+                  areas: neverVisibleAreas.map((a) => a.name).join(', ')
+                })}
+              </p>
+            )}
+          </>
         )}
       </Card>
 

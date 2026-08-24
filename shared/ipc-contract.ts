@@ -80,32 +80,75 @@ export interface LayoutConfig {
 // a single component rather than a list like the other 6).
 export type FrameSlot = LayoutPosition | 'pageBody'
 
-// One rectangular region of a generated grid frame. row/col are 1-based, matching CSS
-// grid-row/grid-column line numbers directly so the main-process codegen can pass them straight
-// through into a generated `grid-template-areas` declaration.
-export interface GridFrameArea {
-  id: string
-  name: string
-  slot: FrameSlot
+// Verified against the real Quartz 5 source (quartz/styles/variables.scss): $breakpoints =
+// (mobile: 800px, desktop: 1200px) - mobile is max-width:800px, tablet is the 800-1200px band,
+// desktop is min-width:1200px. Quartz's own `.mobile-only`/`.desktop-only` (styles/base.scss)
+// switch at exactly 800px, so generated frame media queries reuse these thresholds verbatim -
+// see layoutFrameService/gridFrameCss for where they're applied.
+export type FrameBreakpoint = 'desktop' | 'tablet' | 'mobile'
+
+// One rectangular placement of an area within a single breakpoint's grid. row/col are 1-based,
+// matching CSS grid-row/grid-column line numbers directly so the codegen can pass them straight
+// through into a generated `grid-template-areas` declaration. `hidden` keeps the area's identity
+// (and its placements on other breakpoints) while excluding it from this breakpoint entirely.
+export interface GridAreaPlacement {
   row: number
   col: number
   rowSpan: number
   colSpan: number
+  hidden?: boolean
 }
 
-// Authored via the Layout Editor's Frame Builder (Phase 1b) and compiled into a generated local
-// companion plugin under <project>/.quartz-gui/authored-frames/<id> - see layoutFrameService.
-// `id` doubles as the generated plugin's directory name and its registered plugin name (`quartz
-// plugin add` derives the plugin name from the local source path's basename - verified against
+// Identity of a grid-frame area - breakpoint-invariant, since the same named/slotted area (e.g.
+// "sidebar" -> left) typically persists across breakpoints even as its geometry or visibility
+// changes. Actual geometry lives in GridBreakpointLayout.placements, keyed by this id.
+export interface GridFrameArea {
+  id: string
+  name: string
+  slot: FrameSlot
+}
+
+// Full grid geometry for exactly one breakpoint. columnSizes/rowSizes are optional per-track CSS
+// sizes (one entry per column/row; a missing/shorter array falls back to '1fr'/'auto' per track,
+// matching the old implicit repeat() behavior). Line names mirror CSS's `[line-name]` track
+// syntax, keyed by the 0-based line position (0..cols / 0..rows).
+export interface GridBreakpointLayout {
+  rows: number
+  cols: number
+  columnSizes?: string[]
+  rowSizes?: string[]
+  rowGap: string
+  columnGap: string
+  columnLineNames?: Record<number, string[]>
+  rowLineNames?: Record<number, string[]>
+  // Keyed by GridFrameArea.id - an area with no entry here simply isn't part of this
+  // breakpoint's grid (equivalent to placements[id].hidden = true).
+  placements: Record<string, GridAreaPlacement>
+}
+
+// Authored via the Layout Editor's Frame Builder and compiled into a generated local companion
+// plugin under <project>/.quartz-gui/authored-frames/<id> - see layoutFrameService. `id` doubles
+// as the generated plugin's directory name and its registered plugin name (`quartz plugin add`
+// derives the plugin name from the local source path's basename - verified against
 // quartz/cli/plugin-data.js's parseGitSource). `frameName` is the PageFrame.name value that
 // becomes selectable in layout.byPageType.<type>.template.
 export interface GridFrameDefinition {
   id: string
   frameName: string
+  areas: GridFrameArea[]
+  breakpoints: Record<FrameBreakpoint, GridBreakpointLayout>
+}
+
+// Pre-breakpoint on-disk shape (frame.json written before breakpoint support existed) - a flat
+// single grid with area geometry inlined. gridFrameCss.migrateGridFrameDefinition() upgrades this
+// into the current GridFrameDefinition shape on load.
+export interface LegacyGridFrameDefinition {
+  id: string
+  frameName: string
   rows: number
   cols: number
   gap: string
-  areas: GridFrameArea[]
+  areas: Array<{ id: string; name: string; slot: FrameSlot; row: number; col: number; rowSpan: number; colSpan: number }>
 }
 
 // Extracted from an installed plugin's compiled .d.ts (see pluginSchemaService in main) so the

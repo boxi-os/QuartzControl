@@ -6,6 +6,7 @@ import type {
   CssVariableOverride,
   GridFrameDefinition,
   LayoutConfig,
+  LegacyGridFrameDefinition,
   PluginEntry,
   TemplatePackageCategory,
   TemplatePackageImportResult,
@@ -181,7 +182,7 @@ export async function importPackage(
   // from an in-memory snapshot taken before this step would silently revert the frame's own plugin
   // entry, exactly the bug Phase 1b's LayoutEditor already had to fix once.
   if (categories.includes('frames')) {
-    const defs = await tryReadJson<GridFrameDefinition[]>(join(sourceDir, 'frames.json'))
+    const defs = await tryReadJson<Array<GridFrameDefinition | LegacyGridFrameDefinition>>(join(sourceDir, 'frames.json'))
     if (defs) {
       const existingIds = new Set((await layoutFrameService.listFrames(projectPath)).map((f) => f.id))
       for (const def of defs) {

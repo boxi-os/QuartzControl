@@ -141,25 +141,50 @@ export const quartzConfig = z.looseObject({
     .optional()
 })
 
+const cssTrackValue = z.string().max(40).regex(/^[A-Za-z0-9.%\s()+*/[\]_-]*$/, 'kein gültiger CSS-Trackwert')
+const cssGapValue = z.string().max(40).regex(/^[A-Za-z0-9.%\s()+*/-]*$/, 'kein gültiger CSS-Abstandswert')
+const gridLineName = z.string().regex(/^[A-Za-z0-9_-]{1,40}$/, 'kein gültiger Grid-Line-Name')
+
+const gridAreaPlacement = z.looseObject({
+  row: z.number().int().min(1).max(50),
+  col: z.number().int().min(1).max(50),
+  rowSpan: z.number().int().min(1).max(50),
+  colSpan: z.number().int().min(1).max(50),
+  hidden: z.boolean().optional()
+})
+
+const gridBreakpointLayout = z.looseObject({
+  rows: z.number().int().min(1).max(50),
+  cols: z.number().int().min(1).max(50),
+  columnSizes: z.array(cssTrackValue).max(50).optional(),
+  rowSizes: z.array(cssTrackValue).max(50).optional(),
+  rowGap: cssGapValue,
+  columnGap: cssGapValue,
+  // Keys are stringified 0-based line indices (JSON object keys are always strings; ipc-contract's
+  // Record<number, string[]> is the same runtime shape) - kept as a string pattern rather than a
+  // coerced numeric key schema, matching every other z.record(...) in this file.
+  columnLineNames: z.record(z.string().regex(/^\d{1,3}$/), z.array(gridLineName).max(8)).optional(),
+  rowLineNames: z.record(z.string().regex(/^\d{1,3}$/), z.array(gridLineName).max(8)).optional(),
+  placements: z.record(z.string().max(128), gridAreaPlacement)
+})
+
 export const gridFrameDefinition = z.looseObject({
   id: frameId,
   frameName: z.string().min(1).max(120),
-  rows: z.number().int().min(1).max(50),
-  cols: z.number().int().min(1).max(50),
-  gap: z.string().max(40).regex(/^[A-Za-z0-9.%\s()+*/-]*$/, 'kein gültiger CSS-Abstandswert'),
   areas: z
     .array(
       z.looseObject({
         id: z.string().max(128),
         name: cssIdent,
-        slot: frameSlot,
-        row: z.number().int().min(1).max(50),
-        col: z.number().int().min(1).max(50),
-        rowSpan: z.number().int().min(1).max(50),
-        colSpan: z.number().int().min(1).max(50)
+        slot: frameSlot
       })
     )
-    .max(200)
+    .max(200),
+  breakpoints: z.looseObject({
+    desktop: gridBreakpointLayout,
+    tablet: gridBreakpointLayout,
+    mobile: gridBreakpointLayout
+  })
 })
 
 export const themePreset = z.looseObject({

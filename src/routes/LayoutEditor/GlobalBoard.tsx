@@ -10,7 +10,7 @@ import {
 } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import type { FlexGroupConfig, LayoutPosition, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
+import type { FlexGroupConfig, LayoutPosition, PluginEntry, PluginLayoutDeclaration, QuartzConfig } from '@shared/ipc-contract'
 import { Badge, Button, Card, Select, TextInput } from '../../components/ui'
 import { POSITIONS, buildPositionMap, componentItems, getLayout, renumberPriorities } from './utils'
 
@@ -91,6 +91,20 @@ export default function GlobalBoard({
     onChange({ ...config, plugins })
   }
 
+  // Quartz core already honors this at build time (styles/base.scss's .desktop-only/.mobile-only,
+  // switching at the same 800px breakpoint the grid-frame media queries use) - this was previously
+  // modeled but never surfaced in the UI.
+  function setDisplay(index: number, display: PluginLayoutDeclaration['display']): void {
+    const plugins = config.plugins.map((p, i) => {
+      if (i !== index || !p.layout) return p
+      const layout = { ...p.layout }
+      if (display && display !== 'all') layout.display = display
+      else delete layout.display
+      return { ...p, layout }
+    })
+    onChange({ ...config, plugins })
+  }
+
   function setGroups(groups: Record<string, FlexGroupConfig>): void {
     onChange({ ...config, layout: { ...config.layout, groups } })
   }
@@ -118,9 +132,23 @@ export default function GlobalBoard({
   return (
     <div className="flex flex-col gap-6">
       <DndContext collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        <PositionSlot position="header" indices={positions.header} config={config} groupNames={groupNames} onSetGroup={setGroup} />
+        <PositionSlot
+          position="header"
+          indices={positions.header}
+          config={config}
+          groupNames={groupNames}
+          onSetGroup={setGroup}
+          onSetDisplay={setDisplay}
+        />
         <div className="grid grid-cols-3 gap-4">
-          <PositionSlot position="left" indices={positions.left} config={config} groupNames={groupNames} onSetGroup={setGroup} />
+          <PositionSlot
+            position="left"
+            indices={positions.left}
+            config={config}
+            groupNames={groupNames}
+            onSetGroup={setGroup}
+            onSetDisplay={setDisplay}
+          />
           <div className="flex flex-col gap-4">
             <PositionSlot
               position="beforeBody"
@@ -128,6 +156,7 @@ export default function GlobalBoard({
               config={config}
               groupNames={groupNames}
               onSetGroup={setGroup}
+              onSetDisplay={setDisplay}
             />
             <div className="rounded-md border border-dashed border-black/10 px-3 py-6 text-center text-xs text-slate-400 dark:border-white/10">
               Content
@@ -138,11 +167,26 @@ export default function GlobalBoard({
               config={config}
               groupNames={groupNames}
               onSetGroup={setGroup}
+              onSetDisplay={setDisplay}
             />
           </div>
-          <PositionSlot position="right" indices={positions.right} config={config} groupNames={groupNames} onSetGroup={setGroup} />
+          <PositionSlot
+            position="right"
+            indices={positions.right}
+            config={config}
+            groupNames={groupNames}
+            onSetGroup={setGroup}
+            onSetDisplay={setDisplay}
+          />
         </div>
-        <PositionSlot position="footer" indices={positions.footer} config={config} groupNames={groupNames} onSetGroup={setGroup} />
+        <PositionSlot
+          position="footer"
+          indices={positions.footer}
+          config={config}
+          groupNames={groupNames}
+          onSetGroup={setGroup}
+          onSetDisplay={setDisplay}
+        />
 
         <DragOverlay>{activeItem ? <ItemCard name={activeItem.name} /> : null}</DragOverlay>
       </DndContext>
@@ -162,13 +206,15 @@ function PositionSlot({
   indices,
   config,
   groupNames,
-  onSetGroup
+  onSetGroup,
+  onSetDisplay
 }: {
   position: LayoutPosition
   indices: number[]
   config: QuartzConfig
   groupNames: string[]
   onSetGroup: (index: number, group: string) => void
+  onSetDisplay: (index: number, display: PluginLayoutDeclaration['display']) => void
 }): JSX.Element {
   const { t } = useTranslation()
   const { setNodeRef } = useDroppable({ id: position })
@@ -189,6 +235,7 @@ function PositionSlot({
               plugin={config.plugins[index]}
               groupNames={groupNames}
               onSetGroup={(group) => onSetGroup(index, group)}
+              onSetDisplay={(display) => onSetDisplay(index, display)}
             />
           ))}
         </div>
@@ -201,12 +248,14 @@ function SortableItem({
   id,
   plugin,
   groupNames,
-  onSetGroup
+  onSetGroup,
+  onSetDisplay
 }: {
   id: string
   plugin: PluginEntry
   groupNames: string[]
   onSetGroup: (group: string) => void
+  onSetDisplay: (display: PluginLayoutDeclaration['display']) => void
 }): JSX.Element {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
   const layout = getLayout(plugin)
@@ -214,7 +263,15 @@ function SortableItem({
 
   return (
     <div ref={setNodeRef} style={style} className={isDragging ? 'opacity-40' : ''}>
-      <ItemCard name={plugin.name} group={layout?.group} groupNames={groupNames} onSetGroup={onSetGroup} dragHandleProps={{ ...attributes, ...listeners }} />
+      <ItemCard
+        name={plugin.name}
+        group={layout?.group}
+        groupNames={groupNames}
+        onSetGroup={onSetGroup}
+        display={layout?.display}
+        onSetDisplay={onSetDisplay}
+        dragHandleProps={{ ...attributes, ...listeners }}
+      />
     </div>
   )
 }
@@ -224,34 +281,51 @@ function ItemCard({
   group,
   groupNames,
   onSetGroup,
+  display,
+  onSetDisplay,
   dragHandleProps
 }: {
   name: string
   group?: string
   groupNames?: string[]
   onSetGroup?: (group: string) => void
+  display?: PluginLayoutDeclaration['display']
+  onSetDisplay?: (display: PluginLayoutDeclaration['display']) => void
   dragHandleProps?: Record<string, unknown>
 }): JSX.Element {
   const { t } = useTranslation()
   return (
-    <Card className="flex items-center justify-between gap-2 !p-2">
-      <div className="flex items-center gap-2">
+    <Card className="flex flex-wrap items-center justify-between gap-2 !p-2">
+      <div className="flex min-w-0 items-center gap-2">
         <span {...dragHandleProps} className="cursor-grab select-none pl-1 pr-1 text-slate-300 active:cursor-grabbing dark:text-slate-600">
           ⠿
         </span>
-        <span className="text-sm font-medium">{name}</span>
+        <span className="truncate text-sm font-medium">{name}</span>
         {group && <Badge>{group}</Badge>}
       </div>
-      {onSetGroup && groupNames && (
-        <Select value={group ?? ''} onChange={(e) => onSetGroup(e.target.value)} className="!py-1 text-xs">
-          <option value="">{t('layoutEditor.noGroup')}</option>
-          {groupNames.map((g) => (
-            <option key={g} value={g}>
-              {g}
-            </option>
-          ))}
-        </Select>
-      )}
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {onSetDisplay && (
+          <Select
+            value={display ?? 'all'}
+            onChange={(e) => onSetDisplay(e.target.value as PluginLayoutDeclaration['display'])}
+            className="!py-1 text-xs"
+          >
+            <option value="all">{t('layoutEditor.displayAll')}</option>
+            <option value="desktop-only">{t('layoutEditor.displayDesktopOnly')}</option>
+            <option value="mobile-only">{t('layoutEditor.displayMobileOnly')}</option>
+          </Select>
+        )}
+        {onSetGroup && groupNames && (
+          <Select value={group ?? ''} onChange={(e) => onSetGroup(e.target.value)} className="!py-1 text-xs">
+            <option value="">{t('layoutEditor.noGroup')}</option>
+            {groupNames.map((g) => (
+              <option key={g} value={g}>
+                {g}
+              </option>
+            ))}
+          </Select>
+        )}
+      </div>
     </Card>
   )
 }

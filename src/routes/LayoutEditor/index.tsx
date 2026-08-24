@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProject } from '../ProjectLayout'
 import type { GridFrameDefinition, QuartzConfig } from '@shared/ipc-contract'
-import { Button, Select } from '../../components/ui'
+import { Button, PageHeader, Select } from '../../components/ui'
+import { TAB_ICONS } from '../navConfig'
 import GlobalBoard from './GlobalBoard'
 import PageTypeOverrides from './PageTypeOverrides'
 import FrameBuilder from './FrameBuilder'
@@ -73,6 +74,11 @@ export default function LayoutEditor(): JSX.Element {
 
   return (
     <div className="max-w-4xl">
+      <PageHeader
+        icon={TAB_ICONS.layout}
+        title={t('projectLayout.tabs.layout')}
+        description={t('projectLayout.descriptions.layout')}
+      />
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-1 rounded-[8px] bg-black/[0.05] p-0.5 dark:bg-white/10">
           <button
@@ -141,7 +147,7 @@ export default function LayoutEditor(): JSX.Element {
         </>
       )}
 
-      {tab === 'frames' && <FrameBuilder projectPath={project.path} onFramesChanged={syncPluginsFromDisk} />}
+      {tab === 'frames' && <FrameBuilder projectPath={project.path} config={config} onFramesChanged={syncPluginsFromDisk} />}
 
       {tab !== 'global' && tab !== 'frames' && (
         <>

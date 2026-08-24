@@ -1,7 +1,8 @@
 import { existsSync, mkdirSync, rmSync } from 'fs'
 import { readFile, readdir, writeFile } from 'fs/promises'
 import { join } from 'path'
-import type { GridFrameArea, GridFrameDefinition, PluginActionResult } from '@shared/ipc-contract'
+import type { GridFrameDefinition, LegacyGridFrameDefinition, PluginActionResult } from '@shared/ipc-contract'
+import { buildFrameCss, migrateGridFrameDefinition } from '@shared/gridFrameCss'
 import * as pluginService from './pluginService'
 import { quartzGuiDir } from './projectDirs'
 
@@ -27,33 +28,6 @@ function frameDir(projectPath: string, id: string): string {
     throw new Error(`Ungültige Frame-ID "${id}" - erlaubt sind nur Buchstaben, Ziffern und Bindestriche.`)
   }
   return join(framesDir(projectPath), id)
-}
-
-// 1-based row/col, matching CSS grid-row/grid-column line numbers - builds the string handed to
-// `grid-template-areas`. Cells not covered by any area become "." (an intentional empty gap).
-function buildTemplateAreas(rows: number, cols: number, areas: GridFrameArea[]): string {
-  const grid: string[][] = Array.from({ length: rows }, () => Array.from({ length: cols }, () => '.'))
-  for (const area of areas) {
-    for (let r = area.row; r < area.row + area.rowSpan; r++) {
-      for (let c = area.col; c < area.col + area.colSpan; c++) {
-        if (r >= 1 && r <= rows && c >= 1 && c <= cols) grid[r - 1][c - 1] = area.name
-      }
-    }
-  }
-  return grid.map((row) => `"${row.join(' ')}"`).join('\n      ')
-}
-
-function buildFrameCss(def: GridFrameDefinition): string {
-  const areaRules = def.areas.map((area) => `.qgframe-area-${area.name} { grid-area: ${area.name}; }`).join('\n')
-  return `.qgframe-grid {
-  display: grid;
-  grid-template-columns: repeat(${def.cols}, 1fr);
-  grid-template-rows: repeat(${def.rows}, auto);
-  gap: ${def.gap};
-  grid-template-areas:
-      ${buildTemplateAreas(def.rows, def.cols, def.areas)};
-}
-${areaRules}`
 }
 
 // Renders to a preact vnode tree via `h()` directly rather than JSX, since this file is written
@@ -124,7 +98,8 @@ export async function listFrames(projectPath: string): Promise<GridFrameDefiniti
       .filter((e) => e.isDirectory())
       .map(async (e) => {
         try {
-          return JSON.parse(await readFile(join(dir, e.name, 'frame.json'), 'utf-8')) as GridFrameDefinition
+          const raw = JSON.parse(await readFile(join(dir, e.name, 'frame.json'), 'utf-8')) as GridFrameDefinition | LegacyGridFrameDefinition
+          return migrateGridFrameDefinition(raw)
         } catch {
           return null
         }
@@ -133,7 +108,11 @@ export async function listFrames(projectPath: string): Promise<GridFrameDefiniti
   return defs.filter((d): d is GridFrameDefinition => d !== null)
 }
 
-export async function saveFrame(projectPath: string, def: GridFrameDefinition): Promise<PluginActionResult> {
+export async function saveFrame(projectPath: string, rawDef: GridFrameDefinition | LegacyGridFrameDefinition): Promise<PluginActionResult> {
+  // The IPC handler's zod schema already rejects a legacy-shaped payload from the renderer, but
+  // importPackage() calls this directly with whatever a template package's frames.json contains -
+  // possibly a pre-breakpoint export - so migrate defensively here too, not just in listFrames().
+  const def = migrateGridFrameDefinition(rawDef)
   const isNew = !existsSync(frameDir(projectPath, def.id))
   await writeFrameFiles(projectPath, def)
   // Only newly created frames need registering - `quartz plugin add` symlinks the directory into

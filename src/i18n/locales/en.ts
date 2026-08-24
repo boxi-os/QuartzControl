@@ -390,7 +390,10 @@ export default {
   layoutEditor: {
     title: 'Layout Editor',
     tabGlobal: 'Global',
+    tabPageTypes: 'Page types',
     tabFrames: 'Custom frames',
+    pageTypesHint: 'Choose a page type to customize it.',
+    pageTypeHasOverride: 'Customized',
     loading: 'Loading layout…',
     positions: {
       header: 'Header',
@@ -402,7 +405,11 @@ export default {
       footer: 'Footer'
     },
     emptySlot: 'Empty — drag here',
+    activeFrameLabel: 'Showing grid structure from: {{name}}',
+    activeFrameDefault: '(default grid)',
+    previewPageTypeLabel: 'Grid preview for:',
     groupLabel: 'Group',
+    displayLabel: 'Visibility',
     noGroup: '— none —',
     displayAll: 'Always',
     displayDesktopOnly: 'Desktop only',
@@ -427,11 +434,10 @@ export default {
       canvas: 'Canvas pages',
       bases: 'Bases pages'
     },
-    addOverridePlaceholder: 'Choose a page type…',
-    addOverride: 'Add override',
     removeOverride: 'Remove override',
     excludeHeading: 'Visible components',
     excludeDescription: 'Turn off a component to hide it on pages of this type.',
+    excludeDuplicateHint: 'Affects all {{count}} instances of "{{name}}" — Quartz cannot exclude individual duplicates here separately.',
     template: 'Frame/template',
     templateDefault: 'Default',
     templateFullWidth: 'Full width',
@@ -465,13 +471,12 @@ export default {
         tablet: 'Tablet',
         mobile: 'Mobile'
       },
-      modeEdit: 'Edit',
-      modePreview: 'Preview',
       availableAreasLabel: 'Available areas (drag onto the grid to place them)',
       newArea: '+ Add area',
       allPlaced: 'All areas are placed.',
       hintDragToPlace:
         'Drag an area onto an open cell to place it - or drag a placed one back into this list to unplace it. Click an area to select it and show its settings below, including the row/column span - changes apply right away.',
+      expandArea: 'Expand area settings',
       areaName: 'Area name',
       areaSlot: 'Slot',
       rowSpanLabel: 'Row span',
@@ -487,12 +492,16 @@ export default {
       deleteFrame: 'Delete this frame',
       deleteConfirm: 'Really delete frame "{{name}}"? Page types referencing it will fall back to the default template.',
       preview: {
-        pageContent: 'Page content',
-        empty: '— empty —',
-        none: 'No area is visible on this breakpoint.',
-        hiddenLabel: 'Hidden on this breakpoint:',
-        hidden: 'hidden'
+        pageContent: 'Page content'
       }
+    },
+    componentPill: {
+      paletteLabel: 'Add component',
+      paletteDropToRemove: 'Drop here to remove',
+      paletteHint: 'Drag a component onto a slot to insert another instance with its own settings.',
+      dragHandle: 'Drag to move',
+      duplicate: 'Duplicate',
+      removeDuplicate: 'Remove duplicate'
     }
   },
   styleEditor: {

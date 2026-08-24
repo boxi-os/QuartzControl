@@ -391,7 +391,10 @@ export default {
   layoutEditor: {
     title: 'Layout-Editor',
     tabGlobal: 'Global',
+    tabPageTypes: 'Seitentypen',
     tabFrames: 'Eigene Frames',
+    pageTypesHint: 'Wählen Sie einen Seitentyp, um ihn anzupassen.',
+    pageTypeHasOverride: 'Angepasst',
     loading: 'Lade Layout…',
     positions: {
       header: 'Header',
@@ -403,7 +406,11 @@ export default {
       footer: 'Footer'
     },
     emptySlot: 'Leer — hierher ziehen',
+    activeFrameLabel: 'Zeigt Grid-Struktur von: {{name}}',
+    activeFrameDefault: '(Standard-Raster)',
+    previewPageTypeLabel: 'Grid-Vorschau für:',
     groupLabel: 'Gruppe',
+    displayLabel: 'Sichtbarkeit',
     noGroup: '— keine —',
     displayAll: 'Immer',
     displayDesktopOnly: 'Nur Desktop',
@@ -428,11 +435,10 @@ export default {
       canvas: 'Canvas-Seiten',
       bases: 'Bases-Seiten'
     },
-    addOverridePlaceholder: 'Seitentyp wählen…',
-    addOverride: 'Override hinzufügen',
     removeOverride: 'Override entfernen',
     excludeHeading: 'Sichtbare Komponenten',
     excludeDescription: 'Schalten Sie eine Komponente aus, um sie auf Seiten dieses Typs auszublenden.',
+    excludeDuplicateHint: 'Betrifft alle {{count}} Instanzen von „{{name}}" — Quartz kann einzelne Duplikate hier nicht getrennt ausschließen.',
     template: 'Frame/Template',
     templateDefault: 'Standard',
     templateFullWidth: 'Volle Breite',
@@ -466,13 +472,12 @@ export default {
         tablet: 'Tablet',
         mobile: 'Mobil'
       },
-      modeEdit: 'Bearbeiten',
-      modePreview: 'Vorschau',
       availableAreasLabel: 'Verfügbare Bereiche (ins Raster ziehen, um sie zu platzieren)',
       newArea: '+ Bereich hinzufügen',
       allPlaced: 'Alle Bereiche sind platziert.',
       hintDragToPlace:
         'Ziehen Sie einen Bereich auf eine freie Zelle, um ihn zu platzieren — oder einen platzierten Bereich zurück in diese Liste, um ihn wieder zu lösen. Ein Klick wählt einen Bereich aus und zeigt seine Einstellungen unten, dort auch die Zeilen- und Spalten-Spanne — Änderungen wirken sich sofort aus.',
+      expandArea: 'Bereichseinstellungen aufklappen',
       areaName: 'Bereichsname',
       areaSlot: 'Belegung',
       rowSpanLabel: 'Zeilen-Spanne',
@@ -488,12 +493,16 @@ export default {
       deleteFrame: 'Diesen Frame löschen',
       deleteConfirm: 'Frame "{{name}}" wirklich löschen? Seitentypen, die ihn referenzieren, fallen dann auf das Standard-Template zurück.',
       preview: {
-        pageContent: 'Seiteninhalt',
-        empty: '— leer —',
-        none: 'Auf diesem Breakpoint ist kein Bereich sichtbar.',
-        hiddenLabel: 'Ausgeblendet auf diesem Breakpoint:',
-        hidden: 'ausgeblendet'
+        pageContent: 'Seiteninhalt'
       }
+    },
+    componentPill: {
+      paletteLabel: 'Komponente hinzufügen',
+      paletteDropToRemove: 'Hier ablegen zum Entfernen',
+      paletteHint: 'Ziehen Sie eine Komponente auf einen Bereich, um eine weitere Instanz mit eigenen Einstellungen einzufügen.',
+      dragHandle: 'Zum Verschieben ziehen',
+      duplicate: 'Duplizieren',
+      removeDuplicate: 'Duplikat entfernen'
     }
   },
   styleEditor: {

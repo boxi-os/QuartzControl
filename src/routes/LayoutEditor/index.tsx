@@ -2,21 +2,23 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProject } from '../ProjectLayout'
 import type { GridFrameDefinition, QuartzConfig } from '@shared/ipc-contract'
-import { Button, PageHeader, Select } from '../../components/ui'
+import { Badge, Button, PageHeader } from '../../components/ui'
 import { TAB_ICONS } from '../navConfig'
 import GlobalBoard from './GlobalBoard'
 import PageTypeOverrides from './PageTypeOverrides'
 import FrameBuilder from './FrameBuilder'
 import { derivePageTypes } from './utils'
 
+type Tab = 'global' | 'pagetypes' | 'frames'
+
 export default function LayoutEditor(): JSX.Element {
   const { t } = useTranslation()
   const project = useProject()
   const [config, setConfig] = useState<QuartzConfig | null>(null)
-  const [tab, setTab] = useState<string>('global')
+  const [tab, setTab] = useState<Tab>('global')
+  const [activePageType, setActivePageType] = useState<string | null>(null)
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [error, setError] = useState<string | null>(null)
-  const [addingType, setAddingType] = useState('')
   const [customFrames, setCustomFrames] = useState<GridFrameDefinition[]>([])
 
   useEffect(() => {
@@ -52,14 +54,14 @@ export default function LayoutEditor(): JSX.Element {
 
   const availablePageTypes = useMemo(() => (config ? derivePageTypes(config.plugins) : []), [config])
   const overrideTypes = Object.keys(config?.layout?.byPageType ?? {})
-  const addableTypes = availablePageTypes.filter((pt) => !overrideTypes.includes(pt))
 
-  function addOverride(pageType: string): void {
-    if (!config || !pageType) return
-    const byPageType = { ...(config.layout?.byPageType ?? {}), [pageType]: {} }
-    setConfig({ ...config, layout: { ...config.layout, byPageType } })
-    setTab(pageType)
-    setAddingType('')
+  function selectPageType(pageType: string): void {
+    if (!config) return
+    if (!overrideTypes.includes(pageType)) {
+      const byPageType = { ...(config.layout?.byPageType ?? {}), [pageType]: {} }
+      setConfig({ ...config, layout: { ...config.layout, byPageType } })
+    }
+    setActivePageType(pageType)
   }
 
   function removeOverride(pageType: string): void {
@@ -67,7 +69,7 @@ export default function LayoutEditor(): JSX.Element {
     const byPageType = { ...(config.layout?.byPageType ?? {}) }
     delete byPageType[pageType]
     setConfig({ ...config, layout: { ...config.layout, byPageType } })
-    setTab('global')
+    setActivePageType(null)
   }
 
   if (!config) return <p className="text-sm text-slate-500">{t('layoutEditor.loading')}</p>
@@ -79,41 +81,21 @@ export default function LayoutEditor(): JSX.Element {
         title={t('projectLayout.tabs.layout')}
         description={t('projectLayout.descriptions.layout')}
       />
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-1 rounded-[8px] bg-black/[0.05] p-0.5 dark:bg-white/10">
-          <button
-            onClick={() => setTab('global')}
-            className={`rounded-[6px] px-3 py-1 text-[13px] font-medium transition-colors ${
-              tab === 'global'
-                ? 'bg-white text-slate-900 shadow-sm dark:bg-white/20 dark:text-white'
-                : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
-            }`}
-          >
-            {t('layoutEditor.tabGlobal')}
-          </button>
-          {overrideTypes.map((pt) => (
+          {(['global', 'pagetypes', 'frames'] as const).map((key) => (
             <button
-              key={pt}
-              onClick={() => setTab(pt)}
+              key={key}
+              onClick={() => setTab(key)}
               className={`rounded-[6px] px-3 py-1 text-[13px] font-medium transition-colors ${
-                tab === pt
+                tab === key
                   ? 'bg-white text-slate-900 shadow-sm dark:bg-white/20 dark:text-white'
                   : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
               }`}
             >
-              {t(`layoutEditor.pageTypes.${pt}`, pt)}
+              {t(`layoutEditor.tab${key === 'global' ? 'Global' : key === 'pagetypes' ? 'PageTypes' : 'Frames'}`)}
             </button>
           ))}
-          <button
-            onClick={() => setTab('frames')}
-            className={`rounded-[6px] px-3 py-1 text-[13px] font-medium transition-colors ${
-              tab === 'frames'
-                ? 'bg-white text-slate-900 shadow-sm dark:bg-white/20 dark:text-white'
-                : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
-            }`}
-          >
-            {t('layoutEditor.tabFrames')}
-          </button>
         </div>
         {tab !== 'frames' && (
           <div className="flex items-center gap-3">
@@ -126,44 +108,45 @@ export default function LayoutEditor(): JSX.Element {
         )}
       </div>
 
-      {tab === 'global' && (
-        <>
-          {addableTypes.length > 0 && (
-            <div className="mb-4 flex items-center gap-2">
-              <Select value={addingType} onChange={(e) => setAddingType(e.target.value)} className="w-56">
-                <option value="">{t('layoutEditor.addOverridePlaceholder')}</option>
-                {addableTypes.map((pt) => (
-                  <option key={pt} value={pt}>
-                    {t(`layoutEditor.pageTypes.${pt}`, pt)}
-                  </option>
-                ))}
-              </Select>
-              <Button variant="ghost" onClick={() => addOverride(addingType)} disabled={!addingType}>
-                {t('layoutEditor.addOverride')}
-              </Button>
-            </div>
-          )}
-          <GlobalBoard config={config} onChange={setConfig} />
-        </>
-      )}
-
-      {tab === 'frames' && <FrameBuilder projectPath={project.path} config={config} onFramesChanged={syncPluginsFromDisk} />}
-
-      {tab !== 'global' && tab !== 'frames' && (
-        <>
-          <div className="mb-4 flex justify-end">
-            <button type="button" onClick={() => removeOverride(tab)} className="text-xs text-slate-500 underline">
+      {tab === 'pagetypes' && (
+        <div className="mb-6 flex flex-wrap items-center gap-1.5 border-b border-black/[0.06] pb-4 dark:border-white/10">
+          {availablePageTypes.map((pt) => (
+            <button
+              key={pt}
+              onClick={() => selectPageType(pt)}
+              className={`flex items-center gap-1.5 rounded-[6px] px-2.5 py-1 text-[13px] font-medium transition-colors ${
+                activePageType === pt
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-black/[0.04] text-slate-700 hover:bg-black/[0.08] dark:bg-white/10 dark:text-slate-200 dark:hover:bg-white/15'
+              }`}
+            >
+              {t(`layoutEditor.pageTypes.${pt}`, pt)}
+              {overrideTypes.includes(pt) && activePageType !== pt && <Badge tone="slate">{t('layoutEditor.pageTypeHasOverride')}</Badge>}
+            </button>
+          ))}
+          {activePageType && overrideTypes.includes(activePageType) && (
+            <button type="button" onClick={() => removeOverride(activePageType)} className="ml-auto text-xs text-slate-500 underline">
               {t('layoutEditor.removeOverride')}
             </button>
-          </div>
+          )}
+        </div>
+      )}
+
+      {tab === 'global' && <GlobalBoard projectPath={project.path} config={config} onChange={setConfig} />}
+
+      {tab === 'frames' && <FrameBuilder projectPath={project.path} onFramesChanged={syncPluginsFromDisk} />}
+
+      {tab === 'pagetypes' &&
+        (activePageType ? (
           <PageTypeOverrides
             config={config}
-            pageType={tab}
+            pageType={activePageType}
             onChange={setConfig}
             customTemplates={customFrames.map((f) => f.frameName)}
           />
-        </>
-      )}
+        ) : (
+          <p className="text-sm text-slate-500 dark:text-slate-400">{t('layoutEditor.pageTypesHint')}</p>
+        ))}
     </div>
   )
 }

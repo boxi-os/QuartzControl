@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LayoutPosition, PageTypeLayoutOverride, QuartzConfig } from '@shared/ipc-contract'
 import { Card, Select, TextInput, Toggle } from '../../components/ui'
-import { POSITIONS, componentItems } from './utils'
+import { POSITIONS, distinctComponentChips, duplicateNameCounts } from './utils'
 
 const KNOWN_TEMPLATES = ['default', 'full-width', 'minimal']
 
@@ -20,6 +20,7 @@ export default function PageTypeOverrides({
   const { t } = useTranslation()
   const override: PageTypeLayoutOverride = config.layout?.byPageType?.[pageType] ?? {}
   const [customTemplate, setCustomTemplate] = useState(false)
+  const nameCounts = duplicateNameCounts(config.plugins)
 
   function update(patch: Partial<PageTypeLayoutOverride>): void {
     const byPageType = { ...(config.layout?.byPageType ?? {}), [pageType]: { ...override, ...patch } }
@@ -86,10 +87,18 @@ export default function PageTypeOverrides({
         <h3 className="mb-1 text-sm font-semibold">{t('layoutEditor.excludeHeading')}</h3>
         <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('layoutEditor.excludeDescription')}</p>
         <div className="grid grid-cols-2 gap-1.5">
-          {componentItems(config.plugins).map(({ plugin }) => {
+          {distinctComponentChips(config.plugins).map(({ plugin }) => {
             const excluded = (override.exclude ?? []).includes(plugin.name)
+            const count = nameCounts.get(plugin.name) ?? 0
             return (
-              <Toggle key={plugin.name} label={plugin.name} checked={!excluded} onChange={(checked) => toggleExclude(plugin.name, !checked)} />
+              <div key={plugin.name} className="flex flex-col gap-0.5">
+                <Toggle label={plugin.name} checked={!excluded} onChange={(checked) => toggleExclude(plugin.name, !checked)} />
+                {count > 1 && (
+                  <p className="pl-[46px] text-[11px] text-amber-600 dark:text-amber-400">
+                    {t('layoutEditor.excludeDuplicateHint', { count, name: plugin.name })}
+                  </p>
+                )}
+              </div>
             )
           })}
         </div>

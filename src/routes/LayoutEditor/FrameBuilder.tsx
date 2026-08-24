@@ -1,19 +1,11 @@
 import { useEffect, useState } from 'react'
 import type { DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import type {
-  FrameBreakpoint,
-  FrameSlot,
-  GridAreaPlacement,
-  GridBreakpointLayout,
-  GridFrameArea,
-  GridFrameDefinition,
-  QuartzConfig
-} from '@shared/ipc-contract'
+import { GripVertical } from 'lucide-react'
+import type { FrameBreakpoint, FrameSlot, GridAreaPlacement, GridBreakpointLayout, GridFrameArea, GridFrameDefinition } from '@shared/ipc-contract'
 import { FRAME_BREAKPOINTS, buildGridStyle } from '@shared/gridFrameCss'
-import { Button, Card, Field, SegmentedControl, Select, TextInput, Toggle } from '../../components/ui'
+import { Badge, Button, Card, Field, SegmentedControl, Select, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
-import FramePreview from './FramePreview'
 
 const RESERVED_FRAME_NAMES = ['default', 'full-width', 'minimal']
 const SLOTS: FrameSlot[] = ['header', 'left', 'right', 'beforeBody', 'pageBody', 'afterBody', 'footer']
@@ -92,17 +84,15 @@ function withPlacement(def: GridFrameDefinition, breakpoint: FrameBreakpoint, ar
   }
 }
 
-// The one thing dataTransfer needs to carry across a native HTML5 drag - the id of whichever area
-// (palette chip or already-placed box) the drag started from.
+// dataTransfer carries a bare area id across a native HTML5 drag - repositioning that area onto
+// whichever cell it's dropped on. See handleDrop.
 const DRAG_MIME = 'text/plain'
 
 export default function FrameBuilder({
   projectPath,
-  config,
   onFramesChanged
 }: {
   projectPath: string
-  config: QuartzConfig
   onFramesChanged: () => void
 }): JSX.Element {
   const { t } = useTranslation()
@@ -110,10 +100,8 @@ export default function FrameBuilder({
   const [editing, setEditing] = useState<GridFrameDefinition | null>(null)
   const [isNewDraft, setIsNewDraft] = useState(false)
   const [activeBreakpoint, setActiveBreakpoint] = useState<FrameBreakpoint>('desktop')
-  const [mode, setMode] = useState<'edit' | 'preview'>('edit')
-  // Which area's settings panel is showing - drives both the panel below and the "selected"
-  // highlight on that area's box in the grid/palette. All edits made through the panel write
-  // straight into `editing` as they happen (see updateArea*), so there's nothing buffered here.
+  // Which area's own settings panel is expanded - all edits write straight into `editing` as they
+  // happen, nothing buffered here.
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null)
   // The name field is the one exception: it needs to hold whatever the user is literally typing,
   // not the slugified value committed into `editing` on every keystroke (mid-word that value can
@@ -146,7 +134,7 @@ export default function FrameBuilder({
     setEditing(emptyDraft())
     setIsNewDraft(true)
     setActiveBreakpoint('desktop')
-    setMode('edit')
+    setSelectedAreaId(null)
     setMessage(null)
   }
 
@@ -154,7 +142,7 @@ export default function FrameBuilder({
     setEditing(def)
     setIsNewDraft(false)
     setActiveBreakpoint('desktop')
-    setMode('edit')
+    setSelectedAreaId(null)
     setMessage(null)
   }
 
@@ -421,8 +409,6 @@ export default function FrameBuilder({
       return !p || p.hidden
     })
   )
-  const selectedArea = selectedAreaId ? (editing.areas.find((a) => a.id === selectedAreaId) ?? null) : null
-  const selectedPlacement = selectedArea ? layout.placements[selectedArea.id] : undefined
 
   const breakpointOptions = FRAME_BREAKPOINTS.map((bp) => ({
     value: bp,
@@ -433,17 +419,7 @@ export default function FrameBuilder({
     <div className="flex flex-col gap-4">
       {message && <p className="text-sm text-red-600 dark:text-red-400">{message}</p>}
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <SegmentedControl value={activeBreakpoint} onChange={setActiveBreakpoint} options={breakpointOptions} />
-        <SegmentedControl
-          value={mode}
-          onChange={setMode}
-          options={[
-            { value: 'edit', label: t('layoutEditor.frameBuilder.modeEdit') },
-            { value: 'preview', label: t('layoutEditor.frameBuilder.modePreview') }
-          ]}
-        />
-      </div>
+      <SegmentedControl value={activeBreakpoint} onChange={setActiveBreakpoint} options={breakpointOptions} />
 
       <Card>
         <div className="mb-3 grid grid-cols-4 gap-3">
@@ -456,279 +432,289 @@ export default function FrameBuilder({
           </Field>
         </div>
 
-        {mode === 'preview' ? (
-          <FramePreview frame={editing} plugins={config.plugins} />
-        ) : (
-          <>
-            <div className="mb-4 flex flex-col gap-3 rounded-[8px] border border-black/[0.06] p-3 dark:border-white/10">
-              <div className="flex flex-wrap items-end gap-3">
-                <Field label={t('layoutEditor.frameBuilder.rows')}>
-                  <TextInput
-                    type="number"
-                    min={1}
-                    max={12}
-                    value={layout.rows}
-                    onChange={(e) => updateLayout({ rows: Math.max(1, Number(e.target.value) || 1) })}
-                    className="w-20"
-                  />
-                </Field>
-                <Field label={t('layoutEditor.frameBuilder.cols')}>
-                  <TextInput
-                    type="number"
-                    min={1}
-                    max={12}
-                    value={layout.cols}
-                    onChange={(e) => updateLayout({ cols: Math.max(1, Number(e.target.value) || 1) })}
-                    className="w-20"
-                  />
-                </Field>
-                <Field label={t('layoutEditor.frameBuilder.rowGap')}>
-                  <TextInput value={layout.rowGap} onChange={(e) => updateLayout({ rowGap: e.target.value })} className="w-24" />
-                </Field>
-                <Field label={t('layoutEditor.frameBuilder.columnGap')}>
-                  <TextInput value={layout.columnGap} onChange={(e) => updateLayout({ columnGap: e.target.value })} className="w-24" />
-                </Field>
-                <Button variant="ghost" onClick={() => updateLayout({ columnSizes: undefined, rowSizes: undefined })}>
-                  {t('layoutEditor.frameBuilder.resetTracks')}
-                </Button>
-                {FRAME_BREAKPOINTS.filter((bp) => bp !== activeBreakpoint).map((bp) => (
-                  <Button key={bp} variant="ghost" onClick={() => copyLayoutTo(bp)}>
-                    {t('layoutEditor.frameBuilder.copyLayoutTo', { target: t(`layoutEditor.frameBuilder.breakpoint.${bp}`) })}
-                  </Button>
-                ))}
-              </div>
-
-              <div>
-                <p className="mb-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                  {t('layoutEditor.frameBuilder.columnSizesLabel')}
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {Array.from({ length: layout.cols }, (_, i) => (
-                    <TextInput
-                      key={i}
-                      value={layout.columnSizes?.[i] ?? ''}
-                      placeholder="1fr"
-                      onChange={(e) => setColumnSize(i, e.target.value)}
-                      className="w-16"
-                    />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="mb-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                  {t('layoutEditor.frameBuilder.rowSizesLabel')}
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {Array.from({ length: layout.rows }, (_, i) => (
-                    <TextInput
-                      key={i}
-                      value={layout.rowSizes?.[i] ?? ''}
-                      placeholder="auto"
-                      onChange={(e) => setRowSize(i, e.target.value)}
-                      className="w-16"
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <details>
-                <summary className="cursor-pointer text-[12px] text-slate-500 dark:text-slate-400">
-                  {t('layoutEditor.frameBuilder.lineNamesLabel')}
-                </summary>
-                <div className="mt-2 flex flex-col gap-2">
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.lineNamesHint')}</p>
-                  <div>
-                    <p className="mb-1 text-[11px] text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.columnLinesLabel')}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {Array.from({ length: layout.cols + 1 }, (_, i) => (
-                        <TextInput
-                          key={i}
-                          value={layout.columnLineNames?.[i]?.[0] ?? ''}
-                          placeholder={`L${i}`}
-                          onChange={(e) => setColumnLineName(i, e.target.value)}
-                          className="w-16"
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <p className="mb-1 text-[11px] text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.rowLinesLabel')}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {Array.from({ length: layout.rows + 1 }, (_, i) => (
-                        <TextInput
-                          key={i}
-                          value={layout.rowLineNames?.[i]?.[0] ?? ''}
-                          placeholder={`L${i}`}
-                          onChange={(e) => setRowLineName(i, e.target.value)}
-                          className="w-16"
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </details>
-            </div>
-
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.availableAreasLabel')}</p>
-              <Button variant="ghost" onClick={addNewArea}>
-                {t('layoutEditor.frameBuilder.newArea')}
+        <div className="mb-4 flex flex-col gap-3 rounded-[8px] border border-black/[0.06] p-3 dark:border-white/10">
+          <div className="flex flex-wrap items-end gap-3">
+            <Field label={t('layoutEditor.frameBuilder.rows')}>
+              <TextInput
+                type="number"
+                min={1}
+                max={12}
+                value={layout.rows}
+                onChange={(e) => updateLayout({ rows: Math.max(1, Number(e.target.value) || 1) })}
+                className="w-20"
+              />
+            </Field>
+            <Field label={t('layoutEditor.frameBuilder.cols')}>
+              <TextInput
+                type="number"
+                min={1}
+                max={12}
+                value={layout.cols}
+                onChange={(e) => updateLayout({ cols: Math.max(1, Number(e.target.value) || 1) })}
+                className="w-20"
+              />
+            </Field>
+            <Field label={t('layoutEditor.frameBuilder.rowGap')}>
+              <TextInput value={layout.rowGap} onChange={(e) => updateLayout({ rowGap: e.target.value })} className="w-24" />
+            </Field>
+            <Field label={t('layoutEditor.frameBuilder.columnGap')}>
+              <TextInput value={layout.columnGap} onChange={(e) => updateLayout({ columnGap: e.target.value })} className="w-24" />
+            </Field>
+            <Button variant="ghost" onClick={() => updateLayout({ columnSizes: undefined, rowSizes: undefined })}>
+              {t('layoutEditor.frameBuilder.resetTracks')}
+            </Button>
+            {FRAME_BREAKPOINTS.filter((bp) => bp !== activeBreakpoint).map((bp) => (
+              <Button key={bp} variant="ghost" onClick={() => copyLayoutTo(bp)}>
+                {t('layoutEditor.frameBuilder.copyLayoutTo', { target: t(`layoutEditor.frameBuilder.breakpoint.${bp}`) })}
               </Button>
-            </div>
-            <div
-              onDragOver={(e) => {
-                e.preventDefault()
-              }}
-              onDrop={(e) => {
-                e.preventDefault()
-                const areaId = e.dataTransfer.getData(DRAG_MIME)
-                endDrag()
-                if (areaId) {
-                  unplaceAreaById(areaId)
-                  setSelectedAreaId(areaId)
-                }
-              }}
-              className={`mb-3 flex min-h-[44px] flex-wrap items-center gap-2 rounded-[8px] border border-dashed p-2 transition-colors ${
-                dragAreaId ? 'border-blue-400 bg-blue-50/50 dark:border-blue-500/40 dark:bg-blue-500/5' : 'border-transparent'
-              }`}
-            >
-              {unplacedAreas.length === 0 && <span className="px-1 text-[11px] text-slate-400">{t('layoutEditor.frameBuilder.allPlaced')}</span>}
-              {unplacedAreas.map((a) => {
-                const isSelected = selectedAreaId === a.id
-                return (
-                  <div
-                    key={a.id}
-                    role="button"
-                    tabIndex={0}
-                    draggable
-                    onDragStart={(e) => beginDrag(e, a.id)}
-                    onDragEnd={endDrag}
-                    onClick={() => setSelectedAreaId(a.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        setSelectedAreaId(a.id)
-                      }
-                    }}
-                    className={`flex cursor-grab flex-col items-center justify-center gap-0.5 rounded-[6px] border border-dashed px-2.5 py-1.5 text-center text-[11px] active:cursor-grabbing ${
-                      isSelected
-                        ? 'border-blue-500 bg-blue-100 ring-2 ring-blue-500/40 dark:border-blue-400 dark:bg-blue-500/20'
-                        : 'border-blue-300 bg-blue-50/60 dark:border-blue-500/40 dark:bg-blue-500/10'
-                    } ${dragAreaId === a.id ? 'opacity-30' : ''}`}
-                  >
-                    <span className="font-medium">{a.name}</span>
-                    <span className="text-slate-500 dark:text-slate-400">{t(`layoutEditor.positions.${a.slot}`, a.slot)}</span>
-                  </div>
-                )
-              })}
-            </div>
+            ))}
+          </div>
 
-            <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.hintDragToPlace')}</p>
+          <div>
+            <p className="mb-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              {t('layoutEditor.frameBuilder.columnSizesLabel')}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {Array.from({ length: layout.cols }, (_, i) => (
+                <TextInput
+                  key={i}
+                  value={layout.columnSizes?.[i] ?? ''}
+                  placeholder="1fr"
+                  onChange={(e) => setColumnSize(i, e.target.value)}
+                  className="w-16"
+                />
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="mb-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              {t('layoutEditor.frameBuilder.rowSizesLabel')}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {Array.from({ length: layout.rows }, (_, i) => (
+                <TextInput
+                  key={i}
+                  value={layout.rowSizes?.[i] ?? ''}
+                  placeholder="auto"
+                  onChange={(e) => setRowSize(i, e.target.value)}
+                  className="w-16"
+                />
+              ))}
+            </div>
+          </div>
 
-            <div
-              className="relative grid gap-1"
-              style={{
-                gridTemplateColumns: gridStyle.gridTemplateColumns,
-                gridTemplateRows: gridStyle.gridTemplateRows,
-                rowGap: gridStyle.rowGap,
-                columnGap: gridStyle.columnGap
-              }}
-            >
-              {Array.from({ length: layout.rows }, (_, r) =>
-                Array.from({ length: layout.cols }, (_, c) => {
-                  const row = r + 1
-                  const col = c + 1
-                  const isDropTarget = dropCell?.row === row && dropCell?.col === col
-                  return (
-                    <div
-                      key={`${row}-${col}`}
-                      onDragOver={(e) => {
-                        e.preventDefault()
-                        setDropCell({ row, col })
-                      }}
-                      onDragLeave={() => setDropCell((c) => (c?.row === row && c?.col === col ? null : c))}
-                      onDrop={(e) => {
-                        e.preventDefault()
-                        const areaId = e.dataTransfer.getData(DRAG_MIME)
-                        if (areaId) handleDrop(areaId, row, col)
-                        endDrag()
-                      }}
-                      className={`min-h-[40px] rounded-[6px] border transition-colors ${
-                        isDropTarget
-                          ? 'border-blue-500 bg-blue-100 dark:bg-blue-900/40'
-                          : 'border-dashed border-black/15 bg-black/[0.02] dark:border-white/15 dark:bg-white/[0.02]'
-                      }`}
-                      style={{ gridRow: `${row} / span 1`, gridColumn: `${col} / span 1` }}
+          <details>
+            <summary className="cursor-pointer text-[12px] text-slate-500 dark:text-slate-400">
+              {t('layoutEditor.frameBuilder.lineNamesLabel')}
+            </summary>
+            <div className="mt-2 flex flex-col gap-2">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.lineNamesHint')}</p>
+              <div>
+                <p className="mb-1 text-[11px] text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.columnLinesLabel')}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {Array.from({ length: layout.cols + 1 }, (_, i) => (
+                    <TextInput
+                      key={i}
+                      value={layout.columnLineNames?.[i]?.[0] ?? ''}
+                      placeholder={`L${i}`}
+                      onChange={(e) => setColumnLineName(i, e.target.value)}
+                      className="w-16"
                     />
-                  )
-                })
-              )}
-              {editing.areas.map((area) => {
-                const placement = layout.placements[area.id]
-                if (!placement || placement.hidden) return null
-                const isSelected = selectedAreaId === area.id
-                return (
-                  <div
-                    key={area.id}
-                    role="button"
-                    tabIndex={0}
-                    draggable
-                    onDragStart={(e) => beginDrag(e, area.id)}
-                    onDragEnd={endDrag}
-                    onDragOver={(e) => {
-                      e.preventDefault()
-                      setDropCell({ row: placement.row, col: placement.col })
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault()
-                      const areaId = e.dataTransfer.getData(DRAG_MIME)
-                      if (areaId) handleDrop(areaId, placement.row, placement.col)
-                      endDrag()
-                    }}
-                    onClick={() => setSelectedAreaId(area.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        setSelectedAreaId(area.id)
-                      }
-                    }}
-                    className={`flex min-h-[40px] cursor-grab flex-col items-center justify-center gap-0.5 rounded-[6px] border px-1 text-center text-[11px] active:cursor-grabbing ${
-                      isSelected
-                        ? 'border-blue-600 bg-blue-100 shadow-md ring-2 ring-blue-500/50 dark:border-blue-400 dark:bg-blue-500/20'
-                        : 'border-slate-300 bg-white shadow-sm hover:border-blue-300 dark:border-white/15 dark:bg-white/[0.03] dark:hover:border-blue-500/30'
-                    } ${dragAreaId === area.id ? 'opacity-30' : ''}`}
-                    style={{ gridRow: `${placement.row} / span ${placement.rowSpan}`, gridColumn: `${placement.col} / span ${placement.colSpan}` }}
-                  >
-                    <span className="font-medium">{area.name}</span>
-                    <span className="text-slate-500 dark:text-slate-400">{t(`layoutEditor.positions.${area.slot}`, area.slot)}</span>
-                  </div>
-                )
-              })}
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-1 text-[11px] text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.rowLinesLabel')}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {Array.from({ length: layout.rows + 1 }, (_, i) => (
+                    <TextInput
+                      key={i}
+                      value={layout.rowLineNames?.[i]?.[0] ?? ''}
+                      placeholder={`L${i}`}
+                      onChange={(e) => setRowLineName(i, e.target.value)}
+                      className="w-16"
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
+          </details>
+        </div>
 
-            {selectedArea && (
-              <div className="mt-4 flex flex-wrap items-end gap-2 rounded-[8px] border border-blue-300 bg-blue-50/40 p-3 dark:border-blue-500/40 dark:bg-blue-500/5">
-                <Field label={t('layoutEditor.frameBuilder.areaName')}>
-                  <TextInput value={nameDraft} onChange={(e) => updateAreaName(selectedArea.id, e.target.value)} autoFocus />
-                </Field>
-                <Field label={t('layoutEditor.frameBuilder.areaSlot')}>
-                  <Select value={selectedArea.slot} onChange={(e) => updateAreaSlot(selectedArea.id, e.target.value as FrameSlot)}>
-                    {SLOTS.map((slot) => (
-                      <option key={slot} value={slot}>
-                        {t(`layoutEditor.positions.${slot}`, slot)}
-                      </option>
-                    ))}
-                  </Select>
-                </Field>
-                {selectedPlacement && (
-                  <>
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.availableAreasLabel')}</p>
+          <Button variant="ghost" onClick={addNewArea}>
+            {t('layoutEditor.frameBuilder.newArea')}
+          </Button>
+        </div>
+        <div
+          onDragOver={(e) => {
+            e.preventDefault()
+          }}
+          onDrop={(e) => {
+            e.preventDefault()
+            const areaId = e.dataTransfer.getData(DRAG_MIME)
+            endDrag()
+            if (areaId) {
+              unplaceAreaById(areaId)
+              setSelectedAreaId(areaId)
+            }
+          }}
+          className={`mb-3 flex min-h-[44px] flex-wrap items-center gap-2 rounded-[8px] border border-dashed p-2 transition-colors ${
+            dragAreaId ? 'border-blue-400 bg-blue-50/50 dark:border-blue-500/40 dark:bg-blue-500/5' : 'border-transparent'
+          }`}
+        >
+          {unplacedAreas.length === 0 && <span className="px-1 text-[11px] text-slate-400">{t('layoutEditor.frameBuilder.allPlaced')}</span>}
+          {unplacedAreas.map((a) => {
+            const isSelected = selectedAreaId === a.id
+            return (
+              <div
+                key={a.id}
+                role="button"
+                tabIndex={0}
+                draggable
+                onDragStart={(e) => beginDrag(e, a.id)}
+                onDragEnd={endDrag}
+                onClick={() => setSelectedAreaId(a.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setSelectedAreaId(a.id)
+                  }
+                }}
+                className={`flex cursor-grab flex-col items-center justify-center gap-0.5 rounded-[6px] border border-dashed px-2.5 py-1.5 text-center text-[11px] active:cursor-grabbing ${
+                  isSelected
+                    ? 'border-blue-500 bg-blue-100 ring-2 ring-blue-500/40 dark:border-blue-400 dark:bg-blue-500/20'
+                    : 'border-blue-300 bg-blue-50/60 dark:border-blue-500/40 dark:bg-blue-500/10'
+                } ${dragAreaId === a.id ? 'opacity-30' : ''}`}
+              >
+                <span className="font-medium">{a.name}</span>
+                <span className="text-slate-500 dark:text-slate-400">{t(`layoutEditor.positions.${a.slot}`, a.slot)}</span>
+              </div>
+            )
+          })}
+        </div>
+
+        <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.hintDragToPlace')}</p>
+
+        <div
+          className="relative grid gap-1"
+          style={{
+            gridTemplateColumns: gridStyle.gridTemplateColumns,
+            gridTemplateRows: gridStyle.gridTemplateRows,
+            rowGap: gridStyle.rowGap,
+            columnGap: gridStyle.columnGap
+          }}
+        >
+          {Array.from({ length: layout.rows }, (_, r) =>
+            Array.from({ length: layout.cols }, (_, c) => {
+              const row = r + 1
+              const col = c + 1
+              const isDropTarget = dropCell?.row === row && dropCell?.col === col
+              return (
+                <div
+                  key={`${row}-${col}`}
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                    setDropCell({ row, col })
+                  }}
+                  onDragLeave={() => setDropCell((c) => (c?.row === row && c?.col === col ? null : c))}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    const areaId = e.dataTransfer.getData(DRAG_MIME)
+                    if (areaId) handleDrop(areaId, row, col)
+                    endDrag()
+                  }}
+                  className={`min-h-[40px] rounded-[6px] border transition-colors ${
+                    isDropTarget
+                      ? 'border-blue-500 bg-blue-100 dark:bg-blue-900/40'
+                      : 'border-dashed border-black/15 bg-black/[0.02] dark:border-white/15 dark:bg-white/[0.02]'
+                  }`}
+                  style={{ gridRow: `${row} / span 1`, gridColumn: `${col} / span 1` }}
+                />
+              )
+            })
+          )}
+          {editing.areas.map((area) => {
+            const placement = layout.placements[area.id]
+            if (!placement || placement.hidden) return null
+            const isSelected = selectedAreaId === area.id
+            return (
+              <div
+                key={area.id}
+                role="button"
+                tabIndex={0}
+                aria-label={t('layoutEditor.frameBuilder.expandArea')}
+                onClick={() => setSelectedAreaId(isSelected ? null : area.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setSelectedAreaId(isSelected ? null : area.id)
+                  }
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault()
+                  setDropCell({ row: placement.row, col: placement.col })
+                }}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  const areaId = e.dataTransfer.getData(DRAG_MIME)
+                  if (areaId) handleDrop(areaId, placement.row, placement.col)
+                  endDrag()
+                }}
+                className={`flex min-h-[48px] cursor-pointer flex-col gap-1.5 rounded-[6px] border p-2 text-[11px] ${
+                  isSelected
+                    ? 'border-blue-600 bg-blue-50 shadow-md ring-2 ring-blue-500/40 dark:border-blue-400 dark:bg-blue-500/10'
+                    : 'border-slate-300 bg-white shadow-sm hover:border-blue-300 dark:border-white/15 dark:bg-white/[0.03] dark:hover:border-blue-500/30'
+                }`}
+                style={{ gridRow: `${placement.row} / span ${placement.rowSpan}`, gridColumn: `${placement.col} / span ${placement.colSpan}` }}
+              >
+                <div className="flex items-center justify-between gap-1">
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <span
+                      draggable
+                      onDragStart={(e) => beginDrag(e, area.id)}
+                      onDragEnd={endDrag}
+                      onClick={(e) => e.stopPropagation()}
+                      aria-label={t('layoutEditor.componentPill.dragHandle')}
+                      className="-ml-1 flex shrink-0 cursor-grab select-none items-center rounded-[6px] border border-black/10 bg-black/[0.03] p-0.5 text-slate-500 transition-colors hover:border-black/20 hover:bg-black/[0.08] hover:text-slate-700 active:cursor-grabbing dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200"
+                    >
+                      <GripVertical size={13} />
+                    </span>
+                    <span className="truncate font-medium">{area.name}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Badge>{t(`layoutEditor.positions.${area.slot}`, area.slot)}</Badge>
+                    <span aria-hidden="true" className="rounded-[4px] p-0.5 text-slate-400">
+                      {isSelected ? '▲' : '▼'}
+                    </span>
+                  </div>
+                </div>
+
+                {isSelected && (
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex flex-wrap items-end gap-2 border-t border-black/[0.06] pt-2 dark:border-white/10"
+                  >
+                    <Field label={t('layoutEditor.frameBuilder.areaName')}>
+                      <TextInput value={nameDraft} onChange={(e) => updateAreaName(area.id, e.target.value)} autoFocus className="w-32" />
+                    </Field>
+                    <Field label={t('layoutEditor.frameBuilder.areaSlot')}>
+                      <Select value={area.slot} onChange={(e) => updateAreaSlot(area.id, e.target.value as FrameSlot)} className="w-32">
+                        {SLOTS.map((slot) => (
+                          <option key={slot} value={slot}>
+                            {t(`layoutEditor.positions.${slot}`, slot)}
+                          </option>
+                        ))}
+                      </Select>
+                    </Field>
                     <Field label={t('layoutEditor.frameBuilder.rowSpanLabel')}>
                       <TextInput
                         type="number"
                         min={1}
                         max={layout.rows}
-                        value={selectedPlacement.rowSpan}
-                        onChange={(e) => updateAreaSpan(selectedArea.id, { rowSpan: Number(e.target.value) || 1 })}
+                        value={placement.rowSpan}
+                        onChange={(e) => updateAreaSpan(area.id, { rowSpan: Number(e.target.value) || 1 })}
                         className="w-16"
                       />
                     </Field>
@@ -737,8 +723,8 @@ export default function FrameBuilder({
                         type="number"
                         min={1}
                         max={layout.cols}
-                        value={selectedPlacement.colSpan}
-                        onChange={(e) => updateAreaSpan(selectedArea.id, { colSpan: Number(e.target.value) || 1 })}
+                        value={placement.colSpan}
+                        onChange={(e) => updateAreaSpan(area.id, { colSpan: Number(e.target.value) || 1 })}
                         className="w-16"
                       />
                     </Field>
@@ -746,40 +732,41 @@ export default function FrameBuilder({
                       label={t('layoutEditor.frameBuilder.visibleOnBreakpoint', {
                         breakpoint: t(`layoutEditor.frameBuilder.breakpoint.${activeBreakpoint}`)
                       })}
-                      checked={!selectedPlacement.hidden}
-                      onChange={(checked) => updateAreaHidden(selectedArea.id, !checked)}
+                      checked={!placement.hidden}
+                      onChange={(checked) => updateAreaHidden(area.id, !checked)}
                     />
-                  </>
+                    <Button variant="ghost" onClick={() => unplaceAreaById(area.id)}>
+                      {t('layoutEditor.frameBuilder.unplace')}
+                    </Button>
+                    <Button variant="danger" onClick={() => deleteAreaById(area.id)}>
+                      {t('layoutEditor.frameBuilder.removeArea')}
+                    </Button>
+                  </div>
                 )}
-                {selectedPlacement && (
-                  <Button variant="ghost" onClick={() => unplaceAreaById(selectedArea.id)}>
-                    {t('layoutEditor.frameBuilder.unplace')}
-                  </Button>
-                )}
-                <Button variant="danger" onClick={() => deleteAreaById(selectedArea.id)}>
-                  {t('layoutEditor.frameBuilder.removeArea')}
-                </Button>
-                <Button variant="ghost" onClick={() => setSelectedAreaId(null)}>
-                  {t('common.close')}
-                </Button>
-              </div>
-            )}
 
-            {unassignedSlots.length > 0 && (
-              <p className="mt-4 text-xs text-amber-600 dark:text-amber-400">
-                {t('layoutEditor.frameBuilder.unassignedWarning', {
-                  slots: unassignedSlots.map((s) => t(`layoutEditor.positions.${s}`, s)).join(', ')
-                })}
-              </p>
-            )}
-            {neverVisibleAreas.length > 0 && (
-              <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-                {t('layoutEditor.frameBuilder.neverVisibleWarning', {
-                  areas: neverVisibleAreas.map((a) => a.name).join(', ')
-                })}
-              </p>
-            )}
-          </>
+                {area.slot === 'pageBody' && (
+                  <div className="rounded-[4px] border border-dashed border-black/10 px-2 py-3 text-center text-slate-400 dark:border-white/10">
+                    {t('layoutEditor.frameBuilder.preview.pageContent')}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {unassignedSlots.length > 0 && (
+          <p className="mt-4 text-xs text-amber-600 dark:text-amber-400">
+            {t('layoutEditor.frameBuilder.unassignedWarning', {
+              slots: unassignedSlots.map((s) => t(`layoutEditor.positions.${s}`, s)).join(', ')
+            })}
+          </p>
+        )}
+        {neverVisibleAreas.length > 0 && (
+          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+            {t('layoutEditor.frameBuilder.neverVisibleWarning', {
+              areas: neverVisibleAreas.map((a) => a.name).join(', ')
+            })}
+          </p>
         )}
       </Card>
 

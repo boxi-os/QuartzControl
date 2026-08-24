@@ -1,18 +1,65 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   DndContext,
   DragOverlay,
   closestCenter,
+  pointerWithin,
+  useDraggable,
   useDroppable,
+  type CollisionDetection,
   type DragEndEvent,
   type DragStartEvent
 } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import type { FlexGroupConfig, LayoutPosition, PluginEntry, PluginLayoutDeclaration, QuartzConfig } from '@shared/ipc-contract'
-import { Badge, Button, Card, Select, TextInput } from '../../components/ui'
-import { POSITIONS, buildPositionMap, componentItems, getLayout, renumberPriorities } from './utils'
+import type {
+  FlexGroupConfig,
+  FrameBreakpoint,
+  GridFrameDefinition,
+  LayoutPosition,
+  PluginEntry,
+  PluginLayoutDeclaration,
+  QuartzConfig
+} from '@shared/ipc-contract'
+import { FRAME_BREAKPOINTS, buildGridStyle } from '@shared/gridFrameCss'
+import { Badge, Button, Card, SegmentedControl, Select, TextInput } from '../../components/ui'
+import { ItemCard, PaletteChip, GROUP_COLORS } from './ComponentPill'
+import {
+  DEFAULT_FRAME_GRID,
+  POSITIONS,
+  appendDuplicateToPosition,
+  buildPositionMap,
+  derivePageTypes,
+  distinctComponentChips,
+  duplicateAfter,
+  duplicateNameCounts,
+  duplicateRanks,
+  renumberPriorities,
+  sidebarDirection,
+  withDisplay,
+  withGroup
+} from './utils'
+
+// A palette chip's drag id is namespaced so handleDragEnd can tell "create a new instance here"
+// apart from "move this existing instance here" without a second DnD implementation.
+const PALETTE_PREFIX = 'palette:'
+
+// Dropping a placed instance back onto the palette removes it - the reverse of dragging a palette
+// chip out. Fixed id, distinct from any LayoutPosition or plugin index string.
+const PALETTE_DROP_ID = 'palette-drop-zone'
+
+// Plain closestCenter compares the *dragged rect's* center (not the cursor) against each
+// droppable's center - grabbing a wide card by its left-edge handle offsets that rect's center
+// well away from the cursor, so a drop that's visually over a small/distant target like the
+// palette can resolve to whatever unrelated droppable happens to be nearer that offset center
+// instead. Falling back to closestCenter only when the pointer isn't over anything keeps ordinary
+// reordering (dragging one list item over another, same-size rects, no such offset problem) as
+// forgiving as before.
+const collisionDetection: CollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args)
+  return pointerCollisions.length > 0 ? pointerCollisions : closestCenter(args)
+}
 
 function findContainer(positions: Record<LayoutPosition, number[]>, id: string): LayoutPosition | null {
   if ((POSITIONS as string[]).includes(id)) return id as LayoutPosition
@@ -23,16 +70,58 @@ function findContainer(positions: Record<LayoutPosition, number[]>, id: string):
 }
 
 export default function GlobalBoard({
+  projectPath,
   config,
   onChange
 }: {
+  projectPath: string
   config: QuartzConfig
   onChange: (next: QuartzConfig) => void
 }): JSX.Element {
   const { t } = useTranslation()
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [breakpoint, setBreakpoint] = useState<FrameBreakpoint>('desktop')
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null)
+  const [frames, setFrames] = useState<GridFrameDefinition[]>([])
+  // Which page type's assigned template the grid mockup below illustrates - purely a display
+  // choice (see the comment below), defaults to "content" since that's Quartz's de-facto
+  // site-wide default (ordinary notes). Not necessarily present in `pageTypes` on the very first
+  // render (plugins may still be loading), which is fine - the byPageType lookup below just comes
+  // back empty until it is.
+  const [previewPageType, setPreviewPageType] = useState('content')
   const positions = buildPositionMap(config.plugins)
   const groupNames = Object.keys(config.layout?.groups ?? {})
+  const nameCounts = duplicateNameCounts(config.plugins)
+  const ranks = duplicateRanks(config.plugins)
+  const pageTypes = derivePageTypes(config.plugins)
+
+  useEffect(() => {
+    window.quartzGui.layoutFrames.list(projectPath).then(setFrames)
+  }, [projectPath])
+
+  // Global's board doesn't carry a page-type context of its own - it edits the one component
+  // list that feeds every page type, and this switcher doesn't change that: it only picks which
+  // page type's assigned template the grid mockup illustrates (and, as a side effect, which
+  // positions that template leaves "unassigned" below) - it does NOT apply that page type's own
+  // exclude/positions overrides (that stays a Seitentypen-tab concern, PageTypeOverrides.tsx).
+  // Falls back to the fixed built-in shape when no override is set for the selected type, or when
+  // it points at a built-in template ('default'/'full-width'/'minimal') this app doesn't have real
+  // per-breakpoint geometry for.
+  const activeFrameName = config.layout?.byPageType?.[previewPageType]?.template
+  const activeFrame = activeFrameName ? (frames.find((f) => f.frameName === activeFrameName) ?? null) : null
+  const activeLayout = activeFrame?.breakpoints[breakpoint] ?? null
+  const activeAreas =
+    activeFrame && activeLayout
+      ? activeFrame.areas.filter((a) => {
+          const p = activeLayout.placements[a.id]
+          return p && !p.hidden
+        })
+      : null
+  const activeGridStyle = activeFrame && activeLayout ? buildGridStyle(activeLayout, activeFrame.areas) : null
+  const activeUsedSlots = activeAreas
+    ? new Set(activeAreas.map((a) => a.slot).filter((s): s is LayoutPosition => s !== 'pageBody'))
+    : null
+  const activeUnassignedSlots = activeUsedSlots ? POSITIONS.filter((p) => !activeUsedSlots.has(p)) : []
 
   function handleDragStart(event: DragStartEvent): void {
     setActiveId(String(event.active.id))
@@ -42,12 +131,35 @@ export default function GlobalBoard({
     setActiveId(null)
     const { active, over } = event
     if (!over) return
+    const activeId = String(active.id)
 
-    const fromContainer = findContainer(positions, String(active.id))
+    // Dropping a placed duplicate back onto the palette removes it - mirrors the "Duplikat
+    // entfernen" button in its expand panel, and only applies to duplicates for the same reason
+    // that button is hidden for a sole instance (see removeDuplicate below).
+    if (String(over.id) === PALETTE_DROP_ID && !activeId.startsWith(PALETTE_PREFIX)) {
+      const index = Number(activeId)
+      const plugin = config.plugins[index]
+      if (plugin && (nameCounts.get(plugin.name) ?? 0) > 1) removeDuplicate(index)
+      return
+    }
+
     const toContainer = findContainer(positions, String(over.id))
-    if (!fromContainer || !toContainer) return
+    if (!toContainer) return
 
-    const sourceIndex = positions[fromContainer].indexOf(Number(active.id))
+    if (activeId.startsWith(PALETTE_PREFIX)) {
+      const sourceIndex = Number(activeId.slice(PALETTE_PREFIX.length))
+      const overIndex = positions[toContainer].indexOf(Number(over.id))
+      const result = appendDuplicateToPosition(config.plugins, sourceIndex, toContainer, overIndex === -1 ? undefined : overIndex)
+      if (!result) return
+      onChange({ ...config, plugins: result.plugins })
+      setExpandedIndex(result.newIndex)
+      return
+    }
+
+    const fromContainer = findContainer(positions, activeId)
+    if (!fromContainer) return
+
+    const sourceIndex = positions[fromContainer].indexOf(Number(activeId))
     const next: Record<LayoutPosition, number[]> = { ...positions }
     next[fromContainer] = [...positions[fromContainer]]
     next[fromContainer].splice(sourceIndex, 1)
@@ -55,12 +167,12 @@ export default function GlobalBoard({
     if (fromContainer === toContainer) {
       const overIndex = positions[toContainer].indexOf(Number(over.id))
       const targetIndex = overIndex === -1 ? next[toContainer].length : overIndex
-      next[toContainer].splice(targetIndex, 0, Number(active.id))
+      next[toContainer].splice(targetIndex, 0, Number(activeId))
     } else {
       next[toContainer] = [...positions[toContainer]]
       const overIndex = positions[toContainer].indexOf(Number(over.id))
       const targetIndex = overIndex === -1 ? next[toContainer].length : overIndex
-      next[toContainer].splice(targetIndex, 0, Number(active.id))
+      next[toContainer].splice(targetIndex, 0, Number(activeId))
     }
 
     if (next[fromContainer].join(',') === positions[fromContainer].join(',') && fromContainer === toContainer) return
@@ -81,28 +193,26 @@ export default function GlobalBoard({
   }
 
   function setGroup(index: number, group: string): void {
-    const plugins = config.plugins.map((p, i) => {
-      if (i !== index || !p.layout) return p
-      const layout = { ...p.layout }
-      if (group) layout.group = group
-      else delete layout.group
-      return { ...p, layout }
-    })
-    onChange({ ...config, plugins })
+    onChange({ ...config, plugins: withGroup(config.plugins, index, group) })
   }
 
-  // Quartz core already honors this at build time (styles/base.scss's .desktop-only/.mobile-only,
-  // switching at the same 800px breakpoint the grid-frame media queries use) - this was previously
-  // modeled but never surfaced in the UI.
   function setDisplay(index: number, display: PluginLayoutDeclaration['display']): void {
-    const plugins = config.plugins.map((p, i) => {
-      if (i !== index || !p.layout) return p
-      const layout = { ...p.layout }
-      if (display && display !== 'all') layout.display = display
-      else delete layout.display
-      return { ...p, layout }
-    })
+    onChange({ ...config, plugins: withDisplay(config.plugins, index, display) })
+  }
+
+  function duplicate(index: number): void {
+    const result = duplicateAfter(config.plugins, index)
+    if (!result) return
+    onChange({ ...config, plugins: result.plugins })
+    setExpandedIndex(result.newIndex)
+  }
+
+  // Only offered for the 2nd+ instance of a source - deletes just this array entry, no CLI call.
+  // The sole/original instance stays a Plugins -> Installed concern (uninstalling the plugin).
+  function removeDuplicate(index: number): void {
+    const plugins = config.plugins.filter((_, i) => i !== index)
     onChange({ ...config, plugins })
+    setExpandedIndex(null)
   }
 
   function setGroups(groups: Record<string, FlexGroupConfig>): void {
@@ -127,76 +237,209 @@ export default function GlobalBoard({
     setGroups(groups)
   }
 
-  const activeItem = activeId ? config.plugins[Number(activeId)] : null
+  const activeItem = activeId && !activeId.startsWith(PALETTE_PREFIX) ? config.plugins[Number(activeId)] : null
+  const activePaletteSource = activeId?.startsWith(PALETTE_PREFIX) ? config.plugins[Number(activeId.slice(PALETTE_PREFIX.length))] : null
+  const grid = DEFAULT_FRAME_GRID[breakpoint]
+  const narrow = breakpoint !== 'desktop'
+
+  const slotProps = { config, groupNames, nameCounts, ranks, expandedIndex, onExpand: setExpandedIndex, onSetGroup: setGroup, onSetDisplay: setDisplay, onDuplicate: duplicate, onRemove: removeDuplicate }
 
   return (
     <div className="flex flex-col gap-6">
-      <DndContext collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        <PositionSlot
-          position="header"
-          indices={positions.header}
-          config={config}
-          groupNames={groupNames}
-          onSetGroup={setGroup}
-          onSetDisplay={setDisplay}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <SegmentedControl
+          value={breakpoint}
+          onChange={setBreakpoint}
+          options={FRAME_BREAKPOINTS.map((bp) => ({ value: bp, label: t(`layoutEditor.frameBuilder.breakpoint.${bp}`) }))}
         />
-        <div className="grid grid-cols-3 gap-4">
-          <PositionSlot
-            position="left"
-            indices={positions.left}
-            config={config}
-            groupNames={groupNames}
-            onSetGroup={setGroup}
-            onSetDisplay={setDisplay}
-          />
-          <div className="flex flex-col gap-4">
-            <PositionSlot
-              position="beforeBody"
-              indices={positions.beforeBody}
-              config={config}
-              groupNames={groupNames}
-              onSetGroup={setGroup}
-              onSetDisplay={setDisplay}
-            />
-            <div className="rounded-md border border-dashed border-black/10 px-3 py-6 text-center text-xs text-slate-400 dark:border-white/10">
-              Content
-            </div>
-            <PositionSlot
-              position="afterBody"
-              indices={positions.afterBody}
-              config={config}
-              groupNames={groupNames}
-              onSetGroup={setGroup}
-              onSetDisplay={setDisplay}
-            />
-          </div>
-          <PositionSlot
-            position="right"
-            indices={positions.right}
-            config={config}
-            groupNames={groupNames}
-            onSetGroup={setGroup}
-            onSetDisplay={setDisplay}
-          />
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('layoutEditor.previewPageTypeLabel')}</label>
+          <Select value={previewPageType} onChange={(e) => setPreviewPageType(e.target.value)} className="w-40">
+            {pageTypes.map((pt) => (
+              <option key={pt} value={pt}>
+                {t(`layoutEditor.pageTypes.${pt}`, pt)}
+              </option>
+            ))}
+          </Select>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {activeFrame ? t('layoutEditor.activeFrameLabel', { name: activeFrame.frameName }) : t('layoutEditor.activeFrameDefault')}
+          </p>
         </div>
-        <PositionSlot
-          position="footer"
-          indices={positions.footer}
-          config={config}
-          groupNames={groupNames}
-          onSetGroup={setGroup}
-          onSetDisplay={setDisplay}
+      </div>
+
+      {/* useDraggable/useDroppable only register with the nearest ancestor DndContext, so the
+          palette has to be a child of it, not a sibling - otherwise its chips are inert. */}
+      <DndContext collisionDetection={collisionDetection} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <ComponentPalette
+          plugins={config.plugins}
+          activePaletteSource={activePaletteSource !== null}
+          removableActive={activeItem !== null && (nameCounts.get(activeItem.name) ?? 0) > 1}
         />
 
-        <DragOverlay>{activeItem ? <ItemCard name={activeItem.name} /> : null}</DragOverlay>
+        <div className={narrow ? 'mx-auto w-full' : 'w-full'} style={{ maxWidth: breakpoint === 'mobile' ? '22rem' : undefined }}>
+          {activeFrame && activeAreas && activeGridStyle ? (
+            <div
+              className="grid gap-3"
+              style={{
+                gridTemplateColumns: activeGridStyle.gridTemplateColumns,
+                gridTemplateRows: activeGridStyle.gridTemplateRows,
+                gridTemplateAreas: activeGridStyle.gridTemplateAreas,
+                rowGap: activeGridStyle.rowGap,
+                columnGap: activeGridStyle.columnGap
+              }}
+            >
+              {activeAreas.map((area) => (
+                <div key={area.id} style={{ gridArea: area.name }}>
+                  <AreaBox label={area.name} slotLabel={t(`layoutEditor.positions.${area.slot}`, area.slot)}>
+                    {area.slot === 'pageBody' ? (
+                      <div className="rounded-[4px] border border-dashed border-black/10 px-2 py-3 text-center text-slate-400 dark:border-white/10">
+                        {t('layoutEditor.frameBuilder.preview.pageContent')}
+                      </div>
+                    ) : (
+                      <PositionSlot position={area.slot} indices={positions[area.slot]} direction="column" {...slotProps} />
+                    )}
+                  </AreaBox>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div
+              className="grid gap-3"
+              style={{ gridTemplateColumns: grid.columns, gridTemplateRows: grid.rows, gridTemplateAreas: grid.areas }}
+            >
+              <div style={{ gridArea: 'sidebar-left' }}>
+                <AreaBox label={t('layoutEditor.positions.left')}>
+                  <PositionSlot position="left" indices={positions.left} direction={sidebarDirection('left', breakpoint)} {...slotProps} />
+                </AreaBox>
+              </div>
+              <div style={{ gridArea: 'header' }}>
+                <AreaBox label={t('layoutEditor.positions.header')}>
+                  <PositionSlot position="header" indices={positions.header} direction="column" {...slotProps} />
+                </AreaBox>
+              </div>
+              <div style={{ gridArea: 'center' }} className="flex flex-col gap-3">
+                <AreaBox label={t('layoutEditor.positions.beforeBody')}>
+                  <PositionSlot position="beforeBody" indices={positions.beforeBody} direction="column" {...slotProps} />
+                </AreaBox>
+                <div className="rounded-[4px] border border-dashed border-black/10 px-2 py-3 text-center text-slate-400 dark:border-white/10">
+                  {t('layoutEditor.frameBuilder.preview.pageContent')}
+                </div>
+                <AreaBox label={t('layoutEditor.positions.afterBody')}>
+                  <PositionSlot position="afterBody" indices={positions.afterBody} direction="column" {...slotProps} />
+                </AreaBox>
+              </div>
+              <div style={{ gridArea: 'sidebar-right' }}>
+                <AreaBox label={t('layoutEditor.positions.right')}>
+                  <PositionSlot position="right" indices={positions.right} direction={sidebarDirection('right', breakpoint)} {...slotProps} />
+                </AreaBox>
+              </div>
+              <div style={{ gridArea: 'footer' }}>
+                <AreaBox label={t('layoutEditor.positions.footer')}>
+                  <PositionSlot position="footer" indices={positions.footer} direction="column" {...slotProps} />
+                </AreaBox>
+              </div>
+            </div>
+          )}
+          {activeFrame && activeUnassignedSlots.length > 0 && (
+            <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
+              {t('layoutEditor.frameBuilder.unassignedWarning', {
+                slots: activeUnassignedSlots.map((s) => t(`layoutEditor.positions.${s}`, s)).join(', ')
+              })}
+            </p>
+          )}
+        </div>
+
+        <DragOverlay>
+          {activeItem ? (
+            <ItemCard
+              plugin={activeItem}
+              groupNames={groupNames}
+              rank={ranks.get(Number(activeId))}
+              isDuplicate={(nameCounts.get(activeItem.name) ?? 0) > 1}
+              collapsed
+            />
+          ) : null}
+          {activePaletteSource ? <PaletteChip plugin={activePaletteSource} /> : null}
+        </DragOverlay>
       </DndContext>
 
-      <GroupsPanel
-        groups={config.layout?.groups ?? {}}
-        onAdd={addGroup}
-        onUpdate={updateGroup}
-        onDelete={deleteGroup}
-      />
+      <GroupsPanel groups={config.layout?.groups ?? {}} onAdd={addGroup} onUpdate={updateGroup} onDelete={deleteGroup} />
+    </div>
+  )
+}
+
+// One draggable chip per distinct component source already present in the board - dropping it
+// onto a slot spawns a new duplicate instance there (see handleDragEnd's PALETTE_PREFIX branch).
+// Existing instances aren't removed from here when dragged; the chip is a spawn source, not a
+// placed item, so it stays put after the drop. The same area also doubles as a drop target: a
+// placed *duplicate* dragged back here is removed (see handleDragEnd's PALETTE_DROP_ID branch) -
+// `removableActive` is true while such a duplicate is the thing currently being dragged, so the
+// zone can visually invite the drop instead of only reacting after the fact.
+function ComponentPalette({
+  plugins,
+  activePaletteSource,
+  removableActive
+}: {
+  plugins: PluginEntry[]
+  activePaletteSource: boolean
+  removableActive: boolean
+}): JSX.Element {
+  const { t } = useTranslation()
+  const chips = distinctComponentChips(plugins)
+  const { setNodeRef, isOver } = useDroppable({ id: PALETTE_DROP_ID })
+
+  return (
+    // The droppable hit area covers this whole block (label + chips + hint), not just the chip
+    // box - a duplicate dragged back from elsewhere on the board only needs to land generally in
+    // this region, not thread a needle into the narrower box below.
+    <div ref={setNodeRef} className="flex flex-col gap-1.5">
+      <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+        {removableActive ? t('layoutEditor.componentPill.paletteDropToRemove') : t('layoutEditor.componentPill.paletteLabel')}
+      </p>
+      <div
+        className={`flex flex-wrap gap-2 rounded-[8px] border border-dashed p-2 transition-colors ${
+          removableActive && isOver
+            ? 'border-red-400 bg-red-50/50 dark:border-red-500/40 dark:bg-red-500/5'
+            : activePaletteSource
+              ? 'border-blue-400 bg-blue-50/50 dark:border-blue-500/40 dark:bg-blue-500/5'
+              : 'border-black/[0.08] dark:border-white/10'
+        }`}
+      >
+        {chips.map(({ index, plugin }) => (
+          <DraggablePaletteChip key={index} index={index} plugin={plugin} />
+        ))}
+      </div>
+      <p className="text-[11px] text-slate-500 dark:text-slate-400">{t('layoutEditor.componentPill.paletteHint')}</p>
+    </div>
+  )
+}
+
+function DraggablePaletteChip({ index, plugin }: { index: number; plugin: PluginEntry }): JSX.Element {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: `${PALETTE_PREFIX}${index}` })
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      style={{ transform: CSS.Translate.toString(transform) }}
+      className={isDragging ? 'opacity-30' : ''}
+    >
+      <PaletteChip plugin={plugin} />
+    </div>
+  )
+}
+
+// The card look every area gets on the board - name + slot badge header, bordered/shadowed body -
+// mirrors FrameBuilder's own area boxes so a slot reads the same whether it's being assigned a
+// grid position there or having components arranged into it here.
+function AreaBox({ label, slotLabel, children }: { label: string; slotLabel?: string; children: React.ReactNode }): JSX.Element {
+  return (
+    <div className="flex h-full flex-col gap-1.5 rounded-[6px] border border-slate-300 bg-white p-2 shadow-sm dark:border-white/15 dark:bg-white/[0.03]">
+      <div className="flex items-center justify-between gap-1">
+        <span className="truncate text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</span>
+        {slotLabel && slotLabel !== label && <Badge>{slotLabel}</Badge>}
+      </div>
+      {children}
     </div>
   )
 }
@@ -204,43 +447,62 @@ export default function GlobalBoard({
 function PositionSlot({
   position,
   indices,
+  direction,
   config,
   groupNames,
+  nameCounts,
+  ranks,
+  expandedIndex,
+  onExpand,
   onSetGroup,
-  onSetDisplay
+  onSetDisplay,
+  onDuplicate,
+  onRemove
 }: {
   position: LayoutPosition
   indices: number[]
+  direction: 'row' | 'column'
   config: QuartzConfig
   groupNames: string[]
+  nameCounts: Map<string, number>
+  ranks: Map<number, number>
+  expandedIndex: number | null
+  onExpand: (index: number | null) => void
   onSetGroup: (index: number, group: string) => void
   onSetDisplay: (index: number, display: PluginLayoutDeclaration['display']) => void
+  onDuplicate: (index: number) => void
+  onRemove: (index: number) => void
 }): JSX.Element {
   const { t } = useTranslation()
   const { setNodeRef } = useDroppable({ id: position })
   const ids = indices.map(String)
 
   return (
-    <div>
-      <h3 className="mb-1.5 font-mono text-xs font-semibold uppercase tracking-wide text-slate-500">
-        {t(`layoutEditor.positions.${position}`)}
-      </h3>
-      <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-        <div ref={setNodeRef} className="flex min-h-[52px] flex-col gap-2 rounded-md bg-black/[0.02] p-2 dark:bg-white/[0.03]">
-          {indices.length === 0 && <p className="px-2 py-3 text-center text-xs text-slate-400">{t('layoutEditor.emptySlot')}</p>}
-          {indices.map((index) => (
-            <SortableItem
-              key={index}
-              id={String(index)}
-              plugin={config.plugins[index]}
-              groupNames={groupNames}
-              onSetGroup={(group) => onSetGroup(index, group)}
-              onSetDisplay={(display) => onSetDisplay(index, display)}
-            />
-          ))}
-        </div>
-      </SortableContext>
-    </div>
+    <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+      <div
+        ref={setNodeRef}
+        className={`flex min-h-[52px] gap-2 rounded-md bg-black/[0.02] p-2 dark:bg-white/[0.03] ${direction === 'row' ? 'flex-row flex-wrap' : 'flex-col'}`}
+      >
+        {indices.length === 0 && <p className="px-2 py-3 text-center text-xs text-slate-400">{t('layoutEditor.emptySlot')}</p>}
+        {indices.map((index) => (
+          <SortableItem
+            key={index}
+            id={String(index)}
+            plugin={config.plugins[index]}
+            groupNames={groupNames}
+            rank={ranks.get(index) ?? 1}
+            direction={direction}
+            expanded={expandedIndex === index}
+            onToggleExpand={() => onExpand(expandedIndex === index ? null : index)}
+            onSetGroup={(group) => onSetGroup(index, group)}
+            onSetDisplay={(display) => onSetDisplay(index, display)}
+            onDuplicate={() => onDuplicate(index)}
+            onRemove={() => onRemove(index)}
+            isDuplicate={(nameCounts.get(config.plugins[index].name) ?? 0) > 1}
+          />
+        ))}
+      </div>
+    </SortableContext>
   )
 }
 
@@ -248,85 +510,52 @@ function SortableItem({
   id,
   plugin,
   groupNames,
+  rank,
+  direction,
+  expanded,
+  onToggleExpand,
   onSetGroup,
-  onSetDisplay
+  onSetDisplay,
+  onDuplicate,
+  onRemove,
+  isDuplicate
 }: {
   id: string
   plugin: PluginEntry
   groupNames: string[]
+  rank: number
+  direction: 'row' | 'column'
+  expanded: boolean
+  onToggleExpand: () => void
   onSetGroup: (group: string) => void
   onSetDisplay: (display: PluginLayoutDeclaration['display']) => void
+  onDuplicate: () => void
+  onRemove: () => void
+  isDuplicate: boolean
 }): JSX.Element {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
-  const layout = getLayout(plugin)
   const style = { transform: CSS.Transform.toString(transform), transition }
 
   return (
-    <div ref={setNodeRef} style={style} className={isDragging ? 'opacity-40' : ''}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`${direction === 'row' ? 'min-w-[10rem] flex-1' : ''} ${isDragging ? 'opacity-40' : ''}`}
+    >
       <ItemCard
-        name={plugin.name}
-        group={layout?.group}
+        plugin={plugin}
         groupNames={groupNames}
+        rank={rank}
+        isDuplicate={isDuplicate}
+        expanded={expanded}
+        onToggleExpand={onToggleExpand}
         onSetGroup={onSetGroup}
-        display={layout?.display}
         onSetDisplay={onSetDisplay}
+        onDuplicate={onDuplicate}
+        onRemove={onRemove}
         dragHandleProps={{ ...attributes, ...listeners }}
       />
     </div>
-  )
-}
-
-function ItemCard({
-  name,
-  group,
-  groupNames,
-  onSetGroup,
-  display,
-  onSetDisplay,
-  dragHandleProps
-}: {
-  name: string
-  group?: string
-  groupNames?: string[]
-  onSetGroup?: (group: string) => void
-  display?: PluginLayoutDeclaration['display']
-  onSetDisplay?: (display: PluginLayoutDeclaration['display']) => void
-  dragHandleProps?: Record<string, unknown>
-}): JSX.Element {
-  const { t } = useTranslation()
-  return (
-    <Card className="flex flex-wrap items-center justify-between gap-2 !p-2">
-      <div className="flex min-w-0 items-center gap-2">
-        <span {...dragHandleProps} className="cursor-grab select-none pl-1 pr-1 text-slate-300 active:cursor-grabbing dark:text-slate-600">
-          ⠿
-        </span>
-        <span className="truncate text-sm font-medium">{name}</span>
-        {group && <Badge>{group}</Badge>}
-      </div>
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        {onSetDisplay && (
-          <Select
-            value={display ?? 'all'}
-            onChange={(e) => onSetDisplay(e.target.value as PluginLayoutDeclaration['display'])}
-            className="!py-1 text-xs"
-          >
-            <option value="all">{t('layoutEditor.displayAll')}</option>
-            <option value="desktop-only">{t('layoutEditor.displayDesktopOnly')}</option>
-            <option value="mobile-only">{t('layoutEditor.displayMobileOnly')}</option>
-          </Select>
-        )}
-        {onSetGroup && groupNames && (
-          <Select value={group ?? ''} onChange={(e) => onSetGroup(e.target.value)} className="!py-1 text-xs">
-            <option value="">{t('layoutEditor.noGroup')}</option>
-            {groupNames.map((g) => (
-              <option key={g} value={g}>
-                {g}
-              </option>
-            ))}
-          </Select>
-        )}
-      </div>
-    </Card>
   )
 }
 
@@ -353,10 +582,12 @@ function GroupsPanel({
       {names.length === 0 && <p className="mb-3 text-xs text-slate-500">{t('layoutEditor.groupsPanel.none')}</p>}
 
       <div className="mb-3 flex flex-col gap-2">
-        {names.map((name) => {
+        {names.map((name, i) => {
           const group = groups[name]
+          const color = GROUP_COLORS[i % GROUP_COLORS.length]
           return (
             <div key={name} className="flex items-center gap-3 rounded-md border border-black/[0.06] p-2 dark:border-white/10">
+              <span className={`h-2 w-2 shrink-0 rounded-full ${color.dot}`} />
               <span className="w-32 shrink-0 truncate text-sm font-medium">{name}</span>
               <Select
                 value={group.direction ?? 'row'}

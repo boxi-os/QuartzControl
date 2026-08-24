@@ -120,6 +120,18 @@ const COMMANDS = {
     if (page) await page.keyboard.press(key)
   },
 
+  // Real Playwright mouse input (down/move.../up) for exercising drag-and-drop libraries like
+  // dnd-kit, which listen for actual pointer events rather than being clickable via DOM .click().
+  async drag(rest) {
+    if (!page) return console.log('ERROR: launch first')
+    const [x1, y1, x2, y2, steps] = rest.split(/\s+/).map(Number)
+    await page.mouse.move(x1, y1)
+    await page.mouse.down()
+    await page.mouse.move(x2, y2, { steps: steps || 10 })
+    await page.mouse.up()
+    console.log('drag', x1, y1, '→', x2, y2)
+  },
+
   async wait(sel) {
     if (!page) return console.log('ERROR: launch first')
     try {

@@ -443,8 +443,6 @@ export default {
     templateDefault: 'Standard',
     templateFullWidth: 'Volle Breite',
     templateMinimal: 'Minimal',
-    templateCustom: 'Eigener Frame-Name',
-    templateCustomPlaceholder: 'z.B. mein-custom-frame',
     templatePluginDefault: '„{{frame}}" (Plugin-Standard, aktiv)',
     pluginFrameUnknownLayout:
       'Dieser Seitentyp nutzt automatisch das Frame „{{frame}}", das von der zugehörigen Plugin mitgebracht wird. Die genaue Grid-Struktur kann hier nicht als Vorschau angezeigt werden, da sie vom Plugin selbst gerendert wird — nicht das Standard-Raster.',

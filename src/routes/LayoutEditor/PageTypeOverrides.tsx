@@ -1,7 +1,6 @@
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { LayoutPosition, PageTypeLayoutOverride, QuartzConfig } from '@shared/ipc-contract'
-import { Card, Select, TextInput, Toggle } from '../../components/ui'
+import { Card, Select, Toggle } from '../../components/ui'
 import { POSITIONS, distinctComponentChips, duplicateNameCounts, hasPageTypeOverride } from './utils'
 
 const KNOWN_TEMPLATES = ['default', 'full-width', 'minimal']
@@ -24,7 +23,6 @@ export default function PageTypeOverrides({
 }): JSX.Element {
   const { t } = useTranslation()
   const override: PageTypeLayoutOverride = config.layout?.byPageType?.[pageType] ?? {}
-  const [customTemplate, setCustomTemplate] = useState(false)
   const nameCounts = duplicateNameCounts(config.plugins)
 
   // Undoing every individual customization for this page type one at a time (last excluded
@@ -62,12 +60,16 @@ export default function PageTypeOverrides({
   // it must write `template: "default"` (a real string), not merely clear the override.
   const hasBuiltinDefault = builtinFrameName != null && builtinFrameName !== 'default'
   const noOverrideValue = hasBuiltinDefault ? builtinFrameName! : 'default'
-  const isCustomTemplate =
+  // There's no free-text entry any more (removed per feedback - every reachable frame is now
+  // discovered: built-ins, authored frames, plugin defaults), but an already-saved value from
+  // before that removal, or from a since-deleted authored frame, must still show as *something*
+  // selected rather than the Select silently falling back to its first option - hence this extra
+  // option rather than dropping the value on the floor.
+  const isUnknownTemplate =
     override.template != null &&
     !KNOWN_TEMPLATES.includes(override.template) &&
     !customTemplates.includes(override.template) &&
     override.template !== builtinFrameName
-  const showCustomInput = customTemplate || isCustomTemplate
 
   return (
     <div className="flex flex-col gap-4">
@@ -75,15 +77,8 @@ export default function PageTypeOverrides({
         <h3 className="mb-1 text-sm font-semibold">{t('layoutEditor.template')}</h3>
         <div className="flex items-center gap-2">
           <Select
-            value={showCustomInput ? 'custom' : (override.template ?? noOverrideValue)}
-            onChange={(e) => {
-              if (e.target.value === 'custom') {
-                setCustomTemplate(true)
-                return
-              }
-              setCustomTemplate(false)
-              update({ template: e.target.value === noOverrideValue ? undefined : e.target.value })
-            }}
+            value={override.template ?? noOverrideValue}
+            onChange={(e) => update({ template: e.target.value === noOverrideValue ? undefined : e.target.value })}
             className="w-48"
           >
             {hasBuiltinDefault && <option value={builtinFrameName}>{t('layoutEditor.templatePluginDefault', { frame: builtinFrameName })}</option>}
@@ -95,16 +90,8 @@ export default function PageTypeOverrides({
                 {name}
               </option>
             ))}
-            <option value="custom">{t('layoutEditor.templateCustom')}</option>
+            {isUnknownTemplate && <option value={override.template}>{override.template}</option>}
           </Select>
-          {showCustomInput && (
-            <TextInput
-              value={isCustomTemplate ? (override.template ?? '') : ''}
-              onChange={(e) => update({ template: e.target.value || undefined })}
-              placeholder={t('layoutEditor.templateCustomPlaceholder')}
-              className="w-48"
-            />
-          )}
         </div>
       </Card>
 

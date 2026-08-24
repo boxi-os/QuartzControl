@@ -115,17 +115,45 @@ export function buildBreakpointBlock(selector: string, layout: GridBreakpointLay
   return rules.join('\n')
 }
 
-// Full generated CSS for a frame: desktop unconditional, then tablet/mobile cascaded via
-// max-width media queries in narrowing order so a later, narrower block always wins over an
-// earlier, wider one at the same specificity (verified: 800px block comes after and therefore
-// overrides the 1200px block at any width <=800px too).
+function escapeAttrValue(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+}
+
+// A custom frame renders as a single, un-positioned child inside Quartz core's `#quartz-body`
+// (see quartz/components/Body.tsx). Quartz's *default* `.page > #quartz-body` rule (base.scss)
+// lays out a fixed desktop grid-template-columns of "<sidebar> auto <sidebar>" with no grid-area
+// assigned to our child, so without an override it gets auto-placed into that grid's first
+// (narrow, sidebar-width) cell instead of spanning the row - reproduced by hand: content renders,
+// but confined to a slim column. Quartz's own built-in "full-width"/"minimal" frames dodge exactly
+// this via a `.page[data-frame="..."] > #quartz-body` override, whose two class/attribute
+// selectors outrank the base rule's one-class specificity regardless of source order or media
+// queries (verified against base.scss's own full-width/minimal blocks) - mirrored here per custom
+// frame, keyed off `frameName` since that's the exact value renderPage.tsx sets `data-frame` to.
+function buildOuterGridOverride(frameName: string): string {
+  const selector = `.page[data-frame="${escapeAttrValue(frameName)}"] > #quartz-body`
+  return [
+    `${selector} {`,
+    `  grid-template-columns: auto;`,
+    `  grid-template-rows: auto;`,
+    `  grid-template-areas: "qgframe-root";`,
+    `}`,
+    `${selector} > .qgframe-grid {`,
+    `  grid-area: qgframe-root;`,
+    `}`
+  ].join('\n')
+}
+
+// Full generated CSS for a frame: the outer-grid override first, then desktop unconditional,
+// then tablet/mobile cascaded via max-width media queries in narrowing order so a later, narrower
+// block always wins over an earlier, wider one at the same specificity (verified: 800px block
+// comes after and therefore overrides the 1200px block at any width <=800px too).
 export function buildFrameCss(def: GridFrameDefinition): string {
   const blocks = BREAKPOINTS.map((bp) => {
     const block = buildBreakpointBlock('.qgframe-grid', def.breakpoints[bp], def.areas)
     const maxWidth = BREAKPOINT_MEDIA_MAX_WIDTH[bp]
     return maxWidth ? `@media (max-width: ${maxWidth}px) {\n${block}\n}` : block
   })
-  return blocks.join('\n\n')
+  return [buildOuterGridOverride(def.frameName), ...blocks].join('\n\n')
 }
 
 function isLegacyDefinition(def: unknown): def is LegacyGridFrameDefinition {

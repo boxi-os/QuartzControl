@@ -40,7 +40,6 @@ export default function ProjectLayout(): JSX.Element {
         { to: 'config', key: 'config', label: t('projectLayout.tabs.config') },
         { to: 'layout', key: 'layout', label: t('projectLayout.tabs.layout') },
         { to: 'styles', key: 'styles', label: t('projectLayout.tabs.styles') },
-        { to: 'themes', key: 'themes', label: t('projectLayout.tabs.themes') },
         { to: 'templates', key: 'templates', label: t('projectLayout.tabs.templates') }
       ]
     },

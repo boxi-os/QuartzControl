@@ -52,8 +52,7 @@ export default {
       overview: 'Übersicht',
       config: 'Konfiguration',
       layout: 'Layout',
-      styles: 'Styles',
-      themes: 'Community-Themes',
+      styles: 'Stile',
       localization: 'Übersetzungen',
       plugins: 'Plugins',
       content: 'Content-Ordner',
@@ -72,10 +71,10 @@ export default {
     },
     descriptions: {
       overview: 'Der Überblick über dieses Projekt: Server-Status, wichtigste Einstellungen und Schnellzugriffe auf alle Bereiche.',
-      config: 'Grundeinstellungen deiner Website — Titel, Adresse und Sprache — sowie die klassischen Farben und Schriften.',
+      config: 'Grundeinstellungen deiner Website — Titel, Adresse und Sprache.',
       layout: 'Legt fest, welche Bausteine (z. B. Suche, Inhaltsverzeichnis, Navigation) wo auf der Seite erscheinen.',
-      styles: 'Für Fortgeschrittene: eigenes CSS schreiben, um das Aussehen über die Standardeinstellungen hinaus anzupassen.',
-      themes: 'Optionale, von der Community gepflegte Farbschemata. Lassen sich jederzeit deaktivieren — dann gilt wieder das klassische Theme aus „Konfiguration → Theme".',
+      styles:
+        'Alles zum Aussehen an einem Ort: Basisfarben und Schriften, Community-Themes, CSS-Variablen und eigenes CSS — in genau der Reihenfolge, in der sie sich gegenseitig überschreiben.',
       templates: 'Deine Gestaltung — Layout, Farben, Plugins, Schriften — als wiederverwendbares Paket exportieren oder in ein anderes Projekt importieren.',
       content: 'Verwaltet den Ordner mit deinen Markdown-Notizen — als echte Kopie oder verknüpft mit einem bestehenden Ordner, z. B. deinem Obsidian-Vault.',
       localization: 'Bearbeitet feste Textbausteine der Website (z. B. „Suche“, „Zuletzt geändert“) in den verfügbaren Sprachen.',
@@ -191,8 +190,9 @@ export default {
     loadErrorHint:
       'Existiert die Datei im Projektordner? Ein neu erstelltes Projekt braucht dafür einen erfolgreich durchgelaufenen Setup-Assistenten.',
     loading: 'Lade Konfiguration…',
-    tabSite: 'Website',
-    tabTheme: 'Theme'
+    themeMoved:
+      'Farben und Schriften sind zu den Stilen umgezogen — dort bilden sie die Basis-Ebene, auf der Themes, Variablen und eigenes CSS aufbauen.',
+    themeMovedLink: 'Zu den Stilen'
   },
   siteSettings: {
     pageTitle: 'Seitentitel',
@@ -206,7 +206,7 @@ export default {
   themeEditor: {
     overrideWarningPrefix: 'Das Theme-Plugin ',
     overrideWarningSuffix: ' ist aktiv und kann diese Farben in der Vorschau überschreiben. Dort lässt es sich auch wieder deaktivieren.',
-    goToThemes: 'Zu Community-Themes',
+    goToThemeTab: 'Zum Theme-Tab',
     fontSource: 'Font-Quelle',
     googleFonts: 'Google Fonts',
     local: 'Lokal',
@@ -225,7 +225,7 @@ export default {
     cssVars: {
       heading: 'CSS-Variablen überschreiben',
       description:
-        'Diese Variablen leiten sich normalerweise automatisch von den obigen Farben ab. Aktivieren, um einzelne davon gezielt zu überschreiben.',
+        'Diese Variablen leiten sich normalerweise automatisch von den Farben der Basis-Ebene ab. Aktivieren, um einzelne davon gezielt zu überschreiben.',
       scanButton: 'Build-Output scannen',
       scanNoneFound: 'Keine zusätzlichen Variablen im Build-Output gefunden.',
       scanFound: '{{count}} zusätzliche Variable(n) im Build-Output gefunden.',
@@ -237,7 +237,6 @@ export default {
   },
   themes: {
     loading: 'Lade Community-Themes…',
-    title: 'Community-Themes',
     disableAll: 'Community-Themes deaktivieren',
     allDisabled: 'Community-Themes deaktiviert',
     active: {
@@ -247,7 +246,7 @@ export default {
       saveAsPreset: 'Als Preset speichern',
       presetNamePlaceholder: 'Name für das Preset',
       overrideNote:
-        'Dieses Plugin ({{source}}) kann die klassischen Farbeinstellungen auf dem Konfiguration-Tab überschreiben. Änderungen unten wirken sich direkt auf die Vorschau aus.',
+        'Dieses Plugin ({{source}}) überschreibt die Farben aus der Basis-Ebene. Änderungen unten wirken sich direkt auf die Vorschau aus.',
       disabledHeading: 'Community-Theme deaktiviert ({{themeId}})',
       disabledNote:
         'Es gilt jetzt wieder das klassische Theme aus „Konfiguration → Theme". Die Einstellungen dieses Community-Themes bleiben erhalten und lassen sich jederzeit wieder aktivieren.',
@@ -506,8 +505,25 @@ export default {
       removeDuplicate: 'Duplikat entfernen'
     }
   },
+  styles: {
+    tabs: {
+      basics: 'Basis',
+      theme: 'Theme',
+      variables: 'Variablen',
+      customCss: 'Eigenes CSS'
+    },
+    cascade: {
+      themeActive:
+        'Reihenfolge: Basis → Theme → Variablen → eigenes CSS. Das Theme „{{themeId}}" ist aktiv und überschreibt die Basisfarben.',
+      themeInactive:
+        'Reihenfolge: Basis → Theme → Variablen → eigenes CSS. Kein Community-Theme aktiv — es gelten deine Basis-Farben und -Schriften.',
+      overrides: '{{count}} Variable(n) überschrieben.'
+    },
+    scssStale:
+      'custom.scss wurde inzwischen von einem anderen Tab geändert (Variablen-Überschreibung oder Font-Import). Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
+    scssStaleReload: 'Von Festplatte neu laden (Entwurf verwerfen)'
+  },
   styleEditor: {
-    title: 'CSS-Anpassungen',
     openExternally: 'Extern öffnen',
     importFile: 'Datei importieren…',
     componentPlaceholder: 'Komponente wählen…',
@@ -517,12 +533,10 @@ export default {
     cssVars: {
       heading: 'Verfügbare CSS-Variablen',
       description:
-        'Diese Variablen sind an dieser Stelle nutzbar (z.B. var(--text-normal)). Die Werte zeigen den aktuellen Stand aus der Konfiguration, hell/dunkel.',
+        'Diese Variablen sind an dieser Stelle nutzbar (z.B. var(--text-normal)). Die Werte zeigen den aktuellen Stand aus der Basis-Ebene, hell/dunkel.',
+      goToVariables: 'Variablen überschreiben →',
       searchPlaceholder: 'Variable suchen…',
       insertHint: 'Klicken, um die Variable an der Cursor-Position einzufügen.',
-      scanButton: 'Build-Output scannen',
-      scanNoneFound: 'Keine zusätzlichen Variablen im Build-Output gefunden.',
-      scanFound: '{{count}} zusätzliche Variable(n) im Build-Output gefunden.',
       discoveredGroup: 'Im Build-Output gefunden',
       noResults: 'Keine Treffer.',
       calloutsHeading: 'Callout-Farben',

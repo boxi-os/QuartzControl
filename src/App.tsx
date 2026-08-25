@@ -8,8 +8,7 @@ import ProjectLayout from './routes/ProjectLayout'
 import ProjectDashboard from './routes/ProjectDashboard'
 import ConfigEditor from './routes/ConfigEditor'
 import LayoutEditor from './routes/LayoutEditor'
-import StyleEditor from './routes/StyleEditor'
-import Themes from './routes/Themes'
+import Styles from './routes/Styles'
 import Localization from './routes/Localization'
 import PluginsInstalled from './routes/Plugins/Installed'
 import PluginsMarketplace from './routes/Plugins/Marketplace'
@@ -45,8 +44,10 @@ export default function App(): JSX.Element {
           <Route index element={<ProjectDashboard />} />
           <Route path='config' element={<ConfigEditor />} />
           <Route path='layout' element={<LayoutEditor />} />
-          <Route path='styles' element={<StyleEditor />} />
-          <Route path='themes' element={<Themes />} />
+          <Route path='styles' element={<Styles />} />
+          {/* The former standalone Themes tab is now the "Theme" sub-tab of Styles - kept as a
+              redirect so bookmarks and in-app links from before the merge still land right. */}
+          <Route path='themes' element={<Navigate to='../styles?tab=theme' replace />} />
           <Route path='localization' element={<Localization />} />
           <Route path='plugins' element={<PluginsInstalled />} />
           <Route path='plugins/marketplace' element={<PluginsMarketplace />} />

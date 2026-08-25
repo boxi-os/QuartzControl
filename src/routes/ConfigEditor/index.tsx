@@ -1,17 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { useProject } from '../ProjectLayout'
 import type { QuartzConfig } from '@shared/ipc-contract'
-import { Button, PageHeader, SegmentedControl } from '../../components/ui'
+import { Button, PageHeader } from '../../components/ui'
 import { TAB_ICONS } from '../navConfig'
 import SiteSettings from './SiteSettings'
-import ThemeEditor from './ThemeEditor'
 
 export default function ConfigEditor(): JSX.Element {
   const { t } = useTranslation()
   const project = useProject()
   const [config, setConfig] = useState<QuartzConfig | null>(null)
-  const [tab, setTab] = useState<'site' | 'theme'>('site')
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [error, setError] = useState<string | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -55,39 +54,30 @@ export default function ConfigEditor(): JSX.Element {
         icon={TAB_ICONS.config}
         title={t('projectLayout.tabs.config')}
         description={t('projectLayout.descriptions.config')}
+        actions={
+          <>
+            {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
+            {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{error}</span>}
+            <Button onClick={save} disabled={status === 'saving'}>
+              {status === 'saving' ? t('common.saving') : t('common.save')}
+            </Button>
+          </>
+        }
       />
-      <div className="mb-6 flex items-center justify-between">
-        <SegmentedControl
-          value={tab}
-          onChange={setTab}
-          options={[
-            { value: 'site', label: t('configEditor.tabSite') },
-            { value: 'theme', label: t('configEditor.tabTheme') }
-          ]}
-        />
-        <div className="flex items-center gap-3">
-          {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
-          {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{error}</span>}
-          <Button onClick={save} disabled={status === 'saving'}>
-            {status === 'saving' ? t('common.saving') : t('common.save')}
-          </Button>
-        </div>
-      </div>
 
-      {tab === 'site' && (
-        <SiteSettings
-          configuration={config.configuration}
-          onChange={(configuration) => setConfig({ ...config, configuration })}
-        />
-      )}
-      {tab === 'theme' && (
-        <ThemeEditor
-          theme={config.theme}
-          plugins={config.plugins}
-          projectPath={project.path}
-          onChange={(theme) => setConfig({ ...config, theme })}
-        />
-      )}
+      <SiteSettings
+        configuration={config.configuration}
+        onChange={(configuration) => setConfig({ ...config, configuration })}
+      />
+
+      {/* Colors and fonts used to be a second tab here. They are the bottom layer of the styling
+          cascade, so they now live with the other three layers on the Styles page instead. */}
+      <p className="mt-8 max-w-xl text-xs text-slate-500 dark:text-slate-400">
+        {t('configEditor.themeMoved')}{' '}
+        <Link to="../styles" className="underline">
+          {t('configEditor.themeMovedLink')}
+        </Link>
+      </p>
     </div>
   )
 }

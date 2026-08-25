@@ -53,7 +53,6 @@ export default {
       config: 'Configuration',
       layout: 'Layout',
       styles: 'Styles',
-      themes: 'Community Themes',
       localization: 'Localization',
       plugins: 'Plugins',
       content: 'Content folder',
@@ -72,10 +71,10 @@ export default {
     },
     descriptions: {
       overview: 'The overview for this project: server status, key settings, and quick links to every area.',
-      config: 'Basic settings for your site — title, address, and language — plus the classic colors and fonts.',
+      config: 'Basic settings for your site — title, address, and language.',
       layout: 'Decides which building blocks (e.g. search, table of contents, navigation) appear where on the page.',
-      styles: 'For advanced users: write your own CSS to customize the look beyond the built-in settings.',
-      themes: 'Optional, community-maintained color schemes. Can be turned off any time — the classic theme from "Configuration → Theme" then applies again.',
+      styles:
+        'Everything about the look in one place: base colors and fonts, community themes, CSS variables, and your own CSS — in the exact order they override each other.',
       templates: 'Export your design — layout, colors, plugins, fonts — as a reusable package, or import one into another project.',
       content: 'Manages the folder with your Markdown notes — as a real copy, or linked to an existing folder, e.g. your Obsidian vault.',
       localization: 'Edits the site’s built-in text labels (e.g. "Search", "Last modified") in the available languages.',
@@ -191,8 +190,9 @@ export default {
     loadErrorHint:
       'Does the file exist in the project folder? A newly created project needs a successfully completed setup wizard for this.',
     loading: 'Loading configuration…',
-    tabSite: 'Website',
-    tabTheme: 'Theme'
+    themeMoved:
+      'Colors and fonts have moved to Styles — there they form the base layer that themes, variables, and custom CSS build on.',
+    themeMovedLink: 'Go to Styles'
   },
   siteSettings: {
     pageTitle: 'Page title',
@@ -206,7 +206,7 @@ export default {
   themeEditor: {
     overrideWarningPrefix: 'The theme plugin ',
     overrideWarningSuffix: ' is active and can override these colors in the preview. It can also be turned off there.',
-    goToThemes: 'Go to Community Themes',
+    goToThemeTab: 'Go to the Theme tab',
     fontSource: 'Font source',
     googleFonts: 'Google Fonts',
     local: 'Local',
@@ -224,7 +224,7 @@ export default {
     colors: 'Colors',
     cssVars: {
       heading: 'Override CSS variables',
-      description: 'These variables are normally derived automatically from the colors above. Enable one to override it directly.',
+      description: 'These variables are normally derived automatically from the base layer colors. Enable one to override it directly.',
       scanButton: 'Scan build output',
       scanNoneFound: 'No additional variables found in the build output.',
       scanFound: 'Found {{count}} additional variable(s) in the build output.',
@@ -236,7 +236,6 @@ export default {
   },
   themes: {
     loading: 'Loading community themes…',
-    title: 'Community Themes',
     disableAll: 'Disable community themes',
     allDisabled: 'Community themes disabled',
     active: {
@@ -246,7 +245,7 @@ export default {
       saveAsPreset: 'Save as preset',
       presetNamePlaceholder: 'Name for the preset',
       overrideNote:
-        'This plugin ({{source}}) can override the classic color settings on the Configuration tab. Changes below take effect immediately in the preview.',
+        'This plugin ({{source}}) overrides the colors from the Basics layer. Changes below take effect immediately in the preview.',
       disabledHeading: 'Community theme disabled ({{themeId}})',
       disabledNote:
         'The classic theme from "Configuration → Theme" applies again now. This community theme\'s settings are kept and can be turned back on any time.',
@@ -505,8 +504,25 @@ export default {
       removeDuplicate: 'Remove duplicate'
     }
   },
+  styles: {
+    tabs: {
+      basics: 'Basics',
+      theme: 'Theme',
+      variables: 'Variables',
+      customCss: 'Custom CSS'
+    },
+    cascade: {
+      themeActive:
+        'Order: basics → theme → variables → custom CSS. The theme "{{themeId}}" is active and overrides the base colors.',
+      themeInactive:
+        'Order: basics → theme → variables → custom CSS. No community theme active — your base colors and fonts apply.',
+      overrides: '{{count}} variable(s) overridden.'
+    },
+    scssStale:
+      'custom.scss has since been changed from another tab (a variable override or a font import). Your draft here is still unsaved — saving it would overwrite that change.',
+    scssStaleReload: 'Reload from disk (discard draft)'
+  },
   styleEditor: {
-    title: 'CSS customization',
     openExternally: 'Open externally',
     importFile: 'Import file…',
     componentPlaceholder: 'Choose a component…',
@@ -515,12 +531,10 @@ export default {
     referenceHeading: 'Original styles (read-only)',
     cssVars: {
       heading: 'Available CSS variables',
-      description: 'These variables are usable at this point (e.g. var(--text-normal)). Values reflect the current configuration, light/dark.',
+      description: 'These variables are usable at this point (e.g. var(--text-normal)). Values reflect the current base layer, light/dark.',
+      goToVariables: 'Override variables →',
       searchPlaceholder: 'Search variable…',
       insertHint: 'Click to insert the variable at the cursor position.',
-      scanButton: 'Scan build output',
-      scanNoneFound: 'No additional variables found in the build output.',
-      scanFound: 'Found {{count}} additional variable(s) in the build output.',
       discoveredGroup: 'Found in build output',
       noResults: 'No matches.',
       calloutsHeading: 'Callout colors',

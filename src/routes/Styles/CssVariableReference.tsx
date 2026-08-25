@@ -1,7 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { QuartzConfig } from '@shared/ipc-contract'
-import { Button, Card, TextInput } from '../../components/ui'
+import { Card, TextInput } from '../../components/ui'
 import {
   CALLOUT_COLORS,
   CSS_VARIABLES,
@@ -10,63 +9,31 @@ import {
   type CalloutColorDef,
   type CssVariableDef
 } from '../../data/cssVariables'
+import { useStyles } from './index'
 
-type Theme = QuartzConfig['theme']
-
-// Read-only reference of the CSS custom properties available at the point custom.scss is included
-// - Quartz's classic-color-derived variables (see cssVariables.ts, same catalog ThemeEditor's
-// override editor uses) plus anything a plugin injects that curated catalog doesn't know about
-// (found on demand by scanning real compiled build output, same IPC call as ThemeEditor's "scan"
-// button). Unlike ThemeEditor this never writes anything - clicking a row inserts text (either a
-// bare `var(--name)`, or - for callout colors, which are scoped per selector rather than global,
-// see CALLOUT_COLORS - a whole override scaffold) at the editor's cursor; changing what a variable
-// resolves to is ThemeEditor's job.
-export default function CssVariableReference({
-  theme,
-  projectPath,
-  onInsert
-}: {
-  theme: Theme
-  projectPath: string
-  onInsert: (text: string) => void
-}): JSX.Element {
+// Read-only reference of the CSS custom properties available at the point custom.scss is included:
+// Quartz's classic-color-derived variables (see cssVariables.ts) plus whatever the "Variablen" tab
+// has discovered by scanning real build output. This panel never writes and no longer scans on its
+// own - changing what a variable resolves to is the Variablen tab's job, and both read the same
+// discovered-key list from the Styles context. Clicking a row inserts text at the editor's cursor
+// (a bare `var(--name)`, or - for callout colors, which are scoped per selector rather than global,
+// see CALLOUT_COLORS - a whole override scaffold).
+export default function CssVariableReference({ onInsert }: { onInsert: (text: string) => void }): JSX.Element {
   const { t } = useTranslation()
-  const colors = (theme.colors as { lightMode?: Record<string, string>; darkMode?: Record<string, string> }) ?? {}
-  const typography = theme.typography as Record<string, string> | undefined
+  const { config, discoveredKeys, overrides, goToTab } = useStyles()
+  const colors = (config.theme.colors as { lightMode?: Record<string, string>; darkMode?: Record<string, string> }) ?? {}
+  const typography = config.theme.typography as Record<string, string> | undefined
 
   const [search, setSearch] = useState('')
-  const [extraKeys, setExtraKeys] = useState<string[]>([])
-  const [scanning, setScanning] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
-
-  async function scanBuildOutput(): Promise<void> {
-    setScanning(true)
-    setMessage(null)
-    try {
-      const found = await window.quartzGui.styles.scanBuildOutputVariables(projectPath)
-      const knownKeys = new Set(CSS_VARIABLES.map((v) => v.key))
-      const newOnes = found.filter((k) => !knownKeys.has(k) && !extraKeys.includes(k))
-      setMessage(
-        newOnes.length === 0
-          ? t('styleEditor.cssVars.scanNoneFound')
-          : t('styleEditor.cssVars.scanFound', { count: newOnes.length })
-      )
-      if (newOnes.length > 0) setExtraKeys((prev) => [...prev, ...newOnes])
-    } catch (err) {
-      setMessage(String(err))
-    }
-    setScanning(false)
-  }
-
-  const allDefs: CssVariableDef[] = useMemo(
-    () => [
-      ...CSS_VARIABLES,
-      ...extraKeys.map((key) => ({ key, group: t('styleEditor.cssVars.discoveredGroup'), kind: 'font' as const }))
-    ],
-    [extraKeys, t]
-  )
-
   const query = search.trim().toLowerCase()
+
+  const knownKeys = new Set(CSS_VARIABLES.map((v) => v.key))
+  const extraKeys = Array.from(new Set([...discoveredKeys, ...Object.keys(overrides).filter((k) => !knownKeys.has(k))]))
+  const allDefs: CssVariableDef[] = [
+    ...CSS_VARIABLES,
+    ...extraKeys.map((key) => ({ key, group: t('styleEditor.cssVars.discoveredGroup'), kind: 'font' as const }))
+  ]
+
   const filtered = query ? allDefs.filter((def) => def.key.toLowerCase().includes(query)) : allDefs
 
   const grouped = new Map<string, CssVariableDef[]>()
@@ -78,20 +45,19 @@ export default function CssVariableReference({
 
   return (
     <Card>
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold">{t('styleEditor.cssVars.heading')}</h2>
-        <Button variant="ghost" onClick={scanBuildOutput} disabled={scanning}>
-          {scanning ? t('common.loading') : t('styleEditor.cssVars.scanButton')}
-        </Button>
-      </div>
-      <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">{t('styleEditor.cssVars.description')}</p>
+      <h2 className="mb-2 text-sm font-semibold">{t('styleEditor.cssVars.heading')}</h2>
+      <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
+        {t('styleEditor.cssVars.description')}{' '}
+        <button type="button" className="underline" onClick={() => goToTab('variables')}>
+          {t('styleEditor.cssVars.goToVariables')}
+        </button>
+      </p>
       <TextInput
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder={t('styleEditor.cssVars.searchPlaceholder')}
         className="mb-3 w-full"
       />
-      {message && <p className="mb-2 text-xs text-slate-600 dark:text-slate-300">{message}</p>}
       {filtered.length === 0 && <p className="text-xs text-slate-500">{t('styleEditor.cssVars.noResults')}</p>}
       <div className="flex flex-col gap-3">
         {Array.from(grouped.entries()).map(([group, defs]) => (

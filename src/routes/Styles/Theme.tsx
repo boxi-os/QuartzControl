@@ -1,36 +1,29 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useProject } from '../ProjectLayout'
-import type { PluginEntry, QuartzConfig, QuartzThemeListing, ThemeDetail, ThemePreset, ThemeStyleSettingsInfo } from '@shared/ipc-contract'
-import { Badge, Button, Card, PageHeader, TextInput, Toggle } from '../../components/ui'
+import type { PluginEntry, QuartzThemeListing, ThemeDetail, ThemePreset, ThemeStyleSettingsInfo } from '@shared/ipc-contract'
+import { Badge, Button, Card, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
-import { TAB_ICONS } from '../navConfig'
+import { useStyles } from './index'
 
 // @quartz-themes/* (e.g. @quartz-themes/core) is a third-party Obsidian-style theming engine,
 // separate from Quartz's built-in configuration.theme.colors. It injects its own CSS variables
 // later in the cascade and overrides the classic colors outright. Detected by source prefix since
 // it's a whole npm scope of theme packages, not a single fixed plugin name.
 //
-// Matches regardless of `enabled` - unlike the same-named check elsewhere (ProjectDashboard,
-// ThemeEditor), this page needs to find a *disabled* entry too, to offer turning it back on
-// rather than just showing "no theme installed" once it's off.
+// Matches regardless of `enabled` - unlike activeThemeIdOf() in index.tsx, this tab needs to find a
+// *disabled* entry too, to offer turning it back on rather than showing "no theme installed".
 function findThemePluginIndex(plugins: PluginEntry[]): number {
   return plugins.findIndex((p) => typeof p.source === 'string' && p.source.startsWith('@quartz-themes/'))
 }
 
 const VISIBLE_THEME_LIMIT = 30
 
-export default function Themes(): JSX.Element {
+export default function Theme(): JSX.Element {
   const { t } = useTranslation()
-  const project = useProject()
-  const [config, setConfig] = useState<QuartzConfig | null>(null)
-  const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
-  const [error, setError] = useState<string | null>(null)
+  const { project, config, setConfig, saveConfig, registerSave } = useStyles()
   const [presets, setPresets] = useState<ThemePreset[]>([])
 
-  useEffect(() => {
-    window.quartzGui.config.get(project.path).then(setConfig)
-  }, [project.path])
+  useEffect(() => registerSave(saveConfig))
 
   useEffect(() => {
     window.quartzGui.themePresets.list(project.path).then(setPresets)
@@ -40,29 +33,12 @@ export default function Themes(): JSX.Element {
     setPresets(await window.quartzGui.themePresets.list(project.path))
   }
 
-  async function save(): Promise<void> {
-    if (!config) return
-    setStatus('saving')
-    setError(null)
-    try {
-      await window.quartzGui.config.save(project.path, config)
-      setStatus('saved')
-      setTimeout(() => setStatus('idle'), 2000)
-    } catch (err) {
-      setStatus('error')
-      setError(String(err))
-    }
-  }
-
-  if (!config) return <p className="text-sm text-slate-500">{t('themes.loading')}</p>
-
   const themePluginIndex = findThemePluginIndex(config.plugins)
   const themePlugin = themePluginIndex === -1 ? undefined : config.plugins[themePluginIndex]
   const activeThemeId =
     themePlugin?.enabled && typeof themePlugin.options?.theme === 'string' ? themePlugin.options.theme : undefined
 
   function updatePlugin(next: PluginEntry): void {
-    if (!config) return
     const nextPlugins = [...config.plugins]
     if (themePluginIndex === -1) nextPlugins.push(next)
     else nextPlugins[themePluginIndex] = next
@@ -86,24 +62,9 @@ export default function Themes(): JSX.Element {
   }
 
   return (
-    <div className="grid max-w-3xl gap-6">
-      <PageHeader
-        icon={TAB_ICONS.themes}
-        title={t('themes.title')}
-        description={t('projectLayout.descriptions.themes')}
-        actions={
-          <>
-            {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
-            {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{error}</span>}
-            <Button onClick={save} disabled={status === 'saving'}>
-              {status === 'saving' ? t('common.saving') : t('common.save')}
-            </Button>
-          </>
-        }
-      />
-
+    <div className="grid max-w-5xl gap-6">
       {themePlugin && (
-        <div className="-mt-4">
+        <div className="-mt-2">
           {themePlugin.enabled ? (
             <Button variant="ghost" onClick={() => updatePlugin({ ...themePlugin, enabled: false })}>
               {t('themes.disableAll')}
@@ -337,11 +298,7 @@ function CustomStyleSettingsRows({
               <span className="w-40 truncate font-mono text-xs" title={suffix}>
                 {suffix}
               </span>
-              <TextInput
-                value={String(value)}
-                onChange={(e) => onSet(fullKey, e.target.value)}
-                className="w-32 text-xs"
-              />
+              <TextInput value={String(value)} onChange={(e) => onSet(fullKey, e.target.value)} className="w-32 text-xs" />
               <button type="button" onClick={() => onSet(fullKey, undefined)} className="text-xs text-slate-500 underline">
                 {t('themes.active.removeLink')}
               </button>
@@ -481,7 +438,7 @@ function ThemeCatalog({
   }
 
   const q = query.trim().toLowerCase()
-  const filtered = q ? themes.filter((t) => t.id.toLowerCase().includes(q)) : themes
+  const filtered = q ? themes.filter((theme) => theme.id.toLowerCase().includes(q)) : themes
   const visible = filtered.slice(0, VISIBLE_THEME_LIMIT)
 
   return (

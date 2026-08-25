@@ -162,8 +162,8 @@ export default function ProjectDashboard(): JSX.Element {
         <Link to="config">
           <Card className="hover:border-slate-400">{t('dashboard.config')}</Card>
         </Link>
-        <Link to="themes">
-          <Card className="hover:border-slate-400">{t('projectLayout.tabs.themes')}</Card>
+        <Link to="styles">
+          <Card className="hover:border-slate-400">{t('projectLayout.tabs.styles')}</Card>
         </Link>
         <Link to="plugins">
           <Card className="hover:border-slate-400">{t('dashboard.managePlugins')}</Card>

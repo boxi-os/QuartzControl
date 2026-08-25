@@ -15,7 +15,6 @@ import {
   Rocket,
   Server,
   SlidersHorizontal,
-  SwatchBook,
   CloudUpload,
   type LucideIcon
 } from 'lucide-react'
@@ -28,7 +27,6 @@ export const TAB_ICONS = {
   config: SlidersHorizontal,
   layout: LayoutGrid,
   styles: Paintbrush,
-  themes: SwatchBook,
   templates: PackageOpen,
   content: Folder,
   localization: Languages,

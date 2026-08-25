@@ -17,6 +17,7 @@ import * as configService from '../services/configService'
 import * as pluginService from '../services/pluginService'
 import * as pluginSchemaService from '../services/pluginSchemaService'
 import * as themeMarketplaceService from '../services/themeMarketplaceService'
+import * as styleSettingsSchemaService from '../services/styleSettingsSchemaService'
 import * as themePresetsService from '../services/themePresetsService'
 import * as layoutFrameService from '../services/layoutFrameService'
 import * as styleService from '../services/styleService'
@@ -120,6 +121,13 @@ export function registerIpcHandlers(): void {
   handle(IPC.themeMarketplaceInstall, t([s.absolutePath, s.themeId]), (projectPath, themeId) =>
     themeMarketplaceService.installTheme(projectPath, themeId)
   )
+  handle(IPC.themeMarketplaceStyleSettingsSchema, t([s.themeId]), (themeId) =>
+    styleSettingsSchemaService.getStyleSettingsSchema(themeId)
+  )
+  handle(IPC.themeMarketplaceRefreshStyleSettingsSchema, t([s.themeId]), async (themeId) => {
+    await styleSettingsSchemaService.clearStyleSettingsSchemaCache(themeId)
+    return styleSettingsSchemaService.getStyleSettingsSchema(themeId)
+  })
   handle(IPC.themeMarketplaceDetail, t([s.absolutePath, s.themeId]), (projectPath, themeId) =>
     themeMarketplaceService.getThemeDetail(projectPath, themeId)
   )

@@ -510,6 +510,17 @@ export default {
     scssStale:
       'custom.scss has since been changed from another tab (a variable override or a font import). Your draft here is still unsaved — saving it would overwrite that change.',
     scssStaleReload: 'Reload from disk (discard draft)',
+    styleSettings: {
+      sourceNote: 'Descriptions from the original theme "{{theme}}" by {{author}} — {{count}} options.',
+      searchPlaceholder: 'Search option…',
+      loading: 'Loading option descriptions…',
+      refresh: 'Reload docs',
+      unavailable:
+        'No descriptions could be found for this theme — it has no entry in the Obsidian theme registry, or ships no @settings block. Only the raw switches are shown here.',
+      rawSummary: 'Show raw keys and values',
+      themeDefault: '— theme default —',
+      reset: 'Reset'
+    },
     variables: {
       mainHeading: 'Main variables',
       mainDescription:

@@ -1,8 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { PluginEntry, QuartzThemeListing, ThemeDetail, ThemePreset, ThemeStyleSettingsInfo } from '@shared/ipc-contract'
+import type {
+  PluginEntry,
+  QuartzThemeListing,
+  StyleSettingsSchema,
+  ThemeDetail,
+  ThemePreset,
+  ThemeStyleSettingsInfo
+} from '@shared/ipc-contract'
 import { Badge, Button, Card, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
+import StyleSettingsForm from './StyleSettingsForm'
 import { useStyles } from './index'
 
 // @quartz-themes/* (e.g. @quartz-themes/core) is a third-party Obsidian-style theming engine,
@@ -124,6 +132,8 @@ function ActiveThemeSection({
   const { t } = useTranslation()
   const themeId = typeof plugin?.options?.theme === 'string' ? plugin.options.theme : undefined
   const [info, setInfo] = useState<ThemeStyleSettingsInfo | null | undefined>(undefined)
+  const [schema, setSchema] = useState<StyleSettingsSchema | null | undefined>(undefined)
+  const [refreshingSchema, setRefreshingSchema] = useState(false)
   const [savingName, setSavingName] = useState<string | null>(null)
 
   useEffect(() => {
@@ -134,6 +144,28 @@ function ActiveThemeSection({
     setInfo(undefined)
     window.quartzGui.plugins.themeStyleSettingsInfo(projectPath, themeId).then(setInfo)
   }, [projectPath, themeId, plugin?.enabled])
+
+  // The option documentation lives upstream, not in the installed package (see
+  // styleSettingsSchemaService) - fetched once per theme and cached on disk, so this is a network
+  // call only the first time a given theme is opened.
+  useEffect(() => {
+    if (!themeId || !plugin?.enabled) {
+      setSchema(null)
+      return
+    }
+    setSchema(undefined)
+    window.quartzGui.themeMarketplace.styleSettingsSchema(themeId).then(setSchema)
+  }, [themeId, plugin?.enabled])
+
+  async function refreshSchema(): Promise<void> {
+    if (!themeId) return
+    setRefreshingSchema(true)
+    try {
+      setSchema(await window.quartzGui.themeMarketplace.refreshStyleSettingsSchema(themeId))
+    } finally {
+      setRefreshingSchema(false)
+    }
+  }
 
   if (!plugin) {
     return (
@@ -162,12 +194,20 @@ function ActiveThemeSection({
 
   const styleSettings = (plugin.options?.styleSettings as Record<string, unknown>) ?? {}
 
-  function setStyleSettingsKey(fullKey: string, value: unknown): void {
+  // One patch at a time, applied to a single copy: a themed color in hsl-split format writes six
+  // keys, and applying them one call each would each start from the same pre-change state.
+  function applyStyleSettings(patch: Record<string, unknown>): void {
     if (!plugin) return
     const nextStyleSettings = { ...styleSettings }
-    if (value === undefined || value === '') delete nextStyleSettings[fullKey]
-    else nextStyleSettings[fullKey] = value
+    for (const [key, value] of Object.entries(patch)) {
+      if (value === undefined || value === '') delete nextStyleSettings[key]
+      else nextStyleSettings[key] = value
+    }
     onChange({ ...plugin, options: { ...plugin.options, styleSettings: nextStyleSettings } })
+  }
+
+  function setStyleSettingsKey(fullKey: string, value: unknown): void {
+    applyStyleSettings({ [fullKey]: value })
   }
 
   async function confirmSavePreset(): Promise<void> {
@@ -230,30 +270,57 @@ function ActiveThemeSection({
 
       {hasStyleSettings && info && (
         <div className="mt-3 rounded-md border border-black/[0.06] bg-black/[0.02] p-3 dark:border-white/10 dark:bg-white/[0.03]">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            {t('themes.active.styleSettingsHeading', { ids: info.styleSettingsId.join(', ') })}
-          </p>
-          {info.classSettingKeys.length > 0 && (
-            <div className="mb-3 flex flex-col gap-1.5">
-              {info.classSettingKeys.map((key) => {
-                const fullKey = styleSettingsKey(info.styleSettingsId, key)
-                return (
-                  <Toggle
-                    key={key}
-                    label={key}
-                    checked={styleSettings[fullKey] === true}
-                    onChange={(checked) => setStyleSettingsKey(fullKey, checked ? true : undefined)}
-                  />
-                )
-              })}
-            </div>
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              {t('themes.active.styleSettingsHeading', { ids: info.styleSettingsId.join(', ') })}
+            </p>
+            <Button variant="ghost" onClick={refreshSchema} disabled={refreshingSchema || schema === undefined}>
+              {refreshingSchema ? t('common.loading') : t('styles.styleSettings.refresh')}
+            </Button>
+          </div>
+
+          {schema === undefined && <p className="text-xs text-slate-500">{t('styles.styleSettings.loading')}</p>}
+
+          {schema && (
+            <StyleSettingsForm schema={schema} info={info} values={styleSettings} onChange={applyStyleSettings} />
           )}
-          <CustomStyleSettingsRows
-            styleSettingsId={info.styleSettingsId}
-            styleSettings={styleSettings}
-            classSettingKeys={info.classSettingKeys}
-            onSet={setStyleSettingsKey}
-          />
+
+          {schema === null && (
+            <>
+              <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">{t('styles.styleSettings.unavailable')}</p>
+              {info.classSettingKeys.length > 0 && (
+                <div className="mb-3 flex flex-col gap-1.5">
+                  {info.classSettingKeys.map((key) => {
+                    const fullKey = styleSettingsKey(info.styleSettingsId, key)
+                    return (
+                      <Toggle
+                        key={key}
+                        label={key}
+                        checked={styleSettings[fullKey] === true}
+                        onChange={(checked) => setStyleSettingsKey(fullKey, checked ? true : undefined)}
+                      />
+                    )
+                  })}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Always reachable, schema or not: it is the only way to reach a key the upstream
+              @settings block never declared, and the only way to see what is actually stored. */}
+          <details className="mt-3">
+            <summary className="cursor-pointer text-xs text-slate-500 dark:text-slate-400">
+              {t('styles.styleSettings.rawSummary')}
+            </summary>
+            <div className="mt-2">
+              <CustomStyleSettingsRows
+                styleSettingsId={info.styleSettingsId}
+                styleSettings={styleSettings}
+                classSettingKeys={info.classSettingKeys}
+                onSet={setStyleSettingsKey}
+              />
+            </div>
+          </details>
         </div>
       )}
     </Card>

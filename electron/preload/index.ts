@@ -110,7 +110,10 @@ const api: QuartzGuiApi = {
   themeMarketplace: {
     list: (githubToken?: string) => ipcRenderer.invoke(IPC.themeMarketplaceList, githubToken),
     install: (projectPath: string, themeId: string) => ipcRenderer.invoke(IPC.themeMarketplaceInstall, projectPath, themeId),
-    detail: (projectPath: string, themeId: string) => ipcRenderer.invoke(IPC.themeMarketplaceDetail, projectPath, themeId)
+    detail: (projectPath: string, themeId: string) => ipcRenderer.invoke(IPC.themeMarketplaceDetail, projectPath, themeId),
+    styleSettingsSchema: (themeId: string) => ipcRenderer.invoke(IPC.themeMarketplaceStyleSettingsSchema, themeId),
+    refreshStyleSettingsSchema: (themeId: string) =>
+      ipcRenderer.invoke(IPC.themeMarketplaceRefreshStyleSettingsSchema, themeId)
   },
   themePresets: {
     list: (projectPath: string) => ipcRenderer.invoke(IPC.themePresetList, projectPath),

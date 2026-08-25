@@ -172,6 +172,58 @@ export interface ThemeStyleSettingsInfo {
   classSettingKeys: string[]
 }
 
+// The labelled counterpart to ThemeStyleSettingsInfo's bare key list, recovered from the *original*
+// Obsidian theme's `@settings` block rather than from the port (see styleSettingsSchemaService for
+// why the port can't carry it). Not every theme has one - a null schema is a normal answer, and
+// the Theme tab keeps its raw key/value editor for that case.
+export type StyleSettingKind =
+  | 'heading'
+  | 'info-text'
+  | 'class-toggle'
+  | 'class-select'
+  | 'variable-text'
+  | 'variable-number'
+  | 'variable-number-slider'
+  | 'variable-select'
+  | 'variable-color'
+  | 'variable-themed-color'
+  | 'unsupported'
+
+export interface StyleSettingField {
+  id: string
+  // Which `@settings` block declared it - a theme can ship several (tokyo-night: "Appearance" and
+  // "Editor"), and the option key written into quartz.config.yaml is "<blockId>@@<id>".
+  blockId: string
+  title: string
+  description?: string
+  kind: StyleSettingKind
+  // heading only: nesting depth and whether the theme author collapsed it by default
+  level?: number
+  collapsed?: boolean
+  default?: string | boolean
+  // variable-themed-color carries one default per mode instead of a single one
+  defaultLight?: string
+  defaultDark?: string
+  min?: number
+  max?: number
+  step?: number
+  options?: { label: string; value: string }[]
+  // Color encoding the theme expects: 'hex', 'rgb', 'hsl', 'hsl-split', ... - decides what a
+  // picked color has to be written as, and for 'hsl-split' even which variables it lands in.
+  format?: string
+}
+
+export interface StyleSettingsSchema {
+  ids: string[]
+  themeName: string
+  author: string
+  repo: string
+  screenshotUrl?: string
+  // Flat, in the theme author's own order; `heading` entries mark where a group starts and `level`
+  // gives its depth, exactly as Obsidian's Style Settings renders it.
+  fields: StyleSettingField[]
+}
+
 // One entry from the @quartz-themes/* npm scope (id is the package name without the
 // "@quartz-themes/" prefix, e.g. "tokyo-night" for @quartz-themes/tokyo-night). stars/topics come
 // from the github.com/quartz-themes org (bulk-fetched, cached) and are commonly absent - most of
@@ -542,6 +594,8 @@ export const IPC = {
   themeMarketplaceList: 'themeMarketplace:list',
   themeMarketplaceInstall: 'themeMarketplace:install',
   themeMarketplaceDetail: 'themeMarketplace:detail',
+  themeMarketplaceStyleSettingsSchema: 'themeMarketplace:styleSettingsSchema',
+  themeMarketplaceRefreshStyleSettingsSchema: 'themeMarketplace:refreshStyleSettingsSchema',
   themePresetList: 'themePreset:list',
   themePresetSave: 'themePreset:save',
   themePresetDelete: 'themePreset:delete',
@@ -727,6 +781,8 @@ export interface QuartzGuiApi {
     list(githubToken?: string): Promise<QuartzThemeListing[]>
     install(projectPath: string, themeId: string): Promise<PluginActionResult>
     detail(projectPath: string, themeId: string): Promise<ThemeDetail | null>
+    styleSettingsSchema(themeId: string): Promise<StyleSettingsSchema | null>
+    refreshStyleSettingsSchema(themeId: string): Promise<StyleSettingsSchema | null>
   }
   themePresets: {
     list(projectPath: string): Promise<ThemePreset[]>

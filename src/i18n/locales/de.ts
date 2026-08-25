@@ -510,6 +510,18 @@ export default {
     scssStale:
       'custom.scss wurde inzwischen von einem anderen Tab geändert (Variablen-Überschreibung oder Font-Import). Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
     scssStaleReload: 'Von Festplatte neu laden (Entwurf verwerfen)',
+    styleSettings: {
+      sourceNote:
+        'Beschreibungen aus dem Original-Theme „{{theme}}" von {{author}} — {{count}} Optionen.',
+      searchPlaceholder: 'Option suchen…',
+      loading: 'Lade Beschreibungen zu den Optionen…',
+      refresh: 'Doku neu laden',
+      unavailable:
+        'Zu diesem Theme sind keine Beschreibungen auffindbar — es hat keinen Eintrag im Obsidian-Theme-Verzeichnis oder bringt keinen @settings-Block mit. Darum hier nur die rohen Schalter.',
+      rawSummary: 'Rohe Schlüssel und Werte anzeigen',
+      themeDefault: '— Theme-Standard —',
+      reset: 'Zurücksetzen'
+    },
     variables: {
       mainHeading: 'Hauptvariablen',
       mainDescription:

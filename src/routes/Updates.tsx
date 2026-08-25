@@ -92,7 +92,7 @@ export default function Updates(): JSX.Element {
   const outdatedPlugins = (pluginStatuses ?? []).filter((p) => !p.isLocal && !p.upToDate)
 
   return (
-    <div className="flex max-w-3xl flex-col gap-6">
+    <div className="flex max-w-5xl flex-col gap-6">
       <PageHeader icon={TAB_ICONS.updates} title={t('updates.title')} description={t('updates.description')} />
 
       <Card>

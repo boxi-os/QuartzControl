@@ -62,12 +62,12 @@ export default function PluginsMarketplace(): JSX.Element {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-7xl">
       <Link to=".." relative="path" className="text-sm text-slate-500 hover:text-slate-800 dark:hover:text-white">
         {t('pluginsMarketplace.backToInstalled')}
       </Link>
       <PageHeader icon={Store} title={t('pluginsMarketplace.title')} description={t('pluginsMarketplace.description')} />
-      <div className="my-4">
+      <div className="my-4 max-w-xl">
         <TextInput
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -78,7 +78,7 @@ export default function PluginsMarketplace(): JSX.Element {
 
       {message && <p className="mb-4 text-sm text-slate-600 dark:text-slate-300">{message}</p>}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {results.map((plugin) => {
           const isInstalled = installedIds.has(plugin.fullName.toLowerCase())
           return (

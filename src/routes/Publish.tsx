@@ -146,7 +146,7 @@ export default function Publish(): JSX.Element {
   const canDeploy = target.kind === 'github-pages' || !!activeConnection
 
   return (
-    <div className="flex max-w-4xl flex-col gap-6">
+    <div className="flex max-w-5xl flex-col gap-6">
       <PageHeader icon={TAB_ICONS.publish} title={t('publish.title')} description={t('publish.description')} />
 
       {baseUrlWarning && (

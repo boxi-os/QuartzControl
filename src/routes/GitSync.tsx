@@ -30,7 +30,7 @@ export default function GitSync(): JSX.Element {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-4xl">
       <PageHeader
         icon={TAB_ICONS.sync}
         title={t('projectLayout.tabs.sync')}

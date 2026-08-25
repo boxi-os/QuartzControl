@@ -64,7 +64,7 @@ export default function ProjectDashboard(): JSX.Element {
   const totalPlugins = config?.plugins.length ?? 0
 
   return (
-    <div className="grid max-w-3xl gap-4">
+    <div className="grid max-w-5xl gap-4">
       <PageHeader
         icon={TAB_ICONS.overview}
         title={t('projectLayout.tabs.overview')}
@@ -158,7 +158,7 @@ export default function ProjectDashboard(): JSX.Element {
         </Link>
       </Card>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-4 lg:grid-cols-5">
         <Link to="config">
           <Card className="hover:border-slate-400">{t('dashboard.config')}</Card>
         </Link>

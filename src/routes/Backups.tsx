@@ -40,7 +40,7 @@ export default function Backups(): JSX.Element {
   }
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-4xl">
       <PageHeader
         icon={TAB_ICONS.backups}
         title={t('projectLayout.tabs.backups')}

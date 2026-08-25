@@ -97,7 +97,7 @@ export default function Localization(): JSX.Element {
   if (locales.length === 0) return <p className="text-sm text-slate-500">{t('localization.none')}</p>
 
   return (
-    <div className="flex max-w-4xl flex-col gap-4">
+    <div className="flex max-w-6xl flex-col gap-4">
       <PageHeader
         icon={TAB_ICONS.localization}
         title={t('localization.title')}

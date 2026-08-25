@@ -298,7 +298,7 @@ export default function PluginsInstalled(): JSX.Element {
   const cardProps = { project, busy, toggleEnabled, removePlugin, updateField, dragging, setDragging }
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-5xl">
       <PageHeader
         icon={TAB_ICONS.plugins}
         title={t('projectLayout.tabs.plugins')}

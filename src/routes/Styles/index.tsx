@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
-import type { Project, QuartzConfig } from '@shared/ipc-contract'
+import type { CssVariableGraph, Project, QuartzConfig } from '@shared/ipc-contract'
 import { Button, PageHeader, SegmentedControl } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { TAB_ICONS } from '../navConfig'
@@ -35,8 +35,9 @@ export interface StylesContextValue {
   scss: { path: string; content: string; dirty: boolean; staleOnDisk: boolean }
   setScssContent: (content: string) => void
   reloadScss: (force?: boolean) => Promise<void>
-  discoveredKeys: string[]
-  addDiscoveredKeys: (keys: string[]) => void
+  graph: CssVariableGraph | null
+  graphLoading: boolean
+  reloadGraph: () => void
   registerSave: (fn: () => Promise<void>) => void
   goToTab: (tab: StylesTab) => void
 }
@@ -68,7 +69,9 @@ export default function Styles(): JSX.Element {
   const [config, setConfig] = useState<QuartzConfig | null>(null)
   const [overrides, setOverrides] = useState<Record<string, { light: string; dark: string }>>({})
   const [scss, setScss] = useState<{ path: string; content: string; dirty: boolean; staleOnDisk: boolean } | null>(null)
-  const [discoveredKeys, setDiscoveredKeys] = useState<string[]>([])
+  const [graph, setGraph] = useState<CssVariableGraph | null>(null)
+  const [graphLoading, setGraphLoading] = useState(true)
+  const [graphNonce, setGraphNonce] = useState(0)
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [message, setMessage] = useState<string | null>(null)
 
@@ -85,6 +88,25 @@ export default function Styles(): JSX.Element {
       setOverrides(next)
     })
   }, [project.path])
+
+  // Re-read whenever the active theme changes (a different theme.json means a different variable
+  // table entirely) or the user asks for it after a build. Deliberately keyed on the theme *id*
+  // rather than the config object, so editing an unrelated field doesn't re-scan build output.
+  const configLoaded = config !== null
+  const activeTheme = config ? activeThemeIdOf(config) : undefined
+  useEffect(() => {
+    if (!configLoaded) return
+    let cancelled = false
+    setGraphLoading(true)
+    window.quartzGui.styles.variableGraph(project.path, activeTheme).then((result) => {
+      if (cancelled) return
+      setGraph(result)
+      setGraphLoading(false)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [project.path, activeTheme, graphNonce, configLoaded])
 
   const goToTab = useCallback(
     (next: StylesTab) => {
@@ -103,9 +125,7 @@ export default function Styles(): JSX.Element {
     setScss((prev) => (prev ? { ...prev, content, dirty: true } : prev))
   }, [])
 
-  const addDiscoveredKeys = useCallback((keys: string[]) => {
-    setDiscoveredKeys((prev) => [...prev, ...keys.filter((k) => !prev.includes(k))])
-  }, [])
+  const reloadGraph = useCallback(() => setGraphNonce((n) => n + 1), [])
 
   // Saving variable overrides and importing a local font both rewrite custom.scss behind the
   // editor's back (each replaces its own marker-delimited managed block), so the in-memory draft
@@ -153,8 +173,9 @@ export default function Styles(): JSX.Element {
     scss,
     setScssContent,
     reloadScss,
-    discoveredKeys,
-    addDiscoveredKeys,
+    graph,
+    graphLoading,
+    reloadGraph,
     registerSave,
     goToTab
   }

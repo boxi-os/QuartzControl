@@ -20,6 +20,7 @@ import * as themeMarketplaceService from '../services/themeMarketplaceService'
 import * as themePresetsService from '../services/themePresetsService'
 import * as layoutFrameService from '../services/layoutFrameService'
 import * as styleService from '../services/styleService'
+import * as variableGraphService from '../services/variableGraphService'
 import * as fontService from '../services/fontService'
 import * as localizationService from '../services/localizationService'
 import * as updateService from '../services/updateService'
@@ -165,6 +166,11 @@ export function registerIpcHandlers(): void {
   )
   handle(IPC.stylesScanBuildOutputVariables, t([s.absolutePath, s.buildOutputDir.optional()]), (projectPath, outputDir) =>
     styleService.scanBuildOutputVariables(projectPath, outputDir)
+  )
+  handle(
+    IPC.stylesVariableGraph,
+    t([s.absolutePath, s.themeId.optional(), s.buildOutputDir.optional()]),
+    (projectPath, themeId, outputDir) => variableGraphService.getVariableGraph(projectPath, themeId, outputDir)
   )
 
   handle(IPC.fontsImportFile, t([s.absolutePath, s.absolutePath, s.shortText]), (projectPath, sourcePath, family) =>

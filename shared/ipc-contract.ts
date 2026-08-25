@@ -328,6 +328,31 @@ export interface CssVariableOverride {
   dark?: string
 }
 
+// One entry of the variable table the Styles page's "Variablen" tab renders. Values are kept
+// verbatim - `var(--bg_highlight)`, `rgba(var(--x), 0.8)`, `calc(...)` and plain literals all
+// arrive as written - because the point is to show *how* a variable is derived, not only what it
+// ends up as; the renderer resolves the chain itself against the same table.
+export interface CssVariableInfo {
+  light?: string
+  dark?: string
+  // 'theme' = declared by the installed @quartz-themes package's own :root block, 'build' = found
+  // in compiled build output (Quartz's own generated CSS, or a plugin's).
+  origin: 'theme' | 'build'
+}
+
+// A community theme can bring ~1000 variables (verified: @quartz-themes/tokyo-night declares 978,
+// 543 of them derived from another variable), so the tab needs more than a flat list - `dependents`
+// is the inverted graph ("which variables would change if I override this one"), assembled from
+// every `var()` reference plus the theme's own brokenVarLinks table.
+export interface CssVariableGraph {
+  vars: Record<string, CssVariableInfo>
+  dependents: Record<string, string[]>
+  themeId?: string
+  // Which sources actually contributed - lets the UI say "no build output yet" instead of
+  // silently showing a thinner table than the user expects.
+  sources: { theme: boolean; build: boolean }
+}
+
 // One shipped locale file under quartz/i18n/locales/*.ts (excluding definition.ts). `code` is the
 // filename-derived locale (e.g. "de-DE") - some runtime locale codes share one file (see
 // quartz/i18n/index.ts's TRANSLATIONS map, e.g. every "ar-*" variant points at ar-SA.ts), so
@@ -535,6 +560,7 @@ export const IPC = {
   stylesGetVariableOverrides: 'styles:getVariableOverrides',
   stylesSaveVariableOverrides: 'styles:saveVariableOverrides',
   stylesScanBuildOutputVariables: 'styles:scanBuildOutputVariables',
+  stylesVariableGraph: 'styles:variableGraph',
 
   fontsImportFile: 'fonts:importFile',
 
@@ -661,6 +687,7 @@ export interface QuartzGuiApi {
     getVariableOverrides(projectPath: string): Promise<CssVariableOverride[]>
     saveVariableOverrides(projectPath: string, overrides: CssVariableOverride[]): Promise<void>
     scanBuildOutputVariables(projectPath: string, outputDir?: string): Promise<string[]>
+    variableGraph(projectPath: string, themeId?: string, outputDir?: string): Promise<CssVariableGraph>
   }
   fonts: {
     importFile(projectPath: string, sourcePath: string, family: string): Promise<{ fileName: string }>

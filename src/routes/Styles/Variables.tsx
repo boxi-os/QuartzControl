@@ -1,27 +1,29 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import type { CssVariableOverride } from '@shared/ipc-contract'
-import { Button, TextInput } from '../../components/ui'
-import { CSS_VARIABLES, defaultValueFor, type CssVariableDef } from '../../data/cssVariables'
+import { Button, Card, TextInput } from '../../components/ui'
+import { CSS_VARIABLES } from '../../data/cssVariables'
+import VariableRow from './VariableRow'
+import { allKnownKeys, groupOf, type Mode, type ResolveContext } from './variableGraph'
 import { useStyles } from './index'
 
-// The only place CSS custom properties are *edited*. Until this consolidation the same catalog was
-// rendered twice - as an override editor under "Konfiguration -> Theme" and as an insert palette
-// next to custom.scss - each with its own build-output scan and its own idea of which extra keys
-// existed. Now the catalog is edited here, referenced (read-only, for insertion) on the "Eigenes
-// CSS" tab, and the discovered-key list is shared through the Styles context.
+// How many rows the searchable table renders at once. A community theme can declare ~1000
+// variables (tokyo-night: 978), and every row that is on screen resolves its own derivation chain,
+// so the list is capped and says so rather than quietly truncating.
+const MAX_RESULTS = 150
+
+// The only place CSS custom properties are *edited*. Two deliberately separate tables: the curated
+// catalog of variables Quartz itself derives from the classic colors (short, always visible), and
+// everything a theme or plugin brings (long, search-driven). Before this split both lived in one
+// flat list that a "scan build output" button dumped hundreds of unlabelled keys into.
 //
 // Overrides are written into a marker-delimited managed block in custom.scss, so saving here
 // rewrites that file - hence the reloadScss() afterwards, which keeps the CSS tab's draft in sync.
 export default function Variables(): JSX.Element {
   const { t } = useTranslation()
-  const { project, config, overrides, setOverrides, discoveredKeys, addDiscoveredKeys, registerSave, reloadScss } =
+  const { project, config, overrides, setOverrides, graph, graphLoading, reloadGraph, registerSave, reloadScss } =
     useStyles()
-  const colors = (config.theme.colors as { lightMode?: Record<string, string>; darkMode?: Record<string, string> }) ?? {}
-  const typography = config.theme.typography as Record<string, string> | undefined
-
-  const [scanning, setScanning] = useState(false)
-  const [message, setMessage] = useState<string | null>(null)
 
   useEffect(() =>
     registerSave(async () => {
@@ -35,135 +37,206 @@ export default function Variables(): JSX.Element {
     })
   )
 
-  const knownKeys = new Set(CSS_VARIABLES.map((v) => v.key))
-  // Anything already overridden but not in the curated catalog is an extra key too - otherwise a
-  // variable the user overrode in an earlier session would vanish from the editor after a reload.
-  const extraKeys = Array.from(new Set([...discoveredKeys, ...Object.keys(overrides).filter((k) => !knownKeys.has(k))]))
+  const ctx: ResolveContext = {
+    graph,
+    overrides,
+    colors: (config.theme.colors as { lightMode?: Record<string, string>; darkMode?: Record<string, string> }) ?? {},
+    typography: config.theme.typography as Record<string, string> | undefined
+  }
 
-  const allDefs: CssVariableDef[] = [
-    ...CSS_VARIABLES,
-    ...extraKeys.map((key) => ({ key, group: t('themeEditor.cssVars.discoveredGroup'), kind: 'font' as const }))
-  ]
+  function setValue(key: string, mode: Mode, value: string): void {
+    setOverrides((prev) => {
+      const current = prev[key] ?? { light: '', dark: '' }
+      return { ...prev, [key]: { ...current, [mode]: value } }
+    })
+  }
 
-  function toggle(def: CssVariableDef, enabled: boolean): void {
+  function reset(key: string): void {
     setOverrides((prev) => {
       const next = { ...prev }
-      if (enabled) {
-        next[def.key] = {
-          light: defaultValueFor(def, colors, typography, 'light'),
-          dark: defaultValueFor(def, colors, typography, 'dark')
-        }
-      } else {
-        delete next[def.key]
-      }
+      delete next[key]
       return next
     })
   }
 
-  function setValue(key: string, mode: 'light' | 'dark', value: string): void {
-    setOverrides((prev) => ({ ...prev, [key]: { ...prev[key], [mode]: value } }))
-  }
+  const rowProps = (key: string): Parameters<typeof VariableRow>[0] => ({
+    varKey: key,
+    ctx,
+    dependents: graph?.dependents[key] ?? [],
+    onSet: (mode, value) => setValue(key, mode, value),
+    onReset: () => reset(key)
+  })
 
-  async function scanBuildOutput(): Promise<void> {
-    setScanning(true)
-    setMessage(null)
-    try {
-      const found = await window.quartzGui.styles.scanBuildOutputVariables(project.path)
-      const newOnes = found.filter((k) => !knownKeys.has(k) && !extraKeys.includes(k))
-      setMessage(
-        newOnes.length === 0
-          ? t('themeEditor.cssVars.scanNoneFound')
-          : t('themeEditor.cssVars.scanFound', { count: newOnes.length })
-      )
-      if (newOnes.length > 0) addDiscoveredKeys(newOnes)
-    } catch (err) {
-      setMessage(String(err))
+  const curatedGroups = useMemo(() => {
+    const grouped = new Map<string, string[]>()
+    for (const def of CSS_VARIABLES) {
+      const list = grouped.get(def.group) ?? []
+      list.push(def.key)
+      grouped.set(def.group, list)
     }
-    setScanning(false)
-  }
+    return Array.from(grouped.entries())
+  }, [])
 
-  const grouped = new Map<string, CssVariableDef[]>()
-  for (const def of allDefs) {
-    const list = grouped.get(def.group) ?? []
-    list.push(def)
-    grouped.set(def.group, list)
-  }
+  const curatedKeys = useMemo(() => new Set(CSS_VARIABLES.map((def) => def.key)), [])
+  const extraKeys = useMemo(
+    () => allKnownKeys(ctx).filter((key) => !curatedKeys.has(key)).sort(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [graph, overrides, curatedKeys]
+  )
 
   return (
-    <div className="max-w-xl rounded-md border border-black/[0.06] p-3 dark:border-white/10">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold">{t('themeEditor.cssVars.heading')}</h3>
-        <Button variant="ghost" onClick={scanBuildOutput} disabled={scanning}>
-          {scanning ? t('common.loading') : t('themeEditor.cssVars.scanButton')}
-        </Button>
-      </div>
-      <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('themeEditor.cssVars.description')}</p>
-      {message && <p className="mb-3 text-xs text-slate-600 dark:text-slate-300">{message}</p>}
-      <div className="flex flex-col gap-4">
-        {Array.from(grouped.entries()).map(([group, defs]) => (
-          <div key={group}>
-            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">{group}</p>
-            <div className="flex flex-col gap-2">
-              {defs.map((def) => {
-                const active = def.key in overrides
-                const value = overrides[def.key]
-                return (
-                  <div key={def.key} className="flex flex-col gap-1.5">
-                    <label className="flex items-center gap-2 text-xs">
-                      <input type="checkbox" checked={active} onChange={(e) => toggle(def, e.target.checked)} />
-                      <code className="font-mono">--{def.key}</code>
-                    </label>
-                    {active && value && (
-                      <div className="ml-[7px] flex flex-wrap items-center gap-3 border-l-2 border-black/[0.08] py-0.5 pl-3 dark:border-white/10">
-                        <CssVarValueInput
-                          kind={def.kind}
-                          label={t('themeEditor.cssVars.light')}
-                          value={value.light}
-                          onChange={(v) => setValue(def.key, 'light', v)}
-                        />
-                        <CssVarValueInput
-                          kind={def.kind}
-                          label={t('themeEditor.cssVars.dark')}
-                          value={value.dark}
-                          onChange={(v) => setValue(def.key, 'dark', v)}
-                        />
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
+    <div className="flex max-w-3xl flex-col gap-4">
+      <Card>
+        <h3 className="mb-1 text-sm font-semibold">{t('styles.variables.mainHeading')}</h3>
+        <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('styles.variables.mainDescription')}</p>
+        <div className="flex flex-col gap-4">
+          {curatedGroups.map(([group, keys]) => (
+            <div key={group}>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">{group}</p>
+              <div className="flex flex-col gap-0.5">
+                {keys.map((key) => (
+                  <VariableRow key={key} {...rowProps(key)} />
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      </Card>
+
+      <AllVariables
+        keys={extraKeys}
+        overrides={overrides}
+        loading={graphLoading}
+        sources={graph?.sources}
+        themeId={graph?.themeId}
+        onReload={reloadGraph}
+        renderRow={(key) => <VariableRow key={key} {...rowProps(key)} />}
+      />
     </div>
   )
 }
 
-function CssVarValueInput({
-  kind,
-  label,
-  value,
-  onChange
+// Search-driven rather than a rendered list: with ~1000 keys, "show me everything" is never the
+// useful default, and the two things a user actually wants - "what did I change" and "where is the
+// callout background" - are a filter and a query. Nothing is rendered until one of them is active.
+function AllVariables({
+  keys,
+  overrides,
+  loading,
+  sources,
+  themeId,
+  onReload,
+  renderRow
 }: {
-  kind: CssVariableDef['kind']
-  label: string
-  value: string
-  onChange: (value: string) => void
+  keys: string[]
+  overrides: Record<string, unknown>
+  loading: boolean
+  sources: { theme: boolean; build: boolean } | undefined
+  themeId: string | undefined
+  onReload: () => void
+  renderRow: (key: string) => JSX.Element
 }): JSX.Element {
-  const isValidHex = /^#([0-9a-f]{3}){1,2}$/i.test(value)
+  const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const [onlyChanged, setOnlyChanged] = useState(false)
+
+  const overriddenCount = keys.filter((key) => key in overrides).length
+  const q = query.trim().toLowerCase()
+  const matches = q
+    ? keys.filter((key) => key.toLowerCase().includes(q) && (!onlyChanged || key in overrides))
+    : onlyChanged
+      ? keys.filter((key) => key in overrides)
+      : []
+  const visible = matches.slice(0, MAX_RESULTS)
+
+  const grouped = new Map<string, string[]>()
+  for (const key of visible) {
+    const group = groupOf(key)
+    const list = grouped.get(group) ?? []
+    list.push(key)
+    grouped.set(group, list)
+  }
+
   return (
-    <div className="flex items-center gap-1.5">
-      <span className="text-[11px] text-slate-500">{label}</span>
-      {kind === 'color' && (
-        <input
-          type="color"
-          value={isValidHex ? value : '#ffffff'}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-6 w-6 cursor-pointer rounded border border-slate-300"
-        />
+    <Card>
+      <div className="flex items-center justify-between gap-2">
+        <button type="button" onClick={() => setOpen((prev) => !prev)} className="flex items-center gap-1.5 text-left">
+          {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          <h3 className="text-sm font-semibold">{t('styles.variables.allHeading')}</h3>
+        </button>
+        <span className="text-xs text-slate-500 dark:text-slate-400">
+          {t('styles.variables.counter', { overridden: overriddenCount, total: keys.length })}
+        </span>
+      </div>
+
+      {open && (
+        <div className="mt-3">
+          <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
+            {themeId
+              ? t('styles.variables.allDescriptionTheme', { themeId, count: keys.length })
+              : t('styles.variables.allDescription')}
+          </p>
+
+          {loading && <p className="text-xs text-slate-500">{t('common.loading')}</p>}
+
+          {!loading && keys.length === 0 && (
+            <div className="rounded-md border border-black/[0.06] p-3 text-xs text-slate-500 dark:border-white/10 dark:text-slate-400">
+              <p>{t('styles.variables.noSources')}</p>
+              <p className="mt-1">
+                {sources?.theme === false && t('styles.variables.noTheme')}{' '}
+                {sources?.build === false && t('styles.variables.noBuild')}
+              </p>
+              <Button variant="ghost" className="mt-2" onClick={onReload}>
+                {t('styles.variables.reload')}
+              </Button>
+            </div>
+          )}
+
+          {!loading && keys.length > 0 && (
+            <>
+              <div className="mb-2 flex flex-wrap items-center gap-3">
+                <TextInput
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={t('styles.variables.searchPlaceholder')}
+                  className="w-72"
+                />
+                <label className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
+                  <input type="checkbox" checked={onlyChanged} onChange={(e) => setOnlyChanged(e.target.checked)} />
+                  {t('styles.variables.onlyChanged')}
+                </label>
+                <Button variant="ghost" onClick={onReload}>
+                  {t('styles.variables.reload')}
+                </Button>
+              </div>
+
+              {matches.length === 0 && (
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {q || onlyChanged
+                    ? t('styles.variables.noResults')
+                    : t('styles.variables.searchHint', { count: keys.length })}
+                </p>
+              )}
+
+              <div className="flex flex-col gap-4">
+                {Array.from(grouped.entries()).map(([group, groupKeys]) => (
+                  <div key={group}>
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">{group}</p>
+                    <div className="flex flex-col gap-0.5">{groupKeys.map(renderRow)}</div>
+                  </div>
+                ))}
+              </div>
+
+              {matches.length > visible.length && (
+                <p className="mt-2 text-xs text-slate-500">
+                  {t('styles.variables.moreResults', { count: matches.length - visible.length })}
+                </p>
+              )}
+            </>
+          )}
+        </div>
       )}
-      <TextInput value={value} onChange={(e) => onChange(e.target.value)} className="w-32" />
-    </div>
+    </Card>
   )
 }

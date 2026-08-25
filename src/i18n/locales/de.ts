@@ -221,19 +221,7 @@ export default {
     localFontNoSlot: '— keins —',
     localFontConfirm: 'Importieren',
     fontImportSuccess: '"{{family}}" importiert.',
-    colors: 'Farben',
-    cssVars: {
-      heading: 'CSS-Variablen überschreiben',
-      description:
-        'Diese Variablen leiten sich normalerweise automatisch von den Farben der Basis-Ebene ab. Aktivieren, um einzelne davon gezielt zu überschreiben.',
-      scanButton: 'Build-Output scannen',
-      scanNoneFound: 'Keine zusätzlichen Variablen im Build-Output gefunden.',
-      scanFound: '{{count}} zusätzliche Variable(n) im Build-Output gefunden.',
-      discoveredGroup: 'Im Build-Output gefunden',
-      light: 'Hell',
-      dark: 'Dunkel',
-      saved: 'Gespeichert.'
-    }
+    colors: 'Farben'
   },
   themes: {
     loading: 'Lade Community-Themes…',
@@ -521,7 +509,42 @@ export default {
     },
     scssStale:
       'custom.scss wurde inzwischen von einem anderen Tab geändert (Variablen-Überschreibung oder Font-Import). Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
-    scssStaleReload: 'Von Festplatte neu laden (Entwurf verwerfen)'
+    scssStaleReload: 'Von Festplatte neu laden (Entwurf verwerfen)',
+    variables: {
+      mainHeading: 'Hauptvariablen',
+      mainDescription:
+        'Die Variablen, die Quartz selbst aus den Grundfarben ableitet. Zeile aufklappen zeigt, woher der Wert kommt und was daran hängt.',
+      allHeading: 'Alle Theme- und Build-Variablen',
+      allDescription:
+        'Alles, was das aktive Theme, Plugins oder der letzte Build an Variablen mitbringen — getrennt von den Hauptvariablen, weil es sehr viele werden können.',
+      allDescriptionTheme:
+        'Alles, was das Theme „{{themeId}}", Plugins oder der letzte Build mitbringen: {{count}} Variablen. Suche eingeben, um darin zu blättern.',
+      counter: '{{overridden}} von {{total}} überschrieben',
+      searchPlaceholder: 'Variable suchen (z.B. callout, h1, background)…',
+      onlyChanged: 'Nur geänderte',
+      searchHint: 'Suchbegriff eingeben, um in {{count}} Variablen zu suchen.',
+      noResults: 'Keine Treffer.',
+      moreResults: '{{count}} weitere Treffer — weiter tippen zum Eingrenzen.',
+      noSources: 'Keine zusätzlichen Variablen gefunden.',
+      noTheme: 'Es ist kein Community-Theme installiert.',
+      noBuild: 'Es gibt noch keinen Build-Output — einmal bauen, dann hier neu einlesen.',
+      reload: 'Neu einlesen',
+      adjust: 'Anpassen',
+      reset: 'Zurücksetzen',
+      light: 'Hell',
+      dark: 'Dunkel',
+      chainToggle: 'Herkunft und Abhängigkeiten anzeigen',
+      unresolved: 'nicht auflösbar (nur in einem Selektor gesetzt)',
+      dependents: '{{count}} abhängig',
+      dependentsTitle: 'Diese Variablen verweisen darauf: {{names}}',
+      dependentsWarning: 'Ein eigener Wert hier wirkt sich auf {{count}} weitere Variablen aus.',
+      origin: {
+        core: 'Quartz-Kern',
+        theme: 'Theme',
+        build: 'Build',
+        user: 'Von dir'
+      }
+    }
   },
   styleEditor: {
     openExternally: 'Extern öffnen',

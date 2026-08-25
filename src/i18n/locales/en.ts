@@ -221,18 +221,7 @@ export default {
     localFontNoSlot: '— none —',
     localFontConfirm: 'Import',
     fontImportSuccess: '"{{family}}" imported.',
-    colors: 'Colors',
-    cssVars: {
-      heading: 'Override CSS variables',
-      description: 'These variables are normally derived automatically from the base layer colors. Enable one to override it directly.',
-      scanButton: 'Scan build output',
-      scanNoneFound: 'No additional variables found in the build output.',
-      scanFound: 'Found {{count}} additional variable(s) in the build output.',
-      discoveredGroup: 'Found in build output',
-      light: 'Light',
-      dark: 'Dark',
-      saved: 'Saved.'
-    }
+    colors: 'Colors'
   },
   themes: {
     loading: 'Loading community themes…',
@@ -520,7 +509,42 @@ export default {
     },
     scssStale:
       'custom.scss has since been changed from another tab (a variable override or a font import). Your draft here is still unsaved — saving it would overwrite that change.',
-    scssStaleReload: 'Reload from disk (discard draft)'
+    scssStaleReload: 'Reload from disk (discard draft)',
+    variables: {
+      mainHeading: 'Main variables',
+      mainDescription:
+        'The variables Quartz itself derives from the base colors. Expand a row to see where its value comes from and what depends on it.',
+      allHeading: 'All theme and build variables',
+      allDescription:
+        'Everything the active theme, plugins, or the last build bring along — kept separate from the main variables, because there can be a great many.',
+      allDescriptionTheme:
+        'Everything the theme "{{themeId}}", plugins, or the last build bring along: {{count}} variables. Type a search to browse them.',
+      counter: '{{overridden}} of {{total}} overridden',
+      searchPlaceholder: 'Search variable (e.g. callout, h1, background)…',
+      onlyChanged: 'Changed only',
+      searchHint: 'Type a search term to look through {{count}} variables.',
+      noResults: 'No matches.',
+      moreResults: '{{count}} more matches — keep typing to narrow down.',
+      noSources: 'No additional variables found.',
+      noTheme: 'No community theme is installed.',
+      noBuild: 'There is no build output yet — build once, then reload here.',
+      reload: 'Reload',
+      adjust: 'Customize',
+      reset: 'Reset',
+      light: 'Light',
+      dark: 'Dark',
+      chainToggle: 'Show origin and dependencies',
+      unresolved: 'not resolvable (only set inside a selector)',
+      dependents: '{{count}} depend on it',
+      dependentsTitle: 'These variables reference it: {{names}}',
+      dependentsWarning: 'Your own value here affects {{count}} other variables.',
+      origin: {
+        core: 'Quartz core',
+        theme: 'Theme',
+        build: 'Build',
+        user: 'Yours'
+      }
+    }
   },
   styleEditor: {
     openExternally: 'Open externally',

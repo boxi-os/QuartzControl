@@ -4,11 +4,11 @@ import { Card, TextInput } from '../../components/ui'
 import {
   CALLOUT_COLORS,
   CSS_VARIABLES,
-  defaultValueFor,
   resolveCalloutColorValue,
   type CalloutColorDef,
   type CssVariableDef
 } from '../../data/cssVariables'
+import { effectiveValue, isDisplayableColor, resolvedValue, type ResolveContext } from './variableGraph'
 import { useStyles } from './index'
 
 // Read-only reference of the CSS custom properties available at the point custom.scss is included:
@@ -20,21 +20,27 @@ import { useStyles } from './index'
 // see CALLOUT_COLORS - a whole override scaffold).
 export default function CssVariableReference({ onInsert }: { onInsert: (text: string) => void }): JSX.Element {
   const { t } = useTranslation()
-  const { config, discoveredKeys, overrides, goToTab } = useStyles()
+  const { config, graph, overrides, goToTab } = useStyles()
   const colors = (config.theme.colors as { lightMode?: Record<string, string>; darkMode?: Record<string, string> }) ?? {}
   const typography = config.theme.typography as Record<string, string> | undefined
+  const ctx: ResolveContext = { graph, overrides, colors, typography }
 
   const [search, setSearch] = useState('')
   const query = search.trim().toLowerCase()
 
   const knownKeys = new Set(CSS_VARIABLES.map((v) => v.key))
-  const extraKeys = Array.from(new Set([...discoveredKeys, ...Object.keys(overrides).filter((k) => !knownKeys.has(k))]))
+  // Unsearched, this panel stays at the curated catalog plus whatever the user has overridden -
+  // listing a theme's ~1000 variables in a sidebar next to the editor would bury the handful
+  // anyone actually inserts. A query searches the full table.
+  const extraKeys = query
+    ? Object.keys(graph?.vars ?? {}).filter((key) => !knownKeys.has(key))
+    : Object.keys(overrides).filter((key) => !knownKeys.has(key))
   const allDefs: CssVariableDef[] = [
     ...CSS_VARIABLES,
     ...extraKeys.map((key) => ({ key, group: t('styleEditor.cssVars.discoveredGroup'), kind: 'font' as const }))
   ]
 
-  const filtered = query ? allDefs.filter((def) => def.key.toLowerCase().includes(query)) : allDefs
+  const filtered = query ? allDefs.filter((def) => def.key.toLowerCase().includes(query)).slice(0, 80) : allDefs
 
   const grouped = new Map<string, CssVariableDef[]>()
   for (const def of filtered) {
@@ -65,7 +71,7 @@ export default function CssVariableReference({ onInsert }: { onInsert: (text: st
             <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">{group}</p>
             <div className="flex flex-col gap-0.5">
               {defs.map((def) => (
-                <VariableRow key={def.key} def={def} colors={colors} typography={typography} onInsert={onInsert} />
+                <VariableRow key={def.key} def={def} ctx={ctx} onInsert={onInsert} />
               ))}
             </div>
           </div>
@@ -86,21 +92,22 @@ export default function CssVariableReference({ onInsert }: { onInsert: (text: st
   )
 }
 
+// Values come from the same resolver the Variablen tab uses, so a swatch here shows what the
+// variable really paints today - including one whose value is an alias chain into the active
+// theme - rather than only what the classic colors would derive.
 function VariableRow({
   def,
-  colors,
-  typography,
+  ctx,
   onInsert
 }: {
   def: CssVariableDef
-  colors: { lightMode?: Record<string, string>; darkMode?: Record<string, string> }
-  typography: Record<string, string> | undefined
+  ctx: ResolveContext
   onInsert: (text: string) => void
 }): JSX.Element {
   const { t } = useTranslation()
-  const light = defaultValueFor(def, colors, typography, 'light')
-  const dark = defaultValueFor(def, colors, typography, 'dark')
-  const isColor = def.kind === 'color'
+  const light = effectiveValue(def.key, 'light', ctx) ?? ''
+  const dark = effectiveValue(def.key, 'dark', ctx) ?? ''
+  const isColor = def.kind === 'color' || isDisplayableColor(resolvedValue(def.key, 'light', ctx))
 
   return (
     <button
@@ -111,8 +118,8 @@ function VariableRow({
     >
       {isColor && (
         <span className="flex shrink-0 gap-0.5">
-          <Swatch value={light} />
-          <Swatch value={dark} />
+          <Swatch value={resolvedValue(def.key, 'light', ctx)} />
+          <Swatch value={resolvedValue(def.key, 'dark', ctx)} />
         </span>
       )}
       <code className="font-mono">--{def.key}</code>
@@ -163,12 +170,11 @@ function CalloutRow({
   )
 }
 
-function Swatch({ value }: { value: string }): JSX.Element {
-  const isValidColor = /^#([0-9a-f]{3,4}){1,2}$/i.test(value)
+function Swatch({ value }: { value: string | undefined }): JSX.Element {
   return (
     <span
       className="h-3 w-3 shrink-0 rounded-sm border border-black/10 dark:border-white/20"
-      style={{ backgroundColor: isValidColor ? value : 'transparent' }}
+      style={{ backgroundColor: isDisplayableColor(value) ? value : 'transparent' }}
     />
   )
 }

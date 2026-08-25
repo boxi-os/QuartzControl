@@ -1,12 +1,55 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { NavLink, Outlet, useOutletContext, useParams } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useOutletContext, useParams } from 'react-router-dom'
 import { ArrowLeft, type LucideIcon } from 'lucide-react'
 import type { Project } from '@shared/ipc-contract'
 import { GROUP_ICONS, TAB_ICONS, type TabKey } from './navConfig'
 
 export function useProject(): Project {
   return useOutletContext<Project>()
+}
+
+// Module-level (not component state) so it survives a ProjectLayout unmount/remount too - e.g.
+// leaving via "Alle Projekte" and coming back, or switching to a different project and back.
+// Keyed by the full pathname (includes the project id), so different projects/tabs never collide.
+// Lives only for the renderer process's lifetime - not persisted to disk, which matches the ask
+// ("beim Wechseln der Tabs", not "nach einem Neustart").
+const scrollPositions = new Map<string, number>()
+
+// Restores the previous scroll position of `el` for the current route, and keeps it stable while
+// the page's own data is still loading in - each route fully unmounts/remounts on tab switch
+// (see App.tsx's <Routes>), so the newly-mounted page typically renders a loading state first and
+// only reaches its final height once its `useEffect` data fetch resolves. A ResizeObserver
+// re-applies the saved position on every height change; a plain scroll listener keeps the saved
+// value in sync with the user's own scrolling, so once content settles the two converge and stop
+// fighting each other.
+function useRestoreScroll(mainRef: React.RefObject<HTMLElement>, ready: boolean): void {
+  const location = useLocation()
+  useEffect(() => {
+    // `ready` also gates this: on a project's very first render `<main>` doesn't exist yet (see
+    // the loading-state early return below), so without it this effect would run once too early,
+    // find mainRef.current still null, and never re-run once `<main>` actually mounts - silently
+    // leaving the first-visited tab without a listener for the rest of the session.
+    const el = mainRef.current
+    if (!ready || !el) return
+    const key = location.pathname
+    el.scrollTop = scrollPositions.get(key) ?? 0
+
+    const ro = new ResizeObserver(() => {
+      el.scrollTop = scrollPositions.get(key) ?? 0
+    })
+    ro.observe(el)
+
+    const onScroll = (): void => {
+      scrollPositions.set(key, el.scrollTop)
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+
+    return () => {
+      ro.disconnect()
+      el.removeEventListener('scroll', onScroll)
+    }
+  }, [location.pathname, mainRef, ready])
 }
 
 // A curated, brand-ish palette (indigo/violet-leaning, like the app icon) rather than random hues -
@@ -27,6 +70,8 @@ export default function ProjectLayout(): JSX.Element {
   const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const [project, setProject] = useState<Project | null>(null)
+  const mainRef = useRef<HTMLElement>(null)
+  useRestoreScroll(mainRef, project !== null)
 
   // Grouped by what a user is trying to do, not by which service implements it - "Gestaltung"
   // covers everything that changes how the site looks, "Veröffentlichung" everything that ships
@@ -151,7 +196,7 @@ export default function ProjectLayout(): JSX.Element {
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="titlebar-drag h-12 shrink-0" />
-        <main className="flex-1 overflow-y-auto px-8 pb-8">
+        <main ref={mainRef} className="flex-1 overflow-y-auto px-8 pb-8">
           <Outlet context={project} />
         </main>
       </div>

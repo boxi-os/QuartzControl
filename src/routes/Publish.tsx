@@ -11,6 +11,7 @@ import type {
 } from '@shared/ipc-contract'
 import { Badge, Button, Card, Field, PageHeader, Select, TextInput, Toggle } from '../components/ui'
 import { useAsyncAction } from '../hooks/useAsyncAction'
+import { useStickyState } from '../state/uiState'
 import { TAB_ICONS } from './navConfig'
 
 type Target = { kind: 'github-pages' } | { kind: 'connection'; id: string }
@@ -34,13 +35,16 @@ export default function Publish(): JSX.Element {
   const project = useProject()
   const [config, setConfig] = useState<QuartzConfig | null>(null)
   const [connections, setConnections] = useState<DeployConnectionProfile[]>([])
-  const [target, setTarget] = useState<Target>({ kind: 'github-pages' })
-  const [githubBranch, setGithubBranch] = useState('gh-pages')
+  // Which destination is selected, and the two fields that describe it, are "where the user was" -
+  // kept across a trip to another area (see useStickyState). The diff below deliberately is not:
+  // it's a snapshot of the build output and has to be re-taken.
+  const [target, setTarget] = useStickyState<Target>('publish.target', { kind: 'github-pages' })
+  const [githubBranch, setGithubBranch] = useStickyState('publish.githubBranch', 'gh-pages')
   // Which directory gets published. Empty means quartz's own default, public/. Kept explicit
   // rather than assumed: BuildServer's one-off export can write somewhere else entirely, and
   // silently diffing a stale public/ against the server is exactly the kind of wrong that looks
   // like it worked.
-  const [outputDir, setOutputDir] = useState('')
+  const [outputDir, setOutputDir] = useStickyState('publish.outputDir', '')
   const [editingDraft, setEditingDraft] = useState<SaveDeployConnectionInput | null>(null)
   const [diff, setDiff] = useState<DeployDiffEntry[] | null>(null)
   const [excluded, setExcluded] = useState<Set<string>>(new Set())

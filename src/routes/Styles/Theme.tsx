@@ -10,6 +10,7 @@ import type {
 } from '@shared/ipc-contract'
 import { Badge, Button, Card, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
+import { useStickyState } from '../../state/uiState'
 import StyleSettingsForm from './StyleSettingsForm'
 import { useStyles } from './index'
 
@@ -467,10 +468,12 @@ function ThemeCatalog({
   const { t } = useTranslation()
   const [themes, setThemes] = useState<QuartzThemeListing[]>([])
   const [loading, setLoading] = useState(true)
-  const [query, setQuery] = useState('')
+  // Which theme was being looked at, and what was searched for, are worth keeping across a trip to
+  // another area - the catalog itself is refetched, only the position is restored.
+  const [query, setQuery] = useStickyState('styles.themeCatalog.query', '')
   const [installingId, setInstallingId] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useStickyState<string | null>('styles.themeCatalog.expanded', null)
   const [detail, setDetail] = useState<ThemeDetail | null | undefined>(undefined)
 
   useEffect(() => {

@@ -4,6 +4,7 @@ import { SlidersHorizontal } from 'lucide-react'
 import { useProject } from '../ProjectLayout'
 import type { GridFrameDefinition, QuartzConfig } from '@shared/ipc-contract'
 import { Button, PageHeader } from '../../components/ui'
+import { useStickyState } from '../../state/uiState'
 import { TAB_ICONS } from '../navConfig'
 import GlobalBoard from './GlobalBoard'
 import PageTypeOverrides from './PageTypeOverrides'
@@ -16,8 +17,10 @@ export default function LayoutEditor(): JSX.Element {
   const { t } = useTranslation()
   const project = useProject()
   const [config, setConfig] = useState<QuartzConfig | null>(null)
-  const [tab, setTab] = useState<Tab>('global')
-  const [activePageType, setActivePageType] = useState<string | null>(null)
+  // Which sub-tab and which page type are open is "where the user was", not throwaway state - see
+  // useStickyState. Without it, every trip to another area dropped them back on Global.
+  const [tab, setTab] = useStickyState<Tab>('layout.tab', 'global')
+  const [activePageType, setActivePageType] = useStickyState<string | null>('layout.pageType', null)
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [error, setError] = useState<string | null>(null)
   const [customFrames, setCustomFrames] = useState<GridFrameDefinition[]>([])

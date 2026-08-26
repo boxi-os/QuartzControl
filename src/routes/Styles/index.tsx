@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom'
 import type { CssVariableGraph, Project, QuartzConfig } from '@shared/ipc-contract'
 import { Button, PageHeader, SegmentedControl } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
+import { useStickyState } from '../../state/uiState'
 import { TAB_ICONS } from '../navConfig'
 import { useProject } from '../ProjectLayout'
 import Basics from './Basics'
@@ -64,7 +65,12 @@ export default function Styles(): JSX.Element {
   const project = useProject()
   const [searchParams, setSearchParams] = useSearchParams()
   const rawTab = searchParams.get('tab')
-  const tab: StylesTab = isTab(rawTab) ? rawTab : 'basics'
+  // The URL stays the source of truth (so /themes' redirect and any in-app link still land right),
+  // but the sidebar's NavLink points at a bare "styles" with no search string - so coming back from
+  // another area would otherwise always reset to Basis. The remembered tab fills exactly that gap:
+  // it only applies when the URL says nothing.
+  const [lastTab, setLastTab] = useStickyState<StylesTab>('styles.tab', 'basics')
+  const tab: StylesTab = isTab(rawTab) ? rawTab : lastTab
 
   const [config, setConfig] = useState<QuartzConfig | null>(null)
   const [overrides, setOverrides] = useState<Record<string, { light: string; dark: string }>>({})
@@ -111,10 +117,11 @@ export default function Styles(): JSX.Element {
   const goToTab = useCallback(
     (next: StylesTab) => {
       setSearchParams(next === 'basics' ? {} : { tab: next }, { replace: true })
+      setLastTab(next)
       setStatus('idle')
       setMessage(null)
     },
-    [setSearchParams]
+    [setSearchParams, setLastTab]
   )
 
   const registerSave = useCallback((fn: () => Promise<void>) => {

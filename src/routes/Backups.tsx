@@ -4,12 +4,13 @@ import { useProject } from './ProjectLayout'
 import type { BackupEntry } from '@shared/ipc-contract'
 import { Button, Card, PageHeader, SegmentedControl } from '../components/ui'
 import { useAsyncAction } from '../hooks/useAsyncAction'
+import { useStickyState } from '../state/uiState'
 import { TAB_ICONS } from './navConfig'
 
 export default function Backups(): JSX.Element {
   const { t, i18n } = useTranslation()
   const project = useProject()
-  const [kind, setKind] = useState<'config' | 'content'>('config')
+  const [kind, setKind] = useStickyState<'config' | 'content'>('backups.kind', 'config')
   const [entries, setEntries] = useState<BackupEntry[]>([])
   const [diff, setDiff] = useState<{ id: string; text: string } | null>(null)
 

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { useProject } from '../ProjectLayout'
 import { useAppStore } from '../../state/store'
+import { useStickyState } from '../../state/uiState'
 import type { MarketplacePlugin, PluginEntry } from '@shared/ipc-contract'
 import { Badge, Button, Card, PageHeader, TextInput } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
@@ -27,7 +28,9 @@ export default function PluginsMarketplace(): JSX.Element {
   const { t } = useTranslation()
   const project = useProject()
   const { settings, loadSettings } = useAppStore()
-  const [query, setQuery] = useState('')
+  // The search term survives a trip to another area (see useStickyState) - the results themselves
+  // are refetched, so what is shown is never stale.
+  const [query, setQuery] = useStickyState('marketplace.query', '')
   const [results, setResults] = useState<MarketplacePlugin[]>([])
   const [installedIds, setInstalledIds] = useState<Set<string>>(new Set())
   const [installing, setInstalling] = useState<string | null>(null)

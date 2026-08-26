@@ -6,6 +6,7 @@ import type { FrameBreakpoint, FrameSlot, GridAreaPlacement, GridBreakpointLayou
 import { FRAME_BREAKPOINTS, buildGridStyle } from '@shared/gridFrameCss'
 import { Badge, Button, Card, Field, SegmentedControl, Select, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
+import { useStickyState } from '../../state/uiState'
 
 const RESERVED_FRAME_NAMES = ['default', 'full-width', 'minimal']
 const SLOTS: FrameSlot[] = ['header', 'left', 'right', 'beforeBody', 'pageBody', 'afterBody', 'footer']
@@ -97,12 +98,16 @@ export default function FrameBuilder({
 }): JSX.Element {
   const { t } = useTranslation()
   const [frames, setFrames] = useState<GridFrameDefinition[] | null>(null)
-  const [editing, setEditing] = useState<GridFrameDefinition | null>(null)
-  const [isNewDraft, setIsNewDraft] = useState(false)
-  const [activeBreakpoint, setActiveBreakpoint] = useState<FrameBreakpoint>('desktop')
+  // The open frame draft and everything that says *where* in it the user is survives leaving the
+  // area (see useStickyState) - a frame is edited over many small steps, and having the editor
+  // close itself every time the user checks another tab meant clicking back in each time. Nothing
+  // here is written to disk until Save, exactly as before.
+  const [editing, setEditing] = useStickyState<GridFrameDefinition | null>('frames.editing', null)
+  const [isNewDraft, setIsNewDraft] = useStickyState('frames.isNewDraft', false)
+  const [activeBreakpoint, setActiveBreakpoint] = useStickyState<FrameBreakpoint>('frames.breakpoint', 'desktop')
   // Which area's own settings panel is expanded - all edits write straight into `editing` as they
   // happen, nothing buffered here.
-  const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null)
+  const [selectedAreaId, setSelectedAreaId] = useStickyState<string | null>('frames.selectedArea', null)
   // The name field is the one exception: it needs to hold whatever the user is literally typing,
   // not the slugified value committed into `editing` on every keystroke (mid-word that value can
   // have its trailing "-" stripped, which would fight typing a multi-word name). Reset only when

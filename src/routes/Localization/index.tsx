@@ -1,19 +1,23 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProject } from '../ProjectLayout'
 import type { LocaleEntry, LocaleFile } from '@shared/ipc-contract'
 import { Badge, Button, PageHeader, Select, TextInput } from '../../components/ui'
+import { useStickyState } from '../../state/uiState'
 import { TAB_ICONS } from '../navConfig'
 
 export default function Localization(): JSX.Element {
   const { t } = useTranslation()
   const project = useProject()
   const [locales, setLocales] = useState<LocaleFile[] | null>(null)
-  const [code, setCode] = useState('')
+  // Selected locale, search term and - most importantly - the unsaved edits survive a trip to
+  // another area (see useStickyState). Entries themselves are always re-read from disk on mount,
+  // so what is shown underneath the edits is never stale.
+  const [code, setCode] = useStickyState('localization.code', '')
   const [entries, setEntries] = useState<LocaleEntry[] | null>(null)
-  const [edits, setEdits] = useState<Record<string, string>>({})
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [query, setQuery] = useState('')
+  const [edits, setEdits] = useStickyState<Record<string, string>>('localization.edits', {})
+  const [errors, setErrors] = useStickyState<Record<string, string>>('localization.errors', {})
+  const [query, setQuery] = useStickyState('localization.query', '')
   const [saving, setSaving] = useState(false)
   const [gitAttrOk, setGitAttrOk] = useState<boolean | null>(null)
 
@@ -23,19 +27,36 @@ export default function Localization(): JSX.Element {
       if (list.length > 0) {
         window.quartzGui.config.get(project.path).then((config) => {
           const configured = typeof config.configuration.locale === 'string' ? config.configuration.locale : undefined
-          setCode(configured && list.some((l) => l.code === configured) ? configured : list[0].code)
+          // Functional form on purpose: a locale the user already picked in this session wins over
+          // the configured default, which is what makes coming back land on the same locale.
+          setCode((prev) =>
+            prev && list.some((l) => l.code === prev)
+              ? prev
+              : configured && list.some((l) => l.code === configured)
+                ? configured
+                : list[0].code
+          )
         })
       }
     })
     window.quartzGui.localization.gitAttributesStatus(project.path).then(setGitAttrOk)
   }, [project.path])
 
+  // Edits belong to one locale, so switching locales has to drop them - but merely coming back to
+  // this page must not, which is what the ref distinguishes: it starts out at whatever locale was
+  // restored, so a remount counts as "unchanged" while a real switch doesn't.
+  const loadedCodeRef = useRef(code)
   useEffect(() => {
     if (!code) return
+    if (loadedCodeRef.current !== code) {
+      setEdits({})
+      setErrors({})
+    }
+    loadedCodeRef.current = code
     setEntries(null)
-    setEdits({})
-    setErrors({})
     window.quartzGui.localization.getEntries(project.path, code).then(setEntries)
+    // setEdits/setErrors are stable state setters
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project.path, code])
 
   function keyOf(path: string[]): string {

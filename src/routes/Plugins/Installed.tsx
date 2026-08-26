@@ -6,6 +6,7 @@ import { useProject } from '../ProjectLayout'
 import type { PluginEntry, PluginLayoutDeclaration, PluginOptionField, QuartzConfig } from '@shared/ipc-contract'
 import { Badge, Button, Card, PageHeader, Select, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
+import { useStickyState } from '../../state/uiState'
 import { TAB_ICONS } from '../navConfig'
 
 // A plugin row's content is short (name, source, one line of description) and its buttons sit at
@@ -443,7 +444,9 @@ function PluginRow({
   const { plugin, index } = item
   const layout = getLayout(plugin)
   const isDragging = dragging?.group === groupKey && dragging.index === localIndex
-  const [expanded, setExpanded] = useState(false)
+  // Keyed by the plugin's config-array index, the same identity the list's React key uses, so an
+  // opened options panel is still open after a trip to another area (see useStickyState).
+  const [expanded, setExpanded] = useStickyState(`plugins.expanded.${index}`, false)
   const description = getPluginDescription(t, plugin.name)
 
   // Components always have layout fields (position/priority/...) to edit, so their button is

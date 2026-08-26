@@ -208,6 +208,13 @@ export default {
     overrideWarningPrefix: 'The theme plugin ',
     overrideWarningSuffix: ' is active and can override these colors in the preview. It can also be turned off there.',
     goToThemeTab: 'Go to community themes',
+    overrideChecking: 'Checking which of these values the active theme overrides…',
+    overrideCounted:
+        'The theme "{{themeId}}" overrides {{colors}} of {{totalColors}} colors and {{fonts}} of {{totalFonts}} fonts — those are dimmed below.',
+    overrideStillEditable:
+        'You can still edit them: they apply again the moment the theme is off, and can be overridden individually in the Variables tab.',
+    overriddenByTheme: 'Overridden by the active theme',
+    overriddenShort: 'theme',
     fontSource: 'Font source',
     googleFonts: 'Google Fonts',
     googleFontsHint: 'Quartz fetches the chosen fonts from Google. How they are delivered is the switch below.',
@@ -519,6 +526,21 @@ export default {
     }
   },
   styles: {
+    fixes: {
+      heading: 'Known conflicts',
+      description:
+        'Conflicts between plugins that no setting can resolve, only CSS can. The fix is written as an ordinary file under "Custom CSS" — editable, reorderable and deletable like any other.',
+      add: 'Add fix',
+      open: 'Open file',
+      alreadyAdded: 'Added as {{file}}',
+      'heading-fonts': {
+        title: 'Headings ignore the theme',
+        summary:
+          'The "Fonts" plugin sets the h1–h6 font with an unlayered rule, which beats both the theme and your own CSS. The fix points the headings back at the CSS variables.',
+        comment:
+          'The plugin @quartz-community/quartz-fonts sets "h1,…,h6 { font-family: … }" unlayered.\nUnlayered beats every @layer - including the active theme - and because its stylesheet is\nlinked after custom.scss, it also beats an equally specific rule of your own.\n"body h1" is one step more specific and therefore wins regardless of load order.\n\nPointing at the variables puts the Variables tab back in control.\nWritten by QuartzControl - edit freely.'
+      }
+    },
     tabs: {
       basics: 'Basics',
       theme: 'Community themes',

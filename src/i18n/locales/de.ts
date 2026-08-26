@@ -208,6 +208,13 @@ export default {
     overrideWarningPrefix: 'Das Theme-Plugin ',
     overrideWarningSuffix: ' ist aktiv und kann diese Farben in der Vorschau überschreiben. Dort lässt es sich auch wieder deaktivieren.',
     goToThemeTab: 'Zu den Community-Themes',
+    overrideChecking: 'Prüfe, welche dieser Werte das aktive Theme überschreibt…',
+    overrideCounted:
+        'Das Theme „{{themeId}}" überschreibt {{colors}} von {{totalColors}} Farben und {{fonts}} von {{totalFonts}} Schriften — diese sind unten abgeblendet.',
+    overrideStillEditable:
+        'Bearbeiten geht trotzdem: die Werte gelten wieder, sobald das Theme aus ist, und lassen sich jederzeit im Variablen-Tab gezielt überschreiben.',
+    overriddenByTheme: 'Wird vom aktiven Theme überschrieben',
+    overriddenShort: 'Theme',
     fontSource: 'Font-Quelle',
     googleFonts: 'Google Fonts',
     googleFontsHint: 'Quartz holt die gewählten Schriften bei Google. Wie sie ausgeliefert werden, entscheidet der Schalter unten.',
@@ -519,6 +526,21 @@ export default {
     }
   },
   styles: {
+    fixes: {
+      heading: 'Bekannte Konflikte',
+      description:
+        'Konflikte zwischen Plugins, die sich nicht über eine Einstellung lösen lassen, sondern nur im CSS. Der Fix wird als ganz normale Datei unter „Eigenes CSS" angelegt — dort bearbeitbar, verschiebbar und löschbar.',
+      add: 'Fix anlegen',
+      open: 'Datei öffnen',
+      alreadyAdded: 'Angelegt als {{file}}',
+      'heading-fonts': {
+        title: 'Überschriften folgen nicht dem Theme',
+        summary:
+          'Das Plugin „Fonts" setzt die Schrift für h1–h6 mit einer ungelayerten Regel und gewinnt damit gegen das Theme und gegen dein eigenes CSS. Der Fix stellt die Überschriften wieder auf die CSS-Variablen um.',
+        comment:
+          'Das Plugin @quartz-community/quartz-fonts setzt "h1,…,h6 { font-family: … }" ungelayert.\nUngelayert schlägt jedes @layer — also auch das aktive Theme —, und weil die Datei nach\ncustom.scss geladen wird, gewinnt sie auch gegen eine gleich spezifische Regel von dir.\n"body h1" ist eine Stufe spezifischer und gewinnt deshalb unabhängig von der Reihenfolge.\n\nDie Verweise auf die Variablen sorgen dafür, dass der Variablen-Tab wieder die Kontrolle hat.\nAngelegt von QuartzControl — frei bearbeitbar.'
+      }
+    },
     tabs: {
       basics: 'Basis',
       theme: 'Community-Themes',

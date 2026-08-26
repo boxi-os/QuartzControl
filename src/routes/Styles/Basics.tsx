@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import type { QuartzConfig } from '@shared/ipc-contract'
 import { Button, Field, Select, TextInput, Toggle } from '../../components/ui'
 import { CURATED_GOOGLE_FONTS } from '../../data/googleFonts'
+import { formatIpcError } from '../../components/ErrorSurface'
+import { CSS_FIXES, type CssFix } from './cssFixes'
 import {
   callsGoogle,
   fontLoaders,
@@ -11,7 +13,7 @@ import {
   withThemeFonts,
   THEME_PLUGIN_PREFIX
 } from './fontDelivery'
-import { useStyles } from './index'
+import { activeThemeIdOf, useStyles } from './index'
 
 type Theme = QuartzConfig['theme']
 const TYPOGRAPHY_KEYS = ['header', 'body', 'code'] as const
@@ -23,7 +25,7 @@ const GOOGLE_FONTS_DATALIST_ID = 'quartz-gui-google-fonts'
 // is the single place these values are edited.
 export default function Basics(): JSX.Element {
   const { t } = useTranslation()
-  const { config, setConfig, saveConfig, registerSave, goToTab, reloadScss, project } = useStyles()
+  const { config, setConfig, saveConfig, registerSave, goToTab, reloadScss, project, graph, graphLoading } = useStyles()
   const theme = config.theme
 
   useEffect(() => registerSave(saveConfig))
@@ -47,13 +49,39 @@ export default function Basics(): JSX.Element {
   )
   const fontOrigin = (theme.fontOrigin as string) ?? 'googleFonts'
 
+  // Which of these values the active theme actually takes over, asked per variable rather than
+  // assumed for all of them. The answer comes from the installed theme's own :root block (see
+  // variableGraphService), so it is right for *this* theme - a theme that declares no
+  // --textHighlight leaves that field working, and greying it out would be a lie. Nothing is
+  // disabled either way: setting a base value while a theme is on is how you prepare for turning
+  // the theme off again.
+  const overriddenByTheme = (cssVariable: string): boolean => graph?.vars[cssVariable]?.origin === 'theme'
+  const colorKeys = Object.values((theme.colors as Record<string, Record<string, string>>) ?? {}).flatMap((palette) =>
+    typeof palette === 'object' && palette ? Object.keys(palette) : []
+  )
+  const uniqueColorKeys = Array.from(new Set(colorKeys))
+  const overriddenColors = uniqueColorKeys.filter(overriddenByTheme).length
+  const FONT_VARIABLE: Record<(typeof TYPOGRAPHY_KEYS)[number], string> = {
+    header: 'headerFont',
+    body: 'bodyFont',
+    code: 'codeFont'
+  }
+  const overriddenFonts = TYPOGRAPHY_KEYS.filter((key) => overriddenByTheme(FONT_VARIABLE[key])).length
+
   return (
     <div className="grid gap-6">
       {overridingPlugin && (
-        <p className="max-w-3xl rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
-          {t('themeEditor.overrideWarningPrefix')}
-          <code className="font-mono">{String(overridingPlugin.source)}</code>
-          {t('themeEditor.overrideWarningSuffix')}{' '}
+        <p className="max-w-4xl rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+          {graphLoading
+            ? t('themeEditor.overrideChecking')
+            : t('themeEditor.overrideCounted', {
+                themeId: activeThemeIdOf(config) ?? String(overridingPlugin.source),
+                colors: overriddenColors,
+                totalColors: uniqueColorKeys.length,
+                fonts: overriddenFonts,
+                totalFonts: TYPOGRAPHY_KEYS.length
+              })}{' '}
+          {t('themeEditor.overrideStillEditable')}{' '}
           <button type="button" className="underline" onClick={() => goToTab('theme')}>
             {t('themeEditor.goToThemeTab')}
           </button>
@@ -79,18 +107,26 @@ export default function Basics(): JSX.Element {
             <option key={name} value={name} />
           ))}
         </datalist>
-        {TYPOGRAPHY_KEYS.map((key) => (
-          <Field key={key} label={t('themeEditor.fontFor', { slot: key })}>
-            <TextInput
-              list={GOOGLE_FONTS_DATALIST_ID}
-              value={theme.typography?.[key] ?? ''}
-              onChange={(e) => setTypography(key, e.target.value)}
-            />
-          </Field>
-        ))}
+        {TYPOGRAPHY_KEYS.map((key) => {
+          const overridden = overriddenByTheme(FONT_VARIABLE[key])
+          return (
+            <Field key={key} label={t('themeEditor.fontFor', { slot: key })} className={overridden ? 'opacity-60' : ''}>
+              <TextInput
+                list={GOOGLE_FONTS_DATALIST_ID}
+                value={theme.typography?.[key] ?? ''}
+                onChange={(e) => setTypography(key, e.target.value)}
+              />
+              {overridden && (
+                <span className="text-[11px] text-amber-700 dark:text-amber-400">{t('themeEditor.overriddenByTheme')}</span>
+              )}
+            </Field>
+          )
+        })}
       </div>
 
       <FontDelivery config={config} onChange={setConfig} />
+
+      <CssFixes />
 
       <LocalFontImport
         projectPath={project.path}
@@ -104,7 +140,11 @@ export default function Basics(): JSX.Element {
 
       <div>
         <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">{t('themeEditor.colors')}</h3>
-        <ColorGroup value={(theme.colors as Record<string, unknown>) ?? {}} onChange={(colors) => set('colors', colors)} />
+        <ColorGroup
+          value={(theme.colors as Record<string, unknown>) ?? {}}
+          onChange={(colors) => set('colors', colors)}
+          isOverridden={overriddenByTheme}
+        />
       </div>
     </div>
   )
@@ -179,6 +219,70 @@ function FontDelivery({
       {!google && loaders.length > 0 && !baseUrl && (
         <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{t('themeEditor.delivery.baseUrlMissing')}</p>
       )}
+    </div>
+  )
+}
+
+// Offers the ready-made stylesheets from cssFixes.ts, and only for the conflicts this project
+// actually has. Nothing is written until the button is pressed: the fix lands as an ordinary file
+// under quartz/styles/custom/, which the Eigenes-CSS tab then owns like any other stylesheet.
+function CssFixes(): JSX.Element | null {
+  const { t } = useTranslation()
+  const { project, config, fileSet, reloadFiles, reloadScss, goToTab } = useStyles()
+  const [busy, setBusy] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const applicable = CSS_FIXES.filter((fix) => fix.appliesTo(config))
+  if (applicable.length === 0) return null
+
+  async function addFix(fix: CssFix): Promise<void> {
+    setBusy(fix.id)
+    setError(null)
+    try {
+      const created = await window.quartzGui.styles.createFile(project.path, fix.fileName)
+      await window.quartzGui.styles.saveFile(project.path, created.relativePath, fix.content(t))
+      await reloadFiles()
+      // createFile rewrote custom.scss's import block - the CSS tab's draft has to be re-read, or
+      // its next save would put the pre-change file back.
+      await reloadScss()
+      goToTab('customCss')
+    } catch (err) {
+      setError(formatIpcError(err))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  return (
+    <div className="rounded-md border border-black/[0.06] p-3 dark:border-white/10">
+      <h3 className="mb-1 text-sm font-semibold">{t('styles.fixes.heading')}</h3>
+      <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">{t('styles.fixes.description')}</p>
+      <div className="flex flex-col gap-2">
+        {applicable.map((fix) => {
+          const existing = fileSet?.files.find((f) => f.name === fix.fileName)
+          return (
+            <div key={fix.id} className="flex flex-wrap items-center gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium">{t(`styles.fixes.${fix.id}.title`)}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{t(`styles.fixes.${fix.id}.summary`)}</p>
+              </div>
+              {existing ? (
+                <span className="flex shrink-0 items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                  {t('styles.fixes.alreadyAdded', { file: existing.name })}
+                  <button type="button" className="underline" onClick={() => goToTab('customCss')}>
+                    {t('styles.fixes.open')}
+                  </button>
+                </span>
+              ) : (
+                <Button variant="ghost" className="shrink-0" disabled={busy === fix.id} onClick={() => addFix(fix)}>
+                  {busy === fix.id ? t('common.saving') : t('styles.fixes.add')}
+                </Button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      {error && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p>}
     </div>
   )
 }
@@ -274,10 +378,12 @@ function LocalFontImport({
 // fixed width any more except the swatch itself.
 function ColorGroup({
   value,
-  onChange
+  onChange,
+  isOverridden
 }: {
   value: Record<string, unknown>
   onChange: (next: Record<string, unknown>) => void
+  isOverridden: (key: string) => boolean
 }): JSX.Element {
   const entries = Object.entries(value)
   const nested = entries.filter(([, v]) => v !== null && typeof v === 'object')
@@ -288,14 +394,24 @@ function ColorGroup({
       {leaves.length > 0 && (
         <div className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-3">
           {leaves.map(([key, v]) => (
-            <ColorCell key={key} name={key} value={v} onChange={(next) => onChange({ ...value, [key]: next })} />
+            <ColorCell
+              key={key}
+              name={key}
+              value={v}
+              overridden={isOverridden(key)}
+              onChange={(next) => onChange({ ...value, [key]: next })}
+            />
           ))}
         </div>
       )}
       {nested.map(([key, v]) => (
         <div key={key} className="rounded-md border border-slate-200 p-3 dark:border-white/10">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{key}</p>
-          <ColorGroup value={v as Record<string, unknown>} onChange={(next) => onChange({ ...value, [key]: next })} />
+          <ColorGroup
+            value={v as Record<string, unknown>}
+            onChange={(next) => onChange({ ...value, [key]: next })}
+            isOverridden={isOverridden}
+          />
         </div>
       ))}
     </div>
@@ -305,15 +421,26 @@ function ColorGroup({
 function ColorCell({
   name,
   value,
+  overridden,
   onChange
 }: {
   name: string
   value: string
+  overridden: boolean
   onChange: (next: string) => void
 }): JSX.Element {
+  const { t } = useTranslation()
   const isHex = /^#([0-9a-f]{3}){1,2}$/i.test(value)
+  // Dimmed, not disabled: this value has no effect while the theme is on, but it is still the
+  // value that applies the moment the theme is turned off - and for a theme that happens not to
+  // declare this variable, it applies right now.
   return (
-    <div className="flex items-center gap-2.5 rounded-md border border-black/[0.06] p-2 dark:border-white/10">
+    <div
+      className={`flex items-center gap-2.5 rounded-md border border-black/[0.06] p-2 dark:border-white/10 ${
+        overridden ? 'opacity-60' : ''
+      }`}
+      title={overridden ? t('themeEditor.overriddenByTheme') : undefined}
+    >
       {/* Big enough to actually read the color, and a real preview even when the value is a
           notation <input type="color"> cannot parse (it falls back to white internally, so the
           background is painted from the raw value behind it). */}
@@ -330,8 +457,11 @@ function ColorCell({
         />
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="truncate text-xs text-slate-600 dark:text-slate-300" title={name}>
-          {name}
+        <span className="flex items-baseline gap-1.5">
+          <span className="truncate text-xs text-slate-600 dark:text-slate-300" title={name}>
+            {name}
+          </span>
+          {overridden && <span className="shrink-0 text-[10px] uppercase tracking-wide text-amber-700 dark:text-amber-400">{t('themeEditor.overriddenShort')}</span>}
         </span>
         <TextInput value={value} onChange={(e) => onChange(e.target.value)} className="w-full font-mono text-xs" />
       </div>

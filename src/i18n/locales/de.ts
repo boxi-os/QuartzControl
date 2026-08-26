@@ -210,7 +210,9 @@ export default {
     goToThemeTab: 'Zu den Community-Themes',
     fontSource: 'Font-Quelle',
     googleFonts: 'Google Fonts',
-    local: 'Lokal',
+    googleFontsHint: 'Quartz holt die gewählten Schriften bei Google. Wie sie ausgeliefert werden, entscheidet der Schalter unten.',
+    localHint: 'Quartz lädt dann gar nichts — die Schrift muss selbst vorliegen, z.B. über „Eigene Schriftart importieren" unten.',
+    local: 'Selbst mitgebracht',
     fontFor: 'Schriftart ({{slot}})',
     delivery: {
       heading: 'Schrift-Auslieferung',
@@ -227,11 +229,17 @@ export default {
         plugin: {
           google: 'Plugin „Fonts": verlinkt Google Fonts direkt.',
           selfHosted: 'Plugin „Fonts": lädt beim Build herunter und liefert lokal aus.'
+        },
+        theme: {
+          cdn: 'Community-Theme: lädt seine Schriften von unpkg.com.'
         }
-      }
+      },
+      themeFonts: 'Theme-eigene Schriften laden',
+      themeFontsHint:
+        'Das Theme bringt eigene Schriften mit und lädt sie von unpkg.com — auch das ist ein Aufruf bei Dritten. Lokal ausliefern lässt sich das nicht; ausschalten heißt, die Schriften des Themes wegzulassen, dann greifen die Schriftarten von oben.',
+      themeFontsOff:
+        'Die Schriften des Themes sind abgeschaltet — es wird nichts bei unpkg.com geladen, dafür sieht das Theme anders aus als vorgesehen.'
     },
-    gdprHint:
-      'Google Fonts wird bei dieser Einstellung direkt von Google geladen (Besucher-IPs werden an Google übertragen). Quartz kann Schriftarten auch automatisch selbst hosten (DSGVO-konform) — dafür "Lokal" wählen.',
     localFontHeading: 'Eigene Schriftart importieren',
     localFontDescription: 'Lädt eine .ttf/.otf/.woff/.woff2-Datei ins Projekt und erzeugt die passende @font-face-Regel in custom.scss.',
     localFontPick: 'Datei auswählen…',
@@ -637,6 +645,9 @@ export default {
         plugin: {
           google: 'Das Plugin „Fonts" lädt bei jedem Seitenaufruf von Google Fonts.',
           selfHosted: 'Das Plugin „Fonts" lädt beim Build und liefert die Dateien selbst aus.'
+        },
+        theme: {
+          cdn: 'Das Community-Theme lädt seine eigenen Schriften bei jedem Seitenaufruf von unpkg.com.'
         }
       }
     },

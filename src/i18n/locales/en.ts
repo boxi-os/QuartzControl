@@ -210,7 +210,9 @@ export default {
     goToThemeTab: 'Go to community themes',
     fontSource: 'Font source',
     googleFonts: 'Google Fonts',
-    local: 'Local',
+    googleFontsHint: 'Quartz fetches the chosen fonts from Google. How they are delivered is the switch below.',
+    localHint: 'Quartz then fetches nothing at all — the font has to be present already, e.g. via "Import your own font" below.',
+    local: 'Bring your own',
     fontFor: 'Font ({{slot}})',
     delivery: {
       heading: 'Font delivery',
@@ -227,11 +229,17 @@ export default {
         plugin: {
           google: '"Fonts" plugin: links Google Fonts directly.',
           selfHosted: '"Fonts" plugin: downloads at build time and serves locally.'
+        },
+        theme: {
+          cdn: 'Community theme: loads its fonts from unpkg.com.'
         }
-      }
+      },
+      themeFonts: 'Load the theme\'s own fonts',
+      themeFontsHint:
+        'The theme ships its own fonts and loads them from unpkg.com — another third-party request. There is no option to serve those locally; turning them off means dropping them, and the fonts chosen above apply instead.',
+      themeFontsOff:
+        'The theme\'s fonts are off — nothing is loaded from unpkg.com, but the theme looks different from how it was designed.'
     },
-    gdprHint:
-      "With this setting, Google Fonts is loaded directly from Google (visitor IPs are sent to Google). Quartz can also self-host fonts automatically (GDPR-compliant) — choose \"Local\" for that.",
     localFontHeading: 'Import a custom font',
     localFontDescription: 'Copies a .ttf/.otf/.woff/.woff2 file into the project and generates the matching @font-face rule in custom.scss.',
     localFontPick: 'Choose file…',
@@ -636,6 +644,9 @@ export default {
         plugin: {
           google: 'The "Fonts" plugin links Google Fonts on every page view.',
           selfHosted: 'The "Fonts" plugin downloads at build time and serves the files itself.'
+        },
+        theme: {
+          cdn: 'The community theme loads its own fonts from unpkg.com on every page view.'
         }
       }
     },

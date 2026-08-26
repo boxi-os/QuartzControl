@@ -3,7 +3,14 @@ import { useTranslation } from 'react-i18next'
 import type { QuartzConfig } from '@shared/ipc-contract'
 import { Button, Field, Select, TextInput, Toggle } from '../../components/ui'
 import { CURATED_GOOGLE_FONTS } from '../../data/googleFonts'
-import { callsGoogle, fontLoaders, withSelfHostedFonts } from './fontDelivery'
+import {
+  callsGoogle,
+  fontLoaders,
+  themeFontsEnabled,
+  withSelfHostedFonts,
+  withThemeFonts,
+  THEME_PLUGIN_PREFIX
+} from './fontDelivery'
 import { useStyles } from './index'
 
 type Theme = QuartzConfig['theme']
@@ -59,6 +66,12 @@ export default function Basics(): JSX.Element {
             <option value="googleFonts">{t('themeEditor.googleFonts')}</option>
             <option value="local">{t('themeEditor.local')}</option>
           </Select>
+          {/* The single most misread setting on this page: "local" does not mean "download and
+              serve locally", it means Quartz fetches nothing at all. Whether the fetched fonts are
+              self-hosted is the separate switch below. */}
+          <span className="text-[11px] text-slate-500 dark:text-slate-400">
+            {fontOrigin === 'local' ? t('themeEditor.localHint') : t('themeEditor.googleFontsHint')}
+          </span>
         </Field>
 
         <datalist id={GOOGLE_FONTS_DATALIST_ID}>
@@ -111,6 +124,10 @@ function FontDelivery({
   const { t } = useTranslation()
   const loaders = fontLoaders(config)
   const google = callsGoogle(config)
+  const themeFonts = themeFontsEnabled(config)
+  const hasTheme = config.plugins.some(
+    (p) => p.enabled && typeof p.source === 'string' && p.source.startsWith(THEME_PLUGIN_PREFIX)
+  )
   const baseUrl = (config.configuration.baseUrl as string) ?? ''
 
   return (
@@ -129,10 +146,34 @@ function FontDelivery({
       </div>
       <Toggle
         label={t('themeEditor.delivery.selfHost')}
-        checked={loaders.length > 0 && !google}
+        checked={loaders.some((l) => l.mode === 'selfHosted') && !google}
         onChange={(checked) => onChange(withSelfHostedFonts(config, checked))}
       />
       <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{t('themeEditor.delivery.description')}</p>
+
+      {/* Its own control, not part of the switch above: there is no option to serve the theme's
+          fonts locally, so the only way to stop the CDN requests is to drop them - which changes
+          how the site looks. That is a different decision. */}
+      {themeFonts && (
+        <div className="mt-3 border-t border-black/[0.06] pt-3 dark:border-white/10">
+          <Toggle
+            label={t('themeEditor.delivery.themeFonts')}
+            checked
+            onChange={() => onChange(withThemeFonts(config, false))}
+          />
+          <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{t('themeEditor.delivery.themeFontsHint')}</p>
+        </div>
+      )}
+      {!themeFonts && hasTheme && (
+        <div className="mt-3 border-t border-black/[0.06] pt-3 dark:border-white/10">
+          <Toggle
+            label={t('themeEditor.delivery.themeFonts')}
+            checked={false}
+            onChange={() => onChange(withThemeFonts(config, true))}
+          />
+          <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{t('themeEditor.delivery.themeFontsOff')}</p>
+        </div>
+      )}
       {/* Both self-hosting paths rewrite the font URLs to <baseUrl>/static/fonts, and the plugin
           throws outright without one - so an empty baseUrl is a build failure, not a detail. */}
       {!google && loaders.length > 0 && !baseUrl && (

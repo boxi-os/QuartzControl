@@ -15,12 +15,19 @@ import type { QuartzConfig } from '@shared/ipc-contract'
 //    call Google) or `"selfHosted"`, which downloads the files and emits
 //    static/fonts/quartz-fonts.css. Verified: a build with `selfHosted` contains no
 //    fonts.googleapis.com reference at all and ships the .ttf files itself.
+//  - A community theme is a third source and the one that is easiest to miss: `@quartz-themes/core`
+//    emits @font-face rules for the theme's own fonts pointing at a hardcoded
+//    `FONT_CDN_BASE = "https://unpkg.com"`, so an active theme means third-party requests on every
+//    page view no matter what the two settings above say. Its only off switch is the plugin option
+//    `themeFonts: false`, which drops the theme's fonts entirely rather than localising them -
+//    verified: with it the built output contains no unpkg.com reference, without it 22.
 export const FONTS_PLUGIN_SOURCE = '@quartz-community/quartz-fonts'
+export const THEME_PLUGIN_PREFIX = '@quartz-themes/'
 
-export type FontLoaderMode = 'google' | 'selfHosted'
+export type FontLoaderMode = 'google' | 'selfHosted' | 'cdn'
 
 export interface FontLoader {
-  via: 'core' | 'plugin'
+  via: 'core' | 'plugin' | 'theme'
   mode: FontLoaderMode
 }
 
@@ -42,7 +49,42 @@ export function fontLoaders(config: QuartzConfig): FontLoader[] {
     const origin = config.plugins[index].options?.fontOrigin
     loaders.push({ via: 'plugin', mode: origin === 'selfHosted' ? 'selfHosted' : 'google' })
   }
+
+  if (themeFontsIndex(config) !== -1) loaders.push({ via: 'theme', mode: 'cdn' })
   return loaders
+}
+
+// The theme plugin, but only while it is actually emitting its font CSS.
+function themeFontsIndex(config: QuartzConfig): number {
+  return config.plugins.findIndex(
+    (p) =>
+      p.enabled &&
+      typeof p.source === 'string' &&
+      p.source.startsWith(THEME_PLUGIN_PREFIX) &&
+      p.options?.themeFonts !== false
+  )
+}
+
+export function themeFontsEnabled(config: QuartzConfig): boolean {
+  return themeFontsIndex(config) !== -1
+}
+
+/**
+ * Turns the theme's own fonts off or on. Deliberately *not* part of the self-hosting switch: there
+ * is no localising option here, so the only way to stop the unpkg requests is to drop the fonts,
+ * which changes how the site looks. That is a separate decision and gets a separate control.
+ */
+export function withThemeFonts(config: QuartzConfig, enabled: boolean): QuartzConfig {
+  const index = config.plugins.findIndex(
+    (p) => p.enabled && typeof p.source === 'string' && p.source.startsWith(THEME_PLUGIN_PREFIX)
+  )
+  if (index === -1) return config
+  const plugins = [...config.plugins]
+  const options = { ...plugins[index].options }
+  if (enabled) delete options.themeFonts
+  else options.themeFonts = false
+  plugins[index] = { ...plugins[index], options }
+  return { ...config, plugins }
 }
 
 export function callsGoogle(config: QuartzConfig): boolean {

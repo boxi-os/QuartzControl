@@ -112,13 +112,6 @@ function styleSettingsKey(styleSettingsId: string[], suffix: string): string {
   return `${styleSettingsId[0]}@@${suffix}`
 }
 
-function parseStyleSettingsSuffix(styleSettingsId: string[], key: string): string | null {
-  for (const id of styleSettingsId) {
-    if (key.startsWith(`${id}@@`)) return key.slice(id.length + 2)
-  }
-  return null
-}
-
 function ActiveThemeSection({
   plugin,
   onChange,
@@ -131,6 +124,7 @@ function ActiveThemeSection({
   onSavedAsPreset: () => void
 }): JSX.Element {
   const { t } = useTranslation()
+  const { goToTab } = useStyles()
   const themeId = typeof plugin?.options?.theme === 'string' ? plugin.options.theme : undefined
   const [info, setInfo] = useState<ThemeStyleSettingsInfo | null | undefined>(undefined)
   const [schema, setSchema] = useState<StyleSettingsSchema | null | undefined>(undefined)
@@ -307,99 +301,19 @@ function ActiveThemeSection({
             </>
           )}
 
-          {/* Always reachable, schema or not: it is the only way to reach a key the upstream
-              @settings block never declared, and the only way to see what is actually stored. */}
-          <details className="mt-3">
-            <summary className="cursor-pointer text-xs text-slate-500 dark:text-slate-400">
-              {t('styles.styleSettings.rawSummary')}
-            </summary>
-            <div className="mt-2">
-              <CustomStyleSettingsRows
-                styleSettingsId={info.styleSettingsId}
-                styleSettings={styleSettings}
-                classSettingKeys={info.classSettingKeys}
-                onSet={setStyleSettingsKey}
-              />
-            </div>
-          </details>
+          {/* This card is deliberately limited to what the theme itself declares. Writing an
+              arbitrary CSS custom property through a style setting worked here too, but it is the
+              same edit the Variablen tab does properly - with the value's origin, its dependents
+              and a light/dark pair - so there is one place for it now, not two. */}
+          <p className="mt-3 text-[11px] text-slate-500 dark:text-slate-400">
+            {t('themes.active.ownValuesHint')}{' '}
+            <button type="button" className="underline" onClick={() => goToTab('variables')}>
+              {t('themes.active.goToVariables')}
+            </button>
+          </p>
         </div>
       )}
     </Card>
-  )
-}
-
-// Any settingId not matched by a class-toggle in the theme's classSettingKeys is treated by
-// @quartz-themes/core as a literal CSS custom property override (e.g. key "secondary" emits
-// `--secondary: <value>`; a "@@dark"/"@@light" suffix on the key scopes it to one mode) -
-// verified directly against the compiled plugin. This lets the classic Quartz color names
-// (light, secondary, tertiary, ...) be overridden here even when the theme has no dedicated
-// setting for them.
-function CustomStyleSettingsRows({
-  styleSettingsId,
-  styleSettings,
-  classSettingKeys,
-  onSet
-}: {
-  styleSettingsId: string[]
-  styleSettings: Record<string, unknown>
-  classSettingKeys: string[]
-  onSet: (fullKey: string, value: unknown) => void
-}): JSX.Element {
-  const { t } = useTranslation()
-  const classSettingKeySet = new Set(classSettingKeys)
-  const customEntries = Object.entries(styleSettings).filter(([fullKey]) => {
-    const suffix = parseStyleSettingsSuffix(styleSettingsId, fullKey)
-    return suffix !== null && !classSettingKeySet.has(suffix)
-  })
-
-  const [draftKey, setDraftKey] = useState('')
-  const [draftValue, setDraftValue] = useState('')
-
-  return (
-    <div>
-      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">{t('themes.active.cssVarsHeading')}</p>
-      <div className="flex flex-col gap-1.5">
-        {customEntries.map(([fullKey, value]) => {
-          const suffix = parseStyleSettingsSuffix(styleSettingsId, fullKey) ?? fullKey
-          return (
-            <div key={fullKey} className="flex items-center gap-2">
-              <span className="w-40 truncate font-mono text-xs" title={suffix}>
-                {suffix}
-              </span>
-              <TextInput value={String(value)} onChange={(e) => onSet(fullKey, e.target.value)} className="w-32 text-xs" />
-              <button type="button" onClick={() => onSet(fullKey, undefined)} className="text-xs text-slate-500 underline">
-                {t('themes.active.removeLink')}
-              </button>
-            </div>
-          )
-        })}
-      </div>
-      <div className="mt-2 flex items-center gap-2">
-        <TextInput
-          value={draftKey}
-          onChange={(e) => setDraftKey(e.target.value)}
-          placeholder={t('themes.active.keyPlaceholder')}
-          className="w-40 text-xs"
-        />
-        <TextInput
-          value={draftValue}
-          onChange={(e) => setDraftValue(e.target.value)}
-          placeholder={t('themes.active.valuePlaceholder')}
-          className="w-32 text-xs"
-        />
-        <Button
-          variant="ghost"
-          onClick={() => {
-            if (!draftKey.trim() || !draftValue.trim()) return
-            onSet(styleSettingsKey(styleSettingsId, draftKey.trim()), draftValue.trim())
-            setDraftKey('')
-            setDraftValue('')
-          }}
-        >
-          {t('themes.active.addButton')}
-        </Button>
-      </div>
-    </div>
   )
 }
 

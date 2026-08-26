@@ -206,7 +206,7 @@ export default {
   themeEditor: {
     overrideWarningPrefix: 'Das Theme-Plugin ',
     overrideWarningSuffix: ' ist aktiv und kann diese Farben in der Vorschau überschreiben. Dort lässt es sich auch wieder deaktivieren.',
-    goToThemeTab: 'Zum Theme-Tab',
+    goToThemeTab: 'Zu den Community-Themes',
     fontSource: 'Font-Quelle',
     googleFonts: 'Google Fonts',
     local: 'Lokal',
@@ -243,11 +243,9 @@ export default {
       noStyleSettingsNote:
         'Das Theme {{themeId}} bietet keine eigenen Farbeinstellungen an — hier lässt sich für dieses Theme nichts anpassen. Das liegt am Theme selbst, nicht an dieser App: Änderungen würden von Quartz schlicht ignoriert.',
       styleSettingsHeading: 'Style-Settings ({{ids}})',
-      cssVarsHeading: 'CSS-Variablen überschreiben',
-      keyPlaceholder: 'z.B. secondary oder secondary@@dark',
-      valuePlaceholder: 'Wert',
-      addButton: 'Hinzufügen',
-      removeLink: 'Entfernen'
+      ownValuesHint:
+        'Hier stehen nur die Optionen, die das Theme selbst mitbringt. Eigene Werte für einzelne CSS-Variablen gehören in den Variablen-Tab oder ins eigene CSS.',
+      goToVariables: 'Zu den Variablen →'
     },
     presets: {
       title: 'Meine Presets',
@@ -496,15 +494,15 @@ export default {
   styles: {
     tabs: {
       basics: 'Basis',
-      theme: 'Theme',
+      theme: 'Community-Themes',
       variables: 'Variablen',
       customCss: 'Eigenes CSS'
     },
     cascade: {
       themeActive:
-        'Reihenfolge: Basis → Theme → Variablen → eigenes CSS. Das Theme „{{themeId}}" ist aktiv und überschreibt die Basisfarben.',
+        'Reihenfolge: Basis → Community-Theme → Variablen → eigenes CSS. Das Theme „{{themeId}}" ist aktiv und überschreibt die Basisfarben.',
       themeInactive:
-        'Reihenfolge: Basis → Theme → Variablen → eigenes CSS. Kein Community-Theme aktiv — es gelten deine Basis-Farben und -Schriften.',
+        'Reihenfolge: Basis → Community-Theme → Variablen → eigenes CSS. Kein Community-Theme aktiv — es gelten deine Basis-Farben und -Schriften.',
       overrides: '{{count}} Variable(n) überschrieben.'
     },
     scssStale:
@@ -518,7 +516,6 @@ export default {
       refresh: 'Doku neu laden',
       unavailable:
         'Zu diesem Theme sind keine Beschreibungen auffindbar — es hat keinen Eintrag im Obsidian-Theme-Verzeichnis oder bringt keinen @settings-Block mit. Darum hier nur die rohen Schalter.',
-      rawSummary: 'Rohe Schlüssel und Werte anzeigen',
       themeDefault: '— Theme-Standard —',
       reset: 'Zurücksetzen'
     },
@@ -541,15 +538,27 @@ export default {
       noTheme: 'Es ist kein Community-Theme installiert.',
       noBuild: 'Es gibt noch keinen Build-Output — einmal bauen, dann hier neu einlesen.',
       reload: 'Neu einlesen',
-      adjust: 'Anpassen',
       reset: 'Zurücksetzen',
+      resetToOriginal: 'Auf Originalwert zurücksetzen',
       light: 'Hell',
       dark: 'Dunkel',
       chainToggle: 'Herkunft und Abhängigkeiten anzeigen',
       unresolved: 'nicht auflösbar (nur in einem Selektor gesetzt)',
       dependents: '{{count}} abhängig',
-      dependentsTitle: 'Diese Variablen verweisen darauf: {{names}}',
       dependentsWarning: 'Ein eigener Wert hier wirkt sich auf {{count}} weitere Variablen aus.',
+      dependentsNone: 'Keine andere Variable verweist hierauf.',
+      usesNone: 'Verweist auf keine andere Variable — der Wert steht direkt hier.',
+      moreKeys: '+{{count}} weitere',
+      chipHint: 'Zu dieser Variable springen',
+      themeNote:
+        'Das Community-Theme „{{themeId}}" liefert seine Variablen in @layer aus, deine Werte hier landen ungelayert in custom.scss — ungelayerte Regeln gewinnen immer. Geprüft an einem echten Build (hell und dunkel). Nur Variablen, die ein Theme ausschließlich innerhalb eines Selektors setzt (z.B. .callout[data-callout]), lassen sich hier nicht global überschreiben.',
+      section: {
+        current: 'Aktueller Wert',
+        origin: 'Herkunft',
+        uses: 'Verwendet diese Variablen',
+        dependents: 'Wird von diesen Variablen verwendet',
+        edit: 'Eigener Wert'
+      },
       origin: {
         core: 'Quartz-Kern',
         theme: 'Theme',
@@ -565,6 +574,10 @@ export default {
     componentHint: 'Fügt einen Selektor für die gewählte Komponente an der Cursor-Position ein.',
     insertSelector: 'Selektor einfügen',
     referenceHeading: 'Original-Styles (nur lesend)',
+    current: {
+      colors: 'Aktuell geltende Farben (hell / dunkel)',
+      fonts: 'Aktuell geltende Schriften'
+    },
     cssVars: {
       heading: 'Verfügbare CSS-Variablen',
       description:

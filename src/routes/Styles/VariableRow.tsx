@@ -1,14 +1,17 @@
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { Badge, TextInput } from '../../components/ui'
 import {
+  baseValue,
   catalogDef,
+  cssColorToHex,
   effectiveValue,
   isDisplayableColor,
   originOf,
+  referencedVariables,
   resolveChain,
   resolvedValue,
+  resolveValueLiteral,
   type Mode,
   type ResolveContext,
   type VariableOrigin
@@ -21,25 +24,34 @@ const ORIGIN_TONE: Record<VariableOrigin, 'slate' | 'green' | 'amber'> = {
   user: 'green'
 }
 
+export type OverrideValue = { light: string; dark: string }
+
 // One variable, in both the curated "Hauptvariablen" list and the searchable full table - the two
 // differ in which keys they show, not in how a row behaves. A row is inert until expanded: the
-// derivation chain and the dependents list are the expensive-to-read parts, and with up to ~1000
-// rows in the full table they must not all be rendered at once.
+// derivation chain, the two dependency lists and the editors are the expensive-to-read parts, and
+// with up to ~1000 rows in the full table they must not all be rendered at once.
+//
+// Expanding is *not* the same as overriding: the inputs open pre-filled with the value that
+// applies today (see baseValue), and an override is only created once a draft actually differs
+// from it - which is also how it disappears again when the user types the original back.
 export default function VariableRow({
   varKey,
   ctx,
   dependents,
-  onSet,
-  onReset
+  expanded,
+  onToggle,
+  onChange,
+  onNavigate
 }: {
   varKey: string
   ctx: ResolveContext
   dependents: string[]
-  onSet: (mode: Mode, value: string) => void
-  onReset: () => void
+  expanded: boolean
+  onToggle: () => void
+  onChange: (next: OverrideValue | null) => void
+  onNavigate?: (key: string) => void
 }): JSX.Element {
   const { t } = useTranslation()
-  const [expanded, setExpanded] = useState(false)
   const override = ctx.overrides[varKey]
   const origin = originOf(varKey, ctx)
   const light = effectiveValue(varKey, 'light', ctx)
@@ -47,18 +59,29 @@ export default function VariableRow({
   const lightResolved = resolvedValue(varKey, 'light', ctx)
   const darkResolved = resolvedValue(varKey, 'dark', ctx)
 
-  function startEditing(): void {
-    onSet('light', light ?? '')
-    onSet('dark', dark ?? light ?? '')
-    setExpanded(true)
+  // What the row would show with the user's own value taken away - both the yardstick for "is this
+  // actually changed" and what the inputs start from.
+  const base: OverrideValue = {
+    light: baseValue(varKey, 'light', ctx) ?? '',
+    dark: baseValue(varKey, 'dark', ctx) ?? baseValue(varKey, 'light', ctx) ?? ''
   }
+  const draft: OverrideValue = override ?? base
+
+  function setMode(mode: Mode, value: string): void {
+    const next: OverrideValue = { ...draft, [mode]: value }
+    onChange(next.light === base.light && next.dark === base.dark ? null : next)
+  }
+
+  // Which variables this one is built out of - the counterpart to `dependents`, and the half that
+  // was missing: the expanded row said what depends on this variable but never what it depends on.
+  const uses = Array.from(new Set([...referencedVariables(light ?? ''), ...referencedVariables(dark ?? '')]))
 
   return (
     <div className={`rounded-md px-1.5 py-1 ${override ? 'bg-green-50/60 dark:bg-green-500/[0.07]' : ''}`}>
       <div className="flex items-center gap-2 text-xs">
         <button
           type="button"
-          onClick={() => setExpanded((prev) => !prev)}
+          onClick={onToggle}
           className="flex min-w-0 flex-1 items-center gap-2 text-left hover:underline"
           title={t('styles.variables.chainToggle')}
         >
@@ -71,52 +94,146 @@ export default function VariableRow({
           <span className="truncate text-slate-500 dark:text-slate-400">{light ?? '—'}</span>
         </button>
         {dependents.length > 0 && (
-          <span
-            className="shrink-0 text-[11px] text-slate-400"
-            title={t('styles.variables.dependentsTitle', { names: dependents.slice(0, 40).join(', ') })}
-          >
-            {t('styles.variables.dependents', { count: dependents.length })}
-          </span>
+          <span className="shrink-0 text-[11px] text-slate-400">{t('styles.variables.dependents', { count: dependents.length })}</span>
         )}
         <Badge tone={ORIGIN_TONE[origin]}>{t(`styles.variables.origin.${origin}`)}</Badge>
-        {override ? (
-          <button type="button" onClick={onReset} className="shrink-0 text-[11px] text-slate-500 underline">
+        {override && (
+          <button type="button" onClick={() => onChange(null)} className="shrink-0 text-[11px] text-slate-500 underline">
             {t('styles.variables.reset')}
-          </button>
-        ) : (
-          <button type="button" onClick={startEditing} className="shrink-0 text-[11px] text-slate-500 underline">
-            {t('styles.variables.adjust')}
           </button>
         )}
       </div>
 
+      {/* The panel is capped on purpose, unlike the page around it: it is short labelled text and
+          a pair of inputs, and stretched across a maximized window its two dependency columns end
+          up a screen apart from the row they belong to. */}
       {expanded && (
-        <div className="ml-[18px] mt-1 flex flex-col gap-1.5 border-l-2 border-black/[0.08] pl-3 dark:border-white/10">
-          <Chain varKey={varKey} mode="light" ctx={ctx} label={t('styles.variables.light')} />
-          {dark !== light && <Chain varKey={varKey} mode="dark" ctx={ctx} label={t('styles.variables.dark')} />}
-          {dependents.length > 0 && (
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              {t('styles.variables.dependentsWarning', { count: dependents.length })}
-            </p>
-          )}
+        <div className="ml-[18px] mt-1.5 flex max-w-5xl flex-col gap-3 border-l-2 border-black/[0.08] pl-3 dark:border-white/10">
+          <CurrentValues varKey={varKey} ctx={ctx} />
+
+          <section>
+            <SectionLabel>{t('styles.variables.section.origin')}</SectionLabel>
+            <Chain varKey={varKey} mode="light" ctx={ctx} label={t('styles.variables.light')} />
+            {(dark !== light || darkResolved !== lightResolved) && (
+              <Chain varKey={varKey} mode="dark" ctx={ctx} label={t('styles.variables.dark')} />
+            )}
+          </section>
+
+          {/* The two directions of the dependency graph, side by side and named - "N abhängig" in
+              the header answers neither question on its own. */}
+          <div className="grid gap-3 md:grid-cols-2">
+            <section>
+              <SectionLabel>{t('styles.variables.section.uses')}</SectionLabel>
+              {uses.length === 0 ? (
+                <p className="text-[11px] text-slate-400">{t('styles.variables.usesNone')}</p>
+              ) : (
+                <KeyChips keys={uses} onNavigate={onNavigate} />
+              )}
+            </section>
+            <section>
+              <SectionLabel>{t('styles.variables.section.dependents')}</SectionLabel>
+              {dependents.length === 0 ? (
+                <p className="text-[11px] text-slate-400">{t('styles.variables.dependentsNone')}</p>
+              ) : (
+                <>
+                  <p className="mb-1 text-[11px] text-slate-500 dark:text-slate-400">
+                    {t('styles.variables.dependentsWarning', { count: dependents.length })}
+                  </p>
+                  <KeyChips keys={dependents} onNavigate={onNavigate} />
+                </>
+              )}
+            </section>
+          </div>
+
+          <section>
+            <SectionLabel>{t('styles.variables.section.edit')}</SectionLabel>
+            <div className="flex flex-wrap items-center gap-4">
+              <ValueInput
+                varKey={varKey}
+                ctx={ctx}
+                mode="light"
+                label={t('styles.variables.light')}
+                value={draft.light}
+                onChange={(v) => setMode('light', v)}
+              />
+              <ValueInput
+                varKey={varKey}
+                ctx={ctx}
+                mode="dark"
+                label={t('styles.variables.dark')}
+                value={draft.dark}
+                onChange={(v) => setMode('dark', v)}
+              />
+              {override && (
+                <button type="button" onClick={() => onChange(null)} className="text-[11px] text-slate-500 underline">
+                  {t('styles.variables.resetToOriginal')}
+                </button>
+              )}
+            </div>
+          </section>
         </div>
       )}
+    </div>
+  )
+}
 
-      {override && (
-        <div className="ml-[18px] mt-1.5 flex flex-wrap items-center gap-3 border-l-2 border-green-400/40 pl-3">
-          <ValueInput
-            varKey={varKey}
-            label={t('styles.variables.light')}
-            value={override.light}
-            onChange={(v) => onSet('light', v)}
-          />
-          <ValueInput
-            varKey={varKey}
-            label={t('styles.variables.dark')}
-            value={override.dark}
-            onChange={(v) => onSet('dark', v)}
-          />
-        </div>
+function SectionLabel({ children }: { children: React.ReactNode }): JSX.Element {
+  return <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{children}</p>
+}
+
+// The literal both modes paint right now, spelled out rather than left to a 12px swatch - a hex
+// next to the color is what makes "the picker shows something else than the swatch" checkable.
+function CurrentValues({ varKey, ctx }: { varKey: string; ctx: ResolveContext }): JSX.Element {
+  const { t } = useTranslation()
+  return (
+    <section>
+      <SectionLabel>{t('styles.variables.section.current')}</SectionLabel>
+      <div className="flex flex-wrap gap-x-6 gap-y-1">
+        {(['light', 'dark'] as Mode[]).map((mode) => {
+          const resolved = resolvedValue(varKey, mode, ctx)
+          const hex = cssColorToHex(resolved)
+          return (
+            <div key={mode} className="flex items-center gap-1.5 text-[11px]">
+              <span className="text-slate-400">{t(`styles.variables.${mode}`)}:</span>
+              {isDisplayableColor(resolved) && <Swatch value={resolved} size="md" />}
+              <code className="font-mono text-slate-700 dark:text-slate-200">
+                {resolved ?? t('styles.variables.unresolved')}
+              </code>
+              {hex && hex.toLowerCase() !== (resolved ?? '').toLowerCase() && (
+                <code className="font-mono text-slate-400">{hex}</code>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+function KeyChips({ keys, onNavigate }: { keys: string[]; onNavigate?: (key: string) => void }): JSX.Element {
+  const { t } = useTranslation()
+  const visible = keys.slice(0, 24)
+  return (
+    <div className="flex flex-wrap gap-1">
+      {visible.map((key) =>
+        onNavigate ? (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onNavigate(key)}
+            className="rounded bg-black/[0.05] px-1.5 py-0.5 font-mono text-[11px] hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20"
+            title={t('styles.variables.chipHint')}
+          >
+            --{key}
+          </button>
+        ) : (
+          <code key={key} className="rounded bg-black/[0.05] px-1.5 py-0.5 font-mono text-[11px] dark:bg-white/10">
+            --{key}
+          </code>
+        )
+      )}
+      {keys.length > visible.length && (
+        <span className="text-[11px] text-slate-400">{t('styles.variables.moreKeys', { count: keys.length - visible.length })}</span>
       )}
     </div>
   )
@@ -155,39 +272,48 @@ function Chain({ varKey, mode, ctx, label }: { varKey: string; mode: Mode; ctx: 
   )
 }
 
+// The picker is fed the *resolved* literal, not the raw draft: a value like `var(--secondary)` or
+// `hsl(var(--accent-hsl))` is a perfectly good color that <input type="color"> cannot parse, and
+// feeding it straight through made the picker show white next to a swatch painting the real color.
 function ValueInput({
   varKey,
+  ctx,
+  mode,
   label,
   value,
   onChange
 }: {
   varKey: string
+  ctx: ResolveContext
+  mode: Mode
   label: string
   value: string
   onChange: (value: string) => void
 }): JSX.Element {
-  const isColor = catalogDef(varKey)?.kind === 'color' || isDisplayableColor(value)
-  const isValidHex = /^#([0-9a-f]{3}){1,2}$/i.test(value)
+  const resolved = resolveValueLiteral(value, mode, ctx)
+  const hex = cssColorToHex(resolved)
+  const isColor = catalogDef(varKey)?.kind === 'color' || hex !== null
   return (
     <div className="flex items-center gap-1.5">
       <span className="text-[11px] text-slate-500">{label}</span>
       {isColor && (
         <input
           type="color"
-          value={isValidHex ? value : '#ffffff'}
+          value={hex ?? '#ffffff'}
           onChange={(e) => onChange(e.target.value)}
-          className="h-6 w-6 cursor-pointer rounded border border-slate-300"
+          className="h-6 w-8 cursor-pointer rounded border border-slate-300"
+          title={resolved ?? value}
         />
       )}
-      <TextInput value={value} onChange={(e) => onChange(e.target.value)} className="w-36 text-xs" />
+      <TextInput value={value} onChange={(e) => onChange(e.target.value)} className="w-44 font-mono text-xs" />
     </div>
   )
 }
 
-function Swatch({ value }: { value: string | undefined }): JSX.Element {
+function Swatch({ value, size = 'sm' }: { value: string | undefined; size?: 'sm' | 'md' }): JSX.Element {
   return (
     <span
-      className="h-3 w-3 shrink-0 rounded-sm border border-black/10 dark:border-white/20"
+      className={`${size === 'md' ? 'h-4 w-4' : 'h-3 w-3'} shrink-0 rounded-sm border border-black/10 dark:border-white/20`}
       style={{ backgroundColor: isDisplayableColor(value) ? value : 'transparent' }}
     />
   )

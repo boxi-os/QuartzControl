@@ -8,7 +8,7 @@ import {
   type CalloutColorDef,
   type CssVariableDef
 } from '../../data/cssVariables'
-import { effectiveValue, isDisplayableColor, resolvedValue, type ResolveContext } from './variableGraph'
+import { cssColorToHex, effectiveValue, isDisplayableColor, resolvedValue, type ResolveContext } from './variableGraph'
 import { useStyles } from './index'
 
 // Read-only reference of the CSS custom properties available at the point custom.scss is included:
@@ -37,7 +37,7 @@ export default function CssVariableReference({ onInsert }: { onInsert: (text: st
     : Object.keys(overrides).filter((key) => !knownKeys.has(key))
   const allDefs: CssVariableDef[] = [
     ...CSS_VARIABLES,
-    ...extraKeys.map((key) => ({ key, group: t('styleEditor.cssVars.discoveredGroup'), kind: 'font' as const }))
+    ...extraKeys.map((key) => ({ key, group: t('styleEditor.cssVars.discoveredGroup'), kind: 'discovered' as const }))
   ]
 
   const filtered = query ? allDefs.filter((def) => def.key.toLowerCase().includes(query)).slice(0, 80) : allDefs
@@ -94,7 +94,9 @@ export default function CssVariableReference({ onInsert }: { onInsert: (text: st
 
 // Values come from the same resolver the Variablen tab uses, so a swatch here shows what the
 // variable really paints today - including one whose value is an alias chain into the active
-// theme - rather than only what the classic colors would derive.
+// theme - rather than only what the classic colors would derive. Each kind gets the preview that
+// answers "what is this right now" for it: a color its two swatches plus the hex, a font a sample
+// set in that very font, anything else its literal value.
 function VariableRow({
   def,
   ctx,
@@ -105,27 +107,46 @@ function VariableRow({
   onInsert: (text: string) => void
 }): JSX.Element {
   const { t } = useTranslation()
-  const light = effectiveValue(def.key, 'light', ctx) ?? ''
-  const dark = effectiveValue(def.key, 'dark', ctx) ?? ''
-  const isColor = def.kind === 'color' || isDisplayableColor(resolvedValue(def.key, 'light', ctx))
+  const light = resolvedValue(def.key, 'light', ctx)
+  const dark = resolvedValue(def.key, 'dark', ctx)
+  const raw = effectiveValue(def.key, 'light', ctx) ?? effectiveValue(def.key, 'dark', ctx) ?? ''
+  const isColor = def.kind === 'color' || cssColorToHex(light) !== null
+  const isFont = def.kind === 'font'
 
   return (
     <button
       type="button"
       onClick={() => onInsert(`var(--${def.key})`)}
-      className="flex items-center gap-2 rounded px-1.5 py-1 text-left text-xs hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+      className="flex w-full items-center gap-2 rounded px-1.5 py-1 text-left text-xs hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
       title={t('styleEditor.cssVars.insertHint')}
     >
       {isColor && (
         <span className="flex shrink-0 gap-0.5">
-          <Swatch value={resolvedValue(def.key, 'light', ctx)} />
-          <Swatch value={resolvedValue(def.key, 'dark', ctx)} />
+          <Swatch value={light} />
+          <Swatch value={dark} />
         </span>
       )}
-      <code className="font-mono">--{def.key}</code>
-      {!isColor && (light || dark) && <span className="truncate text-slate-500 dark:text-slate-400">{light || dark}</span>}
+      <code className="shrink-0 font-mono">--{def.key}</code>
+      {isColor && <span className="ml-auto shrink-0 font-mono text-[11px] text-slate-400">{cssColorToHex(light) ?? light ?? '—'}</span>}
+      {/* A font stack is a long comma list that told the reader nothing when truncated. The first
+          family is its name, and setting the sample in the stack itself shows what it looks like. */}
+      {isFont && (
+        <span className="ml-auto flex min-w-0 items-baseline gap-2" title={light || raw}>
+          <span className="truncate text-slate-500 dark:text-slate-400">{primaryFamily(light || raw)}</span>
+          <span className="shrink-0 text-[13px] text-slate-700 dark:text-slate-200" style={{ fontFamily: light || raw }}>
+            Aa
+          </span>
+        </span>
+      )}
+      {!isColor && !isFont && raw && <span className="ml-auto truncate text-slate-500 dark:text-slate-400">{raw}</span>}
     </button>
   )
+}
+
+// The readable half of a font stack: its first family, unquoted.
+function primaryFamily(stack: string): string {
+  const first = stack.split(',')[0]?.trim() ?? ''
+  return first.replace(/^["']|["']$/g, '') || '—'
 }
 
 // A callout type's --color/--border/--bg only mean anything inside its own selector (see

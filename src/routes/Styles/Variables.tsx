@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import type { CssVariableOverride } from '@shared/ipc-contract'
 import { Button, Card, TextInput } from '../../components/ui'
+import { useStickyState } from '../../state/uiState'
 import { CSS_VARIABLES } from '../../data/cssVariables'
-import VariableRow from './VariableRow'
-import { allKnownKeys, groupOf, type Mode, type ResolveContext } from './variableGraph'
-import { useStyles } from './index'
+import VariableRow, { type OverrideValue } from './VariableRow'
+import { allKnownKeys, groupOf, type ResolveContext } from './variableGraph'
+import { activeThemeIdOf, useStyles } from './index'
 
 // How many rows the searchable table renders at once. A community theme can declare ~1000
 // variables (tokyo-night: 978), and every row that is on screen resolves its own derivation chain,
@@ -24,6 +25,13 @@ export default function Variables(): JSX.Element {
   const { t } = useTranslation()
   const { project, config, overrides, setOverrides, graph, graphLoading, reloadGraph, registerSave, reloadScss } =
     useStyles()
+
+  // Which rows are open, which query is active: kept across a trip to another area, since with
+  // nothing rendered until a query is typed, losing it means losing the whole result list.
+  const [expandedKeys, setExpandedKeys] = useStickyState<string[]>('styles.vars.expanded', [])
+  const [allOpen, setAllOpen] = useStickyState('styles.allVars.open', false)
+  const [query, setQuery] = useStickyState('styles.allVars.query', '')
+  const [onlyChanged, setOnlyChanged] = useStickyState('styles.allVars.onlyChanged', false)
 
   useEffect(() =>
     registerSave(async () => {
@@ -44,27 +52,38 @@ export default function Variables(): JSX.Element {
     typography: config.theme.typography as Record<string, string> | undefined
   }
 
-  function setValue(key: string, mode: Mode, value: string): void {
+  function setOverride(key: string, next: OverrideValue | null): void {
     setOverrides((prev) => {
-      const current = prev[key] ?? { light: '', dark: '' }
-      return { ...prev, [key]: { ...current, [mode]: value } }
+      if (!next) {
+        const copy = { ...prev }
+        delete copy[key]
+        return copy
+      }
+      return { ...prev, [key]: next }
     })
   }
 
-  function reset(key: string): void {
-    setOverrides((prev) => {
-      const next = { ...prev }
-      delete next[key]
-      return next
-    })
+  function toggleExpanded(key: string): void {
+    setExpandedKeys((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]))
+  }
+
+  // Clicking a variable in either dependency list jumps to it: opens the searchable table, puts the
+  // name in the query and expands that row - which is what makes the graph walkable instead of
+  // just readable.
+  function navigateTo(key: string): void {
+    setExpandedKeys((prev) => (prev.includes(key) ? prev : [...prev, key]))
+    setAllOpen(true)
+    setQuery(key)
   }
 
   const rowProps = (key: string): Parameters<typeof VariableRow>[0] => ({
     varKey: key,
     ctx,
     dependents: graph?.dependents[key] ?? [],
-    onSet: (mode, value) => setValue(key, mode, value),
-    onReset: () => reset(key)
+    expanded: expandedKeys.includes(key),
+    onToggle: () => toggleExpanded(key),
+    onChange: (next) => setOverride(key, next),
+    onNavigate: navigateTo
   })
 
   const curatedGroups = useMemo(() => {
@@ -84,8 +103,20 @@ export default function Variables(): JSX.Element {
     [graph, overrides, curatedKeys]
   )
 
+  const themeId = activeThemeIdOf(config)
+
   return (
-    <div className="flex max-w-3xl flex-col gap-4">
+    <div className="flex flex-col gap-4">
+      {/* Answers the question the tab order raises on its own: a community theme injects its CSS
+          inside @layer, this file's :root block is unlayered, and unlayered declarations outrank
+          every layered one regardless of load order - verified against a real build (ultra-lobster
+          + an override on --background-primary, both modes). The caveat is the honest half. */}
+      {themeId && (
+        <p className="rounded-md border border-blue-200 bg-blue-50 p-2.5 text-xs text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300">
+          {t('styles.variables.themeNote', { themeId })}
+        </p>
+      )}
+
       <Card>
         <h3 className="mb-1 text-sm font-semibold">{t('styles.variables.mainHeading')}</h3>
         <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('styles.variables.mainDescription')}</p>
@@ -110,6 +141,12 @@ export default function Variables(): JSX.Element {
         sources={graph?.sources}
         themeId={graph?.themeId}
         onReload={reloadGraph}
+        open={allOpen}
+        setOpen={setAllOpen}
+        query={query}
+        setQuery={setQuery}
+        onlyChanged={onlyChanged}
+        setOnlyChanged={setOnlyChanged}
         renderRow={(key) => <VariableRow key={key} {...rowProps(key)} />}
       />
     </div>
@@ -119,6 +156,7 @@ export default function Variables(): JSX.Element {
 // Search-driven rather than a rendered list: with ~1000 keys, "show me everything" is never the
 // useful default, and the two things a user actually wants - "what did I change" and "where is the
 // callout background" - are a filter and a query. Nothing is rendered until one of them is active.
+// Its state is owned by the page above, so a dependency chip in any row can steer it.
 function AllVariables({
   keys,
   overrides,
@@ -126,6 +164,12 @@ function AllVariables({
   sources,
   themeId,
   onReload,
+  open,
+  setOpen,
+  query,
+  setQuery,
+  onlyChanged,
+  setOnlyChanged,
   renderRow
 }: {
   keys: string[]
@@ -134,12 +178,15 @@ function AllVariables({
   sources: { theme: boolean; build: boolean } | undefined
   themeId: string | undefined
   onReload: () => void
+  open: boolean
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>
+  query: string
+  setQuery: React.Dispatch<React.SetStateAction<string>>
+  onlyChanged: boolean
+  setOnlyChanged: React.Dispatch<React.SetStateAction<boolean>>
   renderRow: (key: string) => JSX.Element
 }): JSX.Element {
   const { t } = useTranslation()
-  const [open, setOpen] = useState(false)
-  const [query, setQuery] = useState('')
-  const [onlyChanged, setOnlyChanged] = useState(false)
 
   const overriddenCount = keys.filter((key) => key in overrides).length
   const q = query.trim().toLowerCase()

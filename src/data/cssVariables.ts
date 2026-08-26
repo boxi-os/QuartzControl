@@ -12,7 +12,9 @@ export type ClassicColorKey = 'light' | 'lightgray' | 'gray' | 'darkgray' | 'dar
 export interface CssVariableDef {
   key: string
   group: string
-  kind: 'color' | 'font' | 'accent-h' | 'accent-s' | 'accent-l'
+  // 'discovered' is for a key that came out of the theme/build scan rather than this catalog:
+  // nothing is known about what it holds, so it derives no default and gets no typed preview.
+  kind: 'color' | 'font' | 'accent-h' | 'accent-s' | 'accent-l' | 'discovered'
   source?: ClassicColorKey | 'header' | 'body' | 'code'
 }
 

@@ -72,6 +72,24 @@ export function effectiveValue(key: string, mode: Mode, ctx: ResolveContext): st
   return undefined
 }
 
+// The value a variable would have *without* the user's own override for it - the yardstick the
+// editor compares a draft against, so "the user changed something" is a real comparison rather
+// than "an entry exists in the overrides map". Without it every expanded row would count as
+// changed the moment its input is rendered with the current value in it.
+export function baseValue(key: string, mode: Mode, ctx: ResolveContext): string | undefined {
+  const info = ctx.graph?.vars[key]
+  if (info) {
+    const value = info[mode] ?? info.light ?? info.dark
+    if (value) return value
+  }
+  const def = catalogDef(key)
+  if (def) {
+    const value = defaultValueFor(def, ctx.colors, ctx.typography, mode)
+    if (value) return value
+  }
+  return undefined
+}
+
 export interface ChainStep {
   key: string
   value: string
@@ -149,6 +167,47 @@ function substituteVars(value: string, mode: Mode, ctx: ResolveContext, depth: n
     resolvedValue(head[1], mode, ctx, depth) ?? (fallback ? substituteVars(fallback, mode, ctx, depth + 1) : undefined)
   if (resolved === undefined || resolved.includes('var(')) return value
   return substituteVars(value.slice(0, start) + resolved + value.slice(end + 1), mode, ctx, depth + 1)
+}
+
+/**
+ * The same resolution as resolvedValue(), but for a *value* rather than a variable name - what the
+ * editor needs while the user is typing, since a draft like `var(--secondary)` isn't stored under
+ * any key yet. Both shapes are handled: a pure alias is followed, an embedded reference
+ * (`hsl(var(--x))`) is substituted.
+ */
+export function resolveValueLiteral(value: string | undefined, mode: Mode, ctx: ResolveContext, depth = 0): string | undefined {
+  const v = value?.trim()
+  if (!v || depth > 4) return undefined
+  const alias = pureAlias(v)
+  if (alias) {
+    return resolvedValue(alias.target, mode, ctx, depth + 1) ?? resolveValueLiteral(alias.fallback, mode, ctx, depth + 1)
+  }
+  if (!v.includes('var(')) return v
+  const substituted = substituteVars(v, mode, ctx, depth + 1)
+  return substituted.includes('var(') ? undefined : substituted
+}
+
+// Normalises any CSS color notation to #rrggbb, which is the only thing <input type="color">
+// accepts - a theme's values are routinely hsl()/rgb()/color-mix(), and feeding those to the
+// picker made it silently show white next to a swatch painting the real color.
+//
+// Canvas' fillStyle does the parsing (the browser's own color parser, so it covers every notation
+// it can paint). An unparseable value leaves the previous fillStyle in place, so it is primed with
+// a sentinel: an unchanged result means "not a color", not "black".
+let colorProbe: CanvasRenderingContext2D | null | undefined
+const COLOR_PROBE_SENTINEL = '#010203'
+
+export function cssColorToHex(value: string | undefined): string | null {
+  const v = value?.trim()
+  if (!v || v.includes('var(')) return null
+  if (colorProbe === undefined) colorProbe = document.createElement('canvas').getContext('2d')
+  if (!colorProbe) return null
+  colorProbe.fillStyle = COLOR_PROBE_SENTINEL
+  colorProbe.fillStyle = v
+  const out = colorProbe.fillStyle
+  if (typeof out !== 'string' || !out.startsWith('#')) return null
+  if (out === COLOR_PROBE_SENTINEL && v.toLowerCase() !== COLOR_PROBE_SENTINEL) return null
+  return out
 }
 
 export function referencedVariables(value: string): string[] {

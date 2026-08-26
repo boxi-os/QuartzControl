@@ -181,6 +181,12 @@ function LocalFontImport({
 
 // Renders nested color palettes (e.g. per light/dark mode) without assuming a fixed schema depth,
 // since the exact quartz.config.yaml colors shape wasn't confirmed from the docs.
+//
+// Two levels, laid out differently on purpose: the mode palettes (lightMode/darkMode) sit *under*
+// each other, so each one gets the full width for its own multi-column grid of colors - side by
+// side they left every color cell half as wide, which is what squeezed the swatch to a sliver and
+// made the fixed-width name and hex field collide on a narrow window. Nothing inside a cell has a
+// fixed width any more except the swatch itself.
 function ColorGroup({
   value,
   onChange
@@ -188,34 +194,62 @@ function ColorGroup({
   value: Record<string, unknown>
   onChange: (next: Record<string, unknown>) => void
 }): JSX.Element {
+  const entries = Object.entries(value)
+  const nested = entries.filter(([, v]) => v !== null && typeof v === 'object')
+  const leaves = entries.filter(([, v]) => typeof v === 'string') as [string, string][]
+
   return (
-    <div className="flex flex-col gap-3">
-      {Object.entries(value).map(([key, v]) => {
-        if (typeof v === 'string') {
-          const hex = /^#([0-9a-f]{3}){1,2}$/i.test(v) ? v : '#ffffff'
-          return (
-            <div key={key} className="flex items-center gap-3">
-              <input
-                type="color"
-                value={hex}
-                onChange={(e) => onChange({ ...value, [key]: e.target.value })}
-                className="h-8 w-8 cursor-pointer rounded border border-slate-300"
-              />
-              <span className="w-32 text-sm text-slate-600 dark:text-slate-300">{key}</span>
-              <TextInput value={v} onChange={(e) => onChange({ ...value, [key]: e.target.value })} className="w-40" />
-            </div>
-          )
-        }
-        if (v && typeof v === 'object') {
-          return (
-            <div key={key} className="rounded-md border border-slate-200 p-3 dark:border-white/10">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{key}</p>
-              <ColorGroup value={v as Record<string, unknown>} onChange={(next) => onChange({ ...value, [key]: next })} />
-            </div>
-          )
-        }
-        return null
-      })}
+    <div className="flex flex-col gap-4">
+      {leaves.length > 0 && (
+        <div className="grid gap-2 sm:grid-cols-2 2xl:grid-cols-3">
+          {leaves.map(([key, v]) => (
+            <ColorCell key={key} name={key} value={v} onChange={(next) => onChange({ ...value, [key]: next })} />
+          ))}
+        </div>
+      )}
+      {nested.map(([key, v]) => (
+        <div key={key} className="rounded-md border border-slate-200 p-3 dark:border-white/10">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{key}</p>
+          <ColorGroup value={v as Record<string, unknown>} onChange={(next) => onChange({ ...value, [key]: next })} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function ColorCell({
+  name,
+  value,
+  onChange
+}: {
+  name: string
+  value: string
+  onChange: (next: string) => void
+}): JSX.Element {
+  const isHex = /^#([0-9a-f]{3}){1,2}$/i.test(value)
+  return (
+    <div className="flex items-center gap-2.5 rounded-md border border-black/[0.06] p-2 dark:border-white/10">
+      {/* Big enough to actually read the color, and a real preview even when the value is a
+          notation <input type="color"> cannot parse (it falls back to white internally, so the
+          background is painted from the raw value behind it). */}
+      <span
+        className="relative h-10 w-10 shrink-0 overflow-hidden rounded border border-black/10 dark:border-white/20"
+        style={{ backgroundColor: value }}
+      >
+        <input
+          type="color"
+          value={isHex ? value : '#ffffff'}
+          onChange={(e) => onChange(e.target.value)}
+          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+          title={name}
+        />
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className="truncate text-xs text-slate-600 dark:text-slate-300" title={name}>
+          {name}
+        </span>
+        <TextInput value={value} onChange={(e) => onChange(e.target.value)} className="w-full font-mono text-xs" />
+      </div>
     </div>
   )
 }

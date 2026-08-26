@@ -206,7 +206,7 @@ export default {
   themeEditor: {
     overrideWarningPrefix: 'The theme plugin ',
     overrideWarningSuffix: ' is active and can override these colors in the preview. It can also be turned off there.',
-    goToThemeTab: 'Go to the Theme tab',
+    goToThemeTab: 'Go to community themes',
     fontSource: 'Font source',
     googleFonts: 'Google Fonts',
     local: 'Local',
@@ -243,11 +243,9 @@ export default {
       noStyleSettingsNote:
         "The theme {{themeId}} doesn't offer its own color settings — there's nothing to customize here for this theme. That's down to the theme itself, not this app: changes would simply be ignored by Quartz.",
       styleSettingsHeading: 'Style settings ({{ids}})',
-      cssVarsHeading: 'Override CSS variables',
-      keyPlaceholder: 'e.g. secondary or secondary@@dark',
-      valuePlaceholder: 'Value',
-      addButton: 'Add',
-      removeLink: 'Remove'
+      ownValuesHint:
+        'This card only carries the options the theme itself declares. Your own values for individual CSS variables belong in the Variables tab or in your own CSS.',
+      goToVariables: 'Go to variables →'
     },
     presets: {
       title: 'My presets',
@@ -496,15 +494,15 @@ export default {
   styles: {
     tabs: {
       basics: 'Basics',
-      theme: 'Theme',
+      theme: 'Community themes',
       variables: 'Variables',
       customCss: 'Custom CSS'
     },
     cascade: {
       themeActive:
-        'Order: basics → theme → variables → custom CSS. The theme "{{themeId}}" is active and overrides the base colors.',
+        'Order: basics → community theme → variables → custom CSS. The theme "{{themeId}}" is active and overrides the base colors.',
       themeInactive:
-        'Order: basics → theme → variables → custom CSS. No community theme active — your base colors and fonts apply.',
+        'Order: basics → community theme → variables → custom CSS. No community theme active — your base colors and fonts apply.',
       overrides: '{{count}} variable(s) overridden.'
     },
     scssStale:
@@ -517,7 +515,6 @@ export default {
       refresh: 'Reload docs',
       unavailable:
         'No descriptions could be found for this theme — it has no entry in the Obsidian theme registry, or ships no @settings block. Only the raw switches are shown here.',
-      rawSummary: 'Show raw keys and values',
       themeDefault: '— theme default —',
       reset: 'Reset'
     },
@@ -540,15 +537,27 @@ export default {
       noTheme: 'No community theme is installed.',
       noBuild: 'There is no build output yet — build once, then reload here.',
       reload: 'Reload',
-      adjust: 'Customize',
       reset: 'Reset',
+      resetToOriginal: 'Reset to original value',
       light: 'Light',
       dark: 'Dark',
       chainToggle: 'Show origin and dependencies',
       unresolved: 'not resolvable (only set inside a selector)',
       dependents: '{{count}} depend on it',
-      dependentsTitle: 'These variables reference it: {{names}}',
       dependentsWarning: 'Your own value here affects {{count}} other variables.',
+      dependentsNone: 'No other variable references this one.',
+      usesNone: 'References no other variable — the value is right here.',
+      moreKeys: '+{{count}} more',
+      chipHint: 'Jump to this variable',
+      themeNote:
+        'The community theme "{{themeId}}" ships its variables inside @layer, while your values here land unlayered in custom.scss — unlayered rules always win. Verified against a real build (light and dark). Only variables a theme sets exclusively inside a selector (e.g. .callout[data-callout]) cannot be overridden globally here.',
+      section: {
+        current: 'Current value',
+        origin: 'Origin',
+        uses: 'Uses these variables',
+        dependents: 'Used by these variables',
+        edit: 'Your own value'
+      },
       origin: {
         core: 'Quartz core',
         theme: 'Theme',
@@ -564,6 +573,10 @@ export default {
     componentHint: 'Inserts a selector for the chosen component at the cursor position.',
     insertSelector: 'Insert selector',
     referenceHeading: 'Original styles (read-only)',
+    current: {
+      colors: 'Colors in effect (light / dark)',
+      fonts: 'Fonts in effect'
+    },
     cssVars: {
       heading: 'Available CSS variables',
       description: 'These variables are usable at this point (e.g. var(--text-normal)). Values reflect the current base layer, light/dark.',

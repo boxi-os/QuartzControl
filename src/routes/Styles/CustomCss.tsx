@@ -7,7 +7,15 @@ import type { StyleReferenceFile } from '@shared/ipc-contract'
 import { Button, Card, Select } from '../../components/ui'
 import { componentItems } from '../LayoutEditor/utils'
 import CssVariableReference from './CssVariableReference'
+import { cssColorToHex, isDisplayableColor, resolvedValue, type ResolveContext } from './variableGraph'
 import { useStyles } from './index'
+
+// What this file is writing on top of, as it actually looks right now - resolved through the same
+// chain the Variablen tab uses, so an active community theme's values show here rather than the
+// base colors it has long since overridden. Deliberately just the classic palette and the font
+// slots: the full table is one tab away, this is the "what am I working against" glance.
+const SUMMARY_COLORS = ['light', 'lightgray', 'gray', 'darkgray', 'dark', 'secondary', 'tertiary', 'highlight', 'textHighlight']
+const SUMMARY_FONTS = ['titleFont', 'headerFont', 'bodyFont', 'codeFont']
 
 // Tailwind's darkMode:'media' means there's no manual theme class to read - CodeMirror's own
 // theme prop needs an explicit 'light'/'dark' string, so this mirrors the same media query.
@@ -108,6 +116,8 @@ export default function CustomCss(): JSX.Element {
         </div>
       )}
 
+      <ActiveStyles />
+
       <Card className="flex items-center gap-2">
         <Select value={selectedComponent} onChange={(e) => setSelectedComponent(e.target.value)} className="w-56">
           <option value="">{t('styleEditor.componentPlaceholder')}</option>
@@ -163,5 +173,60 @@ export default function CustomCss(): JSX.Element {
         </div>
       </div>
     </div>
+  )
+}
+
+function ActiveStyles(): JSX.Element {
+  const { t } = useTranslation()
+  const { config, graph, overrides } = useStyles()
+  const ctx: ResolveContext = {
+    graph,
+    overrides,
+    colors: (config.theme.colors as { lightMode?: Record<string, string>; darkMode?: Record<string, string> }) ?? {},
+    typography: config.theme.typography as Record<string, string> | undefined
+  }
+
+  return (
+    <Card className="grid gap-4 lg:grid-cols-[2fr_1fr]">
+      <div>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          {t('styleEditor.current.colors')}
+        </h3>
+        <div className="flex flex-wrap gap-3">
+          {SUMMARY_COLORS.map((key) => {
+            const light = resolvedValue(key, 'light', ctx)
+            const dark = resolvedValue(key, 'dark', ctx)
+            return (
+              <div key={key} className="flex items-center gap-1.5" title={`${cssColorToHex(light) ?? light ?? '—'} / ${cssColorToHex(dark) ?? dark ?? '—'}`}>
+                <span className="flex overflow-hidden rounded border border-black/10 dark:border-white/20">
+                  <span className="h-5 w-5" style={{ backgroundColor: isDisplayableColor(light) ? light : 'transparent' }} />
+                  <span className="h-5 w-5" style={{ backgroundColor: isDisplayableColor(dark) ? dark : 'transparent' }} />
+                </span>
+                <code className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{key}</code>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+      <div>
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          {t('styleEditor.current.fonts')}
+        </h3>
+        <div className="flex flex-col gap-1">
+          {SUMMARY_FONTS.map((key) => {
+            const value = resolvedValue(key, 'light', ctx)
+            if (!value) return null
+            return (
+              <div key={key} className="flex items-baseline gap-2 text-[11px]">
+                <code className="w-24 shrink-0 font-mono text-slate-500 dark:text-slate-400">{key}</code>
+                <span className="truncate text-[13px] text-slate-700 dark:text-slate-200" style={{ fontFamily: value }} title={value}>
+                  {value.split(',')[0].replace(/^["']|["']$/g, '')}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </Card>
   )
 }

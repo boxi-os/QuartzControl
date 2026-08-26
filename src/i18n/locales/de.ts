@@ -605,7 +605,13 @@ export default {
     },
     current: {
       colors: 'Aktuell geltende Farben (hell / dunkel)',
-      fonts: 'Aktuell geltende Schriften'
+      fonts: 'Aktuell geltende Schriften',
+      italic: 'kursiv',
+      noFace: 'keine @font-face-Regel gefunden',
+      familyDefault: '(Standardstärke)',
+      googleNote: 'Quartz lädt von Google Fonts: {{specs}}. Die Stärken oben stammen aus den @font-face-Regeln, die tatsächlich vorliegen.',
+      localNote:
+        'Font-Quelle „Lokal": Quartz lädt selbst keine Schriften. Verfügbar ist nur, was ein aktives Theme mitbringt oder was du per @font-face in deinen Stylesheets deklarierst.'
     },
     cssVars: {
       heading: 'Verfügbare CSS-Variablen',

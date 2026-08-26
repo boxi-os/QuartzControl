@@ -4,14 +4,15 @@ import CodeMirror from '@uiw/react-codemirror'
 import { css } from '@codemirror/lang-css'
 import type { EditorView } from '@codemirror/view'
 import { ArrowDown, ArrowUp, Check, FileWarning, Plus, X } from 'lucide-react'
-import type { ScssCheckResult, StyleFile, StyleReferenceFile } from '@shared/ipc-contract'
+import type { FontFaceInfo, ScssCheckResult, StyleFile, StyleReferenceFile } from '@shared/ipc-contract'
 import { Button, Card, Select, TextInput, useCopyToClipboard } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { useStickyState } from '../../state/uiState'
 import { componentItems } from '../LayoutEditor/utils'
 import CssVariableReference from './CssVariableReference'
 import { cssColorToHex, isDisplayableColor, resolvedValue, type ResolveContext } from './variableGraph'
-import { useStyles } from './index'
+import { googleFontRequest, primaryFamily, summarizeFaces, type TypographySlot } from './fontSpec'
+import { activeThemeIdOf, useStyles } from './index'
 
 // What this file is writing on top of, as it actually looks right now - resolved through the same
 // chain the Variablen tab uses, so an active community theme's values show here rather than the
@@ -681,8 +682,15 @@ function CheckBanner({
 
 function ActiveStyles(): JSX.Element {
   const { t } = useTranslation()
-  const { config, graph, overrides } = useStyles()
+  const { project, config, graph, overrides } = useStyles()
   const { copied, copy } = useCopyToClipboard()
+  const [faces, setFaces] = useState<FontFaceInfo[]>([])
+  const themeId = activeThemeIdOf(config)
+
+  useEffect(() => {
+    window.quartzGui.styles.fontFaces(project.path, themeId).then(setFaces)
+  }, [project.path, themeId])
+
   const ctx: ResolveContext = {
     graph,
     overrides,
@@ -690,8 +698,14 @@ function ActiveStyles(): JSX.Element {
     typography: config.theme.typography as Record<string, string> | undefined
   }
 
+  const fontOrigin = (config.theme.fontOrigin as string) ?? 'googleFonts'
+  const typography = (config.theme.typography ?? {}) as Record<string, unknown>
+  const requests = (['header', 'body', 'code'] as TypographySlot[])
+    .map((slot) => googleFontRequest(slot, typography[slot]))
+    .filter((r): r is NonNullable<typeof r> => r !== null)
+
   return (
-    <Card className="grid gap-4 lg:grid-cols-[2fr_1fr]">
+    <Card className="grid gap-4 lg:grid-cols-2">
       <div>
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
           {t('styleEditor.current.colors')}
@@ -723,30 +737,60 @@ function ActiveStyles(): JSX.Element {
         </div>
         {copied && <p className="mt-2 truncate text-[11px] text-green-700 dark:text-green-400">{t('common.copied', { value: copied })}</p>}
       </div>
+
       <div>
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
           {t('styleEditor.current.fonts')}
         </h3>
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1.5">
           {SUMMARY_FONTS.map((key) => {
-            const value = resolvedValue(key, 'light', ctx)
-            if (!value) return null
+            const stack = resolvedValue(key, 'light', ctx)
+            if (!stack) return null
+            const family = primaryFamily(stack)
+            const summary = summarizeFaces(faces, family)
             return (
-              <div key={key} className="flex items-baseline gap-2 text-[11px]">
+              <div key={key} className="flex flex-wrap items-baseline gap-x-2 text-[11px]">
                 <code className="w-24 shrink-0 font-mono text-slate-500 dark:text-slate-400">{key}</code>
                 <button
                   type="button"
-                  onClick={() => copy(value, `--${key}`)}
-                  title={t('styleEditor.cssVars.copyHint', { value })}
+                  onClick={() => copy(stack, `--${key}`)}
+                  title={t('styleEditor.cssVars.copyHint', { value: stack })}
                   className="min-w-0 truncate rounded px-1 text-left text-[13px] text-slate-700 hover:bg-black/[0.06] dark:text-slate-200 dark:hover:bg-white/10"
-                  style={{ fontFamily: value }}
+                  style={{ fontFamily: stack }}
                 >
-                  {value.split(',')[0].replace(/^["']|["']$/g, '')}
+                  {family}
                 </button>
+                {/* Straight out of the @font-face declarations the site really has - a range like
+                    100–1000 is a variable font, and italic only shows when a face declares it. */}
+                {summary ? (
+                  <span className="text-slate-500 dark:text-slate-400">
+                    {summary.weights.join(' · ')}
+                    {summary.italic && ` · ${t('styleEditor.current.italic')}`}
+                  </span>
+                ) : (
+                  <span className="text-slate-400">{t('styleEditor.current.noFace')}</span>
+                )}
               </div>
             )
           })}
         </div>
+
+        {/* Which of the two loading paths is in play changes what the weights above even mean, so
+            it is stated rather than left to be inferred. */}
+        <p className="mt-2 text-[11px] text-slate-400">
+          {fontOrigin === 'googleFonts'
+            ? t('styleEditor.current.googleNote', {
+                specs: requests
+                  .map(
+                    (r) =>
+                      `${r.family} ${r.singleWeightDropped ? t('styleEditor.current.familyDefault') : r.weights.join('/')}${
+                        r.italic ? ` + ${t('styleEditor.current.italic')}` : ''
+                      }`
+                  )
+                  .join(' · ')
+              })
+            : t('styleEditor.current.localNote')}
+        </p>
       </div>
     </Card>
   )

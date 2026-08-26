@@ -385,6 +385,22 @@ export interface StyleFileSet {
   files: StyleFile[]
 }
 
+// One @font-face the site really has: what family it declares, at which weight(s) and in which
+// style. Two honest sources, and they are the only two - Quartz itself downloads fonts *only* for
+// `fontOrigin: "googleFonts"` (componentResources.ts's local branch is literally "let the user do
+// it themselves in css"), so under "local" everything available comes from an @font-face in the
+// project's own stylesheets or from the font files a community theme ships.
+export interface FontFaceInfo {
+  family: string
+  /** Verbatim from the source: "400", "bold", or a variable range like "100 1000". */
+  weight: string
+  /** Verbatim: "normal", "italic", … */
+  style: string
+  origin: 'theme' | 'project'
+  /** Which file it was found in - the theme package or a path relative to quartz/styles. */
+  source: string
+}
+
 // A Sass compile error, located in the file it actually came from - which is frequently not the
 // file being edited, since an error in a partial only surfaces when custom.scss pulls it in.
 export interface ScssDiagnostic {
@@ -656,6 +672,7 @@ export const IPC = {
   stylesSetImportOrder: 'styles:setImportOrder',
   stylesCheck: 'styles:check',
   stylesCheckSource: 'styles:checkSource',
+  stylesFontFaces: 'styles:fontFaces',
   stylesGetVariableOverrides: 'styles:getVariableOverrides',
   stylesSaveVariableOverrides: 'styles:saveVariableOverrides',
   stylesScanBuildOutputVariables: 'styles:scanBuildOutputVariables',
@@ -793,6 +810,7 @@ export interface QuartzGuiApi {
     check(projectPath: string): Promise<ScssCheckResult>
     /** Compiles one file's *unsaved* content on its own - each stylesheet is its own Sass module. */
     checkSource(projectPath: string, relativePath: string, content: string): Promise<ScssCheckResult>
+    fontFaces(projectPath: string, themeId?: string): Promise<FontFaceInfo[]>
     getVariableOverrides(projectPath: string): Promise<CssVariableOverride[]>
     saveVariableOverrides(projectPath: string, overrides: CssVariableOverride[]): Promise<void>
     scanBuildOutputVariables(projectPath: string, outputDir?: string): Promise<string[]>

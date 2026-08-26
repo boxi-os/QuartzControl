@@ -5,6 +5,7 @@ import { basename, dirname, join, relative, sep } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
 import type {
   CssVariableOverride,
+  FontFaceInfo,
   ScssCheckResult,
   ScssDiagnostic,
   StyleFile,
@@ -499,4 +500,79 @@ function toDiagnostic(projectPath: string, err: unknown): ScssDiagnostic {
     line: e.span?.start ? e.span.start.line + 1 : undefined,
     column: e.span?.start ? e.span.start.column + 1 : undefined
   }
+}
+
+// ── which fonts the site actually has ───────────────────────────────────────
+
+const FONT_FACE_RE = /@font-face\s*\{([^}]*)\}/g
+
+function declaration(body: string, property: string): string | undefined {
+  const match = new RegExp(`(?:^|;)\\s*${property}\\s*:\\s*([^;]+)`, 'i').exec(body)
+  return match ? match[1].trim().replace(/^["']|["']$/g, '') : undefined
+}
+
+/**
+ * Every @font-face the built site will have, from the only two places one can come from.
+ *
+ * Quartz downloads fonts *only* for `fontOrigin: "googleFonts"` - its local branch in
+ * componentResources.ts is a comment reading "let the user do it themselves in css" and emits
+ * nothing at all. So under "local" the available weights and styles are exactly what the project's
+ * own stylesheets declare (the app's own font import writes one such block) plus whatever font
+ * files the active community theme ships, which theme.json lists under `meta.fontFiles` with the
+ * family, style and weight of each - including variable ranges like "100 1000".
+ */
+export async function collectFontFaces(projectPath: string, themeId?: string): Promise<FontFaceInfo[]> {
+  const out: FontFaceInfo[] = []
+
+  if (themeId) {
+    const themeJson = join(projectPath, 'node_modules', '@quartz-themes', themeId, 'theme.json')
+    if (existsSync(themeJson)) {
+      try {
+        const parsed = JSON.parse(await readFile(themeJson, 'utf-8')) as {
+          meta?: { fontFiles?: { family?: string; style?: string; weight?: string }[] }
+        }
+        for (const file of parsed.meta?.fontFiles ?? []) {
+          if (!file.family) continue
+          out.push({
+            family: file.family,
+            weight: file.weight ?? '400',
+            style: file.style ?? 'normal',
+            origin: 'theme',
+            source: `@quartz-themes/${themeId}`
+          })
+        }
+      } catch {
+        // a malformed theme.json is the theme's problem, not a reason to show nothing at all
+      }
+    }
+  }
+
+  const files = [customScssPath(projectPath)]
+  for (const dir of STYLE_DIRS) {
+    const full = join(stylesDir(projectPath), dir)
+    if (!existsSync(full)) continue
+    for (const entry of await readdir(full, { withFileTypes: true })) {
+      if (entry.isFile() && /\.(scss|css)$/.test(entry.name)) files.push(join(full, entry.name))
+    }
+  }
+
+  for (const path of files) {
+    if (!existsSync(path)) continue
+    const content = await readFile(path, 'utf-8')
+    FONT_FACE_RE.lastIndex = 0
+    let match: RegExpExecArray | null
+    while ((match = FONT_FACE_RE.exec(content)) !== null) {
+      const family = declaration(match[1], 'font-family')
+      if (!family) continue
+      out.push({
+        family,
+        weight: declaration(match[1], 'font-weight') ?? '400',
+        style: declaration(match[1], 'font-style') ?? 'normal',
+        origin: 'project',
+        source: relative(stylesDir(projectPath), path).split(sep).join('/')
+      })
+    }
+  }
+
+  return out
 }

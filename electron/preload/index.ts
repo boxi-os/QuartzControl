@@ -74,6 +74,7 @@ const api: QuartzGuiApi = {
     check: (projectPath: string) => ipcRenderer.invoke(IPC.stylesCheck, projectPath),
     checkSource: (projectPath: string, relativePath: string, content: string) =>
       ipcRenderer.invoke(IPC.stylesCheckSource, projectPath, relativePath, content),
+    fontFaces: (projectPath: string, themeId?: string) => ipcRenderer.invoke(IPC.stylesFontFaces, projectPath, themeId),
     getVariableOverrides: (projectPath: string) => ipcRenderer.invoke(IPC.stylesGetVariableOverrides, projectPath),
     saveVariableOverrides: (projectPath: string, overrides: CssVariableOverride[]) =>
       ipcRenderer.invoke(IPC.stylesSaveVariableOverrides, projectPath, overrides),

@@ -604,7 +604,13 @@ export default {
     },
     current: {
       colors: 'Colors in effect (light / dark)',
-      fonts: 'Fonts in effect'
+      fonts: 'Fonts in effect',
+      italic: 'italic',
+      noFace: 'no @font-face rule found',
+      familyDefault: '(family default)',
+      googleNote: 'Quartz loads from Google Fonts: {{specs}}. The weights above come from the @font-face rules that actually exist.',
+      localNote:
+        'Font source "local": Quartz loads no fonts itself. Only what an active theme ships, or what you declare via @font-face in your own stylesheets, is available.'
     },
     cssVars: {
       heading: 'Available CSS variables',

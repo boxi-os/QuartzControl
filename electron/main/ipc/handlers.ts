@@ -195,6 +195,9 @@ export function registerIpcHandlers(): void {
     t([s.absolutePath, s.styleEntryPath, s.longText]),
     (projectPath, relativePath, content) => styleService.checkStyleSource(projectPath, relativePath, content)
   )
+  handle(IPC.stylesFontFaces, t([s.absolutePath, s.themeId.optional()]), (projectPath, themeId) =>
+    styleService.collectFontFaces(projectPath, themeId)
+  )
   handle(IPC.stylesGetVariableOverrides, t([s.absolutePath]), (projectPath) =>
     styleService.getVariableOverrides(projectPath)
   )

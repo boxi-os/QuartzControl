@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import CodeMirror from '@uiw/react-codemirror'
 import { css } from '@codemirror/lang-css'
 import type { EditorView } from '@codemirror/view'
-import type { StyleReferenceFile } from '@shared/ipc-contract'
-import { Button, Card, Select } from '../../components/ui'
+import { ArrowDown, ArrowUp, Check, FileWarning, Plus, X } from 'lucide-react'
+import type { ScssCheckResult, StyleFile, StyleReferenceFile } from '@shared/ipc-contract'
+import { Button, Card, Select, TextInput } from '../../components/ui'
+import { formatIpcError } from '../../components/ErrorSurface'
+import { useStickyState } from '../../state/uiState'
 import { componentItems } from '../LayoutEditor/utils'
 import CssVariableReference from './CssVariableReference'
 import { cssColorToHex, isDisplayableColor, resolvedValue, type ResolveContext } from './variableGraph'
@@ -14,6 +17,10 @@ import { useStyles } from './index'
 // chain the Variablen tab uses, so an active community theme's values show here rather than the
 // base colors it has long since overridden. Deliberately just the classic palette and the font
 // slots: the full table is one tab away, this is the "what am I working against" glance.
+// custom.scss is not one of the additional files (it has no relativePath and is never part of the
+// order), but it is one of the editor's tabs - this is the key it goes under.
+const MAIN_TAB = ':main'
+
 const SUMMARY_COLORS = ['light', 'lightgray', 'gray', 'darkgray', 'dark', 'secondary', 'tertiary', 'highlight', 'textHighlight']
 const SUMMARY_FONTS = ['titleFont', 'headerFont', 'bodyFont', 'codeFont']
 
@@ -38,17 +45,83 @@ function useColorScheme(): 'light' | 'dark' {
 // have made that draft stale.
 export default function CustomCss(): JSX.Element {
   const { t } = useTranslation()
-  const { project, config, scss, setScssContent, reloadScss, registerSave } = useStyles()
+  const {
+    project,
+    config,
+    scss,
+    setScssContent,
+    reloadScss,
+    registerSave,
+    fileSet,
+    fileDrafts,
+    setFileDraft,
+    clearFileDrafts,
+    reloadFiles
+  } = useStyles()
   const [selectedComponent, setSelectedComponent] = useState('')
   const [references, setReferences] = useState<StyleReferenceFile[]>([])
+  // Which files are open and which one is in front is "where I was" - kept across an area switch.
+  // Their *content* is not here: an unsaved draft lives in the Styles context, so it also survives
+  // switching to another styling sub-tab and back.
+  const [openTabs, setOpenTabs] = useStickyState<string[]>('styles.css.openTabs', [MAIN_TAB])
+  const [activeTab, setActiveTab] = useStickyState<string>('styles.css.activeTab', MAIN_TAB)
+  // On-disk content of the extra files that have been opened, so "is this draft different?" is a
+  // real comparison. Local rather than lifted: re-reading a file is one cheap call.
+  const [loaded, setLoaded] = useState<Record<string, string>>({})
+  const [check, setCheck] = useState<ScssCheckResult | null>(null)
+  const [checking, setChecking] = useState(false)
   const viewRef = useRef<EditorView | null>(null)
   const scheme = useColorScheme()
 
+  const files = fileSet?.files ?? []
+  const imported = files.filter((f) => f.imported)
+
+  const runCheck = useCallback(async () => {
+    setChecking(true)
+    try {
+      setCheck(await window.quartzGui.styles.check(project.path))
+    } finally {
+      setChecking(false)
+    }
+  }, [project.path])
+
+  // Checked once on arrival too, not only after a save: an error introduced outside the app (or
+  // left behind by an earlier session) should be visible before the next edit builds on top of it.
+  useEffect(() => {
+    void runCheck()
+  }, [runCheck])
+
+  useEffect(() => {
+    const missing = openTabs.filter((tab) => tab !== MAIN_TAB && loaded[tab] === undefined)
+    if (missing.length === 0) return
+    let cancelled = false
+    Promise.all(missing.map((tab) => window.quartzGui.styles.readFile(project.path, tab).then((c) => [tab, c] as const))).then(
+      (entries) => {
+        if (cancelled) return
+        setLoaded((prev) => ({ ...prev, ...Object.fromEntries(entries) }))
+      }
+    )
+    return () => {
+      cancelled = true
+    }
+  }, [project.path, openTabs, loaded])
+
+  const dirtyFiles = files
+    .map((f) => f.relativePath)
+    .filter((rel) => fileDrafts[rel] !== undefined && fileDrafts[rel] !== loaded[rel])
+
   useEffect(() =>
     registerSave(async () => {
+      for (const rel of dirtyFiles) {
+        await window.quartzGui.styles.saveFile(project.path, rel, fileDrafts[rel])
+      }
       await window.quartzGui.styles.save(project.path, scss.content)
       // Re-reads what is now on disk, which clears the dirty/stale flags in one step.
       await reloadScss(true)
+      setLoaded((prev) => ({ ...prev, ...Object.fromEntries(dirtyFiles.map((rel) => [rel, fileDrafts[rel]])) }))
+      clearFileDrafts(dirtyFiles)
+      await reloadFiles()
+      await runCheck()
     })
   )
 
@@ -59,6 +132,57 @@ export default function CustomCss(): JSX.Element {
     }
     window.quartzGui.styles.reference(project.path, selectedComponent).then(setReferences)
   }, [project.path, selectedComponent])
+
+  // A tab whose file was deleted (or renamed) must not stay open pointing at nothing.
+  useEffect(() => {
+    if (!fileSet) return
+    const known = new Set([MAIN_TAB, ...files.map((f) => f.relativePath)])
+    setOpenTabs((prev) => (prev.every((tab) => known.has(tab)) ? prev : prev.filter((tab) => known.has(tab))))
+    setActiveTab((prev) => (known.has(prev) ? prev : MAIN_TAB))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fileSet])
+
+  const contentOf = (tab: string): string =>
+    tab === MAIN_TAB ? scss.content : (fileDrafts[tab] ?? loaded[tab] ?? '')
+
+  function setContent(value: string): void {
+    if (activeTab === MAIN_TAB) setScssContent(value)
+    else setFileDraft(activeTab, value)
+  }
+
+  function openTab(tab: string): void {
+    setOpenTabs((prev) => (prev.includes(tab) ? prev : [...prev, tab]))
+    setActiveTab(tab)
+  }
+
+  function closeTab(tab: string): void {
+    if (tab === MAIN_TAB) return
+    setOpenTabs((prev) => prev.filter((x) => x !== tab))
+    setActiveTab((prev) => (prev === tab ? MAIN_TAB : prev))
+  }
+
+  // Every file operation writes custom.scss's import block, so the editor's draft of that file has
+  // to be re-read afterwards - the same rule variable overrides and font imports follow. Not
+  // forced: an unsaved draft is kept and flagged stale rather than thrown away.
+  async function afterFileOp(): Promise<void> {
+    await reloadFiles()
+    await reloadScss()
+    await runCheck()
+  }
+
+  async function applyOrder(next: string[]): Promise<void> {
+    await window.quartzGui.styles.setImportOrder(project.path, next)
+    await afterFileOp()
+  }
+
+  function move(relativePath: string, delta: number): void {
+    const order = imported.map((f) => f.relativePath)
+    const from = order.indexOf(relativePath)
+    const to = from + delta
+    if (from === -1 || to < 0 || to >= order.length) return
+    order.splice(to, 0, ...order.splice(from, 1))
+    void applyOrder(order)
+  }
 
   // Inserts at the cursor only when the editor actually has focus (the user clicked into it and
   // placed the cursor deliberately) - otherwise the cursor defaults to position 0, and inserting
@@ -71,7 +195,7 @@ export default function CustomCss(): JSX.Element {
     } else if (view) {
       view.dispatch({ changes: { from: view.state.doc.length, insert: text } })
     } else {
-      setScssContent(scss.content + text)
+      setContent(contentOf(activeTab) + text)
     }
     view?.focus()
   }
@@ -84,21 +208,28 @@ export default function CustomCss(): JSX.Element {
     await window.quartzGui.dialog.openPath(targetPath)
   }
 
+  // Copies a stylesheet from anywhere into quartz/styles/imported and wires it into the order,
+  // rather than pasting an @use line into whatever the user happens to be editing.
   async function importFile(): Promise<void> {
     const picked = await window.quartzGui.dialog.pickFile([{ name: 'Stylesheets', extensions: ['scss', 'css'] }])
     if (!picked) return
     const result = await window.quartzGui.styles.importFile(project.path, picked)
-    setScssContent(`${result.importLine}\n${scss.content}`)
+    await applyOrder([...imported.map((f) => f.relativePath), result.relativePath])
+    openTab(result.relativePath)
   }
 
   const components = useMemo(() => componentItems(config.plugins), [config.plugins])
+  const activeFile = files.find((f) => f.relativePath === activeTab)
+  const activePath = activeTab === MAIN_TAB ? scss.path : (activeFile?.path ?? '')
+  const isDirty = (tab: string): boolean =>
+    tab === MAIN_TAB ? scss.dirty : fileDrafts[tab] !== undefined && fileDrafts[tab] !== loaded[tab]
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="truncate text-xs text-slate-500 dark:text-slate-400">{scss.path}</p>
+        <p className="truncate text-xs text-slate-500 dark:text-slate-400">{activePath}</p>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" onClick={() => openExternally(scss.path)}>
+          <Button variant="ghost" onClick={() => openExternally(activePath)}>
             {t('styleEditor.openExternally')}
           </Button>
           <Button variant="ghost" onClick={importFile}>
@@ -116,9 +247,11 @@ export default function CustomCss(): JSX.Element {
         </div>
       )}
 
+      <CheckBanner result={check} checking={checking} onRecheck={runCheck} onOpenFile={openTab} />
+
       <ActiveStyles />
 
-      <Card className="flex items-center gap-2">
+      <Card className="flex flex-wrap items-center gap-2">
         <Select value={selectedComponent} onChange={(e) => setSelectedComponent(e.target.value)} className="w-56">
           <option value="">{t('styleEditor.componentPlaceholder')}</option>
           {components.map(({ plugin }) => (
@@ -134,20 +267,41 @@ export default function CustomCss(): JSX.Element {
       </Card>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]">
-        <Card className="!p-0 overflow-hidden">
-          <CodeMirror
-            value={scss.content}
-            height="65vh"
-            theme={scheme}
-            extensions={[css()]}
-            onChange={setScssContent}
-            onCreateEditor={(view) => {
-              viewRef.current = view
-            }}
+        <div className="flex min-w-0 flex-col">
+          <TabBar
+            tabs={openTabs}
+            active={activeTab}
+            files={files}
+            isDirty={isDirty}
+            onSelect={setActiveTab}
+            onClose={closeTab}
           />
-        </Card>
+          <Card className="!rounded-t-none !p-0 overflow-hidden">
+            <CodeMirror
+              key={activeTab}
+              value={contentOf(activeTab)}
+              height="65vh"
+              theme={scheme}
+              extensions={[css()]}
+              onChange={setContent}
+              onCreateEditor={(view) => {
+                viewRef.current = view
+              }}
+            />
+          </Card>
+        </div>
 
-        <div className="flex flex-col gap-4 overflow-y-auto" style={{ maxHeight: '65vh' }}>
+        <div className="flex flex-col gap-4 overflow-y-auto" style={{ maxHeight: '70vh' }}>
+          <FileOrder
+            files={files}
+            activeTab={activeTab}
+            projectPath={project.path}
+            onOpen={openTab}
+            onMove={move}
+            onSetOrder={applyOrder}
+            onChanged={afterFileOp}
+          />
+
           <CssVariableReference onInsert={insertAtCursor} />
 
           {references.length > 0 && (
@@ -173,6 +327,324 @@ export default function CustomCss(): JSX.Element {
         </div>
       </div>
     </div>
+  )
+}
+
+// One tab per open file. custom.scss is pinned first and cannot be closed - it is the file Quartz
+// actually imports, and closing it would leave the editor pointing at nothing.
+function TabBar({
+  tabs,
+  active,
+  files,
+  isDirty,
+  onSelect,
+  onClose
+}: {
+  tabs: string[]
+  active: string
+  files: StyleFile[]
+  isDirty: (tab: string) => boolean
+  onSelect: (tab: string) => void
+  onClose: (tab: string) => void
+}): JSX.Element {
+  const { t } = useTranslation()
+  const label = (tab: string): string =>
+    tab === MAIN_TAB ? 'custom.scss' : (files.find((f) => f.relativePath === tab)?.name ?? tab)
+  const ordered = [MAIN_TAB, ...tabs.filter((tab) => tab !== MAIN_TAB)]
+
+  return (
+    <div className="flex flex-wrap items-end gap-0.5 overflow-x-auto">
+      {ordered.map((tab) => {
+        const isActive = tab === active
+        return (
+          <div
+            key={tab}
+            className={`flex items-center gap-1 rounded-t-[8px] border border-b-0 px-2.5 py-1.5 text-xs ${
+              isActive
+                ? 'border-black/[0.06] bg-white dark:border-white/10 dark:bg-[#1c1c1e]'
+                : 'border-transparent bg-black/[0.04] text-slate-500 hover:bg-black/[0.07] dark:bg-white/[0.06] dark:hover:bg-white/10'
+            }`}
+          >
+            <button type="button" onClick={() => onSelect(tab)} className="max-w-[16ch] truncate" title={label(tab)}>
+              {label(tab)}
+            </button>
+            {isDirty(tab) && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" title={t('styleEditor.files.unsaved')} />}
+            {tab !== MAIN_TAB && (
+              <button
+                type="button"
+                onClick={() => onClose(tab)}
+                className="shrink-0 text-slate-400 hover:text-slate-700 dark:hover:text-white"
+                title={t('styleEditor.files.closeTab')}
+              >
+                <X size={11} />
+              </button>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// The load order, as a list rather than as draggable tabs: the tabs say which files are *open*,
+// which is a different question from which files are loaded and in what sequence - and with more
+// than a handful of files a tab strip is the wrong place to sort anything.
+function FileOrder({
+  files,
+  activeTab,
+  projectPath,
+  onOpen,
+  onMove,
+  onSetOrder,
+  onChanged
+}: {
+  files: StyleFile[]
+  activeTab: string
+  projectPath: string
+  onOpen: (tab: string) => void
+  onMove: (relativePath: string, delta: number) => void
+  onSetOrder: (next: string[]) => Promise<void>
+  onChanged: () => Promise<void>
+}): JSX.Element {
+  const { t } = useTranslation()
+  const [creating, setCreating] = useState<string | null>(null)
+  const [renaming, setRenaming] = useState<{ relativePath: string; name: string } | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const imported = files.filter((f) => f.imported)
+  const orphans = files.filter((f) => !f.imported)
+
+  async function run(action: () => Promise<unknown>): Promise<void> {
+    setError(null)
+    try {
+      await action()
+      await onChanged()
+    } catch (err) {
+      setError(formatIpcError(err))
+    }
+  }
+
+  return (
+    <Card>
+      <h3 className="mb-1 text-sm font-semibold">{t('styleEditor.files.heading')}</h3>
+      <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('styleEditor.files.description')}</p>
+
+      <div className="flex flex-col gap-1">
+        {imported.map((file, index) => (
+          <div
+            key={file.relativePath}
+            className={`flex items-center gap-1.5 rounded-md px-1.5 py-1 text-xs ${
+              activeTab === file.relativePath ? 'bg-blue-50 dark:bg-blue-500/10' : ''
+            }`}
+          >
+            <span className="w-4 shrink-0 text-right text-[11px] text-slate-400">{index + 1}</span>
+            {renaming?.relativePath === file.relativePath ? (
+              <>
+                <TextInput
+                  value={renaming.name}
+                  onChange={(e) => setRenaming({ ...renaming, name: e.target.value })}
+                  className="h-6 min-w-0 flex-1 text-xs"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  className="shrink-0 text-[11px] underline"
+                  onClick={() =>
+                    run(async () => {
+                      await window.quartzGui.styles.renameFile(projectPath, file.relativePath, renaming.name.trim())
+                      setRenaming(null)
+                    })
+                  }
+                >
+                  {t('common.save')}
+                </button>
+                <button type="button" className="shrink-0 text-[11px] underline" onClick={() => setRenaming(null)}>
+                  {t('common.cancel')}
+                </button>
+              </>
+            ) : (
+              <>
+                <button type="button" onClick={() => onOpen(file.relativePath)} className="min-w-0 flex-1 truncate text-left font-mono hover:underline">
+                  {file.name}
+                </button>
+                <button
+                  type="button"
+                  disabled={index === 0}
+                  onClick={() => onMove(file.relativePath, -1)}
+                  className="shrink-0 text-slate-400 disabled:opacity-30 hover:text-slate-700 dark:hover:text-white"
+                  title={t('styleEditor.files.moveUp')}
+                >
+                  <ArrowUp size={12} />
+                </button>
+                <button
+                  type="button"
+                  disabled={index === imported.length - 1}
+                  onClick={() => onMove(file.relativePath, 1)}
+                  className="shrink-0 text-slate-400 disabled:opacity-30 hover:text-slate-700 dark:hover:text-white"
+                  title={t('styleEditor.files.moveDown')}
+                >
+                  <ArrowDown size={12} />
+                </button>
+                <button
+                  type="button"
+                  className="shrink-0 text-[11px] text-slate-500 underline"
+                  onClick={() => setRenaming({ relativePath: file.relativePath, name: file.name })}
+                >
+                  {t('styleEditor.files.rename')}
+                </button>
+                {confirmDelete === file.relativePath ? (
+                  <>
+                    <button
+                      type="button"
+                      className="shrink-0 text-[11px] font-medium text-red-600 underline"
+                      onClick={() =>
+                        run(async () => {
+                          await window.quartzGui.styles.deleteFile(projectPath, file.relativePath)
+                          setConfirmDelete(null)
+                        })
+                      }
+                    >
+                      {t('styleEditor.files.deleteConfirm')}
+                    </button>
+                    <button type="button" className="shrink-0 text-[11px] underline" onClick={() => setConfirmDelete(null)}>
+                      {t('common.cancel')}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    className="shrink-0 text-[11px] text-slate-500 underline"
+                    onClick={() => setConfirmDelete(file.relativePath)}
+                  >
+                    {t('styleEditor.files.delete')}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        ))}
+
+        <div className="flex items-center gap-1.5 rounded-md border-t border-dashed border-black/10 px-1.5 pt-1.5 text-xs text-slate-500 dark:border-white/10">
+          <span className="w-4 shrink-0" />
+          <span className="min-w-0 flex-1 truncate font-mono">custom.scss</span>
+          <span className="shrink-0 text-[11px] text-slate-400">{t('styleEditor.files.alwaysLast')}</span>
+        </div>
+      </div>
+
+      {/* A stylesheet that exists but is in no @use line does literally nothing - worth showing as
+          its own state rather than hiding, since it looks like a working file in Finder. */}
+      {orphans.length > 0 && (
+        <div className="mt-3">
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+            {t('styleEditor.files.orphansHeading')}
+          </p>
+          <div className="flex flex-col gap-1">
+            {orphans.map((file) => (
+              <div key={file.relativePath} className="flex items-center gap-1.5 text-xs">
+                <span className="min-w-0 flex-1 truncate font-mono text-slate-500">{file.name}</span>
+                <button
+                  type="button"
+                  className="shrink-0 text-[11px] underline"
+                  onClick={() => onSetOrder([...imported.map((f) => f.relativePath), file.relativePath])}
+                >
+                  {t('styleEditor.files.include')}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {creating === null ? (
+        <Button variant="ghost" className="mt-3" onClick={() => setCreating('')}>
+          <Plus size={13} aria-hidden /> {t('styleEditor.files.create')}
+        </Button>
+      ) : (
+        <div className="mt-3 flex items-center gap-2">
+          <TextInput
+            value={creating}
+            onChange={(e) => setCreating(e.target.value)}
+            placeholder={t('styleEditor.files.namePlaceholder')}
+            className="h-7 min-w-0 flex-1 text-xs"
+            autoFocus
+          />
+          <Button
+            variant="ghost"
+            disabled={!creating.trim()}
+            onClick={() =>
+              run(async () => {
+                const created = await window.quartzGui.styles.createFile(projectPath, creating.trim())
+                setCreating(null)
+                onOpen(created.relativePath)
+              })
+            }
+          >
+            {t('styleEditor.files.createConfirm')}
+          </Button>
+          <Button variant="ghost" onClick={() => setCreating(null)}>
+            {t('common.cancel')}
+          </Button>
+        </div>
+      )}
+
+      {error && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p>}
+    </Card>
+  )
+}
+
+// Compiles the whole chain with the project's own Sass, so an error in any of the files above -
+// not just the one being edited - is reported, with the file and line it actually came from.
+function CheckBanner({
+  result,
+  checking,
+  onRecheck,
+  onOpenFile
+}: {
+  result: ScssCheckResult | null
+  checking: boolean
+  onRecheck: () => void
+  onOpenFile: (tab: string) => void
+}): JSX.Element | null {
+  const { t } = useTranslation()
+  if (!result) return null
+
+  if (result.status === 'error') {
+    const { message, relativePath, line } = result.diagnostic
+    return (
+      <div className="flex flex-wrap items-start gap-x-3 gap-y-1 rounded-md border border-red-300 bg-red-50 p-2.5 text-xs text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
+        <FileWarning size={14} className="mt-0.5 shrink-0" aria-hidden />
+        <div className="min-w-0 flex-1">
+          <p className="font-medium">{t('styleEditor.check.failed')}</p>
+          <p className="whitespace-pre-wrap font-mono">{message}</p>
+          {relativePath && (
+            <button type="button" className="mt-1 underline" onClick={() => onOpenFile(relativePath)}>
+              {t('styleEditor.check.location', { file: relativePath, line: line ?? '?' })}
+            </button>
+          )}
+        </div>
+        <button type="button" className="shrink-0 underline" onClick={onRecheck} disabled={checking}>
+          {checking ? t('styleEditor.check.running') : t('styleEditor.check.recheck')}
+        </button>
+      </div>
+    )
+  }
+
+  if (result.status === 'unavailable') {
+    return (
+      <p className="rounded-md border border-black/[0.06] p-2 text-[11px] text-slate-500 dark:border-white/10 dark:text-slate-400">
+        {t('styleEditor.check.unavailable', { reason: result.reason })}
+      </p>
+    )
+  }
+
+  return (
+    <p className="flex items-center gap-1.5 text-[11px] text-green-700 dark:text-green-400">
+      <Check size={12} aria-hidden />
+      {t('styleEditor.check.ok')}
+      <button type="button" className="ml-1 text-slate-500 underline" onClick={onRecheck} disabled={checking}>
+        {checking ? t('styleEditor.check.running') : t('styleEditor.check.recheck')}
+      </button>
+    </p>
   )
 }
 

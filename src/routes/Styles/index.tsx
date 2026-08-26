@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
-import type { CssVariableGraph, Project, QuartzConfig } from '@shared/ipc-contract'
+import type { CssVariableGraph, Project, QuartzConfig, StyleFileSet } from '@shared/ipc-contract'
 import { Button, PageHeader, SegmentedControl } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { useStickyState } from '../../state/uiState'
@@ -36,6 +36,13 @@ export interface StylesContextValue {
   scss: { path: string; content: string; dirty: boolean; staleOnDisk: boolean }
   setScssContent: (content: string) => void
   reloadScss: (force?: boolean) => Promise<void>
+  /** custom.scss plus every additional stylesheet, in the order the import block loads them. */
+  fileSet: StyleFileSet | null
+  /** Unsaved editor content per relativePath - only files the user actually typed in appear. */
+  fileDrafts: Record<string, string>
+  setFileDraft: (relativePath: string, content: string) => void
+  clearFileDrafts: (relativePaths: string[]) => void
+  reloadFiles: () => Promise<void>
   graph: CssVariableGraph | null
   graphLoading: boolean
   reloadGraph: () => void
@@ -75,6 +82,8 @@ export default function Styles(): JSX.Element {
   const [config, setConfig] = useState<QuartzConfig | null>(null)
   const [overrides, setOverrides] = useState<Record<string, { light: string; dark: string }>>({})
   const [scss, setScss] = useState<{ path: string; content: string; dirty: boolean; staleOnDisk: boolean } | null>(null)
+  const [fileSet, setFileSet] = useState<StyleFileSet | null>(null)
+  const [fileDrafts, setFileDrafts] = useState<Record<string, string>>({})
   const [graph, setGraph] = useState<CssVariableGraph | null>(null)
   const [graphLoading, setGraphLoading] = useState(true)
   const [graphNonce, setGraphNonce] = useState(0)
@@ -88,6 +97,7 @@ export default function Styles(): JSX.Element {
   useEffect(() => {
     window.quartzGui.config.get(project.path).then(setConfig)
     window.quartzGui.styles.get(project.path).then((info) => setScss({ ...info, dirty: false, staleOnDisk: false }))
+    window.quartzGui.styles.listFiles(project.path).then(setFileSet)
     window.quartzGui.styles.getVariableOverrides(project.path).then((list) => {
       const next: Record<string, { light: string; dark: string }> = {}
       for (const o of list) next[o.key] = { light: o.light, dark: o.dark ?? o.light }
@@ -114,6 +124,14 @@ export default function Styles(): JSX.Element {
     }
   }, [project.path, activeTheme, graphNonce, configLoaded])
 
+  // A tab reached through the URL (the /themes redirect, a link from another tab, a deep link) has
+  // to be remembered too - otherwise coming back via the sidebar, which carries no search string,
+  // would drop the user somewhere they never chose. goToTab still records it as well, because
+  // switching to Basis clears the parameter entirely and leaves nothing here to react to.
+  useEffect(() => {
+    if (isTab(rawTab)) setLastTab(rawTab)
+  }, [rawTab, setLastTab])
+
   const goToTab = useCallback(
     (next: StylesTab) => {
       setSearchParams(next === 'basics' ? {} : { tab: next }, { replace: true })
@@ -133,6 +151,29 @@ export default function Styles(): JSX.Element {
   }, [])
 
   const reloadGraph = useCallback(() => setGraphNonce((n) => n + 1), [])
+
+  // Creating, renaming, reordering and deleting a stylesheet all act on disk immediately - they
+  // are file operations, not text edits, and treating them as drafts would mean a second copy of
+  // the import order that could disagree with the file. Only the *content* of a file is a draft.
+  // Every one of them rewrites custom.scss's import block, so reloadScss() runs afterwards for the
+  // same reason variable overrides do (see below).
+  const reloadFiles = useCallback(async () => {
+    setFileSet(await window.quartzGui.styles.listFiles(project.path))
+  }, [project.path])
+
+  // Drafts are keyed by relativePath and survive a sub-tab switch, exactly like the custom.scss
+  // draft above - the whole point of lifting this state out of the tab that renders it.
+  const setFileDraft = useCallback((relativePath: string, content: string) => {
+    setFileDrafts((prev) => ({ ...prev, [relativePath]: content }))
+  }, [])
+
+  const clearFileDrafts = useCallback((relativePaths: string[]) => {
+    setFileDrafts((prev) => {
+      const next = { ...prev }
+      for (const relativePath of relativePaths) delete next[relativePath]
+      return next
+    })
+  }, [])
 
   // Saving variable overrides and importing a local font both rewrite custom.scss behind the
   // editor's back (each replaces its own marker-delimited managed block), so the in-memory draft
@@ -180,6 +221,11 @@ export default function Styles(): JSX.Element {
     scss,
     setScssContent,
     reloadScss,
+    fileSet,
+    fileDrafts,
+    setFileDraft,
+    clearFileDrafts,
+    reloadFiles,
     graph,
     graphLoading,
     reloadGraph,

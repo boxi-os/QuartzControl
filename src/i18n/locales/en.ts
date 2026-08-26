@@ -573,6 +573,32 @@ export default {
     componentHint: 'Inserts a selector for the chosen component at the cursor position.',
     insertSelector: 'Insert selector',
     referenceHeading: 'Original styles (read-only)',
+    files: {
+      heading: 'Load order',
+      description:
+        'Quartz only ever imports custom.scss — everything else is loaded from there, in this order. Later files override earlier ones; custom.scss itself always comes last.',
+      alwaysLast: 'always last',
+      moveUp: 'Move up',
+      moveDown: 'Move down',
+      rename: 'Rename',
+      delete: 'Delete',
+      deleteConfirm: 'Really delete',
+      create: 'New file',
+      createConfirm: 'Create',
+      namePlaceholder: 'File name (e.g. typography)',
+      orphansHeading: 'Present, but not loaded',
+      include: 'Load it',
+      unsaved: 'Unsaved changes',
+      closeTab: 'Close tab'
+    },
+    check: {
+      ok: 'SCSS compiles without errors.',
+      failed: 'SCSS error — the build would fail:',
+      location: 'Open {{file}}, line {{line}}',
+      recheck: 'Check again',
+      running: 'Checking…',
+      unavailable: 'SCSS check not possible: {{reason}}'
+    },
     current: {
       colors: 'Colors in effect (light / dark)',
       fonts: 'Fonts in effect'

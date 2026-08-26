@@ -164,6 +164,32 @@ export function registerIpcHandlers(): void {
   handle(IPC.stylesImportFile, t([s.absolutePath, s.absolutePath]), (projectPath, sourcePath) =>
     styleService.importStyleFile(projectPath, sourcePath)
   )
+  handle(IPC.stylesListFiles, t([s.absolutePath]), (projectPath) => styleService.listStyleFiles(projectPath))
+  handle(IPC.stylesReadFile, t([s.absolutePath, s.styleFileSubPath]), (projectPath, relativePath) =>
+    styleService.readStyleFile(projectPath, relativePath)
+  )
+  handle(
+    IPC.stylesSaveFile,
+    t([s.absolutePath, s.styleFileSubPath, s.longText]),
+    (projectPath, relativePath, content) => styleService.writeStyleFile(projectPath, relativePath, content)
+  )
+  handle(IPC.stylesCreateFile, t([s.absolutePath, s.styleFileName]), (projectPath, name) =>
+    styleService.createStyleFile(projectPath, name)
+  )
+  handle(
+    IPC.stylesRenameFile,
+    t([s.absolutePath, s.styleFileSubPath, s.styleFileName]),
+    (projectPath, relativePath, newName) => styleService.renameStyleFile(projectPath, relativePath, newName)
+  )
+  handle(IPC.stylesDeleteFile, t([s.absolutePath, s.styleFileSubPath]), (projectPath, relativePath) =>
+    styleService.deleteStyleFile(projectPath, relativePath)
+  )
+  handle(
+    IPC.stylesSetImportOrder,
+    t([s.absolutePath, z.array(s.styleFileSubPath).max(200)]),
+    (projectPath, relativePaths) => styleService.setImportOrder(projectPath, relativePaths)
+  )
+  handle(IPC.stylesCheck, t([s.absolutePath]), (projectPath) => styleService.checkStyles(projectPath))
   handle(IPC.stylesGetVariableOverrides, t([s.absolutePath]), (projectPath) =>
     styleService.getVariableOverrides(projectPath)
   )

@@ -574,6 +574,32 @@ export default {
     componentHint: 'Fügt einen Selektor für die gewählte Komponente an der Cursor-Position ein.',
     insertSelector: 'Selektor einfügen',
     referenceHeading: 'Original-Styles (nur lesend)',
+    files: {
+      heading: 'Ladereihenfolge',
+      description:
+        'Quartz bindet nur custom.scss ein — alles andere wird von dort aus geladen, und zwar in dieser Reihenfolge. Später geladene Dateien überschreiben frühere; custom.scss selbst kommt immer zuletzt.',
+      alwaysLast: 'immer zuletzt',
+      moveUp: 'Nach oben',
+      moveDown: 'Nach unten',
+      rename: 'Umbenennen',
+      delete: 'Löschen',
+      deleteConfirm: 'Wirklich löschen',
+      create: 'Neue Datei',
+      createConfirm: 'Anlegen',
+      namePlaceholder: 'Dateiname (z.B. typografie)',
+      orphansHeading: 'Vorhanden, aber nicht eingebunden',
+      include: 'Einbinden',
+      unsaved: 'Ungespeicherte Änderungen',
+      closeTab: 'Tab schließen'
+    },
+    check: {
+      ok: 'SCSS kompiliert fehlerfrei.',
+      failed: 'SCSS-Fehler — der Build würde fehlschlagen:',
+      location: 'In {{file}}, Zeile {{line}} öffnen',
+      recheck: 'Erneut prüfen',
+      running: 'Prüfe…',
+      unavailable: 'SCSS-Prüfung nicht möglich: {{reason}}'
+    },
     current: {
       colors: 'Aktuell geltende Farben (hell / dunkel)',
       fonts: 'Aktuell geltende Schriften'

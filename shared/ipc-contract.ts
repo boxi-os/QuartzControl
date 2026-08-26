@@ -366,6 +366,42 @@ export interface StylesInfo {
   content: string
 }
 
+// An additional stylesheet the user keeps alongside custom.scss. Quartz only ever imports
+// custom.scss itself (componentResources.ts), so every extra file has to be reached *through* it -
+// which is what the managed "imports" block at the top of custom.scss does. `imported` is whether
+// the file is currently listed there; a file on disk that isn't is shown but does nothing.
+export interface StyleFile {
+  /** Relative to quartz/styles, e.g. "custom/typography.scss" - also the id used by every call. */
+  relativePath: string
+  path: string
+  name: string
+  imported: boolean
+}
+
+// The whole editable set: custom.scss (always last in the cascade, never part of the order) plus
+// every extra stylesheet, ordered as the import block loads them, orphans last.
+export interface StyleFileSet {
+  main: StylesInfo
+  files: StyleFile[]
+}
+
+// A Sass compile error, located in the file it actually came from - which is frequently not the
+// file being edited, since an error in a partial only surfaces when custom.scss pulls it in.
+export interface ScssDiagnostic {
+  message: string
+  /** Relative to quartz/styles when the error is in one of the project's own files. */
+  relativePath?: string
+  line?: number
+  column?: number
+}
+
+// "unavailable" is not a failure: a project that has never had `npm install` run in it has no
+// sass to compile with, and reporting that honestly beats claiming the stylesheet is fine.
+export type ScssCheckResult =
+  | { status: 'ok' }
+  | { status: 'error'; diagnostic: ScssDiagnostic }
+  | { status: 'unavailable'; reason: string }
+
 // One derived CSS custom property (see src/data/cssVariables.ts for the curated catalog sourced
 // from quartz/util/theme.ts's joinStyles()) the user has chosen to override, stored in
 // custom.scss's managed "css-vars" section. custom.scss is emitted unlayered while Quartz's own
@@ -611,6 +647,14 @@ export const IPC = {
   stylesSave: 'styles:save',
   stylesReference: 'styles:reference',
   stylesImportFile: 'styles:importFile',
+  stylesListFiles: 'styles:listFiles',
+  stylesReadFile: 'styles:readFile',
+  stylesSaveFile: 'styles:saveFile',
+  stylesCreateFile: 'styles:createFile',
+  stylesRenameFile: 'styles:renameFile',
+  stylesDeleteFile: 'styles:deleteFile',
+  stylesSetImportOrder: 'styles:setImportOrder',
+  stylesCheck: 'styles:check',
   stylesGetVariableOverrides: 'styles:getVariableOverrides',
   stylesSaveVariableOverrides: 'styles:saveVariableOverrides',
   stylesScanBuildOutputVariables: 'styles:scanBuildOutputVariables',
@@ -738,6 +782,14 @@ export interface QuartzGuiApi {
     save(projectPath: string, content: string): Promise<void>
     reference(projectPath: string, pluginName: string): Promise<StyleReferenceFile[]>
     importFile(projectPath: string, sourcePath: string): Promise<{ importLine: string; relativePath: string }>
+    listFiles(projectPath: string): Promise<StyleFileSet>
+    readFile(projectPath: string, relativePath: string): Promise<string>
+    saveFile(projectPath: string, relativePath: string, content: string): Promise<void>
+    createFile(projectPath: string, name: string): Promise<StyleFile>
+    renameFile(projectPath: string, relativePath: string, newName: string): Promise<StyleFile>
+    deleteFile(projectPath: string, relativePath: string): Promise<void>
+    setImportOrder(projectPath: string, relativePaths: string[]): Promise<void>
+    check(projectPath: string): Promise<ScssCheckResult>
     getVariableOverrides(projectPath: string): Promise<CssVariableOverride[]>
     saveVariableOverrides(projectPath: string, overrides: CssVariableOverride[]): Promise<void>
     scanBuildOutputVariables(projectPath: string, outputDir?: string): Promise<string[]>

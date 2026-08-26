@@ -104,6 +104,23 @@ export const branchName = z
 export const frameId = z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/i, 'kein gültiger Frame-Bezeichner')
 export const cssIdent = z.string().regex(/^[A-Za-z_][A-Za-z0-9_-]{0,63}$/, 'kein gültiger CSS-Bezeichner')
 
+// An additional stylesheet under quartz/styles. Pinned to the two directories the app itself
+// creates, because this value is joined onto the project path and then written to, renamed and
+// deleted - a bare relativeSubPath would still allow quartz/styles/base.scss (Quartz's own file)
+// or anything else under the tree. The extension is fixed too: the file ends up in an @use rule.
+export const styleFileSubPath = z
+  .string()
+  .max(1024)
+  .regex(/^(custom|imported)\/[A-Za-z0-9._-]+\.(scss|css)$/, 'kein gültiger Stylesheet-Pfad')
+  .refine((p) => !p.split('/')[1].startsWith('.'), { message: 'Dateiname darf nicht mit "." beginnen' })
+
+// The name for a newly created or renamed stylesheet - one segment, the service appends ".scss".
+export const styleFileName = z
+  .string()
+  .min(1)
+  .max(96)
+  .regex(/^[A-Za-z0-9][A-Za-z0-9._-]*$/, 'nur Buchstaben, Ziffern, Punkt, Unterstrich und Bindestrich')
+
 export const uuid = z.uuid()
 export const shortText = z.string().max(512)
 export const longText = z.string().max(5_000_000) // custom.scss and locale values

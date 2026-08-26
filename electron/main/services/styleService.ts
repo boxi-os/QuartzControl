@@ -1,7 +1,17 @@
 import { existsSync, mkdirSync } from 'fs'
-import { copyFile, readFile, readdir, writeFile } from 'fs/promises'
-import { basename, join, relative } from 'path'
-import type { CssVariableOverride, StyleReferenceFile, StylesInfo } from '@shared/ipc-contract'
+import { copyFile, readFile, readdir, rename, rm, writeFile } from 'fs/promises'
+import { createRequire } from 'module'
+import { basename, dirname, join, relative, sep } from 'path'
+import { fileURLToPath } from 'url'
+import type {
+  CssVariableOverride,
+  ScssCheckResult,
+  ScssDiagnostic,
+  StyleFile,
+  StyleFileSet,
+  StyleReferenceFile,
+  StylesInfo
+} from '@shared/ipc-contract'
 import { resolveBuildDir } from './projectDirs'
 
 // The file Quartz's build imports directly (quartz/plugins/emitters/componentResources.ts) -
@@ -203,4 +213,254 @@ async function findCssFiles(dir: string, depth = 0): Promise<string[]> {
     else if (entry.name.endsWith('.css')) results.push(full)
   }
   return results
+}
+
+// ── additional stylesheets ──────────────────────────────────────────────────
+//
+// Quartz imports exactly one stylesheet, custom.scss (componentResources.ts). Everything else has
+// to be reached *through* it, and Sass requires `@use` before any rule - so the load order lives
+// in one managed block at the very top of custom.scss:
+//
+//   /* --- Quartz-GUI:managed:imports:start --- */
+//   @use "./custom/typography";
+//   /* --- Quartz-GUI:managed:imports:end --- */
+//
+// The file is the source of truth on purpose, not a sidecar JSON: the project still builds if this
+// app is never opened again, hand-editing the block in any editor keeps working, and there is no
+// second copy of the order to drift. Everything after the block is custom.scss's own content, so
+// it stays the last layer - which is exactly what the Styles tab's cascade line promises.
+const IMPORTS_MARKER = 'imports'
+const STYLE_DIRS = ['custom', 'imported'] as const
+
+function stylesDir(projectPath: string): string {
+  return join(projectPath, 'quartz', 'styles')
+}
+
+function styleFilePath(projectPath: string, relativePath: string): string {
+  return join(stylesDir(projectPath), ...relativePath.split('/'))
+}
+
+// "custom/typography.scss" -> `@use "./custom/typography";`. The extension is dropped for both
+// .scss and .css: Dart Sass' own resolution tries .sass/.scss/.css for an extensionless URL, and
+// this keeps the line identical to what importStyleFile() has always written.
+function useSpecifierFor(relativePath: string): string {
+  return `./${relativePath.replace(/\.(scss|css)$/, '')}`
+}
+
+// The reverse, resolved against what is actually on disk rather than guessed - an extensionless
+// specifier could mean either extension, and a partial may be written as _name.scss.
+function relativePathForSpecifier(projectPath: string, specifier: string): string | null {
+  const bare = specifier.replace(/^\.\//, '').replace(/\.(scss|css)$/, '')
+  const dir = bare.split('/')[0]
+  const name = bare.split('/').slice(1).join('/')
+  if (!STYLE_DIRS.includes(dir as (typeof STYLE_DIRS)[number]) || !name || name.includes('/')) return null
+  for (const candidate of [`${name}.scss`, `_${name}.scss`, `${name}.css`]) {
+    if (existsSync(join(stylesDir(projectPath), dir, candidate))) return `${dir}/${candidate}`
+  }
+  return null
+}
+
+// An entry whose file no longer exists is dropped rather than kept: the block is written only by
+// this app and restricted to custom/ and imported/, so an unresolvable `@use` there means the file
+// was deleted outside the app - and leaving it in would break the next build.
+function parseImportOrder(projectPath: string, content: string): string[] {
+  const body = getManagedBlock(content, IMPORTS_MARKER)
+  if (!body) return []
+  const out: string[] = []
+  const re = /@use\s+["']([^"']+)["']/g
+  let match: RegExpExecArray | null
+  while ((match = re.exec(body)) !== null) {
+    const relativePath = relativePathForSpecifier(projectPath, match[1])
+    if (relativePath && !out.includes(relativePath)) out.push(relativePath)
+  }
+  return out
+}
+
+// Inserts the block *before the first rule* rather than at the end of the file, which is what
+// upsertManagedBlock does and what every other managed section here wants. Sass rejects a `@use`
+// that follows a rule outright ("@use rules must be written before any other rules"), so this
+// walks past the leading comments, blank lines and Quartz's own `@use "./variables.scss" as *;`
+// and stops at the first line that is anything else.
+function upsertImportBlock(content: string, body: string): string {
+  const { start, end } = managedBlockMarkers(IMPORTS_MARKER)
+  const startIdx = content.indexOf(start)
+  if (startIdx !== -1) {
+    const endIdx = content.indexOf(end, startIdx)
+    if (endIdx !== -1) {
+      if (!body) {
+        const stripped = content.slice(0, startIdx) + content.slice(endIdx + end.length)
+        return stripped.replace(/\n{3,}/g, '\n\n')
+      }
+      return content.slice(0, startIdx) + `${start}\n${body}\n${end}` + content.slice(endIdx + end.length)
+    }
+  }
+  if (!body) return content
+
+  // Placed directly after the leading @charset/@use/@forward lines (Quartz's own
+  // `@use "./variables.scss" as *;` among them) - *not* after the leading comments, which would
+  // push the block past a "// put your custom CSS here!" line and, in a file that has one, all
+  // the way to the end where a later hand-written rule could end up above it.
+  const lines = content.split('\n')
+  let cursor = 0
+  let insertAt = 0
+  let inComment = false
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim()
+    if (inComment) {
+      if (line.includes('*/')) inComment = false
+      cursor = i + 1
+      continue
+    }
+    if (line === '' || line.startsWith('//')) {
+      cursor = i + 1
+      continue
+    }
+    if (line.startsWith('/*')) {
+      inComment = !line.includes('*/')
+      cursor = i + 1
+      continue
+    }
+    if (/^@(charset|use|forward)\b/.test(line)) {
+      cursor = i + 1
+      insertAt = cursor
+      continue
+    }
+    break
+  }
+  if (insertAt === 0) insertAt = cursor
+  lines.splice(insertAt, 0, '', `${start}\n${body}\n${end}`)
+  return lines.join('\n').replace(/\n{3,}/g, '\n\n')
+}
+
+export async function listStyleFiles(projectPath: string): Promise<StyleFileSet> {
+  const main = await readCustomScss(projectPath)
+  const order = parseImportOrder(projectPath, main.content)
+
+  const onDisk: string[] = []
+  for (const dir of STYLE_DIRS) {
+    const full = join(stylesDir(projectPath), dir)
+    if (!existsSync(full)) continue
+    for (const entry of await readdir(full, { withFileTypes: true })) {
+      if (entry.isFile() && /\.(scss|css)$/.test(entry.name)) onDisk.push(`${dir}/${entry.name}`)
+    }
+  }
+  onDisk.sort()
+
+  // Order first (that is the load order), then whatever exists but is not wired up - which is a
+  // real state worth showing rather than hiding: the file is there and does nothing.
+  const ordered = order.filter((relativePath) => onDisk.includes(relativePath))
+  const orphans = onDisk.filter((relativePath) => !ordered.includes(relativePath))
+  const toFile = (relativePath: string, imported: boolean): StyleFile => ({
+    relativePath,
+    path: styleFilePath(projectPath, relativePath),
+    name: relativePath.split('/').slice(1).join('/'),
+    imported
+  })
+  return {
+    main,
+    files: [...ordered.map((p) => toFile(p, true)), ...orphans.map((p) => toFile(p, false))]
+  }
+}
+
+export async function readStyleFile(projectPath: string, relativePath: string): Promise<string> {
+  const path = styleFilePath(projectPath, relativePath)
+  return existsSync(path) ? readFile(path, 'utf-8') : ''
+}
+
+export async function writeStyleFile(projectPath: string, relativePath: string, content: string): Promise<void> {
+  const path = styleFilePath(projectPath, relativePath)
+  mkdirSync(dirname(path), { recursive: true })
+  await writeFile(path, content, 'utf-8')
+}
+
+export async function createStyleFile(projectPath: string, name: string): Promise<StyleFile> {
+  const fileName = /\.(scss|css)$/.test(name) ? name : `${name}.scss`
+  const relativePath = `custom/${fileName}`
+  const path = styleFilePath(projectPath, relativePath)
+  if (existsSync(path)) throw new Error(`Es gibt bereits eine Datei ${fileName}.`)
+  mkdirSync(dirname(path), { recursive: true })
+  await writeFile(path, `// ${fileName}\n`, 'utf-8')
+  await setImportOrder(projectPath, [...(await currentOrder(projectPath)), relativePath])
+  return { relativePath, path, name: fileName, imported: true }
+}
+
+export async function renameStyleFile(projectPath: string, relativePath: string, newName: string): Promise<StyleFile> {
+  const dir = relativePath.split('/')[0]
+  const fileName = /\.(scss|css)$/.test(newName) ? newName : `${newName}.scss`
+  const nextRelative = `${dir}/${fileName}`
+  if (nextRelative === relativePath) return { relativePath, path: styleFilePath(projectPath, relativePath), name: fileName, imported: true }
+  const target = styleFilePath(projectPath, nextRelative)
+  if (existsSync(target)) throw new Error(`Es gibt bereits eine Datei ${fileName}.`)
+  // Read *before* renaming: parseImportOrder resolves each @use against what is on disk, so once
+  // the old name is gone its entry no longer resolves and reading the order afterwards would
+  // silently drop the very file being renamed (and, with it, every later save's order).
+  const order = (await currentOrder(projectPath)).map((p) => (p === relativePath ? nextRelative : p))
+  await rename(styleFilePath(projectPath, relativePath), target)
+  await setImportOrder(projectPath, order)
+  return { relativePath: nextRelative, path: target, name: fileName, imported: order.includes(nextRelative) }
+}
+
+export async function deleteStyleFile(projectPath: string, relativePath: string): Promise<void> {
+  const path = styleFilePath(projectPath, relativePath)
+  // The order is rewritten first: a file left in the block after being deleted breaks the build,
+  // which is a worse outcome than an orphaned file left on disk after a failed unlink.
+  await setImportOrder(
+    projectPath,
+    (await currentOrder(projectPath)).filter((p) => p !== relativePath)
+  )
+  if (existsSync(path)) await rm(path)
+}
+
+async function currentOrder(projectPath: string): Promise<string[]> {
+  const main = await readCustomScss(projectPath)
+  return parseImportOrder(projectPath, main.content)
+}
+
+export async function setImportOrder(projectPath: string, relativePaths: string[]): Promise<void> {
+  const main = await readCustomScss(projectPath)
+  const body = relativePaths.map((p) => `@use "${useSpecifierFor(p)}";`).join('\n')
+  await writeCustomScss(projectPath, upsertImportBlock(main.content, body))
+}
+
+// Compiles custom.scss with the *project's own* Sass - the same dart-sass version
+// esbuild-sass-plugin uses during a real build (verified: quartz/cli/handlers.js registers
+// sassPlugin(), which resolves `sass` from the project). Using the project's copy rather than
+// bundling one keeps the check honest across Quartz versions and adds no dependency here.
+//
+// A missing sass is reported as "unavailable", not as a pass: a project that has never had
+// `npm install` run in it cannot be checked, and saying "no errors" there would be a lie.
+export async function checkStyles(projectPath: string): Promise<ScssCheckResult> {
+  const entry = customScssPath(projectPath)
+  if (!existsSync(entry)) return { status: 'unavailable', reason: 'custom.scss existiert nicht.' }
+  let sass: { compile: (path: string, options?: Record<string, unknown>) => unknown }
+  try {
+    sass = createRequire(join(projectPath, 'package.json'))('sass')
+  } catch {
+    return { status: 'unavailable', reason: 'Im Projekt ist kein sass installiert (npm install).' }
+  }
+  try {
+    sass.compile(entry, { loadPaths: [stylesDir(projectPath)], quietDeps: true, verbose: false })
+    return { status: 'ok' }
+  } catch (err) {
+    return { status: 'error', diagnostic: toDiagnostic(projectPath, err) }
+  }
+}
+
+// Sass throws an Exception carrying a `span` with the file URL and a 0-based line/column. The URL
+// is mapped back to a relativePath when the error is in one of the project's own stylesheets, so
+// the editor can point at the right tab; an error inside node_modules keeps its raw message.
+function toDiagnostic(projectPath: string, err: unknown): ScssDiagnostic {
+  const e = err as { message?: string; sassMessage?: string; span?: { url?: unknown; start?: { line: number; column: number } } }
+  const message = e.sassMessage ?? e.message ?? String(err)
+  const url = e.span?.url
+  let filePath: string | undefined
+  if (typeof url === 'string') filePath = url.startsWith('file:') ? fileURLToPath(url) : url
+  else if (url && typeof url === 'object' && 'href' in url) filePath = fileURLToPath(String((url as URL).href))
+  const rel = filePath ? relative(stylesDir(projectPath), filePath).split(sep).join('/') : undefined
+  return {
+    message,
+    relativePath: rel && !rel.startsWith('..') ? rel : undefined,
+    line: e.span?.start ? e.span.start.line + 1 : undefined,
+    column: e.span?.start ? e.span.start.column + 1 : undefined
+  }
 }

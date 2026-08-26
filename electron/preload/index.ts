@@ -59,6 +59,19 @@ const api: QuartzGuiApi = {
     save: (projectPath: string, content: string) => ipcRenderer.invoke(IPC.stylesSave, projectPath, content),
     reference: (projectPath: string, pluginName: string) => ipcRenderer.invoke(IPC.stylesReference, projectPath, pluginName),
     importFile: (projectPath: string, sourcePath: string) => ipcRenderer.invoke(IPC.stylesImportFile, projectPath, sourcePath),
+    listFiles: (projectPath: string) => ipcRenderer.invoke(IPC.stylesListFiles, projectPath),
+    readFile: (projectPath: string, relativePath: string) =>
+      ipcRenderer.invoke(IPC.stylesReadFile, projectPath, relativePath),
+    saveFile: (projectPath: string, relativePath: string, content: string) =>
+      ipcRenderer.invoke(IPC.stylesSaveFile, projectPath, relativePath, content),
+    createFile: (projectPath: string, name: string) => ipcRenderer.invoke(IPC.stylesCreateFile, projectPath, name),
+    renameFile: (projectPath: string, relativePath: string, newName: string) =>
+      ipcRenderer.invoke(IPC.stylesRenameFile, projectPath, relativePath, newName),
+    deleteFile: (projectPath: string, relativePath: string) =>
+      ipcRenderer.invoke(IPC.stylesDeleteFile, projectPath, relativePath),
+    setImportOrder: (projectPath: string, relativePaths: string[]) =>
+      ipcRenderer.invoke(IPC.stylesSetImportOrder, projectPath, relativePaths),
+    check: (projectPath: string) => ipcRenderer.invoke(IPC.stylesCheck, projectPath),
     getVariableOverrides: (projectPath: string) => ipcRenderer.invoke(IPC.stylesGetVariableOverrides, projectPath),
     saveVariableOverrides: (projectPath: string, overrides: CssVariableOverride[]) =>
       ipcRenderer.invoke(IPC.stylesSaveVariableOverrides, projectPath, overrides),

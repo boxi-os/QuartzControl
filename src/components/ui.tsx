@@ -21,9 +21,11 @@ export function Button({
   )
 }
 
-export function Field({ label, children }: { label: string; children: ReactNode }): JSX.Element {
+// `className` is there for grid placement (e.g. a textarea field spanning every column of a
+// responsive form grid), not for restyling the field itself.
+export function Field({ label, children, className = '' }: { label: string; children: ReactNode; className?: string }): JSX.Element {
   return (
-    <label className="flex flex-col gap-1 text-[13px]">
+    <label className={`flex flex-col gap-1 text-[13px] ${className}`}>
       <span className="font-medium text-slate-600 dark:text-slate-300">{label}</span>
       {children}
     </label>
@@ -97,8 +99,10 @@ export function SegmentedControl<T extends string>({
   options: { value: T; label: string }[]
   onChange: (value: T) => void
 }): JSX.Element {
+  // self-start matters now that pages fill the window: as a flex item, `inline-flex` alone still
+  // stretches to the container's full width, which turned this into a 1600px-wide bar.
   return (
-    <div className="inline-flex gap-0.5 rounded-[8px] bg-black/[0.05] p-0.5 dark:bg-white/10">
+    <div className="inline-flex w-fit self-start gap-0.5 rounded-[8px] bg-black/[0.05] p-0.5 dark:bg-white/10">
       {options.map((option) => (
         <button
           key={option.value}

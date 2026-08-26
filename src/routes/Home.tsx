@@ -31,7 +31,10 @@ export default function Home(): JSX.Element {
   return (
     <div className="flex h-screen flex-col">
       <div className="titlebar-drag h-12 shrink-0" />
-      <div className="mx-auto w-full max-w-3xl flex-1 overflow-y-auto px-6 pb-10">
+      {/* Deliberately a centered column, unlike the project pages: this is a launcher, and a
+          start screen stretched across a 27" display reads as broken rather than spacious. The
+          project list below is what grows with the window. */}
+      <div className="mx-auto w-full max-w-5xl flex-1 overflow-y-auto px-6 pb-10">
         <div className="mb-6 flex items-start justify-between">
           <div className="flex items-center gap-4">
             <img src={appIcon} alt="" className="h-14 w-14 rounded-2xl shadow-sm" />
@@ -55,20 +58,22 @@ export default function Home(): JSX.Element {
           </Button>
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="grid gap-3 lg:grid-cols-2">
           {projects.length === 0 && <p className="text-sm text-slate-500">{t('home.noProjects')}</p>}
           {projects.map((project) => (
-            <Card key={project.id} className="flex items-center justify-between">
-              <div>
+            <Card key={project.id} className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
                 <button
                   className="text-left text-[15px] font-medium hover:underline"
                   onClick={() => navigate(`/project/${project.id}`)}
                 >
                   {project.name}
                 </button>
-                <p className="text-xs text-slate-400">{project.path}</p>
+                <p className="truncate text-xs text-slate-400" title={project.path}>
+                  {project.path}
+                </p>
               </div>
-              <Button variant="ghost" onClick={() => removeProject(project.id)}>
+              <Button className="shrink-0" variant="ghost" onClick={() => removeProject(project.id)}>
                 {t('common.remove')}
               </Button>
             </Card>

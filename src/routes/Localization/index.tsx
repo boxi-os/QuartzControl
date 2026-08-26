@@ -97,7 +97,7 @@ export default function Localization(): JSX.Element {
   if (locales.length === 0) return <p className="text-sm text-slate-500">{t('localization.none')}</p>
 
   return (
-    <div className="flex max-w-6xl flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <PageHeader
         icon={TAB_ICONS.localization}
         title={t('localization.title')}
@@ -140,13 +140,20 @@ export default function Localization(): JSX.Element {
 
       {entries === null && <p className="text-sm text-slate-500">{t('common.loading')}</p>}
 
+      {/* Hundreds of short strings: a second column halves the scrolling. The multi-line
+          "template" entries keep the full row - they're the ones that actually need the width. */}
       {entries !== null && (
-        <div className="flex flex-col gap-2">
+        <div className="grid items-start gap-2 xl:grid-cols-2">
           {filtered.map((entry) => {
             const key = keyOf(entry.path)
             const value = edits[key] ?? entry.value
             return (
-              <div key={key} className="rounded-md border border-black/[0.06] p-2.5 dark:border-white/10">
+              <div
+                key={key}
+                className={`rounded-md border border-black/[0.06] p-2.5 dark:border-white/10 ${
+                  entry.kind === 'template' ? 'xl:col-span-2' : ''
+                }`}
+              >
                 <div className="mb-1 flex items-center gap-2">
                   <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{key}</span>
                   {entry.kind === 'template' && <Badge>{t('localization.advancedBadge')}</Badge>}

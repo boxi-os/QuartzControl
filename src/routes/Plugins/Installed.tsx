@@ -8,6 +8,12 @@ import { Badge, Button, Card, PageHeader, Select, TextInput, Toggle } from '../.
 import { formatIpcError } from '../../components/ErrorSurface'
 import { TAB_ICONS } from '../navConfig'
 
+// A plugin row's content is short (name, source, one line of description) and its buttons sit at
+// the far right, so a single full-width column would be mostly empty space on a wide window. Extra
+// width buys a second column instead - reading order stays top-to-bottom-left-to-right, which is
+// also the order the drag-and-drop reordering below works in.
+const PLUGIN_LIST = 'grid gap-2 xl:grid-cols-2'
+
 // Quartz plugins fall into distinct kinds - transformers, filters, page types, emitters,
 // components (see https://quartz.jzhao.xyz/plugins/) - but that exact category isn't stored
 // in quartz.config.yaml, and some plugins span more than one kind anyway (Quartz's own loader
@@ -298,7 +304,7 @@ export default function PluginsInstalled(): JSX.Element {
   const cardProps = { project, busy, toggleEnabled, removePlugin, updateField, dragging, setDragging }
 
   return (
-    <div className="max-w-5xl">
+    <div>
       <PageHeader
         icon={TAB_ICONS.plugins}
         title={t('projectLayout.tabs.plugins')}
@@ -337,7 +343,7 @@ export default function PluginsInstalled(): JSX.Element {
                   <h3 className="mb-2 font-mono text-xs font-semibold uppercase tracking-wide text-slate-500">
                     {position} ({group.length})
                   </h3>
-                  <div className="flex flex-col gap-2">
+                  <div className={PLUGIN_LIST}>
                     {group.map((item, localIndex) => (
                       <PluginRow
                         key={item.index}
@@ -366,7 +372,7 @@ export default function PluginsInstalled(): JSX.Element {
                 <h3 className="mb-2 font-mono text-xs font-semibold uppercase tracking-wide text-slate-500">
                   {t('pluginsInstalled.pageTypesHeading', { count: pageTypeItems.length })}
                 </h3>
-                <div className="flex flex-col gap-2">
+                <div className={PLUGIN_LIST}>
                   {pageTypeItems.map((item, localIndex) => (
                     <PluginRow
                       key={item.index}
@@ -387,7 +393,7 @@ export default function PluginsInstalled(): JSX.Element {
                     {t('pluginsInstalled.otherProcessingHeading', { count: otherProcessingItems.length })}
                   </h3>
                 )}
-                <div className="flex flex-col gap-2">
+                <div className={PLUGIN_LIST}>
                   {otherProcessingItems.map((item, localIndex) => (
                     <PluginRow
                       key={item.index}
@@ -477,8 +483,8 @@ function PluginRow({
       onDragEnd={() => setDragging(null)}
       className={`cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-40' : ''}`}
     >
-      <div className="flex items-start justify-between">
-        <div className="flex items-start gap-2">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-2">
           <span className="select-none pt-0.5 text-slate-300 dark:text-slate-600" title={t('pluginsInstalled.dragHint')}>
             ⠿
           </span>
@@ -489,7 +495,10 @@ function PluginRow({
             {!expanded && summary && <p className="mt-0.5 font-mono text-[11px] text-slate-400">{summary}</p>}
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        {/* shrink-0 + nowrap: in the two-column list a long description would otherwise squeeze
+            this group until "Optionen anzeigen" wrapped onto two lines and the rows lost their
+            common height. The text column gives way instead (min-w-0 above). */}
+        <div className="flex shrink-0 items-center gap-3 whitespace-nowrap">
           <Badge tone={plugin.enabled ? 'green' : 'slate'}>
             {plugin.enabled ? t('pluginsInstalled.active') : t('pluginsInstalled.disabled')}
           </Badge>

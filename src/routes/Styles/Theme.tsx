@@ -70,7 +70,7 @@ export default function Theme(): JSX.Element {
   }
 
   return (
-    <div className="grid max-w-5xl gap-6">
+    <div className="grid gap-6">
       {themePlugin && (
         <div className="-mt-2">
           {themePlugin.enabled ? (

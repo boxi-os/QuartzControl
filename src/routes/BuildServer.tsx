@@ -74,7 +74,7 @@ export default function BuildServer(): JSX.Element {
   }
 
   return (
-    <div className="grid max-w-5xl gap-6">
+    <div className="grid gap-6">
       <PageHeader
         icon={TAB_ICONS.server}
         title={t('projectLayout.tabs.server')}

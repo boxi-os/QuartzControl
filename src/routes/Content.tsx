@@ -48,13 +48,15 @@ export default function Content(): JSX.Element {
   }
 
   return (
-    <div className="max-w-2xl">
+    <div>
       <PageHeader
         icon={TAB_ICONS.content}
         title={t('projectLayout.tabs.content')}
         description={t('projectLayout.descriptions.content')}
       />
-      <Card>
+      {/* The one block on this page, and it's four short lines - the cap sits on the card rather
+          than on the page, so it's this content saying how wide it wants to be. */}
+      <Card className="max-w-2xl">
         <h2 className="mb-3 font-medium">{t('content.currentFolder')}</h2>
         {!status && <p className="text-sm text-slate-500">{t('content.loading')}</p>}
         {status && !status.exists && <p className="text-sm text-amber-600">{t('content.noFolder')}</p>}

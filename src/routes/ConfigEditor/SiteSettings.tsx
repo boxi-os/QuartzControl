@@ -16,8 +16,11 @@ export default function SiteSettings({
     onChange({ ...configuration, [key]: value })
   }
 
+  // A form's fields don't get better by being stretched, so extra window width buys columns
+  // instead: single-column when there isn't room, two from a laptop screen up, three on a wide
+  // one. Each field's line length is capped by its grid track, not by a wrapper max-width.
   return (
-    <div className="grid max-w-xl gap-4">
+    <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
       <Field label={t('siteSettings.pageTitle')}>
         <TextInput value={configuration.pageTitle ?? ''} onChange={(e) => set('pageTitle', e.target.value)} />
       </Field>
@@ -34,7 +37,7 @@ export default function SiteSettings({
       <Field label={t('siteSettings.locale')}>
         <TextInput value={configuration.locale ?? ''} onChange={(e) => set('locale', e.target.value)} placeholder="en-US" />
       </Field>
-      <div className="flex gap-6">
+      <div className="flex items-end gap-6 pb-1.5">
         <Toggle
           label={t('siteSettings.spa')}
           checked={configuration.enableSPA ?? false}
@@ -46,7 +49,9 @@ export default function SiteSettings({
           onChange={(checked) => set('enablePopovers', checked)}
         />
       </div>
-      <Field label={t('siteSettings.ignorePatterns')}>
+      {/* Two tracks, never all three: this is a short list of one-word patterns, and a 1600px
+          wide text area for it looks broken rather than generous. */}
+      <Field label={t('siteSettings.ignorePatterns')} className="md:col-span-2">
         <textarea
           className="min-h-32 rounded-[7px] border border-black/10 bg-white px-2.5 py-1.5 font-mono text-[13px] shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
           value={(configuration.ignorePatterns ?? []).join('\n')}

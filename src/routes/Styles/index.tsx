@@ -185,7 +185,7 @@ export default function Styles(): JSX.Element {
 
   return (
     <StylesContext.Provider value={value}>
-      <div className="flex max-w-6xl flex-col">
+      <div className="flex flex-col">
         <PageHeader
           icon={TAB_ICONS.styles}
           title={t('projectLayout.tabs.styles')}

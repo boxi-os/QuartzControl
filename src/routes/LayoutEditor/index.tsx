@@ -100,7 +100,7 @@ export default function LayoutEditor(): JSX.Element {
   if (!config) return <p className="text-sm text-slate-500">{t('layoutEditor.loading')}</p>
 
   return (
-    <div className="max-w-6xl">
+    <div>
       <PageHeader
         icon={TAB_ICONS.layout}
         title={t('projectLayout.tabs.layout')}

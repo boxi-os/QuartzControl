@@ -40,7 +40,7 @@ export default function Backups(): JSX.Element {
   }
 
   return (
-    <div className="max-w-4xl">
+    <div>
       <PageHeader
         icon={TAB_ICONS.backups}
         title={t('projectLayout.tabs.backups')}
@@ -63,10 +63,13 @@ export default function Backups(): JSX.Element {
         </p>
       )}
 
-      <div className="flex flex-col gap-3">
+      {/* A backup is a timestamp and two buttons - a single full-width row would be almost entirely
+          empty space, so width buys columns instead. The one exception is the entry whose diff is
+          open: that pane is the one thing here that genuinely wants the whole window. */}
+      <div className="grid grid-cols-1 items-start gap-3 md:grid-cols-2 2xl:grid-cols-3">
         {entries.length === 0 && <p className="text-sm text-slate-500">{t('backups.none')}</p>}
         {entries.map((entry) => (
-          <Card key={entry.id}>
+          <Card key={entry.id} className={diff?.id === entry.id ? 'col-span-full' : ''}>
             <div className="flex items-center justify-between">
               <p className="text-sm">{new Date(entry.createdAt).toLocaleString(i18n.language)}</p>
               <div className="flex gap-2">

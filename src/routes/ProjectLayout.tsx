@@ -23,7 +23,11 @@ const scrollPositions = new Map<string, number>()
 // re-applies the saved position on every height change; a plain scroll listener keeps the saved
 // value in sync with the user's own scrolling, so once content settles the two converge and stop
 // fighting each other.
-function useRestoreScroll(mainRef: React.RefObject<HTMLElement>, ready: boolean): void {
+function useRestoreScroll(
+  mainRef: React.RefObject<HTMLElement>,
+  contentRef: React.RefObject<HTMLElement>,
+  ready: boolean
+): void {
   const location = useLocation()
   useEffect(() => {
     // `ready` also gates this: on a project's very first render `<main>` doesn't exist yet (see
@@ -31,14 +35,22 @@ function useRestoreScroll(mainRef: React.RefObject<HTMLElement>, ready: boolean)
     // find mainRef.current still null, and never re-run once `<main>` actually mounts - silently
     // leaving the first-visited tab without a listener for the rest of the session.
     const el = mainRef.current
-    if (!ready || !el) return
+    const content = contentRef.current
+    if (!ready || !el || !content) return
     const key = location.pathname
     el.scrollTop = scrollPositions.get(key) ?? 0
 
+    // Observes the *content* wrapper rather than the scroll container. `<main>` is a flex-1 box
+    // with overflow-y-auto: its own size doesn't track how much is inside it, so observing it only
+    // catches a content change indirectly, when the growing content happens to make the scrollbar
+    // appear and shrink the content box by its width. That works today (verified against the
+    // slowest page, the plugin marketplace), but only as long as the scrollbar takes up space -
+    // overlay scrollbars would silently take the re-apply away. The wrapper's height tracks the
+    // content directly, which is the thing this actually cares about.
     const ro = new ResizeObserver(() => {
       el.scrollTop = scrollPositions.get(key) ?? 0
     })
-    ro.observe(el)
+    ro.observe(content)
 
     const onScroll = (): void => {
       scrollPositions.set(key, el.scrollTop)
@@ -49,7 +61,7 @@ function useRestoreScroll(mainRef: React.RefObject<HTMLElement>, ready: boolean)
       ro.disconnect()
       el.removeEventListener('scroll', onScroll)
     }
-  }, [location.pathname, mainRef, ready])
+  }, [location.pathname, mainRef, contentRef, ready])
 }
 
 // A curated, brand-ish palette (indigo/violet-leaning, like the app icon) rather than random hues -
@@ -71,7 +83,8 @@ export default function ProjectLayout(): JSX.Element {
   const { id } = useParams<{ id: string }>()
   const [project, setProject] = useState<Project | null>(null)
   const mainRef = useRef<HTMLElement>(null)
-  useRestoreScroll(mainRef, project !== null)
+  const contentRef = useRef<HTMLDivElement>(null)
+  useRestoreScroll(mainRef, contentRef, project !== null)
 
   // Grouped by what a user is trying to do, not by which service implements it - "Gestaltung"
   // covers everything that changes how the site looks, "Veröffentlichung" everything that ships
@@ -196,8 +209,15 @@ export default function ProjectLayout(): JSX.Element {
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="titlebar-drag h-12 shrink-0" />
+        {/* One place decides how wide a page may get. Pages themselves set no max width at all -
+            they fill whatever this gives them and lay their own content out responsively - so the
+            window's width is actually used instead of every page picking its own arbitrary cap.
+            The guard here is only against absurdity on a very wide display; below it the content
+            column simply grows with the window. */}
         <main ref={mainRef} className="flex-1 overflow-y-auto px-8 pb-8">
-          <Outlet context={project} />
+          <div ref={contentRef} className="mx-auto w-full max-w-[1800px]">
+            <Outlet context={project} />
+          </div>
         </main>
       </div>
     </div>

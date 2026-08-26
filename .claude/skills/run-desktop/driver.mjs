@@ -132,6 +132,17 @@ const COMMANDS = {
     console.log('drag', x1, y1, '→', x2, y2)
   },
 
+  // Resizes the real BrowserWindow (not just the viewport) - the renderer can't do this itself,
+  // and the window's default 1280x800 hides every layout problem that only shows up on a
+  // maximized window. `resize 1728 1080` approximates a full-screen 16" MacBook Pro.
+  async resize(rest) {
+    if (!app || !page) return console.log('ERROR: launch first')
+    const [w, h] = rest.split(/\s+/).map(Number)
+    const win = await app.browserWindow(page)
+    await win.evaluate((bw, size) => bw.setSize(size.w, size.h, false), { w, h })
+    console.log('resize →', await page.evaluate(() => [window.innerWidth, window.innerHeight]))
+  },
+
   async wait(sel) {
     if (!page) return console.log('ERROR: launch first')
     try {

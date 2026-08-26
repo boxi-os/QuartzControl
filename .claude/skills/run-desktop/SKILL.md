@@ -69,6 +69,7 @@ screenshot file and look at it** — a command succeeding doesn't mean the UI lo
 | `fill <css-sel> <text>` | set an input's value via the native setter + `input` event, then verify via a fresh query |
 | `type <text>` / `press <key>` | real OS-level keyboard input (see Gotchas — often doesn't land) |
 | `drag <x1> <y1> <x2> <y2> [steps]` | real Playwright mouse down/move/up between two viewport coordinates - needed for dnd-kit or other pointer-event-based drag-and-drop, which a synthetic `dispatchEvent(new PointerEvent(...))` in `eval` does not reliably trigger |
+| `resize <w> <h>` | resize the real BrowserWindow — the default 1280x800 hides every layout problem that only shows up on a maximized window (`resize 1728 1000` ≈ a full-screen 16" MacBook Pro) |
 | `wait <css-sel>` | wait for element, 10s timeout |
 | `eval <js>` | evaluate arbitrary JS in the page, print JSON — your escape hatch when a command doesn't fit |
 | `text [css-sel]` | print `innerText` |

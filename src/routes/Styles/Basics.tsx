@@ -40,9 +40,9 @@ export default function Basics(): JSX.Element {
   const fontOrigin = (theme.fontOrigin as string) ?? 'googleFonts'
 
   return (
-    <div className="grid max-w-xl gap-6">
+    <div className="grid gap-6">
       {overridingPlugin && (
-        <p className="rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+        <p className="max-w-3xl rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
           {t('themeEditor.overrideWarningPrefix')}
           <code className="font-mono">{String(overridingPlugin.source)}</code>
           {t('themeEditor.overrideWarningSuffix')}{' '}
@@ -51,7 +51,8 @@ export default function Basics(): JSX.Element {
           </button>
         </p>
       )}
-      <div className="grid gap-4">
+      {/* Same rule as the site settings form: width buys columns, not longer input boxes. */}
+      <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
         <Field label={t('themeEditor.fontSource')}>
           <Select value={fontOrigin} onChange={(e) => set('fontOrigin', e.target.value)}>
             <option value="googleFonts">{t('themeEditor.googleFonts')}</option>
@@ -59,7 +60,7 @@ export default function Basics(): JSX.Element {
           </Select>
         </Field>
         {fontOrigin === 'googleFonts' && (
-          <p className="rounded-md border border-blue-200 bg-blue-50 p-2.5 text-xs text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300">
+          <p className="self-end rounded-md border border-blue-200 bg-blue-50 p-2.5 text-xs text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300">
             {t('themeEditor.gdprHint')}
           </p>
         )}

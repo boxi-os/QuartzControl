@@ -46,49 +46,53 @@ export default function Templates(): JSX.Element {
   const canExport = !!destDir && selected.size > 0 && !!name.trim()
 
   return (
-    <div className="flex max-w-2xl flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <PageHeader icon={TAB_ICONS.templates} title={t('templates.title')} description={t('templates.description')} />
 
-      <Card>
-        <h2 className="mb-2 text-sm font-semibold">{t('templates.exportHeading')}</h2>
+      {/* Two independent halves of the same job - width puts them side by side rather than
+          stretching each one across the window. */}
+      <div className="grid items-start gap-6 xl:grid-cols-2">
+        <Card>
+          <h2 className="mb-2 text-sm font-semibold">{t('templates.exportHeading')}</h2>
 
-        <Field label={t('templates.nameLabel')}>
-          <TextInput value={name} onChange={(e) => setName(e.target.value)} className="w-72" />
-        </Field>
+          <Field label={t('templates.nameLabel')}>
+            <TextInput value={name} onChange={(e) => setName(e.target.value)} className="w-72" />
+          </Field>
 
-        <p className="mb-1.5 mt-4 text-xs font-semibold uppercase tracking-wide text-slate-500">{t('templates.categoriesHeading')}</p>
-        <div className="flex flex-col gap-1.5">
-          {CATEGORIES.map((category) => (
-            <label key={category} className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={selected.has(category)} onChange={() => toggleCategory(category)} />
-              <span>{t(`templates.categories.${category}`)}</span>
-            </label>
-          ))}
-        </div>
+          <p className="mb-1.5 mt-4 text-xs font-semibold uppercase tracking-wide text-slate-500">{t('templates.categoriesHeading')}</p>
+          <div className="flex flex-col gap-1.5">
+            {CATEGORIES.map((category) => (
+              <label key={category} className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={selected.has(category)} onChange={() => toggleCategory(category)} />
+                <span>{t(`templates.categories.${category}`)}</span>
+              </label>
+            ))}
+          </div>
 
-        <div className="mt-4 flex items-center gap-2">
-          <Button variant="ghost" onClick={pickDestDir}>
-            {t('templates.pickDestDir')}
-          </Button>
-          {destDir && <span className="truncate text-xs text-slate-500 dark:text-slate-400">{destDir}</span>}
-        </div>
+          <div className="mt-4 flex items-center gap-2">
+            <Button variant="ghost" onClick={pickDestDir}>
+              {t('templates.pickDestDir')}
+            </Button>
+            {destDir && <span className="truncate text-xs text-slate-500 dark:text-slate-400">{destDir}</span>}
+          </div>
 
-        <div className="mt-4">
-          <Button onClick={runExport} disabled={!canExport || exporting}>
-            {exporting ? t('common.saving') : t('templates.exportButton')}
-          </Button>
-        </div>
+          <div className="mt-4">
+            <Button onClick={runExport} disabled={!canExport || exporting}>
+              {exporting ? t('common.saving') : t('templates.exportButton')}
+            </Button>
+          </div>
 
-        {result && (
-          <p
-            className={`mt-3 text-xs ${result.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
-          >
-            {result.message}
-          </p>
-        )}
-      </Card>
+          {result && (
+            <p
+              className={`mt-3 text-xs ${result.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+            >
+              {result.message}
+            </p>
+          )}
+        </Card>
 
-      <ImportSection project={project} />
+        <ImportSection project={project} />
+      </div>
     </div>
   )
 }

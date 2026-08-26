@@ -62,7 +62,7 @@ export default function PluginsMarketplace(): JSX.Element {
   }
 
   return (
-    <div className="max-w-7xl">
+    <div>
       <Link to=".." relative="path" className="text-sm text-slate-500 hover:text-slate-800 dark:hover:text-white">
         {t('pluginsMarketplace.backToInstalled')}
       </Link>

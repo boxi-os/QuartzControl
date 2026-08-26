@@ -64,7 +64,7 @@ export default function ProjectDashboard(): JSX.Element {
   const totalPlugins = config?.plugins.length ?? 0
 
   return (
-    <div className="grid max-w-5xl gap-4">
+    <div className="grid gap-4">
       <PageHeader
         icon={TAB_ICONS.overview}
         title={t('projectLayout.tabs.overview')}
@@ -110,53 +110,57 @@ export default function ProjectDashboard(): JSX.Element {
         <LogConsole lines={logs} onClear={() => clearLogs(project.id)} />
       </Card>
 
-      <Card>
-        <h2 className="mb-3 font-medium">{t('dashboard.config')}</h2>
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <p className="text-xs text-slate-400">{t('dashboard.pageTitle')}</p>
-            <p className="truncate">{config?.configuration.pageTitle || '–'}</p>
+      {/* Two short summary cards - side by side once there is room, rather than two
+          full-width strips with a lot of nothing in them. */}
+      <div className="grid items-start gap-4 xl:grid-cols-2">
+        <Card>
+          <h2 className="mb-3 font-medium">{t('dashboard.config')}</h2>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="text-xs text-slate-400">{t('dashboard.pageTitle')}</p>
+              <p className="truncate">{config?.configuration.pageTitle || '–'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400">{t('dashboard.baseUrl')}</p>
+              <p className="truncate">{config?.configuration.baseUrl || '–'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400">{t('dashboard.theme')}</p>
+              <p className="truncate">{activeThemeId ?? t('dashboard.default')}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400">{t('dashboard.plugins')}</p>
+              <p>{t('dashboard.pluginsActiveTotal', { active: activePlugins, total: totalPlugins })}</p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs text-slate-400">{t('dashboard.baseUrl')}</p>
-            <p className="truncate">{config?.configuration.baseUrl || '–'}</p>
-          </div>
-          <div>
-            <p className="text-xs text-slate-400">{t('dashboard.theme')}</p>
-            <p className="truncate">{activeThemeId ?? t('dashboard.default')}</p>
-          </div>
-          <div>
-            <p className="text-xs text-slate-400">{t('dashboard.plugins')}</p>
-            <p>{t('dashboard.pluginsActiveTotal', { active: activePlugins, total: totalPlugins })}</p>
-          </div>
-        </div>
-        <Link to="config" className="mt-3 inline-block text-sm text-slate-600 hover:underline dark:text-slate-300">
-          {t('dashboard.editConfig')}
-        </Link>
-      </Card>
+          <Link to="config" className="mt-3 inline-block text-sm text-slate-600 hover:underline dark:text-slate-300">
+            {t('dashboard.editConfig')}
+          </Link>
+        </Card>
 
-      <Card>
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-medium">{t('dashboard.contentFolder')}</h2>
-            <p className="text-sm text-slate-500">
-              {!content?.exists && t('dashboard.notPresent')}
-              {content?.exists &&
-                !content.isSymlink &&
-                `${t('dashboard.realFolder')}${content.fileCount != null ? t('dashboard.filesSuffix', { count: content.fileCount }) : ''}`}
-              {content?.exists && content.isSymlink && t('dashboard.symlinkTo', { target: content.symlinkTarget })}
-            </p>
+        <Card>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-medium">{t('dashboard.contentFolder')}</h2>
+              <p className="text-sm text-slate-500">
+                {!content?.exists && t('dashboard.notPresent')}
+                {content?.exists &&
+                  !content.isSymlink &&
+                  `${t('dashboard.realFolder')}${content.fileCount != null ? t('dashboard.filesSuffix', { count: content.fileCount }) : ''}`}
+                {content?.exists && content.isSymlink && t('dashboard.symlinkTo', { target: content.symlinkTarget })}
+              </p>
+            </div>
+            {content?.isSymlink && (
+              <Badge tone={content.targetExists ? 'slate' : 'red'}>
+                {content.targetExists ? t('dashboard.symlink') : t('dashboard.targetMissing')}
+              </Badge>
+            )}
           </div>
-          {content?.isSymlink && (
-            <Badge tone={content.targetExists ? 'slate' : 'red'}>
-              {content.targetExists ? t('dashboard.symlink') : t('dashboard.targetMissing')}
-            </Badge>
-          )}
-        </div>
-        <Link to="content" className="mt-2 inline-block text-sm text-slate-600 hover:underline">
-          {t('dashboard.manageContentFolder')}
-        </Link>
-      </Card>
+          <Link to="content" className="mt-2 inline-block text-sm text-slate-600 hover:underline">
+            {t('dashboard.manageContentFolder')}
+          </Link>
+        </Card>
+      </div>
 
       <div className="grid grid-cols-3 gap-4 lg:grid-cols-5">
         <Link to="config">

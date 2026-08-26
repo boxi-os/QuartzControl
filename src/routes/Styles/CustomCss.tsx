@@ -12,6 +12,7 @@ import { componentItems } from '../LayoutEditor/utils'
 import CssVariableReference from './CssVariableReference'
 import { cssColorToHex, isDisplayableColor, resolvedValue, type ResolveContext } from './variableGraph'
 import { googleFontRequest, primaryFamily, summarizeFaces, type TypographySlot } from './fontSpec'
+import { fontLoaders } from './fontDelivery'
 import { activeThemeIdOf, useStyles } from './index'
 
 // What this file is writing on top of, as it actually looks right now - resolved through the same
@@ -698,7 +699,7 @@ function ActiveStyles(): JSX.Element {
     typography: config.theme.typography as Record<string, string> | undefined
   }
 
-  const fontOrigin = (config.theme.fontOrigin as string) ?? 'googleFonts'
+  const loaders = fontLoaders(config)
   const typography = (config.theme.typography ?? {}) as Record<string, unknown>
   const requests = (['header', 'body', 'code'] as TypographySlot[])
     .map((slot) => googleFontRequest(slot, typography[slot]))
@@ -775,11 +776,17 @@ function ActiveStyles(): JSX.Element {
           })}
         </div>
 
-        {/* Which of the two loading paths is in play changes what the weights above even mean, so
-            it is stated rather than left to be inferred. */}
-        <p className="mt-2 text-[11px] text-slate-400">
-          {fontOrigin === 'googleFonts'
-            ? t('styleEditor.current.googleNote', {
+        {/* Where the fonts come from decides what the weights above even mean - and whether the
+            site calls Google at all. Both mechanisms are checked, not just the theme setting: the
+            Fonts plugin has its own fontOrigin and defaults to Google. */}
+        <div className="mt-2 flex flex-col gap-1 text-[11px]">
+          {loaders.length === 0 && <p className="text-slate-400">{t('styleEditor.current.noLoader')}</p>}
+          {loaders.map((loader) => (
+            <p
+              key={`${loader.via}-${loader.mode}`}
+              className={loader.mode === 'google' ? 'text-amber-700 dark:text-amber-400' : 'text-slate-400'}
+            >
+              {t(`styleEditor.current.loader.${loader.via}.${loader.mode}`, {
                 specs: requests
                   .map(
                     (r) =>
@@ -788,9 +795,10 @@ function ActiveStyles(): JSX.Element {
                       }`
                   )
                   .join(' · ')
-              })
-            : t('styleEditor.current.localNote')}
-        </p>
+              })}
+            </p>
+          ))}
+        </div>
       </div>
     </Card>
   )

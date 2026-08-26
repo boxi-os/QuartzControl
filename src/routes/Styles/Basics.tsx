@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { QuartzConfig } from '@shared/ipc-contract'
-import { Button, Field, Select, TextInput } from '../../components/ui'
+import { Button, Field, Select, TextInput, Toggle } from '../../components/ui'
 import { CURATED_GOOGLE_FONTS } from '../../data/googleFonts'
+import { callsGoogle, fontLoaders, withSelfHostedFonts } from './fontDelivery'
 import { useStyles } from './index'
 
 type Theme = QuartzConfig['theme']
@@ -59,11 +60,7 @@ export default function Basics(): JSX.Element {
             <option value="local">{t('themeEditor.local')}</option>
           </Select>
         </Field>
-        {fontOrigin === 'googleFonts' && (
-          <p className="self-end rounded-md border border-blue-200 bg-blue-50 p-2.5 text-xs text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300">
-            {t('themeEditor.gdprHint')}
-          </p>
-        )}
+
         <datalist id={GOOGLE_FONTS_DATALIST_ID}>
           {CURATED_GOOGLE_FONTS.map((name) => (
             <option key={name} value={name} />
@@ -80,6 +77,8 @@ export default function Basics(): JSX.Element {
         ))}
       </div>
 
+      <FontDelivery config={config} onChange={setConfig} />
+
       <LocalFontImport
         projectPath={project.path}
         onImported={(family, slot) => {
@@ -94,6 +93,51 @@ export default function Basics(): JSX.Element {
         <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">{t('themeEditor.colors')}</h3>
         <ColorGroup value={(theme.colors as Record<string, unknown>) ?? {}} onChange={(colors) => set('colors', colors)} />
       </div>
+    </div>
+  )
+}
+
+// "Woher kommen die Schriften" is one question for the user but two settings underneath: Quartz'
+// own cdnCaching and, if the Fonts plugin is installed, its own fontOrigin - which defaults to
+// Google, so a project can be calling Google while the theme's font source says "local". Both are
+// reported and both are flipped together; see fontDelivery.ts for what each one does.
+function FontDelivery({
+  config,
+  onChange
+}: {
+  config: QuartzConfig
+  onChange: (next: QuartzConfig) => void
+}): JSX.Element {
+  const { t } = useTranslation()
+  const loaders = fontLoaders(config)
+  const google = callsGoogle(config)
+  const baseUrl = (config.configuration.baseUrl as string) ?? ''
+
+  return (
+    <div className="rounded-md border border-black/[0.06] p-3 dark:border-white/10">
+      <h3 className="mb-1 text-sm font-semibold">{t('themeEditor.delivery.heading')}</h3>
+      <div className="mb-2 flex flex-col gap-0.5 text-xs">
+        {loaders.length === 0 && <p className="text-slate-500 dark:text-slate-400">{t('styleEditor.current.noLoader')}</p>}
+        {loaders.map((loader) => (
+          <p
+            key={`${loader.via}-${loader.mode}`}
+            className={loader.mode === 'google' ? 'text-amber-700 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'}
+          >
+            {t(`themeEditor.delivery.state.${loader.via}.${loader.mode}`)}
+          </p>
+        ))}
+      </div>
+      <Toggle
+        label={t('themeEditor.delivery.selfHost')}
+        checked={loaders.length > 0 && !google}
+        onChange={(checked) => onChange(withSelfHostedFonts(config, checked))}
+      />
+      <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{t('themeEditor.delivery.description')}</p>
+      {/* Both self-hosting paths rewrite the font URLs to <baseUrl>/static/fonts, and the plugin
+          throws outright without one - so an empty baseUrl is a build failure, not a detail. */}
+      {!google && loaders.length > 0 && !baseUrl && (
+        <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{t('themeEditor.delivery.baseUrlMissing')}</p>
+      )}
     </div>
   )
 }

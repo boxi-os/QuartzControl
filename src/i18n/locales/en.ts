@@ -212,6 +212,24 @@ export default {
     googleFonts: 'Google Fonts',
     local: 'Local',
     fontFor: 'Font ({{slot}})',
+    delivery: {
+      heading: 'Font delivery',
+      description:
+        'Serving locally means Quartz downloads the font files once at build time and puts them under static/fonts. The site then makes no request to Google at all — the GDPR-friendly option.',
+      selfHost: 'Serve fonts locally (no Google request on visit)',
+      baseUrlMissing:
+        'This needs a base URL (Configuration → base URL) — the font URLs are rewritten to it, and the build fails without one.',
+      state: {
+        core: {
+          google: 'Quartz core: links Google Fonts directly.',
+          selfHosted: 'Quartz core: downloads at build time and serves locally.'
+        },
+        plugin: {
+          google: '"Fonts" plugin: links Google Fonts directly.',
+          selfHosted: '"Fonts" plugin: downloads at build time and serves locally.'
+        }
+      }
+    },
     gdprHint:
       "With this setting, Google Fonts is loaded directly from Google (visitor IPs are sent to Google). Quartz can also self-host fonts automatically (GDPR-compliant) — choose \"Local\" for that.",
     localFontHeading: 'Import a custom font',
@@ -608,9 +626,18 @@ export default {
       italic: 'italic',
       noFace: 'no @font-face rule found',
       familyDefault: '(family default)',
-      googleNote: 'Quartz loads from Google Fonts: {{specs}}. The weights above come from the @font-face rules that actually exist.',
-      localNote:
-        'Font source "local": Quartz loads no fonts itself. Only what an active theme ships, or what you declare via @font-face in your own stylesheets, is available.'
+      noLoader:
+        'Nothing fetches fonts: only what an active theme ships, or what you declare via @font-face, is available.',
+      loader: {
+        core: {
+          google: 'Quartz links Google Fonts on every page view: {{specs}}.',
+          selfHosted: 'Quartz downloads from Google at build time and serves the files itself: {{specs}}.'
+        },
+        plugin: {
+          google: 'The "Fonts" plugin links Google Fonts on every page view.',
+          selfHosted: 'The "Fonts" plugin downloads at build time and serves the files itself.'
+        }
+      }
     },
     cssVars: {
       heading: 'Available CSS variables',

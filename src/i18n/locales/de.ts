@@ -212,6 +212,24 @@ export default {
     googleFonts: 'Google Fonts',
     local: 'Lokal',
     fontFor: 'Schriftart ({{slot}})',
+    delivery: {
+      heading: 'Schrift-Auslieferung',
+      description:
+        'Lokal ausliefern heißt: Quartz lädt die Schriftdateien einmal beim Build herunter und legt sie unter static/fonts ab. Die Seite ruft dann nichts mehr bei Google auf — das ist die DSGVO-freundliche Variante.',
+      selfHost: 'Schriften lokal ausliefern (kein Google-Aufruf beim Besuch)',
+      baseUrlMissing:
+        'Dafür muss eine Basis-URL gesetzt sein (Konfiguration → Basis-URL) — die Schrift-URLs werden darauf umgeschrieben, sonst bricht der Build ab.',
+      state: {
+        core: {
+          google: 'Quartz-Kern: verlinkt Google Fonts direkt.',
+          selfHosted: 'Quartz-Kern: lädt beim Build herunter und liefert lokal aus.'
+        },
+        plugin: {
+          google: 'Plugin „Fonts": verlinkt Google Fonts direkt.',
+          selfHosted: 'Plugin „Fonts": lädt beim Build herunter und liefert lokal aus.'
+        }
+      }
+    },
     gdprHint:
       'Google Fonts wird bei dieser Einstellung direkt von Google geladen (Besucher-IPs werden an Google übertragen). Quartz kann Schriftarten auch automatisch selbst hosten (DSGVO-konform) — dafür "Lokal" wählen.',
     localFontHeading: 'Eigene Schriftart importieren',
@@ -609,9 +627,18 @@ export default {
       italic: 'kursiv',
       noFace: 'keine @font-face-Regel gefunden',
       familyDefault: '(Standardstärke)',
-      googleNote: 'Quartz lädt von Google Fonts: {{specs}}. Die Stärken oben stammen aus den @font-face-Regeln, die tatsächlich vorliegen.',
-      localNote:
-        'Font-Quelle „Lokal": Quartz lädt selbst keine Schriften. Verfügbar ist nur, was ein aktives Theme mitbringt oder was du per @font-face in deinen Stylesheets deklarierst.'
+      noLoader:
+        'Es lädt nichts Schriften nach: verfügbar ist nur, was ein aktives Theme mitbringt oder was du per @font-face deklarierst.',
+      loader: {
+        core: {
+          google: 'Quartz lädt bei jedem Seitenaufruf von Google Fonts: {{specs}}.',
+          selfHosted: 'Quartz lädt beim Build von Google und liefert die Dateien selbst aus: {{specs}}.'
+        },
+        plugin: {
+          google: 'Das Plugin „Fonts" lädt bei jedem Seitenaufruf von Google Fonts.',
+          selfHosted: 'Das Plugin „Fonts" lädt beim Build und liefert die Dateien selbst aus.'
+        }
+      }
     },
     cssVars: {
       heading: 'Verfügbare CSS-Variablen',

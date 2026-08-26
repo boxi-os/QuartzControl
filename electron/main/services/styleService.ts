@@ -2,7 +2,7 @@ import { existsSync, mkdirSync } from 'fs'
 import { copyFile, readFile, readdir, rename, rm, writeFile } from 'fs/promises'
 import { createRequire } from 'module'
 import { basename, dirname, join, relative, sep } from 'path'
-import { fileURLToPath } from 'url'
+import { fileURLToPath, pathToFileURL } from 'url'
 import type {
   CssVariableOverride,
   ScssCheckResult,
@@ -429,17 +429,53 @@ export async function setImportOrder(projectPath: string, relativePaths: string[
 //
 // A missing sass is reported as "unavailable", not as a pass: a project that has never had
 // `npm install` run in it cannot be checked, and saying "no errors" there would be a lie.
+interface ProjectSass {
+  compile: (path: string, options?: Record<string, unknown>) => unknown
+  compileString: (source: string, options?: Record<string, unknown>) => unknown
+}
+
+function loadProjectSass(projectPath: string): ProjectSass | null {
+  try {
+    return createRequire(join(projectPath, 'package.json'))('sass') as ProjectSass
+  } catch {
+    return null
+  }
+}
+
 export async function checkStyles(projectPath: string): Promise<ScssCheckResult> {
   const entry = customScssPath(projectPath)
   if (!existsSync(entry)) return { status: 'unavailable', reason: 'custom.scss existiert nicht.' }
-  let sass: { compile: (path: string, options?: Record<string, unknown>) => unknown }
-  try {
-    sass = createRequire(join(projectPath, 'package.json'))('sass')
-  } catch {
-    return { status: 'unavailable', reason: 'Im Projekt ist kein sass installiert (npm install).' }
-  }
+  const sass = loadProjectSass(projectPath)
+  if (!sass) return { status: 'unavailable', reason: 'Im Projekt ist kein sass installiert (npm install).' }
   try {
     sass.compile(entry, { loadPaths: [stylesDir(projectPath)], quietDeps: true, verbose: false })
+    return { status: 'ok' }
+  } catch (err) {
+    return { status: 'error', diagnostic: toDiagnostic(projectPath, err) }
+  }
+}
+
+// Checks one file's *unsaved* content, standing alone. That is not an approximation: with Sass
+// modules a partial sees nothing of what included it, so `custom/typografie.scss` really does
+// compile against only its own `@use` lines - and custom.scss, being the entry point, pulls in the
+// whole chain anyway. The url matters: without it a relative `@use "./variables.scss"` has no
+// directory to resolve against.
+export async function checkStyleSource(
+  projectPath: string,
+  relativePath: string,
+  content: string
+): Promise<ScssCheckResult> {
+  const sass = loadProjectSass(projectPath)
+  if (!sass) return { status: 'unavailable', reason: 'Im Projekt ist kein sass installiert (npm install).' }
+  const filePath =
+    relativePath === 'custom.scss' ? customScssPath(projectPath) : styleFilePath(projectPath, relativePath)
+  try {
+    sass.compileString(content, {
+      url: pathToFileURL(filePath),
+      syntax: filePath.endsWith('.css') ? 'css' : 'scss',
+      loadPaths: [stylesDir(projectPath)],
+      quietDeps: true
+    })
     return { status: 'ok' }
   } catch (err) {
     return { status: 'error', diagnostic: toDiagnostic(projectPath, err) }

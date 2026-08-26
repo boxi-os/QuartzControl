@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ButtonHTMLAttributes, HTMLAttributes, InputHTMLAttributes, LabelHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -19,6 +20,30 @@ export function Button({
       className={`rounded-[7px] px-3 py-1.5 text-[13px] font-medium transition-colors disabled:cursor-not-allowed ${VARIANTS[variant]} ${className}`}
     />
   )
+}
+
+// Copy-to-clipboard with the only feedback that matters here: which value was just copied, for a
+// moment. Shared because both the CSS tab's colour strip and its variable reference offer it, and a
+// second copy of the timeout bookkeeping in each would drift.
+export function useCopyToClipboard(): { copied: string | null; copy: (value: string, label?: string) => void } {
+  const [copied, setCopied] = useState<string | null>(null)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current)
+    },
+    []
+  )
+
+  const copy = useCallback((value: string, label?: string) => {
+    void navigator.clipboard.writeText(value)
+    setCopied(label ? `${label}: ${value}` : value)
+    if (timer.current) clearTimeout(timer.current)
+    timer.current = setTimeout(() => setCopied(null), 1800)
+  }, [])
+
+  return { copied, copy }
 }
 
 // `className` is there for grid placement (e.g. a textarea field spanning every column of a

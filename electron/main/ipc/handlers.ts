@@ -190,6 +190,11 @@ export function registerIpcHandlers(): void {
     (projectPath, relativePaths) => styleService.setImportOrder(projectPath, relativePaths)
   )
   handle(IPC.stylesCheck, t([s.absolutePath]), (projectPath) => styleService.checkStyles(projectPath))
+  handle(
+    IPC.stylesCheckSource,
+    t([s.absolutePath, s.styleEntryPath, s.longText]),
+    (projectPath, relativePath, content) => styleService.checkStyleSource(projectPath, relativePath, content)
+  )
   handle(IPC.stylesGetVariableOverrides, t([s.absolutePath]), (projectPath) =>
     styleService.getVariableOverrides(projectPath)
   )

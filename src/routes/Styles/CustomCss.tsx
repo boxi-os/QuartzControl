@@ -5,7 +5,7 @@ import { css } from '@codemirror/lang-css'
 import type { EditorView } from '@codemirror/view'
 import { ArrowDown, ArrowUp, Check, FileWarning, Plus, X } from 'lucide-react'
 import type { ScssCheckResult, StyleFile, StyleReferenceFile } from '@shared/ipc-contract'
-import { Button, Card, Select, TextInput } from '../../components/ui'
+import { Button, Card, Select, TextInput, useCopyToClipboard } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { useStickyState } from '../../state/uiState'
 import { componentItems } from '../LayoutEditor/utils'
@@ -110,20 +110,29 @@ export default function CustomCss(): JSX.Element {
     .map((f) => f.relativePath)
     .filter((rel) => fileDrafts[rel] !== undefined && fileDrafts[rel] !== loaded[rel])
 
-  useEffect(() =>
-    registerSave(async () => {
-      for (const rel of dirtyFiles) {
-        await window.quartzGui.styles.saveFile(project.path, rel, fileDrafts[rel])
+  // Saves the file that is in front, and only that one. Several open files are several separate
+  // pieces of work - writing all of them because one was finished is not what the button says, and
+  // the tab bar's dots make what is still unsaved visible. The page's own Save button does the
+  // same thing, so both spellings of "save" mean the file you are looking at.
+  const saveActive = useCallback(
+    async (tab: string) => {
+      if (tab === MAIN_TAB) {
+        await window.quartzGui.styles.save(project.path, scss.content)
+        // Re-reads what is now on disk, which clears the dirty/stale flags in one step.
+        await reloadScss(true)
+      } else {
+        const draft = fileDrafts[tab]
+        if (draft === undefined) return
+        await window.quartzGui.styles.saveFile(project.path, tab, draft)
+        setLoaded((prev) => ({ ...prev, [tab]: draft }))
+        clearFileDrafts([tab])
       }
-      await window.quartzGui.styles.save(project.path, scss.content)
-      // Re-reads what is now on disk, which clears the dirty/stale flags in one step.
-      await reloadScss(true)
-      setLoaded((prev) => ({ ...prev, ...Object.fromEntries(dirtyFiles.map((rel) => [rel, fileDrafts[rel]])) }))
-      clearFileDrafts(dirtyFiles)
-      await reloadFiles()
       await runCheck()
-    })
+    },
+    [project.path, scss.content, fileDrafts, reloadScss, clearFileDrafts, runCheck]
   )
+
+  useEffect(() => registerSave(() => saveActive(activeTab)))
 
   useEffect(() => {
     if (!selectedComponent) {
@@ -141,6 +150,18 @@ export default function CustomCss(): JSX.Element {
     setActiveTab((prev) => (known.has(prev) ? prev : MAIN_TAB))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fileSet])
+
+  // Checks what is in the editor right now, unsaved included - each stylesheet is its own Sass
+  // module, so compiling one on its own is exactly how the build sees it.
+  async function checkActive(): Promise<void> {
+    setChecking(true)
+    try {
+      const entry = activeTab === MAIN_TAB ? 'custom.scss' : activeTab
+      setCheck(await window.quartzGui.styles.checkSource(project.path, entry, contentOf(activeTab)))
+    } finally {
+      setChecking(false)
+    }
+  }
 
   const contentOf = (tab: string): string =>
     tab === MAIN_TAB ? scss.content : (fileDrafts[tab] ?? loaded[tab] ?? '')
@@ -228,7 +249,13 @@ export default function CustomCss(): JSX.Element {
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="truncate text-xs text-slate-500 dark:text-slate-400">{activePath}</p>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="ghost" onClick={checkActive} disabled={checking}>
+            {checking ? t('styleEditor.check.running') : t('styleEditor.check.checkActive')}
+          </Button>
+          <Button onClick={() => saveActive(activeTab)} disabled={!isDirty(activeTab)}>
+            {t('styleEditor.files.saveActive')}
+          </Button>
           <Button variant="ghost" onClick={() => openExternally(activePath)}>
             {t('styleEditor.openExternally')}
           </Button>
@@ -557,7 +584,11 @@ function FileOrder({
 
       {creating === null ? (
         <Button variant="ghost" className="mt-3" onClick={() => setCreating('')}>
-          <Plus size={13} aria-hidden /> {t('styleEditor.files.create')}
+          {/* Tailwind's preflight makes an <svg> display:block, which breaks the line inside an
+              inline-block button - the icon and the label need their own flex row. */}
+          <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+            <Plus size={13} aria-hidden /> {t('styleEditor.files.create')}
+          </span>
         </Button>
       ) : (
         <div className="mt-3 flex items-center gap-2">
@@ -651,6 +682,7 @@ function CheckBanner({
 function ActiveStyles(): JSX.Element {
   const { t } = useTranslation()
   const { config, graph, overrides } = useStyles()
+  const { copied, copy } = useCopyToClipboard()
   const ctx: ResolveContext = {
     graph,
     overrides,
@@ -665,20 +697,31 @@ function ActiveStyles(): JSX.Element {
           {t('styleEditor.current.colors')}
         </h3>
         <div className="flex flex-wrap gap-3">
-          {SUMMARY_COLORS.map((key) => {
-            const light = resolvedValue(key, 'light', ctx)
-            const dark = resolvedValue(key, 'dark', ctx)
-            return (
-              <div key={key} className="flex items-center gap-1.5" title={`${cssColorToHex(light) ?? light ?? '—'} / ${cssColorToHex(dark) ?? dark ?? '—'}`}>
-                <span className="flex overflow-hidden rounded border border-black/10 dark:border-white/20">
-                  <span className="h-5 w-5" style={{ backgroundColor: isDisplayableColor(light) ? light : 'transparent' }} />
-                  <span className="h-5 w-5" style={{ backgroundColor: isDisplayableColor(dark) ? dark : 'transparent' }} />
-                </span>
-                <code className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{key}</code>
-              </div>
-            )
-          })}
+          {SUMMARY_COLORS.map((key) => (
+            <div key={key} className="flex items-center gap-1.5">
+              {/* Each half is its own copy target: the light and dark value of the same variable
+                  are different colours, and "which one did I just copy" has to be unambiguous. */}
+              <span className="flex overflow-hidden rounded border border-black/10 dark:border-white/20">
+                {(['light', 'dark'] as const).map((mode) => {
+                  const value = resolvedValue(key, mode, ctx)
+                  const hex = cssColorToHex(value) ?? value
+                  return (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => hex && copy(hex, `--${key} (${t(`styles.variables.${mode}`)})`)}
+                      title={t('styleEditor.cssVars.copyHint', { value: hex ?? '—' })}
+                      className="h-5 w-5"
+                      style={{ backgroundColor: isDisplayableColor(value) ? value : 'transparent' }}
+                    />
+                  )
+                })}
+              </span>
+              <code className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{key}</code>
+            </div>
+          ))}
         </div>
+        {copied && <p className="mt-2 truncate text-[11px] text-green-700 dark:text-green-400">{t('common.copied', { value: copied })}</p>}
       </div>
       <div>
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -691,9 +734,15 @@ function ActiveStyles(): JSX.Element {
             return (
               <div key={key} className="flex items-baseline gap-2 text-[11px]">
                 <code className="w-24 shrink-0 font-mono text-slate-500 dark:text-slate-400">{key}</code>
-                <span className="truncate text-[13px] text-slate-700 dark:text-slate-200" style={{ fontFamily: value }} title={value}>
+                <button
+                  type="button"
+                  onClick={() => copy(value, `--${key}`)}
+                  title={t('styleEditor.cssVars.copyHint', { value })}
+                  className="min-w-0 truncate rounded px-1 text-left text-[13px] text-slate-700 hover:bg-black/[0.06] dark:text-slate-200 dark:hover:bg-white/10"
+                  style={{ fontFamily: value }}
+                >
                   {value.split(',')[0].replace(/^["']|["']$/g, '')}
-                </span>
+                </button>
               </div>
             )
           })}

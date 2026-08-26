@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import type { CssVariableOverride } from '@shared/ipc-contract'
@@ -32,6 +32,9 @@ export default function Variables(): JSX.Element {
   const [allOpen, setAllOpen] = useStickyState('styles.allVars.open', false)
   const [query, setQuery] = useStickyState('styles.allVars.query', '')
   const [onlyChanged, setOnlyChanged] = useStickyState('styles.allVars.onlyChanged', false)
+  // Deliberately not sticky: a pending jump is transient interaction state, and re-running it after
+  // coming back from another area would yank the page around for no reason.
+  const [pendingScroll, setPendingScroll] = useState<string | null>(null)
 
   useEffect(() =>
     registerSave(async () => {
@@ -68,13 +71,27 @@ export default function Variables(): JSX.Element {
   }
 
   // Clicking a variable in either dependency list jumps to it: opens the searchable table, puts the
-  // name in the query and expands that row - which is what makes the graph walkable instead of
-  // just readable.
+  // name in the query, expands that row - and actually scrolls to it, which is the half that makes
+  // it a jump rather than a state change somewhere off screen.
   function navigateTo(key: string): void {
     setExpandedKeys((prev) => (prev.includes(key) ? prev : [...prev, key]))
     setAllOpen(true)
     setQuery(key)
+    setPendingScroll(key)
   }
+
+  // Runs after every render until the target row exists: the row it scrolls to is usually rendered
+  // by the *same* update that set the query, and may be several renders away when the table is
+  // still filtering. Instant rather than smooth on purpose - ProjectLayout re-applies the saved
+  // scroll offset whenever the content resizes, and a smooth scroll's stream of events interleaves
+  // with that and lands somewhere else.
+  useEffect(() => {
+    if (!pendingScroll) return
+    const el = document.querySelector(`[data-var-key="${CSS.escape(pendingScroll)}"]`)
+    if (!el) return
+    el.scrollIntoView({ block: 'center' })
+    setPendingScroll(null)
+  })
 
   const rowProps = (key: string): Parameters<typeof VariableRow>[0] => ({
     varKey: key,

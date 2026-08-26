@@ -655,6 +655,7 @@ export const IPC = {
   stylesDeleteFile: 'styles:deleteFile',
   stylesSetImportOrder: 'styles:setImportOrder',
   stylesCheck: 'styles:check',
+  stylesCheckSource: 'styles:checkSource',
   stylesGetVariableOverrides: 'styles:getVariableOverrides',
   stylesSaveVariableOverrides: 'styles:saveVariableOverrides',
   stylesScanBuildOutputVariables: 'styles:scanBuildOutputVariables',
@@ -790,6 +791,8 @@ export interface QuartzGuiApi {
     deleteFile(projectPath: string, relativePath: string): Promise<void>
     setImportOrder(projectPath: string, relativePaths: string[]): Promise<void>
     check(projectPath: string): Promise<ScssCheckResult>
+    /** Compiles one file's *unsaved* content on its own - each stylesheet is its own Sass module. */
+    checkSource(projectPath: string, relativePath: string, content: string): Promise<ScssCheckResult>
     getVariableOverrides(projectPath: string): Promise<CssVariableOverride[]>
     saveVariableOverrides(projectPath: string, overrides: CssVariableOverride[]): Promise<void>
     scanBuildOutputVariables(projectPath: string, outputDir?: string): Promise<string[]>

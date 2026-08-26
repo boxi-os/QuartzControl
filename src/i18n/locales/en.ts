@@ -11,6 +11,7 @@ export default {
     edit: 'Edit',
     loading: 'Loading…',
     openInBrowser: 'Open in browser ↗',
+    copied: 'Copied — {{value}}',
     serverState: {
       stopped: 'Stopped',
       starting: 'Starting…',
@@ -589,6 +590,7 @@ export default {
       orphansHeading: 'Present, but not loaded',
       include: 'Load it',
       unsaved: 'Unsaved changes',
+      saveActive: 'Save file',
       closeTab: 'Close tab'
     },
     check: {
@@ -596,6 +598,7 @@ export default {
       failed: 'SCSS error — the build would fail:',
       location: 'Open {{file}}, line {{line}}',
       recheck: 'Check again',
+      checkActive: 'Check code',
       running: 'Checking…',
       unavailable: 'SCSS check not possible: {{reason}}'
     },
@@ -609,6 +612,9 @@ export default {
       goToVariables: 'Override variables →',
       searchPlaceholder: 'Search variable…',
       insertHint: 'Click to insert the variable at the cursor position.',
+      rowHint: 'Click the name to insert var(--name), click a swatch to copy its value.',
+      copyHint: 'Click to copy {{value}}',
+      copyValue: 'Copy value',
       discoveredGroup: 'Found in build output',
       noResults: 'No matches.',
       calloutsHeading: 'Callout colors',

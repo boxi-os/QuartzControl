@@ -76,8 +76,17 @@ export default function VariableRow({
   // was missing: the expanded row said what depends on this variable but never what it depends on.
   const uses = Array.from(new Set([...referencedVariables(light ?? ''), ...referencedVariables(dark ?? '')]))
 
+  // data-var-key is what the page's "jump to this variable" scroll looks for - the row has to be
+  // findable from outside, since the chip that navigates here lives in a different row entirely.
   return (
-    <div className={`rounded-md px-1.5 py-1 ${override ? 'bg-green-50/60 dark:bg-green-500/[0.07]' : ''}`}>
+    <div
+      data-var-key={varKey}
+      className={`rounded-md px-1.5 py-1 ${
+        expanded ? 'border border-blue-300 bg-blue-50/40 shadow-sm dark:border-blue-500/40 dark:bg-blue-500/[0.06]' : ''
+      } ${override && !expanded ? 'bg-green-50/60 dark:bg-green-500/[0.07]' : ''} ${
+        override && expanded ? 'border-green-400 bg-green-50/60 dark:border-green-500/40 dark:bg-green-500/[0.07]' : ''
+      }`}
+    >
       <div className="flex items-center gap-2 text-xs">
         <button
           type="button"

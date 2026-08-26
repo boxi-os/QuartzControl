@@ -11,6 +11,7 @@ export default {
     edit: 'Bearbeiten',
     loading: 'Lade…',
     openInBrowser: 'Im Browser öffnen ↗',
+    copied: 'Kopiert — {{value}}',
     serverState: {
       stopped: 'Gestoppt',
       starting: 'Startet…',
@@ -590,6 +591,7 @@ export default {
       orphansHeading: 'Vorhanden, aber nicht eingebunden',
       include: 'Einbinden',
       unsaved: 'Ungespeicherte Änderungen',
+      saveActive: 'Datei speichern',
       closeTab: 'Tab schließen'
     },
     check: {
@@ -597,6 +599,7 @@ export default {
       failed: 'SCSS-Fehler — der Build würde fehlschlagen:',
       location: 'In {{file}}, Zeile {{line}} öffnen',
       recheck: 'Erneut prüfen',
+      checkActive: 'Code prüfen',
       running: 'Prüfe…',
       unavailable: 'SCSS-Prüfung nicht möglich: {{reason}}'
     },
@@ -611,6 +614,9 @@ export default {
       goToVariables: 'Variablen überschreiben →',
       searchPlaceholder: 'Variable suchen…',
       insertHint: 'Klicken, um die Variable an der Cursor-Position einzufügen.',
+      rowHint: 'Name anklicken fügt var(--name) ein, Farbfeld anklicken kopiert den Wert.',
+      copyHint: 'Klicken, um {{value}} zu kopieren',
+      copyValue: 'Wert kopieren',
       discoveredGroup: 'Im Build-Output gefunden',
       noResults: 'Keine Treffer.',
       calloutsHeading: 'Callout-Farben',

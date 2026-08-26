@@ -114,6 +114,9 @@ export const styleFileSubPath = z
   .regex(/^(custom|imported)\/[A-Za-z0-9._-]+\.(scss|css)$/, 'kein gültiger Stylesheet-Pfad')
   .refine((p) => !p.split('/')[1].startsWith('.'), { message: 'Dateiname darf nicht mit "." beginnen' })
 
+// The same, plus custom.scss itself - the one file that is edited but is not part of the order.
+export const styleEntryPath = z.union([z.literal('custom.scss'), styleFileSubPath])
+
 // The name for a newly created or renamed stylesheet - one segment, the service appends ".scss".
 export const styleFileName = z
   .string()

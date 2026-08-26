@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Card, TextInput } from '../../components/ui'
+import { Card, TextInput, useCopyToClipboard } from '../../components/ui'
 import {
   CALLOUT_COLORS,
   CSS_VARIABLES,
@@ -25,6 +25,7 @@ export default function CssVariableReference({ onInsert }: { onInsert: (text: st
   const typography = config.theme.typography as Record<string, string> | undefined
   const ctx: ResolveContext = { graph, overrides, colors, typography }
 
+  const { copied, copy } = useCopyToClipboard()
   const [search, setSearch] = useState('')
   const query = search.trim().toLowerCase()
 
@@ -71,20 +72,21 @@ export default function CssVariableReference({ onInsert }: { onInsert: (text: st
             <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">{group}</p>
             <div className="flex flex-col gap-0.5">
               {defs.map((def) => (
-                <VariableRow key={def.key} def={def} ctx={ctx} onInsert={onInsert} />
+                <VariableRow key={def.key} def={def} ctx={ctx} onInsert={onInsert} onCopy={copy} />
               ))}
             </div>
           </div>
         ))}
       </div>
-      <p className="mt-3 text-[11px] text-slate-400">{t('styleEditor.cssVars.insertHint')}</p>
+      <p className="mt-3 text-[11px] text-slate-400">{t('styleEditor.cssVars.rowHint')}</p>
+      {copied && <p className="mt-1 truncate text-[11px] text-green-700 dark:text-green-400">{t('common.copied', { value: copied })}</p>}
 
       <div className="mt-4 border-t border-black/[0.06] pt-3 dark:border-white/10">
         <h2 className="mb-1 text-sm font-semibold">{t('styleEditor.cssVars.calloutsHeading')}</h2>
         <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">{t('styleEditor.cssVars.calloutsDescription')}</p>
         <div className="flex flex-col gap-0.5">
           {CALLOUT_COLORS.map((def) => (
-            <CalloutRow key={def.type} def={def} colors={colors} onInsert={onInsert} />
+            <CalloutRow key={def.type} def={def} colors={colors} onInsert={onInsert} onCopy={copy} />
           ))}
         </div>
       </div>
@@ -92,19 +94,22 @@ export default function CssVariableReference({ onInsert }: { onInsert: (text: st
   )
 }
 
-// Values come from the same resolver the Variablen tab uses, so a swatch here shows what the
-// variable really paints today - including one whose value is an alias chain into the active
-// theme - rather than only what the classic colors would derive. Each kind gets the preview that
-// answers "what is this right now" for it: a color its two swatches plus the hex, a font a sample
-// set in that very font, anything else its literal value.
+// Two separate targets in one row, because they answer two different needs: the name inserts
+// `var(--x)` into the editor, the preview copies the value the variable resolves to right now (a
+// hex, a font stack) - which is what you want when writing a rule that has to *match* a colour
+// rather than follow it. The literal value is no longer printed: it was the widest thing in a
+// narrow sidebar and regularly ran out of the card, and the swatch plus the title attribute say
+// the same thing without overflowing.
 function VariableRow({
   def,
   ctx,
-  onInsert
+  onInsert,
+  onCopy
 }: {
   def: CssVariableDef
   ctx: ResolveContext
   onInsert: (text: string) => void
+  onCopy: (value: string, label: string) => void
 }): JSX.Element {
   const { t } = useTranslation()
   const light = resolvedValue(def.key, 'light', ctx)
@@ -112,41 +117,64 @@ function VariableRow({
   const raw = effectiveValue(def.key, 'light', ctx) ?? effectiveValue(def.key, 'dark', ctx) ?? ''
   const isColor = def.kind === 'color' || cssColorToHex(light) !== null
   const isFont = def.kind === 'font'
+  const copyValue = (mode: 'light' | 'dark'): string => {
+    const resolved = mode === 'light' ? light : dark
+    return cssColorToHex(resolved) ?? resolved ?? raw
+  }
 
   return (
-    <button
-      type="button"
-      onClick={() => onInsert(`var(--${def.key})`)}
-      className="flex w-full items-center gap-2 rounded px-1.5 py-1 text-left text-xs hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
-      title={t('styleEditor.cssVars.insertHint')}
-    >
+    <div className="flex items-center gap-2 rounded px-1.5 py-1 text-xs hover:bg-black/[0.04] dark:hover:bg-white/[0.06]">
       {isColor && (
         <span className="flex shrink-0 gap-0.5">
-          <Swatch value={light} />
-          <Swatch value={dark} />
+          {(['light', 'dark'] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => onCopy(copyValue(mode), `--${def.key}`)}
+              title={t('styleEditor.cssVars.copyHint', { value: copyValue(mode) })}
+              className="h-4 w-4 shrink-0 rounded-sm border border-black/10 dark:border-white/20"
+              style={{
+                backgroundColor: isDisplayableColor(mode === 'light' ? light : dark)
+                  ? (mode === 'light' ? light : dark)
+                  : 'transparent'
+              }}
+            />
+          ))}
         </span>
       )}
-      <code className="shrink-0 font-mono">--{def.key}</code>
-      {isColor && <span className="ml-auto shrink-0 font-mono text-[11px] text-slate-400">{cssColorToHex(light) ?? light ?? '—'}</span>}
-      {/* A font stack is a long comma list that told the reader nothing when truncated. The first
-          family is its name, and setting the sample in the stack itself shows what it looks like. */}
+      <button
+        type="button"
+        onClick={() => onInsert(`var(--${def.key})`)}
+        className="min-w-0 flex-1 truncate text-left font-mono hover:underline"
+        title={t('styleEditor.cssVars.insertHint')}
+      >
+        --{def.key}
+      </button>
+      {/* A font's preview is the sample itself, set in the very stack it names - clicking it copies
+          the stack, the same as a colour swatch copies its value. */}
       {isFont && (
-        <span className="ml-auto flex min-w-0 items-baseline gap-2" title={light || raw}>
-          <span className="truncate text-slate-500 dark:text-slate-400">{primaryFamily(light || raw)}</span>
-          <span className="shrink-0 text-[13px] text-slate-700 dark:text-slate-200" style={{ fontFamily: light || raw }}>
-            Aa
-          </span>
-        </span>
+        <button
+          type="button"
+          onClick={() => onCopy(light || raw, `--${def.key}`)}
+          title={t('styleEditor.cssVars.copyHint', { value: light || raw })}
+          className="shrink-0 rounded px-1 text-[13px] text-slate-700 hover:bg-black/[0.06] dark:text-slate-200 dark:hover:bg-white/10"
+          style={{ fontFamily: light || raw }}
+        >
+          Aa
+        </button>
       )}
-      {!isColor && !isFont && raw && <span className="ml-auto truncate text-slate-500 dark:text-slate-400">{raw}</span>}
-    </button>
+      {!isColor && !isFont && raw && (
+        <button
+          type="button"
+          onClick={() => onCopy(raw, `--${def.key}`)}
+          title={t('styleEditor.cssVars.copyHint', { value: raw })}
+          className="shrink-0 rounded px-1 text-[11px] text-slate-400 hover:bg-black/[0.06] dark:hover:bg-white/10"
+        >
+          {t('styleEditor.cssVars.copyValue')}
+        </button>
+      )}
+    </div>
   )
-}
-
-// The readable half of a font stack: its first family, unquoted.
-function primaryFamily(stack: string): string {
-  const first = stack.split(',')[0]?.trim() ?? ''
-  return first.replace(/^["']|["']$/g, '') || '—'
 }
 
 // A callout type's --color/--border/--bg only mean anything inside its own selector (see
@@ -156,11 +184,13 @@ function primaryFamily(stack: string): string {
 function CalloutRow({
   def,
   colors,
-  onInsert
+  onInsert,
+  onCopy
 }: {
   def: CalloutColorDef
   colors: { lightMode?: Record<string, string>; darkMode?: Record<string, string> }
   onInsert: (text: string) => void
+  onCopy: (value: string, label: string) => void
 }): JSX.Element {
   const { t } = useTranslation()
   const color = resolveCalloutColorValue(def.color, colors, 'light')
@@ -175,27 +205,29 @@ function CalloutRow({
   }
 
   return (
-    <button
-      type="button"
-      onClick={insertScaffold}
-      className="flex items-center gap-2 rounded px-1.5 py-1 text-left text-xs hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
-      title={t('styleEditor.cssVars.calloutsInsertHint')}
-    >
+    <div className="flex items-center gap-2 rounded px-1.5 py-1 text-xs hover:bg-black/[0.04] dark:hover:bg-white/[0.06]">
       <span className="flex shrink-0 gap-0.5">
-        <Swatch value={color} />
-        <Swatch value={border} />
-        {bg && <Swatch value={bg} />}
+        {([['--color', color], ['--border', border], ['--bg', bg]] as const)
+          .filter(([, value]) => !!value)
+          .map(([name, value]) => (
+            <button
+              key={name}
+              type="button"
+              onClick={() => onCopy(cssColorToHex(value) ?? value!, `[!${def.type}] ${name}`)}
+              title={t('styleEditor.cssVars.copyHint', { value: cssColorToHex(value) ?? value })}
+              className="h-4 w-4 shrink-0 rounded-sm border border-black/10 dark:border-white/20"
+              style={{ backgroundColor: isDisplayableColor(value) ? value : 'transparent' }}
+            />
+          ))}
       </span>
-      <code className="font-mono">[!{def.type}]</code>
-    </button>
-  )
-}
-
-function Swatch({ value }: { value: string | undefined }): JSX.Element {
-  return (
-    <span
-      className="h-3 w-3 shrink-0 rounded-sm border border-black/10 dark:border-white/20"
-      style={{ backgroundColor: isDisplayableColor(value) ? value : 'transparent' }}
-    />
+      <button
+        type="button"
+        onClick={insertScaffold}
+        className="min-w-0 flex-1 truncate text-left font-mono hover:underline"
+        title={t('styleEditor.cssVars.calloutsInsertHint')}
+      >
+        [!{def.type}]
+      </button>
+    </div>
   )
 }

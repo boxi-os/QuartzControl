@@ -80,7 +80,8 @@ export default {
         'Bringt den Quartz-Kern und die installierten Plugins auf den neuesten Stand. Vor jedem Kern-Update wird automatisch ein wiederherstellbarer Snapshot der versionierten Dateien angelegt.',
       server: 'Zeigt deine Website lokal in der Vorschau an und erstellt bei Bedarf einen einmaligen Build zum Exportieren.',
       sync: 'Gleicht deine lokalen Änderungen mit dem Git-Repository ab: Hochladen (Push) und Herunterladen (Pull).',
-      backups: 'Automatisch gesicherte Stände deiner Konfiguration und deines Content-Ordners — zum Vergleichen und Wiederherstellen.',
+      backups:
+        'Wiederherstellbare Stände deines ganzen Projekts — automatisch vor jeder größeren Änderung angelegt, jederzeit selbst auslösbar, vergleichbar und einzeln zurückholbar.',
       publish: 'Baut die Website und lädt nur die geänderten Dateien auf deinen Webspace oder zu GitHub Pages hoch.'
     }
   },
@@ -207,13 +208,59 @@ export default {
     staged: 'vorgemerkt'
   },
   backups: {
-    config: 'Konfiguration',
-    content: 'Content-Ordner',
-    none: 'Keine Backups vorhanden.',
-    viewDiff: 'Diff ansehen',
+    newHeading: 'Neuer Snapshot',
+    newHint:
+      'Ein Snapshot sichert alles, was dir in diesem Projekt gehört: Konfiguration, Plugin-Sperrdatei, Layout-Frames, eigene Stylesheets, Übersetzungen und Veröffentlichungsziele. Nicht enthalten sind node_modules, der Build-Ordner und installierte Plugin-Dateien — die entstehen beim nächsten Build ohnehin neu.',
+    labelPlaceholder: 'Name (optional), z. B. "vor dem Theme-Wechsel"',
+    create: 'Snapshot anlegen',
+    created: 'Snapshot angelegt.',
+    includeContent: 'content-Ordner mitsichern',
+    contentFolderHint: 'Ein echter Ordner mit Markdown-Dateien — klein genug, um immer mitzulaufen.',
+    contentSymlinkHint:
+      'Dein content-Ordner ist ein Symlink auf einen Vault außerhalb des Projekts. Der wird standardmäßig NICHT mitgesichert: er ist deine eigene Datenquelle, kann sehr groß sein und hat meist eine eigene Sicherung. Schalte das nur ein, wenn du weißt, was du tust.',
+    contentMissing: 'Es gibt keinen content-Ordner, den man mitsichern könnte.',
+    none: 'Noch keine Snapshots. Vor jedem Kern-Update, jeder Plugin-Änderung, jedem Content-Wechsel und jedem Vorlagen-Import wird automatisch einer angelegt.',
+    compare: 'Vergleichen',
+    close: 'Schließen',
+    comparing: 'Vergleiche mit dem heutigen Stand…',
+    identical: 'Keine Unterschiede zum heutigen Stand.',
+    changeCount: '{{count}} Datei unterscheidet sich',
+    changeCount_other: '{{count}} Dateien unterscheiden sich',
+    noDiff: 'Kein Textunterschied (z. B. eine Binärdatei).',
+    restoreAll: 'Alles wiederherstellen',
+    restoreSelected: 'Auswahl wiederherstellen ({{count}})',
     restore: 'Wiederherstellen',
-    noDiff: 'Keine Unterschiede.',
-    confirmRestore: 'Diesen Stand wiederherstellen? Der aktuelle Stand wird vorher gesichert.'
+    restored: 'Wiederhergestellt.',
+    export: 'Als ZIP exportieren',
+    exported: 'Snapshot exportiert.',
+    delete: 'Löschen',
+    confirmDelete: 'Diesen Snapshot endgültig löschen?',
+    confirmRestoreAll:
+      'Das gesamte Projekt auf diesen Snapshot zurücksetzen?\n\nDateien, die es damals nicht gab, werden dabei gelöscht. Vom aktuellen Stand wird vorher automatisch ein Snapshot angelegt.',
+    confirmRestoreFiles:
+      '{{count}} ausgewählte Datei(en) auf den Stand dieses Snapshots zurücksetzen?\n\nVom aktuellen Stand wird vorher automatisch ein Snapshot angelegt.',
+    resetProjectHead: 'Auch den Projekt-Commit auf {{commit}} zurücksetzen',
+    resetProjectHeadHint:
+      'Setzt zusätzlich die Git-Historie des Projekts zurück — nötig, wenn du ein Kern-Update rückgängig machst, sonst meldet die Updates-Seite weiterhin den neuen Stand. Wenn du diesen Commit schon gepusht hast, weicht dein lokaler Stand danach vom Remote ab.',
+    status: {
+      modified: 'geändert',
+      addedSince: 'seitdem neu',
+      removedSince: 'seitdem gelöscht'
+    },
+    kinds: {
+      manual: 'Von dir',
+      configChange: 'Vor Konfigurations-Änderung',
+      coreUpdate: 'Vor Kern-Update',
+      pluginChange: 'Vor Plugin-Änderung',
+      contentChange: 'Vor Content-Wechsel',
+      restore: 'Vor Wiederherstellung',
+      styleChange: 'Vor Gestaltungs-Import',
+      imported: 'Altes Config-Backup'
+    },
+    movedFoldersHeading: 'Beiseitegelegte content-Ordner',
+    movedFoldersHint:
+      'Beim Wechsel des Content-Ordners wird der bisherige hierher verschoben statt gelöscht. Das ist kein Backup deiner Notizen: ein Symlink auf einen Vault wurde nie kopiert, nur der Link selbst notiert.',
+    confirmRestoreFolder: 'Diesen content-Ordner wieder einsetzen? Der aktuelle wird dabei ebenfalls beiseitegelegt.'
   },
   settings: {
     title: 'Einstellungen',
@@ -801,12 +848,9 @@ export default {
     },
     snapshots: {
       heading: 'Snapshots',
-      description:
-        'Automatisch vor jedem Kern-Update und vor jeder Wiederherstellung angelegt. Enthalten sind nur die von git versionierten Dateien — quartz.lock.json, der content-Ordner und eigene Stylesheets gehören nicht dazu. Wiederherstellen setzt diese Dateien komplett auf den gewählten Stand zurück und legt vorher selbst einen Snapshot an.',
-      none: 'Noch keine Snapshots vorhanden.',
-      restore: 'Wiederherstellen',
-      confirmRestore:
-        'Projekt auf Snapshot "{{tag}}" zurücksetzen?\n\nAlle Änderungen an versionierten Dateien seitdem gehen verloren. Vom aktuellen Stand wird vorher ein Snapshot angelegt, damit auch das rückgängig gemacht werden kann.'
+      movedHint:
+        'Vor jedem Kern-Update wird automatisch ein Snapshot angelegt. Verwaltet werden sie unter Backups — dort liegen auch die Snapshots aller anderen Bereiche.',
+      openBackups: 'Zu den Backups →'
     }
   },
   publish: {

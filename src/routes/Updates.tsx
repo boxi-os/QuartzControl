@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { useProject } from './ProjectLayout'
-import type { CoreUpdateStatus, PluginUpdateStatus, ProjectSnapshot, UpdateCheckState, UpdateResult } from '@shared/ipc-contract'
+import type { CoreUpdateStatus, PluginUpdateStatus, UpdateCheckState, UpdateResult } from '@shared/ipc-contract'
 import { Badge, Button, Card, PageHeader } from '../components/ui'
 import { formatIpcError } from '../components/ErrorSurface'
 import { TAB_ICONS } from './navConfig'
@@ -20,21 +21,18 @@ function UpdateStateBadge({ state }: { state: UpdateCheckState }): JSX.Element {
 }
 
 export default function Updates(): JSX.Element {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const project = useProject()
   const [coreStatus, setCoreStatus] = useState<CoreUpdateStatus | null>(null)
   const [pluginStatuses, setPluginStatuses] = useState<PluginUpdateStatus[] | null>(null)
-  const [snapshots, setSnapshots] = useState<ProjectSnapshot[]>([])
   const [coreBusy, setCoreBusy] = useState(false)
   const [coreResult, setCoreResult] = useState<UpdateResult | null>(null)
   const [pluginBusy, setPluginBusy] = useState<string | null>(null)
   const [pluginMessage, setPluginMessage] = useState<string | null>(null)
-  const [restoreBusy, setRestoreBusy] = useState<string | null>(null)
 
   async function reload(): Promise<void> {
     window.quartzGui.updates.coreStatus(project.path).then(setCoreStatus)
     window.quartzGui.updates.pluginsStatus(project.path).then(setPluginStatuses)
-    window.quartzGui.updates.listSnapshots(project.path).then(setSnapshots)
   }
 
   useEffect(() => {
@@ -82,19 +80,6 @@ export default function Updates(): JSX.Element {
     } finally {
       setPluginBusy(null)
       window.quartzGui.updates.pluginsStatus(project.path).then(setPluginStatuses)
-    }
-  }
-
-  async function restoreSnapshot(tag: string): Promise<void> {
-    if (!confirm(t('updates.snapshots.confirmRestore', { tag }))) return
-    setRestoreBusy(tag)
-    try {
-      await window.quartzGui.updates.restoreSnapshot(project.path, tag)
-    } catch (err) {
-      setCoreResult({ success: false, output: formatIpcError(err) })
-    } finally {
-      setRestoreBusy(null)
-      reload()
     }
   }
 
@@ -183,20 +168,18 @@ export default function Updates(): JSX.Element {
         )}
       </Card>
 
+      {/* Snapshots are not this page's job any more: the store behind them covers the config, the
+          lockfile, the content folder and the user's own stylesheets, none of which the git tags
+          this card used to list ever captured. One list, on the page that is about it. */}
       <Card>
         <h2 className="mb-1 text-sm font-semibold">{t('updates.snapshots.heading')}</h2>
-        <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">{t('updates.snapshots.description')}</p>
-        {snapshots.length === 0 && <p className="text-xs text-slate-500">{t('updates.snapshots.none')}</p>}
-        <div className="flex flex-col gap-1.5">
-          {snapshots.map((s) => (
-            <div key={s.tag} className="flex items-center justify-between rounded-md border border-black/[0.06] px-2.5 py-1.5 text-sm dark:border-white/10">
-              <span className="text-xs">{new Date(s.createdAt).toLocaleString(i18n.language)}</span>
-              <Button variant="ghost" onClick={() => restoreSnapshot(s.tag)} disabled={restoreBusy !== null}>
-                {restoreBusy === s.tag ? t('common.saving') : t('updates.snapshots.restore')}
-              </Button>
-            </div>
-          ))}
-        </div>
+        <p className="text-xs text-slate-500 dark:text-slate-400">{t('updates.snapshots.movedHint')}</p>
+        <Link
+          to="../backups"
+          className="mt-2 inline-block text-sm text-indigo-600 hover:underline dark:text-indigo-400"
+        >
+          {t('updates.snapshots.openBackups')}
+        </Link>
       </Card>
     </div>
   )

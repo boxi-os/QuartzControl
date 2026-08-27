@@ -13,7 +13,9 @@ import type {
   ThemePreset,
   GridFrameDefinition,
   PluginEntry,
+  RestoreOptions,
   SaveConnectionInput,
+  SnapshotKind,
   SavePublishTargetInput,
   DeployProgressEvent,
   CssVariableOverride,
@@ -95,14 +97,27 @@ const api: QuartzGuiApi = {
     gitAttributesStatus: (projectPath: string) => ipcRenderer.invoke(IPC.localizationGitAttributesStatus, projectPath),
     ensureGitAttributes: (projectPath: string) => ipcRenderer.invoke(IPC.localizationEnsureGitAttributes, projectPath)
   },
+  snapshots: {
+    list: (projectPath: string) => ipcRenderer.invoke(IPC.snapshotList, projectPath),
+    create: (projectPath: string, kind: SnapshotKind, label?: string) =>
+      ipcRenderer.invoke(IPC.snapshotCreate, projectPath, kind, label),
+    diff: (projectPath: string, id: string) => ipcRenderer.invoke(IPC.snapshotDiff, projectPath, id),
+    fileDiff: (projectPath: string, id: string, path: string) =>
+      ipcRenderer.invoke(IPC.snapshotFileDiff, projectPath, id, path),
+    restore: (projectPath: string, id: string, options?: RestoreOptions) =>
+      ipcRenderer.invoke(IPC.snapshotRestore, projectPath, id, options),
+    delete: (projectPath: string, id: string) => ipcRenderer.invoke(IPC.snapshotDelete, projectPath, id),
+    export: (projectPath: string, id: string) => ipcRenderer.invoke(IPC.snapshotExport, projectPath, id),
+    settings: (projectPath: string) => ipcRenderer.invoke(IPC.snapshotSettings, projectPath),
+    saveSettings: (projectPath: string, includeContent: boolean) =>
+      ipcRenderer.invoke(IPC.snapshotSaveSettings, projectPath, includeContent)
+  },
   updates: {
     coreStatus: (projectPath: string) => ipcRenderer.invoke(IPC.updateCoreStatus, projectPath),
     runCoreUpdate: (projectPath: string) => ipcRenderer.invoke(IPC.updateCoreRun, projectPath),
     abortCoreMerge: (projectPath: string) => ipcRenderer.invoke(IPC.updateCoreAbort, projectPath),
     pluginsStatus: (projectPath: string) => ipcRenderer.invoke(IPC.updatePluginsStatus, projectPath),
-    updatePlugin: (projectPath: string, name?: string) => ipcRenderer.invoke(IPC.updatePluginRun, projectPath, name),
-    listSnapshots: (projectPath: string) => ipcRenderer.invoke(IPC.updateSnapshotList, projectPath),
-    restoreSnapshot: (projectPath: string, tag: string) => ipcRenderer.invoke(IPC.updateSnapshotRestore, projectPath, tag)
+    updatePlugin: (projectPath: string, name?: string) => ipcRenderer.invoke(IPC.updatePluginRun, projectPath, name)
   },
   connections: {
     list: () => ipcRenderer.invoke(IPC.connectionsList),
@@ -179,10 +194,8 @@ const api: QuartzGuiApi = {
     status: (projectPath: string) => ipcRenderer.invoke(IPC.syncStatus, projectPath)
   },
   backups: {
-    list: (projectPath: string, kind: 'config' | 'content') => ipcRenderer.invoke(IPC.backupList, projectPath, kind),
-    diff: (projectPath: string, id: string) => ipcRenderer.invoke(IPC.backupDiff, projectPath, id),
-    restore: (projectPath: string, kind: 'config' | 'content', id: string) =>
-      ipcRenderer.invoke(IPC.backupRestore, projectPath, kind, id)
+    listContentFolders: (projectPath: string) => ipcRenderer.invoke(IPC.backupList, projectPath),
+    restoreContentFolder: (projectPath: string, id: string) => ipcRenderer.invoke(IPC.backupRestore, projectPath, id)
   },
   content: {
     status: (projectPath: string) => ipcRenderer.invoke(IPC.contentStatus, projectPath),

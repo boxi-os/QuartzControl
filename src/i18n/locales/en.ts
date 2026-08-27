@@ -80,7 +80,8 @@ export default {
         "Brings Quartz's core and the installed plugins up to date. A restorable snapshot of the version-controlled files is created automatically before every core update.",
       server: 'Previews your site locally, and can produce a one-off build for export.',
       sync: 'Syncs your local changes with the Git repository: uploading (push) and downloading (pull).',
-      backups: 'Automatically saved snapshots of your configuration and content folder — to compare and restore.',
+      backups:
+        'Restorable states of your whole project - taken automatically before every major change, triggerable yourself at any time, comparable and restorable file by file.',
       publish: 'Builds the site and uploads only the changed files to your web space or GitHub Pages.'
     }
   },
@@ -207,13 +208,59 @@ export default {
     staged: 'staged'
   },
   backups: {
-    config: 'Configuration',
-    content: 'Content folder',
-    none: 'No backups available.',
-    viewDiff: 'View diff',
+    newHeading: 'New snapshot',
+    newHint:
+      "A snapshot captures everything that is yours in this project: the configuration, the plugin lockfile, layout frames, your own stylesheets, translations and publish targets. Not included are node_modules, the build folder and installed plugin files - the next build produces those anyway.",
+    labelPlaceholder: 'Name (optional), e.g. "before switching themes"',
+    create: 'Take snapshot',
+    created: 'Snapshot taken.',
+    includeContent: 'Include the content folder',
+    contentFolderHint: 'A real folder of markdown files - small enough to always come along.',
+    contentSymlinkHint:
+      'Your content folder is a symlink to a vault outside the project. It is NOT included by default: it is your own primary data, it can be very large, and it usually has a backup of its own. Only turn this on if you know what you are doing.',
+    contentMissing: 'There is no content folder to include.',
+    none: 'No snapshots yet. One is taken automatically before every core update, plugin change, content switch and template import.',
+    compare: 'Compare',
+    close: 'Close',
+    comparing: 'Comparing with the current state…',
+    identical: 'No differences from the current state.',
+    changeCount: '{{count}} file differs',
+    changeCount_other: '{{count}} files differ',
+    noDiff: 'No text difference (a binary file, for instance).',
+    restoreAll: 'Restore everything',
+    restoreSelected: 'Restore selection ({{count}})',
     restore: 'Restore',
-    noDiff: 'No differences.',
-    confirmRestore: 'Restore this version? The current state will be backed up first.'
+    restored: 'Restored.',
+    export: 'Export as ZIP',
+    exported: 'Snapshot exported.',
+    delete: 'Delete',
+    confirmDelete: 'Delete this snapshot permanently?',
+    confirmRestoreAll:
+      'Reset the whole project to this snapshot?\n\nFiles that did not exist back then will be deleted. A snapshot of the current state is taken first.',
+    confirmRestoreFiles:
+      'Reset {{count}} selected file(s) to this snapshot?\n\nA snapshot of the current state is taken first.',
+    resetProjectHead: 'Also reset the project commit to {{commit}}',
+    resetProjectHeadHint:
+      "Also rewinds the project's git history - needed when undoing a core update, or the Updates page will keep reporting the new state. If you have already pushed that commit, your local state will diverge from the remote afterwards.",
+    status: {
+      modified: 'changed',
+      addedSince: 'new since',
+      removedSince: 'deleted since'
+    },
+    kinds: {
+      manual: 'Yours',
+      configChange: 'Before config change',
+      coreUpdate: 'Before core update',
+      pluginChange: 'Before plugin change',
+      contentChange: 'Before content switch',
+      restore: 'Before restore',
+      styleChange: 'Before template import',
+      imported: 'Old config backup'
+    },
+    movedFoldersHeading: 'Set-aside content folders',
+    movedFoldersHint:
+      'When the content source is switched, the previous folder is moved here rather than deleted. This is not a backup of your notes: a symlink to a vault was never copied, only the link itself recorded.',
+    confirmRestoreFolder: 'Put this content folder back? The current one is set aside as well.'
   },
   settings: {
     title: 'Settings',
@@ -799,12 +846,9 @@ export default {
     },
     snapshots: {
       heading: 'Snapshots',
-      description:
-        "Created automatically before every core update and before every restore. Only files git tracks are included - quartz.lock.json, the content folder and your own stylesheets are not. Restoring resets those files to the chosen point and takes a snapshot of the current state first.",
-      none: 'No snapshots yet.',
-      restore: 'Restore',
-      confirmRestore:
-        'Reset the project to snapshot "{{tag}}"?\n\nAll changes to version-controlled files since then will be lost. A snapshot of the current state is taken first, so this can be undone too.'
+      movedHint:
+        'A snapshot is taken automatically before every core update. They are managed under Backups, together with the snapshots from every other area.',
+      openBackups: 'Go to Backups →'
     }
   },
   publish: {

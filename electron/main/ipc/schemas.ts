@@ -50,12 +50,33 @@ export const backupId = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z$/, 'kein gültiger Backup-Bezeichner')
 
-// updateService tags snapshots as `quartz-gui-backup-<timestamp>` and passes the tag to
-// `git reset --hard <tag>`; pinning the prefix also stops a value starting with "-" from being
-// read as a git flag.
-export const snapshotTag = z
+// snapshotService builds refs as `refs/snapshots/<id>` from newSnapshotId(), so the exact
+// generated shape is pinned rather than a loose slug. Anything looser reaches `git update-ref` and
+// `git rev-parse`, where a "../" or a leading "-" is not a path but a different ref or a flag.
+export const snapshotId = z
   .string()
-  .regex(/^quartz-gui-backup-[\dTZ-]{1,40}$/, 'kein gültiger Snapshot-Tag')
+  .regex(/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z-[0-9a-f]{4}$/, 'kein gültiger Snapshot-Bezeichner')
+
+export const snapshotKind = z.enum([
+  'manual',
+  'configChange',
+  'coreUpdate',
+  'pluginChange',
+  'contentChange',
+  'restore',
+  'styleChange',
+  'imported'
+])
+
+// A path inside the project, as git reports it: forward slashes, relative, no traversal. These
+// come back from a diff and go straight into `git checkout <commit> -- <path>` and an fs.rm, so a
+// leading "-" (read as a flag) and a "../" (outside the project) both have to be impossible.
+export const snapshotFilePath = z
+  .string()
+  .min(1)
+  .max(1024)
+  .refine((p) => !p.startsWith('-') && !p.startsWith('/'), { message: 'muss ein relativer Pfad sein' })
+  .refine((p) => !p.split('/').includes('..'), { message: 'darf nicht aus dem Projekt herausführen' })
 
 // npm package name segment - becomes a path segment (node_modules/@quartz-themes/<id>) and an
 // `npm install` argument.
@@ -134,7 +155,6 @@ export const longText = z.string().max(5_000_000) // custom.scss and locale valu
 // ── enums ───────────────────────────────────────────────────────────────────
 
 export const contentStrategy = z.enum(['copy', 'symlink'])
-export const backupKind = z.enum(['config', 'content'])
 export const syncDirection = z.enum(['push', 'pull', 'both'])
 export const layoutPosition = z.enum(['header', 'left', 'right', 'beforeBody', 'afterBody', 'footer'])
 export const frameSlot = z.enum([...layoutPosition.options, 'pageBody'])

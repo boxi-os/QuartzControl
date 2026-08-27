@@ -366,11 +366,11 @@ export interface MarketplacePlugin {
   topics?: string[]
 }
 
+// A content directory that was moved aside when the content source was switched - see
+// backupService. Not a snapshot; those are Snapshot/snapshotService.
 export interface BackupEntry {
   id: string
   createdAt: string
-  kind: 'config' | 'content'
-  label?: string
 }
 
 export type ContentStrategy = 'copy' | 'symlink'
@@ -579,25 +579,70 @@ export interface PluginUpdateStatus {
   state: UpdateCheckState | 'local'
 }
 
-// A git tag pointing at a `git stash create` commit (or bare HEAD on a clean tree) - a
-// non-destructive snapshot of the project's *tracked* file state, taken automatically before a
-// core update and before a restore.
+// ---------------------------------------------------------------------------------------------
+// Snapshots
 //
-// Its coverage is genuinely narrow, and the UI says so rather than implying a full backup: in a
-// project created by this app, quartz.config.yaml, quartz.lock.json, content/*, .quartz/ and
-// .quartz-gui/ are all untracked or ignored, and `git stash create` captures none of them (it has
-// no --include-untracked; verified - the flag is accepted and silently ignored). runCoreUpdate
-// therefore also takes a backupService config snapshot, which covers the single most valuable of
-// those files.
-export interface ProjectSnapshot {
-  tag: string
+// One concept replacing three: the config file copies, the moved-aside content folders and the
+// git tags on the update page were three mechanisms with three different meanings, and none of
+// them covered the project. A snapshot covers everything the user owns in one place, stored in a
+// git repository of this app's own (see snapshotService.ts).
+
+// Why a snapshot was taken. Automatic ones are thinned with age and skipped when nothing changed;
+// a manual one is always kept. The renderer translates these - a service must not invent the
+// user-facing wording for a page that exists in two languages.
+export type SnapshotKind =
+  | 'manual'
+  | 'configChange'
+  | 'coreUpdate'
+  | 'pluginChange'
+  | 'contentChange'
+  | 'restore'
+  | 'styleChange'
+  /** Carried over from the per-save config backups this store replaced. */
+  | 'imported'
+
+export interface Snapshot {
+  id: string
+  commit: string
   createdAt: string
+  kind: SnapshotKind
+  /** Free detail, not a sentence: a user-typed name, or which plugin an automatic one was about. */
+  label: string
+  /** The project's own HEAD when the snapshot was taken - see RestoreOptions.resetProjectHead. */
+  projectHead?: string
+}
+
+// Relative to the project as it is *now*, not the other way round, because that is what a restore
+// would do: 'addedSince' means the file exists now and not in the snapshot, so restoring deletes
+// it.
+export interface SnapshotFileChange {
+  path: string
+  status: 'addedSince' | 'removedSince' | 'modified'
+}
+
+export interface RestoreOptions {
+  /** Only these files; without it the whole snapshot, which also removes files it does not have. */
+  paths?: string[]
+  /**
+   * Also move the project's own branch back to the commit the snapshot recorded. Opt-in and
+   * separate, because it rewrites the user's git history rather than their files - the one thing
+   * a restore must not do behind their back. Only offered when the recorded commit differs from
+   * the current one.
+   */
+  resetProjectHead?: boolean
+}
+
+export interface SnapshotSettings {
+  includeContent: boolean
+  contentExists: boolean
+  contentIsSymlink: boolean
 }
 
 export interface UpdateResult {
   success: boolean
   output: string
-  snapshotTag?: string
+  /** Absent when nothing had changed since the last snapshot, so none was taken. */
+  snapshotId?: string
   conflicts?: string[]
 }
 
@@ -854,8 +899,15 @@ export const IPC = {
   updateCoreAbort: 'update:coreAbort',
   updatePluginsStatus: 'update:pluginsStatus',
   updatePluginRun: 'update:pluginRun',
-  updateSnapshotList: 'update:snapshotList',
-  updateSnapshotRestore: 'update:snapshotRestore',
+  snapshotList: 'snapshot:list',
+  snapshotCreate: 'snapshot:create',
+  snapshotDiff: 'snapshot:diff',
+  snapshotFileDiff: 'snapshot:fileDiff',
+  snapshotRestore: 'snapshot:restore',
+  snapshotDelete: 'snapshot:delete',
+  snapshotExport: 'snapshot:export',
+  snapshotSettings: 'snapshot:settings',
+  snapshotSaveSettings: 'snapshot:saveSettings',
 
   connectionsList: 'connections:list',
   connectionSave: 'connections:save',
@@ -899,9 +951,8 @@ export const IPC = {
   syncRun: 'sync:run',
   syncStatus: 'sync:status',
 
-  backupList: 'backup:list',
-  backupDiff: 'backup:diff',
-  backupRestore: 'backup:restore',
+  backupList: 'backup:listContentFolders',
+  backupRestore: 'backup:restoreContentFolder',
 
   contentStatus: 'content:status',
   contentChange: 'content:change',
@@ -1006,8 +1057,6 @@ export interface QuartzGuiApi {
     abortCoreMerge(projectPath: string): Promise<PluginActionResult>
     pluginsStatus(projectPath: string): Promise<PluginUpdateStatus[]>
     updatePlugin(projectPath: string, name?: string): Promise<PluginActionResult>
-    listSnapshots(projectPath: string): Promise<ProjectSnapshot[]>
-    restoreSnapshot(projectPath: string, tag: string): Promise<PluginActionResult>
   }
   connections: {
     list(): Promise<Connection[]>
@@ -1080,9 +1129,21 @@ export interface QuartzGuiApi {
     status(projectPath: string): Promise<GitStatus>
   }
   backups: {
-    list(projectPath: string, kind: 'config' | 'content'): Promise<BackupEntry[]>
-    diff(projectPath: string, id: string): Promise<string>
-    restore(projectPath: string, kind: 'config' | 'content', id: string): Promise<void>
+    listContentFolders(projectPath: string): Promise<BackupEntry[]>
+    restoreContentFolder(projectPath: string, id: string): Promise<void>
+  }
+  snapshots: {
+    list(projectPath: string): Promise<Snapshot[]>
+    /** Resolves to null when an automatic snapshot was skipped because nothing had changed. */
+    create(projectPath: string, kind: SnapshotKind, label?: string): Promise<Snapshot | null>
+    diff(projectPath: string, id: string): Promise<SnapshotFileChange[]>
+    fileDiff(projectPath: string, id: string, path: string): Promise<string>
+    restore(projectPath: string, id: string, options?: RestoreOptions): Promise<PluginActionResult>
+    delete(projectPath: string, id: string): Promise<void>
+    /** Resolves to false when the user cancelled the save dialog. */
+    export(projectPath: string, id: string): Promise<boolean>
+    settings(projectPath: string): Promise<SnapshotSettings>
+    saveSettings(projectPath: string, includeContent: boolean): Promise<SnapshotSettings>
   }
   content: {
     status(projectPath: string): Promise<ContentStatus>

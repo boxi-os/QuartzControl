@@ -17,6 +17,7 @@ import * as configService from './configService'
 import * as styleService from './styleService'
 import * as layoutFrameService from './layoutFrameService'
 import * as pluginService from './pluginService'
+import { createSnapshot } from './snapshotService'
 
 const MANIFEST_FILE = 'manifest.json'
 
@@ -175,6 +176,10 @@ export async function importPackage(
   categories: TemplatePackageCategory[]
 ): Promise<TemplatePackageImportResult> {
   const warnings: string[] = []
+
+  // Importing a package overwrites layout, colours, fonts and plugins in one go - the single most
+  // destructive thing this app can do to a project's look, and the case a snapshot exists for.
+  await createSnapshot(projectPath, 'styleChange', '')
 
   // Frames first: a newly registered frame mutates quartz.config.yaml's plugins array out-of-band
   // via the CLI (same mechanism/bug documented in Phase 1b's layoutFrameService), so this must

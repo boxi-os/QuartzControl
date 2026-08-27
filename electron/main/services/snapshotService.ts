@@ -1,0 +1,492 @@
+import { existsSync } from 'fs'
+import { lstat, mkdir, readdir, readFile, rename, rm, writeFile } from 'fs/promises'
+import { join } from 'path'
+import { randomBytes } from 'crypto'
+import { spawn } from 'child_process'
+import type {
+  PluginActionResult,
+  RestoreOptions,
+  Snapshot,
+  SnapshotFileChange,
+  SnapshotKind,
+  SnapshotSettings
+} from '@shared/ipc-contract'
+import { runCommand as run } from './runCommand'
+import { quartzGuiDir } from './projectDirs'
+import { withContentSymlinkParked } from './contentSymlink'
+
+// A snapshot store is a git repository of its own, pointed at the project as its work tree:
+//
+//   git --git-dir=<project>/.quartz-gui/snapshots.git --work-tree=<project>
+//
+// git is used here as a content-addressed store, not as the user's history. That is the whole
+// point of the separation: the project's own repo (and everything Git-Sync pushes) stays
+// untouched, while snapshots still get deduplication, real diffs between any two points, per-file
+// restore and an export - none of which a directory of timestamped file copies can do. It also
+// adds no dependency: a Quartz project is a git clone to begin with.
+//
+// Each snapshot is an independent *root* commit (no parent) kept alive by its own ref under
+// refs/snapshots/. Deleting one is then a ref deletion rather than history surgery, and the order
+// is the commit date rather than a chain. Identical trees and blobs are still shared, so fifty
+// near-identical configs cost almost nothing - the problem the old "keep the newest 50 copies"
+// pruning was working around.
+const STORE_DIR = 'snapshots.git'
+const REF_PREFIX = 'refs/snapshots/'
+const SETTINGS_FILE = 'snapshot-settings.json'
+const NUL = '\u0000'
+const COALESCE_WINDOW = 15 * 60 * 1000
+
+// Only the kinds that come from frequent, small saves. A core update, a plugin change, a content
+// switch and a restore are each a deliberate, infrequent act that deserves its own point to go
+// back to - collapsing two core updates ten minutes apart into one would lose the state between
+// them, which is the opposite of what a snapshot is for.
+const COALESCING_KINDS = new Set<SnapshotKind>(['configChange', 'styleChange'])
+
+function storePath(projectPath: string): string {
+  return join(quartzGuiDir(projectPath), STORE_DIR)
+}
+
+function git(
+  projectPath: string,
+  args: string[],
+  env?: Record<string, string>
+): Promise<{ success: boolean; output: string }> {
+  return run('git', ['--git-dir', storePath(projectPath), '--work-tree', projectPath, ...args], projectPath, env)
+}
+
+// Anything derived, huge, or belonging to another tool. `/.git/` is the critical one: to this git
+// invocation the project's own repository is just a directory in the work tree, and without the
+// rule the entire object database would be staged into every snapshot.
+//
+// `/.quartz-gui/` is excluded wholesale and the parts worth keeping are force-added back by
+// stage(), because a project's own .gitignore already ignores that directory and an `info/exclude`
+// negation cannot re-include what a .gitignore excluded (the .gitignore wins). Being explicit
+// about which children come along also means the store can never end up inside itself.
+const BASE_EXCLUDES = [
+  '/node_modules/',
+  '/public/',
+  '/prof/',
+  '/.quartz/',
+  '/.quartz-cache/',
+  '/.turbo/',
+  '/.git/',
+  '/.quartz-gui/',
+  '/tsconfig.tsbuildinfo',
+  '.DS_Store'
+]
+
+// Derived state about a *remote*, not the user's work: restoring an old manifest would only make
+// the next deploy re-upload files the server already has.
+function isSnapshotWorthy(entryName: string): boolean {
+  if (entryName === STORE_DIR || entryName === SETTINGS_FILE) return false
+  if (entryName === 'backups' || entryName === 'content-backups') return false
+  return !entryName.startsWith('deploy-manifest-')
+}
+
+async function writeExcludes(projectPath: string, settings: SnapshotSettings): Promise<void> {
+  const lines = [...BASE_EXCLUDES]
+  if (!settings.includeContent) lines.push('/content/')
+  const infoDir = join(storePath(projectPath), 'info')
+  await mkdir(infoDir, { recursive: true })
+  await writeFile(join(infoDir, 'exclude'), `${lines.join('\n')}\n`, 'utf-8')
+}
+
+async function ensureStore(projectPath: string): Promise<SnapshotSettings> {
+  const store = storePath(projectPath)
+  if (!existsSync(join(store, 'HEAD'))) {
+    await run('git', ['init', '--bare', '--quiet', store])
+    // A bare repo refuses to use a work tree; everything else about "bare" (no checkout of its
+    // own, no nested .git directory) is exactly what is wanted here.
+    await run('git', ['--git-dir', store, 'config', 'core.bare', 'false'])
+    await run('git', ['--git-dir', store, 'config', 'user.name', 'QuartzControl'])
+    await run('git', ['--git-dir', store, 'config', 'user.email', 'snapshots@quartzcontrol.local'])
+  }
+  const settings = await getSettings(projectPath)
+  await writeExcludes(projectPath, settings)
+  return settings
+}
+
+async function stage(projectPath: string, settings: SnapshotSettings): Promise<void> {
+  await git(projectPath, ['add', '-A'])
+  const entries = (await readdir(quartzGuiDir(projectPath))).filter(isSnapshotWorthy).map((name) => `.quartz-gui/${name}`)
+  if (entries.length > 0) await git(projectPath, ['add', '-f', '--', ...entries])
+  // An ignore rule only ever governs *untracked* files, so turning the content folder off left it
+  // in the index and in every later snapshot - it had been added while the setting was still on.
+  // The index therefore has to be told explicitly, on every staging run rather than only when the
+  // setting changes, since the store's index outlives any one of them.
+  if (!settings.includeContent) {
+    await git(projectPath, ['rm', '-r', '--cached', '--quiet', '--ignore-unmatch', '--', 'content'])
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Settings
+
+// The content folder is the one part whose default cannot be a constant. A real directory of
+// markdown belongs in every snapshot; a symlink points at an Obsidian vault that lives outside the
+// project, is the user's own primary data, is commonly gigabytes and usually has a backup of its
+// own - so it is off unless the user says otherwise, and the page says so rather than implying the
+// notes are covered, which is exactly what the old "Backups -> Inhalte" tab did.
+export async function getSettings(projectPath: string): Promise<SnapshotSettings> {
+  let contentExists = false
+  let contentIsSymlink = false
+  try {
+    const stat = await lstat(join(projectPath, 'content'))
+    contentExists = true
+    contentIsSymlink = stat.isSymbolicLink()
+  } catch {
+    // no content folder at all
+  }
+  let stored: { includeContent?: boolean } = {}
+  try {
+    stored = JSON.parse(await readFile(join(quartzGuiDir(projectPath), SETTINGS_FILE), 'utf-8')) as {
+      includeContent?: boolean
+    }
+  } catch {
+    // never saved - fall through to the derived default
+  }
+  return {
+    includeContent: stored.includeContent ?? (contentExists && !contentIsSymlink),
+    contentExists,
+    contentIsSymlink
+  }
+}
+
+export async function saveSettings(projectPath: string, includeContent: boolean): Promise<SnapshotSettings> {
+  await writeFile(
+    join(quartzGuiDir(projectPath), SETTINGS_FILE),
+    JSON.stringify({ includeContent }, null, 2),
+    'utf-8'
+  )
+  const settings = await getSettings(projectPath)
+  await writeExcludes(projectPath, settings)
+  return settings
+}
+
+// ---------------------------------------------------------------------------------------------
+// Creating and listing
+
+function newSnapshotId(): string {
+  // Sortable and ref-name-safe (a ref cannot contain ":"), with a random tail because two
+  // snapshots can land in the same millisecond - an automatic one and the action that triggered
+  // it, for instance.
+  return `${new Date().toISOString().replace(/[:.]/g, '-')}-${randomBytes(2).toString('hex')}`
+}
+
+// Automatic snapshots are skipped when nothing changed since the last one, because the value of
+// this list is being able to read it. A manual snapshot is always kept: the user pressed a button,
+// and an entry not appearing would read as a failure.
+export async function createSnapshot(projectPath: string, kind: SnapshotKind, rawLabel = ''): Promise<Snapshot | null> {
+  // The label rides in the commit subject, which is one line by definition.
+  const label = rawLabel.replace(/\s+/g, ' ').trim().slice(0, 120)
+  const settings = await ensureStore(projectPath)
+  await stage(projectPath, settings)
+
+  const tree = (await git(projectPath, ['write-tree'])).output.trim()
+  if (!tree) throw new Error('Snapshot konnte nicht angelegt werden: git write-tree lieferte kein Ergebnis.')
+
+  if (kind !== 'manual') {
+    const existing = await listSnapshots(projectPath)
+    const [newest] = existing
+    if (newest) {
+      const previousTree = (await git(projectPath, ['rev-parse', `${newest.commit}^{tree}`])).output.trim()
+      if (previousTree === tree) return null
+    }
+    // A burst of the same kind - a session of config edits, a run of style saves - collapses into
+    // the *first* snapshot of that burst, not the last: the interesting state is the one from
+    // before the session started, and keeping one entry per save is exactly what made the old list
+    // of fifty identical timestamps unreadable.
+    if (COALESCING_KINDS.has(kind)) {
+      const recent = existing.find(
+        (entry) => entry.kind === kind && Date.now() - new Date(entry.createdAt).getTime() < COALESCE_WINDOW
+      )
+      if (recent) return null
+    }
+  }
+
+  // One line, "<kind> <label>", rather than a commit trailer: with an empty label a
+  // "<label>\n\n<trailer>" message has git promote the trailer itself to the subject, and the
+  // kind would then be parsed back out of the wrong field. A kind never contains a space, so the
+  // first token is the kind and the remainder is the label.
+  // Everything the listing needs sits in the commit subject at a fixed position: "<kind> <head>
+  // <label>". Neither of the two obvious alternatives survives a line-based read of
+  // `for-each-ref` - a trailer paragraph gets promoted to the subject when the label is empty,
+  // and for-each-ref's own %(trailers) atom appends a newline that splits every record in two.
+  // Only the label can contain spaces, so it goes last.
+  //
+  // The project's own HEAD is recorded because a core update leaves a merge commit in the user's
+  // history; restoring the files alone would leave git claiming the update is installed while the
+  // files say otherwise.
+  const head = (await run('git', ['rev-parse', 'HEAD'], projectPath)).output.trim()
+  const subject = `${kind} ${head || '-'}${label ? ` ${label}` : ''}`
+  const commit = (await git(projectPath, ['commit-tree', tree, '-m', subject])).output.trim()
+  const id = newSnapshotId()
+  await git(projectPath, ['update-ref', `${REF_PREFIX}${id}`, commit])
+  // Every snapshot writes a handful of loose objects, and a loose object costs a whole disk block
+  // no matter how small it is - which is most of what an unpacked store takes up. `--auto` only
+  // does the work once git's own threshold is crossed, so this is a cheap check on the common path.
+  await git(projectPath, ['gc', '--auto', '--quiet'])
+  if (kind !== 'manual') await pruneAutomatic(projectPath)
+  return { id, commit, createdAt: new Date().toISOString(), kind, label, projectHead: head || undefined }
+}
+
+export async function listSnapshots(projectPath: string): Promise<Snapshot[]> {
+  if (!existsSync(join(storePath(projectPath), 'HEAD'))) return []
+  const format = ['%(refname)', '%(objectname)', '%(creatordate:iso-strict)', '%(subject)'].join(' ')
+  const result = await git(projectPath, ['for-each-ref', `--format=${format}`, REF_PREFIX])
+  if (!result.success) return []
+  return result.output
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith(REF_PREFIX))
+    .map((line) => {
+      // The subject is "<kind> <head> <label>"; only the label can contain spaces, so it is
+      // whatever follows the fifth field.
+      const [refname, commit, createdAt, kind, projectHead, ...rest] = line.split(' ')
+      return {
+        id: refname.slice(REF_PREFIX.length),
+        commit,
+        createdAt,
+        projectHead: projectHead && projectHead !== '-' ? projectHead : undefined,
+        kind: (kind || 'manual') as SnapshotKind,
+        label: rest.join(' ')
+      }
+    })
+    // Newest first, sorted here rather than by `for-each-ref --sort=-creatordate`: a commit date
+    // has second precision, so several snapshots from the same second tie and git falls back to
+    // ref name order, which is *ascending*. That put the oldest entry at the top of the list and,
+    // worse, made createSnapshot compare a new tree against the oldest snapshot instead of the
+    // newest - so the "nothing changed, skip it" check never fired. Ids carry milliseconds and
+    // are fixed-width, so they sort chronologically as plain strings.
+    .sort((a, b) => b.id.localeCompare(a.id))
+}
+
+async function commitFor(projectPath: string, id: string): Promise<string> {
+  const result = await git(projectPath, ['rev-parse', `${REF_PREFIX}${id}`])
+  const commit = result.output.trim()
+  if (!result.success || !commit) throw new Error(`Snapshot "${id}" existiert nicht.`)
+  return commit
+}
+
+// ---------------------------------------------------------------------------------------------
+// Migration
+//
+// The config backups this replaces are timestamped copies of one file. They are read in as real
+// snapshots, oldest first, so their history survives the switch instead of being thrown away -
+// and the directory is renamed rather than deleted, the same "keep the old data, just stop using
+// it" treatment connectionsService gave deploy-secrets.json.
+//
+// Each imported snapshot holds *only* that config file: the rest of the project as it was back
+// then is not recoverable, and inventing it from today's files would produce a snapshot that
+// never existed. Restoring one therefore offers exactly the file it has.
+export async function migrateConfigBackups(projectPath: string): Promise<number> {
+  const legacyDir = join(projectPath, '.quartz-gui', 'backups')
+  if (!existsSync(legacyDir)) return 0
+  await ensureStore(projectPath)
+
+  // Only files whose name is one of backupService's generated timestamps. A stray file - the
+  // .DS_Store macOS drops into any folder opened in Finder, or anything hand-placed - would
+  // otherwise become a snapshot whose id the IPC schema rejects, i.e. an entry the list shows and
+  // no action can touch. backupService's own listing filters for the same reason.
+  const files = (await readdir(legacyDir))
+    .filter((name) => /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z\.yaml$/.test(name))
+    .sort()
+  let imported = 0
+  for (const file of files) {
+    const id = file.replace(/\.yaml$/, '')
+    const blob = (
+      await run('git', ['--git-dir', storePath(projectPath), 'hash-object', '-w', join(legacyDir, file)], projectPath)
+    ).output.trim()
+    if (!blob) continue
+    // mktree reads "<mode> <type> <sha>\t<path>" - one entry, the config file at the project root.
+    const tree = (
+      await runWithInput(
+        ['--git-dir', storePath(projectPath), 'mktree'],
+        `100644 blob ${blob}\tquartz.config.yaml\n`,
+        projectPath
+      )
+    ).trim()
+    if (!tree) continue
+    // The commit gets the backup's *own* timestamp, not the moment of the migration: without this
+    // every imported entry showed today's date, which flattens the very history the import exists
+    // to preserve - and, because the list is ordered by that date, buried everything else under
+    // forty entries from the same second.
+    const when = idToIsoDate(id)
+    const commit = (
+      await git(
+        projectPath,
+        ['commit-tree', tree, '-m', 'imported -'],
+        when ? { GIT_AUTHOR_DATE: when, GIT_COMMITTER_DATE: when } : undefined
+      )
+    ).output.trim()
+    if (!commit) continue
+    await git(projectPath, ['update-ref', `${REF_PREFIX}${id}-0000`, commit])
+    imported += 1
+  }
+  await rename(legacyDir, `${legacyDir}.migrated`)
+  // Imported entries are automatic, so the usual thinning applies to them - forty config saves
+  // from one afternoon collapse to one per day the same way a fresh burst would.
+  await pruneAutomatic(projectPath)
+  return imported
+}
+
+// backupService's timestampId() in reverse: "2026-08-22T10-00-00-000Z" -> an ISO instant git takes.
+function idToIsoDate(id: string): string | null {
+  const match = /^(\d{4}-\d{2}-\d{2}T\d{2})-(\d{2})-(\d{2})-(\d{3})Z$/.exec(id)
+  return match ? `${match[1]}:${match[2]}:${match[3]}.${match[4]}Z` : null
+}
+
+// git mktree only reads its tree entries from stdin, which runCommand deliberately keeps closed
+// (see its own comment: an unexpected prompt must fail fast rather than hang).
+function runWithInput(args: string[], input: string, cwd: string): Promise<string> {
+  return new Promise((resolvePromise) => {
+    const child = spawn('git', args, { cwd, stdio: ['pipe', 'pipe', 'pipe'] })
+    let output = ''
+    child.stdout.on('data', (chunk: Buffer) => (output += chunk.toString()))
+    child.on('close', () => resolvePromise(output))
+    child.on('error', () => resolvePromise(''))
+    child.stdin.end(input)
+  })
+}
+
+// ---------------------------------------------------------------------------------------------
+// Comparing
+
+// Compares the snapshot against the project as it is *now*, which needs the current state in the
+// index first - hence the stage() on what looks like a read. The index belongs to this store and
+// is rebuilt on every operation anyway, so there is nothing to preserve.
+//
+// -z because git C-quotes non-ASCII paths otherwise, which reaches the UI as mojibake - the same
+// reason gitStatusService uses it.
+export async function diffSnapshot(projectPath: string, id: string): Promise<SnapshotFileChange[]> {
+  const commit = await commitFor(projectPath, id)
+  await stage(projectPath, await ensureStore(projectPath))
+  const result = await git(projectPath, ['diff-index', '--cached', '--name-status', '-z', commit])
+  if (!result.success) return []
+  const parts = result.output.split(NUL).filter((part) => part.length > 0)
+  const changes: SnapshotFileChange[] = []
+  for (let i = 0; i + 1 < parts.length; i += 2) {
+    const letter = parts[i][0]
+    // diff-index compares <commit> -> index, so "A" means the file exists now but not in the
+    // snapshot: restoring it would delete the file rather than add one.
+    changes.push({
+      path: parts[i + 1],
+      status: letter === 'A' ? 'addedSince' : letter === 'D' ? 'removedSince' : 'modified'
+    })
+  }
+  return changes.sort((a, b) => a.path.localeCompare(b.path))
+}
+
+export async function fileDiff(projectPath: string, id: string, path: string): Promise<string> {
+  const commit = await commitFor(projectPath, id)
+  await stage(projectPath, await ensureStore(projectPath))
+  return (await git(projectPath, ['diff', '--cached', commit, '--', path])).output
+}
+
+// ---------------------------------------------------------------------------------------------
+// Restoring, deleting, exporting
+
+// Restoring is itself reversible - a snapshot of the current state is taken first, the principle
+// the old config backups already followed and the update page's git tags did not.
+export async function restoreSnapshot(
+  projectPath: string,
+  id: string,
+  options: RestoreOptions = {}
+): Promise<PluginActionResult> {
+  const { paths, resetProjectHead } = options
+  const commit = await commitFor(projectPath, id)
+  const touched = paths && paths.length > 0 ? paths : (await diffSnapshot(projectPath, id)).map((change) => change.path)
+  const snapshot = (await listSnapshots(projectPath)).find((entry) => entry.id === id)
+  await createSnapshot(projectPath, 'restore', '')
+  await stage(projectPath, await getSettings(projectPath))
+
+  const output: string[] = []
+
+  // Moving the project's own branch back is a separate, opt-in step, and it happens first so the
+  // snapshot's files are written on top of it rather than the other way round. `--hard` needs the
+  // content symlink parked for the same reason every other git write does.
+  if (resetProjectHead && snapshot?.projectHead) {
+    const reset = await withContentSymlinkParked(projectPath, () =>
+      run('git', ['reset', '--hard', snapshot.projectHead as string], projectPath)
+    )
+    if (!reset.success) return { success: false, output: reset.output }
+    output.push(reset.output)
+  }
+  if (!paths || paths.length === 0) {
+    // Updates the work tree *and* removes what the snapshot doesn't have. That only ever touches
+    // files this store tracks - node_modules and everything else excluded stays where it is.
+    const read = await git(projectPath, ['read-tree', '-u', '--reset', commit])
+    if (!read.success) return { success: false, output: read.output }
+    output.push(read.output)
+  } else {
+    // git checkout can bring a file back but cannot delete one the snapshot never had, so those
+    // are removed by hand and dropped from the index.
+    const inSnapshot = new Set(
+      (await git(projectPath, ['ls-tree', '-r', '--name-only', '-z', commit])).output.split(NUL).filter(Boolean)
+    )
+    const toRestore = paths.filter((path) => inSnapshot.has(path))
+    const toDelete = paths.filter((path) => !inSnapshot.has(path))
+    if (toRestore.length > 0) {
+      const checkout = await git(projectPath, ['checkout', commit, '--', ...toRestore])
+      if (!checkout.success) return { success: false, output: checkout.output }
+      output.push(checkout.output)
+    }
+    for (const doomedPath of toDelete) await rm(join(projectPath, doomedPath), { force: true })
+    if (toDelete.length > 0) await git(projectPath, ['rm', '--cached', '--quiet', '--', ...toDelete])
+  }
+
+  // node_modules is never part of a snapshot, so a restore that moved the dependency manifests
+  // leaves the installed tree out of step with them.
+  if (touched.some((path) => path === 'package.json' || path === 'package-lock.json')) {
+    const install = await run('npm', ['install'], projectPath)
+    output.push(install.output)
+    if (!install.success) return { success: false, output: output.join('\n') }
+  }
+  return { success: true, output: output.join('\n').trim() }
+}
+
+export async function deleteSnapshot(projectPath: string, id: string): Promise<void> {
+  await git(projectPath, ['update-ref', '-d', `${REF_PREFIX}${id}`])
+  // The commit is unreachable now; without a prune its objects would sit there forever.
+  await git(projectPath, ['gc', '--prune=now', '--quiet'])
+}
+
+export async function exportSnapshot(projectPath: string, id: string, targetFile: string): Promise<void> {
+  const commit = await commitFor(projectPath, id)
+  const result = await git(projectPath, ['archive', '--format=zip', `--prefix=${id}/`, '-o', targetFile, commit])
+  if (!result.success) throw new Error(result.output)
+}
+
+// ---------------------------------------------------------------------------------------------
+// Retention
+//
+// Deduplication makes disk space a weak argument; a list nobody can read is the real cost. So
+// automatic snapshots are thinned to a resolution that decreases with age, and manual ones are
+// never touched - the user named those on purpose.
+const DAY = 24 * 60 * 60 * 1000
+
+function retentionBucket(age: number, createdAt: Date): string | null {
+  if (age < DAY) return null // keep every one from the last 24 hours
+  if (age < 7 * DAY) return `day-${createdAt.toISOString().slice(0, 10)}`
+  if (age < 56 * DAY) return `week-${Math.floor(createdAt.getTime() / (7 * DAY))}`
+  return `month-${createdAt.toISOString().slice(0, 7)}`
+}
+
+export async function pruneAutomatic(projectPath: string): Promise<number> {
+  const snapshots = await listSnapshots(projectPath)
+  const now = Date.now()
+  const kept = new Set<string>()
+  const doomed: string[] = []
+  // newest first, so the first entry to claim a bucket is the one that survives it
+  for (const snapshot of snapshots) {
+    if (snapshot.kind === 'manual') continue
+    const createdAt = new Date(snapshot.createdAt)
+    const bucket = retentionBucket(now - createdAt.getTime(), createdAt)
+    if (bucket === null) continue
+    if (kept.has(bucket)) doomed.push(snapshot.id)
+    else kept.add(bucket)
+  }
+  for (const id of doomed) await git(projectPath, ['update-ref', '-d', `${REF_PREFIX}${id}`])
+  if (doomed.length > 0) await git(projectPath, ['gc', '--prune=now', '--quiet'])
+  return doomed.length
+}

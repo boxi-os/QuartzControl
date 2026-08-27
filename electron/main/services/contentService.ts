@@ -3,6 +3,7 @@ import { lstat, readlink, readdir, cp, symlink, mkdir } from 'fs/promises'
 import { join } from 'path'
 import type { ContentStatus, ContentStrategy } from '@shared/ipc-contract'
 import { snapshotContent } from './backupService'
+import { createSnapshot } from './snapshotService'
 
 export function contentDirPath(projectPath: string): string {
   return join(projectPath, 'content')
@@ -49,6 +50,10 @@ export async function changeContentSource(
     throw new Error(`Quellordner existiert nicht: ${sourcePath}`)
   }
   const target = contentDirPath(projectPath)
+  // Two different safety nets, both needed: the snapshot records the project's files as they are
+  // now, and the move-aside keeps the whole old content directory - which the snapshot may not
+  // hold at all, since a symlinked vault is excluded by default.
+  await createSnapshot(projectPath, 'contentChange', '')
   // moves the current content/ into .quartz-gui/content-backups/ instead of deleting it
   await snapshotContent(projectPath, target)
 

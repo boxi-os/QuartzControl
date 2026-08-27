@@ -1,12 +1,11 @@
 import { existsSync, mkdirSync } from 'fs'
 import { cp, readdir, readFile, writeFile, rename, rm, lstat, readlink, symlink } from 'fs/promises'
 import { join } from 'path'
-import { diffLines } from 'diff'
 import type { BackupEntry } from '@shared/ipc-contract'
 import { quartzGuiDir } from './projectDirs'
 
-function backupsRoot(projectPath: string, kind: 'config' | 'content'): string {
-  return quartzGuiDir(projectPath, kind === 'config' ? 'backups' : 'content-backups')
+function backupsRoot(projectPath: string): string {
+  return quartzGuiDir(projectPath, 'content-backups')
 }
 
 function timestampId(): string {
@@ -23,68 +22,15 @@ function idToIso(id: string): string {
   return `${prefix}:${mm}:${ss}.${ms}Z`
 }
 
-// Every writeConfig() snapshots the previous file, and the editor tabs save often - a session of
-// tweaking colors can leave dozens of near-identical copies. Config backups are a short-term undo,
-// not an archive (git is the archive), so only the newest are kept. Content backups are NOT pruned:
-// each one holds a whole content directory the user may have moved away, which is not something to
-// delete behind their back.
-const MAX_CONFIG_BACKUPS = 50
-
-async function pruneConfigBackups(projectPath: string): Promise<void> {
-  const dir = backupsRoot(projectPath, 'config')
-  const files = (await readdir(dir)).filter((f) => f.endsWith('.yaml')).sort()
-  // sorted ascending, and the timestamp format sorts lexicographically == chronologically
-  const stale = files.slice(0, Math.max(0, files.length - MAX_CONFIG_BACKUPS))
-  await Promise.all(stale.map((f) => rm(join(dir, f), { force: true })))
-}
-
-export async function snapshotConfig(projectPath: string, rawYaml: string): Promise<BackupEntry> {
-  const id = timestampId()
-  await writeFile(join(backupsRoot(projectPath, 'config'), `${id}.yaml`), rawYaml, 'utf-8')
-  await pruneConfigBackups(projectPath)
-  return { id, createdAt: new Date().toISOString(), kind: 'config' }
-}
-
-export async function listConfigBackups(projectPath: string): Promise<BackupEntry[]> {
-  const files = await readdir(backupsRoot(projectPath, 'config'))
-  return files
-    .filter((f) => f.endsWith('.yaml'))
-    .map((f) => {
-      const id = f.replace(/\.yaml$/, '')
-      return { id, createdAt: idToIso(id), kind: 'config' as const }
-    })
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-}
-
-export async function diffConfigBackup(projectPath: string, id: string): Promise<string> {
-  const backupRaw = await readFile(join(backupsRoot(projectPath, 'config'), `${id}.yaml`), 'utf-8')
-  const currentPath = join(projectPath, 'quartz.config.yaml')
-  const currentRaw = existsSync(currentPath) ? await readFile(currentPath, 'utf-8') : ''
-  const parts = diffLines(backupRaw, currentRaw)
-  return parts
-    .map((part) => {
-      const prefix = part.added ? '+ ' : part.removed ? '- ' : '  '
-      const lines = part.value.split('\n')
-      if (lines[lines.length - 1] === '') lines.pop()
-      return lines.map((line) => prefix + line).join('\n')
-    })
-    .join('\n')
-}
-
-export async function restoreConfigBackup(projectPath: string, id: string): Promise<void> {
-  const backupRaw = await readFile(join(backupsRoot(projectPath, 'config'), `${id}.yaml`), 'utf-8')
-  const currentPath = join(projectPath, 'quartz.config.yaml')
-  if (existsSync(currentPath)) {
-    // restoring is itself reversible
-    await snapshotConfig(projectPath, await readFile(currentPath, 'utf-8'))
-  }
-  await writeFile(currentPath, backupRaw, 'utf-8')
-}
-
+// This is not a backup and is no longer presented as one: it is what happens to the *previous*
+// content directory when the content source is switched - moved aside instead of deleted, so
+// there is a way back to a folder the user replaced. A symlinked vault is never copied here, only
+// the link itself recorded, which is exactly the promise the old "Backups -> Inhalte" tab made and
+// could not keep. Whole-project snapshots live in snapshotService.
 export async function snapshotContent(projectPath: string, contentDir: string): Promise<BackupEntry | null> {
   if (!existsSync(contentDir)) return null
   const id = timestampId()
-  const dir = join(backupsRoot(projectPath, 'content'), id)
+  const dir = join(backupsRoot(projectPath), id)
   mkdirSync(dir, { recursive: true })
 
   const stat = await lstat(contentDir)
@@ -96,22 +42,22 @@ export async function snapshotContent(projectPath: string, contentDir: string): 
   } else {
     await rename(contentDir, join(dir, 'content'))
   }
-  return { id, createdAt: new Date().toISOString(), kind: 'content' }
+  return { id, createdAt: new Date().toISOString() }
 }
 
 export async function listContentBackups(projectPath: string): Promise<BackupEntry[]> {
-  const entries = await readdir(backupsRoot(projectPath, 'content'), { withFileTypes: true })
+  const entries = await readdir(backupsRoot(projectPath), { withFileTypes: true })
   return entries
     // Only real snapshot directories: a stray file (.DS_Store, which macOS drops into any folder
     // the user opens in Finder) was otherwise listed as a backup whose date rendered as
     // "Invalid Date" and whose restore could only fail.
     .filter((e) => e.isDirectory() && TIMESTAMP_ID_RE.test(e.name))
-    .map((e) => ({ id: e.name, createdAt: idToIso(e.name), kind: 'content' as const }))
+    .map((e) => ({ id: e.name, createdAt: idToIso(e.name) }))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 }
 
 export async function restoreContentBackup(projectPath: string, contentDir: string, id: string): Promise<void> {
-  const dir = join(backupsRoot(projectPath, 'content'), id)
+  const dir = join(backupsRoot(projectPath), id)
   if (existsSync(contentDir)) {
     // restoring is itself reversible
     await snapshotContent(projectPath, contentDir)

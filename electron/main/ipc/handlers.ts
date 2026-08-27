@@ -34,6 +34,7 @@ import * as buildService from '../services/buildService'
 import * as syncService from '../services/syncService'
 import * as gitStatusService from '../services/gitStatusService'
 import * as backupService from '../services/backupService'
+import * as snapshotService from '../services/snapshotService'
 import * as contentService from '../services/contentService'
 import * as createService from '../services/createService'
 import * as settingsService from '../services/settingsService'
@@ -242,10 +243,6 @@ export function registerIpcHandlers(): void {
   handle(IPC.updatePluginRun, t([s.absolutePath, s.pluginName.optional()]), (projectPath, name) =>
     updateService.updatePlugin(projectPath, name)
   )
-  handle(IPC.updateSnapshotList, t([s.absolutePath]), (projectPath) => updateService.listSnapshots(projectPath))
-  handle(IPC.updateSnapshotRestore, t([s.absolutePath, s.snapshotTag]), (projectPath, tag) =>
-    updateService.restoreSnapshot(projectPath, tag)
-  )
 
   handleNoArgs(IPC.connectionsList, () => connectionsService.listConnections())
   handle(IPC.connectionSave, t([s.saveConnectionInput]), (input) =>
@@ -330,16 +327,58 @@ export function registerIpcHandlers(): void {
     syncService.runSync(projectPath, direction)
   )
 
-  handle(IPC.backupList, t([s.absolutePath, s.backupKind]), (projectPath, kind) =>
-    kind === 'config' ? backupService.listConfigBackups(projectPath) : backupService.listContentBackups(projectPath)
+  handle(IPC.backupList, t([s.absolutePath]), (projectPath) => backupService.listContentBackups(projectPath))
+  handle(IPC.backupRestore, t([s.absolutePath, s.backupId]), (projectPath, id) =>
+    backupService.restoreContentBackup(projectPath, contentService.contentDirPath(projectPath), id)
   )
-  handle(IPC.backupDiff, t([s.absolutePath, s.backupId]), (projectPath, id) =>
-    backupService.diffConfigBackup(projectPath, id)
+
+  // The one-time import of the old per-save config copies runs here rather than inside the
+  // service: this is the single entry point a user reaches, and it renames the legacy directory
+  // afterwards, so a second call finds nothing to do.
+  handle(IPC.snapshotList, t([s.absolutePath]), async (projectPath) => {
+    await snapshotService.migrateConfigBackups(projectPath)
+    return snapshotService.listSnapshots(projectPath)
+  })
+  handle(IPC.snapshotCreate, t([s.absolutePath, s.snapshotKind, z.string().max(200).optional()]), (projectPath, kind, label) =>
+    snapshotService.createSnapshot(projectPath, kind, label)
   )
-  handle(IPC.backupRestore, t([s.absolutePath, s.backupKind, s.backupId]), (projectPath, kind, id) =>
-    kind === 'config'
-      ? backupService.restoreConfigBackup(projectPath, id)
-      : backupService.restoreContentBackup(projectPath, contentService.contentDirPath(projectPath), id)
+  handle(IPC.snapshotDiff, t([s.absolutePath, s.snapshotId]), (projectPath, id) =>
+    snapshotService.diffSnapshot(projectPath, id)
+  )
+  handle(IPC.snapshotFileDiff, t([s.absolutePath, s.snapshotId, s.snapshotFilePath]), (projectPath, id, path) =>
+    snapshotService.fileDiff(projectPath, id, path)
+  )
+  handle(
+    IPC.snapshotRestore,
+    t([
+      s.absolutePath,
+      s.snapshotId,
+      z
+        .object({
+          paths: z.array(s.snapshotFilePath).max(20000).optional(),
+          resetProjectHead: z.boolean().optional()
+        })
+        .optional()
+    ]),
+    (projectPath, id, options) => snapshotService.restoreSnapshot(projectPath, id, options)
+  )
+  handle(IPC.snapshotDelete, t([s.absolutePath, s.snapshotId]), (projectPath, id) =>
+    snapshotService.deleteSnapshot(projectPath, id)
+  )
+  // The target file is chosen here rather than taken from the renderer: an arbitrary path from
+  // there would let a page write a zip anywhere on disk.
+  handle(IPC.snapshotExport, t([s.absolutePath, s.snapshotId]), async (projectPath, id) => {
+    const result = await dialog.showSaveDialog({
+      defaultPath: `${id}.zip`,
+      filters: [{ name: 'ZIP', extensions: ['zip'] }]
+    })
+    if (result.canceled || !result.filePath) return false
+    await snapshotService.exportSnapshot(projectPath, id, result.filePath)
+    return true
+  })
+  handle(IPC.snapshotSettings, t([s.absolutePath]), (projectPath) => snapshotService.getSettings(projectPath))
+  handle(IPC.snapshotSaveSettings, t([s.absolutePath, z.boolean()]), (projectPath, includeContent) =>
+    snapshotService.saveSettings(projectPath, includeContent)
   )
 
   handle(IPC.contentStatus, t([s.absolutePath]), (projectPath) => contentService.getContentStatus(projectPath))

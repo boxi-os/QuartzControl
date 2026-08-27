@@ -3,7 +3,7 @@ import { readFile, writeFile, rename } from 'fs/promises'
 import { join } from 'path'
 import { parseDocument, Document, isMap } from 'yaml'
 import type { QuartzConfig, PluginEntry, PluginSource, LayoutConfig } from '@shared/ipc-contract'
-import { snapshotConfig } from './backupService'
+import { createSnapshot } from './snapshotService'
 
 function configPath(projectPath: string): string {
   return join(projectPath, 'quartz.config.yaml')
@@ -96,6 +96,10 @@ export async function writeConfig(projectPath: string, config: QuartzConfig): Pr
   }
 
   const serialized = doc.toString()
-  if (existingRaw) await snapshotConfig(projectPath, existingRaw)
+  // A snapshot rather than the old per-save copy of this one file: the store covers the whole
+  // project, and its coalescing window means a session of edits leaves the state from *before*
+  // the session as one entry instead of one entry per save - which is what made the old backup
+  // list fifty unreadable timestamps.
+  if (existingRaw) await createSnapshot(projectPath, 'configChange', '')
   await atomicWrite(path, serialized)
 }

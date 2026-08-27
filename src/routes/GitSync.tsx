@@ -2,8 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { RefreshCw } from 'lucide-react'
 import { useProject } from './ProjectLayout'
-import type { GitFileChange, GitStatus } from '@shared/ipc-contract'
-import { Badge, Button, Card, PageHeader } from '../components/ui'
+import type { GitFileChange, GithubAccount, GitStatus } from '@shared/ipc-contract'
+import { Badge, Button, Card, Field, PageHeader, TextInput, Toggle } from '../components/ui'
 import { formatIpcError } from '../components/ErrorSurface'
 import { useAsyncAction } from '../hooks/useAsyncAction'
 import { TAB_ICONS } from './navConfig'
@@ -101,6 +101,53 @@ function RepoStatus({ status }: { status: GitStatus }): JSX.Element {
   )
 }
 
+// Offered only when the project is a repo with no origin at all. That is exactly the state
+// createService leaves a new project in - it removes origin on purpose, so a later Git-Sync push
+// can never reach upstream jackyzha0/quartz - which used to mean a trip to github.com and a
+// terminal before anything here could be pushed or published.
+function CreateRepoCard({ projectPath, onCreated }: { projectPath: string; onCreated: () => void }): JSX.Element {
+  const { t } = useTranslation()
+  const [viewer, setViewer] = useState<GithubAccount | null>(null)
+  const [name, setName] = useState('')
+  const [isPrivate, setIsPrivate] = useState(false)
+  const [result, setResult] = useState<string | null>(null)
+
+  useEffect(() => {
+    // A missing or rejected token answers null; the card then says so instead of failing on click.
+    window.quartzGui.github.viewer().then(setViewer).catch(() => setViewer(null))
+    // A sensible default that the user can overwrite: the project folder's own name.
+    setName(projectPath.split('/').filter(Boolean).pop() ?? '')
+  }, [projectPath])
+
+  const create = useAsyncAction(async () => {
+    const created = await window.quartzGui.github.createRepo(projectPath, { name, private: isPrivate })
+    setResult(created.output)
+    if (created.success) onCreated()
+  })
+
+  return (
+    <Card className="max-w-2xl">
+      <h2 className="mb-1 font-medium">{t('gitSync.createRepo.title')}</h2>
+      <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+        {viewer ? t('gitSync.createRepo.asAccount', { login: viewer.login }) : t('gitSync.createRepo.noToken')}
+      </p>
+      <div className="mb-3 flex flex-wrap items-end gap-3">
+        <Field label={t('gitSync.createRepo.name')}>
+          <TextInput value={name} onChange={(e) => setName(e.target.value)} className="w-64" disabled={!viewer} />
+        </Field>
+        <div className="pb-1.5">
+          <Toggle label={t('gitSync.createRepo.private')} checked={isPrivate} onChange={setIsPrivate} />
+        </div>
+        <Button onClick={() => create.run()} disabled={!viewer || !name.trim() || create.pending} className="mb-0.5">
+          {create.pending ? t('common.saving') : t('gitSync.createRepo.action')}
+        </Button>
+      </div>
+      {create.error && <p className="text-xs text-red-600 dark:text-red-400">{create.error}</p>}
+      {result && <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-md bg-slate-950 p-3 font-mono text-xs text-slate-200">{result}</pre>}
+    </Card>
+  )
+}
+
 export default function GitSync(): JSX.Element {
   const { t } = useTranslation()
   const project = useProject()
@@ -162,6 +209,8 @@ export default function GitSync(): JSX.Element {
         {refresh.error && <p className="text-xs text-red-600 dark:text-red-400">{refresh.error}</p>}
         {status && <RepoStatus status={status} />}
       </Card>
+
+      {status?.isRepo && !status.remoteUrl && <CreateRepoCard projectPath={project.path} onCreated={refreshStatus} />}
 
       {/* Three buttons don't need the whole window; the git output that appears underneath them
           does, so the card only caps itself while there is nothing to show. */}

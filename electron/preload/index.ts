@@ -111,6 +111,15 @@ const api: QuartzGuiApi = {
     usage: (id: string) => ipcRenderer.invoke(IPC.connectionUsage, id),
     forgetHostKey: (id: string) => ipcRenderer.invoke(IPC.connectionForgetHostKey, id)
   },
+  github: {
+    viewer: () => ipcRenderer.invoke(IPC.githubViewer),
+    originRepo: (projectPath: string) => ipcRenderer.invoke(IPC.githubOriginRepo, projectPath),
+    createRepo: (projectPath: string, input: { name: string; private: boolean; description?: string }) =>
+      ipcRenderer.invoke(IPC.githubCreateRepo, projectPath, input),
+    pagesInfo: (projectPath: string) => ipcRenderer.invoke(IPC.githubPagesInfo, projectPath),
+    configurePages: (projectPath: string, input: { branch: string; cname?: string | null; httpsEnforced?: boolean }) =>
+      ipcRenderer.invoke(IPC.githubConfigurePages, projectPath, input)
+  },
   publishTargets: {
     list: (projectPath: string) => ipcRenderer.invoke(IPC.publishTargetsList, projectPath),
     save: (projectPath: string, input: SavePublishTargetInput) =>

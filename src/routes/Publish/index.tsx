@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useProject } from './ProjectLayout'
+import { useProject } from '../ProjectLayout'
 import type {
   Connection,
   DeployDiffEntry,
@@ -11,11 +11,12 @@ import type {
   SaveConnectionInput,
   SavePublishTargetInput
 } from '@shared/ipc-contract'
-import { Badge, Button, Card, Field, PageHeader, Select, TextInput, Toggle } from '../components/ui'
-import { useAsyncAction } from '../hooks/useAsyncAction'
-import { useStickyState } from '../state/uiState'
+import { Badge, Button, Card, Field, PageHeader, Select, TextInput, Toggle } from '../../components/ui'
+import { useAsyncAction } from '../../hooks/useAsyncAction'
+import { useStickyState } from '../../state/uiState'
 import { rsyncBlockReason } from '@shared/rsyncSupport'
-import { TAB_ICONS } from './navConfig'
+import { TAB_ICONS } from '../navConfig'
+import GithubPages from './GithubPages'
 
 // GitHub Pages used to be a built-in choice that bypassed the target list entirely. It is now a
 // regular git-branch target like any other: the special case was the one thing left that made this
@@ -229,11 +230,17 @@ export default function Publish(): JSX.Element {
         : 'no-connection'
       : null
 
-  // A folder target needs no credential but does need a path; every other type needs its
-  // connection picked before there is anything to save.
-  const targetReady =
-    !!targetDraft &&
-    (targetDraft.destination.type === 'folder' ? !!targetDraft.destination.path.trim() : !!targetDraft.connectionId)
+  // What "ready to save" means is per destination, and deriving it from requiredKind is what keeps
+  // it honest: a type that needs no credential must not be gated on one. The earlier version had a
+  // folder special case and required a connection for everything else, which made a git-branch
+  // target - which authenticates through the repo's own origin - impossible to save at all.
+  const targetReady = (() => {
+    if (!targetDraft) return false
+    const destination = targetDraft.destination
+    if (destination.type === 'folder') return !!destination.path.trim()
+    if (destination.type === 'git-branch') return !!destination.branch.trim()
+    return !!targetDraft.connectionId
+  })()
   // Which targets have a file diff at all. GitHub Pages compares trees on the remote itself and
   // skips the push when they match; a webhook only asks a provider to build. Neither has a local
   // file list, so neither may be gated on one - that check used to leave their deploy button
@@ -685,6 +692,10 @@ export default function Publish(): JSX.Element {
             </p>
           )}
         </Card>
+      )}
+
+      {activeTarget?.destination.type === 'git-branch' && activeTarget.destination.provider === 'github' && (
+        <GithubPages projectPath={project.path} branch={activeTarget.destination.branch} />
       )}
 
       {activeTarget && !hasFileDiff && (

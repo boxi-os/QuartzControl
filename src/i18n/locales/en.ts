@@ -164,6 +164,14 @@ export default {
     bothRunning: 'Sync running…',
     success: 'Successful.',
     failed: 'Failed.',
+    createRepo: {
+      title: 'Create a repository on GitHub',
+      asAccount: 'Created under the account "{{login}}" and wired up as "origin".',
+      noToken: 'This needs a GitHub token with the "repo" scope - add one in the settings.',
+      name: 'Repository name',
+      private: 'Private',
+      action: 'Create'
+    },
     statusTitle: 'Repository state',
     notARepo: 'This project is not a git repository - syncing is not possible here.',
     noRemote: 'No "origin" remote configured. Push and pull have no target.',
@@ -814,6 +822,25 @@ export default {
         'Codeberg Pages serves the "pages" branch directly - after the first push the site is reachable with no further setup.',
       gitlab:
         'Note: on GitLab the branch alone publishes nothing - a CI job has to ship the files as a "public" artifact. The push works regardless.'
+    },
+    pages: {
+      title: 'GitHub Pages',
+      reload: 'Reload status',
+      noGithubOrigin: 'This project\'s "origin" remote does not point at github.com. Pages can only be set up from here once the repository lives on GitHub - see Git sync.',
+      notConfigured: 'This repository has no Pages site yet. The button below creates one and points it at this branch.',
+      source: 'Source: {{branch}}',
+      status: {
+        built: 'Published',
+        building: 'Building',
+        errored: 'Failed',
+        unknown: 'Never built'
+      },
+      cname: 'Custom domain',
+      cnamePlaceholder: 'e.g. wiki.example.com',
+      httpsEnforced: 'Enforce HTTPS',
+      apply: 'Point at "{{branch}}"',
+      cnameHint:
+        'The domain is stored by GitHub, not in the branch - unlike a CNAME file it therefore survives every deploy that replaces the branch wholesale. HTTPS can only be enforced once GitHub has issued the certificate, which takes a few minutes after setting the domain.'
     },
     sftpHint:
       'SFTP compares against a local record of what was last uploaded. Files someone changes or deletes directly on the server go unnoticed.',

@@ -164,6 +164,14 @@ export default {
     bothRunning: 'Sync läuft…',
     success: 'Erfolgreich.',
     failed: 'Fehlgeschlagen.',
+    createRepo: {
+      title: 'Repository auf GitHub anlegen',
+      asAccount: 'Wird unter dem Konto "{{login}}" angelegt und als "origin" eingetragen.',
+      noToken: 'Dafür wird ein GitHub-Token mit "repo"-Berechtigung gebraucht - in den Einstellungen eintragen.',
+      name: 'Repository-Name',
+      private: 'Privat',
+      action: 'Anlegen'
+    },
     statusTitle: 'Stand des Repositorys',
     notARepo: 'Dieses Projekt ist kein Git-Repository - Sync ist hier nicht möglich.',
     noRemote: 'Kein "origin"-Remote konfiguriert. Push und Pull haben kein Ziel.',
@@ -816,6 +824,25 @@ export default {
         'Codeberg Pages liefert den Branch "pages" direkt aus - nach dem ersten Push ist die Seite ohne weitere Einstellungen erreichbar.',
       gitlab:
         'Achtung: Bei GitLab veröffentlicht der Branch allein noch nichts - dort muss ein CI-Job die Dateien als "public"-Artefakt ausliefern. Der Push funktioniert trotzdem.'
+    },
+    pages: {
+      title: 'GitHub Pages',
+      reload: 'Status neu laden',
+      noGithubOrigin: 'Das "origin"-Remote dieses Projekts zeigt nicht auf github.com. Pages lässt sich von hier aus erst einrichten, wenn das Repository auf GitHub liegt - siehe Git-Sync.',
+      notConfigured: 'Für dieses Repository sind noch keine Pages eingerichtet. Mit dem Knopf unten wird Pages angelegt und auf diesen Branch gestellt.',
+      source: 'Quelle: {{branch}}',
+      status: {
+        built: 'Veröffentlicht',
+        building: 'Wird gebaut',
+        errored: 'Fehlgeschlagen',
+        unknown: 'Noch nie gebaut'
+      },
+      cname: 'Eigene Domain',
+      cnamePlaceholder: 'z. B. wiki.example.com',
+      httpsEnforced: 'HTTPS erzwingen',
+      apply: 'Auf "{{branch}}" stellen',
+      cnameHint:
+        'Die Domain wird bei GitHub gespeichert, nicht im Branch - anders als eine CNAME-Datei überlebt sie damit jedes Deploy, das den Branch vollständig ersetzt. HTTPS lässt sich erst erzwingen, wenn GitHub das Zertifikat ausgestellt hat; das dauert nach dem Setzen der Domain einige Minuten.'
     },
     sftpHint:
       'SFTP vergleicht mit einem lokalen Verzeichnis dessen, was zuletzt hochgeladen wurde. Dateien, die jemand direkt auf dem Server ändert oder löscht, bleiben dabei unbemerkt.',

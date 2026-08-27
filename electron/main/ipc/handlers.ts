@@ -27,6 +27,7 @@ import * as localizationService from '../services/localizationService'
 import * as updateService from '../services/updateService'
 import * as connectionsService from '../services/connectionsService'
 import * as publishTargetsService from '../services/publishTargetsService'
+import * as githubService from '../services/githubService'
 import * as deployService from '../services/deploy'
 import * as marketplaceService from '../services/marketplaceService'
 import * as buildService from '../services/buildService'
@@ -264,6 +265,16 @@ export function registerIpcHandlers(): void {
     }
     return usage
   })
+
+  handleNoArgs(IPC.githubViewer, () => githubService.getViewer())
+  handle(IPC.githubOriginRepo, t([s.absolutePath]), (projectPath) => githubService.getOriginRepo(projectPath))
+  handle(IPC.githubCreateRepo, t([s.absolutePath, s.createRepoInput]), (projectPath, input) =>
+    githubService.createRepo(projectPath, input as { name: string; private: boolean; description?: string })
+  )
+  handle(IPC.githubPagesInfo, t([s.absolutePath]), (projectPath) => githubService.getPagesInfo(projectPath))
+  handle(IPC.githubConfigurePages, t([s.absolutePath, s.configurePagesInput]), (projectPath, input) =>
+    githubService.configurePages(projectPath, input as { branch: string; cname?: string | null; httpsEnforced?: boolean })
+  )
 
   handle(IPC.publishTargetsList, t([s.absolutePath]), (projectPath) => publishTargetsService.listTargets(projectPath))
   handle(IPC.publishTargetSave, t([s.absolutePath, s.savePublishTargetInput]), (projectPath, input) =>

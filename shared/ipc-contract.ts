@@ -277,6 +277,32 @@ export interface ThemePreset {
   }
 }
 
+export interface GithubAccount {
+  login: string
+  name?: string
+}
+
+export interface GithubRepoRef {
+  owner: string
+  repo: string
+  htmlUrl: string
+}
+
+// What GitHub reports about a repo's Pages site. `configured: false` is the normal answer for a
+// repo that has none yet (the API answers 404), not a failure - `error` is only set when the call
+// itself went wrong.
+export interface GithubPagesInfo {
+  configured: boolean
+  /** 'built' | 'building' | 'errored' | null while it has never been built. */
+  status?: string | null
+  htmlUrl?: string
+  cname?: string | null
+  httpsEnforced?: boolean
+  sourceBranch?: string
+  sourcePath?: string
+  error?: string
+}
+
 export interface QuartzConfig {
   configuration: Record<string, unknown> & {
     pageTitle?: string
@@ -826,6 +852,12 @@ export const IPC = {
   connectionUsage: 'connections:usage',
   connectionForgetHostKey: 'connections:forgetHostKey',
 
+  githubViewer: 'github:viewer',
+  githubOriginRepo: 'github:originRepo',
+  githubCreateRepo: 'github:createRepo',
+  githubPagesInfo: 'github:pagesInfo',
+  githubConfigurePages: 'github:configurePages',
+
   publishTargetsList: 'publishTargets:list',
   publishTargetSave: 'publishTargets:save',
   publishTargetDelete: 'publishTargets:delete',
@@ -974,6 +1006,18 @@ export interface QuartzGuiApi {
      *  still in use would leave those targets dangling, so the caller checks first. */
     usage(id: string): Promise<{ projectPath: string; targetName: string }[]>
     forgetHostKey(id: string): Promise<void>
+  }
+  github: {
+    /** Who the stored token belongs to; null when there is no token or it is rejected. */
+    viewer(): Promise<GithubAccount | null>
+    /** The project's origin remote, if it points at github.com. */
+    originRepo(projectPath: string): Promise<GithubRepoRef | null>
+    createRepo(projectPath: string, input: { name: string; private: boolean; description?: string }): Promise<PluginActionResult>
+    pagesInfo(projectPath: string): Promise<GithubPagesInfo | null>
+    configurePages(
+      projectPath: string,
+      input: { branch: string; cname?: string | null; httpsEnforced?: boolean }
+    ): Promise<PluginActionResult>
   }
   publishTargets: {
     list(projectPath: string): Promise<PublishTarget[]>

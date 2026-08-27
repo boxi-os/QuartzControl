@@ -4,6 +4,7 @@ import type { DeployDiffEntry, DeployResult, PublishTarget } from '@shared/ipc-c
 import type { DeployAdapter, DeployContext } from './types'
 import { runCommand as run } from '../runCommand'
 import { quartzGuiDir } from '../projectDirs'
+import { gitAuthForOrigin, type GitAuth } from '../gitAuth'
 
 // Publishing by pushing the build output to a branch of the project's own repo. Three providers
 // use exactly this mechanism and differ only in what they call the branch and what they do with
@@ -48,7 +49,7 @@ interface Staged {
 }
 
 /** Everything both preview and run need: the branch fetched, the build output staged, a tree written. */
-async function stageBuild(ctx: DeployContext, branch: string, worktreeDir: string): Promise<Staged> {
+async function stageBuild(ctx: DeployContext, branch: string, worktreeDir: string, auth: GitAuth): Promise<Staged> {
   let output = ''
 
   // Clean up any stale worktree registration/directory from a previous (e.g. interrupted) deploy
@@ -59,7 +60,10 @@ async function stageBuild(ctx: DeployContext, branch: string, worktreeDir: strin
   await run('git', ['worktree', 'remove', '--force', worktreeDir], ctx.projectPath)
   await rm(worktreeDir, { recursive: true, force: true })
 
-  const fetchBranch = await run('git', ['fetch', 'origin', branch], ctx.projectPath)
+  // The fetch already talks to the remote, so it needs the credential too - a private repo would
+  // otherwise report "branch does not exist" and the deploy would push a first root commit over an
+  // existing branch without the lease that protects it.
+  const fetchBranch = await run('git', ['fetch', 'origin', branch], ctx.projectPath, auth.env)
   // The remote tip we just fetched, used as the explicit lease on push. Read from FETCH_HEAD rather
   // than refs/remotes/origin/<branch>, which a single-branch fetch only updates opportunistically.
   const remoteTip = fetchBranch.success ? (await run('git', ['rev-parse', 'FETCH_HEAD'], ctx.projectPath)).output.trim() : ''
@@ -143,8 +147,9 @@ export const gitBranchAdapter: DeployAdapter = {
     await assertBranchSafe(ctx.projectPath, destination.branch)
 
     const worktreeDir = worktreePath(ctx.projectPath, ctx.target)
+    const auth = await gitAuthForOrigin(ctx.projectPath)
     try {
-      const staged = await stageBuild(ctx, destination.branch, worktreeDir)
+      const staged = await stageBuild(ctx, destination.branch, worktreeDir, auth)
       if (!staged.remoteTip) {
         // Branch does not exist yet - everything in the tree is new.
         const listing = await run('git', ['ls-tree', '-r', '--name-only', staged.tree], ctx.projectPath)
@@ -160,6 +165,7 @@ export const gitBranchAdapter: DeployAdapter = {
       return parseNameStatus(diff.output).sort((a, b) => a.path.localeCompare(b.path))
     } finally {
       await run('git', ['worktree', 'remove', '--force', worktreeDir], ctx.projectPath)
+      await auth.cleanup()
     }
   },
 
@@ -173,9 +179,10 @@ export const gitBranchAdapter: DeployAdapter = {
     await assertBranchSafe(ctx.projectPath, destination.branch)
 
     const worktreeDir = worktreePath(ctx.projectPath, ctx.target)
+    const auth = await gitAuthForOrigin(ctx.projectPath)
     let output = ''
     try {
-      const staged = await stageBuild(ctx, destination.branch, worktreeDir)
+      const staged = await stageBuild(ctx, destination.branch, worktreeDir, auth)
       output += staged.output
 
       // Comparing trees answers "is what's published already byte-identical?" exactly. It also
@@ -200,7 +207,7 @@ export const gitBranchAdapter: DeployAdapter = {
       const pushArgs = staged.remoteTip
         ? ['push', `--force-with-lease=refs/heads/${destination.branch}:${staged.remoteTip}`, 'origin', `${commit}:refs/heads/${destination.branch}`]
         : ['push', 'origin', `${commit}:refs/heads/${destination.branch}`]
-      const push = await run('git', pushArgs, worktreeDir)
+      const push = await run('git', pushArgs, worktreeDir, auth.env)
       output += push.output
       ctx.emitProgress(1, 1, destination.branch)
       return { success: push.success, output }
@@ -208,6 +215,7 @@ export const gitBranchAdapter: DeployAdapter = {
       return { success: false, output: `${output}\n${String(err instanceof Error ? err.message : err)}` }
     } finally {
       await run('git', ['worktree', 'remove', '--force', worktreeDir], ctx.projectPath)
+      await auth.cleanup()
     }
   }
 }

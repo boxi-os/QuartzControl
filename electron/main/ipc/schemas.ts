@@ -321,6 +321,32 @@ const publishDestination = z.discriminatedUnion('type', [
   })
 ])
 
+// GitHub's own rule for a repository name: letters, digits, dot, dash and underscore. Kept tight
+// because this string goes straight into an API path.
+export const githubRepoName = z
+  .string()
+  .min(1)
+  .max(100)
+  .regex(/^[A-Za-z0-9._-]+$/, 'kein gültiger Repository-Name')
+
+export const createRepoInput = z.looseObject({
+  name: githubRepoName,
+  private: z.boolean(),
+  description: z.string().max(350).optional()
+})
+
+export const configurePagesInput = z.looseObject({
+  branch: branchName,
+  // null clears the custom domain; a hostname otherwise. Not a full URL - GitHub stores a bare host.
+  cname: z
+    .string()
+    .max(253)
+    .regex(/^[A-Za-z0-9.-]+$/, 'kein gültiger Hostname')
+    .nullable()
+    .optional(),
+  httpsEnforced: z.boolean().optional()
+})
+
 export const savePublishTargetInput = z.looseObject({
   id: uuid.optional(),
   name: z.string().min(1).max(200),

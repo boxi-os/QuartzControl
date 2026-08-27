@@ -645,6 +645,7 @@ export default {
       ok: 'SCSS compiles without errors.',
       failed: 'SCSS error — the build would fail:',
       location: 'Open {{file}}, line {{line}}',
+      locationExternal: 'In {{file}}, line {{line}} (not editable here)',
       recheck: 'Check again',
       checkActive: 'Check code',
       running: 'Checking…',

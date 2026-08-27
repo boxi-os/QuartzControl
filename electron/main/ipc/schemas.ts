@@ -112,7 +112,10 @@ export const styleFileSubPath = z
   .string()
   .max(1024)
   .regex(/^(custom|imported)\/[A-Za-z0-9._-]+\.(scss|css)$/, 'kein gültiger Stylesheet-Pfad')
-  .refine((p) => !p.split('/')[1].startsWith('.'), { message: 'Dateiname darf nicht mit "." beginnen' })
+  // Guards against undefined rather than trusting the regex above: zod v4 keeps running the checks
+  // of a schema after one of them failed, so this refine also sees values the regex just rejected -
+  // and a TypeError thrown here replaces the readable validation error with a crash.
+  .refine((p) => !(p.split('/')[1] ?? '').startsWith('.'), { message: 'Dateiname darf nicht mit "." beginnen' })
 
 // The same, plus custom.scss itself - the one file that is edited but is not part of the order.
 export const styleEntryPath = z.union([z.literal('custom.scss'), styleFileSubPath])

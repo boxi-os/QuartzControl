@@ -72,6 +72,9 @@ export default function CustomCss(): JSX.Element {
   const [loaded, setLoaded] = useState<Record<string, string>>({})
   const [check, setCheck] = useState<ScssCheckResult | null>(null)
   const [checking, setChecking] = useState(false)
+  // Where a diagnostic wants the cursor. Not sticky: it is a single gesture, and restoring it after
+  // an area switch would scroll the editor for a click made minutes ago.
+  const [pendingJump, setPendingJump] = useState<{ tab: string; line: number } | null>(null)
   const viewRef = useRef<EditorView | null>(null)
   const scheme = useColorScheme()
 
@@ -168,6 +171,21 @@ export default function CustomCss(): JSX.Element {
   const contentOf = (tab: string): string =>
     tab === MAIN_TAB ? scss.content : (fileDrafts[tab] ?? loaded[tab] ?? '')
 
+  // Opening the file a diagnostic points at is only half of "jump there" - this puts the cursor on
+  // the line. It waits for the file's content, since an extra file is read asynchronously after its
+  // tab opens and an empty document has no line to scroll to; the line is clamped because the
+  // diagnostic can be older than the text in front of it.
+  const activeContent = contentOf(activeTab)
+  const activeContentReady = activeTab === MAIN_TAB || fileDrafts[activeTab] !== undefined || loaded[activeTab] !== undefined
+  useEffect(() => {
+    const view = viewRef.current
+    if (!pendingJump || !view || pendingJump.tab !== activeTab || !activeContentReady) return
+    const pos = view.state.doc.line(Math.min(Math.max(pendingJump.line, 1), view.state.doc.lines)).from
+    view.dispatch({ selection: { anchor: pos }, scrollIntoView: true })
+    view.focus()
+    setPendingJump(null)
+  }, [pendingJump, activeTab, activeContent, activeContentReady])
+
   function setContent(value: string): void {
     if (activeTab === MAIN_TAB) setScssContent(value)
     else setFileDraft(activeTab, value)
@@ -176,6 +194,22 @@ export default function CustomCss(): JSX.Element {
   function openTab(tab: string): void {
     setOpenTabs((prev) => (prev.includes(tab) ? prev : [...prev, tab]))
     setActiveTab(tab)
+  }
+
+  // A diagnostic names a file on disk, which is not the same thing as one of this editor's tabs:
+  // custom.scss is the pinned main tab rather than one of the additional files, and an error inside
+  // Quartz's own stylesheets or node_modules has no tab at all. Returning null is what lets the
+  // banner print the location as plain text instead of a link that opens an empty editor.
+  function tabForFile(relativePath: string): string | null {
+    if (relativePath === 'custom.scss') return MAIN_TAB
+    return files.some((f) => f.relativePath === relativePath) ? relativePath : null
+  }
+
+  function jumpToFile(relativePath: string, line: number | undefined): void {
+    const tab = tabForFile(relativePath)
+    if (!tab) return
+    openTab(tab)
+    if (line !== undefined) setPendingJump({ tab, line })
   }
 
   function closeTab(tab: string): void {
@@ -276,7 +310,7 @@ export default function CustomCss(): JSX.Element {
         </div>
       )}
 
-      <CheckBanner result={check} checking={checking} onRecheck={runCheck} onOpenFile={openTab} />
+      <CheckBanner result={check} checking={checking} onRecheck={runCheck} onJump={jumpToFile} tabForFile={tabForFile} />
 
       <ActiveStyles />
 
@@ -631,12 +665,14 @@ function CheckBanner({
   result,
   checking,
   onRecheck,
-  onOpenFile
+  onJump,
+  tabForFile
 }: {
   result: ScssCheckResult | null
   checking: boolean
   onRecheck: () => void
-  onOpenFile: (tab: string) => void
+  onJump: (relativePath: string, line: number | undefined) => void
+  tabForFile: (relativePath: string) => string | null
 }): JSX.Element | null {
   const { t } = useTranslation()
   if (!result) return null
@@ -649,11 +685,16 @@ function CheckBanner({
         <div className="min-w-0 flex-1">
           <p className="font-medium">{t('styleEditor.check.failed')}</p>
           <p className="whitespace-pre-wrap font-mono">{message}</p>
-          {relativePath && (
-            <button type="button" className="mt-1 underline" onClick={() => onOpenFile(relativePath)}>
-              {t('styleEditor.check.location', { file: relativePath, line: line ?? '?' })}
-            </button>
-          )}
+          {relativePath &&
+            (tabForFile(relativePath) ? (
+              <button type="button" className="mt-1 underline" onClick={() => onJump(relativePath, line)}>
+                {t('styleEditor.check.location', { file: relativePath, line: line ?? '?' })}
+              </button>
+            ) : (
+              // Not one of this editor's files (Quartz's own stylesheets, or something under
+              // node_modules): the location is still worth printing, but there is nothing to open.
+              <p className="mt-1">{t('styleEditor.check.locationExternal', { file: relativePath, line: line ?? '?' })}</p>
+            ))}
         </div>
         <button type="button" className="shrink-0 underline" onClick={onRecheck} disabled={checking}>
           {checking ? t('styleEditor.check.running') : t('styleEditor.check.recheck')}

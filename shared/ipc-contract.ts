@@ -709,10 +709,6 @@ export interface DeployResult {
   output: string
 }
 
-export interface GithubPagesDeployOptions {
-  branch: string
-}
-
 // The six independent slices a Template-Paket can carry - each maps to one export function's
 // output file(s) in templatePackageService.ts (layout.json/colors.json/plugins.json/frames.json/
 // custom.scss+imported/*/fonts/*) and one checkbox in the Templates route. Import (Phase 3c) can
@@ -836,7 +832,6 @@ export const IPC = {
 
   deployDiff: 'deploy:diff',
   deployRun: 'deploy:run',
-  deployGithubPagesRun: 'deploy:githubPagesRun',
   deployProgress: 'deploy:progress',
   dialogPickFile: 'dialog:pickFile',
   dialogOpenPath: 'dialog:openPath',
@@ -990,7 +985,6 @@ export interface QuartzGuiApi {
      *  dry-run for rsync, and empty for a webhook, which has nothing to diff. */
     diff(projectPath: string, targetId: string, outputDir?: string): Promise<DeployDiffEntry[]>
     run(projectPath: string, targetId: string, outputDir: string | undefined, excludePaths: string[]): Promise<DeployResult>
-    runGithubPages(projectPath: string, outputDir: string | undefined, options: GithubPagesDeployOptions): Promise<DeployResult>
     onProgress(cb: (event: DeployProgressEvent) => void): () => void
   }
   templatePackage: {

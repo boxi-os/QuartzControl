@@ -352,8 +352,6 @@ export const settings = z.looseObject({
   language: z.enum(['system', 'de', 'en']).optional()
 })
 
-export const githubPagesDeployOptions = z.looseObject({ branch: branchName })
-
 export const dialogFileFilters = z
   .array(z.object({ name: z.string().max(120), extensions: z.array(z.string().max(20)).max(50) }))
   .max(20)

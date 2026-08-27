@@ -798,15 +798,23 @@ export default {
   },
   publish: {
     title: 'Publish',
-    description: 'Builds the project and uploads only changed files to SFTP/FTP or GitHub Pages.',
+    description: 'Builds the project and takes the result to its targets - over SFTP/rsync, FTP, into a folder, onto a git branch, or via a webhook.',
     baseUrlWarning: 'configuration.baseUrl is still set to "{{baseUrl}}" — set it to the real domain before publishing.',
     targetHeading: 'Target',
-    githubPages: 'GitHub Pages',
-    githubBranch: 'Branch',
-    githubPagesHint: 'Uses the already-configured "origin" remote (the same one Git-Sync uses).',
     newConnection: '+ New credential',
     newTarget: '+ New target',
     confirmDeleteTarget: 'Really delete this publish target? The credential it uses stays.',
+    noTargets: 'No publish target yet. Create one via "+ New target" - e.g. GitHub Pages, a webspace over SFTP, or a local folder.',
+    confirmDeployBranch:
+      'Publish to branch "{{branch}}"?\n\nThe branch is replaced entirely by the current build (force push).',
+    branchHint: {
+      github:
+        'Pushes the build as a single commit to that branch of the "origin" remote (the same one Git sync uses). GitHub Pages must be pointed at this branch in the repository settings.',
+      codeberg:
+        'Codeberg Pages serves the "pages" branch directly - after the first push the site is reachable with no further setup.',
+      gitlab:
+        'Note: on GitLab the branch alone publishes nothing - a CI job has to ship the files as a "public" artifact. The push works regardless.'
+    },
     sftpHint:
       'SFTP compares against a local record of what was last uploaded. Files someone changes or deletes directly on the server go unnoticed.',
     rsyncHint:
@@ -835,6 +843,9 @@ export default {
       transferRsync: 'rsync (faster, compares against the server)',
       typeFolder: 'Folder',
       typeWebhook: 'Webhook',
+      typeGitBranch: 'Git branch',
+      provider: 'Provider',
+      branch: 'Branch',
       folderPath: 'Target folder',
       connection: 'Credential',
       pickConnection: '— pick a credential —',
@@ -847,8 +858,6 @@ export default {
     confirmForgetHostKey:
       'Discard the stored host key for {{host}}?\n\nYou will be asked to confirm the fingerprint again on the next connect. Only do this if the server was genuinely rebuilt.',
     ftpPlaintextWarning: 'FTP sends the password and all files in the clear. Without FTPS anyone on the same network can read along — enable it if your provider supports it (or use SFTP instead).',
-    confirmDeployGithubPages:
-      'Publish to GitHub Pages?\n\nBranch "{{branch}}" will be replaced entirely by the current build (force push).',
     confirmDeployConnection:
       'Publish to {{target}}?\n\n{{uploads}} file(s) will be uploaded, {{deletions}} file(s) will be deleted on the server.',
     connectionForm: {

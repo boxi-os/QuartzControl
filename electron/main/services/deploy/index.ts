@@ -9,6 +9,7 @@ import { ftpAdapter } from './ftp'
 import { folderAdapter } from './folder'
 import { webhookAdapter } from './webhook'
 import { rsyncAdapter } from './rsync'
+import { gitBranchAdapter } from './gitBranch'
 
 export const deployEvents = new EventEmitter()
 
@@ -18,7 +19,8 @@ const ADAPTERS: Partial<Record<string, DeployAdapter>> = {
   sftp: sftpAdapter,
   ftp: ftpAdapter,
   folder: folderAdapter,
-  webhook: webhookAdapter
+  webhook: webhookAdapter,
+  'git-branch': gitBranchAdapter
 }
 
 // The one destination type with two adapters. rsync is not a separate kind of target - it is the

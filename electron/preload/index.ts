@@ -15,7 +15,6 @@ import type {
   PluginEntry,
   SaveConnectionInput,
   SavePublishTargetInput,
-  GithubPagesDeployOptions,
   DeployProgressEvent,
   CssVariableOverride,
   TemplatePackageCategory
@@ -123,8 +122,6 @@ const api: QuartzGuiApi = {
       ipcRenderer.invoke(IPC.deployDiff, projectPath, targetId, outputDir),
     run: (projectPath: string, targetId: string, outputDir: string | undefined, excludePaths: string[]) =>
       ipcRenderer.invoke(IPC.deployRun, projectPath, targetId, outputDir, excludePaths),
-    runGithubPages: (projectPath: string, outputDir: string | undefined, options: GithubPagesDeployOptions) =>
-      ipcRenderer.invoke(IPC.deployGithubPagesRun, projectPath, outputDir, options),
     onProgress: (cb: (event: DeployProgressEvent) => void) => onEvent<[DeployProgressEvent]>(IPC.deployProgress, cb)
   },
   templatePackage: {

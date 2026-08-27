@@ -800,15 +800,23 @@ export default {
   },
   publish: {
     title: 'Veröffentlichen',
-    description: 'Baut das Projekt und lädt nur geänderte Dateien zu SFTP/FTP oder GitHub Pages hoch.',
+    description: 'Baut das Projekt und bringt das Ergebnis an seine Ziele - per SFTP/rsync, FTP, in einen Ordner, auf einen Git-Branch oder über einen Webhook.',
     baseUrlWarning: 'configuration.baseUrl steht noch auf "{{baseUrl}}" — vor dem Veröffentlichen auf die echte Domain setzen.',
     targetHeading: 'Ziel',
-    githubPages: 'GitHub Pages',
-    githubBranch: 'Branch',
-    githubPagesHint: 'Nutzt das bereits konfigurierte "origin"-Remote (dasselbe wie bei Git-Sync).',
     newConnection: '+ Neuer Zugang',
     newTarget: '+ Neues Ziel',
     confirmDeleteTarget: 'Dieses Veröffentlichungsziel wirklich löschen? Der hinterlegte Zugang bleibt bestehen.',
+    noTargets: 'Noch kein Veröffentlichungsziel angelegt. Über "+ Neues Ziel" eines anlegen - z. B. GitHub Pages, einen Webspace per SFTP oder einen lokalen Ordner.',
+    confirmDeployBranch:
+      'Auf den Branch "{{branch}}" veröffentlichen?\n\nDer Branch wird dabei vollständig durch den aktuellen Build ersetzt (force-push).',
+    branchHint: {
+      github:
+        'Schiebt den Build als einzelnen Commit auf den Branch des "origin"-Remotes (dasselbe wie bei Git-Sync). In den Repository-Einstellungen muss GitHub Pages auf diesen Branch zeigen.',
+      codeberg:
+        'Codeberg Pages liefert den Branch "pages" direkt aus - nach dem ersten Push ist die Seite ohne weitere Einstellungen erreichbar.',
+      gitlab:
+        'Achtung: Bei GitLab veröffentlicht der Branch allein noch nichts - dort muss ein CI-Job die Dateien als "public"-Artefakt ausliefern. Der Push funktioniert trotzdem.'
+    },
     sftpHint:
       'SFTP vergleicht mit einem lokalen Verzeichnis dessen, was zuletzt hochgeladen wurde. Dateien, die jemand direkt auf dem Server ändert oder löscht, bleiben dabei unbemerkt.',
     rsyncHint:
@@ -837,6 +845,9 @@ export default {
       transferRsync: 'rsync (schneller, vergleicht mit dem Server)',
       typeFolder: 'Ordner',
       typeWebhook: 'Webhook',
+      typeGitBranch: 'Git-Branch',
+      provider: 'Anbieter',
+      branch: 'Branch',
       folderPath: 'Zielordner',
       connection: 'Zugang',
       pickConnection: '— Zugang wählen —',
@@ -849,8 +860,6 @@ export default {
     confirmForgetHostKey:
       'Gespeicherten Host-Key für {{host}} verwerfen?\n\nBeim nächsten Verbinden wird der Fingerprint erneut abgefragt. Nur tun, wenn der Server nachweislich neu aufgesetzt wurde.',
     ftpPlaintextWarning: 'FTP überträgt Passwort und Dateien im Klartext. Ohne FTPS kann jeder im selben Netz mitlesen — falls dein Anbieter es unterstützt, unbedingt aktivieren (oder besser SFTP nutzen).',
-    confirmDeployGithubPages:
-      'Veröffentlichen nach GitHub Pages?\n\nDer Branch "{{branch}}" wird dabei vollständig durch den aktuellen Build ersetzt (force-push).',
     confirmDeployConnection:
       'Nach {{target}} veröffentlichen?\n\n{{uploads}} Datei(en) werden hochgeladen, {{deletions}} Datei(en) werden auf dem Server gelöscht.',
     connectionForm: {

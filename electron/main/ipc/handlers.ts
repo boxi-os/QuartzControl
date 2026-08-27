@@ -4,7 +4,6 @@ import { z } from 'zod'
 import { IPC } from '@shared/ipc-contract'
 import type {
   CreateProjectOptions,
-  GithubPagesDeployOptions,
   GridFrameDefinition,
   QuartzConfig,
   SaveConnectionInput,
@@ -29,7 +28,6 @@ import * as updateService from '../services/updateService'
 import * as connectionsService from '../services/connectionsService'
 import * as publishTargetsService from '../services/publishTargetsService'
 import * as deployService from '../services/deploy'
-import * as githubPagesService from '../services/githubPagesService'
 import * as marketplaceService from '../services/marketplaceService'
 import * as buildService from '../services/buildService'
 import * as syncService from '../services/syncService'
@@ -283,11 +281,6 @@ export function registerIpcHandlers(): void {
     t([s.absolutePath, s.uuid, s.buildOutputDir.optional(), s.excludePaths]),
     (projectPath, targetId, outputDir, excludePaths) =>
       deployService.runDeploy(projectPath, targetId, outputDir, excludePaths)
-  )
-  handle(
-    IPC.deployGithubPagesRun,
-    t([s.absolutePath, s.buildOutputDir.optional(), s.githubPagesDeployOptions]),
-    (projectPath, outputDir, options) => githubPagesService.deployGithubPages(projectPath, outputDir, options as GithubPagesDeployOptions)
   )
 
   handle(

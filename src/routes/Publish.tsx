@@ -17,10 +17,10 @@ import { useStickyState } from '../state/uiState'
 import { rsyncBlockReason } from '@shared/rsyncSupport'
 import { TAB_ICONS } from './navConfig'
 
-// GitHub Pages is not a stored target: it needs no credential of its own (it pushes over the
-// repo's existing origin) and no per-project settings beyond the branch, so it stays a built-in
-// choice rather than something the user has to create first.
-type Selection = { kind: 'github-pages' } | { kind: 'target'; id: string }
+// GitHub Pages used to be a built-in choice that bypassed the target list entirely. It is now a
+// regular git-branch target like any other: the special case was the one thing left that made this
+// page reach past its own model, and a branch push to Codeberg or GitLab is the same mechanism
+// with a different name for the branch.
 
 function emptyTargetDraft(): SavePublishTargetInput {
   return { name: '', destination: { type: 'sftp', remotePath: '/', transfer: 'sftp', deleteRemoved: true } }
@@ -41,7 +41,16 @@ function requiredKind(destination: SavePublishTargetInput['destination']): 'ssh'
   return null
 }
 
-function emptyDestination(type: 'sftp' | 'ftp' | 'folder' | 'webhook'): SavePublishTargetInput['destination'] {
+// Each provider serves a different branch by convention: GitHub Pages reads gh-pages, Codeberg
+// Pages reads a branch literally named pages. GitLab has no fixed convention because the branch
+// alone does not publish there - a CI job does - so it gets the same default and a hint.
+const BRANCH_DEFAULTS: Record<'github' | 'gitlab' | 'codeberg', string> = {
+  github: 'gh-pages',
+  gitlab: 'pages',
+  codeberg: 'pages'
+}
+
+function emptyDestination(type: 'sftp' | 'ftp' | 'folder' | 'webhook' | 'git-branch'): SavePublishTargetInput['destination'] {
   switch (type) {
     case 'sftp':
       return { type: 'sftp', remotePath: '/', transfer: 'sftp', deleteRemoved: true }
@@ -51,6 +60,8 @@ function emptyDestination(type: 'sftp' | 'ftp' | 'folder' | 'webhook'): SavePubl
       return { type: 'folder', path: '', deleteRemoved: true }
     case 'webhook':
       return { type: 'webhook' }
+    case 'git-branch':
+      return { type: 'git-branch', branch: BRANCH_DEFAULTS.github, provider: 'github' }
   }
 }
 
@@ -63,8 +74,7 @@ export default function Publish(): JSX.Element {
   // Which destination is selected, and the two fields that describe it, are "where the user was" -
   // kept across a trip to another area (see useStickyState). The diff below deliberately is not:
   // it's a snapshot of the build output and has to be re-taken.
-  const [selection, setSelection] = useStickyState<Selection>('publish.target', { kind: 'github-pages' })
-  const [githubBranch, setGithubBranch] = useStickyState('publish.githubBranch', 'gh-pages')
+  const [selectedId, setSelectedId] = useStickyState<string | null>('publish.target', null)
   // Which directory gets published. Empty means quartz's own default, public/. Kept explicit
   // rather than assumed: BuildServer's one-off export can write somewhere else entirely, and
   // silently diffing a stale public/ against the server is exactly the kind of wrong that looks
@@ -93,15 +103,14 @@ export default function Publish(): JSX.Element {
   // success message and file list read as statements about the newly selected one - seen in the
   // running app, where a folder deploy's "nothing to do" sat under a webhook target that had never
   // run. The key covers the whole selection, so the GitHub Pages/target switch clears it too.
-  const selectionKey = selection.kind === 'target' ? selection.id : 'github-pages'
   useEffect(() => {
     setDiff(null)
     setExcluded(new Set())
     setDeployResult(null)
     setProgress(null)
-  }, [selectionKey])
+  }, [selectedId])
 
-  const activeTarget = selection.kind === 'target' ? targets.find((tg) => tg.id === selection.id) : undefined
+  const activeTarget = targets.find((tg) => tg.id === selectedId)
   const activeConnection = activeTarget?.connectionId ? connections.find((c) => c.id === activeTarget.connectionId) : undefined
 
   // The diff reads the build output directory, which simply doesn't exist until the first build -
@@ -138,12 +147,13 @@ export default function Publish(): JSX.Element {
     // A deploy is not reversible from inside the app: it force-pushes over the Pages branch, or
     // uploads to and deletes files on a remote server. Deleting a mere connection profile already
     // asks, so the destructive action has to as well.
-    if (selection.kind === 'github-pages') {
-      if (!confirm(t('publish.confirmDeployGithubPages', { branch: githubBranch }))) return
+    if (!activeTarget) return
+    if (activeTarget.destination.type === 'git-branch') {
+      if (!confirm(t('publish.confirmDeployBranch', { branch: activeTarget.destination.branch }))) return
     } else {
       const uploads = (diff ?? []).filter((e) => e.status !== 'removed' && !excluded.has(e.path)).length
       const deletions = (diff ?? []).filter((e) => e.status === 'removed' && !excluded.has(e.path)).length
-      if (!confirm(t('publish.confirmDeployConnection', { target: activeTarget?.name ?? '', uploads, deletions }))) return
+      if (!confirm(t('publish.confirmDeployConnection', { target: activeTarget.name, uploads, deletions }))) return
     }
 
     await deployAction.run()
@@ -152,12 +162,10 @@ export default function Publish(): JSX.Element {
   const deployAction = useAsyncAction(async () => {
     setDeployResult(null)
     setProgress(null)
-    const result =
-      selection.kind === 'github-pages'
-        ? await window.quartzGui.deploy.runGithubPages(project.path, outputDir || undefined, { branch: githubBranch })
-        : await window.quartzGui.deploy.run(project.path, selection.id, outputDir || undefined, Array.from(excluded))
+    if (!activeTarget) return
+    const result = await window.quartzGui.deploy.run(project.path, activeTarget.id, outputDir || undefined, Array.from(excluded))
     setDeployResult(result)
-    if (result.success && selection.kind === 'target') await refreshDiff(true)
+    if (result.success) await refreshDiff(true)
   })
 
   // Both saves go through useAsyncAction so a rejected write lands *in the form*. The validation
@@ -170,7 +178,7 @@ export default function Publish(): JSX.Element {
     const saved = await window.quartzGui.publishTargets.save(project.path, targetDraft)
     setTargetDraft(null)
     await reload()
-    setSelection({ kind: 'target', id: saved.id })
+    setSelectedId(saved.id)
   })
 
   const saveConnectionAction = useAsyncAction(async () => {
@@ -195,7 +203,7 @@ export default function Publish(): JSX.Element {
   async function deleteTarget(id: string): Promise<void> {
     if (!confirm(t('publish.confirmDeleteTarget'))) return
     await window.quartzGui.publishTargets.delete(project.path, id)
-    if (selection.kind === 'target' && selection.id === id) setSelection({ kind: 'github-pages' })
+    if (selectedId === id) setSelectedId(null)
     await reload()
   }
 
@@ -230,9 +238,12 @@ export default function Publish(): JSX.Element {
   // skips the push when they match; a webhook only asks a provider to build. Neither has a local
   // file list, so neither may be gated on one - that check used to leave their deploy button
   // permanently disabled.
-  const hasFileDiff =
-    selection.kind === 'target' && !!activeTarget && activeTarget.destination.type !== 'webhook'
-  const canDeploy = selection.kind === 'github-pages' ? true : !!activeTarget && (!hasFileDiff || !!diff)
+  const hasFileDiff = !!activeTarget && activeTarget.destination.type !== 'webhook'
+  // A branch deploy replaces the branch with one root commit, so "publish everything except this
+  // file" would delete that file from the live site rather than leave it alone. The diff is shown
+  // for it, but read-only.
+  const canExclude = !!activeTarget && activeTarget.destination.type !== 'git-branch'
+  const canDeploy = !!activeTarget && (!hasFileDiff || !!diff)
 
   return (
     <div className="flex flex-col gap-6">
@@ -247,22 +258,12 @@ export default function Publish(): JSX.Element {
       <Card>
         <h2 className="mb-2 text-sm font-semibold">{t('publish.targetHeading')}</h2>
         <div className="flex flex-wrap items-center gap-1.5">
-          <button
-            onClick={() => setSelection({ kind: 'github-pages' })}
-            className={`rounded-[6px] px-3 py-1.5 text-[13px] font-medium transition-colors ${
-              selection.kind === 'github-pages'
-                ? 'bg-blue-600 text-white'
-                : 'bg-black/[0.05] text-slate-700 hover:bg-black/[0.08] dark:bg-white/10 dark:text-slate-200'
-            }`}
-          >
-            {t('publish.githubPages')}
-          </button>
           {targets.map((target) => (
             <button
               key={target.id}
-              onClick={() => setSelection({ kind: 'target', id: target.id })}
+              onClick={() => setSelectedId(target.id)}
               className={`rounded-[6px] px-3 py-1.5 text-[13px] font-medium transition-colors ${
-                selection.kind === 'target' && selection.id === target.id
+                selectedId === target.id
                   ? 'bg-blue-600 text-white'
                   : 'bg-black/[0.05] text-slate-700 hover:bg-black/[0.08] dark:bg-white/10 dark:text-slate-200'
               }`}
@@ -275,14 +276,7 @@ export default function Publish(): JSX.Element {
           </Button>
         </div>
 
-        {selection.kind === 'github-pages' && (
-          <div className="mt-3 flex items-end gap-2">
-            <Field label={t('publish.githubBranch')}>
-              <TextInput value={githubBranch} onChange={(e) => setGithubBranch(e.target.value)} className="w-40" />
-            </Field>
-            <p className="text-xs text-slate-500 dark:text-slate-400">{t('publish.githubPagesHint')}</p>
-          </div>
-        )}
+        {targets.length === 0 && <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{t('publish.noTargets')}</p>}
 
         {activeTarget && (
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-black/[0.06] p-2.5 text-xs dark:border-white/10">
@@ -295,6 +289,7 @@ export default function Publish(): JSX.Element {
               )}
               {'remotePath' in activeTarget.destination && activeTarget.destination.remotePath}
               {activeTarget.destination.type === 'folder' && activeTarget.destination.path}
+              {activeTarget.destination.type === 'git-branch' && `origin → ${activeTarget.destination.branch}`}
               {activeTarget.destination.type === 'webhook' &&
                 (activeConnection?.kind === 'webhook' && activeConnection.displayOrigin
                   ? `POST → ${activeConnection.displayOrigin}`
@@ -351,7 +346,7 @@ export default function Publish(): JSX.Element {
               <Select
                 value={targetDraft.destination.type}
                 onChange={(e) => {
-                  const type = e.target.value as 'sftp' | 'ftp' | 'folder' | 'webhook'
+                  const type = e.target.value as 'sftp' | 'ftp' | 'folder' | 'webhook' | 'git-branch'
                   setTargetDraft({
                     ...targetDraft,
                     // The connection is cleared with the type: an FTP account cannot serve an
@@ -365,6 +360,7 @@ export default function Publish(): JSX.Element {
                 <option value="ftp">FTP</option>
                 <option value="folder">{t('publish.targetForm.typeFolder')}</option>
                 <option value="webhook">{t('publish.targetForm.typeWebhook')}</option>
+                <option value="git-branch">{t('publish.targetForm.typeGitBranch')}</option>
               </Select>
             </Field>
             {'remotePath' in targetDraft.destination && (
@@ -396,6 +392,50 @@ export default function Publish(): JSX.Element {
                   <option value="rsync">{t('publish.targetForm.transferRsync')}</option>
                 </Select>
               </Field>
+            )}
+            {targetDraft.destination.type === 'git-branch' && (
+              <>
+                <Field label={t('publish.targetForm.provider')}>
+                  <Select
+                    value={targetDraft.destination.provider}
+                    onChange={(e) => {
+                      const provider = e.target.value as 'github' | 'gitlab' | 'codeberg'
+                      setTargetDraft((prev) =>
+                        prev && prev.destination.type === 'git-branch'
+                          ? {
+                              ...prev,
+                              destination: {
+                                ...prev.destination,
+                                provider,
+                                // Only follow the provider while the branch is still whichever
+                                // default a provider set - a name the user typed stays.
+                                branch: Object.values(BRANCH_DEFAULTS).includes(prev.destination.branch)
+                                  ? BRANCH_DEFAULTS[provider]
+                                  : prev.destination.branch
+                              }
+                            }
+                          : prev
+                      )
+                    }}
+                  >
+                    <option value="github">GitHub Pages</option>
+                    <option value="codeberg">Codeberg Pages</option>
+                    <option value="gitlab">GitLab Pages</option>
+                  </Select>
+                </Field>
+                <Field label={t('publish.targetForm.branch')}>
+                  <TextInput
+                    value={targetDraft.destination.branch}
+                    onChange={(e) =>
+                      setTargetDraft((prev) =>
+                        prev && prev.destination.type === 'git-branch'
+                          ? { ...prev, destination: { ...prev.destination, branch: e.target.value } }
+                          : prev
+                      )
+                    }
+                  />
+                </Field>
+              </>
             )}
             {targetDraft.destination.type === 'folder' && (
               <Field label={t('publish.targetForm.folderPath')}>
@@ -473,6 +513,12 @@ export default function Publish(): JSX.Element {
               </div>
             )}
           </div>
+
+          {targetDraft.destination.type === 'git-branch' && (
+            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+              {t(`publish.branchHint.${targetDraft.destination.provider}`)}
+            </p>
+          )}
 
           {targetDraft.destination.type === 'sftp' && (
             <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
@@ -641,7 +687,7 @@ export default function Publish(): JSX.Element {
         </Card>
       )}
 
-      {selection.kind === 'target' && !hasFileDiff && (
+      {activeTarget && !hasFileDiff && (
         <Card>
           <p className="text-xs text-slate-500 dark:text-slate-400">{t('publish.webhookExplainer')}</p>
         </Card>
@@ -691,16 +737,22 @@ export default function Publish(): JSX.Element {
                         {t(`publish.status.${status}`)} ({grouped[status].length})
                       </p>
                       <div className="columns-1 gap-x-6 sm:columns-2 xl:columns-3">
-                        {grouped[status].map((entry) => (
-                          <label key={entry.path} className="flex break-inside-avoid items-center gap-2 font-mono text-xs">
-                            <input
-                              type="checkbox"
-                              checked={!excluded.has(entry.path)}
-                              onChange={() => toggleExclude(entry.path)}
-                            />
-                            <span className={excluded.has(entry.path) ? 'text-slate-400 line-through' : ''}>{entry.path}</span>
-                          </label>
-                        ))}
+                        {grouped[status].map((entry) =>
+                          canExclude ? (
+                            <label key={entry.path} className="flex break-inside-avoid items-center gap-2 font-mono text-xs">
+                              <input
+                                type="checkbox"
+                                checked={!excluded.has(entry.path)}
+                                onChange={() => toggleExclude(entry.path)}
+                              />
+                              <span className={excluded.has(entry.path) ? 'text-slate-400 line-through' : ''}>{entry.path}</span>
+                            </label>
+                          ) : (
+                            <p key={entry.path} className="break-inside-avoid font-mono text-xs text-slate-600 dark:text-slate-300">
+                              {entry.path}
+                            </p>
+                          )
+                        )}
                       </div>
                     </div>
                   )

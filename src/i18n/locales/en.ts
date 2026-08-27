@@ -20,6 +20,12 @@ export default {
       error: 'Error'
     }
   },
+  devServer: {
+    staleHint: 'The running dev server will not show this change until it restarts.',
+    restart: 'Restart dev server',
+    restarting: 'Restarting…',
+    restarted: 'Dev server restarted'
+  },
   home: {
     subtitle:
       'Manage your Quartz 5 projects in one place: edit configuration and themes, install plugins, link the content folder to an Obsidian vault, and control builds and the local dev server.',

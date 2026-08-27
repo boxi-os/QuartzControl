@@ -15,6 +15,7 @@ import type {
 import { DEFAULT_FRAME_BREAKPOINT_WIDTHS, FRAME_BREAKPOINTS, buildFrameBox, buildGridStyle } from '@shared/gridFrameCss'
 import { Badge, Button, Card, Field, SegmentedControl, Select, SettingsSection, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
+import DevServerRestartHint from '../../components/DevServerRestartHint'
 import { breakpointRangeLabel } from './utils'
 import { useStickyState } from '../../state/uiState'
 
@@ -133,6 +134,11 @@ export default function FrameBuilder({
   // moment the draft differs from it again - there is no reset to forget at one of the ~15 places
   // that write into `editing`.
   const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null)
+  // Whether that save was an *edit*. Only an edit needs a dev-server restart: creating a frame runs
+  // `quartz plugin add`, which writes quartz.config.yaml and so triggers a rebuild - and the new
+  // frame's module has never been imported, so nothing is cached yet. Both measured against a real
+  // `--serve` run; see DevServerRestartHint.
+  const [savedWasEdit, setSavedWasEdit] = useState(false)
   const [dragAreaId, setDragAreaId] = useState<string | null>(null)
   const [dropCell, setDropCell] = useState<{ row: number; col: number } | null>(null)
   // Read-only here - edited on the Global tab, because they apply to every frame. Used only to
@@ -366,6 +372,7 @@ export default function FrameBuilder({
       // Deliberately no closeEditor() here - see savedNotice. `isNewDraft` flips because the frame
       // now exists on disk: saveFrame() only registers the companion plugin the first time, and the
       // delete link belongs to a frame that is real.
+      setSavedWasEdit(!isNewDraft)
       setIsNewDraft(false)
       setMessage(null)
       setSavedSnapshot(JSON.stringify(editing))
@@ -853,6 +860,7 @@ export default function FrameBuilder({
         {savedNotice && (
           <span className="text-xs text-emerald-600 dark:text-emerald-400">{t('layoutEditor.frameBuilder.saved')}</span>
         )}
+        <DevServerRestartHint show={savedNotice && savedWasEdit} />
         <Button variant="ghost" onClick={closeEditor}>
           {t('layoutEditor.frameBuilder.closeEditor')}
         </Button>

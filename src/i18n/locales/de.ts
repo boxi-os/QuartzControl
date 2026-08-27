@@ -20,6 +20,12 @@ export default {
       error: 'Fehler'
     }
   },
+  devServer: {
+    staleHint: 'Der laufende Dev-Server zeigt die Änderung erst nach einem Neustart.',
+    restart: 'Dev-Server neu starten',
+    restarting: 'Starte neu…',
+    restarted: 'Dev-Server neu gestartet'
+  },
   home: {
     subtitle:
       'Verwalte deine Quartz-5-Projekte an einem Ort: Konfiguration und Themes bearbeiten, Plugins installieren, den Content-Ordner mit einem Obsidian-Vault verknüpfen und Builds sowie den lokalen Dev-Server steuern.',

@@ -26,6 +26,7 @@ import type {
 import { DEFAULT_FRAME_BREAKPOINT_WIDTHS, FRAME_BREAKPOINTS, buildFrameBox, buildGridStyle } from '@shared/gridFrameCss'
 import { Badge, Button, Card, Field, SegmentedControl, Select, SettingsSection, TextInput } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
+import DevServerRestartHint from '../../components/DevServerRestartHint'
 import { ItemCard, PaletteChip, GROUP_COLORS } from './ComponentPill'
 import {
   BUILTIN_FRAME_LAYOUT,
@@ -317,7 +318,12 @@ export default function GlobalBoard({
         </div>
       </div>
 
-      <FrameBreakpoints projectPath={projectPath} widths={breakpointWidths} onSaved={setBreakpointWidths} />
+      <FrameBreakpoints
+        projectPath={projectPath}
+        widths={breakpointWidths}
+        onSaved={setBreakpointWidths}
+        hasFrames={frames.length > 0}
+      />
 
       {/* useDraggable/useDroppable only register with the nearest ancestor DndContext, so the
           palette has to be a child of it, not a sibling - otherwise its chips are inert. */}
@@ -759,11 +765,15 @@ function GroupsPanel({
 function FrameBreakpoints({
   projectPath,
   widths,
-  onSaved
+  onSaved,
+  hasFrames
 }: {
   projectPath: string
   widths: FrameBreakpointWidths
   onSaved: (widths: FrameBreakpointWidths) => void
+  // A save rewrites every authored frame's CSS, so it needs a dev-server restart for the same
+  // reason a frame edit does - but with no frames there is nothing it could have changed.
+  hasFrames: boolean
 }): JSX.Element {
   const { t } = useTranslation()
   // Held as text, not as numbers: a number input the user is clearing mid-edit is briefly "", and
@@ -820,6 +830,7 @@ function FrameBreakpoints({
           {saving ? t('common.saving') : t('common.save')}
         </Button>
         {saved && !changed && <span className="text-xs text-emerald-600 dark:text-emerald-400">{t('layoutEditor.breakpoints.saved')}</span>}
+        <DevServerRestartHint show={saved && !changed && hasFrames} />
         {!valid && <span className="text-xs text-red-600 dark:text-red-400">{t('layoutEditor.breakpoints.invalid')}</span>}
         {error && <span className="text-xs text-red-600 dark:text-red-400">{error}</span>}
       </div>

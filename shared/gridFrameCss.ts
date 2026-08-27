@@ -78,6 +78,37 @@ export interface GridStyle {
   columnGap: string
 }
 
+// The frame container's own box - separate from GridStyle because it describes the box the grid
+// sits in rather than the grid itself, and the previews apply it to a wrapper.
+export interface FrameBoxStyle {
+  maxWidth: string
+  marginInline: string
+  paddingBlock: string
+  paddingInline: string
+}
+
+/**
+ * The box metrics for one breakpoint, with every property spelled out.
+ *
+ * Alignment is auto margins rather than `justify-self`, because a frame is a grid *item* in
+ * Quartz's `#quartz-body` (see buildOuterGridOverride) and auto margins take precedence over an
+ * item's stretch. Without a maxWidth they change nothing - measured against a real build: the
+ * outer override's single `auto` track is sized by its container, so the frame fills it and there
+ * is no free space left for a margin to absorb (1454px wide either way). Hence no special case
+ * here, and an editor hint saying alignment needs a maximum width to do anything.
+ */
+export function buildFrameBox(layout: GridBreakpointLayout): FrameBoxStyle {
+  const maxWidth = layout.maxWidth?.trim()
+  const align = layout.align ?? 'left'
+  const marginInline = align === 'center' ? 'auto' : align === 'right' ? 'auto 0' : '0'
+  return {
+    maxWidth: maxWidth || 'none',
+    marginInline,
+    paddingBlock: layout.paddingBlock?.trim() || '0',
+    paddingInline: layout.paddingInline?.trim() || '0'
+  }
+}
+
 // The inline-style equivalent of a breakpoint block's grid-container rules - used directly by
 // FramePreview so its rendering is a truthful reconstruction, not a hand-approximated one.
 export function buildGridStyle(layout: GridBreakpointLayout, areas: GridFrameArea[]): GridStyle {
@@ -97,6 +128,7 @@ export function buildGridStyle(layout: GridBreakpointLayout, areas: GridFrameAre
 // as an unclaimed auto-placed grid item instead of disappearing.
 export function buildBreakpointBlock(selector: string, layout: GridBreakpointLayout, areas: GridFrameArea[]): string {
   const style = buildGridStyle(layout, areas)
+  const box = buildFrameBox(layout)
   const rules = [
     `${selector} {`,
     `  display: grid;`,
@@ -104,6 +136,17 @@ export function buildBreakpointBlock(selector: string, layout: GridBreakpointLay
     `  grid-template-rows: ${style.gridTemplateRows};`,
     `  row-gap: ${style.rowGap};`,
     `  column-gap: ${style.columnGap};`,
+    // Written out even when unset: the narrower breakpoints are media-query overrides of this same
+    // selector, so a value only present on desktop would otherwise still apply on mobile.
+    //
+    // border-box because the editor's field says "maximum width", and Quartz sets no global
+    // box-sizing for this element: measured in a real build, a 900px cap with 3rem of padding
+    // produced a 996px-wide frame, which is not what anyone typing 900 means.
+    `  box-sizing: border-box;`,
+    `  max-width: ${box.maxWidth};`,
+    `  margin-inline: ${box.marginInline};`,
+    `  padding-block: ${box.paddingBlock};`,
+    `  padding-inline: ${box.paddingInline};`,
     `  grid-template-areas:`,
     `      ${style.gridTemplateAreas};`,
     `}`

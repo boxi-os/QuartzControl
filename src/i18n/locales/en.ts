@@ -478,6 +478,20 @@ export default {
       gap: 'Gap',
       rowGap: 'Row gap',
       columnGap: 'Column gap',
+      maxWidth: 'Maximum width',
+      maxWidthPlaceholder: 'none',
+      align: 'Alignment',
+      alignOption: {
+        left: 'Left',
+        center: 'Centered',
+        right: 'Right'
+      },
+      paddingBlock: 'Padding top/bottom',
+      paddingInline: 'Padding left/right',
+      boxHint:
+        'Applies to this breakpoint only. The frame never gets wider than the maximum width; the alignment distributes what is left. Padding sits between the frame edge and its content.',
+      boxHintNoMaxWidth:
+        'Applies to this breakpoint only. Alignment needs a maximum width to do anything — without one the frame fills the full width and there is nothing left to distribute.',
       resetTracks: 'Reset track sizes',
       columnSizesLabel: 'Column widths (blank = 1fr)',
       rowSizesLabel: 'Row heights (blank = auto)',

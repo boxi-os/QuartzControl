@@ -2,14 +2,23 @@ import { useEffect, useState } from 'react'
 import type { DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { GripVertical } from 'lucide-react'
-import type { FrameBreakpoint, FrameSlot, GridAreaPlacement, GridBreakpointLayout, GridFrameArea, GridFrameDefinition } from '@shared/ipc-contract'
-import { FRAME_BREAKPOINTS, buildGridStyle } from '@shared/gridFrameCss'
+import type {
+  FrameAlign,
+  FrameBreakpoint,
+  FrameSlot,
+  GridAreaPlacement,
+  GridBreakpointLayout,
+  GridFrameArea,
+  GridFrameDefinition
+} from '@shared/ipc-contract'
+import { FRAME_BREAKPOINTS, buildFrameBox, buildGridStyle } from '@shared/gridFrameCss'
 import { Badge, Button, Card, Field, SegmentedControl, Select, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { useStickyState } from '../../state/uiState'
 
 const RESERVED_FRAME_NAMES = ['default', 'full-width', 'minimal']
 const SLOTS: FrameSlot[] = ['header', 'left', 'right', 'beforeBody', 'pageBody', 'afterBody', 'footer']
+const ALIGNMENTS: FrameAlign[] = ['left', 'center', 'right']
 
 function slugify(text: string): string {
   return (
@@ -397,6 +406,9 @@ export default function FrameBuilder({
 
   const layout = editing.breakpoints[activeBreakpoint]
   const gridStyle = buildGridStyle(layout, editing.areas)
+  const box = buildFrameBox(layout)
+  const hasMaxWidth = !!layout.maxWidth?.trim()
+  const hasBox = hasMaxWidth || box.paddingBlock !== '0' || box.paddingInline !== '0'
   const usedSlots = new Set(
     editing.areas.filter((a) => {
       const p = layout.placements[a.id]
@@ -474,6 +486,43 @@ export default function FrameBuilder({
               </Button>
             ))}
           </div>
+
+          <div className="flex flex-wrap items-end gap-3 border-t border-black/[0.06] pt-3 dark:border-white/10">
+            <Field label={t('layoutEditor.frameBuilder.maxWidth')}>
+              <TextInput
+                value={layout.maxWidth ?? ''}
+                placeholder={t('layoutEditor.frameBuilder.maxWidthPlaceholder')}
+                onChange={(e) => updateLayout({ maxWidth: e.target.value })}
+                className="w-28"
+              />
+            </Field>
+            <Field label={t('layoutEditor.frameBuilder.align')}>
+              <SegmentedControl
+                value={layout.align ?? 'left'}
+                onChange={(align: FrameAlign) => updateLayout({ align })}
+                options={ALIGNMENTS.map((value) => ({ value, label: t(`layoutEditor.frameBuilder.alignOption.${value}`) }))}
+              />
+            </Field>
+            <Field label={t('layoutEditor.frameBuilder.paddingBlock')}>
+              <TextInput
+                value={layout.paddingBlock ?? ''}
+                placeholder="0"
+                onChange={(e) => updateLayout({ paddingBlock: e.target.value })}
+                className="w-24"
+              />
+            </Field>
+            <Field label={t('layoutEditor.frameBuilder.paddingInline')}>
+              <TextInput
+                value={layout.paddingInline ?? ''}
+                placeholder="0"
+                onChange={(e) => updateLayout({ paddingInline: e.target.value })}
+                className="w-24"
+              />
+            </Field>
+          </div>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            {t(hasMaxWidth ? 'layoutEditor.frameBuilder.boxHint' : 'layoutEditor.frameBuilder.boxHintNoMaxWidth')}
+          </p>
 
           <div>
             <p className="mb-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
@@ -602,13 +651,23 @@ export default function FrameBuilder({
 
         <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.hintDragToPlace')}</p>
 
+        {/* The drop board carries the frame's own box, so a cap, an alignment or a padding is
+            something you can see rather than a value you have to imagine. It is the same box the
+            codegen writes - both come out of buildFrameBox - but at panel width, so a cap wider
+            than this panel legitimately looks like nothing happened. */}
         <div
-          className="relative grid gap-1"
+          className={`relative grid gap-1 ${
+            hasBox ? 'rounded-[8px] border border-dashed border-blue-400/50 dark:border-blue-400/40' : ''
+          }`}
           style={{
             gridTemplateColumns: gridStyle.gridTemplateColumns,
             gridTemplateRows: gridStyle.gridTemplateRows,
             rowGap: gridStyle.rowGap,
-            columnGap: gridStyle.columnGap
+            columnGap: gridStyle.columnGap,
+            maxWidth: box.maxWidth,
+            marginInline: box.marginInline,
+            paddingBlock: box.paddingBlock,
+            paddingInline: box.paddingInline
           }}
         >
           {Array.from({ length: layout.rows }, (_, r) =>

@@ -194,6 +194,13 @@ const gridBreakpointLayout = z.looseObject({
   rowSizes: z.array(cssTrackValue).max(50).optional(),
   rowGap: cssGapValue,
   columnGap: cssGapValue,
+  // The frame's own box. Same value shape as a gap (a length, a percentage or a calc/min/max
+  // expression), and padding additionally takes the two-value shorthand - which the space in the
+  // pattern already allows.
+  maxWidth: cssGapValue.optional(),
+  align: z.enum(['left', 'center', 'right']).optional(),
+  paddingBlock: cssGapValue.optional(),
+  paddingInline: cssGapValue.optional(),
   // Keys are stringified 0-based line indices (JSON object keys are always strings; ipc-contract's
   // Record<number, string[]> is the same runtime shape) - kept as a string pattern rather than a
   // coerced numeric key schema, matching every other z.record(...) in this file.

@@ -22,7 +22,7 @@ import type {
   PluginLayoutDeclaration,
   QuartzConfig
 } from '@shared/ipc-contract'
-import { FRAME_BREAKPOINTS, buildGridStyle } from '@shared/gridFrameCss'
+import { FRAME_BREAKPOINTS, buildFrameBox, buildGridStyle } from '@shared/gridFrameCss'
 import { Badge, Button, Card, SegmentedControl, Select, TextInput } from '../../components/ui'
 import { ItemCard, PaletteChip, GROUP_COLORS } from './ComponentPill'
 import {
@@ -121,6 +121,9 @@ export default function GlobalBoard({
         })
       : null
   const activeGridStyle = activeFrame && activeLayout ? buildGridStyle(activeLayout, activeFrame.areas) : null
+  // A custom frame's width cap, alignment and padding belong on this board too - it is the page as
+  // it will be built, and leaving them out would show a full-width layout for a frame that is not.
+  const activeBox = activeLayout ? buildFrameBox(activeLayout) : null
   const activeUsedSlots = activeAreas
     ? new Set(activeAreas.map((a) => a.slot).filter((s): s is LayoutPosition => s !== 'pageBody'))
     : null
@@ -314,7 +317,11 @@ export default function GlobalBoard({
                 gridTemplateRows: activeGridStyle.gridTemplateRows,
                 gridTemplateAreas: activeGridStyle.gridTemplateAreas,
                 rowGap: activeGridStyle.rowGap,
-                columnGap: activeGridStyle.columnGap
+                columnGap: activeGridStyle.columnGap,
+                maxWidth: activeBox?.maxWidth,
+                marginInline: activeBox?.marginInline,
+                paddingBlock: activeBox?.paddingBlock,
+                paddingInline: activeBox?.paddingInline
               }}
             >
               {activeAreas.map((area) => (

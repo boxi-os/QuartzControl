@@ -87,6 +87,9 @@ export type FrameSlot = LayoutPosition | 'pageBody'
 // see layoutFrameService/gridFrameCss for where they're applied.
 export type FrameBreakpoint = 'desktop' | 'tablet' | 'mobile'
 
+// Where a width-capped frame sits in the space its container leaves it.
+export type FrameAlign = 'left' | 'center' | 'right'
+
 // One rectangular placement of an area within a single breakpoint's grid. row/col are 1-based,
 // matching CSS grid-row/grid-column line numbers directly so the codegen can pass them straight
 // through into a generated `grid-template-areas` declaration. `hidden` keeps the area's identity
@@ -119,6 +122,16 @@ export interface GridBreakpointLayout {
   rowSizes?: string[]
   rowGap: string
   columnGap: string
+  // The frame's own box, per breakpoint: maxWidth caps how wide the grid itself may get (absent or
+  // empty = no cap), align says where that capped box sits in the width that is left, and the two
+  // paddings inset the tracks from its edges. All optional, so a frame.json written before they
+  // existed keeps loading unchanged - the codegen still emits an explicit value for each of them in
+  // every breakpoint block, or a desktop cap would leak into the narrower ones. See buildFrameBox
+  // for why align only does anything once a maxWidth is set.
+  maxWidth?: string
+  align?: FrameAlign
+  paddingBlock?: string
+  paddingInline?: string
   columnLineNames?: Record<number, string[]>
   rowLineNames?: Record<number, string[]>
   // Keyed by GridFrameArea.id - an area with no entry here simply isn't part of this

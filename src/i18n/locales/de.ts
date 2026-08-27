@@ -478,6 +478,20 @@ export default {
       gap: 'Abstand',
       rowGap: 'Zeilenabstand',
       columnGap: 'Spaltenabstand',
+      maxWidth: 'Maximalbreite',
+      maxWidthPlaceholder: 'keine',
+      align: 'Ausrichtung',
+      alignOption: {
+        left: 'Links',
+        center: 'Zentriert',
+        right: 'Rechts'
+      },
+      paddingBlock: 'Innenabstand oben/unten',
+      paddingInline: 'Innenabstand links/rechts',
+      boxHint:
+        'Gilt nur für diesen Breakpoint. Der Rahmen ist nie breiter als die Maximalbreite; die Ausrichtung verteilt den übrigen Platz. Innenabstände liegen zwischen Rahmenkante und Inhalt.',
+      boxHintNoMaxWidth:
+        'Gilt nur für diesen Breakpoint. Die Ausrichtung wirkt erst mit einer Maximalbreite — ohne sie füllt der Rahmen die volle Breite und es bleibt nichts zu verteilen.',
       resetTracks: 'Spurgrößen zurücksetzen',
       columnSizesLabel: 'Spaltenbreiten (leer = 1fr)',
       rowSizesLabel: 'Zeilenhöhen (leer = auto)',

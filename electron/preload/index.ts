@@ -12,6 +12,7 @@ import type {
   CreateProjectOptions,
   ThemePreset,
   GridFrameDefinition,
+  FrameBreakpointWidths,
   PluginEntry,
   RestoreOptions,
   SaveConnectionInput,
@@ -54,7 +55,10 @@ const api: QuartzGuiApi = {
     save: (projectPath: string, definition: GridFrameDefinition) => ipcRenderer.invoke(IPC.layoutFrameSave, projectPath, definition),
     delete: (projectPath: string, id: string) => ipcRenderer.invoke(IPC.layoutFrameDelete, projectPath, id),
     builtinPageTypeFrames: (projectPath: string, plugins: PluginEntry[]) =>
-      ipcRenderer.invoke(IPC.layoutFrameBuiltinPageTypeFrames, projectPath, plugins)
+      ipcRenderer.invoke(IPC.layoutFrameBuiltinPageTypeFrames, projectPath, plugins),
+    getBreakpoints: (projectPath: string) => ipcRenderer.invoke(IPC.layoutFrameGetBreakpoints, projectPath),
+    saveBreakpoints: (projectPath: string, widths: FrameBreakpointWidths) =>
+      ipcRenderer.invoke(IPC.layoutFrameSaveBreakpoints, projectPath, widths)
   },
   styles: {
     get: (projectPath: string) => ipcRenderer.invoke(IPC.stylesGet, projectPath),

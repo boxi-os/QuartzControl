@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react'
-import type { DragEvent, ReactNode } from 'react'
+import type { DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { GripVertical } from 'lucide-react'
 import type {
   FrameAlign,
   FrameBreakpoint,
+  FrameBreakpointWidths,
   FrameSlot,
   GridAreaPlacement,
   GridBreakpointLayout,
   GridFrameArea,
   GridFrameDefinition
 } from '@shared/ipc-contract'
-import { FRAME_BREAKPOINTS, buildFrameBox, buildGridStyle } from '@shared/gridFrameCss'
-import { Badge, Button, Card, Field, SegmentedControl, Select, TextInput, Toggle } from '../../components/ui'
+import { DEFAULT_FRAME_BREAKPOINT_WIDTHS, FRAME_BREAKPOINTS, buildFrameBox, buildGridStyle } from '@shared/gridFrameCss'
+import { Badge, Button, Card, Field, SegmentedControl, Select, SettingsSection, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
+import { breakpointRangeLabel } from './utils'
 import { useStickyState } from '../../state/uiState'
 
 const RESERVED_FRAME_NAMES = ['default', 'full-width', 'minimal']
@@ -133,6 +135,9 @@ export default function FrameBuilder({
   const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null)
   const [dragAreaId, setDragAreaId] = useState<string | null>(null)
   const [dropCell, setDropCell] = useState<{ row: number; col: number } | null>(null)
+  // Read-only here - edited on the Global tab, because they apply to every frame. Used only to
+  // label the three breakpoint tabs with the width band each one actually covers.
+  const [breakpointWidths, setBreakpointWidths] = useState<FrameBreakpointWidths>(DEFAULT_FRAME_BREAKPOINT_WIDTHS)
 
   function refresh(): void {
     window.quartzGui.layoutFrames.list(projectPath).then(setFrames)
@@ -140,6 +145,7 @@ export default function FrameBuilder({
 
   useEffect(() => {
     refresh()
+    window.quartzGui.layoutFrames.getBreakpoints(projectPath).then(setBreakpointWidths)
   }, [projectPath])
 
   useEffect(() => {
@@ -445,7 +451,7 @@ export default function FrameBuilder({
 
   const breakpointOptions = FRAME_BREAKPOINTS.map((bp) => ({
     value: bp,
-    label: t(`layoutEditor.frameBuilder.breakpoint.${bp}`)
+    label: `${t(`layoutEditor.frameBuilder.breakpoint.${bp}`)} · ${breakpointRangeLabel(bp, breakpointWidths)}`
   }))
 
   return (
@@ -862,50 +868,6 @@ export default function FrameBuilder({
         </p>
       )}
     </div>
-  )
-}
-
-// One labelled group of settings inside the editor card. `collapsible` renders the same box as a
-// <details> - used for the line names, which are an advanced detail nobody needs open by default.
-function SettingsSection({
-  title,
-  actions,
-  hint,
-  collapsible,
-  children
-}: {
-  title: string
-  actions?: ReactNode
-  hint?: string
-  collapsible?: boolean
-  children: ReactNode
-}): JSX.Element {
-  const heading = <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{title}</span>
-  const body = (
-    <>
-      {children}
-      {hint && <p className="text-[11px] text-slate-500 dark:text-slate-400">{hint}</p>}
-    </>
-  )
-  const box = 'rounded-[10px] border border-black/[0.06] p-3.5 dark:border-white/10'
-
-  if (collapsible) {
-    return (
-      <details className={box}>
-        <summary className="cursor-pointer">{heading}</summary>
-        <div className="mt-3 flex flex-col gap-3">{body}</div>
-      </details>
-    )
-  }
-
-  return (
-    <section className={`flex flex-col gap-3 ${box}`}>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        {heading}
-        {actions}
-      </div>
-      {body}
-    </section>
   )
 }
 

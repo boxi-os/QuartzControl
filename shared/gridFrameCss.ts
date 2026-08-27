@@ -4,6 +4,7 @@
 // gets built: both call the exact same functions.
 import type {
   FrameBreakpoint,
+  FrameBreakpointWidths,
   GridBreakpointLayout,
   GridFrameArea,
   GridFrameDefinition,
@@ -15,11 +16,17 @@ import type {
 export const FRAME_BREAKPOINTS: FrameBreakpoint[] = ['desktop', 'tablet', 'mobile']
 const BREAKPOINTS = FRAME_BREAKPOINTS
 
-// Verified against quartz/styles/variables.scss - see the FrameBreakpoint doc comment in
-// ipc-contract.ts. Only tablet/mobile need a media query; desktop is the unconditional base.
-export const BREAKPOINT_MEDIA_MAX_WIDTH: Partial<Record<FrameBreakpoint, number>> = {
+// Quartz's own thresholds, read from quartz/styles/variables.scss ($breakpoints: mobile 800px,
+// desktop 1200px) - see the FrameBreakpoint doc comment in ipc-contract.ts. They are the default a
+// project starts on, not a constant: buildFrameCss takes whatever widths the project configured.
+// Only tablet/mobile need a media query; desktop is the unconditional base.
+export const DEFAULT_FRAME_BREAKPOINT_WIDTHS: FrameBreakpointWidths = {
   tablet: 1200,
   mobile: 800
+}
+
+export function isDefaultBreakpointWidths(widths: FrameBreakpointWidths): boolean {
+  return widths.tablet === DEFAULT_FRAME_BREAKPOINT_WIDTHS.tablet && widths.mobile === DEFAULT_FRAME_BREAKPOINT_WIDTHS.mobile
 }
 
 function trackSizeAt(sizes: string[] | undefined, index: number, fallback: string): string {
@@ -218,17 +225,77 @@ function buildOuterGridOverride(frameName: string): string {
   ].join('\n')
 }
 
+/**
+ * Retargets the handful of Quartz core rules that switch on *its* breakpoints, so a project using
+ * its own widths does not end up with the frame reflowing at one width and the page's own chrome at
+ * another. Emitted only when the widths actually differ from Quartz's - at the defaults the two
+ * agree and there is nothing to restate.
+ *
+ * The list is exhaustive, not a sample: every consumer of `$mobile`/`$tablet`/`$desktop` in a real
+ * Quartz 5 checkout was grepped, and outside the `.page > #quartz-body` grid an authored frame
+ * already replaces, only these are left - `.desktop-only`/`.mobile-only` (the DesktopOnly and
+ * MobileOnly wrapper components), `#quartz-body`'s sub-desktop padding, plus `html`'s
+ * scroll-padding and one popover rule, which are cosmetic and deliberately left alone. No TS or JS
+ * in Quartz reads a breakpoint at all, so CSS is the whole surface.
+ *
+ * Everything here is scoped by `.page[data-frame="<name>"]`, which outranks core's bare
+ * `.desktop-only` (and `.desktop-only.flex-component`) at any source order - so no core file is
+ * touched, and pages rendered with a *built-in* frame keep Quartz's own widths, which is right:
+ * their layout comes from Quartz, not from here.
+ */
+function buildQuartzBreakpointCompat(frameName: string, widths: FrameBreakpointWidths): string {
+  if (isDefaultBreakpointWidths(widths)) return ''
+  const page = `.page[data-frame="${escapeAttrValue(frameName)}"]`
+  return [
+    // core: `@media all and not ($desktop) { padding: 0 1rem }` on #quartz-body. Restated against
+    // the frame's own tablet threshold, which also makes it agree with the frame's media queries at
+    // the exact boundary pixel - core's `not (min-width: N)` excludes N, our `max-width: N` includes it.
+    `${page} > #quartz-body {`,
+    `  padding: 0;`,
+    `}`,
+    `@media (max-width: ${widths.tablet}px) {`,
+    `${page} > #quartz-body {`,
+    `  padding: 0 1rem;`,
+    `}`,
+    `}`,
+    // core: `.desktop-only`/`.mobile-only` flip at $mobile. Both halves are restated, not just the
+    // media half - a rule that only overrode inside the query would lose to core's own base
+    // declaration in the band between the two mobile thresholds.
+    `${page} .desktop-only {`,
+    `  display: contents;`,
+    `}`,
+    `${page} .desktop-only.flex-component {`,
+    `  display: flex;`,
+    `}`,
+    `${page} .mobile-only, ${page} .mobile-only.flex-component {`,
+    `  display: none;`,
+    `}`,
+    `@media (max-width: ${widths.mobile}px) {`,
+    `${page} .desktop-only, ${page} .desktop-only.flex-component {`,
+    `  display: none;`,
+    `}`,
+    `${page} .mobile-only {`,
+    `  display: contents;`,
+    `}`,
+    `${page} .mobile-only.flex-component {`,
+    `  display: flex;`,
+    `}`,
+    `}`
+  ].join('\n')
+}
+
 // Full generated CSS for a frame: the outer-grid override first, then desktop unconditional,
 // then tablet/mobile cascaded via max-width media queries in narrowing order so a later, narrower
 // block always wins over an earlier, wider one at the same specificity (verified: 800px block
 // comes after and therefore overrides the 1200px block at any width <=800px too).
-export function buildFrameCss(def: GridFrameDefinition): string {
+export function buildFrameCss(def: GridFrameDefinition, widths: FrameBreakpointWidths = DEFAULT_FRAME_BREAKPOINT_WIDTHS): string {
   const blocks = BREAKPOINTS.map((bp) => {
     const block = buildBreakpointBlock('.qgframe-grid', def.breakpoints[bp], def.areas)
-    const maxWidth = BREAKPOINT_MEDIA_MAX_WIDTH[bp]
+    const maxWidth = bp === 'desktop' ? undefined : widths[bp]
     return maxWidth ? `@media (max-width: ${maxWidth}px) {\n${block}\n}` : block
   })
-  return [buildOuterGridOverride(def.frameName), ...blocks].join('\n\n')
+  const compat = buildQuartzBreakpointCompat(def.frameName, widths)
+  return [buildOuterGridOverride(def.frameName), ...(compat ? [compat] : []), ...blocks].join('\n\n')
 }
 
 function isLegacyDefinition(def: unknown): def is LegacyGridFrameDefinition {

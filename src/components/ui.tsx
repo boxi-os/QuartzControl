@@ -211,3 +211,47 @@ export function LabelText(props: LabelHTMLAttributes<HTMLLabelElement>): JSX.Ele
     />
   )
 }
+
+// One labelled group of settings inside a card. `collapsible` renders the same box as a
+// <details> - used for the line names, which are an advanced detail nobody needs open by default.
+export function SettingsSection({
+  title,
+  actions,
+  hint,
+  collapsible,
+  children
+}: {
+  title: string
+  actions?: ReactNode
+  hint?: string
+  collapsible?: boolean
+  children: ReactNode
+}): JSX.Element {
+  const heading = <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{title}</span>
+  const body = (
+    <>
+      {children}
+      {hint && <p className="text-[11px] text-slate-500 dark:text-slate-400">{hint}</p>}
+    </>
+  )
+  const box = 'rounded-[10px] border border-black/[0.06] p-3.5 dark:border-white/10'
+
+  if (collapsible) {
+    return (
+      <details className={box}>
+        <summary className="cursor-pointer">{heading}</summary>
+        <div className="mt-3 flex flex-col gap-3">{body}</div>
+      </details>
+    )
+  }
+
+  return (
+    <section className={`flex flex-col gap-3 ${box}`}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {heading}
+        {actions}
+      </div>
+      {body}
+    </section>
+  )
+}

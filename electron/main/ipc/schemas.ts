@@ -123,6 +123,15 @@ export const branchName = z
 // Frame ids and CSS area names end up in generated CSS/JS - keep them to plain identifiers.
 // layoutFrameService enforces the same id rule again at its own boundary.
 export const frameId = z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/i, 'kein gültiger Frame-Bezeichner')
+
+// The two thresholds an authored frame's media queries are generated from. Both bounds are sanity
+// limits rather than taste: below ~240px no phone exists, above 3840px no media query would ever
+// match. The refine only compares two numbers, so it stays safe even when a range check above it
+// already failed - zod v4 keeps running the remaining checks (see the .refine note in CLAUDE.md).
+const breakpointWidth = z.number().int().min(240).max(3840)
+export const frameBreakpointWidths = z
+  .object({ tablet: breakpointWidth, mobile: breakpointWidth })
+  .refine((v) => v.mobile < v.tablet, 'die Mobil-Breite muss unter der Tablet-Breite liegen')
 export const cssIdent = z.string().regex(/^[A-Za-z_][A-Za-z0-9_-]{0,63}$/, 'kein gültiger CSS-Bezeichner')
 
 // An additional stylesheet under quartz/styles. Pinned to the two directories the app itself

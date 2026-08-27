@@ -534,6 +534,14 @@ export default {
     activeFrameLabel: 'Showing grid structure from: {{name}}',
     activeFrameDefault: '(default grid)',
     previewPageTypeLabel: 'Grid preview for:',
+    breakpoints: {
+      title: 'Breakpoints',
+      tablet: 'Tablet up to (px)',
+      mobile: 'Mobile up to (px)',
+      saved: 'Saved',
+      invalid: 'Mobile must be smaller than tablet (240–3840 px).',
+      hint: 'The window widths at which your own frames switch to the tablet and mobile layout. Applies to every authored frame in this project and is rewritten into their CSS on save. Quartz’ built-in frames (default, full-width, minimal) and community themes carry their own breakpoints and do not follow these values. The default is 1200 / 800 — exactly what Quartz itself uses.'
+    },
     groupLabel: 'Group',
     displayLabel: 'Visibility',
     noGroup: '— none —',

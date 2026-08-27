@@ -534,6 +534,14 @@ export default {
     activeFrameLabel: 'Zeigt Grid-Struktur von: {{name}}',
     activeFrameDefault: '(Standard-Raster)',
     previewPageTypeLabel: 'Grid-Vorschau für:',
+    breakpoints: {
+      title: 'Breakpoints',
+      tablet: 'Tablet bis (px)',
+      mobile: 'Mobil bis (px)',
+      saved: 'Gespeichert',
+      invalid: 'Mobil muss kleiner als Tablet sein (240–3840 px).',
+      hint: 'Ab welcher Fensterbreite eigene Frames auf das Tablet- bzw. Mobil-Layout umschalten. Gilt für alle eigenen Frames dieses Projekts und wird beim Speichern in deren CSS neu geschrieben. Quartz’ eingebaute Frames (Standard, Volle Breite, Minimal) und Community-Themes bringen eigene Breakpoints mit und folgen diesen Werten nicht. Standard ist 1200 / 800 — genau die Werte, die Quartz selbst benutzt.'
+    },
     groupLabel: 'Gruppe',
     displayLabel: 'Sichtbarkeit',
     noGroup: '— keine —',

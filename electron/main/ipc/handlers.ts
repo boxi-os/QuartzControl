@@ -154,6 +154,12 @@ export function registerIpcHandlers(): void {
   handle(IPC.layoutFrameBuiltinPageTypeFrames, t([s.absolutePath, s.pluginSourceList]), (projectPath, plugins) =>
     pluginSchemaService.discoverBuiltinPageTypeFrames(projectPath, plugins as { name: string; source: unknown }[])
   )
+  handle(IPC.layoutFrameGetBreakpoints, t([s.absolutePath]), (projectPath) =>
+    layoutFrameService.getBreakpointWidths(projectPath)
+  )
+  handle(IPC.layoutFrameSaveBreakpoints, t([s.absolutePath, s.frameBreakpointWidths]), (projectPath, widths) =>
+    layoutFrameService.saveBreakpointWidths(projectPath, widths)
+  )
 
   handle(IPC.stylesGet, t([s.absolutePath]), (projectPath) => styleService.readCustomScss(projectPath))
   handle(IPC.stylesSave, t([s.absolutePath, s.longText]), (projectPath, content) =>

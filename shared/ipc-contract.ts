@@ -87,6 +87,22 @@ export type FrameSlot = LayoutPosition | 'pageBody'
 // see layoutFrameService/gridFrameCss for where they're applied.
 export type FrameBreakpoint = 'desktop' | 'tablet' | 'mobile'
 
+/**
+ * The widths at which an authored frame's own media queries switch, as max-widths in px.
+ *
+ * Quartz's numbers (`DEFAULT_FRAME_BREAKPOINT_WIDTHS`) are the default and were the only option
+ * before this existed. They stay a *default* rather than a constant because the generated frame
+ * CSS emits its own media queries - the thresholds are ours to choose, and a layout with a wide
+ * sidebar routinely wants to collapse earlier or later than Quartz's own three-column page does.
+ *
+ * Stored per project (`.quartz-gui/layout-breakpoints.json`), not per frame: two frames in one
+ * site reflowing at different widths is a bug, not a feature. `mobile` must stay below `tablet`.
+ */
+export interface FrameBreakpointWidths {
+  tablet: number
+  mobile: number
+}
+
 // Where a width-capped frame sits in the space its container leaves it.
 export type FrameAlign = 'left' | 'center' | 'right'
 
@@ -866,6 +882,8 @@ export const IPC = {
   layoutFrameSave: 'layoutFrame:save',
   layoutFrameDelete: 'layoutFrame:delete',
   layoutFrameBuiltinPageTypeFrames: 'layoutFrame:builtinPageTypeFrames',
+  layoutFrameGetBreakpoints: 'layoutFrame:getBreakpoints',
+  layoutFrameSaveBreakpoints: 'layoutFrame:saveBreakpoints',
 
   stylesGet: 'styles:get',
   stylesSave: 'styles:save',
@@ -1019,6 +1037,10 @@ export interface QuartzGuiApi {
     // pluginSchemaService.discoverBuiltinPageTypeFrames). Keyed by the plugin's derived display
     // name (e.g. "canvas-page"), matching derivePageTypes()'s "-page" stripping convention.
     builtinPageTypeFrames(projectPath: string, plugins: PluginEntry[]): Promise<Record<string, string>>
+    getBreakpoints(projectPath: string): Promise<FrameBreakpointWidths>
+    // Rewrites every authored frame's generated CSS as well - the widths are baked into each
+    // frame's media queries at codegen time, so a frame not rewritten here would keep the old ones.
+    saveBreakpoints(projectPath: string, widths: FrameBreakpointWidths): Promise<void>
   }
   styles: {
     get(projectPath: string): Promise<StylesInfo>

@@ -1,4 +1,21 @@
-import type { FrameBreakpoint, LayoutPosition, PageTypeLayoutOverride, PluginEntry, PluginLayoutDeclaration } from '@shared/ipc-contract'
+import type {
+  FrameBreakpoint,
+  FrameBreakpointWidths,
+  LayoutPosition,
+  PageTypeLayoutOverride,
+  PluginEntry,
+  PluginLayoutDeclaration
+} from '@shared/ipc-contract'
+
+// The width band a breakpoint actually covers, for the tab labels - three reiters called
+// "Desktop/Tablet/Mobil" say nothing about where they switch, and once the thresholds are the
+// user's own choice that stops being guessable. Mirrors buildFrameCss's cascade: desktop is the
+// unconditional base, so it owns everything above the tablet threshold.
+export function breakpointRangeLabel(breakpoint: FrameBreakpoint, widths: FrameBreakpointWidths): string {
+  if (breakpoint === 'desktop') return `> ${widths.tablet} px`
+  if (breakpoint === 'tablet') return `${widths.mobile + 1}–${widths.tablet} px`
+  return `≤ ${widths.mobile} px`
+}
 
 export const POSITIONS: LayoutPosition[] = ['header', 'left', 'right', 'beforeBody', 'afterBody', 'footer']
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { DragEvent } from 'react'
+import type { DragEvent, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { GripVertical } from 'lucide-react'
 import type {
@@ -439,160 +439,152 @@ export default function FrameBuilder({
       <SegmentedControl value={activeBreakpoint} onChange={setActiveBreakpoint} options={breakpointOptions} />
 
       <Card>
-        <div className="mb-3 grid grid-cols-4 gap-3">
-          <Field label={t('layoutEditor.frameBuilder.frameName')}>
-            <TextInput
-              value={editing.frameName}
-              onChange={(e) => setEditing({ ...editing, frameName: e.target.value })}
-              placeholder={t('layoutEditor.templateCustomPlaceholder')}
-            />
-          </Field>
-        </div>
-
-        <div className="mb-4 flex flex-col gap-3 rounded-[8px] border border-black/[0.06] p-3 dark:border-white/10">
-          <div className="flex flex-wrap items-end gap-3">
-            <Field label={t('layoutEditor.frameBuilder.rows')}>
+        {/* Everything above the board is one breakpoint's settings, so it reads as such: the frame's
+            identity once at the top, then the grid, then the frame's own box - each with the actions
+            that belong to it rather than in one long row of controls. */}
+        <div className="mb-4 flex flex-col gap-3">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <Field label={t('layoutEditor.frameBuilder.frameName')} className="w-full max-w-xs">
               <TextInput
-                type="number"
-                min={1}
-                max={12}
-                value={layout.rows}
-                onChange={(e) => updateLayout({ rows: Math.max(1, Number(e.target.value) || 1) })}
-                className="w-20"
+                value={editing.frameName}
+                onChange={(e) => setEditing({ ...editing, frameName: e.target.value })}
+                placeholder={t('layoutEditor.templateCustomPlaceholder')}
               />
             </Field>
-            <Field label={t('layoutEditor.frameBuilder.cols')}>
-              <TextInput
-                type="number"
-                min={1}
-                max={12}
-                value={layout.cols}
-                onChange={(e) => updateLayout({ cols: Math.max(1, Number(e.target.value) || 1) })}
-                className="w-20"
-              />
-            </Field>
-            <Field label={t('layoutEditor.frameBuilder.rowGap')}>
-              <TextInput value={layout.rowGap} onChange={(e) => updateLayout({ rowGap: e.target.value })} className="w-24" />
-            </Field>
-            <Field label={t('layoutEditor.frameBuilder.columnGap')}>
-              <TextInput value={layout.columnGap} onChange={(e) => updateLayout({ columnGap: e.target.value })} className="w-24" />
-            </Field>
-            <Button variant="ghost" onClick={() => updateLayout({ columnSizes: undefined, rowSizes: undefined })}>
-              {t('layoutEditor.frameBuilder.resetTracks')}
-            </Button>
-            {FRAME_BREAKPOINTS.filter((bp) => bp !== activeBreakpoint).map((bp) => (
-              <Button key={bp} variant="ghost" onClick={() => copyLayoutTo(bp)}>
-                {t('layoutEditor.frameBuilder.copyLayoutTo', { target: t(`layoutEditor.frameBuilder.breakpoint.${bp}`) })}
-              </Button>
-            ))}
-          </div>
-
-          <div className="flex flex-wrap items-end gap-3 border-t border-black/[0.06] pt-3 dark:border-white/10">
-            <Field label={t('layoutEditor.frameBuilder.maxWidth')}>
-              <TextInput
-                value={layout.maxWidth ?? ''}
-                placeholder={t('layoutEditor.frameBuilder.maxWidthPlaceholder')}
-                onChange={(e) => updateLayout({ maxWidth: e.target.value })}
-                className="w-28"
-              />
-            </Field>
-            <Field label={t('layoutEditor.frameBuilder.align')}>
-              <SegmentedControl
-                value={layout.align ?? 'left'}
-                onChange={(align: FrameAlign) => updateLayout({ align })}
-                options={ALIGNMENTS.map((value) => ({ value, label: t(`layoutEditor.frameBuilder.alignOption.${value}`) }))}
-              />
-            </Field>
-            <Field label={t('layoutEditor.frameBuilder.paddingBlock')}>
-              <TextInput
-                value={layout.paddingBlock ?? ''}
-                placeholder="0"
-                onChange={(e) => updateLayout({ paddingBlock: e.target.value })}
-                className="w-24"
-              />
-            </Field>
-            <Field label={t('layoutEditor.frameBuilder.paddingInline')}>
-              <TextInput
-                value={layout.paddingInline ?? ''}
-                placeholder="0"
-                onChange={(e) => updateLayout({ paddingInline: e.target.value })}
-                className="w-24"
-              />
-            </Field>
-          </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            {t(hasMaxWidth ? 'layoutEditor.frameBuilder.boxHint' : 'layoutEditor.frameBuilder.boxHintNoMaxWidth')}
-          </p>
-
-          <div>
-            <p className="mb-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
-              {t('layoutEditor.frameBuilder.columnSizesLabel')}
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {Array.from({ length: layout.cols }, (_, i) => (
-                <TextInput
-                  key={i}
-                  value={layout.columnSizes?.[i] ?? ''}
-                  placeholder="1fr"
-                  onChange={(e) => setColumnSize(i, e.target.value)}
-                  className="w-16"
-                />
-              ))}
-            </div>
-          </div>
-          <div>
-            <p className="mb-1 text-[11px] font-medium text-slate-500 dark:text-slate-400">
-              {t('layoutEditor.frameBuilder.rowSizesLabel')}
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {Array.from({ length: layout.rows }, (_, i) => (
-                <TextInput
-                  key={i}
-                  value={layout.rowSizes?.[i] ?? ''}
-                  placeholder="auto"
-                  onChange={(e) => setRowSize(i, e.target.value)}
-                  className="w-16"
-                />
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                {t('layoutEditor.frameBuilder.appliesTo', {
+                  breakpoint: t(`layoutEditor.frameBuilder.breakpoint.${activeBreakpoint}`)
+                })}
+              </span>
+              {FRAME_BREAKPOINTS.filter((bp) => bp !== activeBreakpoint).map((bp) => (
+                <Button key={bp} variant="ghost" onClick={() => copyLayoutTo(bp)}>
+                  {t('layoutEditor.frameBuilder.copyLayoutTo', { target: t(`layoutEditor.frameBuilder.breakpoint.${bp}`) })}
+                </Button>
               ))}
             </div>
           </div>
 
-          <details>
-            <summary className="cursor-pointer text-[12px] text-slate-500 dark:text-slate-400">
-              {t('layoutEditor.frameBuilder.lineNamesLabel')}
-            </summary>
-            <div className="mt-2 flex flex-col gap-2">
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.lineNamesHint')}</p>
-              <div>
-                <p className="mb-1 text-[11px] text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.columnLinesLabel')}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {Array.from({ length: layout.cols + 1 }, (_, i) => (
-                    <TextInput
-                      key={i}
-                      value={layout.columnLineNames?.[i]?.[0] ?? ''}
-                      placeholder={`L${i}`}
-                      onChange={(e) => setColumnLineName(i, e.target.value)}
-                      className="w-16"
-                    />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="mb-1 text-[11px] text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.rowLinesLabel')}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {Array.from({ length: layout.rows + 1 }, (_, i) => (
-                    <TextInput
-                      key={i}
-                      value={layout.rowLineNames?.[i]?.[0] ?? ''}
-                      placeholder={`L${i}`}
-                      onChange={(e) => setRowLineName(i, e.target.value)}
-                      className="w-16"
-                    />
-                  ))}
-                </div>
-              </div>
+          <SettingsSection
+            title={t('layoutEditor.frameBuilder.gridSection')}
+            actions={
+              <button
+                type="button"
+                className="text-[11px] text-slate-500 underline hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                onClick={() => updateLayout({ columnSizes: undefined, rowSizes: undefined })}
+              >
+                {t('layoutEditor.frameBuilder.resetTracks')}
+              </button>
+            }
+          >
+            <div className="grid max-w-3xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Field label={t('layoutEditor.frameBuilder.rows')}>
+                <TextInput
+                  type="number"
+                  min={1}
+                  max={12}
+                  value={layout.rows}
+                  onChange={(e) => updateLayout({ rows: Math.max(1, Number(e.target.value) || 1) })}
+                />
+              </Field>
+              <Field label={t('layoutEditor.frameBuilder.cols')}>
+                <TextInput
+                  type="number"
+                  min={1}
+                  max={12}
+                  value={layout.cols}
+                  onChange={(e) => updateLayout({ cols: Math.max(1, Number(e.target.value) || 1) })}
+                />
+              </Field>
+              <Field label={t('layoutEditor.frameBuilder.rowGap')}>
+                <TextInput value={layout.rowGap} onChange={(e) => updateLayout({ rowGap: e.target.value })} />
+              </Field>
+              <Field label={t('layoutEditor.frameBuilder.columnGap')}>
+                <TextInput value={layout.columnGap} onChange={(e) => updateLayout({ columnGap: e.target.value })} />
+              </Field>
             </div>
-          </details>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <TrackInputs
+                label={t('layoutEditor.frameBuilder.columnSizesLabel')}
+                count={layout.cols}
+                firstIndex={1}
+                placeholder="1fr"
+                valueAt={(i) => layout.columnSizes?.[i] ?? ''}
+                onChange={setColumnSize}
+              />
+              <TrackInputs
+                label={t('layoutEditor.frameBuilder.rowSizesLabel')}
+                count={layout.rows}
+                firstIndex={1}
+                placeholder="auto"
+                valueAt={(i) => layout.rowSizes?.[i] ?? ''}
+                onChange={setRowSize}
+              />
+            </div>
+          </SettingsSection>
+
+          <SettingsSection
+            title={t('layoutEditor.frameBuilder.boxSection')}
+            hint={t(hasMaxWidth ? 'layoutEditor.frameBuilder.boxHint' : 'layoutEditor.frameBuilder.boxHintNoMaxWidth')}
+          >
+            <div className="grid max-w-4xl gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              <Field label={t('layoutEditor.frameBuilder.maxWidth')}>
+                <TextInput
+                  value={layout.maxWidth ?? ''}
+                  placeholder={t('layoutEditor.frameBuilder.maxWidthPlaceholder')}
+                  onChange={(e) => updateLayout({ maxWidth: e.target.value })}
+                />
+              </Field>
+              {/* Three options side by side need more than one column's worth of width. */}
+              <Field label={t('layoutEditor.frameBuilder.align')} className="sm:col-span-2">
+                <SegmentedControl
+                  value={layout.align ?? 'left'}
+                  onChange={(align: FrameAlign) => updateLayout({ align })}
+                  options={ALIGNMENTS.map((value) => ({ value, label: t(`layoutEditor.frameBuilder.alignOption.${value}`) }))}
+                />
+              </Field>
+              <Field label={t('layoutEditor.frameBuilder.paddingBlock')}>
+                <TextInput
+                  value={layout.paddingBlock ?? ''}
+                  placeholder="0"
+                  onChange={(e) => updateLayout({ paddingBlock: e.target.value })}
+                />
+              </Field>
+              <Field label={t('layoutEditor.frameBuilder.paddingInline')}>
+                <TextInput
+                  value={layout.paddingInline ?? ''}
+                  placeholder="0"
+                  onChange={(e) => updateLayout({ paddingInline: e.target.value })}
+                />
+              </Field>
+            </div>
+          </SettingsSection>
+
+          <SettingsSection
+            title={t('layoutEditor.frameBuilder.lineNamesLabel')}
+            hint={t('layoutEditor.frameBuilder.lineNamesHint')}
+            collapsible
+          >
+            <div className="grid gap-3 sm:grid-cols-2">
+              <TrackInputs
+                label={t('layoutEditor.frameBuilder.columnLinesLabel')}
+                count={layout.cols + 1}
+                firstIndex={0}
+                placeholder=""
+                valueAt={(i) => layout.columnLineNames?.[i]?.[0] ?? ''}
+                onChange={setColumnLineName}
+              />
+              <TrackInputs
+                label={t('layoutEditor.frameBuilder.rowLinesLabel')}
+                count={layout.rows + 1}
+                firstIndex={0}
+                placeholder=""
+                valueAt={(i) => layout.rowLineNames?.[i]?.[0] ?? ''}
+                onChange={setRowLineName}
+              />
+            </div>
+          </SettingsSection>
         </div>
 
         <div className="mb-3 flex items-center justify-between gap-2">
@@ -852,3 +844,86 @@ export default function FrameBuilder({
     </div>
   )
 }
+
+// One labelled group of settings inside the editor card. `collapsible` renders the same box as a
+// <details> - used for the line names, which are an advanced detail nobody needs open by default.
+function SettingsSection({
+  title,
+  actions,
+  hint,
+  collapsible,
+  children
+}: {
+  title: string
+  actions?: ReactNode
+  hint?: string
+  collapsible?: boolean
+  children: ReactNode
+}): JSX.Element {
+  const heading = <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{title}</span>
+  const body = (
+    <>
+      {children}
+      {hint && <p className="text-[11px] text-slate-500 dark:text-slate-400">{hint}</p>}
+    </>
+  )
+  const box = 'rounded-[10px] border border-black/[0.06] p-3.5 dark:border-white/10'
+
+  if (collapsible) {
+    return (
+      <details className={box}>
+        <summary className="cursor-pointer">{heading}</summary>
+        <div className="mt-3 flex flex-col gap-3">{body}</div>
+      </details>
+    )
+  }
+
+  return (
+    <section className={`flex flex-col gap-3 ${box}`}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        {heading}
+        {actions}
+      </div>
+      {body}
+    </section>
+  )
+}
+
+// The per-track inputs (column widths, row heights, line names) with the position each one belongs
+// to printed under it - without that number the row is a line of identical boxes, and the line-name
+// inputs start at 0 while the track inputs start at 1.
+function TrackInputs({
+  label,
+  count,
+  firstIndex,
+  placeholder,
+  valueAt,
+  onChange
+}: {
+  label: string
+  count: number
+  firstIndex: number
+  placeholder: string
+  valueAt: (index: number) => string
+  onChange: (index: number, value: string) => void
+}): JSX.Element {
+  return (
+    <div>
+      <p className="mb-1.5 text-[11px] font-medium text-slate-500 dark:text-slate-400">{label}</p>
+      <div className="flex flex-wrap gap-1.5">
+        {Array.from({ length: count }, (_, i) => (
+          <label key={i} className="flex flex-col items-center gap-0.5">
+            <TextInput
+              value={valueAt(i)}
+              placeholder={placeholder}
+              onChange={(e) => onChange(i, e.target.value)}
+              className="w-16 text-center"
+            />
+            <span className="text-[10px] text-slate-400 dark:text-slate-500">{i + firstIndex}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  )
+}
+

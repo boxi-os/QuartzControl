@@ -77,7 +77,7 @@ export default {
       templates: 'Deine Gestaltung — Layout, Farben, Plugins, Schriften — als wiederverwendbares Paket exportieren oder in ein anderes Projekt importieren.',
       plugins: 'Erweitert Quartz um zusätzliche Funktionen — von Volltextsuche bis Kommentaren.',
       updates:
-        'Bringt den Quartz-Kern und die installierten Plugins auf den neuesten Stand. Vor jedem Kern-Update wird automatisch ein wiederherstellbarer Snapshot angelegt.',
+        'Bringt den Quartz-Kern und die installierten Plugins auf den neuesten Stand. Vor jedem Kern-Update wird automatisch ein wiederherstellbarer Snapshot der versionierten Dateien angelegt.',
       server: 'Zeigt deine Website lokal in der Vorschau an und erstellt bei Bedarf einen einmaligen Build zum Exportieren.',
       sync: 'Gleicht deine lokalen Änderungen mit dem Git-Repository ab: Hochladen (Push) und Herunterladen (Pull).',
       backups: 'Automatisch gesicherte Stände deiner Konfiguration und deines Content-Ordners — zum Vergleichen und Wiederherstellen.',
@@ -781,12 +781,13 @@ export default {
   updates: {
     upToDate: 'Aktuell',
     updateAvailable: 'Update verfügbar',
+    checkFailed: 'Nicht prüfbar',
     core: {
       heading: 'Quartz-Kern',
       commits: 'Installiert: {{current}} · Neueste Version: {{latest}}',
       runUpdate: 'Update durchführen',
       confirm:
-        'Quartz-Kern aktualisieren? Ein Snapshot wird zuerst automatisch angelegt. Der Vorgang holt Änderungen von jackyzha0/quartz, führt npm install aus und kann bei Konflikten manuelles Eingreifen erfordern.',
+        'Quartz-Kern aktualisieren?\n\nVorher werden automatisch ein Snapshot der versionierten Dateien und eine Sicherung der quartz.config.yaml angelegt. Nicht enthalten sind Dateien, die git nicht kennt — quartz.lock.json, dein content-Ordner und eigene Stylesheets unter quartz/styles/custom/.\n\nDer Vorgang holt Änderungen von jackyzha0/quartz, führt npm install aus und kann bei Konflikten manuelles Eingreifen erfordern.',
       abortMerge: 'Merge abbrechen',
       conflictHeading: 'Konflikte in folgenden Dateien (außer den durch .gitattributes geschützten Locale-Dateien):'
     },
@@ -800,10 +801,12 @@ export default {
     },
     snapshots: {
       heading: 'Snapshots',
-      description: 'Automatisch vor jedem Kern-Update angelegt. Wiederherstellen setzt das Projekt komplett auf diesen Stand zurück (verwirft spätere Änderungen).',
+      description:
+        'Automatisch vor jedem Kern-Update und vor jeder Wiederherstellung angelegt. Enthalten sind nur die von git versionierten Dateien — quartz.lock.json, der content-Ordner und eigene Stylesheets gehören nicht dazu. Wiederherstellen setzt diese Dateien komplett auf den gewählten Stand zurück und legt vorher selbst einen Snapshot an.',
       none: 'Noch keine Snapshots vorhanden.',
       restore: 'Wiederherstellen',
-      confirmRestore: 'Projekt auf Snapshot "{{tag}}" zurücksetzen? Alle Änderungen seitdem gehen verloren.'
+      confirmRestore:
+        'Projekt auf Snapshot "{{tag}}" zurücksetzen?\n\nAlle Änderungen an versionierten Dateien seitdem gehen verloren. Vom aktuellen Stand wird vorher ein Snapshot angelegt, damit auch das rückgängig gemacht werden kann.'
     }
   },
   publish: {

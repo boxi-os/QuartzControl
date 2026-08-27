@@ -557,27 +557,38 @@ export interface LocaleSaveResult {
 // "origin" so Git-Sync never pushes to jackyzha0/quartz - see CLAUDE.md). Core-update status
 // compares its current HEAD against upstream's default branch via a plain `git ls-remote` (no
 // GitHub API/token needed, works for any public repo).
+// "Konnte nicht pruefen" is a third answer, not a green badge - the same distinction
+// styleService's `unavailable` makes. A failed `git ls-remote` (no network, repo gone) used to
+// come back as upToDate.
+export type UpdateCheckState = 'upToDate' | 'behind' | 'unknown'
+
 export interface CoreUpdateStatus {
   currentCommit: string
   latestCommit: string
-  upToDate: boolean
+  state: UpdateCheckState
 }
 
 // One quartz.lock.json entry's update status. `commit: "local"` entries (Phase 1b's generated
-// frame plugins) have no remote to check against, so isLocal is reported instead of a commit
-// comparison. latestCommit is null when the check itself failed (e.g. network unreachable).
+// frame plugins) have no remote to check against, hence the extra 'local' state rather than a
+// commit comparison. latestCommit is null when the check itself failed (e.g. network
+// unreachable), which is 'unknown' - never 'upToDate'.
 export interface PluginUpdateStatus {
   name: string
-  isLocal: boolean
   installedCommit?: string
   latestCommit?: string | null
-  upToDate: boolean
+  state: UpdateCheckState | 'local'
 }
 
 // A git tag pointing at a `git stash create` commit (or bare HEAD on a clean tree) - a
-// non-destructive snapshot of the project's tracked-file state, taken automatically before a core
-// update. Does NOT capture untracked files (git stash create has no --include-untracked option) -
-// backupService.ts's config/content snapshots are the complementary safety net for those.
+// non-destructive snapshot of the project's *tracked* file state, taken automatically before a
+// core update and before a restore.
+//
+// Its coverage is genuinely narrow, and the UI says so rather than implying a full backup: in a
+// project created by this app, quartz.config.yaml, quartz.lock.json, content/*, .quartz/ and
+// .quartz-gui/ are all untracked or ignored, and `git stash create` captures none of them (it has
+// no --include-untracked; verified - the flag is accepted and silently ignored). runCoreUpdate
+// therefore also takes a backupService config snapshot, which covers the single most valuable of
+// those files.
 export interface ProjectSnapshot {
   tag: string
   createdAt: string

@@ -77,7 +77,7 @@ export default {
       templates: 'Export your design — layout, colors, plugins, fonts — as a reusable package, or import one into another project.',
       plugins: 'Extends Quartz with extra functionality — from full-text search to comments.',
       updates:
-        "Brings Quartz's core and the installed plugins up to date. A restorable snapshot is created automatically before every core update.",
+        "Brings Quartz's core and the installed plugins up to date. A restorable snapshot of the version-controlled files is created automatically before every core update.",
       server: 'Previews your site locally, and can produce a one-off build for export.',
       sync: 'Syncs your local changes with the Git repository: uploading (push) and downloading (pull).',
       backups: 'Automatically saved snapshots of your configuration and content folder — to compare and restore.',
@@ -779,12 +779,13 @@ export default {
   updates: {
     upToDate: 'Up to date',
     updateAvailable: 'Update available',
+    checkFailed: 'Check failed',
     core: {
       heading: 'Quartz core',
       commits: 'Installed: {{current}} · Latest: {{latest}}',
       runUpdate: 'Run update',
       confirm:
-        "Update Quartz's core? A snapshot is created automatically first. This fetches changes from jackyzha0/quartz, runs npm install, and may require manual intervention on conflicts.",
+        "Update Quartz's core?\n\nA snapshot of the version-controlled files and a backup of quartz.config.yaml are created first. Not included are files git doesn't know about - quartz.lock.json, your content folder, and your own stylesheets under quartz/styles/custom/.\n\nThis fetches changes from jackyzha0/quartz, runs npm install, and may require manual intervention on conflicts.",
       abortMerge: 'Abort merge',
       conflictHeading: 'Conflicts in these files (aside from the locale files .gitattributes protects):'
     },
@@ -798,10 +799,12 @@ export default {
     },
     snapshots: {
       heading: 'Snapshots',
-      description: 'Created automatically before every core update. Restoring resets the project completely to that point (discarding later changes).',
+      description:
+        "Created automatically before every core update and before every restore. Only files git tracks are included - quartz.lock.json, the content folder and your own stylesheets are not. Restoring resets those files to the chosen point and takes a snapshot of the current state first.",
       none: 'No snapshots yet.',
       restore: 'Restore',
-      confirmRestore: 'Reset the project to snapshot "{{tag}}"? Everything since then will be lost.'
+      confirmRestore:
+        'Reset the project to snapshot "{{tag}}"?\n\nAll changes to version-controlled files since then will be lost. A snapshot of the current state is taken first, so this can be undone too.'
     }
   },
   publish: {

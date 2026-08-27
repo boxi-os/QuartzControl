@@ -55,6 +55,7 @@ export default {
       layout: 'Layout',
       styles: 'Styles',
       plugins: 'Plugins',
+      updates: 'Updates',
       server: 'Preview & build',
       sync: 'Git sync',
       backups: 'Backups',
@@ -65,7 +66,7 @@ export default {
       setup: 'Setup',
       design: 'Design',
       publish: 'Publishing',
-      safety: 'Safety net'
+      maintenance: 'Maintenance'
     },
     descriptions: {
       overview: 'The overview for this project: server status, key settings, and quick links to every area.',
@@ -74,7 +75,9 @@ export default {
       styles:
         'Everything about the look in one place: base colors and fonts, community themes, CSS variables, and your own CSS — in the exact order they override each other.',
       templates: 'Export your design — layout, colors, plugins, fonts — as a reusable package, or import one into another project.',
-      plugins: 'Extends Quartz with extra functionality — from full-text search to comments — and keeps it all up to date.',
+      plugins: 'Extends Quartz with extra functionality — from full-text search to comments.',
+      updates:
+        "Brings Quartz's core and the installed plugins up to date. A restorable snapshot is created automatically before every core update.",
       server: 'Previews your site locally, and can produce a one-off build for export.',
       sync: 'Syncs your local changes with the Git repository: uploading (push) and downloading (pull).',
       backups: 'Automatically saved snapshots of your configuration and content folder — to compare and restore.',
@@ -322,14 +325,11 @@ export default {
   plugins: {
     tabs: {
       installed: 'Installed',
-      marketplace: 'Marketplace',
-      updates: 'Updates'
+      marketplace: 'Marketplace'
     },
     descriptions: {
       installed: 'Extends Quartz with extra functionality — this is what is active, and where you configure it.',
-      marketplace: 'Browse plugins the community has published on GitHub, in addition to the built-in ones.',
-      updates:
-        "Brings Quartz's core and the installed plugins up to date. A restorable snapshot is created automatically before every core update."
+      marketplace: 'Browse plugins the community has published on GitHub, in addition to the built-in ones.'
     }
   },
   pluginsInstalled: {

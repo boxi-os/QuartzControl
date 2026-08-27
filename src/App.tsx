@@ -10,6 +10,7 @@ import ConfigEditor from './routes/ConfigEditor'
 import LayoutEditor from './routes/LayoutEditor'
 import Styles from './routes/Styles'
 import Plugins from './routes/Plugins'
+import Updates from './routes/Updates'
 import BuildServer from './routes/BuildServer'
 import GitSync from './routes/GitSync'
 import Backups from './routes/Backups'
@@ -45,13 +46,13 @@ export default function App(): JSX.Element {
               redirect so bookmarks and in-app links from before the merge still land right. */}
           <Route path='themes' element={<Navigate to='../styles?tab=theme' replace />} />
           <Route path='plugins' element={<Plugins />} />
-          {/* The former standalone Content-Ordner, Übersetzungen, Marktplatz and Updates tabs are
-              now sub-tabs of Konfiguration resp. Plugins - kept as redirects so bookmarks and
-              older in-app links still land on the right tab. */}
+          {/* The former standalone Content-Ordner, Übersetzungen and Marktplatz tabs are now
+              sub-tabs of Konfiguration resp. Plugins - kept as redirects so bookmarks and older
+              in-app links still land on the right tab. */}
           <Route path='content' element={<Navigate to='../config?tab=content' replace />} />
           <Route path='localization' element={<Navigate to='../config?tab=localization' replace />} />
           <Route path='plugins/marketplace' element={<Navigate to='../plugins?tab=marketplace' replace />} />
-          <Route path='updates' element={<Navigate to='../plugins?tab=updates' replace />} />
+          <Route path='updates' element={<Updates />} />
           <Route path='server' element={<BuildServer />} />
           <Route path='sync' element={<GitSync />} />
           <Route path='backups' element={<Backups />} />

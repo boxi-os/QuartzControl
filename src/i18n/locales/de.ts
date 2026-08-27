@@ -55,6 +55,7 @@ export default {
       layout: 'Layout',
       styles: 'Stile',
       plugins: 'Plugins',
+      updates: 'Updates',
       server: 'Vorschau & Build',
       sync: 'Git-Sync',
       backups: 'Backups',
@@ -65,7 +66,7 @@ export default {
       setup: 'Einrichtung',
       design: 'Gestaltung',
       publish: 'Veröffentlichung',
-      safety: 'Sicherung'
+      maintenance: 'Wartung'
     },
     descriptions: {
       overview: 'Der Überblick über dieses Projekt: Server-Status, wichtigste Einstellungen und Schnellzugriffe auf alle Bereiche.',
@@ -74,7 +75,9 @@ export default {
       styles:
         'Alles zum Aussehen an einem Ort: Basisfarben und Schriften, Community-Themes, CSS-Variablen und eigenes CSS — in genau der Reihenfolge, in der sie sich gegenseitig überschreiben.',
       templates: 'Deine Gestaltung — Layout, Farben, Plugins, Schriften — als wiederverwendbares Paket exportieren oder in ein anderes Projekt importieren.',
-      plugins: 'Erweitert Quartz um zusätzliche Funktionen — von Volltextsuche bis Kommentaren — und hält alles aktuell.',
+      plugins: 'Erweitert Quartz um zusätzliche Funktionen — von Volltextsuche bis Kommentaren.',
+      updates:
+        'Bringt den Quartz-Kern und die installierten Plugins auf den neuesten Stand. Vor jedem Kern-Update wird automatisch ein wiederherstellbarer Snapshot angelegt.',
       server: 'Zeigt deine Website lokal in der Vorschau an und erstellt bei Bedarf einen einmaligen Build zum Exportieren.',
       sync: 'Gleicht deine lokalen Änderungen mit dem Git-Repository ab: Hochladen (Push) und Herunterladen (Pull).',
       backups: 'Automatisch gesicherte Stände deiner Konfiguration und deines Content-Ordners — zum Vergleichen und Wiederherstellen.',
@@ -322,14 +325,11 @@ export default {
   plugins: {
     tabs: {
       installed: 'Installiert',
-      marketplace: 'Marktplatz',
-      updates: 'Updates'
+      marketplace: 'Marktplatz'
     },
     descriptions: {
       installed: 'Erweitert Quartz um zusätzliche Funktionen — hier siehst du, was aktiv ist, und stellst es ein.',
-      marketplace: 'Durchsucht Plugins, die die Community auf GitHub veröffentlicht hat — zusätzlich zu den mitgelieferten.',
-      updates:
-        'Bringt den Quartz-Kern und die installierten Plugins auf den neuesten Stand. Vor jedem Kern-Update wird automatisch ein wiederherstellbarer Snapshot angelegt.'
+      marketplace: 'Durchsucht Plugins, die die Community auf GitHub veröffentlicht hat — zusätzlich zu den mitgelieferten.'
     }
   },
   pluginsInstalled: {

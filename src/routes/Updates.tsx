@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useProject } from '../ProjectLayout'
+import { useProject } from './ProjectLayout'
 import type { CoreUpdateStatus, PluginUpdateStatus, ProjectSnapshot, UpdateResult } from '@shared/ipc-contract'
-import { Badge, Button, Card } from '../../components/ui'
-import { formatIpcError } from '../../components/ErrorSurface'
+import { Badge, Button, Card, PageHeader } from '../components/ui'
+import { formatIpcError } from '../components/ErrorSurface'
+import { TAB_ICONS } from './navConfig'
 
 function shortCommit(commit?: string | null): string {
   return commit ? commit.slice(0, 7) : '—'
@@ -92,6 +93,12 @@ export default function Updates(): JSX.Element {
 
   return (
     <div className="flex flex-col gap-6">
+      <PageHeader
+        icon={TAB_ICONS.updates}
+        title={t('projectLayout.tabs.updates')}
+        description={t('projectLayout.descriptions.updates')}
+      />
+
       <Card>
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold">{t('updates.core.heading')}</h2>

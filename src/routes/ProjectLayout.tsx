@@ -88,7 +88,7 @@ export default function ProjectLayout(): JSX.Element {
 
   // Grouped by what a user is trying to do, not by which service implements it: "Einrichtung" is
   // what the site *is* and what it can do, "Gestaltung" everything that changes how it looks,
-  // "Veröffentlichung" everything that ships it somewhere, "Sicherung" what gets you back.
+  // "Veröffentlichung" everything that ships it somewhere, "Wartung" what keeps it healthy.
   // Übersicht stays ungrouped at the top since it's the landing page, not a category.
   const NAV_GROUPS: NavGroup[] = [
     { items: [{ to: '', key: 'overview', label: t('projectLayout.tabs.overview'), end: true }] },
@@ -119,9 +119,12 @@ export default function ProjectLayout(): JSX.Element {
       ]
     },
     {
-      key: 'safety',
-      label: t('projectLayout.groups.safety'),
-      items: [{ to: 'backups', key: 'backups', label: t('projectLayout.tabs.backups') }]
+      key: 'maintenance',
+      label: t('projectLayout.groups.maintenance'),
+      items: [
+        { to: 'updates', key: 'updates', label: t('projectLayout.tabs.updates') },
+        { to: 'backups', key: 'backups', label: t('projectLayout.tabs.backups') }
+      ]
     }
   ]
 

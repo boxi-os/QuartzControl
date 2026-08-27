@@ -6,14 +6,12 @@ import { useStickyState } from '../../state/uiState'
 import { TAB_ICONS } from '../navConfig'
 import Installed from './Installed'
 import Marketplace from './Marketplace'
-import Updates from './Updates'
 
-// Finding, configuring and updating an extension is one job, so it is one page. Updates lives
-// here too even though it also updates Quartz itself: everything it lists is something that was
-// installed, and its plugin half is the same lockfile the other two tabs write.
-export type PluginsTab = 'installed' | 'marketplace' | 'updates'
+// Finding a plugin and configuring it is one job, so it is one page. Updating is not: that is
+// maintenance, it covers the Quartz core as much as the plugins, and it lives next to Backups.
+export type PluginsTab = 'installed' | 'marketplace'
 
-const TAB_ORDER: PluginsTab[] = ['installed', 'marketplace', 'updates']
+const TAB_ORDER: PluginsTab[] = ['installed', 'marketplace']
 
 function isTab(value: string | null): value is PluginsTab {
   return value !== null && (TAB_ORDER as string[]).includes(value)
@@ -57,7 +55,6 @@ export default function Plugins(): JSX.Element {
 
       {tab === 'installed' && <Installed />}
       {tab === 'marketplace' && <Marketplace />}
-      {tab === 'updates' && <Updates />}
     </div>
   )
 }

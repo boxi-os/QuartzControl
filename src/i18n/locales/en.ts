@@ -54,33 +54,27 @@ export default {
       config: 'Configuration',
       layout: 'Layout',
       styles: 'Styles',
-      localization: 'Localization',
       plugins: 'Plugins',
-      content: 'Content folder',
-      server: 'Build & server',
+      server: 'Preview & build',
       sync: 'Git sync',
       backups: 'Backups',
-      updates: 'Updates',
       publish: 'Publish',
       templates: 'Templates'
     },
     groups: {
+      setup: 'Setup',
       design: 'Design',
-      content: 'Content',
-      plugins: 'Plugins',
-      publish: 'Publishing'
+      publish: 'Publishing',
+      safety: 'Safety net'
     },
     descriptions: {
       overview: 'The overview for this project: server status, key settings, and quick links to every area.',
-      config: 'Basic settings for your site — title, address, and language.',
+      config: 'What your site is and where its content comes from — basic settings, content folder, and built-in text labels.',
       layout: 'Decides which building blocks (e.g. search, table of contents, navigation) appear where on the page.',
       styles:
         'Everything about the look in one place: base colors and fonts, community themes, CSS variables, and your own CSS — in the exact order they override each other.',
       templates: 'Export your design — layout, colors, plugins, fonts — as a reusable package, or import one into another project.',
-      content: 'Manages the folder with your Markdown notes — as a real copy, or linked to an existing folder, e.g. your Obsidian vault.',
-      localization: 'Edits the site’s built-in text labels (e.g. "Search", "Last modified") in the available languages.',
-      plugins: 'Extends Quartz with extra functionality — from full-text search to comments.',
-      updates: 'Keeps Quartz itself and the installed plugins up to date.',
+      plugins: 'Extends Quartz with extra functionality — from full-text search to comments — and keeps it all up to date.',
       server: 'Previews your site locally, and can produce a one-off build for export.',
       sync: 'Syncs your local changes with the Git repository: uploading (push) and downloading (pull).',
       backups: 'Automatically saved snapshots of your configuration and content folder — to compare and restore.',
@@ -187,6 +181,17 @@ export default {
     languageEn: 'English'
   },
   configEditor: {
+    tabs: {
+      site: 'Site',
+      content: 'Content folder',
+      localization: 'Localization'
+    },
+    descriptions: {
+      site: 'Basic settings for your site — title, address, and language.',
+      content: 'The folder with your Markdown notes — as a real copy, or linked to an existing folder, e.g. your Obsidian vault.',
+      localization:
+        'The site’s built-in text labels (e.g. "Search", "Last modified") in the available languages. Core texts only — plugin texts are not covered here.'
+    },
     loadError: 'quartz.config.yaml could not be read.',
     loadErrorHint:
       'Does the file exist in the project folder? A newly created project needs a successfully completed setup wizard for this.',
@@ -314,10 +319,22 @@ export default {
       github: 'GitHub: {{text}}'
     }
   },
+  plugins: {
+    tabs: {
+      installed: 'Installed',
+      marketplace: 'Marketplace',
+      updates: 'Updates'
+    },
+    descriptions: {
+      installed: 'Extends Quartz with extra functionality — this is what is active, and where you configure it.',
+      marketplace: 'Browse plugins the community has published on GitHub, in addition to the built-in ones.',
+      updates:
+        "Brings Quartz's core and the installed plugins up to date. A restorable snapshot is created automatically before every core update."
+    }
+  },
   pluginsInstalled: {
     addPlaceholder: 'github:owner/repo',
     add: 'Add',
-    marketplaceLink: 'Browse marketplace →',
     none: 'No plugins installed.',
     componentsHeading: 'Components',
     componentsDescription: 'These plugins are visible on the page — e.g. in the header, sidebar, or footer.',
@@ -708,9 +725,6 @@ export default {
     }
   },
   localization: {
-    title: 'Localization',
-    description:
-      "Edit Quartz's built-in translation texts directly in quartz/i18n/locales/*.ts. Core texts only — plugin-owned strings aren't covered here.",
     none: 'No locale files found (quartz/i18n/locales is missing).',
     searchPlaceholder: 'Search by key or text…',
     unsavedCount: '{{count}} unsaved',
@@ -721,8 +735,6 @@ export default {
     gitAttributesMissing: 'Update protection will be enabled automatically on the next save'
   },
   updates: {
-    title: 'Updates',
-    description: "Bring Quartz's core and installed plugins up to date. A restorable snapshot is created automatically before every core update.",
     upToDate: 'Up to date',
     updateAvailable: 'Update available',
     core: {
@@ -831,9 +843,6 @@ export default {
     importSuccessNoWarnings: 'Import complete, no conflicts.'
   },
   pluginsMarketplace: {
-    title: 'Marketplace',
-    description: 'Browse plugins the community has published on GitHub, in addition to the built-in ones.',
-    backToInstalled: '← Installed plugins',
     searchPlaceholder: 'Search plugins…',
     installed: 'Installed',
     installing: 'Installing…',

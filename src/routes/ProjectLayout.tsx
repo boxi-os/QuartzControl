@@ -86,35 +86,27 @@ export default function ProjectLayout(): JSX.Element {
   const contentRef = useRef<HTMLDivElement>(null)
   useRestoreScroll(mainRef, contentRef, project !== null)
 
-  // Grouped by what a user is trying to do, not by which service implements it - "Gestaltung"
-  // covers everything that changes how the site looks, "Veröffentlichung" everything that ships
-  // it somewhere. Übersicht stays ungrouped at the top since it's the landing page, not a category.
+  // Grouped by what a user is trying to do, not by which service implements it: "Einrichtung" is
+  // what the site *is* and what it can do, "Gestaltung" everything that changes how it looks,
+  // "Veröffentlichung" everything that ships it somewhere, "Sicherung" what gets you back.
+  // Übersicht stays ungrouped at the top since it's the landing page, not a category.
   const NAV_GROUPS: NavGroup[] = [
     { items: [{ to: '', key: 'overview', label: t('projectLayout.tabs.overview'), end: true }] },
+    {
+      key: 'setup',
+      label: t('projectLayout.groups.setup'),
+      items: [
+        { to: 'config', key: 'config', label: t('projectLayout.tabs.config') },
+        { to: 'plugins', key: 'plugins', label: t('projectLayout.tabs.plugins') }
+      ]
+    },
     {
       key: 'design',
       label: t('projectLayout.groups.design'),
       items: [
-        { to: 'config', key: 'config', label: t('projectLayout.tabs.config') },
         { to: 'layout', key: 'layout', label: t('projectLayout.tabs.layout') },
         { to: 'styles', key: 'styles', label: t('projectLayout.tabs.styles') },
         { to: 'templates', key: 'templates', label: t('projectLayout.tabs.templates') }
-      ]
-    },
-    {
-      key: 'content',
-      label: t('projectLayout.groups.content'),
-      items: [
-        { to: 'content', key: 'content', label: t('projectLayout.tabs.content') },
-        { to: 'localization', key: 'localization', label: t('projectLayout.tabs.localization') }
-      ]
-    },
-    {
-      key: 'plugins',
-      label: t('projectLayout.groups.plugins'),
-      items: [
-        { to: 'plugins', key: 'plugins', label: t('projectLayout.tabs.plugins') },
-        { to: 'updates', key: 'updates', label: t('projectLayout.tabs.updates') }
       ]
     },
     {
@@ -123,9 +115,13 @@ export default function ProjectLayout(): JSX.Element {
       items: [
         { to: 'server', key: 'server', label: t('projectLayout.tabs.server') },
         { to: 'sync', key: 'sync', label: t('projectLayout.tabs.sync') },
-        { to: 'backups', key: 'backups', label: t('projectLayout.tabs.backups') },
         { to: 'publish', key: 'publish', label: t('projectLayout.tabs.publish') }
       ]
+    },
+    {
+      key: 'safety',
+      label: t('projectLayout.groups.safety'),
+      items: [{ to: 'backups', key: 'backups', label: t('projectLayout.tabs.backups') }]
     }
   ]
 

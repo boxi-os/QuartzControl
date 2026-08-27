@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useProject } from './ProjectLayout'
+import { useProject } from '../ProjectLayout'
 import type { ContentProgress, ContentStatus, ContentStrategy } from '@shared/ipc-contract'
-import { Badge, Button, Card, Field, PageHeader, Select, TextInput } from '../components/ui'
-import { TAB_ICONS } from './navConfig'
+import { Badge, Button, Card, Field, Select, TextInput } from '../../components/ui'
 
-export default function Content(): JSX.Element {
+export default function ContentFolder(): JSX.Element {
   const { t } = useTranslation()
   const project = useProject()
   const [status, setStatus] = useState<ContentStatus | null>(null)
@@ -49,12 +48,7 @@ export default function Content(): JSX.Element {
 
   return (
     <div>
-      <PageHeader
-        icon={TAB_ICONS.content}
-        title={t('projectLayout.tabs.content')}
-        description={t('projectLayout.descriptions.content')}
-      />
-      {/* The one block on this page, and it's four short lines - the cap sits on the card rather
+      {/* The one block on this tab, and it's four short lines - the cap sits on the card rather
           than on the page, so it's this content saying how wide it wants to be. */}
       <Card className="max-w-2xl">
         <h2 className="mb-3 font-medium">{t('content.currentFolder')}</h2>

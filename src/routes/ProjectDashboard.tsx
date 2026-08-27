@@ -156,7 +156,7 @@ export default function ProjectDashboard(): JSX.Element {
               </Badge>
             )}
           </div>
-          <Link to="content" className="mt-2 inline-block text-sm text-slate-600 hover:underline">
+          <Link to="config?tab=content" className="mt-2 inline-block text-sm text-slate-600 hover:underline">
             {t('dashboard.manageContentFolder')}
           </Link>
         </Card>

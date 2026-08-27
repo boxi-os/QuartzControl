@@ -2,9 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProject } from '../ProjectLayout'
 import type { LocaleEntry, LocaleFile } from '@shared/ipc-contract'
-import { Badge, Button, PageHeader, Select, TextInput } from '../../components/ui'
+import { Badge, Button, Select, TextInput } from '../../components/ui'
 import { useStickyState } from '../../state/uiState'
-import { TAB_ICONS } from '../navConfig'
 
 export default function Localization(): JSX.Element {
   const { t } = useTranslation()
@@ -119,22 +118,6 @@ export default function Localization(): JSX.Element {
 
   return (
     <div className="flex flex-col gap-4">
-      <PageHeader
-        icon={TAB_ICONS.localization}
-        title={t('localization.title')}
-        description={t('localization.description')}
-        actions={
-          <>
-            {dirtyKeys.length > 0 && (
-              <span className="text-xs text-slate-500 dark:text-slate-400">{t('localization.unsavedCount', { count: dirtyKeys.length })}</span>
-            )}
-            <Button onClick={saveAll} disabled={saving || dirtyKeys.length === 0}>
-              {saving ? t('common.saving') : t('common.save')}
-            </Button>
-          </>
-        }
-      />
-
       <p className="text-xs text-slate-500 dark:text-slate-400">
         {gitAttrOk ? (
           <Badge tone="green">{t('localization.gitAttributesOk')}</Badge>
@@ -143,6 +126,9 @@ export default function Localization(): JSX.Element {
         )}
       </p>
 
+      {/* Save sits in this row rather than in the page header: the header belongs to the whole
+          Konfiguration page now, and saving here means saving the locale selected right next to
+          it - the two controls describe one action together. */}
       <div className="flex items-center gap-2">
         <Select value={code} onChange={(e) => setCode(e.target.value)} className="w-32">
           {locales.map((l) => (
@@ -157,6 +143,14 @@ export default function Localization(): JSX.Element {
           placeholder={t('localization.searchPlaceholder')}
           className="flex-1"
         />
+        {dirtyKeys.length > 0 && (
+          <span className="shrink-0 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400">
+            {t('localization.unsavedCount', { count: dirtyKeys.length })}
+          </span>
+        )}
+        <Button onClick={saveAll} disabled={saving || dirtyKeys.length === 0}>
+          {saving ? t('common.saving') : t('common.save')}
+        </Button>
       </div>
 
       {entries === null && <p className="text-sm text-slate-500">{t('common.loading')}</p>}

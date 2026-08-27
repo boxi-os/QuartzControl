@@ -1,13 +1,11 @@
 import { useEffect, useState, type DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
-import { Link } from 'react-router-dom'
 import { useProject } from '../ProjectLayout'
 import type { PluginEntry, PluginLayoutDeclaration, PluginOptionField, QuartzConfig } from '@shared/ipc-contract'
-import { Badge, Button, Card, PageHeader, Select, TextInput, Toggle } from '../../components/ui'
+import { Badge, Button, Card, Select, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { useStickyState } from '../../state/uiState'
-import { TAB_ICONS } from '../navConfig'
 
 // A plugin row's content is short (name, source, one line of description) and its buttons sit at
 // the far right, so a single full-width column would be mostly empty space on a wide window. Extra
@@ -306,11 +304,6 @@ export default function PluginsInstalled(): JSX.Element {
 
   return (
     <div>
-      <PageHeader
-        icon={TAB_ICONS.plugins}
-        title={t('projectLayout.tabs.plugins')}
-        description={t('projectLayout.descriptions.plugins')}
-      />
       <div className="mb-4 flex items-center justify-between">
         <div className="flex gap-2">
           <TextInput
@@ -323,9 +316,6 @@ export default function PluginsInstalled(): JSX.Element {
             {t('pluginsInstalled.add')}
           </Button>
         </div>
-        <Link to="marketplace" className="text-sm text-slate-600 hover:underline dark:text-slate-300">
-          {t('pluginsInstalled.marketplaceLink')}
-        </Link>
       </div>
 
       {message && <p className="mb-4 text-sm text-red-600 dark:text-red-400">{message}</p>}

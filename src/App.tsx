@@ -9,14 +9,10 @@ import ProjectDashboard from './routes/ProjectDashboard'
 import ConfigEditor from './routes/ConfigEditor'
 import LayoutEditor from './routes/LayoutEditor'
 import Styles from './routes/Styles'
-import Localization from './routes/Localization'
-import PluginsInstalled from './routes/Plugins/Installed'
-import PluginsMarketplace from './routes/Plugins/Marketplace'
+import Plugins from './routes/Plugins'
 import BuildServer from './routes/BuildServer'
-import Content from './routes/Content'
 import GitSync from './routes/GitSync'
 import Backups from './routes/Backups'
-import Updates from './routes/Updates'
 import Publish from './routes/Publish'
 import Templates from './routes/Templates'
 
@@ -48,14 +44,17 @@ export default function App(): JSX.Element {
           {/* The former standalone Themes tab is now the "Theme" sub-tab of Styles - kept as a
               redirect so bookmarks and in-app links from before the merge still land right. */}
           <Route path='themes' element={<Navigate to='../styles?tab=theme' replace />} />
-          <Route path='localization' element={<Localization />} />
-          <Route path='plugins' element={<PluginsInstalled />} />
-          <Route path='plugins/marketplace' element={<PluginsMarketplace />} />
-          <Route path='content' element={<Content />} />
+          <Route path='plugins' element={<Plugins />} />
+          {/* The former standalone Content-Ordner, Übersetzungen, Marktplatz and Updates tabs are
+              now sub-tabs of Konfiguration resp. Plugins - kept as redirects so bookmarks and
+              older in-app links still land on the right tab. */}
+          <Route path='content' element={<Navigate to='../config?tab=content' replace />} />
+          <Route path='localization' element={<Navigate to='../config?tab=localization' replace />} />
+          <Route path='plugins/marketplace' element={<Navigate to='../plugins?tab=marketplace' replace />} />
+          <Route path='updates' element={<Navigate to='../plugins?tab=updates' replace />} />
           <Route path='server' element={<BuildServer />} />
           <Route path='sync' element={<GitSync />} />
           <Route path='backups' element={<Backups />} />
-          <Route path='updates' element={<Updates />} />
           <Route path='publish' element={<Publish />} />
           <Route path='templates' element={<Templates />} />
         </Route>

@@ -11,7 +11,16 @@ import { useStickyState } from '../../state/uiState'
 // the far right, so a single full-width column would be mostly empty space on a wide window. Extra
 // width buys a second column instead - reading order stays top-to-bottom-left-to-right, which is
 // also the order the drag-and-drop reordering below works in.
-const PLUGIN_LIST = 'grid gap-2 xl:grid-cols-2'
+//
+// The breakpoint is measured, not chosen from the scale: a row's action group alone is 408px wide
+// (badge + three buttons, all nowrap) and the text column asks for basis-64, so a row stops
+// wrapping onto two lines at a column width of ~710px - checked by stepping the container width
+// in the running app. Two columns of that plus the gap need 1448px of content, i.e. a 1752px
+// window once the sidebar and page padding are off; hence min-[1760px]. Below it a single column
+// keeps every row on one line, which is the better trade - at Tailwind's own xl (~490px per
+// column) the name was squeezed down to a couple of characters, and even at 2xl every single card
+// wrapped.
+const PLUGIN_LIST = 'grid gap-2 min-[1760px]:grid-cols-2'
 
 // Quartz plugins fall into distinct kinds - transformers, filters, page types, emitters,
 // components (see https://quartz.jzhao.xyz/plugins/) - but that exact category isn't stored
@@ -476,13 +485,16 @@ function PluginRow({
       onDragEnd={() => setDragging(null)}
       className={`cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-40' : ''}`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-start gap-2">
+      {/* Wraps rather than squeezing: the action group can't give way (see below), so in a narrow
+          column the alternative to a second line is a name crushed to a few characters. basis-64
+          is the width the text column asks for before that happens. */}
+      <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+        <div className="flex min-w-0 flex-1 basis-64 items-start gap-2">
           <span className="select-none pt-0.5 text-slate-300 dark:text-slate-600" title={t('pluginsInstalled.dragHint')}>
             ⠿
           </span>
-          <div>
-            <p className="font-medium">{plugin.name}</p>
+          <div className="min-w-0">
+            <p className="break-words font-medium">{plugin.name}</p>
             <p className="text-xs text-slate-500">{sourceLabel(plugin.source)}</p>
             {description && <p className="mt-0.5 max-w-md text-xs text-slate-400">{description}</p>}
             {!expanded && summary && <p className="mt-0.5 font-mono text-[11px] text-slate-400">{summary}</p>}
@@ -490,8 +502,9 @@ function PluginRow({
         </div>
         {/* shrink-0 + nowrap: in the two-column list a long description would otherwise squeeze
             this group until "Optionen anzeigen" wrapped onto two lines and the rows lost their
-            common height. The text column gives way instead (min-w-0 above). */}
-        <div className="flex shrink-0 items-center gap-3 whitespace-nowrap">
+            common height. ml-auto keeps it at the right edge on its own line too, once the row
+            above wraps. */}
+        <div className="ml-auto flex shrink-0 items-center gap-3 whitespace-nowrap">
           <Badge tone={plugin.enabled ? 'green' : 'slate'}>
             {plugin.enabled ? t('pluginsInstalled.active') : t('pluginsInstalled.disabled')}
           </Badge>

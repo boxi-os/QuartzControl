@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events'
-import type { DeployDiffEntry, DeployProgressEvent, DeployResult } from '@shared/ipc-contract'
+import type { DeployDiffEntry, DeployProgressEvent, DeployResult, PublishTarget } from '@shared/ipc-contract'
 import type { DeployAdapter, DeployContext } from './types'
 import { resolveBuildDir } from '../projectDirs'
 import * as connectionsService from '../connectionsService'
@@ -8,6 +8,7 @@ import { sftpAdapter } from './sftp'
 import { ftpAdapter } from './ftp'
 import { folderAdapter } from './folder'
 import { webhookAdapter } from './webhook'
+import { rsyncAdapter } from './rsync'
 
 export const deployEvents = new EventEmitter()
 
@@ -20,11 +21,19 @@ const ADAPTERS: Partial<Record<string, DeployAdapter>> = {
   webhook: webhookAdapter
 }
 
+// The one destination type with two adapters. rsync is not a separate kind of target - it is the
+// same server and the same remote path, reached a faster way - so it stays a field on the sftp
+// destination and is resolved here rather than duplicating the type in the UI.
+function adapterFor(destination: PublishTarget['destination']): DeployAdapter | undefined {
+  if (destination.type === 'sftp' && destination.transfer === 'rsync') return rsyncAdapter
+  return ADAPTERS[destination.type]
+}
+
 async function makeContext(projectPath: string, targetId: string, outputDir?: string): Promise<{ ctx: DeployContext; adapter: DeployAdapter }> {
   const target = await publishTargetsService.getTarget(projectPath, targetId)
   if (!target) throw new Error(`Kein Veröffentlichungsziel mit der ID ${targetId} gefunden.`)
 
-  const adapter = ADAPTERS[target.destination.type]
+  const adapter = adapterFor(target.destination)
   if (!adapter) throw new Error(`Für den Zieltyp "${target.destination.type}" gibt es noch keinen Adapter.`)
 
   // Resolved in main and never sent to the renderer; a target whose destination needs no

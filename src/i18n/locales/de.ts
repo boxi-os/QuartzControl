@@ -809,6 +809,18 @@ export default {
     newConnection: '+ Neuer Zugang',
     newTarget: '+ Neues Ziel',
     confirmDeleteTarget: 'Dieses Veröffentlichungsziel wirklich löschen? Der hinterlegte Zugang bleibt bestehen.',
+    sftpHint:
+      'SFTP vergleicht mit einem lokalen Verzeichnis dessen, was zuletzt hochgeladen wurde. Dateien, die jemand direkt auf dem Server ändert oder löscht, bleiben dabei unbemerkt.',
+    rsyncHint:
+      'rsync fragt den Server selbst, was dort liegt - der Diff stimmt also auch dann, wenn dort jemand von Hand etwas geändert hat. Setzt voraus, dass rsync auf dem Server installiert ist.',
+    rsyncBlocked: {
+      'no-connection': 'rsync steht zur Verfügung, sobald ein SSH-Zugang mit Schlüsseldatei oder SSH-Agent gewählt ist.',
+      'password-auth': 'rsync ist mit Passwort-Anmeldung nicht möglich - ssh kann das Passwort nicht entgegennehmen. Mit Schlüsseldatei oder SSH-Agent geht es.',
+      'key-not-a-file':
+        'rsync braucht den privaten Schlüssel als Datei; ein hier eingefügter Schlüsseltext reicht nicht. Den Zugang auf eine Schlüsseldatei umstellen.',
+      'no-pinned-host-key':
+        'rsync braucht einen bestätigten Host-Key. Einmal über SFTP veröffentlichen - dabei wird der Fingerprint abgefragt und gespeichert - danach lässt sich rsync wählen.'
+    },
     webhookNoUrl: 'keine URL hinterlegt',
     webhookExplainer:
       'Ein Webhook lädt keine Dateien hoch, sondern stößt einen Build beim Anbieter an (Netlify, Cloudflare Pages, Vercel, CI). Deshalb gibt es hier keine Dateiliste - der Build läuft dort, nicht hier.',
@@ -820,6 +832,9 @@ export default {
       name: 'Name',
       type: 'Art',
       remotePath: 'Remote-Pfad',
+      transfer: 'Übertragung',
+      transferSftp: 'SFTP (Datei für Datei)',
+      transferRsync: 'rsync (schneller, vergleicht mit dem Server)',
       typeFolder: 'Ordner',
       typeWebhook: 'Webhook',
       folderPath: 'Zielordner',

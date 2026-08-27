@@ -14,6 +14,7 @@ import type {
 import { Badge, Button, Card, Field, PageHeader, Select, TextInput, Toggle } from '../components/ui'
 import { useAsyncAction } from '../hooks/useAsyncAction'
 import { useStickyState } from '../state/uiState'
+import { rsyncBlockReason } from '@shared/rsyncSupport'
 import { TAB_ICONS } from './navConfig'
 
 // GitHub Pages is not a stored target: it needs no credential of its own (it pushes over the
@@ -159,15 +160,20 @@ export default function Publish(): JSX.Element {
     if (result.success && selection.kind === 'target') await refreshDiff(true)
   })
 
-  async function saveTarget(): Promise<void> {
+  // Both saves go through useAsyncAction so a rejected write lands *in the form*. The validation
+  // layer refuses more here than anywhere else in the app (port range, absolute remote path, https
+  // webhook), and a plain await let those failures fall through to the global toast: the form
+  // simply stayed open with nothing changed and nothing said. Seen in the running app with a port
+  // that had been typed as text and arrived as 0.
+  const saveTargetAction = useAsyncAction(async () => {
     if (!targetDraft) return
     const saved = await window.quartzGui.publishTargets.save(project.path, targetDraft)
     setTargetDraft(null)
     await reload()
     setSelection({ kind: 'target', id: saved.id })
-  }
+  })
 
-  async function saveConnection(): Promise<void> {
+  const saveConnectionAction = useAsyncAction(async () => {
     if (!connectionDraft) return
     const saved = await window.quartzGui.connections.save(connectionDraft)
     setConnectionDraft(null)
@@ -175,7 +181,7 @@ export default function Publish(): JSX.Element {
     // A connection created from inside the target form is immediately what that target uses -
     // otherwise the user has to pick it from the dropdown they just implicitly filled.
     setTargetDraft((prev) => (prev ? { ...prev, connectionId: saved.id } : prev))
-  }
+  })
 
   // Deliberately a separate, confirmed action rather than an option in the mismatch dialog - see
   // the host verifier for why a "key changed, continue?" prompt is the wrong shape.
@@ -204,6 +210,17 @@ export default function Publish(): JSX.Element {
 
   const draftKind = targetDraft ? requiredKind(targetDraft.destination) : null
   const eligibleConnections = draftKind ? connections.filter((c) => c.kind === draftKind) : []
+  // Asked of the *picked* connection, with the shared rule the adapter itself uses - so the form
+  // never offers a transfer that would then be refused at deploy time. Without a connection chosen
+  // yet there is nothing to judge, and rsync stays unavailable rather than being offered blindly.
+  const draftConnection = targetDraft?.connectionId ? connections.find((c) => c.id === targetDraft.connectionId) : undefined
+  const rsyncBlocker =
+    targetDraft?.destination.type === 'sftp'
+      ? draftConnection?.kind === 'ssh'
+        ? rsyncBlockReason(draftConnection)
+        : 'no-connection'
+      : null
+
   // A folder target needs no credential but does need a path; every other type needs its
   // connection picked before there is anything to save.
   const targetReady =
@@ -363,6 +380,23 @@ export default function Publish(): JSX.Element {
                 />
               </Field>
             )}
+            {targetDraft.destination.type === 'sftp' && (
+              <Field label={t('publish.targetForm.transfer')}>
+                <Select
+                  value={targetDraft.destination.transfer}
+                  onChange={(e) =>
+                    setTargetDraft({
+                      ...targetDraft,
+                      destination: { ...targetDraft.destination, transfer: e.target.value as 'sftp' | 'rsync' } as SavePublishTargetInput['destination']
+                    })
+                  }
+                  disabled={!!rsyncBlocker}
+                >
+                  <option value="sftp">{t('publish.targetForm.transferSftp')}</option>
+                  <option value="rsync">{t('publish.targetForm.transferRsync')}</option>
+                </Select>
+              </Field>
+            )}
             {targetDraft.destination.type === 'folder' && (
               <Field label={t('publish.targetForm.folderPath')}>
                 <div className="flex gap-2">
@@ -398,7 +432,21 @@ export default function Publish(): JSX.Element {
             <Field label={t('publish.targetForm.connection')}>
               <Select
                 value={targetDraft.connectionId ?? ''}
-                onChange={(e) => setTargetDraft({ ...targetDraft, connectionId: e.target.value || undefined })}
+                onChange={(e) => {
+                  const connectionId = e.target.value || undefined
+                  const picked = connections.find((c) => c.id === connectionId)
+                  const blocked = picked?.kind === 'ssh' ? !!rsyncBlockReason(picked) : true
+                  setTargetDraft({
+                    ...targetDraft,
+                    connectionId,
+                    // Switching to a credential rsync cannot use must not leave the target on a
+                    // transfer that will fail - it falls back to SFTP, which every credential can do.
+                    destination:
+                      targetDraft.destination.type === 'sftp' && blocked
+                        ? { ...targetDraft.destination, transfer: 'sftp' }
+                        : targetDraft.destination
+                  })
+                }}
               >
                 <option value="">{t('publish.targetForm.pickConnection')}</option>
                 {eligibleConnections.map((c) => (
@@ -426,6 +474,16 @@ export default function Publish(): JSX.Element {
             )}
           </div>
 
+          {targetDraft.destination.type === 'sftp' && (
+            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+              {rsyncBlocker
+                ? t(`publish.rsyncBlocked.${rsyncBlocker}`)
+                : targetDraft.destination.transfer === 'rsync'
+                  ? t('publish.rsyncHint')
+                  : t('publish.sftpHint')}
+            </p>
+          )}
+
           {draftKind && (
             <div className="mt-3">
               <Button variant="ghost" onClick={() => setConnectionDraft(emptyConnectionDraft(draftKind))}>
@@ -435,13 +493,16 @@ export default function Publish(): JSX.Element {
           )}
 
           <div className="mt-3 flex gap-2">
-            <Button onClick={saveTarget} disabled={!targetDraft.name.trim() || !targetReady}>
-              {t('common.save')}
+            <Button onClick={() => saveTargetAction.run()} disabled={saveTargetAction.pending || !targetDraft.name.trim() || !targetReady}>
+              {saveTargetAction.pending ? t('common.saving') : t('common.save')}
             </Button>
             <Button variant="ghost" onClick={() => setTargetDraft(null)}>
               {t('common.cancel')}
             </Button>
           </div>
+          {saveTargetAction.error && (
+            <p className="mt-2 whitespace-pre-wrap break-words text-xs text-red-600 dark:text-red-400">{saveTargetAction.error}</p>
+          )}
         </Card>
       )}
 
@@ -562,13 +623,21 @@ export default function Publish(): JSX.Element {
             </p>
           )}
           <div className="mt-3 flex gap-2">
-            <Button onClick={saveConnection} disabled={!connectionDraft.name.trim()}>
-              {t('common.save')}
+            <Button
+              onClick={() => saveConnectionAction.run()}
+              disabled={saveConnectionAction.pending || !connectionDraft.name.trim()}
+            >
+              {saveConnectionAction.pending ? t('common.saving') : t('common.save')}
             </Button>
             <Button variant="ghost" onClick={() => setConnectionDraft(null)}>
               {t('common.cancel')}
             </Button>
           </div>
+          {saveConnectionAction.error && (
+            <p className="mt-2 whitespace-pre-wrap break-words text-xs text-red-600 dark:text-red-400">
+              {saveConnectionAction.error}
+            </p>
+          )}
         </Card>
       )}
 

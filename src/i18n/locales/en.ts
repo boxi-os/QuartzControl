@@ -807,6 +807,18 @@ export default {
     newConnection: '+ New credential',
     newTarget: '+ New target',
     confirmDeleteTarget: 'Really delete this publish target? The credential it uses stays.',
+    sftpHint:
+      'SFTP compares against a local record of what was last uploaded. Files someone changes or deletes directly on the server go unnoticed.',
+    rsyncHint:
+      'rsync asks the server what is actually there, so the diff is right even if someone changed something by hand. Requires rsync on the server.',
+    rsyncBlocked: {
+      'no-connection': 'rsync becomes available once an SSH credential with a key file or the SSH agent is selected.',
+      'password-auth': 'rsync cannot be used with password login - ssh has no way to accept the password. A key file or the SSH agent works.',
+      'key-not-a-file':
+        'rsync needs the private key as a file; a key pasted here is not enough. Switch the credential to a key file.',
+      'no-pinned-host-key':
+        'rsync needs a confirmed host key. Publish once over SFTP - the fingerprint is asked for and stored - then rsync can be selected.'
+    },
     webhookNoUrl: 'no URL stored',
     webhookExplainer:
       'A webhook uploads nothing - it asks a provider (Netlify, Cloudflare Pages, Vercel, CI) to build. That is why there is no file list here: the build runs there, not on this machine.',
@@ -818,6 +830,9 @@ export default {
       name: 'Name',
       type: 'Type',
       remotePath: 'Remote path',
+      transfer: 'Transfer',
+      transferSftp: 'SFTP (file by file)',
+      transferRsync: 'rsync (faster, compares against the server)',
       typeFolder: 'Folder',
       typeWebhook: 'Webhook',
       folderPath: 'Target folder',

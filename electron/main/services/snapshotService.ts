@@ -42,6 +42,29 @@ const COALESCE_WINDOW = 15 * 60 * 1000
 // them, which is the opposite of what a snapshot is for.
 const COALESCING_KINDS = new Set<SnapshotKind>(['configChange', 'styleChange'])
 
+// Every operation below shares one git index, and git guards that index with an index.lock that
+// a second process cannot take: measured, six concurrent `git add -A` runs leave five failing with
+// "Unable to create index.lock". React's StrictMode makes that the normal case, not an edge case -
+// it runs every page's mount effect twice, so the Backups page fires each of its calls twice at
+// once. Worse than the failure was how it failed: diffSnapshot swallowed it and answered with an
+// empty change list, i.e. "no differences from the current state".
+//
+// So every operation that touches the index runs in a per-project queue. The two pure reads
+// (listSnapshots, getSettings) stay outside it - they read refs and a JSON file, take no lock, and
+// are called from inside the locked operations, where waiting on the queue would deadlock.
+const queues = new Map<string, Promise<unknown>>()
+
+function serialize<T>(projectPath: string, operation: () => Promise<T>): Promise<T> {
+  const previous = queues.get(projectPath) ?? Promise.resolve()
+  const next = previous.then(operation, operation)
+  // The stored tail must never reject, or every later operation would inherit that rejection.
+  queues.set(
+    projectPath,
+    next.catch(() => undefined)
+  )
+  return next
+}
+
 function storePath(projectPath: string): string {
   return join(quartzGuiDir(projectPath), STORE_DIR)
 }
@@ -107,7 +130,10 @@ async function ensureStore(projectPath: string): Promise<SnapshotSettings> {
 }
 
 async function stage(projectPath: string, settings: SnapshotSettings): Promise<void> {
-  await git(projectPath, ['add', '-A'])
+  // Not silent: a failure here means the index does not describe the project, and every answer
+  // derived from it - a diff above all - would be confidently wrong.
+  const added = await git(projectPath, ['add', '-A'])
+  if (!added.success) throw new Error(`Projektstand konnte nicht erfasst werden:\n${added.output}`)
   const entries = (await readdir(quartzGuiDir(projectPath))).filter(isSnapshotWorthy).map((name) => `.quartz-gui/${name}`)
   if (entries.length > 0) await git(projectPath, ['add', '-f', '--', ...entries])
   // An ignore rule only ever governs *untracked* files, so turning the content folder off left it
@@ -152,7 +178,7 @@ export async function getSettings(projectPath: string): Promise<SnapshotSettings
   }
 }
 
-export async function saveSettings(projectPath: string, includeContent: boolean): Promise<SnapshotSettings> {
+async function saveSettingsUnlocked(projectPath: string, includeContent: boolean): Promise<SnapshotSettings> {
   await writeFile(
     join(quartzGuiDir(projectPath), SETTINGS_FILE),
     JSON.stringify({ includeContent }, null, 2),
@@ -176,7 +202,7 @@ function newSnapshotId(): string {
 // Automatic snapshots are skipped when nothing changed since the last one, because the value of
 // this list is being able to read it. A manual snapshot is always kept: the user pressed a button,
 // and an entry not appearing would read as a failure.
-export async function createSnapshot(projectPath: string, kind: SnapshotKind, rawLabel = ''): Promise<Snapshot | null> {
+async function createSnapshotUnlocked(projectPath: string, kind: SnapshotKind, rawLabel = ''): Promise<Snapshot | null> {
   // The label rides in the commit subject, which is one line by definition.
   const label = rawLabel.replace(/\s+/g, ' ').trim().slice(0, 120)
   const settings = await ensureStore(projectPath)
@@ -226,7 +252,7 @@ export async function createSnapshot(projectPath: string, kind: SnapshotKind, ra
   // no matter how small it is - which is most of what an unpacked store takes up. `--auto` only
   // does the work once git's own threshold is crossed, so this is a cheap check on the common path.
   await git(projectPath, ['gc', '--auto', '--quiet'])
-  if (kind !== 'manual') await pruneAutomatic(projectPath)
+  if (kind !== 'manual') await pruneAutomaticUnlocked(projectPath)
   return { id, commit, createdAt: new Date().toISOString(), kind, label, projectHead: head || undefined }
 }
 
@@ -261,6 +287,24 @@ export async function listSnapshots(projectPath: string): Promise<Snapshot[]> {
     .sort((a, b) => b.id.localeCompare(a.id))
 }
 
+// An imported entry carries a single file - the config copy the old per-save backups kept. It
+// describes that file at a point in time, not the project, so the whole-project comparison every
+// other snapshot gets is wrong for it in a dangerous way: on a real project it reported 342 files
+// as "added since", and restoring all of them would have deleted the entire project down to that
+// one config file. Every other kind is a full-project snapshot, where deleting what the snapshot
+// does not have is exactly right.
+function isPartial(kind: SnapshotKind): boolean {
+  return kind === 'imported'
+}
+
+async function snapshotPaths(projectPath: string, commit: string): Promise<string[]> {
+  return (await git(projectPath, ['ls-tree', '-r', '--name-only', '-z', commit])).output.split(NUL).filter(Boolean)
+}
+
+async function findSnapshot(projectPath: string, id: string): Promise<Snapshot | undefined> {
+  return (await listSnapshots(projectPath)).find((entry) => entry.id === id)
+}
+
 async function commitFor(projectPath: string, id: string): Promise<string> {
   const result = await git(projectPath, ['rev-parse', `${REF_PREFIX}${id}`])
   const commit = result.output.trim()
@@ -279,23 +323,35 @@ async function commitFor(projectPath: string, id: string): Promise<string> {
 // Each imported snapshot holds *only* that config file: the rest of the project as it was back
 // then is not recoverable, and inventing it from today's files would produce a snapshot that
 // never existed. Restoring one therefore offers exactly the file it has.
-export async function migrateConfigBackups(projectPath: string): Promise<number> {
+async function migrateConfigBackupsUnlocked(projectPath: string): Promise<number> {
   const legacyDir = join(projectPath, '.quartz-gui', 'backups')
-  if (!existsSync(legacyDir)) return 0
+  const claimedDir = `${legacyDir}.migrated`
+  // The rename claims the work up front rather than confirming it at the end, because a check
+  // followed by a rename is not atomic: React's StrictMode runs the Backups page's mount effect
+  // twice, so two snapshot:list calls arrive at once, both got past an existsSync, one renamed,
+  // and the other threw its ENOENT at the user as a toast. Exactly one caller can win a rename.
+  //
+  // A crash between the claim and the import would leave the files unimported but intact under
+  // .migrated, which is the better failure: nothing is lost, and nothing is imported twice.
+  try {
+    await rename(legacyDir, claimedDir)
+  } catch {
+    return 0 // nothing to migrate, or another call is already doing it
+  }
   await ensureStore(projectPath)
 
   // Only files whose name is one of backupService's generated timestamps. A stray file - the
   // .DS_Store macOS drops into any folder opened in Finder, or anything hand-placed - would
   // otherwise become a snapshot whose id the IPC schema rejects, i.e. an entry the list shows and
   // no action can touch. backupService's own listing filters for the same reason.
-  const files = (await readdir(legacyDir))
+  const files = (await readdir(claimedDir))
     .filter((name) => /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z\.yaml$/.test(name))
     .sort()
   let imported = 0
   for (const file of files) {
     const id = file.replace(/\.yaml$/, '')
     const blob = (
-      await run('git', ['--git-dir', storePath(projectPath), 'hash-object', '-w', join(legacyDir, file)], projectPath)
+      await run('git', ['--git-dir', storePath(projectPath), 'hash-object', '-w', join(claimedDir, file)], projectPath)
     ).output.trim()
     if (!blob) continue
     // mktree reads "<mode> <type> <sha>\t<path>" - one entry, the config file at the project root.
@@ -323,10 +379,9 @@ export async function migrateConfigBackups(projectPath: string): Promise<number>
     await git(projectPath, ['update-ref', `${REF_PREFIX}${id}-0000`, commit])
     imported += 1
   }
-  await rename(legacyDir, `${legacyDir}.migrated`)
   // Imported entries are automatic, so the usual thinning applies to them - forty config saves
   // from one afternoon collapse to one per day the same way a fresh burst would.
-  await pruneAutomatic(projectPath)
+  await pruneAutomaticUnlocked(projectPath)
   return imported
 }
 
@@ -358,10 +413,14 @@ function runWithInput(args: string[], input: string, cwd: string): Promise<strin
 //
 // -z because git C-quotes non-ASCII paths otherwise, which reaches the UI as mojibake - the same
 // reason gitStatusService uses it.
-export async function diffSnapshot(projectPath: string, id: string): Promise<SnapshotFileChange[]> {
+async function diffSnapshotUnlocked(projectPath: string, id: string): Promise<SnapshotFileChange[]> {
   const commit = await commitFor(projectPath, id)
+  const snapshot = await findSnapshot(projectPath, id)
   await stage(projectPath, await ensureStore(projectPath))
-  const result = await git(projectPath, ['diff-index', '--cached', '--name-status', '-z', commit])
+  // A partial snapshot is compared only against what it actually holds; anything else would report
+  // the rest of the project as new.
+  const limitTo = snapshot && isPartial(snapshot.kind) ? ['--', ...(await snapshotPaths(projectPath, commit))] : []
+  const result = await git(projectPath, ['diff-index', '--cached', '--name-status', '-z', commit, ...limitTo])
   if (!result.success) return []
   const parts = result.output.split(NUL).filter((part) => part.length > 0)
   const changes: SnapshotFileChange[] = []
@@ -377,7 +436,7 @@ export async function diffSnapshot(projectPath: string, id: string): Promise<Sna
   return changes.sort((a, b) => a.path.localeCompare(b.path))
 }
 
-export async function fileDiff(projectPath: string, id: string, path: string): Promise<string> {
+async function fileDiffUnlocked(projectPath: string, id: string, path: string): Promise<string> {
   const commit = await commitFor(projectPath, id)
   await stage(projectPath, await ensureStore(projectPath))
   return (await git(projectPath, ['diff', '--cached', commit, '--', path])).output
@@ -388,16 +447,20 @@ export async function fileDiff(projectPath: string, id: string, path: string): P
 
 // Restoring is itself reversible - a snapshot of the current state is taken first, the principle
 // the old config backups already followed and the update page's git tags did not.
-export async function restoreSnapshot(
+async function restoreSnapshotUnlocked(
   projectPath: string,
   id: string,
   options: RestoreOptions = {}
 ): Promise<PluginActionResult> {
   const { paths, resetProjectHead } = options
   const commit = await commitFor(projectPath, id)
-  const touched = paths && paths.length > 0 ? paths : (await diffSnapshot(projectPath, id)).map((change) => change.path)
-  const snapshot = (await listSnapshots(projectPath)).find((entry) => entry.id === id)
-  await createSnapshot(projectPath, 'restore', '')
+  const snapshot = await findSnapshot(projectPath, id)
+  // "Everything" means everything *this snapshot is about*. For a partial one that is the files it
+  // holds - never a whole-project reset, which would delete the rest of the project.
+  const effectivePaths =
+    paths && paths.length > 0 ? paths : snapshot && isPartial(snapshot.kind) ? await snapshotPaths(projectPath, commit) : undefined
+  const touched = effectivePaths ?? (await diffSnapshotUnlocked(projectPath, id)).map((change) => change.path)
+  await createSnapshotUnlocked(projectPath, 'restore', '')
   await stage(projectPath, await getSettings(projectPath))
 
   const output: string[] = []
@@ -412,7 +475,7 @@ export async function restoreSnapshot(
     if (!reset.success) return { success: false, output: reset.output }
     output.push(reset.output)
   }
-  if (!paths || paths.length === 0) {
+  if (!effectivePaths) {
     // Updates the work tree *and* removes what the snapshot doesn't have. That only ever touches
     // files this store tracks - node_modules and everything else excluded stays where it is.
     const read = await git(projectPath, ['read-tree', '-u', '--reset', commit])
@@ -424,8 +487,8 @@ export async function restoreSnapshot(
     const inSnapshot = new Set(
       (await git(projectPath, ['ls-tree', '-r', '--name-only', '-z', commit])).output.split(NUL).filter(Boolean)
     )
-    const toRestore = paths.filter((path) => inSnapshot.has(path))
-    const toDelete = paths.filter((path) => !inSnapshot.has(path))
+    const toRestore = effectivePaths.filter((path) => inSnapshot.has(path))
+    const toDelete = effectivePaths.filter((path) => !inSnapshot.has(path))
     if (toRestore.length > 0) {
       const checkout = await git(projectPath, ['checkout', commit, '--', ...toRestore])
       if (!checkout.success) return { success: false, output: checkout.output }
@@ -445,13 +508,13 @@ export async function restoreSnapshot(
   return { success: true, output: output.join('\n').trim() }
 }
 
-export async function deleteSnapshot(projectPath: string, id: string): Promise<void> {
+async function deleteSnapshotUnlocked(projectPath: string, id: string): Promise<void> {
   await git(projectPath, ['update-ref', '-d', `${REF_PREFIX}${id}`])
   // The commit is unreachable now; without a prune its objects would sit there forever.
   await git(projectPath, ['gc', '--prune=now', '--quiet'])
 }
 
-export async function exportSnapshot(projectPath: string, id: string, targetFile: string): Promise<void> {
+async function exportSnapshotUnlocked(projectPath: string, id: string, targetFile: string): Promise<void> {
   const commit = await commitFor(projectPath, id)
   const result = await git(projectPath, ['archive', '--format=zip', `--prefix=${id}/`, '-o', targetFile, commit])
   if (!result.success) throw new Error(result.output)
@@ -472,7 +535,7 @@ function retentionBucket(age: number, createdAt: Date): string | null {
   return `month-${createdAt.toISOString().slice(0, 7)}`
 }
 
-export async function pruneAutomatic(projectPath: string): Promise<number> {
+async function pruneAutomaticUnlocked(projectPath: string): Promise<number> {
   const snapshots = await listSnapshots(projectPath)
   const now = Date.now()
   const kept = new Set<string>()
@@ -490,3 +553,33 @@ export async function pruneAutomatic(projectPath: string): Promise<number> {
   if (doomed.length > 0) await git(projectPath, ['gc', '--prune=now', '--quiet'])
   return doomed.length
 }
+
+// ---------------------------------------------------------------------------------------------
+// Public API - everything that touches the index goes through the per-project queue above.
+
+export const createSnapshot = (projectPath: string, kind: SnapshotKind, label = ''): Promise<Snapshot | null> =>
+  serialize(projectPath, () => createSnapshotUnlocked(projectPath, kind, label))
+
+export const diffSnapshot = (projectPath: string, id: string): Promise<SnapshotFileChange[]> =>
+  serialize(projectPath, () => diffSnapshotUnlocked(projectPath, id))
+
+export const fileDiff = (projectPath: string, id: string, path: string): Promise<string> =>
+  serialize(projectPath, () => fileDiffUnlocked(projectPath, id, path))
+
+export const restoreSnapshot = (projectPath: string, id: string, options: RestoreOptions = {}): Promise<PluginActionResult> =>
+  serialize(projectPath, () => restoreSnapshotUnlocked(projectPath, id, options))
+
+export const deleteSnapshot = (projectPath: string, id: string): Promise<void> =>
+  serialize(projectPath, () => deleteSnapshotUnlocked(projectPath, id))
+
+export const exportSnapshot = (projectPath: string, id: string, targetFile: string): Promise<void> =>
+  serialize(projectPath, () => exportSnapshotUnlocked(projectPath, id, targetFile))
+
+export const saveSettings = (projectPath: string, includeContent: boolean): Promise<SnapshotSettings> =>
+  serialize(projectPath, () => saveSettingsUnlocked(projectPath, includeContent))
+
+export const migrateConfigBackups = (projectPath: string): Promise<number> =>
+  serialize(projectPath, () => migrateConfigBackupsUnlocked(projectPath))
+
+export const pruneAutomatic = (projectPath: string): Promise<number> =>
+  serialize(projectPath, () => pruneAutomaticUnlocked(projectPath))

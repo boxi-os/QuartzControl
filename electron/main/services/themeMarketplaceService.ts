@@ -1,4 +1,5 @@
 import { spawn } from 'child_process'
+import * as connectionsService from './connectionsService'
 import { needsShell, runCommand } from './runCommand'
 import type { PluginActionResult, QuartzThemeListing, ThemeDetail } from '@shared/ipc-contract'
 import { getLocalThemeDetail } from './pluginSchemaService'
@@ -74,7 +75,8 @@ interface GithubRepo {
 // In practice almost none of these repos carry topics or a description, and stars sit at 0-1
 // (sampled tokyo-night/catppuccin/obsidian/nord/minimal/default and 5 more at random) - real, but
 // sparse; callers should not assume every theme gets a badge.
-async function fetchGithubMetadata(githubToken?: string): Promise<Map<string, GithubRepoMeta>> {
+async function fetchGithubMetadata(): Promise<Map<string, GithubRepoMeta>> {
+  const githubToken = await connectionsService.getGithubToken()
   const byRepoName = new Map<string, GithubRepoMeta>()
   const headers: Record<string, string> = { Accept: 'application/vnd.github+json' }
   if (githubToken) headers.Authorization = `Bearer ${githubToken}`
@@ -102,12 +104,12 @@ async function fetchGithubMetadata(githubToken?: string): Promise<Map<string, Gi
   return byRepoName
 }
 
-export async function listThemes(githubToken?: string): Promise<QuartzThemeListing[]> {
+export async function listThemes(): Promise<QuartzThemeListing[]> {
   if (!cache || Date.now() - cache.at > CACHE_TTL_MS) {
     cache = { at: Date.now(), results: await fetchFromNpm() }
   }
   if (!githubCache || Date.now() - githubCache.at > CACHE_TTL_MS) {
-    githubCache = { at: Date.now(), byRepoName: await fetchGithubMetadata(githubToken) }
+    githubCache = { at: Date.now(), byRepoName: await fetchGithubMetadata() }
   }
   return cache.results.map((t) => {
     const gh = githubCache!.byRepoName.get(t.id)

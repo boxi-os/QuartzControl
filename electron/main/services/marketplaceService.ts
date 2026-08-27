@@ -1,4 +1,5 @@
 import type { MarketplacePlugin } from '@shared/ipc-contract'
+import * as connectionsService from './connectionsService'
 
 const CACHE_TTL_MS = 15 * 60 * 1000
 
@@ -23,7 +24,10 @@ interface GithubRepo {
   topics?: string[]
 }
 
-async function fetchFromGithub(githubToken?: string): Promise<MarketplacePlugin[]> {
+async function fetchFromGithub(): Promise<MarketplacePlugin[]> {
+  // Read here rather than passed in from the renderer: the token is a credential, and relaying it
+  // out to the renderer and back on every search was one round-trip more exposure than necessary.
+  const githubToken = await connectionsService.getGithubToken()
   try {
     const headers: Record<string, string> = { Accept: 'application/vnd.github+json' }
     if (githubToken) headers.Authorization = `Bearer ${githubToken}`
@@ -44,9 +48,9 @@ async function fetchFromGithub(githubToken?: string): Promise<MarketplacePlugin[
   }
 }
 
-export async function searchPlugins(query: string, githubToken?: string): Promise<MarketplacePlugin[]> {
+export async function searchPlugins(query: string): Promise<MarketplacePlugin[]> {
   if (!cache || Date.now() - cache.at > CACHE_TTL_MS) {
-    cache = { at: Date.now(), results: await fetchFromGithub(githubToken) }
+    cache = { at: Date.now(), results: await fetchFromGithub() }
   }
   const q = query.trim().toLowerCase()
   if (!q) return cache.results

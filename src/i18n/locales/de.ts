@@ -163,7 +163,40 @@ export default {
     both: 'Push + Pull',
     bothRunning: 'Sync läuft…',
     success: 'Erfolgreich.',
-    failed: 'Fehlgeschlagen.'
+    failed: 'Fehlgeschlagen.',
+    statusTitle: 'Stand des Repositorys',
+    notARepo: 'Dieses Projekt ist kein Git-Repository - Sync ist hier nicht möglich.',
+    noRemote: 'Kein "origin"-Remote konfiguriert. Push und Pull haben kein Ziel.',
+    detached: 'Losgelöster HEAD',
+    noUpstream: 'Kein Upstream',
+    noUpstreamHint: 'Dieser Branch verfolgt keinen Remote-Branch - "voraus/zurück" lässt sich deshalb nicht bestimmen.',
+    upToDate: 'Auf dem Stand des Remotes',
+    ahead: '{{count}} voraus',
+    behind: '{{count}} zurück',
+    clean: 'Keine lokalen Änderungen',
+    changes: '{{count}} lokale Änderung',
+    changes_other: '{{count}} lokale Änderungen',
+    conflicts: '{{count}} Konflikt',
+    conflicts_other: '{{count}} Konflikte',
+    moreChanges: '… und {{count}} weitere',
+    lastCommit: 'Letzter Commit',
+    refresh: 'Aktualisieren',
+    inProgress: {
+      merge: 'Ein Merge ist angefangen und nicht abgeschlossen.',
+      rebase: 'Ein Rebase ist angefangen und nicht abgeschlossen.',
+      'cherry-pick': 'Ein Cherry-Pick ist angefangen und nicht abgeschlossen.',
+      revert: 'Ein Revert ist angefangen und nicht abgeschlossen.'
+    },
+    fileStatus: {
+      added: 'neu',
+      modified: 'geändert',
+      deleted: 'gelöscht',
+      renamed: 'umbenannt',
+      copied: 'kopiert',
+      untracked: 'unverfolgt',
+      conflicted: 'Konflikt'
+    },
+    staged: 'vorgemerkt'
   },
   backups: {
     config: 'Konfiguration',
@@ -177,6 +210,7 @@ export default {
   settings: {
     title: 'Einstellungen',
     githubToken: 'GitHub-Token (für Marktplatz-Rate-Limit)',
+    githubTokenStored: 'gespeichert - zum Ersetzen neu eingeben',
     defaultProjectDirectory: 'Standard-Projektverzeichnis',
     language: 'Sprache',
     languageSystem: 'Systemsprache folgen',
@@ -772,7 +806,27 @@ export default {
     githubPages: 'GitHub Pages',
     githubBranch: 'Branch',
     githubPagesHint: 'Nutzt das bereits konfigurierte "origin"-Remote (dasselbe wie bei Git-Sync).',
-    newConnection: '+ Neue Verbindung',
+    newConnection: '+ Neuer Zugang',
+    newTarget: '+ Neues Ziel',
+    confirmDeleteTarget: 'Dieses Veröffentlichungsziel wirklich löschen? Der hinterlegte Zugang bleibt bestehen.',
+    webhookNoUrl: 'keine URL hinterlegt',
+    webhookExplainer:
+      'Ein Webhook lädt keine Dateien hoch, sondern stößt einen Build beim Anbieter an (Netlify, Cloudflare Pages, Vercel, CI). Deshalb gibt es hier keine Dateiliste - der Build läuft dort, nicht hier.',
+    deleteDisabledHint: 'Löschen ist für dieses Ziel deaktiviert - entfernte Dateien bleiben dort liegen, werden aber weiter mitgezählt.',
+    targetForm: {
+      heading: 'Veröffentlichungsziel',
+      explainer:
+        'Ein Ziel beschreibt, wohin dieses Projekt veröffentlicht - Pfad, Löschverhalten und welcher Zugang dafür benutzt wird. Der Zugang selbst gilt appweit und kann von mehreren Projekten benutzt werden.',
+      name: 'Name',
+      type: 'Art',
+      remotePath: 'Remote-Pfad',
+      typeFolder: 'Ordner',
+      typeWebhook: 'Webhook',
+      folderPath: 'Zielordner',
+      connection: 'Zugang',
+      pickConnection: '— Zugang wählen —',
+      deleteRemoved: 'Entfernte Dateien auch im Ziel löschen'
+    },
     noSecretWarning: '(kein Passwort/Key hinterlegt)',
     hostKeyPinned: 'Host-Key bestätigt',
     hostKeyUnknown: 'Host-Key noch nicht bestätigt — wird beim ersten Verbinden abgefragt',
@@ -780,25 +834,29 @@ export default {
     confirmForgetHostKey:
       'Gespeicherten Host-Key für {{host}} verwerfen?\n\nBeim nächsten Verbinden wird der Fingerprint erneut abgefragt. Nur tun, wenn der Server nachweislich neu aufgesetzt wurde.',
     ftpPlaintextWarning: 'FTP überträgt Passwort und Dateien im Klartext. Ohne FTPS kann jeder im selben Netz mitlesen — falls dein Anbieter es unterstützt, unbedingt aktivieren (oder besser SFTP nutzen).',
-    confirmDeleteConnection: 'Diese Verbindung wirklich löschen?',
     confirmDeployGithubPages:
       'Veröffentlichen nach GitHub Pages?\n\nDer Branch "{{branch}}" wird dabei vollständig durch den aktuellen Build ersetzt (force-push).',
     confirmDeployConnection:
       'Nach {{target}} veröffentlichen?\n\n{{uploads}} Datei(en) werden hochgeladen, {{deletions}} Datei(en) werden auf dem Server gelöscht.',
     connectionForm: {
-      heading: 'Verbindung',
+      heading: 'Zugang',
+      explainer:
+        'Zugangsdaten werden verschlüsselt im Schlüsselbund des Systems abgelegt und gelten appweit - nicht nur für dieses Projekt.',
       name: 'Name',
-      protocol: 'Protokoll',
       host: 'Host',
       port: 'Port',
       username: 'Benutzername',
-      remotePath: 'Remote-Pfad',
       authMethod: 'Authentifizierung',
       authPassword: 'Passwort',
       authPrivateKey: 'Privater Schlüssel',
+      authAgent: 'SSH-Agent',
+      keyPath: 'Schlüsseldatei',
+      agentHint:
+        'Der Schlüssel bleibt im SSH-Agent des Systems; diese App speichert dafür nichts. Vorausgesetzt wird eine gesetzte SSH_AUTH_SOCK-Umgebungsvariable.',
       secure: 'FTPS (verschlüsselt)',
       password: 'Passwort',
       privateKey: 'Privater Schlüssel (Inhalt)',
+      webhookUrl: 'Webhook-URL',
       secretUnchangedPlaceholder: 'unverändert lassen'
     },
     outputDir: 'Ausgabeverzeichnis',

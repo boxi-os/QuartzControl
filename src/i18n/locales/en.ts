@@ -163,7 +163,40 @@ export default {
     both: 'Push + pull',
     bothRunning: 'Sync running…',
     success: 'Successful.',
-    failed: 'Failed.'
+    failed: 'Failed.',
+    statusTitle: 'Repository state',
+    notARepo: 'This project is not a git repository - syncing is not possible here.',
+    noRemote: 'No "origin" remote configured. Push and pull have no target.',
+    detached: 'Detached HEAD',
+    noUpstream: 'No upstream',
+    noUpstreamHint: 'This branch tracks no remote branch, so ahead/behind cannot be determined.',
+    upToDate: 'Up to date with the remote',
+    ahead: '{{count}} ahead',
+    behind: '{{count}} behind',
+    clean: 'No local changes',
+    changes: '{{count}} local change',
+    changes_other: '{{count}} local changes',
+    conflicts: '{{count}} conflict',
+    conflicts_other: '{{count}} conflicts',
+    moreChanges: '… and {{count}} more',
+    lastCommit: 'Last commit',
+    refresh: 'Refresh',
+    inProgress: {
+      merge: 'A merge has been started and is not finished.',
+      rebase: 'A rebase has been started and is not finished.',
+      'cherry-pick': 'A cherry-pick has been started and is not finished.',
+      revert: 'A revert has been started and is not finished.'
+    },
+    fileStatus: {
+      added: 'new',
+      modified: 'modified',
+      deleted: 'deleted',
+      renamed: 'renamed',
+      copied: 'copied',
+      untracked: 'untracked',
+      conflicted: 'conflict'
+    },
+    staged: 'staged'
   },
   backups: {
     config: 'Configuration',
@@ -177,6 +210,7 @@ export default {
   settings: {
     title: 'Settings',
     githubToken: 'GitHub token (for marketplace rate limit)',
+    githubTokenStored: 'stored - type a new one to replace it',
     defaultProjectDirectory: 'Default project directory',
     language: 'Language',
     languageSystem: 'Follow system language',
@@ -770,7 +804,27 @@ export default {
     githubPages: 'GitHub Pages',
     githubBranch: 'Branch',
     githubPagesHint: 'Uses the already-configured "origin" remote (the same one Git-Sync uses).',
-    newConnection: '+ New connection',
+    newConnection: '+ New credential',
+    newTarget: '+ New target',
+    confirmDeleteTarget: 'Really delete this publish target? The credential it uses stays.',
+    webhookNoUrl: 'no URL stored',
+    webhookExplainer:
+      'A webhook uploads nothing - it asks a provider (Netlify, Cloudflare Pages, Vercel, CI) to build. That is why there is no file list here: the build runs there, not on this machine.',
+    deleteDisabledHint: 'Deleting is off for this target - removed files stay there, but are still tracked.',
+    targetForm: {
+      heading: 'Publish target',
+      explainer:
+        'A target describes where this project publishes to - path, deletion behaviour and which credential it uses. The credential itself is app-wide and can be shared by several projects.',
+      name: 'Name',
+      type: 'Type',
+      remotePath: 'Remote path',
+      typeFolder: 'Folder',
+      typeWebhook: 'Webhook',
+      folderPath: 'Target folder',
+      connection: 'Credential',
+      pickConnection: '— pick a credential —',
+      deleteRemoved: 'Also delete removed files at the target'
+    },
     noSecretWarning: '(no password/key stored)',
     hostKeyPinned: 'Host key confirmed',
     hostKeyUnknown: 'Host key not confirmed yet — you will be asked on first connect',
@@ -778,25 +832,29 @@ export default {
     confirmForgetHostKey:
       'Discard the stored host key for {{host}}?\n\nYou will be asked to confirm the fingerprint again on the next connect. Only do this if the server was genuinely rebuilt.',
     ftpPlaintextWarning: 'FTP sends the password and all files in the clear. Without FTPS anyone on the same network can read along — enable it if your provider supports it (or use SFTP instead).',
-    confirmDeleteConnection: 'Really delete this connection?',
     confirmDeployGithubPages:
       'Publish to GitHub Pages?\n\nBranch "{{branch}}" will be replaced entirely by the current build (force push).',
     confirmDeployConnection:
       'Publish to {{target}}?\n\n{{uploads}} file(s) will be uploaded, {{deletions}} file(s) will be deleted on the server.',
     connectionForm: {
-      heading: 'Connection',
+      heading: 'Credential',
+      explainer:
+        'Credentials are encrypted in the system keychain and are app-wide, not tied to this project.',
       name: 'Name',
-      protocol: 'Protocol',
       host: 'Host',
       port: 'Port',
       username: 'Username',
-      remotePath: 'Remote path',
       authMethod: 'Authentication',
       authPassword: 'Password',
       authPrivateKey: 'Private key',
+      authAgent: 'SSH agent',
+      keyPath: 'Key file',
+      agentHint:
+        'The key stays in the system SSH agent; this app stores nothing for it. Requires SSH_AUTH_SOCK to be set.',
       secure: 'FTPS (encrypted)',
       password: 'Password',
       privateKey: 'Private key (contents)',
+      webhookUrl: 'Webhook URL',
       secretUnchangedPlaceholder: 'leave unchanged'
     },
     outputDir: 'Output directory',

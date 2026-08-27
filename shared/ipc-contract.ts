@@ -370,6 +370,39 @@ export interface SyncResult {
   output: string
 }
 
+export type GitOperationInProgress = 'merge' | 'rebase' | 'cherry-pick' | 'revert'
+
+export interface GitFileChange {
+  path: string
+  /** Only set for a rename/copy - the path the file had before. */
+  origPath?: string
+  /** The index differs from HEAD, i.e. this change is already staged for the next commit. */
+  staged: boolean
+  /** The working tree differs from the index. Both flags can be true for the same file. */
+  unstaged: boolean
+  status: 'added' | 'modified' | 'deleted' | 'renamed' | 'copied' | 'untracked' | 'conflicted'
+}
+
+// What `quartz sync` is about to act on, read straight from git (no token, no network). ahead and
+// behind are only meaningful when `upstream` is set - a branch without one reports 0/0, which is
+// not the same as "in sync".
+export interface GitStatus {
+  isRepo: boolean
+  /** null while HEAD is detached - see `detached`. */
+  branch: string | null
+  detached: boolean
+  upstream: string | null
+  ahead: number
+  behind: number
+  remoteUrl: string | null
+  /** Capped (conflicts and staged changes first); `changeCount` holds the untruncated total. */
+  changes: GitFileChange[]
+  changeCount: number
+  conflictCount: number
+  inProgress: GitOperationInProgress | null
+  lastCommit: { sha: string; shortSha: string; author: string; date: string; subject: string } | null
+}
+
 // The whole-file content of quartz/styles/custom.scss - verified to be the actual file Quartz's
 // build imports directly (quartz/plugins/emitters/componentResources.ts: `import customStyles
 // from "../../styles/custom.scss"`), so editing it needs no separate live-reload wiring: it's
@@ -531,48 +564,132 @@ export interface UpdateResult {
   conflicts?: string[]
 }
 
-// A saved SFTP/FTP connection profile. The renderer never sees the actual secret (password or
-// private-key contents) - only whether one is stored (`hasSecret`). It's encrypted at rest via
-// Electron's safeStorage (OS keychain-backed) in secretsService.ts, kept in Electron's userData
-// dir rather than the project - these are machine-local credentials, not something that should
-// ever end up inside the project's own git repo.
-export interface DeployConnectionProfile {
+// ---------------------------------------------------------------------------------------------
+// Connections (app level) and publish targets (project level)
+//
+// The split is deliberate and not cosmetic. A *connection* is something you have with a provider -
+// an SSH login, an FTP account, the GitHub token, a build hook. A *target* is what one project
+// does with it: which remote path, which branch, which local folder. Three things forced this
+// apart from the old per-project profile:
+//
+//   - A host key belongs to the host, not to the project. Pinning it per profile meant the same
+//     server got two independent pins in two projects, which can silently drift apart - the exact
+//     failure trust-on-first-use exists to prevent.
+//   - One webspace commonly carries several sites: same login, different remote path.
+//   - Rotating a password or token has to be one edit, not one per project.
+//
+// Connections live in Electron's userData (machine-local, secrets encrypted via safeStorage);
+// targets live in the project's own .quartz-gui/ (they travel with the project and carry no
+// secret at all).
+// ---------------------------------------------------------------------------------------------
+
+export type ConnectionKind = 'ssh' | 'ftp' | 'github' | 'webhook'
+
+// How an SSH connection authenticates. Three methods, but 'privateKey' has two provenances: with
+// a `keyPath` the file is read at connect time and nothing is stored here; without one the key
+// contents themselves are the stored secret (what the pre-split profiles held, and what a pasted
+// key still produces). The distinction matters beyond bookkeeping - rsync shells out to ssh(1),
+// which needs a key *file*, so it is only offered for 'agent' or 'privateKey' with a keyPath.
+export type SshAuthMethod = 'password' | 'privateKey' | 'agent'
+
+// The server's identity, recorded the first time the user confirmed it. `fingerprint` is
+// OpenSSH's "SHA256:<base64>" form, directly comparable with `ssh-keygen -lf` output. `blob` is
+// the raw public key, base64-encoded - it cannot be recovered from the fingerprint, and ssh(1)
+// needs it to build a known_hosts line, which is what lets an rsync transfer honour the same pin
+// as the SFTP one instead of trusting a second, separate store.
+export interface PinnedHostKey {
+  fingerprint: string
+  blob: string
+  type: string
+}
+
+interface ConnectionBase {
   id: string
-  projectPath: string
   name: string
-  protocol: 'sftp' | 'ftp'
-  host: string
-  port: number
-  username: string
-  remotePath: string
-  authMethod: 'password' | 'privateKey'
-  secure?: boolean
+  /** Whether a secret is stored. The secret itself is never sent to the renderer. */
   hasSecret: boolean
-  // SFTP only: the server's public-key fingerprint in OpenSSH's "SHA256:<base64>" form, recorded
-  // the first time the user confirmed it. A later connection whose key doesn't match is refused
-  // outright rather than re-prompting; clearing it (deploy.forgetHostKey) is the deliberate
-  // opt-out for a server that legitimately changed keys.
-  hostKeyFingerprint?: string
 }
 
-// `secret` is the plaintext password or private-key contents - only ever sent renderer->main when
-// saving (to be encrypted immediately), never the other direction. Omit to keep the existing
-// stored secret unchanged when just editing other fields of an existing profile.
-export interface SaveDeployConnectionInput {
-  id?: string
-  projectPath: string
-  name: string
-  protocol: 'sftp' | 'ftp'
+export interface SshConnection extends ConnectionBase {
+  kind: 'ssh'
   host: string
   port: number
   username: string
-  remotePath: string
-  authMethod: 'password' | 'privateKey'
-  secure?: boolean
-  secret?: string
+  authMethod: SshAuthMethod
+  /** Path to a private key file. Set only for authMethod 'privateKey' read from disk. */
+  keyPath?: string
+  hostKey?: PinnedHostKey
 }
 
-// One entry in the local build-output manifest (.quartz-gui/deploy-manifest.json), keyed by the
+export interface FtpConnection extends ConnectionBase {
+  kind: 'ftp'
+  host: string
+  port: number
+  username: string
+  /** FTPS. Plain FTP is cleartext by nature - there is no host-key equivalent to pin. */
+  secure: boolean
+}
+
+export interface GithubConnection extends ConnectionBase {
+  kind: 'github'
+  /** The account the token belongs to, resolved from the API once and cached for display. */
+  login?: string
+}
+
+export interface WebhookConnection extends ConnectionBase {
+  kind: 'webhook'
+  /** The URL is the credential (a build hook URL is a bearer token in URL form), so it is stored
+   *  encrypted like a password and only its origin is exposed for display. */
+  displayOrigin?: string
+}
+
+export type Connection = SshConnection | FtpConnection | GithubConnection | WebhookConnection
+
+/** `secret` is plaintext and only ever travels renderer->main, to be encrypted immediately.
+ *  Omit it when editing other fields to keep the stored secret unchanged. */
+export type SaveConnectionInput = { id?: string; secret?: string } & (
+  | Omit<SshConnection, 'id' | 'hasSecret' | 'hostKey'>
+  | Omit<FtpConnection, 'id' | 'hasSecret'>
+  | Omit<GithubConnection, 'id' | 'hasSecret'>
+  | Omit<WebhookConnection, 'id' | 'hasSecret' | 'displayOrigin'>
+)
+
+export type PublishDestination =
+  | {
+      type: 'sftp'
+      remotePath: string
+      /** 'rsync' runs rsync over ssh and diffs against the real remote state; 'sftp' uploads file
+       *  by file against the local manifest. Only offered for key/agent auth - see deploy/rsync.ts. */
+      transfer: 'sftp' | 'rsync'
+      /** Whether files missing locally are removed remotely. Off by default: a wrong remote path
+       *  plus deletion empties a directory that was never ours. */
+      deleteRemoved: boolean
+    }
+  | { type: 'ftp'; remotePath: string; deleteRemoved: boolean }
+  | { type: 'folder'; path: string; deleteRemoved: boolean }
+  | { type: 'webhook' }
+  | { type: 'git-branch'; branch: string; provider: 'github' | 'gitlab' | 'codeberg' }
+
+// Stored in <project>/.quartz-gui/publish-targets.json. `connectionId` is absent for
+// destinations that need no credential - a folder target, and a git-branch target, which uses the
+// repo's existing origin remote and the system's own git credentials.
+export interface PublishTarget {
+  id: string
+  name: string
+  connectionId?: string
+  destination: PublishDestination
+  /** Build-output paths never uploaded or deleted, carried between runs. */
+  excludes: string[]
+}
+
+export type SavePublishTargetInput = Omit<PublishTarget, 'id' | 'excludes'> & {
+  id?: string
+  excludes?: string[]
+}
+
+// One entry in a target's build-output manifest (.quartz-gui/deploy-manifest-<targetId>.json)
+// - one per target, because after deploying to A a shared manifest would report B as up to date.
+// Keyed by the
 // file's path relative to the build directory. Compared against a fresh hash of the current build
 // output to compute the changed/added/removed diff shown before a deploy.
 export interface DeployDiffEntry {
@@ -581,7 +698,7 @@ export interface DeployDiffEntry {
 }
 
 export interface DeployProgressEvent {
-  connectionId: string
+  targetId: string
   processed: number
   total: number
   currentFile?: string
@@ -707,10 +824,16 @@ export const IPC = {
   updateSnapshotList: 'update:snapshotList',
   updateSnapshotRestore: 'update:snapshotRestore',
 
-  deployConnectionsList: 'deploy:connectionsList',
-  deployConnectionSave: 'deploy:connectionSave',
-  deployConnectionDelete: 'deploy:connectionDelete',
-  deployForgetHostKey: 'deploy:forgetHostKey',
+  connectionsList: 'connections:list',
+  connectionSave: 'connections:save',
+  connectionDelete: 'connections:delete',
+  connectionUsage: 'connections:usage',
+  connectionForgetHostKey: 'connections:forgetHostKey',
+
+  publishTargetsList: 'publishTargets:list',
+  publishTargetSave: 'publishTargets:save',
+  publishTargetDelete: 'publishTargets:delete',
+
   deployDiff: 'deploy:diff',
   deployRun: 'deploy:run',
   deployGithubPagesRun: 'deploy:githubPagesRun',
@@ -736,6 +859,7 @@ export const IPC = {
   buildLog: 'build:log',
 
   syncRun: 'sync:run',
+  syncStatus: 'sync:status',
 
   backupList: 'backup:list',
   backupDiff: 'backup:diff',
@@ -752,7 +876,6 @@ export const IPC = {
 } as const
 
 export interface Settings {
-  githubToken?: string
   defaultProjectDirectory?: string
   // 'system' (default) follows the OS locale with an English fallback; 'de'/'en' pin the language.
   language?: 'system' | 'de' | 'en'
@@ -848,13 +971,25 @@ export interface QuartzGuiApi {
     listSnapshots(projectPath: string): Promise<ProjectSnapshot[]>
     restoreSnapshot(projectPath: string, tag: string): Promise<PluginActionResult>
   }
-  deploy: {
-    listConnections(projectPath: string): Promise<DeployConnectionProfile[]>
-    saveConnection(input: SaveDeployConnectionInput): Promise<DeployConnectionProfile>
-    deleteConnection(id: string): Promise<void>
+  connections: {
+    list(): Promise<Connection[]>
+    save(input: SaveConnectionInput): Promise<Connection>
+    delete(id: string): Promise<void>
+    /** Which registered projects have a target pointing at this connection - deleting one that is
+     *  still in use would leave those targets dangling, so the caller checks first. */
+    usage(id: string): Promise<{ projectPath: string; targetName: string }[]>
     forgetHostKey(id: string): Promise<void>
-    diff(projectPath: string, outputDir?: string): Promise<DeployDiffEntry[]>
-    run(connectionId: string, outputDir: string | undefined, excludePaths: string[]): Promise<DeployResult>
+  }
+  publishTargets: {
+    list(projectPath: string): Promise<PublishTarget[]>
+    save(projectPath: string, input: SavePublishTargetInput): Promise<PublishTarget>
+    delete(projectPath: string, id: string): Promise<void>
+  }
+  deploy: {
+    /** What this target would upload/delete. Manifest-based for sftp/ftp/folder, a real remote
+     *  dry-run for rsync, and empty for a webhook, which has nothing to diff. */
+    diff(projectPath: string, targetId: string, outputDir?: string): Promise<DeployDiffEntry[]>
+    run(projectPath: string, targetId: string, outputDir: string | undefined, excludePaths: string[]): Promise<DeployResult>
     runGithubPages(projectPath: string, outputDir: string | undefined, options: GithubPagesDeployOptions): Promise<DeployResult>
     onProgress(cb: (event: DeployProgressEvent) => void): () => void
   }
@@ -864,7 +999,7 @@ export interface QuartzGuiApi {
     import(projectPath: string, sourceDir: string, categories: TemplatePackageCategory[]): Promise<TemplatePackageImportResult>
   }
   themeMarketplace: {
-    list(githubToken?: string): Promise<QuartzThemeListing[]>
+    list(): Promise<QuartzThemeListing[]>
     install(projectPath: string, themeId: string): Promise<PluginActionResult>
     detail(projectPath: string, themeId: string): Promise<ThemeDetail | null>
     styleSettingsSchema(themeId: string): Promise<StyleSettingsSchema | null>
@@ -876,7 +1011,7 @@ export interface QuartzGuiApi {
     delete(projectPath: string, id: string): Promise<void>
   }
   marketplace: {
-    search(query: string, githubToken?: string): Promise<MarketplacePlugin[]>
+    search(query: string): Promise<MarketplacePlugin[]>
     refresh(): Promise<void>
   }
   server: {
@@ -893,6 +1028,7 @@ export interface QuartzGuiApi {
   }
   sync: {
     run(projectPath: string, direction?: 'push' | 'pull' | 'both'): Promise<SyncResult>
+    status(projectPath: string): Promise<GitStatus>
   }
   backups: {
     list(projectPath: string, kind: 'config' | 'content'): Promise<BackupEntry[]>

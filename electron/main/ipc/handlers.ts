@@ -7,7 +7,8 @@ import type {
   GithubPagesDeployOptions,
   GridFrameDefinition,
   QuartzConfig,
-  SaveDeployConnectionInput,
+  SaveConnectionInput,
+  SavePublishTargetInput,
   ServerOptions,
   Settings,
   ThemePreset
@@ -25,12 +26,14 @@ import * as variableGraphService from '../services/variableGraphService'
 import * as fontService from '../services/fontService'
 import * as localizationService from '../services/localizationService'
 import * as updateService from '../services/updateService'
-import * as secretsService from '../services/secretsService'
-import * as deployService from '../services/deployService'
+import * as connectionsService from '../services/connectionsService'
+import * as publishTargetsService from '../services/publishTargetsService'
+import * as deployService from '../services/deploy'
 import * as githubPagesService from '../services/githubPagesService'
 import * as marketplaceService from '../services/marketplaceService'
 import * as buildService from '../services/buildService'
 import * as syncService from '../services/syncService'
+import * as gitStatusService from '../services/gitStatusService'
 import * as backupService from '../services/backupService'
 import * as contentService from '../services/contentService'
 import * as createService from '../services/createService'
@@ -115,9 +118,7 @@ export function registerIpcHandlers(): void {
     pluginSchemaService.getThemeStyleSettingsInfo(projectPath, themeId)
   )
 
-  handle(IPC.themeMarketplaceList, t([s.shortText.optional()]), (githubToken) =>
-    themeMarketplaceService.listThemes(githubToken)
-  )
+  handleNoArgs(IPC.themeMarketplaceList, () => themeMarketplaceService.listThemes())
   handle(IPC.themeMarketplaceInstall, t([s.absolutePath, s.themeId]), (projectPath, themeId) =>
     themeMarketplaceService.installTheme(projectPath, themeId)
   )
@@ -247,17 +248,41 @@ export function registerIpcHandlers(): void {
     updateService.restoreSnapshot(projectPath, tag)
   )
 
-  handle(IPC.deployConnectionsList, t([s.absolutePath]), (projectPath) => secretsService.listConnections(projectPath))
-  handle(IPC.deployConnectionSave, t([s.saveDeployConnectionInput]), (input) => secretsService.saveConnection(input as SaveDeployConnectionInput))
-  handle(IPC.deployConnectionDelete, t([s.uuid]), (id) => secretsService.deleteConnection(id))
-  handle(IPC.deployForgetHostKey, t([s.uuid]), (id) => secretsService.forgetHostKey(id))
-  handle(IPC.deployDiff, t([s.absolutePath, s.buildOutputDir.optional()]), (projectPath, outputDir) =>
-    deployService.diffBuildOutput(projectPath, outputDir)
+  handleNoArgs(IPC.connectionsList, () => connectionsService.listConnections())
+  handle(IPC.connectionSave, t([s.saveConnectionInput]), (input) =>
+    connectionsService.saveConnection(input as SaveConnectionInput)
+  )
+  handle(IPC.connectionDelete, t([s.uuid]), (id) => connectionsService.deleteConnection(id))
+  handle(IPC.connectionForgetHostKey, t([s.uuid]), (id) => connectionsService.forgetHostKey(id))
+  // Asked across every registered project, because a connection is app-level while the targets
+  // that reference it are not - only the union answers "is this still in use anywhere?".
+  handle(IPC.connectionUsage, t([s.uuid]), async (id) => {
+    const projects = await projectStore.listProjects()
+    const usage: { projectPath: string; targetName: string }[] = []
+    for (const project of projects) {
+      for (const target of await publishTargetsService.targetsUsingConnection(project.path, id)) {
+        usage.push({ projectPath: project.path, targetName: target.name })
+      }
+    }
+    return usage
+  })
+
+  handle(IPC.publishTargetsList, t([s.absolutePath]), (projectPath) => publishTargetsService.listTargets(projectPath))
+  handle(IPC.publishTargetSave, t([s.absolutePath, s.savePublishTargetInput]), (projectPath, input) =>
+    publishTargetsService.saveTarget(projectPath, input as SavePublishTargetInput)
+  )
+  handle(IPC.publishTargetDelete, t([s.absolutePath, s.uuid]), (projectPath, id) =>
+    publishTargetsService.deleteTarget(projectPath, id)
+  )
+
+  handle(IPC.deployDiff, t([s.absolutePath, s.uuid, s.buildOutputDir.optional()]), (projectPath, targetId, outputDir) =>
+    deployService.previewDeploy(projectPath, targetId, outputDir)
   )
   handle(
     IPC.deployRun,
-    t([s.uuid, s.buildOutputDir.optional(), z.array(z.string().max(4096)).max(100_000)]),
-    (connectionId, outputDir, excludePaths) => deployService.runDeploy(connectionId, outputDir, excludePaths)
+    t([s.absolutePath, s.uuid, s.buildOutputDir.optional(), s.excludePaths]),
+    (projectPath, targetId, outputDir, excludePaths) =>
+      deployService.runDeploy(projectPath, targetId, outputDir, excludePaths)
   )
   handle(
     IPC.deployGithubPagesRun,
@@ -277,9 +302,7 @@ export function registerIpcHandlers(): void {
     (projectPath, sourceDir, categories) => templatePackageService.importPackage(projectPath, sourceDir, categories)
   )
 
-  handle(IPC.marketplaceSearch, t([s.shortText, s.shortText.optional()]), (query, githubToken) =>
-    marketplaceService.searchPlugins(query, githubToken)
-  )
+  handle(IPC.marketplaceSearch, t([s.shortText]), (query) => marketplaceService.searchPlugins(query))
   handleNoArgs(IPC.marketplaceRefresh, () => {
     marketplaceService.invalidateCache()
   })
@@ -296,6 +319,8 @@ export function registerIpcHandlers(): void {
   handle(IPC.buildRun, t([s.uuid, s.absolutePath, s.buildOutputDir.optional()]), (projectId, projectPath, outputDir) =>
     buildService.runBuild(projectId, projectPath, outputDir)
   )
+
+  handle(IPC.syncStatus, t([s.absolutePath]), (projectPath) => gitStatusService.getGitStatus(projectPath))
 
   handle(IPC.syncRun, t([s.absolutePath, s.syncDirection.optional()]), (projectPath, direction) =>
     syncService.runSync(projectPath, direction)

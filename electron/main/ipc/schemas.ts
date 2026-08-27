@@ -253,19 +253,83 @@ export const cssVariableOverride = z.object({
   dark: cssValue.optional()
 })
 
-export const saveDeployConnectionInput = z.looseObject({
+// A remote directory on the target server. Absolute, and never bare "/": a target whose path is
+// the server root plus deletion enabled would empty a directory that was never this app's to
+// manage - a mistake no confirmation dialog reliably catches.
+export const remotePosixPath = z
+  .string()
+  .min(2)
+  .max(4096)
+  .refine((p) => p.startsWith('/'), 'muss ein absoluter Pfad sein')
+  .refine((p) => p.replace(/\/+$/, '') !== '', 'das Wurzelverzeichnis "/" ist als Ziel nicht zulässig')
+
+// Webhook URLs are credentials in URL form (a build hook's path *is* its token), so the scheme is
+// pinned to https - posting one over http would put it on the wire in the clear.
+export const webhookUrl = z
+  .string()
+  .max(2048)
+  .refine((value) => {
+    try {
+      return new URL(value).protocol === 'https:'
+    } catch {
+      return false
+    }
+  }, 'muss eine https-URL sein')
+
+// Deliberately looseObject, like every other payload schema here: z.object() strips unknown keys,
+// which would silently drop a field a newer destination type adds.
+export const saveConnectionInput = z.looseObject({
   id: uuid.optional(),
-  projectPath: absolutePath,
+  kind: z.enum(['ssh', 'ftp', 'github', 'webhook']),
   name: z.string().min(1).max(200),
-  protocol: z.enum(['sftp', 'ftp']),
-  host: z.string().min(1).max(255),
-  port: z.number().int().min(1).max(65535),
-  username: z.string().max(255),
-  remotePath: z.string().min(1).max(4096),
-  authMethod: z.enum(['password', 'privateKey']),
+  host: z.string().min(1).max(255).optional(),
+  port: z.number().int().min(1).max(65535).optional(),
+  username: z.string().max(255).optional(),
+  authMethod: z.enum(['password', 'privateKey', 'agent']).optional(),
+  keyPath: absolutePath.optional(),
   secure: z.boolean().optional(),
+  login: z.string().max(255).optional(),
   secret: z.string().max(100_000).optional()
 })
+  // A webhook's secret *is* a URL, so it is validated as one at the boundary rather than trusted
+  // and only discovered to be junk at deploy time. Written defensively because zod v4 keeps
+  // running the remaining checks after one fails, so this refine can see a `kind` the enum above
+  // already rejected - hence the typeof guard rather than a direct new URL() on whatever is there.
+  .refine(
+    (input) => {
+      if (input.kind !== 'webhook') return true
+      if (typeof input.secret !== 'string') return true // absent means "keep the stored one"
+      return webhookUrl.safeParse(input.secret).success
+    },
+    { message: 'Ein Webhook braucht eine gültige https-URL' }
+  )
+
+const publishDestination = z.discriminatedUnion('type', [
+  z.looseObject({
+    type: z.literal('sftp'),
+    remotePath: remotePosixPath,
+    transfer: z.enum(['sftp', 'rsync']),
+    deleteRemoved: z.boolean()
+  }),
+  z.looseObject({ type: z.literal('ftp'), remotePath: remotePosixPath, deleteRemoved: z.boolean() }),
+  z.looseObject({ type: z.literal('folder'), path: absolutePath, deleteRemoved: z.boolean() }),
+  z.looseObject({ type: z.literal('webhook') }),
+  z.looseObject({
+    type: z.literal('git-branch'),
+    branch: branchName,
+    provider: z.enum(['github', 'gitlab', 'codeberg'])
+  })
+])
+
+export const savePublishTargetInput = z.looseObject({
+  id: uuid.optional(),
+  name: z.string().min(1).max(200),
+  connectionId: uuid.optional(),
+  destination: publishDestination,
+  excludes: z.array(z.string().max(4096)).max(100_000).optional()
+})
+
+export const excludePaths = z.array(z.string().max(4096)).max(100_000)
 
 export const serverOptions = z.looseObject({
   port: z.number().int().min(1).max(65535),
@@ -284,7 +348,6 @@ export const createProjectOptions = z.looseObject({
 })
 
 export const settings = z.looseObject({
-  githubToken: z.string().max(512).optional(),
   defaultProjectDirectory: absolutePath.optional(),
   language: z.enum(['system', 'de', 'en']).optional()
 })

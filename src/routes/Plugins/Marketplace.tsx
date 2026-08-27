@@ -45,9 +45,11 @@ export default function PluginsMarketplace(): JSX.Element {
     loadInstalled()
   }, [loadSettings, project.path])
 
+  // No token passed from here any more: it is a credential, and main resolves it from the
+  // connection store itself (see connectionsService.getGithubToken).
   useEffect(() => {
-    window.quartzGui.marketplace.search(query, settings.githubToken).then(setResults)
-  }, [query, settings.githubToken])
+    window.quartzGui.marketplace.search(query).then(setResults)
+  }, [query])
 
   async function install(plugin: MarketplacePlugin): Promise<void> {
     setInstalling(plugin.fullName)

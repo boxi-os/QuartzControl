@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
+import type { Connection } from '@shared/ipc-contract'
 import { useAppStore } from '../state/store'
 import { Button, Card, Field, Select, TextInput } from '../components/ui'
 import { applyLanguagePreference } from '../i18n'
@@ -8,6 +9,10 @@ import { applyLanguagePreference } from '../i18n'
 export default function Settings(): JSX.Element {
   const { t } = useTranslation()
   const { settings, loadSettings, saveSettings } = useAppStore()
+  // The token is no longer a Settings field - it is a connection like the FTP/SFTP credentials
+  // (see connectionsService). This screen still edits it, because the dedicated "Zugänge" area is
+  // a later step; what it writes goes to the connection store, not into settings.json.
+  const [githubConnection, setGithubConnection] = useState<Connection | null>(null)
   const [githubToken, setGithubToken] = useState('')
   const [defaultProjectDirectory, setDefaultProjectDirectory] = useState('')
   const [language, setLanguage] = useState<'system' | 'de' | 'en'>('system')
@@ -16,10 +21,12 @@ export default function Settings(): JSX.Element {
 
   useEffect(() => {
     loadSettings()
+    window.quartzGui.connections.list().then((connections) => {
+      setGithubConnection(connections.find((c) => c.kind === 'github') ?? null)
+    })
   }, [loadSettings])
 
   useEffect(() => {
-    setGithubToken(settings.githubToken ?? '')
     setDefaultProjectDirectory(settings.defaultProjectDirectory ?? '')
     setLanguage(settings.language ?? 'system')
   }, [settings])
@@ -42,7 +49,7 @@ export default function Settings(): JSX.Element {
             type="password"
             value={githubToken}
             onChange={(e) => setGithubToken(e.target.value)}
-            placeholder="ghp_…"
+            placeholder={githubConnection?.hasSecret ? t('settings.githubTokenStored') : 'ghp_…'}
           />
         </Field>
 
@@ -80,10 +87,21 @@ export default function Settings(): JSX.Element {
               setSaveError(null)
               try {
                 await saveSettings({
-                  githubToken: githubToken || undefined,
                   defaultProjectDirectory: defaultProjectDirectory || undefined,
                   language
                 })
+                // Only written when something was actually typed: the stored token never travels
+                // to the renderer, so an untouched field is empty and must not clear it.
+                if (githubToken) {
+                  const saved = await window.quartzGui.connections.save({
+                    id: githubConnection?.id,
+                    kind: 'github',
+                    name: 'GitHub',
+                    secret: githubToken
+                  })
+                  setGithubConnection(saved)
+                  setGithubToken('')
+                }
                 setSaved(true)
                 setTimeout(() => setSaved(false), 2000)
               } catch (err) {

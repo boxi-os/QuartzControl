@@ -13,7 +13,8 @@ import type {
   ThemePreset,
   GridFrameDefinition,
   PluginEntry,
-  SaveDeployConnectionInput,
+  SaveConnectionInput,
+  SavePublishTargetInput,
   GithubPagesDeployOptions,
   DeployProgressEvent,
   CssVariableOverride,
@@ -104,14 +105,24 @@ const api: QuartzGuiApi = {
     listSnapshots: (projectPath: string) => ipcRenderer.invoke(IPC.updateSnapshotList, projectPath),
     restoreSnapshot: (projectPath: string, tag: string) => ipcRenderer.invoke(IPC.updateSnapshotRestore, projectPath, tag)
   },
+  connections: {
+    list: () => ipcRenderer.invoke(IPC.connectionsList),
+    save: (input: SaveConnectionInput) => ipcRenderer.invoke(IPC.connectionSave, input),
+    delete: (id: string) => ipcRenderer.invoke(IPC.connectionDelete, id),
+    usage: (id: string) => ipcRenderer.invoke(IPC.connectionUsage, id),
+    forgetHostKey: (id: string) => ipcRenderer.invoke(IPC.connectionForgetHostKey, id)
+  },
+  publishTargets: {
+    list: (projectPath: string) => ipcRenderer.invoke(IPC.publishTargetsList, projectPath),
+    save: (projectPath: string, input: SavePublishTargetInput) =>
+      ipcRenderer.invoke(IPC.publishTargetSave, projectPath, input),
+    delete: (projectPath: string, id: string) => ipcRenderer.invoke(IPC.publishTargetDelete, projectPath, id)
+  },
   deploy: {
-    listConnections: (projectPath: string) => ipcRenderer.invoke(IPC.deployConnectionsList, projectPath),
-    saveConnection: (input: SaveDeployConnectionInput) => ipcRenderer.invoke(IPC.deployConnectionSave, input),
-    deleteConnection: (id: string) => ipcRenderer.invoke(IPC.deployConnectionDelete, id),
-    forgetHostKey: (id: string) => ipcRenderer.invoke(IPC.deployForgetHostKey, id),
-    diff: (projectPath: string, outputDir?: string) => ipcRenderer.invoke(IPC.deployDiff, projectPath, outputDir),
-    run: (connectionId: string, outputDir: string | undefined, excludePaths: string[]) =>
-      ipcRenderer.invoke(IPC.deployRun, connectionId, outputDir, excludePaths),
+    diff: (projectPath: string, targetId: string, outputDir?: string) =>
+      ipcRenderer.invoke(IPC.deployDiff, projectPath, targetId, outputDir),
+    run: (projectPath: string, targetId: string, outputDir: string | undefined, excludePaths: string[]) =>
+      ipcRenderer.invoke(IPC.deployRun, projectPath, targetId, outputDir, excludePaths),
     runGithubPages: (projectPath: string, outputDir: string | undefined, options: GithubPagesDeployOptions) =>
       ipcRenderer.invoke(IPC.deployGithubPagesRun, projectPath, outputDir, options),
     onProgress: (cb: (event: DeployProgressEvent) => void) => onEvent<[DeployProgressEvent]>(IPC.deployProgress, cb)
@@ -124,7 +135,7 @@ const api: QuartzGuiApi = {
       ipcRenderer.invoke(IPC.templatePackageImport, projectPath, sourceDir, categories)
   },
   themeMarketplace: {
-    list: (githubToken?: string) => ipcRenderer.invoke(IPC.themeMarketplaceList, githubToken),
+    list: () => ipcRenderer.invoke(IPC.themeMarketplaceList),
     install: (projectPath: string, themeId: string) => ipcRenderer.invoke(IPC.themeMarketplaceInstall, projectPath, themeId),
     detail: (projectPath: string, themeId: string) => ipcRenderer.invoke(IPC.themeMarketplaceDetail, projectPath, themeId),
     styleSettingsSchema: (themeId: string) => ipcRenderer.invoke(IPC.themeMarketplaceStyleSettingsSchema, themeId),
@@ -137,7 +148,7 @@ const api: QuartzGuiApi = {
     delete: (projectPath: string, id: string) => ipcRenderer.invoke(IPC.themePresetDelete, projectPath, id)
   },
   marketplace: {
-    search: (query: string, githubToken?: string) => ipcRenderer.invoke(IPC.marketplaceSearch, query, githubToken),
+    search: (query: string) => ipcRenderer.invoke(IPC.marketplaceSearch, query),
     refresh: () => ipcRenderer.invoke(IPC.marketplaceRefresh)
   },
   server: {
@@ -158,7 +169,8 @@ const api: QuartzGuiApi = {
   },
   sync: {
     run: (projectPath: string, direction?: 'push' | 'pull' | 'both') =>
-      ipcRenderer.invoke(IPC.syncRun, projectPath, direction)
+      ipcRenderer.invoke(IPC.syncRun, projectPath, direction),
+    status: (projectPath: string) => ipcRenderer.invoke(IPC.syncStatus, projectPath)
   },
   backups: {
     list: (projectPath: string, kind: 'config' | 'content') => ipcRenderer.invoke(IPC.backupList, projectPath, kind),

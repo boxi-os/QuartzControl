@@ -318,6 +318,7 @@ export default function GlobalBoard({
                 gridTemplateAreas: activeGridStyle.gridTemplateAreas,
                 rowGap: activeGridStyle.rowGap,
                 columnGap: activeGridStyle.columnGap,
+                width: activeBox?.width,
                 maxWidth: activeBox?.maxWidth,
                 marginInline: activeBox?.marginInline,
                 paddingBlock: activeBox?.paddingBlock,

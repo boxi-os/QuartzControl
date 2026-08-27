@@ -81,6 +81,7 @@ export interface GridStyle {
 // The frame container's own box - separate from GridStyle because it describes the box the grid
 // sits in rather than the grid itself, and the previews apply it to a wrapper.
 export interface FrameBoxStyle {
+  width: string
   maxWidth: string
   marginInline: string
   paddingBlock: string
@@ -92,16 +93,23 @@ export interface FrameBoxStyle {
  *
  * Alignment is auto margins rather than `justify-self`, because a frame is a grid *item* in
  * Quartz's `#quartz-body` (see buildOuterGridOverride) and auto margins take precedence over an
- * item's stretch. Without a maxWidth they change nothing - measured against a real build: the
- * outer override's single `auto` track is sized by its container, so the frame fills it and there
- * is no free space left for a margin to absorb (1454px wide either way). Hence no special case
- * here, and an editor hint saying alignment needs a maximum width to do anything.
+ * item's stretch.
+ *
+ * `width: 100%` is why they are safe. An auto margin makes a grid item shrink-to-fit rather than
+ * stretch, so with `margin-inline: auto` and no cap the frame collapsed to its *max-content* width
+ * and left the rest of the page empty - measured in a real build at a 1728px viewport: 778px wide,
+ * centred, with `1fr 2fr 2fr` resolving to 149/298/298px instead of filling. A definite width takes
+ * the shrink-to-fit path away, and an auto margin then only has to distribute what a `maxWidth`
+ * actually leaves over (verified: 1728px with no cap, 900px centred at x=414 with one). The editor
+ * hint still says alignment needs a maximum width, because that part is unchanged - with no cap
+ * there is simply nothing left to distribute.
  */
 export function buildFrameBox(layout: GridBreakpointLayout): FrameBoxStyle {
   const maxWidth = layout.maxWidth?.trim()
   const align = layout.align ?? 'left'
   const marginInline = align === 'center' ? 'auto' : align === 'right' ? 'auto 0' : '0'
   return {
+    width: '100%',
     maxWidth: maxWidth || 'none',
     marginInline,
     paddingBlock: layout.paddingBlock?.trim() || '0',
@@ -143,6 +151,9 @@ export function buildBreakpointBlock(selector: string, layout: GridBreakpointLay
     // box-sizing for this element: measured in a real build, a 900px cap with 3rem of padding
     // produced a 996px-wide frame, which is not what anyone typing 900 means.
     `  box-sizing: border-box;`,
+    // A definite width, or an auto margin from `align` would collapse the frame to its content -
+    // see buildFrameBox. Written out per breakpoint like everything else here.
+    `  width: ${box.width};`,
     `  max-width: ${box.maxWidth};`,
     `  margin-inline: ${box.marginInline};`,
     `  padding-block: ${box.paddingBlock};`,
@@ -173,8 +184,18 @@ function escapeAttrValue(value: string): string {
 // queries (verified against base.scss's own full-width/minimal blocks) - mirrored here per custom
 // frame, keyed off `frameName` since that's the exact value renderPage.tsx sets `data-frame` to.
 function buildOuterGridOverride(frameName: string): string {
-  const selector = `.page[data-frame="${escapeAttrValue(frameName)}"] > #quartz-body`
+  const page = `.page[data-frame="${escapeAttrValue(frameName)}"]`
+  const selector = `${page} > #quartz-body`
   return [
+    // Quartz caps every page at `max-width: calc(<desktop breakpoint> + 300px)` = 1500px
+    // (base.scss's `.page` rule), which its own "full-width" frame does not lift either. For an
+    // authored frame that cap is a second, invisible width limit next to the one the editor offers:
+    // measured at a 1728px viewport, a frame with no maximum width still stopped at 1500px. Lifting
+    // it here makes the frame's own `max-width` the single place a width limit is decided - leave it
+    // blank and the frame really does use the whole window.
+    `${page} {`,
+    `  max-width: none;`,
+    `}`,
     `${selector} {`,
     `  grid-template-columns: auto;`,
     `  grid-template-rows: auto;`,
@@ -182,6 +203,17 @@ function buildOuterGridOverride(frameName: string): string {
     `}`,
     `${selector} > .qgframe-grid {`,
     `  grid-area: qgframe-root;`,
+    `}`,
+    // An `fr` track is `minmax(auto, 1fr)`, so a track can never shrink below its item's min-content
+    // and the declared proportions quietly stop holding once the viewport gets narrow - measured at
+    // 390px, `1fr 2fr 2fr` rendered as 149/71/106px because the first area's content would not go
+    // below 149px. That contradicts both the editor's own preview (whose placeholder areas have no
+    // such floor) and the point of having per-breakpoint track sizes at all. Overflow is the
+    // trade-off, and Quartz's own content styles already handle it: with this rule and a long
+    // unbreakable code line in an area, the page still had no horizontal scroll at 390px.
+    `${selector} .qgframe-area {`,
+    `  min-width: 0;`,
+    `  min-height: 0;`,
     `}`
   ].join('\n')
 }

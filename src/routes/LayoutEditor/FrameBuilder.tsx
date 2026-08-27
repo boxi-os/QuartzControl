@@ -124,6 +124,13 @@ export default function FrameBuilder({
   const [nameDraft, setNameDraft] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  // Saving keeps the editor open (a frame is built in many passes, and being thrown back to the
+  // list after every save meant clicking back in each time), so a save that worked needs to say so
+  // - otherwise the button just flickers and nothing visibly happens. Held as the serialized
+  // definition that was written rather than as a flag, so the notice disappears by itself the
+  // moment the draft differs from it again - there is no reset to forget at one of the ~15 places
+  // that write into `editing`.
+  const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null)
   const [dragAreaId, setDragAreaId] = useState<string | null>(null)
   const [dropCell, setDropCell] = useState<{ row: number; col: number } | null>(null)
 
@@ -150,6 +157,7 @@ export default function FrameBuilder({
     setActiveBreakpoint('desktop')
     setSelectedAreaId(null)
     setMessage(null)
+    setSavedSnapshot(null)
   }
 
   function startEditFrame(def: GridFrameDefinition): void {
@@ -158,6 +166,7 @@ export default function FrameBuilder({
     setActiveBreakpoint('desktop')
     setSelectedAreaId(null)
     setMessage(null)
+    setSavedSnapshot(null)
   }
 
   function closeEditor(): void {
@@ -342,12 +351,18 @@ export default function FrameBuilder({
     try {
       const result = await window.quartzGui.layoutFrames.save(projectPath, editing)
       if (!result.success) {
+        setSavedSnapshot(null)
         setMessage(result.output)
         return
       }
       refresh()
       onFramesChanged()
-      closeEditor()
+      // Deliberately no closeEditor() here - see savedNotice. `isNewDraft` flips because the frame
+      // now exists on disk: saveFrame() only registers the companion plugin the first time, and the
+      // delete link belongs to a frame that is real.
+      setIsNewDraft(false)
+      setMessage(null)
+      setSavedSnapshot(JSON.stringify(editing))
     } catch (err) {
       // e.g. an area name the validation layer refuses because it would break the generated CSS
       setMessage(formatIpcError(err))
@@ -404,6 +419,7 @@ export default function FrameBuilder({
     )
   }
 
+  const savedNotice = savedSnapshot !== null && savedSnapshot === JSON.stringify(editing)
   const layout = editing.breakpoints[activeBreakpoint]
   const gridStyle = buildGridStyle(layout, editing.areas)
   const box = buildFrameBox(layout)
@@ -656,6 +672,7 @@ export default function FrameBuilder({
             gridTemplateRows: gridStyle.gridTemplateRows,
             rowGap: gridStyle.rowGap,
             columnGap: gridStyle.columnGap,
+            width: box.width,
             maxWidth: box.maxWidth,
             marginInline: box.marginInline,
             paddingBlock: box.paddingBlock,
@@ -826,9 +843,12 @@ export default function FrameBuilder({
         )}
       </Card>
 
-      <div className="flex justify-end gap-2">
+      <div className="flex items-center justify-end gap-3">
+        {savedNotice && (
+          <span className="text-xs text-emerald-600 dark:text-emerald-400">{t('layoutEditor.frameBuilder.saved')}</span>
+        )}
         <Button variant="ghost" onClick={closeEditor}>
-          {t('common.cancel')}
+          {t('layoutEditor.frameBuilder.closeEditor')}
         </Button>
         <Button onClick={save} disabled={saving}>
           {saving ? t('common.saving') : t('common.save')}

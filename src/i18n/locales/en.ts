@@ -600,7 +600,9 @@ export default {
       boxHint:
         'Applies to this breakpoint only. The frame never gets wider than the maximum width; the alignment distributes what is left. Padding sits between the frame edge and its content.',
       boxHintNoMaxWidth:
-        'Applies to this breakpoint only. Alignment needs a maximum width to do anything — without one the frame fills the full width and there is nothing left to distribute.',
+        'Applies to this breakpoint only. Without a maximum width the frame uses the full window width. Alignment needs a maximum width to do anything — before that there is nothing left to distribute.',
+      saved: 'Saved',
+      closeEditor: 'Close editor',
       resetTracks: 'Reset track sizes',
       columnSizesLabel: 'Column widths (blank = 1fr)',
       rowSizesLabel: 'Row heights (blank = auto)',

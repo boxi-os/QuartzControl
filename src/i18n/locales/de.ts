@@ -600,7 +600,9 @@ export default {
       boxHint:
         'Gilt nur für diesen Breakpoint. Der Rahmen ist nie breiter als die Maximalbreite; die Ausrichtung verteilt den übrigen Platz. Innenabstände liegen zwischen Rahmenkante und Inhalt.',
       boxHintNoMaxWidth:
-        'Gilt nur für diesen Breakpoint. Die Ausrichtung wirkt erst mit einer Maximalbreite — ohne sie füllt der Rahmen die volle Breite und es bleibt nichts zu verteilen.',
+        'Gilt nur für diesen Breakpoint. Ohne Maximalbreite nutzt der Rahmen die volle Fensterbreite. Die Ausrichtung wirkt erst mit einer Maximalbreite — vorher bleibt nichts zu verteilen.',
+      saved: 'Gespeichert',
+      closeEditor: 'Editor schließen',
       resetTracks: 'Spurgrößen zurücksetzen',
       columnSizesLabel: 'Spaltenbreiten (leer = 1fr)',
       rowSizesLabel: 'Zeilenhöhen (leer = auto)',

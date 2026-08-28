@@ -461,7 +461,8 @@ export default {
     },
     projects: {
       title: 'Projects',
-      description: 'Where the folder dialogs start when you open or create a project.'
+      description: 'Where the folder dialogs start when you open or create a project.',
+      mustBeAbsolute: 'That is not a full path. It has to start with “/” or “~/” — or pick the folder instead.'
     },
     github: {
       title: 'GitHub',

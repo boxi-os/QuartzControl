@@ -462,7 +462,8 @@ export default {
     },
     projects: {
       title: 'Projekte',
-      description: 'Wo die Ordner-Dialoge starten, wenn du ein Projekt öffnest oder anlegst.'
+      description: 'Wo die Ordner-Dialoge starten, wenn du ein Projekt öffnest oder anlegst.',
+      mustBeAbsolute: 'Das ist kein vollständiger Pfad. Er muss mit „/“ oder „~/“ beginnen — oder wähle den Ordner aus.'
     },
     github: {
       title: 'GitHub',

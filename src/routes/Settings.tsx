@@ -161,8 +161,16 @@ function ProjectsSection({
     setDirectory(settings.defaultProjectDirectory ?? '')
   }, [settings.defaultProjectDirectory])
 
+  // "~/Documents" is this field's own placeholder, and it used to be a value the app refused: the
+  // settings schema requires an absolute path (every other path in the app comes from a native
+  // dialog), so saving it answered with a raw "arg[0.defaultProjectDirectory]: Pfad muss absolut
+  // sein" - measured in the running app. The tilde is expanded here, before the value crosses IPC,
+  // and anything still relative gets a sentence rather than a validation dump.
   const save = useAsyncAction(async () => {
-    await persist({ defaultProjectDirectory: directory || undefined })
+    const expanded = expandHome(directory)
+    if (expanded && !isAbsolutePath(expanded)) throw new Error(t('settings.projects.mustBeAbsolute'))
+    setDirectory(expanded)
+    await persist({ defaultProjectDirectory: expanded || undefined })
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   })

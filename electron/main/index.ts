@@ -56,8 +56,18 @@ function createWindow(): void {
   })
 
   win.on('ready-to-show', () => win.show())
+  // Every target="_blank" in the app lands here, and shell.openExternal hands the URL to whatever
+  // the OS registered for its scheme - so the scheme is checked rather than trusted. http is
+  // allowed alongside https because the dev-server preview link is http://localhost:<port>, which
+  // is also why those links cannot use dialog.openExternal's https-only channel.
   win.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
+    let scheme = ''
+    try {
+      scheme = new URL(details.url).protocol
+    } catch {
+      scheme = ''
+    }
+    if (scheme === 'https:' || scheme === 'http:') shell.openExternal(details.url)
     return { action: 'deny' }
   })
 

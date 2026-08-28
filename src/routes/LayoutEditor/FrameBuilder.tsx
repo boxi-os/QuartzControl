@@ -13,7 +13,7 @@ import type {
   GridFrameDefinition
 } from '@shared/ipc-contract'
 import { DEFAULT_FRAME_BREAKPOINT_WIDTHS, FRAME_BREAKPOINTS, buildFrameBox, buildGridStyle } from '@shared/gridFrameCss'
-import { Badge, Button, Card, Field, SegmentedControl, Select, SettingsSection, TextInput, Toggle } from '../../components/ui'
+import { Badge, Button, Card, Field, FieldGroup, SegmentedControl, Select, SettingsSection, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import DevServerRestartHint from '../../components/DevServerRestartHint'
 import { breakpointRangeLabel } from './utils'
@@ -566,13 +566,14 @@ export default function FrameBuilder({
                 />
               </Field>
               {/* Three options side by side need more than one column's worth of width. */}
-              <Field label={t('layoutEditor.frameBuilder.align')} className="sm:col-span-2">
+              {/* FieldGroup, not Field - see ui.tsx: a <label> around buttons steals the click. */}
+              <FieldGroup label={t('layoutEditor.frameBuilder.align')} className="sm:col-span-2">
                 <SegmentedControl
                   value={layout.align ?? 'left'}
                   onChange={(align: FrameAlign) => updateLayout({ align })}
                   options={ALIGNMENTS.map((value) => ({ value, label: t(`layoutEditor.frameBuilder.alignOption.${value}`) }))}
                 />
-              </Field>
+              </FieldGroup>
               <Field label={t('layoutEditor.frameBuilder.paddingBlock')}>
                 <TextInput
                   value={layout.paddingBlock ?? ''}

@@ -2,7 +2,8 @@ import { app } from 'electron'
 import { existsSync, mkdirSync } from 'fs'
 import { readFile, writeFile } from 'fs/promises'
 import { join } from 'path'
-import type { Settings } from '@shared/ipc-contract'
+import type { AppInfo, Settings } from '@shared/ipc-contract'
+import { themeDocsCacheStats } from './styleSettingsSchemaService'
 
 // No credentials here any more. The GitHub token used to live in this file (encrypted), which meant
 // two credential stores with two migration paths and a token the renderer had to relay back to main
@@ -41,4 +42,17 @@ export async function saveSettings(settings: Settings): Promise<void> {
   if (stored.githubToken) next.githubToken = stored.githubToken
   if (stored.githubTokenEncrypted) next.githubTokenEncrypted = stored.githubTokenEncrypted
   await writeFile(settingsPath(), JSON.stringify(next, null, 2), 'utf-8')
+}
+
+// What the Settings page's maintenance section reports: which build this is, and where the app
+// keeps the two things that are not inside a project - the connection store (encrypted secrets)
+// and the permanent theme-docs cache.
+export async function getAppInfo(): Promise<AppInfo> {
+  return {
+    appVersion: app.getVersion(),
+    electronVersion: process.versions.electron,
+    chromeVersion: process.versions.chrome,
+    userDataPath: app.getPath('userData'),
+    themeDocsCache: await themeDocsCacheStats()
+  }
 }

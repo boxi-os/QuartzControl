@@ -27,12 +27,54 @@ export default {
     restarted: 'Dev-Server neu gestartet'
   },
   home: {
-    subtitle:
-      'Verwalte deine Quartz-5-Projekte an einem Ort: Konfiguration und Themes bearbeiten, Plugins installieren, den Content-Ordner mit einem Obsidian-Vault verknüpfen und Builds sowie den lokalen Dev-Server steuern.',
+    subtitle: 'Deine Quartz-Websites an einem Ort — einrichten, gestalten, veröffentlichen.',
     settings: 'Einstellungen',
     openExisting: 'Vorhandenes Projekt öffnen',
     createNew: 'Neues Projekt erstellen',
     noProjects: 'Noch keine Projekte hinzugefügt.',
+    searchPlaceholder: 'Projekt suchen…',
+    noSearchResults: 'Kein Projekt passt zur Suche.',
+    lastOpened: 'Zuletzt geöffnet {{when}}',
+    neverOpened: 'Noch nie geöffnet',
+    serverRunning: 'Dev-Server läuft',
+    serverRunningOnPort: 'Dev-Server auf Port {{port}}',
+    folderMissing: 'Ordner nicht gefunden — verschoben, umbenannt oder auf einem nicht eingebundenen Laufwerk.',
+    notAQuartzProject: 'Kein Quartz-Projekt — in diesem Ordner liegt keine quartz.config.yaml.',
+    locateFolder: 'Ordner suchen…',
+    confirmRemove: '„{{name}}“ aus der Liste entfernen?\n\nDer Ordner auf der Festplatte bleibt unangetastet.',
+    gettingStarted: {
+      title: 'Erste Schritte',
+      description:
+        'QuartzControl verwaltet Quartz-Projekte: aus einem Ordner voller Markdown-Dateien wird eine fertige Website.',
+      step1: 'Lege ein neues Projekt an oder öffne einen Ordner, in dem Quartz schon eingerichtet ist.',
+      step2: 'Verknüpfe den Content-Ordner mit deinen Notizen — auch direkt mit einem Obsidian-Vault.',
+      step3: 'Starte die Vorschau, gestalte die Seite nach deinem Geschmack und veröffentliche sie.'
+    },
+    capabilities: {
+      title: 'Was du hier tun kannst',
+      setup: {
+        title: 'Einrichtung',
+        body: 'Titel, Adresse und Sprache der Seite festlegen, Plugins aus dem Marktplatz installieren und den Content-Ordner mit deinem Obsidian-Vault verknüpfen.'
+      },
+      design: {
+        title: 'Gestaltung',
+        body: 'Farben, Schriften und CSS-Variablen anpassen, Community-Themes installieren, eigenes CSS schreiben und Layout-Rahmen selbst bauen.'
+      },
+      publish: {
+        title: 'Veröffentlichung',
+        body: 'Lokal bauen und in der Vorschau ansehen, per Git synchronisieren und auf GitHub Pages, SFTP, rsync oder einen Webspace veröffentlichen.'
+      },
+      maintenance: {
+        title: 'Wartung',
+        body: 'Quartz-Kern und Plugins aktualisieren, Snapshots anlegen und einzelne Dateien oder das ganze Projekt zurückspielen.'
+      }
+    },
+    aboutQuartz: {
+      title: 'Was ist Quartz?',
+      body: 'Quartz 5 ist ein statischer Website-Generator für vernetzte Notizen: Markdown rein, fertige Website raus — mit Backlinks, Graph-Ansicht und Volltextsuche. Es versteht Obsidian-Wikilinks, du kannst deinen Vault also direkt veröffentlichen.',
+      docs: 'Quartz-Dokumentation',
+      catalog: 'Plugin-Katalog auf GitHub'
+    },
     wizard: {
       title: 'Neues Quartz-Projekt',
       targetDirectory: 'Zielverzeichnis',
@@ -343,13 +385,75 @@ export default {
   },
   settings: {
     title: 'Einstellungen',
+    subtitle: 'Gilt für die App als Ganzes — projektbezogene Einstellungen stehen im jeweiligen Projekt.',
     githubToken: 'GitHub-Token (für Marktplatz-Rate-Limit)',
     githubTokenStored: 'gespeichert - zum Ersetzen neu eingeben',
     defaultProjectDirectory: 'Standard-Projektverzeichnis',
     language: 'Sprache',
     languageSystem: 'Systemsprache folgen',
     languageDe: 'Deutsch',
-    languageEn: 'English'
+    languageEn: 'English',
+    appearance: {
+      title: 'Erscheinungsbild',
+      description: 'Wie die App aussieht und in welcher Sprache sie mit dir spricht.',
+      theme: 'Design',
+      themeLight: 'Hell',
+      themeDark: 'Dunkel',
+      themeSystem: 'Systemeinstellung',
+      appliedImmediately: 'Design und Sprache werden sofort übernommen und gespeichert.'
+    },
+    projects: {
+      title: 'Projekte',
+      description: 'Wo die Ordner-Dialoge starten, wenn du ein Projekt öffnest oder anlegst.'
+    },
+    github: {
+      title: 'GitHub',
+      description:
+        'Hebt das Rate-Limit im Plugin- und Theme-Marktplatz an und wird zum Anlegen von Repositories und zum Einrichten von GitHub Pages gebraucht.',
+      token: 'Persönlicher Zugriffstoken',
+      saveAndCheck: 'Speichern & prüfen',
+      valid: 'Gültig',
+      rejected: 'Abgelehnt',
+      rejectedHint: 'GitHub akzeptiert diesen Token nicht — abgelaufen oder zurückgezogen.',
+      checking: 'Prüfe…',
+      remove: 'Token entfernen',
+      scopeHint:
+        'Für den Marktplatz genügt ein Token ganz ohne Berechtigungen. Zum Anlegen von Repositories und für GitHub Pages wird der Scope „repo“ benötigt. Der Token wird verschlüsselt im Schlüsselbund deines Systems abgelegt.'
+    },
+    connections: {
+      title: 'Zugänge',
+      description:
+        'Server-Logins und Build-Hooks, die du zum Veröffentlichen brauchst. Sie gehören zur App, nicht zu einem Projekt — dasselbe Webspace-Konto kann mehrere Websites tragen, und ein Passwortwechsel ist damit eine Änderung statt einer pro Projekt.',
+      empty: 'Noch keine Zugänge angelegt.',
+      addSsh: '+ SFTP / SSH',
+      addFtp: '+ FTP',
+      addWebhook: '+ Webhook',
+      noSecret: 'kein Passwort/Key',
+      plaintext: 'unverschlüsselt',
+      usedBy_one: 'von {{count}} Projekt verwendet',
+      usedBy_other: 'von {{count}} Projekten verwendet',
+      confirmDelete: 'Diesen Zugang löschen?\n\nDas hinterlegte Passwort bzw. der Key wird dabei mitgelöscht und lässt sich nicht wiederherstellen.',
+      confirmDeleteInUse_one:
+        'Dieser Zugang wird von {{count}} Projekt verwendet.\n\nNach dem Löschen zeigt dessen Veröffentlichungsziel ins Leere. Trotzdem löschen?',
+      confirmDeleteInUse_other:
+        'Dieser Zugang wird von {{count}} Projekten verwendet.\n\nNach dem Löschen zeigen deren Veröffentlichungsziele ins Leere. Trotzdem löschen?',
+      targetHint:
+        'Wohin genau ein Projekt damit veröffentlicht — Serverpfad, Branch, Ausschlüsse — legst du im Projekt unter „Veröffentlichen“ fest.'
+    },
+    maintenance: {
+      title: 'Daten & Wartung',
+      description: 'Was die App außerhalb deiner Projekte ablegt.',
+      cache: 'Theme-Dokumentation',
+      cacheSize_one: '{{count}} Eintrag · {{size}}',
+      cacheSize_other: '{{count}} Einträge · {{size}}',
+      cacheHint:
+        'Beschriftungen und Beschreibungen der Optionen von Community-Themes, einmal von GitHub geholt und dauerhaft aufbewahrt. Leeren erzwingt ein erneutes Laden.',
+      clearCache: 'Cache leeren',
+      clearing: 'Leere…',
+      storage: 'Speicherort',
+      storageHint: 'Hier liegen Projektliste, Einstellungen und die verschlüsselten Zugänge.',
+      reveal: 'Im Finder zeigen'
+    }
   },
   configEditor: {
     tabs: {
@@ -626,6 +730,7 @@ export default {
   },
   layoutEditor: {
     title: 'Layout-Editor',
+    templateCustomPlaceholder: 'z. B. Startseite mit Seitenleiste',
     tabGlobal: 'Global',
     tabPageTypes: 'Seitentypen',
     tabFrames: 'Eigene Frames',
@@ -980,6 +1085,7 @@ export default {
     baseUrlWarning: 'configuration.baseUrl steht noch auf "{{baseUrl}}" — vor dem Veröffentlichen auf die echte Domain setzen.',
     targetHeading: 'Ziel',
     newConnection: '+ Neuer Zugang',
+    manageConnections: 'Zugänge verwalten',
     newTarget: '+ Neues Ziel',
     confirmDeleteTarget: 'Dieses Veröffentlichungsziel wirklich löschen? Der hinterlegte Zugang bleibt bestehen.',
     noTargets: 'Noch kein Veröffentlichungsziel angelegt. Über "+ Neues Ziel" eines anlegen - z. B. GitHub Pages, einen Webspace per SFTP oder einen lokalen Ordner.',

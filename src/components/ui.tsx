@@ -57,6 +57,27 @@ export function Field({ label, children, className = '' }: { label: string; chil
   )
 }
 
+// Field's <label> shape, for content that is *not* one form control - a SegmentedControl, a row of
+// buttons. A <label> forwards its own clicks to the first labelable element inside it, and a
+// <button> is labelable: with Field, clicking the word "Design" activated the first segment and
+// silently changed the setting. Measured in the running app before this existed.
+export function FieldGroup({
+  label,
+  children,
+  className = ''
+}: {
+  label: string
+  children: ReactNode
+  className?: string
+}): JSX.Element {
+  return (
+    <div role="group" aria-label={label} className={`flex flex-col gap-1 text-[13px] ${className}`}>
+      <span className="font-medium text-slate-600 dark:text-slate-300">{label}</span>
+      {children}
+    </div>
+  )
+}
+
 export function TextInput(props: InputHTMLAttributes<HTMLInputElement>): JSX.Element {
   return (
     <input

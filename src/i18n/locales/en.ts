@@ -27,12 +27,53 @@ export default {
     restarted: 'Dev server restarted'
   },
   home: {
-    subtitle:
-      'Manage your Quartz 5 projects in one place: edit configuration and themes, install plugins, link the content folder to an Obsidian vault, and control builds and the local dev server.',
+    subtitle: 'Your Quartz sites in one place — set up, design, publish.',
     settings: 'Settings',
     openExisting: 'Open existing project',
     createNew: 'Create new project',
     noProjects: 'No projects added yet.',
+    searchPlaceholder: 'Search projects…',
+    noSearchResults: 'No project matches your search.',
+    lastOpened: 'Last opened {{when}}',
+    neverOpened: 'Never opened',
+    serverRunning: 'Dev server running',
+    serverRunningOnPort: 'Dev server on port {{port}}',
+    folderMissing: 'Folder not found — moved, renamed, or on a volume that is not mounted.',
+    notAQuartzProject: 'Not a Quartz project — this folder has no quartz.config.yaml.',
+    locateFolder: 'Locate folder…',
+    confirmRemove: 'Remove “{{name}}” from the list?\n\nThe folder on disk is left untouched.',
+    gettingStarted: {
+      title: 'Getting started',
+      description: 'QuartzControl manages Quartz projects: a folder full of Markdown files becomes a finished website.',
+      step1: 'Create a new project, or open a folder where Quartz is already set up.',
+      step2: 'Link the content folder to your notes — an Obsidian vault works directly.',
+      step3: 'Start the preview, design the site to your taste, and publish it.'
+    },
+    capabilities: {
+      title: 'What you can do here',
+      setup: {
+        title: 'Setup',
+        body: 'Set the site’s title, address and language, install plugins from the marketplace, and link the content folder to your Obsidian vault.'
+      },
+      design: {
+        title: 'Design',
+        body: 'Adjust colours, fonts and CSS variables, install community themes, write your own CSS, and build layout frames yourself.'
+      },
+      publish: {
+        title: 'Publishing',
+        body: 'Build locally and check the preview, sync via Git, and publish to GitHub Pages, SFTP, rsync or a web space.'
+      },
+      maintenance: {
+        title: 'Maintenance',
+        body: 'Update the Quartz core and your plugins, take snapshots, and restore single files or the whole project.'
+      }
+    },
+    aboutQuartz: {
+      title: 'What is Quartz?',
+      body: 'Quartz 5 is a static site generator for linked notes: Markdown in, finished website out — with backlinks, a graph view and full-text search. It understands Obsidian wikilinks, so you can publish your vault directly.',
+      docs: 'Quartz documentation',
+      catalog: 'Plugin catalogue on GitHub'
+    },
     wizard: {
       title: 'New Quartz project',
       targetDirectory: 'Target directory',
@@ -343,13 +384,75 @@ export default {
   },
   settings: {
     title: 'Settings',
+    subtitle: 'These apply to the whole app — per-project settings live inside each project.',
     githubToken: 'GitHub token (for marketplace rate limit)',
     githubTokenStored: 'stored - type a new one to replace it',
     defaultProjectDirectory: 'Default project directory',
     language: 'Language',
     languageSystem: 'Follow system language',
     languageDe: 'Deutsch',
-    languageEn: 'English'
+    languageEn: 'English',
+    appearance: {
+      title: 'Appearance',
+      description: 'How the app looks, and which language it speaks to you in.',
+      theme: 'Theme',
+      themeLight: 'Light',
+      themeDark: 'Dark',
+      themeSystem: 'System setting',
+      appliedImmediately: 'Theme and language apply and save immediately.'
+    },
+    projects: {
+      title: 'Projects',
+      description: 'Where the folder dialogs start when you open or create a project.'
+    },
+    github: {
+      title: 'GitHub',
+      description:
+        'Raises the rate limit in the plugin and theme marketplaces, and is required to create repositories and configure GitHub Pages.',
+      token: 'Personal access token',
+      saveAndCheck: 'Save & check',
+      valid: 'Valid',
+      rejected: 'Rejected',
+      rejectedHint: 'GitHub does not accept this token — expired or revoked.',
+      checking: 'Checking…',
+      remove: 'Remove token',
+      scopeHint:
+        'For the marketplace a token with no permissions at all is enough. Creating repositories and configuring GitHub Pages needs the “repo” scope. The token is stored encrypted in your system keychain.'
+    },
+    connections: {
+      title: 'Connections',
+      description:
+        'Server logins and build hooks used for publishing. They belong to the app, not to a project — one web space commonly carries several sites, and rotating a password is then one edit instead of one per project.',
+      empty: 'No connections yet.',
+      addSsh: '+ SFTP / SSH',
+      addFtp: '+ FTP',
+      addWebhook: '+ Webhook',
+      noSecret: 'no password/key',
+      plaintext: 'unencrypted',
+      usedBy_one: 'used by {{count}} project',
+      usedBy_other: 'used by {{count}} projects',
+      confirmDelete: 'Delete this connection?\n\nThe stored password or key is deleted with it and cannot be recovered.',
+      confirmDeleteInUse_one:
+        'This connection is used by {{count}} project.\n\nAfter deleting it, that project’s publish target points nowhere. Delete anyway?',
+      confirmDeleteInUse_other:
+        'This connection is used by {{count}} projects.\n\nAfter deleting it, those projects’ publish targets point nowhere. Delete anyway?',
+      targetHint:
+        'Where exactly a project publishes to — remote path, branch, exclusions — is set inside that project under “Publish”.'
+    },
+    maintenance: {
+      title: 'Data & maintenance',
+      description: 'What the app stores outside your projects.',
+      cache: 'Theme documentation',
+      cacheSize_one: '{{count}} entry · {{size}}',
+      cacheSize_other: '{{count}} entries · {{size}}',
+      cacheHint:
+        'Labels and descriptions for community theme options, fetched from GitHub once and kept permanently. Clearing forces a fresh fetch.',
+      clearCache: 'Clear cache',
+      clearing: 'Clearing…',
+      storage: 'Storage location',
+      storageHint: 'Holds the project list, the settings, and the encrypted connections.',
+      reveal: 'Show in Finder'
+    }
   },
   configEditor: {
     tabs: {
@@ -627,6 +730,7 @@ export default {
   },
   layoutEditor: {
     title: 'Layout Editor',
+    templateCustomPlaceholder: 'e.g. Home page with sidebar',
     tabGlobal: 'Global',
     tabPageTypes: 'Page types',
     tabFrames: 'Custom frames',
@@ -979,6 +1083,7 @@ export default {
     baseUrlWarning: 'configuration.baseUrl is still set to "{{baseUrl}}" — set it to the real domain before publishing.',
     targetHeading: 'Target',
     newConnection: '+ New credential',
+    manageConnections: 'Manage connections',
     newTarget: '+ New target',
     confirmDeleteTarget: 'Really delete this publish target? The credential it uses stays.',
     noTargets: 'No publish target yet. Create one via "+ New target" - e.g. GitHub Pages, a webspace over SFTP, or a local folder.',

@@ -1,6 +1,6 @@
 import { app } from 'electron'
 import { existsSync, mkdirSync } from 'fs'
-import { readFile, writeFile } from 'fs/promises'
+import { readdir, readFile, rm, stat, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { parse as parseYaml } from 'yaml'
 import type { StyleSettingField, StyleSettingKind, StyleSettingsSchema } from '@shared/ipc-contract'
@@ -289,6 +289,48 @@ async function buildSchema(themeId: string): Promise<StyleSettingsSchema | null>
       : undefined,
     fields: parsed.flatMap((block) => block.fields)
   }
+}
+
+// Size and entry count of the whole theme-docs directory, for the Settings page's maintenance
+// section. Deliberately does not go through cacheDir(): that one *creates* the directory, and a
+// pure read must never leave a folder behind on a machine that never opened the Themes tab.
+export async function themeDocsCacheStats(): Promise<{ entries: number; bytes: number }> {
+  const dir = join(app.getPath('userData'), 'theme-docs')
+  let entries = 0
+  let bytes = 0
+  try {
+    for (const name of await readdir(dir)) {
+      const info = await stat(join(dir, name)).catch(() => null)
+      if (!info?.isFile()) continue
+      // An emptied entry (see clearStyleSettingsSchemaCache below) is not a cached answer.
+      if (info.size === 0) continue
+      entries += 1
+      bytes += info.size
+    }
+  } catch {
+    return { entries: 0, bytes: 0 }
+  }
+  return { entries, bytes }
+}
+
+/** Empties the whole cache; returns how many entries were actually removed. */
+export async function clearThemeDocsCache(): Promise<number> {
+  registryMemo = null
+  const dir = join(app.getPath('userData'), 'theme-docs')
+  let removed = 0
+  try {
+    for (const name of await readdir(dir)) {
+      // Only files this service writes, and only by an exact name match - nothing here builds a
+      // path from anything that came in over IPC.
+      if (!name.endsWith('.json')) continue
+      await rm(join(dir, name)).then(() => {
+        removed += 1
+      }).catch(() => undefined)
+    }
+  } catch {
+    return 0
+  }
+  return removed
 }
 
 export async function clearStyleSettingsSchemaCache(themeId: string): Promise<void> {

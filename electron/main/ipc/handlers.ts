@@ -1,5 +1,6 @@
-import { ipcMain, BrowserWindow, dialog, shell } from 'electron'
-import { resolve, sep } from 'path'
+import { app, ipcMain, BrowserWindow, dialog, shell } from 'electron'
+import { existsSync } from 'fs'
+import { join, resolve, sep } from 'path'
 import { z } from 'zod'
 import { IPC, TEMPLATE_PACKAGE_EXTENSION } from '@shared/ipc-contract'
 import type {
@@ -14,6 +15,7 @@ import type {
   ThemePreset
 } from '@shared/ipc-contract'
 import * as projectStore from '../services/projectStore'
+import * as projectOverviewService from '../services/projectOverviewService'
 import * as configService from '../services/configService'
 import * as pluginService from '../services/pluginService'
 import * as pluginSchemaService from '../services/pluginSchemaService'
@@ -40,6 +42,7 @@ import * as contentService from '../services/contentService'
 import * as createService from '../services/createService'
 import * as settingsService from '../services/settingsService'
 import * as templatePackageService from '../services/templatePackage'
+import { applyTheme } from '../theme'
 import { handle, handleNoArgs } from './handle'
 import * as s from './schemas'
 
@@ -89,7 +92,9 @@ export function registerIpcHandlers(): void {
   deployService.deployEvents.on('progress', (event) => broadcast(IPC.deployProgress, event))
 
   handleNoArgs(IPC.projectList, () => projectStore.listProjects())
+  handleNoArgs(IPC.projectOverview, () => projectOverviewService.getProjectOverviews())
   handle(IPC.projectAdd, t([s.absolutePath]), (path) => projectStore.addProject(path))
+  handle(IPC.projectRelocate, t([s.uuid, s.absolutePath]), (id, path) => projectStore.relocateProject(id, path))
   handle(IPC.projectOpen, t([s.uuid]), async (id) => {
     await projectStore.touchProject(id)
     return projectStore.getProject(id)
@@ -422,12 +427,39 @@ export function registerIpcHandlers(): void {
   )
 
   handleNoArgs(IPC.settingsGet, () => settingsService.getSettings())
-  handle(IPC.settingsSave, t([s.settings]), (next) => settingsService.saveSettings(next as Settings))
+  handle(IPC.settingsSave, t([s.settings]), async (next) => {
+    await settingsService.saveSettings(next as Settings)
+    // Applied here rather than in the renderer: the appearance is nativeTheme's to set, and doing
+    // it on the save keeps the stored value and the live window from ever disagreeing. Guarded by
+    // the key being present rather than by its value: a caller that saves other fields and leaves
+    // `theme` out would otherwise silently reset the window to the OS appearance, since an absent
+    // key and an explicit 'system' are the same thing once the payload has crossed IPC.
+    if ('theme' in (next as object)) applyTheme((next as Settings).theme)
+  })
+  handleNoArgs(IPC.settingsAppInfo, () => settingsService.getAppInfo())
+  handleNoArgs(IPC.settingsClearThemeDocsCache, () => styleSettingsSchemaService.clearThemeDocsCache())
 
-  handleNoArgs(IPC.dialogPickFolder, async () => {
-    const result = await dialog.showOpenDialog({ properties: ['openDirectory', 'createDirectory'] })
+  handle(IPC.dialogPickFolder, t([s.absolutePath.optional()]), async (defaultPath) => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openDirectory', 'createDirectory'],
+      // Only honoured when it still exists - Electron shows the last-used folder otherwise, and
+      // a stale default project directory must not make the dialog open somewhere surprising.
+      defaultPath: defaultPath && existsSync(defaultPath) ? defaultPath : undefined
+    })
     if (result.canceled || result.filePaths.length === 0) return null
     return result.filePaths[0]
+  })
+
+  // Takes no path from the renderer on purpose: there is exactly one directory this is for, and
+  // main is the only side that knows where it is.
+  handleNoArgs(IPC.dialogRevealUserData, () => {
+    shell.showItemInFolder(join(app.getPath('userData'), 'settings.json'))
+  })
+
+  // The start screen links the Quartz documentation. `s.externalUrl` allows https and nothing
+  // else - shell.openExternal hands the URL to whatever handler the OS registered for its scheme.
+  handle(IPC.dialogOpenExternal, t([s.externalUrl]), async (url) => {
+    await shell.openExternal(url)
   })
 
   handle(IPC.dialogPickFile, t([s.dialogFileFilters.optional()]), async (filters) => {

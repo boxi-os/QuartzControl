@@ -422,8 +422,24 @@ export const createProjectOptions = z.looseObject({
 
 export const settings = z.looseObject({
   defaultProjectDirectory: absolutePath.optional(),
-  language: z.enum(['system', 'de', 'en']).optional()
+  language: z.enum(['system', 'de', 'en']).optional(),
+  theme: z.enum(['system', 'light', 'dark']).optional()
 })
+
+// The only URL the renderer may hand to shell.openExternal. Restricted to https because that
+// channel launches whatever handler the OS has registered for a scheme - file:, and on macOS
+// several app-specific schemes, would turn it into a "run something" primitive.
+export const externalUrl = z
+  .string()
+  .min(1)
+  .max(2048)
+  .refine((u) => {
+    try {
+      return new URL(u).protocol === 'https:'
+    } catch {
+      return false
+    }
+  }, { message: 'Nur https-URLs erlaubt' })
 
 export const dialogFileFilters = z
   .array(z.object({ name: z.string().max(120), extensions: z.array(z.string().max(20)).max(50) }))

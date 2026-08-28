@@ -35,7 +35,9 @@ function onEvent<Args extends unknown[]>(channel: string, cb: (...args: Args) =>
 const api: QuartzGuiApi = {
   projects: {
     list: () => ipcRenderer.invoke(IPC.projectList),
+    overview: () => ipcRenderer.invoke(IPC.projectOverview),
     add: (path: string) => ipcRenderer.invoke(IPC.projectAdd, path),
+    relocate: (id: string, path: string) => ipcRenderer.invoke(IPC.projectRelocate, id, path),
     open: (id: string) => ipcRenderer.invoke(IPC.projectOpen, id),
     remove: (id: string) => ipcRenderer.invoke(IPC.projectRemove, id),
     create: (options: CreateProjectOptions) => ipcRenderer.invoke(IPC.projectCreate, options)
@@ -218,12 +220,16 @@ const api: QuartzGuiApi = {
   },
   settings: {
     get: () => ipcRenderer.invoke(IPC.settingsGet),
-    save: (settings: Settings) => ipcRenderer.invoke(IPC.settingsSave, settings)
+    save: (settings: Settings) => ipcRenderer.invoke(IPC.settingsSave, settings),
+    appInfo: () => ipcRenderer.invoke(IPC.settingsAppInfo),
+    clearThemeDocsCache: () => ipcRenderer.invoke(IPC.settingsClearThemeDocsCache)
   },
   dialog: {
-    pickFolder: () => ipcRenderer.invoke(IPC.dialogPickFolder),
+    pickFolder: (defaultPath?: string) => ipcRenderer.invoke(IPC.dialogPickFolder, defaultPath),
     pickFile: (filters?: { name: string; extensions: string[] }[]) => ipcRenderer.invoke(IPC.dialogPickFile, filters),
-    openPath: (path: string) => ipcRenderer.invoke(IPC.dialogOpenPath, path)
+    openPath: (path: string) => ipcRenderer.invoke(IPC.dialogOpenPath, path),
+    revealUserData: () => ipcRenderer.invoke(IPC.dialogRevealUserData),
+    openExternal: (url: string) => ipcRenderer.invoke(IPC.dialogOpenExternal, url)
   }
 }
 

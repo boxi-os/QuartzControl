@@ -985,9 +985,37 @@ export interface StyleReferenceFile {
   content: string
 }
 
+// One row of the launcher's project list. Everything here is a local file read plus the
+// dev-server status the main process already holds in memory - the start screen must not cost a
+// network round trip, same rule the project Übersicht follows. Computed in one pass in main
+// rather than N renderer round trips.
+export interface ProjectOverview extends Project {
+  /** The folder is gone - moved, renamed, or on a volume that isn't mounted. */
+  missing: boolean
+  /** The folder exists but holds no quartz.config.yaml. `projects.add` never checked, so a
+   *  plain folder could always be added and only failed once its project page was opened. */
+  isQuartzProject: boolean
+  siteTitle?: string
+  baseUrl?: string
+  serverRunning: boolean
+  serverPort?: number
+}
+
+/** Versions and storage locations for the Settings page's maintenance section. */
+export interface AppInfo {
+  appVersion: string
+  electronVersion: string
+  chromeVersion: string
+  userDataPath: string
+  /** The permanent upstream-theme documentation cache (see styleSettingsSchemaService). */
+  themeDocsCache: { entries: number; bytes: number }
+}
+
 export const IPC = {
   projectList: 'project:list',
+  projectOverview: 'project:overview',
   projectAdd: 'project:add',
+  projectRelocate: 'project:relocate',
   projectOpen: 'project:open',
   projectRemove: 'project:remove',
   projectCreate: 'project:create',
@@ -1114,14 +1142,24 @@ export const IPC = {
 
   settingsGet: 'settings:get',
   settingsSave: 'settings:save',
+  settingsAppInfo: 'settings:appInfo',
+  settingsClearThemeDocsCache: 'settings:clearThemeDocsCache',
 
-  dialogPickFolder: 'dialog:pickFolder'
+  dialogPickFolder: 'dialog:pickFolder',
+  dialogRevealUserData: 'dialog:revealUserData',
+  dialogOpenExternal: 'dialog:openExternal'
 } as const
 
 export interface Settings {
+  /** Pre-fills the folder pickers on the start screen and the create wizard. */
   defaultProjectDirectory?: string
   // 'system' (default) follows the OS locale with an English fallback; 'de'/'en' pin the language.
   language?: 'system' | 'de' | 'en'
+  // 'system' (default) follows the OS appearance. Applied in the main process via
+  // nativeTheme.themeSource, which also flips the renderer's own prefers-color-scheme - verified
+  // against this repo's Electron binary. That is why Tailwind stays on darkMode: 'media' and
+  // every existing `dark:` variant keeps working with no class-strategy migration.
+  theme?: 'system' | 'light' | 'dark'
 }
 
 export interface PluginActionResult {
@@ -1147,7 +1185,12 @@ export interface CreateProjectResult {
 export interface QuartzGuiApi {
   projects: {
     list(): Promise<Project[]>
+    /** The list plus what the launcher shows per row. Local reads only - see ProjectOverview. */
+    overview(): Promise<ProjectOverview[]>
     add(path: string): Promise<Project>
+    /** Points an existing entry at a folder that moved, keeping its id - so everything keyed by
+     *  that id (remembered tabs, running-server tracking) survives the move. */
+    relocate(id: string, path: string): Promise<Project | undefined>
     open(id: string): Promise<Project | undefined>
     remove(id: string): Promise<void>
     create(options: CreateProjectOptions): Promise<CreateProjectResult>
@@ -1324,11 +1367,20 @@ export interface QuartzGuiApi {
   }
   settings: {
     get(): Promise<Settings>
+    /** Always send the whole object - the store overwrites rather than merges. */
     save(settings: Settings): Promise<void>
+    appInfo(): Promise<AppInfo>
+    /** Empties the theme-docs cache; returns how many entries were removed. */
+    clearThemeDocsCache(): Promise<number>
   }
   dialog: {
-    pickFolder(): Promise<string | null>
+    /** `defaultPath` pre-selects a starting folder (the Settings default project directory). */
+    pickFolder(defaultPath?: string): Promise<string | null>
     pickFile(filters?: { name: string; extensions: string[] }[]): Promise<string | null>
     openPath(path: string): Promise<void>
+    /** Shows Electron's userData directory in the OS file manager. Takes no path on purpose. */
+    revealUserData(): Promise<void>
+    /** Opens an https URL in the default browser. Refused for anything else. */
+    openExternal(url: string): Promise<void>
   }
 }

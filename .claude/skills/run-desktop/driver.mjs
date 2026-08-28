@@ -135,6 +135,24 @@ const COMMANDS = {
   // Resizes the real BrowserWindow (not just the viewport) - the renderer can't do this itself,
   // and the window's default 1280x800 hides every layout problem that only shows up on a
   // maximized window. `resize 1728 1080` approximates a full-screen 16" MacBook Pro.
+  // Playwright emulates a colour scheme by default, which *overrides* prefers-color-scheme in the
+  // renderer - so with no argument this app always renders light no matter what macOS or the app's
+  // own Hell/Dunkel/Systemeinstellung say, and dark mode cannot be verified through the driver at
+  // all. `colorscheme none` clears the emulation and hands the question back to Electron
+  // (nativeTheme.themeSource, which is what the app's appearance setting drives); `light`/`dark`
+  // force one for a screenshot pair.
+  async colorscheme(mode) {
+    if (!page) return console.log('ERROR: launch first')
+    const value = !mode || mode === 'none' || mode === 'null' ? null : mode
+    await page.emulateMedia({ colorScheme: value })
+    console.log(
+      'colorScheme emulation:',
+      value ?? 'off (following Electron)',
+      '→ page reports',
+      (await page.evaluate(() => matchMedia('(prefers-color-scheme: dark)').matches)) ? 'dark' : 'light'
+    )
+  },
+
   async resize(rest) {
     if (!app || !page) return console.log('ERROR: launch first')
     const [w, h] = rest.split(/\s+/).map(Number)

@@ -34,6 +34,13 @@ body {
   background-clip: content-box;
 }
 
-.dark ::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.2);
+/* A media query, not `.dark`: Tailwind runs on darkMode: 'media', so no `.dark` class ever
+   exists in this app's DOM and the rule this replaces could never match - the dark scrollbar
+   thumb was never actually rendered. The app's Hell/Dunkel/Systemeinstellung works through
+   nativeTheme.themeSource, which flips prefers-color-scheme here too (see electron/main/theme.ts),
+   so this follows the app's own setting and not just the OS. */
+@media (prefers-color-scheme: dark) {
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
 }

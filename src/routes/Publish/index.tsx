@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { useProject } from '../ProjectLayout'
 import type {
   Connection,
@@ -12,6 +13,7 @@ import type {
   SavePublishTargetInput
 } from '@shared/ipc-contract'
 import { Badge, Button, Card, Field, PageHeader, Select, TextInput, Toggle } from '../../components/ui'
+import { ConnectionFormFields, emptyConnectionDraft } from '../../components/ConnectionForm'
 import { useAsyncAction } from '../../hooks/useAsyncAction'
 import { useStickyState } from '../../state/uiState'
 import { rsyncBlockReason } from '@shared/rsyncSupport'
@@ -25,12 +27,6 @@ import GithubPages from './GithubPages'
 
 function emptyTargetDraft(): SavePublishTargetInput {
   return { name: '', destination: { type: 'sftp', remotePath: '/', transfer: 'sftp', deleteRemoved: true } }
-}
-
-function emptyConnectionDraft(kind: 'ssh' | 'ftp' | 'webhook'): SaveConnectionInput {
-  if (kind === 'ssh') return { kind: 'ssh', name: '', host: '', port: 22, username: '', authMethod: 'password', secret: '' }
-  if (kind === 'ftp') return { kind: 'ftp', name: '', host: '', port: 21, username: '', secure: true, secret: '' }
-  return { kind: 'webhook', name: '', secret: '' }
 }
 
 /** Which connection kind a destination needs, or null when it needs none - a folder is reached
@@ -538,10 +534,16 @@ export default function Publish(): JSX.Element {
           )}
 
           {draftKind && (
-            <div className="mt-3">
+            <div className="mt-3 flex flex-wrap items-center gap-3">
               <Button variant="ghost" onClick={() => setConnectionDraft(emptyConnectionDraft(draftKind))}>
                 {t('publish.newConnection')}
               </Button>
+              {/* Creating one in the flow stays here; everything else about a connection - editing
+                  it, rotating its password, forgetting a host key - is app-level and lives in the
+                  Einstellungen, because one login commonly serves several projects. */}
+              <Link to="/settings" className="text-[13px] text-slate-500 underline hover:text-slate-900 dark:hover:text-white">
+                {t('publish.manageConnections')}
+              </Link>
             </div>
           )}
 
@@ -563,118 +565,7 @@ export default function Publish(): JSX.Element {
         <Card>
           <h2 className="mb-2 text-sm font-semibold">{t('publish.connectionForm.heading')}</h2>
           <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('publish.connectionForm.explainer')}</p>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            <Field label={t('publish.connectionForm.name')}>
-              <TextInput value={connectionDraft.name} onChange={(e) => setConnectionDraft({ ...connectionDraft, name: e.target.value })} />
-            </Field>
-            {connectionDraft.kind !== 'webhook' && (
-              <>
-                <Field label={t('publish.connectionForm.host')}>
-                  <TextInput
-                    value={'host' in connectionDraft ? connectionDraft.host : ''}
-                    onChange={(e) => setConnectionDraft({ ...connectionDraft, host: e.target.value } as SaveConnectionInput)}
-                  />
-                </Field>
-                <Field label={t('publish.connectionForm.port')}>
-                  <TextInput
-                    type="number"
-                    value={'port' in connectionDraft ? connectionDraft.port : 0}
-                    onChange={(e) => setConnectionDraft({ ...connectionDraft, port: Number(e.target.value) || 0 } as SaveConnectionInput)}
-                  />
-                </Field>
-                <Field label={t('publish.connectionForm.username')}>
-                  <TextInput
-                    value={'username' in connectionDraft ? connectionDraft.username : ''}
-                    onChange={(e) => setConnectionDraft({ ...connectionDraft, username: e.target.value } as SaveConnectionInput)}
-                  />
-                </Field>
-              </>
-            )}
-            {connectionDraft.kind === 'ssh' && (
-              <Field label={t('publish.connectionForm.authMethod')}>
-                <Select
-                  value={connectionDraft.authMethod}
-                  onChange={(e) =>
-                    setConnectionDraft({
-                      ...connectionDraft,
-                      authMethod: e.target.value as 'password' | 'privateKey' | 'agent',
-                      secret: ''
-                    })
-                  }
-                >
-                  <option value="password">{t('publish.connectionForm.authPassword')}</option>
-                  <option value="privateKey">{t('publish.connectionForm.authPrivateKey')}</option>
-                  <option value="agent">{t('publish.connectionForm.authAgent')}</option>
-                </Select>
-              </Field>
-            )}
-            {connectionDraft.kind === 'ftp' && (
-              <div className="flex items-end pb-1.5">
-                <Toggle
-                  label={t('publish.connectionForm.secure')}
-                  checked={connectionDraft.secure}
-                  onChange={(checked) => setConnectionDraft({ ...connectionDraft, secure: checked })}
-                />
-              </div>
-            )}
-            {connectionDraft.kind === 'ssh' && connectionDraft.authMethod === 'privateKey' && (
-              <Field label={t('publish.connectionForm.keyPath')}>
-                <div className="flex gap-2">
-                  <TextInput
-                    value={connectionDraft.keyPath ?? ''}
-                    onChange={(e) => setConnectionDraft({ ...connectionDraft, keyPath: e.target.value || undefined })}
-                    className="flex-1"
-                    placeholder="~/.ssh/id_ed25519"
-                  />
-                  <Button
-                    variant="ghost"
-                    onClick={async () => {
-                      const file = await window.quartzGui.dialog.pickFile()
-                      if (file) setConnectionDraft({ ...connectionDraft, keyPath: file })
-                    }}
-                  >
-                    {t('common.select')}
-                  </Button>
-                </div>
-              </Field>
-            )}
-            {connectionDraft.kind === 'ssh' && connectionDraft.authMethod === 'agent' ? (
-              <p className="text-xs text-slate-500 dark:text-slate-400 sm:col-span-2 xl:col-span-3">
-                {t('publish.connectionForm.agentHint')}
-              </p>
-            ) : connectionDraft.kind === 'webhook' ? (
-              <Field label={t('publish.connectionForm.webhookUrl')}>
-                {/* Not a password field: the URL has to be readable while pasting it, since a
-                    mistyped build hook fails with a 404 that says nothing about which one. It is
-                    still stored encrypted - its path is the token. */}
-                <TextInput
-                  value={connectionDraft.secret ?? ''}
-                  onChange={(e) => setConnectionDraft({ ...connectionDraft, secret: e.target.value })}
-                  placeholder="https://api.netlify.com/build_hooks/…"
-                />
-              </Field>
-            ) : (
-              <Field
-                label={
-                  connectionDraft.kind === 'ssh' && connectionDraft.authMethod === 'privateKey'
-                    ? t('publish.connectionForm.privateKey')
-                    : t('publish.connectionForm.password')
-                }
-              >
-                <TextInput
-                  type="password"
-                  value={connectionDraft.secret ?? ''}
-                  onChange={(e) => setConnectionDraft({ ...connectionDraft, secret: e.target.value })}
-                  placeholder={connectionDraft.id ? t('publish.connectionForm.secretUnchangedPlaceholder') : ''}
-                />
-              </Field>
-            )}
-          </div>
-          {connectionDraft.kind === 'ftp' && !connectionDraft.secure && (
-            <p className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
-              {t('publish.ftpPlaintextWarning')}
-            </p>
-          )}
+          <ConnectionFormFields draft={connectionDraft} onChange={setConnectionDraft} />
           <div className="mt-3 flex gap-2">
             <Button
               onClick={() => saveConnectionAction.run()}

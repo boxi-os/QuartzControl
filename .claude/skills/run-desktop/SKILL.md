@@ -69,6 +69,7 @@ screenshot file and look at it** — a command succeeding doesn't mean the UI lo
 | `fill <css-sel> <text>` | set an input's value via the native setter + `input` event, then verify via a fresh query |
 | `type <text>` / `press <key>` | real OS-level keyboard input (see Gotchas — often doesn't land) |
 | `drag <x1> <y1> <x2> <y2> [steps]` | real Playwright mouse down/move/up between two viewport coordinates - needed for dnd-kit or other pointer-event-based drag-and-drop, which a synthetic `dispatchEvent(new PointerEvent(...))` in `eval` does not reliably trigger |
+| `colorscheme <none\|light\|dark>` | clear or force Playwright's colour-scheme emulation — **`colorscheme none` is required before judging anything about dark mode** (see Gotchas) |
 | `resize <w> <h>` | resize the real BrowserWindow — the default 1280x800 hides every layout problem that only shows up on a maximized window (`resize 1728 1000` ≈ a full-screen 16" MacBook Pro) |
 | `wait <css-sel>` | wait for element, 10s timeout |
 | `eval <js>` | evaluate arbitrary JS in the page, print JSON — your escape hatch when a command doesn't fit |
@@ -107,6 +108,15 @@ npm run dev   # electron-vite dev - opens a real window, hot reload
   `process.exit(0)`. If you need to relaunch, you must re-run
   `node .claude/skills/run-desktop/driver.mjs` in the tmux pane first; sending `launch` after
   `quit` just types `launch` at your shell prompt and does nothing.
+
+- **Playwright emulates a colour scheme by default, and that overrides `prefers-color-scheme` in
+  the renderer.** With the default the app renders light no matter what macOS says *or* what the
+  app's own Hell/Dunkel/Systemeinstellung is set to — which works through
+  `nativeTheme.themeSource` in the main process (see CLAUDE.md's Dark mode section). So a
+  screenshot taken without `colorscheme none` says nothing about the appearance, and a
+  dark-mode bug cannot be reproduced through the driver at all. Run `colorscheme none` right
+  after `launch` whenever appearance is part of what you are checking; `colorscheme light` /
+  `colorscheme dark` force one for a before/after pair.
 
 - **This app's own async data can take 5-15s to resolve** — the Themes catalog does `npm search`
   plus a paginated GitHub API call on load. A screenshot taken right after `goto` will show

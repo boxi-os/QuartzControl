@@ -1,10 +1,11 @@
-import { app, BrowserWindow, dialog, shell, Menu, nativeImage, nativeTheme, type MenuItemConstructorOptions } from 'electron'
+import { app, BrowserWindow, dialog, shell, Menu, nativeImage, type MenuItemConstructorOptions } from 'electron'
 import { existsSync } from 'fs'
 import { join } from 'path'
 import { registerIpcHandlers } from './ipc/handlers'
 import { killAllServers, detectOrphanedServers, killOrphanedServers } from './services/buildService'
 import { getProject } from './services/projectStore'
 import { resolveMainStrings, type MainStrings } from './i18n'
+import { applyStoredTheme, windowBackgroundColor } from './theme'
 
 const isMac = process.platform === 'darwin'
 const APP_NAME = 'QuartzControl'
@@ -39,7 +40,9 @@ function createWindow(): void {
     // matching how most modern macOS apps (Mail, Notes, Slack) present their chrome
     titleBarStyle: isMac ? 'hiddenInset' : 'default',
     trafficLightPosition: isMac ? { x: 16, y: 16 } : undefined,
-    backgroundColor: nativeTheme.shouldUseDarkColors ? '#1e1e1e' : '#f5f5f7',
+    // follows the app's own Hell/Dunkel/Systemeinstellung, not just the OS - applyStoredTheme()
+    // has already run at this point, so nativeTheme reflects the user's choice
+    backgroundColor: windowBackgroundColor(),
     // affects the Windows/Linux taskbar icon and the dev-mode dock icon on Linux; on macOS the
     // Dock icon is set separately below via app.dock.setIcon since BrowserWindow's `icon` option
     // has no effect there
@@ -162,6 +165,8 @@ app.whenReady().then(async () => {
     const iconPath = resolveIconPath()
     if (iconPath) app.dock.setIcon(nativeImage.createFromPath(iconPath))
   }
+  // Before createWindow(), so the very first frame is painted in the chosen appearance.
+  await applyStoredTheme()
   const strings = await resolveMainStrings()
   buildMenu(strings)
   registerIpcHandlers()

@@ -361,6 +361,7 @@ export default {
     conflicts_other: '{{count}} conflicts',
     moreChanges: '… and {{count}} more',
     lastCommit: 'Last commit',
+    abortMerge: 'Abort merge',
     refresh: 'Refresh',
     inProgress: {
       merge: 'A merge has been started and is not finished.',

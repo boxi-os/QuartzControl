@@ -29,8 +29,26 @@ function StatusRow({ change }: { change: GitFileChange }): JSX.Element {
   )
 }
 
-function RepoStatus({ status, repo }: { status: GitStatus; repo: GithubRepoRef | null }): JSX.Element {
+function RepoStatus({
+  status,
+  repo,
+  projectPath,
+  onChanged
+}: {
+  status: GitStatus
+  repo: GithubRepoRef | null
+  projectPath: string
+  onChanged: () => void
+}): JSX.Element {
   const { t } = useTranslation()
+  // `quartz sync --pull` merges (--no-rebase), so a conflict leaves a half-finished merge right
+  // here - and the way out used to be a terminal: this state was named and nothing more. The
+  // channel is the one the Updates page uses; it is a plain `git merge --abort` with the content
+  // symlink parked, which is exactly what is needed here too - only its name says "core".
+  const abort = useAsyncAction(async () => {
+    await window.quartzGui.updates.abortCoreMerge(projectPath)
+    onChanged()
+  })
 
   if (!status.isRepo) {
     return <p className="text-xs text-slate-500 dark:text-slate-400">{t('gitSync.notARepo')}</p>
@@ -66,9 +84,15 @@ function RepoStatus({ status, repo }: { status: GitStatus; repo: GithubRepoRef |
       </div>
 
       {status.inProgress && (
-        <p className="rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
-          {t(`gitSync.inProgress.${status.inProgress}`)}
-        </p>
+        <div className="flex flex-wrap items-center gap-3 rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+          <span>{t(`gitSync.inProgress.${status.inProgress}`)}</span>
+          {status.inProgress === 'merge' && (
+            <Button variant="ghost" onClick={() => abort.run()} disabled={abort.pending}>
+              {abort.pending ? t('common.saving') : t('gitSync.abortMerge')}
+            </Button>
+          )}
+          {abort.error && <span className="text-red-600 dark:text-red-400">{abort.error}</span>}
+        </div>
       )}
 
       {!status.remoteUrl ? (
@@ -236,7 +260,9 @@ export default function GitSync(): JSX.Element {
           </Button>
         </div>
         {refresh.error && <p className="text-xs text-red-600 dark:text-red-400">{refresh.error}</p>}
-        {status && <RepoStatus status={status} repo={repo} />}
+        {status && (
+          <RepoStatus status={status} repo={repo} projectPath={project.path} onChanged={refreshStatus} />
+        )}
       </Card>
 
       {status?.isRepo && !status.remoteUrl && <CreateRepoCard projectPath={project.path} onCreated={refreshStatus} />}

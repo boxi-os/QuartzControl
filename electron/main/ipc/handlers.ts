@@ -374,7 +374,7 @@ export function registerIpcHandlers(): void {
           project: 'Das ist das Projektverzeichnis selbst.',
           containsProject: 'Dieser Ordner enthält das Projekt.',
           home: 'Das ist dein Benutzerordner.',
-          protected: `Darin liegt "${verdict.detail}", das das Projekt zum Bauen braucht.`
+          protected: `Der Ordner ist "${verdict.detail}" oder liegt darin - den braucht das Projekt selbst.`
         }[verdict.reason]
         throw new Error(
           `In "${dir}" kann nicht gebaut werden: ${why} Jeder Build löscht sein Ausgabeverzeichnis vollständig. ` +
@@ -382,11 +382,15 @@ export function registerIpcHandlers(): void {
         )
       }
       if (verdict.kind === 'confirm') {
+        // Cancel first, not second: `defaultId` is not honoured here - measured against this
+        // Electron build on macOS with the destructive button in buttons[0] and defaultId
+        // pointing at "Abbrechen", where Return emptied the folder anyway (Escape does honour
+        // cancelId). So the safe answer has to be the one sitting first.
         const { response } = await dialog.showMessageBox({
           type: 'warning',
-          buttons: ['Ordner leeren und bauen', 'Abbrechen'],
-          defaultId: 1,
-          cancelId: 1,
+          buttons: ['Abbrechen', 'Ordner leeren und bauen'],
+          defaultId: 0,
+          cancelId: 0,
           title: 'Ausgabeverzeichnis wird geleert',
           message: `"${dir}" ist nicht leer.`,
           detail:
@@ -394,7 +398,7 @@ export function registerIpcHandlers(): void {
             'Jeder Build löscht sein Ausgabeverzeichnis vollständig - das lässt sich nicht rückgängig machen ' +
             'und geht nicht in den Papierkorb.'
         })
-        if (response !== 0) throw new Error(`Build abgebrochen - "${dir}" wurde nicht geleert.`)
+        if (response !== 1) throw new Error(`Build abgebrochen - "${dir}" wurde nicht geleert.`)
       }
       return buildService.runBuild(projectId, projectPath, outputDir)
     }

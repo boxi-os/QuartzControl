@@ -64,9 +64,12 @@ export function makeHostVerifier(connection: SshConnection, onRejected: (message
     void dialog
       .showMessageBox({
         type: 'warning',
-        buttons: ['Verbinden und merken', 'Abbrechen'],
-        defaultId: 1,
-        cancelId: 1,
+        // Cancel first for the same reason the build guard puts it first: `defaultId` does not
+        // decide what Return does here (measured), and confirming an unknown host key by reflex
+        // is exactly what trust-on-first-use must not make easy.
+        buttons: ['Abbrechen', 'Verbinden und merken'],
+        defaultId: 0,
+        cancelId: 0,
         title: 'Unbekannter Server',
         message: `${connection.host} ist zum ersten Mal kontaktiert worden.`,
         detail:
@@ -75,7 +78,7 @@ export function makeHostVerifier(connection: SshConnection, onRejected: (message
           `${connection.host} | ssh-keygen -lf -\`). Nur bei Übereinstimmung verbinden.`
       })
       .then(async ({ response }) => {
-        if (response !== 0) {
+        if (response !== 1) {
           onRejected('Verbindung abgebrochen - der Host-Key wurde nicht bestätigt.')
           return accept(false)
         }

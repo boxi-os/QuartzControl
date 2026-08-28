@@ -326,7 +326,7 @@ function LocalFontImport({
       setFamily('')
       setSlot('')
     } catch (err) {
-      setMessage(String(err))
+      setMessage(formatIpcError(err))
     }
     setBusy(false)
   }

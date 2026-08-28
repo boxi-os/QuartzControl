@@ -4,6 +4,7 @@ import { SlidersHorizontal } from 'lucide-react'
 import { useProject } from '../ProjectLayout'
 import type { GridFrameDefinition, QuartzConfig } from '@shared/ipc-contract'
 import { Button, PageHeader } from '../../components/ui'
+import { formatIpcError } from '../../components/ErrorSurface'
 import { useStickyState } from '../../state/uiState'
 import { TAB_ICONS } from '../navConfig'
 import GlobalBoard from './GlobalBoard'
@@ -70,7 +71,7 @@ export default function LayoutEditor(): JSX.Element {
       setTimeout(() => setStatus('idle'), 2000)
     } catch (err) {
       setStatus('error')
-      setError(String(err))
+      setError(formatIpcError(err))
     }
   }
 

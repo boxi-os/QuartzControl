@@ -43,6 +43,22 @@ export default {
     notAQuartzProject: 'Kein Quartz-Projekt — in diesem Ordner liegt keine quartz.config.yaml.',
     locateFolder: 'Ordner suchen…',
     confirmRemove: '„{{name}}“ aus der Liste entfernen?\n\nDer Ordner auf der Festplatte bleibt unangetastet.',
+    environment: {
+      titleProblem: 'Diese Werkzeuge fehlen',
+      description:
+        'QuartzControl ruft für Builds, Plugins und neue Projekte Node, npm und git auf. Ohne sie schlagen diese Schritte mit einer Fehlermeldung fehl.',
+      missing: 'nicht gefunden',
+      brokenTool: 'gefunden, lässt sich aber nicht ausführen',
+      installHint:
+        'Node.js (mit npm) von nodejs.org installieren, danach diese Ansicht neu laden. git ist auf macOS Teil der Xcode-Befehlszeilenwerkzeuge (xcode-select --install).',
+      recheck: 'Erneut prüfen',
+      ready: 'Werkzeuge bereit',
+      secretsTitle: 'Zugangsdaten liegen unverschlüsselt',
+      secretsBody:
+        'Auf diesem System ist kein Schlüsselbund aktiv, deshalb speichert Electron Passwörter und Token nur mit einem fest eingebauten Schlüssel ({{backend}}) — das ist praktisch Klartext. Mit gnome-keyring oder KWallet werden sie richtig geschützt.',
+      secretsUnavailable:
+        'Auf diesem System steht keine Verschlüsselung zur Verfügung. Zugangsdaten mit Passwort oder Token lassen sich deshalb nicht speichern.'
+    },
     gettingStarted: {
       title: 'Erste Schritte',
       description:

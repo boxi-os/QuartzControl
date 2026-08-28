@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, Link } from 'react-router-dom'
-import { ArrowUpRight, FolderSearch, Search, TriangleAlert, Trash2 } from 'lucide-react'
-import type { CreateProjectOptions, ProjectOverview } from '@shared/ipc-contract'
+import { ArrowUpRight, CheckCircle2, FolderSearch, Search, TriangleAlert, Trash2 } from 'lucide-react'
+import type { CreateProjectOptions, EnvironmentInfo, ProjectOverview } from '@shared/ipc-contract'
 import { useAppStore } from '../state/store'
 import { Button, Card, Field, Select, TextInput } from '../components/ui'
 import { GROUP_ICONS } from './navConfig'
@@ -30,6 +30,7 @@ export default function Home(): JSX.Element {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
+  const [environment, recheckEnvironment] = useEnvironment()
   const navigate = useNavigate()
 
   const reload = useCallback(async () => {
@@ -104,6 +105,8 @@ export default function Home(): JSX.Element {
           </Link>
         </div>
 
+        {environment && <EnvironmentBand info={environment} onRecheck={recheckEnvironment} />}
+
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
           <div className="min-w-0">
             <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -151,7 +154,7 @@ export default function Home(): JSX.Element {
             )}
           </div>
 
-          <WhatYouCanDo />
+          <WhatYouCanDo environment={environment} />
         </div>
       </div>
 
@@ -321,9 +324,113 @@ function GettingStarted({ onOpen, onCreate }: { onOpen: () => void; onCreate: ()
   )
 }
 
+// ── environment ─────────────────────────────────────────────────────────────────────────────
+
+// Nothing in this app works without node, npm and git - a build, a plugin install and creating a
+// project all shell out. Before this, a machine missing one of them said so as a cryptic failure
+// halfway through a clone; now it says so before anything is attempted.
+//
+// Two presentations, never both: a full-width band above everything when something is wrong (the
+// same rule ProjectDashboard's attention band follows - it exists only when there is real
+// breakage), and a single quiet line in the side column when everything is fine. A broken
+// environment must not sit in a 320px column that collapses below the project list on a narrow
+// window.
+function useEnvironment(): [EnvironmentInfo | null, () => void] {
+  const [info, setInfo] = useState<EnvironmentInfo | null>(null)
+  const load = useCallback(() => {
+    void window.quartzGui.settings.environment().then(setInfo)
+  }, [])
+  useEffect(load, [load])
+  return [info, load]
+}
+
+function environmentIsHealthy(info: EnvironmentInfo): boolean {
+  return info.ok && info.secretStorage.secure
+}
+
+function EnvironmentBand({ info, onRecheck }: { info: EnvironmentInfo; onRecheck: () => void }): JSX.Element | null {
+  const { t } = useTranslation()
+  if (environmentIsHealthy(info)) return null
+
+  const broken = info.tools.filter((tool) => tool.version === null)
+  return (
+    <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-500/40 dark:bg-amber-950/40">
+      {broken.length > 0 && (
+        <>
+          <div className="flex items-center gap-2">
+            <TriangleAlert size={15} className="shrink-0 text-amber-600 dark:text-amber-400" />
+            <h2 className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+              {t('home.environment.titleProblem')}
+            </h2>
+          </div>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-amber-900/80 dark:text-amber-200/80">
+            {t('home.environment.description')}
+          </p>
+          <ul className="mt-2.5 flex flex-col gap-1">
+            {broken.map((tool) => (
+              <li key={tool.name} className="font-mono text-xs text-amber-900 dark:text-amber-200">
+                {tool.name} — {tool.path ? t('home.environment.brokenTool') : t('home.environment.missing')}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2.5 text-xs leading-relaxed text-amber-900/70 dark:text-amber-200/70">
+            {t('home.environment.installHint')}
+          </p>
+        </>
+      )}
+      {!info.secretStorage.secure && (
+        <div className={broken.length > 0 ? 'mt-4 border-t border-amber-300/60 pt-3 dark:border-amber-500/30' : ''}>
+          <div className="flex items-center gap-2">
+            <TriangleAlert size={15} className="shrink-0 text-amber-600 dark:text-amber-400" />
+            <h2 className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+              {t('home.environment.secretsTitle')}
+            </h2>
+          </div>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-amber-900/80 dark:text-amber-200/80">
+            {info.secretStorage.available
+              ? t('home.environment.secretsBody', { backend: info.secretStorage.backend ?? '?' })
+              : t('home.environment.secretsUnavailable')}
+          </p>
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={onRecheck}
+        className="mt-3 text-xs font-medium text-amber-800 hover:underline dark:text-amber-300"
+      >
+        {t('home.environment.recheck')}
+      </button>
+    </div>
+  )
+}
+
+// The tools disagree on what --version prints: node answers "v26.5.1", npm a bare "11.17.0", git a
+// whole sentence with a vendor suffix ("git version 2.50.1 (Apple Git-155)"). This line is a
+// reassurance, not a diagnosis, so it shows the number and nothing else - the full string is what
+// the warning band prints when something is actually wrong.
+function versionNumber(version: string | null): string {
+  return /\d[\d.]*/.exec(version ?? '')?.[0] ?? ''
+}
+
+function EnvironmentLine({ info }: { info: EnvironmentInfo }): JSX.Element | null {
+  const { t } = useTranslation()
+  if (!environmentIsHealthy(info)) return null
+  return (
+    <div className="flex items-start gap-2 px-1 text-xs text-slate-500 dark:text-slate-400">
+      <CheckCircle2 size={13} className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-500" />
+      <p className="min-w-0">
+        <span className="font-medium">{t('home.environment.ready')}</span>{' '}
+        <span className="break-words">
+          {info.tools.map((tool) => `${tool.name} ${versionNumber(tool.version)}`).join(' · ')}
+        </span>
+      </p>
+    </div>
+  )
+}
+
 // ── what the app is for ─────────────────────────────────────────────────────────────────────
 
-function WhatYouCanDo(): JSX.Element {
+function WhatYouCanDo({ environment }: { environment: EnvironmentInfo | null }): JSX.Element {
   const { t } = useTranslation()
   // The four blocks are exactly the sidebar's four groups, in the same order - so the start
   // screen teaches the structure of a project before you are inside one.
@@ -336,6 +443,7 @@ function WhatYouCanDo(): JSX.Element {
 
   return (
     <aside className="flex flex-col gap-4">
+      {environment && <EnvironmentLine info={environment} />}
       <Card>
         <h2 className="text-[15px] font-semibold">{t('home.capabilities.title')}</h2>
         <div className="mt-3 flex flex-col gap-3.5">

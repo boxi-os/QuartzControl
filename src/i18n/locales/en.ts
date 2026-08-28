@@ -43,6 +43,22 @@ export default {
     notAQuartzProject: 'Not a Quartz project — this folder has no quartz.config.yaml.',
     locateFolder: 'Locate folder…',
     confirmRemove: 'Remove “{{name}}” from the list?\n\nThe folder on disk is left untouched.',
+    environment: {
+      titleProblem: 'These tools are missing',
+      description:
+        'QuartzControl calls Node, npm and git for builds, plugins and new projects. Without them those steps fail with an error.',
+      missing: 'not found',
+      brokenTool: 'found, but does not run',
+      installHint:
+        'Install Node.js (which includes npm) from nodejs.org, then re-check here. On macOS git is part of the Xcode command line tools (xcode-select --install).',
+      recheck: 'Check again',
+      ready: 'Tools ready',
+      secretsTitle: 'Credentials are stored unencrypted',
+      secretsBody:
+        'No keyring is running on this system, so Electron stores passwords and tokens with a hardcoded key ({{backend}}) - effectively plaintext. Running gnome-keyring or KWallet protects them properly.',
+      secretsUnavailable:
+        'No encryption is available on this system, so connections with a password or token cannot be saved.'
+    },
     gettingStarted: {
       title: 'Getting started',
       description: 'QuartzControl manages Quartz projects: a folder full of Markdown files becomes a finished website.',

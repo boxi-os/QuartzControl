@@ -446,7 +446,19 @@ export default function BuildServer(): JSX.Element {
               )}
             </div>
           </Field>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('buildServer.exportDirShared')}</p>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            {t('buildServer.exportDirShared')} {t('buildServer.exportDirWipes')}
+          </p>
+          {/* `quartz build` deletes its output directory before it writes - measured against a real
+              build, which removed a subfolder of notes from a picked export folder. A folder that
+              already holds a build is its own previous output and needs no warning; anything else
+              in there is about to be lost, and the folder picker two lines up makes that one click
+              away. Main asks again before the build actually runs (see buildOutputGuard). */}
+          {output && output.fileCount > 0 && !output.looksLikeBuild && (
+            <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+              {t('buildServer.exportDirForeign', { count: output.fileCount })}
+            </p>
+          )}
           {outputDirError && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{outputDirError}</p>}
         </div>
 

@@ -307,6 +307,9 @@ export default {
     exportDir: 'Output folder (optional)',
     exportDirPlaceholder: 'Default: public/ in the project',
     exportDirShared: 'Also used by Publish — the upload comes from the same folder.',
+    exportDirWipes: 'Every build empties this folder first.',
+    exportDirForeign:
+      'Careful: this folder holds {{count}} files that do not look like a build. The next build deletes them for good.',
     reset: 'Reset',
     success: 'Successful',
     failed: 'Failed',

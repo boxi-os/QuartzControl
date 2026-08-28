@@ -308,6 +308,9 @@ export default {
     exportDir: 'Ausgabeordner (optional)',
     exportDirPlaceholder: 'Standard: public/ im Projekt',
     exportDirShared: 'Gilt auch für Veröffentlichen — dort wird aus demselben Ordner hochgeladen.',
+    exportDirWipes: 'Jeder Build leert diesen Ordner vorher vollständig.',
+    exportDirForeign:
+      'Achtung: In diesem Ordner liegen {{count}} Dateien, die nicht nach einem Build aussehen. Der nächste Build löscht sie unwiderruflich.',
     reset: 'Zurücksetzen',
     success: 'Erfolgreich',
     failed: 'Fehlgeschlagen',

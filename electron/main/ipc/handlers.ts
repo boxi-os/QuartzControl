@@ -35,6 +35,8 @@ import * as githubService from '../services/githubService'
 import * as deployService from '../services/deploy'
 import * as marketplaceService from '../services/marketplaceService'
 import * as buildService from '../services/buildService'
+import * as buildOutputGuard from '../services/buildOutputGuard'
+import { resolveBuildDir } from '../services/projectDirs'
 import * as projectPrefsService from '../services/projectPrefsService'
 import * as syncService from '../services/syncService'
 import * as gitStatusService from '../services/gitStatusService'
@@ -355,8 +357,46 @@ export function registerIpcHandlers(): void {
   handle(IPC.buildLastOutput, t([s.absolutePath, s.buildOutputDir.optional()]), (projectPath, outputDir) =>
     buildService.getBuildOutput(projectPath, outputDir)
   )
-  handle(IPC.buildRun, t([s.uuid, s.absolutePath, s.buildOutputDir.optional()]), (projectId, projectPath, outputDir) =>
-    buildService.runBuild(projectId, projectPath, outputDir)
+  // `quartz build` empties its output directory before writing (see buildOutputGuard) - so the
+  // question "may this directory be deleted" is asked here, in the one place both pages that
+  // build go through. A refusal and a cancelled confirmation are thrown rather than returned:
+  // BuildResult has no room for a message, and both callers already show a rejected invoke -
+  // Vorschau & Build in the build log, Veröffentlichen in the diff card.
+  handle(
+    IPC.buildRun,
+    t([s.uuid, s.absolutePath, s.buildOutputDir.optional()]),
+    async (projectId, projectPath, outputDir) => {
+      const verdict = await buildOutputGuard.assessOutputDir(projectPath, outputDir)
+      const dir = resolveBuildDir(projectPath, outputDir)
+      if (verdict.kind === 'refused') {
+        const why = {
+          project: 'Das ist das Projektverzeichnis selbst.',
+          containsProject: 'Dieser Ordner enthält das Projekt.',
+          home: 'Das ist dein Benutzerordner.',
+          protected: `Darin liegt "${verdict.detail}", das das Projekt zum Bauen braucht.`
+        }[verdict.reason]
+        throw new Error(
+          `In "${dir}" kann nicht gebaut werden: ${why} Jeder Build löscht sein Ausgabeverzeichnis vollständig. ` +
+            'Bitte einen eigenen Ordner wählen, z. B. "public" oder "dist".'
+        )
+      }
+      if (verdict.kind === 'confirm') {
+        const { response } = await dialog.showMessageBox({
+          type: 'warning',
+          buttons: ['Ordner leeren und bauen', 'Abbrechen'],
+          defaultId: 1,
+          cancelId: 1,
+          title: 'Ausgabeverzeichnis wird geleert',
+          message: `"${dir}" ist nicht leer.`,
+          detail:
+            `Darin liegen ${verdict.entryCount} ${verdict.entryCount === 1 ? 'Eintrag' : 'Einträge'}, die nicht nach einem Quartz-Build aussehen. ` +
+            'Jeder Build löscht sein Ausgabeverzeichnis vollständig - das lässt sich nicht rückgängig machen ' +
+            'und geht nicht in den Papierkorb.'
+        })
+        if (response !== 0) throw new Error(`Build abgebrochen - "${dir}" wurde nicht geleert.`)
+      }
+      return buildService.runBuild(projectId, projectPath, outputDir)
+    }
   )
 
   handle(IPC.projectPrefsGet, t([s.absolutePath]), (projectPath) => projectPrefsService.getPrefs(projectPath))

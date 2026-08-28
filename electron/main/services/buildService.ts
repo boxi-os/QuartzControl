@@ -6,6 +6,7 @@ import treeKill from 'tree-kill'
 import { EventEmitter } from 'events'
 import type { BuildOutputInfo, LogLine, ServerOptions, ServerStatus, BuildResult } from '@shared/ipc-contract'
 import { needsShell } from './runCommand'
+import { looksLikeQuartzBuild } from './buildOutputGuard'
 import { resolveBuildDir } from './projectDirs'
 import * as runningServersStore from './runningServersStore'
 
@@ -216,7 +217,7 @@ export function runBuild(projectId: string, projectPath: string, outputDir?: str
 // following would let a link out of the tree distort both numbers.
 export async function getBuildOutput(projectPath: string, outputDir?: string): Promise<BuildOutputInfo> {
   const dir = resolveBuildDir(projectPath, outputDir)
-  const empty: BuildOutputInfo = { dir, exists: false, fileCount: 0, sizeBytes: 0 }
+  const empty: BuildOutputInfo = { dir, exists: false, fileCount: 0, sizeBytes: 0, looksLikeBuild: false }
   try {
     if (!(await stat(dir)).isDirectory()) return empty
   } catch {
@@ -252,7 +253,8 @@ export async function getBuildOutput(projectPath: string, outputDir?: string): P
     exists: fileCount > 0,
     builtAt: newest > 0 ? new Date(newest).toISOString() : undefined,
     fileCount,
-    sizeBytes
+    sizeBytes,
+    looksLikeBuild: await looksLikeQuartzBuild(dir)
   }
 }
 

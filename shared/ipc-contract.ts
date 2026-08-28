@@ -402,6 +402,10 @@ export interface BuildOutputInfo {
   builtAt?: string
   fileCount: number
   sizeBytes: number
+  /** Whether what lies there looks like a built site rather than someone else's files. A build
+   *  deletes this directory before it writes (see buildOutputGuard), so a non-empty directory
+   *  that is *not* a build is the one case the user has to be warned about beforehand. */
+  looksLikeBuild: boolean
 }
 
 // The per-project settings this app keeps for itself, in <project>/.quartz-gui/. Only one so far,

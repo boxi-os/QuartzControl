@@ -181,55 +181,6 @@ export function stripManagedBlock(content: string, markerId: string): string {
   return (content.slice(0, startIdx) + content.slice(endIdx + end.length)).replace(/\n{3,}/g, '\n\n')
 }
 
-// Regex-scans the compiled build output's CSS files for custom-property declarations, so plugin-
-// authored variables (which have no fixed catalog - any plugin can bring its own) can still be
-// discovered without a hardcoded list. Best-effort: returns [] if no build output exists yet.
-export async function scanBuildOutputVariables(projectPath: string, outputDir?: string): Promise<string[]> {
-  const buildDir = resolveBuildDir(projectPath, outputDir)
-  if (!existsSync(buildDir)) return []
-  const cssFiles = (await findCssFiles(buildDir)).slice(0, 50)
-  const found = new Set<string>()
-  for (const file of cssFiles) {
-    const content = await readFile(file, 'utf-8')
-    const re = /--([\w-]+)\s*:/g
-    let match: RegExpExecArray | null
-    while ((match = re.exec(content)) !== null) found.add(match[1])
-  }
-  return Array.from(found).sort()
-}
-
-async function findCssFiles(dir: string, depth = 0): Promise<string[]> {
-  if (depth > 6) return []
-  let entries
-  try {
-    entries = await readdir(dir, { withFileTypes: true })
-  } catch {
-    return []
-  }
-  const results: string[] = []
-  for (const entry of entries) {
-    if (IGNORED_DIRS.has(entry.name)) continue
-    const full = join(dir, entry.name)
-    if (entry.isDirectory()) results.push(...(await findCssFiles(full, depth + 1)))
-    else if (entry.name.endsWith('.css')) results.push(full)
-  }
-  return results
-}
-
-// ── additional stylesheets ──────────────────────────────────────────────────
-//
-// Quartz imports exactly one stylesheet, custom.scss (componentResources.ts). Everything else has
-// to be reached *through* it, and Sass requires `@use` before any rule - so the load order lives
-// in one managed block at the very top of custom.scss:
-//
-//   /* --- Quartz-GUI:managed:imports:start --- */
-//   @use "./custom/typography";
-//   /* --- Quartz-GUI:managed:imports:end --- */
-//
-// The file is the source of truth on purpose, not a sidecar JSON: the project still builds if this
-// app is never opened again, hand-editing the block in any editor keeps working, and there is no
-// second copy of the order to drift. Everything after the block is custom.scss's own content, so
-// it stays the last layer - which is exactly what the Styles tab's cascade line promises.
 const IMPORTS_MARKER = 'imports'
 const STYLE_DIRS = ['custom', 'imported'] as const
 

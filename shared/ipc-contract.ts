@@ -1143,7 +1143,6 @@ export const IPC = {
   stylesFontFaces: 'styles:fontFaces',
   stylesGetVariableOverrides: 'styles:getVariableOverrides',
   stylesSaveVariableOverrides: 'styles:saveVariableOverrides',
-  stylesScanBuildOutputVariables: 'styles:scanBuildOutputVariables',
   stylesVariableGraph: 'styles:variableGraph',
 
   fontsImportFile: 'fonts:importFile',
@@ -1334,7 +1333,6 @@ export interface QuartzGuiApi {
     fontFaces(projectPath: string, themeId?: string): Promise<FontFaceInfo[]>
     getVariableOverrides(projectPath: string): Promise<CssVariableOverride[]>
     saveVariableOverrides(projectPath: string, overrides: CssVariableOverride[]): Promise<void>
-    scanBuildOutputVariables(projectPath: string, outputDir?: string): Promise<string[]>
     variableGraph(projectPath: string, themeId?: string, outputDir?: string): Promise<CssVariableGraph>
   }
   fonts: {

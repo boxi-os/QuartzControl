@@ -225,9 +225,6 @@ export function registerIpcHandlers(): void {
     t([s.absolutePath, z.array(s.cssVariableOverride).max(1000)]),
     (projectPath, overrides) => styleService.saveVariableOverrides(projectPath, overrides)
   )
-  handle(IPC.stylesScanBuildOutputVariables, t([s.absolutePath, s.buildOutputDir.optional()]), (projectPath, outputDir) =>
-    styleService.scanBuildOutputVariables(projectPath, outputDir)
-  )
   handle(
     IPC.stylesVariableGraph,
     t([s.absolutePath, s.themeId.optional(), s.buildOutputDir.optional()]),

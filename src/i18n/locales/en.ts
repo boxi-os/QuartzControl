@@ -1304,6 +1304,7 @@ export default {
       'For {{count}} languages there is no way to tell what you changed — the comparison baseline is created the first time you edit a text in this app. Pick “All texts” if one of them should be included.',
     importHeading: 'Apply a template',
     importHint: 'A snapshot is taken first, so the import can be undone completely from “Backups”.',
+    planning: 'Checking the package…',
     pickPackage: 'Choose a template…',
     previewError: 'This is not a readable template (no manifest.json found).',
     legacyBadge: 'Old format',

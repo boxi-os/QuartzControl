@@ -264,6 +264,9 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
   const [progress, setProgress] = useState<TemplateImportProgress | null>(null)
   const [warnings, setWarnings] = useState<string[] | null>(null)
   const [failure, setFailure] = useState<string | null>(null)
+  // The preview is a real dry run - it reads the package and the target project - so it takes long
+  // enough that the button needs to say something.
+  const [planning, setPlanning] = useState(false)
 
   // Installed once for the section's lifetime, not per import: the main process emits while the
   // import runs, and a subscription created inside the click handler would miss the first events.
@@ -276,10 +279,20 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
     setWarnings(null)
     setFailure(null)
     setProgress(null)
-    const result = await window.quartzGui.templatePackage.plan(project.path, picked)
-    setPlan(result)
-    setUnreadable(result === null)
-    setSelected(result?.parts.map((p) => p.id) ?? [])
+    setPlan(null)
+    setUnreadable(false)
+    setPlanning(true)
+    try {
+      const result = await window.quartzGui.templatePackage.plan(project.path, picked)
+      setPlan(result)
+      setUnreadable(result === null)
+      setSelected(result?.parts.map((p) => p.id) ?? [])
+    } catch (err) {
+      setFailure(formatIpcError(err))
+      setUnreadable(false)
+    } finally {
+      setPlanning(false)
+    }
   }
 
   function toggle(id: TemplatePartId): void {
@@ -316,8 +329,8 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
       <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">{t('templates.importHint')}</p>
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button variant="ghost" onClick={pick} disabled={running}>
-          {t('templates.pickPackage')}
+        <Button variant="ghost" onClick={pick} disabled={running || planning}>
+          {planning ? t('templates.planning') : t('templates.pickPackage')}
         </Button>
         {packagePath && <span className="min-w-0 flex-1 truncate text-xs text-slate-500 dark:text-slate-400">{packagePath}</span>}
       </div>

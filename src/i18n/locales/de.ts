@@ -1307,6 +1307,7 @@ export default {
     importHeading: 'Vorlage anwenden',
     importHint:
       'Vorher wird automatisch ein Snapshot angelegt, der Import lässt sich also über „Backups“ komplett zurücknehmen.',
+    planning: 'Paket wird geprüft…',
     pickPackage: 'Vorlage wählen…',
     previewError: 'Das ist keine lesbare Vorlage (keine manifest.json gefunden).',
     legacyBadge: 'Altes Format',

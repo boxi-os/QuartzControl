@@ -172,6 +172,7 @@ const api: QuartzGuiApi = {
   },
   themeMarketplace: {
     list: () => ipcRenderer.invoke(IPC.themeMarketplaceList),
+    refresh: () => ipcRenderer.invoke(IPC.themeMarketplaceRefresh),
     install: (projectPath: string, themeId: string) => ipcRenderer.invoke(IPC.themeMarketplaceInstall, projectPath, themeId),
     detail: (projectPath: string, themeId: string) => ipcRenderer.invoke(IPC.themeMarketplaceDetail, projectPath, themeId),
     styleSettingsSchema: (themeId: string) => ipcRenderer.invoke(IPC.themeMarketplaceStyleSettingsSchema, themeId),

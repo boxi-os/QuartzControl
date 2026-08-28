@@ -253,6 +253,16 @@ export interface StyleSettingsSchema {
   fields: StyleSettingField[]
 }
 
+/**
+ * What one theme-catalog fetch produced - the same shape (and the same reason) as
+ * MarketplaceResult: `npm search` failing leaves a seven-entry placeholder behind, which reads
+ * exactly like a very small catalog unless it is said out loud.
+ */
+export interface ThemeCatalogResult {
+  themes: QuartzThemeListing[]
+  unavailable: boolean
+}
+
 // One entry from the @quartz-themes/* npm scope (id is the package name without the
 // "@quartz-themes/" prefix, e.g. "tokyo-night" for @quartz-themes/tokyo-night). stars/topics come
 // from the github.com/quartz-themes org (bulk-fetched, cached) and are commonly absent - most of
@@ -1103,6 +1113,7 @@ export const IPC = {
   themeMarketplaceDetail: 'themeMarketplace:detail',
   themeMarketplaceStyleSettingsSchema: 'themeMarketplace:styleSettingsSchema',
   themeMarketplaceRefreshStyleSettingsSchema: 'themeMarketplace:refreshStyleSettingsSchema',
+  themeMarketplaceRefresh: 'themeMarketplace:refresh',
   themePresetList: 'themePreset:list',
   themePresetSave: 'themePreset:save',
   themePresetDelete: 'themePreset:delete',
@@ -1394,7 +1405,8 @@ export interface QuartzGuiApi {
     onProgress(cb: (progress: TemplateImportProgress) => void): () => void
   }
   themeMarketplace: {
-    list(): Promise<QuartzThemeListing[]>
+    list(): Promise<ThemeCatalogResult>
+    refresh(): Promise<void>
     install(projectPath: string, themeId: string): Promise<PluginActionResult>
     detail(projectPath: string, themeId: string): Promise<ThemeDetail | null>
     styleSettingsSchema(themeId: string): Promise<StyleSettingsSchema | null>

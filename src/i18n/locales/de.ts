@@ -632,6 +632,10 @@ export default {
       description:
         'Vorgefertigte Farbschemata aus dem @quartz-themes-Ökosystem (installiert und aktiviert das Plugin @quartz-themes/core mit dem gewählten Theme).',
       searchPlaceholder: 'Theme suchen (z.B. tokyo-night, catppuccin, nord)…',
+      refresh: 'Neu laden',
+      refreshing: 'Lädt…',
+      unavailable:
+        'Die Theme-Liste konnte nicht von npm geladen werden. Unten stehen nur ein paar bekannte Themes als Platzhalter — mit „Neu laden" nochmal versuchen.',
       installing: 'Installiere…',
       install: 'Installieren & aktivieren',
       active: 'Aktiv',

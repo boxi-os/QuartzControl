@@ -1,7 +1,7 @@
 import { spawn } from 'child_process'
 import * as connectionsService from './connectionsService'
 import { needsShell, runCommand } from './runCommand'
-import type { PluginActionResult, QuartzThemeListing, ThemeDetail } from '@shared/ipc-contract'
+import type { PluginActionResult, QuartzThemeListing, ThemeCatalogResult, ThemeDetail } from '@shared/ipc-contract'
 import { getLocalThemeDetail } from './pluginSchemaService'
 
 const CACHE_TTL_MS = 15 * 60 * 1000
@@ -18,7 +18,9 @@ interface GithubRepoMeta {
 }
 
 // Shown when npm is unreachable, so the picker is never empty. A handful of well-known themes -
-// "default" is what @quartz-themes/core auto-installs on first use if none is specified.
+// "default" is what @quartz-themes/core auto-installs on first use if none is specified. Seven
+// entries next to the ~700 the registry really holds is obviously not the catalog, but only if
+// the reader knows that - so this list always travels with `unavailable: true`.
 const FALLBACK_THEMES: QuartzThemeListing[] = [
   { id: 'default' },
   { id: 'tokyo-night' },
@@ -39,7 +41,7 @@ interface NpmSearchResult {
 // against the registry is the only enumeration mechanism available (there's no GitHub org to list
 // the way marketplaceService.ts does for @quartz-community, since these are individual npm
 // packages, not necessarily one-repo-per-theme on GitHub).
-function fetchFromNpm(): Promise<QuartzThemeListing[]> {
+function fetchFromNpm(): Promise<{ results: QuartzThemeListing[]; unavailable: boolean }> {
   return new Promise((resolvePromise) => {
     const child = spawn('npm', ['search', '@quartz-themes', '--json', '--searchlimit=250'], {
       shell: needsShell('npm'),
@@ -53,12 +55,14 @@ function fetchFromNpm(): Promise<QuartzThemeListing[]> {
         const themes = parsed
           .filter((p) => p.name.startsWith('@quartz-themes/') && p.name !== '@quartz-themes/core')
           .map((p) => ({ id: p.name.slice('@quartz-themes/'.length), description: p.description }))
-        resolvePromise(themes.length > 0 ? themes : FALLBACK_THEMES)
+        resolvePromise(
+          themes.length > 0 ? { results: themes, unavailable: false } : { results: FALLBACK_THEMES, unavailable: true }
+        )
       } catch {
-        resolvePromise(FALLBACK_THEMES)
+        resolvePromise({ results: FALLBACK_THEMES, unavailable: true })
       }
     })
-    child.on('error', () => resolvePromise(FALLBACK_THEMES))
+    child.on('error', () => resolvePromise({ results: FALLBACK_THEMES, unavailable: true }))
   })
 }
 
@@ -104,14 +108,21 @@ async function fetchGithubMetadata(): Promise<Map<string, GithubRepoMeta>> {
   return byRepoName
 }
 
-export async function listThemes(): Promise<QuartzThemeListing[]> {
+export async function listThemes(): Promise<ThemeCatalogResult> {
+  let unavailable = false
   if (!cache || Date.now() - cache.at > CACHE_TTL_MS) {
-    cache = { at: Date.now(), results: await fetchFromNpm() }
+    const fetched = await fetchFromNpm()
+    // A failed `npm search` is never cached: it used to hold the seven-entry placeholder for
+    // fifteen minutes with nothing in the app able to clear it - invalidateCache() was exported
+    // and called from nowhere.
+    unavailable = fetched.unavailable
+    if (!unavailable) cache = { at: Date.now(), results: fetched.results }
+    else return { themes: fetched.results, unavailable: true }
   }
   if (!githubCache || Date.now() - githubCache.at > CACHE_TTL_MS) {
     githubCache = { at: Date.now(), byRepoName: await fetchGithubMetadata() }
   }
-  return cache.results.map((t) => {
+  const themes = cache!.results.map((t) => {
     const gh = githubCache!.byRepoName.get(t.id)
     if (!gh) return t
     return {
@@ -121,6 +132,7 @@ export async function listThemes(): Promise<QuartzThemeListing[]> {
       githubDescription: gh.description
     }
   })
+  return { themes, unavailable: false }
 }
 
 export function invalidateCache(): void {
@@ -156,7 +168,9 @@ export async function getThemeDetail(projectPath: string, themeId: string): Prom
       }
     }
   } catch {
-    detail = null
+    // Not cached: a network blip would otherwise mean "this theme has no details" for a whole
+    // hour, with no way to ask again.
+    return null
   }
   detailCache.set(themeId, { at: Date.now(), detail })
   return detail

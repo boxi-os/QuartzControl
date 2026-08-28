@@ -631,6 +631,10 @@ export default {
       description:
         'Ready-made color schemes from the @quartz-themes ecosystem (installs and activates the @quartz-themes/core plugin with the chosen theme).',
       searchPlaceholder: 'Search themes (e.g. tokyo-night, catppuccin, nord)…',
+      refresh: 'Reload',
+      refreshing: 'Loading…',
+      unavailable:
+        'The theme list could not be loaded from npm. What is listed below is a handful of well-known themes as a placeholder — try "Reload".',
       installing: 'Installing…',
       install: 'Install & activate',
       active: 'Active',

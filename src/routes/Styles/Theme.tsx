@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type {
   PluginEntry,
@@ -382,6 +382,7 @@ function ThemeCatalog({
   const { t } = useTranslation()
   const [themes, setThemes] = useState<QuartzThemeListing[]>([])
   const [loading, setLoading] = useState(true)
+  const [unavailable, setUnavailable] = useState(false)
   // Which theme was being looked at, and what was searched for, are worth keeping across a trip to
   // another area - the catalog itself is refetched, only the position is restored.
   const [query, setQuery] = useStickyState('styles.themeCatalog.query', '')
@@ -390,12 +391,24 @@ function ThemeCatalog({
   const [expandedId, setExpandedId] = useStickyState<string | null>('styles.themeCatalog.expanded', null)
   const [detail, setDetail] = useState<ThemeDetail | null | undefined>(undefined)
 
-  useEffect(() => {
-    window.quartzGui.themeMarketplace.list().then((result) => {
-      setThemes(result)
-      setLoading(false)
-    })
+  const load = useCallback(async () => {
+    setLoading(true)
+    const result = await window.quartzGui.themeMarketplace.list()
+    setThemes(result.themes)
+    setUnavailable(result.unavailable)
+    setLoading(false)
   }, [])
+
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  // The catalog is cached for fifteen minutes in main, so a theme published in the meantime - or a
+  // catalog that could not be fetched a moment ago - is otherwise out of reach until a restart.
+  async function refresh(): Promise<void> {
+    await window.quartzGui.themeMarketplace.refresh()
+    await load()
+  }
 
   useEffect(() => {
     if (!expandedId) return
@@ -429,12 +442,22 @@ function ThemeCatalog({
     <Card>
       <h3 className="mb-1 text-sm font-semibold">{t('themes.catalog.title')}</h3>
       <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('themes.catalog.description')}</p>
-      <TextInput
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder={t('themes.catalog.searchPlaceholder')}
-        className="w-full"
-      />
+      <div className="flex items-center gap-2">
+        <TextInput
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t('themes.catalog.searchPlaceholder')}
+          className="flex-1"
+        />
+        <Button variant="ghost" onClick={refresh} disabled={loading}>
+          {loading ? t('themes.catalog.refreshing') : t('themes.catalog.refresh')}
+        </Button>
+      </div>
+      {unavailable && (
+        <p className="mt-2 rounded-md bg-amber-50 px-2.5 py-1.5 text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
+          {t('themes.catalog.unavailable')}
+        </p>
+      )}
       <div className="mt-2 max-h-80 overflow-y-auto rounded-md border border-black/[0.06] dark:border-white/10">
         {visible.map((listing) => {
           const isActive = listing.id === activeThemeId

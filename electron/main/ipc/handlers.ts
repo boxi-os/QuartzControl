@@ -128,6 +128,9 @@ export function registerIpcHandlers(): void {
   )
 
   handleNoArgs(IPC.themeMarketplaceList, () => themeMarketplaceService.listThemes())
+  handleNoArgs(IPC.themeMarketplaceRefresh, () => {
+    themeMarketplaceService.invalidateCache()
+  })
   handle(IPC.themeMarketplaceInstall, t([s.absolutePath, s.themeId]), (projectPath, themeId) =>
     themeMarketplaceService.installTheme(projectPath, themeId)
   )

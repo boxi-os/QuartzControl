@@ -1,26 +1,27 @@
-import { useEffect, useState, type DragEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
+import { useNavigate } from 'react-router-dom'
+import { ExternalLink, Search, Trash2 } from 'lucide-react'
 import { useProject } from '../ProjectLayout'
-import type { PluginEntry, PluginLayoutDeclaration, PluginOptionField, QuartzConfig } from '@shared/ipc-contract'
+import type {
+  GridFrameDefinition,
+  PluginEntry,
+  PluginLayoutDeclaration,
+  PluginOptionField,
+  QuartzConfig
+} from '@shared/ipc-contract'
 import { Badge, Button, Card, Select, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
-import { useStickyState } from '../../state/uiState'
+import { primeStickyState, useStickyState } from '../../state/uiState'
+import { repoUrl } from './pluginSource'
 
-// A plugin row's content is short (name, source, one line of description) and its buttons sit at
-// the far right, so a single full-width column would be mostly empty space on a wide window. Extra
-// width buys a second column instead - reading order stays top-to-bottom-left-to-right, which is
-// also the order the drag-and-drop reordering below works in.
-//
-// The breakpoint is measured, not chosen from the scale: a row's action group alone is 408px wide
-// (badge + three buttons, all nowrap) and the text column asks for basis-64, so a row stops
-// wrapping onto two lines at a column width of ~710px - checked by stepping the container width
-// in the running app. Two columns of that plus the gap need 1448px of content, i.e. a 1752px
-// window once the sidebar and page padding are off; hence min-[1760px]. Below it a single column
-// keeps every row on one line, which is the better trade - at Tailwind's own xl (~490px per
-// column) the name was squeezed down to a couple of characters, and even at 2xl every single card
-// wrapped.
-const PLUGIN_LIST = 'grid gap-2 min-[1760px]:grid-cols-2'
+// A row is one line of text plus two fixed-width controls, so it no longer needs the ~710px the
+// old wrap-or-squeeze layout did - the name/source/description column shrinks freely (min-w-0)
+// and only the action group is pinned. The breakpoint below is measured in the running app, not
+// picked off Tailwind's scale: two columns need enough width that the plugin name still reads at
+// a glance, which is where a second column stops being a gain.
+const PLUGIN_LIST = 'grid gap-2 min-[1500px]:grid-cols-2'
 
 // Quartz plugins fall into distinct kinds - transformers, filters, page types, emitters,
 // components (see https://quartz.jzhao.xyz/plugins/) - but that exact category isn't stored
@@ -166,9 +167,29 @@ function setDeep(obj: Record<string, unknown>, path: string[], value: unknown): 
   return { ...obj, [head]: setDeep(child, rest, value) }
 }
 
+// A hand-typed option value arrives as a string but the config is typed YAML, so "true" has to
+// become a boolean and "3" a number - otherwise the plugin reads a string where it expects
+// neither. JSON covers arrays/objects; anything else stays the literal string it was typed as.
+function parseOptionValue(raw: string): unknown {
+  const text = raw.trim()
+  if (text === 'true') return true
+  if (text === 'false') return false
+  if (text !== '' && !Number.isNaN(Number(text))) return Number(text)
+  if (/^[[{"]/.test(text)) {
+    try {
+      return JSON.parse(text)
+    } catch {
+      return raw
+    }
+  }
+  return raw
+}
+
 interface IndexedPlugin {
   plugin: PluginEntry
   index: number
+  /** The authored frame this entry registers, for the handful of entries that are one. */
+  frame?: GridFrameDefinition
 }
 
 interface DragTarget {
@@ -176,15 +197,33 @@ interface DragTarget {
   index: number
 }
 
+type EnabledFilter = 'all' | 'active' | 'inactive'
+
 export default function PluginsInstalled(): JSX.Element {
   const { t } = useTranslation()
   const project = useProject()
+  const navigate = useNavigate()
   const [config, setConfig] = useState<QuartzConfig | null>(null)
-  const [newSource, setNewSource] = useState('')
+  // Authored frames are registered as plugins (`quartz plugin add <path>` on the frame's own
+  // directory - see layoutFrameService), so they legitimately appear in this list. Reading the
+  // frame list is what turns those entries from an opaque directory id into the frame's own name.
+  const [frames, setFrames] = useState<GridFrameDefinition[]>([])
+  // Which plugins the Updates page would offer an update for. Deliberately its own effect that
+  // nothing awaits: it runs `git ls-remote` per lockfile entry, and a slow or failing network
+  // check must not hold up (or blank) the list itself.
+  const [outdated, setOutdated] = useState<Set<string>>(new Set())
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [dragging, setDragging] = useState<DragTarget | null>(null)
+  const [dropTarget, setDropTarget] = useState<DragTarget | null>(null)
+  // Which row last had a field written. Layout and option fields save on blur with no Save button,
+  // so without this the config changes with no sign that anything happened.
+  const [savedIndex, setSavedIndex] = useState<number | null>(null)
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Search and filter are "where the user was", not a draft - see useStickyState.
+  const [query, setQuery] = useStickyState('plugins.query', '')
+  const [enabledFilter, setEnabledFilter] = useStickyState<EnabledFilter>('plugins.filter', 'all')
 
   async function reload(): Promise<void> {
     try {
@@ -195,23 +234,33 @@ export default function PluginsInstalled(): JSX.Element {
     }
   }
 
+  async function reloadFrames(): Promise<void> {
+    setFrames(await window.quartzGui.layoutFrames.list(project.path).catch(() => []))
+  }
+
   useEffect(() => {
     reload()
+    reloadFrames()
   }, [project.path])
 
-  async function addPlugin(): Promise<void> {
-    if (!newSource.trim()) return
-    setBusy(true)
-    try {
-      const result = await window.quartzGui.plugins.add(project.path, newSource.trim())
-      setMessage(result.success ? null : result.output)
-      setNewSource('')
-    } catch (err) {
-      setMessage(formatIpcError(err))
-    } finally {
-      setBusy(false)
-      await reload()
-    }
+  useEffect(() => {
+    window.quartzGui.updates
+      .pluginsStatus(project.path)
+      .then((statuses) => setOutdated(new Set(statuses.filter((s) => s.state === 'behind').map((s) => s.name))))
+      .catch(() => setOutdated(new Set()))
+  }, [project.path])
+
+  useEffect(
+    () => () => {
+      if (savedTimer.current) clearTimeout(savedTimer.current)
+    },
+    []
+  )
+
+  function flagSaved(index: number): void {
+    setSavedIndex(index)
+    if (savedTimer.current) clearTimeout(savedTimer.current)
+    savedTimer.current = setTimeout(() => setSavedIndex(null), 2000)
   }
 
   // Two config entries can derive the same display name (e.g. a built-in "@quartz-community/explorer"
@@ -222,6 +271,23 @@ export default function PluginsInstalled(): JSX.Element {
     if (!config) return
     const plugins = config.plugins.map((p, i) => (i === index ? (setDeep(p, path, value) as PluginEntry) : p))
     await window.quartzGui.config.save(project.path, { ...config, plugins })
+    flagSaved(index)
+    await reload()
+  }
+
+  // Dropping a key needs its own path: setDeep can only ever *write* a value, and writing
+  // `undefined` leaves the key in the object, where the YAML writer turns it into an explicit null
+  // rather than removing it.
+  async function removeOptionKey(index: number, key: string): Promise<void> {
+    if (!config) return
+    const plugins = config.plugins.map((p, i) => {
+      if (i !== index) return p
+      const rest = { ...(p.options ?? {}) }
+      delete rest[key]
+      return { ...p, options: rest }
+    })
+    await window.quartzGui.config.save(project.path, { ...config, plugins })
+    flagSaved(index)
     await reload()
   }
 
@@ -239,19 +305,26 @@ export default function PluginsInstalled(): JSX.Element {
     }
   }
 
-  async function removePlugin(plugin: PluginEntry): Promise<void> {
-    if (!confirm(t('pluginsInstalled.removeConfirm', { name: plugin.name }))) return
+  async function removePlugin(item: IndexedPlugin): Promise<void> {
+    const { plugin, frame } = item
+    const name = frame ? frame.frameName : plugin.name
+    if (!confirm(t(frame ? 'pluginsInstalled.removeFrameConfirm' : 'pluginsInstalled.removeConfirm', { name }))) return
     setBusy(true)
-    // still CLI-based: `quartz plugin remove <name>` also cleans up .quartz/plugins/<name> on
-    // disk and quartz.lock.json, which a plain config.yaml edit wouldn't do
     try {
-      const result = await window.quartzGui.plugins.remove(project.path, plugin.name)
+      // A frame has to go through layoutFrames.delete: `quartz plugin remove` alone unregisters it
+      // but leaves .quartz-gui/authored-frames/<id> behind, which keeps the frame in the Layout
+      // editor's list while it is no longer part of any build - and saveFrame() only re-registers
+      // a frame whose directory is *new*, so it could never come back.
+      const result = frame
+        ? await window.quartzGui.layoutFrames.delete(project.path, frame.id)
+        : await window.quartzGui.plugins.remove(project.path, plugin.name)
       setMessage(result.success ? null : result.output)
     } catch (err) {
       setMessage(formatIpcError(err))
     } finally {
       setBusy(false)
       await reload()
+      await reloadFrames()
     }
   }
 
@@ -276,6 +349,49 @@ export default function PluginsInstalled(): JSX.Element {
     await reload()
   }
 
+  // Opens the Layout editor on the frames tab with this frame already loaded. Which tab and which
+  // frame are open live in the sticky-state store rather than in the URL (see LayoutEditor), so the
+  // hand-off writes them for the target route before navigating there.
+  function openFrameInLayoutEditor(frame: GridFrameDefinition): void {
+    const target = `/project/${project.id}/layout`
+    primeStickyState(target, 'layout.tab', 'frames')
+    primeStickyState(target, 'frames.editing', frame)
+    primeStickyState(target, 'frames.isNewDraft', false)
+    navigate(target)
+  }
+
+  const frameById = useMemo(() => new Map(frames.map((f) => [f.id, f])), [frames])
+
+  const items: IndexedPlugin[] = useMemo(
+    () =>
+      (config?.plugins ?? []).map((plugin, index) => {
+        // Both halves have to agree before an entry counts as a frame: the frame list says a frame
+        // with that id exists, and the entry really points at that frame's directory. A plugin that
+        // merely shares a name with a frame is still a plugin.
+        const frame = frameById.get(plugin.name)
+        const isFrame =
+          frame !== undefined && typeof plugin.source === 'string' && plugin.source.includes('authored-frames')
+        return { plugin, index, frame: isFrame ? frame : undefined }
+      }),
+    [config, frameById]
+  )
+
+  const filtering = query.trim() !== '' || enabledFilter !== 'all'
+  const matches = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return (item: IndexedPlugin): boolean => {
+      if (enabledFilter === 'active' && !item.plugin.enabled) return false
+      if (enabledFilter === 'inactive' && item.plugin.enabled) return false
+      if (!q) return true
+      const haystack = [
+        item.frame ? item.frame.frameName : item.plugin.name,
+        sourceLabel(item.plugin.source),
+        getPluginDescription(t, item.plugin.name) ?? ''
+      ]
+      return haystack.some((s) => s.toLowerCase().includes(q))
+    }
+  }, [query, enabledFilter, t])
+
   if (loadError) {
     return (
       <div className="max-w-xl">
@@ -287,9 +403,10 @@ export default function PluginsInstalled(): JSX.Element {
     )
   }
 
-  const items: IndexedPlugin[] = (config?.plugins ?? []).map((plugin, index) => ({ plugin, index }))
-  const componentItems = items.filter(({ plugin }) => getLayout(plugin) !== null)
-  const processingItems = [...items.filter(({ plugin }) => getLayout(plugin) === null)].sort(
+  const frameItems = items.filter((item) => item.frame)
+  const pluginItems = items.filter((item) => !item.frame)
+  const componentItems = pluginItems.filter(({ plugin }) => getLayout(plugin) !== null)
+  const processingItems = [...pluginItems.filter(({ plugin }) => getLayout(plugin) === null)].sort(
     (a, b) => (Number(a.plugin.order) || 0) - (Number(b.plugin.order) || 0)
   )
   const pageTypeItems = processingItems.filter(({ plugin }) => isPageType(plugin))
@@ -309,47 +426,105 @@ export default function PluginsInstalled(): JSX.Element {
     ...[...byPosition.keys()].filter((p) => !knownPositionOrder.includes(p))
   ]
 
-  const cardProps = { project, busy, toggleEnabled, removePlugin, updateField, dragging, setDragging }
+  const activeCount = items.filter((item) => item.plugin.enabled).length
+  const visibleCount = items.filter(matches).length
+
+  const cardProps = {
+    busy,
+    // Reordering renumbers a whole group in steps of ten. With a filter on, the rendered group is
+    // a subset, so those new numbers would be assigned as though the hidden entries weren't there
+    // - which silently reshuffles them too. Dragging is therefore off while filtering, and the
+    // hint above the list says so rather than leaving a dead handle.
+    canDrag: !filtering,
+    dragging,
+    setDragging,
+    dropTarget,
+    setDropTarget,
+    outdated,
+    savedIndex,
+    toggleEnabled,
+    removePlugin,
+    updateField,
+    removeOptionKey,
+    openFrameInLayoutEditor
+  }
 
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex gap-2">
-          <TextInput
-            value={newSource}
-            onChange={(e) => setNewSource(e.target.value)}
-            placeholder={t('pluginsInstalled.addPlaceholder')}
-            className="w-72"
+      <div className="mb-5 flex flex-wrap items-center gap-3">
+        <div className="relative w-full max-w-xs">
+          <Search
+            size={14}
+            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
+            aria-hidden
           />
-          <Button onClick={addPlugin} disabled={busy || !newSource.trim()}>
-            {t('pluginsInstalled.add')}
-          </Button>
+          <TextInput
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t('pluginsInstalled.searchPlaceholder')}
+            className="w-full pl-8"
+          />
         </div>
+        <div className="inline-flex w-fit gap-0.5 rounded-[8px] bg-black/[0.05] p-0.5 dark:bg-white/10">
+          {(['all', 'active', 'inactive'] as EnabledFilter[]).map((key) => (
+            <button
+              key={key}
+              onClick={() => setEnabledFilter(key)}
+              className={`rounded-[6px] px-3 py-1 text-[13px] font-medium transition-colors ${
+                enabledFilter === key
+                  ? 'bg-white text-slate-900 shadow-sm dark:bg-white/20 dark:text-white'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+              }`}
+            >
+              {t(`pluginsInstalled.filters.${key}`)}
+            </button>
+          ))}
+        </div>
+        <p className="ml-auto text-[13px] text-slate-500 dark:text-slate-400">
+          {filtering
+            ? t('pluginsInstalled.countFiltered', { visible: visibleCount, total: items.length })
+            : t('pluginsInstalled.countActive', { active: activeCount, total: items.length })}
+        </p>
       </div>
+
+      {filtering && <p className="mb-3 text-xs text-slate-400">{t('pluginsInstalled.reorderDisabledByFilter')}</p>}
 
       {message && <p className="mb-4 text-sm text-red-600 dark:text-red-400">{message}</p>}
 
       {items.length === 0 && <p className="text-sm text-slate-500">{t('pluginsInstalled.none')}</p>}
+      {items.length > 0 && visibleCount === 0 && <p className="text-sm text-slate-500">{t('pluginsInstalled.noMatches')}</p>}
 
-      {componentItems.length > 0 && (
+      {frameItems.some(matches) && (
+        <section className="mb-8">
+          <h2 className="mb-1 text-sm font-semibold">{t('pluginsInstalled.framesHeading')}</h2>
+          <p className="mb-3 max-w-3xl text-xs text-slate-400">{t('pluginsInstalled.framesDescription')}</p>
+          <div className={PLUGIN_LIST}>
+            {frameItems.filter(matches).map((item) => (
+              <PluginRow key={item.index} item={item} groupKey="frames" localIndex={0} onReorder={() => {}} {...cardProps} canDrag={false} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {componentItems.some(matches) && (
         <section className="mb-8">
           <h2 className="mb-1 text-sm font-semibold">{t('pluginsInstalled.componentsHeading')}</h2>
-          <p className="mb-3 text-xs text-slate-400">{t('pluginsInstalled.componentsDescription')}</p>
+          <p className="mb-3 max-w-3xl text-xs text-slate-400">{t('pluginsInstalled.componentsDescription')}</p>
           <div className="flex flex-col gap-5">
             {positionKeys.map((position) => {
               const group = byPosition.get(position)!
+              const shown = group.filter(matches)
+              if (shown.length === 0) return null
               return (
                 <div key={position}>
-                  <h3 className="mb-2 font-mono text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    {position} ({group.length})
-                  </h3>
+                  <GroupHeading label={t(`pluginsInstalled.positions.${position}`, position)} rawKey={position} count={shown.length} />
                   <div className={PLUGIN_LIST}>
-                    {group.map((item, localIndex) => (
+                    {shown.map((item) => (
                       <PluginRow
                         key={item.index}
                         item={item}
                         groupKey={`pos:${position}`}
-                        localIndex={localIndex}
+                        localIndex={group.indexOf(item)}
                         onReorder={(from, to) => reorderGroup(group, from, to, 'layoutPriority')}
                         {...cardProps}
                       />
@@ -362,23 +537,21 @@ export default function PluginsInstalled(): JSX.Element {
         </section>
       )}
 
-      {processingItems.length > 0 && (
+      {processingItems.some(matches) && (
         <section>
           <h2 className="mb-1 text-sm font-semibold">{t('pluginsInstalled.processingHeading')}</h2>
-          <p className="mb-3 text-xs text-slate-400">{t('pluginsInstalled.processingDescription')}</p>
+          <p className="mb-3 max-w-3xl text-xs text-slate-400">{t('pluginsInstalled.processingDescription')}</p>
           <div className="flex flex-col gap-5">
-            {pageTypeItems.length > 0 && (
+            {pageTypeItems.some(matches) && (
               <div>
-                <h3 className="mb-2 font-mono text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  {t('pluginsInstalled.pageTypesHeading', { count: pageTypeItems.length })}
-                </h3>
+                <GroupHeading label={t('pluginsInstalled.pageTypesGroup')} count={pageTypeItems.filter(matches).length} />
                 <div className={PLUGIN_LIST}>
-                  {pageTypeItems.map((item, localIndex) => (
+                  {pageTypeItems.filter(matches).map((item) => (
                     <PluginRow
                       key={item.index}
                       item={item}
                       groupKey="pageTypes"
-                      localIndex={localIndex}
+                      localIndex={pageTypeItems.indexOf(item)}
                       onReorder={(from, to) => reorderGroup(pageTypeItems, from, to, 'order')}
                       {...cardProps}
                     />
@@ -386,20 +559,19 @@ export default function PluginsInstalled(): JSX.Element {
                 </div>
               </div>
             )}
-            {otherProcessingItems.length > 0 && (
+            {otherProcessingItems.some(matches) && (
               <div>
-                {pageTypeItems.length > 0 && (
-                  <h3 className="mb-2 font-mono text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    {t('pluginsInstalled.otherProcessingHeading', { count: otherProcessingItems.length })}
-                  </h3>
-                )}
+                <GroupHeading
+                  label={t('pluginsInstalled.otherProcessingGroup')}
+                  count={otherProcessingItems.filter(matches).length}
+                />
                 <div className={PLUGIN_LIST}>
-                  {otherProcessingItems.map((item, localIndex) => (
+                  {otherProcessingItems.filter(matches).map((item) => (
                     <PluginRow
                       key={item.index}
                       item={item}
                       groupKey="processing"
-                      localIndex={localIndex}
+                      localIndex={otherProcessingItems.indexOf(item)}
                       onReorder={(from, to) => reorderGroup(otherProcessingItems, from, to, 'order')}
                       {...cardProps}
                     />
@@ -414,111 +586,206 @@ export default function PluginsInstalled(): JSX.Element {
   )
 }
 
+// The plain-language name of a group, with the raw config key next to it - the key is what is in
+// quartz.config.yaml and what the row's own `position:` summary repeats, so dropping it entirely
+// would break the link between this UI and the file it edits.
+function GroupHeading({ label, rawKey, count }: { label: string; rawKey?: string; count: number }): JSX.Element {
+  return (
+    <h3 className="mb-2 flex items-baseline gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+      {label}
+      {rawKey && <span className="font-mono text-[11px] font-normal normal-case tracking-normal text-slate-400">{rawKey}</span>}
+      <span className="font-normal text-slate-400">({count})</span>
+    </h3>
+  )
+}
+
+function IconButton({
+  icon: Icon,
+  title,
+  onClick,
+  disabled
+}: {
+  icon: typeof Trash2
+  title: string
+  onClick: () => void
+  disabled?: boolean
+}): JSX.Element {
+  return (
+    <button
+      type="button"
+      title={title}
+      aria-label={title}
+      onClick={onClick}
+      disabled={disabled}
+      className="rounded-[7px] p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-red-500/15 dark:hover:text-red-400"
+    >
+      <Icon size={15} strokeWidth={2} aria-hidden />
+    </button>
+  )
+}
+
 function PluginRow({
   item,
   groupKey,
   localIndex,
   busy,
+  canDrag,
   dragging,
   setDragging,
+  dropTarget,
+  setDropTarget,
+  outdated,
+  savedIndex,
   onReorder,
   toggleEnabled,
   removePlugin,
-  updateField
+  updateField,
+  removeOptionKey,
+  openFrameInLayoutEditor
 }: {
   item: IndexedPlugin
   groupKey: string
   localIndex: number
-  project: { path: string }
   busy: boolean
+  canDrag: boolean
   dragging: DragTarget | null
   setDragging: (d: DragTarget | null) => void
+  dropTarget: DragTarget | null
+  setDropTarget: (d: DragTarget | null) => void
+  outdated: Set<string>
+  savedIndex: number | null
   onReorder: (from: number, to: number) => void
   toggleEnabled: (index: number) => void
-  removePlugin: (plugin: PluginEntry) => void
+  removePlugin: (item: IndexedPlugin) => void
   updateField: (index: number, path: string[], value: unknown) => void
+  removeOptionKey: (index: number, key: string) => void
+  openFrameInLayoutEditor: (frame: GridFrameDefinition) => void
 }): JSX.Element {
   const { t } = useTranslation()
   const project = useProject()
-  const { plugin, index } = item
+  const { plugin, index, frame } = item
   const layout = getLayout(plugin)
   const isDragging = dragging?.group === groupKey && dragging.index === localIndex
+  const isDropTarget = dropTarget?.group === groupKey && dropTarget.index === localIndex && !isDragging
   // Keyed by the plugin's config-array index, the same identity the list's React key uses, so an
   // opened options panel is still open after a trip to another area (see useStickyState).
   const [expanded, setExpanded] = useStickyState(`plugins.expanded.${index}`, false)
   const description = getPluginDescription(t, plugin.name)
+  const url = repoUrl(plugin.source)
 
   // Components always have layout fields (position/priority/...) to edit, so their button is
   // always shown. Processing plugins (no layout) may genuinely have nothing to configure, so the
   // schema is fetched eagerly here (not lazily on expand, like PluginOptions used to) to decide
   // whether the button is worth showing at all - and passed down to avoid re-fetching it there.
+  // A frame is skipped entirely: its "plugin" is generated JS with no .d.ts to read, and it is
+  // configured in the Layout editor, not here.
   const [processingSchema, setProcessingSchema] = useState<PluginOptionField[] | null | 'loading'>('loading')
   useEffect(() => {
-    if (layout) return
+    if (layout || frame) return
     setProcessingSchema('loading')
     window.quartzGui.plugins.optionsSchema(project.path, plugin.name).then(setProcessingSchema)
-  }, [project.path, plugin.name, layout])
+  }, [project.path, plugin.name, layout, frame])
 
-  const hasOptions = layout
-    ? true
-    : processingSchema === 'loading'
-      ? false
-      : processingSchema
-        ? processingSchema.some((f) => f.kind !== 'unsupported')
-        : Object.keys(plugin.options ?? {}).length > 0
+  const hasOptions = frame
+    ? false
+    : layout
+      ? true
+      : processingSchema === 'loading'
+        ? false
+        : processingSchema
+          ? processingSchema.some((f) => f.kind !== 'unsupported')
+          : true // no schema: the editor still offers the existing keys plus a way to add one
 
   const summary = layout
     ? t('pluginsInstalled.summaryPosPriority', { position: layout.position ?? '–', priority: layout.priority ?? '–' })
-    : plugin.order != null
-      ? t('pluginsInstalled.summaryOrder', { order: String(plugin.order) })
-      : null
+    : frame
+      ? t('pluginsInstalled.frameSummary', { count: frame.areas.length })
+      : plugin.order != null
+        ? t('pluginsInstalled.summaryOrder', { order: String(plugin.order) })
+        : null
 
   return (
     <Card
-      draggable
-      onDragStart={() => setDragging({ group: groupKey, index: localIndex })}
-      onDragOver={(e: DragEvent) => e.preventDefault()}
+      onDragOver={(e: DragEvent) => {
+        if (!dragging || dragging.group !== groupKey) return
+        e.preventDefault()
+        setDropTarget({ group: groupKey, index: localIndex })
+      }}
       onDrop={() => {
         if (dragging && dragging.group === groupKey) onReorder(dragging.index, localIndex)
         setDragging(null)
+        setDropTarget(null)
       }}
-      onDragEnd={() => setDragging(null)}
-      className={`cursor-grab active:cursor-grabbing ${isDragging ? 'opacity-40' : ''}`}
+      className={`px-3 py-2.5 transition-opacity ${isDragging ? 'opacity-40' : ''} ${
+        isDropTarget ? 'outline outline-2 outline-blue-500' : ''
+      } ${plugin.enabled ? '' : 'bg-black/[0.02] dark:bg-white/[0.02]'}`}
     >
-      {/* Wraps rather than squeezing: the action group can't give way (see below), so in a narrow
-          column the alternative to a second line is a name crushed to a few characters. basis-64
-          is the width the text column asks for before that happens. */}
-      <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
-        <div className="flex min-w-0 flex-1 basis-64 items-start gap-2">
-          <span className="select-none pt-0.5 text-slate-300 dark:text-slate-600" title={t('pluginsInstalled.dragHint')}>
-            ⠿
-          </span>
-          <div className="min-w-0">
-            <p className="break-words font-medium">{plugin.name}</p>
-            <p className="text-xs text-slate-500">{sourceLabel(plugin.source)}</p>
-            {description && <p className="mt-0.5 max-w-md text-xs text-slate-400">{description}</p>}
-            {!expanded && summary && <p className="mt-0.5 font-mono text-[11px] text-slate-400">{summary}</p>}
-          </div>
+      <div className="flex items-start gap-2.5">
+        {/* Only the handle carries `draggable`. With it on the whole card, any drag gesture -
+            selecting the description, dragging inside an option field - started a reorder. */}
+        <span
+          draggable={canDrag}
+          onDragStart={() => setDragging({ group: groupKey, index: localIndex })}
+          onDragEnd={() => {
+            setDragging(null)
+            setDropTarget(null)
+          }}
+          title={canDrag ? t('pluginsInstalled.dragHint') : undefined}
+          className={`select-none pt-[3px] text-slate-300 dark:text-slate-600 ${
+            canDrag ? 'cursor-grab active:cursor-grabbing' : 'cursor-default opacity-40'
+          }`}
+        >
+          ⠿
+        </span>
+        <div className="pt-px">
+          <Toggle label="" checked={plugin.enabled} onChange={() => toggleEnabled(index)} disabled={busy} />
         </div>
-        {/* shrink-0 + nowrap: in the two-column list a long description would otherwise squeeze
-            this group until "Optionen anzeigen" wrapped onto two lines and the rows lost their
-            common height. ml-auto keeps it at the right edge on its own line too, once the row
-            above wraps. */}
-        <div className="ml-auto flex shrink-0 items-center gap-3 whitespace-nowrap">
-          <Badge tone={plugin.enabled ? 'green' : 'slate'}>
-            {plugin.enabled ? t('pluginsInstalled.active') : t('pluginsInstalled.disabled')}
-          </Badge>
-          {hasOptions && (
-            <Button variant="ghost" onClick={() => setExpanded((v) => !v)}>
-              {expanded ? t('pluginsInstalled.hideOptions') : t('pluginsInstalled.showOptions')}
-            </Button>
-          )}
-          <Button variant="ghost" onClick={() => toggleEnabled(index)} disabled={busy}>
-            {plugin.enabled ? t('pluginsInstalled.disable') : t('pluginsInstalled.enable')}
-          </Button>
-          <Button variant="danger" onClick={() => removePlugin(plugin)} disabled={busy}>
-            {t('common.remove')}
-          </Button>
+
+        <div className={`min-w-0 flex-1 ${plugin.enabled ? '' : 'opacity-60'}`}>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <p className="break-words font-medium leading-tight">{frame ? frame.frameName : plugin.name}</p>
+            {frame && <Badge>{t('pluginsInstalled.frameBadge')}</Badge>}
+            {outdated.has(plugin.name) && <Badge tone="amber">{t('pluginsInstalled.updateAvailable')}</Badge>}
+            {savedIndex === index && <span className="text-[11px] text-green-600 dark:text-green-400">{t('pluginsInstalled.savedFlash')}</span>}
+          </div>
+          <p className="truncate text-xs text-slate-500" title={sourceLabel(plugin.source)}>
+            {frame ? t('pluginsInstalled.frameSource') : sourceLabel(plugin.source)}
+            {url && (
+              <a
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                title={t('pluginsInstalled.openRepo')}
+                className="ml-1 inline-flex translate-y-[2px] text-slate-400 hover:text-blue-600 dark:hover:text-blue-400"
+              >
+                <ExternalLink size={11} aria-hidden />
+              </a>
+            )}
+          </p>
+          {description && <p className="mt-0.5 text-xs text-slate-400">{description}</p>}
+          {!expanded && summary && <p className="mt-0.5 font-mono text-[11px] text-slate-400">{summary}</p>}
+        </div>
+
+        {/* Fixed widths, not content-sized: across ~50 rows a button group that grew with the
+            longest label produced three different right edges down the page. */}
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          {/* Wide enough for the longest label in either language and nowrap on top of it:
+              at 150px "Optionen einklappen" wrapped onto two lines, so a row grew taller the
+              moment it was expanded. */}
+          <div className="w-[164px] text-right">
+            {frame ? (
+              <Button variant="ghost" className="w-full whitespace-nowrap" onClick={() => openFrameInLayoutEditor(frame)}>
+                {t('pluginsInstalled.openInLayoutEditor')}
+              </Button>
+            ) : (
+              hasOptions && (
+                <Button variant="ghost" className="w-full whitespace-nowrap" onClick={() => setExpanded((v) => !v)}>
+                  {expanded ? t('pluginsInstalled.hideOptions') : t('pluginsInstalled.showOptions')}
+                </Button>
+              )
+            )}
+          </div>
+          <IconButton icon={Trash2} title={t('common.remove')} onClick={() => removePlugin(item)} disabled={busy} />
         </div>
       </div>
 
@@ -544,7 +811,13 @@ function PluginRow({
       )}
 
       {expanded && (
-        <PluginOptions plugin={plugin} index={index} updateField={updateField} preloadedSchema={layout ? undefined : processingSchema} />
+        <PluginOptions
+          plugin={plugin}
+          index={index}
+          updateField={updateField}
+          removeOptionKey={removeOptionKey}
+          preloadedSchema={layout ? undefined : processingSchema}
+        />
       )}
     </Card>
   )
@@ -554,11 +827,13 @@ function PluginOptions({
   plugin,
   index,
   updateField,
+  removeOptionKey,
   preloadedSchema
 }: {
   plugin: PluginEntry
   index: number
   updateField: (index: number, path: string[], value: unknown) => void
+  removeOptionKey: (index: number, key: string) => void
   // Processing rows already fetched this in PluginRow (to decide whether to show the "Optionen
   // anzeigen" button at all) - reuse it here instead of fetching a second time. Components don't
   // fetch eagerly (their button is always shown), so this stays undefined for them and this
@@ -599,19 +874,72 @@ function PluginOptions({
     )
   }
 
-  // no compiled type declarations found (true for built-in config entries that were never
-  // `plugin add`ed) - we only know about keys that already happen to be in the config, so only
-  // those can be edited; their control type is inferred from the current value's JS type
+  // No compiled type declarations found - true for every built-in config entry, which ships no
+  // discoverable dist/*.d.ts (see pluginSchemaService). Those plugins do have options upstream, so
+  // showing only the keys that happen to be in the config already would mean a plugin like
+  // `explorer` offers nothing at all to set. The key/value adder below is the way in; the control
+  // type of an existing key is inferred from its current value.
   const keys = Object.keys(options)
-  if (keys.length === 0) return null
   return (
     <div className="mt-3 border-t border-black/10 pt-3 dark:border-white/10">
       <p className="mb-2 text-[11px] text-slate-400">{t('pluginsInstalled.noSchemaInfo')}</p>
       <div className="flex flex-col gap-2">
         {keys.map((key) => (
-          <InferredFieldRow key={key} name={key} value={options[key]} onChange={(v) => onChange(key, v)} />
+          <InferredFieldRow
+            key={key}
+            name={key}
+            value={options[key]}
+            onChange={(v) => onChange(key, v)}
+            onRemove={() => removeOptionKey(index, key)}
+          />
         ))}
       </div>
+      <AddOptionRow existingKeys={keys} onAdd={(key, value) => onChange(key, value)} />
+    </div>
+  )
+}
+
+function AddOptionRow({
+  existingKeys,
+  onAdd
+}: {
+  existingKeys: string[]
+  onAdd: (key: string, value: unknown) => void
+}): JSX.Element {
+  const { t } = useTranslation()
+  const [key, setKey] = useState('')
+  const [value, setValue] = useState('')
+  const trimmed = key.trim()
+  const duplicate = existingKeys.includes(trimmed)
+
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-dashed border-black/10 pt-3 dark:border-white/10">
+      <TextInput
+        value={key}
+        onChange={(e) => setKey(e.target.value)}
+        placeholder={t('pluginsInstalled.optionKeyPlaceholder')}
+        className="w-40 font-mono"
+      />
+      <TextInput
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder={t('pluginsInstalled.optionValuePlaceholder')}
+        className="w-56 font-mono"
+      />
+      <Button
+        variant="ghost"
+        disabled={trimmed === '' || duplicate}
+        onClick={() => {
+          onAdd(trimmed, parseOptionValue(value))
+          setKey('')
+          setValue('')
+        }}
+      >
+        {t('pluginsInstalled.addOption')}
+      </Button>
+      <p className="text-[11px] text-slate-400">
+        {duplicate ? t('pluginsInstalled.optionKeyExists') : t('pluginsInstalled.optionValueHint')}
+      </p>
     </div>
   )
 }
@@ -708,17 +1036,23 @@ function FieldRow({
 function InferredFieldRow({
   name,
   value,
-  onChange
+  onChange,
+  onRemove
 }: {
   name: string
   value: unknown
   onChange: (value: unknown) => void
+  onRemove: () => void
 }): JSX.Element {
+  const { t } = useTranslation()
+  const remove = <IconButton icon={Trash2} title={t('pluginsInstalled.removeOption', { name })} onClick={onRemove} />
+
   if (typeof value === 'boolean') {
     return (
       <div className="flex items-center gap-3">
         <span className="w-40 shrink-0 font-mono text-xs text-slate-600 dark:text-slate-300">{name}</span>
         <Toggle label="" checked={value} onChange={onChange} />
+        {remove}
       </div>
     )
   }
@@ -733,6 +1067,7 @@ function InferredFieldRow({
           onBlur={(e) => onChange(Number(e.target.value))}
           className="w-40"
         />
+        {remove}
       </div>
     )
   }
@@ -757,6 +1092,7 @@ function InferredFieldRow({
         }}
         className="w-56 font-mono"
       />
+      {remove}
     </div>
   )
 }

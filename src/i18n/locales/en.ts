@@ -497,31 +497,64 @@ export default {
     },
     descriptions: {
       installed: 'Extends Quartz with extra functionality — this is what is active, and where you configure it.',
-      marketplace: 'Browse plugins the community has published on GitHub, in addition to the built-in ones.'
+      marketplace: 'The plugin catalog of the quartz-community organisation, built-in ones included. Add plugins from anywhere else via "owner/repo".'
     }
   },
   pluginsInstalled: {
-    addPlaceholder: 'github:owner/repo',
-    add: 'Add',
+    searchPlaceholder: 'Filter plugins…',
+    filters: {
+      all: 'All',
+      active: 'Active',
+      inactive: 'Inactive'
+    },
+    countActive: '{{active}} of {{total}} active',
+    countFiltered: '{{visible}} of {{total}} shown',
+    reorderDisabledByFilter:
+      'Drag-to-reorder is off while a filter is active — the new order would move the hidden entries as well.',
+    noMatches: 'No plugin matches the filter and search.',
     none: 'No plugins installed.',
-    componentsHeading: 'Components',
+    framesHeading: 'Your frames',
+    framesDescription:
+      'Page frames built in the Layout editor. Quartz registers each one as a plugin — which is why they appear here — but they are configured in the Layout editor.',
+    frameBadge: 'Frame',
+    frameSource: 'Your own frame from the Layout editor',
+    frameSummary: '{{count}} areas',
+    openInLayoutEditor: 'Open in Layout',
+    componentsHeading: 'Visible components',
     componentsDescription: 'These plugins are visible on the page — e.g. in the header, sidebar, or footer.',
     processingHeading: 'Processing',
     processingDescription:
       "These plugins change your content behind the scenes (e.g. formatting, links, images) and aren't visible on the page themselves. Page types — plugins that create their own kind of page, e.g. tag pages — are listed separately below.",
-    pageTypesHeading: 'Page types ({{count}})',
-    otherProcessingHeading: 'Transformers, filters & emitters ({{count}})',
+    positions: {
+      header: 'Header',
+      left: 'Left sidebar',
+      right: 'Right sidebar',
+      beforeBody: 'Before the content',
+      afterBody: 'After the content',
+      footer: 'Footer',
+      body: 'In the content'
+    },
+    pageTypesGroup: 'Page types',
+    otherProcessingGroup: 'Transformers, filters & emitters',
     dragHint: 'Drag to reorder',
-    active: 'Active',
-    disabled: 'Disabled',
+    updateAvailable: 'Update available',
+    savedFlash: 'Saved',
+    openRepo: 'Open repository on GitHub',
     showOptions: 'Show options',
     hideOptions: 'Hide options',
-    disable: 'Disable',
-    enable: 'Enable',
-    removeConfirm: 'Really remove plugin "{{name}}"?',
+    removeConfirm: 'Really remove plugin "{{name}}"? A snapshot is taken first, so you can bring it back.',
+    removeFrameConfirm:
+      'Really delete frame "{{name}}"? This removes it from the configuration and from disk. A snapshot is taken first.',
     availableOptions: 'Available options:',
     onlyViaYaml: ', YAML only',
-    noSchemaInfo: 'No options schema information found for this plugin — only existing values can be edited.',
+    noSchemaInfo:
+      "Quartz ships no options description for its built-in plugins, so the known options can't be listed. Existing values can be edited here; add further ones by hand below (see the plugin's repository for names).",
+    optionKeyPlaceholder: 'Option',
+    optionValuePlaceholder: 'Value',
+    addOption: 'Add',
+    optionKeyExists: 'That option is already set.',
+    optionValueHint: 'true/false and numbers are stored as such, [..] and {..} as JSON, anything else as text.',
+    removeOption: 'Remove option "{{name}}"',
     notSet: 'not set',
     summaryPosPriority: 'position: {{position}} · priority: {{priority}}',
     summaryOrder: 'order: {{order}}',
@@ -1089,10 +1122,19 @@ export default {
   },
   pluginsMarketplace: {
     searchPlaceholder: 'Search plugins…',
+    addFromGithub: 'Add a plugin from GitHub',
+    addPlaceholder: 'github:owner/repo',
+    add: 'Add',
     installed: 'Installed',
     installing: 'Installing…',
     install: 'Install',
-    noResults: 'No results.',
+    archived: 'Archived',
+    openRepo: 'Open repository on GitHub',
+    noResults: 'No plugins found.',
+    showOther: 'Show {{count}} more repositories',
+    hideOther: 'Hide {{count}} more repositories',
+    otherDescription:
+      'Repositories of the quartz-community organisation without the "quartz-plugin" topic — among them Quartz itself, shared libraries, templates and forks. Mostly not installable as a plugin.',
     installedMessage: '{{name}} installed.'
   },
   logConsole: {

@@ -386,6 +386,11 @@ export interface BuildOutputInfo {
   sizeBytes: number
 }
 
+// `topics` and `archived` are what separates a real plugin from the rest of the org: the
+// marketplace reads *every* repository of quartz-community, which also holds the core itself
+// (`v5`, archived), shared libraries (`types`/`runtime`/`utils`), a template, an awesome-list and
+// a few forks. 47 of the 63 repositories carry the `quartz-plugin` topic - verified against the
+// API - so the renderer sorts by that rather than offering "install" on an awesome-list.
 export interface MarketplacePlugin {
   name: string
   fullName: string
@@ -393,6 +398,7 @@ export interface MarketplacePlugin {
   stars?: number
   url: string
   topics?: string[]
+  archived?: boolean
 }
 
 // A content directory that was moved aside when the content source was switched - see

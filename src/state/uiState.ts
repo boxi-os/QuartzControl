@@ -39,3 +39,16 @@ export function useStickyState<T>(key: string, initial: T | (() => T)): [T, Reac
 
   return [value, setValue]
 }
+
+/**
+ * Writes a sticky value for a route the user is *about to* navigate to, so a cross-area link can
+ * hand over more than a pathname - e.g. "open this frame in the Layout editor", where which tab
+ * and which frame are open live in this store rather than in the URL.
+ *
+ * `pathname` has to be the target route's own pathname, since that is what keys the store; the
+ * target reads it in its useState initializer, i.e. exactly once when it mounts. Writing after
+ * the target has mounted therefore does nothing - this is for the moment before a navigation.
+ */
+export function primeStickyState(pathname: string, key: string, value: unknown): void {
+  store.set(`${pathname}::${key}`, value)
+}

@@ -497,31 +497,63 @@ export default {
     },
     descriptions: {
       installed: 'Erweitert Quartz um zusätzliche Funktionen — hier siehst du, was aktiv ist, und stellst es ein.',
-      marketplace: 'Durchsucht Plugins, die die Community auf GitHub veröffentlicht hat — zusätzlich zu den mitgelieferten.'
+      marketplace: 'Der Plugin-Katalog der quartz-community-Organisation, inklusive der mitgelieferten. Plugins von anderswo fügst du über „owner/repo" hinzu.'
     }
   },
   pluginsInstalled: {
-    addPlaceholder: 'github:owner/repo',
-    add: 'Hinzufügen',
+    searchPlaceholder: 'Plugins filtern…',
+    filters: {
+      all: 'Alle',
+      active: 'Aktiv',
+      inactive: 'Inaktiv'
+    },
+    countActive: '{{active}} von {{total}} aktiv',
+    countFiltered: '{{visible}} von {{total}} angezeigt',
+    reorderDisabledByFilter: 'Solange gefiltert wird, ist das Umsortieren per Ziehen abgeschaltet — die Reihenfolge würde sonst auch die ausgeblendeten Einträge verschieben.',
+    noMatches: 'Kein Plugin passt zu Filter und Suche.',
     none: 'Keine Plugins installiert.',
-    componentsHeading: 'Components',
+    framesHeading: 'Eigene Frames',
+    framesDescription:
+      'Im Layout-Editor gebaute Seitengerüste. Quartz registriert jedes davon als Plugin — deshalb stehen sie hier — eingestellt werden sie aber im Layout-Editor.',
+    frameBadge: 'Frame',
+    frameSource: 'Eigener Frame aus dem Layout-Editor',
+    frameSummary: '{{count}} Bereiche',
+    openInLayoutEditor: 'Im Layout-Editor',
+    componentsHeading: 'Sichtbare Bausteine',
     componentsDescription: 'Diese Plugins sind sichtbar auf der Seite — z. B. im Kopfbereich, in der Seitenleiste oder im Footer.',
     processingHeading: 'Verarbeitung',
     processingDescription:
       'Diese Plugins verändern deine Inhalte im Hintergrund (z. B. Formatierung, Links, Bilder) und erscheinen selbst nicht sichtbar auf der Seite. Seitentypen — Plugins, die eine eigene Art von Seite erzeugen, z. B. Tag-Seiten — werden unten separat aufgeführt.',
-    pageTypesHeading: 'Seitentypen ({{count}})',
-    otherProcessingHeading: 'Transformer, Filter & Emitter ({{count}})',
+    positions: {
+      header: 'Kopfbereich',
+      left: 'Linke Seitenleiste',
+      right: 'Rechte Seitenleiste',
+      beforeBody: 'Vor dem Inhalt',
+      afterBody: 'Nach dem Inhalt',
+      footer: 'Fußzeile',
+      body: 'Im Inhalt'
+    },
+    pageTypesGroup: 'Seitentypen',
+    otherProcessingGroup: 'Transformer, Filter & Emitter',
     dragHint: 'Ziehen zum Umsortieren',
-    active: 'Aktiv',
-    disabled: 'Deaktiviert',
+    updateAvailable: 'Update verfügbar',
+    savedFlash: 'Gespeichert',
+    openRepo: 'Repository auf GitHub öffnen',
     showOptions: 'Optionen anzeigen',
     hideOptions: 'Optionen einklappen',
-    disable: 'Deaktivieren',
-    enable: 'Aktivieren',
-    removeConfirm: 'Plugin "{{name}}" wirklich entfernen?',
+    removeConfirm: 'Plugin "{{name}}" wirklich entfernen? Vorher wird automatisch ein Snapshot angelegt, über den du es zurückholen kannst.',
+    removeFrameConfirm:
+      'Frame "{{name}}" wirklich löschen? Das entfernt ihn aus der Konfiguration und von der Festplatte. Vorher wird automatisch ein Snapshot angelegt.',
     availableOptions: 'Verfügbare Optionen:',
     onlyViaYaml: ', nur per YAML',
-    noSchemaInfo: 'Keine Options-Schema-Information für dieses Plugin gefunden — nur vorhandene Werte bearbeitbar.',
+    noSchemaInfo:
+      'Für mitgelieferte Plugins liefert Quartz keine Options-Beschreibung mit — bekannte Optionen lassen sich deshalb nicht auflisten. Vorhandene Werte kannst du hier ändern, weitere unten von Hand anlegen (Namen siehe Plugin-Repository).',
+    optionKeyPlaceholder: 'Option',
+    optionValuePlaceholder: 'Wert',
+    addOption: 'Anlegen',
+    optionKeyExists: 'Diese Option ist bereits gesetzt.',
+    optionValueHint: 'true/false und Zahlen werden als solche gespeichert, [..] und {..} als JSON, alles andere als Text.',
+    removeOption: 'Option "{{name}}" entfernen',
     notSet: 'nicht gesetzt',
     summaryPosPriority: 'position: {{position}} · priority: {{priority}}',
     summaryOrder: 'order: {{order}}',
@@ -1091,10 +1123,19 @@ export default {
   },
   pluginsMarketplace: {
     searchPlaceholder: 'Plugins durchsuchen…',
+    addFromGithub: 'Plugin von GitHub hinzufügen',
+    addPlaceholder: 'github:owner/repo',
+    add: 'Hinzufügen',
     installed: 'Installiert',
     installing: 'Installiere…',
     install: 'Installieren',
-    noResults: 'Keine Ergebnisse.',
+    archived: 'Archiviert',
+    openRepo: 'Repository auf GitHub öffnen',
+    noResults: 'Keine Plugins gefunden.',
+    showOther: 'Weitere {{count}} Repositories anzeigen',
+    hideOther: 'Weitere {{count}} Repositories ausblenden',
+    otherDescription:
+      'Repositories der quartz-community-Organisation ohne die Markierung „quartz-plugin" — darunter Quartz selbst, gemeinsam genutzte Bibliotheken, Vorlagen und Forks. Meistens nicht als Plugin installierbar.',
     installedMessage: '{{name}} installiert.'
   },
   logConsole: {

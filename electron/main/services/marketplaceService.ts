@@ -22,6 +22,7 @@ interface GithubRepo {
   stargazers_count: number
   html_url: string
   topics?: string[]
+  archived?: boolean
 }
 
 async function fetchFromGithub(): Promise<MarketplacePlugin[]> {
@@ -41,7 +42,8 @@ async function fetchFromGithub(): Promise<MarketplacePlugin[]> {
       description: r.description ?? undefined,
       stars: r.stargazers_count,
       url: r.html_url,
-      topics: r.topics
+      topics: r.topics,
+      archived: r.archived
     }))
   } catch {
     return FALLBACK_PLUGINS

@@ -1,8 +1,11 @@
 import { spawn, execFileSync, type ChildProcess } from 'child_process'
+import { readdir, stat } from 'fs/promises'
+import { join } from 'path'
 import treeKill from 'tree-kill'
 import { EventEmitter } from 'events'
-import type { LogLine, ServerOptions, ServerStatus, BuildResult } from '@shared/ipc-contract'
+import type { BuildOutputInfo, LogLine, ServerOptions, ServerStatus, BuildResult } from '@shared/ipc-contract'
 import { needsShell } from './runCommand'
+import { resolveBuildDir } from './projectDirs'
 import * as runningServersStore from './runningServersStore'
 
 interface RunningServer {
@@ -163,6 +166,56 @@ export function runBuild(projectId: string, projectPath: string, outputDir?: str
     })
     child.on('exit', (code) => resolvePromise({ success: code === 0, durationMs: Date.now() - start, exitCode: code }))
   })
+}
+
+// What is currently lying in the output directory - the only honest answer to "when was this site
+// last built", since nothing records a build anywhere. Read from the files themselves: the newest
+// mtime in the tree, plus how many files and how much they weigh.
+//
+// Why the newest mtime and not the directory's own: a directory's mtime only moves when an entry
+// is added or removed, so rebuilding a site whose file list did not change would report the age of
+// the *first* build. Symlinks are counted but not followed - a build never emits one, and
+// following would let a link out of the tree distort both numbers.
+export async function getBuildOutput(projectPath: string, outputDir?: string): Promise<BuildOutputInfo> {
+  const dir = resolveBuildDir(projectPath, outputDir)
+  const empty: BuildOutputInfo = { dir, exists: false, fileCount: 0, sizeBytes: 0 }
+  try {
+    if (!(await stat(dir)).isDirectory()) return empty
+  } catch {
+    return empty
+  }
+
+  let fileCount = 0
+  let sizeBytes = 0
+  let newest = 0
+
+  async function walk(current: string): Promise<void> {
+    const entries = await readdir(current, { withFileTypes: true })
+    for (const entry of entries) {
+      const full = join(current, entry.name)
+      if (entry.isDirectory()) {
+        await walk(full)
+        continue
+      }
+      try {
+        const info = await stat(full)
+        fileCount++
+        sizeBytes += info.size
+        if (info.mtimeMs > newest) newest = info.mtimeMs
+      } catch {
+        // a file that vanished between readdir and stat - a build running right now
+      }
+    }
+  }
+  await walk(dir)
+
+  return {
+    dir,
+    exists: fileCount > 0,
+    builtAt: newest > 0 ? new Date(newest).toISOString() : undefined,
+    fileCount,
+    sizeBytes
+  }
 }
 
 export function killAllServers(): void {

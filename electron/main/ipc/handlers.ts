@@ -323,6 +323,9 @@ export function registerIpcHandlers(): void {
   )
   handle(IPC.serverStatus, t([s.uuid]), (projectId) => buildService.getServerStatus(projectId))
 
+  handle(IPC.buildLastOutput, t([s.absolutePath, s.buildOutputDir.optional()]), (projectPath, outputDir) =>
+    buildService.getBuildOutput(projectPath, outputDir)
+  )
   handle(IPC.buildRun, t([s.uuid, s.absolutePath, s.buildOutputDir.optional()]), (projectId, projectPath, outputDir) =>
     buildService.runBuild(projectId, projectPath, outputDir)
   )

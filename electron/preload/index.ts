@@ -190,7 +190,9 @@ const api: QuartzGuiApi = {
   build: {
     run: (projectId: string, projectPath: string, outputDir?: string) =>
       ipcRenderer.invoke(IPC.buildRun, projectId, projectPath, outputDir),
-    onLog: (cb: (line: LogLine) => void) => onEvent<[LogLine]>(IPC.buildLog, cb)
+    onLog: (cb: (line: LogLine) => void) => onEvent<[LogLine]>(IPC.buildLog, cb),
+    lastOutput: (projectPath: string, outputDir?: string) =>
+      ipcRenderer.invoke(IPC.buildLastOutput, projectPath, outputDir)
   },
   sync: {
     run: (projectPath: string, direction?: 'push' | 'pull' | 'both') =>

@@ -373,6 +373,19 @@ export interface BuildResult {
   exitCode: number | null
 }
 
+// The state of a project's build output directory, read from the files themselves - nothing
+// records that a build happened, so this is the only answer to "is there a build, and how old is
+// it". `builtAt` is the newest mtime in the tree; `exists` means the directory holds at least one
+// file, since an empty leftover directory is not a build.
+export interface BuildOutputInfo {
+  /** Absolute, as resolveBuildDir() interpreted it - may sit outside the project. */
+  dir: string
+  exists: boolean
+  builtAt?: string
+  fileCount: number
+  sizeBytes: number
+}
+
 export interface MarketplacePlugin {
   name: string
   fullName: string
@@ -965,6 +978,7 @@ export const IPC = {
 
   buildRun: 'build:run',
   buildLog: 'build:log',
+  buildLastOutput: 'build:lastOutput',
 
   syncRun: 'sync:run',
   syncStatus: 'sync:status',
@@ -1145,6 +1159,8 @@ export interface QuartzGuiApi {
   build: {
     run(projectId: string, projectPath: string, outputDir?: string): Promise<BuildResult>
     onLog(cb: (line: LogLine) => void): () => void
+    /** What is in the output directory right now - see BuildOutputInfo. Pure read, no build. */
+    lastOutput(projectPath: string, outputDir?: string): Promise<BuildOutputInfo>
   }
   sync: {
     run(projectPath: string, direction?: 'push' | 'pull' | 'both'): Promise<SyncResult>

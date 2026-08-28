@@ -143,7 +143,11 @@ async function run() {
     console.log(`\n── ${size.label} ─────────────────────────────`)
     const app = await electron.launch({ executablePath: electronBinPath(), args: [APP_DIR], timeout: 30_000 })
     const page = app.windows().find((w) => !w.url().startsWith('devtools://')) ?? (await app.firstWindow())
-    await page.waitForFunction(() => document.getElementById('root')?.children.length > 0, { timeout: 20_000 })
+    // Generous, because the *first* launch of a freshly downloaded Electron binary is slow on
+    // macOS - the OS verifies the signature of a ~300MB bundle before it runs, which measured over
+    // ten seconds right after an upgrade while every later launch settled in ~250ms. A tighter
+    // wait turns "you just bumped Electron" into a failing smoke run.
+    await page.waitForSelector('#root > *', { timeout: 60_000 })
     // Playwright emulates a colour scheme by default, which overrides prefers-color-scheme and
     // would hide anything that only goes wrong in the theme the OS is actually set to.
     await page.emulateMedia({ colorScheme: null })

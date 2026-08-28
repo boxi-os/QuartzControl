@@ -144,7 +144,7 @@ export default {
       templates: 'Your design as a single file: colours, theme, CSS, fonts, layout, frames, plugins and translations — export it, pass it on, apply it to another project.',
       plugins: 'Extends Quartz with extra functionality — from full-text search to comments.',
       updates:
-        "Brings Quartz's core and the installed plugins up to date. A restorable snapshot of the version-controlled files is created automatically before every core update.",
+        "Brings Quartz's core and the installed plugins up to date. A snapshot is taken automatically before every update, so you can go back to that state under Backups.",
       server: 'Previews your site locally, and can produce a one-off build for export.',
       sync: 'Syncs your local changes with the Git repository: uploading (push) and downloading (pull).',
       backups:
@@ -1143,13 +1143,15 @@ export default {
     upToDate: 'Up to date',
     updateAvailable: 'Update available',
     checkFailed: 'Check failed',
+    recheck: 'Check again',
     core: {
       heading: 'Quartz core',
       commits: 'Installed: {{current}} · Latest: {{latest}}',
       runUpdate: 'Run update',
       confirm:
-        "Update Quartz's core?\n\nA snapshot of the version-controlled files and a backup of quartz.config.yaml are created first. Not included are files git doesn't know about - quartz.lock.json, your content folder, and your own stylesheets under quartz/styles/custom/.\n\nThis fetches changes from jackyzha0/quartz, runs npm install, and may require manual intervention on conflicts.",
+        "Update Quartz's core?\n\nA snapshot is taken first: quartz.config.yaml, quartz.lock.json, your own stylesheets and this app's settings are part of it; your content folder only if it is a real folder and switched on under Backups. You can go back to that state any time under Backups.\n\nThis fetches changes from jackyzha0/quartz, runs npm install, and may require manual intervention on conflicts.",
       abortMerge: 'Abort merge',
+      openSnapshot: 'Open the snapshot from before the update →',
       conflictHeading: 'Conflicts in these files (aside from the locale files .gitattributes protects):'
     },
     plugins: {
@@ -1163,7 +1165,7 @@ export default {
     snapshots: {
       heading: 'Snapshots',
       movedHint:
-        'A snapshot is taken automatically before every core update. They are managed under Backups, together with the snapshots from every other area.',
+        'A snapshot is taken automatically before every core and plugin update. They are managed under Backups, together with the snapshots from every other area.',
       openBackups: 'Go to Backups →'
     }
   },

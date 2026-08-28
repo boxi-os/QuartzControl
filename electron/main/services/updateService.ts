@@ -194,7 +194,14 @@ export async function getPluginsUpdateStatus(projectPath: string): Promise<Plugi
 // reimplementing its fetch/checkout/rebuild/lockfile-update logic - `plugin update` still works
 // too but is a deprecated alias for this exact invocation (verified against the CLI's own command
 // wiring), so this uses the non-deprecated form directly.
-export function updatePlugin(projectPath: string, name?: string): Promise<PluginActionResult> {
+//
+// The snapshot is not decoration: read from the CLI's own handler, --latest does `git fetch` plus
+// `git reset --hard origin/<ref>` inside each plugin directory and rewrites quartz.lock.json, and
+// a plugin that builds a broken site after an update is exactly the situation a restore point is
+// for. Every other action that changes a project takes one (pluginService.add/remove,
+// configService, contentService, the core update above); this one silently did not.
+export async function updatePlugin(projectPath: string, name?: string): Promise<PluginActionResult> {
+  await createSnapshot(projectPath, 'pluginChange', name ?? '')
   const args = ['quartz', 'plugin', 'install', '--latest']
   if (name) args.push(name)
   return run('npx', args, projectPath)

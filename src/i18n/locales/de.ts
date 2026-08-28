@@ -145,7 +145,7 @@ export default {
       templates: 'Deine Gestaltung als eine Datei: Farben, Theme, CSS, Schriften, Layout, Frames, Plugins und Übersetzungen — exportieren, weitergeben, in ein anderes Projekt einspielen.',
       plugins: 'Erweitert Quartz um zusätzliche Funktionen — von Volltextsuche bis Kommentaren.',
       updates:
-        'Bringt den Quartz-Kern und die installierten Plugins auf den neuesten Stand. Vor jedem Kern-Update wird automatisch ein wiederherstellbarer Snapshot der versionierten Dateien angelegt.',
+        'Bringt den Quartz-Kern und die installierten Plugins auf den neuesten Stand. Vor jedem Update wird automatisch ein Snapshot angelegt, über den sich der Stand unter Backups zurückholen lässt.',
       server: 'Zeigt deine Website lokal in der Vorschau an und erstellt bei Bedarf einen einmaligen Build zum Exportieren.',
       sync: 'Gleicht deine lokalen Änderungen mit dem Git-Repository ab: Hochladen (Push) und Herunterladen (Pull).',
       backups:
@@ -1145,13 +1145,15 @@ export default {
     upToDate: 'Aktuell',
     updateAvailable: 'Update verfügbar',
     checkFailed: 'Nicht prüfbar',
+    recheck: 'Erneut prüfen',
     core: {
       heading: 'Quartz-Kern',
       commits: 'Installiert: {{current}} · Neueste Version: {{latest}}',
       runUpdate: 'Update durchführen',
       confirm:
-        'Quartz-Kern aktualisieren?\n\nVorher werden automatisch ein Snapshot der versionierten Dateien und eine Sicherung der quartz.config.yaml angelegt. Nicht enthalten sind Dateien, die git nicht kennt — quartz.lock.json, dein content-Ordner und eigene Stylesheets unter quartz/styles/custom/.\n\nDer Vorgang holt Änderungen von jackyzha0/quartz, führt npm install aus und kann bei Konflikten manuelles Eingreifen erfordern.',
+        'Quartz-Kern aktualisieren?\n\nVorher wird automatisch ein Snapshot angelegt: quartz.config.yaml, quartz.lock.json, eigene Stylesheets und die Einstellungen dieser App gehören dazu, dein content-Ordner nur, wenn er ein echter Ordner ist und unter Backups eingeschaltet wurde. Zurückholen lässt sich der Stand jederzeit unter Backups.\n\nDer Vorgang holt Änderungen von jackyzha0/quartz, führt npm install aus und kann bei Konflikten manuelles Eingreifen erfordern.',
       abortMerge: 'Merge abbrechen',
+      openSnapshot: 'Snapshot von vor dem Update öffnen →',
       conflictHeading: 'Konflikte in folgenden Dateien (außer den durch .gitattributes geschützten Locale-Dateien):'
     },
     plugins: {
@@ -1165,7 +1167,7 @@ export default {
     snapshots: {
       heading: 'Snapshots',
       movedHint:
-        'Vor jedem Kern-Update wird automatisch ein Snapshot angelegt. Verwaltet werden sie unter Backups — dort liegen auch die Snapshots aller anderen Bereiche.',
+        'Vor jedem Kern- und Plugin-Update wird automatisch ein Snapshot angelegt. Verwaltet werden sie unter Backups — dort liegen auch die Snapshots aller anderen Bereiche.',
       openBackups: 'Zu den Backups →'
     }
   },

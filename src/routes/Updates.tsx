@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { RefreshCw } from 'lucide-react'
 import { useProject } from './ProjectLayout'
-import type { CoreUpdateStatus, PluginUpdateStatus, UpdateCheckState, UpdateResult } from '@shared/ipc-contract'
+import type { CoreUpdateStatus, GitStatus, PluginUpdateStatus, UpdateCheckState, UpdateResult } from '@shared/ipc-contract'
 import { Badge, Button, Card, PageHeader } from '../components/ui'
 import { formatIpcError } from '../components/ErrorSurface'
+import { primeStickyState } from '../state/uiState'
 import { TAB_ICONS } from './navConfig'
 
 function shortCommit(commit?: string | null): string {
@@ -23,16 +25,32 @@ function UpdateStateBadge({ state }: { state: UpdateCheckState }): JSX.Element {
 export default function Updates(): JSX.Element {
   const { t } = useTranslation()
   const project = useProject()
+  const navigate = useNavigate()
   const [coreStatus, setCoreStatus] = useState<CoreUpdateStatus | null>(null)
+  const [gitStatus, setGitStatus] = useState<GitStatus | null>(null)
+  const [checking, setChecking] = useState(false)
   const [pluginStatuses, setPluginStatuses] = useState<PluginUpdateStatus[] | null>(null)
   const [coreBusy, setCoreBusy] = useState(false)
   const [coreResult, setCoreResult] = useState<UpdateResult | null>(null)
   const [pluginBusy, setPluginBusy] = useState<string | null>(null)
   const [pluginMessage, setPluginMessage] = useState<string | null>(null)
 
+  // Both checks talk to a remote host, so the page says it is working rather than leaving the
+  // previous answer standing with nothing to indicate it is being replaced.
   async function reload(): Promise<void> {
-    window.quartzGui.updates.coreStatus(project.path).then(setCoreStatus)
-    window.quartzGui.updates.pluginsStatus(project.path).then(setPluginStatuses)
+    setChecking(true)
+    try {
+      const [core, plugins, git] = await Promise.all([
+        window.quartzGui.updates.coreStatus(project.path),
+        window.quartzGui.updates.pluginsStatus(project.path),
+        window.quartzGui.sync.status(project.path)
+      ])
+      setCoreStatus(core)
+      setPluginStatuses(plugins)
+      setGitStatus(git)
+    } finally {
+      setChecking(false)
+    }
   }
 
   useEffect(() => {
@@ -69,6 +87,14 @@ export default function Updates(): JSX.Element {
     }
   }
 
+  // The restore point runCoreUpdate takes is reported by the service and was shown nowhere: after
+  // a failed merge the one thing the user needs is the way back to the state before it.
+  function openSnapshot(snapshotId: string): void {
+    const target = `/project/${project.id}/backups`
+    primeStickyState(target, 'backups.open', snapshotId)
+    navigate(target)
+  }
+
   async function updatePlugin(name?: string): Promise<void> {
     setPluginBusy(name ?? '__all__')
     setPluginMessage(null)
@@ -94,26 +120,49 @@ export default function Updates(): JSX.Element {
       />
 
       <Card>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <h2 className="text-sm font-semibold">{t('updates.core.heading')}</h2>
-          {coreStatus && <UpdateStateBadge state={coreStatus.state} />}
+          <div className="flex shrink-0 items-center gap-2">
+            {coreStatus && <UpdateStateBadge state={coreStatus.state} />}
+            {/* "Nicht prüfbar" is a network answer, and there was no way to ask again short of
+                leaving the page and coming back - the same gap the marketplace catalog had. */}
+            <Button
+              variant="ghost"
+              onClick={reload}
+              disabled={checking || coreBusy}
+              className="inline-flex items-center gap-1.5 whitespace-nowrap"
+            >
+              <RefreshCw size={13} className={checking ? 'animate-spin' : ''} aria-hidden />
+              {t('updates.recheck')}
+            </Button>
+          </div>
         </div>
         {coreStatus && (
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             {t('updates.core.commits', { current: shortCommit(coreStatus.currentCommit), latest: shortCommit(coreStatus.latestCommit) })}
           </p>
         )}
+        {/* Read from git rather than from this session's last result: the abort used to appear
+            only next to the failure that produced it, so switching pages once left a half-finished
+            merge with nothing anywhere in the app to say so, let alone a way out. Same banner and
+            same action as Git-Sync's, which is where the other half of this state is visible. */}
+        {gitStatus?.inProgress && (
+          <div className="mt-3 flex flex-wrap items-center gap-3 rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+            <span>{t(`gitSync.inProgress.${gitStatus.inProgress}`)}</span>
+            {gitStatus.inProgress === 'merge' && (
+              <Button variant="ghost" onClick={abortMerge} disabled={coreBusy}>
+                {coreBusy ? t('common.saving') : t('updates.core.abortMerge')}
+              </Button>
+            )}
+          </div>
+        )}
+
         <div className="mt-3 flex items-center gap-2">
           {/* Only a positive "you already have it" disables the button. An unknown state means the
               check failed, not that there is nothing to do - the update itself may well work. */}
           <Button onClick={runCoreUpdate} disabled={coreBusy || coreStatus?.state === 'upToDate'}>
             {coreBusy ? t('common.saving') : t('updates.core.runUpdate')}
           </Button>
-          {coreResult && !coreResult.success && coreResult.conflicts && coreResult.conflicts.length > 0 && (
-            <Button variant="danger" onClick={abortMerge} disabled={coreBusy}>
-              {t('updates.core.abortMerge')}
-            </Button>
-          )}
         </div>
         {coreResult && coreResult.conflicts && coreResult.conflicts.length > 0 && (
           <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
@@ -127,6 +176,15 @@ export default function Updates(): JSX.Element {
         )}
         {coreResult && (
           <pre className="mt-3 max-h-56 overflow-y-auto rounded-md bg-slate-950 p-3 font-mono text-xs text-slate-200">{coreResult.output}</pre>
+        )}
+        {coreResult?.snapshotId && (
+          <button
+            type="button"
+            onClick={() => openSnapshot(coreResult.snapshotId as string)}
+            className="mt-2 text-xs text-indigo-600 hover:underline dark:text-indigo-400"
+          >
+            {t('updates.core.openSnapshot')}
+          </button>
         )}
       </Card>
 
@@ -153,10 +211,16 @@ export default function Updates(): JSX.Element {
                   </span>
                 )}
               </div>
-              {p.state === 'behind' ? (
-                <Button variant="ghost" onClick={() => updatePlugin(p.name)} disabled={pluginBusy !== null}>
-                  {pluginBusy === p.name ? t('common.saving') : t('updates.plugins.update')}
-                </Button>
+              {/* An unknown state gets the button too, for the reason the core card states: the
+                  check failed to reach the remote, which says nothing about whether updating
+                  works. Only a positive "up to date" leaves nothing to do. */}
+              {p.state === 'behind' || p.state === 'unknown' ? (
+                <div className="flex shrink-0 items-center gap-2">
+                  {p.state === 'unknown' && <UpdateStateBadge state={p.state} />}
+                  <Button variant="ghost" onClick={() => updatePlugin(p.name)} disabled={pluginBusy !== null}>
+                    {pluginBusy === p.name ? t('common.saving') : t('updates.plugins.update')}
+                  </Button>
+                </div>
               ) : (
                 p.state !== 'local' && <UpdateStateBadge state={p.state} />
               )}

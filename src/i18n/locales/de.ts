@@ -434,7 +434,12 @@ export default {
     movedFoldersHeading: 'Beiseitegelegte content-Ordner',
     movedFoldersHint:
       'Beim Wechsel des Content-Ordners wird der bisherige hierher verschoben statt gelöscht. Das ist kein Backup deiner Notizen: ein Symlink auf einen Vault wurde nie kopiert, nur der Link selbst notiert.',
-    confirmRestoreFolder: 'Diesen content-Ordner wieder einsetzen? Der aktuelle wird dabei ebenfalls beiseitegelegt.'
+    confirmRestoreFolder: 'Diesen content-Ordner wieder einsetzen? Der aktuelle wird dabei ebenfalls beiseitegelegt.',
+    confirmDeleteFolder:
+      'Diesen beiseitegelegten content-Ordner endgültig löschen ({{size}})?\n\nEs ist die einzige Kopie: In den Snapshots ist er nicht enthalten, und rückgängig machen lässt sich das nicht.',
+    folderSize: '{{count}} Datei · {{size}}',
+    folderSize_other: '{{count}} Dateien · {{size}}',
+    folderLink: 'Nur der Link auf {{target}} - die Notizen liegen dort und wurden nie kopiert.'
   },
   settings: {
     title: 'Einstellungen',

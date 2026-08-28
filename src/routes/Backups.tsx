@@ -4,6 +4,7 @@ import { useProject } from './ProjectLayout'
 import type { BackupEntry, Snapshot, SnapshotFileChange, SnapshotSettings } from '@shared/ipc-contract'
 import { Badge, Button, Card, PageHeader, TextInput, Toggle } from '../components/ui'
 import { useAsyncAction } from '../hooks/useAsyncAction'
+import { formatBytes } from '../utils/format'
 import { useStickyState } from '../state/uiState'
 import { TAB_ICONS } from './navConfig'
 
@@ -132,6 +133,14 @@ export default function Backups(): JSX.Element {
   const restoreFolderAction = useAsyncAction(async (entry: BackupEntry) => {
     if (!confirm(t('backups.confirmRestoreFolder'))) return
     await window.quartzGui.backups.restoreContentFolder(project.path, entry.id)
+    await reload()
+  })
+
+  // The list only ever grew - and every restore adds to it, since restoring moves the current
+  // folder aside first. Nothing else in the app deletes these, and a snapshot does not hold them.
+  const deleteFolderAction = useAsyncAction(async (entry: BackupEntry) => {
+    if (!confirm(t('backups.confirmDeleteFolder', { size: formatBytes(entry.sizeBytes, i18n.language) }))) return
+    await window.quartzGui.backups.deleteContentFolder(project.path, entry.id)
     await reload()
   })
 
@@ -306,21 +315,34 @@ export default function Backups(): JSX.Element {
                 key={entry.id}
                 className="flex items-center justify-between gap-2 rounded-md border border-black/[0.06] px-2.5 py-1.5 dark:border-white/10"
               >
-                <span className="min-w-0 truncate text-sm">{new Date(entry.createdAt).toLocaleString(i18n.language)}</span>
-                <Button
-                  variant="ghost"
-                  className="shrink-0 whitespace-nowrap"
-                  onClick={() => restoreFolderAction.run(entry)}
-                  disabled={restoreFolderAction.pending}
-                >
-                  {t('backups.restore')}
-                </Button>
+                {/* A recorded symlink and a real copy of a folder are worlds apart on disk, and
+                    the row now has a delete button - so it says which one this is and what it
+                    costs rather than leaving that to a timestamp. */}
+                <div className="min-w-0">
+                  <p className="truncate text-sm">{new Date(entry.createdAt).toLocaleString(i18n.language)}</p>
+                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                    {entry.kind === 'link'
+                      ? t('backups.folderLink', { target: entry.target ?? '?' })
+                      : t('backups.folderSize', {
+                          count: entry.fileCount,
+                          size: formatBytes(entry.sizeBytes, i18n.language)
+                        })}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
+                  <Button variant="ghost" onClick={() => restoreFolderAction.run(entry)} disabled={restoreFolderAction.pending}>
+                    {t('backups.restore')}
+                  </Button>
+                  <Button variant="danger" onClick={() => deleteFolderAction.run(entry)} disabled={deleteFolderAction.pending}>
+                    {t('backups.delete')}
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
-          {restoreFolderAction.error && (
+          {(restoreFolderAction.error ?? deleteFolderAction.error) && (
             <p className="mt-2 whitespace-pre-wrap break-words text-sm text-red-600 dark:text-red-400">
-              {restoreFolderAction.error}
+              {restoreFolderAction.error ?? deleteFolderAction.error}
             </p>
           )}
         </Card>

@@ -216,7 +216,8 @@ const api: QuartzGuiApi = {
   },
   backups: {
     listContentFolders: (projectPath: string) => ipcRenderer.invoke(IPC.backupList, projectPath),
-    restoreContentFolder: (projectPath: string, id: string) => ipcRenderer.invoke(IPC.backupRestore, projectPath, id)
+    restoreContentFolder: (projectPath: string, id: string) => ipcRenderer.invoke(IPC.backupRestore, projectPath, id),
+    deleteContentFolder: (projectPath: string, id: string) => ipcRenderer.invoke(IPC.backupDelete, projectPath, id)
   },
   content: {
     status: (projectPath: string) => ipcRenderer.invoke(IPC.contentStatus, projectPath),

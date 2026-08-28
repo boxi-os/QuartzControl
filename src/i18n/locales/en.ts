@@ -433,7 +433,12 @@ export default {
     movedFoldersHeading: 'Set-aside content folders',
     movedFoldersHint:
       'When the content source is switched, the previous folder is moved here rather than deleted. This is not a backup of your notes: a symlink to a vault was never copied, only the link itself recorded.',
-    confirmRestoreFolder: 'Put this content folder back? The current one is set aside as well.'
+    confirmRestoreFolder: 'Put this content folder back? The current one is set aside as well.',
+    confirmDeleteFolder:
+      'Delete this set-aside content folder for good ({{size}})?\n\nIt is the only copy: snapshots do not contain it, and this cannot be undone.',
+    folderSize: '{{count}} file · {{size}}',
+    folderSize_other: '{{count}} files · {{size}}',
+    folderLink: 'Only the link to {{target}} - the notes live there and were never copied.'
   },
   settings: {
     title: 'Settings',

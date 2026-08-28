@@ -421,6 +421,9 @@ export function registerIpcHandlers(): void {
   handle(IPC.backupRestore, t([s.absolutePath, s.backupId]), (projectPath, id) =>
     backupService.restoreContentBackup(projectPath, contentService.contentDirPath(projectPath), id)
   )
+  handle(IPC.backupDelete, t([s.absolutePath, s.backupId]), (projectPath, id) =>
+    backupService.deleteContentBackup(projectPath, id)
+  )
 
   // The one-time import of the old per-save config copies runs here rather than inside the
   // service: this is the single entry point a user reaches, and it renames the legacy directory

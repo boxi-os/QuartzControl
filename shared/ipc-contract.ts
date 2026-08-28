@@ -450,6 +450,17 @@ export interface MarketplaceResult {
 export interface BackupEntry {
   id: string
   createdAt: string
+  /**
+   * 'link' is a moved *symlink*, recorded as its target and nothing else; 'folder' is a real copy
+   * of what the content directory held. The two are worlds apart on disk, which is why the size
+   * and the count travel with the entry: a folder of notes can be gigabytes, and deciding whether
+   * to delete one is impossible from a timestamp alone.
+   */
+  kind: 'folder' | 'link'
+  sizeBytes: number
+  fileCount: number
+  /** Where the recorded symlink pointed. Only set for kind 'link'. */
+  target?: string
 }
 
 export type ContentStrategy = 'copy' | 'symlink'
@@ -1234,6 +1245,7 @@ export const IPC = {
 
   backupList: 'backup:listContentFolders',
   backupRestore: 'backup:restoreContentFolder',
+  backupDelete: 'backup:deleteContentFolder',
 
   contentStatus: 'content:status',
   contentChange: 'content:change',
@@ -1460,6 +1472,8 @@ export interface QuartzGuiApi {
   backups: {
     listContentFolders(projectPath: string): Promise<BackupEntry[]>
     restoreContentFolder(projectPath: string, id: string): Promise<void>
+    /** Irreversible: this is the only copy of a folder the content switch moved aside. */
+    deleteContentFolder(projectPath: string, id: string): Promise<void>
   }
   snapshots: {
     list(projectPath: string): Promise<Snapshot[]>

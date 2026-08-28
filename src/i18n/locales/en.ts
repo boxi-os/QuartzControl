@@ -474,6 +474,9 @@ export default {
       rejected: 'Rejected',
       rejectedHint: 'GitHub does not accept this token — expired or revoked.',
       checking: 'Checking…',
+      unknown: 'Cannot check',
+      unknownHint: 'GitHub could not be reached — whether the token is valid is unknown.',
+      recheck: 'Check again',
       remove: 'Remove token',
       scopeHint:
         'For the marketplace a token with no permissions at all is enough. Creating repositories and configuring GitHub Pages needs the “repo” scope. The token is stored encrypted in your system keychain.'

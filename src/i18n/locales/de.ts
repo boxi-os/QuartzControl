@@ -475,6 +475,9 @@ export default {
       rejected: 'Abgelehnt',
       rejectedHint: 'GitHub akzeptiert diesen Token nicht — abgelaufen oder zurückgezogen.',
       checking: 'Prüfe…',
+      unknown: 'Nicht prüfbar',
+      unknownHint: 'GitHub war nicht erreichbar — ob der Token gilt, ist damit offen.',
+      recheck: 'Erneut prüfen',
       remove: 'Token entfernen',
       scopeHint:
         'Für den Marktplatz genügt ein Token ganz ohne Berechtigungen. Zum Anlegen von Repositories und für GitHub Pages wird der Scope „repo“ benötigt. Der Token wird verschlüsselt im Schlüsselbund deines Systems abgelegt.'

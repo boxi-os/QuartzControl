@@ -210,20 +210,31 @@ function GithubSection(): JSX.Element {
   const [connection, setConnection] = useState<Connection | null>(null)
   const [token, setToken] = useState('')
   const [account, setAccount] = useState<GithubAccount | null>(null)
-  // Three states, not two: not checked yet, checked and rejected, checked and fine. A token that
-  // silently does nothing is worse than none, which is the whole reason this section exists.
-  const [checked, setChecked] = useState(false)
+  // Four states, not two. "Abgelehnt" is a 401 from GitHub, i.e. a real answer about the token;
+  // an unreachable API is not, and rendering it as either a valid or a rejected token is the
+  // "cannot check is not the same as fine" mistake the update check and the theme catalog each
+  // had. Before this the failure was not even a state: github.viewer() rejects on a network
+  // error, reload() did not catch it, so the badge stayed on "wird geprüft" for good while the
+  // rejection surfaced as an app-wide error toast.
+  const [status, setStatus] = useState<'none' | 'checking' | 'valid' | 'rejected' | 'unknown'>('none')
 
   const reload = useCallback(async () => {
     const connections = await window.quartzGui.connections.list()
     const github = connections.find((c) => c.kind === 'github') ?? null
     setConnection(github)
-    if (github?.hasSecret) {
-      setAccount(await window.quartzGui.github.viewer())
-      setChecked(true)
-    } else {
+    if (!github?.hasSecret) {
       setAccount(null)
-      setChecked(false)
+      setStatus('none')
+      return
+    }
+    setStatus('checking')
+    try {
+      const viewer = await window.quartzGui.github.viewer()
+      setAccount(viewer)
+      setStatus(viewer ? 'valid' : 'rejected')
+    } catch {
+      setAccount(null)
+      setStatus('unknown')
     }
   }, [])
 
@@ -247,24 +258,39 @@ function GithubSection(): JSX.Element {
     <Section icon={Key} title={t('settings.github.title')} description={t('settings.github.description')}>
       {connection?.hasSecret && (
         <div className="mb-3 flex flex-wrap items-center gap-2 text-[13px]">
-          {checked && account ? (
+          {status === 'valid' && account ? (
             <>
               <Badge tone="green">{t('settings.github.valid')}</Badge>
               <span className="text-slate-600 dark:text-slate-300">
                 {account.name ? `${account.name} (@${account.login})` : `@${account.login}`}
               </span>
             </>
-          ) : checked ? (
+          ) : status === 'rejected' ? (
             <>
               <Badge tone="red">{t('settings.github.rejected')}</Badge>
               <span className="text-slate-600 dark:text-slate-300">{t('settings.github.rejectedHint')}</span>
             </>
+          ) : status === 'unknown' ? (
+            <>
+              <Badge>{t('settings.github.unknown')}</Badge>
+              <span className="text-slate-600 dark:text-slate-300">{t('settings.github.unknownHint')}</span>
+            </>
           ) : (
             <Badge tone="slate">{t('settings.github.checking')}</Badge>
           )}
+          {/* The only way to check the stored token again used to be pasting it in a second time. */}
+          <Button
+            variant="ghost"
+            onClick={() => void reload()}
+            disabled={status === 'checking'}
+            className="ml-auto inline-flex items-center gap-1.5 whitespace-nowrap"
+          >
+            <RefreshCw size={13} className={status === 'checking' ? 'animate-spin' : ''} aria-hidden />
+            {t('settings.github.recheck')}
+          </Button>
           <button
             type="button"
-            className="ml-auto text-[13px] text-slate-500 underline hover:text-slate-900 dark:hover:text-white"
+            className="text-[13px] text-slate-500 underline hover:text-slate-900 dark:hover:text-white"
             onClick={() => remove.run()}
             disabled={remove.pending}
           >

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ExternalLink, Search } from 'lucide-react'
+import { ExternalLink, RefreshCw, Search } from 'lucide-react'
 import { useProject } from '../ProjectLayout'
 import { useStickyState } from '../../state/uiState'
 import type { MarketplacePlugin } from '@shared/ipc-contract'
@@ -27,7 +27,11 @@ export default function PluginsMarketplace(): JSX.Element {
   // The search term survives a trip to another area (see useStickyState) - the results themselves
   // are refetched, so what is shown is never stale.
   const [query, setQuery] = useStickyState('marketplace.query', '')
-  const [results, setResults] = useState<MarketplacePlugin[]>([])
+  // null until the first fetch answers: an empty array renders "nothing found", which is a false
+  // answer for the second or two the catalog takes to arrive - measured in the running app.
+  const [results, setResults] = useState<MarketplacePlugin[] | null>(null)
+  const [unavailable, setUnavailable] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const [installedIds, setInstalledIds] = useState<Set<string>>(new Set())
   const [installing, setInstalling] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
@@ -51,8 +55,25 @@ export default function PluginsMarketplace(): JSX.Element {
   // No token passed from here any more: it is a credential, and main resolves it from the
   // connection store itself (see connectionsService.getGithubToken).
   useEffect(() => {
-    window.quartzGui.marketplace.search(query).then(setResults)
+    window.quartzGui.marketplace.search(query).then((result) => {
+      setResults(result.plugins)
+      setUnavailable(result.unavailable)
+    })
   }, [query])
+
+  // The catalog is cached for fifteen minutes in main, so a plugin published in the meantime is
+  // otherwise unreachable without restarting the app.
+  async function refresh(): Promise<void> {
+    setRefreshing(true)
+    try {
+      await window.quartzGui.marketplace.refresh()
+      const result = await window.quartzGui.marketplace.search(query)
+      setResults(result.plugins)
+      setUnavailable(result.unavailable)
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
   async function install(plugin: MarketplacePlugin): Promise<void> {
     setInstalling(plugin.fullName)
@@ -86,10 +107,11 @@ export default function PluginsMarketplace(): JSX.Element {
   }
 
   const [plugins, other] = useMemo(() => {
+    const list = results ?? []
     // Archived repositories are not offered as plugins even if they carry the topic - the org's
     // archived entry is the Quartz core itself, and "install" on it would be nonsense.
-    const pluginResults = results.filter((r) => isPlugin(r) && !r.archived)
-    const rest = results.filter((r) => !pluginResults.includes(r))
+    const pluginResults = list.filter((r) => isPlugin(r) && !r.archived)
+    const rest = list.filter((r) => !pluginResults.includes(r))
     const byStars = (a: MarketplacePlugin, b: MarketplacePlugin): number => (b.stars ?? 0) - (a.stars ?? 0)
     return [[...pluginResults].sort(byStars), [...rest].sort(byStars)]
   }, [results])
@@ -110,6 +132,10 @@ export default function PluginsMarketplace(): JSX.Element {
             className="w-full pl-8"
           />
         </div>
+        <Button variant="ghost" onClick={refresh} disabled={refreshing} className="inline-flex items-center gap-1.5 whitespace-nowrap">
+          <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} aria-hidden />
+          {refreshing ? t('pluginsMarketplace.refreshing') : t('pluginsMarketplace.refresh')}
+        </Button>
         <div className="flex flex-col gap-1">
           <span className="text-[13px] font-medium text-slate-600 dark:text-slate-300">
             {t('pluginsMarketplace.addFromGithub')}
@@ -128,6 +154,11 @@ export default function PluginsMarketplace(): JSX.Element {
         </div>
       </div>
 
+      {unavailable && (
+        <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
+          {t('pluginsMarketplace.unavailable')}
+        </p>
+      )}
       {message && <p className="mb-4 text-sm text-slate-600 dark:text-slate-300">{message}</p>}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
@@ -141,7 +172,10 @@ export default function PluginsMarketplace(): JSX.Element {
           />
         ))}
       </div>
-      {plugins.length === 0 && <p className="text-sm text-slate-500">{t('pluginsMarketplace.noResults')}</p>}
+      {results === null && <p className="text-sm text-slate-500">{t('pluginsMarketplace.loading')}</p>}
+      {results !== null && plugins.length === 0 && (
+        <p className="text-sm text-slate-500">{t('pluginsMarketplace.noResults')}</p>
+      )}
 
       {other.length > 0 && (
         <div className="mt-8">

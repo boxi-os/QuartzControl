@@ -418,6 +418,19 @@ export interface MarketplacePlugin {
   archived?: boolean
 }
 
+/**
+ * What one catalog fetch produced.
+ *
+ * `unavailable` is its own answer rather than an empty list: a rate-limited or unreachable GitHub
+ * API leaves the service with a single hard-coded entry, which is indistinguishable from a
+ * one-plugin organisation unless it is said out loud - the same "cannot check is not the same as
+ * fine" distinction styleService's `unavailable` and updateService's `'unknown'` make.
+ */
+export interface MarketplaceResult {
+  plugins: MarketplacePlugin[]
+  unavailable: boolean
+}
+
 // A content directory that was moved aside when the content source was switched - see
 // backupService. Not a snapshot; those are Snapshot/snapshotService.
 export interface BackupEntry {
@@ -1393,7 +1406,7 @@ export interface QuartzGuiApi {
     delete(projectPath: string, id: string): Promise<void>
   }
   marketplace: {
-    search(query: string): Promise<MarketplacePlugin[]>
+    search(query: string): Promise<MarketplaceResult>
     refresh(): Promise<void>
   }
   server: {

@@ -1406,7 +1406,12 @@ export default {
     hideOther: 'Weitere {{count}} Repositories ausblenden',
     otherDescription:
       'Repositories der quartz-community-Organisation ohne die Markierung „quartz-plugin" — darunter Quartz selbst, gemeinsam genutzte Bibliotheken, Vorlagen und Forks. Meistens nicht als Plugin installierbar.',
-    installedMessage: '{{name}} installiert.'
+    installedMessage: '{{name}} installiert.',
+    loading: 'Katalog wird geladen…',
+    refresh: 'Katalog neu laden',
+    refreshing: 'Lade…',
+    unavailable:
+      'Der Katalog ist gerade nicht erreichbar (GitHub antwortet nicht oder das Anfragelimit ist erschöpft). Unten steht deshalb nur ein Platzhalter — mit „Katalog neu laden" nochmal versuchen. Ein GitHub-Token in den Einstellungen hebt das Limit deutlich an.'
   },
   logConsole: {
     noOutput: 'Noch keine Ausgabe.',

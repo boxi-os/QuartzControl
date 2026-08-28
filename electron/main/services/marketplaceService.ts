@@ -1,11 +1,13 @@
-import type { MarketplacePlugin } from '@shared/ipc-contract'
+import type { MarketplacePlugin, MarketplaceResult } from '@shared/ipc-contract'
 import * as connectionsService from './connectionsService'
 
 const CACHE_TTL_MS = 15 * 60 * 1000
 
 let cache: { at: number; results: MarketplacePlugin[] } | null = null
 
-// shown when the GitHub API is unreachable or rate-limited, so the marketplace tab is never empty
+// Shown when the GitHub API is unreachable or rate-limited, so the tab is never empty - but it
+// travels with `unavailable: true`, because one hard-coded entry presented as the catalog is a
+// lie the user cannot see through.
 const FALLBACK_PLUGINS: MarketplacePlugin[] = [
   {
     name: 'explorer',
@@ -25,7 +27,7 @@ interface GithubRepo {
   archived?: boolean
 }
 
-async function fetchFromGithub(): Promise<MarketplacePlugin[]> {
+async function fetchFromGithub(): Promise<{ results: MarketplacePlugin[]; unavailable: boolean }> {
   // Read here rather than passed in from the renderer: the token is a credential, and relaying it
   // out to the renderer and back on every search was one round-trip more exposure than necessary.
   const githubToken = await connectionsService.getGithubToken()
@@ -33,10 +35,10 @@ async function fetchFromGithub(): Promise<MarketplacePlugin[]> {
     const headers: Record<string, string> = { Accept: 'application/vnd.github+json' }
     if (githubToken) headers.Authorization = `Bearer ${githubToken}`
     const res = await fetch('https://api.github.com/orgs/quartz-community/repos?per_page=100', { headers })
-    if (!res.ok) return FALLBACK_PLUGINS
+    if (!res.ok) return { results: FALLBACK_PLUGINS, unavailable: true }
     const repos = (await res.json()) as GithubRepo[]
-    if (repos.length === 0) return FALLBACK_PLUGINS
-    return repos.map((r) => ({
+    if (repos.length === 0) return { results: FALLBACK_PLUGINS, unavailable: true }
+    const results = repos.map((r) => ({
       name: r.name,
       fullName: r.full_name,
       description: r.description ?? undefined,
@@ -45,18 +47,27 @@ async function fetchFromGithub(): Promise<MarketplacePlugin[]> {
       topics: r.topics,
       archived: r.archived
     }))
+    return { results, unavailable: false }
   } catch {
-    return FALLBACK_PLUGINS
+    return { results: FALLBACK_PLUGINS, unavailable: true }
   }
 }
 
-export async function searchPlugins(query: string): Promise<MarketplacePlugin[]> {
+export async function searchPlugins(query: string): Promise<MarketplaceResult> {
   if (!cache || Date.now() - cache.at > CACHE_TTL_MS) {
-    cache = { at: Date.now(), results: await fetchFromGithub() }
+    const fetched = await fetchFromGithub()
+    // A failed fetch is never cached: retrying costs one request, and someone who fixes their
+    // connection should not have to wait out a fifteen-minute window holding a placeholder.
+    if (fetched.unavailable) return { plugins: filterPlugins(fetched.results, query), unavailable: true }
+    cache = { at: Date.now(), results: fetched.results }
   }
+  return { plugins: filterPlugins(cache.results, query), unavailable: false }
+}
+
+function filterPlugins(plugins: MarketplacePlugin[], query: string): MarketplacePlugin[] {
   const q = query.trim().toLowerCase()
-  if (!q) return cache.results
-  return cache.results.filter(
+  if (!q) return plugins
+  return plugins.filter(
     (p) =>
       p.name.toLowerCase().includes(q) ||
       p.fullName.toLowerCase().includes(q) ||

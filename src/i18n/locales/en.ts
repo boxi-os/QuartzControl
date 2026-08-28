@@ -1402,7 +1402,12 @@ export default {
     hideOther: 'Hide {{count}} more repositories',
     otherDescription:
       'Repositories of the quartz-community organisation without the "quartz-plugin" topic — among them Quartz itself, shared libraries, templates and forks. Mostly not installable as a plugin.',
-    installedMessage: '{{name}} installed.'
+    installedMessage: '{{name}} installed.',
+    loading: 'Loading the catalog…',
+    refresh: 'Reload catalog',
+    refreshing: 'Loading…',
+    unavailable:
+      'The catalog is unreachable right now (GitHub is not answering, or the rate limit is used up). What is listed below is a placeholder — try "Reload catalog". A GitHub token in the settings raises the limit considerably.'
   },
   logConsole: {
     noOutput: 'No output yet.',

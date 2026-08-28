@@ -11,8 +11,16 @@ import {
   SlidersHorizontal
 } from 'lucide-react'
 import { useProject } from './ProjectLayout'
-import type { BuildOutputInfo, ServerOptions, ServerStatus, BuildResult } from '@shared/ipc-contract'
-import { Badge, Button, Card, Field, PageHeader, TextInput, useCopyToClipboard } from '../components/ui'
+import type {
+  BuildOutputInfo,
+  FrameBreakpoint,
+  FrameBreakpointWidths,
+  ServerOptions,
+  ServerStatus,
+  BuildResult
+} from '@shared/ipc-contract'
+import { DEFAULT_FRAME_BREAKPOINT_WIDTHS } from '@shared/gridFrameCss'
+import { Badge, Button, Card, Field, PageHeader, SegmentedControl, TextInput, useCopyToClipboard } from '../components/ui'
 import { LogConsole } from '../components/LogConsole'
 import { formatIpcError } from '../components/ErrorSurface'
 import { TAB_ICONS } from './navConfig'
@@ -36,6 +44,23 @@ function urlFor(options: ServerOptions): string {
   return `http://${options.host || 'localhost'}:${options.port}`
 }
 
+// The width the preview is rendered at, per band. Real device widths rather than the breakpoints
+// themselves - a breakpoint is the *widest* point of its band, which is where a layout is least
+// likely to break, and "wie sieht es auf dem Handy aus" means a phone, not an 800px viewport. 390
+// is the width this repo has been measuring mobile frame layouts at all along; 820 is an iPad in
+// portrait. Both are then pulled into the project's own bands, because those widths are the
+// project's to choose (.quartz-gui/layout-breakpoints.json) and a device width that falls outside
+// its band would preview the wrong layout entirely - with a 900px mobile breakpoint, 820 is a
+// phone, not a tablet.
+const PHONE_WIDTH = 390
+const TABLET_PORTRAIT_WIDTH = 820
+
+function previewWidthPx(mode: FrameBreakpoint, widths: FrameBreakpointWidths): number | null {
+  if (mode === 'desktop') return null
+  if (mode === 'mobile') return Math.min(PHONE_WIDTH, widths.mobile)
+  return Math.max(Math.min(TABLET_PORTRAIT_WIDTH, widths.tablet), widths.mobile + 1)
+}
+
 export default function BuildServer(): JSX.Element {
   const { t, i18n } = useTranslation()
   const project = useProject()
@@ -50,6 +75,8 @@ export default function BuildServer(): JSX.Element {
   // Remounts the iframe. A cache-busting query would work too, but it changes the URL the user is
   // looking at - and Quartz serves the site at clean paths.
   const [previewNonce, setPreviewNonce] = useState(0)
+  const [previewMode, setPreviewMode] = useStickyState<FrameBreakpoint>('server.previewMode', 'desktop')
+  const [breakpoints, setBreakpoints] = useState<FrameBreakpointWidths>(DEFAULT_FRAME_BREAKPOINT_WIDTHS)
   const [buildResult, setBuildResult] = useState<BuildResult | null>(null)
   const [building, setBuilding] = useState(false)
   const [output, setOutput] = useState<BuildOutputInfo | null>(null)
@@ -90,6 +117,8 @@ export default function BuildServer(): JSX.Element {
       setOutputDir(prefs.outputDir)
       void refreshOutput(prefs.outputDir)
     })
+    // Falls back to Quartz's own widths on its own when the project never set any.
+    window.quartzGui.layoutFrames.getBreakpoints(project.path).then(setBreakpoints)
   }, [project.path, refreshOutput])
 
   // Relative ages ("gestartet vor 2 Minuten", "gebaut vor 5 Minuten") are computed at render, so
@@ -112,6 +141,7 @@ export default function BuildServer(): JSX.Element {
   // index.html). A remoteDevHost preview is somewhere else entirely and keeps the external link.
   const embeddable = running && !liveOptions.host
   const errorText = serverErrorText(status, t)
+  const previewWidth = previewWidthPx(previewMode, breakpoints)
   const outputInProject = output ? output.dir === project.path || output.dir.startsWith(`${project.path}/`) : false
 
   async function start(): Promise<void> {
@@ -168,7 +198,11 @@ export default function BuildServer(): JSX.Element {
         description={t('projectLayout.descriptions.server')}
       />
 
-      <Card>
+      {/* min-w-0: a grid item's implicit `min-width: auto` lets its content push it wider than the
+          column, so the fixed-width preview below dragged the whole card past the window edge and
+          made <main> scroll sideways - buttons and all - instead of the preview scrolling inside
+          its own container (reproduced at a 900px window with the tablet preset). */}
+      <Card className="min-w-0">
         <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
           <h2 className="font-medium">{t('buildServer.devServer')}</h2>
           <Badge tone={running ? 'green' : status.state === 'error' ? 'red' : 'slate'}>
@@ -285,7 +319,7 @@ export default function BuildServer(): JSX.Element {
             cross-origin frame; the sandbox keeps the previewed site from navigating this window. */}
         {embeddable && (
           <div className="mt-4">
-            <div className="mb-1 flex items-center gap-3">
+            <div className="mb-1 flex flex-wrap items-center gap-x-3 gap-y-2">
               <button
                 type="button"
                 onClick={() => setPreviewOpen(!previewOpen)}
@@ -295,24 +329,48 @@ export default function BuildServer(): JSX.Element {
                 {t('buildServer.livePreview')}
               </button>
               {previewOpen && (
-                <button
-                  type="button"
-                  onClick={() => setPreviewNonce((n) => n + 1)}
-                  className="ml-auto inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
-                >
-                  <RefreshCw size={12} aria-hidden />
-                  {t('buildServer.reloadPreview')}
-                </button>
+                <>
+                  {/* Its own labels rather than the Layout editor's: those live inside that
+                      screen's frameBuilder namespace, and a page reaching into another page's keys
+                      is a rename away from breaking silently - i18next keys are not typechecked. */}
+                  <SegmentedControl
+                    value={previewMode}
+                    onChange={setPreviewMode}
+                    options={[
+                      { value: 'desktop', label: t('buildServer.viewport.desktop') },
+                      { value: 'tablet', label: t('buildServer.viewport.tablet') },
+                      { value: 'mobile', label: t('buildServer.viewport.mobile') }
+                    ]}
+                  />
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    {previewWidth === null ? t('buildServer.viewport.full') : `${previewWidth} px`}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewNonce((n) => n + 1)}
+                    className="ml-auto inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                  >
+                    <RefreshCw size={12} aria-hidden />
+                    {t('buildServer.reloadPreview')}
+                  </button>
+                </>
               )}
             </div>
             {previewOpen && (
-              <iframe
-                key={`${url}#${previewNonce}`}
-                src={url}
-                title={t('buildServer.livePreview')}
-                sandbox="allow-scripts allow-same-origin allow-forms"
-                className="h-[560px] w-full rounded-md border border-black/[0.08] bg-white dark:border-white/10"
-              />
+              /* Real CSS pixels, not a scaled-down mock: the iframe's own width *is* the viewport
+                 the site's media queries see. Which means a narrow window cannot show a 1200px
+                 tablet - hence the scroll container, the same answer this app gives every other
+                 piece of content too wide for its column. */
+              <div className="overflow-x-auto rounded-md border border-black/[0.08] dark:border-white/10">
+                <iframe
+                  key={`${url}#${previewNonce}`}
+                  src={url}
+                  title={t('buildServer.livePreview')}
+                  sandbox="allow-scripts allow-same-origin allow-forms"
+                  style={{ width: previewWidth === null ? '100%' : `${previewWidth}px` }}
+                  className="mx-auto block h-[560px] bg-white"
+                />
+              </div>
             )}
           </div>
         )}

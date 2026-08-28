@@ -271,6 +271,12 @@ export default {
     exitedUnexpectedly: 'The server exited unexpectedly.',
     livePreview: 'Live preview',
     reloadPreview: 'Reload preview',
+    viewport: {
+      desktop: 'Desktop',
+      tablet: 'Tablet',
+      mobile: 'Mobile',
+      full: 'full width'
+    },
     oneOffBuild: 'One-off build',
     building: 'Building…',
     buildNow: 'Build now',

@@ -272,6 +272,12 @@ export default {
     exitedUnexpectedly: 'Der Server wurde unerwartet beendet.',
     livePreview: 'Live-Vorschau',
     reloadPreview: 'Vorschau neu laden',
+    viewport: {
+      desktop: 'Desktop',
+      tablet: 'Tablet',
+      mobile: 'Mobil',
+      full: 'volle Breite'
+    },
     oneOffBuild: 'Einmaliger Build',
     building: 'Baue…',
     buildNow: 'Jetzt bauen',

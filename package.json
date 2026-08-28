@@ -12,7 +12,8 @@
     "build": "electron-vite build",
     "start": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "postinstall": "node scripts/brand-electron.mjs"
+    "postinstall": "node scripts/brand-electron.mjs",
+    "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",

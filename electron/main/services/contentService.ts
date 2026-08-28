@@ -1,6 +1,6 @@
 import { existsSync } from 'fs'
 import { lstat, readlink, readdir, cp, symlink, mkdir } from 'fs/promises'
-import { join } from 'path'
+import { isAbsolute, join, relative, resolve } from 'path'
 import type { ContentStatus, ContentStrategy } from '@shared/ipc-contract'
 import { snapshotContent } from './backupService'
 import { createSnapshot } from './snapshotService'
@@ -40,6 +40,20 @@ export async function getContentStatus(projectPath: string): Promise<ContentStat
   return { path, exists: true, isSymlink: false, fileCount: await countFiles(path) }
 }
 
+// Neither direction of containment is allowed between the source and the content directory.
+// The current content/ is moved aside *before* anything is read, so a source that lives inside it
+// is already gone by then - measured on a real project: with the symlink strategy the call
+// reported success and left a link pointing at itself (the page then said the folder was missing),
+// with the copy strategy it failed with a raw ENOENT. In both cases the notes existed only in
+// .quartz-gui/content-backups/, which nothing in the UI leads to. The reverse case (the source
+// contains content/, e.g. the project directory itself) would copy the project into its own
+// content folder. `relative()` rather than a prefix test, which would call /notes-old a child
+// of /notes - the same reasoning deploy/folder.ts's containment check follows.
+function contains(parent: string, child: string): boolean {
+  const rel = relative(parent, child)
+  return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel))
+}
+
 export async function changeContentSource(
   projectPath: string,
   sourcePath: string,
@@ -50,6 +64,18 @@ export async function changeContentSource(
     throw new Error(`Quellordner existiert nicht: ${sourcePath}`)
   }
   const target = contentDirPath(projectPath)
+  const from = resolve(sourcePath)
+  const to = resolve(target)
+  if (contains(to, from)) {
+    throw new Error(
+      `Der Quellordner liegt im Content-Ordner des Projekts (${target}). Dieser wird beim Wechsel zuerst beiseitegelegt - wähle einen Ordner außerhalb.`
+    )
+  }
+  if (contains(from, to)) {
+    throw new Error(
+      `Der Content-Ordner des Projekts (${target}) liegt im gewählten Quellordner. Wähle einen Ordner, der ihn nicht enthält.`
+    )
+  }
   // Two different safety nets, both needed: the snapshot records the project's files as they are
   // now, and the move-aside keeps the whole old content directory - which the snapshot may not
   // hold at all, since a symlinked vault is excluded by default.

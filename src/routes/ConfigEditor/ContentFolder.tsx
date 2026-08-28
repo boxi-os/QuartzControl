@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useProject } from '../ProjectLayout'
 import type { ContentProgress, ContentStatus, ContentStrategy } from '@shared/ipc-contract'
 import { Badge, Button, Card, Field, Select, TextInput } from '../../components/ui'
+import { formatIpcError } from '../../components/ErrorSurface'
 
 export default function ContentFolder(): JSX.Element {
   const { t } = useTranslation()
@@ -41,7 +42,7 @@ export default function ContentFolder(): JSX.Element {
       setSource('')
       await reload()
     } catch (err) {
-      setError(String(err))
+      setError(formatIpcError(err))
     }
     setBusy(false)
   }

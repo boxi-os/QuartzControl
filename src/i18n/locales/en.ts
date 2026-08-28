@@ -677,6 +677,17 @@ export default {
     dragHint: 'Drag to reorder',
     updateAvailable: 'Update available',
     savedFlash: 'Saved',
+    maintenanceHeading: 'Maintenance',
+    maintenanceDescription:
+      'Acts on the .quartz/plugins folder, where source-installed plugins are built - not on what the site does. That folder does not belong in the git repository, so a second machine has to rebuild it first.',
+    installFromLock: 'Restore from quartz.lock.json',
+    installFromLockRunning: 'Restoring…',
+    installDone: 'Plugins restored from the lockfile.',
+    prune: 'Remove orphaned plugin folders',
+    pruneRunning: 'Cleaning up…',
+    pruneDone: 'Orphaned plugin folders removed.',
+    pruneConfirm:
+      'Removes every built plugin folder no config entry points at any more. The configuration itself is left untouched. Continue?',
     openRepo: 'Open repository on GitHub',
     showOptions: 'Show options',
     hideOptions: 'Hide options',
@@ -700,7 +711,8 @@ export default {
       position: 'header = top header, left/right = sidebar, beforeBody/afterBody = around the content, footer = footer',
       priority: 'Order within the position — smaller first',
       display: 'all = all devices, mobile-only = mobile only, desktop-only = desktop only',
-      condition: 'Free-text condition, e.g. "not-index"',
+      condition:
+        'Built in: not-index, has-tags, has-backlinks, has-toc. An unknown name is ignored at build time and the element always renders.',
       group: 'Name of a toolbar group, e.g. "toolbar"'
     },
     groupOptionsFields: {

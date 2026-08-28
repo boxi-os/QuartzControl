@@ -221,6 +221,11 @@ export default function PluginsInstalled(): JSX.Element {
   // so without this the config changes with no sign that anything happened.
   const [savedIndex, setSavedIndex] = useState<number | null>(null)
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Which maintenance action is running, so only that one button says so.
+  const [maintenance, setMaintenance] = useState<'install' | 'prune' | null>(null)
+  // Its result is kept apart from `message`, which is rendered in red because everything else
+  // that reaches it is a failure.
+  const [maintenanceNotice, setMaintenanceNotice] = useState<string | null>(null)
   // Search and filter are "where the user was", not a draft - see useStickyState.
   const [query, setQuery] = useStickyState('plugins.query', '')
   const [enabledFilter, setEnabledFilter] = useStickyState<EnabledFilter>('plugins.filter', 'all')
@@ -230,7 +235,7 @@ export default function PluginsInstalled(): JSX.Element {
       setConfig(await window.quartzGui.config.get(project.path))
       setLoadError(null)
     } catch (err) {
-      setLoadError(String(err))
+      setLoadError(formatIpcError(err))
     }
   }
 
@@ -325,6 +330,31 @@ export default function PluginsInstalled(): JSX.Element {
       setBusy(false)
       await reload()
       await reloadFrames()
+    }
+  }
+
+  // `quartz plugin install` and `quartz plugin prune` are the two CLI actions that repair the
+  // .quartz/plugins tree rather than change what the site does: the first rebuilds it from
+  // quartz.lock.json (what a freshly cloned copy of the project needs, since that tree is not
+  // committed), the second drops directories no config entry points at any more. Both were wired
+  // all the way through to the preload bridge and reachable from nowhere in the app.
+  async function runMaintenance(kind: 'install' | 'prune'): Promise<void> {
+    if (kind === 'prune' && !confirm(t('pluginsInstalled.pruneConfirm'))) return
+    setMaintenance(kind)
+    setMessage(null)
+    setMaintenanceNotice(null)
+    try {
+      const result =
+        kind === 'install'
+          ? await window.quartzGui.plugins.installFromLock(project.path)
+          : await window.quartzGui.plugins.prune(project.path)
+      if (result.success) setMaintenanceNotice(t(`pluginsInstalled.${kind}Done`))
+      else setMessage(result.output)
+    } catch (err) {
+      setMessage(formatIpcError(err))
+    } finally {
+      setMaintenance(null)
+      await reload()
     }
   }
 
@@ -582,6 +612,22 @@ export default function PluginsInstalled(): JSX.Element {
           </div>
         </section>
       )}
+
+      <section className="mt-10 border-t border-black/[0.06] pt-5 dark:border-white/10">
+        <h2 className="mb-1 text-sm font-semibold">{t('pluginsInstalled.maintenanceHeading')}</h2>
+        <p className="mb-3 max-w-3xl text-xs text-slate-400">{t('pluginsInstalled.maintenanceDescription')}</p>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="ghost" onClick={() => runMaintenance('install')} disabled={maintenance !== null || busy}>
+            {maintenance === 'install' ? t('pluginsInstalled.installFromLockRunning') : t('pluginsInstalled.installFromLock')}
+          </Button>
+          <Button variant="ghost" onClick={() => runMaintenance('prune')} disabled={maintenance !== null || busy}>
+            {maintenance === 'prune' ? t('pluginsInstalled.pruneRunning') : t('pluginsInstalled.prune')}
+          </Button>
+        </div>
+        {maintenanceNotice && (
+          <p className="mt-3 text-sm text-green-700 dark:text-green-400">{maintenanceNotice}</p>
+        )}
+      </section>
     </div>
   )
 }

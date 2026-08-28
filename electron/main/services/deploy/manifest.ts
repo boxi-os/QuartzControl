@@ -3,7 +3,7 @@ import { existsSync } from 'fs'
 import { readFile, readdir, rename, writeFile } from 'fs/promises'
 import { join, relative } from 'path'
 import type { DeployDiffEntry } from '@shared/ipc-contract'
-import { quartzGuiDir } from '../projectDirs'
+import { quartzGuiDir, quartzGuiPath } from '../projectDirs'
 
 // Path relative to the build directory -> sha256 hex digest: what this app last deployed *to one
 // target*. Per target, not per project - the shared file this replaced meant that after deploying
@@ -13,12 +13,14 @@ import { quartzGuiDir } from '../projectDirs'
 // answer available.
 type Manifest = Record<string, string>
 
+// Read path (see projectDirs' quartzGuiPath): readManifest runs on the Uebersicht and on opening
+// Veroeffentlichen, and quartzGuiDir() would create the directory and its .gitignore entry there.
 function manifestPath(projectPath: string, targetId: string): string {
-  return join(quartzGuiDir(projectPath), `deploy-manifest-${targetId}.json`)
+  return quartzGuiPath(projectPath, `deploy-manifest-${targetId}.json`)
 }
 
 function legacyManifestPath(projectPath: string): string {
-  return join(quartzGuiDir(projectPath), 'deploy-manifest.json')
+  return quartzGuiPath(projectPath, 'deploy-manifest.json')
 }
 
 export async function readManifest(projectPath: string, targetId: string): Promise<Manifest> {
@@ -42,7 +44,7 @@ export async function readManifest(projectPath: string, targetId: string): Promi
 }
 
 async function writeManifest(projectPath: string, targetId: string, manifest: Manifest): Promise<void> {
-  await writeFile(manifestPath(projectPath, targetId), JSON.stringify(manifest, null, 2), 'utf-8')
+  await writeFile(join(quartzGuiDir(projectPath), `deploy-manifest-${targetId}.json`), JSON.stringify(manifest, null, 2), 'utf-8')
 }
 
 async function walkFiles(dir: string, base = dir): Promise<string[]> {

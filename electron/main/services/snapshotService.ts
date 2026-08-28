@@ -12,7 +12,7 @@ import type {
   SnapshotSettings
 } from '@shared/ipc-contract'
 import { runCommand as run } from './runCommand'
-import { quartzGuiDir } from './projectDirs'
+import { quartzGuiDir, quartzGuiPath } from './projectDirs'
 import { withContentSymlinkParked } from './contentSymlink'
 
 // A snapshot store is a git repository of its own, pointed at the project as its work tree:
@@ -67,8 +67,11 @@ function serialize<T>(projectPath: string, operation: () => Promise<T>): Promise
   return next
 }
 
+// quartzGuiPath, not quartzGuiDir: listSnapshots() only looks whether a store exists, and it runs
+// on the Uebersicht of every project - with the creating helper that read left an empty
+// .quartz-gui/ and an edited .gitignore in a project nobody had snapshotted. ensureStore() creates.
 function storePath(projectPath: string): string {
-  return join(quartzGuiDir(projectPath), STORE_DIR)
+  return quartzGuiPath(projectPath, STORE_DIR)
 }
 
 function git(
@@ -119,6 +122,7 @@ async function writeExcludes(projectPath: string, settings: SnapshotSettings): P
 async function ensureStore(projectPath: string): Promise<SnapshotSettings> {
   const store = storePath(projectPath)
   if (!existsSync(join(store, 'HEAD'))) {
+    quartzGuiDir(projectPath) // the one creating call - and what writes the .gitignore rule
     await run('git', ['init', '--bare', '--quiet', store])
     // A bare repo refuses to use a work tree; everything else about "bare" (no checkout of its
     // own, no nested .git directory) is exactly what is wanted here.
@@ -136,7 +140,7 @@ async function stage(projectPath: string, settings: SnapshotSettings): Promise<v
   // derived from it - a diff above all - would be confidently wrong.
   const added = await git(projectPath, ['add', '-A'])
   if (!added.success) throw new Error(`Projektstand konnte nicht erfasst werden:\n${added.output}`)
-  const entries = (await readdir(quartzGuiDir(projectPath))).filter(isSnapshotWorthy).map((name) => `.quartz-gui/${name}`)
+  const entries = (await readdir(quartzGuiPath(projectPath))).filter(isSnapshotWorthy).map((name) => `.quartz-gui/${name}`)
   if (entries.length > 0) await git(projectPath, ['add', '-f', '--', ...entries])
   // An ignore rule only ever governs *untracked* files, so turning the content folder off left it
   // in the index and in every later snapshot - it had been added while the setting was still on.
@@ -167,7 +171,7 @@ export async function getSettings(projectPath: string): Promise<SnapshotSettings
   }
   let stored: { includeContent?: boolean } = {}
   try {
-    stored = JSON.parse(await readFile(join(quartzGuiDir(projectPath), SETTINGS_FILE), 'utf-8')) as {
+    stored = JSON.parse(await readFile(quartzGuiPath(projectPath, SETTINGS_FILE), 'utf-8')) as {
       includeContent?: boolean
     }
   } catch {

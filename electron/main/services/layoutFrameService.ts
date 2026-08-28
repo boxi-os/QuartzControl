@@ -9,7 +9,7 @@ import type {
 } from '@shared/ipc-contract'
 import { DEFAULT_FRAME_BREAKPOINT_WIDTHS, buildFrameCss, migrateGridFrameDefinition } from '@shared/gridFrameCss'
 import * as pluginService from './pluginService'
-import { quartzGuiDir } from './projectDirs'
+import { quartzGuiDir, quartzGuiPath } from './projectDirs'
 
 // Authored frames live inside the project (.quartz-gui/, same convention as
 // themePresetsService.ts/backupService.ts) so they travel with the project, not the app install.
@@ -17,8 +17,12 @@ import { quartzGuiDir } from './projectDirs'
 // into .quartz/plugins/<id> by `quartz plugin add <absolute path>` (verified: local sources are
 // symlinked, not copied, and the plugin name is derived from the source path's basename - see
 // quartz/cli/plugin-git-handlers.js's handlePluginAdd + plugin-data.js's parseGitSource).
+// quartzGuiPath, not quartzGuiDir: the latter creates the directory it is asked for *and* writes
+// the .gitignore entry that goes with it, and listFrames() runs on the Uebersicht of every project
+// - so merely opening one left an empty authored-frames/ and an edited .gitignore behind. The one
+// place that creates it is writeFrameFiles(), whose mkdirSync covers the parent anyway.
 function framesDir(projectPath: string): string {
-  return quartzGuiDir(projectPath, 'authored-frames')
+  return quartzGuiPath(projectPath, 'authored-frames')
 }
 
 // A frame id becomes a directory name under .quartz-gui/authored-frames/ and is also handed to
@@ -38,7 +42,7 @@ const BREAKPOINTS_FILE = 'layout-breakpoints.json'
 // it is handed, so passing a file name through it produced a directory called
 // layout-breakpoints.json and every write after it failed with EISDIR.
 function breakpointsPath(projectPath: string): string {
-  return join(quartzGuiDir(projectPath), BREAKPOINTS_FILE)
+  return quartzGuiPath(projectPath, BREAKPOINTS_FILE)
 }
 
 export async function getBreakpointWidths(projectPath: string): Promise<FrameBreakpointWidths> {
@@ -58,7 +62,7 @@ export async function getBreakpointWidths(projectPath: string): Promise<FrameBre
 // from the UI. No `quartz plugin add` is needed - each frame's directory is already symlinked into
 // .quartz/plugins, so rewriting the files behind the symlink is all it takes.
 export async function saveBreakpointWidths(projectPath: string, widths: FrameBreakpointWidths): Promise<void> {
-  await writeFile(breakpointsPath(projectPath), JSON.stringify(widths, null, 2), 'utf-8')
+  await writeFile(join(quartzGuiDir(projectPath), BREAKPOINTS_FILE), JSON.stringify(widths, null, 2), 'utf-8')
   for (const def of await listFrames(projectPath)) {
     await writeFrameFiles(projectPath, def, widths)
   }
@@ -123,6 +127,7 @@ function generatePackageJson(def: GridFrameDefinition): string {
 
 async function writeFrameFiles(projectPath: string, def: GridFrameDefinition, widths: FrameBreakpointWidths): Promise<void> {
   const dir = frameDir(projectPath, def.id)
+  quartzGuiDir(projectPath, 'authored-frames') // creating: this is the write path
   mkdirSync(join(dir, 'dist'), { recursive: true })
   await Promise.all([
     writeFile(join(dir, 'frame.json'), JSON.stringify(def, null, 2), 'utf-8'),
@@ -133,7 +138,12 @@ async function writeFrameFiles(projectPath: string, def: GridFrameDefinition, wi
 
 export async function listFrames(projectPath: string): Promise<GridFrameDefinition[]> {
   const dir = framesDir(projectPath)
-  const entries = await readdir(dir, { withFileTypes: true })
+  let entries
+  try {
+    entries = await readdir(dir, { withFileTypes: true })
+  } catch {
+    return [] // no frame was ever authored in this project
+  }
   const defs = await Promise.all(
     entries
       .filter((e) => e.isDirectory())

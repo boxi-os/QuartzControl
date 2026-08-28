@@ -2,15 +2,20 @@ import { readFile, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { randomUUID } from 'crypto'
 import type { PublishTarget, SavePublishTargetInput } from '@shared/ipc-contract'
-import { quartzGuiDir } from './projectDirs'
+import { quartzGuiDir, quartzGuiPath } from './projectDirs'
 import { claimLegacyTargets } from './connectionsService'
 
 // Targets live in the project, not in userData: they describe what *this* project publishes and
 // where, they carry no secret (that is the connection's half), and keeping them here means they
 // travel with the project folder and are covered by the existing backups. .quartz-gui/ is already
 // gitignored by projectDirs, so they don't end up in the user's own repo either.
+const FILE = 'publish-targets.json'
+
+// Reading must not create anything: quartzGuiDir() creates the directory it is asked for *and*
+// writes the .gitignore entry that goes with it, so a read path using it left both behind in every
+// project merely opened - and the Uebersicht reads this on mount. Only write() creates.
 function targetsPath(projectPath: string): string {
-  return join(quartzGuiDir(projectPath), 'publish-targets.json')
+  return quartzGuiPath(projectPath, FILE)
 }
 
 async function read(projectPath: string): Promise<PublishTarget[]> {
@@ -22,7 +27,7 @@ async function read(projectPath: string): Promise<PublishTarget[]> {
 }
 
 async function write(projectPath: string, targets: PublishTarget[]): Promise<void> {
-  await writeFile(targetsPath(projectPath), JSON.stringify(targets, null, 2), 'utf-8')
+  await writeFile(join(quartzGuiDir(projectPath), FILE), JSON.stringify(targets, null, 2), 'utf-8')
 }
 
 export async function listTargets(projectPath: string): Promise<PublishTarget[]> {

@@ -109,7 +109,9 @@ export default function Updates(): JSX.Element {
     }
   }
 
-  const outdatedPlugins = (pluginStatuses ?? []).filter((p) => p.state === 'behind')
+  // 'unknown' counts here for the same reason it gets a button of its own: a check that never
+  // reached the remote says nothing about whether the update works.
+  const actionablePlugins = (pluginStatuses ?? []).filter((p) => p.state === 'behind' || p.state === 'unknown')
 
   return (
     <div className="flex flex-col gap-6">
@@ -191,7 +193,7 @@ export default function Updates(): JSX.Element {
       <Card>
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold">{t('updates.plugins.heading')}</h2>
-          <Button variant="ghost" onClick={() => updatePlugin(undefined)} disabled={pluginBusy !== null || outdatedPlugins.length === 0}>
+          <Button variant="ghost" onClick={() => updatePlugin(undefined)} disabled={pluginBusy !== null || actionablePlugins.length === 0}>
             {pluginBusy === '__all__' ? t('common.saving') : t('updates.plugins.updateAll')}
           </Button>
         </div>

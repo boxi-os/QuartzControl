@@ -352,11 +352,13 @@ export interface LogLine {
 
 export type ServerState = 'stopped' | 'starting' | 'running' | 'stopping' | 'error'
 
+// No `watch` here on purpose: `quartz build --serve` sets `argv.watch = true` itself
+// (quartz/cli/handlers.js), so the dev server always watches and a switch offering to turn that
+// off could only ever lie about what the process does.
 export interface ServerOptions {
   port: number
   wsPort: number
   host: string
-  watch: boolean
 }
 
 export interface ServerStatus {
@@ -364,7 +366,13 @@ export interface ServerStatus {
   options?: ServerOptions
   pid?: number
   startedAt?: string
+  /** A failure the OS reported verbatim (a failed spawn), so it is not translatable. */
   error?: string
+  /**
+   * Set when the process died on its own: how it ended, as a number rather than as a sentence, so
+   * the renderer phrases it in the user's language. `null` means it was killed by a signal.
+   */
+  exitCode?: number | null
 }
 
 export interface BuildResult {
@@ -384,6 +392,15 @@ export interface BuildOutputInfo {
   builtAt?: string
   fileCount: number
   sizeBytes: number
+}
+
+// The per-project settings this app keeps for itself, in <project>/.quartz-gui/. Only one so far,
+// but it is one two pages have to agree on: Vorschau & Build writes the build there and
+// Veröffentlichen publishes from it, and when each page kept its own field, building to an export
+// folder and then deploying silently shipped a stale public/ instead.
+export interface ProjectPrefs {
+  /** Where `quartz build` writes. Empty means Quartz's own default, public/ in the project. */
+  outputDir: string
 }
 
 // `topics` and `archived` are what separates a real plugin from the rest of the org: the
@@ -1129,6 +1146,8 @@ export const IPC = {
   buildRun: 'build:run',
   buildLog: 'build:log',
   buildLastOutput: 'build:lastOutput',
+  projectPrefsGet: 'projectPrefs:get',
+  projectPrefsSave: 'projectPrefs:save',
 
   syncRun: 'sync:run',
   syncStatus: 'sync:status',
@@ -1338,6 +1357,10 @@ export interface QuartzGuiApi {
     onLog(cb: (line: LogLine) => void): () => void
     /** What is in the output directory right now - see BuildOutputInfo. Pure read, no build. */
     lastOutput(projectPath: string, outputDir?: string): Promise<BuildOutputInfo>
+  }
+  projectPrefs: {
+    get(projectPath: string): Promise<ProjectPrefs>
+    save(projectPath: string, prefs: ProjectPrefs): Promise<void>
   }
   sync: {
     run(projectPath: string, direction?: 'push' | 'pull' | 'both'): Promise<SyncResult>

@@ -1,4 +1,5 @@
 import { spawn, execFileSync, type ChildProcess } from 'child_process'
+import { createConnection } from 'net'
 import { readdir, stat } from 'fs/promises'
 import { join } from 'path'
 import treeKill from 'tree-kill'
@@ -23,7 +24,7 @@ const lastTerminalStatus = new Map<string, ServerStatus>()
 export const serverEvents = new EventEmitter()
 
 // host is Quartz's --remoteDevHost, not a bind address - leave it empty locally, see BuildServer.tsx
-const DEFAULT_OPTIONS: ServerOptions = { port: 8080, wsPort: 3001, host: '', watch: true }
+const DEFAULT_OPTIONS: ServerOptions = { port: 8080, wsPort: 3001, host: '' }
 
 function emitLog(projectId: string, stream: 'stdout' | 'stderr', text: string): void {
   serverEvents.emit('log', { projectId, stream, text, timestamp: new Date().toISOString() } satisfies LogLine)
@@ -49,7 +50,8 @@ export async function startServer(
 
   const args = ['quartz', 'build', '--serve', '--port', String(options.port), '--wsPort', String(options.wsPort)]
   if (options.host) args.push('--remoteDevHost', options.host)
-  if (options.watch) args.push('--watch')
+  // No --watch: `quartz build --serve` sets argv.watch itself (quartz/cli/handlers.js), so passing
+  // it is at best redundant and offering it as a switch was a control that could not be honoured.
 
   const child = spawn('npx', args, {
     cwd: projectPath,
@@ -61,15 +63,18 @@ export async function startServer(
   emitStatus(projectId)
   if (child.pid) void runningServersStore.record(projectId, { pid: child.pid, port: options.port, startedAt: status.startedAt! })
 
-  let markedRunning = false
-  child.stdout?.on('data', (chunk: Buffer) => {
-    emitLog(projectId, 'stdout', chunk.toString())
-    if (!markedRunning) {
-      markedRunning = true
-      status.state = 'running'
-      emitStatus(projectId)
-    }
+  // "running" has to mean there is something to open at that URL. Quartz prints its first line
+  // (the version banner) while it is still *building*, a second or more before the http server
+  // listens - marking the state on that line made every consumer of it wrong for that window: the
+  // Übersicht's link led nowhere, and the live-preview iframe mounted into a connection refusal and
+  // stayed blank (reproduced in the running app). Probing the port answers the question directly
+  // and, unlike matching the "Started a Quartz server" line, does not depend on its wording.
+  waitForPort(options.port, () => {
+    if (runningServers.get(projectId)?.status !== status || status.state !== 'starting') return
+    status.state = 'running'
+    emitStatus(projectId)
   })
+  child.stdout?.on('data', (chunk: Buffer) => emitLog(projectId, 'stdout', chunk.toString()))
   child.stderr?.on('data', (chunk: Buffer) => emitLog(projectId, 'stderr', chunk.toString()))
   // Without this listener a failed spawn (e.g. npx missing from PATH) makes the ChildProcess
   // emit an unhandled 'error', which EventEmitter rethrows and takes the whole main process
@@ -88,7 +93,9 @@ export async function startServer(
     void runningServersStore.remove(projectId)
     // an explicit stop ends as "stopped"; anything else means the process died on its own
     if (running && !wasStopping) {
-      lastTerminalStatus.set(projectId, { state: 'error', error: `Prozess beendet mit Code ${code}` })
+      // The code, not a sentence about it: the renderer owns every user-facing text, and this
+      // one is shown on two pages in whichever language the user picked.
+      lastTerminalStatus.set(projectId, { state: 'error', exitCode: code })
     } else {
       lastTerminalStatus.delete(projectId)
     }
@@ -96,6 +103,37 @@ export async function startServer(
   })
 
   return status
+}
+
+// Retries a TCP connect to 127.0.0.1:<port> until it succeeds or the deadline passes, then calls
+// back once. 127.0.0.1 regardless of --remoteDevHost: that flag only rewrites the live-reload
+// websocket URL handed to the browser, the server itself always binds locally. Giving up silently
+// is deliberate - a server that never listens ends in the 'exit' handler, which reports the real
+// failure; guessing one here would only replace it with a worse message.
+const PORT_PROBE_TIMEOUT_MS = 120_000
+
+function waitForPort(port: number, onOpen: () => void): void {
+  const deadline = Date.now() + PORT_PROBE_TIMEOUT_MS
+  const attempt = (): void => {
+    let settled = false
+    const socket = createConnection({ port, host: '127.0.0.1' })
+    const retry = (): void => {
+      if (settled) return
+      settled = true
+      socket.destroy()
+      if (Date.now() < deadline) setTimeout(attempt, 250)
+    }
+    socket.setTimeout(1000)
+    socket.once('connect', () => {
+      if (settled) return
+      settled = true
+      socket.destroy()
+      onOpen()
+    })
+    socket.once('error', retry)
+    socket.once('timeout', retry)
+  }
+  attempt()
 }
 
 export function stopServer(projectId: string): Promise<void> {

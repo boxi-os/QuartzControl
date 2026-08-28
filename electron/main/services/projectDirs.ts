@@ -38,6 +38,13 @@ export function quartzGuiDir(projectPath: string, ...sub: string[]): string {
   return dir
 }
 
+// The same path *without* creating anything - for read paths. quartzGuiDir() creates what it is
+// asked for, so using it to locate a file that may not exist yet leaves an empty .quartz-gui/ (and
+// a .gitignore entry) in every project the user merely looks at. Writers call quartzGuiDir().
+export function quartzGuiPath(projectPath: string, ...sub: string[]): string {
+  return join(projectPath, DIR_NAME, ...sub)
+}
+
 // `quartz build`'s own default output dir is "public" (verified against quartz/cli/args.js's
 // BuildArgv). An outputDir may also be absolute - BuildServer's one-off export lets the user pick
 // a folder from the native dialog, which always yields an absolute path. A plain join() would

@@ -72,11 +72,11 @@ export default function Publish(): JSX.Element {
   // kept across a trip to another area (see useStickyState). The diff below deliberately is not:
   // it's a snapshot of the build output and has to be re-taken.
   const [selectedId, setSelectedId] = useStickyState<string | null>('publish.target', null)
-  // Which directory gets published. Empty means quartz's own default, public/. Kept explicit
-  // rather than assumed: BuildServer's one-off export can write somewhere else entirely, and
-  // silently diffing a stale public/ against the server is exactly the kind of wrong that looks
-  // like it worked.
-  const [outputDir, setOutputDir] = useStickyState('publish.outputDir', '')
+  // Which directory gets published. Empty means quartz's own default, public/. Stored per project
+  // (ProjectPrefs) rather than kept in this page, because Vorschau & Build writes the build into
+  // the same directory: when each page had its own field, building to an export folder and then
+  // publishing silently shipped a stale public/ - the kind of wrong that looks like it worked.
+  const [outputDir, setOutputDir] = useState('')
   const [targetDraft, setTargetDraft] = useState<SavePublishTargetInput | null>(null)
   const [connectionDraft, setConnectionDraft] = useState<SaveConnectionInput | null>(null)
   const [diff, setDiff] = useState<DeployDiffEntry[] | null>(null)
@@ -91,6 +91,7 @@ export default function Publish(): JSX.Element {
 
   useEffect(() => {
     window.quartzGui.config.get(project.path).then(setConfig)
+    window.quartzGui.projectPrefs.get(project.path).then((prefs) => setOutputDir(prefs.outputDir))
     reload()
   }, [project.path])
 
@@ -614,10 +615,14 @@ export default function Publish(): JSX.Element {
               <TextInput
                 value={outputDir}
                 onChange={(e) => setOutputDir(e.target.value)}
+                // Written when the value is settled, not per keystroke - same as on Vorschau & Build,
+                // where the other half of this shared setting lives.
+                onBlur={(e) => void window.quartzGui.projectPrefs.save(project.path, { outputDir: e.target.value })}
                 placeholder={t('publish.outputDirPlaceholder')}
                 className="max-w-md"
               />
             </Field>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('publish.outputDirShared')}</p>
           </div>
 
           {(diffAction.error || buildAction.error) && (

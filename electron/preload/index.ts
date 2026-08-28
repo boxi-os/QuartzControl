@@ -14,6 +14,7 @@ import type {
   GridFrameDefinition,
   FrameBreakpointWidths,
   PluginEntry,
+  ProjectPrefs,
   RestoreOptions,
   SaveConnectionInput,
   SnapshotKind,
@@ -202,6 +203,10 @@ const api: QuartzGuiApi = {
     onLog: (cb: (line: LogLine) => void) => onEvent<[LogLine]>(IPC.buildLog, cb),
     lastOutput: (projectPath: string, outputDir?: string) =>
       ipcRenderer.invoke(IPC.buildLastOutput, projectPath, outputDir)
+  },
+  projectPrefs: {
+    get: (projectPath: string) => ipcRenderer.invoke(IPC.projectPrefsGet, projectPath),
+    save: (projectPath: string, prefs: ProjectPrefs) => ipcRenderer.invoke(IPC.projectPrefsSave, projectPath, prefs)
   },
   sync: {
     run: (projectPath: string, direction?: 'push' | 'pull' | 'both') =>

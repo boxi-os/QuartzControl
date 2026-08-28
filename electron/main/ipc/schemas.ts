@@ -407,8 +407,13 @@ export const excludePaths = z.array(z.string().max(4096)).max(100_000)
 export const serverOptions = z.looseObject({
   port: z.number().int().min(1).max(65535),
   wsPort: z.number().int().min(1).max(65535),
-  host: z.string().max(255),
-  watch: z.boolean()
+  host: z.string().max(255)
+})
+
+export const projectPrefs = z.looseObject({
+  // Empty is the meaningful default (Quartz's own public/), so this is a union with '' rather than
+  // an optional field - buildOutputDir itself rejects the empty string.
+  outputDir: z.union([z.literal(''), buildOutputDir])
 })
 
 export const createProjectOptions = z.looseObject({

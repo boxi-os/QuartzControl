@@ -6,6 +6,7 @@ import { IPC, TEMPLATE_PACKAGE_EXTENSION } from '@shared/ipc-contract'
 import type {
   CreateProjectOptions,
   GridFrameDefinition,
+  ProjectPrefs,
   QuartzConfig,
   SaveConnectionInput,
   SavePublishTargetInput,
@@ -34,6 +35,7 @@ import * as githubService from '../services/githubService'
 import * as deployService from '../services/deploy'
 import * as marketplaceService from '../services/marketplaceService'
 import * as buildService from '../services/buildService'
+import * as projectPrefsService from '../services/projectPrefsService'
 import * as syncService from '../services/syncService'
 import * as gitStatusService from '../services/gitStatusService'
 import * as backupService from '../services/backupService'
@@ -354,6 +356,11 @@ export function registerIpcHandlers(): void {
   )
   handle(IPC.buildRun, t([s.uuid, s.absolutePath, s.buildOutputDir.optional()]), (projectId, projectPath, outputDir) =>
     buildService.runBuild(projectId, projectPath, outputDir)
+  )
+
+  handle(IPC.projectPrefsGet, t([s.absolutePath]), (projectPath) => projectPrefsService.getPrefs(projectPath))
+  handle(IPC.projectPrefsSave, t([s.absolutePath, s.projectPrefs]), (projectPath, prefs) =>
+    projectPrefsService.savePrefs(projectPath, prefs as ProjectPrefs)
   )
 
   handle(IPC.syncStatus, t([s.absolutePath]), (projectPath) => gitStatusService.getGitStatus(projectPath))

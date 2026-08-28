@@ -34,6 +34,7 @@ import { useProject } from './ProjectLayout'
 import { Badge, Button, Card, PageHeader } from '../components/ui'
 import { TAB_ICONS } from './navConfig'
 import { formatBytes, formatRelativeTime } from '../utils/format'
+import { serverErrorText } from '../utils/serverStatus'
 
 // Same detection quartz-themes/core convention as Styles/Theme.tsx - the active theme isn't its
 // own config field, it's read off whichever @quartz-themes/* plugin entry is enabled.
@@ -319,7 +320,7 @@ export default function ProjectDashboard(): JSX.Element {
       tone: 'red',
       icon: TAB_ICONS.server,
       title: t('dashboard.attention.serverError'),
-      detail: server.error,
+      detail: serverErrorText(server, t) ?? undefined,
       to: 'server',
       linkLabel: t('projectLayout.tabs.server')
     })
@@ -449,7 +450,7 @@ export default function ProjectDashboard(): JSX.Element {
               </span>
             ) : (
               <span className="text-slate-500 dark:text-slate-400">
-                {server.error ?? t('dashboard.serverIdleHint')}
+                {serverErrorText(server, t) ?? t('dashboard.serverIdleHint')}
               </span>
             )}
           </Facts>

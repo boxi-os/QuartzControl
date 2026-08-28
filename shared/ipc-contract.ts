@@ -1019,6 +1019,47 @@ export interface ProjectOverview extends Project {
 }
 
 /** Versions and storage locations for the Settings page's maintenance section. */
+export interface ToolInfo {
+  name: string
+  /** Absolute path the executable resolved to, or null when it is not on PATH at all. */
+  path: string | null
+  /**
+   * The tool's own `--version` output. Null while `path` is set means the file exists but does
+   * not run - the state a macOS without the Xcode command line tools is in, where /usr/bin/git
+   * is a stub that opens an installer instead of doing anything.
+   */
+  version: string | null
+}
+
+/** How the app's secrets are actually protected, which is not the same question everywhere. */
+export interface SecretStorageInfo {
+  available: boolean
+  /**
+   * Electron's chosen backend. On Linux without a running keyring this is `basic_text`, which
+   * reports as available while encrypting with a hardcoded key - so secrets are effectively
+   * plaintext and the user has to be told. Null where the platform has only one answer.
+   */
+  backend: string | null
+  /** True when the backend is real OS-keychain-backed encryption rather than the text fallback. */
+  secure: boolean
+}
+
+/** What the machine can do, for the start screen to state instead of failing later. */
+export interface EnvironmentInfo {
+  platform: string
+  /**
+   * Where the PATH that finds node/npm came from. 'inherited' means the process already had it
+   * (every terminal start); the other two mean the app had to go looking, which is what a packaged
+   * app launched from the Dock or a desktop launcher needs.
+   */
+  pathSource: 'inherited' | 'login-shell' | 'probed'
+  addedPaths: string[]
+  tools: ToolInfo[]
+  /** True when every tool both exists and runs. */
+  ok: boolean
+  secretStorage: SecretStorageInfo
+}
+
 export interface AppInfo {
   appVersion: string
   electronVersion: string
@@ -1162,6 +1203,7 @@ export const IPC = {
   settingsGet: 'settings:get',
   settingsSave: 'settings:save',
   settingsAppInfo: 'settings:appInfo',
+  settingsEnvironment: 'settings:environment',
   settingsClearThemeDocsCache: 'settings:clearThemeDocsCache',
 
   dialogPickFolder: 'dialog:pickFolder',
@@ -1393,6 +1435,8 @@ export interface QuartzGuiApi {
     /** Always send the whole object - the store overwrites rather than merges. */
     save(settings: Settings): Promise<void>
     appInfo(): Promise<AppInfo>
+    /** Not cached: a user who installs Node because this told them to expects a fresh answer. */
+    environment(): Promise<EnvironmentInfo>
     /** Empties the theme-docs cache; returns how many entries were removed. */
     clearThemeDocsCache(): Promise<number>
   }

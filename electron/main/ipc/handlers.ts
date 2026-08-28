@@ -42,6 +42,7 @@ import * as backupService from '../services/backupService'
 import * as snapshotService from '../services/snapshotService'
 import * as contentService from '../services/contentService'
 import * as createService from '../services/createService'
+import * as environmentService from '../services/environmentService'
 import * as settingsService from '../services/settingsService'
 import * as templatePackageService from '../services/templatePackage'
 import { applyTheme } from '../theme'
@@ -444,6 +445,9 @@ export function registerIpcHandlers(): void {
     if ('theme' in (next as object)) applyTheme((next as Settings).theme)
   })
   handleNoArgs(IPC.settingsAppInfo, () => settingsService.getAppInfo())
+  handleNoArgs(IPC.settingsEnvironment, () =>
+    environmentService.getEnvironmentInfo(connectionsService.getSecretStorageInfo())
+  )
   handleNoArgs(IPC.settingsClearThemeDocsCache, () => styleSettingsSchemaService.clearThemeDocsCache())
 
   handle(IPC.dialogPickFolder, t([s.absolutePath.optional()]), async (defaultPath) => {

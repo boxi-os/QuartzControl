@@ -4,6 +4,7 @@ import { join } from 'path'
 import { registerIpcHandlers } from './ipc/handlers'
 import { killAllServers, detectOrphanedServers, killOrphanedServers } from './services/buildService'
 import { getProject } from './services/projectStore'
+import { ensureToolPath } from './services/environmentService'
 import { resolveMainStrings, type MainStrings } from './i18n'
 import { applyStoredTheme, windowBackgroundColor } from './theme'
 
@@ -161,6 +162,12 @@ async function promptForOrphanedServers(strings: MainStrings): Promise<void> {
 }
 
 app.whenReady().then(async () => {
+  // First, before anything can spawn a command: a packaged app started from the Dock, Finder or a
+  // desktop launcher does not inherit a shell's PATH, so node/npm/npx are not findable and every
+  // build, plugin install and project creation would fail with ENOENT - while the same app
+  // started from a terminal works. Patches process.env.PATH once; a no-op when node is already
+  // findable, which is every `npm run dev`.
+  ensureToolPath()
   if (isMac && app.dock) {
     const iconPath = resolveIconPath()
     if (iconPath) app.dock.setIcon(nativeImage.createFromPath(iconPath))

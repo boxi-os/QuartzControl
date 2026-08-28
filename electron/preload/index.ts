@@ -227,6 +227,7 @@ const api: QuartzGuiApi = {
     get: () => ipcRenderer.invoke(IPC.settingsGet),
     save: (settings: Settings) => ipcRenderer.invoke(IPC.settingsSave, settings),
     appInfo: () => ipcRenderer.invoke(IPC.settingsAppInfo),
+    environment: () => ipcRenderer.invoke(IPC.settingsEnvironment),
     clearThemeDocsCache: () => ipcRenderer.invoke(IPC.settingsClearThemeDocsCache)
   },
   dialog: {

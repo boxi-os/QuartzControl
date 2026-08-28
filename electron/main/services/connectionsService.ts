@@ -3,7 +3,13 @@ import { existsSync, mkdirSync } from 'fs'
 import { readFile, rename, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { randomUUID } from 'crypto'
-import type { Connection, PinnedHostKey, SaveConnectionInput, SshAuthMethod } from '@shared/ipc-contract'
+import type {
+  Connection,
+  PinnedHostKey,
+  SaveConnectionInput,
+  SecretStorageInfo,
+  SshAuthMethod
+} from '@shared/ipc-contract'
 
 // The single credential store. Before the connection/target split there were two - per-project
 // SFTP profiles in deploy-secrets.json and the GitHub token inside settings.json - which meant two
@@ -43,6 +49,22 @@ function legacySecretsPath(): string {
 
 function settingsPath(): string {
   return join(app.getPath('userData'), 'settings.json')
+}
+
+// Whether a secret written here is actually protected - which is not the same question on every
+// platform. On Linux without a running keyring (gnome-keyring, kwallet) Electron falls back to the
+// `basic_text` backend, which encrypts with a hardcoded key and still reports
+// isEncryptionAvailable() === true. Every check in this file trusts that flag, so an SFTP password
+// or the GitHub token would land in connections.json effectively in the clear with nothing saying
+// so. The rest of this app is careful to distinguish "cannot check" from "fine" (see
+// styleService's `unavailable` and updateService's 'unknown'); this is the same distinction for
+// secrets, and the user is the only one who can fix it.
+export function getSecretStorageInfo(): SecretStorageInfo {
+  const available = safeStorage.isEncryptionAvailable()
+  // getSelectedStorageBackend() only exists on Linux; elsewhere the backend is the OS keychain
+  // and there is nothing to choose or to warn about.
+  const backend = process.platform === 'linux' ? safeStorage.getSelectedStorageBackend() : null
+  return { available, backend, secure: available && backend !== 'basic_text' }
 }
 
 function encrypt(secret: string): string | undefined {

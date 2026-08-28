@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { titlebarStripClass } from '../utils/platform'
 import { useNavigate, Link } from 'react-router-dom'
 import { ArrowUpRight, CheckCircle2, FolderSearch, Search, TriangleAlert, Trash2 } from 'lucide-react'
 import type { CreateProjectOptions, EnvironmentInfo, ProjectOverview } from '@shared/ipc-contract'
@@ -83,7 +84,7 @@ export default function Home(): JSX.Element {
 
   return (
     <div className="flex h-screen flex-col">
-      <div className="titlebar-drag h-12 shrink-0" />
+      <div className={titlebarStripClass} />
       {/* Still a centred column, unlike the project pages: this is a launcher, and a start screen
           stretched across a 27" display reads as broken rather than spacious. What the extra width
           buys here is a second column - the projects stay the main thing on the left, and what the

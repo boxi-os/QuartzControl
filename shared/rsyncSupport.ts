@@ -12,8 +12,20 @@ export type RsyncBlockReason =
   | 'key-not-a-file'
   /** A known_hosts line needs the raw key, which cannot be derived from a stored fingerprint. */
   | 'no-pinned-host-key'
+  /**
+   * There is no rsync to spawn. macOS ships openrsync and every Linux has it or can install it;
+   * Windows has neither it nor a shell for the `-e` wrapper script this adapter writes. Without
+   * this the target form would offer rsync there and the adapter would fail at deploy time.
+   */
+  | 'platform-unsupported'
 
-export function rsyncBlockReason(connection: SshConnection): RsyncBlockReason | null {
+/**
+ * `platform` is passed in rather than read here because this rule has to hold on both sides of
+ * the IPC boundary and the renderer has no `process` - it reads window.quartzGui.platform. Keeping
+ * one function with an argument is what stops the two sides from drifting.
+ */
+export function rsyncBlockReason(connection: SshConnection, platform: string): RsyncBlockReason | null {
+  if (platform === 'win32') return 'platform-unsupported'
   if (connection.authMethod === 'password') return 'password-auth'
   if (connection.authMethod === 'privateKey' && !connection.keyPath) return 'key-not-a-file'
   if (!connection.hostKey?.blob) return 'no-pinned-host-key'

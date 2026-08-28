@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Route, Routes, Navigate } from 'react-router-dom'
+import { Route, Routes, Navigate, useNavigate } from 'react-router-dom'
 import { ErrorToasts, RouteErrorBoundary } from './components/ErrorSurface'
 import { useLogStore } from './state/store'
 import Home from './routes/Home'
@@ -20,6 +20,12 @@ import Templates from './routes/Templates'
 export default function App(): JSX.Element {
   const appendServerLog = useLogStore((s) => s.appendServerLog)
   const appendBuildLog = useLogStore((s) => s.appendBuildLog)
+  const navigate = useNavigate()
+
+  // The native menu's Settings item (Cmd+, / Ctrl+,) lives in the main process and cannot reach
+  // the HashRouter on its own. One listener for the app's lifetime, same reasoning as the log
+  // subscriptions below.
+  useEffect(() => window.quartzGui.menu.onNavigate((hashPath) => navigate(hashPath)), [navigate])
 
   // Installed once, for the app's whole lifetime, independent of which page/project is currently
   // shown - a page-local subscription would miss lines emitted while the user is on another tab.

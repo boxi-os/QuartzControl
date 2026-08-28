@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { titlebarStripClass } from '../utils/platform'
 import { NavLink, Outlet, useLocation, useOutletContext, useParams } from 'react-router-dom'
 import { ArrowLeft, type LucideIcon } from 'lucide-react'
 import type { Project } from '@shared/ipc-contract'
@@ -144,7 +145,7 @@ export default function ProjectLayout(): JSX.Element {
   return (
     <div className="flex h-screen">
       <aside className="flex w-60 shrink-0 flex-col border-r border-black/[0.06] bg-black/[0.02] dark:border-white/10 dark:bg-white/[0.03]">
-        <div className="titlebar-drag h-12 shrink-0" />
+        <div className={titlebarStripClass} />
         <div className="px-2 pb-2">
           <NavLink
             to="/"
@@ -207,7 +208,7 @@ export default function ProjectLayout(): JSX.Element {
         </nav>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="titlebar-drag h-12 shrink-0" />
+        <div className={titlebarStripClass} />
         {/* One place decides how wide a page may get. Pages themselves set no max width at all -
             they fill whatever this gives them and lay their own content out responsively - so the
             window's width is actually used instead of every page picking its own arbitrary cap.

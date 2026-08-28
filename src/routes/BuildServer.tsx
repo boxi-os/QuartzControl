@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { isInsideDirectory } from '../utils/platform'
 import {
   Check,
   ChevronDown,
@@ -142,7 +143,7 @@ export default function BuildServer(): JSX.Element {
   const embeddable = running && !liveOptions.host
   const errorText = serverErrorText(status, t)
   const previewWidth = previewWidthPx(previewMode, breakpoints)
-  const outputInProject = output ? output.dir === project.path || output.dir.startsWith(`${project.path}/`) : false
+  const outputInProject = output ? isInsideDirectory(project.path, output.dir) : false
 
   async function start(): Promise<void> {
     setStatus(await window.quartzGui.server.start(project.id, project.path, options))

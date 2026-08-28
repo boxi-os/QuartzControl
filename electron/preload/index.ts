@@ -34,6 +34,7 @@ function onEvent<Args extends unknown[]>(channel: string, cb: (...args: Args) =>
 }
 
 const api: QuartzGuiApi = {
+  platform: process.platform,
   projects: {
     list: () => ipcRenderer.invoke(IPC.projectList),
     overview: () => ipcRenderer.invoke(IPC.projectOverview),
@@ -236,6 +237,13 @@ const api: QuartzGuiApi = {
     openPath: (path: string) => ipcRenderer.invoke(IPC.dialogOpenPath, path),
     revealUserData: () => ipcRenderer.invoke(IPC.dialogRevealUserData),
     openExternal: (url: string) => ipcRenderer.invoke(IPC.dialogOpenExternal, url)
+  },
+  menu: {
+    onNavigate: (cb: (hashPath: string) => void) => {
+      const listener = (_e: unknown, hashPath: string): void => cb(hashPath)
+      ipcRenderer.on(IPC.appNavigate, listener)
+      return () => ipcRenderer.removeListener(IPC.appNavigate, listener)
+    }
   }
 }
 

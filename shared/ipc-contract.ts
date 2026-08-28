@@ -1208,7 +1208,10 @@ export const IPC = {
 
   dialogPickFolder: 'dialog:pickFolder',
   dialogRevealUserData: 'dialog:revealUserData',
-  dialogOpenExternal: 'dialog:openExternal'
+  dialogOpenExternal: 'dialog:openExternal',
+
+  /** main → renderer: a menu item asking the HashRouter to go somewhere. */
+  appNavigate: 'app:navigate'
 } as const
 
 export interface Settings {
@@ -1244,6 +1247,13 @@ export interface CreateProjectResult {
 
 // The renderer-facing API exposed on window.quartzGui by the preload script.
 export interface QuartzGuiApi {
+  /**
+   * process.platform, read straight off the preload rather than fetched over IPC: the renderer
+   * needs it during the very first render (the title-bar drag strip only exists on macOS, where
+   * the traffic lights are inset over the app's own header), and an async answer would paint the
+   * wrong layout first.
+   */
+  platform: string
   projects: {
     list(): Promise<Project[]>
     /** The list plus what the launcher shows per row. Local reads only - see ProjectOverview. */
@@ -1449,5 +1459,13 @@ export interface QuartzGuiApi {
     revealUserData(): Promise<void>
     /** Opens an https URL in the default browser. Refused for anything else. */
     openExternal(url: string): Promise<void>
+  }
+  menu: {
+    /**
+     * Fires when a native menu item wants the renderer to navigate (Settings, today). The menu is
+     * built in the main process and the routes live in a HashRouter, so this event is the only way
+     * across. App.tsx installs the single listener for the app's lifetime.
+     */
+    onNavigate(cb: (hashPath: string) => void): () => void
   }
 }

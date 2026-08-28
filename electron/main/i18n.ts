@@ -6,6 +6,13 @@ export interface MainStrings {
   menuEdit: string
   menuView: string
   menuWindow: string
+  menuHelp: string
+  menuSettings: string
+  menuQuartzDocs: string
+  menuPluginCatalog: string
+  menuDataFolder: string
+  menuAbout: string
+  aboutDetail: string
   orphanTitle: string
   orphanMessage: string
   orphanQuit: string
@@ -22,6 +29,13 @@ const STRINGS: Record<'de' | 'en', MainStrings> = {
     menuEdit: 'Bearbeiten',
     menuView: 'Ansicht',
     menuWindow: 'Fenster',
+    menuHelp: 'Hilfe',
+    menuSettings: 'Einstellungen…',
+    menuQuartzDocs: 'Quartz-Dokumentation',
+    menuPluginCatalog: 'Plugin-Katalog',
+    menuDataFolder: 'Datenordner von QuartzControl öffnen',
+    menuAbout: 'Über QuartzControl',
+    aboutDetail: 'Verwaltung für Quartz-Websites',
     orphanTitle: 'Laufende Server gefunden',
     orphanMessage: 'Von einer vorherigen Sitzung laufen noch Dev-Server im Hintergrund:',
     orphanQuit: 'Beenden',
@@ -32,6 +46,13 @@ const STRINGS: Record<'de' | 'en', MainStrings> = {
     menuEdit: 'Edit',
     menuView: 'View',
     menuWindow: 'Window',
+    menuHelp: 'Help',
+    menuSettings: 'Settings…',
+    menuQuartzDocs: 'Quartz documentation',
+    menuPluginCatalog: 'Plugin catalog',
+    menuDataFolder: "Open QuartzControl's data folder",
+    menuAbout: 'About QuartzControl',
+    aboutDetail: 'Manage Quartz websites',
     orphanTitle: 'Running servers found',
     orphanMessage: 'Dev servers from a previous session are still running in the background:',
     orphanQuit: 'Quit',

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { titlebarStripClass } from '../utils/platform'
 import { Link } from 'react-router-dom'
 import { Database, Key, Monitor, Moon, FolderOpen, Plug, Sun } from 'lucide-react'
 import type { AppInfo, Connection, GithubAccount, SaveConnectionInput, Settings as AppSettings } from '@shared/ipc-contract'
@@ -40,7 +41,7 @@ export default function Settings(): JSX.Element {
 
   return (
     <div className="flex h-screen flex-col">
-      <div className="titlebar-drag h-12 shrink-0" />
+      <div className={titlebarStripClass} />
       <div className="mx-auto w-full max-w-5xl flex-1 overflow-y-auto px-6 pb-12">
         <Link to="/" className="text-[13px] text-slate-500 hover:text-slate-900 dark:hover:text-white">
           ← {t('common.back')}

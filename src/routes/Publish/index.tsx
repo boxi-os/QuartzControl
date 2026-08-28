@@ -223,7 +223,7 @@ export default function Publish(): JSX.Element {
   const rsyncBlocker =
     targetDraft?.destination.type === 'sftp'
       ? draftConnection?.kind === 'ssh'
-        ? rsyncBlockReason(draftConnection)
+        ? rsyncBlockReason(draftConnection, window.quartzGui.platform)
         : 'no-connection'
       : null
 
@@ -479,7 +479,7 @@ export default function Publish(): JSX.Element {
                 onChange={(e) => {
                   const connectionId = e.target.value || undefined
                   const picked = connections.find((c) => c.id === connectionId)
-                  const blocked = picked?.kind === 'ssh' ? !!rsyncBlockReason(picked) : true
+                  const blocked = picked?.kind === 'ssh' ? !!rsyncBlockReason(picked, window.quartzGui.platform) : true
                   setTargetDraft({
                     ...targetDraft,
                     connectionId,

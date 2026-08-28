@@ -24,7 +24,8 @@ const BLOCKER_MESSAGES: Record<RsyncBlockReason, string> = {
   'key-not-a-file':
     'Für rsync muss der private Schlüssel als Datei hinterlegt sein; ein eingefügter Schlüsseltext reicht nicht, weil ssh eine Datei braucht.',
   'no-pinned-host-key':
-    'Der Host-Key dieses Servers ist noch nicht vollständig hinterlegt. Bitte das Ziel einmal über SFTP veröffentlichen - dabei wird der Schlüssel bestätigt und gespeichert - und danach auf rsync umstellen.'
+    'Der Host-Key dieses Servers ist noch nicht vollständig hinterlegt. Bitte das Ziel einmal über SFTP veröffentlichen - dabei wird der Schlüssel bestätigt und gespeichert - und danach auf rsync umstellen.',
+  'platform-unsupported': 'rsync steht auf diesem Betriebssystem nicht zur Verfügung. Bitte SFTP verwenden.'
 }
 
 // "host key-type base64" - with the bracketed form ssh itself uses whenever the port is not 22.
@@ -149,7 +150,7 @@ function runRsync(args: string[], onEntry?: (entry: DeployDiffEntry) => void): P
 async function resolveConnection(ctx: DeployContext): Promise<SshConnection> {
   const connection = ctx.target.connectionId ? await connectionsService.getConnection(ctx.target.connectionId) : null
   if (!connection || connection.kind !== 'ssh') throw new Error('Für dieses Ziel ist kein SSH-Zugang hinterlegt.')
-  const blocker = rsyncBlockReason(connection)
+  const blocker = rsyncBlockReason(connection, process.platform)
   if (blocker) throw new Error(BLOCKER_MESSAGES[blocker])
   return connection
 }

@@ -1161,7 +1161,9 @@ export default {
       'key-not-a-file':
         'rsync needs the private key as a file; a key pasted here is not enough. Switch the credential to a key file.',
       'no-pinned-host-key':
-        'rsync needs a confirmed host key. Publish once over SFTP - the fingerprint is asked for and stored - then rsync can be selected.'
+        'rsync needs a confirmed host key. Publish once over SFTP - the fingerprint is asked for and stored - then rsync can be selected.',
+      'platform-unsupported':
+        'rsync is not available on this operating system. SFTP transfers the same files, just without asking the server what it has.'
     },
     webhookNoUrl: 'no URL stored',
     webhookExplainer:

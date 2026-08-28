@@ -80,7 +80,7 @@ export default {
       layout: 'Legt fest, welche Bausteine (z. B. Suche, Inhaltsverzeichnis, Navigation) wo auf der Seite erscheinen.',
       styles:
         'Alles zum Aussehen an einem Ort: Basisfarben und Schriften, Community-Themes, CSS-Variablen und eigenes CSS — in genau der Reihenfolge, in der sie sich gegenseitig überschreiben.',
-      templates: 'Deine Gestaltung — Layout, Farben, Plugins, Schriften — als wiederverwendbares Paket exportieren oder in ein anderes Projekt importieren.',
+      templates: 'Deine Gestaltung als eine Datei: Farben, Theme, CSS, Schriften, Layout, Frames, Plugins und Übersetzungen — exportieren, weitergeben, in ein anderes Projekt einspielen.',
       plugins: 'Erweitert Quartz um zusätzliche Funktionen — von Volltextsuche bis Kommentaren.',
       updates:
         'Bringt den Quartz-Kern und die installierten Plugins auf den neuesten Stand. Vor jedem Kern-Update wird automatisch ein wiederherstellbarer Snapshot der versionierten Dateien angelegt.',
@@ -1098,28 +1098,151 @@ export default {
   },
   templates: {
     title: 'Vorlagen',
-    description: 'Exportiert Layout, Farben, Plugins, Frames, Styles und Schriften als wiederverwendbares Template-Paket — auch teilweise.',
-    exportHeading: 'Exportieren',
-    nameLabel: 'Name',
-    categoriesHeading: 'Enthaltene Kategorien',
-    categories: {
-      layout: 'Layout',
-      colors: 'Farben (inkl. CSS-Variablen)',
-      plugins: 'Plugins',
-      frames: 'Eigene Frames',
-      styles: 'Styles (custom.scss)',
-      fonts: 'Schriften'
+    description:
+      'Bündelt die Gestaltung dieses Projekts in einer Datei: Farben, Theme, CSS, Schriften, Layout, Frames, Plugins und Übersetzungen — ganz oder in Teilen. Nach dem Import in ein anderes Projekt ist alles so eingestellt wie hier.',
+    exportHeading: 'Vorlage erstellen',
+    exportHint:
+      'Es wird eine einzelne .qtpl-Datei geschrieben, die du weitergeben kannst. Ausgewählt ist alles, was dieses Projekt hat; was fehlt, taucht gar nicht erst auf.',
+    nameLabel: 'Name der Vorlage',
+    descriptionLabel: 'Beschreibung (optional)',
+    descriptionPlaceholder: 'Wofür ist diese Vorlage gedacht?',
+    partsHeading: 'Inhalt',
+    nothingToExport: 'In diesem Projekt ist noch nichts, was sich als Vorlage sichern ließe.',
+    selectedCount: '{{count}} von {{total}} Bausteinen',
+    exportButton: 'Vorlage speichern…',
+    exporting: 'Speichere…',
+    exportSuccess: 'Gespeichert ({{size}}): {{path}}',
+    exportCancelled: 'Abgebrochen.',
+    scopeChanged: 'Nur deine Änderungen ({{count}})',
+    scopeNoChanges: 'keine Änderungen erkannt',
+    scopeAll: 'Alle Texte ({{count}})',
+    baselineHint:
+      'Für eine Sprache lässt sich nicht feststellen, was du geändert hast — die Vergleichsbasis entsteht erst, wenn du einen Text in dieser App bearbeitest. Nimm „Alle Texte“, wenn sie dabei sein soll.',
+    baselineHint_other:
+      'Für {{count}} Sprachen lässt sich nicht feststellen, was du geändert hast — die Vergleichsbasis entsteht erst, wenn du einen Text in dieser App bearbeitest. Nimm „Alle Texte“, wenn eine davon dabei sein soll.',
+    importHeading: 'Vorlage anwenden',
+    importHint:
+      'Vorher wird automatisch ein Snapshot angelegt, der Import lässt sich also über „Backups“ komplett zurücknehmen.',
+    pickPackage: 'Vorlage wählen…',
+    previewError: 'Das ist keine lesbare Vorlage (keine manifest.json gefunden).',
+    legacyBadge: 'Altes Format',
+    packageOrigin: 'Erstellt am {{date}} aus dem Projekt „{{project}}“',
+    unknownProject: 'unbekannt',
+    unknownParts:
+      'Diese Vorlage enthält Bausteine, die diese Version noch nicht kennt ({{parts}}) — sie werden übersprungen.',
+    strategyHeading: 'Bei Konflikten',
+    strategyPackage: 'Vorlage gewinnt',
+    strategyProject: 'Projekt gewinnt',
+    strategyPackageHint: 'Was dieses Projekt schon hat, wird durch die Vorlage ersetzt.',
+    strategyProjectHint: 'Was dieses Projekt schon hat, bleibt; nur Fehlendes kommt hinzu.',
+    planAdditions: '{{count}} neu',
+    planReplaced: '{{count}} wird ersetzt',
+    planKept: '{{count}} bleibt unverändert',
+    planNoChange: 'ändert nichts',
+    willInstall: 'Wird nachinstalliert: {{packages}}',
+    importButton: 'Vorlage anwenden',
+    importing: 'Wird angewendet…',
+    importPreparing: 'Snapshot wird angelegt…',
+    confirmOverwrite:
+      '{{count}} Baustein(e) anwenden? Vorhandenes in diesem Projekt wird dabei durch die Vorlage ersetzt. Vorher wird ein Snapshot angelegt.',
+    confirmMerge: '{{count}} Baustein(e) anwenden? Vorhandenes in diesem Projekt bleibt unverändert.',
+    importSuccessNoWarnings: 'Fertig — alles übernommen, nichts blieb offen.',
+    parts: {
+      appearance: {
+        label: 'Farben & Schriften',
+        description: 'Die Basisfarben für hell und dunkel, die drei Schriftrollen und woher die Schriftdateien kommen.'
+      },
+      theme: {
+        label: 'Community-Theme',
+        description: 'Das gewählte Theme mit allen seinen Einstellungen. Das npm-Paket wird beim Import mitinstalliert.'
+      },
+      cssVariables: {
+        label: 'CSS-Variablen',
+        description: 'Deine eigenen Werte für einzelne CSS-Variablen, getrennt nach hell und dunkel.'
+      },
+      styles: {
+        label: 'Eigenes CSS',
+        description: 'custom.scss und alle Stylesheets, die du angelegt oder importiert hast — samt ihrer Ladereihenfolge.'
+      },
+      fonts: {
+        label: 'Schriftdateien',
+        description: 'Die selbst mitgebrachten Schriftdateien und die @font-face-Regeln, die auf sie zeigen.'
+      },
+      layout: {
+        label: 'Layout',
+        description: 'Welcher Baustein wo erscheint, pro Seitentyp — und ab welcher Breite umgebrochen wird.'
+      },
+      frames: {
+        label: 'Eigene Frames',
+        description: 'Selbst gebaute Seitenraster. Werden im Zielprojekt neu registriert, nicht bloß kopiert.'
+      },
+      plugins: {
+        label: 'Plugins',
+        description: 'Alle Plugin-Einträge mit ihren Optionen, ihrer Reihenfolge und ihrer Position.'
+      },
+      translations: {
+        label: 'Übersetzungen',
+        description: 'Die Texte, die du in Quartz’ Sprachdateien geändert hast.'
+      },
+      presets: {
+        label: 'Theme-Presets',
+        description: 'Deine gespeicherten Theme-Zusammenstellungen.'
+      }
     },
-    pickDestDir: 'Zielordner wählen…',
-    exportButton: 'Paket exportieren',
-    exportSuccess: 'Paket exportiert nach: {{path}}',
-    importHeading: 'Importieren',
-    pickSourceDir: 'Paket-Ordner wählen…',
-    previewError: 'Kein gültiges Template-Paket in diesem Ordner gefunden (keine manifest.json).',
-    previewHeading: 'Paket: {{name}} — verfügbare Kategorien ankreuzbar, fehlende sind ausgegraut.',
-    importButton: 'Ausgewählte Kategorien importieren',
-    confirmImport: '{{count}} Kategorie(n) wirklich importieren? Vorhandene Plugins/Frames/Dateien werden dabei übersprungen, nicht überschrieben.',
-    importSuccessNoWarnings: 'Import abgeschlossen, keine Konflikte.'
+    stats: {
+      colors: '{{count}} Farbe',
+      colors_other: '{{count}} Farben',
+      fonts: '{{count}} Schrift',
+      fonts_other: '{{count}} Schriften',
+      files: '{{count}} Datei',
+      files_other: '{{count}} Dateien',
+      variables: '{{count}} Variable',
+      variables_other: '{{count}} Variablen',
+      styleSettings: '{{count}} Einstellung',
+      styleSettings_other: '{{count}} Einstellungen',
+      groups: '{{count}} Gruppe',
+      groups_other: '{{count}} Gruppen',
+      pageTypes: '{{count}} Seitentyp',
+      pageTypes_other: '{{count}} Seitentypen',
+      frames: '{{count}} Frame',
+      frames_other: '{{count}} Frames',
+      plugins: '{{count}} Plugin',
+      plugins_other: '{{count}} Plugins',
+      active: '{{count}} aktiv',
+      languages: '{{count}} Sprache',
+      languages_other: '{{count}} Sprachen',
+      entries: '{{count}} Text',
+      entries_other: '{{count}} Texte',
+      presets: '{{count}} Preset',
+      presets_other: '{{count}} Presets'
+    },
+    warnings: {
+      unknown: '{{count}}× {{kind}}',
+      appearanceSkipped: 'Farben & Schriften blieben unverändert.',
+      themeSkipped: 'Das vorhandene Theme blieb unverändert.',
+      layoutSkipped: 'Layout und Breakpoints blieben unverändert.',
+      themeInstallFailed: 'Das Theme-Paket ließ sich nicht installieren: {{detail}}',
+      pluginInstallFailed: 'Nicht installierbar: {{detail}}',
+      pluginSkipped: '{{count}} vorhandenes Plugin blieb unverändert.',
+      pluginSkipped_other: '{{count}} vorhandene Plugins blieben unverändert.',
+      pluginUnsupported: '{{count}} Plugin hat eine Quellenform, die nicht übertragbar ist.',
+      pluginUnsupported_other: '{{count}} Plugins haben eine Quellenform, die nicht übertragbar ist.',
+      frameSkipped: '{{count}} vorhandener Frame blieb unverändert.',
+      frameSkipped_other: '{{count}} vorhandene Frames blieben unverändert.',
+      frameFailed: 'Frame konnte nicht angelegt werden: {{detail}}',
+      styleFileSkipped: '{{count}} vorhandene Stylesheet-Datei blieb unverändert.',
+      styleFileSkipped_other: '{{count}} vorhandene Stylesheet-Dateien blieben unverändert.',
+      fontSkipped: '{{count}} gleichnamige Schriftdatei mit anderem Inhalt blieb unverändert.',
+      fontSkipped_other: '{{count}} gleichnamige Schriftdateien mit anderem Inhalt blieben unverändert.',
+      presetSkipped: '{{count}} vorhandenes Preset blieb unverändert.',
+      presetSkipped_other: '{{count}} vorhandene Presets blieben unverändert.',
+      missingKey: '{{count}} Text gibt es in diesem Quartz-Stand nicht mehr.',
+      missingKey_other: '{{count}} Texte gibt es in diesem Quartz-Stand nicht mehr.',
+      translationFailed: 'Text nicht schreibbar: {{detail}}',
+      partUnreadable: 'Ein Baustein war nicht lesbar: {{detail}}',
+      partFailed: 'Ein Baustein ist fehlgeschlagen: {{detail}}',
+      packageUnreadable: 'Die Vorlage ließ sich nicht lesen.'
+    }
   },
   pluginsMarketplace: {
     searchPlaceholder: 'Plugins durchsuchen…',

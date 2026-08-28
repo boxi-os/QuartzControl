@@ -9,11 +9,19 @@ function runQuartzCli(projectPath: string, args: string[]): Promise<PluginAction
   return runCommand('npx', ['quartz', ...args], projectPath)
 }
 
+// The CLI call on its own, without a snapshot. Split out for the template-package import, which
+// takes one snapshot for the whole import and would otherwise produce one per plugin - a package
+// carrying 48 plugin entries would leave 48 snapshots behind, and pluginChange deliberately does
+// not coalesce (see snapshotService).
+export function installPluginSource(projectPath: string, source: string): Promise<PluginActionResult> {
+  return runQuartzCli(projectPath, ['plugin', 'add', source])
+}
+
 // Installing or removing a plugin rewrites quartz.lock.json and the .quartz/ tree, and can change
 // quartz.config.yaml - none of which the old backup mechanism ever covered.
 export async function addPlugin(projectPath: string, source: string): Promise<PluginActionResult> {
   await createSnapshot(projectPath, 'pluginChange', source)
-  return runQuartzCli(projectPath, ['plugin', 'add', source])
+  return installPluginSource(projectPath, source)
 }
 
 export async function removePlugin(projectPath: string, name: string): Promise<PluginActionResult> {

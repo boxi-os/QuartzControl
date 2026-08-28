@@ -167,7 +167,25 @@ export const contentStrategy = z.enum(['copy', 'symlink'])
 export const syncDirection = z.enum(['push', 'pull', 'both'])
 export const layoutPosition = z.enum(['header', 'left', 'right', 'beforeBody', 'afterBody', 'footer'])
 export const frameSlot = z.enum([...layoutPosition.options, 'pageBody'])
-export const templatePackageCategory = z.enum(['layout', 'colors', 'plugins', 'frames', 'styles', 'fonts'])
+export const templatePartId = z.enum([
+  'appearance',
+  'cssVariables',
+  'theme',
+  'styles',
+  'fonts',
+  'layout',
+  'frames',
+  'plugins',
+  'translations',
+  'presets'
+])
+export const templateConflictStrategy = z.enum(['packageWins', 'projectWins'])
+export const templateExportOptions = z.object({
+  name: z.string().min(1).max(200),
+  description: z.string().max(2000).optional(),
+  parts: z.array(templatePartId).max(templatePartId.options.length),
+  translationScope: z.enum(['changed', 'all'])
+})
 
 // ── payloads ────────────────────────────────────────────────────────────────
 

@@ -20,7 +20,10 @@ import type {
   SavePublishTargetInput,
   DeployProgressEvent,
   CssVariableOverride,
-  TemplatePackageCategory
+  TemplateConflictStrategy,
+  TemplateExportOptions,
+  TemplateImportProgress,
+  TemplatePartId
 } from '@shared/ipc-contract'
 
 function onEvent<Args extends unknown[]>(channel: string, cb: (...args: Args) => void): () => void {
@@ -153,11 +156,15 @@ const api: QuartzGuiApi = {
     onProgress: (cb: (event: DeployProgressEvent) => void) => onEvent<[DeployProgressEvent]>(IPC.deployProgress, cb)
   },
   templatePackage: {
-    export: (projectPath: string, destDir: string, name: string, categories: TemplatePackageCategory[]) =>
-      ipcRenderer.invoke(IPC.templatePackageExport, projectPath, destDir, name, categories),
-    preview: (sourceDir: string) => ipcRenderer.invoke(IPC.templatePackagePreview, sourceDir),
-    import: (projectPath: string, sourceDir: string, categories: TemplatePackageCategory[]) =>
-      ipcRenderer.invoke(IPC.templatePackageImport, projectPath, sourceDir, categories)
+    inspect: (projectPath: string) => ipcRenderer.invoke(IPC.templatePackageInspect, projectPath),
+    pick: () => ipcRenderer.invoke(IPC.templatePackagePick),
+    export: (projectPath: string, options: TemplateExportOptions) =>
+      ipcRenderer.invoke(IPC.templatePackageExport, projectPath, options),
+    plan: (projectPath: string, packagePath: string) => ipcRenderer.invoke(IPC.templatePackagePlan, projectPath, packagePath),
+    import: (projectPath: string, packagePath: string, parts: TemplatePartId[], strategy: TemplateConflictStrategy) =>
+      ipcRenderer.invoke(IPC.templatePackageImport, projectPath, packagePath, parts, strategy),
+    onProgress: (cb: (progress: TemplateImportProgress) => void) =>
+      onEvent<[TemplateImportProgress]>(IPC.templatePackageProgress, cb)
   },
   themeMarketplace: {
     list: () => ipcRenderer.invoke(IPC.themeMarketplaceList),

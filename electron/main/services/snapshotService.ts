@@ -36,11 +36,13 @@ const SETTINGS_FILE = 'snapshot-settings.json'
 const NUL = '\u0000'
 const COALESCE_WINDOW = 15 * 60 * 1000
 
-// Only the kinds that come from frequent, small saves. A core update, a plugin change, a content
-// switch and a restore are each a deliberate, infrequent act that deserves its own point to go
-// back to - collapsing two core updates ten minutes apart into one would lose the state between
-// them, which is the opposite of what a snapshot is for.
-const COALESCING_KINDS = new Set<SnapshotKind>(['configChange', 'styleChange'])
+// Only the kinds that come from frequent, small saves - which is one kind, config saves. A core
+// update, a plugin change, a content switch, a restore and a template import are each a
+// deliberate, infrequent act that deserves its own point to go back to: collapsing two core
+// updates (or two template imports) ten minutes apart into one would lose the state between them,
+// which is the opposite of what a snapshot is for. 'styleChange' used to be in this set even
+// though its only caller is the template import, which is precisely a one-shot act.
+const COALESCING_KINDS = new Set<SnapshotKind>(['configChange'])
 
 // Every operation below shares one git index, and git guards that index with an index.lock that
 // a second process cannot take: measured, six concurrent `git add -A` runs leave five failing with

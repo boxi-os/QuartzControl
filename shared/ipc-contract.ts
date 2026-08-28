@@ -826,40 +826,153 @@ export interface DeployResult {
   output: string
 }
 
-// The six independent slices a Template-Paket can carry - each maps to one export function's
-// output file(s) in templatePackageService.ts (layout.json/colors.json/plugins.json/frames.json/
-// custom.scss+imported/*/fonts/*) and one checkbox in the Templates route. Import (Phase 3c) can
-// select any subset independently of what was exported, driven by which categories the source
-// package's manifest.json actually contains.
-export type TemplatePackageCategory = 'layout' | 'colors' | 'plugins' | 'frames' | 'styles' | 'fonts'
+/**
+ * The independent slices a Vorlagen-Paket can carry. Each one is a *self-contained* piece of the
+ * project's appearance: it owns everything needed to reproduce itself, so any subset can be
+ * exported and any subset of that imported without a second part having to be selected too.
+ *
+ * That is why the list is finer-grained than the six categories it replaced. Three splits carry
+ * their reasoning:
+ *  - `theme` owns the whole `@quartz-themes/core` plugin entry (its `theme`/`mode`/`styleSettings`
+ *    options *are* the community theme) plus the `@quartz-themes/<id>` npm package, which the old
+ *    `plugins` category never installed - so a package with a theme built nowhere but the machine
+ *    it was made on. `plugins` therefore excludes that entry.
+ *  - `plugins` also excludes authored frames. Their config entry's `source` is an absolute path
+ *    under the *exporting* machine's `.quartz-gui/authored-frames/`, which is meaningless on
+ *    another computer; `frames` re-registers them from their definitions instead.
+ *  - custom.scss is split along its own managed blocks: `cssVariables` owns the `css-vars` block,
+ *    `fonts` owns the `fonts` block (so the @font-face rules travel with the files they point at),
+ *    and `styles` owns the rest plus the `custom/`+`imported/` files and their load order.
+ *
+ * Adding a slice later is additive: a new id here, one entry in the main service's part registry,
+ * one label. An older app reading a newer package reports the unknown ids rather than importing a
+ * silent half (see TemplatePackagePlan.unknownParts).
+ */
+export type TemplatePartId =
+  | 'appearance'
+  | 'cssVariables'
+  | 'theme'
+  | 'styles'
+  | 'fonts'
+  | 'layout'
+  | 'frames'
+  | 'plugins'
+  | 'translations'
+  | 'presets'
 
-// Written as manifest.json at the root of an exported package folder. `stats` are best-effort
-// counts shown in the import preview before committing to anything - absent for categories that
-// weren't exported.
-export interface TemplatePackageManifest {
+// Export order is also import order, and that is load-bearing: frames and plugins mutate
+// quartz.config.yaml out-of-band through the Quartz CLI, so they have to run before the parts that
+// write the config from an in-memory copy, and the three parts that write custom.scss run last,
+// one after another, each re-reading the file (see CLAUDE.md's reloadScss rule).
+export const TEMPLATE_PART_IDS: readonly TemplatePartId[] = [
+  'frames',
+  'theme',
+  'plugins',
+  'appearance',
+  'layout',
+  'presets',
+  'translations',
+  'styles',
+  'fonts',
+  'cssVariables'
+] as const
+
+// An npm package a part needs in the target project. `version` is what was installed at export
+// time and is informational only - the import installs the package by name so the target resolves
+// its own compatible version rather than being pinned to the exporter's lockfile.
+export interface TemplatePackageDependency {
   name: string
+  version?: string
+}
+
+// Per-part counts shown in the export result and the import preview. Deliberately an open record
+// rather than a fixed shape: what is worth counting differs per part (files, entries, languages),
+// and a future part should not need a contract change to report its own number.
+export interface TemplatePartSummary {
+  id: TemplatePartId
+  stats: Record<string, number>
+  requires: TemplatePackageDependency[]
+}
+
+// Written as manifest.json at the root of the package. `formatVersion` is what lets an older app
+// say "dieses Paket ist neuer" instead of importing whatever it happens to recognise.
+export interface TemplatePackageManifest {
+  formatVersion: number
+  name: string
+  description?: string
   createdAt: string
-  categories: TemplatePackageCategory[]
-  stats: {
-    pluginCount?: number
-    frameCount?: number
-    fontCount?: number
-  }
+  createdBy: { app: string; appVersion: string }
+  // Provenance, shown in the preview so the receiving user can tell where a package came from.
+  source: { projectName?: string; quartzHead?: string }
+  parts: TemplatePartSummary[]
 }
 
-// Returned by previewPackage() so the Import UI can show what a chosen source folder actually
-// contains before the user picks which categories to import - null if the folder has no readable
-// manifest.json (not a Template-Paket, or corrupted).
-export interface TemplatePackagePreview {
+// The file extension a package is written with. It is a ZIP inside - anyone can open it in Finder
+// or Explorer to see what a template contains - but it gets its own extension so a template is not
+// mistaken for an archive of something else, and so the open dialog can filter for it.
+export const TEMPLATE_PACKAGE_EXTENSION = '.qtpl'
+
+export interface TemplateExportOptions {
+  name: string
+  description?: string
+  parts: TemplatePartId[]
+  // 'changed' exports only the translation entries that differ from the project's own baseline
+  // (see localizationService.getTranslationCustomizations); 'all' exports every string of every
+  // locale that has any content, for the case where no baseline can be established.
+  translationScope: 'changed' | 'all'
+}
+
+export interface TemplateExportResult {
+  filePath: string
+  bytes: number
+  parts: TemplatePartSummary[]
+}
+
+// Which side wins when the target project already has the thing a part brings. Chosen per import;
+// a snapshot is taken first either way, so 'packageWins' is recoverable.
+export type TemplateConflictStrategy = 'packageWins' | 'projectWins'
+
+// What one part would actually do to *this* project, computed by reading both the package and the
+// target before anything is written - the old preview only echoed the manifest, so the first time
+// a user learned what an import changed was from the warnings afterwards.
+export interface TemplatePartPlan {
+  id: TemplatePartId
+  // Everything the part would create that the project does not have yet.
+  additions: string[]
+  // Everything that already exists and would be replaced ('packageWins') or skipped
+  // ('projectWins') - the strategy switch flips the meaning of this list, not its contents.
+  conflicts: string[]
+  // npm packages this part needs that the project does not have installed.
+  missingPackages: TemplatePackageDependency[]
+  // Anything the user should know that is neither an addition nor a conflict, e.g. a translation
+  // key that no longer exists in the target's Quartz version.
+  notes: string[]
+}
+
+export interface TemplatePackagePlan {
   manifest: TemplatePackageManifest
+  parts: TemplatePartPlan[]
+  // Part ids present in the package that this app version does not know - a package written by a
+  // newer QuartzControl. Listed rather than ignored, so "es fehlt etwas" is visible.
+  unknownParts: string[]
+  // True for a package in the pre-1 folder format, which has no formatVersion and a fixed set of
+  // files; it is read but can never be written again.
+  legacy: boolean
 }
 
-// Collision handling during import is always skip-and-warn, never overwrite (an existing plugin/
-// frame/style-file/font wins) - warnings surface exactly which entries were skipped and why, so
-// the import never silently clobbers something the target project already has.
 export interface TemplatePackageImportResult {
   success: boolean
   warnings: string[]
+}
+
+// Emitted on IPC.templatePackageProgress while an import runs. npm installs dominate the runtime,
+// so the message carries what is happening rather than only a fraction.
+export interface TemplateImportProgress {
+  projectPath: string
+  partId: TemplatePartId | null
+  message: string
+  done: number
+  total: number
 }
 
 // A read-only reference file (an installed plugin's own *.scss) shown alongside the editor so the
@@ -969,8 +1082,11 @@ export const IPC = {
   dialogOpenPath: 'dialog:openPath',
 
   templatePackageExport: 'templatePackage:export',
-  templatePackagePreview: 'templatePackage:preview',
+  templatePackageInspect: 'templatePackage:inspect',
+  templatePackagePick: 'templatePackage:pick',
+  templatePackagePlan: 'templatePackage:plan',
   templatePackageImport: 'templatePackage:import',
+  templatePackageProgress: 'templatePackage:progress',
 
   marketplaceSearch: 'marketplace:search',
   marketplaceRefresh: 'marketplace:refresh',
@@ -1134,9 +1250,21 @@ export interface QuartzGuiApi {
     onProgress(cb: (event: DeployProgressEvent) => void): () => void
   }
   templatePackage: {
-    export(projectPath: string, destDir: string, name: string, categories: TemplatePackageCategory[]): Promise<{ packageDir: string }>
-    preview(sourceDir: string): Promise<TemplatePackagePreview | null>
-    import(projectPath: string, sourceDir: string, categories: TemplatePackageCategory[]): Promise<TemplatePackageImportResult>
+    /** What each part would contribute, so the export form can show counts before writing. */
+    inspect(projectPath: string): Promise<TemplatePartSummary[]>
+    /** Opens the package chooser. Accepts a folder too, for packages in the pre-1 folder format. */
+    pick(): Promise<string | null>
+    /** Resolves to null when the user cancelled the save dialog. */
+    export(projectPath: string, options: TemplateExportOptions): Promise<TemplateExportResult | null>
+    /** Resolves to null when the chosen path is not a readable package. */
+    plan(projectPath: string, packagePath: string): Promise<TemplatePackagePlan | null>
+    import(
+      projectPath: string,
+      packagePath: string,
+      parts: TemplatePartId[],
+      strategy: TemplateConflictStrategy
+    ): Promise<TemplatePackageImportResult>
+    onProgress(cb: (progress: TemplateImportProgress) => void): () => void
   }
   themeMarketplace: {
     list(): Promise<QuartzThemeListing[]>

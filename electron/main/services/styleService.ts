@@ -172,7 +172,7 @@ export async function saveVariableOverrides(projectPath: string, overrides: CssV
   await writeCustomScss(projectPath, next)
 }
 
-function stripManagedBlock(content: string, markerId: string): string {
+export function stripManagedBlock(content: string, markerId: string): string {
   const { start, end } = managedBlockMarkers(markerId)
   const startIdx = content.indexOf(start)
   if (startIdx === -1) return content

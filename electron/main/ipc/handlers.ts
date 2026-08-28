@@ -1,7 +1,7 @@
 import { ipcMain, BrowserWindow, dialog, shell } from 'electron'
 import { resolve, sep } from 'path'
 import { z } from 'zod'
-import { IPC } from '@shared/ipc-contract'
+import { IPC, TEMPLATE_PACKAGE_EXTENSION } from '@shared/ipc-contract'
 import type {
   CreateProjectOptions,
   GridFrameDefinition,
@@ -10,6 +10,7 @@ import type {
   SavePublishTargetInput,
   ServerOptions,
   Settings,
+  TemplateExportOptions,
   ThemePreset
 } from '@shared/ipc-contract'
 import * as projectStore from '../services/projectStore'
@@ -38,7 +39,7 @@ import * as snapshotService from '../services/snapshotService'
 import * as contentService from '../services/contentService'
 import * as createService from '../services/createService'
 import * as settingsService from '../services/settingsService'
-import * as templatePackageService from '../services/templatePackageService'
+import * as templatePackageService from '../services/templatePackage'
 import { handle, handleNoArgs } from './handle'
 import * as s from './schemas'
 
@@ -297,16 +298,36 @@ export function registerIpcHandlers(): void {
       deployService.runDeploy(projectPath, targetId, outputDir, excludePaths)
   )
 
-  handle(
-    IPC.templatePackageExport,
-    t([s.absolutePath, s.absolutePath, z.string().min(1).max(200), z.array(s.templatePackageCategory).max(6)]),
-    (projectPath, destDir, name, categories) => templatePackageService.exportPackage(projectPath, destDir, name, categories)
+  // A folder is selectable as well as a file: packages written before the single-file format are
+  // folders, and they stay importable.
+  handleNoArgs(IPC.templatePackagePick, async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile', 'openDirectory'],
+      filters: [{ name: 'QuartzControl-Vorlage', extensions: [TEMPLATE_PACKAGE_EXTENSION.slice(1)] }]
+    })
+    return result.canceled || result.filePaths.length === 0 ? null : result.filePaths[0]
+  })
+  handle(IPC.templatePackageInspect, t([s.absolutePath]), (projectPath) => templatePackageService.inspectProject(projectPath))
+  // The target file is chosen here rather than taken from the renderer, the same rule snapshot
+  // export follows: an arbitrary path from there would let a page write a file anywhere on disk.
+  handle(IPC.templatePackageExport, t([s.absolutePath, s.templateExportOptions]), async (projectPath, options) => {
+    const result = await dialog.showSaveDialog({
+      defaultPath: `${templatePackageService.slugifyFileName(options.name)}${TEMPLATE_PACKAGE_EXTENSION}`,
+      filters: [{ name: 'QuartzControl-Vorlage', extensions: [TEMPLATE_PACKAGE_EXTENSION.slice(1)] }]
+    })
+    if (result.canceled || !result.filePath) return null
+    return templatePackageService.exportPackage(projectPath, result.filePath, options as TemplateExportOptions)
+  })
+  handle(IPC.templatePackagePlan, t([s.absolutePath, s.absolutePath]), (projectPath, packagePath) =>
+    templatePackageService.planImport(projectPath, packagePath)
   )
-  handle(IPC.templatePackagePreview, t([s.absolutePath]), (sourceDir) => templatePackageService.previewPackage(sourceDir))
   handle(
     IPC.templatePackageImport,
-    t([s.absolutePath, s.absolutePath, z.array(s.templatePackageCategory).max(6)]),
-    (projectPath, sourceDir, categories) => templatePackageService.importPackage(projectPath, sourceDir, categories)
+    t([s.absolutePath, s.absolutePath, z.array(s.templatePartId).max(s.templatePartId.options.length), s.templateConflictStrategy]),
+    (projectPath, packagePath, parts, strategy) =>
+      templatePackageService.importPackage(projectPath, packagePath, parts, strategy, (progress) =>
+        broadcast(IPC.templatePackageProgress, { projectPath, ...progress })
+      )
   )
 
   handle(IPC.marketplaceSearch, t([s.shortText]), (query) => marketplaceService.searchPlugins(query))

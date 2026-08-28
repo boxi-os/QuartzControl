@@ -80,7 +80,7 @@ export default {
       layout: 'Decides which building blocks (e.g. search, table of contents, navigation) appear where on the page.',
       styles:
         'Everything about the look in one place: base colors and fonts, community themes, CSS variables, and your own CSS — in the exact order they override each other.',
-      templates: 'Export your design — layout, colors, plugins, fonts — as a reusable package, or import one into another project.',
+      templates: 'Your design as a single file: colours, theme, CSS, fonts, layout, frames, plugins and translations — export it, pass it on, apply it to another project.',
       plugins: 'Extends Quartz with extra functionality — from full-text search to comments.',
       updates:
         "Brings Quartz's core and the installed plugins up to date. A restorable snapshot of the version-controlled files is created automatically before every core update.",
@@ -1097,28 +1097,149 @@ export default {
   },
   templates: {
     title: 'Templates',
-    description: 'Exports layout, colors, plugins, frames, styles and fonts as a reusable template package — partial exports supported too.',
-    exportHeading: 'Export',
-    nameLabel: 'Name',
-    categoriesHeading: 'Included categories',
-    categories: {
-      layout: 'Layout',
-      colors: 'Colors (incl. CSS variables)',
-      plugins: 'Plugins',
-      frames: 'Custom frames',
-      styles: 'Styles (custom.scss)',
-      fonts: 'Fonts'
+    description:
+      "Bundles this project's design into a single file: colours, theme, CSS, fonts, layout, frames, plugins and translations — in whole or in part. After importing into another project everything is set up the way it is here.",
+    exportHeading: 'Create a template',
+    exportHint:
+      'Writes a single .qtpl file you can pass on. Everything this project has is preselected; what it does not have is not offered.',
+    nameLabel: 'Template name',
+    descriptionLabel: 'Description (optional)',
+    descriptionPlaceholder: 'What is this template for?',
+    partsHeading: 'Contents',
+    nothingToExport: 'There is nothing in this project yet that could be saved as a template.',
+    selectedCount: '{{count}} of {{total}} parts',
+    exportButton: 'Save template…',
+    exporting: 'Saving…',
+    exportSuccess: 'Saved ({{size}}): {{path}}',
+    exportCancelled: 'Cancelled.',
+    scopeChanged: 'Only your changes ({{count}})',
+    scopeNoChanges: 'no changes detected',
+    scopeAll: 'All texts ({{count}})',
+    baselineHint:
+      'For one language there is no way to tell what you changed — the comparison baseline is created the first time you edit a text in this app. Pick “All texts” if it should be included.',
+    baselineHint_other:
+      'For {{count}} languages there is no way to tell what you changed — the comparison baseline is created the first time you edit a text in this app. Pick “All texts” if one of them should be included.',
+    importHeading: 'Apply a template',
+    importHint: 'A snapshot is taken first, so the import can be undone completely from “Backups”.',
+    pickPackage: 'Choose a template…',
+    previewError: 'This is not a readable template (no manifest.json found).',
+    legacyBadge: 'Old format',
+    packageOrigin: 'Created on {{date}} from the project “{{project}}”',
+    unknownProject: 'unknown',
+    unknownParts: 'This template contains parts this version does not know yet ({{parts}}) — they are skipped.',
+    strategyHeading: 'On conflict',
+    strategyPackage: 'Template wins',
+    strategyProject: 'Project wins',
+    strategyPackageHint: 'Whatever this project already has is replaced by the template.',
+    strategyProjectHint: 'Whatever this project already has stays; only what is missing is added.',
+    planAdditions: '{{count}} new',
+    planReplaced: '{{count}} replaced',
+    planKept: '{{count}} kept as is',
+    planNoChange: 'changes nothing',
+    willInstall: 'Will be installed: {{packages}}',
+    importButton: 'Apply template',
+    importing: 'Applying…',
+    importPreparing: 'Taking a snapshot…',
+    confirmOverwrite:
+      'Apply {{count}} part(s)? What this project already has will be replaced by the template. A snapshot is taken first.',
+    confirmMerge: 'Apply {{count}} part(s)? What this project already has stays untouched.',
+    importSuccessNoWarnings: 'Done — everything applied, nothing left open.',
+    parts: {
+      appearance: {
+        label: 'Colours & fonts',
+        description: 'The base colours for light and dark, the three font roles, and where the font files come from.'
+      },
+      theme: {
+        label: 'Community theme',
+        description: 'The chosen theme with all its settings. Its npm package is installed along with it.'
+      },
+      cssVariables: {
+        label: 'CSS variables',
+        description: 'Your own values for individual CSS variables, separately for light and dark.'
+      },
+      styles: {
+        label: 'Custom CSS',
+        description: 'custom.scss and every stylesheet you created or imported — including their load order.'
+      },
+      fonts: {
+        label: 'Font files',
+        description: 'The font files you brought yourself and the @font-face rules pointing at them.'
+      },
+      layout: {
+        label: 'Layout',
+        description: 'Which component appears where, per page type — and at which width things reflow.'
+      },
+      frames: {
+        label: 'Custom frames',
+        description: 'Page grids you built yourself. Registered afresh in the target project, not just copied.'
+      },
+      plugins: {
+        label: 'Plugins',
+        description: 'Every plugin entry with its options, its order and its position.'
+      },
+      translations: {
+        label: 'Translations',
+        description: "The texts you changed in Quartz' language files."
+      },
+      presets: {
+        label: 'Theme presets',
+        description: 'Your saved theme combinations.'
+      }
     },
-    pickDestDir: 'Choose destination folder…',
-    exportButton: 'Export package',
-    exportSuccess: 'Package exported to: {{path}}',
-    importHeading: 'Import',
-    pickSourceDir: 'Choose package folder…',
-    previewError: 'No valid template package found in this folder (no manifest.json).',
-    previewHeading: 'Package: {{name}} — available categories are checkable, missing ones are grayed out.',
-    importButton: 'Import selected categories',
-    confirmImport: 'Really import {{count}} categorie(s)? Existing plugins/frames/files are skipped, never overwritten.',
-    importSuccessNoWarnings: 'Import complete, no conflicts.'
+    stats: {
+      colors: '{{count}} colour',
+      colors_other: '{{count}} colours',
+      fonts: '{{count}} font',
+      fonts_other: '{{count}} fonts',
+      files: '{{count}} file',
+      files_other: '{{count}} files',
+      variables: '{{count}} variable',
+      variables_other: '{{count}} variables',
+      styleSettings: '{{count}} setting',
+      styleSettings_other: '{{count}} settings',
+      groups: '{{count}} group',
+      groups_other: '{{count}} groups',
+      pageTypes: '{{count}} page type',
+      pageTypes_other: '{{count}} page types',
+      frames: '{{count}} frame',
+      frames_other: '{{count}} frames',
+      plugins: '{{count}} plugin',
+      plugins_other: '{{count}} plugins',
+      active: '{{count}} active',
+      languages: '{{count}} language',
+      languages_other: '{{count}} languages',
+      entries: '{{count}} text',
+      entries_other: '{{count}} texts',
+      presets: '{{count}} preset',
+      presets_other: '{{count}} presets'
+    },
+    warnings: {
+      unknown: '{{count}}× {{kind}}',
+      appearanceSkipped: 'Colours and fonts were left unchanged.',
+      themeSkipped: 'The existing theme was left unchanged.',
+      layoutSkipped: 'Layout and breakpoints were left unchanged.',
+      themeInstallFailed: 'The theme package could not be installed: {{detail}}',
+      pluginInstallFailed: 'Could not be installed: {{detail}}',
+      pluginSkipped: '{{count}} existing plugin was left unchanged.',
+      pluginSkipped_other: '{{count}} existing plugins were left unchanged.',
+      pluginUnsupported: '{{count}} plugin has a source form that cannot be transferred.',
+      pluginUnsupported_other: '{{count}} plugins have a source form that cannot be transferred.',
+      frameSkipped: '{{count}} existing frame was left unchanged.',
+      frameSkipped_other: '{{count}} existing frames were left unchanged.',
+      frameFailed: 'A frame could not be created: {{detail}}',
+      styleFileSkipped: '{{count}} existing stylesheet was left unchanged.',
+      styleFileSkipped_other: '{{count}} existing stylesheets were left unchanged.',
+      fontSkipped: '{{count}} font file of the same name but different content was left unchanged.',
+      fontSkipped_other: '{{count}} font files of the same name but different content were left unchanged.',
+      presetSkipped: '{{count}} existing preset was left unchanged.',
+      presetSkipped_other: '{{count}} existing presets were left unchanged.',
+      missingKey: '{{count}} text no longer exists in this Quartz version.',
+      missingKey_other: '{{count}} texts no longer exist in this Quartz version.',
+      translationFailed: 'Text could not be written: {{detail}}',
+      partUnreadable: 'One part could not be read: {{detail}}',
+      partFailed: 'One part failed: {{detail}}',
+      packageUnreadable: 'The template could not be read.'
+    }
   },
   pluginsMarketplace: {
     searchPlaceholder: 'Search plugins…',

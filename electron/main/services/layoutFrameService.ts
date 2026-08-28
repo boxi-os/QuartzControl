@@ -149,7 +149,18 @@ export async function listFrames(projectPath: string): Promise<GridFrameDefiniti
   return defs.filter((d): d is GridFrameDefinition => d !== null)
 }
 
-export async function saveFrame(projectPath: string, rawDef: GridFrameDefinition | LegacyGridFrameDefinition): Promise<PluginActionResult> {
+/** Where a frame's own files live. Exported so a template import can check the CLI's work. */
+export function authoredFrameDir(projectPath: string, id: string): string {
+  return frameDir(projectPath, id)
+}
+
+export async function saveFrame(
+  projectPath: string,
+  rawDef: GridFrameDefinition | LegacyGridFrameDefinition,
+  // A template import takes one snapshot for the whole import and passes false here, so a package
+  // carrying ten frames does not leave ten more behind it.
+  options?: { snapshot?: boolean }
+): Promise<PluginActionResult> {
   // The IPC handler's zod schema already rejects a legacy-shaped payload from the renderer, but
   // importPackage() calls this directly with whatever a template package's frames.json contains -
   // possibly a pre-breakpoint export - so migrate defensively here too, not just in listFrames().
@@ -159,8 +170,11 @@ export async function saveFrame(projectPath: string, rawDef: GridFrameDefinition
   // Only newly created frames need registering - `quartz plugin add` symlinks the directory into
   // .quartz/plugins/<id> once; editing an existing frame just rewrites the files the symlink
   // already points at, so the build picks up the change on its next run with no CLI call needed.
-  if (isNew) return pluginService.addPlugin(projectPath, frameDir(projectPath, def.id))
-  return { success: true, output: '' }
+  if (!isNew) return { success: true, output: '' }
+  const source = frameDir(projectPath, def.id)
+  return options?.snapshot === false
+    ? pluginService.installPluginSource(projectPath, source)
+    : pluginService.addPlugin(projectPath, source)
 }
 
 export async function deleteFrame(projectPath: string, id: string): Promise<PluginActionResult> {

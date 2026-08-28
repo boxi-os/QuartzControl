@@ -141,7 +141,13 @@ export default function Home(): JSX.Element {
                     locale={i18n.language}
                     onOpen={() => navigate(`/project/${project.id}`)}
                     onRemove={async () => {
-                      if (!confirm(t('home.confirmRemove', { name: project.name }))) return
+                      // Removing the entry also stops the project's dev server (see the
+                      // project:remove handler), so the question says so rather than leaving a
+                      // process running that nothing in the app points at any more.
+                      const question = project.serverRunning
+                        ? t('home.confirmRemoveRunning', { name: project.name })
+                        : t('home.confirmRemove', { name: project.name })
+                      if (!confirm(question)) return
                       await removeProject(project.id)
                       await reload()
                     }}

@@ -43,6 +43,8 @@ export default {
     notAQuartzProject: 'Kein Quartz-Projekt — in diesem Ordner liegt keine quartz.config.yaml.',
     locateFolder: 'Ordner suchen…',
     confirmRemove: '„{{name}}“ aus der Liste entfernen?\n\nDer Ordner auf der Festplatte bleibt unangetastet.',
+    confirmRemoveRunning:
+      '„{{name}}“ aus der Liste entfernen?\n\nDer laufende Dev-Server wird dabei beendet. Der Ordner auf der Festplatte bleibt unangetastet.',
     environment: {
       titleProblem: 'Diese Werkzeuge fehlen',
       description:

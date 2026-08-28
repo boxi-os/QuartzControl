@@ -105,7 +105,15 @@ export function registerIpcHandlers(): void {
     await projectStore.touchProject(id)
     return projectStore.getProject(id)
   })
-  handle(IPC.projectRemove, t([s.uuid]), (id) => projectStore.removeProject(id))
+  handle(IPC.projectRemove, t([s.uuid]), async (id) => {
+    // Removing the entry is the last moment the app can still reach this project's dev server:
+    // it is tracked by project id, so afterwards the process keeps serving with nothing in the UI
+    // pointing at it and only a bare uuid left in running-servers.json for the next start's
+    // orphan dialog to name. Measured before this: the removed project's site still answered on
+    // its port and the tracking file still held the entry.
+    await buildService.stopServer(id)
+    await projectStore.removeProject(id)
+  })
   handle(IPC.projectCreate, t([s.createProjectOptions]), async (options) => {
     const result = await createService.createProject(options as CreateProjectOptions)
     if (result.success) await projectStore.addProject(options.targetDirectory)

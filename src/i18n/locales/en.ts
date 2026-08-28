@@ -43,6 +43,8 @@ export default {
     notAQuartzProject: 'Not a Quartz project — this folder has no quartz.config.yaml.',
     locateFolder: 'Locate folder…',
     confirmRemove: 'Remove “{{name}}” from the list?\n\nThe folder on disk is left untouched.',
+    confirmRemoveRunning:
+      'Remove “{{name}}” from the list?\n\nIts running dev server will be stopped. The folder on disk is left untouched.',
     environment: {
       titleProblem: 'These tools are missing',
       description:

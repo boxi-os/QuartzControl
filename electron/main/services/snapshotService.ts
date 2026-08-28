@@ -462,28 +462,44 @@ async function restoreSnapshotUnlocked(
   const effectivePaths =
     paths && paths.length > 0 ? paths : snapshot && isPartial(snapshot.kind) ? await snapshotPaths(projectPath, commit) : undefined
   const touched = effectivePaths ?? (await diffSnapshotUnlocked(projectPath, id)).map((change) => change.path)
+  const settings = await getSettings(projectPath)
   await createSnapshotUnlocked(projectPath, 'restore', '')
-  await stage(projectPath, await getSettings(projectPath))
+  await stage(projectPath, settings)
 
   const output: string[] = []
 
-  // Moving the project's own branch back is a separate, opt-in step, and it happens first so the
-  // snapshot's files are written on top of it rather than the other way round. `--hard` needs the
-  // content symlink parked for the same reason every other git write does.
-  if (resetProjectHead && snapshot?.projectHead) {
-    const reset = await withContentSymlinkParked(projectPath, () =>
-      run('git', ['reset', '--hard', snapshot.projectHead as string], projectPath)
-    )
-    if (!reset.success) return { success: false, output: reset.output }
-    output.push(reset.output)
-  }
-  if (!effectivePaths) {
-    // Updates the work tree *and* removes what the snapshot doesn't have. That only ever touches
-    // files this store tracks - node_modules and everything else excluded stays where it is.
-    const read = await git(projectPath, ['read-tree', '-u', '--reset', commit])
-    if (!read.success) return { success: false, output: read.output }
-    output.push(read.output)
-  } else {
+  // git writes *through* a symlinked content folder, and a restore is a git write like any other.
+  // Measured against a real project whose content/ pointed at a vault: a whole-project restore
+  // reported success with no output at all and left content/ as a real directory holding the
+  // snapshot's old notes, i.e. the project silently disconnected from the vault - and a per-file
+  // restore of a content path would have written into the vault itself. So the link is parked for
+  // the whole write phase and put back afterwards, which also discards whatever the snapshot held
+  // under content/: a vault is the user's own primary data with its own backup, and it is not
+  // overwritten from a snapshot without being asked. Only wrapped when the restore actually
+  // reaches content/, so a restore of one config file never unlinks the vault even briefly.
+  const touchesContent = touched.some((path) => path === 'content' || path.startsWith('content/'))
+  const needsParking = resetProjectHead || touchesContent
+  const park = <T>(fn: () => Promise<T>): Promise<T> =>
+    needsParking ? withContentSymlinkParked(projectPath, fn) : fn()
+
+  // Returns a failure to hand straight back, or null to carry on - the write phase has several
+  // exits and they all have to leave the parking helper's finally intact.
+  const failure = await park(async (): Promise<PluginActionResult | null> => {
+    // Moving the project's own branch back is a separate, opt-in step, and it happens first so the
+    // snapshot's files are written on top of it rather than the other way round.
+    if (resetProjectHead && snapshot?.projectHead) {
+      const reset = await run('git', ['reset', '--hard', snapshot.projectHead], projectPath)
+      if (!reset.success) return { success: false, output: reset.output }
+      output.push(reset.output)
+    }
+    if (!effectivePaths) {
+      // Updates the work tree *and* removes what the snapshot doesn't have. That only ever touches
+      // files this store tracks - node_modules and everything else excluded stays where it is.
+      const read = await git(projectPath, ['read-tree', '-u', '--reset', commit])
+      if (!read.success) return { success: false, output: read.output }
+      output.push(read.output)
+      return null
+    }
     // git checkout can bring a file back but cannot delete one the snapshot never had, so those
     // are removed by hand and dropped from the index.
     const inSnapshot = new Set(
@@ -498,6 +514,16 @@ async function restoreSnapshotUnlocked(
     }
     for (const doomedPath of toDelete) await rm(join(projectPath, doomedPath), { force: true })
     if (toDelete.length > 0) await git(projectPath, ['rm', '--cached', '--quiet', '--', ...toDelete])
+    return null
+  })
+  if (failure) return failure
+
+  // Said out loud rather than left to be discovered: the restore did run, and the notes it holds
+  // are the one part of it that did not happen.
+  if (settings.contentIsSymlink && touchesContent) {
+    output.push(
+      'Hinweis: content/ zeigt auf einen externen Ordner (z. B. einen Obsidian-Vault). Dessen Dateien wurden nicht angetastet - alles ausserhalb von content/ wurde wiederhergestellt.'
+    )
   }
 
   // node_modules is never part of a snapshot, so a restore that moved the dependency manifests

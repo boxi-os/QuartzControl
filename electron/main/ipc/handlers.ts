@@ -49,6 +49,7 @@ import * as environmentService from '../services/environmentService'
 import * as settingsService from '../services/settingsService'
 import * as templatePackageService from '../services/templatePackage'
 import { applyTheme } from '../theme'
+import { applyAppMenu } from '../menu'
 import { handle, handleNoArgs } from './handle'
 import * as s from './schemas'
 
@@ -501,6 +502,10 @@ export function registerIpcHandlers(): void {
     // `theme` out would otherwise silently reset the window to the OS appearance, since an absent
     // key and an explicit 'system' are the same thing once the payload has crossed IPC.
     if ('theme' in (next as object)) applyTheme((next as Settings).theme)
+    // Same reasoning for the other half of the Erscheinungsbild section: the native menu is built
+    // once from a snapshot of the strings, so without this the Sprache select switched the whole
+    // renderer instantly and left Datei/Bearbeiten/Ansicht in the old language until a restart.
+    if ('language' in (next as object)) await applyAppMenu()
   })
   handleNoArgs(IPC.settingsAppInfo, () => settingsService.getAppInfo())
   handleNoArgs(IPC.settingsEnvironment, () =>

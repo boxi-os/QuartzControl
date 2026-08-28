@@ -1083,8 +1083,11 @@ export default {
     saveError: 'Speichern fehlgeschlagen.',
     noResults: 'Keine Treffer.',
     advancedBadge: 'JS',
-    gitAttributesOk: 'Update-Schutz aktiv (.gitattributes: merge=ours)',
-    gitAttributesMissing: 'Update-Schutz wird beim nächsten Speichern automatisch aktiviert'
+    gitAttributesOk: 'Update-Schutz aktiv',
+    gitAttributesMissing: 'Update-Schutz nicht aktiv',
+    gitAttributesExplain:
+      'Deine Formulierungen stehen in Quartz’ eigenen Dateien. Der Schutz sorgt dafür, dass ein Kern-Update sie nicht überschreibt — er braucht zwei Teile: die Zeile in .gitattributes und den Merge-Treiber in der Git-Konfiguration dieses Projekts. Beides wird beim nächsten Speichern automatisch gesetzt.',
+    gitAttributesEnable: 'Jetzt aktivieren'
   },
   updates: {
     upToDate: 'Aktuell',

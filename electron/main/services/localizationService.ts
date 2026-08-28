@@ -1,3 +1,4 @@
+import { execFileSync } from 'child_process'
 import { copyFileSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import ts from 'typescript'
@@ -245,18 +246,57 @@ export function getAllEntries(projectPath: string, code: string): LocaleEntry[] 
 
 const MERGE_OURS_LINE = 'quartz/i18n/locales/*.ts merge=ours'
 
+/**
+ * The protection has two halves and needs both.
+ *
+ * `merge=ours` names a merge *driver*, and git ships no built-in one - the attribute on its own is
+ * silently inert, with not even a warning. Measured against git 2.50.1 on a real repository:
+ * merging an upstream change into an edited locale file conflicted exactly as it does without the
+ * attribute, and only after `git config merge.ours.driver true` did the same merge keep the user's
+ * file. The driver is repository configuration, which is never committed, so shipping the
+ * .gitattributes line alone could not have worked on any machine - including the one that wrote it.
+ */
+function hasMergeDriver(projectPath: string): boolean {
+  try {
+    return execFileSync('git', ['config', '--get', 'merge.ours.driver'], {
+      cwd: projectPath,
+      encoding: 'utf-8',
+      stdio: ['ignore', 'pipe', 'ignore']
+    }).trim().length > 0
+  } catch {
+    // exit 1 (unset) and "not a git repository" both land here, and neither is protection
+    return false
+  }
+}
+
 export function getGitAttributesStatus(projectPath: string): boolean {
   const path = join(projectPath, '.gitattributes')
   if (!existsSync(path)) return false
-  return readFileSync(path, 'utf-8').includes(MERGE_OURS_LINE)
+  if (!readFileSync(path, 'utf-8').includes(MERGE_OURS_LINE)) return false
+  return hasMergeDriver(projectPath)
 }
 
-// Idempotent: called automatically after every successful save, so the update-safety net (Phase
-// 6 relies on this) is never forgotten, not just offered as an opt-in the user might skip.
+// Idempotent: called automatically after every successful save, so the update-safety net (the core
+// update relies on this) is never forgotten, not just offered as an opt-in the user might skip.
 export function ensureGitAttributes(projectPath: string): void {
   const path = join(projectPath, '.gitattributes')
   const existing = existsSync(path) ? readFileSync(path, 'utf-8') : ''
-  if (existing.includes(MERGE_OURS_LINE)) return
-  const next = existing.length > 0 && !existing.endsWith('\n') ? `${existing}\n${MERGE_OURS_LINE}\n` : `${existing}${MERGE_OURS_LINE}\n`
-  writeFileSync(path, next, 'utf-8')
+  if (!existing.includes(MERGE_OURS_LINE)) {
+    const next =
+      existing.length > 0 && !existing.endsWith('\n') ? `${existing}\n${MERGE_OURS_LINE}\n` : `${existing}${MERGE_OURS_LINE}\n`
+    writeFileSync(path, next, 'utf-8')
+  }
+  if (hasMergeDriver(projectPath)) return
+  try {
+    // `true` is /usr/bin/true: it succeeds without writing, which git reads as "the merge result is
+    // already in the working tree", i.e. keep ours. The documented recipe, and what the check above
+    // was verified against.
+    execFileSync('git', ['config', 'merge.ours.driver', 'true'], {
+      cwd: projectPath,
+      stdio: 'ignore'
+    })
+  } catch {
+    // A project that is not a git repository has nothing to protect against a merge in the first
+    // place; the status check reports it as inactive either way.
+  }
 }

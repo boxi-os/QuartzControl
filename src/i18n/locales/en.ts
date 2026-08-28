@@ -1081,8 +1081,11 @@ export default {
     saveError: 'Save failed.',
     noResults: 'No matches.',
     advancedBadge: 'JS',
-    gitAttributesOk: 'Update protection active (.gitattributes: merge=ours)',
-    gitAttributesMissing: 'Update protection will be enabled automatically on the next save'
+    gitAttributesOk: 'Update protection active',
+    gitAttributesMissing: 'Update protection not active',
+    gitAttributesExplain:
+      "Your wording lives in Quartz' own files. The protection keeps a core update from overwriting it, and it takes two parts: the line in .gitattributes and the merge driver in this project's git configuration. Both are set automatically on the next save.",
+    gitAttributesEnable: 'Enable now'
   },
   updates: {
     upToDate: 'Up to date',

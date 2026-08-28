@@ -19,6 +19,7 @@ export default function Localization(): JSX.Element {
   const [query, setQuery] = useStickyState('localization.query', '')
   const [saving, setSaving] = useState(false)
   const [gitAttrOk, setGitAttrOk] = useState<boolean | null>(null)
+  const [enablingProtection, setEnablingProtection] = useState(false)
 
   useEffect(() => {
     window.quartzGui.localization.list(project.path).then((list) => {
@@ -57,6 +58,19 @@ export default function Localization(): JSX.Element {
     // setEdits/setErrors are stable state setters
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project.path, code])
+
+  // The service sets both halves of the protection after every successful save anyway - this is
+  // for the project that has translations to protect but has not been edited from here yet, where
+  // the badge otherwise only stated a problem it could have fixed itself.
+  async function enableProtection(): Promise<void> {
+    setEnablingProtection(true)
+    try {
+      await window.quartzGui.localization.ensureGitAttributes(project.path)
+      setGitAttrOk(await window.quartzGui.localization.gitAttributesStatus(project.path))
+    } finally {
+      setEnablingProtection(false)
+    }
+  }
 
   function keyOf(path: string[]): string {
     return path.join('.')
@@ -118,13 +132,19 @@ export default function Localization(): JSX.Element {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-xs text-slate-500 dark:text-slate-400">
+      <div className="flex flex-wrap items-center gap-2">
         {gitAttrOk ? (
           <Badge tone="green">{t('localization.gitAttributesOk')}</Badge>
         ) : (
-          <Badge tone="amber">{t('localization.gitAttributesMissing')}</Badge>
+          <>
+            <Badge tone="amber">{t('localization.gitAttributesMissing')}</Badge>
+            <Button variant="ghost" onClick={enableProtection} disabled={enablingProtection}>
+              {t('localization.gitAttributesEnable')}
+            </Button>
+          </>
         )}
-      </p>
+        <p className="min-w-0 flex-1 text-xs text-slate-500 dark:text-slate-400">{t('localization.gitAttributesExplain')}</p>
+      </div>
 
       {/* Save sits in this row rather than in the page header: the header belongs to the whole
           Konfiguration page now, and saving here means saving the locale selected right next to

@@ -1,0 +1,72 @@
+# Packaging config. Until this existed the app could only be run from the repo with `npm run dev`,
+# which is a different program from the one a user gets: a bundle started from the Dock or a
+# desktop launcher inherits no shell PATH (see environmentService), so the packaged build is the
+# only one that exercises that path at all.
+#
+# Windows is deliberately absent. The app is not ready for it - directory symlinks need elevated
+# rights there (the Obsidian-vault feature), npx/npm are spawned through cmd.exe so free-text
+# arguments would be reinterpreted, and rsync has no equivalent. Adding a `win:` block here would
+# produce an installer for a version that does not work.
+appId: de.holgerborker.quartzcontrol
+productName: QuartzControl
+copyright: © Holger Borker
+
+directories:
+  output: release
+  buildResources: build
+
+# electron-vite bundles the renderer and both Electron entry points into out/, but
+# externalizeDepsPlugin leaves everything under `dependencies` as a runtime require - so those
+# still have to travel. electron-builder includes production dependencies on its own; what is
+# listed here is only the app's own output. build/icon.png is included because the main process
+# resolves it at runtime through app.getAppPath() for the Linux/Windows window icon and the macOS
+# Dock icon.
+files:
+  - out/**
+  - build/icon.png
+  - package.json
+  - '!**/*.map'
+
+asar: true
+# Nothing here compiles against Electron's headers - ssh2 falls back to its pure-JS crypto when
+# the optional native binding is absent - so a rebuild would only be a slow way to fail.
+npmRebuild: false
+
+mac:
+  category: public.app-category.developer-tools
+  icon: build/icon.icns
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+    - target: zip
+      arch: [arm64, x64]
+  # No Developer ID certificate, so the bundle is left unsigned rather than signed with an ad-hoc
+  # identity that Gatekeeper treats no better. Consequence for whoever installs it: macOS refuses
+  # the first launch until the quarantine flag is cleared
+  # (`xattr -dr com.apple.quarantine /Applications/QuartzControl.app`) or the app is opened once
+  # from the context menu. Set an identity here once a certificate exists; notarisation is a
+  # separate step after that.
+  identity: null
+
+dmg:
+  # Just the app and a link to /Applications - the default background image ships with
+  # electron-builder and would put someone else's artwork on this window.
+  contents:
+    - x: 140
+      y: 180
+      type: file
+    - x: 400
+      y: 180
+      type: link
+      path: /Applications
+
+linux:
+  category: Development
+  icon: build/icon.png
+  # deb refuses to build without a maintainer carrying an address; AppImage does not care. Change
+  # this if the package is ever handed to someone else.
+  maintainer: Holger Borker <mail@holgerborker.de>
+  synopsis: Manage Quartz websites
+  target:
+    - AppImage
+    - deb

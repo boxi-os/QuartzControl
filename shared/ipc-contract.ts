@@ -1305,6 +1305,13 @@ export interface QuartzGuiApi {
    * wrong layout first.
    */
   platform: string
+  /**
+   * The user's home directory, on the bridge for the same reason as `platform`: it is needed to
+   * expand a leading "~" in a path the user types, which has to happen before the value crosses
+   * IPC - every path schema requires an absolute one. Without it the Settings page's own
+   * "~/Documents" placeholder was a value the app refused.
+   */
+  homeDir: string
   projects: {
     list(): Promise<Project[]>
     /** The list plus what the launcher shows per row. Local reads only - see ProjectOverview. */

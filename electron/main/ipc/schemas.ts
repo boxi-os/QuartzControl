@@ -352,6 +352,9 @@ export const saveConnectionInput = z.looseObject({
     (input) => {
       if (input.kind !== 'webhook') return true
       if (typeof input.secret !== 'string') return true // absent means "keep the stored one"
+      // An emptied field on an edit means the same thing - see saveConnection's keepStoredSecret.
+      // Only a *new* webhook has to carry a URL, since there is no stored one to fall back on.
+      if (input.secret === '' && input.id) return true
       return webhookUrl.safeParse(input.secret).success
     },
     { message: 'Ein Webhook braucht eine gültige https-URL' }

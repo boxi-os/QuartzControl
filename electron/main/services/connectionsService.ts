@@ -68,7 +68,10 @@ export function getSecretStorageInfo(): SecretStorageInfo {
 }
 
 function encrypt(secret: string): string | undefined {
-  if (!safeStorage.isEncryptionAvailable()) return undefined
+  // An empty secret is not a secret. encryptString('') still produces bytes on some platforms, and
+  // storing those would make hasSecret true for a credential that is not there - a row reading
+  // "password stored" next to a connection that cannot log in anywhere.
+  if (!secret || !safeStorage.isEncryptionAvailable()) return undefined
   return safeStorage.encryptString(secret).toString('base64')
 }
 
@@ -265,11 +268,22 @@ export async function saveConnection(input: SaveConnectionInput): Promise<Connec
     )
   }
 
+  // Changing the auth method invalidates whatever was stored for the previous one - a password is
+  // not a key - and is the one case where an emptied field must not be read as "unchanged".
+  const authMethodChanged =
+    input.kind === 'ssh' && existing?.kind === 'ssh' && existing.authMethod !== input.authMethod
+
+  // An empty field on an edit means "leave the stored secret alone", which is exactly what the
+  // form's placeholder promises. Measured before this: clicking into the password field of a saved
+  // SFTP connection, typing and deleting again wrote an empty secret over the stored one - the row
+  // then read "kein Passwort/Key" and the credential was gone, with nothing having asked.
+  const keepStoredSecret = input.secret === undefined || (input.secret === '' && !!existing && !authMethodChanged)
+
   const stored: StoredConnection = {
     id: existing?.id ?? randomUUID(),
     kind: input.kind,
     name: input.name,
-    encryptedSecret: input.secret !== undefined ? encrypt(input.secret) : existing?.encryptedSecret,
+    encryptedSecret: keepStoredSecret ? existing?.encryptedSecret : encrypt(input.secret as string),
     // Carried over on edit: changing a password does not change which server we trust.
     hostKey: existing?.hostKey
   }
@@ -292,7 +306,7 @@ export async function saveConnection(input: SaveConnectionInput): Promise<Connec
   } else if (input.kind === 'webhook') {
     // Only the origin is kept for display - the path carries the token part of a build-hook URL.
     try {
-      stored.login = input.secret ? new URL(input.secret).origin : existing?.login
+      stored.login = !keepStoredSecret && input.secret ? new URL(input.secret).origin : existing?.login
     } catch {
       stored.login = existing?.login
     }

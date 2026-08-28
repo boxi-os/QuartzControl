@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import { homedir } from 'os'
 import { IPC } from '@shared/ipc-contract'
 import type {
   QuartzGuiApi,
@@ -36,6 +37,7 @@ function onEvent<Args extends unknown[]>(channel: string, cb: (...args: Args) =>
 
 const api: QuartzGuiApi = {
   platform: process.platform,
+  homeDir: homedir(),
   projects: {
     list: () => ipcRenderer.invoke(IPC.projectList),
     overview: () => ipcRenderer.invoke(IPC.projectOverview),

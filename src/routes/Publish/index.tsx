@@ -13,7 +13,12 @@ import type {
   SavePublishTargetInput
 } from '@shared/ipc-contract'
 import { Badge, Button, Card, Field, PageHeader, Select, TextInput, Toggle } from '../../components/ui'
-import { ConnectionFormFields, emptyConnectionDraft } from '../../components/ConnectionForm'
+import {
+  ConnectionFormFields,
+  connectionDraftIncomplete,
+  emptyConnectionDraft,
+  normalizeConnectionDraft
+} from '../../components/ConnectionForm'
 import { useAsyncAction } from '../../hooks/useAsyncAction'
 import { useStickyState } from '../../state/uiState'
 import { rsyncBlockReason } from '@shared/rsyncSupport'
@@ -185,7 +190,7 @@ export default function Publish(): JSX.Element {
 
   const saveConnectionAction = useAsyncAction(async () => {
     if (!connectionDraft) return
-    const saved = await window.quartzGui.connections.save(connectionDraft)
+    const saved = await window.quartzGui.connections.save(normalizeConnectionDraft(connectionDraft))
     setConnectionDraft(null)
     setConnections(await window.quartzGui.connections.list())
     // A connection created from inside the target form is immediately what that target uses -
@@ -603,7 +608,7 @@ export default function Publish(): JSX.Element {
           <div className="mt-3 flex gap-2">
             <Button
               onClick={() => saveConnectionAction.run()}
-              disabled={saveConnectionAction.pending || !connectionDraft.name.trim()}
+              disabled={saveConnectionAction.pending || connectionDraftIncomplete(connectionDraft)}
             >
               {saveConnectionAction.pending ? t('common.saving') : t('common.save')}
             </Button>

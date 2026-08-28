@@ -25,3 +25,21 @@ export function isInsideDirectory(parent: string, child: string): boolean {
   const prefix = /[\\/]$/.test(parent) ? parent : parent + '/'
   return child.startsWith(prefix) || child.startsWith(prefix.slice(0, -1) + '\\')
 }
+
+/**
+ * Expands a leading "~" to the user's home directory, and answers whether the result is an
+ * absolute path at all. Every path schema in electron/main/ipc/schemas.ts requires one, because
+ * almost every path in this app comes out of a native dialog - but the Settings page's default
+ * project directory is a text field, and a "~/Documents" typed into it (which was that field's own
+ * placeholder) reached the boundary and came back as a raw validation error.
+ */
+export function expandHome(path: string): string {
+  const trimmed = path.trim()
+  if (trimmed !== '~' && !trimmed.startsWith('~/')) return trimmed
+  const home = window.quartzGui.homeDir.replace(/\/$/, '')
+  return trimmed === '~' ? home : `${home}/${trimmed.slice(2)}`
+}
+
+export function isAbsolutePath(path: string): boolean {
+  return path.startsWith('/') || /^[A-Za-z]:[\\/]/.test(path)
+}

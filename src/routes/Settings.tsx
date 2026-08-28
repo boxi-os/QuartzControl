@@ -1,17 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { titlebarStripClass } from '../utils/platform'
+import { expandHome, isAbsolutePath, titlebarStripClass } from '../utils/platform'
 import { Link } from 'react-router-dom'
-import { Database, Key, Monitor, Moon, FolderOpen, Plug, Sun } from 'lucide-react'
+import { Database, Key, Monitor, Moon, FolderOpen, Plug, RefreshCw, Sun } from 'lucide-react'
 import type { AppInfo, Connection, GithubAccount, SaveConnectionInput, Settings as AppSettings } from '@shared/ipc-contract'
 import { useAppStore } from '../state/store'
 import { Badge, Button, Card, Field, FieldGroup, SegmentedControl, Select, TextInput } from '../components/ui'
 import {
   CONNECTION_KIND_LABEL,
   ConnectionFormFields,
+  connectionDraftIncomplete,
   connectionSummary,
   draftFromConnection,
-  emptyConnectionDraft
+  emptyConnectionDraft,
+  normalizeConnectionDraft
 } from '../components/ConnectionForm'
 import { useAsyncAction } from '../hooks/useAsyncAction'
 import { applyLanguagePreference } from '../i18n'
@@ -308,7 +310,7 @@ function ConnectionsSection(): JSX.Element {
 
   const save = useAsyncAction(async () => {
     if (!draft) return
-    await window.quartzGui.connections.save(draft)
+    await window.quartzGui.connections.save(normalizeConnectionDraft(draft))
     setDraft(null)
     await reload()
   })
@@ -394,7 +396,7 @@ function ConnectionsSection(): JSX.Element {
         <div className="mt-4 rounded-[8px] border border-black/[0.06] p-3 dark:border-white/10">
           <ConnectionFormFields draft={draft} onChange={setDraft} />
           <div className="mt-3 flex gap-2">
-            <Button onClick={() => save.run()} disabled={save.pending || !draft.name.trim()}>
+            <Button onClick={() => save.run()} disabled={save.pending || connectionDraftIncomplete(draft)}>
               {save.pending ? t('common.saving') : t('common.save')}
             </Button>
             <Button variant="ghost" onClick={() => setDraft(null)}>

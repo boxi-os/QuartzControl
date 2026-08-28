@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import type { Connection, ConnectionKind, SaveConnectionInput } from '@shared/ipc-contract'
 import { Button, Field, Select, TextInput, Toggle } from './ui'
+import { expandHome } from '../utils/platform'
 
 // Shared because a connection is app-level (connectionsService keeps them in userData, one per
 // provider) but is reached from two places: the Settings page, where they are managed on their
@@ -34,6 +35,35 @@ export function draftFromConnection(connection: Connection): SaveConnectionInput
   }
   if (connection.kind === 'github') return { ...base, kind: 'github', login: connection.login }
   return { ...base, kind: 'webhook' }
+}
+
+/**
+ * Whether the draft still lacks something that has to be there. The Save button's guard in both
+ * places that render this form - it used to check only the name, so an SFTP connection could be
+ * saved with an empty host or with the port field cleared to 0, and what came back was the zod
+ * message from the IPC boundary rather than anything about the field it was about.
+ */
+export function connectionDraftIncomplete(draft: SaveConnectionInput): boolean {
+  if (!draft.name.trim()) return true
+  if (draft.kind === 'ssh' || draft.kind === 'ftp') {
+    if (!draft.host.trim() || !draft.username.trim()) return true
+    if (!Number.isInteger(draft.port) || draft.port < 1 || draft.port > 65535) return true
+  }
+  // An edit may leave the URL field empty - that means "keep the stored one" (see
+  // connectionsService.saveConnection). A new webhook has nothing to fall back on.
+  if (draft.kind === 'webhook' && !draft.id && !(draft.secret ?? '').trim()) return true
+  return false
+}
+
+/**
+ * What actually gets saved. The key-file field's own placeholder is "~/.ssh/id_ed25519" and
+ * `keyPath` is validated as an absolute path at the IPC boundary, so a tilde typed there was
+ * refused with a validation message about an argument - the same trap the Settings page's default
+ * project directory had.
+ */
+export function normalizeConnectionDraft(draft: SaveConnectionInput): SaveConnectionInput {
+  if (draft.kind === 'ssh' && draft.keyPath) return { ...draft, keyPath: expandHome(draft.keyPath) }
+  return draft
 }
 
 export function connectionSummary(connection: Connection): string {
@@ -141,11 +171,14 @@ export function ConnectionFormFields({
           <Field label={t('publish.connectionForm.webhookUrl')}>
             {/* Not a password field: the URL has to be readable while pasting it, since a
                 mistyped build hook fails with a 404 that says nothing about which one. It is
-                still stored encrypted - its path is the token. */}
+                still stored encrypted - its path is the token, so it never travels back to the
+                renderer and an edit opens on an empty field. Which is why the placeholder is the
+                same "unverändert lassen" every other secret field shows on an edit: with the
+                example URL there instead, a stored webhook read as one that had none. */}
             <TextInput
               value={draft.secret ?? ''}
               onChange={(e) => onChange({ ...draft, secret: e.target.value })}
-              placeholder="https://api.netlify.com/build_hooks/…"
+              placeholder={draft.id ? t('publish.connectionForm.secretUnchangedPlaceholder') : 'https://api.netlify.com/build_hooks/…'}
             />
           </Field>
         ) : (

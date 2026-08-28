@@ -6,6 +6,7 @@ import type { GridFrameDefinition, QuartzConfig } from '@shared/ipc-contract'
 import { Button, PageHeader } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { useStickyState } from '../../state/uiState'
+import { UnsavedBadge, useUnsavedChanges } from '../../state/unsavedGuard'
 import { TAB_ICONS } from '../navConfig'
 import GlobalBoard from './GlobalBoard'
 import PageTypeOverrides from './PageTypeOverrides'
@@ -18,6 +19,10 @@ export default function LayoutEditor(): JSX.Element {
   const { t } = useTranslation()
   const project = useProject()
   const [config, setConfig] = useState<QuartzConfig | null>(null)
+  // What quartz.config.yaml held when it was last read - see syncPluginsFromDisk, which moves this
+  // along with it, so a frame the CLI just registered does not read as an unsaved edit.
+  const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
   // Which sub-tab and which page type are open is "where the user was", not throwaway state - see
   // useStickyState. Without it, every trip to another area dropped them back on Global.
   const [tab, setTab] = useStickyState<Tab>('layout.tab', 'global')
@@ -33,7 +38,13 @@ export default function LayoutEditor(): JSX.Element {
   const [builtinPageTypeFrames, setBuiltinPageTypeFrames] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    window.quartzGui.config.get(project.path).then(setConfig)
+    window.quartzGui.config
+      .get(project.path)
+      .then((loaded) => {
+        setConfig(loaded)
+        setSavedSnapshot(JSON.stringify(loaded))
+      })
+      .catch((err) => setLoadError(formatIpcError(err)))
   }, [project.path])
 
   useEffect(() => {
@@ -59,6 +70,9 @@ export default function LayoutEditor(): JSX.Element {
   async function syncPluginsFromDisk(): Promise<void> {
     const fresh = await window.quartzGui.config.get(project.path)
     setConfig((prev) => (prev ? { ...prev, plugins: fresh.plugins } : fresh))
+    // The snapshot is what is on disk, which `fresh` now is - so unsaved layout edits elsewhere in
+    // the config still count as unsaved, while the plugin entry the CLI just wrote does not.
+    setSavedSnapshot(JSON.stringify(fresh))
   }
 
   async function save(): Promise<void> {
@@ -67,6 +81,7 @@ export default function LayoutEditor(): JSX.Element {
     setError(null)
     try {
       await window.quartzGui.config.save(project.path, config)
+      setSavedSnapshot(JSON.stringify(config))
       setStatus('saved')
       setTimeout(() => setStatus('idle'), 2000)
     } catch (err) {
@@ -74,6 +89,12 @@ export default function LayoutEditor(): JSX.Element {
       setError(formatIpcError(err))
     }
   }
+
+  const dirty = useMemo(
+    () => config !== null && savedSnapshot !== null && JSON.stringify(config) !== savedSnapshot,
+    [config, savedSnapshot]
+  )
+  useUnsavedChanges(dirty)
 
   const availablePageTypes = useMemo(() => (config ? derivePageTypes(config.plugins) : []), [config])
   // Raw keys present under layout.byPageType, regardless of whether they actually customize
@@ -101,6 +122,17 @@ export default function LayoutEditor(): JSX.Element {
     setActivePageType(null)
   }
 
+  if (loadError) {
+    return (
+      <div className="max-w-xl">
+        <p className="mb-2 text-sm font-medium text-red-600 dark:text-red-400">{t('configEditor.loadError')}</p>
+        <pre className="whitespace-pre-wrap rounded-md bg-red-50 p-3 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-400">
+          {loadError}
+        </pre>
+        <p className="mt-2 text-sm text-slate-500">{t('configEditor.loadErrorHint')}</p>
+      </div>
+    )
+  }
   if (!config) return <p className="text-sm text-slate-500">{t('layoutEditor.loading')}</p>
 
   return (
@@ -130,6 +162,7 @@ export default function LayoutEditor(): JSX.Element {
           <div className="flex items-center gap-3">
             {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
             {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{error}</span>}
+            {dirty && status !== 'saving' && <UnsavedBadge />}
             <Button onClick={save} disabled={status === 'saving'}>
               {status === 'saving' ? t('common.saving') : t('common.save')}
             </Button>

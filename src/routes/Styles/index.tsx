@@ -5,6 +5,7 @@ import type { CssVariableGraph, Project, QuartzConfig, StyleFileSet } from '@sha
 import { Button, PageHeader, SegmentedControl } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { useStickyState } from '../../state/uiState'
+import { UnsavedBadge, useUnsavedChanges } from '../../state/unsavedGuard'
 import { TAB_ICONS } from '../navConfig'
 import { useProject } from '../ProjectLayout'
 import Basics from './Basics'
@@ -34,6 +35,8 @@ export interface StylesContextValue {
   overrides: Record<string, { light: string; dark: string }>
   setOverrides: React.Dispatch<React.SetStateAction<Record<string, { light: string; dark: string }>>>
   scss: { path: string; content: string; dirty: boolean; staleOnDisk: boolean }
+  /** True while anything on this page differs from what is on disk. */
+  dirty: boolean
   setScssContent: (content: string) => void
   reloadScss: (force?: boolean) => Promise<void>
   /** custom.scss plus every additional stylesheet, in the order the import block loads them. */
@@ -81,7 +84,17 @@ export default function Styles(): JSX.Element {
 
   const [config, setConfig] = useState<QuartzConfig | null>(null)
   const [overrides, setOverrides] = useState<Record<string, { light: string; dark: string }>>({})
-  const [scss, setScss] = useState<{ path: string; content: string; dirty: boolean; staleOnDisk: boolean } | null>(null)
+  // `original` is what the file held when it was last read, so `dirty` stays a comparison rather
+  // than a flag that survives typing an edit and undoing it again.
+  const [scss, setScss] = useState<{
+    path: string
+    content: string
+    original: string
+    dirty: boolean
+    staleOnDisk: boolean
+  } | null>(null)
+  const [savedConfig, setSavedConfig] = useState<string | null>(null)
+  const [savedOverrides, setSavedOverrides] = useState<string | null>(null)
   const [fileSet, setFileSet] = useState<StyleFileSet | null>(null)
   const [fileDrafts, setFileDrafts] = useState<Record<string, string>>({})
   const [graph, setGraph] = useState<CssVariableGraph | null>(null)
@@ -95,13 +108,19 @@ export default function Styles(): JSX.Element {
   const saveRef = useRef<() => Promise<void>>(async () => {})
 
   useEffect(() => {
-    window.quartzGui.config.get(project.path).then(setConfig)
-    window.quartzGui.styles.get(project.path).then((info) => setScss({ ...info, dirty: false, staleOnDisk: false }))
+    window.quartzGui.config.get(project.path).then((loaded) => {
+      setConfig(loaded)
+      setSavedConfig(JSON.stringify(loaded))
+    })
+    window.quartzGui.styles
+      .get(project.path)
+      .then((info) => setScss({ ...info, original: info.content, dirty: false, staleOnDisk: false }))
     window.quartzGui.styles.listFiles(project.path).then(setFileSet)
     window.quartzGui.styles.getVariableOverrides(project.path).then((list) => {
       const next: Record<string, { light: string; dark: string }> = {}
       for (const o of list) next[o.key] = { light: o.light, dark: o.dark ?? o.light }
       setOverrides(next)
+      setSavedOverrides(JSON.stringify(next))
     })
   }, [project.path])
 
@@ -147,7 +166,7 @@ export default function Styles(): JSX.Element {
   }, [])
 
   const setScssContent = useCallback((content: string) => {
-    setScss((prev) => (prev ? { ...prev, content, dirty: true } : prev))
+    setScss((prev) => (prev ? { ...prev, content, dirty: content !== prev.original } : prev))
   }, [])
 
   const reloadGraph = useCallback(() => setGraphNonce((n) => n + 1), [])
@@ -184,8 +203,8 @@ export default function Styles(): JSX.Element {
     async (force = false) => {
       const info = await window.quartzGui.styles.get(project.path)
       setScss((prev) => {
-        if (prev?.dirty && !force) return { ...prev, staleOnDisk: true }
-        return { ...info, dirty: false, staleOnDisk: false }
+        if (prev?.dirty && !force) return { ...prev, original: info.content, staleOnDisk: true }
+        return { ...info, original: info.content, dirty: false, staleOnDisk: false }
       })
     },
     [project.path]
@@ -201,6 +220,10 @@ export default function Styles(): JSX.Element {
     setMessage(null)
     try {
       await saveRef.current()
+      // Every sub-tab's save ends with what it wrote being on disk, so both snapshots are taken
+      // again here rather than in four places - the scss/file drafts clear themselves.
+      setSavedConfig(JSON.stringify(config))
+      setSavedOverrides(JSON.stringify(overrides))
       setStatus('saved')
       setTimeout(() => setStatus('idle'), 2000)
     } catch (err) {
@@ -208,6 +231,14 @@ export default function Styles(): JSX.Element {
       setMessage(formatIpcError(err))
     }
   }
+
+  // Computed before the early return below, since the guard is a hook and hooks cannot be skipped.
+  const dirty =
+    (savedConfig !== null && JSON.stringify(config) !== savedConfig) ||
+    (savedOverrides !== null && JSON.stringify(overrides) !== savedOverrides) ||
+    (scss?.dirty ?? false) ||
+    Object.keys(fileDrafts).length > 0
+  useUnsavedChanges(dirty)
 
   if (!config || !scss) return <p className="text-sm text-slate-500">{t('common.loading')}</p>
 
@@ -230,7 +261,8 @@ export default function Styles(): JSX.Element {
     graphLoading,
     reloadGraph,
     registerSave,
-    goToTab
+    goToTab,
+    dirty
   }
 
   const themeId = activeThemeIdOf(config)
@@ -247,6 +279,7 @@ export default function Styles(): JSX.Element {
             <>
               {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
               {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{message}</span>}
+              {dirty && status !== 'saving' && <UnsavedBadge />}
               <Button onClick={save} disabled={status === 'saving'}>
                 {status === 'saving' ? t('common.saving') : t('common.save')}
               </Button>

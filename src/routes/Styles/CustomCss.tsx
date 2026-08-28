@@ -188,6 +188,10 @@ export default function CustomCss(): JSX.Element {
 
   function setContent(value: string): void {
     if (activeTab === MAIN_TAB) setScssContent(value)
+    // Typing the file's own content back drops the draft rather than keeping an identical one -
+    // otherwise the tab keeps its modified dot, and the page keeps warning about unsaved changes
+    // that are not changes.
+    else if (value === loaded[activeTab]) clearFileDrafts([activeTab])
     else setFileDraft(activeTab, value)
   }
 

@@ -111,6 +111,9 @@ export default {
     }
   },
   projectLayout: {
+    unsavedWarning:
+      'This page has changes that are not saved yet. Leaving discards them. Switch anyway?',
+    unsavedBadge: 'Unsaved',
     allProjects: 'All projects',
     loading: 'Loading project…',
     tabs: {

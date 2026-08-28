@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useProject } from '../ProjectLayout'
@@ -6,6 +6,7 @@ import type { QuartzConfig } from '@shared/ipc-contract'
 import { Button, PageHeader, SegmentedControl } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { useStickyState } from '../../state/uiState'
+import { UnsavedBadge, useUnsavedChanges } from '../../state/unsavedGuard'
 import { TAB_ICONS } from '../navConfig'
 import SiteSettings from './SiteSettings'
 import ContentFolder from './ContentFolder'
@@ -34,13 +35,22 @@ export default function ConfigEditor(): JSX.Element {
   const tab: ConfigTab = isTab(rawTab) ? rawTab : lastTab
 
   const [config, setConfig] = useState<QuartzConfig | null>(null)
+  // What the file held when it was read, so "unsaved" is a comparison. Stringified once per change
+  // rather than per render, since a real project's config carries some fifty plugin entries.
+  const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null)
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [error, setError] = useState<string | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
     setLoadError(null)
-    window.quartzGui.config.get(project.path).then(setConfig).catch((err) => setLoadError(formatIpcError(err)))
+    window.quartzGui.config
+      .get(project.path)
+      .then((loaded) => {
+        setConfig(loaded)
+        setSavedSnapshot(JSON.stringify(loaded))
+      })
+      .catch((err) => setLoadError(formatIpcError(err)))
   }, [project.path])
 
   // Arriving at a tab through the URL has to be remembered too, or a deep link followed by a
@@ -48,6 +58,12 @@ export default function ConfigEditor(): JSX.Element {
   useEffect(() => {
     if (isTab(rawTab)) setLastTab(rawTab)
   }, [rawTab, setLastTab])
+
+  const dirty = useMemo(
+    () => config !== null && savedSnapshot !== null && JSON.stringify(config) !== savedSnapshot,
+    [config, savedSnapshot]
+  )
+  useUnsavedChanges(dirty)
 
   const goToTab = useCallback(
     (next: ConfigTab) => {
@@ -65,6 +81,7 @@ export default function ConfigEditor(): JSX.Element {
     setError(null)
     try {
       await window.quartzGui.config.save(project.path, config)
+      setSavedSnapshot(JSON.stringify(config))
       setStatus('saved')
       setTimeout(() => setStatus('idle'), 2000)
     } catch (err) {
@@ -94,6 +111,7 @@ export default function ConfigEditor(): JSX.Element {
             <>
               {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
               {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{error}</span>}
+              {dirty && status !== 'saving' && <UnsavedBadge />}
               <Button onClick={save} disabled={status === 'saving' || !config}>
                 {status === 'saving' ? t('common.saving') : t('common.save')}
               </Button>

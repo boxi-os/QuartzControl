@@ -112,6 +112,9 @@ export default {
     }
   },
   projectLayout: {
+    unsavedWarning:
+      'Auf dieser Seite gibt es Änderungen, die noch nicht gespeichert sind. Beim Wechseln gehen sie verloren. Trotzdem wechseln?',
+    unsavedBadge: 'Nicht gespeichert',
     allProjects: 'Alle Projekte',
     loading: 'Lade Projekt…',
     tabs: {

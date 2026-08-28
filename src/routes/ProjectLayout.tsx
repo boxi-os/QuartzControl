@@ -5,6 +5,17 @@ import { NavLink, Outlet, useLocation, useOutletContext, useParams } from 'react
 import { ArrowLeft, type LucideIcon } from 'lucide-react'
 import type { Project } from '@shared/ipc-contract'
 import { GROUP_ICONS, TAB_ICONS, type TabKey } from './navConfig'
+import { hasUnsavedChanges } from '../state/unsavedGuard'
+
+// Guards every way out of a page that the sidebar offers - the nav items and the way back to the
+// project list. In-page links are deliberately not wrapped: they lead out of pages that do not
+// edit anything, and a guard nobody can see is worse than one place that is consistent.
+function useLeaveGuard(): (event: { preventDefault: () => void }) => void {
+  const { t } = useTranslation()
+  return (event) => {
+    if (hasUnsavedChanges() && !confirm(t('projectLayout.unsavedWarning'))) event.preventDefault()
+  }
+}
 
 export function useProject(): Project {
   return useOutletContext<Project>()
@@ -85,6 +96,7 @@ export default function ProjectLayout(): JSX.Element {
   const [project, setProject] = useState<Project | null>(null)
   const mainRef = useRef<HTMLElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
+  const guardLeave = useLeaveGuard()
   useRestoreScroll(mainRef, contentRef, project !== null)
 
   // Grouped by what a user is trying to do, not by which service implements it: "Einrichtung" is
@@ -149,6 +161,7 @@ export default function ProjectLayout(): JSX.Element {
         <div className="px-2 pb-2">
           <NavLink
             to="/"
+            onClick={guardLeave}
             className="titlebar-no-drag flex items-center gap-1.5 rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium text-slate-700 transition-colors hover:bg-black/[0.05] dark:text-slate-200 dark:hover:bg-white/10"
           >
             <ArrowLeft size={14} aria-hidden /> {t('projectLayout.allProjects')}
@@ -189,6 +202,7 @@ export default function ProjectLayout(): JSX.Element {
                       key={item.to}
                       to={item.to}
                       end={item.end}
+                      onClick={guardLeave}
                       className={({ isActive }) =>
                         `flex items-center gap-2 rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium transition-colors ${
                           isActive

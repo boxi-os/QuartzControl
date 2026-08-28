@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events'
+import { existsSync } from 'fs'
 import type { DeployDiffEntry, DeployProgressEvent, DeployResult, PublishTarget } from '@shared/ipc-contract'
 import type { DeployAdapter, DeployContext } from './types'
 import { resolveBuildDir } from '../projectDirs'
@@ -55,9 +56,33 @@ async function makeContext(projectPath: string, targetId: string, outputDir?: st
   return { ctx, adapter }
 }
 
+// A target's own `excludes` are the paths it never publishes, kept between runs - as opposed to the
+// per-run boxes the user unticks in the diff. They are applied here rather than in each adapter so
+// that the preview and the run cannot disagree: a path in this list is simply invisible to
+// publishing. A git-branch target is the exception the adapter documents - it replaces the branch
+// with one root commit, so leaving a file out would delete it from the live site instead of leaving
+// it alone; the target form does not offer the field for that type.
+function persistentExcludes(ctx: DeployContext): string[] {
+  return ctx.target.destination.type === 'git-branch' ? [] : ctx.target.excludes
+}
+
+// Every file adapter reads the build output, and on a project that has never been built that used
+// to surface as a raw "ENOENT: no such file or directory, scandir '<dir>'" from deep inside the
+// manifest walk. The page that shows this has a "Jetzt bauen" button right next to the message.
+async function assertBuildExists(ctx: DeployContext): Promise<void> {
+  if (ctx.target.destination.type === 'webhook') return
+  if (existsSync(ctx.buildDir)) return
+  throw new Error(
+    `Es liegt noch kein Build in "${ctx.buildDir}". Bitte zuerst bauen - oder in Vorschau & Build einen anderen Ausgabeordner einstellen.`
+  )
+}
+
 export async function previewDeploy(projectPath: string, targetId: string, outputDir?: string): Promise<DeployDiffEntry[]> {
   const { ctx, adapter } = await makeContext(projectPath, targetId, outputDir)
-  return adapter.preview(ctx)
+  await assertBuildExists(ctx)
+  const hidden = new Set(persistentExcludes(ctx))
+  const diff = await adapter.preview(ctx)
+  return hidden.size === 0 ? diff : diff.filter((entry) => !hidden.has(entry.path))
 }
 
 export async function runDeploy(
@@ -68,7 +93,8 @@ export async function runDeploy(
 ): Promise<DeployResult> {
   const { ctx, adapter } = await makeContext(projectPath, targetId, outputDir)
   try {
-    return await adapter.run(ctx, excludePaths)
+    await assertBuildExists(ctx)
+    return await adapter.run(ctx, [...new Set([...excludePaths, ...persistentExcludes(ctx)])])
   } catch (err) {
     // An adapter's setup failures (no connection configured, no SSH agent, an unreadable key file)
     // are thrown rather than returned, so they arrive as one message in the same output panel the

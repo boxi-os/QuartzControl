@@ -1241,7 +1241,9 @@ export default {
       folderPath: 'Target folder',
       connection: 'Credential',
       pickConnection: '— pick a credential —',
-      deleteRemoved: 'Also delete removed files at the target'
+      deleteRemoved: 'Also delete removed files at the target',
+      excludes: 'Never publish (one path per line)',
+      excludesPlaceholder: 'e.g. .htaccess\nstats/'
     },
     noSecretWarning: '(no password/key stored)',
     hostKeyPinned: 'Host key confirmed',

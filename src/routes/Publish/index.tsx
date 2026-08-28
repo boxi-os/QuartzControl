@@ -176,6 +176,10 @@ export default function Publish(): JSX.Element {
     const saved = await window.quartzGui.publishTargets.save(project.path, targetDraft)
     setTargetDraft(null)
     await reload()
+    // Editing the *selected* target keeps its id, so the effect below does not fire and a diff
+    // taken before the change would keep describing the old remote path or exclusion list.
+    setDiff(null)
+    setExcluded(new Set())
     setSelectedId(saved.id)
   })
 
@@ -446,11 +450,15 @@ export default function Publish(): JSX.Element {
                 <div className="flex gap-2">
                   <TextInput
                     value={targetDraft.destination.path}
+                    // Rebuilding the destination from scratch here reset deleteRemoved to true,
+                    // so switching deletion off and then correcting the path silently switched it
+                    // back on - and deletion is the half of a folder target that removes files.
                     onChange={(e) =>
-                      setTargetDraft({
-                        ...targetDraft,
-                        destination: { type: 'folder', path: e.target.value, deleteRemoved: true }
-                      })
+                      setTargetDraft((prev) =>
+                        prev && prev.destination.type === 'folder'
+                          ? { ...prev, destination: { ...prev.destination, path: e.target.value } }
+                          : prev
+                      )
                     }
                     className="flex-1"
                   />
@@ -501,6 +509,31 @@ export default function Publish(): JSX.Element {
                 ))}
               </Select>
             </Field>
+            )}
+            {/* The paths this target never publishes, kept between runs - as opposed to the
+                per-run checkboxes in the diff below, which only skip one deploy. Not offered for a
+                branch target: there, leaving a file out deletes it from the live site. */}
+            {targetDraft.destination.type !== 'git-branch' && (
+              <Field label={t('publish.targetForm.excludes')} className="sm:col-span-2 xl:col-span-1">
+                <textarea
+                  className="min-h-20 rounded-[7px] border border-black/10 bg-white px-2.5 py-1.5 font-mono text-[13px] shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
+                  value={(targetDraft.excludes ?? []).join('\n')}
+                  placeholder={t('publish.targetForm.excludesPlaceholder')}
+                  onChange={(e) =>
+                    setTargetDraft((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            excludes: e.target.value
+                              .split('\n')
+                              .map((line) => line.trim())
+                              .filter(Boolean)
+                          }
+                        : prev
+                    )
+                  }
+                />
+              </Field>
             )}
             {'deleteRemoved' in targetDraft.destination && (
               <div className="flex items-end pb-1.5">

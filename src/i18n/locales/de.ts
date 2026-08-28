@@ -1243,7 +1243,9 @@ export default {
       folderPath: 'Zielordner',
       connection: 'Zugang',
       pickConnection: '— Zugang wählen —',
-      deleteRemoved: 'Entfernte Dateien auch im Ziel löschen'
+      deleteRemoved: 'Entfernte Dateien auch im Ziel löschen',
+      excludes: 'Nie veröffentlichen (ein Pfad pro Zeile)',
+      excludesPlaceholder: 'z. B. .htaccess\nstats/'
     },
     noSecretWarning: '(kein Passwort/Key hinterlegt)',
     hostKeyPinned: 'Host-Key bestätigt',

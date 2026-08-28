@@ -517,7 +517,25 @@ export default {
     locale: 'Locale',
     spa: 'Single-Page-App-Routing',
     popovers: 'Popover-Vorschauen',
-    ignorePatterns: 'Ignore-Patterns (eine Zeile pro Muster)'
+    ignorePatterns: 'Ignore-Patterns (eine Zeile pro Muster)',
+    localeHint: 'Sprachen, die dieses Projekt mitbringt',
+    localeUnknownSuffix: '(nicht im Projekt)',
+    analyticsHeading: 'Statistik',
+    analyticsDescription:
+      'Bindet das Zählskript eines Anbieters in jede Seite ein. Ohne Anbieter wird nichts geladen und nichts gemessen.',
+    analyticsProvider: 'Anbieter',
+    analyticsNone: 'Keine Statistik',
+    analyticsMissing: 'Noch auszufüllen, sonst kann das Skript nichts senden: {{fields}}',
+    analyticsFields: {
+      host: 'Nur bei selbst gehosteter Instanz — sonst leer lassen',
+      hostRequired: 'Adresse deiner Installation, z. B. https://analytics.example.com',
+      tagId: 'Mess-ID, z. B. G-XXXXXXX',
+      websiteId: 'ID der Website im Konto des Anbieters',
+      scriptSrc: 'Abweichende Skript-URL',
+      apiKey: 'Projekt-API-Key',
+      siteId: 'ID der Website im Konto des Anbieters',
+      projectId: 'Projekt-ID'
+    }
   },
   themeEditor: {
     overrideWarningPrefix: 'Das Theme-Plugin ',

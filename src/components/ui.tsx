@@ -48,11 +48,24 @@ export function useCopyToClipboard(): { copied: string | null; copy: (value: str
 
 // `className` is there for grid placement (e.g. a textarea field spanning every column of a
 // responsive form grid), not for restyling the field itself.
-export function Field({ label, children, className = '' }: { label: string; children: ReactNode; className?: string }): JSX.Element {
+export function Field({
+  label,
+  hint,
+  children,
+  className = ''
+}: {
+  label: string
+  // One line under the control saying what belongs in it. Part of the primitive rather than left
+  // to each page, so the size, colour and position of that line are the same everywhere.
+  hint?: string
+  children: ReactNode
+  className?: string
+}): JSX.Element {
   return (
     <label className={`flex flex-col gap-1 text-[13px] ${className}`}>
       <span className="font-medium text-slate-600 dark:text-slate-300">{label}</span>
       {children}
+      {hint && <span className="text-[11px] text-slate-500 dark:text-slate-400">{hint}</span>}
     </label>
   )
 }

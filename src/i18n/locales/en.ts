@@ -516,7 +516,25 @@ export default {
     locale: 'Locale',
     spa: 'Single-page-app routing',
     popovers: 'Popover previews',
-    ignorePatterns: 'Ignore patterns (one line per pattern)'
+    ignorePatterns: 'Ignore patterns (one line per pattern)',
+    localeHint: 'The languages this project ships',
+    localeUnknownSuffix: '(not in this project)',
+    analyticsHeading: 'Analytics',
+    analyticsDescription:
+      "Embeds a provider's counting script into every page. With no provider, nothing is loaded and nothing is measured.",
+    analyticsProvider: 'Provider',
+    analyticsNone: 'No analytics',
+    analyticsMissing: 'Still missing, or the script has nothing to send to: {{fields}}',
+    analyticsFields: {
+      host: 'Only for a self-hosted instance — leave empty otherwise',
+      hostRequired: 'Address of your installation, e.g. https://analytics.example.com',
+      tagId: 'Measurement ID, e.g. G-XXXXXXX',
+      websiteId: "The site's id in your provider account",
+      scriptSrc: 'Alternative script URL',
+      apiKey: 'Project API key',
+      siteId: "The site's id in your provider account",
+      projectId: 'Project id'
+    }
   },
   themeEditor: {
     overrideWarningPrefix: 'The theme plugin ',

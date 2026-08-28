@@ -165,6 +165,12 @@ export const longText = z.string().max(5_000_000) // custom.scss and locale valu
 
 export const contentStrategy = z.enum(['copy', 'symlink'])
 export const syncDirection = z.enum(['push', 'pull', 'both'])
+// The commit half of `quartz sync`. The message is passed as its own argv entry (-m <text>), so
+// it needs no escaping - only a length bound, since it becomes a git commit subject.
+export const syncOptions = z.looseObject({
+  commit: z.boolean(),
+  message: z.string().max(500).optional()
+})
 export const layoutPosition = z.enum(['header', 'left', 'right', 'beforeBody', 'afterBody', 'footer'])
 export const frameSlot = z.enum([...layoutPosition.options, 'pageBody'])
 export const templatePartId = z.enum([

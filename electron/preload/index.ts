@@ -18,6 +18,7 @@ import type {
   RestoreOptions,
   SaveConnectionInput,
   SnapshotKind,
+  SyncOptions,
   SavePublishTargetInput,
   DeployProgressEvent,
   CssVariableOverride,
@@ -209,8 +210,8 @@ const api: QuartzGuiApi = {
     save: (projectPath: string, prefs: ProjectPrefs) => ipcRenderer.invoke(IPC.projectPrefsSave, projectPath, prefs)
   },
   sync: {
-    run: (projectPath: string, direction?: 'push' | 'pull' | 'both') =>
-      ipcRenderer.invoke(IPC.syncRun, projectPath, direction),
+    run: (projectPath: string, direction?: 'push' | 'pull' | 'both', options?: SyncOptions) =>
+      ipcRenderer.invoke(IPC.syncRun, projectPath, direction, options),
     status: (projectPath: string) => ipcRenderer.invoke(IPC.syncStatus, projectPath)
   },
   backups: {

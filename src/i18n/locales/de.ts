@@ -318,7 +318,18 @@ export default {
   },
   gitSync: {
     title: 'Git-Sync',
-    explainer: 'Pull holt Änderungen aus dem Repository ab. Push lädt deine lokalen Änderungen dorthin hoch.',
+    explainer:
+      'Jeder Sync committet zuerst deine Änderungen (falls unten aktiviert), holt dann den Branch "{{branch}}" von origin und pusht deinen aktuellen Branch — als Force-Push, so macht es die Quartz-CLI.',
+    commitChanges: 'Änderungen vorher committen',
+    commitMessage: 'Commit-Nachricht (optional)',
+    commitMessagePlaceholder: 'Standard: "Quartz sync: <Datum>"',
+    commitHint: 'Die {{count}} lokale Änderung wird committet.',
+    commitHint_other: 'Alle {{count}} lokalen Änderungen werden in einem Commit zusammengefasst.',
+    commitHintClean: 'Es gibt gerade nichts zu committen.',
+    noCommitHint: 'Ohne Commit wird nur der bereits committete Stand gepusht bzw. geholt.',
+    pullBranchWarning:
+      'Pull holt immer den Branch "{{source}}" von origin, unabhängig davon, welcher Branch hier ausgecheckt ist ("{{branch}}"). Auf einem anderen Branch schlägt der Pull entweder fehl oder mischt Fremdes herein.',
+    openOnGithub: 'Auf GitHub öffnen',
     pull: 'Pull',
     pullRunning: 'Pull läuft…',
     push: 'Push',

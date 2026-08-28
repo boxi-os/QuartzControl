@@ -1,12 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { RefreshCw } from 'lucide-react'
+import { ExternalLink, RefreshCw } from 'lucide-react'
 import { useProject } from './ProjectLayout'
-import type { GitFileChange, GithubAccount, GitStatus } from '@shared/ipc-contract'
+import type { GitFileChange, GithubAccount, GithubRepoRef, GitStatus } from '@shared/ipc-contract'
 import { Badge, Button, Card, Field, PageHeader, TextInput, Toggle } from '../components/ui'
 import { formatIpcError } from '../components/ErrorSurface'
 import { useAsyncAction } from '../hooks/useAsyncAction'
+import { useStickyState } from '../state/uiState'
 import { TAB_ICONS } from './navConfig'
+
+// The branch `quartz sync --pull` fetches, hardcoded in the CLI itself
+// (quartz/cli/constants.js: QUARTZ_SOURCE_BRANCH = "v5"), not derived from what is checked out -
+// so on any other branch a pull merges Quartz's v5 into it, or fails because the remote has no
+// such branch. Worth saying out loud; nothing else in the app would reveal it.
+const QUARTZ_SOURCE_BRANCH = 'v5'
 
 function StatusRow({ change }: { change: GitFileChange }): JSX.Element {
   const { t } = useTranslation()
@@ -22,7 +29,7 @@ function StatusRow({ change }: { change: GitFileChange }): JSX.Element {
   )
 }
 
-function RepoStatus({ status }: { status: GitStatus }): JSX.Element {
+function RepoStatus({ status, repo }: { status: GitStatus; repo: GithubRepoRef | null }): JSX.Element {
   const { t } = useTranslation()
 
   if (!status.isRepo) {
@@ -67,8 +74,23 @@ function RepoStatus({ status }: { status: GitStatus }): JSX.Element {
       {!status.remoteUrl ? (
         <p className="text-xs text-slate-500 dark:text-slate-400">{t('gitSync.noRemote')}</p>
       ) : (
-        <p className="truncate font-mono text-xs text-slate-500 dark:text-slate-400" title={status.remoteUrl}>
-          origin: {status.remoteUrl}
+        <p className="flex min-w-0 items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+          <span className="min-w-0 truncate font-mono" title={status.remoteUrl}>
+            origin: {status.remoteUrl}
+          </span>
+          {/* github.originRepo answers null for anything that isn't github.com, which is exactly
+              the condition for showing this - the URL itself is a remote spec and may be the
+              scp-like form, which no browser opens. */}
+          {repo && (
+            <button
+              type="button"
+              onClick={() => window.quartzGui.dialog.openExternal(repo.htmlUrl)}
+              className="inline-flex shrink-0 items-center gap-1 text-slate-600 hover:underline dark:text-slate-300"
+            >
+              <ExternalLink size={12} aria-hidden />
+              {t('gitSync.openOnGithub')}
+            </button>
+          )}
         </p>
       )}
 
@@ -155,6 +177,12 @@ export default function GitSync(): JSX.Element {
   const [output, setOutput] = useState<string | null>(null)
   const [success, setSuccess] = useState<boolean | null>(null)
   const [status, setStatus] = useState<GitStatus | null>(null)
+  const [repo, setRepo] = useState<GithubRepoRef | null>(null)
+  // Whether the sync commits, and under which message. Sticky rather than plain state: a message
+  // typed a moment ago must survive the trip to another area, the same rule the rest of the app
+  // follows for drafts.
+  const [commit, setCommit] = useStickyState('sync.commit', true)
+  const [message, setMessage] = useStickyState('sync.message', '')
 
   const refresh = useAsyncAction(async () => {
     setStatus(await window.quartzGui.sync.status(project.path))
@@ -163,6 +191,7 @@ export default function GitSync(): JSX.Element {
 
   useEffect(() => {
     refreshStatus()
+    window.quartzGui.github.originRepo(project.path).then(setRepo).catch(() => setRepo(null))
   }, [project.path, refreshStatus])
 
   const run = useCallback(
@@ -170,7 +199,7 @@ export default function GitSync(): JSX.Element {
       setBusy(direction)
       setOutput(null)
       try {
-        const result = await window.quartzGui.sync.run(project.path, direction)
+        const result = await window.quartzGui.sync.run(project.path, direction, { commit, message })
         setSuccess(result.success)
         setOutput(result.output)
       } catch (err) {
@@ -185,7 +214,7 @@ export default function GitSync(): JSX.Element {
         await refreshStatus()
       }
     },
-    [project.path, refreshStatus]
+    [project.path, refreshStatus, commit, message]
   )
 
   return (
@@ -207,7 +236,7 @@ export default function GitSync(): JSX.Element {
           </Button>
         </div>
         {refresh.error && <p className="text-xs text-red-600 dark:text-red-400">{refresh.error}</p>}
-        {status && <RepoStatus status={status} />}
+        {status && <RepoStatus status={status} repo={repo} />}
       </Card>
 
       {status?.isRepo && !status.remoteUrl && <CreateRepoCard projectPath={project.path} onCreated={refreshStatus} />}
@@ -216,7 +245,41 @@ export default function GitSync(): JSX.Element {
           does, so the card only caps itself while there is nothing to show. */}
       <Card className={output == null ? 'max-w-2xl' : ''}>
         <h2 className="mb-1 font-medium">{t('gitSync.title')}</h2>
-        <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('gitSync.explainer')}</p>
+        {/* What `quartz sync` actually does, in the order it does it. All three parts were
+            invisible before: the commit (its --commit defaults to true, so even "Pull" committed
+            the whole working tree under a generated message - measured), the force push
+            (`git push -uf origin <current branch>`) and the fixed pull branch. */}
+        <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+          {t('gitSync.explainer', { branch: QUARTZ_SOURCE_BRANCH })}
+        </p>
+
+        {/* The commit is part of every direction, so it sits above the buttons rather than next to
+            one of them. Unticking it maps to --no-commit, which syncs the last committed state. */}
+        <div className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-black/[0.06] p-3 dark:border-white/10">
+          <Toggle label={t('gitSync.commitChanges')} checked={commit} onChange={setCommit} />
+          <Field label={t('gitSync.commitMessage')} className="min-w-64 flex-1">
+            <TextInput
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder={t('gitSync.commitMessagePlaceholder')}
+              disabled={!commit || busy !== null}
+            />
+          </Field>
+          <p className="basis-full text-xs text-slate-500 dark:text-slate-400">
+            {commit
+              ? status && status.changeCount > 0
+                ? t('gitSync.commitHint', { count: status.changeCount })
+                : t('gitSync.commitHintClean')
+              : t('gitSync.noCommitHint')}
+          </p>
+        </div>
+
+        {status?.isRepo && !status.detached && status.branch && status.branch !== QUARTZ_SOURCE_BRANCH && (
+          <p className="mb-4 rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+            {t('gitSync.pullBranchWarning', { branch: status.branch, source: QUARTZ_SOURCE_BRANCH })}
+          </p>
+        )}
+
         <div className="mb-4 flex gap-2">
           <Button onClick={() => run('pull')} disabled={busy !== null}>
             {busy === 'pull' ? t('gitSync.pullRunning') : t('gitSync.pull')}

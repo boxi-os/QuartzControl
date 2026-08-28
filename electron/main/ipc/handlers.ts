@@ -12,6 +12,7 @@ import type {
   SavePublishTargetInput,
   ServerOptions,
   Settings,
+  SyncOptions,
   TemplateExportOptions,
   ThemePreset
 } from '@shared/ipc-contract'
@@ -406,8 +407,10 @@ export function registerIpcHandlers(): void {
 
   handle(IPC.syncStatus, t([s.absolutePath]), (projectPath) => gitStatusService.getGitStatus(projectPath))
 
-  handle(IPC.syncRun, t([s.absolutePath, s.syncDirection.optional()]), (projectPath, direction) =>
-    syncService.runSync(projectPath, direction)
+  handle(
+    IPC.syncRun,
+    t([s.absolutePath, s.syncDirection.optional(), s.syncOptions.optional()]),
+    (projectPath, direction, options) => syncService.runSync(projectPath, direction, options as SyncOptions | undefined)
   )
 
   handle(IPC.backupList, t([s.absolutePath]), (projectPath) => backupService.listContentBackups(projectPath))

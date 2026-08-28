@@ -317,7 +317,18 @@ export default {
   },
   gitSync: {
     title: 'Git sync',
-    explainer: 'Pull fetches changes from the repository. Push uploads your local changes to it.',
+    explainer:
+      'Every sync first commits your changes (when enabled below), then fetches the branch "{{branch}}" from origin and pushes your current branch — as a force push, which is what the Quartz CLI does.',
+    commitChanges: 'Commit changes first',
+    commitMessage: 'Commit message (optional)',
+    commitMessagePlaceholder: 'Default: "Quartz sync: <date>"',
+    commitHint: '{{count}} local change goes into the commit.',
+    commitHint_other: 'All {{count}} local changes go into a single commit.',
+    commitHintClean: 'There is nothing to commit right now.',
+    noCommitHint: 'Without a commit, only the already committed state is pushed or fetched.',
+    pullBranchWarning:
+      'Pull always fetches the branch "{{source}}" from origin, no matter which branch is checked out here ("{{branch}}"). On any other branch the pull either fails or merges in something unrelated.',
+    openOnGithub: 'Open on GitHub',
     pull: 'Pull',
     pullRunning: 'Pull running…',
     push: 'Push',

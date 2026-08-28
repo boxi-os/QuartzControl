@@ -475,6 +475,18 @@ export interface SyncResult {
   output: string
 }
 
+// `quartz sync` does three things, and two of them were invisible here. Verified against the CLI's
+// own args.js: --commit, --push and --pull all default to *true*, so even a pull-only run first
+// stages the whole working tree and commits it under "Quartz sync: <date>" (measured in a real
+// project: `--no-push --no-pull` produced a 10-file commit). The push is `git push -uf`, a force
+// push onto the current branch. Both are now the user's decision rather than a surprise.
+export interface SyncOptions {
+  /** Commit everything in the working tree before syncing (the CLI's own default). */
+  commit: boolean
+  /** Overrides the generated "Quartz sync: <date>" message. Ignored when commit is false. */
+  message?: string
+}
+
 export type GitOperationInProgress = 'merge' | 'rebase' | 'cherry-pick' | 'revert'
 
 export interface GitFileChange {
@@ -1442,7 +1454,7 @@ export interface QuartzGuiApi {
     save(projectPath: string, prefs: ProjectPrefs): Promise<void>
   }
   sync: {
-    run(projectPath: string, direction?: 'push' | 'pull' | 'both'): Promise<SyncResult>
+    run(projectPath: string, direction?: 'push' | 'pull' | 'both', options?: SyncOptions): Promise<SyncResult>
     status(projectPath: string): Promise<GitStatus>
   }
   backups: {

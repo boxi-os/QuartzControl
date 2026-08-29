@@ -430,6 +430,19 @@ function EnvironmentLine({ info }: { info: EnvironmentInfo }): JSX.Element | nul
         <span className="break-words">
           {info.tools.map((tool) => `${tool.name} ${versionNumber(tool.version)}`).join(' · ')}
         </span>
+        {/* Named rather than merely implied by the band's absence. "No warning" and "secrets are
+            protected" look identical, and the alpha test asked exactly that question about a Linux
+            machine - where the backend is the one thing that decides it (see
+            connectionsService.getSecretStorageInfo). Only on Linux, because everywhere else there
+            is one keychain and nothing to distinguish. */}
+        {info.secretStorage.backend && (
+          <>
+            {' · '}
+            <span className="break-words">
+              {t('home.environment.secretsBackend', { backend: info.secretStorage.backend })}
+            </span>
+          </>
+        )}
       </p>
     </div>
   )

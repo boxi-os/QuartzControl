@@ -1,18 +1,24 @@
 // The window's title bar is macOS-only chrome: `titleBarStyle: 'hiddenInset'` (electron/main/
 // index.ts) hides the OS title bar and insets the traffic lights over the app's own header, which
 // is why every full-height screen reserves a 48px drag strip at the top. Windows and Linux get
-// `titleBarStyle: 'default'`, i.e. a real title bar above the window - so that strip is pure empty
-// space there, at the top of every single screen.
+// `titleBarStyle: 'default'`, i.e. a real title bar - and, on most Linux desktops, a native menu
+// bar right below it.
 //
 // Read from the preload bridge rather than an IPC call because the answer is needed during the
 // first render; fetching it would paint the wrong layout first and then jump.
 export const isMac = window.quartzGui.platform === 'darwin'
 
 /**
- * Class names for the top drag strip: a 48px draggable band on macOS, nothing anywhere else.
+ * Class names for the top strip: a 48px draggable band on macOS, a plain 16px gap everywhere
+ * else. Not zero, which is what it used to be - measured on Debian, the first line of every
+ * screen ("Alle Projekte", the app title, a PageHeader) sat flush against the native menu bar
+ * with no separation at all, which reads as a rendering fault rather than as a dense layout.
+ * The non-mac strip is deliberately *not* draggable: there is a real title bar above it doing
+ * that job, and a drag region swallows clicks on anything inside it.
+ *
  * Kept as one export so the four screens that need it cannot drift apart.
  */
-export const titlebarStripClass = isMac ? 'titlebar-drag h-12 shrink-0' : ''
+export const titlebarStripClass = isMac ? 'titlebar-drag h-12 shrink-0' : 'h-4 shrink-0'
 
 /**
  * Whether `child` is `parent` itself or lies inside it, comparing path strings. Both separators

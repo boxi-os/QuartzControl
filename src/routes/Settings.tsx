@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { expandHome, isAbsolutePath, titlebarStripClass } from '../utils/platform'
-import { Link } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Database, Key, Monitor, Moon, FolderOpen, Plug, RefreshCw, Sun, TriangleAlert } from 'lucide-react'
 import type { AppInfo, Connection, GithubAccount, SaveConnectionInput, Settings as AppSettings } from '@shared/ipc-contract'
 import { useAppStore } from '../state/store'
@@ -25,6 +25,8 @@ import { formatBytes } from '../utils/format'
 // Veröffentlichen page first) and the GitHub token, which is one of those connections.
 
 export default function Settings(): JSX.Element {
+  const navigate = useNavigate()
+  const location = useLocation()
   const { t } = useTranslation()
   const { settings, loadSettings, saveSettings } = useAppStore()
 
@@ -45,9 +47,19 @@ export default function Settings(): JSX.Element {
     <div className="flex h-screen flex-col">
       <div className={titlebarStripClass} />
       <div className="mx-auto w-full max-w-5xl flex-1 overflow-y-auto px-6 pb-12">
-        <Link to="/" className="text-[13px] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+        {/* This page is reached from three places - the start screen, Cmd+, from anywhere, and the
+            "Zugänge verwalten" link on Veröffentlichen - so a hardcoded `to="/"` sent two of those
+            somewhere the user had not been: coming from a project page, "Zurück" landed on the
+            project list and the project had to be picked again. `key` is 'default' only when this
+            is the session's first entry (a deep link, nothing to go back to), which is the one
+            case that still needs a destination of its own. */}
+        <button
+          type="button"
+          onClick={() => (location.key === 'default' ? navigate('/') : navigate(-1))}
+          className="text-[13px] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+        >
           ← {t('common.back')}
-        </Link>
+        </button>
         <h1 className="mb-1 mt-2 text-2xl font-semibold">{t('settings.title')}</h1>
         <p className="mb-6 text-[13px] text-slate-500 dark:text-slate-400">{t('settings.subtitle')}</p>
 

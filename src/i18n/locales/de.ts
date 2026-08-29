@@ -70,6 +70,7 @@ export default {
         'Node.js (mit npm) von nodejs.org installieren, danach diese Ansicht neu laden. git ist auf macOS Teil der Xcode-Befehlszeilenwerkzeuge (xcode-select --install).',
       recheck: 'Erneut prüfen',
       ready: 'Werkzeuge bereit',
+      secretsBackend: 'Zugangsdaten verschlüsselt über {{backend}}',
       secretsTitle: 'Zugangsdaten liegen unverschlüsselt',
       secretsBody:
         'Auf diesem System ist kein Schlüsselbund aktiv, deshalb speichert Electron Passwörter und Token nur mit einem fest eingebauten Schlüssel ({{backend}}) — das ist praktisch Klartext. Mit gnome-keyring oder KWallet werden sie richtig geschützt.',
@@ -1236,8 +1237,11 @@ export default {
     connectionVsTarget:
       'Zwei Dinge, die zusammengehören: Ein Zugang ist die Anmeldung bei einem Anbieter — Server, Benutzername, Passwort oder Schlüssel. Er gehört der App und lässt sich von mehreren Projekten benutzen; ein Passwortwechsel ist deshalb eine Änderung statt einer pro Projekt. Ein Ziel gehört zu diesem Projekt und sagt, was damit geschehen soll: in welchen Ordner auf dem Server, auf welchen Branch, und was mit gelöschten Dateien passiert.',
     targetHeading: 'Ziel',
-    newConnection: '+ Neuer Zugang',
+    newConnectionOfKind: '+ Neuer {{kind}}-Zugang',
+    connectionKindFixed:
+      'Die Art des Zugangs ergibt sich aus der Art des Ziels: dieses Ziel braucht einen {{kind}}-Zugang. Andere Arten legst du in den Einstellungen an.',
     manageConnections: 'Zugänge verwalten',
+    manageConnectionsHere: 'Zugänge in den Einstellungen verwalten →',
     newTarget: '+ Neues Ziel',
     confirmDeleteTarget: 'Dieses Veröffentlichungsziel wirklich löschen? Der hinterlegte Zugang bleibt bestehen.',
     noTargets: 'Noch kein Veröffentlichungsziel angelegt. Über „+ Neues Ziel“ eines anlegen — z. B. GitHub Pages, einen Webspace per SFTP oder einen lokalen Ordner.',

@@ -14,6 +14,7 @@ import type {
 } from '@shared/ipc-contract'
 import { Badge, Button, Card, Field, InfoNote, PageHeader, Select, TextInput, Toggle } from '../../components/ui'
 import {
+  CONNECTION_KIND_LABEL,
   ConnectionFormFields,
   connectionDraftIncomplete,
   emptyConnectionDraft,
@@ -263,8 +264,15 @@ export default function Publish(): JSX.Element {
       <PageHeader icon={TAB_ICONS.publish} title={t('publish.title')} description={t('publish.description')} />
 
       {/* The Zugang/Ziel split was only explained inside the target form, i.e. after the user had
-          already had to pick one of the two. */}
-      <InfoNote>{t('publish.connectionVsTarget')}</InfoNote>
+          already had to pick one of the two. The link belongs in the same paragraph: connections
+          live in the Einstellungen, and until this was here the only route to them was to click
+          "Neues Ziel" first - so the page named a second concept and led nowhere near it. */}
+      <InfoNote>
+        {t('publish.connectionVsTarget')}{' '}
+        <Link to="/settings" className="font-medium underline underline-offset-2 hover:no-underline">
+          {t('publish.manageConnectionsHere')}
+        </Link>
+      </InfoNote>
 
       {baseUrlWarning && (
         <p className="rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
@@ -577,16 +585,24 @@ export default function Publish(): JSX.Element {
           )}
 
           {draftKind && (
-            <div className="mt-3 flex flex-wrap items-center gap-3">
-              <Button variant="ghost" onClick={() => setConnectionDraft(emptyConnectionDraft(draftKind))}>
-                {t('publish.newConnection')}
-              </Button>
-              {/* Creating one in the flow stays here; everything else about a connection - editing
-                  it, rotating its password, forgetting a host key - is app-level and lives in the
-                  Einstellungen, because one login commonly serves several projects. */}
-              <Link to="/settings" className="text-[13px] text-slate-500 underline hover:text-slate-900 dark:hover:text-white">
-                {t('publish.manageConnections')}
-              </Link>
+            <div className="mt-3">
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Creating one in the flow stays here - the target draft is plain state and a trip
+                    to the Einstellungen throws it away - but the button now names the kind it will
+                    create. It cannot offer a choice: an SFTP target needs an SFTP login and nothing
+                    else, so the kind follows from the target type two fields up. Reported from the
+                    alpha test as "you cannot pick the kind", which was the missing sentence rather
+                    than a missing control. */}
+                <Button variant="ghost" onClick={() => setConnectionDraft(emptyConnectionDraft(draftKind))}>
+                  {t('publish.newConnectionOfKind', { kind: CONNECTION_KIND_LABEL[draftKind] })}
+                </Button>
+                <Link to="/settings" className="text-[13px] text-slate-500 underline hover:text-slate-900 dark:hover:text-white">
+                  {t('publish.manageConnections')}
+                </Link>
+              </div>
+              <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                {t('publish.connectionKindFixed', { kind: CONNECTION_KIND_LABEL[draftKind] })}
+              </p>
             </div>
           )}
 

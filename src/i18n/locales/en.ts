@@ -70,6 +70,7 @@ export default {
         'Install Node.js (which includes npm) from nodejs.org, then re-check here. On macOS git is part of the Xcode command line tools (xcode-select --install).',
       recheck: 'Check again',
       ready: 'Tools ready',
+      secretsBackend: 'Credentials encrypted via {{backend}}',
       secretsTitle: 'Credentials are stored unencrypted',
       secretsBody:
         'No keyring is running on this system, so Electron stores passwords and tokens with a hardcoded key ({{backend}}) — effectively plaintext. Running gnome-keyring or KWallet protects them properly.',
@@ -1234,8 +1235,11 @@ export default {
     connectionVsTarget:
       'Two things that belong together: a credential is the login at a provider — server, username, password or key. It belongs to the app and can be used by several projects, so rotating a password is one edit rather than one per project. A target belongs to this project and says what to do with that credential: which folder on the server, which branch, and what happens to deleted files.',
     targetHeading: 'Target',
-    newConnection: '+ New credential',
+    newConnectionOfKind: '+ New {{kind}} credential',
+    connectionKindFixed:
+      'The kind of credential follows from the kind of target: this one needs a {{kind}} credential. Other kinds are created in the settings.',
     manageConnections: 'Manage connections',
+    manageConnectionsHere: 'Manage credentials in the settings →',
     newTarget: '+ New target',
     confirmDeleteTarget: 'Really delete this publish target? The credential it uses stays.',
     noTargets: 'No publish target yet. Create one via “+ New target” — e.g. GitHub Pages, a webspace over SFTP, or a local folder.',

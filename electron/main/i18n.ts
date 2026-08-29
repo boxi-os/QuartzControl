@@ -169,6 +169,7 @@ const STRINGS = {
     webhookInvalidUrl: 'Die hinterlegte Webhook-URL ist ungültig.',
     webhookHttpsOnly: 'Webhooks werden nur über https ausgelöst.',
     webhookFailed: 'POST {{origin}} fehlgeschlagen.',
+    webhookTimeout: 'Keine Antwort innerhalb von {{seconds}} Sekunden.',
 
     // GitHub
     githubNoToken: 'Kein GitHub-Token hinterlegt. Trage in den Einstellungen einen Token mit „repo“-Berechtigung ein.',
@@ -321,6 +322,7 @@ const STRINGS = {
     webhookInvalidUrl: 'The stored webhook URL is invalid.',
     webhookHttpsOnly: 'Webhooks are only triggered over https.',
     webhookFailed: 'POST {{origin}} failed.',
+    webhookTimeout: 'No answer within {{seconds}} seconds.',
 
     githubNoToken: 'No GitHub token stored. Add one with the “repo” scope in the settings.',
     githubRepoCreateFailed: 'The repository could not be created.',

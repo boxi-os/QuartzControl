@@ -47,7 +47,10 @@ export const webhookAdapter: DeployAdapter = {
       const line = `POST ${url.origin} → ${response.status} ${response.statusText}\n`
       return { success: response.ok, output: body ? `${line}\n${body}` : line }
     } catch (err) {
-      const reason = err instanceof Error && err.name === 'TimeoutError' ? `Keine Antwort innerhalb von ${TIMEOUT_MS / 1000} Sekunden.` : String(err)
+      const reason =
+        err instanceof Error && err.name === 'TimeoutError'
+          ? mainT('webhookTimeout', { seconds: String(TIMEOUT_MS / 1000) })
+          : String(err)
       return { success: false, output: `${mainT('webhookFailed', { origin: url.origin })}\n${reason}` }
     }
   }

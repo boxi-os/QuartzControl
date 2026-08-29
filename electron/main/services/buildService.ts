@@ -203,7 +203,9 @@ export function runBuild(projectId: string, projectPath: string, outputDir?: str
       } satisfies LogLine)
       resolvePromise({ success: false, durationMs: Date.now() - start, exitCode: null })
     })
-    child.on('exit', (code) => resolvePromise({ success: code === 0, durationMs: Date.now() - start, exitCode: code }))
+    // 'close' rather than 'exit', so "Build fertig" cannot be reported while the last lines of
+    // the output - which on a failure are the error itself - are still in the pipe.
+    child.on('close', (code) => resolvePromise({ success: code === 0, durationMs: Date.now() - start, exitCode: code }))
   })
 }
 

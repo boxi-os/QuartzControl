@@ -6,6 +6,12 @@ import { getLocalThemeDetail } from './pluginSchemaService'
 
 const CACHE_TTL_MS = 15 * 60 * 1000
 const DETAIL_CACHE_TTL_MS = 60 * 60 * 1000
+// See marketplaceService: undici's own 300s defaults are not a timeout a user waits out.
+const TIMEOUT_MS = 20_000
+// `npm search` talks to the registry and has no timeout of its own either - and unlike a fetch it
+// cannot even be aborted, so without this the Community-Themes tab could wait forever on a stalled
+// registry connection. Generous, because a cold npm process plus a registry round trip is slow.
+const NPM_SEARCH_TIMEOUT_MS = 30_000
 
 let cache: { at: number; results: QuartzThemeListing[] } | null = null
 let githubCache: { at: number; byRepoName: Map<string, GithubRepoMeta> } | null = null
@@ -48,6 +54,19 @@ function fetchFromNpm(): Promise<{ results: QuartzThemeListing[]; unavailable: b
       stdio: ['ignore', 'pipe', 'ignore']
     })
     let output = ''
+    let settled = false
+    const answer = (value: { results: QuartzThemeListing[]; unavailable: boolean }): void => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      resolvePromise(value)
+    }
+    const timer = setTimeout(() => {
+      answer({ results: FALLBACK_THEMES, unavailable: true })
+      child.kill('SIGTERM')
+      setTimeout(() => child.kill('SIGKILL'), 2000).unref()
+    }, NPM_SEARCH_TIMEOUT_MS)
+    timer.unref()
     child.stdout?.on('data', (chunk: Buffer) => (output += chunk.toString()))
     child.on('close', () => {
       try {
@@ -55,14 +74,12 @@ function fetchFromNpm(): Promise<{ results: QuartzThemeListing[]; unavailable: b
         const themes = parsed
           .filter((p) => p.name.startsWith('@quartz-themes/') && p.name !== '@quartz-themes/core')
           .map((p) => ({ id: p.name.slice('@quartz-themes/'.length), description: p.description }))
-        resolvePromise(
-          themes.length > 0 ? { results: themes, unavailable: false } : { results: FALLBACK_THEMES, unavailable: true }
-        )
+        answer(themes.length > 0 ? { results: themes, unavailable: false } : { results: FALLBACK_THEMES, unavailable: true })
       } catch {
-        resolvePromise({ results: FALLBACK_THEMES, unavailable: true })
+        answer({ results: FALLBACK_THEMES, unavailable: true })
       }
     })
-    child.on('error', () => resolvePromise({ results: FALLBACK_THEMES, unavailable: true }))
+    child.on('error', () => answer({ results: FALLBACK_THEMES, unavailable: true }))
   })
 }
 
@@ -88,7 +105,8 @@ async function fetchGithubMetadata(): Promise<Map<string, GithubRepoMeta>> {
   try {
     for (let page = 1; page <= 5; page++) {
       const res = await fetch(`https://api.github.com/orgs/quartz-themes/repos?per_page=100&page=${page}`, {
-        headers
+        headers,
+        signal: AbortSignal.timeout(TIMEOUT_MS)
       })
       if (!res.ok) break
       const repos = (await res.json()) as GithubRepo[]
@@ -154,7 +172,9 @@ export async function getThemeDetail(projectPath: string, themeId: string): Prom
 
   let detail: ThemeDetail | null = null
   try {
-    const res = await fetch(`https://cdn.jsdelivr.net/npm/@quartz-themes/${themeId}/theme.json`)
+    const res = await fetch(`https://cdn.jsdelivr.net/npm/@quartz-themes/${themeId}/theme.json`, {
+      signal: AbortSignal.timeout(TIMEOUT_MS)
+    })
     if (res.ok) {
       const parsed = (await res.json()) as {
         meta?: { styleSettingsId?: string | string[]; modes?: string[]; variations?: string[]; fonts?: string[] }

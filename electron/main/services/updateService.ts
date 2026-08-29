@@ -16,8 +16,15 @@ import { createSnapshot } from './snapshotService'
 // separator, `git ls-remote --upload-pack=<cmd> <repo> HEAD` *executes* <cmd>; with it, git
 // refuses ("fatal: strange pathname ... blocked"). getPluginsUpdateStatus calls this for every
 // entry in the lockfile on opening the Updates tab, with no user action in between.
+// git has no timeout of its own, and a stalled connection - a captive portal, a route that went
+// away mid-flight - leaves ls-remote waiting on the kernel's TCP retries. That is fine on a
+// command line and not fine here, where four of these run unprompted on opening the Updates tab
+// and the page has no cancel. 20s is well past a normal handshake against a slow host, and a
+// timeout answers `unknown` ("konnte nicht prüfen"), never "aktuell".
+const LS_REMOTE_TIMEOUT_MS = 20_000
+
 async function lsRemote(url: string, ref: string): Promise<Array<{ commit: string; ref: string }>> {
-  const result = await run('git', ['ls-remote', '--', url, ref])
+  const result = await run('git', ['ls-remote', '--', url, ref], undefined, undefined, LS_REMOTE_TIMEOUT_MS)
   if (!result.success) return []
   return result.output
     .split('\n')

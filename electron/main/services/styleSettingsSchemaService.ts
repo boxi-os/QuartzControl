@@ -27,6 +27,9 @@ const REGISTRY_TTL_MS = 24 * 60 * 60 * 1000
 // theme.css files run large and the spread is wide - tokyo-night is 71 KB, Ultra Lobster 4.35 MB.
 // A sanity bound on a remote file, set well clear of the largest real one rather than tuned.
 const MAX_CSS_BYTES = 16 * 1024 * 1024
+// See marketplaceService. Longer than the others because a theme.css can genuinely be megabytes
+// (Ultra Lobster is 4.35 MB), and a slow but working download must not be cut off.
+const TIMEOUT_MS = 45_000
 
 interface RegistryEntry {
   name: string
@@ -66,7 +69,7 @@ async function loadRegistry(): Promise<RegistryEntry[]> {
 
   const cachePath = join(cacheDir(), 'community-css-themes.json')
   try {
-    const res = await fetch(REGISTRY_URL)
+    const res = await fetch(REGISTRY_URL, { signal: AbortSignal.timeout(TIMEOUT_MS) })
     if (res.ok) {
       const entries = (await res.json()) as RegistryEntry[]
       if (Array.isArray(entries) && entries.length > 0) {
@@ -102,11 +105,24 @@ async function findRegistryEntry(themeId: string): Promise<RegistryEntry | null>
 
 // GitHub's raw host resolves "HEAD" to the repo's default branch, so this works for both `main`
 // and `master` themes without an extra API call to look the branch up.
+//
+// `repo` comes out of a JSON file fetched from a third party, not from anything this app decided,
+// and it is pasted straight into a URL path - so it has to look like "owner/name" and nothing
+// else, or an entry reading "../../somewhere" would address a different resource entirely.
+const REPO_PATTERN = /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/
+
 async function fetchThemeCss(repo: string): Promise<string | null> {
+  if (!REPO_PATTERN.test(repo)) return null
   for (const file of ['theme.css', 'obsidian.css']) {
     try {
-      const res = await fetch(`https://raw.githubusercontent.com/${repo}/HEAD/${file}`)
+      const res = await fetch(`https://raw.githubusercontent.com/${repo}/HEAD/${file}`, {
+        signal: AbortSignal.timeout(TIMEOUT_MS)
+      })
       if (!res.ok) continue
+      // Asked before the body is read, not after: res.text() buffers the whole response first, so
+      // the size limit below only ever applied once the memory had already been spent.
+      const declared = Number(res.headers.get('content-length'))
+      if (Number.isFinite(declared) && declared > MAX_CSS_BYTES) return null
       const text = await res.text()
       if (text.length > MAX_CSS_BYTES) return null
       return text

@@ -27,7 +27,12 @@ export function runCommand(
   // Extra environment for this one call. Used to hand git a credential through GIT_ASKPASS -
   // argv would put it in `ps` output, and a token inside the remote URL would be written into the
   // project's own .git/config and printed by `git remote -v`.
-  env?: Record<string, string>
+  env?: Record<string, string>,
+  // For the calls that talk to a remote host. git has no timeout of its own, and a stalled TCP
+  // connection (a captive portal, a dropped route) leaves the promise pending for as long as the
+  // kernel keeps retrying - which on the Updates tab means a spinner with no way to cancel it.
+  // Left unset for everything local and for npm install, which legitimately takes minutes.
+  timeoutMs?: number
 ): Promise<CommandResult> {
   return new Promise((resolvePromise) => {
     const child = spawn(command, args, {
@@ -37,9 +42,32 @@ export function runCommand(
       ...(env ? { env: { ...process.env, ...env } } : {})
     })
     let output = ''
+    let settled = false
+    let timer: NodeJS.Timeout | null = null
+    const settle = (result: CommandResult): void => {
+      if (settled) return
+      settled = true
+      if (timer) clearTimeout(timer)
+      resolvePromise(result)
+    }
+    if (timeoutMs) {
+      timer = setTimeout(() => {
+        // Answered right here rather than from the kill's 'close': a child that left a grandchild
+        // holding stdout keeps the pipe open even after it dies, and waiting for that would put
+        // the caller back where the missing timeout left it.
+        settle({ success: false, output: `${output}\nZeitüberschreitung nach ${timeoutMs} ms: ${command} ${args[0] ?? ''}` })
+        child.kill('SIGTERM')
+        setTimeout(() => child.kill('SIGKILL'), 2000).unref()
+      }, timeoutMs)
+      timer.unref()
+    }
     child.stdout?.on('data', (chunk: Buffer) => (output += chunk.toString()))
     child.stderr?.on('data', (chunk: Buffer) => (output += chunk.toString()))
-    child.on('exit', (code) => resolvePromise({ success: code === 0, output }))
-    child.on('error', (err) => resolvePromise({ success: false, output: String(err) }))
+    // 'close', not 'exit': 'exit' fires when the process ends, while the pipes may still hold
+    // output - measured with a child that leaves a grandchild holding stdout, where 'exit' saw
+    // "HEAD" and 'close' saw "HEAD\nTAIL". A plain fast-exiting child drains first (30 runs at
+    // 4 MB, not a byte missing), so this is the correct event rather than an observed bug here.
+    child.on('close', (code) => settle({ success: code === 0, output }))
+    child.on('error', (err) => settle({ success: false, output: String(err) }))
   })
 }

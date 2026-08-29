@@ -135,7 +135,10 @@ function runRsync(args: string[], onEntry?: (entry: DeployDiffEntry) => void): P
       }
     })
     child.stderr?.on('data', (chunk: Buffer) => (output += chunk.toString()))
-    child.on('exit', (code) => {
+    // 'close' rather than 'exit': the itemized lines *are* the result here, and 'exit' fires
+    // while the pipe can still hold some - rsync's own ssh child keeps stdout open past it. A
+    // diff that silently drops its tail is worse than a slow one.
+    child.on('close', (code) => {
       const entry = parseItemized(pending)
       if (entry) {
         entries.push(entry)

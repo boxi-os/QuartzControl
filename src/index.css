@@ -19,6 +19,27 @@ body,
   color-scheme: light dark;
 }
 
+/* And `color-scheme` alone is not enough for the one popup that matters. Measured in the packaged
+   app on Debian 13 (X11): with `color-scheme: light dark` in place and the page reporting
+   `prefers-color-scheme: dark`, the list a <select> opens was still painted light - Chromium draws
+   that popup in the browser process from the platform theme, not from the page. The option text,
+   however, *is* inherited from the <select>, which our own classes set to near-white in dark mode:
+   white on white, readable only under the hover highlight. Explicit colours on the options are
+   what Chromium does honour there, and they make the popup self-consistent rather than depending
+   on which half wins. Ignored on macOS, where the popup is a native menu - which is exactly why
+   this was invisible during development. */
+select option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+@media (prefers-color-scheme: dark) {
+  select option {
+    background-color: #2b2b2b;
+    color: #f1f5f9;
+  }
+}
+
 body {
   @apply bg-[#f5f5f7] text-slate-900 antialiased dark:bg-[#1e1e1e] dark:text-slate-100;
 }

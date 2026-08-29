@@ -2,14 +2,19 @@
 <html lang="de">
   <head>
     <meta charset="UTF-8" />
-    <!-- frame-src is exactly one thing: the live preview of the project's own dev server, which
+    <!-- The renderer makes no network request of its own - every fetch in this app happens in the
+         main process, which is also where the GitHub token lives - so connect-src is 'self' and
+         img-src carries no remote host. object-src/base-uri/form-action are the three defaults
+         `default-src` does not cover.
+
+         frame-src is exactly one thing: the live preview of the project's own dev server, which
          runs on http://localhost:<port>. Without it `default-src 'self'` blocks the iframe (a
          file:// document framing http:// is not "self"). Deliberately not widened to the
          remoteDevHost - that is a tunnel to somewhere else, and the preview falls back to the
          external link for it. -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.github.com; frame-src http://localhost:* http://127.0.0.1:*"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src http://localhost:* http://127.0.0.1:*"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>QuartzControl</title>

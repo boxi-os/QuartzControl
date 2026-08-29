@@ -70,6 +70,35 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
+  // setWindowOpenHandler only covers window.open and target="_blank". A navigation of the window
+  // itself - a link without a target, or anything setting location.href - was unguarded, and this
+  // is the window that carries the preload bridge: a page loaded into it would find window.
+  // quartzGui sitting there with every channel behind it. Only the app's own document may load
+  // here; http(s) is handed to the browser like any other external link, everything else dropped.
+  // (Hash changes and reloads do not fire this, so the HashRouter and dev-mode HMR are unaffected
+  // - verified by navigating the whole app in dev with this in place.)
+  const rendererFile = join(__dirname, '../renderer/index.html')
+  const devOrigin = process.env.ELECTRON_RENDERER_URL ? new URL(process.env.ELECTRON_RENDERER_URL).origin : null
+  win.webContents.on('will-navigate', (event, url) => {
+    let parsed: URL | null = null
+    try {
+      parsed = new URL(url)
+    } catch {
+      /* not a URL at all - nothing this window should be loading */
+    }
+    // A file: URL has an opaque origin ("null" in Chromium), so the packaged case is decided on
+    // the path: exactly the document this window was loaded with, not "any local file".
+    const allowed = parsed
+      ? devOrigin
+        ? parsed.origin === devOrigin
+        : parsed.protocol === 'file:' && decodeURIComponent(parsed.pathname) === rendererFile
+      : false
+    if (allowed) return
+    event.preventDefault()
+    console.error(`[main] Navigation des App-Fensters abgelehnt: ${url}`)
+    if (parsed?.protocol === 'https:' || parsed?.protocol === 'http:') shell.openExternal(url)
+  })
+
   if (process.env.ELECTRON_RENDERER_URL) {
     win.loadURL(process.env.ELECTRON_RENDERER_URL)
   } else {

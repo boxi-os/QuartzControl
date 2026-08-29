@@ -73,7 +73,7 @@ export default {
       ready: 'Tools ready',
       secretsTitle: 'Credentials are stored unencrypted',
       secretsBody:
-        'No keyring is running on this system, so Electron stores passwords and tokens with a hardcoded key ({{backend}}) - effectively plaintext. Running gnome-keyring or KWallet protects them properly.',
+        'No keyring is running on this system, so Electron stores passwords and tokens with a hardcoded key ({{backend}}) — effectively plaintext. Running gnome-keyring or KWallet protects them properly.',
       secretsUnavailable:
         'No encryption is available on this system, so connections with a password or token cannot be saved.'
     },
@@ -166,7 +166,7 @@ export default {
       server: 'Previews your site locally, and can produce a one-off build for export.',
       sync: 'Syncs your local changes with the Git repository: uploading (push) and downloading (pull).',
       backups:
-        'Restorable states of your whole project - taken automatically before every major change, triggerable yourself at any time, comparable and restorable file by file.',
+        'Restorable states of your whole project — taken automatically before every major change, triggerable yourself at any time, comparable and restorable file by file.',
       publish: 'Builds the site and uploads only the changed files to your web space or GitHub Pages.'
     }
   },
@@ -336,16 +336,16 @@ export default {
   gitSync: {
     title: 'Git sync',
     explainer:
-      'Every sync first commits your changes (when enabled below), then fetches the branch "{{branch}}" from origin and pushes your current branch — as a force push, which is what the Quartz CLI does.',
+      'Every sync first commits your changes (when enabled below), then fetches the branch “{{branch}}” from origin and pushes your current branch — as a force push, which is what the Quartz CLI does.',
     commitChanges: 'Commit changes first',
     commitMessage: 'Commit message (optional)',
-    commitMessagePlaceholder: 'Default: "Quartz sync: <date>"',
+    commitMessagePlaceholder: 'Default: “Quartz sync: <date>”',
     commitHint: '{{count}} local change goes into the commit.',
     commitHint_other: 'All {{count}} local changes go into a single commit.',
     commitHintClean: 'There is nothing to commit right now.',
     noCommitHint: 'Without a commit, only the already committed state is pushed or fetched.',
     pullBranchWarning:
-      'Pull always fetches the branch "{{source}}" from origin, no matter which branch is checked out here ("{{branch}}"). On any other branch the pull either fails or merges in something unrelated.',
+      'Pull always fetches the branch “{{source}}” from origin, no matter which branch is checked out here (“{{branch}}”). On any other branch the pull either fails or merges in something unrelated.',
     openOnGithub: 'Open on GitHub',
     pull: 'Pull',
     pullRunning: 'Pull running…',
@@ -357,15 +357,15 @@ export default {
     failed: 'Failed.',
     createRepo: {
       title: 'Create a repository on GitHub',
-      asAccount: 'Created under the account "{{login}}" and wired up as "origin".',
-      noToken: 'This needs a GitHub token with the "repo" scope - add one in the settings.',
+      asAccount: 'Created under the account “{{login}}” and wired up as “origin”.',
+      noToken: 'This needs a GitHub token with the “repo” scope — add one in the settings.',
       name: 'Repository name',
       private: 'Private',
       action: 'Create'
     },
     statusTitle: 'Repository state',
-    notARepo: 'This project is not a git repository - syncing is not possible here.',
-    noRemote: 'No "origin" remote configured. Push and pull have no target.',
+    notARepo: 'This project is not a git repository — syncing is not possible here.',
+    noRemote: 'No “origin” remote configured. Push and pull have no target.',
     detached: 'Detached HEAD',
     noUpstream: 'No upstream',
     noUpstreamHint: 'This branch tracks no remote branch, so ahead/behind cannot be determined.',
@@ -402,11 +402,11 @@ export default {
     newHeading: 'New snapshot',
     newHint:
       "A snapshot captures everything that is yours in this project: the configuration, the plugin lockfile, layout frames, your own stylesheets, translations and publish targets. Not included are node_modules, the build folder and installed plugin files - the next build produces those anyway.",
-    labelPlaceholder: 'Name (optional), e.g. "before switching themes"',
+    labelPlaceholder: 'Name (optional), e.g. “before switching themes”',
     create: 'Take snapshot',
     created: 'Snapshot taken.',
     includeContent: 'Include the content folder',
-    contentFolderHint: 'A real folder of markdown files - small enough to always come along.',
+    contentFolderHint: 'A real folder of markdown files — small enough to always come along.',
     contentSymlinkHint:
       'Your content folder is a symlink to a vault outside the project. It is NOT included by default: it is your own primary data, it can be very large, and it usually has a backup of its own. Only turn this on if you know what you are doing.',
     contentMissing: 'There is no content folder to include.',
@@ -456,13 +456,13 @@ export default {
       'Delete this set-aside content folder for good ({{size}})?\n\nIt is the only copy: snapshots do not contain it, and this cannot be undone.',
     folderSize: '{{count}} file · {{size}}',
     folderSize_other: '{{count}} files · {{size}}',
-    folderLink: 'Only the link to {{target}} - the notes live there and were never copied.'
+    folderLink: 'Only the link to {{target}} — the notes live there and were never copied.'
   },
   settings: {
     title: 'Settings',
     subtitle: 'These apply to the whole app — per-project settings live inside each project.',
     githubToken: 'GitHub token (for marketplace rate limit)',
-    githubTokenStored: 'stored - type a new one to replace it',
+    githubTokenStored: 'stored — type a new one to replace it',
     defaultProjectDirectory: 'Default project directory',
     language: 'Language',
     languageSystem: 'Follow system language',
@@ -534,7 +534,7 @@ export default {
       reveal: 'Show in Finder',
       unreadableTitle: 'A saved file could not be read',
       unreadableHint:
-        'QuartzControl found one of its own files unreadable - most likely because the app was killed while saving it. It was moved aside instead of overwritten, so its contents are still on disk. Whatever it held (connections, the project list) is missing from the app and has to be set up again.'
+        'QuartzControl found one of its own files unreadable — most likely because the app was killed while saving it. It was moved aside instead of overwritten, so its contents are still on disk. Whatever it held (connections, the project list) is missing from the app and has to be set up again.'
     }
   },
   configEditor: {
@@ -547,7 +547,7 @@ export default {
       site: 'Basic settings for your site — title, address, and language.',
       content: 'The folder with your Markdown notes — as a real copy, or linked to an existing folder, e.g. your Obsidian vault.',
       localization:
-        'The site’s built-in text labels (e.g. "Search", "Last modified") in the available languages. Core texts only — plugin texts are not covered here.'
+        'The site’s built-in text labels (e.g. “Search”, “Last modified”) in the available languages. Core texts only — plugin texts are not covered here.'
     },
     loadError: 'quartz.config.yaml could not be read.',
     loadErrorHint:
@@ -590,7 +590,7 @@ export default {
     goToThemeTab: 'Go to community themes',
     overrideChecking: 'Checking which of these values the active theme overrides…',
     overrideCounted:
-        'The theme "{{themeId}}" overrides {{colors}} of {{totalColors}} colors and {{fonts}} of {{totalFonts}} fonts — those are dimmed below.',
+        'The theme “{{themeId}}” overrides {{colors}} of {{totalColors}} colors and {{fonts}} of {{totalFonts}} fonts — those are dimmed below.',
     overrideStillEditable:
         'You can still edit them: they apply again the moment the theme is off, and can be overridden individually in the Variables tab.',
     overriddenByTheme: 'Overridden by the active theme',
@@ -598,7 +598,7 @@ export default {
     fontSource: 'Font source',
     googleFonts: 'Google Fonts',
     googleFontsHint: 'Quartz fetches the chosen fonts from Google. How they are delivered is the switch below.',
-    localHint: 'Quartz then fetches nothing at all — the font has to be present already, e.g. via "Import your own font" below.',
+    localHint: 'Quartz then fetches nothing at all — the font has to be present already, e.g. via “Import your own font” below.',
     local: 'Bring your own',
     fontFor: 'Font ({{slot}})',
     delivery: {
@@ -614,18 +614,18 @@ export default {
           selfHosted: 'Quartz core: downloads at build time and serves locally.'
         },
         plugin: {
-          google: '"Fonts" plugin: links Google Fonts directly.',
-          selfHosted: '"Fonts" plugin: downloads at build time and serves locally.'
+          google: '“Fonts” plugin: links Google Fonts directly.',
+          selfHosted: '“Fonts” plugin: downloads at build time and serves locally.'
         },
         theme: {
           cdn: 'Community theme: loads its fonts from unpkg.com.'
         }
       },
-      themeFonts: 'Load the theme\'s own fonts',
+      themeFonts: 'Load the theme’s own fonts',
       themeFontsHint:
         'The theme ships its own fonts and loads them from unpkg.com — another third-party request. There is no option to serve those locally; turning them off means dropping them, and the fonts chosen above apply instead.',
       themeFontsOff:
-        'The theme\'s fonts are off — nothing is loaded from unpkg.com, but the theme looks different from how it was designed.'
+        'The theme’s fonts are off — nothing is loaded from unpkg.com, but the theme looks different from how it was designed.'
     },
     localFontHeading: 'Import a custom font',
     localFontDescription: 'Copies a .ttf/.otf/.woff/.woff2 file into the project and generates the matching @font-face rule in custom.scss.',
@@ -634,7 +634,7 @@ export default {
     localFontSlot: 'Use directly for',
     localFontNoSlot: '— none —',
     localFontConfirm: 'Import',
-    fontImportSuccess: '"{{family}}" imported.',
+    fontImportSuccess: '“{{family}}” imported.',
     colors: 'Colors'
   },
   themes: {
@@ -643,7 +643,7 @@ export default {
     allDisabled: 'Community themes disabled',
     active: {
       title: 'Current theme',
-      none: 'No community theme active — the classic theme from "Configuration → Theme" applies. Install one from the catalog below to get started.',
+      none: 'No community theme active — the classic theme from “Configuration → Theme” applies. Install one from the catalog below to get started.',
       heading: 'Current theme: {{themeId}}',
       saveAsPreset: 'Save as preset',
       presetNamePlaceholder: 'Name for the preset',
@@ -651,7 +651,7 @@ export default {
         'This plugin ({{source}}) overrides the colors from the Basics layer. Changes below take effect immediately in the preview.',
       disabledHeading: 'Community theme disabled ({{themeId}})',
       disabledNote:
-        'The classic theme from "Configuration → Theme" applies again now. This community theme\'s settings are kept and can be turned back on any time.',
+        'The classic theme from “Configuration → Theme” applies again now. This community theme’s settings are kept and can be turned back on any time.',
       reactivate: 'Turn back on',
       checkingStyleSettings: "Checking the theme's style settings…",
       noStyleSettingsNote:
@@ -679,14 +679,14 @@ export default {
       refresh: 'Reload',
       refreshing: 'Loading…',
       unavailable:
-        'The theme list could not be loaded from npm. What is listed below is a handful of well-known themes as a placeholder — try "Reload".',
+        'The theme list could not be loaded from npm. What is listed below is a handful of well-known themes as a placeholder — try “Reload”.',
       installing: 'Installing…',
       install: 'Install & activate',
       active: 'Active',
       noResults: 'No results.',
       moreResults: '{{count}} more results — keep typing to filter.',
-      installSuccess: '"{{id}}" installed and activated — don\'t forget to click "Save" above.',
-      installFailed: 'Installation of "{{id}}" failed: {{output}}',
+      installSuccess: '“{{id}}” installed and activated — don’t forget to click “Save” above.',
+      installFailed: 'Installation of “{{id}}” failed: {{output}}',
       detailLoading: 'Loading details…',
       detailNone: 'No details available.',
       modes: 'Modes: {{modes}}',
@@ -705,7 +705,7 @@ export default {
     },
     descriptions: {
       installed: 'Extends Quartz with extra functionality — this is what is active, and where you configure it.',
-      marketplace: 'The plugin catalog of the quartz-community organisation, built-in ones included. Add plugins from anywhere else via "owner/repo".'
+      marketplace: 'The plugin catalog of the quartz-community organisation, built-in ones included. Add plugins from anywhere else via “owner/repo”.'
     }
   },
   pluginsInstalled: {
@@ -740,7 +740,7 @@ export default {
     savedFlash: 'Saved',
     maintenanceHeading: 'Maintenance',
     maintenanceDescription:
-      'Acts on the .quartz/plugins folder, where source-installed plugins are built - not on what the site does. That folder does not belong in the git repository, so a second machine has to rebuild it first.',
+      'Acts on the .quartz/plugins folder, where source-installed plugins are built — not on what the site does. That folder does not belong in the git repository, so a second machine has to rebuild it first.',
     installFromLock: 'Restore from quartz.lock.json',
     installFromLockRunning: 'Restoring…',
     installDone: 'Plugins restored from the lockfile.',
@@ -752,9 +752,9 @@ export default {
     openRepo: 'Open repository on GitHub',
     showOptions: 'Show options',
     hideOptions: 'Hide options',
-    removeConfirm: 'Really remove plugin "{{name}}"? A snapshot is taken first, so you can bring it back.',
+    removeConfirm: 'Really remove plugin “{{name}}”? A snapshot is taken first, so you can bring it back.',
     removeFrameConfirm:
-      'Really delete frame "{{name}}"? This removes it from the configuration and from disk. A snapshot is taken first.',
+      'Really delete frame “{{name}}”? This removes it from the configuration and from disk. A snapshot is taken first.',
     availableOptions: 'Available options:',
     onlyViaYaml: ', YAML only',
     noSchemaInfo:
@@ -764,7 +764,7 @@ export default {
     addOption: 'Add',
     optionKeyExists: 'That option is already set.',
     optionValueHint: 'true/false and numbers are stored as such, [..] and {..} as JSON, anything else as text.',
-    removeOption: 'Remove option "{{name}}"',
+    removeOption: 'Remove option “{{name}}”',
     notSet: 'not set',
     summaryPosPriority: 'position: {{position}} · priority: {{priority}}',
     summaryOrder: 'order: {{order}}',
@@ -774,15 +774,15 @@ export default {
       display: 'all = all devices, mobile-only = mobile only, desktop-only = desktop only',
       condition:
         'Built in: not-index, has-tags, has-backlinks, has-toc. An unknown name is ignored at build time and the element always renders.',
-      group: 'Name of a toolbar group, e.g. "toolbar"'
+      group: 'Name of a toolbar group, e.g. “toolbar”'
     },
     groupOptionsFields: {
       grow: 'Element grows to fill free space in the group',
       shrink: 'Element may shrink when space is limited',
-      basis: 'Flex basis size, e.g. "auto" or "100px"',
+      basis: 'Flex basis size, e.g. “auto” or “100px”',
       order: 'Order within the group — smaller first',
-      align: 'CSS align-items, e.g. "center"',
-      justify: 'CSS justify-content, e.g. "space-between"'
+      align: 'CSS align-items, e.g. “center”',
+      justify: 'CSS justify-content, e.g. “space-between”'
     }
   },
   pluginDescriptions: {
@@ -800,10 +800,10 @@ export default {
     roam: 'Supports notes exported from Roam Research.',
     'quartz-fonts': 'Controls fonts per heading level, including Google Fonts integration.',
     core: 'Applies the chosen theme (colors, typography, appearance) to the page.',
-    'remove-draft': 'Hides pages with "draft: true" in the frontmatter.',
-    'explicit-publish': 'Only publishes pages explicitly marked "publish: true" in the frontmatter.',
+    'remove-draft': 'Hides pages with “draft: true” in the frontmatter.',
+    'explicit-publish': 'Only publishes pages explicitly marked “publish: true” in the frontmatter.',
     'unlisted-pages':
-      'Hides pages marked "unlisted: true" from all listings (search, graph, explorer, …) — they remain reachable via their URL.',
+      'Hides pages marked “unlisted: true” from all listings (search, graph, explorer, …) — they remain reachable via their URL.',
     'encrypted-pages': 'Password-protects individual pages (AES-256-GCM encryption).',
     'stacked-pages': 'Opens internal links as side-by-side stacked panes (Andy Matuschak style).',
     'alias-redirects': 'Generates redirect pages for alias URLs.',
@@ -886,14 +886,14 @@ export default {
     removeOverride: 'Remove override',
     excludeHeading: 'Visible components',
     excludeDescription: 'Turn off a component to hide it on pages of this type.',
-    excludeDuplicateHint: 'Affects all {{count}} instances of "{{name}}" — Quartz cannot exclude individual duplicates here separately.',
+    excludeDuplicateHint: 'Affects all {{count}} instances of “{{name}}” — Quartz cannot exclude individual duplicates here separately.',
     template: 'Frame/template',
     templateDefault: 'Default',
     templateFullWidth: 'Full width',
     templateMinimal: 'Minimal',
-    templatePluginDefault: '"{{frame}}" (plugin default, active)',
+    templatePluginDefault: '“{{frame}}” (plugin default, active)',
     pluginFrameUnknownLayout:
-      'This page type automatically uses the "{{frame}}" frame provided by its plugin. Its exact grid structure can\'t be previewed here, since the plugin renders it itself — this is not the standard layout.',
+      'This page type automatically uses the “{{frame}}” frame provided by its plugin. Its exact grid structure can’t be previewed here, since the plugin renders it itself — this is not the standard layout.',
     clearSlotsHeading: 'Clear slots for this page type',
     clearSlotsDescription: 'Enabled slots always stay empty for this page type, regardless of the global layout.',
     frameBuilder: {
@@ -944,7 +944,7 @@ export default {
       newArea: '+ Add area',
       allPlaced: 'All areas are placed.',
       hintDragToPlace:
-        'Drag an area onto an open cell to place it - or drag a placed one back into this list to unplace it. Click an area to select it and show its settings below, including the row/column span - changes apply right away.',
+        'Drag an area onto an open cell to place it — or drag a placed one back into this list to unplace it. Click an area to select it and show its settings below, including the row/column span — changes apply right away.',
       expandArea: 'Expand area settings',
       areaName: 'Area name',
       areaSlot: 'Slot',
@@ -959,7 +959,7 @@ export default {
       nameRequired: 'Please give the frame a name.',
       nameCollision: 'This name is already taken (a built-in template or another custom frame).',
       deleteFrame: 'Delete this frame',
-      deleteConfirm: 'Really delete frame "{{name}}"? Page types referencing it will fall back to the default template.',
+      deleteConfirm: 'Really delete frame “{{name}}”? Page types referencing it will fall back to the default template.',
       preview: {
         pageContent: 'Page content'
       }
@@ -977,14 +977,14 @@ export default {
     fixes: {
       heading: 'Known conflicts',
       description:
-        'Conflicts between plugins that no setting can resolve, only CSS can. The fix is written as an ordinary file under "Custom CSS" — editable, reorderable and deletable like any other.',
+        'Conflicts between plugins that no setting can resolve, only CSS can. The fix is written as an ordinary file under “Custom CSS” — editable, reorderable and deletable like any other.',
       add: 'Add fix',
       open: 'Open file',
       alreadyAdded: 'Added as {{file}}',
       'heading-fonts': {
         title: 'Headings ignore the theme',
         summary:
-          'The "Fonts" plugin sets the h1–h6 font with an unlayered rule, which beats both the theme and your own CSS. The fix points the headings back at the CSS variables.',
+          'The “Fonts” plugin sets the h1–h6 font with an unlayered rule, which beats both the theme and your own CSS. The fix points the headings back at the CSS variables.',
         comment:
           'The plugin @quartz-community/quartz-fonts sets "h1,…,h6 { font-family: … }" unlayered.\nUnlayered beats every @layer - including the active theme - and because its stylesheet is\nlinked after custom.scss, it also beats an equally specific rule of your own.\n"body h1" is one step more specific and therefore wins regardless of load order.\n\nPointing at the variables puts the Variables tab back in control.\nWritten by QuartzControl - edit freely.'
       }
@@ -997,7 +997,7 @@ export default {
     },
     cascade: {
       themeActive:
-        'Order: basics → community theme → variables → custom CSS. The theme "{{themeId}}" is active and overrides the base colors.',
+        'Order: basics → community theme → variables → custom CSS. The theme “{{themeId}}” is active and overrides the base colors.',
       themeInactive:
         'Order: basics → community theme → variables → custom CSS. No community theme active — your base colors and fonts apply.',
       overrides: '{{count}} variable(s) overridden.'
@@ -1006,7 +1006,7 @@ export default {
       'custom.scss has since been changed from another tab (a variable override or a font import). Your draft here is still unsaved — saving it would overwrite that change.',
     scssStaleReload: 'Reload from disk (discard draft)',
     styleSettings: {
-      sourceNote: 'Descriptions from the original theme "{{theme}}" by {{author}} — {{count}} options.',
+      sourceNote: 'Descriptions from the original theme “{{theme}}” by {{author}} — {{count}} options.',
       searchPlaceholder: 'Search option…',
       loading: 'Loading option descriptions…',
       refresh: 'Reload docs',
@@ -1023,7 +1023,7 @@ export default {
       allDescription:
         'Everything the active theme, plugins, or the last build bring along — kept separate from the main variables, because there can be a great many.',
       allDescriptionTheme:
-        'Everything the theme "{{themeId}}", plugins, or the last build bring along: {{count}} variables. Type a search to browse them.',
+        'Everything the theme “{{themeId}}”, plugins, or the last build bring along: {{count}} variables. Type a search to browse them.',
       counter: '{{overridden}} of {{total}} overridden',
       searchPlaceholder: 'Search variable (e.g. callout, h1, background)…',
       onlyChanged: 'Changed only',
@@ -1047,7 +1047,7 @@ export default {
       moreKeys: '+{{count}} more',
       chipHint: 'Jump to this variable',
       themeNote:
-        'The community theme "{{themeId}}" ships its variables inside @layer, while your values here land unlayered in custom.scss — unlayered rules always win. Verified against a real build (light and dark). Only variables a theme sets exclusively inside a selector (e.g. .callout[data-callout]) cannot be overridden globally here.',
+        'The community theme “{{themeId}}” ships its variables inside @layer, while your values here land unlayered in custom.scss — unlayered rules always win. Verified against a real build (light and dark). Only variables a theme sets exclusively inside a selector (e.g. .callout[data-callout]) cannot be overridden globally here.',
       section: {
         current: 'Current value',
         origin: 'Origin',
@@ -1125,8 +1125,8 @@ export default {
           selfHosted: 'Quartz downloads from Google at build time and serves the files itself: {{specs}}.'
         },
         plugin: {
-          google: 'The "Fonts" plugin links Google Fonts on every page view.',
-          selfHosted: 'The "Fonts" plugin downloads at build time and serves the files itself.'
+          google: 'The “Fonts” plugin links Google Fonts on every page view.',
+          selfHosted: 'The “Fonts” plugin downloads at build time and serves the files itself.'
         },
         theme: {
           cdn: 'The community theme loads its own fonts from unpkg.com on every page view.'
@@ -1195,28 +1195,28 @@ export default {
   },
   publish: {
     title: 'Publish',
-    description: 'Builds the project and takes the result to its targets - over SFTP/rsync, FTP, into a folder, onto a git branch, or via a webhook.',
-    baseUrlWarning: 'configuration.baseUrl is still set to "{{baseUrl}}" — set it to the real domain before publishing.',
+    description: 'Builds the project and takes the result to its targets — over SFTP/rsync, FTP, into a folder, onto a git branch, or via a webhook.',
+    baseUrlWarning: 'configuration.baseUrl is still set to “{{baseUrl}}” — set it to the real domain before publishing.',
     targetHeading: 'Target',
     newConnection: '+ New credential',
     manageConnections: 'Manage connections',
     newTarget: '+ New target',
     confirmDeleteTarget: 'Really delete this publish target? The credential it uses stays.',
-    noTargets: 'No publish target yet. Create one via "+ New target" - e.g. GitHub Pages, a webspace over SFTP, or a local folder.',
+    noTargets: 'No publish target yet. Create one via “+ New target” — e.g. GitHub Pages, a webspace over SFTP, or a local folder.',
     confirmDeployBranch:
-      'Publish to branch "{{branch}}"?\n\nThe branch is replaced entirely by the current build (force push).',
+      'Publish to branch “{{branch}}”?\n\nThe branch is replaced entirely by the current build (force push).',
     branchHint: {
       github:
-        'Pushes the build as a single commit to that branch of the "origin" remote (the same one Git sync uses). GitHub Pages must be pointed at this branch in the repository settings.',
+        'Pushes the build as a single commit to that branch of the “origin” remote (the same one Git sync uses). GitHub Pages must be pointed at this branch in the repository settings.',
       codeberg:
-        'Codeberg Pages serves the "pages" branch directly - after the first push the site is reachable with no further setup.',
+        'Codeberg Pages serves the “pages” branch directly — after the first push the site is reachable with no further setup.',
       gitlab:
-        'Note: on GitLab the branch alone publishes nothing - a CI job has to ship the files as a "public" artifact. The push works regardless.'
+        'Note: on GitLab the branch alone publishes nothing — a CI job has to ship the files as a “public” artifact. The push works regardless.'
     },
     pages: {
       title: 'GitHub Pages',
       reload: 'Reload status',
-      noGithubOrigin: 'This project\'s "origin" remote does not point at github.com. Pages can only be set up from here once the repository lives on GitHub - see Git sync.',
+      noGithubOrigin: 'This project’s “origin” remote does not point at github.com. Pages can only be set up from here once the repository lives on GitHub — see Git sync.',
       notConfigured: 'This repository has no Pages site yet. The button below creates one and points it at this branch.',
       source: 'Source: {{branch}}',
       status: {
@@ -1228,9 +1228,9 @@ export default {
       cname: 'Custom domain',
       cnamePlaceholder: 'e.g. wiki.example.com',
       httpsEnforced: 'Enforce HTTPS',
-      apply: 'Point at "{{branch}}"',
+      apply: 'Point at “{{branch}}”',
       cnameHint:
-        'The domain is stored by GitHub, not in the branch - unlike a CNAME file it therefore survives every deploy that replaces the branch wholesale. HTTPS can only be enforced once GitHub has issued the certificate, which takes a few minutes after setting the domain.'
+        'The domain is stored by GitHub, not in the branch — unlike a CNAME file it therefore survives every deploy that replaces the branch wholesale. HTTPS can only be enforced once GitHub has issued the certificate, which takes a few minutes after setting the domain.'
     },
     sftpHint:
       'SFTP compares against a local record of what was last uploaded. Files someone changes or deletes directly on the server go unnoticed.',
@@ -1238,22 +1238,22 @@ export default {
       'rsync asks the server what is actually there, so the diff is right even if someone changed something by hand. Requires rsync on the server.',
     rsyncBlocked: {
       'no-connection': 'rsync becomes available once an SSH credential with a key file or the SSH agent is selected.',
-      'password-auth': 'rsync cannot be used with password login - ssh has no way to accept the password. A key file or the SSH agent works.',
+      'password-auth': 'rsync cannot be used with password login — ssh has no way to accept the password. A key file or the SSH agent works.',
       'key-not-a-file':
         'rsync needs the private key as a file; a key pasted here is not enough. Switch the credential to a key file.',
       'no-pinned-host-key':
-        'rsync needs a confirmed host key. Publish once over SFTP - the fingerprint is asked for and stored - then rsync can be selected.',
+        'rsync needs a confirmed host key. Publish once over SFTP — the fingerprint is asked for and stored — then rsync can be selected.',
       'platform-unsupported':
         'rsync is not available on this operating system. SFTP transfers the same files, just without asking the server what it has.'
     },
     webhookNoUrl: 'no URL stored',
     webhookExplainer:
-      'A webhook uploads nothing - it asks a provider (Netlify, Cloudflare Pages, Vercel, CI) to build. That is why there is no file list here: the build runs there, not on this machine.',
-    deleteDisabledHint: 'Deleting is off for this target - removed files stay there, but are still tracked.',
+      'A webhook uploads nothing — it asks a provider (Netlify, Cloudflare Pages, Vercel, CI) to build. That is why there is no file list here: the build runs there, not on this machine.',
+    deleteDisabledHint: 'Deleting is off for this target — removed files stay there, but are still tracked.',
     targetForm: {
       heading: 'Publish target',
       explainer:
-        'A target describes where this project publishes to - path, deletion behaviour and which credential it uses. The credential itself is app-wide and can be shared by several projects.',
+        'A target describes where this project publishes to — path, deletion behaviour and which credential it uses. The credential itself is app-wide and can be shared by several projects.',
       name: 'Name',
       type: 'Type',
       remotePath: 'Remote path',
@@ -1482,13 +1482,13 @@ export default {
     showOther: 'Show {{count}} more repositories',
     hideOther: 'Hide {{count}} more repositories',
     otherDescription:
-      'Repositories of the quartz-community organisation without the "quartz-plugin" topic — among them Quartz itself, shared libraries, templates and forks. Mostly not installable as a plugin.',
+      'Repositories of the quartz-community organisation without the “quartz-plugin” topic — among them Quartz itself, shared libraries, templates and forks. Mostly not installable as a plugin.',
     installedMessage: '{{name}} installed.',
     loading: 'Loading the catalog…',
     refresh: 'Reload catalog',
     refreshing: 'Loading…',
     unavailable:
-      'The catalog is unreachable right now (GitHub is not answering, or the rate limit is used up). What is listed below is a placeholder — try "Reload catalog". A GitHub token in the settings raises the limit considerably.'
+      'The catalog is unreachable right now (GitHub is not answering, or the rate limit is used up). What is listed below is a placeholder — try “Reload catalog”. A GitHub token in the settings raises the limit considerably.'
   },
   logConsole: {
     noOutput: 'No output yet.',

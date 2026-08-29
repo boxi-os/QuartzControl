@@ -337,16 +337,16 @@ export default {
   gitSync: {
     title: 'Git-Sync',
     explainer:
-      'Jeder Sync committet zuerst deine Änderungen (falls unten aktiviert), holt dann den Branch "{{branch}}" von origin und pusht deinen aktuellen Branch — als Force-Push, so macht es die Quartz-CLI.',
+      'Jeder Sync committet zuerst deine Änderungen (falls unten aktiviert), holt dann den Branch „{{branch}}“ von origin und pusht deinen aktuellen Branch — als Force-Push, so macht es die Quartz-CLI.',
     commitChanges: 'Änderungen vorher committen',
     commitMessage: 'Commit-Nachricht (optional)',
-    commitMessagePlaceholder: 'Standard: "Quartz sync: <Datum>"',
+    commitMessagePlaceholder: 'Standard: „Quartz sync: <Datum>“',
     commitHint: 'Die {{count}} lokale Änderung wird committet.',
     commitHint_other: 'Alle {{count}} lokalen Änderungen werden in einem Commit zusammengefasst.',
     commitHintClean: 'Es gibt gerade nichts zu committen.',
     noCommitHint: 'Ohne Commit wird nur der bereits committete Stand gepusht bzw. geholt.',
     pullBranchWarning:
-      'Pull holt immer den Branch "{{source}}" von origin, unabhängig davon, welcher Branch hier ausgecheckt ist ("{{branch}}"). Auf einem anderen Branch schlägt der Pull entweder fehl oder mischt Fremdes herein.',
+      'Pull holt immer den Branch „{{source}}“ von origin, unabhängig davon, welcher Branch hier ausgecheckt ist („{{branch}}“). Auf einem anderen Branch schlägt der Pull entweder fehl oder mischt Fremdes herein.',
     openOnGithub: 'Auf GitHub öffnen',
     pull: 'Pull',
     pullRunning: 'Pull läuft…',
@@ -358,18 +358,18 @@ export default {
     failed: 'Fehlgeschlagen.',
     createRepo: {
       title: 'Repository auf GitHub anlegen',
-      asAccount: 'Wird unter dem Konto "{{login}}" angelegt und als "origin" eingetragen.',
-      noToken: 'Dafür wird ein GitHub-Token mit "repo"-Berechtigung gebraucht - in den Einstellungen eintragen.',
+      asAccount: 'Wird unter dem Konto „{{login}}“ angelegt und als „origin“ eingetragen.',
+      noToken: 'Dafür wird ein GitHub-Token mit „repo“-Berechtigung gebraucht — in den Einstellungen eintragen.',
       name: 'Repository-Name',
       private: 'Privat',
       action: 'Anlegen'
     },
     statusTitle: 'Stand des Repositorys',
-    notARepo: 'Dieses Projekt ist kein Git-Repository - Sync ist hier nicht möglich.',
-    noRemote: 'Kein "origin"-Remote konfiguriert. Push und Pull haben kein Ziel.',
+    notARepo: 'Dieses Projekt ist kein Git-Repository — Sync ist hier nicht möglich.',
+    noRemote: 'Kein „origin“-Remote konfiguriert. Push und Pull haben kein Ziel.',
     detached: 'Losgelöster HEAD',
     noUpstream: 'Kein Upstream',
-    noUpstreamHint: 'Dieser Branch verfolgt keinen Remote-Branch - "voraus/zurück" lässt sich deshalb nicht bestimmen.',
+    noUpstreamHint: 'Dieser Branch verfolgt keinen Remote-Branch — „voraus/zurück“ lässt sich deshalb nicht bestimmen.',
     upToDate: 'Auf dem Stand des Remotes',
     ahead: '{{count}} voraus',
     behind: '{{count}} zurück',
@@ -403,7 +403,7 @@ export default {
     newHeading: 'Neuer Snapshot',
     newHint:
       'Ein Snapshot sichert alles, was dir in diesem Projekt gehört: Konfiguration, Plugin-Sperrdatei, Layout-Frames, eigene Stylesheets, Übersetzungen und Veröffentlichungsziele. Nicht enthalten sind node_modules, der Build-Ordner und installierte Plugin-Dateien — die entstehen beim nächsten Build ohnehin neu.',
-    labelPlaceholder: 'Name (optional), z. B. "vor dem Theme-Wechsel"',
+    labelPlaceholder: 'Name (optional), z. B. „vor dem Theme-Wechsel“',
     create: 'Snapshot anlegen',
     created: 'Snapshot angelegt.',
     includeContent: 'Content-Ordner mitsichern',
@@ -457,13 +457,13 @@ export default {
       'Diesen beiseitegelegten Content-Ordner endgültig löschen ({{size}})?\n\nEs ist die einzige Kopie: In den Snapshots ist er nicht enthalten, und rückgängig machen lässt sich das nicht.',
     folderSize: '{{count}} Datei · {{size}}',
     folderSize_other: '{{count}} Dateien · {{size}}',
-    folderLink: 'Nur der Link auf {{target}} - die Notizen liegen dort und wurden nie kopiert.'
+    folderLink: 'Nur der Link auf {{target}} — die Notizen liegen dort und wurden nie kopiert.'
   },
   settings: {
     title: 'Einstellungen',
     subtitle: 'Gilt für die App als Ganzes — projektbezogene Einstellungen stehen im jeweiligen Projekt.',
     githubToken: 'GitHub-Token (für Marktplatz-Rate-Limit)',
-    githubTokenStored: 'gespeichert - zum Ersetzen neu eingeben',
+    githubTokenStored: 'gespeichert — zum Ersetzen neu eingeben',
     defaultProjectDirectory: 'Standard-Projektverzeichnis',
     language: 'Sprache',
     languageSystem: 'Systemsprache folgen',
@@ -535,7 +535,7 @@ export default {
       reveal: 'Im Finder zeigen',
       unreadableTitle: 'Eine gespeicherte Datei war nicht lesbar',
       unreadableHint:
-        'Beim Start konnte QuartzControl eine seiner Dateien nicht lesen - vermutlich, weil die App beim Speichern hart beendet wurde. Sie wurde zur Seite gelegt statt überschrieben, der Inhalt liegt also noch da. Was darin stand (z. B. Zugänge oder die Projektliste), fehlt in der App und muss neu angelegt werden.'
+        'Beim Start konnte QuartzControl eine seiner Dateien nicht lesen — vermutlich, weil die App beim Speichern hart beendet wurde. Sie wurde zur Seite gelegt statt überschrieben, der Inhalt liegt also noch da. Was darin stand (z. B. Zugänge oder die Projektliste), fehlt in der App und muss neu angelegt werden.'
     }
   },
   configEditor: {
@@ -591,7 +591,7 @@ export default {
     goToThemeTab: 'Zu den Community-Themes',
     overrideChecking: 'Prüfe, welche dieser Werte das aktive Theme überschreibt…',
     overrideCounted:
-        'Das Theme „{{themeId}}" überschreibt {{colors}} von {{totalColors}} Farben und {{fonts}} von {{totalFonts}} Schriften — diese sind unten abgeblendet.',
+        'Das Theme „{{themeId}}“ überschreibt {{colors}} von {{totalColors}} Farben und {{fonts}} von {{totalFonts}} Schriften — diese sind unten abgeblendet.',
     overrideStillEditable:
         'Bearbeiten geht trotzdem: die Werte gelten wieder, sobald das Theme aus ist, und lassen sich jederzeit im Variablen-Tab gezielt überschreiben.',
     overriddenByTheme: 'Wird vom aktiven Theme überschrieben',
@@ -599,7 +599,7 @@ export default {
     fontSource: 'Font-Quelle',
     googleFonts: 'Google Fonts',
     googleFontsHint: 'Quartz holt die gewählten Schriften bei Google. Wie sie ausgeliefert werden, entscheidet der Schalter unten.',
-    localHint: 'Quartz lädt dann gar nichts — die Schrift muss selbst vorliegen, z.B. über „Eigene Schriftart importieren" unten.',
+    localHint: 'Quartz lädt dann gar nichts — die Schrift muss selbst vorliegen, z. B. über „Eigene Schriftart importieren“ unten.',
     local: 'Selbst mitgebracht',
     fontFor: 'Schriftart ({{slot}})',
     delivery: {
@@ -615,8 +615,8 @@ export default {
           selfHosted: 'Quartz-Kern: lädt beim Build herunter und liefert lokal aus.'
         },
         plugin: {
-          google: 'Plugin „Fonts": verlinkt Google Fonts direkt.',
-          selfHosted: 'Plugin „Fonts": lädt beim Build herunter und liefert lokal aus.'
+          google: 'Plugin „Fonts“: verlinkt Google Fonts direkt.',
+          selfHosted: 'Plugin „Fonts“: lädt beim Build herunter und liefert lokal aus.'
         },
         theme: {
           cdn: 'Community-Theme: lädt seine Schriften von unpkg.com.'
@@ -635,7 +635,7 @@ export default {
     localFontSlot: 'Direkt verwenden für',
     localFontNoSlot: '— keins —',
     localFontConfirm: 'Importieren',
-    fontImportSuccess: '"{{family}}" importiert.',
+    fontImportSuccess: '„{{family}}“ importiert.',
     colors: 'Farben'
   },
   themes: {
@@ -644,7 +644,7 @@ export default {
     allDisabled: 'Community-Themes deaktiviert',
     active: {
       title: 'Aktuelles Theme',
-      none: 'Kein Community-Theme aktiv — es gilt das klassische Theme aus „Konfiguration → Theme". Installiere unten eines aus dem Katalog, um loszulegen.',
+      none: 'Kein Community-Theme aktiv — es gilt das klassische Theme aus „Konfiguration → Theme“. Installiere unten eines aus dem Katalog, um loszulegen.',
       heading: 'Aktuelles Theme: {{themeId}}',
       saveAsPreset: 'Als Preset speichern',
       presetNamePlaceholder: 'Name für das Preset',
@@ -652,7 +652,7 @@ export default {
         'Dieses Plugin ({{source}}) überschreibt die Farben aus der Basis-Ebene. Änderungen unten wirken sich direkt auf die Vorschau aus.',
       disabledHeading: 'Community-Theme deaktiviert ({{themeId}})',
       disabledNote:
-        'Es gilt jetzt wieder das klassische Theme aus „Konfiguration → Theme". Die Einstellungen dieses Community-Themes bleiben erhalten und lassen sich jederzeit wieder aktivieren.',
+        'Es gilt jetzt wieder das klassische Theme aus „Konfiguration → Theme“. Die Einstellungen dieses Community-Themes bleiben erhalten und lassen sich jederzeit wieder aktivieren.',
       reactivate: 'Wieder aktivieren',
       checkingStyleSettings: 'Prüfe Style-Settings des Themes…',
       noStyleSettingsNote:
@@ -676,18 +676,18 @@ export default {
       title: 'Katalog',
       description:
         'Vorgefertigte Farbschemata aus dem @quartz-themes-Ökosystem (installiert und aktiviert das Plugin @quartz-themes/core mit dem gewählten Theme).',
-      searchPlaceholder: 'Theme suchen (z.B. tokyo-night, catppuccin, nord)…',
+      searchPlaceholder: 'Theme suchen (z. B. tokyo-night, catppuccin, nord)…',
       refresh: 'Neu laden',
       refreshing: 'Lädt…',
       unavailable:
-        'Die Theme-Liste konnte nicht von npm geladen werden. Unten stehen nur ein paar bekannte Themes als Platzhalter — mit „Neu laden" nochmal versuchen.',
+        'Die Theme-Liste konnte nicht von npm geladen werden. Unten stehen nur ein paar bekannte Themes als Platzhalter — mit „Neu laden“ nochmal versuchen.',
       installing: 'Installiere…',
       install: 'Installieren & aktivieren',
       active: 'Aktiv',
       noResults: 'Keine Treffer.',
       moreResults: '{{count}} weitere Treffer — weiter tippen zum Filtern.',
-      installSuccess: '"{{id}}" installiert und aktiviert — nicht vergessen, oben auf "Speichern" zu klicken.',
-      installFailed: 'Installation von "{{id}}" fehlgeschlagen: {{output}}',
+      installSuccess: '„{{id}}“ installiert und aktiviert — nicht vergessen, oben auf „Speichern“ zu klicken.',
+      installFailed: 'Installation von „{{id}}“ fehlgeschlagen: {{output}}',
       detailLoading: 'Lade Details…',
       detailNone: 'Keine Details verfügbar.',
       modes: 'Modi: {{modes}}',
@@ -706,7 +706,7 @@ export default {
     },
     descriptions: {
       installed: 'Erweitert Quartz um zusätzliche Funktionen — hier siehst du, was aktiv ist, und stellst es ein.',
-      marketplace: 'Der Plugin-Katalog der quartz-community-Organisation, inklusive der mitgelieferten. Plugins von anderswo fügst du über „owner/repo" hinzu.'
+      marketplace: 'Der Plugin-Katalog der quartz-community-Organisation, inklusive der mitgelieferten. Plugins von anderswo fügst du über „owner/repo“ hinzu.'
     }
   },
   pluginsInstalled: {
@@ -752,9 +752,9 @@ export default {
     openRepo: 'Repository auf GitHub öffnen',
     showOptions: 'Optionen anzeigen',
     hideOptions: 'Optionen einklappen',
-    removeConfirm: 'Plugin "{{name}}" wirklich entfernen? Vorher wird automatisch ein Snapshot angelegt, über den du es zurückholen kannst.',
+    removeConfirm: 'Plugin „{{name}}“ wirklich entfernen? Vorher wird automatisch ein Snapshot angelegt, über den du es zurückholen kannst.',
     removeFrameConfirm:
-      'Frame "{{name}}" wirklich löschen? Das entfernt ihn aus der Konfiguration und von der Festplatte. Vorher wird automatisch ein Snapshot angelegt.',
+      'Frame „{{name}}“ wirklich löschen? Das entfernt ihn aus der Konfiguration und von der Festplatte. Vorher wird automatisch ein Snapshot angelegt.',
     availableOptions: 'Verfügbare Optionen:',
     onlyViaYaml: ', nur per YAML',
     noSchemaInfo:
@@ -764,7 +764,7 @@ export default {
     addOption: 'Anlegen',
     optionKeyExists: 'Diese Option ist bereits gesetzt.',
     optionValueHint: 'true/false und Zahlen werden als solche gespeichert, [..] und {..} als JSON, alles andere als Text.',
-    removeOption: 'Option "{{name}}" entfernen',
+    removeOption: 'Option „{{name}}“ entfernen',
     notSet: 'nicht gesetzt',
     summaryPosPriority: 'position: {{position}} · priority: {{priority}}',
     summaryOrder: 'order: {{order}}',
@@ -774,15 +774,15 @@ export default {
       display: 'all = alle Geräte, mobile-only = nur mobil, desktop-only = nur Desktop',
       condition:
         'Mitgeliefert: not-index, has-tags, has-backlinks, has-toc. Ein unbekannter Name wird beim Build ignoriert, das Element erscheint dann immer.',
-      group: 'Name einer Toolbar-Gruppe, z. B. "toolbar"'
+      group: 'Name einer Toolbar-Gruppe, z. B. „toolbar“'
     },
     groupOptionsFields: {
       grow: 'Element wächst, um freien Platz in der Gruppe zu füllen',
       shrink: 'Element darf bei Platzmangel schrumpfen',
-      basis: 'Flex-Basisgröße, z. B. "auto" oder "100px"',
+      basis: 'Flex-Basisgröße, z. B. „auto“ oder „100px“',
       order: 'Reihenfolge innerhalb der Gruppe — kleiner zuerst',
-      align: 'CSS align-items, z. B. "center"',
-      justify: 'CSS justify-content, z. B. "space-between"'
+      align: 'CSS align-items, z. B. „center“',
+      justify: 'CSS justify-content, z. B. „space-between“'
     }
   },
   pluginDescriptions: {
@@ -800,10 +800,10 @@ export default {
     roam: 'Unterstützt aus Roam Research exportierte Notizen.',
     'quartz-fonts': 'Steuert Schriftarten pro Überschriftenebene, inkl. Google-Fonts-Integration.',
     core: 'Wendet das gewählte Theme (Farben, Typografie, Darstellung) auf die Seite an.',
-    'remove-draft': 'Blendet Seiten mit „draft: true" im Frontmatter aus.',
-    'explicit-publish': 'Veröffentlicht nur Seiten, die im Frontmatter explizit mit „publish: true" markiert sind.',
+    'remove-draft': 'Blendet Seiten mit „draft: true“ im Frontmatter aus.',
+    'explicit-publish': 'Veröffentlicht nur Seiten, die im Frontmatter explizit mit „publish: true“ markiert sind.',
     'unlisted-pages':
-      'Blendet Seiten mit „unlisted: true" aus allen Listen (Suche, Graph, Explorer, …) aus — bleiben aber über die URL erreichbar.',
+      'Blendet Seiten mit „unlisted: true“ aus allen Listen (Suche, Graph, Explorer, …) aus — bleiben aber über die URL erreichbar.',
     'encrypted-pages': 'Verschlüsselt einzelne Seiten passwortgeschützt (AES-256-GCM).',
     'stacked-pages': 'Öffnet interne Links als nebeneinander gestapelte Panes (Andy-Matuschak-Stil).',
     'alias-redirects': 'Erzeugt Weiterleitungsseiten für Alias-URLs.',
@@ -886,14 +886,14 @@ export default {
     removeOverride: 'Override entfernen',
     excludeHeading: 'Sichtbare Komponenten',
     excludeDescription: 'Schalte eine Komponente aus, um sie auf Seiten dieses Typs auszublenden.',
-    excludeDuplicateHint: 'Betrifft alle {{count}} Instanzen von „{{name}}" — Quartz kann einzelne Duplikate hier nicht getrennt ausschließen.',
+    excludeDuplicateHint: 'Betrifft alle {{count}} Instanzen von „{{name}}“ — Quartz kann einzelne Duplikate hier nicht getrennt ausschließen.',
     template: 'Frame/Template',
     templateDefault: 'Standard',
     templateFullWidth: 'Volle Breite',
     templateMinimal: 'Minimal',
-    templatePluginDefault: '„{{frame}}" (Plugin-Standard, aktiv)',
+    templatePluginDefault: '„{{frame}}“ (Plugin-Standard, aktiv)',
     pluginFrameUnknownLayout:
-      'Dieser Seitentyp nutzt automatisch das Frame „{{frame}}", das das zugehörige Plugin mitbringt. Die genaue Grid-Struktur kann hier nicht als Vorschau angezeigt werden, da sie vom Plugin selbst gerendert wird — nicht das Standard-Raster.',
+      'Dieser Seitentyp nutzt automatisch das Frame „{{frame}}“, das das zugehörige Plugin mitbringt. Die genaue Grid-Struktur kann hier nicht als Vorschau angezeigt werden, da sie vom Plugin selbst gerendert wird — nicht das Standard-Raster.',
     clearSlotsHeading: 'Bereiche für diesen Seitentyp leeren',
     clearSlotsDescription: 'Aktivierte Bereiche bleiben für diesen Seitentyp immer leer, unabhängig von der globalen Belegung.',
     frameBuilder: {
@@ -931,7 +931,7 @@ export default {
       rowSizesLabel: 'Zeilenhöhen (leer = auto)',
       lineNamesLabel: 'Benannte Grid-Lines (optional)',
       lineNamesHint:
-        'Vergibt Namen für die Linien zwischen den Spalten bzw. Zeilen (z. B. „sidebar-start"). Wird für die Bereichszuweisung hier im Editor nicht benötigt — nützlich nur, wenn du später in eigenem CSS (z. B. custom.scss) gezielt auf diese Linie verweisen willst, etwa mit grid-column: sidebar-start / content-end.',
+        'Vergibt Namen für die Linien zwischen den Spalten bzw. Zeilen (z. B. „sidebar-start“). Wird für die Bereichszuweisung hier im Editor nicht benötigt — nützlich nur, wenn du später in eigenem CSS (z. B. custom.scss) gezielt auf diese Linie verweisen willst, etwa mit grid-column: sidebar-start / content-end.',
       columnLinesLabel: 'Spalten-Lines',
       rowLinesLabel: 'Zeilen-Lines',
       copyLayoutTo: 'Auf {{target}} kopieren',
@@ -959,7 +959,7 @@ export default {
       nameRequired: 'Bitte einen Frame-Namen vergeben.',
       nameCollision: 'Dieser Name ist bereits vergeben (Standard-Templates oder ein anderer eigener Frame).',
       deleteFrame: 'Diesen Frame löschen',
-      deleteConfirm: 'Frame "{{name}}" wirklich löschen? Seitentypen, die ihn referenzieren, fallen dann auf das Standard-Template zurück.',
+      deleteConfirm: 'Frame „{{name}}“ wirklich löschen? Seitentypen, die ihn referenzieren, fallen dann auf das Standard-Template zurück.',
       preview: {
         pageContent: 'Seiteninhalt'
       }
@@ -977,14 +977,14 @@ export default {
     fixes: {
       heading: 'Bekannte Konflikte',
       description:
-        'Konflikte zwischen Plugins, die sich nicht über eine Einstellung lösen lassen, sondern nur im CSS. Der Fix wird als ganz normale Datei unter „Eigenes CSS" angelegt — dort bearbeitbar, verschiebbar und löschbar.',
+        'Konflikte zwischen Plugins, die sich nicht über eine Einstellung lösen lassen, sondern nur im CSS. Der Fix wird als ganz normale Datei unter „Eigenes CSS“ angelegt — dort bearbeitbar, verschiebbar und löschbar.',
       add: 'Fix anlegen',
       open: 'Datei öffnen',
       alreadyAdded: 'Angelegt als {{file}}',
       'heading-fonts': {
         title: 'Überschriften folgen nicht dem Theme',
         summary:
-          'Das Plugin „Fonts" setzt die Schrift für h1–h6 mit einer ungelayerten Regel und gewinnt damit gegen das Theme und gegen dein eigenes CSS. Der Fix stellt die Überschriften wieder auf die CSS-Variablen um.',
+          'Das Plugin „Fonts“ setzt die Schrift für h1–h6 mit einer ungelayerten Regel und gewinnt damit gegen das Theme und gegen dein eigenes CSS. Der Fix stellt die Überschriften wieder auf die CSS-Variablen um.',
         comment:
           'Das Plugin @quartz-community/quartz-fonts setzt "h1,…,h6 { font-family: … }" ungelayert.\nUngelayert schlägt jedes @layer — also auch das aktive Theme —, und weil die Datei nach\ncustom.scss geladen wird, gewinnt sie auch gegen eine gleich spezifische Regel von dir.\n"body h1" ist eine Stufe spezifischer und gewinnt deshalb unabhängig von der Reihenfolge.\n\nDie Verweise auf die Variablen sorgen dafür, dass der Variablen-Tab wieder die Kontrolle hat.\nAngelegt von QuartzControl — frei bearbeitbar.'
       }
@@ -997,7 +997,7 @@ export default {
     },
     cascade: {
       themeActive:
-        'Reihenfolge: Basis → Community-Theme → Variablen → eigenes CSS. Das Theme „{{themeId}}" ist aktiv und überschreibt die Basisfarben.',
+        'Reihenfolge: Basis → Community-Theme → Variablen → eigenes CSS. Das Theme „{{themeId}}“ ist aktiv und überschreibt die Basisfarben.',
       themeInactive:
         'Reihenfolge: Basis → Community-Theme → Variablen → eigenes CSS. Kein Community-Theme aktiv — es gelten deine Basis-Farben und -Schriften.',
       overrides: '{{count}} Variable(n) überschrieben.'
@@ -1007,7 +1007,7 @@ export default {
     scssStaleReload: 'Von Festplatte neu laden (Entwurf verwerfen)',
     styleSettings: {
       sourceNote:
-        'Beschreibungen aus dem Original-Theme „{{theme}}" von {{author}} — {{count}} Optionen.',
+        'Beschreibungen aus dem Original-Theme „{{theme}}“ von {{author}} — {{count}} Optionen.',
       searchPlaceholder: 'Option suchen…',
       loading: 'Lade Beschreibungen zu den Optionen…',
       refresh: 'Doku neu laden',
@@ -1024,9 +1024,9 @@ export default {
       allDescription:
         'Alles, was das aktive Theme, Plugins oder der letzte Build an Variablen mitbringen — getrennt von den Hauptvariablen, weil es sehr viele werden können.',
       allDescriptionTheme:
-        'Alles, was das Theme „{{themeId}}", Plugins oder der letzte Build mitbringen: {{count}} Variablen. Suche eingeben, um darin zu blättern.',
+        'Alles, was das Theme „{{themeId}}“, Plugins oder der letzte Build mitbringen: {{count}} Variablen. Suche eingeben, um darin zu blättern.',
       counter: '{{overridden}} von {{total}} überschrieben',
-      searchPlaceholder: 'Variable suchen (z.B. callout, h1, background)…',
+      searchPlaceholder: 'Variable suchen (z. B. callout, h1, background)…',
       onlyChanged: 'Nur geänderte',
       searchHint: 'Suchbegriff eingeben, um in {{count}} Variablen zu suchen.',
       noResults: 'Keine Treffer.',
@@ -1048,7 +1048,7 @@ export default {
       moreKeys: '+{{count}} weitere',
       chipHint: 'Zu dieser Variable springen',
       themeNote:
-        'Das Community-Theme „{{themeId}}" liefert seine Variablen in @layer aus, deine Werte hier landen ungelayert in custom.scss — ungelayerte Regeln gewinnen immer. Geprüft an einem echten Build (hell und dunkel). Nur Variablen, die ein Theme ausschließlich innerhalb eines Selektors setzt (z.B. .callout[data-callout]), lassen sich hier nicht global überschreiben.',
+        'Das Community-Theme „{{themeId}}“ liefert seine Variablen in @layer aus, deine Werte hier landen ungelayert in custom.scss — ungelayerte Regeln gewinnen immer. Geprüft an einem echten Build (hell und dunkel). Nur Variablen, die ein Theme ausschließlich innerhalb eines Selektors setzt (z. B. .callout[data-callout]), lassen sich hier nicht global überschreiben.',
       section: {
         current: 'Aktueller Wert',
         origin: 'Herkunft',
@@ -1095,7 +1095,7 @@ export default {
       deleteConfirm: 'Wirklich löschen',
       create: 'Neue Datei',
       createConfirm: 'Anlegen',
-      namePlaceholder: 'Dateiname (z.B. typografie)',
+      namePlaceholder: 'Dateiname (z. B. typografie)',
       orphansHeading: 'Vorhanden, aber nicht eingebunden',
       include: 'Einbinden',
       unsaved: 'Ungespeicherte Änderungen',
@@ -1126,8 +1126,8 @@ export default {
           selfHosted: 'Quartz lädt beim Build von Google und liefert die Dateien selbst aus: {{specs}}.'
         },
         plugin: {
-          google: 'Das Plugin „Fonts" lädt bei jedem Seitenaufruf von Google Fonts.',
-          selfHosted: 'Das Plugin „Fonts" lädt beim Build und liefert die Dateien selbst aus.'
+          google: 'Das Plugin „Fonts“ lädt bei jedem Seitenaufruf von Google Fonts.',
+          selfHosted: 'Das Plugin „Fonts“ lädt beim Build und liefert die Dateien selbst aus.'
         },
         theme: {
           cdn: 'Das Community-Theme lädt seine eigenen Schriften bei jedem Seitenaufruf von unpkg.com.'
@@ -1137,7 +1137,7 @@ export default {
     cssVars: {
       heading: 'Verfügbare CSS-Variablen',
       description:
-        'Diese Variablen sind an dieser Stelle nutzbar (z.B. var(--text-normal)). Die Werte zeigen den aktuellen Stand aus der Basis-Ebene, hell/dunkel.',
+        'Diese Variablen sind an dieser Stelle nutzbar (z. B. var(--text-normal)). Die Werte zeigen den aktuellen Stand aus der Basis-Ebene, hell/dunkel.',
       goToVariables: 'Variablen überschreiben →',
       searchPlaceholder: 'Variable suchen…',
       insertHint: 'Klicken, um die Variable an der Cursor-Position einzufügen.',
@@ -1197,28 +1197,28 @@ export default {
   },
   publish: {
     title: 'Veröffentlichen',
-    description: 'Baut das Projekt und bringt das Ergebnis an seine Ziele - per SFTP/rsync, FTP, in einen Ordner, auf einen Git-Branch oder über einen Webhook.',
-    baseUrlWarning: 'configuration.baseUrl steht noch auf "{{baseUrl}}" — vor dem Veröffentlichen auf die echte Domain setzen.',
+    description: 'Baut das Projekt und bringt das Ergebnis an seine Ziele — per SFTP/rsync, FTP, in einen Ordner, auf einen Git-Branch oder über einen Webhook.',
+    baseUrlWarning: 'configuration.baseUrl steht noch auf „{{baseUrl}}“ — vor dem Veröffentlichen auf die echte Domain setzen.',
     targetHeading: 'Ziel',
     newConnection: '+ Neuer Zugang',
     manageConnections: 'Zugänge verwalten',
     newTarget: '+ Neues Ziel',
     confirmDeleteTarget: 'Dieses Veröffentlichungsziel wirklich löschen? Der hinterlegte Zugang bleibt bestehen.',
-    noTargets: 'Noch kein Veröffentlichungsziel angelegt. Über "+ Neues Ziel" eines anlegen - z. B. GitHub Pages, einen Webspace per SFTP oder einen lokalen Ordner.',
+    noTargets: 'Noch kein Veröffentlichungsziel angelegt. Über „+ Neues Ziel“ eines anlegen — z. B. GitHub Pages, einen Webspace per SFTP oder einen lokalen Ordner.',
     confirmDeployBranch:
-      'Auf den Branch "{{branch}}" veröffentlichen?\n\nDer Branch wird dabei vollständig durch den aktuellen Build ersetzt (force-push).',
+      'Auf den Branch „{{branch}}“ veröffentlichen?\n\nDer Branch wird dabei vollständig durch den aktuellen Build ersetzt (force-push).',
     branchHint: {
       github:
-        'Schiebt den Build als einzelnen Commit auf den Branch des "origin"-Remotes (dasselbe wie bei Git-Sync). In den Repository-Einstellungen muss GitHub Pages auf diesen Branch zeigen.',
+        'Schiebt den Build als einzelnen Commit auf den Branch des „origin“-Remotes (dasselbe wie bei Git-Sync). In den Repository-Einstellungen muss GitHub Pages auf diesen Branch zeigen.',
       codeberg:
-        'Codeberg Pages liefert den Branch "pages" direkt aus - nach dem ersten Push ist die Seite ohne weitere Einstellungen erreichbar.',
+        'Codeberg Pages liefert den Branch „pages“ direkt aus — nach dem ersten Push ist die Seite ohne weitere Einstellungen erreichbar.',
       gitlab:
-        'Achtung: Bei GitLab veröffentlicht der Branch allein noch nichts - dort muss ein CI-Job die Dateien als "public"-Artefakt ausliefern. Der Push funktioniert trotzdem.'
+        'Achtung: Bei GitLab veröffentlicht der Branch allein noch nichts — dort muss ein CI-Job die Dateien als „public“-Artefakt ausliefern. Der Push funktioniert trotzdem.'
     },
     pages: {
       title: 'GitHub Pages',
       reload: 'Status neu laden',
-      noGithubOrigin: 'Das "origin"-Remote dieses Projekts zeigt nicht auf github.com. Pages lässt sich von hier aus erst einrichten, wenn das Repository auf GitHub liegt - siehe Git-Sync.',
+      noGithubOrigin: 'Das „origin“-Remote dieses Projekts zeigt nicht auf github.com. Pages lässt sich von hier aus erst einrichten, wenn das Repository auf GitHub liegt — siehe Git-Sync.',
       notConfigured: 'Für dieses Repository sind noch keine Pages eingerichtet. Mit dem Knopf unten wird Pages angelegt und auf diesen Branch gestellt.',
       source: 'Quelle: {{branch}}',
       status: {
@@ -1230,32 +1230,32 @@ export default {
       cname: 'Eigene Domain',
       cnamePlaceholder: 'z. B. wiki.example.com',
       httpsEnforced: 'HTTPS erzwingen',
-      apply: 'Auf "{{branch}}" stellen',
+      apply: 'Auf „{{branch}}“ stellen',
       cnameHint:
-        'Die Domain wird bei GitHub gespeichert, nicht im Branch - anders als eine CNAME-Datei überlebt sie damit jedes Deploy, das den Branch vollständig ersetzt. HTTPS lässt sich erst erzwingen, wenn GitHub das Zertifikat ausgestellt hat; das dauert nach dem Setzen der Domain einige Minuten.'
+        'Die Domain wird bei GitHub gespeichert, nicht im Branch — anders als eine CNAME-Datei überlebt sie damit jedes Deploy, das den Branch vollständig ersetzt. HTTPS lässt sich erst erzwingen, wenn GitHub das Zertifikat ausgestellt hat; das dauert nach dem Setzen der Domain einige Minuten.'
     },
     sftpHint:
       'SFTP vergleicht den Build mit einer lokalen Liste dessen, was zuletzt hochgeladen wurde. Dateien, die jemand direkt auf dem Server ändert oder löscht, bleiben dabei unbemerkt.',
     rsyncHint:
-      'rsync fragt den Server selbst, was dort liegt - der Diff stimmt also auch dann, wenn dort jemand von Hand etwas geändert hat. Setzt voraus, dass rsync auf dem Server installiert ist.',
+      'rsync fragt den Server selbst, was dort liegt — der Diff stimmt also auch dann, wenn dort jemand von Hand etwas geändert hat. Setzt voraus, dass rsync auf dem Server installiert ist.',
     rsyncBlocked: {
       'no-connection': 'rsync steht zur Verfügung, sobald ein SSH-Zugang mit Schlüsseldatei oder SSH-Agent gewählt ist.',
-      'password-auth': 'rsync ist mit Passwort-Anmeldung nicht möglich - ssh kann das Passwort nicht entgegennehmen. Mit Schlüsseldatei oder SSH-Agent geht es.',
+      'password-auth': 'rsync ist mit Passwort-Anmeldung nicht möglich — ssh kann das Passwort nicht entgegennehmen. Mit Schlüsseldatei oder SSH-Agent geht es.',
       'key-not-a-file':
         'rsync braucht den privaten Schlüssel als Datei; ein hier eingefügter Schlüsseltext reicht nicht. Den Zugang auf eine Schlüsseldatei umstellen.',
       'no-pinned-host-key':
-        'rsync braucht einen bestätigten Host-Key. Einmal über SFTP veröffentlichen - dabei wird der Fingerprint abgefragt und gespeichert - danach lässt sich rsync wählen.',
+        'rsync braucht einen bestätigten Host-Key. Einmal über SFTP veröffentlichen — dabei wird der Fingerprint abgefragt und gespeichert — danach lässt sich rsync wählen.',
       'platform-unsupported':
         'rsync gibt es auf diesem Betriebssystem nicht. SFTP überträgt dieselben Dateien, nur ohne den Abgleich mit dem Server.'
     },
     webhookNoUrl: 'keine URL hinterlegt',
     webhookExplainer:
-      'Ein Webhook lädt keine Dateien hoch, sondern stößt einen Build beim Anbieter an (Netlify, Cloudflare Pages, Vercel, CI). Deshalb gibt es hier keine Dateiliste - der Build läuft dort, nicht hier.',
-    deleteDisabledHint: 'Löschen ist für dieses Ziel deaktiviert - entfernte Dateien bleiben dort liegen, werden aber weiter mitgezählt.',
+      'Ein Webhook lädt keine Dateien hoch, sondern stößt einen Build beim Anbieter an (Netlify, Cloudflare Pages, Vercel, CI). Deshalb gibt es hier keine Dateiliste — der Build läuft dort, nicht hier.',
+    deleteDisabledHint: 'Löschen ist für dieses Ziel deaktiviert — entfernte Dateien bleiben dort liegen, werden aber weiter mitgezählt.',
     targetForm: {
       heading: 'Veröffentlichungsziel',
       explainer:
-        'Ein Ziel beschreibt, wohin dieses Projekt veröffentlicht - Pfad, Löschverhalten und welcher Zugang dafür benutzt wird. Der Zugang selbst gilt appweit und kann von mehreren Projekten benutzt werden.',
+        'Ein Ziel beschreibt, wohin dieses Projekt veröffentlicht — Pfad, Löschverhalten und welcher Zugang dafür benutzt wird. Der Zugang selbst gilt appweit und kann von mehreren Projekten benutzt werden.',
       name: 'Name',
       type: 'Art',
       remotePath: 'Remote-Pfad',
@@ -1286,7 +1286,7 @@ export default {
     connectionForm: {
       heading: 'Zugang',
       explainer:
-        'Zugangsdaten werden verschlüsselt im Schlüsselbund des Systems abgelegt und gelten appweit - nicht nur für dieses Projekt.',
+        'Zugangsdaten werden verschlüsselt im Schlüsselbund des Systems abgelegt und gelten appweit — nicht nur für dieses Projekt.',
       name: 'Name',
       host: 'Host',
       port: 'Port',
@@ -1486,13 +1486,13 @@ export default {
     showOther: 'Weitere {{count}} Repositories anzeigen',
     hideOther: 'Weitere {{count}} Repositories ausblenden',
     otherDescription:
-      'Repositories der quartz-community-Organisation ohne die Markierung „quartz-plugin" — darunter Quartz selbst, gemeinsam genutzte Bibliotheken, Vorlagen und Forks. Meistens nicht als Plugin installierbar.',
+      'Repositories der quartz-community-Organisation ohne die Markierung „quartz-plugin“ — darunter Quartz selbst, gemeinsam genutzte Bibliotheken, Vorlagen und Forks. Meistens nicht als Plugin installierbar.',
     installedMessage: '{{name}} installiert.',
     loading: 'Katalog wird geladen…',
     refresh: 'Katalog neu laden',
     refreshing: 'Lade…',
     unavailable:
-      'Der Katalog ist gerade nicht erreichbar (GitHub antwortet nicht oder das Anfragelimit ist erschöpft). Unten steht deshalb nur ein Platzhalter — mit „Katalog neu laden" nochmal versuchen. Ein GitHub-Token in den Einstellungen hebt das Limit deutlich an.'
+      'Der Katalog ist gerade nicht erreichbar (GitHub antwortet nicht oder das Anfragelimit ist erschöpft). Unten steht deshalb nur ein Platzhalter — mit „Katalog neu laden“ nochmal versuchen. Ein GitHub-Token in den Einstellungen hebt das Limit deutlich an.'
   },
   logConsole: {
     noOutput: 'Noch keine Ausgabe.',

@@ -71,7 +71,7 @@ function Tile({
         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[7px] bg-black/[0.04] text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
           <Icon size={14} strokeWidth={2} aria-hidden />
         </span>
-        <h2 className="truncate text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+        <h2 className="truncate text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
           {title}
         </h2>
         {badge && <span className="ml-auto shrink-0">{badge}</span>}
@@ -94,7 +94,7 @@ function Metric({ children, tone }: { children: ReactNode; tone?: 'green' | 'mut
     tone === 'green'
       ? 'text-green-700 dark:text-green-400'
       : tone === 'muted'
-        ? 'text-slate-400 dark:text-slate-500'
+        ? 'text-slate-500 dark:text-slate-400'
         : 'text-slate-900 dark:text-white'
   return <p className={`text-[19px] font-semibold leading-tight tracking-tight ${color}`}>{children}</p>
 }
@@ -132,7 +132,7 @@ function AttentionBand({ issues }: { issues: Issue[] }): JSX.Element {
     <Card className="!p-0">
       <div className="flex items-center gap-2 border-b border-black/[0.06] px-4 py-2.5 dark:border-white/10">
         <TriangleAlert size={14} className="text-amber-600 dark:text-amber-400" aria-hidden />
-        <h2 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+        <h2 className="text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
           {t('dashboard.attention.title')}
         </h2>
         <Badge tone="amber">{issues.length}</Badge>
@@ -503,7 +503,7 @@ export default function ProjectDashboard(): JSX.Element {
                   <Badge tone="red">{t('dashboard.targetMissing')}</Badge>
                 ) : (
                   <span className="inline-flex min-w-0 items-center gap-1.5">
-                    <Link2 size={13} className="shrink-0 text-slate-400" aria-hidden />
+                    <Link2 size={13} className="shrink-0 text-slate-500 dark:text-slate-400" aria-hidden />
                     <span className="truncate font-mono text-[12px]">{content.symlinkTarget}</span>
                   </span>
                 )
@@ -551,7 +551,7 @@ export default function ProjectDashboard(): JSX.Element {
             <>
               <Metric>
                 <span className="tabular-nums">↑ {git.ahead}</span>
-                <span className="ml-2.5 tabular-nums text-slate-400 dark:text-slate-500">↓ {git.behind}</span>
+                <span className="ml-2.5 tabular-nums text-slate-500 dark:text-slate-400">↓ {git.behind}</span>
                 {git.conflictCount > 0 && (
                   <span className="ml-2.5 text-[13px] font-medium text-red-600 dark:text-red-400">
                     {t('dashboard.git.conflicts', { count: git.conflictCount })}
@@ -665,7 +665,7 @@ export default function ProjectDashboard(): JSX.Element {
               <Facts>
                 {targets.slice(0, 3).map((target) => (
                   <span key={target.id} className="truncate text-slate-500 dark:text-slate-400">
-                    {target.name} <span className="text-slate-400 dark:text-slate-500">· {target.destination.type}</span>
+                    {target.name} <span className="text-slate-500 dark:text-slate-400">· {target.destination.type}</span>
                   </span>
                 ))}
               </Facts>
@@ -696,7 +696,7 @@ export default function ProjectDashboard(): JSX.Element {
             <>
               <Skeleton className="h-5 w-3/4" />
               <Skeleton className="h-3 w-1/2" />
-              <p className="text-[11.5px] text-slate-400 dark:text-slate-500">{t('dashboard.updates.checking')}</p>
+              <p className="text-[11.5px] text-slate-500 dark:text-slate-400">{t('dashboard.updates.checking')}</p>
             </>
           ) : (
             <>
@@ -716,7 +716,7 @@ export default function ProjectDashboard(): JSX.Element {
                     : t('dashboard.updates.pluginsCurrent', { count: pluginUpdates?.length ?? 0 })}
                 </span>
                 {pluginsUnknown > 0 && (
-                  <span className="text-slate-400 dark:text-slate-500">
+                  <span className="text-slate-500 dark:text-slate-400">
                     {t('dashboard.updates.checkFailed', { count: pluginsUnknown })}
                   </span>
                 )}
@@ -745,7 +745,7 @@ export default function ProjectDashboard(): JSX.Element {
                   })}
                 </span>
                 {newestSnapshot && (
-                  <span className="truncate text-slate-400 dark:text-slate-500">
+                  <span className="truncate text-slate-500 dark:text-slate-400">
                     {newestSnapshot.label || t(`backups.kinds.${newestSnapshot.kind}`)}
                   </span>
                 )}
@@ -791,7 +791,7 @@ export default function ProjectDashboard(): JSX.Element {
 function Row({ label, children }: { label: string; children: ReactNode }): JSX.Element {
   return (
     <div className="flex min-w-0 items-baseline gap-2.5">
-      <dt className="w-20 shrink-0 text-[11px] text-slate-400 dark:text-slate-500">{label}</dt>
+      <dt className="w-20 shrink-0 text-[11px] text-slate-500 dark:text-slate-400">{label}</dt>
       <dd className="m-0 min-w-0 truncate text-[12.5px] text-slate-700 dark:text-slate-300">{children}</dd>
     </div>
   )

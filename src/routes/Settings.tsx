@@ -45,7 +45,7 @@ export default function Settings(): JSX.Element {
     <div className="flex h-screen flex-col">
       <div className={titlebarStripClass} />
       <div className="mx-auto w-full max-w-5xl flex-1 overflow-y-auto px-6 pb-12">
-        <Link to="/" className="text-[13px] text-slate-500 hover:text-slate-900 dark:hover:text-white">
+        <Link to="/" className="text-[13px] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
           ← {t('common.back')}
         </Link>
         <h1 className="mb-1 mt-2 text-2xl font-semibold">{t('settings.title')}</h1>
@@ -290,7 +290,7 @@ function GithubSection(): JSX.Element {
           </Button>
           <button
             type="button"
-            className="text-[13px] text-slate-500 underline hover:text-slate-900 dark:hover:text-white"
+            className="text-[13px] text-slate-500 dark:text-slate-400 underline hover:text-slate-900 dark:hover:text-white"
             onClick={() => remove.run()}
             disabled={remove.pending}
           >
@@ -400,7 +400,7 @@ function ConnectionsSection(): JSX.Element {
                 {usage[connection.id] > 0 && ` · ${t('settings.connections.usedBy', { count: usage[connection.id] })}`}
               </p>
               {connection.kind === 'ssh' && (
-                <p className="mt-0.5 truncate text-xs text-slate-400 dark:text-slate-500" title={connection.hostKey?.fingerprint}>
+                <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400" title={connection.hostKey?.fingerprint}>
                   {connection.hostKey
                     ? `${t('publish.hostKeyPinned')}: ${connection.hostKey.fingerprint}`
                     : t('publish.hostKeyUnknown')}
@@ -513,7 +513,7 @@ function MaintenanceSection(): JSX.Element {
       </div>
 
       {info && (
-        <p className="mt-4 border-t border-black/[0.06] pt-3 text-xs text-slate-400 dark:border-white/10 dark:text-slate-500">
+        <p className="mt-4 border-t border-black/[0.06] pt-3 text-xs text-slate-500 dark:border-white/10 dark:text-slate-400">
           QuartzControl {info.appVersion} · Electron {info.electronVersion} · Chromium {info.chromeVersion}
         </p>
       )}

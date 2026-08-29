@@ -130,10 +130,10 @@ export default function ConfigEditor(): JSX.Element {
               <pre className="whitespace-pre-wrap rounded-md bg-red-50 p-3 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-400">
                 {loadError}
               </pre>
-              <p className="mt-2 text-sm text-slate-500">{t('configEditor.loadErrorHint')}</p>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t('configEditor.loadErrorHint')}</p>
             </div>
           )}
-          {!loadError && !config && <p className="text-sm text-slate-500">{t('configEditor.loading')}</p>}
+          {!loadError && !config && <p className="text-sm text-slate-500 dark:text-slate-400">{t('configEditor.loading')}</p>}
           {config && (
             <>
               <SiteSettings

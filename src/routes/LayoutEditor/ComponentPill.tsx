@@ -110,7 +110,7 @@ export function ItemCard({
             </span>
           )}
           <span className="truncate text-sm font-medium">{plugin.name}</span>
-          {isDuplicate && rank !== undefined && <span className="text-[11px] text-slate-400">#{rank}</span>}
+          {isDuplicate && rank !== undefined && <span className="text-[11px] text-slate-500 dark:text-slate-400">#{rank}</span>}
         </div>
         <div className="flex flex-wrap items-center justify-end gap-1.5">
           {layout?.group && (
@@ -125,7 +125,7 @@ export function ItemCard({
             <ChevronDown
               size={15}
               aria-hidden="true"
-              className={`shrink-0 text-slate-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
+              className={`shrink-0 text-slate-500 dark:text-slate-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
             />
           )}
         </div>

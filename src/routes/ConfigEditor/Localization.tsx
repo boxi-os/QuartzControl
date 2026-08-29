@@ -127,8 +127,8 @@ export default function Localization(): JSX.Element {
     (e) => !q || keyOf(e.path).toLowerCase().includes(q) || e.value.toLowerCase().includes(q)
   )
 
-  if (!locales) return <p className="text-sm text-slate-500">{t('common.loading')}</p>
-  if (locales.length === 0) return <p className="text-sm text-slate-500">{t('localization.none')}</p>
+  if (!locales) return <p className="text-sm text-slate-500 dark:text-slate-400">{t('common.loading')}</p>
+  if (locales.length === 0) return <p className="text-sm text-slate-500 dark:text-slate-400">{t('localization.none')}</p>
 
   return (
     <div className="flex flex-col gap-4">
@@ -173,7 +173,7 @@ export default function Localization(): JSX.Element {
         </Button>
       </div>
 
-      {entries === null && <p className="text-sm text-slate-500">{t('common.loading')}</p>}
+      {entries === null && <p className="text-sm text-slate-500 dark:text-slate-400">{t('common.loading')}</p>}
 
       {/* Hundreds of short strings: a second column halves the scrolling. The multi-line
           "template" entries keep the full row - they're the ones that actually need the width. */}
@@ -207,7 +207,7 @@ export default function Localization(): JSX.Element {
               </div>
             )
           })}
-          {filtered.length === 0 && <p className="text-sm text-slate-500">{t('localization.noResults')}</p>}
+          {filtered.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">{t('localization.noResults')}</p>}
         </div>
       )}
     </div>

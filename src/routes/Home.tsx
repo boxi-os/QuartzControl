@@ -100,7 +100,7 @@ export default function Home(): JSX.Element {
           </div>
           <Link
             to="/settings"
-            className="shrink-0 pt-1 text-[13px] text-slate-500 hover:text-slate-900 dark:hover:text-white"
+            className="shrink-0 pt-1 text-[13px] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           >
             {t('home.settings')}
           </Link>
@@ -117,7 +117,7 @@ export default function Home(): JSX.Element {
               </Button>
               {sorted.length >= SEARCH_THRESHOLD && (
                 <div className="relative ml-auto">
-                  <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400" />
                   <TextInput
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
@@ -265,15 +265,15 @@ function ProjectRow({
         )
       )}
 
-      <p className="truncate text-xs text-slate-400 dark:text-slate-500" title={project.path}>
+      <p className="truncate text-xs text-slate-500 dark:text-slate-400" title={project.path}>
         {project.path}
       </p>
 
       <div className="mt-1 flex flex-wrap items-center gap-2">
         {lastOpened ? (
-          <span className="text-xs text-slate-400 dark:text-slate-500">{t('home.lastOpened', { when: lastOpened })}</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400">{t('home.lastOpened', { when: lastOpened })}</span>
         ) : (
-          <span className="text-xs text-slate-400 dark:text-slate-500">{t('home.neverOpened')}</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400">{t('home.neverOpened')}</span>
         )}
         {project.missing && (
           <Button variant="ghost" className="ml-auto" onClick={() => relocate.run()} disabled={relocate.pending}>
@@ -291,7 +291,7 @@ function ProjectRow({
         aria-label={t('common.remove')}
         title={t('common.remove')}
         onClick={onRemove}
-        className="absolute right-3 top-3 rounded-[6px] p-1 text-slate-400 transition-colors hover:bg-black/[0.05] hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-slate-200"
+        className="absolute right-3 top-3 rounded-[6px] p-1 text-slate-500 dark:text-slate-400 transition-colors hover:bg-black/[0.05] hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-slate-200"
       >
         <Trash2 size={14} />
       </button>

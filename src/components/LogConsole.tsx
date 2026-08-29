@@ -20,7 +20,7 @@ export function LogConsole({ lines, onClear }: { lines: LogLine[]; onClear?: () 
 
   if (lines.length === 0) {
     return (
-      <div className="rounded-md bg-slate-950 px-3 py-2 font-mono text-xs text-slate-500">{t('logConsole.noOutput')}</div>
+      <div className="rounded-md bg-slate-950 px-3 py-2 font-mono text-xs text-slate-400">{t('logConsole.noOutput')}</div>
     )
   }
 
@@ -28,7 +28,7 @@ export function LogConsole({ lines, onClear }: { lines: LogLine[]; onClear?: () 
     <div>
       {onClear && (
         <div className="mb-1 flex justify-end">
-          <button type="button" onClick={onClear} className="text-xs text-slate-500 underline hover:text-slate-700 dark:hover:text-slate-300">
+          <button type="button" onClick={onClear} className="text-xs text-slate-500 dark:text-slate-400 underline hover:text-slate-700 dark:hover:text-slate-300">
             {t('logConsole.clear')}
           </button>
         </div>

@@ -171,7 +171,7 @@ function ExportSection({ project }: { project: Project }): JSX.Element {
         </Field>
       </div>
 
-      <p className="mb-1.5 mt-4 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('templates.partsHeading')}</p>
+      <p className="mb-1.5 mt-4 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{t('templates.partsHeading')}</p>
       {available === null ? (
         <p className="px-2 py-1.5 text-sm text-slate-500 dark:text-slate-400">{t('common.loading')}</p>
       ) : available.length === 0 ? (
@@ -341,7 +341,7 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
         <>
           <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-800/50">
             <div className="flex flex-wrap items-baseline gap-2">
-              <FileArchive size={14} className="shrink-0 text-slate-500" />
+              <FileArchive size={14} className="shrink-0 text-slate-500 dark:text-slate-400" />
               <span className="text-sm font-medium">{plan.manifest.name}</span>
               {plan.legacy && <Badge tone="slate">{t('templates.legacyBadge')}</Badge>}
             </div>
@@ -362,7 +362,7 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
           )}
 
           <div className="mt-4">
-            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('templates.strategyHeading')}</p>
+            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{t('templates.strategyHeading')}</p>
             <SegmentedControl
               value={strategy}
               onChange={setStrategy}
@@ -376,7 +376,7 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
             </p>
           </div>
 
-          <p className="mb-1.5 mt-4 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{t('templates.partsHeading')}</p>
+          <p className="mb-1.5 mt-4 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{t('templates.partsHeading')}</p>
           <div className="flex flex-col">
             {sortForDisplay(plan.parts).map((part) => (
               <PartRow

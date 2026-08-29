@@ -242,13 +242,13 @@ export default function BuildServer(): JSX.Element {
               <ExternalLink size={13} aria-hidden />
             </a>
           ) : (
-            <span className="text-[17px] font-semibold tracking-tight text-slate-400 dark:text-slate-500">{url}</span>
+            <span className="text-[17px] font-semibold tracking-tight text-slate-500 dark:text-slate-400">{url}</span>
           )}
           <button
             type="button"
             onClick={() => copy(url)}
             title={t('common.copy')}
-            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-slate-500 hover:bg-black/[0.05] dark:hover:bg-white/10"
+            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-slate-500 dark:text-slate-400 hover:bg-black/[0.05] dark:hover:bg-white/10"
           >
             {copied === url ? <Check size={13} aria-hidden /> : <Copy size={13} aria-hidden />}
             {t('common.copy')}
@@ -349,7 +349,7 @@ export default function BuildServer(): JSX.Element {
                   <button
                     type="button"
                     onClick={() => setPreviewNonce((n) => n + 1)}
-                    className="ml-auto inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                    className="ml-auto inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
                   >
                     <RefreshCw size={12} aria-hidden />
                     {t('buildServer.reloadPreview')}
@@ -404,7 +404,7 @@ export default function BuildServer(): JSX.Element {
               </p>
             </>
           ) : (
-            <p className="text-[15px] font-semibold tracking-tight text-slate-400 dark:text-slate-500">
+            <p className="text-[15px] font-semibold tracking-tight text-slate-500 dark:text-slate-400">
               {t('buildServer.neverBuilt')}
             </p>
           )}

@@ -207,8 +207,8 @@ export default function Backups(): JSX.Element {
           almost entirely empty space. The one that is open is the exception: its file list and
           diff want the whole window. */}
       <div className="grid grid-cols-1 items-start gap-3 md:grid-cols-2 2xl:grid-cols-3">
-        {snapshots === null && <p className="text-sm text-slate-500">{t('common.loading')}</p>}
-        {snapshots?.length === 0 && <p className="text-sm text-slate-500">{t('backups.none')}</p>}
+        {snapshots === null && <p className="text-sm text-slate-500 dark:text-slate-400">{t('common.loading')}</p>}
+        {snapshots?.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">{t('backups.none')}</p>}
         {snapshots?.map((snapshot) => (
           <SnapshotRow
             key={snapshot.id}
@@ -218,8 +218,8 @@ export default function Backups(): JSX.Element {
           >
             {openId === snapshot.id && (
               <div className="mt-4 border-t border-black/[0.06] pt-3 dark:border-white/10">
-                {changes === null && <p className="text-xs text-slate-500">{t('backups.comparing')}</p>}
-                {changes?.length === 0 && <p className="text-xs text-slate-500">{t('backups.identical')}</p>}
+                {changes === null && <p className="text-xs text-slate-500 dark:text-slate-400">{t('backups.comparing')}</p>}
+                {changes?.length === 0 && <p className="text-xs text-slate-500 dark:text-slate-400">{t('backups.identical')}</p>}
                 {changes && changes.length > 0 && (
                   <>
                     <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">

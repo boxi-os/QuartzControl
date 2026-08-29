@@ -406,7 +406,7 @@ function ColorGroup({
       )}
       {nested.map(([key, v]) => (
         <div key={key} className="rounded-md border border-slate-200 p-3 dark:border-white/10">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{key}</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{key}</p>
           <ColorGroup
             value={v as Record<string, unknown>}
             onChange={(next) => onChange({ ...value, [key]: next })}

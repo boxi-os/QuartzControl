@@ -198,8 +198,8 @@ export default function Updates(): JSX.Element {
           </Button>
         </div>
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('updates.plugins.hint')}</p>
-        {pluginStatuses === null && <p className="mt-2 text-xs text-slate-500">{t('common.loading')}</p>}
-        {pluginStatuses && pluginStatuses.length === 0 && <p className="mt-2 text-xs text-slate-500">{t('updates.plugins.none')}</p>}
+        {pluginStatuses === null && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('common.loading')}</p>}
+        {pluginStatuses && pluginStatuses.length === 0 && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('updates.plugins.none')}</p>}
         <div className="mt-2 flex flex-col gap-1.5">
           {pluginStatuses?.map((p) => (
             <div key={p.name} className="flex items-center justify-between rounded-md border border-black/[0.06] px-2.5 py-1.5 text-sm dark:border-white/10">

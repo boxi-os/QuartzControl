@@ -53,7 +53,7 @@ export default function ContentFolder(): JSX.Element {
           than on the page, so it's this content saying how wide it wants to be. */}
       <Card className="max-w-2xl">
         <h2 className="mb-3 font-medium">{t('content.currentFolder')}</h2>
-        {!status && <p className="text-sm text-slate-500">{t('content.loading')}</p>}
+        {!status && <p className="text-sm text-slate-500 dark:text-slate-400">{t('content.loading')}</p>}
         {status && !status.exists && <p className="text-sm text-amber-600">{t('content.noFolder')}</p>}
         {status?.exists && (
           <div className="flex flex-col gap-1 text-sm">
@@ -62,12 +62,12 @@ export default function ContentFolder(): JSX.Element {
                 {status.isSymlink ? t('content.symlinkBadge') : t('content.realFolderBadge')}
               </Badge>
               {status.fileCount != null && (
-                <span className="text-slate-500">{t('content.filesCount', { count: status.fileCount })}</span>
+                <span className="text-slate-500 dark:text-slate-400">{t('content.filesCount', { count: status.fileCount })}</span>
               )}
             </div>
-            <p className="text-slate-500">{status.path}</p>
+            <p className="text-slate-500 dark:text-slate-400">{status.path}</p>
             {status.isSymlink && (
-              <p className={status.targetExists ? 'text-slate-500' : 'text-red-600 dark:text-red-400'}>
+              <p className={status.targetExists ? 'text-slate-500 dark:text-slate-400' : 'text-red-600 dark:text-red-400'}>
                 → {status.symlinkTarget}
                 {!status.targetExists && t('content.targetMissingSuffix')}
               </p>
@@ -101,7 +101,7 @@ export default function ContentFolder(): JSX.Element {
               </Field>
 
               {progress && (
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
                   {t('content.progress', { processed: progress.processed, total: progress.total })}
                 </p>
               )}

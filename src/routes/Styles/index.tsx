@@ -240,7 +240,7 @@ export default function Styles(): JSX.Element {
     Object.keys(fileDrafts).length > 0
   useUnsavedChanges(dirty)
 
-  if (!config || !scss) return <p className="text-sm text-slate-500">{t('common.loading')}</p>
+  if (!config || !scss) return <p className="text-sm text-slate-500 dark:text-slate-400">{t('common.loading')}</p>
 
   const value: StylesContextValue = {
     project,

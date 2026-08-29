@@ -103,11 +103,11 @@ export default function VariableRow({
           <span className="truncate text-slate-500 dark:text-slate-400">{light ?? '—'}</span>
         </button>
         {dependents.length > 0 && (
-          <span className="shrink-0 text-[11px] text-slate-400">{t('styles.variables.dependents', { count: dependents.length })}</span>
+          <span className="shrink-0 text-[11px] text-slate-500 dark:text-slate-400">{t('styles.variables.dependents', { count: dependents.length })}</span>
         )}
         <Badge tone={ORIGIN_TONE[origin]}>{t(`styles.variables.origin.${origin}`)}</Badge>
         {override && (
-          <button type="button" onClick={() => onChange(null)} className="shrink-0 text-[11px] text-slate-500 underline">
+          <button type="button" onClick={() => onChange(null)} className="shrink-0 text-[11px] text-slate-500 dark:text-slate-400 underline">
             {t('styles.variables.reset')}
           </button>
         )}
@@ -134,7 +134,7 @@ export default function VariableRow({
             <section>
               <SectionLabel>{t('styles.variables.section.uses')}</SectionLabel>
               {uses.length === 0 ? (
-                <p className="text-[11px] text-slate-400">{t('styles.variables.usesNone')}</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">{t('styles.variables.usesNone')}</p>
               ) : (
                 <KeyChips keys={uses} onNavigate={onNavigate} />
               )}
@@ -142,7 +142,7 @@ export default function VariableRow({
             <section>
               <SectionLabel>{t('styles.variables.section.dependents')}</SectionLabel>
               {dependents.length === 0 ? (
-                <p className="text-[11px] text-slate-400">{t('styles.variables.dependentsNone')}</p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">{t('styles.variables.dependentsNone')}</p>
               ) : (
                 <>
                   <p className="mb-1 text-[11px] text-slate-500 dark:text-slate-400">
@@ -174,7 +174,7 @@ export default function VariableRow({
                 onChange={(v) => setMode('dark', v)}
               />
               {override && (
-                <button type="button" onClick={() => onChange(null)} className="text-[11px] text-slate-500 underline">
+                <button type="button" onClick={() => onChange(null)} className="text-[11px] text-slate-500 dark:text-slate-400 underline">
                   {t('styles.variables.resetToOriginal')}
                 </button>
               )}
@@ -187,7 +187,7 @@ export default function VariableRow({
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }): JSX.Element {
-  return <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{children}</p>
+  return <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{children}</p>
 }
 
 // The literal both modes paint right now, spelled out rather than left to a 12px swatch - a hex
@@ -203,13 +203,13 @@ function CurrentValues({ varKey, ctx }: { varKey: string; ctx: ResolveContext })
           const hex = cssColorToHex(resolved)
           return (
             <div key={mode} className="flex items-center gap-1.5 text-[11px]">
-              <span className="text-slate-400">{t(`styles.variables.${mode}`)}:</span>
+              <span className="text-slate-500 dark:text-slate-400">{t(`styles.variables.${mode}`)}:</span>
               {isDisplayableColor(resolved) && <Swatch value={resolved} size="md" />}
               <code className="font-mono text-slate-700 dark:text-slate-200">
                 {resolved ?? t('styles.variables.unresolved')}
               </code>
               {hex && hex.toLowerCase() !== (resolved ?? '').toLowerCase() && (
-                <code className="font-mono text-slate-400">{hex}</code>
+                <code className="font-mono text-slate-500 dark:text-slate-400">{hex}</code>
               )}
             </div>
           )
@@ -242,7 +242,7 @@ function KeyChips({ keys, onNavigate }: { keys: string[]; onNavigate?: (key: str
         )
       )}
       {keys.length > visible.length && (
-        <span className="text-[11px] text-slate-400">{t('styles.variables.moreKeys', { count: keys.length - visible.length })}</span>
+        <span className="text-[11px] text-slate-500 dark:text-slate-400">{t('styles.variables.moreKeys', { count: keys.length - visible.length })}</span>
       )}
     </div>
   )
@@ -257,14 +257,14 @@ function Chain({ varKey, mode, ctx, label }: { varKey: string; mode: Mode; ctx: 
   const steps = resolveChain(varKey, mode, ctx)
   if (steps.length === 0) {
     return (
-      <p className="text-[11px] text-slate-400">
+      <p className="text-[11px] text-slate-500 dark:text-slate-400">
         {label}: {t('styles.variables.unresolved')}
       </p>
     )
   }
   return (
     <p className="flex flex-wrap items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
-      <span className="text-slate-400">{label}:</span>
+      <span className="text-slate-500 dark:text-slate-400">{label}:</span>
       {steps.map((step, i) => (
         <span key={step.key} className="flex items-center gap-1">
           {i > 0 && <span className="text-slate-300">→</span>}
@@ -304,7 +304,7 @@ function ValueInput({
   const isColor = catalogDef(varKey)?.kind === 'color' || hex !== null
   return (
     <div className="flex items-center gap-1.5">
-      <span className="text-[11px] text-slate-500">{label}</span>
+      <span className="text-[11px] text-slate-500 dark:text-slate-400">{label}</span>
       {isColor && (
         <input
           type="color"

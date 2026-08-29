@@ -247,7 +247,7 @@ function ActiveThemeSection({
             <Button variant="ghost" onClick={confirmSavePreset} disabled={!savingName.trim()}>
               {t('common.save')}
             </Button>
-            <button type="button" onClick={() => setSavingName(null)} className="text-xs text-slate-500 underline">
+            <button type="button" onClick={() => setSavingName(null)} className="text-xs text-slate-500 dark:text-slate-400 underline">
               {t('common.cancel')}
             </button>
           </div>
@@ -257,7 +257,7 @@ function ActiveThemeSection({
         {t('themes.active.overrideNote', { source: String(plugin.source) })}
       </p>
 
-      {info === undefined && <p className="mt-2 text-xs text-slate-500">{t('themes.active.checkingStyleSettings')}</p>}
+      {info === undefined && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('themes.active.checkingStyleSettings')}</p>}
 
       {info !== undefined && !hasStyleSettings && themeId && (
         <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('themes.active.noStyleSettingsNote', { themeId })}</p>
@@ -266,7 +266,7 @@ function ActiveThemeSection({
       {hasStyleSettings && info && (
         <div className="mt-3 rounded-md border border-black/[0.06] bg-black/[0.02] p-3 dark:border-white/10 dark:bg-white/[0.03]">
           <div className="mb-2 flex items-center justify-between gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
               {t('themes.active.styleSettingsHeading', { ids: info.styleSettingsId.join(', ') })}
             </p>
             <Button variant="ghost" onClick={refreshSchema} disabled={refreshingSchema || schema === undefined}>
@@ -274,7 +274,7 @@ function ActiveThemeSection({
             </Button>
           </div>
 
-          {schema === undefined && <p className="text-xs text-slate-500">{t('styles.styleSettings.loading')}</p>}
+          {schema === undefined && <p className="text-xs text-slate-500 dark:text-slate-400">{t('styles.styleSettings.loading')}</p>}
 
           {schema && (
             <StyleSettingsForm schema={schema} info={info} values={styleSettings} onChange={applyStyleSettings} />
@@ -340,7 +340,7 @@ function PresetsSection({
     <Card>
       <h3 className="mb-1 text-sm font-semibold">{t('themes.presets.title')}</h3>
       <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('themes.presets.description')}</p>
-      {presets.length === 0 && <p className="text-xs text-slate-500">{t('themes.presets.none')}</p>}
+      {presets.length === 0 && <p className="text-xs text-slate-500 dark:text-slate-400">{t('themes.presets.none')}</p>}
       <div className="flex flex-col gap-1.5">
         {presets.map((preset) => (
           <div
@@ -349,7 +349,7 @@ function PresetsSection({
           >
             <div>
               <span className="font-medium">{preset.name}</span>{' '}
-              <span className="text-xs text-slate-500">{t('themes.presets.basisLabel', { base: preset.baseThemeId })}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">{t('themes.presets.basisLabel', { base: preset.baseThemeId })}</span>
             </div>
             <div className="flex items-center gap-2">
               {preset.options.theme === activeThemeId ? (
@@ -359,7 +359,7 @@ function PresetsSection({
                   {t('themes.presets.apply')}
                 </Button>
               )}
-              <button type="button" onClick={() => remove(preset.id)} className="text-xs text-slate-500 underline">
+              <button type="button" onClick={() => remove(preset.id)} className="text-xs text-slate-500 dark:text-slate-400 underline">
                 {t('themes.presets.delete')}
               </button>
             </div>
@@ -472,7 +472,7 @@ function ThemeCatalog({
                 >
                   {listing.id}
                   {listing.stars !== undefined && listing.stars > 0 && (
-                    <span className="text-[11px] text-slate-400">★ {listing.stars}</span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">★ {listing.stars}</span>
                   )}
                 </button>
                 <div className="flex items-center gap-2">
@@ -490,8 +490,8 @@ function ThemeCatalog({
               </div>
               {isExpanded && (
                 <div className="border-t border-black/[0.04] bg-black/[0.02] px-2.5 py-2 text-xs dark:border-white/5 dark:bg-white/[0.02]">
-                  {detail === undefined && <p className="text-slate-500">{t('themes.catalog.detailLoading')}</p>}
-                  {detail === null && <p className="text-slate-500">{t('themes.catalog.detailNone')}</p>}
+                  {detail === undefined && <p className="text-slate-500 dark:text-slate-400">{t('themes.catalog.detailLoading')}</p>}
+                  {detail === null && <p className="text-slate-500 dark:text-slate-400">{t('themes.catalog.detailNone')}</p>}
                   {detail && (
                     <div className="flex flex-col gap-1 text-slate-600 dark:text-slate-300">
                       <p>{t('themes.catalog.modes', { modes: detail.modes.join(', ') || '—' })}</p>
@@ -511,11 +511,11 @@ function ThemeCatalog({
           )
         })}
         {visible.length === 0 && (
-          <p className="p-2 text-xs text-slate-500">{loading ? t('themes.loading') : t('themes.catalog.noResults')}</p>
+          <p className="p-2 text-xs text-slate-500 dark:text-slate-400">{loading ? t('themes.loading') : t('themes.catalog.noResults')}</p>
         )}
       </div>
       {filtered.length > visible.length && (
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
           {t('themes.catalog.moreResults', { count: filtered.length - visible.length })}
         </p>
       )}

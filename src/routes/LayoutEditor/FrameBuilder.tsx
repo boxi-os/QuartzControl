@@ -393,7 +393,7 @@ export default function FrameBuilder({
     if (editing?.id === def.id) closeEditor()
   }
 
-  if (!frames) return <p className="text-sm text-slate-500">{t('layoutEditor.loading')}</p>
+  if (!frames) return <p className="text-sm text-slate-500 dark:text-slate-400">{t('layoutEditor.loading')}</p>
 
   if (!editing) {
     return (
@@ -403,7 +403,7 @@ export default function FrameBuilder({
           <p className="text-xs text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.description')}</p>
           <Button onClick={startNewFrame}>{t('layoutEditor.frameBuilder.newFrame')}</Button>
         </div>
-        {frames.length === 0 && <p className="text-sm text-slate-500">{t('layoutEditor.frameBuilder.none')}</p>}
+        {frames.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.none')}</p>}
         <div className="flex flex-col gap-2">
           {frames.map((def) => (
             <Card key={def.id} className="flex items-center justify-between">
@@ -640,7 +640,7 @@ export default function FrameBuilder({
             dragAreaId ? 'border-blue-400 bg-blue-50/50 dark:border-blue-500/40 dark:bg-blue-500/5' : 'border-transparent'
           }`}
         >
-          {unplacedAreas.length === 0 && <span className="px-1 text-[11px] text-slate-400">{t('layoutEditor.frameBuilder.allPlaced')}</span>}
+          {unplacedAreas.length === 0 && <span className="px-1 text-[11px] text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.allPlaced')}</span>}
           {unplacedAreas.map((a) => {
             const isSelected = selectedAreaId === a.id
             return (
@@ -772,7 +772,7 @@ export default function FrameBuilder({
                   </div>
                   <div className="flex items-center gap-1">
                     <Badge>{t(`layoutEditor.positions.${area.slot}`, area.slot)}</Badge>
-                    <span aria-hidden="true" className="rounded-[4px] p-0.5 text-slate-400">
+                    <span aria-hidden="true" className="rounded-[4px] p-0.5 text-slate-500 dark:text-slate-400">
                       {isSelected ? '▲' : '▼'}
                     </span>
                   </div>
@@ -832,7 +832,7 @@ export default function FrameBuilder({
                 )}
 
                 {area.slot === 'pageBody' && (
-                  <div className="rounded-[4px] border border-dashed border-black/10 px-2 py-3 text-center text-slate-400 dark:border-white/10">
+                  <div className="rounded-[4px] border border-dashed border-black/10 px-2 py-3 text-center text-slate-500 dark:text-slate-400 dark:border-white/10">
                     {t('layoutEditor.frameBuilder.preview.pageContent')}
                   </div>
                 )}
@@ -910,7 +910,7 @@ function TrackInputs({
               onChange={(e) => onChange(i, e.target.value)}
               className="w-16 text-center"
             />
-            <span className="text-[10px] text-slate-400 dark:text-slate-500">{i + firstIndex}</span>
+            <span className="text-[10px] text-slate-500 dark:text-slate-400">{i + firstIndex}</span>
           </label>
         ))}
       </div>

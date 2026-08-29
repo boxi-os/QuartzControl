@@ -65,11 +65,11 @@ export default function CssVariableReference({ onInsert }: { onInsert: (text: st
         placeholder={t('styleEditor.cssVars.searchPlaceholder')}
         className="mb-3 w-full"
       />
-      {filtered.length === 0 && <p className="text-xs text-slate-500">{t('styleEditor.cssVars.noResults')}</p>}
+      {filtered.length === 0 && <p className="text-xs text-slate-500 dark:text-slate-400">{t('styleEditor.cssVars.noResults')}</p>}
       <div className="flex flex-col gap-3">
         {Array.from(grouped.entries()).map(([group, defs]) => (
           <div key={group}>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">{group}</p>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{group}</p>
             <div className="flex flex-col gap-0.5">
               {defs.map((def) => (
                 <VariableRow key={def.key} def={def} ctx={ctx} onInsert={onInsert} onCopy={copy} />
@@ -78,7 +78,7 @@ export default function CssVariableReference({ onInsert }: { onInsert: (text: st
           </div>
         ))}
       </div>
-      <p className="mt-3 text-[11px] text-slate-400">{t('styleEditor.cssVars.rowHint')}</p>
+      <p className="mt-3 text-[11px] text-slate-500 dark:text-slate-400">{t('styleEditor.cssVars.rowHint')}</p>
       {copied && <p className="mt-1 truncate text-[11px] text-green-700 dark:text-green-400">{t('common.copied', { value: copied })}</p>}
 
       <div className="mt-4 border-t border-black/[0.06] pt-3 dark:border-white/10">
@@ -168,7 +168,7 @@ function VariableRow({
           type="button"
           onClick={() => onCopy(raw, `--${def.key}`)}
           title={t('styleEditor.cssVars.copyHint', { value: raw })}
-          className="shrink-0 rounded px-1 text-[11px] text-slate-400 hover:bg-black/[0.06] dark:hover:bg-white/10"
+          className="shrink-0 rounded px-1 text-[11px] text-slate-500 dark:text-slate-400 hover:bg-black/[0.06] dark:hover:bg-white/10"
         >
           {t('styleEditor.cssVars.copyValue')}
         </button>

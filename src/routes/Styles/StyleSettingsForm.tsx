@@ -220,7 +220,7 @@ function FieldRow({
           <button
             type="button"
             onClick={() => onChange(Object.fromEntries(keys.map((k) => [k, undefined])))}
-            className="text-[11px] text-slate-500 underline"
+            className="text-[11px] text-slate-500 dark:text-slate-400 underline"
           >
             {t('styles.styleSettings.reset')}
           </button>
@@ -362,7 +362,7 @@ function ColorControl({
   const { hex, isSet } = readColor(field, values, mode)
   return (
     <div className="flex items-center gap-1.5">
-      {label && <span className="text-[11px] text-slate-400">{label}</span>}
+      {label && <span className="text-[11px] text-slate-500 dark:text-slate-400">{label}</span>}
       <input
         type="color"
         value={hex ?? '#ffffff'}

@@ -148,7 +148,7 @@ export default function ProjectLayout(): JSX.Element {
 
   if (!project) {
     return (
-      <div className="titlebar-drag flex h-screen items-center justify-center text-sm text-slate-500">
+      <div className="titlebar-drag flex h-screen items-center justify-center text-sm text-slate-500 dark:text-slate-400">
         {t('projectLayout.loading')}
       </div>
     )
@@ -179,7 +179,7 @@ export default function ProjectLayout(): JSX.Element {
             <h1 className="truncate text-[13px] font-semibold text-slate-900 dark:text-white" title={project.name}>
               {project.name}
             </h1>
-            <p className="truncate text-[11px] text-slate-400" title={project.path}>
+            <p className="truncate text-[11px] text-slate-500 dark:text-slate-400" title={project.path}>
               {project.path}
             </p>
           </div>
@@ -190,7 +190,7 @@ export default function ProjectLayout(): JSX.Element {
             return (
               <div key={group.label ?? `top-${i}`} className="flex flex-col gap-0.5">
                 {group.label && (
-                  <div className="flex items-center gap-1.5 px-2.5 pb-1 pt-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                  <div className="flex items-center gap-1.5 px-2.5 pb-1 pt-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
                     {GroupIcon && <GroupIcon size={12} aria-hidden />}
                     {group.label}
                   </div>

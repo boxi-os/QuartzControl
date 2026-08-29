@@ -140,7 +140,7 @@ export default function Variables(): JSX.Element {
         <div className="flex flex-col gap-4">
           {curatedGroups.map(([group, keys]) => (
             <div key={group}>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">{group}</p>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{group}</p>
               <div className="flex flex-col gap-0.5">
                 {keys.map((key) => (
                   <VariableRow key={key} {...rowProps(key)} />
@@ -242,7 +242,7 @@ function AllVariables({
               : t('styles.variables.allDescription')}
           </p>
 
-          {loading && <p className="text-xs text-slate-500">{t('common.loading')}</p>}
+          {loading && <p className="text-xs text-slate-500 dark:text-slate-400">{t('common.loading')}</p>}
 
           {!loading && keys.length === 0 && (
             <div className="rounded-md border border-black/[0.06] p-3 text-xs text-slate-500 dark:border-white/10 dark:text-slate-400">
@@ -286,14 +286,14 @@ function AllVariables({
               <div className="flex flex-col gap-4">
                 {Array.from(grouped.entries()).map(([group, groupKeys]) => (
                   <div key={group}>
-                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">{group}</p>
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{group}</p>
                     <div className="flex flex-col gap-0.5">{groupKeys.map(renderRow)}</div>
                   </div>
                 ))}
               </div>
 
               {matches.length > visible.length && (
-                <p className="mt-2 text-xs text-slate-500">
+                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                   {t('styles.variables.moreResults', { count: matches.length - visible.length })}
                 </p>
               )}

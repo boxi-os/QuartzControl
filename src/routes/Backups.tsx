@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProject } from './ProjectLayout'
 import type { BackupEntry, Snapshot, SnapshotFileChange, SnapshotSettings } from '@shared/ipc-contract'
-import { Badge, Button, Card, PageHeader, TextInput, Toggle } from '../components/ui'
+import { Badge, Button, Card, InfoNote, PageHeader, TextInput, Toggle } from '../components/ui'
 import { useAsyncAction } from '../hooks/useAsyncAction'
 import { formatBytes } from '../utils/format'
 import { useStickyState } from '../state/uiState'
@@ -165,6 +165,11 @@ export default function Backups(): JSX.Element {
         title={t('projectLayout.tabs.backups')}
         description={t('projectLayout.descriptions.backups')}
       />
+
+      {/* Both this page and Git-Sync keep old versions of the project, and nothing said how they
+          differ. They are not alternatives: one is private to this machine, the other is what
+          leaves it. */}
+      <InfoNote>{t('backups.vsGitSync')}</InfoNote>
 
       <Card>
         <h2 className="text-sm font-semibold">{t('backups.newHeading')}</h2>

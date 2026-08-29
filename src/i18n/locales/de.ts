@@ -11,7 +11,7 @@ export default {
     remove: 'Entfernen',
     edit: 'Bearbeiten',
     loading: 'Lade…',
-    openInBrowser: 'Im Browser öffnen ↗',
+    openInBrowser: 'Im Browser öffnen',
     copied: 'Kopiert — {{value}}',
     serverState: {
       stopped: 'Gestoppt',
@@ -48,7 +48,6 @@ export default {
     settings: 'Einstellungen',
     openExisting: 'Vorhandenes Projekt öffnen',
     createNew: 'Neues Projekt erstellen',
-    noProjects: 'Noch keine Projekte hinzugefügt.',
     searchPlaceholder: 'Projekt suchen…',
     noSearchResults: 'Kein Projekt passt zur Suche.',
     lastOpened: 'Zuletzt geöffnet {{when}}',
@@ -156,19 +155,15 @@ export default {
     },
     descriptions: {
       overview: 'Der Überblick über dieses Projekt: Server-Status, wichtigste Einstellungen und Schnellzugriffe auf alle Bereiche.',
-      config: 'Was deine Website ist und woher ihre Inhalte kommen — Grundeinstellungen, Content-Ordner und feste Textbausteine.',
       layout: 'Legt fest, welche Bausteine (z. B. Suche, Inhaltsverzeichnis, Navigation) wo auf der Seite erscheinen.',
       styles:
         'Alles zum Aussehen an einem Ort: Basisfarben und Schriften, Community-Themes, CSS-Variablen und eigenes CSS — in genau der Reihenfolge, in der sie sich gegenseitig überschreiben.',
-      templates: 'Deine Gestaltung als eine Datei: Farben, Theme, CSS, Schriften, Layout, Frames, Plugins und Übersetzungen — exportieren, weitergeben, in ein anderes Projekt einspielen.',
-      plugins: 'Erweitert Quartz um zusätzliche Funktionen — von Volltextsuche bis Kommentaren.',
       updates:
         'Bringt den Quartz-Kern und die installierten Plugins auf den neuesten Stand. Vor jedem Update wird automatisch ein Snapshot angelegt, über den sich der Stand unter Backups zurückholen lässt.',
       server: 'Zeigt deine Website lokal in der Vorschau an und erstellt bei Bedarf einen einmaligen Build zum Exportieren.',
       sync: 'Gleicht deine lokalen Änderungen mit dem Git-Repository ab: Hochladen (Push) und Herunterladen (Pull).',
       backups:
-        'Wiederherstellbare Stände deines ganzen Projekts — automatisch vor jeder größeren Änderung angelegt, jederzeit selbst auslösbar, vergleichbar und einzeln zurückholbar.',
-      publish: 'Baut die Website und lädt nur die geänderten Dateien auf deinen Webspace oder zu GitHub Pages hoch.'
+        'Snapshots deines ganzen Projekts — automatisch vor jeder größeren Änderung angelegt, jederzeit selbst auslösbar, vergleichbar und einzeln zurückholbar.'
     }
   },
   dashboard: {
@@ -400,6 +395,8 @@ export default {
     staged: 'vorgemerkt'
   },
   backups: {
+    vsGitSync:
+      'Ein Snapshot ist eine Kopie dieses Projekts, die nur diese App kennt: Sie liegt im Projekt unter .quartz-gui/, wird nie hochgeladen und ändert deine eigene Git-Historie nicht. Git-Sync ist zum Teilen da — dein Stand landet auf GitHub und damit auf anderen Rechnern. Ein Snapshot ist zum Zurückholen da — er holt einen früheren Stand auf diesem Rechner wieder her, auch wenn das Projekt gar kein Git-Repository ist.',
     newHeading: 'Neuer Snapshot',
     newHint:
       'Ein Snapshot sichert alles, was dir in diesem Projekt gehört: Konfiguration, Plugin-Sperrdatei, Layout-Frames, eigene Stylesheets, Übersetzungen und Veröffentlichungsziele. Nicht enthalten sind node_modules, der Build-Ordner und installierte Plugin-Dateien — die entstehen beim nächsten Build ohnehin neu.',
@@ -462,7 +459,6 @@ export default {
   settings: {
     title: 'Einstellungen',
     subtitle: 'Gilt für die App als Ganzes — projektbezogene Einstellungen stehen im jeweiligen Projekt.',
-    githubToken: 'GitHub-Token (für Marktplatz-Rate-Limit)',
     githubTokenStored: 'gespeichert — zum Ersetzen neu eingeben',
     defaultProjectDirectory: 'Standard-Projektverzeichnis',
     language: 'Sprache',
@@ -586,8 +582,6 @@ export default {
     }
   },
   themeEditor: {
-    overrideWarningPrefix: 'Das Theme-Plugin ',
-    overrideWarningSuffix: ' ist aktiv und kann diese Farben in der Vorschau überschreiben. Dort lässt es sich auch wieder deaktivieren.',
     goToThemeTab: 'Zu den Community-Themes',
     overrideChecking: 'Prüfe, welche dieser Werte das aktive Theme überschreibt…',
     overrideCounted:
@@ -870,9 +864,14 @@ export default {
       none: 'Keine Flex-Gruppen definiert.',
       newGroupPlaceholder: 'Name der neuen Gruppe',
       add: 'Hinzufügen',
-      direction: 'Richtung',
+      direction: 'Anordnung',
+      directionRow: 'Nebeneinander',
+      directionRowReverse: 'Nebeneinander, rückwärts',
+      directionColumn: 'Untereinander',
+      directionColumnReverse: 'Untereinander, rückwärts',
       gap: 'Abstand',
-      priority: 'Priorität (optional)',
+      priority: 'Priorität',
+      priorityPlaceholder: 'optional',
       delete: 'Löschen'
     },
     pageTypes: {
@@ -897,14 +896,15 @@ export default {
     clearSlotsHeading: 'Bereiche für diesen Seitentyp leeren',
     clearSlotsDescription: 'Aktivierte Bereiche bleiben für diesen Seitentyp immer leer, unabhängig von der globalen Belegung.',
     frameBuilder: {
-      description: 'Baue eigene Grid-Layouts als neue Frames. Sie werden bei den Seitentyp-Overrides als Frame/Template auswählbar.',
+      whatIsAFrame:
+        'Ein Frame ist das Raster einer Seite: Es legt fest, welche Bereiche es gibt — Kopfbereich, Seitenleisten, Inhalt, Fußzeile —, wo sie liegen und wie breit sie sind. Was in diesen Bereichen erscheint, entscheidest du im Tab „Global“; welcher Seitentyp welchen Frame benutzt, im Tab „Seitentypen“. Quartz bringt drei Frames mit (Standard, Volle Breite, Minimal). Hier baust du eigene.',
+      description: 'Die eigenen Frames dieses Projekts.',
       newFrame: 'Neuer Frame',
       none: 'Noch keine eigenen Frames erstellt.',
       gridSummary: '{{rows}}×{{cols}}-Raster, {{areas}} Bereich(e)',
       frameName: 'Frame-Name',
       rows: 'Zeilen',
       cols: 'Spalten',
-      gap: 'Abstand',
       rowGap: 'Zeilenabstand',
       columnGap: 'Spaltenabstand',
       gridSection: 'Raster',
@@ -1199,6 +1199,8 @@ export default {
     title: 'Veröffentlichen',
     description: 'Baut das Projekt und bringt das Ergebnis an seine Ziele — per SFTP/rsync, FTP, in einen Ordner, auf einen Git-Branch oder über einen Webhook.',
     baseUrlWarning: 'configuration.baseUrl steht noch auf „{{baseUrl}}“ — vor dem Veröffentlichen auf die echte Domain setzen.',
+    connectionVsTarget:
+      'Zwei Dinge, die zusammengehören: Ein Zugang ist die Anmeldung bei einem Anbieter — Server, Benutzername, Passwort oder Schlüssel. Er gehört der App und lässt sich von mehreren Projekten benutzen; ein Passwortwechsel ist deshalb eine Änderung statt einer pro Projekt. Ein Ziel gehört zu diesem Projekt und sagt, was damit geschehen soll: in welchen Ordner auf dem Server, auf welchen Branch, und was mit gelöschten Dateien passiert.',
     targetHeading: 'Ziel',
     newConnection: '+ Neuer Zugang',
     manageConnections: 'Zugänge verwalten',

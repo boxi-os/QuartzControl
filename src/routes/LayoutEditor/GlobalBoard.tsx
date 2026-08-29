@@ -697,33 +697,37 @@ function GroupsPanel({
           const group = groups[name]
           const color = GROUP_COLORS[i % GROUP_COLORS.length]
           return (
-            <div key={name} className="flex items-center gap-3 rounded-md border border-black/[0.06] p-2 dark:border-white/10">
-              <span className={`h-2 w-2 shrink-0 rounded-full ${color.dot}`} />
-              <span className="w-32 shrink-0 truncate text-sm font-medium">{name}</span>
-              <Select
-                value={group.direction ?? 'row'}
-                onChange={(e) => onUpdate(name, { direction: e.target.value as FlexGroupConfig['direction'] })}
-                className="w-36"
-              >
-                <option value="row">row</option>
-                <option value="row-reverse">row-reverse</option>
-                <option value="column">column</option>
-                <option value="column-reverse">column-reverse</option>
-              </Select>
-              <TextInput
-                value={group.gap ?? ''}
-                onChange={(e) => onUpdate(name, { gap: e.target.value })}
-                placeholder="0.5rem"
-                className="w-24"
-              />
-              <TextInput
-                type="number"
-                value={group.priority ?? ''}
-                onChange={(e) => onUpdate(name, { priority: e.target.value === '' ? undefined : Number(e.target.value) })}
-                placeholder={t('layoutEditor.groupsPanel.priority')}
-                className="w-24"
-              />
-              <button type="button" onClick={() => onDelete(name)} className="ml-auto text-xs text-slate-500 dark:text-slate-400 underline">
+            // items-end, not items-center: every control below now carries a label above it, so
+            // aligning on the boxes rather than on the whole column keeps the row one line high.
+            <div key={name} className="flex flex-wrap items-end gap-3 rounded-md border border-black/[0.06] p-2 dark:border-white/10">
+              <span className={`mb-2.5 h-2 w-2 shrink-0 rounded-full ${color.dot}`} />
+              <span className="mb-2 w-32 shrink-0 truncate text-sm font-medium">{name}</span>
+              {/* Three unlabelled controls in a row, one of them offering bare CSS keywords, is
+                  not a form - the direction values say what they do on the page now, and each
+                  field carries its own label. */}
+              <Field label={t('layoutEditor.groupsPanel.direction')} className="w-44">
+                <Select
+                  value={group.direction ?? 'row'}
+                  onChange={(e) => onUpdate(name, { direction: e.target.value as FlexGroupConfig['direction'] })}
+                >
+                  <option value="row">{t('layoutEditor.groupsPanel.directionRow')}</option>
+                  <option value="row-reverse">{t('layoutEditor.groupsPanel.directionRowReverse')}</option>
+                  <option value="column">{t('layoutEditor.groupsPanel.directionColumn')}</option>
+                  <option value="column-reverse">{t('layoutEditor.groupsPanel.directionColumnReverse')}</option>
+                </Select>
+              </Field>
+              <Field label={t('layoutEditor.groupsPanel.gap')} className="w-28">
+                <TextInput value={group.gap ?? ''} onChange={(e) => onUpdate(name, { gap: e.target.value })} placeholder="0.5rem" />
+              </Field>
+              <Field label={t('layoutEditor.groupsPanel.priority')} className="w-28">
+                <TextInput
+                  type="number"
+                  value={group.priority ?? ''}
+                  onChange={(e) => onUpdate(name, { priority: e.target.value === '' ? undefined : Number(e.target.value) })}
+                  placeholder={t('layoutEditor.groupsPanel.priorityPlaceholder')}
+                />
+              </Field>
+              <button type="button" onClick={() => onDelete(name)} className="mb-2 ml-auto text-xs text-slate-500 dark:text-slate-400 underline">
                 {t('layoutEditor.groupsPanel.delete')}
               </button>
             </div>

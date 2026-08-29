@@ -433,6 +433,7 @@ export default function ProjectDashboard(): JSX.Element {
               href={serverUrl}
               target="_blank"
               rel="noreferrer"
+              title={t('common.openInBrowser')}
               className="inline-flex items-center gap-1.5 text-[17px] font-semibold tracking-tight text-blue-600 hover:underline dark:text-blue-400"
             >
               {serverUrl}

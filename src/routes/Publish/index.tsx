@@ -12,7 +12,7 @@ import type {
   SaveConnectionInput,
   SavePublishTargetInput
 } from '@shared/ipc-contract'
-import { Badge, Button, Card, Field, PageHeader, Select, TextInput, Toggle } from '../../components/ui'
+import { Badge, Button, Card, Field, InfoNote, PageHeader, Select, TextInput, Toggle } from '../../components/ui'
 import {
   ConnectionFormFields,
   connectionDraftIncomplete,
@@ -261,6 +261,10 @@ export default function Publish(): JSX.Element {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader icon={TAB_ICONS.publish} title={t('publish.title')} description={t('publish.description')} />
+
+      {/* The Zugang/Ziel split was only explained inside the target form, i.e. after the user had
+          already had to pick one of the two. */}
+      <InfoNote>{t('publish.connectionVsTarget')}</InfoNote>
 
       {baseUrlWarning && (
         <p className="rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">

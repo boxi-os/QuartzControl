@@ -11,7 +11,7 @@ export default {
     remove: 'Remove',
     edit: 'Edit',
     loading: 'Loading…',
-    openInBrowser: 'Open in browser ↗',
+    openInBrowser: 'Open in browser',
     copied: 'Copied — {{value}}',
     serverState: {
       stopped: 'Stopped',
@@ -48,7 +48,6 @@ export default {
     settings: 'Settings',
     openExisting: 'Open existing project',
     createNew: 'Create new project',
-    noProjects: 'No projects added yet.',
     searchPlaceholder: 'Search projects…',
     noSearchResults: 'No project matches your search.',
     lastOpened: 'Last opened {{when}}',
@@ -155,19 +154,15 @@ export default {
     },
     descriptions: {
       overview: 'The overview for this project: server status, key settings, and quick links to every area.',
-      config: 'What your site is and where its content comes from — basic settings, content folder, and built-in text labels.',
       layout: 'Decides which building blocks (e.g. search, table of contents, navigation) appear where on the page.',
       styles:
         'Everything about the look in one place: base colors and fonts, community themes, CSS variables, and your own CSS — in the exact order they override each other.',
-      templates: 'Your design as a single file: colours, theme, CSS, fonts, layout, frames, plugins and translations — export it, pass it on, apply it to another project.',
-      plugins: 'Extends Quartz with extra functionality — from full-text search to comments.',
       updates:
-        "Brings Quartz's core and the installed plugins up to date. A snapshot is taken automatically before every update, so you can go back to that state under Backups.",
+        'Brings Quartz’s core and the installed plugins up to date. A snapshot is taken automatically before every update, so you can go back to that state under Backups.',
       server: 'Previews your site locally, and can produce a one-off build for export.',
       sync: 'Syncs your local changes with the Git repository: uploading (push) and downloading (pull).',
       backups:
-        'Restorable states of your whole project — taken automatically before every major change, triggerable yourself at any time, comparable and restorable file by file.',
-      publish: 'Builds the site and uploads only the changed files to your web space or GitHub Pages.'
+        'Snapshots of your whole project — taken automatically before every major change, triggerable yourself at any time, comparable and restorable file by file.'
     }
   },
   dashboard: {
@@ -399,9 +394,11 @@ export default {
     staged: 'staged'
   },
   backups: {
+    vsGitSync:
+      'A snapshot is a copy of this project that only this app knows about: it lives inside the project under .quartz-gui/, is never uploaded, and does not touch your own git history. Git sync is for sharing — your work ends up on GitHub and from there on other machines. A snapshot is for going back — it restores an earlier state on this machine, even if the project is not a git repository at all.',
     newHeading: 'New snapshot',
     newHint:
-      "A snapshot captures everything that is yours in this project: the configuration, the plugin lockfile, layout frames, your own stylesheets, translations and publish targets. Not included are node_modules, the build folder and installed plugin files - the next build produces those anyway.",
+      'A snapshot captures everything that is yours in this project: the configuration, the plugin lockfile, layout frames, your own stylesheets, translations and publish targets. Not included are node_modules, the build folder and installed plugin files — the next build produces those anyway.',
     labelPlaceholder: 'Name (optional), e.g. “before switching themes”',
     create: 'Take snapshot',
     created: 'Snapshot taken.',
@@ -432,7 +429,7 @@ export default {
       'Reset {{count}} selected file(s) to this snapshot?\n\nA snapshot of the current state is taken first.',
     resetProjectHead: 'Also reset the project commit to {{commit}}',
     resetProjectHeadHint:
-      "Also rewinds the project's git history - needed when undoing a core update, or the Updates page will keep reporting the new state. If you have already pushed that commit, your local state will diverge from the remote afterwards.",
+      'Also rewinds the project’s git history — needed when undoing a core update, or the Updates page will keep reporting the new state. If you have already pushed that commit, your local state will diverge from the remote afterwards.',
     status: {
       modified: 'changed',
       addedSince: 'new since',
@@ -461,7 +458,6 @@ export default {
   settings: {
     title: 'Settings',
     subtitle: 'These apply to the whole app — per-project settings live inside each project.',
-    githubToken: 'GitHub token (for marketplace rate limit)',
     githubTokenStored: 'stored — type a new one to replace it',
     defaultProjectDirectory: 'Default project directory',
     language: 'Language',
@@ -569,7 +565,7 @@ export default {
     localeUnknownSuffix: '(not in this project)',
     analyticsHeading: 'Analytics',
     analyticsDescription:
-      "Embeds a provider's counting script into every page. With no provider, nothing is loaded and nothing is measured.",
+      'Embeds a provider’s counting script into every page. With no provider, nothing is loaded and nothing is measured.',
     analyticsProvider: 'Provider',
     analyticsNone: 'No analytics',
     analyticsMissing: 'Still missing, or the script has nothing to send to: {{fields}}',
@@ -577,16 +573,14 @@ export default {
       host: 'Only for a self-hosted instance — leave empty otherwise',
       hostRequired: 'Address of your installation, e.g. https://analytics.example.com',
       tagId: 'Measurement ID, e.g. G-XXXXXXX',
-      websiteId: "The site's id in your provider account",
+      websiteId: 'The site’s id in your provider account',
       scriptSrc: 'Alternative script URL',
       apiKey: 'Project API key',
-      siteId: "The site's id in your provider account",
+      siteId: 'The site’s id in your provider account',
       projectId: 'Project id'
     }
   },
   themeEditor: {
-    overrideWarningPrefix: 'The theme plugin ',
-    overrideWarningSuffix: ' is active and can override these colors in the preview. It can also be turned off there.',
     goToThemeTab: 'Go to community themes',
     overrideChecking: 'Checking which of these values the active theme overrides…',
     overrideCounted:
@@ -653,9 +647,9 @@ export default {
       disabledNote:
         'The classic theme from “Configuration → Theme” applies again now. This community theme’s settings are kept and can be turned back on any time.',
       reactivate: 'Turn back on',
-      checkingStyleSettings: "Checking the theme's style settings…",
+      checkingStyleSettings: 'Checking the theme’s style settings…',
       noStyleSettingsNote:
-        "The theme {{themeId}} doesn't offer its own color settings — there's nothing to customize here for this theme. That's down to the theme itself, not this app: changes would simply be ignored by Quartz.",
+        'The theme {{themeId}} doesn’t offer its own color settings — there’s nothing to customize here for this theme. That’s down to the theme itself, not this app: changes would simply be ignored by Quartz.',
       styleSettingsHeading: 'Style settings ({{ids}})',
       ownValuesHint:
         'This card only carries the options the theme itself declares. Your own values for individual CSS variables belong in the Variables tab or in your own CSS.',
@@ -732,7 +726,7 @@ export default {
     componentsDescription: 'These plugins are visible on the page — e.g. in the header, sidebar, or footer.',
     processingHeading: 'Processing',
     processingDescription:
-      "These plugins change your content behind the scenes (e.g. formatting, links, images) and aren't visible on the page themselves. Page types — plugins that create their own kind of page, e.g. tag pages — are listed separately below.",
+      'These plugins change your content behind the scenes (e.g. formatting, links, images) and aren’t visible on the page themselves. Page types — plugins that create their own kind of page, e.g. tag pages — are listed separately below.',
     pageTypesGroup: 'Page types',
     otherProcessingGroup: 'Transformers, filters & emitters',
     dragHint: 'Drag to reorder',
@@ -758,7 +752,7 @@ export default {
     availableOptions: 'Available options:',
     onlyViaYaml: ', YAML only',
     noSchemaInfo:
-      "Quartz ships no options description for its built-in plugins, so the known options can't be listed. Existing values can be edited here; add further ones by hand below (see the plugin's repository for names).",
+      'Quartz ships no options description for its built-in plugins, so the known options can’t be listed. Existing values can be edited here; add further ones by hand below (see the plugin’s repository for names).',
     optionKeyPlaceholder: 'Option',
     optionValuePlaceholder: 'Value',
     addOption: 'Add',
@@ -822,8 +816,8 @@ export default {
     backlinks: 'Shows pages that link to the current page.',
     'article-title': 'Shows the page title as a heading above the content.',
     'content-meta': 'Shows metadata like creation date and reading time below the title.',
-    'tag-list': "Shows a page's tags as a clickable list.",
-    'page-title': "Shows the site's title as a link to the homepage, usually in the sidebar.",
+    'tag-list': 'Shows a page’s tags as a clickable list.',
+    'page-title': 'Shows the site’s title as a link to the homepage, usually in the sidebar.',
     darkmode: 'Toggle for light/dark mode.',
     'reader-mode': 'Distraction-free reading mode.',
     breadcrumbs: 'Shows the navigation path (breadcrumbs) above the content.',
@@ -870,9 +864,14 @@ export default {
       none: 'No flex groups defined yet.',
       newGroupPlaceholder: 'New group name',
       add: 'Add',
-      direction: 'Direction',
+      direction: 'Arrangement',
+      directionRow: 'Side by side',
+      directionRowReverse: 'Side by side, reversed',
+      directionColumn: 'Stacked',
+      directionColumnReverse: 'Stacked, reversed',
       gap: 'Gap',
-      priority: 'Priority (optional)',
+      priority: 'Priority',
+      priorityPlaceholder: 'optional',
       delete: 'Delete'
     },
     pageTypes: {
@@ -897,14 +896,15 @@ export default {
     clearSlotsHeading: 'Clear slots for this page type',
     clearSlotsDescription: 'Enabled slots always stay empty for this page type, regardless of the global layout.',
     frameBuilder: {
-      description: 'Build custom grid layouts as new frames. They become selectable as a Frame/template on page type overrides.',
+      whatIsAFrame:
+        'A frame is a page’s grid: it decides which areas exist — header, sidebars, content, footer —, where they sit and how wide they are. What appears inside those areas is set on the “Global” tab; which page type uses which frame, on the “Page types” tab. Quartz ships three frames (Default, Full width, Minimal). Here you build your own.',
+      description: 'This project’s own frames.',
       newFrame: 'New frame',
       none: 'No custom frames created yet.',
       gridSummary: '{{rows}}×{{cols}} grid, {{areas}} area(s)',
       frameName: 'Frame name',
       rows: 'Rows',
       cols: 'Columns',
-      gap: 'Gap',
       rowGap: 'Row gap',
       columnGap: 'Column gap',
       gridSection: 'Grid',
@@ -931,7 +931,7 @@ export default {
       rowSizesLabel: 'Row heights (blank = auto)',
       lineNamesLabel: 'Named grid lines (optional)',
       lineNamesHint:
-        "Gives names to the lines between columns/rows (e.g. \"sidebar-start\"). Not needed for placing areas here in the editor - only useful if you later want to reference this exact line from your own CSS (e.g. custom.scss), like grid-column: sidebar-start / content-end.",
+        'Gives names to the lines between columns/rows (e.g. “sidebar-start”). Not needed for placing areas here in the editor — only useful if you later want to reference this exact line from your own CSS (e.g. custom.scss), like grid-column: sidebar-start / content-end.',
       columnLinesLabel: 'Column lines',
       rowLinesLabel: 'Row lines',
       copyLayoutTo: 'Copy to {{target}}',
@@ -1146,7 +1146,7 @@ export default {
       noResults: 'No matches.',
       calloutsHeading: 'Callout colors',
       calloutsDescription:
-        'Each callout type ([!note], [!warning], …) has its own --color/--border/--bg variables - but only valid inside .callout[data-callout="…"], not as a global var(--color). Click inserts the matching scaffold prefilled with the real values.',
+        'Each callout type ([!note], [!warning], …) has its own --color/--border/--bg variables — but only valid inside .callout[data-callout="…"], not as a global var(--color). Click inserts the matching scaffold prefilled with the real values.',
       calloutsInsertHint: 'Click to insert the override scaffold for this callout type.'
     }
   },
@@ -1160,7 +1160,7 @@ export default {
     gitAttributesOk: 'Update protection active',
     gitAttributesMissing: 'Update protection not active',
     gitAttributesExplain:
-      "Your wording lives in Quartz' own files. The protection keeps a core update from overwriting it, and it takes two parts: the line in .gitattributes and the merge driver in this project's git configuration. Both are set automatically on the next save.",
+      'Your wording lives in Quartz’ own files. The protection keeps a core update from overwriting it, and it takes two parts: the line in .gitattributes and the merge driver in this project’s git configuration. Both are set automatically on the next save.',
     gitAttributesEnable: 'Enable now'
   },
   updates: {
@@ -1173,14 +1173,14 @@ export default {
       commits: 'Installed: {{current}} · Latest: {{latest}}',
       runUpdate: 'Run update',
       confirm:
-        "Update Quartz's core?\n\nA snapshot is taken first: quartz.config.yaml, quartz.lock.json, your own stylesheets and this app's settings are part of it; your content folder only if it is a real folder and switched on under Backups. You can go back to that state any time under Backups.\n\nThis fetches changes from jackyzha0/quartz, runs npm install, and may require manual intervention on conflicts.",
+        'Update Quartz’s core?\n\nA snapshot is taken first: quartz.config.yaml, quartz.lock.json, your own stylesheets and this app’s settings are part of it; your content folder only if it is a real folder and switched on under Backups. You can go back to that state any time under Backups.\n\nThis fetches changes from jackyzha0/quartz, runs npm install, and may require manual intervention on conflicts.',
       abortMerge: 'Abort merge',
       openSnapshot: 'Open the snapshot from before the update →',
       conflictHeading: 'Conflicts in these files (aside from the locale files .gitattributes protects):'
     },
     plugins: {
       heading: 'Plugins',
-      hint: "Only shows plugins you added via the marketplace or command line. Built-in plugins (most of them in a new project) update automatically with the Quartz core above.",
+      hint: 'Only shows plugins you added via the marketplace or command line. Built-in plugins (most of them in a new project) update automatically with the Quartz core above.',
       updateAll: 'Update all',
       update: 'Update',
       local: 'Local',
@@ -1197,6 +1197,8 @@ export default {
     title: 'Publish',
     description: 'Builds the project and takes the result to its targets — over SFTP/rsync, FTP, into a folder, onto a git branch, or via a webhook.',
     baseUrlWarning: 'configuration.baseUrl is still set to “{{baseUrl}}” — set it to the real domain before publishing.',
+    connectionVsTarget:
+      'Two things that belong together: a credential is the login at a provider — server, username, password or key. It belongs to the app and can be used by several projects, so rotating a password is one edit rather than one per project. A target belongs to this project and says what to do with that credential: which folder on the server, which branch, and what happens to deleted files.',
     targetHeading: 'Target',
     newConnection: '+ New credential',
     manageConnections: 'Manage connections',
@@ -1324,7 +1326,7 @@ export default {
   templates: {
     title: 'Templates',
     description:
-      "Bundles this project's design into a single file: colours, theme, CSS, fonts, layout, frames, plugins and translations — in whole or in part. After importing into another project everything is set up the way it is here.",
+      'Bundles this project’s design into a single file: colours, theme, CSS, fonts, layout, frames, plugins and translations — in whole or in part. After importing into another project everything is set up the way it is here.',
     exportHeading: 'Create a template',
     exportHint:
       'Writes a single .qtpl file you can pass on. Everything this project has is preselected; what it does not have is not offered.',
@@ -1406,7 +1408,7 @@ export default {
       },
       translations: {
         label: 'Translations',
-        description: "The texts you changed in Quartz' language files."
+        description: 'The texts you changed in Quartz’ language files.'
       },
       presets: {
         label: 'Theme presets',

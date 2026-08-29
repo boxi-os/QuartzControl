@@ -13,7 +13,19 @@ import type {
   GridFrameDefinition
 } from '@shared/ipc-contract'
 import { DEFAULT_FRAME_BREAKPOINT_WIDTHS, FRAME_BREAKPOINTS, buildFrameBox, buildGridStyle } from '@shared/gridFrameCss'
-import { Badge, Button, Card, Field, FieldGroup, SegmentedControl, Select, SettingsSection, TextInput, Toggle } from '../../components/ui'
+import {
+  Badge,
+  Button,
+  Card,
+  Field,
+  FieldGroup,
+  InfoNote,
+  SegmentedControl,
+  Select,
+  SettingsSection,
+  TextInput,
+  Toggle
+} from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import DevServerRestartHint from '../../components/DevServerRestartHint'
 import { breakpointRangeLabel } from './utils'
@@ -399,6 +411,9 @@ export default function FrameBuilder({
     return (
       <div className="flex flex-col gap-4">
         {message && <p className="text-sm text-red-600 dark:text-red-400">{message}</p>}
+        {/* The whole app says "Frame" and no screen said what one is. It belongs here, on the
+            list that is the first thing anyone opens who wants to build one. */}
+        <InfoNote>{t('layoutEditor.frameBuilder.whatIsAFrame')}</InfoNote>
         <div className="flex items-center justify-between">
           <p className="text-xs text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.description')}</p>
           <Button onClick={startNewFrame}>{t('layoutEditor.frameBuilder.newFrame')}</Button>

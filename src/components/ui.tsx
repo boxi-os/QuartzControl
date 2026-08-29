@@ -196,6 +196,23 @@ export function Card({ children, className = '', ...props }: HTMLAttributes<HTML
   )
 }
 
+// A short explanation of a word the app uses, shown once at the top of the page that word belongs
+// to - what a snapshot is and how it differs from Git-Sync, what a Frame is, what separates a
+// Zugang from a Ziel. Blue rather than amber, because none of it is a warning: it is the sentence
+// a first-time user needs and everyone else reads past. The same box already existed by hand in
+// the Variablen tab; this is that one, named.
+export function InfoNote({ children, className = '' }: { children: ReactNode; className?: string }): JSX.Element {
+  return (
+    <p
+      // Capped rather than full width: this is a paragraph to read, and at 1800px a line of it
+      // runs past 200 characters. The cap is on the block, not on the page - see CLAUDE.md.
+      className={`max-w-[95ch] rounded-md border border-blue-200 bg-blue-50 p-2.5 text-xs leading-relaxed text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300 ${className}`}
+    >
+      {children}
+    </p>
+  )
+}
+
 export function Badge({
   children,
   tone = 'slate'

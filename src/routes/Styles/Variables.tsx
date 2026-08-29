@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import type { CssVariableOverride } from '@shared/ipc-contract'
-import { Button, Card, TextInput } from '../../components/ui'
+import { Button, Card, InfoNote, TextInput } from '../../components/ui'
 import { useStickyState } from '../../state/uiState'
 import { CSS_VARIABLES } from '../../data/cssVariables'
 import VariableRow, { type OverrideValue } from './VariableRow'
@@ -129,9 +129,7 @@ export default function Variables(): JSX.Element {
           every layered one regardless of load order - verified against a real build (ultra-lobster
           + an override on --background-primary, both modes). The caveat is the honest half. */}
       {themeId && (
-        <p className="rounded-md border border-blue-200 bg-blue-50 p-2.5 text-xs text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300">
-          {t('styles.variables.themeNote', { themeId })}
-        </p>
+        <InfoNote>{t('styles.variables.themeNote', { themeId })}</InfoNote>
       )}
 
       <Card>

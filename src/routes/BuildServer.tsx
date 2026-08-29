@@ -236,6 +236,7 @@ export default function BuildServer(): JSX.Element {
               href={url}
               target="_blank"
               rel="noreferrer"
+              title={t('common.openInBrowser')}
               className="inline-flex items-center gap-1.5 text-[17px] font-semibold tracking-tight text-blue-600 hover:underline dark:text-blue-400"
             >
               {url}

@@ -111,20 +111,40 @@ export default {
     },
     wizard: {
       title: 'Neues Quartz-Projekt',
-      targetDirectory: 'Zielverzeichnis',
-      template: 'Template',
-      contentStrategy: 'Content-Strategie',
-      strategyNew: 'Neu (leerer Ordner)',
-      strategyCopy: 'Kopieren (echter Ordner)',
-      strategySymlink: 'Verknüpfen (symbolischer Link)',
+      intro:
+        'QuartzControl legt einen neuen Ordner an und lädt Quartz von GitHub hinein. Der Ordner darf noch nicht existieren — er wird für dich erstellt. Das dauert ein bis zwei Minuten, weil dabei auch die Abhängigkeiten installiert werden.',
+      parentDirectory: 'Wo soll das Projekt liegen?',
+      parentDirectoryHint:
+        'Der übergeordnete Ordner, der schon existiert — zum Beispiel „Dokumente“. Darin entsteht ein neuer Ordner mit dem Namen von unten.',
+      parentDirectoryPlaceholder: '/Users/du/Dokumente',
+      projectName: 'Name des Projektordners',
+      projectNameHint:
+        'Nur der Ordnername, nicht der Titel der Website — den stellst du später unter Konfiguration ein. Am einfachsten sind Kleinbuchstaben und Bindestriche.',
+      projectNamePlaceholder: 'meine-notizen',
+      targetPreview: 'Angelegt wird:',
+      nameInvalid: 'Der Name darf kein „/“ enthalten und nicht „.“ oder „..“ sein.',
+      template: 'Vorlage',
+      templateHint:
+        'Bestimmt, welche Beispielseiten und welche Grundeinstellungen das Projekt mitbringt. „default“ ist der normale Startpunkt; alles daran lässt sich später ändern.',
+      contentStrategy: 'Woher kommen die Notizen?',
+      contentStrategyHint:
+        'Beim Verknüpfen bleiben die Notizen dort, wo sie sind — zum Beispiel in deinem Obsidian-Vault — und werden nicht kopiert. Beim Kopieren entsteht eine zweite, unabhängige Sammlung. Auch das ist später umstellbar.',
+      strategyNew: 'Neu anfangen (leerer Content-Ordner)',
+      strategyCopy: 'Vorhandene Notizen kopieren',
+      strategySymlink: 'Auf vorhandene Notizen verweisen (symbolischer Link)',
       sourceFolder: 'Quellordner (z. B. Obsidian-Vault)',
-      linkResolution: 'Link-Auflösung',
-      linkShortest: 'Kürzeste (wie Obsidian)',
-      linkAbsolute: 'Absolut',
-      linkRelative: 'Relativ',
-      baseUrl: 'Basis-URL (später in der Konfiguration änderbar)',
-      creating: 'Erstelle… (Klonen + npm install kann etwas dauern)',
-      create: 'Erstellen',
+      sourceFolderHint: 'Der Ordner, in dem deine Markdown-Dateien liegen.',
+      linkResolution: 'Wie sind deine [[Wikilinks]] geschrieben?',
+      linkResolutionHint:
+        'Muss zu deinen Notizen passen, sonst finden die Links ihr Ziel nicht. Obsidian benutzt in der Voreinstellung die kürzeste Form.',
+      linkShortest: 'Kürzeste Form (wie Obsidian)',
+      linkAbsolute: 'Absolut (vom Wurzelordner aus)',
+      linkRelative: 'Relativ (von der aktuellen Notiz aus)',
+      baseUrl: 'Basis-URL',
+      baseUrlHint:
+        'Die Adresse, unter der die Website später erreichbar ist — ohne https://. Wenn du sie noch nicht kennst, lass „localhost“ stehen und trage sie später unter Konfiguration nach.',
+      creating: 'Erstelle… (Klonen und npm install dauern ein bis zwei Minuten)',
+      create: 'Projekt anlegen',
       createFailed: 'Projekt konnte nicht erstellt werden.'
     }
   },

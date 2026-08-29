@@ -5,7 +5,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { ArrowUpRight, CheckCircle2, FolderSearch, Search, TriangleAlert, Trash2 } from 'lucide-react'
 import type { CreateProjectOptions, EnvironmentInfo, ProjectOverview } from '@shared/ipc-contract'
 import { useAppStore } from '../state/store'
-import { Button, Card, Field, Select, TextInput } from '../components/ui'
+import { Button, Card, Field, InfoNote, Select, TextInput } from '../components/ui'
 import { GROUP_ICONS } from './navConfig'
 import { formatRelativeTime } from '../utils/format'
 import { useAsyncAction } from '../hooks/useAsyncAction'
@@ -509,16 +509,27 @@ function CreateWizard({
   onCreate: (options: CreateProjectOptions) => void
 }): JSX.Element {
   const { t } = useTranslation()
-  const [targetDirectory, setTargetDirectory] = useState('')
+  // Two fields rather than one path, because the folder is created here rather than chosen: a
+  // native folder picker can only return a directory that already exists, so with a single
+  // "target directory" field the only way to name a new project was to create the folder in the
+  // dialog first - which is exactly what a first-time user does not think to do. The parent comes
+  // from the picker, the name is typed, and the line under them shows what will be created.
+  const [parentDirectory, setParentDirectory] = useState(defaultDirectory ?? '')
+  const [projectName, setProjectName] = useState('')
   const [template, setTemplate] = useState<NonNullable<CreateProjectOptions['template']>>('default')
   const [source, setSource] = useState('')
   const [strategy, setStrategy] = useState<NonNullable<CreateProjectOptions['strategy']>>('new')
   const [linkResolution, setLinkResolution] = useState<NonNullable<CreateProjectOptions['linkResolution']>>('shortest')
   const [baseUrl, setBaseUrl] = useState('localhost')
 
-  async function pickTarget(): Promise<void> {
-    const folder = await window.quartzGui.dialog.pickFolder(targetDirectory || defaultDirectory)
-    if (folder) setTargetDirectory(folder)
+  const trimmedName = projectName.trim()
+  // macOS and Linux only (see electron-builder.yml on why Windows is absent), so one separator.
+  const targetDirectory = parentDirectory && trimmedName ? `${parentDirectory.replace(/\/+$/, '')}/${trimmedName}` : ''
+  const nameInvalid = trimmedName.includes('/') || trimmedName === '.' || trimmedName === '..'
+
+  async function pickParent(): Promise<void> {
+    const folder = await window.quartzGui.dialog.pickFolder(parentDirectory || defaultDirectory)
+    if (folder) setParentDirectory(folder)
   }
 
   async function pickSource(): Promise<void> {
@@ -528,19 +539,43 @@ function CreateWizard({
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/30 p-6 backdrop-blur-sm">
-      <Card className="w-full max-w-lg">
-        <h2 className="mb-4 text-lg font-semibold">{t('home.wizard.title')}</h2>
+      <Card className="max-h-[88vh] w-full max-w-lg overflow-y-auto">
+        <h2 className="mb-2 text-lg font-semibold">{t('home.wizard.title')}</h2>
+        <InfoNote className="mb-4">{t('home.wizard.intro')}</InfoNote>
         <div className="flex flex-col gap-3">
-          <Field label={t('home.wizard.targetDirectory')}>
+          <Field label={t('home.wizard.parentDirectory')} hint={t('home.wizard.parentDirectoryHint')}>
             <div className="flex gap-2">
-              <TextInput value={targetDirectory} onChange={(e) => setTargetDirectory(e.target.value)} className="flex-1" />
-              <Button variant="ghost" onClick={pickTarget}>
+              <TextInput
+                value={parentDirectory}
+                onChange={(e) => setParentDirectory(e.target.value)}
+                placeholder={t('home.wizard.parentDirectoryPlaceholder')}
+                className="flex-1"
+              />
+              <Button variant="ghost" onClick={pickParent}>
                 {t('common.select')}
               </Button>
             </div>
           </Field>
 
-          <Field label={t('home.wizard.template')}>
+          <Field label={t('home.wizard.projectName')} hint={t('home.wizard.projectNameHint')}>
+            <TextInput
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
+              placeholder={t('home.wizard.projectNamePlaceholder')}
+            />
+          </Field>
+
+          {nameInvalid ? (
+            <p className="text-[11px] text-red-600 dark:text-red-400">{t('home.wizard.nameInvalid')}</p>
+          ) : (
+            targetDirectory && (
+              <p className="break-all text-[11px] text-slate-500 dark:text-slate-400">
+                {t('home.wizard.targetPreview')} <code className="font-mono">{targetDirectory}</code>
+              </p>
+            )
+          )}
+
+          <Field label={t('home.wizard.template')} hint={t('home.wizard.templateHint')}>
             <Select value={template} onChange={(e) => setTemplate(e.target.value as typeof template)}>
               {TEMPLATES.map((tpl) => (
                 <option key={tpl} value={tpl}>
@@ -550,7 +585,7 @@ function CreateWizard({
             </Select>
           </Field>
 
-          <Field label={t('home.wizard.contentStrategy')}>
+          <Field label={t('home.wizard.contentStrategy')} hint={t('home.wizard.contentStrategyHint')}>
             <Select value={strategy} onChange={(e) => setStrategy(e.target.value as typeof strategy)}>
               <option value="new">{t('home.wizard.strategyNew')}</option>
               <option value="copy">{t('home.wizard.strategyCopy')}</option>
@@ -559,7 +594,7 @@ function CreateWizard({
           </Field>
 
           {strategy !== 'new' && (
-            <Field label={t('home.wizard.sourceFolder')}>
+            <Field label={t('home.wizard.sourceFolder')} hint={t('home.wizard.sourceFolderHint')}>
               <div className="flex gap-2">
                 <TextInput value={source} onChange={(e) => setSource(e.target.value)} className="flex-1" />
                 <Button variant="ghost" onClick={pickSource}>
@@ -569,7 +604,7 @@ function CreateWizard({
             </Field>
           )}
 
-          <Field label={t('home.wizard.linkResolution')}>
+          <Field label={t('home.wizard.linkResolution')} hint={t('home.wizard.linkResolutionHint')}>
             <Select value={linkResolution} onChange={(e) => setLinkResolution(e.target.value as typeof linkResolution)}>
               <option value="shortest">{t('home.wizard.linkShortest')}</option>
               <option value="absolute">{t('home.wizard.linkAbsolute')}</option>
@@ -577,7 +612,7 @@ function CreateWizard({
             </Select>
           </Field>
 
-          <Field label={t('home.wizard.baseUrl')}>
+          <Field label={t('home.wizard.baseUrl')} hint={t('home.wizard.baseUrlHint')}>
             <TextInput value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="example.com" />
           </Field>
 
@@ -592,7 +627,7 @@ function CreateWizard({
               {t('common.cancel')}
             </Button>
             <Button
-              disabled={busy || !targetDirectory || (strategy !== 'new' && !source)}
+              disabled={busy || !targetDirectory || nameInvalid || (strategy !== 'new' && !source)}
               onClick={() =>
                 onCreate({
                   targetDirectory,

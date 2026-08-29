@@ -3,7 +3,7 @@
 // then exits 0 without writing quartz.config.yaml. That is why success below is re-checked
 // against the file actually existing rather than trusting the exit code alone.
 import { runCommand as run } from './runCommand'
-import { existsSync } from 'fs'
+import { existsSync, readdirSync } from 'fs'
 import { join } from 'path'
 import type { CreateProjectOptions, CreateProjectResult } from '@shared/ipc-contract'
 import { mainT } from '../i18n'
@@ -16,9 +16,17 @@ export const TEMPLATE_REPO = 'https://github.com/jackyzha0/quartz.git'
 // works once run *inside* an already-cloned-and-`npm install`ed copy of the project. So this
 // clones the upstream template, installs its dependencies, then runs the local wizard.
 export async function createProject(options: CreateProjectOptions): Promise<CreateProjectResult> {
+  // git clone creates the target directory itself but refuses one that already holds something,
+  // with a message about a "destination path" that says nothing about which field to change. The
+  // wizard composes this path out of a picked parent plus a typed name, so the collision is a
+  // normal typo rather than an exceptional case - it gets a sentence naming the path instead.
+  if (existsSync(options.targetDirectory) && readdirSync(options.targetDirectory).length > 0) {
+    return { success: false, output: mainT('createTargetExists', { path: options.targetDirectory }) }
+  }
+
   const clone = await run('git', ['clone', '--depth', '1', TEMPLATE_REPO, options.targetDirectory])
   if (!clone.success) {
-    return { success: false, output: `Klonen des Quartz-Templates fehlgeschlagen:\n${clone.output}` }
+    return { success: false, output: `${mainT('createCloneFailed')}\n${clone.output}` }
   }
 
   // detach from jackyzha0/quartz so a later "Git-Sync" push never targets the upstream repo
@@ -26,7 +34,7 @@ export async function createProject(options: CreateProjectOptions): Promise<Crea
 
   const install = await run('npm', ['install'], options.targetDirectory)
   if (!install.success) {
-    return { success: false, output: `${clone.output}\n\nnpm install fehlgeschlagen:\n${install.output}` }
+    return { success: false, output: `${clone.output}\n\n${mainT('createInstallFailed')}\n${install.output}` }
   }
 
   const args = [

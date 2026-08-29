@@ -110,21 +110,41 @@ export default {
     },
     wizard: {
       title: 'New Quartz project',
-      targetDirectory: 'Target directory',
+      intro:
+        'QuartzControl creates a new folder and downloads Quartz from GitHub into it. The folder must not exist yet — it is created for you. This takes a minute or two, because the dependencies are installed along the way.',
+      parentDirectory: 'Where should the project live?',
+      parentDirectoryHint:
+        'An existing parent folder — “Documents”, for example. A new folder with the name below is created inside it.',
+      parentDirectoryPlaceholder: '/Users/you/Documents',
+      projectName: 'Name of the project folder',
+      projectNameHint:
+        'The folder name only, not the title of the site — you set that later under Configuration. Lowercase letters and hyphens are the easiest choice.',
+      projectNamePlaceholder: 'my-notes',
+      targetPreview: 'Will be created:',
+      nameInvalid: 'The name must not contain “/” and cannot be “.” or “..”.',
       template: 'Template',
-      contentStrategy: 'Content strategy',
-      strategyNew: 'New (empty folder)',
-      strategyCopy: 'Copy (real folder)',
-      strategySymlink: 'Link (symbolic link)',
-      sourceFolder: 'Source folder (e.g. Obsidian vault)',
-      linkResolution: 'Link resolution',
-      linkShortest: 'Shortest (like Obsidian)',
-      linkAbsolute: 'Absolute',
-      linkRelative: 'Relative',
-      baseUrl: 'Base URL (changeable later in configuration)',
-      creating: 'Creating… (cloning + npm install can take a moment)',
-      create: 'Create',
-      createFailed: 'Project could not be created.'
+      templateHint:
+        'Decides which example pages and which starting settings the project comes with. “default” is the normal starting point; everything about it can be changed later.',
+      contentStrategy: 'Where do the notes come from?',
+      contentStrategyHint:
+        'Linking leaves the notes where they are — in your Obsidian vault, for example — and copies nothing. Copying creates a second, independent collection. This can be changed later too.',
+      strategyNew: 'Start fresh (empty content folder)',
+      strategyCopy: 'Copy existing notes',
+      strategySymlink: 'Point at existing notes (symbolic link)',
+      sourceFolder: 'Source folder (e.g. an Obsidian vault)',
+      sourceFolderHint: 'The folder your Markdown files live in.',
+      linkResolution: 'How are your [[wikilinks]] written?',
+      linkResolutionHint:
+        'This has to match your notes, or the links will not find their target. Obsidian uses the shortest form by default.',
+      linkShortest: 'Shortest form (like Obsidian)',
+      linkAbsolute: 'Absolute (from the root folder)',
+      linkRelative: 'Relative (from the current note)',
+      baseUrl: 'Base URL',
+      baseUrlHint:
+        'The address the site will be reachable at later — without https://. If you do not know it yet, leave “localhost” and fill it in later under Configuration.',
+      creating: 'Creating… (cloning and npm install take a minute or two)',
+      create: 'Create project',
+      createFailed: 'The project could not be created.'
     }
   },
   projectLayout: {

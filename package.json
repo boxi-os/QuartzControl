@@ -1,6 +1,7 @@
 {
   "name": "quartz-gui",
   "productName": "QuartzControl",
+  "desktopName": "quartzcontrol.desktop",
   "version": "0.1.0",
   "description": "Desktop GUI for managing Quartz 5 sites: config, plugins, content source, builds and the local dev server.",
   "main": "./out/main/index.js",

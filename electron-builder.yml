@@ -67,6 +67,13 @@ linux:
   # this if the package is ever handed to someone else.
   maintainer: Holger Borker <mail@holgerborker.de>
   synopsis: Manage Quartz websites
+  # Without this the installed .desktop file is named after `name` in package.json
+  # (quartz-gui.desktop) while the window Electron opens identifies itself as QuartzControl, so a
+  # desktop environment cannot connect the running window to its launcher: the taskbar shows a
+  # generic icon and "pin to dock" pins nothing. syncDesktopName derives the filename from
+  # `desktopName` in package.json instead, which is electron-builder's own fix for this
+  # (electron-userland/electron-builder#9103) and becomes the default in v27.
+  syncDesktopName: true
   target:
     - AppImage
     - deb

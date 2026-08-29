@@ -67,6 +67,10 @@ const STRINGS = {
     warmupBuild: 'Aufwärm-Build:',
 
     // Project creation
+    createTargetExists:
+      'In „{{path}}“ liegen bereits Dateien. Wähle einen anderen Namen oder einen anderen Ordner — ein vorhandener Ordner wird nicht überschrieben.',
+    createCloneFailed: 'Quartz konnte nicht von GitHub geladen werden:',
+    createInstallFailed: 'npm install ist fehlgeschlagen:',
     createNoConfig:
       '\n\nDer Setup-Assistent hat quartz.config.yaml nicht geschrieben (vermutlich fehlt eine Antwort auf eine interaktive Rückfrage oben).',
 
@@ -228,6 +232,10 @@ const STRINGS = {
       'Your own changes to files the update touches as well are in the way. Commit or discard them under Git sync and try again.\n\n',
     warmupBuild: 'Warm-up build:',
 
+    createTargetExists:
+      '“{{path}}” already contains files. Pick a different name or a different folder — an existing folder is never overwritten.',
+    createCloneFailed: 'Quartz could not be downloaded from GitHub:',
+    createInstallFailed: 'npm install failed:',
     createNoConfig:
       '\n\nThe setup wizard did not write quartz.config.yaml (most likely an interactive question above went unanswered).',
 

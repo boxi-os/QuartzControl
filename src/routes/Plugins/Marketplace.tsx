@@ -122,7 +122,7 @@ export default function PluginsMarketplace(): JSX.Element {
         <div className="relative w-full max-w-xs">
           <Search
             size={14}
-            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
+            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400"
             aria-hidden
           />
           <TextInput
@@ -172,9 +172,9 @@ export default function PluginsMarketplace(): JSX.Element {
           />
         ))}
       </div>
-      {results === null && <p className="text-sm text-slate-500">{t('pluginsMarketplace.loading')}</p>}
+      {results === null && <p className="text-sm text-slate-500 dark:text-slate-400">{t('pluginsMarketplace.loading')}</p>}
       {results !== null && plugins.length === 0 && (
-        <p className="text-sm text-slate-500">{t('pluginsMarketplace.noResults')}</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">{t('pluginsMarketplace.noResults')}</p>
       )}
 
       {other.length > 0 && (
@@ -187,7 +187,7 @@ export default function PluginsMarketplace(): JSX.Element {
               ? t('pluginsMarketplace.hideOther', { count: other.length })
               : t('pluginsMarketplace.showOther', { count: other.length })}
           </button>
-          <p className="mt-1 max-w-3xl text-xs text-slate-400">{t('pluginsMarketplace.otherDescription')}</p>
+          <p className="mt-1 max-w-3xl text-xs text-slate-500 dark:text-slate-400">{t('pluginsMarketplace.otherDescription')}</p>
           {showOther && (
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {other.map((plugin) => (
@@ -233,21 +233,21 @@ function ResultCard({
         target="_blank"
         rel="noreferrer"
         title={t('pluginsMarketplace.openRepo')}
-        className="inline-flex w-fit items-center gap-1 text-xs text-slate-500 hover:text-blue-600 dark:hover:text-blue-400"
+        className="inline-flex w-fit items-center gap-1 text-xs text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400"
       >
         {plugin.fullName}
         <ExternalLink size={11} aria-hidden />
       </a>
       {plugin.description && <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{plugin.description}</p>}
       <div className="mt-3 flex items-center justify-between pt-1">
-        <span className="text-xs text-slate-400">★ {plugin.stars ?? 0}</span>
-        <Button variant="ghost" onClick={onInstall} disabled={installing || installed}>
-          {installed
-            ? t('pluginsMarketplace.installed')
-            : installing
-              ? t('pluginsMarketplace.installing')
-              : t('pluginsMarketplace.install')}
-        </Button>
+        <span className="text-xs text-slate-500 dark:text-slate-400">★ {plugin.stars ?? 0}</span>
+        {/* An installed plugin says so once, in the badge at the top. The disabled button that used
+            to sit here repeated the same word a second time in every card of a full catalog. */}
+        {!installed && (
+          <Button variant="ghost" onClick={onInstall} disabled={installing}>
+            {installing ? t('pluginsMarketplace.installing') : t('pluginsMarketplace.install')}
+          </Button>
+        )}
       </div>
     </Card>
   )

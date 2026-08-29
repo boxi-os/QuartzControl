@@ -14,6 +14,7 @@ import type {
 import { runCommand as run } from './runCommand'
 import { quartzGuiDir, quartzGuiPath } from './projectDirs'
 import { withContentSymlinkParked } from './contentSymlink'
+import { mainT } from '../i18n'
 
 // A snapshot store is a git repository of its own, pointed at the project as its work tree:
 //
@@ -139,7 +140,7 @@ async function stage(projectPath: string, settings: SnapshotSettings): Promise<v
   // Not silent: a failure here means the index does not describe the project, and every answer
   // derived from it - a diff above all - would be confidently wrong.
   const added = await git(projectPath, ['add', '-A'])
-  if (!added.success) throw new Error(`Projektstand konnte nicht erfasst werden:\n${added.output}`)
+  if (!added.success) throw new Error(`${mainT('snapshotStageFailed')}\n${added.output}`)
   const entries = (await readdir(quartzGuiPath(projectPath))).filter(isSnapshotWorthy).map((name) => `.quartz-gui/${name}`)
   if (entries.length > 0) await git(projectPath, ['add', '-f', '--', ...entries])
   // An ignore rule only ever governs *untracked* files, so turning the content folder off left it
@@ -215,7 +216,7 @@ async function createSnapshotUnlocked(projectPath: string, kind: SnapshotKind, r
   await stage(projectPath, settings)
 
   const tree = (await git(projectPath, ['write-tree'])).output.trim()
-  if (!tree) throw new Error('Snapshot konnte nicht angelegt werden: git write-tree lieferte kein Ergebnis.')
+  if (!tree) throw new Error(mainT('snapshotWriteTreeFailed'))
 
   if (kind !== 'manual') {
     const existing = await listSnapshots(projectPath)
@@ -314,7 +315,7 @@ async function findSnapshot(projectPath: string, id: string): Promise<Snapshot |
 async function commitFor(projectPath: string, id: string): Promise<string> {
   const result = await git(projectPath, ['rev-parse', `${REF_PREFIX}${id}`])
   const commit = result.output.trim()
-  if (!result.success || !commit) throw new Error(`Snapshot "${id}" existiert nicht.`)
+  if (!result.success || !commit) throw new Error(mainT('snapshotMissing', { id }))
   return commit
 }
 
@@ -541,7 +542,7 @@ async function restoreSnapshotUnlocked(
   // are the one part of it that did not happen.
   if (settings.contentIsSymlink && touchesContent) {
     output.push(
-      'Hinweis: content/ zeigt auf einen externen Ordner (z. B. einen Obsidian-Vault). Dessen Dateien wurden nicht angetastet - alles ausserhalb von content/ wurde wiederhergestellt.'
+      mainT('snapshotVaultUntouched')
     )
   }
 

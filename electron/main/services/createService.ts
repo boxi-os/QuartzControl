@@ -6,6 +6,7 @@ import { runCommand as run } from './runCommand'
 import { existsSync } from 'fs'
 import { join } from 'path'
 import type { CreateProjectOptions, CreateProjectResult } from '@shared/ipc-contract'
+import { mainT } from '../i18n'
 
 export const TEMPLATE_REPO = 'https://github.com/jackyzha0/quartz.git'
 
@@ -57,14 +58,14 @@ export async function createProject(options: CreateProjectOptions): Promise<Crea
   let warmupOutput = ''
   if (create.success && configWritten) {
     const warmup = await run('npx', ['quartz', 'build'], options.targetDirectory)
-    warmupOutput = warmup.success ? '' : `\n\nAufwärm-Build:\n${warmup.output}`
+    warmupOutput = warmup.success ? '' : `\n\n${mainT('warmupBuild')}\n${warmup.output}`
   }
 
   return {
     success: create.success && configWritten,
     output: `${clone.output}\n${install.output}\n${create.output}${warmupOutput}${
       create.success && !configWritten
-        ? '\n\nDer Setup-Assistent hat quartz.config.yaml nicht geschrieben (vermutlich fehlt eine Antwort auf eine interaktive Rückfrage oben).'
+        ? mainT('createNoConfig')
         : ''
     }`
   }

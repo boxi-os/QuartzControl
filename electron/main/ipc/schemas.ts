@@ -20,14 +20,14 @@ export const absolutePath = z
   .string()
   .min(1)
   .max(4096)
-  .refine((p) => isAbsolute(p), { message: 'Pfad muss absolut sein' })
+  .refine((p) => isAbsolute(p), { message: 'must be an absolute path' })
 
 // A path fragment joined onto a project directory (e.g. the build output dir). Must stay inside.
 export const relativeSubPath = z
   .string()
   .min(1)
   .max(1024)
-  .refine((p) => !isAbsolute(p), { message: 'Pfad darf nicht absolut sein' })
+  .refine((p) => !isAbsolute(p), { message: 'must not be an absolute path' })
   .refine((p) => !p.split(/[\\/]/).includes('..'), { message: 'Pfad darf kein ".." enthalten' })
 
 // A build output directory may be either: relative to the project ("dist", the common case) or
@@ -48,14 +48,14 @@ export const safeSegment = z
 // rather than a loose slug.
 export const backupId = z
   .string()
-  .regex(/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z$/, 'kein gültiger Backup-Bezeichner')
+  .regex(/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z$/, 'not a valid backup id')
 
 // snapshotService builds refs as `refs/snapshots/<id>` from newSnapshotId(), so the exact
 // generated shape is pinned rather than a loose slug. Anything looser reaches `git update-ref` and
 // `git rev-parse`, where a "../" or a leading "-" is not a path but a different ref or a flag.
 export const snapshotId = z
   .string()
-  .regex(/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z-[0-9a-f]{4}$/, 'kein gültiger Snapshot-Bezeichner')
+  .regex(/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z-[0-9a-f]{4}$/, 'not a valid snapshot id')
 
 export const snapshotKind = z.enum([
   'manual',
@@ -76,7 +76,7 @@ export const snapshotFilePath = z
   .min(1)
   .max(1024)
   .refine((p) => !p.startsWith('-') && !p.startsWith('/'), { message: 'muss ein relativer Pfad sein' })
-  .refine((p) => !p.split('/').includes('..'), { message: 'darf nicht aus dem Projekt herausführen' })
+  .refine((p) => !p.split('/').includes('..'), { message: 'must not lead outside the project' })
 
 // npm package name segment - becomes a path segment (node_modules/@quartz-themes/<id>) and an
 // `npm install` argument.
@@ -84,7 +84,7 @@ export const themeId = z
   .string()
   .min(1)
   .max(128)
-  .regex(/^[a-z0-9][a-z0-9._-]*$/, 'kein gültiger Theme-Bezeichner')
+  .regex(/^[a-z0-9][a-z0-9._-]*$/, 'not a valid theme id')
 
 // A plugin's display name, optionally npm-scoped ("@quartz-community/explorer"). Used both as a
 // CLI argument and as a path segment under .quartz/plugins/.
@@ -92,7 +92,7 @@ export const pluginName = z
   .string()
   .min(1)
   .max(214)
-  .regex(/^(@[A-Za-z0-9._-]+\/)?[A-Za-z0-9._-]+$/, 'kein gültiger Plugin-Name')
+  .regex(/^(@[A-Za-z0-9._-]+\/)?[A-Za-z0-9._-]+$/, 'not a valid plugin name')
   .refine((n) => !n.split('/').includes('..'), { message: '".." ist nicht erlaubt' })
 
 // What `quartz plugin add` accepts: github:/git+/https:/ a local absolute path / a bare npm name.
@@ -108,7 +108,7 @@ export const localeCode = z
   .string()
   .min(2)
   .max(35)
-  .regex(/^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/, 'kein gültiger Locale-Code')
+  .regex(/^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/, 'not a valid locale code')
 
 // A git branch name for the Pages deploy. Refuses the characters git itself rejects, plus a
 // leading "-" (flag injection). The "don't overwrite main" rule lives in githubPagesService,
@@ -117,12 +117,12 @@ export const branchName = z
   .string()
   .min(1)
   .max(255)
-  .regex(/^[A-Za-z0-9][A-Za-z0-9._\/-]*$/, 'kein gültiger Branch-Name')
-  .refine((b) => !b.includes('..') && !b.endsWith('.lock'), { message: 'kein gültiger Branch-Name' })
+  .regex(/^[A-Za-z0-9][A-Za-z0-9._\/-]*$/, 'not a valid branch name')
+  .refine((b) => !b.includes('..') && !b.endsWith('.lock'), { message: 'not a valid branch name' })
 
 // Frame ids and CSS area names end up in generated CSS/JS - keep them to plain identifiers.
 // layoutFrameService enforces the same id rule again at its own boundary.
-export const frameId = z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/i, 'kein gültiger Frame-Bezeichner')
+export const frameId = z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/i, 'not a valid frame id')
 
 // The two thresholds an authored frame's media queries are generated from. Both bounds are sanity
 // limits rather than taste: below ~240px no phone exists, above 3840px no media query would ever
@@ -131,8 +131,8 @@ export const frameId = z.string().regex(/^[a-z0-9][a-z0-9-]{0,63}$/i, 'kein gül
 const breakpointWidth = z.number().int().min(240).max(3840)
 export const frameBreakpointWidths = z
   .object({ tablet: breakpointWidth, mobile: breakpointWidth })
-  .refine((v) => v.mobile < v.tablet, 'die Mobil-Breite muss unter der Tablet-Breite liegen')
-export const cssIdent = z.string().regex(/^[A-Za-z_][A-Za-z0-9_-]{0,63}$/, 'kein gültiger CSS-Bezeichner')
+  .refine((v) => v.mobile < v.tablet, 'the mobile width must be below the tablet width')
+export const cssIdent = z.string().regex(/^[A-Za-z_][A-Za-z0-9_-]{0,63}$/, 'not a valid CSS identifier')
 
 // An additional stylesheet under quartz/styles. Pinned to the two directories the app itself
 // creates, because this value is joined onto the project path and then written to, renamed and
@@ -141,7 +141,7 @@ export const cssIdent = z.string().regex(/^[A-Za-z_][A-Za-z0-9_-]{0,63}$/, 'kein
 export const styleFileSubPath = z
   .string()
   .max(1024)
-  .regex(/^(custom|imported)\/[A-Za-z0-9._-]+\.(scss|css)$/, 'kein gültiger Stylesheet-Pfad')
+  .regex(/^(custom|imported)\/[A-Za-z0-9._-]+\.(scss|css)$/, 'not a valid stylesheet path')
   // Guards against undefined rather than trusting the regex above: zod v4 keeps running the checks
   // of a schema after one of them failed, so this refine also sees values the regex just rejected -
   // and a TypeError thrown here replaces the readable validation error with a crash.
@@ -228,9 +228,9 @@ export const pluginSourceList = z
   )
   .max(500)
 
-const cssTrackValue = z.string().max(40).regex(/^[A-Za-z0-9.%\s()+*/[\]_-]*$/, 'kein gültiger CSS-Trackwert')
-const cssGapValue = z.string().max(40).regex(/^[A-Za-z0-9.%\s()+*/-]*$/, 'kein gültiger CSS-Abstandswert')
-const gridLineName = z.string().regex(/^[A-Za-z0-9_-]{1,40}$/, 'kein gültiger Grid-Line-Name')
+const cssTrackValue = z.string().max(40).regex(/^[A-Za-z0-9.%\s()+*/[\]_-]*$/, 'not a valid CSS track value')
+const cssGapValue = z.string().max(40).regex(/^[A-Za-z0-9.%\s()+*/-]*$/, 'not a valid CSS gap value')
+const gridLineName = z.string().regex(/^[A-Za-z0-9_-]{1,40}$/, 'not a valid grid line name')
 
 const gridAreaPlacement = z.looseObject({
   row: z.number().int().min(1).max(50),
@@ -301,7 +301,7 @@ const cssValue = z
   })
 
 export const cssVariableOverride = z.object({
-  key: z.string().regex(/^[A-Za-z0-9_-]{1,128}$/, 'kein gültiger CSS-Variablenname'),
+  key: z.string().regex(/^[A-Za-z0-9_-]{1,128}$/, 'not a valid CSS variable name'),
   light: cssValue,
   dark: cssValue.optional()
 })
@@ -313,8 +313,8 @@ export const remotePosixPath = z
   .string()
   .min(2)
   .max(4096)
-  .refine((p) => p.startsWith('/'), 'muss ein absoluter Pfad sein')
-  .refine((p) => p.replace(/\/+$/, '') !== '', 'das Wurzelverzeichnis "/" ist als Ziel nicht zulässig')
+  .refine((p) => p.startsWith('/'), 'must be an absolute path')
+  .refine((p) => p.replace(/\/+$/, '') !== '', 'the root directory "/" is not allowed as a target')
 
 // Webhook URLs are credentials in URL form (a build hook's path *is* its token), so the scheme is
 // pinned to https - posting one over http would put it on the wire in the clear.
@@ -327,7 +327,7 @@ export const webhookUrl = z
     } catch {
       return false
     }
-  }, 'muss eine https-URL sein')
+  }, 'must be an https URL')
 
 // Deliberately looseObject, like every other payload schema here: z.object() strips unknown keys,
 // which would silently drop a field a newer destination type adds.
@@ -357,7 +357,7 @@ export const saveConnectionInput = z.looseObject({
       if (input.secret === '' && input.id) return true
       return webhookUrl.safeParse(input.secret).success
     },
-    { message: 'Ein Webhook braucht eine gültige https-URL' }
+    { message: 'a webhook needs a valid https URL' }
   )
 
 const publishDestination = z.discriminatedUnion('type', [
@@ -383,7 +383,7 @@ export const githubRepoName = z
   .string()
   .min(1)
   .max(100)
-  .regex(/^[A-Za-z0-9._-]+$/, 'kein gültiger Repository-Name')
+  .regex(/^[A-Za-z0-9._-]+$/, 'not a valid repository name')
 
 export const createRepoInput = z.looseObject({
   name: githubRepoName,
@@ -397,7 +397,7 @@ export const configurePagesInput = z.looseObject({
   cname: z
     .string()
     .max(253)
-    .regex(/^[A-Za-z0-9.-]+$/, 'kein gültiger Hostname')
+    .regex(/^[A-Za-z0-9.-]+$/, 'not a valid hostname')
     .nullable()
     .optional(),
   httpsEnforced: z.boolean().optional()

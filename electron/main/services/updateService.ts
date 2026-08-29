@@ -5,6 +5,7 @@ import type { CoreUpdateStatus, PluginActionResult, PluginUpdateStatus, UpdateCh
 import { TEMPLATE_REPO } from './createService'
 import { withContentSymlinkParked } from './contentSymlink'
 import { createSnapshot } from './snapshotService'
+import { mainT } from '../i18n'
 
 // `git ls-remote <url> <ref>` returns "<commit>\t<full ref>" lines, without needing to know the
 // remote's default branch name (jackyzha0/quartz's branch naming isn't guaranteed stable) and
@@ -82,10 +83,10 @@ export async function getCoreUpdateStatus(projectPath: string): Promise<CoreUpda
 // other output or (for the symlink case) points at a state we just repaired behind their back.
 function explainGitFailure(output: string): string {
   if (/beyond a symbolic link/.test(output)) {
-    return 'Der content-Ordner ist ein Symlink, durch den git nicht schreiben kann. Wechsle unter Konfiguration → Content-Ordner vorübergehend auf einen echten Ordner und versuche es erneut.\n\n'
+    return mainT('updateBlockedBySymlink')
   }
   if (/local changes to the following files would be overwritten/i.test(output)) {
-    return 'Eigene Änderungen an Dateien, die das Update ebenfalls anfasst, stehen im Weg. Committe oder verwirf sie unter Git-Sync und versuche es erneut.\n\n'
+    return mainT('updateBlockedByLocalChanges')
   }
   return ''
 }
@@ -129,7 +130,7 @@ export async function runCoreUpdate(projectPath: string): Promise<UpdateResult> 
     // Same benign first-build hiccup createService.ts already tolerates for some templates -
     // report it, but a failed warm-up build doesn't undo an otherwise-successful merge+install.
     const warmup = await run('npx', ['quartz', 'build'], projectPath)
-    const warmupNote = warmup.success ? '' : `\n\nAufwärm-Build:\n${warmup.output}`
+    const warmupNote = warmup.success ? '' : `\n\n${mainT('warmupBuild')}\n${warmup.output}`
 
     return { success: true, output: `${merge.output}\n${install.output}${warmupNote}`, snapshotId }
   })

@@ -11,6 +11,7 @@ import type {
   SecretStorageInfo,
   SshAuthMethod
 } from '@shared/ipc-contract'
+import { mainT } from '../i18n'
 
 // The single credential store. Before the connection/target split there were two - per-project
 // SFTP profiles in deploy-secrets.json and the GitHub token inside settings.json - which meant two
@@ -264,7 +265,7 @@ export async function saveConnection(input: SaveConnectionInput): Promise<Connec
   // the point, and silently dropping it would leave the user thinking it was saved.
   if (input.secret && !safeStorage.isEncryptionAvailable()) {
     throw new Error(
-      'Die Zugangsdaten können nicht sicher gespeichert werden, weil der Schlüsselbund des Systems nicht verfügbar ist.'
+      mainT('secretStorageUnavailable')
     )
   }
 

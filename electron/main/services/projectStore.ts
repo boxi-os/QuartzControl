@@ -4,6 +4,7 @@ import { existsSync, mkdirSync } from 'fs'
 import { basename, join } from 'path'
 import type { Project } from '@shared/ipc-contract'
 import { readJsonFileOr, writeJsonFile } from './jsonStore'
+import { mainT } from '../i18n'
 
 function storePath(): string {
   const dir = app.getPath('userData')
@@ -56,7 +57,7 @@ export async function relocateProject(id: string, path: string): Promise<Project
   // The same folder already being registered under another entry would leave two rows pointing at
   // one project, which is exactly the state addProject() refuses to create.
   if (projects.some((p) => p.id !== id && p.path === path)) {
-    throw new Error('Dieser Ordner ist bereits als anderes Projekt registriert.')
+    throw new Error(mainT('projectAlreadyRegistered'))
   }
   project.path = path
   project.name = basename(path)

@@ -14,6 +14,7 @@ import type {
   StylesInfo
 } from '@shared/ipc-contract'
 import { resolveBuildDir } from './projectDirs'
+import { mainT } from '../i18n'
 
 // The file Quartz's build imports directly (quartz/plugins/emitters/componentResources.ts) -
 // verified against a real clone. Already inside the dev server's esbuild watch graph, so saving
@@ -329,7 +330,7 @@ export async function createStyleFile(projectPath: string, name: string): Promis
   const fileName = /\.(scss|css)$/.test(name) ? name : `${name}.scss`
   const relativePath = `custom/${fileName}`
   const path = styleFilePath(projectPath, relativePath)
-  if (existsSync(path)) throw new Error(`Es gibt bereits eine Datei ${fileName}.`)
+  if (existsSync(path)) throw new Error(mainT('styleFileExists', { name: fileName }))
   mkdirSync(dirname(path), { recursive: true })
   await writeFile(path, `// ${fileName}\n`, 'utf-8')
   await setImportOrder(projectPath, [...(await currentOrder(projectPath)), relativePath])
@@ -342,7 +343,7 @@ export async function renameStyleFile(projectPath: string, relativePath: string,
   const nextRelative = `${dir}/${fileName}`
   if (nextRelative === relativePath) return { relativePath, path: styleFilePath(projectPath, relativePath), name: fileName, imported: true }
   const target = styleFilePath(projectPath, nextRelative)
-  if (existsSync(target)) throw new Error(`Es gibt bereits eine Datei ${fileName}.`)
+  if (existsSync(target)) throw new Error(mainT('styleFileExists', { name: fileName }))
   // Read *before* renaming: parseImportOrder resolves each @use against what is on disk, so once
   // the old name is gone its entry no longer resolves and reading the order afterwards would
   // silently drop the very file being renamed (and, with it, every later save's order).
@@ -396,9 +397,9 @@ function loadProjectSass(projectPath: string): ProjectSass | null {
 
 export async function checkStyles(projectPath: string): Promise<ScssCheckResult> {
   const entry = customScssPath(projectPath)
-  if (!existsSync(entry)) return { status: 'unavailable', reason: 'custom.scss existiert nicht.' }
+  if (!existsSync(entry)) return { status: 'unavailable', reason: mainT('styleCustomScssMissing') }
   const sass = loadProjectSass(projectPath)
-  if (!sass) return { status: 'unavailable', reason: 'Im Projekt ist kein sass installiert (npm install).' }
+  if (!sass) return { status: 'unavailable', reason: mainT('styleSassMissing') }
   try {
     sass.compile(entry, { loadPaths: [stylesDir(projectPath)], quietDeps: true, verbose: false })
     return { status: 'ok' }
@@ -418,7 +419,7 @@ export async function checkStyleSource(
   content: string
 ): Promise<ScssCheckResult> {
   const sass = loadProjectSass(projectPath)
-  if (!sass) return { status: 'unavailable', reason: 'Im Projekt ist kein sass installiert (npm install).' }
+  if (!sass) return { status: 'unavailable', reason: mainT('styleSassMissing') }
   const filePath =
     relativePath === 'custom.scss' ? customScssPath(projectPath) : styleFilePath(projectPath, relativePath)
   try {

@@ -1,11 +1,12 @@
 import type { GithubAccount, GithubPagesInfo, GithubRepoRef, PluginActionResult } from '@shared/ipc-contract'
 import { runCommand as run } from './runCommand'
 import * as connectionsService from './connectionsService'
+import { mainT } from '../i18n'
 
 const API = 'https://api.github.com'
 const TIMEOUT_MS = 20_000
 
-const NO_TOKEN = 'Kein GitHub-Token hinterlegt. In den Einstellungen einen Token mit "repo"-Berechtigung eintragen.'
+const NO_TOKEN = mainT('githubNoToken')
 
 // Everything here needs a token with repo scope - the same GitHub connection the marketplace uses
 // for its rate limit, resolved in main rather than handed around by the renderer.
@@ -102,7 +103,7 @@ export async function createRepo(
   if (existing.success) {
     return {
       success: false,
-      output: `Dieses Projekt hat bereits ein "origin"-Remote (${existing.output.trim()}). Es wird nicht überschrieben - bitte zuerst manuell entfernen, wenn das gewollt ist.`
+      output: mainT('githubOriginExists', { remote: existing.output.trim() })
     }
   }
 
@@ -110,16 +111,16 @@ export async function createRepo(
     method: 'POST',
     body: { name: input.name, private: input.private, description: input.description, auto_init: false }
   })
-  if (result.status !== 201 || !result.data) return failure(result, 'Das Repository konnte nicht angelegt werden.')
+  if (result.status !== 201 || !result.data) return failure(result, mainT('githubRepoCreateFailed'))
 
   // The https clone URL, never one with the token embedded: `git remote -v` prints it, and it
   // would end up in the project's own config file on disk. Authentication goes through the
   // askpass helper at push time instead.
   const added = await run('git', ['remote', 'add', 'origin', result.data.clone_url], projectPath)
   if (!added.success) {
-    return { success: false, output: `Repository ${result.data.full_name} wurde angelegt, aber das Remote konnte nicht gesetzt werden.\n${added.output}` }
+    return { success: false, output: `${mainT('githubRemoteSetFailed', { repo: result.data.full_name })}\n${added.output}` }
   }
-  return { success: true, output: `Repository ${result.data.full_name} angelegt und als "origin" eingetragen.\n${result.data.html_url}` }
+  return { success: true, output: `${mainT('githubRepoCreated', { repo: result.data.full_name })}\n${result.data.html_url}` }
 }
 
 export async function getPagesInfo(projectPath: string): Promise<GithubPagesInfo | null> {
@@ -159,7 +160,7 @@ export async function configurePages(
   input: { branch: string; cname?: string | null; httpsEnforced?: boolean }
 ): Promise<PluginActionResult> {
   const repo = await getOriginRepo(projectPath)
-  if (!repo) return { success: false, output: 'Dieses Projekt hat kein "origin"-Remote, das auf github.com zeigt.' }
+  if (!repo) return { success: false, output: mainT('githubNoGithubOrigin') }
 
   const existing = await api<unknown>(`/repos/${repo.owner}/${repo.repo}/pages`)
   const source = { branch: input.branch, path: '/' as const }
@@ -167,14 +168,14 @@ export async function configurePages(
   let output = ''
   if (existing.status === 404) {
     const created = await api<unknown>(`/repos/${repo.owner}/${repo.repo}/pages`, { method: 'POST', body: { source } })
-    if (created.status !== 201) return failure(created, 'GitHub Pages konnte nicht eingerichtet werden.')
+    if (created.status !== 201) return failure(created, mainT('githubPagesSetupFailed'))
     output += `GitHub Pages eingerichtet, Quelle: ${input.branch} (/)\n`
   } else {
     const updated = await api<unknown>(`/repos/${repo.owner}/${repo.repo}/pages`, {
       method: 'PUT',
       body: { source, ...(input.cname !== undefined ? { cname: input.cname || null } : {}) }
     })
-    if (updated.status !== 204) return failure(updated, 'Die Pages-Einstellungen konnten nicht gespeichert werden.')
+    if (updated.status !== 204) return failure(updated, mainT('githubPagesSaveFailed'))
     output += `Quelle gesetzt: ${input.branch} (/)\n`
     if (input.cname !== undefined) output += input.cname ? `Domain gesetzt: ${input.cname}\n` : 'Eigene Domain entfernt.\n'
   }
@@ -186,8 +187,8 @@ export async function configurePages(
     })
     output +=
       https.status === 204
-        ? `HTTPS erzwingen: ${input.httpsEnforced ? 'an' : 'aus'}\n`
-        : `HTTPS konnte noch nicht erzwungen werden - GitHub stellt das Zertifikat für eine eigene Domain erst einige Minuten nach dem Setzen aus. Später erneut versuchen.\n${https.message ?? ''}\n`
+        ? `${mainT('githubHttpsEnforced', { state: mainT(input.httpsEnforced ? 'githubOn' : 'githubOff') })}\n`
+        : `${mainT('githubHttpsPending')}\n${https.message ?? ''}\n`
   }
 
   return { success: true, output }

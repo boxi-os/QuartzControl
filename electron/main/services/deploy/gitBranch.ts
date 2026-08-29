@@ -5,6 +5,7 @@ import type { DeployAdapter, DeployContext } from './types'
 import { runCommand as run } from '../runCommand'
 import { quartzGuiDir } from '../projectDirs'
 import { gitAuthForOrigin, type GitAuth } from '../gitAuth'
+import { mainT } from '../../i18n'
 
 // Publishing by pushing the build output to a branch of the project's own repo. Three providers
 // use exactly this mechanism and differ only in what they call the branch and what they do with
@@ -111,7 +112,7 @@ async function assertOrigin(projectPath: string): Promise<void> {
   const originCheck = await run('git', ['remote', 'get-url', 'origin'], projectPath)
   if (!originCheck.success) {
     throw new Error(
-      'Kein "origin"-Remote konfiguriert. Git-Sync muss zuerst mit einem Repository verbunden werden (git remote add origin <url>).'
+      mainT('branchNoOrigin')
     )
   }
 }
@@ -131,7 +132,7 @@ async function assertBranchSafe(projectPath: string, branch: string): Promise<vo
   if (originHead.success) protectedBranches.add(originHead.output.trim().replace(/^origin\//, ''))
   if (protectedBranches.has(branch)) {
     throw new Error(
-      `"${branch}" ist der aktuelle bzw. der Standard-Branch dieses Repos. Ein Branch-Deploy überschreibt den Ziel-Branch vollständig (force-push) - bitte einen separaten Branch wie "gh-pages" verwenden.`
+      mainT('branchProtected', { branch })
     )
   }
 }
@@ -142,7 +143,7 @@ export const gitBranchAdapter: DeployAdapter = {
   // pass, which is why it happens on demand rather than on every page visit.
   async preview(ctx): Promise<DeployDiffEntry[]> {
     const destination = ctx.target.destination
-    if (destination.type !== 'git-branch') throw new Error('Falscher Zieltyp für den Branch-Adapter.')
+    if (destination.type !== 'git-branch') throw new Error(mainT('deployWrongType', { adapter: 'Branch' }))
     await assertOrigin(ctx.projectPath)
     await assertBranchSafe(ctx.projectPath, destination.branch)
 
@@ -174,7 +175,7 @@ export const gitBranchAdapter: DeployAdapter = {
   // than being left untouched. The UI hides the per-file checkboxes for this target type.
   async run(ctx): Promise<DeployResult> {
     const destination = ctx.target.destination
-    if (destination.type !== 'git-branch') throw new Error('Falscher Zieltyp für den Branch-Adapter.')
+    if (destination.type !== 'git-branch') throw new Error(mainT('deployWrongType', { adapter: 'Branch' }))
     await assertOrigin(ctx.projectPath)
     await assertBranchSafe(ctx.projectPath, destination.branch)
 
@@ -191,7 +192,7 @@ export const gitBranchAdapter: DeployAdapter = {
       if (staged.remoteTip) {
         const remoteTree = await run('git', ['rev-parse', `${staged.remoteTip}^{tree}`], ctx.projectPath)
         if (remoteTree.success && remoteTree.output.trim() === staged.tree) {
-          return { success: true, output: `${output}\nKeine Änderungen gegenüber dem veröffentlichten Stand - Push übersprungen.` }
+          return { success: true, output: `${output}\n${mainT('branchUnchanged')}` }
         }
       }
 

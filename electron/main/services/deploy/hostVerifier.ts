@@ -2,6 +2,7 @@ import { dialog } from 'electron'
 import { createHash } from 'crypto'
 import type { SshConnection } from '@shared/ipc-contract'
 import * as connectionsService from '../connectionsService'
+import { mainT } from '../../i18n'
 
 // OpenSSH's fingerprint format: base64 of the SHA-256 over the raw public-key blob, unpadded.
 // Same bytes `ssh-keygen -lf` hashes, so this string can be compared 1:1 against what the user
@@ -51,12 +52,11 @@ export function makeHostVerifier(connection: SshConnection, onRejected: (message
         return accept(true)
       }
       onRejected(
-        `Der Host-Key von ${connection.host} hat sich geändert!\n\n` +
-          `erwartet:  ${pinned.fingerprint}\n` +
-          `empfangen: ${fingerprint}\n\n` +
-          'Die Verbindung wurde abgebrochen. Das kann ein neu aufgesetzter Server sein - oder ein ' +
-          'Angriff. Prüfe den Fingerprint beim Anbieter und setze ihn erst danach über ' +
-          '"Host-Key vergessen" zurück.'
+        mainT('hostKeyChanged', {
+          host: connection.host,
+          expected: pinned.fingerprint,
+          received: fingerprint
+        })
       )
       return accept(false)
     }
@@ -67,19 +67,16 @@ export function makeHostVerifier(connection: SshConnection, onRejected: (message
         // Cancel first for the same reason the build guard puts it first: `defaultId` does not
         // decide what Return does here (measured), and confirming an unknown host key by reflex
         // is exactly what trust-on-first-use must not make easy.
-        buttons: ['Abbrechen', 'Verbinden und merken'],
+        buttons: [mainT('hostKeyCancel'), mainT('hostKeyAccept')],
         defaultId: 0,
         cancelId: 0,
-        title: 'Unbekannter Server',
-        message: `${connection.host} ist zum ersten Mal kontaktiert worden.`,
-        detail:
-          `Fingerprint des Servers:\n${fingerprint}\n\n` +
-          'Vergleiche ihn mit dem, den dein Anbieter angibt (oder mit `ssh-keyscan -t rsa,ed25519 ' +
-          `${connection.host} | ssh-keygen -lf -\`). Nur bei Übereinstimmung verbinden.`
+        title: mainT('hostKeyUnknownTitle'),
+        message: mainT('hostKeyUnknownMessage', { host: connection.host }),
+        detail: mainT('hostKeyUnknownDetail', { fingerprint, host: connection.host })
       })
       .then(async ({ response }) => {
         if (response !== 1) {
-          onRejected('Verbindung abgebrochen - der Host-Key wurde nicht bestätigt.')
+          onRejected(mainT('hostKeyRejected'))
           return accept(false)
         }
         await connectionsService.rememberHostKey(connection.id, {

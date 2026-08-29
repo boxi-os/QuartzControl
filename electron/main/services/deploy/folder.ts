@@ -4,6 +4,7 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from 'path'
 import type { DeployDiffEntry, DeployResult } from '@shared/ipc-contract'
 import type { DeployAdapter, DeployContext } from './types'
 import { commitManifest, diffAgainstManifest, partitionDiff } from './manifest'
+import { mainT } from '../../i18n'
 
 // True when `child` is `parent` or lies underneath it. Checked via relative() rather than a
 // startsWith() on the strings, which would call "/tmp/site-old" a child of "/tmp/site". A result
@@ -29,7 +30,7 @@ export const folderAdapter: DeployAdapter = {
 
   async run(ctx, excludePaths): Promise<DeployResult> {
     const destination = ctx.target.destination
-    if (destination.type !== 'folder') throw new Error('Falscher Zieltyp für den Ordner-Adapter.')
+    if (destination.type !== 'folder') throw new Error(mainT('deployWrongType', { adapter: 'Ordner' }))
     const dest = resolve(destination.path)
 
     // Two directions, both fatal, both easy to configure by accident: publishing into the build
@@ -38,11 +39,11 @@ export const folderAdapter: DeployAdapter = {
     if (isInside(ctx.buildDir, dest) || isInside(dest, ctx.buildDir)) {
       return {
         success: false,
-        output: `Das Zielverzeichnis (${dest}) liegt im Build-Verzeichnis (${ctx.buildDir}) oder umgekehrt. Bitte einen davon unabhängigen Ordner wählen.`
+        output: mainT('folderOverlapsBuild', { dest, build: ctx.buildDir })
       }
     }
     if (dest === resolve(ctx.projectPath)) {
-      return { success: false, output: 'Das Projektverzeichnis selbst kann kein Veröffentlichungsziel sein.' }
+      return { success: false, output: mainT('folderIsProject') }
     }
 
     const diff = await diffAgainstManifest(ctx.projectPath, ctx.target.id, ctx.buildDir)
@@ -81,7 +82,7 @@ export const folderAdapter: DeployAdapter = {
       }
 
       await commitManifest(ctx.projectPath, ctx.target.id, ctx.buildDir, manifestExcludes)
-      return { success: true, output: output || 'Nichts zu tun - das Ziel ist bereits aktuell.\n' }
+      return { success: true, output: output || mainT('deployNothingToDo') }
     } catch (err) {
       return { success: false, output: `${output}\n${String(err)}` }
     }

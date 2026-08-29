@@ -1,6 +1,7 @@
 import { crc32, deflateRawSync, inflateRawSync } from 'zlib'
 import { existsSync } from 'fs'
 import { readFile, writeFile } from 'fs/promises'
+import { mainT } from '../i18n'
 
 /**
  * A minimal ZIP reader/writer, so a template package can be one file the user can hand to someone
@@ -65,7 +66,7 @@ export function createZip(entries: ZipEntry[], modified = new Date()): Buffer {
     const method = useDeflate ? METHOD_DEFLATE : METHOD_STORE
 
     if (entry.data.length > MAX_SIZE || body.length > MAX_SIZE) {
-      throw new Error(`Die Datei "${entry.name}" ist zu groß für ein Paket (über 4 GB).`)
+      throw new Error(mainT('zipEntryTooLarge', { name: entry.name }))
     }
     const checksum = crc32(entry.data)
 
@@ -139,14 +140,14 @@ export function readZip(buffer: Buffer): Map<string, Buffer> {
       break
     }
   }
-  if (eocd === -1) throw new Error('Die Datei ist kein lesbares Paket (kein ZIP-Verzeichnis gefunden).')
+  if (eocd === -1) throw new Error(mainT('zipNotAPackage'))
 
   const count = buffer.readUInt16LE(eocd + 10)
   let cursor = buffer.readUInt32LE(eocd + 16)
   const files = new Map<string, Buffer>()
 
   for (let i = 0; i < count; i++) {
-    if (buffer.readUInt32LE(cursor) !== CENTRAL_SIG) throw new Error('Das Paket ist beschädigt (Verzeichniseintrag ungültig).')
+    if (buffer.readUInt32LE(cursor) !== CENTRAL_SIG) throw new Error(mainT('zipBadDirectory'))
     const method = buffer.readUInt16LE(cursor + 10)
     const expectedCrc = buffer.readUInt32LE(cursor + 16)
     const compressedSize = buffer.readUInt32LE(cursor + 20)
@@ -162,7 +163,7 @@ export function readZip(buffer: Buffer): Map<string, Buffer> {
     // buffer under a name no caller will ever ask for.
     if (name.endsWith('/')) continue
 
-    if (buffer.readUInt32LE(localOffset) !== LOCAL_SIG) throw new Error('Das Paket ist beschädigt (Dateikopf ungültig).')
+    if (buffer.readUInt32LE(localOffset) !== LOCAL_SIG) throw new Error(mainT('zipBadHeader'))
     // The local header's own name/extra lengths are what locate the data, and its extra field is
     // routinely a different length from the central one (alignment padding), so they must be read
     // here rather than reused from above.
@@ -174,10 +175,10 @@ export function readZip(buffer: Buffer): Map<string, Buffer> {
     let data: Buffer
     if (method === METHOD_STORE) data = Buffer.from(body)
     else if (method === METHOD_DEFLATE) data = inflateRawSync(body)
-    else throw new Error(`Das Paket verwendet ein nicht unterstütztes Kompressionsverfahren (${method}).`)
+    else throw new Error(mainT('zipUnsupportedMethod', { method }))
 
     if (data.length !== uncompressedSize || crc32(data) !== expectedCrc) {
-      throw new Error(`Die Datei "${name}" im Paket ist beschädigt.`)
+      throw new Error(mainT('zipEntryCorrupt', { name }))
     }
     files.set(name, data)
   }
@@ -190,6 +191,6 @@ export async function writeZipFile(path: string, entries: ZipEntry[]): Promise<v
 }
 
 export async function readZipFile(path: string): Promise<Map<string, Buffer>> {
-  if (!existsSync(path)) throw new Error('Die Datei gibt es nicht.')
+  if (!existsSync(path)) throw new Error(mainT('zipFileMissing'))
   return readZip(await readFile(path))
 }

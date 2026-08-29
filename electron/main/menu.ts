@@ -1,6 +1,6 @@
 import { app, BrowserWindow, dialog, shell, Menu, type MenuItemConstructorOptions } from 'electron'
 import { IPC } from '@shared/ipc-contract'
-import { resolveMainStrings, type MainStrings } from './i18n'
+import { mainT, refreshMainLanguage } from './i18n'
 
 export const APP_NAME = 'QuartzControl'
 
@@ -20,23 +20,23 @@ function navigateRenderer(hashPath: string): void {
 
 // macOS puts About in the app menu and takes its content from the bundle; everywhere else it has
 // to be built, and there is no bundle to read it from.
-function showAbout(strings: MainStrings): void {
+function showAbout(): void {
   dialog.showMessageBox({
     type: 'info',
-    title: strings.menuAbout,
+    title: mainT('menuAbout'),
     message: `${APP_NAME} ${app.getVersion()}`,
-    detail: `${strings.aboutDetail}\n\nElectron ${process.versions.electron}\nChromium ${process.versions.chrome}\nNode ${process.versions.node}`
+    detail: `${mainT('aboutDetail')}\n\nElectron ${process.versions.electron}\nChromium ${process.versions.chrome}\nNode ${process.versions.node}`
   })
 }
 
 // A tailored native menu, not just so it looks right, but because Electron only wires up
 // Cmd+C/Cmd+V/Cmd+Z etc. in text fields when a menu with those roles is actually installed.
-function buildMenu(strings: MainStrings): void {
+function buildMenu(): void {
   // Cmd+, / Ctrl+, is what every user of either platform reaches for, and the Settings screen was
   // only reachable by clicking. On macOS it belongs in the app menu right after About; elsewhere
   // there is no app menu, so it goes at the top of File.
   const settingsItem: MenuItemConstructorOptions = {
-    label: strings.menuSettings,
+    label: mainT('menuSettings'),
     accelerator: 'CmdOrCtrl+,',
     click: () => navigateRenderer('/settings')
   }
@@ -62,11 +62,11 @@ function buildMenu(strings: MainStrings): void {
         ] satisfies MenuItemConstructorOptions[])
       : []),
     {
-      label: strings.menuFile,
+      label: mainT('menuFile'),
       submenu: isMac ? [{ role: 'close' }] : [settingsItem, { type: 'separator' }, { role: 'quit' }]
     },
     {
-      label: strings.menuEdit,
+      label: mainT('menuEdit'),
       submenu: [
         { role: 'undo' },
         { role: 'redo' },
@@ -80,7 +80,7 @@ function buildMenu(strings: MainStrings): void {
       ]
     },
     {
-      label: strings.menuView,
+      label: mainT('menuView'),
       submenu: [
         { role: 'reload' },
         { role: 'forceReload' },
@@ -94,7 +94,7 @@ function buildMenu(strings: MainStrings): void {
       ]
     },
     {
-      label: strings.menuWindow,
+      label: mainT('menuWindow'),
       submenu: [
         { role: 'minimize' },
         { role: 'zoom' },
@@ -107,16 +107,16 @@ function buildMenu(strings: MainStrings): void {
     // "where does the truth live" (Quartz's own docs, the plugin org) and "where is my data" from
     // anywhere in the app rather than only from the start screen.
     {
-      label: strings.menuHelp,
+      label: mainT('menuHelp'),
       role: 'help',
       submenu: [
-        { label: strings.menuQuartzDocs, click: () => void shell.openExternal(QUARTZ_DOCS) },
-        { label: strings.menuPluginCatalog, click: () => void shell.openExternal(PLUGIN_CATALOG) },
+        { label: mainT('menuQuartzDocs'), click: () => void shell.openExternal(QUARTZ_DOCS) },
+        { label: mainT('menuPluginCatalog'), click: () => void shell.openExternal(PLUGIN_CATALOG) },
         { type: 'separator' },
-        { label: strings.menuDataFolder, click: () => void shell.openPath(app.getPath('userData')) },
+        { label: mainT('menuDataFolder'), click: () => void shell.openPath(app.getPath('userData')) },
         ...(isMac
           ? []
-          : ([{ type: 'separator' }, { label: strings.menuAbout, click: () => showAbout(strings) }] satisfies MenuItemConstructorOptions[]))
+          : ([{ type: 'separator' }, { label: mainT('menuAbout'), click: () => showAbout() }] satisfies MenuItemConstructorOptions[]))
       ]
     }
   ]
@@ -130,5 +130,6 @@ function buildMenu(strings: MainStrings): void {
  * Bearbeiten / Ansicht kept the language they had at launch until the app was restarted.
  */
 export async function applyAppMenu(): Promise<void> {
-  buildMenu(await resolveMainStrings())
+  await refreshMainLanguage()
+  buildMenu()
 }

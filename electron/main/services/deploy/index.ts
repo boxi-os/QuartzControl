@@ -11,6 +11,7 @@ import { folderAdapter } from './folder'
 import { webhookAdapter } from './webhook'
 import { rsyncAdapter } from './rsync'
 import { gitBranchAdapter } from './gitBranch'
+import { mainT } from '../../i18n'
 
 export const deployEvents = new EventEmitter()
 
@@ -34,10 +35,10 @@ function adapterFor(destination: PublishTarget['destination']): DeployAdapter | 
 
 async function makeContext(projectPath: string, targetId: string, outputDir?: string): Promise<{ ctx: DeployContext; adapter: DeployAdapter }> {
   const target = await publishTargetsService.getTarget(projectPath, targetId)
-  if (!target) throw new Error(`Kein Veröffentlichungsziel mit der ID ${targetId} gefunden.`)
+  if (!target) throw new Error(mainT('deployTargetMissing', { id: targetId }))
 
   const adapter = adapterFor(target.destination)
-  if (!adapter) throw new Error(`Für den Zieltyp "${target.destination.type}" gibt es noch keinen Adapter.`)
+  if (!adapter) throw new Error(mainT('deployNoAdapter', { type: target.destination.type }))
 
   // Resolved in main and never sent to the renderer; a target whose destination needs no
   // credential (a folder, a git branch) simply has no connection to look up.
@@ -73,7 +74,7 @@ async function assertBuildExists(ctx: DeployContext): Promise<void> {
   if (ctx.target.destination.type === 'webhook') return
   if (existsSync(ctx.buildDir)) return
   throw new Error(
-    `Es liegt noch kein Build in "${ctx.buildDir}". Bitte zuerst bauen - oder in Vorschau & Build einen anderen Ausgabeordner einstellen.`
+    mainT('deployNoBuild', { dir: ctx.buildDir })
   )
 }
 

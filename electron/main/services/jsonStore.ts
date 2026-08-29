@@ -71,18 +71,18 @@ export async function readJsonFile<T>(path: string): Promise<JsonReadResult<T>> 
     raw = await readFile(path, 'utf-8')
   } catch (err) {
     if (errorCode(err) === 'ENOENT') return { kind: 'missing' }
-    console.error(`[jsonStore] ${path} ist nicht lesbar: ${String(err)}`)
+    console.error(`[jsonStore] ${path} is not readable: ${String(err)}`)
     return { kind: 'unreadable', quarantinedAs: await quarantine(path) }
   }
   let parsed: unknown
   try {
     parsed = JSON.parse(raw)
   } catch (err) {
-    console.error(`[jsonStore] ${path} enthält kein gültiges JSON: ${String(err)}`)
+    console.error(`[jsonStore] ${path} does not hold valid JSON: ${String(err)}`)
     return { kind: 'unreadable', quarantinedAs: await quarantine(path) }
   }
   if (parsed === null || typeof parsed !== 'object') {
-    console.error(`[jsonStore] ${path} enthält kein Objekt und keine Liste`)
+    console.error(`[jsonStore] ${path} holds neither an object nor a list`)
     return { kind: 'unreadable', quarantinedAs: await quarantine(path) }
   }
   return { kind: 'ok', value: parsed as T }
@@ -99,7 +99,7 @@ export async function readJsonFileOr<T>(path: string, fallback: T): Promise<T> {
   // An array store that finds an object (or the other way round) is as broken as unparseable
   // JSON, and every caller would go on to call .find/.map on it.
   if (Array.isArray(fallback) !== Array.isArray(result.value)) {
-    console.error(`[jsonStore] ${path} hat die falsche Form`)
+    console.error(`[jsonStore] ${path} has the wrong shape`)
     await quarantine(path)
     return fallback
   }

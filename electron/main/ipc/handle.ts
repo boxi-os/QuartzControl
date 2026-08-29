@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron'
 import { z } from 'zod'
+import { mainT } from '../i18n'
 
 // Wraps ipcMain.handle so every channel declares the exact shape of its arguments. See schemas.ts
 // for why the renderer is not trusted here.
@@ -19,8 +20,11 @@ export function handle<T extends z.ZodTuple>(
       const detail = result.error.issues
         .map((issue) => `arg[${issue.path.join('.')}]: ${issue.message}`)
         .join('; ')
-      console.error(`[ipc] ungültige Argumente für "${channel}": ${detail}`)
-      throw new Error(`Ungültige Argumente für "${channel}": ${detail}`)
+      console.error(`[ipc] invalid arguments for "${channel}": ${detail}`)
+      // The detail is a developer diagnostic and stays in English (see schemas.ts); the sentence
+      // in front of it is the only part a user can act on, so that one follows the language
+      // setting and says what the app expects them to do about it.
+      throw new Error(`${mainT('ipcInvalidArguments', { channel })} ${detail}`)
     }
     return fn(...(result.data as z.infer<T>))
   })

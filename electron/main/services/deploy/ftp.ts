@@ -4,6 +4,7 @@ import type { DeployDiffEntry, DeployResult } from '@shared/ipc-contract'
 import type { DeployAdapter, DeployContext } from './types'
 import { commitManifest, diffAgainstManifest, partitionDiff } from './manifest'
 import * as connectionsService from '../connectionsService'
+import { mainT } from '../../i18n'
 
 export const ftpAdapter: DeployAdapter = {
   async preview(ctx: DeployContext): Promise<DeployDiffEntry[]> {
@@ -12,9 +13,9 @@ export const ftpAdapter: DeployAdapter = {
 
   async run(ctx, excludePaths): Promise<DeployResult> {
     const destination = ctx.target.destination
-    if (destination.type !== 'ftp') throw new Error('Falscher Zieltyp für den FTP-Adapter.')
+    if (destination.type !== 'ftp') throw new Error(mainT('deployWrongType', { adapter: 'FTP' }))
     const connection = ctx.target.connectionId ? await connectionsService.getConnection(ctx.target.connectionId) : null
-    if (!connection || connection.kind !== 'ftp') throw new Error('Für dieses Ziel ist kein FTP-Zugang hinterlegt.')
+    if (!connection || connection.kind !== 'ftp') throw new Error(mainT('ftpNoConnection'))
 
     const diff = await diffAgainstManifest(ctx.projectPath, ctx.target.id, ctx.buildDir)
     const { toUpload, toDelete, manifestExcludes } = partitionDiff(diff, excludePaths, destination.deleteRemoved)

@@ -6,6 +6,7 @@ import type { DeployDiffEntry, DeployResult, SshConnection } from '@shared/ipc-c
 import type { DeployAdapter, DeployContext } from './types'
 import { rsyncBlockReason, type RsyncBlockReason } from '@shared/rsyncSupport'
 import * as connectionsService from '../connectionsService'
+import { mainT } from '../../i18n'
 
 // rsync asks the *remote* what it has instead of trusting a local record of what we last sent, so
 // this adapter keeps no manifest at all - which also means it notices a file someone deleted on
@@ -20,12 +21,12 @@ import * as connectionsService from '../connectionsService'
 // before offering rsync; only the wording is local.
 const BLOCKER_MESSAGES: Record<RsyncBlockReason, string> = {
   'password-auth':
-    'rsync kann kein Passwort übergeben. Bitte einen Zugang mit Schlüsseldatei oder SSH-Agent verwenden - oder bei SFTP bleiben.',
+    mainT('rsyncPasswordAuth'),
   'key-not-a-file':
-    'Für rsync muss der private Schlüssel als Datei hinterlegt sein; ein eingefügter Schlüsseltext reicht nicht, weil ssh eine Datei braucht.',
+    mainT('rsyncKeyNotAFile'),
   'no-pinned-host-key':
-    'Der Host-Key dieses Servers ist noch nicht vollständig hinterlegt. Bitte das Ziel einmal über SFTP veröffentlichen - dabei wird der Schlüssel bestätigt und gespeichert - und danach auf rsync umstellen.',
-  'platform-unsupported': 'rsync steht auf diesem Betriebssystem nicht zur Verfügung. Bitte SFTP verwenden.'
+    mainT('rsyncNoPinnedHostKey'),
+  'platform-unsupported': mainT('rsyncUnsupportedPlatform')
 }
 
 // "host key-type base64" - with the bracketed form ssh itself uses whenever the port is not 22.
@@ -89,17 +90,14 @@ function parseItemized(line: string): DeployDiffEntry | null {
 function translateSshFailure(output: string, connection: SshConnection): string | null {
   if (output.includes('REMOTE HOST IDENTIFICATION HAS CHANGED') || output.includes('Host key verification failed')) {
     const received = /SHA256:[A-Za-z0-9+/=]+/.exec(output)?.[0]
-    return (
-      `Der Host-Key von ${connection.host} stimmt nicht mit dem gespeicherten überein.\n\n` +
-      `erwartet:  ${connection.hostKey?.fingerprint ?? '—'}\n` +
-      `empfangen: ${received ?? 'unbekannt'}\n\n` +
-      'Die Übertragung wurde abgebrochen. Das kann ein neu aufgesetzter Server sein - oder ein ' +
-      'Angriff. Prüfe den Fingerprint beim Anbieter und setze ihn erst danach über ' +
-      '"Host-Key vergessen" zurück.'
-    )
+    return mainT('rsyncHostKeyMismatch', {
+      host: connection.host,
+      expected: connection.hostKey?.fingerprint ?? '—',
+      received: received ?? mainT('unknownFingerprint')
+    })
   }
   if (output.includes('Permission denied (publickey')) {
-    return `Der Server hat den Schlüssel abgelehnt (${connection.username}@${connection.host}). Stimmen Benutzername und Schlüsseldatei?`
+    return mainT('rsyncKeyRejected', { user: connection.username, host: connection.host })
   }
   return null
 }
@@ -152,7 +150,7 @@ function runRsync(args: string[], onEntry?: (entry: DeployDiffEntry) => void): P
 
 async function resolveConnection(ctx: DeployContext): Promise<SshConnection> {
   const connection = ctx.target.connectionId ? await connectionsService.getConnection(ctx.target.connectionId) : null
-  if (!connection || connection.kind !== 'ssh') throw new Error('Für dieses Ziel ist kein SSH-Zugang hinterlegt.')
+  if (!connection || connection.kind !== 'ssh') throw new Error(mainT('sshNoConnection'))
   const blocker = rsyncBlockReason(connection, process.platform)
   if (blocker) throw new Error(BLOCKER_MESSAGES[blocker])
   return connection
@@ -162,7 +160,7 @@ function remoteSpec(connection: SshConnection, remotePath: string): string {
   // openrsync has no --protect-args, so a remote path is expanded once more by the remote shell.
   // Whitespace there would silently split into two arguments; refused rather than guessed at.
   if (/\s/.test(remotePath)) {
-    throw new Error('Ein Remote-Pfad mit Leerzeichen lässt sich mit rsync nicht sicher übertragen. Bitte SFTP für dieses Ziel verwenden.')
+    throw new Error(mainT('rsyncPathWithSpace'))
   }
   const withSlash = remotePath.endsWith('/') ? remotePath : `${remotePath}/`
   return `${connection.username}@${connection.host}:${withSlash}`
@@ -200,7 +198,7 @@ async function buildArgs(
 export const rsyncAdapter: DeployAdapter = {
   async preview(ctx): Promise<DeployDiffEntry[]> {
     const destination = ctx.target.destination
-    if (destination.type !== 'sftp') throw new Error('Falscher Zieltyp für den rsync-Adapter.')
+    if (destination.type !== 'sftp') throw new Error(mainT('deployWrongType', { adapter: 'rsync' }))
     const connection = await resolveConnection(ctx)
     const env = await prepareSshEnv(connection)
     try {
@@ -217,7 +215,7 @@ export const rsyncAdapter: DeployAdapter = {
 
   async run(ctx, excludePaths): Promise<DeployResult> {
     const destination = ctx.target.destination
-    if (destination.type !== 'sftp') throw new Error('Falscher Zieltyp für den rsync-Adapter.')
+    if (destination.type !== 'sftp') throw new Error(mainT('deployWrongType', { adapter: 'rsync' }))
     const connection = await resolveConnection(ctx)
     const env = await prepareSshEnv(connection)
 
@@ -233,7 +231,7 @@ export const rsyncAdapter: DeployAdapter = {
         }
       }
       const total = plan.entries.length
-      if (total === 0) return { success: true, output: 'Nichts zu tun - das Ziel ist bereits auf dem Stand des Builds.\n' }
+      if (total === 0) return { success: true, output: mainT('deployNothingToDo') }
 
       let processed = 0
       const args = await buildArgs(ctx, connection, destination.remotePath, destination.deleteRemoved, excludePaths, env, false)

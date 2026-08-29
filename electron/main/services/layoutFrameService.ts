@@ -11,6 +11,7 @@ import type {
 import { DEFAULT_FRAME_BREAKPOINT_WIDTHS, buildFrameCss, migrateGridFrameDefinition } from '@shared/gridFrameCss'
 import * as pluginService from './pluginService'
 import { quartzGuiDir, quartzGuiPath } from './projectDirs'
+import { mainT } from '../i18n'
 
 // Authored frames live inside the project (.quartz-gui/, same convention as
 // themePresetsService.ts/backupService.ts) so they travel with the project, not the app install.
@@ -70,7 +71,7 @@ export async function saveBreakpointWidths(projectPath: string, widths: FrameBre
 
 function frameDir(projectPath: string, id: string): string {
   if (!FRAME_ID_RE.test(id)) {
-    throw new Error(`Ungültige Frame-ID "${id}" - erlaubt sind nur Buchstaben, Ziffern und Bindestriche.`)
+    throw new Error(mainT('frameIdInvalid', { id }))
   }
   return join(framesDir(projectPath), id)
 }
@@ -157,7 +158,7 @@ export async function listFrames(projectPath: string): Promise<GridFrameDefiniti
           // Not quarantined, unlike the stores in jsonStore: moving frame.json aside would take
           // the frame's directory apart while its plugin entry still points at it. Said out loud
           // instead, so a frame vanishing from the list has a reason somewhere.
-          console.error(`[layoutFrames] ${join(dir, e.name, 'frame.json')} ist nicht lesbar: ${String(err)}`)
+          console.error(`[layoutFrames] ${join(dir, e.name, 'frame.json')} is not readable: ${String(err)}`)
           return null
         }
       })

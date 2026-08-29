@@ -1,4 +1,5 @@
 import { spawn } from 'child_process'
+import { mainT } from '../i18n'
 
 export interface CommandResult {
   success: boolean
@@ -55,7 +56,7 @@ export function runCommand(
         // Answered right here rather than from the kill's 'close': a child that left a grandchild
         // holding stdout keeps the pipe open even after it dies, and waiting for that would put
         // the caller back where the missing timeout left it.
-        settle({ success: false, output: `${output}\nZeitüberschreitung nach ${timeoutMs} ms: ${command} ${args[0] ?? ''}` })
+        settle({ success: false, output: `${output}\n${mainT('commandTimeout', { ms: timeoutMs, command: `${command} ${args[0] ?? ''}` })}` })
         child.kill('SIGTERM')
         setTimeout(() => child.kill('SIGKILL'), 2000).unref()
       }, timeoutMs)

@@ -50,6 +50,7 @@ import * as settingsService from '../services/settingsService'
 import * as templatePackageService from '../services/templatePackage'
 import { applyTheme } from '../theme'
 import { applyAppMenu } from '../menu'
+import { mainT, type MainStringKey } from '../i18n'
 import { handle, handleNoArgs } from './handle'
 import * as s from './schemas'
 
@@ -81,8 +82,8 @@ async function openPathWithinProject(path: string): Promise<string> {
     return target === root || target.startsWith(root + sep)
   })
   if (!allowed) {
-    console.error(`[ipc] openPath außerhalb jedes registrierten Projekts abgelehnt: ${target}`)
-    throw new Error('Pfad liegt außerhalb der registrierten Projekte.')
+    console.error(`[ipc] openPath outside every registered project, refused: ${target}`)
+    throw new Error(mainT('openPathOutsideProjects'))
   }
   return shell.openPath(target)
 }
@@ -379,16 +380,15 @@ export function registerIpcHandlers(): void {
       const verdict = await buildOutputGuard.assessOutputDir(projectPath, outputDir)
       const dir = resolveBuildDir(projectPath, outputDir)
       if (verdict.kind === 'refused') {
-        const why = {
-          project: 'Das ist das Projektverzeichnis selbst.',
-          containsProject: 'Dieser Ordner enthält das Projekt.',
-          home: 'Das ist dein Benutzerordner.',
-          protected: `Der Ordner ist "${verdict.detail}" oder liegt darin - den braucht das Projekt selbst.`
-        }[verdict.reason]
-        throw new Error(
-          `In "${dir}" kann nicht gebaut werden: ${why} Jeder Build löscht sein Ausgabeverzeichnis vollständig. ` +
-            'Bitte einen eigenen Ordner wählen, z. B. "public" oder "dist".'
+        const why = mainT(
+          {
+            project: 'buildDirIsProject',
+            containsProject: 'buildDirContainsProject',
+            home: 'buildDirIsHome',
+            protected: 'buildDirReserved'
+          }[verdict.reason] as MainStringKey
         )
+        throw new Error(mainT('buildDirRefused', { dir, why }))
       }
       if (verdict.kind === 'confirm') {
         // Cancel first, not second: `defaultId` is not honoured here - measured against this
@@ -397,17 +397,14 @@ export function registerIpcHandlers(): void {
         // cancelId). So the safe answer has to be the one sitting first.
         const { response } = await dialog.showMessageBox({
           type: 'warning',
-          buttons: ['Abbrechen', 'Ordner leeren und bauen'],
+          buttons: [mainT('buildDirConfirmCancel'), mainT('buildDirConfirmProceed')],
           defaultId: 0,
           cancelId: 0,
-          title: 'Ausgabeverzeichnis wird geleert',
-          message: `"${dir}" ist nicht leer.`,
-          detail:
-            `Darin liegen ${verdict.entryCount} ${verdict.entryCount === 1 ? 'Eintrag' : 'Einträge'}, die nicht nach einem Quartz-Build aussehen. ` +
-            'Jeder Build löscht sein Ausgabeverzeichnis vollständig - das lässt sich nicht rückgängig machen ' +
-            'und geht nicht in den Papierkorb.'
+          title: mainT('buildDirConfirmTitle'),
+          message: mainT('buildDirConfirmMessage', { dir }),
+          detail: mainT('buildDirConfirmDetail', { count: verdict.entryCount })
         })
-        if (response !== 1) throw new Error(`Build abgebrochen - "${dir}" wurde nicht geleert.`)
+        if (response !== 1) throw new Error(mainT('buildDirCancelled'))
       }
       return buildService.runBuild(projectId, projectPath, outputDir)
     }

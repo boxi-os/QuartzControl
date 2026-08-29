@@ -4,6 +4,7 @@ import { isAbsolute, join, relative, resolve } from 'path'
 import type { ContentStatus, ContentStrategy } from '@shared/ipc-contract'
 import { snapshotContent } from './backupService'
 import { createSnapshot } from './snapshotService'
+import { mainT } from '../i18n'
 
 export function contentDirPath(projectPath: string): string {
   return join(projectPath, 'content')
@@ -61,19 +62,19 @@ export async function changeContentSource(
   onProgress?: (processed: number, total: number, currentFile?: string) => void
 ): Promise<void> {
   if (!existsSync(sourcePath)) {
-    throw new Error(`Quellordner existiert nicht: ${sourcePath}`)
+    throw new Error(mainT('contentSourceMissing', { path: sourcePath }))
   }
   const target = contentDirPath(projectPath)
   const from = resolve(sourcePath)
   const to = resolve(target)
   if (contains(to, from)) {
     throw new Error(
-      `Der Quellordner liegt im Content-Ordner des Projekts (${target}). Dieser wird beim Wechsel zuerst beiseitegelegt - wähle einen Ordner außerhalb.`
+      mainT('contentSourceInsideTarget', { target })
     )
   }
   if (contains(from, to)) {
     throw new Error(
-      `Der Content-Ordner des Projekts (${target}) liegt im gewählten Quellordner. Wähle einen Ordner, der ihn nicht enthält.`
+      mainT('contentTargetInsideSource', { target })
     )
   }
   // Two different safety nets, both needed: the snapshot records the project's files as they are

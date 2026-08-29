@@ -5,7 +5,7 @@ import { registerIpcHandlers } from './ipc/handlers'
 import { killAllServers, detectOrphanedServers, killOrphanedServers } from './services/buildService'
 import { getProject } from './services/projectStore'
 import { ensureToolPath } from './services/environmentService'
-import { resolveMainStrings, type MainStrings } from './i18n'
+import { mainT } from './i18n'
 import { applyAppMenu, APP_NAME } from './menu'
 import { applyStoredTheme, windowBackgroundColor } from './theme'
 
@@ -109,24 +109,24 @@ function createWindow(): void {
 // Servers left running by a previous non-graceful exit (before-quit below only fires on a
 // clean quit) might have been deliberately left running by the user, so this asks rather than
 // silently killing them - it could just as well be a server the user still wants to browse.
-async function promptForOrphanedServers(strings: MainStrings): Promise<void> {
+async function promptForOrphanedServers(): Promise<void> {
   const orphaned = await detectOrphanedServers()
   if (orphaned.length === 0) return
 
   const lines = await Promise.all(
     orphaned.map(async (o) => {
       const project = await getProject(o.projectId)
-      return `${project?.name ?? o.projectId} — Port ${o.port}`
+      return mainT('orphanEntry', { name: project?.name ?? o.projectId, port: o.port })
     })
   )
 
   const { response } = await dialog.showMessageBox({
     type: 'question',
-    buttons: [strings.orphanQuit, strings.orphanKeepRunning],
+    buttons: [mainT('orphanQuit'), mainT('orphanKeepRunning')],
     defaultId: 0,
     cancelId: 1,
-    title: strings.orphanTitle,
-    message: strings.orphanMessage,
+    title: mainT('orphanTitle'),
+    message: mainT('orphanMessage'),
     detail: lines.join('\n')
   })
   if (response === 0) killOrphanedServers(orphaned)
@@ -145,10 +145,11 @@ app.whenReady().then(async () => {
   }
   // Before createWindow(), so the very first frame is painted in the chosen appearance.
   await applyStoredTheme()
-  const strings = await resolveMainStrings()
+  // applyAppMenu() refreshes the cached language first, so every mainT() below - the orphan
+  // dialog included - already speaks the language the settings ask for.
   await applyAppMenu()
   registerIpcHandlers()
-  await promptForOrphanedServers(strings)
+  await promptForOrphanedServers()
   createWindow()
 
   app.on('activate', () => {

@@ -6,10 +6,11 @@ import type { DeployAdapter, DeployContext } from './types'
 import { commitManifest, diffAgainstManifest, partitionDiff } from './manifest'
 import { makeHostVerifier } from './hostVerifier'
 import * as connectionsService from '../connectionsService'
+import { mainT } from '../../i18n'
 
 async function resolveConnection(ctx: DeployContext): Promise<SshConnection> {
   const connection = ctx.target.connectionId ? await connectionsService.getConnection(ctx.target.connectionId) : null
-  if (!connection || connection.kind !== 'ssh') throw new Error('Für dieses Ziel ist kein SSH-Zugang hinterlegt.')
+  if (!connection || connection.kind !== 'ssh') throw new Error(mainT('sshNoConnection'))
   return connection
 }
 
@@ -19,14 +20,14 @@ async function resolveConnection(ctx: DeployContext): Promise<SshConnection> {
 export async function sshAuthOptions(connection: SshConnection, secret: string | null): Promise<Record<string, unknown>> {
   if (connection.authMethod === 'agent') {
     const agent = process.env.SSH_AUTH_SOCK
-    if (!agent) throw new Error('Kein SSH-Agent gefunden (SSH_AUTH_SOCK ist nicht gesetzt).')
+    if (!agent) throw new Error(mainT('sshNoAgent'))
     return { agent }
   }
   if (connection.authMethod === 'privateKey') {
     // With a keyPath the file is the source of truth; without one the key contents are the stored
     // secret (a pasted key, or one carried over from the pre-split profiles).
     const privateKey = connection.keyPath ? await readFile(connection.keyPath, 'utf-8') : (secret ?? undefined)
-    if (!privateKey) throw new Error('Für diesen Zugang ist kein privater Schlüssel hinterlegt.')
+    if (!privateKey) throw new Error(mainT('sshNoPrivateKey'))
     return { privateKey }
   }
   return { password: secret ?? undefined }
@@ -39,7 +40,7 @@ export const sftpAdapter: DeployAdapter = {
 
   async run(ctx, excludePaths): Promise<DeployResult> {
     const destination = ctx.target.destination
-    if (destination.type !== 'sftp') throw new Error('Falscher Zieltyp für den SFTP-Adapter.')
+    if (destination.type !== 'sftp') throw new Error(mainT('deployWrongType', { adapter: 'SFTP' }))
     const connection = await resolveConnection(ctx)
 
     const diff = await diffAgainstManifest(ctx.projectPath, ctx.target.id, ctx.buildDir)

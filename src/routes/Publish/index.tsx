@@ -136,6 +136,18 @@ export default function Publish(): JSX.Element {
   })
   const refreshDiff = diffAction.run
 
+  // The diff is a comparison against a record of what this app last sent, so anything that changed
+  // the far end behind its back makes it too small - a file deleted on the server by hand, an
+  // interrupted transfer, a restore from the provider's own backup. Re-pointing a target expires
+  // the record on its own (publishTargetsService), but nothing else can be detected from here, so
+  // this is the explicit way out. Not a "deploy everything" button: it throws the record away and
+  // re-reads the diff, which then offers the whole build with the usual checkboxes.
+  const forgetManifestAction = useAsyncAction(async () => {
+    if (!activeTarget) return
+    await window.quartzGui.deploy.forgetManifest(project.path, activeTarget.id)
+    await refreshDiff(true)
+  })
+
   const buildAction = useAsyncAction(async () => {
     await window.quartzGui.build.run(project.id, project.path, outputDir || undefined)
     await refreshDiff()
@@ -691,8 +703,23 @@ export default function Publish(): JSX.Element {
               <Button variant="ghost" onClick={() => refreshDiff()} disabled={diffAction.pending || !activeTarget}>
                 {diffAction.pending ? t('common.saving') : t('publish.refreshDiff')}
               </Button>
+              {hasFileDiff && activeTarget.destination.type !== 'git-branch' && (
+                <Button
+                  variant="ghost"
+                  onClick={() => forgetManifestAction.run()}
+                  disabled={forgetManifestAction.pending || diffAction.pending}
+                  title={t('publish.uploadEverythingHint')}
+                >
+                  {forgetManifestAction.pending ? t('common.saving') : t('publish.uploadEverything')}
+                </Button>
+              )}
             </div>
           </div>
+          {forgetManifestAction.error && (
+            <p className="mt-2 whitespace-pre-wrap break-words text-xs text-red-600 dark:text-red-400">
+              {forgetManifestAction.error}
+            </p>
+          )}
 
           <div className="mt-3">
             <Field label={t('publish.outputDir')}>

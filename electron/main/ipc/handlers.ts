@@ -34,6 +34,7 @@ import * as connectionsService from '../services/connectionsService'
 import * as publishTargetsService from '../services/publishTargetsService'
 import * as githubService from '../services/githubService'
 import * as deployService from '../services/deploy'
+import { forgetManifest } from '../services/deploy/manifest'
 import * as marketplaceService from '../services/marketplaceService'
 import * as buildService from '../services/buildService'
 import * as buildOutputGuard from '../services/buildOutputGuard'
@@ -317,6 +318,9 @@ export function registerIpcHandlers(): void {
     t([s.absolutePath, s.uuid, s.buildOutputDir.optional(), s.excludePaths]),
     (projectPath, targetId, outputDir, excludePaths) =>
       deployService.runDeploy(projectPath, targetId, outputDir, excludePaths)
+  )
+  handle(IPC.deployForgetManifest, t([s.absolutePath, s.uuid]), (projectPath, targetId) =>
+    forgetManifest(projectPath, targetId)
   )
 
   // A folder is selectable as well as a file: packages written before the single-file format are

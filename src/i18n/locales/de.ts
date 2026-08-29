@@ -1358,6 +1358,9 @@ export default {
     diffHeading: 'Änderungen',
     buildNow: 'Jetzt bauen',
     refreshDiff: 'Diff aktualisieren',
+      uploadEverything: 'Alles neu hochladen',
+      uploadEverythingHint:
+        'Verwirft, was diese App zuletzt an dieses Ziel geschickt hat — danach bietet die Vorschau wieder den ganzen Build an. Für alles, was die App nicht sehen kann: eine von Hand gelöschte Datei auf dem Server, eine abgebrochene Übertragung, eine Wiederherstellung durch den Anbieter.',
     noDiffYet: 'Noch kein Diff berechnet — zuerst bauen oder Diff aktualisieren.',
     noChanges: 'Keine Änderungen seit dem letzten Deploy.',
     status: {

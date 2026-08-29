@@ -1219,6 +1219,7 @@ export const IPC = {
 
   deployDiff: 'deploy:diff',
   deployRun: 'deploy:run',
+  deployForgetManifest: 'deploy:forgetManifest',
   deployProgress: 'deploy:progress',
   dialogPickFile: 'dialog:pickFile',
   dialogOpenPath: 'dialog:openPath',
@@ -1424,6 +1425,10 @@ export interface QuartzGuiApi {
      *  dry-run for rsync, and empty for a webhook, which has nothing to diff. */
     diff(projectPath: string, targetId: string, outputDir?: string): Promise<DeployDiffEntry[]>
     run(projectPath: string, targetId: string, outputDir: string | undefined, excludePaths: string[]): Promise<DeployResult>
+    /** Discards what this app believes it last sent to this target, so the next diff offers the
+     *  whole build again. For everything the manifest cannot see: a file deleted on the server by
+     *  hand, an interrupted transfer, a site rolled back from the provider's own backup. */
+    forgetManifest(projectPath: string, targetId: string): Promise<void>
     onProgress(cb: (event: DeployProgressEvent) => void): () => void
   }
   templatePackage: {

@@ -4,6 +4,7 @@ import type { PublishTarget, SavePublishTargetInput } from '@shared/ipc-contract
 import { quartzGuiDir, quartzGuiPath } from './projectDirs'
 import { claimLegacyTargets } from './connectionsService'
 import { readJsonFileOr, writeJsonFile } from './jsonStore'
+import { forgetManifest } from './deploy/manifest'
 
 // Targets live in the project, not in userData: they describe what *this* project publishes and
 // where, they carry no secret (that is the connection's half), and keeping them here means they
@@ -57,6 +58,23 @@ export async function getTarget(projectPath: string, id: string): Promise<Publis
   return (await listTargets(projectPath)).find((t) => t.id === id) ?? null
 }
 
+/**
+ * Where a target actually points, as one comparable string. The manifest records what was last
+ * sent *there*; re-pointing the same target somewhere else makes every entry in it a claim about a
+ * different machine or a different folder. Reported from a real deploy: after changing the remote
+ * path, the diff offered two files, because the manifest still described the old path - the same
+ * failure per-target manifests were introduced to fix, one level further down.
+ *
+ * Deliberately not part of it: the transfer mode (rsync and sftp reach the same directory) and the
+ * target's name or exclusions, which change nothing about what is on the far end.
+ */
+function locationKey(target: Pick<PublishTarget, 'connectionId' | 'destination'>): string {
+  const d = target.destination
+  const where =
+    'remotePath' in d ? d.remotePath : 'path' in d ? d.path : 'branch' in d ? `${d.provider}:${d.branch}` : ''
+  return `${target.connectionId ?? ''}|${d.type}|${where}`
+}
+
 export async function saveTarget(projectPath: string, input: SavePublishTargetInput): Promise<PublishTarget> {
   const all = await listTargets(projectPath)
   const index = input.id ? all.findIndex((t) => t.id === input.id) : -1
@@ -67,9 +85,12 @@ export async function saveTarget(projectPath: string, input: SavePublishTargetIn
     destination: input.destination,
     excludes: input.excludes ?? (index !== -1 ? all[index].excludes : [])
   }
+  const movedAway = index !== -1 && locationKey(all[index]) !== locationKey(target)
   if (index !== -1) all[index] = target
   else all.push(target)
   await write(projectPath, all)
+  // After the write, so a target that could not be saved does not lose its manifest anyway.
+  if (movedAway) await forgetManifest(projectPath, target.id)
   return target
 }
 

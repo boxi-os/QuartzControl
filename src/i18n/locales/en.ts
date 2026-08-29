@@ -1356,6 +1356,9 @@ export default {
     diffHeading: 'Changes',
     buildNow: 'Build now',
     refreshDiff: 'Refresh diff',
+      uploadEverything: 'Upload everything again',
+      uploadEverythingHint:
+        'Discards what this app last sent to this target — the preview then offers the whole build again. For everything the app cannot see: a file deleted on the server by hand, an interrupted transfer, a restore by the provider.',
     noDiffYet: 'No diff computed yet — build or refresh the diff first.',
     noChanges: 'No changes since the last deploy.',
     status: {

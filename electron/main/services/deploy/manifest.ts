@@ -1,6 +1,6 @@
 import { createHash } from 'crypto'
 import { createReadStream, existsSync } from 'fs'
-import { readFile, readdir, rename, writeFile } from 'fs/promises'
+import { readFile, readdir, rename, rm, writeFile } from 'fs/promises'
 import { join, relative } from 'path'
 import { pipeline } from 'stream/promises'
 import type { DeployDiffEntry } from '@shared/ipc-contract'
@@ -71,6 +71,17 @@ async function hashFile(path: string): Promise<string> {
   const hash = createHash('sha256')
   await pipeline(createReadStream(path), hash)
   return hash.digest('hex')
+}
+
+/**
+ * Throws away what this app believes it last sent to one target, so the next diff offers the whole
+ * build again. Two callers, for two different reasons: `saveTarget` calls it when a target is
+ * re-pointed somewhere else, and the Veroeffentlichen page offers it as an explicit action for
+ * everything this app cannot see - a file removed on the server by hand, a half-finished transfer,
+ * a site restored from the provider's own backup.
+ */
+export async function forgetManifest(projectPath: string, targetId: string): Promise<void> {
+  await rm(manifestPath(projectPath, targetId), { force: true })
 }
 
 export async function buildCurrentManifest(buildDir: string): Promise<Manifest> {

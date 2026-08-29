@@ -78,8 +78,11 @@ function useRestoreScroll(
 
 // A curated, brand-ish palette (indigo/violet-leaning, like the app icon) rather than random hues -
 // picked deterministically from the project id so a given project always gets the same color
-// across sessions, without needing to persist one.
-const AVATAR_COLORS = ['#6366f1', '#8b5cf6', '#0ea5e9', '#14b8a6', '#f59e0b', '#f43f5e', '#a855f7', '#0891b2']
+// across sessions, without needing to persist one. Every entry carries the project's initial in
+// white, so every entry is a shade that white is actually readable on: the 500-level palette this
+// replaced ran from 4.2:1 (violet) down to 2.1:1 (amber), i.e. which letter you could read came
+// down to what your project id happened to hash to. Measured, all eight are now >= 4.7:1.
+const AVATAR_COLORS = ['#4f46e5', '#7c3aed', '#0369a1', '#0f766e', '#b45309', '#e11d48', '#9333ea', '#0e7490']
 
 function avatarColor(seed: string): string {
   let hash = 0

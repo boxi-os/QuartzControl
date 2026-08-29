@@ -122,6 +122,10 @@ function RepoStatus({
         <p className="text-xs text-slate-500 dark:text-slate-400">{t('gitSync.noUpstreamHint')}</p>
       )}
 
+      {/* "Losgelöster HEAD" is the state, not an explanation of it - and it is the one state in
+          which nothing on this page does what it says. */}
+      {status.detached && <p className="text-xs text-slate-500 dark:text-slate-400">{t('gitSync.detachedHint')}</p>}
+
       {status.lastCommit && (
         <p className="text-xs text-slate-500 dark:text-slate-400">
           {t('gitSync.lastCommit')}:{' '}

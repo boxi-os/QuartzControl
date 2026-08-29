@@ -70,20 +70,20 @@ export default function SiteSettings({
   // one. Each field's line length is capped by its grid track, not by a wrapper max-width.
   return (
     <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-      <Field label={t('siteSettings.pageTitle')}>
+      <Field label={t('siteSettings.pageTitle')} hint={t('siteSettings.pageTitleHint')}>
         <TextInput value={configuration.pageTitle ?? ''} onChange={(e) => set('pageTitle', e.target.value)} />
       </Field>
-      <Field label={t('siteSettings.pageTitleSuffix')}>
+      <Field label={t('siteSettings.pageTitleSuffix')} hint={t('siteSettings.pageTitleSuffixHint')}>
         <TextInput value={configuration.pageTitleSuffix ?? ''} onChange={(e) => set('pageTitleSuffix', e.target.value)} />
       </Field>
-      <Field label={t('siteSettings.baseUrl')}>
+      <Field label={t('siteSettings.baseUrl')} hint={t('siteSettings.baseUrlHint')}>
         <TextInput
           value={configuration.baseUrl ?? ''}
           onChange={(e) => set('baseUrl', e.target.value)}
           placeholder="example.com"
         />
       </Field>
-      <Field label={t('siteSettings.locale')} hint={localeOptions.length > 0 ? t('siteSettings.localeHint') : undefined}>
+      <Field label={t('siteSettings.locale')} hint={t(localeOptions.length > 0 ? 'siteSettings.localeHint' : 'siteSettings.localeHintFree')}>
         {localeOptions.length > 0 ? (
           <Select value={locale} onChange={(e) => set('locale', e.target.value)}>
             {localeOptions.map((code) => (
@@ -97,21 +97,25 @@ export default function SiteSettings({
           <TextInput value={locale} onChange={(e) => set('locale', e.target.value)} placeholder="en-US" />
         )}
       </Field>
-      <div className="flex items-end gap-6 pb-1.5">
+      {/* Two switches whose labels are terms of art. They sit one under the other rather than
+          side by side now, because each carries a line saying what it does. */}
+      <div className="flex flex-col justify-end gap-3 pb-1.5">
         <Toggle
           label={t('siteSettings.spa')}
+          hint={t('siteSettings.spaHint')}
           checked={configuration.enableSPA ?? false}
           onChange={(checked) => set('enableSPA', checked)}
         />
         <Toggle
           label={t('siteSettings.popovers')}
+          hint={t('siteSettings.popoversHint')}
           checked={configuration.enablePopovers ?? false}
           onChange={(checked) => set('enablePopovers', checked)}
         />
       </div>
       {/* Two tracks, never all three: this is a short list of one-word patterns, and a 1600px
           wide text area for it looks broken rather than generous. */}
-      <Field label={t('siteSettings.ignorePatterns')} className="md:col-span-2">
+      <Field label={t('siteSettings.ignorePatterns')} hint={t('siteSettings.ignorePatternsHint')} className="md:col-span-2">
         <textarea
           className="min-h-32 rounded-[7px] border border-black/10 bg-white px-2.5 py-1.5 font-mono text-[13px] shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
           value={(configuration.ignorePatterns ?? []).join('\n')}

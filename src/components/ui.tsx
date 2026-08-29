@@ -118,16 +118,20 @@ export function Select(props: SelectHTMLAttributes<HTMLSelectElement>): JSX.Elem
 // A macOS-style switch, used instead of raw checkboxes for boolean settings.
 export function Toggle({
   label,
+  hint,
   checked,
   onChange,
   disabled
 }: {
   label: string
+  // Same line Field's `hint` renders, for the same reason: a switch whose label is a term of art
+  // ("Popover-Vorschauen") says nothing about what turning it on does.
+  hint?: string
   checked: boolean
   onChange: (checked: boolean) => void
   disabled?: boolean
 }): JSX.Element {
-  return (
+  const control = (
     <label className={`flex items-center gap-2.5 text-[13px] text-slate-700 dark:text-slate-200 ${disabled ? 'opacity-50' : ''}`}>
       <button
         type="button"
@@ -151,6 +155,13 @@ export function Toggle({
       </button>
       {label}
     </label>
+  )
+  if (!hint) return control
+  return (
+    <div className="flex flex-col gap-1">
+      {control}
+      <span className="text-[11px] text-slate-500 dark:text-slate-400">{hint}</span>
+    </div>
   )
 }
 

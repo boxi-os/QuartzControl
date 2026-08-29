@@ -21,6 +21,18 @@ export default {
       error: 'Error'
     }
   },
+  // The seven places a component can sit on a page. One table, read by the Layout editor and by
+  // the plugin list - they used to have a copy each, with different words for the same slot.
+  positions: {
+    header: 'Header',
+    left: 'Left sidebar',
+    right: 'Right sidebar',
+    beforeBody: 'Before the content',
+    afterBody: 'After the content',
+    footer: 'Footer',
+    body: 'In the content',
+    pageBody: 'Page content'
+  },
   errors: {
     renderFailed: 'This view could not be displayed.',
     retry: 'Try again'
@@ -235,8 +247,8 @@ export default {
       noneHint: 'No publishing target set up yet.'
     },
     updates: {
-      checking: 'Checking against the remotes …',
-      coreBehind: 'Core is behind',
+      checking: 'Checking for updates…',
+      coreBehind: 'Core out of date',
       pluginsOnly: 'Plugins outdated',
       allCurrent: 'All up to date',
       unknown: 'Cannot check',
@@ -248,12 +260,12 @@ export default {
       checkFailed_other: '{{count}} checks failed'
     },
     backups: {
-      states: 'state',
-      states_other: 'states',
-      newest: 'Last saved {{when}}',
+      states: 'snapshot',
+      states_other: 'snapshots',
+      newest: 'Last {{when}}',
       none: 'None yet',
       noneHint: 'One is created automatically before every major change.',
-      save: 'Save state',
+      save: 'Take snapshot',
       saving: 'Saving…'
     }
   },
@@ -721,15 +733,6 @@ export default {
     processingHeading: 'Processing',
     processingDescription:
       "These plugins change your content behind the scenes (e.g. formatting, links, images) and aren't visible on the page themselves. Page types — plugins that create their own kind of page, e.g. tag pages — are listed separately below.",
-    positions: {
-      header: 'Header',
-      left: 'Left sidebar',
-      right: 'Right sidebar',
-      beforeBody: 'Before the content',
-      afterBody: 'After the content',
-      footer: 'Footer',
-      body: 'In the content'
-    },
     pageTypesGroup: 'Page types',
     otherProcessingGroup: 'Transformers, filters & emitters',
     dragHint: 'Drag to reorder',
@@ -842,15 +845,6 @@ export default {
     pageTypesHint: 'Choose a page type to customize it.',
     pageTypeHasOverride: 'Customized',
     loading: 'Loading layout…',
-    positions: {
-      header: 'Header',
-      left: 'Left',
-      right: 'Right',
-      beforeBody: 'Before content',
-      pageBody: 'Page content',
-      afterBody: 'After content',
-      footer: 'Footer'
-    },
     emptySlot: 'Empty — drag here',
     activeFrameLabel: 'Showing grid structure from: {{name}}',
     activeFrameDefault: '(default grid)',
@@ -1075,8 +1069,8 @@ export default {
       },
       origin: {
         core: 'Quartz core',
-        theme: 'Theme',
-        build: 'Build',
+        theme: 'Community theme',
+        build: 'Last build',
         user: 'Yours'
       }
     }

@@ -353,7 +353,7 @@ export default function GlobalBoard({
             >
               {activeAreas.map((area) => (
                 <div key={area.id} style={{ gridArea: area.name }}>
-                  <AreaBox label={area.name} slotLabel={t(`layoutEditor.positions.${area.slot}`, area.slot)}>
+                  <AreaBox label={area.name} slotLabel={t(`positions.${area.slot}`, area.slot)}>
                     {area.slot === 'pageBody' ? (
                       <div className="rounded-[4px] border border-dashed border-black/10 px-2 py-3 text-center text-slate-500 dark:text-slate-400 dark:border-white/10">
                         {t('layoutEditor.frameBuilder.preview.pageContent')}
@@ -376,14 +376,14 @@ export default function GlobalBoard({
             >
               {builtinFrame.visibleSlots.includes('header') && (
                 <div style={{ gridArea: 'header' }}>
-                  <AreaBox label={t('layoutEditor.positions.header')}>
+                  <AreaBox label={t('positions.header')}>
                     <PositionSlot position="header" indices={positions.header} direction="column" {...slotProps} />
                   </AreaBox>
                 </div>
               )}
               {builtinFrame.visibleSlots.includes('beforeBody') && (
                 <div style={{ gridArea: 'beforeBody' }}>
-                  <AreaBox label={t('layoutEditor.positions.beforeBody')}>
+                  <AreaBox label={t('positions.beforeBody')}>
                     <PositionSlot position="beforeBody" indices={positions.beforeBody} direction="column" {...slotProps} />
                   </AreaBox>
                 </div>
@@ -396,14 +396,14 @@ export default function GlobalBoard({
               </div>
               {builtinFrame.visibleSlots.includes('afterBody') && (
                 <div style={{ gridArea: 'afterBody' }}>
-                  <AreaBox label={t('layoutEditor.positions.afterBody')}>
+                  <AreaBox label={t('positions.afterBody')}>
                     <PositionSlot position="afterBody" indices={positions.afterBody} direction="column" {...slotProps} />
                   </AreaBox>
                 </div>
               )}
               {builtinFrame.visibleSlots.includes('footer') && (
                 <div style={{ gridArea: 'footer' }}>
-                  <AreaBox label={t('layoutEditor.positions.footer')}>
+                  <AreaBox label={t('positions.footer')}>
                     <PositionSlot position="footer" indices={positions.footer} direction="column" {...slotProps} />
                   </AreaBox>
                 </div>
@@ -419,33 +419,33 @@ export default function GlobalBoard({
               style={{ gridTemplateColumns: grid.columns, gridTemplateRows: grid.rows, gridTemplateAreas: grid.areas }}
             >
               <div style={{ gridArea: 'sidebar-left' }}>
-                <AreaBox label={t('layoutEditor.positions.left')}>
+                <AreaBox label={t('positions.left')}>
                   <PositionSlot position="left" indices={positions.left} direction={sidebarDirection('left', breakpoint)} {...slotProps} />
                 </AreaBox>
               </div>
               <div style={{ gridArea: 'header' }}>
-                <AreaBox label={t('layoutEditor.positions.header')}>
+                <AreaBox label={t('positions.header')}>
                   <PositionSlot position="header" indices={positions.header} direction="column" {...slotProps} />
                 </AreaBox>
               </div>
               <div style={{ gridArea: 'center' }} className="flex flex-col gap-3">
-                <AreaBox label={t('layoutEditor.positions.beforeBody')}>
+                <AreaBox label={t('positions.beforeBody')}>
                   <PositionSlot position="beforeBody" indices={positions.beforeBody} direction="column" {...slotProps} />
                 </AreaBox>
                 <div className="rounded-[4px] border border-dashed border-black/10 px-2 py-3 text-center text-slate-500 dark:text-slate-400 dark:border-white/10">
                   {t('layoutEditor.frameBuilder.preview.pageContent')}
                 </div>
-                <AreaBox label={t('layoutEditor.positions.afterBody')}>
+                <AreaBox label={t('positions.afterBody')}>
                   <PositionSlot position="afterBody" indices={positions.afterBody} direction="column" {...slotProps} />
                 </AreaBox>
               </div>
               <div style={{ gridArea: 'sidebar-right' }}>
-                <AreaBox label={t('layoutEditor.positions.right')}>
+                <AreaBox label={t('positions.right')}>
                   <PositionSlot position="right" indices={positions.right} direction={sidebarDirection('right', breakpoint)} {...slotProps} />
                 </AreaBox>
               </div>
               <div style={{ gridArea: 'footer' }}>
-                <AreaBox label={t('layoutEditor.positions.footer')}>
+                <AreaBox label={t('positions.footer')}>
                   <PositionSlot position="footer" indices={positions.footer} direction="column" {...slotProps} />
                 </AreaBox>
               </div>
@@ -454,7 +454,7 @@ export default function GlobalBoard({
           {(activeFrame || builtinFrame) && activeUnassignedSlots.length > 0 && (
             <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
               {t('layoutEditor.frameBuilder.unassignedWarning', {
-                slots: activeUnassignedSlots.map((s) => t(`layoutEditor.positions.${s}`, s)).join(', ')
+                slots: activeUnassignedSlots.map((s) => t(`positions.${s}`, s)).join(', ')
               })}
             </p>
           )}

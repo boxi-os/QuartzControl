@@ -665,7 +665,7 @@ export default function FrameBuilder({
                 } ${dragAreaId === a.id ? 'opacity-30' : ''}`}
               >
                 <span className="font-medium">{a.name}</span>
-                <span className="text-slate-500 dark:text-slate-400">{t(`layoutEditor.positions.${a.slot}`, a.slot)}</span>
+                <span className="text-slate-500 dark:text-slate-400">{t(`positions.${a.slot}`, a.slot)}</span>
               </div>
             )
           })}
@@ -771,7 +771,7 @@ export default function FrameBuilder({
                     <span className="truncate font-medium">{area.name}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Badge>{t(`layoutEditor.positions.${area.slot}`, area.slot)}</Badge>
+                    <Badge>{t(`positions.${area.slot}`, area.slot)}</Badge>
                     <span aria-hidden="true" className="rounded-[4px] p-0.5 text-slate-500 dark:text-slate-400">
                       {isSelected ? '▲' : '▼'}
                     </span>
@@ -790,7 +790,7 @@ export default function FrameBuilder({
                       <Select value={area.slot} onChange={(e) => updateAreaSlot(area.id, e.target.value as FrameSlot)} className="w-32">
                         {SLOTS.map((slot) => (
                           <option key={slot} value={slot}>
-                            {t(`layoutEditor.positions.${slot}`, slot)}
+                            {t(`positions.${slot}`, slot)}
                           </option>
                         ))}
                       </Select>
@@ -844,7 +844,7 @@ export default function FrameBuilder({
         {unassignedSlots.length > 0 && (
           <p className="mt-4 text-xs text-amber-600 dark:text-amber-400">
             {t('layoutEditor.frameBuilder.unassignedWarning', {
-              slots: unassignedSlots.map((s) => t(`layoutEditor.positions.${s}`, s)).join(', ')
+              slots: unassignedSlots.map((s) => t(`positions.${s}`, s)).join(', ')
             })}
           </p>
         )}

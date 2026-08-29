@@ -21,6 +21,18 @@ export default {
       error: 'Fehler'
     }
   },
+  // The seven places a component can sit on a page. One table, read by the Layout editor and by
+  // the plugin list - they used to have a copy each, with different words for the same slot.
+  positions: {
+    header: 'Kopfbereich',
+    left: 'Linke Seitenleiste',
+    right: 'Rechte Seitenleiste',
+    beforeBody: 'Vor dem Inhalt',
+    afterBody: 'Nach dem Inhalt',
+    footer: 'Fußzeile',
+    body: 'Im Inhalt',
+    pageBody: 'Seiteninhalt'
+  },
   errors: {
     renderFailed: 'Diese Ansicht konnte nicht angezeigt werden.',
     retry: 'Nochmal versuchen'
@@ -162,10 +174,10 @@ export default {
   dashboard: {
     attention: {
       title: 'Handlungsbedarf',
-      allGood: 'Nichts zu tun — Inhalte, Git, CSS und Konfiguration sind in Ordnung.',
+      allGood: 'Nichts zu tun — Content, Git, CSS und Konfiguration sind in Ordnung.',
       serverError: 'Der Dev-Server ist mit einem Fehler beendet worden',
-      contentTargetMissing: 'Der Inhalte-Ordner zeigt ins Leere',
-      contentMissing: 'Es gibt keinen Inhalte-Ordner',
+      contentTargetMissing: 'Der Content-Ordner zeigt ins Leere',
+      contentMissing: 'Es gibt keinen Content-Ordner',
       gitConflicts: '{{count}} Datei im Konflikt',
       gitConflicts_other: '{{count}} Dateien im Konflikt',
       gitConflictsDetail: 'Bis der Konflikt gelöst ist, kann nicht gepusht werden.',
@@ -175,7 +187,7 @@ export default {
       noBaseUrl: 'Keine Basis-URL gesetzt',
       noBaseUrlDetail: 'Ohne sie schlägt der Build fehl, sobald Schriften selbst gehostet werden.'
     },
-    contentTab: 'Inhalte',
+    contentTab: 'Content-Ordner',
     devServer: 'Dev-Server',
     noPreview: 'Keine Vorschau aktiv',
     startedAgo: 'Gestartet {{since}}',
@@ -188,7 +200,7 @@ export default {
     baseUrl: 'Adresse',
     notSet: 'nicht gesetzt',
     locale: 'Sprache',
-    contentFolder: 'Inhalte',
+    contentFolder: 'Content-Ordner',
     notPresent: 'nicht vorhanden',
     targetMissing: 'Ziel fehlt',
     realFolderFiles: 'Eigener Ordner · {{count}} Datei',
@@ -201,7 +213,7 @@ export default {
       noUpstream: 'ohne Remote-Branch',
       conflicts: '{{count}} Datei im Konflikt',
       conflicts_other: '{{count}} Dateien im Konflikt',
-      uncommitted: 'nicht eingecheckte Änderungen'
+      uncommitted: 'noch nicht committete Änderungen'
     },
     plugins: {
       ofTotal: 'von {{total}} aktiv',
@@ -236,8 +248,8 @@ export default {
       noneHint: 'Noch kein Veröffentlichungsziel eingerichtet.'
     },
     updates: {
-      checking: 'Prüfe gegen die Remotes …',
-      coreBehind: 'Kern ist zurück',
+      checking: 'Prüfe auf Updates…',
+      coreBehind: 'Kern veraltet',
       pluginsOnly: 'Plugins veraltet',
       allCurrent: 'Alles aktuell',
       unknown: 'Nicht prüfbar',
@@ -249,19 +261,19 @@ export default {
       checkFailed_other: '{{count}} Prüfungen fehlgeschlagen'
     },
     backups: {
-      states: 'Stand',
-      states_other: 'Stände',
-      newest: 'Zuletzt gesichert {{when}}',
+      states: 'Snapshot',
+      states_other: 'Snapshots',
+      newest: 'Zuletzt {{when}}',
       none: 'Noch keiner',
       noneHint: 'Vor jeder größeren Änderung wird automatisch einer angelegt.',
-      save: 'Stand sichern',
-      saving: 'Sichere…'
+      save: 'Snapshot anlegen',
+      saving: 'Lege an…'
     }
   },
   content: {
     currentFolder: 'Aktueller Content-Ordner',
     loading: 'Lade…',
-    noFolder: 'Kein content/-Ordner gefunden.',
+    noFolder: 'Kein Content-Ordner gefunden.',
     symlinkBadge: 'Symbolischer Link',
     realFolderBadge: 'Echter Ordner',
     filesCount: '{{count}} Dateien',
@@ -269,7 +281,7 @@ export default {
     changeSource: 'Quelle ändern…',
     dialogTitle: 'Content-Quelle ändern',
     dialogWarning:
-      'Der aktuelle content/-Ordner wird vor der Änderung nach .quartz-gui/content-backups/ verschoben und kann über die Backups-Ansicht wiederhergestellt werden.',
+      'Der aktuelle Content-Ordner wird vor der Änderung nach .quartz-gui/content-backups/ verschoben und kann über die Backups-Ansicht wiederhergestellt werden.',
     newSourceFolder: 'Neuer Quellordner',
     strategy: 'Strategie',
     strategySymlink: 'Verknüpfen (symbolischer Link, z. B. auf ein Obsidian-Vault)',
@@ -394,11 +406,11 @@ export default {
     labelPlaceholder: 'Name (optional), z. B. "vor dem Theme-Wechsel"',
     create: 'Snapshot anlegen',
     created: 'Snapshot angelegt.',
-    includeContent: 'content-Ordner mitsichern',
+    includeContent: 'Content-Ordner mitsichern',
     contentFolderHint: 'Ein echter Ordner mit Markdown-Dateien — klein genug, um immer mitzulaufen.',
     contentSymlinkHint:
-      'Dein content-Ordner ist ein Symlink auf einen Vault außerhalb des Projekts. Der wird standardmäßig NICHT mitgesichert: er ist deine eigene Datenquelle, kann sehr groß sein und hat meist eine eigene Sicherung. Schalte das nur ein, wenn du weißt, was du tust.',
-    contentMissing: 'Es gibt keinen content-Ordner, den man mitsichern könnte.',
+      'Dein Content-Ordner ist ein Symlink auf einen Vault außerhalb des Projekts. Der wird standardmäßig NICHT mitgesichert: er ist deine eigene Datenquelle, kann sehr groß sein und hat meist eine eigene Sicherung. Schalte das nur ein, wenn du weißt, was du tust.',
+    contentMissing: 'Es gibt keinen Content-Ordner, den man mitsichern könnte.',
     none: 'Noch keine Snapshots. Vor jedem Kern-Update, jeder Plugin-Änderung, jedem Content-Wechsel und jedem Vorlagen-Import wird automatisch einer angelegt.',
     compare: 'Vergleichen',
     close: 'Schließen',
@@ -437,12 +449,12 @@ export default {
       styleChange: 'Vor Gestaltungs-Import',
       imported: 'Altes Config-Backup'
     },
-    movedFoldersHeading: 'Beiseitegelegte content-Ordner',
+    movedFoldersHeading: 'Beiseitegelegte Content-Ordner',
     movedFoldersHint:
       'Beim Wechsel des Content-Ordners wird der bisherige hierher verschoben statt gelöscht. Das ist kein Backup deiner Notizen: ein Symlink auf einen Vault wurde nie kopiert, nur der Link selbst notiert.',
-    confirmRestoreFolder: 'Diesen content-Ordner wieder einsetzen? Der aktuelle wird dabei ebenfalls beiseitegelegt.',
+    confirmRestoreFolder: 'Diesen Content-Ordner wieder einsetzen? Der aktuelle wird dabei ebenfalls beiseitegelegt.',
     confirmDeleteFolder:
-      'Diesen beiseitegelegten content-Ordner endgültig löschen ({{size}})?\n\nEs ist die einzige Kopie: In den Snapshots ist er nicht enthalten, und rückgängig machen lässt sich das nicht.',
+      'Diesen beiseitegelegten Content-Ordner endgültig löschen ({{size}})?\n\nEs ist die einzige Kopie: In den Snapshots ist er nicht enthalten, und rückgängig machen lässt sich das nicht.',
     folderSize: '{{count}} Datei · {{size}}',
     folderSize_other: '{{count}} Dateien · {{size}}',
     folderLink: 'Nur der Link auf {{target}} - die Notizen liegen dort und wurden nie kopiert.'
@@ -721,15 +733,6 @@ export default {
     processingHeading: 'Verarbeitung',
     processingDescription:
       'Diese Plugins verändern deine Inhalte im Hintergrund (z. B. Formatierung, Links, Bilder) und erscheinen selbst nicht sichtbar auf der Seite. Seitentypen — Plugins, die eine eigene Art von Seite erzeugen, z. B. Tag-Seiten — werden unten separat aufgeführt.',
-    positions: {
-      header: 'Kopfbereich',
-      left: 'Linke Seitenleiste',
-      right: 'Rechte Seitenleiste',
-      beforeBody: 'Vor dem Inhalt',
-      afterBody: 'Nach dem Inhalt',
-      footer: 'Fußzeile',
-      body: 'Im Inhalt'
-    },
     pageTypesGroup: 'Seitentypen',
     otherProcessingGroup: 'Transformer, Filter & Emitter',
     dragHint: 'Ziehen zum Umsortieren',
@@ -842,15 +845,6 @@ export default {
     pageTypesHint: 'Wähle einen Seitentyp, um ihn anzupassen.',
     pageTypeHasOverride: 'Angepasst',
     loading: 'Lade Layout…',
-    positions: {
-      header: 'Header',
-      left: 'Links',
-      right: 'Rechts',
-      beforeBody: 'Vor dem Inhalt',
-      pageBody: 'Seiteninhalt',
-      afterBody: 'Nach dem Inhalt',
-      footer: 'Footer'
-    },
     emptySlot: 'Leer — hierher ziehen',
     activeFrameLabel: 'Zeigt Grid-Struktur von: {{name}}',
     activeFrameDefault: '(Standard-Raster)',
@@ -899,7 +893,7 @@ export default {
     templateMinimal: 'Minimal',
     templatePluginDefault: '„{{frame}}" (Plugin-Standard, aktiv)',
     pluginFrameUnknownLayout:
-      'Dieser Seitentyp nutzt automatisch das Frame „{{frame}}", das von der zugehörigen Plugin mitgebracht wird. Die genaue Grid-Struktur kann hier nicht als Vorschau angezeigt werden, da sie vom Plugin selbst gerendert wird — nicht das Standard-Raster.',
+      'Dieser Seitentyp nutzt automatisch das Frame „{{frame}}", das das zugehörige Plugin mitbringt. Die genaue Grid-Struktur kann hier nicht als Vorschau angezeigt werden, da sie vom Plugin selbst gerendert wird — nicht das Standard-Raster.',
     clearSlotsHeading: 'Bereiche für diesen Seitentyp leeren',
     clearSlotsDescription: 'Aktivierte Bereiche bleiben für diesen Seitentyp immer leer, unabhängig von der globalen Belegung.',
     frameBuilder: {
@@ -1076,8 +1070,8 @@ export default {
       },
       origin: {
         core: 'Quartz-Kern',
-        theme: 'Theme',
-        build: 'Build',
+        theme: 'Community-Theme',
+        build: 'Letzter Build',
         user: 'Von dir'
       }
     }
@@ -1181,7 +1175,7 @@ export default {
       commits: 'Installiert: {{current}} · Neueste Version: {{latest}}',
       runUpdate: 'Update durchführen',
       confirm:
-        'Quartz-Kern aktualisieren?\n\nVorher wird automatisch ein Snapshot angelegt: quartz.config.yaml, quartz.lock.json, eigene Stylesheets und die Einstellungen dieser App gehören dazu, dein content-Ordner nur, wenn er ein echter Ordner ist und unter Backups eingeschaltet wurde. Zurückholen lässt sich der Stand jederzeit unter Backups.\n\nDer Vorgang holt Änderungen von jackyzha0/quartz, führt npm install aus und kann bei Konflikten manuelles Eingreifen erfordern.',
+        'Quartz-Kern aktualisieren?\n\nVorher wird automatisch ein Snapshot angelegt: quartz.config.yaml, quartz.lock.json, eigene Stylesheets und die Einstellungen dieser App gehören dazu, dein Content-Ordner nur, wenn er ein echter Ordner ist und unter Backups eingeschaltet wurde. Zurückholen lässt sich der Stand jederzeit unter Backups.\n\nDer Vorgang holt Änderungen von jackyzha0/quartz, führt npm install aus und kann bei Konflikten manuelles Eingreifen erfordern.',
       abortMerge: 'Merge abbrechen',
       openSnapshot: 'Snapshot von vor dem Update öffnen →',
       conflictHeading: 'Konflikte in folgenden Dateien (außer den durch .gitattributes geschützten Locale-Dateien):'
@@ -1241,7 +1235,7 @@ export default {
         'Die Domain wird bei GitHub gespeichert, nicht im Branch - anders als eine CNAME-Datei überlebt sie damit jedes Deploy, das den Branch vollständig ersetzt. HTTPS lässt sich erst erzwingen, wenn GitHub das Zertifikat ausgestellt hat; das dauert nach dem Setzen der Domain einige Minuten.'
     },
     sftpHint:
-      'SFTP vergleicht mit einem lokalen Verzeichnis dessen, was zuletzt hochgeladen wurde. Dateien, die jemand direkt auf dem Server ändert oder löscht, bleiben dabei unbemerkt.',
+      'SFTP vergleicht den Build mit einer lokalen Liste dessen, was zuletzt hochgeladen wurde. Dateien, die jemand direkt auf dem Server ändert oder löscht, bleiben dabei unbemerkt.',
     rsyncHint:
       'rsync fragt den Server selbst, was dort liegt - der Diff stimmt also auch dann, wenn dort jemand von Hand etwas geändert hat. Setzt voraus, dass rsync auf dem Server installiert ist.',
     rsyncBlocked: {

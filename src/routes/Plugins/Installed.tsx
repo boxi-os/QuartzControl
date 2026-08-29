@@ -547,7 +547,7 @@ export default function PluginsInstalled(): JSX.Element {
               if (shown.length === 0) return null
               return (
                 <div key={position}>
-                  <GroupHeading label={t(`pluginsInstalled.positions.${position}`, position)} rawKey={position} count={shown.length} />
+                  <GroupHeading label={t(`positions.${position}`, position)} rawKey={position} count={shown.length} />
                   <div className={PLUGIN_LIST}>
                     {shown.map((item) => (
                       <PluginRow

@@ -123,7 +123,7 @@ export default function PageTypeOverrides({
           {POSITIONS.map((position) => (
             <Toggle
               key={position}
-              label={t(`layoutEditor.positions.${position}`)}
+              label={t(`positions.${position}`)}
               checked={(override.positions?.[position]?.length ?? -1) === 0}
               onChange={(checked) => toggleClearSlot(position, checked)}
             />

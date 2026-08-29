@@ -707,33 +707,38 @@ export default function Publish(): JSX.Element {
         </Card>
       )}
 
-      <Card>
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold">{t('publish.deployHeading')}</h2>
-          <Button onClick={deploy} disabled={deployAction.pending || !canDeploy}>
-            {deployAction.pending ? t('common.saving') : t('publish.deployButton')}
-          </Button>
-        </div>
-        {activeTarget && 'deleteRemoved' in activeTarget.destination && !activeTarget.destination.deleteRemoved && (
-          <Badge tone="slate">{t('publish.deleteDisabledHint')}</Badge>
-        )}
-        {deployAction.error && (
-          <p className="mt-2 whitespace-pre-wrap break-words text-xs text-red-600 dark:text-red-400">{deployAction.error}</p>
-        )}
-        {progress && (
-          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-            {t('publish.progress', { processed: progress.processed, total: progress.total, file: progress.currentFile ?? '' })}
-          </p>
-        )}
-        {deployResult && (
-          <>
-            <p className={`mt-2 text-xs ${deployResult.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-              {deployResult.success ? t('publish.deploySuccess') : t('publish.deployFailed')}
+      {/* Every other card here already appears only once a target is picked. This one
+          rendered regardless, so a project with no target opened on an empty-state sentence
+          saying there is nothing to publish to, right above a "Jetzt veröffentlichen" button. */}
+      {activeTarget && (
+        <Card>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold">{t('publish.deployHeading')}</h2>
+            <Button onClick={deploy} disabled={deployAction.pending || !canDeploy}>
+              {deployAction.pending ? t('common.saving') : t('publish.deployButton')}
+            </Button>
+          </div>
+          {activeTarget && 'deleteRemoved' in activeTarget.destination && !activeTarget.destination.deleteRemoved && (
+            <Badge tone="slate">{t('publish.deleteDisabledHint')}</Badge>
+          )}
+          {deployAction.error && (
+            <p className="mt-2 whitespace-pre-wrap break-words text-xs text-red-600 dark:text-red-400">{deployAction.error}</p>
+          )}
+          {progress && (
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+              {t('publish.progress', { processed: progress.processed, total: progress.total, file: progress.currentFile ?? '' })}
             </p>
-            <pre className="mt-2 max-h-56 overflow-y-auto rounded-md bg-slate-950 p-3 font-mono text-xs text-slate-200">{deployResult.output}</pre>
-          </>
-        )}
-      </Card>
+          )}
+          {deployResult && (
+            <>
+              <p className={`mt-2 text-xs ${deployResult.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                {deployResult.success ? t('publish.deploySuccess') : t('publish.deployFailed')}
+              </p>
+              <pre className="mt-2 max-h-56 overflow-y-auto rounded-md bg-slate-950 p-3 font-mono text-xs text-slate-200">{deployResult.output}</pre>
+            </>
+          )}
+        </Card>
+      )}
     </div>
   )
 }

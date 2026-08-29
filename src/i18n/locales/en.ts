@@ -1297,6 +1297,14 @@ export default {
       name: 'Name',
       type: 'Type',
       remotePath: 'Remote path',
+      remotePathPlaceholder: 'e.g. httpdocs or /var/www/example.com',
+      remotePathHint:
+        'The folder on the server the site goes into. Without a leading slash it counts from the login directory — on a shared webspace that is the normal case.',
+      remotePathError: {
+        empty: 'Nothing can be published without a target folder.',
+        'whole-root': 'The login directory itself is not allowed — with deletion enabled it would be emptied. Name the subfolder the site lives in.',
+        traversal: 'A path containing “..” is not allowed.'
+      },
       transfer: 'Transfer',
       transferSftp: 'SFTP (file by file)',
       transferRsync: 'rsync (faster, compares against the server)',

@@ -23,6 +23,7 @@ import {
 import { useAsyncAction } from '../../hooks/useAsyncAction'
 import { useStickyState } from '../../state/uiState'
 import { rsyncBlockReason } from '@shared/rsyncSupport'
+import { remotePathProblem } from '@shared/remotePath'
 import { TAB_ICONS } from '../navConfig'
 import GithubPages from './GithubPages'
 
@@ -32,7 +33,9 @@ import GithubPages from './GithubPages'
 // with a different name for the branch.
 
 function emptyTargetDraft(): SavePublishTargetInput {
-  return { name: '', destination: { type: 'sftp', remotePath: '/', transfer: 'sftp', deleteRemoved: true } }
+  // Not '/': that is the login's own root, which the boundary refuses - so a fresh draft used to
+  // start on a value that could not be saved, with the Save button giving no reason.
+  return { name: '', destination: { type: 'sftp', remotePath: '', transfer: 'sftp', deleteRemoved: true } }
 }
 
 /** Which connection kind a destination needs, or null when it needs none - a folder is reached
@@ -56,9 +59,9 @@ const BRANCH_DEFAULTS: Record<'github' | 'gitlab' | 'codeberg', string> = {
 function emptyDestination(type: 'sftp' | 'ftp' | 'folder' | 'webhook' | 'git-branch'): SavePublishTargetInput['destination'] {
   switch (type) {
     case 'sftp':
-      return { type: 'sftp', remotePath: '/', transfer: 'sftp', deleteRemoved: true }
+      return { type: 'sftp', remotePath: '', transfer: 'sftp', deleteRemoved: true }
     case 'ftp':
-      return { type: 'ftp', remotePath: '/', deleteRemoved: true }
+      return { type: 'ftp', remotePath: '', deleteRemoved: true }
     case 'folder':
       return { type: 'folder', path: '', deleteRemoved: true }
     case 'webhook':
@@ -169,6 +172,10 @@ export default function Publish(): JSX.Element {
     if (!activeTarget) return
     const result = await window.quartzGui.deploy.run(project.path, activeTarget.id, outputDir || undefined, Array.from(excluded))
     setDeployResult(result)
+    // A deploy is where a host key gets pinned, so the connection this page is showing is stale the
+    // moment it finishes: the card still read "Host-Key noch nicht bestätigt" until the page was
+    // left and re-entered, which reads as the confirmation not having been recorded.
+    setConnections(await window.quartzGui.connections.list())
     if (result.success) await refreshDiff(true)
   })
 
@@ -241,9 +248,20 @@ export default function Publish(): JSX.Element {
   // it honest: a type that needs no credential must not be gated on one. The earlier version had a
   // folder special case and required a connection for everything else, which made a git-branch
   // target - which authenticates through the repo's own origin - impossible to save at all.
+  // A remote path the boundary would refuse must never leave this form: a rejected argument is
+  // reported as a bug in the app - which it is, everywhere except here, where it was the one field
+  // a user types freely. Reported from the alpha test for a path entered without a leading slash,
+  // which is now allowed outright (see shared/remotePath.ts); what is left are the genuine
+  // refusals, and they are said here in words instead.
+  const remotePathIssue =
+    targetDraft && 'remotePath' in targetDraft.destination
+      ? remotePathProblem(targetDraft.destination.remotePath)
+      : null
+
   const targetReady = (() => {
     if (!targetDraft) return false
     const destination = targetDraft.destination
+    if (remotePathIssue) return false
     if (destination.type === 'folder') return !!destination.path.trim()
     if (destination.type === 'git-branch') return !!destination.branch.trim()
     return !!targetDraft.connectionId
@@ -398,7 +416,15 @@ export default function Publish(): JSX.Element {
                       destination: { ...targetDraft.destination, remotePath: e.target.value } as SavePublishTargetInput['destination']
                     })
                   }
+                  placeholder={t('publish.targetForm.remotePathPlaceholder')}
                 />
+                {remotePathIssue ? (
+                  <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                    {t(`publish.targetForm.remotePathError.${remotePathIssue}`)}
+                  </p>
+                ) : (
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('publish.targetForm.remotePathHint')}</p>
+                )}
               </Field>
             )}
             {targetDraft.destination.type === 'sftp' && (

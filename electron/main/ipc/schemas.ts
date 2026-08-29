@@ -1,5 +1,6 @@
 import { isAbsolute } from 'path'
 import { z } from 'zod'
+import { remotePathProblem } from '@shared/remotePath'
 
 // Validation for everything crossing the IPC boundary. The renderer is not a trust boundary the
 // main process can rely on: contextIsolation keeps *our* preload honest, but any script execution
@@ -311,10 +312,13 @@ export const cssVariableOverride = z.object({
 // manage - a mistake no confirmation dialog reliably catches.
 export const remotePosixPath = z
   .string()
-  .min(2)
+  .min(1)
   .max(4096)
-  .refine((p) => p.startsWith('/'), 'must be an absolute path')
-  .refine((p) => p.replace(/\/+$/, '') !== '', 'the root directory "/" is not allowed as a target')
+  // The rule itself lives in shared/remotePath.ts, because the target form has to apply the same
+  // one - see the note there. A relative path is deliberately allowed.
+  .refine((p) => remotePathProblem(p) !== 'traversal', 'must not contain ".." segments')
+  .refine((p) => remotePathProblem(p) !== 'whole-root', 'the login\'s own root directory is not allowed as a target')
+  .refine((p) => remotePathProblem(p) !== 'empty', 'must not be empty')
 
 // Webhook URLs are credentials in URL form (a build hook's path *is* its token), so the scheme is
 // pinned to https - posting one over http would put it on the wire in the clear.

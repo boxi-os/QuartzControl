@@ -1299,6 +1299,14 @@ export default {
       name: 'Name',
       type: 'Art',
       remotePath: 'Remote-Pfad',
+      remotePathPlaceholder: 'z. B. httpdocs oder /var/www/example.com',
+      remotePathHint:
+        'Der Ordner auf dem Server, in den die Website kommt. Ohne führenden Schrägstrich zählt er ab dem Anmeldeverzeichnis — bei einem Webspace ist das der Normalfall.',
+      remotePathError: {
+        empty: 'Ohne Zielordner kann nichts veröffentlicht werden.',
+        'whole-root': 'Das Anmeldeverzeichnis selbst geht nicht — mit aktiviertem Löschen würde es geleert. Gib den Unterordner an, in dem die Website liegt.',
+        traversal: 'Ein Pfad mit „..“ ist nicht erlaubt.'
+      },
       transfer: 'Übertragung',
       transferSftp: 'SFTP (Datei für Datei)',
       transferRsync: 'rsync (schneller, vergleicht mit dem Server)',

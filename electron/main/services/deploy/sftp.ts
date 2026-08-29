@@ -33,6 +33,9 @@ export async function sshAuthOptions(connection: SshConnection, secret: string |
   return { password: secret ?? undefined }
 }
 
+// Long enough for someone to open their provider's page and compare a SHA256 fingerprint by eye.
+const HANDSHAKE_WITH_PROMPT_MS = 180_000
+
 export const sftpAdapter: DeployAdapter = {
   async preview(ctx): Promise<DeployDiffEntry[]> {
     return diffAgainstManifest(ctx.projectPath, ctx.target.id, ctx.buildDir)
@@ -57,6 +60,15 @@ export const sftpAdapter: DeployAdapter = {
         host: connection.host,
         port: connection.port,
         username: connection.username,
+        // ssh2's readyTimeout (20s by default) runs across the *whole* handshake - and the host
+        // verifier below opens a native dialog in the middle of it, asking the user to compare a
+        // fingerprint against what their provider publishes. That is a task measured in minutes,
+        // not seconds. Reported from the alpha test as "first attempt: Timed out while waiting for
+        // handshake, second attempt fine" - the second having no dialog because the key was pinned
+        // by then. ssh2 offers no way to pause the clock, so the budget is widened for exactly the
+        // connection that will ask, and left at the default afterwards, where a long wait really
+        // does mean an unreachable host.
+        readyTimeout: connection.hostKey?.fingerprint ? undefined : HANDSHAKE_WITH_PROMPT_MS,
         hostVerifier: makeHostVerifier(connection, (message) => (hostKeyRejection = message)),
         ...(await sshAuthOptions(connection, ctx.secret))
       })

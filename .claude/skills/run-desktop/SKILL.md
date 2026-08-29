@@ -73,6 +73,7 @@ screenshot file and look at it** — a command succeeding doesn't mean the UI lo
 | `resize <w> <h>` | resize the real BrowserWindow — the default 1280x800 hides every layout problem that only shows up on a maximized window (`resize 1728 1000` ≈ a full-screen 16" MacBook Pro) |
 | `wait <css-sel>` | wait for element, 10s timeout |
 | `eval <js>` | evaluate arbitrary JS in the page, print JSON — your escape hatch when a command doesn't fit |
+| `evalfile <path>` | same, but the expression is read from a file and the JSON result is written to `<path>.out` — use this for anything longer than a line (`tmux send-keys` types character by character, so a long expression is slow to arrive and unreadable in the pane afterwards, and a long JSON answer wraps so `capture-pane` hands back fragments) |
 | `text [css-sel]` | print `innerText` |
 | `windows` | list all windows + webContents |
 | `quit` | close the app **and exit the driver process** (see Gotchas) |

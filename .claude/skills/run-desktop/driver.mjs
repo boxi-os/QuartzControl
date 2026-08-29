@@ -180,6 +180,25 @@ const COMMANDS = {
     }
   },
 
+  // Same as `eval`, but the expression comes from a file. The REPL is driven through
+  // `tmux send-keys`, which types the line character by character - a multi-hundred-character
+  // audit expression either takes seconds to arrive or gets mangled, and it is unreadable in the
+  // pane afterwards. Writing it to a file and passing the path keeps both ends legible. Output
+  // goes to `<file>.out` as well as stdout, since a long JSON result wraps in the pane and
+  // `capture-pane` then hands back fragments rather than one line.
+  async evalfile(rest) {
+    if (!page) return console.log('ERROR: launch first')
+    const file = rest.trim()
+    let out
+    try {
+      out = JSON.stringify(await page.evaluate(fs.readFileSync(file, 'utf8')), null, 1)
+    } catch (e) {
+      out = 'ERROR: ' + e.message
+    }
+    fs.writeFileSync(file + '.out', out)
+    console.log('evalfile', file, '→', file + '.out', `(${out.length} bytes)`)
+  },
+
   async text(sel) {
     if (!page) return console.log('ERROR: launch first')
     console.log(await page.evaluate((s) => (s ? document.querySelector(s) : document.body)?.innerText ?? '(null)', sel || null))

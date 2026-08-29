@@ -52,14 +52,20 @@ export default function PluginsMarketplace(): JSX.Element {
     loadInstalled()
   }, [project.path])
 
-  // No token passed from here any more: it is a credential, and main resolves it from the
+  // Fetched once, not per keystroke. The catalog is the org's ~60 repositories and the search box
+  // is a substring match over them, so filtering happens below in useMemo: an effect keyed on
+  // `query` put an IPC round trip on every character and - because a failed catalog fetch is
+  // deliberately never cached in main - a GitHub request on every character whenever the API was
+  // unreachable, with no ordering guarantee between the overlapping answers.
+  //
+  // No token passed from here either: it is a credential, and main resolves it from the
   // connection store itself (see connectionsService.getGithubToken).
   useEffect(() => {
-    window.quartzGui.marketplace.search(query).then((result) => {
+    window.quartzGui.marketplace.list().then((result) => {
       setResults(result.plugins)
       setUnavailable(result.unavailable)
     })
-  }, [query])
+  }, [])
 
   // The catalog is cached for fifteen minutes in main, so a plugin published in the meantime is
   // otherwise unreachable without restarting the app.
@@ -67,7 +73,7 @@ export default function PluginsMarketplace(): JSX.Element {
     setRefreshing(true)
     try {
       await window.quartzGui.marketplace.refresh()
-      const result = await window.quartzGui.marketplace.search(query)
+      const result = await window.quartzGui.marketplace.list()
       setResults(result.plugins)
       setUnavailable(result.unavailable)
     } finally {
@@ -107,14 +113,21 @@ export default function PluginsMarketplace(): JSX.Element {
   }
 
   const [plugins, other] = useMemo(() => {
-    const list = results ?? []
+    const q = query.trim().toLowerCase()
+    const list = (results ?? []).filter(
+      (p) =>
+        !q ||
+        p.name.toLowerCase().includes(q) ||
+        p.fullName.toLowerCase().includes(q) ||
+        (p.description ?? '').toLowerCase().includes(q)
+    )
     // Archived repositories are not offered as plugins even if they carry the topic - the org's
     // archived entry is the Quartz core itself, and "install" on it would be nonsense.
     const pluginResults = list.filter((r) => isPlugin(r) && !r.archived)
     const rest = list.filter((r) => !pluginResults.includes(r))
     const byStars = (a: MarketplacePlugin, b: MarketplacePlugin): number => (b.stars ?? 0) - (a.stars ?? 0)
     return [[...pluginResults].sort(byStars), [...rest].sort(byStars)]
-  }, [results])
+  }, [results, query])
 
   return (
     <div>

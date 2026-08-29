@@ -60,26 +60,30 @@ async function fetchFromGithub(): Promise<{ results: MarketplacePlugin[]; unavai
   }
 }
 
-export async function searchPlugins(query: string): Promise<MarketplaceResult> {
-  if (!cache || Date.now() - cache.at > CACHE_TTL_MS) {
-    const fetched = await fetchFromGithub()
-    // A failed fetch is never cached: retrying costs one request, and someone who fixes their
-    // connection should not have to wait out a fifteen-minute window holding a placeholder.
-    if (fetched.unavailable) return { plugins: filterPlugins(fetched.results, query), unavailable: true }
-    cache = { at: Date.now(), results: fetched.results }
-  }
-  return { plugins: filterPlugins(cache.results, query), unavailable: false }
+// The whole catalog, unfiltered. It used to take the search term and filter here, which put an
+// IPC round trip on every keystroke - and, because a failed fetch is deliberately never cached
+// (below), a *GitHub request* on every keystroke whenever the API was unreachable. The org has
+// some sixty repositories; matching a substring against them belongs in the renderer, where it is
+// also free of the ordering race two overlapping calls had.
+// One fetch at a time. React's StrictMode runs every mount effect twice, so opening the tab fires
+// two of these at once, and a page switch back before the first answered would add another - each
+// its own GitHub request against an API that rate-limits by the hour.
+let inFlight: Promise<{ results: MarketplacePlugin[]; unavailable: boolean }> | null = null
+
+function fetchOnce(): Promise<{ results: MarketplacePlugin[]; unavailable: boolean }> {
+  if (!inFlight) inFlight = fetchFromGithub().finally(() => (inFlight = null))
+  return inFlight
 }
 
-function filterPlugins(plugins: MarketplacePlugin[], query: string): MarketplacePlugin[] {
-  const q = query.trim().toLowerCase()
-  if (!q) return plugins
-  return plugins.filter(
-    (p) =>
-      p.name.toLowerCase().includes(q) ||
-      p.fullName.toLowerCase().includes(q) ||
-      (p.description ?? '').toLowerCase().includes(q)
-  )
+export async function listPlugins(): Promise<MarketplaceResult> {
+  if (!cache || Date.now() - cache.at > CACHE_TTL_MS) {
+    const fetched = await fetchOnce()
+    // A failed fetch is never cached: retrying costs one request, and someone who fixes their
+    // connection should not have to wait out a fifteen-minute window holding a placeholder.
+    if (fetched.unavailable) return { plugins: fetched.results, unavailable: true }
+    cache = { at: Date.now(), results: fetched.results }
+  }
+  return { plugins: cache.results, unavailable: false }
 }
 
 export function invalidateCache(): void {

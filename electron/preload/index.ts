@@ -186,7 +186,7 @@ const api: QuartzGuiApi = {
     delete: (projectPath: string, id: string) => ipcRenderer.invoke(IPC.themePresetDelete, projectPath, id)
   },
   marketplace: {
-    search: (query: string) => ipcRenderer.invoke(IPC.marketplaceSearch, query),
+    list: () => ipcRenderer.invoke(IPC.marketplaceList),
     refresh: () => ipcRenderer.invoke(IPC.marketplaceRefresh)
   },
   server: {

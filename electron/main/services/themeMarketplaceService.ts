@@ -126,10 +126,16 @@ async function fetchGithubMetadata(): Promise<Map<string, GithubRepoMeta>> {
   return byRepoName
 }
 
+// Same reason as marketplaceService's: StrictMode's double mount would otherwise spawn two
+// `npm search` processes and open two rounds of GitHub pagination for one visit to the tab.
+let npmInFlight: Promise<{ results: QuartzThemeListing[]; unavailable: boolean }> | null = null
+let githubInFlight: Promise<Map<string, GithubRepoMeta>> | null = null
+
 export async function listThemes(): Promise<ThemeCatalogResult> {
   let unavailable = false
   if (!cache || Date.now() - cache.at > CACHE_TTL_MS) {
-    const fetched = await fetchFromNpm()
+    if (!npmInFlight) npmInFlight = fetchFromNpm().finally(() => (npmInFlight = null))
+    const fetched = await npmInFlight
     // A failed `npm search` is never cached: it used to hold the seven-entry placeholder for
     // fifteen minutes with nothing in the app able to clear it - invalidateCache() was exported
     // and called from nowhere.
@@ -138,7 +144,8 @@ export async function listThemes(): Promise<ThemeCatalogResult> {
     else return { themes: fetched.results, unavailable: true }
   }
   if (!githubCache || Date.now() - githubCache.at > CACHE_TTL_MS) {
-    githubCache = { at: Date.now(), byRepoName: await fetchGithubMetadata() }
+    if (!githubInFlight) githubInFlight = fetchGithubMetadata().finally(() => (githubInFlight = null))
+    githubCache = { at: Date.now(), byRepoName: await githubInFlight }
   }
   const themes = cache!.results.map((t) => {
     const gh = githubCache!.byRepoName.get(t.id)

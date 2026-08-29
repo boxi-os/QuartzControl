@@ -350,7 +350,7 @@ export function registerIpcHandlers(): void {
       )
   )
 
-  handle(IPC.marketplaceSearch, t([s.shortText]), (query) => marketplaceService.searchPlugins(query))
+  handleNoArgs(IPC.marketplaceList, () => marketplaceService.listPlugins())
   handleNoArgs(IPC.marketplaceRefresh, () => {
     marketplaceService.invalidateCache()
   })

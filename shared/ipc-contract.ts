@@ -1230,7 +1230,7 @@ export const IPC = {
   templatePackageImport: 'templatePackage:import',
   templatePackageProgress: 'templatePackage:progress',
 
-  marketplaceSearch: 'marketplace:search',
+  marketplaceList: 'marketplace:list',
   marketplaceRefresh: 'marketplace:refresh',
 
   serverStart: 'server:start',
@@ -1457,7 +1457,13 @@ export interface QuartzGuiApi {
     delete(projectPath: string, id: string): Promise<void>
   }
   marketplace: {
-    search(query: string): Promise<MarketplaceResult>
+    /**
+     * The whole catalog. Deliberately not a query: the search box filters the org's ~60
+     * repositories in the renderer, where it costs nothing, rather than crossing IPC per
+     * keystroke - and when GitHub is unreachable a failed fetch is never cached (on purpose),
+     * so a per-keystroke call meant one GitHub request per typed character.
+     */
+    list(): Promise<MarketplaceResult>
     refresh(): Promise<void>
   }
   server: {

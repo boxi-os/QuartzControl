@@ -2,11 +2,17 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ButtonHTMLAttributes, HTMLAttributes, InputHTMLAttributes, LabelHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react'
 import type { LucideIcon } from 'lucide-react'
 
+// A disabled button still has to say what it is. In light mode the disabled fills are light
+// (blue-300 / red-300) while the label stayed white, which measured 1.80:1 and 1.83:1 - the label
+// was simply not readable, and on Updates or Git-Sync that label is the only thing naming the
+// action you cannot take right now. The dark disabled fills are near-black, so white stays there.
 const VARIANTS = {
-  primary: 'bg-blue-600 text-white hover:bg-blue-500 disabled:bg-blue-300 dark:disabled:bg-blue-900/50 shadow-sm',
-  danger: 'bg-red-600 text-white hover:bg-red-500 disabled:bg-red-300 dark:disabled:bg-red-900/50 shadow-sm',
+  primary:
+    'bg-blue-600 text-white hover:bg-blue-500 disabled:bg-blue-300 disabled:text-blue-800 dark:disabled:bg-blue-900/50 dark:disabled:text-white shadow-sm',
+  danger:
+    'bg-red-600 text-white hover:bg-red-500 disabled:bg-red-300 disabled:text-red-900 dark:disabled:bg-red-900/50 dark:disabled:text-white shadow-sm',
   ghost:
-    'bg-black/[0.04] text-slate-700 hover:bg-black/[0.08] disabled:text-slate-400 dark:bg-white/10 dark:text-slate-200 dark:hover:bg-white/15 dark:disabled:text-slate-500'
+    'bg-black/[0.04] text-slate-700 hover:bg-black/[0.08] disabled:text-slate-500 dark:bg-white/10 dark:text-slate-200 dark:hover:bg-white/15 dark:disabled:text-slate-400'
 }
 
 export function Button({
@@ -241,7 +247,7 @@ export function LabelText(props: LabelHTMLAttributes<HTMLLabelElement>): JSX.Ele
   return (
     <label
       {...props}
-      className={`text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 ${props.className ?? ''}`}
+      className={`text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 ${props.className ?? ''}`}
     />
   )
 }
@@ -261,7 +267,7 @@ export function SettingsSection({
   collapsible?: boolean
   children: ReactNode
 }): JSX.Element {
-  const heading = <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{title}</span>
+  const heading = <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{title}</span>
   const body = (
     <>
       {children}

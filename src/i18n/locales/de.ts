@@ -832,7 +832,7 @@ export default {
     tabGlobal: 'Global',
     tabPageTypes: 'Seitentypen',
     tabFrames: 'Eigene Frames',
-    pageTypesHint: 'Wählen Sie einen Seitentyp, um ihn anzupassen.',
+    pageTypesHint: 'Wähle einen Seitentyp, um ihn anzupassen.',
     pageTypeHasOverride: 'Angepasst',
     loading: 'Lade Layout…',
     positions: {
@@ -884,7 +884,7 @@ export default {
     },
     removeOverride: 'Override entfernen',
     excludeHeading: 'Sichtbare Komponenten',
-    excludeDescription: 'Schalten Sie eine Komponente aus, um sie auf Seiten dieses Typs auszublenden.',
+    excludeDescription: 'Schalte eine Komponente aus, um sie auf Seiten dieses Typs auszublenden.',
     excludeDuplicateHint: 'Betrifft alle {{count}} Instanzen von „{{name}}" — Quartz kann einzelne Duplikate hier nicht getrennt ausschließen.',
     template: 'Frame/Template',
     templateDefault: 'Standard',
@@ -896,7 +896,7 @@ export default {
     clearSlotsHeading: 'Bereiche für diesen Seitentyp leeren',
     clearSlotsDescription: 'Aktivierte Bereiche bleiben für diesen Seitentyp immer leer, unabhängig von der globalen Belegung.',
     frameBuilder: {
-      description: 'Erstellen Sie eigene Grid-Layouts als neue Frames. Sie werden bei den Seitentyp-Overrides als Frame/Template auswählbar.',
+      description: 'Baue eigene Grid-Layouts als neue Frames. Sie werden bei den Seitentyp-Overrides als Frame/Template auswählbar.',
       newFrame: 'Neuer Frame',
       none: 'Noch keine eigenen Frames erstellt.',
       gridSummary: '{{rows}}×{{cols}}-Raster, {{areas}} Bereich(e)',
@@ -930,7 +930,7 @@ export default {
       rowSizesLabel: 'Zeilenhöhen (leer = auto)',
       lineNamesLabel: 'Benannte Grid-Lines (optional)',
       lineNamesHint:
-        'Vergibt Namen für die Linien zwischen den Spalten bzw. Zeilen (z. B. „sidebar-start"). Wird für die Bereichszuweisung hier im Editor nicht benötigt — nützlich nur, wenn Sie später in eigenem CSS (z. B. custom.scss) gezielt auf diese Linie verweisen wollen, etwa mit grid-column: sidebar-start / content-end.',
+        'Vergibt Namen für die Linien zwischen den Spalten bzw. Zeilen (z. B. „sidebar-start"). Wird für die Bereichszuweisung hier im Editor nicht benötigt — nützlich nur, wenn du später in eigenem CSS (z. B. custom.scss) gezielt auf diese Linie verweisen willst, etwa mit grid-column: sidebar-start / content-end.',
       columnLinesLabel: 'Spalten-Lines',
       rowLinesLabel: 'Zeilen-Lines',
       copyLayoutTo: 'Auf {{target}} kopieren',
@@ -943,7 +943,7 @@ export default {
       newArea: '+ Bereich hinzufügen',
       allPlaced: 'Alle Bereiche sind platziert.',
       hintDragToPlace:
-        'Ziehen Sie einen Bereich auf eine freie Zelle, um ihn zu platzieren — oder einen platzierten Bereich zurück in diese Liste, um ihn wieder zu lösen. Ein Klick wählt einen Bereich aus und zeigt seine Einstellungen unten, dort auch die Zeilen- und Spalten-Spanne — Änderungen wirken sich sofort aus.',
+        'Ziehe einen Bereich auf eine freie Zelle, um ihn zu platzieren — oder einen platzierten Bereich zurück in diese Liste, um ihn wieder zu lösen. Ein Klick wählt einen Bereich aus und zeigt seine Einstellungen unten, dort auch die Zeilen- und Spalten-Spanne — Änderungen wirken sich sofort aus.',
       expandArea: 'Bereichseinstellungen aufklappen',
       areaName: 'Bereichsname',
       areaSlot: 'Belegung',
@@ -966,7 +966,7 @@ export default {
     componentPill: {
       paletteLabel: 'Komponente hinzufügen',
       paletteDropToRemove: 'Hier ablegen zum Entfernen',
-      paletteHint: 'Ziehen Sie eine Komponente auf einen Bereich, um eine weitere Instanz mit eigenen Einstellungen einzufügen.',
+      paletteHint: 'Ziehe eine Komponente auf einen Bereich, um eine weitere Instanz mit eigenen Einstellungen einzufügen.',
       dragHandle: 'Zum Verschieben ziehen',
       duplicate: 'Duplizieren',
       removeDuplicate: 'Duplikat entfernen'

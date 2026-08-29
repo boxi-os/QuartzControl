@@ -453,6 +453,19 @@ async function fileDiffUnlocked(projectPath: string, id: string, path: string): 
 
 // Restoring is itself reversible - a snapshot of the current state is taken first, the principle
 // the old config backups already followed and the update page's git tags did not.
+// A path list goes into argv, and argv has a hard ceiling: measured against real git on macOS
+// (ARG_MAX 1048576), 5000 paths of ~55 characters still spawn, 10000 fail with ENOBUFS and 20000
+// with E2BIG - and the IPC schema allows up to 20000, which a per-file restore out of a project
+// with a real content folder can reach. The whole-project restore does not go through here (it is
+// one read-tree), so this only ever splits an explicit selection.
+const PATH_BATCH = 1000
+
+function inBatches(paths: string[]): string[][] {
+  const batches: string[][] = []
+  for (let i = 0; i < paths.length; i += PATH_BATCH) batches.push(paths.slice(i, i + PATH_BATCH))
+  return batches
+}
+
 async function restoreSnapshotUnlocked(
   projectPath: string,
   id: string,
@@ -511,13 +524,15 @@ async function restoreSnapshotUnlocked(
     )
     const toRestore = effectivePaths.filter((path) => inSnapshot.has(path))
     const toDelete = effectivePaths.filter((path) => !inSnapshot.has(path))
-    if (toRestore.length > 0) {
-      const checkout = await git(projectPath, ['checkout', commit, '--', ...toRestore])
+    for (const batch of inBatches(toRestore)) {
+      const checkout = await git(projectPath, ['checkout', commit, '--', ...batch])
       if (!checkout.success) return { success: false, output: checkout.output }
       output.push(checkout.output)
     }
     for (const doomedPath of toDelete) await rm(join(projectPath, doomedPath), { force: true })
-    if (toDelete.length > 0) await git(projectPath, ['rm', '--cached', '--quiet', '--', ...toDelete])
+    for (const batch of inBatches(toDelete)) {
+      await git(projectPath, ['rm', '--cached', '--quiet', '--', ...batch])
+    }
     return null
   })
   if (failure) return failure

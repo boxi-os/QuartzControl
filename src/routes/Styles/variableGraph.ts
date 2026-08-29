@@ -249,6 +249,13 @@ export function groupOf(key: string): string {
   return first.toUpperCase()
 }
 
+// The heading a group is shown under. groupOf() answers either a catalog group id - which has a
+// translated label - or an uppercased name prefix, which is the variable's own text and stays as
+// it is. One helper for both, so the two panels that list groups cannot label them differently.
+export function groupLabel(t: (key: string, options?: Record<string, unknown>) => string, group: string): string {
+  return t(`styles.variables.groups.${group}`, { defaultValue: group })
+}
+
 export function allKnownKeys(ctx: ResolveContext): string[] {
   const keys = new Set<string>(CSS_VARIABLES.map((def) => def.key))
   for (const key of Object.keys(ctx.graph?.vars ?? {})) keys.add(key)

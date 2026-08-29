@@ -21,6 +21,10 @@ export default {
       error: 'Fehler'
     }
   },
+  errors: {
+    renderFailed: 'Diese Ansicht konnte nicht angezeigt werden.',
+    retry: 'Nochmal versuchen'
+  },
   devServer: {
     staleHint: 'Der laufende Dev-Server zeigt die Änderung erst nach einem Neustart.',
     restart: 'Dev-Server neu starten',
@@ -1057,6 +1061,18 @@ export default {
         uses: 'Verwendet diese Variablen',
         dependents: 'Wird von diesen Variablen verwendet',
         edit: 'Eigener Wert'
+      },
+      groups: {
+        baseColors: 'Grundfarben',
+        surfaces: 'Flächen',
+        text: 'Text',
+        interaction: 'Bedienelemente',
+        baseScale: 'Grauwert-Skala',
+        fonts: 'Schriften',
+        navigation: 'Navigation',
+        tags: 'Tags',
+        other: 'Sonstiges',
+        accentHsl: 'Akzentfarbe (H/S/L)'
       },
       origin: {
         core: 'Quartz-Kern',

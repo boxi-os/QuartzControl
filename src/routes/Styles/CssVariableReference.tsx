@@ -8,7 +8,7 @@ import {
   type CalloutColorDef,
   type CssVariableDef
 } from '../../data/cssVariables'
-import { cssColorToHex, effectiveValue, isDisplayableColor, resolvedValue, type ResolveContext } from './variableGraph'
+import { cssColorToHex, effectiveValue, groupLabel, isDisplayableColor, resolvedValue, type ResolveContext } from './variableGraph'
 import { useStyles } from './index'
 
 // Read-only reference of the CSS custom properties available at the point custom.scss is included:
@@ -38,7 +38,7 @@ export default function CssVariableReference({ onInsert }: { onInsert: (text: st
     : Object.keys(overrides).filter((key) => !knownKeys.has(key))
   const allDefs: CssVariableDef[] = [
     ...CSS_VARIABLES,
-    ...extraKeys.map((key) => ({ key, group: t('styleEditor.cssVars.discoveredGroup'), kind: 'discovered' as const }))
+    ...extraKeys.map((key) => ({ key, group: 'discovered', kind: 'discovered' as const }))
   ]
 
   const filtered = query ? allDefs.filter((def) => def.key.toLowerCase().includes(query)).slice(0, 80) : allDefs
@@ -69,7 +69,9 @@ export default function CssVariableReference({ onInsert }: { onInsert: (text: st
       <div className="flex flex-col gap-3">
         {Array.from(grouped.entries()).map(([group, defs]) => (
           <div key={group}>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{group}</p>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+              {group === 'discovered' ? t('styleEditor.cssVars.discoveredGroup') : groupLabel(t, group)}
+            </p>
             <div className="flex flex-col gap-0.5">
               {defs.map((def) => (
                 <VariableRow key={def.key} def={def} ctx={ctx} onInsert={onInsert} onCopy={copy} />

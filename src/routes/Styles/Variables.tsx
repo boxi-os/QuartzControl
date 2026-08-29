@@ -6,7 +6,7 @@ import { Button, Card, TextInput } from '../../components/ui'
 import { useStickyState } from '../../state/uiState'
 import { CSS_VARIABLES } from '../../data/cssVariables'
 import VariableRow, { type OverrideValue } from './VariableRow'
-import { allKnownKeys, groupOf, type ResolveContext } from './variableGraph'
+import { allKnownKeys, groupLabel, groupOf, type ResolveContext } from './variableGraph'
 import { activeThemeIdOf, useStyles } from './index'
 
 // How many rows the searchable table renders at once. A community theme can declare ~1000
@@ -140,7 +140,7 @@ export default function Variables(): JSX.Element {
         <div className="flex flex-col gap-4">
           {curatedGroups.map(([group, keys]) => (
             <div key={group}>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{group}</p>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{groupLabel(t, group)}</p>
               <div className="flex flex-col gap-0.5">
                 {keys.map((key) => (
                   <VariableRow key={key} {...rowProps(key)} />
@@ -286,7 +286,7 @@ function AllVariables({
               <div className="flex flex-col gap-4">
                 {Array.from(grouped.entries()).map(([group, groupKeys]) => (
                   <div key={group}>
-                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{group}</p>
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{groupLabel(t, group)}</p>
                     <div className="flex flex-col gap-0.5">{groupKeys.map(renderRow)}</div>
                   </div>
                 ))}

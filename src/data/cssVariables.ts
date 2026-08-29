@@ -9,9 +9,23 @@
 // build-output CSS (see the "scan build output" flow in ThemeEditor.tsx / CssVariableReference.tsx).
 export type ClassicColorKey = 'light' | 'lightgray' | 'gray' | 'darkgray' | 'dark' | 'secondary' | 'tertiary' | 'highlight' | 'textHighlight'
 
+// The group a variable is filed under. An id rather than a label, because the label is a piece of
+// UI text and belongs in the translation files - see styles.variables.groups.* in de.ts/en.ts.
+export type CssVariableGroup =
+  | 'baseColors'
+  | 'surfaces'
+  | 'text'
+  | 'interaction'
+  | 'baseScale'
+  | 'fonts'
+  | 'navigation'
+  | 'tags'
+  | 'other'
+  | 'accentHsl'
+
 export interface CssVariableDef {
   key: string
-  group: string
+  group: CssVariableGroup | string
   // 'discovered' is for a key that came out of the theme/build scan rather than this catalog:
   // nothing is known about what it holds, so it derives no default and gets no typed preview.
   kind: 'color' | 'font' | 'accent-h' | 'accent-s' | 'accent-l' | 'discovered'
@@ -21,92 +35,92 @@ export interface CssVariableDef {
 export const CSS_VARIABLES: CssVariableDef[] = [
   // The 9 classic colors themselves, written verbatim to --light/--secondary/etc. - everything
   // below is an alias of one of these, not a separate source of truth.
-  { key: 'light', group: 'Grundfarben', kind: 'color', source: 'light' },
-  { key: 'lightgray', group: 'Grundfarben', kind: 'color', source: 'lightgray' },
-  { key: 'gray', group: 'Grundfarben', kind: 'color', source: 'gray' },
-  { key: 'darkgray', group: 'Grundfarben', kind: 'color', source: 'darkgray' },
-  { key: 'dark', group: 'Grundfarben', kind: 'color', source: 'dark' },
-  { key: 'secondary', group: 'Grundfarben', kind: 'color', source: 'secondary' },
-  { key: 'tertiary', group: 'Grundfarben', kind: 'color', source: 'tertiary' },
-  { key: 'highlight', group: 'Grundfarben', kind: 'color', source: 'highlight' },
-  { key: 'textHighlight', group: 'Grundfarben', kind: 'color', source: 'textHighlight' },
+  { key: 'light', group: 'baseColors', kind: 'color', source: 'light' },
+  { key: 'lightgray', group: 'baseColors', kind: 'color', source: 'lightgray' },
+  { key: 'gray', group: 'baseColors', kind: 'color', source: 'gray' },
+  { key: 'darkgray', group: 'baseColors', kind: 'color', source: 'darkgray' },
+  { key: 'dark', group: 'baseColors', kind: 'color', source: 'dark' },
+  { key: 'secondary', group: 'baseColors', kind: 'color', source: 'secondary' },
+  { key: 'tertiary', group: 'baseColors', kind: 'color', source: 'tertiary' },
+  { key: 'highlight', group: 'baseColors', kind: 'color', source: 'highlight' },
+  { key: 'textHighlight', group: 'baseColors', kind: 'color', source: 'textHighlight' },
 
   // Surface colors
-  { key: 'background-primary', group: 'Oberflächen', kind: 'color', source: 'light' },
-  { key: 'background-primary-alt', group: 'Oberflächen', kind: 'color', source: 'light' },
-  { key: 'background-secondary', group: 'Oberflächen', kind: 'color', source: 'lightgray' },
-  { key: 'background-secondary-alt', group: 'Oberflächen', kind: 'color', source: 'lightgray' },
-  { key: 'background-modifier-border', group: 'Oberflächen', kind: 'color', source: 'lightgray' },
-  { key: 'background-modifier-border-hover', group: 'Oberflächen', kind: 'color', source: 'gray' },
-  { key: 'background-modifier-border-focus', group: 'Oberflächen', kind: 'color', source: 'secondary' },
+  { key: 'background-primary', group: 'surfaces', kind: 'color', source: 'light' },
+  { key: 'background-primary-alt', group: 'surfaces', kind: 'color', source: 'light' },
+  { key: 'background-secondary', group: 'surfaces', kind: 'color', source: 'lightgray' },
+  { key: 'background-secondary-alt', group: 'surfaces', kind: 'color', source: 'lightgray' },
+  { key: 'background-modifier-border', group: 'surfaces', kind: 'color', source: 'lightgray' },
+  { key: 'background-modifier-border-hover', group: 'surfaces', kind: 'color', source: 'gray' },
+  { key: 'background-modifier-border-focus', group: 'surfaces', kind: 'color', source: 'secondary' },
 
   // Text colors
-  { key: 'text-normal', group: 'Text', kind: 'color', source: 'darkgray' },
-  { key: 'text-muted', group: 'Text', kind: 'color', source: 'gray' },
-  { key: 'text-faint', group: 'Text', kind: 'color', source: 'gray' },
-  { key: 'text-accent', group: 'Text', kind: 'color', source: 'secondary' },
-  { key: 'text-accent-hover', group: 'Text', kind: 'color', source: 'tertiary' },
-  { key: 'text-on-accent', group: 'Text', kind: 'color', source: 'light' },
-  { key: 'text-on-accent-inverted', group: 'Text', kind: 'color', source: 'dark' },
-  { key: 'text-highlight-bg', group: 'Text', kind: 'color', source: 'textHighlight' },
+  { key: 'text-normal', group: 'text', kind: 'color', source: 'darkgray' },
+  { key: 'text-muted', group: 'text', kind: 'color', source: 'gray' },
+  { key: 'text-faint', group: 'text', kind: 'color', source: 'gray' },
+  { key: 'text-accent', group: 'text', kind: 'color', source: 'secondary' },
+  { key: 'text-accent-hover', group: 'text', kind: 'color', source: 'tertiary' },
+  { key: 'text-on-accent', group: 'text', kind: 'color', source: 'light' },
+  { key: 'text-on-accent-inverted', group: 'text', kind: 'color', source: 'dark' },
+  { key: 'text-highlight-bg', group: 'text', kind: 'color', source: 'textHighlight' },
 
   // Interactive
-  { key: 'interactive-normal', group: 'Interaktion', kind: 'color', source: 'light' },
-  { key: 'interactive-hover', group: 'Interaktion', kind: 'color', source: 'lightgray' },
-  { key: 'interactive-accent', group: 'Interaktion', kind: 'color', source: 'secondary' },
-  { key: 'interactive-accent-hover', group: 'Interaktion', kind: 'color', source: 'tertiary' },
+  { key: 'interactive-normal', group: 'interaction', kind: 'color', source: 'light' },
+  { key: 'interactive-hover', group: 'interaction', kind: 'color', source: 'lightgray' },
+  { key: 'interactive-accent', group: 'interaction', kind: 'color', source: 'secondary' },
+  { key: 'interactive-accent-hover', group: 'interaction', kind: 'color', source: 'tertiary' },
 
   // Base scale
-  { key: 'color-base-00', group: 'Basis-Skala', kind: 'color', source: 'light' },
-  { key: 'color-base-05', group: 'Basis-Skala', kind: 'color', source: 'light' },
-  { key: 'color-base-10', group: 'Basis-Skala', kind: 'color', source: 'light' },
-  { key: 'color-base-20', group: 'Basis-Skala', kind: 'color', source: 'lightgray' },
-  { key: 'color-base-25', group: 'Basis-Skala', kind: 'color', source: 'lightgray' },
-  { key: 'color-base-30', group: 'Basis-Skala', kind: 'color', source: 'lightgray' },
-  { key: 'color-base-35', group: 'Basis-Skala', kind: 'color', source: 'lightgray' },
-  { key: 'color-base-40', group: 'Basis-Skala', kind: 'color', source: 'gray' },
-  { key: 'color-base-50', group: 'Basis-Skala', kind: 'color', source: 'gray' },
-  { key: 'color-base-60', group: 'Basis-Skala', kind: 'color', source: 'gray' },
-  { key: 'color-base-70', group: 'Basis-Skala', kind: 'color', source: 'darkgray' },
-  { key: 'color-base-100', group: 'Basis-Skala', kind: 'color', source: 'dark' },
+  { key: 'color-base-00', group: 'baseScale', kind: 'color', source: 'light' },
+  { key: 'color-base-05', group: 'baseScale', kind: 'color', source: 'light' },
+  { key: 'color-base-10', group: 'baseScale', kind: 'color', source: 'light' },
+  { key: 'color-base-20', group: 'baseScale', kind: 'color', source: 'lightgray' },
+  { key: 'color-base-25', group: 'baseScale', kind: 'color', source: 'lightgray' },
+  { key: 'color-base-30', group: 'baseScale', kind: 'color', source: 'lightgray' },
+  { key: 'color-base-35', group: 'baseScale', kind: 'color', source: 'lightgray' },
+  { key: 'color-base-40', group: 'baseScale', kind: 'color', source: 'gray' },
+  { key: 'color-base-50', group: 'baseScale', kind: 'color', source: 'gray' },
+  { key: 'color-base-60', group: 'baseScale', kind: 'color', source: 'gray' },
+  { key: 'color-base-70', group: 'baseScale', kind: 'color', source: 'darkgray' },
+  { key: 'color-base-100', group: 'baseScale', kind: 'color', source: 'dark' },
 
   // Font slots written directly by joinStyles() - titleFont has no separate GUI-managed slot
   // (theme.ts falls back to the header font when title is unset, same as here) and, like the other
   // three, is mode-independent (joinStyles only ever writes it into the light-mode :root block).
-  { key: 'titleFont', group: 'Schriften', kind: 'font', source: 'header' },
-  { key: 'headerFont', group: 'Schriften', kind: 'font', source: 'header' },
-  { key: 'bodyFont', group: 'Schriften', kind: 'font', source: 'body' },
-  { key: 'codeFont', group: 'Schriften', kind: 'font', source: 'code' },
+  { key: 'titleFont', group: 'fonts', kind: 'font', source: 'header' },
+  { key: 'headerFont', group: 'fonts', kind: 'font', source: 'header' },
+  { key: 'bodyFont', group: 'fonts', kind: 'font', source: 'body' },
+  { key: 'codeFont', group: 'fonts', kind: 'font', source: 'code' },
 
   // Font aliases (typography, not color)
-  { key: 'font-text', group: 'Schriften', kind: 'font', source: 'body' },
-  { key: 'font-monospace', group: 'Schriften', kind: 'font', source: 'code' },
-  { key: 'font-interface', group: 'Schriften', kind: 'font', source: 'body' },
+  { key: 'font-text', group: 'fonts', kind: 'font', source: 'body' },
+  { key: 'font-monospace', group: 'fonts', kind: 'font', source: 'code' },
+  { key: 'font-interface', group: 'fonts', kind: 'font', source: 'body' },
 
   // Nav/Sidebar
-  { key: 'nav-item-color', group: 'Navigation', kind: 'color', source: 'darkgray' },
-  { key: 'nav-item-color-hover', group: 'Navigation', kind: 'color', source: 'dark' },
-  { key: 'nav-item-color-active', group: 'Navigation', kind: 'color', source: 'secondary' },
-  { key: 'nav-item-background-hover', group: 'Navigation', kind: 'color', source: 'lightgray' },
-  { key: 'nav-item-background-active', group: 'Navigation', kind: 'color', source: 'highlight' },
+  { key: 'nav-item-color', group: 'navigation', kind: 'color', source: 'darkgray' },
+  { key: 'nav-item-color-hover', group: 'navigation', kind: 'color', source: 'dark' },
+  { key: 'nav-item-color-active', group: 'navigation', kind: 'color', source: 'secondary' },
+  { key: 'nav-item-background-hover', group: 'navigation', kind: 'color', source: 'lightgray' },
+  { key: 'nav-item-background-active', group: 'navigation', kind: 'color', source: 'highlight' },
 
   // Tags
-  { key: 'tag-background', group: 'Tags', kind: 'color', source: 'highlight' },
-  { key: 'tag-color', group: 'Tags', kind: 'color', source: 'secondary' },
-  { key: 'tag-background-hover', group: 'Tags', kind: 'color', source: 'lightgray' },
+  { key: 'tag-background', group: 'tags', kind: 'color', source: 'highlight' },
+  { key: 'tag-color', group: 'tags', kind: 'color', source: 'secondary' },
+  { key: 'tag-background-hover', group: 'tags', kind: 'color', source: 'lightgray' },
 
   // Misc
-  { key: 'icon-color', group: 'Sonstiges', kind: 'color', source: 'darkgray' },
-  { key: 'icon-color-hover', group: 'Sonstiges', kind: 'color', source: 'dark' },
-  { key: 'icon-color-active', group: 'Sonstiges', kind: 'color', source: 'secondary' },
-  { key: 'divider-color', group: 'Sonstiges', kind: 'color', source: 'lightgray' },
-  { key: 'link-color', group: 'Sonstiges', kind: 'color', source: 'secondary' },
-  { key: 'link-color-hover', group: 'Sonstiges', kind: 'color', source: 'tertiary' },
+  { key: 'icon-color', group: 'other', kind: 'color', source: 'darkgray' },
+  { key: 'icon-color-hover', group: 'other', kind: 'color', source: 'dark' },
+  { key: 'icon-color-active', group: 'other', kind: 'color', source: 'secondary' },
+  { key: 'divider-color', group: 'other', kind: 'color', source: 'lightgray' },
+  { key: 'link-color', group: 'other', kind: 'color', source: 'secondary' },
+  { key: 'link-color-hover', group: 'other', kind: 'color', source: 'tertiary' },
 
   // Accent HSL (computed from secondary)
-  { key: 'accent-h', group: 'Akzent (HSL)', kind: 'accent-h' },
-  { key: 'accent-s', group: 'Akzent (HSL)', kind: 'accent-s' },
-  { key: 'accent-l', group: 'Akzent (HSL)', kind: 'accent-l' }
+  { key: 'accent-h', group: 'accentHsl', kind: 'accent-h' },
+  { key: 'accent-s', group: 'accentHsl', kind: 'accent-s' },
+  { key: 'accent-l', group: 'accentHsl', kind: 'accent-l' }
 ]
 
 // Direct port of quartz/util/theme.ts's hexToHsl() (same rounding, same fallback for an unparsable

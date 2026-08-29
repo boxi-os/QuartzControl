@@ -1,4 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
+import i18n from '../i18n'
 import { useAppStore } from '../state/store'
 
 // An IPC rejection reaches the renderer wrapped by Electron as
@@ -28,6 +30,7 @@ export function installGlobalErrorHandlers(): void {
 }
 
 export function ErrorToasts(): JSX.Element | null {
+  const { t } = useTranslation()
   const errors = useAppStore((s) => s.errors)
   const dismissError = useAppStore((s) => s.dismissError)
   if (errors.length === 0) return null
@@ -43,7 +46,7 @@ export function ErrorToasts(): JSX.Element | null {
           <button
             type="button"
             onClick={() => dismissError(error.id)}
-            aria-label="Schließen"
+            aria-label={t('common.close')}
             className="shrink-0 rounded px-1 text-red-500 hover:bg-red-100 dark:hover:bg-red-900"
           >
             ✕
@@ -60,6 +63,8 @@ interface BoundaryState {
 
 // A thrown render error would otherwise blank the whole window (React unmounts the tree), which
 // looks identical to a crashed app. This keeps the shell and shows what happened.
+// Its two strings come from the i18next singleton rather than useTranslation(): this has to be a
+// class component (only classes can catch a render error), so there is no hook to call.
 export class RouteErrorBoundary extends Component<{ children: ReactNode }, BoundaryState> {
   state: BoundaryState = { message: null }
 
@@ -75,14 +80,14 @@ export class RouteErrorBoundary extends Component<{ children: ReactNode }, Bound
     if (this.state.message === null) return this.props.children
     return (
       <div className="m-6 max-w-2xl rounded-lg border border-red-300 bg-red-50 p-4 dark:border-red-500/40 dark:bg-red-950">
-        <p className="mb-2 text-sm font-semibold text-red-800 dark:text-red-300">Diese Ansicht konnte nicht dargestellt werden.</p>
+        <p className="mb-2 text-sm font-semibold text-red-800 dark:text-red-300">{i18n.t('errors.renderFailed')}</p>
         <pre className="whitespace-pre-wrap break-words text-xs text-red-700 dark:text-red-400">{this.state.message}</pre>
         <button
           type="button"
           onClick={() => this.setState({ message: null })}
           className="mt-3 rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700"
         >
-          Erneut versuchen
+          {i18n.t('errors.retry')}
         </button>
       </div>
     )

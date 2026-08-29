@@ -21,6 +21,10 @@ export default {
       error: 'Error'
     }
   },
+  errors: {
+    renderFailed: 'This view could not be displayed.',
+    retry: 'Try again'
+  },
   devServer: {
     staleHint: 'The running dev server will not show this change until it restarts.',
     restart: 'Restart dev server',
@@ -1056,6 +1060,18 @@ export default {
         uses: 'Uses these variables',
         dependents: 'Used by these variables',
         edit: 'Your own value'
+      },
+      groups: {
+        baseColors: 'Base colors',
+        surfaces: 'Surfaces',
+        text: 'Text',
+        interaction: 'Controls',
+        baseScale: 'Grayscale ramp',
+        fonts: 'Fonts',
+        navigation: 'Navigation',
+        tags: 'Tags',
+        other: 'Other',
+        accentHsl: 'Accent color (H/S/L)'
       },
       origin: {
         core: 'Quartz core',

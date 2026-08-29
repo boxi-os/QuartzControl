@@ -169,6 +169,11 @@ export default function Publish(): JSX.Element {
     if (!activeTarget) return
     if (activeTarget.destination.type === 'git-branch') {
       if (!confirm(t('publish.confirmDeployBranch', { branch: activeTarget.destination.branch }))) return
+    } else if (activeTarget.destination.type === 'webhook') {
+      // A webhook uploads nothing and deletes nothing - it asks a provider to build. The shared
+      // wording counted a diff this target does not have and read "0 Dateien werden hochgeladen,
+      // 0 Dateien werden gelöscht", which describes the action as doing nothing at all.
+      if (!confirm(t('publish.confirmDeployWebhook', { target: activeTarget.name }))) return
     } else {
       const uploads = (diff ?? []).filter((e) => e.status !== 'removed' && !excluded.has(e.path)).length
       const deletions = (diff ?? []).filter((e) => e.status === 'removed' && !excluded.has(e.path)).length

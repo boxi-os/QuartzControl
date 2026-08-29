@@ -1329,6 +1329,8 @@ export default {
     confirmForgetHostKey:
       'Gespeicherten Host-Key für {{host}} verwerfen?\n\nBeim nächsten Verbinden wird der Fingerprint erneut abgefragt. Nur tun, wenn der Server nachweislich neu aufgesetzt wurde.',
     ftpPlaintextWarning: 'FTP überträgt Passwort und Dateien im Klartext. Ohne FTPS kann jeder im selben Netz mitlesen — falls dein Anbieter es unterstützt, unbedingt aktivieren (oder besser SFTP nutzen).',
+    confirmDeployWebhook:
+      'Webhook „{{target}}“ auslösen?\n\nDabei werden keine Dateien übertragen — der Anbieter wird nur aufgefordert, selbst zu bauen.',
     confirmDeployConnection:
       'Nach {{target}} veröffentlichen?\n\n{{uploads}} Datei(en) werden hochgeladen, {{deletions}} Datei(en) werden auf dem Server gelöscht.',
     connectionForm: {

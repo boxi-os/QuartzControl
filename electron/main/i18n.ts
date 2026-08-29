@@ -170,6 +170,7 @@ const STRINGS = {
     webhookHttpsOnly: 'Webhooks werden nur über https ausgelöst.',
     webhookFailed: 'POST {{origin}} fehlgeschlagen.',
     webhookTimeout: 'Keine Antwort innerhalb von {{seconds}} Sekunden.',
+    webhookRedacted: '[Token entfernt]',
 
     // GitHub
     githubNoToken: 'Kein GitHub-Token hinterlegt. Trage in den Einstellungen einen Token mit „repo“-Berechtigung ein.',
@@ -323,6 +324,7 @@ const STRINGS = {
     webhookHttpsOnly: 'Webhooks are only triggered over https.',
     webhookFailed: 'POST {{origin}} failed.',
     webhookTimeout: 'No answer within {{seconds}} seconds.',
+    webhookRedacted: '[token removed]',
 
     githubNoToken: 'No GitHub token stored. Add one with the “repo” scope in the settings.',
     githubRepoCreateFailed: 'The repository could not be created.',

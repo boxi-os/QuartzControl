@@ -1327,6 +1327,8 @@ export default {
     confirmForgetHostKey:
       'Discard the stored host key for {{host}}?\n\nYou will be asked to confirm the fingerprint again on the next connect. Only do this if the server was genuinely rebuilt.',
     ftpPlaintextWarning: 'FTP sends the password and all files in the clear. Without FTPS anyone on the same network can read along — enable it if your provider supports it (or use SFTP instead).',
+    confirmDeployWebhook:
+      'Trigger the webhook “{{target}}”?\n\nNo files are transferred — the provider is only asked to build on its own.',
     confirmDeployConnection:
       'Publish to {{target}}?\n\n{{uploads}} file(s) will be uploaded, {{deletions}} file(s) will be deleted on the server.',
     connectionForm: {

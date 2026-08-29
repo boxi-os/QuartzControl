@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { SlidersHorizontal } from 'lucide-react'
 import { useProject } from '../ProjectLayout'
 import type { GridFrameDefinition, QuartzConfig } from '@shared/ipc-contract'
-import { Button, PageHeader } from '../../components/ui'
+import { Button, PageHeader, SegmentedControl } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { useStickyState } from '../../state/uiState'
 import { UnsavedBadge, useUnsavedChanges } from '../../state/unsavedGuard'
@@ -14,6 +14,7 @@ import FrameBuilder from './FrameBuilder'
 import { derivePageTypes, hasPageTypeOverride } from './utils'
 
 type Tab = 'global' | 'pagetypes' | 'frames'
+const TAB_ORDER: Tab[] = ['global', 'pagetypes', 'frames']
 
 export default function LayoutEditor(): JSX.Element {
   const { t } = useTranslation()
@@ -129,11 +130,11 @@ export default function LayoutEditor(): JSX.Element {
         <pre className="whitespace-pre-wrap rounded-md bg-red-50 p-3 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-400">
           {loadError}
         </pre>
-        <p className="mt-2 text-sm text-slate-500">{t('configEditor.loadErrorHint')}</p>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t('configEditor.loadErrorHint')}</p>
       </div>
     )
   }
-  if (!config) return <p className="text-sm text-slate-500">{t('layoutEditor.loading')}</p>
+  if (!config) return <p className="text-sm text-slate-500 dark:text-slate-400">{t('layoutEditor.loading')}</p>
 
   return (
     <div>
@@ -141,33 +142,30 @@ export default function LayoutEditor(): JSX.Element {
         icon={TAB_ICONS.layout}
         title={t('projectLayout.tabs.layout')}
         description={t('projectLayout.descriptions.layout')}
+        actions={
+          // Same place as on Konfiguration and Stile - the other two pages that hold a whole
+          // document behind one Save button. The Frames tab saves per frame from its own editor.
+          tab !== 'frames' && (
+            <>
+              {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
+              {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{error}</span>}
+              {dirty && status !== 'saving' && <UnsavedBadge />}
+              <Button onClick={save} disabled={status === 'saving'}>
+                {status === 'saving' ? t('common.saving') : t('common.save')}
+              </Button>
+            </>
+          )
+        }
       />
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-1 rounded-[8px] bg-black/[0.05] p-0.5 dark:bg-white/10">
-          {(['global', 'pagetypes', 'frames'] as const).map((key) => (
-            <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={`rounded-[6px] px-3 py-1 text-[13px] font-medium transition-colors ${
-                tab === key
-                  ? 'bg-white text-slate-900 shadow-sm dark:bg-white/20 dark:text-white'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
-              }`}
-            >
-              {t(`layoutEditor.tab${key === 'global' ? 'Global' : key === 'pagetypes' ? 'PageTypes' : 'Frames'}`)}
-            </button>
-          ))}
-        </div>
-        {tab !== 'frames' && (
-          <div className="flex items-center gap-3">
-            {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
-            {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{error}</span>}
-            {dirty && status !== 'saving' && <UnsavedBadge />}
-            <Button onClick={save} disabled={status === 'saving'}>
-              {status === 'saving' ? t('common.saving') : t('common.save')}
-            </Button>
-          </div>
-        )}
+      <div className="mb-4">
+        <SegmentedControl
+          value={tab}
+          onChange={setTab}
+          options={TAB_ORDER.map((key) => ({
+            value: key,
+            label: t(`layoutEditor.tab${key === 'global' ? 'Global' : key === 'pagetypes' ? 'PageTypes' : 'Frames'}`)
+          }))}
+        />
       </div>
 
       {tab === 'pagetypes' && (
@@ -191,7 +189,7 @@ export default function LayoutEditor(): JSX.Element {
             </button>
           ))}
           {activePageType && overrideTypes.includes(activePageType) && (
-            <button type="button" onClick={() => removeOverride(activePageType)} className="ml-auto text-xs text-slate-500 underline">
+            <button type="button" onClick={() => removeOverride(activePageType)} className="ml-auto text-xs text-slate-500 dark:text-slate-400 underline">
               {t('layoutEditor.removeOverride')}
             </button>
           )}

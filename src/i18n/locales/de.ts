@@ -516,7 +516,10 @@ export default {
       clearing: 'Leere…',
       storage: 'Speicherort',
       storageHint: 'Hier liegen Projektliste, Einstellungen und die verschlüsselten Zugänge.',
-      reveal: 'Im Finder zeigen'
+      reveal: 'Im Finder zeigen',
+      unreadableTitle: 'Eine gespeicherte Datei war nicht lesbar',
+      unreadableHint:
+        'Beim Start konnte QuartzControl eine seiner Dateien nicht lesen - vermutlich, weil die App beim Speichern hart beendet wurde. Sie wurde zur Seite gelegt statt überschrieben, der Inhalt liegt also noch da. Was darin stand (z. B. Zugänge oder die Projektliste), fehlt in der App und muss neu angelegt werden.'
     }
   },
   configEditor: {

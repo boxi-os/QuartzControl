@@ -1,6 +1,7 @@
 import { app, safeStorage } from 'electron'
 import { existsSync, mkdirSync } from 'fs'
-import { readFile, rename, writeFile } from 'fs/promises'
+import { readFile, rename } from 'fs/promises'
+import { readJsonFile, readJsonFileOr, writeJsonFile } from './jsonStore'
 import { join } from 'path'
 import { randomUUID } from 'crypto'
 import type {
@@ -177,7 +178,7 @@ async function migrate(): Promise<{ connections: StoredConnection[]; targets: Le
     if (token) connections.push({ id: randomUUID(), kind: 'github', name: 'GitHub', encryptedSecret: token })
     if (settings.githubToken || settings.githubTokenEncrypted) {
       const { githubToken: _p, githubTokenEncrypted: _e, ...rest } = settings
-      await writeFile(settingsPath(), JSON.stringify(rest, null, 2), 'utf-8')
+      await writeJsonFile(settingsPath(), rest)
     }
   } catch {
     // no settings file yet, or unreadable - nothing to migrate
@@ -187,23 +188,27 @@ async function migrate(): Promise<{ connections: StoredConnection[]; targets: Le
   // file is still there to look at.
   if (profiles.length > 0) await rename(legacySecretsPath(), `${legacySecretsPath()}.migrated`).catch(() => {})
 
-  if (targets.length > 0) await writeFile(legacyTargetsPath(), JSON.stringify(targets, null, 2), 'utf-8')
+  if (targets.length > 0) await writeJsonFile(legacyTargetsPath(), targets)
 
   return { connections, targets }
 }
 
 async function readAll(): Promise<StoredConnection[]> {
-  try {
-    return JSON.parse(await readFile(storePath(), 'utf-8')) as StoredConnection[]
-  } catch {
-    const { connections } = await migrate()
-    await writeAll(connections)
-    return connections
-  }
+  const stored = await readJsonFile<StoredConnection[]>(storePath())
+  if (stored.kind === 'ok' && Array.isArray(stored.value)) return stored.value
+  // A store that exists but cannot be read is *not* a store that isn't there yet. Running the
+  // migration for it and writing the (empty) result back is what used to destroy every stored
+  // credential over a single truncated byte - a plain writeFile leaves exactly that behind when
+  // the app is force-quit mid-save. jsonStore has moved the file aside by now, so the data is
+  // still on disk; this session simply has no connections rather than a fresh empty store.
+  if (stored.kind !== 'missing') return []
+  const { connections } = await migrate()
+  await writeAll(connections)
+  return connections
 }
 
 async function writeAll(connections: StoredConnection[]): Promise<void> {
-  await writeFile(storePath(), JSON.stringify(connections, null, 2), 'utf-8')
+  await writeJsonFile(storePath(), connections)
 }
 
 // Claimed one project at a time by publishTargetsService; the claimed entries are removed so a
@@ -211,15 +216,10 @@ async function writeAll(connections: StoredConnection[]): Promise<void> {
 export async function claimLegacyTargets(projectPath: string): Promise<LegacyProfileTarget[]> {
   // Forces the migration to have run before the staging file is read.
   await readAll()
-  let staged: LegacyProfileTarget[] = []
-  try {
-    staged = JSON.parse(await readFile(legacyTargetsPath(), 'utf-8')) as LegacyProfileTarget[]
-  } catch {
-    return []
-  }
+  const staged = await readJsonFileOr<LegacyProfileTarget[]>(legacyTargetsPath(), [])
   const mine = staged.filter((t) => t.projectPath === projectPath)
   if (mine.length === 0) return []
-  await writeFile(legacyTargetsPath(), JSON.stringify(staged.filter((t) => t.projectPath !== projectPath), null, 2), 'utf-8')
+  await writeJsonFile(legacyTargetsPath(), staged.filter((t) => t.projectPath !== projectPath))
   return mine
 }
 

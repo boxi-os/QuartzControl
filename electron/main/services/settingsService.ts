@@ -1,9 +1,9 @@
 import { app } from 'electron'
 import { existsSync, mkdirSync } from 'fs'
-import { readFile, writeFile } from 'fs/promises'
 import { join } from 'path'
 import type { AppInfo, Settings } from '@shared/ipc-contract'
 import { themeDocsCacheStats } from './styleSettingsSchemaService'
+import { listQuarantinedFiles, readJsonFileOr, writeJsonFile } from './jsonStore'
 
 // No credentials here any more. The GitHub token used to live in this file (encrypted), which meant
 // two credential stores with two migration paths and a token the renderer had to relay back to main
@@ -22,11 +22,7 @@ function settingsPath(): string {
 }
 
 async function readStored(): Promise<StoredSettings> {
-  try {
-    return JSON.parse(await readFile(settingsPath(), 'utf-8')) as StoredSettings
-  } catch {
-    return {}
-  }
+  return readJsonFileOr<StoredSettings>(settingsPath(), {})
 }
 
 export async function getSettings(): Promise<Settings> {
@@ -41,7 +37,7 @@ export async function saveSettings(settings: Settings): Promise<void> {
   const next: StoredSettings = { ...settings }
   if (stored.githubToken) next.githubToken = stored.githubToken
   if (stored.githubTokenEncrypted) next.githubTokenEncrypted = stored.githubTokenEncrypted
-  await writeFile(settingsPath(), JSON.stringify(next, null, 2), 'utf-8')
+  await writeJsonFile(settingsPath(), next)
 }
 
 // What the Settings page's maintenance section reports: which build this is, and where the app
@@ -53,6 +49,7 @@ export async function getAppInfo(): Promise<AppInfo> {
     electronVersion: process.versions.electron,
     chromeVersion: process.versions.chrome,
     userDataPath: app.getPath('userData'),
-    themeDocsCache: await themeDocsCacheStats()
+    themeDocsCache: await themeDocsCacheStats(),
+    unreadableStores: listQuarantinedFiles().map(({ path, quarantinedAs }) => ({ path, quarantinedAs }))
   }
 }

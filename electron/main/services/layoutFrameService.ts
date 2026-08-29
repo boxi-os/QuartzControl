@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, rmSync } from 'fs'
 import { readFile, readdir, writeFile } from 'fs/promises'
+import { readJsonFileOr, writeJsonFile } from './jsonStore'
 import { join } from 'path'
 import type {
   FrameBreakpointWidths,
@@ -46,15 +47,14 @@ function breakpointsPath(projectPath: string): string {
 }
 
 export async function getBreakpointWidths(projectPath: string): Promise<FrameBreakpointWidths> {
-  try {
-    const raw = JSON.parse(await readFile(breakpointsPath(projectPath), 'utf-8')) as Partial<FrameBreakpointWidths>
-    const tablet = Number(raw.tablet)
-    const mobile = Number(raw.mobile)
-    if (!Number.isFinite(tablet) || !Number.isFinite(mobile) || mobile >= tablet) return DEFAULT_FRAME_BREAKPOINT_WIDTHS
-    return { tablet, mobile }
-  } catch {
-    return DEFAULT_FRAME_BREAKPOINT_WIDTHS
-  }
+  const raw = await readJsonFileOr<Partial<FrameBreakpointWidths>>(
+    breakpointsPath(projectPath),
+    DEFAULT_FRAME_BREAKPOINT_WIDTHS
+  )
+  const tablet = Number(raw.tablet)
+  const mobile = Number(raw.mobile)
+  if (!Number.isFinite(tablet) || !Number.isFinite(mobile) || mobile >= tablet) return DEFAULT_FRAME_BREAKPOINT_WIDTHS
+  return { tablet, mobile }
 }
 
 // The widths are baked into each frame's media queries when its CSS is generated, so changing them
@@ -62,7 +62,7 @@ export async function getBreakpointWidths(projectPath: string): Promise<FrameBre
 // from the UI. No `quartz plugin add` is needed - each frame's directory is already symlinked into
 // .quartz/plugins, so rewriting the files behind the symlink is all it takes.
 export async function saveBreakpointWidths(projectPath: string, widths: FrameBreakpointWidths): Promise<void> {
-  await writeFile(join(quartzGuiDir(projectPath), BREAKPOINTS_FILE), JSON.stringify(widths, null, 2), 'utf-8')
+  await writeJsonFile(join(quartzGuiDir(projectPath), BREAKPOINTS_FILE), widths)
   for (const def of await listFrames(projectPath)) {
     await writeFrameFiles(projectPath, def, widths)
   }
@@ -130,7 +130,9 @@ async function writeFrameFiles(projectPath: string, def: GridFrameDefinition, wi
   quartzGuiDir(projectPath, 'authored-frames') // creating: this is the write path
   mkdirSync(join(dir, 'dist'), { recursive: true })
   await Promise.all([
-    writeFile(join(dir, 'frame.json'), JSON.stringify(def, null, 2), 'utf-8'),
+    // Atomic: frame.json is the frame's definition and its only copy, and a half-written one
+    // drops the frame out of listFrames() while its plugin entry stays in quartz.config.yaml.
+    writeJsonFile(join(dir, 'frame.json'), def),
     writeFile(join(dir, 'package.json'), generatePackageJson(def), 'utf-8'),
     writeFile(join(dir, 'dist', 'frames.js'), generateFrameJs(def, widths), 'utf-8')
   ])
@@ -151,7 +153,11 @@ export async function listFrames(projectPath: string): Promise<GridFrameDefiniti
         try {
           const raw = JSON.parse(await readFile(join(dir, e.name, 'frame.json'), 'utf-8')) as GridFrameDefinition | LegacyGridFrameDefinition
           return migrateGridFrameDefinition(raw)
-        } catch {
+        } catch (err) {
+          // Not quarantined, unlike the stores in jsonStore: moving frame.json aside would take
+          // the frame's directory apart while its plugin entry still points at it. Said out loud
+          // instead, so a frame vanishing from the list has a reason somewhere.
+          console.error(`[layoutFrames] ${join(dir, e.name, 'frame.json')} ist nicht lesbar: ${String(err)}`)
           return null
         }
       })

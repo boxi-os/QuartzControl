@@ -1,7 +1,7 @@
-import { readFile, writeFile } from 'fs/promises'
 import { join } from 'path'
 import type { ThemePreset } from '@shared/ipc-contract'
 import { quartzGuiDir, quartzGuiPath } from './projectDirs'
+import { readJsonFileOr, writeJsonFile } from './jsonStore'
 
 // Presets live inside the project (.quartz-gui/, same convention as backupService.ts's
 // backups/content-backups folders) rather than Electron's userData, since a preset is tied to a
@@ -14,15 +14,11 @@ function presetsPath(projectPath: string): string {
 }
 
 async function readAll(projectPath: string): Promise<ThemePreset[]> {
-  try {
-    return JSON.parse(await readFile(presetsPath(projectPath), 'utf-8')) as ThemePreset[]
-  } catch {
-    return []
-  }
+  return readJsonFileOr<ThemePreset[]>(presetsPath(projectPath), [])
 }
 
 async function writeAll(projectPath: string, presets: ThemePreset[]): Promise<void> {
-  await writeFile(join(quartzGuiDir(projectPath), FILE), JSON.stringify(presets, null, 2), 'utf-8')
+  await writeJsonFile(join(quartzGuiDir(projectPath), FILE), presets)
 }
 
 export function listPresets(projectPath: string): Promise<ThemePreset[]> {

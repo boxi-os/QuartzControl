@@ -1,7 +1,7 @@
 import { app } from 'electron'
 import { existsSync, mkdirSync } from 'fs'
-import { readFile, writeFile } from 'fs/promises'
 import { join } from 'path'
+import { readJsonFileOr, writeJsonFile } from './jsonStore'
 
 // Tracks PIDs of dev servers this app has spawned, surviving an app restart, so an orphaned
 // server left behind by a hard kill (Ctrl+C in a `npm run dev` terminal, a crash, force-quit -
@@ -21,15 +21,11 @@ function storePath(): string {
 }
 
 async function readAll(): Promise<Record<string, TrackedServer>> {
-  try {
-    return JSON.parse(await readFile(storePath(), 'utf-8')) as Record<string, TrackedServer>
-  } catch {
-    return {}
-  }
+  return readJsonFileOr<Record<string, TrackedServer>>(storePath(), {})
 }
 
 async function writeAll(entries: Record<string, TrackedServer>): Promise<void> {
-  await writeFile(storePath(), JSON.stringify(entries, null, 2), 'utf-8')
+  await writeJsonFile(storePath(), entries)
 }
 
 export async function record(projectId: string, server: TrackedServer): Promise<void> {

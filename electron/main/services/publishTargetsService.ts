@@ -1,9 +1,9 @@
-import { readFile, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { randomUUID } from 'crypto'
 import type { PublishTarget, SavePublishTargetInput } from '@shared/ipc-contract'
 import { quartzGuiDir, quartzGuiPath } from './projectDirs'
 import { claimLegacyTargets } from './connectionsService'
+import { readJsonFileOr, writeJsonFile } from './jsonStore'
 
 // Targets live in the project, not in userData: they describe what *this* project publishes and
 // where, they carry no secret (that is the connection's half), and keeping them here means they
@@ -19,15 +19,11 @@ function targetsPath(projectPath: string): string {
 }
 
 async function read(projectPath: string): Promise<PublishTarget[]> {
-  try {
-    return JSON.parse(await readFile(targetsPath(projectPath), 'utf-8')) as PublishTarget[]
-  } catch {
-    return []
-  }
+  return readJsonFileOr<PublishTarget[]>(targetsPath(projectPath), [])
 }
 
 async function write(projectPath: string, targets: PublishTarget[]): Promise<void> {
-  await writeFile(join(quartzGuiDir(projectPath), FILE), JSON.stringify(targets, null, 2), 'utf-8')
+  await writeJsonFile(join(quartzGuiDir(projectPath), FILE), targets)
 }
 
 export async function listTargets(projectPath: string): Promise<PublishTarget[]> {

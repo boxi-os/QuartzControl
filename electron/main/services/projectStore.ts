@@ -1,9 +1,9 @@
 import { app } from 'electron'
 import { randomUUID } from 'crypto'
 import { existsSync, mkdirSync } from 'fs'
-import { readFile, writeFile } from 'fs/promises'
 import { basename, join } from 'path'
 import type { Project } from '@shared/ipc-contract'
+import { readJsonFileOr, writeJsonFile } from './jsonStore'
 
 function storePath(): string {
   const dir = app.getPath('userData')
@@ -12,16 +12,11 @@ function storePath(): string {
 }
 
 async function readAll(): Promise<Project[]> {
-  try {
-    const raw = await readFile(storePath(), 'utf-8')
-    return JSON.parse(raw) as Project[]
-  } catch {
-    return []
-  }
+  return readJsonFileOr<Project[]>(storePath(), [])
 }
 
 async function writeAll(projects: Project[]): Promise<void> {
-  await writeFile(storePath(), JSON.stringify(projects, null, 2), 'utf-8')
+  await writeJsonFile(storePath(), projects)
 }
 
 export async function listProjects(): Promise<Project[]> {

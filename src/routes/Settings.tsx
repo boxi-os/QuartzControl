@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { expandHome, isAbsolutePath, titlebarStripClass } from '../utils/platform'
 import { Link } from 'react-router-dom'
-import { Database, Key, Monitor, Moon, FolderOpen, Plug, RefreshCw, Sun } from 'lucide-react'
+import { Database, Key, Monitor, Moon, FolderOpen, Plug, RefreshCw, Sun, TriangleAlert } from 'lucide-react'
 import type { AppInfo, Connection, GithubAccount, SaveConnectionInput, Settings as AppSettings } from '@shared/ipc-contract'
 import { useAppStore } from '../state/store'
 import { Badge, Button, Card, Field, FieldGroup, SegmentedControl, Select, TextInput } from '../components/ui'
@@ -479,6 +479,27 @@ function MaintenanceSection(): JSX.Element {
 
   return (
     <Section icon={Database} title={t('settings.maintenance.title')} description={t('settings.maintenance.description')}>
+      {/* Normally absent. A store that could not be read has been moved aside rather than
+          overwritten (see jsonStore), so what it held is still on disk - but it is missing from
+          the app, and this is the only place that can say so. */}
+      {info && info.unreadableStores.length > 0 && (
+        <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-500/40 dark:bg-amber-950/40">
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-amber-900 dark:text-amber-200">
+            <TriangleAlert size={15} className="shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
+            {t('settings.maintenance.unreadableTitle')}
+          </p>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-amber-900/80 dark:text-amber-200/80">
+            {t('settings.maintenance.unreadableHint')}
+          </p>
+          <ul className="mt-2 space-y-1">
+            {info.unreadableStores.map((store) => (
+              <li key={store.path} className="break-all font-mono text-xs text-amber-900 dark:text-amber-200">
+                {store.quarantinedAs ?? store.path}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="grid gap-4 lg:grid-cols-2">
         <div>
           <p className="text-[13px] font-medium text-slate-600 dark:text-slate-300">{t('settings.maintenance.cache')}</p>

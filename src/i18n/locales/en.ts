@@ -515,7 +515,10 @@ export default {
       clearing: 'Clearing…',
       storage: 'Storage location',
       storageHint: 'Holds the project list, the settings, and the encrypted connections.',
-      reveal: 'Show in Finder'
+      reveal: 'Show in Finder',
+      unreadableTitle: 'A saved file could not be read',
+      unreadableHint:
+        'QuartzControl found one of its own files unreadable - most likely because the app was killed while saving it. It was moved aside instead of overwritten, so its contents are still on disk. Whatever it held (connections, the project list) is missing from the app and has to be set up again.'
     }
   },
   configEditor: {

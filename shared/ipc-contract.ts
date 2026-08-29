@@ -1117,6 +1117,12 @@ export interface AppInfo {
   userDataPath: string
   /** The permanent upstream-theme documentation cache (see styleSettingsSchemaService). */
   themeDocsCache: { entries: number; bytes: number }
+  /**
+   * Stores this session found on disk but could not read - moved aside as `<name>.corrupt-<time>`
+   * rather than overwritten (see jsonStore). Normally empty; when it is not, something the user
+   * saved is missing from the app and the file that held it is still there to look at.
+   */
+  unreadableStores: { path: string; quarantinedAs: string | null }[]
 }
 
 export const IPC = {

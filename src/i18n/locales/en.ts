@@ -377,6 +377,8 @@ export default {
       noToken: 'This needs a GitHub token with the “repo” scope — add one in the settings.',
       name: 'Repository name',
       private: 'Private',
+      privateHint:
+        'GitHub Pages is only available for private repositories on the paid plans. To publish the site through GitHub Pages on a free account the repository has to be public — visibility can be changed on GitHub later.',
       action: 'Create'
     },
     statusTitle: 'Repository state',

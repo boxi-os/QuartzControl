@@ -378,6 +378,8 @@ export default {
       noToken: 'Dafür wird ein GitHub-Token mit „repo“-Berechtigung gebraucht — in den Einstellungen eintragen.',
       name: 'Repository-Name',
       private: 'Privat',
+      privateHint:
+        'GitHub Pages gibt es für private Repositories nur in den bezahlten Tarifen. Wenn die Website über GitHub Pages veröffentlicht werden soll, muss das Repository im kostenlosen Konto öffentlich sein — die Sichtbarkeit lässt sich auf GitHub später ändern.',
       action: 'Anlegen'
     },
     statusTitle: 'Stand des Repositorys',

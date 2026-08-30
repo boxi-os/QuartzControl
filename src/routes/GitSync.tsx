@@ -186,7 +186,16 @@ function CreateRepoCard({ projectPath, onCreated }: { projectPath: string; onCre
           <TextInput value={name} onChange={(e) => setName(e.target.value)} className="w-64" disabled={!viewer} />
         </Field>
         <div className="pb-1.5">
-          <Toggle label={t('gitSync.createRepo.private')} checked={isPrivate} onChange={setIsPrivate} />
+          {/* The consequence belongs where the decision is taken. GitHub refuses Pages for a
+              private repository on a free account - "422: Your current plan does not support
+              GitHub Pages for this repository", measured - and that answer arrives several steps
+              later, on a different page, after the repository already exists. */}
+          <Toggle
+            label={t('gitSync.createRepo.private')}
+            hint={t('gitSync.createRepo.privateHint')}
+            checked={isPrivate}
+            onChange={setIsPrivate}
+          />
         </div>
         <Button onClick={() => create.run()} disabled={!viewer || !name.trim() || create.pending} className="mb-0.5">
           {create.pending ? t('common.saving') : t('gitSync.createRepo.action')}

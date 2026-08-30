@@ -160,7 +160,8 @@ const STRINGS = {
     rsyncHostKeyMismatch:
       'Der Host-Key von {{host}} stimmt nicht mit dem gespeicherten überein.\n\nerwartet:  {{expected}}\nempfangen: {{received}}\n\nDie Übertragung wurde abgebrochen. Das kann ein neu aufgesetzter Server sein — oder ein Angriff. Prüfe den Fingerprint beim Anbieter und setze ihn erst danach über „Host-Key vergessen“ zurück.',
     unknownFingerprint: 'unbekannt',
-    rsyncKeyRejected: 'Der Server hat den Schlüssel abgelehnt ({{user}}@{{host}}). Stimmen Benutzername und Schlüsseldatei?',
+    rsyncKeyRejected:
+      'Der Server hat die Anmeldung als {{user}}@{{host}} abgelehnt. Angeboten wurde: {{identity}}. Prüfe, ob genau dieser Schlüssel beim Anbieter hinterlegt ist — und ob der Pfad auf den privaten Schlüssel zeigt, nicht auf die .pub-Datei.',
     rsyncPathWithSpace:
       'Ein Remote-Pfad mit Leerzeichen lässt sich mit rsync nicht sicher übertragen. Bitte SFTP für dieses Ziel verwenden.',
 
@@ -171,6 +172,7 @@ const STRINGS = {
     webhookFailed: 'POST {{origin}} fehlgeschlagen.',
     webhookTimeout: 'Keine Antwort innerhalb von {{seconds}} Sekunden.',
     webhookRedacted: '[Token entfernt]',
+    sshAgentIdentity: 'der SSH-Agent',
     sshKeyFileUnreadable:
       'Die Schlüsseldatei „{{path}}“ lässt sich nicht lesen. Prüfe den Pfad und die Rechte (chmod 600).',
 
@@ -317,7 +319,8 @@ const STRINGS = {
     rsyncHostKeyMismatch:
       'The host key of {{host}} does not match the stored one.\n\nexpected: {{expected}}\nreceived: {{received}}\n\nThe transfer was aborted. This can be a rebuilt server — or an attack. Check the fingerprint with your provider and only then clear it via “Forget host key”.',
     unknownFingerprint: 'unknown',
-    rsyncKeyRejected: 'The server rejected the key ({{user}}@{{host}}). Are the username and key file right?',
+    rsyncKeyRejected:
+      'The server refused the login as {{user}}@{{host}}. What was offered: {{identity}}. Check that this exact key is registered with the provider — and that the path points at the private key, not the .pub file.',
     rsyncPathWithSpace:
       'A remote path containing a space cannot be transferred safely with rsync. Please use SFTP for this target.',
 
@@ -327,6 +330,7 @@ const STRINGS = {
     webhookFailed: 'POST {{origin}} failed.',
     webhookTimeout: 'No answer within {{seconds}} seconds.',
     webhookRedacted: '[token removed]',
+    sshAgentIdentity: 'the SSH agent',
     sshKeyFileUnreadable:
       'The key file “{{path}}” cannot be read. Check the path and its permissions (chmod 600).',
 

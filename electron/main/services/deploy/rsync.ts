@@ -106,7 +106,17 @@ function translateSshFailure(output: string, connection: SshConnection): string 
     })
   }
   if (output.includes('Permission denied (publickey')) {
-    return mainT('rsyncKeyRejected', { user: connection.username, host: connection.host })
+    // Naming the identity, because "the server rejected the key" is a claim about the far end and
+    // the near end is at least as often the answer: a path pointing at the .pub file, a key that
+    // was generated but never registered with the provider, or a different key than the one tested
+    // by hand. Measured during the alpha test, where an `ssh -i … -o BatchMode=yes` from a terminal
+    // succeeded against the very server this reported as refusing the key.
+    const identity =
+      connection.authMethod === 'agent' ? mainT('sshAgentIdentity') : (connection.keyPath ?? mainT('sshAgentIdentity'))
+    // The raw text goes underneath rather than being dropped. It is three lines for this failure,
+    // unlike the host-key wall of "@" above, and this is the message that turned out to point the
+    // wrong way - a summary that replaces the evidence cannot be checked.
+    return `${mainT('rsyncKeyRejected', { user: connection.username, host: connection.host, identity })}\n\n${output.trim()}`
   }
   return null
 }

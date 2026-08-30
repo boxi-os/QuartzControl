@@ -17,6 +17,14 @@ async function resolveConnection(ctx: DeployContext): Promise<SshConnection> {
 // Auth is resolved here rather than at save time so a key file the user moves or replaces is
 // picked up without re-saving the connection, and so the key contents exist only for the duration
 // of the connect call.
+async function readKeyFile(keyPath: string): Promise<string> {
+  try {
+    return await readFile(keyPath, 'utf-8')
+  } catch {
+    throw new Error(mainT('sshKeyFileUnreadable', { path: keyPath }))
+  }
+}
+
 export async function sshAuthOptions(connection: SshConnection, secret: string | null): Promise<Record<string, unknown>> {
   if (connection.authMethod === 'agent') {
     const agent = process.env.SSH_AUTH_SOCK
@@ -26,7 +34,11 @@ export async function sshAuthOptions(connection: SshConnection, secret: string |
   if (connection.authMethod === 'privateKey') {
     // With a keyPath the file is the source of truth; without one the key contents are the stored
     // secret (a pasted key, or one carried over from the pre-split profiles).
-    const privateKey = connection.keyPath ? await readFile(connection.keyPath, 'utf-8') : (secret ?? undefined)
+    // Read here rather than trusted: `ssh -i` silently skips a key file it cannot open and then
+    // fails as "Permission denied (publickey)", which both this adapter and rsync's report as the
+    // *server* having rejected the key. A path that moved, a wrong name or a file this user cannot
+    // read is a different problem with a different fix, and it has to say so.
+    const privateKey = connection.keyPath ? await readKeyFile(connection.keyPath) : (secret ?? undefined)
     if (!privateKey) throw new Error(mainT('sshNoPrivateKey'))
     return { privateKey }
   }

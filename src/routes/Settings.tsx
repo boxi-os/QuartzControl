@@ -13,6 +13,7 @@ import {
   connectionSummary,
   draftFromConnection,
   emptyConnectionDraft,
+  connectionMissingCredential,
   normalizeConnectionDraft
 } from '../components/ConnectionForm'
 import { useAsyncAction } from '../hooks/useAsyncAction'
@@ -402,7 +403,7 @@ function ConnectionsSection(): JSX.Element {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-[14px] font-medium">{connection.name}</span>
                 <Badge>{CONNECTION_KIND_LABEL[connection.kind]}</Badge>
-                {!connection.hasSecret && connection.kind === 'ssh' && connection.authMethod !== 'agent' && (
+                {connectionMissingCredential(connection) && (
                   <Badge tone="amber">{t('settings.connections.noSecret')}</Badge>
                 )}
                 {connection.kind === 'ftp' && !connection.secure && <Badge tone="amber">{t('settings.connections.plaintext')}</Badge>}

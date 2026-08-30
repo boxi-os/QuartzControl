@@ -1,5 +1,6 @@
 import { spawn } from 'child_process'
-import { chmod, mkdtemp, rm, writeFile } from 'fs/promises'
+import { access, chmod, mkdtemp, rm, writeFile } from 'fs/promises'
+import { constants } from 'fs'
 import { tmpdir } from 'os'
 import { join, posix } from 'path'
 import type { DeployDiffEntry, DeployResult, SshConnection } from '@shared/ipc-contract'
@@ -60,6 +61,14 @@ async function prepareSshEnv(connection: SshConnection): Promise<SshEnv> {
     `-p ${connection.port}`
   ]
   if (connection.authMethod === 'privateKey' && connection.keyPath) {
+    // ssh warns about an unopenable -i file on stderr and carries on without it, so the run ends
+    // as "Permission denied (publickey)" and translateSshFailure reports the *server* rejecting
+    // the key - for a file that was never read. Checked up front so the message names the real
+    // problem. Reported from the alpha test, where the key had not reached the server yet and this
+    // was indistinguishable from a path that was wrong.
+    await access(connection.keyPath, constants.R_OK).catch(() => {
+      throw new Error(mainT('sshKeyFileUnreadable', { path: connection.keyPath as string }))
+    })
     options.push(`-i '${connection.keyPath}'`, '-o IdentitiesOnly=yes')
   }
 

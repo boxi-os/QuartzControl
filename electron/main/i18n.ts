@@ -171,6 +171,8 @@ const STRINGS = {
     webhookFailed: 'POST {{origin}} fehlgeschlagen.',
     webhookTimeout: 'Keine Antwort innerhalb von {{seconds}} Sekunden.',
     webhookRedacted: '[Token entfernt]',
+    sshKeyFileUnreadable:
+      'Die Schlüsseldatei „{{path}}“ lässt sich nicht lesen. Prüfe den Pfad und die Rechte (chmod 600).',
 
     // GitHub
     githubNoToken: 'Kein GitHub-Token hinterlegt. Trage in den Einstellungen einen Token mit „repo“-Berechtigung ein.',
@@ -325,6 +327,8 @@ const STRINGS = {
     webhookFailed: 'POST {{origin}} failed.',
     webhookTimeout: 'No answer within {{seconds}} seconds.',
     webhookRedacted: '[token removed]',
+    sshKeyFileUnreadable:
+      'The key file “{{path}}” cannot be read. Check the path and its permissions (chmod 600).',
 
     githubNoToken: 'No GitHub token stored. Add one with the “repo” scope in the settings.',
     githubRepoCreateFailed: 'The repository could not be created.',

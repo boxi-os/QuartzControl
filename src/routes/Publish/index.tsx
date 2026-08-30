@@ -18,6 +18,7 @@ import {
   ConnectionFormFields,
   connectionDraftIncomplete,
   emptyConnectionDraft,
+  connectionMissingCredential,
   normalizeConnectionDraft
 } from '../../components/ConnectionForm'
 import { useAsyncAction } from '../../hooks/useAsyncAction'
@@ -354,7 +355,7 @@ export default function Publish(): JSX.Element {
                 (activeConnection?.kind === 'webhook' && activeConnection.displayOrigin
                   ? `POST → ${activeConnection.displayOrigin}`
                   : t('publish.webhookNoUrl'))}
-              {activeConnection && !activeConnection.hasSecret && activeConnection.kind === 'ssh' && activeConnection.authMethod !== 'agent' && (
+              {activeConnection && connectionMissingCredential(activeConnection) && (
                 <span className="ml-2 text-amber-600 dark:text-amber-400">{t('publish.noSecretWarning')}</span>
               )}
               {activeConnection?.kind === 'ssh' && (

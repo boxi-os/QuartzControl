@@ -66,6 +66,21 @@ export function normalizeConnectionDraft(draft: SaveConnectionInput): SaveConnec
   return draft
 }
 
+/**
+ * Whether this connection really has no way to authenticate. Not the same as `hasSecret`: a
+ * private key given as a *file path* stores no secret at all - the file is the source of truth, so
+ * that it survives being moved or replaced without re-saving (see sftp.ts's sshAuthOptions). Both
+ * lists read `!hasSecret` and therefore hung an amber "kein Passwort/Key" on exactly the setup
+ * rsync requires, reported from the alpha test right after configuring one. Shared so the two
+ * lists cannot answer this differently.
+ */
+export function connectionMissingCredential(connection: Connection): boolean {
+  if (connection.kind !== 'ssh') return !connection.hasSecret
+  if (connection.authMethod === 'agent') return false
+  if (connection.authMethod === 'privateKey' && connection.keyPath) return false
+  return !connection.hasSecret
+}
+
 export function connectionSummary(connection: Connection): string {
   if (connection.kind === 'ssh' || connection.kind === 'ftp') {
     return `${connection.username}@${connection.host}:${connection.port}`

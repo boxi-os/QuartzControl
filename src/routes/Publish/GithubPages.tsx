@@ -74,7 +74,17 @@ export default function GithubPages({ projectPath, branch }: { projectPath: stri
       {info?.configured && (
         <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
           <Badge tone={statusTone(info.status)}>{t(`publish.pages.status.${info.status ?? 'unknown'}`, { defaultValue: info.status ?? '' })}</Badge>
-          {info.htmlUrl && <span className="font-mono text-slate-600 dark:text-slate-300">{info.htmlUrl}</span>}
+          {info.htmlUrl && (
+            // The one moment the user wants to look at the result. It was printed as plain text
+            // next to a status badge saying "Veröffentlicht", with no way to get there.
+            <button
+              type="button"
+              onClick={() => void window.quartzGui.dialog.openExternal(info.htmlUrl as string)}
+              className="font-mono text-blue-600 underline underline-offset-2 hover:no-underline dark:text-blue-400"
+            >
+              {info.htmlUrl}
+            </button>
+          )}
           {info.sourceBranch && (
             // Worth stating plainly: a target that pushes to gh-pages while Pages reads main
             // publishes nothing, and nothing else in the UI would reveal the mismatch.
@@ -110,8 +120,16 @@ export default function GithubPages({ projectPath, branch }: { projectPath: stri
             disabled={!cname.trim()}
           />
         </div>
+        {/* Two different actions wearing one label. Before Pages exists - or while it reads a
+            different branch - this points it at ours, which is what "Auf gh-pages stellen" says.
+            Once it already reads this branch the button only saves the domain and HTTPS settings,
+            and the old label described something that had already happened. */}
         <Button onClick={() => apply.run()} disabled={apply.pending} className="mb-0.5">
-          {apply.pending ? t('common.saving') : t('publish.pages.apply', { branch })}
+          {apply.pending
+            ? t('common.saving')
+            : info?.configured && info.sourceBranch === branch
+              ? t('publish.pages.saveSettings')
+              : t('publish.pages.apply', { branch })}
         </Button>
       </div>
 

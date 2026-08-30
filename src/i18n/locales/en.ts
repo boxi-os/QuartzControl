@@ -700,6 +700,7 @@ export default {
       basisLabel: '(base: {{base}})',
       active: 'Active',
       apply: 'Apply',
+      saveSettings: 'Save settings',
       delete: 'Delete'
     },
     catalog: {

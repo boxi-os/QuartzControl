@@ -1272,6 +1272,8 @@ export default {
       cname: 'Eigene Domain',
       cnamePlaceholder: 'z. B. wiki.example.com',
       httpsEnforced: 'HTTPS erzwingen',
+      httpsOnlyWithDomain:
+        'Nur mit eigener Domain einstellbar. Eine Adresse auf github.io wird ohnehin immer über HTTPS ausgeliefert.',
       apply: 'Auf „{{branch}}“ stellen',
       cnameHint:
         'Die Domain wird bei GitHub gespeichert, nicht im Branch — anders als eine CNAME-Datei überlebt sie damit jedes Deploy, das den Branch vollständig ersetzt. HTTPS lässt sich erst erzwingen, wenn GitHub das Zertifikat ausgestellt hat; das dauert nach dem Setzen der Domain einige Minuten.'

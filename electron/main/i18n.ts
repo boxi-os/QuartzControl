@@ -77,6 +77,10 @@ const STRINGS = {
     // GitHub
     githubOriginExists:
       'Dieses Projekt hat bereits ein „origin“-Remote ({{remote}}). Es wird nicht überschrieben — bitte zuerst manuell entfernen, wenn das gewollt ist.',
+    githubPagesCreated: 'GitHub Pages eingerichtet, Quelle: {{branch}} (/)',
+    githubPagesSourceSet: 'Quelle gesetzt: {{branch}} (/)',
+    githubDomainSet: 'Domain gesetzt: {{domain}}',
+    githubDomainCleared: 'Eigene Domain entfernt.',
     githubHttpsPending:
       'HTTPS konnte noch nicht erzwungen werden — GitHub stellt das Zertifikat für eine eigene Domain erst einige Minuten nach dem Setzen aus. Später erneut versuchen.',
 
@@ -251,6 +255,10 @@ const STRINGS = {
 
     githubOriginExists:
       'This project already has an “origin” remote ({{remote}}). It is not overwritten — remove it by hand first if that is what you want.',
+    githubPagesCreated: 'GitHub Pages set up, source: {{branch}} (/)',
+    githubPagesSourceSet: 'Source set: {{branch}} (/)',
+    githubDomainSet: 'Domain set: {{domain}}',
+    githubDomainCleared: 'Custom domain removed.',
     githubHttpsPending:
       'HTTPS could not be enforced yet — GitHub only issues the certificate for a custom domain a few minutes after the domain is set. Try again later.',
 

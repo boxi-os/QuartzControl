@@ -169,15 +169,17 @@ export async function configurePages(
   if (existing.status === 404) {
     const created = await api<unknown>(`/repos/${repo.owner}/${repo.repo}/pages`, { method: 'POST', body: { source } })
     if (created.status !== 201) return failure(created, mainT('githubPagesSetupFailed'))
-    output += `GitHub Pages eingerichtet, Quelle: ${input.branch} (/)\n`
+    output += `${mainT('githubPagesCreated', { branch: input.branch })}\n`
   } else {
     const updated = await api<unknown>(`/repos/${repo.owner}/${repo.repo}/pages`, {
       method: 'PUT',
       body: { source, ...(input.cname !== undefined ? { cname: input.cname || null } : {}) }
     })
     if (updated.status !== 204) return failure(updated, mainT('githubPagesSaveFailed'))
-    output += `Quelle gesetzt: ${input.branch} (/)\n`
-    if (input.cname !== undefined) output += input.cname ? `Domain gesetzt: ${input.cname}\n` : 'Eigene Domain entfernt.\n'
+    output += `${mainT('githubPagesSourceSet', { branch: input.branch })}\n`
+    if (input.cname !== undefined) {
+      output += `${input.cname ? mainT('githubDomainSet', { domain: input.cname }) : mainT('githubDomainCleared')}\n`
+    }
   }
 
   if (input.httpsEnforced !== undefined) {

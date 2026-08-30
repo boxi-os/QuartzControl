@@ -97,7 +97,18 @@ export default function GithubPages({ projectPath, branch }: { projectPath: stri
           />
         </Field>
         <div className="pb-1.5">
-          <Toggle label={t('publish.pages.httpsEnforced')} checked={httpsEnforced} onChange={setHttpsEnforced} />
+          {/* Only a custom domain has a choice here. A *.github.io site is served over HTTPS
+              unconditionally and GitHub reports https_enforced as already true, so the switch was
+              offering a decision that does not exist - and flipping it off would have looked like
+              it did something. It follows the field next to it, not the stored value, because the
+              domain being typed is the one this Save will apply. */}
+          <Toggle
+            label={t('publish.pages.httpsEnforced')}
+            hint={cname.trim() ? undefined : t('publish.pages.httpsOnlyWithDomain')}
+            checked={httpsEnforced}
+            onChange={setHttpsEnforced}
+            disabled={!cname.trim()}
+          />
         </div>
         <Button onClick={() => apply.run()} disabled={apply.pending} className="mb-0.5">
           {apply.pending ? t('common.saving') : t('publish.pages.apply', { branch })}

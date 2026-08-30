@@ -24,7 +24,13 @@ export async function createProject(options: CreateProjectOptions): Promise<Crea
     return { success: false, output: mainT('createTargetExists', { path: options.targetDirectory }) }
   }
 
-  const clone = await run('git', ['clone', '--depth', '1', TEMPLATE_REPO, options.targetDirectory])
+  // Not --depth 1. A shallow clone cannot be pushed anywhere: git refuses it outright against a
+  // local remote ("shallow update not allowed") and GitHub answers the same thing as
+  // "remote: fatal: did not receive expected object" / "index-pack failed" - both reproduced. And
+  // pushing this project to the user's own repository is the point of Git-Sync and of every
+  // git-branch publish target, so the one-time download saved here breaks the feature the project
+  // exists for. Projects created before this are repaired on their first push (syncService).
+  const clone = await run('git', ['clone', TEMPLATE_REPO, options.targetDirectory])
   if (!clone.success) {
     return { success: false, output: `${mainT('createCloneFailed')}\n${clone.output}` }
   }

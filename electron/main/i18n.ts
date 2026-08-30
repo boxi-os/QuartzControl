@@ -172,6 +172,10 @@ const STRINGS = {
     webhookFailed: 'POST {{origin}} fehlgeschlagen.',
     webhookTimeout: 'Keine Antwort innerhalb von {{seconds}} Sekunden.',
     webhookRedacted: '[Token entfernt]',
+    syncHistoryCompleted:
+      'Die Projekt-Historie war unvollständig (flacher Klon) und konnte so nicht gepusht werden. Sie wurde vor dem Push vervollständigt — das passiert nur einmal.',
+    syncHistoryIncomplete:
+      'Die Projekt-Historie ist unvollständig (flacher Klon) und ließ sich nicht vervollständigen. Ein Push wird daran voraussichtlich scheitern:',
     sshAgentIdentity: 'der SSH-Agent',
     sshKeyFileUnreadable:
       'Die Schlüsseldatei „{{path}}“ lässt sich nicht lesen. Prüfe den Pfad und die Rechte (chmod 600).',
@@ -330,6 +334,10 @@ const STRINGS = {
     webhookFailed: 'POST {{origin}} failed.',
     webhookTimeout: 'No answer within {{seconds}} seconds.',
     webhookRedacted: '[token removed]',
+    syncHistoryCompleted:
+      'The project history was incomplete (a shallow clone) and could not have been pushed. It was completed before the push — this happens only once.',
+    syncHistoryIncomplete:
+      'The project history is incomplete (a shallow clone) and could not be completed. A push will most likely fail because of it:',
     sshAgentIdentity: 'the SSH agent',
     sshKeyFileUnreadable:
       'The key file “{{path}}” cannot be read. Check the path and its permissions (chmod 600).',

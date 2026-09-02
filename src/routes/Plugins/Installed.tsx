@@ -718,9 +718,13 @@ function PluginRow({
   const layout = getLayout(plugin)
   const isDragging = dragging?.group === groupKey && dragging.index === localIndex
   const isDropTarget = dropTarget?.group === groupKey && dropTarget.index === localIndex && !isDragging
-  // Keyed by the plugin's config-array index, the same identity the list's React key uses, so an
-  // opened options panel is still open after a trip to another area (see useStickyState).
-  const [expanded, setExpanded] = useStickyState(`plugins.expanded.${index}`, false)
+  // Keyed by the plugin's *name*, not by its position in the config array. The index is what the
+  // list's React key uses, and it was what this key used too - but a reorder or a removal renumbers
+  // every entry after the touched one, so the open options panel jumped to whichever plugin
+  // inherited the index. Names are what quartz addresses a plugin by (`quartz plugin remove <name>`),
+  // and they survive both. Two entries of the same name would share one panel; that is the config
+  // being ambiguous, and sharing beats pointing at the wrong row.
+  const [expanded, setExpanded] = useStickyState(`plugins.expanded.${plugin.name}`, false)
   const description = getPluginDescription(t, plugin.name)
   const url = repoUrl(plugin.source)
 

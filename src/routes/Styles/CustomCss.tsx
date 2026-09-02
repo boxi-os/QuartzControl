@@ -534,11 +534,13 @@ function FileOrder({
                 <button type="button" onClick={() => onOpen(file.relativePath)} className="min-w-0 flex-1 truncate text-left font-mono hover:underline">
                   {file.name}
                 </button>
+                {/* Secondary / muted / text for enabled / disabled / hover, all explicit: the
+                    `disabled:opacity-30` this replaces left the arrow at 1.69:1. */}
                 <button
                   type="button"
                   disabled={index === 0}
                   onClick={() => onMove(file.relativePath, -1)}
-                  className="shrink-0 text-slate-500 dark:text-slate-400 disabled:opacity-30 hover:text-slate-700 dark:hover:text-white"
+                  className="shrink-0 text-text-secondary hover:text-text disabled:text-text-muted"
                   title={t('styleEditor.files.moveUp')}
                 >
                   <ArrowUp size={12} />
@@ -547,7 +549,7 @@ function FileOrder({
                   type="button"
                   disabled={index === imported.length - 1}
                   onClick={() => onMove(file.relativePath, 1)}
-                  className="shrink-0 text-slate-500 dark:text-slate-400 disabled:opacity-30 hover:text-slate-700 dark:hover:text-white"
+                  className="shrink-0 text-text-secondary hover:text-text disabled:text-text-muted"
                   title={t('styleEditor.files.moveDown')}
                 >
                   <ArrowDown size={12} />

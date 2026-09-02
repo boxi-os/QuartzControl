@@ -110,7 +110,7 @@ export default function Basics(): JSX.Element {
         {TYPOGRAPHY_KEYS.map((key) => {
           const overridden = overriddenByTheme(FONT_VARIABLE[key])
           return (
-            <Field key={key} label={t('themeEditor.fontFor', { slot: key })} className={overridden ? 'opacity-60' : ''}>
+            <Field key={key} label={t('themeEditor.fontFor', { slot: key })} muted={overridden}>
               <TextInput
                 list={GOOGLE_FONTS_DATALIST_ID}
                 value={theme.typography?.[key] ?? ''}
@@ -433,12 +433,12 @@ function ColorCell({
   const isHex = /^#([0-9a-f]{3}){1,2}$/i.test(value)
   // Dimmed, not disabled: this value has no effect while the theme is on, but it is still the
   // value that applies the moment the theme is turned off - and for a theme that happens not to
-  // declare this variable, it applies right now.
+  // declare this variable, it applies right now. The dimming is the name going muted, not
+  // `opacity-60` on the row: that took the amber tag saying *why* down to 2.88:1
+  // (docs/REVIEW-2026-09-02.md, d), and the swatch and the value are the information here.
   return (
     <div
-      className={`flex items-center gap-2.5 rounded-md border border-black/[0.06] p-2 dark:border-white/10 ${
-        overridden ? 'opacity-60' : ''
-      }`}
+      className="flex items-center gap-2.5 rounded-md border border-black/[0.06] p-2 dark:border-white/10"
       title={overridden ? t('themeEditor.overriddenByTheme') : undefined}
     >
       {/* Big enough to actually read the color, and a real preview even when the value is a
@@ -458,7 +458,7 @@ function ColorCell({
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex items-baseline gap-1.5">
-          <span className="truncate text-xs text-slate-600 dark:text-slate-300" title={name}>
+          <span className={`truncate text-xs ${overridden ? 'text-text-muted' : 'text-text-secondary'}`} title={name}>
             {name}
           </span>
           {overridden && <span className="shrink-0 text-[10px] uppercase tracking-wide text-amber-700 dark:text-amber-400">{t('themeEditor.overriddenShort')}</span>}

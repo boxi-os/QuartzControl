@@ -665,7 +665,10 @@ function IconButton({
       aria-label={title}
       onClick={onClick}
       disabled={disabled}
-      className="rounded-[7px] p-1.5 text-slate-500 dark:text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-red-500/15 dark:hover:text-red-400"
+      // Enabled is the secondary tone and disabled the muted one, both explicit: `disabled:opacity-40`
+      // on a muted icon measured 1.69:1 (docs/REVIEW-2026-09-02.md, d), and one step below muted
+      // is below the floor - so the enabled icon moved up a step instead.
+      className="rounded-[7px] p-1.5 text-text-secondary transition-colors hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:text-text-muted dark:hover:bg-red-500/15 dark:hover:text-red-400"
     >
       <Icon size={15} strokeWidth={2} aria-hidden />
     </button>

@@ -75,15 +75,17 @@ function PartRow({
   const { t } = useTranslation()
   return (
     <label
+      // Muted text rather than `opacity-45` for the row that cannot be chosen: the opacity put the
+      // label at 2.35:1 (docs/REVIEW-2026-09-02.md, d). The checkbox is the UA's and dims itself.
       className={`flex items-start gap-2.5 rounded-md px-2 py-1.5 text-sm ${
-        disabled ? 'opacity-45' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+        disabled ? 'text-text-muted' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
       }`}
     >
       <input type="checkbox" className="mt-1" checked={checked} disabled={disabled} onChange={onToggle} />
       <span className="min-w-0 flex-1">
         <span className="font-medium">{t(`templates.parts.${id}.label`)}</span>
-        <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">{summary}</span>
-        <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{t(`templates.parts.${id}.description`)}</span>
+        <span className="ml-2 text-xs text-text-muted">{summary}</span>
+        <span className="mt-0.5 block text-xs text-text-muted">{t(`templates.parts.${id}.description`)}</span>
         {children}
       </span>
     </label>

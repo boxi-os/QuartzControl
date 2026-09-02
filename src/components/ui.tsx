@@ -77,6 +77,7 @@ export function useCopyToClipboard(): { copied: string | null; copy: (value: str
 export function Field({
   label,
   hint,
+  muted,
   children,
   className = ''
 }: {
@@ -84,12 +85,17 @@ export function Field({
   // One line under the control saying what belongs in it. Part of the primitive rather than left
   // to each page, so the size, colour and position of that line are the same everywhere.
   hint?: string
+  // The label in the muted tone: for a field whose value is currently not the one in effect (a
+  // font the active theme overrides). A prop rather than `opacity-60` from outside, which also
+  // dimmed the line explaining the state to 2.88:1; the control itself stays as it is, because it
+  // is still editable and still the value that applies once the override is gone.
+  muted?: boolean
   children: ReactNode
   className?: string
 }): JSX.Element {
   return (
     <label className={`flex flex-col gap-1 text-[13px] ${className}`}>
-      <span className="font-medium text-text-secondary">{label}</span>
+      <span className={`font-medium ${muted ? 'text-text-muted' : 'text-text-secondary'}`}>{label}</span>
       {children}
       {hint && <span className="text-[11px] text-text-muted">{hint}</span>}
     </label>

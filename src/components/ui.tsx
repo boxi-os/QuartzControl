@@ -217,14 +217,26 @@ export function Toggle({
 // navigate), so a focus-only arrow key would be the one input needing a second keystroke. Wrapping
 // earns its keep at the three call sites with exactly two options, where without it half the arrow
 // presses would be dead keys.
+//
+// `label` is required, for the reason `Toggle`'s is: a group without an accessible name is announced
+// as "radio group" and nothing else, and making the name optional means the nine call sites that had
+// no visible heading would have stayed nameless. It becomes `aria-label` rather than Toggle's
+// `sr-only` span, because a group is named by `aria-label`/`aria-labelledby` - there is no `<label>`
+// element that can wrap a group the way one wraps a switch, and the segments carry visible text of
+// their own, so the usual argument for a real text node does not apply here. At the two call sites
+// that sit inside a `FieldGroup` the name is now announced on both levels ("Design, group" then
+// "Design, radio group"); that is redundant, not wrong, and the alternative - FieldGroup handing an
+// id down to whatever it wraps - is a wiring between two primitives for two call sites.
 export function SegmentedControl<T extends string>({
   value,
   options,
-  onChange
+  onChange,
+  label
 }: {
   value: T
   options: { value: T; label: string }[]
   onChange: (value: T) => void
+  label: string
 }): JSX.Element {
   const segments = useRef<(HTMLButtonElement | null)[]>([])
   // Roving tabindex: the group is one tab stop, not one per option. `Math.max(0, …)` so a value that
@@ -247,7 +259,11 @@ export function SegmentedControl<T extends string>({
   // self-start matters now that pages fill the window: as a flex item, `inline-flex` alone still
   // stretches to the container's full width, which turned this into a 1600px-wide bar.
   return (
-    <div role="radiogroup" className="inline-flex w-fit self-start gap-0.5 rounded-[8px] bg-ink/[0.05] p-0.5 dark:bg-ink/10">
+    <div
+      role="radiogroup"
+      aria-label={label}
+      className="inline-flex w-fit self-start gap-0.5 rounded-[8px] bg-ink/[0.05] p-0.5 dark:bg-ink/10"
+    >
       {options.map((option, index) => (
         <button
           key={option.value}

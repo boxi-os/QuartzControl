@@ -12,6 +12,7 @@ export default {
     edit: 'Edit',
     loading: 'Loading…',
     openInBrowser: 'Open in browser',
+    viewSwitcher: 'View',
     copied: 'Copied — {{value}}',
     serverState: {
       stopped: 'Stopped',
@@ -327,6 +328,7 @@ export default {
     livePreview: 'Live preview',
     reloadPreview: 'Reload preview',
     viewport: {
+      label: 'Preview width',
       desktop: 'Desktop',
       tablet: 'Tablet',
       mobile: 'Mobile',
@@ -982,6 +984,7 @@ export default {
       columnLinesLabel: 'Column lines',
       rowLinesLabel: 'Row lines',
       copyLayoutTo: 'Copy to {{target}}',
+      breakpointLabel: 'Breakpoint',
       breakpoint: {
         desktop: 'Desktop',
         tablet: 'Tablet',
@@ -1409,6 +1412,7 @@ export default {
     exporting: 'Saving…',
     exportSuccess: 'Saved ({{size}}): {{path}}',
     exportCancelled: 'Cancelled.',
+    scopeLabel: 'Scope',
     scopeChanged: 'Only your changes ({{count}})',
     scopeNoChanges: 'no changes detected',
     scopeAll: 'All texts ({{count}})',

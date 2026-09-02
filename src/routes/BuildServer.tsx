@@ -336,6 +336,7 @@ export default function BuildServer(): JSX.Element {
                       screen's frameBuilder namespace, and a page reaching into another page's keys
                       is a rename away from breaking silently - i18next keys are not typechecked. */}
                   <SegmentedControl
+                    label={t('buildServer.viewport.label')}
                     value={previewMode}
                     onChange={setPreviewMode}
                     options={[

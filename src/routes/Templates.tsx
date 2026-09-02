@@ -244,6 +244,7 @@ function TranslationScope({
       onClick={(e) => e.preventDefault()}
     >
       <SegmentedControl
+        label={t('templates.scopeLabel')}
         value={scope}
         onChange={setScope}
         options={[
@@ -368,6 +369,7 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
           <div className="mt-4">
             <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{t('templates.strategyHeading')}</p>
             <SegmentedControl
+              label={t('templates.strategyHeading')}
               value={strategy}
               onChange={setStrategy}
               options={[

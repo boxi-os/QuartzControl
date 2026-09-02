@@ -488,7 +488,12 @@ export default function FrameBuilder({
     <div className="flex flex-col gap-4">
       {message && <p className="text-sm text-red-600 dark:text-red-400">{message}</p>}
 
-      <SegmentedControl value={activeBreakpoint} onChange={setActiveBreakpoint} options={breakpointOptions} />
+      <SegmentedControl
+        label={t('layoutEditor.frameBuilder.breakpointLabel')}
+        value={activeBreakpoint}
+        onChange={setActiveBreakpoint}
+        options={breakpointOptions}
+      />
 
       <Card>
         {/* Everything above the board is one breakpoint's settings, so it reads as such: the frame's
@@ -592,6 +597,7 @@ export default function FrameBuilder({
               {/* FieldGroup, not Field - see ui.tsx: a <label> around buttons steals the click. */}
               <FieldGroup label={t('layoutEditor.frameBuilder.align')} className="sm:col-span-2">
                 <SegmentedControl
+                  label={t('layoutEditor.frameBuilder.align')}
                   value={layout.align ?? 'left'}
                   onChange={(align: FrameAlign) => updateLayout({ align })}
                   options={ALIGNMENTS.map((value) => ({ value, label: t(`layoutEditor.frameBuilder.alignOption.${value}`) }))}

@@ -123,7 +123,9 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   beiden Enden - so wie es die native Radiogruppe in diesem Chromium tut und wie jeder Klick hier
   ohnehin sofort committet. Auch für die vier Sub-Tab-Leisten: `tablist` ohne `aria-controls` auf ein
   `tabpanel` wäre ein halber Vertrag, „eins von N“ stimmt überall. Der Fokus wandert *vor* `onChange`,
-  weil vier Aufrufstellen dabei navigieren. Messungen in
+  weil vier Aufrufstellen dabei navigieren. `label` ist Pflicht wie bei `Toggle` und wird zu
+  `aria-label` (eine Gruppe hat kein `<label>`, das sie umschließen könnte); eine Gruppe ohne Namen
+  ist damit am Aufrufer sichtbar falsch. Messungen in
   [`navigation-and-pages.md`](docs/decisions/navigation-and-pages.md).
 - **Farben heißen nach Rolle, nicht nach Palette.** Zehn Tokens in `src/index.css` (`--ground`,
   `--surface`, `--text`, `--text-secondary`, `--text-muted`, `--ink`, `--accent`, `--accent-hover`,
@@ -211,15 +213,6 @@ mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge.
   Werte von `--surface` und `--text` als Hex; beides gehört an die Variablen, sobald `theme.ts`
   eine geteilte Konstante bekommt. Die Sidebar, die Seiten und die Sub-Komponenten tragen noch
   Palette-Paare - beiläufig, kein sed.
-- **Die Radiogruppe hat keinen Namen (aus dem U3-Durchgang) - Status: offen.** `SegmentedControl`
-  ist jetzt eine `radiogroup`, und neun der elf Gruppen tragen keinen zugänglichen Namen: die vier
-  Sub-Tab-Leisten, beide Breakpoint-Leisten, die Viewport-Leiste in Vorschau & Build und die zwei
-  in `Vorlagen`. Ein Screenreader sagt dort „Optionsfeldgruppe“ und nichts weiter - dasselbe Muster
-  wie U2 beim `Toggle`, eine Ebene höher. Die zwei Ausnahmen (Settings/Design, Frame-Ausrichtung)
-  haben ihren Namen am äußeren `FieldGroup`-`role="group"`, nicht an der `radiogroup` darin; damit
-  ist er zwar vorhanden, aber an der falschen Ebene. Ein optionales `label`-Prop (`aria-label` auf
-  dem Container, oder der `sr-only`-Weg von `Toggle`) und elf Aufrufstellen - nicht gemessen, aus
-  dem DOM der laufenden App gelesen.
 - **S1 - Status: offen.** `useIpcQuery(fn, deps)` mit Abbruch-Guard, `loading`, `error`, `reload()`;
   20 von 32 API-Effekten haben heute keinen Guard. Neues Muster für neue Seiten, Bestehendes nur beim
   Anfassen.

@@ -128,6 +128,7 @@ function AppearanceSection({
           {/* No Save button on purpose: these commit on click, and the appearance change is its
               own confirmation. The text fields below still have one - you can be mid-word there. */}
           <SegmentedControl
+            label={t('settings.appearance.theme')}
             value={theme}
             onChange={(next) => void persist({ theme: next })}
             options={[

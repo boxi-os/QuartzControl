@@ -47,6 +47,7 @@ export default function Plugins(): JSX.Element {
 
       <div className="mb-5">
         <SegmentedControl
+          label={t('common.viewSwitcher')}
           value={tab}
           onChange={goToTab}
           options={TAB_ORDER.map((key) => ({ value: key, label: t(`plugins.tabs.${key}`) }))}

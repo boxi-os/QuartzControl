@@ -12,6 +12,9 @@ export default {
     edit: 'Bearbeiten',
     loading: 'Lade…',
     openInBrowser: 'Im Browser öffnen',
+    // Name der Sub-Tab-Leiste für Screenreader. Nicht „Bereich“ - das heißt im Layout-Editor ein
+    // Frame-Bereich, und ein Wort hat einen Namen.
+    viewSwitcher: 'Ansicht',
     copied: 'Kopiert — {{value}}',
     serverState: {
       stopped: 'Gestoppt',
@@ -328,6 +331,7 @@ export default {
     livePreview: 'Live-Vorschau',
     reloadPreview: 'Vorschau neu laden',
     viewport: {
+      label: 'Vorschaubreite',
       desktop: 'Desktop',
       tablet: 'Tablet',
       mobile: 'Mobil',
@@ -982,6 +986,7 @@ export default {
       columnLinesLabel: 'Spalten-Lines',
       rowLinesLabel: 'Zeilen-Lines',
       copyLayoutTo: 'Auf {{target}} kopieren',
+      breakpointLabel: 'Breakpoint',
       breakpoint: {
         desktop: 'Desktop',
         tablet: 'Tablet',
@@ -1411,6 +1416,7 @@ export default {
     exporting: 'Speichere…',
     exportSuccess: 'Gespeichert ({{size}}): {{path}}',
     exportCancelled: 'Abgebrochen.',
+    scopeLabel: 'Umfang',
     scopeChanged: 'Nur deine Änderungen ({{count}})',
     scopeNoChanges: 'keine Änderungen erkannt',
     scopeAll: 'Alle Texte ({{count}})',

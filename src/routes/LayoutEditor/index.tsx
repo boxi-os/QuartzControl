@@ -185,6 +185,7 @@ export default function LayoutEditor(): JSX.Element {
       />
       <div className="mb-4">
         <SegmentedControl
+          label={t('common.viewSwitcher')}
           value={tab}
           onChange={goToTab}
           options={TAB_ORDER.map((key) => ({

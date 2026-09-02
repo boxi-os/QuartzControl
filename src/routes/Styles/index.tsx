@@ -289,6 +289,7 @@ export default function Styles(): JSX.Element {
 
         <div className="mb-2 flex flex-wrap items-center gap-3">
           <SegmentedControl
+            label={t('common.viewSwitcher')}
             value={tab}
             onChange={goToTab}
             options={TAB_ORDER.map((key) => ({ value: key, label: t(`styles.tabs.${key}`) }))}

@@ -1257,6 +1257,8 @@ export default {
     manageConnections: 'Manage connections',
     manageConnectionsHere: 'Manage credentials in the settings →',
     newTarget: '+ New target',
+    confirmDiscardTargetDraftAction: 'Discard changes',
+    confirmDiscardTargetDraft: 'The open target has unsaved changes. Switching now loses them.',
     confirmDeleteTargetAction: 'Delete target',
     confirmDeleteTarget: 'Really delete this publish target? The credential it uses stays.',
     noTargets: 'No publish target yet. Create one via “+ New target” — e.g. GitHub Pages, a webspace over SFTP, or a local folder.',

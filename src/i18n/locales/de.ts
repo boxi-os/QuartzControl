@@ -1261,6 +1261,9 @@ export default {
     manageConnections: 'Zugänge verwalten',
     manageConnectionsHere: 'Zugänge in den Einstellungen verwalten →',
     newTarget: '+ Neues Ziel',
+    confirmDiscardTargetDraftAction: 'Änderungen verwerfen',
+    confirmDiscardTargetDraft:
+      'Am geöffneten Ziel gibt es ungespeicherte Änderungen. Wer jetzt wechselt, verliert sie.',
     confirmDeleteTargetAction: 'Ziel löschen',
     confirmDeleteTarget: 'Dieses Veröffentlichungsziel wirklich löschen? Der hinterlegte Zugang bleibt bestehen.',
     noTargets: 'Noch kein Veröffentlichungsziel angelegt. Über „+ Neues Ziel“ eines anlegen — z. B. GitHub Pages, einen Webspace per SFTP oder einen lokalen Ordner.',

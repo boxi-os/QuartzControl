@@ -89,6 +89,10 @@ export default function Publish(): JSX.Element {
   // publishing silently shipped a stale public/ - the kind of wrong that looks like it worked.
   const [outputDir, setOutputDir] = useState('')
   const [targetDraft, setTargetDraft] = useState<SavePublishTargetInput | null>(null)
+  // What the open form looked like when it was opened, as the same JSON snapshot the config pages
+  // compare against. Only used to decide whether switching targets has anything to lose - the form
+  // itself has an explicit Save, and nothing here writes on its own.
+  const [draftSnapshot, setDraftSnapshot] = useState<string | null>(null)
   const [connectionDraft, setConnectionDraft] = useState<SaveConnectionInput | null>(null)
   const [diff, setDiff] = useState<DeployDiffEntry[] | null>(null)
   const [excluded, setExcluded] = useState<Set<string>>(new Set())
@@ -125,6 +129,57 @@ export default function Publish(): JSX.Element {
     setDeployResult(null)
     setProgress(null)
   }, [selectedId])
+
+  // Opening and closing the target form go through these two so the snapshot can never drift from
+  // what is on screen; every setTargetDraft below them edits an already-open form.
+  function openTargetDraft(draft: SavePublishTargetInput): void {
+    setTargetDraft(draft)
+    setDraftSnapshot(JSON.stringify(draft))
+  }
+
+  function closeTargetDraft(): void {
+    setTargetDraft(null)
+    setDraftSnapshot(null)
+  }
+
+  function draftOf(target: PublishTarget): SavePublishTargetInput {
+    return {
+      id: target.id,
+      name: target.name,
+      connectionId: target.connectionId,
+      destination: target.destination,
+      excludes: target.excludes
+    }
+  }
+
+  // Anything that takes the open form off the screen asks first, and only when there is something
+  // to lose: the form has an explicit Save, so a discarded draft is gone for good. An untouched
+  // form closes silently - opening "Bearbeiten" and clicking elsewhere is not a decision worth a
+  // dialog.
+  async function mayDiscardDraft(): Promise<boolean> {
+    if (!targetDraft || JSON.stringify(targetDraft) === draftSnapshot) return true
+    return confirmDialog({
+      text: t('publish.confirmDiscardTargetDraft'),
+      confirmLabel: t('publish.confirmDiscardTargetDraftAction')
+    })
+  }
+
+  // The form describes one target, so it cannot outlive the selection it belongs to - the same rule
+  // the effect above applies to the diff and the deploy result. Found in the alpha test: after
+  // "Bearbeiten" on one target and a click on another, the form kept showing the first target's
+  // host, path and excludes, and a Save from there would have written them back to *that* target
+  // while the page around it talked about the newly selected one.
+  async function selectTarget(id: string): Promise<void> {
+    if (id === selectedId) return
+    if (!(await mayDiscardDraft())) return
+    closeTargetDraft()
+    setSelectedId(id)
+  }
+
+  async function newTarget(): Promise<void> {
+    if (!(await mayDiscardDraft())) return
+    openTargetDraft(emptyTargetDraft())
+  }
 
   const activeTarget = targets.find((tg) => tg.id === selectedId)
   const activeConnection = activeTarget?.connectionId ? connections.find((c) => c.id === activeTarget.connectionId) : undefined
@@ -216,7 +271,7 @@ export default function Publish(): JSX.Element {
   const saveTargetAction = useAsyncAction(async () => {
     if (!targetDraft) return
     const saved = await window.quartzGui.publishTargets.save(project.path, targetDraft)
-    setTargetDraft(null)
+    closeTargetDraft()
     await reload()
     // Editing the *selected* target keeps its id, so the effect below does not fire and a diff
     // taken before the change would keep describing the old remote path or exclusion list.
@@ -247,6 +302,7 @@ export default function Publish(): JSX.Element {
   async function deleteTarget(id: string): Promise<void> {
     if (!(await confirmDialog({ text: t('publish.confirmDeleteTarget'), confirmLabel: t('publish.confirmDeleteTargetAction'), danger: true }))) return
     await window.quartzGui.publishTargets.delete(project.path, id)
+    if (targetDraft?.id === id) closeTargetDraft()
     if (selectedId === id) setSelectedId(null)
     await reload()
   }
@@ -333,7 +389,7 @@ export default function Publish(): JSX.Element {
           {targets.map((target) => (
             <button
               key={target.id}
-              onClick={() => setSelectedId(target.id)}
+              onClick={() => selectTarget(target.id)}
               className={`rounded-[6px] px-3 py-1.5 text-[13px] font-medium transition-colors ${
                 selectedId === target.id
                   ? 'bg-blue-600 text-white'
@@ -343,7 +399,7 @@ export default function Publish(): JSX.Element {
               {target.name} ({target.destination.type.toUpperCase()})
             </button>
           ))}
-          <Button variant="ghost" onClick={() => setTargetDraft(emptyTargetDraft())}>
+          <Button variant="ghost" onClick={newTarget}>
             {t('publish.newTarget')}
           </Button>
         </div>
@@ -381,15 +437,7 @@ export default function Publish(): JSX.Element {
               <button
                 type="button"
                 className="text-slate-500 underline"
-                onClick={() =>
-                  setTargetDraft({
-                    id: activeTarget.id,
-                    name: activeTarget.name,
-                    connectionId: activeTarget.connectionId,
-                    destination: activeTarget.destination,
-                    excludes: activeTarget.excludes
-                  })
-                }
+                onClick={() => openTargetDraft(draftOf(activeTarget))}
               >
                 {t('common.edit')}
               </button>
@@ -665,7 +713,7 @@ export default function Publish(): JSX.Element {
             <Button onClick={() => saveTargetAction.run()} disabled={saveTargetAction.pending || !targetDraft.name.trim() || !targetReady}>
               {saveTargetAction.pending ? t('common.saving') : t('common.save')}
             </Button>
-            <Button variant="ghost" onClick={() => setTargetDraft(null)}>
+            <Button variant="ghost" onClick={closeTargetDraft}>
               {t('common.cancel')}
             </Button>
           </div>

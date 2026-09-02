@@ -51,3 +51,20 @@ Aus CLAUDE.md ausgelagert (2026-09-02): die Messungen und Beobachtungen hinter d
 **Ein Fallback, der nie ansprang (2026-09-02).** Alle drei Fehlerpfade in `rsync.ts` schrieben `translateSshFailure(…) ?? output.trim() ?? "rsync endete mit Code …"`. Das liest sich als dreistufiger Rückfall, ist aber immer nur zweistufig: `String.trim()` liefert einen String, nie `null` oder `undefined`, und `??` greift ausschließlich bei diesen beiden. Der dritte Zweig war damit unerreichbar — ein rsync, das ohne Ausgabe scheitert (abgeschossener Prozess, ein `-e`-Wrapper, der nicht startet), erzeugte einen `Error` mit leerer Nachricht, und die Seite zeigte ein leeres rotes Feld. Nebenbei war genau dieser Text als einziger im Adapter fest deutsch, also auch für die englische Oberfläche. Beides behoben mit `failureMessage()`: eine Stelle, expliziter Leer-Test statt `??`, und der Exit-Code als `mainT('rsyncExitCode')`.
 
 **„Jedes Linux hat rsync oder kann es installieren“ war die falsche Hälfte der Annahme (2026-09-02).** `rsyncBlockReason()` kannte genau einen Grund, warum es keinen rsync zu spawnen gibt: Windows. Der Kommentar daneben schrieb die andere Hälfte als gesetzt fest — macOS bringt openrsync mit, und jedes Linux habe es. Der Alpha-Test hat das auf einem Debian-13-Desktop widerlegt: `rsync` ist dort Priorität *optional* und schlicht nicht da. Das Zielformular bot die Übertragung trotzdem an, und „Diff aktualisieren“ antwortete mit `Error: spawn rsync ENOENT (deploy:diff)` — der rohe Node-Fehler, der weder sagt, was fehlt, noch was hilft. Behoben an derselben einen Stelle, an der die Regel schon lag: `rsyncBlockReason(connection, platform, rsyncAvailable)` mit dem neuen Grund `not-installed`. Der Adapter beantwortet die Frage über `findExecutable('rsync')` unmittelbar vor dem Spawn (rsync kann installiert werden, während die App offen ist), der Renderer über ein neues Feld `rsyncAvailable` an `settings.environment` — bewusst *nicht* in dessen `tools`, weil rsync optional ist und ein Rechner ohne es keine kaputte Umgebung hat, also auch nicht `ok: false` verdient. Gemessen mit einer App, die mit `PATH` ohne `/usr/bin` gestartet wurde: die Meldung nennt jetzt das fehlende Programm und `sudo apt install rsync`.
+
+**Das Zielformular überlebte den Zielwechsel (2026-09-02).** Ein Effekt auf `selectedId` räumte beim
+Wechsel schon Diff, Ausschlüsse, Fortschritt und Deploy-Ergebnis weg, mit der Begründung, all das
+beschreibe *ein* Ziel und stehe sonst als Aussage über das neu gewählte da. Das offene
+Bearbeiten-Formular war genau derselbe Fall und trotzdem nicht dabei: Ziel A bearbeiten, dann Ziel B
+anklicken, und im Formular standen weiter Name, Remote-Pfad und Ausschlüsse von A — bis man bei B
+noch einmal auf „Bearbeiten“ klickte. Schlimmer als die Anzeige ist, wohin ein Speichern gegangen
+wäre: der Entwurf trägt die ID von A, die Seite ringsum redet von B. Im Alpha-Test gefunden.
+Öffnen und Schließen laufen jetzt über `openTargetDraft()`/`closeTargetDraft()`, damit der beim
+Öffnen genommene JSON-Schnappschuss nicht vom Formular abweichen kann, und jeder Weg, der das
+Formular vom Schirm nimmt — Zielwechsel, „+ Neues Ziel“, Löschen des bearbeiteten Ziels — geht durch
+`mayDiscardDraft()`. Gefragt wird nur, wenn es etwas zu verlieren gibt: ein unverändertes Formular
+schließt lautlos, ein verändertes stellt die übliche native Ja/Nein-Frage. Gemessen im laufenden
+Programm: unverändert wechselt die Auswahl und das Formular ist weg; nach einer Änderung im
+Namensfeld bleibt beim Klick auf ein anderes Ziel die Auswahl stehen und das Formular offen, weil
+die Frage aussteht. Der Dialog selbst ist ein macOS-Sheet und unter Playwright weder sichtbar noch
+bedienbar — dass er kommt, ist gemessen, sein Aussehen nicht.

@@ -1289,6 +1289,7 @@ export default {
       httpsOnlyWithDomain:
         'Only adjustable with a custom domain. A github.io address is always served over HTTPS anyway.',
       apply: 'Point at “{{branch}}”',
+      saveSettings: 'Save settings',
       cnameHint:
         'The domain is stored by GitHub, not in the branch — unlike a CNAME file it therefore survives every deploy that replaces the branch wholesale. HTTPS can only be enforced once GitHub has issued the certificate, which takes a few minutes after setting the domain.'
     },

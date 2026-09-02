@@ -13,6 +13,11 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
 - `npm run start` — preview a production build
 - `npm run typecheck` — `tsc --noEmit` against both `tsconfig.node.json` (main/preload) and `tsconfig.web.json` (renderer); there is no lint script and no unit tests in this repo
 - `npm run smoke` — launches the production build (so `npm run build` first) and visits every screen in `App.tsx`, sub-tabs included, at 1280x800 and 1728x1000, reporting uncaught exceptions, console errors, `ErrorSurface` toasts, the route error boundary, a horizontally scrolling layout and an empty page. Not a test suite and it asserts nothing about content — it answers one question, *does every screen still come up*, which is otherwise only answerable by opening all seventeen of them. Each size is a fresh launch because `setViewportSize()` does not resize an Electron `BrowserWindow`
+- `npm run check:i18n` — every literal `t('…')` and `mainT('…')` key against `de.ts`, `en.ts` and
+  `electron/main/i18n.ts`, plus de/en parity in both directions. Static and instant; it exists because
+  i18next renders a missing key *as the key* rather than failing, so a gap is invisible until someone
+  opens the one screen state that uses it (`publish.pages.saveSettings`, found in the alpha test, was
+  missing from both files and therefore in perfect parity)
 - `npm run dist` / `dist:mac` / `dist:linux` — electron-builder (see `docs/decisions/electron-runtime-and-packaging.md`)
 
 If `npm install` leaves `node_modules/electron` half-installed (`electron-vite dev` fails with `Error: Electron uninstall`), the postinstall's `extract-zip` step may have silently produced a partial extraction in a sandboxed shell. Fix: `rm -rf node_modules/electron/dist node_modules/electron/path.txt`, then `unzip -q <cached zip under ~/Library/Caches/electron/...> -d node_modules/electron/dist` and write the platform binary path (e.g. `Electron.app/Contents/MacOS/Electron`) into `node_modules/electron/path.txt` with no trailing newline.

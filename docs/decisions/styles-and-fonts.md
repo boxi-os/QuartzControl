@@ -19,3 +19,29 @@ Aus CLAUDE.md ausgelagert (2026-09-02): die Messungen und Beobachtungen hinter d
   - **Some conflicts can only be fixed in CSS, and those ship as a file the user owns.** `src/routes/Styles/cssFixes.ts` is a small catalogue: each entry knows whether this project is affected and generates a stylesheet, written into `quartz/styles/custom/` through the normal create/save path so it appears in the editor and can be edited, reordered or deleted like anything else. Nothing is applied silently. The first entry is the heading-font conflict: `quartz-fonts` emits `h1,…,h6 { font-family: … }` **unlayered**, which beats every `@layer` *and* — because its stylesheet is linked after custom.scss — an equally specific rule of your own; verified in a real build that neither a `--headerFont` override nor a plain `h1 { … }` changed anything, while `body h1` (one step more specific) did. The generated rules point at `var(--hN-font, var(--headerFont))` so the Variablen tab is back in control: with the fix, h1 followed the theme's own Getai and h2 fell back to the header font.
   - **The SCSS check compiles with the *project's* sass, not one bundled here.** `checkStyles()` resolves `sass` via `createRequire(<project>/package.json)` - the same dart-sass `esbuild-sass-plugin` uses in a real build (`quartz/cli/handlers.js`) - so the check can never disagree with the build over a language feature, and this app gains no dependency. A project without `node_modules` returns `unavailable`, never `ok`: "cannot check" and "no errors" are different answers. The error's `span` is mapped back to a `relativePath` so the banner can open the file it actually came from, which is regularly not the one being edited.
   - **Anything that writes `custom.scss` behind the editor's back must call `reloadScss()`** — variable overrides and the local-font import each rewrite their own managed block (see `styleService`'s markers), and without the re-read the CSS tab's next save would write the pre-change file straight back. An unsaved draft is never discarded silently: it stays, flagged `staleOnDisk`, and the CSS tab offers an explicit reload.
+
+**Zehn Kategorien, alle offen, drei Bildschirme (2026-09-03).** Die Karte „Hauptvariablen" rendert
+64 Zeilen in zehn Kategorien, und sie standen alle immer da: gemessen bei 1728×1000 waren das
+2620 px Inhalt in einem 875 px hohen Bereich. Jede Kategorie klappt jetzt auf und zu, offen ist nur
+*Grundfarben* — die neun anderen sind daraus abgeleitet, wer sie sucht, sucht gezielt. Danach:
+929 px, 9 Zeilen statt 64. Der Kopf einer zugeklappten Kategorie nennt die Anzahl und, wenn darin
+etwas überschrieben ist, wie viel — sonst hieße „finde meine eigene Änderung" alle zehn zu öffnen.
+Der Zustand liegt in `useStickyState`, überlebt also einen Bereichswechsel und keinen Neustart, wie
+jedes andere „wo war ich" in dieser App.
+
+Der Kopf trägt eine Fläche (`ink` bei 4,5 %, in beiden Schemata dasselbe Gewicht). Ohne sie sitzt
+eine Überschrift optisch näher an den Zeilen *darüber* als an ihren eigenen — genau der Eindruck
+einer einzigen langen Liste, den das Zuklappen beheben soll.
+
+**Zweispaltig wäre die falsche Antwort gewesen.** Die Zeile ist 1380 px breit und ihr Inhalt endet
+bei 500 px, also lag es nahe. Dagegen spricht das Aufklappen: eine offene Zeile braucht die volle
+Breite, in zwei Spalten hätte jedes Aufklappen die halbe Liste verschoben. Die Breite geht
+stattdessen an eine Sache, die sie nicht verdient hat: das Abzeichen „Letzter Build" stand auf 60
+von 64 Zeilen wortgleich am rechten Rand. Es ist aus der Zeile raus und erscheint nur noch als
+Abweichung („Von dir", „Community-Theme"); dafür nennt das aufgeklappte Panel die Herkunft jetzt
+für jede Zeile, was es vorher nicht tat.
+
+**Ein Sprung öffnet die Kategorie seines Ziels.** Die Abhängigkeits-Chips navigieren zu einer
+Variablen und scrollen zu ihrer Zeile. Mit zugeklappten Kategorien gibt es diese Zeile unter
+Umständen nicht — `navigateTo` schlägt den Schlüssel deshalb in `CSS_VARIABLES` nach und öffnet
+seine Kategorie mit, bevor der Scroll läuft.

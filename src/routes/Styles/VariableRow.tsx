@@ -105,7 +105,13 @@ export default function VariableRow({
         {dependents.length > 0 && (
           <span className="shrink-0 text-[11px] text-slate-500 dark:text-slate-400">{t('styles.variables.dependents', { count: dependents.length })}</span>
         )}
-        <Badge tone={ORIGIN_TONE[origin]}>{t(`styles.variables.origin.${origin}`)}</Badge>
+        {/* Only the deviation. "Letzter Build" was on 60 of 64 rows, identical every time, sitting
+            at the far right of a 1380px row with nothing between it and the name - which is what
+            made the list read as wide and empty. The origin is named in the panel below for every
+            row, so nothing is lost by dropping the repetition. */}
+        {(origin === 'user' || origin === 'theme') && (
+          <Badge tone={ORIGIN_TONE[origin]}>{t(`styles.variables.origin.${origin}`)}</Badge>
+        )}
         {override && (
           <button type="button" onClick={() => onChange(null)} className="shrink-0 text-[11px] text-slate-500 dark:text-slate-400 underline">
             {t('styles.variables.reset')}
@@ -122,6 +128,9 @@ export default function VariableRow({
 
           <section>
             <SectionLabel>{t('styles.variables.section.origin')}</SectionLabel>
+            <p className="mb-1 text-[11px] text-slate-500 dark:text-slate-400">
+              {t(`styles.variables.origin.${origin}`)}
+            </p>
             <Chain varKey={varKey} mode="light" ctx={ctx} label={t('styles.variables.light')} />
             {(dark !== light || darkResolved !== lightResolved) && (
               <Chain varKey={varKey} mode="dark" ctx={ctx} label={t('styles.variables.dark')} />

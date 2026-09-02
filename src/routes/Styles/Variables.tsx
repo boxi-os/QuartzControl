@@ -6,6 +6,7 @@ import { Button, Card, InfoNote, TextInput } from '../../components/ui'
 import { useStickyState } from '../../state/uiState'
 import { CSS_VARIABLES } from '../../data/cssVariables'
 import VariableRow, { type OverrideValue } from './VariableRow'
+import VariableGroup from './VariableGroup'
 import { allKnownKeys, groupLabel, groupOf, type ResolveContext } from './variableGraph'
 import { activeThemeIdOf, useStyles } from './index'
 
@@ -29,6 +30,11 @@ export default function Variables(): JSX.Element {
   // Which rows are open, which query is active: kept across a trip to another area, since with
   // nothing rendered until a query is typed, losing it means losing the whole result list.
   const [expandedKeys, setExpandedKeys] = useStickyState<string[]>('styles.vars.expanded', [])
+  // Which categories are open. Only the base colours to start with: the other nine are derived
+  // from them, and with all ten open the card was three screens long (measured at 1728x1000).
+  // Sticky like every other "where was I" state - it survives a trip to another area, not a
+  // restart.
+  const [openGroups, setOpenGroups] = useStickyState<string[]>('styles.vars.openGroups', ['baseColors'])
   const [allOpen, setAllOpen] = useStickyState('styles.allVars.open', false)
   const [query, setQuery] = useStickyState('styles.allVars.query', '')
   const [onlyChanged, setOnlyChanged] = useStickyState('styles.allVars.onlyChanged', false)
@@ -66,6 +72,10 @@ export default function Variables(): JSX.Element {
     })
   }
 
+  function toggleGroup(group: string): void {
+    setOpenGroups((prev) => (prev.includes(group) ? prev.filter((g) => g !== group) : [...prev, group]))
+  }
+
   function toggleExpanded(key: string): void {
     setExpandedKeys((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]))
   }
@@ -75,6 +85,11 @@ export default function Variables(): JSX.Element {
   // it a jump rather than a state change somewhere off screen.
   function navigateTo(key: string): void {
     setExpandedKeys((prev) => (prev.includes(key) ? prev : [...prev, key]))
+    // A chip can point at a curated variable, which lives in the card above rather than in the
+    // searchable table - and since the categories collapse, its row may not exist to scroll to.
+    // Opening its category is what makes the jump land; for a discovered key there is none.
+    const def = CSS_VARIABLES.find((d) => d.key === key)
+    if (def) setOpenGroups((prev) => (prev.includes(def.group) ? prev : [...prev, def.group]))
     setAllOpen(true)
     setQuery(key)
     setPendingScroll(key)
@@ -135,16 +150,20 @@ export default function Variables(): JSX.Element {
       <Card>
         <h3 className="mb-1 text-sm font-semibold">{t('styles.variables.mainHeading')}</h3>
         <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('styles.variables.mainDescription')}</p>
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
           {curatedGroups.map(([group, keys]) => (
-            <div key={group}>
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{groupLabel(t, group)}</p>
-              <div className="flex flex-col gap-0.5">
-                {keys.map((key) => (
-                  <VariableRow key={key} {...rowProps(key)} />
-                ))}
-              </div>
-            </div>
+            <VariableGroup
+              key={group}
+              label={groupLabel(t, group)}
+              count={keys.length}
+              changed={keys.filter((key) => key in overrides).length}
+              open={openGroups.includes(group)}
+              onToggle={() => toggleGroup(group)}
+            >
+              {keys.map((key) => (
+                <VariableRow key={key} {...rowProps(key)} />
+              ))}
+            </VariableGroup>
           ))}
         </div>
       </Card>

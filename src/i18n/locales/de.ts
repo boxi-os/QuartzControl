@@ -1109,6 +1109,7 @@ export default {
         dependents: 'Wird von diesen Variablen verwendet',
         edit: 'Eigener Wert'
       },
+      groupChanged: '{{count}} geändert',
       groups: {
         baseColors: 'Grundfarben',
         surfaces: 'Flächen',

@@ -1106,6 +1106,7 @@ export default {
         dependents: 'Used by these variables',
         edit: 'Your own value'
       },
+      groupChanged: '{{count}} changed',
       groups: {
         baseColors: 'Base colors',
         surfaces: 'Surfaces',

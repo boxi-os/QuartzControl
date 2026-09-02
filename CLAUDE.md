@@ -104,12 +104,21 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
 - **`Button` hat `type="button"` als Default.** In einem Formular reicht ein untypisierter `<button>`
   ein; der eine Button pro Dialog, der das soll, sagt `type="submit"`. (`SegmentedControl`s Segmente
   haben noch keinen Typ - siehe offene Befunde.)
-- **Ein deaktiviertes Control muss noch lesbar sein.** Explizite disabled-Farben, keine Opazität
-  (in `ui.tsx` selbst noch nicht überall eingehalten - siehe offene Befunde, T1 zuerst). Der
-  Muted-Token ist `text-slate-500 dark:text-slate-400`; Micro-Labels in Großbuchstaben
-  `text-slate-600`; eine immer dunkle Fläche bekommt kein `dark:`. Diese Literale sind die Form
-  *bis T1*: sobald die semantischen Tokens da sind, gilt der Token (`text-muted`), und wer danach
-  eine disabled-Stelle anfasst, schreibt den Token, nicht mehr das Paar.
+- **Farben heißen nach Rolle, nicht nach Palette.** Zehn Tokens in `src/index.css` (`--ground`,
+  `--surface`, `--text`, `--text-secondary`, `--text-muted`, `--ink`, `--accent`, `--accent-hover`,
+  `--accent-fg`, `--accent-text`), in `tailwind.config.js` als `bg-ground`, `bg-surface`, `text-text`,
+  `text-text-secondary`, `text-text-muted`, `border-ink/10`, `bg-accent`, `text-accent-text`. Der
+  Muted-Token ist `text-text-muted`; Labels und Micro-Labels in Großbuchstaben `text-text-secondary`.
+  `--ink` trägt nur Kanäle (Schwarz hell, Weiß dunkel), das Alpha steht am Ort und darf pro Schema
+  verschieden sein (`border-ink/[0.06] dark:border-ink/10`). Statusfarben (Danger-Rot, Badge-Töne,
+  InfoNote-Blau) bleiben Palette; eine immer dunkle Fläche bekommt weder `dark:` noch Token.
+  Umgestellt sind `ui.tsx`, `body` und die vier U4-Seiten; alles andere beiläufig beim Anfassen,
+  kein sed. `theme.ts` hält den Grund weiter als eigenes Literal.
+- **Ein deaktiviertes Control muss noch lesbar sein.** Explizite disabled-Farben, keine Opazität:
+  Text wird `text-text-muted`, ein Feld sinkt auf `bg-ground`, ein Icon-Button geht von
+  `text-text-secondary` auf `text-text-muted`. Gedimmt werden darf nur, was keine eigene Information
+  trägt (der Toggle-Knopf, die native Checkbox). Ein Feld, dessen Wert gerade nicht gilt, ist nicht
+  deaktiviert: `Field muted` setzt nur das Label auf Muted, Control und Hinweis bleiben.
 - **`darkMode: 'media'`, und das ist der App-Schalter.** `nativeTheme.themeSource` flippt
   `prefers-color-scheme` im Renderer mit; `color-scheme: light dark` auf `:root`, explizite Farben
   auf `select option` für Linux. Neue UI mit `dark:`-Varianten. Kein Wechsel auf `'class'`: die
@@ -163,22 +172,23 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 ## Offene Befunde aus dem Review (Status: offen)
 
 Aus [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md). Umgesetzt sind die P1-Befunde E1, E2
-und U1 (Sandbox, `dialog.confirm`, `Modal`) sowie U2 (`Toggle` mit `hideLabel`; `label` bleibt Pflicht,
-ein Switch ohne Namen ist damit am Aufrufer sichtbar falsch). Alles Folgende ist **nicht** erledigt;
-die Kurzbezeichnungen verweisen auf das Review.
+und U1 (Sandbox, `dialog.confirm`, `Modal`), U2 (`Toggle` mit `hideLabel`; `label` bleibt Pflicht,
+ein Switch ohne Namen ist damit am Aufrufer sichtbar falsch) sowie T1 und U4 (Farb-Tokens in
+`index.css`/`tailwind.config.js`, `ui.tsx` als Pilot, die vier Opazitäts-Seiten; Messungen in
+`docs/decisions/dark-mode-and-contrast.md`). Alles Folgende ist **nicht** erledigt; die
+Kurzbezeichnungen verweisen auf das Review.
 
 **Arbeitsregel:** ein Befund pro Durchgang, jeweils mit `npm run typecheck`, `npm run build`,
 `npm run smoke` und eigenem Commit; was dabei nebenbei auffällt, wird gesammelt und genannt, nicht
-mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge. Die einzige Abhängigkeit ist
-T1 vor U4.
+mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge.
 
-- **T1 + U4/d gemeinsam, T1 zuerst - Status: offen.** T1: sechs bis acht semantische Farb-Tokens
-  (`--ground`, `--surface`, `--text`, `--text-muted`, `--border`, `--accent`, `--accent-fg`) als
-  CSS-Variablen unter `:root` und `prefers-color-scheme: dark`, in `tailwind.config.js` mit
-  `<alpha-value>`; `ui.tsx` als Pilot. U4/d: die Opazitäts-Fälle (Toggle-Label 2,57:1, TextInput
-  disabled 3,41:1, Templates-Zeile 2,35:1, Basics-Feld 2,88:1, Icon-Buttons 1,69:1) durch explizite
-  disabled-Farben ersetzen. Beide betreffen dieselben Zeilen in `ui.tsx`: Kontrastfixes zuerst würden
-  von den Tokens direkt wieder ersetzt, darum ein gemeinsamer Schritt, Tokens voran.
+- **Reste aus dem T1/U4-Durchgang - Status: offen.** Der deaktivierte Ghost-Button liegt auf dem
+  Seitengrund bei 4,00:1, weil seine `ink/4%`-Fläche den Grund abdunkelt (auf einer Karte 4,36);
+  behebbar wie beim Feld, wäre aber eine Regel für alle Ghost-Buttons. `theme.ts` hält
+  `#f5f5f7`/`#1e1e1e` als eigenes Literal neben `--ground`, `select option` in `index.css` die
+  Werte von `--surface` und `--text` als Hex; beides gehört an die Variablen, sobald `theme.ts`
+  eine geteilte Konstante bekommt. Die Sidebar, die Seiten und die Sub-Komponenten tragen noch
+  Palette-Paare - beiläufig, kein sed.
 - **U3 - Status: offen.** `SegmentedControl`: `role="radiogroup"`/`radio`, `aria-checked`,
   Roving-Tabindex, Pfeiltasten, `type="button"` auf den Segmenten. ~25 Zeilen, keine Bibliothek.
 - **S1 - Status: offen.** `useIpcQuery(fn, deps)` mit Abbruch-Guard, `loading`, `error`, `reload()`;

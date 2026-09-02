@@ -2,17 +2,30 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from
 import type { ButtonHTMLAttributes, HTMLAttributes, InputHTMLAttributes, LabelHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react'
 import type { LucideIcon } from 'lucide-react'
 
-// A disabled button still has to say what it is. In light mode the disabled fills are light
-// (blue-300 / red-300) while the label stayed white, which measured 1.80:1 and 1.83:1 - the label
-// was simply not readable, and on Updates or Git-Sync that label is the only thing naming the
-// action you cannot take right now. The dark disabled fills are near-black, so white stays there.
+// Colours in this file are the semantic tokens from src/index.css (`text-text-muted`, `bg-surface`,
+// `border-ink/10`, `bg-accent`), not palette pairs; this file is the pilot for them. Status colours
+// (red danger, the badge tones, the blue info note) stay palette classes on purpose - they mean
+// something, and there is no token for "danger".
+//
+// A disabled control still has to say what it is, and that means explicit disabled colours, never
+// opacity. Twice measured: the disabled primary/danger fills are light (blue-300 / red-300), and
+// with the enabled state's white label that was 1.80:1 and 1.83:1 - the word was simply not there,
+// and on Updates or Git-Sync that word is the only thing naming the action you cannot take right
+// now; the dark disabled fills are near-black, so white stays there. Then `opacity-50` on the
+// disabled Toggle label measured 2.57:1 on the page ground and `disabled:opacity-50` on TextInput
+// 3.41:1 (docs/REVIEW-2026-09-02.md, d). Both carry the muted token now. The Toggle label measures
+// 4.37:1 on the page ground and 4.76:1 on a card in light, 6.5:1 and 5.5:1 in dark. The disabled
+// TextInput sinks to the page ground (`disabled:bg-ground`) rather than taking a 3% ink wash: on
+// the ground that wash left the muted text at 4.11:1, below the 4.36:1 floor the muted token is
+// held to, while the ground itself gives 4.37:1 in light and 6.5:1 in dark wherever the field
+// sits. The Toggle's knob may still dim - it carries no information the label does not.
 const VARIANTS = {
   primary:
-    'bg-blue-600 text-white hover:bg-blue-500 disabled:bg-blue-300 disabled:text-blue-800 dark:disabled:bg-blue-900/50 dark:disabled:text-white shadow-sm',
+    'bg-accent text-accent-fg hover:bg-accent-hover disabled:bg-blue-300 disabled:text-blue-800 dark:disabled:bg-blue-900/50 dark:disabled:text-white shadow-sm',
   danger:
     'bg-red-600 text-white hover:bg-red-500 disabled:bg-red-300 disabled:text-red-900 dark:disabled:bg-red-900/50 dark:disabled:text-white shadow-sm',
   ghost:
-    'bg-black/[0.04] text-slate-700 hover:bg-black/[0.08] disabled:text-slate-500 dark:bg-white/10 dark:text-slate-200 dark:hover:bg-white/15 dark:disabled:text-slate-400'
+    'bg-ink/[0.04] text-text-secondary hover:bg-ink/[0.08] disabled:text-text-muted dark:bg-ink/10 dark:hover:bg-ink/15'
 }
 
 // `type` defaults to "button" rather than the element's own "submit": the app had no <form> at
@@ -76,9 +89,9 @@ export function Field({
 }): JSX.Element {
   return (
     <label className={`flex flex-col gap-1 text-[13px] ${className}`}>
-      <span className="font-medium text-slate-600 dark:text-slate-300">{label}</span>
+      <span className="font-medium text-text-secondary">{label}</span>
       {children}
-      {hint && <span className="text-[11px] text-slate-500 dark:text-slate-400">{hint}</span>}
+      {hint && <span className="text-[11px] text-text-muted">{hint}</span>}
     </label>
   )
 }
@@ -98,7 +111,7 @@ export function FieldGroup({
 }): JSX.Element {
   return (
     <div role="group" aria-label={label} className={`flex flex-col gap-1 text-[13px] ${className}`}>
-      <span className="font-medium text-slate-600 dark:text-slate-300">{label}</span>
+      <span className="font-medium text-text-secondary">{label}</span>
       {children}
     </div>
   )
@@ -108,7 +121,7 @@ export function TextInput(props: InputHTMLAttributes<HTMLInputElement>): JSX.Ele
   return (
     <input
       {...props}
-      className={`rounded-[7px] border border-black/10 bg-white px-2.5 py-1.5 text-[13px] shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 ${props.className ?? ''}`}
+      className={`rounded-[7px] border border-ink/10 bg-surface px-2.5 py-1.5 text-[13px] text-text shadow-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:bg-ground disabled:text-text-muted ${props.className ?? ''}`}
     />
   )
 }
@@ -117,7 +130,7 @@ export function Select(props: SelectHTMLAttributes<HTMLSelectElement>): JSX.Elem
   return (
     <select
       {...props}
-      className={`rounded-[7px] border border-black/10 bg-white px-2.5 py-1.5 text-[13px] shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 ${props.className ?? ''}`}
+      className={`rounded-[7px] border border-ink/10 bg-surface px-2.5 py-1.5 text-[13px] text-text shadow-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:bg-ground disabled:text-text-muted ${props.className ?? ''}`}
     />
   )
 }
@@ -147,15 +160,15 @@ export function Toggle({
   disabled?: boolean
 }): JSX.Element {
   const control = (
-    <label className={`flex items-center gap-2.5 text-[13px] text-slate-700 dark:text-slate-200 ${disabled ? 'opacity-50' : ''}`}>
+    <label className={`flex items-center gap-2.5 text-[13px] ${disabled ? 'text-text-muted' : 'text-text-secondary'}`}>
       <button
         type="button"
         role="switch"
         aria-checked={checked}
         disabled={disabled}
         onClick={() => onChange(!checked)}
-        className={`relative h-[20px] w-[34px] shrink-0 rounded-full transition-colors disabled:cursor-not-allowed ${
-          checked ? 'bg-blue-600' : 'bg-black/15 dark:bg-white/20'
+        className={`relative h-[20px] w-[34px] shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+          checked ? 'bg-accent' : 'bg-ink/15 dark:bg-ink/20'
         }`}
       >
         {/* left-[2px] is a required, explicit anchor: without it, an absolutely positioned
@@ -175,7 +188,7 @@ export function Toggle({
   return (
     <div className="flex flex-col gap-1">
       {control}
-      <span className="text-[11px] text-slate-500 dark:text-slate-400">{hint}</span>
+      <span className="text-[11px] text-text-muted">{hint}</span>
     </div>
   )
 }
@@ -193,15 +206,15 @@ export function SegmentedControl<T extends string>({
   // self-start matters now that pages fill the window: as a flex item, `inline-flex` alone still
   // stretches to the container's full width, which turned this into a 1600px-wide bar.
   return (
-    <div className="inline-flex w-fit self-start gap-0.5 rounded-[8px] bg-black/[0.05] p-0.5 dark:bg-white/10">
+    <div className="inline-flex w-fit self-start gap-0.5 rounded-[8px] bg-ink/[0.05] p-0.5 dark:bg-ink/10">
       {options.map((option) => (
         <button
           key={option.value}
           onClick={() => onChange(option.value)}
           className={`rounded-[6px] px-3 py-1 text-[13px] font-medium transition-colors ${
             value === option.value
-              ? 'bg-white text-slate-900 shadow-sm dark:bg-white/20 dark:text-white'
-              : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+              ? 'bg-surface text-text shadow-sm dark:bg-ink/20'
+              : 'text-text-secondary hover:text-text'
           }`}
         >
           {option.label}
@@ -215,7 +228,7 @@ export function Card({ children, className = '', ...props }: HTMLAttributes<HTML
   return (
     <div
       {...props}
-      className={`rounded-[10px] border border-black/[0.06] bg-white p-4 shadow-sm dark:border-white/10 dark:bg-white/[0.04] ${className}`}
+      className={`rounded-[10px] border border-ink/[0.06] bg-surface p-4 shadow-sm dark:border-ink/10 ${className}`}
     >
       {children}
     </div>
@@ -331,11 +344,11 @@ export function Modal({
       onCancel={(event) => {
         if (!dismissible) event.preventDefault()
       }}
-      // An opaque dark surface rather than Card's white/4%: on the top layer that translucent
-      // colour composites over the dimmed backdrop and comes out darker than the page it sits on.
-      // The backdrop repeats what the hand-rolled overlays painted (black/30 plus blur), so the
-      // look did not change with the element.
-      className="m-auto w-full max-w-lg rounded-[10px] border border-black/[0.06] bg-white p-4 text-slate-900 shadow-xl backdrop:bg-black/30 backdrop:backdrop-blur-sm dark:border-white/10 dark:bg-[#2b2b2b] dark:text-slate-100"
+      // `--surface` is opaque in both schemes for this element's sake: Card used to be white/4%
+      // in dark, and on the top layer that translucent colour composited over the dimmed backdrop
+      // and came out darker than the page it sat on. The backdrop repeats what the hand-rolled
+      // overlays painted (black/30 plus blur) and is deliberately black in both schemes.
+      className="m-auto w-full max-w-lg rounded-[10px] border border-ink/[0.06] bg-surface p-4 text-text shadow-xl backdrop:bg-black/30 backdrop:backdrop-blur-sm dark:border-ink/10"
     >
       <form
         method="dialog"
@@ -363,7 +376,7 @@ export function Badge({
   tone?: 'slate' | 'green' | 'red' | 'amber'
 }): JSX.Element {
   const tones = {
-    slate: 'bg-black/[0.06] text-slate-700 dark:bg-white/10 dark:text-slate-300',
+    slate: 'bg-ink/[0.06] text-text-secondary dark:bg-ink/10',
     green: 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400',
     red: 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400',
     amber: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400'
@@ -389,12 +402,12 @@ export function PageHeader({
   return (
     <div className="mb-6 flex items-start justify-between gap-4">
       <div className="flex items-start gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] bg-blue-600/10 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] bg-accent-text/10 text-accent-text">
           <Icon size={18} strokeWidth={2} aria-hidden />
         </div>
         <div>
-          <h1 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h1>
-          {description && <p className="mt-0.5 max-w-xl text-[13px] text-slate-500 dark:text-slate-400">{description}</p>}
+          <h1 className="text-lg font-semibold text-text">{title}</h1>
+          {description && <p className="mt-0.5 max-w-xl text-[13px] text-text-muted">{description}</p>}
         </div>
       </div>
       {actions && <div className="flex shrink-0 items-center gap-3 pt-1">{actions}</div>}
@@ -406,7 +419,7 @@ export function LabelText(props: LabelHTMLAttributes<HTMLLabelElement>): JSX.Ele
   return (
     <label
       {...props}
-      className={`text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400 ${props.className ?? ''}`}
+      className={`text-xs font-semibold uppercase tracking-wide text-text-secondary ${props.className ?? ''}`}
     />
   )
 }
@@ -426,14 +439,14 @@ export function SettingsSection({
   collapsible?: boolean
   children: ReactNode
 }): JSX.Element {
-  const heading = <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{title}</span>
+  const heading = <span className="text-[11px] font-semibold uppercase tracking-wide text-text-secondary">{title}</span>
   const body = (
     <>
       {children}
-      {hint && <p className="text-[11px] text-slate-500 dark:text-slate-400">{hint}</p>}
+      {hint && <p className="text-[11px] text-text-muted">{hint}</p>}
     </>
   )
-  const box = 'rounded-[10px] border border-black/[0.06] p-3.5 dark:border-white/10'
+  const box = 'rounded-[10px] border border-ink/[0.06] p-3.5 dark:border-ink/10'
 
   if (collapsible) {
     return (

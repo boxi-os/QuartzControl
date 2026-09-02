@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { confirmDialog } from '../../utils/confirm'
 import type { TFunction } from 'i18next'
 import { useNavigate } from 'react-router-dom'
-import { ExternalLink, Search, Trash2 } from 'lucide-react'
+import { ExternalLink, GripVertical, Search, Trash2 } from 'lucide-react'
 import { useProject } from '../ProjectLayout'
 import type {
   GridFrameDefinition,
@@ -782,11 +782,17 @@ function PluginRow({
             setDropTarget(null)
           }}
           title={canDrag ? t('pluginsInstalled.dragHint') : undefined}
-          className={`select-none pt-[3px] text-slate-500 dark:text-slate-400 ${
-            canDrag ? 'cursor-grab active:cursor-grabbing' : 'cursor-default opacity-40'
+          aria-label={canDrag ? t('pluginsInstalled.dragHint') : undefined}
+          // The same bordered, padded box the layout editor's handle uses. As a bare ⠿ on the card
+          // ground it was almost invisible and read as decoration - reported from the alpha test,
+          // where the two lists sat next to each other and only one of them looked draggable.
+          className={`mt-px flex shrink-0 select-none items-center rounded-[6px] border p-1 transition-colors ${
+            canDrag
+              ? 'cursor-grab border-ink/10 bg-ink/[0.03] text-text-secondary hover:border-ink/20 hover:bg-ink/[0.08] hover:text-text active:cursor-grabbing'
+              : 'cursor-default border-transparent text-text-muted'
           }`}
         >
-          ⠿
+          <GripVertical size={15} />
         </span>
         <div className="pt-px">
           <Toggle

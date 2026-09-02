@@ -7,6 +7,21 @@ Aus CLAUDE.md ausgelagert (2026-09-02): die Messungen und Beobachtungen hinter d
 **An authored frame is a plugin, and the plugin list is where that leaks.** `layoutFrameService.saveFrame()` registers a new frame with `quartz plugin add <the frame's own directory>`, so `quartz.config.yaml` carries an entry whose source is an absolute path under `.quartz-gui/authored-frames/` - it has to, or the frame is not built. `Installed.tsx` therefore reads `layoutFrames.list()` alongside the config and gives those entries their own section: the frame's `frameName` instead of the directory id, its area count instead of a 60-character path, and a link that hands the Layout editor its tab *and* the frame to open (`primeStickyState`, since neither lives in the URL). An entry only counts as a frame when **both** halves agree - a frame with that id exists and the source really points at its directory - so a plugin that merely shares a name is still a plugin.
 - **Removing one has to go through `layoutFrames.delete`.** `quartz plugin remove` unregisters the frame but leaves its directory, and `saveFrame` only re-registers a frame whose directory is *new* - so the frame stayed in the Layout editor's list, editable and saveable, while being part of no build ever again, with nothing in the UI to show it. This was the row's Remove button until it was routed through the frame API, which deletes the directory too.
 
+**Der Griff muss aussehen, als ließe er sich greifen (2026-09-02).** Der Anfasser war ein blankes
+Braille-Zeichen `⠿` in Muted-Grau auf dem Kartengrund - technisch der einzige `draggable`-Punkt der
+Zeile, optisch aber Dekoration. Im Alpha-Test nebeneinander mit dem Layout-Editor gesehen, dessen
+Griff seit jeher eine gerahmte, gepolsterte Fläche mit `GripVertical` ist: dort erkennt man ihn, hier
+nicht. Jetzt dieselbe Fläche, mit Hover-Zustand und in Farb-Tokens statt Palette. Die Zeile mit
+`canDrag={false}` (Frames, und jede Zeile bei aktivem Filter) behält den Platz, verliert aber Rahmen
+und Fläche und wird `text-text-muted` - gedimmt statt unsichtbar, wie es die Regel für deaktivierte
+Bedienelemente verlangt. Gemessen im laufenden Programm in beiden Farbschemata; dass das Icon die
+Geste nicht schluckt (SVG-Kinder sind in Chromium nicht selbst `draggable`), mit einem
+`dragstart`/`dragend`-Paar auf dem `<svg>` geprüft, das im Handler der Zeile ankommt.
+
+**Die Umstellung auf `@dnd-kit` steht weiter aus.** Diese Änderung war rein optisch; natives
+HTML5-Drag kann nach wie vor keine Tastatur und sagt nichts an. Die Regel aus `CLAUDE.md` bleibt
+damit offen und gilt für den nächsten Durchgang an dieser Liste.
+
 **Dragging is off while the list is filtered, and that is a correctness rule, not a nicety.** `reorderGroup` renumbers a whole group in steps of ten from the sequence it is handed. Handed a *filtered* group, it assigns those numbers as though the hidden entries did not exist, silently reshuffling them - so the search/filter row disables the handles and says why. The handle is also the only `draggable` element now: with it on the whole card, selecting a description or dragging inside an option field started a reorder. Verified end to end by dispatching the drag/drop pair against a real project and diffing `quartz.config.yaml`: a move and its reverse leave the file byte-identical.
 
 **The marketplace is one organisation's repository list, and most of it is not a plugin.** `marketplaceService` fetches every repo of `quartz-community` - which includes the core itself (`v5`, archived), the shared libraries (`types`/`runtime`/`utils`), a `registry`, a `plugin-template`, an awesome-list and several forks. The org marks the real ones with the **`quartz-plugin` topic** (47 of 63 at the time of writing, checked against the API), so `Marketplace.tsx` splits on that plus `archived` rather than filtering: the marker is not perfect either - a forked plugin can lack it - and hiding a real plugin is worse than listing an odd repository under a collapsed "other" heading. This is also why the `github:owner/repo` field lives here rather than on the Installed tab: a plugin outside this one organisation is unreachable through the catalog, and on the Installed tab that unlabelled field sat exactly where a search box belongs.

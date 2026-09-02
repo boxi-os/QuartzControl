@@ -34,7 +34,8 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   `as`-Casts in `handlers.ts`.
 - **Neue Kanäle nehmen ein Objekt-Argument**, kein Positions-Tupel (`dialog.confirm` ist das Muster):
   ein späterer optionaler Key ist dann eine Zeile im Vertrag und eine im Schema, nicht ein vierter
-  Slot in vier Dateien. Bestehende Kanäle bleiben, wie sie sind.
+  Slot in vier Dateien. Bestehende Kanäle bleiben, wie sie sind (123 mit Positions-Argumenten,
+  kein Umbau), und es gibt keinen neuen Kanal für etwas, das ein bestehender mit einem Flag kann.
 - **Der Renderer läuft in der Chromium-Sandbox** (`sandbox: true`, seit 2026-09-02). Das Preload wird
   deshalb als CommonJS gebaut (`electron.vite.config.ts`): Electron lädt ein ESM-Preload nur ohne
   Sandbox, und genau das war der einzige Grund für das frühere `sandbox: false`. Im Preload gibt es
@@ -43,7 +44,10 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   Render vor, was `titlebarStripClass` braucht.
 - **Nur `ipcMain.handle` über `handle()`/`handleNoArgs()`; kein `ipcMain.on`.** Events von Main zum
   Renderer gehen über `broadcast()` an alle Fenster; der Renderer abonniert über `onEvent` mit
-  Rückgabe eines Abmelders. Sieben solcher Events gibt es.
+  Rückgabe eines Abmelders. Sechs Events laufen so (`server:log`, `build:log`,
+  `server:statusChanged`, `deploy:progress`, `templatePackage:progress`, `content:progress`); das
+  siebte, `app:navigate`, sendet `menu.ts` selbst an alle Fenster, weil das Menü ohne den
+  Handler-Kontext lebt.
 - **Alles, was Main aus Projektdateien liest und an Prozesse gibt, ist mit `--` getrennt; `git`
   bekommt nie eine Shell; nur npm/npx brauchen eine.** `runCommand.ts` ist der eine Spawner für
   kurzlebige Kommandos.
@@ -62,7 +66,9 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
 - **Eine Route ist gemountet, und sie besitzt ihr Dokument.** Beim Mount lesen, in `useState`
   halten, expliziter Save, `dirty` durch Vergleich mit dem Gelesenen (nicht durch Flag beim ersten
   Tastendruck). Nach jedem eigenen Schreibvorgang neu lesen; ein Dokument wird nie über eine Aktion
-  hinweg gehalten, die Main daran schreiben könnte.
+  hinweg gehalten, die Main daran schreiben könnte. Fünf Seiten halten so je eine Kopie der Config;
+  das ist sicher, solange nur eine Ansicht gemountet ist. Ein `project:changed`-Event kommt erst,
+  wenn zwei Ansichten gleichzeitig leben - nicht vorher.
 - **App-weit gibt es vier Dinge im Store** (`state/store.ts`): Projektliste, Settings, Fehler,
   Log-Puffer pro Projekt. Letzterer, weil Main Log-Zeilen unabhängig von der Seite sendet und ein
   seitenlokales Abonnement sie verlöre. Das Abonnement lebt einmal in `App.tsx`.
@@ -70,7 +76,10 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   Tab, Auswahl, Suchtext, Entwurf; keyed per Pathname, Namespace pro Komponente. Nicht für Gesten
   oder Pending-Flags. Scroll-Position analog in `ProjectLayout`. Schlüssel sind stabile Kennungen
   (ID, Name, Pfad), nie Listenindizes: `plugins.expanded.<index>` hängt an der Position, und nach
-  einem Umsortieren gehört der Zustand zum falschen Plugin (siehe offene Befunde).
+  einem Umsortieren gehört der Zustand zum falschen Plugin (siehe offene Befunde). Ein Link in einen
+  anderen Bereich, der mehr als einen Pfad übergeben will („diesen Frame im Layout-Editor öffnen“),
+  schreibt vor der Navigation mit `primeStickyState(pathname, key, value)` in den Store der Zielroute;
+  die liest es genau einmal beim Mount, danach ist der Aufruf wirkungslos.
 - **Verlassen mit ungespeicherten Änderungen fragt.** Modul-Flag in `unsavedGuard.tsx`, gesetzt von
   der Seite, abgefragt von der Sidebar; `UnsavedBadge` neben dem Save. Nur Sidebar-Links sind
   geguardet. Die Frage ist ein nativer Dialog und damit asynchron: der Klick wird gestoppt und die
@@ -194,13 +203,9 @@ mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge.
 - **S1 - Status: offen.** `useIpcQuery(fn, deps)` mit Abbruch-Guard, `loading`, `error`, `reload()`;
   20 von 32 API-Effekten haben heute keinen Guard. Neues Muster für neue Seiten, Bestehendes nur beim
   Anfassen.
-- **S2 - Status: offen (Regel, kein Code).** Fünf Seiten halten je eine Config-Kopie; sicher, solange
-  eine Ansicht existiert. Ein `project:changed`-Event erst, wenn zwei Ansichten gleichzeitig leben.
 - **S3 - Status: offen.** `useAppStore()` ohne Selektor in `Home`/`Settings`;
   `document.documentElement.lang` folgt dem Sprachwechsel nicht (`index.html` hat `lang="de"` fest);
   Settings werden zweimal geladen.
-- **E3 - Status: offen (Regel steht oben, kein Umbau).** Positions-Argumente in den bestehenden 123
-  Kanälen bleiben; keine neuen Kanäle für Dinge, die ein bestehender mit einem Flag kann.
 - **E4 - Status: offen.** `console.error` in `will-navigate` ist deutsch; Log-Puffer geht beim
   macOS-Fenster-Schließen verloren, während die Server weiterlaufen.
 - **A2 - Status: offen.** Cmd+S auf Konfiguration, Layout, Stile: Menüpunkt mit `CmdOrCtrl+S`, Kanal

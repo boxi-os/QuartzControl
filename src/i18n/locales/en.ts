@@ -58,6 +58,7 @@ export default {
     notAQuartzProject: 'Not a Quartz project — this folder has no quartz.config.yaml.',
     locateFolder: 'Locate folder…',
     confirmRemove: 'Remove “{{name}}” from the list?\n\nThe folder on disk is left untouched.',
+    confirmRemoveAction: 'Remove from list',
     confirmRemoveRunning:
       'Remove “{{name}}” from the list?\n\nIts running dev server will be stopped. The folder on disk is left untouched.',
     environment: {
@@ -149,6 +150,7 @@ export default {
     }
   },
   projectLayout: {
+    unsavedLeave: 'Discard changes',
     unsavedWarning:
       'This page has changes that are not saved yet. Leaving discards them. Switch anyway?',
     unsavedBadge: 'Unsaved',
@@ -449,7 +451,9 @@ export default {
     export: 'Export as ZIP',
     exported: 'Snapshot exported.',
     delete: 'Delete',
+    confirmDeleteAction: 'Delete snapshot',
     confirmDelete: 'Delete this snapshot permanently?',
+    confirmRestoreAction: 'Restore',
     confirmRestoreAll:
       'Reset the whole project to this snapshot?\n\nFiles that did not exist back then will be deleted. A snapshot of the current state is taken first.',
     confirmRestoreFiles:
@@ -475,7 +479,9 @@ export default {
     movedFoldersHeading: 'Set-aside content folders',
     movedFoldersHint:
       'When the content source is switched, the previous folder is moved here rather than deleted. This is not a backup of your notes: a symlink to a vault was never copied, only the link itself recorded.',
+    confirmRestoreFolderAction: 'Put folder back',
     confirmRestoreFolder: 'Put this content folder back? The current one is set aside as well.',
+    confirmDeleteFolderAction: 'Delete folder',
     confirmDeleteFolder:
       'Delete this set-aside content folder for good ({{size}})?\n\nIt is the only copy: snapshots do not contain it, and this cannot be undone.',
     folderSize: '{{count}} file · {{size}}',
@@ -535,6 +541,7 @@ export default {
       usedBy_one: 'used by {{count}} project',
       usedBy_other: 'used by {{count}} projects',
       confirmDelete: 'Delete this connection?\n\nThe stored password or key is deleted with it and cannot be recovered.',
+      confirmDeleteAction: 'Delete connection',
       confirmDeleteInUse_one:
         'This connection is used by {{count}} project.\n\nAfter deleting it, that project’s publish target points nowhere. Delete anyway?',
       confirmDeleteInUse_other:
@@ -779,6 +786,7 @@ export default {
     prune: 'Remove orphaned plugin folders',
     pruneRunning: 'Cleaning up…',
     pruneDone: 'Orphaned plugin folders removed.',
+    pruneConfirmAction: 'Remove folders',
     pruneConfirm:
       'Removes every built plugin folder no config entry points at any more. The configuration itself is left untouched. Continue?',
     openRepo: 'Open repository on GitHub',
@@ -997,6 +1005,7 @@ export default {
       nameRequired: 'Please give the frame a name.',
       nameCollision: 'This name is already taken (a built-in template or another custom frame).',
       deleteFrame: 'Delete this frame',
+      deleteConfirmAction: 'Delete frame',
       deleteConfirm: 'Really delete frame “{{name}}”? Page types referencing it will fall back to the default template.',
       preview: {
         pageContent: 'Page content'
@@ -1244,8 +1253,10 @@ export default {
     manageConnections: 'Manage connections',
     manageConnectionsHere: 'Manage credentials in the settings →',
     newTarget: '+ New target',
+    confirmDeleteTargetAction: 'Delete target',
     confirmDeleteTarget: 'Really delete this publish target? The credential it uses stays.',
     noTargets: 'No publish target yet. Create one via “+ New target” — e.g. GitHub Pages, a webspace over SFTP, or a local folder.',
+    confirmDeployAction: 'Publish now',
     confirmDeployBranch:
       'Publish to branch “{{branch}}”?\n\nThe branch is replaced entirely by the current build (force push).',
     branchHint: {
@@ -1329,6 +1340,7 @@ export default {
     hostKeyPinned: 'Host key confirmed',
     hostKeyUnknown: 'Host key not confirmed yet — you will be asked on first connect',
     forgetHostKey: 'Forget host key',
+    confirmForgetHostKeyAction: 'Forget host key',
     confirmForgetHostKey:
       'Discard the stored host key for {{host}}?\n\nYou will be asked to confirm the fingerprint again on the next connect. Only do this if the server was genuinely rebuilt.',
     ftpPlaintextWarning: 'FTP sends the password and all files in the clear. Without FTPS anyone on the same network can read along — enable it if your provider supports it (or use SFTP instead).',
@@ -1425,6 +1437,7 @@ export default {
     importButton: 'Apply template',
     importing: 'Applying…',
     importPreparing: 'Taking a snapshot…',
+    confirmImportAction: 'Apply',
     confirmOverwrite:
       'Apply {{count}} part(s)? What this project already has will be replaced by the template. A snapshot is taken first.',
     confirmMerge: 'Apply {{count}} part(s)? What this project already has stays untouched.',

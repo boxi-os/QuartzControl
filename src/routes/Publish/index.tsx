@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { confirmDialog } from '../../utils/confirm'
 import { Link } from 'react-router-dom'
 import { useProject } from '../ProjectLayout'
 import type {
@@ -169,16 +170,19 @@ export default function Publish(): JSX.Element {
     // asks, so the destructive action has to as well.
     if (!activeTarget) return
     if (activeTarget.destination.type === 'git-branch') {
-      if (!confirm(t('publish.confirmDeployBranch', { branch: activeTarget.destination.branch }))) return
+      const question = t('publish.confirmDeployBranch', { branch: activeTarget.destination.branch })
+      if (!(await confirmDialog({ text: question, confirmLabel: t('publish.confirmDeployAction'), danger: true }))) return
     } else if (activeTarget.destination.type === 'webhook') {
       // A webhook uploads nothing and deletes nothing - it asks a provider to build. The shared
       // wording counted a diff this target does not have and read "0 Dateien werden hochgeladen,
       // 0 Dateien werden gelöscht", which describes the action as doing nothing at all.
-      if (!confirm(t('publish.confirmDeployWebhook', { target: activeTarget.name }))) return
+      const question = t('publish.confirmDeployWebhook', { target: activeTarget.name })
+      if (!(await confirmDialog({ text: question, confirmLabel: t('publish.confirmDeployAction') }))) return
     } else {
       const uploads = (diff ?? []).filter((e) => e.status !== 'removed' && !excluded.has(e.path)).length
       const deletions = (diff ?? []).filter((e) => e.status === 'removed' && !excluded.has(e.path)).length
-      if (!confirm(t('publish.confirmDeployConnection', { target: activeTarget.name, uploads, deletions }))) return
+      const question = t('publish.confirmDeployConnection', { target: activeTarget.name, uploads, deletions })
+      if (!(await confirmDialog({ text: question, confirmLabel: t('publish.confirmDeployAction'), danger: deletions > 0 }))) return
     }
 
     await deployAction.run()
@@ -228,13 +232,13 @@ export default function Publish(): JSX.Element {
   // the host verifier for why a "key changed, continue?" prompt is the wrong shape.
   async function forgetHostKey(connection: Connection): Promise<void> {
     if (connection.kind !== 'ssh') return
-    if (!confirm(t('publish.confirmForgetHostKey', { host: connection.host }))) return
+    if (!(await confirmDialog({ text: t('publish.confirmForgetHostKey', { host: connection.host }), confirmLabel: t('publish.confirmForgetHostKeyAction'), danger: true }))) return
     await window.quartzGui.connections.forgetHostKey(connection.id)
     await reload()
   }
 
   async function deleteTarget(id: string): Promise<void> {
-    if (!confirm(t('publish.confirmDeleteTarget'))) return
+    if (!(await confirmDialog({ text: t('publish.confirmDeleteTarget'), confirmLabel: t('publish.confirmDeleteTargetAction'), danger: true }))) return
     await window.quartzGui.publishTargets.delete(project.path, id)
     if (selectedId === id) setSelectedId(null)
     await reload()

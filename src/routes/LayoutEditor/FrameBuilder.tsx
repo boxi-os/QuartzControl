@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
+import { confirmDialog } from '../../utils/confirm'
 import { GripVertical } from 'lucide-react'
 import type {
   FrameAlign,
@@ -397,7 +398,14 @@ export default function FrameBuilder({
   }
 
   async function remove(def: GridFrameDefinition): Promise<void> {
-    if (!confirm(t('layoutEditor.frameBuilder.deleteConfirm', { name: def.frameName }))) return
+    if (
+      !(await confirmDialog({
+        text: t('layoutEditor.frameBuilder.deleteConfirm', { name: def.frameName }),
+        confirmLabel: t('layoutEditor.frameBuilder.deleteConfirmAction'),
+        danger: true
+      }))
+    )
+      return
     const result = await window.quartzGui.layoutFrames.delete(projectPath, def.id)
     setMessage(result.success ? null : result.output)
     refresh()

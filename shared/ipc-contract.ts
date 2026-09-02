@@ -1267,10 +1267,24 @@ export const IPC = {
   dialogPickFolder: 'dialog:pickFolder',
   dialogRevealUserData: 'dialog:revealUserData',
   dialogOpenExternal: 'dialog:openExternal',
+  dialogConfirm: 'dialog:confirm',
 
   /** main → renderer: a menu item asking the HashRouter to go somewhere. */
   appNavigate: 'app:navigate'
 } as const
+
+/** One object argument on purpose (new-channel rule): an optional field later is one key here
+ *  and one in the schema, not a fourth positional slot in four files. */
+export interface ConfirmDialogOptions {
+  /** The question, in one line - the bold headline of the native dialog. */
+  message: string
+  /** What confirming does and what it does not do; the dialog's body text. */
+  detail?: string
+  /** The confirming button, named after the action ("Snapshot löschen"), never "OK". */
+  confirmLabel: string
+  /** Deletes, overwrites or ships something: shown with the warning icon. */
+  danger?: boolean
+}
 
 export interface Settings {
   /** Pre-fills the folder pickers on the start screen and the create wizard. */
@@ -1537,6 +1551,15 @@ export interface QuartzGuiApi {
     revealUserData(): Promise<void>
     /** Opens an https URL in the default browser. Refused for anything else. */
     openExternal(url: string): Promise<void>
+    /**
+     * A yes/no question as a native dialog, answered true only for the confirming button. Every
+     * confirmation in the renderer goes through this rather than window.confirm(): that dialog's
+     * default button belongs to Chromium, and Return confirms - measured in the main process
+     * (see the build-guard dialog), Return takes the first button regardless of `defaultId`, so
+     * the safe answer has to sit first, which is what the handler arranges and window.confirm()
+     * cannot. Its buttons also do not follow the app's language setting.
+     */
+    confirm(options: ConfirmDialogOptions): Promise<boolean>
   }
   menu: {
     /**

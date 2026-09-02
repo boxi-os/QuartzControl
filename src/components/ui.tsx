@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import type { ButtonHTMLAttributes, HTMLAttributes, InputHTMLAttributes, LabelHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -15,13 +15,20 @@ const VARIANTS = {
     'bg-black/[0.04] text-slate-700 hover:bg-black/[0.08] disabled:text-slate-500 dark:bg-white/10 dark:text-slate-200 dark:hover:bg-white/15 dark:disabled:text-slate-400'
 }
 
+// `type` defaults to "button" rather than the element's own "submit": the app had no <form> at
+// all until Modal below put one around every dialog's content, and inside a form a <button>
+// without a type submits - so a Cancel or "Ordner wählen" button would have confirmed the dialog
+// on click. Outside a form the attribute changes nothing, which is why this is safe for the 125
+// existing call sites; the one button per dialog that should submit says `type="submit"`.
 export function Button({
   variant = 'primary',
   className = '',
+  type = 'button',
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: keyof typeof VARIANTS }): JSX.Element {
   return (
     <button
+      type={type}
       {...props}
       className={`rounded-[7px] px-3 py-1.5 text-[13px] font-medium transition-colors disabled:cursor-not-allowed ${VARIANTS[variant]} ${className}`}
     />
@@ -221,6 +228,120 @@ export function InfoNote({ children, className = '' }: { children: ReactNode; cl
     >
       {children}
     </p>
+  )
+}
+
+// The rule this primitive and dialog.confirm (electron/main/ipc/handlers.ts) divide the app by:
+// yes/no confirmations run through the native dialog in the main process; in-app overlays are
+// only for content with a form or a selection. Kept as one sentence at both ends so the line
+// does not drift.
+//
+// Built on the native <dialog> and showModal(), not on a fixed-position div. The two overlays
+// this replaced (the create wizard, the content-source change) had no role, no Escape, no focus
+// trap, no focus return, and Tab walked straight through the page behind them - and the third
+// overlay would have copied the second. The element gives all of that for free: the top layer,
+// ::backdrop, Escape through the cancel event, an inert document behind it, and focus back to
+// the opener on close(). The <form method="dialog"> is what makes Return mean "confirm": Return
+// in a text field runs `onSubmit`, and with the submit button disabled the browser suppresses
+// implicit submission - so "confirm only when valid" needs no key handler of its own.
+export function Modal({
+  open,
+  onClose,
+  title,
+  children,
+  onSubmit,
+  dismissible = true
+}: {
+  open: boolean
+  /** Fired for every way the dialog closes: Escape, a Cancel button, a submit without onSubmit. */
+  onClose: () => void
+  title: string
+  children: ReactNode
+  /** Return in a field and the `type="submit"` button both land here. */
+  onSubmit?: () => void
+  /** False while an action is running: Escape is a close path the Cancel button's disabled
+   *  state does not cover. */
+  dismissible?: boolean
+}): JSX.Element {
+  const ref = useRef<HTMLDialogElement>(null)
+  const titleId = useId()
+  // Set while this component closes the element itself (below), so the resulting `close` event
+  // is not reported as the user closing it. Without it, StrictMode's simulated unmount in dev
+  // closed the dialog, the event reached onClose, and the parent unmounted the wizard for real.
+  const closingOurselves = useRef(false)
+
+  // Layout effects, not passive ones: showModal() has to run before the first paint or the
+  // dialog is display:none for a frame, and the unmount cleanup has to run while the element is
+  // still in the document - React runs layout cleanups before it removes the host node, passive
+  // ones after, and close() on a detached dialog cannot hand focus back to anything.
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    if (open && !el.open) {
+      el.showModal()
+      // showModal() puts focus where the spec version of this Chromium says - the first control
+      // in older builds, the dialog itself in newer ones - so the field that matters is named
+      // explicitly (`data-autofocus`), the first enabled control is the fallback. Not React's
+      // `autoFocus`: that calls .focus() at mount, while the dialog is still display:none.
+      const target =
+        el.querySelector<HTMLElement>('[data-autofocus]') ??
+        el.querySelector<HTMLElement>('input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])')
+      target?.focus()
+    } else if (!open && el.open) {
+      closingOurselves.current = true
+      el.close()
+    }
+  }, [open])
+
+  // The pages mount this conditionally, and an open dialog that is simply removed from the DOM
+  // is not closed - it vanishes, and focus lands on <body> instead of returning to the button
+  // that opened it. close() on the way out is what keeps that return trip; verified by reading
+  // document.activeElement after cancelling the create wizard.
+  useLayoutEffect(() => {
+    const el = ref.current
+    return () => {
+      if (el?.open) {
+        closingOurselves.current = true
+        el.close()
+      }
+    }
+  }, [])
+
+  return (
+    <dialog
+      ref={ref}
+      aria-labelledby={titleId}
+      onClose={() => {
+        if (closingOurselves.current) {
+          closingOurselves.current = false
+          return
+        }
+        onClose()
+      }}
+      onCancel={(event) => {
+        if (!dismissible) event.preventDefault()
+      }}
+      // An opaque dark surface rather than Card's white/4%: on the top layer that translucent
+      // colour composites over the dimmed backdrop and comes out darker than the page it sits on.
+      // The backdrop repeats what the hand-rolled overlays painted (black/30 plus blur), so the
+      // look did not change with the element.
+      className="m-auto w-full max-w-lg rounded-[10px] border border-black/[0.06] bg-white p-4 text-slate-900 shadow-xl backdrop:bg-black/30 backdrop:backdrop-blur-sm dark:border-white/10 dark:bg-[#2b2b2b] dark:text-slate-100"
+    >
+      <form
+        method="dialog"
+        className="flex flex-col gap-3"
+        onSubmit={(event) => {
+          if (!onSubmit) return
+          event.preventDefault()
+          onSubmit()
+        }}
+      >
+        <h2 id={titleId} className="text-lg font-semibold">
+          {title}
+        </h2>
+        {children}
+      </form>
+    </dialog>
   )
 }
 

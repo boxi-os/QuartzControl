@@ -544,4 +544,30 @@ export function registerIpcHandlers(): void {
   })
 
   handle(IPC.dialogOpenPath, t([s.absolutePath]), (path) => openPathWithinProject(path))
+
+  // The rule this channel and the Modal primitive in src/components/ui.tsx divide the app by:
+  // yes/no confirmations run through the native dialog in the main process; in-app overlays are
+  // only for content with a form or a selection. Kept as one sentence at both ends so the line
+  // does not drift.
+  //
+  // Cancel sits in buttons[0] with cancelId 0: measured on macOS with the destructive button
+  // first and defaultId on "Abbrechen", Return emptied the build folder anyway - Return takes
+  // the first button, whatever defaultId says (see the build guard above). window.confirm(),
+  // which the renderer used for every one of these questions before, offers no control over
+  // that at all: its confirming answer is always the default.
+  handle(IPC.dialogConfirm, t([s.confirmDialog]), async (options) => {
+    const messageBox = {
+      type: options.danger ? ('warning' as const) : ('question' as const),
+      buttons: [mainT('confirmCancel'), options.confirmLabel],
+      defaultId: 0,
+      cancelId: 0,
+      message: options.message,
+      detail: options.detail
+    }
+    // Attached to the window so it is a sheet on macOS and modal to the app elsewhere; without a
+    // window it would float free and could end up behind the app.
+    const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+    const { response } = win ? await dialog.showMessageBox(win, messageBox) : await dialog.showMessageBox(messageBox)
+    return response === 1
+  })
 }

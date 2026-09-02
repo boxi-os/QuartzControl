@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
 import { useTranslation } from 'react-i18next'
+import { confirmDialog } from '../../utils/confirm'
 import type { TFunction } from 'i18next'
 import { useNavigate } from 'react-router-dom'
 import { ExternalLink, Search, Trash2 } from 'lucide-react'
@@ -313,7 +314,8 @@ export default function PluginsInstalled(): JSX.Element {
   async function removePlugin(item: IndexedPlugin): Promise<void> {
     const { plugin, frame } = item
     const name = frame ? frame.frameName : plugin.name
-    if (!confirm(t(frame ? 'pluginsInstalled.removeFrameConfirm' : 'pluginsInstalled.removeConfirm', { name }))) return
+    const question = t(frame ? 'pluginsInstalled.removeFrameConfirm' : 'pluginsInstalled.removeConfirm', { name })
+    if (!(await confirmDialog({ text: question, confirmLabel: t('common.remove'), danger: true }))) return
     setBusy(true)
     try {
       // A frame has to go through layoutFrames.delete: `quartz plugin remove` alone unregisters it
@@ -339,7 +341,7 @@ export default function PluginsInstalled(): JSX.Element {
   // committed), the second drops directories no config entry points at any more. Both were wired
   // all the way through to the preload bridge and reachable from nowhere in the app.
   async function runMaintenance(kind: 'install' | 'prune'): Promise<void> {
-    if (kind === 'prune' && !confirm(t('pluginsInstalled.pruneConfirm'))) return
+    if (kind === 'prune' && !(await confirmDialog({ text: t('pluginsInstalled.pruneConfirm'), confirmLabel: t('pluginsInstalled.pruneConfirmAction'), danger: true }))) return
     setMaintenance(kind)
     setMessage(null)
     setMaintenanceNotice(null)

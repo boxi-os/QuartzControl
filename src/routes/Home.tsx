@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { confirmDialog } from '../utils/confirm'
 import { titlebarStripClass } from '../utils/platform'
 import { useNavigate, Link } from 'react-router-dom'
 import { ArrowUpRight, CheckCircle2, FolderSearch, Search, TriangleAlert, Trash2 } from 'lucide-react'
 import type { CreateProjectOptions, EnvironmentInfo, ProjectOverview } from '@shared/ipc-contract'
 import { useAppStore } from '../state/store'
-import { Button, Card, Field, InfoNote, Select, TextInput } from '../components/ui'
+import { Button, Card, Field, InfoNote, Modal, Select, TextInput } from '../components/ui'
 import { GROUP_ICONS } from './navConfig'
 import { formatRelativeTime } from '../utils/format'
 import { useAsyncAction } from '../hooks/useAsyncAction'
@@ -147,7 +148,7 @@ export default function Home(): JSX.Element {
                       const question = project.serverRunning
                         ? t('home.confirmRemoveRunning', { name: project.name })
                         : t('home.confirmRemove', { name: project.name })
-                      if (!confirm(question)) return
+                      if (!(await confirmDialog({ text: question, confirmLabel: t('home.confirmRemoveAction'), danger: true }))) return
                       await removeProject(project.id)
                       await reload()
                     }}
@@ -550,12 +551,25 @@ function CreateWizard({
     if (folder) setSource(folder)
   }
 
+  const canCreate = !busy && !!targetDirectory && !nameInvalid && (strategy === 'new' || !!source)
+  function create(): void {
+    // Also the guard behind Return: the submit button is disabled in the same cases, which stops
+    // implicit submission, but a check that lives in one place cannot disagree with the button.
+    if (!canCreate) return
+    onCreate({
+      targetDirectory,
+      template,
+      strategy,
+      linkResolution,
+      source: strategy === 'new' ? undefined : source,
+      baseUrl: baseUrl || undefined
+    })
+  }
+
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/30 p-6 backdrop-blur-sm">
-      <Card className="max-h-[88vh] w-full max-w-lg overflow-y-auto">
-        <h2 className="mb-2 text-lg font-semibold">{t('home.wizard.title')}</h2>
-        <InfoNote className="mb-4">{t('home.wizard.intro')}</InfoNote>
-        <div className="flex flex-col gap-3">
+    <Modal open onClose={onCancel} onSubmit={create} dismissible={!busy} title={t('home.wizard.title')}>
+      <InfoNote className="mb-1">{t('home.wizard.intro')}</InfoNote>
+      <div className="flex flex-col gap-3">
           <Field label={t('home.wizard.parentDirectory')} hint={t('home.wizard.parentDirectoryHint')}>
             <div className="flex gap-2">
               <TextInput
@@ -571,7 +585,9 @@ function CreateWizard({
           </Field>
 
           <Field label={t('home.wizard.projectName')} hint={t('home.wizard.projectNameHint')}>
+            {/* The parent directory above is usually pre-filled; the name is what gets typed. */}
             <TextInput
+              data-autofocus
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
               placeholder={t('home.wizard.projectNamePlaceholder')}
@@ -639,24 +655,11 @@ function CreateWizard({
             <Button variant="ghost" onClick={onCancel} disabled={busy}>
               {t('common.cancel')}
             </Button>
-            <Button
-              disabled={busy || !targetDirectory || nameInvalid || (strategy !== 'new' && !source)}
-              onClick={() =>
-                onCreate({
-                  targetDirectory,
-                  template,
-                  strategy,
-                  linkResolution,
-                  source: strategy === 'new' ? undefined : source,
-                  baseUrl: baseUrl || undefined
-                })
-              }
-            >
+            <Button type="submit" disabled={!canCreate}>
               {busy ? t('home.wizard.creating') : t('home.wizard.create')}
             </Button>
           </div>
-        </div>
-      </Card>
-    </div>
+      </div>
+    </Modal>
   )
 }

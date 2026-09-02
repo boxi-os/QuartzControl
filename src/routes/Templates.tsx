@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { confirmDialog } from '../utils/confirm'
 import { AlertTriangle, Check, FileArchive, FolderInput, Package } from 'lucide-react'
 import { useProject } from './ProjectLayout'
 import type {
@@ -301,7 +302,8 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
 
   async function runImport(): Promise<void> {
     if (!packagePath || selected.length === 0) return
-    if (!confirm(t(strategy === 'packageWins' ? 'templates.confirmOverwrite' : 'templates.confirmMerge', { count: selected.length }))) return
+    const question = t(strategy === 'packageWins' ? 'templates.confirmOverwrite' : 'templates.confirmMerge', { count: selected.length })
+    if (!(await confirmDialog({ text: question, confirmLabel: t('templates.confirmImportAction'), danger: strategy === 'packageWins' }))) return
     setWarnings(null)
     setFailure(null)
     setProgress({ projectPath: project.path, partId: null, message: '', done: 0, total: selected.length })

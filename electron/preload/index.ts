@@ -25,7 +25,8 @@ import type {
   TemplateConflictStrategy,
   TemplateExportOptions,
   TemplateImportProgress,
-  TemplatePartId
+  TemplatePartId,
+  ConfirmDialogOptions
 } from '@shared/ipc-contract'
 
 function onEvent<Args extends unknown[]>(channel: string, cb: (...args: Args) => void): () => void {
@@ -253,7 +254,8 @@ const api: QuartzGuiApi = {
     pickFile: (filters?: { name: string; extensions: string[] }[]) => ipcRenderer.invoke(IPC.dialogPickFile, filters),
     openPath: (path: string) => ipcRenderer.invoke(IPC.dialogOpenPath, path),
     revealUserData: () => ipcRenderer.invoke(IPC.dialogRevealUserData),
-    openExternal: (url: string) => ipcRenderer.invoke(IPC.dialogOpenExternal, url)
+    openExternal: (url: string) => ipcRenderer.invoke(IPC.dialogOpenExternal, url),
+    confirm: (options: ConfirmDialogOptions) => ipcRenderer.invoke(IPC.dialogConfirm, options)
   },
   menu: {
     onNavigate: (cb: (hashPath: string) => void) => {

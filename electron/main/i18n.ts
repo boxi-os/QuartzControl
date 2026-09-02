@@ -48,6 +48,7 @@ const STRINGS = {
     buildDirConfirmDetail:
       'Darin liegen {{count}} Einträge, die nicht nach einem Quartz-Build aussehen. Jeder Build löscht sein Ausgabeverzeichnis vollständig — das lässt sich nicht rückgängig machen.',
     buildDirConfirmCancel: 'Abbrechen',
+    confirmCancel: 'Abbrechen',
     buildDirConfirmProceed: 'Ordner leeren und bauen',
     buildDirCancelled: 'Abgebrochen — es wurde nichts gelöscht und nichts gebaut.',
 
@@ -231,6 +232,7 @@ const STRINGS = {
     buildDirConfirmDetail:
       'It holds {{count}} entries that do not look like a Quartz build. Every build wipes its output directory completely — this cannot be undone.',
     buildDirConfirmCancel: 'Cancel',
+    confirmCancel: 'Cancel',
     buildDirConfirmProceed: 'Empty the folder and build',
     buildDirCancelled: 'Cancelled — nothing was deleted and nothing was built.',
 

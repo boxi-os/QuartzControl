@@ -58,6 +58,7 @@ export default {
     notAQuartzProject: 'Kein Quartz-Projekt — in diesem Ordner liegt keine quartz.config.yaml.',
     locateFolder: 'Ordner suchen…',
     confirmRemove: '„{{name}}“ aus der Liste entfernen?\n\nDer Ordner auf der Festplatte bleibt unangetastet.',
+    confirmRemoveAction: 'Aus der Liste entfernen',
     confirmRemoveRunning:
       '„{{name}}“ aus der Liste entfernen?\n\nDer laufende Dev-Server wird dabei beendet. Der Ordner auf der Festplatte bleibt unangetastet.',
     environment: {
@@ -150,6 +151,7 @@ export default {
     }
   },
   projectLayout: {
+    unsavedLeave: 'Änderungen verwerfen',
     unsavedWarning:
       'Auf dieser Seite gibt es Änderungen, die noch nicht gespeichert sind. Beim Wechseln gehen sie verloren. Trotzdem wechseln?',
     unsavedBadge: 'Nicht gespeichert',
@@ -450,7 +452,9 @@ export default {
     export: 'Als ZIP exportieren',
     exported: 'Snapshot exportiert.',
     delete: 'Löschen',
+    confirmDeleteAction: 'Snapshot löschen',
     confirmDelete: 'Diesen Snapshot endgültig löschen?',
+    confirmRestoreAction: 'Wiederherstellen',
     confirmRestoreAll:
       'Das gesamte Projekt auf diesen Snapshot zurücksetzen?\n\nDateien, die es damals nicht gab, werden dabei gelöscht. Vom aktuellen Stand wird vorher automatisch ein Snapshot angelegt.',
     confirmRestoreFiles:
@@ -476,7 +480,9 @@ export default {
     movedFoldersHeading: 'Beiseitegelegte Content-Ordner',
     movedFoldersHint:
       'Beim Wechsel des Content-Ordners wird der bisherige hierher verschoben statt gelöscht. Das ist kein Backup deiner Notizen: ein Symlink auf einen Vault wurde nie kopiert, nur der Link selbst notiert.',
+    confirmRestoreFolderAction: 'Ordner einsetzen',
     confirmRestoreFolder: 'Diesen Content-Ordner wieder einsetzen? Der aktuelle wird dabei ebenfalls beiseitegelegt.',
+    confirmDeleteFolderAction: 'Ordner löschen',
     confirmDeleteFolder:
       'Diesen beiseitegelegten Content-Ordner endgültig löschen ({{size}})?\n\nEs ist die einzige Kopie: In den Snapshots ist er nicht enthalten, und rückgängig machen lässt sich das nicht.',
     folderSize: '{{count}} Datei · {{size}}',
@@ -536,6 +542,7 @@ export default {
       usedBy_one: 'von {{count}} Projekt verwendet',
       usedBy_other: 'von {{count}} Projekten verwendet',
       confirmDelete: 'Diesen Zugang löschen?\n\nDas hinterlegte Passwort bzw. der Key wird dabei mitgelöscht und lässt sich nicht wiederherstellen.',
+      confirmDeleteAction: 'Zugang löschen',
       confirmDeleteInUse_one:
         'Dieser Zugang wird von {{count}} Projekt verwendet.\n\nNach dem Löschen zeigt dessen Veröffentlichungsziel ins Leere. Trotzdem löschen?',
       confirmDeleteInUse_other:
@@ -779,6 +786,7 @@ export default {
     prune: 'Verwaiste Plugin-Ordner entfernen',
     pruneRunning: 'Räume auf…',
     pruneDone: 'Verwaiste Plugin-Ordner entfernt.',
+    pruneConfirmAction: 'Ordner entfernen',
     pruneConfirm:
       'Entfernt alle gebauten Plugin-Ordner, auf die keine Konfiguration mehr zeigt. Die Konfiguration selbst bleibt unverändert. Fortfahren?',
     openRepo: 'Repository auf GitHub öffnen',
@@ -997,6 +1005,7 @@ export default {
       nameRequired: 'Bitte einen Frame-Namen vergeben.',
       nameCollision: 'Dieser Name ist bereits vergeben (Standard-Templates oder ein anderer eigener Frame).',
       deleteFrame: 'Diesen Frame löschen',
+      deleteConfirmAction: 'Frame löschen',
       deleteConfirm: 'Frame „{{name}}“ wirklich löschen? Seitentypen, die ihn referenzieren, fallen dann auf das Standard-Template zurück.',
       preview: {
         pageContent: 'Seiteninhalt'
@@ -1246,8 +1255,10 @@ export default {
     manageConnections: 'Zugänge verwalten',
     manageConnectionsHere: 'Zugänge in den Einstellungen verwalten →',
     newTarget: '+ Neues Ziel',
+    confirmDeleteTargetAction: 'Ziel löschen',
     confirmDeleteTarget: 'Dieses Veröffentlichungsziel wirklich löschen? Der hinterlegte Zugang bleibt bestehen.',
     noTargets: 'Noch kein Veröffentlichungsziel angelegt. Über „+ Neues Ziel“ eines anlegen — z. B. GitHub Pages, einen Webspace per SFTP oder einen lokalen Ordner.',
+    confirmDeployAction: 'Jetzt veröffentlichen',
     confirmDeployBranch:
       'Auf den Branch „{{branch}}“ veröffentlichen?\n\nDer Branch wird dabei vollständig durch den aktuellen Build ersetzt (force-push).',
     branchHint: {
@@ -1331,6 +1342,7 @@ export default {
     hostKeyPinned: 'Host-Key bestätigt',
     hostKeyUnknown: 'Host-Key noch nicht bestätigt — wird beim ersten Verbinden abgefragt',
     forgetHostKey: 'Host-Key vergessen',
+    confirmForgetHostKeyAction: 'Host-Key vergessen',
     confirmForgetHostKey:
       'Gespeicherten Host-Key für {{host}} verwerfen?\n\nBeim nächsten Verbinden wird der Fingerprint erneut abgefragt. Nur tun, wenn der Server nachweislich neu aufgesetzt wurde.',
     ftpPlaintextWarning: 'FTP überträgt Passwort und Dateien im Klartext. Ohne FTPS kann jeder im selben Netz mitlesen — falls dein Anbieter es unterstützt, unbedingt aktivieren (oder besser SFTP nutzen).',
@@ -1429,6 +1441,7 @@ export default {
     importButton: 'Vorlage anwenden',
     importing: 'Wird angewendet…',
     importPreparing: 'Snapshot wird angelegt…',
+    confirmImportAction: 'Anwenden',
     confirmOverwrite:
       '{{count}} Baustein(e) anwenden? Vorhandenes in diesem Projekt wird dabei durch die Vorlage ersetzt. Vorher wird ein Snapshot angelegt.',
     confirmMerge: '{{count}} Baustein(e) anwenden? Vorhandenes in diesem Projekt bleibt unverändert.',

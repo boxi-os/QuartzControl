@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useProject } from '../ProjectLayout'
 import type { ContentProgress, ContentStatus, ContentStrategy } from '@shared/ipc-contract'
-import { Badge, Button, Card, Field, Select, TextInput } from '../../components/ui'
+import { Badge, Button, Card, Field, Modal, Select, TextInput } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 
 export default function ContentFolder(): JSX.Element {
@@ -33,6 +33,9 @@ export default function ContentFolder(): JSX.Element {
   }
 
   async function apply(): Promise<void> {
+    // Return in the folder field submits the form; the submit button being disabled stops the
+    // implicit case, this stops a submit that arrives anyway.
+    if (busy || !source) return
     setBusy(true)
     setError(null)
     setProgress(null)
@@ -80,14 +83,18 @@ export default function ContentFolder(): JSX.Element {
       </Card>
 
       {showDialog && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/30 p-6 backdrop-blur-sm">
-          <Card className="w-full max-w-lg">
-            <h3 className="mb-1 text-lg font-semibold">{t('content.dialogTitle')}</h3>
-            <p className="mb-4 text-sm text-amber-700 dark:text-amber-400">{t('content.dialogWarning')}</p>
+        <Modal
+          open
+          onClose={() => setShowDialog(false)}
+          onSubmit={apply}
+          dismissible={!busy}
+          title={t('content.dialogTitle')}
+        >
+            <p className="mb-1 text-sm text-amber-700 dark:text-amber-400">{t('content.dialogWarning')}</p>
             <div className="flex flex-col gap-3">
               <Field label={t('content.newSourceFolder')}>
                 <div className="flex gap-2">
-                  <TextInput value={source} onChange={(e) => setSource(e.target.value)} className="flex-1" />
+                  <TextInput data-autofocus value={source} onChange={(e) => setSource(e.target.value)} className="flex-1" />
                   <Button variant="ghost" onClick={pickSource}>
                     {t('common.select')}
                   </Button>
@@ -111,13 +118,12 @@ export default function ContentFolder(): JSX.Element {
                 <Button variant="ghost" onClick={() => setShowDialog(false)} disabled={busy}>
                   {t('common.cancel')}
                 </Button>
-                <Button onClick={apply} disabled={busy || !source}>
+                <Button type="submit" disabled={busy || !source}>
                   {busy ? t('content.applying') : t('content.apply')}
                 </Button>
               </div>
             </div>
-          </Card>
-        </div>
+        </Modal>
       )}
     </div>
   )

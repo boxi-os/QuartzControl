@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { confirmDialog } from '../utils/confirm'
 import { Link, useNavigate } from 'react-router-dom'
 import { RefreshCw } from 'lucide-react'
 import { useProject } from './ProjectLayout'
@@ -61,7 +62,7 @@ export default function Updates(): JSX.Element {
   // in the app (a core update runs git merge + npm install + a warm-up build), and a rejected
   // invoke used to leave the button disabled with no way back except leaving the page.
   async function runCoreUpdate(): Promise<void> {
-    if (!confirm(t('updates.core.confirm'))) return
+    if (!(await confirmDialog({ text: t('updates.core.confirm'), confirmLabel: t('updates.core.runUpdate') }))) return
     setCoreBusy(true)
     setCoreResult(null)
     try {

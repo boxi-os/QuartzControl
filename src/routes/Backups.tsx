@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { confirmDialog } from '../utils/confirm'
 import { useProject } from './ProjectLayout'
 import type { BackupEntry, Snapshot, SnapshotFileChange, SnapshotSettings } from '@shared/ipc-contract'
 import { Badge, Button, Card, InfoNote, PageHeader, TextInput, Toggle } from '../components/ui'
@@ -101,8 +102,8 @@ export default function Backups(): JSX.Element {
   const restoreAction = useAsyncAction(async (mode: 'all' | 'selected') => {
     if (!openId) return
     const paths = mode === 'selected' ? [...selected] : undefined
-    if (!confirm(mode === 'selected' ? t('backups.confirmRestoreFiles', { count: paths?.length ?? 0 }) : t('backups.confirmRestoreAll')))
-      return
+    const question = mode === 'selected' ? t('backups.confirmRestoreFiles', { count: paths?.length ?? 0 }) : t('backups.confirmRestoreAll')
+    if (!(await confirmDialog({ text: question, confirmLabel: t('backups.confirmRestoreAction'), danger: true }))) return
     const result = await window.quartzGui.snapshots.restore(project.path, openId, { paths, resetProjectHead: resetHead })
     setMessage(result.success ? t('backups.restored') : result.output)
     setOpenId(null)
@@ -110,7 +111,7 @@ export default function Backups(): JSX.Element {
   })
 
   const deleteAction = useAsyncAction(async (id: string) => {
-    if (!confirm(t('backups.confirmDelete'))) return
+    if (!(await confirmDialog({ text: t('backups.confirmDelete'), confirmLabel: t('backups.confirmDeleteAction'), danger: true }))) return
     await window.quartzGui.snapshots.delete(project.path, id)
     if (openId === id) setOpenId(null)
     await reload()
@@ -131,7 +132,7 @@ export default function Backups(): JSX.Element {
   })
 
   const restoreFolderAction = useAsyncAction(async (entry: BackupEntry) => {
-    if (!confirm(t('backups.confirmRestoreFolder'))) return
+    if (!(await confirmDialog({ text: t('backups.confirmRestoreFolder'), confirmLabel: t('backups.confirmRestoreFolderAction'), danger: true }))) return
     await window.quartzGui.backups.restoreContentFolder(project.path, entry.id)
     await reload()
   })
@@ -139,7 +140,14 @@ export default function Backups(): JSX.Element {
   // The list only ever grew - and every restore adds to it, since restoring moves the current
   // folder aside first. Nothing else in the app deletes these, and a snapshot does not hold them.
   const deleteFolderAction = useAsyncAction(async (entry: BackupEntry) => {
-    if (!confirm(t('backups.confirmDeleteFolder', { size: formatBytes(entry.sizeBytes, i18n.language) }))) return
+    if (
+      !(await confirmDialog({
+        text: t('backups.confirmDeleteFolder', { size: formatBytes(entry.sizeBytes, i18n.language) }),
+        confirmLabel: t('backups.confirmDeleteFolderAction'),
+        danger: true
+      }))
+    )
+      return
     await window.quartzGui.backups.deleteContentFolder(project.path, entry.id)
     await reload()
   })

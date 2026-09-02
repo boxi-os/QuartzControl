@@ -168,6 +168,15 @@ export const contentStrategy = z.enum(['copy', 'symlink'])
 export const syncDirection = z.enum(['push', 'pull', 'both'])
 // The commit half of `quartz sync`. The message is passed as its own argv entry (-m <text>), so
 // it needs no escaping - only a length bound, since it becomes a git commit subject.
+// dialog.confirm's argument. Text lengths are bounded because these three strings end up in a
+// native dialog verbatim; none of them is interpreted, so nothing else is checked.
+export const confirmDialog = z.looseObject({
+  message: z.string().min(1).max(2000),
+  detail: z.string().max(4000).optional(),
+  confirmLabel: z.string().min(1).max(80),
+  danger: z.boolean().optional()
+})
+
 export const syncOptions = z.looseObject({
   commit: z.boolean(),
   message: z.string().max(500).optional()

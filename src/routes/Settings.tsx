@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { confirmDialog } from '../utils/confirm'
 import { expandHome, isAbsolutePath, titlebarStripClass } from '../utils/platform'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Database, Key, Monitor, Moon, FolderOpen, Plug, RefreshCw, Sun, TriangleAlert } from 'lucide-react'
@@ -368,7 +369,7 @@ function ConnectionsSection(): JSX.Element {
     const used = await window.quartzGui.connections.usage(id)
     const message =
       used.length > 0 ? t('settings.connections.confirmDeleteInUse', { count: used.length }) : t('settings.connections.confirmDelete')
-    if (!confirm(message)) return
+    if (!(await confirmDialog({ text: message, confirmLabel: t('settings.connections.confirmDeleteAction'), danger: true }))) return
     await window.quartzGui.connections.delete(id)
     await reload()
   })
@@ -378,7 +379,7 @@ function ConnectionsSection(): JSX.Element {
   // belongs to the host, so forgetting it here affects every project that reaches that server.
   const forgetHostKey = useAsyncAction(async (connection: Connection) => {
     if (connection.kind !== 'ssh') return
-    if (!confirm(t('publish.confirmForgetHostKey', { host: connection.host }))) return
+    if (!(await confirmDialog({ text: t('publish.confirmForgetHostKey', { host: connection.host }), confirmLabel: t('publish.confirmForgetHostKeyAction'), danger: true }))) return
     await window.quartzGui.connections.forgetHostKey(connection.id)
     await reload()
   })

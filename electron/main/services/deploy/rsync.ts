@@ -121,6 +121,20 @@ function translateSshFailure(output: string, connection: SshConnection): string 
   return null
 }
 
+// The failure text for one rsync run. This used to be written out at each of the three call sites
+// as translateSshFailure(...) ?? output.trim() ?? "rsync endete mit Code ...", which reads as a
+// three-step fallback but is only ever two: String.trim() returns a string, never null or
+// undefined, so `??` can never reach the third. An rsync that failed without printing anything -
+// a killed process, a wrapper script that could not start - therefore produced an Error with an
+// empty message, and the panel showed an empty red box. The exit code is all there is left to
+// report at that point, and it is a message a user reads, so it comes from mainT like the rest.
+function failureMessage(output: string, connection: SshConnection, code: number | null): string {
+  const translated = translateSshFailure(output, connection)
+  if (translated) return translated
+  const raw = output.trim()
+  return raw === '' ? mainT('rsyncExitCode', { code: code ?? '?' }) : raw
+}
+
 interface RsyncRun {
   code: number | null
   entries: DeployDiffEntry[]
@@ -224,7 +238,7 @@ export const rsyncAdapter: DeployAdapter = {
       const args = await buildArgs(ctx, connection, destination.remotePath, destination.deleteRemoved, [], env, true)
       const result = await runRsync(args)
       if (result.code !== 0) {
-        throw new Error(translateSshFailure(result.output, connection) ?? result.output.trim() ?? `rsync endete mit Code ${result.code}.`)
+        throw new Error(failureMessage(result.output, connection, result.code))
       }
       return result.entries.sort((a, b) => a.path.localeCompare(b.path))
     } finally {
@@ -246,7 +260,7 @@ export const rsyncAdapter: DeployAdapter = {
       if (plan.code !== 0) {
         return {
           success: false,
-          output: translateSshFailure(plan.output, connection) ?? plan.output.trim() ?? `rsync endete mit Code ${plan.code}.`
+          output: failureMessage(plan.output, connection, plan.code)
         }
       }
       const total = plan.entries.length
@@ -267,7 +281,7 @@ export const rsyncAdapter: DeployAdapter = {
         output:
           result.code === 0
             ? `${summary}\n`
-            : (translateSshFailure(result.output, connection) ?? result.output.trim() ?? `rsync endete mit Code ${result.code}.`)
+            : failureMessage(result.output, connection, result.code)
       }
     } finally {
       await env.cleanup()

@@ -169,6 +169,7 @@ const STRINGS = {
       'Der Server hat die Anmeldung als {{user}}@{{host}} abgelehnt. Angeboten wurde: {{identity}}. Prüfe, ob genau dieser Schlüssel beim Anbieter hinterlegt ist — und ob der Pfad auf den privaten Schlüssel zeigt, nicht auf die .pub-Datei.',
     rsyncPathWithSpace:
       'Ein Remote-Pfad mit Leerzeichen lässt sich mit rsync nicht sicher übertragen. Bitte SFTP für dieses Ziel verwenden.',
+    rsyncExitCode: 'rsync endete mit Code {{code}}, ohne eine Meldung auszugeben.',
 
     // Publishing - webhook
     webhookNoUrl: 'Für dieses Ziel ist keine Webhook-URL hinterlegt.',
@@ -337,6 +338,7 @@ const STRINGS = {
       'The server refused the login as {{user}}@{{host}}. What was offered: {{identity}}. Check that this exact key is registered with the provider — and that the path points at the private key, not the .pub file.',
     rsyncPathWithSpace:
       'A remote path containing a space cannot be transferred safely with rsync. Please use SFTP for this target.',
+    rsyncExitCode: 'rsync exited with code {{code}} without printing a message.',
 
     webhookNoUrl: 'No webhook URL is stored for this target.',
     webhookInvalidUrl: 'The stored webhook URL is invalid.',

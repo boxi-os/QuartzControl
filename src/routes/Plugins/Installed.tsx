@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
+import { SortableContext, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { confirmDialog } from '../../utils/confirm'
 import type { TFunction } from 'i18next'
 import { useNavigate } from 'react-router-dom'
-import { ExternalLink, GripVertical, Search, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, ExternalLink, GripVertical, Search, Trash2 } from 'lucide-react'
 import { useProject } from '../ProjectLayout'
 import type {
   GridFrameDefinition,
@@ -193,11 +196,6 @@ interface IndexedPlugin {
   frame?: GridFrameDefinition
 }
 
-interface DragTarget {
-  group: string
-  index: number
-}
-
 type EnabledFilter = 'all' | 'active' | 'inactive'
 
 export default function PluginsInstalled(): JSX.Element {
@@ -216,8 +214,6 @@ export default function PluginsInstalled(): JSX.Element {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [dragging, setDragging] = useState<DragTarget | null>(null)
-  const [dropTarget, setDropTarget] = useState<DragTarget | null>(null)
   // Which row last had a field written. Layout and option fields save on blur with no Save button,
   // so without this the config changes with no sign that anything happened.
   const [savedIndex, setSavedIndex] = useState<number | null>(null)
@@ -465,13 +461,10 @@ export default function PluginsInstalled(): JSX.Element {
     busy,
     // Reordering renumbers a whole group in steps of ten. With a filter on, the rendered group is
     // a subset, so those new numbers would be assigned as though the hidden entries weren't there
-    // - which silently reshuffles them too. Dragging is therefore off while filtering, and the
-    // hint above the list says so rather than leaving a dead handle.
-    canDrag: !filtering,
-    dragging,
-    setDragging,
-    dropTarget,
-    setDropTarget,
+    // - which silently reshuffles them too. Reordering is therefore off while filtering (the
+    // handle *and* the two arrows), and the hint above the list says so rather than leaving dead
+    // controls.
+    canReorder: !filtering,
     outdated,
     savedIndex,
     toggleEnabled,
@@ -531,8 +524,10 @@ export default function PluginsInstalled(): JSX.Element {
           <h2 className="mb-1 text-sm font-semibold">{t('pluginsInstalled.framesHeading')}</h2>
           <p className="mb-3 max-w-3xl text-xs text-slate-500 dark:text-slate-400">{t('pluginsInstalled.framesDescription')}</p>
           <div className={PLUGIN_LIST}>
+            {/* Frames are not part of either sequence - they are registered plugins without an
+                order of their own - so this group has no handle and no arrows. */}
             {frameItems.filter(matches).map((item) => (
-              <PluginRow key={item.index} item={item} groupKey="frames" localIndex={0} onReorder={() => {}} {...cardProps} canDrag={false} />
+              <PluginRow key={item.index} item={item} {...cardProps} canReorder={false} />
             ))}
           </div>
         </section>
@@ -550,18 +545,22 @@ export default function PluginsInstalled(): JSX.Element {
               return (
                 <div key={position}>
                   <GroupHeading label={t(`positions.${position}`, position)} rawKey={position} count={shown.length} />
-                  <div className={PLUGIN_LIST}>
+                  <ReorderableList
+                    ids={group.map((item) => String(item.index))}
+                    canReorder={cardProps.canReorder}
+                    onReorder={(from, to) => reorderGroup(group, from, to, 'layoutPriority')}
+                  >
                     {shown.map((item) => (
-                      <PluginRow
+                      <Row
                         key={item.index}
                         item={item}
-                        groupKey={`pos:${position}`}
-                        localIndex={group.indexOf(item)}
-                        onReorder={(from, to) => reorderGroup(group, from, to, 'layoutPriority')}
+                        position={group.indexOf(item)}
+                        groupSize={group.length}
+                        onMove={(delta) => reorderGroup(group, group.indexOf(item), group.indexOf(item) + delta, 'layoutPriority')}
                         {...cardProps}
                       />
                     ))}
-                  </div>
+                  </ReorderableList>
                 </div>
               )
             })}
@@ -577,18 +576,24 @@ export default function PluginsInstalled(): JSX.Element {
             {pageTypeItems.some(matches) && (
               <div>
                 <GroupHeading label={t('pluginsInstalled.pageTypesGroup')} count={pageTypeItems.filter(matches).length} />
-                <div className={PLUGIN_LIST}>
+                <ReorderableList
+                  ids={pageTypeItems.map((item) => String(item.index))}
+                  canReorder={cardProps.canReorder}
+                  onReorder={(from, to) => reorderGroup(pageTypeItems, from, to, 'order')}
+                >
                   {pageTypeItems.filter(matches).map((item) => (
-                    <PluginRow
+                    <Row
                       key={item.index}
                       item={item}
-                      groupKey="pageTypes"
-                      localIndex={pageTypeItems.indexOf(item)}
-                      onReorder={(from, to) => reorderGroup(pageTypeItems, from, to, 'order')}
+                      position={pageTypeItems.indexOf(item)}
+                      groupSize={pageTypeItems.length}
+                      onMove={(delta) =>
+                        reorderGroup(pageTypeItems, pageTypeItems.indexOf(item), pageTypeItems.indexOf(item) + delta, 'order')
+                      }
                       {...cardProps}
                     />
                   ))}
-                </div>
+                </ReorderableList>
               </div>
             )}
             {otherProcessingItems.some(matches) && (
@@ -597,18 +602,29 @@ export default function PluginsInstalled(): JSX.Element {
                   label={t('pluginsInstalled.otherProcessingGroup')}
                   count={otherProcessingItems.filter(matches).length}
                 />
-                <div className={PLUGIN_LIST}>
+                <ReorderableList
+                  ids={otherProcessingItems.map((item) => String(item.index))}
+                  canReorder={cardProps.canReorder}
+                  onReorder={(from, to) => reorderGroup(otherProcessingItems, from, to, 'order')}
+                >
                   {otherProcessingItems.filter(matches).map((item) => (
-                    <PluginRow
+                    <Row
                       key={item.index}
                       item={item}
-                      groupKey="processing"
-                      localIndex={otherProcessingItems.indexOf(item)}
-                      onReorder={(from, to) => reorderGroup(otherProcessingItems, from, to, 'order')}
+                      position={otherProcessingItems.indexOf(item)}
+                      groupSize={otherProcessingItems.length}
+                      onMove={(delta) =>
+                        reorderGroup(
+                          otherProcessingItems,
+                          otherProcessingItems.indexOf(item),
+                          otherProcessingItems.indexOf(item) + delta,
+                          'order'
+                        )
+                      }
                       {...cardProps}
                     />
                   ))}
-                </div>
+                </ReorderableList>
               </div>
             )}
           </div>
@@ -651,12 +667,14 @@ function IconButton({
   icon: Icon,
   title,
   onClick,
-  disabled
+  disabled,
+  tone = 'danger'
 }: {
   icon: typeof Trash2
   title: string
   onClick: () => void
   disabled?: boolean
+  tone?: 'danger' | 'neutral'
 }): JSX.Element {
   return (
     <button
@@ -667,63 +685,138 @@ function IconButton({
       disabled={disabled}
       // Enabled is the secondary tone and disabled the muted one, both explicit: `disabled:opacity-40`
       // on a muted icon measured 1.69:1 (docs/REVIEW-2026-09-02.md, d), and one step below muted
-      // is below the floor - so the enabled icon moved up a step instead.
-      className="rounded-[7px] p-1.5 text-text-secondary transition-colors hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:text-text-muted dark:hover:bg-red-500/15 dark:hover:text-red-400"
+      // is below the floor - so the enabled icon moved up a step instead. Only a destructive
+      // button turns red on hover; the two move arrows next to it are ordinary edits.
+      className={`rounded-[7px] p-1.5 text-text-secondary transition-colors disabled:cursor-not-allowed disabled:text-text-muted ${
+        tone === 'danger'
+          ? 'hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/15 dark:hover:text-red-400'
+          : 'hover:bg-ink/[0.06] hover:text-text'
+      }`}
     >
       <Icon size={15} strokeWidth={2} aria-hidden />
     </button>
   )
 }
 
-function PluginRow({
-  item,
-  groupKey,
-  localIndex,
-  busy,
-  canDrag,
-  dragging,
-  setDragging,
-  dropTarget,
-  setDropTarget,
-  outdated,
-  savedIndex,
-  onReorder,
-  toggleEnabled,
-  removePlugin,
-  updateField,
-  removeOptionKey,
-  openFrameInLayoutEditor
-}: {
+interface PluginRowProps {
   item: IndexedPlugin
-  groupKey: string
-  localIndex: number
   busy: boolean
-  canDrag: boolean
-  dragging: DragTarget | null
-  setDragging: (d: DragTarget | null) => void
-  dropTarget: DragTarget | null
-  setDropTarget: (d: DragTarget | null) => void
+  canReorder: boolean
   outdated: Set<string>
   savedIndex: number | null
-  onReorder: (from: number, to: number) => void
   toggleEnabled: (index: number) => void
   removePlugin: (item: IndexedPlugin) => void
   updateField: (index: number, path: string[], value: unknown) => void
   removeOptionKey: (index: number, key: string) => void
   openFrameInLayoutEditor: (frame: GridFrameDefinition) => void
+  /** Where this entry sits in its own (unfiltered) group, and how long that group is. */
+  position?: number
+  groupSize?: number
+  onMove?: (delta: -1 | 1) => void
+  /** Only set for a row inside a SortableContext - see SortableRow. */
+  handleRef?: (node: HTMLElement | null) => void
+  handleProps?: Record<string, unknown>
+}
+
+// One group's worth of rows. The dnd-kit context sits per group rather than once around the page
+// because the groups are separate sequences in quartz.config.yaml - a component's layout.priority,
+// a processing plugin's order - and an entry can never move from one into another; with a context
+// each, that is true by construction instead of by a guard in the drop handler.
+function ReorderableList({
+  ids,
+  canReorder,
+  onReorder,
+  children
+}: {
+  ids: string[]
+  canReorder: boolean
+  onReorder: (from: number, to: number) => void
+  children: React.ReactNode
 }): JSX.Element {
+  // The keyboard sensor is a default of DndContext, but its default coordinate getter is not:
+  // it moves the picked-up item by a fixed 25px per arrow press, which in this list (cards ~130px
+  // tall, two columns above 1500px) never reaches the next card - measured in the running app,
+  // where space picked the row up and every arrow press left it over itself. sortableKeyboardCoordinates
+  // walks to the neighbouring *item* instead, which is what "nach oben" means here.
+  const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }))
+
+  function handleDragEnd(event: DragEndEvent): void {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+    const from = ids.indexOf(String(active.id))
+    const to = ids.indexOf(String(over.id))
+    if (from < 0 || to < 0) return
+    onReorder(from, to)
+  }
+
+  if (!canReorder) return <div className={PLUGIN_LIST}>{children}</div>
+
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      {/* rect, not vertical list: above 1500px this list is two columns wide (PLUGIN_LIST), and
+          the vertical strategy assumes a single column. */}
+      <SortableContext items={ids} strategy={rectSortingStrategy}>
+        <div className={PLUGIN_LIST}>{children}</div>
+      </SortableContext>
+    </DndContext>
+  )
+}
+
+// The hook may only run inside a SortableContext, so which of the two components renders is
+// decided here rather than by a condition inside one of them: a frame row, and every row while a
+// filter is on, has no context to join.
+function Row(props: PluginRowProps): JSX.Element {
+  return props.canReorder ? <SortableRow {...props} /> : <PluginRow {...props} />
+}
+
+function SortableRow(props: PluginRowProps): JSX.Element {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
+    id: String(props.item.index)
+  })
+  // The wrapper carries the transform because Card is a plain div component with no ref of its
+  // own; `h-full` on both keeps the grid's equal-height rows, which the extra element would
+  // otherwise break.
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`h-full ${isDragging ? 'opacity-40' : ''}`}
+    >
+      <PluginRow {...props} handleRef={setActivatorNodeRef} handleProps={{ ...attributes, ...listeners }} />
+    </div>
+  )
+}
+
+function PluginRow({
+  item,
+  busy,
+  canReorder,
+  outdated,
+  savedIndex,
+  toggleEnabled,
+  removePlugin,
+  updateField,
+  removeOptionKey,
+  openFrameInLayoutEditor,
+  position,
+  groupSize,
+  onMove,
+  handleRef,
+  handleProps
+}: PluginRowProps): JSX.Element {
   const { t } = useTranslation()
   const project = useProject()
   const { plugin, index, frame } = item
   const layout = getLayout(plugin)
-  const isDragging = dragging?.group === groupKey && dragging.index === localIndex
-  const isDropTarget = dropTarget?.group === groupKey && dropTarget.index === localIndex && !isDragging
+  const rowName = frame ? frame.frameName : plugin.name
   // Keyed by the plugin's *name*, not by its position in the config array. The index is what the
-  // list's React key uses, and it was what this key used too - but a reorder or a removal renumbers
-  // every entry after the touched one, so the open options panel jumped to whichever plugin
-  // inherited the index. Names are what quartz addresses a plugin by (`quartz plugin remove <name>`),
-  // and they survive both. Two entries of the same name would share one panel; that is the config
-  // being ambiguous, and sharing beats pointing at the wrong row.
+  // list's React key uses, and it was what this key used too - but removing a plugin shortens that
+  // array, so every entry behind it moves up one and the open options panel was left on whichever
+  // plugin inherited the index. (Reordering is safe by comparison: reorderGroup rewrites the
+  // `order`/`layout.priority` numbers in place and never moves an entry within the array.) Names
+  // are what quartz addresses a plugin by (`quartz plugin remove <name>`) and survive both. Two
+  // entries of the same name would share one panel; that is the config being ambiguous, and
+  // sharing beats pointing at the wrong row.
   const [expanded, setExpanded] = useStickyState(`plugins.expanded.${plugin.name}`, false)
   const description = getPluginDescription(t, plugin.name)
   const url = repoUrl(plugin.source)
@@ -760,44 +853,30 @@ function PluginRow({
         : null
 
   return (
-    <Card
-      onDragOver={(e: DragEvent) => {
-        if (!dragging || dragging.group !== groupKey) return
-        e.preventDefault()
-        setDropTarget({ group: groupKey, index: localIndex })
-      }}
-      onDrop={() => {
-        if (dragging && dragging.group === groupKey) onReorder(dragging.index, localIndex)
-        setDragging(null)
-        setDropTarget(null)
-      }}
-      className={`px-3 py-2.5 transition-opacity ${isDragging ? 'opacity-40' : ''} ${
-        isDropTarget ? 'outline outline-2 outline-blue-500' : ''
-      } ${plugin.enabled ? '' : 'bg-black/[0.02] dark:bg-white/[0.02]'}`}
-    >
+    <Card className={`h-full px-3 py-2.5 ${plugin.enabled ? '' : 'bg-black/[0.02] dark:bg-white/[0.02]'}`}>
       <div className="flex items-start gap-2.5">
-        {/* Only the handle carries `draggable`. With it on the whole card, any drag gesture -
-            selecting the description, dragging inside an option field - started a reorder. */}
-        <span
-          draggable={canDrag}
-          onDragStart={() => setDragging({ group: groupKey, index: localIndex })}
-          onDragEnd={() => {
-            setDragging(null)
-            setDropTarget(null)
-          }}
-          title={canDrag ? t('pluginsInstalled.dragHint') : undefined}
-          aria-label={canDrag ? t('pluginsInstalled.dragHint') : undefined}
-          // The same bordered, padded box the layout editor's handle uses. As a bare ⠿ on the card
-          // ground it was almost invisible and read as decoration - reported from the alpha test,
-          // where the two lists sat next to each other and only one of them looked draggable.
+        {/* Only the handle is the drag activator. With the whole card as one, any drag gesture -
+            selecting the description, dragging inside an option field - started a reorder.
+            A real <button>, not the span this used to be: dnd-kit's keyboard sensor needs a
+            focusable activator, and the attributes it hands over (tabIndex, role, the
+            aria-describedby pointing at its instructions) belong on something that can take focus.
+            The bordered, padded box is the layout editor's handle - as a bare ⠿ on the card ground
+            it was almost invisible and read as decoration, reported from the alpha test. */}
+        <button
+          type="button"
+          ref={handleRef}
+          {...handleProps}
+          disabled={!canReorder}
+          title={canReorder ? t('pluginsInstalled.dragHint') : undefined}
+          aria-label={t('pluginsInstalled.dragHandle', { name: rowName })}
           className={`mt-px flex shrink-0 select-none items-center rounded-[6px] border p-1 transition-colors ${
-            canDrag
+            canReorder
               ? 'cursor-grab border-ink/10 bg-ink/[0.03] text-text-secondary hover:border-ink/20 hover:bg-ink/[0.08] hover:text-text active:cursor-grabbing'
               : 'cursor-default border-transparent text-text-muted'
           }`}
         >
-          <GripVertical size={15} />
-        </span>
+          <GripVertical size={15} aria-hidden />
+        </button>
         <div className="pt-px">
           <Toggle
             label={t('pluginsInstalled.enabledSwitch', { name: frame ? frame.frameName : plugin.name })}
@@ -810,7 +889,7 @@ function PluginRow({
 
         <div className={`min-w-0 flex-1 ${plugin.enabled ? '' : 'opacity-60'}`}>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <p className="break-words font-medium leading-tight">{frame ? frame.frameName : plugin.name}</p>
+            <p className="break-words font-medium leading-tight">{rowName}</p>
             {frame && <Badge>{t('pluginsInstalled.frameBadge')}</Badge>}
             {outdated.has(plugin.name) && <Badge tone="amber">{t('pluginsInstalled.updateAvailable')}</Badge>}
             {savedIndex === index && <span className="text-[11px] text-green-600 dark:text-green-400">{t('pluginsInstalled.savedFlash')}</span>}
@@ -852,6 +931,28 @@ function PluginRow({
               )
             )}
           </div>
+          {/* The keyboard alternative to the handle. dnd-kit's keyboard sensor can do the same
+              thing (space, arrows, space), but it is a modal gesture one has to know about;
+              two arrows are one keystroke each and are the same control the CSS load order and
+              the layout editor use. They are as filter-sensitive as the drag is - see cardProps. */}
+          {onMove && position !== undefined && groupSize !== undefined && (
+            <>
+              <IconButton
+                icon={ArrowUp}
+                tone="neutral"
+                title={t('pluginsInstalled.moveUp', { name: rowName })}
+                onClick={() => onMove(-1)}
+                disabled={busy || !canReorder || position === 0}
+              />
+              <IconButton
+                icon={ArrowDown}
+                tone="neutral"
+                title={t('pluginsInstalled.moveDown', { name: rowName })}
+                onClick={() => onMove(1)}
+                disabled={busy || !canReorder || position === groupSize - 1}
+              />
+            </>
+          )}
           <IconButton icon={Trash2} title={t('common.remove')} onClick={() => removePlugin(item)} disabled={busy} />
         </div>
       </div>

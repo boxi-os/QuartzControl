@@ -18,9 +18,35 @@ Bedienelemente verlangt. Gemessen im laufenden Programm in beiden Farbschemata; 
 Geste nicht schluckt (SVG-Kinder sind in Chromium nicht selbst `draggable`), mit einem
 `dragstart`/`dragend`-Paar auf dem `<svg>` geprüft, das im Handler der Zeile ankommt.
 
-**Die Umstellung auf `@dnd-kit` steht weiter aus.** Diese Änderung war rein optisch; natives
-HTML5-Drag kann nach wie vor keine Tastatur und sagt nichts an. Die Regel aus `CLAUDE.md` bleibt
-damit offen und gilt für den nächsten Durchgang an dieser Liste.
+**Die Umstellung auf `@dnd-kit` (2026-09-03).** Der vorige Durchgang ließ den Griff aussehen wie
+einen Griff, ohne dass er mehr konnte; natives HTML5-Drag kennt keine Tastatur. Jetzt `useSortable`
+wie im Layout-Editor, plus zwei Pfeile pro Zeile als das, was man ohne Anleitung findet.
+
+Drei Dinge, die dabei gemessen wurden:
+
+- **Ein `DndContext` pro Gruppe, nicht einer um die Seite.** Die Gruppen sind getrennte Folgen in
+  `quartz.config.yaml` - `layout.priority` einer Komponente, `order` eines Verarbeitungs-Plugins -
+  und kein Eintrag wandert von einer in die andere. Mit je einem Kontext ist das baulich wahr statt
+  eine Abfrage im Drop-Handler.
+- **`rectSortingStrategy`, nicht `verticalListSortingStrategy`.** Ab 1500px ist die Liste zweispaltig
+  (`PLUGIN_LIST`); die Listenstrategie rechnet mit einer Spalte.
+- **Der Tastatur-Sensor braucht `sortableKeyboardCoordinates`.** `DndContext` bringt den
+  `KeyboardSensor` von sich aus mit, aber mit seinem Standard-Koordinatengeber: der schiebt den
+  aufgenommenen Eintrag pro Pfeildruck um feste 25px. Bei Karten von ~130px Höhe erreicht das nie die
+  nächste Karte - im laufenden Programm gemessen, die Ansage blieb bei „moved over droppable area 37“,
+  also über sich selbst. Mit dem Sortable-Koordinatengeber läuft die Aufnahme über Leertaste,
+  Pfeiltaste, Leertaste durch bis in die Datei. Im Zweispalter geht „hoch“ dabei geometrisch, also in
+  die Zeile darüber und damit ggf. zwei Plätze weit; das ist richtig so, es ist die Karte, die oben
+  liegt.
+
+Geprüft im Produktions-Build gegen `gui-test`, jeweils an der Datei: Maus-Drag (Pointer-Events, die
+das alte HTML5-Drag nicht hatte), Tastatur-Aufnahme, beide Pfeile, die Randfälle (erster Eintrag ohne
+„nach oben“, einziger Eintrag ohne beides, Frame-Zeilen ohne Pfeile) und der aktive Filter, der
+Griff *und* Pfeile deaktiviert. Danach die Konfiguration byte-gleich zurückgestellt.
+
+**Was dabei offen bleibt:** die Ansagen von dnd-kit sind Englisch, in dieser Liste wie im
+Layout-Editor - `accessibility.announcements` nimmt eigene Texte, und die gehören dann beiden
+Stellen gemeinsam, nicht dieser hier allein.
 
 **Dragging is off while the list is filtered, and that is a correctness rule, not a nicety.** `reorderGroup` renumbers a whole group in steps of ten from the sequence it is handed. Handed a *filtered* group, it assigns those numbers as though the hidden entries did not exist, silently reshuffling them - so the search/filter row disables the handles and says why. The handle is also the only `draggable` element now: with it on the whole card, selecting a description or dragging inside an option field started a reorder. Verified end to end by dispatching the drag/drop pair against a real project and diffing `quartz.config.yaml`: a move and its reverse leave the file byte-identical.
 

@@ -759,7 +759,7 @@ export default {
     countActive: '{{active}} of {{total}} active',
     countFiltered: '{{visible}} of {{total}} shown',
     reorderDisabledByFilter:
-      'Drag-to-reorder is off while a filter is active — the new order would move the hidden entries as well.',
+      'Reordering is off while a filter is active — the new order would move the hidden entries as well.',
     noMatches: 'No plugin matches the filter and search.',
     none: 'No plugins installed.',
     framesHeading: 'Your frames',
@@ -778,6 +778,9 @@ export default {
     pageTypesGroup: 'Page types',
     otherProcessingGroup: 'Transformers, filters & emitters',
     dragHint: 'Drag to reorder',
+    dragHandle: 'Reorder: {{name}}',
+    moveUp: 'Move up: {{name}}',
+    moveDown: 'Move down: {{name}}',
     updateAvailable: 'Update available',
     savedFlash: 'Saved',
     maintenanceHeading: 'Maintenance',

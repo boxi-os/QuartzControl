@@ -152,9 +152,14 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   auf `select option` für Linux. Neue UI mit `dark:`-Varianten. Kein Wechsel auf `'class'`: die
   nativen Dialoge, das Linux-`<select>`-Popup und die Scrollbar hängen an der Media-Query.
 - **Keine neue Stelle mit `draggable`.** Wer eine Stelle mit nativem HTML5-Drag anfasst
-  (`Plugins/Installed`, `LayoutEditor/FrameBuilder`, `ComponentPill`, `Styles/CustomCss`), zieht sie
-  auf `@dnd-kit` mit `KeyboardSensor` um - die Abhängigkeit ist da (`GlobalBoard`), natives Drag kann
-  weder Tastatur noch Ansagen.
+  (`LayoutEditor/FrameBuilder`, `ComponentPill`, `Styles/CustomCss`), zieht sie auf `@dnd-kit` mit
+  `KeyboardSensor` um - die Abhängigkeit ist da (`GlobalBoard`), natives Drag kann weder Tastatur
+  noch Ansagen. `Plugins/Installed` ist seit 2026-09-03 umgestellt und ist das Muster: ein
+  `DndContext` pro Gruppe, `rectSortingStrategy` (die Liste ist zweispaltig),
+  `sortableKeyboardCoordinates` am `KeyboardSensor` - ohne den schiebt ein Pfeildruck die Karte um
+  25px und damit um nichts. Dazu „nach oben / nach unten“ an jeder Zeile: die Tastatur-Aufnahme ist eine
+  Geste, die man kennen muss, zwei Pfeile sind ein Tastendruck. Messungen in
+  [`plugins-and-config.md`](docs/decisions/plugins-and-config.md).
 - **Ein Wort, ein Name.** Vokabular ist eine Tabelle (`positions`), nicht pro Seite. Deutsch „…“,
   Englisch “…”, Gedankenstrich als Em-Dash. Jeder Nutzertext steht in `de.ts`/`en.ts`
   (Schlüssel-Parität) oder `electron/main/i18n.ts`; zod- und `console.error`-Texte
@@ -228,19 +233,19 @@ mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge.
   macOS-Fenster-Schließen verloren, während die Server weiterlaufen.
 - **A2 - Status: offen.** Cmd+S auf Konfiguration, Layout, Stile: Menüpunkt mit `CmdOrCtrl+S`, Kanal
   `app:command` nach dem `app:navigate`-Muster, Save-Register auf Modulebene wie `unsavedGuard`.
-- **A3-Buttons - Status: offen.** „Nach oben / nach unten“ an jeder sortierbaren Zeile als
-  Tastatur-Alternative; die Drag-Regel oben gilt ab jetzt.
+- **A3-Buttons - Status: teilweise.** „Nach oben / nach unten“ steht in `Plugins/Installed`
+  (2026-09-03); offen bleiben die anderen Drag-Stellen (`LayoutEditor/FrameBuilder`, `ComponentPill`;
+  `Styles/CustomCss` hat die Pfeile schon, aber noch natives Drag).
 - **A4 - Status: offen.** `aria-live` für „Gespeichert“/Kopiert im `PageHeader`; `role="log"` auf
   `LogConsole`; zwei `<h1>` pro Projektseite (Sidebar-Projektname → `<p>`); `<nav aria-label>`.
 - **U5 - Status: offen.** `LabelText` ist tot; Typo-Skala aus Arbitrary Values (`text-[11px]` 77×,
   `text-[13px]` 54×) - Tokens definieren, `ui.tsx` umstellen, Rest beiläufig, kein sed.
 - **T2 - Status: offen (Notiz).** `'#ffffff'` als Picker-Fallback für nicht parsebare Farben.
-- **Sticky-State über Index (aus dem U2-Durchgang) - Status: offen.** `Plugins/Installed.tsx:720`
-  keyt `plugins.expanded.${index}` auf die Listenposition; nach einem Umsortieren oder Entfernen ist
-  das falsche Plugin aufgeklappt. Per grep die einzige Fundstelle: alle anderen 40 Schlüssel tragen
-  Namen, IDs (`backups.open` = Snapshot-ID, `publish.target`, `styles.themeCatalog.expanded`),
-  Pfade (`styles.css.activeTab`) oder Entwürfe. Umstellen auf eine stabile Kennung des Eintrags
-  (Plugin-Name bzw. Frame-ID). Nicht gemessen, aus dem Schlüssel gelesen.
+- **Sticky-State über Index - Status: erledigt (2026-09-03).** `plugins.expanded.<index>` keyt jetzt
+  auf den Plugin-Namen. Beim Umbau korrigiert: das Umsortieren ist *nicht* der Auslöser, es schreibt
+  nur `order`/`layout.priority` neu und lässt die Array-Positionen stehen - das Entfernen ist es, das
+  das Array verkürzt und jeden Eintrag dahinter um eins verschiebt. Damit tragen alle Sticky-Schlüssel
+  stabile Kennungen.
 - **Options-Zeile in `Plugins/Installed` (aus dem U2-Durchgang) - Status: offen.** In den beiden
   Options-Editoren steht der Optionsschlüssel als `<span>` neben dem Schalter; seit U2 ist der Name
   doppelt vorhanden, sichtbar und `sr-only`. Eine `Field`-artige Verknüpfung (Label umschließt das

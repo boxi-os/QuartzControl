@@ -45,3 +45,29 @@ für jede Zeile, was es vorher nicht tat.
 Variablen und scrollen zu ihrer Zeile. Mit zugeklappten Kategorien gibt es diese Zeile unter
 Umständen nicht — `navigateTo` schlägt den Schlüssel deshalb in `CSS_VARIABLES` nach und öffnet
 seine Kategorie mit, bevor der Scroll läuft.
+
+**Die Schriftvorschau zeigte die Ersatzschrift und sagte es nicht (2026-09-03).** Der Musterknopf in
+„Aktuell geltende Schriften" setzt `fontFamily` auf den Stack der Website — nur lädt dieses Fenster
+die Schriften der Website nirgends: die CSP lässt keinen externen Host zu, und eine Schrift, die
+Quartz beim Seitenaufruf von Google holt, hat im Projekt auch keine Datei zum Lesen. Im Alpha-Test
+gemeldet („sieht mir nicht danach aus"), danach nachgemessen: „Schibsted Grotesk", „Source Sans Pro"
+und „IBM Plex Mono" ergeben auf einem Canvas exakt dieselbe Textbreite wie ein erfundener
+Familienname, „Helvetica" nicht. Die Probe war also die Ersatzschrift, in jeder der vier Zeilen.
+
+`document.fonts.check('16px "X"')` beantwortet die Frage **nicht** — es meldete für alle vier
+Familien `true`, die nachweislich zurückfielen. Der Breitenvergleich gegen eine Familie, die es
+nicht geben kann, beantwortet sie, weil ein Rückfall exakt die Metrik des Rückfalls erzeugt.
+`fontIsAvailable()` in `fontSpec.ts` macht genau das, einmal pro Familie und gemerkt.
+
+Was daraus folgt, ist eine Anzeige statt einer Reparatur: die Zeile sagt „nicht installiert", die
+Probe steht in Muted, und *einmal* unter dem Block steht, was das heißt. Viermal derselbe Satz
+liest sich als vier Probleme. Eine echte Vorschau bräuchte die Schriftdatei im Renderer — neuer
+IPC-Kanal plus `font-src 'self' data:` in der CSP — und hülfe nur bei selbst mitgebrachten oder
+vom Theme gelieferten Schriften; zurückgestellt.
+
+**Und die Farben stehen jetzt als Tabelle da.** Neun Paare als umbrechende Reihe von Feldern, die
+Werte selbst nur im `title` — ein Hex, für das man erst hovern muss, ist kein ablesbarer Wert.
+Jetzt `Variable | Hell | Dunkel` mit Feld und Hex nebeneinander, Kopieren pro Hälfte wie vorher.
+Der Schriftblock daneben ist von vier Zeilen pro Schrift auf zwei runter, damit die beiden Blöcke
+gleich hoch enden: die Box sitzt über dem Editor, und jede Zeile hier ist eine Zeile, die man zum
+Schreiben wegscrollen muss.

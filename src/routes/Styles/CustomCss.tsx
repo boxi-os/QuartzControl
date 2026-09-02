@@ -11,7 +11,7 @@ import { useStickyState } from '../../state/uiState'
 import { componentItems } from '../LayoutEditor/utils'
 import CssVariableReference from './CssVariableReference'
 import { cssColorToHex, isDisplayableColor, resolvedValue, type ResolveContext } from './variableGraph'
-import { googleFontRequest, primaryFamily, summarizeFaces, type TypographySlot } from './fontSpec'
+import { fontIsAvailable, googleFontRequest, primaryFamily, summarizeFaces, type TypographySlot } from './fontSpec'
 import { fontLoaders } from './fontDelivery'
 import { activeThemeIdOf, useStyles } from './index'
 
@@ -752,86 +752,116 @@ function ActiveStyles(): JSX.Element {
     .map((slot) => googleFontRequest(slot, typography[slot]))
     .filter((r): r is NonNullable<typeof r> => r !== null)
 
+  const families = SUMMARY_FONTS.map((key) => primaryFamily(resolvedValue(key, 'light', ctx) ?? undefined))
+  const anyMissing = families.some((family) => family && !fontIsAvailable(family))
+
   return (
-    <Card className="grid gap-4 lg:grid-cols-2">
+    <Card className="grid gap-6 lg:grid-cols-[auto_minmax(0,1fr)]">
       <div>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">
           {t('styleEditor.current.colors')}
         </h3>
-        <div className="flex flex-wrap gap-3">
-          {SUMMARY_COLORS.map((key) => (
-            <div key={key} className="flex items-center gap-1.5">
-              {/* Each half is its own copy target: the light and dark value of the same variable
-                  are different colours, and "which one did I just copy" has to be unambiguous. */}
-              <span className="flex overflow-hidden rounded border border-black/10 dark:border-white/20">
+        {/* A table rather than a wrapping row of swatch pairs: the values themselves used to live
+            only in a title attribute, and a hex one has to hover for is not a value one can read
+            off. Two columns, because a colour without its counterpart in the other scheme is half
+            an answer here. */}
+        <table className="text-xs">
+          <thead>
+            <tr className="text-[10px] font-semibold uppercase tracking-wide text-text-secondary">
+              <th className="pb-1 pr-4 text-left font-semibold">{t('styleEditor.current.variable')}</th>
+              <th className="pb-1 pr-4 text-left font-semibold">{t('styles.variables.light')}</th>
+              <th className="pb-1 text-left font-semibold">{t('styles.variables.dark')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {SUMMARY_COLORS.map((key) => (
+              <tr key={key} className="border-t border-ink/[0.05]">
+                <td className="py-0.5 pr-4 font-mono">--{key}</td>
                 {(['light', 'dark'] as const).map((mode) => {
                   const value = resolvedValue(key, mode, ctx)
                   const hex = cssColorToHex(value) ?? value
                   return (
-                    <button
-                      key={mode}
-                      type="button"
-                      onClick={() => hex && copy(hex, `--${key} (${t(`styles.variables.${mode}`)})`)}
-                      title={t('styleEditor.cssVars.copyHint', { value: hex ?? '—' })}
-                      className="h-5 w-5"
-                      style={{ backgroundColor: isDisplayableColor(value) ? value : 'transparent' }}
-                    />
+                    <td key={mode} className="whitespace-nowrap py-0.5 pr-4">
+                      {/* Still a copy target, and still one per mode: the two halves are different
+                          colours, so "which one did I just copy" has to be unambiguous. */}
+                      <button
+                        type="button"
+                        onClick={() => hex && copy(hex, `--${key} (${t(`styles.variables.${mode}`)})`)}
+                        title={t('styleEditor.cssVars.copyHint', { value: hex ?? '—' })}
+                        className="flex items-center gap-1.5 text-left"
+                      >
+                        <span
+                          className="h-3.5 w-3.5 shrink-0 rounded border border-ink/15"
+                          style={{ backgroundColor: isDisplayableColor(value) ? value : 'transparent' }}
+                        />
+                        <span className="font-mono tabular-nums text-text-muted">{hex ?? '—'}</span>
+                      </button>
+                    </td>
                   )
                 })}
-              </span>
-              <code className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{key}</code>
-            </div>
-          ))}
-        </div>
+              </tr>
+            ))}
+          </tbody>
+        </table>
         {copied && <p className="mt-2 truncate text-[11px] text-green-700 dark:text-green-400">{t('common.copied', { value: copied })}</p>}
       </div>
 
       <div>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">
           {t('styleEditor.current.fonts')}
         </h3>
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col">
           {SUMMARY_FONTS.map((key) => {
             const stack = resolvedValue(key, 'light', ctx)
             if (!stack) return null
             const family = primaryFamily(stack)
             const summary = summarizeFaces(faces, family)
+            const available = fontIsAvailable(family)
             return (
-              <div key={key} className="flex flex-wrap items-baseline gap-x-2 text-[11px]">
-                <code className="w-24 shrink-0 font-mono text-slate-500 dark:text-slate-400">{key}</code>
-                <button
-                  type="button"
-                  onClick={() => copy(stack, `--${key}`)}
-                  title={t('styleEditor.cssVars.copyHint', { value: stack })}
-                  className="min-w-0 truncate rounded px-1 text-left text-[13px] text-slate-700 hover:bg-black/[0.06] dark:text-slate-200 dark:hover:bg-white/10"
+              <div key={key} className="border-t border-ink/[0.05] py-1.5 first:border-t-0 first:pt-0">
+                <div className="flex flex-wrap items-baseline gap-x-2 text-[11px]">
+                  <code className="w-[74px] shrink-0 font-mono text-text-muted">{key}</code>
+                  <button
+                    type="button"
+                    onClick={() => copy(stack, `--${key}`)}
+                    title={t('styleEditor.cssVars.copyHint', { value: stack })}
+                    className="font-semibold hover:underline"
+                  >
+                    {family}
+                  </button>
+                  {/* Straight out of the @font-face declarations the site really has - a range like
+                      100–1000 is a variable font, and italic only shows when a face declares it. */}
+                  <span className="text-text-muted">
+                    {summary
+                      ? `${summary.weights.join(' · ')}${summary.italic ? ` · ${t('styleEditor.current.italic')}` : ''}`
+                      : t('styleEditor.current.noFace')}
+                  </span>
+                  {!available && <span className="text-amber-700 dark:text-amber-400">{t('styleEditor.current.notInstalled')}</span>}
+                </div>
+                <p
+                  className={`pl-[82px] text-xl leading-tight ${available ? '' : 'text-text-muted'}`}
                   style={{ fontFamily: stack }}
                 >
-                  {family}
-                </button>
-                {/* Straight out of the @font-face declarations the site really has - a range like
-                    100–1000 is a variable font, and italic only shows when a face declares it. */}
-                {summary ? (
-                  <span className="text-slate-500 dark:text-slate-400">
-                    {summary.weights.join(' · ')}
-                    {summary.italic && ` · ${t('styleEditor.current.italic')}`}
-                  </span>
-                ) : (
-                  <span className="text-slate-500 dark:text-slate-400">{t('styleEditor.current.noFace')}</span>
-                )}
+                  {t('styleEditor.current.sample')}
+                </p>
               </div>
             )
           })}
         </div>
 
+        {/* Said once under the block, not on every line: four identical warnings read as four
+            problems. The short word sits on the line it belongs to. */}
+        {anyMissing && <p className="mt-2 text-[11px] text-amber-700 dark:text-amber-400">{t('styleEditor.current.notInstalledExplainer')}</p>}
+
         {/* Where the fonts come from decides what the weights above even mean - and whether the
             site calls Google at all. Both mechanisms are checked, not just the theme setting: the
             Fonts plugin has its own fontOrigin and defaults to Google. */}
         <div className="mt-2 flex flex-col gap-1 text-[11px]">
-          {loaders.length === 0 && <p className="text-slate-500 dark:text-slate-400">{t('styleEditor.current.noLoader')}</p>}
+          {loaders.length === 0 && <p className="text-text-muted">{t('styleEditor.current.noLoader')}</p>}
           {loaders.map((loader) => (
             <p
               key={`${loader.via}-${loader.mode}`}
-              className={loader.mode === 'google' ? 'text-amber-700 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'}
+              className={loader.mode === 'google' ? 'text-amber-700 dark:text-amber-400' : 'text-text-muted'}
             >
               {t(`styleEditor.current.loader.${loader.via}.${loader.mode}`, {
                 specs: requests

@@ -1164,8 +1164,13 @@ export default {
       unavailable: 'SCSS check not possible: {{reason}}'
     },
     current: {
-      colors: 'Colors in effect (light / dark)',
+      colors: 'Colors in effect',
       fonts: 'Fonts in effect',
+      variable: 'Variable',
+      sample: 'Aa Bb Cc 123 — sample text',
+      notInstalled: 'not installed',
+      notInstalledExplainer:
+        '“Not installed” means the font is not on this machine and the app fetches nothing from the network — the sample shows the fallback, not the real face.',
       italic: 'italic',
       noFace: 'no @font-face rule found',
       familyDefault: '(family default)',

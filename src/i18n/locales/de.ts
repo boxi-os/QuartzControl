@@ -1167,8 +1167,13 @@ export default {
       unavailable: 'SCSS-Prüfung nicht möglich: {{reason}}'
     },
     current: {
-      colors: 'Aktuell geltende Farben (hell / dunkel)',
+      colors: 'Aktuell geltende Farben',
       fonts: 'Aktuell geltende Schriften',
+      variable: 'Variable',
+      sample: 'Aa Bb Cc 123 — Beispieltext',
+      notInstalled: 'nicht installiert',
+      notInstalledExplainer:
+        '„Nicht installiert“ heißt: die Schrift liegt auf diesem Rechner nicht vor und die App lädt nichts aus dem Netz — die Probe zeigt die Ersatzschrift, nicht die echte.',
       italic: 'kursiv',
       noFace: 'keine @font-face-Regel gefunden',
       familyDefault: '(Standardstärke)',

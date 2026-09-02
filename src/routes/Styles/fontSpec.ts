@@ -77,3 +77,33 @@ export function summarizeFaces(faces: FontFaceInfo[], family: string): FaceSumma
     origins: Array.from(new Set(matching.map((f) => f.origin)))
   }
 }
+
+// Does this renderer actually have the family, or is it about to silently draw the fallback?
+//
+// Measured during the alpha test: the preview showed "Schibsted Grotesk" in whatever the fallback
+// was, and nothing said so. Nothing loads the site's fonts into this window - the CSP allows no
+// external host, and a font the site pulls from Google at page load has no file in the project to
+// read either - so a preview is only genuine when the family happens to be installed on this
+// machine. `document.fonts.check('16px "X"')` is no help: it answered true for all four families
+// that were provably falling back. Comparing rendered text widths against a family that cannot
+// exist does answer it, because a fallback produces exactly the fallback's metrics.
+let measure: CanvasRenderingContext2D | null = null
+const availability = new Map<string, boolean>()
+
+export function fontIsAvailable(family: string): boolean {
+  if (!family) return false
+  const cached = availability.get(family)
+  if (cached !== undefined) return cached
+  measure ??= document.createElement('canvas').getContext('2d')
+  if (!measure) return true // no canvas: do not claim a font is missing on no evidence
+  const width = (stack: string): number => {
+    measure!.font = `32px ${stack}`
+    return measure!.measureText('Hamburgefonstiv 123').width
+  }
+  const escaped = family.replace(/["\\]/g, '')
+  const result =
+    width(`"${escaped}", serif`) !== width('"__no_such_family__", serif') ||
+    width(`"${escaped}", sans-serif`) !== width('"__no_such_family__", sans-serif')
+  availability.set(family, result)
+  return result
+}

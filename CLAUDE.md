@@ -2,10 +2,6 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Rule
-
-Alle Skills und Plugins immer auf Projektebene installieren.
-
 ## What this is
 
 An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://quartz.jzhao.xyz/) (jackyzha0's static-site generator) projects: load/save `quartz.config.yaml`, install/configure plugins (official CLI wrapper + a GitHub-based marketplace), switch the `content/` folder between a real directory and a symlink (e.g. an Obsidian vault), run builds, and control the local dev server. Supports multiple Quartz projects/profiles.
@@ -72,7 +68,9 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   seitenlokales Abonnement sie verlöre. Das Abonnement lebt einmal in `App.tsx`.
 - **„Wo war ich“ überlebt einen Routenwechsel, nicht einen Neustart.** `useStickyState(key)` für
   Tab, Auswahl, Suchtext, Entwurf; keyed per Pathname, Namespace pro Komponente. Nicht für Gesten
-  oder Pending-Flags. Scroll-Position analog in `ProjectLayout`.
+  oder Pending-Flags. Scroll-Position analog in `ProjectLayout`. Schlüssel sind stabile Kennungen
+  (ID, Name, Pfad), nie Listenindizes: `plugins.expanded.<index>` hängt an der Position, und nach
+  einem Umsortieren gehört der Zustand zum falschen Plugin (siehe offene Befunde).
 - **Verlassen mit ungespeicherten Änderungen fragt.** Modul-Flag in `unsavedGuard.tsx`, gesetzt von
   der Seite, abgefragt von der Sidebar; `UnsavedBadge` neben dem Save. Nur Sidebar-Links sind
   geguardet. Die Frage ist ein nativer Dialog und damit asynchron: der Klick wird gestoppt und die
@@ -93,13 +91,22 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   Hintergrund und Fokus-Rückgabe kommen vom Element; `<form method="dialog">` macht Return zum
   Bestätigen, und ein deaktivierter Submit-Button unterdrückt das implizite Absenden. Das Feld, das
   den Fokus bekommen soll, trägt `data-autofocus`. Kein `fixed inset-0`-Overlay mehr, nirgends.
+  Bestätigen und Schließen sind zwei Callbacks, `dialog.returnValue` wird nicht benutzt: `onSubmit`
+  fängt das Absenden ab (Return, Submit-Button), der Dialog bleibt dabei offen, und die Seite
+  schließt ihn über `open` bzw. Unmount, wenn ihre Aktion durch ist. `onClose` heißt immer „nicht
+  bestätigt“: Escape, oder ein Absenden in einem Modal *ohne* `onSubmit`. Ein Abbrechen-Button ruft
+  dieselbe Funktion wie `onClose` direkt auf; das Schließen über `open`/Unmount löst `onClose` nicht
+  noch einmal aus (`closingOurselves`). Ein Modal ohne `onSubmit` kann Return folglich nicht von
+  Escape unterscheiden - beide heutigen Aufrufer setzen `onSubmit`.
 - **`Button` hat `type="button"` als Default.** In einem Formular reicht ein untypisierter `<button>`
   ein; der eine Button pro Dialog, der das soll, sagt `type="submit"`. (`SegmentedControl`s Segmente
   haben noch keinen Typ - siehe offene Befunde.)
 - **Ein deaktiviertes Control muss noch lesbar sein.** Explizite disabled-Farben, keine Opazität
   (in `ui.tsx` selbst noch nicht überall eingehalten - siehe offene Befunde, T1 zuerst). Der
   Muted-Token ist `text-slate-500 dark:text-slate-400`; Micro-Labels in Großbuchstaben
-  `text-slate-600`; eine immer dunkle Fläche bekommt kein `dark:`.
+  `text-slate-600`; eine immer dunkle Fläche bekommt kein `dark:`. Diese Literale sind die Form
+  *bis T1*: sobald die semantischen Tokens da sind, gilt der Token (`text-muted`), und wer danach
+  eine disabled-Stelle anfasst, schreibt den Token, nicht mehr das Paar.
 - **`darkMode: 'media'`, und das ist der App-Schalter.** `nativeTheme.themeSource` flippt
   `prefers-color-scheme` im Renderer mit; `color-scheme: light dark` auf `:root`, explizite Farben
   auf `select option` für Linux. Neue UI mit `dark:`-Varianten. Kein Wechsel auf `'class'`: die
@@ -110,7 +117,7 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   weder Tastatur noch Ansagen.
 - **Ein Wort, ein Name.** Vokabular ist eine Tabelle (`positions`), nicht pro Seite. Deutsch „…“,
   Englisch “…”, Gedankenstrich als Em-Dash. Jeder Nutzertext steht in `de.ts`/`en.ts`
-  (Schlüssel-Parität, aktuell 1194) oder `electron/main/i18n.ts`; zod- und `console.error`-Texte
+  (Schlüssel-Parität) oder `electron/main/i18n.ts`; zod- und `console.error`-Texte
   bleiben Englisch, weil sie Bugs beschreiben, nicht Eingaben.
 - **Ein Fachbegriff bekommt eine Zeile darunter** (`Field`/`Toggle` `hint`); ein Begriff, auf dem
   eine Seite ruht, eine `InfoNote` oben, gedeckelt auf 95ch.
@@ -152,10 +159,15 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 
 ## Offene Befunde aus dem Review (Status: offen)
 
-Aus `REVIEW.md` (2026-09-02). Umgesetzt sind die P1-Befunde E1, E2 und U1 (Sandbox, `dialog.confirm`,
-`Modal`) sowie U2 (`Toggle` mit `hideLabel`; `label` bleibt Pflicht, ein Switch ohne Namen ist damit
-am Aufrufer sichtbar falsch). Alles Folgende ist **nicht** erledigt; die Kurzbezeichnungen verweisen
-auf das Review.
+Aus [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md). Umgesetzt sind die P1-Befunde E1, E2
+und U1 (Sandbox, `dialog.confirm`, `Modal`) sowie U2 (`Toggle` mit `hideLabel`; `label` bleibt Pflicht,
+ein Switch ohne Namen ist damit am Aufrufer sichtbar falsch). Alles Folgende ist **nicht** erledigt;
+die Kurzbezeichnungen verweisen auf das Review.
+
+**Arbeitsregel:** ein Befund pro Durchgang, jeweils mit `npm run typecheck`, `npm run build`,
+`npm run smoke` und eigenem Commit; was dabei nebenbei auffällt, wird gesammelt und genannt, nicht
+mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge. Die einzige Abhängigkeit ist
+T1 vor U4.
 
 - **T1 + U4/d gemeinsam, T1 zuerst - Status: offen.** T1: sechs bis acht semantische Farb-Tokens
   (`--ground`, `--surface`, `--text`, `--text-muted`, `--border`, `--accent`, `--accent-fg`) als
@@ -187,6 +199,16 @@ auf das Review.
 - **U5 - Status: offen.** `LabelText` ist tot; Typo-Skala aus Arbitrary Values (`text-[11px]` 77×,
   `text-[13px]` 54×) - Tokens definieren, `ui.tsx` umstellen, Rest beiläufig, kein sed.
 - **T2 - Status: offen (Notiz).** `'#ffffff'` als Picker-Fallback für nicht parsebare Farben.
+- **Sticky-State über Index (aus dem U2-Durchgang) - Status: offen.** `Plugins/Installed.tsx:720`
+  keyt `plugins.expanded.${index}` auf die Listenposition; nach einem Umsortieren oder Entfernen ist
+  das falsche Plugin aufgeklappt. Per grep die einzige Fundstelle: alle anderen 40 Schlüssel tragen
+  Namen, IDs (`backups.open` = Snapshot-ID, `publish.target`, `styles.themeCatalog.expanded`),
+  Pfade (`styles.css.activeTab`) oder Entwürfe. Umstellen auf eine stabile Kennung des Eintrags
+  (Plugin-Name bzw. Frame-ID). Nicht gemessen, aus dem Schlüssel gelesen.
+- **Options-Zeile in `Plugins/Installed` (aus dem U2-Durchgang) - Status: offen.** In den beiden
+  Options-Editoren steht der Optionsschlüssel als `<span>` neben dem Schalter; seit U2 ist der Name
+  doppelt vorhanden, sichtbar und `sr-only`. Eine `Field`-artige Verknüpfung (Label umschließt das
+  Control) wäre sauberer, ist aber ein Umbau der Zeile, die auch Select, Zahl und Text kennt.
 
 ## Claude-Skills in diesem Projekt
 

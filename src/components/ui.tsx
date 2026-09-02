@@ -200,6 +200,23 @@ export function Toggle({
 }
 
 // A macOS-style segmented control, used instead of a row of plain buttons for sub-tab switches.
+//
+// `radiogroup` and not `tablist`, including at the four call sites that switch sub-tabs (Konfiguration,
+// Stile, Plugins, Layout): `tablist` is only half a contract without `aria-controls` pointing at a
+// `role="tabpanel"`, and the panels here are conditional blocks that no call site gives an id -
+// ConfigEditor even renders the bar inside `PageHeader`, several elements away from the panel it
+// switches. "Choose one of N" is true at all eleven call sites, so one complete radiogroup beats a
+// half-wired tablist plus a second mode every caller would have to get right.
+//
+// Arrow keys move the selection, not just the focus, and they wrap at both ends. Measured rather than
+// assumed: a native `<input type="radio">` group injected into the running production build answers
+// ArrowRight by checking the next radio, and the third press on a group of three lands back on the
+// first - so this is what Chromium itself does two elements away on the same page. It is also what
+// `NSSegmentedControl` does on macOS, and it matches what every call site here already does on a
+// mouse click: none of them defers, a click commits (Settings writes the theme, the sub-tabs
+// navigate), so a focus-only arrow key would be the one input needing a second keystroke. Wrapping
+// earns its keep at the three call sites with exactly two options, where without it half the arrow
+// presses would be dead keys.
 export function SegmentedControl<T extends string>({
   value,
   options,
@@ -209,14 +226,50 @@ export function SegmentedControl<T extends string>({
   options: { value: T; label: string }[]
   onChange: (value: T) => void
 }): JSX.Element {
+  const segments = useRef<(HTMLButtonElement | null)[]>([])
+  // Roving tabindex: the group is one tab stop, not one per option. `Math.max(0, …)` so a value that
+  // matches no option (a stale `?tab=` in the URL) still leaves the group reachable by keyboard -
+  // `aria-checked` stays false on every segment in that case, which is the honest reading.
+  const focusIndex = Math.max(
+    0,
+    options.findIndex((option) => option.value === value)
+  )
+
+  const move = (delta: number): void => {
+    const next = (focusIndex + delta + options.length) % options.length
+    // Focus before onChange: the node is already in the DOM and React keeps it across the re-render
+    // (the key is the option value, not the index), so the focus survives the tabindex flipping to
+    // it. Doing it after would race a caller that navigates.
+    segments.current[next]?.focus()
+    onChange(options[next].value)
+  }
+
   // self-start matters now that pages fill the window: as a flex item, `inline-flex` alone still
   // stretches to the container's full width, which turned this into a 1600px-wide bar.
   return (
-    <div className="inline-flex w-fit self-start gap-0.5 rounded-[8px] bg-ink/[0.05] p-0.5 dark:bg-ink/10">
-      {options.map((option) => (
+    <div role="radiogroup" className="inline-flex w-fit self-start gap-0.5 rounded-[8px] bg-ink/[0.05] p-0.5 dark:bg-ink/10">
+      {options.map((option, index) => (
         <button
           key={option.value}
+          ref={(el) => {
+            segments.current[index] = el
+          }}
+          type="button"
+          role="radio"
+          aria-checked={option.value === value}
+          tabIndex={index === focusIndex ? 0 : -1}
           onClick={() => onChange(option.value)}
+          onKeyDown={(event) => {
+            // Up/Down as well as Left/Right, because the native radio group answers to all four and
+            // this control is laid out in a row on some pages and read as a list by a screen reader.
+            if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+              event.preventDefault()
+              move(1)
+            } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+              event.preventDefault()
+              move(-1)
+            }
+          }}
           className={`rounded-[6px] px-3 py-1 text-[13px] font-medium transition-colors ${
             value === option.value
               ? 'bg-surface text-text shadow-sm dark:bg-ink/20'

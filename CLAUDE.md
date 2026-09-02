@@ -111,8 +111,16 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   Eingabe darf ohne auskommen - dann heißen Return und Escape beide „nicht bestätigt“, und für
   einen Anzeige-Dialog ist genau das richtig.
 - **`Button` hat `type="button"` als Default.** In einem Formular reicht ein untypisierter `<button>`
-  ein; der eine Button pro Dialog, der das soll, sagt `type="submit"`. (`SegmentedControl`s Segmente
-  haben noch keinen Typ - siehe offene Befunde.)
+  ein; der eine Button pro Dialog, der das soll, sagt `type="submit"`. `SegmentedControl`s Segmente
+  tragen ihn seit U3 ebenfalls.
+- **`SegmentedControl` ist eine Radiogruppe, keine Knopfreihe.** `role="radiogroup"` mit
+  `role="radio"`-Segmenten, `aria-checked`, Roving-Tabindex (die Gruppe ist ein Tabstopp), Pfeile
+  links/rechts/hoch/runter wandern durch die Optionen und *ändern dabei die Auswahl*, mit Umbruch an
+  beiden Enden - so wie es die native Radiogruppe in diesem Chromium tut und wie jeder Klick hier
+  ohnehin sofort committet. Auch für die vier Sub-Tab-Leisten: `tablist` ohne `aria-controls` auf ein
+  `tabpanel` wäre ein halber Vertrag, „eins von N“ stimmt überall. Der Fokus wandert *vor* `onChange`,
+  weil vier Aufrufstellen dabei navigieren. Messungen in
+  [`navigation-and-pages.md`](docs/decisions/navigation-and-pages.md).
 - **Farben heißen nach Rolle, nicht nach Palette.** Zehn Tokens in `src/index.css` (`--ground`,
   `--surface`, `--text`, `--text-secondary`, `--text-muted`, `--ink`, `--accent`, `--accent-hover`,
   `--accent-fg`, `--accent-text`), in `tailwind.config.js` als `bg-ground`, `bg-surface`, `text-text`,
@@ -182,9 +190,10 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 
 Aus [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md). Umgesetzt sind die P1-Befunde E1, E2
 und U1 (Sandbox, `dialog.confirm`, `Modal`), U2 (`Toggle` mit `hideLabel`; `label` bleibt Pflicht,
-ein Switch ohne Namen ist damit am Aufrufer sichtbar falsch) sowie T1 und U4 (Farb-Tokens in
+ein Switch ohne Namen ist damit am Aufrufer sichtbar falsch), T1 und U4 (Farb-Tokens in
 `index.css`/`tailwind.config.js`, `ui.tsx` als Pilot, die vier Opazitäts-Seiten; Messungen in
-`docs/decisions/dark-mode-and-contrast.md`). Alles Folgende ist **nicht** erledigt; die
+`docs/decisions/dark-mode-and-contrast.md`) sowie U3 (`SegmentedControl` als Radiogruppe; Messungen
+in `docs/decisions/navigation-and-pages.md`). Alles Folgende ist **nicht** erledigt; die
 Kurzbezeichnungen verweisen auf das Review.
 
 **Arbeitsregel:** ein Befund pro Durchgang, jeweils mit `npm run typecheck`, `npm run build`,
@@ -198,8 +207,20 @@ mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge.
   Werte von `--surface` und `--text` als Hex; beides gehört an die Variablen, sobald `theme.ts`
   eine geteilte Konstante bekommt. Die Sidebar, die Seiten und die Sub-Komponenten tragen noch
   Palette-Paare - beiläufig, kein sed.
-- **U3 - Status: offen.** `SegmentedControl`: `role="radiogroup"`/`radio`, `aria-checked`,
-  Roving-Tabindex, Pfeiltasten, `type="button"` auf den Segmenten. ~25 Zeilen, keine Bibliothek.
+- **Die Radiogruppe hat keinen Namen (aus dem U3-Durchgang) - Status: offen.** `SegmentedControl`
+  ist jetzt eine `radiogroup`, und neun der elf Gruppen tragen keinen zugänglichen Namen: die vier
+  Sub-Tab-Leisten, beide Breakpoint-Leisten, die Viewport-Leiste in Vorschau & Build und die zwei
+  in `Vorlagen`. Ein Screenreader sagt dort „Optionsfeldgruppe“ und nichts weiter - dasselbe Muster
+  wie U2 beim `Toggle`, eine Ebene höher. Die zwei Ausnahmen (Settings/Design, Frame-Ausrichtung)
+  haben ihren Namen am äußeren `FieldGroup`-`role="group"`, nicht an der `radiogroup` darin; damit
+  ist er zwar vorhanden, aber an der falschen Ebene. Ein optionales `label`-Prop (`aria-label` auf
+  dem Container, oder der `sr-only`-Weg von `Toggle`) und elf Aufrufstellen - nicht gemessen, aus
+  dem DOM der laufenden App gelesen.
+- **Der Layout-Tab kennt `?tab=` nicht (aus dem U3-Durchgang) - Status: offen.**
+  `LayoutEditor/index.tsx:29` hält seinen Sub-Tab in `useStickyState('layout.tab')`, während
+  Konfiguration, Stile und Plugins über `goToTab` in die URL schreiben. Die Regel oben („URL zuerst,
+  Sticky-State als Fallback“) gilt für diese eine Leiste heute nicht; ein Deep-Link auf „Eigene
+  Frames“ ist damit nicht möglich.
 - **S1 - Status: offen.** `useIpcQuery(fn, deps)` mit Abbruch-Guard, `loading`, `error`, `reload()`;
   20 von 32 API-Effekten haben heute keinen Guard. Neues Muster für neue Seiten, Bestehendes nur beim
   Anfassen.

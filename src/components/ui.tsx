@@ -125,12 +125,20 @@ export function Select(props: SelectHTMLAttributes<HTMLSelectElement>): JSX.Elem
 // A macOS-style switch, used instead of raw checkboxes for boolean settings.
 export function Toggle({
   label,
+  hideLabel,
   hint,
   checked,
   onChange,
   disabled
 }: {
   label: string
+  // Keeps the label for the accessibility tree only. Four switches sat in list rows with their
+  // name printed by a sibling element (the plugin name, an option key, a style setting's title)
+  // and passed `label=""` - which a screen reader reads as "switch, off" and nothing else. The
+  // label stays required, so an empty one is visibly wrong at the call site, and the name comes
+  // from the same <label> every other Toggle is named by rather than from a second mechanism
+  // (`aria-label`) that could disagree with the visible one.
+  hideLabel?: boolean
   // Same line Field's `hint` renders, for the same reason: a switch whose label is a term of art
   // ("Popover-Vorschauen") says nothing about what turning it on does.
   hint?: string
@@ -160,7 +168,7 @@ export function Toggle({
           }`}
         />
       </button>
-      {label}
+      {hideLabel ? <span className="sr-only">{label}</span> : label}
     </label>
   )
   if (!hint) return control

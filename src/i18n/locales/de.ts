@@ -764,6 +764,7 @@ export default {
     framesDescription:
       'Im Layout-Editor gebaute Seitengerüste. Quartz registriert jedes davon als Plugin — deshalb stehen sie hier — eingestellt werden sie aber im Layout-Editor.',
     frameBadge: 'Frame',
+    enabledSwitch: '„{{name}}“ aktiv',
     frameSource: 'Eigener Frame aus dem Layout-Editor',
     frameSummary: '{{count}} Bereiche',
     openInLayoutEditor: 'Im Layout-Editor',

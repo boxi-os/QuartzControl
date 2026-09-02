@@ -786,7 +786,13 @@ function PluginRow({
           ⠿
         </span>
         <div className="pt-px">
-          <Toggle label="" checked={plugin.enabled} onChange={() => toggleEnabled(index)} disabled={busy} />
+          <Toggle
+            label={t('pluginsInstalled.enabledSwitch', { name: frame ? frame.frameName : plugin.name })}
+            hideLabel
+            checked={plugin.enabled}
+            onChange={() => toggleEnabled(index)}
+            disabled={busy}
+          />
         </div>
 
         <div className={`min-w-0 flex-1 ${plugin.enabled ? '' : 'opacity-60'}`}>
@@ -1029,7 +1035,7 @@ function FieldRow({
       </span>
       <div className="w-40 shrink-0">
         {field.kind === 'boolean' && (
-          <Toggle label="" checked={value === true || value === 'true'} onChange={(checked) => onChange(checked)} />
+          <Toggle label={field.name} hideLabel checked={value === true || value === 'true'} onChange={(checked) => onChange(checked)} />
         )}
         {field.kind === 'enum' && (
           <Select
@@ -1099,7 +1105,7 @@ function InferredFieldRow({
     return (
       <div className="flex items-center gap-3">
         <span className="w-40 shrink-0 font-mono text-xs text-slate-600 dark:text-slate-300">{name}</span>
-        <Toggle label="" checked={value} onChange={onChange} />
+        <Toggle label={name} hideLabel checked={value} onChange={onChange} />
         {remove}
       </div>
     )

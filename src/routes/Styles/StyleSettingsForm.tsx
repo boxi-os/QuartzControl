@@ -249,7 +249,8 @@ function Control({
     case 'class-toggle':
       return (
         <Toggle
-          label=""
+          label={field.title}
+          hideLabel
           checked={values[key] === true}
           onChange={(checked) => onChange({ [key]: checked ? true : undefined })}
         />

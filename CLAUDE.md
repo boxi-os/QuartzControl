@@ -152,8 +152,10 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 
 ## Offene Befunde aus dem Review (Status: offen)
 
-Aus `REVIEW.md` (2026-09-02). Die P1-Befunde E1, E2 und U1 sind umgesetzt (Sandbox, `dialog.confirm`,
-`Modal`). Alles Folgende ist **nicht** erledigt; die Kurzbezeichnungen verweisen auf das Review.
+Aus `REVIEW.md` (2026-09-02). Umgesetzt sind die P1-Befunde E1, E2 und U1 (Sandbox, `dialog.confirm`,
+`Modal`) sowie U2 (`Toggle` mit `hideLabel`; `label` bleibt Pflicht, ein Switch ohne Namen ist damit
+am Aufrufer sichtbar falsch). Alles Folgende ist **nicht** erledigt; die Kurzbezeichnungen verweisen
+auf das Review.
 
 - **T1 + U4/d gemeinsam, T1 zuerst - Status: offen.** T1: sechs bis acht semantische Farb-Tokens
   (`--ground`, `--surface`, `--text`, `--text-muted`, `--border`, `--accent`, `--accent-fg`) als
@@ -164,9 +166,6 @@ Aus `REVIEW.md` (2026-09-02). Die P1-Befunde E1, E2 und U1 sind umgesetzt (Sandb
   von den Tokens direkt wieder ersetzt, darum ein gemeinsamer Schritt, Tokens voran.
 - **U3 - Status: offen.** `SegmentedControl`: `role="radiogroup"`/`radio`, `aria-checked`,
   Roving-Tabindex, Pfeiltasten, `type="button"` auf den Segmenten. ~25 Zeilen, keine Bibliothek.
-- **U2 - Status: offen.** `Toggle label=""` an vier Stellen (`Plugins/Installed.tsx` ×3,
-  `Styles/StyleSettingsForm.tsx`) ist ein Switch ohne Namen; `Toggle` braucht `ariaLabel` oder
-  `hideLabel` mit `sr-only`.
 - **S1 - Status: offen.** `useIpcQuery(fn, deps)` mit Abbruch-Guard, `loading`, `error`, `reload()`;
   20 von 32 API-Effekten haben heute keinen Guard. Neues Muster für neue Seiten, Bestehendes nur beim
   Anfassen.

@@ -764,6 +764,7 @@ export default {
     framesDescription:
       'Page frames built in the Layout editor. Quartz registers each one as a plugin — which is why they appear here — but they are configured in the Layout editor.',
     frameBadge: 'Frame',
+    enabledSwitch: '“{{name}}” enabled',
     frameSource: 'Your own frame from the Layout editor',
     frameSummary: '{{count}} areas',
     openInLayoutEditor: 'Open in Layout',

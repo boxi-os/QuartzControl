@@ -86,7 +86,11 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   Navigation nach „Änderungen verwerfen“ von Hand ausgelöst.
 - **Kein API-Aufruf ohne Netz:** globaler `unhandledrejection`-Handler → Toast; jeder Busy-Flag wird
   in `finally` zurückgesetzt (`useAsyncAction` für boolesche, `try/finally` für keyed).
-- **URL zuerst, Sticky-State als Fallback** für Sub-Tabs (`?tab=`); alte Pfade bleiben als Redirects.
+- **URL zuerst, Sticky-State als Fallback** für Sub-Tabs (`?tab=`); alte Pfade bleiben als
+  Redirects. Gilt für alle vier Leisten (Konfiguration, Stile, Plugins, Layout); der Default-Tab
+  löscht den Parameter, statt ihn zu setzen. Was kein Name aus einer festen Liste ist - der offene
+  Seitentyp, das gerade bearbeitete Frame - bleibt sticky-only und reist bei einer Übergabe über
+  `primeStickyState`.
 - **Eine Stelle bestimmt die Seitenbreite** (`ProjectLayout`, 1800px). Seiten setzen keine eigene
   Maximalbreite; Breite wird in Spalten ausgegeben, nicht in längeren Zeilen. Ein Block, der schmal
   bleiben will, sagt am Block, warum.
@@ -216,11 +220,6 @@ mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge.
   ist er zwar vorhanden, aber an der falschen Ebene. Ein optionales `label`-Prop (`aria-label` auf
   dem Container, oder der `sr-only`-Weg von `Toggle`) und elf Aufrufstellen - nicht gemessen, aus
   dem DOM der laufenden App gelesen.
-- **Der Layout-Tab kennt `?tab=` nicht (aus dem U3-Durchgang) - Status: offen.**
-  `LayoutEditor/index.tsx:29` hält seinen Sub-Tab in `useStickyState('layout.tab')`, während
-  Konfiguration, Stile und Plugins über `goToTab` in die URL schreiben. Die Regel oben („URL zuerst,
-  Sticky-State als Fallback“) gilt für diese eine Leiste heute nicht; ein Deep-Link auf „Eigene
-  Frames“ ist damit nicht möglich.
 - **S1 - Status: offen.** `useIpcQuery(fn, deps)` mit Abbruch-Guard, `loading`, `error`, `reload()`;
   20 von 32 API-Effekten haben heute keinen Guard. Neues Muster für neue Seiten, Bestehendes nur beim
   Anfassen.

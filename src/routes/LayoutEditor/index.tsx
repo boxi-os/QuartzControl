@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
 import { SlidersHorizontal } from 'lucide-react'
 import { useProject } from '../ProjectLayout'
 import type { GridFrameDefinition, QuartzConfig } from '@shared/ipc-contract'
@@ -16,6 +17,10 @@ import { derivePageTypes, hasPageTypeOverride } from './utils'
 type Tab = 'global' | 'pagetypes' | 'frames'
 const TAB_ORDER: Tab[] = ['global', 'pagetypes', 'frames']
 
+function isTab(value: string | null): value is Tab {
+  return value !== null && (TAB_ORDER as string[]).includes(value)
+}
+
 export default function LayoutEditor(): JSX.Element {
   const { t } = useTranslation()
   const project = useProject()
@@ -24,9 +29,16 @@ export default function LayoutEditor(): JSX.Element {
   // along with it, so a frame the CLI just registered does not read as an unsaved edit.
   const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
-  // Which sub-tab and which page type are open is "where the user was", not throwaway state - see
-  // useStickyState. Without it, every trip to another area dropped them back on Global.
-  const [tab, setTab] = useStickyState<Tab>('layout.tab', 'global')
+  // URL first, remembered tab as the fallback - the same shape Konfiguration and Stile use. The
+  // parameter is what makes "open this frame in the layout editor" a link rather than a store
+  // write, and what lets a sub-tab be deep-linked at all; the sticky half is still needed because
+  // the sidebar's NavLink carries no search string, so a trip to another area and back would
+  // otherwise always reset to Global. Which page type is open stays sticky-only: it is a value out
+  // of the project's own data, not one of three fixed names.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const rawTab = searchParams.get('tab')
+  const [lastTab, setLastTab] = useStickyState<Tab>('layout.tab', 'global')
+  const tab: Tab = isTab(rawTab) ? rawTab : lastTab
   const [activePageType, setActivePageType] = useStickyState<string | null>('layout.pageType', null)
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [error, setError] = useState<string | null>(null)
@@ -37,6 +49,20 @@ export default function LayoutEditor(): JSX.Element {
   // assumed "no override" meant the literal 3-column default frame, which is wrong for e.g. canvas
   // pages (canvas-page's PageType instance defaults to its own fullscreen "canvas" frame).
   const [builtinPageTypeFrames, setBuiltinPageTypeFrames] = useState<Record<string, string>>({})
+
+  // A tab reached through the URL has to be remembered as well, or coming back via the sidebar -
+  // which carries no search string - would drop the user somewhere they never chose.
+  useEffect(() => {
+    if (isTab(rawTab)) setLastTab(rawTab)
+  }, [rawTab, setLastTab])
+
+  const goToTab = useCallback(
+    (next: Tab) => {
+      setSearchParams(next === 'global' ? {} : { tab: next }, { replace: true })
+      setLastTab(next)
+    },
+    [setSearchParams, setLastTab]
+  )
 
   useEffect(() => {
     window.quartzGui.config
@@ -160,7 +186,7 @@ export default function LayoutEditor(): JSX.Element {
       <div className="mb-4">
         <SegmentedControl
           value={tab}
-          onChange={setTab}
+          onChange={goToTab}
           options={TAB_ORDER.map((key) => ({
             value: key,
             label: t(`layoutEditor.tab${key === 'global' ? 'Global' : key === 'pagetypes' ? 'PageTypes' : 'Frames'}`)

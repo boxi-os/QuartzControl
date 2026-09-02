@@ -381,15 +381,15 @@ export default function PluginsInstalled(): JSX.Element {
     await reload()
   }
 
-  // Opens the Layout editor on the frames tab with this frame already loaded. Which tab and which
-  // frame are open live in the sticky-state store rather than in the URL (see LayoutEditor), so the
-  // hand-off writes them for the target route before navigating there.
+  // Opens the Layout editor on the frames tab with this frame already loaded. The tab travels in
+  // the URL, like every other sub-tab; which frame is open cannot - it is a whole frame object, not
+  // one of three fixed names - so that half is still primed into the target route's sticky store
+  // before navigating there.
   function openFrameInLayoutEditor(frame: GridFrameDefinition): void {
     const target = `/project/${project.id}/layout`
-    primeStickyState(target, 'layout.tab', 'frames')
     primeStickyState(target, 'frames.editing', frame)
     primeStickyState(target, 'frames.isNewDraft', false)
-    navigate(target)
+    navigate(`${target}?tab=frames`)
   }
 
   const frameById = useMemo(() => new Map(frames.map((f) => [f.id, f])), [frames])

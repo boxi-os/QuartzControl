@@ -162,6 +162,8 @@ const STRINGS = {
     rsyncNoPinnedHostKey:
       'Der Host-Key dieses Servers ist noch nicht vollständig hinterlegt. Bitte das Ziel einmal über SFTP veröffentlichen — dabei wird der Schlüssel bestätigt und gespeichert — und danach auf rsync umstellen.',
     rsyncUnsupportedPlatform: 'rsync gibt es auf diesem Betriebssystem nicht. Bitte SFTP verwenden.',
+    rsyncNotInstalled:
+      'Auf diesem Rechner ist kein rsync installiert. Unter Debian und Ubuntu: sudo apt install rsync. Bis dahin überträgt SFTP dieselben Dateien.',
     rsyncHostKeyMismatch:
       'Der Host-Key von {{host}} stimmt nicht mit dem gespeicherten überein.\n\nerwartet:  {{expected}}\nempfangen: {{received}}\n\nDie Übertragung wurde abgebrochen. Das kann ein neu aufgesetzter Server sein — oder ein Angriff. Prüfe den Fingerprint beim Anbieter und setze ihn erst danach über „Host-Key vergessen“ zurück.',
     unknownFingerprint: 'unbekannt',
@@ -331,6 +333,8 @@ const STRINGS = {
     rsyncNoPinnedHostKey:
       'The host key of this server is not fully stored yet. Publish to this target over SFTP once — that confirms and stores the key — and then switch to rsync.',
     rsyncUnsupportedPlatform: 'rsync does not exist on this operating system. Please use SFTP.',
+    rsyncNotInstalled:
+      'No rsync is installed on this machine. On Debian and Ubuntu: sudo apt install rsync. Until then SFTP transfers the same files.',
     rsyncHostKeyMismatch:
       'The host key of {{host}} does not match the stored one.\n\nexpected: {{expected}}\nreceived: {{received}}\n\nThe transfer was aborted. This can be a rebuilt server — or an attack. Check the fingerprint with your provider and only then clear it via “Forget host key”.',
     unknownFingerprint: 'unknown',

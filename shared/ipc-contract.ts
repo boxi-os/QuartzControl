@@ -1107,6 +1107,13 @@ export interface EnvironmentInfo {
   tools: ToolInfo[]
   /** True when every tool both exists and runs. */
   ok: boolean
+  /**
+   * Whether an rsync binary is on PATH. Deliberately not one of `tools`: rsync is optional - only
+   * an SFTP target switched to the rsync transfer needs it - so a machine without it is not a
+   * broken environment and must not turn `ok` false. The publish form asks for this to decide
+   * whether to offer the transfer at all (see rsyncBlockReason).
+   */
+  rsyncAvailable: boolean
   secretStorage: SecretStorageInfo
 }
 

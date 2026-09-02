@@ -13,19 +13,36 @@ export type RsyncBlockReason =
   /** A known_hosts line needs the raw key, which cannot be derived from a stored fingerprint. */
   | 'no-pinned-host-key'
   /**
-   * There is no rsync to spawn. macOS ships openrsync and every Linux has it or can install it;
-   * Windows has neither it nor a shell for the `-e` wrapper script this adapter writes. Without
+   * Windows has neither rsync nor a shell for the `-e` wrapper script this adapter writes. Without
    * this the target form would offer rsync there and the adapter would fail at deploy time.
    */
   | 'platform-unsupported'
+  /**
+   * The platform could have rsync and this machine does not. This used to be folded into the
+   * assumption above - "macOS ships openrsync and every Linux has it or can install it" - and the
+   * alpha test found the second half wrong: a Debian desktop install has no rsync, so the form
+   * offered the transfer and `spawn rsync ENOENT` came back from the diff.
+   */
+  | 'not-installed'
 
 /**
- * `platform` is passed in rather than read here because this rule has to hold on both sides of
- * the IPC boundary and the renderer has no `process` - it reads window.quartzGui.platform. Keeping
- * one function with an argument is what stops the two sides from drifting.
+ * `platform` and `rsyncAvailable` are passed in rather than read here because this rule has to hold
+ * on both sides of the IPC boundary and the renderer has neither `process` nor a PATH to search -
+ * it reads window.quartzGui.platform and asks `settings.environment` for the binary. Keeping one
+ * function with arguments is what stops the two sides from drifting.
+ *
+ * `rsyncAvailable` is null while the renderer has not heard back yet. Deliberately not a blocker:
+ * the answer arrives long before this form can be opened - opening it takes a click - and the
+ * adapter checks for itself before spawning, so a "not installed" flash on a machine that has
+ * rsync would be the worse of the two lies.
  */
-export function rsyncBlockReason(connection: SshConnection, platform: string): RsyncBlockReason | null {
+export function rsyncBlockReason(
+  connection: SshConnection,
+  platform: string,
+  rsyncAvailable: boolean | null
+): RsyncBlockReason | null {
   if (platform === 'win32') return 'platform-unsupported'
+  if (rsyncAvailable === false) return 'not-installed'
   if (connection.authMethod === 'password') return 'password-auth'
   if (connection.authMethod === 'privateKey' && !connection.keyPath) return 'key-not-a-file'
   if (!connection.hostKey?.blob) return 'no-pinned-host-key'

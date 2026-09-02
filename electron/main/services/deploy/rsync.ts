@@ -7,6 +7,7 @@ import type { DeployDiffEntry, DeployResult, SshConnection } from '@shared/ipc-c
 import type { DeployAdapter, DeployContext } from './types'
 import { rsyncBlockReason, type RsyncBlockReason } from '@shared/rsyncSupport'
 import * as connectionsService from '../connectionsService'
+import { findExecutable } from '../environmentService'
 import { mainT } from '../../i18n'
 
 // rsync asks the *remote* what it has instead of trusting a local record of what we last sent, so
@@ -27,7 +28,8 @@ const BLOCKER_MESSAGES: Record<RsyncBlockReason, string> = {
     mainT('rsyncKeyNotAFile'),
   'no-pinned-host-key':
     mainT('rsyncNoPinnedHostKey'),
-  'platform-unsupported': mainT('rsyncUnsupportedPlatform')
+  'platform-unsupported': mainT('rsyncUnsupportedPlatform'),
+  'not-installed': mainT('rsyncNotInstalled')
 }
 
 // "host key-type base64" - with the bracketed form ssh itself uses whenever the port is not 22.
@@ -184,7 +186,10 @@ function runRsync(args: string[], onEntry?: (entry: DeployDiffEntry) => void): P
 async function resolveConnection(ctx: DeployContext): Promise<SshConnection> {
   const connection = ctx.target.connectionId ? await connectionsService.getConnection(ctx.target.connectionId) : null
   if (!connection || connection.kind !== 'ssh') throw new Error(mainT('sshNoConnection'))
-  const blocker = rsyncBlockReason(connection, process.platform)
+  // Asked here as well as in the form, because the form's answer is a snapshot: rsync can be
+  // installed - or removed - while the app is open, and this is the last point before spawn().
+  // Without it the failure was `spawn rsync ENOENT`, which names no fix and is not a sentence.
+  const blocker = rsyncBlockReason(connection, process.platform, findExecutable('rsync') !== null)
   if (blocker) throw new Error(BLOCKER_MESSAGES[blocker])
   return connection
 }

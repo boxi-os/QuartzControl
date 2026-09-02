@@ -94,6 +94,9 @@ export default function Publish(): JSX.Element {
   const [excluded, setExcluded] = useState<Set<string>>(new Set())
   const [deployResult, setDeployResult] = useState<DeployResult | null>(null)
   const [progress, setProgress] = useState<DeployProgressEvent | null>(null)
+  // null until the main process has answered. Only the rsync transfer needs the binary, so this is
+  // asked once here rather than being part of what the app calls a working environment.
+  const [rsyncAvailable, setRsyncAvailable] = useState<boolean | null>(null)
 
   async function reload(): Promise<void> {
     setConnections(await window.quartzGui.connections.list())
@@ -105,6 +108,10 @@ export default function Publish(): JSX.Element {
     window.quartzGui.projectPrefs.get(project.path).then((prefs) => setOutputDir(prefs.outputDir))
     reload()
   }, [project.path])
+
+  useEffect(() => {
+    window.quartzGui.settings.environment().then((info) => setRsyncAvailable(info.rsyncAvailable))
+  }, [])
 
   useEffect(() => window.quartzGui.deploy.onProgress(setProgress), [])
 
@@ -262,7 +269,7 @@ export default function Publish(): JSX.Element {
   const rsyncBlocker =
     targetDraft?.destination.type === 'sftp'
       ? draftConnection?.kind === 'ssh'
-        ? rsyncBlockReason(draftConnection, window.quartzGui.platform)
+        ? rsyncBlockReason(draftConnection, window.quartzGui.platform, rsyncAvailable)
         : 'no-connection'
       : null
 
@@ -552,7 +559,7 @@ export default function Publish(): JSX.Element {
                 onChange={(e) => {
                   const connectionId = e.target.value || undefined
                   const picked = connections.find((c) => c.id === connectionId)
-                  const blocked = picked?.kind === 'ssh' ? !!rsyncBlockReason(picked, window.quartzGui.platform) : true
+                  const blocked = picked?.kind === 'ssh' ? !!rsyncBlockReason(picked, window.quartzGui.platform, rsyncAvailable) : true
                   setTargetDraft({
                     ...targetDraft,
                     connectionId,

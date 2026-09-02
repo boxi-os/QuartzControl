@@ -170,6 +170,9 @@ export function getEnvironmentInfo(secretStorage: SecretStorageInfo): Environmen
     addedPaths: path.added,
     tools,
     ok: tools.every((tool) => tool.version !== null),
+    // A PATH lookup, not a probe: rsync is spawned by one adapter and is not part of what makes
+    // this environment usable, so it neither runs here nor counts towards `ok`.
+    rsyncAvailable: findExecutable('rsync') !== null,
     secretStorage
   }
 }

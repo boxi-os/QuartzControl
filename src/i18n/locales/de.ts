@@ -1309,7 +1309,9 @@ export default {
       'no-pinned-host-key':
         'rsync braucht einen bestätigten Host-Key. Einmal über SFTP veröffentlichen — dabei wird der Fingerprint abgefragt und gespeichert — danach lässt sich rsync wählen.',
       'platform-unsupported':
-        'rsync gibt es auf diesem Betriebssystem nicht. SFTP überträgt dieselben Dateien, nur ohne den Abgleich mit dem Server.'
+        'rsync gibt es auf diesem Betriebssystem nicht. SFTP überträgt dieselben Dateien, nur ohne den Abgleich mit dem Server.',
+      'not-installed':
+        'Auf diesem Rechner ist kein rsync installiert. Unter Debian und Ubuntu: sudo apt install rsync. SFTP überträgt bis dahin dieselben Dateien, nur ohne den Abgleich mit dem Server.'
     },
     webhookNoUrl: 'keine URL hinterlegt',
     webhookExplainer:

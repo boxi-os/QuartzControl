@@ -1316,7 +1316,8 @@ export interface QuartzGuiApi {
    * The user's home directory, on the bridge for the same reason as `platform`: it is needed to
    * expand a leading "~" in a path the user types, which has to happen before the value crosses
    * IPC - every path schema requires an absolute one. Without it the Settings page's own
-   * "~/Documents" placeholder was a value the app refused.
+   * "~/Documents" placeholder was a value the app refused. Main hands it to the sandboxed preload
+   * on argv (webPreferences.additionalArguments), since `os` is out of reach in there.
    */
   homeDir: string
   projects: {

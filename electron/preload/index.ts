@@ -1,5 +1,4 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { homedir } from 'os'
 import { IPC } from '@shared/ipc-contract'
 import type {
   QuartzGuiApi,
@@ -35,9 +34,22 @@ function onEvent<Args extends unknown[]>(channel: string, cb: (...args: Args) =>
   return () => ipcRenderer.removeListener(channel, listener)
 }
 
+// This file runs inside the renderer sandbox (electron/main/index.ts), which means: no Node
+// modules, only `electron`. `process` here is Electron's polyfill for sandboxed preloads and
+// carries `platform` and `argv` - `argv` is where main puts the home directory, via
+// webPreferences.additionalArguments, because `os.homedir()` is exactly the kind of call that is
+// no longer available in here. Read once; a missing switch is a wiring bug in createWindow, not
+// a runtime condition, so it is loud rather than defaulted.
+function argvValue(name: string): string {
+  const prefix = `--${name}=`
+  const entry = process.argv.find((arg) => arg.startsWith(prefix))
+  if (entry === undefined) throw new Error(`preload: expected ${prefix} in process.argv (see createWindow)`)
+  return entry.slice(prefix.length)
+}
+
 const api: QuartzGuiApi = {
   platform: process.platform,
-  homeDir: homedir(),
+  homeDir: argvValue('quartz-home-dir'),
   projects: {
     list: () => ipcRenderer.invoke(IPC.projectList),
     overview: () => ipcRenderer.invoke(IPC.projectOverview),

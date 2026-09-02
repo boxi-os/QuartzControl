@@ -1,5 +1,6 @@
 import { app, BrowserWindow, dialog, shell, nativeImage } from 'electron'
 import { existsSync } from 'fs'
+import { homedir } from 'os'
 import { join } from 'path'
 import { registerIpcHandlers } from './ipc/handlers'
 import { killAllServers, detectOrphanedServers, killOrphanedServers } from './services/buildService'
@@ -49,8 +50,20 @@ function createWindow(): void {
     // has no effect there
     icon: iconPath,
     webPreferences: {
-      preload: join(__dirname, '../preload/index.mjs'),
-      sandbox: false
+      // index.js, not index.mjs: the preload is built as CommonJS (see electron.vite.config.ts),
+      // because that is the only form Electron loads into a sandboxed renderer.
+      preload: join(__dirname, '../preload/index.js'),
+      // The renderer sandbox is on. It used to be off, and not by choice: the ESM preload could not
+      // be loaded any other way. contextIsolation alone only fences window.quartzGui; without the
+      // sandbox a Chromium bug in this renderer - which renders Marketplace and theme data fetched
+      // from GitHub - would have had full Node through the preload context. The zod boundary in
+      // ipc/schemas.ts is the other half of that reasoning and assumed this half all along.
+      sandbox: true,
+      // The home directory rides into the preload on argv rather than over IPC: a sandboxed preload
+      // has no `os` module, the value is needed synchronously during the first render (expandHome
+      // in src/utils/platform.ts), and a sendSync would put a round trip into preload startup for
+      // one constant string. Read back by the preload from process.argv.
+      additionalArguments: [`--quartz-home-dir=${homedir()}`]
     }
   })
 

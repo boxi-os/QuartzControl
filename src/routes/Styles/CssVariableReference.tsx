@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Card, TextInput, useCopyToClipboard } from '../../components/ui'
+import VariableGroup from './VariableGroup'
+import { useStickyState } from '../../state/uiState'
 import {
   CALLOUT_COLORS,
   CSS_VARIABLES,
@@ -28,6 +30,15 @@ export default function CssVariableReference({ onInsert }: { onInsert: (text: st
   const { copied, copy } = useCopyToClipboard()
   const [search, setSearch] = useState('')
   const query = search.trim().toLowerCase()
+  // Same rule as the Variablen tab: only the base colours start open. A search overrides it
+  // entirely - a query that hides its own hits inside collapsed categories would be worse than
+  // no search at all.
+  const [openGroups, setOpenGroups] = useStickyState<string[]>('styleEditor.cssVars.openGroups', ['baseColors'])
+  const [calloutsOpen, setCalloutsOpen] = useStickyState('styleEditor.cssVars.calloutsOpen', false)
+
+  function toggleGroup(group: string): void {
+    setOpenGroups((prev) => (prev.includes(group) ? prev.filter((g) => g !== group) : [...prev, group]))
+  }
 
   const knownKeys = new Set(CSS_VARIABLES.map((v) => v.key))
   // Unsearched, this panel stays at the curated catalog plus whatever the user has overridden -
@@ -66,18 +77,19 @@ export default function CssVariableReference({ onInsert }: { onInsert: (text: st
         className="mb-3 w-full"
       />
       {filtered.length === 0 && <p className="text-xs text-slate-500 dark:text-slate-400">{t('styleEditor.cssVars.noResults')}</p>}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1">
         {Array.from(grouped.entries()).map(([group, defs]) => (
-          <div key={group}>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
-              {group === 'discovered' ? t('styleEditor.cssVars.discoveredGroup') : groupLabel(t, group)}
-            </p>
-            <div className="flex flex-col gap-0.5">
-              {defs.map((def) => (
-                <VariableRow key={def.key} def={def} ctx={ctx} onInsert={onInsert} onCopy={copy} />
-              ))}
-            </div>
-          </div>
+          <VariableGroup
+            key={group}
+            label={group === 'discovered' ? t('styleEditor.cssVars.discoveredGroup') : groupLabel(t, group)}
+            count={defs.length}
+            open={!!query || openGroups.includes(group)}
+            onToggle={() => toggleGroup(group)}
+          >
+            {defs.map((def) => (
+              <VariableRow key={def.key} def={def} ctx={ctx} onInsert={onInsert} onCopy={copy} />
+            ))}
+          </VariableGroup>
         ))}
       </div>
       <p className="mt-3 text-[11px] text-slate-500 dark:text-slate-400">{t('styleEditor.cssVars.rowHint')}</p>
@@ -86,22 +98,31 @@ export default function CssVariableReference({ onInsert }: { onInsert: (text: st
       <div className="mt-4 border-t border-black/[0.06] pt-3 dark:border-white/10">
         <h2 className="mb-1 text-sm font-semibold">{t('styleEditor.cssVars.calloutsHeading')}</h2>
         <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">{t('styleEditor.cssVars.calloutsDescription')}</p>
-        <div className="flex flex-col gap-0.5">
+        <VariableGroup
+          label={t('styleEditor.cssVars.calloutsGroup')}
+          count={CALLOUT_COLORS.length}
+          open={calloutsOpen}
+          onToggle={() => setCalloutsOpen((prev) => !prev)}
+        >
           {CALLOUT_COLORS.map((def) => (
             <CalloutRow key={def.type} def={def} colors={colors} onInsert={onInsert} onCopy={copy} />
           ))}
-        </div>
+        </VariableGroup>
       </div>
     </Card>
   )
 }
 
-// Two separate targets in one row, because they answer two different needs: the name inserts
-// `var(--x)` into the editor, the preview copies the value the variable resolves to right now (a
-// hex, a font stack) - which is what you want when writing a rule that has to *match* a colour
-// rather than follow it. The literal value is no longer printed: it was the widest thing in a
-// narrow sidebar and regularly ran out of the card, and the swatch plus the title attribute say
-// the same thing without overflowing.
+// Every target in this row inserts; nothing here copies on a plain click. The editor is a
+// centimetre to the left, and "I want this in my file" is what the panel is for - the clipboard
+// was the detour. Option-click still copies, for both the value and the name, because the two are
+// the same gesture with a different destination.
+//
+// Which text goes in is per target, and that distinction is the point: the *name* inserts
+// `var(--x)`, so the rule follows the variable; a *swatch* inserts the literal that half resolves
+// to right now, which is what you want when a rule has to match a colour rather than follow it.
+// The literal value is still not printed: it was the widest thing in a narrow sidebar and ran out
+// of the card, and the swatch plus the title say the same thing without overflowing.
 function VariableRow({
   def,
   ctx,
@@ -119,22 +140,34 @@ function VariableRow({
   const raw = effectiveValue(def.key, 'light', ctx) ?? effectiveValue(def.key, 'dark', ctx) ?? ''
   const isColor = def.kind === 'color' || cssColorToHex(light) !== null
   const isFont = def.kind === 'font'
-  const copyValue = (mode: 'light' | 'dark'): string => {
+  const modeValue = (mode: 'light' | 'dark'): string => {
     const resolved = mode === 'light' ? light : dark
     return cssColorToHex(resolved) ?? resolved ?? raw
   }
+  // One handler for both destinations: Option means clipboard, everything else means editor.
+  const put = (e: React.MouseEvent, text: string): void => {
+    if (e.altKey) onCopy(text, `--${def.key}`)
+    else onInsert(text)
+  }
 
+  // No hover fill on the row: the two things one can hit say so themselves (the name underlines,
+  // a swatch gets a ring), and a block of colour behind them made the sidebar look like a list of
+  // selected items.
   return (
-    <div className="flex items-center gap-2 rounded px-1.5 py-1 text-xs hover:bg-black/[0.04] dark:hover:bg-white/[0.06]">
+    <div className="flex items-center gap-2 rounded px-1.5 py-1 text-xs">
       {isColor && (
         <span className="flex shrink-0 gap-0.5">
           {(['light', 'dark'] as const).map((mode) => (
             <button
               key={mode}
               type="button"
-              onClick={() => onCopy(copyValue(mode), `--${def.key}`)}
-              title={t('styleEditor.cssVars.copyHint', { value: copyValue(mode) })}
-              className="h-4 w-4 shrink-0 rounded-sm border border-black/10 dark:border-white/20"
+              onClick={(e) => put(e, modeValue(mode))}
+              title={t('styleEditor.cssVars.insertValueHint', { value: modeValue(mode) })}
+              aria-label={t('styleEditor.cssVars.insertValueLabel', {
+                key: def.key,
+                mode: t(`styles.variables.${mode}`)
+              })}
+              className="h-4 w-4 shrink-0 rounded-sm border border-black/10 hover:outline hover:outline-2 hover:outline-offset-1 hover:outline-blue-500/50 dark:border-white/20"
               style={{
                 backgroundColor: isDisplayableColor(mode === 'light' ? light : dark)
                   ? (mode === 'light' ? light : dark)
@@ -146,19 +179,19 @@ function VariableRow({
       )}
       <button
         type="button"
-        onClick={() => onInsert(`var(--${def.key})`)}
+        onClick={(e) => put(e, `var(--${def.key})`)}
         className="min-w-0 flex-1 truncate text-left font-mono hover:underline"
         title={t('styleEditor.cssVars.insertHint')}
       >
         --{def.key}
       </button>
-      {/* A font's preview is the sample itself, set in the very stack it names - clicking it copies
-          the stack, the same as a colour swatch copies its value. */}
+      {/* A font's preview is the sample itself, set in the very stack it names - clicking it puts
+          that stack in, the same as a colour swatch puts its value in. */}
       {isFont && (
         <button
           type="button"
-          onClick={() => onCopy(light || raw, `--${def.key}`)}
-          title={t('styleEditor.cssVars.copyHint', { value: light || raw })}
+          onClick={(e) => put(e, light || raw)}
+          title={t('styleEditor.cssVars.insertValueHint', { value: light || raw })}
           className="shrink-0 rounded px-1 text-[13px] text-slate-700 hover:bg-black/[0.06] dark:text-slate-200 dark:hover:bg-white/10"
           style={{ fontFamily: light || raw }}
         >
@@ -168,11 +201,11 @@ function VariableRow({
       {!isColor && !isFont && raw && (
         <button
           type="button"
-          onClick={() => onCopy(raw, `--${def.key}`)}
-          title={t('styleEditor.cssVars.copyHint', { value: raw })}
-          className="shrink-0 rounded px-1 text-[11px] text-slate-500 dark:text-slate-400 hover:bg-black/[0.06] dark:hover:bg-white/10"
+          onClick={(e) => put(e, raw)}
+          title={t('styleEditor.cssVars.insertValueHint', { value: raw })}
+          className="shrink-0 rounded px-1 text-[11px] text-slate-500 hover:bg-black/[0.06] dark:text-slate-400 dark:hover:bg-white/10"
         >
-          {t('styleEditor.cssVars.copyValue')}
+          {t('styleEditor.cssVars.insertValue')}
         </button>
       )}
     </div>
@@ -207,20 +240,23 @@ function CalloutRow({
   }
 
   return (
-    <div className="flex items-center gap-2 rounded px-1.5 py-1 text-xs hover:bg-black/[0.04] dark:hover:bg-white/[0.06]">
+    <div className="flex items-center gap-2 rounded px-1.5 py-1 text-xs">
       <span className="flex shrink-0 gap-0.5">
         {([['--color', color], ['--border', border], ['--bg', bg]] as const)
           .filter(([, value]) => !!value)
-          .map(([name, value]) => (
-            <button
-              key={name}
-              type="button"
-              onClick={() => onCopy(cssColorToHex(value) ?? value!, `[!${def.type}] ${name}`)}
-              title={t('styleEditor.cssVars.copyHint', { value: cssColorToHex(value) ?? value })}
-              className="h-4 w-4 shrink-0 rounded-sm border border-black/10 dark:border-white/20"
-              style={{ backgroundColor: isDisplayableColor(value) ? value : 'transparent' }}
-            />
-          ))}
+          .map(([name, value]) => {
+            const literal = cssColorToHex(value) ?? value!
+            return (
+              <button
+                key={name}
+                type="button"
+                onClick={(e) => (e.altKey ? onCopy(literal, `[!${def.type}] ${name}`) : onInsert(literal))}
+                title={t('styleEditor.cssVars.insertValueHint', { value: literal })}
+                className="h-4 w-4 shrink-0 rounded-sm border border-black/10 hover:outline hover:outline-2 hover:outline-offset-1 hover:outline-blue-500/50 dark:border-white/20"
+                style={{ backgroundColor: isDisplayableColor(value) ? value : 'transparent' }}
+              />
+            )
+          })}
       </span>
       <button
         type="button"

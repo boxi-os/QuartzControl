@@ -71,3 +71,19 @@ Jetzt `Variable | Hell | Dunkel` mit Feld und Hex nebeneinander, Kopieren pro H�
 Der Schriftblock daneben ist von vier Zeilen pro Schrift auf zwei runter, damit die beiden Blöcke
 gleich hoch enden: die Box sitzt über dem Editor, und jede Zeile hier ist eine Zeile, die man zum
 Schreiben wegscrollen muss.
+
+**In der Editor-Seitenleiste fügt jetzt jeder Klick ein (2026-09-03).** Die Leiste hatte zwei
+Klickziele mit zwei verschiedenen Zielen: der Name fügte `var(--x)` in den Editor ein, das Farbfeld
+kopierte den Wert in die Zwischenablage. Der Editor steht einen Zentimeter daneben — die
+Zwischenablage war der Umweg. Beides fügt jetzt ein, und **⌥ + Klick** kopiert, für Farbfeld *und*
+Namen; es ist dieselbe Geste mit einem anderen Ziel. Was eingefügt wird, bleibt pro Ziel
+verschieden, und das ist der Punkt: der Name fügt `var(--x)` ein, damit die Regel der Variablen
+folgt, ein Farbfeld das Literal dieser Hälfte, was man braucht, wenn eine Regel eine Farbe
+*treffen* statt ihr folgen soll.
+
+Die Zeile hat dabei ihre Hover-Fläche verloren. Die beiden Dinge, die man treffen kann, sagen es
+selbst — der Name unterstreicht, ein Feld bekommt einen Ring —, und ein Farbblock hinter der ganzen
+Zeile ließ die Leiste wie eine Liste ausgewählter Einträge aussehen. Dieselben aufklappbaren
+Kategorien wie im Variablen-Tab, dieselbe Komponente (`VariableGroup`), Grundfarben offen. Eine
+Suche hebt das Zuklappen komplett auf: eine Suche, die ihre eigenen Treffer in zugeklappten
+Kategorien versteckt, wäre schlechter als keine.

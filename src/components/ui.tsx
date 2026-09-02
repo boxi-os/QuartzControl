@@ -261,7 +261,9 @@ export function Modal({
   dismissible = true
 }: {
   open: boolean
-  /** Fired for every way the dialog closes: Escape, a Cancel button, a submit without onSubmit. */
+  /** Fired when the element closes unconfirmed: Escape, or a submit without onSubmit. A Cancel
+   *  button calls this directly and does not go through the close event; closes this component
+   *  triggers itself (`open` false, unmount) are filtered out via `closingOurselves`. */
   onClose: () => void
   title: string
   children: ReactNode

@@ -90,14 +90,17 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
 - **`Modal` ist das native `<dialog>` mit `showModal()`.** Top-Layer, Backdrop, Escape, inerter
   Hintergrund und Fokus-Rückgabe kommen vom Element; `<form method="dialog">` macht Return zum
   Bestätigen, und ein deaktivierter Submit-Button unterdrückt das implizite Absenden. Das Feld, das
-  den Fokus bekommen soll, trägt `data-autofocus`. Kein `fixed inset-0`-Overlay mehr, nirgends.
+  den Fokus bekommen soll, trägt `data-autofocus`. Kein `fixed inset-0`-Overlay mehr, nirgends -
+  gemeint sind Vollflächen-Overlays, die die Seite abdecken; die Toasts in `ErrorSurface`
+  (`fixed bottom-4 right-4`) decken nichts ab und bleiben erlaubt.
   Bestätigen und Schließen sind zwei Callbacks, `dialog.returnValue` wird nicht benutzt: `onSubmit`
   fängt das Absenden ab (Return, Submit-Button), der Dialog bleibt dabei offen, und die Seite
   schließt ihn über `open` bzw. Unmount, wenn ihre Aktion durch ist. `onClose` heißt immer „nicht
   bestätigt“: Escape, oder ein Absenden in einem Modal *ohne* `onSubmit`. Ein Abbrechen-Button ruft
   dieselbe Funktion wie `onClose` direkt auf; das Schließen über `open`/Unmount löst `onClose` nicht
-  noch einmal aus (`closingOurselves`). Ein Modal ohne `onSubmit` kann Return folglich nicht von
-  Escape unterscheiden - beide heutigen Aufrufer setzen `onSubmit`.
+  noch einmal aus (`closingOurselves`). Ein Modal mit Eingabe hat `onSubmit`; ein Modal ohne
+  Eingabe darf ohne auskommen - dann heißen Return und Escape beide „nicht bestätigt“, und für
+  einen Anzeige-Dialog ist genau das richtig.
 - **`Button` hat `type="button"` als Default.** In einem Formular reicht ein untypisierter `<button>`
   ein; der eine Button pro Dialog, der das soll, sagt `type="submit"`. (`SegmentedControl`s Segmente
   haben noch keinen Typ - siehe offene Befunde.)
@@ -209,6 +212,11 @@ T1 vor U4.
   Options-Editoren steht der Optionsschlüssel als `<span>` neben dem Schalter; seit U2 ist der Name
   doppelt vorhanden, sichtbar und `sr-only`. Eine `Field`-artige Verknüpfung (Label umschließt das
   Control) wäre sauberer, ist aber ein Umbau der Zeile, die auch Select, Zahl und Text kennt.
+- **Drei Antworten im Bestätigungsdialog (aus dem Doku-Durchgang) - Status: offen.** `confirmDialog()`
+  und der Kanal `dialog.confirm` kennen genau zwei Antworten (Abbrechen, Bestätigen). Der
+  Unsaved-Guard braucht absehbar „Speichern / Verwerfen / Abbrechen“; `showMessageBox` kann drei.
+  Offen ist, ob der bestehende Kanal um einen dritten Button erweitert oder ein zweiter Kanal
+  danebengestellt wird - nicht jetzt entscheiden.
 
 ## Claude-Skills in diesem Projekt
 

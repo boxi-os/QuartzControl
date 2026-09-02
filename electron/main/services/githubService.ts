@@ -6,7 +6,6 @@ import { mainT } from '../i18n'
 const API = 'https://api.github.com'
 const TIMEOUT_MS = 20_000
 
-const NO_TOKEN = mainT('githubNoToken')
 
 // Everything here needs a token with repo scope - the same GitHub connection the marketplace uses
 // for its rate limit, resolved in main rather than handed around by the renderer.
@@ -26,7 +25,9 @@ async function api<T>(path: string, init?: { method?: string; body?: unknown }):
   const token = await connectionsService.getGithubToken()
   // 401 is exactly what GitHub answers for a bad token, so an absent one takes the same path and
   // every caller's existing error handling covers it.
-  if (!token) return { status: 401, data: null, message: NO_TOKEN }
+  // mainT() at the call site, not in a module-level const: this file is imported before
+  // whenReady runs refreshMainLanguage(), so a const would hold the default language forever.
+  if (!token) return { status: 401, data: null, message: mainT('githubNoToken') }
 
   const response = await fetch(`${API}${path}`, {
     method: init?.method ?? 'GET',

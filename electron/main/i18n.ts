@@ -379,13 +379,23 @@ export type MainStringKey = keyof (typeof STRINGS)['de']
 // runs at startup before the window exists and again on every settings save, which is exactly
 // where applyAppMenu() already rides along.
 let language: 'de' | 'en' = 'en'
+let refreshed = false
 
 export async function refreshMainLanguage(): Promise<void> {
   const setting = (await getSettings()).language
   language = setting === 'de' || setting === 'en' ? setting : app.getLocale().startsWith('de') ? 'de' : 'en'
+  refreshed = true
 }
 
 export function mainT(key: MainStringKey, vars?: Record<string, string | number>): string {
+  // Anything resolved before whenReady has run refreshMainLanguage() is stuck with the default
+  // above for the life of the process. That is not a hypothetical: two module-level constants
+  // (rsync's blocker table, githubService's NO_TOKEN) were evaluated when handlers.ts imported
+  // their file and answered in English on a German app until 2026-09-02. English on purpose - it
+  // describes a bug in this app, not something a user typed.
+  if (!refreshed) {
+    console.error(`mainT('${key}') resolved before refreshMainLanguage(); this string is frozen in the default language. Call it inside a function, not at module scope.`)
+  }
   const template: string = STRINGS[language][key]
   if (!vars) return template
   return template.replace(/\{\{(\w+)\}\}/g, (whole, name: string) => (name in vars ? String(vars[name]) : whole))

@@ -21,15 +21,26 @@ import { mainT } from '../../i18n'
 
 // The rule itself lives in shared/rsyncSupport.ts so the target form can ask the same question
 // before offering rsync; only the wording is local.
-const BLOCKER_MESSAGES: Record<RsyncBlockReason, string> = {
-  'password-auth':
-    mainT('rsyncPasswordAuth'),
-  'key-not-a-file':
-    mainT('rsyncKeyNotAFile'),
-  'no-pinned-host-key':
-    mainT('rsyncNoPinnedHostKey'),
-  'platform-unsupported': mainT('rsyncUnsupportedPlatform'),
-  'not-installed': mainT('rsyncNotInstalled')
+//
+// A function rather than a const table, and that is the whole point: mainT() reads a cached
+// language that refreshMainLanguage() fills in whenReady, while a module-level table is evaluated
+// when handlers.ts imports this file - which happens at import time, long before whenReady. The
+// table therefore froze all five messages in the *default* language ('en' in i18n.ts) and stayed
+// there for the life of the process, no matter what the Sprache select said. Found on a German app
+// answering "No rsync is installed on this machine".
+function blockerMessage(reason: RsyncBlockReason): string {
+  switch (reason) {
+    case 'password-auth':
+      return mainT('rsyncPasswordAuth')
+    case 'key-not-a-file':
+      return mainT('rsyncKeyNotAFile')
+    case 'no-pinned-host-key':
+      return mainT('rsyncNoPinnedHostKey')
+    case 'platform-unsupported':
+      return mainT('rsyncUnsupportedPlatform')
+    case 'not-installed':
+      return mainT('rsyncNotInstalled')
+  }
 }
 
 // "host key-type base64" - with the bracketed form ssh itself uses whenever the port is not 22.
@@ -190,7 +201,7 @@ async function resolveConnection(ctx: DeployContext): Promise<SshConnection> {
   // installed - or removed - while the app is open, and this is the last point before spawn().
   // Without it the failure was `spawn rsync ENOENT`, which names no fix and is not a sentence.
   const blocker = rsyncBlockReason(connection, process.platform, findExecutable('rsync') !== null)
-  if (blocker) throw new Error(BLOCKER_MESSAGES[blocker])
+  if (blocker) throw new Error(blockerMessage(blocker))
   return connection
 }
 

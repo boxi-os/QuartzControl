@@ -25,7 +25,14 @@ interface RawThemeJson {
   brokenVarLinks?: Record<string, string[]>
 }
 
-const DECLARATION_RE = /--([\w-]+)\s*:\s*([^;}]+)[;}]/g
+// The terminator is optional at the end of the string, and that is not a nicety: eachRule() hands
+// over a body *without* its closing brace, and minified CSS drops the semicolon after the last
+// declaration of a block - so requiring one silently swallowed the final variable of every rule.
+// Measured on a real build of the test project: three declarations were missing from the table,
+// `--codeFont` (light), `--textHighlight` (dark) and `--accent-l`. The dark one was the visible
+// symptom - with no dark value recorded, baseValue() falls back to the light one, which is correct
+// CSS semantics for a declaration that has no dark counterpart and simply wrong for one that does.
+const DECLARATION_RE = /--([\w-]+)\s*:\s*([^;}]+)(?:[;}]|$)/g
 const VAR_REFERENCE_RE = /var\(\s*--([\w-]+)/g
 
 // Only the first rule of a compiled mode blob, which is the :root block - a plain `{...}` slice

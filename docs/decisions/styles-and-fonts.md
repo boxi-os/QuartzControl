@@ -87,3 +87,23 @@ Zeile ließ die Leiste wie eine Liste ausgewählter Einträge aussehen. Dieselbe
 Kategorien wie im Variablen-Tab, dieselbe Komponente (`VariableGroup`), Grundfarben offen. Eine
 Suche hebt das Zuklappen komplett auf: eine Suche, die ihre eigenen Treffer in zugeklappten
 Kategorien versteckt, wäre schlechter als keine.
+
+**Die letzte Deklaration jeder Regel fiel unter den Tisch (2026-09-03).** `DECLARATION_RE` im
+`variableGraphService` verlangte hinter dem Wert ein `;` oder `}`. Beides fehlt genau einmal pro
+Regel: `eachRule()` übergibt den Rumpf *ohne* die schließende Klammer, und minifiziertes CSS spart
+das Semikolon hinter der letzten Deklaration. Wer zuletzt im Block steht, existierte für die
+Variablen-Tabelle also nicht. Gegen einen echten Build von `gui-test` gemessen: drei Deklarationen,
+`--codeFont` (hell), `--textHighlight` (dunkel) und `--accent-l` — der Graph kannte 70 Variablen,
+mit dem Fix 72.
+
+Sichtbar wurde es erst durch die neue Farbtabelle. Ohne dunklen Wert fällt `baseValue()` auf den
+hellen zurück, und `--textHighlight` stand für beide Modi auf `#fff23688`, während Config und
+gebaute CSS für dunkel `#b3aa0288` sagen. Vorher war daneben nur ein 12-px-Feld, jetzt steht der
+Hex da — dieselbe Sorte Fund wie beim Schlüssel, der als Schlüssel gerendert wurde: die Anzeige
+war das Messgerät.
+
+Der Rückfall selbst bleibt, wie er ist. Eine `:root`-Deklaration ohne dunkles Gegenstück gilt in
+beiden Modi — den hellen Wert für dunkel zu zeigen, ist dann richtig und nicht geraten. Falsch war
+nur, dass das Gegenstück existierte und nicht gelesen wurde. `parseDeclarations` in
+`styleService.ts` hat dasselbe Muster und bleibt ebenfalls unangetastet: es liest ausschließlich
+den Block, den `renderVariableOverrides()` selbst schreibt, und der endet immer auf `;`.

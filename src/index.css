@@ -19,6 +19,48 @@ body,
   color-scheme: light dark;
 }
 
+/* The colour tokens (T1 in docs/REVIEW-2026-09-02.md). Each one is the colour a role already had
+   in ui.tsx before it was named - read off the classes there, not designed - so the app looks the
+   same with the token as without. Channels rather than hex, because tailwind.config.js wraps them
+   as `rgb(var(--x) / <alpha-value>)` and that is what keeps `bg-accent/10` working.
+
+   The dark block is a media query and nothing else: the app's own Hell/Dunkel/Systemeinstellung
+   flips `prefers-color-scheme` here through nativeTheme.themeSource (electron/main/theme.ts), so
+   this follows the switch, and it is the same mechanism darkMode: 'media' runs on.
+
+   `--ink` is the one that is not a colour of its own: it is what every translucent hairline and
+   fill on the scheme is made of - black on light, white on dark - and the alpha stays at the
+   site, because 6% black and 6% white do not weigh the same and the sites already know that.
+   Status colours (blue-50 info notes, green/red/amber badges, red danger buttons) are not tokens;
+   they mean something, and the palette pairs they use are documented as "superfluous, not wrong". */
+:root {
+  --ground: 245 245 247; /* #f5f5f7, the page */
+  --surface: 255 255 255; /* cards, inputs, dialogs */
+  --text: 15 23 42; /* slate-900 */
+  --text-secondary: 71 85 105; /* slate-600: field labels, segment labels, micro-labels */
+  --text-muted: 100 116 139; /* slate-500: hints, descriptions - the muted token */
+  --ink: 0 0 0;
+  --accent: 37 99 235; /* blue-600: fills - primary button, switch on, focus */
+  --accent-hover: 59 130 246; /* blue-500 */
+  --accent-fg: 255 255 255; /* what is written on the accent fill */
+  --accent-text: 37 99 235; /* the accent used as text or icon on ground/surface */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: 30 30 30; /* #1e1e1e */
+    --surface: 43 43 43; /* #2b2b2b - the opaque dialog and popup surface; see Modal in ui.tsx */
+    --text: 241 245 249; /* slate-100 */
+    --text-secondary: 203 213 225; /* slate-300 */
+    --text-muted: 148 163 184; /* slate-400 */
+    --ink: 255 255 255;
+    --accent: 37 99 235; /* the fill stays blue-600: white on blue-400 would not be readable */
+    --accent-hover: 59 130 246;
+    --accent-fg: 255 255 255;
+    --accent-text: 96 165 250; /* blue-400: blue-600 as text on #1e1e1e is only 3.7:1 */
+  }
+}
+
 /* And `color-scheme` alone is not enough for the one popup that matters. Measured in the packaged
    app on Debian 13 (X11): with `color-scheme: light dark` in place and the page reporting
    `prefers-color-scheme: dark`, the list a <select> opens was still painted light - Chromium draws

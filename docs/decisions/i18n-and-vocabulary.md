@@ -15,3 +15,22 @@ Aus CLAUDE.md ausgelagert (2026-09-02): die Messungen und Beobachtungen hinter d
 **Key parity is not key completeness — `npm run check:i18n` (2026-09-02).** The alpha test's GitHub-Pages step showed a button labelled `publish.pages.saveSettings`: i18next resolves a missing key to the key itself, so the gap reached the screen as a dotted string instead of an error. Both language files were missing it, so the parity check that guards `de.ts`/`en.ts` said nothing, and the label only appears in one state — once Pages already reads the target branch, which is the second visit onwards — so no earlier pass had seen it. `scripts/check-i18n-keys.mjs` closes that: it collects every literal `t('…')` in `src/` and `mainT('…')` in `electron/` and resolves each against the flattened language files, counting `key_one`/`key_other` as a match because i18next does (`usedBy`, `confirmDeleteInUse` and `cacheSize` only exist in plural form and were false positives until that rule went in). Over the current tree: 921 renderer keys, 107 main-process keys, one genuine gap — the one above. Keys built from a variable are deliberately out of scope; they cannot be resolved statically, and guessing the possible values would report failures that are not real.
 
 **`mainT()` auf Modulebene friert die Sprache ein (2026-09-02).** Die Regel oben — `mainT()` ist synchron und liest eine gecachte Sprache, die `refreshMainLanguage()` in `whenReady` füllt — hat eine Bedingung, die vorher nirgends stand: *aufgerufen* werden darf sie erst danach. Zwei Konstanten taten es früher. `rsync.ts` baute eine `Record<RsyncBlockReason, string>`-Tabelle mit fünf `mainT()`-Aufrufen im Modulrumpf, `githubService.ts` hielt `const NO_TOKEN = mainT('githubNoToken')`; beide Module importiert `handlers.ts`, und ein Import läuft lange vor `whenReady`. Ergebnis: sechs Texte standen für die Lebensdauer des Prozesses in der Vorgabesprache (`let language = 'en'`), unabhängig davon, was der Sprache-Schalter sagte. Aufgefallen ist es beim Nachmessen des rsync-Befunds — eine durchgehend deutsche App antwortete „No rsync is installed on this machine“. Behoben, indem beide Stellen zu Aufrufen *innerhalb* einer Funktion werden (`blockerMessage(reason)` mit `switch`, `mainT()` direkt am Rückgabewert), und abgesichert durch einen Wächter in `mainT()` selbst: wird es vor dem ersten `refreshMainLanguage()` aufgerufen, geht eine `console.error` mit dem Schlüssel und dem Grund raus. Der Wächter blieb über einen vollständigen Smoke-Lauf (38 Aufrufe) still — es gibt keinen legitimen Aufruf vor der Initialisierung.
+
+## `<html lang>` folgt der Sprache (S3, 2026-09-03)
+
+`index.html` trug `lang="de"` als feste Zeichenkette — seit die App zwei Sprachen spricht, ist das
+schlicht falsch, sobald sie Englisch spricht. Das Attribut ist kein Beiwerk: ein Screenreader wählt
+danach Stimme und Aussprache, und die Rechtschreibprüfung in jedem Textfeld richtet sich ebenfalls
+danach. Gesetzt wird jetzt in `i18n/index.ts` aus `resolvedLanguage` — beim Start und über
+`i18n.on('languageChanged', …)` bei jedem Wechsel. Aus der *aufgelösten* Sprache, nicht aus der
+Einstellung: „Systemeinstellung“ sagt nichts darüber, welche Sprache dabei herauskam.
+
+Im Produktions-Build gemessen: `document.documentElement.lang` steht beim Start auf `de` und wechselt
+mit dem Select in den Einstellungen auf `en`, ohne Neustart.
+
+Zwei kleinere Dinge aus demselben Befund: `Home` und `Einstellungen` lasen den Store ohne Selektor
+(`useAppStore()`), rendern also bei jeder Änderung irgendwo darin neu — jetzt ein Selektor pro Wert,
+die Aktionen sind ohnehin stabile Referenzen. Und die Einstellungen wurden beim Start zweimal
+gelesen: einmal in `main.tsx` für die Sprache, einmal von der ersten Seite für den Store. `main.tsx`
+geht jetzt durch den Store, `Home` lädt gar nicht mehr; die Einstellungsseite behält ihr eigenes
+Laden, weil dort ein von außen geänderter Wert falsch stünde.

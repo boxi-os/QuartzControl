@@ -247,9 +247,9 @@ mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge.
 - **S1 - Status: offen.** `useIpcQuery(fn, deps)` mit Abbruch-Guard, `loading`, `error`, `reload()`;
   20 von 32 API-Effekten haben heute keinen Guard. Neues Muster für neue Seiten, Bestehendes nur beim
   Anfassen.
-- **S3 - Status: offen.** `useAppStore()` ohne Selektor in `Home`/`Settings`;
-  `document.documentElement.lang` folgt dem Sprachwechsel nicht (`index.html` hat `lang="de"` fest);
-  Settings werden zweimal geladen.
+- **S3 - Status: erledigt (2026-09-03).** Selektoren in `Home`/`Settings`,
+  `document.documentElement.lang` folgt der aufgelösten Sprache (`i18n/index.ts`), und die
+  Einstellungen werden beim Start nur noch einmal gelesen (`main.tsx` durch den Store).
 - **E4 - Status: offen.** `console.error` in `will-navigate` ist deutsch; Log-Puffer geht beim
   macOS-Fenster-Schließen verloren, während die Server weiterlaufen.
 - **A2 - Status: erledigt (2026-09-03).** Menüpunkt „Speichern“ mit `CmdOrCtrl+S`, Kanal

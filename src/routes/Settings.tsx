@@ -30,7 +30,9 @@ export default function Settings(): JSX.Element {
   const navigate = useNavigate()
   const location = useLocation()
   const { t } = useTranslation()
-  const { settings, loadSettings, saveSettings } = useAppStore()
+  const settings = useAppStore((s) => s.settings)
+  const loadSettings = useAppStore((s) => s.loadSettings)
+  const saveSettings = useAppStore((s) => s.saveSettings)
 
   useEffect(() => {
     loadSettings()

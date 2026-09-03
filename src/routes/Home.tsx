@@ -26,7 +26,11 @@ const SEARCH_THRESHOLD = 6
 
 export default function Home(): JSX.Element {
   const { t, i18n } = useTranslation()
-  const { settings, loadSettings, removeProject } = useAppStore()
+  // One selector per value, not the whole store: without a selector this page re-renders on every
+  // change anywhere in it - a pushed error, a reloaded project list - and it is the busiest page in
+  // the app. The actions are stable references, so selecting them costs nothing.
+  const settings = useAppStore((s) => s.settings)
+  const removeProject = useAppStore((s) => s.removeProject)
   const [projects, setProjects] = useState<ProjectOverview[] | null>(null)
   const [showWizard, setShowWizard] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -39,10 +43,12 @@ export default function Home(): JSX.Element {
     setProjects(await window.quartzGui.projects.overview())
   }, [])
 
+  // No settings load here any more: main.tsx fills the store before the first render, and the only
+  // thing this page takes from it is the default folder for the picker. The Settings page keeps its
+  // own load, because that is where a value edited outside the app would show up wrong.
   useEffect(() => {
     void reload()
-    void loadSettings()
-  }, [reload, loadSettings])
+  }, [reload])
 
   // Most recently opened first, never-opened last, and a stable name order within each group -
   // the list used to be in insertion order, so `lastOpenedAt` was written on every project open

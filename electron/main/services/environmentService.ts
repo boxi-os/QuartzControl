@@ -46,9 +46,15 @@ function isExecutableFile(path: string): boolean {
   }
 }
 
-/** Absolute path of `name` on the current PATH, or null. The equivalent of `command -v`. */
-export function findExecutable(name: string): string | null {
+/**
+ * Absolute path of `name` on the current PATH, or null. The equivalent of `command -v`.
+ *
+ * `skipDir` leaves one directory out of the search, which is what answers "what would the user's
+ * own node be?" while the app's shim directory sits at the front of PATH.
+ */
+export function findExecutable(name: string, skipDir?: string | null): string | null {
   for (const dir of pathEntries()) {
+    if (skipDir && dir === skipDir) continue
     const candidate = join(dir, name)
     if (isExecutableFile(candidate)) return candidate
   }
@@ -144,8 +150,8 @@ export function ensureToolPath(): ResolvedPath {
 // command line tools as a stub that pops a GUI installer instead of doing anything, so a check
 // that only looked for the file would report git as available on exactly the machines where it
 // is not.
-function probe(name: string, versionArgs: string[], source: ToolInfo['source']): ToolInfo {
-  const path = findExecutable(name)
+function probe(name: string, versionArgs: string[], source: ToolInfo['source'], skipDir?: string | null): ToolInfo {
+  const path = findExecutable(name, skipDir)
   if (!path) return { name, source, path: null, version: null }
   try {
     const version = execFileSync(path, versionArgs, {
@@ -166,18 +172,26 @@ function probe(name: string, versionArgs: string[], source: ToolInfo['source']):
  * `secretStorage` is passed in rather than read here so this file keeps needing no Electron API -
  * safeStorage belongs to connectionsService, which owns every secret in the app.
  */
-export function getEnvironmentInfo(secretStorage: SecretStorageInfo): EnvironmentInfo {
+export function getEnvironmentInfo(
+  secretStorage: SecretStorageInfo,
+  // Where node and npm currently come from, i.e. whether nodeRuntime's shims are on PATH. Passed
+  // in rather than read here so this file keeps needing no Electron API - the same reasoning as
+  // secretStorage above.
+  embeddedBinDir: string | null
+): EnvironmentInfo {
   const path = ensureToolPath()
-  // node and npm are answered by the shims nodeRuntime.ts put at the front of PATH, so they are
-  // probed the same way as before and simply report where they came from. Probing rather than
-  // trusting the runtime's own numbers is deliberate: it is the shim that the app's spawns will
-  // use, and a shim that cannot be executed is exactly the failure worth showing.
+  // node and npm are answered by whatever PATH resolves - the shims when the embedded runtime is
+  // on, the machine's own otherwise. Probing rather than trusting the runtime's own version
+  // numbers is deliberate: it is the shim that the app's spawns will use, and a shim that cannot
+  // be executed is exactly the failure worth showing.
+  const source: ToolInfo['source'] = embeddedBinDir ? 'embedded' : 'host'
   const tools = [
-    probe('node', ['--version'], 'embedded'),
-    probe('npm', ['--version'], 'embedded'),
+    probe('node', ['--version'], source),
+    probe('npm', ['--version'], source),
     probe('git', ['--version'], 'host')
   ]
   return {
+    hostNodeVersion: embeddedBinDir ? probe('node', ['--version'], 'host', embeddedBinDir).version : tools[0].version,
     platform: process.platform,
     pathSource: path.source,
     addedPaths: path.added,

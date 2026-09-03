@@ -563,6 +563,20 @@ export default {
       targetHint:
         'Wohin genau ein Projekt damit veröffentlicht — Serverpfad, Branch, Ausschlüsse — legst du im Projekt unter „Veröffentlichen“ fest.'
     },
+    runtime: {
+      title: 'Laufzeit',
+      description: 'Womit die App Quartz und npm ausführt.',
+      label: 'Node-Laufzeit',
+      embedded: 'In der App',
+      system: 'Vom System',
+      inUseEmbedded: 'Im Einsatz: Node {{node}} und npm {{npm}} aus der App — nichts muss dafür installiert sein.',
+      inUseSystem: 'Im Einsatz: Node {{node}} von diesem Rechner.',
+      noSystemNode: 'nicht gefunden',
+      hintSwitchable: 'Auf diesem Rechner liegt Node {{node}}. Umschalten lohnt sich nur, wenn ein Paket beim Installieren kompiliert werden muss (node-gyp) — dafür braucht es echte Node-Header, die die App nicht mitbringt.',
+      hintNoHostNode: 'Auf diesem Rechner ist kein Node gefunden worden. „Vom System“ würde Builds, Plugins und neue Projekte deshalb scheitern lassen.',
+      hintSystem: 'Quartz verlangt Node 22 oder neuer. Ein Projekt bringt außerdem eine .node-version mit — nvm, fnm, asdf und mise lösen die pro Ordner auf, die Laufzeit kann hier also je Projekt eine andere sein.',
+      appliesToNewProcesses: 'Gilt für Vorgänge, die danach starten. Ein laufender Dev-Server behält seine Umgebung, bis er neu gestartet wird.'
+    },
     maintenance: {
       title: 'Daten & Wartung',
       description: 'Was die App außerhalb deiner Projekte ablegt.',

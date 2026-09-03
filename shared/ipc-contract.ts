@@ -1136,6 +1136,12 @@ export interface EnvironmentInfo {
   pathSource: 'inherited' | 'login-shell' | 'probed'
   addedPaths: string[]
   tools: ToolInfo[]
+  /**
+   * What a `node` on the user's own PATH answers, ignoring the app's shims - null when there is
+   * none. Not one of `tools`: it is not what the app uses, it is what switching the runtime to
+   * 'system' would get you, which is the one thing that choice needs to say out loud.
+   */
+  hostNodeVersion: string | null
   /** True when every tool both exists and runs. */
   ok: boolean
   /**
@@ -1363,6 +1369,14 @@ export interface Settings {
   // against this repo's Electron binary. That is why Tailwind stays on darkMode: 'media' and
   // every existing `dark:` variant keeps working with no class-strategy migration.
   theme?: 'system' | 'light' | 'dark'
+  /**
+   * Which Node runs Quartz and npm. 'embedded' (default) uses Electron's own - see nodeRuntime.ts
+   * for why that is the default rather than the user's. 'system' is the way out for the one case
+   * that needs it: a package that has to be compiled with node-gyp, which wants real Node headers
+   * and cannot be served by Electron's runtime. Takes effect for processes started afterwards; a
+   * running dev server keeps the environment it was started with.
+   */
+  nodeRuntime?: 'embedded' | 'system'
 }
 
 export interface PluginActionResult {

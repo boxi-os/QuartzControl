@@ -5,8 +5,9 @@ import { join } from 'path'
 import { registerIpcHandlers } from './ipc/handlers'
 import { killAllServers, detectOrphanedServers, killOrphanedServers } from './services/buildService'
 import { getProject } from './services/projectStore'
+import { getSettings } from './services/settingsService'
 import { ensureToolPath } from './services/environmentService'
-import { ensureEmbeddedRuntime } from './services/nodeRuntime'
+import { applyRuntimeMode } from './services/nodeRuntime'
 import { mainT } from './i18n'
 import { applyAppMenu, APP_NAME } from './menu'
 import { applyStoredTheme, windowBackgroundColor } from './theme'
@@ -154,11 +155,13 @@ app.whenReady().then(async () => {
   // every project creation and every snapshot fails with ENOENT while the same app started from a
   // terminal works.
   //
-  // ensureEmbeddedRuntime() then puts this app's own node/npm/npx at the *front* of that PATH, so
+  // applyRuntimeMode() then puts this app's own node/npm/npx at the *front* of that PATH, so
   // Quartz runs on Electron's Node 24 rather than on whatever the machine has - or has not -
   // installed. Second, because the first call's search must not be answered by our own shims.
+  // 'embedded' unless the user chose otherwise; the settings read is awaited here because a spawn
+  // must never see a half-applied PATH, and nothing can spawn before the window exists.
   ensureToolPath()
-  ensureEmbeddedRuntime()
+  applyRuntimeMode((await getSettings()).nodeRuntime ?? 'embedded')
   if (isMac && app.dock) {
     const iconPath = resolveIconPath()
     if (iconPath) app.dock.setIcon(nativeImage.createFromPath(iconPath))

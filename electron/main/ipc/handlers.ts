@@ -48,6 +48,7 @@ import * as snapshotService from '../services/snapshotService'
 import * as contentService from '../services/contentService'
 import * as createService from '../services/createService'
 import * as environmentService from '../services/environmentService'
+import * as nodeRuntime from '../services/nodeRuntime'
 import * as settingsService from '../services/settingsService'
 import * as templatePackageService from '../services/templatePackage'
 import { applyTheme } from '../theme'
@@ -523,10 +524,18 @@ export function registerIpcHandlers(): void {
     // once from a snapshot of the strings, so without this the Sprache select switched the whole
     // renderer instantly and left Datei/Bearbeiten/Ansicht in the old language until a restart.
     if ('language' in (next as object)) await applyAppMenu()
+    // Third of the same kind: PATH belongs to the main process, and applying the choice here keeps
+    // the stored value and the live environment from disagreeing until the next start.
+    if ('nodeRuntime' in (next as object)) {
+      nodeRuntime.applyRuntimeMode((next as Settings).nodeRuntime ?? 'embedded')
+    }
   })
   handleNoArgs(IPC.settingsAppInfo, () => settingsService.getAppInfo())
   handleNoArgs(IPC.settingsEnvironment, () =>
-    environmentService.getEnvironmentInfo(connectionsService.getSecretStorageInfo())
+    environmentService.getEnvironmentInfo(
+      connectionsService.getSecretStorageInfo(),
+      nodeRuntime.embeddedRuntime()?.binDir ?? null
+    )
   )
   handleNoArgs(IPC.settingsClearThemeDocsCache, () => styleSettingsSchemaService.clearThemeDocsCache())
 

@@ -27,6 +27,8 @@ export interface EmbeddedRuntime {
   npmVersion: string | null
 }
 
+// Non-null means the shims are written and on PATH. Null means the user chose their own Node
+// (Settings), so nothing of ours is in the way and `node` resolves to whatever the machine has.
 let runtime: EmbeddedRuntime | null = null
 
 // Both trees sit next to the packaged app (electron-builder `extraResources` flattens them into
@@ -65,13 +67,29 @@ function shim(target: string | null): string {
 }
 
 /**
- * Writes the three shims and puts them at the front of PATH. Call once, before anything can spawn.
+ * Applies the user's choice of runtime: 'embedded' writes the three shims and puts them at the
+ * front of PATH, 'system' takes them back out again. Called at startup and after every save of
+ * the setting, so the stored value and the live PATH cannot disagree.
  *
  * The shims are rewritten on every start rather than only when missing: they hold an absolute path
  * to the Electron binary, and inside an AppImage that path lives under a mount point that changes
  * with each launch (/tmp/.mount_…). A shim from yesterday points at nothing.
+ *
+ * Switching to 'system' only changes what *later* spawns see. A dev server that is already running
+ * keeps the environment it was started with - which is why the setting says so.
  */
-export function ensureEmbeddedRuntime(): EmbeddedRuntime {
+export function applyRuntimeMode(mode: 'embedded' | 'system'): EmbeddedRuntime | null {
+  if (mode === 'system') {
+    if (runtime) {
+      const gone = runtime.binDir
+      process.env.PATH = (process.env.PATH ?? '')
+        .split(delimiter)
+        .filter((entry) => entry && entry !== gone)
+        .join(delimiter)
+      runtime = null
+    }
+    return null
+  }
   if (runtime) return runtime
 
   const binDir = join(app.getPath('userData'), 'runtime', 'bin')

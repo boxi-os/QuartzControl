@@ -559,6 +559,20 @@ export default {
       targetHint:
         'Where exactly a project publishes to — remote path, branch, exclusions — is set inside that project under “Publish”.'
     },
+    runtime: {
+      title: 'Runtime',
+      description: 'What the app runs Quartz and npm with.',
+      label: 'Node runtime',
+      embedded: 'In the app',
+      system: 'From the system',
+      inUseEmbedded: 'In use: Node {{node}} and npm {{npm}} from the app — nothing has to be installed for it.',
+      inUseSystem: 'In use: Node {{node}} from this machine.',
+      noSystemNode: 'not found',
+      hintSwitchable: 'This machine has Node {{node}}. Switching only pays off when a package has to be compiled during install (node-gyp) — that needs real Node headers, which the app does not carry.',
+      hintNoHostNode: 'No Node was found on this machine, so “From the system” would make builds, plugins and new projects fail.',
+      hintSystem: 'Quartz requires Node 22 or newer. A project also ships a .node-version, and nvm, fnm, asdf and mise resolve that per folder — so the runtime here can differ from project to project.',
+      appliesToNewProcesses: 'Applies to processes started afterwards. A running dev server keeps its environment until it is restarted.'
+    },
     maintenance: {
       title: 'Data & maintenance',
       description: 'What the app stores outside your projects.',

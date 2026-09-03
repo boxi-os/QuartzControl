@@ -3,8 +3,15 @@ import { useTranslation } from 'react-i18next'
 import { confirmDialog } from '../utils/confirm'
 import { expandHome, isAbsolutePath, titlebarStripClass } from '../utils/platform'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Database, Key, Monitor, Moon, FolderOpen, Plug, RefreshCw, Sun, TriangleAlert } from 'lucide-react'
-import type { AppInfo, Connection, GithubAccount, SaveConnectionInput, Settings as AppSettings } from '@shared/ipc-contract'
+import { Database, Key, Monitor, Moon, FolderOpen, Plug, RefreshCw, Sun, Terminal, TriangleAlert } from 'lucide-react'
+import type {
+  AppInfo,
+  Connection,
+  EnvironmentInfo,
+  GithubAccount,
+  SaveConnectionInput,
+  Settings as AppSettings
+} from '@shared/ipc-contract'
 import { useAppStore } from '../state/store'
 import { Badge, Button, Card, Field, FieldGroup, SegmentedControl, Select, TextInput } from '../components/ui'
 import {
@@ -70,6 +77,7 @@ export default function Settings(): JSX.Element {
         <div className="flex flex-col gap-4">
           <AppearanceSection settings={settings} persist={persist} />
           <ProjectsSection settings={settings} persist={persist} />
+          <RuntimeSection settings={settings} persist={persist} />
           <GithubSection />
           <ConnectionsSection />
           <MaintenanceSection />
@@ -157,6 +165,63 @@ function AppearanceSection({
         </Field>
       </div>
       <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{t('settings.appearance.appliedImmediately')}</p>
+    </Section>
+  )
+}
+
+// ── Laufzeit ────────────────────────────────────────────────────────────────────────────────
+
+// The one place that says which Node builds the sites, and the only way back to the machine's own.
+// It exists for a single case - a package that has to be compiled with node-gyp wants real Node
+// headers, which Electron's runtime cannot provide - so it is a two-option group with the versions
+// spelled out rather than a page of explanation. What each choice actually *is* is the part a
+// person cannot guess, hence the live numbers under it.
+function RuntimeSection({
+  settings,
+  persist
+}: {
+  settings: AppSettings
+  persist: (patch: Partial<AppSettings>) => Promise<void>
+}): JSX.Element {
+  const { t } = useTranslation()
+  const [info, setInfo] = useState<EnvironmentInfo | null>(null)
+  const mode = settings.nodeRuntime ?? 'embedded'
+
+  // Re-read after a switch, not just on mount: the whole point of the control is that it changes
+  // which node the app resolves, and the line below is what shows that it did.
+  useEffect(() => {
+    void window.quartzGui.settings.environment().then(setInfo)
+  }, [mode])
+
+  const node = info?.tools.find((tool) => tool.name === 'node')
+  const npm = info?.tools.find((tool) => tool.name === 'npm')
+
+  return (
+    <Section icon={Terminal} title={t('settings.runtime.title')} description={t('settings.runtime.description')}>
+      <FieldGroup label={t('settings.runtime.label')}>
+        <SegmentedControl
+          label={t('settings.runtime.label')}
+          value={mode}
+          onChange={(next) => void persist({ nodeRuntime: next })}
+          options={[
+            { value: 'embedded', label: t('settings.runtime.embedded') },
+            { value: 'system', label: t('settings.runtime.system') }
+          ]}
+        />
+      </FieldGroup>
+      <p className="mt-2 text-[13px] text-slate-500 dark:text-slate-400">
+        {mode === 'embedded'
+          ? t('settings.runtime.inUseEmbedded', { node: node?.version ?? '—', npm: npm?.version ?? '—' })
+          : t('settings.runtime.inUseSystem', { node: node?.version ?? t('settings.runtime.noSystemNode') })}
+      </p>
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        {mode === 'embedded'
+          ? info && info.hostNodeVersion
+            ? t('settings.runtime.hintSwitchable', { node: info.hostNodeVersion })
+            : t('settings.runtime.hintNoHostNode')
+          : t('settings.runtime.hintSystem')}
+      </p>
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('settings.runtime.appliesToNewProcesses')}</p>
     </Section>
   )
 }

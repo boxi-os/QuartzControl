@@ -97,7 +97,7 @@ function Section({
           <Icon size={16} />
         </div>
         <div className="min-w-0">
-          <h2 className="text-[15px] font-semibold">{title}</h2>
+          <h2 className="text-heading font-semibold">{title}</h2>
           <p className="mt-0.5 text-[13px] text-slate-500 dark:text-slate-400">{description}</p>
         </div>
       </div>

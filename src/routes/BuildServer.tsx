@@ -403,7 +403,7 @@ export default function BuildServer(): JSX.Element {
         <div className="mb-3 rounded-md border border-black/[0.06] p-3 dark:border-white/10">
           {output?.exists ? (
             <>
-              <p className="text-[15px] font-semibold tracking-tight">
+              <p className="text-heading font-semibold tracking-tight">
                 {t('buildServer.lastBuilt', { when: formatRelativeTime(output.builtAt, i18n.language) ?? '–' })}
               </p>
               <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
@@ -411,7 +411,7 @@ export default function BuildServer(): JSX.Element {
               </p>
             </>
           ) : (
-            <p className="text-[15px] font-semibold tracking-tight text-slate-500 dark:text-slate-400">
+            <p className="text-heading font-semibold tracking-tight text-slate-500 dark:text-slate-400">
               {t('buildServer.neverBuilt')}
             </p>
           )}

@@ -12,3 +12,23 @@ Aus CLAUDE.md ausgelagert (2026-09-02): die Messungen und Beobachtungen hinter d
 - **Explicit disabled colours, measured before and after (U4).** The old numbers reproduced exactly with the WCAG formula and the opacity mixed against the ground (2.57:1 Toggle label, 3.41:1 TextInput, 2.35:1 Templates row, 2.88:1 the amber tag in Basics, 1.69:1 icon buttons), so the same arithmetic stands behind the new ones. The muted token as disabled text: 4.37:1 on the ground and 4.76:1 on a card in light, 6.5:1 and 5.5:1 in dark. The disabled TextInput was first given a 3% ink wash, which left the muted text at 4.11:1 on the page ground - below the 4.36:1 floor the muted token is held to - so it sinks to `bg-ground` instead, 4.37:1 wherever it sits. The icon buttons could not take the review's `disabled:text-slate-400`: that is 2.35:1 on the ground and 2.56:1 on a card in light, not the "over 3:1" the review assumed, and one step below muted is below the floor in both schemes; the enabled icon moved *up* to secondary (7.6:1) and disabled took muted (4.8:1). Basics is the one place where dimming is information, not a disabled state (the theme sets this value): the name goes muted and the swatch, the value and the amber tag saying why stay at full colour, and for the font field that is a `muted` prop on `Field`, because `className` on a primitive carries no colour. Left at 4.00:1: the disabled ghost button on the page ground, where its own 4% ink fill darkens the ground under the muted text.
 - **A computed colour read right after a class change is the transition's start value.** Probing the disabled icon button in the running app gave the *enabled* colour in dark and the disabled one in light - not a scheme bug, but `transition-colors`: the dark probe read `getComputedStyle` in the same tick the `disabled` attribute was set, the light one a second later. Wait out the transition before trusting a computed colour.
 - **Every avatar colour is a shade white can be read on.** The project card's initial is always white; the 500-level palette it was drawn on ran from 4.2:1 (violet) down to 2.1:1 (amber), so whether you could read your project's letter came down to what its id hashed to.
+
+## Drei Namen für die Schriftgrößen (U5, 2026-09-03)
+
+Vor dem Zählen sah die Typo-Skala nach Willkür aus, nach dem Zählen nach drei Größen mit Zweck und
+einer Handvoll Ausreißer: 82 Vorkommen von `text-[11px]`, 51 von `text-[13px]`, 7 von `text-[15px]` —
+gegen 13 für 10, 12, 14, 17 und 19px zusammen. Also drei Tokens in `tailwind.config.js`, benannt nach
+der Rolle wie die Farben: `text-micro` (Labels, Hinweise, Badges — das Kleingedruckte),
+`text-ui` (normaler Text in einem Bedienelement oder einer Zeile) und `text-heading` (die eigene
+Überschrift einer Karte). Nur Schriftgröße, keine Zeilenhöhe: sie ersetzen blankes `text-[Npx]`, das
+auch nichts anderes setzt, und damit verschiebt der Tausch kein Layout.
+
+Umgestellt sind `ui.tsx` — dieselbe Pilotrolle wie bei den Farb-Tokens — und die sieben
+15px-Überschriften, damit `text-heading` nicht nur im Kommentar existiert. Die 133 übrigen
+`text-[11px]`/`text-[13px]` in den Seiten bleiben stehen, bis jemand die Zeile ohnehin anfasst; kein
+sed. Die Ausreißer behalten ihre Zahl, bis einer davon einen Namen verdient.
+
+Im Produktions-Build nachgemessen: ein Button rechnet 13px, die Karten-Überschriften 15px, und die
+drei erzeugten Regeln sind reines `font-size`. Bei der Gelegenheit ist `LabelText` gelöscht — ein
+`<label>`-Primitive ohne einen einzigen Aufrufer, das noch dazu ein `<label>` ohne Formularelement
+gewesen wäre.

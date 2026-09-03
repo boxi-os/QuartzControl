@@ -238,7 +238,7 @@ function ProjectRow({
     >
       <div className="flex items-start gap-2 pr-8">
         <button
-          className="min-w-0 text-left text-[15px] font-medium hover:underline disabled:cursor-default disabled:no-underline"
+          className="min-w-0 text-left text-heading font-medium hover:underline disabled:cursor-default disabled:no-underline"
           onClick={onOpen}
           disabled={broken}
         >
@@ -316,7 +316,7 @@ function GettingStarted({ onOpen, onCreate }: { onOpen: () => void; onCreate: ()
 
   return (
     <Card>
-      <h2 className="text-[15px] font-semibold">{t('home.gettingStarted.title')}</h2>
+      <h2 className="text-heading font-semibold">{t('home.gettingStarted.title')}</h2>
       <p className="mt-0.5 text-[13px] text-slate-500 dark:text-slate-400">{t('home.gettingStarted.description')}</p>
       <ol className="mt-4 flex flex-col gap-3">
         {steps.map((step, index) => (
@@ -472,7 +472,7 @@ function WhatYouCanDo({ environment }: { environment: EnvironmentInfo | null }):
     <aside className="flex flex-col gap-4">
       {environment && <EnvironmentLine info={environment} />}
       <Card>
-        <h2 className="text-[15px] font-semibold">{t('home.capabilities.title')}</h2>
+        <h2 className="text-heading font-semibold">{t('home.capabilities.title')}</h2>
         <div className="mt-3 flex flex-col gap-3.5">
           {areas.map(({ key, icon: Icon }) => (
             <div key={key} className="flex gap-2.5">
@@ -489,7 +489,7 @@ function WhatYouCanDo({ environment }: { environment: EnvironmentInfo | null }):
       </Card>
 
       <Card>
-        <h2 className="text-[15px] font-semibold">{t('home.aboutQuartz.title')}</h2>
+        <h2 className="text-heading font-semibold">{t('home.aboutQuartz.title')}</h2>
         <p className="mt-1.5 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{t('home.aboutQuartz.body')}</p>
         <div className="mt-3 flex flex-col gap-1.5">
           <ExternalLink url={QUARTZ_DOCS} label={t('home.aboutQuartz.docs')} />

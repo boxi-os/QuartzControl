@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
-import type { ButtonHTMLAttributes, HTMLAttributes, InputHTMLAttributes, LabelHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react'
+import type { ButtonHTMLAttributes, HTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react'
 import type { LucideIcon } from 'lucide-react'
 
 // Colours in this file are the semantic tokens from src/index.css (`text-text-muted`, `bg-surface`,
 // `border-ink/10`, `bg-accent`), not palette pairs; this file is the pilot for them. Status colours
 // (red danger, the badge tones, the blue info note) stay palette classes on purpose - they mean
 // something, and there is no token for "danger".
+//
+// Sizes are the role tokens from tailwind.config.js too (`text-micro`, `text-ui`, `text-heading`),
+// not `text-[11px]`/`text-[13px]`: this file is the pilot for those the same way it is for the
+// colours, and a new line of text should pick a role rather than a number.
 //
 // A disabled control still has to say what it is, and that means explicit disabled colours, never
 // opacity. Twice measured: the disabled primary/danger fills are light (blue-300 / red-300), and
@@ -43,7 +47,7 @@ export function Button({
     <button
       type={type}
       {...props}
-      className={`rounded-[7px] px-3 py-1.5 text-[13px] font-medium transition-colors disabled:cursor-not-allowed ${VARIANTS[variant]} ${className}`}
+      className={`rounded-[7px] px-3 py-1.5 text-ui font-medium transition-colors disabled:cursor-not-allowed ${VARIANTS[variant]} ${className}`}
     />
   )
 }
@@ -94,10 +98,10 @@ export function Field({
   className?: string
 }): JSX.Element {
   return (
-    <label className={`flex flex-col gap-1 text-[13px] ${className}`}>
+    <label className={`flex flex-col gap-1 text-ui ${className}`}>
       <span className={`font-medium ${muted ? 'text-text-muted' : 'text-text-secondary'}`}>{label}</span>
       {children}
-      {hint && <span className="text-[11px] text-text-muted">{hint}</span>}
+      {hint && <span className="text-micro text-text-muted">{hint}</span>}
     </label>
   )
 }
@@ -116,7 +120,7 @@ export function FieldGroup({
   className?: string
 }): JSX.Element {
   return (
-    <div role="group" aria-label={label} className={`flex flex-col gap-1 text-[13px] ${className}`}>
+    <div role="group" aria-label={label} className={`flex flex-col gap-1 text-ui ${className}`}>
       <span className="font-medium text-text-secondary">{label}</span>
       {children}
     </div>
@@ -127,7 +131,7 @@ export function TextInput(props: InputHTMLAttributes<HTMLInputElement>): JSX.Ele
   return (
     <input
       {...props}
-      className={`rounded-[7px] border border-ink/10 bg-surface px-2.5 py-1.5 text-[13px] text-text shadow-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:bg-ground disabled:text-text-muted ${props.className ?? ''}`}
+      className={`rounded-[7px] border border-ink/10 bg-surface px-2.5 py-1.5 text-ui text-text shadow-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:bg-ground disabled:text-text-muted ${props.className ?? ''}`}
     />
   )
 }
@@ -136,7 +140,7 @@ export function Select(props: SelectHTMLAttributes<HTMLSelectElement>): JSX.Elem
   return (
     <select
       {...props}
-      className={`rounded-[7px] border border-ink/10 bg-surface px-2.5 py-1.5 text-[13px] text-text shadow-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:bg-ground disabled:text-text-muted ${props.className ?? ''}`}
+      className={`rounded-[7px] border border-ink/10 bg-surface px-2.5 py-1.5 text-ui text-text shadow-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:bg-ground disabled:text-text-muted ${props.className ?? ''}`}
     />
   )
 }
@@ -166,7 +170,7 @@ export function Toggle({
   disabled?: boolean
 }): JSX.Element {
   const control = (
-    <label className={`flex items-center gap-2.5 text-[13px] ${disabled ? 'text-text-muted' : 'text-text-secondary'}`}>
+    <label className={`flex items-center gap-2.5 text-ui ${disabled ? 'text-text-muted' : 'text-text-secondary'}`}>
       <button
         type="button"
         role="switch"
@@ -194,7 +198,7 @@ export function Toggle({
   return (
     <div className="flex flex-col gap-1">
       {control}
-      <span className="text-[11px] text-text-muted">{hint}</span>
+      <span className="text-micro text-text-muted">{hint}</span>
     </div>
   )
 }
@@ -289,7 +293,7 @@ export function SegmentedControl<T extends string>({
               move(-1)
             }
           }}
-          className={`rounded-[6px] px-3 py-1 text-[13px] font-medium transition-colors ${
+          className={`rounded-[6px] px-3 py-1 text-ui font-medium transition-colors ${
             value === option.value
               ? 'bg-surface text-text shadow-sm dark:bg-ink/20'
               : 'text-text-secondary hover:text-text'
@@ -493,7 +497,7 @@ export function PageHeader({
         </div>
         <div>
           <h1 className="text-lg font-semibold text-text">{title}</h1>
-          {description && <p className="mt-0.5 max-w-xl text-[13px] text-text-muted">{description}</p>}
+          {description && <p className="mt-0.5 max-w-xl text-ui text-text-muted">{description}</p>}
         </div>
       </div>
       {(status !== undefined || actions) && (
@@ -508,15 +512,6 @@ export function PageHeader({
         </div>
       )}
     </div>
-  )
-}
-
-export function LabelText(props: LabelHTMLAttributes<HTMLLabelElement>): JSX.Element {
-  return (
-    <label
-      {...props}
-      className={`text-xs font-semibold uppercase tracking-wide text-text-secondary ${props.className ?? ''}`}
-    />
   )
 }
 
@@ -535,11 +530,11 @@ export function SettingsSection({
   collapsible?: boolean
   children: ReactNode
 }): JSX.Element {
-  const heading = <span className="text-[11px] font-semibold uppercase tracking-wide text-text-secondary">{title}</span>
+  const heading = <span className="text-micro font-semibold uppercase tracking-wide text-text-secondary">{title}</span>
   const body = (
     <>
       {children}
-      {hint && <p className="text-[11px] text-text-muted">{hint}</p>}
+      {hint && <p className="text-micro text-text-muted">{hint}</p>}
     </>
   )
   const box = 'rounded-[10px] border border-ink/[0.06] p-3.5 dark:border-ink/10'

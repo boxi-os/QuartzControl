@@ -167,6 +167,10 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   Subjekt, nicht „Gespeichert“. Drag-Ansagen kommen aus `utils/dndAnnouncements.ts`, damit die
   beiden Listen dieselben Sätze in derselben Sprache sagen; die Aufrufstelle liefert nur, wie aus
   einer Drag-ID ein Name wird.
+- **Schriftgrößen heißen nach Rolle, so wie die Farben.** `text-micro` (11px: Labels, Hinweise,
+  Badges), `text-ui` (13px: Text in einem Bedienelement oder einer Zeile), `text-heading` (15px: die
+  Überschrift einer Karte), definiert in `tailwind.config.js`. Neue Zeilen nehmen einen davon; die
+  Ausreißer (10/12/14/17/19px) behalten ihre Zahl, bis einer einen Namen verdient.
 - **Ein deaktiviertes Control muss noch lesbar sein.** Explizite disabled-Farben, keine Opazität:
   Text wird `text-text-muted`, ein Feld sinkt auf `bg-ground`, ein Icon-Button geht von
   `text-text-secondary` auf `text-text-muted`. Gedimmt werden darf nur, was keine eigene Information
@@ -272,8 +276,9 @@ mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge.
   Tag: `state/announcer.tsx` als Live-Region der Seite (Zeilenmeldung der Plugin-Liste, Ergebnis
   jedes Umsortierens) und `utils/dndAnnouncements.ts` für die Drag-Ansagen in beiden Listen, die
   vorher Englisch waren und von Roh-IDs sprachen.
-- **U5 - Status: offen.** `LabelText` ist tot; Typo-Skala aus Arbitrary Values (`text-[11px]` 77×,
-  `text-[13px]` 54×) - Tokens definieren, `ui.tsx` umstellen, Rest beiläufig, kein sed.
+- **U5 - Status: erledigt (2026-09-03).** `LabelText` gelöscht; drei Größen-Tokens (`text-micro`,
+  `text-ui`, `text-heading`) in `tailwind.config.js`, `ui.tsx` und die sieben 15px-Überschriften
+  umgestellt. Die 133 übrigen Arbitrary Values bleiben, bis jemand die Zeile anfasst - kein sed.
 - **T2 - Status: offen (Notiz).** `'#ffffff'` als Picker-Fallback für nicht parsebare Farben.
 - **Sticky-State über Index - Status: erledigt (2026-09-03).** `plugins.expanded.<index>` keyt jetzt
   auf den Plugin-Namen. Beim Umbau korrigiert: das Umsortieren ist *nicht* der Auslöser, es schreibt

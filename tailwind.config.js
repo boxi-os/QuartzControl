@@ -22,6 +22,21 @@ export default {
           text: 'rgb(var(--accent-text) / <alpha-value>)'
         }
       },
+      // Three names for the three sizes this app actually has a *reason* for, so a new line of text
+      // picks a role instead of a number. Measured before naming them: 82 uses of `text-[11px]`, 51
+      // of `text-[13px]`, 7 of `text-[15px]`, against 13 uses of everything else put together
+      // (10/12/14/17/19px). Font size only, no line-height - these replace bare `text-[Npx]`, which
+      // sets nothing else either, so the swap changes no layout.
+      //
+      // The strays keep their arbitrary values until one of them earns a name; there is no sed here.
+      fontSize: {
+        // Labels, hints, badges, meta lines - the app's small print.
+        micro: '11px',
+        // Normal text in a control or a row: buttons, fields, list lines. The app's body size.
+        ui: '13px',
+        // A card's or a section's own heading, one step above the text under it.
+        heading: '15px'
+      },
       fontFamily: {
         sans: [
           '-apple-system',

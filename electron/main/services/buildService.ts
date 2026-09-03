@@ -320,5 +320,18 @@ export async function detectOrphanedServers(): Promise<OrphanedServer[]> {
 }
 
 export function killOrphanedServers(servers: OrphanedServer[]): void {
-  for (const { pid } of servers) treeKill(pid)
+  for (const { pid } of servers) {
+    // Callback *and* try/catch, neither of them ceremony: tree-kill rethrows anything but ESRCH
+    // from process.kill - EPERM, for instance, which is what a recycled pid now owned by someone
+    // else's process gives - and without a callback it throws out of the 'close' handler of the
+    // `ps` it spawned, where nothing can catch it. This runs during startup, so an uncaught throw
+    // there took the whole app down before the window existed.
+    try {
+      treeKill(pid, undefined, (err) => {
+        if (err) console.error(`[main] could not kill orphaned server ${pid}:`, err)
+      })
+    } catch (error) {
+      console.error(`[main] could not kill orphaned server ${pid}:`, error)
+    }
+  }
 }

@@ -71,6 +71,17 @@ function createWindow(): void {
   })
 
   win.on('ready-to-show', () => win.show())
+  // Sicherheitsnetz, kein Normalfall: `show: false` heißt, dass das Fenster erst mit
+  // 'ready-to-show' sichtbar wird - und wenn dieses Ereignis nie kommt, hat der Nutzer eine App,
+  // die läuft und nichts zeigt. Genau das ist auf einer Linux-VM ohne OpenGL-Kontext denkbar, wo
+  // Chromium auf Software-Rendering zurückfällt (siehe docs/decisions: ANGLE-Fehler 12289). Nach
+  // fünf Sekunden ist ein womöglich noch weißes Fenster in jedem Fall besser als keines.
+  setTimeout(() => {
+    if (!win.isDestroyed() && !win.isVisible()) {
+      console.error('[main] window never reported ready-to-show; showing it anyway')
+      win.show()
+    }
+  }, 5000).unref()
   // Every target="_blank" in the app lands here, and shell.openExternal hands the URL to whatever
   // the OS registered for its scheme - so the scheme is checked rather than trusted. http is
   // allowed alongside https because the dev-server preview link is http://localhost:<port>, which
@@ -148,37 +159,67 @@ async function promptForOrphanedServers(): Promise<void> {
   if (response === 0) killOrphanedServers(orphaned)
 }
 
-app.whenReady().then(async () => {
-  // Both before anything can spawn a command, and in this order.
-  //
-  // ensureToolPath() looks for what has to come from the outside - git above all: a packaged app
-  // started from the Dock, Finder or a desktop launcher inherits no shell PATH, so without this
-  // every project creation and every snapshot fails with ENOENT while the same app started from a
-  // terminal works.
-  //
-  // applyRuntimeMode() then puts this app's own node/npm/npx at the *front* of that PATH, so
-  // Quartz runs on Electron's Node 24 rather than on whatever the machine has - or has not -
-  // installed. Second, because the first call's search must not be answered by our own shims.
-  // 'embedded' unless the user chose otherwise; the settings read is awaited here because a spawn
-  // must never see a half-applied PATH, and nothing can spawn before the window exists.
-  ensureToolPath()
-  // Dann git: das vom Rechner, wenn es dort eines gibt, sonst das mitgelieferte. Nach
-  // ensureToolPath(), weil ein git, das nur über den Login-Shell-PATH erreichbar ist, vorher nicht
-  // zu sehen wäre - und vor allem, was spawnen kann.
-  applyGitRuntime()
-  applyRuntimeMode((await getSettings()).nodeRuntime ?? 'embedded')
+// Everything the first window needs, and nothing else. Each step is guarded on its own: none of
+// them is worth losing the window over, and one of them - the runtime setup - reads files that a
+// broken installation may not have. What a failure costs is written on the start screen anyway
+// (the environment band), which is a far better place for it than a window that never appears.
+async function prepareBeforeWindow(): Promise<void> {
+  // First, before anything can spawn a command: a packaged app started from the Dock, Finder or a
+  // desktop launcher inherits no shell PATH, so without this every project creation and every
+  // snapshot fails with ENOENT while the same app started from a terminal works. It looks for git,
+  // which is the one tool that still has to come from the outside.
+  step('tool path', () => ensureToolPath())
+  // Then git: the machine's if it has one, ours otherwise. After ensureToolPath(), because a git
+  // reachable only through the login shell's PATH would be invisible before it.
+  step('git runtime', () => applyGitRuntime())
+  // Then this app's own node/npm/npx at the *front* of that PATH, so Quartz runs on Electron's
+  // Node 24 rather than on whatever the machine has - or has not - installed. Last of the three,
+  // because the searches above must not be answered by our own shims.
+  const settings = await stepAsync('settings', () => getSettings(), {})
+  step('node runtime', () => applyRuntimeMode(settings.nodeRuntime ?? 'embedded'))
+
   if (isMac && app.dock) {
-    const iconPath = resolveIconPath()
-    if (iconPath) app.dock.setIcon(nativeImage.createFromPath(iconPath))
+    step('dock icon', () => {
+      const iconPath = resolveIconPath()
+      if (iconPath) app.dock?.setIcon(nativeImage.createFromPath(iconPath))
+    })
   }
   // Before createWindow(), so the very first frame is painted in the chosen appearance.
-  await applyStoredTheme()
-  // applyAppMenu() refreshes the cached language first, so every mainT() below - the orphan
+  await stepAsync('theme', () => applyStoredTheme(), undefined)
+  // applyAppMenu() refreshes the cached language first, so every mainT() afterwards - the orphan
   // dialog included - already speaks the language the settings ask for.
-  await applyAppMenu()
+  await stepAsync('menu', () => applyAppMenu(), undefined)
+}
+
+// English, like every other console.error here: these describe a bug, not something a user typed.
+function step(name: string, run: () => void): void {
+  try {
+    run()
+  } catch (error) {
+    console.error(`[main] startup step "${name}" failed:`, error)
+  }
+}
+
+async function stepAsync<T>(name: string, run: () => Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await run()
+  } catch (error) {
+    console.error(`[main] startup step "${name}" failed:`, error)
+    return fallback
+  }
+}
+
+app.whenReady().then(async () => {
+  await prepareBeforeWindow()
   registerIpcHandlers()
-  await promptForOrphanedServers()
+
+  // The window comes before the orphan question, and that order is the point: the question runs
+  // code that can fail - killOrphanedServers walks a process tree and signals pids that may since
+  // have been recycled - and until this was reordered, a failure there meant the app kept running
+  // with no window at all and nothing on screen to say why. Nothing between "app is ready" and
+  // "there is a window" may be able to prevent the window.
   createWindow()
+  void promptForOrphanedServers().catch((error) => console.error('[main] orphan check failed:', error))
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

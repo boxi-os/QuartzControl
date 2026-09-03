@@ -216,7 +216,8 @@ export default function Styles(): JSX.Element {
     await window.quartzGui.config.save(project.path, config)
   }, [config, project.path])
 
-  async function save(): Promise<void> {
+  // Returns whether it worked - see the leave guard in ProjectLayout.
+  async function save(): Promise<boolean> {
     setStatus('saving')
     setMessage(null)
     try {
@@ -227,9 +228,11 @@ export default function Styles(): JSX.Element {
       setSavedOverrides(JSON.stringify(overrides))
       setStatus('saved')
       setTimeout(() => setStatus('idle'), 2000)
+      return true
     } catch (err) {
       setStatus('error')
       setMessage(formatIpcError(err))
+      return false
     }
   }
 
@@ -243,7 +246,7 @@ export default function Styles(): JSX.Element {
   // Cmd+S saves the same thing the button does, and is registered only while that button would do
   // something: no edits, a save already running, or a sub-tab that saves elsewhere means the
   // shortcut stays quiet rather than rewriting an unchanged file.
-  useSaveCommand(dirty && status !== 'saving' ? () => void save() : null)
+  useSaveCommand(dirty && status !== 'saving' ? save : null)
 
   if (!config || !scss) return <p className="text-sm text-slate-500 dark:text-slate-400">{t('common.loading')}</p>
 

@@ -173,6 +173,7 @@ export const syncDirection = z.enum(['push', 'pull', 'both'])
 export const confirmDialog = z.looseObject({
   message: z.string().min(1).max(2000),
   detail: z.string().max(4000).optional(),
+  altLabel: z.string().min(1).max(80).optional(),
   confirmLabel: z.string().min(1).max(80),
   danger: z.boolean().optional()
 })

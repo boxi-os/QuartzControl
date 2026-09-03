@@ -97,7 +97,9 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
 - **Verlassen mit ungespeicherten Änderungen fragt.** Modul-Flag in `unsavedGuard.tsx`, gesetzt von
   der Seite, abgefragt von der Sidebar; `UnsavedBadge` neben dem Save. Nur Sidebar-Links sind
   geguardet. Die Frage ist ein nativer Dialog und damit asynchron: der Klick wird gestoppt und die
-  Navigation nach „Änderungen verwerfen“ von Hand ausgelöst.
+  Navigation von Hand ausgelöst. Drei Antworten, wenn die Seite ein Save registriert hat
+  (`saveCommand.ts`): Abbrechen, Speichern, Verwerfen - bei einem gescheiterten Speichern bleibt der
+  Guard auf der Seite, weil dort die Fehlermeldung steht.
 - **Kein API-Aufruf ohne Netz:** globaler `unhandledrejection`-Handler → Toast; jeder Busy-Flag wird
   in `finally` zurückgesetzt (`useAsyncAction` für boolesche, `try/finally` für keyed).
 - **URL zuerst, Sticky-State als Fallback** für Sub-Tabs (`?tab=`); alte Pfade bleiben als
@@ -290,11 +292,11 @@ mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge.
   `<label htmlFor>`, das Control trägt die `id`; damit haben Select, Zahl und Text überhaupt erst
   einen Namen (sie hatten keinen). Der Schalter behält sein verstecktes Label und damit den Namen
   zweimal im DOM - das aufzulösen hieße, `Toggle` von außen benennbar zu machen.
-- **Drei Antworten im Bestätigungsdialog (aus dem Doku-Durchgang) - Status: offen.** `confirmDialog()`
-  und der Kanal `dialog.confirm` kennen genau zwei Antworten (Abbrechen, Bestätigen). Der
-  Unsaved-Guard braucht absehbar „Speichern / Verwerfen / Abbrechen“; `showMessageBox` kann drei.
-  Offen ist, ob der bestehende Kanal um einen dritten Button erweitert oder ein zweiter Kanal
-  danebengestellt wird - nicht jetzt entscheiden.
+- **Drei Antworten im Bestätigungsdialog - Status: erledigt (2026-09-03).** Der bestehende Kanal
+  bekam ein optionales `altLabel` und antwortet mit `'cancel' | 'alt' | 'confirm'`; `confirmDialog()`
+  bleibt für die achtzehn Ja/Nein-Fragen ein Boolean, `askDialog()` holt die dritte Antwort. Der
+  Unsaved-Guard bietet „Speichern“ an, wenn die Seite ein Save registriert hat, und bleibt bei einem
+  gescheiterten Speichern stehen.
 
 ## Claude-Skills in diesem Projekt
 

@@ -568,9 +568,15 @@ export function registerIpcHandlers(): void {
   handle(IPC.logsClear, t([s.logClearInput]), (input) => clearLogHistory(input.projectId, input.stream))
 
   handle(IPC.dialogConfirm, t([s.confirmDialog]), async (options) => {
+    // The safe answer stays at index 0 with cancelId 0 - measured: Return takes the first button
+    // regardless of defaultId. A third answer, when there is one, goes between cancel and confirm,
+    // so the confirming button keeps its place at the end and only the middle is new.
+    const buttons = options.altLabel
+      ? [mainT('confirmCancel'), options.altLabel, options.confirmLabel]
+      : [mainT('confirmCancel'), options.confirmLabel]
     const messageBox = {
       type: options.danger ? ('warning' as const) : ('question' as const),
-      buttons: [mainT('confirmCancel'), options.confirmLabel],
+      buttons,
       defaultId: 0,
       cancelId: 0,
       message: options.message,
@@ -580,6 +586,7 @@ export function registerIpcHandlers(): void {
     // window it would float free and could end up behind the app.
     const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
     const { response } = win ? await dialog.showMessageBox(win, messageBox) : await dialog.showMessageBox(messageBox)
-    return response === 1
+    if (response === 0) return 'cancel'
+    return options.altLabel && response === 1 ? 'alt' : 'confirm'
   })
 }

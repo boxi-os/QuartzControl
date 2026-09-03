@@ -103,8 +103,9 @@ export default function LayoutEditor(): JSX.Element {
     setSavedSnapshot(JSON.stringify(fresh))
   }
 
-  async function save(): Promise<void> {
-    if (!config) return
+  // Returns whether it worked - see the leave guard in ProjectLayout.
+  async function save(): Promise<boolean> {
+    if (!config) return false
     setStatus('saving')
     setError(null)
     try {
@@ -112,9 +113,11 @@ export default function LayoutEditor(): JSX.Element {
       setSavedSnapshot(JSON.stringify(config))
       setStatus('saved')
       setTimeout(() => setStatus('idle'), 2000)
+      return true
     } catch (err) {
       setStatus('error')
       setError(formatIpcError(err))
+      return false
     }
   }
 
@@ -126,7 +129,7 @@ export default function LayoutEditor(): JSX.Element {
   // Cmd+S saves the same thing the button does, and is registered only while that button would do
   // something: no edits, a save already running, or a sub-tab that saves elsewhere means the
   // shortcut stays quiet rather than rewriting an unchanged file.
-  useSaveCommand(tab !== 'frames' && dirty && status !== 'saving' ? () => void save() : null)
+  useSaveCommand(tab !== 'frames' && dirty && status !== 'saving' ? save : null)
 
   const availablePageTypes = useMemo(() => (config ? derivePageTypes(config.plugins) : []), [config])
   // Raw keys present under layout.byPageType, regardless of whether they actually customize

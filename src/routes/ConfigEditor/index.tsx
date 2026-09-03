@@ -68,7 +68,7 @@ export default function ConfigEditor(): JSX.Element {
   // Cmd+S saves the same thing the button does, and is registered only while that button would do
   // something: no edits, a save already running, or a sub-tab that saves elsewhere means the
   // shortcut stays quiet rather than rewriting an unchanged file.
-  useSaveCommand(tab === 'site' && dirty && status !== 'saving' ? () => void save() : null)
+  useSaveCommand(tab === 'site' && dirty && status !== 'saving' ? save : null)
 
   const goToTab = useCallback(
     (next: ConfigTab) => {
@@ -80,8 +80,10 @@ export default function ConfigEditor(): JSX.Element {
     [setSearchParams, setLastTab]
   )
 
-  async function save(): Promise<void> {
-    if (!config) return
+  // Returns whether it worked: the leave guard's "Speichern" needs to know before it navigates
+  // away, and the error itself stays here in the header where the user can read it.
+  async function save(): Promise<boolean> {
+    if (!config) return false
     setStatus('saving')
     setError(null)
     try {
@@ -89,9 +91,11 @@ export default function ConfigEditor(): JSX.Element {
       setSavedSnapshot(JSON.stringify(config))
       setStatus('saved')
       setTimeout(() => setStatus('idle'), 2000)
+      return true
     } catch (err) {
       setStatus('error')
       setError(formatIpcError(err))
+      return false
     }
   }
 

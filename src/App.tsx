@@ -35,7 +35,7 @@ export default function App(): JSX.Element {
   useEffect(
     () =>
       window.quartzGui.menu.onCommand((command) => {
-        if (command === 'save') runSaveCommand()
+        if (command === 'save') void runSaveCommand()
       }),
     []
   )

@@ -152,8 +152,10 @@ export default {
   },
   projectLayout: {
     unsavedLeave: 'Discard changes',
+    unsavedSave: 'Save',
     unsavedWarning:
       'This page has changes that are not saved yet. Leaving discards them. Switch anyway?',
+    unsavedWarningWithSave: 'This page has changes that are not saved yet. What should happen to them?',
     unsavedBadge: 'Unsaved',
     allProjects: 'All projects',
     navLabel: 'Project areas',

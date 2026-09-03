@@ -1297,6 +1297,13 @@ export const IPC = {
  */
 export type AppCommand = 'save'
 
+/**
+ * Which button was pressed. A union rather than a boolean because the dialog can carry a third
+ * answer (see `altLabel`); `confirmDialog()` in the renderer still hands the two-answer callers a
+ * boolean, so the eighteen existing questions are unchanged.
+ */
+export type ConfirmAnswer = 'cancel' | 'alt' | 'confirm'
+
 /** One object argument on purpose (new-channel rule): an optional field later is one key here
  *  and one in the schema, not a fourth positional slot in four files. */
 export interface ConfirmDialogOptions {
@@ -1304,6 +1311,13 @@ export interface ConfirmDialogOptions {
   message: string
   /** What confirming does and what it does not do; the dialog's body text. */
   detail?: string
+  /**
+    * A third answer between cancelling and confirming, named after *its* action ("Speichern" beside
+    * "Änderungen verwerfen"). Optional, because almost every question here has two answers; the one
+    * that has three is leaving a page with unsaved changes, where "cancel or lose it" is not the
+    * whole set of things a person might want.
+    */
+  altLabel?: string
   /** The confirming button, named after the action ("Snapshot löschen"), never "OK". */
   confirmLabel: string
   /** Deletes, overwrites or ships something: shown with the warning icon. */
@@ -1594,7 +1608,7 @@ export interface QuartzGuiApi {
      * the safe answer has to sit first, which is what the handler arranges and window.confirm()
      * cannot. Its buttons also do not follow the app's language setting.
      */
-    confirm(options: ConfirmDialogOptions): Promise<boolean>
+    confirm(options: ConfirmDialogOptions): Promise<ConfirmAnswer>
   }
   menu: {
     /**

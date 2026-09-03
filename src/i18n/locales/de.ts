@@ -155,8 +155,11 @@ export default {
   },
   projectLayout: {
     unsavedLeave: 'Änderungen verwerfen',
+    unsavedSave: 'Speichern',
     unsavedWarning:
       'Auf dieser Seite gibt es Änderungen, die noch nicht gespeichert sind. Beim Wechseln gehen sie verloren. Trotzdem wechseln?',
+    unsavedWarningWithSave:
+      'Auf dieser Seite gibt es Änderungen, die noch nicht gespeichert sind. Was soll damit geschehen?',
     unsavedBadge: 'Nicht gespeichert',
     allProjects: 'Alle Projekte',
     navLabel: 'Projektbereiche',

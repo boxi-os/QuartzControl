@@ -218,3 +218,38 @@ identischem Ende. Nach „Ausgabe leeren“ und einem weiteren Reload bleiben be
 
 Aus demselben Befund: der `console.error` in `will-navigate` war deutsch und ist jetzt englisch, wie
 jede andere Meldung im Hauptprozess, die einen Fehler und keine Eingabe beschreibt.
+
+## Drei Antworten im Bestätigungsdialog (2026-09-03)
+
+Der Befund stand seit dem Doku-Durchgang offen, mit der ausdrücklichen Notiz „nicht jetzt
+entscheiden“ — offen war, ob der bestehende Kanal einen dritten Knopf bekommt oder ein zweiter
+danebengestellt wird. Entschieden für den bestehenden: die Regel in `CLAUDE.md` sagt, dass es keinen
+neuen Kanal für etwas gibt, das ein bestehender mit einem Feld kann, und `showMessageBox` kann drei
+Knöpfe ohnehin.
+
+`ConfirmDialogOptions` hat jetzt ein optionales `altLabel`, und der Kanal antwortet mit
+`'cancel' | 'alt' | 'confirm'` statt mit einem Boolean. Im Renderer bleibt `confirmDialog()` bei
+seiner Ja/Nein-Signatur — achtzehn Aufrufstellen stellen eine Ja/Nein-Frage, und für die ist ein
+Boolean die ehrliche Form; die dritte Antwort holt sich `askDialog()`. Die sichere Antwort sitzt
+weiter in `buttons[0]` mit `cancelId: 0`, der dritte Knopf kommt in die Mitte, damit der bestätigende
+seinen Platz am Ende behält.
+
+Gebraucht wird das vom Unsaved-Guard, und der konnte es erst jetzt: „Speichern“ als Antwort setzt
+voraus, dass jemand weiß, wie diese Seite speichert — das ist das Register aus dem Cmd+S-Durchgang.
+Der Guard fragt `hasSaveCommand()` und stellt danach seine Frage: mit Speichern-Knopf lautet sie „Was
+soll damit geschehen?“, ohne ihn bleibt es beim alten „Trotzdem wechseln?“. Zwei Antworten sind kein
+toter Zweig: die Konfiguration meldet ungespeicherte Änderungen auch auf den Tabs, die nicht über
+ihren Speichern-Knopf gehen, und registriert dort nichts.
+
+Die drei Dokumentseiten geben aus ihrem `save()` jetzt zurück, ob es geklappt hat. Sie fangen ihre
+Fehler selbst und schreiben sie in den `PageHeader`, also sagt ein `await` allein nichts — und nach
+einem gescheiterten Speichern wegzunavigieren, hieße genau die Änderungen zu verlieren, die der
+Nutzer gerade retten wollte. Bei `false` bleibt der Guard auf der Seite, wo die Meldung steht.
+
+Gemessen im Produktions-Build, mit einem im Hauptprozess ersetzten `dialog.showMessageBox` (der echte
+Dialog blockiert Playwright; die Ersatzfunktion notiert ihre Optionen und antwortet auf Kommando):
+Die Knopfreihe ist `['Abbrechen', 'Speichern', 'Änderungen verwerfen']` mit `cancelId: 0`. Antwort 0
+bleibt auf der Seite und lässt die Datei, wie sie war; Antwort 1 schreibt die Datei *und* wechselt;
+Antwort 2 wechselt und lässt die Datei, wie sie war. **Nicht am Betriebssystem gemessen** ist, in
+welcher Reihenfolge macOS die drei Knöpfe zeichnet und was die Eingabetaste dort trifft — dafür
+müsste jemand den Dialog von Hand bedienen.

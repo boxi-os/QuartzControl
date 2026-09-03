@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { confirmDialog } from '../utils/confirm'
+import { askDialog } from '../utils/confirm'
 import { titlebarStripClass } from '../utils/platform'
 import { NavLink, Outlet, useLocation, useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { ArrowLeft, type LucideIcon } from 'lucide-react'
 import type { Project } from '@shared/ipc-contract'
 import { GROUP_ICONS, TAB_ICONS, type TabKey } from './navConfig'
 import { hasUnsavedChanges } from '../state/unsavedGuard'
+import { hasSaveCommand, runSaveCommand } from '../state/saveCommand'
 import { useLogStore } from '../state/store'
 
 // Guards every way out of a page that the sidebar offers - the nav items and the way back to the
@@ -23,11 +24,29 @@ function useLeaveGuard(): (event: { preventDefault: () => void }, to: string) =>
   return (event, to) => {
     if (!hasUnsavedChanges()) return
     event.preventDefault()
-    void confirmDialog({ text: t('projectLayout.unsavedWarning'), confirmLabel: t('projectLayout.unsavedLeave'), danger: true }).then(
-      (leave) => {
-        if (leave) navigate(to)
+    void (async () => {
+      // Three answers where the page has a save to offer (Konfiguration, Layout, Stile), two where
+      // it has not - see saveCommand. "Verwerfen" stays the confirming button, so the answer that
+      // loses work keeps the place it always had and nobody hits it by muscle memory.
+      // Two questions, because the wording has to match the answers: with a Save button the
+      // question is what should happen, without one it is whether to leave at all.
+      const canSave = hasSaveCommand()
+      const answer = await askDialog({
+        text: canSave ? t('projectLayout.unsavedWarningWithSave') : t('projectLayout.unsavedWarning'),
+        altLabel: canSave ? t('projectLayout.unsavedSave') : undefined,
+        confirmLabel: t('projectLayout.unsavedLeave'),
+        danger: true
+      })
+      if (answer === 'cancel') return
+      if (answer === 'confirm') {
+        navigate(to)
+        return
       }
-    )
+      // A page's save catches its own errors and reports them in its header rather than throwing,
+      // so it says in its return value whether it worked. A failed save stays on the page, where
+      // the message is - navigating away would drop the changes the user just asked to keep.
+      if (await runSaveCommand()) navigate(to)
+    })()
   }
 }
 

@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog, shell, Menu, type MenuItemConstructorOptions } from 'electron'
-import { IPC } from '@shared/ipc-contract'
+import { IPC, type AppCommand } from '@shared/ipc-contract'
 import { mainT, refreshMainLanguage } from './i18n'
 
 export const APP_NAME = 'QuartzControl'
@@ -16,6 +16,14 @@ const PLUGIN_CATALOG = 'https://github.com/quartz-community'
 // App.tsx installs exactly one listener for the app's lifetime.
 function navigateRenderer(hashPath: string): void {
   for (const win of BrowserWindow.getAllWindows()) win.webContents.send(IPC.appNavigate, hashPath)
+}
+
+// The other direction a menu item can go: not "move the router" but "act on what is on screen".
+// Deliberately not disabled when no page can save - the main process would have to be told about
+// every mount and every keystroke to know that, and the renderer already knows: a command nobody
+// has registered for does nothing.
+function commandRenderer(command: AppCommand): void {
+  for (const win of BrowserWindow.getAllWindows()) win.webContents.send(IPC.appCommand, command)
 }
 
 // macOS puts About in the app menu and takes its content from the bundle; everywhere else it has
@@ -40,6 +48,13 @@ function buildMenu(): void {
     accelerator: 'CmdOrCtrl+,',
     click: () => navigateRenderer('/settings')
   }
+  // Cmd+S is what one presses on a page that holds a document behind a Save button - Konfiguration,
+  // Layout, Stile. It sits in File on both platforms, where every application keeps it.
+  const saveItem: MenuItemConstructorOptions = {
+    label: mainT('menuSave'),
+    accelerator: 'CmdOrCtrl+S',
+    click: () => commandRenderer('save')
+  }
   const template: MenuItemConstructorOptions[] = [
     ...(isMac
       ? ([
@@ -63,7 +78,9 @@ function buildMenu(): void {
       : []),
     {
       label: mainT('menuFile'),
-      submenu: isMac ? [{ role: 'close' }] : [settingsItem, { type: 'separator' }, { role: 'quit' }]
+      submenu: isMac
+        ? [saveItem, { type: 'separator' }, { role: 'close' }]
+        : [saveItem, { type: 'separator' }, settingsItem, { type: 'separator' }, { role: 'quit' }]
     },
     {
       label: mainT('menuEdit'),

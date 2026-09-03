@@ -85,6 +85,11 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   anderen Bereich, der mehr als einen Pfad übergeben will („diesen Frame im Layout-Editor öffnen“),
   schreibt vor der Navigation mit `primeStickyState(pathname, key, value)` in den Store der Zielroute;
   die liest es genau einmal beim Mount, danach ist der Aufruf wirkungslos.
+- **Ein Menüpunkt, der die Seite meint, geht über `app:command`.** `app:navigate` bewegt den Router,
+  `app:command` bittet die gemountete Seite (heute nur `'save'`, Cmd+S). Beide hören einmal in
+  `App.tsx`; die Antwort auf ein Kommando steht in einem Modul-Register (`state/saveCommand.ts`),
+  weil immer nur eine Route gemountet ist. Wer nichts zu tun hat, registriert `null` - ein Kommando
+  ohne Registrierung tut nichts, und genau deshalb muss der Menüpunkt nicht ausgegraut werden.
 - **Verlassen mit ungespeicherten Änderungen fragt.** Modul-Flag in `unsavedGuard.tsx`, gesetzt von
   der Seite, abgefragt von der Sidebar; `UnsavedBadge` neben dem Save. Nur Sidebar-Links sind
   geguardet. Die Frage ist ein nativer Dialog und damit asynchron: der Klick wird gestoppt und die
@@ -238,8 +243,10 @@ mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge.
   Settings werden zweimal geladen.
 - **E4 - Status: offen.** `console.error` in `will-navigate` ist deutsch; Log-Puffer geht beim
   macOS-Fenster-Schließen verloren, während die Server weiterlaufen.
-- **A2 - Status: offen.** Cmd+S auf Konfiguration, Layout, Stile: Menüpunkt mit `CmdOrCtrl+S`, Kanal
-  `app:command` nach dem `app:navigate`-Muster, Save-Register auf Modulebene wie `unsavedGuard`.
+- **A2 - Status: erledigt (2026-09-03).** Menüpunkt „Speichern“ mit `CmdOrCtrl+S`, Kanal
+  `app:command` mit einer `AppCommand`-Union, Register in `state/saveCommand.ts`. Eine Seite
+  registriert nur, solange ihr Knopf etwas täte; der Menüpunkt bleibt aktiv, weil der Hauptprozess
+  sonst jeden Mount mitbekommen müsste.
 - **A3-Buttons - Status: teilweise.** „Nach oben / nach unten“ steht in `Plugins/Installed`
   (2026-09-03); offen bleiben die anderen Drag-Stellen (`LayoutEditor/FrameBuilder`, `ComponentPill`;
   `Styles/CustomCss` hat die Pfeile schon, aber noch natives Drag).

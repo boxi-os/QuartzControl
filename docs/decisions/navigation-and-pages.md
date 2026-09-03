@@ -115,3 +115,38 @@ Konfiguration danach byte-gleich.
 Live-Region pro Zeile hieße hier achtundvierzig, und die richtige Lösung ist eine Region für die
 Seite, in die eine Zeile hineinschreibt — dieselbe Bauform, die auch die englischen dnd-kit-Ansagen
 bräuchten.
+
+## Cmd+S (A2, 2026-09-03)
+
+Drei Seiten halten ein ganzes Dokument hinter einem Speichern-Knopf — Konfiguration, Layout, Stile —
+und der Knopf war die einzige Art, es loszuwerden. Cmd+S tat nichts, nicht einmal hörbar nichts.
+
+**Der Weg ist derselbe wie bei `app:navigate`, nur andersherum gedacht.** Ein zweiter Kanal
+`app:command` trägt eine `AppCommand`-Union (heute genau `'save'`) vom Menü zum Renderer; `App.tsx`
+hört einmal für die Lebensdauer der App darauf, wie schon beim Navigieren. Der Unterschied zum
+Navigieren ist, *wer* antwortet: nicht der Router, sondern die gerade gemountete Seite. Deren Antwort
+steht in `state/saveCommand.ts` — eine Modulvariable, aus demselben Grund wie das Flag in
+`unsavedGuard`: es ist immer nur eine Route gemountet, also gibt es immer nur eine Antwort. Der
+Handler wird über ein Ref gelesen, nicht beim Mount eingefroren; sonst schriebe Cmd+S das Dokument in
+dem Zustand, den es beim Betreten der Seite hatte.
+
+**Der Menüpunkt bleibt aktiv, auch wenn nichts zu speichern ist.** Ihn auszugrauen hieße, dem
+Hauptprozess jeden Mount und jeden Tastendruck zu melden. Stattdessen registriert eine Seite ihr
+Speichern nur, solange der Knopf daneben auch etwas täte: keine Änderungen, ein laufender
+Speichervorgang oder ein Sub-Tab, der woanders speichert (`Frames`, die beiden Nicht-Site-Tabs der
+Konfiguration), heißt `null` — und ein Kommando ohne Registrierung tut nichts. Das ist die ehrlichere
+Hälfte: Cmd+S auf einem unveränderten Dokument würde sonst die Datei neu schreiben und den
+Dev-Server zu einem Rebuild bringen.
+
+**Gemessen im Produktions-Build, über den Hauptprozess statt über die Tastatur.** Ein echter
+Cmd+S-Tastendruck landet unter Playwright nicht (siehe `run-desktop`), der Menüpunkt selbst schon:
+`Menu.getApplicationMenu()` zeigt „Speichern“ mit `CmdOrCtrl+S` im Datei-Menü, und sein
+Click-Handler ist genau der, den das Betriebssystem auslösen würde. Damit geprüft: auf Konfiguration
+mit geänderter Eingabe schreibt er `pageTitle` in die Datei und die Statusregion sagt „Gespeichert.“;
+auf Stile schreibt derselbe Punkt die Schriftart (der Weg über `saveRef`, also ein anderer als bei
+Konfiguration); auf einer sauberen Seite und auf Plugins bleibt die Datei unangetastet — gleiche
+mtime, keine Fehler. **Nicht am Betriebssystem gemessen** ist damit nur die Tastenkombination selbst;
+dass Electron sie an genau diesen Punkt bindet, sagt das `accelerator`-Feld.
+
+Der Treiber hat dafür einen neuen Befehl bekommen (`mainfile`, `electronApplication.evaluate`) — bis
+dahin konnte die Skill nur im Renderer auswerten, und das native Menü liegt nicht dort.

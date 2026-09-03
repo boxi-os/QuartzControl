@@ -199,6 +199,25 @@ const COMMANDS = {
     console.log('evalfile', file, '→', file + '.out', `(${out.length} bytes)`)
   },
 
+  // Evaluates in the *main* process (Playwright's electronApplication.evaluate), which is the only
+  // way to reach what the renderer cannot see: the native menu, nativeTheme, a BrowserWindow. Use
+  // it to fire a menu item the way the OS would - a real Cmd+S keystroke never lands under
+  // Playwright, but `Menu.getApplicationMenu()` and the item's own click handler do. The expression
+  // is called with Electron's module object as its argument, and the result is written to
+  // `<file>.out` like evalfile.
+  async mainfile(rest) {
+    if (!app) return console.log('ERROR: launch first')
+    const file = rest.trim()
+    let out
+    try {
+      out = JSON.stringify(await app.evaluate(eval(fs.readFileSync(file, 'utf8'))), null, 1)
+    } catch (e) {
+      out = 'ERROR: ' + e.message
+    }
+    fs.writeFileSync(file + '.out', out)
+    console.log('mainfile', file, '→', file + '.out', `(${out.length} bytes)`)
+  },
+
   async text(sel) {
     if (!page) return console.log('ERROR: launch first')
     console.log(await page.evaluate((s) => (s ? document.querySelector(s) : document.body)?.innerText ?? '(null)', sel || null))

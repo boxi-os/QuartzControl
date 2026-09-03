@@ -74,6 +74,7 @@ screenshot file and look at it** — a command succeeding doesn't mean the UI lo
 | `wait <css-sel>` | wait for element, 10s timeout |
 | `eval <js>` | evaluate arbitrary JS in the page, print JSON — your escape hatch when a command doesn't fit |
 | `evalfile <path>` | same, but the expression is read from a file and the JSON result is written to `<path>.out` — use this for anything longer than a line (`tmux send-keys` types character by character, so a long expression is slow to arrive and unreadable in the pane afterwards, and a long JSON answer wraps so `capture-pane` hands back fragments) |
+| `mainfile <path>` | evaluate a function from a file in the **main** process (`electronApplication.evaluate`), result to `<path>.out` — the only way to reach the native menu, `nativeTheme` or a `BrowserWindow`. The file holds a function taking Electron's module object, e.g. `({ Menu }) => Menu.getApplicationMenu().items.length`. Use it to fire a menu item the way the OS would: a real Cmd+S never lands under Playwright, the item's own click handler does |
 | `text [css-sel]` | print `innerText` |
 | `windows` | list all windows + webContents |
 | `quit` | close the app **and exit the driver process** (see Gotchas) |

@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Route, Routes, Navigate, useNavigate } from 'react-router-dom'
 import { ErrorToasts, RouteErrorBoundary } from './components/ErrorSurface'
+import { runSaveCommand } from './state/saveCommand'
 import { useLogStore } from './state/store'
 import Home from './routes/Home'
 import Settings from './routes/Settings'
@@ -26,6 +27,17 @@ export default function App(): JSX.Element {
   // the HashRouter on its own. One listener for the app's lifetime, same reasoning as the log
   // subscriptions below.
   useEffect(() => window.quartzGui.menu.onNavigate((hashPath) => navigate(hashPath)), [navigate])
+
+  // The other menu direction: Speichern (Cmd+S) asks the mounted page to act, and which page that
+  // is changes with every route - so the listener is here and the answer is in saveCommand's
+  // register. A command no page registered for is a no-op.
+  useEffect(
+    () =>
+      window.quartzGui.menu.onCommand((command) => {
+        if (command === 'save') runSaveCommand()
+      }),
+    []
+  )
 
   // Installed once, for the app's whole lifetime, independent of which page/project is currently
   // shown - a page-local subscription would miss lines emitted while the user is on another tab.

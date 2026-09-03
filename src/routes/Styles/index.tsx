@@ -5,6 +5,7 @@ import type { CssVariableGraph, Project, QuartzConfig, StyleFileSet } from '@sha
 import { Button, PageHeader, SegmentedControl } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { useStickyState } from '../../state/uiState'
+import { useSaveCommand } from '../../state/saveCommand'
 import { UnsavedBadge, useUnsavedChanges } from '../../state/unsavedGuard'
 import { TAB_ICONS } from '../navConfig'
 import { useProject } from '../ProjectLayout'
@@ -239,6 +240,10 @@ export default function Styles(): JSX.Element {
     (scss?.dirty ?? false) ||
     Object.keys(fileDrafts).length > 0
   useUnsavedChanges(dirty)
+  // Cmd+S saves the same thing the button does, and is registered only while that button would do
+  // something: no edits, a save already running, or a sub-tab that saves elsewhere means the
+  // shortcut stays quiet rather than rewriting an unchanged file.
+  useSaveCommand(dirty && status !== 'saving' ? () => void save() : null)
 
   if (!config || !scss) return <p className="text-sm text-slate-500 dark:text-slate-400">{t('common.loading')}</p>
 

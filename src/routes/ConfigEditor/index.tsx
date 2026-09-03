@@ -6,6 +6,7 @@ import type { QuartzConfig } from '@shared/ipc-contract'
 import { Button, PageHeader, SegmentedControl } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { useStickyState } from '../../state/uiState'
+import { useSaveCommand } from '../../state/saveCommand'
 import { UnsavedBadge, useUnsavedChanges } from '../../state/unsavedGuard'
 import { TAB_ICONS } from '../navConfig'
 import SiteSettings from './SiteSettings'
@@ -64,6 +65,10 @@ export default function ConfigEditor(): JSX.Element {
     [config, savedSnapshot]
   )
   useUnsavedChanges(dirty)
+  // Cmd+S saves the same thing the button does, and is registered only while that button would do
+  // something: no edits, a save already running, or a sub-tab that saves elsewhere means the
+  // shortcut stays quiet rather than rewriting an unchanged file.
+  useSaveCommand(tab === 'site' && dirty && status !== 'saving' ? () => void save() : null)
 
   const goToTab = useCallback(
     (next: ConfigTab) => {

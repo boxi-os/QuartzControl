@@ -1277,8 +1277,17 @@ export const IPC = {
   dialogConfirm: 'dialog:confirm',
 
   /** main → renderer: a menu item asking the HashRouter to go somewhere. */
-  appNavigate: 'app:navigate'
+  appNavigate: 'app:navigate',
+  /** main → renderer: a menu item asking the mounted page to do something (Cmd+S, today). */
+  appCommand: 'app:command'
 } as const
+
+/**
+ * What a menu item can ask the current page to do. One command today; it is a union rather than a
+ * bare string so a second one (Cmd+R for "reload this page's document"?) is a change the typecheck
+ * walks through, and so the renderer's switch is exhaustive.
+ */
+export type AppCommand = 'save'
 
 /** One object argument on purpose (new-channel rule): an optional field later is one key here
  *  and one in the schema, not a fourth positional slot in four files. */
@@ -1575,5 +1584,12 @@ export interface QuartzGuiApi {
      * across. App.tsx installs the single listener for the app's lifetime.
      */
     onNavigate(cb: (hashPath: string) => void): () => void
+    /**
+     * Fires when a menu item wants the *mounted page* to act rather than the router to move -
+     * Speichern (Cmd+S) today. The menu cannot know whether anything is there to save, so the
+     * renderer decides: a page registers its save while it has one (see state/saveCommand.ts),
+     * and a command nobody registered for does nothing.
+     */
+    onCommand(cb: (command: AppCommand) => void): () => void
   }
 }

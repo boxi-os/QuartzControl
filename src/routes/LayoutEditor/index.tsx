@@ -7,6 +7,7 @@ import type { GridFrameDefinition, QuartzConfig } from '@shared/ipc-contract'
 import { Button, PageHeader, SegmentedControl } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { useStickyState } from '../../state/uiState'
+import { useSaveCommand } from '../../state/saveCommand'
 import { UnsavedBadge, useUnsavedChanges } from '../../state/unsavedGuard'
 import { TAB_ICONS } from '../navConfig'
 import GlobalBoard from './GlobalBoard'
@@ -122,6 +123,10 @@ export default function LayoutEditor(): JSX.Element {
     [config, savedSnapshot]
   )
   useUnsavedChanges(dirty)
+  // Cmd+S saves the same thing the button does, and is registered only while that button would do
+  // something: no edits, a save already running, or a sub-tab that saves elsewhere means the
+  // shortcut stays quiet rather than rewriting an unchanged file.
+  useSaveCommand(tab !== 'frames' && dirty && status !== 'saving' ? () => void save() : null)
 
   const availablePageTypes = useMemo(() => (config ? derivePageTypes(config.plugins) : []), [config])
   // Raw keys present under layout.byPageType, regardless of whether they actually customize

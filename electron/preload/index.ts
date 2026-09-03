@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { IPC } from '@shared/ipc-contract'
 import type {
+  AppCommand,
   QuartzGuiApi,
   LogLine,
   ServerStatus,
@@ -262,6 +263,11 @@ const api: QuartzGuiApi = {
       const listener = (_e: unknown, hashPath: string): void => cb(hashPath)
       ipcRenderer.on(IPC.appNavigate, listener)
       return () => ipcRenderer.removeListener(IPC.appNavigate, listener)
+    },
+    onCommand: (cb: (command: AppCommand) => void) => {
+      const listener = (_e: unknown, command: AppCommand): void => cb(command)
+      ipcRenderer.on(IPC.appCommand, listener)
+      return () => ipcRenderer.removeListener(IPC.appCommand, listener)
     }
   }
 }

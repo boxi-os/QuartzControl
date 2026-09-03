@@ -84,6 +84,7 @@ export function applyGitRuntime(): GitRuntime | null {
 
   const version = probeVersion(path, env)
   if (!version) return null
+  if (!httpsHelperLoads(dir, env)) return null
 
   // Erst schreiben, wenn die Binärdatei geantwortet hat: eine halb gesetzte Umgebung wäre
   // schlimmer als gar keine, weil sie auch ein später gefundenes Host-git verbiegen würde.
@@ -96,6 +97,31 @@ export function applyGitRuntime(): GitRuntime | null {
 
   runtime = { source: 'bundled', path, version }
   return runtime
+}
+
+// `git --version` zu bestehen heißt nicht, klonen zu können. Das mitgelieferte Linux-git bringt
+// keine einzige Bibliothek mit (nachgesehen: keine .so im ganzen Bundle), und während die
+// Hauptbinärdatei nur libz und libc braucht, hängt `git-remote-http` an libcurl-gnutls.so.4 - ein
+// SONAME, den es auf Debian und Ubuntu gibt, in der Flatpak-Runtime und auf Fedora oder Arch aber
+// nicht. Ein git, das auf `--version` antwortet und beim ersten `clone` am Nachladen scheitert,
+// wäre genau die Sorte "kann nicht prüfen als alles gut", die diese App sonst vermeidet.
+//
+// Der Helfer ohne Argumente ist dafür der billigste Test: er beschwert sich über die fehlende URL
+// (Exit 1, gemessen), *nachdem* der Loader ihn vollständig geladen hat. Fehlt eine Bibliothek,
+// kommt er nie so weit - der Loader meldet es und beendet mit 127.
+function httpsHelperLoads(dir: string, env: NodeJS.ProcessEnv): boolean {
+  const helper = join(dir, 'libexec/git-core/git-remote-https')
+  if (!existsSync(helper)) return false
+  try {
+    execFileSync(helper, { encoding: 'utf-8', timeout: 10_000, stdio: ['ignore', 'ignore', 'pipe'], env })
+    return true
+  } catch (error) {
+    const failure = error as { status?: number; stderr?: string }
+    if (failure.status === 127) return false
+    return !/error while loading shared libraries|cannot open shared object|dyld: Library not loaded/.test(
+      failure.stderr ?? ''
+    )
+  }
 }
 
 /** Was aufgelöst wurde, für die Startseite und die Einstellungen. Null vor applyGitRuntime(). */

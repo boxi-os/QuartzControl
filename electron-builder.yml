@@ -104,3 +104,59 @@ linux:
   target:
     - AppImage
     - deb
+  # flatpak steht bewusst nicht in dieser Liste: das Ziel braucht flatpak und flatpak-builder auf
+  # der Baumaschine, und `npm run dist:linux` soll auf einem Rechner ohne die beiden nicht
+  # scheitern. Gebaut wird es mit `npm run dist:flatpak`.
+
+# Flatpak ist die einzige Auslieferungsform, in der die eingebettete Laufzeit aus Phase 7a nicht
+# Komfort ist, sondern Voraussetzung: in der Sandbox gibt es kein Host-Node, und
+# `flatpak-spawn --host` wäre kein Ausweg, sondern ein Sandbox-Ausbruch.
+#
+# NICHT AUF DIESEM RECHNER GEMESSEN - flatpak-builder läuft nur unter Linux. Was hier steht, ist
+# aus den Quellen abgeleitet (app-builder-lib/out/targets/FlatpakTarget.js) und aus den Manifesten
+# der BaseApp; der erste echte Build gehört auf eine Linux-Maschine, und bis dahin ist dieser
+# Abschnitt eine begründete Vermutung.
+flatpak:
+  # electron-builders Vorgaben sind von 2020 (Runtime 20.08). 25.08 statt 24.08, weil dieser Zweig
+  # der BaseApp aktiv gepflegt wird (letzter Commit April 2026 gegen September 2024) und weil er
+  # **libsecret** als SDK-Erweiterung führt, wo 24.08 noch libgnome-keyring hatte - safeStorage
+  # hängt unter Linux genau daran, und ein fehlender Schlüsselbund heißt hier: Zugangsdaten im
+  # Klartext, sichtbar im Warnband der Startseite.
+  runtimeVersion: '25.08'
+  baseVersion: '25.08'
+
+  # Ersetzt die Vorgabeliste vollständig, deshalb steht hier auch das Selbstverständliche.
+  # Weggelassen gegenüber der Vorgabe: --socket=pulseaudio (die App gibt keinen Ton aus) und
+  # --talk-name=org.freedesktop.Notifications (sie schickt keine Systemmeldungen).
+  finishArgs:
+    - --share=ipc
+    - --socket=wayland
+    - --socket=fallback-x11
+    - --device=dri
+    # Projekte, Vaults und Schlüsseldateien liegen im Zuhause des Nutzers. Ein Content-Ordner ist
+    # oft ein Symlink in einen Obsidian-Vault - zeigt der auf ein anderes Laufwerk, sieht die
+    # Sandbox ihn nicht, und der Nutzer braucht ein `flatpak override --filesystem=…`.
+    - --filesystem=home
+    # Klonen, Veröffentlichen, Marktplatz.
+    - --share=network
+    # safeStorage: ohne diesen Namen fällt Electron auf basic_text zurück, und das ist praktisch
+    # Klartext (siehe connectionsService.getSecretStorageInfo).
+    - --talk-name=org.freedesktop.secrets
+
+  # git *muss* hier aus der Quelle gebaut werden, und das ist gemessen, nicht befürchtet: das
+  # mitgelieferte Linux-git (Phase 7c) bringt keine einzige Bibliothek mit, und sein
+  # `git-remote-http` hängt an libcurl-gnutls.so.4 - ein SONAME, den Debian und Ubuntu haben, die
+  # freedesktop-Runtime aber nicht. In der Sandbox käme es also bis `git --version` und würde beim
+  # ersten `clone` scheitern. Dieselbe Fassung wie das Bundle, damit es nur eine Zahl gibt.
+  # NO_GETTEXT passt zum ausgedünnten Bundle (dort sind die Übersetzungen ebenfalls weg), NO_PERL
+  # und NO_PYTHON werfen Kommandos raus, die diese App nie aufruft (send-email, svn, p4).
+  modules:
+    - name: git
+      buildsystem: simple
+      build-commands:
+        - make prefix=/app NO_TCLTK=1 NO_GETTEXT=1 NO_PERL=1 NO_PYTHON=1 INSTALL_SYMLINKS=1 -j$FLATPAK_BUILDER_N_JOBS all
+        - make prefix=/app NO_TCLTK=1 NO_GETTEXT=1 NO_PERL=1 NO_PYTHON=1 INSTALL_SYMLINKS=1 install
+      sources:
+        - type: archive
+          url: https://mirrors.edge.kernel.org/pub/software/scm/git/git-2.53.0.tar.xz
+          sha256: 5818bd7d80b061bbbdfec8a433d609dc8818a05991f731ffc4a561e2ca18c653

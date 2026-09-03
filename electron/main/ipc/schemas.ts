@@ -177,6 +177,11 @@ export const confirmDialog = z.looseObject({
   danger: z.boolean().optional()
 })
 
+// The two log-buffer channels. Object arguments per the new-channel rule; the project id is the
+// key of an in-memory map, so a uuid is all that has to hold.
+export const logHistoryInput = z.looseObject({ projectId: uuid })
+export const logClearInput = z.looseObject({ projectId: uuid, stream: z.enum(['server', 'build']) })
+
 export const syncOptions = z.looseObject({
   commit: z.boolean(),
   message: z.string().max(500).optional()

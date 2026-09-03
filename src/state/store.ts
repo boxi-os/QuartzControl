@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { LogLine, Project, Settings } from '@shared/ipc-contract'
+import type { LogHistory, LogLine, Project, Settings } from '@shared/ipc-contract'
 
 // A cap per project, not a global one - so one busy project's build output can't crowd out
 // another project's server log that just happens to share the app session.
@@ -18,6 +18,18 @@ function appendLog(logs: Record<string, LogLine[]>, line: LogLine): Record<strin
   return { ...logs, [line.projectId]: [...existing.slice(-(MAX_LOG_LINES - 1)), line] }
 }
 
+// Seeding a project's buffer from what the main process kept (see the `logs` API). Lines the live
+// subscription already delivered are kept if they are newer than the last buffered one - the gap
+// between asking for the history and applying it is small, but it is not nothing, and dropping a
+// line that arrived inside it would be exactly the bug this seeding exists to fix.
+function mergeHistory(history: LogLine[], live: LogLine[] | undefined): LogLine[] {
+  if (!live || live.length === 0) return history
+  const last = history[history.length - 1]
+  if (!last) return live
+  const newer = live.filter((line) => line.timestamp > last.timestamp)
+  return newer.length === 0 ? history : [...history, ...newer].slice(-MAX_LOG_LINES)
+}
+
 interface LogState {
   // Dev-server output and one-off build output are tracked separately (a build can run while the
   // server is up) but both live here, keyed by project id, rather than as page-local useState:
@@ -29,8 +41,10 @@ interface LogState {
   buildLogs: Record<string, LogLine[]>
   appendServerLog: (line: LogLine) => void
   appendBuildLog: (line: LogLine) => void
-  clearServerLog: (projectId: string) => void
-  clearBuildLog: (projectId: string) => void
+  /** Fills both buffers for one project from the main process - see mergeHistory. */
+  seedLogs: (projectId: string, history: LogHistory) => void
+  clearServerLog: (projectId: string) => Promise<void>
+  clearBuildLog: (projectId: string) => Promise<void>
 }
 
 export const useLogStore = create<LogState>((set) => ({
@@ -38,8 +52,21 @@ export const useLogStore = create<LogState>((set) => ({
   buildLogs: {},
   appendServerLog: (line) => set((state) => ({ serverLogs: appendLog(state.serverLogs, line) })),
   appendBuildLog: (line) => set((state) => ({ buildLogs: appendLog(state.buildLogs, line) })),
-  clearServerLog: (projectId) => set((state) => ({ serverLogs: { ...state.serverLogs, [projectId]: [] } })),
-  clearBuildLog: (projectId) => set((state) => ({ buildLogs: { ...state.buildLogs, [projectId]: [] } }))
+  seedLogs: (projectId, history) =>
+    set((state) => ({
+      serverLogs: { ...state.serverLogs, [projectId]: mergeHistory(history.server, state.serverLogs[projectId]) },
+      buildLogs: { ...state.buildLogs, [projectId]: mergeHistory(history.build, state.buildLogs[projectId]) }
+    })),
+  // Clearing has to reach the main process too, or "Ausgabe leeren" only holds until the next time
+  // the page is opened and the buffer is read back.
+  clearServerLog: async (projectId) => {
+    await window.quartzGui.logs.clear({ projectId, stream: 'server' })
+    set((state) => ({ serverLogs: { ...state.serverLogs, [projectId]: [] } }))
+  },
+  clearBuildLog: async (projectId) => {
+    await window.quartzGui.logs.clear({ projectId, stream: 'build' })
+    set((state) => ({ buildLogs: { ...state.buildLogs, [projectId]: [] } }))
+  }
 }))
 
 export interface AppError {

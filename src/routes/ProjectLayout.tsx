@@ -7,6 +7,7 @@ import { ArrowLeft, type LucideIcon } from 'lucide-react'
 import type { Project } from '@shared/ipc-contract'
 import { GROUP_ICONS, TAB_ICONS, type TabKey } from './navConfig'
 import { hasUnsavedChanges } from '../state/unsavedGuard'
+import { useLogStore } from '../state/store'
 
 // Guards every way out of a page that the sidebar offers - the nav items and the way back to the
 // project list. In-page links are deliberately not wrapped: they lead out of pages that do not
@@ -113,6 +114,7 @@ export default function ProjectLayout(): JSX.Element {
   const mainRef = useRef<HTMLElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const guardLeave = useLeaveGuard()
+  const seedLogs = useLogStore((s) => s.seedLogs)
   useRestoreScroll(mainRef, contentRef, project !== null)
 
   // Grouped by what a user is trying to do, not by which service implements it: "Einrichtung" is
@@ -161,6 +163,16 @@ export default function ProjectLayout(): JSX.Element {
     if (!id) return
     window.quartzGui.projects.open(id).then((p) => setProject(p ?? null))
   }, [id])
+
+  // What the dev server said while no window was open. The log store lives in the renderer and so
+  // dies with the window, but on macOS a closed window leaves the app - and every server it started
+  // - running; the main process buffers those lines for exactly this read. Here rather than on
+  // Vorschau & Build, because the same store feeds the Übersicht, and because a project is opened
+  // once while its pages come and go.
+  useEffect(() => {
+    if (!id) return
+    void window.quartzGui.logs.history({ projectId: id }).then((history) => seedLogs(id, history))
+  }, [id, seedLogs])
 
   if (!project) {
     return (

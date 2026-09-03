@@ -360,6 +360,12 @@ export interface LogLine {
   timestamp: string
 }
 
+/** What the main process has kept of a project's output - see the `logs` API. */
+export interface LogHistory {
+  server: LogLine[]
+  build: LogLine[]
+}
+
 export type ServerState = 'stopped' | 'starting' | 'running' | 'stopping' | 'error'
 
 // No `watch` here on purpose: `quartz build --serve` sets `argv.watch = true` itself
@@ -1250,6 +1256,8 @@ export const IPC = {
 
   buildRun: 'build:run',
   buildLog: 'build:log',
+  logsHistory: 'logs:history',
+  logsClear: 'logs:clear',
   buildLastOutput: 'build:lastOutput',
   projectPrefsGet: 'projectPrefs:get',
   projectPrefsSave: 'projectPrefs:save',
@@ -1515,6 +1523,17 @@ export interface QuartzGuiApi {
     onLog(cb: (line: LogLine) => void): () => void
     /** What is in the output directory right now - see BuildOutputInfo. Pure read, no build. */
     lastOutput(projectPath: string, outputDir?: string): Promise<BuildOutputInfo>
+  }
+  logs: {
+    /**
+     * What the main process has buffered for this project. The renderer's own log store lives and
+     * dies with the window, and on macOS closing the window does not stop the dev server - so
+     * without this the output of a server that kept running is simply gone when the window comes
+     * back. Read once per project mount; the live events carry on from there.
+     */
+    history(input: { projectId: string }): Promise<LogHistory>
+    /** Empties one of the two buffers, so "Ausgabe leeren" does not come back on the next read. */
+    clear(input: { projectId: string; stream: 'server' | 'build' }): Promise<void>
   }
   projectPrefs: {
     get(projectPath: string): Promise<ProjectPrefs>

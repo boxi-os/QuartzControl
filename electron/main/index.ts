@@ -108,7 +108,7 @@ function createWindow(): void {
       : false
     if (allowed) return
     event.preventDefault()
-    console.error(`[main] Navigation des App-Fensters abgelehnt: ${url}`)
+    console.error(`[main] refused to navigate the app window to: ${url}`)
     if (parsed?.protocol === 'https:' || parsed?.protocol === 'http:') shell.openExternal(url)
   })
 

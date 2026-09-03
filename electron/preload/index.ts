@@ -223,6 +223,10 @@ const api: QuartzGuiApi = {
     lastOutput: (projectPath: string, outputDir?: string) =>
       ipcRenderer.invoke(IPC.buildLastOutput, projectPath, outputDir)
   },
+  logs: {
+    history: (input: { projectId: string }) => ipcRenderer.invoke(IPC.logsHistory, input),
+    clear: (input: { projectId: string; stream: 'server' | 'build' }) => ipcRenderer.invoke(IPC.logsClear, input)
+  },
   projectPrefs: {
     get: (projectPath: string) => ipcRenderer.invoke(IPC.projectPrefsGet, projectPath),
     save: (projectPath: string, prefs: ProjectPrefs) => ipcRenderer.invoke(IPC.projectPrefsSave, projectPath, prefs)

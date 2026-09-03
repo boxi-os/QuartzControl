@@ -54,6 +54,7 @@ import { applyAppMenu } from '../menu'
 import { mainT, type MainStringKey } from '../i18n'
 import { handle, handleNoArgs } from './handle'
 import * as s from './schemas'
+import { clearLogHistory, logHistory, recordLogLine } from '../services/logBuffer'
 
 const t = z.tuple
 
@@ -95,8 +96,16 @@ export function registerIpcHandlers(): void {
   if (handlersRegistered) return
   handlersRegistered = true
 
-  buildService.serverEvents.on('log', (line) => broadcast(IPC.serverLog, line))
-  buildService.serverEvents.on('buildLog', (line) => broadcast(IPC.buildLog, line))
+  // Buffered *and* broadcast, in that order: a window that opens later reads the buffer, a window
+  // that is open already gets the line as it happens - see services/logBuffer.ts.
+  buildService.serverEvents.on('log', (line) => {
+    recordLogLine('server', line)
+    broadcast(IPC.serverLog, line)
+  })
+  buildService.serverEvents.on('buildLog', (line) => {
+    recordLogLine('build', line)
+    broadcast(IPC.buildLog, line)
+  })
   buildService.serverEvents.on('status', (projectId, status) => broadcast(IPC.serverStatusChanged, projectId, status))
   deployService.deployEvents.on('progress', (event) => broadcast(IPC.deployProgress, event))
 
@@ -555,6 +564,9 @@ export function registerIpcHandlers(): void {
   // the first button, whatever defaultId says (see the build guard above). window.confirm(),
   // which the renderer used for every one of these questions before, offers no control over
   // that at all: its confirming answer is always the default.
+  handle(IPC.logsHistory, t([s.logHistoryInput]), (input) => logHistory(input.projectId))
+  handle(IPC.logsClear, t([s.logClearInput]), (input) => clearLogHistory(input.projectId, input.stream))
+
   handle(IPC.dialogConfirm, t([s.confirmDialog]), async (options) => {
     const messageBox = {
       type: options.danger ? ('warning' as const) : ('question' as const),

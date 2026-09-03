@@ -191,3 +191,30 @@ danach „reader-mode ist jetzt an Position 3 von 5.“; ein Pfeil-Knopf ergibt 
 allein; eine Option zu ändern ergibt „Einstellungen von darkmode gespeichert.“ neben dem sichtbaren
 Grün. Im Layout-Editor tragen alle 34 Griffe die deutsche Anleitung, und eine Aufnahme mit Abbruch
 sagt „table-of-contents abgebrochen, nichts verschoben.“ Konfiguration danach wiederhergestellt.
+
+## Der Log-Puffer überlebt das Fenster (E4, 2026-09-03)
+
+Der Log-Store lebt im Renderer und stirbt mit dem Fenster — unter macOS schließt ein Fenster aber
+nicht die App: die Dev-Server laufen weiter (`before-quit` beendet sie, nicht `window-all-closed`),
+und das nächste Fenster bekommt einen frischen Renderer mit leerem Store. Was der Server in der
+Zwischenzeit sagte, war weg, und was er davor gesagt hatte, auch.
+
+Der Hauptprozess puffert die Zeilen jetzt selbst (`services/logBuffer.ts`), an genau der Stelle, an
+der er sie ohnehin sendet: erst in den Puffer, dann per `broadcast`. Zwei Kanäle mit Objekt-Argument
+(`logs:history`, `logs:clear`) geben sie wieder heraus. Gelesen wird einmal pro Projekt in
+`ProjectLayout` — nicht auf Vorschau & Build, weil derselbe Store auch die Übersicht speist und ein
+Projekt einmal geöffnet wird, während seine Seiten kommen und gehen.
+
+Zwei Details, die dranhängen. Beim Einspielen werden Zeilen, die das Live-Abo schon geliefert hat,
+behalten, wenn sie neuer sind als die letzte gepufferte (`mergeHistory`, Vergleich über den
+ISO-Zeitstempel): die Lücke zwischen Anfrage und Antwort ist klein, aber nicht null, und eine darin
+verlorene Zeile wäre genau der Fehler, den das Einspielen beheben soll. Und „Ausgabe leeren“ leert
+jetzt beides — sonst käme die Ausgabe beim nächsten Öffnen der Seite zurück.
+
+Gemessen im Produktions-Build gegen `gui-test`: ein einmaliger Build erzeugt sieben Zeilen; nach
+`location.reload()` — ein neuer Renderer bei laufendem Hauptprozess, also dasselbe wie ein
+geschlossenes und wieder geöffnetes Fenster — stehen dieselben sieben Zeilen wieder da, mit
+identischem Ende. Nach „Ausgabe leeren“ und einem weiteren Reload bleiben beide Konsolen leer.
+
+Aus demselben Befund: der `console.error` in `will-navigate` war deutsch und ist jetzt englisch, wie
+jede andere Meldung im Hauptprozess, die einen Fehler und keine Eingabe beschreibt.

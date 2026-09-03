@@ -74,6 +74,10 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   hinweg gehalten, die Main daran schreiben könnte. Fünf Seiten halten so je eine Kopie der Config;
   das ist sicher, solange nur eine Ansicht gemountet ist. Ein `project:changed`-Event kommt erst,
   wenn zwei Ansichten gleichzeitig leben - nicht vorher.
+- **Was im Renderer lebt, stirbt mit dem Fenster - unter macOS aber nicht die App.** Ein
+  geschlossenes Fenster beendet weder die App noch die Dev-Server; alles, was danach noch stimmen
+  soll, gehört in den Hauptprozess. Für die Log-Zeilen ist das `services/logBuffer.ts`, gelesen über
+  `logs:history` beim Öffnen eines Projekts.
 - **App-weit gibt es vier Dinge im Store** (`state/store.ts`): Projektliste, Settings, Fehler,
   Log-Puffer pro Projekt. Letzterer, weil Main Log-Zeilen unabhängig von der Seite sendet und ein
   seitenlokales Abonnement sie verlöre. Das Abonnement lebt einmal in `App.tsx`.
@@ -250,8 +254,9 @@ mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge.
 - **S3 - Status: erledigt (2026-09-03).** Selektoren in `Home`/`Settings`,
   `document.documentElement.lang` folgt der aufgelösten Sprache (`i18n/index.ts`), und die
   Einstellungen werden beim Start nur noch einmal gelesen (`main.tsx` durch den Store).
-- **E4 - Status: offen.** `console.error` in `will-navigate` ist deutsch; Log-Puffer geht beim
-  macOS-Fenster-Schließen verloren, während die Server weiterlaufen.
+- **E4 - Status: erledigt (2026-09-03).** Der `console.error` in `will-navigate` ist englisch, und
+  der Hauptprozess puffert die Log-Zeilen selbst (`services/logBuffer.ts`, Kanäle `logs:history` und
+  `logs:clear`); `ProjectLayout` spielt sie beim Öffnen eines Projekts ein.
 - **A2 - Status: erledigt (2026-09-03).** Menüpunkt „Speichern“ mit `CmdOrCtrl+S`, Kanal
   `app:command` mit einer `AppCommand`-Union, Register in `state/saveCommand.ts`. Eine Seite
   registriert nur, solange ihr Knopf etwas täte; der Menüpunkt bleibt aktiv, weil der Hauptprozess

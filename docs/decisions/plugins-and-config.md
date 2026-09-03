@@ -80,3 +80,56 @@ Im Produktions-Build geprüft, über die Auflösung der Namen im DOM statt über
 neun Schema-Felder eines Plugins antworten mit ihrem Schlüssel (`position`, `priority`, `display`,
 `condition`, `group`, `basis`, `order`, `align`, `justify`), die beiden Felder der Hinzufügen-Zeile
 mit „Option“ und „Wert“. Die Ansicht selbst ist unverändert.
+
+## Das Projektbild ist das Favicon der Seite (2026-09-03)
+
+Die Projekte trugen in der Seitenleiste ein generiertes Avatar: Anfangsbuchstabe auf einer von acht
+Farben, deterministisch aus der Projekt-ID. Auf der Startseite gab es gar keines. Gesucht war ein
+eigenes Bild pro Projekt, das zugleich das Favicon der Website wird.
+
+Gemessen wurde zuerst, was das Favicon-Plugin wirklich tut — an der installierten Fassung in einem
+echten Projekt (`node_modules/@quartz-community/favicon/dist/index.js`), nicht an der Doku: der
+Emitter setzt den Pfad selbst zusammen (`joinSegments("quartz", "static", "icon.png")`), skaliert
+mit sharp auf 48×48 und schreibt `favicon.ico` ins Ausgabeverzeichnis. Er hat **keine Optionen**, es
+gibt also keinen zweiten Pfad, auf den man ihn richten könnte. Das Plugin steht in
+`quartz.config.default.yaml` mit `enabled: true`, und `quartz/static/icon.png` liefert Quartz selbst
+mit — in drei geprüften Projekten war die Datei da.
+
+Daraus folgt der Zuschnitt: **eine Datei für beides.** Das Projektbild *ist* `quartz/static/icon.png`.
+Eine Kopie in `.quartz-gui/` könnte nur von dem abweichen, was die Seite ausliefert.
+
+Was das erzwingt:
+
+- **„Es gibt eine Datei“ heißt nicht „jemand hat sie gewählt“.** Weil Quartz sein Standardicon
+  überall mitliefert, würde ein Avatar aus der Datei allein in jedem Projekt dasselbe Bild zeigen und
+  die Unterscheidbarkeit kosten, die der farbige Buchstabe hat. Die Antwort wird notiert, nicht
+  geraten: `.quartz-gui/project-icon.json` (`custom`, `hasOriginal`) wird beim Zuweisen geschrieben,
+  und das verdrängte Icon liegt als `icon-original.png` daneben. „Bild entfernen“ ist deshalb eine
+  Wiederherstellung, keine Löschung — der Emitter liest `icon.png` bedingungslos, ein Projekt ohne
+  die Datei baut eine Seite ganz ohne Favicon.
+- **Normalisiert wird mit Electrons `nativeImage`**, nicht mit sharp: sharp hängt am Quartz-Projekt,
+  nicht an der GUI, und wäre ein natives Binary im Bundle. JPEG wird zu PNG (der Emitter kennt nur
+  den einen Dateinamen), alles über 512 px auf die längere Kante gedeckelt; ein PNG, das schon passt,
+  wird byteweise kopiert statt neu kodiert — der Nutzer hat diese Datei gewählt. Gemessen: 1200er
+  JPEG → 512×512-PNG, 512er PNG → identische md5. SVG kann `nativeImage` nicht dekodieren und kommt
+  als leeres Bild an; das und eine Textdatei mit `.png` werden mit je eigener Meldung abgelehnt, ohne
+  die vorhandene `icon.png` anzufassen.
+- **Der Renderer bekommt eine Data-URL, keinen Pfad.** Die CSP erlaubt `img-src 'self' data:`, ein
+  `file://` ins Projekt erreicht der Renderer in der Sandbox nicht. Das Thumbnail (128 px) entsteht im
+  Hauptprozess und liegt dort in einem Cache über Pfad + mtime + Größe, damit die Startseite ihre
+  Regel behält: nur lokale Reads, und ein Neuladen der Liste dekodiert nichts noch einmal.
+- **Die Seitenleiste besitzt ihr Avatar, geändert wird es eine Ebene tiefer.** `ProjectLayout` gibt
+  über den Outlet-Context ein `refreshIcon()` mit; die Konfigurationsseite ruft es nach dem Schreiben.
+  Ein Datei-Watcher für ein Bild wäre ein zweiter Mechanismus für etwas, das ein Funktionsaufruf
+  beantwortet — es gibt genau einen Schreiber.
+- **Der Zustand des Favicon-Plugins wird gezeigt, nicht geschaltet.** Die Zeile unter dem Bild sagt,
+  ob das Plugin an, aus oder nicht installiert ist, und verlinkt auf die Plugin-Seite. Ein Schalter
+  hier hätte einen zweiten Schreiber auf `quartz.config.yaml` neben dem Speichern-Knopf derselben
+  Seite gehabt, die die Config in `useState` hält.
+
+Am laufenden Produktions-Build geprüft (1728×1000, hell und dunkel): Startseite und Seitenleiste
+zeigen das Bild bzw. weiterhin den Buchstaben für ein Projekt ohne eigenes; „Bild entfernen“ setzt
+Vorschau *und* Seitenleisten-Avatar im selben Klick zurück und stellt die ursprüngliche `icon.png`
+byteidentisch wieder her. Nicht am OS gemessen: der native Dateidialog hinter „Bild wählen…“ — unter
+Playwright blockiert er; geprüft ist der Weg dahinter (`projectIcon:set` mit dem Pfad, den der Dialog
+liefert).

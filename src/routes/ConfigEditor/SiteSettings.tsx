@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { QuartzConfig } from '@shared/ipc-contract'
 import { useProject } from '../ProjectLayout'
@@ -35,10 +35,14 @@ const ANALYTICS_PROVIDERS: Record<string, AnalyticsField[]> = {
 
 export default function SiteSettings({
   configuration,
-  onChange
+  onChange,
+  image
 }: {
   configuration: Configuration
   onChange: (next: Configuration) => void
+  /** The project's picture - a file, not a config value, so it is passed in rather than read
+   *  here. It leads the form because it is what the site is called *and* looks like. */
+  image: ReactNode
 }): JSX.Element {
   const { t } = useTranslation()
   const project = useProject()
@@ -70,6 +74,7 @@ export default function SiteSettings({
   // one. Each field's line length is capped by its grid track, not by a wrapper max-width.
   return (
     <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+      {image}
       <Field label={t('siteSettings.pageTitle')} hint={t('siteSettings.pageTitleHint')}>
         <TextInput value={configuration.pageTitle ?? ''} onChange={(e) => set('pageTitle', e.target.value)} />
       </Field>

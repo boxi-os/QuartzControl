@@ -598,6 +598,22 @@ export default {
       'Farben und Schriften sind zu den Stilen umgezogen — dort bilden sie die Basis-Ebene, auf der Themes, Variablen und eigenes CSS aufbauen.',
     themeMovedLink: 'Zu den Stilen'
   },
+  projectImage: {
+    label: 'Projektbild',
+    choose: 'Bild wählen…',
+    replace: 'Bild ersetzen…',
+    remove: 'Bild entfernen',
+    fileFilter: 'Bilder (PNG, JPEG)',
+    defaultHint:
+      'Ohne eigenes Bild zeigt die App den Anfangsbuchstaben, und die Seite bekommt das Standard-Icon von Quartz. PNG oder JPEG, quadratisch am besten.',
+    customHint: 'Liegt als quartz/static/icon.png im Projekt, {{width}} × {{height}} Pixel.',
+    faviconOn: 'Das Favicon der Seite wird beim nächsten Build aus diesem Bild erzeugt.',
+    faviconOff: 'Das Favicon-Plugin ist ausgeschaltet — die Seite bekommt daraus kein Favicon.',
+    faviconMissing: 'Das Favicon-Plugin ist nicht installiert — die Seite bekommt daraus kein Favicon.',
+    faviconLink: 'Zu den Plugins',
+    announceSet: 'Projektbild gesetzt.',
+    announceCleared: 'Projektbild entfernt, das ursprüngliche Icon ist wieder da.'
+  },
   siteSettings: {
     pageTitle: 'Seitentitel',
     pageTitleHint: 'Der Name deiner Website. Er steht im Browser-Tab, im RSS-Feed und meist oben in der Seitenleiste.',

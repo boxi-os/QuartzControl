@@ -7,6 +7,7 @@ import { ArrowUpRight, CheckCircle2, FolderSearch, Search, TriangleAlert, Trash2
 import type { CreateProjectOptions, EnvironmentInfo, ProjectOverview } from '@shared/ipc-contract'
 import { useAppStore } from '../state/store'
 import { Button, Card, Field, InfoNote, Modal, Select, TextInput } from '../components/ui'
+import ProjectAvatar from '../components/ProjectAvatar'
 import { GROUP_ICONS } from './navConfig'
 import { formatRelativeTime } from '../utils/format'
 import { useAsyncAction } from '../hooks/useAsyncAction'
@@ -236,7 +237,8 @@ function ProjectRow({
         broken ? 'border-amber-300/70 dark:border-amber-500/30' : ''
       }`}
     >
-      <div className="flex items-start gap-2 pr-8">
+      <div className="flex items-start gap-2.5 pr-8">
+        <ProjectAvatar id={project.id} name={project.name} icon={project.icon} size={40} className="mt-0.5" />
         <button
           className="min-w-0 text-left text-heading font-medium hover:underline disabled:cursor-default disabled:no-underline"
           onClick={onOpen}

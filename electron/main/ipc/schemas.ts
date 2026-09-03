@@ -170,6 +170,12 @@ export const syncDirection = z.enum(['push', 'pull', 'both'])
 // it needs no escaping - only a length bound, since it becomes a git commit subject.
 // dialog.confirm's argument. Text lengths are bounded because these three strings end up in a
 // native dialog verbatim; none of them is interpreted, so nothing else is checked.
+// projectIcon's three channels. Object arguments, as every new channel takes - see CLAUDE.md.
+// `sourcePath` comes from the native file dialog and is checked again in the service, which is
+// where the accepted extensions live next to the reason for them.
+export const projectIconTarget = z.looseObject({ projectPath: absolutePath })
+export const projectIconSource = z.looseObject({ projectPath: absolutePath, sourcePath: absolutePath })
+
 export const confirmDialog = z.looseObject({
   message: z.string().min(1).max(2000),
   detail: z.string().max(4000).optional(),

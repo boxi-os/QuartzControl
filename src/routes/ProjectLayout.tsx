@@ -4,11 +4,13 @@ import { askDialog } from '../utils/confirm'
 import { titlebarStripClass } from '../utils/platform'
 import { NavLink, Outlet, useLocation, useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { ArrowLeft, type LucideIcon } from 'lucide-react'
-import type { Project } from '@shared/ipc-contract'
+import type { Project, ProjectIconInfo } from '@shared/ipc-contract'
 import { GROUP_ICONS, TAB_ICONS, type TabKey } from './navConfig'
 import { hasUnsavedChanges } from '../state/unsavedGuard'
 import { hasSaveCommand, runSaveCommand } from '../state/saveCommand'
 import { useLogStore } from '../state/store'
+import { useIpcQuery } from '../state/useIpcQuery'
+import ProjectAvatar from '../components/ProjectAvatar'
 
 // Guards every way out of a page that the sidebar offers - the nav items and the way back to the
 // project list. In-page links are deliberately not wrapped: they lead out of pages that do not
@@ -50,8 +52,22 @@ function useLeaveGuard(): (event: { preventDefault: () => void }, to: string) =>
   }
 }
 
+interface ProjectContext {
+  project: Project
+  /** Re-reads the project's picture. See useRefreshProjectIcon. */
+  refreshIcon: () => void
+}
+
 export function useProject(): Project {
-  return useOutletContext<Project>()
+  return useOutletContext<ProjectContext>().project
+}
+
+// The avatar in the sidebar belongs to this layout, but the picture behind it is assigned on a
+// page *inside* it (Konfiguration → Seite). The page that writes the file says so rather than the
+// layout watching it: there is exactly one writer, and a file watcher for one image would be a
+// second mechanism for something a function call already answers.
+export function useRefreshProjectIcon(): () => void {
+  return useOutletContext<ProjectContext>().refreshIcon
 }
 
 // Module-level (not component state) so it survives a ProjectLayout unmount/remount too - e.g.
@@ -107,20 +123,6 @@ function useRestoreScroll(
       el.removeEventListener('scroll', onScroll)
     }
   }, [location.pathname, mainRef, contentRef, ready])
-}
-
-// A curated, brand-ish palette (indigo/violet-leaning, like the app icon) rather than random hues -
-// picked deterministically from the project id so a given project always gets the same color
-// across sessions, without needing to persist one. Every entry carries the project's initial in
-// white, so every entry is a shade that white is actually readable on: the 500-level palette this
-// replaced ran from 4.2:1 (violet) down to 2.1:1 (amber), i.e. which letter you could read came
-// down to what your project id happened to hash to. Measured, all eight are now >= 4.7:1.
-const AVATAR_COLORS = ['#4f46e5', '#7c3aed', '#0369a1', '#0f766e', '#b45309', '#e11d48', '#9333ea', '#0e7490']
-
-function avatarColor(seed: string): string {
-  let hash = 0
-  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) | 0
-  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length]
 }
 
 type NavItem = { to: string; key: TabKey; label: string; end?: boolean }
@@ -183,6 +185,13 @@ export default function ProjectLayout(): JSX.Element {
     window.quartzGui.projects.open(id).then((p) => setProject(p ?? null))
   }, [id])
 
+  // Only a picture the user assigned; a project still carrying the icon Quartz ships gets its
+  // letter, or every project in the app would wear the same stock image. See projectIconService.
+  const { data: icon, reload: refreshIcon } = useIpcQuery<ProjectIconInfo | null>(
+    async () => (project ? window.quartzGui.projectIcon.get({ projectPath: project.path }) : null),
+    [project?.path]
+  )
+
   // What the dev server said while no window was open. The log store lives in the renderer and so
   // dies with the window, but on macOS a closed window leaves the app - and every server it started
   // - running; the main process buffers those lines for exactly this read. Here rather than on
@@ -215,13 +224,7 @@ export default function ProjectLayout(): JSX.Element {
           </NavLink>
         </div>
         <div className="mx-2 mb-2 flex items-center gap-2.5 rounded-[10px] border border-black/[0.06] bg-white/70 px-2.5 py-2.5 shadow-sm dark:border-white/10 dark:bg-white/[0.05]">
-          <div
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] text-[13px] font-semibold text-white"
-            style={{ backgroundColor: avatarColor(project.id) }}
-            aria-hidden
-          >
-            {(project.name.trim()[0] ?? '?').toUpperCase()}
-          </div>
+          <ProjectAvatar id={project.id} name={project.name} icon={icon?.custom ? icon.dataUrl : null} size={36} />
           <div className="min-w-0">
             {/* A <p>, not a second <h1>: the page's own heading is the one in PageHeader, and two
                 first-level headings on one page leave a screen reader without a single top. */}
@@ -279,7 +282,7 @@ export default function ProjectLayout(): JSX.Element {
             column simply grows with the window. */}
         <main ref={mainRef} className="flex-1 overflow-y-auto px-8 pb-8">
           <div ref={contentRef} className="mx-auto w-full max-w-[1800px]">
-            <Outlet context={project} />
+            <Outlet context={{ project, refreshIcon } satisfies ProjectContext} />
           </div>
         </main>
       </div>

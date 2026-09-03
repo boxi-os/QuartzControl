@@ -114,6 +114,8 @@ const STRINGS = {
     contentSourceMissing: 'Den Quellordner gibt es nicht: {{path}}',
 
     projectAlreadyRegistered: 'Dieser Ordner ist bereits als anderes Projekt registriert.',
+    projectIconUnsupportedFormat: 'Nur PNG- und JPEG-Dateien können als Projektbild verwendet werden.',
+    projectIconUnreadable: 'Diese Datei konnte nicht als Bild gelesen werden.',
 
     // Snapshots
     snapshotStageFailed: 'Der Projektstand konnte nicht erfasst werden:',
@@ -293,6 +295,8 @@ const STRINGS = {
     contentSourceMissing: 'The source folder does not exist: {{path}}',
 
     projectAlreadyRegistered: 'This folder is already registered as another project.',
+    projectIconUnsupportedFormat: 'Only PNG and JPEG files can be used as a project image.',
+    projectIconUnreadable: 'This file could not be read as an image.',
 
     snapshotStageFailed: 'The project state could not be captured:',
     snapshotWriteTreeFailed: 'The snapshot could not be taken: git write-tree returned nothing.',

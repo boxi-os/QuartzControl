@@ -594,6 +594,22 @@ export default {
       'Colors and fonts have moved to Styles — there they form the base layer that themes, variables, and custom CSS build on.',
     themeMovedLink: 'Go to Styles'
   },
+  projectImage: {
+    label: 'Project image',
+    choose: 'Choose image…',
+    replace: 'Replace image…',
+    remove: 'Remove image',
+    fileFilter: 'Images (PNG, JPEG)',
+    defaultHint:
+      'Without an image of its own the app shows the initial, and the site gets the default Quartz icon. PNG or JPEG, square works best.',
+    customHint: 'Stored as quartz/static/icon.png in the project, {{width}} × {{height}} pixels.',
+    faviconOn: "The site's favicon is generated from this image on the next build.",
+    faviconOff: 'The favicon plugin is switched off — no favicon is generated from this image.',
+    faviconMissing: 'The favicon plugin is not installed — no favicon is generated from this image.',
+    faviconLink: 'Go to Plugins',
+    announceSet: 'Project image set.',
+    announceCleared: 'Project image removed, the original icon is back.'
+  },
   siteSettings: {
     pageTitle: 'Site title',
     pageTitleHint: 'The name of your site. It appears in the browser tab, in the RSS feed and usually at the top of the sidebar.',

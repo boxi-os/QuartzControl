@@ -10,6 +10,7 @@ import { useSaveCommand } from '../../state/saveCommand'
 import { UnsavedBadge, useUnsavedChanges } from '../../state/unsavedGuard'
 import { TAB_ICONS } from '../navConfig'
 import SiteSettings from './SiteSettings'
+import ProjectImage from './ProjectImage'
 import ContentFolder from './ContentFolder'
 import Localization from './Localization'
 
@@ -157,6 +158,10 @@ export default function ConfigEditor(): JSX.Element {
               <SiteSettings
                 configuration={config.configuration}
                 onChange={(configuration) => setConfig({ ...config, configuration })}
+                // The picture writes its file immediately and has nothing in the config, but the
+                // one plugin that turns it into a favicon does - so it is told the plugin list
+                // this page already holds rather than reading the config a second time.
+                image={<ProjectImage plugins={config.plugins} />}
               />
               {/* Colors and fonts used to be a second tab here. They are the bottom layer of the
                   styling cascade, so they now live with the other three layers on the Styles page. */}

@@ -1072,6 +1072,23 @@ export interface ProjectOverview extends Project {
   baseUrl?: string
   serverRunning: boolean
   serverPort?: number
+  /**
+   * The project's own picture as a data: URL, or undefined when it still carries the icon Quartz
+   * ships - those are identical in every project, so the launcher falls back to the letter avatar
+   * rather than rendering the same stock image on every card. See projectIconService.
+   */
+  icon?: string
+}
+
+/** The project's picture, which is also the source the favicon emitter reads. */
+export interface ProjectIconInfo {
+  /** quartz/static/icon.png scaled down for display, or null when there is no readable icon. */
+  dataUrl: string | null
+  /** True when the image was assigned in this app rather than being the one Quartz shipped. */
+  custom: boolean
+  /** Pixel size of the file on disk; 0 when there is none. */
+  width: number
+  height: number
 }
 
 /** Versions and storage locations for the Settings page's maintenance section. */
@@ -1146,6 +1163,10 @@ export const IPC = {
   projectOpen: 'project:open',
   projectRemove: 'project:remove',
   projectCreate: 'project:create',
+
+  projectIconGet: 'projectIcon:get',
+  projectIconSet: 'projectIcon:set',
+  projectIconClear: 'projectIcon:clear',
 
   configGet: 'config:get',
   configSave: 'config:save',
@@ -1383,6 +1404,18 @@ export interface QuartzGuiApi {
     open(id: string): Promise<Project | undefined>
     remove(id: string): Promise<void>
     create(options: CreateProjectOptions): Promise<CreateProjectResult>
+  }
+  /**
+   * The project's picture. One file - quartz/static/icon.png - because that is the only path the
+   * favicon emitter reads, so what the app shows and what the site ships cannot drift apart.
+   */
+  projectIcon: {
+    get(args: { projectPath: string }): Promise<ProjectIconInfo>
+    /** Copies `sourcePath` in, normalized to PNG and capped at 512px. Throws on a format
+     *  nativeImage cannot decode (SVG among them) rather than writing an unusable icon.png. */
+    set(args: { projectPath: string; sourcePath: string }): Promise<ProjectIconInfo>
+    /** Puts back the icon the project came with - see projectIconService for why not a delete. */
+    clear(args: { projectPath: string }): Promise<ProjectIconInfo>
   }
   config: {
     get(projectPath: string): Promise<QuartzConfig>

@@ -18,6 +18,7 @@ import type {
 } from '@shared/ipc-contract'
 import * as projectStore from '../services/projectStore'
 import * as projectOverviewService from '../services/projectOverviewService'
+import * as projectIconService from '../services/projectIconService'
 import * as configService from '../services/configService'
 import * as pluginService from '../services/pluginService'
 import * as pluginSchemaService from '../services/pluginSchemaService'
@@ -126,6 +127,12 @@ export function registerIpcHandlers(): void {
     await buildService.stopServer(id)
     await projectStore.removeProject(id)
   })
+  handle(IPC.projectIconGet, t([s.projectIconTarget]), ({ projectPath }) => projectIconService.getProjectIcon(projectPath))
+  handle(IPC.projectIconSet, t([s.projectIconSource]), ({ projectPath, sourcePath }) =>
+    projectIconService.setProjectIcon(projectPath, sourcePath)
+  )
+  handle(IPC.projectIconClear, t([s.projectIconTarget]), ({ projectPath }) => projectIconService.clearProjectIcon(projectPath))
+
   handle(IPC.projectCreate, t([s.createProjectOptions]), async (options) => {
     const result = await createService.createProject(options as CreateProjectOptions)
     if (result.success) await projectStore.addProject(options.targetDirectory)

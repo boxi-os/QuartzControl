@@ -2,6 +2,7 @@ import { existsSync } from 'fs'
 import { join } from 'path'
 import type { ProjectOverview } from '@shared/ipc-contract'
 import { readConfig } from './configService'
+import { getCustomIconThumbnail } from './projectIconService'
 import { getServerStatus } from './buildService'
 import { listProjects } from './projectStore'
 
@@ -25,6 +26,9 @@ export async function getProjectOverviews(): Promise<ProjectOverview[]> {
 
       let siteTitle: string | undefined
       let baseUrl: string | undefined
+      // Only the projects that carry a picture of their own; the thumbnail is cached in
+      // projectIconService until the file changes, so refreshing the list re-reads nothing.
+      const icon = isQuartzProject ? ((await getCustomIconThumbnail(project.path).catch(() => null)) ?? undefined) : undefined
       if (isQuartzProject) {
         try {
           const config = await readConfig(project.path)
@@ -42,6 +46,7 @@ export async function getProjectOverviews(): Promise<ProjectOverview[]> {
         isQuartzProject,
         siteTitle,
         baseUrl,
+        icon,
         serverRunning: status.state === 'running',
         serverPort: status.state === 'running' ? status.options?.port : undefined
       }

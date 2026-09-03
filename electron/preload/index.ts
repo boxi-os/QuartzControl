@@ -61,6 +61,11 @@ const api: QuartzGuiApi = {
     remove: (id: string) => ipcRenderer.invoke(IPC.projectRemove, id),
     create: (options: CreateProjectOptions) => ipcRenderer.invoke(IPC.projectCreate, options)
   },
+  projectIcon: {
+    get: (args: { projectPath: string }) => ipcRenderer.invoke(IPC.projectIconGet, args),
+    set: (args: { projectPath: string; sourcePath: string }) => ipcRenderer.invoke(IPC.projectIconSet, args),
+    clear: (args: { projectPath: string }) => ipcRenderer.invoke(IPC.projectIconClear, args)
+  },
   config: {
     get: (projectPath: string) => ipcRenderer.invoke(IPC.configGet, projectPath),
     save: (projectPath: string, config: QuartzConfig) => ipcRenderer.invoke(IPC.configSave, projectPath, config)

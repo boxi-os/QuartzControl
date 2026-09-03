@@ -36,6 +36,9 @@ files:
 # 4 MB instead of 16 and its npm-cli.js could not resolve a single dependency - visible only in
 # the packaged app, since in development npm is resolved from the repo. Copied as its own source,
 # that directory's children are below the rule and come along.
+# Holt und spiegelt das architekturrichtige git-Bundle, bevor kopiert wird (scripts/before-pack.mjs).
+beforePack: scripts/before-pack.mjs
+
 extraResources:
   - from: node_modules/npm
     to: npm
@@ -43,6 +46,13 @@ extraResources:
     to: npm/node_modules
   - from: resources/runtime
     to: runtime
+  # git reist mit, damit ein neuer Nutzer nichts installieren muss - auf macOS wären das sonst die
+  # Xcode-Kommandozeilenwerkzeuge, mehrere Gigabyte für einen Klon. Benutzt wird es nur, wenn auf
+  # dem Rechner kein funktionierendes git liegt (gitRuntime.ts).
+  - from: resources/git/current
+    to: git
+  - from: resources/licenses
+    to: licenses
 
 asar: true
 # Nothing here compiles against Electron's headers - ssh2 falls back to its pure-JS crypto when

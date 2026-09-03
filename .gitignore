@@ -15,3 +15,6 @@ release/
 # Claude: lokal verlinkte Skills (Symlinks mit absoluten Pfaden, nicht teambar)
 .claude/skills/firecrawl*
 .claude/settings.local.json
+
+# git-Bundle: wird beim Packen geholt (scripts/fetch-git.mjs), 26 MB je Architektur
+resources/git/

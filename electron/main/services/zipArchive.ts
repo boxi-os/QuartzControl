@@ -7,9 +7,9 @@ import { mainT } from '../i18n'
  * A minimal ZIP reader/writer, so a template package can be one file the user can hand to someone
  * else rather than a folder they have to zip themselves.
  *
- * Hand-rolled rather than added as a dependency for the same reason `scripts/generate-icon.mjs`
- * hand-rolls a PNG encoder: the format's subset we need is small and fully specified, while every
- * npm zip library brings a far larger surface than "store these ~50 files, read them back".
+ * Hand-rolled rather than added as a dependency: the format's subset we need is small and fully
+ * specified, while every npm zip library brings a far larger surface than "store these ~50 files,
+ * read them back".
  * Deflate comes from Node's own zlib (`deflateRawSync` is exactly ZIP's method 8 - a raw deflate
  * stream with no zlib header), and `zlib.crc32` supplies the checksum ZIP requires; both are
  * present in Electron 33's Node 20.18.3 (verified).

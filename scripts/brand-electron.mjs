@@ -26,6 +26,26 @@ const iconDest = join(appDir, 'Contents/Resources/electron.icns')
 
 const BRANDED_PATH = 'QuartzControl.app/Contents/MacOS/Electron'
 
+// forces LaunchServices to re-read the (renamed, re-icon'd) bundle instead of serving a stale
+// cached entry for the old path - without this the Dock kept showing "Electron" even after the
+// rename below, until the next unrelated LaunchServices cache invalidation. The same applies to a
+// swapped icon.
+function reregister() {
+  try {
+    execFileSync(LSREGISTER, ['-f', appDir])
+  } catch {
+    // best-effort - a stale Dock/Finder icon cache is cosmetic and clears on its own eventually
+  }
+}
+
+// Copies build/icon.icns into the bundle when it is missing or differs; returns whether it wrote.
+function refreshIcon() {
+  if (!existsSync(iconSrc)) return false
+  if (existsSync(iconDest) && readFileSync(iconDest).equals(readFileSync(iconSrc))) return false
+  copyFileSync(iconSrc, iconDest)
+  return true
+}
+
 if (!existsSync(oldAppDir) && !existsSync(appDir)) {
   console.warn('[brand-electron] node_modules/electron not installed yet, skipping')
   process.exit(0)
@@ -39,7 +59,15 @@ if (!existsSync(oldAppDir) && !existsSync(appDir)) {
 // Measured after one such install: both directories present, path.txt reading Electron.app.
 const pathTxtIsBranded = existsSync(pathTxt) && readFileSync(pathTxt, 'utf-8') === BRANDED_PATH
 if (existsSync(appDir) && !existsSync(oldAppDir) && pathTxtIsBranded) {
-  console.log('[brand-electron] already branded, skipping')
+  // The bundle is branded, but its icon is a copy that goes stale on its own: build/icon.icns
+  // changes whenever the artwork does (scripts/build-icon.mjs), and this script used to exit here
+  // without looking, so dev kept showing the previous icon until the next npm install.
+  if (refreshIcon()) {
+    reregister()
+    console.log('[brand-electron] dev bundle icon refreshed')
+  } else {
+    console.log('[brand-electron] already branded, skipping')
+  }
   process.exit(0)
 }
 
@@ -66,15 +94,8 @@ execFileSync('/usr/libexec/PlistBuddy', [
   plistPath
 ])
 
-if (existsSync(iconSrc)) copyFileSync(iconSrc, iconDest)
+refreshIcon()
 
-// forces LaunchServices to re-read the (renamed, re-icon'd) bundle instead of serving a stale
-// cached entry for the old path - without this the Dock kept showing "Electron" even after the
-// rename above, until the next unrelated LaunchServices cache invalidation.
-try {
-  execFileSync(LSREGISTER, ['-f', appDir])
-} catch {
-  // best-effort - a stale Dock/Finder icon cache is cosmetic and clears on its own eventually
-}
+reregister()
 
 console.log('[brand-electron] renamed dev Electron.app to QuartzControl.app')

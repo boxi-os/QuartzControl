@@ -18,9 +18,9 @@ const isMac = process.platform === 'darwin'
 // call it explicitly; a packaged build would also get it from package.json's `productName`.
 app.setName(APP_NAME)
 
-// build/icon.png (1024px, generated from build/icon.icns's source) - present both in the repo
-// (dev, `npm run dev` runs from the project root) and, once an electron-builder config exists,
-// copied next to the packaged app; check both locations rather than assuming one.
+// build/icon.png (512px, copied from build/icon-source/ by scripts/build-icon.mjs) - present both
+// in the repo (dev, `npm run dev` runs from the project root) and, once an electron-builder config
+// exists, copied next to the packaged app; check both locations rather than assuming one.
 function resolveIconPath(): string | undefined {
   const candidates = [
     join(app.getAppPath(), 'build/icon.png'),

@@ -8,6 +8,10 @@ dist/
 # electron-builder output
 release/
 
+# Icon-Arbeitsdatei: das SVG und die PNG-Exporte in build/icon-source/ sind versioniert,
+# die Affinity-Datei nicht - sie ist 1,9 MB Binaerformat und wird nur zum Zeichnen gebraucht.
+*.af
+
 # Claude: lokal verlinkte Skills (Symlinks mit absoluten Pfaden, nicht teambar)
 .claude/skills/firecrawl*
 .claude/settings.local.json

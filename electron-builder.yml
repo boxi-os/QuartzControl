@@ -30,9 +30,17 @@ files:
 # Neither travels inside the asar: npm reads and starts its own files, and the loader is handed to
 # a child process as a plain path. `to:` flattens them next to the app, which is where
 # nodeRuntime.ts looks first (process.resourcesPath) before falling back to the repo layout.
+# npm needs two entries, not one, and that is not a style choice: createFilter() in
+# app-builder-lib/out/util/filter.js returns false for the copy source's *own* `node_modules`
+# child, unconditionally and before any pattern is consulted. With a single entry npm arrived as
+# 4 MB instead of 16 and its npm-cli.js could not resolve a single dependency - visible only in
+# the packaged app, since in development npm is resolved from the repo. Copied as its own source,
+# that directory's children are below the rule and come along.
 extraResources:
   - from: node_modules/npm
     to: npm
+  - from: node_modules/npm/node_modules
+    to: npm/node_modules
   - from: resources/runtime
     to: runtime
 

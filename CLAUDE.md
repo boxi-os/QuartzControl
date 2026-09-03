@@ -100,6 +100,10 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   Navigation von Hand ausgelöst. Drei Antworten, wenn die Seite ein Save registriert hat
   (`saveCommand.ts`): Abbrechen, Speichern, Verwerfen - bei einem gescheiterten Speichern bleibt der
   Guard auf der Seite, weil dort die Fehlermeldung steht.
+- **Ein Lesevorgang, dessen Schlüssel sich per Klick ändert, braucht einen Abbruch-Guard**
+  (`useIpcQuery`). Zwei Antworten sind dann gleichzeitig unterwegs und die langsamere gewinnt, egal
+  welche Frage später gestellt wurde. Wo der Schlüssel konstant ist oder sein Wechsel die Route neu
+  mountet, ist ein Guard nur Zeremonie.
 - **Kein API-Aufruf ohne Netz:** globaler `unhandledrejection`-Handler → Toast; jeder Busy-Flag wird
   in `finally` zurückgesetzt (`useAsyncAction` für boolesche, `try/finally` für keyed).
 - **URL zuerst, Sticky-State als Fallback** für Sub-Tabs (`?tab=`); alte Pfade bleiben als
@@ -258,9 +262,11 @@ mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge.
   bleiben eine zweite Kopie, weil Electron sie vor dem Renderer malt, verweisen jetzt aber
   aufeinander. Die Palette-Paare in Sidebar, Seiten und Sub-Komponenten bleiben offen - beiläufig
   beim Anfassen, kein sed.
-- **S1 - Status: offen.** `useIpcQuery(fn, deps)` mit Abbruch-Guard, `loading`, `error`, `reload()`;
-  20 von 32 API-Effekten haben heute keinen Guard. Neues Muster für neue Seiten, Bestehendes nur beim
-  Anfassen.
+- **S1 - Status: erledigt (2026-09-03).** `state/useIpcQuery.ts` mit Abbruch-Guard, `loading`,
+  `error`, `reload()`; umgestellt sind die drei Lesevorgänge, deren Schlüssel der Nutzer per Klick
+  ändern kann (Theme-Detail, Theme-Info, Style-Settings-Schema) - die übrigen laufen einmal oder
+  hängen an einem Schlüssel, der die Route ohnehin neu mountet. Neue Seiten nehmen den Hook,
+  bestehende beim Anfassen.
 - **S3 - Status: erledigt (2026-09-03).** Selektoren in `Home`/`Settings`,
   `document.documentElement.lang` folgt der aufgelösten Sprache (`i18n/index.ts`), und die
   Einstellungen werden beim Start nur noch einmal gelesen (`main.tsx` durch den Store).

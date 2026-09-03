@@ -253,3 +253,30 @@ bleibt auf der Seite und lässt die Datei, wie sie war; Antwort 1 schreibt die D
 Antwort 2 wechselt und lässt die Datei, wie sie war. **Nicht am Betriebssystem gemessen** ist, in
 welcher Reihenfolge macOS die drei Knöpfe zeichnet und was die Eingabetaste dort trifft — dafür
 müsste jemand den Dialog von Hand bedienen.
+
+## `useIpcQuery`, und wo ein Abbruch-Guard wirklich fehlt (S1, 2026-09-03)
+
+Der Befund zählte 20 von 32 API-Effekten ohne Abbruch-Guard. Beim Durchsehen ist die Zahl weniger
+interessant als die Frage, welche davon überhaupt in eine falsche Reihenfolge geraten *können*: Ein
+Effekt mit leerer Abhängigkeitsliste läuft einmal, und wenn sich der Schlüssel nur beim Wechsel des
+Projekts ändert, wird die Route ohnehin neu gemountet. Übrig bleiben die Stellen, deren Schlüssel der
+Nutzer per Klick ändert, während die Antwort noch unterwegs ist — und die liegen alle auf der
+Community-Themes-Seite: die Detailansicht eines Themes (ein GitHub-Aufruf pro geöffnetem Eintrag) und
+die zwei Lesevorgänge zum aktiven Theme.
+
+`state/useIpcQuery.ts` ist der Hook: `{ data, loading, error, reload }`, die Anfrage über ein Ref
+(damit der Aufrufer wie bei `useEffect` die Abhängigkeiten bestimmt und nicht die Identität der
+Funktion), und im Cleanup ein `cancelled`-Flag. Kein Abbruch im Wortsinn — der Hauptprozess macht
+fertig, worum er gebeten wurde; die Antwort auf eine Frage, die niemand mehr stellt, landet nur nicht
+mehr im Zustand.
+
+**Gemessen, indem die falsche Reihenfolge erzwungen wurde.** Der Katalog wird in Main
+fünfzehn Minuten lang zwischengespeichert, also kommen im Alltag beide Antworten sofort und die
+Verwechslung ist nicht zu sehen. Also wurde der Detail-Handler im Hauptprozess ersetzt: „origami“
+antwortet nach 2,5 Sekunden, jedes andere Theme nach 100 ms. Ablauf: origami öffnen, nach 300 ms auf
+kakano wechseln. Ergebnis: nach dem Wechsel steht `Modi: FAST-kakano` da — und drei Sekunden später,
+als origamis späte Antwort eintrifft, steht es immer noch da. Ohne den Guard hätte sie gewonnen.
+
+Der Rest bleibt, wie er ist: ein Hook, den man überall einzieht, wo er nichts ändert, ist ein Umbau
+ohne Messung. Neue Seiten nehmen ihn, bestehende beim Anfassen — und die Regel, woran man erkennt,
+dass er nötig ist, steht jetzt oben in diesem Abschnitt.

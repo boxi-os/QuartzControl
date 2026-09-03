@@ -11,6 +11,7 @@ import type {
 import { Badge, Button, Card, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { useStickyState } from '../../state/uiState'
+import { useIpcQuery } from '../../state/useIpcQuery'
 import StyleSettingsForm from './StyleSettingsForm'
 import { useStyles } from './index'
 
@@ -126,37 +127,31 @@ function ActiveThemeSection({
   const { t } = useTranslation()
   const { goToTab } = useStyles()
   const themeId = typeof plugin?.options?.theme === 'string' ? plugin.options.theme : undefined
-  const [info, setInfo] = useState<ThemeStyleSettingsInfo | null | undefined>(undefined)
-  const [schema, setSchema] = useState<StyleSettingsSchema | null | undefined>(undefined)
+  // Both reads are keyed by the active theme, and both are slow the first time (the schema is
+  // fetched upstream and cached on disk) - so both go through useIpcQuery's guard: switching theme
+  // twice in a row must not leave the second theme's panel filled with the first theme's answer.
+  const { data: info, loading: infoLoading } = useIpcQuery(
+    async () => (themeId && plugin?.enabled ? window.quartzGui.plugins.themeStyleSettingsInfo(projectPath, themeId) : null),
+    [projectPath, themeId, plugin?.enabled]
+  )
+  const { data: fetchedSchema, loading: schemaLoading } = useIpcQuery(
+    async () => (themeId && plugin?.enabled ? window.quartzGui.themeMarketplace.styleSettingsSchema(themeId) : null),
+    [themeId, plugin?.enabled]
+  )
+  // The refresh button replaces the fetched answer until the next read - see refreshSchema.
+  const [refreshedSchema, setRefreshedSchema] = useState<StyleSettingsSchema | null | undefined>(undefined)
+  const schema = refreshedSchema !== undefined ? refreshedSchema : fetchedSchema
   const [refreshingSchema, setRefreshingSchema] = useState(false)
   const [savingName, setSavingName] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!themeId || !plugin?.enabled) {
-      setInfo(null)
-      return
-    }
-    setInfo(undefined)
-    window.quartzGui.plugins.themeStyleSettingsInfo(projectPath, themeId).then(setInfo)
-  }, [projectPath, themeId, plugin?.enabled])
-
   // The option documentation lives upstream, not in the installed package (see
-  // styleSettingsSchemaService) - fetched once per theme and cached on disk, so this is a network
-  // call only the first time a given theme is opened.
-  useEffect(() => {
-    if (!themeId || !plugin?.enabled) {
-      setSchema(null)
-      return
-    }
-    setSchema(undefined)
-    window.quartzGui.themeMarketplace.styleSettingsSchema(themeId).then(setSchema)
-  }, [themeId, plugin?.enabled])
-
+  // styleSettingsSchemaService) - fetched once per theme and cached on disk, so the read above is a
+  // network call only the first time a given theme is opened. This one always is.
   async function refreshSchema(): Promise<void> {
     if (!themeId) return
     setRefreshingSchema(true)
     try {
-      setSchema(await window.quartzGui.themeMarketplace.refreshStyleSettingsSchema(themeId))
+      setRefreshedSchema(await window.quartzGui.themeMarketplace.refreshStyleSettingsSchema(themeId))
     } finally {
       setRefreshingSchema(false)
     }
@@ -257,9 +252,9 @@ function ActiveThemeSection({
         {t('themes.active.overrideNote', { source: String(plugin.source) })}
       </p>
 
-      {info === undefined && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('themes.active.checkingStyleSettings')}</p>}
+      {infoLoading && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('themes.active.checkingStyleSettings')}</p>}
 
-      {info !== undefined && !hasStyleSettings && themeId && (
+      {!infoLoading && !hasStyleSettings && themeId && (
         <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('themes.active.noStyleSettingsNote', { themeId })}</p>
       )}
 
@@ -269,18 +264,18 @@ function ActiveThemeSection({
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
               {t('themes.active.styleSettingsHeading', { ids: info.styleSettingsId.join(', ') })}
             </p>
-            <Button variant="ghost" onClick={refreshSchema} disabled={refreshingSchema || schema === undefined}>
+            <Button variant="ghost" onClick={refreshSchema} disabled={refreshingSchema || schemaLoading}>
               {refreshingSchema ? t('common.loading') : t('styles.styleSettings.refresh')}
             </Button>
           </div>
 
-          {schema === undefined && <p className="text-xs text-slate-500 dark:text-slate-400">{t('styles.styleSettings.loading')}</p>}
+          {schemaLoading && <p className="text-xs text-slate-500 dark:text-slate-400">{t('styles.styleSettings.loading')}</p>}
 
-          {schema && (
+          {!schemaLoading && schema && (
             <StyleSettingsForm schema={schema} info={info} values={styleSettings} onChange={applyStyleSettings} />
           )}
 
-          {schema === null && (
+          {!schemaLoading && schema === null && (
             <>
               <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">{t('styles.styleSettings.unavailable')}</p>
               {info.classSettingKeys.length > 0 && (
@@ -389,7 +384,14 @@ function ThemeCatalog({
   const [installingId, setInstallingId] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useStickyState<string | null>('styles.themeCatalog.expanded', null)
-  const [detail, setDetail] = useState<ThemeDetail | null | undefined>(undefined)
+  // Through useIpcQuery for its cancel guard, and this is the site that needs one most in the app:
+  // opening a theme fetches its detail from GitHub, and opening the next one before that comes back
+  // used to be a race whose winner was whichever answer was slower. `undefined` while it runs,
+  // `null` when there is nothing to show - the three states the panel below already reads.
+  const { data: detail, loading: detailLoading } = useIpcQuery(
+    async () => (expandedId ? window.quartzGui.themeMarketplace.detail(projectPath, expandedId) : null),
+    [projectPath, expandedId]
+  )
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -409,12 +411,6 @@ function ThemeCatalog({
     await window.quartzGui.themeMarketplace.refresh()
     await load()
   }
-
-  useEffect(() => {
-    if (!expandedId) return
-    setDetail(undefined)
-    window.quartzGui.themeMarketplace.detail(projectPath, expandedId).then(setDetail)
-  }, [projectPath, expandedId])
 
   async function install(themeId: string): Promise<void> {
     setInstallingId(themeId)
@@ -490,9 +486,9 @@ function ThemeCatalog({
               </div>
               {isExpanded && (
                 <div className="border-t border-black/[0.04] bg-black/[0.02] px-2.5 py-2 text-xs dark:border-white/5 dark:bg-white/[0.02]">
-                  {detail === undefined && <p className="text-slate-500 dark:text-slate-400">{t('themes.catalog.detailLoading')}</p>}
-                  {detail === null && <p className="text-slate-500 dark:text-slate-400">{t('themes.catalog.detailNone')}</p>}
-                  {detail && (
+                  {detailLoading && <p className="text-slate-500 dark:text-slate-400">{t('themes.catalog.detailLoading')}</p>}
+                  {!detailLoading && detail === null && <p className="text-slate-500 dark:text-slate-400">{t('themes.catalog.detailNone')}</p>}
+                  {!detailLoading && detail && (
                     <div className="flex flex-col gap-1 text-slate-600 dark:text-slate-300">
                       <p>{t('themes.catalog.modes', { modes: detail.modes.join(', ') || '—' })}</p>
                       <p>{t('themes.catalog.variations', { variations: detail.variations.join(', ') || '—' })}</p>

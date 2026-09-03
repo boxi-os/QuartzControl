@@ -17,6 +17,7 @@
     "smoke": "node scripts/smoke.mjs",
     "check:i18n": "node scripts/check-i18n-keys.mjs",
     "check:runtime": "node scripts/check-runtime.mjs",
+    "fetch:git": "node scripts/fetch-git.mjs",
     "icon": "node scripts/build-icon.mjs",
     "dist": "npm run build && electron-builder",
     "dist:mac": "npm run build && electron-builder --mac",

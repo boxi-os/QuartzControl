@@ -69,10 +69,8 @@ export default {
       description: 'Ohne sie schlagen Builds, neue Projekte, Plugins aus einer Git-Quelle und Snapshots fehl.',
       missing: 'nicht gefunden',
       brokenTool: 'gefunden, lässt sich aber nicht ausführen',
-      installHint:
-        'git gibt es auf macOS mit den Xcode-Befehlszeilenwerkzeugen (xcode-select --install), unter Debian und Ubuntu mit „sudo apt install git“. Danach diese Ansicht neu laden.',
       embeddedBroken:
-        'Node und npm gehören zur App. Dass sie sich nicht ausführen lassen, heißt, dass diese Installation unvollständig ist — am schnellsten hilft, die App neu zu installieren.',
+        'Diese Werkzeuge gehören zur App. Dass sie sich nicht ausführen lassen, heißt, dass diese Installation unvollständig ist — am schnellsten hilft, die App neu zu installieren.',
       bundled: 'in der App',
       fromSystem: 'vom System',
       recheck: 'Erneut prüfen',

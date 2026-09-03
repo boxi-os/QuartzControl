@@ -345,10 +345,12 @@ function GettingStarted({ onOpen, onCreate }: { onOpen: () => void; onCreate: ()
 
 // A build, a plugin install and creating a project all shell out, and before this a machine
 // missing a tool said so as a cryptic failure halfway through a clone; now it says so before
-// anything is attempted. Since node and npm travel with the app (nodeRuntime.ts), what is left to
-// ask the user for is git - so the two states are named separately here rather than lumped into
-// one list of "missing tools": a missing git is something the user can fix, a missing embedded
-// node means this copy of the app is incomplete.
+// anything is attempted. Since Phase 7c all three travel with the app - node and npm always
+// (nodeRuntime.ts), git whenever the machine has none that runs (gitRuntime.ts) - so there is
+// nothing left to ask the user to install, and a tool that does not run means this copy of the
+// app is incomplete. That is why the band has one hint and not two: a *host* tool that is broken
+// cannot occur any more, because git only counts as the host's once it has answered
+// `git --version`.
 //
 // Two presentations, never both: a full-width band above everything when something is wrong (the
 // same rule ProjectDashboard's attention band follows - it exists only when there is real
@@ -373,7 +375,6 @@ function EnvironmentBand({ info, onRecheck }: { info: EnvironmentInfo; onRecheck
   if (environmentIsHealthy(info)) return null
 
   const broken = info.tools.filter((tool) => tool.version === null)
-  const brokenHost = broken.filter((tool) => tool.source === 'host')
   return (
     <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-500/40 dark:bg-amber-950/40">
       {broken.length > 0 && (
@@ -395,7 +396,7 @@ function EnvironmentBand({ info, onRecheck }: { info: EnvironmentInfo; onRecheck
             ))}
           </ul>
           <p className="mt-2.5 text-xs leading-relaxed text-amber-900/70 dark:text-amber-200/70">
-            {brokenHost.length > 0 ? t('home.environment.installHint') : t('home.environment.embeddedBroken')}
+            {t('home.environment.embeddedBroken')}
           </p>
         </>
       )}

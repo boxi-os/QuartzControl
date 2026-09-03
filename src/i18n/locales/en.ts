@@ -67,10 +67,8 @@ export default {
       description: 'Without them builds, new projects, plugins from a git source and snapshots all fail.',
       missing: 'not found',
       brokenTool: 'found, but does not run',
-      installHint:
-        'On macOS git comes with the Xcode command line tools (xcode-select --install); on Debian and Ubuntu with “sudo apt install git”. Then re-check here.',
       embeddedBroken:
-        'Node and npm are part of the app. If they cannot run, this installation is incomplete — reinstalling the app is the quickest fix.',
+        'These tools are part of the app. If they cannot run, this installation is incomplete — reinstalling the app is the quickest fix.',
       bundled: 'in the app',
       fromSystem: 'from the system',
       recheck: 'Check again',

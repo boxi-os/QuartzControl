@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Route, Routes, Navigate, useNavigate } from 'react-router-dom'
 import { ErrorToasts, RouteErrorBoundary } from './components/ErrorSurface'
+import { Announcer } from './state/announcer'
 import { runSaveCommand } from './state/saveCommand'
 import { useLogStore } from './state/store'
 import Home from './routes/Home'
@@ -80,6 +81,10 @@ export default function App(): JSX.Element {
         <Route path='*' element={<Navigate to='/' replace />} />
       </Routes>
       <ErrorToasts />
+      {/* One live region for messages that have no place of their own - a row's confirmation, the
+          running commentary of a drag. Mounted here so it is in the document before anything is
+          said; see state/announcer.tsx. */}
+      <Announcer />
     </RouteErrorBoundary>
   )
 }

@@ -785,6 +785,8 @@ export default {
     otherProcessingGroup: 'Transformer, Filter & Emitter',
     dragHint: 'Ziehen zum Umsortieren',
     dragHandle: 'Umsortieren: {{name}}',
+    savedAnnounce: 'Einstellungen von {{name}} gespeichert.',
+    reorderedAnnounce: '{{name}} ist jetzt an Position {{position}} von {{total}}.',
     moveUp: 'Nach oben: {{name}}',
     moveDown: 'Nach unten: {{name}}',
     updateAvailable: 'Update verfügbar',
@@ -1593,6 +1595,15 @@ export default {
     refreshing: 'Lade…',
     unavailable:
       'Der Katalog ist gerade nicht erreichbar (GitHub antwortet nicht oder das Anfragelimit ist erschöpft). Unten steht deshalb nur ein Platzhalter — mit „Katalog neu laden“ nochmal versuchen. Ein GitHub-Token in den Einstellungen hebt das Limit deutlich an.'
+  },
+  dnd: {
+    instructions:
+      'Mit Leertaste oder Eingabetaste aufnehmen. Beim Ziehen mit den Pfeiltasten bewegen, mit Leertaste oder Eingabetaste ablegen, mit Escape abbrechen.',
+    picked: '{{name}} aufgenommen.',
+    over: '{{name}} liegt über {{target}}.',
+    outside: '{{name}} liegt über keinem Ablageort.',
+    dropped: '{{name}} bei {{target}} abgelegt.',
+    cancelled: '{{name}} abgebrochen, nichts verschoben.'
   },
   logConsole: {
     noOutput: 'Noch keine Ausgabe.',

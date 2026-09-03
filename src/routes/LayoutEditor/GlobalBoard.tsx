@@ -28,6 +28,7 @@ import { Badge, Button, Card, Field, SegmentedControl, Select, SettingsSection, 
 import { formatIpcError } from '../../components/ErrorSurface'
 import DevServerRestartHint from '../../components/DevServerRestartHint'
 import { ItemCard, PaletteChip, GROUP_COLORS } from './ComponentPill'
+import { dndAccessibility } from '../../utils/dndAnnouncements'
 import {
   BUILTIN_FRAME_LAYOUT,
   DEFAULT_FRAME_GRID,
@@ -157,6 +158,20 @@ export default function GlobalBoard({
   // simply wrong.
   const builtinDefaultFrame = builtinPageTypeFrames[`${previewPageType}-page`]
   const unknownPluginFrame = !activeFrameName && !activeFrame && builtinDefaultFrame != null && builtinDefaultFrame !== 'default'
+
+  // What a drag id means here, in words: a palette chip about to be placed, the palette itself as
+  // a drop target, one of the six layout positions, or - a bare number - the plugin at that index
+  // in the config. dnd-kit would otherwise narrate "droppable area 37" in English.
+  function describeDragId(id: string): string {
+    if (id === PALETTE_DROP_ID) return t('layoutEditor.componentPill.paletteLabel')
+    // A palette id carries the *index* of the plugin it would duplicate, not its name
+    // (appendDuplicateToPosition needs the index) - so it resolves the same way as a placed item.
+    const index = id.startsWith(PALETTE_PREFIX) ? Number(id.slice(PALETTE_PREFIX.length)) : Number(id)
+    if (id.startsWith(PALETTE_PREFIX)) return config.plugins[index]?.name ?? id
+    if ((POSITIONS as string[]).includes(id)) return t(`positions.${id}`, id)
+    return config.plugins[index]?.name ?? id
+  }
+  const { announcements, screenReaderInstructions } = dndAccessibility(t, describeDragId)
 
   function handleDragStart(event: DragStartEvent): void {
     setActiveId(String(event.active.id))
@@ -328,7 +343,12 @@ export default function GlobalBoard({
 
       {/* useDraggable/useDroppable only register with the nearest ancestor DndContext, so the
           palette has to be a child of it, not a sibling - otherwise its chips are inert. */}
-      <DndContext collisionDetection={collisionDetection} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <DndContext
+        collisionDetection={collisionDetection}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        accessibility={{ announcements, screenReaderInstructions }}
+      >
         <ComponentPalette
           plugins={config.plugins}
           activePaletteSource={activePaletteSource !== null}

@@ -150,3 +150,44 @@ dass Electron sie an genau diesen Punkt bindet, sagt das `accelerator`-Feld.
 
 Der Treiber hat dafür einen neuen Befehl bekommen (`mainfile`, `electronApplication.evaluate`) — bis
 dahin konnte die Skill nur im Renderer auswerten, und das native Menü liegt nicht dort.
+
+## Eine Live-Region für die Seite, und ein Drag, der spricht (2026-09-03)
+
+Die zwei Punkte, die der A4- und der `@dnd-kit`-Durchgang liegen gelassen hatten, gehören zusammen:
+beide brauchen eine Stelle, an der etwas gesagt werden kann, das an keinem festen Platz steht.
+
+**`state/announcer.tsx` ist diese Stelle.** Eine `sr-only`-Region, einmal in `App.tsx` gemountet,
+und ein `announce(text)` mit Modul-Abonnenten — dieselbe Bauform wie der Sticky-Store und das
+Unsaved-Flag, aus demselben Grund: der Schreiber sitzt tief in einer Seite, der Leser ist ein
+einzelnes Element ganz oben, und ein Provider dazwischen brächte nichts. Zwei Feinheiten stecken
+drin. Erstens wird der Text vor dem Setzen geleert: dieselbe Meldung zweimal hintereinander ist im
+DOM keine Änderung und damit nichts zum Ansagen — genau der Fall „zweimal nach oben“. Zweitens
+räumt sich die Region nach fünf Sekunden selbst leer, damit niemand später beim Durchgehen der
+Seite auf einen alten Satz stößt.
+
+Was hineinschreibt: die Zeilenmeldung der Plugin-Liste („Einstellungen von darkmode gespeichert.“
+statt eines grünen Wortes an einer von achtundvierzig Zeilen) und das Ergebnis jedes Umsortierens
+(„explorer ist jetzt an Position 2 von 5.“) — letzteres in `reorderGroup`, also für alle drei Wege
+zugleich: Maus-Drag, Tastatur-Drag und die zwei Pfeile.
+
+**Die Drag-Ansagen sind jetzt Deutsch und nennen Namen.** dnd-kit bringt eigene mit, sie sind
+Englisch und sprechen von Roh-IDs („Draggable item 37 was moved over droppable area 42“) — hier
+Indizes in `config.plugins`. `utils/dndAnnouncements.ts` liefert stattdessen dieselben fünf Sätze
+aus `de.ts`/`en.ts`, samt der Tastatur-Anleitung, die dnd-kit per `aria-describedby` an jeden Griff
+hängt. Wie eine ID zu einem Namen wird, weiß nur die Aufrufstelle, also gibt sie ein `describe`
+mit: die Plugin-Liste eine Map, das Board eine Funktion, die Palette, Ablagezone, Position und
+Config-Index auseinanderhält. Dabei gemessen und korrigiert: eine Paletten-ID trägt den *Index* des
+Plugins, das sie dupliziert, nicht seinen Namen — ohne die Auflösung sagte das Board „4 liegt über
+spacer“.
+
+Eine Regel ist beim Messen entstanden: `onDragOver` schweigt, wenn das Ziel der aufgenommene
+Eintrag selbst ist. dnd-kit meldet den eigenen Platz als erstes Ziel, und die Ansage überschrieb das
+„aufgenommen“, das gerade herausgegangen war — im laufenden Programm sichtbar, weil die
+Aufnahme-Meldung nie stehen blieb.
+
+Geprüft im Produktions-Build gegen `gui-test`: Aufnehmen, Pfeiltaste, Ablegen ergibt „reader-mode
+aufgenommen.“ → „reader-mode liegt über darkmode.“ → „reader-mode bei darkmode abgelegt.“ und
+danach „reader-mode ist jetzt an Position 3 von 5.“; ein Pfeil-Knopf ergibt denselben letzten Satz
+allein; eine Option zu ändern ergibt „Einstellungen von darkmode gespeichert.“ neben dem sichtbaren
+Grün. Im Layout-Editor tragen alle 34 Griffe die deutsche Anleitung, und eine Aufnahme mit Abbruch
+sagt „table-of-contents abgebrochen, nichts verschoben.“ Konfiguration danach wiederhergestellt.

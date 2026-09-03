@@ -782,6 +782,8 @@ export default {
     otherProcessingGroup: 'Transformers, filters & emitters',
     dragHint: 'Drag to reorder',
     dragHandle: 'Reorder: {{name}}',
+    savedAnnounce: 'Settings for {{name}} saved.',
+    reorderedAnnounce: '{{name}} is now at position {{position}} of {{total}}.',
     moveUp: 'Move up: {{name}}',
     moveDown: 'Move down: {{name}}',
     updateAvailable: 'Update available',
@@ -1585,6 +1587,15 @@ export default {
     refreshing: 'Loading…',
     unavailable:
       'The catalog is unreachable right now (GitHub is not answering, or the rate limit is used up). What is listed below is a placeholder — try “Reload catalog”. A GitHub token in the settings raises the limit considerably.'
+  },
+  dnd: {
+    instructions:
+      'Press space or enter to pick up. While dragging, use the arrow keys to move, space or enter to drop, escape to cancel.',
+    picked: '{{name}} picked up.',
+    over: '{{name}} is over {{target}}.',
+    outside: '{{name}} is over no drop target.',
+    dropped: '{{name}} dropped on {{target}}.',
+    cancelled: '{{name}} cancelled, nothing moved.'
   },
   logConsole: {
     noOutput: 'No output yet.',

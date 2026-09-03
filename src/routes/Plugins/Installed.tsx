@@ -17,7 +17,9 @@ import type {
 } from '@shared/ipc-contract'
 import { Badge, Button, Card, Select, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
+import { announce } from '../../state/announcer'
 import { primeStickyState, useStickyState } from '../../state/uiState'
+import { dndAccessibility } from '../../utils/dndAnnouncements'
 import { repoUrl } from './pluginSource'
 
 // A row is one line of text plus two fixed-width controls, so it no longer needs the ~710px the
@@ -143,6 +145,13 @@ function buildGroupOptionsFields(t: TFunction): PluginOptionField[] {
   ]
 }
 
+// What a row is called on screen: a frame carries its own name, everything else the plugin name
+// quartz addresses it by. Used for the sticky key, the drag narration and the reorder message, so
+// all three speak of the same thing.
+function displayName(item: IndexedPlugin): string {
+  return item.frame ? item.frame.frameName : item.plugin.name
+}
+
 function getLayout(plugin: PluginEntry): PluginLayout | null {
   const layout = plugin.layout
   return layout && typeof layout === 'object' ? (layout as PluginLayout) : null
@@ -259,10 +268,15 @@ export default function PluginsInstalled(): JSX.Element {
     []
   )
 
+  // The visible half is a green word next to one row of forty-eight; the spoken half has to name
+  // the row, because "Gespeichert." on its own says nothing about which one. It goes through the
+  // app's single live region rather than a region per row - see state/announcer.tsx.
   function flagSaved(index: number): void {
     setSavedIndex(index)
     if (savedTimer.current) clearTimeout(savedTimer.current)
     savedTimer.current = setTimeout(() => setSavedIndex(null), 2000)
+    const name = config?.plugins[index]?.name
+    if (name) announce(t('pluginsInstalled.savedAnnounce', { name }))
   }
 
   // Two config entries can derive the same display name (e.g. a built-in "@quartz-community/explorer"
@@ -374,6 +388,16 @@ export default function PluginsInstalled(): JSX.Element {
           : { ...item.plugin, layout: { ...getLayout(item.plugin)!, priority: value } }
     })
     await window.quartzGui.config.save(project.path, { ...config, plugins })
+    // The one sentence that says what actually happened, for every way of getting here - drag,
+    // keyboard drag, and the two arrows. The drag's own commentary stops at "abgelegt bei X";
+    // this is the result.
+    announce(
+      t('pluginsInstalled.reorderedAnnounce', {
+        name: displayName(moved),
+        position: to + 1,
+        total: reordered.length
+      })
+    )
     await reload()
   }
 
@@ -547,6 +571,7 @@ export default function PluginsInstalled(): JSX.Element {
                   <GroupHeading label={t(`positions.${position}`, position)} rawKey={position} count={shown.length} />
                   <ReorderableList
                     ids={group.map((item) => String(item.index))}
+                    names={new Map(group.map((item) => [String(item.index), displayName(item)]))}
                     canReorder={cardProps.canReorder}
                     onReorder={(from, to) => reorderGroup(group, from, to, 'layoutPriority')}
                   >
@@ -578,6 +603,7 @@ export default function PluginsInstalled(): JSX.Element {
                 <GroupHeading label={t('pluginsInstalled.pageTypesGroup')} count={pageTypeItems.filter(matches).length} />
                 <ReorderableList
                   ids={pageTypeItems.map((item) => String(item.index))}
+                  names={new Map(pageTypeItems.map((item) => [String(item.index), displayName(item)]))}
                   canReorder={cardProps.canReorder}
                   onReorder={(from, to) => reorderGroup(pageTypeItems, from, to, 'order')}
                 >
@@ -604,6 +630,7 @@ export default function PluginsInstalled(): JSX.Element {
                 />
                 <ReorderableList
                   ids={otherProcessingItems.map((item) => String(item.index))}
+                  names={new Map(otherProcessingItems.map((item) => [String(item.index), displayName(item)]))}
                   canReorder={cardProps.canReorder}
                   onReorder={(from, to) => reorderGroup(otherProcessingItems, from, to, 'order')}
                 >
@@ -724,15 +751,20 @@ interface PluginRowProps {
 // each, that is true by construction instead of by a guard in the drop handler.
 function ReorderableList({
   ids,
+  names,
   canReorder,
   onReorder,
   children
 }: {
   ids: string[]
+  /** Display name per id, so the drag can be narrated with the names on screen. */
+  names: Map<string, string>
   canReorder: boolean
   onReorder: (from: number, to: number) => void
   children: React.ReactNode
 }): JSX.Element {
+  const { t } = useTranslation()
+  const { announcements, screenReaderInstructions } = dndAccessibility(t, (id) => names.get(id) ?? '')
   // The keyboard sensor is a default of DndContext, but its default coordinate getter is not:
   // it moves the picked-up item by a fixed 25px per arrow press, which in this list (cards ~130px
   // tall, two columns above 1500px) never reaches the next card - measured in the running app,
@@ -752,7 +784,12 @@ function ReorderableList({
   if (!canReorder) return <div className={PLUGIN_LIST}>{children}</div>
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+      accessibility={{ announcements, screenReaderInstructions }}
+    >
       {/* rect, not vertical list: above 1500px this list is two columns wide (PLUGIN_LIST), and
           the vertical strategy assumes a single column. */}
       <SortableContext items={ids} strategy={rectSortingStrategy}>
@@ -808,7 +845,7 @@ function PluginRow({
   const project = useProject()
   const { plugin, index, frame } = item
   const layout = getLayout(plugin)
-  const rowName = frame ? frame.frameName : plugin.name
+  const rowName = displayName(item)
   // Keyed by the plugin's *name*, not by its position in the config array. The index is what the
   // list's React key uses, and it was what this key used too - but removing a plugin shortens that
   // array, so every entry behind it moves up one and the open options panel was left on whichever

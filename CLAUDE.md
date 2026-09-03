@@ -154,6 +154,12 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   da“ und eine fehlende Eigenschaft „diese Seite sagt nichts“. Knöpfe und Badges bleiben draußen: die
   ändern sich, weil jemand tippt. Eine `<h1>` pro Seite, jede `<nav>` mit Namen. Messungen in
   [`navigation-and-pages.md`](docs/decisions/navigation-and-pages.md).
+- **Was keinen festen Platz hat, wird über `announce()` gesagt.** Eine Meldung, die zu *einer Zeile*
+  einer Liste gehört, oder der Verlauf eines Drags, hat keinen Ort für eine eigene Region - beides
+  geht in die eine Region der Seite (`state/announcer.tsx`, gemountet in `App.tsx`). Ganze Sätze mit
+  Subjekt, nicht „Gespeichert“. Drag-Ansagen kommen aus `utils/dndAnnouncements.ts`, damit die
+  beiden Listen dieselben Sätze in derselben Sprache sagen; die Aufrufstelle liefert nur, wie aus
+  einer Drag-ID ein Name wird.
 - **Ein deaktiviertes Control muss noch lesbar sein.** Explizite disabled-Farben, keine Opazität:
   Text wird `text-text-muted`, ein Feld sinkt auf `bg-ground`, ein Icon-Button geht von
   `text-text-secondary` auf `text-text-muted`. Gedimmt werden darf nur, was keine eigene Information
@@ -251,8 +257,10 @@ mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge.
   (2026-09-03); offen bleiben die anderen Drag-Stellen (`LayoutEditor/FrameBuilder`, `ComponentPill`;
   `Styles/CustomCss` hat die Pfeile schon, aber noch natives Drag).
 - **A4 - Status: erledigt (2026-09-03).** `status`-Platz im `PageHeader` als `role="status"`,
-  `role="log"` an beiden Konsolen, eine `<h1>` pro Seite, `<nav aria-label>`. Offen bleibt die
-  Zeilenmeldung in der Plugin-Liste - die braucht eine Region für die Seite, nicht eine pro Zeile.
+  `role="log"` an beiden Konsolen, eine `<h1>` pro Seite, `<nav aria-label>`. Nachgezogen am selben
+  Tag: `state/announcer.tsx` als Live-Region der Seite (Zeilenmeldung der Plugin-Liste, Ergebnis
+  jedes Umsortierens) und `utils/dndAnnouncements.ts` für die Drag-Ansagen in beiden Listen, die
+  vorher Englisch waren und von Roh-IDs sprachen.
 - **U5 - Status: offen.** `LabelText` ist tot; Typo-Skala aus Arbitrary Values (`text-[11px]` 77×,
   `text-[13px]` 54×) - Tokens definieren, `ui.tsx` umstellen, Rest beiläufig, kein sed.
 - **T2 - Status: offen (Notiz).** `'#ffffff'` als Picker-Fallback für nicht parsebare Farben.

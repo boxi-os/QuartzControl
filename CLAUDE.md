@@ -286,10 +286,10 @@ mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge.
   nur `order`/`layout.priority` neu und lässt die Array-Positionen stehen - das Entfernen ist es, das
   das Array verkürzt und jeden Eintrag dahinter um eins verschiebt. Damit tragen alle Sticky-Schlüssel
   stabile Kennungen.
-- **Options-Zeile in `Plugins/Installed` (aus dem U2-Durchgang) - Status: offen.** In den beiden
-  Options-Editoren steht der Optionsschlüssel als `<span>` neben dem Schalter; seit U2 ist der Name
-  doppelt vorhanden, sichtbar und `sr-only`. Eine `Field`-artige Verknüpfung (Label umschließt das
-  Control) wäre sauberer, ist aber ein Umbau der Zeile, die auch Select, Zahl und Text kennt.
+- **Options-Zeile in `Plugins/Installed` - Status: erledigt (2026-09-03).** Der Schlüssel ist ein
+  `<label htmlFor>`, das Control trägt die `id`; damit haben Select, Zahl und Text überhaupt erst
+  einen Namen (sie hatten keinen). Der Schalter behält sein verstecktes Label und damit den Namen
+  zweimal im DOM - das aufzulösen hieße, `Toggle` von außen benennbar zu machen.
 - **Drei Antworten im Bestätigungsdialog (aus dem Doku-Durchgang) - Status: offen.** `confirmDialog()`
   und der Kanal `dialog.confirm` kennen genau zwei Antworten (Abbrechen, Bestätigen). Der
   Unsaved-Guard braucht absehbar „Speichern / Verwerfen / Abbrechen“; `showMessageBox` kann drei.

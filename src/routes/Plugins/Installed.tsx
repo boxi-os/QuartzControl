@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
 import { SortableContext, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
@@ -1119,16 +1119,20 @@ function AddOptionRow({
 
   return (
     <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-dashed border-black/10 pt-3 dark:border-white/10">
+      {/* aria-label rather than a visible label: the row is one line of controls with no column to
+          put a label in, and a placeholder is not a name - it disappears the moment anyone types. */}
       <TextInput
         value={key}
         onChange={(e) => setKey(e.target.value)}
         placeholder={t('pluginsInstalled.optionKeyPlaceholder')}
+        aria-label={t('pluginsInstalled.optionKeyPlaceholder')}
         className="w-40 font-mono"
       />
       <TextInput
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={t('pluginsInstalled.optionValuePlaceholder')}
+        aria-label={t('pluginsInstalled.optionValuePlaceholder')}
         className="w-56 font-mono"
       />
       <Button
@@ -1178,18 +1182,33 @@ function FieldRow({
 }): JSX.Element {
   const { t } = useTranslation()
   const currentText = value == null ? '' : String(value)
+  const id = useId()
+  // The key in the left column is the control's label, not decoration next to it: a select, a
+  // number field and a text field had no accessible name at all here - the name was a <span> the
+  // control knew nothing about, so a screen reader announced "combobox" and nothing else. It is a
+  // real <label htmlFor> now (Select and TextInput pass `id` straight through to their element).
+  //
+  // The switch is the exception and keeps its own hidden label (see Toggle's hideLabel): its input
+  // sits inside a <label> of its own, so the name would end up announced twice. The visible key
+  // therefore stays a <span> in that one row - the name is in the DOM twice there, which is untidy
+  // rather than wrong, and fixing it means teaching Toggle to be named from outside.
+  const Key = field.kind === 'boolean' ? 'span' : 'label'
   return (
     <div className="flex items-center gap-3">
-      <span className="w-40 shrink-0 font-mono text-xs text-slate-600 dark:text-slate-300">
+      <Key
+        {...(field.kind === 'boolean' ? {} : { htmlFor: id })}
+        className="w-40 shrink-0 font-mono text-xs text-slate-600 dark:text-slate-300"
+      >
         {field.name}
         {!field.optional && <span className="text-red-500"> *</span>}
-      </span>
+      </Key>
       <div className="w-40 shrink-0">
         {field.kind === 'boolean' && (
           <Toggle label={field.name} hideLabel checked={value === true || value === 'true'} onChange={(checked) => onChange(checked)} />
         )}
         {field.kind === 'enum' && (
           <Select
+            id={id}
             value={typeof value === 'string' && field.enumValues?.includes(value) ? value : ''}
             onChange={(e) => onChange(e.target.value)}
             className="w-40"
@@ -1211,6 +1230,7 @@ function FieldRow({
           // defaultValue after the first render
           <TextInput
             key={currentText}
+            id={id}
             type="number"
             defaultValue={currentText}
             onBlur={(e) => {
@@ -1222,6 +1242,7 @@ function FieldRow({
         {field.kind === 'string' && (
           <TextInput
             key={currentText}
+            id={id}
             type="text"
             defaultValue={currentText}
             onBlur={(e) => {
@@ -1250,7 +1271,15 @@ function InferredFieldRow({
   onRemove: () => void
 }): JSX.Element {
   const { t } = useTranslation()
+  const id = useId()
+  // Same as FieldRow: the key is the control's label, except for the switch, which brings its own -
+  // see the comment there.
   const remove = <IconButton icon={Trash2} title={t('pluginsInstalled.removeOption', { name })} onClick={onRemove} />
+  const keyLabel = (
+    <label htmlFor={id} className="w-40 shrink-0 font-mono text-xs text-slate-600 dark:text-slate-300">
+      {name}
+    </label>
+  )
 
   if (typeof value === 'boolean') {
     return (
@@ -1264,9 +1293,10 @@ function InferredFieldRow({
   if (typeof value === 'number') {
     return (
       <div className="flex items-center gap-3">
-        <span className="w-40 shrink-0 font-mono text-xs text-slate-600 dark:text-slate-300">{name}</span>
+        {keyLabel}
         <TextInput
           key={String(value)}
+          id={id}
           type="number"
           defaultValue={String(value)}
           onBlur={(e) => onChange(Number(e.target.value))}
@@ -1280,9 +1310,10 @@ function InferredFieldRow({
   const initial = typeof value === 'string' ? value : JSON.stringify(value)
   return (
     <div className="flex items-center gap-3">
-      <span className="w-40 shrink-0 font-mono text-xs text-slate-600 dark:text-slate-300">{name}</span>
+      {keyLabel}
       <TextInput
         key={initial}
+        id={id}
         defaultValue={initial}
         onBlur={(e) => {
           if (e.target.value === initial) return

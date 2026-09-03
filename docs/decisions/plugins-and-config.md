@@ -56,3 +56,27 @@ Stellen gemeinsam, nicht dieser hier allein.
 
 **Two config-mutation paths coexist, and mixing them up breaks silently.** `quartz plugin enable/disable/config --set <key>=<value>` all **no-op (exit 0, no file change)** for any plugin not CLI-"installed" — i.e. every built-in `@quartz-community/x` entry, which is most of them. So `configurePlugin`/`enablePlugin`/`disablePlugin` were removed entirely (there's no `plugins.enable`/`.disable`/`.configure` in `ipc-contract.ts` — don't re-add them expecting the CLI to work); `Installed.tsx`'s `toggleEnabled`/`updateField`/`reorderGroup` instead call `config.save` directly. Only `plugins.add`/`.remove`/`.installFromLock`/`.prune` still shell out to the CLI (verified reliable for those specific actions).
 - Direct-write mutations must address plugin entries **by array index, not derived display name** — a built-in `@quartz-community/explorer` entry and a CLI-installed `github:quartz-community/explorer` entry both derive the display name `"explorer"` (see `deriveName()`), so name-based lookup can silently mutate the wrong entry once both exist side by side. The Marketplace also blocks installing a plugin whose normalized repo id already matches an existing entry, to stop that situation from being created in the first place.
+
+## Der Optionsschlüssel ist das Label (2026-09-03)
+
+Der Befund aus dem U2-Durchgang war „der Name steht doppelt da“ — beim Nachsehen war das die
+harmlosere Hälfte. Die andere: von den vier Zeilentypen in den beiden Options-Editoren trug nur der
+Schalter überhaupt einen Namen. Select, Zahl und Text hatten links einen `<span>`, von dem das
+Bedienelement nichts wusste; ein Screenreader sagte „Kombinationsfeld“ und sonst nichts, auf einer
+Seite mit bis zu neun solchen Feldern pro Plugin.
+
+Der Schlüssel ist jetzt ein `<label htmlFor>` und das Control trägt die passende `id` (`Select` und
+`TextInput` reichen `id` an ihr Element durch, weil sie ihre Props spreizen). Der Schalter bleibt die
+Ausnahme und behält sein eigenes verstecktes Label: sein `<input>` sitzt in einem `<label>`, ein
+zweites außen herum ließe den Namen zweimal ansagen. In dieser einen Zeile steht der Name also
+weiter zweimal im DOM — unordentlich, nicht falsch, und das Aufräumen hieße, `Toggle` beizubringen,
+sich von außen benennen zu lassen.
+
+Dazu die Zeile zum Hinzufügen einer Option: zwei Felder, die nur einen Platzhalter hatten. Ein
+Platzhalter ist kein Name, er verschwindet beim ersten Tastendruck — sie tragen jetzt `aria-label`
+mit demselben Wort.
+
+Im Produktions-Build geprüft, über die Auflösung der Namen im DOM statt über den Augenschein: alle
+neun Schema-Felder eines Plugins antworten mit ihrem Schlüssel (`position`, `priority`, `display`,
+`condition`, `group`, `basis`, `order`, `align`, `justify`), die beiden Felder der Hinzufügen-Zeile
+mit „Option“ und „Wert“. Die Ansicht selbst ist unverändert.

@@ -107,3 +107,27 @@ beiden Modi — den hellen Wert für dunkel zu zeigen, ist dann richtig und nich
 nur, dass das Gegenstück existierte und nicht gelesen wurde. `parseDeclarations` in
 `styleService.ts` hat dasselbe Muster und bleibt ebenfalls unangetastet: es liest ausschließlich
 den Block, den `renderVariableOverrides()` selbst schreibt, und der endet immer auf `;`.
+
+## Der Farbwähler zeigt, was dasteht (T2, 2026-09-03)
+
+`<input type="color">` kennt nur `#rrggbb`. Alles andere — `var(--secondary)`, ein `hsl()`, ein
+Verlauf, eine Kette, die ins Leere zeigt — ersetzt es still durch Weiß, und alle drei Aufrufstellen
+gaben ihm dafür `'#ffffff'` mit. Zwei davon zeigten dieses Feld direkt, also stand da ein weißes
+Kästchen für eine Variable, die eine echte Farbe hat: das eine, wofür der Wähler da ist, war genau
+dann falsch, wenn der Wert interessant war.
+
+Jetzt ein gemeinsames `ColorPicker`: das Eingabefeld ist durchsichtig, die Farbe liegt dahinter —
+das Muster, das die Basis-Seite schon hatte, nur an allen drei Stellen. Der Browser malt, was CSS
+versteht, und das ist deutlich mehr, als der Wähler annimmt. Zwei Dinge kamen beim Messen dazu:
+
+- **Gemalt wird über `isDisplayableColor`, nicht mit dem rohen Wert.** Das CSSOM *verwirft* einen
+  Wert, den es nicht parsen kann, und behält den vorherigen — nach dem Tippen von
+  `linear-gradient(red, blue)` in ein Farbfeld zeigte das Kästchen weiter das Grün von eben. Ein
+  unmalbarer Wert ist jetzt durchsichtig.
+- **Der Startwert des Wählers ist Schwarz statt Weiß**, wenn es keinen Hex gibt. Er entscheidet nur,
+  wo sich das Betriebssystem-Fenster öffnet; Schwarz sieht dabei weniger nach „gelesen: weiß“ aus.
+
+Im Produktions-Build gemessen, in der Variablen-Ansicht: bei `#faf8f8`/`#161618` zeigt das Kästchen
+die Farbe und der Wähler startet dort; nach `var(--secondary)` zeigt es das aufgelöste `#10bc3b` und
+startet dort; nach `linear-gradient(red, blue)` ist es durchsichtig und der Wähler startet auf
+Schwarz, während der Titel den rohen Wert nennt. Nichts davon wurde gespeichert.

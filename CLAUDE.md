@@ -282,7 +282,8 @@ mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge.
 - **U5 - Status: erledigt (2026-09-03).** `LabelText` gelöscht; drei Größen-Tokens (`text-micro`,
   `text-ui`, `text-heading`) in `tailwind.config.js`, `ui.tsx` und die sieben 15px-Überschriften
   umgestellt. Die 133 übrigen Arbitrary Values bleiben, bis jemand die Zeile anfasst - kein sed.
-- **T2 - Status: offen (Notiz).** `'#ffffff'` als Picker-Fallback für nicht parsebare Farben.
+- **T2 - Status: erledigt (2026-09-03).** Die drei Farbwähler teilen sich `Styles/ColorPicker.tsx`:
+  durchsichtiges Feld, Farbe dahinter über `isDisplayableColor`, Startwert Schwarz statt Weiß.
 - **Sticky-State über Index - Status: erledigt (2026-09-03).** `plugins.expanded.<index>` keyt jetzt
   auf den Plugin-Namen. Beim Umbau korrigiert: das Umsortieren ist *nicht* der Auslöser, es schreibt
   nur `order`/`layout.priority` neu und lässt die Array-Positionen stehen - das Entfernen ist es, das

@@ -16,6 +16,7 @@ import {
   type ResolveContext,
   type VariableOrigin
 } from './variableGraph'
+import ColorPicker from './ColorPicker'
 
 const ORIGIN_TONE: Record<VariableOrigin, 'slate' | 'green' | 'amber'> = {
   core: 'slate',
@@ -315,13 +316,7 @@ function ValueInput({
     <div className="flex items-center gap-1.5">
       <span className="text-[11px] text-slate-500 dark:text-slate-400">{label}</span>
       {isColor && (
-        <input
-          type="color"
-          value={hex ?? '#ffffff'}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-6 w-8 cursor-pointer rounded border border-slate-300"
-          title={resolved ?? value}
-        />
+        <ColorPicker value={resolved ?? value} hex={hex} onChange={onChange} title={resolved ?? value} className="border-slate-300" />
       )}
       <TextInput value={value} onChange={(e) => onChange(e.target.value)} className="w-44 font-mono text-xs" />
     </div>

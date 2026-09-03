@@ -4,6 +4,7 @@ import { ChevronDown, ChevronRight } from 'lucide-react'
 import type { StyleSettingField, StyleSettingsSchema, ThemeStyleSettingsInfo } from '@shared/ipc-contract'
 import { Select, TextInput, Toggle } from '../../components/ui'
 import { colorEntries, keysOf, optionKey, readColor, type Mode } from './styleSettings'
+import ColorPicker from './ColorPicker'
 
 interface Group {
   heading?: StyleSettingField
@@ -364,13 +365,11 @@ function ColorControl({
   return (
     <div className="flex items-center gap-1.5">
       {label && <span className="text-[11px] text-slate-500 dark:text-slate-400">{label}</span>}
-      <input
-        type="color"
-        value={hex ?? '#ffffff'}
-        onChange={(e) => onChange(colorEntries(field, e.target.value, mode))}
-        className={`h-6 w-6 cursor-pointer rounded border ${
-          isSet ? 'border-green-500' : 'border-slate-300 dark:border-white/20'
-        }`}
+      <ColorPicker
+        value={hex ?? undefined}
+        hex={hex ?? null}
+        onChange={(next) => onChange(colorEntries(field, next, mode))}
+        className={isSet ? 'border-green-500' : 'border-slate-300 dark:border-white/20'}
       />
     </div>
   )

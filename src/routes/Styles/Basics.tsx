@@ -14,6 +14,7 @@ import {
   THEME_PLUGIN_PREFIX
 } from './fontDelivery'
 import { activeThemeIdOf, useStyles } from './index'
+import ColorPicker from './ColorPicker'
 
 type Theme = QuartzConfig['theme']
 const TYPOGRAPHY_KEYS = ['header', 'body', 'code'] as const
@@ -441,21 +442,16 @@ function ColorCell({
       className="flex items-center gap-2.5 rounded-md border border-black/[0.06] p-2 dark:border-white/10"
       title={overridden ? t('themeEditor.overriddenByTheme') : undefined}
     >
-      {/* Big enough to actually read the color, and a real preview even when the value is a
-          notation <input type="color"> cannot parse (it falls back to white internally, so the
-          background is painted from the raw value behind it). */}
-      <span
-        className="relative h-10 w-10 shrink-0 overflow-hidden rounded border border-black/10 dark:border-white/20"
-        style={{ backgroundColor: value }}
-      >
-        <input
-          type="color"
-          value={isHex ? value : '#ffffff'}
-          onChange={(e) => onChange(e.target.value)}
-          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-          title={name}
-        />
-      </span>
+      {/* Big enough to actually read the colour. The shared picker paints the raw value behind a
+          transparent input, so a notation the picker cannot parse still shows as itself. */}
+      <ColorPicker
+        value={value}
+        hex={isHex ? value : null}
+        onChange={onChange}
+        title={name}
+        size="lg"
+        className="border-black/10 dark:border-white/20"
+      />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex items-baseline gap-1.5">
           <span className={`truncate text-xs ${overridden ? 'text-text-muted' : 'text-text-secondary'}`} title={name}>

@@ -8,11 +8,16 @@ import type { EnvironmentInfo, SecretStorageInfo, ToolInfo } from '@shared/ipc-c
 // PATH. That works in development, where the app is started from a terminal and inherits the
 // shell's PATH, and fails in the one place it matters: a packaged app started from the Dock,
 // Finder or a desktop launcher, which on macOS inherits launchd's PATH
-// (/usr/bin:/bin:/usr/sbin:/sbin) and on Linux whatever the session manager exports. Node is
-// almost never in either - Homebrew puts it in /opt/homebrew/bin, nvm under ~/.nvm/versions,
-// volta/fnm/asdf/mise in their own shim directories - so every build, every plugin install and
-// every project creation would fail with ENOENT, while the same app started from a terminal works
-// perfectly. That difference is invisible during development, which is why this exists.
+// (/usr/bin:/bin:/usr/sbin:/sbin) and on Linux whatever the session manager exports. Developer
+// tools are almost never in either - Homebrew puts them in /opt/homebrew/bin, MacPorts in
+// /opt/local/bin - so every build, every plugin install and every project creation would fail
+// with ENOENT, while the same app started from a terminal works perfectly. That difference is
+// invisible during development, which is why this exists.
+//
+// Since node and npm travel with the app (nodeRuntime.ts), the tool this search is *for* is git,
+// and git is what decides whether it has to keep looking. It used to be node: with the embedded
+// runtime on PATH that test now always succeeds, so the search would stop before it ever reached
+// the directory holding git and a packaged app launched from the Dock would find no git at all.
 //
 // The fix runs once at startup and patches process.env.PATH, so every existing spawn keeps
 // working unchanged rather than each caller having to thread an environment through.
@@ -74,9 +79,9 @@ function pathFromLoginShell(): string[] {
 }
 
 // Last resort when the login shell told us nothing (a non-interactive shell, a hung dotfile, a
-// SHELL that no longer exists). Covers where the common installers actually put things; the
-// version-manager entries are globs by nature, so only their stable shim directories are listed -
-// a versioned nvm directory is found by the shell path above or not at all.
+// SHELL that no longer exists). Covers where the common installers actually put things. The
+// version-manager shim directories stay in the list even though node no longer comes from there:
+// on a machine without Xcode's command line tools, git often does (Homebrew, MacPorts, Nix).
 function candidateDirs(): string[] {
   const home = homedir()
   return [
@@ -96,15 +101,15 @@ function candidateDirs(): string[] {
 }
 
 /**
- * Makes `node`/`npm`/`npx` findable for every command this app spawns. Called once, before the
- * window is created, so the first thing the user does already works. A no-op when the inherited
- * PATH already resolves node, which is the case for every `npm run dev` - so nothing is paid for
- * in development.
+ * Makes the tools this app spawns from the outside - git, and rsync where a target asks for it -
+ * findable. Called once, before the window is created, so the first thing the user does already
+ * works. A no-op when the inherited PATH already resolves git, which is the case for every
+ * `npm run dev` - so nothing is paid for in development.
  */
 export function ensureToolPath(): ResolvedPath {
   if (resolved) return resolved
 
-  if (findExecutable('node')) {
+  if (findExecutable('git')) {
     resolved = { source: 'inherited', added: [] }
     return resolved
   }
@@ -125,13 +130,13 @@ export function ensureToolPath(): ResolvedPath {
   }
 
   const fromShell = add(pathFromLoginShell())
-  if (findExecutable('node')) {
+  if (findExecutable('git')) {
     resolved = { source: 'login-shell', added: fromShell }
     return resolved
   }
 
   const probed = add(candidateDirs())
-  resolved = { source: findExecutable('node') ? 'probed' : 'inherited', added: [...fromShell, ...probed] }
+  resolved = { source: findExecutable('git') ? 'probed' : 'inherited', added: [...fromShell, ...probed] }
   return resolved
 }
 

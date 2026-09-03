@@ -6,6 +6,7 @@ import { registerIpcHandlers } from './ipc/handlers'
 import { killAllServers, detectOrphanedServers, killOrphanedServers } from './services/buildService'
 import { getProject } from './services/projectStore'
 import { ensureToolPath } from './services/environmentService'
+import { ensureEmbeddedRuntime } from './services/nodeRuntime'
 import { mainT } from './i18n'
 import { applyAppMenu, APP_NAME } from './menu'
 import { applyStoredTheme, windowBackgroundColor } from './theme'
@@ -146,12 +147,18 @@ async function promptForOrphanedServers(): Promise<void> {
 }
 
 app.whenReady().then(async () => {
-  // First, before anything can spawn a command: a packaged app started from the Dock, Finder or a
-  // desktop launcher does not inherit a shell's PATH, so node/npm/npx are not findable and every
-  // build, plugin install and project creation would fail with ENOENT - while the same app
-  // started from a terminal works. Patches process.env.PATH once; a no-op when node is already
-  // findable, which is every `npm run dev`.
+  // Both before anything can spawn a command, and in this order.
+  //
+  // ensureToolPath() looks for what has to come from the outside - git above all: a packaged app
+  // started from the Dock, Finder or a desktop launcher inherits no shell PATH, so without this
+  // every project creation and every snapshot fails with ENOENT while the same app started from a
+  // terminal works.
+  //
+  // ensureEmbeddedRuntime() then puts this app's own node/npm/npx at the *front* of that PATH, so
+  // Quartz runs on Electron's Node 24 rather than on whatever the machine has - or has not -
+  // installed. Second, because the first call's search must not be answered by our own shims.
   ensureToolPath()
+  ensureEmbeddedRuntime()
   if (isMac && app.dock) {
     const iconPath = resolveIconPath()
     if (iconPath) app.dock.setIcon(nativeImage.createFromPath(iconPath))

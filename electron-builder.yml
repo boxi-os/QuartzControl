@@ -27,6 +27,15 @@ files:
   - package.json
   - '!**/*.map'
 
+# Neither travels inside the asar: npm reads and starts its own files, and the loader is handed to
+# a child process as a plain path. `to:` flattens them next to the app, which is where
+# nodeRuntime.ts looks first (process.resourcesPath) before falling back to the repo layout.
+extraResources:
+  - from: node_modules/npm
+    to: npm
+  - from: resources/runtime
+    to: runtime
+
 asar: true
 # Nothing here compiles against Electron's headers - ssh2 falls back to its pure-JS crypto when
 # the optional native binding is absent - so a rebuild would only be a slow way to fail.

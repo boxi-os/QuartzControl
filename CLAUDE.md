@@ -153,7 +153,8 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   verschieden sein (`border-ink/[0.06] dark:border-ink/10`). Statusfarben (Danger-Rot, Badge-Töne,
   InfoNote-Blau) bleiben Palette; eine immer dunkle Fläche bekommt weder `dark:` noch Token.
   Umgestellt sind `ui.tsx`, `body` und die vier U4-Seiten; alles andere beiläufig beim Anfassen,
-  kein sed. `theme.ts` hält den Grund weiter als eigenes Literal.
+  kein sed. `theme.ts` hält den Grund als zweite Kopie - Electron malt ihn, bevor der Renderer
+  existiert; beide Seiten verweisen aufeinander.
 - **Was ohne Zutun erscheint, wird angesagt.** Eine Meldung, die nach einer Aktion von selbst
   auftaucht, gehört in eine Live-Region: der `status`-Platz des `PageHeader` (`role="status"`), eine
   Konsole in `role="log"`. Die Region muss *vor* ihrem Text im Dokument stehen - sie wird also leer
@@ -248,13 +249,13 @@ Kurzbezeichnungen verweisen auf das Review.
 `npm run smoke` und eigenem Commit; was dabei nebenbei auffällt, wird gesammelt und genannt, nicht
 mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge.
 
-- **Reste aus dem T1/U4-Durchgang - Status: offen.** Der deaktivierte Ghost-Button liegt auf dem
-  Seitengrund bei 4,00:1, weil seine `ink/4%`-Fläche den Grund abdunkelt (auf einer Karte 4,36);
-  behebbar wie beim Feld, wäre aber eine Regel für alle Ghost-Buttons. `theme.ts` hält
-  `#f5f5f7`/`#1e1e1e` als eigenes Literal neben `--ground`, `select option` in `index.css` die
-  Werte von `--surface` und `--text` als Hex; beides gehört an die Variablen, sobald `theme.ts`
-  eine geteilte Konstante bekommt. Die Sidebar, die Seiten und die Sub-Komponenten tragen noch
-  Palette-Paare - beiläufig, kein sed.
+- **Reste aus dem T1/U4-Durchgang - Status: erledigt bis auf die Palette-Paare (2026-09-03).** Der
+  deaktivierte Ghost-Button sinkt auf `bg-ground` und misst 4,37:1 hell / 6,5:1 dunkel statt 4,00:1;
+  `select option` nimmt `rgb(var(--surface))`/`rgb(var(--text))` und braucht keinen Dark-Block mehr
+  (nicht auf Linux nachgemessen - das Popup gibt es nur dort); die zwei Grundfarben in `theme.ts`
+  bleiben eine zweite Kopie, weil Electron sie vor dem Renderer malt, verweisen jetzt aber
+  aufeinander. Die Palette-Paare in Sidebar, Seiten und Sub-Komponenten bleiben offen - beiläufig
+  beim Anfassen, kein sed.
 - **S1 - Status: offen.** `useIpcQuery(fn, deps)` mit Abbruch-Guard, `loading`, `error`, `reload()`;
   20 von 32 API-Effekten haben heute keinen Guard. Neues Muster für neue Seiten, Bestehendes nur beim
   Anfassen.

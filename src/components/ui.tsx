@@ -28,8 +28,13 @@ const VARIANTS = {
     'bg-accent text-accent-fg hover:bg-accent-hover disabled:bg-blue-300 disabled:text-blue-800 dark:disabled:bg-blue-900/50 dark:disabled:text-white shadow-sm',
   danger:
     'bg-red-600 text-white hover:bg-red-500 disabled:bg-red-300 disabled:text-red-900 dark:disabled:bg-red-900/50 dark:disabled:text-white shadow-sm',
+  // A disabled ghost sinks to the page ground instead of keeping its ink wash, exactly like the
+  // disabled TextInput and for the same measurement: the 4% wash darkens whatever is behind it, and
+  // muted text on that came out at 4.00:1 on the page ground (4.36 on a card) - below the 4.36:1
+  // floor the muted token is held to. On the ground itself the same text measures 4.37:1 in light
+  // and 6.5:1 in dark, and the button keeps a fill, so it still reads as a control.
   ghost:
-    'bg-ink/[0.04] text-text-secondary hover:bg-ink/[0.08] disabled:text-text-muted dark:bg-ink/10 dark:hover:bg-ink/15'
+    'bg-ink/[0.04] text-text-secondary hover:bg-ink/[0.08] disabled:bg-ground disabled:text-text-muted dark:bg-ink/10 dark:hover:bg-ink/15'
 }
 
 // `type` defaults to "button" rather than the element's own "submit": the app had no <form> at

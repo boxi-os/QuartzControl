@@ -10,6 +10,11 @@ import { getSettings } from './services/settingsService'
 // working untouched; the alternative (the class strategy plus a class on <html>) would have
 // meant migrating the whole renderer for the same result, and would still have left the native
 // dialogs - the host-key confirmation, the file pickers - following the OS instead of the app.
+// The same two colours as `--ground` in src/index.css, and deliberately a second copy: this one is
+// painted by Electron *before* the renderer exists, so it cannot come from a CSS custom property.
+// The pair is named on both sides - change one, change the other. It is not a silent coupling: if
+// they drift, the window flashes the wrong colour when it opens and while it is resized, which is
+// exactly the bug this constant was added for.
 const BACKGROUND = { light: '#f5f5f7', dark: '#1e1e1e' }
 
 /** The colour Electron paints before the renderer's first frame. Must be read *after* the theme

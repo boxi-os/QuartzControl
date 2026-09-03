@@ -32,3 +32,30 @@ Im Produktions-Build nachgemessen: ein Button rechnet 13px, die Karten-Überschr
 drei erzeugten Regeln sind reines `font-size`. Bei der Gelegenheit ist `LabelText` gelöscht — ein
 `<label>`-Primitive ohne einen einzigen Aufrufer, das noch dazu ein `<label>` ohne Formularelement
 gewesen wäre.
+
+## Die Reste aus dem T1/U4-Durchgang (2026-09-03)
+
+**Der deaktivierte Ghost-Button sinkt auf den Seitengrund.** Er behielt seine 4%-Tinten-Fläche, und
+die verdunkelt, was hinter ihr liegt: der Muted-Text darauf kam auf 4,00:1 auf dem Seitengrund
+(4,36 auf einer Karte) — unter der 4,36:1-Grenze, an der der Muted-Token gehalten wird. Jetzt
+`disabled:bg-ground`, dieselbe Bewegung wie beim deaktivierten `TextInput` und aus derselben
+Messung. Im laufenden Programm nachgemessen, an einem Ghost-Button, den das Messskript selbst
+deaktiviert: **4,37:1 in Hell** (Muted `#64748b` auf `#f5f5f7`) und **6,5:1 in Dunkel** (`#94a3b8`
+auf `#1e1e1e`). Die Fläche bleibt sichtbar, der Knopf liest sich also weiter als Bedienelement.
+
+**`select option` nimmt die Tokens.** Die Regel wiederholte die Hex-Werte von `--surface` und
+`--text` und brauchte dafür einen eigenen Dark-Block; jetzt `rgb(var(--surface))`/`rgb(var(--text))`,
+und der Dark-Block entfällt, weil die Variablen ohnehin mit dem Schema umschalten. `var()` löst zum
+Zeitpunkt des berechneten Werts auf — dieselbe Stufe, aus der Chromium die Farbe der Option liest,
+wenn es das Popup an den Browser-Prozess gibt. **Nicht auf Linux nachgemessen**: das Popup, um das es
+geht, gibt es nur dort, unter macOS zeichnet das Betriebssystem ein natives Menü. Beim nächsten Lauf
+in der Debian-VM ist das der eine Punkt, den man ansehen sollte.
+
+**Die zwei Grundfarben in `theme.ts` bleiben eine zweite Kopie, jetzt aber eine benannte.** Electron
+malt diese Fläche, *bevor* der Renderer existiert; aus einer CSS-Variablen kann sie deshalb nicht
+kommen. Beide Seiten verweisen jetzt aufeinander. Eine stille Kopplung ist es nicht: driften sie,
+blitzt beim Öffnen und beim Vergrößern des Fensters die falsche Farbe auf — genau der Fehler, für
+den die Konstante angelegt wurde.
+
+Offen aus diesem Befund bleiben die Palette-Paare in der Sidebar, den Seiten und den
+Sub-Komponenten: beiläufig beim Anfassen, kein sed.

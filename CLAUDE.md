@@ -25,7 +25,10 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   i18next renders a missing key *as the key* rather than failing, so a gap is invisible until someone
   opens the one screen state that uses it (`publish.pages.saveSettings`, found in the alpha test, was
   missing from both files and therefore in perfect parity)
-- `npm run dist` / `dist:mac` / `dist:linux` — electron-builder (see `docs/decisions/electron-runtime-and-packaging.md`)
+- `npm run dist` / `dist:mac` / `dist:linux` / `dist:flatpak` — electron-builder (see
+  `docs/decisions/electron-runtime-and-packaging.md`). `dist:flatpak` ist ein eigenes Skript, weil
+  das Ziel flatpak und flatpak-builder auf der Baumaschine braucht und **noch nie gebaut wurde** —
+  die Konfiguration ist abgeleitet, nicht gemessen
 
 If `npm install` leaves `node_modules/electron` half-installed (`electron-vite dev` fails with `Error: Electron uninstall`), the postinstall's `extract-zip` step may have silently produced a partial extraction in a sandboxed shell. Fix: `rm -rf node_modules/electron/dist node_modules/electron/path.txt`, then `unzip -q <cached zip under ~/Library/Caches/electron/...> -d node_modules/electron/dist` and write the platform binary path (e.g. `Electron.app/Contents/MacOS/Electron`) into `node_modules/electron/path.txt` with no trailing newline.
 

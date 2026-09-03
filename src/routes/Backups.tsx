@@ -196,11 +196,15 @@ export default function Backups(): JSX.Element {
 
         {settings && (
           <div className="mt-4 border-t border-black/[0.06] pt-3 dark:border-white/10">
+            {/* Bei einem Symlink ist das kein Vorgabewert, sondern eine Tatsache: git folgt keinem
+                Symlink, im Snapshot landet die Verknüpfung statt der Notizen. Der Schalter ist
+                deshalb aus und deaktiviert - lesbar, nicht ausgegraut (siehe CLAUDE.md), und der
+                Satz darunter sagt den Grund. */}
             <Toggle
               checked={settings.includeContent}
               onChange={(checked) => settingsAction.run(checked)}
               label={t('backups.includeContent')}
-              disabled={settingsAction.pending || !settings.contentExists}
+              disabled={settingsAction.pending || !settings.contentExists || settings.contentIsSymlink}
             />
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               {!settings.contentExists
@@ -233,6 +237,12 @@ export default function Backups(): JSX.Element {
               <div className="mt-4 border-t border-black/[0.06] pt-3 dark:border-white/10">
                 {changes === null && <p className="text-xs text-slate-500 dark:text-slate-400">{t('backups.comparing')}</p>}
                 {changes?.length === 0 && <p className="text-xs text-slate-500 dark:text-slate-400">{t('backups.identical')}</p>}
+                {/* Genau hier ist der Irrtum entstanden, über den der Alpha-Test stolperte: eine
+                    geänderte Notiz im Vault taucht im Vergleich nie auf, und ohne diese Zeile
+                    liest sich das als "nichts hat sich geändert". */}
+                {changes !== null && settings?.contentIsSymlink && (
+                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('backups.vaultNotCompared')}</p>
+                )}
                 {changes && changes.length > 0 && (
                   <>
                     <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">

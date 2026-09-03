@@ -155,11 +155,17 @@ async function stage(projectPath: string, settings: SnapshotSettings): Promise<v
 // ---------------------------------------------------------------------------------------------
 // Settings
 
-// The content folder is the one part whose default cannot be a constant. A real directory of
-// markdown belongs in every snapshot; a symlink points at an Obsidian vault that lives outside the
-// project, is the user's own primary data, is commonly gigabytes and usually has a backup of its
-// own - so it is off unless the user says otherwise, and the page says so rather than implying the
-// notes are covered, which is exactly what the old "Backups -> Inhalte" tab did.
+// The content folder is the one part whose value cannot be a constant. A real directory of markdown
+// belongs in every snapshot; a symlink points at an Obsidian vault outside the project - and there
+// the setting is not a default but a fact: **git does not follow symlinks**. Measured against a real
+// store: with the switch on, the snapshot holds `120000 blob … content`, the link object, and not
+// one note; changing a note in the vault afterwards leaves `diff-index` empty, so the comparison
+// correctly reports no differences while the user believes their notes are backed up. That is a
+// silent false promise about a backup, which is worse than no switch at all - so a symlinked
+// content folder is never included, whatever an older settings file says. It also matches what the
+// restore does: a vault is the user's own primary data and is never written back from a snapshot,
+// so notes in a snapshot could not be restored anyway. Reported by the alpha test (2026-09-03),
+// where the switch was on and the comparison showed nothing after a note had changed.
 export async function getSettings(projectPath: string): Promise<SnapshotSettings> {
   let contentExists = false
   let contentIsSymlink = false
@@ -179,16 +185,19 @@ export async function getSettings(projectPath: string): Promise<SnapshotSettings
     // never saved - fall through to the derived default
   }
   return {
-    includeContent: stored.includeContent ?? (contentExists && !contentIsSymlink),
+    includeContent: contentIsSymlink ? false : (stored.includeContent ?? contentExists),
     contentExists,
     contentIsSymlink
   }
 }
 
 async function saveSettingsUnlocked(projectPath: string, includeContent: boolean): Promise<SnapshotSettings> {
+  // Normalised on the way in as well, not only on the way out: a stored `true` from before this
+  // rule existed would otherwise sit in the file looking like a setting that does something.
+  const { contentIsSymlink } = await getSettings(projectPath)
   await writeFile(
     join(quartzGuiDir(projectPath), SETTINGS_FILE),
-    JSON.stringify({ includeContent }, null, 2),
+    JSON.stringify({ includeContent: contentIsSymlink ? false : includeContent }, null, 2),
     'utf-8'
   )
   const settings = await getSettings(projectPath)

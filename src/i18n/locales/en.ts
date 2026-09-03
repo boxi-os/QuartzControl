@@ -442,7 +442,9 @@ export default {
     includeContent: 'Include the content folder',
     contentFolderHint: 'A real folder of markdown files — small enough to always come along.',
     contentSymlinkHint:
-      'Your content folder is a symlink to a vault outside the project. It is NOT included by default: it is your own primary data, it can be very large, and it usually has a backup of its own. Only turn this on if you know what you are doing.',
+      'Your content folder is a symlink to a vault outside the project. It cannot be included: git does not follow symlinks — a snapshot would hold the link, not a single note. Your vault is your own source of truth with its own backup, and a snapshot would never overwrite it anyway.',
+    vaultNotCompared:
+      'Notes from the linked vault are not part of this — everything except the content folder is compared.',
     contentMissing: 'There is no content folder to include.',
     none: 'No snapshots yet. One is taken automatically before every core update, plugin change, content switch and template import.',
     compare: 'Compare',

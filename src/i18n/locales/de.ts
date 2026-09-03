@@ -446,7 +446,9 @@ export default {
     includeContent: 'Content-Ordner mitsichern',
     contentFolderHint: 'Ein echter Ordner mit Markdown-Dateien — klein genug, um immer mitzulaufen.',
     contentSymlinkHint:
-      'Dein Content-Ordner ist ein Symlink auf einen Vault außerhalb des Projekts. Der wird standardmäßig NICHT mitgesichert: er ist deine eigene Datenquelle, kann sehr groß sein und hat meist eine eigene Sicherung. Schalte das nur ein, wenn du weißt, was du tust.',
+      'Dein Content-Ordner ist ein Symlink auf einen Vault außerhalb des Projekts. Der lässt sich nicht mitsichern: git folgt keinem Symlink — im Snapshot landet die Verknüpfung, keine einzige Notiz. Dein Vault ist deine eigene Datenquelle mit eigener Sicherung, und ein Snapshot würde ihn ohnehin nie überschreiben.',
+    vaultNotCompared:
+      'Notizen aus dem verknüpften Vault sind hier nicht dabei — verglichen wird alles außer dem Content-Ordner.',
     contentMissing: 'Es gibt keinen Content-Ordner, den man mitsichern könnte.',
     none: 'Noch keine Snapshots. Vor jedem Kern-Update, jeder Plugin-Änderung, jedem Content-Wechsel und jedem Vorlagen-Import wird automatisch einer angelegt.',
     compare: 'Vergleichen',

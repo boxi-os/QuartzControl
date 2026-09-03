@@ -66,12 +66,15 @@ export default {
       '„{{name}}“ aus der Liste entfernen?\n\nDer laufende Dev-Server wird dabei beendet. Der Ordner auf der Festplatte bleibt unangetastet.',
     environment: {
       titleProblem: 'Diese Werkzeuge fehlen',
-      description:
-        'QuartzControl ruft für Builds, Plugins und neue Projekte Node, npm und git auf. Ohne sie schlagen diese Schritte mit einer Fehlermeldung fehl.',
+      description: 'Ohne sie schlagen Builds, neue Projekte, Plugins aus einer Git-Quelle und Snapshots fehl.',
       missing: 'nicht gefunden',
       brokenTool: 'gefunden, lässt sich aber nicht ausführen',
       installHint:
-        'Node.js (mit npm) von nodejs.org installieren, danach diese Ansicht neu laden. git ist auf macOS Teil der Xcode-Befehlszeilenwerkzeuge (xcode-select --install).',
+        'git gibt es auf macOS mit den Xcode-Befehlszeilenwerkzeugen (xcode-select --install), unter Debian und Ubuntu mit „sudo apt install git“. Danach diese Ansicht neu laden.',
+      embeddedBroken:
+        'Node und npm gehören zur App. Dass sie sich nicht ausführen lassen, heißt, dass diese Installation unvollständig ist — am schnellsten hilft, die App neu zu installieren.',
+      bundled: 'in der App',
+      fromSystem: 'vom System',
       recheck: 'Erneut prüfen',
       ready: 'Werkzeuge bereit',
       secretsBackend: 'Zugangsdaten verschlüsselt über {{backend}}',

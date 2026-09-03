@@ -144,18 +144,18 @@ export function ensureToolPath(): ResolvedPath {
 // command line tools as a stub that pops a GUI installer instead of doing anything, so a check
 // that only looked for the file would report git as available on exactly the machines where it
 // is not.
-function probe(name: string, versionArgs: string[]): ToolInfo {
+function probe(name: string, versionArgs: string[], source: ToolInfo['source']): ToolInfo {
   const path = findExecutable(name)
-  if (!path) return { name, path: null, version: null }
+  if (!path) return { name, source, path: null, version: null }
   try {
     const version = execFileSync(path, versionArgs, {
       encoding: 'utf-8',
       timeout: 10_000,
       stdio: ['ignore', 'pipe', 'ignore']
     })
-    return { name, path, version: version.trim().split('\n')[0] || null }
+    return { name, source, path, version: version.trim().split('\n')[0] || null }
   } catch {
-    return { name, path, version: null }
+    return { name, source, path, version: null }
   }
 }
 
@@ -168,7 +168,15 @@ function probe(name: string, versionArgs: string[]): ToolInfo {
  */
 export function getEnvironmentInfo(secretStorage: SecretStorageInfo): EnvironmentInfo {
   const path = ensureToolPath()
-  const tools = [probe('node', ['--version']), probe('npm', ['--version']), probe('git', ['--version'])]
+  // node and npm are answered by the shims nodeRuntime.ts put at the front of PATH, so they are
+  // probed the same way as before and simply report where they came from. Probing rather than
+  // trusting the runtime's own numbers is deliberate: it is the shim that the app's spawns will
+  // use, and a shim that cannot be executed is exactly the failure worth showing.
+  const tools = [
+    probe('node', ['--version'], 'embedded'),
+    probe('npm', ['--version'], 'embedded'),
+    probe('git', ['--version'], 'host')
+  ]
   return {
     platform: process.platform,
     pathSource: path.source,

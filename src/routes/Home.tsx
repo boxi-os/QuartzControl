@@ -4,7 +4,8 @@ import { confirmDialog } from '../utils/confirm'
 import { titlebarStripClass } from '../utils/platform'
 import { useNavigate, Link } from 'react-router-dom'
 import { ArrowUpRight, CheckCircle2, FolderSearch, Search, TriangleAlert, Trash2 } from 'lucide-react'
-import type { CreateProjectOptions, EnvironmentInfo, ProjectOverview } from '@shared/ipc-contract'
+import type { CreateProjectOptions, EnvironmentInfo, ProjectOverview, ToolInfo } from '@shared/ipc-contract'
+import type { TFunction } from 'i18next'
 import { useAppStore } from '../state/store'
 import { Button, Card, Field, InfoNote, Modal, Select, TextInput } from '../components/ui'
 import ProjectAvatar from '../components/ProjectAvatar'
@@ -342,9 +343,12 @@ function GettingStarted({ onOpen, onCreate }: { onOpen: () => void; onCreate: ()
 
 // ── environment ─────────────────────────────────────────────────────────────────────────────
 
-// Nothing in this app works without node, npm and git - a build, a plugin install and creating a
-// project all shell out. Before this, a machine missing one of them said so as a cryptic failure
-// halfway through a clone; now it says so before anything is attempted.
+// A build, a plugin install and creating a project all shell out, and before this a machine
+// missing a tool said so as a cryptic failure halfway through a clone; now it says so before
+// anything is attempted. Since node and npm travel with the app (nodeRuntime.ts), what is left to
+// ask the user for is git - so the two states are named separately here rather than lumped into
+// one list of "missing tools": a missing git is something the user can fix, a missing embedded
+// node means this copy of the app is incomplete.
 //
 // Two presentations, never both: a full-width band above everything when something is wrong (the
 // same rule ProjectDashboard's attention band follows - it exists only when there is real
@@ -369,6 +373,7 @@ function EnvironmentBand({ info, onRecheck }: { info: EnvironmentInfo; onRecheck
   if (environmentIsHealthy(info)) return null
 
   const broken = info.tools.filter((tool) => tool.version === null)
+  const brokenHost = broken.filter((tool) => tool.source === 'host')
   return (
     <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-500/40 dark:bg-amber-950/40">
       {broken.length > 0 && (
@@ -390,7 +395,7 @@ function EnvironmentBand({ info, onRecheck }: { info: EnvironmentInfo; onRecheck
             ))}
           </ul>
           <p className="mt-2.5 text-xs leading-relaxed text-amber-900/70 dark:text-amber-200/70">
-            {t('home.environment.installHint')}
+            {brokenHost.length > 0 ? t('home.environment.installHint') : t('home.environment.embeddedBroken')}
           </p>
         </>
       )}
@@ -428,6 +433,24 @@ function versionNumber(version: string | null): string {
   return /\d[\d.]*/.exec(version ?? '')?.[0] ?? ''
 }
 
+// Grouped by origin rather than listed flat, because the origin is the point: two of the three
+// tools are the app's own and need nothing from the user. Naming that once per group beats a
+// "(bundled)" tag repeated behind every version.
+function toolSummary(info: EnvironmentInfo, t: TFunction): string {
+  const groups: [string, ToolInfo['source']][] = [
+    [t('home.environment.bundled'), 'embedded'],
+    [t('home.environment.fromSystem'), 'host']
+  ]
+  return groups
+    .map(([label, source]) => {
+      const tools = info.tools.filter((tool) => tool.source === source)
+      if (tools.length === 0) return null
+      return `${label}: ${tools.map((tool) => `${tool.name} ${versionNumber(tool.version)}`).join(', ')}`
+    })
+    .filter((part): part is string => part !== null)
+    .join(' · ')
+}
+
 function EnvironmentLine({ info }: { info: EnvironmentInfo }): JSX.Element | null {
   const { t } = useTranslation()
   if (!environmentIsHealthy(info)) return null
@@ -435,10 +458,9 @@ function EnvironmentLine({ info }: { info: EnvironmentInfo }): JSX.Element | nul
     <div className="flex items-start gap-2 px-1 text-xs text-slate-500 dark:text-slate-400">
       <CheckCircle2 size={13} className="mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-500" />
       <p className="min-w-0">
-        <span className="font-medium">{t('home.environment.ready')}</span>{' '}
-        <span className="break-words">
-          {info.tools.map((tool) => `${tool.name} ${versionNumber(tool.version)}`).join(' · ')}
-        </span>
+        <span className="font-medium">{t('home.environment.ready')}</span>
+        {' · '}
+        <span className="break-words">{toolSummary(info, t)}</span>
         {/* Named rather than merely implied by the band's absence. "No warning" and "secrets are
             protected" look identical, and the alpha test asked exactly that question about a Linux
             machine - where the backend is the one thing that decides it (see

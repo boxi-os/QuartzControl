@@ -1094,6 +1094,14 @@ export interface ProjectIconInfo {
 /** Versions and storage locations for the Settings page's maintenance section. */
 export interface ToolInfo {
   name: string
+  /**
+   * Where this tool comes from. 'embedded' means it travels with the app - node and npm run on
+   * Electron's own Node (nodeRuntime.ts), so a machine without Node installed is not a problem
+   * to report but the normal case. 'host' means the user's system provides it, which is git and,
+   * where a target asks for it, rsync: the app cannot supply those, so a missing one is worth a
+   * warning band.
+   */
+  source: 'embedded' | 'host'
   /** Absolute path the executable resolved to, or null when it is not on PATH at all. */
   path: string | null
   /**

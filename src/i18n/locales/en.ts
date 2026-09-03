@@ -64,12 +64,15 @@ export default {
       'Remove “{{name}}” from the list?\n\nIts running dev server will be stopped. The folder on disk is left untouched.',
     environment: {
       titleProblem: 'These tools are missing',
-      description:
-        'QuartzControl calls Node, npm and git for builds, plugins and new projects. Without them those steps fail with an error.',
+      description: 'Without them builds, new projects, plugins from a git source and snapshots all fail.',
       missing: 'not found',
       brokenTool: 'found, but does not run',
       installHint:
-        'Install Node.js (which includes npm) from nodejs.org, then re-check here. On macOS git is part of the Xcode command line tools (xcode-select --install).',
+        'On macOS git comes with the Xcode command line tools (xcode-select --install); on Debian and Ubuntu with “sudo apt install git”. Then re-check here.',
+      embeddedBroken:
+        'Node and npm are part of the app. If they cannot run, this installation is incomplete — reinstalling the app is the quickest fix.',
+      bundled: 'in the app',
+      fromSystem: 'from the system',
       recheck: 'Check again',
       ready: 'Tools ready',
       secretsBackend: 'Credentials encrypted via {{backend}}',

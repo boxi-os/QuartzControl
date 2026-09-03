@@ -68,3 +68,24 @@ Programm: unverändert wechselt die Auswahl und das Formular ist weg; nach einer
 Namensfeld bleibt beim Klick auf ein anderes Ziel die Auswahl stehen und das Formular offen, weil
 die Frage aussteht. Der Dialog selbst ist ein macOS-Sheet und unter Playwright weder sichtbar noch
 bedienbar — dass er kommt, ist gemessen, sein Aussehen nicht.
+
+## Der Ziel-Wähler ist eine Radiogruppe (2026-09-03)
+
+„Ziel“ war eine handgebaute Knopfreihe: das gewählte Ziel blau, alle anderen grau, jeder Knopf ein
+eigener Tabstopp, und nichts daran sagte, dass es sich um *eine* Wahl aus mehreren handelt — kein
+`radiogroup`, keine Pfeiltasten. Genau das ist `SegmentedControl` seit U3, also ist es das jetzt
+auch hier. „Neues Ziel“ bleibt außerhalb der Gruppe: ein Ziel anzulegen ist keine der Optionen.
+
+Eine Sache am Primitive musste dafür nachziehen: `flex-wrap`. Bei den vier bisherigen Aufrufern sind
+die Optionen eine feste Liste kurzer Namen, hier sind sie Daten — sieben Ziele mit Namen wie
+„boxi-os.github.io/quartzcontrol-testing (GIT-BRANCH)“ passen in keine Zeile. Eine umbrechende
+Gruppe ist immer noch eine Gruppe; eine überlaufende lässt Optionen hinter dem Kartenrand.
+
+Ohne ausgewähltes Ziel steht `aria-checked` auf jedem Segment auf `false` und die Gruppe bleibt über
+den Tabstopp erreichbar — der Fall, den `SegmentedControl` seit U3 ausdrücklich vorsieht, und der
+hier der Normalzustand beim Öffnen der Seite ist.
+
+Im Produktions-Build geprüft: eine Gruppe „Ziel“ mit sieben `radio`-Segmenten, Klick wählt und die
+Detailzeile darunter folgt, Pfeil rechts verschiebt Auswahl *und* Fokus. Die Rückfrage beim Wechsel
+mit offenem Entwurf ist unverändert - sie hängt an `selectTarget`, nicht am Widget - und wurde nicht
+erneut ausgelöst, weil sie ein nativer Dialog ist.

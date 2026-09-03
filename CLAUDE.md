@@ -139,8 +139,11 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   `tabpanel` wäre ein halber Vertrag, „eins von N“ stimmt überall. Der Fokus wandert *vor* `onChange`,
   weil vier Aufrufstellen dabei navigieren. `label` ist Pflicht wie bei `Toggle` und wird zu
   `aria-label` (eine Gruppe hat kein `<label>`, das sie umschließen könnte); eine Gruppe ohne Namen
-  ist damit am Aufrufer sichtbar falsch. Messungen in
-  [`navigation-and-pages.md`](docs/decisions/navigation-and-pages.md).
+  ist damit am Aufrufer sichtbar falsch. Die Optionen dürfen Daten sein statt einer festen Liste -
+  der Ziel-Wähler in Veröffentlichen ist seit 2026-09-03 einer, weshalb die Gruppe umbricht statt
+  überzulaufen. Messungen in
+  [`navigation-and-pages.md`](docs/decisions/navigation-and-pages.md) und
+  [`publishing-and-credentials.md`](docs/decisions/publishing-and-credentials.md).
 - **Farben heißen nach Rolle, nicht nach Palette.** Zehn Tokens in `src/index.css` (`--ground`,
   `--surface`, `--text`, `--text-secondary`, `--text-muted`, `--ink`, `--accent`, `--accent-hover`,
   `--accent-fg`, `--accent-text`), in `tailwind.config.js` als `bg-ground`, `bg-surface`, `text-text`,

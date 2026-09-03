@@ -13,7 +13,7 @@ import type {
   SaveConnectionInput,
   SavePublishTargetInput
 } from '@shared/ipc-contract'
-import { Badge, Button, Card, Field, InfoNote, PageHeader, Select, TextInput, Toggle } from '../../components/ui'
+import { Badge, Button, Card, Field, InfoNote, PageHeader, SegmentedControl, Select, TextInput, Toggle } from '../../components/ui'
 import {
   CONNECTION_KIND_LABEL,
   ConnectionFormFields,
@@ -385,20 +385,22 @@ export default function Publish(): JSX.Element {
 
       <Card>
         <h2 className="mb-2 text-sm font-semibold">{t('publish.targetHeading')}</h2>
-        <div className="flex flex-wrap items-center gap-1.5">
-          {targets.map((target) => (
-            <button
-              key={target.id}
-              onClick={() => selectTarget(target.id)}
-              className={`rounded-[6px] px-3 py-1.5 text-[13px] font-medium transition-colors ${
-                selectedId === target.id
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-black/[0.05] text-slate-700 hover:bg-black/[0.08] dark:bg-white/10 dark:text-slate-200'
-              }`}
-            >
-              {target.name} ({target.destination.type.toUpperCase()})
-            </button>
-          ))}
+        {/* One of N, which is what SegmentedControl already is - this used to be a hand-rolled row
+            of buttons where the selected one was blue and nothing said it was a choice: no
+            radiogroup, no arrow keys, and every chip its own tab stop. "Neues Ziel" stays outside
+            the group, because adding a target is not one of the options. */}
+        <div className="flex flex-wrap items-center gap-2">
+          {targets.length > 0 && (
+            <SegmentedControl
+              label={t('publish.targetHeading')}
+              value={selectedId ?? ''}
+              options={targets.map((target) => ({
+                value: target.id,
+                label: `${target.name} (${target.destination.type.toUpperCase()})`
+              }))}
+              onChange={(id) => void selectTarget(id)}
+            />
+          )}
           <Button variant="ghost" onClick={newTarget}>
             {t('publish.newTarget')}
           </Button>

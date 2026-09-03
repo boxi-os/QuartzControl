@@ -262,7 +262,10 @@ export function SegmentedControl<T extends string>({
     <div
       role="radiogroup"
       aria-label={label}
-      className="inline-flex w-fit self-start gap-0.5 rounded-[8px] bg-ink/[0.05] p-0.5 dark:bg-ink/10"
+      // flex-wrap because one caller's options are data, not a fixed list of three or four: the
+      // publish targets are named by the user and there can be a dozen. A wrapped group is still one
+      // group; an overflowing one leaves options off the right edge of its card.
+      className="inline-flex w-fit flex-wrap self-start gap-0.5 rounded-[8px] bg-ink/[0.05] p-0.5 dark:bg-ink/10"
     >
       {options.map((option, index) => (
         <button

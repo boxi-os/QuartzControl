@@ -463,15 +463,23 @@ export function Badge({
 // the sidebar entry, the section title, and a plain-language explanation of what it's for -
 // aimed at users who don't already know Quartz's terminology. `actions` holds whatever
 // page-specific buttons used to sit next to a hand-rolled <h1> (save button, status text, ...).
+// `status` is the slot for what a page says *about itself* after an action - "Gespeichert", a save
+// error - and it is separate from `actions` for one reason: it is the only part of the header that
+// appears without the user looking at it, so it is the part that has to be announced. A live region
+// has to be in the document *before* its text arrives, which is why a page passes `null` rather than
+// leaving the prop out: an undefined prop means "this page has nothing to say" and renders no
+// region at all, while `null` mounts the empty one that a later "Gespeichert" drops into.
 export function PageHeader({
   icon: Icon,
   title,
   description,
+  status,
   actions
 }: {
   icon: LucideIcon
   title: string
   description?: string
+  status?: ReactNode
   actions?: ReactNode
 }): JSX.Element {
   return (
@@ -485,7 +493,17 @@ export function PageHeader({
           {description && <p className="mt-0.5 max-w-xl text-[13px] text-text-muted">{description}</p>}
         </div>
       </div>
-      {actions && <div className="flex shrink-0 items-center gap-3 pt-1">{actions}</div>}
+      {(status !== undefined || actions) && (
+        <div className="flex shrink-0 items-center gap-3 pt-1">
+          {status !== undefined && (
+            // role="status" is aria-live="polite" plus aria-atomic - the whole line is read, not
+            // the diff. `empty:hidden` would take it out of the tree again, so it stays: an empty
+            // span is zero-width, it only costs the flex gap next to it.
+            <span role="status">{status}</span>
+          )}
+          {actions}
+        </div>
+      )}
     </div>
   )
 }

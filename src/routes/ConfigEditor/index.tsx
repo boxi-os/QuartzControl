@@ -105,13 +105,21 @@ export default function ConfigEditor(): JSX.Element {
         icon={TAB_ICONS.config}
         title={t('projectLayout.tabs.config')}
         description={t(`configEditor.descriptions.${tab}`)}
+        // Announced, unlike the badge and the button next to it - see PageHeader. Only the site
+        // tab has a save of its own, so only it mounts the region.
+        status={
+          tab === 'site' ? (
+            <>
+              {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
+              {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{error}</span>}
+            </>
+          ) : undefined
+        }
         actions={
           // Only the site form saves through this button - the other two tabs act on their own
           // (a folder change runs immediately, translations save per locale from their toolbar).
           tab === 'site' && (
             <>
-              {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
-              {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{error}</span>}
               {dirty && status !== 'saving' && <UnsavedBadge />}
               <Button onClick={save} disabled={status === 'saving' || !config}>
                 {status === 'saving' ? t('common.saving') : t('common.save')}

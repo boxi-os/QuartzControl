@@ -76,3 +76,42 @@ Es wird `aria-label` und nicht Toggles `sr-only`-Span: eine Gruppe wird per `ari
 Die Namen selbst: die vier Sub-Tab-Leisten teilen sich `common.viewSwitcher` („Ansicht“), weil pro Seite genau eine existiert und der Seitenname schon in der `<h1>` steht. Nicht „Bereich“ — das heißt im Layout-Editor ein Frame-Bereich, und ein Wort hat einen Namen. Drei Stellen benutzen den Text weiter, der ohnehin über ihnen steht (`settings.appearance.theme`, `layoutEditor.frameBuilder.align`, `templates.strategyHeading`); die restlichen vier bekamen neue Schlüssel in beiden Sprachdateien (`buildServer.viewport.label`, `layoutEditor.frameBuilder.breakpointLabel`, `templates.scopeLabel`), Parität geprüft: 1199 Schlüssel auf beiden Seiten.
 
 Geprüft nicht über die Attribute im DOM, sondern über Playwrights `getByRole`, das den accname-Algorithmus umsetzt: zehn der elf Gruppen antworten in der laufenden Produktions-App auf `getByRole('radiogroup', { name, exact: true })` mit genau einem Treffer, und jede davon auf `getByRole('radio', { checked: true })` mit genau einem — Settings/Design, die vier Sub-Tab-Leisten, beide Breakpoint-Leisten, die Frame-Ausrichtung, der Übersetzungsumfang in `Vorlagen` und die Vorschaubreite in Vorschau & Build (die wieder einen laufenden Dev-Server brauchte). Die elfte, die Import-Strategie, liegt weiter hinter dem nativen Dateidialog.
+## Was von selbst erscheint, muss gesagt werden (A4, 2026-09-03)
+
+Vor diesem Durchgang gab es im ganzen Renderer kein `aria-live` und kein `role="log"` — per grep,
+null Fundstellen. Sichtbar war das nicht, hörbar schon: „Gespeichert.“ erscheint neben dem Knopf,
+ohne dass jemand hinsieht, und für einen Screenreader passierte nach dem Speichern nichts.
+
+**Der Statusplatz gehört in den `PageHeader`, nicht in `actions`.** `PageHeader` hat jetzt eine
+eigene `status`-Eigenschaft neben `actions`, gerendert als `role="status"` (das ist
+`aria-live="polite"` plus `aria-atomic`, also die ganze Zeile statt der Differenz). Die Trennung hat
+einen technischen Grund: eine Live-Region muss im Dokument stehen, *bevor* ihr Text ankommt — eine,
+die zusammen mit ihrem Inhalt erscheint, sagt niemand an. Deshalb ist die Unterscheidung
+`undefined` gegen `null` bedeutungstragend: eine Seite ohne Statusmeldung lässt die Eigenschaft weg
+und bekommt keine Region, eine Seite mit Speichern übergibt `null` und bekommt die leere. Umgestellt
+sind die drei Seiten, die ein ganzes Dokument hinter einem Speichern-Knopf halten (Konfiguration,
+Layout, Stile), die Einstellungen (die keinen `PageHeader` haben und die Region deshalb selbst
+tragen) und die drei Kopier-Bestätigungen (CSS-Seitenleiste, Eigenes CSS, die URL in Vorschau &
+Build — dort war das Häkchen das einzige Zeichen, und ein Häkchen ist kein Wort; die Region ist
+`sr-only`). Der Unsaved-Badge und der Knopf bleiben außerhalb: sie ändern sich, weil der Nutzer
+tippt, nicht von selbst.
+
+**`role="log"` an beiden Konsolen, und die Konsole ist jetzt ein Element statt zweier.** `LogConsole`
+kehrte im Leerzustand früh zurück und rendert seither ein anderes Element als im gefüllten — genau
+der Fall, den eine Live-Region nicht überlebt. Jetzt ist es dasselbe `<div>` mit zwei Klassensätzen,
+sodass die Region schon steht, wenn die erste Zeile kommt; `role="log"` ist die anfügende
+Schwester von `role="status"` (neue Zeilen werden gelesen, die alten nicht noch einmal). Dazu
+`tabIndex={0}`, weil ein scrollender Kasten ohne das mit der Tastatur nicht erreichbar ist, und ein
+`aria-label` pro Konsole — auf Vorschau & Build stehen zwei, und „Konsole“ zweimal sagt nicht, wer
+gerade spricht. Die gemessene Höhe des Leerzustands (32px, eine Zeile statt 288px) bleibt.
+
+**Eine Seite, eine `<h1>`.** Der Projektname in der Seitenleiste war die zweite; er ist jetzt ein
+`<p>` mit derselben Optik. Die `<nav>` der Seitenleiste heißt „Projektbereiche“. Im laufenden
+Produktions-Build geprüft: eine `<h1>` pro Projektseite, die Region leer beim Aufbau und mit
+„Gespeichert.“ nach einem Klick auf Speichern, beide Konsolen mit Label und `tabIndex`, und die
+Konfiguration danach byte-gleich.
+
+**Offen bleibt** die Zeilenmeldung in der Plugin-Liste (`pluginsInstalled.savedFlash`): eine
+Live-Region pro Zeile hieße hier achtundvierzig, und die richtige Lösung ist eine Region für die
+Seite, in die eine Zeile hineinschreibt — dieselbe Bauform, die auch die englischen dnd-kit-Ansagen
+bräuchten.

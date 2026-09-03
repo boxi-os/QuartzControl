@@ -211,8 +211,12 @@ function ProjectsSection({
         <Button onClick={() => save.run()} disabled={save.pending}>
           {save.pending ? t('common.saving') : t('common.save')}
         </Button>
-        {saved && <span className="text-[13px] text-green-600 dark:text-green-400">{t('common.saved')}</span>}
-        {save.error && <span className="text-[13px] text-red-600 dark:text-red-400">{save.error}</span>}
+        {/* Settings has no PageHeader to hand this to, so the live region sits here - mounted
+            always, filled when there is something to say. */}
+        <span role="status" className="text-[13px]">
+          {saved && <span className="text-green-600 dark:text-green-400">{t('common.saved')}</span>}
+          {save.error && <span className="text-red-600 dark:text-red-400">{save.error}</span>}
+        </span>
       </div>
     </Section>
   )

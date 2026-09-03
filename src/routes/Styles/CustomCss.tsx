@@ -803,7 +803,9 @@ function ActiveStyles(): JSX.Element {
             ))}
           </tbody>
         </table>
-        {copied && <p className="mt-2 truncate text-[11px] text-green-700 dark:text-green-400">{t('common.copied', { value: copied })}</p>}
+        <p role="status" className="mt-2 min-h-[15px] truncate text-[11px] text-green-700 dark:text-green-400">
+          {copied ? t('common.copied', { value: copied }) : ''}
+        </p>
       </div>
 
       <div>

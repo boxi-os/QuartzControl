@@ -156,6 +156,7 @@ export default {
       'This page has changes that are not saved yet. Leaving discards them. Switch anyway?',
     unsavedBadge: 'Unsaved',
     allProjects: 'All projects',
+    navLabel: 'Project areas',
     loading: 'Loading project…',
     tabs: {
       overview: 'Overview',
@@ -335,6 +336,8 @@ export default {
       full: 'full width'
     },
     oneOffBuild: 'One-off build',
+    serverLogLabel: 'Preview server output',
+    buildLogLabel: 'Build output',
     building: 'Building…',
     buildNow: 'Build now',
     lastBuilt: 'Last built {{when}}',

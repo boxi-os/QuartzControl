@@ -275,10 +275,14 @@ export default function Styles(): JSX.Element {
           icon={TAB_ICONS.styles}
           title={t('projectLayout.tabs.styles')}
           description={t('projectLayout.descriptions.styles')}
-          actions={
+          status={
             <>
               {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
               {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{message}</span>}
+            </>
+          }
+          actions={
+            <>
               {dirty && status !== 'saving' && <UnsavedBadge />}
               <Button onClick={save} disabled={status === 'saving'}>
                 {status === 'saving' ? t('common.saving') : t('common.save')}

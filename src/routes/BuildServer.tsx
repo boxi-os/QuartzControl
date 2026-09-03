@@ -254,6 +254,11 @@ export default function BuildServer(): JSX.Element {
             {copied === url ? <Check size={13} aria-hidden /> : <Copy size={13} aria-hidden />}
             {t('common.copy')}
           </button>
+          {/* The tick is the only sign that the click did anything, and a tick is not a word.
+              The region is mounted with the button so the confirmation is announced when it comes. */}
+          <span role="status" className="sr-only">
+            {copied === url ? t('common.copied', { value: url }) : ''}
+          </span>
         </div>
 
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -379,7 +384,7 @@ export default function BuildServer(): JSX.Element {
         )}
 
         <div className="mt-4">
-          <LogConsole lines={logs} onClear={() => clearServerLog(project.id)} />
+          <LogConsole lines={logs} label={t('buildServer.serverLogLabel')} onClear={() => clearServerLog(project.id)} />
         </div>
       </Card>
 
@@ -472,7 +477,7 @@ export default function BuildServer(): JSX.Element {
             })}
           </p>
         )}
-        <LogConsole lines={buildLogs} onClear={() => clearBuildLog(project.id)} />
+        <LogConsole lines={buildLogs} label={t('buildServer.buildLogLabel')} onClear={() => clearBuildLog(project.id)} />
       </Card>
     </div>
   )

@@ -142,6 +142,13 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   InfoNote-Blau) bleiben Palette; eine immer dunkle Fläche bekommt weder `dark:` noch Token.
   Umgestellt sind `ui.tsx`, `body` und die vier U4-Seiten; alles andere beiläufig beim Anfassen,
   kein sed. `theme.ts` hält den Grund weiter als eigenes Literal.
+- **Was ohne Zutun erscheint, wird angesagt.** Eine Meldung, die nach einer Aktion von selbst
+  auftaucht, gehört in eine Live-Region: der `status`-Platz des `PageHeader` (`role="status"`), eine
+  Konsole in `role="log"`. Die Region muss *vor* ihrem Text im Dokument stehen - sie wird also leer
+  gerendert, nicht mit dem Inhalt zusammen; im `PageHeader` heißt `status={null}` „leer, aber
+  da“ und eine fehlende Eigenschaft „diese Seite sagt nichts“. Knöpfe und Badges bleiben draußen: die
+  ändern sich, weil jemand tippt. Eine `<h1>` pro Seite, jede `<nav>` mit Namen. Messungen in
+  [`navigation-and-pages.md`](docs/decisions/navigation-and-pages.md).
 - **Ein deaktiviertes Control muss noch lesbar sein.** Explizite disabled-Farben, keine Opazität:
   Text wird `text-text-muted`, ein Feld sinkt auf `bg-ground`, ein Icon-Button geht von
   `text-text-secondary` auf `text-text-muted`. Gedimmt werden darf nur, was keine eigene Information
@@ -236,8 +243,9 @@ mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge.
 - **A3-Buttons - Status: teilweise.** „Nach oben / nach unten“ steht in `Plugins/Installed`
   (2026-09-03); offen bleiben die anderen Drag-Stellen (`LayoutEditor/FrameBuilder`, `ComponentPill`;
   `Styles/CustomCss` hat die Pfeile schon, aber noch natives Drag).
-- **A4 - Status: offen.** `aria-live` für „Gespeichert“/Kopiert im `PageHeader`; `role="log"` auf
-  `LogConsole`; zwei `<h1>` pro Projektseite (Sidebar-Projektname → `<p>`); `<nav aria-label>`.
+- **A4 - Status: erledigt (2026-09-03).** `status`-Platz im `PageHeader` als `role="status"`,
+  `role="log"` an beiden Konsolen, eine `<h1>` pro Seite, `<nav aria-label>`. Offen bleibt die
+  Zeilenmeldung in der Plugin-Liste - die braucht eine Region für die Seite, nicht eine pro Zeile.
 - **U5 - Status: offen.** `LabelText` ist tot; Typo-Skala aus Arbitrary Values (`text-[11px]` 77×,
   `text-[13px]` 54×) - Tokens definieren, `ui.tsx` umstellen, Rest beiläufig, kein sed.
 - **T2 - Status: offen (Notiz).** `'#ffffff'` als Picker-Fallback für nicht parsebare Farben.

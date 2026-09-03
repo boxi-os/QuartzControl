@@ -192,15 +192,17 @@ export default function ProjectLayout(): JSX.Element {
             {(project.name.trim()[0] ?? '?').toUpperCase()}
           </div>
           <div className="min-w-0">
-            <h1 className="truncate text-[13px] font-semibold text-slate-900 dark:text-white" title={project.name}>
+            {/* A <p>, not a second <h1>: the page's own heading is the one in PageHeader, and two
+                first-level headings on one page leave a screen reader without a single top. */}
+            <p className="truncate text-[13px] font-semibold text-slate-900 dark:text-white" title={project.name}>
               {project.name}
-            </h1>
+            </p>
             <p className="truncate text-[11px] text-slate-500 dark:text-slate-400" title={project.path}>
               {project.path}
             </p>
           </div>
         </div>
-        <nav className="flex flex-1 flex-col gap-3 overflow-y-auto px-2 pb-4 pt-2">
+        <nav aria-label={t('projectLayout.navLabel')} className="flex flex-1 flex-col gap-3 overflow-y-auto px-2 pb-4 pt-2">
           {NAV_GROUPS.map((group, i) => {
             const GroupIcon: LucideIcon | undefined = group.key ? GROUP_ICONS[group.key] : undefined
             return (

@@ -159,6 +159,7 @@ export default {
       'Auf dieser Seite gibt es Änderungen, die noch nicht gespeichert sind. Beim Wechseln gehen sie verloren. Trotzdem wechseln?',
     unsavedBadge: 'Nicht gespeichert',
     allProjects: 'Alle Projekte',
+    navLabel: 'Projektbereiche',
     loading: 'Lade Projekt…',
     tabs: {
       overview: 'Übersicht',
@@ -338,6 +339,8 @@ export default {
       full: 'volle Breite'
     },
     oneOffBuild: 'Einmaliger Build',
+    serverLogLabel: 'Ausgabe des Vorschau-Servers',
+    buildLogLabel: 'Ausgabe des Builds',
     building: 'Baue…',
     buildNow: 'Jetzt bauen',
     lastBuilt: 'Zuletzt gebaut {{when}}',

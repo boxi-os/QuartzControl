@@ -168,13 +168,19 @@ export default function LayoutEditor(): JSX.Element {
         icon={TAB_ICONS.layout}
         title={t('projectLayout.tabs.layout')}
         description={t('projectLayout.descriptions.layout')}
+        status={
+          tab !== 'frames' ? (
+            <>
+              {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
+              {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{error}</span>}
+            </>
+          ) : undefined
+        }
         actions={
           // Same place as on Konfiguration and Stile - the other two pages that hold a whole
           // document behind one Save button. The Frames tab saves per frame from its own editor.
           tab !== 'frames' && (
             <>
-              {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
-              {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{error}</span>}
               {dirty && status !== 'saving' && <UnsavedBadge />}
               <Button onClick={save} disabled={status === 'saving'}>
                 {status === 'saving' ? t('common.saving') : t('common.save')}

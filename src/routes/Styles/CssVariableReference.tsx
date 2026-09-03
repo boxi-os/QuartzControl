@@ -93,7 +93,10 @@ export default function CssVariableReference({ onInsert }: { onInsert: (text: st
         ))}
       </div>
       <p className="mt-3 text-[11px] text-slate-500 dark:text-slate-400">{t('styleEditor.cssVars.rowHint')}</p>
-      {copied && <p className="mt-1 truncate text-[11px] text-green-700 dark:text-green-400">{t('common.copied', { value: copied })}</p>}
+      {/* Mounted whether or not anything was copied - see PageHeader's status slot. */}
+      <p role="status" className="mt-1 min-h-[15px] truncate text-[11px] text-green-700 dark:text-green-400">
+        {copied ? t('common.copied', { value: copied }) : ''}
+      </p>
 
       <div className="mt-4 border-t border-black/[0.06] pt-3 dark:border-white/10">
         <h2 className="mb-1 text-sm font-semibold">{t('styleEditor.cssVars.calloutsHeading')}</h2>

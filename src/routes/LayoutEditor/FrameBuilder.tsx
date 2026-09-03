@@ -1,6 +1,21 @@
-import { useEffect, useState } from 'react'
-import type { DragEvent } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import {
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  pointerWithin,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type CollisionDetection,
+  type DraggableAttributes,
+  type DragEndEvent,
+  type DragStartEvent
+} from '@dnd-kit/core'
 import { confirmDialog } from '../../utils/confirm'
 import { GripVertical } from 'lucide-react'
 import type {
@@ -30,7 +45,10 @@ import {
 import { formatIpcError } from '../../components/ErrorSurface'
 import DevServerRestartHint from '../../components/DevServerRestartHint'
 import { breakpointRangeLabel } from './utils'
+import { announce } from '../../state/announcer'
 import { useStickyState } from '../../state/uiState'
+import { dndAccessibility } from '../../utils/dndAnnouncements'
+import { nearestDroppableCoordinates } from '../../utils/dndKeyboard'
 
 const RESERVED_FRAME_NAMES = ['default', 'full-width', 'minimal']
 const SLOTS: FrameSlot[] = ['header', 'left', 'right', 'beforeBody', 'pageBody', 'afterBody', 'footer']
@@ -110,9 +128,27 @@ function withPlacement(def: GridFrameDefinition, breakpoint: FrameBreakpoint, ar
   }
 }
 
-// dataTransfer carries a bare area id across a native HTML5 drag - repositioning that area onto
-// whichever cell it's dropped on. See handleDrop.
-const DRAG_MIME = 'text/plain'
+// The board's drop targets, as ids. A cell carries its coordinates in its id because there is
+// nothing else to identify it by; a placed box is its own target (dropping onto it means "this
+// area's cell", the same as before) and is prefixed so it cannot collide with an area id; the tray
+// is the one fixed target that unplaces.
+const cellId = (row: number, col: number): string => `cell:${row}:${col}`
+const BOX_PREFIX = 'box:'
+const TRAY_ID = 'unplaced-tray'
+
+function parseCellId(id: string): { row: number; col: number } | null {
+  const parts = id.split(':')
+  if (parts[0] !== 'cell') return null
+  return { row: Number(parts[1]), col: Number(parts[2]) }
+}
+
+// Grabbing a wide box by its small handle puts the dragged rect's centre far from the cursor, so
+// the pointer decides while it is over something and the centre only settles ties - the same
+// reasoning (and the same pair) as on the global board.
+const collisionDetection: CollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args)
+  return pointerCollisions.length > 0 ? pointerCollisions : closestCenter(args)
+}
 
 export default function FrameBuilder({
   projectPath,
@@ -153,7 +189,6 @@ export default function FrameBuilder({
   // `--serve` run; see DevServerRestartHint.
   const [savedWasEdit, setSavedWasEdit] = useState(false)
   const [dragAreaId, setDragAreaId] = useState<string | null>(null)
-  const [dropCell, setDropCell] = useState<{ row: number; col: number } | null>(null)
   // Read-only here - edited on the Global tab, because they apply to every frame. Used only to
   // label the three breakpoint tabs with the width band each one actually covers.
   const [breakpointWidths, setBreakpointWidths] = useState<FrameBreakpointWidths>(DEFAULT_FRAME_BREAKPOINT_WIDTHS)
@@ -197,7 +232,7 @@ export default function FrameBuilder({
   function closeEditor(): void {
     setEditing(null)
     setSelectedAreaId(null)
-    endDrag()
+    setDragAreaId(null)
   }
 
   function nameCollision(def: GridFrameDefinition): boolean {
@@ -270,7 +305,10 @@ export default function FrameBuilder({
     const rowSpan = Math.min(existing?.rowSpan ?? 1, layout.rows - row + 1)
     const colSpan = Math.min(existing?.colSpan ?? 1, layout.cols - col + 1)
     if (overlaps(layout, editing.areas, row, col, rowSpan, colSpan, areaId)) {
+      // Said as well as shown: the drag's own narration ends with "bei Zelle ... abgelegt", which
+      // would otherwise be the last thing anyone hears about a drop that was refused.
       setMessage(t('layoutEditor.frameBuilder.overlapError'))
+      announce(t('layoutEditor.frameBuilder.overlapError'))
       return
     }
     setEditing((prev) => (prev ? withPlacement(prev, activeBreakpoint, areaId, { row, col, rowSpan, colSpan, hidden: false }) : prev))
@@ -278,15 +316,51 @@ export default function FrameBuilder({
     setMessage(null)
   }
 
-  function beginDrag(e: DragEvent<HTMLElement>, areaId: string): void {
-    e.dataTransfer.setData(DRAG_MIME, areaId)
-    e.dataTransfer.effectAllowed = 'move'
-    setDragAreaId(areaId)
+  // Distance before a drag starts, so a click on a tray chip still selects it: without it every
+  // press on the chip's handle is a drag of zero pixels and the click never lands.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: nearestDroppableCoordinates })
+  )
+  // Every id on this board in words: an area by its name, a cell by its coordinates, the tray by
+  // its label - see dndAccessibility.
+  const { announcements, screenReaderInstructions } = dndAccessibility(t, (id) => {
+    if (id === TRAY_ID) return t('layoutEditor.frameBuilder.availableAreasLabel')
+    const cell = parseCellId(id)
+    if (cell) return t('layoutEditor.frameBuilder.cellName', { row: cell.row, col: cell.col })
+    const areaId = id.startsWith(BOX_PREFIX) ? id.slice(BOX_PREFIX.length) : id
+    return editing?.areas.find((a) => a.id === areaId)?.name ?? id
+  })
+
+  function handleDragStart(event: DragStartEvent): void {
+    setDragAreaId(String(event.active.id))
   }
 
-  function endDrag(): void {
+  // One place decides what a drop meant, instead of a handler per target: the tray unplaces, a cell
+  // places at its coordinates, a placed box places at *its* cell (dropping onto a box has always
+  // meant "here", not "swap"), and anything else is a drag that ended over nothing.
+  function handleDragEnd(event: DragEndEvent): void {
     setDragAreaId(null)
-    setDropCell(null)
+    const areaId = String(event.active.id)
+    const over = event.over ? String(event.over.id) : null
+    if (!over) return
+
+    if (over === TRAY_ID) {
+      unplaceAreaById(areaId)
+      setSelectedAreaId(areaId)
+      return
+    }
+
+    const cell = parseCellId(over)
+    if (cell) {
+      handleDrop(areaId, cell.row, cell.col)
+      return
+    }
+
+    if (over.startsWith(BOX_PREFIX) && editing) {
+      const placement = editing.breakpoints[activeBreakpoint].placements[over.slice(BOX_PREFIX.length)]
+      if (placement) handleDrop(areaId, placement.row, placement.col)
+    }
   }
 
   // Created immediately (not as a buffered draft) so it's live the moment it exists: it shows up
@@ -472,6 +546,7 @@ export default function FrameBuilder({
     const p = layout.placements[a.id]
     return !p || p.hidden
   })
+  const draggedArea = dragAreaId ? (editing.areas.find((a) => a.id === dragAreaId) ?? null) : null
   const neverVisibleAreas = editing.areas.filter((a) =>
     FRAME_BREAKPOINTS.every((bp) => {
       const p = editing.breakpoints[bp].placements[a.id]
@@ -652,53 +727,28 @@ export default function FrameBuilder({
             {t('layoutEditor.frameBuilder.newArea')}
           </Button>
         </div>
-        <div
-          onDragOver={(e) => {
-            e.preventDefault()
-          }}
-          onDrop={(e) => {
-            e.preventDefault()
-            const areaId = e.dataTransfer.getData(DRAG_MIME)
-            endDrag()
-            if (areaId) {
-              unplaceAreaById(areaId)
-              setSelectedAreaId(areaId)
-            }
-          }}
-          className={`mb-3 flex min-h-[44px] flex-wrap items-center gap-2 rounded-[8px] border border-dashed p-2 transition-colors ${
-            dragAreaId ? 'border-blue-400 bg-blue-50/50 dark:border-blue-500/40 dark:bg-blue-500/5' : 'border-transparent'
-          }`}
+        {/* Tray and board are one drag context: a chip goes from the tray onto a cell, and a placed
+            box goes back to the tray. Two contexts could not see each other's targets. */}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={collisionDetection}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragCancel={() => setDragAreaId(null)}
+          accessibility={{ announcements, screenReaderInstructions }}
         >
+        <UnplacedTray dragging={dragAreaId !== null}>
           {unplacedAreas.length === 0 && <span className="px-1 text-[11px] text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.allPlaced')}</span>}
-          {unplacedAreas.map((a) => {
-            const isSelected = selectedAreaId === a.id
-            return (
-              <div
-                key={a.id}
-                role="button"
-                tabIndex={0}
-                draggable
-                onDragStart={(e) => beginDrag(e, a.id)}
-                onDragEnd={endDrag}
-                onClick={() => setSelectedAreaId(a.id)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    setSelectedAreaId(a.id)
-                  }
-                }}
-                className={`flex cursor-grab flex-col items-center justify-center gap-0.5 rounded-[6px] border border-dashed px-2.5 py-1.5 text-center text-[11px] active:cursor-grabbing ${
-                  isSelected
-                    ? 'border-blue-500 bg-blue-100 ring-2 ring-blue-500/40 dark:border-blue-400 dark:bg-blue-500/20'
-                    : 'border-blue-300 bg-blue-50/60 dark:border-blue-500/40 dark:bg-blue-500/10'
-                } ${dragAreaId === a.id ? 'opacity-30' : ''}`}
-              >
-                <span className="font-medium">{a.name}</span>
-                <span className="text-slate-500 dark:text-slate-400">{t(`positions.${a.slot}`, a.slot)}</span>
-              </div>
-            )
-          })}
-        </div>
+          {unplacedAreas.map((a) => (
+            <TrayChip
+              key={a.id}
+              area={a}
+              selected={selectedAreaId === a.id}
+              dragging={dragAreaId === a.id}
+              onSelect={() => setSelectedAreaId(a.id)}
+            />
+          ))}
+        </UnplacedTray>
 
         <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.hintDragToPlace')}</p>
 
@@ -723,80 +773,25 @@ export default function FrameBuilder({
           }}
         >
           {Array.from({ length: layout.rows }, (_, r) =>
-            Array.from({ length: layout.cols }, (_, c) => {
-              const row = r + 1
-              const col = c + 1
-              const isDropTarget = dropCell?.row === row && dropCell?.col === col
-              return (
-                <div
-                  key={`${row}-${col}`}
-                  onDragOver={(e) => {
-                    e.preventDefault()
-                    setDropCell({ row, col })
-                  }}
-                  onDragLeave={() => setDropCell((c) => (c?.row === row && c?.col === col ? null : c))}
-                  onDrop={(e) => {
-                    e.preventDefault()
-                    const areaId = e.dataTransfer.getData(DRAG_MIME)
-                    if (areaId) handleDrop(areaId, row, col)
-                    endDrag()
-                  }}
-                  className={`min-h-[40px] rounded-[6px] border transition-colors ${
-                    isDropTarget
-                      ? 'border-blue-500 bg-blue-100 dark:bg-blue-900/40'
-                      : 'border-dashed border-black/15 bg-black/[0.02] dark:border-white/15 dark:bg-white/[0.02]'
-                  }`}
-                  style={{ gridRow: `${row} / span 1`, gridColumn: `${col} / span 1` }}
-                />
-              )
-            })
+            Array.from({ length: layout.cols }, (_, c) => <DropCell key={`${r + 1}-${c + 1}`} row={r + 1} col={c + 1} />)
           )}
           {editing.areas.map((area) => {
             const placement = layout.placements[area.id]
             if (!placement || placement.hidden) return null
             const isSelected = selectedAreaId === area.id
             return (
-              <div
+              <PlacedBox
                 key={area.id}
-                role="button"
-                tabIndex={0}
-                aria-label={t('layoutEditor.frameBuilder.expandArea')}
-                onClick={() => setSelectedAreaId(isSelected ? null : area.id)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault()
-                    setSelectedAreaId(isSelected ? null : area.id)
-                  }
-                }}
-                onDragOver={(e) => {
-                  e.preventDefault()
-                  setDropCell({ row: placement.row, col: placement.col })
-                }}
-                onDrop={(e) => {
-                  e.preventDefault()
-                  const areaId = e.dataTransfer.getData(DRAG_MIME)
-                  if (areaId) handleDrop(areaId, placement.row, placement.col)
-                  endDrag()
-                }}
-                className={`flex min-h-[48px] cursor-pointer flex-col gap-1.5 rounded-[6px] border p-2 text-[11px] ${
-                  isSelected
-                    ? 'border-blue-600 bg-blue-50 shadow-md ring-2 ring-blue-500/40 dark:border-blue-400 dark:bg-blue-500/10'
-                    : 'border-slate-300 bg-white shadow-sm hover:border-blue-300 dark:border-white/15 dark:bg-white/[0.03] dark:hover:border-blue-500/30'
-                }`}
-                style={{ gridRow: `${placement.row} / span ${placement.rowSpan}`, gridColumn: `${placement.col} / span ${placement.colSpan}` }}
+                areaId={area.id}
+                placement={placement}
+                selected={isSelected}
+                dragging={dragAreaId === area.id}
+                label={t('layoutEditor.frameBuilder.expandArea')}
+                onToggle={() => setSelectedAreaId(isSelected ? null : area.id)}
               >
                 <div className="flex items-center justify-between gap-1">
                   <div className="flex min-w-0 items-center gap-1.5">
-                    <span
-                      draggable
-                      onDragStart={(e) => beginDrag(e, area.id)}
-                      onDragEnd={endDrag}
-                      onClick={(e) => e.stopPropagation()}
-                      aria-label={t('layoutEditor.componentPill.dragHandle')}
-                      className="-ml-1 flex shrink-0 cursor-grab select-none items-center rounded-[6px] border border-black/10 bg-black/[0.03] p-0.5 text-slate-500 transition-colors hover:border-black/20 hover:bg-black/[0.08] hover:text-slate-700 active:cursor-grabbing dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200"
-                    >
-                      <GripVertical size={13} />
-                    </span>
+                    <AreaDragHandle label={t('layoutEditor.frameBuilder.moveArea', { name: area.name })} />
                     <span className="truncate font-medium">{area.name}</span>
                   </div>
                   <div className="flex items-center gap-1">
@@ -865,10 +860,21 @@ export default function FrameBuilder({
                     {t('layoutEditor.frameBuilder.preview.pageContent')}
                   </div>
                 )}
-              </div>
+              </PlacedBox>
             )
           })}
         </div>
+
+        {/* What follows the cursor - without it a dnd-kit drag moves nothing visible, since the
+            source keeps its place in the grid until the drop. */}
+        <DragOverlay>
+          {draggedArea && (
+            <div className="rounded-[6px] border border-blue-500 bg-blue-100 px-2 py-1 text-[11px] font-medium shadow-md dark:border-blue-400 dark:bg-blue-500/30">
+              {draggedArea.name}
+            </div>
+          )}
+        </DragOverlay>
+        </DndContext>
 
         {unassignedSlots.length > 0 && (
           <p className="mt-4 text-xs text-amber-600 dark:text-amber-400">
@@ -947,3 +953,158 @@ function TrackInputs({
   )
 }
 
+
+// The tray of areas that have no place on this breakpoint. It is a drop target itself: dropping a
+// placed box here unplaces it, which is the same thing the box's own "Nicht platzieren" button does.
+// What the drag *is* (the whole chip, the whole box) and what starts it (the grip inside) are two
+// different nodes, and dnd-kit wants the first as its node and the second as its activator: the node
+// is what collision detection measures. With the grip as the node, picking a placed box up put a
+// 18px rect at the box's top-left corner, and the nearest target to that was the tray above - so a
+// pick-up-and-drop without moving unplaced the area instead of leaving it where it was. Measured on
+// the frame board. The context is how the grip, which is written at the call site inside the box,
+// gets the activator props of the box that contains it.
+type DragActivator = {
+  attributes: DraggableAttributes
+  listeners: ReturnType<typeof useDraggable>['listeners']
+  setActivatorNodeRef: (node: HTMLElement | null) => void
+}
+const ActivatorContext = createContext<DragActivator | null>(null)
+
+function UnplacedTray({ dragging, children }: { dragging: boolean; children: React.ReactNode }): JSX.Element {
+  const { setNodeRef, isOver } = useDroppable({ id: TRAY_ID })
+  return (
+    <div
+      ref={setNodeRef}
+      className={`mb-3 flex min-h-[44px] flex-wrap items-center gap-2 rounded-[8px] border border-dashed p-2 transition-colors ${
+        isOver
+          ? 'border-blue-500 bg-blue-100/60 dark:border-blue-400 dark:bg-blue-500/10'
+          : dragging
+            ? 'border-blue-400 bg-blue-50/50 dark:border-blue-500/40 dark:bg-blue-500/5'
+            : 'border-transparent'
+      }`}
+    >
+      {children}
+    </div>
+  )
+}
+
+// An unplaced area. The chip selects on click as it always did; the grip beside it is what drags,
+// the same split the placed box uses - with the whole chip as the activator, keyboard users would
+// have no way left to select it (space and enter both belong to the drag then).
+function TrayChip({
+  area,
+  selected,
+  dragging,
+  onSelect
+}: {
+  area: GridFrameArea
+  selected: boolean
+  dragging: boolean
+  onSelect: () => void
+}): JSX.Element {
+  const { t } = useTranslation()
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef } = useDraggable({ id: area.id })
+  return (
+    <div
+      ref={setNodeRef}
+      className={`flex items-center gap-1 rounded-[6px] border border-dashed px-1.5 py-1 text-[11px] ${
+        selected
+          ? 'border-blue-500 bg-blue-100 ring-2 ring-blue-500/40 dark:border-blue-400 dark:bg-blue-500/20'
+          : 'border-blue-300 bg-blue-50/60 dark:border-blue-500/40 dark:bg-blue-500/10'
+      } ${dragging ? 'opacity-30' : ''}`}
+    >
+      <ActivatorContext.Provider value={{ attributes, listeners, setActivatorNodeRef }}>
+        <AreaDragHandle label={t('layoutEditor.frameBuilder.placeArea', { name: area.name })} />
+      </ActivatorContext.Provider>
+      <button type="button" onClick={onSelect} className="flex flex-col items-center gap-0.5 text-center">
+        <span className="font-medium">{area.name}</span>
+        <span className="text-slate-500 dark:text-slate-400">{t(`positions.${area.slot}`, area.slot)}</span>
+      </button>
+    </div>
+  )
+}
+
+// One empty cell of the board. Its id carries its coordinates, since that is the only thing that
+// identifies it; `isOver` replaces the dropCell state the native version had to keep by hand.
+function DropCell({ row, col }: { row: number; col: number }): JSX.Element {
+  const { setNodeRef, isOver } = useDroppable({ id: cellId(row, col) })
+  return (
+    <div
+      ref={setNodeRef}
+      className={`min-h-[40px] rounded-[6px] border transition-colors ${
+        isOver ? 'border-blue-500 bg-blue-100 dark:bg-blue-900/40' : 'border-dashed border-black/15 bg-black/[0.02] dark:border-white/15 dark:bg-white/[0.02]'
+      }`}
+      style={{ gridRow: `${row} / span 1`, gridColumn: `${col} / span 1` }}
+    />
+  )
+}
+
+// A placed area: a drop target of its own (dropping onto it means "this cell") and the container
+// for the area's form. The box is not the drag activator - the handle inside it is - so a click
+// anywhere on it still opens and closes the form.
+function PlacedBox({
+  areaId,
+  placement,
+  selected,
+  dragging,
+  label,
+  onToggle,
+  children
+}: {
+  areaId: string
+  placement: GridAreaPlacement
+  selected: boolean
+  dragging: boolean
+  label: string
+  onToggle: () => void
+  children: React.ReactNode
+}): JSX.Element {
+  const { setNodeRef: setDropRef, isOver } = useDroppable({ id: `${BOX_PREFIX}${areaId}` })
+  const { attributes, listeners, setNodeRef: setDragRef, setActivatorNodeRef } = useDraggable({ id: areaId })
+  return (
+    <div
+      ref={(node) => {
+        setDropRef(node)
+        setDragRef(node)
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={label}
+      onClick={onToggle}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onToggle()
+        }
+      }}
+      className={`flex min-h-[48px] cursor-pointer flex-col gap-1.5 rounded-[6px] border p-2 text-[11px] ${
+        selected
+          ? 'border-blue-600 bg-blue-50 shadow-md ring-2 ring-blue-500/40 dark:border-blue-400 dark:bg-blue-500/10'
+          : 'border-slate-300 bg-white shadow-sm hover:border-blue-300 dark:border-white/15 dark:bg-white/[0.03] dark:hover:border-blue-500/30'
+      } ${isOver ? 'ring-2 ring-blue-500' : ''} ${dragging ? 'opacity-30' : ''}`}
+      style={{ gridRow: `${placement.row} / span ${placement.rowSpan}`, gridColumn: `${placement.col} / span ${placement.colSpan}` }}
+    >
+      <ActivatorContext.Provider value={{ attributes, listeners, setActivatorNodeRef }}>{children}</ActivatorContext.Provider>
+    </div>
+  )
+}
+
+// The one thing that drags, in both places. A real button: dnd-kit's keyboard sensor needs an
+// activator that can take focus, and the attributes it hands over (tabIndex, role, the
+// aria-describedby pointing at its instructions) belong on something that can.
+function AreaDragHandle({ label }: { label: string }): JSX.Element {
+  const activator = useContext(ActivatorContext)
+  return (
+    <button
+      type="button"
+      ref={activator?.setActivatorNodeRef}
+      {...activator?.attributes}
+      {...activator?.listeners}
+      onClick={(e) => e.stopPropagation()}
+      aria-label={label}
+      className="-ml-1 flex shrink-0 cursor-grab select-none items-center rounded-[6px] border border-black/10 bg-black/[0.03] p-0.5 text-slate-500 transition-colors hover:border-black/20 hover:bg-black/[0.08] hover:text-slate-700 active:cursor-grabbing dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200"
+    >
+      <GripVertical size={13} aria-hidden />
+    </button>
+  )
+}

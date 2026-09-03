@@ -1004,6 +1004,9 @@ export default {
       hintDragToPlace:
         'Drag an area onto an open cell to place it — or drag a placed one back into this list to unplace it. Click an area to select it and show its settings below, including the row/column span — changes apply right away.',
       expandArea: 'Expand area settings',
+      placeArea: 'Place area {{name}}',
+      moveArea: 'Move area {{name}}',
+      cellName: 'Cell row {{row}}, column {{col}}',
       areaName: 'Area name',
       areaSlot: 'Slot',
       rowSpanLabel: 'Row span',

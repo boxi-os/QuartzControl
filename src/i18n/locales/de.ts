@@ -1007,6 +1007,9 @@ export default {
       hintDragToPlace:
         'Ziehe einen Bereich auf eine freie Zelle, um ihn zu platzieren — oder einen platzierten Bereich zurück in diese Liste, um ihn wieder zu lösen. Ein Klick wählt einen Bereich aus und zeigt seine Einstellungen unten, dort auch die Zeilen- und Spalten-Spanne — Änderungen wirken sich sofort aus.',
       expandArea: 'Bereichseinstellungen aufklappen',
+      placeArea: 'Bereich {{name}} platzieren',
+      moveArea: 'Bereich {{name}} verschieben',
+      cellName: 'Zelle Zeile {{row}}, Spalte {{col}}',
       areaName: 'Bereichsname',
       areaSlot: 'Belegung',
       rowSpanLabel: 'Zeilen-Spanne',

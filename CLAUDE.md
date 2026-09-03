@@ -169,15 +169,18 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   `prefers-color-scheme` im Renderer mit; `color-scheme: light dark` auf `:root`, explizite Farben
   auf `select option` für Linux. Neue UI mit `dark:`-Varianten. Kein Wechsel auf `'class'`: die
   nativen Dialoge, das Linux-`<select>`-Popup und die Scrollbar hängen an der Media-Query.
-- **Keine neue Stelle mit `draggable`.** Wer eine Stelle mit nativem HTML5-Drag anfasst
-  (`LayoutEditor/FrameBuilder`, `ComponentPill`, `Styles/CustomCss`), zieht sie auf `@dnd-kit` mit
-  `KeyboardSensor` um - die Abhängigkeit ist da (`GlobalBoard`), natives Drag kann weder Tastatur
-  noch Ansagen. `Plugins/Installed` ist seit 2026-09-03 umgestellt und ist das Muster: ein
-  `DndContext` pro Gruppe, `rectSortingStrategy` (die Liste ist zweispaltig),
-  `sortableKeyboardCoordinates` am `KeyboardSensor` - ohne den schiebt ein Pfeildruck die Karte um
-  25px und damit um nichts. Dazu „nach oben / nach unten“ an jeder Zeile: die Tastatur-Aufnahme ist eine
-  Geste, die man kennen muss, zwei Pfeile sind ein Tastendruck. Messungen in
-  [`plugins-and-config.md`](docs/decisions/plugins-and-config.md).
+- **Kein natives HTML5-Drag mehr, nirgends.** Alle vier Stellen ziehen mit `@dnd-kit`
+  (`Plugins/Installed`, `LayoutEditor/GlobalBoard`, `LayoutEditor/FrameBuilder`; `Styles/CustomCss`
+  hatte nie eines, nur Pfeile). Eine neue Stelle nimmt `@dnd-kit` mit `KeyboardSensor`, denn natives
+  Drag kann weder Tastatur noch Ansagen. Was dabei gilt: der gezogene *Knoten* ist das ganze
+  Element, der Griff nur `setActivatorNodeRef` (sonst vermisst die Kollisionsrechnung den Griff);
+  eine Liste nimmt `useSortable` mit `sortableKeyboardCoordinates`, ein Raster `useDroppable` mit
+  `nearestDroppableCoordinates` aus `utils/dndKeyboard.ts` - ohne einen der beiden schiebt ein
+  Pfeildruck um 25px und damit um nichts; `PointerSensor` mit `distance: 4`, wo derselbe Griff auch
+  klickbar ist. Sortierbare Zeilen tragen zusätzlich „nach oben / nach unten“: die Tastatur-Aufnahme
+  ist eine Geste, die man kennen muss. Messungen in
+  [`plugins-and-config.md`](docs/decisions/plugins-and-config.md) und
+  [`layout-frames.md`](docs/decisions/layout-frames.md).
 - **Ein Wort, ein Name.** Vokabular ist eine Tabelle (`positions`), nicht pro Seite. Deutsch „…“,
   Englisch “…”, Gedankenstrich als Em-Dash. Jeder Nutzertext steht in `de.ts`/`en.ts`
   (Schlüssel-Parität) oder `electron/main/i18n.ts`; zod- und `console.error`-Texte
@@ -253,9 +256,9 @@ mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge.
   `app:command` mit einer `AppCommand`-Union, Register in `state/saveCommand.ts`. Eine Seite
   registriert nur, solange ihr Knopf etwas täte; der Menüpunkt bleibt aktiv, weil der Hauptprozess
   sonst jeden Mount mitbekommen müsste.
-- **A3-Buttons - Status: teilweise.** „Nach oben / nach unten“ steht in `Plugins/Installed`
-  (2026-09-03); offen bleiben die anderen Drag-Stellen (`LayoutEditor/FrameBuilder`, `ComponentPill`;
-  `Styles/CustomCss` hat die Pfeile schon, aber noch natives Drag).
+- **A3 - Status: erledigt (2026-09-03).** „Nach oben / nach unten“ in `Plugins/Installed`, und alle
+  Drag-Stellen laufen über `@dnd-kit` mit Tastatur; `Styles/CustomCss` hatte die Pfeile schon und nie
+  ein natives Drag.
 - **A4 - Status: erledigt (2026-09-03).** `status`-Platz im `PageHeader` als `role="status"`,
   `role="log"` an beiden Konsolen, eine `<h1>` pro Seite, `<nav aria-label>`. Nachgezogen am selben
   Tag: `state/announcer.tsx` als Live-Region der Seite (Zeilenmeldung der Plugin-Liste, Ergebnis

@@ -9,3 +9,41 @@ Aus CLAUDE.md ausgelagert (2026-09-02): die Messungen und Beobachtungen hinter d
     - **Changing the widths rewrites every frame's CSS.** They are baked into each frame's media queries at codegen time, so a frame not rewritten would silently keep the old thresholds with nothing in the UI to show it. No `quartz plugin add` is involved — the frame directories are already symlinked into `.quartz/plugins`.
   - **The dev server cannot pick up an edited frame — a restart is the only way, and the editor says so.** Measured against a real `quartz build --serve`, for two independent reasons. First, the watcher never sees the file: `--serve` implies `--watch`, and chokidar gets a fixed list from one `globby(["**/*.ts", "quartz/cli/*.js", "quartz/static/**/*", "**/*.tsx", "**/*.scss", "package.json", "quartz.config.yaml", "quartz.config.default.yaml"])` call — a frame's generated `dist/frames.js` matches none of them (`*.js` only under `quartz/cli/`), and editing it produced no rebuild at all. Second, and decisive: even a rebuild forced by changing `quartz.config.yaml` ("Detected a source code change, doing a hard rebuild…") still served the *old* CSS, because `quartz/plugins/loader/frameLoader.ts` does a bare `await import(toFileUrl(...))` with no cache-buster and Node caches an ESM module for the process's lifetime. Only `Ctrl-C` + restart showed the change. **A brand-new frame is the exception** and needs no restart — `quartz plugin add` writes quartz.config.yaml, which does trigger a rebuild, and that module was never imported so nothing is cached; verified with a throwaway frame, which appeared immediately and then froze on its next edit like any other. Hence `DevServerRestartHint`, offered after a *frame edit* and after a breakpoint save (which rewrites every frame) but not after creating a frame, and only when a server is actually running. It prompts rather than restarting by itself: a frame is saved many times while being built, and bouncing the server on each intermediate save is worse than the stale preview.
   - **Saving a frame does not close the editor.** A frame is built in many passes across three breakpoints, and being thrown back to the frame list after every save meant clicking back in each time. The success notice is derived from `JSON.stringify(editing) === savedSnapshot` rather than held as a flag, so it clears itself the moment the draft differs again — there is no reset to forget at one of the ~15 places that write into `editing`.
+
+## Der Frame-Builder zieht mit `@dnd-kit` (2026-09-03)
+
+Die letzte Stelle mit nativem HTML5-Drag. Sie ist kein Umsortieren, sondern ein Setzen: ein Bereich
+wandert aus der Ablage auf eine Rasterzelle, ein platzierter Bereich zurück in die Ablage. Deshalb
+kein `SortableContext`, sondern `useDraggable`/`useDroppable` von Hand — Zellen als
+`cell:<Zeile>:<Spalte>`, platzierte Kästen als `box:<id>`, die Ablage als eine feste ID. Ein
+`onDragEnd` entscheidet, was ein Abwurf hieß, statt eines Handlers pro Ziel.
+
+Drei Dinge, die erst das laufende Programm gezeigt hat:
+
+- **Der Knoten ist der Kasten, der Griff nur der Auslöser.** Erst hing beides am Griff — und weil
+  dnd-kit den *Knoten* für die Kollisionsrechnung vermisst, lag beim Aufnehmen eines platzierten
+  Kastens ein 18px-Rechteck in seiner linken oberen Ecke, dessen nächstes Ziel die Ablage darüber
+  war: Aufnehmen und ohne Bewegung ablegen löste den Bereich, statt ihn liegen zu lassen. Mit
+  `setNodeRef` am Kasten und `setActivatorNodeRef` am Griff meldet dasselbe Manöver „bei Zelle Zeile
+  1, Spalte 1 abgelegt“ und ändert nichts. Der Griff steht im JSX innerhalb des Kastens, also reicht
+  ein kleiner Kontext die Aktivator-Props hinein.
+- **Pfeiltasten brauchen einen eigenen Koordinatengeber, und der braucht eine Achsenregel**
+  (`utils/dndKeyboard.ts`). dnd-kits Standard schiebt um feste 25px; der Sortable-Geber verlangt,
+  dass das gezogene Element selbst ein Ablageziel ist, was hier nie zutrifft. Der erste eigene Versuch
+  wertete nur Entfernungen — und „nach rechts“ aus Zelle (1,1) landete in der Ablage: die nächste
+  Spalte lag 800px weit, die Ablage 50px rechts und 150px darüber. Jetzt zählen zuerst nur Ziele, die
+  quer zur Richtung noch überlappen (die Spalte bei hoch/runter, die Zeile bei links/rechts); erst
+  wenn es keine gibt, entscheidet die Entfernung — so kommt man vom Raster auch wieder hinauf in die
+  Ablage.
+- **Ein Klick muss ein Klick bleiben.** `PointerSensor` mit `activationConstraint: { distance: 4 }`,
+  sonst ist jeder Druck auf den Griff ein Null-Pixel-Drag und die Auswahl per Klick fällt aus.
+
+Dazu ein `DragOverlay` (ohne das folgt dem Zeiger nichts, weil die Quelle bis zum Abwurf an ihrem
+Platz bleibt) und die Ansagen aus `utils/dndAnnouncements.ts`, die hier Bereichsnamen, „Zelle Zeile
+2, Spalte 2“ und die Ablage benennen. Die Überschneidungs-Absage wird jetzt zusätzlich angesagt:
+sonst wäre „bei Zelle … abgelegt“ das Letzte, was von einem abgelehnten Abwurf zu hören ist.
+
+Gemessen im Produktions-Build am Frame `rename-test`, ohne zu speichern (der Editor hält alles bis
+zum Speichern in seinem eigenen Zustand): Tastatur-Platzierung aus der Ablage, Tastatur-Lösen zurück
+in die Ablage, Aufnehmen-und-Ablegen ohne Bewegung, Maus-Drag auf eine freie Zelle, Klick zum
+Auswählen, und ein Abwurf auf eine belegte Zelle, der weiterhin an `overlaps` scheitert.

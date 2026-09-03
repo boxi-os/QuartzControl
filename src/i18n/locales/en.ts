@@ -571,6 +571,10 @@ export default {
       hintSwitchable: 'This machine has Node {{node}}. Switching only pays off when a package has to be compiled during install (node-gyp) — that needs real Node headers, which the app does not carry.',
       hintNoHostNode: 'No Node was found on this machine, so “From the system” would make builds, plugins and new projects fail.',
       hintSystem: 'Quartz requires Node 22 or newer. A project also ships a .node-version, and nvm, fnm, asdf and mise resolve that per folder — so the runtime here can differ from project to project.',
+      gitBundled: 'git {{version}} from the app — this machine has none, so QuartzControl brings one.',
+      gitHost: 'git {{version}} from this machine. The app carries one too but only uses it when there is none — so your own setup (~/.gitconfig, credential helpers) keeps applying.',
+      gitLicense: 'git is licensed under the GPL v2; the full licence text ships with the app.',
+      gitSource: 'View source',
       appliesToNewProcesses: 'Applies to processes started afterwards. A running dev server keeps its environment until it is restarted.'
     },
     maintenance: {

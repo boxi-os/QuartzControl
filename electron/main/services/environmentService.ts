@@ -174,10 +174,11 @@ function probe(name: string, versionArgs: string[], source: ToolInfo['source'], 
  */
 export function getEnvironmentInfo(
   secretStorage: SecretStorageInfo,
-  // Where node and npm currently come from, i.e. whether nodeRuntime's shims are on PATH. Passed
-  // in rather than read here so this file keeps needing no Electron API - the same reasoning as
-  // secretStorage above.
-  embeddedBinDir: string | null
+  // Where node and npm currently come from, i.e. whether nodeRuntime's shims are on PATH, and
+  // whether git is the machine's or the app's. Passed in rather than read here so this file keeps
+  // needing no Electron API - the same reasoning as secretStorage above.
+  embeddedBinDir: string | null,
+  gitSource: ToolInfo['source']
 ): EnvironmentInfo {
   const path = ensureToolPath()
   // node and npm are answered by whatever PATH resolves - the shims when the embedded runtime is
@@ -188,7 +189,7 @@ export function getEnvironmentInfo(
   const tools = [
     probe('node', ['--version'], source),
     probe('npm', ['--version'], source),
-    probe('git', ['--version'], 'host')
+    probe('git', ['--version'], gitSource)
   ]
   return {
     hostNodeVersion: embeddedBinDir ? probe('node', ['--version'], 'host', embeddedBinDir).version : tools[0].version,

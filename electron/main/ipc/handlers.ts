@@ -49,6 +49,7 @@ import * as contentService from '../services/contentService'
 import * as createService from '../services/createService'
 import * as environmentService from '../services/environmentService'
 import * as nodeRuntime from '../services/nodeRuntime'
+import * as gitRuntime from '../services/gitRuntime'
 import * as settingsService from '../services/settingsService'
 import * as templatePackageService from '../services/templatePackage'
 import { applyTheme } from '../theme'
@@ -534,7 +535,11 @@ export function registerIpcHandlers(): void {
   handleNoArgs(IPC.settingsEnvironment, () =>
     environmentService.getEnvironmentInfo(
       connectionsService.getSecretStorageInfo(),
-      nodeRuntime.embeddedRuntime()?.binDir ?? null
+      nodeRuntime.embeddedRuntime()?.binDir ?? null,
+      // 'embedded' auch dann, wenn gar keines gefunden wurde: dass git fehlt, heißt seit dem
+      // mitgelieferten Bundle nicht mehr "installier dir eins", sondern "diese Installation ist
+      // unvollständig" - und genau diesen Satz zeigt das Warnband für eingebettete Werkzeuge.
+      gitRuntime.gitRuntime()?.source === 'host' ? 'host' : 'embedded'
     )
   )
   handleNoArgs(IPC.settingsClearThemeDocsCache, () => styleSettingsSchemaService.clearThemeDocsCache())

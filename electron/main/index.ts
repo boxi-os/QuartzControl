@@ -8,6 +8,7 @@ import { getProject } from './services/projectStore'
 import { getSettings } from './services/settingsService'
 import { ensureToolPath } from './services/environmentService'
 import { applyRuntimeMode } from './services/nodeRuntime'
+import { applyGitRuntime } from './services/gitRuntime'
 import { mainT } from './i18n'
 import { applyAppMenu, APP_NAME } from './menu'
 import { applyStoredTheme, windowBackgroundColor } from './theme'
@@ -161,6 +162,10 @@ app.whenReady().then(async () => {
   // 'embedded' unless the user chose otherwise; the settings read is awaited here because a spawn
   // must never see a half-applied PATH, and nothing can spawn before the window exists.
   ensureToolPath()
+  // Dann git: das vom Rechner, wenn es dort eines gibt, sonst das mitgelieferte. Nach
+  // ensureToolPath(), weil ein git, das nur über den Login-Shell-PATH erreichbar ist, vorher nicht
+  // zu sehen wäre - und vor allem, was spawnen kann.
+  applyGitRuntime()
   applyRuntimeMode((await getSettings()).nodeRuntime ?? 'embedded')
   if (isMac && app.dock) {
     const iconPath = resolveIconPath()

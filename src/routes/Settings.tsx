@@ -195,6 +195,7 @@ function RuntimeSection({
 
   const node = info?.tools.find((tool) => tool.name === 'node')
   const npm = info?.tools.find((tool) => tool.name === 'npm')
+  const git = info?.tools.find((tool) => tool.name === 'git')
 
   return (
     <Section icon={Terminal} title={t('settings.runtime.title')} description={t('settings.runtime.description')}>
@@ -222,8 +223,42 @@ function RuntimeSection({
           : t('settings.runtime.hintSystem')}
       </p>
       <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('settings.runtime.appliesToNewProcesses')}</p>
+
+      {/* git steht hier mit, weil die Frage dieselbe ist - womit führt die App aus - die Antwort
+          aber die umgekehrte: das vom Rechner gewinnt, weil es die Einrichtung des Nutzers trägt.
+          Kein Schalter: es gibt keinen Fall, in dem jemand das mitgelieferte git *vorziehen* will. */}
+      <div className="mt-4 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
+        <p className="text-[13px] text-slate-500 dark:text-slate-400">
+          {git?.source === 'embedded'
+            ? t('settings.runtime.gitBundled', { version: versionNumber(git.version) })
+            : t('settings.runtime.gitHost', { version: versionNumber(git?.version ?? null) })}
+        </p>
+        {git?.source === 'embedded' && (
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            {t('settings.runtime.gitLicense')}{' '}
+            <button
+              type="button"
+              className="underline hover:text-slate-700 dark:hover:text-slate-200"
+              onClick={() => void window.quartzGui.dialog.openExternal(GIT_SOURCE_URL)}
+            >
+              {t('settings.runtime.gitSource')}
+            </button>
+          </p>
+        )}
+      </div>
     </Section>
   )
+}
+
+// Die Fassung, die scripts/fetch-git.mjs holt. Beim Anheben dort *und* hier ändern - der Link muss
+// auf den Quelltext genau der mitgelieferten Binärdatei zeigen, sonst ist das Quellcode-Angebot
+// keines.
+const GIT_SOURCE_URL = 'https://github.com/git/git/tree/v2.53.0'
+
+// "git version 2.53.0 (Apple Git-155)" → "2.53.0". Dieselbe Frage wie auf der Startseite, dieselbe
+// Antwort: die Zeile ist eine Auskunft, keine Diagnose.
+function versionNumber(version: string | null): string {
+  return /\d[\d.]*/.exec(version ?? '')?.[0] ?? '—'
 }
 
 // ── Projekte ────────────────────────────────────────────────────────────────────────────────

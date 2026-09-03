@@ -575,6 +575,10 @@ export default {
       hintSwitchable: 'Auf diesem Rechner liegt Node {{node}}. Umschalten lohnt sich nur, wenn ein Paket beim Installieren kompiliert werden muss (node-gyp) — dafür braucht es echte Node-Header, die die App nicht mitbringt.',
       hintNoHostNode: 'Auf diesem Rechner ist kein Node gefunden worden. „Vom System“ würde Builds, Plugins und neue Projekte deshalb scheitern lassen.',
       hintSystem: 'Quartz verlangt Node 22 oder neuer. Ein Projekt bringt außerdem eine .node-version mit — nvm, fnm, asdf und mise lösen die pro Ordner auf, die Laufzeit kann hier also je Projekt eine andere sein.',
+      gitBundled: 'git {{version}} aus der App — auf diesem Rechner läuft keines, deshalb bringt QuartzControl eines mit.',
+      gitHost: 'git {{version}} von diesem Rechner. Die App bringt zwar eines mit, benutzt es aber nur, wenn keines da ist — deine eigene Einrichtung (~/.gitconfig, Zugangshelfer) gilt so weiter.',
+      gitLicense: 'git steht unter der GPL v2; der vollständige Lizenztext liegt in der App.',
+      gitSource: 'Quelltext ansehen',
       appliesToNewProcesses: 'Gilt für Vorgänge, die danach starten. Ein laufender Dev-Server behält seine Umgebung, bis er neu gestartet wird.'
     },
     maintenance: {

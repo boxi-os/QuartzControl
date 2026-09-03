@@ -70,18 +70,29 @@ function createWindow(): void {
     }
   })
 
-  win.on('ready-to-show', () => win.show())
-  // Sicherheitsnetz, kein Normalfall: `show: false` heißt, dass das Fenster erst mit
-  // 'ready-to-show' sichtbar wird - und wenn dieses Ereignis nie kommt, hat der Nutzer eine App,
-  // die läuft und nichts zeigt. Genau das ist auf einer Linux-VM ohne OpenGL-Kontext denkbar, wo
-  // Chromium auf Software-Rendering zurückfällt (siehe docs/decisions: ANGLE-Fehler 12289). Nach
-  // fünf Sekunden ist ein womöglich noch weißes Fenster in jedem Fall besser als keines.
-  setTimeout(() => {
-    if (!win.isDestroyed() && !win.isVisible()) {
-      console.error('[main] window never reported ready-to-show; showing it anyway')
-      win.show()
-    }
-  }, 5000).unref()
+  // Drei Wege, sichtbar zu werden, und nur der erste ist der Normalfall.
+  //
+  // 'ready-to-show' feuert, wenn der Renderer seinen ersten Frame gemalt hat - deshalb `show:
+  // false`, sonst blitzt ein leeres Fenster auf. Auf einer Maschine ohne GL-Kontext kommt dieser
+  // Frame aber nie: gemessen auf Debian 13 in einer VM unter Wayland, wo `eglCreateContext ES 3.0`
+  // scheitert, der GPU-Prozess sich beendet und Chromium mit `--use-gl=disabled` weiterläuft. Die
+  // App lief dort mit Haupt-, Renderer- und GPU-Prozess und zeigte nie ein Fenster - vier
+  // Startversuche, vier unsichtbare Instanzen.
+  //
+  // 'did-finish-load' ist das nächstbeste Signal: das Dokument ist geladen, auch wenn nichts
+  // gemalt wurde. Eine Sekunde Nachlauf, damit auf gesunden Maschinen weiterhin der erste Frame
+  // gewinnt und niemand ein ungemaltes Fenster sieht. Der Timer darüber ist die letzte Instanz für
+  // den Fall, dass auch das Laden nichts meldet.
+  let shown = false
+  const show = (reason: string): void => {
+    if (shown || win.isDestroyed() || win.isVisible()) return
+    shown = true
+    if (reason !== 'ready-to-show') console.error(`[main] window shown via fallback: ${reason}`)
+    win.show()
+  }
+  win.on('ready-to-show', () => show('ready-to-show'))
+  win.webContents.on('did-finish-load', () => setTimeout(() => show('did-finish-load'), 1000).unref())
+  setTimeout(() => show('timeout'), 5000).unref()
   // Every target="_blank" in the app lands here, and shell.openExternal hands the URL to whatever
   // the OS registered for its scheme - so the scheme is checked rather than trusted. http is
   // allowed alongside https because the dev-server preview link is http://localhost:<port>, which

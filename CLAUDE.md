@@ -13,6 +13,11 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
 - `npm run start` — preview a production build
 - `npm run typecheck` — `tsc --noEmit` against both `tsconfig.node.json` (main/preload) and `tsconfig.web.json` (renderer); there is no lint script and no unit tests in this repo
 - `npm run smoke` — launches the production build (so `npm run build` first) and visits every screen in `App.tsx`, sub-tabs included, at 1280x800 and 1728x1000, reporting uncaught exceptions, console errors, `ErrorSurface` toasts, the route error boundary, a horizontally scrolling layout and an empty page. Not a test suite and it asserts nothing about content — it answers one question, *does every screen still come up*, which is otherwise only answerable by opening all seventeen of them. Each size is a fresh launch because `setViewportSize()` does not resize an Electron `BrowserWindow`
+- `npm run check:runtime -- <projektpfad>` — die eingebettete Node-Laufzeit gegen ein echtes Projekt:
+  Shims, Node-Version gegen Quartz' Untergrenze, mitgeliefertes npm, der yargs-Loader mit Gegenprobe,
+  ein Unterkommando des Quartz-CLI und ein vollständiger Build in einem Wegwerf-Ordner. Existiert aus
+  demselben Grund wie `check:i18n`: keiner dieser Fehler wird im Typcheck oder im Build sichtbar, sie
+  passieren alle in einem Kindprozess
 - `npm run check:i18n` — every literal `t('…')` and `mainT('…')` key against `de.ts`, `en.ts` and
   `electron/main/i18n.ts`, plus de/en parity in both directions. Static and instant; it exists because
   i18next renders a missing key *as the key* rather than failing, so a gap is invisible until someone
@@ -56,6 +61,19 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
 - **Alles, was Main aus Projektdateien liest und an Prozesse gibt, ist mit `--` getrennt; `git`
   bekommt nie eine Shell; nur npm/npx brauchen eine.** `runCommand.ts` ist der eine Spawner für
   kurzlebige Kommandos.
+- **Quartz und npm laufen unter Electrons eigener Node-Laufzeit; git kommt vom System.**
+  `nodeRuntime.ts` schreibt bei *jedem* Start drei Shell-Skripte (`node`, `npm`, `npx`) nach
+  `<userData>/runtime/bin` und hängt das Verzeichnis vorn in den PATH — jedes Mal neu, weil der
+  Pfad auf die Electron-Binärdatei im AppImage pro Start wechselt. Ein neuer Spawn muss davon
+  nichts wissen: er ruft weiter `npx`. Die Shim-Vorlage steht in `resources/runtime/shim.sh`, weil
+  `scripts/check-runtime.mjs` dieselbe füllt; der `-r`-Loader
+  (`resources/runtime/defaultapp.cjs`) setzt `process.defaultApp`, ohne den liest yargs den
+  Skriptpfad als Kommandonamen. npm reist als exakt gepinnte devDependency mit und braucht in
+  `electron-builder.yml` **zwei** `extraResources`-Einträge. `ensureToolPath()` sucht deshalb nach
+  **git**, nicht nach node. Der Ausweg ist eine Einstellung (`nodeRuntime: 'embedded' | 'system'`,
+  Vorgabe eingebettet) für den einen Fall, der ihn braucht: ein Paket, das node-gyp verlangt.
+  Warum nicht „Host zuerst" wie bei git, und alle Messungen: siehe
+  [`electron-runtime-and-packaging.md`](docs/decisions/electron-runtime-and-packaging.md).
 - **Ja/Nein-Bestätigungen laufen über den nativen Dialog im Main-Prozess. In-App-Overlays sind nur
   für Inhalte mit Formular oder Auswahl.** Der Renderer fragt über `confirmDialog()`
   (`src/utils/confirm.ts` → Kanal `dialog.confirm`), nie über `window.confirm()`. Die sichere Antwort
@@ -219,6 +237,10 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   Schreiben.
 - **JSON-Stores nur über `jsonStore.ts`**: atomar schreiben, Unlesbares beiseitelegen statt
   überschreiben.
+- **Was nur ein Kindprozess beantworten kann, wird auch dort gemessen.** Die eingebettete Laufzeit,
+  Lifecycle-Skripte, das gepackte Bundle: `npm run check:runtime` und eine Messung an der
+  *gepackten* App, nicht am Build. Vier der fünf Befunde aus Phase 7a wären in Entwicklung
+  unsichtbar geblieben.
 - **Vor jedem UI-Urteil die App wirklich starten** (`run-desktop`-Skill, `npm run smoke`), und unter
   Playwright zuerst `colorscheme none`. Was Playwright nicht erreicht - den nativen Dialog, den
   echten Return-Tastendruck - im Main-Prozess spiegeln (`app.evaluate`) und das als „nicht am OS

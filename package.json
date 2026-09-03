@@ -16,6 +16,7 @@
     "postinstall": "node scripts/postinstall.mjs",
     "smoke": "node scripts/smoke.mjs",
     "check:i18n": "node scripts/check-i18n-keys.mjs",
+    "check:runtime": "node scripts/check-runtime.mjs",
     "icon": "node scripts/build-icon.mjs",
     "dist": "npm run build && electron-builder",
     "dist:mac": "npm run build && electron-builder --mac",

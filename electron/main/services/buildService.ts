@@ -284,6 +284,13 @@ function looksLikeQuartzServer(pid: number): boolean {
     // userData, so interpolating it into a shell command line made a tampered file enough to run
     // arbitrary commands. Passing argv directly means there is no shell to interpret anything.
     const output = execFileSync('ps', ['-p', String(pid), '-o', 'command='], { encoding: 'utf-8' })
+    // What this actually reads, measured with a running server under the embedded runtime
+    // (nodeRuntime.ts): "npm exec quartz build --serve --port 8080 --wsPort 3001". The tracked pid
+    // is npx's, and npm rewrites its own process title, so both needles are matched by the
+    // *arguments* this app passed - not by a path that happens to contain them. The child doing
+    // the listening is one level below and carries the Electron binary's path instead; treeKill
+    // in killOrphanedServers covers it, which is why the parent is the right thing to track.
+    // The app's own process cannot match either needle: its path says "QuartzControl", capital Q.
     return output.includes('quartz') && output.includes('--serve')
   } catch {
     return false

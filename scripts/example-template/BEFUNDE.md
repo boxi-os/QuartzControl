@@ -396,3 +396,52 @@ das ist hier kein Abkürzen, sondern der einzige Hebel. Überschrieben wird die 
 Was offen bleibt: Eine Sprache, deren Tokens eine zehnte Farbe erzeugen, käme ungemessen herein.
 Die Zählung ist mit einem `grep` über `public/` wiederholbar, aber sie läuft nicht automatisch —
 die Farben existieren erst nach einem Build.
+
+### 37. Welches Element den Explorer rollt, entscheidet der Browser
+
+Quartz gibt der inneren Liste `max-height: 100%`. Chrome löst die Prozentangabe gegen
+`.explorer-content` auf, die Liste wird damit selbst zum Rollcontainer und der Kasten darum rollt
+nie. Firefox löst sie nicht auf — die Höhe des Elternteils ist `auto` mit einem Maximum —, die
+Liste wächst auf ihre volle Höhe und der **Kasten** rollt.
+
+Gemessen auf derselben Seite, gleiches Fenster:
+
+| | rollendes Element | `.explorer-content` | `ul.explorer-ul` |
+| --- | --- | --- | --- |
+| Chrome | die Liste | 540 px, Überlauf 0 | 540 px, Überlauf 148 |
+| Firefox | der Kasten | 540 px, Überlauf 148 | 688 px, Überlauf 0 |
+
+Alles, was diese Vorlage an das Rollen hängt — Maske, `overscroll-behavior`, `scrollbar-width` und
+seit dem 05.09.2026 die scroll-getriebene Kante —, sitzt auf `.explorer-content`. In Chrome traf
+das ein Element, das gar nicht rollt; die Kante konnte dort nie animieren, und das sah aus wie
+„die Absoftung ist verschwunden".
+
+Behoben, indem die Liste ihre Deckelung aufgibt (`max-height: none; overflow: visible`). Danach
+rollt in beiden Browsern derselbe Kasten, mit demselben Überlauf von 148 px.
+
+### 38. Ein `animation`-Kurzbefehl ohne Timeline ist nicht wirkungslos, er springt ans Ende
+
+Scroll-getriebene Animationen gibt es nur in Chromium; `CSS.supports('animation-timeline',
+'scroll()')` ist in Firefox 155 `false`. Der naheliegende Gedanke — „dann passiert dort eben
+nichts" — ist falsch. `animation-timeline` und `animation-range` werden beim Parsen verworfen, der
+`animation`-Kurzbefehl bleibt stehen, läuft mit der Vorgabe **null Sekunden** und landet wegen
+`fill: both` sofort auf dem Endbild.
+
+Gemessen in Firefox 155: `--tpl-fade-start: 20px`, `--tpl-fade-end: 0px` und eine Maske, die zu
+`transparent 0px, black 0px, …` ausrechnete — die weiche Kante war an *beiden* Enden weg statt nur
+statisch. Der Kopfbereich saß aus demselben Grund dauerhaft in seiner kleinen Form.
+
+Beides steht jetzt hinter `@supports (animation-timeline: scroll())`. Ohne Timeline greifen die
+Ausgangswerte: Kante an beiden Enden, Kopf in Ruhegröße — also genau das Verhalten von vorher.
+
+### 39. `initial-value` einer registrierten Eigenschaft darf kein `rem` enthalten
+
+`@property` verlangt einen *computationally independent* Anfangswert: keine `em`, keine `rem`,
+keine Prozente. Chrome nimmt `initial-value: 0.5rem` trotzdem an, Firefox verwirft die ganze
+`@property`-Regel — der Name bleibt unregistriert, und jedes `var()`, das ihn liest, wird beim
+Berechnen ungültig.
+
+Gemessen: In Firefox hatte der Kopfbereich `padding-block: 0px` und einen 16-px-Titel, also
+*kleiner* als seine eigene Schrumpfform, weil beide Deklarationen weggeworfen wurden. Mit `8px` und
+`22.4px` als Anfangswerten — denselben Zahlen, nur einheitenfest — stimmt es in beiden Browsern.
+Die Keyframes dürfen weiterhin die Tokens verwenden; nur der Anfangswert nicht.

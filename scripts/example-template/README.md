@@ -343,6 +343,9 @@ Alle gemessen, nicht vermutet. Wer die Vorlage erweitert, spart sich damit diese
 | Eine Rinne in rem bei zwölf Spalten | Elf Rinnen sind die Mindestbreite des Rasters. 2 rem × 11 + 40 Rand = 392 px passen nicht auf ein 390-px-Telefon (BEFUNDE 34) |
 | Ein `<p>` in einer Titelzeile | Behält seinen Absatzrand und verschiebt den Text gegen das Icon daneben — im Callout waren es 8 px (BEFUNDE 33) |
 | Die Farben eines Syntax-Themas | Sind nicht gemessen, nur weil die Palette es ist. Fünf von neun Token-Farben fielen durch; shiki schreibt sie inline, also hilft nur `!important` auf der Variablen (BEFUNDE 36) |
+| Eine Regel an „das scrollende Element" hängen | Welches das ist, entscheidet der Browser: bei Quartz' Explorer rollt in Chrome die innere Liste, in Firefox der Kasten darum (BEFUNDE 37) |
+| `animation` mit `animation-timeline` | Wo es keine Scroll-Timelines gibt, bleibt der Kurzbefehl stehen, läuft 0 s und springt mit `fill: both` ans Endbild. `@supports` davor, sonst ist die Ausnahme schlimmer als gar kein Effekt (BEFUNDE 38) |
+| `initial-value` in `@property` | Muss einheitenfest sein — `rem` lässt Chrome durch und Firefox verwirft die ganze Regel (BEFUNDE 39) |
 | Ein `<summary>` als Bedienelement | Rechnet ohne `box-sizing` als `content-box`, und ein Plugin-`padding` überlebt, wenn man nur die eine Hälfte überschreibt. Der Sprachumschalter wurde so 51 px hoch neben 44-px-Nachbarn (BEFUNDE 27) |
 | Ein zweiter Ausklapp-Pfeil | `base.scss` gibt jedem `<summary>` eine Chevron, das Plugin setzt zusätzlich ein „▾“. Wer eine eigene hinzufügt, hat drei (BEFUNDE 27) |
 | Ein Alias in zwei Sprachen | `alias-redirects` slugifiziert sprachübergreifend: „Frontmatter-Demo“ und „Frontmatter demo“ ergeben denselben Pfad, und die zweite Seite kapert die erste (BEFUNDE 25) |

@@ -97,16 +97,25 @@ html {
 // The height is not measured anywhere: it is 44px of control plus this padding twice plus the
 // rule. That is why the padding is the thing being animated rather than a height - a height would
 // be a second place where the same number lives, and the controls may not shrink below 44px.
+// The initial values are in px, and that is a rule rather than a preference: a registered
+// property's `initial-value` has to be *computationally independent*, so no em, no rem, no
+// percentage. Chrome accepts `0.5rem` here anyway; Firefox rejects the whole @property rule, the
+// name stays unregistered, and every `var()` that reads it becomes invalid at computed-value time.
+// Measured before this was px: the header had `padding-block: 0px` and a 16px title in Firefox -
+// smaller than its own shrunken state, because both declarations had been thrown away.
+//
+// 8px and 22.4px are --tpl-space-xs and --tpl-text-xl at the root font size. They are only the
+// fallback for a browser without scroll timelines; the keyframes below still use the tokens.
 @property --tpl-header-pad {
   syntax: "<length>";
   inherits: true;
-  initial-value: 0.5rem;
+  initial-value: 8px;
 }
 
 @property --tpl-header-title {
   syntax: "<length>";
   inherits: true;
-  initial-value: 1.4rem;
+  initial-value: 22.4px;
 }
 
 :root {
@@ -127,10 +136,17 @@ html {
 // Driven by the document's own scroll, over the first --tpl-space-2xl of it. Nothing here moves
 // on its own: the animation is bound to the scroll position, so with `prefers-reduced-motion` on
 // there is nothing to suppress - the header is simply smaller further down the page.
-:root {
-  animation: tpl-header-shrink linear both;
-  animation-timeline: scroll(root block);
-  animation-range: 0 var(--tpl-space-2xl);
+//
+// Behind the same guard as the fade, and for the same measured reason: without a timeline the
+// shorthand runs as a 0s animation and `fill: both` lands on the end keyframe, so in Firefox the
+// header sat in its *small* state permanently - 2px of padding at the top of the page. With the
+// guard the registered initial values apply instead and the header simply does not shrink there.
+@supports (animation-timeline: scroll()) {
+  :root {
+    animation: tpl-header-shrink linear both;
+    animation-timeline: scroll(root block);
+    animation-range: 0 var(--tpl-space-2xl);
+  }
 }
 
 // The two panels that scroll on their own: the folder tree and the right column. Stated here as
@@ -146,22 +162,53 @@ html {
   .qgframe-area-right {
     overflow-y: auto;
     overscroll-behavior: contain;
+    // Both ends soft by default. That is the fallback, and it is the behaviour this template had
+    // before scroll-driven animations existed here - a browser without them gets a fade that is
+    // always on rather than no fade at all.
+    --tpl-fade-start: var(--tpl-fade);
+    --tpl-fade-end: var(--tpl-fade);
     mask-image: var(--tpl-fade-mask);
     -webkit-mask-image: var(--tpl-fade-mask);
     scrollbar-width: thin;
+  }
 
-    // Two scroll-driven animations on the panel's own scrollport. The first fades the top edge in
-    // over the first --tpl-fade of scrolling, the second fades the bottom edge out over the last:
-    // at rest the first line is whole, at the end the last line is. `both` matters - outside its
-    // range each animation holds the nearer end value, which is what keeps the bottom faded while
-    // you are anywhere in the middle.
-    //
-    // A panel with nothing to scroll has no active timeline, so neither animation applies and both
-    // lengths stay at their registered 0px. That is the third case, and the one that was wrong
-    // before: the tree on a short page was faded at both ends although it was showing everything.
-    animation: tpl-fade-start-in linear both, tpl-fade-end-out linear both;
-    animation-timeline: scroll(self block), scroll(self block);
-    animation-range: 0 var(--tpl-fade), calc(100% - var(--tpl-fade)) 100%;
+  // Which element scrolls the tree is not the same in every browser, and that had to be settled
+  // before anything could be attached to it. Quartz gives the inner list `max-height: 100%`:
+  //
+  //   * Chrome resolves the percentage against `.explorer-content` (540px), so the *list* becomes
+  //     the scroll container and the box around it never scrolls.
+  //   * Firefox does not resolve it - the parent's height is auto with a max - so the list grows
+  //     to its full 688px and the *box* scrolls instead.
+  //
+  // Measured on the same page in both: `scrollHeight - clientHeight` was 148px, but on two
+  // different elements. Everything below - the mask, the fade, the contained overscroll - sits on
+  // `.explorer-content`, so the list gives up its cap and the box is the one scroller everywhere.
+  ul.explorer-ul {
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+// The fade that follows the scroll position. Chromium-only for now: Firefox and Safari have no
+// scroll-driven animations, and `CSS.supports('animation-timeline', 'scroll()')` is false there.
+//
+// The guard is not decoration. Without it the `animation` shorthand still applies in those
+// browsers, with no timeline and therefore a duration of 0s - and `fill: both` then jumps straight
+// to the end keyframe. Measured in Firefox 155: `--tpl-fade-start` 20px, `--tpl-fade-end` 0px, and
+// a mask that computed to `transparent 0px, black 0px` - the fade was gone at both ends rather
+// than merely static.
+@supports (animation-timeline: scroll()) {
+  @media (min-width: 801px) {
+    .explorer-content,
+    .qgframe-area-right {
+      // The animation overrides these, so they are what shows when the panel has nothing to
+      // scroll: no fade at all, which is the whole point.
+      --tpl-fade-start: 0px;
+      --tpl-fade-end: 0px;
+      animation: tpl-fade-start-in linear both, tpl-fade-end-out linear both;
+      animation-timeline: scroll(self block), scroll(self block);
+      animation-range: 0 var(--tpl-fade), calc(100% - var(--tpl-fade)) 100%;
+    }
   }
 }
 

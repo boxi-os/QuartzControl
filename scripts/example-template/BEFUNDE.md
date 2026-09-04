@@ -75,3 +75,42 @@ als Inline-SVG führt; für den fünften Fall liegt eine Anleitung bei (`site/RE
   Stylesheet kann keinen hinzufügen — das Element muss im Markup stehen, um fokussierbar zu sein.
   Auf einer Seite mit Explorer kostet der Weg zum Artikel per Tastatur damit einen Tabstopp pro
   Baumzeile.
+
+### 8. Ein Projekt umbenennen bricht alle selbstgebauten Frames
+
+`projects.relocate` hängt einen Projekteintrag auf einen anderen Ordner um und behält dabei die ID
+— genau richtig. Es zieht aber die **absoluten Pfade nicht nach**, die zu einem authored Frame
+gehören: weder den `source:`-Eintrag in `quartz.config.yaml` noch den Symlink unter
+`.quartz/plugins/<id>`. Gemessen beim Umbenennen des Beispielprojekts: alle drei Frames tot, und
+der nächste `quartz plugin add` starb mit `ENOENT` auf dem alten Pfad. Repariert wurde von Hand.
+
+Der Nutzer merkt davon zunächst nichts — der Layout-Editor zeigt die Frames weiter an, weil er sie
+aus `.quartz-gui/authored-frames/` liest.
+
+### 9. `plugin add` schreibt wieder keinen Config-Eintrag
+
+Bekannt aus `templates-and-localization.md`, hier erneut aufgetreten: `npx quartz plugin add
+github:quartz-community/obsidian-plugin-excalidraw` legte das Plugin unter `.quartz/plugins/` an,
+schrieb `quartz.lock.json` — und **keinen Eintrag in `quartz.config.yaml`**. Ohne den passiert beim
+Bauen nichts. Der Eintrag musste von Hand ergänzt werden.
+
+### 10. Ein Seitentyp-Plugin ohne `-page` im Namen wird nicht erkannt
+
+`derivePageTypes()` (`src/routes/LayoutEditor/utils.ts:171`) erkennt Seitentypen daran, dass der
+Pluginname auf `-page` endet. `obsidian-plugin-excalidraw` tut das nicht, trägt aber
+`quartz.category: ["pageType", …]`. Für den Build ist das egal — Quartz liest die Kategorie —, im
+Layout-Editor der App fehlt der Seitentyp dadurch.
+
+### 11. Bases sprechen Englisch
+
+Das Plugin schreibt über jede Ansicht eine Zeile wie *„Showing 45 of 45 entries"* und beschriftet
+die Spaltenköpfe mit den englischen Feldnamen (`Description`). Beides kommt aus dem kompilierten
+Plugin und lässt sich weder über die Sprachdatei noch über Optionen ändern. Die Vorlage setzt die
+Zeile deshalb leise statt sie zu entfernen — eine falschsprachige Zeile, die schreit, ist schlimmer
+als eine, die zurücktritt.
+
+### 12. `groupBy` über eine Formel greift nicht
+
+`groupBy: { property: formula.Bereich }` in einer `.base` wird vom Quartz-Plugin ignoriert; die
+Liste erscheint ungruppiert. Ob eine Gruppierung über ein echtes Feld funktioniert, ist noch nicht
+gemessen.

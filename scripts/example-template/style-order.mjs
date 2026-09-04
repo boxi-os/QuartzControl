@@ -55,6 +55,8 @@ export const STYLE_ORDER = [
   // whole page types
   'page-folder',
   'page-tag',
+  'page-bases',
+  'page-canvas',
   'page-popover',
   'page-search-results',
   'page-404',

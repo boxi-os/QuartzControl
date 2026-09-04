@@ -10,6 +10,28 @@ dieses Dokument beschreibt beides.
 
 ---
 
+## 0. Wo der Inhalt lebt
+
+Seit dem Umbau ist **das Projekt die Quelle**, nicht mehr dieses Verzeichnis:
+
+```
+~/Obsidian/QuartzProjekte/Example/     der Vault — 100 Notizen, 2 Bases, 1 Canvas, 1 Zeichnung
+        ↑ Symlink
+~/Documents/Example/content/            das Projekt
+~/Documents/Example/quartz/styles/      die Stylesheets — hier wird gearbeitet
+```
+
+| Was | Quelle | Versioniert in |
+| --- | --- | --- |
+| Notizen, Bases, Canvas, Excalidraw | Vault | eigenes git im Vault |
+| Stylesheets, Config, Schriften | Projekt | git im Projekt |
+| Frames, Presets, Breakpoints | Projekt (`.quartz-gui/`, gitignored) | dieses Verzeichnis |
+| Messung, Bootstrap | dieses Verzeichnis | Quartz-GUI-Repo |
+
+> **Ein Content-Symlink nimmt die Notizen aus QuartzControls Obhut.** Git folgt keinen Symlinks,
+> deshalb erzwingt der Snapshot-Dienst `includeContent: false`, sobald `content/` ein Link ist.
+> Keine Snapshots, kein Restore, kein Vergleich — der Vault ist über sein eigenes git gesichert.
+
 ## 1. Wo was liegt
 
 | Datei | Was darin entschieden wird |
@@ -24,7 +46,7 @@ dieses Dokument beschreibt beides.
 | `presets.mjs` | Zwei gespeicherte Theme-Zusammenstellungen |
 | `style-order.mjs` | Die Ladereihenfolge der Stylesheets — Liste **und** Reihenfolge in einem |
 | `styles/*.scss` | 31 Stylesheets, eines je Komponente |
-| `site/content/**` | 31 Beispielnotizen, darunter 14 Seiten Obsidian-Referenz |
+| `site/content/**` | der ursprüngliche Beispielinhalt — **überholt**, gepflegt wird im Vault |
 | `site/snippets/` | Die eine Snippet-Datei, die nicht im Paket mitreist |
 | `BEFUNDE.md` | Was beim Bauen an der App auffiel |
 
@@ -46,7 +68,7 @@ Schritte:
 | Phase | Name | Wann sie nötig ist |
 | --- | --- | --- |
 | 0 | `bootstrap` | einmalig — klont Quartz, installiert, legt das Projekt an |
-| 1 | `content` | Beispielnotizen oder Snippets geändert |
+| 1 | `content` | stellt den **Symlink** auf den Vault her, wenn er fehlt — kopiert nichts mehr |
 | 2 | `plugin` | einmalig — installiert `quartz-layout-box` |
 | 3 | `frames` | `frames.mjs` geändert |
 | 4 | `config` | `palette.mjs`, `plugins.mjs` oder `layout.mjs` geändert |

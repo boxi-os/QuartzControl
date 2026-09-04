@@ -1,0 +1,69 @@
+// Canvas and Excalidraw — the two page types that take over the whole viewport.
+//
+// Both plugins bring their own frame and their own complete styling, including dark-mode palettes
+// they compute themselves. That is the right split for a drawing: the colours inside it belong to
+// the drawing, and a stylesheet that fights them recolours half of it and leaves the rest.
+//
+// So this file touches only what surrounds the drawing and what the plugins leave neutral:
+// the controls, the labels on file nodes, and the one place where a template decision has to win.
+
+/* --------------------------------------------------------------------------- canvas */
+
+// The controls float over the drawing. They are buttons, so they get this template's target size
+// and the same edge every other control uses — measured against `gray`, not `lightgray`.
+.canvas-controls button,
+.canvas-sidebar-toggle,
+.canvas-fullscreen-toggle {
+  min-width: var(--tpl-target);
+  min-height: var(--tpl-target);
+  display: grid;
+  place-items: center;
+  border: var(--tpl-rule-width) solid var(--tpl-rule-strong);
+  border-radius: var(--tpl-radius-md);
+  background: var(--light);
+  color: var(--darkgray);
+  cursor: pointer;
+  transition: border-color var(--tpl-motion), background-color var(--tpl-motion);
+
+  &:hover {
+    border-color: var(--secondary);
+    background: var(--tpl-surface-tint);
+  }
+}
+
+// A node that points at a note. The label is the note's name and doubles as the link.
+.canvas-file-label,
+.canvas-file-link {
+  font-family: var(--headerFont);
+  font-size: var(--tpl-text-sm);
+  font-weight: 600;
+  color: var(--dark);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--secondary);
+  }
+}
+
+// Text nodes carry markdown; give it the body face rather than the browser default.
+.canvas-embed-content {
+  font-family: var(--bodyFont);
+  font-size: var(--tpl-text-sm);
+  color: var(--darkgray);
+}
+
+/* ---------------------------------------------------------------------- excalidraw */
+
+// Nothing. The plugin renders the drawing as SVG with its own palette - all 65 Excalidraw colours
+// have a pre-computed dark-mode equivalent - and its own frame. Every rule this template could add
+// would either duplicate that or fight it.
+//
+// Except one: its controls are buttons like any other, and this template's rule about target size
+// applies to them too.
+.excalidraw-controls button,
+.excalidraw-zoom-in,
+.excalidraw-zoom-out,
+.excalidraw-zoom-reset {
+  min-width: var(--tpl-target);
+  min-height: var(--tpl-target);
+}

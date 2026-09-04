@@ -1,0 +1,235 @@
+// Bases — the page type that turns a `.base` query into a table, cards or a list.
+//
+// The plugin emits its own markup with its own class names, none of which overlap with the folder
+// and tag listings (page-folder.scss). Read off a real build:
+//
+//   .bases-page > .bases-view-tabs > button[data-view-index]      one per view, .is-active
+//                > .bases-view-container > .bases-view[data-view-type]
+//                    table:  .bases-table-wrapper > .bases-view-meta + table.bases-table
+//                    cards:  .bases-cards-wrapper > .bases-view-meta + .bases-cards > a.bases-card
+//                    list:   .bases-list-wrapper  > .bases-view-meta + .bases-list-group
+//
+// The plugin ships no colours of its own, so everything below is this template's — same tokens,
+// same rhythm as the rest of the site.
+
+.bases-page {
+  margin-block-start: var(--tpl-space-md);
+}
+
+/* ------------------------------------------------------------------- the view tabs */
+
+// A base can hold several views of the same data. The switcher is a real tablist, so it gets a
+// real control's treatment rather than a row of links.
+.bases-view-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tpl-space-2xs);
+  margin-block-end: var(--tpl-space-sm);
+  border-block-end: var(--tpl-rule-width) solid var(--tpl-rule);
+  padding-block-end: var(--tpl-space-2xs);
+
+  button {
+    min-height: var(--tpl-target);
+    padding-inline: var(--tpl-space-sm);
+    background: none;
+    border: var(--tpl-rule-width) solid transparent;
+    border-radius: var(--tpl-radius-md);
+    font-family: var(--font-interface);
+    font-size: var(--tpl-text-sm);
+    color: var(--gray);
+    cursor: pointer;
+    transition: color var(--tpl-motion), background-color var(--tpl-motion), border-color var(--tpl-motion);
+
+    &:hover {
+      color: var(--dark);
+      background: var(--tpl-surface);
+    }
+
+    // Colour *and* weight *and* a border: the selected view is a state, and a state never rests on
+    // colour alone in this template.
+    &.is-active {
+      color: var(--secondary);
+      font-weight: 600;
+      background: var(--tpl-surface-tint);
+      border-color: color-mix(in srgb, var(--secondary) 35%, transparent);
+    }
+  }
+}
+
+// The row count above every view. The plugin writes it in English ("Showing 45 of 45 entries") and
+// offers no way to translate it, so it is set quiet rather than removed - a wrong-language line
+// that shouts is worse than one that recedes.
+.bases-view-meta {
+  margin-block-end: var(--tpl-space-xs);
+  color: var(--gray);
+  font-size: var(--tpl-text-xs);
+}
+
+/* ----------------------------------------------------------------------- table view */
+
+.bases-table-wrapper {
+  overflow-x: auto;
+}
+
+table.bases-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--tpl-text-sm);
+
+  th,
+  td {
+    text-align: start;
+    vertical-align: top;
+    padding: var(--tpl-space-xs) var(--tpl-space-sm);
+    border-block-end: var(--tpl-rule-width) solid var(--tpl-rule);
+  }
+
+  th {
+    border-block-end: 2px solid var(--tpl-rule-strong);
+    white-space: nowrap;
+  }
+
+  tbody tr:last-child td {
+    border-block-end: none;
+  }
+
+  // Zebra striping would fight the hairlines; a hover row is enough to follow a line across.
+  tbody tr:hover {
+    background: var(--tpl-surface-tint);
+  }
+
+  a {
+    color: var(--dark);
+    text-decoration: none;
+    font-weight: 500;
+
+    &:hover {
+      color: var(--secondary);
+      text-decoration: underline;
+      text-underline-offset: 0.18em;
+    }
+  }
+}
+
+.bases-table-header {
+  font-family: var(--headerFont);
+  font-weight: 600;
+  color: var(--ink, var(--dark));
+}
+
+// The sort indicator sits in the header next to the label; it is a hint, not a word.
+.bases-table-header-sort {
+  margin-inline-start: var(--tpl-space-2xs);
+  color: var(--gray);
+}
+
+th[data-sortable="true"] {
+  cursor: pointer;
+
+  &:hover .bases-table-header {
+    color: var(--secondary);
+  }
+}
+
+/* ----------------------------------------------------------------------- cards view */
+
+.bases-cards {
+  display: grid;
+  // Cards find their own column count; nothing stretches across dead space.
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: var(--tpl-space-sm);
+}
+
+a.bases-card {
+  display: block;
+  padding: var(--tpl-space-sm);
+  border: var(--tpl-rule-width) solid var(--tpl-rule);
+  border-radius: var(--tpl-radius-md);
+  background: var(--light);
+  text-decoration: none;
+  transition: border-color var(--tpl-motion), background-color var(--tpl-motion);
+
+  &:hover {
+    border-color: var(--tpl-rule-strong);
+    background: var(--tpl-surface-tint);
+  }
+}
+
+.bases-card-title {
+  display: block;
+  font-family: var(--headerFont);
+  font-weight: 600;
+  color: var(--dark);
+  margin-block-end: var(--tpl-space-2xs);
+}
+
+.bases-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tpl-space-3xs);
+  font-size: var(--tpl-text-xs);
+  color: var(--gray);
+}
+
+.bases-card-label {
+  color: var(--gray);
+  margin-inline-end: var(--tpl-space-2xs);
+}
+
+/* ------------------------------------------------------------------------ list view */
+
+.bases-list-group + .bases-list-group {
+  margin-block-start: var(--tpl-space-lg);
+}
+
+// The group heading a `groupBy` produces.
+.bases-list-group > :first-child:not(.bases-list-group-list) {
+  font-family: var(--headerFont);
+  font-size: var(--tpl-text-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gray);
+  font-weight: 700;
+  margin-block-end: var(--tpl-space-xs);
+}
+
+.bases-list-item {
+  padding-block: var(--tpl-space-2xs);
+  border-block-end: var(--tpl-rule-width) solid var(--tpl-rule);
+  font-size: var(--tpl-text-sm);
+
+  &:last-child {
+    border-block-end: none;
+  }
+}
+
+.bases-list-item-properties {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tpl-space-2xs) var(--tpl-space-xs);
+  align-items: baseline;
+}
+
+// The first property is the title; everything after it is detail.
+.bases-list-property:not(:first-child) {
+  color: var(--gray);
+  font-size: var(--tpl-text-xs);
+}
+
+// The plugin prints a literal "-" as the bullet. It is punctuation, so it recedes.
+.list-bullet {
+  color: var(--tpl-rule-strong);
+  margin-inline-end: var(--tpl-space-3xs);
+}
+
+.bases-rendered-value a {
+  color: var(--dark);
+  text-decoration: none;
+  font-weight: 500;
+
+  &:hover {
+    color: var(--secondary);
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+  }
+}

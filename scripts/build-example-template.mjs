@@ -47,7 +47,8 @@ const APP_DIR = path.resolve(import.meta.dirname, '..')
 const DATA_DIR = path.join(APP_DIR, 'scripts/example-template')
 const HOME = os.homedir()
 
-const WORKSHOP = path.join(HOME, 'Documents/quartz-vorlage-werkstatt')
+const WORKSHOP = path.join(HOME, 'Documents/Example')
+const VAULT = path.join(HOME, 'Obsidian/QuartzProjekte/Example')
 const CONTROL = path.join(HOME, 'Documents/quartz-vorlage-gegenprobe')
 const PACKAGE_OUT = path.join(HOME, 'Documents/minimal-lesbar.qtpl')
 
@@ -177,11 +178,28 @@ function bootstrap(target) {
 
 function installContent(target) {
   const content = path.join(target, 'content')
-  fs.rmSync(content, { recursive: true, force: true })
-  copyTree(path.join(DATA_DIR, 'site/content'), content)
+
+  // The content lives in an Obsidian vault now, and `content/` is a symlink to it. This phase used
+  // to `rm -rf` the directory and copy a fresh one in - which would silently replace the link with
+  // a real folder and disconnect the project from the vault. So it only ever *establishes* the
+  // link, and never touches an existing one.
+  const existing = fs.existsSync(content) ? fs.lstatSync(content) : null
+  if (existing?.isSymbolicLink()) {
+    const target_ = fs.readlinkSync(content)
+    done(target_ === VAULT ? 'Symlink steht' : `Symlink zeigt woanders hin: ${target_}`)
+    return
+  }
+  if (!fs.existsSync(VAULT)) throw new Error(`Vault fehlt: ${VAULT}`)
+  if (existing) {
+    throw new Error(
+      `${content} ist ein echter Ordner. Umstellen auf den Vault geht über die App ` +
+      '(Konfiguration → Content-Ordner, Strategie „Verknüpfen") — die sichert den bestehenden ' +
+      'Inhalt vorher weg.'
+    )
+  }
+  fs.symlinkSync(VAULT, content, 'dir')
   copyTree(path.join(DATA_DIR, 'site/snippets'), path.join(target, 'quartz/static/snippets'))
-  const notes = run('find', [content, '-name', '*.md'], target).trim().split('\n').length
-  done(`${notes} Notizen, 1 Snippet`)
+  done('Symlink auf den Vault gelegt')
 }
 
 /* ======================================================================= 2 · plugin */

@@ -421,8 +421,9 @@ rollt in beiden Browsern derselbe Kasten, mit demselben Überlauf von 148 px.
 
 ### 38. Ein `animation`-Kurzbefehl ohne Timeline ist nicht wirkungslos, er springt ans Ende
 
-Scroll-getriebene Animationen gibt es nur in Chromium; `CSS.supports('animation-timeline',
-'scroll()')` ist in Firefox 155 `false`. Der naheliegende Gedanke — „dann passiert dort eben
+Nicht jede Engine kennt scroll-getriebene Animationen; `CSS.supports('animation-timeline',
+'scroll()')` war in Firefox 155 `false` — das ist die Version, an der das gemessen wurde. Welcher
+Browser sie in welcher Fassung kann, entscheidet `@supports`, nicht eine Liste in dieser Datei. Der naheliegende Gedanke — „dann passiert dort eben
 nichts" — ist falsch. `animation-timeline` und `animation-range` werden beim Parsen verworfen, der
 `animation`-Kurzbefehl bleibt stehen, läuft mit der Vorgabe **null Sekunden** und landet wegen
 `fill: both` sofort auf dem Endbild.

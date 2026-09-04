@@ -189,8 +189,9 @@ html {
   }
 }
 
-// The fade that follows the scroll position. Chromium-only for now: Firefox and Safari have no
-// scroll-driven animations, and `CSS.supports('animation-timeline', 'scroll()')` is false there.
+// The fade that follows the scroll position. It needs scroll-driven animations, which not every
+// engine has: `CSS.supports('animation-timeline', 'scroll()')` was false in Firefox 155, which is
+// the one this was measured on. `@supports` decides, not a browser name.
 //
 // The guard is not decoration. Without it the `animation` shorthand still applies in those
 // browsers, with no timeline and therefore a duration of 0s - and `fill: both` then jumps straight

@@ -77,3 +77,19 @@ Der Codegen hängt `center` daher an die Area, die `pageBody` trägt — die ein
 Regel daraus: **was Quartz' eigene Frames ins Markup schreiben, ist Schnittstelle, nicht
 Dekoration.** Ein generierter Frame, der eine Klasse weglässt, bricht Code, den man in der
 Frame-Ansicht nie zu Gesicht bekommt.
+
+**Nachtrag (2026-09-04): `center` bringt Quartz' Auto-Margin mit.** Der Fix oben hat eine
+Regression erzeugt, die erst beim Vermessen einer Mermaid-Seite auffiel. `base.scss` setzt auf
+`.center` nicht nur `min-width: 100%`, sondern auch `margin-left: auto; margin-right: auto` — und
+ein Auto-Margin macht ein Grid-Item shrink-to-fit, exakt die Falle aus Befund 2(1) weiter oben.
+Gemessen an drei Fensterbreiten: die pageBody-Area rendert 466px breit und in ihrer 796px-Spalte
+zentriert, auf **jeder** Seite eines Projekts mit authored Frame. Das Lesemaß der Beispielvorlage
+lag damit nicht bei 686px, sondern bei 466.
+
+Der Codegen emittiert deshalb zusätzlich `.qgframe-area.center { width: 100%; max-width: none;
+margin-inline: 0 }`. Damit gilt weiter, was in Befund 2 steht: **`align` auf der Frame-Box ist das
+einzige, was etwas positioniert** — und eine geerbte Regel darf das nicht unterlaufen.
+
+Die Lehre für den nächsten solchen Fix: Eine Klasse, die man wegen ihres *Verhaltens* setzt, bringt
+ihr *Aussehen* mit. Beides ist zu prüfen, und zwar am gemessenen Layout, nicht am Screenshot — 466
+gegen 796 sieht auf einem Bild nach einer Gestaltungsentscheidung aus.

@@ -114,3 +114,26 @@ als eine, die zurücktritt.
 `groupBy: { property: formula.Bereich }` in einer `.base` wird vom Quartz-Plugin ignoriert; die
 Liste erscheint ungruppiert. Ob eine Gruppierung über ein echtes Feld funktioniert, ist noch nicht
 gemessen.
+
+### 13. Mermaid: `<<Annotation>>` überlebt die HTML-Verarbeitung nicht
+
+Mermaid kennt für Klassendiagramme eine Annotation in doppelten spitzen Klammern. Der Inhalt eines
+Mermaid-Blocks läuft in Quartz aber durch dieselbe HTML-Verarbeitung wie der übrige Text, und die
+Klammern werden als Tag gelesen und entfernt — übrig bleibt ein einzelnes `>`, und das Diagramm
+scheitert mit *Syntax error in text*. Gemessen: derselbe Quelltext parst in Mermaid selbst
+fehlerfrei; im gebauten HTML fehlt der Anfang des Blocks.
+
+### 14. Mermaid rechnet seine Sektionsfarben aus `primaryColor` — und landet bei Schwarz
+
+Quartz übergibt neun CSS-Variablen als `themeVariables`, darunter `--light` als `primaryColor`.
+Mindmap, Timeline und gitGraph leiten daraus ihre Sektionsfarben ab und kamen bei einem
+Seitengrund von `#FCFCFA` auf `rgb(2, 4, 4)` und `rgb(0, 0, 0)`: schwarze Knoten mit schwarzem
+Text. Pie, Sankey, xychart und Quadrant nutzen ihre eigenen Paletten und ignorieren die
+Theme-Variablen ganz. Die Vorlage setzt für alle vierzehn Diagrammarten eine eigene Farbserie.
+
+### 15. Ein Mermaid-Block ist ein Codeblock
+
+Das Markup ist `<pre><code class="mermaid">`, also greift jede Regel für Codeblöcke auch hier —
+einschließlich `pre > code { min-width: max-content }`, das jedes Diagramm auf seine eigene
+Layoutbreite festnagelte: gemessen 294 bis 594 px in einer 796 px breiten Spalte. Wer Codeblöcke
+gestaltet, gestaltet unbeabsichtigt auch seine Diagramme.

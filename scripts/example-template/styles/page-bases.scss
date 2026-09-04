@@ -8,6 +8,8 @@
 //                    table:  .bases-table-wrapper > .bases-view-meta + table.bases-table
 //                    cards:  .bases-cards-wrapper > .bases-view-meta + .bases-cards > a.bases-card
 //                    list:   .bases-list-wrapper  > .bases-view-meta + .bases-list-group
+//                    board:  .bases-board-wrapper > .bases-view-meta + .bases-board > .bases-board-column
+//                    gallery:.bases-gallery-wrapper > .bases-view-meta + .bases-gallery > .bases-gallery-item
 //
 // The plugin ships no colours of its own, so everything below is this template's — same tokens,
 // same rhythm as the rest of the site.
@@ -232,4 +234,184 @@ a.bases-card {
     text-decoration: underline;
     text-underline-offset: 0.18em;
   }
+}
+
+/* ----------------------------------------------------------------------- board view */
+
+// A `groupBy` turns the base into columns, one per value — a kanban over whatever field was
+// chosen. The columns scroll sideways as a block; each column scrolls on its own vertically.
+.bases-board-wrapper {
+  overflow-x: auto;
+}
+
+.bases-board {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--tpl-space-sm);
+  // Columns keep a usable width instead of shrinking to fit; the board scrolls instead.
+  min-width: max-content;
+}
+
+.bases-board-column {
+  flex: 0 0 15rem;
+  border: var(--tpl-rule-width) solid var(--tpl-rule);
+  border-radius: var(--tpl-radius-md);
+  background: var(--tpl-surface-tint);
+  overflow: hidden;
+}
+
+.bases-board-column-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--tpl-space-xs);
+  padding: var(--tpl-space-xs) var(--tpl-space-sm);
+  border-block-end: var(--tpl-rule-width) solid var(--tpl-rule);
+  background: var(--light);
+  font-family: var(--headerFont);
+  font-size: var(--tpl-text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--gray);
+
+  // The group's value can be a whole path; it truncates rather than wrapping the header.
+  > span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+// The count is a fact about the column, not a label — it gets figures that line up.
+.bases-board-count {
+  flex: 0 0 auto;
+  font-family: var(--codeFont);
+  font-variant-numeric: tabular-nums;
+  color: var(--gray);
+}
+
+.bases-board-column-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tpl-space-2xs);
+  padding: var(--tpl-space-xs);
+  // A column with forty cards scrolls on its own rather than stretching the page.
+  max-height: 32rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.bases-board-card {
+  padding: var(--tpl-space-xs) var(--tpl-space-sm);
+  border: var(--tpl-rule-width) solid var(--tpl-rule);
+  border-radius: var(--tpl-radius-sm);
+  background: var(--light);
+  font-size: var(--tpl-text-sm);
+  transition: border-color var(--tpl-motion);
+
+  &:hover {
+    border-color: var(--tpl-rule-strong);
+  }
+
+  a {
+    color: var(--dark);
+    text-decoration: none;
+    font-weight: 500;
+
+    &:hover {
+      color: var(--secondary);
+    }
+  }
+}
+
+/* --------------------------------------------------------------------- gallery view */
+
+// The plugin writes `grid-template-columns` as an inline style (three columns), which no
+// stylesheet can outrank without `!important`. Rather than fight it at every width, the column
+// count is restated per breakpoint — three columns at 1728px are right, at 390px they are not.
+.bases-gallery {
+  display: grid;
+  gap: var(--tpl-space-sm);
+}
+
+@media (max-width: 1100px) {
+  .bases-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 720px) {
+  .bases-gallery {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+.bases-gallery-item {
+  border: var(--tpl-rule-width) solid var(--tpl-rule);
+  border-radius: var(--tpl-radius-md);
+  background: var(--light);
+  overflow: hidden;
+  transition: border-color var(--tpl-motion);
+
+  &:hover {
+    border-color: var(--tpl-rule-strong);
+  }
+}
+
+.bases-gallery-image {
+  aspect-ratio: 3 / 2;
+  background: var(--tpl-surface);
+  border-block-end: var(--tpl-rule-width) solid var(--tpl-rule);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border: none;
+    border-radius: 0;
+  }
+}
+
+// Entries without an image get a placeholder. It is a state, not a failure, so it says so quietly
+// with a mark rather than staying an empty grey box.
+.bases-gallery-placeholder {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  color: var(--tpl-rule-strong);
+
+  &::before {
+    content: "▨";
+    font-size: 1.75rem;
+  }
+}
+
+.bases-gallery-title {
+  padding: var(--tpl-space-xs) var(--tpl-space-sm);
+  font-family: var(--headerFont);
+  font-weight: 600;
+  font-size: var(--tpl-text-sm);
+
+  a {
+    color: var(--dark);
+    text-decoration: none;
+
+    &:hover {
+      color: var(--secondary);
+    }
+  }
+}
+
+// Any further property under the title is detail.
+.bases-gallery-item .bases-card-meta,
+.bases-gallery-meta {
+  padding: 0 var(--tpl-space-sm) var(--tpl-space-xs);
+  font-size: var(--tpl-text-xs);
+  color: var(--gray);
 }

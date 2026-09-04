@@ -37,8 +37,7 @@ pre {
   border: var(--tpl-rule-width) solid var(--tpl-rule);
   border-radius: var(--tpl-radius-md);
   overflow-x: auto;
-  // Code is the one place where the reading measure does not apply — wrapping a shell command
-  // costs more than scrolling it.
+  // Wrapping a shell command costs more than scrolling it, so a block scrolls rather than breaks.
   max-width: none;
   line-height: 1.55;
   tab-size: 2;

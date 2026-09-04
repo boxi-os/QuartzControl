@@ -67,11 +67,6 @@ export const VARIABLE_OVERRIDES = [
   { key: 'tpl-surface', light: 'var(--lightgray)', dark: 'var(--lightgray)' },
   { key: 'tpl-surface-tint', light: 'var(--highlight)', dark: 'var(--highlight)' },
 
-  // Measure. 68 characters is the line length the body text is set to - the single most
-  // effective readability decision in the whole template, and the one most often lost when a
-  // frame gets wider.
-  { key: 'tpl-measure', light: '68ch' },
-
   // Type scale, in one place so the six heading levels stay related to each other.
   { key: 'tpl-text-xs', light: '0.78rem' },
   { key: 'tpl-text-sm', light: '0.875rem' },

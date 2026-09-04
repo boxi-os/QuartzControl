@@ -49,16 +49,23 @@ article {
 
   // A PDF is the exception: quartz turns `![[x.pdf]]` into `<iframe class="pdf">`, and a document
   // is taller than it is wide. 16/9 would show two centimetres of the first page.
-  iframe.pdf {
+  // `:not([height])` matters: this rule is for the iframe quartz generates from `![[x.pdf]]`, which
+  // carries no dimensions. An iframe someone wrote by hand with `height="500"` said what it wanted,
+  // and a ratio here would silently overrule it.
+  iframe.pdf:not([height]) {
     aspect-ratio: 1 / 1.2;
     min-height: 28rem;
+  }
+
+  iframe.pdf,
+  iframe[src$=".pdf"] {
     background: var(--tpl-surface);
   }
 
   @media (max-width: 720px) {
     // On a phone a document viewer inside a scrolling page is unusable; it gets a fixed, modest
     // height so the page stays scrollable past it.
-    iframe.pdf {
+    iframe.pdf:not([height]) {
       aspect-ratio: auto;
       height: 22rem;
       min-height: 0;

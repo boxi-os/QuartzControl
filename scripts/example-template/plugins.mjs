@@ -93,7 +93,10 @@ export const LAYOUT_BOXES = [
     order: 530,
     options: {
       title: 'Weiterlesen',
-      html: '<p>Diese Seite gehört zu <a href="{{root}}/handbuch/">{{siteTitle}}</a>. Der Abschnitt <strong>{{frontmatter.section}}</strong> führt die Reihe fort.</p>',
+      // No `{{frontmatter.section}}` here: a page without that field - a canvas, a base, a drawing -
+      // prints the placeholder raw. A placeholder that can be empty does not belong in a box that
+      // appears on every page.
+      html: '<p>Diese Seite gehört zu <a href="{{root}}/">{{siteTitle}}</a> — der Beispielvorlage für QuartzControl. Ein Überblick über alle Bereiche steht auf der <a href="{{root}}/">Startseite</a>.</p>',
       className: 'layout-box-cta',
       frontmatterKey: 'layoutBoxCta'
     },
@@ -196,7 +199,12 @@ export const PLUGIN_PATCHES = {
   'created-modified-date': { enabled: true, options: { defaultDateType: 'modified', priority: ['frontmatter', 'git', 'filesystem'] } },
   description: { enabled: true },
   'crawl-links': { enabled: true, options: { markdownLinkResolution: 'shortest' } },
-  'hard-line-breaks': { enabled: true },
+  // Off, deliberately. With it on, every line break in a note's source becomes a `<br>` on the
+  // page - and prose written with a wrap at column 100, which is how these notes are written and
+  // how they diff well, arrives on the site broken mid-sentence. Measured: nine of them on one
+  // page. A break that is genuinely wanted is written as a paragraph, or as `<br>` where it has to
+  // be a break.
+  'hard-line-breaks': { enabled: false },
 
   /* --- the content rules the example notes demonstrate --------------------------------- */
   'remove-draft': { enabled: true },

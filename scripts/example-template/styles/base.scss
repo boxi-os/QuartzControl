@@ -124,27 +124,13 @@ h6 {
   gap: var(--tpl-space-lg);
 }
 
-// The reading measure — the single most consequential rule in this template, and the one that was
-// silently doing nothing for the longest.
+// No reading measure here.
 //
-// Rendered markdown is not a direct child of <article>: quartz wraps it in
-// `<div class="markdown-preview-view markdown-rendered">`. So `article > p` matches nothing, and
-// the comfortable-looking line length in the first build was a coincidence of the frame's column
-// width (measured: max-width `none`, paragraph 786px wide). The wrapper is named explicitly rather
-// than using a descendant selector, because popovers and transclusions carry the same class and a
-// preview should not be re-measured.
+// An earlier version capped prose at 68 characters with `max-width` on every block-level element
+// of the article. That is one way to keep lines readable; it is not this template's way any more.
+// The column width is decided by the frame - `editorial` gives the content 1fr between a 240px and
+// a 260px sidebar, and the frame's own `maxWidth` caps the whole thing - which keeps the decision
+// in one place instead of two that can disagree.
 //
-// Only prose is capped. A table, a diagram, a code block or an image may use the whole column;
-// capping those at 68ch is the classic way to make a wide layout look broken.
-article > .markdown-preview-view > p,
-article > .markdown-preview-view > ul,
-article > .markdown-preview-view > ol,
-article > .markdown-preview-view > blockquote,
-article > .markdown-preview-view > h1,
-article > .markdown-preview-view > h2,
-article > .markdown-preview-view > h3,
-article > .markdown-preview-view > h4,
-article > .markdown-preview-view > h5,
-article > .markdown-preview-view > h6 {
-  max-width: var(--tpl-measure);
-}
+// The consequence for anyone adding rules here: do not reintroduce a per-element max-width. If a
+// column is too wide to read comfortably, the frame is what to change.

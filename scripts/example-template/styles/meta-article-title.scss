@@ -5,9 +5,8 @@
   font-size: var(--tpl-text-3xl);
   font-weight: 700;
   letter-spacing: -0.02em;
-  // The title is allowed past the reading measure: a long one wrapping after four words looks
-  // like an accident, and a heading is scanned rather than read line by line.
-  max-width: none;
+  // A heading is scanned rather than read line by line, so its lines are balanced rather than
+  // filled - a title that breaks after four words looks like an accident.
   text-wrap: balance;
 }
 

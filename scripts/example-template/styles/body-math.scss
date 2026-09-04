@@ -17,7 +17,6 @@
   padding-block: var(--tpl-space-2xs);
   overflow-x: auto;
   overflow-y: hidden;
-  max-width: none;
 
   // Scrolling needs something to grab; a hairline says the block continues.
   &::-webkit-scrollbar {

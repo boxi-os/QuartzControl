@@ -1,0 +1,63 @@
+// Recent notes.
+
+.recent-notes {
+  min-width: 0;
+
+  h1, h2, h3 {
+    margin-block: 0 var(--tpl-space-xs);
+    font-family: var(--headerFont);
+    font-size: var(--tpl-text-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gray);
+    font-weight: 700;
+  }
+}
+
+.recent-ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.recent-li {
+  padding-block: var(--tpl-space-xs);
+  border-block-end: var(--tpl-rule-width) solid var(--tpl-rule);
+  font-size: var(--tpl-text-sm);
+
+  &:last-child {
+    border-block-end: none;
+  }
+
+  // The title inside the entry.
+  a.internal {
+    color: var(--darkgray);
+    text-decoration: none;
+    font-weight: 600;
+
+    &:hover {
+      color: var(--secondary);
+    }
+  }
+
+  .meta {
+    display: block;
+    color: var(--gray);
+    font-size: var(--tpl-text-xs);
+    margin-block-start: var(--tpl-space-3xs);
+  }
+
+  .desc {
+    margin-block: var(--tpl-space-3xs) 0;
+    color: var(--gray);
+    font-size: var(--tpl-text-xs);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .tags {
+    margin-block: var(--tpl-space-3xs) 0;
+  }
+}

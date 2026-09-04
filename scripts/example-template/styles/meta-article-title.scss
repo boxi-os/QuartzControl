@@ -1,0 +1,20 @@
+// The article's own h1.
+
+.article-title {
+  margin-block: 0 var(--tpl-space-xs);
+  font-size: var(--tpl-text-3xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  // The title is allowed past the reading measure: a long one wrapping after four words looks
+  // like an accident, and a heading is scanned rather than read line by line.
+  max-width: none;
+  text-wrap: balance;
+}
+
+// At the narrow end the 2.25rem title is most of the screen; it steps down rather than wrapping
+// to five lines.
+@media (max-width: 720px) {
+  .article-title {
+    font-size: var(--tpl-text-2xl);
+  }
+}

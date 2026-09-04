@@ -1,0 +1,19 @@
+// The toolbar group — search, dark mode and reader mode on one row.
+//
+// The group itself is quartz's flex container (layout.groups.toolbar in layout.mjs); this file
+// only styles what a flex container cannot express. `search` has grow:true, so it takes the
+// leftover width and the two icon buttons keep their size.
+
+.flex-component {
+  align-items: stretch;
+
+  // Every direct child of the group has the same height, whatever it contains.
+  > * {
+    min-height: var(--tpl-target);
+  }
+}
+
+// The spacer plugin sits above the toolbar on mobile, where the sidebar is a strip across the top.
+.spacer {
+  min-height: var(--tpl-space-xs);
+}

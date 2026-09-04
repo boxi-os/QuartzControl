@@ -1,0 +1,127 @@
+// Code — inline, blocks, the language label and the copy button.
+//
+// `keepBackground: false` is set on the syntax-highlighting plugin (plugins.mjs), so shiki emits
+// token colours but no background of its own: the block's surface is this template's, in both
+// modes, and the two themes (github-light / github-dark) only have to agree with it once.
+
+article {
+  code {
+    font-family: var(--codeFont);
+    // The mono face runs large next to Inter at the same nominal size.
+    font-size: 0.9em;
+    font-variant-ligatures: none;
+  }
+
+  // Inline code: a tint, not a box. Enough to separate it from prose, not enough to interrupt a
+  // sentence.
+  :not(pre) > code {
+    background: var(--tpl-surface);
+    color: var(--dark);
+    padding: 0.1em 0.35em;
+    border-radius: var(--tpl-radius-sm);
+    // Long identifiers must be allowed to break rather than widen the column.
+    overflow-wrap: anywhere;
+  }
+
+  a > code {
+    color: inherit;
+  }
+}
+
+pre {
+  position: relative;
+  margin-block: var(--tpl-space-lg);
+  padding: var(--tpl-space-md);
+  padding-block-start: var(--tpl-space-lg);
+  background: var(--tpl-surface);
+  border: var(--tpl-rule-width) solid var(--tpl-rule);
+  border-radius: var(--tpl-radius-md);
+  overflow-x: auto;
+  // Code is the one place where the reading measure does not apply — wrapping a shell command
+  // costs more than scrolling it.
+  max-width: none;
+  line-height: 1.55;
+  tab-size: 2;
+
+  > code {
+    background: none;
+    padding: 0;
+    display: block;
+    // A block wide enough to scroll must scroll as a whole, not lose its last line's indent.
+    min-width: max-content;
+  }
+
+  .line {
+    display: inline-block;
+    width: 100%;
+  }
+
+  // shiki's line highlight, restated so it reads on both grounds.
+  .line-highlight {
+    background: var(--tpl-surface-tint);
+    box-shadow: inset var(--tpl-accent-bar) 0 0 var(--secondary);
+  }
+}
+
+// The language, from the attribute shiki writes. `::before` rather than markup so it can never
+// end up in a copied selection.
+pre[data-language]::before {
+  content: attr(data-language);
+  position: absolute;
+  inset-block-start: var(--tpl-space-2xs);
+  inset-inline-start: var(--tpl-space-md);
+  font-family: var(--headerFont);
+  font-size: var(--tpl-text-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gray);
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------------- copy button */
+
+.clipboard-button {
+  position: absolute;
+  inset-block-start: var(--tpl-space-2xs);
+  inset-inline-end: var(--tpl-space-2xs);
+  display: grid;
+  place-items: center;
+  // 44px is the smallest comfortable pointer target; the icon inside stays small.
+  min-width: var(--tpl-target);
+  min-height: var(--tpl-target);
+  color: var(--gray);
+  background: none;
+  border: var(--tpl-rule-width) solid transparent;
+  border-radius: var(--tpl-radius-sm);
+  cursor: pointer;
+  // Hidden until the block is hovered or something inside it has focus — but never hidden from a
+  // keyboard: `opacity` rather than `display`, and focus-within brings it back.
+  opacity: 0;
+  transition: opacity var(--tpl-motion), color var(--tpl-motion), border-color var(--tpl-motion);
+
+  > svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  &:hover {
+    color: var(--dark);
+    border-color: var(--tpl-rule-strong);
+  }
+
+  &:focus-visible {
+    opacity: 1;
+  }
+}
+
+pre:hover .clipboard-button,
+pre:focus-within .clipboard-button {
+  opacity: 1;
+}
+
+// Coarse pointers have no hover, so the button would never appear.
+@media (hover: none) {
+  .clipboard-button {
+    opacity: 1;
+  }
+}

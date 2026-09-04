@@ -18,3 +18,6 @@ release/
 
 # git-Bundle: wird beim Packen geholt (scripts/fetch-git.mjs), 26 MB je Architektur
 resources/git/
+
+# Downloaded by scripts/build-example-template.mjs; not part of the repo.
+scripts/example-template/.fonts/

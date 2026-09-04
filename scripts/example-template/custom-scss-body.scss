@@ -1,0 +1,23 @@
+@use "./variables.scss" as *;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Minimal & lesbar
+//
+// Everything this template styles lives in quartz/styles/custom/, one file per
+// component, loaded in the order listed in the block above. Nothing is styled
+// here directly - this file only holds the import order and this note.
+//
+// Two things are worth knowing before changing anything:
+//
+//   • No colour and no length is written literally in those files. They all read
+//     CSS variables, which the app manages under "Stile → Variablen" (the
+//     `css-vars` block further down this file). Change --tpl-space-md there and
+//     every gap in the site follows.
+//
+//   • The colours were measured, not chosen by eye: every text/background pair
+//     in this template, including all twelve callout types, meets WCAG AA in
+//     both light and dark mode. Quartz's own callout colours do not - eleven of
+//     the twelve fail against a light ground - which is why 41-callouts.scss
+//     restates them.
+//
+// ─────────────────────────────────────────────────────────────────────────────

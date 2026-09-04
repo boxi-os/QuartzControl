@@ -1,0 +1,38 @@
+// Mermaid diagrams.
+//
+// The diagram is generated SVG with its own inline colours, so this file does two things only:
+// gives it a surface that matches every other block, and makes it behave at narrow widths. Its
+// palette is not overridden — mermaid resolves colours at render time from its own theme, and a
+// stylesheet fighting that produces half-recoloured diagrams.
+
+.mermaid {
+  margin-block: var(--tpl-space-lg);
+  padding: var(--tpl-space-md);
+  background: var(--tpl-surface);
+  border: var(--tpl-rule-width) solid var(--tpl-rule);
+  border-radius: var(--tpl-radius-md);
+  // A diagram is a figure, not prose: full column, and it scrolls if it must.
+  max-width: none;
+  overflow-x: auto;
+  text-align: center;
+
+  > svg {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+// Quartz's expand control on a diagram.
+.expand-button {
+  border-radius: var(--tpl-radius-sm);
+  border: var(--tpl-rule-width) solid var(--tpl-rule-strong);
+  background: var(--light);
+  color: var(--darkgray);
+  min-width: 32px;
+  min-height: 32px;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--tpl-surface);
+  }
+}

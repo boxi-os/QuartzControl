@@ -1,0 +1,150 @@
+// Base — the rules everything else assumes.
+//
+// Reads only tokens from the `css-vars` block (variables.mjs); no literal colour and no literal
+// length appears below. That is what makes the whole look adjustable from the app's Variables tab
+// afterwards instead of only by editing SCSS.
+
+/* ---------------------------------------------------------------- typographic rhythm */
+
+body {
+  font-family: var(--bodyFont);
+  font-size: var(--tpl-text-base);
+  line-height: var(--tpl-leading-normal);
+  color: var(--darkgray);
+  background-color: var(--light);
+  // Enable the variable font's real optical work instead of the browser's synthesis.
+  font-synthesis-weight: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--headerFont);
+  color: var(--dark);
+  line-height: var(--tpl-leading-tight);
+  // A heading's space belongs above it, not below: the gap tells you what the heading owns.
+  margin-block: var(--tpl-space-xl) var(--tpl-space-xs);
+  font-weight: 600;
+  letter-spacing: -0.011em;
+}
+
+h1 { font-size: var(--tpl-text-3xl); }
+h2 { font-size: var(--tpl-text-2xl); }
+h3 { font-size: var(--tpl-text-xl); }
+h4 { font-size: var(--tpl-text-lg); }
+// The two deepest levels stop growing and take on weight and case instead — six sizes in one
+// document is noise, and at h5/h6 a size difference of 1px is not a signal anyone can read.
+h5 {
+  font-size: var(--tpl-text-base);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+h6 {
+  font-size: var(--tpl-text-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--gray);
+}
+
+/* ---------------------------------------------------------------------------- focus */
+
+// One rule for everything focusable, and `:focus-visible` so a mouse click does not draw a ring
+// the pointer already explains. `outline: none` appears nowhere in this template.
+:focus-visible {
+  outline: var(--tpl-focus-width) solid var(--tpl-focus-color);
+  outline-offset: var(--tpl-focus-offset);
+  border-radius: var(--tpl-radius-sm);
+}
+
+// The ring has to be visible on a tinted or filled surface too, where an outline of the accent
+// colour can sit on top of the accent colour.
+.callout :focus-visible,
+.layout-box :focus-visible,
+[data-callout] :focus-visible {
+  outline-color: var(--dark);
+}
+
+/* ------------------------------------------------------------------- skip navigation */
+
+// Kept, and deliberately unused.
+//
+// Quartz renders no skip link — measured, `.skip-to-content` matches nothing on any page — and a
+// stylesheet cannot add one, because the element has to exist in the markup to be focusable. So
+// this is not a rule that works today; it is the styling that will apply the moment a skip link
+// arrives, either from quartz or from a layout-box instance carrying the anchor.
+//
+// It matters on this template more than on most: the header comes first in every frame and the
+// explorer follows it, so reaching the article by keyboard costs one tab per tree item.
+.skip-to-content {
+  position: absolute;
+  left: var(--tpl-space-xs);
+  top: var(--tpl-space-xs);
+  z-index: 100;
+  padding: var(--tpl-space-xs) var(--tpl-space-sm);
+  background: var(--light);
+  color: var(--dark);
+  border: var(--tpl-rule-width) solid var(--tpl-rule-strong);
+  border-radius: var(--tpl-radius-md);
+  transform: translateY(-200%);
+
+  &:focus {
+    transform: none;
+  }
+}
+
+/* --------------------------------------------------------------------------- motion */
+
+// Every transition in this template goes through --tpl-motion, so honouring the OS setting is one
+// rule rather than thirty.
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --tpl-motion: 0s;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ------------------------------------------------------------------------ the frame */
+
+// The authored frames set their own box; these are the rules inside an area that quartz does not
+// cover because it never had a grid there.
+.qgframe-area {
+  // Areas stack their components with the same rhythm on every breakpoint.
+  display: flex;
+  flex-direction: column;
+  gap: var(--tpl-space-lg);
+}
+
+// The reading measure — the single most consequential rule in this template, and the one that was
+// silently doing nothing for the longest.
+//
+// Rendered markdown is not a direct child of <article>: quartz wraps it in
+// `<div class="markdown-preview-view markdown-rendered">`. So `article > p` matches nothing, and
+// the comfortable-looking line length in the first build was a coincidence of the frame's column
+// width (measured: max-width `none`, paragraph 786px wide). The wrapper is named explicitly rather
+// than using a descendant selector, because popovers and transclusions carry the same class and a
+// preview should not be re-measured.
+//
+// Only prose is capped. A table, a diagram, a code block or an image may use the whole column;
+// capping those at 68ch is the classic way to make a wide layout look broken.
+article > .markdown-preview-view > p,
+article > .markdown-preview-view > ul,
+article > .markdown-preview-view > ol,
+article > .markdown-preview-view > blockquote,
+article > .markdown-preview-view > h1,
+article > .markdown-preview-view > h2,
+article > .markdown-preview-view > h3,
+article > .markdown-preview-view > h4,
+article > .markdown-preview-view > h5,
+article > .markdown-preview-view > h6 {
+  max-width: var(--tpl-measure);
+}

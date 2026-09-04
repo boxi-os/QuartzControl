@@ -1,0 +1,27 @@
+// The 404 page.
+//
+// Uses the `focus` frame: one centred column, no explorer, no graph. The layout decision is in
+// layout.mjs; this file is only the type.
+
+article:has(> h1:only-child),
+.page:has([data-slug="404"]) article {
+  text-align: center;
+}
+
+// Quartz renders the 404 as a plain h1 + p. Give it room rather than leaving it at the top of an
+// empty column.
+.page[data-frame="focus"] article {
+  h1 {
+    font-size: var(--tpl-text-3xl);
+    margin-block-end: var(--tpl-space-md);
+  }
+
+  p {
+    color: var(--gray);
+    max-width: none;
+  }
+
+  a {
+    color: var(--secondary);
+  }
+}

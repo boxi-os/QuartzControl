@@ -1,0 +1,44 @@
+// Breadcrumbs — the path down to this page.
+
+.breadcrumb-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tpl-space-3xs);
+  margin: 0;
+  font-size: var(--tpl-text-sm);
+  color: var(--gray);
+}
+
+.breadcrumb-element {
+  display: flex;
+  align-items: center;
+  gap: var(--tpl-space-3xs);
+
+  a {
+    color: var(--gray);
+    text-decoration: none;
+    // A trail four levels deep on a phone needs targets that are not 14px tall.
+    padding-block: var(--tpl-space-3xs);
+
+    &:hover {
+      color: var(--secondary);
+      text-decoration: underline;
+      text-underline-offset: 0.18em;
+    }
+  }
+
+  // The separator is decoration and must not be read out as content or picked up by a selection.
+  > p {
+    margin: 0;
+    user-select: none;
+    color: var(--tpl-rule-strong);
+  }
+
+  // The last crumb is this page: not a link, and it carries the weight.
+  &:last-child a {
+    color: var(--darkgray);
+    font-weight: 600;
+    pointer-events: none;
+  }
+}

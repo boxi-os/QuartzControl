@@ -25,6 +25,15 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   i18next renders a missing key *as the key* rather than failing, so a gap is invisible until someone
   opens the one screen state that uses it (`publish.pages.saveSettings`, found in the alpha test, was
   missing from both files and therefore in perfect parity)
+- `npm run template:example` — baut die Beispielvorlage (`scripts/example-template/`) in einem
+  Wegwerf-Projekt auf und exportiert sie als `.qtpl`. Treibt dafür die **gebaute App** über
+  Playwright und schreibt alles über `window.quartzGui.*`, also durch dieselben IPC-Pfade wie ein
+  Klick — kein zweiter Frame-Codegen, kein zweiter SCSS-Writer. Phasen einzeln über
+  `--only 3,4,5`, die WCAG-Messung allein über `--check-contrast` (78 Paare, braucht weder App noch
+  Projekt). Ist zugleich der einzige End-to-End-Test der Vorlagen-Funktion: Phase 11 importiert das
+  Paket in ein zweites leeres Projekt und baut es. Was dabei gefunden wurde, steht in
+  `scripts/example-template/BEFUNDE.md`
+
 - `npm run dist` / `dist:mac` / `dist:linux` / `dist:flatpak` — electron-builder (see
   `docs/decisions/electron-runtime-and-packaging.md`). `dist:flatpak` ist ein eigenes Skript, weil
   das Ziel flatpak und flatpak-builder auf der Baumaschine braucht und **noch nie gebaut wurde** —

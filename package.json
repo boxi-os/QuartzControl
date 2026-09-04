@@ -16,6 +16,7 @@
     "postinstall": "node scripts/postinstall.mjs",
     "smoke": "node scripts/smoke.mjs",
     "check:i18n": "node scripts/check-i18n-keys.mjs",
+    "template:example": "node scripts/build-example-template.mjs",
     "check:runtime": "node scripts/check-runtime.mjs",
     "fetch:git": "node scripts/fetch-git.mjs",
     "icon": "node scripts/build-icon.mjs",

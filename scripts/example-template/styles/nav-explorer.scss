@@ -1,0 +1,251 @@
+// Explorer — the folder tree.
+//
+// Depth is the whole problem here, and the markup is not what it looks like from the class names.
+// Read off a real build:
+//
+//   <ul class="explorer-ul">                          ← only the ROOT list has this class
+//     <li>
+//       <div class="folder-container nav-folder-title tree-item-self">
+//         <svg class="folder-icon …"/>
+//         <div><a class="folder-button" href="…"><span class="folder-title">Name</span></a></div>
+//       </div>
+//       <div class="folder-outer">
+//         <ul class="content tree-item-children">      ← every nested list, at every depth
+//           <li><a class="nav-file-title tree-item-self" href="…">File</a></li>
+//
+// Two things follow, and the first version of this file got both wrong:
+//
+//   * `.explorer-ul .explorer-ul` matches nothing. Nesting is expressed by `ul.tree-item-children`
+//     inside `.folder-outer`, so that is what the indent rule has to key on. Measured: 0 matches
+//     for the old selector against 7 nested lists on one page - the indentation visible in the
+//     browser was quartz's own, not this template's.
+//   * `.nav-file-title` IS the anchor and `.folder-title` is a span inside `a.folder-button`, so
+//     neither `.nav-file-title a` nor `.folder-title a` matches anything either.
+//
+// Nothing here touches `.folder-outer` itself: quartz drives the fold, and an unlayered
+// `grid-template-rows` in custom.scss beats it - measured, that left collapsed folders holding the
+// full height of their hidden contents.
+
+.explorer {
+  min-width: 0;
+  font-size: var(--tpl-text-sm);
+}
+
+/* --------------------------------------------------------------------- the heading */
+
+// Doubles as the collapse control for the whole tree.
+.explorer-toggle,
+button.title-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tpl-space-xs);
+  width: 100%;
+  min-height: var(--tpl-target);
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--dark);
+  font-family: var(--headerFont);
+
+  h1, h2, h3 {
+    margin: 0;
+    font-size: var(--tpl-text-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gray);
+    font-weight: 700;
+  }
+
+  .fold {
+    transition: transform var(--tpl-motion);
+    color: var(--gray);
+  }
+
+  &.collapsed .fold {
+    transform: rotate(-90deg);
+  }
+}
+
+.mobile-explorer {
+  min-width: var(--tpl-target);
+  min-height: var(--tpl-target);
+  display: grid;
+  place-items: center;
+  border-radius: var(--tpl-radius-sm);
+
+  &:hover {
+    background: var(--tpl-surface);
+  }
+}
+
+/* -------------------------------------------------------------- collapsed component */
+
+// Collapsed, quartz caps the whole component at `flex-basis: 1.2em` — a height computed for a
+// heading at default size. This template's heading is a touch target, so that cap sliced the word
+// "Explorer" off entirely and left a 19px stub (measured: 19px container, 44px button, no visible
+// label). The fold is therefore expressed on the content, and the header keeps its height.
+.explorer.collapsed {
+  flex-basis: auto;
+  min-height: 0;
+  overflow: visible;
+}
+
+.explorer.collapsed .explorer-content {
+  max-height: 0;
+  margin-block-start: 0;
+  overflow: hidden;
+}
+
+.explorer-content {
+  margin-block-start: var(--tpl-space-xs);
+  // A long tree scrolls inside the sidebar rather than pushing the frame's footer off screen.
+  max-height: 60vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+ul.explorer-ul,
+.explorer-content ul.tree-item-children {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ------------------------------------------------------- indentation and guide lines */
+
+// One rule, every depth: a nested list steps in and carries a hairline back to its parent. The
+// guide line matters more than the indent — at four levels deep, 0.85rem of padding alone does not
+// tell you which parent a file belongs to.
+.explorer-content ul.tree-item-children {
+  padding-inline-start: var(--tpl-indent);
+  margin-inline-start: var(--tpl-space-2xs);
+  border-inline-start: var(--tpl-rule-width) solid var(--tpl-rule);
+}
+
+// Past the fifth level the guide line alone carries the structure; stepping further would push the
+// file names out of a 240px sidebar.
+.explorer-content
+  ul.tree-item-children
+  ul.tree-item-children
+  ul.tree-item-children
+  ul.tree-item-children
+  ul.tree-item-children {
+  padding-inline-start: var(--tpl-space-xs);
+}
+
+/* ----------------------------------------------------------------------- tree rows */
+
+.folder-container,
+a.nav-file-title {
+  display: flex;
+  align-items: center;
+  gap: var(--tpl-space-2xs);
+  border-radius: var(--tpl-radius-sm);
+  // Rows are dense; 32px keeps them hittable without turning the tree into a list of buttons.
+  min-height: 32px;
+  padding-inline: var(--tpl-space-2xs);
+  transition: background-color var(--tpl-motion);
+
+  &:hover {
+    background: var(--tpl-surface);
+  }
+}
+
+.folder-icon {
+  flex: 0 0 auto;
+  color: var(--gray);
+  cursor: pointer;
+  // The chevron alone is a 12px target; padding makes it usable without moving the row.
+  padding: var(--tpl-space-2xs);
+  margin-inline-start: calc(var(--tpl-space-2xs) * -1);
+}
+
+a.folder-button {
+  text-decoration: none;
+  min-width: 0;
+}
+
+.folder-title {
+  display: block;
+  font-family: var(--headerFont);
+  color: var(--dark);
+  font-weight: 600;
+  // A long folder name truncates rather than wrapping to three lines in a 240px column.
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+a.nav-file-title {
+  color: var(--darkgray);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+
+  &:hover {
+    color: var(--dark);
+  }
+}
+
+/* --------------------------------------------------------- weight steps with depth */
+
+// So the eye can find the top of a branch: level 1 is the section, level 2 a chapter, level 3 and
+// beyond are just places. Keyed on `.tree-item-children`, which is what the nesting actually uses.
+.explorer-ul > li > .folder-container .folder-title {
+  font-size: var(--tpl-text-sm);
+  font-weight: 700;
+}
+
+.tree-item-children > li > .folder-container .folder-title {
+  font-weight: 600;
+}
+
+.tree-item-children .tree-item-children > li > .folder-container .folder-title {
+  font-weight: 500;
+  color: var(--darkgray);
+}
+
+.tree-item-children .tree-item-children .tree-item-children > li > .folder-container .folder-title {
+  font-weight: 500;
+  font-size: var(--tpl-text-xs);
+  color: var(--darkgray);
+}
+
+.tree-item-children .tree-item-children .tree-item-children .tree-item-children > li > .folder-container .folder-title {
+  font-size: var(--tpl-text-xs);
+  color: var(--gray);
+}
+
+// Files follow their folder's size from the third level down.
+.tree-item-children .tree-item-children a.nav-file-title {
+  font-size: var(--tpl-text-xs);
+}
+
+/* --------------------------------------------------------------- the current page */
+
+// Colour *and* weight *and* a marker: colour alone is not a state for everyone who reads this.
+.explorer a.active {
+  background: var(--tpl-surface-tint);
+  color: var(--secondary);
+  font-weight: 600;
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset-inline-start: calc(var(--tpl-space-xs) * -1);
+    inset-block: 0.2em;
+    width: var(--tpl-accent-bar);
+    border-radius: 1px;
+    background: var(--secondary);
+  }
+}
+
+// Quartz's own fade at the bottom of a scrolled tree.
+.explorer .overflow-end {
+  height: var(--tpl-space-md);
+}

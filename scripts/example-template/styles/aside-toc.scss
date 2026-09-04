@@ -1,0 +1,133 @@
+// Table of contents.
+//
+// Unlike the explorer, this component *does* label its depth: every entry carries a `.depth-N`
+// class, flat in one list. The numbering is relative to the shallowest heading on the page, not to
+// the tag: on a normal page h2 is `depth-0`, so h6 lands on `depth-4` (measured). `depth-5` and
+// `depth-6` only occur where a document starts at h1; they are styled so that case is not a hole.
+//
+// Note that the plugin stops at `maxDepth: 3` by default — three levels — which is why
+// plugins.mjs raises it to 6. Without that, everything below is unreachable.
+//
+// The indent step is the same --tpl-indent the explorer uses, so the two structures line up with
+// each other in the two sidebars.
+
+.toc {
+  font-size: var(--tpl-text-sm);
+  min-width: 0;
+}
+
+.toc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tpl-space-xs);
+  width: 100%;
+  min-height: var(--tpl-target);
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+
+  h1, h2, h3 {
+    margin: 0;
+    font-family: var(--headerFont);
+    font-size: var(--tpl-text-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gray);
+    font-weight: 700;
+  }
+
+  .fold {
+    color: var(--gray);
+    transition: transform var(--tpl-motion);
+  }
+
+  &.collapsed .fold {
+    transform: rotate(-90deg);
+  }
+}
+
+.toc-content {
+  margin-block-start: var(--tpl-space-xs);
+  // A long outline scrolls on its own instead of stretching the sidebar past the article.
+  max-height: 55vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    // The line the whole outline hangs from.
+    border-inline-start: var(--tpl-rule-width) solid var(--tpl-rule);
+  }
+
+  li {
+    margin: 0;
+  }
+
+  a {
+    display: block;
+    color: var(--gray);
+    text-decoration: none;
+    padding-block: var(--tpl-space-3xs);
+    padding-inline-start: var(--tpl-space-xs);
+    border-inline-start: 2px solid transparent;
+    margin-inline-start: -1px;
+    transition: color var(--tpl-motion), border-color var(--tpl-motion);
+    overflow-wrap: break-word;
+
+    &:hover {
+      color: var(--dark);
+      border-inline-start-color: var(--tpl-rule-strong);
+    }
+  }
+
+  &.collapsed {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------- one step per heading level */
+
+// depth-0 is the document's top level (usually h2, since h1 is the page title). Each step adds one
+// --tpl-indent and gives up a little weight and size; by depth-4 — h6 on a normal page — the entry
+// is a detail.
+.toc-content .depth-0 > a { padding-inline-start: var(--tpl-space-xs); font-weight: 600; color: var(--darkgray); }
+.toc-content .depth-1 > a { padding-inline-start: calc(var(--tpl-space-xs) + var(--tpl-indent)); }
+.toc-content .depth-2 > a { padding-inline-start: calc(var(--tpl-space-xs) + var(--tpl-indent) * 2); }
+.toc-content .depth-3 > a { padding-inline-start: calc(var(--tpl-space-xs) + var(--tpl-indent) * 3); font-size: var(--tpl-text-xs); }
+.toc-content .depth-4 > a { padding-inline-start: calc(var(--tpl-space-xs) + var(--tpl-indent) * 4); font-size: var(--tpl-text-xs); }
+// The last two levels stop stepping — five indents in a 260px column leaves no room for a word.
+// They are marked instead, so the outline stays complete and still readable.
+.toc-content .depth-5 > a,
+.toc-content .depth-6 > a {
+  padding-inline-start: calc(var(--tpl-space-xs) + var(--tpl-indent) * 4);
+  font-size: var(--tpl-text-xs);
+  opacity: 1;
+
+  &::before {
+    content: "·";
+    margin-inline-end: 0.35em;
+    color: var(--gray);
+  }
+}
+
+.toc-content .depth-6 > a::before {
+  content: "··";
+}
+
+/* --------------------------------------------------------------- the current section */
+
+// Quartz marks the heading currently in the viewport. Colour, weight and the rail together —
+// the rail is what makes it findable while scrolling.
+.toc-content a.in-view {
+  color: var(--secondary);
+  font-weight: 600;
+  border-inline-start-color: var(--secondary);
+}
+
+.toc .overflow-end {
+  height: var(--tpl-space-md);
+}

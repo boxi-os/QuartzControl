@@ -1,0 +1,83 @@
+// Search — the button in the toolbar, and the overlay it opens.
+
+.search {
+  min-width: 0;
+}
+
+.search-button {
+  display: flex;
+  align-items: center;
+  gap: var(--tpl-space-xs);
+  width: 100%;
+  // 44px: this is the primary control in the sidebar and is used on touch.
+  min-height: var(--tpl-target);
+  padding-inline: var(--tpl-space-sm);
+  background: var(--light);
+  // --gray, not --lightgray: this is a control's edge, and lightgray measures 1.34:1 against the
+  // ground (see palette.mjs). It reaches the 3:1 that WCAG 1.4.11 asks for.
+  border: var(--tpl-rule-width) solid var(--tpl-rule-strong);
+  border-radius: var(--tpl-radius-md);
+  color: var(--gray);
+  cursor: pointer;
+  font-family: var(--font-interface);
+  font-size: var(--tpl-text-sm);
+  transition: border-color var(--tpl-motion), color var(--tpl-motion);
+
+  &:hover {
+    border-color: var(--secondary);
+    color: var(--dark);
+  }
+
+  > p {
+    margin: 0;
+  }
+
+  svg {
+    flex: 0 0 auto;
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+/* ---------------------------------------------------------------------- the overlay */
+
+.search-container {
+  // The one place in this template with real depth, because it genuinely floats above the page.
+  backdrop-filter: blur(2px);
+  background: color-mix(in srgb, var(--light) 70%, transparent);
+}
+
+.search-space {
+  background: var(--light);
+  border: var(--tpl-rule-width) solid var(--tpl-rule-strong);
+  border-radius: var(--tpl-radius-lg);
+  box-shadow: var(--tpl-shadow);
+  overflow: hidden;
+}
+
+.search-bar {
+  width: 100%;
+  padding: var(--tpl-space-sm) var(--tpl-space-md);
+  font-family: var(--font-interface);
+  font-size: var(--tpl-text-lg);
+  color: var(--dark);
+  background: var(--light);
+  border: none;
+  border-block-end: var(--tpl-rule-width) solid var(--tpl-rule);
+
+  &::placeholder {
+    color: var(--gray);
+  }
+
+  // The field is the only focusable thing when the overlay opens; an outline inside a rounded
+  // container looks like a mistake, so the border does the work instead.
+  &:focus-visible {
+    outline: none;
+    border-block-end-color: var(--secondary);
+    box-shadow: inset 0 -2px 0 var(--secondary);
+  }
+}
+
+.search-layout {
+  border: none;
+}

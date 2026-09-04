@@ -1,0 +1,59 @@
+// Graph.
+//
+// The graph draws itself in canvas/SVG with colours it reads from CSS variables at runtime, so
+// this file styles the box around it and leaves the drawing alone.
+
+.graph {
+  min-width: 0;
+
+  h1, h2, h3 {
+    margin-block: 0 var(--tpl-space-xs);
+    font-family: var(--headerFont);
+    font-size: var(--tpl-text-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gray);
+    font-weight: 700;
+  }
+}
+
+.graph-outer {
+  border: var(--tpl-rule-width) solid var(--tpl-rule);
+  border-radius: var(--tpl-radius-md);
+  background: var(--tpl-surface-tint);
+  overflow: hidden;
+}
+
+.graph-container {
+  // A square well: the local graph is round, and a letterboxed container wastes the sidebar.
+  aspect-ratio: 1;
+  width: 100%;
+}
+
+.global-graph-icon {
+  display: grid;
+  place-items: center;
+  min-width: var(--tpl-target);
+  min-height: var(--tpl-target);
+  margin-inline-start: auto;
+  color: var(--gray);
+  cursor: pointer;
+  border-radius: var(--tpl-radius-sm);
+
+  &:hover {
+    color: var(--dark);
+    background: var(--tpl-surface);
+  }
+}
+
+.global-graph-outer {
+  background: color-mix(in srgb, var(--light) 70%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+.global-graph-container {
+  background: var(--light);
+  border: var(--tpl-rule-width) solid var(--tpl-rule-strong);
+  border-radius: var(--tpl-radius-lg);
+  box-shadow: var(--tpl-shadow);
+}

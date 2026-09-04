@@ -1,0 +1,111 @@
+// Folder and tag listing pages.
+//
+// Both page types render the same markup, so this file styles both and page-tag.scss only adds
+// what is specific to a tag. Read off a real build — the class names are misleading in one place
+// that matters:
+//
+//   <div class="page-listing">
+//     <p>3 Dateien in diesem Ordner.</p>          ← the count, not a description
+//     <ul class="section-ul">
+//       <li class="section-li">
+//         <div class="section">
+//           <p class="meta"><time …>04. Sept. 2026</time></p>
+//           <div class="desc"><h3><a class="internal">Titel</a></h3></div>   ← `desc` holds the TITLE
+//           <ul class="tags">…</ul>
+//
+// `.desc` is the title cell, not a summary. Styling it as muted secondary text - the obvious
+// reading of the name - greys out every entry title on every listing page.
+
+.page-listing {
+  margin-block-start: var(--tpl-space-md);
+
+  // The count line above the list.
+  > p:first-child {
+    margin-block: 0 var(--tpl-space-sm);
+    color: var(--gray);
+    font-size: var(--tpl-text-sm);
+  }
+}
+
+ul.section-ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+li.section-li {
+  padding-block: var(--tpl-space-sm);
+  border-block-end: var(--tpl-rule-width) solid var(--tpl-rule);
+
+  &:last-child {
+    border-block-end: none;
+  }
+}
+
+// Date, title, tags. The date column is fixed so the titles line up down the page; the title takes
+// what is left and the tags sit at the end.
+//
+// Everything below is scoped under `.page-listing`, and that is not tidiness: the recent-notes
+// component reuses these very class names — `.section`, `.meta`, `.desc`, `.tags` — inside a 240px
+// sidebar. Unscoped, this three-column grid landed there too and stacked the date on top of the
+// title. Measured on the built page.
+.page-listing .section {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr) auto;
+  gap: var(--tpl-space-xs) var(--tpl-space-md);
+  align-items: baseline;
+}
+
+.page-listing .section .meta {
+  margin: 0;
+  color: var(--gray);
+  font-size: var(--tpl-text-sm);
+  // Tabular figures so the dates form a column rather than a ragged edge.
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.page-listing .section .desc {
+  min-width: 0;
+
+  h3 {
+    margin: 0;
+    font-size: var(--tpl-text-base);
+    font-weight: 600;
+
+    a {
+      color: var(--dark);
+      text-decoration: none;
+
+      &:hover {
+        color: var(--secondary);
+        text-decoration: underline;
+        text-underline-offset: 0.18em;
+      }
+    }
+  }
+
+  // If a page has a description, it follows the title inside the same cell.
+  p {
+    margin: var(--tpl-space-3xs) 0 0;
+    color: var(--gray);
+    font-size: var(--tpl-text-sm);
+  }
+}
+
+.page-listing .section .tags {
+  margin: 0;
+  justify-content: flex-end;
+}
+
+// One column below the tablet breakpoint: a 7.5rem date column plus a title plus tags does not
+// fit in 390px, and the date is the part that can move.
+@media (max-width: 720px) {
+  .page-listing .section {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .page-listing .section .tags {
+    justify-content: flex-start;
+  }
+}

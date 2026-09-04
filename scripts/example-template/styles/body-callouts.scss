@@ -119,6 +119,15 @@
   cursor: pointer;
 }
 
+// The fold marker is Quartz' own `--callout-icon-fold`, an empty <div> with the icon as a
+// background - not an SVG like the explorer's and the outline's. Pointing the variable at the same
+// lucide chevron is what makes "one disclosure glyph on the whole site" literally true rather than
+// only nearly: quartz' default draws the same shape at a different stroke weight and with square
+// caps, which is visible when a callout and the table of contents are on screen together.
+.callout {
+  --callout-icon-fold: var(--icon-chevron);
+}
+
 .callout-fold {
   flex: 0 0 auto;
   display: flex;

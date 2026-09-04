@@ -89,13 +89,15 @@ html {
 // all the same gesture, so they are now all the same lucide chevron, at the same size, in the same
 // colour, rotating the same way.
 //
-// The SVG elements stay in the document instead of being hidden. Two of them have to: the
-// explorer's `.folder-icon` is the click target its inline script binds the fold handler to, and
-// every one of them carries the rotation that says which way the fold goes. So the drawn path goes
-// and the element itself becomes a box wearing the chevron as a mask.
+// The SVG elements stay in the document instead of being hidden. One of them has to: the explorer's
+// `.folder-icon` is the click target its inline script binds the fold handler to, and both carry
+// the rotation that says which way the fold goes. So the drawn path goes and the element itself
+// becomes a box wearing the chevron as a mask.
+//
+// The callout's fold marker is not an SVG at all but an empty <div> with a background, so it takes
+// the same glyph a different way - see body-callouts.scss.
 .fold,
-.folder-icon,
-.callout-fold > svg {
+.folder-icon {
   background-color: currentColor;
   mask-image: var(--icon-chevron);
   -webkit-mask-image: var(--icon-chevron);

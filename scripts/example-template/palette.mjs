@@ -19,9 +19,9 @@ export const PALETTE = {
     gray: '#5F5D57',         // meta text, dates, muted labels
     darkgray: '#33322E',     // body text
     dark: '#17171A',         // headings, the darkest ink
-    secondary: '#2C5A4C',    // links, the one accent
-    tertiary: '#1F4034',     // link hover, active nav
-    highlight: 'rgba(44, 90, 76, 0.10)',   // surface tint behind quoted/active blocks
+    secondary: '#2A4E6C',    // links, the one accent - a deep, slightly grey navy
+    tertiary: '#9C4221',     // link hover, active nav - the warm counterpart, a burnt sienna
+    highlight: 'rgba(42, 78, 108, 0.10)',  // surface tint behind quoted/active blocks
     textHighlight: 'rgba(226, 189, 92, 0.45)' // ==mark==
   },
   darkMode: {
@@ -30,10 +30,10 @@ export const PALETTE = {
     gray: '#A1A3A8',
     darkgray: '#D5D7DB',
     dark: '#F3F4F6',
-    secondary: '#86D5BC',
-    tertiary: '#B4E4D3',
-    highlight: 'rgba(134, 213, 188, 0.12)',
-    textHighlight: 'rgba(134, 213, 188, 0.28)'
+    secondary: '#8CB8DA',
+    tertiary: '#E8A56B',
+    highlight: 'rgba(140, 184, 218, 0.12)',
+    textHighlight: 'rgba(140, 184, 218, 0.30)'
   }
 }
 

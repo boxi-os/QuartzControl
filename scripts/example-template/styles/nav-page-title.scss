@@ -17,8 +17,8 @@
   }
 }
 
-// The header area lays its two components out side by side. Wrapping matters: at 390px the mark
-// and the title do not fit on one line, and the title is the half that moves.
+// The header area lays its components out in one row: the mark and the site name at the start,
+// the three site-wide controls at the end.
 //
 // The class is `.qgframe-area-<slot>`, not a data attribute - read off the generated markup rather
 // than guessed. `.qgframe-area` sets `flex-direction: column` for every area in base.scss, which
@@ -31,4 +31,54 @@
   gap: var(--tpl-space-sm);
   padding-block-end: var(--tpl-space-md);
   border-block-end: var(--tpl-rule-width) solid var(--tpl-rule);
+}
+
+// The toolbar group takes the leftover width and sits at the far end. `margin-inline-start: auto`
+// rather than `justify-content: space-between` on the header: there are three children, not two,
+// and space-between would strand the site name in the middle of the row.
+.qgframe-area-header > .flex-component,
+#quartz-body > .header > .flex-component {
+  margin-inline-start: auto;
+}
+
+/* ------------------------------------------------------------------ the mobile header */
+
+// Below 800px the header becomes the app bar: it stays at the top of the window, bleeds to both
+// edges of the screen, and holds the drawer trigger, the site name and the three controls on one
+// line.
+//
+// The negative margins undo the frame's own 20px inset so the bar can touch the edges; the
+// start-side padding is the space the drawer trigger occupies. The trigger itself is not a child
+// of this element - it belongs to the explorer, three areas further down the document - so it is
+// placed into the bar with `position: fixed` in nav-explorer.scss rather than moved. The two
+// numbers have to agree, which is why both are written in --tpl-target plus one gap.
+@media (max-width: 800px) {
+  .qgframe-area-header {
+    position: sticky;
+    top: 0;
+    z-index: 90;
+    flex-wrap: nowrap;
+    margin-block-start: -20px;
+    margin-inline: -20px;
+    padding-block: var(--tpl-space-xs);
+    padding-inline: var(--tpl-space-sm) var(--tpl-space-sm);
+    padding-inline-start: calc(var(--tpl-target) + var(--tpl-space-sm));
+    background: var(--light);
+    // The bar sits above the article as it scrolls past, so it needs its own edge.
+    border-block-end: var(--tpl-rule-width) solid var(--tpl-rule);
+  }
+
+  // The site name gives way first: it is the one thing in the bar that is also the first line of
+  // every page below it.
+  .qgframe-area-header .page-title {
+    font-size: var(--tpl-text-base);
+    min-width: 0;
+
+    a {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
 }

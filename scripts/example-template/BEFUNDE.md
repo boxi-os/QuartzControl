@@ -175,3 +175,56 @@ Ein Element mit `width: 100%` und Innenabstand ist damit breiter als sein Contai
 der Canvas-Seite: Die Layout-Box nach dem Inhalt kam auf 1492 px in einem 1440 px breiten Body und
 schob die ganze Seite zur Seite. Das betrifft jede Komponente, die ihre Breite füllt und Padding
 hat — die Vorlage setzt `box-sizing: border-box` deshalb global, statt die Fälle einzeln zu suchen.
+
+### 21. `folderDefaultState` im Explorer ist wirkungslos
+
+`@quartz-community/explorer` 0.1.0 nimmt die Option entgegen und schreibt sie als
+`data-collapsed` ins Markup. Sein eigenes Inline-Skript liest das Attribut nie. Der Faltzustand
+kommt ausschließlich aus `localStorage.fileTree`, und für alles, was dort nicht steht, ist die
+Vorgabe *zugeklappt*:
+
+```js
+let C = r[u.slug] !== undefined ? r[u.slug] : true   // true == collapsed
+if ((!C || onActivePath) && outer) outer.classList.add("open")
+```
+
+Gemessen: 29 Einträge gerendert, jede Ebene zu, nur die Ordner auf dem Weg zur aktuellen Seite
+offen. `useSavedState` wird auf demselben Weg ignoriert. Mit einem Stylesheet nicht zu heilen —
+„offen“ und „noch nie angefasst“ teilen sich eine Klasse, CSS kann die beiden nicht unterscheiden.
+Die Optionen bleiben in `plugins.mjs` stehen, weil sie die richtigen Werte für den Tag sind, an dem
+das Plugin sie liest.
+
+### 22. Eine ungeschichtete Regel kann den Explorer zuklappen
+
+Hausgemacht, gefunden und behoben — hier, weil die Kette selbst lehrreich ist. `nav-explorer.scss`
+gab `.mobile-explorer` ein `display: grid`, ohne es auf schmale Fenster zu beschränken. Das
+Explorer-Plugin versteckt den Knopf mit `.explorer button.mobile-explorer { display: none }` in
+`@layer quartz-base`; alles in dieser Vorlage steht ungeschichtet und schlägt das unabhängig von
+der Spezifität. Der Knopf war also auch bei 1600 px sichtbar — und das Skript des Plugins endet mit
+
+```js
+if (mobileButton.checkVisibility()) explorer.classList.add("collapsed")
+```
+
+Ergebnis: Der Baum war auf jedem Desktop-Aufruf zugeklappt, obwohl er vollständig gerendert wurde
+(`.explorer-content` 335 × 0 px, sechs Einträge). Die Lehre gilt über diesen Fall hinaus: Wo eine
+ungeschichtete Regel ein `display` aus einem Layer überschreibt, muss sie **beide** Zustände selbst
+aussprechen — sonst gewinnt sie auch dort, wo das Plugin recht hatte.
+
+### 23. `quartz build` räumt sein Ausgabeverzeichnis nicht auf
+
+Kostete beim Umbau auf zwölf Spalten eine halbe Stunde. Das CSS eines selbstgebauten Frames steht
+als `<style>` in *jeder* Seite; ändert sich der Frame, aber nicht die Notiz, behält die Seite ihre
+alte Fassung. `public/` enthielt danach neue Farben und altes Raster nebeneinander — und die
+Frame-Datei auf der Platte war nachweislich die neue. Ein zweiter Lauf holte einen Teil der Seiten
+nach, ein vollständig richtiges Ergebnis gab es erst nach `rm -rf public`. Die App macht das von
+sich aus (`docs/decisions/navigation-and-pages.md`, Build-Ausgabeverzeichnis); wer von Hand baut,
+muss daran denken.
+
+### 24. Die mobile Schublade des Explorers lässt sich nur über ihren Knopf schließen
+
+Das Plugin bringt weder eine Escape-Behandlung noch einen Klick-Fänger hinter der Schublade mit.
+Der Auslöser bleibt über ihr liegen und schaltet zurück, es gibt also immer einen Weg heraus — aber
+ein Tipp auf die abgedunkelte Seite tut nichts, und das ist die Geste, die jeder zuerst probiert.
+Der Hintergrund selbst ist Vorlagenarbeit (`html.mobile-no-scroll body::after`): Das Plugin setzt
+die Klasse und benutzt sie nur für ein `overscroll-behavior`.

@@ -23,6 +23,153 @@ html {
   box-sizing: inherit;
 }
 
+/* ---------------------------------------------------------------------------- icons */
+
+// Lucide, inlined as masks.
+//
+// Three components draw a disclosure triangle of their own - the explorer (both the tree heading
+// and every folder), the table of contents, and any <details> this template styles - and each drew
+// a different one: two hand-rolled `polyline` arrows from the plugins plus a CSS border triangle in
+// the layout box. They are all the same gesture and now all the same glyph.
+//
+// The technique is `mask-image` with `background-color: currentColor`, not `background-image`: a
+// mask takes the element's own colour, so one icon works in both themes, follows :hover, and turns
+// accent-coloured on the active row without a second copy. The SVGs are stroked in black because
+// only the alpha channel survives a mask - the black is never seen.
+//
+// These live here rather than in variables.mjs on purpose. A 400-character data URI in the app's
+// Variables tab is not something anybody edits; the sizes and colours that ARE worth editing are
+// tokens, and this is the one place where the value is code.
+:root {
+  --icon-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  --icon-folder: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z'/%3E%3C/svg%3E");
+  --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2'/%3E%3C/svg%3E");
+  --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z'/%3E%3Cpath d='M14 2v4a2 2 0 0 0 2 2h4'/%3E%3C/svg%3E");
+  --icon-close: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E");
+
+  // The soft edge on a panel that scrolls. Fixed to the panel, not to its content, so the fade
+  // stays at the top and bottom edges while the content moves under it. Not a token in
+  // variables.mjs: a variable override there may not contain a comma, and this is nothing but
+  // commas. The distance it fades over is --tpl-fade, which IS a token.
+  --tpl-fade-mask: linear-gradient(
+    to bottom,
+    transparent 0,
+    black var(--tpl-fade),
+    black calc(100% - var(--tpl-fade)),
+    transparent 100%
+  );
+}
+
+// The two panels that scroll on their own: the folder tree and the right column. Stated here as
+// one rule rather than twice in the two component files, and not as a `%placeholder` - each
+// stylesheet is a separate Sass module (`@use "./custom/<name>"`, see style-order.mjs), and a
+// placeholder does not cross a module boundary, so an `@extend` in nav-explorer.scss would fail
+// to compile rather than quietly do nothing.
+//
+// Below 800px neither one scrolls: the tree becomes a full-height drawer and the right column is
+// laid out under the article.
+@media (min-width: 801px) {
+  .explorer-content,
+  .qgframe-area-right {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    mask-image: var(--tpl-fade-mask);
+    -webkit-mask-image: var(--tpl-fade-mask);
+    scrollbar-width: thin;
+  }
+}
+
+/* ------------------------------------------------------------------ disclosure icons */
+
+// Every "this opens" arrow on the site, drawn once.
+//
+// Four components had four different ones: the explorer's tree heading and its folders each drew a
+// `polyline` chevron, the table of contents drew a third copy of the same polyline, the callout
+// plugin ships its own SVG, and the layout box built a triangle out of two CSS borders. They are
+// all the same gesture, so they are now all the same lucide chevron, at the same size, in the same
+// colour, rotating the same way.
+//
+// The SVG elements stay in the document instead of being hidden. Two of them have to: the
+// explorer's `.folder-icon` is the click target its inline script binds the fold handler to, and
+// every one of them carries the rotation that says which way the fold goes. So the drawn path goes
+// and the element itself becomes a box wearing the chevron as a mask.
+.fold,
+.folder-icon,
+.callout-fold > svg {
+  background-color: currentColor;
+  mask-image: var(--icon-chevron);
+  -webkit-mask-image: var(--icon-chevron);
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  mask-position: center;
+  -webkit-mask-position: center;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-origin: content-box;
+  -webkit-mask-origin: content-box;
+
+  > polyline,
+  > path,
+  > line {
+    display: none;
+  }
+}
+
+.fold {
+  width: var(--tpl-icon-sm);
+  height: var(--tpl-icon-sm);
+  flex: 0 0 auto;
+}
+
+// A <details> the browser marks itself, so this is the one disclosure on the site that needs no
+// script - and the one that has to be styled globally rather than per component, because a
+// <details> can also come straight out of a note. Same chevron, same size, same rotation as the
+// three scripted ones above.
+summary {
+  display: flex;
+  align-items: center;
+  gap: var(--tpl-space-xs);
+  cursor: pointer;
+  // Both are needed: `list-style` removes the marker in Chromium and Firefox, the pseudo-element
+  // does it in older WebKit.
+  list-style: none;
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+
+  &::before {
+    content: "";
+    flex: 0 0 auto;
+    width: var(--tpl-icon-sm);
+    height: var(--tpl-icon-sm);
+    background-color: currentColor;
+    mask-image: var(--icon-chevron);
+    -webkit-mask-image: var(--icon-chevron);
+    mask-size: contain;
+    -webkit-mask-size: contain;
+    mask-repeat: no-repeat;
+    -webkit-mask-repeat: no-repeat;
+    // Shut points right, open points down - the same convention as the folder tree.
+    transform: rotate(-90deg);
+    transition: transform var(--tpl-motion);
+  }
+}
+
+details[open] > summary::before {
+  transform: rotate(0deg);
+}
+
+// Quartz fades the bottom of an overflowing list itself, by putting a one-ended mask on the <ul>
+// when a sentinel scrolls out of view (`gradient-active`, base.scss:650 in quartz). Two masks on
+// two nested elements fighting over the same edge is one too many, and the outer one is the one
+// that also covers the top - so the inner one goes.
+ul.overflow.gradient-active,
+ol.overflow.gradient-active {
+  mask-image: none;
+  -webkit-mask-image: none;
+}
+
 /* ---------------------------------------------------------------- typographic rhythm */
 
 body {
@@ -35,6 +182,22 @@ body {
   font-synthesis-weight: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+}
+
+// Small type gets a tighter leading than the article does.
+//
+// 1.65 is a body ratio: it is measured for a 1rem line running across six columns. The same number
+// at 0.875rem in a three-column sidebar puts almost 21px between two lines that are 14px tall, and
+// a three-line paragraph stops reading as a paragraph - which is precisely how the note in the
+// sidebar looked. The three areas that are made of small type say so once, here, instead of every
+// component in them repeating it.
+//
+// The article keeps --tpl-leading-normal; anything inside it that drops to --tpl-text-sm and wants
+// the tighter ratio asks for it at the point where it changes size.
+.qgframe-area-left,
+.qgframe-area-right,
+.qgframe-area-footer {
+  line-height: var(--tpl-leading-snug);
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -147,9 +310,31 @@ h6 {
 //
 // An earlier version capped prose at 68 characters with `max-width` on every block-level element
 // of the article. That is one way to keep lines readable; it is not this template's way any more.
-// The column width is decided by the frame - `editorial` gives the content 1fr between a 240px and
-// a 260px sidebar, and the frame's own `maxWidth` caps the whole thing - which keeps the decision
-// in one place instead of two that can disagree.
+// The column width is decided by the frame - twelve columns of 98.33px, the content on six of them
+// plus their gutters, so 690px, about 72 characters at 1rem - which keeps the decision in one
+// place instead of two that can disagree.
 //
 // The consequence for anyone adding rules here: do not reintroduce a per-element max-width. If a
 // column is too wide to read comfortably, the frame is what to change.
+
+/* ------------------------------------------------------------------ the right column */
+
+// The apparatus stays put while the article moves.
+//
+// A table of contents that scrolls away with the text is a list of places you can no longer get
+// to, so from tablet up the right area is sticky and scrolls on its own. Three things are needed
+// together and it does nothing without all three: `align-self: start` (a grid item stretches to
+// its row by default, and a full-height item has nothing to stick *to*), a `top` that matches the
+// frame's own inset, and a max-height so a long outline scrolls inside the column instead of
+// running past the bottom of the window.
+//
+// The fade at both ends comes from the rule further up; the components inside give up their own
+// height caps in aside-toc.scss, because the scrolling now happens one level out.
+@media (min-width: 801px) {
+  .qgframe-area-right {
+    position: sticky;
+    top: 20px;
+    align-self: start;
+    max-height: calc(100dvh - 40px);
+  }
+}

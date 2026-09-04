@@ -24,7 +24,7 @@
 .layout-box-content {
   font-size: var(--tpl-text-sm);
   color: var(--darkgray);
-  line-height: var(--tpl-leading-normal);
+  line-height: var(--tpl-leading-snug);
 
   p { margin-block: 0 var(--tpl-space-xs); }
   p:last-child { margin-block-end: 0; }
@@ -67,34 +67,13 @@
 
 /* ------------------------------------------------------------------- collapsible form */
 
-// `collapsible: true` renders <details>/<summary>. The marker is replaced with one that rotates,
-// and the summary gets a real target height - a 17px summary is not a usable control.
-details.layout-box {
-  > summary.layout-box-title {
-    display: flex;
-    align-items: center;
-    gap: var(--tpl-space-2xs);
-    min-height: 32px;
-    cursor: pointer;
-    list-style: none;
-
-    &::-webkit-details-marker { display: none; }
-
-    &::before {
-      content: "";
-      flex: 0 0 auto;
-      width: 0.45em;
-      height: 0.45em;
-      border-inline-end: 2px solid currentColor;
-      border-block-end: 2px solid currentColor;
-      transform: rotate(45deg);
-      transition: transform var(--tpl-motion);
-    }
-  }
-
-  &:not([open]) > summary.layout-box-title::before {
-    transform: rotate(-45deg);
-  }
+// `collapsible: true` renders <details>/<summary>. The marker, the chevron and its rotation all
+// come from the one `summary` rule in base.scss now - this box used to build its own triangle out
+// of two CSS borders, which was a fourth drawing of the site's one disclosure arrow. What is left
+// here is the part that is about this box and not about disclosure: a summary that is 17px tall is
+// not a usable control.
+details.layout-box > summary.layout-box-title {
+  min-height: 32px;
 }
 
 /* --------------------------------------------------------------- the missing-file state */

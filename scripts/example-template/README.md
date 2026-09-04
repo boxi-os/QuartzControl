@@ -101,8 +101,8 @@ Neun Rollen je Modus. **Zwei davon lesen sich verkehrt herum:** `light` ist der 
 | `gray` | Sekundärtext, **und jeder Rand eines Bedienelements** |
 | `darkgray` | Fließtext |
 | `dark` | Überschriften |
-| `secondary` | Links, der eine Akzent |
-| `tertiary` | Link-Hover |
+| `secondary` | Links, der eine Akzent — ein tiefes Navy |
+| `tertiary` | Link-Hover und aktive Navigation — ein warmes Sienna |
 | `highlight` | getönte Fläche (mit Alpha) |
 | `textHighlight` | `==Hervorhebung==` (mit Alpha) |
 
@@ -119,13 +119,17 @@ Fläche. Unter der Schwelle bricht der Lauf ab.
 > dadurch nicht, sie wandert: alles, was man bedient, zieht seinen Rand aus `gray`. Wer eine neue
 > Komponente baut, hält sich daran — sonst ist die Messung eine Lüge.
 
+> **Warum `tertiary` eine andere Farbe ist und nicht eine dunklere:** Es markiert, was gerade
+> angefasst oder gerade aktiv ist. Als Helligkeitsstufe von `secondary` sieht man dem Ergebnis nicht
+> an, welche der beiden Rollen greift; als eigener Farbton schon.
+
 **Callout-Farben** stehen nicht hier, sondern in `styles/body-callouts.scss`, je Modus einmal. Die
 Prüfung liest sie aus der Datei, damit sie nie an einer veralteten Kopie misst. Quartz' eigene
 Farben scheitern übrigens zu elf Zwölfteln im hellen Modus — deshalb sind sie neu gesetzt.
 
 ### 3.2 Maße, Formen, Rhythmus — `variables.mjs`
 
-46 Variablen, in drei Gruppen:
+49 Variablen, in drei Gruppen:
 
 1. **Schriftstapel** (`--bodyFont` …) — die Familie plus ein echter Fallback.
 2. **Quartz-Variablen, wo die Vorlage widerspricht** — etwa `--background-modifier-border`, das von
@@ -137,13 +141,19 @@ Die wirkungsvollsten Einzelwerte:
 
 | Token | Wirkung, wenn man ihn ändert |
 | --- | --- |
-| `--tpl-measure` | Die Zeilenlänge des Fließtexts (68ch). Die folgenreichste Zahl der ganzen Vorlage |
 | `--tpl-space-md` | Der Grundabstand; alle anderen Abstände sind daran orientiert |
 | `--tpl-radius-md` | Ecken von Karten, Codeblöcken, Callouts |
 | `--tpl-target` | Mindestgröße aller Bedienelemente (44px) — einmal ändern, überall wirksam |
 | `--tpl-indent` | Eine Ebene Einrückung in Explorer *und* Inhaltsverzeichnis |
 | `--tpl-accent-bar` | Breite jedes Akzentbalkens (aktive Zeile, Zitat, Callout-Kante) |
 | `--tpl-motion` | Jede Übergangsdauer; `prefers-reduced-motion` setzt sie an einer Stelle auf 0 |
+| `--tpl-leading-snug` | Der Zeilenabstand aller Kleinschrift (Leisten, Fußzeile, Layout-Box). Der Fließtext hat seinen eigenen |
+| `--tpl-icon-sm` | Die Ordner-, Datei- und Chevron-Symbole im Baum |
+| `--tpl-fade` | Wie weit eine rollende Leiste an ihren Enden ausblendet |
+| `--tpl-drawer-width` | Die Breite der mobilen Navigationsschublade |
+
+Die Zeilenlänge steht **nicht** mehr dabei: Sie ist jetzt eine Frage des Rasters (siehe 3.5) und
+hat keinen eigenen Token mehr.
 
 **Kein Stylesheet enthält eine Farbe oder eine Länge als Zahl.** Alles liest Tokens — deshalb lässt
 sich die Vorlage nach dem Import in der App unter *Stile → Variablen* weiterdrehen, ohne SCSS
@@ -193,13 +203,36 @@ Datei, die nie geladen wird, ist schwer zu bemerken.
 
 Drei Frames, je drei Breakpoints, jede Fläche vollständig platziert.
 
-| Frame | Verwendet von | Aufbau (Desktop) |
-| --- | --- | --- |
-| `editorial` | Inhaltsseiten | drei Spalten: Navigation · Text · Apparat |
-| `index` | Ordner, Tags, Bases | zwei Spalten, rechte Leiste ausgeblendet |
-| `focus` | 404 | eine Spalte, 680px, zentriert |
+Alle drei teilen sich am Desktop **ein Raster: zwölf gleiche Spalten, 20 px Rinne, 20 px Rand,
+gedeckelt auf 1440 px**. Das sind 1400 px nutzbar, elf Rinnen, also 98,33 px je Spalte:
 
-Die Breakpoints (1100 / 720 px) stehen ebenfalls dort und gelten projektweit.
+| Block | Spalten | Breite |
+| --- | --- | --- |
+| Navigation (`left`) | 1–3 | 335 px |
+| Text (`beforeBody`/`pageBody`/`afterBody`) | 4–9 | 690 px |
+| Apparat (`right`) | 10–12 | 335 px |
+
+690 px sind bei 1 rem rund 72 Zeichen — deshalb deckelt kein Stylesheet mehr die Zeilenlänge
+(`styles/base.scss` sagt das an der Stelle, wo die Regel früher stand). Wer den Text breiter will,
+ändert die Spannen hier, nicht eine `max-width` an einem Absatz.
+
+| Frame | Verwendet von | Unterschied |
+| --- | --- | --- |
+| `editorial` | Inhaltsseiten | alle sieben Bereiche belegt |
+| `index` | Ordner, Tags, Bases | rechte Spalte reserviert, aber leer |
+| `focus` | 404 | beide Randspalten leer, kein `beforeBody`/`afterBody` |
+
+Dass die rechte Spalte auch dort steht, wo nichts darin ist, ist die eigentliche Entscheidung: Der
+Text beginnt damit auf jeder Seite an derselben Stelle.
+
+Am Tablet fällt die rechte **Spalte** weg und ihr Inhalt rutscht unter den Text — nicht weg. Mobil
+steht alles untereinander.
+
+Die Breakpoints (1100 / 800 px) stehen ebenfalls dort und gelten projektweit. Die 800 sind
+abgeschrieben, nicht gewählt: Das Explorer-Plugin hat `max-width: 800px` in seinem eigenen
+Stylesheet stehen. Bei den früheren 720 gab es ein 80-px-Band, in dem der Explorer schon eine
+Schublade war, während der Frame die Seite noch als Tablet auslegte — mit dem sichtbaren Ergebnis,
+dass `.desktop-only`-Komponenten dort noch standen und `.mobile-only` fehlten.
 
 > **Zwei Regeln aus dem Schema:** Ein Wert darf **kein Komma** enthalten — also kein
 > `minmax(0, 1fr)` und kein `var(--x, fallback)`. Und Längen stehen hier absichtlich als Zahl statt
@@ -215,7 +248,10 @@ Quartz nach aufsteigender `priority`; die Werte gehen in Zehnerschritten, damit 
 bleibt.
 
 `layout.mjs` bestimmt, welcher Seitentyp welchen Frame nutzt, und definiert die Flex-Gruppe
-`toolbar` (Suche, Farbschema, Lesemodus in einer Reihe).
+`toolbar` (Suche, Farbschema, Lesemodus in einer Reihe). Die Gruppe sitzt seit dem 04.09.2026 am
+**rechten Ende des Kopfbereichs** und nicht mehr in der linken Leiste: Dort sucht man sie, und der
+Kopf ist der einzige Bereich, den jeder Frame hat — auf der 404-Seite gab es vorher weder Suche
+noch Farbschema-Umschalter.
 
 ### 3.7 Die fünf Layout-Box-Instanzen — `plugins.mjs`
 
@@ -254,6 +290,9 @@ Alle gemessen, nicht vermutet. Wer die Vorlage erweitert, spart sich damit diese
 | Plugin-CSS überschreiben | Quartz legt Komponenten-CSS in `@layer`, `custom.scss` kommt ungelayert dahinter: **jede** Regel hier gewinnt, auch unbeabsichtigt. Wer eine Eigenschaft anfasst, die ein Plugin selbst setzt, muss dessen Regel mitschreiben |
 | Klappmechanismen nachbauen | Quartz klappt Explorer und Ordner selbst. Eine eigene `grid-template-rows`-Animation gewinnt und hinterlässt Lücken |
 | `.math-display`, `.tag-index`, `<input>` im Farbschalter | Existiert alles nicht. Vor dem Schreiben einer Regel im gebauten HTML nachsehen |
+| `display` aus einem Layer überschreiben | Wer ungeschichtet `display: grid` setzt, gewinnt auch dort, wo das Plugin `display: none` meinte. Beim Schubladen-Knopf des Explorers klappte das den ganzen Baum auf jedem Desktop zu (BEFUNDE 22). Beide Zustände selbst aussprechen |
+| Nach einer Frame-Änderung von Hand bauen | `quartz build` räumt `public/` nicht auf, und das Frame-CSS steht in jeder Seite. `rm -rf public` davor, sonst mischen sich alt und neu (BEFUNDE 23) |
+| `folderDefaultState: 'open'` | Wirkungslos in Explorer 0.1.0 — das Skript liest nur `localStorage` (BEFUNDE 21) |
 
 ---
 

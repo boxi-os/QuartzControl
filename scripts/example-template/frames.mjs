@@ -14,6 +14,28 @@
 // Lengths are literal rather than `var(--tpl-space-*)` on purpose: a frame has to still work when
 // someone imports the `frames` part without `cssVariables`, and the no-comma rule above means a
 // var() reference cannot carry a fallback.
+//
+// ---------------------------------------------------------------------------------------------
+// The column system (2026-09-04)
+//
+// All three frames share one desktop grid: **twelve equal columns, 20px gutters, 20px outer
+// padding, capped at 1440px**. That is 1400px of usable width, eleven 20px gutters, and therefore
+// a column of (1400 - 220) / 12 = 98.33px. The three blocks snap to it:
+//
+//     left  cols 1-3    3 × 98.33 + 2 × 20  = 335px
+//     body  cols 4-9    6 × 98.33 + 5 × 20  = 690px
+//     right cols 10-12  3 × 98.33 + 2 × 20  = 335px
+//
+// 690px of text at 1rem is about 72 characters, which is why no stylesheet caps the measure any
+// more (base.scss says so at length): the grid decides it, in one place.
+//
+// The right column is now present on *every* page type on desktop - listing pages and the error
+// page included, where it stays empty. That is deliberate: the content column then starts at the
+// same x on every page, so navigating from an article to its folder does not shift the text.
+//
+// Tablet keeps the twelve columns and drops the right *column*: `right` moves below the content
+// instead of vanishing, because a 1000px screen still wants a table of contents. Mobile is a
+// single column in reading order.
 
 const SLOTS = ['header', 'left', 'right', 'beforeBody', 'pageBody', 'afterBody', 'footer']
 
@@ -29,13 +51,26 @@ function areas() {
 const place = (row, col, rowSpan = 1, colSpan = 1) => ({ row, col, rowSpan, colSpan })
 const hidden = { row: 1, col: 1, rowSpan: 1, colSpan: 1, hidden: true }
 
+/** Twelve equal columns - the one track list every breakpoint of every frame uses. */
+const TWELVE = Array.from({ length: 12 }, () => '1fr')
+
+/** The box: same gutters and insets on all three sizes, only the cap and the alignment change. */
+const box = (maxWidth, align) => ({
+  columnSizes: TWELVE,
+  rowGap: '20px',
+  columnGap: '20px',
+  maxWidth,
+  align,
+  paddingBlock: '20px',
+  paddingInline: '20px'
+})
+
 /**
  * editorial - the reading frame, used by content pages.
  *
- * Desktop is three columns: navigation, the text at its measure, and the page's own apparatus
- * (table of contents, backlinks, graph). Tablet drops to two and moves the apparatus below the
- * text, because a 260px panel next to a 60ch measure at 1100px leaves neither enough room.
- * Mobile is one column in reading order: what the page *is* comes before what surrounds it.
+ * Desktop is 3 / 6 / 3: navigation, the text, and the page's own apparatus (table of contents,
+ * backlinks, graph). Tablet is 3 / 9 with the apparatus moved below the text. Mobile is one column
+ * in reading order: what the page *is* comes before what surrounds it.
  */
 const editorial = {
   id: 'frame-editorial',
@@ -44,76 +79,59 @@ const editorial = {
   breakpoints: {
     desktop: {
       rows: 5,
-      cols: 3,
-      columnSizes: ['240px', '1fr', '260px'],
+      cols: 12,
       rowSizes: ['auto', 'auto', '1fr', 'auto', 'auto'],
-      rowGap: '1.5rem',
-      columnGap: '2.5rem',
-      maxWidth: '1440px',
-      align: 'center',
-      paddingBlock: '1.5rem',
-      paddingInline: '2rem',
+      ...box('1440px', 'center'),
       placements: {
-        'area-header': place(1, 1, 1, 3),
-        'area-left': place(2, 1, 3, 1),
-        'area-beforeBody': place(2, 2),
-        'area-pageBody': place(3, 2),
-        'area-afterBody': place(4, 2),
-        'area-right': place(2, 3, 3, 1),
-        'area-footer': place(5, 1, 1, 3)
+        'area-header': place(1, 1, 1, 12),
+        'area-left': place(2, 1, 3, 3),
+        'area-beforeBody': place(2, 4, 1, 6),
+        'area-pageBody': place(3, 4, 1, 6),
+        'area-afterBody': place(4, 4, 1, 6),
+        'area-right': place(2, 10, 3, 3),
+        'area-footer': place(5, 1, 1, 12)
       }
     },
     tablet: {
       rows: 6,
-      cols: 2,
-      columnSizes: ['210px', '1fr'],
+      cols: 12,
       rowSizes: ['auto', 'auto', '1fr', 'auto', 'auto', 'auto'],
-      rowGap: '1.25rem',
-      columnGap: '1.75rem',
-      maxWidth: '100%',
-      align: 'left',
-      paddingBlock: '1.25rem',
-      paddingInline: '1.5rem',
+      ...box('100%', 'left'),
       placements: {
-        'area-header': place(1, 1, 1, 2),
-        'area-left': place(2, 1, 4, 1),
-        'area-beforeBody': place(2, 2),
-        'area-pageBody': place(3, 2),
-        'area-afterBody': place(4, 2),
-        'area-right': place(5, 2),
-        'area-footer': place(6, 1, 1, 2)
+        'area-header': place(1, 1, 1, 12),
+        'area-left': place(2, 1, 4, 3),
+        'area-beforeBody': place(2, 4, 1, 9),
+        'area-pageBody': place(3, 4, 1, 9),
+        'area-afterBody': place(4, 4, 1, 9),
+        'area-right': place(5, 4, 1, 9),
+        'area-footer': place(6, 1, 1, 12)
       }
     },
     mobile: {
       rows: 7,
-      cols: 1,
-      columnSizes: ['1fr'],
+      cols: 12,
       rowSizes: ['auto', 'auto', 'auto', '1fr', 'auto', 'auto', 'auto'],
-      rowGap: '1rem',
-      columnGap: '0',
-      maxWidth: '100%',
-      align: 'left',
-      paddingBlock: '1rem',
-      paddingInline: '1rem',
+      ...box('100%', 'left'),
       placements: {
-        'area-header': place(1, 1),
-        'area-left': place(2, 1),
-        'area-beforeBody': place(3, 1),
-        'area-pageBody': place(4, 1),
-        'area-afterBody': place(5, 1),
-        'area-right': place(6, 1),
-        'area-footer': place(7, 1)
+        'area-header': place(1, 1, 1, 12),
+        'area-left': place(2, 1, 1, 12),
+        'area-beforeBody': place(3, 1, 1, 12),
+        'area-pageBody': place(4, 1, 1, 12),
+        'area-afterBody': place(5, 1, 1, 12),
+        'area-right': place(6, 1, 1, 12),
+        'area-footer': place(7, 1, 1, 12)
       }
     }
   }
 }
 
 /**
- * index - listing pages (folders, tags).
+ * index - listing pages (folders, tags, bases).
  *
- * A list of links needs no table of contents and no backlinks panel, so the right slot is hidden
- * outright rather than left empty: `hidden` keeps the area's identity while excluding it from this
- * breakpoint's grid, which is what stops an empty 260px column from reserving space.
+ * Geometrically the same as `editorial` on desktop, and that is the point: a folder page keeps the
+ * empty right column so its list of links starts exactly where the article text starts. It is a
+ * separate frame because the two page types are free to diverge again - and because the right slot
+ * is genuinely dropped here below desktop, where `editorial` still has an outline to show.
  */
 const index = {
   id: 'frame-index',
@@ -122,73 +140,63 @@ const index = {
   breakpoints: {
     desktop: {
       rows: 5,
-      cols: 2,
-      columnSizes: ['240px', '1fr'],
+      cols: 12,
       rowSizes: ['auto', 'auto', '1fr', 'auto', 'auto'],
-      rowGap: '1.5rem',
-      columnGap: '2.5rem',
-      maxWidth: '1200px',
-      align: 'center',
-      paddingBlock: '1.5rem',
-      paddingInline: '2rem',
+      ...box('1440px', 'center'),
       placements: {
-        'area-header': place(1, 1, 1, 2),
-        'area-left': place(2, 1, 3, 1),
-        'area-beforeBody': place(2, 2),
-        'area-pageBody': place(3, 2),
-        'area-afterBody': place(4, 2),
-        'area-right': hidden,
-        'area-footer': place(5, 1, 1, 2)
+        'area-header': place(1, 1, 1, 12),
+        'area-left': place(2, 1, 3, 3),
+        'area-beforeBody': place(2, 4, 1, 6),
+        'area-pageBody': place(3, 4, 1, 6),
+        'area-afterBody': place(4, 4, 1, 6),
+        'area-right': place(2, 10, 3, 3),
+        'area-footer': place(5, 1, 1, 12)
       }
     },
     tablet: {
       rows: 5,
-      cols: 2,
-      columnSizes: ['200px', '1fr'],
+      cols: 12,
       rowSizes: ['auto', 'auto', '1fr', 'auto', 'auto'],
-      rowGap: '1.25rem',
-      columnGap: '1.75rem',
-      maxWidth: '100%',
-      align: 'left',
-      paddingBlock: '1.25rem',
-      paddingInline: '1.5rem',
+      ...box('100%', 'left'),
       placements: {
-        'area-header': place(1, 1, 1, 2),
-        'area-left': place(2, 1, 3, 1),
-        'area-beforeBody': place(2, 2),
-        'area-pageBody': place(3, 2),
-        'area-afterBody': place(4, 2),
+        'area-header': place(1, 1, 1, 12),
+        'area-left': place(2, 1, 3, 3),
+        'area-beforeBody': place(2, 4, 1, 9),
+        'area-pageBody': place(3, 4, 1, 9),
+        'area-afterBody': place(4, 4, 1, 9),
         'area-right': hidden,
-        'area-footer': place(5, 1, 1, 2)
+        'area-footer': place(5, 1, 1, 12)
       }
     },
     mobile: {
       rows: 6,
-      cols: 1,
-      columnSizes: ['1fr'],
+      cols: 12,
       rowSizes: ['auto', 'auto', 'auto', '1fr', 'auto', 'auto'],
-      rowGap: '1rem',
-      columnGap: '0',
-      maxWidth: '100%',
-      align: 'left',
-      paddingBlock: '1rem',
-      paddingInline: '1rem',
+      ...box('100%', 'left'),
       placements: {
-        'area-header': place(1, 1),
-        'area-left': place(2, 1),
-        'area-beforeBody': place(3, 1),
-        'area-pageBody': place(4, 1),
-        'area-afterBody': place(5, 1),
+        'area-header': place(1, 1, 1, 12),
+        'area-left': place(2, 1, 1, 12),
+        'area-beforeBody': place(3, 1, 1, 12),
+        'area-pageBody': place(4, 1, 1, 12),
+        'area-afterBody': place(5, 1, 1, 12),
         'area-right': hidden,
-        'area-footer': place(6, 1)
+        'area-footer': place(6, 1, 1, 12)
       }
     }
   }
 }
 
 /**
- * focus - one column, nothing around it. Used by the 404 page, where an explorer tree and a graph
- * are decoration on top of an error.
+ * focus - the error page.
+ *
+ * Same twelve columns and the same 3 / 6 / 3 split, so a 404 is recognisably the same site rather
+ * than a differently-shaped page. Both side columns stay reserved and empty (layout.mjs empties
+ * their component lists, so nothing is even built), and `beforeBody` / `afterBody` are hidden
+ * outright: breadcrumbs and backlinks on an error are decoration on top of a dead end.
+ *
+ * The vertical breathing room a 404 wants is *not* set here: the frame's paddingBlock also moves
+ * the header, and a site whose logo sits 60px lower on the error page looks broken rather than
+ * calm. It lives in page-404.scss, inside the body area, where it belongs.
  */
 const focus = {
   id: 'frame-focus',
@@ -197,65 +205,47 @@ const focus = {
   breakpoints: {
     desktop: {
       rows: 3,
-      cols: 1,
-      columnSizes: ['1fr'],
+      cols: 12,
       rowSizes: ['auto', '1fr', 'auto'],
-      rowGap: '2.5rem',
-      columnGap: '0',
-      maxWidth: '680px',
-      align: 'center',
-      paddingBlock: '4rem',
-      paddingInline: '1.5rem',
+      ...box('1440px', 'center'),
       placements: {
-        'area-header': place(1, 1),
-        'area-left': hidden,
-        'area-right': hidden,
+        'area-header': place(1, 1, 1, 12),
+        'area-left': place(2, 1, 1, 3),
         'area-beforeBody': hidden,
-        'area-pageBody': place(2, 1),
+        'area-pageBody': place(2, 4, 1, 6),
         'area-afterBody': hidden,
-        'area-footer': place(3, 1)
+        'area-right': place(2, 10, 1, 3),
+        'area-footer': place(3, 1, 1, 12)
       }
     },
     tablet: {
       rows: 3,
-      cols: 1,
-      columnSizes: ['1fr'],
+      cols: 12,
       rowSizes: ['auto', '1fr', 'auto'],
-      rowGap: '2rem',
-      columnGap: '0',
-      maxWidth: '640px',
-      align: 'center',
-      paddingBlock: '3rem',
-      paddingInline: '1.5rem',
+      ...box('100%', 'left'),
       placements: {
-        'area-header': place(1, 1),
-        'area-left': hidden,
-        'area-right': hidden,
+        'area-header': place(1, 1, 1, 12),
+        'area-left': place(2, 1, 1, 3),
         'area-beforeBody': hidden,
-        'area-pageBody': place(2, 1),
+        'area-pageBody': place(2, 4, 1, 9),
         'area-afterBody': hidden,
-        'area-footer': place(3, 1)
+        'area-right': hidden,
+        'area-footer': place(3, 1, 1, 12)
       }
     },
     mobile: {
       rows: 3,
-      cols: 1,
-      columnSizes: ['1fr'],
+      cols: 12,
       rowSizes: ['auto', '1fr', 'auto'],
-      rowGap: '1.5rem',
-      columnGap: '0',
-      maxWidth: '100%',
-      align: 'left',
-      paddingBlock: '2rem',
-      paddingInline: '1rem',
+      ...box('100%', 'left'),
       placements: {
-        'area-header': place(1, 1),
+        'area-header': place(1, 1, 1, 12),
         'area-left': hidden,
-        'area-right': hidden,
         'area-beforeBody': hidden,
-        'area-pageBody': place(2, 1),
+        'area-pageBody': place(2, 1, 1, 12),
         'area-afterBody': hidden,
-        'area-footer': place(3, 1)
+        'area-right': hidden,
+        'area-footer': place(3, 1, 1, 12)
       }
     }
   }
@@ -263,5 +253,14 @@ const focus = {
 
 export const FRAMES = [editorial, index, focus]
 
-/** The project's own breakpoint widths - see docs/decisions/layout-frames.md, finding 3. */
-export const BREAKPOINT_WIDTHS = { tablet: 1100, mobile: 720 }
+/**
+ * The project's own breakpoint widths - see docs/decisions/layout-frames.md, finding 3.
+ *
+ * `mobile` is 800 and not a rounder number because the explorer plugin's own stylesheet hard-codes
+ * `@media all and (max-width: 800px)` for its drawer. At the old 720 the two disagreed: between
+ * 721 and 800px the explorer was already a hamburger while the frame still called it tablet, so
+ * `.desktop-only` components (recent notes, the graph, the sidebar note) were still rendered and
+ * `.mobile-only` ones were not. Aligning the frame to the plugin costs nothing and removes the
+ * whole 80px band in which the two layouts contradicted each other.
+ */
+export const BREAKPOINT_WIDTHS = { tablet: 1100, mobile: 800 }

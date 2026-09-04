@@ -77,6 +77,11 @@ export const VARIABLE_OVERRIDES = [
   { key: 'tpl-text-3xl', light: '2.25rem' },
   { key: 'tpl-leading-tight', light: '1.25' },
   { key: 'tpl-leading-normal', light: '1.65' },
+  // Small type does not want the body's leading. 1.65 is generous at 1rem across a 690px column;
+  // at 0.875rem in a 335px sidebar the same ratio pulls the lines so far apart that a three-line
+  // paragraph reads as three separate ones - which is exactly how the layout-box in the sidebar
+  // looked. Everything set in --tpl-text-sm or smaller uses this instead.
+  { key: 'tpl-leading-snug', light: '1.45' },
 
   // Focus. Its own token because it appears in ~20 rules and must never be tuned in only one.
   { key: 'tpl-focus-color', light: 'var(--secondary)', dark: 'var(--secondary)' },
@@ -110,5 +115,17 @@ export const VARIABLE_OVERRIDES = [
 
   // The indent one level of the explorer tree or the table of contents adds. Both read it, so
   // the two structures line up with each other instead of drifting apart.
-  { key: 'tpl-indent', light: '0.85rem' }
+  { key: 'tpl-indent', light: '0.85rem' },
+
+  // The size of the small icons that mark a row rather than sit in a button: the folder and file
+  // glyphs in the explorer tree. Smaller than --tpl-icon, which is for a control.
+  { key: 'tpl-icon-sm', light: '0.95rem' },
+
+  // How far a scrolling panel fades out at each end. See --tpl-fade-mask in base.scss, which is
+  // the mask itself - it cannot live here because a variable override may not carry a comma.
+  { key: 'tpl-fade', light: '20px' },
+
+  // The mobile navigation drawer. `min()` keeps it off the right edge on a 360px phone while
+  // giving a four-level tree room to breathe on a tablet-sized screen.
+  { key: 'tpl-drawer-width', light: 'min(86vw, 340px)' }
 ]

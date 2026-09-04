@@ -1,11 +1,17 @@
-// The toolbar group — search, dark mode and reader mode on one row.
+// The toolbar group — search, dark mode and reader mode on one row at the end of the header.
 //
 // The group itself is quartz's flex container (layout.groups.toolbar in layout.mjs); this file
-// only styles what a flex container cannot express. `search` has grow:true, so it takes the
-// leftover width and the two icon buttons keep their size.
+// only styles what a flex container cannot express.
+//
+// It moved out of the left sidebar on 2026-09-04. Two things follow from the new home. The search
+// field no longer has `grow: true` - in a sidebar it was right for it to take the leftover width,
+// in a 1440px header row that would have pushed the two icon buttons to the far edge - so it gets
+// a width of its own here. And the group is now on every page type, including the 404, which under
+// the `focus` frame has no sidebars at all and therefore used to offer no way to search or to
+// switch the theme.
 
 .flex-component {
-  align-items: stretch;
+  align-items: center;
 
   // Every direct child of the group has the same height, whatever it contains.
   > * {
@@ -13,7 +19,42 @@
   }
 }
 
-// The spacer plugin sits above the toolbar on mobile, where the sidebar is a strip across the top.
+// A search field wide enough to read as a field rather than a button, and narrow enough that the
+// header still belongs to the site name. It gives up width before the site name does.
+.qgframe-area-header .search {
+  flex: 0 1 15rem;
+  min-width: 0;
+}
+
+/* -------------------------------------------------------------------------- mobile */
+
+// In the app bar there is room for three targets and the site name, and not for the word "Suche".
+// The button keeps its 44px, so nothing gets harder to hit - it just stops being a field.
+@media (max-width: 800px) {
+  .qgframe-area-header .flex-component {
+    gap: var(--tpl-space-2xs);
+    flex: 0 0 auto;
+  }
+
+  .qgframe-area-header .search {
+    flex: 0 0 auto;
+  }
+
+  // A square button like the other two, not a field with the label taken out: three controls that
+  // do the same kind of thing should not be two shapes.
+  .qgframe-area-header .search-button {
+    width: var(--tpl-target);
+    justify-content: center;
+    padding-inline: 0;
+
+    > p {
+      display: none;
+    }
+  }
+}
+
+// The spacer plugin sits above the drawer trigger on mobile, where the left area is a strip across
+// the top of the page rather than a column beside it.
 .spacer {
   min-height: var(--tpl-space-xs);
 }

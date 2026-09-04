@@ -29,8 +29,14 @@ const LAYOUT_BOX_NAME = 'quartz-layout-box'
 // project imports this. As markup inside the config entry it travels with the `plugins` part.
 // Two variants to exercise the plugin's .img-light/.img-dark switching; a single currentColor mark
 // would also work and is what a real site would probably use.
-const MARK_LIGHT = `<svg class="img-light" width="26" height="26" viewBox="0 0 26 26" role="img" aria-label=""><rect width="26" height="26" rx="7" fill="#2C5A4C"/><path d="M8 17.5V8.5h3.4c2.3 0 3.8 1.2 3.8 3.1 0 1.4-.8 2.4-2.1 2.8l2.9 3.1h-2.6l-2.5-2.8h-.7v2.8H8Zm2.2-4.6h1.1c1 0 1.6-.5 1.6-1.3s-.6-1.2-1.6-1.2h-1.1v2.5Z" fill="#FCFCFA"/></svg>`
-const MARK_DARK = `<svg class="img-dark" width="26" height="26" viewBox="0 0 26 26" role="img" aria-label=""><rect width="26" height="26" rx="7" fill="#86D5BC"/><path d="M8 17.5V8.5h3.4c2.3 0 3.8 1.2 3.8 3.1 0 1.4-.8 2.4-2.1 2.8l2.9 3.1h-2.6l-2.5-2.8h-.7v2.8H8Zm2.2-4.6h1.1c1 0 1.6-.5 1.6-1.3s-.6-1.2-1.6-1.2h-1.1v2.5Z" fill="#16171A"/></svg>`
+// The site mark, one SVG per mode. The two fills are the palette's `secondary` written out as
+// hex, not `var(--secondary)`: this string is an option value in quartz.config.yaml that the
+// layout-box plugin drops into the page as raw HTML, and a CSS variable resolves there but the
+// *dark* copy would then be the light value - the two SVGs are both in the document at all times
+// and switched with `.img-light` / `.img-dark`, so each has to carry its own colour. Change the
+// palette in palette.mjs and these two follow by hand.
+const MARK_LIGHT = `<svg class="img-light" width="26" height="26" viewBox="0 0 26 26" role="img" aria-label=""><rect width="26" height="26" rx="7" fill="#2A4E6C"/><path d="M8 17.5V8.5h3.4c2.3 0 3.8 1.2 3.8 3.1 0 1.4-.8 2.4-2.1 2.8l2.9 3.1h-2.6l-2.5-2.8h-.7v2.8H8Zm2.2-4.6h1.1c1 0 1.6-.5 1.6-1.3s-.6-1.2-1.6-1.2h-1.1v2.5Z" fill="#FCFCFA"/></svg>`
+const MARK_DARK = `<svg class="img-dark" width="26" height="26" viewBox="0 0 26 26" role="img" aria-label=""><rect width="26" height="26" rx="7" fill="#8CB8DA"/><path d="M8 17.5V8.5h3.4c2.3 0 3.8 1.2 3.8 3.1 0 1.4-.8 2.4-2.1 2.8l2.9 3.1h-2.6l-2.5-2.8h-.7v2.8H8Zm2.2-4.6h1.1c1 0 1.6-.5 1.6-1.3s-.6-1.2-1.6-1.2h-1.1v2.5Z" fill="#16171A"/></svg>`
 
 /**
  * Five instances of quartz-layout-box, one per thing the plugin can do.
@@ -123,16 +129,35 @@ export const PLUGIN_PATCHES = {
   /* --- components: where each one sits ------------------------------------------------ */
   'page-title': { enabled: true, layout: { position: 'header', priority: 20 } },
 
-  search: { enabled: true, layout: { position: 'left', priority: 20, group: 'toolbar', groupOptions: { grow: true } } },
-  darkmode: { enabled: true, layout: { position: 'left', priority: 30, group: 'toolbar' } },
-  'reader-mode': { enabled: true, layout: { position: 'left', priority: 40, group: 'toolbar' } },
+  // The three site-wide controls live in the header, at its right end, on every breakpoint. They
+  // were in the left sidebar until 2026-09-04; the header is where a reader looks for them, and it
+  // is the one area that survives every frame - including `focus`, where the 404 page has no
+  // sidebars at all and previously offered no way to switch the theme or search.
+  //
+  // `grow` is gone with the move: in a 335px sidebar the search field wanting the leftover width
+  // was right, in a header row it would push the two icon buttons to the far edge of a 1440px page.
+  // nav-toolbar.scss gives the field a width instead.
+  search: { enabled: true, layout: { position: 'header', priority: 30, group: 'toolbar' } },
+  darkmode: { enabled: true, layout: { position: 'header', priority: 40, group: 'toolbar' } },
+  'reader-mode': { enabled: true, layout: { position: 'header', priority: 50, group: 'toolbar' } },
+  // Kept, and now doing its actual job: with the toolbar gone from the left sidebar, the spacer is
+  // what holds the mobile strip open above the drawer trigger.
   spacer: { enabled: true, layout: { position: 'left', priority: 10, display: 'mobile-only' } },
   explorer: {
     enabled: true,
-    // The plugin defaults to `folderDefaultState: 'collapsed'`, which leaves a first-time visitor
-    // with a heading and nothing else - measured on the built site, where the tree was rendered
-    // (29 items) but every level was folded shut. A template that ships a four-level example vault
-    // and hides it has demonstrated nothing.
+    // `folderDefaultState: 'open'` states the intent and DOES NOT WORK - measured against
+    // @quartz-community/explorer 0.1.0. The component writes the option into `data-collapsed`, but
+    // its own inline script never reads that attribute: it takes the fold state from
+    // localStorage's `fileTree` alone and defaults to *collapsed* for anything not saved there
+    //
+    //     let C = r[u.slug] !== undefined ? r[u.slug] : true      // true == collapsed
+    //     if ((!C || onActivePath) && outer) outer.classList.add("open")
+    //
+    // so a first-time visitor gets the tree folded shut whatever this says, and only the folders
+    // on the current page's path are open. `useSavedState` is ignored the same way. Both are left
+    // here because they are the correct values the day the plugin honours them; the finding is
+    // written up in BEFUNDE.md, and no stylesheet can undo it - the open and the never-touched
+    // state share one class name, so CSS cannot tell them apart.
     options: { folderDefaultState: 'open', folderClickBehavior: 'link', useSavedState: true },
     layout: { position: 'left', priority: 50 }
   },

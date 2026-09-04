@@ -9,8 +9,10 @@
 export const LAYOUT_CONFIG = {
   groups: {
     // Search, dark mode and reader mode read as one control strip rather than three stacked
-    // blocks. `wrap` matters at the narrow end: three controls in a 210px tablet sidebar would
-    // otherwise overflow rather than break.
+    // blocks. They sit at the end of the header on every breakpoint since 2026-09-04 - see
+    // plugins.mjs for why they left the sidebar. `wrap` stays: it is what keeps the strip from
+    // overflowing the app bar on a 360px phone, where the three of them share the row with the
+    // drawer trigger and the site name.
     toolbar: {
       priority: 35,
       direction: 'row',

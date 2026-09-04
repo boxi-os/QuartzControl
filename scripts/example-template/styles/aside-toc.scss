@@ -11,9 +11,20 @@
 // The indent step is the same --tpl-indent the explorer uses, so the two structures line up with
 // each other in the two sidebars.
 
+// The outline shows all of itself.
+//
+// Quartz caps this component three times over - `flex: 0 0.5 auto` with `overflow-y: hidden` on
+// the component, `max-height: calc(100% - 2rem)` on the list, and `div:has(> .overflow)` in its
+// base stylesheet - which between them turn a long outline into a short scrollable stub inside a
+// column that was itself scrolling. All three go. The scrolling happens once, one level out, on
+// the sticky right column (base.scss), so what you see is the whole outline as far as the window
+// is tall, with a soft edge at each end and no second scrollbar.
 .toc {
   font-size: var(--tpl-text-sm);
   min-width: 0;
+  flex: 0 0 auto;
+  max-height: none;
+  overflow: visible;
 }
 
 .toc-header {
@@ -48,20 +59,22 @@
   }
 }
 
-.toc-content {
-  margin-block-start: var(--tpl-space-xs);
-  // A long outline scrolls on its own instead of stretching the sidebar past the article.
-  max-height: 55vh;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-
-  ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    // The line the whole outline hangs from.
-    border-inline-start: var(--tpl-rule-width) solid var(--tpl-rule);
-  }
+// `.toc-content` IS the <ul> - not a wrapper around one. The first version of this file styled
+// `.toc-content ul`, which matches nothing on any page, so the rail the whole outline hangs from
+// was never drawn. Written flat here for that reason.
+//
+// The second selector is the same element again, spelled the way quartz spells it, so this beats
+// `ul.toc-content.overflow { max-height: calc(100% - 2rem) }` on specificity as well as on layer.
+.toc-content,
+ul.toc-content.overflow {
+  list-style: none;
+  margin-block: var(--tpl-space-xs) 0;
+  margin-inline: 0;
+  padding: 0;
+  max-height: none;
+  overflow: visible;
+  // The line the whole outline hangs from.
+  border-inline-start: var(--tpl-rule-width) solid var(--tpl-rule);
 
   li {
     margin: 0;
@@ -69,6 +82,11 @@
 
   a {
     display: block;
+    // Quartz dims an entry that is not currently on screen to `opacity: 0.35`, which at this size
+    // on this ground measures below 3:1 - the outline's lower half was barely there. The state is
+    // worth keeping; the way it was expressed was not. Opacity goes, and "in view" is said in
+    // colour, weight and the rail instead, all three of which are measured.
+    opacity: 1;
     color: var(--gray);
     text-decoration: none;
     padding-block: var(--tpl-space-3xs);
@@ -99,7 +117,7 @@
 .toc-content .depth-2 > a { padding-inline-start: calc(var(--tpl-space-xs) + var(--tpl-indent) * 2); }
 .toc-content .depth-3 > a { padding-inline-start: calc(var(--tpl-space-xs) + var(--tpl-indent) * 3); font-size: var(--tpl-text-xs); }
 .toc-content .depth-4 > a { padding-inline-start: calc(var(--tpl-space-xs) + var(--tpl-indent) * 4); font-size: var(--tpl-text-xs); }
-// The last two levels stop stepping — five indents in a 260px column leaves no room for a word.
+// The last two levels stop stepping — five indents in three columns leaves no room for a word.
 // They are marked instead, so the outline stays complete and still readable.
 .toc-content .depth-5 > a,
 .toc-content .depth-6 > a {

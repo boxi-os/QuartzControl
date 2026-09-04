@@ -15,7 +15,7 @@ dieses Dokument beschreibt beides.
 Seit dem Umbau ist **das Projekt die Quelle**, nicht mehr dieses Verzeichnis:
 
 ```
-~/Obsidian/QuartzProjekte/Example/     der Vault — 100 Notizen, 2 Bases, 1 Canvas, 1 Zeichnung
+~/Obsidian/QuartzProjekte/Example/     der Vault — 123 Notizen, 3 Bases, 1 Canvas, 1 Zeichnung, 7 Mediendateien
         ↑ Symlink
 ~/Documents/Example/content/            das Projekt
 ~/Documents/Example/quartz/styles/      die Stylesheets — hier wird gearbeitet

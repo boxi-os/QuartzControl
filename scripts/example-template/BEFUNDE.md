@@ -168,3 +168,10 @@ dargestellt.
 
 Weder Obsidian noch Quartz kennen die `Begriff` / `: Erklärung`-Schreibweise; die Doppelpunktzeile
 bleibt als Text stehen. Nur über HTML (`<dl>`) zu haben.
+
+### 20. Quartz setzt kein globales `box-sizing`
+
+Ein Element mit `width: 100%` und Innenabstand ist damit breiter als sein Container. Gemessen auf
+der Canvas-Seite: Die Layout-Box nach dem Inhalt kam auf 1492 px in einem 1440 px breiten Body und
+schob die ganze Seite zur Seite. Das betrifft jede Komponente, die ihre Breite füllt und Padding
+hat — die Vorlage setzt `box-sizing: border-box` deshalb global, statt die Fälle einzeln zu suchen.

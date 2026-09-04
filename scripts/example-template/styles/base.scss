@@ -4,6 +4,25 @@
 // length appears below. That is what makes the whole look adjustable from the app's Variables tab
 // afterwards instead of only by editing SCSS.
 
+/* --------------------------------------------------------------------- box model */
+
+// Quartz sets no global box-sizing, so `width: 100%` plus padding overflows its container -
+// measured on the canvas page, where the call-to-action box came out 1492px wide in a 1440px body
+// and pushed the whole page sideways. Every component in this template that fills its width and
+// has padding would hit the same thing; one rule is cheaper than finding them one at a time.
+//
+// `inherit` on the universal selector rather than `border-box` directly: a component that needs
+// the content box for its own reasons can opt out for itself and its children.
+html {
+  box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
 /* ---------------------------------------------------------------- typographic rhythm */
 
 body {

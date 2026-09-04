@@ -3,7 +3,8 @@
 .page-title {
   margin: 0;
   font-family: var(--headerFont);
-  font-size: var(--tpl-text-xl);
+  // Follows the header as it shrinks; --tpl-header-title rests on --tpl-text-xl (base.scss).
+  font-size: var(--tpl-header-title);
   font-weight: 700;
   letter-spacing: -0.015em;
 
@@ -29,8 +30,23 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--tpl-space-sm);
-  padding-block-end: var(--tpl-space-md);
   border-block-end: var(--tpl-rule-width) solid var(--tpl-rule);
+  // Sticky on every width, not only on a phone. The four controls and the way back to the home
+  // page are the things a reader reaches for in the middle of a long article, and this site has
+  // several pages that are three screens tall.
+  //
+  // It needs its own ground: what scrolls underneath is body text, and a transparent bar over it
+  // is unreadable within one line. The z-index sits under the search overlay and the drawer.
+  position: sticky;
+  top: 0;
+  z-index: 80;
+  background: var(--light);
+  // The padding is what shrinks (base.scss animates it); the 44px controls inside do not, because
+  // a target that changes size while you reach for it is worse than a tall bar.
+  //
+  // No transition: the animation in base.scss is bound to the scroll position, and a transition
+  // on the same property would chase it a frame behind.
+  padding-block: var(--tpl-header-pad);
 }
 
 // The toolbar group takes the leftover width and sits at the far end. `margin-inline-start: auto`

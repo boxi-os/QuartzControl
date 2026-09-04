@@ -92,6 +92,14 @@
 .callout-title-inner {
   flex: 1 1 auto;
   min-width: 0;
+
+  // Quartz wraps the title text in a <p>, which keeps its paragraph margin. Measured: the title
+  // row was 57.6px and centred its three children on 453.4, but the <p> inside this box sat at
+  // 445.4 - eight pixels above the icon, because the 16px it carried below it pushed it up inside
+  // a box that was centred as a whole. The icon looked like it had dropped; it had not.
+  > * {
+    margin-block: 0;
+  }
 }
 
 .callout-content {

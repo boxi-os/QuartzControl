@@ -20,8 +20,10 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--gray);
-  border-block-end: var(--tpl-rule-width) solid var(--tpl-rule);
   margin: 0;
+  // No rule under this line. It is a label on a tinted box, not a table header over columns, and
+  // a second horizontal line so close to the box's own edge reads as a seam.
+  border-block-end: none;
 }
 
 .note-properties-table {

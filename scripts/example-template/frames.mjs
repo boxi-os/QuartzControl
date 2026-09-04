@@ -54,11 +54,22 @@ const hidden = { row: 1, col: 1, rowSpan: 1, colSpan: 1, hidden: true }
 /** Twelve equal columns - the one track list every breakpoint of every frame uses. */
 const TWELVE = Array.from({ length: 12 }, () => '1fr')
 
-/** The box: same gutters and insets on all three sizes, only the cap and the alignment change. */
-const box = (maxWidth, align) => ({
+/** The box: same insets on all three sizes; the cap, the alignment and the gutter change. */
+//
+// The gutter went from 20px to 2rem on 2026-09-05. It changes the arithmetic of the whole page:
+// 1440 - 40 of inset leaves 1400, eleven gutters of 32 take 352, so a column is (1400-352)/12 =
+// 87.33px and the three blocks measure 3 x 87.33 + 2 x 32 = 326 / 6 x 87.33 + 5 x 32 = 684 / 326.
+// The inset stays at 20px: it is the distance to the edge of the window, not between two things.
+//
+// The phone keeps 20px, and that is not a taste decision. A twelve-column grid has eleven gutters
+// whatever its content does, and they set its minimum width: 11 x 32 + 40 of inset = 392px, which
+// is wider than a 390px screen. Measured before this line existed - every page scrolled sideways
+// by 18px. The column gutter is invisible there anyway, because on the phone every area spans all
+// twelve columns; only the row gutter is doing any work, and it keeps the full 2rem.
+const box = (maxWidth, align, columnGap = '2rem') => ({
   columnSizes: TWELVE,
-  rowGap: '20px',
-  columnGap: '20px',
+  rowGap: '2rem',
+  columnGap,
   maxWidth,
   align,
   paddingBlock: '20px',
@@ -111,7 +122,7 @@ const editorial = {
       rows: 7,
       cols: 12,
       rowSizes: ['auto', 'auto', 'auto', '1fr', 'auto', 'auto', 'auto'],
-      ...box('100%', 'left'),
+      ...box('100%', 'left', '20px'),
       placements: {
         'area-header': place(1, 1, 1, 12),
         'area-left': place(2, 1, 1, 12),
@@ -172,7 +183,7 @@ const index = {
       rows: 6,
       cols: 12,
       rowSizes: ['auto', 'auto', 'auto', '1fr', 'auto', 'auto'],
-      ...box('100%', 'left'),
+      ...box('100%', 'left', '20px'),
       placements: {
         'area-header': place(1, 1, 1, 12),
         'area-left': place(2, 1, 1, 12),
@@ -237,7 +248,7 @@ const focus = {
       rows: 3,
       cols: 12,
       rowSizes: ['auto', '1fr', 'auto'],
-      ...box('100%', 'left'),
+      ...box('100%', 'left', '20px'),
       placements: {
         'area-header': place(1, 1, 1, 12),
         'area-left': hidden,

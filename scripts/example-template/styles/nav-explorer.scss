@@ -513,8 +513,11 @@ li:has(> .folder-outer > ul > li > .nav-file-title.active) > .folder-outer > ul.
 // `lang` is a locale (`de-DE`), hence `^=`. A page whose language could not be detected keeps
 // the site locale and therefore sees the German tree, which is the right fallback here.
 
-// On a German page: hide the English branch, root row and all.
-html[lang^="de"] .explorer-ul > li:has(> .folder-container[data-folderpath="en/index"]) {
+// The German tree is the default, not a case: hide the English branch unless the page says it is
+// English. Written this way round because a page can have no language at all - the redirect stubs
+// that `alias-redirects` writes carry no <html lang>, and with `html[lang^="de"]` as the condition
+// they showed both trees for the half second before the redirect fired.
+.explorer-ul > li:has(> .folder-container[data-folderpath="en/index"]) {
   display: none;
 }
 

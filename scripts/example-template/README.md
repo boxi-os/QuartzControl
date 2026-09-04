@@ -129,7 +129,7 @@ Farben scheitern übrigens zu elf Zwölfteln im hellen Modus — deshalb sind si
 
 ### 3.2 Maße, Formen, Rhythmus — `variables.mjs`
 
-49 Variablen, in drei Gruppen:
+50 Variablen, in drei Gruppen:
 
 1. **Schriftstapel** (`--bodyFont` …) — die Familie plus ein echter Fallback.
 2. **Quartz-Variablen, wo die Vorlage widerspricht** — etwa `--background-modifier-border`, das von
@@ -203,16 +203,17 @@ Datei, die nie geladen wird, ist schwer zu bemerken.
 
 Drei Frames, je drei Breakpoints, jede Fläche vollständig platziert.
 
-Alle drei teilen sich am Desktop **ein Raster: zwölf gleiche Spalten, 20 px Rinne, 20 px Rand,
-gedeckelt auf 1440 px**. Das sind 1400 px nutzbar, elf Rinnen, also 98,33 px je Spalte:
+Alle drei teilen sich am Desktop **ein Raster: zwölf gleiche Spalten, 2 rem Rinne, 20 px Rand,
+gedeckelt auf 1440 px**. Das sind 1400 px nutzbar; elf Rinnen zu 32 px nehmen 352 davon, bleiben
+87,33 px je Spalte:
 
 | Block | Spalten | Breite |
 | --- | --- | --- |
-| Navigation (`left`) | 1–3 | 335 px |
-| Text (`beforeBody`/`pageBody`/`afterBody`) | 4–9 | 690 px |
-| Apparat (`right`) | 10–12 | 335 px |
+| Navigation (`left`) | 1–3 | 326 px |
+| Text (`beforeBody`/`pageBody`/`afterBody`) | 4–9 | 684 px |
+| Apparat (`right`) | 10–12 | 326 px |
 
-690 px sind bei 1 rem rund 72 Zeichen — deshalb deckelt kein Stylesheet mehr die Zeilenlänge
+684 px sind bei 1 rem rund 71 Zeichen — deshalb deckelt kein Stylesheet mehr die Zeilenlänge
 (`styles/base.scss` sagt das an der Stelle, wo die Regel früher stand). Wer den Text breiter will,
 ändert die Spannen hier, nicht eine `max-width` an einem Absatz.
 
@@ -334,6 +335,9 @@ Alle gemessen, nicht vermutet. Wer die Vorlage erweitert, spart sich damit diese
 | `display` aus einem Layer überschreiben | Wer ungeschichtet `display: grid` setzt, gewinnt auch dort, wo das Plugin `display: none` meinte. Beim Schubladen-Knopf des Explorers klappte das den ganzen Baum auf jedem Desktop zu (BEFUNDE 22). Beide Zustände selbst aussprechen |
 | Nach einer Frame-Änderung von Hand bauen | `quartz build` räumt `public/` nicht auf, und das Frame-CSS steht in jeder Seite. `rm -rf public` davor, sonst mischen sich alt und neu (BEFUNDE 23) |
 | `folderDefaultState: 'open'` | Wirkungslos in Explorer 0.1.0 — das Skript liest nur `localStorage` (BEFUNDE 21) |
+| Plugin-CSS überschreiben, zweiter Teil | Für *Ressourcen*-Stylesheets (`static/resource-style-….css`) gilt die Layer-Regel nicht: ungeschichtet und **nach** `index.css` verlinkt. Bei gleicher Spezifität gewinnt das Plugin (BEFUNDE 32) |
+| Eine Rinne in rem bei zwölf Spalten | Elf Rinnen sind die Mindestbreite des Rasters. 2 rem × 11 + 40 Rand = 392 px passen nicht auf ein 390-px-Telefon (BEFUNDE 34) |
+| Ein `<p>` in einer Titelzeile | Behält seinen Absatzrand und verschiebt den Text gegen das Icon daneben — im Callout waren es 8 px (BEFUNDE 33) |
 | Ein `<summary>` als Bedienelement | Rechnet ohne `box-sizing` als `content-box`, und ein Plugin-`padding` überlebt, wenn man nur die eine Hälfte überschreibt. Der Sprachumschalter wurde so 51 px hoch neben 44-px-Nachbarn (BEFUNDE 27) |
 | Ein zweiter Ausklapp-Pfeil | `base.scss` gibt jedem `<summary>` eine Chevron, das Plugin setzt zusätzlich ein „▾“. Wer eine eigene hinzufügt, hat drei (BEFUNDE 27) |
 | Ein Alias in zwei Sprachen | `alias-redirects` slugifiziert sprachübergreifend: „Frontmatter-Demo“ und „Frontmatter demo“ ergeben denselben Pfad, und die zweite Seite kapert die erste (BEFUNDE 25) |

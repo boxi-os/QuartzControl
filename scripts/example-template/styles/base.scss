@@ -51,13 +51,86 @@ html {
   // stays at the top and bottom edges while the content moves under it. Not a token in
   // variables.mjs: a variable override there may not contain a comma, and this is nothing but
   // commas. The distance it fades over is --tpl-fade, which IS a token.
+  //
+  // The two ends are separate lengths, and they are animated (see below), so the fade only ever
+  // sits on a side where there is more content. Both start at zero: a panel short enough not to
+  // scroll gets no fade at all, which is what a fade is supposed to mean.
   --tpl-fade-mask: linear-gradient(
     to bottom,
     transparent 0,
-    black var(--tpl-fade),
-    black calc(100% - var(--tpl-fade)),
+    black var(--tpl-fade-start),
+    black calc(100% - var(--tpl-fade-end)),
     transparent 100%
   );
+}
+
+// Registered so the two lengths can be interpolated - an unregistered custom property is a string
+// to the animation engine and would jump from 0 to 20px in one step.
+@property --tpl-fade-start {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --tpl-fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes tpl-fade-start-in {
+  from { --tpl-fade-start: 0px; }
+  to { --tpl-fade-start: var(--tpl-fade); }
+}
+
+@keyframes tpl-fade-end-out {
+  from { --tpl-fade-end: var(--tpl-fade); }
+  to { --tpl-fade-end: 0px; }
+}
+
+/* ------------------------------------------------------------------ the sticky header */
+
+// The header stays at the top of the window and shrinks as the page scrolls. Two lengths carry
+// that, both registered so they can be interpolated and both inheriting, because the right column
+// has to know how tall the header currently is in order to stick below it rather than under it.
+//
+// The height is not measured anywhere: it is 44px of control plus this padding twice plus the
+// rule. That is why the padding is the thing being animated rather than a height - a height would
+// be a second place where the same number lives, and the controls may not shrink below 44px.
+@property --tpl-header-pad {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0.5rem;
+}
+
+@property --tpl-header-title {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 1.4rem;
+}
+
+:root {
+  --tpl-header-h: calc(var(--tpl-target) + 2 * var(--tpl-header-pad) + var(--tpl-rule-width));
+}
+
+@keyframes tpl-header-shrink {
+  from {
+    --tpl-header-pad: var(--tpl-space-xs);
+    --tpl-header-title: var(--tpl-text-xl);
+  }
+  to {
+    --tpl-header-pad: var(--tpl-space-3xs);
+    --tpl-header-title: var(--tpl-text-base);
+  }
+}
+
+// Driven by the document's own scroll, over the first --tpl-space-2xl of it. Nothing here moves
+// on its own: the animation is bound to the scroll position, so with `prefers-reduced-motion` on
+// there is nothing to suppress - the header is simply smaller further down the page.
+:root {
+  animation: tpl-header-shrink linear both;
+  animation-timeline: scroll(root block);
+  animation-range: 0 var(--tpl-space-2xl);
 }
 
 // The two panels that scroll on their own: the folder tree and the right column. Stated here as
@@ -76,7 +149,35 @@ html {
     mask-image: var(--tpl-fade-mask);
     -webkit-mask-image: var(--tpl-fade-mask);
     scrollbar-width: thin;
+
+    // Two scroll-driven animations on the panel's own scrollport. The first fades the top edge in
+    // over the first --tpl-fade of scrolling, the second fades the bottom edge out over the last:
+    // at rest the first line is whole, at the end the last line is. `both` matters - outside its
+    // range each animation holds the nearer end value, which is what keeps the bottom faded while
+    // you are anywhere in the middle.
+    //
+    // A panel with nothing to scroll has no active timeline, so neither animation applies and both
+    // lengths stay at their registered 0px. That is the third case, and the one that was wrong
+    // before: the tree on a short page was faded at both ends although it was showing everything.
+    animation: tpl-fade-start-in linear both, tpl-fade-end-out linear both;
+    animation-timeline: scroll(self block), scroll(self block);
+    animation-range: 0 var(--tpl-fade), calc(100% - var(--tpl-fade)) 100%;
   }
+}
+
+/* ------------------------------------------------------------- jumping under the header */
+
+// The header stays at the top of the window, so anything jumped to - a heading from the table of
+// contents, a footnote, a `#anchor` from outside - would land behind it. Every target keeps the
+// bar's height free above itself.
+//
+// The number is the bar in its *small* state (44px of control plus the thin padding it shrinks
+// to), because by the time a jump has happened the page has scrolled and the bar has shrunk.
+:target,
+article :is(h1, h2, h3, h4, h5, h6)[id],
+article [id^="user-content-fn"],
+.footnotes li[id] {
+  scroll-margin-block-start: calc(var(--tpl-target) + var(--tpl-space-md));
 }
 
 /* ------------------------------------------------------------------ disclosure icons */
@@ -335,8 +436,10 @@ h6 {
 @media (min-width: 801px) {
   .qgframe-area-right {
     position: sticky;
-    top: 20px;
+    // Below the header, not under it. --tpl-header-h follows the header as it shrinks, so the
+    // column moves up with it instead of leaving a gap that grows on every scroll.
+    top: calc(var(--tpl-header-h) + var(--tpl-space-md));
     align-self: start;
-    max-height: calc(100dvh - 40px);
+    max-height: calc(100dvh - var(--tpl-header-h) - 2 * var(--tpl-space-md));
   }
 }

@@ -312,3 +312,54 @@ Eine `.base`- oder `.canvas`-Datei ist kein Markdown und trägt keine Kopfzeilen
 beiden Sprachen — den es hier nicht gibt, weil die englischen Pfade englisch sind. Gemessen: Auf
 allen vier solchen Seiten bietet der Umschalter die Startseite der anderen Sprache an statt der
 entsprechenden Datei. Kein Fehler des Plugins, sondern die Grenze der Verankerung im Frontmatter.
+
+### 32. Ressourcen-Stylesheets stehen ungeschichtet *hinter* `custom.scss`
+
+Die Regel, auf der diese Vorlage überall aufbaut — Komponenten-CSS liegt in `@layer quartz-base`,
+`custom.scss` liegt ungeschichtet dahinter und gewinnt deshalb unabhängig von der Spezifität — gilt
+nicht für alles, was Quartz ausliefert. Der Kopierknopf am Codeblock wird in
+`static/resource-style-….css` gestaltet: **kein Layer**, und im `<head>` *nach* `index.css`
+verlinkt. Bei gleicher Spezifität entscheidet die Reihenfolge, also das Plugin:
+
+```css
+.clipboard-button { float: right; border: 1px solid; border-color: var(--dark);
+                    background-color: var(--light); margin: .3rem; padding: .4rem }
+```
+
+Gemessen: Mit `border: none`, `background: transparent` und `appearance: none` in dieser Vorlage
+meldete der Knopf weiterhin `border-width: 1px` und `rgb(252,252,250)` — und malte sie auch. Selbst
+ein Inline-`style` änderte nichts, weil die spätere Regel dieselbe Kaskadenebene hat und *nach* ihr
+gelesen wird. Ein Nachfahre im Selektor (`pre .clipboard-button`) hebt es auf.
+
+Die Suche danach war der eigentliche Aufwand: Ein Durchlauf über `document.styleSheets`, der jede
+passende Regel meldet, fand die Stelle nicht — die Ressourcen-Stylesheets stehen dort zwar in der
+Liste, aber der Treffer ging in einem zu engen Filter unter. Gefunden hat sie erst `grep` über die
+ausgelieferten Dateien. Merke: Wenn keine Regel es erklärt, ist der Suchraum falsch, nicht der Wert.
+
+### 33. Ein `<p>` in einer Titelzeile verschiebt das Icon daneben
+
+Der Callout-Titel ist eine Flex-Zeile mit `align-items: center` aus Icon und
+`.callout-title-inner`. Beide Kinder waren sauber auf der Zeilenmitte — gemessen 453,4 px für die
+Zeile, für das Icon und für die innere Box. Nur der Text saß bei 445,4: Quartz packt den Titel in
+ein `<p>`, das seinen Absatzrand behält, wodurch die innere Box 41,6 px hoch wurde und der Text
+darin oben klebte. Sichtbar war es als ein Icon, das acht Pixel zu tief zu hängen schien — es hing
+richtig, der Text stand zu hoch. `margin-block: 0` auf die Kinder der inneren Box, und alle drei
+Mitten fallen zusammen.
+
+### 34. Eine Rinne in `rem` kann ein Zwölf-Spalten-Raster breiter machen als das Telefon
+
+Elf Rinnen sind die Mindestbreite eines Zwölf-Spalten-Rasters, unabhängig davon, was darin steht
+und über wie viele Spalten es geht. Beim Wechsel der Rinne von 20 px auf 2 rem ergab das mobil
+11 × 32 + 40 px Rand = 392 px in einem 390 px breiten Fenster. Gemessen: **jede** der 333 Seiten
+scrollte bei 390 px um 18 px seitwärts; das Raster selbst war 392 px breit und begann bei x = 16.
+
+Die mobile Breite behält deshalb 20 px. Sichtbar ist die Spaltenrinne dort ohnehin nicht — mobil
+spannt jeder Bereich über alle zwölf Spalten —, es arbeitet nur die Zeilenrinne, und die behält die
+vollen 2 rem.
+
+### 35. Ein `<summary>` als Bedienelement rechnet als `content-box`
+
+Beim Sprachumschalter schon aufgeschrieben (Befund 27), hier noch einmal als Regel: Ein `<button>`
+bekommt `box-sizing: border-box` vom Browser, ein `<summary>` nicht. Wer beiden dieselbe
+`min-height` gibt, bekommt zwei verschiedene Höhen, sobald Innenabstand im Spiel ist — und den
+setzt in diesem Fall das Plugin, dessen Padding nur halb überschrieben war.

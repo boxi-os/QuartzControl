@@ -33,7 +33,12 @@ pre {
   margin-block: var(--tpl-space-lg);
   padding: var(--tpl-space-md);
   padding-block-start: var(--tpl-space-lg);
-  background: var(--tpl-surface);
+  // A surface of its own, lighter than --tpl-surface in light mode: a block is a large area, and
+  // the tint that is right for a line of inline code makes a twenty-line block a grey slab. In
+  // dark mode the token stays on --lightgray - there, lifting the surface would push it towards
+  // the text instead of away from it. The border is --tpl-rule, which is what --tpl-surface used
+  // to be, so the block now has an edge instead of dissolving into one.
+  background: var(--tpl-surface-code);
   border: var(--tpl-rule-width) solid var(--tpl-rule);
   border-radius: var(--tpl-radius-md);
   overflow-x: auto;
@@ -79,7 +84,22 @@ pre[data-language]::before {
 
 /* ------------------------------------------------------------------- copy button */
 
-.clipboard-button {
+// Just the icon. No box, no border, no surface.
+//
+// The selector is `pre .clipboard-button` and not `.clipboard-button`, and that is the whole
+// finding: quartz ships this button's styling in a *resource* stylesheet
+// (`static/resource-style-….css`), which is **not** inside `@layer quartz-base` and is linked
+// *after* index.css. So the rule everything else in this template relies on - "custom.scss is
+// unlayered, therefore it wins" - does not hold here. Same specificity, later in the document,
+// and it wins instead:
+//
+//     .clipboard-button { float: right; border: 1px solid; border-color: var(--dark);
+//                         background-color: var(--light); margin: .3rem; padding: .4rem }
+//
+// Measured on the built page: with `border: none` and `background: transparent` written here, the
+// button still reported a 1px border and --light behind it. One descendant in the selector settles
+// it, and `pre` is where this button always is.
+pre .clipboard-button {
   position: absolute;
   inset-block-start: var(--tpl-space-2xs);
   inset-inline-end: var(--tpl-space-2xs);
@@ -88,24 +108,33 @@ pre[data-language]::before {
   // 44px is the smallest comfortable pointer target; the icon inside stays small.
   min-width: var(--tpl-target);
   min-height: var(--tpl-target);
+  // Every one of these five undoes something from the rule quoted above.
+  float: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  appearance: none;
   color: var(--gray);
-  background: none;
-  border: var(--tpl-rule-width) solid transparent;
-  border-radius: var(--tpl-radius-sm);
   cursor: pointer;
   // Hidden until the block is hovered or something inside it has focus — but never hidden from a
   // keyboard: `opacity` rather than `display`, and focus-within brings it back.
   opacity: 0;
-  transition: opacity var(--tpl-motion), color var(--tpl-motion), border-color var(--tpl-motion);
+  transition: opacity var(--tpl-motion), color var(--tpl-motion);
 
   > svg {
     width: 1rem;
     height: 1rem;
+    // The resource stylesheet fills the glyph with --light and drops the contrast; on a surface
+    // this light that leaves a white smudge. currentColor is what a lucide icon expects.
+    fill: none;
+    filter: none;
+    stroke: currentColor;
   }
 
+  // The state is the colour of the icon, because there is nothing else left to change.
   &:hover {
     color: var(--dark);
-    border-color: var(--tpl-rule-strong);
   }
 
   &:focus-visible {
@@ -120,7 +149,7 @@ pre:focus-within .clipboard-button {
 
 // Coarse pointers have no hover, so the button would never appear.
 @media (hover: none) {
-  .clipboard-button {
+  pre .clipboard-button {
     opacity: 1;
   }
 }

@@ -65,6 +65,12 @@ export const VARIABLE_OVERRIDES = [
 
   // Surfaces. A card sits on `lightgray`; a quiet tint uses `highlight`.
   { key: 'tpl-surface', light: 'var(--lightgray)', dark: 'var(--lightgray)' },
+  // A code block is a large area, and the tint that is right for one word of inline code makes a
+  // twenty-line block a grey slab. Light mode gets a surface of its own, closer to the ground; in
+  // dark mode it stays on `lightgray`, because lifting it there would move it towards the text
+  // rather than away from it. The block's border is `tpl-rule` - which is what `tpl-surface` is -
+  // so it gains an edge in exchange.
+  { key: 'tpl-surface-code', light: '#F1EFE9', dark: 'var(--lightgray)' },
   { key: 'tpl-surface-tint', light: 'var(--highlight)', dark: 'var(--highlight)' },
 
   // Type scale, in one place so the six heading levels stay related to each other.

@@ -110,9 +110,13 @@ Nach jeder Änderung:
 
     npm run template:example -- --check-contrast
 
-Das prüft **78 Paare** — jede Text-auf-Grund-Kombination in beiden Modi, die Alpha-Farben über den
-Grund gerechnet, und alle zwölf Callout-Farben gegen den Grund *und* gegen ihre eigene getönte
-Fläche. Unter der Schwelle bricht der Lauf ab.
+Das prüft **83 Paare** — jede Text-auf-Grund-Kombination in beiden Modi, die Alpha-Farben über den
+Grund gerechnet, alle zwölf Callout-Farben gegen den Grund *und* gegen ihre eigene getönte Fläche,
+und die fünf korrigierten Farben des Syntax-Themas gegen die Fläche des Codeblocks. Unter der
+Schwelle bricht der Lauf ab.
+
+Die drei Teile lesen aus drei Dateien — `palette.mjs`, `styles/body-callouts.scss`,
+`styles/body-code.scss` — und immer aus dem, was ausgeliefert wird, nie aus einer zweiten Liste.
 
 > **Warum `lightgray` nicht 3:1 erreichen muss:** Es ist Trennlinie *und* Fläche zugleich. WCAG
 > 1.4.11 verlangt 3:1 von *Bedienelementen*, nicht von einer Zierlinie. Die Pflicht verschwindet
@@ -338,6 +342,7 @@ Alle gemessen, nicht vermutet. Wer die Vorlage erweitert, spart sich damit diese
 | Plugin-CSS überschreiben, zweiter Teil | Für *Ressourcen*-Stylesheets (`static/resource-style-….css`) gilt die Layer-Regel nicht: ungeschichtet und **nach** `index.css` verlinkt. Bei gleicher Spezifität gewinnt das Plugin (BEFUNDE 32) |
 | Eine Rinne in rem bei zwölf Spalten | Elf Rinnen sind die Mindestbreite des Rasters. 2 rem × 11 + 40 Rand = 392 px passen nicht auf ein 390-px-Telefon (BEFUNDE 34) |
 | Ein `<p>` in einer Titelzeile | Behält seinen Absatzrand und verschiebt den Text gegen das Icon daneben — im Callout waren es 8 px (BEFUNDE 33) |
+| Die Farben eines Syntax-Themas | Sind nicht gemessen, nur weil die Palette es ist. Fünf von neun Token-Farben fielen durch; shiki schreibt sie inline, also hilft nur `!important` auf der Variablen (BEFUNDE 36) |
 | Ein `<summary>` als Bedienelement | Rechnet ohne `box-sizing` als `content-box`, und ein Plugin-`padding` überlebt, wenn man nur die eine Hälfte überschreibt. Der Sprachumschalter wurde so 51 px hoch neben 44-px-Nachbarn (BEFUNDE 27) |
 | Ein zweiter Ausklapp-Pfeil | `base.scss` gibt jedem `<summary>` eine Chevron, das Plugin setzt zusätzlich ein „▾“. Wer eine eigene hinzufügt, hat drei (BEFUNDE 27) |
 | Ein Alias in zwei Sprachen | `alias-redirects` slugifiziert sprachübergreifend: „Frontmatter-Demo“ und „Frontmatter demo“ ergeben denselben Pfad, und die zweite Seite kapert die erste (BEFUNDE 25) |
@@ -347,7 +352,7 @@ Alle gemessen, nicht vermutet. Wer die Vorlage erweitert, spart sich damit diese
 
 ## 5. Prüfen, ob es noch stimmt
 
-    npm run template:example -- --check-contrast    # 78 Farbpaare
+    npm run template:example -- --check-contrast    # 83 Farbpaare
     npm run template:example -- --only 9            # SCSS übersetzt? alle zehn Bausteine gefüllt?
     npm run template:example -- --only 9,10,11      # exportieren und in ein leeres Projekt importieren
 

@@ -154,6 +154,44 @@ pre:focus-within .clipboard-button {
   }
 }
 
+/* --------------------------------------------------------------- syntax colours, corrected */
+
+// Five token colours of github-light / github-dark do not reach 4.5:1 on this template's code
+// surface. Measured over the whole built site - every `--shiki-light` / `--shiki-dark` value in
+// all 333 pages, counted and rated against #F1EFE9 and --lightgray:
+//
+//     hell    #24292E  1179x  12.76      dunkel  #E1E4E8  1179x  10.34
+//             #005CC5   260x   5.47              #79B8FF   260x   6.35
+//             #22863A   206x   4.02  <--         #85E89D   206x   8.81
+//             #032F62   148x  11.51              #9ECBFF   148x   7.81
+//             #D73A49   112x   3.98  <--         #F97583   112x   4.96
+//             #E36209    82x   3.04  <--         #FFAB70    82x   7.10
+//             #6F42C1    48x   5.66              #B392F0    48x   5.20
+//             #6A737D     4x   4.19  <--         #6A737D     4x   2.74  <--
+//             #B31D28     2x   5.85              #FDAEB7     2x   7.48
+//
+// Each correction keeps the hue and the saturation and moves only the lightness, so github-light
+// still reads as github-light - the same thing body-callouts.scss does with quartz' callout
+// colours. The new values are checked on every run by `--check-contrast`, which reads them out of
+// this file.
+//
+// `!important` is not a shortcut here, it is the only lever: shiki writes the colour as an inline
+// custom property on every single span (`style="--shiki-light:#E36209;--shiki-dark:#FFAB70;"`),
+// and an inline declaration beats any author rule that is not important. Overriding the variable
+// rather than `color` means quartz' own light/dark switch keeps doing the switching.
+//
+// This is the one place where a colour is pinned that this template did not choose. A language
+// whose tokens produce a tenth colour would arrive unmeasured; the audit above is repeatable by
+// grepping `--shiki-light:` out of `public/`.
+
+/* --- Quartz-GUI:syntax:start --- */
+pre span[style*="--shiki-light:#22863A"] { --shiki-light: #1F7A35 !important; }  // 4.02 -> 4.72
+pre span[style*="--shiki-light:#D73A49"] { --shiki-light: #CA2938 !important; }  // 3.98 -> 4.70
+pre span[style*="--shiki-light:#E36209"] { --shiki-light: #B04C07 !important; }  // 3.04 -> 4.71
+pre span[style*="--shiki-light:#6A737D"] { --shiki-light: #636B74 !important; }  // 4.19 -> 4.71
+pre span[style*="--shiki-dark:#6A737D"] { --shiki-dark: #949CA4 !important; }    // 2.74 -> 4.72
+/* --- Quartz-GUI:syntax:end --- */
+
 /* ------------------------------------------------------------------- block title */
 
 // A `title=` after the language produces a `<figcaption>` above the block (rehype-pretty-code).

@@ -363,3 +363,36 @@ Beim Sprachumschalter schon aufgeschrieben (Befund 27), hier noch einmal als Reg
 bekommt `box-sizing: border-box` vom Browser, ein `<summary>` nicht. Wer beiden dieselbe
 `min-height` gibt, bekommt zwei verschiedene Höhen, sobald Innenabstand im Spiel ist — und den
 setzt in diesem Fall das Plugin, dessen Padding nur halb überschrieben war.
+
+### 36. Fünf von neun Farben des Syntax-Themas halten den Kontrast nicht
+
+Eine gemessene Palette sagt nichts über die Farben, die ein *Syntax-Thema* mitbringt — die kommen
+nicht aus `quartz.config.yaml`, sondern aus shiki, und sie stehen nirgends in einem Stylesheet.
+Gezählt wurde deshalb über die gebaute Site: jeder `--shiki-light`- und `--shiki-dark`-Wert auf
+allen 333 Seiten, mit Häufigkeit und Kontrast gegen die Codefläche.
+
+| hell | Anzahl | Kontrast | | dunkel | Anzahl | Kontrast |
+| --- | ---: | ---: | --- | --- | ---: | ---: |
+| `#24292E` | 1179 | 12,76 | | `#E1E4E8` | 1179 | 10,34 |
+| `#005CC5` | 260 | 5,47 | | `#79B8FF` | 260 | 6,35 |
+| `#22863A` | 206 | **4,02** | | `#85E89D` | 206 | 8,81 |
+| `#032F62` | 148 | 11,51 | | `#9ECBFF` | 148 | 7,81 |
+| `#D73A49` | 112 | **3,98** | | `#F97583` | 112 | 4,96 |
+| `#E36209` | 82 | **3,04** | | `#FFAB70` | 82 | 7,10 |
+| `#6F42C1` | 48 | 5,66 | | `#B392F0` | 48 | 5,20 |
+| `#6A737D` | 4 | **4,19** | | `#6A737D` | 4 | **2,74** |
+| `#B31D28` | 2 | 5,85 | | `#FDAEB7` | 2 | 7,48 |
+
+Korrigiert sind die fünf fetten Werte, jeweils unter Beibehaltung von Farbton und Sättigung; nur
+die Helligkeit wandert. Das Ergebnis liegt zwischen 4,69 und 4,74 und wird seither mitgeprüft —
+`palette.mjs` liest die Werte aus `body-code.scss`, so wie es die Callout-Farben aus
+`body-callouts.scss` liest. 78 Paare wurden zu 83.
+
+Der technische Haken: shiki schreibt die Farbe **inline an jedes `<span>`**, als zwei
+Custom-Properties. Eine Inline-Deklaration schlägt jede Autorenregel, die nicht `!important` ist —
+das ist hier kein Abkürzen, sondern der einzige Hebel. Überschrieben wird die *Variable*, nicht
+`color`, damit Quartz' eigene Hell-Dunkel-Umschaltung weiterarbeitet.
+
+Was offen bleibt: Eine Sprache, deren Tokens eine zehnte Farbe erzeugen, käme ungemessen herein.
+Die Zählung ist mit einem `grep` über `public/` wiederholbar, aber sie läuft nicht automatisch —
+die Farben existieren erst nach einem Build.

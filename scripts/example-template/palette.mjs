@@ -162,7 +162,47 @@ export function calloutPairs() {
   return rows.map((row) => ({ ...row, ok: row.ratio >= row.min }))
 }
 
+/* ------------------------------------------------- syntax colours, read from the file as well */
+
+/**
+ * The five token colours this template corrects, measured against the code block's own surface.
+ *
+ * Read out of body-code.scss for the same reason the callout colours are read out of their file:
+ * the stylesheet is what ships. What is *not* here is the rest of github-light - a theme's other
+ * colours only exist in the built HTML, on inline styles, so they were audited once by counting
+ * every `--shiki-light` value across the built site. The four light corrections and the one dark
+ * one are what that audit turned up; the numbers are in the comment above the block.
+ *
+ * The surface is not `light`: a code block has a ground of its own (`tpl-surface-code`), which is
+ * lighter than the page tint in light mode and `lightgray` in dark.
+ */
+export function syntaxPairs() {
+  const source = readFileSync(join(import.meta.dirname, 'styles', 'body-code.scss'), 'utf-8')
+  const start = source.indexOf('/* --- Quartz-GUI:syntax:start --- */')
+  const end = source.indexOf('/* --- Quartz-GUI:syntax:end --- */')
+  if (start === -1 || end === -1) throw new Error('body-code.scss no longer marks its syntax block')
+  const block = source.slice(start, end)
+
+  const surface = { lightMode: '#F1EFE9', darkMode: PALETTE.darkMode.lightgray }
+  const rows = []
+  for (const [, which, was, now] of block.matchAll(
+    /--shiki-(light|dark):#([0-9A-Fa-f]{6})"\]\s*\{\s*--shiki-\1:\s*(#[0-9A-Fa-f]{6})/g
+  )) {
+    const mode = which === 'light' ? 'lightMode' : 'darkMode'
+    rows.push({
+      mode,
+      fg: `syntax ${now}`,
+      bg: 'code surface',
+      min: 4.5,
+      what: `syntax token (was #${was.toUpperCase()})`,
+      ratio: contrast(now, surface[mode])
+    })
+  }
+  if (rows.length === 0) throw new Error('body-code.scss marks a syntax block but it is empty')
+  return rows.map((row) => ({ ...row, ok: row.ratio >= row.min }))
+}
+
 /** Everything this template puts on top of something else, in one list. */
 export function checkAll() {
-  return [...checkContrast(), ...calloutPairs()]
+  return [...checkContrast(), ...calloutPairs(), ...syntaxPairs()]
 }

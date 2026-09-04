@@ -137,3 +137,34 @@ Das Markup ist `<pre><code class="mermaid">`, also greift jede Regel für Codebl
 einschließlich `pre > code { min-width: max-content }`, das jedes Diagramm auf seine eigene
 Layoutbreite festnagelte: gemessen 294 bis 594 px in einer 796 px breiten Spalte. Wer Codeblöcke
 gestaltet, gestaltet unbeabsichtigt auch seine Diagramme.
+
+### 16. Bildgröße und Alternativtext schließen einander aus
+
+Gemessen an einer echten Seite:
+
+| Schreibweise | Ergebnis |
+| --- | --- |
+| `![[bild.png\|300]]` | `<img width="300" height="auto" alt>` — Größe, **kein** Alternativtext |
+| `![Text\|300](bild.png)` | `alt="Text\|300"` — Alternativtext, **keine** Größe |
+
+Die Markdown-Form kennt die Größenangabe nicht: Der ganze String wird zum `alt`, Pipe und Zahl
+eingeschlossen. Die Wikilink-Form setzt `width`/`height`, lässt `alt` aber leer. Wer beides
+braucht, muss `<img>` schreiben. Für eine Website, die zugänglich sein soll, ist das eine
+unangenehme Wahl zwischen zwei Pflichten.
+
+### 17. Der Seitenanker eines eingebetteten PDFs geht verloren
+
+`![[dokument.pdf#page=2]]` erzeugt `<iframe src="…/dokument.pdf">` — ohne den Anker. Die Einbettung
+beginnt immer auf Seite 1. Ein gewöhnlicher Link (`[Text](datei.pdf#page=2)`) behält ihn.
+
+### 18. Von den Aufgaben-Zuständen überlebt nur „offen" und „erledigt"
+
+Obsidian erlaubt beliebige Zeichen im Kästchen (`[/]`, `[-]`, `[>]`, `[?]`) und zeigt dafür eigene
+Symbole. Gemessen: Quartz erkennt nur `[ ]` und `[x]`; alles andere wird zu einem leeren Kästchen,
+das Zeichen geht ersatzlos verloren — die Information ist auf der Website weg, nicht nur anders
+dargestellt.
+
+### 19. Definitionslisten gibt es nicht
+
+Weder Obsidian noch Quartz kennen die `Begriff` / `: Erklärung`-Schreibweise; die Doppelpunktzeile
+bleibt als Text stehen. Nur über HTML (`<dl>`) zu haben.

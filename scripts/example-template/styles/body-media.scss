@@ -16,18 +16,53 @@ article {
     width: auto;
   }
 
+  // The audio player is the browser's own. Nothing here restyles the control itself: a rebuilt
+  // player loses its keyboard handling, its media-key support and its screen-reader labels, and
+  // gains nothing this template needs.
   audio {
+    display: block;
     width: 100%;
     margin-block: var(--tpl-space-md);
+    // Chrome's player has its own rounded shell; matching the radius stops the two from fighting.
+    border-radius: var(--tpl-radius-md);
   }
 
-  // A YouTube or video embed keeps its aspect ratio instead of collapsing to zero height.
+  // A video is a figure like an image, so it gets the same edges — and keeps its own proportions
+  // rather than being forced into a ratio it does not have.
+  video {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin-block: var(--tpl-space-md);
+    background: var(--tpl-surface);
+  }
+
+  // An embed with no intrinsic size: YouTube, a map, anything in an iframe. Without a ratio it
+  // collapses to zero height inside a grid cell — which is every page in this template.
   iframe {
     width: 100%;
     aspect-ratio: 16 / 9;
     border: var(--tpl-rule-width) solid var(--tpl-rule);
     border-radius: var(--tpl-radius-md);
     max-width: none;
+  }
+
+  // A PDF is the exception: quartz turns `![[x.pdf]]` into `<iframe class="pdf">`, and a document
+  // is taller than it is wide. 16/9 would show two centimetres of the first page.
+  iframe.pdf {
+    aspect-ratio: 1 / 1.2;
+    min-height: 28rem;
+    background: var(--tpl-surface);
+  }
+
+  @media (max-width: 720px) {
+    // On a phone a document viewer inside a scrolling page is unusable; it gets a fixed, modest
+    // height so the page stays scrollable past it.
+    iframe.pdf {
+      aspect-ratio: auto;
+      height: 22rem;
+      min-height: 0;
+    }
   }
 
   figure {

@@ -48,6 +48,7 @@ Seit dem Umbau ist **das Projekt die Quelle**, nicht mehr dieses Verzeichnis:
 | `styles/*.scss` | 31 Stylesheets, eines je Komponente |
 | `site/content/**` | der ursprüngliche Beispielinhalt — **überholt**, gepflegt wird im Vault |
 | `site/snippets/` | Die eine Snippet-Datei, die nicht im Paket mitreist |
+| *(im Vault)* `assets/` | Dummy-Medien: PNG, JPEG, WebP, GIF, SVG, ein dreiseitiges PDF, eine WAV-Datei |
 | `BEFUNDE.md` | Was beim Bauen an der App auffiel |
 
 Der Treiber ist `../build-example-template.mjs`. Er startet die **gebaute App** über Playwright und

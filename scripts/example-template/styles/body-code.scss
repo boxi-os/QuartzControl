@@ -125,3 +125,60 @@ pre:focus-within .clipboard-button {
     opacity: 1;
   }
 }
+
+/* ------------------------------------------------------------------- block title */
+
+// A `title=` after the language produces a `<figcaption>` above the block (rehype-pretty-code).
+// Unstyled it looks like a stray line of body text sitting on top of a grey box.
+figcaption[data-rehype-pretty-code-title] {
+  // The caption and its block are one object: the caption keeps the block's top margin and the
+  // block gives up its own, rather than the two being pulled together with a negative margin.
+  margin-block: var(--tpl-space-lg) 0;
+  padding: var(--tpl-space-2xs) var(--tpl-space-md);
+  background: var(--tpl-surface);
+  border: var(--tpl-rule-width) solid var(--tpl-rule);
+  border-block-end: none;
+  border-start-start-radius: var(--tpl-radius-md);
+  border-start-end-radius: var(--tpl-radius-md);
+  font-family: var(--codeFont);
+  font-size: var(--tpl-text-xs);
+  color: var(--gray);
+  // The filename is the point; it stays on one line and truncates rather than wrapping.
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// The block under a title joins it: square top corners, no doubled border.
+figcaption[data-rehype-pretty-code-title] + pre {
+  margin-block-start: 0;
+  border-start-start-radius: 0;
+  border-start-end-radius: 0;
+
+  // The language label would repeat what the title already says.
+  &::before {
+    content: none;
+  }
+}
+
+/* ------------------------------------------------------------- definition list */
+
+// Not markdown - the only way to write one is HTML (see besonderes/html). Styled so that the one
+// place using it does not fall back to browser defaults.
+article dl {
+  margin-block: var(--tpl-space-md);
+}
+
+article dt {
+  font-family: var(--headerFont);
+  font-weight: 600;
+  color: var(--dark);
+}
+
+article dd {
+  margin-inline-start: 0;
+  padding-inline-start: var(--tpl-space-md);
+  border-inline-start: var(--tpl-rule-width) solid var(--tpl-rule);
+  margin-block-end: var(--tpl-space-xs);
+  color: var(--darkgray);
+}

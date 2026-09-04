@@ -7,12 +7,17 @@ statischen Dateien**. Erfasst werden nur `quartz/styles/` (der Baustein *Eigenes
 
 Für diese Vorlage heißt das zweierlei:
 
-## 1. `snippets/sidebar-note.md` → `quartz/static/snippets/sidebar-note.md`
+## 1. `snippets/*.md` → `quartz/static/snippets/`
 
 Von den fünf Layout-Box-Instanzen der Vorlage laden vier ihren Inhalt aus der Option `html:`, also
 aus dem Konfigurationseintrag selbst — die reisen vollständig mit dem Paket. Genau eine Instanz
 („Über dieses Handbuch“, linke Spalte) lädt aus einer Datei, um den Datei-Weg des Plugins zu
-zeigen. Diese eine Datei muss von Hand kopiert werden.
+zeigen. Diese Dateien müssen von Hand kopiert werden.
+
+Es sind zwei: `sidebar-note.md` und `sidebar-note.en.md`. Die zweite ist dieselbe Box auf Englisch,
+und sie kommt nicht aus der Konfiguration, sondern aus dem Frontmatter jeder englischen Seite
+(`layoutBoxNote: sidebar-note.en.md`) — der einzige Hebel, der innerhalb *eines* Builds einen
+Unterschied je Sprache macht.
 
 Fehlt sie, ist das kein Fehler: Das Plugin protokolliert eine Warnung und rendert nichts. Im
 Dev-Server (`quartz build --serve`) erscheint stattdessen ein gestrichelter Platzhalter mit dem
@@ -24,5 +29,10 @@ Der Beispielinhalt. Er ist nicht Teil der Vorlage, sondern das, woran man sie se
 vier Ebenen tiefe Ordnerstruktur (für den Explorer und die Brotkrumen), ein Artikel mit
 Überschriften bis H6 (für das Inhaltsverzeichnis), Querverweise (für Graph und Rückverweise),
 Tags, sowie eine vollständige Referenz aller Obsidian-Formatierungen unter `formatierung/`.
+
+> **Dieser Ordner ist nicht mehr die Quelle.** Der Inhalt lebt seit dem Umbau im Obsidian-Vault,
+> auf den das Projekt mit einem Symlink zeigt; Phase 1 des Skripts legt nur noch diesen Link an und
+> kopiert nichts mehr hierher. Was hier liegt, ist der Stand von vor dem Umzug — ohne die englische
+> Fassung unter `en/` und ohne die Seiten, die seitdem dazugekommen sind.
 
 Wer die Vorlage in ein Projekt mit eigenen Inhalten importiert, braucht diesen Ordner nicht.

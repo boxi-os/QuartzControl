@@ -228,3 +228,87 @@ Der Auslöser bleibt über ihr liegen und schaltet zurück, es gibt also immer e
 ein Tipp auf die abgedunkelte Seite tut nichts, und das ist die Geste, die jeder zuerst probiert.
 Der Hintergrund selbst ist Vorlagenarbeit (`html.mobile-no-scroll body::after`): Das Plugin setzt
 die Klasse und benutzt sie nur für ein `overscroll-behavior`.
+
+### 25. Ein übersetzter Alias kann die Weiterleitung des Originals kapern
+
+`alias-redirects` legt für jeden Alias eine Weiterleitungsseite an, und der Pfad dafür ist der
+slugifizierte Alias — sprachübergreifend, ohne Namensraum. Die deutsche Notiz trug
+`Frontmatter-Demo`, die englische bekam `Frontmatter demo`; beides ergibt `/frontmatter-demo`, und
+die zweite Seite überschrieb die erste. Gemessen an der gebauten Site: `/frontmatter-demo` zeigte
+auf die *englische* Seite, ohne eine Warnung im Build.
+
+Daraus die Regel für diese Website: Ein Alias, den es in zwei Sprachen gibt, muss in beiden
+verschieden slugifizieren (`Frontmatter-Demo` / `Frontmatter example`). Und der zweite Grund, die
+englischen Titel **nicht** flächendeckend als Alias in die deutschen Notizen zu schreiben: 122
+Aliase wären 122 zusätzliche Weiterleitungsseiten gewesen, die von einem englischen Wort auf eine
+deutsche Seite führen.
+
+### 26. Der Explorer lässt sich nicht aus YAML filtern
+
+`quartz-multilanguage` bringt `languageExplorerFilter` mit, damit der Baum nur die Seiten einer
+Sprache zeigt. Der Explorer nimmt Funktionen aber ausschließlich aus `quartz.ts` entgegen
+(`filterFn` reist als **String** im `data-data-fns`-Attribut und wird im Browser mit `new Function`
+wieder aufgebaut), und dieses Projekt baut sein Layout aus `quartz.config.yaml`, wo keine Funktion
+steht. Der Weg ist damit zu, solange die App die Layout-Konfiguration schreibt.
+
+Ersetzt ist er durch zwei Selektoren in `nav-explorer.scss`. Möglich sind sie, weil das
+Explorer-Skript an jede Ordnerzeile ein `data-folderpath` mit dem vollen Slug schreibt und die
+Dateilinks absolute `href`s bekommen — beides am gebauten DOM abgelesen, nicht angenommen. Auf der
+englischen Seite fällt zusätzlich die Kopfzeile des `en`-Ordners weg, sonst stünde der ganze Baum
+eine Ebene eingerückt unter einem Ordner namens „en“.
+
+### 27. Drei Pfeile an einem Knopf
+
+Der aufklappbare Sprachumschalter zeigte „English ▾ ⌄“. Drei Quellen trafen sich auf demselben
+Element: `base.scss` gibt **jedem** `<summary>` dieser Vorlage die Lucide-Chevron als `::before`,
+das Plugin setzt ein Text-„▾“ als `::after`, und die erste Fassung von
+`nav-language-switcher.scss` fügte noch eine eigene hinzu. Geblieben ist die aus `base.scss` — sie
+dreht sich beim Aufklappen bereits über `details[open] > summary::before` und ist dieselbe wie an
+allen anderen Ausklappstellen; sie wandert nur mit `order: 1` hinter die Beschriftung, weil ein
+Menüknopf seinen Pfeil rechts trägt. Das `::after` des Plugins wird ausdrücklich auf
+`content: none` gesetzt und am Telefon mit dem Sprachkürzel gefüllt.
+
+Dazu ein zweiter Fund am selben Element: Das Plugin setzt `padding: 0.15rem 0.5rem`. Wer nur
+`padding-inline` überschreibt, behält 2,4 px oben und unten — und weil ein `<summary>` ohne
+`box-sizing` als `content-box` rechnet, wurde der Knopf 51 px hoch neben drei 44-px-Nachbarn.
+Beide Hälften des Paddings und das Box-Modell stehen jetzt ausdrücklich da.
+
+### 28. Der vierte Knopf kostet den Seitennamen
+
+Gemessen bei 390 px: Mit drei Bedienelementen in der Werkzeugleiste hatte der Seitentitel in der
+App-Leiste 84 px, mit dem Sprachumschalter als viertem noch 24 px — dargestellt als „M…“. Die
+Leiste schiebt in dieser Reihenfolge: erst schrumpft der Titel, dann läuft sie über; die Wortmarke
+schrumpft gar nicht.
+
+Zwei Änderungen daraus. Der Umschalter gibt am Telefon sein Wort auf und zeigt das Sprachkürzel, so
+wie die Suche ihr „Suche“ aufgibt — das Kürzel steht dabei in CSS, weil das Plugin das *Label*
+rendert und `attr()` nur eigene Attribute liest. Und unter 480 px entfällt der Titel ganz: Die
+Wortmarke daneben ist ein Link zur Startseite und trägt denselben Namen als zugänglichen Namen.
+
+### 29. Was in einem Build einsprachig bleibt
+
+Nachgesehen im gebauten Code der Komponenten-Plugins, nicht vermutet: Der Explorer liest
+`cfg?.locale`, die Rückverweise `cfg.locale`; keine Komponente sieht die Sprache der Seite an, die
+sie gerade rendert. Damit bleiben „Explorer“, „Backlinks“, „Graph View“, „Table of Contents“,
+„Recent Notes“ und die Beschriftungen der Suche in der Sprache der Website. Dasselbe gilt für den
+Suchindex, „Zuletzt geändert“, den globalen Graphen und die eine `404.html`.
+
+Verschieben lässt sich davon genau eines: `localizeDates` formatiert jedes `<time>`-Element im
+Browser in der Seitensprache nach. Alles andere löst nur ein Build je Sprache
+(`publishLanguages`) — mit zwei Adressen als Preis.
+
+### 30. Die Frontmatter-Steuerung der Layout-Box kennt keinen Titel
+
+`readFrontmatterControl` in `quartz-layout-box` liest `hidden`, `file` und `html` — mehr nicht. Die
+englischen Seiten dieser Website können damit den *Inhalt* von vier der fünf Boxen austauschen,
+aber nicht die Überschrift: „Über dieses Handbuch“ und „Weiterlesen“ stehen auch dort deutsch über
+englischem Text. Eine Option `title` in derselben Steuerung wäre der saubere Weg; bis dahin ist es
+die sichtbarste Grenze der Zweisprachigkeit in einem Build.
+
+### 31. Seiten ohne Frontmatter lassen sich nicht als Übersetzung verknüpfen
+
+Eine `.base`- oder `.canvas`-Datei ist kein Markdown und trägt keine Kopfzeilen, also weder
+`translationKey` noch `aliases`. Bleibt die Pfad-Strategie, und die verlangt denselben Basispfad in
+beiden Sprachen — den es hier nicht gibt, weil die englischen Pfade englisch sind. Gemessen: Auf
+allen vier solchen Seiten bietet der Umschalter die Startseite der anderen Sprache an statt der
+entsprechenden Datei. Kein Fehler des Plugins, sondern die Grenze der Verankerung im Frontmatter.

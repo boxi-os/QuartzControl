@@ -82,3 +82,14 @@
     }
   }
 }
+
+// Below 480px the site name in the bar becomes a stub. Measured at 390px: it has 84px with three
+// controls in the toolbar and 24px with four, which renders as "M…". The word mark beside it is a
+// link to the home page and carries the same name as its accessible name, so the stub is dropped
+// rather than shown - the bar then reads logo, then controls, which is what an app bar this narrow
+// usually does. At 480px the name has room again and comes back.
+@media (max-width: 480px) {
+  .qgframe-area-header .page-title {
+    display: none;
+  }
+}

@@ -493,3 +493,56 @@ li:has(> .folder-outer > ul > li > .nav-file-title.active) > .folder-outer > ul.
     min-height: 40px;
   }
 }
+
+/* ------------------------------------------------------------------ one tree per language */
+
+// The explorer knows nothing about languages. It builds its trie from every page of the build,
+// so on this site it would show the German tree and the English one at once - on both.
+//
+// The plugin `quartz-multilanguage` ships a filter for exactly this (`languageExplorerFilter`),
+// but the explorer accepts functions only from `quartz.ts`, and this project builds its layout
+// from `quartz.config.yaml`, where a function cannot be written down. So it is done here.
+//
+// Two handles make that possible, both read off the rendered DOM rather than assumed:
+//
+//   * every folder row carries `data-folderpath` with its full slug (`en/index`), set by the
+//     explorer's own script, and
+//   * `<html lang>` carries the language of the page, which the multilanguage plugin writes into
+//     the frontmatter of every page that has none.
+//
+// `lang` is a locale (`de-DE`), hence `^=`. A page whose language could not be detected keeps
+// the site locale and therefore sees the German tree, which is the right fallback here.
+
+// On a German page: hide the English branch, root row and all.
+html[lang^="de"] .explorer-ul > li:has(> .folder-container[data-folderpath="en/index"]) {
+  display: none;
+}
+
+// On an English page the other way round - and one step further. Hiding everything except the
+// `en` branch would leave the whole English tree sitting one indent deep under a folder called
+// "en", so its own row goes too and its children move up to the top level.
+html[lang^="en"] {
+  .explorer-ul > li:not(:has(> .folder-container[data-folderpath="en/index"])) {
+    display: none;
+  }
+
+  .explorer-ul > li > .folder-container[data-folderpath="en/index"] {
+    display: none;
+  }
+
+  // With the row gone there is no longer a control for this fold, so the state must not depend
+  // on one. The explorer opens a folder that lies on the path to the current page, which `en`
+  // always does here - this only makes that independent of a stale `localStorage` entry.
+  .explorer-ul > li > .folder-container[data-folderpath="en/index"] + .folder-outer {
+    visibility: visible;
+    grid-template-rows: 1fr;
+  }
+
+  // And it stops being a nesting level: no rail, no indent, so the English tree begins where the
+  // German one does.
+  .explorer-ul > li > .folder-container[data-folderpath="en/index"] + .folder-outer > ul {
+    border-inline-start: none;
+    margin-inline-start: 0;
+    padding-inline-start: 0;
+  }
+}

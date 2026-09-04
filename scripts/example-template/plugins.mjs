@@ -263,6 +263,67 @@ export const PLUGIN_PATCHES = {
   'obsidian-plugin-excalidraw': { enabled: false }
 }
 
+/* --------------------------------------------------------------- two languages, one site */
+
+// The second github: plugin of this template. Quartz knows one `locale` per site; this one adds
+// the language of a *page* - detection, the link between a page and its translation, the switcher,
+// `<html lang>`, hreflang and the notices.
+//
+// The shape of the content decides most of the options. German sits at the root of the vault and
+// English under `en/`, so German pages match no detection strategy and fall into
+// `defaultLanguage`, while English ones are found by their folder. That asymmetry is the point:
+// a `de/` folder would have meant moving 122 notes and rewriting 99 wikilinks for nothing.
+export const MULTILANGUAGE_SOURCE = 'github:boxi-os/quartz-multilanguage'
+
+export const MULTILANGUAGE_ENTRY = {
+  source: MULTILANGUAGE_SOURCE,
+  name: 'quartz-multilanguage',
+  enabled: true,
+  // After crawl-links (60). Only `rewriteCrossLanguageLinks` needs that, and it is off - but the
+  // order is then already right for anyone who turns it on.
+  order: 65,
+  options: {
+    languages: [
+      { code: 'de', label: 'German', native: 'Deutsch', locale: 'de-DE' },
+      { code: 'en', label: 'English', native: 'English', locale: 'en-US' }
+    ],
+    defaultLanguage: 'de',
+    detection: ['folder', 'suffix', 'frontmatter'],
+    // `frontmatter` first is not the default order by accident: several pages of this site share a
+    // title ("Grundform" three times), so the alias strategy alone could not tell which English
+    // page is meant and would skip the pair with a warning. Three pages carry no key on purpose
+    // and are linked by their alias, one pair by its path - one live proof per strategy.
+    linking: ['frontmatter', 'aliases', 'path'],
+    frontmatterKeys: { lang: 'lang', key: 'translationKey', translations: 'translations' },
+    // The root is the German home page, not a switch, so there is nothing to redirect.
+    rootRedirect: 'none',
+    rememberChoice: true,
+    seo: { hreflang: true, ogLocale: true, xDefault: 'default' },
+    // Of the three shapes, the collapsible one is the only one that fits a toolbar next to a
+    // search field and does not grow with a third language. All three are styled in
+    // styles/nav-language-switcher.scss.
+    switcher: {
+      style: 'dropdown',
+      label: 'native',
+      showCurrent: true,
+      missing: 'home',
+      separator: '|'
+    },
+    missingTranslationNotice: true,
+    availableTranslationNotice: true,
+    // Both only work for the folder and suffix conventions. German pages arrive through
+    // `default` and have no derivable sibling path, so neither would do anything here.
+    fallbackPages: 'none',
+    rewriteCrossLanguageLinks: false,
+    // Quartz formats dates site-wide from `configuration.locale`. This pulls them back into the
+    // language of the page in the browser - the only part of the Quartz interface that becomes
+    // bilingual without a second build.
+    localizeDates: true,
+    publishLanguages: []
+  },
+  layout: { position: 'header', group: 'toolbar', priority: 60 }
+}
+
 /**
  * The community theme entry.
  *

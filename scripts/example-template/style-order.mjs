@@ -30,6 +30,7 @@ export const STYLE_ORDER = [
   'nav-darkmode',
   'nav-reader-mode',
   'nav-explorer',
+  'nav-language-switcher',
 
   // the apparatus above the article
   'meta-breadcrumbs',

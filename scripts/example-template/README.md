@@ -248,10 +248,10 @@ Quartz nach aufsteigender `priority`; die Werte gehen in Zehnerschritten, damit 
 bleibt.
 
 `layout.mjs` bestimmt, welcher Seitentyp welchen Frame nutzt, und definiert die Flex-Gruppe
-`toolbar` (Suche, Farbschema, Lesemodus in einer Reihe). Die Gruppe sitzt seit dem 04.09.2026 am
-**rechten Ende des Kopfbereichs** und nicht mehr in der linken Leiste: Dort sucht man sie, und der
-Kopf ist der einzige Bereich, den jeder Frame hat — auf der 404-Seite gab es vorher weder Suche
-noch Farbschema-Umschalter.
+`toolbar` (Suche, Farbschema, Lesemodus und Sprachumschalter in einer Reihe). Die Gruppe sitzt seit
+dem 04.09.2026 am **rechten Ende des Kopfbereichs** und nicht mehr in der linken Leiste: Dort sucht
+man sie, und der Kopf ist der einzige Bereich, den jeder Frame hat — auf der 404-Seite gab es
+vorher weder Suche noch Farbschema-Umschalter.
 
 ### 3.7 Die fünf Layout-Box-Instanzen — `plugins.mjs`
 
@@ -274,6 +274,47 @@ fehlendes Snippet.
 > **Und eine offene Einschränkung:** Beim Import überlebt derzeit nur **eine** der fünf Instanzen —
 > alle tragen denselben abgeleiteten Namen. Siehe `BEFUNDE.md`.
 
+### 3.8 Zwei Sprachen — `plugins.mjs`, `styles/nav-language-switcher.scss`
+
+Quartz kennt ein `locale` je Website. `quartz-multilanguage` fügt die Sprache der **Seite** hinzu:
+Erkennung, Verknüpfung mit der Übersetzung, Umschalter, `<html lang>`, `hreflang` und die Hinweise.
+
+**Der Zuschnitt.** Deutsch liegt in der Wurzel des Vaults, Englisch unter `en/`. Deutsche Seiten
+passen damit auf keine Erkennungsstrategie und fallen in `defaultLanguage`, englische findet die
+Ordner-Strategie. Diese Asymmetrie ist der Punkt: Ein `de/`-Ordner hätte 122 Notizen verschoben und
+99 Wikilinks umgeschrieben, ohne dass irgendetwas dadurch besser würde.
+
+**Die Verknüpfung** läuft über `translationKey` im Frontmatter — 118 von 122 Paaren. Nicht aus
+Vorliebe: Mehrere Seiten teilen sich einen Titel („Grundform“ dreimal), und die Alias-Strategie
+könnte nicht entscheiden, welche englische Seite gemeint ist. Drei Seiten tragen deshalb absichtlich
+*keinen* Schlüssel und hängen allein an dem Alias, den das Obsidian-Plugin **Multilingual** in die
+Notiz schreibt; ein Paar — die beiden Startseiten — hängt allein am gleichen Basispfad. Damit ist
+jede der drei Strategien an der gebauten Site nachweisbar.
+
+**Der Umschalter** kann drei Formen annehmen. Gestaltet sind alle drei, sichtbar ist eine:
+
+| `switcher.style` | Was es ist | Wofür |
+| --- | --- | --- |
+| `dropdown` | ein `<details>` mit Liste | **in Gebrauch** — ein Kasten, egal wie viele Sprachen |
+| `links` | die Sprachen nebeneinander | zwei Sprachen, viel Platz |
+| `flags` | Flaggen-Emoji | sehr eng, wenn die Sprachen bekannt sind |
+
+Am Telefon gibt er sein Wort auf und zeigt das Sprachkürzel, wie die Suche ihr „Suche“ aufgibt.
+Das Kürzel steht in CSS, weil das Plugin das Label rendert und `attr()` nur eigene Attribute liest
+— eine dritte Sprache wäre dort eine dritte Zeile.
+
+**Den Explorer** trennt das Stylesheet, nicht das Plugin: Sein `languageExplorerFilter` ist nur aus
+`quartz.ts` erreichbar, und dieses Projekt baut sein Layout aus YAML. Zwei Selektoren auf
+`data-folderpath` und `html[lang]` blenden den fremdsprachigen Ast aus (BEFUNDE 26).
+
+> **Was einsprachig bleibt:** Alles, was Quartz selbst beschriftet — Explorer, Backlinks, Graph,
+> Inhaltsverzeichnis, Suche — folgt `configuration.locale`, site-weit. Dazu der Suchindex,
+> „zuletzt geändert“, der globale Graph und die eine `404.html`. Verschieben lässt sich davon nur
+> das Datum (`localizeDates`); alles andere löst ein Build je Sprache (`publishLanguages`).
+> Gemessen und aufgeschrieben in BEFUNDE 29 bis 31.
+
+---
+
 ---
 
 ## 4. Fallen, die beim Bauen aufgefallen sind
@@ -293,6 +334,10 @@ Alle gemessen, nicht vermutet. Wer die Vorlage erweitert, spart sich damit diese
 | `display` aus einem Layer überschreiben | Wer ungeschichtet `display: grid` setzt, gewinnt auch dort, wo das Plugin `display: none` meinte. Beim Schubladen-Knopf des Explorers klappte das den ganzen Baum auf jedem Desktop zu (BEFUNDE 22). Beide Zustände selbst aussprechen |
 | Nach einer Frame-Änderung von Hand bauen | `quartz build` räumt `public/` nicht auf, und das Frame-CSS steht in jeder Seite. `rm -rf public` davor, sonst mischen sich alt und neu (BEFUNDE 23) |
 | `folderDefaultState: 'open'` | Wirkungslos in Explorer 0.1.0 — das Skript liest nur `localStorage` (BEFUNDE 21) |
+| Ein `<summary>` als Bedienelement | Rechnet ohne `box-sizing` als `content-box`, und ein Plugin-`padding` überlebt, wenn man nur die eine Hälfte überschreibt. Der Sprachumschalter wurde so 51 px hoch neben 44-px-Nachbarn (BEFUNDE 27) |
+| Ein zweiter Ausklapp-Pfeil | `base.scss` gibt jedem `<summary>` eine Chevron, das Plugin setzt zusätzlich ein „▾“. Wer eine eigene hinzufügt, hat drei (BEFUNDE 27) |
+| Ein Alias in zwei Sprachen | `alias-redirects` slugifiziert sprachübergreifend: „Frontmatter-Demo“ und „Frontmatter demo“ ergeben denselben Pfad, und die zweite Seite kapert die erste (BEFUNDE 25) |
+| Ein vierter Knopf in der Werkzeugleiste | Kostet bei 390 px den Seitennamen in der App-Leiste. Erst schrumpft der Titel, dann läuft die Leiste über (BEFUNDE 28) |
 
 ---
 

@@ -8,11 +8,16 @@
 // all.
 export const LAYOUT_CONFIG = {
   groups: {
-    // Search, dark mode and reader mode read as one control strip rather than three stacked
-    // blocks. They sit at the end of the header on every breakpoint since 2026-09-04 - see
-    // plugins.mjs for why they left the sidebar. `wrap` stays: it is what keeps the strip from
-    // overflowing the app bar on a 360px phone, where the three of them share the row with the
-    // drawer trigger and the site name.
+    // Search, dark mode, reader mode and the language switcher read as one control strip rather
+    // than four stacked blocks. They sit at the end of the header on every breakpoint since
+    // 2026-09-04 - see plugins.mjs for why they left the sidebar. `wrap` stays: it is what keeps
+    // the strip from overflowing the app bar on a 360px phone, where the four of them share the
+    // row with the drawer trigger and the site name.
+    //
+    // The fourth arrived with the multilanguage plugin and cost the site name its place in the
+    // app bar: measured at 390px, the title had 84px with three controls and 24px with four,
+    // which renders as "M…". nav-page-title.scss drops it below 480px; the word mark next to it
+    // is a link home and carries the same name.
     toolbar: {
       priority: 35,
       direction: 'row',

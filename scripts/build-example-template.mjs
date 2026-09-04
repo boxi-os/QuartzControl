@@ -38,7 +38,14 @@ import { VARIABLE_OVERRIDES } from './example-template/variables.mjs'
 import { FONTS, fontFaceCss, resolveFontUrl } from './example-template/fonts.mjs'
 import { FRAMES, BREAKPOINT_WIDTHS } from './example-template/frames.mjs'
 import { LAYOUT_CONFIG } from './example-template/layout.mjs'
-import { PLUGIN_PATCHES, LAYOUT_BOXES, LAYOUT_BOX_SOURCE, THEME_ENTRY } from './example-template/plugins.mjs'
+import {
+  PLUGIN_PATCHES,
+  LAYOUT_BOXES,
+  LAYOUT_BOX_SOURCE,
+  MULTILANGUAGE_SOURCE,
+  MULTILANGUAGE_ENTRY,
+  THEME_ENTRY
+} from './example-template/plugins.mjs'
 import { LOCALE, TRANSLATIONS } from './example-template/translations.mjs'
 import { PRESETS } from './example-template/presets.mjs'
 import { STYLE_ORDER } from './example-template/style-order.mjs'
@@ -204,17 +211,22 @@ function installContent(target) {
 
 /* ======================================================================= 2 · plugin */
 
-function installLayoutBox(target) {
-  const installed = path.join(target, '.quartz/plugins/quartz-layout-box')
-  if (fs.existsSync(installed)) {
-    done('schon installiert')
-    return
-  }
+function installGithubPlugins(target) {
   // A github: source has to go through the CLI - it clones, builds and writes quartz.lock.json,
   // none of which can be reproduced by writing a config entry.
-  run('npx', ['quartz', 'plugin', 'add', LAYOUT_BOX_SOURCE], target)
-  if (!fs.existsSync(installed)) throw new Error('quartz plugin add legte .quartz/plugins/quartz-layout-box nicht an')
-  done()
+  const wanted = [
+    ['quartz-layout-box', LAYOUT_BOX_SOURCE],
+    ['quartz-multilanguage', MULTILANGUAGE_SOURCE]
+  ]
+  const added = []
+  for (const [name, source] of wanted) {
+    const installed = path.join(target, '.quartz/plugins', name)
+    if (fs.existsSync(installed)) continue
+    run('npx', ['quartz', 'plugin', 'add', source], target)
+    if (!fs.existsSync(installed)) throw new Error(`quartz plugin add legte .quartz/plugins/${name} nicht an`)
+    added.push(name)
+  }
+  done(added.length ? added.join(', ') : 'schon installiert')
 }
 
 /* ==================================================================== the app phases */
@@ -294,7 +306,7 @@ async function buildTemplate() {
               fontOrigin: 'local',
               cdnCaching: false
             },
-            plugins: [...plugins, ...a.boxes],
+            plugins: [...plugins, ...a.boxes, a.multilanguage],
             layout: a.layout
           }
           await window.quartzGui.config.save(a.path, next)
@@ -306,6 +318,7 @@ async function buildTemplate() {
           typography: TYPOGRAPHY,
           patches: PLUGIN_PATCHES,
           boxes: LAYOUT_BOXES,
+          multilanguage: MULTILANGUAGE_ENTRY,
           layout: LAYOUT_CONFIG,
           theme: THEME_ENTRY,
           layoutBoxSource: LAYOUT_BOX_SOURCE
@@ -594,7 +607,7 @@ async function main() {
   if (phase(2, 'plugin')) {
     log('\n2 · quartz-layout-box')
     step('installieren')
-    installLayoutBox(WORKSHOP)
+    installGithubPlugins(WORKSHOP)
   }
 
   const written = await buildTemplate()

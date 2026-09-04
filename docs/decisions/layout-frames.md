@@ -47,3 +47,33 @@ Gemessen im Produktions-Build am Frame `rename-test`, ohne zu speichern (der Edi
 zum Speichern in seinem eigenen Zustand): Tastatur-Platzierung aus der Ablage, Tastatur-Lösen zurück
 in die Ablage, Aufnehmen-und-Ablegen ohne Bewegung, Maus-Drag auf eine freie Zelle, Klick zum
 Auswählen, und ein Abwurf auf eine belegte Zelle, der weiterhin an `overlaps` scheitert.
+
+## Ein authored Frame muss `center` mitrendern (2026-09-04)
+
+Gefunden beim Bau der Beispielvorlage, an einer echten Seite mit einem echten Frame.
+
+Quartz' drei mitgelieferte Frames rendern alle einen `<div class="center …">` um den Seiteninhalt
+(`DefaultFrame.tsx`, `FullWidthFrame.tsx`, `MinimalFrame.tsx`). Der Codegen in
+`layoutFrameService.generateFrameJs` tat das nicht — er schrieb je Area nur
+`qgframe-area qgframe-area-<name>`. Für das *Layout* war das folgenlos, und genau deshalb ist es
+nie aufgefallen: `.center` hat in `base.scss` nur eine Regel (`.center > article { grid-area }`,
+in einem Flex-Container wirkungslos) plus die beiden Varianten `.full-width`/`.minimal`.
+
+Die Klasse ist aber **Vertrag für die Client-Skripte**. Der Mermaid-Initialisierer macht auf jeder
+Seite, unbedingt:
+
+    document.querySelector(".center").querySelectorAll("code.mermaid")
+
+Ohne `.center` ist das `null.querySelectorAll` — ein TypeError im `nav`-Handler, und weil alle
+Komponentenskripte an derselben Stelle registriert werden, **bricht damit jedes danach
+registrierte Skript ab**. Gemessen an einem gebauten Projekt: der Explorer rendert seinen
+Container, aber weder seinen Baum noch seine Überschrift, und die Konsole zeigt genau einen Fehler,
+der nichts über den Explorer sagt. Ein Frame kostete also die halbe Interaktivität der Seite, ohne
+dass irgendwo „Frame“ auftauchte.
+
+Der Codegen hängt `center` daher an die Area, die `pageBody` trägt — die eine Area, die dem
+`.center` der eingebauten Frames entspricht. Nachgemessen: Fehler weg, Explorer vollständig.
+
+Regel daraus: **was Quartz' eigene Frames ins Markup schreiben, ist Schnittstelle, nicht
+Dekoration.** Ein generierter Frame, der eine Klasse weglässt, bricht Code, den man in der
+Frame-Ansicht nie zu Gesicht bekommt.

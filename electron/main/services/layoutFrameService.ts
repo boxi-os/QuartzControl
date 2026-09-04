@@ -99,9 +99,22 @@ export const Frame = {
         { class: "qgframe-grid" },
         AREAS.map((area) => {
           const components = bySlot[area.slot] ?? []
+          // The area holding pageBody also carries \`center\`, because quartz's own three frames
+          // do (DefaultFrame/FullWidthFrame/MinimalFrame all render <div class="center …">) and
+          // client scripts rely on it: the mermaid initialiser runs
+          // \`document.querySelector(".center").querySelectorAll("code.mermaid")\` unconditionally
+          // on every page. Without the class that threw a TypeError inside the nav handler, which
+          // aborted every component script registered after it - measured on a real build, where
+          // the explorer rendered its container but never its tree or its title. The class alone
+          // is inert for layout here: base.scss only uses it for \`.center > article { grid-area }\`
+          // (no effect on a flex child) and for its .full-width/.minimal variants.
+          const isPageBody = area.slot === "pageBody"
           return h(
             "div",
-            { key: area.id, class: "qgframe-area qgframe-area-" + area.name },
+            {
+              key: area.id,
+              class: "qgframe-area qgframe-area-" + area.name + (isPageBody ? " center" : "")
+            },
             components.map((Component) => h(Component, componentData))
           )
         })

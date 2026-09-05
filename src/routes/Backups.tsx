@@ -195,7 +195,7 @@ export default function Backups(): JSX.Element {
         </div>
 
         {settings && (
-          <div className="mt-4 border-t border-black/[0.06] pt-3 dark:border-white/10">
+          <div className="mt-4 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
             {/* Bei einem Symlink ist das kein Vorgabewert, sondern eine Tatsache: git folgt keinem
                 Symlink, im Snapshot landet die Verknüpfung statt der Notizen. Der Schalter ist
                 deshalb aus und deaktiviert - lesbar, nicht ausgegraut (siehe CLAUDE.md), und der
@@ -234,7 +234,7 @@ export default function Backups(): JSX.Element {
             onToggle={() => setOpenId(openId === snapshot.id ? null : snapshot.id)}
           >
             {openId === snapshot.id && (
-              <div className="mt-4 border-t border-black/[0.06] pt-3 dark:border-white/10">
+              <div className="mt-4 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
                 {changes === null && <p className="text-xs text-text-muted">{t('backups.comparing')}</p>}
                 {changes?.length === 0 && <p className="text-xs text-text-muted">{t('backups.identical')}</p>}
                 {/* Genau hier ist der Irrtum entstanden, über den der Alpha-Test stolperte: eine
@@ -248,11 +248,11 @@ export default function Backups(): JSX.Element {
                     <p className="mb-2 text-xs text-text-muted">
                       {t('backups.changeCount', { count: changes.length })}
                     </p>
-                    <div className="max-h-72 overflow-y-auto rounded-md border border-black/[0.06] dark:border-white/10">
+                    <div className="max-h-72 overflow-y-auto rounded-md border border-ink/[0.06] dark:border-ink/10">
                       {changes.map((change) => (
                         <div
                           key={change.path}
-                          className="flex items-center gap-2 border-b border-black/[0.04] px-2.5 py-1 last:border-b-0 dark:border-white/5"
+                          className="flex items-center gap-2 border-b border-ink/[0.04] px-2.5 py-1 last:border-b-0 dark:border-ink/5"
                         >
                           <input
                             type="checkbox"
@@ -310,7 +310,7 @@ export default function Backups(): JSX.Element {
                   </>
                 )}
 
-                <div className="mt-3 flex flex-wrap gap-2 border-t border-black/[0.06] pt-3 dark:border-white/10">
+                <div className="mt-3 flex flex-wrap gap-2 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
                   <Button variant="ghost" onClick={() => exportAction.run(snapshot.id)} disabled={exportAction.pending}>
                     {t('backups.export')}
                   </Button>
@@ -336,7 +336,7 @@ export default function Backups(): JSX.Element {
             {contentFolders.map((entry) => (
               <div
                 key={entry.id}
-                className="flex items-center justify-between gap-2 rounded-md border border-black/[0.06] px-2.5 py-1.5 dark:border-white/10"
+                className="flex items-center justify-between gap-2 rounded-md border border-ink/[0.06] px-2.5 py-1.5 dark:border-ink/10"
               >
                 {/* A recorded symlink and a real copy of a folder are worlds apart on disk, and
                     the row now has a delete button - so it says which one this is and what it

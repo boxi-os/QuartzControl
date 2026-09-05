@@ -805,7 +805,7 @@ export default function FrameBuilder({
                 {isSelected && (
                   <div
                     onClick={(e) => e.stopPropagation()}
-                    className="flex flex-wrap items-end gap-2 border-t border-black/[0.06] pt-2 dark:border-white/10"
+                    className="flex flex-wrap items-end gap-2 border-t border-ink/[0.06] pt-2 dark:border-ink/10"
                   >
                     <Field label={t('layoutEditor.frameBuilder.areaName')}>
                       <TextInput value={nameDraft} onChange={(e) => updateAreaName(area.id, e.target.value)} autoFocus className="w-32" />
@@ -856,7 +856,7 @@ export default function FrameBuilder({
                 )}
 
                 {area.slot === 'pageBody' && (
-                  <div className="rounded-[4px] border border-dashed border-black/10 px-2 py-3 text-center text-text-muted dark:border-white/10">
+                  <div className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10">
                     {t('layoutEditor.frameBuilder.preview.pageContent')}
                   </div>
                 )}
@@ -1032,7 +1032,7 @@ function DropCell({ row, col }: { row: number; col: number }): JSX.Element {
     <div
       ref={setNodeRef}
       className={`min-h-[40px] rounded-[6px] border transition-colors ${
-        isOver ? 'border-blue-500 bg-blue-100 dark:bg-blue-900/40' : 'border-dashed border-black/15 bg-black/[0.02] dark:border-white/15 dark:bg-white/[0.02]'
+        isOver ? 'border-blue-500 bg-blue-100 dark:bg-blue-900/40' : 'border-dashed border-ink/15 bg-ink/[0.02] dark:border-ink/15 dark:bg-ink/[0.02]'
       }`}
       style={{ gridRow: `${row} / span 1`, gridColumn: `${col} / span 1` }}
     />
@@ -1080,7 +1080,7 @@ function PlacedBox({
       className={`flex min-h-[48px] cursor-pointer flex-col gap-1.5 rounded-[6px] border p-2 text-[11px] ${
         selected
           ? 'border-blue-600 bg-blue-50 shadow-md ring-2 ring-blue-500/40 dark:border-blue-400 dark:bg-blue-500/10'
-          : 'border-slate-300 bg-white shadow-sm hover:border-blue-300 dark:border-white/15 dark:bg-white/[0.03] dark:hover:border-blue-500/30'
+          : 'border-slate-300 bg-surface shadow-sm hover:border-blue-300 dark:border-ink/15 dark:bg-ink/[0.03] dark:hover:border-blue-500/30'
       } ${isOver ? 'ring-2 ring-blue-500' : ''} ${dragging ? 'opacity-30' : ''}`}
       style={{ gridRow: `${placement.row} / span ${placement.rowSpan}`, gridColumn: `${placement.col} / span ${placement.colSpan}` }}
     >

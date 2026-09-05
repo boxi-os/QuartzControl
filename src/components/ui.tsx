@@ -435,7 +435,7 @@ export function Modal({
       // in dark, and on the top layer that translucent colour composited over the dimmed backdrop
       // and came out darker than the page it sat on. The backdrop repeats what the hand-rolled
       // overlays painted (black/30 plus blur) and is deliberately black in both schemes.
-      className="m-auto w-full max-w-lg rounded-[10px] border border-ink/[0.06] bg-surface p-4 text-text shadow-xl backdrop:bg-black/30 backdrop:backdrop-blur-sm dark:border-ink/10"
+      className="m-auto w-full max-w-lg rounded-[10px] border border-ink/[0.06] bg-surface p-4 text-text shadow-xl backdrop:bg-ink/30 backdrop:backdrop-blur-sm dark:border-ink/10"
     >
       <form
         method="dialog"

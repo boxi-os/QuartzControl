@@ -262,7 +262,7 @@ function AllVariables({
           {loading && <p className="text-xs text-text-muted">{t('common.loading')}</p>}
 
           {!loading && keys.length === 0 && (
-            <div className="rounded-md border border-black/[0.06] p-3 text-xs text-text-muted dark:border-white/10">
+            <div className="rounded-md border border-ink/[0.06] p-3 text-xs text-text-muted dark:border-ink/10">
               <p>{t('styles.variables.noSources')}</p>
               <p className="mt-1">
                 {sources?.theme === false && t('styles.variables.noTheme')}{' '}

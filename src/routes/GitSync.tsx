@@ -294,7 +294,7 @@ export default function GitSync(): JSX.Element {
 
         {/* The commit is part of every direction, so it sits above the buttons rather than next to
             one of them. Unticking it maps to --no-commit, which syncs the last committed state. */}
-        <div className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-black/[0.06] p-3 dark:border-white/10">
+        <div className="mb-4 flex flex-wrap items-end gap-3 rounded-md border border-ink/[0.06] p-3 dark:border-ink/10">
           <Toggle label={t('gitSync.commitChanges')} checked={commit} onChange={setCommit} />
           <Field label={t('gitSync.commitMessage')} className="min-w-64 flex-1">
             <TextInput

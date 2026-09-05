@@ -376,7 +376,7 @@ export default function GlobalBoard({
                 <div key={area.id} style={{ gridArea: area.name }}>
                   <AreaBox label={area.name} slotLabel={t(`positions.${area.slot}`, area.slot)}>
                     {area.slot === 'pageBody' ? (
-                      <div className="rounded-[4px] border border-dashed border-black/10 px-2 py-3 text-center text-text-muted dark:border-white/10">
+                      <div className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10">
                         {t('layoutEditor.frameBuilder.preview.pageContent')}
                       </div>
                     ) : (
@@ -411,7 +411,7 @@ export default function GlobalBoard({
               )}
               <div
                 style={{ gridArea: 'center' }}
-                className="rounded-[4px] border border-dashed border-black/10 px-2 py-3 text-center text-text-muted dark:border-white/10"
+                className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10"
               >
                 {t('layoutEditor.frameBuilder.preview.pageContent')}
               </div>
@@ -453,7 +453,7 @@ export default function GlobalBoard({
                 <AreaBox label={t('positions.beforeBody')}>
                   <PositionSlot position="beforeBody" indices={positions.beforeBody} direction="column" {...slotProps} />
                 </AreaBox>
-                <div className="rounded-[4px] border border-dashed border-black/10 px-2 py-3 text-center text-text-muted dark:border-white/10">
+                <div className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10">
                   {t('layoutEditor.frameBuilder.preview.pageContent')}
                 </div>
                 <AreaBox label={t('positions.afterBody')}>
@@ -534,7 +534,7 @@ function ComponentPalette({
             ? 'border-red-400 bg-red-50/50 dark:border-red-500/40 dark:bg-red-500/5'
             : activePaletteSource
               ? 'border-blue-400 bg-blue-50/50 dark:border-blue-500/40 dark:bg-blue-500/5'
-              : 'border-black/[0.08] dark:border-white/10'
+              : 'border-ink/[0.08] dark:border-ink/10'
         }`}
       >
         {chips.map(({ index, plugin }) => (
@@ -566,7 +566,7 @@ function DraggablePaletteChip({ index, plugin }: { index: number; plugin: Plugin
 // grid position there or having components arranged into it here.
 function AreaBox({ label, slotLabel, children }: { label: string; slotLabel?: string; children: React.ReactNode }): JSX.Element {
   return (
-    <div className="flex h-full flex-col gap-1.5 rounded-[6px] border border-slate-300 bg-white p-2 shadow-sm dark:border-white/15 dark:bg-white/[0.03]">
+    <div className="flex h-full flex-col gap-1.5 rounded-[6px] border border-slate-300 bg-surface p-2 shadow-sm dark:border-ink/15 dark:bg-ink/[0.03]">
       <div className="flex items-center justify-between gap-1">
         <span className="truncate text-[11px] font-semibold uppercase tracking-wide text-text-secondary">{label}</span>
         {slotLabel && slotLabel !== label && <Badge>{slotLabel}</Badge>}
@@ -613,7 +613,7 @@ function PositionSlot({
     <SortableContext items={ids} strategy={verticalListSortingStrategy}>
       <div
         ref={setNodeRef}
-        className={`flex min-h-[52px] gap-2 rounded-md bg-black/[0.02] p-2 dark:bg-white/[0.03] ${direction === 'row' ? 'flex-row flex-wrap' : 'flex-col'}`}
+        className={`flex min-h-[52px] gap-2 rounded-md bg-ink/[0.02] p-2 dark:bg-ink/[0.03] ${direction === 'row' ? 'flex-row flex-wrap' : 'flex-col'}`}
       >
         {indices.length === 0 && <p className="px-2 py-3 text-center text-xs text-text-muted">{t('layoutEditor.emptySlot')}</p>}
         {indices.map((index) => (
@@ -720,7 +720,7 @@ function GroupsPanel({
           return (
             // items-end, not items-center: every control below now carries a label above it, so
             // aligning on the boxes rather than on the whole column keeps the row one line high.
-            <div key={name} className="flex flex-wrap items-end gap-3 rounded-md border border-black/[0.06] p-2 dark:border-white/10">
+            <div key={name} className="flex flex-wrap items-end gap-3 rounded-md border border-ink/[0.06] p-2 dark:border-ink/10">
               <span className={`mb-2.5 h-2 w-2 shrink-0 rounded-full ${color.dot}`} />
               <span className="mb-2 w-32 shrink-0 truncate text-sm font-medium">{name}</span>
               {/* Three unlabelled controls in a row, one of them offering bare CSS keywords, is

@@ -122,7 +122,7 @@ export default function SiteSettings({
           wide text area for it looks broken rather than generous. */}
       <Field label={t('siteSettings.ignorePatterns')} hint={t('siteSettings.ignorePatternsHint')} className="md:col-span-2">
         <textarea
-          className="min-h-32 rounded-[7px] border border-black/10 bg-white px-2.5 py-1.5 font-mono text-[13px] shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
+          className="min-h-32 rounded-[7px] border border-ink/10 bg-surface px-2.5 py-1.5 font-mono text-[13px] text-text shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-ink/10 dark:bg-ink/5"
           value={(configuration.ignorePatterns ?? []).join('\n')}
           onChange={(e) =>
             set(
@@ -162,7 +162,7 @@ function Analytics({
 
   return (
     <div className="md:col-span-2 2xl:col-span-3">
-      <div className="rounded-lg border border-black/[0.06] p-4 dark:border-white/10">
+      <div className="rounded-lg border border-ink/[0.06] p-4 dark:border-ink/10">
         <h3 className="text-sm font-semibold">{t('siteSettings.analyticsHeading')}</h3>
         <p className="mb-3 mt-0.5 max-w-3xl text-xs text-text-muted">
           {t('siteSettings.analyticsDescription')}

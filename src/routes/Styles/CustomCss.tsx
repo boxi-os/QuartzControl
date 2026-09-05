@@ -376,7 +376,7 @@ export default function CustomCss(): JSX.Element {
               <h2 className="text-sm font-semibold">{t('styleEditor.referenceHeading')}</h2>
               {references.map((ref) => (
                 <Card key={ref.path} className="!p-0 overflow-hidden">
-                  <div className="flex items-center justify-between border-b border-black/[0.06] px-3 py-1.5 dark:border-white/10">
+                  <div className="flex items-center justify-between border-b border-ink/[0.06] px-3 py-1.5 dark:border-ink/10">
                     <span className="truncate text-xs font-medium">{ref.label}</span>
                     <button
                       type="button"
@@ -428,8 +428,8 @@ function TabBar({
             key={tab}
             className={`flex items-center gap-1 rounded-t-[8px] border border-b-0 px-2.5 py-1.5 text-xs ${
               isActive
-                ? 'border-black/[0.06] bg-white dark:border-white/10 dark:bg-[#1c1c1e]'
-                : 'border-transparent bg-black/[0.04] text-text-muted hover:bg-ink/[0.07] dark:bg-white/[0.06] dark:hover:bg-ink/10'
+                ? 'border-ink/[0.06] bg-surface dark:border-ink/10 dark:bg-[#1c1c1e]'
+                : 'border-transparent bg-ink/[0.04] text-text-muted hover:bg-ink/[0.07] dark:bg-ink/[0.06] dark:hover:bg-ink/10'
             }`}
           >
             <button type="button" onClick={() => onSelect(tab)} className="max-w-[16ch] truncate" title={label(tab)}>
@@ -593,7 +593,7 @@ function FileOrder({
           </div>
         ))}
 
-        <div className="flex items-center gap-1.5 rounded-md border-t border-dashed border-black/10 px-1.5 pt-1.5 text-xs text-text-muted dark:border-white/10">
+        <div className="flex items-center gap-1.5 rounded-md border-t border-dashed border-ink/10 px-1.5 pt-1.5 text-xs text-text-muted dark:border-ink/10">
           <span className="w-4 shrink-0" />
           <span className="min-w-0 flex-1 truncate font-mono">custom.scss</span>
           <span className="shrink-0 text-[11px] text-text-muted">{t('styleEditor.files.alwaysLast')}</span>
@@ -711,7 +711,7 @@ function CheckBanner({
 
   if (result.status === 'unavailable') {
     return (
-      <p className="rounded-md border border-black/[0.06] p-2 text-[11px] text-text-muted dark:border-white/10">
+      <p className="rounded-md border border-ink/[0.06] p-2 text-[11px] text-text-muted dark:border-ink/10">
         {t('styleEditor.check.unavailable', { reason: result.reason })}
       </p>
     )

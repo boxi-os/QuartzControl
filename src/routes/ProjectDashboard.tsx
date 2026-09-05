@@ -68,7 +68,7 @@ function Tile({
   return (
     <Card className={`flex flex-col gap-3 ${className}`}>
       <div className="flex min-w-0 items-center gap-2">
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[7px] bg-black/[0.04] text-text-muted dark:bg-white/[0.06]">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[7px] bg-ink/[0.04] text-text-muted dark:bg-ink/[0.06]">
           <Icon size={14} strokeWidth={2} aria-hidden />
         </span>
         <h2 className="truncate text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
@@ -95,7 +95,7 @@ function Metric({ children, tone }: { children: ReactNode; tone?: 'green' | 'mut
       ? 'text-green-700 dark:text-green-400'
       : tone === 'muted'
         ? 'text-text-muted'
-        : 'text-slate-900 dark:text-white'
+        : 'text-text'
   return <p className={`text-[19px] font-semibold leading-tight tracking-tight ${color}`}>{children}</p>
 }
 
@@ -105,11 +105,11 @@ function MetricNote({ children }: { children: ReactNode }): JSX.Element {
 }
 
 function Facts({ children }: { children: ReactNode }): JSX.Element {
-  return <div className="flex flex-col gap-1 text-[12.5px] text-slate-700 dark:text-slate-300">{children}</div>
+  return <div className="flex flex-col gap-1 text-[12.5px] text-text-secondary">{children}</div>
 }
 
 function Skeleton({ className = '' }: { className?: string }): JSX.Element {
-  return <span className={`block animate-pulse rounded bg-black/[0.07] dark:bg-white/[0.09] ${className}`} aria-hidden />
+  return <span className={`block animate-pulse rounded bg-ink/[0.07] dark:bg-ink/[0.09] ${className}`} aria-hidden />
 }
 
 // ------------------------------------------------------------------------------------------
@@ -130,7 +130,7 @@ function AttentionBand({ issues }: { issues: Issue[] }): JSX.Element {
   const { t } = useTranslation()
   return (
     <Card className="!p-0">
-      <div className="flex items-center gap-2 border-b border-black/[0.06] px-4 py-2.5 dark:border-white/10">
+      <div className="flex items-center gap-2 border-b border-ink/[0.06] px-4 py-2.5 dark:border-ink/10">
         <TriangleAlert size={14} className="text-amber-600 dark:text-amber-400" aria-hidden />
         <h2 className="text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
           {t('dashboard.attention.title')}
@@ -140,7 +140,7 @@ function AttentionBand({ issues }: { issues: Issue[] }): JSX.Element {
       {issues.map((issue, i) => (
         <div
           key={issue.id}
-          className={`flex items-center gap-3 px-4 py-2.5 ${i > 0 ? 'border-t border-black/[0.06] dark:border-white/10' : ''}`}
+          className={`flex items-center gap-3 px-4 py-2.5 ${i > 0 ? 'border-t border-ink/[0.06] dark:border-ink/10' : ''}`}
         >
           <span
             className={`flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-[7px] ${
@@ -793,7 +793,7 @@ function Row({ label, children }: { label: string; children: ReactNode }): JSX.E
   return (
     <div className="flex min-w-0 items-baseline gap-2.5">
       <dt className="w-20 shrink-0 text-[11px] text-text-muted">{label}</dt>
-      <dd className="m-0 min-w-0 truncate text-[12.5px] text-slate-700 dark:text-slate-300">{children}</dd>
+      <dd className="m-0 min-w-0 truncate text-[12.5px] text-text-secondary">{children}</dd>
     </div>
   )
 }

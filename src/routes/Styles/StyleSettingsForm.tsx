@@ -141,7 +141,7 @@ function GroupView({
   if (group.heading && !hasAnyField(group)) return null
 
   return (
-    <div className={depth > 0 ? 'ml-3 border-l border-black/[0.06] pl-3 dark:border-white/10' : ''}>
+    <div className={depth > 0 ? 'ml-3 border-l border-ink/[0.06] pl-3 dark:border-ink/10' : ''}>
       {group.heading && (
         <button
           type="button"
@@ -369,7 +369,7 @@ function ColorControl({
         value={hex ?? undefined}
         hex={hex ?? null}
         onChange={(next) => onChange(colorEntries(field, next, mode))}
-        className={isSet ? 'border-green-500' : 'border-slate-300 dark:border-white/20'}
+        className={isSet ? 'border-green-500' : 'border-slate-300 dark:border-ink/20'}
       />
     </div>
   )

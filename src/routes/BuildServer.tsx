@@ -289,7 +289,7 @@ export default function BuildServer(): JSX.Element {
         </button>
 
         {optionsOpen && (
-          <div className="mt-2 rounded-md border border-black/[0.06] p-3 dark:border-white/10">
+          <div className="mt-2 rounded-md border border-ink/[0.06] p-3 dark:border-ink/10">
             <div className="flex flex-wrap items-end gap-3">
               <Field label={t('buildServer.port')} className="w-28">
                 <TextInput
@@ -369,7 +369,7 @@ export default function BuildServer(): JSX.Element {
                  the site's media queries see. Which means a narrow window cannot show a 1200px
                  tablet - hence the scroll container, the same answer this app gives every other
                  piece of content too wide for its column. */
-              <div className="overflow-x-auto rounded-md border border-black/[0.08] dark:border-white/10">
+              <div className="overflow-x-auto rounded-md border border-ink/[0.08] dark:border-ink/10">
                 <iframe
                   key={`${url}#${previewNonce}`}
                   src={url}
@@ -400,7 +400,7 @@ export default function BuildServer(): JSX.Element {
         {/* What is in the output directory right now - nothing records that a build happened, so
             this is read from the files themselves (see BuildOutputInfo). The Übersicht showed this
             long before the page that actually owns building did. */}
-        <div className="mb-3 rounded-md border border-black/[0.06] p-3 dark:border-white/10">
+        <div className="mb-3 rounded-md border border-ink/[0.06] p-3 dark:border-ink/10">
           {output?.exists ? (
             <>
               <p className="text-heading font-semibold tracking-tight">

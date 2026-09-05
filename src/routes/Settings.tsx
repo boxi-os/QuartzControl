@@ -513,7 +513,7 @@ function ConnectionsSection(): JSX.Element {
         {listed.map((connection) => (
           <div
             key={connection.id}
-            className="grid grid-cols-1 items-center gap-2 rounded-[8px] border border-black/[0.06] px-3 py-2.5 sm:grid-cols-[1fr_auto] dark:border-white/10"
+            className="grid grid-cols-1 items-center gap-2 rounded-[8px] border border-ink/[0.06] px-3 py-2.5 sm:grid-cols-[1fr_auto] dark:border-ink/10"
           >
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
@@ -556,7 +556,7 @@ function ConnectionsSection(): JSX.Element {
       {remove.error && <p className="mt-2 text-[13px] text-red-600 dark:text-red-400">{remove.error}</p>}
 
       {draft ? (
-        <div className="mt-4 rounded-[8px] border border-black/[0.06] p-3 dark:border-white/10">
+        <div className="mt-4 rounded-[8px] border border-ink/[0.06] p-3 dark:border-ink/10">
           <ConnectionFormFields draft={draft} onChange={setDraft} />
           <div className="mt-3 flex gap-2">
             <Button onClick={() => save.run()} disabled={save.pending || connectionDraftIncomplete(draft)}>
@@ -663,7 +663,7 @@ function MaintenanceSection(): JSX.Element {
       </div>
 
       {info && (
-        <p className="mt-4 border-t border-black/[0.06] pt-3 text-xs text-text-muted dark:border-white/10">
+        <p className="mt-4 border-t border-ink/[0.06] pt-3 text-xs text-text-muted dark:border-ink/10">
           QuartzControl {info.appVersion} · Electron {info.electronVersion} · Chromium {info.chromeVersion}
         </p>
       )}

@@ -140,7 +140,7 @@ export default function Basics(): JSX.Element {
       />
 
       <div>
-        <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">{t('themeEditor.colors')}</h3>
+        <h3 className="mb-2 text-sm font-semibold text-text">{t('themeEditor.colors')}</h3>
         <ColorGroup
           value={(theme.colors as Record<string, unknown>) ?? {}}
           onChange={(colors) => set('colors', colors)}
@@ -172,7 +172,7 @@ function FontDelivery({
   const baseUrl = (config.configuration.baseUrl as string) ?? ''
 
   return (
-    <div className="rounded-md border border-black/[0.06] p-3 dark:border-white/10">
+    <div className="rounded-md border border-ink/[0.06] p-3 dark:border-ink/10">
       <h3 className="mb-1 text-sm font-semibold">{t('themeEditor.delivery.heading')}</h3>
       <div className="mb-2 flex flex-col gap-0.5 text-xs">
         {loaders.length === 0 && <p className="text-text-muted">{t('styleEditor.current.noLoader')}</p>}
@@ -196,7 +196,7 @@ function FontDelivery({
           fonts locally, so the only way to stop the CDN requests is to drop them - which changes
           how the site looks. That is a different decision. */}
       {themeFonts && (
-        <div className="mt-3 border-t border-black/[0.06] pt-3 dark:border-white/10">
+        <div className="mt-3 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
           <Toggle
             label={t('themeEditor.delivery.themeFonts')}
             checked
@@ -206,7 +206,7 @@ function FontDelivery({
         </div>
       )}
       {!themeFonts && hasTheme && (
-        <div className="mt-3 border-t border-black/[0.06] pt-3 dark:border-white/10">
+        <div className="mt-3 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
           <Toggle
             label={t('themeEditor.delivery.themeFonts')}
             checked={false}
@@ -255,7 +255,7 @@ function CssFixes(): JSX.Element | null {
   }
 
   return (
-    <div className="rounded-md border border-black/[0.06] p-3 dark:border-white/10">
+    <div className="rounded-md border border-ink/[0.06] p-3 dark:border-ink/10">
       <h3 className="mb-1 text-sm font-semibold">{t('styles.fixes.heading')}</h3>
       <p className="mb-2 text-xs text-text-muted">{t('styles.fixes.description')}</p>
       <div className="flex flex-col gap-2">
@@ -333,7 +333,7 @@ function LocalFontImport({
   }
 
   return (
-    <div className="rounded-md border border-black/[0.06] p-3 dark:border-white/10">
+    <div className="rounded-md border border-ink/[0.06] p-3 dark:border-ink/10">
       <h3 className="mb-1 text-sm font-semibold">{t('themeEditor.localFontHeading')}</h3>
       <p className="mb-2 text-xs text-text-muted">{t('themeEditor.localFontDescription')}</p>
       {!pendingPath && (
@@ -406,7 +406,7 @@ function ColorGroup({
         </div>
       )}
       {nested.map(([key, v]) => (
-        <div key={key} className="rounded-md border border-slate-200 p-3 dark:border-white/10">
+        <div key={key} className="rounded-md border border-slate-200 p-3 dark:border-ink/10">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">{key}</p>
           <ColorGroup
             value={v as Record<string, unknown>}
@@ -439,7 +439,7 @@ function ColorCell({
   // (docs/REVIEW-2026-09-02.md, d), and the swatch and the value are the information here.
   return (
     <div
-      className="flex items-center gap-2.5 rounded-md border border-black/[0.06] p-2 dark:border-white/10"
+      className="flex items-center gap-2.5 rounded-md border border-ink/[0.06] p-2 dark:border-ink/10"
       title={overridden ? t('themeEditor.overriddenByTheme') : undefined}
     >
       {/* Big enough to actually read the colour. The shared picker paints the raw value behind a
@@ -450,7 +450,7 @@ function ColorCell({
         onChange={onChange}
         title={name}
         size="lg"
-        className="border-black/10 dark:border-white/20"
+        className="border-ink/10 dark:border-ink/20"
       />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex items-baseline gap-1.5">

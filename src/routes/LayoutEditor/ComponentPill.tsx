@@ -133,7 +133,7 @@ export function ItemCard({
 
       {expanded && (
         <div
-          className="mt-2 flex flex-wrap items-end gap-2 border-t border-black/[0.06] pt-2 dark:border-white/10"
+          className="mt-2 flex flex-wrap items-end gap-2 border-t border-ink/[0.06] pt-2 dark:border-ink/10"
           onClick={(e) => e.stopPropagation()}
         >
           <label className="flex flex-col gap-1 text-[12px]">

@@ -528,14 +528,14 @@ export default function PluginsInstalled(): JSX.Element {
             className="w-full pl-8"
           />
         </div>
-        <div className="inline-flex w-fit gap-0.5 rounded-[8px] bg-black/[0.05] p-0.5 dark:bg-white/10">
+        <div className="inline-flex w-fit gap-0.5 rounded-[8px] bg-ink/[0.05] p-0.5 dark:bg-ink/10">
           {(['all', 'active', 'inactive'] as EnabledFilter[]).map((key) => (
             <button
               key={key}
               onClick={() => setEnabledFilter(key)}
               className={`rounded-[6px] px-3 py-1 text-[13px] font-medium transition-colors ${
                 enabledFilter === key
-                  ? 'bg-white text-slate-900 shadow-sm dark:bg-white/20 dark:text-white'
+                  ? 'bg-surface text-text shadow-sm dark:bg-ink/20'
                   : 'text-text-secondary hover:text-text'
               }`}
             >
@@ -672,7 +672,7 @@ export default function PluginsInstalled(): JSX.Element {
         </section>
       )}
 
-      <section className="mt-10 border-t border-black/[0.06] pt-5 dark:border-white/10">
+      <section className="mt-10 border-t border-ink/[0.06] pt-5 dark:border-ink/10">
         <h2 className="mb-1 text-sm font-semibold">{t('pluginsInstalled.maintenanceHeading')}</h2>
         <p className="mb-3 max-w-3xl text-xs text-text-muted">{t('pluginsInstalled.maintenanceDescription')}</p>
         <div className="flex flex-wrap gap-2">
@@ -903,7 +903,7 @@ function PluginRow({
         : null
 
   return (
-    <Card className={`h-full px-3 py-2.5 ${plugin.enabled ? '' : 'bg-black/[0.02] dark:bg-white/[0.02]'}`}>
+    <Card className={`h-full px-3 py-2.5 ${plugin.enabled ? '' : 'bg-ink/[0.02] dark:bg-ink/[0.02]'}`}>
       <div className="flex items-start gap-2.5">
         {/* Only the handle is the drag activator. With the whole card as one, any drag gesture -
             selecting the description, dragging inside an option field - started a reorder.
@@ -1008,7 +1008,7 @@ function PluginRow({
       </div>
 
       {expanded && layout && (
-        <div className="mt-3 border-t border-black/10 pt-3 dark:border-white/10">
+        <div className="mt-3 border-t border-ink/10 pt-3 dark:border-ink/10">
           <FieldGroup
             fields={buildLayoutFields(t)}
             values={layout as unknown as Record<string, unknown>}
@@ -1016,7 +1016,7 @@ function PluginRow({
           />
           {/* groupOptions only makes sense once the plugin is actually placed in a group */}
           {layout.group && (
-            <div className="mt-2 border-t border-dashed border-black/10 pt-2 dark:border-white/10">
+            <div className="mt-2 border-t border-dashed border-ink/10 pt-2 dark:border-ink/10">
               <p className="mb-1 font-mono text-[11px] text-text-muted">groupOptions</p>
               <FieldGroup
                 fields={buildGroupOptionsFields(t)}
@@ -1077,7 +1077,7 @@ function PluginOptions({
 
   if (schema) {
     return (
-      <div className="mt-3 border-t border-black/10 pt-3 dark:border-white/10">
+      <div className="mt-3 border-t border-ink/10 pt-3 dark:border-ink/10">
         <p className="mb-2 text-[11px] text-text-muted">
           <span className="font-medium">{t('pluginsInstalled.availableOptions')}</span>{' '}
           {schema
@@ -1099,7 +1099,7 @@ function PluginOptions({
   // type of an existing key is inferred from its current value.
   const keys = Object.keys(options)
   return (
-    <div className="mt-3 border-t border-black/10 pt-3 dark:border-white/10">
+    <div className="mt-3 border-t border-ink/10 pt-3 dark:border-ink/10">
       <p className="mb-2 text-[11px] text-text-muted">{t('pluginsInstalled.noSchemaInfo')}</p>
       <div className="flex flex-col gap-2">
         {keys.map((key) => (
@@ -1131,7 +1131,7 @@ function AddOptionRow({
   const duplicate = existingKeys.includes(trimmed)
 
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-dashed border-black/10 pt-3 dark:border-white/10">
+    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-dashed border-ink/10 pt-3 dark:border-ink/10">
       {/* aria-label rather than a visible label: the row is one line of controls with no column to
           put a label in, and a placeholder is not a name - it disappears the moment anyone types. */}
       <TextInput

@@ -212,7 +212,7 @@ export default function ProjectLayout(): JSX.Element {
 
   return (
     <div className="flex h-screen">
-      <aside className="flex w-60 shrink-0 flex-col border-r border-black/[0.06] bg-black/[0.02] dark:border-white/10 dark:bg-white/[0.03]">
+      <aside className="flex w-60 shrink-0 flex-col border-r border-ink/[0.06] bg-ink/[0.02] dark:border-ink/10 dark:bg-ink/[0.03]">
         <div className={titlebarStripClass} />
         <div className="px-2 pb-2">
           <NavLink
@@ -223,12 +223,12 @@ export default function ProjectLayout(): JSX.Element {
             <ArrowLeft size={14} aria-hidden /> {t('projectLayout.allProjects')}
           </NavLink>
         </div>
-        <div className="mx-2 mb-2 flex items-center gap-2.5 rounded-[10px] border border-black/[0.06] bg-white/70 px-2.5 py-2.5 shadow-sm dark:border-white/10 dark:bg-white/[0.05]">
+        <div className="mx-2 mb-2 flex items-center gap-2.5 rounded-[10px] border border-ink/[0.06] bg-surface/70 px-2.5 py-2.5 shadow-sm dark:border-ink/10 dark:bg-ink/[0.05]">
           <ProjectAvatar id={project.id} name={project.name} icon={icon?.custom ? icon.dataUrl : null} size={36} />
           <div className="min-w-0">
             {/* A <p>, not a second <h1>: the page's own heading is the one in PageHeader, and two
                 first-level headings on one page leave a screen reader without a single top. */}
-            <p className="truncate text-[13px] font-semibold text-slate-900 dark:text-white" title={project.name}>
+            <p className="truncate text-[13px] font-semibold text-text" title={project.name}>
               {project.name}
             </p>
             <p className="truncate text-[11px] text-text-muted" title={project.path}>

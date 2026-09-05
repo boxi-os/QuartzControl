@@ -185,6 +185,7 @@ const api: QuartzGuiApi = {
   },
   templatePackage: {
     inspect: (projectPath: string) => ipcRenderer.invoke(IPC.templatePackageInspect, projectPath),
+    builtin: () => ipcRenderer.invoke(IPC.templatePackageBuiltin),
     pick: () => ipcRenderer.invoke(IPC.templatePackagePick),
     export: (projectPath: string, options: TemplateExportOptions) =>
       ipcRenderer.invoke(IPC.templatePackageExport, projectPath, options),

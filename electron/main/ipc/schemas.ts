@@ -1,6 +1,7 @@
 import { isAbsolute } from 'path'
 import { z } from 'zod'
 import { remotePathProblem } from '@shared/remotePath'
+import { TEMPLATE_PART_IDS, type TemplatePartId } from '@shared/ipc-contract'
 
 // Validation for everything crossing the IPC boundary. The renderer is not a trust boundary the
 // main process can rely on: contextIsolation keeps *our* preload honest, but any script execution
@@ -195,18 +196,10 @@ export const syncOptions = z.looseObject({
 })
 export const layoutPosition = z.enum(['header', 'left', 'right', 'beforeBody', 'afterBody', 'footer'])
 export const frameSlot = z.enum([...layoutPosition.options, 'pageBody'])
-export const templatePartId = z.enum([
-  'appearance',
-  'cssVariables',
-  'theme',
-  'styles',
-  'fonts',
-  'layout',
-  'frames',
-  'plugins',
-  'translations',
-  'presets'
-])
+// Derived from the contract rather than restated. The list was a copy once, and the copy went stale
+// the first time a part was added: the export refused a valid call with "Invalid option", which
+// reads like a bug in the caller and is a bug in this file.
+export const templatePartId = z.enum(TEMPLATE_PART_IDS as unknown as [TemplatePartId, ...TemplatePartId[]])
 export const templateConflictStrategy = z.enum(['packageWins', 'projectWins'])
 export const templateExportOptions = z.object({
   name: z.string().min(1).max(200),

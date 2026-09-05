@@ -932,6 +932,7 @@ export type TemplatePartId =
   | 'plugins'
   | 'translations'
   | 'presets'
+  | 'content'
 
 // Export order is also import order, and that is load-bearing: frames and plugins mutate
 // quartz.config.yaml out-of-band through the Quartz CLI, so they have to run before the parts that
@@ -947,7 +948,10 @@ export const TEMPLATE_PART_IDS: readonly TemplatePartId[] = [
   'translations',
   'styles',
   'fonts',
-  'cssVariables'
+  'cssVariables',
+  // Last, and on its own: the notes touch nothing the other ten write, and a long file copy at the
+  // end of the run is the one part whose progress a person actually watches.
+  'content'
 ] as const
 
 // An npm package a part needs in the target project. `version` is what was installed at export
@@ -1178,6 +1182,7 @@ export const IPC = {
   projectRemove: 'project:remove',
   projectCreate: 'project:create',
   projectDuplicate: 'project:duplicate',
+  templatePackageBuiltin: 'templatePackage:builtin',
 
   projectIconGet: 'projectIcon:get',
   projectIconSet: 'projectIcon:set',
@@ -1566,6 +1571,13 @@ export interface QuartzGuiApi {
   templatePackage: {
     /** What each part would contribute, so the export form can show counts before writing. */
     inspect(projectPath: string): Promise<TemplatePartSummary[]>
+    /**
+     * The example template the app can offer while a project is being created - a path, so that
+     * everything after this point is the ordinary import: plan(), then import(). Null when neither
+     * a downloaded nor a bundled copy exists. `source` says which of the two answered, because a
+     * dialog that has been offline for a week should be able to say so.
+     */
+    builtin(): Promise<{ path: string; source: 'downloaded' | 'bundled' } | null>
     /** Opens the package chooser. Accepts a folder too, for packages in the pre-1 folder format. */
     pick(): Promise<string | null>
     /** Resolves to null when the user cancelled the save dialog. */

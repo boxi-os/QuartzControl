@@ -167,6 +167,13 @@ export default {
       baseUrl: 'Base URL',
       baseUrlHint:
         'The address the site will be reachable at later — without https://. If you do not know it yet, leave “localhost” and fill it in later under Configuration.',
+      useTemplate: 'Install the example template',
+      useTemplateHint:
+        'A finished design: measured colours for light and dark, three authored page grids, self-hosted typefaces and every component styled individually. All of it editable afterwards.',
+      templateContent: 'With the example pages',
+      templateContentHint:
+        'Around 270 pages that explain the template itself — for every component the page describing it. Meant for looking things up; leave it out if you bring your own notes.',
+      templateFailed: 'The project was created, but the template could not be applied: {{detail}}',
       creating: 'Creating… (cloning and npm install take a minute or two)',
       create: 'Create project',
       createFailed: 'The project could not be created.'
@@ -1572,6 +1579,11 @@ export default {
       presets: {
         label: 'Theme presets',
         description: 'Your saved theme combinations.'
+      },
+      content: {
+        label: 'Content',
+        description:
+          'The notes themselves. For most templates you do not want this — a template is a design. For one that explains itself, you do.'
       }
     },
     stats: {
@@ -1599,7 +1611,8 @@ export default {
       entries: '{{count}} text',
       entries_other: '{{count}} texts',
       presets: '{{count}} preset',
-      presets_other: '{{count}} presets'
+      presets_other: '{{count}} presets',
+      kilobytes: '{{count}} kB'
     },
     warnings: {
       unknown: '{{count}}× {{kind}}',
@@ -1626,6 +1639,10 @@ export default {
       translationFailed: 'Text could not be written: {{detail}}',
       partUnreadable: 'One part could not be read: {{detail}}',
       partFailed: 'One part failed: {{detail}}',
+      contentIsSymlink:
+        'The content was not written: this project\'s content folder is a link to {{detail}}. Pouring a template\'s notes into somebody\'s vault could not be undone.',
+      contentSkipped: '{{count}} existing note was left unchanged.',
+      contentSkipped_other: '{{count}} existing notes were left unchanged.',
       packageUnreadable: 'The template could not be read.'
     }
   },

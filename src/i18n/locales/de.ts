@@ -168,6 +168,13 @@ export default {
       baseUrl: 'Basis-URL',
       baseUrlHint:
         'Die Adresse, unter der die Website später erreichbar ist — ohne https://. Wenn du sie noch nicht kennst, lass „localhost“ stehen und trage sie später unter Konfiguration nach.',
+      useTemplate: 'Beispielvorlage mitinstallieren',
+      useTemplateHint:
+        'Eine fertige Gestaltung: gemessene Farben für hell und dunkel, drei eigene Seitenraster, selbst gehostete Schriften und jede Komponente einzeln gestaltet. Lässt sich hinterher überall ändern.',
+      templateContent: 'Mit den Beispielseiten',
+      templateContentHint:
+        'Rund 270 Seiten, die die Vorlage selbst erklären — zu jeder Komponente die Seite, auf der sie beschrieben ist. Zum Nachschlagen gedacht; wenn du eigene Notizen mitbringst, lass sie weg.',
+      templateFailed: 'Das Projekt wurde angelegt, aber die Vorlage ließ sich nicht anwenden: {{detail}}',
       creating: 'Erstelle… (Klonen und npm install dauern ein bis zwei Minuten)',
       create: 'Projekt anlegen',
       createFailed: 'Projekt konnte nicht erstellt werden.'
@@ -1579,6 +1586,11 @@ export default {
       presets: {
         label: 'Theme-Presets',
         description: 'Deine gespeicherten Theme-Zusammenstellungen.'
+      },
+      content: {
+        label: 'Inhalt',
+        description:
+          'Die Notizen selbst. Bei den meisten Vorlagen willst du das nicht — eine Vorlage ist eine Gestaltung. Bei einer, die sich selbst erklärt, schon.'
       }
     },
     stats: {
@@ -1606,7 +1618,8 @@ export default {
       entries: '{{count}} Text',
       entries_other: '{{count}} Texte',
       presets: '{{count}} Preset',
-      presets_other: '{{count}} Presets'
+      presets_other: '{{count}} Presets',
+      kilobytes: '{{count}} kB'
     },
     warnings: {
       unknown: '{{count}}× {{kind}}',
@@ -1633,6 +1646,10 @@ export default {
       translationFailed: 'Text nicht schreibbar: {{detail}}',
       partUnreadable: 'Ein Baustein war nicht lesbar: {{detail}}',
       partFailed: 'Ein Baustein ist fehlgeschlagen: {{detail}}',
+      contentIsSymlink:
+        'Der Inhalt wurde nicht geschrieben: Der Content-Ordner dieses Projekts ist ein Link auf {{detail}}. Die Notizen einer Vorlage in einen fremden Vault zu schütten wäre nicht rückgängig zu machen.',
+      contentSkipped: '{{count}} vorhandene Notiz blieb unverändert.',
+      contentSkipped_other: '{{count}} vorhandene Notizen blieben unverändert.',
       packageUnreadable: 'Die Vorlage ließ sich nicht lesen.'
     }
   },

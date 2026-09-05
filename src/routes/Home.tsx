@@ -13,7 +13,7 @@ import type {
 } from '@shared/ipc-contract'
 import type { TFunction } from 'i18next'
 import { useAppStore } from '../state/store'
-import { Button, Card, Field, InfoNote, Modal, Select, TextInput } from '../components/ui'
+import { Button, Card, Field, InfoNote, Modal, Select, TextInput, Toggle } from '../components/ui'
 import ProjectAvatar from '../components/ProjectAvatar'
 import { GROUP_ICONS } from './navConfig'
 import { formatRelativeTime } from '../utils/format'
@@ -221,7 +221,7 @@ export default function Home(): JSX.Element {
           error={error}
           defaultDirectory={settings.defaultProjectDirectory}
           onCancel={() => setShowWizard(false)}
-          onCreate={async (options) => {
+          onCreate={async (options, template) => {
             setBusy(true)
             setError(null)
             try {
@@ -229,6 +229,46 @@ export default function Home(): JSX.Element {
               if (!result.success) {
                 setError(result.output || t('home.wizard.createFailed'))
                 return
+              }
+              // The template is applied to the project that now exists, through the ordinary import
+              // path - plan first, so the parts come from the package rather than from a list here
+              // that would go stale the next time a part is added. A failure does not undo the
+              // project: it is a finished, usable Quartz project either way, and the message says
+              // what did not happen rather than throwing the whole creation away.
+              if (template) {
+                try {
+                  const plan = await window.quartzGui.templatePackage.plan(options.targetDirectory, template.path)
+                  if (plan) {
+                    const parts = plan.parts
+                      .map((part) => part.id)
+                      .filter((id) => template.withContent || id !== 'content')
+                    await window.quartzGui.templatePackage.import(
+                      options.targetDirectory,
+                      template.path,
+                      parts,
+                      'packageWins'
+                    )
+                    // The one setting the template deliberately does not carry, set here because
+                    // leaving it would be worse than either: `configuration` is a site's own
+                    // identity and no part touches it, but `quartz create` writes en-US and the
+                    // example pages are German. Without this a German user gets German pages under
+                    // an English "Table of contents" - and the eleven translated strings the
+                    // package just installed are not rendered at all, since quartz only reads a
+                    // locale file the configuration names. The app's own language is the best
+                    // answer available at this moment, and the config editor is one click away.
+                    const config = await window.quartzGui.config.get(options.targetDirectory)
+                    const wanted = i18n.language.startsWith('de') ? 'de-DE' : 'en-US'
+                    if (config.configuration.locale !== wanted) {
+                      await window.quartzGui.config.save(options.targetDirectory, {
+                        ...config,
+                        configuration: { ...config.configuration, locale: wanted }
+                      })
+                    }
+                  }
+                } catch (err) {
+                  setError(t('home.wizard.templateFailed', { detail: String(err) }))
+                  return
+                }
               }
               const overview = await window.quartzGui.projects.overview()
               setProjects(overview)
@@ -723,7 +763,7 @@ function CreateWizard({
   error: string | null
   defaultDirectory?: string
   onCancel: () => void
-  onCreate: (options: CreateProjectOptions) => void
+  onCreate: (options: CreateProjectOptions, template: { path: string; withContent: boolean } | null) => void
 }): JSX.Element {
   const { t } = useTranslation()
   // Two fields rather than one path, because the folder is created here rather than chosen: a
@@ -738,6 +778,16 @@ function CreateWizard({
   const [strategy, setStrategy] = useState<NonNullable<CreateProjectOptions['strategy']>>('new')
   const [linkResolution, setLinkResolution] = useState<NonNullable<CreateProjectOptions['linkResolution']>>('shortest')
   const [baseUrl, setBaseUrl] = useState('localhost')
+  // The example template, if the app has one to offer. Asked for once on mount: the answer may
+  // involve a download, and a dialog that re-checks on every keystroke would be checking the
+  // network while somebody types a folder name.
+  const [builtin, setBuiltin] = useState<{ path: string; source: 'downloaded' | 'bundled' } | null>(null)
+  const [useTemplate, setUseTemplate] = useState(true)
+  const [withContent, setWithContent] = useState(true)
+
+  useEffect(() => {
+    void window.quartzGui.templatePackage.builtin().then(setBuiltin)
+  }, [])
 
   const trimmedName = projectName.trim()
   // macOS and Linux only (see electron-builder.yml on why Windows is absent), so one separator.
@@ -759,14 +809,17 @@ function CreateWizard({
     // Also the guard behind Return: the submit button is disabled in the same cases, which stops
     // implicit submission, but a check that lives in one place cannot disagree with the button.
     if (!canCreate) return
-    onCreate({
-      targetDirectory,
-      template,
-      strategy,
-      linkResolution,
-      source: strategy === 'new' ? undefined : source,
-      baseUrl: baseUrl || undefined
-    })
+    onCreate(
+      {
+        targetDirectory,
+        template,
+        strategy,
+        linkResolution,
+        source: strategy === 'new' ? undefined : source,
+        baseUrl: baseUrl || undefined
+      },
+      builtin && useTemplate ? { path: builtin.path, withContent } : null
+    )
   }
 
   return (
@@ -847,6 +900,31 @@ function CreateWizard({
           <Field label={t('home.wizard.baseUrl')} hint={t('home.wizard.baseUrlHint')}>
             <TextInput value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="example.com" />
           </Field>
+
+          {/* Last, and deliberately after the Quartz options: this is a decision about how the site
+              should look, and the ones above are about what the project *is*. A checkbox rather
+              than a picker because there is one template to offer; when there are several this
+              becomes a list and the second checkbox moves into it. */}
+          {builtin && (
+            <div className="rounded-md border border-ink/10 bg-ground p-2.5">
+              <Toggle
+                label={t('home.wizard.useTemplate')}
+                hint={t('home.wizard.useTemplateHint')}
+                checked={useTemplate}
+                onChange={setUseTemplate}
+              />
+              {useTemplate && (
+                <div className="mt-2 border-t border-ink/10 pt-2">
+                  <Toggle
+                    label={t('home.wizard.templateContent')}
+                    hint={t('home.wizard.templateContentHint')}
+                    checked={withContent}
+                    onChange={setWithContent}
+                  />
+                </div>
+              )}
+            </div>
+          )}
 
           {error && (
             <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-md bg-red-50 p-2 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-400">

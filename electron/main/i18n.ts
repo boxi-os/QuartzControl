@@ -72,6 +72,8 @@ const STRINGS = {
     createTargetExists:
       'In „{{path}}“ liegen bereits Dateien. Wähle einen anderen Namen oder einen anderen Ordner — ein vorhandener Ordner wird nicht überschrieben.',
     createCloneFailed: 'Quartz konnte nicht von GitHub geladen werden:',
+    templateContentTooLarge:
+      'Der Inhalt dieses Projekts ist größer als {{limit}} MB. Eine Vorlage ist eine Gestaltung, keine Sicherung — nimm den Baustein „Inhalt“ heraus.',
     duplicateSourceNotAProject:
       'In „{{path}}“ liegt keine quartz.config.yaml — das ist kein Quartz-Projekt.',
     duplicateNested:
@@ -264,6 +266,8 @@ const STRINGS = {
     createTargetExists:
       '“{{path}}” already contains files. Pick a different name or a different folder — an existing folder is never overwritten.',
     createCloneFailed: 'Quartz could not be downloaded from GitHub:',
+    templateContentTooLarge:
+      'This project\'s content is larger than {{limit}} MB. A template is a design, not a backup — leave the “content” part out.',
     duplicateSourceNotAProject: 'There is no quartz.config.yaml in “{{path}}” — that is not a Quartz project.',
     duplicateNested:
       'The copy must not sit inside the original project, nor the original inside the copy. Pick a folder beside it.',

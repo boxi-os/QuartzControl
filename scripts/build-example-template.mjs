@@ -53,6 +53,16 @@ import { LOCALE, TRANSLATIONS } from './example-template/translations.mjs'
 import { PRESETS } from './example-template/presets.mjs'
 import { STYLE_ORDER } from './example-template/style-order.mjs'
 
+// The expected part list, read out of the contract instead of restated here. A copy went stale the
+// first time a part was added and this line printed "11 von 10" - small, but it is exactly the kind
+// of wrongness that teaches people to stop reading a script's output.
+const TEMPLATE_PART_IDS = (() => {
+  const source = fs.readFileSync(path.join(import.meta.dirname, '../shared/ipc-contract.ts'), 'utf-8')
+  const block = /TEMPLATE_PART_IDS: readonly TemplatePartId\[\] = \[([\s\S]*?)\] as const/.exec(source)
+  if (!block) throw new Error('TEMPLATE_PART_IDS nicht in shared/ipc-contract.ts gefunden')
+  return [...block[1].matchAll(/'([a-zA-Z]+)'/g)].map((m) => m[1])
+})()
+
 const APP_DIR = path.resolve(import.meta.dirname, '..')
 const DATA_DIR = path.join(APP_DIR, 'scripts/example-template')
 const HOME = os.homedir()
@@ -370,8 +380,19 @@ async function buildTemplate() {
         async (a) => {
           const config = await window.quartzGui.config.get(a.path)
 
+          // Both sources are filtered out before being appended again below. The layout boxes were
+          // from the start; the multilanguage entry was not, and running this phase twice against
+          // the same project therefore added a second copy of it - found the hard way, by running
+          // the script by accident. "Each phase is idempotent" is a claim this file makes at the
+          // top, so it has to hold for every entry it appends, not for most of them.
           const plugins = config.plugins
-            .filter((entry) => !(typeof entry.source === 'string' && entry.source === a.layoutBoxSource))
+            .filter(
+              (entry) =>
+                !(
+                  typeof entry.source === 'string' &&
+                  (entry.source === a.layoutBoxSource || entry.source === a.multilanguageSource)
+                )
+            )
             .map((entry) => {
               const patch = a.patches[entry.name]
               if (!patch) return entry
@@ -425,7 +446,8 @@ async function buildTemplate() {
           multilanguage: MULTILANGUAGE_ENTRY,
           layout: LAYOUT_CONFIG,
           theme: THEME_ENTRY,
-          layoutBoxSource: LAYOUT_BOX_SOURCE
+          layoutBoxSource: LAYOUT_BOX_SOURCE,
+          multilanguageSource: MULTILANGUAGE_SOURCE
         }
       )
       done(`${applied.plugins} Einträge`)
@@ -604,9 +626,11 @@ async function buildTemplate() {
       step('Bausteine')
       parts = await ipc(page, (a) => window.quartzGui.templatePackage.inspect(a.path), { path: WORKSHOP })
       const ids = parts.map((p) => p.id)
-      const missing = ['appearance', 'cssVariables', 'theme', 'styles', 'fonts', 'layout', 'frames', 'plugins', 'translations', 'presets']
-        .filter((id) => !ids.includes(id))
-      done(`${ids.length} von 10${missing.length ? ` — fehlt: ${missing.join(', ')}` : ''}`)
+      // The expected list comes from the contract, not from a copy of it here: this line said
+      // "11 von 10" the first time a part was added, which is the kind of small wrongness that
+      // teaches people to stop reading the output.
+      const missing = TEMPLATE_PART_IDS.filter((id) => !ids.includes(id))
+      done(`${ids.length} von ${TEMPLATE_PART_IDS.length}${missing.length ? ` — fehlt: ${missing.join(', ')}` : ''}`)
       for (const part of parts) {
         const stats = Object.entries(part.stats)
           .filter(([key, value]) => value > 0 && !key.startsWith('all'))

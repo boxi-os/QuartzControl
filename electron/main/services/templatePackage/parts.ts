@@ -1,6 +1,6 @@
 import { createHash } from 'crypto'
 import { existsSync } from 'fs'
-import { copyFile, mkdir, readFile, writeFile } from 'fs/promises'
+import { copyFile, mkdir, readdir, readFile, writeFile } from 'fs/promises'
 import { dirname, join } from 'path'
 import type {
   CssVariableOverride,
@@ -13,12 +13,14 @@ import type {
   ThemePreset
 } from '@shared/ipc-contract'
 import * as configService from '../configService'
+import * as contentService from '../contentService'
 import * as layoutFrameService from '../layoutFrameService'
 import * as localizationService from '../localizationService'
 import * as pluginService from '../pluginService'
 import * as styleService from '../styleService'
 import * as themePresetsService from '../themePresetsService'
 import { runCommand } from '../runCommand'
+import { mainT } from '../../i18n'
 import type { ZipEntry } from '../zipArchive'
 import { emptyPlan, hasNodeModule, installedVersion, listFilesFlat, type ApplyContext, type TemplatePart } from './shared'
 
@@ -724,6 +726,108 @@ const presets: TemplatePart<PresetsPayload> = {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the registry is heterogeneous by
 // design: each part has its own payload type, which only that part's own three functions ever see.
+/* -------------------------------------------------------------------- content */
+
+// The notes themselves. The one part that carries what a site *says* rather than how it looks, and
+// the only one that is genuinely optional in both directions: a template exists to be a design, and
+// most of them should ship without a single page. It exists because this app's own example template
+// is also its manual - the pages explain the components they are rendered by - and a manual that
+// does not arrive with the thing it documents is a link somebody has to find.
+//
+// Three rules keep it from being a foot-gun:
+//
+//   * Hidden entries are skipped. A vault carries .obsidian and usually its own .git; neither is
+//     content, and .git alone was 1107 of the example vault's 1392 entries.
+//   * There is a cap. A template is a design, not a backup: past it the export says so instead of
+//     writing a package nobody can send anywhere.
+//   * A symlinked content folder is never written into. That is the important one - `content/` in
+//     the target may be a link into somebody's Obsidian vault, and an import would then drop the
+//     package's notes among their own. The plan says so before the click and apply refuses.
+interface ContentPayload {
+  files: string[]
+}
+
+const CONTENT_MAX_BYTES = 100 * 1024 * 1024
+
+async function listContentFiles(dir: string, prefix = ''): Promise<string[]> {
+  if (!existsSync(dir)) return []
+  const out: string[] = []
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    if (entry.name.startsWith('.')) continue
+    const rel = prefix ? `${prefix}/${entry.name}` : entry.name
+    if (entry.isDirectory()) out.push(...(await listContentFiles(join(dir, entry.name), rel)))
+    else out.push(rel)
+  }
+  return out.sort()
+}
+
+const content: TemplatePart<ContentPayload> = {
+  id: 'content',
+  async collect({ projectPath }) {
+    const dir = contentService.contentDirPath(projectPath)
+    const names = await listContentFiles(dir)
+    if (names.length === 0) return null
+    const entries: ZipEntry[] = []
+    let bytes = 0
+    for (const name of names) {
+      const data = await readFile(join(dir, name))
+      bytes += data.length
+      if (bytes > CONTENT_MAX_BYTES) {
+        throw new Error(mainT('templateContentTooLarge', { limit: Math.round(CONTENT_MAX_BYTES / 1024 / 1024) }))
+      }
+      entries.push({ name: `files/content/${name}`, data })
+    }
+    return { payload: { files: names }, files: entries, stats: { files: names.length, kilobytes: Math.round(bytes / 1024) } }
+  },
+  async plan(payload, { projectPath, files }) {
+    const plan = emptyPlan()
+    const status = await contentService.getContentStatus(projectPath)
+    if (status.isSymlink) {
+      // Not a conflict per file: the whole part cannot run, and saying that once is clearer than
+      // saying it 254 times.
+      plan.notes.push('contentIsSymlink')
+      return plan
+    }
+    const dir = contentService.contentDirPath(projectPath)
+    for (const name of payload.files) {
+      const target = join(dir, name)
+      if (!existsSync(target)) {
+        plan.additions.push(name)
+        continue
+      }
+      const incoming = files.get(`files/content/${name}`)
+      if (incoming && sha(incoming) === sha(await readFile(target))) plan.notes.push(`identical:${name}`)
+      else plan.conflicts.push(name)
+    }
+    return plan
+  },
+  async apply(payload, { projectPath, strategy, files, warn, progress }) {
+    const status = await contentService.getContentStatus(projectPath)
+    if (status.isSymlink) {
+      warn(`contentIsSymlink:${status.symlinkTarget ?? ''}`)
+      return
+    }
+    const dir = contentService.contentDirPath(projectPath)
+    let done = 0
+    for (const name of payload.files) {
+      const data = files.get(`files/content/${name}`)
+      if (!data) continue
+      const target = join(dir, name)
+      if (existsSync(target)) {
+        if (sha(data) === sha(await readFile(target))) continue
+        if (strategy === 'projectWins') {
+          warn(`contentSkipped:${name}`)
+          continue
+        }
+      }
+      await mkdir(dirname(target), { recursive: true })
+      await writeFile(target, data)
+      done += 1
+      if (done % 25 === 0) progress(`content:${done}`)
+    }
+  }
+}
+
 export const PARTS: Record<string, TemplatePart<any>> = {
   appearance,
   cssVariables,
@@ -734,7 +838,8 @@ export const PARTS: Record<string, TemplatePart<any>> = {
   frames,
   plugins,
   translations,
-  presets
+  presets,
+  content
 }
 
 export async function copyIfMissing(source: string, target: string): Promise<void> {

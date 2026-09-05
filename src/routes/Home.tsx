@@ -3,8 +3,14 @@ import { useTranslation } from 'react-i18next'
 import { confirmDialog } from '../utils/confirm'
 import { titlebarStripClass } from '../utils/platform'
 import { useNavigate, Link } from 'react-router-dom'
-import { ArrowUpRight, CheckCircle2, FolderSearch, Search, TriangleAlert, Trash2 } from 'lucide-react'
-import type { CreateProjectOptions, EnvironmentInfo, ProjectOverview, ToolInfo } from '@shared/ipc-contract'
+import { ArrowUpRight, CheckCircle2, Copy, FolderSearch, Search, TriangleAlert, Trash2 } from 'lucide-react'
+import type {
+  CreateProjectOptions,
+  DuplicateProjectOptions,
+  EnvironmentInfo,
+  ProjectOverview,
+  ToolInfo
+} from '@shared/ipc-contract'
 import type { TFunction } from 'i18next'
 import { useAppStore } from '../state/store'
 import { Button, Card, Field, InfoNote, Modal, Select, TextInput } from '../components/ui'
@@ -35,6 +41,9 @@ export default function Home(): JSX.Element {
   const removeProject = useAppStore((s) => s.removeProject)
   const [projects, setProjects] = useState<ProjectOverview[] | null>(null)
   const [showWizard, setShowWizard] = useState(false)
+  // The project a "Duplizieren" click opened the dialog for. One piece of state rather than a flag
+  // per row: only one dialog can be open, and the row itself has nothing to remember afterwards.
+  const [duplicating, setDuplicating] = useState<ProjectOverview | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
@@ -161,6 +170,7 @@ export default function Home(): JSX.Element {
                       await reload()
                     }}
                     onRelocated={reload}
+                    onDuplicate={() => setDuplicating(project)}
                   />
                 ))}
                 {filtered.length === 0 && (
@@ -173,6 +183,37 @@ export default function Home(): JSX.Element {
           <WhatYouCanDo environment={environment} />
         </div>
       </div>
+
+      {duplicating && (
+        <DuplicateWizard
+          source={duplicating}
+          busy={busy}
+          error={error}
+          defaultDirectory={settings.defaultProjectDirectory}
+          onCancel={() => {
+            setDuplicating(null)
+            setError(null)
+          }}
+          onDuplicate={async (options) => {
+            setBusy(true)
+            setError(null)
+            try {
+              const result = await window.quartzGui.projects.duplicate(options)
+              if (!result.success) {
+                setError(result.output || t('home.duplicate.failed'))
+                return
+              }
+              const overview = await window.quartzGui.projects.overview()
+              setProjects(overview)
+              const created = overview.find((p) => p.path === options.targetDirectory)
+              setDuplicating(null)
+              if (created) navigate(`/project/${created.id}`)
+            } finally {
+              setBusy(false)
+            }
+          }}
+        />
+      )}
 
       {showWizard && (
         <CreateWizard
@@ -206,6 +247,127 @@ export default function Home(): JSX.Element {
   )
 }
 
+// ── duplicating a project ───────────────────────────────────────────────────────────────────
+
+// Same two fields as the create wizard, for the same reason (a folder picker cannot return a
+// folder that does not exist yet), plus the one question a copy has to answer: where its own
+// content comes from. The original's content folder is deliberately not offered - it is either a
+// link into a vault, which two projects would then write through without either saying so, or a
+// folder that belongs to the original.
+function DuplicateWizard({
+  source,
+  busy,
+  error,
+  defaultDirectory,
+  onCancel,
+  onDuplicate
+}: {
+  source: ProjectOverview
+  busy: boolean
+  error: string | null
+  defaultDirectory?: string
+  onCancel: () => void
+  onDuplicate: (options: DuplicateProjectOptions) => void
+}): JSX.Element {
+  const { t } = useTranslation()
+  const [parentDirectory, setParentDirectory] = useState(defaultDirectory ?? '')
+  const [projectName, setProjectName] = useState(`${source.name}-2`)
+  const [strategy, setStrategy] = useState<DuplicateProjectOptions['contentStrategy']>('blank')
+  const [contentSource, setContentSource] = useState('')
+
+  const trimmedName = projectName.trim()
+  const targetDirectory = parentDirectory && trimmedName ? `${parentDirectory.replace(/\/+$/, '')}/${trimmedName}` : ''
+  const nameInvalid = trimmedName.includes('/') || trimmedName === '.' || trimmedName === '..'
+
+  async function pickParent(): Promise<void> {
+    const folder = await window.quartzGui.dialog.pickFolder(parentDirectory || defaultDirectory)
+    if (folder) setParentDirectory(folder)
+  }
+
+  async function pickContent(): Promise<void> {
+    const folder = await window.quartzGui.dialog.pickFolder(contentSource || undefined)
+    if (folder) setContentSource(folder)
+  }
+
+  const canRun = !busy && !!targetDirectory && !nameInvalid && (strategy === 'blank' || !!contentSource)
+  function run(): void {
+    if (!canRun) return
+    onDuplicate({
+      sourcePath: source.path,
+      targetDirectory,
+      contentStrategy: strategy,
+      contentSource: strategy === 'blank' ? undefined : contentSource
+    })
+  }
+
+  return (
+    <Modal open onClose={onCancel} onSubmit={run} dismissible={!busy} title={t('home.duplicate.title', { name: source.name })}>
+      <InfoNote className="mb-1">{t('home.duplicate.intro')}</InfoNote>
+      <div className="flex flex-col gap-3">
+        <Field label={t('home.wizard.parentDirectory')} hint={t('home.wizard.parentDirectoryHint')}>
+          <div className="flex gap-2">
+            <TextInput
+              value={parentDirectory}
+              onChange={(e) => setParentDirectory(e.target.value)}
+              placeholder={t('home.wizard.parentDirectoryPlaceholder')}
+              className="flex-1"
+            />
+            <Button variant="ghost" onClick={pickParent}>
+              {t('common.select')}
+            </Button>
+          </div>
+        </Field>
+
+        <Field label={t('home.wizard.projectName')} hint={t('home.duplicate.nameHint')}>
+          <TextInput data-autofocus value={projectName} onChange={(e) => setProjectName(e.target.value)} />
+        </Field>
+
+        {nameInvalid ? (
+          <p className="text-[11px] text-red-600 dark:text-red-400">{t('home.wizard.nameInvalid')}</p>
+        ) : (
+          targetDirectory && (
+            <p className="break-all text-[11px] text-slate-500 dark:text-slate-400">
+              {t('home.wizard.targetPreview')} <code className="font-mono">{targetDirectory}</code>
+            </p>
+          )
+        )}
+
+        <Field label={t('home.duplicate.contentLabel')} hint={t('home.duplicate.contentHint')}>
+          <Select value={strategy} onChange={(e) => setStrategy(e.target.value as typeof strategy)}>
+            <option value="blank">{t('home.duplicate.contentBlank')}</option>
+            <option value="symlink">{t('home.duplicate.contentSymlink')}</option>
+            <option value="copy">{t('home.duplicate.contentCopy')}</option>
+          </Select>
+        </Field>
+
+        {strategy !== 'blank' && (
+          <Field label={t('home.duplicate.contentFolder')} hint={t('home.duplicate.contentFolderHint')}>
+            <div className="flex gap-2">
+              <TextInput value={contentSource} onChange={(e) => setContentSource(e.target.value)} className="flex-1" />
+              <Button variant="ghost" onClick={pickContent}>
+                {t('common.select')}
+              </Button>
+            </div>
+          </Field>
+        )}
+
+        <p className="text-[11px] text-slate-500 dark:text-slate-400">{t('home.duplicate.whatStaysBehind')}</p>
+
+        {error && <p className="text-[11px] text-red-600 dark:text-red-400">{error}</p>}
+
+        <div className="mt-1 flex justify-end gap-2">
+          <Button variant="ghost" onClick={onCancel} disabled={busy}>
+            {t('common.cancel')}
+          </Button>
+          <Button type="submit" variant="primary" disabled={!canRun}>
+            {busy ? t('home.duplicate.running') : t('home.duplicate.confirm')}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
 // ── one project ─────────────────────────────────────────────────────────────────────────────
 
 function ProjectRow({
@@ -213,13 +375,15 @@ function ProjectRow({
   locale,
   onOpen,
   onRemove,
-  onRelocated
+  onRelocated,
+  onDuplicate
 }: {
   project: ProjectOverview
   locale: string
   onOpen: () => void
   onRemove: () => void
   onRelocated: () => void
+  onDuplicate: () => void
 }): JSX.Element {
   const { t } = useTranslation()
   const broken = project.missing || !project.isQuartzProject
@@ -290,6 +454,14 @@ function ProjectRow({
             <span className="flex items-center gap-1.5">
               <FolderSearch size={13} />
               {t('home.locateFolder')}
+            </span>
+          </Button>
+        )}
+        {!broken && (
+          <Button variant="ghost" className="ml-auto" onClick={onDuplicate}>
+            <span className="flex items-center gap-1.5">
+              <Copy size={13} />
+              {t('home.duplicate.action')}
             </span>
           </Button>
         )}

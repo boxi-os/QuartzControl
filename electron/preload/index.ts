@@ -11,6 +11,7 @@ import type {
   ContentStrategy,
   Settings,
   CreateProjectOptions,
+  DuplicateProjectOptions,
   ThemePreset,
   GridFrameDefinition,
   FrameBreakpointWidths,
@@ -59,7 +60,8 @@ const api: QuartzGuiApi = {
     relocate: (id: string, path: string) => ipcRenderer.invoke(IPC.projectRelocate, id, path),
     open: (id: string) => ipcRenderer.invoke(IPC.projectOpen, id),
     remove: (id: string) => ipcRenderer.invoke(IPC.projectRemove, id),
-    create: (options: CreateProjectOptions) => ipcRenderer.invoke(IPC.projectCreate, options)
+    create: (options: CreateProjectOptions) => ipcRenderer.invoke(IPC.projectCreate, options),
+    duplicate: (options: DuplicateProjectOptions) => ipcRenderer.invoke(IPC.projectDuplicate, options)
   },
   projectIcon: {
     get: (args: { projectPath: string }) => ipcRenderer.invoke(IPC.projectIconGet, args),

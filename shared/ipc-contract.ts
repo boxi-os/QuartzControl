@@ -1177,6 +1177,7 @@ export const IPC = {
   projectOpen: 'project:open',
   projectRemove: 'project:remove',
   projectCreate: 'project:create',
+  projectDuplicate: 'project:duplicate',
 
   projectIconGet: 'projectIcon:get',
   projectIconSet: 'projectIcon:set',
@@ -1398,6 +1399,26 @@ export interface CreateProjectResult {
   output: string
 }
 
+/**
+ * Copying an existing project into a new folder. The content folder is not copied along: the
+ * original's is either a link into a vault - which two projects would then write through at once,
+ * without either of them saying so - or a folder the copy has no claim to. The dialog asks where
+ * the copy's own content comes from, and `blank` is the honest answer for "I want the design, not
+ * the notes".
+ */
+export interface DuplicateProjectOptions {
+  sourcePath: string
+  targetDirectory: string
+  contentStrategy: ContentStrategy | 'blank'
+  /** The folder to link to or copy in. Required unless the strategy is `blank`. */
+  contentSource?: string
+}
+
+export interface DuplicateProjectResult {
+  success: boolean
+  output: string
+}
+
 // The renderer-facing API exposed on window.quartzGui by the preload script.
 export interface QuartzGuiApi {
   /**
@@ -1426,6 +1447,9 @@ export interface QuartzGuiApi {
     open(id: string): Promise<Project | undefined>
     remove(id: string): Promise<void>
     create(options: CreateProjectOptions): Promise<CreateProjectResult>
+    /** Copies a project into a new folder and registers it. Everything the original's own past or
+     *  outside world belongs to stays behind - see duplicateService for the list and the reasons. */
+    duplicate(options: DuplicateProjectOptions): Promise<DuplicateProjectResult>
   }
   /**
    * The project's picture. One file - quartz/static/icon.png - because that is the only path the

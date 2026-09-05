@@ -60,6 +60,25 @@ export default {
     folderMissing: 'Ordner nicht gefunden — verschoben, umbenannt oder auf einem nicht eingebundenen Laufwerk.',
     notAQuartzProject: 'Kein Quartz-Projekt — in diesem Ordner liegt keine quartz.config.yaml.',
     locateFolder: 'Ordner suchen…',
+    duplicate: {
+      action: 'Duplizieren',
+      title: '„{{name}}“ duplizieren',
+      intro:
+        'Kopiert Gestaltung, Konfiguration, Plugins und die eigenen Frames in einen neuen Ordner. Der Inhalt kommt nicht mit — wähle unten, woher das Duplikat seine Notizen bekommt.',
+      nameHint: 'Der Ordnername des Duplikats. Er wird auch der Projektname in dieser Liste.',
+      contentLabel: 'Inhalt des Duplikats',
+      contentHint: 'Der Content-Ordner des Originals wird nie mitkopiert — zwei Projekte, die durch denselben Link schreiben, wüssten nichts voneinander.',
+      contentBlank: 'Leer beginnen (eine Startseite)',
+      contentSymlink: 'Mit einem Ordner verknüpfen (z. B. einem Obsidian-Vault)',
+      contentCopy: 'Einen Ordner hineinkopieren',
+      contentFolder: 'Quellordner',
+      contentFolderHint: 'Beim Verknüpfen bleibt dieser Ordner der Ort, an dem du schreibst; beim Kopieren wird er einmal übernommen.',
+      whatStaysBehind:
+        'Nicht mitkopiert werden: Snapshots, beiseitegelegte Content-Ordner und die Veröffentlichungsziele. Das Duplikat könnte sonst mit dem ersten Klick die Website des Originals überschreiben. Die Basis-URL wird übernommen — ändere sie unter „Einrichtung“, wenn das Duplikat woanders stehen soll.',
+      confirm: 'Duplizieren',
+      running: 'Kopiere…',
+      failed: 'Das Duplizieren ist fehlgeschlagen.'
+    },
     confirmRemove: '„{{name}}“ aus der Liste entfernen?\n\nDer Ordner auf der Festplatte bleibt unangetastet.',
     confirmRemoveAction: 'Aus der Liste entfernen',
     confirmRemoveRunning:

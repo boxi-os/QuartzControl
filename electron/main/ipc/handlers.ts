@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { IPC, TEMPLATE_PACKAGE_EXTENSION } from '@shared/ipc-contract'
 import type {
   CreateProjectOptions,
+  DuplicateProjectOptions,
   GridFrameDefinition,
   ProjectPrefs,
   QuartzConfig,
@@ -47,6 +48,7 @@ import * as backupService from '../services/backupService'
 import * as snapshotService from '../services/snapshotService'
 import * as contentService from '../services/contentService'
 import * as createService from '../services/createService'
+import * as duplicateService from '../services/duplicateService'
 import * as environmentService from '../services/environmentService'
 import * as nodeRuntime from '../services/nodeRuntime'
 import * as gitRuntime from '../services/gitRuntime'
@@ -137,6 +139,12 @@ export function registerIpcHandlers(): void {
 
   handle(IPC.projectCreate, t([s.createProjectOptions]), async (options) => {
     const result = await createService.createProject(options as CreateProjectOptions)
+    if (result.success) await projectStore.addProject(options.targetDirectory)
+    return result
+  })
+
+  handle(IPC.projectDuplicate, t([s.duplicateProjectOptions]), async (options) => {
+    const result = await duplicateService.duplicateProject(options as DuplicateProjectOptions)
     if (result.success) await projectStore.addProject(options.targetDirectory)
     return result
   })

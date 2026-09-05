@@ -459,6 +459,13 @@ export const createProjectOptions = z.looseObject({
   baseUrl: z.string().max(255).optional()
 })
 
+export const duplicateProjectOptions = z.looseObject({
+  sourcePath: absolutePath,
+  targetDirectory: absolutePath,
+  contentStrategy: z.enum(['copy', 'symlink', 'blank']),
+  contentSource: absolutePath.optional()
+})
+
 export const settings = z.looseObject({
   defaultProjectDirectory: absolutePath.optional(),
   language: z.enum(['system', 'de', 'en']).optional(),

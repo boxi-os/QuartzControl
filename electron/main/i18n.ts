@@ -72,6 +72,12 @@ const STRINGS = {
     createTargetExists:
       'In „{{path}}“ liegen bereits Dateien. Wähle einen anderen Namen oder einen anderen Ordner — ein vorhandener Ordner wird nicht überschrieben.',
     createCloneFailed: 'Quartz konnte nicht von GitHub geladen werden:',
+    duplicateSourceNotAProject:
+      'In „{{path}}“ liegt keine quartz.config.yaml — das ist kein Quartz-Projekt.',
+    duplicateNested:
+      'Das Duplikat darf nicht im Originalprojekt liegen und das Original nicht im Duplikat. Wähle einen Ordner daneben.',
+    duplicateBlankContent:
+      'Dieses Projekt ist eine Kopie und hat noch keinen Inhalt. Unter „Einrichtung → Content-Ordner“ kannst du einen Ordner oder einen Obsidian-Vault verknüpfen.',
     createInstallFailed: 'npm install ist fehlgeschlagen:',
     createNoConfig:
       '\n\nDer Setup-Assistent hat quartz.config.yaml nicht geschrieben (vermutlich fehlt eine Antwort auf eine interaktive Rückfrage oben).',
@@ -258,6 +264,11 @@ const STRINGS = {
     createTargetExists:
       '“{{path}}” already contains files. Pick a different name or a different folder — an existing folder is never overwritten.',
     createCloneFailed: 'Quartz could not be downloaded from GitHub:',
+    duplicateSourceNotAProject: 'There is no quartz.config.yaml in “{{path}}” — that is not a Quartz project.',
+    duplicateNested:
+      'The copy must not sit inside the original project, nor the original inside the copy. Pick a folder beside it.',
+    duplicateBlankContent:
+      'This project is a copy and has no content yet. Under “Setup → Content folder” you can link a folder or an Obsidian vault.',
     createInstallFailed: 'npm install failed:',
     createNoConfig:
       '\n\nThe setup wizard did not write quartz.config.yaml (most likely an interactive question above went unanswered).',

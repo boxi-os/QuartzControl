@@ -58,6 +58,27 @@ export default {
     folderMissing: 'Folder not found — moved, renamed, or on a volume that is not mounted.',
     notAQuartzProject: 'Not a Quartz project — this folder has no quartz.config.yaml.',
     locateFolder: 'Locate folder…',
+    duplicate: {
+      action: 'Duplicate',
+      title: 'Duplicate “{{name}}”',
+      intro:
+        'Copies the design, the configuration, the plugins and the authored frames into a new folder. The content does not come along — choose below where the copy gets its notes from.',
+      nameHint: 'The copy\'s folder name. It also becomes the project name in this list.',
+      contentLabel: 'Content of the copy',
+      contentHint:
+        'The original\'s content folder is never copied along — two projects writing through the same link would know nothing of each other.',
+      contentBlank: 'Start empty (one home page)',
+      contentSymlink: 'Link to a folder (an Obsidian vault, for instance)',
+      contentCopy: 'Copy a folder in',
+      contentFolder: 'Source folder',
+      contentFolderHint:
+        'When linking, that folder stays the place you write in; when copying, it is taken over once.',
+      whatStaysBehind:
+        'Not copied along: snapshots, set-aside content folders and the publishing destinations. Otherwise the copy could overwrite the original\'s website with the first click. The base URL is taken over — change it under “Setup” if the copy belongs somewhere else.',
+      confirm: 'Duplicate',
+      running: 'Copying…',
+      failed: 'Duplicating failed.'
+    },
     confirmRemove: 'Remove “{{name}}” from the list?\n\nThe folder on disk is left untouched.',
     confirmRemoveAction: 'Remove from list',
     confirmRemoveRunning:

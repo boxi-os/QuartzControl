@@ -103,84 +103,91 @@ export default function Home(): JSX.Element {
   return (
     <div className="flex h-screen flex-col">
       <div className={titlebarStripClass} />
-      {/* Still a centred column, unlike the project pages: this is a launcher, and a start screen
+      {/* Two boxes, and the split is the point: the scroller is the full width of the window, the
+          width cap sits inside it. With one element doing both, the scrollbar sat at the right edge
+          of the centred column - which on a wide window is the middle of the screen. Same shape as
+          ProjectLayout, where <main> scrolls and the inner div caps.
+
+          Still a centred column, unlike the project pages: this is a launcher, and a start screen
           stretched across a 27" display reads as broken rather than spacious. What the extra width
           buys here is a second column - the projects stay the main thing on the left, and what the
           app can do sits beside them instead of pushing them down the page. */}
-      <div className="mx-auto w-full max-w-6xl flex-1 overflow-y-auto px-6 pb-12">
-        <div className="mb-6 flex items-start justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <img src={appIcon} alt="" className="h-14 w-14 rounded-2xl shadow-sm" />
-            <div>
-              <h1 className="text-2xl font-semibold">QuartzControl</h1>
-              <p className="mt-0.5 text-[13px] text-slate-500 dark:text-slate-400">{t('home.subtitle')}</p>
+      <div className="flex-1 overflow-y-auto px-6 pb-12">
+        <div className="mx-auto w-full max-w-6xl">
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <img src={appIcon} alt="" className="h-14 w-14 rounded-2xl shadow-sm" />
+              <div>
+                <h1 className="text-2xl font-semibold">QuartzControl</h1>
+                <p className="mt-0.5 text-[13px] text-slate-500 dark:text-slate-400">{t('home.subtitle')}</p>
+              </div>
             </div>
+            <Link
+              to="/settings"
+              className="shrink-0 pt-1 text-[13px] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            >
+              {t('home.settings')}
+            </Link>
           </div>
-          <Link
-            to="/settings"
-            className="shrink-0 pt-1 text-[13px] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-          >
-            {t('home.settings')}
-          </Link>
-        </div>
 
-        {environment && <EnvironmentBand info={environment} onRecheck={recheckEnvironment} />}
+          {environment && <EnvironmentBand info={environment} onRecheck={recheckEnvironment} />}
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="min-w-0">
-            <div className="mb-4 flex flex-wrap items-center gap-3">
-              <Button onClick={openExisting}>{t('home.openExisting')}</Button>
-              <Button variant="ghost" onClick={() => setShowWizard(true)}>
-                {t('home.createNew')}
-              </Button>
-              {sorted.length >= SEARCH_THRESHOLD && (
-                <div className="relative ml-auto">
-                  <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400" />
-                  <TextInput
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder={t('home.searchPlaceholder')}
-                    className="w-56 pl-8"
-                  />
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="min-w-0">
+              <div className="mb-4 flex flex-wrap items-center gap-3">
+                <Button onClick={openExisting}>{t('home.openExisting')}</Button>
+                <Button variant="ghost" onClick={() => setShowWizard(true)}>
+                  {t('home.createNew')}
+                </Button>
+                {sorted.length >= SEARCH_THRESHOLD && (
+                  <div className="relative ml-auto">
+                    <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400" />
+                    <TextInput
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder={t('home.searchPlaceholder')}
+                      className="w-56 pl-8"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {projects === null ? (
+                <p className="text-[13px] text-slate-500 dark:text-slate-400">{t('common.loading')}</p>
+              ) : sorted.length === 0 ? (
+                <GettingStarted onOpen={openExisting} onCreate={() => setShowWizard(true)} />
+              ) : (
+                <div className={`grid gap-3 ${listColumns}`}>
+                  {filtered.map((project) => (
+                    <ProjectRow
+                      key={project.id}
+                      project={project}
+                      locale={i18n.language}
+                      onOpen={() => navigate(`/project/${project.id}`)}
+                      onRemove={async () => {
+                        // Removing the entry also stops the project's dev server (see the
+                        // project:remove handler), so the question says so rather than leaving a
+                        // process running that nothing in the app points at any more.
+                        const question = project.serverRunning
+                          ? t('home.confirmRemoveRunning', { name: project.name })
+                          : t('home.confirmRemove', { name: project.name })
+                        if (!(await confirmDialog({ text: question, confirmLabel: t('home.confirmRemoveAction'), danger: true }))) return
+                        await removeProject(project.id)
+                        await reload()
+                      }}
+                      onRelocated={reload}
+                      onDuplicate={() => setDuplicating(project)}
+                    />
+                  ))}
+                  {filtered.length === 0 && (
+                    <p className="text-[13px] text-slate-500 dark:text-slate-400">{t('home.noSearchResults')}</p>
+                  )}
                 </div>
               )}
             </div>
 
-            {projects === null ? (
-              <p className="text-[13px] text-slate-500 dark:text-slate-400">{t('common.loading')}</p>
-            ) : sorted.length === 0 ? (
-              <GettingStarted onOpen={openExisting} onCreate={() => setShowWizard(true)} />
-            ) : (
-              <div className={`grid gap-3 ${listColumns}`}>
-                {filtered.map((project) => (
-                  <ProjectRow
-                    key={project.id}
-                    project={project}
-                    locale={i18n.language}
-                    onOpen={() => navigate(`/project/${project.id}`)}
-                    onRemove={async () => {
-                      // Removing the entry also stops the project's dev server (see the
-                      // project:remove handler), so the question says so rather than leaving a
-                      // process running that nothing in the app points at any more.
-                      const question = project.serverRunning
-                        ? t('home.confirmRemoveRunning', { name: project.name })
-                        : t('home.confirmRemove', { name: project.name })
-                      if (!(await confirmDialog({ text: question, confirmLabel: t('home.confirmRemoveAction'), danger: true }))) return
-                      await removeProject(project.id)
-                      await reload()
-                    }}
-                    onRelocated={reload}
-                    onDuplicate={() => setDuplicating(project)}
-                  />
-                ))}
-                {filtered.length === 0 && (
-                  <p className="text-[13px] text-slate-500 dark:text-slate-400">{t('home.noSearchResults')}</p>
-                )}
-              </div>
-            )}
+            <WhatYouCanDo environment={environment} />
           </div>
-
-          <WhatYouCanDo environment={environment} />
         </div>
       </div>
 

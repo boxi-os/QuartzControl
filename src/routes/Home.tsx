@@ -247,32 +247,37 @@ export default function Home(): JSX.Element {
               if (template) {
                 try {
                   const plan = await window.quartzGui.templatePackage.plan(options.targetDirectory, template.path)
-                  if (plan) {
-                    const parts = plan.parts
-                      .map((part) => part.id)
-                      .filter((id) => template.withContent || id !== 'content')
-                    await window.quartzGui.templatePackage.import(
-                      options.targetDirectory,
-                      template.path,
-                      parts,
-                      'packageWins'
-                    )
-                    // The one setting the template deliberately does not carry, set here because
-                    // leaving it would be worse than either: `configuration` is a site's own
-                    // identity and no part touches it, but `quartz create` writes en-US and the
-                    // example pages are German. Without this a German user gets German pages under
-                    // an English "Table of contents" - and the eleven translated strings the
-                    // package just installed are not rendered at all, since quartz only reads a
-                    // locale file the configuration names. The app's own language is the best
-                    // answer available at this moment, and the config editor is one click away.
-                    const config = await window.quartzGui.config.get(options.targetDirectory)
-                    const wanted = i18n.language.startsWith('de') ? 'de-DE' : 'en-US'
-                    if (config.configuration.locale !== wanted) {
-                      await window.quartzGui.config.save(options.targetDirectory, {
-                        ...config,
-                        configuration: { ...config.configuration, locale: wanted }
-                      })
-                    }
+                  // null means the package could not be read at all. Silently skipping it left the
+                  // user with a project that looks like the one they asked for minus its whole
+                  // appearance, and nothing anywhere said why.
+                  if (!plan) {
+                    setError(t('home.wizard.templateFailed', { detail: t('home.wizard.templateUnreadable') }))
+                    return
+                  }
+                  const parts = plan.parts
+                    .map((part) => part.id)
+                    .filter((id) => template.withContent || id !== 'content')
+                  await window.quartzGui.templatePackage.import(
+                    options.targetDirectory,
+                    template.path,
+                    parts,
+                    'packageWins'
+                  )
+                  // The one setting the template deliberately does not carry, set here because
+                  // leaving it would be worse than either: `configuration` is a site's own
+                  // identity and no part touches it, but `quartz create` writes en-US and the
+                  // example pages are German. Without this a German user gets German pages under
+                  // an English "Table of contents" - and the eleven translated strings the
+                  // package just installed are not rendered at all, since quartz only reads a
+                  // locale file the configuration names. The app's own language is the best
+                  // answer available at this moment, and the config editor is one click away.
+                  const config = await window.quartzGui.config.get(options.targetDirectory)
+                  const wanted = i18n.language.startsWith('de') ? 'de-DE' : 'en-US'
+                  if (config.configuration.locale !== wanted) {
+                    await window.quartzGui.config.save(options.targetDirectory, {
+                      ...config,
+                      configuration: { ...config.configuration, locale: wanted }
+                    })
                   }
                 } catch (err) {
                   setError(t('home.wizard.templateFailed', { detail: String(err) }))

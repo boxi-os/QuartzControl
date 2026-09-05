@@ -179,6 +179,7 @@ export default {
       templateContentHint:
         'Rund 270 Seiten, die die Vorlage selbst erklären — zu jeder Komponente die Seite, auf der sie beschrieben ist. Zum Nachschlagen gedacht; wenn du eigene Notizen mitbringst, lass sie weg.',
       templateFailed: 'Das Projekt wurde angelegt, aber die Vorlage ließ sich nicht anwenden: {{detail}}',
+      templateUnreadable: 'Das Paket ließ sich nicht lesen.',
       creating: 'Erstelle… (Klonen und npm install dauern ein bis zwei Minuten)',
       create: 'Projekt anlegen',
       createFailed: 'Projekt konnte nicht erstellt werden.'

@@ -11,12 +11,15 @@
 //
 // A download is cached in userData and used for a day before the app asks again; a failed check
 // silently keeps whatever is cached, and failing that the bundled copy. The one thing this must
-// never do is make creating a project depend on the network, so every failure path ends at a file
-// that exists.
+// never do is make creating a project depend on the network, so every failure path ends at a
+// package that can be *read* - which is not the same as a file that exists, and was the bug: a
+// half-written cache file is still a file, and it beat the bundled copy for a whole day.
 import { app, net } from 'electron'
 import { existsSync } from 'fs'
-import { mkdir, readFile, stat, writeFile } from 'fs/promises'
+import { mkdir, open, readFile, rename, rm, stat } from 'fs/promises'
 import { join } from 'path'
+import { readZip, readZipFile } from './zipArchive'
+import { MANIFEST_FILE } from './templatePackage/shared'
 
 /**
  * The published package. A raw file rather than a release asset: a release asset in a *private*
@@ -51,6 +54,27 @@ async function ageMs(path: string): Promise<number> {
   }
 }
 
+// Temp file plus rename, and the same fsync jsonStore does for the same reason: the crash window a
+// rename alone leaves open is the one where the directory entry lands before the data. A plain
+// writeFile here left a torso behind when the app died mid-download - and that torso then beat the
+// bundled copy for a day, because "the file exists" was all getBuiltinTemplate asked.
+async function writeAtomically(target: string, data: Buffer): Promise<void> {
+  const tmp = `${target}.tmp-${process.pid}`
+  try {
+    const handle = await open(tmp, 'w')
+    try {
+      await handle.writeFile(data)
+      await handle.sync()
+    } finally {
+      await handle.close()
+    }
+    await rename(tmp, target)
+  } catch (err) {
+    await rm(tmp, { force: true }).catch(() => undefined)
+    throw err
+  }
+}
+
 /**
  * Downloads the package if the cached copy is missing or older than a day. Answers false on every
  * failure - a caller is expected to fall back, not to report an error: a project creation that
@@ -65,12 +89,13 @@ async function refresh(): Promise<boolean> {
     if (!res.ok) return false
     const data = Buffer.from(await res.arrayBuffer())
     if (data.length === 0 || data.length > MAX_BYTES) return false
-    // A .qtpl is a ZIP. Checking the two magic bytes costs nothing and is the difference between
-    // caching a template and caching a captive portal's login page.
-    if (data[0] !== 0x50 || data[1] !== 0x4b) return false
-    const target = cachedPath()
+    // Two magic bytes used to be the whole check, which separated a template from a captive
+    // portal's login page and from nothing else. Reading the archive properly is the check: readZip
+    // walks the central directory and verifies every entry's CRC, and a package without a manifest
+    // is not one. What gets cached is therefore a package this app can open, not merely a file.
+    if (!readZip(data).has(MANIFEST_FILE)) return false
     await mkdir(join(app.getPath('userData'), 'templates'), { recursive: true })
-    await writeFile(target, data)
+    await writeAtomically(cachedPath(), data)
     return true
   } catch {
     return false
@@ -82,13 +107,35 @@ export interface BuiltinTemplate {
   source: 'downloaded' | 'bundled'
 }
 
+// "It exists" is not "it can be read", and the difference is the whole of this finding: an
+// unreadable copy handed out here makes planImport answer null, and the wizard then creates a
+// project without the template it promised. Measured on the real package - 552 kB, 323 entries -
+// reading it whole takes 7 ms, which is nothing next to the dialog this runs behind.
+async function isReadablePackage(path: string): Promise<boolean> {
+  try {
+    return (await readZipFile(path)).has(MANIFEST_FILE)
+  } catch {
+    return false
+  }
+}
+
+// A cached copy that cannot be read is not merely skipped but deleted: its mtime would otherwise
+// keep ageMs under a day and block the re-download that repairs it. One download is then attempted
+// on the spot, so the recovery is now rather than tomorrow.
+async function cacheIsUsable(cached: string): Promise<boolean> {
+  if (!existsSync(cached)) return false
+  if (await isReadablePackage(cached)) return true
+  await rm(cached, { force: true }).catch(() => undefined)
+  return refresh()
+}
+
 /** The best package available right now, and where it came from. Never throws. */
 export async function getBuiltinTemplate(): Promise<BuiltinTemplate | null> {
   const cached = cachedPath()
   if ((await ageMs(cached)) > MAX_AGE_MS) await refresh()
-  if (existsSync(cached)) return { path: cached, source: 'downloaded' }
+  if (await cacheIsUsable(cached)) return { path: cached, source: 'downloaded' }
   const bundled = bundledPath()
-  if (existsSync(bundled)) return { path: bundled, source: 'bundled' }
+  if (await isReadablePackage(bundled)) return { path: bundled, source: 'bundled' }
   return null
 }
 

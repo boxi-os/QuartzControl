@@ -178,6 +178,7 @@ export default {
       templateContentHint:
         'Around 270 pages that explain the template itself — for every component the page describing it. Meant for looking things up; leave it out if you bring your own notes.',
       templateFailed: 'The project was created, but the template could not be applied: {{detail}}',
+      templateUnreadable: 'The package could not be read.',
       creating: 'Creating… (cloning and npm install take a minute or two)',
       create: 'Create project',
       createFailed: 'The project could not be created.'

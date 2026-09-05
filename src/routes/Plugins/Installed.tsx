@@ -152,6 +152,17 @@ function displayName(item: IndexedPlugin): string {
   return item.frame ? item.frame.frameName : item.plugin.name
 }
 
+// The name alone is not an identity: one plugin can be installed several times, and a real project
+// has six `quartz-layout-box` entries - opening one row's options opened all six, closing one
+// closed all six. The occurrence number separates them. It is not perfect either: removing the
+// second of six renumbers the four behind it, so their panels shift by one - but those entries are
+// indistinguishable to the reader anyway, whereas the shared panel was visible in every project
+// that uses a layout box more than once. A frame keeps the plain name; frame ids are unique by
+// construction (they are directory names under authored-frames/).
+function stickyKey(item: IndexedPlugin): string {
+  return item.frame || item.occurrence === 1 ? item.plugin.name : `${item.plugin.name}#${item.occurrence}`
+}
+
 function getLayout(plugin: PluginEntry): PluginLayout | null {
   const layout = plugin.layout
   return layout && typeof layout === 'object' ? (layout as PluginLayout) : null
@@ -203,6 +214,8 @@ interface IndexedPlugin {
   index: number
   /** The authored frame this entry registers, for the handful of entries that are one. */
   frame?: GridFrameDefinition
+  /** Which of the same-named entries this is, counted from 1. See stickyKey(). */
+  occurrence: number
 }
 
 type EnabledFilter = 'all' | 'active' | 'inactive'
@@ -414,19 +427,20 @@ export default function PluginsInstalled(): JSX.Element {
 
   const frameById = useMemo(() => new Map(frames.map((f) => [f.id, f])), [frames])
 
-  const items: IndexedPlugin[] = useMemo(
-    () =>
-      (config?.plugins ?? []).map((plugin, index) => {
-        // Both halves have to agree before an entry counts as a frame: the frame list says a frame
-        // with that id exists, and the entry really points at that frame's directory. A plugin that
-        // merely shares a name with a frame is still a plugin.
-        const frame = frameById.get(plugin.name)
-        const isFrame =
-          frame !== undefined && typeof plugin.source === 'string' && plugin.source.includes('authored-frames')
-        return { plugin, index, frame: isFrame ? frame : undefined }
-      }),
-    [config, frameById]
-  )
+  const items: IndexedPlugin[] = useMemo(() => {
+    const seen = new Map<string, number>()
+    return (config?.plugins ?? []).map((plugin, index) => {
+      // Both halves have to agree before an entry counts as a frame: the frame list says a frame
+      // with that id exists, and the entry really points at that frame's directory. A plugin that
+      // merely shares a name with a frame is still a plugin.
+      const frame = frameById.get(plugin.name)
+      const isFrame =
+        frame !== undefined && typeof plugin.source === 'string' && plugin.source.includes('authored-frames')
+      const occurrence = (seen.get(plugin.name) ?? 0) + 1
+      seen.set(plugin.name, occurrence)
+      return { plugin, index, frame: isFrame ? frame : undefined, occurrence }
+    })
+  }, [config, frameById])
 
   const filtering = query.trim() !== '' || enabledFilter !== 'all'
   const matches = useMemo(() => {
@@ -846,15 +860,14 @@ function PluginRow({
   const { plugin, index, frame } = item
   const layout = getLayout(plugin)
   const rowName = displayName(item)
-  // Keyed by the plugin's *name*, not by its position in the config array. The index is what the
-  // list's React key uses, and it was what this key used too - but removing a plugin shortens that
-  // array, so every entry behind it moves up one and the open options panel was left on whichever
-  // plugin inherited the index. (Reordering is safe by comparison: reorderGroup rewrites the
-  // `order`/`layout.priority` numbers in place and never moves an entry within the array.) Names
-  // are what quartz addresses a plugin by (`quartz plugin remove <name>`) and survive both. Two
-  // entries of the same name would share one panel; that is the config being ambiguous, and
-  // sharing beats pointing at the wrong row.
-  const [expanded, setExpanded] = useStickyState(`plugins.expanded.${plugin.name}`, false)
+  // Keyed by the plugin's *name* and which occurrence of it this row is, not by its position in
+  // the config array. The index is what the list's React key uses, and it was what this key used
+  // too - but removing a plugin shortens that array, so every entry behind it moves up one and the
+  // open options panel was left on whichever plugin inherited the index. (Reordering is safe by
+  // comparison: reorderGroup rewrites the `order`/`layout.priority` numbers in place and never
+  // moves an entry within the array.) Names are what quartz addresses a plugin by (`quartz plugin
+  // remove <name>`) and survive both - see stickyKey for why the name alone is still not enough.
+  const [expanded, setExpanded] = useStickyState(`plugins.expanded.${stickyKey(item)}`, false)
   const description = getPluginDescription(t, plugin.name)
   const url = repoUrl(plugin.source)
 

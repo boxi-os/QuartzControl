@@ -446,7 +446,13 @@ function DuplicateWizard({
 
         <p className="text-[11px] text-slate-500 dark:text-slate-400">{t('home.duplicate.whatStaysBehind')}</p>
 
-        {error && <p className="text-[11px] text-red-600 dark:text-red-400">{error}</p>}
+        {/* Mounted whether or not there is an error, because a live region has to be in the
+            document *before* its text is - the same reason PageHeader's status slot renders empty
+            rather than not at all, and the same reason `empty:hidden` is not used here. An empty
+            <p> is zero-height; it costs the flex gap next to it and nothing else. */}
+        <p role="alert" className="text-[11px] text-red-600 dark:text-red-400">
+          {error}
+        </p>
 
         <div className="mt-1 flex justify-end gap-2">
           <Button variant="ghost" onClick={onCancel} disabled={busy}>
@@ -559,7 +565,10 @@ function ProjectRow({
           </Button>
         )}
       </div>
-      {relocate.error && <p className="text-xs text-red-600 dark:text-red-400">{relocate.error}</p>}
+      {/* Same rule, same shape: this appears after the folder picker comes back. */}
+      <p role="alert" className="text-xs text-red-600 dark:text-red-400">
+        {relocate.error}
+      </p>
 
       <button
         type="button"
@@ -1057,11 +1066,15 @@ function CreateWizard({
             </div>
           )}
 
-          {error && (
-            <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-md bg-red-50 p-2 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-400">
-              {error}
-            </pre>
-          )}
+          {/* Empty but present - see the same region in the duplicate dialog. The box only paints
+              when there is something in it, so an empty region shows no red panel. */}
+          <div role="alert">
+            {error && (
+              <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-md bg-red-50 p-2 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-400">
+                {error}
+              </pre>
+            )}
+          </div>
 
           <div className="mt-2 flex justify-end gap-2">
             <Button variant="ghost" onClick={onCancel} disabled={busy}>

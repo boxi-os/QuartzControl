@@ -103,7 +103,10 @@ async function visit(page, size, label, hash) {
   process.stdout.write(`  ${label} … `)
   const dom = await page.evaluate(() => ({
     boundary: document.body.innerText.includes('Diese Ansicht konnte nicht dargestellt werden.'),
-    toasts: [...document.querySelectorAll('[role="alert"]')].map((e) => e.innerText.trim()),
+    // Empty ones are filtered out, not counted: a live region has to be mounted before its text
+    // exists (see CLAUDE.md), so the pages that report errors properly carry an empty [role=alert]
+    // at all times. An empty region is not an error - the question here is whether one is *shown*.
+    toasts: [...document.querySelectorAll('[role="alert"]')].map((e) => e.innerText.trim()).filter(Boolean),
     // Home and Settings render no <main> at all (only ProjectLayout does), so the scroll
     // container falls back to #root rather than the check silently passing on those two.
     sideways: (() => {

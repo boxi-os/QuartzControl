@@ -273,6 +273,11 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
 
 - **„Kann nicht prüfen“ ist nie „alles gut“.** `unavailable`/`'unknown'` sind eigene Antworten
   (Style-Check, Update-Check, Kataloge, Token-Prüfung, Secret-Backend).
+- **„Die Datei ist da“ ist nicht „die Datei lässt sich lesen“.** Ein Cache, ein Download, eine
+  mitgelieferte Kopie: geprüft wird, ob der Inhalt sich öffnen lässt, nicht ob ein Verzeichniseintrag
+  existiert - sonst gewinnt ein Torso gegen eine heile Kopie. Geschrieben wird so etwas über
+  Temp-Datei, `fsync` und `rename` (`jsonStore.ts` ist das Muster), und was sich nicht lesen lässt,
+  wird weggeräumt statt übersprungen, damit der reparierende Weg nicht blockiert bleibt.
 - **Gemessen, nicht angenommen.** Jede Regel hier steht in `docs/decisions/` mit dem Experiment, das
   sie erzwungen hat. Neue Regeln genauso.
 - **Ein Lesepfad legt nie `.quartz-gui/` an.** `quartzGuiPath()` zum Lesen, `quartzGuiDir()` zum
@@ -339,6 +344,12 @@ mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge.
   Der Build-Guard bleibt, wie er ist: ein Ordner mit `index.html` und `static/` ist vom eigenen
   vorigen Build nicht zu unterscheiden, also darf gar nicht erst ein fremder Pfad in der Kopie
   landen.
+- **8 Kaputter Vorlagen-Cache gewann gegen die mitgelieferte Kopie - erledigt.** Ein Download wird
+  jetzt durch *Lesen* geprüft (`readZip` plus vorhandenes Manifest, nicht zwei Magic-Bytes), über
+  Temp-Datei mit `fsync` und `rename` geschrieben, und `getBuiltinTemplate` gibt nur eine Kopie
+  heraus, die sich **lesen** lässt - Cache wie Bundle. Ein unlesbarer Cache wird gelöscht statt
+  übersprungen, sonst hielte seine mtime den reparierenden Download einen Tag lang auf. Der
+  Assistent meldet `plan === null`, statt das Projekt still ohne Vorlage anzulegen.
 - **9 Zwei Reste des Originals - erledigt.** `.quartz-gui/deploy-manifest.json` (der Legacy-Name, den
   `readManifest` adoptiert) in `SKIP`, `.quartz-gui/branch-worktree-` in `SKIP_PREFIX`.
 
@@ -356,9 +367,6 @@ mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge.
   `plugins.expanded.<name>` hängt am abgeleiteten Namen, und ein Projekt kann sechs Zeilen
   `quartz-layout-box` haben - die Umstellung von Index auf Name hat den Positions-Befund gegen diesen
   getauscht.
-- **8 Ein kaputter Vorlagen-Cache gewinnt gegen die mitgelieferte Kopie** (Mittel).
-  `builtinTemplateService.ts` schreibt nicht atomar und prüft nur zwei Magic-Bytes; `Home.tsx` legt
-  bei `plan === null` still ohne Vorlage an.
 - **10 Auf einem Mac ohne Command Line Tools startet die App vermutlich mit Apples
   Installer-Dialog** (Mittel, nicht gemessen - kein solcher Rechner verfügbar). `gitRuntime.ts` führt
   `/usr/bin/git --version` aus, obwohl der Kommentar daneben weiß, dass das dort ein Stub ist.

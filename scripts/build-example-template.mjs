@@ -1,6 +1,6 @@
 // Builds the example template package end to end.
 //
-//   node scripts/build-example-template.mjs [--only <phase>] [--check-contrast] [--fresh]
+//   node scripts/build-example-template.mjs [--only <phase>] [--check-contrast] [--sync] [--fresh]
 //
 // The whole thing runs *through the app*: it launches the production build with playwright's
 // electron driver (the same way scripts/smoke.mjs does) and does every write with
@@ -27,6 +27,9 @@
 //   11 verify      import it into a second, empty project and build that
 //
 // --check-contrast runs the WCAG measurement alone and exits; it needs no app and no project.
+// --sync copies the stylesheets and snippets back out of the project into this repo and exits; it
+// needs no app either. Phases push forward, --sync pulls back - see syncBack() for what it leaves
+// alone and why.
 import { _electron as electron } from 'playwright-core'
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
@@ -102,6 +105,107 @@ function reportContrast() {
 
 if (argv.includes('--check-contrast')) {
   process.exit(reportContrast() ? 0 : 1)
+}
+
+/* ================================================================= sync (no app needed) */
+
+/**
+ * The way back: project → repo.
+ *
+ * Phase 5 writes the stylesheets from this repo into the project. The project is where the work
+ * happens, though, so every edit there leaves the repo a copy behind - measured on 2026-09-05, one
+ * of the 34 files had drifted within a day of being touched, and nothing said so. `--sync` closes
+ * that loop by copying the files back. It is a file copy, so comments and formatting survive.
+ *
+ * What it does *not* touch is quartz.config.yaml. That file is generated from plugins.mjs,
+ * variables.mjs, layout.mjs and translations.mjs; reading it back would mean a second, inverse
+ * implementation of all four, and the first person to change one of them would have two. A change
+ * to colours, plugins, frames or layout is therefore made in those modules and pushed forward with
+ * `--only 4`, never synced backwards. The same holds for the frames in .quartz-gui/.
+ */
+function syncBack() {
+  const ordered = STYLE_ORDER.map((name) => `${name}.scss`)
+  const customDir = path.join(WORKSHOP, 'quartz/styles/custom')
+  const repoDir = path.join(DATA_DIR, 'styles')
+
+  if (!fs.existsSync(customDir)) {
+    log(`Kein Projekt unter ${WORKSHOP} - nichts zu synchronisieren.`)
+    return false
+  }
+
+  // Same check as phase 5, in both directions: STYLE_ORDER is the list *and* the load order, so a
+  // file that only exists on one side is a bug on the other side, not something to copy silently.
+  const inProject = fs.readdirSync(customDir).filter((name) => name.endsWith('.scss')).sort()
+  const unordered = inProject.filter((name) => !ordered.includes(name))
+  const absent = ordered.filter((name) => !inProject.includes(name))
+  if (unordered.length) throw new Error(`im Projekt, aber nicht in STYLE_ORDER: ${unordered.join(', ')}`)
+  if (absent.length) throw new Error(`in STYLE_ORDER, aber nicht im Projekt: ${absent.join(', ')}`)
+
+  const changed = []
+  const write = (target, content, label) => {
+    const before = fs.existsSync(target) ? fs.readFileSync(target, 'utf-8') : null
+    if (before === content) return
+    fs.mkdirSync(path.dirname(target), { recursive: true })
+    fs.writeFileSync(target, content)
+    changed.push(`${label}${before === null ? ' (neu)' : ''}`)
+  }
+
+  log('\nStylesheets')
+  for (const name of ordered) {
+    write(path.join(repoDir, name), fs.readFileSync(path.join(customDir, name), 'utf-8'), `styles/${name}`)
+  }
+
+  // A file left in the repo that STYLE_ORDER no longer names would make the next phase-5 run fail
+  // its own check ("nicht in STYLE_ORDER"), so it goes.
+  for (const name of fs.readdirSync(repoDir).filter((n) => n.endsWith('.scss'))) {
+    if (ordered.includes(name)) continue
+    fs.rmSync(path.join(repoDir, name))
+    changed.push(`styles/${name} (entfernt)`)
+  }
+
+  log('custom.scss')
+  write(path.join(DATA_DIR, 'custom-scss-body.scss'), readCustomBody(), 'custom-scss-body.scss')
+
+  log('Schnipsel')
+  const snippetDir = path.join(WORKSHOP, 'quartz/static/snippets')
+  if (fs.existsSync(snippetDir)) {
+    for (const name of fs.readdirSync(snippetDir).sort()) {
+      write(path.join(DATA_DIR, 'site/snippets', name), fs.readFileSync(path.join(snippetDir, name), 'utf-8'), `site/snippets/${name}`)
+    }
+  }
+
+  log('\n═══════════════════════════════════')
+  if (!changed.length) log(`${ordered.length} Stylesheets, custom.scss und die Schnipsel: alles deckungsgleich.`)
+  else {
+    log(`${changed.length} von ${ordered.length + 1} Dateien zurückgeholt:`)
+    for (const entry of changed) log(`  ${entry}`)
+    log('\nZu prüfen mit `git diff scripts/example-template/`.')
+  }
+  return true
+}
+
+/**
+ * The project's custom.scss minus the three blocks the app owns (imports, fonts, css-vars).
+ * Phase 5 puts fonts and css-vars back from the project itself and rewrites imports through
+ * setImportOrder, so what belongs in the repo is exactly the remainder.
+ */
+function readCustomBody() {
+  const source = path.join(WORKSHOP, 'quartz/styles/custom.scss')
+  let text = fs.readFileSync(source, 'utf-8')
+  for (const marker of ['imports', 'fonts', 'css-vars']) {
+    const start = `/* --- Quartz-GUI:managed:${marker}:start --- */`
+    const end = `/* --- Quartz-GUI:managed:${marker}:end --- */`
+    const from = text.indexOf(start)
+    const to = text.indexOf(end)
+    if (from === -1 || to === -1) throw new Error(`Block ${marker} fehlt in ${source}`)
+    text = text.slice(0, from) + text.slice(to + end.length)
+  }
+  // Collapse the gaps the removed blocks left, so the result is stable across runs.
+  return text.replace(/\n{3,}/g, '\n\n').trim() + '\n'
+}
+
+if (argv.includes('--sync')) {
+  process.exit(syncBack() ? 0 : 1)
 }
 
 /* ================================================================================= helpers */

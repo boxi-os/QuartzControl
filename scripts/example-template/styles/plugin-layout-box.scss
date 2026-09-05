@@ -116,20 +116,17 @@ details.layout-box > summary.layout-box-title {
   padding: var(--tpl-space-3xs);
   margin: calc(var(--tpl-space-3xs) * -1);
 
-  // The plugin ships the .img-light/.img-dark swap itself, but it cannot win here: quartz emits
-  // component CSS inside `@layer quartz-base` and appends custom.scss unlayered, and an unlayered
-  // declaration beats every layered one regardless of specificity (docs/decisions/
-  // styles-and-fonts.md, finding 6). So a plain `svg { display: block }` in this file silently
-  // switched both images on - measured, both marks rendered side by side. Any file in
-  // quartz/styles/ that touches a property a plugin's own CSS sets has to restate the plugin's
-  // rule as well, which is what the two blocks below do.
+  // Nothing here may set `display` on an svg. Quartz emits component CSS inside
+  // `@layer quartz-base` and appends custom.scss unlayered, and an unlayered declaration beats
+  // every layered one regardless of specificity (docs/decisions/styles-and-fonts.md, finding 6) -
+  // a plain `svg { display: block }` in this file silently switched both marks on, measured, side
+  // by side. Since 2026-09-05 the plugin sets `display` on both .img-light and .img-dark itself
+  // and owns the swap; the restatement that used to stand here is gone, because a second copy of
+  // a rule only drifts.
   svg {
     flex: 0 0 auto;
     border-radius: var(--tpl-radius-sm);
   }
-
-  .img-light { display: block; }
-  .img-dark { display: none; }
 
   // The link's accessible name. page-title already prints the site title right next to this, so
   // showing it again would say everything twice - but `display: none` was the wrong way to stop
@@ -217,13 +214,6 @@ details.layout-box > summary.layout-box-title {
     background: none;
     color: var(--gray);
   }
-}
-
-/* ------------------------------------------------------- light/dark image swap, restated */
-
-:root[saved-theme="dark"] .layout-box {
-  .img-light { display: none; }
-  .img-dark { display: block; }
 }
 
 /* --------------------------------------------------------------------- narrow screens */

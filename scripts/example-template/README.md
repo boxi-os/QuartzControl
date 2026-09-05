@@ -7,6 +7,7 @@ dieses Dokument beschreibt beides.
     npm run template:example                 # alles: aufbauen, prüfen, exportieren, gegenprüfen
     npm run template:example -- --only 5     # nur die Stylesheets neu einspielen
     npm run template:example -- --check-contrast   # nur messen, ohne App und ohne Projekt
+    npm run template:example -- --sync             # Stylesheets aus dem Projekt zurückholen
 
 ---
 
@@ -15,7 +16,7 @@ dieses Dokument beschreibt beides.
 Seit dem Umbau ist **das Projekt die Quelle**, nicht mehr dieses Verzeichnis:
 
 ```
-~/Obsidian/QuartzProjekte/Example/     der Vault — 123 Notizen, 3 Bases, 1 Canvas, 1 Zeichnung, 7 Mediendateien
+~/Obsidian/QuartzProjekte/Example/     der Vault — 252 Notizen, 6 Bases, 2 Canvas, 2 Zeichnungen, 9 Mediendateien
         ↑ Symlink
 ~/Documents/Example/content/            das Projekt
 ~/Documents/Example/quartz/styles/      die Stylesheets — hier wird gearbeitet
@@ -23,10 +24,18 @@ Seit dem Umbau ist **das Projekt die Quelle**, nicht mehr dieses Verzeichnis:
 
 | Was | Quelle | Versioniert in |
 | --- | --- | --- |
-| Notizen, Bases, Canvas, Excalidraw | Vault | eigenes git im Vault |
-| Stylesheets, Config, Schriften | Projekt | git im Projekt |
-| Frames, Presets, Breakpoints | Projekt (`.quartz-gui/`, gitignored) | dieses Verzeichnis |
+| Notizen, Bases, Canvas, Excalidraw | Vault | eigenes git im Vault, seit 2026-09-05 gepusht nach `boxi-os/Quartz-Example-Vault` (privat) |
+| Stylesheets | Projekt | git im Projekt **und** hier — abgeglichen mit `--sync` |
+| Config, Frames, Presets, Breakpoints | dieses Verzeichnis | Quartz-GUI-Repo; ins Projekt gespielt mit `--only 4` bzw. `--only 3` |
 | Messung, Bootstrap | dieses Verzeichnis | Quartz-GUI-Repo |
+
+Die zweite Zeile ist die einzige, die in beide Richtungen läuft, und sie ist deshalb die einzige,
+die driften kann. Genau das ist am 2026-09-05 passiert: `plugin-layout-box.scss` wurde im Projekt
+geändert, und die Kopie hier blieb einen Tag lang stehen, ohne dass etwas es gesagt hätte. `--sync`
+holt sie zurück und meldet, was sich unterschieden hat; die Prüfung dabei ist dieselbe wie in
+Phase 5, nur andersherum. Für Config und Frames gibt es bewusst keinen Rückweg — sie entstehen aus
+`plugins.mjs`, `variables.mjs`, `layout.mjs` und `frames.mjs`, und ein Rückleser wäre eine zweite,
+inverse Umsetzung von allen vieren.
 
 > **Ein Content-Symlink nimmt die Notizen aus QuartzControls Obhut.** Git folgt keinen Symlinks,
 > deshalb erzwingt der Snapshot-Dienst `includeContent: false`, sobald `content/` ein Link ist.
@@ -37,7 +46,7 @@ Seit dem Umbau ist **das Projekt die Quelle**, nicht mehr dieses Verzeichnis:
 | Datei | Was darin entschieden wird |
 | --- | --- |
 | `palette.mjs` | Die neun Quartz-Farben für hell und dunkel, die drei Schriftrollen — **und die WCAG-Messung**, die sie prüft |
-| `variables.mjs` | 46 CSS-Variablen: Abstände, Radien, Schriftgrößen, Lesemaß, Fokus, Zielgrößen |
+| `variables.mjs` | 50 CSS-Variablen: Abstände, Radien, Schriftgrößen, Lesemaß, Fokus, Zielgrößen |
 | `fonts.mjs` | Welche Schriften geladen werden, woher, und die korrigierten `@font-face`-Regeln |
 | `frames.mjs` | Die drei Seitenraster (`editorial`, `index`, `focus`) für je drei Breakpoints |
 | `layout.mjs` | Welcher Seitentyp welches Raster nutzt, und die Flex-Gruppe der Werkzeugleiste |
@@ -45,9 +54,9 @@ Seit dem Umbau ist **das Projekt die Quelle**, nicht mehr dieses Verzeichnis:
 | `translations.mjs` | Geänderte Formulierungen in Quartz' deutscher Sprachdatei |
 | `presets.mjs` | Zwei gespeicherte Theme-Zusammenstellungen |
 | `style-order.mjs` | Die Ladereihenfolge der Stylesheets — Liste **und** Reihenfolge in einem |
-| `styles/*.scss` | 31 Stylesheets, eines je Komponente |
+| `styles/*.scss` | 34 Stylesheets, eines je Komponente — die Kopie des Projekts, gepflegt über `--sync` |
 | `site/content/**` | der ursprüngliche Beispielinhalt — **überholt**, gepflegt wird im Vault |
-| `site/snippets/` | Die eine Snippet-Datei, die nicht im Paket mitreist |
+| `site/snippets/` | Die zwei Snippet-Dateien, die nicht im Paket mitreisen (deutsch und englisch) |
 | *(im Vault)* `assets/` | Dummy-Medien: PNG, JPEG, WebP, GIF, SVG, ein dreiseitiges PDF, eine WAV-Datei |
 | `BEFUNDE.md` | Was beim Bauen an der App auffiel |
 

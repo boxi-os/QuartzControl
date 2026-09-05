@@ -342,8 +342,7 @@ liegen in `docs/decisions/`, und was dauerhaft gilt, steht oben als Regel.
 markiert das Ende des Token-Durchgangs (was er umfasst, steht in seiner eigenen Nachricht), ist aber
 ausdrücklich *nicht* der Ausgangsstand: die 615 umgestellten Klassen und die vier Aufräumpunkte sind
 gemessen, aber von keinem zweiten Augenpaar gelesen, und genau deshalb sollen sie im Diff des
-nächsten Auftrags liegen. Die Zeile in der Tag-Nachricht („This is the baseline the next review
-measures from“) ist damit überholt; hier steht, was gilt.
+nächsten Auftrags liegen. Die Tag-Nachricht sagt dasselbe.
 
 Von dem, was beide Reviews als „beiläufig, kein sed“ führen, sind die Farbpaare am 2026-09-05
 abgearbeitet, soweit sie eine Umbenennung waren: 322 Paare, die wörtlich das Token buchstabierten,

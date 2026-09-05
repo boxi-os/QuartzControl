@@ -41,6 +41,7 @@ const SEITEN = [
   { de: 'gestaltung/navigation/farbschema', en: 'en/design/navigation/colour-scheme', files: ['nav-darkmode.scss'] },
   { de: 'gestaltung/navigation/lesemodus', en: 'en/design/navigation/reader-mode', files: ['nav-reader-mode.scss'] },
   { de: 'gestaltung/navigation/kopfbereich', en: 'en/design/navigation/header', files: ['nav-toolbar.scss', 'nav-page-title.scss'] },
+  { de: 'gestaltung/navigation/fusszeile', en: 'en/design/navigation/footer', files: ['site-footer.scss', 'site-comments.scss'] },
   { de: 'gestaltung/seitenapparat/inhaltsverzeichnis', en: 'en/design/page-apparatus/table-of-contents', files: ['aside-toc.scss'] },
   { de: 'gestaltung/seitenapparat/rueckverweise', en: 'en/design/page-apparatus/backlinks', files: ['aside-backlinks.scss'] },
   { de: 'gestaltung/seitenapparat/graph', en: 'en/design/page-apparatus/graph', files: ['aside-graph.scss'] },

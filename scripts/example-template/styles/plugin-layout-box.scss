@@ -32,7 +32,7 @@
   a {
     color: var(--secondary);
     text-decoration: underline;
-    text-underline-offset: 0.18em;
+    text-underline-offset: var(--tpl-underline-offset);
 
     &:hover { color: var(--tertiary); }
   }
@@ -59,7 +59,7 @@
   font-family: var(--headerFont);
   font-size: var(--tpl-text-sm);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tpl-tracking-label);
   color: var(--gray);
   font-weight: 700;
   margin-block: 0 var(--tpl-space-xs);

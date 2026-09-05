@@ -18,7 +18,7 @@
   font-family: var(--headerFont);
   font-size: var(--tpl-text-xs);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tpl-tracking-label);
   color: var(--gray);
   margin: 0;
   // No rule under this line. It is a label on a tinted box, not a table header over columns, and

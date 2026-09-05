@@ -36,7 +36,7 @@ footer {
     &:hover {
       color: var(--secondary);
       text-decoration: underline;
-      text-underline-offset: 0.18em;
+      text-underline-offset: var(--tpl-underline-offset);
     }
   }
 }

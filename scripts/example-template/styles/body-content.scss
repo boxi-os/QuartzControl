@@ -18,7 +18,7 @@ article {
     // A colour alone is not a link affordance for someone who cannot separate these two hues.
     text-decoration: underline;
     text-decoration-thickness: 1px;
-    text-underline-offset: 0.18em;
+    text-underline-offset: var(--tpl-underline-offset);
     text-decoration-color: color-mix(in srgb, var(--secondary) 40%, transparent);
     transition: color var(--tpl-motion), text-decoration-color var(--tpl-motion);
 

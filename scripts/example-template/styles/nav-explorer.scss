@@ -53,7 +53,7 @@ button.title-button {
     margin: 0;
     font-size: var(--tpl-text-sm);
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: var(--tpl-tracking-label);
     color: var(--gray);
     font-weight: 700;
   }

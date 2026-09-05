@@ -52,6 +52,6 @@ article p a.tag-link {
   &:hover {
     background: none;
     text-decoration: underline;
-    text-underline-offset: 0.18em;
+    text-underline-offset: var(--tpl-underline-offset);
   }
 }

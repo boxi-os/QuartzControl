@@ -326,13 +326,13 @@ h4 { font-size: var(--tpl-text-lg); }
 h5 {
   font-size: var(--tpl-text-base);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--tpl-tracking-caps);
   font-weight: 700;
 }
 h6 {
   font-size: var(--tpl-text-sm);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tpl-tracking-label);
   font-weight: 700;
   color: var(--gray);
 }

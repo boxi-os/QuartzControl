@@ -108,7 +108,7 @@ table.bases-table {
     &:hover {
       color: var(--secondary);
       text-decoration: underline;
-      text-underline-offset: 0.18em;
+      text-underline-offset: var(--tpl-underline-offset);
     }
   }
 }
@@ -189,7 +189,7 @@ a.bases-card {
   font-family: var(--headerFont);
   font-size: var(--tpl-text-sm);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tpl-tracking-label);
   color: var(--gray);
   font-weight: 700;
   margin-block-end: var(--tpl-space-xs);
@@ -232,7 +232,7 @@ a.bases-card {
   &:hover {
     color: var(--secondary);
     text-decoration: underline;
-    text-underline-offset: 0.18em;
+    text-underline-offset: var(--tpl-underline-offset);
   }
 }
 
@@ -272,7 +272,7 @@ a.bases-card {
   font-size: var(--tpl-text-xs);
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--tpl-tracking-caps);
   color: var(--gray);
 
   // The group's value can be a whole path; it truncates rather than wrapping the header.

@@ -76,7 +76,7 @@ pre[data-language]::before {
   inset-inline-start: var(--tpl-space-md);
   font-family: var(--headerFont);
   font-size: var(--tpl-text-xs);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--tpl-tracking-caps);
   text-transform: uppercase;
   color: var(--gray);
   pointer-events: none;

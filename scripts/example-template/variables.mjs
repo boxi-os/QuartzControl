@@ -89,6 +89,16 @@ export const VARIABLE_OVERRIDES = [
   // looked. Everything set in --tpl-text-sm or smaller uses this instead.
   { key: 'tpl-leading-snug', light: '1.45' },
 
+  // Tracking, and the reason there are two of it: an uppercase label needs more of it the smaller
+  // it is set, so the micro-labels above every panel take more than the larger caps of an h5 or a
+  // code block's language tag. Both were literals in nine and three files respectively - changing
+  // how a label reads meant finding all twelve.
+  { key: 'tpl-tracking-label', light: '0.08em' },
+  { key: 'tpl-tracking-caps', light: '0.06em' },
+  // How far a link's underline sits below the baseline. Low enough not to cut the descenders of a
+  // g or a p, and one value across the eight places that draw one.
+  { key: 'tpl-underline-offset', light: '0.18em' },
+
   // Focus. Its own token because it appears in ~20 rules and must never be tuned in only one.
   { key: 'tpl-focus-color', light: 'var(--secondary)', dark: 'var(--secondary)' },
   { key: 'tpl-focus-width', light: '2px' },

@@ -333,8 +333,22 @@ Beide Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-0
 `review-2026-09-02` markiert den Ausgangsstand) und [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md)
 mit seinen 15 Befunden (Auftrag daneben in `docs/REVIEW-2026-09-05-auftrag.md`) stehen als Dokumente
 unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft gilt, steht
-oben als Regel. Offen ist nur noch, was beide als „beiläufig, kein sed“ führen: rund 272 Farbpaare
-im Renderer stehen als Tailwind-Palette statt als Token, und die 133 übrigen Arbitrary-Value-Größen.
+oben als Regel.
+
+Von dem, was beide Reviews als „beiläufig, kein sed“ führen, sind die Farbpaare am 2026-09-05
+abgearbeitet, soweit sie eine Umbenennung waren: 322 Paare, die wörtlich das Token buchstabierten,
+plus sechs Stellen ohne `dark:`-Partner (3,50:1 im Dunkeln) und dreizehn Micro-Labels, die in
+Großbuchstaben zwei verschiedene Dunkel-Werte für dieselbe Rolle hatten. Gemessen mit
+`scripts/colors-snapshot.mjs`: von 13543 Elementen blieben 13152 unverändert, im Hellen kein
+einziges anders.
+
+Was bewusst Palette bleibt: die immer dunklen Konsolenflächen (`bg-slate-950` und der Text darauf —
+eine Fläche, die in beiden Schemata dunkel ist, bekommt weder `dark:` noch Token) und die
+Statusfarben. Offen sind rund 80 Klassen an etwa 40 Stellen, deren Farbe **kein** Token benennt:
+Hover-Zustände (26), Text zwischen `--text` und `--text-secondary` (24), Ränder und Flächen (11).
+Für die ist die Wahl eines Tokens eine Gestaltungsentscheidung, keine Umbenennung — sie gehören in
+einen eigenen Durchgang mit einer Vorher/Nachher-Messung, nicht in einen, der behauptet, nichts zu
+ändern. Ebenfalls offen: die 133 übrigen Arbitrary-Value-Größen.
 
 **Arbeitsregel** für die nächste Liste: ein Befund pro Durchgang, jeweils mit `npm run typecheck`,
 `npm run build`, `npm run smoke` und eigenem Commit; was dabei nebenbei auffällt, wird gesammelt und

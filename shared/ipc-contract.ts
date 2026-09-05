@@ -1182,6 +1182,7 @@ export const IPC = {
   projectRemove: 'project:remove',
   projectCreate: 'project:create',
   projectDuplicate: 'project:duplicate',
+  appUpdateCheck: 'appUpdate:check',
   templatePackageBuiltin: 'templatePackage:builtin',
 
   projectIconGet: 'projectIcon:get',
@@ -1424,6 +1425,22 @@ export interface DuplicateProjectResult {
   output: string
 }
 
+/**
+ * Whether a newer build of the app itself exists. `unknown` is its own answer: a failed check is
+ * not an up-to-date one, and a start screen that claims "you have the latest" because GitHub was
+ * unreachable would be lying at the one moment it matters.
+ */
+export interface AppUpdateStatus {
+  state: 'current' | 'newer' | 'unknown'
+  /** What is running right now. */
+  current: string
+  /** What the server named, when it answered. */
+  latest?: string
+  /** Where to get it - https only, checked in main. */
+  url?: string
+  notes?: string
+}
+
 // The renderer-facing API exposed on window.quartzGui by the preload script.
 export interface QuartzGuiApi {
   /**
@@ -1455,6 +1472,10 @@ export interface QuartzGuiApi {
     /** Copies a project into a new folder and registers it. Everything the original's own past or
      *  outside world belongs to stays behind - see duplicateService for the list and the reasons. */
     duplicate(options: DuplicateProjectOptions): Promise<DuplicateProjectResult>
+  }
+  /** Is there a newer build of QuartzControl? An answer, not an updater - nothing is downloaded. */
+  appUpdate: {
+    check(): Promise<AppUpdateStatus>
   }
   /**
    * The project's picture. One file - quartz/static/icon.png - because that is the only path the

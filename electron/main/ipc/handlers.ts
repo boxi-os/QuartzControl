@@ -50,6 +50,7 @@ import * as contentService from '../services/contentService'
 import * as createService from '../services/createService'
 import * as duplicateService from '../services/duplicateService'
 import * as builtinTemplateService from '../services/builtinTemplateService'
+import * as appUpdateService from '../services/appUpdateService'
 import * as environmentService from '../services/environmentService'
 import * as nodeRuntime from '../services/nodeRuntime'
 import * as gitRuntime from '../services/gitRuntime'
@@ -361,6 +362,7 @@ export function registerIpcHandlers(): void {
   })
   handle(IPC.templatePackageInspect, t([s.absolutePath]), (projectPath) => templatePackageService.inspectProject(projectPath))
   handleNoArgs(IPC.templatePackageBuiltin, () => builtinTemplateService.getBuiltinTemplate())
+  handleNoArgs(IPC.appUpdateCheck, () => appUpdateService.checkAppUpdate())
   // The target file is chosen here rather than taken from the renderer, the same rule snapshot
   // export follows: an arbitrary path from there would let a page write a file anywhere on disk.
   handle(IPC.templatePackageExport, t([s.absolutePath, s.templateExportOptions]), async (projectPath, options) => {

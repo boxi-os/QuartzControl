@@ -46,6 +46,10 @@ export default {
   },
   home: {
     subtitle: 'Your Quartz sites in one place — set up, design, publish.',
+    update: {
+      available: 'A newer build exists: {{latest}} — you have {{current}}.',
+      get: 'Download'
+    },
     settings: 'Settings',
     openExisting: 'Open existing project',
     createNew: 'Create new project',

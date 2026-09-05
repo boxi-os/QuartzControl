@@ -22,6 +22,8 @@ const STRINGS = {
     menuQuartzDocs: 'Quartz-Dokumentation',
     menuPluginCatalog: 'Plugin-Katalog',
     menuDataFolder: 'Datenordner von QuartzControl öffnen',
+    menuFeedback: 'Rückmeldung senden…',
+    feedbackSubject: 'Rückmeldung',
     menuAbout: 'Über QuartzControl',
     aboutDetail: 'Verwaltung für Quartz-Websites',
 
@@ -222,6 +224,8 @@ const STRINGS = {
     menuQuartzDocs: 'Quartz documentation',
     menuPluginCatalog: 'Plugin catalog',
     menuDataFolder: 'Open QuartzControl’s data folder',
+    menuFeedback: 'Send feedback…',
+    feedbackSubject: 'Feedback',
     menuAbout: 'About QuartzControl',
     aboutDetail: 'Manage Quartz websites',
 

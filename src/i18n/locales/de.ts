@@ -48,6 +48,10 @@ export default {
   },
   home: {
     subtitle: 'Deine Quartz-Websites an einem Ort — einrichten, gestalten, veröffentlichen.',
+    update: {
+      available: 'Es gibt eine neuere Fassung: {{latest}} — du hast {{current}}.',
+      get: 'Herunterladen'
+    },
     settings: 'Einstellungen',
     openExisting: 'Vorhandenes Projekt öffnen',
     createNew: 'Neues Projekt erstellen',

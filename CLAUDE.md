@@ -20,6 +20,9 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   ein Unterkommando des Quartz-CLI und ein vollständiger Build in einem Wegwerf-Ordner. Existiert aus
   demselben Grund wie `check:i18n`: keiner dieser Fehler wird im Typcheck oder im Build sichtbar, sie
   passieren alle in einem Kindprozess
+- `npm run check:semver` — die 18 Versionsvergleiche, die der Update-Hinweis trifft. Braucht weder
+  App noch Netz; existiert, weil die interessanten Fälle Vorabversionen sind (`beta.10` ist neuer
+  als `beta.9`, `1.0.0` neuer als beide) und ein Zeichenkettenvergleich beide falsch beantwortet
 - `npm run check:i18n` — every literal `t('…')` and `mainT('…')` key against `de.ts`, `en.ts` and
   `electron/main/i18n.ts`, plus de/en parity in both directions. Static and instant; it exists because
   i18next renders a missing key *as the key* rather than failing, so a gap is invisible until someone

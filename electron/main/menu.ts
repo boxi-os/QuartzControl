@@ -11,6 +11,10 @@ const isMac = process.platform === 'darwin'
 const QUARTZ_DOCS = 'https://quartz.jzhao.xyz/'
 const PLUGIN_CATALOG = 'https://github.com/quartz-community'
 
+// Where a beta tester's report goes. A constant rather than a setting: it is this app's own
+// address, the same domain as its appId, and a field for it would only invite a typo.
+const FEEDBACK_ADDRESS = 'mail@holgerborker.de'
+
 // Menu items that need the renderer to go somewhere. The menu lives in the main process and the
 // routes live in a HashRouter, so the only way across is an event the renderer listens for -
 // App.tsx installs exactly one listener for the app's lifetime.
@@ -28,6 +32,35 @@ function commandRenderer(command: AppCommand): void {
 
 // macOS puts About in the app menu and takes its content from the bundle; everywhere else it has
 // to be built, and there is no bundle to read it from.
+/**
+ * Opens the user's mail client with the version and the platform already in the body.
+ *
+ * The point is not convenience, it is that those two lines actually arrive. A tester writes what
+ * went wrong; almost nobody writes "QuartzControl 1.0.0-beta.1, darwin arm64, Electron 43.4.1"
+ * underneath it, and that is the half of the report that decides whether a finding can be placed
+ * at all. Filled in rather than asked for.
+ *
+ * `mailto:` rather than the renderer's openExternal channel, which is restricted to https on
+ * purpose: that channel takes a URL from the renderer, and a scheme handler is a "run something"
+ * primitive. Here the whole string is built in the main process out of constants and Electron's own
+ * version numbers, so there is nothing for a caller to smuggle in.
+ */
+function sendFeedback(): void {
+  const zeilen = [
+    '',
+    '',
+    '---',
+    `${APP_NAME} ${app.getVersion()}`,
+    `${process.platform} ${process.arch}`,
+    `Electron ${process.versions.electron} · Chromium ${process.versions.chrome} · Node ${process.versions.node}`
+  ]
+  const url =
+    `mailto:${FEEDBACK_ADDRESS}` +
+    `?subject=${encodeURIComponent(`${APP_NAME} ${app.getVersion()} — ${mainT('feedbackSubject')}`)}` +
+    `&body=${encodeURIComponent(zeilen.join('\n'))}`
+  void shell.openExternal(url)
+}
+
 function showAbout(): void {
   dialog.showMessageBox({
     type: 'info',
@@ -127,6 +160,8 @@ function buildMenu(): void {
       label: mainT('menuHelp'),
       role: 'help',
       submenu: [
+        { label: mainT('menuFeedback'), click: () => sendFeedback() },
+        { type: 'separator' },
         { label: mainT('menuQuartzDocs'), click: () => void shell.openExternal(QUARTZ_DOCS) },
         { label: mainT('menuPluginCatalog'), click: () => void shell.openExternal(PLUGIN_CATALOG) },
         { type: 'separator' },

@@ -5,6 +5,7 @@ import { titlebarStripClass } from '../utils/platform'
 import { useNavigate, Link } from 'react-router-dom'
 import { ArrowUpRight, CheckCircle2, Copy, FolderSearch, Search, TriangleAlert, Trash2 } from 'lucide-react'
 import type {
+  AppUpdateStatus,
   CreateProjectOptions,
   DuplicateProjectOptions,
   EnvironmentInfo,
@@ -131,6 +132,7 @@ export default function Home(): JSX.Element {
           </div>
 
           {environment && <EnvironmentBand info={environment} onRecheck={recheckEnvironment} />}
+          <NewerVersionBand />
 
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
             <div className="min-w-0">
@@ -557,6 +559,41 @@ function GettingStarted({ onOpen, onCreate }: { onOpen: () => void; onCreate: ()
         </Button>
       </div>
     </Card>
+  )
+}
+
+// ── a newer build ───────────────────────────────────────────────────────────────────────────
+
+// Shown only when there *is* one. `unknown` says nothing on purpose: a band that reads "could not
+// check for updates" every time somebody works offline is noise about the app instead of about
+// their site, and the answer it would be hiding is one the user cannot act on anyway. The one state
+// worth a line is the one that costs a tester an evening otherwise.
+function NewerVersionBand(): JSX.Element | null {
+  const { t } = useTranslation()
+  const [status, setStatus] = useState<AppUpdateStatus | null>(null)
+
+  useEffect(() => {
+    // Not awaited into the render path: the start screen must come up at the speed of the local
+    // reads around it, and this one goes to the network.
+    void window.quartzGui.appUpdate.check().then(setStatus)
+  }, [])
+
+  if (!status || status.state !== 'newer') return null
+  return (
+    <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-blue-300/60 bg-blue-50/60 px-3 py-2 text-[13px] text-blue-900 dark:border-blue-500/30 dark:bg-blue-500/[0.08] dark:text-blue-200">
+      <span>{t('home.update.available', { latest: status.latest, current: status.current })}</span>
+      {status.notes && <span className="text-blue-800/80 dark:text-blue-300/80">{status.notes}</span>}
+      {status.url && (
+        <button
+          type="button"
+          onClick={() => void window.quartzGui.dialog.openExternal(status.url as string)}
+          className="ml-auto flex items-center gap-1 underline underline-offset-2 hover:no-underline"
+        >
+          {t('home.update.get')}
+          <ArrowUpRight size={13} />
+        </button>
+      )}
+    </div>
   )
 }
 

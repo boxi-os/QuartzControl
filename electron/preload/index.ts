@@ -63,6 +63,9 @@ const api: QuartzGuiApi = {
     create: (options: CreateProjectOptions) => ipcRenderer.invoke(IPC.projectCreate, options),
     duplicate: (options: DuplicateProjectOptions) => ipcRenderer.invoke(IPC.projectDuplicate, options)
   },
+  appUpdate: {
+    check: () => ipcRenderer.invoke(IPC.appUpdateCheck)
+  },
   projectIcon: {
     get: (args: { projectPath: string }) => ipcRenderer.invoke(IPC.projectIconGet, args),
     set: (args: { projectPath: string; sourcePath: string }) => ipcRenderer.invoke(IPC.projectIconSet, args),

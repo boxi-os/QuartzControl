@@ -432,8 +432,16 @@ Gemessen in Firefox 155: `--tpl-fade-start: 20px`, `--tpl-fade-end: 0px` und ein
 `transparent 0px, black 0px, …` ausrechnete — die weiche Kante war an *beiden* Enden weg statt nur
 statisch. Der Kopfbereich saß aus demselben Grund dauerhaft in seiner kleinen Form.
 
-Beides steht jetzt hinter `@supports (animation-timeline: scroll())`. Ohne Timeline greifen die
-Ausgangswerte: Kante an beiden Enden, Kopf in Ruhegröße — also genau das Verhalten von vorher.
+Beides stand danach hinter `@supports (animation-timeline: scroll())`. Ohne Timeline greifen dann
+die Ausgangswerte: Kante an beiden Enden, Kopf in Ruhegröße.
+
+**Nachtrag vom selben Tag:** Für die Kante ist der ganze Apparat wieder verschwunden. Was sie
+eigentlich leisten sollte — dass die erste und die letzte Zeile in voller Stärke lesbar sind —
+leistet ein Innenabstand, der so tief ist wie der Verlauf: Am Anfang steht die erste Zeile dann
+*unter* dem Verlauf statt darin, am Ende die letzte darüber. Eine Zeile CSS statt zwei registrierter
+Eigenschaften, zweier Keyframes und einer `@supports`-Klammer, und in jedem Browser gleich. Der
+Befund bleibt trotzdem stehen, denn der Kopfbereich schrumpft weiterhin über eine Scroll-Timeline —
+und die Falle mit den null Sekunden gilt dort unverändert.
 
 ### 39. `initial-value` einer registrierten Eigenschaft darf kein `rem` enthalten
 

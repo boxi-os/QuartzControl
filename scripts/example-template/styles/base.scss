@@ -50,42 +50,15 @@ html {
   // The soft edge on a panel that scrolls. Fixed to the panel, not to its content, so the fade
   // stays at the top and bottom edges while the content moves under it. Not a token in
   // variables.mjs: a variable override there may not contain a comma, and this is nothing but
-  // commas. The distance it fades over is --tpl-fade, which IS a token.
-  //
-  // The two ends are separate lengths, and they are animated (see below), so the fade only ever
-  // sits on a side where there is more content. Both start at zero: a panel short enough not to
-  // scroll gets no fade at all, which is what a fade is supposed to mean.
+  // commas. The distance it fades over is --tpl-fade, which IS a token - the same one the panels
+  // use as their padding, so the gradient and the space it needs can never drift apart.
   --tpl-fade-mask: linear-gradient(
     to bottom,
     transparent 0,
-    black var(--tpl-fade-start),
-    black calc(100% - var(--tpl-fade-end)),
+    black var(--tpl-fade),
+    black calc(100% - var(--tpl-fade)),
     transparent 100%
   );
-}
-
-// Registered so the two lengths can be interpolated - an unregistered custom property is a string
-// to the animation engine and would jump from 0 to 20px in one step.
-@property --tpl-fade-start {
-  syntax: "<length>";
-  inherits: false;
-  initial-value: 0px;
-}
-
-@property --tpl-fade-end {
-  syntax: "<length>";
-  inherits: false;
-  initial-value: 0px;
-}
-
-@keyframes tpl-fade-start-in {
-  from { --tpl-fade-start: 0px; }
-  to { --tpl-fade-start: var(--tpl-fade); }
-}
-
-@keyframes tpl-fade-end-out {
-  from { --tpl-fade-end: var(--tpl-fade); }
-  to { --tpl-fade-end: 0px; }
 }
 
 /* ------------------------------------------------------------------ the sticky header */
@@ -162,14 +135,20 @@ html {
   .qgframe-area-right {
     overflow-y: auto;
     overscroll-behavior: contain;
-    // Both ends soft by default. That is the fallback, and it is the behaviour this template had
-    // before scroll-driven animations existed here - a browser without them gets a fade that is
-    // always on rather than no fade at all.
-    --tpl-fade-start: var(--tpl-fade);
-    --tpl-fade-end: var(--tpl-fade);
     mask-image: var(--tpl-fade-mask);
     -webkit-mask-image: var(--tpl-fade-mask);
     scrollbar-width: thin;
+
+    // The padding is what makes the fade honest, and it is exactly as deep as the fade. At the top
+    // of the list the first row then sits below the gradient instead of inside it, and at the
+    // bottom the last row sits above it: both ends are read at full strength, and only what is
+    // actually passing through goes soft.
+    //
+    // This replaces a scroll-driven version that turned each end on and off with the scroll
+    // position. That was cleverer and worse: it needed `@property`, two keyframes and a
+    // `@supports` guard, it only worked in Chromium, and it still faded the first line whenever
+    // the list was scrolled at all. One length of padding does the whole job in every browser.
+    padding-block: var(--tpl-fade);
   }
 
   // Which element scrolls the tree is not the same in every browser, and that had to be settled
@@ -181,35 +160,12 @@ html {
   //     to its full 688px and the *box* scrolls instead.
   //
   // Measured on the same page in both: `scrollHeight - clientHeight` was 148px, but on two
-  // different elements. Everything below - the mask, the fade, the contained overscroll - sits on
-  // `.explorer-content`, so the list gives up its cap and the box is the one scroller everywhere.
+  // different elements. Everything above - the mask, the padding, the contained overscroll - sits
+  // on `.explorer-content`, so the list gives up its cap and the box is the one scroller
+  // everywhere.
   ul.explorer-ul {
     max-height: none;
     overflow: visible;
-  }
-}
-
-// The fade that follows the scroll position. It needs scroll-driven animations, which not every
-// engine has: `CSS.supports('animation-timeline', 'scroll()')` was false in Firefox 155, which is
-// the one this was measured on. `@supports` decides, not a browser name.
-//
-// The guard is not decoration. Without it the `animation` shorthand still applies in those
-// browsers, with no timeline and therefore a duration of 0s - and `fill: both` then jumps straight
-// to the end keyframe. Measured in Firefox 155: `--tpl-fade-start` 20px, `--tpl-fade-end` 0px, and
-// a mask that computed to `transparent 0px, black 0px` - the fade was gone at both ends rather
-// than merely static.
-@supports (animation-timeline: scroll()) {
-  @media (min-width: 801px) {
-    .explorer-content,
-    .qgframe-area-right {
-      // The animation overrides these, so they are what shows when the panel has nothing to
-      // scroll: no fade at all, which is the whole point.
-      --tpl-fade-start: 0px;
-      --tpl-fade-end: 0px;
-      animation: tpl-fade-start-in linear both, tpl-fade-end-out linear both;
-      animation-timeline: scroll(self block), scroll(self block);
-      animation-range: 0 var(--tpl-fade), calc(100% - var(--tpl-fade)) 100%;
-    }
   }
 }
 

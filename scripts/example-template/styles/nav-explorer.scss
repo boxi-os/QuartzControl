@@ -130,7 +130,10 @@ button.title-button {
   }
 
   .explorer-content {
-    margin-block-start: var(--tpl-space-xs);
+    // No margin of its own any more: the panel carries --tpl-fade of padding for the soft edge
+    // (base.scss), and that is more than the gap this used to add. Two of them stacked left the
+    // first folder floating a long way under the heading.
+    margin-block-start: 0;
     // A long tree scrolls inside the sidebar rather than pushing the frame's footer off screen.
     // The scrolling itself, and the soft edge at both ends of it, are set in base.scss.
     max-height: 60vh;

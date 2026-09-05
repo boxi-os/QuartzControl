@@ -133,3 +133,26 @@ Vorschau *und* Seitenleisten-Avatar im selben Klick zurück und stellt die urspr
 byteidentisch wieder her. Nicht am OS gemessen: der native Dateidialog hinter „Bild wählen…“ — unter
 Playwright blockiert er; geprüft ist der Weg dahinter (`projectIcon:set` mit dem Pfad, den der Dialog
 liefert).
+
+**Was ein Duplikat erbt, entscheidet eine Liste - und drei Dinge fehlten darin (2026-09-05).** Ein
+authored frame ist ein Plugin mit absolutem `source`, und `cp` kopiert alle drei Stellen, die diesen
+Pfad festhalten, wortgleich: den Config-Eintrag, `source`/`resolved` in `quartz.lock.json` und den
+Symlink `.quartz/plugins/<id>`. Gemessen an einem Duplikat von `quartz-vorlage-gegenprobe` (drei
+Frames): die Kopie baute aus den Verzeichnissen des Originals. Eine Änderung in der Kopie schrieb
+`saveFrame` in deren eigenes `authored-frames/` - das Verzeichnis existiert ja, also gilt das Frame
+als registriert und wird nicht neu angemeldet - und erschien in keinem Build; jede Änderung im
+Original erschien dagegen in der Kopie, und ein dort gelöschtes Frame nahm der Kopie den Build.
+`duplicateProject` schreibt deshalb jeden Pfad um, der *innerhalb* des Quellprojekts liegt; was
+außerhalb liegt, bedeutet in beiden Projekten dasselbe und bleibt. `writeConfig` bekam dafür die
+`snapshot: false`-Ausnahme, die `saveFrame` schon hatte - die Kopie hat bewusst keinen
+Snapshot-Store und darf hier keinen anfangen.
+
+Zwei weitere Einträge fehlten in derselben Liste. `.quartz-gui/project-prefs.json` hält als einzigen
+Schlüssel den *absoluten* Ausgabepfad des Originals; geerbt, hätte der erste Klick auf „Bauen“ in der
+Kopie den Export des Originals gelöscht und sich hineingeschrieben, ohne Rückfrage - `quartz build
+--output` leert das Verzeichnis zuerst, und `buildOutputGuard` antwortet `ok`, weil ein Ordner mit
+`index.html` und `static/` vom eigenen vorigen Build nicht zu unterscheiden ist. Und `SKIP_PREFIX`
+traf `deploy-manifest-<id>.json`, nicht aber den Vor-Split-Namen `deploy-manifest.json`, den
+`readManifest` für das erstfragende Ziel adoptiert: die Kopie hätte ihrem neuen Ziel gemeldet, ein
+Server, auf dem sie nie war, sei bereits aktuell. `branch-worktree-<id>` - ein im `.git` des
+*Originals* registrierter Worktree, den ein abgebrochener Deploy hinterlässt - stand nirgends.

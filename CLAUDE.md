@@ -64,6 +64,12 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   er rendert Daten von GitHub. Schemas sind bewusst *loser* als die Typen (`looseObject`, `record`),
   weil `z.object()` unbekannte Keys streicht und damit den Config-Roundtrip bricht. Daraus folgen die
   `as`-Casts in `handlers.ts`.
+- **Ein Vorlagen-Paket ist so wenig eine Vertrauensgrenze wie der Renderer.** Ein `.qtpl` ist eine
+  Datei, die jemand weitergereicht hat: `readZip` weist ein Archiv mit absolutem Namen,
+  `..`-Segment, Laufwerksbuchstaben oder NUL komplett zurück, und ein Name aus einem Baustein wird
+  nie ungeprüft auf ein Verzeichnis gelegt - `containedPath()` (`templatePackage/shared.ts`)
+  entscheidet per `resolve()`+`relative()`, in `plan` wie in `apply`. Messungen in
+  [`templates-and-localization.md`](docs/decisions/templates-and-localization.md).
 - **Neue Kanäle nehmen ein Objekt-Argument**, kein Positions-Tupel (`dialog.confirm` ist das Muster):
   ein späterer optionaler Key ist dann eine Zeile im Vertrag und eine im Schema, nicht ein vierter
   Slot in vier Dateien. Bestehende Kanäle bleiben, wie sie sind (123 mit Positions-Argumenten,
@@ -299,69 +305,77 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Offene Befunde aus dem Review (Status: offen)
+## Offene Befunde aus dem Review (Stand 2026-09-05)
 
-Aus [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md). Umgesetzt sind die P1-Befunde E1, E2
-und U1 (Sandbox, `dialog.confirm`, `Modal`), U2 (`Toggle` mit `hideLabel`; `label` bleibt Pflicht,
-ein Switch ohne Namen ist damit am Aufrufer sichtbar falsch), T1 und U4 (Farb-Tokens in
-`index.css`/`tailwind.config.js`, `ui.tsx` als Pilot, die vier Opazitäts-Seiten; Messungen in
-`docs/decisions/dark-mode-and-contrast.md`) sowie U3 (`SegmentedControl` als Radiogruppe; Messungen
-in `docs/decisions/navigation-and-pages.md`). Alles Folgende ist **nicht** erledigt; die
-Kurzbezeichnungen verweisen auf das Review.
+Die Liste aus [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md) ist vollständig abgearbeitet;
+der Tag `review-2026-09-02` markiert den Ausgangsstand, und was dabei gemessen wurde, steht in
+`docs/decisions/`. Offen davon nur noch die rund 272 Palette-Paare im Renderer - beiläufig beim
+Anfassen, kein sed.
+
+Aktuell ist [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) (der Auftrag daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`): 15 Befunde, 3 Hoch, 7 Mittel, 5 Niedrig, jeweils mit Datei,
+Zeile, Szenario und der Angabe, ob gemessen oder gelesen.
 
 **Arbeitsregel:** ein Befund pro Durchgang, jeweils mit `npm run typecheck`, `npm run build`,
 `npm run smoke` und eigenem Commit; was dabei nebenbei auffällt, wird gesammelt und genannt, nicht
 mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge.
 
-- **Reste aus dem T1/U4-Durchgang - Status: erledigt bis auf die Palette-Paare (2026-09-03).** Der
-  deaktivierte Ghost-Button sinkt auf `bg-ground` und misst 4,37:1 hell / 6,5:1 dunkel statt 4,00:1;
-  `select option` nimmt `rgb(var(--surface))`/`rgb(var(--text))` und braucht keinen Dark-Block mehr
-  (nicht auf Linux nachgemessen - das Popup gibt es nur dort); die zwei Grundfarben in `theme.ts`
-  bleiben eine zweite Kopie, weil Electron sie vor dem Renderer malt, verweisen jetzt aber
-  aufeinander. Die Palette-Paare in Sidebar, Seiten und Sub-Komponenten bleiben offen - beiläufig
-  beim Anfassen, kein sed.
-- **S1 - Status: erledigt (2026-09-03).** `state/useIpcQuery.ts` mit Abbruch-Guard, `loading`,
-  `error`, `reload()`; umgestellt sind die drei Lesevorgänge, deren Schlüssel der Nutzer per Klick
-  ändern kann (Theme-Detail, Theme-Info, Style-Settings-Schema) - die übrigen laufen einmal oder
-  hängen an einem Schlüssel, der die Route ohnehin neu mountet. Neue Seiten nehmen den Hook,
-  bestehende beim Anfassen.
-- **S3 - Status: erledigt (2026-09-03).** Selektoren in `Home`/`Settings`,
-  `document.documentElement.lang` folgt der aufgelösten Sprache (`i18n/index.ts`), und die
-  Einstellungen werden beim Start nur noch einmal gelesen (`main.tsx` durch den Store).
-- **E4 - Status: erledigt (2026-09-03).** Der `console.error` in `will-navigate` ist englisch, und
-  der Hauptprozess puffert die Log-Zeilen selbst (`services/logBuffer.ts`, Kanäle `logs:history` und
-  `logs:clear`); `ProjectLayout` spielt sie beim Öffnen eines Projekts ein.
-- **A2 - Status: erledigt (2026-09-03).** Menüpunkt „Speichern“ mit `CmdOrCtrl+S`, Kanal
-  `app:command` mit einer `AppCommand`-Union, Register in `state/saveCommand.ts`. Eine Seite
-  registriert nur, solange ihr Knopf etwas täte; der Menüpunkt bleibt aktiv, weil der Hauptprozess
-  sonst jeden Mount mitbekommen müsste.
-- **A3 - Status: erledigt (2026-09-03).** „Nach oben / nach unten“ in `Plugins/Installed`, und alle
-  Drag-Stellen laufen über `@dnd-kit` mit Tastatur; `Styles/CustomCss` hatte die Pfeile schon und nie
-  ein natives Drag.
-- **A4 - Status: erledigt (2026-09-03).** `status`-Platz im `PageHeader` als `role="status"`,
-  `role="log"` an beiden Konsolen, eine `<h1>` pro Seite, `<nav aria-label>`. Nachgezogen am selben
-  Tag: `state/announcer.tsx` als Live-Region der Seite (Zeilenmeldung der Plugin-Liste, Ergebnis
-  jedes Umsortierens) und `utils/dndAnnouncements.ts` für die Drag-Ansagen in beiden Listen, die
-  vorher Englisch waren und von Roh-IDs sprachen.
-- **U5 - Status: erledigt (2026-09-03).** `LabelText` gelöscht; drei Größen-Tokens (`text-micro`,
-  `text-ui`, `text-heading`) in `tailwind.config.js`, `ui.tsx` und die sieben 15px-Überschriften
-  umgestellt. Die 133 übrigen Arbitrary Values bleiben, bis jemand die Zeile anfasst - kein sed.
-- **T2 - Status: erledigt (2026-09-03).** Die drei Farbwähler teilen sich `Styles/ColorPicker.tsx`:
-  durchsichtiges Feld, Farbe dahinter über `isDisplayableColor`, Startwert Schwarz statt Weiß.
-- **Sticky-State über Index - Status: erledigt (2026-09-03).** `plugins.expanded.<index>` keyt jetzt
-  auf den Plugin-Namen. Beim Umbau korrigiert: das Umsortieren ist *nicht* der Auslöser, es schreibt
-  nur `order`/`layout.priority` neu und lässt die Array-Positionen stehen - das Entfernen ist es, das
-  das Array verkürzt und jeden Eintrag dahinter um eins verschiebt. Damit tragen alle Sticky-Schlüssel
-  stabile Kennungen.
-- **Options-Zeile in `Plugins/Installed` - Status: erledigt (2026-09-03).** Der Schlüssel ist ein
-  `<label htmlFor>`, das Control trägt die `id`; damit haben Select, Zahl und Text überhaupt erst
-  einen Namen (sie hatten keinen). Der Schalter behält sein verstecktes Label und damit den Namen
-  zweimal im DOM - das aufzulösen hieße, `Toggle` von außen benennbar zu machen.
-- **Drei Antworten im Bestätigungsdialog - Status: erledigt (2026-09-03).** Der bestehende Kanal
-  bekam ein optionales `altLabel` und antwortet mit `'cancel' | 'alt' | 'confirm'`; `confirmDialog()`
-  bleibt für die achtzehn Ja/Nein-Fragen ein Boolean, `askDialog()` holt die dritte Antwort. Der
-  Unsaved-Guard bietet „Speichern“ an, wenn die Seite ein Save registriert hat, und bleibt bei einem
-  gescheiterten Speichern stehen.
+### Erledigt (2026-09-05)
+
+- **1 Duplikat baute mit den Frames des Originals - erledigt.** `duplicateProject` schreibt nach dem
+  Kopieren jeden Pfad um, der *innerhalb* des Quellprojekts liegt: Plugin-`source` in der Config,
+  `source`/`resolved` im Lockfile, die Symlinks in `.quartz/plugins/`. Ein Plugin von woanders auf
+  der Platte bedeutet in beiden Projekten dasselbe und bleibt. `writeConfig` hat dafür dieselbe
+  `snapshot: false`-Ausnahme wie `saveFrame` - die Kopie hat bewusst keinen Snapshot-Store und darf
+  hier keinen anfangen.
+- **2 Pfad-Traversal im Paket-Import - erledigt.** Zwei Schichten: `readZip` weist ein Archiv mit
+  absolutem Namen, `..`-Segment, Laufwerksbuchstaben oder NUL komplett zurück (nichts, was diese App
+  schreibt, erzeugt so einen Namen), und `containedPath()` in `templatePackage/shared.ts` entscheidet
+  per `resolve()`+`relative()` über jeden Zielpfad - in `content`, `fonts` und `styles`, in `plan`
+  *und* `apply`, damit der Plan nichts verspricht, was `apply` verweigert. **Ein Paket ist keine
+  Vertrauensgrenze**, so wenig wie der Renderer: Namen daraus werden nie ungeprüft auf ein
+  Verzeichnis gelegt.
+- **3 Ausgabeverzeichnis reiste mit - erledigt.** `.quartz-gui/project-prefs.json` steht in `SKIP`.
+  Der Build-Guard bleibt, wie er ist: ein Ordner mit `index.html` und `static/` ist vom eigenen
+  vorigen Build nicht zu unterscheiden, also darf gar nicht erst ein fremder Pfad in der Kopie
+  landen.
+- **9 Zwei Reste des Originals - erledigt.** `.quartz-gui/deploy-manifest.json` (der Legacy-Name, den
+  `readManifest` adoptiert) in `SKIP`, `.quartz-gui/branch-worktree-` in `SKIP_PREFIX`.
+
+### Offen
+
+- **4 Der Assistent überschreibt beim Kopieren eigene Notizen mit denen der Vorlage** (Mittel).
+  `Home.tsx`: `withContent` steht unabhängig von der Content-Strategie auf an, der Import läuft mit
+  `packageWins` ohne Plan-Anzeige.
+- **5 Import-Warnungen im Assistenten verschwinden** (Mittel). Das Ergebnis von
+  `templatePackage.import` wird dort nicht gelesen; über „Vorlagen → Importieren“ sind dieselben
+  Warnungen sichtbar.
+- **6 `plan.notes` wird nirgends gerendert** (Mittel). Der `content`-Baustein schreibt
+  `contentIsSymlink` und `identical:<name>` hinein, die Seite zeigt nur `additions` und `conflicts`.
+- **7 Sticky-Schlüssel kollidiert für mehrfach installierte Plugins** (Mittel).
+  `plugins.expanded.<name>` hängt am abgeleiteten Namen, und ein Projekt kann sechs Zeilen
+  `quartz-layout-box` haben - die Umstellung von Index auf Name hat den Positions-Befund gegen diesen
+  getauscht.
+- **8 Ein kaputter Vorlagen-Cache gewinnt gegen die mitgelieferte Kopie** (Mittel).
+  `builtinTemplateService.ts` schreibt nicht atomar und prüft nur zwei Magic-Bytes; `Home.tsx` legt
+  bei `plan === null` still ohne Vorlage an.
+- **10 Auf einem Mac ohne Command Line Tools startet die App vermutlich mit Apples
+  Installer-Dialog** (Mittel, nicht gemessen - kein solcher Rechner verfügbar). `gitRuntime.ts` führt
+  `/usr/bin/git --version` aus, obwohl der Kommentar daneben weiß, dass das dort ein Stub ist.
+- **11 Nach einem Vorlagenfehler bleibt der Assistent in einem toten Zustand** (Niedrig).
+  `reload()` beim Schließen und `setError(null)` in `onCancel` fehlen; der Duplizieren-Dialog macht
+  beides richtig.
+- **12 Die Symlink-Sperre hat zwei blinde Flecken** (Niedrig). `getContentStatus` prüft mit
+  `existsSync`, das Links folgt (hängender Link meldet „kein Symlink“), und geprüft wird nur
+  `content/` selbst, nicht ein Link darin.
+- **13 Ein Symlink innerhalb von `content/` bricht den Export** (Niedrig). `listContentFiles`
+  behandelt einen Link-Eintrag weder als Verzeichnis noch als versteckt, `readFile` wirft EISDIR.
+- **14 Fehlertexte in beiden Dialogen erscheinen ohne Live-Region** (Niedrig). `Home.tsx`, gegen die
+  Regel „Was ohne Zutun erscheint, wird angesagt“.
+- **15 Zwei Kopien der git-Version** (Niedrig). `Settings.tsx` und `scripts/fetch-git.mjs` führen
+  `2.53.0` je einmal; driftet eine, zeigt der Quelltext-Link der Lizenzangabe auf die falsche
+  Version.
+
 
 ## Claude-Skills in diesem Projekt
 

@@ -184,6 +184,9 @@ export default {
         'Nicht verfügbar: Der Content-Ordner wird ein Link in den gewählten Ordner. Dorthin schreibt eine Vorlage nichts, damit fremde Notizen nicht in deinem Vault landen.',
       templateFailed: 'Das Projekt wurde angelegt, aber die Vorlage ließ sich nicht anwenden: {{detail}}',
       templateUnreadable: 'Das Paket ließ sich nicht lesen.',
+      doneTitle: 'Projekt angelegt',
+      doneWithWarnings: 'Das Projekt ist da. Beim Anwenden der Vorlage gab es aber etwas zu melden:',
+      toProject: 'Zum Projekt',
       creating: 'Erstelle… (Klonen und npm install dauern ein bis zwei Minuten)',
       create: 'Projekt anlegen',
       createFailed: 'Projekt konnte nicht erstellt werden.'

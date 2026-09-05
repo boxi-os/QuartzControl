@@ -16,6 +16,7 @@ import type { TFunction } from 'i18next'
 import { useAppStore } from '../state/store'
 import { Button, Card, Field, InfoNote, Modal, Select, TextInput, Toggle } from '../components/ui'
 import ProjectAvatar from '../components/ProjectAvatar'
+import { ImportOutcome } from '../components/ImportOutcome'
 import { GROUP_ICONS } from './navConfig'
 import { formatRelativeTime } from '../utils/format'
 import { useAsyncAction } from '../hooks/useAsyncAction'
@@ -42,6 +43,9 @@ export default function Home(): JSX.Element {
   const removeProject = useAppStore((s) => s.removeProject)
   const [projects, setProjects] = useState<ProjectOverview[] | null>(null)
   const [showWizard, setShowWizard] = useState(false)
+  // Set only when a created project's template import had something to report. It keeps the wizard
+  // on screen with the outcome instead of navigating away from the one moment it can be shown.
+  const [outcome, setOutcome] = useState<{ projectId: string; warnings: string[] } | null>(null)
   // The project a "Duplizieren" click opened the dialog for. One piece of state rather than a flag
   // per row: only one dialog can be open, and the row itself has nothing to remember afterwards.
   const [duplicating, setDuplicating] = useState<ProjectOverview | null>(null)
@@ -229,7 +233,17 @@ export default function Home(): JSX.Element {
           busy={busy}
           error={error}
           defaultDirectory={settings.defaultProjectDirectory}
-          onCancel={() => setShowWizard(false)}
+          outcome={outcome?.warnings ?? null}
+          onContinue={() => {
+            const id = outcome?.projectId
+            setOutcome(null)
+            setShowWizard(false)
+            if (id) navigate(`/project/${id}`)
+          }}
+          onCancel={() => {
+            setShowWizard(false)
+            setOutcome(null)
+          }}
           onCreate={async (options, template) => {
             setBusy(true)
             setError(null)
@@ -244,6 +258,7 @@ export default function Home(): JSX.Element {
               // that would go stale the next time a part is added. A failure does not undo the
               // project: it is a finished, usable Quartz project either way, and the message says
               // what did not happen rather than throwing the whole creation away.
+              let warnings: string[] = []
               if (template) {
                 try {
                   const plan = await window.quartzGui.templatePackage.plan(options.targetDirectory, template.path)
@@ -257,12 +272,17 @@ export default function Home(): JSX.Element {
                   const parts = plan.parts
                     .map((part) => part.id)
                     .filter((id) => template.withContent || id !== 'content')
-                  await window.quartzGui.templatePackage.import(
+                  const imported = await window.quartzGui.templatePackage.import(
                     options.targetDirectory,
                     template.path,
                     parts,
                     'packageWins'
                   )
+                  // What the import had to say about itself. Dropping it meant a package that was
+                  // only half applied - offline, so no plugin could be installed, or a part that
+                  // failed - produced a project that simply looked wrong, with the explanation
+                  // available on the Vorlagen page and nowhere near the person who just clicked.
+                  warnings = imported.warnings
                   // The one setting the template deliberately does not carry, set here because
                   // leaving it would be worse than either: `configuration` is a site's own
                   // identity and no part touches it, but `quartz create` writes en-US and the
@@ -287,6 +307,12 @@ export default function Home(): JSX.Element {
               const overview = await window.quartzGui.projects.overview()
               setProjects(overview)
               const created = overview.find((p) => p.path === options.targetDirectory)
+              // The project exists either way. With warnings the dialog stays up to show them once,
+              // because after the navigation there is no place left that knows they happened.
+              if (warnings.length > 0 && created) {
+                setOutcome({ projectId: created.id, warnings })
+                return
+              }
               setShowWizard(false)
               if (created) navigate(`/project/${created.id}`)
             } finally {
@@ -805,12 +831,17 @@ function CreateWizard({
   busy,
   error,
   defaultDirectory,
+  outcome,
+  onContinue,
   onCancel,
   onCreate
 }: {
   busy: boolean
   error: string | null
   defaultDirectory?: string
+  /** Warnings from the template import, once the project exists. Null while it does not. */
+  outcome: string[] | null
+  onContinue: () => void
   onCancel: () => void
   onCreate: (options: CreateProjectOptions, template: { path: string; withContent: boolean } | null) => void
 }): JSX.Element {
@@ -875,6 +906,23 @@ function CreateWizard({
         baseUrl: baseUrl || undefined
       },
       builtin && useTemplate ? { path: builtin.path, withContent: withContent && contentAllowed } : null
+    )
+  }
+
+  // The project is made; the form behind this would only invite creating it a second time. One
+  // screen, one message, one way on - and closing with Escape goes the same way, since onContinue
+  // is what the parent hands to onClose in this state.
+  if (outcome) {
+    return (
+      <Modal open onClose={onContinue} title={t('home.wizard.doneTitle')}>
+        <div className="flex flex-col gap-1">
+          <p className="text-ui text-text-secondary">{t('home.wizard.doneWithWarnings')}</p>
+          <ImportOutcome warnings={outcome} />
+          <div className="mt-4 flex justify-end">
+            <Button onClick={onContinue}>{t('home.wizard.toProject')}</Button>
+          </div>
+        </div>
+      </Modal>
     )
   }
 

@@ -183,6 +183,9 @@ export default {
         'Not available: the content folder becomes a link into the folder you chose. A template never writes there, so its notes cannot end up in your vault.',
       templateFailed: 'The project was created, but the template could not be applied: {{detail}}',
       templateUnreadable: 'The package could not be read.',
+      doneTitle: 'Project created',
+      doneWithWarnings: 'The project is there. Applying the template had something to report, though:',
+      toProject: 'Go to the project',
       creating: 'Creating… (cloning and npm install take a minute or two)',
       create: 'Create project',
       createFailed: 'The project could not be created.'

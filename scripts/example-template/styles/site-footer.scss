@@ -1,4 +1,8 @@
-// Footer — the links row and the colophon layout-box under it.
+// Everything under the article: the footer's links row, the colophon layout-box below it, and the
+// comment thread that would follow if the giscus plugin were switched on.
+//
+// One file because they are one region and one documentation page - and because all three take the
+// same hairline and the same top margin from the text above them, which is a single decision.
 
 footer {
   margin-block-start: var(--tpl-space-xl);
@@ -39,4 +43,20 @@ footer {
       text-underline-offset: var(--tpl-underline-offset);
     }
   }
+}
+
+/* ------------------------------------------------------------------------------ */
+// Comments (giscus).
+//
+// The plugin is off in this template - it needs a repository the importing site does not have -
+// but the styling travels with it, so switching it on in the app does not land an unstyled iframe
+// at the bottom of every page.
+
+.giscus,
+.giscus-frame {
+  margin-block-start: var(--tpl-space-xl);
+  padding-block-start: var(--tpl-space-md);
+  border-block-start: var(--tpl-rule-width) solid var(--tpl-rule);
+  width: 100%;
+  border-radius: var(--tpl-radius-md);
 }

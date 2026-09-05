@@ -24,8 +24,7 @@ export const STYLE_ORDER = [
   'base',
 
   // navigation and controls, in the order they appear down the sidebar
-  'nav-page-title',
-  'nav-toolbar',
+  'nav-header',
   'nav-search',
   'nav-darkmode',
   'nav-reader-mode',
@@ -34,8 +33,7 @@ export const STYLE_ORDER = [
 
   // the apparatus above the article
   'meta-breadcrumbs',
-  'meta-article-title',
-  'meta-content-meta',
+  'meta-title-and-date',
   'meta-note-properties',
   'meta-tag-list',
 
@@ -54,8 +52,7 @@ export const STYLE_ORDER = [
   'body-media',
 
   // whole page types
-  'page-folder',
-  'page-tag',
+  'page-listing',
   'page-bases',
   'page-canvas',
   'page-popover',
@@ -67,7 +64,6 @@ export const STYLE_ORDER = [
 
   // the bottom of every page
   'site-footer',
-  'site-comments',
 
   // last on purpose: several of these have to beat a decision made further up
   'a11y'

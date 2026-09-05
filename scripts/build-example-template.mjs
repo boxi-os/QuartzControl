@@ -124,7 +124,7 @@ if (argv.includes('--check-contrast')) {
  *
  * Phase 5 writes the stylesheets from this repo into the project. The project is where the work
  * happens, though, so every edit there leaves the repo a copy behind - measured on 2026-09-05, one
- * of the 34 files had drifted within a day of being touched, and nothing said so. `--sync` closes
+ * of the files had drifted within a day of being touched, and nothing said so. `--sync` closes
  * that loop by copying the files back. It is a file copy, so comments and formatting survive.
  *
  * What it does *not* touch is quartz.config.yaml. That file is generated from plugins.mjs,

@@ -54,7 +54,7 @@ inverse Umsetzung von allen vieren.
 | `translations.mjs` | Geänderte Formulierungen in Quartz' deutscher Sprachdatei |
 | `presets.mjs` | Zwei gespeicherte Theme-Zusammenstellungen |
 | `style-order.mjs` | Die Ladereihenfolge der Stylesheets — Liste **und** Reihenfolge in einem |
-| `styles/*.scss` | 34 Stylesheets, eines je Komponente — die Kopie des Projekts, gepflegt über `--sync` |
+| `styles/*.scss` | 30 Stylesheets, eines je Komponente — die Kopie des Projekts, gepflegt über `--sync` |
 | `site/content/**` | der ursprüngliche Beispielinhalt — **überholt**, gepflegt wird im Vault |
 | `site/snippets/` | Die zwei Snippet-Dateien, die nicht im Paket mitreisen (deutsch und englisch) |
 | *(im Vault)* `assets/` | Dummy-Medien: PNG, JPEG, WebP, GIF, SVG, ein dreiseitiges PDF, eine WAV-Datei |

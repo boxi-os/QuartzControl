@@ -519,3 +519,41 @@ der Schwelle (knappste 9,63:1 hell, 9,15:1 dunkel).
 
 Die Lehre ist die dritte: Eine Regel, die eine Diagrammart meint, muss sie auch benennen. Mermaid
 gibt allen Arten dieselben Klassennamen.
+
+### 43. Der Content-Symlink schaltet Quartz' git-Datumsangaben still ab
+
+Das gilt nicht nur für diese Vorlage: **die Symlink-Strategie ist die, die QuartzControl als
+Vorgabe anbietet**, und sie nimmt jedem so angelegten Projekt die git-Daten.
+
+Der Bau warnte für **250 der 254 Seiten** mit `isn't yet tracked by git, dates will be inaccurate`.
+Die vier stummen Seiten sind die mit `lastmod` im Frontmatter: `modified ||= await …` wertet rechts
+nur aus, wenn links leer ist, also fragen sie git gar nicht erst.
+
+`@quartz-community/created-modified-date` sucht sein Repository mit
+`Repository.discover(ctx.argv.directory)`, und `directory` ist `content` — der Symlink. libgit2 löst
+ihn auf und findet damit das Repo des **Vaults** (`workdir: ~/Obsidian/QuartzProjekte/Example/`).
+Den Dateipfad rechnet das Plugin danach aber weiter gegen das Projektverzeichnis:
+`path.relative(workdir, "content/en/…")` löst das relative Argument gegen das Arbeitsverzeichnis auf
+und liefert `../../../Documents/Example/content/en/…` — einen Pfad, der aus dem Vault wieder
+herausführt. Jede Abfrage wirft. Gegenprobe mit dem Pfad, wie ihn der Vault kennt
+(`en/formatting/special/escapes.md`): `1788573656000`. Das Repository weiß es, es wird falsch
+gefragt.
+
+In einem gewöhnlichen Quartz-Projekt fällt das nie auf, weil `content/` dort im Repo liegt und die
+Rechnung aufgeht. Kaputt ist sie genau dann, wenn `content/` aus dem Repo herauszeigt.
+
+Gemessen sind beide Enden. Erstens: Das Datum kam ohnehin aus `filesystem`, denn das steht als
+dritte Quelle in der Liste — der gerenderte Zeitstempel trug Millisekunden (`03:41:43.937Z`, eine
+mtime). `git` aus der Prioritätenliste zu streichen ändert also nichts am Ergebnis, nur an den 250
+Zeilen Lärm. Zweitens: ein `fs.realpathSync()` an der einen Stelle
+(`path.relative(repositoryWorkdir, fs.realpathSync(fullFp))`) baut mit **0 Warnungen** und
+sekundengenauen Zeitstempeln (`03:43:04.000Z`, ein Commit). Der Patch wurde danach zurückgenommen —
+ein von Hand geändertes `node_modules` verschwindet beim nächsten `npm install` still.
+
+Die Vorlage steht deshalb jetzt auf `priority: [frontmatter, filesystem]`, mit der Begründung an
+beiden Stellen (`plugins.mjs`, `quartz.config.yaml`). Was dabei verloren geht, ist keine Anzeige,
+sondern Haltbarkeit: eine mtime überlebt kein `rsync`, kein Restore und kein frisches Auschecken,
+ein Commit-Datum schon. Sobald der Fix upstream ist, gehört `git` wieder vor `filesystem`.
+
+Für die App bleibt die Frage offen, ob der Content-Tab das sagen sollte, wenn er einen Symlink
+anbietet.

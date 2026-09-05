@@ -237,7 +237,16 @@ export const PLUGIN_PATCHES = {
   'github-flavored-markdown': { enabled: true },
   'syntax-highlighting': { enabled: true, options: { theme: { light: 'github-light', dark: 'github-dark' }, keepBackground: false } },
   latex: { enabled: true, options: { renderEngine: 'katex' } },
-  'created-modified-date': { enabled: true, options: { defaultDateType: 'modified', priority: ['frontmatter', 'git', 'filesystem'] } },
+  // `git` is missing from the priority list on purpose. It cannot answer while `content/` is a
+  // symlink into a vault, which is this template's whole arrangement - and the default one
+  // QuartzControl offers. The plugin finds its repository with `Repository.discover("content")`;
+  // libgit2 resolves the symlink and so lands in the *vault's* repo, but then computes the file's
+  // path against the project directory, producing a path that leads back out of the vault
+  // (`../../../Documents/Example/content/...`). Every lookup throws, and the build warned for 250
+  // of 254 pages. Measured: the date came from `filesystem` either way, so dropping `git` changes
+  // nothing but the noise; and one `fs.realpathSync()` inside the plugin builds with 0 warnings
+  // and real commit timestamps. Put `git` back before `filesystem` once that is upstream.
+  'created-modified-date': { enabled: true, options: { defaultDateType: 'modified', priority: ['frontmatter', 'filesystem'] } },
   description: { enabled: true },
   'crawl-links': { enabled: true, options: { markdownLinkResolution: 'shortest' } },
   // Off, deliberately. With it on, every line break in a note's source becomes a `<br>` on the

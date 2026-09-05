@@ -156,3 +156,16 @@ traf `deploy-manifest-<id>.json`, nicht aber den Vor-Split-Namen `deploy-manifes
 `readManifest` für das erstfragende Ziel adoptiert: die Kopie hätte ihrem neuen Ziel gemeldet, ein
 Server, auf dem sie nie war, sei bereits aktuell. `branch-worktree-<id>` - ein im `.git` des
 *Originals* registrierter Worktree, den ein abgebrochener Deploy hinterlässt - stand nirgends.
+
+**Ein Name ist keine Kennung, wenn ein Plugin mehrfach installiert sein darf (2026-09-05).** Der
+Sticky-Schlüssel des Optionen-Panels war `plugins.expanded.<name>`, und ein echtes Projekt hat sechs
+`quartz-layout-box`-Einträge. Gemessen an der gebauten App mit drei davon: solange die Seite
+gemountet bleibt, fällt nichts auf — `useStickyState` liest den Speicher nur im
+`useState`-Initialisierer, der Klick erreicht also den lokalen Zustand einer Zeile und die anderen
+behalten ihren. Es zeigt sich beim Zurückkommen: zweite Box aufklappen, Seite verlassen, zurück —
+alle drei stehen offen. Der Schlüssel trägt jetzt zusätzlich, die wievielte gleichnamige Zeile es
+ist. Auch das ist nicht perfekt (das Entfernen der zweiten von sechs verschiebt die vier dahinter um
+eins), aber diese Einträge sind für den Lesenden ohnehin nicht zu unterscheiden, während das geteilte
+Panel in jedem Projekt sichtbar war, das eine Layout-Box mehr als einmal benutzt. Frames behalten den
+blanken Namen: ihre IDs sind Verzeichnisnamen unter `authored-frames/` und schon eindeutig.
+

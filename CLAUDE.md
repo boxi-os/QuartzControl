@@ -280,6 +280,15 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   wird weggeräumt statt übersprungen, damit der reparierende Weg nicht blockiert bleibt.
 - **Gemessen, nicht angenommen.** Jede Regel hier steht in `docs/decisions/` mit dem Experiment, das
   sie erzwungen hat. Neue Regeln genauso.
+- **Ein Symlink-Schutz prüft jedes Segment, nicht das oberste Verzeichnis** — und fragt mit
+  `lstat`, nicht mit `existsSync`. Letzteres folgt dem Link, also meldet ein hängender Link „ist
+  nicht da“ statt „ist ein Link“, und die Sperre geht auf. Ein Link *innerhalb* des geschützten
+  Ordners führt genauso hinaus wie der Ordner selbst (`writableTarget` in
+  `templatePackage/shared.ts`).
+- **Eine Kopie erbt keinen Pfad, der in das Original zeigt.** Config, Lockfile und Symlinks werden
+  nach dem Kopieren umgeschrieben, alles Instanzgebundene (Ausgabeverzeichnis, Deploy-Manifeste,
+  Worktrees, Snapshots, Ziele) bleibt zurück — `duplicateService.ts` führt beide Listen mit
+  Begründung.
 - **Ein Lesepfad legt nie `.quartz-gui/` an.** `quartzGuiPath()` zum Lesen, `quartzGuiDir()` zum
   Schreiben.
 - **JSON-Stores nur über `jsonStore.ts`**: atomar schreiben, Unlesbares beiseitelegen statt
@@ -310,80 +319,33 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Offene Befunde aus dem Review (Stand 2026-09-05)
+## Befunde aus den Reviews (Stand 2026-09-05)
 
-Die Liste aus [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md) ist vollständig abgearbeitet;
-der Tag `review-2026-09-02` markiert den Ausgangsstand, und was dabei gemessen wurde, steht in
-`docs/decisions/`. Offen davon nur noch die rund 272 Palette-Paare im Renderer - beiläufig beim
-Anfassen, kein sed.
+Beide Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md) (Tag
+`review-2026-09-02` markiert den Ausgangsstand) und [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md)
+mit seinen 15 Befunden (Auftrag daneben in `docs/REVIEW-2026-09-05-auftrag.md`) stehen als Dokumente
+unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft gilt, steht
+oben als Regel. Offen ist nur noch, was beide als „beiläufig, kein sed“ führen: rund 272 Farbpaare
+im Renderer stehen als Tailwind-Palette statt als Token, und die 133 übrigen Arbitrary-Value-Größen.
 
-Aktuell ist [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) (der Auftrag daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`): 15 Befunde, 3 Hoch, 7 Mittel, 5 Niedrig, jeweils mit Datei,
-Zeile, Szenario und der Angabe, ob gemessen oder gelesen.
+**Arbeitsregel** für die nächste Liste: ein Befund pro Durchgang, jeweils mit `npm run typecheck`,
+`npm run build`, `npm run smoke` und eigenem Commit; was dabei nebenbei auffällt, wird gesammelt und
+genannt, nicht mit erledigt. Was nur ein laufendes Programm beantworten kann, wird an der gebauten
+App gemessen — und wo es geht mit einer Vorher-Messung, denn zwei der Befunde traten anders auf als
+das Review sie beschrieb (der geteilte Optionen-Zustand erst nach einem Routenwechsel, der hängende
+Content-Link mit ENOTDIR statt ENOENT).
 
-**Arbeitsregel:** ein Befund pro Durchgang, jeweils mit `npm run typecheck`, `npm run build`,
-`npm run smoke` und eigenem Commit; was dabei nebenbei auffällt, wird gesammelt und genannt, nicht
-mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge.
+Was aus dem 09-05-Durchgang als Regel hängengeblieben ist, steht jeweils oben im passenden Abschnitt:
+ein Vorlagen-Paket ist keine Vertrauensgrenze; „die Datei ist da“ ist nicht „die Datei lässt sich
+lesen“; eine Kopie erbt keinen Pfad, der in das Original zeigt; ein Symlink-Schutz, der nur das
+oberste Verzeichnis prüft, prüft nichts.
 
-### Erledigt (2026-09-05)
+Zwei Dinge sind dabei aufgefallen und bewusst nicht mit erledigt worden:
 
-- **1 Duplikat baute mit den Frames des Originals - erledigt.** `duplicateProject` schreibt nach dem
-  Kopieren jeden Pfad um, der *innerhalb* des Quellprojekts liegt: Plugin-`source` in der Config,
-  `source`/`resolved` im Lockfile, die Symlinks in `.quartz/plugins/`. Ein Plugin von woanders auf
-  der Platte bedeutet in beiden Projekten dasselbe und bleibt. `writeConfig` hat dafür dieselbe
-  `snapshot: false`-Ausnahme wie `saveFrame` - die Kopie hat bewusst keinen Snapshot-Store und darf
-  hier keinen anfangen.
-- **2 Pfad-Traversal im Paket-Import - erledigt.** Zwei Schichten: `readZip` weist ein Archiv mit
-  absolutem Namen, `..`-Segment, Laufwerksbuchstaben oder NUL komplett zurück (nichts, was diese App
-  schreibt, erzeugt so einen Namen), und `containedPath()` in `templatePackage/shared.ts` entscheidet
-  per `resolve()`+`relative()` über jeden Zielpfad - in `content`, `fonts` und `styles`, in `plan`
-  *und* `apply`, damit der Plan nichts verspricht, was `apply` verweigert. **Ein Paket ist keine
-  Vertrauensgrenze**, so wenig wie der Renderer: Namen daraus werden nie ungeprüft auf ein
-  Verzeichnis gelegt.
-- **3 Ausgabeverzeichnis reiste mit - erledigt.** `.quartz-gui/project-prefs.json` steht in `SKIP`.
-  Der Build-Guard bleibt, wie er ist: ein Ordner mit `index.html` und `static/` ist vom eigenen
-  vorigen Build nicht zu unterscheiden, also darf gar nicht erst ein fremder Pfad in der Kopie
-  landen.
-- **8 Kaputter Vorlagen-Cache gewann gegen die mitgelieferte Kopie - erledigt.** Ein Download wird
-  jetzt durch *Lesen* geprüft (`readZip` plus vorhandenes Manifest, nicht zwei Magic-Bytes), über
-  Temp-Datei mit `fsync` und `rename` geschrieben, und `getBuiltinTemplate` gibt nur eine Kopie
-  heraus, die sich **lesen** lässt - Cache wie Bundle. Ein unlesbarer Cache wird gelöscht statt
-  übersprungen, sonst hielte seine mtime den reparierenden Download einen Tag lang auf. Der
-  Assistent meldet `plan === null`, statt das Projekt still ohne Vorlage anzulegen.
-- **9 Zwei Reste des Originals - erledigt.** `.quartz-gui/deploy-manifest.json` (der Legacy-Name, den
-  `readManifest` adoptiert) in `SKIP`, `.quartz-gui/branch-worktree-` in `SKIP_PREFIX`.
-
-### Offen
-
-- **4 Der Assistent überschreibt beim Kopieren eigene Notizen mit denen der Vorlage** (Mittel).
-  `Home.tsx`: `withContent` steht unabhängig von der Content-Strategie auf an, der Import läuft mit
-  `packageWins` ohne Plan-Anzeige.
-- **5 Import-Warnungen im Assistenten verschwinden** (Mittel). Das Ergebnis von
-  `templatePackage.import` wird dort nicht gelesen; über „Vorlagen → Importieren“ sind dieselben
-  Warnungen sichtbar.
-- **6 `plan.notes` wird nirgends gerendert** (Mittel). Der `content`-Baustein schreibt
-  `contentIsSymlink` und `identical:<name>` hinein, die Seite zeigt nur `additions` und `conflicts`.
-- **7 Sticky-Schlüssel kollidiert für mehrfach installierte Plugins** (Mittel).
-  `plugins.expanded.<name>` hängt am abgeleiteten Namen, und ein Projekt kann sechs Zeilen
-  `quartz-layout-box` haben - die Umstellung von Index auf Name hat den Positions-Befund gegen diesen
-  getauscht.
-- **10 Auf einem Mac ohne Command Line Tools startet die App vermutlich mit Apples
-  Installer-Dialog** (Mittel, nicht gemessen - kein solcher Rechner verfügbar). `gitRuntime.ts` führt
-  `/usr/bin/git --version` aus, obwohl der Kommentar daneben weiß, dass das dort ein Stub ist.
-- **11 Nach einem Vorlagenfehler bleibt der Assistent in einem toten Zustand** (Niedrig).
-  `reload()` beim Schließen und `setError(null)` in `onCancel` fehlen; der Duplizieren-Dialog macht
-  beides richtig.
-- **12 Die Symlink-Sperre hat zwei blinde Flecken** (Niedrig). `getContentStatus` prüft mit
-  `existsSync`, das Links folgt (hängender Link meldet „kein Symlink“), und geprüft wird nur
-  `content/` selbst, nicht ein Link darin.
-- **13 Ein Symlink innerhalb von `content/` bricht den Export** (Niedrig). `listContentFiles`
-  behandelt einen Link-Eintrag weder als Verzeichnis noch als versteckt, `readFile` wirft EISDIR.
-- **14 Fehlertexte in beiden Dialogen erscheinen ohne Live-Region** (Niedrig). `Home.tsx`, gegen die
-  Regel „Was ohne Zutun erscheint, wird angesagt“.
-- **15 Zwei Kopien der git-Version** (Niedrig). `Settings.tsx` und `scripts/fetch-git.mjs` führen
-  `2.53.0` je einmal; driftet eine, zeigt der Quelltext-Link der Lizenzangabe auf die falsche
-  Version.
-
+- `builtinTemplateAvailable()` in `builtinTemplateService.ts` hat in `electron/`, `src/` und
+  `shared/` keinen Aufrufer.
+- `countFiles()` in `contentService.ts` zählt einen Link auf ein Verzeichnis als *eine* Datei —
+  dieselbe Familie wie Befund 13, aber ohne Folge außer einer zu kleinen Zahl.
 
 ## Claude-Skills in diesem Projekt
 

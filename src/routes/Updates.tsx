@@ -203,7 +203,7 @@ export default function Updates(): JSX.Element {
         {pluginStatuses && pluginStatuses.length === 0 && <p className="mt-2 text-xs text-text-muted">{t('updates.plugins.none')}</p>}
         <div className="mt-2 flex flex-col gap-1.5">
           {pluginStatuses?.map((p) => (
-            <div key={p.name} className="flex items-center justify-between rounded-md border border-black/[0.06] px-2.5 py-1.5 text-sm dark:border-white/10">
+            <div key={p.name} className="flex items-center justify-between rounded-md border border-ink/[0.06] px-2.5 py-1.5 text-sm dark:border-ink/10">
               <div className="flex items-center gap-2">
                 <span className="font-mono text-xs">{p.name}</span>
                 {p.state === 'local' ? (

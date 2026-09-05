@@ -98,7 +98,7 @@ export default function CssVariableReference({ onInsert }: { onInsert: (text: st
         {copied ? t('common.copied', { value: copied }) : ''}
       </p>
 
-      <div className="mt-4 border-t border-black/[0.06] pt-3 dark:border-white/10">
+      <div className="mt-4 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
         <h2 className="mb-1 text-sm font-semibold">{t('styleEditor.cssVars.calloutsHeading')}</h2>
         <p className="mb-2 text-xs text-text-muted">{t('styleEditor.cssVars.calloutsDescription')}</p>
         <VariableGroup
@@ -170,7 +170,7 @@ function VariableRow({
                 key: def.key,
                 mode: t(`styles.variables.${mode}`)
               })}
-              className="h-4 w-4 shrink-0 rounded-sm border border-black/10 hover:outline hover:outline-2 hover:outline-offset-1 hover:outline-blue-500/50 dark:border-white/20"
+              className="h-4 w-4 shrink-0 rounded-sm border border-ink/10 hover:outline hover:outline-2 hover:outline-offset-1 hover:outline-blue-500/50 dark:border-ink/20"
               style={{
                 backgroundColor: isDisplayableColor(mode === 'light' ? light : dark)
                   ? (mode === 'light' ? light : dark)
@@ -255,7 +255,7 @@ function CalloutRow({
                 type="button"
                 onClick={(e) => (e.altKey ? onCopy(literal, `[!${def.type}] ${name}`) : onInsert(literal))}
                 title={t('styleEditor.cssVars.insertValueHint', { value: literal })}
-                className="h-4 w-4 shrink-0 rounded-sm border border-black/10 hover:outline hover:outline-2 hover:outline-offset-1 hover:outline-blue-500/50 dark:border-white/20"
+                className="h-4 w-4 shrink-0 rounded-sm border border-ink/10 hover:outline hover:outline-2 hover:outline-offset-1 hover:outline-blue-500/50 dark:border-ink/20"
                 style={{ backgroundColor: isDisplayableColor(value) ? value : 'transparent' }}
               />
             )

@@ -185,7 +185,7 @@ export default function Localization(): JSX.Element {
             return (
               <div
                 key={key}
-                className={`rounded-md border border-black/[0.06] p-2.5 dark:border-white/10 ${
+                className={`rounded-md border border-ink/[0.06] p-2.5 dark:border-ink/10 ${
                   entry.kind === 'template' ? 'xl:col-span-2' : ''
                 }`}
               >
@@ -200,7 +200,7 @@ export default function Localization(): JSX.Element {
                     value={value}
                     onChange={(e) => setEdit(entry.path, e.target.value)}
                     rows={2}
-                    className="w-full rounded-[7px] border border-black/10 bg-white px-2.5 py-1.5 font-mono text-[12px] shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-white/10 dark:bg-white/5 dark:text-slate-100"
+                    className="w-full rounded-[7px] border border-ink/10 bg-white px-2.5 py-1.5 font-mono text-[12px] shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-ink/10 dark:bg-ink/5 dark:text-slate-100"
                   />
                 )}
                 {errors[key] && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors[key]}</p>}

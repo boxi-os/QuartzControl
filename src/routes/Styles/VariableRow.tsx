@@ -137,7 +137,7 @@ export default function VariableRow({
           a pair of inputs, and stretched across a maximized window its two dependency columns end
           up a screen apart from the row they belong to. */}
       {expanded && (
-        <div className="ml-[18px] mt-1.5 flex max-w-5xl flex-col gap-3 border-l-2 border-black/[0.08] pl-3 dark:border-white/10">
+        <div className="ml-[18px] mt-1.5 flex max-w-5xl flex-col gap-3 border-l-2 border-ink/[0.08] pl-3 dark:border-ink/10">
           <CurrentValues varKey={varKey} ctx={ctx} />
 
           <section>
@@ -253,13 +253,13 @@ function KeyChips({ keys, onNavigate }: { keys: string[]; onNavigate?: (key: str
             key={key}
             type="button"
             onClick={() => onNavigate(key)}
-            className="rounded bg-black/[0.05] px-1.5 py-0.5 font-mono text-[11px] hover:bg-ink/10 dark:bg-white/10 dark:hover:bg-ink/20"
+            className="rounded bg-ink/[0.05] px-1.5 py-0.5 font-mono text-[11px] hover:bg-ink/10 dark:bg-ink/10 dark:hover:bg-ink/20"
             title={t('styles.variables.chipHint')}
           >
             --{key}
           </button>
         ) : (
-          <code key={key} className="rounded bg-black/[0.05] px-1.5 py-0.5 font-mono text-[11px] dark:bg-white/10">
+          <code key={key} className="rounded bg-ink/[0.05] px-1.5 py-0.5 font-mono text-[11px] dark:bg-ink/10">
             --{key}
           </code>
         )
@@ -339,7 +339,7 @@ function ValueInput({
 function Swatch({ value, size = 'sm' }: { value: string | undefined; size?: 'sm' | 'md' }): JSX.Element {
   return (
     <span
-      className={`${size === 'md' ? 'h-4 w-4' : 'h-3 w-3'} shrink-0 rounded-sm border border-black/10 dark:border-white/20`}
+      className={`${size === 'md' ? 'h-4 w-4' : 'h-3 w-3'} shrink-0 rounded-sm border border-ink/10 dark:border-ink/20`}
       style={{ backgroundColor: isDisplayableColor(value) ? value : 'transparent' }}
     />
   )

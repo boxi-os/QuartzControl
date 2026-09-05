@@ -259,7 +259,7 @@ function ActiveThemeSection({
       )}
 
       {hasStyleSettings && info && (
-        <div className="mt-3 rounded-md border border-black/[0.06] bg-black/[0.02] p-3 dark:border-white/10 dark:bg-white/[0.03]">
+        <div className="mt-3 rounded-md border border-ink/[0.06] bg-ink/[0.02] p-3 dark:border-ink/10 dark:bg-ink/[0.03]">
           <div className="mb-2 flex items-center justify-between gap-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
               {t('themes.active.styleSettingsHeading', { ids: info.styleSettingsId.join(', ') })}
@@ -340,7 +340,7 @@ function PresetsSection({
         {presets.map((preset) => (
           <div
             key={preset.id}
-            className="flex items-center justify-between rounded-md border border-black/[0.06] px-2.5 py-1.5 text-sm dark:border-white/10"
+            className="flex items-center justify-between rounded-md border border-ink/[0.06] px-2.5 py-1.5 text-sm dark:border-ink/10"
           >
             <div>
               <span className="font-medium">{preset.name}</span>{' '}
@@ -454,12 +454,12 @@ function ThemeCatalog({
           {t('themes.catalog.unavailable')}
         </p>
       )}
-      <div className="mt-2 max-h-80 overflow-y-auto rounded-md border border-black/[0.06] dark:border-white/10">
+      <div className="mt-2 max-h-80 overflow-y-auto rounded-md border border-ink/[0.06] dark:border-ink/10">
         {visible.map((listing) => {
           const isActive = listing.id === activeThemeId
           const isExpanded = expandedId === listing.id
           return (
-            <div key={listing.id} className="border-b border-black/[0.04] last:border-b-0 dark:border-white/5">
+            <div key={listing.id} className="border-b border-ink/[0.04] last:border-b-0 dark:border-ink/5">
               <div className="flex items-center justify-between px-2.5 py-1.5 text-sm">
                 <button
                   type="button"
@@ -485,7 +485,7 @@ function ThemeCatalog({
                 </div>
               </div>
               {isExpanded && (
-                <div className="border-t border-black/[0.04] bg-black/[0.02] px-2.5 py-2 text-xs dark:border-white/5 dark:bg-white/[0.02]">
+                <div className="border-t border-ink/[0.04] bg-ink/[0.02] px-2.5 py-2 text-xs dark:border-ink/5 dark:bg-ink/[0.02]">
                   {detailLoading && <p className="text-text-muted">{t('themes.catalog.detailLoading')}</p>}
                   {!detailLoading && detail === null && <p className="text-text-muted">{t('themes.catalog.detailNone')}</p>}
                   {!detailLoading && detail && (

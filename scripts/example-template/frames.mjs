@@ -139,10 +139,16 @@ const editorial = {
 /**
  * index - listing pages (folders, tags, bases).
  *
- * Geometrically the same as `editorial` on desktop, and that is the point: a folder page keeps the
- * empty right column so its list of links starts exactly where the article text starts. It is a
- * separate frame because the two page types are free to diverge again - and because the right slot
- * is genuinely dropped here below desktop, where `editorial` still has an outline to show.
+ * Geometrically identical to `editorial`, and that is the point: a folder page keeps the right
+ * column so its list of links starts exactly where the article text starts. It stays a separate
+ * frame because the two page types are free to diverge again, and because the layout editor keys
+ * page types to frames by name.
+ *
+ * It used to drop the right slot below desktop, on the assumption that the column was empty there -
+ * a listing page has no headings, so no table of contents. Measured on `/formatierung/`, it is not
+ * empty: backlinks and the graph live there, and `display: none` at 900 and at 390px took both away
+ * from every folder, tag and bases page. The slot now moves below the text, exactly as it does in
+ * `editorial`.
  */
 const index = {
   id: 'frame-index',
@@ -165,24 +171,24 @@ const index = {
       }
     },
     tablet: {
-      rows: 5,
+      rows: 6,
       cols: 12,
-      rowSizes: ['auto', 'auto', '1fr', 'auto', 'auto'],
+      rowSizes: ['auto', 'auto', '1fr', 'auto', 'auto', 'auto'],
       ...box('100%', 'left'),
       placements: {
         'area-header': place(1, 1, 1, 12),
-        'area-left': place(2, 1, 3, 3),
+        'area-left': place(2, 1, 4, 3),
         'area-beforeBody': place(2, 4, 1, 9),
         'area-pageBody': place(3, 4, 1, 9),
         'area-afterBody': place(4, 4, 1, 9),
-        'area-right': hidden,
-        'area-footer': place(5, 1, 1, 12)
+        'area-right': place(5, 4, 1, 9),
+        'area-footer': place(6, 1, 1, 12)
       }
     },
     mobile: {
-      rows: 6,
+      rows: 7,
       cols: 12,
-      rowSizes: ['auto', 'auto', 'auto', '1fr', 'auto', 'auto'],
+      rowSizes: ['auto', 'auto', 'auto', '1fr', 'auto', 'auto', 'auto'],
       ...box('100%', 'left', '20px'),
       placements: {
         'area-header': place(1, 1, 1, 12),
@@ -190,8 +196,8 @@ const index = {
         'area-beforeBody': place(3, 1, 1, 12),
         'area-pageBody': place(4, 1, 1, 12),
         'area-afterBody': place(5, 1, 1, 12),
-        'area-right': hidden,
-        'area-footer': place(6, 1, 1, 12)
+        'area-right': place(6, 1, 1, 12),
+        'area-footer': place(7, 1, 1, 12)
       }
     }
   }

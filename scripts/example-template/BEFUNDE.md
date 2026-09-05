@@ -558,7 +558,7 @@ ein Commit-Datum schon. Sobald der Fix upstream ist, gehört `git` wieder vor `f
 Für die App bleibt die Frage offen, ob der Content-Tab das sagen sollte, wenn er einen Symlink
 anbietet.
 
-### 44. Der `index`-Frame blendet eine Spalte aus, die nicht leer ist
+### 44. Der `index`-Frame blendete eine Spalte aus, die nicht leer ist — behoben
 
 Gefunden beim Durchgang durch die Dokumentation, weil die Seite über die Frames behauptete, die
 rechte Spalte einer Ordnerseite bleibe „frei, aber reserviert". Sie ist nicht frei: Gemessen an
@@ -569,15 +569,18 @@ rechte Spalte einer Ordnerseite bleibe „frei, aber reserviert". Sie ist nicht 
 Rückverweise und ihren Graph vollständig. `frame-editorial` macht es richtig — dort wandert die
 Spalte in eine eigene Zeile unter den Text (`row 5, col 4–12`) und bleibt lesbar.
 
-Das ist kein Entwurf, sondern ein Versehen mit einer nachvollziehbaren Ursache: Wer glaubt, die
-Spalte sei leer, für den ist Ausblenden die richtige Entscheidung. Die Doku sagt es jetzt richtig
-und trägt den Befund; der Frame selbst ist **nicht** geändert — das ist eine Entscheidung über das
-Aussehen aller Listenseiten auf zwei Breiten und gehört nicht in einen Doku-Durchgang.
+Kein Entwurf, sondern ein Versehen mit nachvollziehbarer Ursache: Wer glaubt, die Spalte sei leer,
+für den ist Ausblenden richtig.
 
-Der Weg dahin führt über `frames.mjs` im Repo und `--only 3`, denn ein Frame ist erzeugter Code, der
-im Projekt liegen bleibt (Befund 40).
+**Behoben am 05.09.2026.** `frames.mjs` gibt `index` für Tablet und Mobil dieselbe Zeile für
+`area-right` wie `editorial` (Tablet `row 5, col 4–12`, Mobil `row 6, col 1–12`), eingespielt über
+`--only 3` — denn ein Frame ist erzeugter Code, der im Projekt liegen bleibt (Befund 40). Gemessen
+danach an Ordner-, Tag- und Bases-Seite bei 1400, 900 und 390 px: Die Spalte steht überall,
+Rückverweise und Graph inbegriffen, und `display: none` kommt im erzeugten Stylesheet nur noch für
+`.mobile-only` und `.desktop-only` vor. Die beiden Frames sind damit geometrisch gleich; getrennt
+bleiben sie, weil der Layout-Editor Seitentypen über den Frame-Namen zuordnet.
 
-### 45. Das Suchfeld erreicht seine Breite nie
+### 45. Das Suchfeld erreichte seine Breite nie — behoben
 
 `nav-toolbar.scss` gibt der Suche `flex: 0 1 15rem`. Gemessen sind es **110 px** — bei 1728, 1440,
 1100 und 900 px Fensterbreite gleichermaßen, obwohl die Werkzeugleiste dort nur 322 von 1400 px
@@ -594,9 +597,22 @@ div (ohne Klasse)      110px  flex: 0 1 auto    ← und hier scheitern sie
 div.flex-component     322px
 ```
 
-Damit liest sich der Knopf als Knopf statt als Feld — genau das, was die Breite verhindern sollte.
-Die Regel gehört an den Wrapper, nicht an `.search`. Nicht geändert, aus demselben Grund wie oben:
-es ändert den Kopfbereich jeder Seite.
+Damit las sich der Knopf als Knopf statt als Feld — genau das, was die Breite verhindern sollte.
+
+**Behoben am 05.09.2026**, und nicht im Stylesheet: Die Flex-Werte des Wrappers sind ein
+**Inline-Stil**, den Quartz aus der Konfiguration schreibt, und ein Inline-Stil schlägt jedes
+Stylesheet. Die Breite steht deshalb jetzt in `layout.groupOptions.basis` des Such-Plugins.
+
+Dazu gehört `shrink: false`, und das war der zweite Anlauf: Mit `basis` allein maß das Feld zwar
+240 px, aber ein schrumpfbares Element steuert nur seine *Inhaltsbreite* zur intrinsischen Größe
+seiner Gruppe bei. Die Gruppe blieb bei 322 px, während ihre Kinder 452 wollten, die Leiste brach
+auf zwei Zeilen um und der Kopfbereich wuchs von 61 auf 101 px — auf jeder Seite. Mit `shrink: false`
+misst die Gruppe 452 px, die Leiste ist eine Zeile, der Kopf wieder 61 px.
+
+Am Telefon nimmt `nav-toolbar.scss` die Breite mit `!important` wieder weg; ohne das stand dort eine
+216 px breite Box um einen 44-px-Knopf (gemessen bei 480, 390 und 360 px). Der Kommentar daneben
+sagt, warum es hier keinen anderen Weg gibt — anders als bei den übrigen `!important` dieser
+Vorlage, die alle gegen ein fremdes Stylesheet arbeiten und nicht gegen einen Inline-Stil.
 
 ### 46. Was der Doku-Durchgang an Quartz-Fehlern fand
 
@@ -607,11 +623,11 @@ Stelle dokumentiert:
 | --- | --- | --- |
 | `parseArrows` wandelt nichts | `-->` bleibt Rohtext; mit *GitHub flavored markdown* wird daraus zusätzlich `—>`, weil dessen Bindestrich-Ersatz zuerst greift | `formatierung/besonderes/pfeile-und-emoji` |
 | Inline-Fußnoten | `^[Text]` steht als Rohtext auf der Seite, in Obsidian als Fußnote | `formatierung/fussnoten/varianten` |
-| Links in einem Canvas-Dateiknoten | Ordner der eingebetteten Notiz doppelt vorangestellt; 7 kaputte Links je Sprache | `obsidian-formate/canvas/index` |
+| Links in einem Canvas-Dateiknoten | Ordner der eingebetteten Notiz doppelt vorangestellt; 6 kaputte Links je Sprache | `obsidian-formate/canvas/index` |
 | Ein Tag im Fließtext | `../.././../tags/inline-tag` — ein `../` zu viel, während dasselbe Tag in der Liste stimmt | `formatierung/besonderes/pfeile-und-emoji` |
 
 Dazu eine Behauptung, die nur woanders stimmt: Ein HTML-Kommentar überlebt hier **nicht** ins
 ausgelieferte HTML, Quartz entfernt ihn wie den `%%`-Kommentar.
 
-Von den 18 kaputten Links der gebauten Website sind damit 16 erklärt und zwei Absicht (die
+Von den 16 kaputten Links der gebauten Website sind damit 14 erklärt und zwei Absicht (die
 Wikilink-Demo).

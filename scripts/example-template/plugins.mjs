@@ -152,8 +152,27 @@ export const PLUGIN_PATCHES = {
   //
   // `grow` is gone with the move: in a 335px sidebar the search field wanting the leftover width
   // was right, in a header row it would push the two icon buttons to the far edge of a 1440px page.
-  // nav-toolbar.scss gives the field a width instead.
-  search: { enabled: true, layout: { position: 'header', priority: 30, group: 'toolbar' } },
+  // A fixed basis takes its place, and it has to be set *here* rather than in nav-toolbar.scss:
+  // quartz wraps every component of a group in a `div` of its own and writes that div's flex values
+  // as an inline style from this config, so the flex item is the wrapper and not `.search`. A basis
+  // in the stylesheet landed on a box that was already sized to its content - measured at 1728,
+  // 1440, 1100 and 900px, the field came out 110px wide every time, reading as a button rather than
+  // a field.
+  //
+  // `shrink: false` belongs with it. A shrinkable item contributes only its content width to the
+  // group's intrinsic size, so the group stayed 322px wide while its children wanted 452, and the
+  // toolbar wrapped onto a second row: the header went from 61 to 101px on every page. With the
+  // shrink off the group measures 452px and the header is 61px again. The one width where shrinking
+  // would matter is the phone, and there nav-toolbar.scss takes the basis back off.
+  search: {
+    enabled: true,
+    layout: {
+      position: 'header',
+      priority: 30,
+      group: 'toolbar',
+      groupOptions: { basis: '15rem', shrink: false }
+    }
+  },
   darkmode: { enabled: true, layout: { position: 'header', priority: 40, group: 'toolbar' } },
   'reader-mode': { enabled: true, layout: { position: 'header', priority: 50, group: 'toolbar' } },
   // Kept, and now doing its actual job: with the toolbar gone from the left sidebar, the spacer is

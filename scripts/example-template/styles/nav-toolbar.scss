@@ -21,8 +21,16 @@
 
 // A search field wide enough to read as a field rather than a button, and narrow enough that the
 // header still belongs to the site name. It gives up width before the site name does.
+//
+// The 15rem are NOT set here. Quartz wraps every component of a group in a `div` of its own and
+// writes that div's flex values as an *inline style* from the layout config, so the flex item is
+// the wrapper and not `.search`. A basis written here applied to a box that was already sized to
+// its content: measured at 1728, 1440, 1100 and 900px, the field came out 110px wide every time,
+// in a toolbar that occupied 322 of 1400px. It reads as a button, which is the one thing the width
+// was there to prevent. The basis therefore lives in the plugin's `layout.groupOptions.basis`,
+// where it lands on the wrapper - and only `min-width` stays here, because a flex item's automatic
+// minimum would otherwise stop it from shrinking at all.
 .qgframe-area-header .search {
-  flex: 0 1 15rem;
   min-width: 0;
 }
 
@@ -34,6 +42,13 @@
   .qgframe-area-header .flex-component {
     gap: var(--tpl-space-2xs);
     flex: 0 0 auto;
+  }
+
+  // `!important` on the wrapper, and it is the only way: the inline style that carries the 15rem
+  // comes from the layout config and outranks every stylesheet without it. Without this the app bar
+  // kept a 216px box around a 44px button - measured at 480, 390 and 360px.
+  .qgframe-area-header .flex-component > *:has(> .search) {
+    flex: 0 0 auto !important;
   }
 
   .qgframe-area-header .search {

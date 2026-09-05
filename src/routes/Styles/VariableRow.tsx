@@ -117,7 +117,7 @@ export default function VariableRow({
           <span className="truncate text-text-muted">{light ?? '—'}</span>
         </button>
         {dependents.length > 0 && (
-          <span className="shrink-0 text-[11px] text-text-muted">{t('styles.variables.dependents', { count: dependents.length })}</span>
+          <span className="shrink-0 text-micro text-text-muted">{t('styles.variables.dependents', { count: dependents.length })}</span>
         )}
         {/* Only the deviation. "Letzter Build" was on 60 of 64 rows, identical every time, sitting
             at the far right of a 1380px row with nothing between it and the name - which is what
@@ -127,7 +127,7 @@ export default function VariableRow({
           <Badge tone={ORIGIN_TONE[origin]}>{t(`styles.variables.origin.${origin}`)}</Badge>
         )}
         {override && (
-          <button type="button" onClick={() => onChange(null)} className="shrink-0 text-[11px] text-text-muted underline">
+          <button type="button" onClick={() => onChange(null)} className="shrink-0 text-micro text-text-muted underline">
             {t('styles.variables.reset')}
           </button>
         )}
@@ -142,7 +142,7 @@ export default function VariableRow({
 
           <section>
             <SectionLabel>{t('styles.variables.section.origin')}</SectionLabel>
-            <p className="mb-1 text-[11px] text-text-muted">
+            <p className="mb-1 text-micro text-text-muted">
               {t(`styles.variables.origin.${origin}`)}
             </p>
             <Chain varKey={varKey} mode="light" ctx={ctx} label={t('styles.variables.light')} />
@@ -157,7 +157,7 @@ export default function VariableRow({
             <section>
               <SectionLabel>{t('styles.variables.section.uses')}</SectionLabel>
               {uses.length === 0 ? (
-                <p className="text-[11px] text-text-muted">{t('styles.variables.usesNone')}</p>
+                <p className="text-micro text-text-muted">{t('styles.variables.usesNone')}</p>
               ) : (
                 <KeyChips keys={uses} onNavigate={onNavigate} />
               )}
@@ -165,10 +165,10 @@ export default function VariableRow({
             <section>
               <SectionLabel>{t('styles.variables.section.dependents')}</SectionLabel>
               {dependents.length === 0 ? (
-                <p className="text-[11px] text-text-muted">{t('styles.variables.dependentsNone')}</p>
+                <p className="text-micro text-text-muted">{t('styles.variables.dependentsNone')}</p>
               ) : (
                 <>
-                  <p className="mb-1 text-[11px] text-text-muted">
+                  <p className="mb-1 text-micro text-text-muted">
                     {t('styles.variables.dependentsWarning', { count: dependents.length })}
                   </p>
                   <KeyChips keys={dependents} onNavigate={onNavigate} />
@@ -197,7 +197,7 @@ export default function VariableRow({
                 onChange={(v) => setMode('dark', v)}
               />
               {override && (
-                <button type="button" onClick={() => onChange(null)} className="text-[11px] text-text-muted underline">
+                <button type="button" onClick={() => onChange(null)} className="text-micro text-text-muted underline">
                   {t('styles.variables.resetToOriginal')}
                 </button>
               )}
@@ -210,7 +210,7 @@ export default function VariableRow({
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }): JSX.Element {
-  return <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-text-secondary">{children}</p>
+  return <p className="mb-1 text-micro font-semibold uppercase tracking-wide text-text-secondary">{children}</p>
 }
 
 // The literal both modes paint right now, spelled out rather than left to a 12px swatch - a hex
@@ -225,7 +225,7 @@ function CurrentValues({ varKey, ctx }: { varKey: string; ctx: ResolveContext })
           const resolved = resolvedValue(varKey, mode, ctx)
           const hex = cssColorToHex(resolved)
           return (
-            <div key={mode} className="flex items-center gap-1.5 text-[11px]">
+            <div key={mode} className="flex items-center gap-1.5 text-micro">
               <span className="text-text-muted">{t(`styles.variables.${mode}`)}:</span>
               {isDisplayableColor(resolved) && <Swatch value={resolved} size="md" />}
               <code className="font-mono text-text">
@@ -253,19 +253,19 @@ function KeyChips({ keys, onNavigate }: { keys: string[]; onNavigate?: (key: str
             key={key}
             type="button"
             onClick={() => onNavigate(key)}
-            className="rounded bg-ink/[0.05] px-1.5 py-0.5 font-mono text-[11px] hover:bg-ink/10 dark:bg-ink/10 dark:hover:bg-ink/20"
+            className="rounded bg-ink/[0.05] px-1.5 py-0.5 font-mono text-micro hover:bg-ink/10 dark:bg-ink/10 dark:hover:bg-ink/20"
             title={t('styles.variables.chipHint')}
           >
             --{key}
           </button>
         ) : (
-          <code key={key} className="rounded bg-ink/[0.05] px-1.5 py-0.5 font-mono text-[11px] dark:bg-ink/10">
+          <code key={key} className="rounded bg-ink/[0.05] px-1.5 py-0.5 font-mono text-micro dark:bg-ink/10">
             --{key}
           </code>
         )
       )}
       {keys.length > visible.length && (
-        <span className="text-[11px] text-text-muted">{t('styles.variables.moreKeys', { count: keys.length - visible.length })}</span>
+        <span className="text-micro text-text-muted">{t('styles.variables.moreKeys', { count: keys.length - visible.length })}</span>
       )}
     </div>
   )
@@ -280,13 +280,13 @@ function Chain({ varKey, mode, ctx, label }: { varKey: string; mode: Mode; ctx: 
   const steps = resolveChain(varKey, mode, ctx)
   if (steps.length === 0) {
     return (
-      <p className="text-[11px] text-text-muted">
+      <p className="text-micro text-text-muted">
         {label}: {t('styles.variables.unresolved')}
       </p>
     )
   }
   return (
-    <p className="flex flex-wrap items-center gap-1 text-[11px] text-text-muted">
+    <p className="flex flex-wrap items-center gap-1 text-micro text-text-muted">
       <span className="text-text-muted">{label}:</span>
       {steps.map((step, i) => (
         <span key={step.key} className="flex items-center gap-1">
@@ -327,7 +327,7 @@ function ValueInput({
   const isColor = catalogDef(varKey)?.kind === 'color' || hex !== null
   return (
     <div className="flex items-center gap-1.5">
-      <span className="text-[11px] text-text-muted">{label}</span>
+      <span className="text-micro text-text-muted">{label}</span>
       {isColor && (
         <ColorPicker value={resolved ?? value} hex={hex} onChange={onChange} title={resolved ?? value} className="border-slate-300" />
       )}

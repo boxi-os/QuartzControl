@@ -40,10 +40,10 @@ export default function VariableGroup({
         ) : (
           <ChevronRight size={12} className="shrink-0 text-text-muted" />
         )}
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-text-secondary">{label}</span>
-        <span className="text-[11px] tabular-nums text-text-muted">{count}</span>
+        <span className="text-micro font-semibold uppercase tracking-wide text-text-secondary">{label}</span>
+        <span className="text-micro tabular-nums text-text-muted">{count}</span>
         {changed > 0 && (
-          <span className="rounded-full bg-green-100 px-2 text-[11px] text-green-700 dark:bg-green-500/15 dark:text-green-400">
+          <span className="rounded-full bg-green-100 px-2 text-micro text-green-700 dark:bg-green-500/15 dark:text-green-400">
             {t('styles.variables.groupChanged', { count: changed })}
           </span>
         )}

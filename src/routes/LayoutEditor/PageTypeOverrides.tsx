@@ -106,7 +106,7 @@ export default function PageTypeOverrides({
               <div key={plugin.name} className="flex flex-col gap-0.5">
                 <Toggle label={plugin.name} checked={!excluded} onChange={(checked) => toggleExclude(plugin.name, !checked)} />
                 {count > 1 && (
-                  <p className="pl-[46px] text-[11px] text-amber-600 dark:text-amber-400">
+                  <p className="pl-[46px] text-micro text-amber-600 dark:text-amber-400">
                     {t('layoutEditor.excludeDuplicateHint', { count, name: plugin.name })}
                   </p>
                 )}

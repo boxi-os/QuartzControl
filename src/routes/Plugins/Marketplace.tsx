@@ -150,7 +150,7 @@ export default function PluginsMarketplace(): JSX.Element {
           {refreshing ? t('pluginsMarketplace.refreshing') : t('pluginsMarketplace.refresh')}
         </Button>
         <div className="flex flex-col gap-1">
-          <span className="text-[13px] font-medium text-text-secondary">
+          <span className="text-ui font-medium text-text-secondary">
             {t('pluginsMarketplace.addFromGithub')}
           </span>
           <div className="flex gap-2">
@@ -194,7 +194,7 @@ export default function PluginsMarketplace(): JSX.Element {
         <div className="mt-8">
           <button
             onClick={() => setShowOther((v) => !v)}
-            className="text-[13px] font-medium text-text-muted hover:text-text"
+            className="text-ui font-medium text-text-muted hover:text-text"
           >
             {showOther
               ? t('pluginsMarketplace.hideOther', { count: other.length })

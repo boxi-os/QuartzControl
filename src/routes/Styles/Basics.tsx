@@ -98,7 +98,7 @@ export default function Basics(): JSX.Element {
           {/* The single most misread setting on this page: "local" does not mean "download and
               serve locally", it means Quartz fetches nothing at all. Whether the fetched fonts are
               self-hosted is the separate switch below. */}
-          <span className="text-[11px] text-text-muted">
+          <span className="text-micro text-text-muted">
             {fontOrigin === 'local' ? t('themeEditor.localHint') : t('themeEditor.googleFontsHint')}
           </span>
         </Field>
@@ -118,7 +118,7 @@ export default function Basics(): JSX.Element {
                 onChange={(e) => setTypography(key, e.target.value)}
               />
               {overridden && (
-                <span className="text-[11px] text-amber-700 dark:text-amber-400">{t('themeEditor.overriddenByTheme')}</span>
+                <span className="text-micro text-amber-700 dark:text-amber-400">{t('themeEditor.overriddenByTheme')}</span>
               )}
             </Field>
           )

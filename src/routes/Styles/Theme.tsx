@@ -300,7 +300,7 @@ function ActiveThemeSection({
               arbitrary CSS custom property through a style setting worked here too, but it is the
               same edit the Variablen tab does properly - with the value's origin, its dependents
               and a light/dark pair - so there is one place for it now, not two. */}
-          <p className="mt-3 text-[11px] text-text-muted">
+          <p className="mt-3 text-micro text-text-muted">
             {t('themes.active.ownValuesHint')}{' '}
             <button type="button" className="underline" onClick={() => goToTab('variables')}>
               {t('themes.active.goToVariables')}
@@ -468,7 +468,7 @@ function ThemeCatalog({
                 >
                   {listing.id}
                   {listing.stars !== undefined && listing.stars > 0 && (
-                    <span className="text-[11px] text-text-muted">★ {listing.stars}</span>
+                    <span className="text-micro text-text-muted">★ {listing.stars}</span>
                   )}
                 </button>
                 <div className="flex items-center gap-2">

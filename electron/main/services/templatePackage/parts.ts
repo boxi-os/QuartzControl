@@ -1,6 +1,6 @@
 import { createHash } from 'crypto'
 import { existsSync } from 'fs'
-import { copyFile, mkdir, readdir, readFile, writeFile } from 'fs/promises'
+import { copyFile, mkdir, readdir, readFile, realpath, stat, writeFile } from 'fs/promises'
 import { dirname, join } from 'path'
 import type {
   CssVariableOverride,
@@ -766,14 +766,40 @@ interface ContentPayload {
 
 const CONTENT_MAX_BYTES = 100 * 1024 * 1024
 
-async function listContentFiles(dir: string, prefix = ''): Promise<string[]> {
+// readdir's isDirectory() answers for the entry itself, so a link to a folder came back as "not a
+// directory" and was listed as a file - readFile then threw EISDIR, which inspectProject swallowed
+// (the whole part disappeared from the export form) and the export itself reported raw. Resolved
+// with stat instead: a link to a file is a file, a link to a folder is descended into. That is the
+// same thing the site build does, and the same thing already happens one level up, since content/
+// itself is a link in every project that keeps its notes in a vault.
+//
+// `seen` carries the real paths of the directories already entered, because a link pointing back
+// at an ancestor would otherwise recurse until the stack ran out. A dangling link is skipped:
+// there is nothing behind it to export.
+async function listContentFiles(dir: string, prefix = '', seen?: Set<string>): Promise<string[]> {
   if (!existsSync(dir)) return []
+  const visited = seen ?? new Set<string>([await realpath(dir)])
   const out: string[] = []
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     if (entry.name.startsWith('.')) continue
+    const full = join(dir, entry.name)
     const rel = prefix ? `${prefix}/${entry.name}` : entry.name
-    if (entry.isDirectory()) out.push(...(await listContentFiles(join(dir, entry.name), rel)))
-    else out.push(rel)
+    let isDirectory = entry.isDirectory()
+    if (entry.isSymbolicLink()) {
+      try {
+        isDirectory = (await stat(full)).isDirectory()
+      } catch {
+        continue
+      }
+    }
+    if (!isDirectory) {
+      out.push(rel)
+      continue
+    }
+    const real = await realpath(full)
+    if (visited.has(real)) continue
+    visited.add(real)
+    out.push(...(await listContentFiles(full, rel, visited)))
   }
   return out.sort()
 }

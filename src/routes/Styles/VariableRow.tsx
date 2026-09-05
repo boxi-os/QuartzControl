@@ -66,11 +66,24 @@ export default function VariableRow({
     light: baseValue(varKey, 'light', ctx) ?? '',
     dark: baseValue(varKey, 'dark', ctx) ?? baseValue(varKey, 'light', ctx) ?? ''
   }
-  const draft: OverrideValue = override ?? base
+  // The inputs still open pre-filled with what applies today, but an override's `dark` half stays
+  // empty until someone actually types in the dark field: an empty `dark` means "no declaration in
+  // the file's dark block", which is how a mode-independent variable is stored, and effectiveValue()
+  // resolves it back to the light value. Carrying the display default into the saved value is what
+  // made one edit write forty extra declarations.
+  const draft: OverrideValue = {
+    light: override?.light || base.light,
+    dark: override?.dark || base.dark
+  }
 
   function setMode(mode: Mode, value: string): void {
-    const next: OverrideValue = { ...draft, [mode]: value }
-    onChange(next.light === base.light && next.dark === base.dark ? null : next)
+    const next: OverrideValue =
+      mode === 'light'
+        ? { light: value, dark: override?.dark ?? '' }
+        : // Typing the applying value back into the dark field removes the dark declaration again,
+          // the same way typing the original into the light field removes the whole override.
+          { light: override?.light || base.light, dark: value === base.dark ? '' : value }
+    onChange(next.light === base.light && next.dark === '' ? null : next)
   }
 
   // Which variables this one is built out of - the counterpart to `dependents`, and the half that

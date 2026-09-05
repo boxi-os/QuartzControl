@@ -119,7 +119,14 @@ export default function Styles(): JSX.Element {
     window.quartzGui.styles.listFiles(project.path).then(setFileSet)
     window.quartzGui.styles.getVariableOverrides(project.path).then((list) => {
       const next: Record<string, { light: string; dark: string }> = {}
-      for (const o of list) next[o.key] = { light: o.light, dark: o.dark ?? o.light }
+      // An empty `dark`, not a copy of `light`. The dark half of an override is optional - a
+      // variable that only differs in light mode has no declaration in the file's dark block, and
+      // effectiveValue() already falls back to the light value for it. Filling it in here looked
+      // harmless because it is only a display default, but the same object is what goes back to
+      // saveVariableOverrides(): one edit to --divider-color wrote 40 further declarations into the
+      // dark block, and every mode-independent token was decoupled from its light counterpart from
+      // then on - change --tpl-space-md in light and dark no longer follows.
+      for (const o of list) next[o.key] = { light: o.light, dark: o.dark ?? '' }
       setOverrides(next)
       setSavedOverrides(JSON.stringify(next))
     })

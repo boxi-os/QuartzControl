@@ -218,7 +218,7 @@ export default function LayoutEditor(): JSX.Element {
               className={`flex items-center gap-1.5 rounded-[6px] px-2.5 py-1 text-[13px] font-medium transition-colors ${
                 activePageType === pt
                   ? 'bg-blue-600 text-white'
-                  : 'bg-ink/[0.04] text-slate-700 hover:bg-ink/[0.08] dark:bg-ink/10 dark:text-slate-200 dark:hover:bg-ink/15'
+                  : 'bg-ink/[0.04] text-text-secondary hover:bg-ink/[0.08] dark:bg-ink/10 dark:hover:bg-ink/15'
               }`}
             >
               {t(`layoutEditor.pageTypes.${pt}`, pt)}

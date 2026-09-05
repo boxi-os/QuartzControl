@@ -228,7 +228,7 @@ function CurrentValues({ varKey, ctx }: { varKey: string; ctx: ResolveContext })
             <div key={mode} className="flex items-center gap-1.5 text-[11px]">
               <span className="text-text-muted">{t(`styles.variables.${mode}`)}:</span>
               {isDisplayableColor(resolved) && <Swatch value={resolved} size="md" />}
-              <code className="font-mono text-slate-700 dark:text-slate-200">
+              <code className="font-mono text-text">
                 {resolved ?? t('styles.variables.unresolved')}
               </code>
               {hex && hex.toLowerCase() !== (resolved ?? '').toLowerCase() && (
@@ -290,12 +290,12 @@ function Chain({ varKey, mode, ctx, label }: { varKey: string; mode: Mode; ctx: 
       <span className="text-text-muted">{label}:</span>
       {steps.map((step, i) => (
         <span key={step.key} className="flex items-center gap-1">
-          {i > 0 && <span className="text-slate-300">→</span>}
+          {i > 0 && <span className="text-text-muted">→</span>}
           <code className="font-mono">--{step.key}</code>
           {i === steps.length - 1 && (
             <>
-              <span className="text-slate-300">→</span>
-              <code className="font-mono text-slate-700 dark:text-slate-200">{step.value}</code>
+              <span className="text-text-muted">→</span>
+              <code className="font-mono text-text">{step.value}</code>
             </>
           )}
         </span>

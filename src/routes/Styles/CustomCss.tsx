@@ -428,7 +428,7 @@ function TabBar({
             key={tab}
             className={`flex items-center gap-1 rounded-t-[8px] border border-b-0 px-2.5 py-1.5 text-xs ${
               isActive
-                ? 'border-ink/[0.06] bg-white dark:border-ink/10 dark:bg-[#1c1c1e]'
+                ? 'border-ink/[0.06] bg-surface dark:border-ink/10 dark:bg-[#1c1c1e]'
                 : 'border-transparent bg-ink/[0.04] text-text-muted hover:bg-ink/[0.07] dark:bg-ink/[0.06] dark:hover:bg-ink/10'
             }`}
           >

@@ -638,7 +638,7 @@ export default function Publish(): JSX.Element {
             {targetDraft.destination.type !== 'git-branch' && (
               <Field label={t('publish.targetForm.excludes')} className="sm:col-span-2 xl:col-span-1">
                 <textarea
-                  className="min-h-20 rounded-[7px] border border-ink/10 bg-white px-2.5 py-1.5 font-mono text-[13px] shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-ink/10 dark:bg-ink/5 dark:text-slate-100"
+                  className="min-h-20 rounded-[7px] border border-ink/10 bg-surface px-2.5 py-1.5 font-mono text-[13px] text-text shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-ink/10 dark:bg-ink/5"
                   value={(targetDraft.excludes ?? []).join('\n')}
                   placeholder={t('publish.targetForm.excludesPlaceholder')}
                   onChange={(e) =>
@@ -830,7 +830,7 @@ export default function Publish(): JSX.Element {
                                 checked={!excluded.has(entry.path)}
                                 onChange={() => toggleExclude(entry.path)}
                               />
-                              <span className={excluded.has(entry.path) ? 'text-slate-400 line-through' : ''}>{entry.path}</span>
+                              <span className={excluded.has(entry.path) ? 'text-text-muted line-through' : ''}>{entry.path}</span>
                             </label>
                           ) : (
                             <p key={entry.path} className="break-inside-avoid font-mono text-xs text-text-secondary">

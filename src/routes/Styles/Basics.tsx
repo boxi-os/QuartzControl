@@ -140,7 +140,7 @@ export default function Basics(): JSX.Element {
       />
 
       <div>
-        <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">{t('themeEditor.colors')}</h3>
+        <h3 className="mb-2 text-sm font-semibold text-text">{t('themeEditor.colors')}</h3>
         <ColorGroup
           value={(theme.colors as Record<string, unknown>) ?? {}}
           onChange={(colors) => set('colors', colors)}

@@ -566,7 +566,7 @@ function DraggablePaletteChip({ index, plugin }: { index: number; plugin: Plugin
 // grid position there or having components arranged into it here.
 function AreaBox({ label, slotLabel, children }: { label: string; slotLabel?: string; children: React.ReactNode }): JSX.Element {
   return (
-    <div className="flex h-full flex-col gap-1.5 rounded-[6px] border border-slate-300 bg-white p-2 shadow-sm dark:border-ink/15 dark:bg-ink/[0.03]">
+    <div className="flex h-full flex-col gap-1.5 rounded-[6px] border border-slate-300 bg-surface p-2 shadow-sm dark:border-ink/15 dark:bg-ink/[0.03]">
       <div className="flex items-center justify-between gap-1">
         <span className="truncate text-[11px] font-semibold uppercase tracking-wide text-text-secondary">{label}</span>
         {slotLabel && slotLabel !== label && <Badge>{slotLabel}</Badge>}

@@ -350,13 +350,23 @@ unverändert, im Hover änderten sich 51. Dabei kam ein Fehler heraus, den niema
 zwei Ziehgriffe hatten `hover:border-black/20` ohne `dark:`-Partner, ihr Rand wurde im Dunkelmodus
 also **schwarz** — auf dunklem Grund unsichtbar. Mit dem Token ist er Weiß.
 
+Im dritten Durchgang die Ränder und Flächen: 164 Klassen schrieben aus, wofür es `--ink` gibt
+(`border-black/[0.06] dark:border-white/10`), dazu neun `bg-white`, hinter denen eine `dark:`-Klasse
+stand und die damit wörtlich `--surface` sind. Vorher geprüft statt angenommen: **jede** der 75
+`…-black/α`-Klassen hatte einen `dark:`-Partner derselben Eigenschaft, die schwarze Hälfte malt also
+nur im Hellen und der Tausch kann sie nicht ändern. Gemessen: kein einziges Pixel, in Ruhe wie im
+Hover. Danach 19 Stellen, an denen der Wert zwischen zwei Tokens lag und eine Rolle zu wählen war —
+Überschrift, Wert und Variablenname auf `--text`, Fließtext der Übersicht auf `--text-secondary`,
+zwei zu blasse Stellen ohne `dark:`-Partner auf `--text-muted`. 44 Elemente ändern sich dabei, alle
+benannt im Commit.
+
 Was bewusst Palette bleibt: die immer dunklen Konsolenflächen (`bg-slate-950` und der Text darauf —
-eine Fläche, die in beiden Schemata dunkel ist, bekommt weder `dark:` noch Token) und die
-Statusfarben. Offen sind noch zwei Familien: Text zwischen `--text` und `--text-secondary` (rund 24
-Klassen — `text-slate-700 dark:text-slate-200` liegt zwischen zwei Tokens, welches gilt, ist eine
-Entscheidung) und die ruhenden Ränder und Flächen aus `black`/`white` (rund 130 Klassen, wörtlich
-`--ink`, also eine reine Umbenennung — aber viele, und keine davon dringend). Ebenfalls offen: die
-133 übrigen Arbitrary-Value-Größen.
+eine Fläche, die in beiden Schemata dunkel ist, bekommt weder `dark:` noch Token), die Statusfarben,
+die **Seitenleiste** (`text-slate-700 dark:text-slate-200`: der Token hätte die gesamte Navigation
+auf 1083 Elementen eine Stufe heller gemacht — die Hauptnavigation blasser zu machen ist keine
+Umbenennung) und acht strukturelle Grautöne, für die es keine Rolle gibt: der Fortschrittsbalken,
+der Rahmen einer Karte, die Fläche eines Hinweiskastens. Ebenfalls offen: die 133 übrigen
+Arbitrary-Value-Größen.
 
 **Arbeitsregel** für die nächste Liste: ein Befund pro Durchgang, jeweils mit `npm run typecheck`,
 `npm run build`, `npm run smoke` und eigenem Commit; was dabei nebenbei auffällt, wird gesammelt und

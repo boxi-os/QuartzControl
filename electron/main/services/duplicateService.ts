@@ -37,6 +37,7 @@ const SKIP = new Set([
   '.quartz-gui/snapshots.git',
   '.quartz-gui/content-backups',
   '.quartz-gui/publish-targets.json',
+  '.quartz-gui/deploy-manifest.json',
   // The build output directory, and it is an absolute path pointing at where the *original*
   // exports its site. Inherited, the copy's first click on "Bauen" deleted that folder and wrote
   // itself into it, with no question asked: `quartz build --output` empties the directory first,
@@ -48,8 +49,15 @@ const SKIP = new Set([
 
 // Same reasoning as publish-targets.json, one level further: a deploy manifest records what is
 // already lying on a particular server, keyed by the id of a target that stays behind. In the copy
-// it is an orphan at best and a wrong answer to "what still has to be uploaded" at worst.
-const SKIP_PREFIX = ['.quartz-gui/deploy-manifest-']
+// it is an orphan at best and a wrong answer to "what still has to be uploaded" at worst. Both
+// names are listed - readManifest adopts a pre-split `deploy-manifest.json` for whichever target
+// asks first, so a copy that inherited one would tell its new target that a server it has never
+// uploaded to is already up to date, and the first deploy would leave that server empty.
+//
+// branch-worktree-<id> is not history but a leftover: a git worktree registered in the *original's*
+// .git, left behind by a deploy that broke off. Copied, it is a directory whose .git file points
+// into another project.
+const SKIP_PREFIX = ['.quartz-gui/deploy-manifest-', '.quartz-gui/branch-worktree-']
 
 // Neither direction of containment is allowed - the same check changeContentSource makes, and for
 // the same reason: copying a folder into itself either loops or writes into what it is reading.

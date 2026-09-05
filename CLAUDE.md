@@ -331,13 +331,17 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Befunde aus den Reviews (Stand 2026-09-05)
+## Befunde aus den Reviews (Stand 2026-09-06)
 
-Beide Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md) (Tag
-`review-2026-09-02` markiert den Ausgangsstand) und [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md)
-mit seinen 15 Befunden (Auftrag daneben in `docs/REVIEW-2026-09-05-auftrag.md`) stehen als Dokumente
-unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft gilt, steht
-oben als Regel.
+Beide Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md) und
+[`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden (Auftrag daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`) stehen als Dokumente unverändert; die Messungen zu jedem Fix
+liegen in `docs/decisions/`, und was dauerhaft gilt, steht oben als Regel.
+
+**Der Ausgangsstand für das nächste Review ist der Tag `review-2026-09-06`** (davor
+`review-2026-09-05`, davor `review-2026-09-02`). Er sitzt auf dem Merge von PR #3 und schließt damit
+die Token-Arbeit und die vier Aufräumpunkte mit ein — die sind also von keinem zweiten Augenpaar
+gelesen, sondern nur gemessen worden.
 
 Von dem, was beide Reviews als „beiläufig, kein sed“ führen, sind die Farbpaare am 2026-09-05
 abgearbeitet, soweit sie eine Umbenennung waren: 322 Paare, die wörtlich das Token buchstabierten,

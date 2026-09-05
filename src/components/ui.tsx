@@ -236,16 +236,29 @@ export function Toggle({
 // that sit inside a `FieldGroup` the name is now announced on both levels ("Design, group" then
 // "Design, radio group"); that is redundant, not wrong, and the alternative - FieldGroup handing an
 // id down to whatever it wraps - is a wiring between two primitives for two call sites.
+// Zwei Häute, eine Bedienung. `track` ist die Leiste für „eine von wenigen festen Ansichten"; sie
+// setzt voraus, dass die Optionen in eine Zeile passen. `chips` ist für den einen Aufrufer, dessen
+// Optionen *Daten* sind: die Veröffentlichungsziele heißen, wie der Nutzer sie genannt hat, und es
+// können sieben sein. Gemessen an einem Projekt mit sieben: die Leiste wurde 1390 px breit (bei
+// 1280 px Fenster 942 px), brach in zwei Zeilen um und ließ 508 px graue Fläche neben der zweiten
+// stehen - `w-fit` kann nicht auf die breiteste *umgebrochene* Zeile schrumpfen, es nimmt die
+// verfügbare Breite. Ohne gemeinsame Fläche ist ein Umbruch keine Lücke mehr, sondern eine zweite
+// Reihe. Alle anderen elf Aufrufstellen sind einzeilig mit 0-2 px Spiel (nachgemessen bei 1728 und
+// 1280 px) und bleiben `track`.
+//
+// Die Semantik ist in beiden Fällen dieselbe: eine Radiogruppe, ein Tabstopp, Pfeiltasten.
 export function SegmentedControl<T extends string>({
   value,
   options,
   onChange,
-  label
+  label,
+  variant = 'track'
 }: {
   value: T
   options: { value: T; label: string }[]
   onChange: (value: T) => void
   label: string
+  variant?: 'track' | 'chips'
 }): JSX.Element {
   const segments = useRef<(HTMLButtonElement | null)[]>([])
   // Roving tabindex: the group is one tab stop, not one per option. `Math.max(0, …)` so a value that
@@ -265,16 +278,20 @@ export function SegmentedControl<T extends string>({
     onChange(options[next].value)
   }
 
+  const chips = variant === 'chips'
   // self-start matters now that pages fill the window: as a flex item, `inline-flex` alone still
   // stretches to the container's full width, which turned this into a 1600px-wide bar.
   return (
     <div
       role="radiogroup"
       aria-label={label}
-      // flex-wrap because one caller's options are data, not a fixed list of three or four: the
-      // publish targets are named by the user and there can be a dozen. A wrapped group is still one
-      // group; an overflowing one leaves options off the right edge of its card.
-      className="inline-flex w-fit flex-wrap self-start gap-0.5 rounded-[8px] bg-ink/[0.05] p-0.5 dark:bg-ink/10"
+      // flex-wrap in beiden Häuten: eine umgebrochene Gruppe ist immer noch eine Gruppe, eine
+      // überlaufende lässt Optionen rechts aus der Karte fallen.
+      className={
+        chips
+          ? 'flex flex-wrap gap-1.5'
+          : 'inline-flex w-fit flex-wrap self-start gap-0.5 rounded-[8px] bg-ink/[0.05] p-0.5 dark:bg-ink/10'
+      }
     >
       {options.map((option, index) => (
         <button
@@ -298,11 +315,19 @@ export function SegmentedControl<T extends string>({
               move(-1)
             }
           }}
-          className={`rounded-[6px] px-3 py-1 text-ui font-medium transition-colors ${
-            value === option.value
-              ? 'bg-surface text-text shadow-sm dark:bg-ink/20'
-              : 'text-text-secondary hover:text-text'
-          }`}
+          className={
+            chips
+              ? `rounded-[7px] border px-2.5 py-1 text-ui font-medium shadow-sm transition-colors ${
+                  value === option.value
+                    ? 'border-accent bg-accent text-accent-fg'
+                    : 'border-ink/10 bg-surface text-text-secondary hover:border-ink/20 hover:text-text'
+                }`
+              : `rounded-[6px] px-3 py-1 text-ui font-medium transition-colors ${
+                  value === option.value
+                    ? 'bg-surface text-text shadow-sm dark:bg-ink/20'
+                    : 'text-text-secondary hover:text-text'
+                }`
+          }
         >
           {option.label}
         </button>

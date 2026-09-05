@@ -1349,7 +1349,7 @@ export default {
     description: 'Builds the project and takes the result to its targets — over SFTP/rsync, FTP, into a folder, onto a git branch, or via a webhook.',
     baseUrlWarning: 'configuration.baseUrl is still set to “{{baseUrl}}” — set it to the real domain before publishing.',
     connectionVsTarget:
-      'Two things that belong together: a credential is the login at a provider — server, username, password or key. It belongs to the app and can be used by several projects, so rotating a password is one edit rather than one per project. A target belongs to this project and says what to do with that credential: which folder on the server, which branch, and what happens to deleted files.',
+      'A credential is the login at a provider and belongs to the app; a target belongs to this project and says where the result goes.',
     targetHeading: 'Target',
     newConnectionOfKind: '+ New {{kind}} credential',
     connectionKindFixed:

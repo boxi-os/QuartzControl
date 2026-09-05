@@ -1353,7 +1353,7 @@ export default {
     description: 'Baut das Projekt und bringt das Ergebnis an seine Ziele — per SFTP/rsync, FTP, in einen Ordner, auf einen Git-Branch oder über einen Webhook.',
     baseUrlWarning: 'configuration.baseUrl steht noch auf „{{baseUrl}}“ — vor dem Veröffentlichen auf die echte Domain setzen.',
     connectionVsTarget:
-      'Zwei Dinge, die zusammengehören: Ein Zugang ist die Anmeldung bei einem Anbieter — Server, Benutzername, Passwort oder Schlüssel. Er gehört der App und lässt sich von mehreren Projekten benutzen; ein Passwortwechsel ist deshalb eine Änderung statt einer pro Projekt. Ein Ziel gehört zu diesem Projekt und sagt, was damit geschehen soll: in welchen Ordner auf dem Server, auf welchen Branch, und was mit gelöschten Dateien passiert.',
+      'Ein Zugang ist die Anmeldung bei einem Anbieter und gehört der App; ein Ziel gehört zu diesem Projekt und sagt, wohin das Ergebnis soll.',
     targetHeading: 'Ziel',
     newConnectionOfKind: '+ Neuer {{kind}}-Zugang',
     connectionKindFixed:

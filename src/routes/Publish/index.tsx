@@ -392,6 +392,7 @@ export default function Publish(): JSX.Element {
         <div className="flex flex-wrap items-center gap-2">
           {targets.length > 0 && (
             <SegmentedControl
+              variant="chips"
               label={t('publish.targetHeading')}
               value={selectedId ?? ''}
               options={targets.map((target) => ({

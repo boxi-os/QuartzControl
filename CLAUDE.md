@@ -216,7 +216,12 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   `aria-label` (eine Gruppe hat kein `<label>`, das sie umschließen könnte); eine Gruppe ohne Namen
   ist damit am Aufrufer sichtbar falsch. Die Optionen dürfen Daten sein statt einer festen Liste -
   der Ziel-Wähler in Veröffentlichen ist seit 2026-09-03 einer, weshalb die Gruppe umbricht statt
-  überzulaufen. Messungen in
+  überzulaufen. **Dafür gibt es seit 2026-09-06 `variant="chips"`**: die gemeinsame graue Leiste
+  setzt voraus, dass alles in eine Zeile passt, und `w-fit` kann nicht auf die breiteste
+  *umgebrochene* Zeile schrumpfen - bei sieben Zielen stand neben der zweiten Zeile eine halbe
+  Kartenbreite leere Fläche. Ohne gemeinsame Fläche ist ein Umbruch eine zweite Reihe statt einer
+  Lücke. Die Bedienung ist in beiden Häuten dieselbe; alle elf anderen Aufrufstellen sind einzeilig
+  (nachgemessen: 0-2 px Spiel bei 1728 wie bei 1280 px) und bleiben `track`. Messungen in
   [`navigation-and-pages.md`](docs/decisions/navigation-and-pages.md) und
   [`publishing-and-credentials.md`](docs/decisions/publishing-and-credentials.md).
 - **Farben heißen nach Rolle, nicht nach Palette.** Zehn Tokens in `src/index.css` (`--ground`,

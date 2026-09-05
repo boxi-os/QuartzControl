@@ -89,3 +89,9 @@ Im Produktions-Build geprüft: eine Gruppe „Ziel“ mit sieben `radio`-Segment
 Detailzeile darunter folgt, Pfeil rechts verschiebt Auswahl *und* Fokus. Die Rückfrage beim Wechsel
 mit offenem Entwurf ist unverändert - sie hängt an `selectTarget`, nicht am Widget - und wurde nicht
 erneut ausgelöst, weil sie ein nativer Dialog ist.
+
+**Sieben Ziele passen nicht in eine Leiste (2026-09-06).** Der Ziel-Wähler ist eine Radiogruppe, und das war richtig; seine *Haut* war es nicht. Die gemeinsame graue Leiste setzt voraus, dass die Optionen in eine Zeile passen — `w-fit` kann nicht auf die breiteste umgebrochene Zeile schrumpfen, es nimmt die verfügbare Breite. Gemessen an einem Projekt mit sieben Zielen: 1390 px breit bei 1728 px Fenster, 942 px bei 1280 px, zwei Zeilen, und neben der zweiten 508 px leere graue Fläche. Dazu kam, dass „+ Neues Ziel“ als eigene graue Pille direkt darunter hing und dazuzugehören schien. `SegmentedControl` hat dafür jetzt `variant="chips"`: keine gemeinsame Fläche, jede Option eine eigene umrandete Pille, die gewählte in Akzentfarbe. Ein Umbruch ist damit eine zweite Reihe statt einer Lücke. Die Bedienung ändert sich nicht — Radiogruppe, ein Tabstopp, Pfeiltasten.
+
+Nachgemessen wurde auch, ob es sonst noch auftritt: alle zwölf Radiogruppen der App auf acht Routen bei 1728 und 1280 px Fensterbreite. Elf sind einzeilig mit 0–2 px Spiel; nur der Ziel-Wähler bricht um, weil er als einziger Optionen hat, die der Nutzer selbst benannt hat. Die übrigen bleiben `track`.
+
+**Der Absatz über Zugang und Ziel ist auf einen Satz zusammengezogen (2026-09-06).** Er stand fünf Zeilen lang über der Seite und erklärte Passwortwechsel, Mehrfachnutzung und den Umgang mit gelöschten Dateien, bevor irgendetwas zu sehen war. Was an dieser Stelle gebraucht wird, ist die Trennung selbst: ein Zugang gehört der App, ein Ziel gehört dem Projekt. Der Rest steht im Formular, wo er hingehört.

@@ -41,8 +41,8 @@
 /* -------------------------------------------------------------- forced colours */
 
 // Windows high contrast and similar: the system takes over colour entirely, and anything drawn
-// with a background instead of a border disappears. These are the four places in this template
-// where a state is expressed as a fill.
+// with a background instead of a border disappears. Listed below is everything in this template
+// that expresses a surface or a state as a fill; a new one belongs in the list.
 @media (forced-colors: active) {
   .callout,
   .layout-box-cta,

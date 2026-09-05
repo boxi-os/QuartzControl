@@ -557,3 +557,61 @@ ein Commit-Datum schon. Sobald der Fix upstream ist, gehört `git` wieder vor `f
 
 Für die App bleibt die Frage offen, ob der Content-Tab das sagen sollte, wenn er einen Symlink
 anbietet.
+
+### 44. Der `index`-Frame blendet eine Spalte aus, die nicht leer ist
+
+Gefunden beim Durchgang durch die Dokumentation, weil die Seite über die Frames behauptete, die
+rechte Spalte einer Ordnerseite bleibe „frei, aber reserviert". Sie ist nicht frei: Gemessen an
+`/formatierung/` stehen dort **Rückverweise und die Graphansicht**.
+
+`frame-index` setzt für Tablet und Mobil `display: none` auf `area-right`. Gemessen bei 900 und bei
+390 px: `0×0`. Damit verlieren alle Ordner-, Tag- und Bases-Seiten unterhalb von 1100 px ihre
+Rückverweise und ihren Graph vollständig. `frame-editorial` macht es richtig — dort wandert die
+Spalte in eine eigene Zeile unter den Text (`row 5, col 4–12`) und bleibt lesbar.
+
+Das ist kein Entwurf, sondern ein Versehen mit einer nachvollziehbaren Ursache: Wer glaubt, die
+Spalte sei leer, für den ist Ausblenden die richtige Entscheidung. Die Doku sagt es jetzt richtig
+und trägt den Befund; der Frame selbst ist **nicht** geändert — das ist eine Entscheidung über das
+Aussehen aller Listenseiten auf zwei Breiten und gehört nicht in einen Doku-Durchgang.
+
+Der Weg dahin führt über `frames.mjs` im Repo und `--only 3`, denn ein Frame ist erzeugter Code, der
+im Projekt liegen bleibt (Befund 40).
+
+### 45. Das Suchfeld erreicht seine Breite nie
+
+`nav-toolbar.scss` gibt der Suche `flex: 0 1 15rem`. Gemessen sind es **110 px** — bei 1728, 1440,
+1100 und 900 px Fensterbreite gleichermaßen, obwohl die Werkzeugleiste dort nur 322 von 1400 px
+belegt.
+
+Die Ursache steht eine Ebene tiefer: Quartz legt um jede Komponente einen eigenen `div` ohne Klasse.
+Der ist `flex: 0 1 auto` und schrumpft auf seinen Inhalt; die 15 rem an `.search` darunter kommen nie
+zum Tragen. Die Kette, gemessen im Browser:
+
+```
+button.search-button   110px  flex: 0 1 auto
+div.search             110px  flex: 0 1 240px   ← hier stehen die 15 rem
+div (ohne Klasse)      110px  flex: 0 1 auto    ← und hier scheitern sie
+div.flex-component     322px
+```
+
+Damit liest sich der Knopf als Knopf statt als Feld — genau das, was die Breite verhindern sollte.
+Die Regel gehört an den Wrapper, nicht an `.search`. Nicht geändert, aus demselben Grund wie oben:
+es ändert den Kopfbereich jeder Seite.
+
+### 46. Was der Doku-Durchgang an Quartz-Fehlern fand
+
+Vier Dinge, die keine Vorlage heilen kann, alle an der gebauten Seite gemessen und jetzt an Ort und
+Stelle dokumentiert:
+
+| Was | Gemessen | Wo es steht |
+| --- | --- | --- |
+| `parseArrows` wandelt nichts | `-->` bleibt Rohtext; mit *GitHub flavored markdown* wird daraus zusätzlich `—>`, weil dessen Bindestrich-Ersatz zuerst greift | `formatierung/besonderes/pfeile-und-emoji` |
+| Inline-Fußnoten | `^[Text]` steht als Rohtext auf der Seite, in Obsidian als Fußnote | `formatierung/fussnoten/varianten` |
+| Links in einem Canvas-Dateiknoten | Ordner der eingebetteten Notiz doppelt vorangestellt; 7 kaputte Links je Sprache | `obsidian-formate/canvas/index` |
+| Ein Tag im Fließtext | `../.././../tags/inline-tag` — ein `../` zu viel, während dasselbe Tag in der Liste stimmt | `formatierung/besonderes/pfeile-und-emoji` |
+
+Dazu eine Behauptung, die nur woanders stimmt: Ein HTML-Kommentar überlebt hier **nicht** ins
+ausgelieferte HTML, Quartz entfernt ihn wie den `%%`-Kommentar.
+
+Von den 18 kaputten Links der gebauten Website sind damit 16 erklärt und zwei Absicht (die
+Wikilink-Demo).

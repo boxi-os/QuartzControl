@@ -42,7 +42,11 @@
 /* ---------------------------------------------------------------------- the overlay */
 
 .search-container {
-  // The one place in this template with real depth, because it genuinely floats above the page.
+  // Depth in this template is not decoration but a statement: this thing floats above the page,
+  // rather than sitting in it. Five elements qualify and all of them use `--tpl-shadow` - this
+  // overlay, the link preview, the language menu, the drawer on a phone and the global graph.
+  // Nothing that merely sits on the page gets one. Counting them in a comment goes stale; the rule
+  // does not.
   backdrop-filter: blur(2px);
   background: color-mix(in srgb, var(--light) 70%, transparent);
 }

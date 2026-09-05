@@ -117,8 +117,7 @@
     background: var(--light);
     border: var(--tpl-rule-width) solid var(--tpl-rule-strong);
     border-radius: var(--tpl-radius-md);
-    // One of the three places in this template with real depth, for the same reason as the
-    // search overlay and the link preview: it genuinely floats above the page.
+    // Real depth, for the reason stated in nav-search.scss: it genuinely floats above the page.
     box-shadow: var(--tpl-shadow);
   }
 

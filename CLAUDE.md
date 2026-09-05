@@ -338,10 +338,12 @@ Beide Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-0
 `docs/REVIEW-2026-09-05-auftrag.md`) stehen als Dokumente unverändert; die Messungen zu jedem Fix
 liegen in `docs/decisions/`, und was dauerhaft gilt, steht oben als Regel.
 
-**Der Ausgangsstand für das nächste Review ist der Tag `review-2026-09-06`** (davor
-`review-2026-09-05`, davor `review-2026-09-02`). Er sitzt auf dem Merge von PR #3 und schließt damit
-die Token-Arbeit und die vier Aufräumpunkte mit ein — die sind also von keinem zweiten Augenpaar
-gelesen, sondern nur gemessen worden.
+**Das nächste Review misst ab `review-2026-09-05`, nicht ab `review-2026-09-06`.** Der jüngere Tag
+markiert das Ende des Token-Durchgangs (was er umfasst, steht in seiner eigenen Nachricht), ist aber
+ausdrücklich *nicht* der Ausgangsstand: die 615 umgestellten Klassen und die vier Aufräumpunkte sind
+gemessen, aber von keinem zweiten Augenpaar gelesen, und genau deshalb sollen sie im Diff des
+nächsten Auftrags liegen. Die Zeile in der Tag-Nachricht („This is the baseline the next review
+measures from“) ist damit überholt; hier steht, was gilt.
 
 Von dem, was beide Reviews als „beiläufig, kein sed“ führen, sind die Farbpaare am 2026-09-05
 abgearbeitet, soweit sie eine Umbenennung waren: 322 Paare, die wörtlich das Token buchstabierten,

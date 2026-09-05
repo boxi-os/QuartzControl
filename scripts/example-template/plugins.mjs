@@ -217,11 +217,32 @@ export const PLUGIN_PATCHES = {
     enabled: true,
     options: {
       includeAll: false,
-      // The four type-demo fields are listed alongside the three real ones so the value types the
-      // stylesheet distinguishes - boolean, number, list, empty - are actually reachable. A page
-      // that does not define them simply shows nothing for them; measured, only the fields present
-      // in a page's frontmatter get a row.
-      includedProperties: ['description', 'tags', 'section', 'zahl', 'wahr', 'liste', 'leer'],
+      // The five type-demo fields are listed alongside the three real ones so the value types the
+      // stylesheet distinguishes - boolean true, boolean false, number, list, empty - are actually
+      // reachable. A page that does not define them simply shows nothing for them; measured, only
+      // the fields present in a page's frontmatter get a row.
+      //
+      // `falsch` joined them on 2026-09-05: a sweep for styled classes that never occur in the
+      // built HTML found `.is-false`, which the stylesheet colours and the demo page carried in its
+      // frontmatter without ever listing. A template that styles a state should show it.
+      // Both languages' demo fields, because the two demo pages name them in their own language and
+      // a field the plugin does not list simply has no row: measured before this, the English "Data
+      // types" page showed three properties and none of the four value types it describes.
+      includedProperties: [
+        'description',
+        'tags',
+        'section',
+        'zahl',
+        'wahr',
+        'falsch',
+        'liste',
+        'leer',
+        'number',
+        'truthy',
+        'falsy',
+        'list',
+        'empty'
+      ],
       excludedProperties: [],
       hidePropertiesView: false
     },

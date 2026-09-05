@@ -22,7 +22,7 @@ import * as themePresetsService from '../themePresetsService'
 import { runCommand } from '../runCommand'
 import { mainT } from '../../i18n'
 import type { ZipEntry } from '../zipArchive'
-import { containedPath, emptyPlan, hasNodeModule, installedVersion, listFilesFlat, type ApplyContext, type TemplatePart } from './shared'
+import { emptyPlan, hasNodeModule, installedVersion, listFilesFlat, writableTarget, type ApplyContext, type TemplatePart } from './shared'
 
 // custom.scss's managed sections, split across three parts so each travels with what it describes:
 // 'imports' (the load order) and the file's own free-form body belong to `styles`, 'fonts' to
@@ -279,7 +279,7 @@ const styles: TemplatePart<StylesPayload> = {
     for (const relativePath of payload.files) {
       // A name that would leave quartz/styles is dropped from the plan too, not only from apply -
       // the plan is what the user ticks, and it must not promise a file that will never be written.
-      const target = containedPath(stylesDir(projectPath), relativePath)
+      const target = await writableTarget(stylesDir(projectPath), relativePath)
       if (!target) continue
       if (existsSync(target)) plan.conflicts.push(relativePath)
       else plan.additions.push(relativePath)
@@ -299,7 +299,7 @@ const styles: TemplatePart<StylesPayload> = {
     for (const relativePath of payload.files) {
       const data = files.get(`files/styles/${relativePath}`)
       if (!data) continue
-      const target = containedPath(stylesDir(projectPath), relativePath)
+      const target = await writableTarget(stylesDir(projectPath), relativePath)
       if (!target) {
         warn(`fileOutsideProject:${relativePath}`)
         continue
@@ -373,7 +373,7 @@ const fonts: TemplatePart<FontsPayload> = {
   async plan(payload, { projectPath, files }) {
     const plan = emptyPlan()
     for (const name of payload.files) {
-      const target = containedPath(fontsDir(projectPath), name)
+      const target = await writableTarget(fontsDir(projectPath), name)
       if (!target) continue
       if (!existsSync(target)) {
         plan.additions.push(name)
@@ -397,7 +397,7 @@ const fonts: TemplatePart<FontsPayload> = {
     for (const name of payload.files) {
       const data = files.get(`files/fonts/${name}`)
       if (!data) continue
-      const target = containedPath(fontsDir(projectPath), name)
+      const target = await writableTarget(fontsDir(projectPath), name)
       if (!target) {
         warn(`fileOutsideProject:${name}`)
         continue
@@ -807,7 +807,7 @@ const content: TemplatePart<ContentPayload> = {
     }
     const dir = contentService.contentDirPath(projectPath)
     for (const name of payload.files) {
-      const target = containedPath(dir, name)
+      const target = await writableTarget(dir, name)
       if (!target) continue
       if (!existsSync(target)) {
         plan.additions.push(name)
@@ -830,7 +830,7 @@ const content: TemplatePart<ContentPayload> = {
     for (const name of payload.files) {
       const data = files.get(`files/content/${name}`)
       if (!data) continue
-      const target = containedPath(dir, name)
+      const target = await writableTarget(dir, name)
       if (!target) {
         warn(`fileOutsideProject:${name}`)
         continue

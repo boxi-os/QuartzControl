@@ -1,6 +1,6 @@
 import { existsSync } from 'fs'
-import { readFile, readdir } from 'fs/promises'
-import { isAbsolute, join, relative, resolve } from 'path'
+import { lstat, readFile, readdir } from 'fs/promises'
+import { isAbsolute, join, relative, resolve, sep } from 'path'
 import type {
   TemplateConflictStrategy,
   TemplatePackageDependency,
@@ -91,6 +91,31 @@ export function containedPath(dir: string, name: string): string | null {
   const target = resolve(dir, name)
   const rel = relative(dir, target)
   if (rel === '' || rel.startsWith('..') || isAbsolute(rel)) return null
+  return target
+}
+
+/**
+ * Where a file named by a package may actually be written, or null - `containedPath` plus the
+ * question a resolved path cannot answer: does the way there lead through a link?
+ *
+ * `..` cannot escape any more, but a link can, and it is the same escape: `content/notizen` ->
+ * ~/Obsidian/Vault turns `content/notizen/x.md` into a write into that vault, which is exactly what
+ * the symlink guard on content/ exists to prevent - it only ever looked at content/ itself. Every
+ * segment is checked, the file included: a note that is itself a link would be written through just
+ * as well. A segment that does not exist yet is fine, since mkdir then creates a real directory.
+ */
+export async function writableTarget(dir: string, name: string): Promise<string | null> {
+  const target = containedPath(dir, name)
+  if (target === null) return null
+  let current = dir
+  for (const segment of relative(dir, target).split(sep)) {
+    current = join(current, segment)
+    try {
+      if ((await lstat(current)).isSymbolicLink()) return null
+    } catch {
+      return target
+    }
+  }
   return target
 }
 

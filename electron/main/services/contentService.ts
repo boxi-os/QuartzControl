@@ -27,10 +27,18 @@ async function countFiles(dir: string): Promise<number> {
 
 export async function getContentStatus(projectPath: string): Promise<ContentStatus> {
   const path = contentDirPath(projectPath)
-  if (!existsSync(path)) {
+  // lstat, not existsSync: the latter follows the link, so a content/ pointing at an unmounted
+  // drive answered "there is no content folder here" - and everything that asks this question in
+  // order to decide whether it may write (the template import's content part above all) then read
+  // the answer as "an ordinary, absent folder", planned every note as an addition and failed with
+  // a raw ENOENT from mkdir. A link that is there but hanging is a link, and saying so is what
+  // keeps the guard on.
+  let stat
+  try {
+    stat = await lstat(path)
+  } catch {
     return { path, exists: false, isSymlink: false }
   }
-  const stat = await lstat(path)
   if (stat.isSymbolicLink()) {
     const target = await readlink(path)
     // readlink() hands back the link's *raw* target, and a relative one is relative to the link's

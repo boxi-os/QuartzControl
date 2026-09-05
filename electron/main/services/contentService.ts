@@ -1,5 +1,5 @@
 import { existsSync } from 'fs'
-import { lstat, readlink, readdir, cp, symlink, mkdir } from 'fs/promises'
+import { lstat, readlink, readdir, cp, realpath, stat, symlink, mkdir } from 'fs/promises'
 import { dirname, isAbsolute, join, relative, resolve } from 'path'
 import type { ContentStatus, ContentStrategy } from '@shared/ipc-contract'
 import { snapshotContent } from './backupService'
@@ -14,13 +14,35 @@ export function contentDirPath(projectPath: string): string {
 // its own .git, Obsidian keeps its settings in .obsidian, and quartz ignores both. Measured on the
 // example vault - 1392 entries reported for 273 files of actual content, the other 1119 being git
 // objects and Obsidian's own state. Whatever the folder hides from Quartz it should hide here too.
-async function countFiles(dir: string): Promise<number> {
+//
+// Links werden aufgelöst, nicht gezählt: `entry.isDirectory()` antwortet für den Eintrag selbst,
+// also galt ein verlinkter Ordner als *eine* Datei - dieselbe Ursache wie beim Export
+// (templatePackage/parts.ts, Befund 13 aus dem Review vom 2026-09-05), hier ohne Folge außer einer
+// zu kleinen Zahl auf der Übersicht. `seen` schneidet einen Link ab, der auf einen Vorfahren zeigt;
+// ein hängender Link zählt gar nicht, weil hinter ihm nichts liegt.
+async function countFiles(dir: string, seen?: Set<string>): Promise<number> {
+  const visited = seen ?? new Set<string>([await realpath(dir)])
   let count = 0
   const entries = await readdir(dir, { withFileTypes: true })
   for (const entry of entries) {
     if (entry.name.startsWith('.')) continue
-    if (entry.isDirectory()) count += await countFiles(join(dir, entry.name))
-    else count += 1
+    const full = join(dir, entry.name)
+    let isDirectory = entry.isDirectory()
+    if (entry.isSymbolicLink()) {
+      try {
+        isDirectory = (await stat(full)).isDirectory()
+      } catch {
+        continue
+      }
+    }
+    if (!isDirectory) {
+      count += 1
+      continue
+    }
+    const real = await realpath(full)
+    if (visited.has(real)) continue
+    visited.add(real)
+    count += await countFiles(full, visited)
   }
   return count
 }

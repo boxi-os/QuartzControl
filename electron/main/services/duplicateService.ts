@@ -36,7 +36,14 @@ const SKIP = new Set([
   'content',
   '.quartz-gui/snapshots.git',
   '.quartz-gui/content-backups',
-  '.quartz-gui/publish-targets.json'
+  '.quartz-gui/publish-targets.json',
+  // The build output directory, and it is an absolute path pointing at where the *original*
+  // exports its site. Inherited, the copy's first click on "Bauen" deleted that folder and wrote
+  // itself into it, with no question asked: `quartz build --output` empties the directory first,
+  // and buildOutputGuard answers `ok` for it because a folder holding index.html and static/ is
+  // indistinguishable from this project's own previous build. The file has one key, so leaving it
+  // behind loses nothing - a second key that *should* travel would need its own decision here.
+  '.quartz-gui/project-prefs.json'
 ])
 
 // Same reasoning as publish-targets.json, one level further: a deploy manifest records what is

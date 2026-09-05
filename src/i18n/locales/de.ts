@@ -186,6 +186,7 @@ export default {
       templateUnreadable: 'Das Paket ließ sich nicht lesen.',
       doneTitle: 'Projekt angelegt',
       doneWithWarnings: 'Das Projekt ist da. Beim Anwenden der Vorlage gab es aber etwas zu melden:',
+      doneWithFailure: 'Das Projekt ist da und benutzbar. Die Vorlage ließ sich aber nicht anwenden:',
       toProject: 'Zum Projekt',
       creating: 'Erstelle… (Klonen und npm install dauern ein bis zwei Minuten)',
       create: 'Projekt anlegen',

@@ -45,7 +45,7 @@ export default function Home(): JSX.Element {
   const [showWizard, setShowWizard] = useState(false)
   // Set only when a created project's template import had something to report. It keeps the wizard
   // on screen with the outcome instead of navigating away from the one moment it can be shown.
-  const [outcome, setOutcome] = useState<{ projectId: string; warnings: string[] } | null>(null)
+  const [outcome, setOutcome] = useState<{ projectId: string; warnings: string[]; failure?: string } | null>(null)
   // The project a "Duplizieren" click opened the dialog for. One piece of state rather than a flag
   // per row: only one dialog can be open, and the row itself has nothing to remember afterwards.
   const [duplicating, setDuplicating] = useState<ProjectOverview | null>(null)
@@ -233,7 +233,7 @@ export default function Home(): JSX.Element {
           busy={busy}
           error={error}
           defaultDirectory={settings.defaultProjectDirectory}
-          outcome={outcome?.warnings ?? null}
+          outcome={outcome ? { warnings: outcome.warnings, failure: outcome.failure } : null}
           onContinue={() => {
             const id = outcome?.projectId
             setOutcome(null)
@@ -243,6 +243,12 @@ export default function Home(): JSX.Element {
           onCancel={() => {
             setShowWizard(false)
             setOutcome(null)
+            // Both of these were missing, and both were only visible after something had gone
+            // wrong: the error text survived into the next opening of the dialog, and a project
+            // that *was* created before the template step failed did not appear in the list until
+            // some other navigation happened to reload it.
+            setError(null)
+            void reload()
           }}
           onCreate={async (options, template) => {
             setBusy(true)
@@ -259,6 +265,23 @@ export default function Home(): JSX.Element {
               // project: it is a finished, usable Quartz project either way, and the message says
               // what did not happen rather than throwing the whole creation away.
               let warnings: string[] = []
+              // One ending for every path after `quartz create` has succeeded, because from there
+              // on the project exists and the wizard's job is done - a failing template step used
+              // to leave the form standing with its message, where a second click could only fail
+              // on "target exists" and Abbrechen led back to a list that did not show the new
+              // project yet. With something to report the dialog shows it once and offers the way
+              // to the project; with nothing to report it goes there directly.
+              const finish = async (failure?: string): Promise<void> => {
+                const overview = await window.quartzGui.projects.overview()
+                setProjects(overview)
+                const created = overview.find((p) => p.path === options.targetDirectory)
+                if (created && (failure !== undefined || warnings.length > 0)) {
+                  setOutcome({ projectId: created.id, warnings, failure })
+                  return
+                }
+                setShowWizard(false)
+                if (created) navigate(`/project/${created.id}`)
+              }
               if (template) {
                 try {
                   const plan = await window.quartzGui.templatePackage.plan(options.targetDirectory, template.path)
@@ -266,7 +289,7 @@ export default function Home(): JSX.Element {
                   // user with a project that looks like the one they asked for minus its whole
                   // appearance, and nothing anywhere said why.
                   if (!plan) {
-                    setError(t('home.wizard.templateFailed', { detail: t('home.wizard.templateUnreadable') }))
+                    await finish(t('home.wizard.templateUnreadable'))
                     return
                   }
                   const parts = plan.parts
@@ -300,21 +323,11 @@ export default function Home(): JSX.Element {
                     })
                   }
                 } catch (err) {
-                  setError(t('home.wizard.templateFailed', { detail: String(err) }))
+                  await finish(String(err))
                   return
                 }
               }
-              const overview = await window.quartzGui.projects.overview()
-              setProjects(overview)
-              const created = overview.find((p) => p.path === options.targetDirectory)
-              // The project exists either way. With warnings the dialog stays up to show them once,
-              // because after the navigation there is no place left that knows they happened.
-              if (warnings.length > 0 && created) {
-                setOutcome({ projectId: created.id, warnings })
-                return
-              }
-              setShowWizard(false)
-              if (created) navigate(`/project/${created.id}`)
+              await finish()
             } finally {
               // Without this the button stays on "Erstelle…" forever when the invoke rejects,
               // which is the failure mode every busy flag in this app resets in a finally.
@@ -839,8 +852,8 @@ function CreateWizard({
   busy: boolean
   error: string | null
   defaultDirectory?: string
-  /** Warnings from the template import, once the project exists. Null while it does not. */
-  outcome: string[] | null
+  /** What the template step had to report, once the project exists. Null while it does not. */
+  outcome: { warnings: string[]; failure?: string } | null
   onContinue: () => void
   onCancel: () => void
   onCreate: (options: CreateProjectOptions, template: { path: string; withContent: boolean } | null) => void
@@ -916,8 +929,15 @@ function CreateWizard({
     return (
       <Modal open onClose={onContinue} title={t('home.wizard.doneTitle')}>
         <div className="flex flex-col gap-1">
-          <p className="text-ui text-text-secondary">{t('home.wizard.doneWithWarnings')}</p>
-          <ImportOutcome warnings={outcome} />
+          <p className="text-ui text-text-secondary">
+            {outcome.failure ? t('home.wizard.doneWithFailure') : t('home.wizard.doneWithWarnings')}
+          </p>
+          {outcome.failure && (
+            <pre className="mt-1 max-h-40 overflow-y-auto whitespace-pre-wrap rounded-md bg-red-50 p-2 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-400">
+              {outcome.failure}
+            </pre>
+          )}
+          {outcome.warnings.length > 0 && <ImportOutcome warnings={outcome.warnings} />}
           <div className="mt-4 flex justify-end">
             <Button onClick={onContinue}>{t('home.wizard.toProject')}</Button>
           </div>

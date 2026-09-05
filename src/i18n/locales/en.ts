@@ -185,6 +185,7 @@ export default {
       templateUnreadable: 'The package could not be read.',
       doneTitle: 'Project created',
       doneWithWarnings: 'The project is there. Applying the template had something to report, though:',
+      doneWithFailure: 'The project is there and usable. The template could not be applied, though:',
       toProject: 'Go to the project',
       creating: 'Creating… (cloning and npm install take a minute or two)',
       create: 'Create project',

@@ -46,6 +46,39 @@ function isExecutableFile(path: string): boolean {
   }
 }
 
+// macOS ships /usr/bin/git on machines that have no git: it is one of the command line tools
+// shims, and running it opens Apple's "Install Command Line Developer Tools" dialog instead of
+// answering. Everywhere else in this app "is the tool there" means "does it answer --version", and
+// here that question has a side effect - a modal dialog, at startup, before the window, on exactly
+// the machines the bundled git exists for (gitRuntime runs before createWindow).
+//
+// `xcode-select -p` is the same question without the side effect: it prints the active developer
+// directory, or exits non-zero when there is none. Only the shim path is guarded - a git from
+// Homebrew or MacPorts is an ordinary binary and is probed as before - and the answer is not
+// cached, for the same reason getEnvironmentInfo is not: somebody who installs the tools because
+// this told them to expects the answer to change without restarting.
+//
+// Not measured: no Mac without the command line tools was available (docs/REVIEW-2026-09-05.md,
+// finding 10). What is measured here is the other direction - on a machine that has them,
+// `xcode-select -p` answers and nothing about the lookup changes.
+const CLT_SHIM = '/usr/bin/git'
+
+export function isCommandLineToolsStub(path: string): boolean {
+  if (process.platform !== 'darwin' || path !== CLT_SHIM) return false
+  try {
+    execFileSync('/usr/bin/xcode-select', ['-p'], { encoding: 'utf-8', timeout: 5_000, stdio: ['ignore', 'pipe', 'ignore'] })
+    return false
+  } catch {
+    return true
+  }
+}
+
+/** git on PATH that is really git, i.e. not the macOS stub. The test ensureToolPath keeps asking. */
+function findUsableGit(): string | null {
+  const path = findExecutable('git')
+  return path && isCommandLineToolsStub(path) ? null : path
+}
+
 /**
  * Absolute path of `name` on the current PATH, or null. The equivalent of `command -v`.
  *
@@ -115,7 +148,7 @@ function candidateDirs(): string[] {
 export function ensureToolPath(): ResolvedPath {
   if (resolved) return resolved
 
-  if (findExecutable('git')) {
+  if (findUsableGit()) {
     resolved = { source: 'inherited', added: [] }
     return resolved
   }
@@ -136,13 +169,13 @@ export function ensureToolPath(): ResolvedPath {
   }
 
   const fromShell = add(pathFromLoginShell())
-  if (findExecutable('git')) {
+  if (findUsableGit()) {
     resolved = { source: 'login-shell', added: fromShell }
     return resolved
   }
 
   const probed = add(candidateDirs())
-  resolved = { source: findExecutable('git') ? 'probed' : 'inherited', added: [...fromShell, ...probed] }
+  resolved = { source: findUsableGit() ? 'probed' : 'inherited', added: [...fromShell, ...probed] }
   return resolved
 }
 
@@ -153,6 +186,10 @@ export function ensureToolPath(): ResolvedPath {
 function probe(name: string, versionArgs: string[], source: ToolInfo['source'], skipDir?: string | null): ToolInfo {
   const path = findExecutable(name, skipDir)
   if (!path) return { name, source, path: null, version: null }
+  // The stub is reported as found-but-not-working, which is what running it would have concluded
+  // anyway - only without the dialog. This runs on every mount of the start screen and the
+  // settings, so without the guard the dialog came back on every visit, not just at startup.
+  if (isCommandLineToolsStub(path)) return { name, source, path, version: null }
   try {
     const version = execFileSync(path, versionArgs, {
       encoding: 'utf-8',

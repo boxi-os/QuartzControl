@@ -149,10 +149,10 @@ export default function ConfigEditor(): JSX.Element {
               <pre className="whitespace-pre-wrap rounded-md bg-red-50 p-3 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-400">
                 {loadError}
               </pre>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t('configEditor.loadErrorHint')}</p>
+              <p className="mt-2 text-sm text-text-muted">{t('configEditor.loadErrorHint')}</p>
             </div>
           )}
-          {!loadError && !config && <p className="text-sm text-slate-500 dark:text-slate-400">{t('configEditor.loading')}</p>}
+          {!loadError && !config && <p className="text-sm text-text-muted">{t('configEditor.loading')}</p>}
           {config && (
             <>
               <SiteSettings
@@ -165,7 +165,7 @@ export default function ConfigEditor(): JSX.Element {
               />
               {/* Colors and fonts used to be a second tab here. They are the bottom layer of the
                   styling cascade, so they now live with the other three layers on the Styles page. */}
-              <p className="mt-8 max-w-xl text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-8 max-w-xl text-xs text-text-muted">
                 {t('configEditor.themeMoved')}{' '}
                 <Link to="../styles" className="underline">
                   {t('configEditor.themeMovedLink')}

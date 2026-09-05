@@ -164,7 +164,7 @@ function Analytics({
     <div className="md:col-span-2 2xl:col-span-3">
       <div className="rounded-lg border border-black/[0.06] p-4 dark:border-white/10">
         <h3 className="text-sm font-semibold">{t('siteSettings.analyticsHeading')}</h3>
-        <p className="mb-3 mt-0.5 max-w-3xl text-xs text-slate-500 dark:text-slate-400">
+        <p className="mb-3 mt-0.5 max-w-3xl text-xs text-text-muted">
           {t('siteSettings.analyticsDescription')}
         </p>
         <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">

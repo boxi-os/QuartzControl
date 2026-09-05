@@ -161,7 +161,7 @@ function ActiveThemeSection({
     return (
       <Card>
         <h3 className="mb-1 text-sm font-semibold">{t('themes.active.title')}</h3>
-        <p className="text-xs text-slate-500 dark:text-slate-400">{t('themes.active.none')}</p>
+        <p className="text-xs text-text-muted">{t('themes.active.none')}</p>
       </Card>
     )
   }
@@ -177,7 +177,7 @@ function ActiveThemeSection({
             {t('themes.active.reactivate')}
           </Button>
         </div>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('themes.active.disabledNote')}</p>
+        <p className="mt-1 text-xs text-text-muted">{t('themes.active.disabledNote')}</p>
       </Card>
     )
   }
@@ -242,26 +242,26 @@ function ActiveThemeSection({
             <Button variant="ghost" onClick={confirmSavePreset} disabled={!savingName.trim()}>
               {t('common.save')}
             </Button>
-            <button type="button" onClick={() => setSavingName(null)} className="text-xs text-slate-500 dark:text-slate-400 underline">
+            <button type="button" onClick={() => setSavingName(null)} className="text-xs text-text-muted underline">
               {t('common.cancel')}
             </button>
           </div>
         )}
       </div>
-      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+      <p className="mt-1 text-xs text-text-muted">
         {t('themes.active.overrideNote', { source: String(plugin.source) })}
       </p>
 
-      {infoLoading && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('themes.active.checkingStyleSettings')}</p>}
+      {infoLoading && <p className="mt-2 text-xs text-text-muted">{t('themes.active.checkingStyleSettings')}</p>}
 
       {!infoLoading && !hasStyleSettings && themeId && (
-        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('themes.active.noStyleSettingsNote', { themeId })}</p>
+        <p className="mt-2 text-xs text-text-muted">{t('themes.active.noStyleSettingsNote', { themeId })}</p>
       )}
 
       {hasStyleSettings && info && (
         <div className="mt-3 rounded-md border border-black/[0.06] bg-black/[0.02] p-3 dark:border-white/10 dark:bg-white/[0.03]">
           <div className="mb-2 flex items-center justify-between gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+            <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
               {t('themes.active.styleSettingsHeading', { ids: info.styleSettingsId.join(', ') })}
             </p>
             <Button variant="ghost" onClick={refreshSchema} disabled={refreshingSchema || schemaLoading}>
@@ -269,7 +269,7 @@ function ActiveThemeSection({
             </Button>
           </div>
 
-          {schemaLoading && <p className="text-xs text-slate-500 dark:text-slate-400">{t('styles.styleSettings.loading')}</p>}
+          {schemaLoading && <p className="text-xs text-text-muted">{t('styles.styleSettings.loading')}</p>}
 
           {!schemaLoading && schema && (
             <StyleSettingsForm schema={schema} info={info} values={styleSettings} onChange={applyStyleSettings} />
@@ -277,7 +277,7 @@ function ActiveThemeSection({
 
           {!schemaLoading && schema === null && (
             <>
-              <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">{t('styles.styleSettings.unavailable')}</p>
+              <p className="mb-2 text-xs text-text-muted">{t('styles.styleSettings.unavailable')}</p>
               {info.classSettingKeys.length > 0 && (
                 <div className="mb-3 flex flex-col gap-1.5">
                   {info.classSettingKeys.map((key) => {
@@ -300,7 +300,7 @@ function ActiveThemeSection({
               arbitrary CSS custom property through a style setting worked here too, but it is the
               same edit the Variablen tab does properly - with the value's origin, its dependents
               and a light/dark pair - so there is one place for it now, not two. */}
-          <p className="mt-3 text-[11px] text-slate-500 dark:text-slate-400">
+          <p className="mt-3 text-[11px] text-text-muted">
             {t('themes.active.ownValuesHint')}{' '}
             <button type="button" className="underline" onClick={() => goToTab('variables')}>
               {t('themes.active.goToVariables')}
@@ -334,8 +334,8 @@ function PresetsSection({
   return (
     <Card>
       <h3 className="mb-1 text-sm font-semibold">{t('themes.presets.title')}</h3>
-      <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('themes.presets.description')}</p>
-      {presets.length === 0 && <p className="text-xs text-slate-500 dark:text-slate-400">{t('themes.presets.none')}</p>}
+      <p className="mb-3 text-xs text-text-muted">{t('themes.presets.description')}</p>
+      {presets.length === 0 && <p className="text-xs text-text-muted">{t('themes.presets.none')}</p>}
       <div className="flex flex-col gap-1.5">
         {presets.map((preset) => (
           <div
@@ -344,7 +344,7 @@ function PresetsSection({
           >
             <div>
               <span className="font-medium">{preset.name}</span>{' '}
-              <span className="text-xs text-slate-500 dark:text-slate-400">{t('themes.presets.basisLabel', { base: preset.baseThemeId })}</span>
+              <span className="text-xs text-text-muted">{t('themes.presets.basisLabel', { base: preset.baseThemeId })}</span>
             </div>
             <div className="flex items-center gap-2">
               {preset.options.theme === activeThemeId ? (
@@ -354,7 +354,7 @@ function PresetsSection({
                   {t('themes.presets.apply')}
                 </Button>
               )}
-              <button type="button" onClick={() => remove(preset.id)} className="text-xs text-slate-500 dark:text-slate-400 underline">
+              <button type="button" onClick={() => remove(preset.id)} className="text-xs text-text-muted underline">
                 {t('themes.presets.delete')}
               </button>
             </div>
@@ -437,7 +437,7 @@ function ThemeCatalog({
   return (
     <Card>
       <h3 className="mb-1 text-sm font-semibold">{t('themes.catalog.title')}</h3>
-      <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('themes.catalog.description')}</p>
+      <p className="mb-3 text-xs text-text-muted">{t('themes.catalog.description')}</p>
       <div className="flex items-center gap-2">
         <TextInput
           value={query}
@@ -468,7 +468,7 @@ function ThemeCatalog({
                 >
                   {listing.id}
                   {listing.stars !== undefined && listing.stars > 0 && (
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">★ {listing.stars}</span>
+                    <span className="text-[11px] text-text-muted">★ {listing.stars}</span>
                   )}
                 </button>
                 <div className="flex items-center gap-2">
@@ -486,10 +486,10 @@ function ThemeCatalog({
               </div>
               {isExpanded && (
                 <div className="border-t border-black/[0.04] bg-black/[0.02] px-2.5 py-2 text-xs dark:border-white/5 dark:bg-white/[0.02]">
-                  {detailLoading && <p className="text-slate-500 dark:text-slate-400">{t('themes.catalog.detailLoading')}</p>}
-                  {!detailLoading && detail === null && <p className="text-slate-500 dark:text-slate-400">{t('themes.catalog.detailNone')}</p>}
+                  {detailLoading && <p className="text-text-muted">{t('themes.catalog.detailLoading')}</p>}
+                  {!detailLoading && detail === null && <p className="text-text-muted">{t('themes.catalog.detailNone')}</p>}
                   {!detailLoading && detail && (
-                    <div className="flex flex-col gap-1 text-slate-600 dark:text-slate-300">
+                    <div className="flex flex-col gap-1 text-text-secondary">
                       <p>{t('themes.catalog.modes', { modes: detail.modes.join(', ') || '—' })}</p>
                       <p>{t('themes.catalog.variations', { variations: detail.variations.join(', ') || '—' })}</p>
                       <p>
@@ -507,15 +507,15 @@ function ThemeCatalog({
           )
         })}
         {visible.length === 0 && (
-          <p className="p-2 text-xs text-slate-500 dark:text-slate-400">{loading ? t('themes.loading') : t('themes.catalog.noResults')}</p>
+          <p className="p-2 text-xs text-text-muted">{loading ? t('themes.loading') : t('themes.catalog.noResults')}</p>
         )}
       </div>
       {filtered.length > visible.length && (
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        <p className="mt-1 text-xs text-text-muted">
           {t('themes.catalog.moreResults', { count: filtered.length - visible.length })}
         </p>
       )}
-      {message && <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">{message}</p>}
+      {message && <p className="mt-2 text-xs text-text-secondary">{message}</p>}
     </Card>
   )
 }

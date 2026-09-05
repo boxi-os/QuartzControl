@@ -179,7 +179,7 @@ export function ConnectionFormFields({
           </Field>
         )}
         {draft.kind === 'ssh' && draft.authMethod === 'agent' ? (
-          <p className="text-xs text-slate-500 dark:text-slate-400 sm:col-span-2 xl:col-span-3">
+          <p className="text-xs text-text-muted sm:col-span-2 xl:col-span-3">
             {t('publish.connectionForm.agentHint')}
           </p>
         ) : draft.kind === 'webhook' ? (

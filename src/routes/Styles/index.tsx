@@ -261,7 +261,7 @@ export default function Styles(): JSX.Element {
   // shortcut stays quiet rather than rewriting an unchanged file.
   useSaveCommand(dirty && status !== 'saving' ? save : null)
 
-  if (!config || !scss) return <p className="text-sm text-slate-500 dark:text-slate-400">{t('common.loading')}</p>
+  if (!config || !scss) return <p className="text-sm text-text-muted">{t('common.loading')}</p>
 
   const value: StylesContextValue = {
     project,
@@ -320,7 +320,7 @@ export default function Styles(): JSX.Element {
             options={TAB_ORDER.map((key) => ({ value: key, label: t(`styles.tabs.${key}`) }))}
           />
         </div>
-        <p className="mb-5 text-xs text-slate-500 dark:text-slate-400">
+        <p className="mb-5 text-xs text-text-muted">
           {themeId ? t('styles.cascade.themeActive', { themeId }) : t('styles.cascade.themeInactive')}{' '}
           {overrideCount > 0 && t('styles.cascade.overrides', { count: overrideCount })}
         </p>

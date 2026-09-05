@@ -25,7 +25,7 @@ export function LogConsole({ lines, label, onClear }: { lines: LogLine[]; label:
     <div>
       {onClear && !empty && (
         <div className="mb-1 flex justify-end">
-          <button type="button" onClick={onClear} className="text-xs text-slate-500 dark:text-slate-400 underline hover:text-slate-700 dark:hover:text-slate-300">
+          <button type="button" onClick={onClear} className="text-xs text-text-muted underline hover:text-slate-700 dark:hover:text-slate-300">
             {t('logConsole.clear')}
           </button>
         </div>

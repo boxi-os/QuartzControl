@@ -29,7 +29,7 @@ function SnapshotRow({
             <Badge tone={snapshot.kind === 'manual' ? 'green' : 'slate'}>{t(`backups.kinds.${snapshot.kind}`)}</Badge>
             <span className="text-sm">{new Date(snapshot.createdAt).toLocaleString(i18n.language)}</span>
           </div>
-          {snapshot.label && <p className="mt-1 break-words text-sm text-slate-600 dark:text-slate-300">{snapshot.label}</p>}
+          {snapshot.label && <p className="mt-1 break-words text-sm text-text-secondary">{snapshot.label}</p>}
         </div>
         <Button variant="ghost" className="shrink-0 whitespace-nowrap" onClick={onToggle}>
           {expanded ? t('backups.close') : t('backups.compare')}
@@ -181,7 +181,7 @@ export default function Backups(): JSX.Element {
 
       <Card>
         <h2 className="text-sm font-semibold">{t('backups.newHeading')}</h2>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('backups.newHint')}</p>
+        <p className="mt-1 text-xs text-text-muted">{t('backups.newHint')}</p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <TextInput
             value={newLabel}
@@ -206,7 +206,7 @@ export default function Backups(): JSX.Element {
               label={t('backups.includeContent')}
               disabled={settingsAction.pending || !settings.contentExists || settings.contentIsSymlink}
             />
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-1 text-xs text-text-muted">
               {!settings.contentExists
                 ? t('backups.contentMissing')
                 : settings.contentIsSymlink
@@ -217,15 +217,15 @@ export default function Backups(): JSX.Element {
         )}
       </Card>
 
-      {message && <p className="whitespace-pre-wrap break-words text-sm text-slate-600 dark:text-slate-300">{message}</p>}
+      {message && <p className="whitespace-pre-wrap break-words text-sm text-text-secondary">{message}</p>}
       {error && <p className="whitespace-pre-wrap break-words text-sm text-red-600 dark:text-red-400">{error}</p>}
 
       {/* A snapshot is a date, a category and two buttons - a full-width row per entry would be
           almost entirely empty space. The one that is open is the exception: its file list and
           diff want the whole window. */}
       <div className="grid grid-cols-1 items-start gap-3 md:grid-cols-2 2xl:grid-cols-3">
-        {snapshots === null && <p className="text-sm text-slate-500 dark:text-slate-400">{t('common.loading')}</p>}
-        {snapshots?.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">{t('backups.none')}</p>}
+        {snapshots === null && <p className="text-sm text-text-muted">{t('common.loading')}</p>}
+        {snapshots?.length === 0 && <p className="text-sm text-text-muted">{t('backups.none')}</p>}
         {snapshots?.map((snapshot) => (
           <SnapshotRow
             key={snapshot.id}
@@ -235,17 +235,17 @@ export default function Backups(): JSX.Element {
           >
             {openId === snapshot.id && (
               <div className="mt-4 border-t border-black/[0.06] pt-3 dark:border-white/10">
-                {changes === null && <p className="text-xs text-slate-500 dark:text-slate-400">{t('backups.comparing')}</p>}
-                {changes?.length === 0 && <p className="text-xs text-slate-500 dark:text-slate-400">{t('backups.identical')}</p>}
+                {changes === null && <p className="text-xs text-text-muted">{t('backups.comparing')}</p>}
+                {changes?.length === 0 && <p className="text-xs text-text-muted">{t('backups.identical')}</p>}
                 {/* Genau hier ist der Irrtum entstanden, über den der Alpha-Test stolperte: eine
                     geänderte Notiz im Vault taucht im Vergleich nie auf, und ohne diese Zeile
                     liest sich das als "nichts hat sich geändert". */}
                 {changes !== null && settings?.contentIsSymlink && (
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('backups.vaultNotCompared')}</p>
+                  <p className="mt-1 text-xs text-text-muted">{t('backups.vaultNotCompared')}</p>
                 )}
                 {changes && changes.length > 0 && (
                   <>
-                    <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
+                    <p className="mb-2 text-xs text-text-muted">
                       {t('backups.changeCount', { count: changes.length })}
                     </p>
                     <div className="max-h-72 overflow-y-auto rounded-md border border-black/[0.06] dark:border-white/10">
@@ -260,7 +260,7 @@ export default function Backups(): JSX.Element {
                             onChange={() => toggleFile(change.path)}
                             aria-label={change.path}
                           />
-                          <span className="w-32 shrink-0 text-xs text-slate-500 dark:text-slate-400">
+                          <span className="w-32 shrink-0 text-xs text-text-muted">
                             {t(`backups.status.${change.status}`)}
                           </span>
                           <button
@@ -291,7 +291,7 @@ export default function Backups(): JSX.Element {
                           onChange={setResetHead}
                           label={t('backups.resetProjectHead', { commit: snapshot.projectHead?.slice(0, 7) })}
                         />
-                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('backups.resetProjectHeadHint')}</p>
+                        <p className="mt-1 text-xs text-text-muted">{t('backups.resetProjectHeadHint')}</p>
                       </div>
                     )}
 
@@ -331,7 +331,7 @@ export default function Backups(): JSX.Element {
       {contentFolders.length > 0 && (
         <Card>
           <h2 className="text-sm font-semibold">{t('backups.movedFoldersHeading')}</h2>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('backups.movedFoldersHint')}</p>
+          <p className="mt-1 text-xs text-text-muted">{t('backups.movedFoldersHint')}</p>
           <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2 2xl:grid-cols-3">
             {contentFolders.map((entry) => (
               <div
@@ -343,7 +343,7 @@ export default function Backups(): JSX.Element {
                     costs rather than leaving that to a timestamp. */}
                 <div className="min-w-0">
                   <p className="truncate text-sm">{new Date(entry.createdAt).toLocaleString(i18n.language)}</p>
-                  <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                  <p className="truncate text-xs text-text-muted">
                     {entry.kind === 'link'
                       ? t('backups.folderLink', { target: entry.target ?? '?' })
                       : t('backups.folderSize', {

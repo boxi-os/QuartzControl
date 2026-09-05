@@ -164,11 +164,11 @@ export default function LayoutEditor(): JSX.Element {
         <pre className="whitespace-pre-wrap rounded-md bg-red-50 p-3 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-400">
           {loadError}
         </pre>
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t('configEditor.loadErrorHint')}</p>
+        <p className="mt-2 text-sm text-text-muted">{t('configEditor.loadErrorHint')}</p>
       </div>
     )
   }
-  if (!config) return <p className="text-sm text-slate-500 dark:text-slate-400">{t('layoutEditor.loading')}</p>
+  if (!config) return <p className="text-sm text-text-muted">{t('layoutEditor.loading')}</p>
 
   return (
     <div>
@@ -230,7 +230,7 @@ export default function LayoutEditor(): JSX.Element {
             </button>
           ))}
           {activePageType && overrideTypes.includes(activePageType) && (
-            <button type="button" onClick={() => removeOverride(activePageType)} className="ml-auto text-xs text-slate-500 dark:text-slate-400 underline">
+            <button type="button" onClick={() => removeOverride(activePageType)} className="ml-auto text-xs text-text-muted underline">
               {t('layoutEditor.removeOverride')}
             </button>
           )}
@@ -253,7 +253,7 @@ export default function LayoutEditor(): JSX.Element {
             builtinFrameName={builtinPageTypeFrames[`${activePageType}-page`]}
           />
         ) : (
-          <p className="text-sm text-slate-500 dark:text-slate-400">{t('layoutEditor.pageTypesHint')}</p>
+          <p className="text-sm text-text-muted">{t('layoutEditor.pageTypesHint')}</p>
         ))}
     </div>
   )

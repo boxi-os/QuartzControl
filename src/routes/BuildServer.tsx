@@ -243,13 +243,13 @@ export default function BuildServer(): JSX.Element {
               <ExternalLink size={13} aria-hidden />
             </a>
           ) : (
-            <span className="text-[17px] font-semibold tracking-tight text-slate-500 dark:text-slate-400">{url}</span>
+            <span className="text-[17px] font-semibold tracking-tight text-text-muted">{url}</span>
           )}
           <button
             type="button"
             onClick={() => copy(url)}
             title={t('common.copy')}
-            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-slate-500 dark:text-slate-400 hover:bg-black/[0.05] dark:hover:bg-white/10"
+            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-text-muted hover:bg-black/[0.05] dark:hover:bg-white/10"
           >
             {copied === url ? <Check size={13} aria-hidden /> : <Copy size={13} aria-hidden />}
             {t('common.copy')}
@@ -261,7 +261,7 @@ export default function BuildServer(): JSX.Element {
           </span>
         </div>
 
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+        <p className="mt-1 text-xs text-text-muted">
           {running ? (
             <>
               {t('buildServer.startedAgo', { since: formatRelativeTime(status.startedAt, i18n.language) ?? '–' })}
@@ -281,7 +281,7 @@ export default function BuildServer(): JSX.Element {
         <button
           type="button"
           onClick={() => setOptionsOpen(!optionsOpen)}
-          className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+          className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-slate-900 dark:hover:text-white"
         >
           {optionsOpen ? <ChevronDown size={14} aria-hidden /> : <ChevronRight size={14} aria-hidden />}
           <SlidersHorizontal size={13} aria-hidden />
@@ -317,7 +317,7 @@ export default function BuildServer(): JSX.Element {
               </Field>
             </div>
             {serverActive && (
-              <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('buildServer.optionsLocked')}</p>
+              <p className="mt-2 text-xs text-text-muted">{t('buildServer.optionsLocked')}</p>
             )}
           </div>
         )}
@@ -330,7 +330,7 @@ export default function BuildServer(): JSX.Element {
               <button
                 type="button"
                 onClick={() => setPreviewOpen(!previewOpen)}
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-slate-900 dark:hover:text-white"
               >
                 {previewOpen ? <ChevronDown size={14} aria-hidden /> : <ChevronRight size={14} aria-hidden />}
                 {t('buildServer.livePreview')}
@@ -350,13 +350,13 @@ export default function BuildServer(): JSX.Element {
                       { value: 'mobile', label: t('buildServer.viewport.mobile') }
                     ]}
                   />
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                  <span className="text-xs text-text-muted">
                     {previewWidth === null ? t('buildServer.viewport.full') : `${previewWidth} px`}
                   </span>
                   <button
                     type="button"
                     onClick={() => setPreviewNonce((n) => n + 1)}
-                    className="ml-auto inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                    className="ml-auto inline-flex items-center gap-1 text-xs text-text-muted hover:text-slate-800 dark:hover:text-slate-200"
                   >
                     <RefreshCw size={12} aria-hidden />
                     {t('buildServer.reloadPreview')}
@@ -395,7 +395,7 @@ export default function BuildServer(): JSX.Element {
             {building ? t('buildServer.building') : t('buildServer.buildNow')}
           </Button>
         </div>
-        <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('buildServer.oneOffBuildHint')}</p>
+        <p className="mb-3 text-xs text-text-muted">{t('buildServer.oneOffBuildHint')}</p>
 
         {/* What is in the output directory right now - nothing records that a build happened, so
             this is read from the files themselves (see BuildOutputInfo). The Übersicht showed this
@@ -406,23 +406,23 @@ export default function BuildServer(): JSX.Element {
               <p className="text-heading font-semibold tracking-tight">
                 {t('buildServer.lastBuilt', { when: formatRelativeTime(output.builtAt, i18n.language) ?? '–' })}
               </p>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-0.5 text-xs text-text-muted">
                 {t('buildServer.outputFiles', { count: output.fileCount })} · {formatBytes(output.sizeBytes, i18n.language)}
               </p>
             </>
           ) : (
-            <p className="text-heading font-semibold tracking-tight text-slate-500 dark:text-slate-400">
+            <p className="text-heading font-semibold tracking-tight text-text-muted">
               {t('buildServer.neverBuilt')}
             </p>
           )}
           {output && (
             <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
-              <code className="break-all text-xs text-slate-500 dark:text-slate-400">{output.dir}</code>
+              <code className="break-all text-xs text-text-muted">{output.dir}</code>
               {output.exists && outputInProject && (
                 <button
                   type="button"
                   onClick={() => window.quartzGui.dialog.openPath(output.dir)}
-                  className="inline-flex shrink-0 items-center gap-1 text-xs text-slate-600 hover:underline dark:text-slate-300"
+                  className="inline-flex shrink-0 items-center gap-1 text-xs text-text-secondary hover:underline"
                 >
                   <FolderOpen size={12} aria-hidden />
                   {t('buildServer.openFolder')}
@@ -453,7 +453,7 @@ export default function BuildServer(): JSX.Element {
               )}
             </div>
           </Field>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-xs text-text-muted">
             {t('buildServer.exportDirShared')} {t('buildServer.exportDirWipes')}
           </p>
           {/* `quartz build` deletes its output directory before it writes - measured against a real

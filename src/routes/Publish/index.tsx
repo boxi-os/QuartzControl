@@ -406,7 +406,7 @@ export default function Publish(): JSX.Element {
           </Button>
         </div>
 
-        {targets.length === 0 && <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{t('publish.noTargets')}</p>}
+        {targets.length === 0 && <p className="mt-3 text-xs text-text-muted">{t('publish.noTargets')}</p>}
 
         {activeTarget && (
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-black/[0.06] p-2.5 text-xs dark:border-white/10">
@@ -428,7 +428,7 @@ export default function Publish(): JSX.Element {
                 <span className="ml-2 text-amber-600 dark:text-amber-400">{t('publish.noSecretWarning')}</span>
               )}
               {activeConnection?.kind === 'ssh' && (
-                <span className="mt-1 block font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                <span className="mt-1 block font-mono text-[11px] text-text-muted">
                   {activeConnection.hostKey
                     ? `${t('publish.hostKeyPinned')}: ${activeConnection.hostKey.fingerprint}`
                     : t('publish.hostKeyUnknown')}
@@ -438,13 +438,13 @@ export default function Publish(): JSX.Element {
             <div className="flex shrink-0 gap-2 whitespace-nowrap">
               <button
                 type="button"
-                className="text-slate-500 underline"
+                className="text-text-muted underline"
                 onClick={() => openTargetDraft(draftOf(activeTarget))}
               >
                 {t('common.edit')}
               </button>
               {activeConnection?.kind === 'ssh' && activeConnection.hostKey && (
-                <button type="button" className="text-slate-500 underline" onClick={() => forgetHostKey(activeConnection)}>
+                <button type="button" className="text-text-muted underline" onClick={() => forgetHostKey(activeConnection)}>
                   {t('publish.forgetHostKey')}
                 </button>
               )}
@@ -459,7 +459,7 @@ export default function Publish(): JSX.Element {
       {targetDraft && (
         <Card>
           <h2 className="mb-2 text-sm font-semibold">{t('publish.targetForm.heading')}</h2>
-          <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('publish.targetForm.explainer')}</p>
+          <p className="mb-3 text-xs text-text-muted">{t('publish.targetForm.explainer')}</p>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             <Field label={t('publish.targetForm.name')}>
               <TextInput value={targetDraft.name} onChange={(e) => setTargetDraft({ ...targetDraft, name: e.target.value })} />
@@ -502,7 +502,7 @@ export default function Publish(): JSX.Element {
                     {t(`publish.targetForm.remotePathError.${remotePathIssue}`)}
                   </p>
                 ) : (
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('publish.targetForm.remotePathHint')}</p>
+                  <p className="mt-1 text-xs text-text-muted">{t('publish.targetForm.remotePathHint')}</p>
                 )}
               </Field>
             )}
@@ -674,13 +674,13 @@ export default function Publish(): JSX.Element {
           </div>
 
           {targetDraft.destination.type === 'git-branch' && (
-            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-3 text-xs text-text-muted">
               {t(`publish.branchHint.${targetDraft.destination.provider}`)}
             </p>
           )}
 
           {targetDraft.destination.type === 'sftp' && (
-            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-3 text-xs text-text-muted">
               {rsyncBlocker
                 ? t(`publish.rsyncBlocked.${rsyncBlocker}`)
                 : targetDraft.destination.transfer === 'rsync'
@@ -701,11 +701,11 @@ export default function Publish(): JSX.Element {
                 <Button variant="ghost" onClick={() => setConnectionDraft(emptyConnectionDraft(draftKind))}>
                   {t('publish.newConnectionOfKind', { kind: CONNECTION_KIND_LABEL[draftKind] })}
                 </Button>
-                <Link to="/settings" className="text-[13px] text-slate-500 underline hover:text-slate-900 dark:hover:text-white">
+                <Link to="/settings" className="text-[13px] text-text-muted underline hover:text-slate-900 dark:hover:text-white">
                   {t('publish.manageConnections')}
                 </Link>
               </div>
-              <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-1.5 text-xs text-text-muted">
                 {t('publish.connectionKindFixed', { kind: CONNECTION_KIND_LABEL[draftKind] })}
               </p>
             </div>
@@ -728,7 +728,7 @@ export default function Publish(): JSX.Element {
       {connectionDraft && (
         <Card>
           <h2 className="mb-2 text-sm font-semibold">{t('publish.connectionForm.heading')}</h2>
-          <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('publish.connectionForm.explainer')}</p>
+          <p className="mb-3 text-xs text-text-muted">{t('publish.connectionForm.explainer')}</p>
           <ConnectionFormFields draft={connectionDraft} onChange={setConnectionDraft} />
           <div className="mt-3 flex gap-2">
             <Button
@@ -755,7 +755,7 @@ export default function Publish(): JSX.Element {
 
       {activeTarget && !hasFileDiff && (
         <Card>
-          <p className="text-xs text-slate-500 dark:text-slate-400">{t('publish.webhookExplainer')}</p>
+          <p className="text-xs text-text-muted">{t('publish.webhookExplainer')}</p>
         </Card>
       )}
 
@@ -800,7 +800,7 @@ export default function Publish(): JSX.Element {
                 className="max-w-md"
               />
             </Field>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('publish.outputDirShared')}</p>
+            <p className="mt-1 text-xs text-text-muted">{t('publish.outputDirShared')}</p>
           </div>
 
           {(diffAction.error || buildAction.error) && (
@@ -809,8 +809,8 @@ export default function Publish(): JSX.Element {
             </p>
           )}
 
-          {diff === null && !diffAction.error && <p className="mt-2 text-xs text-slate-500">{t('publish.noDiffYet')}</p>}
-          {diff && diff.length === 0 && <p className="mt-2 text-xs text-slate-500">{t('publish.noChanges')}</p>}
+          {diff === null && !diffAction.error && <p className="mt-2 text-xs text-text-muted">{t('publish.noDiffYet')}</p>}
+          {diff && diff.length === 0 && <p className="mt-2 text-xs text-text-muted">{t('publish.noChanges')}</p>}
 
           {diff && diff.length > 0 && (
             <div className="mt-2 flex flex-col gap-3">
@@ -818,7 +818,7 @@ export default function Publish(): JSX.Element {
                 (status) =>
                   grouped[status].length > 0 && (
                     <div key={status}>
-                      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-text-secondary">
                         {t(`publish.status.${status}`)} ({grouped[status].length})
                       </p>
                       <div className="columns-1 gap-x-6 sm:columns-2 xl:columns-3">
@@ -833,7 +833,7 @@ export default function Publish(): JSX.Element {
                               <span className={excluded.has(entry.path) ? 'text-slate-400 line-through' : ''}>{entry.path}</span>
                             </label>
                           ) : (
-                            <p key={entry.path} className="break-inside-avoid font-mono text-xs text-slate-600 dark:text-slate-300">
+                            <p key={entry.path} className="break-inside-avoid font-mono text-xs text-text-secondary">
                               {entry.path}
                             </p>
                           )
@@ -865,7 +865,7 @@ export default function Publish(): JSX.Element {
             <p className="mt-2 whitespace-pre-wrap break-words text-xs text-red-600 dark:text-red-400">{deployAction.error}</p>
           )}
           {progress && (
-            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-2 text-xs text-text-muted">
               {t('publish.progress', { processed: progress.processed, total: progress.total, file: progress.currentFile ?? '' })}
             </p>
           )}

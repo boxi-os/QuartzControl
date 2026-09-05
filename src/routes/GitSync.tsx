@@ -22,7 +22,7 @@ function StatusRow({ change }: { change: GitFileChange }): JSX.Element {
     <div className="flex min-w-0 items-center gap-2 break-inside-avoid py-0.5">
       <Badge tone={tone}>{t(`gitSync.fileStatus.${change.status}`)}</Badge>
       {change.staged && <Badge tone="green">{t('gitSync.staged')}</Badge>}
-      <span className="min-w-0 truncate font-mono text-xs text-slate-600 dark:text-slate-300" title={change.path}>
+      <span className="min-w-0 truncate font-mono text-xs text-text-secondary" title={change.path}>
         {change.origPath ? `${change.origPath} → ${change.path}` : change.path}
       </span>
     </div>
@@ -51,7 +51,7 @@ function RepoStatus({
   })
 
   if (!status.isRepo) {
-    return <p className="text-xs text-slate-500 dark:text-slate-400">{t('gitSync.notARepo')}</p>
+    return <p className="text-xs text-text-muted">{t('gitSync.notARepo')}</p>
   }
 
   const hidden = status.changeCount - status.changes.length
@@ -62,7 +62,7 @@ function RepoStatus({
         <span className="font-mono text-[13px] font-medium">
           {status.detached ? t('gitSync.detached') : status.branch}
         </span>
-        {status.upstream && <span className="text-xs text-slate-500 dark:text-slate-400">→ {status.upstream}</span>}
+        {status.upstream && <span className="text-xs text-text-muted">→ {status.upstream}</span>}
         {status.upstream ? (
           status.ahead === 0 && status.behind === 0 ? (
             <Badge tone="green">{t('gitSync.upToDate')}</Badge>
@@ -96,9 +96,9 @@ function RepoStatus({
       )}
 
       {!status.remoteUrl ? (
-        <p className="text-xs text-slate-500 dark:text-slate-400">{t('gitSync.noRemote')}</p>
+        <p className="text-xs text-text-muted">{t('gitSync.noRemote')}</p>
       ) : (
-        <p className="flex min-w-0 items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+        <p className="flex min-w-0 items-center gap-2 text-xs text-text-muted">
           <span className="min-w-0 truncate font-mono" title={status.remoteUrl}>
             origin: {status.remoteUrl}
           </span>
@@ -109,7 +109,7 @@ function RepoStatus({
             <button
               type="button"
               onClick={() => window.quartzGui.dialog.openExternal(repo.htmlUrl)}
-              className="inline-flex shrink-0 items-center gap-1 text-slate-600 hover:underline dark:text-slate-300"
+              className="inline-flex shrink-0 items-center gap-1 text-text-secondary hover:underline"
             >
               <ExternalLink size={12} aria-hidden />
               {t('gitSync.openOnGithub')}
@@ -119,15 +119,15 @@ function RepoStatus({
       )}
 
       {status.remoteUrl && !status.upstream && (
-        <p className="text-xs text-slate-500 dark:text-slate-400">{t('gitSync.noUpstreamHint')}</p>
+        <p className="text-xs text-text-muted">{t('gitSync.noUpstreamHint')}</p>
       )}
 
       {/* "Losgelöster HEAD" is the state, not an explanation of it - and it is the one state in
           which nothing on this page does what it says. */}
-      {status.detached && <p className="text-xs text-slate-500 dark:text-slate-400">{t('gitSync.detachedHint')}</p>}
+      {status.detached && <p className="text-xs text-text-muted">{t('gitSync.detachedHint')}</p>}
 
       {status.lastCommit && (
-        <p className="text-xs text-slate-500 dark:text-slate-400">
+        <p className="text-xs text-text-muted">
           {t('gitSync.lastCommit')}:{' '}
           <span className="font-mono">{status.lastCommit.shortSha}</span> {status.lastCommit.subject}
           {' · '}
@@ -146,7 +146,7 @@ function RepoStatus({
           ))}
         </div>
       )}
-      {hidden > 0 && <p className="text-xs text-slate-500 dark:text-slate-400">{t('gitSync.moreChanges', { count: hidden })}</p>}
+      {hidden > 0 && <p className="text-xs text-text-muted">{t('gitSync.moreChanges', { count: hidden })}</p>}
     </div>
   )
 }
@@ -178,7 +178,7 @@ function CreateRepoCard({ projectPath, onCreated }: { projectPath: string; onCre
   return (
     <Card className="max-w-2xl">
       <h2 className="mb-1 font-medium">{t('gitSync.createRepo.title')}</h2>
-      <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+      <p className="mb-3 text-xs text-text-muted">
         {viewer ? t('gitSync.createRepo.asAccount', { login: viewer.login }) : t('gitSync.createRepo.noToken')}
       </p>
       <div className="mb-3 flex flex-wrap items-end gap-3">
@@ -288,7 +288,7 @@ export default function GitSync(): JSX.Element {
             invisible before: the commit (its --commit defaults to true, so even "Pull" committed
             the whole working tree under a generated message - measured), the force push
             (`git push -uf origin <current branch>`) and the fixed pull branch. */}
-        <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+        <p className="mb-3 text-xs text-text-muted">
           {t('gitSync.explainer', { branch: QUARTZ_SOURCE_BRANCH })}
         </p>
 
@@ -304,7 +304,7 @@ export default function GitSync(): JSX.Element {
               disabled={!commit || busy !== null}
             />
           </Field>
-          <p className="basis-full text-xs text-slate-500 dark:text-slate-400">
+          <p className="basis-full text-xs text-text-muted">
             {commit
               ? status && status.changeCount > 0
                 ? t('gitSync.commitHint', { count: status.changeCount })

@@ -64,7 +64,7 @@ export default function CssVariableReference({ onInsert }: { onInsert: (text: st
   return (
     <Card>
       <h2 className="mb-2 text-sm font-semibold">{t('styleEditor.cssVars.heading')}</h2>
-      <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
+      <p className="mb-2 text-xs text-text-muted">
         {t('styleEditor.cssVars.description')}{' '}
         <button type="button" className="underline" onClick={() => goToTab('variables')}>
           {t('styleEditor.cssVars.goToVariables')}
@@ -76,7 +76,7 @@ export default function CssVariableReference({ onInsert }: { onInsert: (text: st
         placeholder={t('styleEditor.cssVars.searchPlaceholder')}
         className="mb-3 w-full"
       />
-      {filtered.length === 0 && <p className="text-xs text-slate-500 dark:text-slate-400">{t('styleEditor.cssVars.noResults')}</p>}
+      {filtered.length === 0 && <p className="text-xs text-text-muted">{t('styleEditor.cssVars.noResults')}</p>}
       <div className="flex flex-col gap-1">
         {Array.from(grouped.entries()).map(([group, defs]) => (
           <VariableGroup
@@ -92,7 +92,7 @@ export default function CssVariableReference({ onInsert }: { onInsert: (text: st
           </VariableGroup>
         ))}
       </div>
-      <p className="mt-3 text-[11px] text-slate-500 dark:text-slate-400">{t('styleEditor.cssVars.rowHint')}</p>
+      <p className="mt-3 text-[11px] text-text-muted">{t('styleEditor.cssVars.rowHint')}</p>
       {/* Mounted whether or not anything was copied - see PageHeader's status slot. */}
       <p role="status" className="mt-1 min-h-[15px] truncate text-[11px] text-green-700 dark:text-green-400">
         {copied ? t('common.copied', { value: copied }) : ''}
@@ -100,7 +100,7 @@ export default function CssVariableReference({ onInsert }: { onInsert: (text: st
 
       <div className="mt-4 border-t border-black/[0.06] pt-3 dark:border-white/10">
         <h2 className="mb-1 text-sm font-semibold">{t('styleEditor.cssVars.calloutsHeading')}</h2>
-        <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">{t('styleEditor.cssVars.calloutsDescription')}</p>
+        <p className="mb-2 text-xs text-text-muted">{t('styleEditor.cssVars.calloutsDescription')}</p>
         <VariableGroup
           label={t('styleEditor.cssVars.calloutsGroup')}
           count={CALLOUT_COLORS.length}
@@ -206,7 +206,7 @@ function VariableRow({
           type="button"
           onClick={(e) => put(e, raw)}
           title={t('styleEditor.cssVars.insertValueHint', { value: raw })}
-          className="shrink-0 rounded px-1 text-[11px] text-slate-500 hover:bg-black/[0.06] dark:text-slate-400 dark:hover:bg-white/10"
+          className="shrink-0 rounded px-1 text-[11px] text-text-muted hover:bg-black/[0.06] dark:hover:bg-white/10"
         >
           {t('styleEditor.cssVars.insertValue')}
         </button>

@@ -68,10 +68,10 @@ function Tile({
   return (
     <Card className={`flex flex-col gap-3 ${className}`}>
       <div className="flex min-w-0 items-center gap-2">
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[7px] bg-black/[0.04] text-slate-500 dark:bg-white/[0.06] dark:text-slate-400">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[7px] bg-black/[0.04] text-text-muted dark:bg-white/[0.06]">
           <Icon size={14} strokeWidth={2} aria-hidden />
         </span>
-        <h2 className="truncate text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+        <h2 className="truncate text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
           {title}
         </h2>
         {badge && <span className="ml-auto shrink-0">{badge}</span>}
@@ -94,14 +94,14 @@ function Metric({ children, tone }: { children: ReactNode; tone?: 'green' | 'mut
     tone === 'green'
       ? 'text-green-700 dark:text-green-400'
       : tone === 'muted'
-        ? 'text-slate-500 dark:text-slate-400'
+        ? 'text-text-muted'
         : 'text-slate-900 dark:text-white'
   return <p className={`text-[19px] font-semibold leading-tight tracking-tight ${color}`}>{children}</p>
 }
 
 /** The muted half of a metric line ("von 21 aktiv"), sitting on the same baseline. */
 function MetricNote({ children }: { children: ReactNode }): JSX.Element {
-  return <span className="ml-1.5 text-xs font-medium tracking-normal text-slate-500 dark:text-slate-400">{children}</span>
+  return <span className="ml-1.5 text-xs font-medium tracking-normal text-text-muted">{children}</span>
 }
 
 function Facts({ children }: { children: ReactNode }): JSX.Element {
@@ -132,7 +132,7 @@ function AttentionBand({ issues }: { issues: Issue[] }): JSX.Element {
     <Card className="!p-0">
       <div className="flex items-center gap-2 border-b border-black/[0.06] px-4 py-2.5 dark:border-white/10">
         <TriangleAlert size={14} className="text-amber-600 dark:text-amber-400" aria-hidden />
-        <h2 className="text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+        <h2 className="text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
           {t('dashboard.attention.title')}
         </h2>
         <Badge tone="amber">{issues.length}</Badge>
@@ -153,7 +153,7 @@ function AttentionBand({ issues }: { issues: Issue[] }): JSX.Element {
           </span>
           <div className="min-w-0">
             <p className="text-[13px] font-medium">{issue.title}</p>
-            {issue.detail && <p className="truncate text-xs text-slate-500 dark:text-slate-400">{issue.detail}</p>}
+            {issue.detail && <p className="truncate text-xs text-text-muted">{issue.detail}</p>}
           </div>
           <Link
             to={issue.to}
@@ -444,13 +444,13 @@ export default function ProjectDashboard(): JSX.Element {
           )}
           <Facts>
             {server.state === 'running' ? (
-              <span className="text-slate-500 dark:text-slate-400">
+              <span className="text-text-muted">
                 {t('dashboard.startedAgo', { since: formatRelativeTime(server.startedAt, i18n.language) ?? '–' })}
                 {server.options && ` · WebSocket ${server.options.wsPort}`}
                 {server.pid != null && ` · PID ${server.pid}`}
               </span>
             ) : (
-              <span className="text-slate-500 dark:text-slate-400">
+              <span className="text-text-muted">
                 {serverErrorText(server, t) ?? t('dashboard.serverIdleHint')}
               </span>
             )}
@@ -504,7 +504,7 @@ export default function ProjectDashboard(): JSX.Element {
                   <Badge tone="red">{t('dashboard.targetMissing')}</Badge>
                 ) : (
                   <span className="inline-flex min-w-0 items-center gap-1.5">
-                    <Link2 size={13} className="shrink-0 text-slate-500 dark:text-slate-400" aria-hidden />
+                    <Link2 size={13} className="shrink-0 text-text-muted" aria-hidden />
                     <span className="truncate font-mono text-[12px]">{content.symlinkTarget}</span>
                   </span>
                 )
@@ -516,7 +516,7 @@ export default function ProjectDashboard(): JSX.Element {
           <button
             type="button"
             onClick={() => void api.dialog.openPath(project.path)}
-            className="inline-flex w-fit items-center gap-1.5 text-xs font-medium text-slate-500 hover:underline dark:text-slate-400"
+            className="inline-flex w-fit items-center gap-1.5 text-xs font-medium text-text-muted hover:underline"
           >
             <FolderOpen size={13} aria-hidden />
             {t('dashboard.openProjectFolder')}
@@ -545,14 +545,14 @@ export default function ProjectDashboard(): JSX.Element {
             <>
               <Metric tone="muted">{t('dashboard.git.noRepo')}</Metric>
               <Facts>
-                <span className="text-slate-500 dark:text-slate-400">{t('dashboard.git.noRepoHint')}</span>
+                <span className="text-text-muted">{t('dashboard.git.noRepoHint')}</span>
               </Facts>
             </>
           ) : (
             <>
               <Metric>
                 <span className="tabular-nums">↑ {git.ahead}</span>
-                <span className="ml-2.5 tabular-nums text-slate-500 dark:text-slate-400">↓ {git.behind}</span>
+                <span className="ml-2.5 tabular-nums text-text-muted">↓ {git.behind}</span>
                 {git.conflictCount > 0 && (
                   <span className="ml-2.5 text-[13px] font-medium text-red-600 dark:text-red-400">
                     {t('dashboard.git.conflicts', { count: git.conflictCount })}
@@ -563,10 +563,10 @@ export default function ProjectDashboard(): JSX.Element {
               <Facts>
                 <span>
                   <b className="font-semibold tabular-nums">{git.changeCount}</b>{' '}
-                  <span className="text-slate-500 dark:text-slate-400">{t('dashboard.git.uncommitted')}</span>
+                  <span className="text-text-muted">{t('dashboard.git.uncommitted')}</span>
                 </span>
                 {git.lastCommit && (
-                  <span className="truncate text-slate-500 dark:text-slate-400">
+                  <span className="truncate text-text-muted">
                     „{git.lastCommit.subject}“ · {formatRelativeTime(git.lastCommit.date, i18n.language) ?? '–'} ·{' '}
                     {git.lastCommit.author}
                   </span>
@@ -587,7 +587,7 @@ export default function ProjectDashboard(): JSX.Element {
                 <MetricNote>{t('dashboard.plugins.ofTotal', { total: totalPlugins })}</MetricNote>
               </Metric>
               <Facts>
-                <span className="text-slate-500 dark:text-slate-400">
+                <span className="text-text-muted">
                   {totalPlugins - activePlugins > 0
                     ? t('dashboard.plugins.disabled', { count: totalPlugins - activePlugins })
                     : t('dashboard.plugins.allEnabled')}
@@ -608,7 +608,7 @@ export default function ProjectDashboard(): JSX.Element {
         >
           <Metric>{activeTheme ?? t('dashboard.design.stockTheme')}</Metric>
           <Facts>
-            <span className="text-slate-500 dark:text-slate-400">
+            <span className="text-text-muted">
               {t('dashboard.design.frames', { count: frames?.length ?? 0 })} ·{' '}
               {t('dashboard.design.stylesheets', { count: styleFiles?.files.length ?? 0 })}
             </span>
@@ -635,7 +635,7 @@ export default function ProjectDashboard(): JSX.Element {
             <>
               <Metric>{formatRelativeTime(build.builtAt, i18n.language) ?? '–'}</Metric>
               <Facts>
-                <span className="text-slate-500 dark:text-slate-400">
+                <span className="text-text-muted">
                   {t('dashboard.build.files', { count: build.fileCount })} · {formatBytes(build.sizeBytes, i18n.language)}
                 </span>
               </Facts>
@@ -644,7 +644,7 @@ export default function ProjectDashboard(): JSX.Element {
             <>
               <Metric tone="muted">{t('dashboard.build.never')}</Metric>
               <Facts>
-                <span className="text-slate-500 dark:text-slate-400">{t('dashboard.build.neverHint')}</span>
+                <span className="text-text-muted">{t('dashboard.build.neverHint')}</span>
               </Facts>
             </>
           )}
@@ -665,8 +665,8 @@ export default function ProjectDashboard(): JSX.Element {
               </Metric>
               <Facts>
                 {targets.slice(0, 3).map((target) => (
-                  <span key={target.id} className="truncate text-slate-500 dark:text-slate-400">
-                    {target.name} <span className="text-slate-500 dark:text-slate-400">· {target.destination.type}</span>
+                  <span key={target.id} className="truncate text-text-muted">
+                    {target.name} <span className="text-text-muted">· {target.destination.type}</span>
                   </span>
                 ))}
               </Facts>
@@ -675,7 +675,7 @@ export default function ProjectDashboard(): JSX.Element {
             <>
               <Metric tone="muted">{t('dashboard.publish.none')}</Metric>
               <Facts>
-                <span className="text-slate-500 dark:text-slate-400">{t('dashboard.publish.noneHint')}</span>
+                <span className="text-text-muted">{t('dashboard.publish.noneHint')}</span>
               </Facts>
             </>
           )}
@@ -697,7 +697,7 @@ export default function ProjectDashboard(): JSX.Element {
             <>
               <Skeleton className="h-5 w-3/4" />
               <Skeleton className="h-3 w-1/2" />
-              <p className="text-[11.5px] text-slate-500 dark:text-slate-400">{t('dashboard.updates.checking')}</p>
+              <p className="text-[11.5px] text-text-muted">{t('dashboard.updates.checking')}</p>
             </>
           ) : (
             <>
@@ -711,13 +711,13 @@ export default function ProjectDashboard(): JSX.Element {
                     : t('dashboard.updates.unknown')}
               </Metric>
               <Facts>
-                <span className="text-slate-500 dark:text-slate-400">
+                <span className="text-text-muted">
                   {pluginsBehind > 0
                     ? t('dashboard.updates.pluginsBehind', { count: pluginsBehind })
                     : t('dashboard.updates.pluginsCurrent', { count: pluginUpdates?.length ?? 0 })}
                 </span>
                 {pluginsUnknown > 0 && (
-                  <span className="text-slate-500 dark:text-slate-400">
+                  <span className="text-text-muted">
                     {t('dashboard.updates.checkFailed', { count: pluginsUnknown })}
                   </span>
                 )}
@@ -740,13 +740,13 @@ export default function ProjectDashboard(): JSX.Element {
                 <MetricNote>{t('dashboard.backups.states', { count: snapshots.length })}</MetricNote>
               </Metric>
               <Facts>
-                <span className="text-slate-500 dark:text-slate-400">
+                <span className="text-text-muted">
                   {t('dashboard.backups.newest', {
                     when: formatRelativeTime(newestSnapshot?.createdAt, i18n.language) ?? '–'
                   })}
                 </span>
                 {newestSnapshot && (
-                  <span className="truncate text-slate-500 dark:text-slate-400">
+                  <span className="truncate text-text-muted">
                     {newestSnapshot.label || t(`backups.kinds.${newestSnapshot.kind}`)}
                   </span>
                 )}
@@ -756,7 +756,7 @@ export default function ProjectDashboard(): JSX.Element {
             <>
               <Metric tone="muted">{t('dashboard.backups.none')}</Metric>
               <Facts>
-                <span className="text-slate-500 dark:text-slate-400">{t('dashboard.backups.noneHint')}</span>
+                <span className="text-text-muted">{t('dashboard.backups.noneHint')}</span>
               </Facts>
             </>
           )}
@@ -783,7 +783,7 @@ export default function ProjectDashboard(): JSX.Element {
             {t('dashboard.openProjectFolder')}
           </span>
         </Button>
-        {buildMessage && <span className="text-xs text-slate-500 dark:text-slate-400">{buildMessage}</span>}
+        {buildMessage && <span className="text-xs text-text-muted">{buildMessage}</span>}
       </div>
     </div>
   )
@@ -792,7 +792,7 @@ export default function ProjectDashboard(): JSX.Element {
 function Row({ label, children }: { label: string; children: ReactNode }): JSX.Element {
   return (
     <div className="flex min-w-0 items-baseline gap-2.5">
-      <dt className="w-20 shrink-0 text-[11px] text-slate-500 dark:text-slate-400">{label}</dt>
+      <dt className="w-20 shrink-0 text-[11px] text-text-muted">{label}</dt>
       <dd className="m-0 min-w-0 truncate text-[12.5px] text-slate-700 dark:text-slate-300">{children}</dd>
     </div>
   )

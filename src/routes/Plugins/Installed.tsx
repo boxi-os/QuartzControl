@@ -518,7 +518,7 @@ export default function PluginsInstalled(): JSX.Element {
         <div className="relative w-full max-w-xs">
           <Search
             size={14}
-            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400"
+            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted"
             aria-hidden
           />
           <TextInput
@@ -536,31 +536,31 @@ export default function PluginsInstalled(): JSX.Element {
               className={`rounded-[6px] px-3 py-1 text-[13px] font-medium transition-colors ${
                 enabledFilter === key
                   ? 'bg-white text-slate-900 shadow-sm dark:bg-white/20 dark:text-white'
-                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                  : 'text-text-secondary hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               {t(`pluginsInstalled.filters.${key}`)}
             </button>
           ))}
         </div>
-        <p className="ml-auto text-[13px] text-slate-500 dark:text-slate-400">
+        <p className="ml-auto text-[13px] text-text-muted">
           {filtering
             ? t('pluginsInstalled.countFiltered', { visible: visibleCount, total: items.length })
             : t('pluginsInstalled.countActive', { active: activeCount, total: items.length })}
         </p>
       </div>
 
-      {filtering && <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('pluginsInstalled.reorderDisabledByFilter')}</p>}
+      {filtering && <p className="mb-3 text-xs text-text-muted">{t('pluginsInstalled.reorderDisabledByFilter')}</p>}
 
       {message && <p className="mb-4 text-sm text-red-600 dark:text-red-400">{message}</p>}
 
-      {items.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">{t('pluginsInstalled.none')}</p>}
-      {items.length > 0 && visibleCount === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">{t('pluginsInstalled.noMatches')}</p>}
+      {items.length === 0 && <p className="text-sm text-text-muted">{t('pluginsInstalled.none')}</p>}
+      {items.length > 0 && visibleCount === 0 && <p className="text-sm text-text-muted">{t('pluginsInstalled.noMatches')}</p>}
 
       {frameItems.some(matches) && (
         <section className="mb-8">
           <h2 className="mb-1 text-sm font-semibold">{t('pluginsInstalled.framesHeading')}</h2>
-          <p className="mb-3 max-w-3xl text-xs text-slate-500 dark:text-slate-400">{t('pluginsInstalled.framesDescription')}</p>
+          <p className="mb-3 max-w-3xl text-xs text-text-muted">{t('pluginsInstalled.framesDescription')}</p>
           <div className={PLUGIN_LIST}>
             {/* Frames are not part of either sequence - they are registered plugins without an
                 order of their own - so this group has no handle and no arrows. */}
@@ -574,7 +574,7 @@ export default function PluginsInstalled(): JSX.Element {
       {componentItems.some(matches) && (
         <section className="mb-8">
           <h2 className="mb-1 text-sm font-semibold">{t('pluginsInstalled.componentsHeading')}</h2>
-          <p className="mb-3 max-w-3xl text-xs text-slate-500 dark:text-slate-400">{t('pluginsInstalled.componentsDescription')}</p>
+          <p className="mb-3 max-w-3xl text-xs text-text-muted">{t('pluginsInstalled.componentsDescription')}</p>
           <div className="flex flex-col gap-5">
             {positionKeys.map((position) => {
               const group = byPosition.get(position)!
@@ -610,7 +610,7 @@ export default function PluginsInstalled(): JSX.Element {
       {processingItems.some(matches) && (
         <section>
           <h2 className="mb-1 text-sm font-semibold">{t('pluginsInstalled.processingHeading')}</h2>
-          <p className="mb-3 max-w-3xl text-xs text-slate-500 dark:text-slate-400">{t('pluginsInstalled.processingDescription')}</p>
+          <p className="mb-3 max-w-3xl text-xs text-text-muted">{t('pluginsInstalled.processingDescription')}</p>
           <div className="flex flex-col gap-5">
             {pageTypeItems.some(matches) && (
               <div>
@@ -674,7 +674,7 @@ export default function PluginsInstalled(): JSX.Element {
 
       <section className="mt-10 border-t border-black/[0.06] pt-5 dark:border-white/10">
         <h2 className="mb-1 text-sm font-semibold">{t('pluginsInstalled.maintenanceHeading')}</h2>
-        <p className="mb-3 max-w-3xl text-xs text-slate-500 dark:text-slate-400">{t('pluginsInstalled.maintenanceDescription')}</p>
+        <p className="mb-3 max-w-3xl text-xs text-text-muted">{t('pluginsInstalled.maintenanceDescription')}</p>
         <div className="flex flex-wrap gap-2">
           <Button variant="ghost" onClick={() => runMaintenance('install')} disabled={maintenance !== null || busy}>
             {maintenance === 'install' ? t('pluginsInstalled.installFromLockRunning') : t('pluginsInstalled.installFromLock')}
@@ -696,10 +696,10 @@ export default function PluginsInstalled(): JSX.Element {
 // would break the link between this UI and the file it edits.
 function GroupHeading({ label, rawKey, count }: { label: string; rawKey?: string; count: number }): JSX.Element {
   return (
-    <h3 className="mb-2 flex items-baseline gap-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+    <h3 className="mb-2 flex items-baseline gap-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">
       {label}
-      {rawKey && <span className="font-mono text-[11px] font-normal normal-case tracking-normal text-slate-500 dark:text-slate-400">{rawKey}</span>}
-      <span className="font-normal text-slate-500 dark:text-slate-400">({count})</span>
+      {rawKey && <span className="font-mono text-[11px] font-normal normal-case tracking-normal text-text-muted">{rawKey}</span>}
+      <span className="font-normal text-text-muted">({count})</span>
     </h3>
   )
 }
@@ -944,7 +944,7 @@ function PluginRow({
             {outdated.has(plugin.name) && <Badge tone="amber">{t('pluginsInstalled.updateAvailable')}</Badge>}
             {savedIndex === index && <span className="text-[11px] text-green-600 dark:text-green-400">{t('pluginsInstalled.savedFlash')}</span>}
           </div>
-          <p className="truncate text-xs text-slate-500 dark:text-slate-400" title={sourceLabel(plugin.source)}>
+          <p className="truncate text-xs text-text-muted" title={sourceLabel(plugin.source)}>
             {frame ? t('pluginsInstalled.frameSource') : sourceLabel(plugin.source)}
             {url && (
               <a
@@ -952,14 +952,14 @@ function PluginRow({
                 target="_blank"
                 rel="noreferrer"
                 title={t('pluginsInstalled.openRepo')}
-                className="ml-1 inline-flex translate-y-[2px] text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400"
+                className="ml-1 inline-flex translate-y-[2px] text-text-muted hover:text-blue-600 dark:hover:text-blue-400"
               >
                 <ExternalLink size={11} aria-hidden />
               </a>
             )}
           </p>
-          {description && <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{description}</p>}
-          {!expanded && summary && <p className="mt-0.5 font-mono text-[11px] text-slate-500 dark:text-slate-400">{summary}</p>}
+          {description && <p className="mt-0.5 text-xs text-text-muted">{description}</p>}
+          {!expanded && summary && <p className="mt-0.5 font-mono text-[11px] text-text-muted">{summary}</p>}
         </div>
 
         {/* Fixed widths, not content-sized: across ~50 rows a button group that grew with the
@@ -1017,7 +1017,7 @@ function PluginRow({
           {/* groupOptions only makes sense once the plugin is actually placed in a group */}
           {layout.group && (
             <div className="mt-2 border-t border-dashed border-black/10 pt-2 dark:border-white/10">
-              <p className="mb-1 font-mono text-[11px] text-slate-500 dark:text-slate-400">groupOptions</p>
+              <p className="mb-1 font-mono text-[11px] text-text-muted">groupOptions</p>
               <FieldGroup
                 fields={buildGroupOptionsFields(t)}
                 values={layout.groupOptions ?? {}}
@@ -1078,7 +1078,7 @@ function PluginOptions({
   if (schema) {
     return (
       <div className="mt-3 border-t border-black/10 pt-3 dark:border-white/10">
-        <p className="mb-2 text-[11px] text-slate-500 dark:text-slate-400">
+        <p className="mb-2 text-[11px] text-text-muted">
           <span className="font-medium">{t('pluginsInstalled.availableOptions')}</span>{' '}
           {schema
             .map(
@@ -1100,7 +1100,7 @@ function PluginOptions({
   const keys = Object.keys(options)
   return (
     <div className="mt-3 border-t border-black/10 pt-3 dark:border-white/10">
-      <p className="mb-2 text-[11px] text-slate-500 dark:text-slate-400">{t('pluginsInstalled.noSchemaInfo')}</p>
+      <p className="mb-2 text-[11px] text-text-muted">{t('pluginsInstalled.noSchemaInfo')}</p>
       <div className="flex flex-col gap-2">
         {keys.map((key) => (
           <InferredFieldRow
@@ -1159,7 +1159,7 @@ function AddOptionRow({
       >
         {t('pluginsInstalled.addOption')}
       </Button>
-      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+      <p className="text-[11px] text-text-muted">
         {duplicate ? t('pluginsInstalled.optionKeyExists') : t('pluginsInstalled.optionValueHint')}
       </p>
     </div>
@@ -1210,7 +1210,7 @@ function FieldRow({
     <div className="flex items-center gap-3">
       <Key
         {...(field.kind === 'boolean' ? {} : { htmlFor: id })}
-        className="w-40 shrink-0 font-mono text-xs text-slate-600 dark:text-slate-300"
+        className="w-40 shrink-0 font-mono text-xs text-text-secondary"
       >
         {field.name}
         {!field.optional && <span className="text-red-500"> *</span>}
@@ -1267,7 +1267,7 @@ function FieldRow({
       </div>
       {/* uses the free space to the right of the control to briefly explain the possible values,
           instead of cramming it under the (already narrow) label column */}
-      {field.description && <p className="flex-1 text-[11px] text-slate-500 dark:text-slate-400">{field.description}</p>}
+      {field.description && <p className="flex-1 text-[11px] text-text-muted">{field.description}</p>}
     </div>
   )
 }
@@ -1289,7 +1289,7 @@ function InferredFieldRow({
   // see the comment there.
   const remove = <IconButton icon={Trash2} title={t('pluginsInstalled.removeOption', { name })} onClick={onRemove} />
   const keyLabel = (
-    <label htmlFor={id} className="w-40 shrink-0 font-mono text-xs text-slate-600 dark:text-slate-300">
+    <label htmlFor={id} className="w-40 shrink-0 font-mono text-xs text-text-secondary">
       {name}
     </label>
   )
@@ -1297,7 +1297,7 @@ function InferredFieldRow({
   if (typeof value === 'boolean') {
     return (
       <div className="flex items-center gap-3">
-        <span className="w-40 shrink-0 font-mono text-xs text-slate-600 dark:text-slate-300">{name}</span>
+        <span className="w-40 shrink-0 font-mono text-xs text-text-secondary">{name}</span>
         <Toggle label={name} hideLabel checked={value} onChange={onChange} />
         {remove}
       </div>

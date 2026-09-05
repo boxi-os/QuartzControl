@@ -97,7 +97,7 @@ export default function PageTypeOverrides({
 
       <Card>
         <h3 className="mb-1 text-sm font-semibold">{t('layoutEditor.excludeHeading')}</h3>
-        <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('layoutEditor.excludeDescription')}</p>
+        <p className="mb-3 text-xs text-text-muted">{t('layoutEditor.excludeDescription')}</p>
         <div className="grid grid-cols-2 gap-1.5">
           {distinctComponentChips(config.plugins).map(({ plugin }) => {
             const excluded = (override.exclude ?? []).includes(plugin.name)
@@ -118,7 +118,7 @@ export default function PageTypeOverrides({
 
       <Card>
         <h3 className="mb-1 text-sm font-semibold">{t('layoutEditor.clearSlotsHeading')}</h3>
-        <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('layoutEditor.clearSlotsDescription')}</p>
+        <p className="mb-3 text-xs text-text-muted">{t('layoutEditor.clearSlotsDescription')}</p>
         <div className="grid grid-cols-3 gap-2">
           {POSITIONS.map((position) => (
             <Toggle

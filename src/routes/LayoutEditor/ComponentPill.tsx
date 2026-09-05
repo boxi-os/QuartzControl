@@ -104,13 +104,13 @@ export function ItemCard({
               {...dragHandleProps}
               onClick={(e) => e.stopPropagation()}
               aria-label={t('layoutEditor.componentPill.dragHandle')}
-              className="-ml-1 flex shrink-0 cursor-grab select-none items-center rounded-[6px] border border-black/10 bg-black/[0.03] p-1 text-slate-500 transition-colors hover:border-black/20 hover:bg-black/[0.08] hover:text-slate-700 active:cursor-grabbing dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200"
+              className="-ml-1 flex shrink-0 cursor-grab select-none items-center rounded-[6px] border border-black/10 bg-black/[0.03] p-1 text-text-muted transition-colors hover:border-black/20 hover:bg-black/[0.08] hover:text-slate-700 active:cursor-grabbing dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/10 dark:hover:text-slate-200"
             >
               <GripVertical size={15} />
             </span>
           )}
           <span className="truncate text-sm font-medium">{plugin.name}</span>
-          {isDuplicate && rank !== undefined && <span className="text-[11px] text-slate-500 dark:text-slate-400">#{rank}</span>}
+          {isDuplicate && rank !== undefined && <span className="text-[11px] text-text-muted">#{rank}</span>}
         </div>
         <div className="flex flex-wrap items-center justify-end gap-1.5">
           {layout?.group && (
@@ -125,7 +125,7 @@ export function ItemCard({
             <ChevronDown
               size={15}
               aria-hidden="true"
-              className={`shrink-0 text-slate-500 dark:text-slate-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
+              className={`shrink-0 text-text-muted transition-transform ${expanded ? 'rotate-180' : ''}`}
             />
           )}
         </div>
@@ -137,7 +137,7 @@ export function ItemCard({
           onClick={(e) => e.stopPropagation()}
         >
           <label className="flex flex-col gap-1 text-[12px]">
-            <span className="font-medium text-slate-600 dark:text-slate-300">{t('layoutEditor.groupLabel')}</span>
+            <span className="font-medium text-text-secondary">{t('layoutEditor.groupLabel')}</span>
             <Select value={layout?.group ?? ''} onChange={(e) => onSetGroup?.(e.target.value)} className="!py-1 text-xs">
               <option value="">{t('layoutEditor.noGroup')}</option>
               {groupNames.map((g) => (
@@ -148,7 +148,7 @@ export function ItemCard({
             </Select>
           </label>
           <label className="flex flex-col gap-1 text-[12px]">
-            <span className="font-medium text-slate-600 dark:text-slate-300">{t('layoutEditor.displayLabel')}</span>
+            <span className="font-medium text-text-secondary">{t('layoutEditor.displayLabel')}</span>
             <Select
               value={layout?.display ?? 'all'}
               onChange={(e) => onSetDisplay?.(e.target.value as PluginLayoutDeclaration['display'])}

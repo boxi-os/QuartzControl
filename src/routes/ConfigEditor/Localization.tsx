@@ -127,8 +127,8 @@ export default function Localization(): JSX.Element {
     (e) => !q || keyOf(e.path).toLowerCase().includes(q) || e.value.toLowerCase().includes(q)
   )
 
-  if (!locales) return <p className="text-sm text-slate-500 dark:text-slate-400">{t('common.loading')}</p>
-  if (locales.length === 0) return <p className="text-sm text-slate-500 dark:text-slate-400">{t('localization.none')}</p>
+  if (!locales) return <p className="text-sm text-text-muted">{t('common.loading')}</p>
+  if (locales.length === 0) return <p className="text-sm text-text-muted">{t('localization.none')}</p>
 
   return (
     <div className="flex flex-col gap-4">
@@ -143,7 +143,7 @@ export default function Localization(): JSX.Element {
             </Button>
           </>
         )}
-        <p className="min-w-0 flex-1 text-xs text-slate-500 dark:text-slate-400">{t('localization.gitAttributesExplain')}</p>
+        <p className="min-w-0 flex-1 text-xs text-text-muted">{t('localization.gitAttributesExplain')}</p>
       </div>
 
       {/* Save sits in this row rather than in the page header: the header belongs to the whole
@@ -164,7 +164,7 @@ export default function Localization(): JSX.Element {
           className="flex-1"
         />
         {dirtyKeys.length > 0 && (
-          <span className="shrink-0 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400">
+          <span className="shrink-0 whitespace-nowrap text-xs text-text-muted">
             {t('localization.unsavedCount', { count: dirtyKeys.length })}
           </span>
         )}
@@ -173,7 +173,7 @@ export default function Localization(): JSX.Element {
         </Button>
       </div>
 
-      {entries === null && <p className="text-sm text-slate-500 dark:text-slate-400">{t('common.loading')}</p>}
+      {entries === null && <p className="text-sm text-text-muted">{t('common.loading')}</p>}
 
       {/* Hundreds of short strings: a second column halves the scrolling. The multi-line
           "template" entries keep the full row - they're the ones that actually need the width. */}
@@ -190,7 +190,7 @@ export default function Localization(): JSX.Element {
                 }`}
               >
                 <div className="mb-1 flex items-center gap-2">
-                  <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{key}</span>
+                  <span className="font-mono text-xs text-text-muted">{key}</span>
                   {entry.kind === 'template' && <Badge>{t('localization.advancedBadge')}</Badge>}
                 </div>
                 {entry.kind === 'string' ? (
@@ -207,7 +207,7 @@ export default function Localization(): JSX.Element {
               </div>
             )
           })}
-          {filtered.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">{t('localization.noResults')}</p>}
+          {filtered.length === 0 && <p className="text-sm text-text-muted">{t('localization.noResults')}</p>}
         </div>
       )}
     </div>

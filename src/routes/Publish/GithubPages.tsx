@@ -64,11 +64,11 @@ export default function GithubPages({ projectPath, branch }: { projectPath: stri
       </div>
 
       {load.error && <p className="mb-2 text-xs text-red-600 dark:text-red-400">{load.error}</p>}
-      {loaded && !info && <p className="text-xs text-slate-500 dark:text-slate-400">{t('publish.pages.noGithubOrigin')}</p>}
+      {loaded && !info && <p className="text-xs text-text-muted">{t('publish.pages.noGithubOrigin')}</p>}
       {info?.error && <p className="mb-2 text-xs text-red-600 dark:text-red-400">{info.error}</p>}
 
       {info && !info.configured && !info.error && (
-        <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('publish.pages.notConfigured')}</p>
+        <p className="mb-3 text-xs text-text-muted">{t('publish.pages.notConfigured')}</p>
       )}
 
       {info?.configured && (
@@ -133,7 +133,7 @@ export default function GithubPages({ projectPath, branch }: { projectPath: stri
         </Button>
       </div>
 
-      <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('publish.pages.cnameHint')}</p>
+      <p className="mt-2 text-xs text-text-muted">{t('publish.pages.cnameHint')}</p>
         </>
       )}
 

@@ -312,7 +312,7 @@ export default function GlobalBoard({
           }))}
         />
         <div className="flex items-center gap-2">
-          <label className="text-xs font-medium text-slate-500 dark:text-slate-400">{t('layoutEditor.previewPageTypeLabel')}</label>
+          <label className="text-xs font-medium text-text-muted">{t('layoutEditor.previewPageTypeLabel')}</label>
           <Select value={previewPageType} onChange={(e) => setPreviewPageType(e.target.value)} className="w-40">
             {pageTypes.map((pt) => (
               <option key={pt} value={pt}>
@@ -320,7 +320,7 @@ export default function GlobalBoard({
               </option>
             ))}
           </Select>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-text-muted">
             {activeFrame
               ? t('layoutEditor.activeFrameLabel', { name: activeFrame.frameName })
               : builtinFrame
@@ -376,7 +376,7 @@ export default function GlobalBoard({
                 <div key={area.id} style={{ gridArea: area.name }}>
                   <AreaBox label={area.name} slotLabel={t(`positions.${area.slot}`, area.slot)}>
                     {area.slot === 'pageBody' ? (
-                      <div className="rounded-[4px] border border-dashed border-black/10 px-2 py-3 text-center text-slate-500 dark:text-slate-400 dark:border-white/10">
+                      <div className="rounded-[4px] border border-dashed border-black/10 px-2 py-3 text-center text-text-muted dark:border-white/10">
                         {t('layoutEditor.frameBuilder.preview.pageContent')}
                       </div>
                     ) : (
@@ -411,7 +411,7 @@ export default function GlobalBoard({
               )}
               <div
                 style={{ gridArea: 'center' }}
-                className="rounded-[4px] border border-dashed border-black/10 px-2 py-3 text-center text-slate-500 dark:text-slate-400 dark:border-white/10"
+                className="rounded-[4px] border border-dashed border-black/10 px-2 py-3 text-center text-text-muted dark:border-white/10"
               >
                 {t('layoutEditor.frameBuilder.preview.pageContent')}
               </div>
@@ -453,7 +453,7 @@ export default function GlobalBoard({
                 <AreaBox label={t('positions.beforeBody')}>
                   <PositionSlot position="beforeBody" indices={positions.beforeBody} direction="column" {...slotProps} />
                 </AreaBox>
-                <div className="rounded-[4px] border border-dashed border-black/10 px-2 py-3 text-center text-slate-500 dark:text-slate-400 dark:border-white/10">
+                <div className="rounded-[4px] border border-dashed border-black/10 px-2 py-3 text-center text-text-muted dark:border-white/10">
                   {t('layoutEditor.frameBuilder.preview.pageContent')}
                 </div>
                 <AreaBox label={t('positions.afterBody')}>
@@ -525,7 +525,7 @@ function ComponentPalette({
     // box - a duplicate dragged back from elsewhere on the board only needs to land generally in
     // this region, not thread a needle into the narrower box below.
     <div ref={setNodeRef} className="flex flex-col gap-1.5">
-      <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+      <p className="text-[11px] font-medium text-text-muted">
         {removableActive ? t('layoutEditor.componentPill.paletteDropToRemove') : t('layoutEditor.componentPill.paletteLabel')}
       </p>
       <div
@@ -541,7 +541,7 @@ function ComponentPalette({
           <DraggablePaletteChip key={index} index={index} plugin={plugin} />
         ))}
       </div>
-      <p className="text-[11px] text-slate-500 dark:text-slate-400">{t('layoutEditor.componentPill.paletteHint')}</p>
+      <p className="text-[11px] text-text-muted">{t('layoutEditor.componentPill.paletteHint')}</p>
     </div>
   )
 }
@@ -568,7 +568,7 @@ function AreaBox({ label, slotLabel, children }: { label: string; slotLabel?: st
   return (
     <div className="flex h-full flex-col gap-1.5 rounded-[6px] border border-slate-300 bg-white p-2 shadow-sm dark:border-white/15 dark:bg-white/[0.03]">
       <div className="flex items-center justify-between gap-1">
-        <span className="truncate text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{label}</span>
+        <span className="truncate text-[11px] font-semibold uppercase tracking-wide text-text-secondary">{label}</span>
         {slotLabel && slotLabel !== label && <Badge>{slotLabel}</Badge>}
       </div>
       {children}
@@ -615,7 +615,7 @@ function PositionSlot({
         ref={setNodeRef}
         className={`flex min-h-[52px] gap-2 rounded-md bg-black/[0.02] p-2 dark:bg-white/[0.03] ${direction === 'row' ? 'flex-row flex-wrap' : 'flex-col'}`}
       >
-        {indices.length === 0 && <p className="px-2 py-3 text-center text-xs text-slate-500 dark:text-slate-400">{t('layoutEditor.emptySlot')}</p>}
+        {indices.length === 0 && <p className="px-2 py-3 text-center text-xs text-text-muted">{t('layoutEditor.emptySlot')}</p>}
         {indices.map((index) => (
           <SortableItem
             key={index}
@@ -709,9 +709,9 @@ function GroupsPanel({
   return (
     <Card>
       <h3 className="mb-1 text-sm font-semibold">{t('layoutEditor.groupsPanel.title')}</h3>
-      <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('layoutEditor.groupsPanel.description')}</p>
+      <p className="mb-3 text-xs text-text-muted">{t('layoutEditor.groupsPanel.description')}</p>
 
-      {names.length === 0 && <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('layoutEditor.groupsPanel.none')}</p>}
+      {names.length === 0 && <p className="mb-3 text-xs text-text-muted">{t('layoutEditor.groupsPanel.none')}</p>}
 
       <div className="mb-3 flex flex-col gap-2">
         {names.map((name, i) => {
@@ -748,7 +748,7 @@ function GroupsPanel({
                   placeholder={t('layoutEditor.groupsPanel.priorityPlaceholder')}
                 />
               </Field>
-              <button type="button" onClick={() => onDelete(name)} className="mb-2 ml-auto text-xs text-slate-500 dark:text-slate-400 underline">
+              <button type="button" onClick={() => onDelete(name)} className="mb-2 ml-auto text-xs text-text-muted underline">
                 {t('layoutEditor.groupsPanel.delete')}
               </button>
             </div>

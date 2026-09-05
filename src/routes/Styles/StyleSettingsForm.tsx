@@ -88,7 +88,7 @@ export default function StyleSettingsForm({
   return (
     <div>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-slate-500 dark:text-slate-400">
+        <p className="text-xs text-text-muted">
           {t('styles.styleSettings.sourceNote', { theme: schema.themeName, author: schema.author, count: settingCount })}
         </p>
         <TextInput
@@ -153,7 +153,7 @@ function GroupView({
         </button>
       )}
       {group.heading?.description && isOpen && (
-        <p className="mb-1 pl-5 text-[11px] text-slate-500 dark:text-slate-400">{group.heading.description}</p>
+        <p className="mb-1 pl-5 text-[11px] text-text-muted">{group.heading.description}</p>
       )}
       {isOpen && (
         <>
@@ -200,7 +200,7 @@ function FieldRow({
 
   if (field.kind === 'info-text') {
     return (
-      <p className="pl-5 text-[11px] text-slate-500 dark:text-slate-400">
+      <p className="pl-5 text-[11px] text-text-muted">
         {field.title}
         {field.description ? ` — ${field.description}` : ''}
       </p>
@@ -221,13 +221,13 @@ function FieldRow({
           <button
             type="button"
             onClick={() => onChange(Object.fromEntries(keys.map((k) => [k, undefined])))}
-            className="text-[11px] text-slate-500 dark:text-slate-400 underline"
+            className="text-[11px] text-text-muted underline"
           >
             {t('styles.styleSettings.reset')}
           </button>
         )}
       </div>
-      {field.description && <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">{field.description}</p>}
+      {field.description && <p className="mt-0.5 text-[11px] text-text-muted">{field.description}</p>}
     </div>
   )
 }
@@ -364,7 +364,7 @@ function ColorControl({
   const { hex, isSet } = readColor(field, values, mode)
   return (
     <div className="flex items-center gap-1.5">
-      {label && <span className="text-[11px] text-slate-500 dark:text-slate-400">{label}</span>}
+      {label && <span className="text-[11px] text-text-muted">{label}</span>}
       <ColorPicker
         value={hex ?? undefined}
         hex={hex ?? null}

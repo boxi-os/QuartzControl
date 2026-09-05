@@ -98,7 +98,7 @@ export default function Basics(): JSX.Element {
           {/* The single most misread setting on this page: "local" does not mean "download and
               serve locally", it means Quartz fetches nothing at all. Whether the fetched fonts are
               self-hosted is the separate switch below. */}
-          <span className="text-[11px] text-slate-500 dark:text-slate-400">
+          <span className="text-[11px] text-text-muted">
             {fontOrigin === 'local' ? t('themeEditor.localHint') : t('themeEditor.googleFontsHint')}
           </span>
         </Field>
@@ -175,11 +175,11 @@ function FontDelivery({
     <div className="rounded-md border border-black/[0.06] p-3 dark:border-white/10">
       <h3 className="mb-1 text-sm font-semibold">{t('themeEditor.delivery.heading')}</h3>
       <div className="mb-2 flex flex-col gap-0.5 text-xs">
-        {loaders.length === 0 && <p className="text-slate-500 dark:text-slate-400">{t('styleEditor.current.noLoader')}</p>}
+        {loaders.length === 0 && <p className="text-text-muted">{t('styleEditor.current.noLoader')}</p>}
         {loaders.map((loader) => (
           <p
             key={`${loader.via}-${loader.mode}`}
-            className={loader.mode === 'google' ? 'text-amber-700 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'}
+            className={loader.mode === 'google' ? 'text-amber-700 dark:text-amber-400' : 'text-text-muted'}
           >
             {t(`themeEditor.delivery.state.${loader.via}.${loader.mode}`)}
           </p>
@@ -190,7 +190,7 @@ function FontDelivery({
         checked={loaders.some((l) => l.mode === 'selfHosted') && !google}
         onChange={(checked) => onChange(withSelfHostedFonts(config, checked))}
       />
-      <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{t('themeEditor.delivery.description')}</p>
+      <p className="mt-1.5 text-xs text-text-muted">{t('themeEditor.delivery.description')}</p>
 
       {/* Its own control, not part of the switch above: there is no option to serve the theme's
           fonts locally, so the only way to stop the CDN requests is to drop them - which changes
@@ -202,7 +202,7 @@ function FontDelivery({
             checked
             onChange={() => onChange(withThemeFonts(config, false))}
           />
-          <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{t('themeEditor.delivery.themeFontsHint')}</p>
+          <p className="mt-1.5 text-xs text-text-muted">{t('themeEditor.delivery.themeFontsHint')}</p>
         </div>
       )}
       {!themeFonts && hasTheme && (
@@ -212,7 +212,7 @@ function FontDelivery({
             checked={false}
             onChange={() => onChange(withThemeFonts(config, true))}
           />
-          <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">{t('themeEditor.delivery.themeFontsOff')}</p>
+          <p className="mt-1.5 text-xs text-text-muted">{t('themeEditor.delivery.themeFontsOff')}</p>
         </div>
       )}
       {/* Both self-hosting paths rewrite the font URLs to <baseUrl>/static/fonts, and the plugin
@@ -257,7 +257,7 @@ function CssFixes(): JSX.Element | null {
   return (
     <div className="rounded-md border border-black/[0.06] p-3 dark:border-white/10">
       <h3 className="mb-1 text-sm font-semibold">{t('styles.fixes.heading')}</h3>
-      <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">{t('styles.fixes.description')}</p>
+      <p className="mb-2 text-xs text-text-muted">{t('styles.fixes.description')}</p>
       <div className="flex flex-col gap-2">
         {applicable.map((fix) => {
           const existing = fileSet?.files.find((f) => f.name === fix.fileName)
@@ -265,10 +265,10 @@ function CssFixes(): JSX.Element | null {
             <div key={fix.id} className="flex flex-wrap items-center gap-2">
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-medium">{t(`styles.fixes.${fix.id}.title`)}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">{t(`styles.fixes.${fix.id}.summary`)}</p>
+                <p className="text-xs text-text-muted">{t(`styles.fixes.${fix.id}.summary`)}</p>
               </div>
               {existing ? (
-                <span className="flex shrink-0 items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                <span className="flex shrink-0 items-center gap-2 text-xs text-text-muted">
                   {t('styles.fixes.alreadyAdded', { file: existing.name })}
                   <button type="button" className="underline" onClick={() => goToTab('customCss')}>
                     {t('styles.fixes.open')}
@@ -335,7 +335,7 @@ function LocalFontImport({
   return (
     <div className="rounded-md border border-black/[0.06] p-3 dark:border-white/10">
       <h3 className="mb-1 text-sm font-semibold">{t('themeEditor.localFontHeading')}</h3>
-      <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">{t('themeEditor.localFontDescription')}</p>
+      <p className="mb-2 text-xs text-text-muted">{t('themeEditor.localFontDescription')}</p>
       {!pendingPath && (
         <Button variant="ghost" onClick={pickFile}>
           {t('themeEditor.localFontPick')}
@@ -364,7 +364,7 @@ function LocalFontImport({
           </Button>
         </div>
       )}
-      {message && <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">{message}</p>}
+      {message && <p className="mt-2 text-xs text-text-secondary">{message}</p>}
     </div>
   )
 }
@@ -407,7 +407,7 @@ function ColorGroup({
       )}
       {nested.map(([key, v]) => (
         <div key={key} className="rounded-md border border-slate-200 p-3 dark:border-white/10">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{key}</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">{key}</p>
           <ColorGroup
             value={v as Record<string, unknown>}
             onChange={(next) => onChange({ ...value, [key]: next })}

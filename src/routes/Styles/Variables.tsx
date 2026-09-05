@@ -149,7 +149,7 @@ export default function Variables(): JSX.Element {
 
       <Card>
         <h3 className="mb-1 text-sm font-semibold">{t('styles.variables.mainHeading')}</h3>
-        <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('styles.variables.mainDescription')}</p>
+        <p className="mb-3 text-xs text-text-muted">{t('styles.variables.mainDescription')}</p>
         <div className="flex flex-col gap-1">
           {curatedGroups.map(([group, keys]) => (
             <VariableGroup
@@ -246,23 +246,23 @@ function AllVariables({
           {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
           <h3 className="text-sm font-semibold">{t('styles.variables.allHeading')}</h3>
         </button>
-        <span className="text-xs text-slate-500 dark:text-slate-400">
+        <span className="text-xs text-text-muted">
           {t('styles.variables.counter', { overridden: overriddenCount, total: keys.length })}
         </span>
       </div>
 
       {open && (
         <div className="mt-3">
-          <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mb-2 text-xs text-text-muted">
             {themeId
               ? t('styles.variables.allDescriptionTheme', { themeId, count: keys.length })
               : t('styles.variables.allDescription')}
           </p>
 
-          {loading && <p className="text-xs text-slate-500 dark:text-slate-400">{t('common.loading')}</p>}
+          {loading && <p className="text-xs text-text-muted">{t('common.loading')}</p>}
 
           {!loading && keys.length === 0 && (
-            <div className="rounded-md border border-black/[0.06] p-3 text-xs text-slate-500 dark:border-white/10 dark:text-slate-400">
+            <div className="rounded-md border border-black/[0.06] p-3 text-xs text-text-muted dark:border-white/10">
               <p>{t('styles.variables.noSources')}</p>
               <p className="mt-1">
                 {sources?.theme === false && t('styles.variables.noTheme')}{' '}
@@ -283,7 +283,7 @@ function AllVariables({
                   placeholder={t('styles.variables.searchPlaceholder')}
                   className="w-72"
                 />
-                <label className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
+                <label className="flex items-center gap-1.5 text-xs text-text-secondary">
                   <input type="checkbox" checked={onlyChanged} onChange={(e) => setOnlyChanged(e.target.checked)} />
                   {t('styles.variables.onlyChanged')}
                 </label>
@@ -293,7 +293,7 @@ function AllVariables({
               </div>
 
               {matches.length === 0 && (
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-text-muted">
                   {q || onlyChanged
                     ? t('styles.variables.noResults')
                     : t('styles.variables.searchHint', { count: keys.length })}
@@ -303,14 +303,14 @@ function AllVariables({
               <div className="flex flex-col gap-4">
                 {Array.from(grouped.entries()).map(([group, groupKeys]) => (
                   <div key={group}>
-                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{groupLabel(t, group)}</p>
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-text-secondary">{groupLabel(t, group)}</p>
                     <div className="flex flex-col gap-0.5">{groupKeys.map(renderRow)}</div>
                   </div>
                 ))}
               </div>
 
               {matches.length > visible.length && (
-                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                <p className="mt-2 text-xs text-text-muted">
                   {t('styles.variables.moreResults', { count: matches.length - visible.length })}
                 </p>
               )}

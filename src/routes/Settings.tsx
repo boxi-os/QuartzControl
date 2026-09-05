@@ -73,12 +73,12 @@ export default function Settings(): JSX.Element {
           <button
             type="button"
             onClick={() => (location.key === 'default' ? navigate('/') : navigate(-1))}
-            className="text-[13px] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            className="text-[13px] text-text-muted hover:text-slate-900 dark:hover:text-white"
           >
             ← {t('common.back')}
           </button>
           <h1 className="mb-1 mt-2 text-2xl font-semibold">{t('settings.title')}</h1>
-          <p className="mb-6 text-[13px] text-slate-500 dark:text-slate-400">{t('settings.subtitle')}</p>
+          <p className="mb-6 text-[13px] text-text-muted">{t('settings.subtitle')}</p>
 
           <div className="flex flex-col gap-4">
             <AppearanceSection settings={settings} persist={persist} />
@@ -113,7 +113,7 @@ function Section({
         </div>
         <div className="min-w-0">
           <h2 className="text-heading font-semibold">{title}</h2>
-          <p className="mt-0.5 text-[13px] text-slate-500 dark:text-slate-400">{description}</p>
+          <p className="mt-0.5 text-[13px] text-text-muted">{description}</p>
         </div>
       </div>
       {children}
@@ -171,7 +171,7 @@ function AppearanceSection({
           </Select>
         </Field>
       </div>
-      <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{t('settings.appearance.appliedImmediately')}</p>
+      <p className="mt-3 text-xs text-text-muted">{t('settings.appearance.appliedImmediately')}</p>
     </Section>
   )
 }
@@ -217,31 +217,31 @@ function RuntimeSection({
           ]}
         />
       </FieldGroup>
-      <p className="mt-2 text-[13px] text-slate-500 dark:text-slate-400">
+      <p className="mt-2 text-[13px] text-text-muted">
         {mode === 'embedded'
           ? t('settings.runtime.inUseEmbedded', { node: node?.version ?? '—', npm: npm?.version ?? '—' })
           : t('settings.runtime.inUseSystem', { node: node?.version ?? t('settings.runtime.noSystemNode') })}
       </p>
-      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+      <p className="mt-1 text-xs text-text-muted">
         {mode === 'embedded'
           ? info && info.hostNodeVersion
             ? t('settings.runtime.hintSwitchable', { node: info.hostNodeVersion })
             : t('settings.runtime.hintNoHostNode')
           : t('settings.runtime.hintSystem')}
       </p>
-      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('settings.runtime.appliesToNewProcesses')}</p>
+      <p className="mt-1 text-xs text-text-muted">{t('settings.runtime.appliesToNewProcesses')}</p>
 
       {/* git steht hier mit, weil die Frage dieselbe ist - womit führt die App aus - die Antwort
           aber die umgekehrte: das vom Rechner gewinnt, weil es die Einrichtung des Nutzers trägt.
           Kein Schalter: es gibt keinen Fall, in dem jemand das mitgelieferte git *vorziehen* will. */}
       <div className="mt-4 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
-        <p className="text-[13px] text-slate-500 dark:text-slate-400">
+        <p className="text-[13px] text-text-muted">
           {git?.source === 'embedded'
             ? t('settings.runtime.gitBundled', { version: versionNumber(git.version) })
             : t('settings.runtime.gitHost', { version: versionNumber(git?.version ?? null) })}
         </p>
         {git?.source === 'embedded' && (
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-xs text-text-muted">
             {t('settings.runtime.gitLicense')}{' '}
             <button
               type="button"
@@ -390,19 +390,19 @@ function GithubSection(): JSX.Element {
           {status === 'valid' && account ? (
             <>
               <Badge tone="green">{t('settings.github.valid')}</Badge>
-              <span className="text-slate-600 dark:text-slate-300">
+              <span className="text-text-secondary">
                 {account.name ? `${account.name} (@${account.login})` : `@${account.login}`}
               </span>
             </>
           ) : status === 'rejected' ? (
             <>
               <Badge tone="red">{t('settings.github.rejected')}</Badge>
-              <span className="text-slate-600 dark:text-slate-300">{t('settings.github.rejectedHint')}</span>
+              <span className="text-text-secondary">{t('settings.github.rejectedHint')}</span>
             </>
           ) : status === 'unknown' ? (
             <>
               <Badge>{t('settings.github.unknown')}</Badge>
-              <span className="text-slate-600 dark:text-slate-300">{t('settings.github.unknownHint')}</span>
+              <span className="text-text-secondary">{t('settings.github.unknownHint')}</span>
             </>
           ) : (
             <Badge tone="slate">{t('settings.github.checking')}</Badge>
@@ -419,7 +419,7 @@ function GithubSection(): JSX.Element {
           </Button>
           <button
             type="button"
-            className="text-[13px] text-slate-500 dark:text-slate-400 underline hover:text-slate-900 dark:hover:text-white"
+            className="text-[13px] text-text-muted underline hover:text-slate-900 dark:hover:text-white"
             onClick={() => remove.run()}
             disabled={remove.pending}
           >
@@ -445,7 +445,7 @@ function GithubSection(): JSX.Element {
       {(save.error || remove.error) && (
         <p className="mt-2 text-[13px] text-red-600 dark:text-red-400">{save.error ?? remove.error}</p>
       )}
-      <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{t('settings.github.scopeHint')}</p>
+      <p className="mt-3 text-xs text-text-muted">{t('settings.github.scopeHint')}</p>
     </Section>
   )
 }
@@ -506,7 +506,7 @@ function ConnectionsSection(): JSX.Element {
   return (
     <Section icon={Plug} title={t('settings.connections.title')} description={t('settings.connections.description')}>
       {listed.length === 0 && !draft && (
-        <p className="mb-3 text-[13px] text-slate-500 dark:text-slate-400">{t('settings.connections.empty')}</p>
+        <p className="mb-3 text-[13px] text-text-muted">{t('settings.connections.empty')}</p>
       )}
 
       <div className="flex flex-col gap-2">
@@ -524,12 +524,12 @@ function ConnectionsSection(): JSX.Element {
                 )}
                 {connection.kind === 'ftp' && !connection.secure && <Badge tone="amber">{t('settings.connections.plaintext')}</Badge>}
               </div>
-              <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-0.5 truncate text-xs text-text-muted">
                 {connectionSummary(connection)}
                 {usage[connection.id] > 0 && ` · ${t('settings.connections.usedBy', { count: usage[connection.id] })}`}
               </p>
               {connection.kind === 'ssh' && (
-                <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400" title={connection.hostKey?.fingerprint}>
+                <p className="mt-0.5 truncate text-xs text-text-muted" title={connection.hostKey?.fingerprint}>
                   {connection.hostKey
                     ? `${t('publish.hostKeyPinned')}: ${connection.hostKey.fingerprint}`
                     : t('publish.hostKeyUnknown')}
@@ -582,7 +582,7 @@ function ConnectionsSection(): JSX.Element {
         </div>
       )}
 
-      <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">{t('settings.connections.targetHint')}</p>
+      <p className="mt-3 text-xs text-text-muted">{t('settings.connections.targetHint')}</p>
     </Section>
   )
 }
@@ -631,8 +631,8 @@ function MaintenanceSection(): JSX.Element {
       )}
       <div className="grid gap-4 lg:grid-cols-2">
         <div>
-          <p className="text-[13px] font-medium text-slate-600 dark:text-slate-300">{t('settings.maintenance.cache')}</p>
-          <p className="mt-0.5 text-[13px] text-slate-500 dark:text-slate-400">
+          <p className="text-[13px] font-medium text-text-secondary">{t('settings.maintenance.cache')}</p>
+          <p className="mt-0.5 text-[13px] text-text-muted">
             {info
               ? t('settings.maintenance.cacheSize', {
                   count: info.themeDocsCache.entries,
@@ -640,7 +640,7 @@ function MaintenanceSection(): JSX.Element {
                 })
               : '…'}
           </p>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('settings.maintenance.cacheHint')}</p>
+          <p className="mt-1 text-xs text-text-muted">{t('settings.maintenance.cacheHint')}</p>
           <Button
             className="mt-2"
             variant="ghost"
@@ -653,9 +653,9 @@ function MaintenanceSection(): JSX.Element {
         </div>
 
         <div>
-          <p className="text-[13px] font-medium text-slate-600 dark:text-slate-300">{t('settings.maintenance.storage')}</p>
-          <p className="mt-0.5 break-all text-xs text-slate-500 dark:text-slate-400">{info?.userDataPath ?? '…'}</p>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('settings.maintenance.storageHint')}</p>
+          <p className="text-[13px] font-medium text-text-secondary">{t('settings.maintenance.storage')}</p>
+          <p className="mt-0.5 break-all text-xs text-text-muted">{info?.userDataPath ?? '…'}</p>
+          <p className="mt-1 text-xs text-text-muted">{t('settings.maintenance.storageHint')}</p>
           <Button className="mt-2" variant="ghost" onClick={() => void window.quartzGui.dialog.revealUserData()}>
             {t('settings.maintenance.reveal')}
           </Button>
@@ -663,7 +663,7 @@ function MaintenanceSection(): JSX.Element {
       </div>
 
       {info && (
-        <p className="mt-4 border-t border-black/[0.06] pt-3 text-xs text-slate-500 dark:border-white/10 dark:text-slate-400">
+        <p className="mt-4 border-t border-black/[0.06] pt-3 text-xs text-text-muted dark:border-white/10">
           QuartzControl {info.appVersion} · Electron {info.electronVersion} · Chromium {info.chromeVersion}
         </p>
       )}

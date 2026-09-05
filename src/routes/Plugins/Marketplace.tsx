@@ -135,7 +135,7 @@ export default function PluginsMarketplace(): JSX.Element {
         <div className="relative w-full max-w-xs">
           <Search
             size={14}
-            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400"
+            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted"
             aria-hidden
           />
           <TextInput
@@ -150,7 +150,7 @@ export default function PluginsMarketplace(): JSX.Element {
           {refreshing ? t('pluginsMarketplace.refreshing') : t('pluginsMarketplace.refresh')}
         </Button>
         <div className="flex flex-col gap-1">
-          <span className="text-[13px] font-medium text-slate-600 dark:text-slate-300">
+          <span className="text-[13px] font-medium text-text-secondary">
             {t('pluginsMarketplace.addFromGithub')}
           </span>
           <div className="flex gap-2">
@@ -172,7 +172,7 @@ export default function PluginsMarketplace(): JSX.Element {
           {t('pluginsMarketplace.unavailable')}
         </p>
       )}
-      {message && <p className="mb-4 text-sm text-slate-600 dark:text-slate-300">{message}</p>}
+      {message && <p className="mb-4 text-sm text-text-secondary">{message}</p>}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {plugins.map((plugin) => (
@@ -185,22 +185,22 @@ export default function PluginsMarketplace(): JSX.Element {
           />
         ))}
       </div>
-      {results === null && <p className="text-sm text-slate-500 dark:text-slate-400">{t('pluginsMarketplace.loading')}</p>}
+      {results === null && <p className="text-sm text-text-muted">{t('pluginsMarketplace.loading')}</p>}
       {results !== null && plugins.length === 0 && (
-        <p className="text-sm text-slate-500 dark:text-slate-400">{t('pluginsMarketplace.noResults')}</p>
+        <p className="text-sm text-text-muted">{t('pluginsMarketplace.noResults')}</p>
       )}
 
       {other.length > 0 && (
         <div className="mt-8">
           <button
             onClick={() => setShowOther((v) => !v)}
-            className="text-[13px] font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
+            className="text-[13px] font-medium text-text-muted hover:text-slate-800 dark:hover:text-slate-100"
           >
             {showOther
               ? t('pluginsMarketplace.hideOther', { count: other.length })
               : t('pluginsMarketplace.showOther', { count: other.length })}
           </button>
-          <p className="mt-1 max-w-3xl text-xs text-slate-500 dark:text-slate-400">{t('pluginsMarketplace.otherDescription')}</p>
+          <p className="mt-1 max-w-3xl text-xs text-text-muted">{t('pluginsMarketplace.otherDescription')}</p>
           {showOther && (
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
               {other.map((plugin) => (
@@ -246,14 +246,14 @@ function ResultCard({
         target="_blank"
         rel="noreferrer"
         title={t('pluginsMarketplace.openRepo')}
-        className="inline-flex w-fit items-center gap-1 text-xs text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400"
+        className="inline-flex w-fit items-center gap-1 text-xs text-text-muted hover:text-blue-600 dark:hover:text-blue-400"
       >
         {plugin.fullName}
         <ExternalLink size={11} aria-hidden />
       </a>
-      {plugin.description && <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{plugin.description}</p>}
+      {plugin.description && <p className="mt-1 text-sm text-text-secondary">{plugin.description}</p>}
       <div className="mt-3 flex items-center justify-between pt-1">
-        <span className="text-xs text-slate-500 dark:text-slate-400">★ {plugin.stars ?? 0}</span>
+        <span className="text-xs text-text-muted">★ {plugin.stars ?? 0}</span>
         {/* An installed plugin says so once, in the badge at the top. The disabled button that used
             to sit here repeated the same word a second time in every card of a full catalog. */}
         {!installed && (

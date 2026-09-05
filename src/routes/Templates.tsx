@@ -163,7 +163,7 @@ function ExportSection({ project }: { project: Project }): JSX.Element {
       <h2 className="mb-1 flex items-center gap-2 text-sm font-semibold">
         <Package size={15} /> {t('templates.exportHeading')}
       </h2>
-      <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">{t('templates.exportHint')}</p>
+      <p className="mb-4 text-xs text-text-muted">{t('templates.exportHint')}</p>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label={t('templates.nameLabel')}>
@@ -179,11 +179,11 @@ function ExportSection({ project }: { project: Project }): JSX.Element {
         </Field>
       </div>
 
-      <p className="mb-1.5 mt-4 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{t('templates.partsHeading')}</p>
+      <p className="mb-1.5 mt-4 text-xs font-semibold uppercase tracking-wide text-text-secondary">{t('templates.partsHeading')}</p>
       {available === null ? (
-        <p className="px-2 py-1.5 text-sm text-slate-500 dark:text-slate-400">{t('common.loading')}</p>
+        <p className="px-2 py-1.5 text-sm text-text-muted">{t('common.loading')}</p>
       ) : available.length === 0 ? (
-        <p className="px-2 py-1.5 text-sm text-slate-500 dark:text-slate-400">{t('templates.nothingToExport')}</p>
+        <p className="px-2 py-1.5 text-sm text-text-muted">{t('templates.nothingToExport')}</p>
       ) : (
         <div className="flex flex-col">
           {sortForDisplay(available).map((part) => (
@@ -213,7 +213,7 @@ function ExportSection({ project }: { project: Project }): JSX.Element {
           {exporting ? t('templates.exporting') : t('templates.exportButton')}
         </Button>
         {available !== null && (
-          <span className="text-xs text-slate-500 dark:text-slate-400">
+          <span className="text-xs text-text-muted">
             {t('templates.selectedCount', { count: chosen.length, total: available.length })}
           </span>
         )}
@@ -224,7 +224,7 @@ function ExportSection({ project }: { project: Project }): JSX.Element {
         </p>
       )}
       {translations && translations.stats.undetermined > 0 && chosen.includes('translations') && (
-        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+        <p className="mt-2 text-xs text-text-muted">
           {t('templates.baselineHint', { count: translations.stats.undetermined })}
         </p>
       )}
@@ -336,13 +336,13 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
       <h2 className="mb-1 flex items-center gap-2 text-sm font-semibold">
         <FolderInput size={15} /> {t('templates.importHeading')}
       </h2>
-      <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">{t('templates.importHint')}</p>
+      <p className="mb-4 text-xs text-text-muted">{t('templates.importHint')}</p>
 
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="ghost" onClick={pick} disabled={running || planning}>
           {planning ? t('templates.planning') : t('templates.pickPackage')}
         </Button>
-        {packagePath && <span className="min-w-0 flex-1 truncate text-xs text-slate-500 dark:text-slate-400">{packagePath}</span>}
+        {packagePath && <span className="min-w-0 flex-1 truncate text-xs text-text-muted">{packagePath}</span>}
       </div>
 
       {unreadable && <p className="mt-3 text-xs text-red-600 dark:text-red-400">{t('templates.previewError')}</p>}
@@ -351,12 +351,12 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
         <>
           <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-800/50">
             <div className="flex flex-wrap items-baseline gap-2">
-              <FileArchive size={14} className="shrink-0 text-slate-500 dark:text-slate-400" />
+              <FileArchive size={14} className="shrink-0 text-text-muted" />
               <span className="text-sm font-medium">{plan.manifest.name}</span>
               {plan.legacy && <Badge tone="slate">{t('templates.legacyBadge')}</Badge>}
             </div>
-            {plan.manifest.description && <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{plan.manifest.description}</p>}
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            {plan.manifest.description && <p className="mt-1 text-xs text-text-secondary">{plan.manifest.description}</p>}
+            <p className="mt-1 text-xs text-text-muted">
               {t('templates.packageOrigin', {
                 date: new Date(plan.manifest.createdAt).toLocaleDateString(),
                 project: plan.manifest.source.projectName ?? t('templates.unknownProject')
@@ -372,7 +372,7 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
           )}
 
           <div className="mt-4">
-            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{t('templates.strategyHeading')}</p>
+            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-text-secondary">{t('templates.strategyHeading')}</p>
             <SegmentedControl
               label={t('templates.strategyHeading')}
               value={strategy}
@@ -382,12 +382,12 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
                 { value: 'projectWins', label: t('templates.strategyProject') }
               ]}
             />
-            <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-1.5 text-xs text-text-muted">
               {t(strategy === 'packageWins' ? 'templates.strategyPackageHint' : 'templates.strategyProjectHint')}
             </p>
           </div>
 
-          <p className="mb-1.5 mt-4 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">{t('templates.partsHeading')}</p>
+          <p className="mb-1.5 mt-4 text-xs font-semibold uppercase tracking-wide text-text-secondary">{t('templates.partsHeading')}</p>
           <div className="flex flex-col">
             {sortForDisplay(plan.parts).map((part) => (
               <PartRow
@@ -403,7 +403,7 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
           </div>
 
           {missing.length > 0 && (
-            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+            <p className="mt-3 text-xs text-text-muted">
               {t('templates.willInstall', { packages: missing.join(', ') })}
             </p>
           )}
@@ -413,7 +413,7 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
               {running ? t('templates.importing') : t('templates.importButton')}
             </Button>
             {running && (
-              <span className="text-xs text-slate-500 dark:text-slate-400">
+              <span className="text-xs text-text-muted">
                 {progress?.partId
                   ? `${t(`templates.parts.${progress.partId}.label`)}${progress.message ? ` — ${progress.message}` : ''}`
                   : t('templates.importPreparing')}

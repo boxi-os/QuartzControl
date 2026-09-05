@@ -41,6 +41,14 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   Paket in ein zweites leeres Projekt und baut es. Was dabei gefunden wurde, steht in
   `scripts/example-template/BEFUNDE.md`
 
+- `node scripts/colors-snapshot.mjs <datei.json>` bzw. `--diff <a> <b>` — nimmt die *berechneten*
+  Farben jedes Elements auf jeder Route in hell und dunkel auf und vergleicht zwei Aufnahmen.
+  Braucht den Bau. Existiert aus demselben Grund wie `check:i18n`: ob eine Palette-Klasse durch das
+  richtige Token ersetzt wurde, sieht weder der Typcheck noch der Build, und ein Diff der
+  Klassennamen beantwortet die einzige Frage nicht — sieht es hinterher genauso aus. Indiziert wird
+  über die Position im DOM, nicht über die Klasse, und genau deshalb trägt der Vergleich über die
+  Umstellung hinweg
+
 - `npm run dist` / `dist:mac` / `dist:linux` / `dist:flatpak` — electron-builder (see
   `docs/decisions/electron-runtime-and-packaging.md`). `dist:flatpak` ist ein eigenes Skript, weil
   das Ziel flatpak und flatpak-builder auf der Baumaschine braucht und **noch nie gebaut wurde** —

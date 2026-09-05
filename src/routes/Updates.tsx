@@ -141,7 +141,7 @@ export default function Updates(): JSX.Element {
           </div>
         </div>
         {coreStatus && (
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-xs text-text-muted">
             {t('updates.core.commits', { current: shortCommit(coreStatus.currentCommit), latest: shortCommit(coreStatus.latestCommit) })}
           </p>
         )}
@@ -198,9 +198,9 @@ export default function Updates(): JSX.Element {
             {pluginBusy === '__all__' ? t('common.saving') : t('updates.plugins.updateAll')}
           </Button>
         </div>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('updates.plugins.hint')}</p>
-        {pluginStatuses === null && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('common.loading')}</p>}
-        {pluginStatuses && pluginStatuses.length === 0 && <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('updates.plugins.none')}</p>}
+        <p className="mt-1 text-xs text-text-muted">{t('updates.plugins.hint')}</p>
+        {pluginStatuses === null && <p className="mt-2 text-xs text-text-muted">{t('common.loading')}</p>}
+        {pluginStatuses && pluginStatuses.length === 0 && <p className="mt-2 text-xs text-text-muted">{t('updates.plugins.none')}</p>}
         <div className="mt-2 flex flex-col gap-1.5">
           {pluginStatuses?.map((p) => (
             <div key={p.name} className="flex items-center justify-between rounded-md border border-black/[0.06] px-2.5 py-1.5 text-sm dark:border-white/10">
@@ -209,7 +209,7 @@ export default function Updates(): JSX.Element {
                 {p.state === 'local' ? (
                   <Badge>{t('updates.plugins.local')}</Badge>
                 ) : (
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                  <span className="text-xs text-text-muted">
                     {shortCommit(p.installedCommit)} → {shortCommit(p.latestCommit)}
                   </span>
                 )}
@@ -240,7 +240,7 @@ export default function Updates(): JSX.Element {
           this card used to list ever captured. One list, on the page that is about it. */}
       <Card>
         <h2 className="mb-1 text-sm font-semibold">{t('updates.snapshots.heading')}</h2>
-        <p className="text-xs text-slate-500 dark:text-slate-400">{t('updates.snapshots.movedHint')}</p>
+        <p className="text-xs text-text-muted">{t('updates.snapshots.movedHint')}</p>
         <Link
           to="../backups"
           className="mt-2 inline-block text-sm text-indigo-600 hover:underline dark:text-indigo-400"

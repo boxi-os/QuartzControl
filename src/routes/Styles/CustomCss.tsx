@@ -288,7 +288,7 @@ export default function CustomCss(): JSX.Element {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="truncate text-xs text-slate-500 dark:text-slate-400">{activePath}</p>
+        <p className="truncate text-xs text-text-muted">{activePath}</p>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="ghost" onClick={checkActive} disabled={checking}>
             {checking ? t('styleEditor.check.running') : t('styleEditor.check.checkActive')}
@@ -330,7 +330,7 @@ export default function CustomCss(): JSX.Element {
         <Button variant="ghost" onClick={() => insertSnippet(selectedComponent)} disabled={!selectedComponent}>
           {t('styleEditor.insertSelector')}
         </Button>
-        <span className="text-xs text-slate-500 dark:text-slate-400">{t('styleEditor.componentHint')}</span>
+        <span className="text-xs text-text-muted">{t('styleEditor.componentHint')}</span>
       </Card>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]">
@@ -380,7 +380,7 @@ export default function CustomCss(): JSX.Element {
                     <span className="truncate text-xs font-medium">{ref.label}</span>
                     <button
                       type="button"
-                      className="shrink-0 text-xs text-slate-500 dark:text-slate-400 underline"
+                      className="shrink-0 text-xs text-text-muted underline"
                       onClick={() => openExternally(ref.path)}
                     >
                       {t('styleEditor.openExternally')}
@@ -429,7 +429,7 @@ function TabBar({
             className={`flex items-center gap-1 rounded-t-[8px] border border-b-0 px-2.5 py-1.5 text-xs ${
               isActive
                 ? 'border-black/[0.06] bg-white dark:border-white/10 dark:bg-[#1c1c1e]'
-                : 'border-transparent bg-black/[0.04] text-slate-500 dark:text-slate-400 hover:bg-black/[0.07] dark:bg-white/[0.06] dark:hover:bg-white/10'
+                : 'border-transparent bg-black/[0.04] text-text-muted hover:bg-black/[0.07] dark:bg-white/[0.06] dark:hover:bg-white/10'
             }`}
           >
             <button type="button" onClick={() => onSelect(tab)} className="max-w-[16ch] truncate" title={label(tab)}>
@@ -440,7 +440,7 @@ function TabBar({
               <button
                 type="button"
                 onClick={() => onClose(tab)}
-                className="shrink-0 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white"
+                className="shrink-0 text-text-muted hover:text-slate-700 dark:hover:text-white"
                 title={t('styleEditor.files.closeTab')}
               >
                 <X size={11} />
@@ -494,7 +494,7 @@ function FileOrder({
   return (
     <Card>
       <h3 className="mb-1 text-sm font-semibold">{t('styleEditor.files.heading')}</h3>
-      <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">{t('styleEditor.files.description')}</p>
+      <p className="mb-3 text-xs text-text-muted">{t('styleEditor.files.description')}</p>
 
       <div className="flex flex-col gap-1">
         {imported.map((file, index) => (
@@ -504,7 +504,7 @@ function FileOrder({
               activeTab === file.relativePath ? 'bg-blue-50 dark:bg-blue-500/10' : ''
             }`}
           >
-            <span className="w-4 shrink-0 text-right text-[11px] text-slate-500 dark:text-slate-400">{index + 1}</span>
+            <span className="w-4 shrink-0 text-right text-[11px] text-text-muted">{index + 1}</span>
             {renaming?.relativePath === file.relativePath ? (
               <>
                 <TextInput
@@ -556,7 +556,7 @@ function FileOrder({
                 </button>
                 <button
                   type="button"
-                  className="shrink-0 text-[11px] text-slate-500 dark:text-slate-400 underline"
+                  className="shrink-0 text-[11px] text-text-muted underline"
                   onClick={() => setRenaming({ relativePath: file.relativePath, name: file.name })}
                 >
                   {t('styleEditor.files.rename')}
@@ -582,7 +582,7 @@ function FileOrder({
                 ) : (
                   <button
                     type="button"
-                    className="shrink-0 text-[11px] text-slate-500 dark:text-slate-400 underline"
+                    className="shrink-0 text-[11px] text-text-muted underline"
                     onClick={() => setConfirmDelete(file.relativePath)}
                   >
                     {t('styleEditor.files.delete')}
@@ -593,10 +593,10 @@ function FileOrder({
           </div>
         ))}
 
-        <div className="flex items-center gap-1.5 rounded-md border-t border-dashed border-black/10 px-1.5 pt-1.5 text-xs text-slate-500 dark:text-slate-400 dark:border-white/10">
+        <div className="flex items-center gap-1.5 rounded-md border-t border-dashed border-black/10 px-1.5 pt-1.5 text-xs text-text-muted dark:border-white/10">
           <span className="w-4 shrink-0" />
           <span className="min-w-0 flex-1 truncate font-mono">custom.scss</span>
-          <span className="shrink-0 text-[11px] text-slate-500 dark:text-slate-400">{t('styleEditor.files.alwaysLast')}</span>
+          <span className="shrink-0 text-[11px] text-text-muted">{t('styleEditor.files.alwaysLast')}</span>
         </div>
       </div>
 
@@ -604,13 +604,13 @@ function FileOrder({
           its own state rather than hiding, since it looks like a working file in Finder. */}
       {orphans.length > 0 && (
         <div className="mt-3">
-          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
             {t('styleEditor.files.orphansHeading')}
           </p>
           <div className="flex flex-col gap-1">
             {orphans.map((file) => (
               <div key={file.relativePath} className="flex items-center gap-1.5 text-xs">
-                <span className="min-w-0 flex-1 truncate font-mono text-slate-500 dark:text-slate-400">{file.name}</span>
+                <span className="min-w-0 flex-1 truncate font-mono text-text-muted">{file.name}</span>
                 <button
                   type="button"
                   className="shrink-0 text-[11px] underline"
@@ -711,7 +711,7 @@ function CheckBanner({
 
   if (result.status === 'unavailable') {
     return (
-      <p className="rounded-md border border-black/[0.06] p-2 text-[11px] text-slate-500 dark:border-white/10 dark:text-slate-400">
+      <p className="rounded-md border border-black/[0.06] p-2 text-[11px] text-text-muted dark:border-white/10">
         {t('styleEditor.check.unavailable', { reason: result.reason })}
       </p>
     )
@@ -721,7 +721,7 @@ function CheckBanner({
     <p className="flex items-center gap-1.5 text-[11px] text-green-700 dark:text-green-400">
       <Check size={12} aria-hidden />
       {t('styleEditor.check.ok')}
-      <button type="button" className="ml-1 text-slate-500 dark:text-slate-400 underline" onClick={onRecheck} disabled={checking}>
+      <button type="button" className="ml-1 text-text-muted underline" onClick={onRecheck} disabled={checking}>
         {checking ? t('styleEditor.check.running') : t('styleEditor.check.recheck')}
       </button>
     </p>

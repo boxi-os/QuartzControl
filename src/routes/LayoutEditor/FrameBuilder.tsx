@@ -487,7 +487,7 @@ export default function FrameBuilder({
     if (editing?.id === def.id) closeEditor()
   }
 
-  if (!frames) return <p className="text-sm text-slate-500 dark:text-slate-400">{t('layoutEditor.loading')}</p>
+  if (!frames) return <p className="text-sm text-text-muted">{t('layoutEditor.loading')}</p>
 
   if (!editing) {
     return (
@@ -497,16 +497,16 @@ export default function FrameBuilder({
             list that is the first thing anyone opens who wants to build one. */}
         <InfoNote>{t('layoutEditor.frameBuilder.whatIsAFrame')}</InfoNote>
         <div className="flex items-center justify-between">
-          <p className="text-xs text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.description')}</p>
+          <p className="text-xs text-text-muted">{t('layoutEditor.frameBuilder.description')}</p>
           <Button onClick={startNewFrame}>{t('layoutEditor.frameBuilder.newFrame')}</Button>
         </div>
-        {frames.length === 0 && <p className="text-sm text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.none')}</p>}
+        {frames.length === 0 && <p className="text-sm text-text-muted">{t('layoutEditor.frameBuilder.none')}</p>}
         <div className="flex flex-col gap-2">
           {frames.map((def) => (
             <Card key={def.id} className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium">{def.frameName}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-text-muted">
                   {t('layoutEditor.frameBuilder.gridSummary', {
                     rows: def.breakpoints.desktop.rows,
                     cols: def.breakpoints.desktop.cols,
@@ -584,7 +584,7 @@ export default function FrameBuilder({
               />
             </Field>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] text-slate-500 dark:text-slate-400">
+              <span className="text-[11px] text-text-muted">
                 {t('layoutEditor.frameBuilder.appliesTo', {
                   breakpoint: t(`layoutEditor.frameBuilder.breakpoint.${activeBreakpoint}`)
                 })}
@@ -602,7 +602,7 @@ export default function FrameBuilder({
             actions={
               <button
                 type="button"
-                className="text-[11px] text-slate-500 underline hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                className="text-[11px] text-text-muted underline hover:text-slate-700 dark:hover:text-slate-200"
                 onClick={() => updateLayout({ columnSizes: undefined, rowSizes: undefined })}
               >
                 {t('layoutEditor.frameBuilder.resetTracks')}
@@ -722,7 +722,7 @@ export default function FrameBuilder({
         </div>
 
         <div className="mb-3 flex items-center justify-between gap-2">
-          <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.availableAreasLabel')}</p>
+          <p className="text-[11px] font-medium text-text-muted">{t('layoutEditor.frameBuilder.availableAreasLabel')}</p>
           <Button variant="ghost" onClick={addNewArea}>
             {t('layoutEditor.frameBuilder.newArea')}
           </Button>
@@ -738,7 +738,7 @@ export default function FrameBuilder({
           accessibility={{ announcements, screenReaderInstructions }}
         >
         <UnplacedTray dragging={dragAreaId !== null}>
-          {unplacedAreas.length === 0 && <span className="px-1 text-[11px] text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.allPlaced')}</span>}
+          {unplacedAreas.length === 0 && <span className="px-1 text-[11px] text-text-muted">{t('layoutEditor.frameBuilder.allPlaced')}</span>}
           {unplacedAreas.map((a) => (
             <TrayChip
               key={a.id}
@@ -750,7 +750,7 @@ export default function FrameBuilder({
           ))}
         </UnplacedTray>
 
-        <p className="mb-2 text-xs text-slate-500 dark:text-slate-400">{t('layoutEditor.frameBuilder.hintDragToPlace')}</p>
+        <p className="mb-2 text-xs text-text-muted">{t('layoutEditor.frameBuilder.hintDragToPlace')}</p>
 
         {/* The drop board carries the frame's own box, so a cap, an alignment or a padding is
             something you can see rather than a value you have to imagine. It is the same box the
@@ -796,7 +796,7 @@ export default function FrameBuilder({
                   </div>
                   <div className="flex items-center gap-1">
                     <Badge>{t(`positions.${area.slot}`, area.slot)}</Badge>
-                    <span aria-hidden="true" className="rounded-[4px] p-0.5 text-slate-500 dark:text-slate-400">
+                    <span aria-hidden="true" className="rounded-[4px] p-0.5 text-text-muted">
                       {isSelected ? '▲' : '▼'}
                     </span>
                   </div>
@@ -856,7 +856,7 @@ export default function FrameBuilder({
                 )}
 
                 {area.slot === 'pageBody' && (
-                  <div className="rounded-[4px] border border-dashed border-black/10 px-2 py-3 text-center text-slate-500 dark:text-slate-400 dark:border-white/10">
+                  <div className="rounded-[4px] border border-dashed border-black/10 px-2 py-3 text-center text-text-muted dark:border-white/10">
                     {t('layoutEditor.frameBuilder.preview.pageContent')}
                   </div>
                 )}
@@ -935,7 +935,7 @@ function TrackInputs({
 }): JSX.Element {
   return (
     <div>
-      <p className="mb-1.5 text-[11px] font-medium text-slate-500 dark:text-slate-400">{label}</p>
+      <p className="mb-1.5 text-[11px] font-medium text-text-muted">{label}</p>
       <div className="flex flex-wrap gap-1.5">
         {Array.from({ length: count }, (_, i) => (
           <label key={i} className="flex flex-col items-center gap-0.5">
@@ -945,7 +945,7 @@ function TrackInputs({
               onChange={(e) => onChange(i, e.target.value)}
               className="w-16 text-center"
             />
-            <span className="text-[10px] text-slate-500 dark:text-slate-400">{i + firstIndex}</span>
+            <span className="text-[10px] text-text-muted">{i + firstIndex}</span>
           </label>
         ))}
       </div>
@@ -1018,7 +1018,7 @@ function TrayChip({
       </ActivatorContext.Provider>
       <button type="button" onClick={onSelect} className="flex flex-col items-center gap-0.5 text-center">
         <span className="font-medium">{area.name}</span>
-        <span className="text-slate-500 dark:text-slate-400">{t(`positions.${area.slot}`, area.slot)}</span>
+        <span className="text-text-muted">{t(`positions.${area.slot}`, area.slot)}</span>
       </button>
     </div>
   )
@@ -1102,7 +1102,7 @@ function AreaDragHandle({ label }: { label: string }): JSX.Element {
       {...activator?.listeners}
       onClick={(e) => e.stopPropagation()}
       aria-label={label}
-      className="-ml-1 flex shrink-0 cursor-grab select-none items-center rounded-[6px] border border-black/10 bg-black/[0.03] p-0.5 text-slate-500 transition-colors hover:border-black/20 hover:bg-black/[0.08] hover:text-slate-700 active:cursor-grabbing dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-400 dark:hover:bg-white/10 dark:hover:text-slate-200"
+      className="-ml-1 flex shrink-0 cursor-grab select-none items-center rounded-[6px] border border-black/10 bg-black/[0.03] p-0.5 text-text-muted transition-colors hover:border-black/20 hover:bg-black/[0.08] hover:text-slate-700 active:cursor-grabbing dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/10 dark:hover:text-slate-200"
     >
       <GripVertical size={13} aria-hidden />
     </button>

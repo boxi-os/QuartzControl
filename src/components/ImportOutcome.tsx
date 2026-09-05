@@ -31,7 +31,7 @@ export function ImportOutcome({ warnings }: { warnings: string[] }): JSX.Element
       {grouped.map(([kind, details]) => (
         <li key={kind}>
           {t([`templates.warnings.${kind}`, 'templates.warnings.unknown'], { count: details.length, detail: details[0], kind })}
-          {details.length > 1 && <span className="text-slate-500 dark:text-slate-400"> — {details.slice(0, 6).join(', ')}{details.length > 6 ? ' …' : ''}</span>}
+          {details.length > 1 && <span className="text-text-muted"> — {details.slice(0, 6).join(', ')}{details.length > 6 ? ' …' : ''}</span>}
         </li>
       ))}
     </ul>

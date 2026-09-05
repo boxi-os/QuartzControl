@@ -602,7 +602,7 @@ export default function FrameBuilder({
             actions={
               <button
                 type="button"
-                className="text-[11px] text-text-muted underline hover:text-slate-700 dark:hover:text-slate-200"
+                className="text-[11px] text-text-muted underline hover:text-text"
                 onClick={() => updateLayout({ columnSizes: undefined, rowSizes: undefined })}
               >
                 {t('layoutEditor.frameBuilder.resetTracks')}
@@ -1102,7 +1102,7 @@ function AreaDragHandle({ label }: { label: string }): JSX.Element {
       {...activator?.listeners}
       onClick={(e) => e.stopPropagation()}
       aria-label={label}
-      className="-ml-1 flex shrink-0 cursor-grab select-none items-center rounded-[6px] border border-black/10 bg-black/[0.03] p-0.5 text-text-muted transition-colors hover:border-black/20 hover:bg-black/[0.08] hover:text-slate-700 active:cursor-grabbing dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/10 dark:hover:text-slate-200"
+      className="-ml-1 flex shrink-0 cursor-grab select-none items-center rounded-[6px] border border-ink/10 bg-ink/[0.03] p-0.5 text-text-muted transition-colors hover:border-ink/20 hover:bg-ink/[0.08] hover:text-text active:cursor-grabbing dark:bg-ink/[0.04]"
     >
       <GripVertical size={13} aria-hidden />
     </button>

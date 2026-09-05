@@ -129,7 +129,7 @@ export default function Home(): JSX.Element {
             </div>
             <Link
               to="/settings"
-              className="shrink-0 pt-1 text-[13px] text-text-muted hover:text-slate-900 dark:hover:text-white"
+              className="shrink-0 pt-1 text-[13px] text-text-muted hover:text-text"
             >
               {t('home.settings')}
             </Link>
@@ -575,7 +575,7 @@ function ProjectRow({
         aria-label={t('common.remove')}
         title={t('common.remove')}
         onClick={onRemove}
-        className="absolute right-3 top-3 rounded-[6px] p-1 text-text-muted transition-colors hover:bg-black/[0.05] hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-slate-200"
+        className="absolute right-3 top-3 rounded-[6px] p-1 text-text-muted transition-colors hover:bg-ink/[0.05] hover:text-text dark:hover:bg-ink/10"
       >
         <Trash2 size={14} />
       </button>

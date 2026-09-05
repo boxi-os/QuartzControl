@@ -194,7 +194,7 @@ export default function PluginsMarketplace(): JSX.Element {
         <div className="mt-8">
           <button
             onClick={() => setShowOther((v) => !v)}
-            className="text-[13px] font-medium text-text-muted hover:text-slate-800 dark:hover:text-slate-100"
+            className="text-[13px] font-medium text-text-muted hover:text-text"
           >
             {showOther
               ? t('pluginsMarketplace.hideOther', { count: other.length })

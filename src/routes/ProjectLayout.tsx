@@ -218,7 +218,7 @@ export default function ProjectLayout(): JSX.Element {
           <NavLink
             to="/"
             onClick={(event) => guardLeave(event, '/')}
-            className="titlebar-no-drag flex items-center gap-1.5 rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium text-slate-700 transition-colors hover:bg-black/[0.05] dark:text-slate-200 dark:hover:bg-white/10"
+            className="titlebar-no-drag flex items-center gap-1.5 rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium text-slate-700 transition-colors hover:bg-ink/[0.05] dark:text-slate-200 dark:hover:bg-ink/10"
           >
             <ArrowLeft size={14} aria-hidden /> {t('projectLayout.allProjects')}
           </NavLink>
@@ -259,7 +259,7 @@ export default function ProjectLayout(): JSX.Element {
                         `flex items-center gap-2 rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium transition-colors ${
                           isActive
                             ? 'bg-blue-600 text-white'
-                            : 'text-slate-700 hover:bg-black/[0.05] dark:text-slate-200 dark:hover:bg-white/10'
+                            : 'text-slate-700 hover:bg-ink/[0.05] dark:text-slate-200 dark:hover:bg-ink/10'
                         }`
                       }
                     >

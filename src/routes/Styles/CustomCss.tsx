@@ -429,7 +429,7 @@ function TabBar({
             className={`flex items-center gap-1 rounded-t-[8px] border border-b-0 px-2.5 py-1.5 text-xs ${
               isActive
                 ? 'border-black/[0.06] bg-white dark:border-white/10 dark:bg-[#1c1c1e]'
-                : 'border-transparent bg-black/[0.04] text-text-muted hover:bg-black/[0.07] dark:bg-white/[0.06] dark:hover:bg-white/10'
+                : 'border-transparent bg-black/[0.04] text-text-muted hover:bg-ink/[0.07] dark:bg-white/[0.06] dark:hover:bg-ink/10'
             }`}
           >
             <button type="button" onClick={() => onSelect(tab)} className="max-w-[16ch] truncate" title={label(tab)}>
@@ -440,7 +440,7 @@ function TabBar({
               <button
                 type="button"
                 onClick={() => onClose(tab)}
-                className="shrink-0 text-text-muted hover:text-slate-700 dark:hover:text-white"
+                className="shrink-0 text-text-muted hover:text-text"
                 title={t('styleEditor.files.closeTab')}
               >
                 <X size={11} />

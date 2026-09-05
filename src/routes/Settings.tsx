@@ -73,7 +73,7 @@ export default function Settings(): JSX.Element {
           <button
             type="button"
             onClick={() => (location.key === 'default' ? navigate('/') : navigate(-1))}
-            className="text-[13px] text-text-muted hover:text-slate-900 dark:hover:text-white"
+            className="text-[13px] text-text-muted hover:text-text"
           >
             ← {t('common.back')}
           </button>
@@ -245,7 +245,7 @@ function RuntimeSection({
             {t('settings.runtime.gitLicense')}{' '}
             <button
               type="button"
-              className="underline hover:text-slate-700 dark:hover:text-slate-200"
+              className="underline hover:text-text"
               onClick={() => void window.quartzGui.dialog.openExternal(GIT_SOURCE_URL)}
             >
               {t('settings.runtime.gitSource')}
@@ -419,7 +419,7 @@ function GithubSection(): JSX.Element {
           </Button>
           <button
             type="button"
-            className="text-[13px] text-text-muted underline hover:text-slate-900 dark:hover:text-white"
+            className="text-[13px] text-text-muted underline hover:text-text"
             onClick={() => remove.run()}
             disabled={remove.pending}
           >

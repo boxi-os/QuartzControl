@@ -11,6 +11,11 @@
 //   node scripts/colors-snapshot.mjs nachher.json     (danach, wieder nach `npm run build`)
 //   node scripts/colors-snapshot.mjs --diff vorher.json nachher.json
 //
+// `--hover` nimmt statt des Ruhezustands den *Hover*-Zustand auf: jedes Element, dessen Klassen
+// eine `hover:`-Farbe tragen, wird der Reihe nach mit einer echten Mausbewegung angefahren und
+// danach ausgelesen. Ohne das ist eine Umstellung von Hover-Klassen unbelegbar - der Ruhezustand
+// ist dabei ja gerade unverändert. Verglichen wird mit demselben `--diff`.
+//
 // Der Diff nennt jede Farbänderung mit Schema, Eigenschaft, altem und neuem Wert und wie oft sie
 // vorkommt - eine Umstellung, die nichts ändern soll, hat eine leere Liste, und eine, die etwas
 // ändern soll, zeigt genau das und sonst nichts.
@@ -50,6 +55,8 @@ function diff(fileA, fileB) {
   const b = JSON.parse(fs.readFileSync(fileB, 'utf-8'))
   const keys = Object.keys(a).filter((k) => k in b)
   const props = ['idx', 'tag', 'color', 'background', 'border-top', 'border-bottom', 'outline']
+  // Im --hover-Modus steht an Stelle 2 'hover'/'verdeckt' und die Farben rücken eins weiter.
+  const hoverProps = ['idx', 'tag', 'erreicht', 'color', 'background', 'border-top']
   const counts = new Map()
   const routes = new Map()
   let same = 0
@@ -66,9 +73,10 @@ function diff(fileA, fileB) {
         continue
       }
       const [fx, fy] = [x.split('|'), y.split('|')]
-      for (let i = 2; i < props.length; i++) {
+      const names = fx[2] === 'hover' || fx[2] === 'verdeckt' ? hoverProps : props
+      for (let i = 2; i < names.length; i++) {
         if (fx[i] === fy[i]) continue
-        const key = `${k.split(' ')[0]}|${props[i]}|${fx[i]}|${fy[i]}`
+        const key = `${k.split(' ')[0]}|${names[i]}|${fx[i]}|${fy[i]}`
         counts.set(key, (counts.get(key) ?? 0) + 1)
       }
       routes.set(k, (routes.get(k) ?? 0) + 1)
@@ -88,7 +96,49 @@ function diff(fileA, fileB) {
   for (const [k, n] of [...routes].sort((x, y) => y[1] - x[1])) console.log(`  ${String(n).padStart(3)}  ${k}`)
 }
 
-async function snapshot(out) {
+const collectResting = () =>
+  [...document.querySelectorAll('#root *')].map((el, i) => {
+    const s = getComputedStyle(el)
+    return [i, el.tagName, s.color, s.backgroundColor, s.borderTopColor, s.borderBottomColor, s.outlineColor].join('|')
+  })
+
+// Eine echte Mausbewegung, kein :hover per Skript: die Pseudoklasse lässt sich nicht setzen, und
+// `dispatchEvent(new MouseEvent('mouseover'))` ändert nichts an der Darstellung. Element für
+// Element, weil immer nur eines unter dem Zeiger liegen kann.
+async function hoverStates(page) {
+  // Die App animiert Farben (`transition-colors`, 150ms). Ohne dies liest man einen Zwischenwert
+  // der Animation und hält ihn für den Hover-Zustand - gemessen: rgba(255,255,255,0.004) an einer
+  // Stelle, deren Hover-Fläche in Wahrheit 10% Weiß ist. Pro Element zu warten kostete 1195 × 250ms;
+  // die Animation abzuschalten kostet nichts und misst genau das, was gefragt ist: den Zielwert.
+  await page.addStyleTag({ content: '*, *::before, *::after { transition: none !important }' })
+  const targets = await page.evaluate(() =>
+    [...document.querySelectorAll('#root *')]
+      .map((el, i) => [i, el])
+      .filter(([, el]) => typeof el.className === 'string' && /hover:(text|bg|border)-/.test(el.className))
+      .map(([i, el]) => {
+        const r = el.getBoundingClientRect()
+        return { i, tag: el.tagName, x: r.x + r.width / 2, y: r.y + r.height / 2, w: r.width, h: r.height }
+      })
+      .filter((t) => t.w > 0 && t.h > 0)
+  )
+  const out = []
+  for (const t of targets) {
+    await page.mouse.move(t.x, t.y)
+    const seen = await page.evaluate((i) => {
+      const el = document.querySelectorAll('#root *')[i]
+      const s = getComputedStyle(el)
+      // Ohne diese Prüfung misst man ein Element, das gar nicht unter dem Zeiger liegt, weil ein
+      // anderes davor sitzt - und liest dann den Ruhezustand als Hover-Zustand.
+      return [el.matches(':hover'), s.color, s.backgroundColor, s.borderTopColor].join('|')
+    }, t.i)
+    const [hovered, ...rest] = seen.split('|')
+    out.push([t.i, t.tag, hovered === 'true' ? 'hover' : 'verdeckt', ...rest].join('|'))
+  }
+  await page.mouse.move(0, 0)
+  return out
+}
+
+async function snapshot(out, hoverMode) {
   if (!fs.existsSync(path.join(APP_DIR, 'out/main/index.js'))) {
     console.error('out/main/index.js fehlt - bitte zuerst `npm run build`')
     process.exit(2)
@@ -114,12 +164,7 @@ async function snapshot(out) {
         location.hash = h
       }, hash)
       await page.waitForTimeout(1200)
-      result[`${scheme} ${hash}`] = await page.evaluate(() =>
-        [...document.querySelectorAll('#root *')].map((el, i) => {
-          const s = getComputedStyle(el)
-          return [i, el.tagName, s.color, s.backgroundColor, s.borderTopColor, s.borderBottomColor, s.outlineColor].join('|')
-        })
-      )
+      result[`${scheme} ${hash}`] = hoverMode ? await hoverStates(page) : await page.evaluate(collectResting)
     }
   }
   await app.close().catch(() => {})
@@ -135,9 +180,10 @@ if (argv[0] === '--diff') {
     process.exit(2)
   }
   diff(argv[1], argv[2])
-} else if (argv.length === 1) {
-  await snapshot(argv[0])
+} else if (argv.length >= 1 && argv.length <= 2) {
+  const hover = argv.includes('--hover')
+  await snapshot(argv.find((a) => a !== '--hover'), hover)
 } else {
-  console.error('Aufruf: node scripts/colors-snapshot.mjs <datei.json> | --diff <a.json> <b.json>')
+  console.error('Aufruf: node scripts/colors-snapshot.mjs [--hover] <datei.json> | --diff <a.json> <b.json>')
   process.exit(2)
 }

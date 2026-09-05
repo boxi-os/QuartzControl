@@ -701,7 +701,7 @@ export default function Publish(): JSX.Element {
                 <Button variant="ghost" onClick={() => setConnectionDraft(emptyConnectionDraft(draftKind))}>
                   {t('publish.newConnectionOfKind', { kind: CONNECTION_KIND_LABEL[draftKind] })}
                 </Button>
-                <Link to="/settings" className="text-[13px] text-text-muted underline hover:text-slate-900 dark:hover:text-white">
+                <Link to="/settings" className="text-[13px] text-text-muted underline hover:text-text">
                   {t('publish.manageConnections')}
                 </Link>
               </div>

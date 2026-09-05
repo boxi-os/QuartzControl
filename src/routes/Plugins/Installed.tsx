@@ -536,7 +536,7 @@ export default function PluginsInstalled(): JSX.Element {
               className={`rounded-[6px] px-3 py-1 text-[13px] font-medium transition-colors ${
                 enabledFilter === key
                   ? 'bg-white text-slate-900 shadow-sm dark:bg-white/20 dark:text-white'
-                  : 'text-text-secondary hover:text-slate-900 dark:hover:text-white'
+                  : 'text-text-secondary hover:text-text'
               }`}
             >
               {t(`pluginsInstalled.filters.${key}`)}

@@ -253,7 +253,7 @@ function KeyChips({ keys, onNavigate }: { keys: string[]; onNavigate?: (key: str
             key={key}
             type="button"
             onClick={() => onNavigate(key)}
-            className="rounded bg-black/[0.05] px-1.5 py-0.5 font-mono text-[11px] hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20"
+            className="rounded bg-black/[0.05] px-1.5 py-0.5 font-mono text-[11px] hover:bg-ink/10 dark:bg-white/10 dark:hover:bg-ink/20"
             title={t('styles.variables.chipHint')}
           >
             --{key}

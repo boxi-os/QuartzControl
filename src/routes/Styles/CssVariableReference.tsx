@@ -195,7 +195,7 @@ function VariableRow({
           type="button"
           onClick={(e) => put(e, light || raw)}
           title={t('styleEditor.cssVars.insertValueHint', { value: light || raw })}
-          className="shrink-0 rounded px-1 text-[13px] text-slate-700 hover:bg-black/[0.06] dark:text-slate-200 dark:hover:bg-white/10"
+          className="shrink-0 rounded px-1 text-[13px] text-slate-700 hover:bg-ink/[0.06] dark:text-slate-200 dark:hover:bg-ink/10"
           style={{ fontFamily: light || raw }}
         >
           Aa
@@ -206,7 +206,7 @@ function VariableRow({
           type="button"
           onClick={(e) => put(e, raw)}
           title={t('styleEditor.cssVars.insertValueHint', { value: raw })}
-          className="shrink-0 rounded px-1 text-[11px] text-text-muted hover:bg-black/[0.06] dark:hover:bg-white/10"
+          className="shrink-0 rounded px-1 text-[11px] text-text-muted hover:bg-ink/[0.06] dark:hover:bg-ink/10"
         >
           {t('styleEditor.cssVars.insertValue')}
         </button>

@@ -82,7 +82,7 @@ function PartRow({
       // Muted text rather than `opacity-45` for the row that cannot be chosen: the opacity put the
       // label at 2.35:1 (docs/REVIEW-2026-09-02.md, d). The checkbox is the UA's and dims itself.
       className={`flex items-start gap-2.5 rounded-md px-2 py-1.5 text-sm ${
-        disabled ? 'text-text-muted' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+        disabled ? 'text-text-muted' : 'hover:bg-ink/[0.04]'
       }`}
     >
       <input type="checkbox" className="mt-1" checked={checked} disabled={disabled} onChange={onToggle} />

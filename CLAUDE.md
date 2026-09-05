@@ -342,13 +342,21 @@ Großbuchstaben zwei verschiedene Dunkel-Werte für dieselbe Rolle hatten. Gemes
 `scripts/colors-snapshot.mjs`: von 13543 Elementen blieben 13152 unverändert, im Hellen kein
 einziges anders.
 
+Im zweiten Durchgang am selben Tag die **Hover-Zustände**: 31 Stellen sprachen dieselbe Geste in
+fünf verschiedenen Paaren aus, obwohl `hover:text-text` und `hover:bg-ink/…` im Code schon standen —
+in `ui.tsx` und, für einen von drei identischen Ziehgriffen, in `Plugins/Installed.tsx`. Jetzt
+sagen alle dasselbe. Gemessen mit `--hover`: der Ruhezustand blieb an allen 13543 Elementen
+unverändert, im Hover änderten sich 51. Dabei kam ein Fehler heraus, den niemand gesehen hatte:
+zwei Ziehgriffe hatten `hover:border-black/20` ohne `dark:`-Partner, ihr Rand wurde im Dunkelmodus
+also **schwarz** — auf dunklem Grund unsichtbar. Mit dem Token ist er Weiß.
+
 Was bewusst Palette bleibt: die immer dunklen Konsolenflächen (`bg-slate-950` und der Text darauf —
 eine Fläche, die in beiden Schemata dunkel ist, bekommt weder `dark:` noch Token) und die
-Statusfarben. Offen sind rund 80 Klassen an etwa 40 Stellen, deren Farbe **kein** Token benennt:
-Hover-Zustände (26), Text zwischen `--text` und `--text-secondary` (24), Ränder und Flächen (11).
-Für die ist die Wahl eines Tokens eine Gestaltungsentscheidung, keine Umbenennung — sie gehören in
-einen eigenen Durchgang mit einer Vorher/Nachher-Messung, nicht in einen, der behauptet, nichts zu
-ändern. Ebenfalls offen: die 133 übrigen Arbitrary-Value-Größen.
+Statusfarben. Offen sind noch zwei Familien: Text zwischen `--text` und `--text-secondary` (rund 24
+Klassen — `text-slate-700 dark:text-slate-200` liegt zwischen zwei Tokens, welches gilt, ist eine
+Entscheidung) und die ruhenden Ränder und Flächen aus `black`/`white` (rund 130 Klassen, wörtlich
+`--ink`, also eine reine Umbenennung — aber viele, und keine davon dringend). Ebenfalls offen: die
+133 übrigen Arbitrary-Value-Größen.
 
 **Arbeitsregel** für die nächste Liste: ein Befund pro Durchgang, jeweils mit `npm run typecheck`,
 `npm run build`, `npm run smoke` und eigenem Commit; was dabei nebenbei auffällt, wird gesammelt und

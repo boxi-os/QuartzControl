@@ -249,7 +249,7 @@ export default function BuildServer(): JSX.Element {
             type="button"
             onClick={() => copy(url)}
             title={t('common.copy')}
-            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-text-muted hover:bg-black/[0.05] dark:hover:bg-white/10"
+            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-text-muted hover:bg-ink/[0.05] dark:hover:bg-ink/10"
           >
             {copied === url ? <Check size={13} aria-hidden /> : <Copy size={13} aria-hidden />}
             {t('common.copy')}
@@ -281,7 +281,7 @@ export default function BuildServer(): JSX.Element {
         <button
           type="button"
           onClick={() => setOptionsOpen(!optionsOpen)}
-          className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-slate-900 dark:hover:text-white"
+          className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-text"
         >
           {optionsOpen ? <ChevronDown size={14} aria-hidden /> : <ChevronRight size={14} aria-hidden />}
           <SlidersHorizontal size={13} aria-hidden />
@@ -330,7 +330,7 @@ export default function BuildServer(): JSX.Element {
               <button
                 type="button"
                 onClick={() => setPreviewOpen(!previewOpen)}
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-slate-900 dark:hover:text-white"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-text-secondary hover:text-text"
               >
                 {previewOpen ? <ChevronDown size={14} aria-hidden /> : <ChevronRight size={14} aria-hidden />}
                 {t('buildServer.livePreview')}
@@ -356,7 +356,7 @@ export default function BuildServer(): JSX.Element {
                   <button
                     type="button"
                     onClick={() => setPreviewNonce((n) => n + 1)}
-                    className="ml-auto inline-flex items-center gap-1 text-xs text-text-muted hover:text-slate-800 dark:hover:text-slate-200"
+                    className="ml-auto inline-flex items-center gap-1 text-xs text-text-muted hover:text-text"
                   >
                     <RefreshCw size={12} aria-hidden />
                     {t('buildServer.reloadPreview')}

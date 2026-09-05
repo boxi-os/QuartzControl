@@ -59,7 +59,7 @@ function RepoStatus({
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="font-mono text-[13px] font-medium">
+        <span className="font-mono text-ui font-medium">
           {status.detached ? t('gitSync.detached') : status.branch}
         </span>
         {status.upstream && <span className="text-xs text-text-muted">→ {status.upstream}</span>}

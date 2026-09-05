@@ -71,7 +71,7 @@ function Tile({
         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[7px] bg-ink/[0.04] text-text-muted dark:bg-ink/[0.06]">
           <Icon size={14} strokeWidth={2} aria-hidden />
         </span>
-        <h2 className="truncate text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
+        <h2 className="truncate text-micro font-semibold uppercase tracking-wide text-text-secondary">
           {title}
         </h2>
         {badge && <span className="ml-auto shrink-0">{badge}</span>}
@@ -132,7 +132,7 @@ function AttentionBand({ issues }: { issues: Issue[] }): JSX.Element {
     <Card className="!p-0">
       <div className="flex items-center gap-2 border-b border-ink/[0.06] px-4 py-2.5 dark:border-ink/10">
         <TriangleAlert size={14} className="text-amber-600 dark:text-amber-400" aria-hidden />
-        <h2 className="text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
+        <h2 className="text-micro font-semibold uppercase tracking-wide text-text-secondary">
           {t('dashboard.attention.title')}
         </h2>
         <Badge tone="amber">{issues.length}</Badge>
@@ -152,7 +152,7 @@ function AttentionBand({ issues }: { issues: Issue[] }): JSX.Element {
             <issue.icon size={14} strokeWidth={2} aria-hidden />
           </span>
           <div className="min-w-0">
-            <p className="text-[13px] font-medium">{issue.title}</p>
+            <p className="text-ui font-medium">{issue.title}</p>
             {issue.detail && <p className="truncate text-xs text-text-muted">{issue.detail}</p>}
           </div>
           <Link
@@ -554,7 +554,7 @@ export default function ProjectDashboard(): JSX.Element {
                 <span className="tabular-nums">↑ {git.ahead}</span>
                 <span className="ml-2.5 tabular-nums text-text-muted">↓ {git.behind}</span>
                 {git.conflictCount > 0 && (
-                  <span className="ml-2.5 text-[13px] font-medium text-red-600 dark:text-red-400">
+                  <span className="ml-2.5 text-ui font-medium text-red-600 dark:text-red-400">
                     {t('dashboard.git.conflicts', { count: git.conflictCount })}
                   </span>
                 )}
@@ -792,7 +792,7 @@ export default function ProjectDashboard(): JSX.Element {
 function Row({ label, children }: { label: string; children: ReactNode }): JSX.Element {
   return (
     <div className="flex min-w-0 items-baseline gap-2.5">
-      <dt className="w-20 shrink-0 text-[11px] text-text-muted">{label}</dt>
+      <dt className="w-20 shrink-0 text-micro text-text-muted">{label}</dt>
       <dd className="m-0 min-w-0 truncate text-[12.5px] text-text-secondary">{children}</dd>
     </div>
   )

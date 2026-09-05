@@ -584,7 +584,7 @@ export default function FrameBuilder({
               />
             </Field>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[11px] text-text-muted">
+              <span className="text-micro text-text-muted">
                 {t('layoutEditor.frameBuilder.appliesTo', {
                   breakpoint: t(`layoutEditor.frameBuilder.breakpoint.${activeBreakpoint}`)
                 })}
@@ -602,7 +602,7 @@ export default function FrameBuilder({
             actions={
               <button
                 type="button"
-                className="text-[11px] text-text-muted underline hover:text-text"
+                className="text-micro text-text-muted underline hover:text-text"
                 onClick={() => updateLayout({ columnSizes: undefined, rowSizes: undefined })}
               >
                 {t('layoutEditor.frameBuilder.resetTracks')}
@@ -722,7 +722,7 @@ export default function FrameBuilder({
         </div>
 
         <div className="mb-3 flex items-center justify-between gap-2">
-          <p className="text-[11px] font-medium text-text-muted">{t('layoutEditor.frameBuilder.availableAreasLabel')}</p>
+          <p className="text-micro font-medium text-text-muted">{t('layoutEditor.frameBuilder.availableAreasLabel')}</p>
           <Button variant="ghost" onClick={addNewArea}>
             {t('layoutEditor.frameBuilder.newArea')}
           </Button>
@@ -738,7 +738,7 @@ export default function FrameBuilder({
           accessibility={{ announcements, screenReaderInstructions }}
         >
         <UnplacedTray dragging={dragAreaId !== null}>
-          {unplacedAreas.length === 0 && <span className="px-1 text-[11px] text-text-muted">{t('layoutEditor.frameBuilder.allPlaced')}</span>}
+          {unplacedAreas.length === 0 && <span className="px-1 text-micro text-text-muted">{t('layoutEditor.frameBuilder.allPlaced')}</span>}
           {unplacedAreas.map((a) => (
             <TrayChip
               key={a.id}
@@ -869,7 +869,7 @@ export default function FrameBuilder({
             source keeps its place in the grid until the drop. */}
         <DragOverlay>
           {draggedArea && (
-            <div className="rounded-[6px] border border-blue-500 bg-blue-100 px-2 py-1 text-[11px] font-medium shadow-md dark:border-blue-400 dark:bg-blue-500/30">
+            <div className="rounded-[6px] border border-blue-500 bg-blue-100 px-2 py-1 text-micro font-medium shadow-md dark:border-blue-400 dark:bg-blue-500/30">
               {draggedArea.name}
             </div>
           )}
@@ -935,7 +935,7 @@ function TrackInputs({
 }): JSX.Element {
   return (
     <div>
-      <p className="mb-1.5 text-[11px] font-medium text-text-muted">{label}</p>
+      <p className="mb-1.5 text-micro font-medium text-text-muted">{label}</p>
       <div className="flex flex-wrap gap-1.5">
         {Array.from({ length: count }, (_, i) => (
           <label key={i} className="flex flex-col items-center gap-0.5">
@@ -1007,7 +1007,7 @@ function TrayChip({
   return (
     <div
       ref={setNodeRef}
-      className={`flex items-center gap-1 rounded-[6px] border border-dashed px-1.5 py-1 text-[11px] ${
+      className={`flex items-center gap-1 rounded-[6px] border border-dashed px-1.5 py-1 text-micro ${
         selected
           ? 'border-blue-500 bg-blue-100 ring-2 ring-blue-500/40 dark:border-blue-400 dark:bg-blue-500/20'
           : 'border-blue-300 bg-blue-50/60 dark:border-blue-500/40 dark:bg-blue-500/10'
@@ -1077,7 +1077,7 @@ function PlacedBox({
           onToggle()
         }
       }}
-      className={`flex min-h-[48px] cursor-pointer flex-col gap-1.5 rounded-[6px] border p-2 text-[11px] ${
+      className={`flex min-h-[48px] cursor-pointer flex-col gap-1.5 rounded-[6px] border p-2 text-micro ${
         selected
           ? 'border-blue-600 bg-blue-50 shadow-md ring-2 ring-blue-500/40 dark:border-blue-400 dark:bg-blue-500/10'
           : 'border-slate-300 bg-surface shadow-sm hover:border-blue-300 dark:border-ink/15 dark:bg-ink/[0.03] dark:hover:border-blue-500/30'

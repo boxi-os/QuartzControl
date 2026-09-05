@@ -533,7 +533,7 @@ export default function PluginsInstalled(): JSX.Element {
             <button
               key={key}
               onClick={() => setEnabledFilter(key)}
-              className={`rounded-[6px] px-3 py-1 text-[13px] font-medium transition-colors ${
+              className={`rounded-[6px] px-3 py-1 text-ui font-medium transition-colors ${
                 enabledFilter === key
                   ? 'bg-surface text-text shadow-sm dark:bg-ink/20'
                   : 'text-text-secondary hover:text-text'
@@ -543,7 +543,7 @@ export default function PluginsInstalled(): JSX.Element {
             </button>
           ))}
         </div>
-        <p className="ml-auto text-[13px] text-text-muted">
+        <p className="ml-auto text-ui text-text-muted">
           {filtering
             ? t('pluginsInstalled.countFiltered', { visible: visibleCount, total: items.length })
             : t('pluginsInstalled.countActive', { active: activeCount, total: items.length })}
@@ -698,7 +698,7 @@ function GroupHeading({ label, rawKey, count }: { label: string; rawKey?: string
   return (
     <h3 className="mb-2 flex items-baseline gap-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">
       {label}
-      {rawKey && <span className="font-mono text-[11px] font-normal normal-case tracking-normal text-text-muted">{rawKey}</span>}
+      {rawKey && <span className="font-mono text-micro font-normal normal-case tracking-normal text-text-muted">{rawKey}</span>}
       <span className="font-normal text-text-muted">({count})</span>
     </h3>
   )
@@ -942,7 +942,7 @@ function PluginRow({
             <p className="break-words font-medium leading-tight">{rowName}</p>
             {frame && <Badge>{t('pluginsInstalled.frameBadge')}</Badge>}
             {outdated.has(plugin.name) && <Badge tone="amber">{t('pluginsInstalled.updateAvailable')}</Badge>}
-            {savedIndex === index && <span className="text-[11px] text-green-600 dark:text-green-400">{t('pluginsInstalled.savedFlash')}</span>}
+            {savedIndex === index && <span className="text-micro text-green-600 dark:text-green-400">{t('pluginsInstalled.savedFlash')}</span>}
           </div>
           <p className="truncate text-xs text-text-muted" title={sourceLabel(plugin.source)}>
             {frame ? t('pluginsInstalled.frameSource') : sourceLabel(plugin.source)}
@@ -959,7 +959,7 @@ function PluginRow({
             )}
           </p>
           {description && <p className="mt-0.5 text-xs text-text-muted">{description}</p>}
-          {!expanded && summary && <p className="mt-0.5 font-mono text-[11px] text-text-muted">{summary}</p>}
+          {!expanded && summary && <p className="mt-0.5 font-mono text-micro text-text-muted">{summary}</p>}
         </div>
 
         {/* Fixed widths, not content-sized: across ~50 rows a button group that grew with the
@@ -1017,7 +1017,7 @@ function PluginRow({
           {/* groupOptions only makes sense once the plugin is actually placed in a group */}
           {layout.group && (
             <div className="mt-2 border-t border-dashed border-ink/10 pt-2 dark:border-ink/10">
-              <p className="mb-1 font-mono text-[11px] text-text-muted">groupOptions</p>
+              <p className="mb-1 font-mono text-micro text-text-muted">groupOptions</p>
               <FieldGroup
                 fields={buildGroupOptionsFields(t)}
                 values={layout.groupOptions ?? {}}
@@ -1078,7 +1078,7 @@ function PluginOptions({
   if (schema) {
     return (
       <div className="mt-3 border-t border-ink/10 pt-3 dark:border-ink/10">
-        <p className="mb-2 text-[11px] text-text-muted">
+        <p className="mb-2 text-micro text-text-muted">
           <span className="font-medium">{t('pluginsInstalled.availableOptions')}</span>{' '}
           {schema
             .map(
@@ -1100,7 +1100,7 @@ function PluginOptions({
   const keys = Object.keys(options)
   return (
     <div className="mt-3 border-t border-ink/10 pt-3 dark:border-ink/10">
-      <p className="mb-2 text-[11px] text-text-muted">{t('pluginsInstalled.noSchemaInfo')}</p>
+      <p className="mb-2 text-micro text-text-muted">{t('pluginsInstalled.noSchemaInfo')}</p>
       <div className="flex flex-col gap-2">
         {keys.map((key) => (
           <InferredFieldRow
@@ -1159,7 +1159,7 @@ function AddOptionRow({
       >
         {t('pluginsInstalled.addOption')}
       </Button>
-      <p className="text-[11px] text-text-muted">
+      <p className="text-micro text-text-muted">
         {duplicate ? t('pluginsInstalled.optionKeyExists') : t('pluginsInstalled.optionValueHint')}
       </p>
     </div>
@@ -1267,7 +1267,7 @@ function FieldRow({
       </div>
       {/* uses the free space to the right of the control to briefly explain the possible values,
           instead of cramming it under the (already narrow) label column */}
-      {field.description && <p className="flex-1 text-[11px] text-text-muted">{field.description}</p>}
+      {field.description && <p className="flex-1 text-micro text-text-muted">{field.description}</p>}
     </div>
   )
 }

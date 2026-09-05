@@ -110,11 +110,11 @@ export function ItemCard({
             </span>
           )}
           <span className="truncate text-sm font-medium">{plugin.name}</span>
-          {isDuplicate && rank !== undefined && <span className="text-[11px] text-text-muted">#{rank}</span>}
+          {isDuplicate && rank !== undefined && <span className="text-micro text-text-muted">#{rank}</span>}
         </div>
         <div className="flex flex-wrap items-center justify-end gap-1.5">
           {layout?.group && (
-            <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${color?.bg} ${color?.text}`}>{layout.group}</span>
+            <span className={`rounded-full px-2 py-0.5 text-micro font-medium ${color?.bg} ${color?.text}`}>{layout.group}</span>
           )}
           {layout?.display && layout.display !== 'all' && (
             <Badge tone="amber">
@@ -177,7 +177,7 @@ export function ItemCard({
 // GlobalBoard wires its own dnd-kit draggable behavior around this and just renders it for the look.
 export function PaletteChip({ plugin }: { plugin: PluginEntry }): JSX.Element {
   return (
-    <div className="flex cursor-grab items-center gap-1.5 rounded-[6px] border border-dashed border-blue-300 bg-blue-50/60 px-2.5 py-1.5 text-[11px] font-medium active:cursor-grabbing dark:border-blue-500/40 dark:bg-blue-500/10">
+    <div className="flex cursor-grab items-center gap-1.5 rounded-[6px] border border-dashed border-blue-300 bg-blue-50/60 px-2.5 py-1.5 text-micro font-medium active:cursor-grabbing dark:border-blue-500/40 dark:bg-blue-500/10">
       {plugin.name}
     </div>
   )

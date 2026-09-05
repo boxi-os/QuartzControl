@@ -8,7 +8,7 @@ import type { LucideIcon } from 'lucide-react'
 // something, and there is no token for "danger".
 //
 // Sizes are the role tokens from tailwind.config.js too (`text-micro`, `text-ui`, `text-heading`),
-// not `text-[11px]`/`text-[13px]`: this file is the pilot for those the same way it is for the
+// not `text-micro`/`text-ui`: this file is the pilot for those the same way it is for the
 // colours, and a new line of text should pick a role rather than a number.
 //
 // A disabled control still has to say what it is, and that means explicit disabled colours, never

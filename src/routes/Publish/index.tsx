@@ -428,7 +428,7 @@ export default function Publish(): JSX.Element {
                 <span className="ml-2 text-amber-600 dark:text-amber-400">{t('publish.noSecretWarning')}</span>
               )}
               {activeConnection?.kind === 'ssh' && (
-                <span className="mt-1 block font-mono text-[11px] text-text-muted">
+                <span className="mt-1 block font-mono text-micro text-text-muted">
                   {activeConnection.hostKey
                     ? `${t('publish.hostKeyPinned')}: ${activeConnection.hostKey.fingerprint}`
                     : t('publish.hostKeyUnknown')}
@@ -638,7 +638,7 @@ export default function Publish(): JSX.Element {
             {targetDraft.destination.type !== 'git-branch' && (
               <Field label={t('publish.targetForm.excludes')} className="sm:col-span-2 xl:col-span-1">
                 <textarea
-                  className="min-h-20 rounded-[7px] border border-ink/10 bg-surface px-2.5 py-1.5 font-mono text-[13px] text-text shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-ink/10 dark:bg-ink/5"
+                  className="min-h-20 rounded-[7px] border border-ink/10 bg-surface px-2.5 py-1.5 font-mono text-ui text-text shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-ink/10 dark:bg-ink/5"
                   value={(targetDraft.excludes ?? []).join('\n')}
                   placeholder={t('publish.targetForm.excludesPlaceholder')}
                   onChange={(e) =>
@@ -701,7 +701,7 @@ export default function Publish(): JSX.Element {
                 <Button variant="ghost" onClick={() => setConnectionDraft(emptyConnectionDraft(draftKind))}>
                   {t('publish.newConnectionOfKind', { kind: CONNECTION_KIND_LABEL[draftKind] })}
                 </Button>
-                <Link to="/settings" className="text-[13px] text-text-muted underline hover:text-text">
+                <Link to="/settings" className="text-ui text-text-muted underline hover:text-text">
                   {t('publish.manageConnections')}
                 </Link>
               </div>

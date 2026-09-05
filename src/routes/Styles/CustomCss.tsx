@@ -504,7 +504,7 @@ function FileOrder({
               activeTab === file.relativePath ? 'bg-blue-50 dark:bg-blue-500/10' : ''
             }`}
           >
-            <span className="w-4 shrink-0 text-right text-[11px] text-text-muted">{index + 1}</span>
+            <span className="w-4 shrink-0 text-right text-micro text-text-muted">{index + 1}</span>
             {renaming?.relativePath === file.relativePath ? (
               <>
                 <TextInput
@@ -515,7 +515,7 @@ function FileOrder({
                 />
                 <button
                   type="button"
-                  className="shrink-0 text-[11px] underline"
+                  className="shrink-0 text-micro underline"
                   onClick={() =>
                     run(async () => {
                       await window.quartzGui.styles.renameFile(projectPath, file.relativePath, renaming.name.trim())
@@ -525,7 +525,7 @@ function FileOrder({
                 >
                   {t('common.save')}
                 </button>
-                <button type="button" className="shrink-0 text-[11px] underline" onClick={() => setRenaming(null)}>
+                <button type="button" className="shrink-0 text-micro underline" onClick={() => setRenaming(null)}>
                   {t('common.cancel')}
                 </button>
               </>
@@ -556,7 +556,7 @@ function FileOrder({
                 </button>
                 <button
                   type="button"
-                  className="shrink-0 text-[11px] text-text-muted underline"
+                  className="shrink-0 text-micro text-text-muted underline"
                   onClick={() => setRenaming({ relativePath: file.relativePath, name: file.name })}
                 >
                   {t('styleEditor.files.rename')}
@@ -565,7 +565,7 @@ function FileOrder({
                   <>
                     <button
                       type="button"
-                      className="shrink-0 text-[11px] font-medium text-red-600 underline"
+                      className="shrink-0 text-micro font-medium text-red-600 underline"
                       onClick={() =>
                         run(async () => {
                           await window.quartzGui.styles.deleteFile(projectPath, file.relativePath)
@@ -575,14 +575,14 @@ function FileOrder({
                     >
                       {t('styleEditor.files.deleteConfirm')}
                     </button>
-                    <button type="button" className="shrink-0 text-[11px] underline" onClick={() => setConfirmDelete(null)}>
+                    <button type="button" className="shrink-0 text-micro underline" onClick={() => setConfirmDelete(null)}>
                       {t('common.cancel')}
                     </button>
                   </>
                 ) : (
                   <button
                     type="button"
-                    className="shrink-0 text-[11px] text-text-muted underline"
+                    className="shrink-0 text-micro text-text-muted underline"
                     onClick={() => setConfirmDelete(file.relativePath)}
                   >
                     {t('styleEditor.files.delete')}
@@ -596,7 +596,7 @@ function FileOrder({
         <div className="flex items-center gap-1.5 rounded-md border-t border-dashed border-ink/10 px-1.5 pt-1.5 text-xs text-text-muted dark:border-ink/10">
           <span className="w-4 shrink-0" />
           <span className="min-w-0 flex-1 truncate font-mono">custom.scss</span>
-          <span className="shrink-0 text-[11px] text-text-muted">{t('styleEditor.files.alwaysLast')}</span>
+          <span className="shrink-0 text-micro text-text-muted">{t('styleEditor.files.alwaysLast')}</span>
         </div>
       </div>
 
@@ -604,7 +604,7 @@ function FileOrder({
           its own state rather than hiding, since it looks like a working file in Finder. */}
       {orphans.length > 0 && (
         <div className="mt-3">
-          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
+          <p className="mb-1 text-micro font-semibold uppercase tracking-wide text-text-secondary">
             {t('styleEditor.files.orphansHeading')}
           </p>
           <div className="flex flex-col gap-1">
@@ -613,7 +613,7 @@ function FileOrder({
                 <span className="min-w-0 flex-1 truncate font-mono text-text-muted">{file.name}</span>
                 <button
                   type="button"
-                  className="shrink-0 text-[11px] underline"
+                  className="shrink-0 text-micro underline"
                   onClick={() => onSetOrder([...imported.map((f) => f.relativePath), file.relativePath])}
                 >
                   {t('styleEditor.files.include')}
@@ -711,14 +711,14 @@ function CheckBanner({
 
   if (result.status === 'unavailable') {
     return (
-      <p className="rounded-md border border-ink/[0.06] p-2 text-[11px] text-text-muted dark:border-ink/10">
+      <p className="rounded-md border border-ink/[0.06] p-2 text-micro text-text-muted dark:border-ink/10">
         {t('styleEditor.check.unavailable', { reason: result.reason })}
       </p>
     )
   }
 
   return (
-    <p className="flex items-center gap-1.5 text-[11px] text-green-700 dark:text-green-400">
+    <p className="flex items-center gap-1.5 text-micro text-green-700 dark:text-green-400">
       <Check size={12} aria-hidden />
       {t('styleEditor.check.ok')}
       <button type="button" className="ml-1 text-text-muted underline" onClick={onRecheck} disabled={checking}>
@@ -803,7 +803,7 @@ function ActiveStyles(): JSX.Element {
             ))}
           </tbody>
         </table>
-        <p role="status" className="mt-2 min-h-[15px] truncate text-[11px] text-green-700 dark:text-green-400">
+        <p role="status" className="mt-2 min-h-[15px] truncate text-micro text-green-700 dark:text-green-400">
           {copied ? t('common.copied', { value: copied }) : ''}
         </p>
       </div>
@@ -821,7 +821,7 @@ function ActiveStyles(): JSX.Element {
             const available = fontIsAvailable(family)
             return (
               <div key={key} className="border-t border-ink/[0.05] py-1.5 first:border-t-0 first:pt-0">
-                <div className="flex flex-wrap items-baseline gap-x-2 text-[11px]">
+                <div className="flex flex-wrap items-baseline gap-x-2 text-micro">
                   <code className="w-[74px] shrink-0 font-mono text-text-muted">{key}</code>
                   <button
                     type="button"
@@ -853,12 +853,12 @@ function ActiveStyles(): JSX.Element {
 
         {/* Said once under the block, not on every line: four identical warnings read as four
             problems. The short word sits on the line it belongs to. */}
-        {anyMissing && <p className="mt-2 text-[11px] text-amber-700 dark:text-amber-400">{t('styleEditor.current.notInstalledExplainer')}</p>}
+        {anyMissing && <p className="mt-2 text-micro text-amber-700 dark:text-amber-400">{t('styleEditor.current.notInstalledExplainer')}</p>}
 
         {/* Where the fonts come from decides what the weights above even mean - and whether the
             site calls Google at all. Both mechanisms are checked, not just the theme setting: the
             Fonts plugin has its own fontOrigin and defaults to Google. */}
-        <div className="mt-2 flex flex-col gap-1 text-[11px]">
+        <div className="mt-2 flex flex-col gap-1 text-micro">
           {loaders.length === 0 && <p className="text-text-muted">{t('styleEditor.current.noLoader')}</p>}
           {loaders.map((loader) => (
             <p

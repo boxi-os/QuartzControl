@@ -525,7 +525,7 @@ function ComponentPalette({
     // box - a duplicate dragged back from elsewhere on the board only needs to land generally in
     // this region, not thread a needle into the narrower box below.
     <div ref={setNodeRef} className="flex flex-col gap-1.5">
-      <p className="text-[11px] font-medium text-text-muted">
+      <p className="text-micro font-medium text-text-muted">
         {removableActive ? t('layoutEditor.componentPill.paletteDropToRemove') : t('layoutEditor.componentPill.paletteLabel')}
       </p>
       <div
@@ -541,7 +541,7 @@ function ComponentPalette({
           <DraggablePaletteChip key={index} index={index} plugin={plugin} />
         ))}
       </div>
-      <p className="text-[11px] text-text-muted">{t('layoutEditor.componentPill.paletteHint')}</p>
+      <p className="text-micro text-text-muted">{t('layoutEditor.componentPill.paletteHint')}</p>
     </div>
   )
 }
@@ -568,7 +568,7 @@ function AreaBox({ label, slotLabel, children }: { label: string; slotLabel?: st
   return (
     <div className="flex h-full flex-col gap-1.5 rounded-[6px] border border-slate-300 bg-surface p-2 shadow-sm dark:border-ink/15 dark:bg-ink/[0.03]">
       <div className="flex items-center justify-between gap-1">
-        <span className="truncate text-[11px] font-semibold uppercase tracking-wide text-text-secondary">{label}</span>
+        <span className="truncate text-micro font-semibold uppercase tracking-wide text-text-secondary">{label}</span>
         {slotLabel && slotLabel !== label && <Badge>{slotLabel}</Badge>}
       </div>
       {children}

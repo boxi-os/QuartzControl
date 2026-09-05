@@ -218,7 +218,7 @@ export default function ProjectLayout(): JSX.Element {
           <NavLink
             to="/"
             onClick={(event) => guardLeave(event, '/')}
-            className="titlebar-no-drag flex items-center gap-1.5 rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium text-slate-700 transition-colors hover:bg-ink/[0.05] dark:text-slate-200 dark:hover:bg-ink/10"
+            className="titlebar-no-drag flex items-center gap-1.5 rounded-[6px] px-2.5 py-1.5 text-ui font-medium text-text transition-colors hover:bg-ink/[0.05] dark:hover:bg-ink/10"
           >
             <ArrowLeft size={14} aria-hidden /> {t('projectLayout.allProjects')}
           </NavLink>
@@ -228,10 +228,10 @@ export default function ProjectLayout(): JSX.Element {
           <div className="min-w-0">
             {/* A <p>, not a second <h1>: the page's own heading is the one in PageHeader, and two
                 first-level headings on one page leave a screen reader without a single top. */}
-            <p className="truncate text-[13px] font-semibold text-text" title={project.name}>
+            <p className="truncate text-ui font-semibold text-text" title={project.name}>
               {project.name}
             </p>
-            <p className="truncate text-[11px] text-text-muted" title={project.path}>
+            <p className="truncate text-micro text-text-muted" title={project.path}>
               {project.path}
             </p>
           </div>
@@ -242,7 +242,7 @@ export default function ProjectLayout(): JSX.Element {
             return (
               <div key={group.label ?? `top-${i}`} className="flex flex-col gap-0.5">
                 {group.label && (
-                  <div className="flex items-center gap-1.5 px-2.5 pb-1 pt-1 text-[11px] font-semibold uppercase tracking-wide text-text-secondary">
+                  <div className="flex items-center gap-1.5 px-2.5 pb-1 pt-1 text-micro font-semibold uppercase tracking-wide text-text-secondary">
                     {GroupIcon && <GroupIcon size={12} aria-hidden />}
                     {group.label}
                   </div>
@@ -256,10 +256,10 @@ export default function ProjectLayout(): JSX.Element {
                       end={item.end}
                       onClick={(event) => guardLeave(event, item.to || '.')}
                       className={({ isActive }) =>
-                        `flex items-center gap-2 rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium transition-colors ${
+                        `flex items-center gap-2 rounded-[6px] px-2.5 py-1.5 text-ui font-medium transition-colors ${
                           isActive
                             ? 'bg-blue-600 text-white'
-                            : 'text-slate-700 hover:bg-ink/[0.05] dark:text-slate-200 dark:hover:bg-ink/10'
+                            : 'text-text hover:bg-ink/[0.05] dark:hover:bg-ink/10'
                         }`
                       }
                     >

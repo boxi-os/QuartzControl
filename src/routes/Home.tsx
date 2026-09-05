@@ -124,12 +124,12 @@ export default function Home(): JSX.Element {
               <img src={appIcon} alt="" className="h-14 w-14 rounded-2xl shadow-sm" />
               <div>
                 <h1 className="text-2xl font-semibold">QuartzControl</h1>
-                <p className="mt-0.5 text-[13px] text-text-muted">{t('home.subtitle')}</p>
+                <p className="mt-0.5 text-ui text-text-muted">{t('home.subtitle')}</p>
               </div>
             </div>
             <Link
               to="/settings"
-              className="shrink-0 pt-1 text-[13px] text-text-muted hover:text-text"
+              className="shrink-0 pt-1 text-ui text-text-muted hover:text-text"
             >
               {t('home.settings')}
             </Link>
@@ -159,7 +159,7 @@ export default function Home(): JSX.Element {
               </div>
 
               {projects === null ? (
-                <p className="text-[13px] text-text-muted">{t('common.loading')}</p>
+                <p className="text-ui text-text-muted">{t('common.loading')}</p>
               ) : sorted.length === 0 ? (
                 <GettingStarted onOpen={openExisting} onCreate={() => setShowWizard(true)} />
               ) : (
@@ -186,7 +186,7 @@ export default function Home(): JSX.Element {
                     />
                   ))}
                   {filtered.length === 0 && (
-                    <p className="text-[13px] text-text-muted">{t('home.noSearchResults')}</p>
+                    <p className="text-ui text-text-muted">{t('home.noSearchResults')}</p>
                   )}
                 </div>
               )}
@@ -416,10 +416,10 @@ function DuplicateWizard({
         </Field>
 
         {nameInvalid ? (
-          <p className="text-[11px] text-red-600 dark:text-red-400">{t('home.wizard.nameInvalid')}</p>
+          <p className="text-micro text-red-600 dark:text-red-400">{t('home.wizard.nameInvalid')}</p>
         ) : (
           targetDirectory && (
-            <p className="break-all text-[11px] text-text-muted">
+            <p className="break-all text-micro text-text-muted">
               {t('home.wizard.targetPreview')} <code className="font-mono">{targetDirectory}</code>
             </p>
           )
@@ -444,13 +444,13 @@ function DuplicateWizard({
           </Field>
         )}
 
-        <p className="text-[11px] text-text-muted">{t('home.duplicate.whatStaysBehind')}</p>
+        <p className="text-micro text-text-muted">{t('home.duplicate.whatStaysBehind')}</p>
 
         {/* Mounted whether or not there is an error, because a live region has to be in the
             document *before* its text is - the same reason PageHeader's status slot renders empty
             rather than not at all, and the same reason `empty:hidden` is not used here. An empty
             <p> is zero-height; it costs the flex gap next to it and nothing else. */}
-        <p role="alert" className="text-[11px] text-red-600 dark:text-red-400">
+        <p role="alert" className="text-micro text-red-600 dark:text-red-400">
           {error}
         </p>
 
@@ -519,18 +519,18 @@ function ProjectRow({
       </div>
 
       {project.missing ? (
-        <p className="flex items-center gap-1.5 text-[13px] text-amber-700 dark:text-amber-400">
+        <p className="flex items-center gap-1.5 text-ui text-amber-700 dark:text-amber-400">
           <TriangleAlert size={13} className="shrink-0" />
           {t('home.folderMissing')}
         </p>
       ) : !project.isQuartzProject ? (
-        <p className="flex items-center gap-1.5 text-[13px] text-amber-700 dark:text-amber-400">
+        <p className="flex items-center gap-1.5 text-ui text-amber-700 dark:text-amber-400">
           <TriangleAlert size={13} className="shrink-0" />
           {t('home.notAQuartzProject')}
         </p>
       ) : (
         (project.siteTitle || project.baseUrl) && (
-          <p className="truncate text-[13px] text-text-secondary">
+          <p className="truncate text-ui text-text-secondary">
             {project.siteTitle && `„${project.siteTitle}“`}
             {project.siteTitle && project.baseUrl && ' · '}
             {project.baseUrl}
@@ -594,14 +594,14 @@ function GettingStarted({ onOpen, onCreate }: { onOpen: () => void; onCreate: ()
   return (
     <Card>
       <h2 className="text-heading font-semibold">{t('home.gettingStarted.title')}</h2>
-      <p className="mt-0.5 text-[13px] text-text-muted">{t('home.gettingStarted.description')}</p>
+      <p className="mt-0.5 text-ui text-text-muted">{t('home.gettingStarted.description')}</p>
       <ol className="mt-4 flex flex-col gap-3">
         {steps.map((step, index) => (
           <li key={step} className="flex gap-3">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-600/10 text-[11px] font-semibold text-blue-600 dark:bg-blue-400/10 dark:text-blue-400">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-600/10 text-micro font-semibold text-blue-600 dark:bg-blue-400/10 dark:text-blue-400">
               {index + 1}
             </span>
-            <span className="text-[13px] text-text-secondary">{step}</span>
+            <span className="text-ui text-text-secondary">{step}</span>
           </li>
         ))}
       </ol>
@@ -633,7 +633,7 @@ function NewerVersionBand(): JSX.Element | null {
 
   if (!status || status.state !== 'newer') return null
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-blue-300/60 bg-blue-50/60 px-3 py-2 text-[13px] text-blue-900 dark:border-blue-500/30 dark:bg-blue-500/[0.08] dark:text-blue-200">
+    <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-blue-300/60 bg-blue-50/60 px-3 py-2 text-ui text-blue-900 dark:border-blue-500/30 dark:bg-blue-500/[0.08] dark:text-blue-200">
       <span>{t('home.update.available', { latest: status.latest, current: status.current })}</span>
       {status.notes && <span className="text-blue-800/80 dark:text-blue-300/80">{status.notes}</span>}
       {status.url && (
@@ -694,7 +694,7 @@ function EnvironmentBand({ info, onRecheck }: { info: EnvironmentInfo; onRecheck
               {t('home.environment.titleProblem')}
             </h2>
           </div>
-          <p className="mt-1.5 text-[13px] leading-relaxed text-amber-900/80 dark:text-amber-200/80">
+          <p className="mt-1.5 text-ui leading-relaxed text-amber-900/80 dark:text-amber-200/80">
             {t('home.environment.description')}
           </p>
           <ul className="mt-2.5 flex flex-col gap-1">
@@ -717,7 +717,7 @@ function EnvironmentBand({ info, onRecheck }: { info: EnvironmentInfo; onRecheck
               {t('home.environment.secretsTitle')}
             </h2>
           </div>
-          <p className="mt-1.5 text-[13px] leading-relaxed text-amber-900/80 dark:text-amber-200/80">
+          <p className="mt-1.5 text-ui leading-relaxed text-amber-900/80 dark:text-amber-200/80">
             {info.secretStorage.available
               ? t('home.environment.secretsBody', { backend: info.secretStorage.backend ?? '?' })
               : t('home.environment.secretsUnavailable')}
@@ -812,7 +812,7 @@ function WhatYouCanDo({ environment }: { environment: EnvironmentInfo | null }):
             <div key={key} className="flex gap-2.5">
               <Icon size={15} className="mt-0.5 shrink-0 text-blue-600 dark:text-blue-400" />
               <div className="min-w-0">
-                <p className="text-[13px] font-medium">{t(`home.capabilities.${key}.title`)}</p>
+                <p className="text-ui font-medium">{t(`home.capabilities.${key}.title`)}</p>
                 <p className="mt-0.5 text-xs leading-relaxed text-text-muted">
                   {t(`home.capabilities.${key}.body`)}
                 </p>
@@ -839,7 +839,7 @@ function ExternalLink({ url, label }: { url: string; label: string }): JSX.Eleme
     <button
       type="button"
       onClick={() => void window.quartzGui.dialog.openExternal(url)}
-      className="flex w-fit items-center gap-1 text-[13px] text-blue-600 hover:underline dark:text-blue-400"
+      className="flex w-fit items-center gap-1 text-ui text-blue-600 hover:underline dark:text-blue-400"
     >
       {label}
       <ArrowUpRight size={13} />
@@ -984,10 +984,10 @@ function CreateWizard({
           </Field>
 
           {nameInvalid ? (
-            <p className="text-[11px] text-red-600 dark:text-red-400">{t('home.wizard.nameInvalid')}</p>
+            <p className="text-micro text-red-600 dark:text-red-400">{t('home.wizard.nameInvalid')}</p>
           ) : (
             targetDirectory && (
-              <p className="break-all text-[11px] text-text-muted">
+              <p className="break-all text-micro text-text-muted">
                 {t('home.wizard.targetPreview')} <code className="font-mono">{targetDirectory}</code>
               </p>
             )

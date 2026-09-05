@@ -73,12 +73,12 @@ export default function Settings(): JSX.Element {
           <button
             type="button"
             onClick={() => (location.key === 'default' ? navigate('/') : navigate(-1))}
-            className="text-[13px] text-text-muted hover:text-text"
+            className="text-ui text-text-muted hover:text-text"
           >
             ← {t('common.back')}
           </button>
           <h1 className="mb-1 mt-2 text-2xl font-semibold">{t('settings.title')}</h1>
-          <p className="mb-6 text-[13px] text-text-muted">{t('settings.subtitle')}</p>
+          <p className="mb-6 text-ui text-text-muted">{t('settings.subtitle')}</p>
 
           <div className="flex flex-col gap-4">
             <AppearanceSection settings={settings} persist={persist} />
@@ -113,7 +113,7 @@ function Section({
         </div>
         <div className="min-w-0">
           <h2 className="text-heading font-semibold">{title}</h2>
-          <p className="mt-0.5 text-[13px] text-text-muted">{description}</p>
+          <p className="mt-0.5 text-ui text-text-muted">{description}</p>
         </div>
       </div>
       {children}
@@ -217,7 +217,7 @@ function RuntimeSection({
           ]}
         />
       </FieldGroup>
-      <p className="mt-2 text-[13px] text-text-muted">
+      <p className="mt-2 text-ui text-text-muted">
         {mode === 'embedded'
           ? t('settings.runtime.inUseEmbedded', { node: node?.version ?? '—', npm: npm?.version ?? '—' })
           : t('settings.runtime.inUseSystem', { node: node?.version ?? t('settings.runtime.noSystemNode') })}
@@ -235,7 +235,7 @@ function RuntimeSection({
           aber die umgekehrte: das vom Rechner gewinnt, weil es die Einrichtung des Nutzers trägt.
           Kein Schalter: es gibt keinen Fall, in dem jemand das mitgelieferte git *vorziehen* will. */}
       <div className="mt-4 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
-        <p className="text-[13px] text-text-muted">
+        <p className="text-ui text-text-muted">
           {git?.source === 'embedded'
             ? t('settings.runtime.gitBundled', { version: versionNumber(git.version) })
             : t('settings.runtime.gitHost', { version: versionNumber(git?.version ?? null) })}
@@ -323,7 +323,7 @@ function ProjectsSection({
         </Button>
         {/* Settings has no PageHeader to hand this to, so the live region sits here - mounted
             always, filled when there is something to say. */}
-        <span role="status" className="text-[13px]">
+        <span role="status" className="text-ui">
           {saved && <span className="text-green-600 dark:text-green-400">{t('common.saved')}</span>}
           {save.error && <span className="text-red-600 dark:text-red-400">{save.error}</span>}
         </span>
@@ -386,7 +386,7 @@ function GithubSection(): JSX.Element {
   return (
     <Section icon={Key} title={t('settings.github.title')} description={t('settings.github.description')}>
       {connection?.hasSecret && (
-        <div className="mb-3 flex flex-wrap items-center gap-2 text-[13px]">
+        <div className="mb-3 flex flex-wrap items-center gap-2 text-ui">
           {status === 'valid' && account ? (
             <>
               <Badge tone="green">{t('settings.github.valid')}</Badge>
@@ -419,7 +419,7 @@ function GithubSection(): JSX.Element {
           </Button>
           <button
             type="button"
-            className="text-[13px] text-text-muted underline hover:text-text"
+            className="text-ui text-text-muted underline hover:text-text"
             onClick={() => remove.run()}
             disabled={remove.pending}
           >
@@ -443,7 +443,7 @@ function GithubSection(): JSX.Element {
         </div>
       </Field>
       {(save.error || remove.error) && (
-        <p className="mt-2 text-[13px] text-red-600 dark:text-red-400">{save.error ?? remove.error}</p>
+        <p className="mt-2 text-ui text-red-600 dark:text-red-400">{save.error ?? remove.error}</p>
       )}
       <p className="mt-3 text-xs text-text-muted">{t('settings.github.scopeHint')}</p>
     </Section>
@@ -506,7 +506,7 @@ function ConnectionsSection(): JSX.Element {
   return (
     <Section icon={Plug} title={t('settings.connections.title')} description={t('settings.connections.description')}>
       {listed.length === 0 && !draft && (
-        <p className="mb-3 text-[13px] text-text-muted">{t('settings.connections.empty')}</p>
+        <p className="mb-3 text-ui text-text-muted">{t('settings.connections.empty')}</p>
       )}
 
       <div className="flex flex-col gap-2">
@@ -553,7 +553,7 @@ function ConnectionsSection(): JSX.Element {
         ))}
       </div>
 
-      {remove.error && <p className="mt-2 text-[13px] text-red-600 dark:text-red-400">{remove.error}</p>}
+      {remove.error && <p className="mt-2 text-ui text-red-600 dark:text-red-400">{remove.error}</p>}
 
       {draft ? (
         <div className="mt-4 rounded-[8px] border border-ink/[0.06] p-3 dark:border-ink/10">
@@ -617,7 +617,7 @@ function MaintenanceSection(): JSX.Element {
             <TriangleAlert size={15} className="shrink-0 text-amber-600 dark:text-amber-400" aria-hidden />
             {t('settings.maintenance.unreadableTitle')}
           </p>
-          <p className="mt-1.5 text-[13px] leading-relaxed text-amber-900/80 dark:text-amber-200/80">
+          <p className="mt-1.5 text-ui leading-relaxed text-amber-900/80 dark:text-amber-200/80">
             {t('settings.maintenance.unreadableHint')}
           </p>
           <ul className="mt-2 space-y-1">
@@ -631,8 +631,8 @@ function MaintenanceSection(): JSX.Element {
       )}
       <div className="grid gap-4 lg:grid-cols-2">
         <div>
-          <p className="text-[13px] font-medium text-text-secondary">{t('settings.maintenance.cache')}</p>
-          <p className="mt-0.5 text-[13px] text-text-muted">
+          <p className="text-ui font-medium text-text-secondary">{t('settings.maintenance.cache')}</p>
+          <p className="mt-0.5 text-ui text-text-muted">
             {info
               ? t('settings.maintenance.cacheSize', {
                   count: info.themeDocsCache.entries,
@@ -649,11 +649,11 @@ function MaintenanceSection(): JSX.Element {
           >
             {clearCache.pending ? t('settings.maintenance.clearing') : t('settings.maintenance.clearCache')}
           </Button>
-          {clearCache.error && <p className="mt-2 text-[13px] text-red-600 dark:text-red-400">{clearCache.error}</p>}
+          {clearCache.error && <p className="mt-2 text-ui text-red-600 dark:text-red-400">{clearCache.error}</p>}
         </div>
 
         <div>
-          <p className="text-[13px] font-medium text-text-secondary">{t('settings.maintenance.storage')}</p>
+          <p className="text-ui font-medium text-text-secondary">{t('settings.maintenance.storage')}</p>
           <p className="mt-0.5 break-all text-xs text-text-muted">{info?.userDataPath ?? '…'}</p>
           <p className="mt-1 text-xs text-text-muted">{t('settings.maintenance.storageHint')}</p>
           <Button className="mt-2" variant="ghost" onClick={() => void window.quartzGui.dialog.revealUserData()}>

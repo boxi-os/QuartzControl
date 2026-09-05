@@ -1,22 +1,22 @@
-// Nimmt die *berechneten* Farben jedes Elements auf jeder Route in beiden Farbschemata auf, und
-// vergleicht zwei solche Aufnahmen.
+// Nimmt die *berechneten* Farben und Schriftmaße jedes Elements auf jeder Route in beiden
+// Farbschemata auf, und vergleicht zwei solche Aufnahmen.
 //
 // Existiert aus demselben Grund wie check:i18n: das Ersetzen einer Palette-Klasse durch ein
-// Farb-Token ist im Typcheck und im Build unsichtbar, und ein Diff der Klassennamen beantwortet
-// nicht die einzige Frage, die zählt - sieht es hinterher genauso aus. Indiziert wird über die
-// Position im DOM, nicht über die Klasse; genau deshalb trägt der Vergleich über die Umstellung
-// hinweg.
+// Farb-Token oder einer `text-[13px]` durch `text-ui` ist im Typcheck und im Build unsichtbar, und
+// ein Diff der Klassennamen beantwortet nicht die einzige Frage, die zählt - sieht es hinterher
+// genauso aus. Indiziert wird über die Position im DOM, nicht über die Klasse; genau deshalb trägt
+// der Vergleich über die Umstellung hinweg.
 //
-//   node scripts/colors-snapshot.mjs vorher.json      (vor der Änderung, nach `npm run build`)
-//   node scripts/colors-snapshot.mjs nachher.json     (danach, wieder nach `npm run build`)
-//   node scripts/colors-snapshot.mjs --diff vorher.json nachher.json
+//   node scripts/styles-snapshot.mjs vorher.json      (vor der Änderung, nach `npm run build`)
+//   node scripts/styles-snapshot.mjs nachher.json     (danach, wieder nach `npm run build`)
+//   node scripts/styles-snapshot.mjs --diff vorher.json nachher.json
 //
 // `--hover` nimmt statt des Ruhezustands den *Hover*-Zustand auf: jedes Element, dessen Klassen
 // eine `hover:`-Farbe tragen, wird der Reihe nach mit einer echten Mausbewegung angefahren und
 // danach ausgelesen. Ohne das ist eine Umstellung von Hover-Klassen unbelegbar - der Ruhezustand
 // ist dabei ja gerade unverändert. Verglichen wird mit demselben `--diff`.
 //
-// Der Diff nennt jede Farbänderung mit Schema, Eigenschaft, altem und neuem Wert und wie oft sie
+// Der Diff nennt jede Änderung mit Schema, Eigenschaft, altem und neuem Wert und wie oft sie
 // vorkommt - eine Umstellung, die nichts ändern soll, hat eine leere Liste, und eine, die etwas
 // ändern soll, zeigt genau das und sonst nichts.
 import { _electron as electron } from 'playwright-core'
@@ -54,7 +54,7 @@ function diff(fileA, fileB) {
   const a = JSON.parse(fs.readFileSync(fileA, 'utf-8'))
   const b = JSON.parse(fs.readFileSync(fileB, 'utf-8'))
   const keys = Object.keys(a).filter((k) => k in b)
-  const props = ['idx', 'tag', 'color', 'background', 'border-top', 'border-bottom', 'outline']
+  const props = ['idx', 'tag', 'color', 'background', 'border-top', 'border-bottom', 'outline', 'font-size', 'line-height']
   // Im --hover-Modus steht an Stelle 2 'hover'/'verdeckt' und die Farben rücken eins weiter.
   const hoverProps = ['idx', 'tag', 'erreicht', 'color', 'background', 'border-top']
   const counts = new Map()
@@ -84,7 +84,7 @@ function diff(fileA, fileB) {
   }
   console.log(`${same} von ${total} Elementen unverändert\n`)
   if (counts.size === 0) {
-    console.log('✓ keine einzige Farbe hat sich geändert.')
+    console.log('✓ keine einzige Farbe und kein einziges Schriftmaß hat sich geändert.')
     return
   }
   console.log('Unterschiede:')
@@ -99,7 +99,10 @@ function diff(fileA, fileB) {
 const collectResting = () =>
   [...document.querySelectorAll('#root *')].map((el, i) => {
     const s = getComputedStyle(el)
-    return [i, el.tagName, s.color, s.backgroundColor, s.borderTopColor, s.borderBottomColor, s.outlineColor].join('|')
+    // Zeilenhöhe mit aufgenommen, weil die Größen-Tokens *nur* die Schriftgröße setzen, so wie die
+    // arbitrary values, die sie ersetzen: bliebe die Zeilenhöhe nicht gleich, verschöbe sich das
+    // Layout, und genau das soll die Aufnahme ausschließen können.
+    return [i, el.tagName, s.color, s.backgroundColor, s.borderTopColor, s.borderBottomColor, s.outlineColor, s.fontSize, s.lineHeight].join('|')
   })
 
 // Eine echte Mausbewegung, kein :hover per Skript: die Pseudoklasse lässt sich nicht setzen, und
@@ -176,7 +179,7 @@ async function snapshot(out, hoverMode) {
 const argv = process.argv.slice(2)
 if (argv[0] === '--diff') {
   if (argv.length !== 3) {
-    console.error('Aufruf: node scripts/colors-snapshot.mjs --diff vorher.json nachher.json')
+    console.error('Aufruf: node scripts/styles-snapshot.mjs --diff vorher.json nachher.json')
     process.exit(2)
   }
   diff(argv[1], argv[2])
@@ -184,6 +187,6 @@ if (argv[0] === '--diff') {
   const hover = argv.includes('--hover')
   await snapshot(argv.find((a) => a !== '--hover'), hover)
 } else {
-  console.error('Aufruf: node scripts/colors-snapshot.mjs [--hover] <datei.json> | --diff <a.json> <b.json>')
+  console.error('Aufruf: node scripts/styles-snapshot.mjs [--hover] <datei.json> | --diff <a.json> <b.json>')
   process.exit(2)
 }

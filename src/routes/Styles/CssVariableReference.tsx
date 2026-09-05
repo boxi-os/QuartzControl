@@ -92,9 +92,9 @@ export default function CssVariableReference({ onInsert }: { onInsert: (text: st
           </VariableGroup>
         ))}
       </div>
-      <p className="mt-3 text-[11px] text-text-muted">{t('styleEditor.cssVars.rowHint')}</p>
+      <p className="mt-3 text-micro text-text-muted">{t('styleEditor.cssVars.rowHint')}</p>
       {/* Mounted whether or not anything was copied - see PageHeader's status slot. */}
-      <p role="status" className="mt-1 min-h-[15px] truncate text-[11px] text-green-700 dark:text-green-400">
+      <p role="status" className="mt-1 min-h-[15px] truncate text-micro text-green-700 dark:text-green-400">
         {copied ? t('common.copied', { value: copied }) : ''}
       </p>
 
@@ -195,7 +195,7 @@ function VariableRow({
           type="button"
           onClick={(e) => put(e, light || raw)}
           title={t('styleEditor.cssVars.insertValueHint', { value: light || raw })}
-          className="shrink-0 rounded px-1 text-[13px] text-text hover:bg-ink/[0.06] dark:hover:bg-ink/10"
+          className="shrink-0 rounded px-1 text-ui text-text hover:bg-ink/[0.06] dark:hover:bg-ink/10"
           style={{ fontFamily: light || raw }}
         >
           Aa
@@ -206,7 +206,7 @@ function VariableRow({
           type="button"
           onClick={(e) => put(e, raw)}
           title={t('styleEditor.cssVars.insertValueHint', { value: raw })}
-          className="shrink-0 rounded px-1 text-[11px] text-text-muted hover:bg-ink/[0.06] dark:hover:bg-ink/10"
+          className="shrink-0 rounded px-1 text-micro text-text-muted hover:bg-ink/[0.06] dark:hover:bg-ink/10"
         >
           {t('styleEditor.cssVars.insertValue')}
         </button>

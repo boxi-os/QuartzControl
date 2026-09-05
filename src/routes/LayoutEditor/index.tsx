@@ -215,7 +215,7 @@ export default function LayoutEditor(): JSX.Element {
             <button
               key={pt}
               onClick={() => selectPageType(pt)}
-              className={`flex items-center gap-1.5 rounded-[6px] px-2.5 py-1 text-[13px] font-medium transition-colors ${
+              className={`flex items-center gap-1.5 rounded-[6px] px-2.5 py-1 text-ui font-medium transition-colors ${
                 activePageType === pt
                   ? 'bg-blue-600 text-white'
                   : 'bg-ink/[0.04] text-text-secondary hover:bg-ink/[0.08] dark:bg-ink/10 dark:hover:bg-ink/15'

@@ -41,13 +41,14 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   Paket in ein zweites leeres Projekt und baut es. Was dabei gefunden wurde, steht in
   `scripts/example-template/BEFUNDE.md`
 
-- `node scripts/colors-snapshot.mjs <datei.json>` bzw. `--diff <a> <b>` — nimmt die *berechneten*
-  Farben jedes Elements auf jeder Route in hell und dunkel auf und vergleicht zwei Aufnahmen.
-  Braucht den Bau. Existiert aus demselben Grund wie `check:i18n`: ob eine Palette-Klasse durch das
-  richtige Token ersetzt wurde, sieht weder der Typcheck noch der Build, und ein Diff der
-  Klassennamen beantwortet die einzige Frage nicht — sieht es hinterher genauso aus. Indiziert wird
-  über die Position im DOM, nicht über die Klasse, und genau deshalb trägt der Vergleich über die
-  Umstellung hinweg
+- `node scripts/styles-snapshot.mjs <datei.json>` bzw. `--diff <a> <b>` — nimmt die *berechneten*
+  Farben und Schriftmaße jedes Elements auf jeder Route in hell und dunkel auf und vergleicht zwei
+  Aufnahmen; `--hover` fährt zusätzlich jedes Element mit einer `hover:`-Farbe per echter
+  Mausbewegung an. Braucht den Bau. Existiert aus demselben Grund wie `check:i18n`: ob eine
+  Palette-Klasse durch das richtige Token ersetzt wurde, sieht weder der Typcheck noch der Build,
+  und ein Diff der Klassennamen beantwortet die einzige Frage nicht — sieht es hinterher genauso
+  aus. Indiziert wird über die Position im DOM, nicht über die Klasse, und genau deshalb trägt der
+  Vergleich über die Umstellung hinweg
 
 - `npm run dist` / `dist:mac` / `dist:linux` / `dist:flatpak` — electron-builder (see
   `docs/decisions/electron-runtime-and-packaging.md`). `dist:flatpak` ist ein eigenes Skript, weil
@@ -244,8 +245,11 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   einer Drag-ID ein Name wird.
 - **Schriftgrößen heißen nach Rolle, so wie die Farben.** `text-micro` (11px: Labels, Hinweise,
   Badges), `text-ui` (13px: Text in einem Bedienelement oder einer Zeile), `text-heading` (15px: die
-  Überschrift einer Karte), definiert in `tailwind.config.js`. Neue Zeilen nehmen einen davon; die
-  Ausreißer (10/12/14/17/19px) behalten ihre Zahl, bis einer einen Namen verdient.
+  Überschrift einer Karte), definiert in `tailwind.config.js`. Seit dem 2026-09-06 gibt es keine
+  `text-[11px]`, `text-[13px]` und `text-[15px]` mehr; die Ausreißer (10/11,5/12/12,5/14/17/19px,
+  17 Stück) behalten ihre Zahl, bis einer einen Namen verdient. Die Tokens setzen **nur** die
+  Schriftgröße, genau wie die arbitrary values, die sie ersetzt haben - deshalb war die Umstellung
+  an 129 Stellen ohne jede Layoutfolge, gemessen mit `scripts/styles-snapshot.mjs`.
 - **Ein deaktiviertes Control muss noch lesbar sein.** Explizite disabled-Farben, keine Opazität:
   Text wird `text-text-muted`, ein Feld sinkt auf `bg-ground`, ein Icon-Button geht von
   `text-text-secondary` auf `text-text-muted`. Gedimmt werden darf nur, was keine eigene Information
@@ -339,7 +343,7 @@ Von dem, was beide Reviews als „beiläufig, kein sed“ führen, sind die Farb
 abgearbeitet, soweit sie eine Umbenennung waren: 322 Paare, die wörtlich das Token buchstabierten,
 plus sechs Stellen ohne `dark:`-Partner (3,50:1 im Dunkeln) und dreizehn Micro-Labels, die in
 Großbuchstaben zwei verschiedene Dunkel-Werte für dieselbe Rolle hatten. Gemessen mit
-`scripts/colors-snapshot.mjs`: von 13543 Elementen blieben 13152 unverändert, im Hellen kein
+`scripts/styles-snapshot.mjs`: von 13543 Elementen blieben 13152 unverändert, im Hellen kein
 einziges anders.
 
 Im zweiten Durchgang am selben Tag die **Hover-Zustände**: 31 Stellen sprachen dieselbe Geste in
@@ -362,11 +366,23 @@ benannt im Commit.
 
 Was bewusst Palette bleibt: die immer dunklen Konsolenflächen (`bg-slate-950` und der Text darauf —
 eine Fläche, die in beiden Schemata dunkel ist, bekommt weder `dark:` noch Token), die Statusfarben,
-die **Seitenleiste** (`text-slate-700 dark:text-slate-200`: der Token hätte die gesamte Navigation
-auf 1083 Elementen eine Stufe heller gemacht — die Hauptnavigation blasser zu machen ist keine
-Umbenennung) und acht strukturelle Grautöne, für die es keine Rolle gibt: der Fortschrittsbalken,
-der Rahmen einer Karte, die Fläche eines Hinweiskastens. Ebenfalls offen: die 133 übrigen
-Arbitrary-Value-Größen.
+und sieben strukturelle
+Grautöne, für die es keine Rolle gibt: der Fortschrittsbalken, der Rahmen einer Karte, die Fläche
+eines Hinweiskastens.
+
+Die **Seitenleiste** ist am 2026-09-06 nachgezogen, und zwar auf `--text`, nicht auf
+`--text-secondary`: die Gruppenüberschriften darüber (`EINRICHTUNG`, `GESTALTUNG`, …) sind bereits
+secondary, ein Eintrag auf demselben Wert wöge also so viel wie seine eigene Überschrift. Mit
+`--text` liest sich die Leiste als das, was sie ist — Überschrift schwächer, Eintrag stärker,
+aktiver Eintrag weiß auf Blau. Gemessen auf dem Grund der Leiste: 9,10:1 → 15,69:1 im Hellen und
+12,43:1 → 13,99:1 im Dunkeln, 1067 Elemente pro Schema. Die Größen-Tokens sind am 2026-09-06 nachgezogen: 129 Stellen
+(83× `text-[11px]`, 46× `text-[13px]`) tragen jetzt `text-micro` bzw. `text-ui`, gemessen ohne jede
+Änderung an Schriftgröße, Zeilenhöhe oder Farbe. Offen bleiben die 17 Ausreißer-Größen, die keinen
+Namen haben — darunter dreimal 12,5px auf der Übersicht, der einzige Kandidat für einen vierten
+Namen. Am 2026-09-06 nachgemessen und *nicht* umgestellt: die Übersicht hat fünf eigene Größen
+(19/17/12,5/12/11,5px), das ist eine nach Augenmaß gesetzte Skala für einen Bildschirm und keine
+Rolle; und die zwei Faktenzeilen auf `text-ui` zu heben (12,5 → 13px, 30 Elemente) ließ die Karte
+„Kein Ziel“ eine Zeile mehr umbrechen — die halbe Pixel war genau dafür gewählt.
 
 **Arbeitsregel** für die nächste Liste: ein Befund pro Durchgang, jeweils mit `npm run typecheck`,
 `npm run build`, `npm run smoke` und eigenem Commit; was dabei nebenbei auffällt, wird gesammelt und

@@ -1,6 +1,6 @@
 import { existsSync } from 'fs'
 import { readFile, readdir } from 'fs/promises'
-import { join } from 'path'
+import { isAbsolute, join, relative, resolve } from 'path'
 import type {
   TemplateConflictStrategy,
   TemplatePackageDependency,
@@ -74,6 +74,24 @@ export async function installedVersion(projectPath: string, name: string): Promi
   } catch {
     return undefined
   }
+}
+
+/**
+ * Where a file named by a package may be written, or null when that name would leave `dir`.
+ *
+ * The names in a part's payload (`files: [...]`) come from the package, and the package is not a
+ * trust boundary - it is a file somebody handed over. Measured before this check existed: a
+ * prepared .qtpl whose content part listed `../PROOF.md` wrote that file into the project root,
+ * with the plan calling it an addition and the import reporting success. Checked by resolving and
+ * comparing with `relative()` rather than by looking for `..` in the string, the same way
+ * buildOutputGuard decides whether a directory is inside the project: a prefix test answers
+ * `/a/bc` for the parent `/a/b`.
+ */
+export function containedPath(dir: string, name: string): string | null {
+  const target = resolve(dir, name)
+  const rel = relative(dir, target)
+  if (rel === '' || rel.startsWith('..') || isAbsolute(rel)) return null
+  return target
 }
 
 // Flat (non-recursive) listing - both quartz/static/fonts and quartz/styles/{custom,imported} are

@@ -22,7 +22,7 @@ import * as themePresetsService from '../themePresetsService'
 import { runCommand } from '../runCommand'
 import { mainT } from '../../i18n'
 import type { ZipEntry } from '../zipArchive'
-import { emptyPlan, hasNodeModule, installedVersion, listFilesFlat, type ApplyContext, type TemplatePart } from './shared'
+import { containedPath, emptyPlan, hasNodeModule, installedVersion, listFilesFlat, type ApplyContext, type TemplatePart } from './shared'
 
 // custom.scss's managed sections, split across three parts so each travels with what it describes:
 // 'imports' (the load order) and the file's own free-form body belong to `styles`, 'fonts' to
@@ -36,8 +36,12 @@ function stripAllManaged(content: string): string {
   return MANAGED_MARKERS.reduce((acc, marker) => styleService.stripManagedBlock(acc, marker), content).trim()
 }
 
+function stylesDir(projectPath: string): string {
+  return join(projectPath, 'quartz', 'styles')
+}
+
 function styleFilePath(projectPath: string, relativePath: string): string {
-  return join(projectPath, 'quartz', 'styles', ...relativePath.split('/'))
+  return join(stylesDir(projectPath), ...relativePath.split('/'))
 }
 
 function fontsDir(projectPath: string): string {
@@ -273,7 +277,11 @@ const styles: TemplatePart<StylesPayload> = {
   async plan(payload, { projectPath }) {
     const plan = emptyPlan()
     for (const relativePath of payload.files) {
-      if (existsSync(styleFilePath(projectPath, relativePath))) plan.conflicts.push(relativePath)
+      // A name that would leave quartz/styles is dropped from the plan too, not only from apply -
+      // the plan is what the user ticks, and it must not promise a file that will never be written.
+      const target = containedPath(stylesDir(projectPath), relativePath)
+      if (!target) continue
+      if (existsSync(target)) plan.conflicts.push(relativePath)
       else plan.additions.push(relativePath)
     }
     const current = stripAllManaged((await styleService.readCustomScss(projectPath)).content)
@@ -291,7 +299,11 @@ const styles: TemplatePart<StylesPayload> = {
     for (const relativePath of payload.files) {
       const data = files.get(`files/styles/${relativePath}`)
       if (!data) continue
-      const target = styleFilePath(projectPath, relativePath)
+      const target = containedPath(stylesDir(projectPath), relativePath)
+      if (!target) {
+        warn(`fileOutsideProject:${relativePath}`)
+        continue
+      }
       if (existsSync(target) && strategy === 'projectWins') {
         warn(`styleFileSkipped:${relativePath}`)
         continue
@@ -361,7 +373,8 @@ const fonts: TemplatePart<FontsPayload> = {
   async plan(payload, { projectPath, files }) {
     const plan = emptyPlan()
     for (const name of payload.files) {
-      const target = join(fontsDir(projectPath), name)
+      const target = containedPath(fontsDir(projectPath), name)
+      if (!target) continue
       if (!existsSync(target)) {
         plan.additions.push(name)
         continue
@@ -384,7 +397,11 @@ const fonts: TemplatePart<FontsPayload> = {
     for (const name of payload.files) {
       const data = files.get(`files/fonts/${name}`)
       if (!data) continue
-      const target = join(fontsDir(projectPath), name)
+      const target = containedPath(fontsDir(projectPath), name)
+      if (!target) {
+        warn(`fileOutsideProject:${name}`)
+        continue
+      }
       if (existsSync(target)) {
         if (sha(data) === sha(await readFile(target))) continue
         if (strategy === 'projectWins') {
@@ -790,7 +807,8 @@ const content: TemplatePart<ContentPayload> = {
     }
     const dir = contentService.contentDirPath(projectPath)
     for (const name of payload.files) {
-      const target = join(dir, name)
+      const target = containedPath(dir, name)
+      if (!target) continue
       if (!existsSync(target)) {
         plan.additions.push(name)
         continue
@@ -812,7 +830,11 @@ const content: TemplatePart<ContentPayload> = {
     for (const name of payload.files) {
       const data = files.get(`files/content/${name}`)
       if (!data) continue
-      const target = join(dir, name)
+      const target = containedPath(dir, name)
+      if (!target) {
+        warn(`fileOutsideProject:${name}`)
+        continue
+      }
       if (existsSync(target)) {
         if (sha(data) === sha(await readFile(target))) continue
         if (strategy === 'projectWins') {

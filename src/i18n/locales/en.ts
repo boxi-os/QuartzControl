@@ -1647,6 +1647,10 @@ export default {
         'The content was not written: this project\'s content folder is a link to {{detail}}. Pouring a template\'s notes into somebody\'s vault could not be undone.',
       contentSkipped: '{{count}} existing note was left unchanged.',
       contentSkipped_other: '{{count}} existing notes were left unchanged.',
+      fileOutsideProject:
+        '{{count}} file in the template would have been written outside the project and was skipped.',
+      fileOutsideProject_other:
+        '{{count}} files in the template would have been written outside the project and were skipped.',
       packageUnreadable: 'The template could not be read.'
     }
   },

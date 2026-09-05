@@ -108,6 +108,7 @@ const STRINGS = {
     zipBadHeader: 'Das Paket ist beschädigt (Dateikopf ungültig).',
     zipUnsupportedMethod: 'Das Paket verwendet ein nicht unterstütztes Kompressionsverfahren ({{method}}).',
     zipEntryCorrupt: 'Die Datei „{{name}}“ im Paket ist beschädigt.',
+    zipEntryUnsafeName: 'Die Datei „{{name}}“ im Paket würde außerhalb des Projekts geschrieben werden.',
 
     // Publishing
     ftpWrongTarget: 'Falscher Zieltyp für den FTP-Adapter.',
@@ -299,6 +300,7 @@ const STRINGS = {
     zipBadHeader: 'The package is damaged (invalid file header).',
     zipUnsupportedMethod: 'The package uses an unsupported compression method ({{method}}).',
     zipEntryCorrupt: 'The file “{{name}}” in the package is damaged.',
+    zipEntryUnsafeName: 'The file “{{name}}” in the package would be written outside the project.',
 
     ftpWrongTarget: 'Wrong destination type for the FTP adapter.',
     ftpNoConnection: 'No FTP credential is set for this target.',

@@ -1654,6 +1654,10 @@ export default {
         'Der Inhalt wurde nicht geschrieben: Der Content-Ordner dieses Projekts ist ein Link auf {{detail}}. Die Notizen einer Vorlage in einen fremden Vault zu schütten wäre nicht rückgängig zu machen.',
       contentSkipped: '{{count}} vorhandene Notiz blieb unverändert.',
       contentSkipped_other: '{{count}} vorhandene Notizen blieben unverändert.',
+      fileOutsideProject:
+        '{{count}} Datei der Vorlage sollte außerhalb des Projekts geschrieben werden und wurde übersprungen.',
+      fileOutsideProject_other:
+        '{{count}} Dateien der Vorlage sollten außerhalb des Projekts geschrieben werden und wurden übersprungen.',
       packageUnreadable: 'Die Vorlage ließ sich nicht lesen.'
     }
   },

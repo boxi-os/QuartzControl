@@ -369,7 +369,7 @@ function ColorControl({
         value={hex ?? undefined}
         hex={hex ?? null}
         onChange={(next) => onChange(colorEntries(field, next, mode))}
-        className={isSet ? 'border-green-500' : 'border-slate-300 dark:border-ink/20'}
+        className={isSet ? 'border-green-500' : ''}
       />
     </div>
   )

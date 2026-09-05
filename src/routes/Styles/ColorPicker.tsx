@@ -38,9 +38,18 @@ export default function ColorPicker({
   size?: 'sm' | 'lg'
   className?: string
 }): JSX.Element {
+  // Der Rahmen gehört hierher und nicht an die Aufrufstellen. Drei gab es, und sie sagten drei
+  // verschiedene Dinge: `border-ink/10 dark:border-ink/20`, `border-slate-300 dark:border-ink/20`
+  // und `border-slate-300` allein. Die letzte ist im Dunkelmodus ein fast weißer Rahmen (gemessen:
+  // rgb(203,213,225) um das Feld herum, während jeder andere Haarstrich der App Weiß bei 10-20%
+  // ist) - das Feld sah aus wie ausgewählt, ohne es zu sein. Eine Aufrufstelle, die einen anderen
+  // Rahmen *meint* - der grüne, wenn ein Wert gesetzt ist - bringt ihn weiter selbst mit; geprüft
+  // wird auf eine eigene `border-`-Klasse, damit nicht zwei Farben gleicher Spezifität um die
+  // Reihenfolge im erzeugten Stylesheet würfeln.
+  const border = /(^|\s)border-/.test(className) ? '' : 'border-ink/10 dark:border-ink/20'
   return (
     <span
-      className={`relative shrink-0 overflow-hidden rounded border ${
+      className={`relative shrink-0 overflow-hidden rounded border ${border} ${
         size === 'lg' ? 'h-10 w-10' : 'h-6 w-8'
       } ${className}`}
       style={{ backgroundColor: isDisplayableColor(value) ? value : 'transparent' }}

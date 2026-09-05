@@ -329,7 +329,7 @@ function ValueInput({
     <div className="flex items-center gap-1.5">
       <span className="text-micro text-text-muted">{label}</span>
       {isColor && (
-        <ColorPicker value={resolved ?? value} hex={hex} onChange={onChange} title={resolved ?? value} className="border-slate-300" />
+        <ColorPicker value={resolved ?? value} hex={hex} onChange={onChange} title={resolved ?? value} />
       )}
       <TextInput value={value} onChange={(e) => onChange(e.target.value)} className="w-44 font-mono text-xs" />
     </div>

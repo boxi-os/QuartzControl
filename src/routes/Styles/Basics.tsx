@@ -450,7 +450,6 @@ function ColorCell({
         onChange={onChange}
         title={name}
         size="lg"
-        className="border-ink/10 dark:border-ink/20"
       />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex items-baseline gap-1.5">

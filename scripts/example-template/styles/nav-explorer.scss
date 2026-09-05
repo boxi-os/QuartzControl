@@ -1,0 +1,554 @@
+// Explorer — the folder tree.
+//
+// Depth is the whole problem here, and the markup is not what it looks like from the class names.
+// Read off a real build:
+//
+//   <ul class="explorer-ul">                          ← only the ROOT list has this class
+//     <li>
+//       <div class="folder-container nav-folder-title tree-item-self">
+//         <svg class="folder-icon …"/>
+//         <div><a class="folder-button" href="…"><span class="folder-title">Name</span></a></div>
+//       </div>
+//       <div class="folder-outer">
+//         <ul class="content tree-item-children">      ← every nested list, at every depth
+//           <li><a class="nav-file-title tree-item-self" href="…">File</a></li>
+//
+// Two things follow, and the first version of this file got both wrong:
+//
+//   * `.explorer-ul .explorer-ul` matches nothing. Nesting is expressed by `ul.tree-item-children`
+//     inside `.folder-outer`, so that is what the indent rule has to key on. Measured: 0 matches
+//     for the old selector against 7 nested lists on one page - the indentation visible in the
+//     browser was quartz's own, not this template's.
+//   * `.nav-file-title` IS the anchor and `.folder-title` is a span inside `a.folder-button`, so
+//     neither `.nav-file-title a` nor `.folder-title a` matches anything either.
+//
+// Nothing here touches `.folder-outer` itself: quartz drives the fold, and an unlayered
+// `grid-template-rows` in custom.scss beats it - measured, that left collapsed folders holding the
+// full height of their hidden contents.
+
+.explorer {
+  min-width: 0;
+  font-size: var(--tpl-text-sm);
+}
+
+/* --------------------------------------------------------------------- the heading */
+
+// Doubles as the collapse control for the whole tree.
+.explorer-toggle,
+button.title-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tpl-space-xs);
+  width: 100%;
+  min-height: var(--tpl-target);
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--dark);
+  font-family: var(--headerFont);
+
+  h1, h2, h3 {
+    margin: 0;
+    font-size: var(--tpl-text-sm);
+    text-transform: uppercase;
+    letter-spacing: var(--tpl-tracking-label);
+    color: var(--gray);
+    font-weight: 700;
+  }
+
+  .fold {
+    transition: transform var(--tpl-motion);
+    color: var(--gray);
+  }
+
+  &.collapsed .fold {
+    transform: rotate(-90deg);
+  }
+}
+
+// The drawer trigger exists on every breakpoint and is only ever *shown* below 800px.
+//
+// This rule has to say `display: none` itself, and that is not belt and braces. The plugin hides
+// the button with `.explorer button.mobile-explorer { display: none }` inside `@layer quartz-base`,
+// and every rule in this template is unlayered, so a bare `display: grid` here beat it on every
+// screen size - the button was 44 × 44 and visible at 1600px wide. That mattered far beyond a
+// stray icon: the plugin's script ends with
+//
+//     if (mobileButton.checkVisibility()) explorer.classList.add("collapsed")
+//
+// so a trigger that is visible on a desktop screen makes the plugin fold the whole tree away on
+// every page load. Measured: `.explorer.collapsed`, `.explorer-content` 335 × 0, six tree items
+// rendered and none of them on screen. That is what "the explorer should be expanded by default"
+// was actually about.
+.explorer button.mobile-explorer {
+  display: none;
+}
+
+@media (max-width: 800px) {
+  .explorer button.mobile-explorer {
+    display: grid;
+    width: var(--tpl-target);
+    min-width: var(--tpl-target);
+    min-height: var(--tpl-target);
+    place-items: center;
+    border-radius: var(--tpl-radius-md);
+
+    &:hover {
+      background: var(--tpl-surface);
+    }
+  }
+
+  // The other half of the swap, for the same reason: quartz's `display: none` on the desktop
+  // heading is layered and would otherwise lose to `.explorer-toggle { display: flex }` above.
+  .explorer button.desktop-explorer {
+    display: none;
+  }
+}
+
+/* -------------------------------------------------------------- collapsed component */
+
+// Collapsed, quartz caps the whole component at `flex-basis: 1.2em` — a height computed for a
+// heading at default size. This template's heading is a touch target, so that cap sliced the word
+// "Explorer" off entirely and left a 19px stub (measured: 19px container, 44px button, no visible
+// label). The fold is therefore expressed on the content, and the header keeps its height.
+//
+// All of it is scoped above 800px, because below that `.collapsed` means something entirely
+// different - the drawer is shut, not the panel - and the two must not meet.
+@media (min-width: 801px) {
+  .explorer.collapsed {
+    flex-basis: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .explorer.collapsed .explorer-content {
+    max-height: 0;
+    margin-block-start: 0;
+    overflow: hidden;
+  }
+
+  .explorer-content {
+    // No margin of its own any more: the panel carries --tpl-fade of padding for the soft edge
+    // (base.scss), and that is more than the gap this used to add. Two of them stacked left the
+    // first folder floating a long way under the heading.
+    margin-block-start: 0;
+    // A long tree scrolls inside the sidebar rather than pushing the frame's footer off screen.
+    // The scrolling itself, and the soft edge at both ends of it, are set in base.scss.
+    max-height: 60vh;
+  }
+}
+
+ul.explorer-ul,
+.explorer-content ul.tree-item-children {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ------------------------------------------------------- indentation and guide lines */
+
+// One rule, every depth: a nested list steps in and carries a hairline back to its parent. The
+// guide line matters more than the indent — at four levels deep, 0.85rem of padding alone does not
+// tell you which parent a file belongs to.
+.explorer-content ul.tree-item-children {
+  padding-inline-start: var(--tpl-indent);
+  margin-inline-start: var(--tpl-space-2xs);
+  border-inline-start: var(--tpl-rule-width) solid var(--tpl-rule);
+}
+
+// Past the fifth level the guide line alone carries the structure; stepping further would push the
+// file names out of the three columns the sidebar has.
+.explorer-content
+  ul.tree-item-children
+  ul.tree-item-children
+  ul.tree-item-children
+  ul.tree-item-children
+  ul.tree-item-children {
+  padding-inline-start: var(--tpl-space-xs);
+}
+
+/* ----------------------------------------------------------------------- tree rows */
+
+.folder-container,
+a.nav-file-title {
+  display: flex;
+  align-items: center;
+  gap: var(--tpl-space-2xs);
+  border-radius: var(--tpl-radius-sm);
+  // Rows are dense; 32px keeps them hittable without turning the tree into a list of buttons.
+  min-height: 32px;
+  padding-inline: var(--tpl-space-2xs);
+  transition: background-color var(--tpl-motion);
+
+  &:hover {
+    background: var(--tpl-surface);
+  }
+}
+
+.folder-icon {
+  flex: 0 0 auto;
+  color: var(--gray);
+  cursor: pointer;
+  // `content-box` so the padding grows the target instead of eating the glyph: everything else in
+  // this template is border-box (base.scss), and under that rule a 0.95rem box with 4px of padding
+  // leaves 7px of chevron. The mask is anchored to the content box for the same reason.
+  box-sizing: content-box;
+  width: var(--tpl-icon-sm);
+  height: var(--tpl-icon-sm);
+  // The chevron alone is a 15px target; padding makes it usable without moving the row.
+  padding: var(--tpl-space-2xs);
+  margin-inline-start: calc(var(--tpl-space-2xs) * -1);
+}
+
+/* ------------------------------------------------------------------ folder and file icons */
+
+// A row says what it is before it says what it is called. The folder glyph also carries the fold
+// state - shut or spilling open - which is the same information the chevron gives, in the place the
+// eye is already looking.
+//
+// `.folder-button` is an <a> under `folderClickBehavior: 'link'` and a <button> otherwise, so
+// neither is named here. `:has()` on the list item is what reads the fold state: the class lives on
+// `.folder-outer`, a sibling of the container the icon sits in, and a sibling is exactly what a
+// descendant selector cannot reach.
+.folder-button::before,
+a.nav-file-title::before {
+  content: "";
+  flex: 0 0 auto;
+  width: var(--tpl-icon-sm);
+  height: var(--tpl-icon-sm);
+  margin-inline-end: var(--tpl-space-2xs);
+  background-color: currentColor;
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  mask-position: center;
+  -webkit-mask-position: center;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  color: var(--gray);
+}
+
+.folder-button::before {
+  mask-image: var(--icon-folder);
+  -webkit-mask-image: var(--icon-folder);
+}
+
+li:has(> .folder-outer.open) > .folder-container .folder-button::before {
+  mask-image: var(--icon-folder-open);
+  -webkit-mask-image: var(--icon-folder-open);
+}
+
+a.nav-file-title::before {
+  mask-image: var(--icon-file);
+  -webkit-mask-image: var(--icon-file);
+}
+
+.folder-button {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  min-width: 0;
+}
+
+// The <div> quartz wraps the button in has no class of its own and would otherwise refuse to
+// shrink, which is what stops a long folder name from ever reaching its ellipsis.
+.folder-container > div {
+  min-width: 0;
+}
+
+.folder-title {
+  display: block;
+  font-family: var(--headerFont);
+  color: var(--dark);
+  font-weight: 600;
+  // A long folder name truncates rather than wrapping to three lines.
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+a.nav-file-title {
+  color: var(--darkgray);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+
+  &:hover {
+    color: var(--dark);
+  }
+}
+
+/* --------------------------------------------------------- weight steps with depth */
+
+// So the eye can find the top of a branch: level 1 is the section, level 2 a chapter, level 3 and
+// beyond are just places. Keyed on `.tree-item-children`, which is what the nesting actually uses.
+.explorer-ul > li > .folder-container .folder-title {
+  font-size: var(--tpl-text-sm);
+  font-weight: 700;
+}
+
+.tree-item-children > li > .folder-container .folder-title {
+  font-weight: 600;
+}
+
+.tree-item-children .tree-item-children > li > .folder-container .folder-title {
+  font-weight: 500;
+  color: var(--darkgray);
+}
+
+.tree-item-children .tree-item-children .tree-item-children > li > .folder-container .folder-title {
+  font-weight: 500;
+  font-size: var(--tpl-text-xs);
+  color: var(--darkgray);
+}
+
+.tree-item-children .tree-item-children .tree-item-children .tree-item-children > li > .folder-container .folder-title {
+  font-size: var(--tpl-text-xs);
+  color: var(--gray);
+}
+
+// Files follow their folder's size from the third level down.
+.tree-item-children .tree-item-children a.nav-file-title {
+  font-size: var(--tpl-text-xs);
+}
+
+/* --------------------------------------------------------------- the current page */
+
+// Colour *and* weight *and* a marker: colour alone is not a state for everyone who reads this.
+.explorer a.active {
+  background: var(--tpl-surface-tint);
+  color: var(--secondary);
+  font-weight: 600;
+  position: relative;
+
+  // `::after`, not `::before`. The file glyph is a `::before` on this same element, and the first
+  // version of this rule put the accent bar there too - so the current page was the one row in the
+  // tree with no icon, its marker having eaten it. Measured on the built page before the fix.
+  &::after {
+    content: "";
+    position: absolute;
+    inset-inline-start: calc(var(--tpl-space-xs) * -1);
+    inset-block: 0.2em;
+    width: var(--tpl-accent-bar);
+    border-radius: 1px;
+    background: var(--secondary);
+  }
+
+  // The glyph joins the colour change rather than staying grey next to it.
+  &::before {
+    color: var(--secondary);
+  }
+}
+
+// Quartz's own end-of-list sentinel. It stays (the plugin's IntersectionObserver watches it) but
+// draws nothing: the fade at both ends of the panel is set once in base.scss.
+.explorer .overflow-end {
+  height: var(--tpl-space-md);
+}
+
+/* ------------------------------------------------------------------- the current branch */
+
+// Yes, a folder can know that something under it is open - `:has()` is what makes it possible, and
+// it is the answer to the one question the tree could not previously answer: *where am I*.
+//
+// The plugin marks the file (`a.active`) and unfolds the folders on its path, and that is all. Four
+// levels deep, an unfolded folder looks exactly like a folder somebody unfolded by hand ten minutes
+// ago, so the trail from the root to the current page was invisible.
+//
+// Two selectors, and the difference between them matters:
+//
+//   * `li:has(.nav-file-title.active)` - descendant, so it matches EVERY ancestor of the current
+//     file. That is deliberate: the whole trail lights up, not just the last step.
+//   * `li:has(> .folder-outer > ul > li > .nav-file-title.active)` - child combinators all the way
+//     down, so it matches only the folder the file is directly in. That one gets the coloured guide
+//     line, which would be a stripe down the entire sidebar if every ancestor drew it.
+li:has(.nav-file-title.active) > .folder-container {
+  .folder-title {
+    color: var(--secondary);
+  }
+
+  .folder-button::before,
+  .folder-icon {
+    color: var(--secondary);
+  }
+}
+
+li:has(> .folder-outer > ul > li > .nav-file-title.active) > .folder-outer > ul.tree-item-children {
+  border-inline-start-color: var(--secondary);
+}
+
+/* --------------------------------------------------------------- the mobile drawer */
+
+// Below 800px the tree is a drawer that slides in from the left over a dimmed page.
+//
+// What the plugin gives us and what it does not, measured against @quartz-community/explorer 0.1.0:
+//
+//   * it toggles `.collapsed` on `.explorer` and, from the same handler, `mobile-no-scroll` on
+//     <html>. The second one is set and then never used by the plugin for anything except an
+//     `overscroll-behavior`, which makes it the hook this file hangs the backdrop and the scroll
+//     lock on.
+//   * its own drawer is the full width of the viewport with no backdrop, no edge and no shadow, so
+//     an open drawer and a normal page look the same. That is what "doesn't work properly" was.
+//   * there is no close button and no Escape handler. The trigger stays on top of the drawer and
+//     toggles it back, so there is always a way out - but a tap on the dimmed page does nothing,
+//     and that is a plugin limitation, not a choice. Written up in BEFUNDE.md.
+//
+// `mobile-no-scroll` is also toggled by the desktop fold button, so every rule below is inside the
+// media query: on a wide screen the class means "the sidebar panel is open" and must draw nothing.
+@media (max-width: 800px) {
+  // The trigger is pinned into the app bar that nav-page-title.scss makes out of the header. It
+  // cannot be moved there in the document - it belongs to the explorer, which is a different grid
+  // area - so it is placed over it. The bar reserves exactly this much room at its start.
+  .explorer button.mobile-explorer {
+    position: fixed;
+    top: var(--tpl-space-xs);
+    inset-inline-start: var(--tpl-space-xs);
+    z-index: 101;
+    background: var(--light);
+  }
+
+  .explorer .mobile-explorer .lucide-menu {
+    width: var(--tpl-icon);
+    height: var(--tpl-icon);
+    stroke: var(--dark);
+  }
+
+  // Open, the trigger says what it does: the three bars become a cross. Same technique as every
+  // other icon here - the drawn lines go and the element wears the glyph as a mask - so the one
+  // button carries both states without a second element and without a script.
+  .explorer:not(.collapsed) .mobile-explorer .lucide-menu {
+    > line {
+      display: none;
+    }
+
+    background-color: var(--dark);
+    mask-image: var(--icon-close);
+    -webkit-mask-image: var(--icon-close);
+    mask-size: contain;
+    -webkit-mask-size: contain;
+    mask-repeat: no-repeat;
+    -webkit-mask-repeat: no-repeat;
+  }
+
+  // The panel itself takes no room in the column: its trigger is fixed into the app bar and its
+  // content is a fixed drawer, so the 34px strip quartz reserves here is 34px of nothing between
+  // the bar and the first line of the page.
+  .explorer {
+    flex: 0 0 auto;
+    min-height: 0;
+  }
+
+  .explorer .explorer-content {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: 0;
+    width: var(--tpl-drawer-width);
+    max-width: var(--tpl-drawer-width);
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    // Room at the top for the trigger, which floats above the drawer rather than inside it.
+    padding: calc(var(--tpl-target) + var(--tpl-space-md)) var(--tpl-space-md) var(--tpl-space-lg);
+    background: var(--light);
+    border-inline-end: var(--tpl-rule-width) solid var(--tpl-rule);
+    box-shadow: var(--tpl-shadow);
+    // -100% rather than the plugin's -100vw: the drawer is no longer the width of the viewport,
+    // and -100vw would leave it parked far enough off-screen to widen the document.
+    transform: translateX(-100%);
+    transition: transform var(--tpl-motion), visibility var(--tpl-motion);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    z-index: 100;
+  }
+
+  .explorer:not(.collapsed) > .explorer-content {
+    transform: translateX(0);
+  }
+
+  // The tree fills the drawer, so it scrolls with it rather than inside a second scroller.
+  .explorer .explorer-content ul.explorer-ul {
+    max-height: none;
+    overflow: visible;
+  }
+
+  // A drawer over a page that is still there. `body::after` because there is no element to use -
+  // the plugin renders no backdrop - and because a pseudo-element on the body is the one overlay
+  // that is guaranteed to be a sibling of nothing and cover everything below z-index 100.
+  html.mobile-no-scroll {
+    overflow: hidden;
+  }
+
+  html.mobile-no-scroll body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 99;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(1px);
+  }
+
+  // Rows get their touch height back: 32px is right for a dense sidebar and too small for a thumb.
+  .folder-container,
+  .explorer a.nav-file-title {
+    min-height: 40px;
+  }
+}
+
+/* ------------------------------------------------------------------ one tree per language */
+
+// The explorer knows nothing about languages. It builds its trie from every page of the build,
+// so on this site it would show the German tree and the English one at once - on both.
+//
+// The plugin `quartz-multilanguage` ships a filter for exactly this (`languageExplorerFilter`),
+// but the explorer accepts functions only from `quartz.ts`, and this project builds its layout
+// from `quartz.config.yaml`, where a function cannot be written down. So it is done here.
+//
+// Two handles make that possible, both read off the rendered DOM rather than assumed:
+//
+//   * every folder row carries `data-folderpath` with its full slug (`en/index`), set by the
+//     explorer's own script, and
+//   * `<html lang>` carries the language of the page, which the multilanguage plugin writes into
+//     the frontmatter of every page that has none.
+//
+// `lang` is a locale (`de-DE`), hence `^=`. A page whose language could not be detected keeps
+// the site locale and therefore sees the German tree, which is the right fallback here.
+
+// The German tree is the default, not a case: hide the English branch unless the page says it is
+// English. Written this way round because a page can have no language at all - the redirect stubs
+// that `alias-redirects` writes carry no <html lang>, and with `html[lang^="de"]` as the condition
+// they showed both trees for the half second before the redirect fired.
+.explorer-ul > li:has(> .folder-container[data-folderpath="en/index"]) {
+  display: none;
+}
+
+// On an English page the other way round - and one step further. Hiding everything except the
+// `en` branch would leave the whole English tree sitting one indent deep under a folder called
+// "en", so its own row goes too and its children move up to the top level.
+html[lang^="en"] {
+  .explorer-ul > li:not(:has(> .folder-container[data-folderpath="en/index"])) {
+    display: none;
+  }
+
+  .explorer-ul > li > .folder-container[data-folderpath="en/index"] {
+    display: none;
+  }
+
+  // With the row gone there is no longer a control for this fold, so the state must not depend
+  // on one. The explorer opens a folder that lies on the path to the current page, which `en`
+  // always does here - this only makes that independent of a stale `localStorage` entry.
+  .explorer-ul > li > .folder-container[data-folderpath="en/index"] + .folder-outer {
+    visibility: visible;
+    grid-template-rows: 1fr;
+  }
+
+  // And it stops being a nesting level: no rail, no indent, so the English tree begins where the
+  // German one does.
+  .explorer-ul > li > .folder-container[data-folderpath="en/index"] + .folder-outer > ul {
+    border-inline-start: none;
+    margin-inline-start: 0;
+    padding-inline-start: 0;
+  }
+}

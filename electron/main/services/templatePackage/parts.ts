@@ -1,6 +1,6 @@
 import { createHash } from 'crypto'
 import { existsSync } from 'fs'
-import { copyFile, mkdir, readFile, writeFile } from 'fs/promises'
+import { copyFile, mkdir, readdir, readFile, realpath, stat, writeFile } from 'fs/promises'
 import { dirname, join } from 'path'
 import type {
   CssVariableOverride,
@@ -13,14 +13,16 @@ import type {
   ThemePreset
 } from '@shared/ipc-contract'
 import * as configService from '../configService'
+import * as contentService from '../contentService'
 import * as layoutFrameService from '../layoutFrameService'
 import * as localizationService from '../localizationService'
 import * as pluginService from '../pluginService'
 import * as styleService from '../styleService'
 import * as themePresetsService from '../themePresetsService'
 import { runCommand } from '../runCommand'
+import { mainT } from '../../i18n'
 import type { ZipEntry } from '../zipArchive'
-import { emptyPlan, hasNodeModule, installedVersion, listFilesFlat, type ApplyContext, type TemplatePart } from './shared'
+import { emptyPlan, hasNodeModule, installedVersion, listFilesFlat, writableTarget, type ApplyContext, type TemplatePart } from './shared'
 
 // custom.scss's managed sections, split across three parts so each travels with what it describes:
 // 'imports' (the load order) and the file's own free-form body belong to `styles`, 'fonts' to
@@ -34,8 +36,12 @@ function stripAllManaged(content: string): string {
   return MANAGED_MARKERS.reduce((acc, marker) => styleService.stripManagedBlock(acc, marker), content).trim()
 }
 
+function stylesDir(projectPath: string): string {
+  return join(projectPath, 'quartz', 'styles')
+}
+
 function styleFilePath(projectPath: string, relativePath: string): string {
-  return join(projectPath, 'quartz', 'styles', ...relativePath.split('/'))
+  return join(stylesDir(projectPath), ...relativePath.split('/'))
 }
 
 function fontsDir(projectPath: string): string {
@@ -271,7 +277,11 @@ const styles: TemplatePart<StylesPayload> = {
   async plan(payload, { projectPath }) {
     const plan = emptyPlan()
     for (const relativePath of payload.files) {
-      if (existsSync(styleFilePath(projectPath, relativePath))) plan.conflicts.push(relativePath)
+      // A name that would leave quartz/styles is dropped from the plan too, not only from apply -
+      // the plan is what the user ticks, and it must not promise a file that will never be written.
+      const target = await writableTarget(stylesDir(projectPath), relativePath)
+      if (!target) continue
+      if (existsSync(target)) plan.conflicts.push(relativePath)
       else plan.additions.push(relativePath)
     }
     const current = stripAllManaged((await styleService.readCustomScss(projectPath)).content)
@@ -289,7 +299,11 @@ const styles: TemplatePart<StylesPayload> = {
     for (const relativePath of payload.files) {
       const data = files.get(`files/styles/${relativePath}`)
       if (!data) continue
-      const target = styleFilePath(projectPath, relativePath)
+      const target = await writableTarget(stylesDir(projectPath), relativePath)
+      if (!target) {
+        warn(`fileOutsideProject:${relativePath}`)
+        continue
+      }
       if (existsSync(target) && strategy === 'projectWins') {
         warn(`styleFileSkipped:${relativePath}`)
         continue
@@ -359,7 +373,8 @@ const fonts: TemplatePart<FontsPayload> = {
   async plan(payload, { projectPath, files }) {
     const plan = emptyPlan()
     for (const name of payload.files) {
-      const target = join(fontsDir(projectPath), name)
+      const target = await writableTarget(fontsDir(projectPath), name)
+      if (!target) continue
       if (!existsSync(target)) {
         plan.additions.push(name)
         continue
@@ -382,7 +397,11 @@ const fonts: TemplatePart<FontsPayload> = {
     for (const name of payload.files) {
       const data = files.get(`files/fonts/${name}`)
       if (!data) continue
-      const target = join(fontsDir(projectPath), name)
+      const target = await writableTarget(fontsDir(projectPath), name)
+      if (!target) {
+        warn(`fileOutsideProject:${name}`)
+        continue
+      }
       if (existsSync(target)) {
         if (sha(data) === sha(await readFile(target))) continue
         if (strategy === 'projectWins') {
@@ -724,6 +743,139 @@ const presets: TemplatePart<PresetsPayload> = {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the registry is heterogeneous by
 // design: each part has its own payload type, which only that part's own three functions ever see.
+/* -------------------------------------------------------------------- content */
+
+// The notes themselves. The one part that carries what a site *says* rather than how it looks, and
+// the only one that is genuinely optional in both directions: a template exists to be a design, and
+// most of them should ship without a single page. It exists because this app's own example template
+// is also its manual - the pages explain the components they are rendered by - and a manual that
+// does not arrive with the thing it documents is a link somebody has to find.
+//
+// Three rules keep it from being a foot-gun:
+//
+//   * Hidden entries are skipped. A vault carries .obsidian and usually its own .git; neither is
+//     content, and .git alone was 1107 of the example vault's 1392 entries.
+//   * There is a cap. A template is a design, not a backup: past it the export says so instead of
+//     writing a package nobody can send anywhere.
+//   * A symlinked content folder is never written into. That is the important one - `content/` in
+//     the target may be a link into somebody's Obsidian vault, and an import would then drop the
+//     package's notes among their own. The plan says so before the click and apply refuses.
+interface ContentPayload {
+  files: string[]
+}
+
+const CONTENT_MAX_BYTES = 100 * 1024 * 1024
+
+// readdir's isDirectory() answers for the entry itself, so a link to a folder came back as "not a
+// directory" and was listed as a file - readFile then threw EISDIR, which inspectProject swallowed
+// (the whole part disappeared from the export form) and the export itself reported raw. Resolved
+// with stat instead: a link to a file is a file, a link to a folder is descended into. That is the
+// same thing the site build does, and the same thing already happens one level up, since content/
+// itself is a link in every project that keeps its notes in a vault.
+//
+// `seen` carries the real paths of the directories already entered, because a link pointing back
+// at an ancestor would otherwise recurse until the stack ran out. A dangling link is skipped:
+// there is nothing behind it to export.
+async function listContentFiles(dir: string, prefix = '', seen?: Set<string>): Promise<string[]> {
+  if (!existsSync(dir)) return []
+  const visited = seen ?? new Set<string>([await realpath(dir)])
+  const out: string[] = []
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    if (entry.name.startsWith('.')) continue
+    const full = join(dir, entry.name)
+    const rel = prefix ? `${prefix}/${entry.name}` : entry.name
+    let isDirectory = entry.isDirectory()
+    if (entry.isSymbolicLink()) {
+      try {
+        isDirectory = (await stat(full)).isDirectory()
+      } catch {
+        continue
+      }
+    }
+    if (!isDirectory) {
+      out.push(rel)
+      continue
+    }
+    const real = await realpath(full)
+    if (visited.has(real)) continue
+    visited.add(real)
+    out.push(...(await listContentFiles(full, rel, visited)))
+  }
+  return out.sort()
+}
+
+const content: TemplatePart<ContentPayload> = {
+  id: 'content',
+  async collect({ projectPath }) {
+    const dir = contentService.contentDirPath(projectPath)
+    const names = await listContentFiles(dir)
+    if (names.length === 0) return null
+    const entries: ZipEntry[] = []
+    let bytes = 0
+    for (const name of names) {
+      const data = await readFile(join(dir, name))
+      bytes += data.length
+      if (bytes > CONTENT_MAX_BYTES) {
+        throw new Error(mainT('templateContentTooLarge', { limit: Math.round(CONTENT_MAX_BYTES / 1024 / 1024) }))
+      }
+      entries.push({ name: `files/content/${name}`, data })
+    }
+    return { payload: { files: names }, files: entries, stats: { files: names.length, kilobytes: Math.round(bytes / 1024) } }
+  },
+  async plan(payload, { projectPath, files }) {
+    const plan = emptyPlan()
+    const status = await contentService.getContentStatus(projectPath)
+    if (status.isSymlink) {
+      // Not a conflict per file: the whole part cannot run, and saying that once is clearer than
+      // saying it 254 times.
+      plan.notes.push('contentIsSymlink')
+      return plan
+    }
+    const dir = contentService.contentDirPath(projectPath)
+    for (const name of payload.files) {
+      const target = await writableTarget(dir, name)
+      if (!target) continue
+      if (!existsSync(target)) {
+        plan.additions.push(name)
+        continue
+      }
+      const incoming = files.get(`files/content/${name}`)
+      if (incoming && sha(incoming) === sha(await readFile(target))) plan.notes.push(`identical:${name}`)
+      else plan.conflicts.push(name)
+    }
+    return plan
+  },
+  async apply(payload, { projectPath, strategy, files, warn, progress }) {
+    const status = await contentService.getContentStatus(projectPath)
+    if (status.isSymlink) {
+      warn(`contentIsSymlink:${status.symlinkTarget ?? ''}`)
+      return
+    }
+    const dir = contentService.contentDirPath(projectPath)
+    let done = 0
+    for (const name of payload.files) {
+      const data = files.get(`files/content/${name}`)
+      if (!data) continue
+      const target = await writableTarget(dir, name)
+      if (!target) {
+        warn(`fileOutsideProject:${name}`)
+        continue
+      }
+      if (existsSync(target)) {
+        if (sha(data) === sha(await readFile(target))) continue
+        if (strategy === 'projectWins') {
+          warn(`contentSkipped:${name}`)
+          continue
+        }
+      }
+      await mkdir(dirname(target), { recursive: true })
+      await writeFile(target, data)
+      done += 1
+      if (done % 25 === 0) progress(`content:${done}`)
+    }
+  }
+}
+
 export const PARTS: Record<string, TemplatePart<any>> = {
   appearance,
   cssVariables,
@@ -734,7 +886,8 @@ export const PARTS: Record<string, TemplatePart<any>> = {
   frames,
   plugins,
   translations,
-  presets
+  presets,
+  content
 }
 
 export async function copyIfMissing(source: string, target: string): Promise<void> {

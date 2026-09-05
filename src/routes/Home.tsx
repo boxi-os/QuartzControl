@@ -3,12 +3,20 @@ import { useTranslation } from 'react-i18next'
 import { confirmDialog } from '../utils/confirm'
 import { titlebarStripClass } from '../utils/platform'
 import { useNavigate, Link } from 'react-router-dom'
-import { ArrowUpRight, CheckCircle2, FolderSearch, Search, TriangleAlert, Trash2 } from 'lucide-react'
-import type { CreateProjectOptions, EnvironmentInfo, ProjectOverview, ToolInfo } from '@shared/ipc-contract'
+import { ArrowUpRight, CheckCircle2, Copy, FolderSearch, Search, TriangleAlert, Trash2 } from 'lucide-react'
+import type {
+  AppUpdateStatus,
+  CreateProjectOptions,
+  DuplicateProjectOptions,
+  EnvironmentInfo,
+  ProjectOverview,
+  ToolInfo
+} from '@shared/ipc-contract'
 import type { TFunction } from 'i18next'
 import { useAppStore } from '../state/store'
-import { Button, Card, Field, InfoNote, Modal, Select, TextInput } from '../components/ui'
+import { Button, Card, Field, InfoNote, Modal, Select, TextInput, Toggle } from '../components/ui'
 import ProjectAvatar from '../components/ProjectAvatar'
+import { ImportOutcome } from '../components/ImportOutcome'
 import { GROUP_ICONS } from './navConfig'
 import { formatRelativeTime } from '../utils/format'
 import { useAsyncAction } from '../hooks/useAsyncAction'
@@ -35,6 +43,12 @@ export default function Home(): JSX.Element {
   const removeProject = useAppStore((s) => s.removeProject)
   const [projects, setProjects] = useState<ProjectOverview[] | null>(null)
   const [showWizard, setShowWizard] = useState(false)
+  // Set only when a created project's template import had something to report. It keeps the wizard
+  // on screen with the outcome instead of navigating away from the one moment it can be shown.
+  const [outcome, setOutcome] = useState<{ projectId: string; warnings: string[]; failure?: string } | null>(null)
+  // The project a "Duplizieren" click opened the dialog for. One piece of state rather than a flag
+  // per row: only one dialog can be open, and the row itself has nothing to remember afterwards.
+  const [duplicating, setDuplicating] = useState<ProjectOverview | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
@@ -94,93 +108,149 @@ export default function Home(): JSX.Element {
   return (
     <div className="flex h-screen flex-col">
       <div className={titlebarStripClass} />
-      {/* Still a centred column, unlike the project pages: this is a launcher, and a start screen
+      {/* Two boxes, and the split is the point: the scroller is the full width of the window, the
+          width cap sits inside it. With one element doing both, the scrollbar sat at the right edge
+          of the centred column - which on a wide window is the middle of the screen. Same shape as
+          ProjectLayout, where <main> scrolls and the inner div caps.
+
+          Still a centred column, unlike the project pages: this is a launcher, and a start screen
           stretched across a 27" display reads as broken rather than spacious. What the extra width
           buys here is a second column - the projects stay the main thing on the left, and what the
           app can do sits beside them instead of pushing them down the page. */}
-      <div className="mx-auto w-full max-w-6xl flex-1 overflow-y-auto px-6 pb-12">
-        <div className="mb-6 flex items-start justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <img src={appIcon} alt="" className="h-14 w-14 rounded-2xl shadow-sm" />
-            <div>
-              <h1 className="text-2xl font-semibold">QuartzControl</h1>
-              <p className="mt-0.5 text-[13px] text-slate-500 dark:text-slate-400">{t('home.subtitle')}</p>
+      <div className="flex-1 overflow-y-auto px-6 pb-12">
+        <div className="mx-auto w-full max-w-6xl">
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <img src={appIcon} alt="" className="h-14 w-14 rounded-2xl shadow-sm" />
+              <div>
+                <h1 className="text-2xl font-semibold">QuartzControl</h1>
+                <p className="mt-0.5 text-[13px] text-slate-500 dark:text-slate-400">{t('home.subtitle')}</p>
+              </div>
             </div>
+            <Link
+              to="/settings"
+              className="shrink-0 pt-1 text-[13px] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            >
+              {t('home.settings')}
+            </Link>
           </div>
-          <Link
-            to="/settings"
-            className="shrink-0 pt-1 text-[13px] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-          >
-            {t('home.settings')}
-          </Link>
-        </div>
 
-        {environment && <EnvironmentBand info={environment} onRecheck={recheckEnvironment} />}
+          {environment && <EnvironmentBand info={environment} onRecheck={recheckEnvironment} />}
+          <NewerVersionBand />
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="min-w-0">
-            <div className="mb-4 flex flex-wrap items-center gap-3">
-              <Button onClick={openExisting}>{t('home.openExisting')}</Button>
-              <Button variant="ghost" onClick={() => setShowWizard(true)}>
-                {t('home.createNew')}
-              </Button>
-              {sorted.length >= SEARCH_THRESHOLD && (
-                <div className="relative ml-auto">
-                  <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400" />
-                  <TextInput
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder={t('home.searchPlaceholder')}
-                    className="w-56 pl-8"
-                  />
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="min-w-0">
+              <div className="mb-4 flex flex-wrap items-center gap-3">
+                <Button onClick={openExisting}>{t('home.openExisting')}</Button>
+                <Button variant="ghost" onClick={() => setShowWizard(true)}>
+                  {t('home.createNew')}
+                </Button>
+                {sorted.length >= SEARCH_THRESHOLD && (
+                  <div className="relative ml-auto">
+                    <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400" />
+                    <TextInput
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder={t('home.searchPlaceholder')}
+                      className="w-56 pl-8"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {projects === null ? (
+                <p className="text-[13px] text-slate-500 dark:text-slate-400">{t('common.loading')}</p>
+              ) : sorted.length === 0 ? (
+                <GettingStarted onOpen={openExisting} onCreate={() => setShowWizard(true)} />
+              ) : (
+                <div className={`grid gap-3 ${listColumns}`}>
+                  {filtered.map((project) => (
+                    <ProjectRow
+                      key={project.id}
+                      project={project}
+                      locale={i18n.language}
+                      onOpen={() => navigate(`/project/${project.id}`)}
+                      onRemove={async () => {
+                        // Removing the entry also stops the project's dev server (see the
+                        // project:remove handler), so the question says so rather than leaving a
+                        // process running that nothing in the app points at any more.
+                        const question = project.serverRunning
+                          ? t('home.confirmRemoveRunning', { name: project.name })
+                          : t('home.confirmRemove', { name: project.name })
+                        if (!(await confirmDialog({ text: question, confirmLabel: t('home.confirmRemoveAction'), danger: true }))) return
+                        await removeProject(project.id)
+                        await reload()
+                      }}
+                      onRelocated={reload}
+                      onDuplicate={() => setDuplicating(project)}
+                    />
+                  ))}
+                  {filtered.length === 0 && (
+                    <p className="text-[13px] text-slate-500 dark:text-slate-400">{t('home.noSearchResults')}</p>
+                  )}
                 </div>
               )}
             </div>
 
-            {projects === null ? (
-              <p className="text-[13px] text-slate-500 dark:text-slate-400">{t('common.loading')}</p>
-            ) : sorted.length === 0 ? (
-              <GettingStarted onOpen={openExisting} onCreate={() => setShowWizard(true)} />
-            ) : (
-              <div className={`grid gap-3 ${listColumns}`}>
-                {filtered.map((project) => (
-                  <ProjectRow
-                    key={project.id}
-                    project={project}
-                    locale={i18n.language}
-                    onOpen={() => navigate(`/project/${project.id}`)}
-                    onRemove={async () => {
-                      // Removing the entry also stops the project's dev server (see the
-                      // project:remove handler), so the question says so rather than leaving a
-                      // process running that nothing in the app points at any more.
-                      const question = project.serverRunning
-                        ? t('home.confirmRemoveRunning', { name: project.name })
-                        : t('home.confirmRemove', { name: project.name })
-                      if (!(await confirmDialog({ text: question, confirmLabel: t('home.confirmRemoveAction'), danger: true }))) return
-                      await removeProject(project.id)
-                      await reload()
-                    }}
-                    onRelocated={reload}
-                  />
-                ))}
-                {filtered.length === 0 && (
-                  <p className="text-[13px] text-slate-500 dark:text-slate-400">{t('home.noSearchResults')}</p>
-                )}
-              </div>
-            )}
+            <WhatYouCanDo environment={environment} />
           </div>
-
-          <WhatYouCanDo environment={environment} />
         </div>
       </div>
+
+      {duplicating && (
+        <DuplicateWizard
+          source={duplicating}
+          busy={busy}
+          error={error}
+          defaultDirectory={settings.defaultProjectDirectory}
+          onCancel={() => {
+            setDuplicating(null)
+            setError(null)
+          }}
+          onDuplicate={async (options) => {
+            setBusy(true)
+            setError(null)
+            try {
+              const result = await window.quartzGui.projects.duplicate(options)
+              if (!result.success) {
+                setError(result.output || t('home.duplicate.failed'))
+                return
+              }
+              const overview = await window.quartzGui.projects.overview()
+              setProjects(overview)
+              const created = overview.find((p) => p.path === options.targetDirectory)
+              setDuplicating(null)
+              if (created) navigate(`/project/${created.id}`)
+            } finally {
+              setBusy(false)
+            }
+          }}
+        />
+      )}
 
       {showWizard && (
         <CreateWizard
           busy={busy}
           error={error}
           defaultDirectory={settings.defaultProjectDirectory}
-          onCancel={() => setShowWizard(false)}
-          onCreate={async (options) => {
+          outcome={outcome ? { warnings: outcome.warnings, failure: outcome.failure } : null}
+          onContinue={() => {
+            const id = outcome?.projectId
+            setOutcome(null)
+            setShowWizard(false)
+            if (id) navigate(`/project/${id}`)
+          }}
+          onCancel={() => {
+            setShowWizard(false)
+            setOutcome(null)
+            // Both of these were missing, and both were only visible after something had gone
+            // wrong: the error text survived into the next opening of the dialog, and a project
+            // that *was* created before the template step failed did not appear in the list until
+            // some other navigation happened to reload it.
+            setError(null)
+            void reload()
+          }}
+          onCreate={async (options, template) => {
             setBusy(true)
             setError(null)
             try {
@@ -189,11 +259,75 @@ export default function Home(): JSX.Element {
                 setError(result.output || t('home.wizard.createFailed'))
                 return
               }
-              const overview = await window.quartzGui.projects.overview()
-              setProjects(overview)
-              const created = overview.find((p) => p.path === options.targetDirectory)
-              setShowWizard(false)
-              if (created) navigate(`/project/${created.id}`)
+              // The template is applied to the project that now exists, through the ordinary import
+              // path - plan first, so the parts come from the package rather than from a list here
+              // that would go stale the next time a part is added. A failure does not undo the
+              // project: it is a finished, usable Quartz project either way, and the message says
+              // what did not happen rather than throwing the whole creation away.
+              let warnings: string[] = []
+              // One ending for every path after `quartz create` has succeeded, because from there
+              // on the project exists and the wizard's job is done - a failing template step used
+              // to leave the form standing with its message, where a second click could only fail
+              // on "target exists" and Abbrechen led back to a list that did not show the new
+              // project yet. With something to report the dialog shows it once and offers the way
+              // to the project; with nothing to report it goes there directly.
+              const finish = async (failure?: string): Promise<void> => {
+                const overview = await window.quartzGui.projects.overview()
+                setProjects(overview)
+                const created = overview.find((p) => p.path === options.targetDirectory)
+                if (created && (failure !== undefined || warnings.length > 0)) {
+                  setOutcome({ projectId: created.id, warnings, failure })
+                  return
+                }
+                setShowWizard(false)
+                if (created) navigate(`/project/${created.id}`)
+              }
+              if (template) {
+                try {
+                  const plan = await window.quartzGui.templatePackage.plan(options.targetDirectory, template.path)
+                  // null means the package could not be read at all. Silently skipping it left the
+                  // user with a project that looks like the one they asked for minus its whole
+                  // appearance, and nothing anywhere said why.
+                  if (!plan) {
+                    await finish(t('home.wizard.templateUnreadable'))
+                    return
+                  }
+                  const parts = plan.parts
+                    .map((part) => part.id)
+                    .filter((id) => template.withContent || id !== 'content')
+                  const imported = await window.quartzGui.templatePackage.import(
+                    options.targetDirectory,
+                    template.path,
+                    parts,
+                    'packageWins'
+                  )
+                  // What the import had to say about itself. Dropping it meant a package that was
+                  // only half applied - offline, so no plugin could be installed, or a part that
+                  // failed - produced a project that simply looked wrong, with the explanation
+                  // available on the Vorlagen page and nowhere near the person who just clicked.
+                  warnings = imported.warnings
+                  // The one setting the template deliberately does not carry, set here because
+                  // leaving it would be worse than either: `configuration` is a site's own
+                  // identity and no part touches it, but `quartz create` writes en-US and the
+                  // example pages are German. Without this a German user gets German pages under
+                  // an English "Table of contents" - and the eleven translated strings the
+                  // package just installed are not rendered at all, since quartz only reads a
+                  // locale file the configuration names. The app's own language is the best
+                  // answer available at this moment, and the config editor is one click away.
+                  const config = await window.quartzGui.config.get(options.targetDirectory)
+                  const wanted = i18n.language.startsWith('de') ? 'de-DE' : 'en-US'
+                  if (config.configuration.locale !== wanted) {
+                    await window.quartzGui.config.save(options.targetDirectory, {
+                      ...config,
+                      configuration: { ...config.configuration, locale: wanted }
+                    })
+                  }
+                } catch (err) {
+                  await finish(String(err))
+                  return
+                }
+              }
+              await finish()
             } finally {
               // Without this the button stays on "Erstelle…" forever when the invoke rejects,
               // which is the failure mode every busy flag in this app resets in a finally.
@@ -206,6 +340,133 @@ export default function Home(): JSX.Element {
   )
 }
 
+// ── duplicating a project ───────────────────────────────────────────────────────────────────
+
+// Same two fields as the create wizard, for the same reason (a folder picker cannot return a
+// folder that does not exist yet), plus the one question a copy has to answer: where its own
+// content comes from. The original's content folder is deliberately not offered - it is either a
+// link into a vault, which two projects would then write through without either saying so, or a
+// folder that belongs to the original.
+function DuplicateWizard({
+  source,
+  busy,
+  error,
+  defaultDirectory,
+  onCancel,
+  onDuplicate
+}: {
+  source: ProjectOverview
+  busy: boolean
+  error: string | null
+  defaultDirectory?: string
+  onCancel: () => void
+  onDuplicate: (options: DuplicateProjectOptions) => void
+}): JSX.Element {
+  const { t } = useTranslation()
+  const [parentDirectory, setParentDirectory] = useState(defaultDirectory ?? '')
+  const [projectName, setProjectName] = useState(`${source.name}-2`)
+  const [strategy, setStrategy] = useState<DuplicateProjectOptions['contentStrategy']>('blank')
+  const [contentSource, setContentSource] = useState('')
+
+  const trimmedName = projectName.trim()
+  const targetDirectory = parentDirectory && trimmedName ? `${parentDirectory.replace(/\/+$/, '')}/${trimmedName}` : ''
+  const nameInvalid = trimmedName.includes('/') || trimmedName === '.' || trimmedName === '..'
+
+  async function pickParent(): Promise<void> {
+    const folder = await window.quartzGui.dialog.pickFolder(parentDirectory || defaultDirectory)
+    if (folder) setParentDirectory(folder)
+  }
+
+  async function pickContent(): Promise<void> {
+    const folder = await window.quartzGui.dialog.pickFolder(contentSource || undefined)
+    if (folder) setContentSource(folder)
+  }
+
+  const canRun = !busy && !!targetDirectory && !nameInvalid && (strategy === 'blank' || !!contentSource)
+  function run(): void {
+    if (!canRun) return
+    onDuplicate({
+      sourcePath: source.path,
+      targetDirectory,
+      contentStrategy: strategy,
+      contentSource: strategy === 'blank' ? undefined : contentSource
+    })
+  }
+
+  return (
+    <Modal open onClose={onCancel} onSubmit={run} dismissible={!busy} title={t('home.duplicate.title', { name: source.name })}>
+      <InfoNote className="mb-1">{t('home.duplicate.intro')}</InfoNote>
+      <div className="flex flex-col gap-3">
+        <Field label={t('home.wizard.parentDirectory')} hint={t('home.wizard.parentDirectoryHint')}>
+          <div className="flex gap-2">
+            <TextInput
+              value={parentDirectory}
+              onChange={(e) => setParentDirectory(e.target.value)}
+              placeholder={t('home.wizard.parentDirectoryPlaceholder')}
+              className="flex-1"
+            />
+            <Button variant="ghost" onClick={pickParent}>
+              {t('common.select')}
+            </Button>
+          </div>
+        </Field>
+
+        <Field label={t('home.wizard.projectName')} hint={t('home.duplicate.nameHint')}>
+          <TextInput data-autofocus value={projectName} onChange={(e) => setProjectName(e.target.value)} />
+        </Field>
+
+        {nameInvalid ? (
+          <p className="text-[11px] text-red-600 dark:text-red-400">{t('home.wizard.nameInvalid')}</p>
+        ) : (
+          targetDirectory && (
+            <p className="break-all text-[11px] text-slate-500 dark:text-slate-400">
+              {t('home.wizard.targetPreview')} <code className="font-mono">{targetDirectory}</code>
+            </p>
+          )
+        )}
+
+        <Field label={t('home.duplicate.contentLabel')} hint={t('home.duplicate.contentHint')}>
+          <Select value={strategy} onChange={(e) => setStrategy(e.target.value as typeof strategy)}>
+            <option value="blank">{t('home.duplicate.contentBlank')}</option>
+            <option value="symlink">{t('home.duplicate.contentSymlink')}</option>
+            <option value="copy">{t('home.duplicate.contentCopy')}</option>
+          </Select>
+        </Field>
+
+        {strategy !== 'blank' && (
+          <Field label={t('home.duplicate.contentFolder')} hint={t('home.duplicate.contentFolderHint')}>
+            <div className="flex gap-2">
+              <TextInput value={contentSource} onChange={(e) => setContentSource(e.target.value)} className="flex-1" />
+              <Button variant="ghost" onClick={pickContent}>
+                {t('common.select')}
+              </Button>
+            </div>
+          </Field>
+        )}
+
+        <p className="text-[11px] text-slate-500 dark:text-slate-400">{t('home.duplicate.whatStaysBehind')}</p>
+
+        {/* Mounted whether or not there is an error, because a live region has to be in the
+            document *before* its text is - the same reason PageHeader's status slot renders empty
+            rather than not at all, and the same reason `empty:hidden` is not used here. An empty
+            <p> is zero-height; it costs the flex gap next to it and nothing else. */}
+        <p role="alert" className="text-[11px] text-red-600 dark:text-red-400">
+          {error}
+        </p>
+
+        <div className="mt-1 flex justify-end gap-2">
+          <Button variant="ghost" onClick={onCancel} disabled={busy}>
+            {t('common.cancel')}
+          </Button>
+          <Button type="submit" variant="primary" disabled={!canRun}>
+            {busy ? t('home.duplicate.running') : t('home.duplicate.confirm')}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
 // ── one project ─────────────────────────────────────────────────────────────────────────────
 
 function ProjectRow({
@@ -213,13 +474,15 @@ function ProjectRow({
   locale,
   onOpen,
   onRemove,
-  onRelocated
+  onRelocated,
+  onDuplicate
 }: {
   project: ProjectOverview
   locale: string
   onOpen: () => void
   onRemove: () => void
   onRelocated: () => void
+  onDuplicate: () => void
 }): JSX.Element {
   const { t } = useTranslation()
   const broken = project.missing || !project.isQuartzProject
@@ -293,8 +556,19 @@ function ProjectRow({
             </span>
           </Button>
         )}
+        {!broken && (
+          <Button variant="ghost" className="ml-auto" onClick={onDuplicate}>
+            <span className="flex items-center gap-1.5">
+              <Copy size={13} />
+              {t('home.duplicate.action')}
+            </span>
+          </Button>
+        )}
       </div>
-      {relocate.error && <p className="text-xs text-red-600 dark:text-red-400">{relocate.error}</p>}
+      {/* Same rule, same shape: this appears after the folder picker comes back. */}
+      <p role="alert" className="text-xs text-red-600 dark:text-red-400">
+        {relocate.error}
+      </p>
 
       <button
         type="button"
@@ -338,6 +612,41 @@ function GettingStarted({ onOpen, onCreate }: { onOpen: () => void; onCreate: ()
         </Button>
       </div>
     </Card>
+  )
+}
+
+// ── a newer build ───────────────────────────────────────────────────────────────────────────
+
+// Shown only when there *is* one. `unknown` says nothing on purpose: a band that reads "could not
+// check for updates" every time somebody works offline is noise about the app instead of about
+// their site, and the answer it would be hiding is one the user cannot act on anyway. The one state
+// worth a line is the one that costs a tester an evening otherwise.
+function NewerVersionBand(): JSX.Element | null {
+  const { t } = useTranslation()
+  const [status, setStatus] = useState<AppUpdateStatus | null>(null)
+
+  useEffect(() => {
+    // Not awaited into the render path: the start screen must come up at the speed of the local
+    // reads around it, and this one goes to the network.
+    void window.quartzGui.appUpdate.check().then(setStatus)
+  }, [])
+
+  if (!status || status.state !== 'newer') return null
+  return (
+    <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-blue-300/60 bg-blue-50/60 px-3 py-2 text-[13px] text-blue-900 dark:border-blue-500/30 dark:bg-blue-500/[0.08] dark:text-blue-200">
+      <span>{t('home.update.available', { latest: status.latest, current: status.current })}</span>
+      {status.notes && <span className="text-blue-800/80 dark:text-blue-300/80">{status.notes}</span>}
+      {status.url && (
+        <button
+          type="button"
+          onClick={() => void window.quartzGui.dialog.openExternal(status.url as string)}
+          className="ml-auto flex items-center gap-1 underline underline-offset-2 hover:no-underline"
+        >
+          {t('home.update.get')}
+          <ArrowUpRight size={13} />
+        </button>
+      )}
+    </div>
   )
 }
 
@@ -544,14 +853,19 @@ function CreateWizard({
   busy,
   error,
   defaultDirectory,
+  outcome,
+  onContinue,
   onCancel,
   onCreate
 }: {
   busy: boolean
   error: string | null
   defaultDirectory?: string
+  /** What the template step had to report, once the project exists. Null while it does not. */
+  outcome: { warnings: string[]; failure?: string } | null
+  onContinue: () => void
   onCancel: () => void
-  onCreate: (options: CreateProjectOptions) => void
+  onCreate: (options: CreateProjectOptions, template: { path: string; withContent: boolean } | null) => void
 }): JSX.Element {
   const { t } = useTranslation()
   // Two fields rather than one path, because the folder is created here rather than chosen: a
@@ -566,6 +880,16 @@ function CreateWizard({
   const [strategy, setStrategy] = useState<NonNullable<CreateProjectOptions['strategy']>>('new')
   const [linkResolution, setLinkResolution] = useState<NonNullable<CreateProjectOptions['linkResolution']>>('shortest')
   const [baseUrl, setBaseUrl] = useState('localhost')
+  // The example template, if the app has one to offer. Asked for once on mount: the answer may
+  // involve a download, and a dialog that re-checks on every keystroke would be checking the
+  // network while somebody types a folder name.
+  const [builtin, setBuiltin] = useState<{ path: string; source: 'downloaded' | 'bundled' } | null>(null)
+  const [useTemplate, setUseTemplate] = useState(true)
+  const [withContent, setWithContent] = useState(true)
+
+  useEffect(() => {
+    void window.quartzGui.templatePackage.builtin().then(setBuiltin)
+  }, [])
 
   const trimmedName = projectName.trim()
   // macOS and Linux only (see electron-builder.yml on why Windows is absent), so one separator.
@@ -583,18 +907,52 @@ function CreateWizard({
   }
 
   const canCreate = !busy && !!targetDirectory && !nameInvalid && (strategy === 'new' || !!source)
+  // The template's notes may only be written into a content folder the project itself just made.
+  // Under 'copy' the folder holds the user's own notes and the import runs with packageWins, so an
+  // index.md of theirs was replaced by the template's start page with no plan, no conflict list and
+  // nothing but the pre-import snapshot - which they do not know about - to get it back. Under
+  // 'symlink' it is a link into somebody's vault and the content part refuses outright, so the
+  // switch promised something that could not happen either way.
+  const contentAllowed = strategy === 'new'
   function create(): void {
     // Also the guard behind Return: the submit button is disabled in the same cases, which stops
     // implicit submission, but a check that lives in one place cannot disagree with the button.
     if (!canCreate) return
-    onCreate({
-      targetDirectory,
-      template,
-      strategy,
-      linkResolution,
-      source: strategy === 'new' ? undefined : source,
-      baseUrl: baseUrl || undefined
-    })
+    onCreate(
+      {
+        targetDirectory,
+        template,
+        strategy,
+        linkResolution,
+        source: strategy === 'new' ? undefined : source,
+        baseUrl: baseUrl || undefined
+      },
+      builtin && useTemplate ? { path: builtin.path, withContent: withContent && contentAllowed } : null
+    )
+  }
+
+  // The project is made; the form behind this would only invite creating it a second time. One
+  // screen, one message, one way on - and closing with Escape goes the same way, since onContinue
+  // is what the parent hands to onClose in this state.
+  if (outcome) {
+    return (
+      <Modal open onClose={onContinue} title={t('home.wizard.doneTitle')}>
+        <div className="flex flex-col gap-1">
+          <p className="text-ui text-text-secondary">
+            {outcome.failure ? t('home.wizard.doneWithFailure') : t('home.wizard.doneWithWarnings')}
+          </p>
+          {outcome.failure && (
+            <pre className="mt-1 max-h-40 overflow-y-auto whitespace-pre-wrap rounded-md bg-red-50 p-2 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-400">
+              {outcome.failure}
+            </pre>
+          )}
+          {outcome.warnings.length > 0 && <ImportOutcome warnings={outcome.warnings} />}
+          <div className="mt-4 flex justify-end">
+            <Button onClick={onContinue}>{t('home.wizard.toProject')}</Button>
+          </div>
+        </div>
+      </Modal>
+    )
   }
 
   return (
@@ -676,11 +1034,47 @@ function CreateWizard({
             <TextInput value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} placeholder="example.com" />
           </Field>
 
-          {error && (
-            <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-md bg-red-50 p-2 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-400">
-              {error}
-            </pre>
+          {/* Last, and deliberately after the Quartz options: this is a decision about how the site
+              should look, and the ones above are about what the project *is*. A checkbox rather
+              than a picker because there is one template to offer; when there are several this
+              becomes a list and the second checkbox moves into it. */}
+          {builtin && (
+            <div className="rounded-md border border-ink/10 bg-ground p-2.5">
+              <Toggle
+                label={t('home.wizard.useTemplate')}
+                hint={t('home.wizard.useTemplateHint')}
+                checked={useTemplate}
+                onChange={setUseTemplate}
+              />
+              {useTemplate && (
+                <div className="mt-2 border-t border-ink/10 pt-2">
+                  <Toggle
+                    label={t('home.wizard.templateContent')}
+                    hint={
+                      contentAllowed
+                        ? t('home.wizard.templateContentHint')
+                        : strategy === 'copy'
+                          ? t('home.wizard.templateContentHintCopy')
+                          : t('home.wizard.templateContentHintSymlink')
+                    }
+                    checked={withContent && contentAllowed}
+                    onChange={setWithContent}
+                    disabled={!contentAllowed}
+                  />
+                </div>
+              )}
+            </div>
           )}
+
+          {/* Empty but present - see the same region in the duplicate dialog. The box only paints
+              when there is something in it, so an empty region shows no red panel. */}
+          <div role="alert">
+            {error && (
+              <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-md bg-red-50 p-2 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-400">
+                {error}
+              </pre>
+            )}
+          </div>
 
           <div className="mt-2 flex justify-end gap-2">
             <Button variant="ghost" onClick={onCancel} disabled={busy}>

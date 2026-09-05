@@ -2,7 +2,7 @@ import { app } from 'electron'
 import { execFileSync } from 'child_process'
 import { existsSync } from 'fs'
 import { delimiter, join } from 'path'
-import { findExecutable } from './environmentService'
+import { findExecutable, isCommandLineToolsStub } from './environmentService'
 
 // git kommt vom Rechner, wenn es dort eines gibt, und sonst aus der App - die umgekehrte Regel zu
 // der für Node (nodeRuntime.ts), und aus dem umgekehrten Grund. git hat keine Versionsuntergrenze,
@@ -60,7 +60,10 @@ export function applyGitRuntime(): GitRuntime | null {
   if (runtime) return runtime
 
   const host = findExecutable('git')
-  if (host) {
+  // Der Stub in /usr/bin/git wird nicht ausgeführt, sondern übersprungen: `git --version` ist dort
+  // kein Test, sondern ein Installer-Dialog - und dieser Aufruf steht vor createWindow, also vor
+  // dem eigenen Fenster. Siehe isCommandLineToolsStub.
+  if (host && !isCommandLineToolsStub(host)) {
     const version = probeVersion(host)
     if (version) {
       runtime = { source: 'host', path: host, version }

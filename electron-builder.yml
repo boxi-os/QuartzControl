@@ -51,6 +51,11 @@ extraResources:
   # dem Rechner kein funktionierendes git liegt (gitRuntime.ts).
   - from: resources/git/current
     to: git
+  # Die Beispielvorlage als Reserve. Beim Anlegen eines Projekts holt die App zuerst die Fassung von
+  # GitHub (builtinTemplateService) - diese hier ist die, die ohne Netz funktioniert und die ein
+  # erster Start benutzt, weil noch nichts geladen wurde.
+  - from: resources/templates
+    to: templates
   - from: resources/licenses
     to: licenses
 

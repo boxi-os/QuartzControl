@@ -27,6 +27,7 @@ import {
 import { useAsyncAction } from '../hooks/useAsyncAction'
 import { applyLanguagePreference } from '../i18n'
 import { formatBytes } from '../utils/format'
+import bundledGit from '@shared/bundled-git.json'
 
 // Five named sections instead of one card with three fields. Two of them are here because the
 // thing they configure is *app*-level and had no app-level home: connections (connectionsService
@@ -57,30 +58,36 @@ export default function Settings(): JSX.Element {
   return (
     <div className="flex h-screen flex-col">
       <div className={titlebarStripClass} />
-      <div className="mx-auto w-full max-w-5xl flex-1 overflow-y-auto px-6 pb-12">
-        {/* This page is reached from three places - the start screen, Cmd+, from anywhere, and the
-            "Zugänge verwalten" link on Veröffentlichen - so a hardcoded `to="/"` sent two of those
-            somewhere the user had not been: coming from a project page, "Zurück" landed on the
-            project list and the project had to be picked again. `key` is 'default' only when this
-            is the session's first entry (a deep link, nothing to go back to), which is the one
-            case that still needs a destination of its own. */}
-        <button
-          type="button"
-          onClick={() => (location.key === 'default' ? navigate('/') : navigate(-1))}
-          className="text-[13px] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-        >
-          ← {t('common.back')}
-        </button>
-        <h1 className="mb-1 mt-2 text-2xl font-semibold">{t('settings.title')}</h1>
-        <p className="mb-6 text-[13px] text-slate-500 dark:text-slate-400">{t('settings.subtitle')}</p>
+      {/* Two boxes, and the split is the point: the scroller is the full width of the window, the
+          width cap sits inside it. When one element did both, its scrollbar sat at the right edge
+          of the centred column - which on a wide window is the middle of the screen. Same shape
+          as ProjectLayout, where <main> scrolls and the inner div caps. */}
+      <div className="flex-1 overflow-y-auto px-6 pb-12">
+        <div className="mx-auto w-full max-w-5xl">
+          {/* This page is reached from three places - the start screen, Cmd+, from anywhere, and the
+              "Zugänge verwalten" link on Veröffentlichen - so a hardcoded `to="/"` sent two of those
+              somewhere the user had not been: coming from a project page, "Zurück" landed on the
+              project list and the project had to be picked again. `key` is 'default' only when this
+              is the session's first entry (a deep link, nothing to go back to), which is the one
+              case that still needs a destination of its own. */}
+          <button
+            type="button"
+            onClick={() => (location.key === 'default' ? navigate('/') : navigate(-1))}
+            className="text-[13px] text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+          >
+            ← {t('common.back')}
+          </button>
+          <h1 className="mb-1 mt-2 text-2xl font-semibold">{t('settings.title')}</h1>
+          <p className="mb-6 text-[13px] text-slate-500 dark:text-slate-400">{t('settings.subtitle')}</p>
 
-        <div className="flex flex-col gap-4">
-          <AppearanceSection settings={settings} persist={persist} />
-          <ProjectsSection settings={settings} persist={persist} />
-          <RuntimeSection settings={settings} persist={persist} />
-          <GithubSection />
-          <ConnectionsSection />
-          <MaintenanceSection />
+          <div className="flex flex-col gap-4">
+            <AppearanceSection settings={settings} persist={persist} />
+            <ProjectsSection settings={settings} persist={persist} />
+            <RuntimeSection settings={settings} persist={persist} />
+            <GithubSection />
+            <ConnectionsSection />
+            <MaintenanceSection />
+          </div>
         </div>
       </div>
     </div>
@@ -250,10 +257,11 @@ function RuntimeSection({
   )
 }
 
-// Die Fassung, die scripts/fetch-git.mjs holt. Beim Anheben dort *und* hier ändern - der Link muss
-// auf den Quelltext genau der mitgelieferten Binärdatei zeigen, sonst ist das Quellcode-Angebot
-// keines.
-const GIT_SOURCE_URL = 'https://github.com/git/git/tree/v2.53.0'
+// Die Fassung steht an einer Stelle, weil der Link auf den Quelltext *genau* der mitgelieferten
+// Binärdatei zeigen muss - sonst ist das Quellcode-Angebot keines. Vorher stand die Zahl hier und
+// noch einmal in scripts/fetch-git.mjs, jeweils mit einem Kommentar, der zum Nachziehen der anderen
+// Stelle aufforderte; heute gleich, morgen vielleicht nicht.
+const GIT_SOURCE_URL = `https://github.com/git/git/tree/v${bundledGit.version}`
 
 // "git version 2.53.0 (Apple Git-155)" → "2.53.0". Dieselbe Frage wie auf der Startseite, dieselbe
 // Antwort: die Zeile ist eine Auskunft, keine Diagnose.

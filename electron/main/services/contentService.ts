@@ -1,6 +1,6 @@
 import { existsSync } from 'fs'
 import { lstat, readlink, readdir, cp, symlink, mkdir } from 'fs/promises'
-import { isAbsolute, join, relative, resolve } from 'path'
+import { dirname, isAbsolute, join, relative, resolve } from 'path'
 import type { ContentStatus, ContentStrategy } from '@shared/ipc-contract'
 import { snapshotContent } from './backupService'
 import { createSnapshot } from './snapshotService'
@@ -10,10 +10,15 @@ export function contentDirPath(projectPath: string): string {
   return join(projectPath, 'content')
 }
 
+// Hidden entries are not content, and counting them made the number meaningless: a vault carries
+// its own .git, Obsidian keeps its settings in .obsidian, and quartz ignores both. Measured on the
+// example vault - 1392 entries reported for 273 files of actual content, the other 1119 being git
+// objects and Obsidian's own state. Whatever the folder hides from Quartz it should hide here too.
 async function countFiles(dir: string): Promise<number> {
   let count = 0
   const entries = await readdir(dir, { withFileTypes: true })
   for (const entry of entries) {
+    if (entry.name.startsWith('.')) continue
     if (entry.isDirectory()) count += await countFiles(join(dir, entry.name))
     else count += 1
   }
@@ -22,20 +27,35 @@ async function countFiles(dir: string): Promise<number> {
 
 export async function getContentStatus(projectPath: string): Promise<ContentStatus> {
   const path = contentDirPath(projectPath)
-  if (!existsSync(path)) {
+  // lstat, not existsSync: the latter follows the link, so a content/ pointing at an unmounted
+  // drive answered "there is no content folder here" - and everything that asks this question in
+  // order to decide whether it may write (the template import's content part above all) then read
+  // the answer as "an ordinary, absent folder", planned every note as an addition and failed with
+  // a raw ENOENT from mkdir. A link that is there but hanging is a link, and saying so is what
+  // keeps the guard on.
+  let stat
+  try {
+    stat = await lstat(path)
+  } catch {
     return { path, exists: false, isSymlink: false }
   }
-  const stat = await lstat(path)
   if (stat.isSymbolicLink()) {
     const target = await readlink(path)
-    const targetExists = existsSync(target)
+    // readlink() hands back the link's *raw* target, and a relative one is relative to the link's
+    // own directory - not to the working directory of whoever asks. Resolving it against the
+    // latter reported a perfectly good link as broken: measured on a project whose content/ points
+    // at ../vault, `targetExists` came back false and the file count was missing, while the link
+    // itself worked. The dialog in this app always writes an absolute path, so only a hand-made or
+    // moved project ever hit it.
+    const targetPath = isAbsolute(target) ? target : resolve(dirname(path), target)
+    const targetExists = existsSync(targetPath)
     return {
       path,
       exists: true,
       isSymlink: true,
       symlinkTarget: target,
       targetExists,
-      fileCount: targetExists ? await countFiles(target) : undefined
+      fileCount: targetExists ? await countFiles(targetPath) : undefined
     }
   }
   return { path, exists: true, isSymlink: false, fileCount: await countFiles(path) }

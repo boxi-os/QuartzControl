@@ -46,6 +46,10 @@ export default {
   },
   home: {
     subtitle: 'Your Quartz sites in one place — set up, design, publish.',
+    update: {
+      available: 'A newer build exists: {{latest}} — you have {{current}}.',
+      get: 'Download'
+    },
     settings: 'Settings',
     openExisting: 'Open existing project',
     createNew: 'Create new project',
@@ -58,6 +62,27 @@ export default {
     folderMissing: 'Folder not found — moved, renamed, or on a volume that is not mounted.',
     notAQuartzProject: 'Not a Quartz project — this folder has no quartz.config.yaml.',
     locateFolder: 'Locate folder…',
+    duplicate: {
+      action: 'Duplicate',
+      title: 'Duplicate “{{name}}”',
+      intro:
+        'Copies the design, the configuration, the plugins and the authored frames into a new folder. The content does not come along — choose below where the copy gets its notes from.',
+      nameHint: 'The copy\'s folder name. It also becomes the project name in this list.',
+      contentLabel: 'Content of the copy',
+      contentHint:
+        'The original\'s content folder is never copied along — two projects writing through the same link would know nothing of each other.',
+      contentBlank: 'Start empty (one home page)',
+      contentSymlink: 'Link to a folder (an Obsidian vault, for instance)',
+      contentCopy: 'Copy a folder in',
+      contentFolder: 'Source folder',
+      contentFolderHint:
+        'When linking, that folder stays the place you write in; when copying, it is taken over once.',
+      whatStaysBehind:
+        'Not copied along: snapshots, set-aside content folders and the publishing destinations. Otherwise the copy could overwrite the original\'s website with the first click. The base URL is taken over — change it under “Setup” if the copy belongs somewhere else.',
+      confirm: 'Duplicate',
+      running: 'Copying…',
+      failed: 'Duplicating failed.'
+    },
     confirmRemove: 'Remove “{{name}}” from the list?\n\nThe folder on disk is left untouched.',
     confirmRemoveAction: 'Remove from list',
     confirmRemoveRunning:
@@ -146,6 +171,22 @@ export default {
       baseUrl: 'Base URL',
       baseUrlHint:
         'The address the site will be reachable at later — without https://. If you do not know it yet, leave “localhost” and fill it in later under Configuration.',
+      useTemplate: 'Install the example template',
+      useTemplateHint:
+        'A finished design: measured colours for light and dark, three authored page grids, self-hosted typefaces and every component styled individually. All of it editable afterwards.',
+      templateContent: 'With the example pages',
+      templateContentHint:
+        'Around 270 pages that explain the template itself — for every component the page describing it. Meant for looking things up; leave it out if you bring your own notes.',
+      templateContentHintCopy:
+        'Not available: the notes come from the folder you chose. The example pages would overwrite files of the same name in it — the template brings an index.md of its own.',
+      templateContentHintSymlink:
+        'Not available: the content folder becomes a link into the folder you chose. A template never writes there, so its notes cannot end up in your vault.',
+      templateFailed: 'The project was created, but the template could not be applied: {{detail}}',
+      templateUnreadable: 'The package could not be read.',
+      doneTitle: 'Project created',
+      doneWithWarnings: 'The project is there. Applying the template had something to report, though:',
+      doneWithFailure: 'The project is there and usable. The template could not be applied, though:',
+      toProject: 'Go to the project',
       creating: 'Creating… (cloning and npm install take a minute or two)',
       create: 'Create project',
       createFailed: 'The project could not be created.'
@@ -1501,6 +1542,9 @@ export default {
     planAdditions: '{{count}} new',
     planReplaced: '{{count}} replaced',
     planKept: '{{count}} kept as is',
+    planIdentical: '{{count}} identical',
+    planContentIsSymlink:
+        'Will be skipped: this project’s content folder is a link into another folder. A template never writes there.',
     planNoChange: 'changes nothing',
     willInstall: 'Will be installed: {{packages}}',
     importButton: 'Apply template',
@@ -1551,6 +1595,11 @@ export default {
       presets: {
         label: 'Theme presets',
         description: 'Your saved theme combinations.'
+      },
+      content: {
+        label: 'Content',
+        description:
+          'The notes themselves. For most templates you do not want this — a template is a design. For one that explains itself, you do.'
       }
     },
     stats: {
@@ -1578,7 +1627,8 @@ export default {
       entries: '{{count}} text',
       entries_other: '{{count}} texts',
       presets: '{{count}} preset',
-      presets_other: '{{count}} presets'
+      presets_other: '{{count}} presets',
+      kilobytes: '{{count}} kB'
     },
     warnings: {
       unknown: '{{count}}× {{kind}}',
@@ -1605,6 +1655,14 @@ export default {
       translationFailed: 'Text could not be written: {{detail}}',
       partUnreadable: 'One part could not be read: {{detail}}',
       partFailed: 'One part failed: {{detail}}',
+      contentIsSymlink:
+        'The content was not written: this project\'s content folder is a link to {{detail}}. Pouring a template\'s notes into somebody\'s vault could not be undone.',
+      contentSkipped: '{{count}} existing note was left unchanged.',
+      contentSkipped_other: '{{count}} existing notes were left unchanged.',
+      fileOutsideProject:
+        '{{count}} file in the template would have been written outside the project and was skipped.',
+      fileOutsideProject_other:
+        '{{count}} files in the template would have been written outside the project and were skipped.',
       packageUnreadable: 'The template could not be read.'
     }
   },

@@ -20,11 +20,27 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   ein Unterkommando des Quartz-CLI und ein vollständiger Build in einem Wegwerf-Ordner. Existiert aus
   demselben Grund wie `check:i18n`: keiner dieser Fehler wird im Typcheck oder im Build sichtbar, sie
   passieren alle in einem Kindprozess
+- `npm run check:semver` — die 18 Versionsvergleiche, die der Update-Hinweis trifft. Braucht weder
+  App noch Netz; existiert, weil die interessanten Fälle Vorabversionen sind (`beta.10` ist neuer
+  als `beta.9`, `1.0.0` neuer als beide) und ein Zeichenkettenvergleich beide falsch beantwortet
 - `npm run check:i18n` — every literal `t('…')` and `mainT('…')` key against `de.ts`, `en.ts` and
   `electron/main/i18n.ts`, plus de/en parity in both directions. Static and instant; it exists because
   i18next renders a missing key *as the key* rather than failing, so a gap is invisible until someone
   opens the one screen state that uses it (`publish.pages.saveSettings`, found in the alpha test, was
   missing from both files and therefore in perfect parity)
+- `npm run template:example` — baut die Beispielvorlage (`scripts/example-template/`) in einem
+  Wegwerf-Projekt auf und exportiert sie als `.qtpl`. Treibt dafür die **gebaute App** über
+  Playwright und schreibt alles über `window.quartzGui.*`, also durch dieselben IPC-Pfade wie ein
+  Klick — kein zweiter Frame-Codegen, kein zweiter SCSS-Writer. Phasen einzeln über
+  `--only 3,4,5`, die WCAG-Messung allein über `--check-contrast` (87 Paare, braucht weder App noch
+  Projekt). Den Rückweg geht `--sync`: Es holt die 30 Stylesheets und die Schnipsel aus dem Projekt
+  zurück ins Repo, denn dort wird gearbeitet und die Kopie hier driftet sonst still (gemessen am
+  2026-09-05). Config und Frames haben bewusst keinen Rückweg — sie entstehen aus `plugins.mjs`,
+  `variables.mjs`, `layout.mjs` und `frames.mjs`, und ein Rückleser wäre deren zweite, inverse
+  Umsetzung. Ist zugleich der einzige End-to-End-Test der Vorlagen-Funktion: Phase 11 importiert das
+  Paket in ein zweites leeres Projekt und baut es. Was dabei gefunden wurde, steht in
+  `scripts/example-template/BEFUNDE.md`
+
 - `npm run dist` / `dist:mac` / `dist:linux` / `dist:flatpak` — electron-builder (see
   `docs/decisions/electron-runtime-and-packaging.md`). `dist:flatpak` ist ein eigenes Skript, weil
   das Ziel flatpak und flatpak-builder auf der Baumaschine braucht und **noch nie gebaut wurde** —
@@ -48,6 +64,12 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   er rendert Daten von GitHub. Schemas sind bewusst *loser* als die Typen (`looseObject`, `record`),
   weil `z.object()` unbekannte Keys streicht und damit den Config-Roundtrip bricht. Daraus folgen die
   `as`-Casts in `handlers.ts`.
+- **Ein Vorlagen-Paket ist so wenig eine Vertrauensgrenze wie der Renderer.** Ein `.qtpl` ist eine
+  Datei, die jemand weitergereicht hat: `readZip` weist ein Archiv mit absolutem Namen,
+  `..`-Segment, Laufwerksbuchstaben oder NUL komplett zurück, und ein Name aus einem Baustein wird
+  nie ungeprüft auf ein Verzeichnis gelegt - `containedPath()` (`templatePackage/shared.ts`)
+  entscheidet per `resolve()`+`relative()`, in `plan` wie in `apply`. Messungen in
+  [`templates-and-localization.md`](docs/decisions/templates-and-localization.md).
 - **Neue Kanäle nehmen ein Objekt-Argument**, kein Positions-Tupel (`dialog.confirm` ist das Muster):
   ein späterer optionaler Key ist dann eine Zeile im Vertrag und eine im Schema, nicht ein vierter
   Slot in vier Dateien. Bestehende Kanäle bleiben, wie sie sind (123 mit Positions-Argumenten,
@@ -146,6 +168,12 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
 - **Eine Stelle bestimmt die Seitenbreite** (`ProjectLayout`, 1800px). Seiten setzen keine eigene
   Maximalbreite; Breite wird in Spalten ausgegeben, nicht in längeren Zeilen. Ein Block, der schmal
   bleiben will, sagt am Block, warum.
+- **Wer rollt, ist nicht wer die Breite deckelt.** Der Roller (`overflow-y-auto`) geht über die
+  volle Fensterbreite, die Kappung sitzt in einem Kind darin. Beides an einem Element hängt die
+  Rollleiste an den rechten Rand der zentrierten Spalte — bei 1728 px Fenster und `max-w-6xl` sind
+  das 288 px vom Fensterrand, also mitten im Bild. `ProjectLayout` war schon so gebaut (`<main>`
+  rollt, das innere `div` deckelt), Startseite und Einstellungen nicht. Eine Leiste oder ein Panel
+  mit eigenem Roller ist davon nicht betroffen: Dort gehört die Rollleiste an die Kante des Panels.
 
 ### Primitives und Gestaltung
 
@@ -245,8 +273,22 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
 
 - **„Kann nicht prüfen“ ist nie „alles gut“.** `unavailable`/`'unknown'` sind eigene Antworten
   (Style-Check, Update-Check, Kataloge, Token-Prüfung, Secret-Backend).
+- **„Die Datei ist da“ ist nicht „die Datei lässt sich lesen“.** Ein Cache, ein Download, eine
+  mitgelieferte Kopie: geprüft wird, ob der Inhalt sich öffnen lässt, nicht ob ein Verzeichniseintrag
+  existiert - sonst gewinnt ein Torso gegen eine heile Kopie. Geschrieben wird so etwas über
+  Temp-Datei, `fsync` und `rename` (`jsonStore.ts` ist das Muster), und was sich nicht lesen lässt,
+  wird weggeräumt statt übersprungen, damit der reparierende Weg nicht blockiert bleibt.
 - **Gemessen, nicht angenommen.** Jede Regel hier steht in `docs/decisions/` mit dem Experiment, das
   sie erzwungen hat. Neue Regeln genauso.
+- **Ein Symlink-Schutz prüft jedes Segment, nicht das oberste Verzeichnis** — und fragt mit
+  `lstat`, nicht mit `existsSync`. Letzteres folgt dem Link, also meldet ein hängender Link „ist
+  nicht da“ statt „ist ein Link“, und die Sperre geht auf. Ein Link *innerhalb* des geschützten
+  Ordners führt genauso hinaus wie der Ordner selbst (`writableTarget` in
+  `templatePackage/shared.ts`).
+- **Eine Kopie erbt keinen Pfad, der in das Original zeigt.** Config, Lockfile und Symlinks werden
+  nach dem Kopieren umgeschrieben, alles Instanzgebundene (Ausgabeverzeichnis, Deploy-Manifeste,
+  Worktrees, Snapshots, Ziele) bleibt zurück — `duplicateService.ts` führt beide Listen mit
+  Begründung.
 - **Ein Lesepfad legt nie `.quartz-gui/` an.** `quartzGuiPath()` zum Lesen, `quartzGuiDir()` zum
   Schreiben.
 - **JSON-Stores nur über `jsonStore.ts`**: atomar schreiben, Unlesbares beiseitelegen statt
@@ -277,69 +319,33 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Offene Befunde aus dem Review (Status: offen)
+## Befunde aus den Reviews (Stand 2026-09-05)
 
-Aus [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md). Umgesetzt sind die P1-Befunde E1, E2
-und U1 (Sandbox, `dialog.confirm`, `Modal`), U2 (`Toggle` mit `hideLabel`; `label` bleibt Pflicht,
-ein Switch ohne Namen ist damit am Aufrufer sichtbar falsch), T1 und U4 (Farb-Tokens in
-`index.css`/`tailwind.config.js`, `ui.tsx` als Pilot, die vier Opazitäts-Seiten; Messungen in
-`docs/decisions/dark-mode-and-contrast.md`) sowie U3 (`SegmentedControl` als Radiogruppe; Messungen
-in `docs/decisions/navigation-and-pages.md`). Alles Folgende ist **nicht** erledigt; die
-Kurzbezeichnungen verweisen auf das Review.
+Beide Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md) (Tag
+`review-2026-09-02` markiert den Ausgangsstand) und [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md)
+mit seinen 15 Befunden (Auftrag daneben in `docs/REVIEW-2026-09-05-auftrag.md`) stehen als Dokumente
+unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft gilt, steht
+oben als Regel. Offen ist nur noch, was beide als „beiläufig, kein sed“ führen: rund 272 Farbpaare
+im Renderer stehen als Tailwind-Palette statt als Token, und die 133 übrigen Arbitrary-Value-Größen.
 
-**Arbeitsregel:** ein Befund pro Durchgang, jeweils mit `npm run typecheck`, `npm run build`,
-`npm run smoke` und eigenem Commit; was dabei nebenbei auffällt, wird gesammelt und genannt, nicht
-mit erledigt. Die Reihenfolge der Liste ist keine Arbeitsreihenfolge.
+**Arbeitsregel** für die nächste Liste: ein Befund pro Durchgang, jeweils mit `npm run typecheck`,
+`npm run build`, `npm run smoke` und eigenem Commit; was dabei nebenbei auffällt, wird gesammelt und
+genannt, nicht mit erledigt. Was nur ein laufendes Programm beantworten kann, wird an der gebauten
+App gemessen — und wo es geht mit einer Vorher-Messung, denn zwei der Befunde traten anders auf als
+das Review sie beschrieb (der geteilte Optionen-Zustand erst nach einem Routenwechsel, der hängende
+Content-Link mit ENOTDIR statt ENOENT).
 
-- **Reste aus dem T1/U4-Durchgang - Status: erledigt bis auf die Palette-Paare (2026-09-03).** Der
-  deaktivierte Ghost-Button sinkt auf `bg-ground` und misst 4,37:1 hell / 6,5:1 dunkel statt 4,00:1;
-  `select option` nimmt `rgb(var(--surface))`/`rgb(var(--text))` und braucht keinen Dark-Block mehr
-  (nicht auf Linux nachgemessen - das Popup gibt es nur dort); die zwei Grundfarben in `theme.ts`
-  bleiben eine zweite Kopie, weil Electron sie vor dem Renderer malt, verweisen jetzt aber
-  aufeinander. Die Palette-Paare in Sidebar, Seiten und Sub-Komponenten bleiben offen - beiläufig
-  beim Anfassen, kein sed.
-- **S1 - Status: erledigt (2026-09-03).** `state/useIpcQuery.ts` mit Abbruch-Guard, `loading`,
-  `error`, `reload()`; umgestellt sind die drei Lesevorgänge, deren Schlüssel der Nutzer per Klick
-  ändern kann (Theme-Detail, Theme-Info, Style-Settings-Schema) - die übrigen laufen einmal oder
-  hängen an einem Schlüssel, der die Route ohnehin neu mountet. Neue Seiten nehmen den Hook,
-  bestehende beim Anfassen.
-- **S3 - Status: erledigt (2026-09-03).** Selektoren in `Home`/`Settings`,
-  `document.documentElement.lang` folgt der aufgelösten Sprache (`i18n/index.ts`), und die
-  Einstellungen werden beim Start nur noch einmal gelesen (`main.tsx` durch den Store).
-- **E4 - Status: erledigt (2026-09-03).** Der `console.error` in `will-navigate` ist englisch, und
-  der Hauptprozess puffert die Log-Zeilen selbst (`services/logBuffer.ts`, Kanäle `logs:history` und
-  `logs:clear`); `ProjectLayout` spielt sie beim Öffnen eines Projekts ein.
-- **A2 - Status: erledigt (2026-09-03).** Menüpunkt „Speichern“ mit `CmdOrCtrl+S`, Kanal
-  `app:command` mit einer `AppCommand`-Union, Register in `state/saveCommand.ts`. Eine Seite
-  registriert nur, solange ihr Knopf etwas täte; der Menüpunkt bleibt aktiv, weil der Hauptprozess
-  sonst jeden Mount mitbekommen müsste.
-- **A3 - Status: erledigt (2026-09-03).** „Nach oben / nach unten“ in `Plugins/Installed`, und alle
-  Drag-Stellen laufen über `@dnd-kit` mit Tastatur; `Styles/CustomCss` hatte die Pfeile schon und nie
-  ein natives Drag.
-- **A4 - Status: erledigt (2026-09-03).** `status`-Platz im `PageHeader` als `role="status"`,
-  `role="log"` an beiden Konsolen, eine `<h1>` pro Seite, `<nav aria-label>`. Nachgezogen am selben
-  Tag: `state/announcer.tsx` als Live-Region der Seite (Zeilenmeldung der Plugin-Liste, Ergebnis
-  jedes Umsortierens) und `utils/dndAnnouncements.ts` für die Drag-Ansagen in beiden Listen, die
-  vorher Englisch waren und von Roh-IDs sprachen.
-- **U5 - Status: erledigt (2026-09-03).** `LabelText` gelöscht; drei Größen-Tokens (`text-micro`,
-  `text-ui`, `text-heading`) in `tailwind.config.js`, `ui.tsx` und die sieben 15px-Überschriften
-  umgestellt. Die 133 übrigen Arbitrary Values bleiben, bis jemand die Zeile anfasst - kein sed.
-- **T2 - Status: erledigt (2026-09-03).** Die drei Farbwähler teilen sich `Styles/ColorPicker.tsx`:
-  durchsichtiges Feld, Farbe dahinter über `isDisplayableColor`, Startwert Schwarz statt Weiß.
-- **Sticky-State über Index - Status: erledigt (2026-09-03).** `plugins.expanded.<index>` keyt jetzt
-  auf den Plugin-Namen. Beim Umbau korrigiert: das Umsortieren ist *nicht* der Auslöser, es schreibt
-  nur `order`/`layout.priority` neu und lässt die Array-Positionen stehen - das Entfernen ist es, das
-  das Array verkürzt und jeden Eintrag dahinter um eins verschiebt. Damit tragen alle Sticky-Schlüssel
-  stabile Kennungen.
-- **Options-Zeile in `Plugins/Installed` - Status: erledigt (2026-09-03).** Der Schlüssel ist ein
-  `<label htmlFor>`, das Control trägt die `id`; damit haben Select, Zahl und Text überhaupt erst
-  einen Namen (sie hatten keinen). Der Schalter behält sein verstecktes Label und damit den Namen
-  zweimal im DOM - das aufzulösen hieße, `Toggle` von außen benennbar zu machen.
-- **Drei Antworten im Bestätigungsdialog - Status: erledigt (2026-09-03).** Der bestehende Kanal
-  bekam ein optionales `altLabel` und antwortet mit `'cancel' | 'alt' | 'confirm'`; `confirmDialog()`
-  bleibt für die achtzehn Ja/Nein-Fragen ein Boolean, `askDialog()` holt die dritte Antwort. Der
-  Unsaved-Guard bietet „Speichern“ an, wenn die Seite ein Save registriert hat, und bleibt bei einem
-  gescheiterten Speichern stehen.
+Was aus dem 09-05-Durchgang als Regel hängengeblieben ist, steht jeweils oben im passenden Abschnitt:
+ein Vorlagen-Paket ist keine Vertrauensgrenze; „die Datei ist da“ ist nicht „die Datei lässt sich
+lesen“; eine Kopie erbt keinen Pfad, der in das Original zeigt; ein Symlink-Schutz, der nur das
+oberste Verzeichnis prüft, prüft nichts.
+
+Zwei Dinge sind dabei aufgefallen und bewusst nicht mit erledigt worden:
+
+- `builtinTemplateAvailable()` in `builtinTemplateService.ts` hat in `electron/`, `src/` und
+  `shared/` keinen Aufrufer.
+- `countFiles()` in `contentService.ts` zählt einen Link auf ein Verzeichnis als *eine* Datei —
+  dieselbe Familie wie Befund 13, aber ohne Folge außer einer zu kleinen Zahl.
 
 ## Claude-Skills in diesem Projekt
 

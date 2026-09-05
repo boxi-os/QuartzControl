@@ -280,3 +280,16 @@ als origamis späte Antwort eintrifft, steht es immer noch da. Ohne den Guard h�
 Der Rest bleibt, wie er ist: ein Hook, den man überall einzieht, wo er nichts ändert, ist ein Umbau
 ohne Messung. Neue Seiten nehmen ihn, bestehende beim Anfassen — und die Regel, woran man erkennt,
 dass er nötig ist, steht jetzt oben in diesem Abschnitt.
+
+**Ein Fehler, der von selbst erscheint, gehört in eine Region, die schon da ist (2026-09-05).** Drei
+Texte tauchten nach einem Klick ohne Live-Region auf: die Meldung des Duplizieren-Dialogs, die des
+Anlege-Assistenten und der Relocate-Fehler in einer Projektzeile. Die Region muss *vor* ihrem Text im
+Dokument stehen, die Meldung zusammen mit ihr zu mounten hätte also nichts geholfen. Alle drei werden
+jetzt leer gerendert und bleiben, so wie der `status`-Platz des `PageHeader`, mit `role="alert"` für
+das bestimmte Vorlesen, das ein Fehler verdient; ein leeres `<p>` ist nullhoch und kostet nur den
+Flex-Abstand daneben. `empty:hidden` bewusst nicht — das nähme die Region wieder aus dem Baum.
+Gemessen an der gebauten App: dasselbe Element ist vor dem Klick leer und nullhoch und trägt danach
+den Text. `npm run smoke` musste dieselbe Unterscheidung lernen: es zählte jedes `[role=alert]` als
+gezeigten Fehler-Toast und meldete zehn leere; es überspringt jetzt leere Regionen, denn seine Frage
+ist, ob ein Fehler *sichtbar* ist.
+

@@ -221,6 +221,18 @@ function buildOuterGridOverride(frameName: string): string {
     `${selector} .qgframe-area {`,
     `  min-width: 0;`,
     `  min-height: 0;`,
+    `}`,
+    // The area holding pageBody also carries `center`, so the client scripts that look for it keep
+    // working (see layoutFrameService's codegen). That class brings two of quartz's own rules with
+    // it - `margin-inline: auto` and `min-width: 100%` from base.scss - and the auto margin makes a
+    // grid item shrink-to-fit, exactly the trap documented for the frame box itself. Measured: an
+    // area sitting in a 796px column rendered 466px wide and centred in it, on every page of a site
+    // using an authored frame. `width: 100%` takes that route away again, and the margins go back
+    // to zero so `align` on the frame box stays the only thing that positions anything.
+    `${selector} .qgframe-area.center {`,
+    `  width: 100%;`,
+    `  max-width: none;`,
+    `  margin-inline: 0;`,
     `}`
   ].join('\n')
 }

@@ -48,6 +48,10 @@ export default {
   },
   home: {
     subtitle: 'Deine Quartz-Websites an einem Ort — einrichten, gestalten, veröffentlichen.',
+    update: {
+      available: 'Es gibt eine neuere Fassung: {{latest}} — du hast {{current}}.',
+      get: 'Herunterladen'
+    },
     settings: 'Einstellungen',
     openExisting: 'Vorhandenes Projekt öffnen',
     createNew: 'Neues Projekt erstellen',
@@ -60,6 +64,25 @@ export default {
     folderMissing: 'Ordner nicht gefunden — verschoben, umbenannt oder auf einem nicht eingebundenen Laufwerk.',
     notAQuartzProject: 'Kein Quartz-Projekt — in diesem Ordner liegt keine quartz.config.yaml.',
     locateFolder: 'Ordner suchen…',
+    duplicate: {
+      action: 'Duplizieren',
+      title: '„{{name}}“ duplizieren',
+      intro:
+        'Kopiert Gestaltung, Konfiguration, Plugins und die eigenen Frames in einen neuen Ordner. Der Inhalt kommt nicht mit — wähle unten, woher das Duplikat seine Notizen bekommt.',
+      nameHint: 'Der Ordnername des Duplikats. Er wird auch der Projektname in dieser Liste.',
+      contentLabel: 'Inhalt des Duplikats',
+      contentHint: 'Der Content-Ordner des Originals wird nie mitkopiert — zwei Projekte, die durch denselben Link schreiben, wüssten nichts voneinander.',
+      contentBlank: 'Leer beginnen (eine Startseite)',
+      contentSymlink: 'Mit einem Ordner verknüpfen (z. B. einem Obsidian-Vault)',
+      contentCopy: 'Einen Ordner hineinkopieren',
+      contentFolder: 'Quellordner',
+      contentFolderHint: 'Beim Verknüpfen bleibt dieser Ordner der Ort, an dem du schreibst; beim Kopieren wird er einmal übernommen.',
+      whatStaysBehind:
+        'Nicht mitkopiert werden: Snapshots, beiseitegelegte Content-Ordner und die Veröffentlichungsziele. Das Duplikat könnte sonst mit dem ersten Klick die Website des Originals überschreiben. Die Basis-URL wird übernommen — ändere sie unter „Einrichtung“, wenn das Duplikat woanders stehen soll.',
+      confirm: 'Duplizieren',
+      running: 'Kopiere…',
+      failed: 'Das Duplizieren ist fehlgeschlagen.'
+    },
     confirmRemove: '„{{name}}“ aus der Liste entfernen?\n\nDer Ordner auf der Festplatte bleibt unangetastet.',
     confirmRemoveAction: 'Aus der Liste entfernen',
     confirmRemoveRunning:
@@ -149,6 +172,22 @@ export default {
       baseUrl: 'Basis-URL',
       baseUrlHint:
         'Die Adresse, unter der die Website später erreichbar ist — ohne https://. Wenn du sie noch nicht kennst, lass „localhost“ stehen und trage sie später unter Konfiguration nach.',
+      useTemplate: 'Beispielvorlage mitinstallieren',
+      useTemplateHint:
+        'Eine fertige Gestaltung: gemessene Farben für hell und dunkel, drei eigene Seitenraster, selbst gehostete Schriften und jede Komponente einzeln gestaltet. Lässt sich hinterher überall ändern.',
+      templateContent: 'Mit den Beispielseiten',
+      templateContentHint:
+        'Rund 270 Seiten, die die Vorlage selbst erklären — zu jeder Komponente die Seite, auf der sie beschrieben ist. Zum Nachschlagen gedacht; wenn du eigene Notizen mitbringst, lass sie weg.',
+      templateContentHintCopy:
+        'Nicht verfügbar: Die Notizen kommen aus dem gewählten Ordner. Die Beispielseiten würden gleichnamige Dateien daraus überschreiben — die Vorlage bringt eine eigene index.md mit.',
+      templateContentHintSymlink:
+        'Nicht verfügbar: Der Content-Ordner wird ein Link in den gewählten Ordner. Dorthin schreibt eine Vorlage nichts, damit fremde Notizen nicht in deinem Vault landen.',
+      templateFailed: 'Das Projekt wurde angelegt, aber die Vorlage ließ sich nicht anwenden: {{detail}}',
+      templateUnreadable: 'Das Paket ließ sich nicht lesen.',
+      doneTitle: 'Projekt angelegt',
+      doneWithWarnings: 'Das Projekt ist da. Beim Anwenden der Vorlage gab es aber etwas zu melden:',
+      doneWithFailure: 'Das Projekt ist da und benutzbar. Die Vorlage ließ sich aber nicht anwenden:',
+      toProject: 'Zum Projekt',
       creating: 'Erstelle… (Klonen und npm install dauern ein bis zwei Minuten)',
       create: 'Projekt anlegen',
       createFailed: 'Projekt konnte nicht erstellt werden.'
@@ -1510,6 +1549,9 @@ export default {
     planAdditions: '{{count}} neu',
     planReplaced: '{{count}} wird ersetzt',
     planKept: '{{count}} bleibt unverändert',
+    planIdentical: '{{count}} identisch',
+    planContentIsSymlink:
+        'Wird übersprungen: Der Content-Ordner dieses Projekts ist ein Link in einen anderen Ordner. Dorthin schreibt eine Vorlage nichts.',
     planNoChange: 'ändert nichts',
     willInstall: 'Wird nachinstalliert: {{packages}}',
     importButton: 'Vorlage anwenden',
@@ -1560,6 +1602,11 @@ export default {
       presets: {
         label: 'Theme-Presets',
         description: 'Deine gespeicherten Theme-Zusammenstellungen.'
+      },
+      content: {
+        label: 'Inhalt',
+        description:
+          'Die Notizen selbst. Bei den meisten Vorlagen willst du das nicht — eine Vorlage ist eine Gestaltung. Bei einer, die sich selbst erklärt, schon.'
       }
     },
     stats: {
@@ -1587,7 +1634,8 @@ export default {
       entries: '{{count}} Text',
       entries_other: '{{count}} Texte',
       presets: '{{count}} Preset',
-      presets_other: '{{count}} Presets'
+      presets_other: '{{count}} Presets',
+      kilobytes: '{{count}} kB'
     },
     warnings: {
       unknown: '{{count}}× {{kind}}',
@@ -1614,6 +1662,14 @@ export default {
       translationFailed: 'Text nicht schreibbar: {{detail}}',
       partUnreadable: 'Ein Baustein war nicht lesbar: {{detail}}',
       partFailed: 'Ein Baustein ist fehlgeschlagen: {{detail}}',
+      contentIsSymlink:
+        'Der Inhalt wurde nicht geschrieben: Der Content-Ordner dieses Projekts ist ein Link auf {{detail}}. Die Notizen einer Vorlage in einen fremden Vault zu schütten wäre nicht rückgängig zu machen.',
+      contentSkipped: '{{count}} vorhandene Notiz blieb unverändert.',
+      contentSkipped_other: '{{count}} vorhandene Notizen blieben unverändert.',
+      fileOutsideProject:
+        '{{count}} Datei der Vorlage sollte außerhalb des Projekts geschrieben werden und wurde übersprungen.',
+      fileOutsideProject_other:
+        '{{count}} Dateien der Vorlage sollten außerhalb des Projekts geschrieben werden und wurden übersprungen.',
       packageUnreadable: 'Die Vorlage ließ sich nicht lesen.'
     }
   },

@@ -1,0 +1,41 @@
+// Reader mode — hides the sidebars for the length of one page view.
+
+// Also a plain `<button class="readermode">`, same shape as the dark mode control.
+button.readermode {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--tpl-target);
+  min-height: var(--tpl-target);
+  border: var(--tpl-rule-width) solid var(--tpl-rule-strong);
+  border-radius: var(--tpl-radius-md);
+  background: var(--light);
+  cursor: pointer;
+  transition: border-color var(--tpl-motion), background-color var(--tpl-motion);
+
+  &:hover {
+    border-color: var(--secondary);
+    background: var(--tpl-surface-tint);
+  }
+
+  svg {
+    width: var(--tpl-icon);
+    height: var(--tpl-icon);
+    color: var(--darkgray);
+    stroke: var(--darkgray);
+  }
+
+}
+
+// When reader mode is on, the state has to be visible on the control itself - otherwise the only
+// feedback is that the page changed, which is exactly what someone who toggled it by accident
+// cannot interpret.
+:root[reader-mode="on"] .readermode {
+  border-color: var(--secondary);
+  background: var(--tpl-surface-tint);
+
+  svg {
+    color: var(--secondary);
+    stroke: var(--secondary);
+  }
+}

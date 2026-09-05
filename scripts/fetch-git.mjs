@@ -29,9 +29,10 @@ import { pipeline } from 'stream/promises'
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)))
 
-// Eine Version, an einer Stelle. Beim Anheben auch resources/licenses/git-LICENSE.txt prüfen und die
-// Fassung in den Einstellungen (settings.runtime.gitBundled) nachziehen.
-export const GIT_VERSION = '2.53.0'
+// Eine Version, an einer Stelle - und die Stelle ist shared/, weil die Einstellungen daraus den
+// Link auf den Quelltext genau dieser Binärdatei bauen. Beim Anheben nur die JSON-Datei ändern und
+// resources/licenses/git-LICENSE.txt prüfen.
+export const GIT_VERSION = JSON.parse(readFileSync(join(root, 'shared/bundled-git.json'), 'utf-8')).version
 const RELEASE = `v${GIT_VERSION}`
 const BUILD = '6981a1f'
 

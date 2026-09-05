@@ -1,0 +1,204 @@
+// Article body — everything that comes out of a Markdown file.
+
+article {
+  // Anchors quartz adds to headings: present for the pointer, never in the way of the text.
+  a[data-no-popover],
+  .internal.broken {
+    color: var(--gray);
+  }
+
+  p {
+    margin-block: 0 var(--tpl-space-md);
+  }
+
+  /* ------------------------------------------------------------------------- links */
+
+  a {
+    color: var(--secondary);
+    // A colour alone is not a link affordance for someone who cannot separate these two hues.
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: var(--tpl-underline-offset);
+    text-decoration-color: color-mix(in srgb, var(--secondary) 40%, transparent);
+    transition: color var(--tpl-motion), text-decoration-color var(--tpl-motion);
+
+    &:hover {
+      color: var(--tertiary);
+      text-decoration-color: currentColor;
+    }
+
+    // External links get a mark rather than only a different colour.
+    &.external::after {
+      content: "↗";
+      display: inline-block;
+      margin-inline-start: 0.15em;
+      font-size: 0.85em;
+      text-decoration: none;
+      color: var(--gray);
+    }
+
+    // A wikilink to a page that does not exist should look unfinished, not broken.
+    //
+    // Measured: this build does not emit the class — a link to a missing page came out as
+    // `internal internal-link` like any other. `.broken` is in quartz's own base.scss, so some
+    // configuration does produce it; the rule stays as the one that will apply when it does,
+    // rather than being deleted and rediscovered later.
+    &.internal.broken {
+      text-decoration-style: dotted;
+    }
+  }
+
+  /* ------------------------------------------------------------------------- lists */
+
+  ul,
+  ol {
+    padding-inline-start: var(--tpl-space-lg);
+    margin-block: 0 var(--tpl-space-md);
+  }
+
+  li {
+    margin-block: var(--tpl-space-2xs);
+
+    &::marker {
+      color: var(--gray);
+    }
+  }
+
+  // Nested lists tighten rather than repeat the full gap.
+  li > ul,
+  li > ol {
+    margin-block: var(--tpl-space-2xs);
+  }
+
+  // Task lists: the checkbox is decoration, the text carries the state.
+  input[type="checkbox"] {
+    margin-inline-end: var(--tpl-space-xs);
+    accent-color: var(--secondary);
+    width: 1em;
+    height: 1em;
+  }
+
+  li:has(> input[type="checkbox"]:checked) {
+    color: var(--gray);
+    text-decoration: line-through;
+    text-decoration-color: color-mix(in srgb, var(--gray) 50%, transparent);
+  }
+
+  ul:has(> li > input[type="checkbox"]) {
+    list-style: none;
+    padding-inline-start: var(--tpl-space-xs);
+  }
+
+  /* -------------------------------------------------------------------- quotations */
+
+  blockquote {
+    margin-block: var(--tpl-space-lg);
+    margin-inline: 0;
+    padding: var(--tpl-space-xs) var(--tpl-space-md);
+    border-inline-start: var(--tpl-accent-bar) solid var(--secondary);
+    background: var(--tpl-surface-tint);
+    border-start-end-radius: var(--tpl-radius-md);
+    border-end-end-radius: var(--tpl-radius-md);
+    color: var(--darkgray);
+
+    > :last-child {
+      margin-block-end: 0;
+    }
+  }
+
+  /* ------------------------------------------------------------------------ tables */
+
+  // Quartz already wraps every content table in a .table-container, so the scrolling belongs
+  // there. Putting `display: block; overflow-x: auto` on the <table> itself - the obvious first
+  // attempt - destroys the table layout: measured against the note-properties table, whose keys
+  // and values then rendered on top of each other. The container is also the only correct place
+  // for it, because the table has to keep `display: table` to lay out at all.
+  //
+  // Scoped to the container rather than to `article table`, which would also catch the
+  // note-properties and layout-box tables that quartz does not wrap.
+  .table-container {
+    overflow-x: auto;
+    margin-block: var(--tpl-space-lg);
+    // The wrapper is the block; the table inside it may be wider than the column.
+    max-width: none;
+  }
+
+  .table-container > table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--tpl-text-sm);
+    // Overriding quartz's own 1rem margin + 1.5rem padding on this element (base.scss), which
+    // would otherwise indent every table inside its own scroll box.
+    margin: 0;
+    padding: 0;
+  }
+
+  .table-container th,
+  .table-container td,
+  th,
+  td {
+    padding: var(--tpl-space-xs) var(--tpl-space-sm);
+    border-block-end: var(--tpl-rule-width) solid var(--tpl-rule);
+    text-align: start;
+    vertical-align: top;
+  }
+
+  thead th {
+    font-family: var(--headerFont);
+    font-weight: 600;
+    color: var(--dark);
+    border-block-end: 2px solid var(--tpl-rule-strong);
+    white-space: nowrap;
+  }
+
+  tbody tr:last-child td {
+    border-block-end: none;
+  }
+
+  /* ------------------------------------------------------------------------- rules */
+
+  hr {
+    border: none;
+    border-block-start: var(--tpl-rule-width) solid var(--tpl-rule);
+    margin-block: var(--tpl-space-xl);
+  }
+
+  /* -------------------------------------------------------------------- highlights */
+
+  mark {
+    background: var(--textHighlight);
+    color: var(--darkgray);
+    padding-inline: 0.15em;
+    border-radius: var(--tpl-radius-sm);
+  }
+
+  // Obsidian comments (%%...%%) are stripped at build time; this catches the case where a theme
+  // renders them instead of removing them.
+  .comment {
+    display: none;
+  }
+
+  /* -------------------------------------------------------------------- footnotes */
+
+  .footnotes {
+    margin-block-start: var(--tpl-space-xl);
+    padding-block-start: var(--tpl-space-md);
+    border-block-start: var(--tpl-rule-width) solid var(--tpl-rule);
+    font-size: var(--tpl-text-sm);
+    color: var(--gray);
+
+    li:target {
+      background: var(--tpl-surface-tint);
+      border-radius: var(--tpl-radius-sm);
+    }
+  }
+
+  .data-footnote-backref {
+    text-decoration: none;
+  }
+
+  sup a {
+    text-decoration: none;
+    padding-inline: 0.1em;
+  }
+}

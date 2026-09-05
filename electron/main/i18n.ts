@@ -22,6 +22,8 @@ const STRINGS = {
     menuQuartzDocs: 'Quartz-Dokumentation',
     menuPluginCatalog: 'Plugin-Katalog',
     menuDataFolder: 'Datenordner von QuartzControl öffnen',
+    menuFeedback: 'Rückmeldung senden…',
+    feedbackSubject: 'Rückmeldung',
     menuAbout: 'Über QuartzControl',
     aboutDetail: 'Verwaltung für Quartz-Websites',
 
@@ -72,6 +74,14 @@ const STRINGS = {
     createTargetExists:
       'In „{{path}}“ liegen bereits Dateien. Wähle einen anderen Namen oder einen anderen Ordner — ein vorhandener Ordner wird nicht überschrieben.',
     createCloneFailed: 'Quartz konnte nicht von GitHub geladen werden:',
+    templateContentTooLarge:
+      'Der Inhalt dieses Projekts ist größer als {{limit}} MB. Eine Vorlage ist eine Gestaltung, keine Sicherung — nimm den Baustein „Inhalt“ heraus.',
+    duplicateSourceNotAProject:
+      'In „{{path}}“ liegt keine quartz.config.yaml — das ist kein Quartz-Projekt.',
+    duplicateNested:
+      'Das Duplikat darf nicht im Originalprojekt liegen und das Original nicht im Duplikat. Wähle einen Ordner daneben.',
+    duplicateBlankContent:
+      'Dieses Projekt ist eine Kopie und hat noch keinen Inhalt. Unter „Einrichtung → Content-Ordner“ kannst du einen Ordner oder einen Obsidian-Vault verknüpfen.',
     createInstallFailed: 'npm install ist fehlgeschlagen:',
     createNoConfig:
       '\n\nDer Setup-Assistent hat quartz.config.yaml nicht geschrieben (vermutlich fehlt eine Antwort auf eine interaktive Rückfrage oben).',
@@ -98,6 +108,7 @@ const STRINGS = {
     zipBadHeader: 'Das Paket ist beschädigt (Dateikopf ungültig).',
     zipUnsupportedMethod: 'Das Paket verwendet ein nicht unterstütztes Kompressionsverfahren ({{method}}).',
     zipEntryCorrupt: 'Die Datei „{{name}}“ im Paket ist beschädigt.',
+    zipEntryUnsafeName: 'Die Datei „{{name}}“ im Paket würde außerhalb des Projekts geschrieben werden.',
 
     // Publishing
     ftpWrongTarget: 'Falscher Zieltyp für den FTP-Adapter.',
@@ -214,6 +225,8 @@ const STRINGS = {
     menuQuartzDocs: 'Quartz documentation',
     menuPluginCatalog: 'Plugin catalog',
     menuDataFolder: 'Open QuartzControl’s data folder',
+    menuFeedback: 'Send feedback…',
+    feedbackSubject: 'Feedback',
     menuAbout: 'About QuartzControl',
     aboutDetail: 'Manage Quartz websites',
 
@@ -258,6 +271,13 @@ const STRINGS = {
     createTargetExists:
       '“{{path}}” already contains files. Pick a different name or a different folder — an existing folder is never overwritten.',
     createCloneFailed: 'Quartz could not be downloaded from GitHub:',
+    templateContentTooLarge:
+      'This project\'s content is larger than {{limit}} MB. A template is a design, not a backup — leave the “content” part out.',
+    duplicateSourceNotAProject: 'There is no quartz.config.yaml in “{{path}}” — that is not a Quartz project.',
+    duplicateNested:
+      'The copy must not sit inside the original project, nor the original inside the copy. Pick a folder beside it.',
+    duplicateBlankContent:
+      'This project is a copy and has no content yet. Under “Setup → Content folder” you can link a folder or an Obsidian vault.',
     createInstallFailed: 'npm install failed:',
     createNoConfig:
       '\n\nThe setup wizard did not write quartz.config.yaml (most likely an interactive question above went unanswered).',
@@ -280,6 +300,7 @@ const STRINGS = {
     zipBadHeader: 'The package is damaged (invalid file header).',
     zipUnsupportedMethod: 'The package uses an unsupported compression method ({{method}}).',
     zipEntryCorrupt: 'The file “{{name}}” in the package is damaged.',
+    zipEntryUnsafeName: 'The file “{{name}}” in the package would be written outside the project.',
 
     ftpWrongTarget: 'Wrong destination type for the FTP adapter.',
     ftpNoConnection: 'No FTP credential is set for this target.',

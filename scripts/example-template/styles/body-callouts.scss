@@ -1,0 +1,177 @@
+// Callouts.
+//
+// Quartz ships twelve colours for these, and eleven of them fail AA against a light ground:
+// measured against this template's page colour, `note` (#448aff) reaches 3.23:1, `question`
+// (#dba642) 2.14:1, and the red used by danger/failure/bug fails in *both* modes at ~4.2:1. Since
+// the callout title is text and the type colour is the only thing distinguishing one callout from
+// another, every one of them is restated here per mode.
+//
+// The values below are measured, not picked: `npm run template:example -- --check-contrast` reads
+// this file, extracts these declarations and checks each one against the ground it sits on and
+// against its own tinted background. The check reads the stylesheet rather than a copy in JS, so
+// a value edited here can never silently drift out of the measurement.
+//
+// Hue is preserved throughout — blue stays blue — so the type is still recognisable at a glance
+// for anyone who reads these by colour.
+
+.callout {
+  --callout-tint: 8%;
+  --border: color-mix(in srgb, var(--color) 35%, transparent);
+  --bg: color-mix(in srgb, var(--color) var(--callout-tint), var(--light));
+
+  margin-block: var(--tpl-space-lg);
+  border: var(--tpl-rule-width) solid var(--border);
+  border-inline-start: var(--tpl-accent-bar) solid var(--color);
+  border-radius: var(--tpl-radius-md);
+  background: var(--bg);
+  overflow: hidden;
+}
+
+/* -------------------------------------------------------------- light mode colours */
+
+.callout[data-callout="note"] { --color: #1D4ED8; }
+.callout[data-callout="abstract"] { --color: #0369A1; }
+.callout[data-callout="info"] { --color: #0E7490; }
+.callout[data-callout="todo"] { --color: #0E7490; }
+.callout[data-callout="tip"] { --color: #0F766E; }
+.callout[data-callout="success"] { --color: #136B34; }
+.callout[data-callout="question"] { --color: #8A5A00; }
+.callout[data-callout="warning"] { --color: #9A4B06; }
+.callout[data-callout="failure"] { --color: #B02020; }
+.callout[data-callout="danger"] { --color: #B02020; }
+.callout[data-callout="bug"] { --color: #A21D62; }
+.callout[data-callout="example"] { --color: #6D28D9; }
+.callout[data-callout="quote"] { --color: var(--secondary); }
+
+/* --------------------------------------------------------------- dark mode colours */
+
+:root[saved-theme="dark"] {
+  .callout {
+    // A tint has to be stronger on a dark ground to be visible at all.
+    --callout-tint: 12%;
+  }
+
+  .callout[data-callout="note"] { --color: #93B8FF; }
+  .callout[data-callout="abstract"] { --color: #67C7EF; }
+  .callout[data-callout="info"] { --color: #5AC8DE; }
+  .callout[data-callout="todo"] { --color: #5AC8DE; }
+  .callout[data-callout="tip"] { --color: #5AD3BC; }
+  .callout[data-callout="success"] { --color: #6DD68F; }
+  .callout[data-callout="question"] { --color: #E8C25E; }
+  .callout[data-callout="warning"] { --color: #F0A868; }
+  .callout[data-callout="failure"] { --color: #FF9C93; }
+  .callout[data-callout="danger"] { --color: #FF9C93; }
+  .callout[data-callout="bug"] { --color: #FF9BC8; }
+  .callout[data-callout="example"] { --color: #C3A6F7; }
+  .callout[data-callout="quote"] { --color: var(--secondary); }
+}
+
+/* ------------------------------------------------------------------------ structure */
+
+.callout-title {
+  display: flex;
+  align-items: center;
+  gap: var(--tpl-space-xs);
+  padding: var(--tpl-space-xs) var(--tpl-space-md);
+  font-family: var(--headerFont);
+  font-weight: 600;
+  color: var(--color);
+}
+
+.callout-icon {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  // The icon repeats what the title says; it is decoration, not information.
+  > svg {
+    width: 1.05em;
+    height: 1.05em;
+  }
+}
+
+.callout-title-inner {
+  flex: 1 1 auto;
+  min-width: 0;
+
+  // Quartz wraps the title text in a <p>, which keeps its paragraph margin. Measured: the title
+  // row was 57.6px and centred its three children on 453.4, but the <p> inside this box sat at
+  // 445.4 - eight pixels above the icon, because the 16px it carried below it pushed it up inside
+  // a box that was centred as a whole. The icon looked like it had dropped; it had not.
+  > * {
+    margin-block: 0;
+  }
+}
+
+.callout-content {
+  padding: 0 var(--tpl-space-md) var(--tpl-space-xs);
+  color: var(--darkgray);
+
+  > :first-child {
+    margin-block-start: 0;
+  }
+
+  > :last-child {
+    margin-block-end: 0;
+  }
+
+  // A callout is already a tinted box; a quote inside one repeating the treatment reads as damage.
+  blockquote {
+    background: none;
+    border-inline-start-color: var(--border);
+  }
+}
+
+/* ------------------------------------------------------------------------ folding */
+
+.callout.is-collapsible .callout-title {
+  cursor: pointer;
+}
+
+// The fold marker is Quartz' own `--callout-icon-fold`, an empty <div> with the icon as a
+// background - not an SVG like the explorer's and the outline's. Pointing the variable at the same
+// lucide chevron is what makes "one disclosure glyph on the whole site" literally true rather than
+// only nearly: quartz' default draws the same shape at a different stroke weight and with square
+// caps, which is visible when a callout and the table of contents are on screen together.
+.callout {
+  --callout-icon-fold: var(--icon-chevron);
+}
+
+.callout-fold {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  transition: transform var(--tpl-motion);
+
+  > svg {
+    width: 1em;
+    height: 1em;
+  }
+}
+
+.callout.is-collapsed .callout-fold {
+  transform: rotate(-90deg);
+}
+
+// The title is the control when a callout folds, so it needs a focus ring of its own — the
+// element that takes focus is not the one the browser would outline by default here.
+.callout.is-collapsible .callout-title:focus-visible {
+  outline: var(--tpl-focus-width) solid var(--color);
+  outline-offset: calc(var(--tpl-focus-offset) * -1);
+}
+
+.callout-metadata {
+  display: none;
+}
+
+/* --------------------------------------------------------------------- nesting */
+
+// One level in, the box drops its own border so two nested callouts do not read as a frame in a
+// frame; the accent bar keeps the type visible.
+.callout .callout {
+  margin-block: var(--tpl-space-md);
+  border-block: none;
+  border-inline-end: none;
+  border-radius: 0;
+  border-start-start-radius: var(--tpl-radius-sm);
+  border-end-start-radius: var(--tpl-radius-sm);
+}

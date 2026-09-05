@@ -932,6 +932,7 @@ export type TemplatePartId =
   | 'plugins'
   | 'translations'
   | 'presets'
+  | 'content'
 
 // Export order is also import order, and that is load-bearing: frames and plugins mutate
 // quartz.config.yaml out-of-band through the Quartz CLI, so they have to run before the parts that
@@ -947,7 +948,10 @@ export const TEMPLATE_PART_IDS: readonly TemplatePartId[] = [
   'translations',
   'styles',
   'fonts',
-  'cssVariables'
+  'cssVariables',
+  // Last, and on its own: the notes touch nothing the other ten write, and a long file copy at the
+  // end of the run is the one part whose progress a person actually watches.
+  'content'
 ] as const
 
 // An npm package a part needs in the target project. `version` is what was installed at export
@@ -1177,6 +1181,9 @@ export const IPC = {
   projectOpen: 'project:open',
   projectRemove: 'project:remove',
   projectCreate: 'project:create',
+  projectDuplicate: 'project:duplicate',
+  appUpdateCheck: 'appUpdate:check',
+  templatePackageBuiltin: 'templatePackage:builtin',
 
   projectIconGet: 'projectIcon:get',
   projectIconSet: 'projectIcon:set',
@@ -1398,6 +1405,42 @@ export interface CreateProjectResult {
   output: string
 }
 
+/**
+ * Copying an existing project into a new folder. The content folder is not copied along: the
+ * original's is either a link into a vault - which two projects would then write through at once,
+ * without either of them saying so - or a folder the copy has no claim to. The dialog asks where
+ * the copy's own content comes from, and `blank` is the honest answer for "I want the design, not
+ * the notes".
+ */
+export interface DuplicateProjectOptions {
+  sourcePath: string
+  targetDirectory: string
+  contentStrategy: ContentStrategy | 'blank'
+  /** The folder to link to or copy in. Required unless the strategy is `blank`. */
+  contentSource?: string
+}
+
+export interface DuplicateProjectResult {
+  success: boolean
+  output: string
+}
+
+/**
+ * Whether a newer build of the app itself exists. `unknown` is its own answer: a failed check is
+ * not an up-to-date one, and a start screen that claims "you have the latest" because GitHub was
+ * unreachable would be lying at the one moment it matters.
+ */
+export interface AppUpdateStatus {
+  state: 'current' | 'newer' | 'unknown'
+  /** What is running right now. */
+  current: string
+  /** What the server named, when it answered. */
+  latest?: string
+  /** Where to get it - https only, checked in main. */
+  url?: string
+  notes?: string
+}
+
 // The renderer-facing API exposed on window.quartzGui by the preload script.
 export interface QuartzGuiApi {
   /**
@@ -1426,6 +1469,13 @@ export interface QuartzGuiApi {
     open(id: string): Promise<Project | undefined>
     remove(id: string): Promise<void>
     create(options: CreateProjectOptions): Promise<CreateProjectResult>
+    /** Copies a project into a new folder and registers it. Everything the original's own past or
+     *  outside world belongs to stays behind - see duplicateService for the list and the reasons. */
+    duplicate(options: DuplicateProjectOptions): Promise<DuplicateProjectResult>
+  }
+  /** Is there a newer build of QuartzControl? An answer, not an updater - nothing is downloaded. */
+  appUpdate: {
+    check(): Promise<AppUpdateStatus>
   }
   /**
    * The project's picture. One file - quartz/static/icon.png - because that is the only path the
@@ -1542,6 +1592,13 @@ export interface QuartzGuiApi {
   templatePackage: {
     /** What each part would contribute, so the export form can show counts before writing. */
     inspect(projectPath: string): Promise<TemplatePartSummary[]>
+    /**
+     * The example template the app can offer while a project is being created - a path, so that
+     * everything after this point is the ordinary import: plan(), then import(). Null when neither
+     * a downloaded nor a bundled copy exists. `source` says which of the two answered, because a
+     * dialog that has been offline for a week should be able to say so.
+     */
+    builtin(): Promise<{ path: string; source: 'downloaded' | 'bundled' } | null>
     /** Opens the package chooser. Accepts a folder too, for packages in the pre-1 folder format. */
     pick(): Promise<string | null>
     /** Resolves to null when the user cancelled the save dialog. */

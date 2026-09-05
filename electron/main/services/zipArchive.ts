@@ -50,6 +50,18 @@ function dosDateTime(date: Date): { time: number; date: number } {
   }
 }
 
+// A name inside a ZIP is a path fragment chosen by whoever wrote the archive, and a template
+// package arrives from outside - so `..` in one is a write outside the target project waiting to
+// happen. Measured before this check existed: a hand-built .qtpl with an entry named
+// `files/content/../PROOF.md` put that file in the project root, and the import reported success
+// with no warning. Nothing this app writes ever produces an absolute name, a `..` segment or a
+// backslash separator, so an archive that carries one was written by something else and is refused
+// whole rather than partly - a package whose file list cannot be trusted has no trustworthy half.
+function isSafeEntryName(name: string): boolean {
+  if (name === '' || name.startsWith('/') || name.includes('\0') || /^[a-zA-Z]:/.test(name)) return false
+  return !name.split(/[/\\]/).some((segment) => segment === '..')
+}
+
 export function createZip(entries: ZipEntry[], modified = new Date()): Buffer {
   const { time, date } = dosDateTime(modified)
   const locals: Buffer[] = []
@@ -162,6 +174,7 @@ export function readZip(buffer: Buffer): Map<string, Buffer> {
     // A directory entry (trailing '/') carries no payload - skip it rather than storing an empty
     // buffer under a name no caller will ever ask for.
     if (name.endsWith('/')) continue
+    if (!isSafeEntryName(name)) throw new Error(mainT('zipEntryUnsafeName', { name }))
 
     if (buffer.readUInt32LE(localOffset) !== LOCAL_SIG) throw new Error(mainT('zipBadHeader'))
     // The local header's own name/extra lengths are what locate the data, and its extra field is

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { confirmDialog } from '../utils/confirm'
-import { AlertTriangle, Check, FileArchive, FolderInput, Package } from 'lucide-react'
+import { AlertTriangle, FileArchive, FolderInput, Package } from 'lucide-react'
 import { useProject } from './ProjectLayout'
 import type {
   Project,
@@ -15,6 +15,7 @@ import type {
 import { TEMPLATE_PART_IDS } from '@shared/ipc-contract'
 import { Badge, Button, Card, Field, PageHeader, SegmentedControl, TextInput } from '../components/ui'
 import { formatIpcError } from '../components/ErrorSurface'
+import { ImportOutcome } from '../components/ImportOutcome'
 import { useStickyState } from '../state/uiState'
 import { TAB_ICONS } from './navConfig'
 
@@ -63,6 +64,7 @@ function PartRow({
   disabled,
   onToggle,
   summary,
+  note,
   children
 }: {
   id: TemplatePartId
@@ -70,6 +72,8 @@ function PartRow({
   disabled?: boolean
   onToggle: () => void
   summary: string
+  /** A whole sentence the plan attached to this part, when there is one to say out loud. */
+  note?: string
   children?: React.ReactNode
 }): JSX.Element {
   const { t } = useTranslation()
@@ -86,6 +90,7 @@ function PartRow({
         <span className="font-medium">{t(`templates.parts.${id}.label`)}</span>
         <span className="ml-2 text-xs text-text-muted">{summary}</span>
         <span className="mt-0.5 block text-xs text-text-muted">{t(`templates.parts.${id}.description`)}</span>
+        {note && <span className="mt-0.5 block text-xs text-amber-700 dark:text-amber-400">{note}</span>}
         {children}
       </span>
     </label>
@@ -392,6 +397,7 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
                 disabled={running}
                 onToggle={() => toggle(part.id)}
                 summary={planSummary(t, part, strategy)}
+                note={planNote(t, part)}
               />
             ))}
           </div>
@@ -431,41 +437,6 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
   )
 }
 
-/**
- * Warnings arrive as `kind:detail` strings from main, deliberately not as finished sentences: the
- * service has no i18n and an import of a 48-plugin package produces 45 near-identical ones. They
- * are grouped by kind here, so "45 Plugins übersprungen" is one line rather than forty-five.
- */
-function ImportOutcome({ warnings }: { warnings: string[] }): JSX.Element {
-  const { t } = useTranslation()
-  const grouped = useMemo(() => {
-    const map = new Map<string, string[]>()
-    for (const warning of warnings) {
-      const kind = warning.split(':')[0]
-      const detail = warning.slice(kind.length + 1)
-      map.set(kind, [...(map.get(kind) ?? []), detail])
-    }
-    return [...map.entries()]
-  }, [warnings])
-
-  if (warnings.length === 0) {
-    return (
-      <p className="mt-3 flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
-        <Check size={13} /> {t('templates.importSuccessNoWarnings')}
-      </p>
-    )
-  }
-  return (
-    <ul className="mt-3 flex flex-col gap-1 text-xs text-amber-700 dark:text-amber-400">
-      {grouped.map(([kind, details]) => (
-        <li key={kind}>
-          {t([`templates.warnings.${kind}`, 'templates.warnings.unknown'], { count: details.length, detail: details[0], kind })}
-          {details.length > 1 && <span className="text-slate-500 dark:text-slate-400"> — {details.slice(0, 6).join(', ')}{details.length > 6 ? ' …' : ''}</span>}
-        </li>
-      ))}
-    </ul>
-  )
-}
 
 /* ----------------------------------------------------------------------- helpers */
 
@@ -478,14 +449,31 @@ function statsSummary(t: Translate, id: TemplatePartId, stats: Record<string, nu
   return parts.join(', ')
 }
 
+// `notes` are the third thing a part's plan can report, next to additions and conflicts, and until
+// now nothing rendered them - so the content part could appear with nothing to add and no reason
+// given, get ticked, and be skipped with the explanation arriving only afterwards as a warning.
+// Two kinds exist: a count of files that are byte-identical on both sides, which belongs in the
+// summary next to the other counts, and a whole sentence about why this part cannot run, which
+// belongs on its own line.
+function noteCount(plan: TemplatePartPlan, kind: string): number {
+  return plan.notes.filter((note) => note === kind || note.startsWith(`${kind}:`)).length
+}
+
 function planSummary(t: Translate, plan: TemplatePartPlan, strategy: TemplateConflictStrategy): string {
   const bits: string[] = []
   if (plan.additions.length > 0) bits.push(t('templates.planAdditions', { count: plan.additions.length }))
   if (plan.conflicts.length > 0) {
     bits.push(t(strategy === 'packageWins' ? 'templates.planReplaced' : 'templates.planKept', { count: plan.conflicts.length }))
   }
+  const identical = noteCount(plan, 'identical')
+  if (identical > 0) bits.push(t('templates.planIdentical', { count: identical }))
   if (bits.length === 0) bits.push(t('templates.planNoChange'))
   return bits.join(', ')
+}
+
+/** The sentence a part's plan wants said before the click, or undefined when it has none. */
+function planNote(t: Translate, plan: TemplatePartPlan): string | undefined {
+  return plan.notes.includes('contentIsSymlink') ? t('templates.planContentIsSymlink') : undefined
 }
 
 function formatBytes(bytes: number): string {

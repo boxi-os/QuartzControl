@@ -27,6 +27,7 @@ import {
 import { useAsyncAction } from '../hooks/useAsyncAction'
 import { applyLanguagePreference } from '../i18n'
 import { formatBytes } from '../utils/format'
+import bundledGit from '@shared/bundled-git.json'
 
 // Five named sections instead of one card with three fields. Two of them are here because the
 // thing they configure is *app*-level and had no app-level home: connections (connectionsService
@@ -256,10 +257,11 @@ function RuntimeSection({
   )
 }
 
-// Die Fassung, die scripts/fetch-git.mjs holt. Beim Anheben dort *und* hier ändern - der Link muss
-// auf den Quelltext genau der mitgelieferten Binärdatei zeigen, sonst ist das Quellcode-Angebot
-// keines.
-const GIT_SOURCE_URL = 'https://github.com/git/git/tree/v2.53.0'
+// Die Fassung steht an einer Stelle, weil der Link auf den Quelltext *genau* der mitgelieferten
+// Binärdatei zeigen muss - sonst ist das Quellcode-Angebot keines. Vorher stand die Zahl hier und
+// noch einmal in scripts/fetch-git.mjs, jeweils mit einem Kommentar, der zum Nachziehen der anderen
+// Stelle aufforderte; heute gleich, morgen vielleicht nicht.
+const GIT_SOURCE_URL = `https://github.com/git/git/tree/v${bundledGit.version}`
 
 // "git version 2.53.0 (Apple Git-155)" → "2.53.0". Dieselbe Frage wie auf der Startseite, dieselbe
 // Antwort: die Zeile ist eine Auskunft, keine Diagnose.

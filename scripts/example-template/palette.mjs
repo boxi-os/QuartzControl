@@ -136,12 +136,20 @@ export function calloutPairs() {
   const darkAt = source.indexOf(':root[saved-theme="dark"]')
   if (darkAt === -1) throw new Error('body-callouts.scss no longer has a dark-mode block')
 
-  const read = (text) => {
+  // A callout may name a palette colour instead of writing its own (`quote` uses --secondary).
+  // Those used to be skipped here, on the grounds that the base check already measures the colour
+  // against the ground - but it does not measure it against its own tinted box, which is the second
+  // pair every other callout gets. So the variable is resolved instead of dropped: the file states
+  // thirteen callouts and thirteen get measured. An unknown name throws rather than disappearing.
+  const read = (mode, text) => {
     const out = {}
-    for (const [, type, colour] of text.matchAll(/\.callout\[data-callout="([a-z]+)"\]\s*\{\s*--color:\s*([^;]+);/g)) {
-      // `quote` aliases --secondary, which the base palette check already covers.
-      if (colour.trim().startsWith('var(')) continue
-      out[type] = colour.trim()
+    for (const [, type, raw] of text.matchAll(/\.callout\[data-callout="([a-z]+)"\]\s*\{\s*--color:\s*([^;]+);/g)) {
+      const colour = raw.trim()
+      const named = colour.match(/^var\(--([\w-]+)\)$/)
+      if (!named) { out[type] = colour; continue }
+      const resolved = PALETTE[mode][named[1]]
+      if (!resolved) throw new Error(`callout ${type} reads --${named[1]}, which the palette does not define`)
+      out[type] = resolved
     }
     return out
   }
@@ -150,7 +158,7 @@ export function calloutPairs() {
   for (const [mode, text] of [['lightMode', source.slice(0, darkAt)], ['darkMode', source.slice(darkAt)]]) {
     const ground = PALETTE[mode].light
     const tint = mode === 'lightMode' ? 0.08 : 0.12
-    for (const [type, colour] of Object.entries(read(text))) {
+    for (const [type, colour] of Object.entries(read(mode, text))) {
       const [r, g, b] = parseColor(colour)
       const tinted = `rgba(${r}, ${g}, ${b}, ${tint})`
       rows.push(

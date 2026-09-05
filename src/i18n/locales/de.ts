@@ -178,6 +178,10 @@ export default {
       templateContent: 'Mit den Beispielseiten',
       templateContentHint:
         'Rund 270 Seiten, die die Vorlage selbst erklären — zu jeder Komponente die Seite, auf der sie beschrieben ist. Zum Nachschlagen gedacht; wenn du eigene Notizen mitbringst, lass sie weg.',
+      templateContentHintCopy:
+        'Nicht verfügbar: Die Notizen kommen aus dem gewählten Ordner. Die Beispielseiten würden gleichnamige Dateien daraus überschreiben — die Vorlage bringt eine eigene index.md mit.',
+      templateContentHintSymlink:
+        'Nicht verfügbar: Der Content-Ordner wird ein Link in den gewählten Ordner. Dorthin schreibt eine Vorlage nichts, damit fremde Notizen nicht in deinem Vault landen.',
       templateFailed: 'Das Projekt wurde angelegt, aber die Vorlage ließ sich nicht anwenden: {{detail}}',
       templateUnreadable: 'Das Paket ließ sich nicht lesen.',
       creating: 'Erstelle… (Klonen und npm install dauern ein bis zwei Minuten)',

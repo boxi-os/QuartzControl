@@ -854,6 +854,13 @@ function CreateWizard({
   }
 
   const canCreate = !busy && !!targetDirectory && !nameInvalid && (strategy === 'new' || !!source)
+  // The template's notes may only be written into a content folder the project itself just made.
+  // Under 'copy' the folder holds the user's own notes and the import runs with packageWins, so an
+  // index.md of theirs was replaced by the template's start page with no plan, no conflict list and
+  // nothing but the pre-import snapshot - which they do not know about - to get it back. Under
+  // 'symlink' it is a link into somebody's vault and the content part refuses outright, so the
+  // switch promised something that could not happen either way.
+  const contentAllowed = strategy === 'new'
   function create(): void {
     // Also the guard behind Return: the submit button is disabled in the same cases, which stops
     // implicit submission, but a check that lives in one place cannot disagree with the button.
@@ -867,7 +874,7 @@ function CreateWizard({
         source: strategy === 'new' ? undefined : source,
         baseUrl: baseUrl || undefined
       },
-      builtin && useTemplate ? { path: builtin.path, withContent } : null
+      builtin && useTemplate ? { path: builtin.path, withContent: withContent && contentAllowed } : null
     )
   }
 
@@ -966,9 +973,16 @@ function CreateWizard({
                 <div className="mt-2 border-t border-ink/10 pt-2">
                   <Toggle
                     label={t('home.wizard.templateContent')}
-                    hint={t('home.wizard.templateContentHint')}
-                    checked={withContent}
+                    hint={
+                      contentAllowed
+                        ? t('home.wizard.templateContentHint')
+                        : strategy === 'copy'
+                          ? t('home.wizard.templateContentHintCopy')
+                          : t('home.wizard.templateContentHintSymlink')
+                    }
+                    checked={withContent && contentAllowed}
                     onChange={setWithContent}
+                    disabled={!contentAllowed}
                   />
                 </div>
               )}

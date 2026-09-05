@@ -177,6 +177,10 @@ export default {
       templateContent: 'With the example pages',
       templateContentHint:
         'Around 270 pages that explain the template itself — for every component the page describing it. Meant for looking things up; leave it out if you bring your own notes.',
+      templateContentHintCopy:
+        'Not available: the notes come from the folder you chose. The example pages would overwrite files of the same name in it — the template brings an index.md of its own.',
+      templateContentHintSymlink:
+        'Not available: the content folder becomes a link into the folder you chose. A template never writes there, so its notes cannot end up in your vault.',
       templateFailed: 'The project was created, but the template could not be applied: {{detail}}',
       templateUnreadable: 'The package could not be read.',
       creating: 'Creating… (cloning and npm install take a minute or two)',

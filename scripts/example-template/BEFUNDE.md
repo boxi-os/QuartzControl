@@ -467,3 +467,55 @@ Gemessen: In Firefox hatte der Kopfbereich `padding-block: 0px` und einen 16-px-
 *kleiner* als seine eigene Schrumpfform, weil beide Deklarationen weggeworfen wurden. Mit `8px` und
 `22.4px` als Anfangswerten — denselben Zahlen, nur einheitenfest — stimmt es in beiden Browsern.
 Die Keyframes dürfen weiterhin die Tokens verwenden; nur der Anfangswert nicht.
+
+### 40. Die installierten Frames waren älter als der `center`-Fix — und Mermaid starb daran
+
+Quartz' eigene Frames rendern `<div class="center …">`, und Client-Skripte verlassen sich darauf.
+Der Mermaid-Initialisierer beginnt mit
+
+```js
+document.querySelector(".center").querySelectorAll("code.mermaid")
+```
+
+— ohne Null-Prüfung. Die App erzeugt die Klasse seit `5c05ea0` (2026-09-04) mit, die drei Frames im
+Beispielprojekt stammten aber von davor. Gemessen im Browser: auf **jeder** Seite der Website
+`Cannot read properties of null (reading 'querySelectorAll')`, kein einziges der 30 Diagramme
+gerendert, und weil der Fehler in der `nav`-Behandlung fliegt, brach er die danach registrierten
+Komponenten-Skripte gleich mit ab.
+
+Der Fund ist keiner am Code, sondern an der Arbeitsweise: Ein Frame ist **erzeugter Code, der im
+Projekt liegen bleibt**. Ein Fix in der App erreicht ein bestehendes Projekt erst, wenn die Frames
+neu erzeugt werden (`--only 3`). Für die Vorlage heißt das: Nach jeder Änderung an
+`layoutFrameService.ts` gehört ein `--only 3` dazu, sonst misst man eine alte Fassung.
+
+### 41. Das Excalidraw-Plugin stand seit dem Einbau auf `enabled: false`
+
+Der Konfigurationseintrag musste von Hand geschrieben werden (Befund 9), und dabei blieb er
+ausgeschaltet. Die Folge war auf der Zeichnungsseite zu lesen: Statt der Zeichnung stand dort der
+Rohtext der `.excalidraw.md` — beginnend mit „⚠ Switch to EXCALIDRAW VIEW in the MORE OPTIONS menu
+of this document." Ausgerechnet auf der Seite, die das Format vorführt.
+
+Eingeschaltet rendert das Plugin die Zeichnung als SVG mit eigenen Bedienelementen (Zoom, Reset)
+und **eigenem Frame**: Die Seite verliert Explorer und Seitenapparat und zeigt nur die Zeichnung.
+Das ist die Entscheidung des Plugins, nicht die der Vorlage — ob das so bleiben soll, ist noch
+nicht entschieden.
+
+### 42. Die Sankey-Farbreihe traf jeden Flowchart-Knoten und stufte nie
+
+Zwei Fehler in vier Zeilen, beide erst sichtbar, als die Diagramme überhaupt rendern konnten.
+
+`.mermaid .nodes rect:nth-of-type(4n + 1) { fill: var(--secondary) }` war für Sankey gedacht. Ein
+Flowchart baut aber dieselbe Struktur (`g.nodes > g.node > rect`), also traf die Regel jeden
+rechteckigen Flowchart-Knoten — und schlug dabei die Flowchart-Regel weiter oben um eine Klasse.
+Die Beschriftung behielt `primaryTextColor`: **1,47:1 in hell, 1,31:1 in dunkel**, auf vier Seiten.
+Struktur unterscheidet die beiden nicht; `aria-roledescription` tut es, und Mermaid schreibt es an
+jedes Diagramm.
+
+Der zweite Fehler steckte in der Zählung: `:nth-of-type` zählt unter Geschwistern, und jedes `rect`
+ist das einzige in seinem `g.node`. Also passte **jeder** Knoten auf `4n + 1`, und die vier Töne
+waren in Wahrheit einer. Gezählt wird jetzt an den `g.node`-Elementen, die wirklich Geschwister
+sind. Seitdem: 7 Sankey-Knoten in 4 Füllungen, und 50 Diagramm-Beschriftungen ohne ein Paar unter
+der Schwelle (knappste 9,63:1 hell, 9,15:1 dunkel).
+
+Die Lehre ist die dritte: Eine Regel, die eine Diagrammart meint, muss sie auch benennen. Mermaid
+gibt allen Arten dieselben Klassennamen.

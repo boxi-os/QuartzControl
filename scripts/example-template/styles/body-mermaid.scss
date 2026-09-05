@@ -138,11 +138,19 @@ code.mermaid > svg {
 
 /* ------------------------------------------------------------------------ flowchart */
 
+// Mermaid 11 fills a <rect> node from `secondaryColor` and every other shape from `primaryColor`,
+// but takes the label colour from `primaryTextColor` for all of them. On this palette that put
+// --darkgray on the accent navy: measured 1.47:1 in light and 1.31:1 in dark, on every rectangular
+// node of every flowchart. In a flowchart the *shape* carries the meaning, not the fill, so all
+// four get the same ground and the accent stays where it reads - on the edge.
 .mermaid .node rect,
 .mermaid .node circle,
 .mermaid .node polygon,
 .mermaid .node path {
-  stroke: var(--tertiary);
+  // `!important` like everywhere else in this file: mermaid writes its own <style> into each svg,
+  // and its selectors carry the svg's generated id, so they outrank anything written from outside.
+  fill: var(--light) !important;
+  stroke: var(--tertiary) !important;
 }
 
 .mermaid .edgePath .path,
@@ -429,10 +437,20 @@ code.mermaid > svg {
 
 // Sankey's own palette is a rainbow; four tints of the accent carry the same information without
 // asserting a meaning the numbers do not have.
-.mermaid .nodes rect:nth-of-type(4n + 1) { fill: var(--secondary) !important; }
-.mermaid .nodes rect:nth-of-type(4n + 2) { fill: var(--mm-3) !important; }
-.mermaid .nodes rect:nth-of-type(4n + 3) { fill: var(--mm-2) !important; }
-.mermaid .nodes rect:nth-of-type(4n) { fill: var(--mm-4) !important; }
+//
+// Two things had to be fixed here at once, both measured on 2026-09-05:
+//
+//   • A *flowchart* builds the same `g.nodes > g.node > rect` as sankey does, so `.mermaid .nodes
+//     rect` painted every rectangular flowchart node in the accent while its label kept
+//     `primaryTextColor`: 1.47:1 in light, 1.31:1 in dark, on four pages. Structure cannot tell the
+//     two apart - `aria-roledescription` can, and mermaid writes it on every diagram it draws.
+//   • The series never stepped. `:nth-of-type` counts among siblings, and every `rect` is the only
+//     one inside its own `g.node`, so *every* node matched `4n + 1` and the four tints rendered as
+//     one. The count belongs on the `g.node` elements, which really are siblings.
+.mermaid svg[aria-roledescription="sankey"] .nodes .node:nth-of-type(4n + 1) rect { fill: var(--secondary) !important; }
+.mermaid svg[aria-roledescription="sankey"] .nodes .node:nth-of-type(4n + 2) rect { fill: var(--mm-3) !important; }
+.mermaid svg[aria-roledescription="sankey"] .nodes .node:nth-of-type(4n + 3) rect { fill: var(--mm-2) !important; }
+.mermaid svg[aria-roledescription="sankey"] .nodes .node:nth-of-type(4n) rect { fill: var(--mm-4) !important; }
 
 .mermaid .links path,
 .mermaid .link path {

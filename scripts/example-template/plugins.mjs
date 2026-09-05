@@ -259,6 +259,10 @@ export const PLUGIN_PATCHES = {
   'tag-page': { enabled: true },
   'canvas-page': { enabled: true },
   'bases-page': { enabled: true },
+  // The drawing pages. Left off until 2026-09-05 by oversight - the entry had to be written by
+  // hand (finding 9) and was written disabled, so every .excalidraw.md rendered as its own raw
+  // source, warning banner and all, on a page that exists to show the format.
+  'obsidian-plugin-excalidraw': { enabled: true },
 
   /* --- emitters ----------------------------------------------------------------------- */
   'content-index': { enabled: true, options: { enableSiteMap: true, enableRSS: true } },
@@ -275,8 +279,7 @@ export const PLUGIN_PATCHES = {
   roam: { enabled: false },
   'stacked-pages': { enabled: false },
   'encrypted-pages': { enabled: false },
-  cname: { enabled: false },
-  'obsidian-plugin-excalidraw': { enabled: false }
+  cname: { enabled: false }
 }
 
 /* --------------------------------------------------------------- two languages, one site */

@@ -548,10 +548,21 @@ async function buildTemplate() {
     /* ------------------------------------------------------------- 7 · variables */
     if (phase(7, 'variables')) {
       log('\n7 · CSS-Variablen')
-      step(`${VARIABLE_OVERRIDES.length} Überschreibungen`)
+      // A `dark` that repeats its `light` is dropped here rather than in variables.mjs: there it
+      // states an intention ("in dark mode it stays on lightgray") that the comments around it
+      // explain, and dropping the line would take the explanation with it. In the file it would be
+      // a declaration with no effect - `--tpl-rule: var(--lightgray)` in the dark block resolves
+      // exactly like the one in `:root`, because it is `--lightgray` that differs per mode, not
+      // this. Measured: all fourteen computed values (seven variables, two modes) identical with
+      // and without them. The app drops them on load for the same reason, so leaving them in would
+      // mean this phase writes seven lines that the next save in the UI removes again.
+      const überschreibungen = VARIABLE_OVERRIDES.map((v) =>
+        v.dark === v.light ? { key: v.key, light: v.light } : v
+      )
+      step(`${überschreibungen.length} Überschreibungen`)
       await ipc(page, (a) => window.quartzGui.styles.saveVariableOverrides(a.path, a.overrides), {
         path: WORKSHOP,
-        overrides: VARIABLE_OVERRIDES
+        overrides: überschreibungen
       })
       done()
     }

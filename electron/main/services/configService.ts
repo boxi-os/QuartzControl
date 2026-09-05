@@ -68,7 +68,14 @@ function syncMapping(doc: Document, nodePath: string[], next: Record<string, unk
   }
 }
 
-export async function writeConfig(projectPath: string, config: QuartzConfig): Promise<void> {
+// `snapshot: false` for a write that is part of a larger operation which takes its own snapshot,
+// or - as in duplicateService - happens inside a project that has no history yet and must not
+// start one: the same escape hatch layoutFrameService.saveFrame offers for the same reason.
+export async function writeConfig(
+  projectPath: string,
+  config: QuartzConfig,
+  options?: { snapshot?: boolean }
+): Promise<void> {
   const path = configPath(projectPath)
   const existingRaw = existsSync(path) ? await readFile(path, 'utf-8') : ''
   // field-level setIn (rather than replacing whole subtrees) keeps existing YAML comments intact
@@ -100,6 +107,6 @@ export async function writeConfig(projectPath: string, config: QuartzConfig): Pr
   // project, and its coalescing window means a session of edits leaves the state from *before*
   // the session as one entry instead of one entry per save - which is what made the old backup
   // list fifty unreadable timestamps.
-  if (existingRaw) await createSnapshot(projectPath, 'configChange', '')
+  if (existingRaw && options?.snapshot !== false) await createSnapshot(projectPath, 'configChange', '')
   await atomicWrite(path, serialized)
 }

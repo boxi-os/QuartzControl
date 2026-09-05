@@ -255,7 +255,10 @@ export function SegmentedControl<T extends string>({
   variant = 'track'
 }: {
   value: T
-  options: { value: T; label: string }[]
+  // `badge` ist die Art der Sache, nicht ihr Name - die Zielart neben dem Zielnamen. In der
+  // `chips`-Haut steht sie als eigene kleine Fläche in der Pille; in der Leiste ist dafür kein
+  // Platz, dort hängt sie in Klammern hinten dran, damit die Angabe nirgends verlorengeht.
+  options: { value: T; label: string; badge?: string }[]
   onChange: (value: T) => void
   label: string
   variant?: 'track' | 'chips'
@@ -329,7 +332,27 @@ export function SegmentedControl<T extends string>({
                 }`
           }
         >
-          {option.label}
+          {chips ? (
+            <span className="flex items-center gap-1.5">
+              {option.label}
+              {option.badge && (
+                // Nicht `Badge`: dessen Töne sind für eine Fläche in Grund- oder Kartenfarbe
+                // gedacht, und auf der akzentgefüllten gewählten Pille wäre `text-text-secondary`
+                // nicht lesbar. Ein eigener Ton dafür wäre eine Variante für genau eine Stelle.
+                // Kein `uppercase`: die Beschriftung bringt ihre Schreibweise mit, und dieselbe
+                // Sache soll hier nicht „ORDNER" heißen, wo das Formular daneben „Ordner" sagt.
+                <span
+                  className={`rounded-full px-1.5 py-px text-micro font-medium ${
+                    value === option.value ? 'bg-accent-fg/20 text-accent-fg' : 'bg-ink/[0.06] text-text-muted dark:bg-ink/10'
+                  }`}
+                >
+                  {option.badge}
+                </span>
+              )}
+            </span>
+          ) : (
+            `${option.label}${option.badge ? ` (${option.badge})` : ''}`
+          )}
         </button>
       ))}
     </div>

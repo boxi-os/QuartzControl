@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { confirmDialog } from '../../utils/confirm'
+import type { TFunction } from 'i18next'
 import { Link } from 'react-router-dom'
 import { useProject } from '../ProjectLayout'
 import type {
@@ -38,6 +39,17 @@ function emptyTargetDraft(): SavePublishTargetInput {
   // Not '/': that is the login's own root, which the boundary refuses - so a fresh draft used to
   // start on a value that could not be saved, with the Save button giving no reason.
   return { name: '', destination: { type: 'sftp', remotePath: '', transfer: 'sftp', deleteRemoved: true } }
+}
+
+/** Wie die Zielart heißt - dieselben Worte, die die Auswahl im Zielformular anbietet. Vorher stand
+ *  in der Zeile `type.toUpperCase()`, also "GIT-BRANCH" und "FOLDER", während das Formular zwei
+ *  Zentimeter tiefer "Git-Branch" und "Ordner" sagte. Ein Ding, ein Name. */
+function destinationTypeLabel(t: TFunction, type: PublishTarget['destination']['type']): string {
+  if (type === 'sftp') return 'SFTP'
+  if (type === 'ftp') return 'FTP'
+  if (type === 'folder') return t('publish.targetForm.typeFolder')
+  if (type === 'webhook') return t('publish.targetForm.typeWebhook')
+  return t('publish.targetForm.typeGitBranch')
 }
 
 /** Which connection kind a destination needs, or null when it needs none - a folder is reached
@@ -112,6 +124,18 @@ export default function Publish(): JSX.Element {
     window.quartzGui.projectPrefs.get(project.path).then((prefs) => setOutputDir(prefs.outputDir))
     reload()
   }, [project.path])
+
+  // Ohne dies stand die Seite nach jedem App-Start leer da: `selectedId` merkt sich die Auswahl nur
+  // für die Sitzung, und alles unterhalb der Zielliste beschreibt *ein* Ziel - ohne Auswahl also
+  // nichts. Das erste zu nehmen ist die richtige Antwort, weil die Liste eine Reihenfolge hat und
+  // bei genau einem Ziel gar keine Wahl besteht. Läuft auch, wenn das gewählte Ziel gelöscht wurde
+  // oder aus einer anderen Sitzung stammt und es nicht mehr gibt; und es überschreibt nie eine
+  // getroffene Wahl, weil es nur bei einer leeren oder ins Leere zeigenden greift.
+  useEffect(() => {
+    if (targets.length === 0) return
+    if (selectedId && targets.some((tg) => tg.id === selectedId)) return
+    setSelectedId(targets[0].id)
+  }, [targets, selectedId, setSelectedId])
 
   useEffect(() => {
     window.quartzGui.settings.environment().then((info) => setRsyncAvailable(info.rsyncAvailable))
@@ -397,7 +421,8 @@ export default function Publish(): JSX.Element {
               value={selectedId ?? ''}
               options={targets.map((target) => ({
                 value: target.id,
-                label: `${target.name} (${target.destination.type.toUpperCase()})`
+                label: target.name,
+                badge: destinationTypeLabel(t, target.destination.type)
               }))}
               onChange={(id) => void selectTarget(id)}
             />

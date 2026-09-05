@@ -366,10 +366,16 @@ benannt im Commit.
 
 Was bewusst Palette bleibt: die immer dunklen Konsolenflächen (`bg-slate-950` und der Text darauf —
 eine Fläche, die in beiden Schemata dunkel ist, bekommt weder `dark:` noch Token), die Statusfarben,
-die **Seitenleiste** (`text-slate-700 dark:text-slate-200`: der Token hätte die gesamte Navigation
-auf 1083 Elementen eine Stufe heller gemacht — die Hauptnavigation blasser zu machen ist keine
-Umbenennung) und acht strukturelle Grautöne, für die es keine Rolle gibt: der Fortschrittsbalken,
-der Rahmen einer Karte, die Fläche eines Hinweiskastens. Die Größen-Tokens sind am 2026-09-06 nachgezogen: 129 Stellen
+und sieben strukturelle
+Grautöne, für die es keine Rolle gibt: der Fortschrittsbalken, der Rahmen einer Karte, die Fläche
+eines Hinweiskastens.
+
+Die **Seitenleiste** ist am 2026-09-06 nachgezogen, und zwar auf `--text`, nicht auf
+`--text-secondary`: die Gruppenüberschriften darüber (`EINRICHTUNG`, `GESTALTUNG`, …) sind bereits
+secondary, ein Eintrag auf demselben Wert wöge also so viel wie seine eigene Überschrift. Mit
+`--text` liest sich die Leiste als das, was sie ist — Überschrift schwächer, Eintrag stärker,
+aktiver Eintrag weiß auf Blau. Gemessen auf dem Grund der Leiste: 9,10:1 → 15,69:1 im Hellen und
+12,43:1 → 13,99:1 im Dunkeln, 1067 Elemente pro Schema. Die Größen-Tokens sind am 2026-09-06 nachgezogen: 129 Stellen
 (83× `text-[11px]`, 46× `text-[13px]`) tragen jetzt `text-micro` bzw. `text-ui`, gemessen ohne jede
 Änderung an Schriftgröße, Zeilenhöhe oder Farbe. Offen bleiben nur die 17 Ausreißer-Größen, die
 keinen Namen haben.

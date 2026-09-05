@@ -139,11 +139,6 @@ export async function getBuiltinTemplate(): Promise<BuiltinTemplate | null> {
   return null
 }
 
-/** What the create wizard shows before anything is downloaded: is there a template to offer at all? */
-export async function builtinTemplateAvailable(): Promise<boolean> {
-  return existsSync(cachedPath()) || existsSync(bundledPath())
-}
-
 /**
  * The package's own manifest, for the wizard's description and part list. Read from whichever copy
  * getBuiltinTemplate() picks, so what the dialog promises is what would be applied.

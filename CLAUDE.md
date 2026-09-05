@@ -377,8 +377,12 @@ secondary, ein Eintrag auf demselben Wert wöge also so viel wie seine eigene Ü
 aktiver Eintrag weiß auf Blau. Gemessen auf dem Grund der Leiste: 9,10:1 → 15,69:1 im Hellen und
 12,43:1 → 13,99:1 im Dunkeln, 1067 Elemente pro Schema. Die Größen-Tokens sind am 2026-09-06 nachgezogen: 129 Stellen
 (83× `text-[11px]`, 46× `text-[13px]`) tragen jetzt `text-micro` bzw. `text-ui`, gemessen ohne jede
-Änderung an Schriftgröße, Zeilenhöhe oder Farbe. Offen bleiben nur die 17 Ausreißer-Größen, die
-keinen Namen haben.
+Änderung an Schriftgröße, Zeilenhöhe oder Farbe. Offen bleiben die 17 Ausreißer-Größen, die keinen
+Namen haben — darunter dreimal 12,5px auf der Übersicht, der einzige Kandidat für einen vierten
+Namen. Am 2026-09-06 nachgemessen und *nicht* umgestellt: die Übersicht hat fünf eigene Größen
+(19/17/12,5/12/11,5px), das ist eine nach Augenmaß gesetzte Skala für einen Bildschirm und keine
+Rolle; und die zwei Faktenzeilen auf `text-ui` zu heben (12,5 → 13px, 30 Elemente) ließ die Karte
+„Kein Ziel“ eine Zeile mehr umbrechen — die halbe Pixel war genau dafür gewählt.
 
 **Arbeitsregel** für die nächste Liste: ein Befund pro Durchgang, jeweils mit `npm run typecheck`,
 `npm run build`, `npm run smoke` und eigenem Commit; was dabei nebenbei auffällt, wird gesammelt und

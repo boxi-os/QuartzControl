@@ -297,13 +297,26 @@ Verschieben lässt sich davon genau eines: `localizeDates` formatiert jedes `<ti
 Browser in der Seitensprache nach. Alles andere löst nur ein Build je Sprache
 (`publishLanguages`) — mit zwei Adressen als Preis.
 
-### 30. Die Frontmatter-Steuerung der Layout-Box kennt keinen Titel
+### 30. Die Frontmatter-Steuerung der Layout-Box kannte keinen Titel — behoben am 2026-09-05
 
-`readFrontmatterControl` in `quartz-layout-box` liest `hidden`, `file` und `html` — mehr nicht. Die
-englischen Seiten dieser Website können damit den *Inhalt* von vier der fünf Boxen austauschen,
-aber nicht die Überschrift: „Über dieses Handbuch“ und „Weiterlesen“ stehen auch dort deutsch über
-englischem Text. Eine Option `title` in derselben Steuerung wäre der saubere Weg; bis dahin ist es
-die sichtbarste Grenze der Zweisprachigkeit in einem Build.
+`readFrontmatterControl` in `quartz-layout-box` las `hidden`, `file` und `html` — mehr nicht. Die
+englischen Seiten dieser Website konnten damit den *Inhalt* von vier der fünf Boxen austauschen,
+aber nicht die Überschrift: „Über dieses Handbuch“ und „Weiterlesen“ standen auch dort deutsch über
+englischem Text. Der Preis für den Inhalt war ebenfalls gemessen: **876 Zeilen Frontmatter in 126
+Dateien**, in jeder Datei dieselben vier Blöcke.
+
+Das Plugin hat beides nachgeholt (Commit `503041f`). Die Steuerung nimmt jetzt zusätzlich `title`,
+`collapsible` und `collapsed`, und eine neue Option `byLang` hält je Sprache einen Satz Optionen
+bereit, ausgewählt über `fileData.frontmatter.lang` — Quartz' eigenes Feld, also ohne Abhängigkeit
+zu einem Mehrsprachigkeits-Plugin. Die Rangfolge ist Frontmatter → `byLang` → Grundoptionen.
+`{{locale}}` nennt seitdem die Sprache der Seite statt die der Website, und `{{lang}}` liefert davon
+den vorderen Teil.
+
+Umgestellt: vier `byLang`-Einträge in `plugins.mjs` und in `quartz.config.yaml`, die 876 Zeilen aus
+den Notizen entfernt. Gemessen am gebauten Ergebnis: `/en/formatting/text/emphasis` trägt „About
+this handbook“, „Read on“ und `Language: en-US`, die deutsche Schwesterseite unverändert ihre drei
+deutschen Fassungen; die beiden Demo-Seiten behalten ihren Frontmatter-Inhalt und bekommen die
+Überschrift aus `byLang` — die Rangfolge also am Ergebnis belegt.
 
 ### 31. Seiten ohne Frontmatter lassen sich nicht als Übersetzung verknüpfen
 

@@ -46,6 +46,13 @@ const MARK_DARK = `<svg class="img-dark" width="26" height="26" viewBox="0 0 26 
  * arrives in the importing project pointing at nothing. Inline HTML rides along inside the config
  * entry. The one `file:` instance is deliberate - it demonstrates the file path *and* the gap, and
  * site/README.md says which file has to be copied along with the package.
+ *
+ * Four of the five carry text and therefore carry a `byLang` entry as well: the plugin reads the
+ * page's `lang` frontmatter field - the one Quartz renders <html lang> from - and merges that entry
+ * over the base options. Before the plugin could do that, every one of the 126 English pages had to
+ * repeat the same four blocks in its own frontmatter (876 lines), and the two headings could not be
+ * translated at all. The site mark stays without one: it carries the site name, which is not
+ * translated.
  */
 export const LAYOUT_BOXES = [
   {
@@ -74,7 +81,8 @@ export const LAYOUT_BOXES = [
       collapsible: true,
       collapsed: false,
       className: 'layout-box-note',
-      frontmatterKey: 'layoutBoxNote'
+      frontmatterKey: 'layoutBoxNote',
+      byLang: { en: { file: 'sidebar-note.en.md', title: 'About this handbook' } }
     },
     layout: { position: 'left', priority: 60, display: 'desktop-only' }
   },
@@ -88,7 +96,8 @@ export const LAYOUT_BOXES = [
     options: {
       html: '<p>Auf einem schmalen Bildschirm ist die Navigation oben eingeklappt.</p>',
       className: 'layout-box-hint',
-      frontmatterKey: 'layoutBoxHint'
+      frontmatterKey: 'layoutBoxHint',
+      byLang: { en: { html: '<p>On a narrow screen the navigation is collapsed at the top.</p>' } }
     },
     layout: { position: 'left', priority: 15, display: 'mobile-only' }
   },
@@ -104,7 +113,13 @@ export const LAYOUT_BOXES = [
       // appears on every page.
       html: '<p>Diese Seite gehört zu <a href="{{root}}/">{{siteTitle}}</a> — der Beispielvorlage für QuartzControl. Ein Überblick über alle Bereiche steht auf der <a href="{{root}}/">Startseite</a>.</p>',
       className: 'layout-box-cta',
-      frontmatterKey: 'layoutBoxCta'
+      frontmatterKey: 'layoutBoxCta',
+      byLang: {
+        en: {
+          title: 'Read on',
+          html: '<p>This page belongs to <a href="{{root}}/en/">{{siteTitle}}</a> — the example template for QuartzControl. An overview of every area is on the <a href="{{root}}/en/">English home page</a>.</p>'
+        }
+      }
     },
     layout: { position: 'afterBody', priority: 10 }
   },
@@ -116,7 +131,8 @@ export const LAYOUT_BOXES = [
     options: {
       html: '<p>{{siteTitle}} · Sprache: {{locale}} · Diese Seite: <code>{{slug}}</code></p>',
       className: 'layout-box-colophon',
-      frontmatterKey: 'layoutBoxColophon'
+      frontmatterKey: 'layoutBoxColophon',
+      byLang: { en: { html: '<p>{{siteTitle}} · Language: {{locale}} · This page: <code>{{slug}}</code></p>' } }
     },
     layout: { position: 'footer', priority: 20 }
   }

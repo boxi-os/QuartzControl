@@ -14,10 +14,12 @@ aus dem Konfigurationseintrag selbst — die reisen vollständig mit dem Paket. 
 („Über dieses Handbuch“, linke Spalte) lädt aus einer Datei, um den Datei-Weg des Plugins zu
 zeigen. Diese Dateien müssen von Hand kopiert werden.
 
-Es sind zwei: `sidebar-note.md` und `sidebar-note.en.md`. Die zweite ist dieselbe Box auf Englisch,
-und sie kommt nicht aus der Konfiguration, sondern aus dem Frontmatter jeder englischen Seite
-(`layoutBoxNote: sidebar-note.en.md`) — der einzige Hebel, der innerhalb *eines* Builds einen
-Unterschied je Sprache macht.
+Es sind zwei: `sidebar-note.md` und `sidebar-note.en.md`. Die zweite ist dieselbe Box auf Englisch
+und steht seit dem 2026-09-05 in der Konfiguration unter `byLang: { en: … }`; das Plugin wählt sie
+über das Frontmatter-Feld `lang` der Seite. Vorher trug jede englische Notiz die Zuordnung selbst.
+
+Wer die Vorlage in ein einsprachiges Projekt importiert, braucht `sidebar-note.en.md` nicht — der
+`byLang`-Eintrag greift dort nie, und eine fehlende Datei ist wie oben beschrieben kein Fehler.
 
 Fehlt sie, ist das kein Fehler: Das Plugin protokolliert eine Warnung und rendert nichts. Im
 Dev-Server (`quartz build --serve`) erscheint stattdessen ein gestrichelter Platzhalter mit dem

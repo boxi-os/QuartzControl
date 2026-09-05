@@ -1548,6 +1548,9 @@ export default {
     planAdditions: '{{count}} neu',
     planReplaced: '{{count}} wird ersetzt',
     planKept: '{{count}} bleibt unverändert',
+    planIdentical: '{{count}} identisch',
+    planContentIsSymlink:
+        'Wird übersprungen: Der Content-Ordner dieses Projekts ist ein Link in einen anderen Ordner. Dorthin schreibt eine Vorlage nichts.',
     planNoChange: 'ändert nichts',
     willInstall: 'Wird nachinstalliert: {{packages}}',
     importButton: 'Vorlage anwenden',

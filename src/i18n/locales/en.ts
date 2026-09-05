@@ -1541,6 +1541,9 @@ export default {
     planAdditions: '{{count}} new',
     planReplaced: '{{count}} replaced',
     planKept: '{{count}} kept as is',
+    planIdentical: '{{count}} identical',
+    planContentIsSymlink:
+        'Will be skipped: this project’s content folder is a link into another folder. A template never writes there.',
     planNoChange: 'changes nothing',
     willInstall: 'Will be installed: {{packages}}',
     importButton: 'Apply template',

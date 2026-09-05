@@ -64,6 +64,7 @@ function PartRow({
   disabled,
   onToggle,
   summary,
+  note,
   children
 }: {
   id: TemplatePartId
@@ -71,6 +72,8 @@ function PartRow({
   disabled?: boolean
   onToggle: () => void
   summary: string
+  /** A whole sentence the plan attached to this part, when there is one to say out loud. */
+  note?: string
   children?: React.ReactNode
 }): JSX.Element {
   const { t } = useTranslation()
@@ -87,6 +90,7 @@ function PartRow({
         <span className="font-medium">{t(`templates.parts.${id}.label`)}</span>
         <span className="ml-2 text-xs text-text-muted">{summary}</span>
         <span className="mt-0.5 block text-xs text-text-muted">{t(`templates.parts.${id}.description`)}</span>
+        {note && <span className="mt-0.5 block text-xs text-amber-700 dark:text-amber-400">{note}</span>}
         {children}
       </span>
     </label>
@@ -393,6 +397,7 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
                 disabled={running}
                 onToggle={() => toggle(part.id)}
                 summary={planSummary(t, part, strategy)}
+                note={planNote(t, part)}
               />
             ))}
           </div>
@@ -444,14 +449,31 @@ function statsSummary(t: Translate, id: TemplatePartId, stats: Record<string, nu
   return parts.join(', ')
 }
 
+// `notes` are the third thing a part's plan can report, next to additions and conflicts, and until
+// now nothing rendered them - so the content part could appear with nothing to add and no reason
+// given, get ticked, and be skipped with the explanation arriving only afterwards as a warning.
+// Two kinds exist: a count of files that are byte-identical on both sides, which belongs in the
+// summary next to the other counts, and a whole sentence about why this part cannot run, which
+// belongs on its own line.
+function noteCount(plan: TemplatePartPlan, kind: string): number {
+  return plan.notes.filter((note) => note === kind || note.startsWith(`${kind}:`)).length
+}
+
 function planSummary(t: Translate, plan: TemplatePartPlan, strategy: TemplateConflictStrategy): string {
   const bits: string[] = []
   if (plan.additions.length > 0) bits.push(t('templates.planAdditions', { count: plan.additions.length }))
   if (plan.conflicts.length > 0) {
     bits.push(t(strategy === 'packageWins' ? 'templates.planReplaced' : 'templates.planKept', { count: plan.conflicts.length }))
   }
+  const identical = noteCount(plan, 'identical')
+  if (identical > 0) bits.push(t('templates.planIdentical', { count: identical }))
   if (bits.length === 0) bits.push(t('templates.planNoChange'))
   return bits.join(', ')
+}
+
+/** The sentence a part's plan wants said before the click, or undefined when it has none. */
+function planNote(t: Translate, plan: TemplatePartPlan): string | undefined {
+  return plan.notes.includes('contentIsSymlink') ? t('templates.planContentIsSymlink') : undefined
 }
 
 function formatBytes(bytes: number): string {

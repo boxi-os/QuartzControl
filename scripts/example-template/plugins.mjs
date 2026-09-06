@@ -66,7 +66,10 @@ export const LAYOUT_BOXES = [
       placeholders: true,
       frontmatterKey: 'layoutBoxMark'
     },
-    layout: { position: 'header', priority: 10 }
+    // In the `brand` group with page-title (layout.mjs): the mark and the site name are one
+    // logotype, and saying so here is what lets the header be two flex items instead of three
+    // children held apart by a margin.
+    layout: { position: 'header', priority: 10, group: 'brand' }
   },
   {
     // The file path, with a Markdown snippet: rendered at build time, GFM, no Obsidian syntax.
@@ -143,7 +146,7 @@ export const LAYOUT_BOXES = [
 /** name -> partial entry. Anything absent is left exactly as the project had it. */
 export const PLUGIN_PATCHES = {
   /* --- components: where each one sits ------------------------------------------------ */
-  'page-title': { enabled: true, layout: { position: 'header', priority: 20 } },
+  'page-title': { enabled: true, layout: { position: 'header', priority: 20, group: 'brand' } },
 
   // The three site-wide controls live in the header, at its right end, on every breakpoint. They
   // were in the left sidebar until 2026-09-04; the header is where a reader looks for them, and it

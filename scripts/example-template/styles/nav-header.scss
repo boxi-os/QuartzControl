@@ -32,7 +32,16 @@
 .qgframe-area-header,
 #quartz-body > .header {
   flex-direction: row;
-  flex-wrap: wrap;
+  // Two children, both of them flex groups declared in the layout (layout.mjs): `brand` at the
+  // start, `toolbar` at the end. `space-between` is then the whole arrangement, and it does not
+  // care how many components either group holds.
+  //
+  // `nowrap`, and it replaces `wrap`. With three loose children and a margin pushing the last one
+  // over, the only thing standing between this bar and a second row was that the three happened to
+  // fit; there is no width at which a wrapped header is what anybody wanted. What gives instead is
+  // the site name, which truncates (below).
+  flex-wrap: nowrap;
+  justify-content: space-between;
   align-items: center;
   gap: var(--tpl-space-sm);
   border-block-end: var(--tpl-rule-width) solid var(--tpl-rule);
@@ -54,12 +63,40 @@
   padding-block: var(--tpl-header-pad);
 }
 
-// The toolbar group takes the leftover width and sits at the far end. `margin-inline-start: auto`
-// rather than `justify-content: space-between` on the header: there are three children, not two,
-// and space-between would strand the site name in the middle of the row.
-.qgframe-area-header > .flex-component,
-#quartz-body > .header > .flex-component {
-  margin-inline-start: auto;
+// The two groups, told apart by what is inside them: quartz writes the same `flex-component` class
+// on every group it renders and puts the group's own name nowhere in the markup (Flex.tsx), so
+// `:has()` is the handle. Reading them by position (`:first-child` / `:last-child`) would work
+// today and break the day a third thing joins the bar.
+//
+// The brand gives up width first - it is the one part of the bar that is also the first line of
+// every page below it - so it may shrink and the name inside it may truncate. The toolbar may not:
+// its children are 44px targets that must stay 44px.
+.qgframe-area-header > .flex-component:has(.site-mark),
+#quartz-body > .header > .flex-component:has(.site-mark) {
+  min-width: 0;
+  flex: 0 1 auto;
+
+  > * {
+    min-width: 0;
+  }
+}
+
+.qgframe-area-header > .flex-component:has(.search),
+#quartz-body > .header > .flex-component:has(.search) {
+  flex: 0 0 auto;
+}
+
+// The site name truncates rather than wrapping, at every width and not only in the app bar. It is
+// a single line by nature: a logotype whose second half drops below the first is a broken logo.
+.qgframe-area-header .page-title {
+  min-width: 0;
+
+  a {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 /* ------------------------------------------------------------------ the mobile header */
@@ -90,17 +127,10 @@
   }
 
   // The site name gives way first: it is the one thing in the bar that is also the first line of
-  // every page below it.
+  // every page below it. Only the size is set here - the truncation is unconditional now and lives
+  // with the rest of the brand group above.
   .qgframe-area-header .page-title {
     font-size: var(--tpl-text-base);
-    min-width: 0;
-
-    a {
-      display: block;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
   }
 }
 
@@ -127,21 +157,9 @@
 // a width of its own here. And the group is now on every page type, including the 404, which under
 // the `focus` frame has no sidebars at all and therefore used to offer no way to search or to
 // switch the theme.
-// A search field wide enough to read as a field rather than a button, and narrow enough that the
-// header still belongs to the site name. It gives up width before the site name does.
 //
-// The 15rem are NOT set here. Quartz wraps every component of a group in a `div` of its own and
-// writes that div's flex values as an *inline style* from the layout config, so the flex item is
-// the wrapper and not `.search`. A basis written here applied to a box that was already sized to
-// its content: measured at 1728, 1440, 1100 and 900px, the field came out 110px wide every time,
-// in a toolbar that occupied 322 of 1400px. It reads as a button, which is the one thing the width
-// was there to prevent. The basis therefore lives in the plugin's `layout.groupOptions.basis`,
-// where it lands on the wrapper - and only `min-width` stays here, because a flex item's automatic
-// minimum would otherwise stop it from shrinking at all.
-// In the app bar there is room for three targets and the site name, and not for the word "Suche".
-// The button keeps its 44px, so nothing gets harder to hit - it just stops being a field.
-// The spacer plugin sits above the drawer trigger on mobile, where the left area is a strip across
-// the top of the page rather than a column beside it.
+// The three paragraphs that used to stand here were a verbatim second copy of the ones on the two
+// rules further down, left behind when the file was merged out of two.
 
 .flex-component {
   align-items: center;
@@ -172,9 +190,8 @@
 // In the app bar there is room for three targets and the site name, and not for the word "Suche".
 // The button keeps its 44px, so nothing gets harder to hit - it just stops being a field.
 @media (max-width: 800px) {
-  .qgframe-area-header .flex-component {
+  .qgframe-area-header .flex-component:has(.search) {
     gap: var(--tpl-space-2xs);
-    flex: 0 0 auto;
   }
 
   // `!important` on the wrapper, and it is the only way: the inline style that carries the 15rem

@@ -15,12 +15,17 @@
 // None of the three is visible in the file. All three are visible here, because this does not read
 // the CSS: it changes the token in a live page and counts how many computed values move.
 //
-// Three blind spots are designed around rather than lived with, because each cost a wrong answer
+// Four blind spots are designed around rather than lived with, because each cost a wrong answer
 // on a real run: a token that only shows in a state (the three focus ones) needs something
 // focused, one that only shows at a breakpoint (the drawer width) needs that breakpoint, and a
 // page that is still settling moves values on its own, which otherwise gets credited to whatever
-// token was being probed. So every page is visited at two widths with a control focused, and every
-// count has the page's own noise floor subtracted.
+// token was being probed. And a token that only reaches a **pseudo-element** was invisible outright,
+// because `querySelectorAll` does not return one - three of the sticky header's tokens sat in that
+// hole, and --tpl-page-fade, which paints on every page, was reported as read by nobody.
+//
+// So every page is visited at two widths with a control focused, every ::before and ::after that
+// exists is fingerprinted alongside its element, and every count has the page's own noise floor
+// subtracted.
 //
 //     node scripts/check-tokens.mjs [baseUrl]        default http://localhost:8080
 //
@@ -63,7 +68,8 @@ const PROPS = [
   'paddingBottom', 'marginTop', 'marginBottom', 'marginLeft', 'gap', 'rowGap', 'columnGap', 'width',
   'height', 'minHeight', 'minWidth', 'maxWidth', 'maxHeight', 'boxShadow', 'outlineColor', 'outlineWidth',
   'outlineOffset', 'opacity', 'transitionDuration', 'maskImage', 'fill', 'stroke', 'textDecorationColor',
-  'textUnderlineOffset', 'flexBasis', 'gridTemplateColumns', 'inset', 'top', 'backdropFilter'
+  'textUnderlineOffset', 'flexBasis', 'gridTemplateColumns', 'inset', 'top', 'backdropFilter',
+  'backgroundSize', 'transform', 'insetBlockStart', 'insetBlockEnd'
 ]
 
 /** A probe value unmistakably different from the current one, matched to its shape. */
@@ -76,11 +82,33 @@ function probe(value) {
   return '"Courier New", monospace'
 }
 
+// The list of boxes to fingerprint, built once per page and reused for the baseline, the noise
+// floor and all 50 probes: every element, plus every ::before and ::after that actually exists.
+//
+// The pseudo-elements are here because of --tpl-page-fade, which read as dead on the run that
+// introduced it. `document.querySelectorAll('body *')` does not return a pseudo-element, so a token
+// that only ever reaches one could not move a single sampled value - a false "nobody reads it" on a
+// token that paints on every page. Three of the header's own tokens were in that blind spot.
+//
+// Built once rather than probed per element, because asking every element for both of its pseudos
+// on every one of the 50 probes would triple the work; asking once and keeping the few dozen that
+// exist costs nothing measurable.
+const collectNodes = () => {
+  window.__NODES = []
+  for (const el of document.querySelectorAll('body *')) {
+    window.__NODES.push([el, null])
+    for (const pseudo of ['::before', '::after']) {
+      if (getComputedStyle(el, pseudo).content !== 'none') window.__NODES.push([el, pseudo])
+    }
+  }
+  return window.__NODES.length
+}
+
 const fingerprint = () => {
   const props = window.__PROPS
   const rows = []
-  for (const el of document.querySelectorAll('body *')) {
-    const c = getComputedStyle(el)
+  for (const [el, pseudo] of window.__NODES) {
+    const c = getComputedStyle(el, pseudo)
     let row = ''
     for (const p of props) row += c[p] + '|'
     rows.push(row)
@@ -103,6 +131,7 @@ try {
       for (let i = 0; i < 3; i++) await page.keyboard.press('Tab')
       await page.waitForTimeout(80)
       visited++
+      await page.evaluate(collectNodes)
       const base = await page.evaluate(fingerprint)
       // A page is not perfectly still: a webfont swapping in, mermaid finishing, the graph's canvas
       // settling - all of them move a computed value between two identical reads. Without this,
@@ -113,8 +142,8 @@ try {
         const props = window.__PROPS
         let changed = 0
         let i = 0
-        for (const el of document.querySelectorAll('body *')) {
-          const c = getComputedStyle(el)
+        for (const [el, pseudo] of window.__NODES) {
+          const c = getComputedStyle(el, pseudo)
           let row = ''
           for (const p of props) row += c[p] + '|'
           if (row !== baseline[i]) changed++
@@ -131,8 +160,8 @@ try {
             const props = window.__PROPS
             let changed = 0
             let i = 0
-            for (const el of document.querySelectorAll('body *')) {
-              const c = getComputedStyle(el)
+            for (const [el, pseudo] of window.__NODES) {
+              const c = getComputedStyle(el, pseudo)
               let row = ''
               for (const p of props) row += c[p] + '|'
               if (row !== baseline[i]) changed++

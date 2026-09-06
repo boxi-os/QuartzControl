@@ -152,8 +152,33 @@ a.bases-card {
   transition: border-color var(--tpl-motion), background-color var(--tpl-motion);
 
   &:hover {
-    border-color: var(--tpl-rule-strong);
+    border-color: var(--tpl-rule-control);
     background: var(--tpl-surface-tint);
+  }
+}
+
+// A cover fills the card, edge to edge - the card's own padding would otherwise frame the picture
+// in a 12px strip of card ground, which reads as a mistake rather than as a margin. The negative
+// inset is exactly the padding above it, and the top corners are rounded by one hairline less than
+// the card so the two curves sit concentric rather than crossing.
+.bases-card-image {
+  margin: calc(var(--tpl-space-sm) * -1) calc(var(--tpl-space-sm) * -1) var(--tpl-space-sm);
+  border-start-start-radius: calc(var(--tpl-radius-md) - var(--tpl-rule-width));
+  border-start-end-radius: calc(var(--tpl-radius-md) - var(--tpl-rule-width));
+  overflow: hidden;
+  aspect-ratio: 3 / 2;
+  background: var(--tpl-surface);
+
+  // `margin: 0` is not belt and braces: body-media.scss gives every `<img>` on the site 16px of
+  // vertical margin, which is right in an article and is a 16px band of card ground above a cover.
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    object-fit: cover;
+    border: none;
+    border-radius: 0;
   }
 }
 
@@ -312,7 +337,7 @@ a.bases-card {
   transition: border-color var(--tpl-motion);
 
   &:hover {
-    border-color: var(--tpl-rule-strong);
+    border-color: var(--tpl-rule-control);
   }
 
   a {
@@ -349,6 +374,10 @@ a.bases-card {
 }
 
 .bases-gallery-item {
+  // Two rows, picture then caption - see the note at .bases-gallery-title for why the caption is
+  // not the overlay the plugin makes of it.
+  display: grid;
+  grid-template-rows: auto 1fr;
   border: var(--tpl-rule-width) solid var(--tpl-rule);
   border-radius: var(--tpl-radius-md);
   background: var(--light);
@@ -356,7 +385,7 @@ a.bases-card {
   transition: border-color var(--tpl-motion);
 
   &:hover {
-    border-color: var(--tpl-rule-strong);
+    border-color: var(--tpl-rule-control);
   }
 }
 
@@ -369,8 +398,10 @@ a.bases-card {
   overflow: hidden;
 
   img {
+    display: block;
     width: 100%;
     height: 100%;
+    margin: 0;
     object-fit: cover;
     border: none;
     border-radius: 0;
@@ -392,11 +423,23 @@ a.bases-card {
   }
 }
 
+// The plugin lays the title *over* the bottom of the picture: `position: absolute; inset: auto 0
+// 0` on the title and `overflow: hidden` on the tile. That works while every entry shows the grey
+// placeholder and stops working the moment they have covers - the label is `--dark`, which in
+// light mode is near-black, and a cover can be any colour. Measured with the fourteen covers in
+// place: a two-line title also ran out of the bottom of the tile and was clipped mid-word, because
+// an absolutely positioned title takes no part in the tile's height.
+//
+// So it goes back into the flow. The tile is then image plus caption, the way the cards view of
+// the same data already reads, the caption sits on the card's own ground in the site's own ink,
+// and a title of any length simply makes its tile taller.
 .bases-gallery-title {
+  position: static;
   padding: var(--tpl-space-xs) var(--tpl-space-sm);
   font-family: var(--headerFont);
   font-weight: 600;
   font-size: var(--tpl-text-sm);
+  line-height: var(--tpl-leading-snug);
 
   a {
     color: var(--dark);

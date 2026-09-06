@@ -64,6 +64,23 @@ html {
     transparent 100%
   );
 
+  // The same fade with only its lower half. The right column needs this one rather than the
+  // two-ended mask above: its panel headings stay put while their contents scroll under them
+  // (see "the right column"), so a top fade would leave a permanently half-dissolved heading.
+  // Nothing ever appears above a heading there, so there is nothing at the top edge to fade.
+  //
+  // In the light `:root` and not in the dark block, which is where it was written and where it did
+  // not belong: a mask carries only alpha, so `black` here means "opaque" in both schemes and
+  // there is nothing scheme-dependent about it. Measured before the move - in light mode the
+  // custom property was empty, `mask-image: var(--tpl-fade-mask-end)` was therefore invalid, and
+  // the right column computed `mask-image: none`. The soft lower edge existed in dark mode only.
+  --tpl-fade-mask-end: linear-gradient(
+    to bottom,
+    black 0,
+    black calc(100% - var(--tpl-fade)),
+    transparent 100%
+  );
+
   // The edge of something you operate - the search field, the three icon buttons, the language
   // menu, a link preview, the controls over a drawing.
   //
@@ -99,17 +116,6 @@ html {
 // the opposite of what the light mix does.
 :root[saved-theme="dark"] {
   --tpl-surface-code: var(--lightgray);
-
-  // The same fade with only its lower half. The right column needs this one rather than the
-  // two-ended mask above: its panel headings stay put while their contents scroll under them
-  // (see "the right column"), so a top fade would leave a permanently half-dissolved heading.
-  // Nothing ever appears above a heading there, so there is nothing at the top edge to fade.
-  --tpl-fade-mask-end: linear-gradient(
-    to bottom,
-    black 0,
-    black calc(100% - var(--tpl-fade)),
-    transparent 100%
-  );
 }
 
 /* ------------------------------------------------------------------ the sticky header */

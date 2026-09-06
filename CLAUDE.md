@@ -395,14 +395,39 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Befunde aus den Reviews (Stand 2026-09-06, abends)
+## Befunde aus den Reviews (Stand 2026-09-07)
 
-Alle drei Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
-[`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden und
-[`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md` und `docs/REVIEW-2026-09-06-auftrag.md`) stehen als Dokumente
-unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft gilt, steht
-oben als Regel.
+Alle vier Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
+[`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden,
+[`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs und
+[`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` und `-07-`) stehen als Dokumente unverändert; die
+Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft gilt, steht oben als Regel.
+
+**Das vierte Review las den Diff, den das dritte hinterlassen hatte** — seine sechs Fixes, von
+niemandem sonst gelesen. Ein Befund der Stufe Mittel, sieben niedrige, und der mittlere war eine
+Regression aus einem der sechs: Die Obergrenze, die die ZIP-Bombe abfing, fing die leere Datei mit,
+weil zlib `maxOutputLength: 0` nicht annimmt. Vier der niedrigen lagen genau dort, wo der Auftrag
+seine eigenen Risiken vermutet hatte. Alle acht sind abgearbeitet, jeder mit einer Vorher-Messung;
+was daraus als Regel bleibt, steht oben in den passenden Abschnitten:
+
+- **Eine Grenze, die aus den Daten kommt, kann Null sein — und Null ist selten „keine".** `zlib`
+  liest `maxOutputLength: 0` als ungültig, nicht als „nichts". Wer eine angemeldete Größe als
+  Grenze durchreicht, prüft den Rand, den die Bibliothek anders liest als er gemeint war.
+- **Ein Fehler, der weiß warum, muss den Grund tragen.** Ein `catch`, der jede Ursache in dieselbe
+  Antwort (`null`, „nicht lesbar") verwandelt, macht auch die sorgfältig übersetzten Sätze
+  unsichtbar — `check:i18n` sieht das nicht, es prüft, ob ein Schlüssel existiert, nicht ob sein
+  Wert je eine Oberfläche erreicht.
+- **Ein Schreibpfad vor einem Spawn braucht einen Fallback**, sonst beantwortet er eine Frage, die
+  vorher der Kindprozess beantwortet hat — und zwar schlechter (roher Toast statt Status).
+- **Eine Datei, die zu einem Lauf gehört, trägt den Lauf im Namen.** Ein fester Name plus `'w'`
+  heißt: Der vorherige Lauf, der noch lebt, schreibt in die abgeschnittene Datei des nächsten.
+- **Ein Vorgabewert ist eine Vermutung, kein Fund.** Wer einen fehlenden Wert (hier: den Port) mit
+  der Vorgabe füllt und dann *misst*, ob dort etwas antwortet, bestätigt fremde Beobachtungen als
+  eigene. Erst der Besitz macht die Vermutung zum Fund.
+- **Was zweimal aufgerufen werden kann, wird zweimal aufgerufen.** `stop()`, `close()`, `dispose()`
+  bekommen ein Flag; ein `closeSync` auf einen geschlossenen Deskriptor wirft aus einem
+  Event-Handler heraus, wo nichts es fängt.
 
 Aus dem dritten Review, dessen drei mittlere Befunde alle Fälle waren, in denen eine Messung aus
 einer Commit-Nachricht nicht weit genug reichte:
@@ -424,17 +449,17 @@ Die drei niedrigen: der vierte Fundort der Zahl zehn (die Bausteine sind seit `b
 im gepflegten Vault stand sie noch sechsmal), ein Dry-Run, der verschwieg, was der Import ablehnen
 wird, und eine Nadel, deren eigenes Beispiel sie nicht traf.
 
-**Das nächste Review misst ab `review-2026-09-06`, und der Tag ist dafür verschoben worden.** Er
-stand auf `0b0fb96`, dem Ende des Token-Durchgangs, und sagte in seiner eigenen Nachricht, er sei
-ausdrücklich *nicht* der Ausgangsstand — weil dieser Durchgang gemessen, aber nicht gelesen war.
-Gelesen ist er inzwischen: er lag im Diff dieses Reviews. Der Tag sitzt deshalb jetzt 67 Commits
-weiter auf `1bd69dc`, dem Stand, den das dritte Review tatsächlich vor sich hatte.
+**Das nächste Review misst ab `review-2026-09-07`.** Der Tag gehört auf den Stand, den das vierte
+Review vor sich hatte — `1994811`, den letzten Merge vor diesen Fixes —, nach derselben Regel, die
+schon beim dritten galt: Der Ausgangsstand ist das, was gelesen wurde, nicht das, was danach
+entstanden ist. `review-2026-09-06` sitzt entsprechend auf `1bd69dc`; er war einmal 67 Commits
+früher auf `0b0fb96` gesetzt und wurde verschoben, weil jener Stand gemessen, aber nicht gelesen
+war.
 
-**Die sechs Fixes dieses Reviews liegen bewusst dahinter** (PR #17, Merge `34b88dd`). Sie sind
-gemessen, jeder mit Vorher und Nachher, und von niemandem sonst gelesen — der größte Einzeleingriff
-ist der Dev-Server, dessen Ausgabe aus der Pipe in eine Datei umgezogen ist. Sie gehören damit in
-den Diff des nächsten Auftrags, nach derselben Regel, die die alte Tag-Nachricht aufgeschrieben
-hatte.
+**Die acht Fixes dieses Reviews liegen bewusst dahinter.** Sie sind gemessen, jeder mit Vorher und
+Nachher, und von niemandem sonst gelesen — die größten Eingriffe sind der Dateiname des
+Server-Logs (jetzt pro Lauf, mit Aufräumen) und die Server-Erkennung, die einen Vorgabeport nur
+noch nimmt, wenn der Prozess ihn hält. Sie gehören damit in den Diff des nächsten Auftrags.
 
 Von dem, was beide Reviews als „beiläufig, kein sed“ führen, sind die Farbpaare am 2026-09-05
 abgearbeitet, soweit sie eine Umbenennung waren: 322 Paare, die wörtlich das Token buchstabierten,

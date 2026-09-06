@@ -353,16 +353,50 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+// The one rule that makes both leading tokens do anything at all.
+//
+// Quartz's own base.scss hard-codes a leading in four places:
+//
+//     tbody, li, p            { line-height: 1.6rem }   // 25.6px
+//     a.internal              { line-height: 1.4rem }   // 22.4px
+//     <table wrapper> > *     { line-height: 2rem }     // 32px, so thead
+//
+// A paragraph, a list item and a table body therefore carry their own leading, and an inherited
+// one - which is all a rule on `body` or on a frame area ever produces - cannot reach them. Every
+// token this template set was landing on the elements *between* the text and the page, and the
+// text itself was 25.6px everywhere. Measured on the built site: an explorer row 14px on 25.6px
+// (ratio 1.83), the date under a recent note 12.5px on 25.6px (2.05), a footer paragraph the same;
+// and `--tpl-leading-normal` was equally dead on the article, where its 1.65 was quietly rendering
+// as Quartz's 1.6rem. Both numbers had been decorative since the day they were written.
+//
+// `inherit` is the whole fix, and it is one line: it hands those three elements back to whatever
+// their context says. Unlayered, so it beats `@layer quartz-base` whatever the specificity - the
+// rule this template rests on everywhere. Anything that genuinely wants its own leading still says
+// so and still wins, because a rule naming a class beats a rule naming an element (the code block's
+// 1.55, the breadcrumb separator's 1, mermaid's `normal`).
+// Measured before this rule, on one built page: an explorer row 14px on 25.6px (ratio 1.83), the
+// date under a recent note 12.5px on 25.6px (2.05), a footer paragraph the same, a table whose
+// header rows were 32px while its body rows were 22.4px, and an internal link 22.4px inside a
+// 25.6px paragraph.
+p,
+li,
+tbody,
+thead,
+tfoot,
+a.internal {
+  line-height: inherit;
+}
+
 // Small type gets a tighter leading than the article does.
 //
-// 1.65 is a body ratio: it is measured for a 1rem line running across six columns. The same number
-// at 0.875rem in a three-column sidebar puts almost 21px between two lines that are 14px tall, and
-// a three-line paragraph stops reading as a paragraph - which is precisely how the note in the
-// sidebar looked. The three areas that are made of small type say so once, here, instead of every
-// component in them repeating it.
+// A body ratio is measured for a 1rem line running across six columns. The same number at 0.875rem
+// in a three-column sidebar puts over 20px between two lines that are 14px tall, and a three-line
+// paragraph stops reading as a paragraph - which is precisely how the note in the sidebar looked.
+// The three areas that are made of small type say so once, here, instead of every component in
+// them repeating it.
 //
 // The article keeps --tpl-leading-normal; anything inside it that drops to --tpl-text-sm and wants
-// the tighter ratio asks for it at the point where it changes size.
+// the tighter step asks for it at the point where it changes size.
 .qgframe-area-left,
 .qgframe-area-right,
 .qgframe-area-footer {

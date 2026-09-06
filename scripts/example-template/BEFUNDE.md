@@ -881,3 +881,53 @@ dastanden. Alles, was an intrinsischer Größe von Flexbox oder Grid hängt, mus
 Engines gemessen werden. Die Bauten dafür liegen jetzt auf dem Rechner:
 
     node node_modules/playwright-core/cli.js install firefox webkit
+
+### 59. Beide Zeilenabstands-Tokens waren seit dem Tag ihrer Einführung wirkungslos
+
+Gemeldet als „die Änderung des Zeilenabstandes hat nicht angeschlagen". Sie hatte angeschlagen —
+die Tokens standen richtig im Projekt und im gebauten CSS —, sie kamen nur nirgends an.
+
+Quartz' eigenes `base.scss` schreibt vier feste Zeilenabstände:
+
+```css
+tbody, li, p         { line-height: 1.6rem }   /* 25,6px */
+a.internal           { line-height: 1.4rem }   /* 22,4px */
+<Tabellen-Wrapper> > * { line-height: 2rem }   /* 32px, also thead */
+```
+
+Ein Absatz, ein Listeneintrag und ein Tabellenkörper tragen damit ihren *eigenen* Wert, und ein
+geerbter — mehr erzeugt eine Regel auf `body` oder auf einen Frame-Bereich nie — erreicht sie nicht.
+Diese Vorlage setzte `--tpl-leading-normal` auf `body` und `--tpl-leading-snug` auf die drei
+Kleinschrift-Bereiche; beides landete also auf den Elementen *zwischen* dem Text und der Seite,
+während der Text selbst überall auf 25,6px stand. Gemessen an der gebauten Seite:
+
+| | vorher | jetzt |
+| --- | --- | --- |
+| Explorer-Zeile | 14px / 25,6px (1,83) | 14px / 20px (1,43) |
+| Datum unter einer Notiz | 12,5px / 25,6px (2,05) | 12,5px / 20px (1,60) |
+| Absatz in der Layout-Box | 14px / 25,6px | 14px / 20px |
+| Fußzeile | 14px / 25,6px | 14px / 20px |
+| Tabelle: Kopf gegen Körper | 32px gegen 22,4px | beide 22,4px |
+| Interner Link im Absatz | 22,4px in einem 25,6px-Absatz | 25,6px |
+| Fließtext | 16px / 25,6px | 16px / 25,6px |
+
+Die letzte Zeile ist die verräterische: `--tpl-leading-normal` stand auf 1.65 und rechnete zu
+26,4px — angezeigt wurden trotzdem 25,6px, weil Quartz' `1.6rem` auf jedem `p` gewann. Die
+Umstellung auf 1.6 hat deshalb *nichts* geändert, und zwar weil sie zufällig genau den Wert traf,
+der ohnehin schon galt.
+
+Behoben mit einer Regel, nicht mit sieben:
+
+```scss
+p, li, tbody, thead, tfoot, a.internal { line-height: inherit; }
+```
+
+`inherit` gibt die fünf Elemente an ihren Kontext zurück, und der Kontext ist genau das, was die
+Tokens setzen. Ungeschichtet, also schlägt es `@layer quartz-base` unabhängig von der Spezifität —
+die Regel, auf der diese Vorlage überall ruht. Was wirklich einen eigenen Wert will, sagt das
+weiterhin über eine Klasse und gewinnt weiterhin: die 1,55 des Codeblocks, die 1 des
+Brotkrumen-Trenners, das `normal` von Mermaid.
+
+Die Lehre ist dieselbe wie in 57, nur teurer: Wer eine Eigenschaft über Vererbung setzt, muss
+nachsehen, ob das Zielelement sie nicht selbst gesetzt bekommt. Ein Token, das nirgends ankommt,
+sieht in der Datei genauso richtig aus wie eines, das wirkt.

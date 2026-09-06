@@ -21,11 +21,13 @@ import { ownedServerPids, stopServer } from './buildService'
 //   12893 12877  node --no-deprecation …/.bin/quartz build --serve --port 8099 --wsPort 3099
 //
 // Both lines carry the needles, the child holds both ports, and both carry the port numbers in
-// their arguments - so the ports come from the command line and no socket table is needed. `lsof`
-// is used for one thing only, the working directory, and only where /proc is absent.
+// their arguments - so for a server started with flags the ports come from the command line and no
+// socket table is needed. `lsof` answers two narrower questions: the working directory (only where
+// /proc is absent), and which ports a candidate that named none actually holds - see resolveGroups.
 
 const PS_TIMEOUT_MS = 4_000
 const CWD_TIMEOUT_MS = 2_000
+const LSOF_TIMEOUT_MS = 2_000
 const PROBE_TIMEOUT_MS = 1_500
 const PROBE_MAX_BYTES = 64 * 1024
 
@@ -194,15 +196,27 @@ interface Group {
   wsPort?: number
 }
 
+interface Candidate {
+  root: PsRow
+  listener: PsRow
+  /** From the command line, or undefined when the process was started without the flag. */
+  argPort?: number
+  argWsPort?: number
+}
+
+// What quartz uses when the flag is absent - the same two numbers buildService passes explicitly.
+const DEFAULT_PORT = 8080
+const DEFAULT_WS_PORT = 3001
+
 // One entry per server, not per process: a server started through npx is two processes that carry
 // the same arguments, and listing both would offer to stop the same thing twice. The root is what
 // gets signalled - tree-kill takes the child with it, and killing the child alone would leave the
 // wrapper behind.
-function groupCandidates(rows: PsRow[]): Group[] {
+function groupCandidates(rows: PsRow[]): Candidate[] {
   const candidates = new Map<number, PsRow>()
   for (const row of rows) if (looksLikeQuartzServer(row.command)) candidates.set(row.pid, row)
 
-  const groups = new Map<number, Group>()
+  const groups = new Map<number, Candidate>()
   for (const row of candidates.values()) {
     let root = row
     const seen = new Set<number>([row.pid])
@@ -210,14 +224,69 @@ function groupCandidates(rows: PsRow[]): Group[] {
       seen.add(root.ppid)
       root = candidates.get(root.ppid)!
     }
-    const port = readPortArg(row.command, 'port') ?? 8080
-    const wsPort = readPortArg(row.command, 'wsPort') ?? 3001
+    const argPort = readPortArg(row.command, 'port')
+    const argWsPort = readPortArg(row.command, 'wsPort')
     const existing = groups.get(root.pid)
     // The deepest process in the group is the one holding the ports; ps lists parents first, so
     // a later row of the same group replaces the earlier one.
-    if (!existing || row.pid !== root.pid) groups.set(root.pid, { root, listener: row, port, wsPort })
+    if (!existing || row.pid !== root.pid) groups.set(root.pid, { root, listener: row, argPort, argWsPort })
   }
   return [...groups.values()]
+}
+
+// The TCP ports a process listens on. Asked only of a candidate that did not name its port, so the
+// common case - a server this app or a user started with --port, which every one of them carries -
+// still costs no lsof at all.
+async function listeningPorts(pid: number): Promise<number[]> {
+  try {
+    // -Fn prints one field per line; -P and -n keep ports and addresses numeric, so the line is
+    // `n*:8080` or `n127.0.0.1:8080` and never a service name from /etc/services.
+    const stdout = await execFileText(
+      'lsof',
+      ['-a', '-p', String(pid), '-iTCP', '-sTCP:LISTEN', '-P', '-n', '-Fn'],
+      LSOF_TIMEOUT_MS
+    )
+    const ports: number[] = []
+    for (const line of stdout.split('\n')) {
+      const match = /^n.*:(\d{1,5})$/.exec(line)
+      if (match) ports.push(Number(match[1]))
+    }
+    return ports
+  } catch {
+    // lsof missing, or no open file matched - "no port established" either way, which is what the
+    // caller does with an empty list.
+    return []
+  }
+}
+
+/**
+ * Turns candidates into servers, and drops the ones whose port cannot be established.
+ *
+ * A candidate that named no `--port` used to be *given* 8080, which then got probed - so a process
+ * that merely carried "quartz" in its path and `--serve` somewhere in its arguments was listed as
+ * a server on 8080, wearing the title and generator mark of whatever really answered there, and
+ * offering a Beenden that killed it. Measured with `sh -c 'sleep 40 # …/Example --serve'`: one
+ * server, port 8080, `reachable: false` the only hint. The default is still the right guess, but
+ * it has to be confirmed - the process must actually hold the port for it to mean anything, and
+ * the socket table is the only thing that knows.
+ */
+async function resolveGroups(candidates: Candidate[]): Promise<Group[]> {
+  const groups = await Promise.all(
+    candidates.map(async (candidate): Promise<Group | null> => {
+      if (candidate.argPort !== undefined) {
+        return { root: candidate.root, listener: candidate.listener, port: candidate.argPort, wsPort: candidate.argWsPort }
+      }
+      const held = await listeningPorts(candidate.listener.pid)
+      if (!held.includes(DEFAULT_PORT)) return null
+      return {
+        root: candidate.root,
+        listener: candidate.listener,
+        port: DEFAULT_PORT,
+        wsPort: candidate.argWsPort ?? (held.includes(DEFAULT_WS_PORT) ? DEFAULT_WS_PORT : undefined)
+      }
+    })
+  )
+  return groups.filter((group): group is Group => group !== null)
 }
 
 export async function discoverServers(ports: number[] = []): Promise<ServerDiscovery> {
@@ -234,7 +303,7 @@ export async function discoverServers(ports: number[] = []): Promise<ServerDisco
     return { state: 'unavailable', reason: `ps failed: ${(error as Error).message}`, servers: [], occupiedPorts: [] }
   }
 
-  const groups = groupCandidates(rows)
+  const groups = await resolveGroups(groupCandidates(rows))
   const owned = ownedServerPids()
   const projects = await projectStore.listProjects()
   const now = Date.now()
@@ -281,15 +350,19 @@ export async function killServer(pid: number): Promise<ServerKillResult> {
   }
 
   // Re-checked here, not trusted from the listing: pids are recycled, and between the scan that
-  // filled the list and this click the number may belong to something else entirely. The check is
-  // the same needle the scan used, against a freshly read command line.
-  let command: string
+  // filled the list and this click the number may belong to something else entirely. The gate is
+  // the whole of what the listing does, run again against a freshly read process table, rather
+  // than the needle alone - the needle is deliberately wide (a folder with a capital Q in its
+  // path is enough for half of it), and what may be signalled has to be exactly what was offered:
+  // a group whose port could be established. The port itself is not checked against the click,
+  // because the click carries only a pid; being a root of a resolved group is the condition.
+  let groups: Group[]
   try {
-    command = await execFileText('ps', ['-ww', '-p', String(pid), '-o', 'command='], PS_TIMEOUT_MS)
+    groups = await resolveGroups(groupCandidates(await readProcessTable()))
   } catch {
     return { stopped: false }
   }
-  if (!looksLikeQuartzServer(command)) return { stopped: false }
+  if (!groups.some((group) => group.root.pid === pid)) return { stopped: false }
 
   return new Promise((resolvePromise) => {
     try {

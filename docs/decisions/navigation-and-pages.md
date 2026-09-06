@@ -310,7 +310,8 @@ Tabelle:
 
 Beide tragen `quartz` **und** `--serve`, und beide tragen die Portnummern in ihren Argumenten. Damit
 kommen die Ports aus der Kommandozeile statt aus einer Socket-Tabelle — der einzige unportable Teil
-entfällt. `lsof` bleibt für genau eine Sache: das Arbeitsverzeichnis (`lsof -a -p <pid> -d cwd -Fn`
+entfällt, solange die Flags dastehen (was fehlt, wenn sie fehlen, steht weiter unten). `lsof` bleibt
+sonst für genau eine Sache: das Arbeitsverzeichnis (`lsof -a -p <pid> -d cwd -Fn`
 lieferte `/Users/boxi/Documents/Example`), unter Linux dafür `/proc/<pid>/cwd`. Das Verzeichnis ist,
 was einen gefundenen Server einem Projekt zuordnet, und deshalb steht in der Zeile ein Projektname
 statt einer PID. Zur Gegenprobe von außen antwortet der Port mit
@@ -344,11 +345,33 @@ Signal, weshalb die Dev-Server-Karte darüber im selben Moment auf „Gestoppt" 
 Dritter Fall, mit `python3 -m http.server 8080` gemessen: „Port 8080 ist belegt, aber von keinem
 erkennbaren Quartz-Server."
 
+**Ein Vorgabewert ist eine Vermutung, kein Fund (2026-09-07).** Ein Kandidat ohne `--port` bekam
+`8080` und wurde damit geprobt — und ein `probeHttp(8080)`, auf dem ein *echter* Server antwortet,
+gab der Zeile dessen Titel und Generator-Marke, mit der PID des Fremden. Damit stand ein Prozess in
+der Liste, der nur „quartz" im Pfad und irgendwo `--serve` in den Argumenten trug, und „Beenden"
+hätte ihn getroffen. Gemessen mit einem Skript, das mit
+`/Users/boxi/Obsidian/QuartzProjekte/Example --serve` aufgerufen wurde und keinen Port hält:
+
+| | Liste | `killServer` auf diese PID |
+|---|---|---|
+| vorher | `pid=7078 port=8080 ws=3001 reachable=false` | die Nadel sagt ja |
+| nachher | leer | `{"stopped":false}`, der Prozess lebt |
+
+Der Vorgabewert bleibt die richtige Vermutung, er muss nur bestätigt werden: `lsof -a -p <pid>
+-iTCP -sTCP:LISTEN -P -n -Fn` sagt, welche Ports der Prozess wirklich hält, und nur wenn 8080
+darunter ist, wird er zum Server auf 8080. Gefragt wird das ausschließlich bei einem Kandidaten
+ohne Flag — jeder Server dieser App und jeder mit `--port` gestartete kostet weiterhin kein `lsof`.
+Gegenprobe mit einem Prozess, der ohne `--port` tatsächlich auf 8080 hört: gefunden, `reachable:
+true`, `wsPort: undefined` (er hält 3001 nicht und nennt es nicht), und `killServer` beendet ihn.
+
 **Beendet wird nie von selbst.** Ein fremder Server gehört jemand anderem — einem Terminal, einem
 zweiten Fenster, einer hart beendeten Sitzung —, und das steht als Hinweis unter der Liste und
 noch einmal im Bestätigungsdialog, der die Herkunft benennt. Die PID wird vor dem Signal ein
 zweites Mal geprüft: zwischen dem Scan, der die Liste gefüllt hat, und dem Klick kann die Nummer
-längst jemand anderem gehören.
+längst jemand anderem gehören. Geprüft wird seit dem 2026-09-07 nicht mehr mit der Nadel allein,
+sondern mit dem ganzen Weg der Liste gegen eine frisch gelesene Prozesstabelle — die Nadel ist
+bewusst weit (ein Ordner mit großem Q im Pfad genügt für ihre eine Hälfte), und signalisiert werden
+darf nur, was auch angeboten wurde.
 
 **Windows sagt „unbekannt", nicht „keiner".** Dort gibt es kein `ps`; `Win32_Process` beantwortet
 dieselbe Frage, ist hier aber nicht messbar. Ein ungemessener Scan, der „keine gefunden" meldet,

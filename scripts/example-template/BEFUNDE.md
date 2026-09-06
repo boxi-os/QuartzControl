@@ -16,13 +16,29 @@ den Explorer sagte. Behoben, Messung in `docs/decisions/layout-frames.md`.
 
 ## Offen
 
-### 1. Fünf Instanzen eines Plugins reisen als eine
+### 1. Fünf Instanzen eines Plugins reisen als eine — behoben am 2026-09-06
 
 `configService.deriveName()` leitet den Namen aus dem letzten Pfadsegment der Quelle ab, also heißen
-alle fünf `quartz-layout-box`-Einträge gleich. Der `plugins`-Baustein legt beim Anwenden eine
-`byName`-Map an (`parts.ts:554`) — **gemessen: von fünf Instanzen kommt eine im Zielprojekt an.**
+alle `quartz-layout-box`-Einträge gleich. Der `plugins`-Baustein legte beim Anwenden eine
+`byName`-Map an (`parts.ts`) — **gemessen: von fünf Instanzen kam eine im Zielprojekt an.**
 Die Mehrfachverwendung ist im Plugin ausdrücklich vorgesehen (das README zeigt sie) und in der App
-über „Duplizieren“ im Layout-Editor erreichbar; über eine Vorlage überlebt sie nicht.
+über „Duplizieren“ im Layout-Editor erreichbar; über eine Vorlage überlebte sie nicht.
+
+**Behoben, indem Instanzen eine Identität bekommen, die die Datei hergibt: ihre Position unter
+Gleichnamigen.** Ein Eintrag in `quartz.config.yaml` hat keine Kennung — `name` ist abgeleitet, und
+ein zweites Feld dafür zu erfinden hieße, das Dateiformat für ein Problem zu ändern, das die
+Reihenfolge schon beantwortet. `instanceKeys()` vergibt `quartz-layout-box#0`, `#1`, …, und alle
+drei Stellen, die vorher nach dem Namen suchten, suchen jetzt danach: die Zuordnung beim Anwenden,
+die Vorschau (sie meldet damit „ein Konflikt und fünf Ergänzungen“ statt sechsmal desselben), und
+die Verschmelzung nach dem Neulesen. Die n-te Instanz aus dem Paket aktualisiert die n-te im
+Projekt, der Rest wird in seiner Reihenfolge angehängt.
+
+Nebenbei erledigt sich damit der nackte Eintrag, den `quartz plugin add` hinter dem Rücken des
+Bausteins anhängt: Er liegt als nächstes Vorkommen eines Namens, den wir gerade schreiben, und
+bekommt deshalb einen unserer Einträge — statt als siebte, optionslose Box zu überleben.
+
+Gemessen an einem **frisch angelegten** Kontrollprojekt (`--only 10,11 --fresh`): „Layout-Box-Instanzen
+im Ziel … 6 von 6“, 0 Warnungen, Build grün. Vorher an derselben Stelle: 1 von 6.
 
 ### 2. Ein Stylesheet mit Ziffer am Anfang macht das Projekt unübersetzbar
 

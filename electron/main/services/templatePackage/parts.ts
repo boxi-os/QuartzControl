@@ -526,6 +526,31 @@ interface PluginsPayload {
   entries: PluginEntry[]
 }
 
+/**
+ * One key per config entry, telling instances of the same plugin apart by their position among
+ * their own kind: `quartz-layout-box#0`, `#1`, and so on.
+ *
+ * A plugin entry has no id in quartz.config.yaml. Its `name` is *derived* from the source
+ * (configService.deriveName - the last path segment), so six uses of quartz-layout-box are six
+ * entries carrying one name, and a Map keyed by that name holds one of them. That is what this
+ * part did until 2026-09-06, and it cost the other five: the example template ships six instances
+ * and exactly one arrived in the importing project (BEFUNDE 1). Multiple instances are what the
+ * plugin is for - its README shows them, and the layout editor's "Duplizieren" makes them.
+ *
+ * Position among same-named entries is the only identity the file gives, and it is enough here:
+ * the n-th instance in the package updates the n-th instance in the project, and instances the
+ * project does not have yet are appended in order.
+ */
+function instanceKeys(entries: Array<{ name?: string; source: PluginEntry['source'] }>): string[] {
+  const seen = new Map<string, number>()
+  return entries.map((entry) => {
+    const name = entry.name ?? configService.deriveName(entry.source)
+    const occurrence = seen.get(name) ?? 0
+    seen.set(name, occurrence + 1)
+    return `${name}#${occurrence}`
+  })
+}
+
 const plugins: TemplatePart<PluginsPayload> = {
   id: 'plugins',
   async collect({ projectPath }) {
@@ -547,11 +572,14 @@ const plugins: TemplatePart<PluginsPayload> = {
   },
   async plan(payload, { projectPath }) {
     const config = await configService.readConfig(projectPath)
-    const existing = new Set(config.plugins.map((p) => p.name))
+    // Keyed per instance, so a package with six layout boxes meeting a project with one reports
+    // one conflict and five additions rather than six of whichever the name lookup answered.
+    const existing = new Set(instanceKeys(config.plugins))
+    const keys = instanceKeys(payload.entries)
     const plan = emptyPlan()
-    for (const entry of payload.entries) {
+    for (const [index, entry] of payload.entries.entries()) {
       const name = configService.deriveName(entry.source)
-      if (existing.has(name)) plan.conflicts.push(name)
+      if (existing.has(keys[index])) plan.conflicts.push(name)
       else plan.additions.push(name)
       const npmName = npmPackageName(entry.source)
       if (npmName && !hasNodeModule(projectPath, npmName)) plan.missingPackages.push({ name: npmName })
@@ -570,7 +598,8 @@ const plugins: TemplatePart<PluginsPayload> = {
    */
   async apply(payload, { projectPath, strategy, warn, progress }) {
     const config = await configService.readConfig(projectPath)
-    const byName = new Map(config.plugins.map((entry, index) => [entry.name, index]))
+    const byInstance = new Map(instanceKeys(config.plugins).map((key, index) => [key, index]))
+    const payloadKeys = instanceKeys(payload.entries)
     const next = [...config.plugins]
 
     const missingNpm: string[] = []
@@ -584,9 +613,9 @@ const plugins: TemplatePart<PluginsPayload> = {
       if (!result.success) warn(`pluginInstallFailed:${missingNpm.join(', ')}:${result.output.slice(-400)}`)
     }
 
-    for (const entry of payload.entries) {
+    for (const [position, entry] of payload.entries.entries()) {
       const name = configService.deriveName(entry.source)
-      const index = byName.get(name)
+      const index = byInstance.get(payloadKeys[position])
       if (index !== undefined && strategy === 'projectWins') {
         warn(`pluginSkipped:${name}`)
         continue
@@ -613,9 +642,18 @@ const plugins: TemplatePart<PluginsPayload> = {
     // the in-memory copy above is stale for exactly those plugins. Entries we wrote win; anything
     // the CLI added that we do not know about is kept.
     const after = await configService.readConfig(projectPath)
-    const written = new Map(next.map((entry) => [entry.name, entry]))
-    const merged = after.plugins.map((entry) => written.get(entry.name) ?? entry)
-    for (const entry of next) if (!merged.some((e) => e.name === entry.name)) merged.push(entry)
+    // Keyed the same way, and that also disposes of the bare entry the CLI appends: it lands as
+    // the next occurrence of a name we are writing, so one of our entries takes its place instead
+    // of it surviving as a seventh, optionless box.
+    const nextKeys = instanceKeys(next)
+    const written = new Map(nextKeys.map((key, index) => [key, next[index]]))
+    // Replacing an entry never changes its key - the key carries the name, and the name comes from
+    // the source - so the keys of `merged` are the keys of `after`, and what is missing from that
+    // set is exactly what still has to be appended.
+    const afterKeys = instanceKeys(after.plugins)
+    const merged = after.plugins.map((entry, index) => written.get(afterKeys[index]) ?? entry)
+    const covered = new Set(afterKeys)
+    for (const [index, entry] of next.entries()) if (!covered.has(nextKeys[index])) merged.push(entry)
     await configService.writeConfig(projectPath, { ...after, plugins: merged })
   }
 }

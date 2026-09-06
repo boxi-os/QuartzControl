@@ -376,8 +376,9 @@ fehlendes Snippet.
 > zurück. Inline-HTML steckt dagegen im Konfigurationseintrag und reist mit. Eine Instanz
 > nutzt bewusst den Datei-Weg und dokumentiert damit die Lücke (siehe `site/README.md`).
 >
-> **Und eine offene Einschränkung:** Beim Import überlebt derzeit nur **eine** der sechs Instanzen —
-> alle tragen denselben abgeleiteten Namen. Siehe `BEFUNDE.md`.
+> **Bis zum 2026-09-06 eine Einschränkung:** Beim Import überlebte nur **eine** der sechs Instanzen,
+> weil alle denselben abgeleiteten Namen tragen. Seitdem unterscheidet der `plugins`-Baustein sie
+> nach ihrer Position unter Gleichnamigen; die Gegenprobe meldet 6 von 6. Siehe `BEFUNDE.md`.
 
 ### 3.8 Zwei Sprachen — `plugins.mjs`, `styles/nav-language-switcher.scss`
 

@@ -16,3 +16,31 @@ Aus CLAUDE.md ausgelagert (2026-09-02): die Messungen und Beobachtungen hinter d
   - **Der Assistent versprach Dinge, die er nicht halten konnte (2026-09-05).** Vier Befunde aus demselben Durchgang, alle im Weg „neues Projekt mit Beispielvorlage“. *Der Schalter „Mit den Beispielseiten“ stand unabhängig von der Content-Strategie auf an*, und der Import lief mit `packageWins`: bei „vorhandene Notizen kopieren“ ersetzte die Startseite der Vorlage die `index.md` des Nutzers, und die einzige Spur war der Snapshot, von dem er nichts weiß; bei „Symlink“ konnte der Schalter gar nichts tun, weil der content-Baustein einen verlinkten Ordner ohnehin verweigert. Er ist jetzt nur bei „neu anfangen“ lebendig, sonst aus und deaktiviert, mit dem jeweiligen Grund als Hinweis — gemessen in beiden Farbschemata. *Das Ergebnis von `templatePackage.import` wurde weggeworfen*, also verschwanden genau die Warnungen, die auf der Vorlagen-Seite sichtbar sind, auf dem Weg, den die meisten nehmen; `ImportOutcome` ist jetzt eine eigene Komponente und wird von beiden benutzt, und mit etwas zu melden bleibt der Dialog auf einem Abschluss-Schirm stehen, statt wegzunavigieren. *`plan.notes` wurde nirgends gerendert*: gemessen am echten Paket meldete der content-Baustein 273 `identical:`-Notizen und der fonts-Baustein 4, und beide Zeilen sagten „ändert nichts“; die zählbaren Notizen stehen jetzt bei den anderen Zahlen, die eine, die ein ganzer Satz ist (`contentIsSymlink`), auf einer eigenen Zeile. *Und ein Fehler beim Vorlagenschritt ließ den Assistenten tot stehen* — das Projekt war angelegt, ein zweiter Klick konnte nur an „Ziel existiert“ scheitern, Abbrechen führte auf eine Liste ohne das neue Projekt, und die Meldung überlebte bis zum nächsten Öffnen; alle Wege nach `quartz create` enden jetzt an derselben Stelle.
   - **Zwei Wege an der Symlink-Sperre vorbei, und einer aus dem Export heraus (2026-09-05).** `getContentStatus` fragte `existsSync`, das dem Link folgt: ein `content/` auf ein ausgehängtes Laufwerk antwortete „gibt es nicht“ (`exists: false, isSymlink: false`), der Plan listete jede Notiz als Ergänzung und der Import endete in `partFailed:content:ENOTDIR … mkdir …/content` — gemessen. Mit `lstat` ist es ein Link mit fehlendem Ziel, der Plan sagt, dass der Baustein übersprungen wird, und der Import warnt. Geprüft wurde außerdem nur `content/` selbst: mit `content/notizen -> ein Ordner außerhalb des Projekts` schrieb der Import `notizen/durch-den-link.md` genau dorthin und meldete Erfolg ohne Warnung — die Notizen einer Vorlage im Vault eines Fremden, das eine, was diese Sperre verhindern soll. `writableTarget` prüft jetzt jedes Segment des Zielpfads, die Datei eingeschlossen, für content, fonts und styles gleichermaßen. Umgekehrt beim Export: `readdir`s `isDirectory()` antwortet für den Eintrag, nicht für sein Ziel, also war ein verlinkter Ordner eine „Datei“ und `readFile` warf EISDIR — `inspectProject` fängt mit `null`, und damit verschwand der ganze content-Baustein aus dem Export-Formular (gemessen: `inspect` antwortete ohne ihn). Links werden jetzt mit `stat` aufgelöst, Schleifen über die schon betretenen Realpfade abgeschnitten, hängende übersprungen.
 
+
+**Instanzen eines Plugins werden nach ihrer Position unterschieden, nicht nach ihrem Namen
+(2026-09-06).** Ein Eintrag in `quartz.config.yaml` hat keine Kennung: `name` leitet
+`configService.deriveName()` aus dem letzten Pfadsegment der Quelle ab. Sechs Verwendungen von
+`quartz-layout-box` sind damit sechs Einträge mit einem Namen — und eine `Map`, die danach
+schlüsselt, hält einen davon. Genau das tat der `plugins`-Baustein, und es kostete die anderen
+fünf: Die Beispielvorlage liefert sechs Instanzen aus, im Zielprojekt kam **eine** an (BEFUNDE 1).
+Mehrfachverwendung ist keine Randerscheinung — das Plugin ist dafür gemacht, und der Layout-Editor
+hat einen Knopf „Duplizieren“.
+
+`instanceKeys()` vergibt `quartz-layout-box#0`, `#1`, … in Dokumentreihenfolge, und die drei
+Stellen, die vorher nach dem Namen suchten, suchen jetzt danach: die Zuordnung in `apply`, die
+Vorschau in `plan` und die Verschmelzung nach dem Neulesen. Die n-te Instanz aus dem Paket
+aktualisiert die n-te im Projekt, alles Weitere wird in seiner Reihenfolge angehängt.
+
+Ein zweites Feld im Dateiformat wäre die andere Lösung gewesen und ist bewusst unterblieben: Die
+Reihenfolge beantwortet die Frage schon, und ein neues Feld müsste von jedem Leser dieser Datei
+verstanden werden — auch von Quartz selbst, das es nicht kennt.
+
+Nebenbei löst dasselbe Schlüsseln ein zweites Problem, das vorher der Namensabgleich verdeckt hat:
+`quartz plugin add` hängt beim Installieren einen nackten Eintrag an die Konfiguration, weil unsere
+Einträge zu dem Zeitpunkt noch nicht geschrieben sind. Er liegt als nächstes Vorkommen eines Namens,
+den der Baustein gerade schreibt, und bekommt deshalb einen unserer Einträge, statt als zusätzliche
+optionslose Instanz stehen zu bleiben.
+
+Gemessen an einem frisch angelegten Kontrollprojekt (`node scripts/build-example-template.mjs
+--only 10,11 --fresh`): „Layout-Box-Instanzen im Ziel … 6 von 6“, keine Warnung, Build grün. An
+derselben Stelle vorher: 1 von 6.

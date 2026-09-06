@@ -191,7 +191,7 @@ export function syntaxPairs() {
   if (start === -1 || end === -1) throw new Error('body-code.scss no longer marks its syntax block')
   const block = source.slice(start, end)
 
-  const surface = { lightMode: '#F1EFE9', darkMode: PALETTE.darkMode.lightgray }
+  const surface = codeSurface()
   const rows = []
   for (const [, which, was, now] of block.matchAll(
     /--shiki-(light|dark):#([0-9A-Fa-f]{6})"\]\s*\{\s*--shiki-\1:\s*(#[0-9A-Fa-f]{6})/g
@@ -208,6 +208,33 @@ export function syntaxPairs() {
   }
   if (rows.length === 0) throw new Error('body-code.scss marks a syntax block but it is empty')
   return rows.map((row) => ({ ...row, ok: row.ratio >= row.min }))
+}
+
+/**
+ * The code block's own ground, read out of base.scss rather than kept as a copy.
+ *
+ * It stopped being a literal on 2026-09-06 and became `color-mix(in srgb, var(--lightgray) 40%,
+ * var(--light))` for light mode, with dark keeping `lightgray` whole. The syntax check below
+ * measures its five corrected token colours against this surface, so a second copy of the number
+ * here would be the exact kind of stale value that made the mix worth doing.
+ */
+export function codeSurface() {
+  const source = readFileSync(join(import.meta.dirname, 'styles', 'base.scss'), 'utf-8')
+  const found = source.match(
+    /--tpl-surface-code:\s*color-mix\(in srgb,\s*var\(--([\w-]+)\)\s*(\d+(?:\.\d+)?)%,\s*var\(--([\w-]+)\)\s*\)/
+  )
+  if (!found) throw new Error('base.scss no longer defines --tpl-surface-code as a color-mix of two palette colours')
+  const [, from, percent, into] = found
+  const share = Number(percent) / 100
+  const blend = (mode) => {
+    const a = parseColor(PALETTE[mode][from])
+    const b = parseColor(PALETTE[mode][into])
+    return '#' + [0, 1, 2].map((i) => Math.round(a[i] * share + b[i] * (1 - share)).toString(16).padStart(2, '0')).join('')
+  }
+  // The dark override is a plain `var()`, so it is looked up rather than mixed.
+  const dark = source.match(/:root\[saved-theme="dark"\][^}]*--tpl-surface-code:\s*var\(--([\w-]+)\)/)
+  if (!dark) throw new Error('base.scss no longer overrides --tpl-surface-code for dark mode')
+  return { lightMode: blend('lightMode'), darkMode: PALETTE.darkMode[dark[1]] }
 }
 
 /* ------------------------------------------------- the control edge, read from the file too */

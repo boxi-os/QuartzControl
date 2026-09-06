@@ -80,6 +80,26 @@ html {
   // it too, which is the more useful half.
   --tpl-rule-control: color-mix(in srgb, var(--gray) 70%, var(--light));
 
+  // The ground of a code block, and the one surface that is neither `lightgray` nor the page.
+  //
+  // A code block is a large area, and the tint that is right for one word of inline code makes a
+  // twenty-line block a grey slab. So it sits between the two: 40% of the card colour in the page
+  // colour. In exchange it gains an edge (`--tpl-rule`), which a card does not need.
+  //
+  // It was a literal `#F1EFE9` in variables.mjs until 2026-09-06 - the only colour in the whole
+  // template that did not come from the palette, and therefore the only one that stayed put when
+  // the palette moved. As a mix it follows `lightgray` and `light`; the value it produces, #F0EFEB,
+  // is within two per channel of the hex it replaces. The price is that it is no longer a knob in
+  // the app's Variables tab, because an override there may not contain a comma.
+  --tpl-surface-code: color-mix(in srgb, var(--lightgray) 40%, var(--light));
+}
+
+// Dark keeps the full card colour rather than a mix of it. Mixing towards the ground there means
+// mixing towards *black*, which takes the block away from the eye instead of setting it apart -
+// the opposite of what the light mix does.
+:root[saved-theme="dark"] {
+  --tpl-surface-code: var(--lightgray);
+
   // The same fade with only its lower half. The right column needs this one rather than the
   // two-ended mask above: its panel headings stay put while their contents scroll under them
   // (see "the right column"), so a top fade would leave a permanently half-dissolved heading.

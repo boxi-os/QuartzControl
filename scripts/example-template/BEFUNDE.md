@@ -1035,3 +1035,33 @@ Leistenhöhe wachsen lassen, und seitliches Rollen ist ohnehin das, womit nieman
 **Nicht am Bild geprüft:** Ob der Daumen tatsächlich erscheint, ließ sich im kopflosen Screenshot
 nicht festhalten — Rollleisten werden dort nicht mitgezeichnet. Berechnete Werte und Breiten sind
 gemessen, das gemalte Pixel nicht.
+
+### 63. Die eine Farbe, die der Palette nicht folgte
+
+`--tpl-surface-code`, der Grund eines Codeblocks, stand im hellen Modus als literales `#F1EFE9` in
+`variables.mjs` — die einzige Farbe der ganzen Vorlage, die nicht aus den neun Palettenrollen kam,
+und damit die einzige, die stehen blieb, wenn die Palette sich bewegte. Wer `light` oder `lightgray`
+ändert, hätte einen Codeblock behalten, der zur neuen Palette nicht mehr passt, ohne dass etwas es
+sagt.
+
+Jetzt `color-mix(in srgb, var(--lightgray) 40%, var(--light))`: 40 % der Kartenfarbe im Seitengrund.
+Der Gedanke dahinter ist derselbe wie vorher — ein Codeblock ist eine große Fläche, und der Ton, der
+für *ein Wort* Inline-Code richtig ist, macht aus zwanzig Zeilen eine graue Platte —, nur wird er
+jetzt gerechnet statt notiert. Der Wert kommt bei #F0EFEB heraus, also innerhalb von zwei je Kanal
+am Hexwert, den er ersetzt: gemessen an der gebauten Seite rgb(240, 239, 235) gegen vorher
+rgb(241, 239, 233).
+
+Dunkel bleibt `lightgray` ganz. Dort hieße „zum Grund mischen" *zum Schwarz mischen*, was den Block
+vom Auge wegnimmt statt ihn abzusetzen — das Gegenteil dessen, was die Mischung im Hellen tut. Das
+sind zwei verschiedene Prozentsätze, also steht der dunkle Wert als eigener
+`:root[saved-theme="dark"]`-Block daneben.
+
+Zwei Folgen, beide gewollt und beide zu nennen:
+
+- Das Token ist **kein Regler mehr** in der Variablen-Ansicht der App. Eine Überschreibung dort darf
+  kein Komma tragen, und `color-mix()` besteht aus nichts anderem — dieselbe Grenze wie bei
+  `--tpl-fade-mask` und `--tpl-rule-control`. 47 statt 48 Tokens.
+- Die Kontrastprüfung darf den Wert nicht mehr abschreiben. `syntaxPairs()` misst die fünf
+  korrigierten Farben des Syntax-Themas gegen genau diese Fläche; die neue `codeSurface()` liest
+  die Mischung aus `base.scss` und rechnet sie nach, statt eine zweite Kopie zu führen — sonst wäre
+  hier genau die veraltete Zahl entstanden, deretwegen die Mischung sich lohnt.

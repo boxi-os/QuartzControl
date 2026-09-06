@@ -628,6 +628,19 @@ export default {
       targetHint:
         'Wohin genau ein Projekt damit veröffentlicht — Serverpfad, Branch, Ausschlüsse — legst du im Projekt unter „Veröffentlichen“ fest.'
     },
+    quit: {
+      title: 'Beim Beenden',
+      description: 'Was mit einem laufenden Dev-Server passiert, wenn du die App schließt.',
+      label: 'Laufende Dev-Server',
+      ask: 'Fragen',
+      keep: 'Weiterlaufen lassen',
+      stop: 'Beenden',
+      hint: {
+        ask: 'Läuft beim Beenden ein Server, fragt die App, was mit ihm geschehen soll.',
+        keep: 'Server laufen weiter und bleiben im Browser erreichbar. Beim nächsten Start fragt die App, ob sie beendet werden sollen — und die Seite „Vorschau & Build“ listet sie.',
+        stop: 'Server werden beim Beenden ohne Rückfrage gestoppt.'
+      }
+    },
     runtime: {
       title: 'Laufzeit',
       description: 'Womit die App Quartz und npm ausführt.',

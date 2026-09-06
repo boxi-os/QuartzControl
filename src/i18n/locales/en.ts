@@ -624,6 +624,19 @@ export default {
       targetHint:
         'Where exactly a project publishes to — remote path, branch, exclusions — is set inside that project under “Publish”.'
     },
+    quit: {
+      title: 'On quit',
+      description: 'What happens to a running dev server when you close the app.',
+      label: 'Running dev servers',
+      ask: 'Ask',
+      keep: 'Keep running',
+      stop: 'Stop',
+      hint: {
+        ask: 'When a server is running at quit, the app asks what should happen to it.',
+        keep: 'Servers keep running and stay reachable in the browser. The next start asks whether to stop them — and the Vorschau & Build page lists them.',
+        stop: 'Servers are stopped on quit without asking.'
+      }
+    },
     runtime: {
       title: 'Runtime',
       description: 'What the app runs Quartz and npm with.',

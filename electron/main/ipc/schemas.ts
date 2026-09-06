@@ -474,7 +474,8 @@ export const settings = z.looseObject({
   defaultProjectDirectory: absolutePath.optional(),
   language: z.enum(['system', 'de', 'en']).optional(),
   theme: z.enum(['system', 'light', 'dark']).optional(),
-  nodeRuntime: z.enum(['embedded', 'system']).optional()
+  nodeRuntime: z.enum(['embedded', 'system']).optional(),
+  serversOnQuit: z.enum(['ask', 'stop', 'keep']).optional()
 })
 
 // The only URL the renderer may hand to shell.openExternal. Restricted to https because that

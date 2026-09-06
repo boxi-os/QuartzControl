@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { confirmDialog } from '../utils/confirm'
 import { expandHome, isAbsolutePath, titlebarStripClass } from '../utils/platform'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Database, Key, Monitor, Moon, FolderOpen, Plug, RefreshCw, Sun, Terminal, TriangleAlert } from 'lucide-react'
+import { Database, Key, Monitor, Moon, FolderOpen, Plug, PowerOff, RefreshCw, Sun, Terminal, TriangleAlert } from 'lucide-react'
 import type {
   AppInfo,
   Connection,
@@ -83,6 +83,7 @@ export default function Settings(): JSX.Element {
           <div className="flex flex-col gap-4">
             <AppearanceSection settings={settings} persist={persist} />
             <ProjectsSection settings={settings} persist={persist} />
+            <QuitSection settings={settings} persist={persist} />
             <RuntimeSection settings={settings} persist={persist} />
             <GithubSection />
             <ConnectionsSection />
@@ -172,6 +173,41 @@ function AppearanceSection({
         </Field>
       </div>
       <p className="mt-3 text-xs text-text-muted">{t('settings.appearance.appliedImmediately')}</p>
+    </Section>
+  )
+}
+
+// ── Beim Beenden ────────────────────────────────────────────────────────────────────────────
+
+// The way back from the dialog's "Nicht mehr fragen" checkbox, and the only reason that checkbox
+// is allowed to exist: a tick in a dialog that quits the app cannot be untucked in that dialog,
+// because the dialog only appears while the setting still says "fragen". The three options are
+// the dialog's own three answers minus Abbrechen, so nothing new has to be learned here.
+function QuitSection({
+  settings,
+  persist
+}: {
+  settings: AppSettings
+  persist: (patch: Partial<AppSettings>) => Promise<void>
+}): JSX.Element {
+  const { t } = useTranslation()
+  const mode = settings.serversOnQuit ?? 'ask'
+
+  return (
+    <Section icon={PowerOff} title={t('settings.quit.title')} description={t('settings.quit.description')}>
+      <FieldGroup label={t('settings.quit.label')}>
+        <SegmentedControl
+          label={t('settings.quit.label')}
+          value={mode}
+          onChange={(next) => void persist({ serversOnQuit: next })}
+          options={[
+            { value: 'ask', label: t('settings.quit.ask') },
+            { value: 'keep', label: t('settings.quit.keep') },
+            { value: 'stop', label: t('settings.quit.stop') }
+          ]}
+        />
+      </FieldGroup>
+      <p className="mt-2 text-ui text-text-muted">{t(`settings.quit.hint.${mode}`)}</p>
     </Section>
   )
 }

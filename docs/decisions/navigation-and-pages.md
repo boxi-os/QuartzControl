@@ -389,3 +389,28 @@ Der Zustand liegt in einer Variablen (`quitDecision`), nicht in einem zweiten Au
 stünde dort dieselbe Frage noch einmal. Ein zweites Cmd+Q, während das Blatt offen ist, öffnet
 kein zweites (`quitPromptOpen`), und ein Dialog, der nicht gezeigt werden kann, macht die App
 nicht unbeendbar — dann gilt „beenden", was das bisherige Verhalten ist.
+
+**Der Haken merkt sich die Antwort, nicht „nie fragen" (2026-09-06).** „Nicht mehr fragen" neben
+„Weiterlaufen lassen" bedeutet etwas anderes als derselbe Haken neben „Server beenden"; ein
+einzelnes Nie-fragen-Flag könnte nur eines von beiden heißen. Gespeichert wird deshalb die
+*geklickte* Antwort (`Settings.serversOnQuit: 'ask' | 'stop' | 'keep'`), gelesen bei jedem
+Beenden statt beim Start — sonst bräuchte das Zurückstellen einen Neustart. Bei Abbrechen wird
+nichts gemerkt, denn nichts wurde entschieden. Geschrieben wird lesend-ändernd-schreibend:
+`saveSettings` ersetzt die Datei, und das passiert hier während des Beendens; Design oder Sprache
+an ein Häkchen zu verlieren wäre ein seltsames Andenken.
+
+Der Weg zurück steht in den Einstellungen („Beim Beenden", dieselben drei Antworten ohne
+Abbrechen) — **und das ist die Bedingung dafür, dass es den Haken überhaupt geben darf**: ein
+Häkchen in einem Dialog, der nur noch erscheint, solange die Einstellung „fragen" sagt, kann sich
+nicht selbst zurücknehmen. Gemessen: Haken plus „Server beenden" schrieb `serversOnQuit: "stop"`,
+der nächste Lauf beendete ohne jede Frage, die Einstellungsseite zeigte „Beenden" ausgewählt, ein
+Klick auf „Fragen" schrieb `"ask"` zurück, und der Dialog kam sofort wieder — ohne Neustart.
+
+**Dabei kam ein Fehler heraus, den es schon vorher gab: das Töten wurde nie abgewartet.**
+`before-quit` rief `killAllServers()` und ließ die App weiterlaufen ins Ende — aber `tree-kill`
+läuft erst `ps`, um den Baum zu finden, und signalisiert danach. Gemessen mit stehender Antwort
+„Server beenden": **die App war weg und der Dev-Server antwortete weiter mit 200 auf 8080.** Das
+Rennen war in beide Richtungen zu gewinnen, deshalb sah es so lange gut aus. `killAllServers()`
+gibt jetzt ein Promise zurück, das auf jeden `tree-kill`-Rückruf wartet, mit einer Frist von drei
+Sekunden — ein Kill, der nie antwortet, darf die App nicht unbeendbar machen, und was die Frist
+überlebt, ist eine verfolgte PID und damit die Waisen-Frage beim nächsten Start.

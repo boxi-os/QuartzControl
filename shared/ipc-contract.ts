@@ -1441,6 +1441,13 @@ export interface Settings {
    * running dev server keeps the environment it was started with.
    */
   nodeRuntime?: 'embedded' | 'system'
+  /**
+   * What happens to a running dev server when the app quits. 'ask' (default) puts the question up
+   * with the three answers; the other two are what the dialog's "Nicht mehr fragen" checkbox
+   * writes, and the Einstellungen page is the way back to asking - a checkbox that cannot be
+   * undone anywhere is a one-way door.
+   */
+  serversOnQuit?: 'ask' | 'stop' | 'keep'
 }
 
 export interface PluginActionResult {

@@ -39,6 +39,7 @@ const STRINGS = {
     quitMessage: 'Beim Beenden laufen noch Dev-Server.',
     quitDetail: 'Weiterlaufende Server bleiben im Browser erreichbar und werden beim nächsten Start wieder gefunden.',
     quitStopServers: 'Server beenden',
+    quitDontAskAgain: 'Nicht mehr fragen',
 
     // Content folder
     contentSourceInsideTarget:
@@ -247,6 +248,7 @@ const STRINGS = {
     quitMessage: 'Dev servers are still running.',
     quitDetail: 'Servers left running stay reachable in the browser and are found again on the next start.',
     quitStopServers: 'Stop servers',
+    quitDontAskAgain: 'Don’t ask again',
 
     contentSourceInsideTarget:
       'The source folder is inside the project’s content folder ({{target}}), which is moved aside before the switch — pick a folder outside it.',

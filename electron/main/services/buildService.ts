@@ -39,6 +39,26 @@ export function getServerStatus(projectId: string): ServerStatus {
   return runningServers.get(projectId)?.status ?? lastTerminalStatus.get(projectId) ?? { state: 'stopped' }
 }
 
+// What is running right now, for the question at quit: project and port, which is what the
+// dialog names. Kept next to ownedServerPids() because both answer "what does this app own".
+export function runningServerSummaries(): { projectId: string; port: number }[] {
+  return [...runningServers.entries()].map(([projectId, { status }]) => ({
+    projectId,
+    port: status.options?.port ?? DEFAULT_OPTIONS.port
+  }))
+}
+
+// pid -> projectId for the servers this app has running right now, so serverDiscovery can tell
+// its own from a stranger's. The pid is the one this app spawned (npx), which is also the root of
+// the process group a scan finds - the child below it is npx's, not a second server.
+export function ownedServerPids(): Map<number, string> {
+  const owned = new Map<number, string>()
+  for (const [projectId, { process: child }] of runningServers) {
+    if (child.pid) owned.set(child.pid, projectId)
+  }
+  return owned
+}
+
 export async function startServer(
   projectId: string,
   projectPath: string,
@@ -260,11 +280,40 @@ export async function getBuildOutput(projectPath: string, outputDir?: string): P
   }
 }
 
-export function killAllServers(): void {
-  for (const running of runningServers.values()) {
-    if (running.process.pid) treeKill(running.process.pid)
-  }
+// Awaited by the quit path, and that is the whole point of the promise: tree-kill walks the
+// process tree with `ps` before it signals anything, so it is asynchronous - and `before-quit`
+// used to fire it and let the app exit immediately. Measured, with the decision "Server beenden"
+// standing: the app was gone and the dev server was still answering on 8080. The race was
+// winnable either way, which is why it looked fine for as long as it did.
+//
+// The deadline is not decoration: a kill that never calls back must not make the app unquittable.
+// Whatever survives it is a tracked pid in running-servers.json and therefore the next start's
+// orphan question, which is exactly the safety net for this case.
+const KILL_ALL_DEADLINE_MS = 3_000
+
+export function killAllServers(): Promise<void> {
+  const pids = [...runningServers.values()].map((running) => running.process.pid).filter((pid): pid is number => !!pid)
   runningServers.clear()
+  if (pids.length === 0) return Promise.resolve()
+
+  const killed = Promise.all(
+    pids.map(
+      (pid) =>
+        new Promise<void>((resolvePromise) => {
+          try {
+            treeKill(pid, 'SIGTERM', (error) => {
+              if (error) console.error(`[main] could not stop server ${pid} on quit:`, error)
+              resolvePromise()
+            })
+          } catch (error) {
+            console.error(`[main] could not stop server ${pid} on quit:`, error)
+            resolvePromise()
+          }
+        })
+    )
+  ).then(() => undefined)
+
+  return Promise.race([killed, new Promise<void>((resolvePromise) => setTimeout(resolvePromise, KILL_ALL_DEADLINE_MS))])
 }
 
 function isAlive(pid: number): boolean {

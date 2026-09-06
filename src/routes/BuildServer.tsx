@@ -23,6 +23,7 @@ import type {
 import { DEFAULT_FRAME_BREAKPOINT_WIDTHS } from '@shared/gridFrameCss'
 import { Badge, Button, Card, Field, PageHeader, SegmentedControl, TextInput, useCopyToClipboard } from '../components/ui'
 import { LogConsole } from '../components/LogConsole'
+import { DiscoveredServers } from '../components/DiscoveredServers'
 import { formatIpcError } from '../components/ErrorSurface'
 import { TAB_ICONS } from './navConfig'
 import { EMPTY_LOG_LINES, useLogStore } from '../state/store'
@@ -387,6 +388,15 @@ export default function BuildServer(): JSX.Element {
           <LogConsole lines={logs} label={t('buildServer.serverLogLabel')} onClear={() => clearServerLog(project.id)} />
         </div>
       </Card>
+
+      {/* Directly under the project's own server, because that is where the question comes up: the
+          start above fails on a port someone else holds, and until now nothing in the app could
+          say who. Asks about this project's two ports as well, so "taken by something that is not
+          Quartz" is an answer too. */}
+      <DiscoveredServers
+        ports={[liveOptions.port, liveOptions.wsPort]}
+        onChanged={() => void window.quartzGui.server.status(project.id).then(setStatus)}
+      />
 
       <Card>
         <div className="mb-1 flex items-center justify-between gap-3">

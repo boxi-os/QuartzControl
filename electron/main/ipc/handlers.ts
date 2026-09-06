@@ -39,6 +39,7 @@ import * as deployService from '../services/deploy'
 import { forgetManifest } from '../services/deploy/manifest'
 import * as marketplaceService from '../services/marketplaceService'
 import * as buildService from '../services/buildService'
+import * as serverDiscovery from '../services/serverDiscovery'
 import * as buildOutputGuard from '../services/buildOutputGuard'
 import { resolveBuildDir } from '../services/projectDirs'
 import * as projectPrefsService from '../services/projectPrefsService'
@@ -398,6 +399,10 @@ export function registerIpcHandlers(): void {
     buildService.restartServer(projectId, projectPath, options as ServerOptions | undefined)
   )
   handle(IPC.serverStatus, t([s.uuid]), (projectId) => buildService.getServerStatus(projectId))
+  handle(IPC.serverDiscover, t([s.serverDiscoverInput.optional()]), (input) =>
+    serverDiscovery.discoverServers(input?.ports)
+  )
+  handle(IPC.serverKill, t([s.serverKillInput]), (input) => serverDiscovery.killServer(input.pid))
 
   handle(IPC.buildLastOutput, t([s.absolutePath, s.buildOutputDir.optional()]), (projectPath, outputDir) =>
     buildService.getBuildOutput(projectPath, outputDir)

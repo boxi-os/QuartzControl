@@ -437,6 +437,17 @@ export const serverOptions = z.looseObject({
   host: z.string().max(255)
 })
 
+// Both take an object, per CLAUDE.md's rule for new channels. The port list is what the page
+// wants asked about beyond the servers that were found, so it is bounded like every other array
+// crossing this boundary.
+export const serverDiscoverInput = z.looseObject({
+  ports: z.array(z.number().int().min(1).max(65535)).max(20).optional()
+})
+
+export const serverKillInput = z.looseObject({
+  pid: z.number().int().min(1).max(4_294_967_295)
+})
+
 export const projectPrefs = z.looseObject({
   // Empty is the meaningful default (Quartz's own public/), so this is a union with '' rather than
   // an optional field - buildOutputDir itself rejects the empty string.
@@ -463,7 +474,8 @@ export const settings = z.looseObject({
   defaultProjectDirectory: absolutePath.optional(),
   language: z.enum(['system', 'de', 'en']).optional(),
   theme: z.enum(['system', 'light', 'dark']).optional(),
-  nodeRuntime: z.enum(['embedded', 'system']).optional()
+  nodeRuntime: z.enum(['embedded', 'system']).optional(),
+  serversOnQuit: z.enum(['ask', 'stop', 'keep']).optional()
 })
 
 // The only URL the renderer may hand to shell.openExternal. Restricted to https because that

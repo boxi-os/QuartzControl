@@ -293,3 +293,124 @@ den Text. `npm run smoke` musste dieselbe Unterscheidung lernen: es zählte jede
 gezeigten Fehler-Toast und meldete zehn leere; es überspringt jetzt leere Regionen, denn seine Frage
 ist, ob ein Fehler *sichtbar* ist.
 
+
+**Laufende Server auf diesem Rechner, nicht nur die eigenen (2026-09-06).** Bis hierher wusste die
+App nur von Servern, die sie selbst gestartet hatte: `buildService` merkt sich die PIDs in
+`running-servers.json`, und die Waisen-Frage beim Start liest genau diese Liste. Ein Server, den
+jemand im Terminal gestartet hat, kam darin nicht vor — er hielt Port 8080, das Starten in der App
+scheiterte, und nichts in der App konnte sagen, wem der Port gehört. Der Fall ist am 2026-09-06
+aufgetreten und war von innen nicht zu beantworten.
+
+Gemessen wurde erst, was von außen überhaupt sichtbar ist. Ein Server, gestartet wie ein Nutzer ihn
+startet (`npx quartz build --serve --port 8099 --wsPort 3099`), steht als zwei Prozesse in der
+Tabelle:
+
+    12877     1  npm exec quartz build --serve --port 8099 --wsPort 3099
+    12893 12877  node --no-deprecation …/.bin/quartz build --serve --port 8099 --wsPort 3099
+
+Beide tragen `quartz` **und** `--serve`, und beide tragen die Portnummern in ihren Argumenten. Damit
+kommen die Ports aus der Kommandozeile statt aus einer Socket-Tabelle — der einzige unportable Teil
+entfällt. `lsof` bleibt für genau eine Sache: das Arbeitsverzeichnis (`lsof -a -p <pid> -d cwd -Fn`
+lieferte `/Users/boxi/Documents/Example`), unter Linux dafür `/proc/<pid>/cwd`. Das Verzeichnis ist,
+was einen gefundenen Server einem Projekt zuordnet, und deshalb steht in der Zeile ein Projektname
+statt einer PID. Zur Gegenprobe von außen antwortet der Port mit
+`<meta name="generator" content="Quartz"/>` und dem Sitenamen im `<title>` — das bestätigt, es
+entscheidet nicht: ein statisch ausgelieferter Quartz-Bau sieht genauso aus.
+
+Drei Dinge, die die Messung erzwungen hat:
+
+- **`--serve` als ganzes Wort.** `appleeventsd --server` steht in jeder macOS-Prozesstabelle und
+  passte auf eine Teilzeichenkette. Beide Nadeln zusammen, denn `quartz` allein trifft jeden Pfad
+  unterhalb eines Ordners namens Quartz — dieses Repo eingeschlossen.
+- **Ein Eintrag pro Server, nicht pro Prozess.** Die zwei Zeilen sind ein Server; zwei Zeilen in der
+  Liste hätten zweimal dasselbe zum Beenden angeboten. Signalisiert wird der oberste Prozess der
+  Gruppe, `tree-kill` nimmt das Kind mit — das Kind allein zu beenden ließe den npm-Wrapper stehen.
+- **`etime` statt `lstart`.** Die Startzeit als formatiertes Datum hängt an der Sprache des Systems
+  (`So.  6 Sep. 16:56:53 2026` auf diesem Rechner). Die verstrichene Zeit ist überall dieselbe
+  Zahl.
+
+Ein Server, den die App gestartet hat, sieht in der Tabelle anders aus als einer aus dem Terminal —
+das Kind trägt den Pfad der Electron-Binärdatei statt eines node-Pfads —, aber dieselben zwei
+Nadeln und dieselben Portargumente. Gemessen an der gebauten App mit beiden gleichzeitig:
+
+    16118 15813  npm exec quartz build --serve --port 8080 --wsPort 3001
+    16135 16118  …/QuartzControl.app/Contents/MacOS/Electron -r …/defaultapp.cjs … quartz build --serve --port 8080 …
+
+Die Karte listete beide richtig einsortiert: `localhost:8099 · Außerhalb gestartet · Example` und
+`localhost:8080 · Von dieser App · gui-test`. Das Beenden des fremden ließ beide seiner Prozesse
+verschwinden und den Port frei; das Beenden des eigenen lief über `stopServer()` statt über ein
+Signal, weshalb die Dev-Server-Karte darüber im selben Moment auf „Gestoppt" sprang — ein Signal an
+`buildService` vorbei hätte sie „Läuft" zeigen lassen für einen Prozess, den es nicht mehr gibt.
+Dritter Fall, mit `python3 -m http.server 8080` gemessen: „Port 8080 ist belegt, aber von keinem
+erkennbaren Quartz-Server."
+
+**Beendet wird nie von selbst.** Ein fremder Server gehört jemand anderem — einem Terminal, einem
+zweiten Fenster, einer hart beendeten Sitzung —, und das steht als Hinweis unter der Liste und
+noch einmal im Bestätigungsdialog, der die Herkunft benennt. Die PID wird vor dem Signal ein
+zweites Mal geprüft: zwischen dem Scan, der die Liste gefüllt hat, und dem Klick kann die Nummer
+längst jemand anderem gehören.
+
+**Windows sagt „unbekannt", nicht „keiner".** Dort gibt es kein `ps`; `Win32_Process` beantwortet
+dieselbe Frage, ist hier aber nicht messbar. Ein ungemessener Scan, der „keine gefunden" meldet,
+wäre die schlechtere Antwort — dieselbe Unterscheidung wie beim Update-Check und beim SCSS-Check.
+
+**Beim Beenden wird gefragt, was mit dem laufenden Server geschieht (2026-09-06).** `before-quit`
+rief bis hierher `killAllServers()` ohne ein Wort — und widersprach damit der Haltung der App am
+anderen Ende: die Waisen-Frage beim Start bietet ausdrücklich „Weiterlaufen lassen" an, weil ein
+laufender Server Absicht sein kann. Seit ein weiterlaufender Server wieder sichtbar und beendbar
+ist (die Karte oben, dazu die Frage beim Start), ist „weiterlaufen lassen" eine Entscheidung, die
+sich zurücknehmen lässt — und erst das macht das Angebot ehrlich.
+
+Drei Antworten, Abbrechen auf Platz 0 mit `cancelId: 0`, damit Escape *und* Return — das unter
+macOS die erste Taste nimmt, was `defaultId` auch sagt — „nicht beenden" heißen. Die beiden
+anderen beenden die App; ihre Beschriftung sagt, was aus den Servern wird. Gefragt wird
+asynchron mit `preventDefault()`, nicht mit `showMessageBoxSync`: ein synchroner Dialog blockiert
+den ganzen Hauptprozess, und alles, was diese App von außen fährt (der `run-desktop`-Treiber,
+`npm run smoke`), schließt sie über `app.close()` und bliebe daran hängen.
+
+Gemessen an der gebauten App, je mit laufendem Dev-Server auf 8080. Der Dialog selbst wurde im
+Hauptprozess gespiegelt gelesen, weil Playwright ein natives Blatt nicht bedienen kann; **dass er
+erscheint, ist trotzdem am OS gemessen** — zweimal, unfreiwillig, als der Spiegel an einem
+`require` scheiterte und das echte Blatt aufging:
+
+    buttons: ["Abbrechen", "Weiterlaufen lassen", "Server beenden"], cancelId: 0
+    message: "Beim Beenden laufen noch Dev-Server."
+    detail:  "gui-test — Port 8080\n\nWeiterlaufende Server bleiben im Browser erreichbar …"
+
+- **Abbrechen:** Fenster bleibt, Server läuft weiter, nichts angefasst.
+- **Weiterlaufen lassen:** App beendet, der Server antwortet danach weiter mit 200, und sein
+  Eintrag bleibt in `running-servers.json` stehen. Der nächste Start findet ihn — nachgewiesen,
+  weil genau dieser Waisen-Dialog beim folgenden `launch` aufging und Playwright ins Timeout
+  laufen ließ.
+- **Server beenden:** App beendet, beide Prozesse weg, Port zu.
+
+Der Zustand liegt in einer Variablen (`quitDecision`), nicht in einem zweiten Aufruf von
+`killAllServers()`: `app.quit()` löst `before-quit` ein zweites Mal aus, und ohne die Merkung
+stünde dort dieselbe Frage noch einmal. Ein zweites Cmd+Q, während das Blatt offen ist, öffnet
+kein zweites (`quitPromptOpen`), und ein Dialog, der nicht gezeigt werden kann, macht die App
+nicht unbeendbar — dann gilt „beenden", was das bisherige Verhalten ist.
+
+**Der Haken merkt sich die Antwort, nicht „nie fragen" (2026-09-06).** „Nicht mehr fragen" neben
+„Weiterlaufen lassen" bedeutet etwas anderes als derselbe Haken neben „Server beenden"; ein
+einzelnes Nie-fragen-Flag könnte nur eines von beiden heißen. Gespeichert wird deshalb die
+*geklickte* Antwort (`Settings.serversOnQuit: 'ask' | 'stop' | 'keep'`), gelesen bei jedem
+Beenden statt beim Start — sonst bräuchte das Zurückstellen einen Neustart. Bei Abbrechen wird
+nichts gemerkt, denn nichts wurde entschieden. Geschrieben wird lesend-ändernd-schreibend:
+`saveSettings` ersetzt die Datei, und das passiert hier während des Beendens; Design oder Sprache
+an ein Häkchen zu verlieren wäre ein seltsames Andenken.
+
+Der Weg zurück steht in den Einstellungen („Beim Beenden", dieselben drei Antworten ohne
+Abbrechen) — **und das ist die Bedingung dafür, dass es den Haken überhaupt geben darf**: ein
+Häkchen in einem Dialog, der nur noch erscheint, solange die Einstellung „fragen" sagt, kann sich
+nicht selbst zurücknehmen. Gemessen: Haken plus „Server beenden" schrieb `serversOnQuit: "stop"`,
+der nächste Lauf beendete ohne jede Frage, die Einstellungsseite zeigte „Beenden" ausgewählt, ein
+Klick auf „Fragen" schrieb `"ask"` zurück, und der Dialog kam sofort wieder — ohne Neustart.
+
+**Dabei kam ein Fehler heraus, den es schon vorher gab: das Töten wurde nie abgewartet.**
+`before-quit` rief `killAllServers()` und ließ die App weiterlaufen ins Ende — aber `tree-kill`
+läuft erst `ps`, um den Baum zu finden, und signalisiert danach. Gemessen mit stehender Antwort
+„Server beenden": **die App war weg und der Dev-Server antwortete weiter mit 200 auf 8080.** Das
+Rennen war in beide Richtungen zu gewinnen, deshalb sah es so lange gut aus. `killAllServers()`
+gibt jetzt ein Promise zurück, das auf jeden `tree-kill`-Rückruf wartet, mit einer Frist von drei
+Sekunden — ein Kill, der nie antwortet, darf die App nicht unbeendbar machen, und was die Frist
+überlebt, ist eine verfolgte PID und damit die Waisen-Frage beim nächsten Start.

@@ -3,9 +3,14 @@ import { existsSync } from 'fs'
 import { homedir } from 'os'
 import { join } from 'path'
 import { registerIpcHandlers } from './ipc/handlers'
-import { killAllServers, detectOrphanedServers, killOrphanedServers } from './services/buildService'
+import {
+  killAllServers,
+  detectOrphanedServers,
+  killOrphanedServers,
+  runningServerSummaries
+} from './services/buildService'
 import { getProject } from './services/projectStore'
-import { getSettings } from './services/settingsService'
+import { getSettings, saveSettings } from './services/settingsService'
 import { ensureToolPath } from './services/environmentService'
 import { applyRuntimeMode } from './services/nodeRuntime'
 import { applyGitRuntime } from './services/gitRuntime'
@@ -241,6 +246,91 @@ app.on('window-all-closed', () => {
   if (!isMac) app.quit()
 })
 
-app.on('before-quit', () => {
-  killAllServers()
+// What happens to a running dev server when the app quits is the user's decision, not the app's.
+// It used to kill them all without a word, which contradicted the app's own stance at the other
+// end: the orphan question at startup offers "Weiterlaufen lassen" precisely because a server may
+// have been left running on purpose. Since a left-running server is now visible and stoppable
+// again - the discovery card on Vorschau & Build, and the startup question - keeping one is a
+// choice that can be undone, which is what makes offering it honest.
+//
+// Asked asynchronously with preventDefault rather than with showMessageBoxSync: a sync dialog
+// blocks the whole main process, and everything that drives this app from the outside (the
+// run-desktop driver, `npm run smoke`) closes it through app.close() and would hang on it.
+type QuitDecision = 'ask' | 'stop' | 'keep'
+let quitDecision: QuitDecision = 'ask'
+let quitPromptOpen = false
+
+app.on('before-quit', (event) => {
+  // The second pass, after the question has been answered: everything that had to happen to the
+  // servers has happened by then, so the quit goes through untouched.
+  if (quitDecision !== 'ask') return
+  const servers = runningServerSummaries()
+  if (servers.length === 0) return
+
+  event.preventDefault()
+  // A second Cmd+Q while the sheet is up must not open a second sheet.
+  if (quitPromptOpen) return
+  quitPromptOpen = true
+  void settleRunningServers(servers)
+    .catch((error) => {
+      // Neither a dialog that cannot be shown nor a kill that will not answer may leave the app
+      // unquittable; stopping is what this did before there was a question at all.
+      console.error('[main] quit prompt failed:', error)
+      return 'stop' as QuitDecision
+    })
+    .then(async (decision) => {
+      quitPromptOpen = false
+      if (decision === 'ask') return // cancelled: the app stays open, nothing was touched
+      // Awaited before quitting, not fired at it: see killAllServers.
+      if (decision === 'stop') await killAllServers()
+      quitDecision = decision
+      app.quit()
+    })
 })
+
+async function settleRunningServers(servers: { projectId: string; port: number }[]): Promise<QuitDecision> {
+  // A standing answer skips the question entirely - that is what the dialog's checkbox writes.
+  // Read here rather than cached at startup, so turning the question back on in Einstellungen
+  // takes effect without a restart.
+  const stored = (await getSettings()).serversOnQuit ?? 'ask'
+  return stored === 'ask' ? promptAboutRunningServers(servers) : stored
+}
+
+async function promptAboutRunningServers(servers: { projectId: string; port: number }[]): Promise<QuitDecision> {
+  const lines = await Promise.all(
+    servers.map(async ({ projectId, port }) => {
+      const project = await getProject(projectId)
+      return mainT('orphanEntry', { name: project?.name ?? projectId, port })
+    })
+  )
+  // Cancel sits at index 0 with cancelId 0, so both Escape and Return - which on macOS takes the
+  // first button whatever defaultId says (measured, see the dialog.confirm handler) - answer
+  // "don't quit". The other two both quit; their labels say what becomes of the servers.
+  const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+  const options = {
+    type: 'question' as const,
+    buttons: [mainT('confirmCancel'), mainT('orphanKeepRunning'), mainT('quitStopServers')],
+    defaultId: 0,
+    cancelId: 0,
+    title: mainT('quitTitle'),
+    message: mainT('quitMessage'),
+    detail: `${lines.join('\n')}\n\n${mainT('quitDetail')}`,
+    // Remembers *the answer that was clicked*, not "never ask": ticking the box next to
+    // "Weiterlaufen lassen" means something different from ticking it next to "Server beenden",
+    // and a single "don't ask" flag could only ever mean one of the two.
+    checkboxLabel: mainT('quitDontAskAgain'),
+    checkboxChecked: false
+  }
+  const { response, checkboxChecked } = win
+    ? await dialog.showMessageBox(win, options)
+    : await dialog.showMessageBox(options)
+  if (response === 0) return 'ask' // cancelled: nothing decided, so nothing is remembered either
+  const decision: QuitDecision = response === 1 ? 'keep' : 'stop'
+  if (checkboxChecked) {
+    // Read-modify-write: saveSettings replaces the file, and this runs while the app is quitting -
+    // losing the theme or the language to a tick here would be a strange souvenir.
+    const current = await getSettings()
+    await saveSettings({ ...current, serversOnQuit: decision })
+  }
+  return decision
+}

@@ -397,6 +397,61 @@ export interface BuildResult {
   exitCode: number | null
 }
 
+// A `quartz ... --serve` process found in the machine's process table, whether or not this app
+// started it. Measured on macOS with a server started from a terminal: `npm exec quartz build
+// --serve --port 8099 --wsPort 3099` (the parent) and a `node .../.bin/quartz build --serve
+// --port 8099 --wsPort 3099` below it, which is the process actually holding both ports. The
+// ports therefore come out of the arguments, not out of a socket table, and the working
+// directory names the project.
+export interface DiscoveredServer {
+  /** The topmost process of the group - what a stop has to signal, since tree-kill takes the rest. */
+  pid: number
+  /** The process holding the ports. Same pid when the server was started without a wrapper. */
+  listenerPid: number
+  port: number
+  wsPort?: number
+  /** Working directory, when it could be read; this is what maps a server to a project. */
+  cwd?: string
+  /** Set when `cwd` is a project this app knows. */
+  projectId?: string
+  projectName?: string
+  /** Derived from the process's elapsed time, so it does not depend on a locale-formatted date. */
+  startedAt?: string
+  /** True when this app spawned it in this session - those are stopped through server.stop(). */
+  ownedByApp: boolean
+  /** Did the HTTP port answer at all. */
+  reachable: boolean
+  /** `<title>` of the served page, when it answered with one. */
+  siteTitle?: string
+  /** Did the answer carry Quartz's own `<meta name="generator">`. */
+  quartzGenerator?: boolean
+}
+
+export interface ServerDiscovery {
+  /**
+   * 'unavailable' is its own answer, never an empty list: on Windows there is no `ps`, and a
+   * failed scan must not read as "nothing is running" - see CLAUDE.md, "Kann nicht prüfen" ist
+   * nie "alles gut".
+   */
+  state: 'ok' | 'unavailable'
+  /** Why the scan could not answer. English, like every other diagnostic that describes a bug. */
+  reason?: string
+  servers: DiscoveredServer[]
+  /**
+   * Ports that were asked about and answer a TCP connect, but belong to no discovered server -
+   * i.e. something else holds the port this project wants. Identifying *what* would need a socket
+   * table, which is exactly the part that is not portable; that it is taken is enough to say.
+   */
+  occupiedPorts: number[]
+}
+
+export interface ServerKillResult {
+  /** False when the process was gone, or no longer looked like a Quartz server, by the time it was signalled. */
+  stopped: boolean
+  /** Set when the pid was one this app started, so it went through the normal stop path. */
+  projectId?: string
+}
+
 // The state of a project's build output directory, read from the files themselves - nothing
 // records that a build happened, so this is the only answer to "is there a build, and how old is
 // it". `builtAt` is the newest mtime in the tree; `exists` means the directory holds at least one
@@ -1295,6 +1350,8 @@ export const IPC = {
   serverStatus: 'server:status',
   serverStatusChanged: 'server:statusChanged',
   serverLog: 'server:log',
+  serverDiscover: 'server:discover',
+  serverKill: 'server:kill',
 
   buildRun: 'build:run',
   buildLog: 'build:log',
@@ -1384,6 +1441,13 @@ export interface Settings {
    * running dev server keeps the environment it was started with.
    */
   nodeRuntime?: 'embedded' | 'system'
+  /**
+   * What happens to a running dev server when the app quits. 'ask' (default) puts the question up
+   * with the three answers; the other two are what the dialog's "Nicht mehr fragen" checkbox
+   * writes, and the Einstellungen page is the way back to asking - a checkbox that cannot be
+   * undone anywhere is a one-way door.
+   */
+  serversOnQuit?: 'ask' | 'stop' | 'keep'
 }
 
 export interface PluginActionResult {
@@ -1643,6 +1707,20 @@ export interface QuartzGuiApi {
     status(projectId: string): Promise<ServerStatus>
     onLog(cb: (line: LogLine) => void): () => void
     onStatus(cb: (projectId: string, status: ServerStatus) => void): () => void
+    /**
+     * Every Quartz dev server running on this machine, including ones started outside the app -
+     * a terminal, another window, a previous run that was force-quit. `ports` asks additionally
+     * whether those specific ports answer, which is how "8080 is taken by something that is not
+     * Quartz" gets an answer at all.
+     */
+    discover(input?: { ports?: number[] }): Promise<ServerDiscovery>
+    /**
+     * Stops a server found by discover(). Verifies the pid still belongs to a Quartz server
+     * before signalling - a pid recycled between the listing and the click would otherwise be
+     * someone else's process. A pid this app started goes through the normal stop path, so its
+     * status and log keep working.
+     */
+    kill(input: { pid: number }): Promise<ServerKillResult>
   }
   build: {
     run(projectId: string, projectPath: string, outputDir?: string): Promise<BuildResult>

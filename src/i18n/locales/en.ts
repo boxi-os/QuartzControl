@@ -398,7 +398,31 @@ export default {
     reset: 'Reset',
     success: 'Successful',
     failed: 'Failed',
-    resultLine: '{{status}} in {{seconds}}s'
+    resultLine: '{{status}} in {{seconds}}s',
+    discovery: {
+      title: 'Servers running on this machine',
+      refresh: 'Refresh',
+      scanning: 'Looking for running servers…',
+      unavailable: 'The process list cannot be read on this system. Whether servers are running is unknown — not “none”.',
+      none: 'No Quartz server is running on this machine.',
+      found_one: 'One Quartz server is running on this machine.',
+      found_other: '{{count}} Quartz servers are running on this machine.',
+      fromApp: 'Started by this app',
+      fromOutside: 'Started elsewhere',
+      unknownProject: 'Project unknown',
+      notAnswering: 'not answering',
+      stopServer: 'Stop server',
+      confirmOwn:
+        'Stop the server on port {{port}}?\n\nIt belongs to {{name}} and was started by this app. The preview in the browser will stop working.',
+      confirmForeign:
+        'Stop the server on port {{port}}?\n\nThis server was not started by this app ({{name}}). Whoever started it — a terminal, another window, an earlier session — may be working with it right now.',
+      stopped: 'The server on port {{port}} was stopped.',
+      stopFailed:
+        'The server on port {{port}} could not be stopped. It may already be gone, or the process may now belong to someone else.',
+      portTaken: 'Port {{ports}} is taken, but not by anything recognisable as a Quartz server. Starting on it will fail.',
+      warning:
+        'Servers started outside this app belong to someone else — a terminal, a second window, a session that was force-quit. The app never stops them on its own; stopping one is a decision made here, every time.'
+    }
   },
   gitSync: {
     title: 'Git sync',
@@ -599,6 +623,19 @@ export default {
         'This connection is used by {{count}} projects.\n\nAfter deleting it, those projects’ publish targets point nowhere. Delete anyway?',
       targetHint:
         'Where exactly a project publishes to — remote path, branch, exclusions — is set inside that project under “Publish”.'
+    },
+    quit: {
+      title: 'On quit',
+      description: 'What happens to a running dev server when you close the app.',
+      label: 'Running dev servers',
+      ask: 'Ask',
+      keep: 'Keep running',
+      stop: 'Stop',
+      hint: {
+        ask: 'When a server is running at quit, the app asks what should happen to it.',
+        keep: 'Servers keep running and stay reachable in the browser. The next start asks whether to stop them — and the Vorschau & Build page lists them.',
+        stop: 'Servers are stopped on quit without asking.'
+      }
     },
     runtime: {
       title: 'Runtime',

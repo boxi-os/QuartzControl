@@ -18,7 +18,8 @@
 // base stylesheet - which between them turn a long outline into a short scrollable stub inside a
 // column that was itself scrolling. All three go. The scrolling happens once, one level out, on
 // the sticky right column (base.scss), so what you see is the whole outline as far as the window
-// is tall, with a soft edge at each end and no second scrollbar.
+// is tall and no second scrollbar - with a soft edge at the bottom, and at the top this component's
+// own heading, which base.scss pins to the top of the column while the list runs under it.
 .toc {
   font-size: var(--tpl-text-sm);
   min-width: 0;

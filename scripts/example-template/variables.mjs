@@ -11,6 +11,16 @@
 //    colour - and they stay editable in the app afterwards, which a value buried in SCSS is not.
 //
 // Every stylesheet below reads these; no raw hex, no magic number in a rule.
+//
+// What an override may NOT contain, checked against `cssVariableOverride` in schemas.ts rather
+// than remembered: `{`, `}`, `;`, `\`, `/*` and `*/`, and that is the whole list. A **comma is
+// fine** - `--tpl-shadow` has carried three of them through the app since it was written. Three
+// comments in this file and two in base.scss claimed the opposite until 2026-09-06 and cost two
+// colours their place in the app's Variables tab; the comma rule is real but belongs to *frame*
+// values (`cssTrackValue` / `cssGapValue`), which is a different schema for a different part.
+// So the test for whether something belongs here is not what characters it uses: it is whether a
+// person would ever want to change it. A colour, a length, a font stack - yes. A four-line
+// gradient or a 400-character data URI - no, and those stay in base.scss.
 
 const SANS = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
 const MONO = 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace'
@@ -20,21 +30,30 @@ export const VARIABLE_OVERRIDES = [
      Quartz writes --headerFont/--bodyFont/--codeFont from theme.typography as the bare family
      name. A woff2 that fails to load then falls back to the browser default rather than to
      something chosen, so each slot is restated here with a stack behind it. */
+  // Quartz reads this one for `.page-title`, the site's wordmark, and nothing else. It stayed
+  // dead here for a different reason than the three below: nav-header.scss styled `.page-title`
+  // with `--headerFont`, unlayered, so quartz's rule never got a look in. Since 2026-09-06 the
+  // wordmark reads `--titleFont` again, which makes this the one place to give the site's own name
+  // a face of its own. The default is the same family as the headings, so nothing changed.
   { key: 'titleFont', light: `"Instrument Sans", ${SANS}` },
   { key: 'headerFont', light: `"Instrument Sans", ${SANS}` },
   { key: 'bodyFont', light: `"Inter", ${SANS}` },
   { key: 'codeFont', light: `"JetBrains Mono", ${MONO}` },
-  { key: 'font-text', light: `"Inter", ${SANS}` },
+  // Of the three Obsidian-style aliases only `font-interface` survives, and the audit is why:
+  // counted in the built CSS, `--font-interface` has five readers, `--font-text` and
+  // `--font-monospace` have none - in quartz, in any component plugin, and in this template's own
+  // stylesheets, which use `--bodyFont` and `--codeFont` for those two roles. Two more knobs that
+  // could not move a pixel (BEFUNDE 60).
   { key: 'font-interface', light: `"Inter", ${SANS}` },
-  { key: 'font-monospace', light: `"JetBrains Mono", ${MONO}` },
 
-  /* ---- the control-edge rule from palette.mjs, made real -------------------------------
-     `lightgray` is a hairline and a surface; it measures 1.34:1 against the ground and must
-     therefore never draw the edge of something a person operates. These three are exactly the
-     variables Quartz uses for that, and they move to `gray` (3.0:1+ in both modes). */
-  { key: 'background-modifier-border', light: 'var(--gray)', dark: 'var(--gray)' },
-  { key: 'background-modifier-border-hover', light: 'var(--darkgray)', dark: 'var(--dark)' },
-  { key: 'background-modifier-border-focus', light: 'var(--secondary)', dark: 'var(--secondary)' },
+  /* ---- three overrides that were removed on 2026-09-06, and why they are not here -------
+     `background-modifier-border`, `-hover` and `-focus` were set to `gray` on the grounds that
+     "these are exactly the variables quartz uses for a control's edge". They are not. Counted in
+     the built CSS: each of the three is *declared* twice - once by quartz's own theme block, once
+     by this override - and read by no `var()` anywhere, in quartz or in any component plugin.
+     Three knobs in the app's Variables tab that could not change a pixel.
+     The obligation they were carrying is real and is carried by `--tpl-rule-control` (base.scss),
+     which is measured. */
 
   /* ---- our own tokens ---------------------------------------------------------------- */
 
@@ -62,15 +81,38 @@ export const VARIABLE_OVERRIDES = [
   { key: 'tpl-rule', light: 'var(--lightgray)', dark: 'var(--lightgray)' },
   { key: 'tpl-rule-strong', light: 'var(--gray)', dark: 'var(--gray)' },
   { key: 'tpl-rule-width', light: '1px' },
+  // The edge of something you operate - the search field, the three icon buttons, the language
+  // menu, a link preview, the controls over a drawing.
+  //
+  // It used to be `--tpl-rule-strong`, which is `gray`, and gray measures 6.41:1 against the light
+  // ground and 7.10:1 against the dark one. That is more than twice what WCAG 1.4.11 asks of a
+  // control's boundary, and it looked it: a row of hard black-ish rectangles across the top of
+  // every page. This mixes 70% of the same gray into the ground and lands at 3.24:1 light /
+  // 4.11:1 dark - still above the 3:1 the rule wants, visibly quieter than what it replaces.
+  // Measured in palette.mjs, which computes the same mix rather than trusting a second copy.
+  { key: 'tpl-rule-control', light: 'color-mix(in srgb, var(--gray) 70%, var(--light))' },
 
   // Surfaces. A card sits on `lightgray`; a quiet tint uses `highlight`.
   { key: 'tpl-surface', light: 'var(--lightgray)', dark: 'var(--lightgray)' },
+  // The ground of a code block, and the one surface that is neither `lightgray` nor the page.
+  //
   // A code block is a large area, and the tint that is right for one word of inline code makes a
-  // twenty-line block a grey slab. Light mode gets a surface of its own, closer to the ground; in
-  // dark mode it stays on `lightgray`, because lifting it there would move it towards the text
-  // rather than away from it. The block's border is `tpl-rule` - which is what `tpl-surface` is -
-  // so it gains an edge in exchange.
-  { key: 'tpl-surface-code', light: '#F1EFE9', dark: 'var(--lightgray)' },
+  // twenty-line block a grey slab. So it sits between the two: 40% of the card colour in the page
+  // colour. In exchange it gains an edge (`--tpl-rule`), which a card does not need.
+  //
+  // Dark keeps the full card colour rather than a mix of it. Mixing towards the ground there means
+  // mixing towards *black*, which takes the block away from the eye instead of setting it apart -
+  // the opposite of what the light mix does.
+  //
+  // It was a literal `#F1EFE9` here until 2026-09-06 - the only colour in the template that did not
+  // come from the palette, and therefore the only one that stayed put when the palette moved. It
+  // then spent one day in base.scss on the mistaken grounds that an override may not contain a
+  // comma (see below), and is back where a colour belongs.
+  {
+    key: 'tpl-surface-code',
+    light: 'color-mix(in srgb, var(--lightgray) 40%, var(--light))',
+    dark: 'var(--lightgray)'
+  },
   { key: 'tpl-surface-tint', light: 'var(--highlight)', dark: 'var(--highlight)' },
 
   // Type scale, in one place so the six heading levels stay related to each other.
@@ -82,12 +124,24 @@ export const VARIABLE_OVERRIDES = [
   { key: 'tpl-text-2xl', light: '1.75rem' },
   { key: 'tpl-text-3xl', light: '2.25rem' },
   { key: 'tpl-leading-tight', light: '1.25' },
-  { key: 'tpl-leading-normal', light: '1.65' },
-  // Small type does not want the body's leading. 1.65 is generous at 1rem across a 690px column;
-  // at 0.875rem in a 335px sidebar the same ratio pulls the lines so far apart that a three-line
+  { key: 'tpl-leading-normal', light: '1.6' },
+  // Small type does not want the body's leading. 1.6 is generous at 1rem across a 672px column;
+  // at 0.875rem in a 300px sidebar the same ratio pulls the lines so far apart that a three-line
   // paragraph reads as three separate ones - which is exactly how the layout-box in the sidebar
   // looked. Everything set in --tpl-text-sm or smaller uses this instead.
-  { key: 'tpl-leading-snug', light: '1.45' },
+  //
+  // A length, not a ratio, and that is the whole point of the value: 1.4rem is 22.4px, so every
+  // line of small type sits on the same step whatever its exact size - the 14px of a sidebar row
+  // and the 12.5px of a date below it line up with each other instead of each keeping its own
+  // rhythm. It inherits as a computed length, so a descendant that changes size does *not* rescale
+  // it; anything that wants its own leading back says so (the headings do, via
+  // --tpl-leading-tight).
+  //
+  // It only reaches the text at all because base.scss hands `p`, `li`, `tbody`, `thead`, `tfoot`
+  // and `a.internal` back to their inherited value - quartz gives each of them a leading of its
+  // own, and an inherited one cannot reach an element that has been given one directly
+  // (BEFUNDE 59).
+  { key: 'tpl-leading-snug', light: '1.4rem' },
 
   // Tracking, and the reason there are two of it: an uppercase label needs more of it the smaller
   // it is set, so the micro-labels above every panel take more than the larger caps of an h5 or a
@@ -138,8 +192,27 @@ export const VARIABLE_OVERRIDES = [
   { key: 'tpl-icon-sm', light: '0.95rem' },
 
   // How far a scrolling panel fades out at each end. See --tpl-fade-mask in base.scss, which is
-  // the mask itself - it cannot live here because a variable override may not carry a comma.
-  { key: 'tpl-fade', light: '20px' },
+  // the mask itself - it stays there because a four-line gradient is not something anyone edits in
+  // a text field, not because of the comma rule that used to be given as the reason (below).
+  //
+  // It is also the panel's own top and bottom padding, and therefore the gap between the heading
+  // of a panel and its first row: the padding is what keeps that row from being read through the
+  // gradient. At 20px, plus a 16px sentinel the explorer plugin leaves at the *top* of its list,
+  // the tree began 36px under the word "Explorer" - measured, and too far. The sentinel gives up
+  // its height in nav-explorer.scss and this drops to 14, which is still a soft edge and a third
+  // of the gap.
+  { key: 'tpl-fade', light: '14px' },
+
+  // How far the page itself dissolves before it goes under the sticky bar - the same gesture the
+  // scrolling panels make at their own edges, one size larger because it acts on running text
+  // rather than on a list of short rows. Its own token and not --tpl-fade: the two are the same
+  // idea at two scales, and tying them together would mean a panel's soft edge could not be tuned
+  // without moving the page's.
+  //
+  // The ceiling is measured: the first painted thing below the bar starts 32px down on every page
+  // at every width, and a fade longer than that would be visible at the top of the page, where
+  // there is nothing scrolled under the bar to soften.
+  { key: 'tpl-page-fade', light: '24px' },
 
   // The mobile navigation drawer. `min()` keeps it off the right edge on a 360px phone while
   // giving a four-level tree room to breathe on a tablet-sized screen.

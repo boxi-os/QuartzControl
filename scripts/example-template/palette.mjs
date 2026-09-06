@@ -11,6 +11,7 @@
 
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { VARIABLE_OVERRIDES } from './variables.mjs'
 
 export const PALETTE = {
   lightMode: {
@@ -191,7 +192,7 @@ export function syntaxPairs() {
   if (start === -1 || end === -1) throw new Error('body-code.scss no longer marks its syntax block')
   const block = source.slice(start, end)
 
-  const surface = { lightMode: '#F1EFE9', darkMode: PALETTE.darkMode.lightgray }
+  const surface = codeSurface()
   const rows = []
   for (const [, which, was, now] of block.matchAll(
     /--shiki-(light|dark):#([0-9A-Fa-f]{6})"\]\s*\{\s*--shiki-\1:\s*(#[0-9A-Fa-f]{6})/g
@@ -210,7 +211,81 @@ export function syntaxPairs() {
   return rows.map((row) => ({ ...row, ok: row.ratio >= row.min }))
 }
 
+/**
+ * The value of one token, resolved against the palette rather than copied.
+ *
+ * Both tokens below are declared in variables.mjs and both are written as an expression over the
+ * nine colours - a `color-mix()` or a bare `var()`. The checks measure contrast *against* them, so
+ * a second copy of the resulting hex here would be the exact kind of stale value that made them
+ * expressions in the first place: change `gray` and this follows, a literal would not.
+ *
+ * Reading the token list rather than parsing base.scss with a regex, which is what this did while
+ * the two lived in the stylesheet. Only these two shapes are understood; anything else is an error
+ * rather than a guess.
+ */
+function tokenColour(key, mode) {
+  const entry = VARIABLE_OVERRIDES.find((o) => o.key === key)
+  if (!entry) throw new Error(`variables.mjs no longer defines --${key}`)
+  const value = (mode === 'darkMode' && entry.dark) || entry.light
+
+  const plain = value.match(/^var\(--([\w-]+)\)$/)
+  if (plain) {
+    const colour = PALETTE[mode][plain[1]]
+    if (!colour) throw new Error(`--${key} is var(--${plain[1]}), and the palette has no such colour`)
+    return colour
+  }
+
+  // `color-mix(in srgb, A p%, B)` is a plain per-channel interpolation of the two
+  // non-premultiplied sRGB values, which is what the arithmetic below does. Every colour this
+  // template mixes is opaque, so there is no alpha to premultiply.
+  const mix = value.match(/^color-mix\(in srgb,\s*var\(--([\w-]+)\)\s*(\d+(?:\.\d+)?)%,\s*var\(--([\w-]+)\)\s*\)$/)
+  if (!mix) throw new Error(`--${key} is neither a var() nor a two-colour srgb mix: ${value}`)
+  const [, from, percent, into] = mix
+  if (!PALETTE[mode][from] || !PALETTE[mode][into]) {
+    throw new Error(`--${key} mixes --${from} into --${into}, and the palette has no such colour`)
+  }
+  const share = Number(percent) / 100
+  const a = parseColor(PALETTE[mode][from])
+  const b = parseColor(PALETTE[mode][into])
+  return '#' + [0, 1, 2].map((i) => Math.round(a[i] * share + b[i] * (1 - share)).toString(16).padStart(2, '0')).join('')
+}
+
+/**
+ * The code block's own ground - `--tpl-surface-code`, resolved rather than copied.
+ *
+ * 40% of the card colour in the page colour for light mode; dark keeps `lightgray` whole. The
+ * syntax check below measures its five corrected token colours against this surface.
+ */
+export function codeSurface() {
+  return { lightMode: tokenColour('tpl-surface-code', 'lightMode'), darkMode: tokenColour('tpl-surface-code', 'darkMode') }
+}
+
+/* ------------------------------------------------- the control edge, read from the file too */
+
+/**
+ * `--tpl-rule-control` - the edge of everything a person operates - measured, not assumed.
+ *
+ * The threshold is 3.0 and not 4.5: WCAG 1.4.11 asks that of a control's boundary. That is the
+ * whole reason this token exists - `gray` measures 6.41:1 and 7.10:1, more than twice what the
+ * rule wants, and looked it.
+ */
+export function controlEdgePairs() {
+  const rows = []
+  for (const [mode, colours] of Object.entries(PALETTE)) {
+    const hex = tokenColour('tpl-rule-control', mode)
+    rows.push({
+      mode,
+      fg: `rule-control ${hex}`,
+      bg: 'light',
+      min: 3.0,
+      what: 'edge of a control',
+      ratio: contrast(hex, colours.light)
+    })
+  }
+  return rows.map((row) => ({ ...row, ok: row.ratio >= row.min }))
+}
+
 /** Everything this template puts on top of something else, in one list. */
 export function checkAll() {
-  return [...checkContrast(), ...calloutPairs(), ...syntaxPairs()]
+  return [...checkContrast(), ...calloutPairs(), ...syntaxPairs(), ...controlEdgePairs()]
 }

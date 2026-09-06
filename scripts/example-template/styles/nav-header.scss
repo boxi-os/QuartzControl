@@ -7,7 +7,11 @@
 
 .page-title {
   margin: 0;
-  font-family: var(--headerFont);
+  // --titleFont, not --headerFont: quartz reads `--titleFont` for exactly this element and nothing
+  // else, and this file overriding it unlayered was what made that variable unreachable - one of
+  // the four the 2026-09-06 audit found could not change a pixel. Same family by default, so this
+  // changes nothing on the page; it gives the site's own name a slot of its own in the app.
+  font-family: var(--titleFont);
   // Follows the header as it shrinks; --tpl-header-title rests on --tpl-text-xl (base.scss).
   font-size: var(--tpl-header-title);
   font-weight: 700;
@@ -32,9 +36,23 @@
 .qgframe-area-header,
 #quartz-body > .header {
   flex-direction: row;
-  flex-wrap: wrap;
+  // Two children, both of them flex groups declared in the layout (layout.mjs): `brand` at the
+  // start, `toolbar` at the end. `space-between` is then the whole arrangement, and it does not
+  // care how many components either group holds.
+  //
+  // `nowrap`, and it replaces `wrap`. With three loose children and a margin pushing the last one
+  // over, the only thing standing between this bar and a second row was that the three happened to
+  // fit; there is no width at which a wrapped header is what anybody wanted. What gives instead is
+  // the site name, which truncates - see "which group gives up width" below.
+  flex-wrap: nowrap;
+  justify-content: space-between;
   align-items: center;
   gap: var(--tpl-space-sm);
+  // The hairline, at every scroll position and in every browser. It was made to disappear at the
+  // top of the page on 2026-09-06 - the argument being that nothing is behind the bar up there -
+  // and taken back the same day: the bar is a bar whether or not anything has scrolled under it
+  // yet, and an edge that comes and goes draws attention to itself rather than to the page. What
+  // is *added* once the page moves is below, under "the edge once the page moves".
   border-block-end: var(--tpl-rule-width) solid var(--tpl-rule);
   // Sticky on every width, not only on a phone. The four controls and the way back to the home
   // page are the things a reader reaches for in the middle of a long article, and this site has
@@ -54,12 +72,153 @@
   padding-block: var(--tpl-header-pad);
 }
 
-// The toolbar group takes the leftover width and sits at the far end. `margin-inline-start: auto`
-// rather than `justify-content: space-between` on the header: there are three children, not two,
-// and space-between would strand the site name in the middle of the row.
-.qgframe-area-header > .flex-component,
-#quartz-body > .header > .flex-component {
-  margin-inline-start: auto;
+// Which of the two groups gives up width, and which may not.
+//
+// The brand goes first: it is the one part of the bar that is also the first line of every page
+// below it, so it shrinks and the name inside it truncates. The toolbar does not: its children are
+// 44px targets and a target that shrinks is a target you miss.
+//
+// The chain matters and `min-width: 0` on the title alone is not enough - measured with a longer
+// name at 620px, the bar pushed 64px past the window and at 500px 184px, because a flex item's
+// automatic minimum is its content size at *every* level. Quartz's own wrapper div sits between
+// the group and the title, so all three have to be told.
+//
+// `:has()` is the handle because quartz writes the same `flex-component` class on every group it
+// renders and puts the group's own name nowhere in the markup (Flex.tsx). By content, not by
+// position: `:first-child` / `:last-child` would work today and break the day a third thing joins
+// the bar. Below 480px the title is `display: none` and `:has()` still matches it, which is right -
+// the group is still the brand group.
+.qgframe-area-header > .flex-component:has(.page-title),
+#quartz-body > .header > .flex-component:has(.page-title) {
+  min-width: 0;
+  flex: 0 1 auto;
+
+  > * {
+    min-width: 0;
+  }
+}
+
+.qgframe-area-header > .flex-component:has(.search),
+#quartz-body > .header > .flex-component:has(.search) {
+  flex: 0 0 auto;
+}
+
+// The site name is one line, at every width and not only in the app bar: a logotype whose second
+// half drops below the first is a broken logo. So it truncates instead of wrapping.
+//
+// This block existed, was lost on 2026-09-05 when nav-page-title.scss and nav-toolbar.scss were
+// merged into this file, and nobody noticed for a day because three comments here went on
+// describing it - the header rule still says "what gives instead is the site name, which truncates
+// (below)", and the mobile rule still says the truncation "is unconditional now". Restored on
+// 2026-09-06 after measuring what actually happened without it: at 620px with a longer name the
+// title box went to 40px tall, so the name sat on two lines inside a 44px wrapper. Nothing
+// overflowed and nothing scrolled sideways, which is why every sweep passed - it just looked wrong.
+//
+// `min-width: 0` on the h2 because it is a flex item and its automatic minimum would otherwise
+// keep it at its content width; `display: block` on the link because `text-overflow` needs a block
+// box and quartz's anchor is inline.
+.qgframe-area-header .page-title {
+  min-width: 0;
+
+  a {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* ------------------------------------------------------- the edge once the page moves */
+
+// Three things happen at the bottom of the bar, and two of them share a box.
+//
+//   the line    ::before, two hairlines thick. A grey track that fades in as soon as the page
+//               moves - this is what says "text is running underneath me" - with the accent
+//               filling it from the left to say how far down the document you are. One line, two
+//               jobs: the track *is* the unfilled part of the progress line, which is what a
+//               progress line has always looked like. A second bar above or below would be the
+//               fourth horizontal line in the top 60px of the page, and this template does not
+//               have that many lines to spend.
+//   the fade    ::after, below the bar. The article does not vanish at a hard edge, it dissolves
+//               into the page over the last few pixels before it goes under - the same gesture the
+//               scrolling panels make at their own edges (--tpl-fade-mask in base.scss).
+//
+// Track and fill share ::before because there are only two pseudo-elements and the fade needs one.
+// They are two background layers - the accent over the control tone - and the *fill* is the accent
+// layer's `background-size`, animated from 0% to 100%. A transform would have been the other way
+// to do it and cannot share the box: scaling the element scales the track with it.
+//
+// At rest neither is visible: the line's opacity is 0 and the accent layer has no width. What
+// remains is the 1px hairline above, which the bar keeps at every scroll position.
+@supports (animation-timeline: scroll()) {
+  .qgframe-area-header::before {
+    content: "";
+    position: absolute;
+    // The bar is `position: sticky` and therefore the containing block.
+    inset-block-end: calc(-1 * var(--tpl-rule-width));
+    inset-inline: 0;
+    // Twice the hairline, so the edge reads as *thickening* rather than as a new object sitting on
+    // it, and so it covers the hairline exactly instead of hanging under it.
+    height: calc(2 * var(--tpl-rule-width));
+    pointer-events: none;
+    background-image:
+      linear-gradient(var(--secondary), var(--secondary)),
+      linear-gradient(var(--tpl-rule-control), var(--tpl-rule-control));
+    background-repeat: no-repeat;
+    background-size: 0% 100%, 100% 100%;
+    opacity: 0;
+    // Two animations, two ranges, one timeline each. The track's range is much shorter than the
+    // shrink's: the height may take a while to settle, but "something is behind me" is true from
+    // the first pixel. --tpl-space-xs is 8px; `normal` is the whole document.
+    animation: tpl-header-track linear both, tpl-header-progress linear both;
+    animation-timeline: scroll(root block), scroll(root block);
+    animation-range: 0 var(--tpl-space-xs), normal;
+  }
+}
+
+// The fade is deliberately *outside* the guard, and it is the one part of this that Firefox gets:
+// a fixed gradient needs no scroll timeline. It can be static because there is nothing under it to
+// wash out at rest - measured at 1456, 810 and 390px, the first painted thing below the bar starts
+// 32px down on every page, and the fade is shorter than that.
+//
+// It begins one hairline below the bar rather than at its edge, so that it does not paint over the
+// line above: ::after comes after ::before in document order and would otherwise cover its lower
+// pixel with opaque --light.
+.qgframe-area-header::after {
+  content: "";
+  position: absolute;
+  inset-block-start: calc(100% + var(--tpl-rule-width));
+  inset-inline: 0;
+  height: var(--tpl-page-fade);
+  background: linear-gradient(to bottom, var(--light), transparent);
+  pointer-events: none;
+}
+
+@keyframes tpl-header-track {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+// Both ends written out, and that is not tidiness. With only a `to` keyframe the start value is
+// the element's own underlying value - and WebKit resolves that underlying value against the
+// *already animated* one, so the progress compounds and the line reads the square of how far you
+// are: 6% at a quarter of the way down, 25% at half, 57% at three quarters. Right at both ends,
+// wrong everywhere in between, which is the one shape of wrong a progress line may not have.
+// Measured at six positions in all three engines. The track's keyframes are written out for the
+// same reason.
+@keyframes tpl-header-progress {
+  from {
+    background-size: 0% 100%, 100% 100%;
+  }
+
+  to {
+    background-size: 100% 100%, 100% 100%;
+  }
 }
 
 /* ------------------------------------------------------------------ the mobile header */
@@ -85,22 +244,17 @@
     padding-inline: var(--tpl-space-sm) var(--tpl-space-sm);
     padding-inline-start: calc(var(--tpl-target) + var(--tpl-space-sm));
     background: var(--light);
-    // The bar sits above the article as it scrolls past, so it needs its own edge.
+    // The bar sits above the article as it scrolls past, so it needs its own edge. Restated here
+    // because this rule also restates the padding; the track and the fill above sit on top of it
+    // on this width as on every other, being positioned against the bar rather than declared by it.
     border-block-end: var(--tpl-rule-width) solid var(--tpl-rule);
   }
 
   // The site name gives way first: it is the one thing in the bar that is also the first line of
-  // every page below it.
+  // every page below it. Only the size is set here - the truncation is unconditional and lives
+  // above, with the rest of the brand group.
   .qgframe-area-header .page-title {
     font-size: var(--tpl-text-base);
-    min-width: 0;
-
-    a {
-      display: block;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
   }
 }
 
@@ -127,43 +281,53 @@
 // a width of its own here. And the group is now on every page type, including the 404, which under
 // the `focus` frame has no sidebars at all and therefore used to offer no way to search or to
 // switch the theme.
-// A search field wide enough to read as a field rather than a button, and narrow enough that the
-// header still belongs to the site name. It gives up width before the site name does.
 //
-// The 15rem are NOT set here. Quartz wraps every component of a group in a `div` of its own and
-// writes that div's flex values as an *inline style* from the layout config, so the flex item is
-// the wrapper and not `.search`. A basis written here applied to a box that was already sized to
-// its content: measured at 1728, 1440, 1100 and 900px, the field came out 110px wide every time,
-// in a toolbar that occupied 322 of 1400px. It reads as a button, which is the one thing the width
-// was there to prevent. The basis therefore lives in the plugin's `layout.groupOptions.basis`,
-// where it lands on the wrapper - and only `min-width` stays here, because a flex item's automatic
-// minimum would otherwise stop it from shrinking at all.
-// In the app bar there is room for three targets and the site name, and not for the word "Suche".
-// The button keeps its 44px, so nothing gets harder to hit - it just stops being a field.
-// The spacer plugin sits above the drawer trigger on mobile, where the left area is a strip across
-// the top of the page rather than a column beside it.
+// The three paragraphs that used to stand here were a verbatim second copy of the ones on the two
+// rules further down, left behind when the file was merged out of two.
 
 .flex-component {
   align-items: center;
 
-  // Every direct child of the group has the same height, whatever it contains.
+  // Every direct child of the group has the same height, whatever it contains - and centres what
+  // is inside it, which the `min-height` alone does not do. Quartz wraps each component of a group
+  // in a plain `div` (Flex.tsx), the group centres those wrappers, and until 2026-09-06 the
+  // wrapper was a block box: its content sat at the top of the 44px. Measured at 1456px with the
+  // bar at rest - the wrappers' centres were at y=30 where the bar's is 30.5, but the mark's was
+  // at 21 and the site name's at 22, both nine pixels high. Scrolled it got worse rather than
+  // better, because the name shrinks and the mark does not: 15 against 12, so the two were three
+  // pixels out from each other as well as from the bar.
   > * {
+    display: flex;
+    align-items: center;
     min-height: var(--tpl-target);
   }
 }
 
 // A search field wide enough to read as a field rather than a button, and narrow enough that the
-// header still belongs to the site name. It gives up width before the site name does.
+// header still belongs to the site name.
 //
-// The 15rem are NOT set here. Quartz wraps every component of a group in a `div` of its own and
-// writes that div's flex values as an *inline style* from the layout config, so the flex item is
-// the wrapper and not `.search`. A basis written here applied to a box that was already sized to
-// its content: measured at 1728, 1440, 1100 and 900px, the field came out 110px wide every time,
-// in a toolbar that occupied 322 of 1400px. It reads as a button, which is the one thing the width
-// was there to prevent. The basis therefore lives in the plugin's `layout.groupOptions.basis`,
-// where it lands on the wrapper - and only `min-width` stays here, because a flex item's automatic
-// minimum would otherwise stop it from shrinking at all.
+// The 15rem are a `width` on the component, and getting here took two wrong turns worth writing
+// down, because the difference between them is only visible in a second browser.
+//
+// Quartz wraps every component of a group in a `div` of its own and writes that div's flex values
+// as an inline style from the layout config, so the flex item is the wrapper and not `.search`. The
+// first attempt set a `flex-basis` in this file; it landed on `.search`, which is not the item, and
+// the field stayed 110px wide - a button, which is the one thing the width was there to prevent.
+//
+// So the basis moved into `layout.groupOptions.basis`, where it does reach the wrapper. In Chrome
+// that was the end of it. In Firefox and WebKit it was not: a flex-basis sizes the item (measured
+// 240px in all three engines) but Gecko and WebKit do not count it towards the *group's*
+// max-content contribution - they use the item's content width, 110px. The group therefore came out
+// 452 - 130 = 322px wide in those two, and with the group's own `wrap` it broke onto a second row
+// (61px header -> 113px), or once that was `nowrap`, its last child hung 130px out of the window
+// and every page scrolled 102px sideways. Measured at 1456, 1280, 1100 and 900px, identically in
+// both engines and on all 38 pages.
+//
+// A plain `width` has none of that ambiguity: it makes the wrapper's *content* 240px, which all
+// three engines agree on. `min-width: 0` stays with it, because a flex item's automatic minimum
+// would otherwise stop the field from shrinking at all.
 .qgframe-area-header .search {
+  width: 15rem;
   min-width: 0;
 }
 
@@ -172,19 +336,16 @@
 // In the app bar there is room for three targets and the site name, and not for the word "Suche".
 // The button keeps its 44px, so nothing gets harder to hit - it just stops being a field.
 @media (max-width: 800px) {
-  .qgframe-area-header .flex-component {
+  .qgframe-area-header .flex-component:has(.search) {
     gap: var(--tpl-space-2xs);
-    flex: 0 0 auto;
   }
 
-  // `!important` on the wrapper, and it is the only way: the inline style that carries the 15rem
-  // comes from the layout config and outranks every stylesheet without it. Without this the app bar
-  // kept a 216px box around a 44px button - measured at 480, 390 and 360px.
-  .qgframe-area-header .flex-component > *:has(> .search) {
-    flex: 0 0 auto !important;
-  }
-
+  // The field gives its 15rem back and becomes a button like its neighbours. This used to need an
+  // `!important` on the wrapper, because the width arrived as an inline `flex-basis` from the
+  // layout config and no stylesheet outranks that; with the width on the component itself, one
+  // ordinary declaration does it.
   .qgframe-area-header .search {
+    width: auto;
     flex: 0 0 auto;
   }
 

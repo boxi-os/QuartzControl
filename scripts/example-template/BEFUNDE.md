@@ -94,7 +94,7 @@ github:quartz-community/obsidian-plugin-excalidraw` legte das Plugin unter `.qua
 schrieb `quartz.lock.json` — und **keinen Eintrag in `quartz.config.yaml`**. Ohne den passiert beim
 Bauen nichts. Der Eintrag musste von Hand ergänzt werden.
 
-### 10. Ein Seitentyp-Plugin ohne `-page` im Namen wird nicht erkannt
+### 10. Ein Seitentyp-Plugin ohne `-page` im Namen wird nicht erkannt — behoben am 2026-09-06 (BEFUNDE 53)
 
 `derivePageTypes()` (`src/routes/LayoutEditor/utils.ts:171`) erkennt Seitentypen daran, dass der
 Pluginname auf `-page` endet. `obsidian-plugin-excalidraw` tut das nicht, trägt aber
@@ -631,3 +631,721 @@ ausgelieferte HTML, Quartz entfernt ihn wie den `%%`-Kommentar.
 
 Von den 16 kaputten Links der gebauten Website sind damit 14 erklärt und zwei Absicht (die
 Wikilink-Demo).
+
+---
+
+## Durchgang 2026-09-06
+
+### 47. Eine breitere Rinne macht die Randspalten schmaler — und `1fr` kann das nicht ausdrücken
+
+Bei zwölf `1fr`-Spalten liegen elf Rinnen im selben Budget wie die Spalten selbst. Wer die Rinne
+von 2 rem auf 4 rem hebt, nimmt damit 352 px aus den Spalten heraus: gemessen wanderten die beiden
+Randspalten von 326 px auf 302 px, ohne dass jemand die Spaltenbreite angefasst hätte.
+
+Ein festes Maß ist in einem Spaltenraster deshalb **keine Drittelung**: Zwischen drei Spuren liegen
+zwei Rinnen, die zum Block gehören. Die Spur ist `(300px − 2 × Rinne) / 3`, in `frames.mjs` als
+`calc((300px - 8rem) / 3)` — ein `calc()` ohne Komma ist im Frame-Schema erlaubt, `minmax(0, 1fr)`
+nicht. In der App steht dasselbe Feld unter *Layout → Eigene Frames → Spaltenbreiten (leer = 1fr)*,
+ein Eingabefeld je Spur.
+
+Nebenbefund: Nur `editorial` war auf 4 rem umgestellt, `index` und `focus` standen weiter auf 2 rem.
+Eine Ordnerseite legte ihren Text damit 32 px weiter links an als der Artikel, der auf sie verlinkt
+— genau das, was die reservierte rechte Spalte verhindern soll. Jetzt teilen sich alle vier Frames
+eine Rinne.
+
+### 48. Der Frame, den ein Seitentyp-Plugin mitbringt, ist keine benutzbare Seite
+
+Zwei Plugins, zwei verschiedene Arten, dieselbe Sache falsch zu machen — beide an der gebauten Site
+gemessen:
+
+- **Canvas** hatte gar keinen eigenen Frame und fiel auf Quartz' eingebauten `full-width` zurück.
+  Dessen `.center` hat keine definierte Höhe, `.canvas-page` und `.canvas-container` sind aber
+  `height: 100%`. Die Prozentangabe löst gegen nichts auf, der Kasten fiel zusammen — gemessen
+  406 px für eine Zeichnung, die 807 px hoch sein wollte — und Kopfbereich, Fußzeile und die
+  „Weiterlesen"-Box wurden **über** die Zeichnung gemalt statt um sie herum.
+- **Excalidraw** bringt einen eigenen Frame mit, und der rendert überhaupt keine Kopfleiste: kein
+  Link zur Startseite, keine Suche, kein Farbschema, keine Brotkrumen. Der einzige Weg aus der
+  Seite war der Zurück-Knopf des Browsers. Seine eigene Antwort darauf ist ein Burger-Knopf, der
+  eine 300 px breite Schublade mit den Bausteinen der *linken* Spalte öffnet — die in dieser
+  Vorlage für eine 335-px-Spalte gemacht sind und am Fensterrand abgeschnitten wurden.
+
+Beide bekommen jetzt den `drawing`-Frame der Website (`frames.mjs`, `layout.mjs`): Kopfleiste,
+Brotkrumen und Titel, die Zeichnung, was danach kommt, Fußzeile — jedes in seiner eigenen Zeile,
+auf denselben 1440 px wie jede andere Seite. Die Randspalten sind im Frame verborgen *und* über
+`positions: { left: [], right: [] }` geleert, damit sie gar nicht erst gebaut werden. Die Höhe der
+Zeichnung ist keine Rasterfrage — `1fr` in einem Raster ohne eigene Höhe ist die Höhe des Inhalts,
+und die fehlte ja gerade — und steht in `styles/page-canvas.scss` als
+`clamp(320px, 72dvh, 900px)`. Die Bedienelemente beider Plugins sind `position: fixed`, was unter
+ihren Vollbild-Frames dasselbe war wie „an der Zeichnung"; hier wären sie über der Kopfleiste
+geschwebt, also stehen sie jetzt `absolute` im Container.
+
+### 49. Der Explorer stellt den Scrollstand der *Liste* wieder her — und die stand nicht mehr zur Verfügung
+
+Das Plugin kann, was der Nutzer vermisst hat:
+
+```js
+prenav: sessionStorage.setItem("explorerScrollTop", document.querySelector(".explorer-ul").scrollTop)
+render: let l = sessionStorage.getItem("explorerScrollTop")
+        if (l) n.scrollTop = parseInt(l, 10)
+        else n.querySelector(".active")?.scrollIntoView({ behavior: "smooth" })
+```
+
+Diese Vorlage hatte die Rolle des Rollers aber auf `.explorer-content` verschoben, um einen
+Browser-Unterschied zu glätten (BEFUNDE 37). Damit las das Plugin bei jedem Seitenwechsel `0` — und
+weil `"0"` als Zeichenkette *wahr* ist, lief auch der `else`-Zweig nie, der sonst die aktuelle Seite
+in den Blick geholt hätte. Gemessen: Klick auf eine Datei vier Ordner tief, und der Baum stand
+danach wieder ganz oben. Beim Ordner genauso — dort navigiert der Klick unter
+`folderClickBehavior: 'link'` ja auch —, beim Pfeil nicht, weil der nichts lädt.
+
+Der Browser-Unterschied ist jetzt andersherum gelöst: `ul.explorer-ul` bekommt eine **absolute**
+`max-height`, die Firefox genauso auflöst wie Chrome, und ist damit wieder der Roller.
+`.explorer-content` ist nur noch der Kasten, an dem das Einklappen hängt. Nachgemessen: Scrollstand
+200 px, Klick auf eine Datei, Scrollstand danach 200 px.
+
+### 50. `.overflow-end` steht am Anfang der Liste, nicht am Ende
+
+Der Sentinel, den der Explorer für seinen eigenen Verlauf-Verlauf beobachtet, ist das **erste**
+`<li>` der Liste und bleibt es auch, nachdem der Baum gebaut ist. Mit einer Höhe sind das 16 px
+Nichts zwischen der Überschrift und dem ersten Ordner. Zusammen mit den 20 px Rand, die der weiche
+Rand der Leiste braucht, waren es 36 px — der Grund, aus dem der Abstand zu groß aussah. Der
+Sentinel behält sein Element und gibt seine Höhe ab; `--tpl-fade` sinkt von 20 auf 14 px. Bleiben
+14 px.
+
+### 51. Zwei Regeln versteckten den englischen Explorer-Baum doppelt
+
+Hausgemacht, aus BEFUNDE 26. Die erste Regel blendet den `en`-Ast unbedingt aus — das muss sie
+sein, weil eine Weiterleitungsseite ohne `<html lang>` sonst beide Bäume zeigte. Die zweite Regel
+blendet auf einer englischen Seite alles *außer* dem `en`-Ast aus. Zusammen: alles. Gemessen auf
+`/en/`: sechs Einträge oberster Ebene, alle `display: none`, unter einer Überschrift „Explorer",
+die brav dastand. Der Baum war die ganze Zeit gerendert.
+
+Die englische Fassung nimmt die erste Regel jetzt ausdrücklich zurück. Die Lehre ist dieselbe wie
+in BEFUNDE 22: Wo eine unbedingte Regel etwas versteckt, muss die Ausnahme **beide** Zustände
+aussprechen.
+
+### 52. Der Titel einer Galerie-Kachel liegt über dem Bild und zählt nicht zu ihrer Höhe
+
+Das Bases-Plugin setzt `.bases-gallery-title` auf `position: absolute; inset: auto 0 0` und die
+Kachel auf `overflow: hidden`. Solange jede Kachel denselben grauen Platzhalter zeigt, fällt das
+nicht auf. Mit echten Titelbildern zweimal:
+
+- Die Beschriftung ist `--dark`, im hellen Modus also fast schwarz — auf einem Titelbild beliebiger
+  Farbe.
+- Ein zweizeiliger Titel läuft aus der Kachel heraus und wird mitten im Wort abgeschnitten, weil
+  ein absolut positionierter Titel nichts zur Höhe seiner Kachel beiträgt. Gemessen: Kachel 145 px,
+  Bild 143 px, Titel 62 px.
+
+Die Vorlage holt ihn zurück in den Fluss (`position: static`, Kachel als zweizeiliges Grid). Damit
+liest sich die Galerie wie die Kachelansicht derselben Daten, die Beschriftung steht auf dem Grund
+der Karte, und ein Titel beliebiger Länge macht seine Kachel höher.
+
+Dabei zwei Kleinigkeiten am selben Ort: Ein `<img>` in einer fremden Komponente erbt die 16 px
+Absatzabstand aus `body-media.scss` — in einer randlos gedachten Karte ist das ein Streifen
+Kartengrund über dem Bild. Und die Kachelansicht führte `title` in ihrer Spaltenliste, obwohl die
+Karte den Titel schon als Überschrift trägt; die Zeile „Title — Ablauf-Diagramme" stand also
+zweimal dasselbe da.
+
+### 53. Ein Seitentyp ohne `-page` im Namen ist jetzt in der App erreichbar — BEFUNDE 10 behoben
+
+`derivePageTypes()` erkannte einen Seitentyp nur am Namensmuster `<name>-page`. Das ist eine
+Konvention, keine Regel: `obsidian-plugin-excalidraw` registriert den Seitentyp `excalidraw` und
+trägt `quartz.category: ["pageType", …]`. Quartz baut ihn trotzdem, der Layout-Editor der App bot
+ihn aber nicht an, und der Frame dieses Seitentyps war nur über die YAML zu wählen.
+
+Die Funktion nimmt jetzt die ganze Config und zählt zusätzlich jeden Schlüssel, der bereits unter
+`layout.byPageType` steht — ein Seitentyp durch Vorführung. Damit ist die Ausnahme keine Liste von
+Ausnahmen, und `excalidraw` steht in der App unter *Layout → Seitentypen*.
+
+### 54. Der Layout-Board der App zeigt die rechte Spalte am Tablet als umbrechende Reihe — offen
+
+`sidebarDirection()` (`src/routes/LayoutEditor/utils.ts`) gibt für `right` auf Tablet und Mobil
+`'row'` zurück, für `left` nur auf Mobil. Das stimmt für Quartz' eigenes `base.scss`, aus dem es
+abgelesen ist — und nicht für ein Projekt mit selbstgebauten Frames: `.qgframe-area` ist auf jedem
+Breakpoint `flex-direction: column`. Auf dem Tablet-Reiter des Boards stehen die Bausteine der
+rechten Spalte deshalb nebeneinander und brechen um, während sie auf der Website untereinander
+stehen. Kein Datenfehler, aber die Vorschau widerspricht dem Ergebnis.
+
+### 55. Beim Rollen *in* der rechten Spalte lief die Überschrift mit bis an den Header
+
+Die Spalte klebt unter der Kopfleiste und rollt ihren Inhalt selbst — und nahm dabei alles mit, die
+Überschrift des Panels eingeschlossen. Gemessen mit dem Zeiger über dem Inhaltsverzeichnis: Das Wort
+„INHALTSVERZEICHNIS" wanderte bis 10 px unter die Linie und löste sich dort im oberen Verlauf auf.
+Übrig blieb eine Liste von Überschriften, an der nichts mehr sagte, was für eine Liste das ist.
+
+Die linke Spalte hatte das Problem nie: Dort ist die Überschrift des Explorers ein *Geschwister* des
+Baums, keine Zeile darin, also rollt der Baum und das Wort „Explorer" bleibt stehen. Die rechte
+Spalte bekommt dasselbe Verhalten mit den Mitteln, die sie hat — jede Panel-Überschrift klebt am
+oberen Rand des Rollbereichs, die nächste schiebt sie hinaus, wenn sie ankommt.
+
+Zwei Dinge gehören dazu, und ohne beide sieht es schlechter aus als vorher:
+
+- **Ein deckender Grund.** Eine klebende Überschrift ohne eigenen Hintergrund lässt die Liste durch
+  ihre Buchstaben gleiten.
+- **Ein kurzer Verlauf darunter.** Eine deckende Kante allein *schneidet* eine Zeile in der Mitte
+  durch: Die Zeilen der Gliederung sind 30 px hoch, die Überschrift 44, und was gerade darunter
+  hindurchgeht, wird quer durch seine Buchstaben abgeschnitten und liest sich als Durchstreichung.
+  Gemessen an „Struktur und Rhythmus" bei Rollstand 174. Der Verlauf löst dieselbe Zeile auf statt
+  sie zu zerschneiden.
+
+Weil oben nun nichts mehr erscheinen kann, braucht die Spalte dort auch keinen Verlauf mehr: Sie
+bekommt `--tpl-fade-mask-end`, dieselbe Maske ohne ihre obere Hälfte, und Polsterung nur noch unten.
+Damit fällt zugleich die negative Marge weg, mit der die obere Polsterung vorher ausgeglichen wurde,
+und die beiden Spalten beginnen von selbst auf derselben Zeile — nachgemessen: beide bei y = 113,
+beide Überschriften bei y = 113.
+
+Verworfen wurde unterwegs die Variante „gar kein internes Rollen": Bei Rollstand 1500 war der ganze
+Apparat aus dem Bild — Inhaltsverzeichnis, Rückverweise, Graph —, und genau dagegen ist die Spalte
+überhaupt klebend.
+
+### 56. Eine feste Spur kostet Mindestbreite, auch wo sie nichts trägt — hausgemacht, behoben
+
+Beim Umstellen auf feste 300-px-Randspalten (BEFUNDE 47) bekamen die Spuren 1–3 *und* 10–12 an
+jedem Breakpoint eine feste Breite. Am Tablet ist die rechte Spalte aber keine Spalte mehr: Sie
+sitzt unter dem Text, und 10–12 gehören zum Fließtext. Eine feste Spur ist nicht stauchbar, also
+hob jede von ihnen die Mindestbreite des Rasters — mit sechs festen Spuren kam es nicht unter
+6 × 68 + 11 × 48 + 40 = 976 px.
+
+Gemessen im systematischen Durchgang: **alle 32 geprüften Seiten** scrollten in einem 900-px-Fenster
+92 px seitwärts, in beiden Farbschemata. Am Desktop war nichts davon zu sehen, weil dort genug Platz
+ist — die Art Fehler, die ein Durchgang über mehrere Breiten findet und ein Blick auf die eigene
+Fenstergröße nicht.
+
+Am Tablet sind jetzt nur die linken drei Spuren fest. Nachgemessen über fünf Breiten (1456, 1101,
+900, 801, 390) in hell und dunkel: kein seitliches Scrollen auf keiner Seite.
+
+### 57. Der Lesemodus tat nichts
+
+Quartz' Lesemodus ist eine Regel im Stylesheet des Plugins:
+
+```css
+:root[reader-mode=on] .sidebar.left, :root[reader-mode=on] .sidebar.right { opacity: 0 }
+```
+
+`.sidebar` ist, wie die *eingebaute* Anordnung von Quartz ihre beiden Spalten nennt. Ein Projekt mit
+selbstgebauten Frames hat so ein Element nicht — die Bereiche heißen `.qgframe-area-left` und
+`.qgframe-area-right` —, die Regel traf hier also nichts. Gemessen: Der Knopf setzte
+`reader-mode="on"`, färbte sich selbst ein, und beide Seitenleisten standen unverändert da. Ein
+Bedienelement, das nur sein eigenes Aussehen ändert, ist schlechter als keines.
+
+Dieselbe Geste jetzt auf den Elementen, die diese Website hat, mit `:focus-within` als Zugabe, damit
+die Leiste auch beim Durchtabben zurückkommt. Ausblenden statt Ausblenden-und-Platz-Wegnehmen ist
+Quartz' Entwurf und der richtige: Es verschiebt sich nichts, das Lesemaß bleibt, und die Navigation
+ist einen Zeiger weit weg.
+
+Das ist derselbe Fehlertyp wie 53 und 56: Eine Annahme über die eingebaute Anordnung, die ein
+selbstgebauter Frame nicht erfüllt. Wer eine Regel aus Quartz' `base.scss` abliest, muss prüfen, ob
+ihr Selektor in einem Frame-Projekt überhaupt vorkommt.
+
+### 58. Zweimal derselbe Interop-Unterschied im Kopfbereich — nur in Firefox und Safari sichtbar
+
+Gemeldet als „Umbrüche der Elemente rechts im Header: in Chrome ist alles richtig". Reproduziert mit
+Playwrights Firefox- und WebKit-Bauten gegen dieselbe gebaute Site, und es waren zwei Symptome
+derselben Ursache.
+
+**Die Ursache.** Die Werkzeugleiste ist eine Flex-Gruppe, und ihr Suchfeld bekam seine Breite über
+`layout.groupOptions.basis: '15rem'` — also als Inline-`flex-basis` auf dem Wrapper, den Quartz um
+jede Komponente einer Gruppe legt. Das *Element* ist damit in jeder Engine 240 px breit, gemessen in
+allen dreien. Aber:
+
+| | Chrome | Firefox | WebKit |
+| --- | ---: | ---: | ---: |
+| Suchfeld | 240 px | 240 px | 240 px |
+| Beitrag zur max-content-Breite der Gruppe | 240 px | **110 px** | **110 px** |
+| Breite der Gruppe | 452 px | **322 px** | **322 px** |
+
+Gecko und WebKit rechnen einen `flex-basis` nicht in den max-content-Beitrag des Flex-Items ein, sie
+nehmen dessen Inhaltsbreite — und 110 px ist genau die Breite, die das Feld ohne Vorgabe hätte
+(steht seit 2026-09-04 als Messung in `nav-header.scss`). Die Gruppe war also 130 px schmaler als
+ihr eigener Inhalt.
+
+**Symptom eins:** Mit `wrap: 'wrap'` an der Gruppe brachen die vier Bedienelemente auf zwei Zeilen
+um, der Kopf ging von 61 px auf 113 px — auf *jeder* Seite und bei jeder Breite von 900 bis 1456 px.
+
+**Symptom zwei:** Mit `wrap: 'nowrap'` hörte der Umbruch auf, und stattdessen hing das letzte Kind
+130 px aus dem Fenster: **jede Seite scrollte 102 px seitwärts** (94 px bei 900 px Fenster). Der
+Kopf war 61 px hoch und sah in der Messung geheilt aus — die zweite Prüfung fand es nur, weil sie
+auch auf seitliches Scrollen sah.
+
+**Behoben** an der Wurzel: `width: 15rem` auf `.search` statt eines `flex-basis` auf dem Wrapper.
+Eine Breite am Element macht die Inhaltsbreite des Wrappers zu 240 px, und darüber sind sich alle
+drei Engines einig — nachgemessen: Gruppe 436 px in Chrome, Firefox und WebKit. `wrap: 'nowrap'`
+bleibt trotzdem, weil eine umbrechende Flex-Gruppe auch sonst keine verlässliche Größe hat, und
+`shrink: false` bleibt, damit das Feld seine Breite nicht an die Icon-Knöpfe abgibt.
+
+Der ganze Durchgang danach in drei Engines: 38 Seiten × 3 Breiten × 3 Engines = 342 Aufrufe, kein
+seitliches Scrollen, kein zu hoher Kopf, keine umgebrochene Gruppe.
+
+**Die Lehre für die Arbeitsweise, und sie ist die eigentliche:** Der systematische Durchgang davor
+lief in Chrome allein und meldete „nichts gefunden", während zwei Seitenleisten-breite Fehler
+dastanden. Alles, was an intrinsischer Größe von Flexbox oder Grid hängt, muss in mindestens zwei
+Engines gemessen werden. Die Bauten dafür liegen jetzt auf dem Rechner:
+
+    node node_modules/playwright-core/cli.js install firefox webkit
+
+### 59. Beide Zeilenabstands-Tokens waren seit dem Tag ihrer Einführung wirkungslos
+
+Gemeldet als „die Änderung des Zeilenabstandes hat nicht angeschlagen". Sie hatte angeschlagen —
+die Tokens standen richtig im Projekt und im gebauten CSS —, sie kamen nur nirgends an.
+
+Quartz' eigenes `base.scss` schreibt vier feste Zeilenabstände:
+
+```css
+tbody, li, p         { line-height: 1.6rem }   /* 25,6px */
+a.internal           { line-height: 1.4rem }   /* 22,4px */
+<Tabellen-Wrapper> > * { line-height: 2rem }   /* 32px, also thead */
+```
+
+Ein Absatz, ein Listeneintrag und ein Tabellenkörper tragen damit ihren *eigenen* Wert, und ein
+geerbter — mehr erzeugt eine Regel auf `body` oder auf einen Frame-Bereich nie — erreicht sie nicht.
+Diese Vorlage setzte `--tpl-leading-normal` auf `body` und `--tpl-leading-snug` auf die drei
+Kleinschrift-Bereiche; beides landete also auf den Elementen *zwischen* dem Text und der Seite,
+während der Text selbst überall auf 25,6px stand. Gemessen an der gebauten Seite:
+
+| | vorher | jetzt |
+| --- | --- | --- |
+| Explorer-Zeile | 14px / 25,6px (1,83) | 14px / 20px (1,43) |
+| Datum unter einer Notiz | 12,5px / 25,6px (2,05) | 12,5px / 20px (1,60) |
+| Absatz in der Layout-Box | 14px / 25,6px | 14px / 20px |
+| Fußzeile | 14px / 25,6px | 14px / 20px |
+| Tabelle: Kopf gegen Körper | 32px gegen 22,4px | beide 22,4px |
+| Interner Link im Absatz | 22,4px in einem 25,6px-Absatz | 25,6px |
+| Fließtext | 16px / 25,6px | 16px / 25,6px |
+
+Die letzte Zeile ist die verräterische: `--tpl-leading-normal` stand auf 1.65 und rechnete zu
+26,4px — angezeigt wurden trotzdem 25,6px, weil Quartz' `1.6rem` auf jedem `p` gewann. Die
+Umstellung auf 1.6 hat deshalb *nichts* geändert, und zwar weil sie zufällig genau den Wert traf,
+der ohnehin schon galt.
+
+Behoben mit einer Regel, nicht mit sieben:
+
+```scss
+p, li, tbody, thead, tfoot, a.internal { line-height: inherit; }
+```
+
+`inherit` gibt die fünf Elemente an ihren Kontext zurück, und der Kontext ist genau das, was die
+Tokens setzen. Ungeschichtet, also schlägt es `@layer quartz-base` unabhängig von der Spezifität —
+die Regel, auf der diese Vorlage überall ruht. Was wirklich einen eigenen Wert will, sagt das
+weiterhin über eine Klasse und gewinnt weiterhin: die 1,55 des Codeblocks, die 1 des
+Brotkrumen-Trenners, das `normal` von Mermaid.
+
+Die Lehre ist dieselbe wie in 57, nur teurer: Wer eine Eigenschaft über Vererbung setzt, muss
+nachsehen, ob das Zielelement sie nicht selbst gesetzt bekommt. Ein Token, das nirgends ankommt,
+sieht in der Datei genauso richtig aus wie eines, das wirkt.
+
+### 60. Vier von 53 Tokens in der Variablen-Ansicht konnten kein Pixel bewegen
+
+Nach BEFUNDE 59 lag die Frage nahe: Wenn zwei Tokens jahrelang ins Leere zeigten, wie viele noch?
+Also gemessen statt gelesen — jedes Token in einer *laufenden* Seite auf einen unmissverständlich
+anderen Wert gesetzt und gezählt, wie viele berechnete Werte sich über alle Elemente bewegen. Zwölf
+Seiten, zwei Breiten, jeweils mit fokussiertem Bedienelement. Das Skript ist geblieben:
+`npm run check:tokens`.
+
+Ergebnis: **vier tot**, und jedes auf seine eigene Art.
+
+- `background-modifier-border`, `-hover` und `-focus`. Der Kommentar daneben behauptete, das seien
+  „genau die Variablen, die Quartz für den Rand eines Bedienelements benutzt". Nachgezählt im
+  gebauten CSS: Jede der drei wird **zweimal deklariert** — einmal von Quartz' eigenem Theme-Block,
+  einmal von dieser Überschreibung — und von **keinem** `var()` gelesen, weder in Quartz noch in
+  einem Komponenten-Plugin. Drei Regler in der App, die nichts regeln. Entfernt; die Pflicht, die
+  sie tragen sollten, trägt `--tpl-rule-control`, und die ist gemessen.
+- `titleFont`. Wird sehr wohl gelesen, und zwar von Quartz für `.page-title` — die Wortmarke. Nur
+  hatte `nav-header.scss` dieselbe Eigenschaft ungeschichtet mit `--headerFont` gesetzt, und
+  ungeschichtet schlägt `@layer quartz-base`. Die Vorlage hat sich das Token also selbst
+  abgeschnitten. Jetzt liest die Wortmarke wieder `--titleFont`; die Vorgabe ist dieselbe Familie
+  wie die Überschriften, sichtbar ändert sich nichts, und der Slot ist wieder ein Regler.
+
+Zwei Dinge, die beim ersten Lauf **falsch** als tot gemeldet wurden, und beide sind eine Lehre über
+die Messung selbst:
+
+- Die drei `tpl-focus-*`. Fokusstile gelten nur, während etwas `:focus-visible` ist, und in einer
+  frisch geladenen Seite ist nichts fokussiert. Das Skript drückt jetzt dreimal Tab, bevor es misst.
+- `tpl-drawer-width`. Die Schublade gibt es nur unter 800 px. Das Skript besucht jetzt jede Seite
+  auf 1456 und auf 390 px.
+
+Eine Momentaufnahme misst nur den Zustand, in dem sie aufgenommen wurde — was nur in einem Zustand
+oder auf einer Breite existiert, muss dort aufgesucht werden.
+
+Und ein dritter Fehler der Messung, der einen Tag später auffiel: Eine Seite steht nie ganz still.
+Eine Webschrift, die nachlädt, ein fertig gezeichnetes Mermaid-Diagramm, die Leinwand des Graphen —
+alle drei verändern zwischen zwei *identischen* Aufnahmen berechnete Werte, und die Änderung wird
+dem Token zugeschrieben, das gerade an der Reihe war. Gemessen: `--font-monospace` bestand einen
+Lauf und fiel im nächsten durch, ohne dass es in beiden irgendjemand las. Das Skript nimmt jetzt
+zuerst den Grundrauschpegel derselben Seite auf und zieht ihn von jeder Zählung ab.
+
+Mit dem Rauschpegel kamen zwei weitere tote Tokens ans Licht, beide aus derselben Familie wie die
+drei oben: `--font-text` und `--font-monospace` sind Obsidian-Aliase, die im gebauten CSS **null**
+Leser haben — weder in Quartz noch in einem Plugin noch in dieser Vorlage, die für diese beiden
+Rollen `--bodyFont` und `--codeFont` benutzt. `--font-interface` hat fünf Leser und bleibt.
+
+Endstand: **sechs von 53 waren tot**, 48 bleiben, und alle 48 bewegen etwas.
+
+### 61. Mermaid: die Platte unter der Zeichnung und die Legende, die der Palette nicht folgte
+
+Der Hintergrund einer Zeichnung kam aus dieser Vorlage, nicht aus Mermaid: `pre:has(> code.mermaid)`
+bekam `background: var(--tpl-surface)`, weil ein Mermaid-Block im Markup ein Codeblock ist
+(`<pre><code class="mermaid">`, BEFUNDE 15) und die Codeblock-Behandlung geerbt hatte. Ein Codeblock
+braucht eine Fläche, weil sein Inhalt ein Textblock ist, der sich vom Fließtext lösen muss; eine
+Zeichnung löst sich dadurch, dass sie eine Zeichnung ist. Die Fläche ist weg, die Haarlinie bleibt
+und tut die ganze Arbeit. Dazu Mermaids eigene Platte *innerhalb* des SVG (`rect.background`, bei
+journey und gantt), die sonst als einziges getöntes Rechteck übrig geblieben wäre.
+
+Dabei fiel die Legende des Kreisdiagramms auf. Das Feld neben einem Eintrag ist ein **anderes
+Element** als das Tortenstück, das es benennt, und Mermaid füllt es aus seinen eigenen
+`pie1..pieN`-Themenvariablen statt aus der Serie, die diese Vorlage setzt. Gemessen an der gebauten
+Seite: Das erste Feld kam im Hellen als `--light` und im Dunklen fast schwarz heraus — beides der
+Grund der Seite, also in beiden Modi unsichtbar —, während das Stück daneben Navy war. Die Legende
+liest jetzt dieselbe Serie in derselben Reihenfolge.
+
+Die orange Farbe in den Diagrammen ist übrigens `tertiary`: `--mm-3` ist `tertiary` zu 24 % im
+Grund, und `stroke: var(--tertiary)` zeichnet die Umrisse in Flowchart, Sequenz, Zustand, Gantt und
+gitGraph.
+
+### 62. Eine Rollleiste ausblenden, ohne dass der Kasten dabei umbricht
+
+Die Frage war, ob sich die Leisten in den Kästen ausblenden lassen, solange nicht gerollt wird.
+„Während gerollt wird" gibt es in CSS nicht — das macht das Betriebssystem, ein Stylesheet hat kein
+Ereignis dafür. `:hover` ist das Nächstliegende ohne Skript, und nah genug: Eine Leiste, die man
+nicht sieht, wollte man auch nicht greifen.
+
+Der naheliegende Weg ist der falsche, und zwar auf drei verschiedene Arten. `scrollbar-width: none`
+in Ruhe, `thin` beim Hovern, gemessen an derselben Seite:
+
+| | Ergebnis |
+| --- | --- |
+| Chrome | Inhalt von 300 px auf **289 px** beim Hovern — die ganze Spalte bricht unter dem Zeiger um |
+| Firefox | gar nichts; der berechnete Wert blieb `none` über den Hover hinweg. Gecko legt die Leistenbreite beim Bau der Box fest und stylt sie für einen Hover nicht neu |
+| WebKit | funktioniert, als einziges — dort ist die Leiste ein Overlay und kostet keine Breite |
+
+`scrollbar-gutter: stable` rettet den Chrome-Fall **nicht**: Die Rinne, die es reserviert, ist *die
+Breite der Leiste*, und die ist bei `scrollbar-width: none` null.
+
+Also die Breite konstant lassen und nur die **Farbe** wechseln: `scrollbar-width: thin` immer,
+`scrollbar-color: transparent transparent` in Ruhe, ein sichtbarer Daumen bei `:hover` und
+`:focus-within`. Nachgemessen in allen drei Engines: Die Farbe wechselt und `clientWidth` bleibt in
+allen dreien bei 300 — es bewegt sich nichts.
+
+Die Liste umfasst jeden Kasten, der in diesem Bau *gemessen* selbst rollt: den Baum, die mobile
+Schublade, die rechte Spalte, die Rückverweise (die kappt Quartz, nicht diese Vorlage), die
+Suchergebnisse und eine Board-Spalte. Zwei Auslassungen mit Absicht. Die Leiste des Dokuments ist
+die eine, die sagt, wie lang die Seite ist — die muss niemand erst suchen. Und die *waagerechten*
+Roller — Codeblöcke, breite Tabellen, KaTeX, das Board — behalten ihre Leiste: `scrollbar-gutter`
+reserviert am unteren Rand nichts, ein Ausblenden würde den Kasten dort beim Hovern um die
+Leistenhöhe wachsen lassen, und seitliches Rollen ist ohnehin das, womit niemand rechnet.
+
+**Nicht am Bild geprüft:** Ob der Daumen tatsächlich erscheint, ließ sich im kopflosen Screenshot
+nicht festhalten — Rollleisten werden dort nicht mitgezeichnet. Berechnete Werte und Breiten sind
+gemessen, das gemalte Pixel nicht.
+
+### 63. Die eine Farbe, die der Palette nicht folgte
+
+`--tpl-surface-code`, der Grund eines Codeblocks, stand im hellen Modus als literales `#F1EFE9` in
+`variables.mjs` — die einzige Farbe der ganzen Vorlage, die nicht aus den neun Palettenrollen kam,
+und damit die einzige, die stehen blieb, wenn die Palette sich bewegte. Wer `light` oder `lightgray`
+ändert, hätte einen Codeblock behalten, der zur neuen Palette nicht mehr passt, ohne dass etwas es
+sagt.
+
+Jetzt `color-mix(in srgb, var(--lightgray) 40%, var(--light))`: 40 % der Kartenfarbe im Seitengrund.
+Der Gedanke dahinter ist derselbe wie vorher — ein Codeblock ist eine große Fläche, und der Ton, der
+für *ein Wort* Inline-Code richtig ist, macht aus zwanzig Zeilen eine graue Platte —, nur wird er
+jetzt gerechnet statt notiert. Der Wert kommt bei #F0EFEB heraus, also innerhalb von zwei je Kanal
+am Hexwert, den er ersetzt: gemessen an der gebauten Seite rgb(240, 239, 235) gegen vorher
+rgb(241, 239, 233).
+
+Dunkel bleibt `lightgray` ganz. Dort hieße „zum Grund mischen" *zum Schwarz mischen*, was den Block
+vom Auge wegnimmt statt ihn abzusetzen — das Gegenteil dessen, was die Mischung im Hellen tut. Das
+sind zwei verschiedene Prozentsätze, also steht der dunkle Wert als eigener
+`:root[saved-theme="dark"]`-Block daneben.
+
+Zwei Folgen, beide gewollt und beide zu nennen:
+
+- Das Token ist **kein Regler mehr** in der Variablen-Ansicht der App. Eine Überschreibung dort darf
+  kein Komma tragen, und `color-mix()` besteht aus nichts anderem — dieselbe Grenze wie bei
+  `--tpl-fade-mask` und `--tpl-rule-control`. 47 statt 48 Tokens.
+- Die Kontrastprüfung darf den Wert nicht mehr abschreiben. `syntaxPairs()` misst die fünf
+  korrigierten Farben des Syntax-Themas gegen genau diese Fläche; die neue `codeSurface()` liest
+  die Mischung aus `base.scss` und rechnet sie nach, statt eine zweite Kopie zu führen — sonst wäre
+  hier genau die veraltete Zahl entstanden, deretwegen die Mischung sich lohnt.
+
+### 64. Der Sticky-Header schrumpfte und sagte sonst nichts
+
+Beim Scrollen ging die Leiste von 61 px auf 49 px und änderte sonst nichts: derselbe Haarstrich,
+kein Schatten. 12 px sind fast das ganze Budget, das sie hat — die vier Bedienelemente sind 44 px
+und bleiben es —, also war das einzige Signal eine Höhenänderung, auf die niemand achtet. Umgekehrt
+trennte der Haarstrich die Leiste ganz oben von ihrem *eigenen* ersten Absatz, obwohl dort noch
+nichts dahinterlag.
+
+Jetzt trägt die Kante den Zustand: in Ruhe keine Linie und kein Schatten, gescrollt der Haarstrich
+plus `--tpl-shadow-bar`. Eigener Scroll-Bereich von 8 px statt der 4 rem des Schrumpfens, denn „da
+ist etwas hinter mir" stimmt ab dem ersten Pixel.
+
+`--tpl-shadow-bar` ist bewusst nicht `--tpl-shadow`. Das heißt in dieser Vorlage „dieses Ding
+schwebt über der Seite" und gehört den fünf Overlays, die das tun; 24 px Weichzeichnung unter einer
+randlosen Leiste liest sich wie ein Schlagschatten auf einem Foto. Die Geometrie ist gemessen, und
+der erste Versuch war auf eine Art falsch, die `getComputedStyle` nicht zeigen kann:
+`0 10px 22px -18px` schrumpft die Schattenfläche um 18 px, sodass ihr unterster Pixel 3 px unter der
+Leiste landete — ein Schatten, der in den berechneten Werten steht und praktisch nichts malt. Aus
+einem Screenshot dekodiert verdunkelt der ausgelieferte Wert den Grund in der ersten Zeile unter dem
+Haarstrich von 252 auf 220 und klettert über 19 Zeilen zurück; dunkel 22 → 11 über 15 Zeilen.
+
+Drei Engines bei 1456 px: Chromium und WebKit gleich, Firefox hat keine Scroll-Timeline, der
+`@supports`-Wächter hält, und es bleibt beim schlichten Haarstrich — dieselbe Rückfallebene, auf der
+das Schrumpfen schon ruht.
+
+### 65. Nichts sagte, wie weit man ist
+
+Mehrere Seiten hier sind drei Bildschirme hoch, und nichts darauf sagte, wie viel noch kommt; das
+Inhaltsverzeichnis sagt, *was* kommt, was eine andere Frage ist. Jetzt füllt sich der Haarstrich von
+links: ein Pseudo-Element auf der Leiste, doppelte Linienbreite, von derselben Scroll-Timeline
+getrieben wie das Schrumpfen und der Schatten. Kein eigener Balken darüber oder darunter — das wäre
+die vierte waagerechte Linie in den obersten 60 px, und so viele Linien hat diese Vorlage nicht zu
+vergeben.
+
+Das `::after` existiert nur innerhalb des `@supports`-Wächters, Firefox bekommt also keinen bei
+irgendeiner Breite eingefrorenen Streifen (nachgemessen: gar kein Pseudo-Element). Auf einer Seite,
+die zu kurz zum Scrollen ist, ist die Timeline inaktiv und `scaleX(0)` zeigt nichts — richtig so, es
+gibt keinen Fortschritt zu melden. Bewegung im Sinne von `prefers-reduced-motion` ist nichts davon:
+die Linie läuft nicht von selbst, sie *ist* die Scroll-Position.
+
+**Beide Keyframe-Enden stehen ausgeschrieben, und das ist eine Reparatur, keine Ordnungsliebe.** Mit
+nur einem `to`-Keyframe ist der Startwert der eigene `scaleX(0)` des Elements, und WebKit löst
+diesen zugrundeliegenden Wert gegen den *bereits animierten* auf — der Fortschritt potenziert sich,
+und die Linie meldet das Quadrat: 6 % nach einem Viertel, 25 % nach der Hälfte, 57 % nach drei
+Vierteln. An beiden Enden richtig, dazwischen überall falsch, also genau die eine Form von falsch,
+die eine Fortschrittslinie nicht haben darf. Mit ausgeschriebenem `from` stimmen Chromium und WebKit
+an sechs Positionen auf drei Nachkommastellen überein.
+
+### 66. Die untere Ausblendung der rechten Spalte gab es nur im Dunkeln
+
+`--tpl-fade-mask-end` stand in `:root[saved-theme="dark"]`, und daran ist nichts schemaabhängig:
+eine Maske trägt nur Alpha, `black` heißt also in beiden Modi „deckend". Im hellen Modus war die
+Custom Property leer, `mask-image: var(--tpl-fade-mask-end)` damit zur Berechnungszeit ungültig, und
+die rechte Spalte kam mit `mask-image: none` heraus — die weiche Unterkante, um die herum die
+klebenden Panel-Überschriften gebaut sind, war für jeden, der die Seite hell liest, schlicht nicht
+da. Beim Durchsehen der Kommentare im selben Block aufgefallen, nicht beim Suchen: eine leere Custom
+Property ist in der Datei unsichtbar und im Browser stumm.
+
+### 67. Fünf Kommentare behaupteten eine Regel, die es nicht gibt
+
+„Eine Variablen-Überschreibung darf kein Komma tragen" stand in `variables.mjs` (dreimal),
+`styles/base.scss` (zweimal), `palette.mjs` und im README — und stimmt nicht. Das Komma-Verbot ist
+echt, gehört aber zu den *Frame*-Werten (`cssTrackValue` / `cssGapValue` in `schemas.ts`).
+`cssVariableOverride` verbietet genau `{`, `}`, `;`, `\`, `/*` und `*/`; der Leser in
+`styleService.ts` (`--([\w-]+)\s*:\s*([^;]+);`) kommt mit Kommas klar, und `--tpl-shadow` trägt seit
+jeher drei davon durch die App.
+
+Die Behauptung hat zwei Farben ihren Platz in der Variablen-Ansicht gekostet: `--tpl-rule-control`
+und `--tpl-surface-code` waren deswegen nach `styles/base.scss` gewandert. Beide sind zurück in
+`variables.mjs`, wo eine Farbe hingehört, `--tpl-surface-code` mit seinem dunklen Wert als
+`dark`-Feld statt als eigenem Block. 50 statt 48 Tokens, alle lebendig
+(`npm run check:tokens`); die 89 Kontrastpaare stehen unverändert.
+
+`palette.mjs` liest die beiden jetzt aus der Token-Liste statt `base.scss` mit einer Regex zu
+zerlegen — eine gemeinsame `tokenColour()` für beide, die genau zwei Formen versteht (`var(--x)` und
+einen zweifarbigen srgb-Mix) und bei allem anderen einen Fehler wirft statt zu raten.
+
+Was bleibt: der Test dafür, ob etwas nach `variables.mjs` gehört, ist **nicht**, welche Zeichen der
+Wert benutzt, sondern ob jemand ihn je ändern wollen würde. Eine Farbe, eine Länge, ein
+Schriftstapel — ja. Ein vierzeiliger Verlauf oder eine 400 Zeichen lange Data-URI — nein.
+
+### 68. Nach zwei Bildschirmen zeigt die Leiste den Namen, den man schon kennt — vorgemerkt
+
+Der Sticky-Header trägt oben wie unten den *Sitenamen*. Auf einer Seite, die drei Bildschirme hoch
+ist, ist das die eine Information, die man ohnehin hat, während die verloren gegangen ist, die man
+bräuchte: welcher Artikel das hier eigentlich ist. Die Überschrift ist längst oben raus, das
+Inhaltsverzeichnis in der rechten Spalte sagt nur, welcher *Abschnitt* kommt.
+
+Gewollt wäre: Sobald die `h1` des Artikels den Bildschirm verlässt, blendet die Leiste vom
+Sitenamen auf den Seitentitel um und beim Zurückscrollen wieder zurück. Das Zeitmaß dafür gibt es
+schon — `view-timeline` auf der Überschrift mit `animation-range: exit`, also derselbe Mechanismus
+wie bei Befund 64 und 65, mit demselben `@supports`-Wächter und derselben Rückfallebene (Firefox
+behielte schlicht den Sitenamen).
+
+Warum es hier steht und nicht im Diff: Es braucht `ArticleTitle` als zweite Komponente in der
+`brand`-Gruppe, also eine Änderung an `plugins.mjs` und `layout.mjs` und damit am Layout des
+Projekts — kein Stylesheet-Kniff. Zwei Dinge sind daran vorher zu messen und nicht zu raten: was
+die zusätzliche Komponente mit der Breite der Leiste macht, die bei 390 px ohnehin schon knapp ist
+(siehe Befund 28), und ob eine `view-timeline` auf einem Element funktioniert, das in einer anderen
+Frame-Fläche liegt als das animierte. Das ist ein Feature, kein Feinschliff, und gehört in einen
+eigenen Durchgang.
+
+### 69. Vier Korrekturen am Header, und drei davon waren an mir
+
+Der Durchgang aus 64/65 wurde am selben Tag nachgezogen. Was daran falsch war:
+
+**Die Haarlinie verschwand im Ruhezustand.** Das Argument — oben liegt nichts hinter der Leiste,
+also braucht sie dort keine Kante — ist richtig und trotzdem die falsche Antwort: eine Leiste ist
+eine Leiste, ob schon etwas unter ihr durchgelaufen ist oder nicht, und eine Kante, die kommt und
+geht, lenkt auf sich statt auf die Seite. Die Haarlinie steht jetzt auf jeder Scroll-Position.
+
+**Marke und Seitenname saßen nicht in der Mitte ihrer Zeile.** Quartz packt jede Komponente einer
+Gruppe in ein klassenloses `div` (`Flex.tsx`); die Gruppe zentriert diese Hüllen, und die Hülle war
+ein Blockkasten mit `min-height: 44px` — ihr Inhalt saß also oben. Gemessen bei 1456 px in Ruhe: die
+Mitten der Hüllen lagen bei y=30 gegen 30,5 der Leiste, die der Marke aber bei 21 und die des
+Seitennamens bei 22, beide neun Pixel zu hoch. Beim Schrumpfen wurde es schlechter statt besser,
+weil der Name kleiner wird und die Marke nicht: 15 gegen 12, also drei Pixel auch noch
+gegeneinander. Die Hüllen sind jetzt selbst zentrierende Flexboxen; alle drei Mitten liegen auf der
+der Leiste.
+
+**Die Bedienelemente wurden zusammengedrückt.** Die Untergrenze des Polsters war der kleinste Wert,
+der noch nach Polster aussah — und das ist die falsche Größe zum Optimieren: die vier Ziele sind
+44 px und schrumpfen nicht, also standen sie bei 2 px in einer Leiste, die kaum höher war als sie
+selbst. Jetzt 12 px oben in Ruhe und 8 px unten am Ende, die Leiste geht 69 → 61 px statt 61 → 49.
+
+**Der Schatten ist eine Linie geworden.** Er war als „kein Schatten wie bei den Overlays" gedacht
+und blieb trotzdem ein Schatten; diese Vorlage zeichnet mit Linien. Statt seiner blendet beim ersten
+Scroll-Pixel eine graue Spur ein — zwei Haarlinien stark, in `--tpl-rule-control`, also derselbe
+gemessene Ton wie jede Bedienelement-Kante — und der Fortschrittsbalken ist die *Füllung* dieser
+Spur statt einer freistehenden Linie darüber. Eine Linie, zwei Aufgaben; so hat ein
+Fortschrittsbalken immer schon ausgesehen. `--tpl-shadow-bar` ist damit wieder weg, 49 Tokens.
+
+Gemessen in Chromium und WebKit an sechs Scroll-Positionen: Höhe, Polster, Deckkraft der Spur und
+Füllstand auf drei Nachkommastellen gleich. Die Kante Pixel für Pixel aus dem Screenshot gelesen —
+hell `rgb(42, 78, 108)` bis zum Füllstand, danach `rgb(142, 141, 136)`, zwei Zeilen hoch, die
+Haarlinie vollständig verdeckt; dunkel `rgb(140, 184, 218)` und `rgb(119, 121, 125)`.
+
+### 70. Firefox 155 kann von alldem nichts — nachgewiesen, nicht vermutet
+
+`animation-timeline` ist die Grundlage für alle drei Bewegungen im Header (Schrumpfen, Spur,
+Fortschritt). Bisher stand hier „Firefox hat keine Scroll-Timeline", gestützt auf Playwrights
+Firefox 153. Weil das über eine Einstellung freigeschaltet sein kann und die Version des Rechners
+neuer ist, am 2026-09-06 an der **installierten** Firefox 155.0 nachgeprüft — headless, eigenes
+Profil, `CSS.supports` auf eine Seite geschrieben und die Seite fotografiert:
+
+    scroll() false | scroll(root block) false | view() false | @property true
+
+Damit ist es keine Frage der Version und keine der Einstellung: der Header ist dort statisch, mit
+12 px Polster und der Haarlinie, und die Fortschrittslinie fehlt ganz — der `@supports`-Wächter legt
+die beiden Pseudo-Elemente gar nicht erst an, damit nicht eine graue Linie festklebt oder ein
+Streifen bei irgendeiner Breite einfriert. Das ist die vollständige, richtige Rückfallebene und
+zugleich alles, was ohne Skript geht: eine reine CSS-Lösung für „wie weit ist gescrollt" gibt es
+außerhalb der Scroll-Timelines nicht, und die App hat keine Stelle, an der eine Vorlage ein Skript
+mitliefern könnte (weder ein Head-Schnipsel noch eine `custom.js`; die `snippets/` sind Markdown für
+die Layout-Box). Wer das in Firefox will, braucht ein Quartz-Plugin mit `afterDOMLoaded` — ein
+eigener Baustein, keine Stilfrage.
+
+Safari 26.6.2 ist **nicht** direkt gemessen: `safaridriver` verlangt „Automatisierung erlauben" in
+den Entwicklereinstellungen, und Playwrights WebKit 26.5 ist ein anderer Bau derselben Engine-Reihe.
+Dort stimmt alles auf drei Nachkommastellen mit Chromium überein. Was bleibt, ist eine Lücke im
+Nachweis, nicht ein Befund.
+
+### 71. Der Seitenname brach seit einem Tag um, und drei Kommentare beschrieben die Regel weiter
+
+Beim Zusammenlegen von `nav-page-title.scss` und `nav-toolbar.scss` in `nav-header.scss` am
+2026-09-05 (Befund „Eine Datei pro Komponente") ging der Block verloren, der den Sitenamen auf einer
+Zeile hält. Aufgefallen ist es einen Tag lang nicht, und zwar aus einem lehrreichen Grund: **drei
+Kommentare in derselben Datei beschrieben die Regel weiterhin** — die Header-Regel sagte „was
+stattdessen nachgibt, ist der Seitenname, der kürzt (unten)", die Mobil-Regel sagte, die Kürzung
+sei „jetzt unbedingt und steht oben bei der Brand-Gruppe". Wer die Datei las, las die Regel. Nur der
+Browser nicht.
+
+Kein Test hätte es gefangen. Der Name dieser Website ist kurz, also passt er überall; gemessen mit
+einem längeren Namen bei 620 px stand er auf **zwei Zeilen** in einer 44-px-Hülle — nichts lief
+über, nichts scrollte seitlich, jeder Durchlauf war grün. Es sah nur falsch aus, und das sieht nur
+ein Mensch mit einem anderen Namen im Kopf.
+
+Wiederhergestellt, und dabei zeigte sich, dass die alte Fassung zu kurz griff: `min-width: 0` allein
+am `h2` reicht nicht. Das automatische Minimum eines Flex-Elements ist seine Inhaltsbreite auf
+*jeder* Ebene, und zwischen Gruppe und Titel sitzt noch Quartz' eigene Hülle. Mit nur der einen
+Ebene stand die Leiste bei 620 px 64 px und bei 500 px 184 px über dem Fenster. Jetzt sind alle drei
+Ebenen genannt, die Brand-Gruppe darf schrumpfen (`flex: 0 1 auto`) und die Werkzeugleiste
+ausdrücklich nicht (`flex: 0 0 auto`) — ihre Kinder sind 44-px-Ziele.
+
+Der Griff ist `:has(.page-title)` statt des früheren `:has(.site-mark)`: eine Klasse dieses Namens
+gibt es im erzeugten Markup nicht, die Marke ist eine `.layout-box-mark`. Nach Inhalt und nicht nach
+Position, denn `:first-child` funktionierte heute und bräche an dem Tag, an dem ein drittes Ding in
+die Leiste kommt.
+
+Gemessen in drei Engines bei 1456, 780, 620 und 500 px, mit dem echten und einem langen Namen: eine
+Zeile überall, Auslassungspunkte wo nötig, kein seitliches Scrollen.
+
+### 72. Der Inhalt verschwand an einer harten Kante unter der Leiste
+
+Die rollenden Boxen lösen ihren Inhalt an den Rändern auf (`--tpl-fade-mask`), die Seite selbst tat
+es nicht: Text lief unter die undurchsichtige Leiste und war von einer Zeile zur nächsten weg. Jetzt
+macht der Seitenkörper dieselbe Geste — ein 24 px hoher Verlauf von `--light` nach durchsichtig,
+direkt unter der Leiste, `pointer-events: none`.
+
+Zwei Dinge daran sind gemessen statt entschieden.
+
+**Er darf statisch sein**, also ohne Scroll-Timeline, und das ist der ganze Gewinn: unter der Leiste
+beginnt das erste gezeichnete Element auf **jeder** Seite und bei 1456, 810 und 390 px genau 32 px
+tiefer. Ein Verlauf, der kürzer ist als dieser Abstand, ist im Ruhezustand unsichtbar und muss
+deshalb nicht ein- und ausgeblendet werden. Damit steht er außerhalb des `@supports`-Wächters — und
+ist das einzige Stück des Headers, das **auch Firefox bekommt** (siehe Befund 70).
+
+**Er brauchte ein Pseudo-Element, und es gab keins mehr.** Die Leiste hatte beide vergeben: `::before`
+an die graue Spur, `::after` an den Fortschritt. Zusammengelegt: die Linie ist jetzt *ein* Kasten mit
+zwei Hintergrundebenen — Akzent über Steuerton — und der Füllstand ist die `background-size` der
+Akzentebene, von 0 % auf 100 %. Ein `transform` war die Alternative und kann den Kasten nicht teilen,
+weil das Skalieren die Spur mitskaliert. Nachgemessen an fünf Scroll-Positionen: Chromium und WebKit
+interpolieren `background-size` auf drei Nachkommastellen gleich.
+
+Der Verlauf beginnt eine Haarlinie unter der Leiste statt an ihrer Kante, sonst deckte er das untere
+Pixel der Linie zu — `::after` kommt nach `::before` und malt darüber. Die klebende rechte Spalte
+setzt bei `--tpl-header-h + --tpl-space-lg` an, also 1 px unter dem Ende des Verlaufs; dort ist er
+bereits durchsichtig.
+
+`--tpl-page-fade` ist ein eigenes Token und nicht `--tpl-fade`: dieselbe Idee in zwei Maßstäben, und
+zusammengebunden ließe sich die weiche Kante einer Box nicht mehr einstellen, ohne die der Seite zu
+verschieben. 50 Tokens.
+
+### 73. Die Token-Prüfung konnte Pseudo-Elemente nicht sehen
+
+`scripts/check-tokens.mjs` beantwortet die Frage „bewegt dieses Token etwas", indem es die Variable
+in einer laufenden Seite verdreht und zählt, wie viele berechnete Werte sich ändern. Die Liste der
+Kästen dafür war `document.querySelectorAll('body *')` — und **ein Pseudo-Element steht da nicht
+drin**. Ein Token, das nur ein `::before` oder `::after` erreicht, konnte also keinen einzigen
+gemessenen Wert bewegen und kam als „liest niemand" heraus.
+
+Aufgefallen an `--tpl-page-fade` (Befund 72): Es setzt die Höhe des Verlaufs unter der Leiste, malt
+auf jeder Seite, und die Prüfung meldete null. Im selben Loch saßen drei weitere: die Linie am
+unteren Rand der Leiste liest `--tpl-rule-control`, `--secondary` und `--tpl-rule-width`, und alle
+drei kamen bisher nur deshalb durch, weil sie *woanders* auch noch gelesen werden.
+
+Die Kastenliste wird jetzt einmal pro Seite gebaut und enthält jedes Element plus jedes `::before`
+und `::after`, dessen `content` nicht `none` ist. Einmal statt bei jeder Messung, weil sonst jede
+der 50 Sonden alle Elemente zweimal zusätzlich fragen müsste; so kosten die paar Dutzend
+tatsächlich vorhandenen Pseudo-Elemente nichts Messbares. Dazu vier Eigenschaften mehr in der Liste
+(`backgroundSize`, `transform`, `insetBlockStart`, `insetBlockEnd`) — ein Token, das nur eine davon
+bewegt, wäre sonst weiter unsichtbar.
+
+Danach: 50 Tokens, keins tot, `--tpl-page-fade` mit 44 Treffern.
+
+### 74. Safari 26.6.2 direkt gemessen — und dabei fiel auf, dass die Seite außermittig steht
+
+Mit „Automatisierung erlauben" ließ sich Safari am 2026-09-06 endlich selbst befahren
+(`safaridriver` über den W3C-Endpunkt, Playwright kann Safari nicht). Ergebnis zuerst: **alles
+funktioniert.** `animation-timeline: scroll()` **und** `view()` werden unterstützt, die Leiste geht
+69 → 61 px, Polster 12 → 8, die Spur blendet über 8 px von 0 auf 1, der Füllstand läuft von 0 % auf
+100 %, der Verlauf ist 24 px hoch, kein Schatten, Marke/Name/Suche liegen alle auf derselben Mitte,
+und der Seitenname bleibt einzeilig und kürzt. Hell und dunkel je nachgemessen. Die frühere Meldung
+„in Safari nicht vollständig" ist damit erledigt; sie stammte aus der Zeit vor diesen Durchgängen.
+
+Dass `view()` da ist, ist nebenbei die Antwort auf eine offene Frage aus Befund 68: Der Seitentitel,
+der den Sitenamen ablöst, wäre in Chromium *und* Safari machbar.
+
+**Der Fund war ein anderer.** Im ersten Durchlauf meldete meine Messung 17 px waagerechten Überhang
+auf jeder Seite und bei jeder Fensterbreite — gleich groß bei 1500 wie bei 560 px, also kein Inhalt,
+der übersteht. Ursache: Quartz' eigenes Basis-CSS setzt
+
+    html { width: 100vw; overflow-x: hidden }
+
+und `100vw` **schließt eine klassische Scrollleiste ein**, der Inhaltskasten nicht. Auf einem
+Rechner, dessen Scrollleisten immer sichtbar sind, ist das Dokument also so breit wie das Fenster,
+sichtbar sind aber 17 px weniger — und die zentrierte Inhaltsspalte wird im falschen Kasten
+zentriert. Gemessen bei 1500 px Fenster: **30 px Rand links, 13 px rechts, die ganze Seite 17 px
+außermittig.** Quartz' `overflow-x: hidden` ist der Grund, warum daraus nie eine waagerechte
+Scrollleiste wurde (`scrollLeft` blieb bei 0) — nur der Versatz.
+
+Unter Playwright unsichtbar, in allen drei Engines, und in der Vorschau der App ebenso: dort gibt es
+überall Overlay-Scrollleisten, und dann ist `100vw` gleich der sichtbaren Breite. Es braucht einen
+Rechner, auf dem „Scrollleisten immer einblenden" steht — oder eine angeschlossene Maus, oder
+Windows und die meisten Linux-Desktops.
+
+Behoben mit `html { width: auto }` in `base.scss`: der Anfangswert, das Blockelement füllt damit
+schlicht den initialen umgebenden Block, und der ist das Fenster *ohne* Scrollleiste. Danach 22 px
+Rand auf beiden Seiten, Versatz 0. Quartz' `overflow-x: hidden` bleibt und tut weiter, was es tut.
+
+Die Lehre, und sie ist allgemein: **eine Overlay-Scrollleiste versteckt jeden `vw`-Fehler.** Was in
+`vw` gerechnet wird, muss auf einer Maschine mit klassischen Scrollleisten nachgesehen werden, und
+das ist genau die Maschinenklasse, die kein Prüfskript hier abdeckt.

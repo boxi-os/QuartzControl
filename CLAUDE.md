@@ -28,11 +28,18 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   i18next renders a missing key *as the key* rather than failing, so a gap is invisible until someone
   opens the one screen state that uses it (`publish.pages.saveSettings`, found in the alpha test, was
   missing from both files and therefore in perfect parity)
+- `npm run check:tokens -- [baseUrl]` — ändert jede Variable, die die Beispielvorlage schreibt, in
+  einer *laufenden* Seite und zählt, wie viele berechnete Werte sich bewegen. Existiert, weil ein
+  Token auf drei Arten wirkungslos sein kann, ohne dass die Datei es zeigt: niemand liest es, eine
+  ungeschichtete Regel gewinnt, oder das Zielelement hat die Eigenschaft direkt gesetzt (dann kommt
+  keine Vererbung an). Am 2026-09-06 waren so 4 von 53 Tokens tot. Besucht jede Seite auf zwei
+  Breiten mit fokussiertem Bedienelement, weil Fokus- und Breakpoint-Tokens sonst als tot gelten;
+  braucht einen laufenden Server (der Dev-Server der App genügt, das Skript liest nur)
 - `npm run template:example` — baut die Beispielvorlage (`scripts/example-template/`) in einem
   Wegwerf-Projekt auf und exportiert sie als `.qtpl`. Treibt dafür die **gebaute App** über
   Playwright und schreibt alles über `window.quartzGui.*`, also durch dieselben IPC-Pfade wie ein
   Klick — kein zweiter Frame-Codegen, kein zweiter SCSS-Writer. Phasen einzeln über
-  `--only 3,4,5`, die WCAG-Messung allein über `--check-contrast` (87 Paare, braucht weder App noch
+  `--only 3,4,5`, die WCAG-Messung allein über `--check-contrast` (89 Paare, braucht weder App noch
   Projekt). Den Rückweg geht `--sync`: Es holt die 30 Stylesheets und die Schnipsel aus dem Projekt
   zurück ins Repo, denn dort wird gearbeitet und die Kopie hier driftet sonst still (gemessen am
   2026-09-05). Config und Frames haben bewusst keinen Rückweg — sie entstehen aus `plugins.mjs`,

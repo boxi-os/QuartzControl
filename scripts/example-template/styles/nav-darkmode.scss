@@ -12,7 +12,7 @@ button.darkmode {
   // Same target as its neighbours - a row of controls with different heights reads as broken.
   min-width: var(--tpl-target);
   min-height: var(--tpl-target);
-  border: var(--tpl-rule-width) solid var(--tpl-rule-strong);
+  border: var(--tpl-rule-width) dotted var(--tpl-rule-control);
   border-radius: var(--tpl-radius-md);
   background: var(--light);
   transition: border-color var(--tpl-motion), background-color var(--tpl-motion);

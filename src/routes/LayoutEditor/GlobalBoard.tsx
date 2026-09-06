@@ -107,7 +107,7 @@ export default function GlobalBoard({
   const groupNames = Object.keys(config.layout?.groups ?? {})
   const nameCounts = duplicateNameCounts(config.plugins)
   const ranks = duplicateRanks(config.plugins)
-  const pageTypes = derivePageTypes(config.plugins)
+  const pageTypes = derivePageTypes(config)
 
   useEffect(() => {
     window.quartzGui.layoutFrames.getBreakpoints(projectPath).then(setBreakpointWidths)

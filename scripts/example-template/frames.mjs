@@ -16,26 +16,39 @@
 // var() reference cannot carry a fallback.
 //
 // ---------------------------------------------------------------------------------------------
-// The column system (2026-09-04)
+// The column system (2026-09-06)
 //
-// All three frames share one desktop grid: **twelve equal columns, 20px gutters, 20px outer
-// padding, capped at 1440px**. That is 1400px of usable width, eleven 20px gutters, and therefore
-// a column of (1400 - 220) / 12 = 98.33px. The three blocks snap to it:
+// All three frames share one desktop grid: **twelve columns, a 4rem gutter, 20px outer padding,
+// capped at 1440px** - and the two side columns are a fixed 300px rather than a share of what is
+// left. That is the one thing a fractional grid cannot express: with `1fr` everywhere, widening
+// the gutter narrows the sidebars, because eleven gutters come out of the same 1400px the columns
+// are dividing. Measured before this: raising the desktop gutter from 2rem to 4rem took the side
+// columns from 326px to 302px without anybody asking it to.
 //
-//     left  cols 1-3    3 × 98.33 + 2 × 20  = 335px
-//     body  cols 4-9    6 × 98.33 + 5 × 20  = 690px
-//     right cols 10-12  3 × 98.33 + 2 × 20  = 335px
+// A block that spans three tracks is three tracks *plus the two gutters between them*, so a fixed
+// 300px block is not three 100px tracks - it is three tracks of (300 - 2 x gutter) / 3, and that
+// is what `sideTrack` below computes. Written as a `calc()` rather than a number because the
+// gutter is written once, at the top of each breakpoint, and the arithmetic has to follow it.
 //
-// 690px of text at 1rem is about 72 characters, which is why no stylesheet caps the measure any
-// more (base.scss says so at length): the grid decides it, in one place.
+//     desktop  gutter 4rem = 64px   track (300 - 128) / 3 = 57.33px
+//     tablet   gutter 3rem = 48px   track (300 -  96) / 3 = 68px
 //
-// The right column is now present on *every* page type on desktop - listing pages and the error
-// page included, where it stays empty. That is deliberate: the content column then starts at the
-// same x on every page, so navigating from an article to its folder does not shift the text.
+// The middle six tracks stay `1fr` and take whatever is left: 1400 - 300 - 300 - 2 x 64 = 672px of
+// text on a 1440px page, about 70 characters at 1rem. That is why no stylesheet caps the measure
+// any more (base.scss says so at length): the grid decides it, in one place.
 //
-// Tablet keeps the twelve columns and drops the right *column*: `right` moves below the content
-// instead of vanishing, because a 1000px screen still wants a table of contents. Mobile is a
-// single column in reading order.
+// The right column is present on *every* page type on desktop - listing pages and the error page
+// included, where it stays empty. That is deliberate: the content column then starts at the same x
+// on every page, so navigating from an article to its folder does not shift the text. The same
+// reasoning is why all three frames now use the same gutter. They did not: `editorial` had been
+// moved to 4rem/3rem/1rem and `index` and `focus` still had 2rem/2rem/20px, so a folder page laid
+// its text out 32px further left than the article it linked to.
+//
+// Tablet keeps the twelve columns and the fixed left column and drops the right *column*: `right`
+// moves below the content instead of vanishing, because a 1000px screen still wants a table of
+// contents. Mobile is a single column in reading order, and there the tracks go back to `1fr` -
+// every area spans all twelve, so a fixed side track would only be a lower bound on the page
+// width.
 
 const SLOTS = ['header', 'left', 'right', 'beforeBody', 'pageBody', 'afterBody', 'footer']
 
@@ -56,18 +69,14 @@ const TWELVE = Array.from({ length: 12 }, () => '1fr')
 
 /** The box: same insets on all three sizes; the cap, the alignment and the gutter change. */
 //
-// The gutter went from 20px to 2rem on 2026-09-05. It changes the arithmetic of the whole page:
-// 1440 - 40 of inset leaves 1400, eleven gutters of 32 take 352, so a column is (1400-352)/12 =
-// 87.33px and the three blocks measure 3 x 87.33 + 2 x 32 = 326 / 6 x 87.33 + 5 x 32 = 684 / 326.
-// The inset stays at 20px: it is the distance to the edge of the window, not between two things.
-//
-// The phone keeps 20px, and that is not a taste decision. A twelve-column grid has eleven gutters
-// whatever its content does, and they set its minimum width: 11 x 32 + 40 of inset = 392px, which
-// is wider than a 390px screen. Measured before this line existed - every page scrolled sideways
-// by 18px. The column gutter is invisible there anyway, because on the phone every area spans all
-// twelve columns; only the row gutter is doing any work, and it keeps the full 2rem.
-const box = (maxWidth, align, columnGap = '2rem') => ({
-  columnSizes: TWELVE,
+// The phone keeps a 1rem gutter, and that is not a taste decision. A twelve-column grid has eleven
+// gutters whatever its content does, and they set its minimum width: at 2rem that is 11 x 32 + 40
+// of inset = 392px, which is wider than a 390px screen. Measured before this line existed - every
+// page scrolled sideways by 18px. The column gutter is invisible there anyway, because on the
+// phone every area spans all twelve columns; only the row gutter is doing any work, and it keeps
+// the full 2rem.
+const box = (maxWidth, align, columnGap, columnSizes) => ({
+  columnSizes,
   rowGap: '2rem',
   columnGap,
   maxWidth,
@@ -75,6 +84,51 @@ const box = (maxWidth, align, columnGap = '2rem') => ({
   paddingBlock: '20px',
   paddingInline: '20px'
 })
+
+/**
+ * Twelve tracks, of which the ones carrying a side column are fixed so that three of them plus the
+ * two gutters between them come to `SIDE_COLUMN`.
+ *
+ * `twoGutters` is twice the breakpoint's own `columnGap`, written as a CSS length - two gutters fit
+ * between three tracks. No comma appears anywhere: a frame track value may not contain one
+ * (schemas.ts).
+ *
+ * `both` decides whether the closing three are fixed as well, and that is not symmetry for its own
+ * sake. A fixed track is incompressible, so every one of them raises the grid's minimum width.
+ * Fixing 10-12 on the *tablet*, where the right column has moved below the text and those tracks
+ * are part of the body, cost 3 x 68px of floor for nothing: the grid could not go below
+ * 6 x 68 + 11 x 48 + 40 = 976px and every page scrolled 92px sideways in a 900px window - measured
+ * on all 32 pages of the sweep, in both colour schemes. There, only the left three are fixed.
+ */
+const SIDE_COLUMN = '300px'
+const sideTrack = (twoGutters) => `calc((${SIDE_COLUMN} - ${twoGutters}) / 3)`
+const fixedSides = (twoGutters, both) => {
+  const side = sideTrack(twoGutters)
+  const rest = both ? [side, side, side] : ['1fr', '1fr', '1fr']
+  return [side, side, side, '1fr', '1fr', '1fr', '1fr', '1fr', '1fr', ...rest]
+}
+
+/**
+ * The gutter per breakpoint, and why it is not one number.
+ *
+ * 4rem is the chosen value and the desktop uses it. The other two cannot: eleven gutters are the
+ * minimum width of a twelve-column grid whatever it contains, and they do not compress.
+ *
+ *   tablet, worst case 801px:  15px of scrollbar and 40px of inset leave 746. The left column is
+ *                              300px including two of its gutters, so 9 gutters + 300 <= 746, and
+ *                              the gutter cannot exceed 49.5px. 3rem = 48px is the largest step
+ *                              that fits; 4rem = 64px puts the grid at 916px in a 900px window.
+ *   mobile, worst case 390px:  11 gutters + 40 of inset <= 375, so the gutter cannot exceed 30px.
+ *                              4rem would be 744px of gutter alone. It is invisible there anyway -
+ *                              every area spans all twelve columns, so only the row gap works, and
+ *                              that one IS 2rem everywhere.
+ *
+ * Measured the hard way once already: 2rem on the phone scrolled every page sideways by 18px
+ * (BEFUNDE 34). What IS uniform is that all four frames now use the same three values.
+ */
+const DESKTOP_BOX = () => box('1440px', 'center', '4rem', fixedSides('8rem', true))
+const TABLET_BOX = () => box('100%', 'left', '3rem', fixedSides('6rem', false))
+const MOBILE_BOX = () => box('100%', 'left', '1rem', TWELVE)
 
 /**
  * editorial - the reading frame, used by content pages.
@@ -92,7 +146,7 @@ const editorial = {
       rows: 5,
       cols: 12,
       rowSizes: ['auto', 'auto', '1fr', 'auto', 'auto'],
-      ...box('1440px', 'center'),
+      ...DESKTOP_BOX(),
       placements: {
         'area-header': place(1, 1, 1, 12),
         'area-left': place(2, 1, 3, 3),
@@ -107,7 +161,7 @@ const editorial = {
       rows: 6,
       cols: 12,
       rowSizes: ['auto', 'auto', '1fr', 'auto', 'auto', 'auto'],
-      ...box('100%', 'left'),
+      ...TABLET_BOX(),
       placements: {
         'area-header': place(1, 1, 1, 12),
         'area-left': place(2, 1, 4, 3),
@@ -122,7 +176,7 @@ const editorial = {
       rows: 7,
       cols: 12,
       rowSizes: ['auto', 'auto', 'auto', '1fr', 'auto', 'auto', 'auto'],
-      ...box('100%', 'left', '20px'),
+      ...MOBILE_BOX(),
       placements: {
         'area-header': place(1, 1, 1, 12),
         'area-left': place(2, 1, 1, 12),
@@ -159,7 +213,7 @@ const index = {
       rows: 5,
       cols: 12,
       rowSizes: ['auto', 'auto', '1fr', 'auto', 'auto'],
-      ...box('1440px', 'center'),
+      ...DESKTOP_BOX(),
       placements: {
         'area-header': place(1, 1, 1, 12),
         'area-left': place(2, 1, 3, 3),
@@ -174,7 +228,7 @@ const index = {
       rows: 6,
       cols: 12,
       rowSizes: ['auto', 'auto', '1fr', 'auto', 'auto', 'auto'],
-      ...box('100%', 'left'),
+      ...TABLET_BOX(),
       placements: {
         'area-header': place(1, 1, 1, 12),
         'area-left': place(2, 1, 4, 3),
@@ -189,7 +243,7 @@ const index = {
       rows: 7,
       cols: 12,
       rowSizes: ['auto', 'auto', 'auto', '1fr', 'auto', 'auto', 'auto'],
-      ...box('100%', 'left', '20px'),
+      ...MOBILE_BOX(),
       placements: {
         'area-header': place(1, 1, 1, 12),
         'area-left': place(2, 1, 1, 12),
@@ -224,7 +278,7 @@ const focus = {
       rows: 3,
       cols: 12,
       rowSizes: ['auto', '1fr', 'auto'],
-      ...box('1440px', 'center'),
+      ...DESKTOP_BOX(),
       placements: {
         'area-header': place(1, 1, 1, 12),
         'area-left': place(2, 1, 1, 3),
@@ -239,7 +293,7 @@ const focus = {
       rows: 3,
       cols: 12,
       rowSizes: ['auto', '1fr', 'auto'],
-      ...box('100%', 'left'),
+      ...TABLET_BOX(),
       placements: {
         'area-header': place(1, 1, 1, 12),
         'area-left': place(2, 1, 1, 3),
@@ -254,7 +308,7 @@ const focus = {
       rows: 3,
       cols: 12,
       rowSizes: ['auto', '1fr', 'auto'],
-      ...box('100%', 'left', '20px'),
+      ...MOBILE_BOX(),
       placements: {
         'area-header': place(1, 1, 1, 12),
         'area-left': hidden,
@@ -268,7 +322,87 @@ const focus = {
   }
 }
 
-export const FRAMES = [editorial, index, focus]
+/**
+ * drawing - the two page types that are a picture: canvas and excalidraw.
+ *
+ * Both plugins ship a frame of their own, and both frames are the reason those pages were unusable.
+ * Measured on the built site before this existed:
+ *
+ *   * A canvas page fell back to quartz's built-in `full-width`, whose `.center` has no definite
+ *     height. `.canvas-page` and `.canvas-container` are `height: 100%` and resolve that against
+ *     nothing, so the box collapsed and everything else in the page - the header, the footer, the
+ *     "read on" box - was painted *over* the drawing rather than around it.
+ *   * An excalidraw page used the plugin's own `ExcalidrawFrame`, which renders no header at all.
+ *     There was no link home, no search, no theme switch and no breadcrumb: the only way out of the
+ *     page was the browser's back button. Its own answer to that is a burger button opening a
+ *     300px sidebar holding the *left* slot's components, which in this template are sized for a
+ *     335px column and were cut off at the window edge.
+ *
+ * So both page types get a frame of the site's own instead. It is `focus` without the reserved side
+ * columns: the bar at the top, the breadcrumb trail and the title, the drawing, whatever comes after
+ * it, the footer - each in its own row, at the same 1440px width as every other page, so the header
+ * lines up with the one on the page you arrived from. The drawing's height is not a grid question
+ * and is not set here; `page-canvas.scss` gives both containers a definite one, because `1fr` in a
+ * grid whose own height is auto is just the content's height, and the content's height is the thing
+ * that was missing.
+ *
+ * `left` and `right` are hidden here *and* emptied in layout.mjs: the frame stops them taking room,
+ * the empty positions stop them being built at all.
+ */
+const drawing = {
+  id: 'frame-drawing',
+  frameName: 'drawing',
+  areas: areas(),
+  breakpoints: {
+    desktop: {
+      rows: 5,
+      cols: 12,
+      rowSizes: ['auto', 'auto', '1fr', 'auto', 'auto'],
+      ...DESKTOP_BOX(),
+      placements: {
+        'area-header': place(1, 1, 1, 12),
+        'area-left': hidden,
+        'area-beforeBody': place(2, 1, 1, 12),
+        'area-pageBody': place(3, 1, 1, 12),
+        'area-afterBody': place(4, 1, 1, 12),
+        'area-right': hidden,
+        'area-footer': place(5, 1, 1, 12)
+      }
+    },
+    tablet: {
+      rows: 5,
+      cols: 12,
+      rowSizes: ['auto', 'auto', '1fr', 'auto', 'auto'],
+      ...TABLET_BOX(),
+      placements: {
+        'area-header': place(1, 1, 1, 12),
+        'area-left': hidden,
+        'area-beforeBody': place(2, 1, 1, 12),
+        'area-pageBody': place(3, 1, 1, 12),
+        'area-afterBody': place(4, 1, 1, 12),
+        'area-right': hidden,
+        'area-footer': place(5, 1, 1, 12)
+      }
+    },
+    mobile: {
+      rows: 5,
+      cols: 12,
+      rowSizes: ['auto', 'auto', '1fr', 'auto', 'auto'],
+      ...MOBILE_BOX(),
+      placements: {
+        'area-header': place(1, 1, 1, 12),
+        'area-left': hidden,
+        'area-beforeBody': place(2, 1, 1, 12),
+        'area-pageBody': place(3, 1, 1, 12),
+        'area-afterBody': place(4, 1, 1, 12),
+        'area-right': hidden,
+        'area-footer': place(5, 1, 1, 12)
+      }
+    }
+  }
+}
+
+export const FRAMES = [editorial, index, focus, drawing]
 
 /**
  * The project's own breakpoint widths - see docs/decisions/layout-frames.md, finding 3.

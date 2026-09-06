@@ -131,7 +131,7 @@ export default function LayoutEditor(): JSX.Element {
   // shortcut stays quiet rather than rewriting an unchanged file.
   useSaveCommand(tab !== 'frames' && dirty && status !== 'saving' ? save : null)
 
-  const availablePageTypes = useMemo(() => (config ? derivePageTypes(config.plugins) : []), [config])
+  const availablePageTypes = useMemo(() => (config ? derivePageTypes(config) : []), [config])
   // Raw keys present under layout.byPageType, regardless of whether they actually customize
   // anything - still lets "Override entfernen" clean up a stray empty entry left over from before
   // the selectPageType fix below, or from every individual toggle for a type being undone one at a

@@ -11,7 +11,7 @@
 export const PRESETS = [
   {
     id: 'tpl-minimal-lesbar-hell',
-    name: 'Minimal & lesbar — hell',
+    name: 'Example — hell',
     createdAt: '2026-09-04T00:00:00.000Z',
     baseThemeId: 'minimal',
     options: {
@@ -27,7 +27,7 @@ export const PRESETS = [
   },
   {
     id: 'tpl-minimal-lesbar-dunkel',
-    name: 'Minimal & lesbar — dunkel',
+    name: 'Example — dunkel',
     createdAt: '2026-09-04T00:00:00.000Z',
     baseThemeId: 'minimal',
     options: {

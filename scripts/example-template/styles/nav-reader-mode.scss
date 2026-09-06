@@ -7,7 +7,7 @@ button.readermode {
   justify-content: center;
   min-width: var(--tpl-target);
   min-height: var(--tpl-target);
-  border: var(--tpl-rule-width) solid var(--tpl-rule-strong);
+  border: var(--tpl-rule-width) dotted var(--tpl-rule-control);
   border-radius: var(--tpl-radius-md);
   background: var(--light);
   cursor: pointer;
@@ -25,6 +25,32 @@ button.readermode {
     stroke: var(--darkgray);
   }
 
+}
+
+// What the button is actually for, and on this site it did nothing at all.
+//
+// Quartz's own reader mode is one rule in the plugin's stylesheet:
+//
+//     :root[reader-mode=on] .sidebar.left, :root[reader-mode=on] .sidebar.right { opacity: 0 }
+//     :root[reader-mode=on] .sidebar.left:hover, … :hover { opacity: 1 }
+//
+// `.sidebar` is what quartz's *built-in* layout calls its two columns. A project with authored
+// frames has no such element - the areas are `.qgframe-area-left` and `.qgframe-area-right` - so
+// the rule matched nothing here. Measured: the toggle set `reader-mode="on"`, coloured itself in,
+// and both sidebars stayed exactly where they were. A control that changes only its own appearance
+// is worse than no control.
+//
+// Same gesture, same selectors as quartz would have used, on the elements this site has. Fading
+// rather than hiding, and coming back on hover, is quartz's design and the right one: nothing
+// moves, the measure does not change under the reader, and the navigation is one pointer away.
+:root[reader-mode="on"] :is(.qgframe-area-left, .qgframe-area-right) {
+  opacity: 0;
+  transition: opacity var(--tpl-motion);
+
+  &:hover,
+  &:focus-within {
+    opacity: 1;
+  }
 }
 
 // When reader mode is on, the state has to be visible on the control itself - otherwise the only

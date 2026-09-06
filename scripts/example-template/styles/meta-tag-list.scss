@@ -21,22 +21,49 @@ a.tag-link,
   border-radius: 999px;
   background: var(--tag-background);
   color: var(--tag-color);
-  border: var(--tpl-rule-width) solid transparent;
+  // Dotted already at rest, invisibly: the style has to match the hover state or the pill's edge
+  // changes shape under the pointer as well as colour.
+  border: var(--tpl-rule-width) dotted transparent;
   font-size: var(--tpl-text-xs);
   font-family: var(--font-interface);
   text-decoration: none;
   white-space: nowrap;
   transition: border-color var(--tpl-motion), background-color var(--tpl-motion);
 
+  // The lucide `tag` glyph instead of a hash, drawn the way every other icon in this template is:
+  // a box wearing the shape as a mask, coloured by `currentColor`. So it follows the pill's own
+  // colour into the hover state and into dark mode without a second copy, which a glyph in a font
+  // or a `background-image` would both need.
+  //
+  // Sized in `em`, not in --tpl-icon-sm: a tag appears at four sizes on this site (the list under
+  // a title, a properties row, a recent-notes entry, running text) and the mark has to follow the
+  // text it sits in rather than stay one absolute size.
   &::before {
-    content: "#";
-    opacity: 0.6;
-    margin-inline-end: 0.1em;
+    content: "";
+    flex: 0 0 auto;
+    width: 0.95em;
+    height: 0.95em;
+    // The mark's own margin rather than a `gap` on the pill: `gap` would also apply in running
+    // text, where the padding is gone and the two belong closer together.
+    margin-inline-end: 0.3em;
+    background-color: currentColor;
+    mask-image: var(--icon-tag);
+    -webkit-mask-image: var(--icon-tag);
+    mask-size: contain;
+    -webkit-mask-size: contain;
+    mask-position: center;
+    -webkit-mask-position: center;
+    mask-repeat: no-repeat;
+    -webkit-mask-repeat: no-repeat;
+    opacity: 0.75;
   }
 
+  // The accent used to draw this ring, and on a 20px pill a full-strength navy outline is a lot
+  // of statement for "the pointer is here" - the background already says it. The control tone
+  // says the same thing at a third of the weight.
   &:hover {
     background: var(--tag-background-hover);
-    border-color: var(--secondary);
+    border-color: var(--tpl-rule-control);
     text-decoration: none;
   }
 }

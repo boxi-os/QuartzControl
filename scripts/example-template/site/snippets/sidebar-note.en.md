@@ -1,8 +1,9 @@
-This handbook is the **example template** for QuartzControl. It shows what a
-template looks like that fills all ten parts.
+This handbook belongs to the template **Example** for QuartzControl. It explains
+the template and, at the same time, shows everything it can do.
 
-- [Formatting](/en/formatting/) — every Obsidian element
-- [Handbook](/en/handbook/) — four levels deep, for the explorer
-- [Examples](/en/examples/) — drafts, aliases, properties
+- [Getting started](/en/1-getting-started/) — for the beginning
+- [Formatting](/en/2-formatting/) — every Obsidian element
+- [Adapting](/en/6-adapting/) — colours, typefaces, measures
+- [Reference](/en/7-reference/) — glossary and limits
 
 The text here comes from a *Markdown file*, not from the configuration.

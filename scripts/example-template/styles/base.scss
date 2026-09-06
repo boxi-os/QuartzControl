@@ -15,6 +15,19 @@
 // the content box for its own reasons can opt out for itself and its children.
 html {
   box-sizing: border-box;
+
+  // Quartz sets `html { width: 100vw; overflow-x: hidden }`, and `100vw` includes a classic
+  // scrollbar while the content box does not. On a machine whose scrollbars always show, the
+  // document is therefore as wide as the window and the visible area is 17px narrower - so the
+  // centred content column is centred in the wrong box. Measured in Safari 26.6.2 at a 1500px
+  // window: 30px of margin on the left, 13px on the right, the whole page 17px off centre.
+  // Invisible under Playwright and in the app's own preview, because both use overlay scrollbars.
+  //
+  // `auto` rather than `100%`: it is the initial value, so the block simply fills the initial
+  // containing block, which is the viewport *minus* the scrollbar - the box the column should be
+  // centred in. Quartz's `overflow-x: hidden` stays and keeps doing its job; it is also the reason
+  // the 100vw never produced a sideways scrollbar, only the offset.
+  width: auto;
 }
 
 *,
@@ -46,12 +59,22 @@ html {
   --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2'/%3E%3C/svg%3E");
   --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z'/%3E%3Cpath d='M14 2v4a2 2 0 0 0 2 2h4'/%3E%3C/svg%3E");
   --icon-close: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E");
+  // lucide `tag`. The dot is `fill`ed rather than stroked and that is not cosmetic: only the alpha
+  // channel of a mask survives, so an unfilled 0.5-radius circle would leave a hole where the eye
+  // of the label belongs.
+  --icon-tag: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z'/%3E%3Ccircle cx='7.5' cy='7.5' r='1' fill='black' stroke='none'/%3E%3C/svg%3E");
 
   // The soft edge on a panel that scrolls. Fixed to the panel, not to its content, so the fade
-  // stays at the top and bottom edges while the content moves under it. Not a token in
-  // variables.mjs: a variable override there may not contain a comma, and this is nothing but
-  // commas. The distance it fades over is --tpl-fade, which IS a token - the same one the panels
-  // use as their padding, so the gradient and the space it needs can never drift apart.
+  // stays at the top and bottom edges while the content moves under it.
+  //
+  // Not a token in variables.mjs, and the reason written here until 2026-09-06 was wrong: it said
+  // an override may not contain a comma. That rule is real but belongs to *frame* values
+  // (`cssTrackValue` / `cssGapValue`, schemas.ts); `cssVariableOverride` forbids only braces, a
+  // semicolon, a backslash and comment markers, and --tpl-shadow has carried three commas through
+  // the app the whole time. The honest reason is the one above the icons: a four-line gradient is
+  // not something anyone edits in a text field, and the number inside it that IS worth editing is
+  // --tpl-fade, which is a token - the same one the panels use as their padding, so the gradient
+  // and the space it needs can never drift apart.
   --tpl-fade-mask: linear-gradient(
     to bottom,
     transparent 0,
@@ -59,6 +82,24 @@ html {
     black calc(100% - var(--tpl-fade)),
     transparent 100%
   );
+
+  // The same fade with only its lower half. The right column needs this one rather than the
+  // two-ended mask above: its panel headings stay put while their contents scroll under them
+  // (see "the right column"), so a top fade would leave a permanently half-dissolved heading.
+  // Nothing ever appears above a heading there, so there is nothing at the top edge to fade.
+  //
+  // In the light `:root` and not in the dark block, which is where it was written and where it did
+  // not belong: a mask carries only alpha, so `black` here means "opaque" in both schemes and
+  // there is nothing scheme-dependent about it. Measured before the move - in light mode the
+  // custom property was empty, `mask-image: var(--tpl-fade-mask-end)` was therefore invalid, and
+  // the right column computed `mask-image: none`. The soft lower edge existed in dark mode only.
+  --tpl-fade-mask-end: linear-gradient(
+    to bottom,
+    black 0,
+    black calc(100% - var(--tpl-fade)),
+    transparent 100%
+  );
+
 }
 
 /* ------------------------------------------------------------------ the sticky header */
@@ -77,12 +118,17 @@ html {
 // Measured before this was px: the header had `padding-block: 0px` and a 16px title in Firefox -
 // smaller than its own shrunken state, because both declarations had been thrown away.
 //
-// 8px and 22.4px are --tpl-space-xs and --tpl-text-xl at the root font size. They are only the
+// 12px and 22.4px are --tpl-space-sm and --tpl-text-xl at the root font size. They are only the
 // fallback for a browser without scroll timelines; the keyframes below still use the tokens.
+//
+// Two lengths and nothing else. What the bar's *edge* does over the same scroll - a grey track
+// fading in and an accent fill following the scroll along it - is in nav-header.scss under "the
+// edge once the page moves", because it touches only properties that rule owns and no shared
+// token. These two are here because the right column reads --tpl-header-h to stick below the bar.
 @property --tpl-header-pad {
   syntax: "<length>";
   inherits: true;
-  initial-value: 8px;
+  initial-value: 12px;
 }
 
 @property --tpl-header-title {
@@ -95,13 +141,18 @@ html {
   --tpl-header-h: calc(var(--tpl-target) + 2 * var(--tpl-header-pad) + var(--tpl-rule-width));
 }
 
+// 12px down to 8px, not 8px down to 2px. The floor was the smallest number that still looked like
+// padding, and it is the wrong thing to optimise: the four controls are 44px targets that do not
+// shrink, so at 2px they sat in a bar barely taller than themselves and read as crammed into it
+// rather than placed in it. Measured at the old floor - 2px above and 3px below each control,
+// the extra pixel being the hairline. Now 8 and 9, and the bar still gives up 8px on the way down.
 @keyframes tpl-header-shrink {
   from {
-    --tpl-header-pad: var(--tpl-space-xs);
+    --tpl-header-pad: var(--tpl-space-sm);
     --tpl-header-title: var(--tpl-text-xl);
   }
   to {
-    --tpl-header-pad: var(--tpl-space-3xs);
+    --tpl-header-pad: var(--tpl-space-xs);
     --tpl-header-title: var(--tpl-text-base);
   }
 }
@@ -131,13 +182,12 @@ html {
 // Below 800px neither one scrolls: the tree becomes a full-height drawer and the right column is
 // laid out under the article.
 @media (min-width: 801px) {
-  .explorer-content,
+  ul.explorer-ul,
   .qgframe-area-right {
     overflow-y: auto;
     overscroll-behavior: contain;
     mask-image: var(--tpl-fade-mask);
     -webkit-mask-image: var(--tpl-fade-mask);
-    scrollbar-width: thin;
 
     // The padding is what makes the fade honest, and it is exactly as deep as the fade. At the top
     // of the list the first row then sits below the gradient instead of inside it, and at the
@@ -159,14 +209,98 @@ html {
   //   * Firefox does not resolve it - the parent's height is auto with a max - so the list grows
   //     to its full 688px and the *box* scrolls instead.
   //
-  // Measured on the same page in both: `scrollHeight - clientHeight` was 148px, but on two
-  // different elements. Everything above - the mask, the padding, the contained overscroll - sits
-  // on `.explorer-content`, so the list gives up its cap and the box is the one scroller
-  // everywhere.
+  // The first answer to that was to cap `.explorer-content` and let the list give up its own cap,
+  // so the box scrolled in both. It settled the browser difference and broke something else: the
+  // plugin saves and restores the tree's scroll position across a page change, and the element it
+  // reads is the *list*
+  //
+  //     prenav: sessionStorage.setItem("explorerScrollTop", document.querySelector(".explorer-ul").scrollTop)
+  //     render: let l = sessionStorage.getItem("explorerScrollTop"); if (l) n.scrollTop = parseInt(l, 10)
+  //             else n.querySelector(".active")?.scrollIntoView({ behavior: "smooth" })
+  //
+  // With the box scrolling, that read 0 every time - and because `"0"` is a truthy string, the
+  // else branch never ran either, so neither the saved position nor the current page was scrolled
+  // to. Measured: click a file four folders down, and the tree came back at the top on every
+  // navigation. So the list is the scroller again, and the browser difference is settled the other
+  // way instead: an absolute `max-height` on the list itself, which Firefox resolves as readily as
+  // Chrome. `.explorer-content` keeps `overflow: visible` and is only the box the fold acts on.
   ul.explorer-ul {
-    max-height: none;
+    max-height: 60vh;
+  }
+
+  .explorer-content {
     overflow: visible;
   }
+}
+
+/* ----------------------------------------------- the scrollbar of a box, on demand */
+
+// A box that scrolls shows its bar while the pointer is in it, and not otherwise.
+//
+// What is *not* possible, since it was the first idea: there is no CSS for "while scrolling". The
+// operating system does that - macOS' overlay scrollbars fade on their own - and a stylesheet has
+// no event to hang it on. `:hover` is the closest thing that is not a script, and it is close
+// enough: a bar you cannot see is one you were not reaching for.
+//
+// The *width* stays `thin` at all times and only the **colour** changes. The obvious version -
+// `scrollbar-width: none` at rest, `thin` on hover - was written first and measured, and it fails
+// in two different ways at once:
+//
+//   Chrome    the content narrowed from 300px to 289px on hover, so the whole panel reflowed
+//             under the pointer. `scrollbar-gutter: stable` does not save it: the gutter it
+//             reserves is *the width of the scrollbar*, and with `scrollbar-width: none` that
+//             width is zero.
+//   Firefox   nothing happened at all - the computed value stayed `none` through the hover.
+//             Gecko settles a scroll container's scrollbar width when it builds the box and does
+//             not restyle it for a hover.
+//   WebKit    worked, being the only one of the three with an overlay bar that costs no width.
+//
+// A colour has neither problem: the gutter is the same at rest and on hover, so nothing moves, and
+// a repaint is something all three do. `transparent transparent` is thumb and track.
+//
+// `:focus-within` alongside `:hover`, because tabbing into a list is also a reason to see how long
+// it is.
+//
+// The list is every box in this build that was *measured* scrolling on its own - the tree, the
+// mobile drawer, the right column, the backlinks box (quartz caps that one, not this template),
+// the search results and a board column. Two deliberate absences. The page's own scrollbar is the
+// one bar that says how long the document is, and nobody should have to find it first. And the
+// horizontal scrollers - code blocks, wide tables, KaTeX displays, the board - keep their bar
+// because sideways scrolling is the thing nobody expects, so its only sign has to be visible.
+.qgframe-area-right,
+ul.explorer-ul,
+.explorer-content,
+.backlinks,
+.results-container,
+.bases-board-column-body {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+
+  &:hover,
+  &:focus-within {
+    scrollbar-color: var(--tpl-rule-control) transparent;
+  }
+}
+
+/* ------------------------------------------------- one line for every panel heading */
+
+// Both side columns begin with a panel, and a panel begins with a heading - but two of those
+// headings are also *controls* (the explorer's and the table of contents', which fold their panel)
+// and therefore 44px tall, while the rest are plain `<h3>`s. Measured at 1440px on a page with no
+// outline: "Explorer" sat at y=134 and "Graphansicht" at 121, because the button centres its text
+// in 44px and the heading does not.
+//
+// So every panel heading gets the same line box, whether or not it is a button. The three that are
+// not are named here rather than in their own files because the point of the rule is that they
+// agree with each other; three separate copies of one number is how they stop agreeing. Their
+// typography stays where it belongs, in aside-*.scss.
+.backlinks > :is(h1, h2, h3),
+.graph > :is(h1, h2, h3),
+.recent-notes > :is(h1, h2, h3) {
+  display: flex;
+  align-items: center;
+  min-height: var(--tpl-target);
+  margin-block: 0;
 }
 
 /* ------------------------------------------------------------- jumping under the header */
@@ -291,16 +425,50 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+// The one rule that makes both leading tokens do anything at all.
+//
+// Quartz's own base.scss hard-codes a leading in four places:
+//
+//     tbody, li, p            { line-height: 1.6rem }   // 25.6px
+//     a.internal              { line-height: 1.4rem }   // 22.4px
+//     <table wrapper> > *     { line-height: 2rem }     // 32px, so thead
+//
+// A paragraph, a list item and a table body therefore carry their own leading, and an inherited
+// one - which is all a rule on `body` or on a frame area ever produces - cannot reach them. Every
+// token this template set was landing on the elements *between* the text and the page, and the
+// text itself was 25.6px everywhere. Measured on the built site: an explorer row 14px on 25.6px
+// (ratio 1.83), the date under a recent note 12.5px on 25.6px (2.05), a footer paragraph the same;
+// and `--tpl-leading-normal` was equally dead on the article, where its 1.65 was quietly rendering
+// as Quartz's 1.6rem. Both numbers had been decorative since the day they were written.
+//
+// `inherit` is the whole fix, and it is one line: it hands those three elements back to whatever
+// their context says. Unlayered, so it beats `@layer quartz-base` whatever the specificity - the
+// rule this template rests on everywhere. Anything that genuinely wants its own leading still says
+// so and still wins, because a rule naming a class beats a rule naming an element (the code block's
+// 1.55, the breadcrumb separator's 1, mermaid's `normal`).
+// Measured before this rule, on one built page: an explorer row 14px on 25.6px (ratio 1.83), the
+// date under a recent note 12.5px on 25.6px (2.05), a footer paragraph the same, a table whose
+// header rows were 32px while its body rows were 22.4px, and an internal link 22.4px inside a
+// 25.6px paragraph.
+p,
+li,
+tbody,
+thead,
+tfoot,
+a.internal {
+  line-height: inherit;
+}
+
 // Small type gets a tighter leading than the article does.
 //
-// 1.65 is a body ratio: it is measured for a 1rem line running across six columns. The same number
-// at 0.875rem in a three-column sidebar puts almost 21px between two lines that are 14px tall, and
-// a three-line paragraph stops reading as a paragraph - which is precisely how the note in the
-// sidebar looked. The three areas that are made of small type say so once, here, instead of every
-// component in them repeating it.
+// A body ratio is measured for a 1rem line running across six columns. The same number at 0.875rem
+// in a three-column sidebar puts over 20px between two lines that are 14px tall, and a three-line
+// paragraph stops reading as a paragraph - which is precisely how the note in the sidebar looked.
+// The three areas that are made of small type say so once, here, instead of every component in
+// them repeating it.
 //
 // The article keeps --tpl-leading-normal; anything inside it that drops to --tpl-text-sm and wants
-// the tighter ratio asks for it at the point where it changes size.
+// the tighter step asks for it at the point where it changes size.
 .qgframe-area-left,
 .qgframe-area-right,
 .qgframe-area-footer {
@@ -311,8 +479,11 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--headerFont);
   color: var(--dark);
   line-height: var(--tpl-leading-tight);
-  // A heading's space belongs above it, not below: the gap tells you what the heading owns.
-  margin-block: var(--tpl-space-xl) var(--tpl-space-xs);
+  // A heading's space belongs above it, not below: the gap tells you what the heading owns. 40px
+  // over 12px, and the 12 has to stay well under the 24 that separates two blocks - the moment the
+  // two are close, a heading stops belonging to the text under it and starts floating between two
+  // paragraphs. Measured: 8px was the previous value and read as attached rather than as a lead-in.
+  margin-block: var(--tpl-space-xl) var(--tpl-space-sm);
   font-weight: 600;
   letter-spacing: -0.011em;
 }
@@ -437,13 +608,60 @@ h6 {
 //
 // The fade at both ends comes from the rule further up; the components inside give up their own
 // height caps in aside-toc.scss, because the scrolling now happens one level out.
+// The fade padding is also why the two side columns did not start at the same height. The shared
+// rule above gives a scrolling panel --tpl-fade of padding at each end so its first and last line
+// clear the gradient; the left column has no such padding, because there the padding sits on the
+// tree inside it. Measured at 1440px: "Explorer" at y=113, "Inhaltsverzeichnis" at y=133 - exactly
+// the fade. Here the top padding goes away entirely rather than being compensated, because the top
+// of this column no longer fades (see the headings below), and the two columns then begin on the
+// same line by themselves.
 @media (min-width: 801px) {
   .qgframe-area-right {
     position: sticky;
     // Below the header, not under it. --tpl-header-h follows the header as it shrinks, so the
     // column moves up with it instead of leaving a gap that grows on every scroll.
-    top: calc(var(--tpl-header-h) + var(--tpl-space-md));
+    top: calc(var(--tpl-header-h) + var(--tpl-space-lg));
     align-self: start;
-    max-height: calc(100dvh - var(--tpl-header-h) - 2 * var(--tpl-space-md));
+    max-height: calc(100dvh - var(--tpl-header-h) - 2 * var(--tpl-space-lg));
+    // Only the lower edge fades, and only the lower edge is padded: the upper one is covered by a
+    // heading that stays put.
+    mask-image: var(--tpl-fade-mask-end);
+    -webkit-mask-image: var(--tpl-fade-mask-end);
+    padding-block: 0 var(--tpl-fade);
+  }
+
+  // Scrolling *inside* the column used to take everything with it - the panel's own heading
+  // included, up to the line under the header. Measured: with the pointer over the outline, the
+  // words "INHALTSVERZEICHNIS" travelled to 10px below the bar and dissolved there, and what was
+  // left was a list of headings with nothing saying what the list was.
+  //
+  // The left column never had that problem: the explorer's heading is a sibling of the tree, not a
+  // row inside it, so the tree scrolls and the word "Explorer" stays. This gives the right column
+  // the same behaviour with the means available - each panel heading sticks to the top of the
+  // scrollport, and the next one pushes it out as it arrives.
+  //
+  // The opaque ground is what makes it work rather than decoration: a sticky heading with a
+  // transparent background has the list sliding through its letters. It is also why the top of
+  // this column no longer needs a fade - nothing can appear above a heading any more.
+  .qgframe-area-right :is(.toc-header, .backlinks > h3, .graph > h3) {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--light);
+
+    // And a short wash under it, because an opaque edge alone cuts a row in half: the outline's
+    // rows are 30px and the heading is 44, so whatever is passing under it is sliced through the
+    // middle of its letters and reads as a strikethrough. Measured on "Struktur und Rhythmus" at
+    // scroll 174 of the column. The gradient dissolves the same row instead - the same move the
+    // panel makes at its lower edge, in the one place a mask on the scroller cannot reach.
+    &::after {
+      content: "";
+      position: absolute;
+      inset-inline: 0;
+      inset-block-start: 100%;
+      height: var(--tpl-fade);
+      background: linear-gradient(to bottom, var(--light), transparent);
+      pointer-events: none;
+    }
   }
 }

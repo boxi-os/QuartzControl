@@ -7,8 +7,19 @@ article {
     color: var(--gray);
   }
 
+  // The gap between one block and the next, and it is one number for every kind of block.
+  //
+  // Measured before this: a paragraph was followed by 16px while a blockquote, a figure, a callout
+  // and a code block were followed by 24px. At a 25.6px line the 16 is 0.63 of a line - too little
+  // to end a paragraph with, so two of them read as one, and inconsistent with the four block types
+  // that already had it right. 24px is 0.94 of a line: the blank line a reader expects, and no
+  // more. The scale stays three-valued and says what it means:
+  //
+  //     40px (--tpl-space-xl)  before a heading   - the heading belongs to what follows it
+  //     24px (--tpl-space-lg)  between two blocks - one blank line
+  //      8px (--tpl-space-xs)  heading to its text, and between two list items
   p {
-    margin-block: 0 var(--tpl-space-md);
+    margin-block: 0 var(--tpl-space-lg);
   }
 
   /* ------------------------------------------------------------------------- links */
@@ -53,11 +64,15 @@ article {
   ul,
   ol {
     padding-inline-start: var(--tpl-space-lg);
-    margin-block: 0 var(--tpl-space-md);
+    margin-block: 0 var(--tpl-space-lg);
   }
 
+  // 8px between two items, and the reason it is not more: this margin collapses with the list's
+  // own, so whatever stands here is also the smallest gap a list can have above and below it. At
+  // 8px the items are separated - four was not enough to see at a 25.6px line - and the 24px the
+  // block before it sets still wins the collapse.
   li {
-    margin-block: var(--tpl-space-2xs);
+    margin-block: var(--tpl-space-xs);
 
     &::marker {
       color: var(--gray);

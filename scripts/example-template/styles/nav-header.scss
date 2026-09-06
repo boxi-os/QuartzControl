@@ -48,8 +48,11 @@
   justify-content: space-between;
   align-items: center;
   gap: var(--tpl-space-sm);
-  // The edge in its resting state, and the fallback for a browser without scroll timelines. What
-  // it becomes once the page moves is below, under "the bar lands".
+  // The hairline, at every scroll position and in every browser. It was made to disappear at the
+  // top of the page on 2026-09-06 - the argument being that nothing is behind the bar up there -
+  // and taken back the same day: the bar is a bar whether or not anything has scrolled under it
+  // yet, and an edge that comes and goes draws attention to itself rather than to the page. What
+  // is *added* once the page moves is below, under "the edge once the page moves".
   border-block-end: var(--tpl-rule-width) solid var(--tpl-rule);
   // Sticky on every width, not only on a phone. The four controls and the way back to the home
   // page are the things a reader reaches for in the middle of a long article, and this site has
@@ -69,104 +72,91 @@
   padding-block: var(--tpl-header-pad);
 }
 
-/* --------------------------------------------------------------------- the bar lands */
+/* ------------------------------------------------------- the edge once the page moves */
 
-// At the top of the page the bar has nothing under it, and a line under it then separates it from
-// its own first paragraph for no reason. Once the page moves, body text is running underneath and
-// the bar has to say so. So the edge carries the state:
+// Two things ride on the bottom edge, both driven by the document's own scroll:
 //
-//   at rest    no line at all, no shadow - the bar is part of the page
-//   scrolled   the hairline, plus --tpl-shadow-bar
+//   a track   a grey line, two hairlines thick, that fades in as soon as the page moves. This is
+//             what says "text is running underneath me". It was a shadow until 2026-09-06 and a
+//             line is the better answer here: this template draws with lines, and a shadow under a
+//             full-width bar reads as a drop shadow on a photograph rather than as depth.
+//   a fill    the same line in the accent colour, filling from the left with how far down the
+//             document you are. Several pages here are three screens tall and nothing on them said
+//             how much was left; the table of contents says what is *coming*, a different question.
 //
-// This is the second half of what shrinking should have been doing on its own. Measured before:
-// the bar goes 61px -> 49px between scrollY 0 and 64, which is nearly the whole budget it has (the
-// four controls are 44px and stay 44px), and *nothing else* changed - same line, no shadow, so the
-// only signal was 12px of height that nobody watches for.
+// One line doing both jobs rather than two stacked: the track is the unfilled part of the progress
+// line, which is what a progress line has always looked like. A second bar above or below would be
+// the fourth horizontal line in the top 60px of the page, and this template does not have that
+// many lines to spend.
 //
-// A range of its own, and much shorter than the shrink's 4rem: the height may take a while to
-// settle, but "something is behind me" is true from the first pixel. --tpl-space-xs is 8px.
+// At rest neither is visible - the track is transparent, the fill is scaled to nothing - and what
+// remains is the 1px hairline above, which the bar keeps at every scroll position.
 //
-// Two properties in the keyframes rather than a registered 0-1 number that everything else reads:
-// both of them are animatable as they are, and a number would need a color-mix() around each use
-// to turn itself back into a colour. `box-shadow` interpolates layer by layer and pads the shorter
-// list with a transparent layer, which is exactly the from-state we want anyway.
+// Track is ::before and fill is ::after so the fill paints over the track: both are positioned,
+// neither carries a z-index, so document order decides.
 //
-// The border WIDTH never changes, only its colour - --tpl-header-h is 44px of control plus padding
-// plus that one pixel (base.scss), and a border that comes and goes would move the right column
-// with it.
-@keyframes tpl-header-land {
-  from {
-    border-block-end-color: transparent;
-    box-shadow: none;
-  }
-  to {
-    border-block-end-color: var(--tpl-rule);
-    box-shadow: var(--tpl-shadow-bar);
-  }
-}
-
-// Behind the same guard as the shrink in base.scss, and for the same measured reason: without a
-// timeline the shorthand runs as a 0s animation and `fill: both` lands on the *end* keyframe, so
-// the bar would sit permanently shadowed at the top of the page in Firefox. With the guard those
-// browsers keep the plain hairline above and never grow a shadow, which is the honest fallback.
+// Only inside the guard, and that is the whole degradation story: without a scroll timeline
+// neither pseudo-element is created, so a browser that cannot drive them does not get a grey line
+// stuck on or a stripe frozen at an arbitrary width - it gets the plain hairline. On a page too
+// short to scroll the timeline is inactive, the animations do not apply, and the same is true.
+//
+// Nothing here is motion in the sense `prefers-reduced-motion` means: neither travels on its own,
+// they are the scroll position.
 @supports (animation-timeline: scroll()) {
-  .qgframe-area-header,
-  #quartz-body > .header {
-    animation: tpl-header-land linear both;
-    animation-timeline: scroll(root block);
-    animation-range: 0 var(--tpl-space-xs);
-  }
-}
-
-/* ------------------------------------------------------------- how far through you are */
-
-// The same edge, doing a second job: it fills from the left as the document scrolls.
-//
-// This site has several pages three screens tall, and until now nothing on them said how much was
-// left - the table of contents says what is coming, which is a different question. A progress line
-// is the cheapest possible answer: no new furniture, no space taken, it rides on a line that is
-// already there.
-//
-// Deliberately not a bar of its own above or below the header. That would be a fourth horizontal
-// line in the top 60px of the page (bar, hairline, breadcrumb trail) and this template does not
-// have that many lines to spend. Twice the hairline's width so it reads as the edge *thickening*
-// rather than as a new object sitting on it, and it covers the hairline exactly rather than
-// hanging under it.
-//
-// Only inside the guard, and that is the whole degradation story: without a scroll timeline the
-// pseudo-element is never created, so a browser that cannot drive it does not get a stripe frozen
-// at some arbitrary width. On a page too short to scroll the timeline is inactive, the animation
-// does not apply, and `scaleX(0)` leaves nothing to see - which is right, because there is no
-// progress to report.
-//
-// Nothing here is motion in the sense `prefers-reduced-motion` means: the line does not travel on
-// its own, it *is* the scroll position. There is nothing to suppress.
-@supports (animation-timeline: scroll()) {
+  .qgframe-area-header::before,
   .qgframe-area-header::after {
     content: "";
     position: absolute;
-    // The bar is `position: sticky` and therefore the containing block for this.
+    // The bar is `position: sticky` and therefore the containing block for both.
     inset-block-end: calc(-1 * var(--tpl-rule-width));
     inset-inline: 0;
+    // Twice the hairline, so the edge reads as *thickening* rather than as a new object sitting on
+    // it, and so it covers the hairline exactly instead of hanging under it.
     height: calc(2 * var(--tpl-rule-width));
+    pointer-events: none;
+    animation-timeline: scroll(root block);
+  }
+
+  .qgframe-area-header::before {
+    background: var(--tpl-rule-control);
+    opacity: 0;
+    animation-name: tpl-header-track;
+    animation-fill-mode: both;
+    animation-timing-function: linear;
+    // Its own range, and much shorter than the shrink's: the height may take a while to settle,
+    // but "something is behind me" is true from the first pixel. --tpl-space-xs is 8px.
+    animation-range: 0 var(--tpl-space-xs);
+  }
+
+  .qgframe-area-header::after {
     background: var(--secondary);
     // `left`, not a logical keyword - transform-origin has none. Both languages on this site read
     // left to right; an RTL translation would want `right` here and that is the one line it costs.
     transform-origin: left center;
     transform: scaleX(0);
-    pointer-events: none;
-    animation: tpl-header-progress linear both;
-    animation-timeline: scroll(root block);
+    animation-name: tpl-header-progress;
+    animation-fill-mode: both;
+    animation-timing-function: linear;
+  }
+}
+
+@keyframes tpl-header-track {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
   }
 }
 
 // Both ends written out, and that is not tidiness. With only a `to` keyframe the start value is
-// the element's own underlying `scaleX(0)` - and WebKit resolves that underlying value against the
+// the element's own underlying value - and WebKit resolves that underlying value against the
 // *already animated* one, so the progress compounds and the line reads the square of how far you
 // are: 6% at a quarter of the way down, 25% at half, 57% at three quarters. Right at both ends,
 // wrong everywhere in between, which is the one shape of wrong a progress line may not have.
 // Measured at six positions in all three engines; with the `from` spelled out, WebKit and Chromium
-// agree to three decimals.
+// agree to three decimals. The track's keyframes are written out for the same reason.
 @keyframes tpl-header-progress {
   from {
     transform: scaleX(0);
@@ -174,42 +164,6 @@
 
   to {
     transform: scaleX(1);
-  }
-}
-
-// The two groups, told apart by what is inside them: quartz writes the same `flex-component` class
-// on every group it renders and puts the group's own name nowhere in the markup (Flex.tsx), so
-// `:has()` is the handle. Reading them by position (`:first-child` / `:last-child`) would work
-// today and break the day a third thing joins the bar.
-//
-// The brand gives up width first - it is the one part of the bar that is also the first line of
-// every page below it - so it may shrink and the name inside it may truncate. The toolbar may not:
-// its children are 44px targets that must stay 44px.
-.qgframe-area-header > .flex-component:has(.site-mark),
-#quartz-body > .header > .flex-component:has(.site-mark) {
-  min-width: 0;
-  flex: 0 1 auto;
-
-  > * {
-    min-width: 0;
-  }
-}
-
-.qgframe-area-header > .flex-component:has(.search),
-#quartz-body > .header > .flex-component:has(.search) {
-  flex: 0 0 auto;
-}
-
-// The site name truncates rather than wrapping, at every width and not only in the app bar. It is
-// a single line by nature: a logotype whose second half drops below the first is a broken logo.
-.qgframe-area-header .page-title {
-  min-width: 0;
-
-  a {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 }
 
@@ -237,9 +191,8 @@
     padding-inline-start: calc(var(--tpl-target) + var(--tpl-space-sm));
     background: var(--light);
     // The bar sits above the article as it scrolls past, so it needs its own edge. Restated here
-    // because this rule also restates the padding; "the bar lands" above then takes it over from
-    // the first pixel of scroll, on this width as on every other - an animation outranks any
-    // normal declaration, so the media query does not need its own copy of that.
+    // because this rule also restates the padding; the track and the fill above sit on top of it
+    // on this width as on every other, being positioned against the bar rather than declared by it.
     border-block-end: var(--tpl-rule-width) solid var(--tpl-rule);
   }
 
@@ -281,8 +234,17 @@
 .flex-component {
   align-items: center;
 
-  // Every direct child of the group has the same height, whatever it contains.
+  // Every direct child of the group has the same height, whatever it contains - and centres what
+  // is inside it, which the `min-height` alone does not do. Quartz wraps each component of a group
+  // in a plain `div` (Flex.tsx), the group centres those wrappers, and until 2026-09-06 the
+  // wrapper was a block box: its content sat at the top of the 44px. Measured at 1456px with the
+  // bar at rest - the wrappers' centres were at y=30 where the bar's is 30.5, but the mark's was
+  // at 21 and the site name's at 22, both nine pixels high. Scrolled it got worse rather than
+  // better, because the name shrinks and the mark does not: 15 against 12, so the two were three
+  // pixels out from each other as well as from the bar.
   > * {
+    display: flex;
+    align-items: center;
     min-height: var(--tpl-target);
   }
 }

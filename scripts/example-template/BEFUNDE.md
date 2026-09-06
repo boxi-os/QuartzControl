@@ -1167,3 +1167,63 @@ die zusätzliche Komponente mit der Breite der Leiste macht, die bei 390 px ohne
 (siehe Befund 28), und ob eine `view-timeline` auf einem Element funktioniert, das in einer anderen
 Frame-Fläche liegt als das animierte. Das ist ein Feature, kein Feinschliff, und gehört in einen
 eigenen Durchgang.
+
+### 69. Vier Korrekturen am Header, und drei davon waren an mir
+
+Der Durchgang aus 64/65 wurde am selben Tag nachgezogen. Was daran falsch war:
+
+**Die Haarlinie verschwand im Ruhezustand.** Das Argument — oben liegt nichts hinter der Leiste,
+also braucht sie dort keine Kante — ist richtig und trotzdem die falsche Antwort: eine Leiste ist
+eine Leiste, ob schon etwas unter ihr durchgelaufen ist oder nicht, und eine Kante, die kommt und
+geht, lenkt auf sich statt auf die Seite. Die Haarlinie steht jetzt auf jeder Scroll-Position.
+
+**Marke und Seitenname saßen nicht in der Mitte ihrer Zeile.** Quartz packt jede Komponente einer
+Gruppe in ein klassenloses `div` (`Flex.tsx`); die Gruppe zentriert diese Hüllen, und die Hülle war
+ein Blockkasten mit `min-height: 44px` — ihr Inhalt saß also oben. Gemessen bei 1456 px in Ruhe: die
+Mitten der Hüllen lagen bei y=30 gegen 30,5 der Leiste, die der Marke aber bei 21 und die des
+Seitennamens bei 22, beide neun Pixel zu hoch. Beim Schrumpfen wurde es schlechter statt besser,
+weil der Name kleiner wird und die Marke nicht: 15 gegen 12, also drei Pixel auch noch
+gegeneinander. Die Hüllen sind jetzt selbst zentrierende Flexboxen; alle drei Mitten liegen auf der
+der Leiste.
+
+**Die Bedienelemente wurden zusammengedrückt.** Die Untergrenze des Polsters war der kleinste Wert,
+der noch nach Polster aussah — und das ist die falsche Größe zum Optimieren: die vier Ziele sind
+44 px und schrumpfen nicht, also standen sie bei 2 px in einer Leiste, die kaum höher war als sie
+selbst. Jetzt 12 px oben in Ruhe und 8 px unten am Ende, die Leiste geht 69 → 61 px statt 61 → 49.
+
+**Der Schatten ist eine Linie geworden.** Er war als „kein Schatten wie bei den Overlays" gedacht
+und blieb trotzdem ein Schatten; diese Vorlage zeichnet mit Linien. Statt seiner blendet beim ersten
+Scroll-Pixel eine graue Spur ein — zwei Haarlinien stark, in `--tpl-rule-control`, also derselbe
+gemessene Ton wie jede Bedienelement-Kante — und der Fortschrittsbalken ist die *Füllung* dieser
+Spur statt einer freistehenden Linie darüber. Eine Linie, zwei Aufgaben; so hat ein
+Fortschrittsbalken immer schon ausgesehen. `--tpl-shadow-bar` ist damit wieder weg, 49 Tokens.
+
+Gemessen in Chromium und WebKit an sechs Scroll-Positionen: Höhe, Polster, Deckkraft der Spur und
+Füllstand auf drei Nachkommastellen gleich. Die Kante Pixel für Pixel aus dem Screenshot gelesen —
+hell `rgb(42, 78, 108)` bis zum Füllstand, danach `rgb(142, 141, 136)`, zwei Zeilen hoch, die
+Haarlinie vollständig verdeckt; dunkel `rgb(140, 184, 218)` und `rgb(119, 121, 125)`.
+
+### 70. Firefox 155 kann von alldem nichts — nachgewiesen, nicht vermutet
+
+`animation-timeline` ist die Grundlage für alle drei Bewegungen im Header (Schrumpfen, Spur,
+Fortschritt). Bisher stand hier „Firefox hat keine Scroll-Timeline", gestützt auf Playwrights
+Firefox 153. Weil das über eine Einstellung freigeschaltet sein kann und die Version des Rechners
+neuer ist, am 2026-09-06 an der **installierten** Firefox 155.0 nachgeprüft — headless, eigenes
+Profil, `CSS.supports` auf eine Seite geschrieben und die Seite fotografiert:
+
+    scroll() false | scroll(root block) false | view() false | @property true
+
+Damit ist es keine Frage der Version und keine der Einstellung: der Header ist dort statisch, mit
+12 px Polster und der Haarlinie, und die Fortschrittslinie fehlt ganz — der `@supports`-Wächter legt
+die beiden Pseudo-Elemente gar nicht erst an, damit nicht eine graue Linie festklebt oder ein
+Streifen bei irgendeiner Breite einfriert. Das ist die vollständige, richtige Rückfallebene und
+zugleich alles, was ohne Skript geht: eine reine CSS-Lösung für „wie weit ist gescrollt" gibt es
+außerhalb der Scroll-Timelines nicht, und die App hat keine Stelle, an der eine Vorlage ein Skript
+mitliefern könnte (weder ein Head-Schnipsel noch eine `custom.js`; die `snippets/` sind Markdown für
+die Layout-Box). Wer das in Firefox will, braucht ein Quartz-Plugin mit `afterDOMLoaded` — ein
+eigener Baustein, keine Stilfrage.
+
+Safari 26.6.2 ist **nicht** direkt gemessen: `safaridriver` verlangt „Automatisierung erlauben" in
+den Entwicklereinstellungen, und Playwrights WebKit 26.5 ist ein anderer Bau derselben Engine-Reihe.
+Dort stimmt alles auf drei Nachkommastellen mit Chromium überein. Was bleibt, ist eine Lücke im
+Nachweis, nicht ein Befund.

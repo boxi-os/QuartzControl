@@ -105,17 +105,17 @@ html {
 // Measured before this was px: the header had `padding-block: 0px` and a 16px title in Firefox -
 // smaller than its own shrunken state, because both declarations had been thrown away.
 //
-// 8px and 22.4px are --tpl-space-xs and --tpl-text-xl at the root font size. They are only the
+// 12px and 22.4px are --tpl-space-sm and --tpl-text-xl at the root font size. They are only the
 // fallback for a browser without scroll timelines; the keyframes below still use the tokens.
 //
-// Two lengths and nothing else. What the bar's *edge* does over the same scroll - losing its line
-// at rest, gaining --tpl-shadow-bar once text runs underneath - is in nav-header.scss under "the
-// bar lands", because it touches only properties that rule owns and no shared token. These two
-// are here because the right column reads --tpl-header-h to stick below the bar.
+// Two lengths and nothing else. What the bar's *edge* does over the same scroll - a grey track
+// fading in and an accent fill following the scroll along it - is in nav-header.scss under "the
+// edge once the page moves", because it touches only properties that rule owns and no shared
+// token. These two are here because the right column reads --tpl-header-h to stick below the bar.
 @property --tpl-header-pad {
   syntax: "<length>";
   inherits: true;
-  initial-value: 8px;
+  initial-value: 12px;
 }
 
 @property --tpl-header-title {
@@ -128,13 +128,18 @@ html {
   --tpl-header-h: calc(var(--tpl-target) + 2 * var(--tpl-header-pad) + var(--tpl-rule-width));
 }
 
+// 12px down to 8px, not 8px down to 2px. The floor was the smallest number that still looked like
+// padding, and it is the wrong thing to optimise: the four controls are 44px targets that do not
+// shrink, so at 2px they sat in a bar barely taller than themselves and read as crammed into it
+// rather than placed in it. Measured at the old floor - 2px above and 3px below each control,
+// the extra pixel being the hairline. Now 8 and 9, and the bar still gives up 8px on the way down.
 @keyframes tpl-header-shrink {
   from {
-    --tpl-header-pad: var(--tpl-space-xs);
+    --tpl-header-pad: var(--tpl-space-sm);
     --tpl-header-title: var(--tpl-text-xl);
   }
   to {
-    --tpl-header-pad: var(--tpl-space-3xs);
+    --tpl-header-pad: var(--tpl-space-xs);
     --tpl-header-title: var(--tpl-text-base);
   }
 }

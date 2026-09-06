@@ -161,26 +161,6 @@ export const VARIABLE_OVERRIDES = [
   // Depth. Almost none - one soft shadow for the two things that genuinely float (popover,
   // search overlay), different per mode because a black shadow is invisible on a dark ground.
   { key: 'tpl-shadow', light: '0 6px 24px rgba(23, 23, 26, 0.10)', dark: '0 6px 24px rgba(0, 0, 0, 0.55)' },
-  // The header's shadow once text is running underneath it, and deliberately *not* --tpl-shadow.
-  // That one means "this floats above the page" and belongs to the five overlays that do; a 24px
-  // blur under a full-width bar reads as a drop shadow on a photograph. A bar does not float over
-  // the page, it lies on it. So: a 1px seat directly under the hairline, plus one soft layer whose
-  // negative spread cancels its offset, which is what keeps it a falloff instead of a second edge.
-  //
-  // The geometry is measured rather than guessed, and the first attempt was wrong in a way the
-  // computed value could not show: `0 10px 22px -18px` shrinks the shadow box by 18px, so with a
-  // 10px offset and an 11px blur radius its lowest pixel landed 3px below the bar - a shadow that
-  // existed in `getComputedStyle` and painted almost nothing. Decoded from a screenshot at 1456px
-  // with the page scrolled, the value below darkens the ground from 252 to 220 in the first row
-  // under the hairline and climbs back to 252 over 19 rows.
-  //
-  // Dark mode takes roughly seven times the alpha for a comparable falloff (22 -> 11 over 15 rows),
-  // because a shadow there darkens a ground that is already near-black.
-  {
-    key: 'tpl-shadow-bar',
-    light: '0 1px 1px rgba(23, 23, 26, 0.04), 0 8px 16px -8px rgba(23, 23, 26, 0.22)',
-    dark: '0 1px 1px rgba(0, 0, 0, 0.30), 0 8px 16px -8px rgba(0, 0, 0, 0.70)'
-  },
 
   // Motion, in one place so `prefers-reduced-motion` can null it out in one place.
   { key: 'tpl-motion', light: '150ms ease' },

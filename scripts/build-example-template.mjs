@@ -22,7 +22,7 @@
 //    6 fonts       import the woff2 files, then correct the @font-face block
 //    7 variables   the css-vars block
 //    8 texts       translations and theme presets
-//    9 check       scss compiles, and all ten parts report something
+//    9 check       scss compiles, and all twelve parts report something
 //   10 export      write the .qtpl
 //   11 verify      import it into a second, empty project and build that
 //

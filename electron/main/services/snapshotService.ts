@@ -14,6 +14,7 @@ import type {
 import { runCommand as run } from './runCommand'
 import { quartzGuiDir, quartzGuiPath } from './projectDirs'
 import { withContentSymlinkParked } from './contentSymlink'
+import { repointAuthoredFrames } from './projectPaths'
 import { mainT } from '../i18n'
 
 // A snapshot store is a git repository of its own, pointed at the project as its work tree:
@@ -109,6 +110,9 @@ const BASE_EXCLUDES = [
 function isSnapshotWorthy(entryName: string): boolean {
   if (entryName === STORE_DIR || entryName === SETTINGS_FILE) return false
   if (entryName === 'backups' || entryName === 'content-backups') return false
+  // The dev server's own output, which buildService tails: transient, truncated at every start,
+  // and nothing anyone would restore a project to.
+  if (entryName === 'logs') return false
   return !entryName.startsWith('deploy-manifest-')
 }
 
@@ -553,6 +557,16 @@ async function restoreSnapshotUnlocked(
     output.push(
       mainT('snapshotVaultUntouched')
     )
+  }
+
+  // A snapshot holds the project's own absolute paths - the plugin sources in the config and the
+  // lockfile - frozen at the moment it was taken, so restoring one taken before a rename puts the
+  // dead paths back. The repair is pattern-driven and therefore needs no record of where the
+  // project used to be; see repointAuthoredFrames. It runs on the files this restore actually
+  // touched, which is why it is here and not in the write phase: a restore that never went near
+  // the config has nothing to repair.
+  if (touched.some((path) => path === 'quartz.config.yaml' || path === 'quartz.lock.json')) {
+    await repointAuthoredFrames(projectPath)
   }
 
   // node_modules is never part of a snapshot, so a restore that moved the dependency manifests

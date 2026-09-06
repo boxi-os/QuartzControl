@@ -1009,7 +1009,7 @@ export const TEMPLATE_PART_IDS: readonly TemplatePartId[] = [
   // plugin option pointing at a snippet or a logo arrived in the target pointing at nothing.
   'static',
   'cssVariables',
-  // Last, and on its own: the notes touch nothing the other ten write, and a long file copy at the
+  // Last, and on its own: the notes touch nothing the other eleven write, and a long file copy at the
   // end of the run is the one part whose progress a person actually watches.
   'content'
 ] as const

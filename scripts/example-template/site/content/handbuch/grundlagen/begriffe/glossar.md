@@ -7,7 +7,7 @@ tags:
   - referenz
 ---
 
-**Baustein** — einer der zehn Teile, aus denen ein Vorlagen-Paket besteht. Siehe
+**Baustein** — einer der zwölf Teile, aus denen ein Vorlagen-Paket besteht. Siehe
 [[beispiele/index|Beispiele]].
 
 **Frame** — das Raster einer Seite: welche Bereiche es gibt und wo sie liegen. Diese Vorlage

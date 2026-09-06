@@ -1,8 +1,8 @@
 import { mkdirSync } from 'fs'
-import { copyFile, readFile } from 'fs/promises'
+import { copyFile, readFile, stat } from 'fs/promises'
 import { basename, extname, join } from 'path'
 import { getManagedBlock, readCustomScss, upsertManagedBlock, writeCustomScss } from './styleService'
-import { readFontFace } from './fontFile'
+import { MAX_FONT_FILE_BYTES, readFontFace } from './fontFile'
 
 const FORMAT_MAP: Record<string, string> = { ttf: 'truetype', otf: 'opentype', woff: 'woff', woff2: 'woff2' }
 
@@ -37,7 +37,11 @@ export async function importFontFile(
   // to the example template's four variable fonts, whose axes went unused (BEFUNDE 3) - and two
   // cuts of one family (upright and italic, say) claim the same identity, so the second replaces
   // the first. An unreadable file is not an error: the rule is then written as it always was.
-  const face = readFontFace(await readFile(sourcePath))
+  // Asked before reading, not after: readFile puts the whole file in the main process's memory,
+  // and the parser's own ceiling cannot help with a file that is already there. Past the limit the
+  // file is copied and the rule written as it always was - the same answer as an unreadable one.
+  const readable = await stat(sourcePath).then((s) => s.size <= MAX_FONT_FILE_BYTES).catch(() => false)
+  const face = readable ? readFontFace(await readFile(sourcePath)) : null
   const declarations = [
     `  font-family: "${family}";`,
     `  src: url("/static/fonts/${fileName}") format("${format}");`,

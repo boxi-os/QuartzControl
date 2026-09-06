@@ -119,6 +119,7 @@ const STRINGS = {
     zipUnsupportedMethod: 'Das Paket verwendet ein nicht unterstütztes Kompressionsverfahren ({{method}}).',
     zipEntryCorrupt: 'Die Datei „{{name}}“ im Paket ist beschädigt.',
     zipEntryUnsafeName: 'Die Datei „{{name}}“ im Paket würde außerhalb des Projekts geschrieben werden.',
+    zipTooLarge: 'Das Paket entpackt sich auf mehr als {{limit}} MB und wird nicht gelesen.',
 
     // Publishing
     ftpWrongTarget: 'Falscher Zieltyp für den FTP-Adapter.',
@@ -319,6 +320,7 @@ const STRINGS = {
     zipUnsupportedMethod: 'The package uses an unsupported compression method ({{method}}).',
     zipEntryCorrupt: 'The file “{{name}}” in the package is damaged.',
     zipEntryUnsafeName: 'The file “{{name}}” in the package would be written outside the project.',
+    zipTooLarge: 'The package unpacks to more than {{limit}} MB and is not read.',
 
     ftpWrongTarget: 'Wrong destination type for the FTP adapter.',
     ftpNoConnection: 'No FTP credential is set for this target.',

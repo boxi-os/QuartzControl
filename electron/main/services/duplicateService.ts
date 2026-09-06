@@ -43,7 +43,10 @@ const SKIP = new Set([
   // and buildOutputGuard answers `ok` for it because a folder holding index.html and static/ is
   // indistinguishable from this project's own previous build. The file has one key, so leaving it
   // behind loses nothing - a second key that *should* travel would need its own decision here.
-  '.quartz-gui/project-prefs.json'
+  '.quartz-gui/project-prefs.json',
+  // The dev server's log files. They describe a server that ran in the original, in a directory
+  // buildService truncates at every start anyway.
+  '.quartz-gui/logs'
 ])
 
 // Same reasoning as publish-targets.json, one level further: a deploy manifest records what is

@@ -16,7 +16,7 @@ Ruhe — ein halb umgefärbtes Diagramm ist schlechter als ein fremdfarbiges.
 ````md
 ```mermaid
 flowchart TD
-    A[Vorlage exportieren] --> B{Alle zehn Bausteine?}
+    A[Vorlage exportieren] --> B{Alle zwölf Bausteine?}
     B -->|ja| C[.qtpl schreiben]
     B -->|nein| D[Fehlende ergänzen]
     D --> B
@@ -26,7 +26,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A[Vorlage exportieren] --> B{Alle zehn Bausteine?}
+    A[Vorlage exportieren] --> B{Alle zwölf Bausteine?}
     B -->|ja| C[.qtpl schreiben]
     B -->|nein| D[Fehlende ergänzen]
     D --> B
@@ -40,7 +40,7 @@ flowchart TD
 sequenceDiagram
     Nutzer->>App: Vorlage wählen
     App->>Paket: Vorschau (Dry-Run)
-    Paket-->>App: zehn Bausteine
+    Paket-->>App: zwölf Bausteine
     App->>Projekt: Snapshot anlegen
     App->>Projekt: anwenden
 ```
@@ -50,7 +50,7 @@ sequenceDiagram
 sequenceDiagram
     Nutzer->>App: Vorlage wählen
     App->>Paket: Vorschau (Dry-Run)
-    Paket-->>App: zehn Bausteine
+    Paket-->>App: zwölf Bausteine
     App->>Projekt: Snapshot anlegen
     App->>Projekt: anwenden
 ```

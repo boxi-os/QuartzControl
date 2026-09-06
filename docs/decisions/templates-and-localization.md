@@ -3,7 +3,7 @@
 Aus CLAUDE.md ausgelagert (2026-09-02): die Messungen und Beobachtungen hinter den Regeln, wortgleich. Die Regeln selbst stehen in CLAUDE.md; hier steht, welches Experiment sie erzwungen hat. Neue Einträge kommen mit derselben Form dazu: was gemessen wurde, was daraus folgt.
 
 **A Vorlagen-Paket is one file, and every slice of it is self-contained.** `templatePackage/` (dispatcher + `parts.ts` + `shared.ts`, the same shape `deploy/` has) writes a `.qtpl` - a ZIP holding `manifest.json`, one `parts/<id>.json` per slice, and the binary files under `files/` - so a template can be handed to another person rather than being a folder they have to zip themselves. `zipArchive.ts` reads and writes it with Node's own zlib (`deflateRawSync` *is* ZIP's method 8; `zlib.crc32` exists in Electron 33's Node 20.18.3, verified against the real binary), hand-rolled rather than pulled in as a dependency. Verified round-trip against `unzip -t`, python's `zipfile` and macOS' `ditto`, unicode filenames included; an already-compressed payload is stored rather than deflated, and ZIP64 is refused rather than silently truncated.
-  - **The ten parts are finer-grained than the six categories they replaced, because each one has to reproduce itself alone.** Three splits carry the reasoning. `theme` owns the whole `@quartz-themes/core` entry *and* installs `@quartz-themes/<id>` - the old `plugins` category carried the config entry and never the npm package, so a package with a community theme built nowhere but the machine it was made on. `plugins` also excludes authored frames: their entry's `source` is an absolute path under the **exporting** machine's `.quartz-gui/authored-frames/` (confirmed in a real export - two entries reading `/Users/…/gui-test/…`), which is meaningless elsewhere, so `frames` re-registers them from their definitions. And custom.scss is split along its own managed blocks - `cssVariables` owns `css-vars`, `fonts` owns `fonts` (the @font-face rules travel with the files they point at), `styles` owns the free body plus `custom/`+`imported/` and the load order - which is what makes any subset importable in any combination. The old export carried **none** of `quartz/styles/custom/`, the breakpoints, the presets or the translations, and flattened the `@use` order it did carry.
+  - **The twelve parts are finer-grained than the six categories they replaced, because each one has to reproduce itself alone.** Three splits carry the reasoning. `theme` owns the whole `@quartz-themes/core` entry *and* installs `@quartz-themes/<id>` - the old `plugins` category carried the config entry and never the npm package, so a package with a community theme built nowhere but the machine it was made on. `plugins` also excludes authored frames: their entry's `source` is an absolute path under the **exporting** machine's `.quartz-gui/authored-frames/` (confirmed in a real export - two entries reading `/Users/…/gui-test/…`), which is meaningless elsewhere, so `frames` re-registers them from their definitions. And custom.scss is split along its own managed blocks - `cssVariables` owns `css-vars`, `fonts` owns `fonts` (the @font-face rules travel with the files they point at), `styles` owns the free body plus `custom/`+`imported/` and the load order - which is what makes any subset importable in any combination. The old export carried **none** of `quartz/styles/custom/`, the breakpoints, the presets or the translations, and flattened the `@use` order it did carry.
   - **Adding a part later is one entry in `PARTS`, not a branch in three if-chains.** A part is `collect`/`plan`/`apply` (plus an optional `probe` for a part whose export has an option). `TEMPLATE_PART_IDS` is *both* the registry order and the apply order, and that order is load-bearing: frames and plugins mutate quartz.config.yaml through the Quartz CLI and must precede the parts that write it from an in-memory copy, and the three parts that share custom.scss run last, one at a time. A part id an older app does not know is reported in `TemplatePackagePlan.unknownParts` rather than silently skipped, which is what `formatVersion` is for.
   - **The preview is a real dry run, and the conflict rule is a choice.** `planImport` reads the package *and* the target and reports per part what would be added and what already exists; the old preview only echoed the manifest back, so the first thing a user learned about an import was its warnings. `packageWins` (the default, since "everything as it was at export" is the point) replaces; `projectWins` keeps and warns. A snapshot is taken first either way, which is what makes the default safe.
   - **`quartz plugin add` can exit 0 and write no config entry.** With a `.quartz/plugins/<id>` link already in place - which a project that once had this frame can easily still have - the CLI reports success and quartz.config.yaml gains nothing, so the frame is built by nothing while looking installed. Reproduced against a real project (45 → 45 entries instead of 47). The frames part therefore re-reads the config and writes the entry itself if it is missing, the same "check the file, don't trust the exit code" rule `createService` applies to `quartz create`.
@@ -93,3 +93,62 @@ Gemessen an einem frisch angelegten Zielprojekt: `static +2 ~0`, keine Warnung, 
 **alle sechs Boxen rendern** — `layout-box-note` auf 327 von 334 Seiten (Desktop-only), mit ihrem
 Text aus der Datei statt eines Platzhalters.
 
+
+---
+
+## Eine Grenze für jede Dekompression (2026-09-06, drittes Review)
+
+Zwei handgeschriebene Leser packen aus, was jemand anders geschrieben hat: `fontFile.ts` den
+Brotli-Strom eines WOFF2 (bzw. jede Deflate-Tabelle eines WOFF), `zipArchive.ts` jeden
+Deflate-Eintrag eines `.qtpl`. Beide taten es ohne `maxOutputLength`, im Hauptprozess.
+
+Gemessen mit den gebündelten Modulen (esbuild, unveränderter Code), jede Bombe erst auf Platte und
+dann in einem eigenen frischen Prozess gelesen, damit der RSS nur das Auspacken zeigt:
+
+| Eingabe | vorher | nachher |
+|---|---|---|
+| 863-Byte-WOFF2, Brotli aus 512 MiB Nullen | 881 ms, 1087 MiB | 108 ms, 120 MiB |
+| 261-KB-WOFF, Deflate aus 256 MiB Nullen | 129 ms, 567 MiB | 26 ms, 116 MiB |
+| `.qtpl`, Eintrag behauptet 4 KiB, entpackt 512 MiB | 296 ms, 1087 MiB | 1 ms, 48 MiB |
+| `.qtpl`, Eintrag behauptet ehrlich 512 MiB | 246 ms, 1086 MiB | 1 ms, 48 MiB |
+
+Die Antwort war in allen vier Fällen vorher wie nachher dieselbe (`null` bzw. eine Fehlermeldung);
+verschieden ist der Preis. Bei rund 620 000:1 erreicht eine 7-KB-Datei 4 GiB — und was darüber
+liegt, endet nicht in `null`, sondern in einem abgebrochenen Hauptprozess samt aller Fenster. Der
+`catch` in `readFontFace` fängt einen `RangeError` aus einer *begrenzten* Dekompression, nie einen
+Out-of-Memory-Abbruch.
+
+Die Grenze ist die eigene Zahl der Datei, wo sie kleiner ist — die Summe der WOFF2-Verzeichnislängen
+ist genau das, worauf sich der Strom entpackt, weil eine transformierte Tabelle ihre transformierte
+Länge trägt; `origLength` je WOFF-Tabelle; `uncompressedSize` je ZIP-Eintrag — und eine absolute
+Decke, wo sie es nicht ist: 64 MiB je Schrift, 256 MiB je Paket. Die Paket-Decke wird gegen die
+*angemeldeten* Größen geprüft, bevor das erste Byte entpackt wird, sonst zahlt man die ehrliche
+Bombe. 256 MiB ist doppelt so viel, wie der eigene Export erzeugen kann (Inhalt 100 MB, static 25).
+`fontService` fragt zusätzlich die Dateigröße *vor* `readFile`, weil auch die unkomprimierte Datei
+ganz in den Speicher geht; darüber wird die Regel geschrieben wie immer, dieselbe Antwort wie bei
+einer unlesbaren Datei.
+
+Gegenproben: Arial 400/700/400 kursiv/900 unverändert, `LastResort.otf` ohne `OS/2` und
+`Helvetica.ttc` weiter `null`, sechs absichtlich kaputte Eingaben weiter `null`, längste Dauer 1 ms;
+ein echtes 754-KB-Paket liest vorher wie nachher 354 Einträge.
+
+---
+
+## Der Dry-Run verschwieg, was der Import ablehnen wird (2026-09-06, drittes Review)
+
+Vier Bausteine rufen `writableTarget()` je Datei, und alle vier beantworteten eine Ablehnung auf den
+zwei Seiten derselben Entscheidung verschieden: `plan` ließ den Namen mit einem nackten `continue`
+fallen, `apply` warnte `fileOutsideProject`. Der Assistent zeigte also „static +2", und der Import
+meldete danach eine Warnung, die die Vorschau nie angekündigt hatte — obwohl der Plan genau das ist,
+was der Nutzer ankreuzt.
+
+Alle vier sagen jetzt `outside:<name>` in `plan.notes`, und die Zusammenfassung zählt sie neben den
+anderen Zahlen, so wie `identical` seit Befund 6 vom 2026-09-05 gezählt wird. Gemessen gegen
+`PARTS.static.plan` an einem Projekt, dessen `quartz/static/bilder` ein Symlink aus dem Projekt
+heraus ist:
+
+    vorher   additions=["logo.png"] conflicts=[] notes=[]
+    nachher  additions=["logo.png"] conflicts=[] notes=["outside:bilder/fremd.png"]
+
+`static` ist der neue Baustein und hatte das Muster von den drei älteren übernommen; sie werden
+zusammen korrigiert, weil das Schweigen eine Gewohnheit war und nicht vier Entscheidungen.

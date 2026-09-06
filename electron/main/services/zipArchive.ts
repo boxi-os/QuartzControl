@@ -135,6 +135,14 @@ export function createZip(entries: ZipEntry[], modified = new Date()): Buffer {
   return Buffer.concat([...locals, centralBuffer, eocd])
 }
 
+// What a whole package may unpack to. Every entry lands in memory at once and stays there - the
+// caller gets a Map of buffers - so this number is the peak the main process pays for reading a
+// package, and it is reached by a 522-KB file: deflate of one repeated byte runs at about 1000:1
+// (measured). Twice what this app's own export can produce (content stops at 100 MB, static at
+// 25), and checked against the directory's own declared sizes *before* the first byte is unpacked,
+// so an honest bomb is refused rather than paid for.
+const MAX_UNPACKED_BYTES = 256 * 1024 * 1024
+
 /**
  * Reads via the central directory rather than by scanning for local headers, because only the
  * central directory is authoritative: a local header may carry zeroed sizes with the real ones in
@@ -157,6 +165,7 @@ export function readZip(buffer: Buffer): Map<string, Buffer> {
   const count = buffer.readUInt16LE(eocd + 10)
   let cursor = buffer.readUInt32LE(eocd + 16)
   const files = new Map<string, Buffer>()
+  let unpacked = 0
 
   for (let i = 0; i < count; i++) {
     if (buffer.readUInt32LE(cursor) !== CENTRAL_SIG) throw new Error(mainT('zipBadDirectory'))
@@ -185,10 +194,27 @@ export function readZip(buffer: Buffer): Map<string, Buffer> {
     const start = localOffset + 30 + localNameLength + localExtraLength
     const body = buffer.subarray(start, start + compressedSize)
 
+    // Both ceilings before the first byte is unpacked, because afterwards is too late: deflate
+    // reaches 1032:1, a package is not a trust boundary (CLAUDE.md), and the crc/length check
+    // below runs on a buffer that is already in memory. The entry's own number is what it claims
+    // to unpack to - believing it costs nothing, since the check below rejects it anyway if it
+    // lied low - and the sum over all entries is what a whole package may cost.
+    unpacked += uncompressedSize
+    if (unpacked > MAX_UNPACKED_BYTES) {
+      throw new Error(mainT('zipTooLarge', { limit: Math.round(MAX_UNPACKED_BYTES / 1024 / 1024) }))
+    }
+
     let data: Buffer
     if (method === METHOD_STORE) data = Buffer.from(body)
-    else if (method === METHOD_DEFLATE) data = inflateRawSync(body)
-    else throw new Error(mainT('zipUnsupportedMethod', { method }))
+    else if (method === METHOD_DEFLATE) {
+      // A stream that runs past the length its own directory entry gave is a damaged entry, and
+      // that is what it is called: the RangeError zlib throws says nothing a user could act on.
+      try {
+        data = inflateRawSync(body, { maxOutputLength: uncompressedSize })
+      } catch {
+        throw new Error(mainT('zipEntryCorrupt', { name }))
+      }
+    } else throw new Error(mainT('zipUnsupportedMethod', { method }))
 
     if (data.length !== uncompressedSize || crc32(data) !== expectedCrc) {
       throw new Error(mainT('zipEntryCorrupt', { name }))

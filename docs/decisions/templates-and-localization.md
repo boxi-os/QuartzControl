@@ -16,3 +16,80 @@ Aus CLAUDE.md ausgelagert (2026-09-02): die Messungen und Beobachtungen hinter d
   - **Der Assistent versprach Dinge, die er nicht halten konnte (2026-09-05).** Vier Befunde aus demselben Durchgang, alle im Weg „neues Projekt mit Beispielvorlage“. *Der Schalter „Mit den Beispielseiten“ stand unabhängig von der Content-Strategie auf an*, und der Import lief mit `packageWins`: bei „vorhandene Notizen kopieren“ ersetzte die Startseite der Vorlage die `index.md` des Nutzers, und die einzige Spur war der Snapshot, von dem er nichts weiß; bei „Symlink“ konnte der Schalter gar nichts tun, weil der content-Baustein einen verlinkten Ordner ohnehin verweigert. Er ist jetzt nur bei „neu anfangen“ lebendig, sonst aus und deaktiviert, mit dem jeweiligen Grund als Hinweis — gemessen in beiden Farbschemata. *Das Ergebnis von `templatePackage.import` wurde weggeworfen*, also verschwanden genau die Warnungen, die auf der Vorlagen-Seite sichtbar sind, auf dem Weg, den die meisten nehmen; `ImportOutcome` ist jetzt eine eigene Komponente und wird von beiden benutzt, und mit etwas zu melden bleibt der Dialog auf einem Abschluss-Schirm stehen, statt wegzunavigieren. *`plan.notes` wurde nirgends gerendert*: gemessen am echten Paket meldete der content-Baustein 273 `identical:`-Notizen und der fonts-Baustein 4, und beide Zeilen sagten „ändert nichts“; die zählbaren Notizen stehen jetzt bei den anderen Zahlen, die eine, die ein ganzer Satz ist (`contentIsSymlink`), auf einer eigenen Zeile. *Und ein Fehler beim Vorlagenschritt ließ den Assistenten tot stehen* — das Projekt war angelegt, ein zweiter Klick konnte nur an „Ziel existiert“ scheitern, Abbrechen führte auf eine Liste ohne das neue Projekt, und die Meldung überlebte bis zum nächsten Öffnen; alle Wege nach `quartz create` enden jetzt an derselben Stelle.
   - **Zwei Wege an der Symlink-Sperre vorbei, und einer aus dem Export heraus (2026-09-05).** `getContentStatus` fragte `existsSync`, das dem Link folgt: ein `content/` auf ein ausgehängtes Laufwerk antwortete „gibt es nicht“ (`exists: false, isSymlink: false`), der Plan listete jede Notiz als Ergänzung und der Import endete in `partFailed:content:ENOTDIR … mkdir …/content` — gemessen. Mit `lstat` ist es ein Link mit fehlendem Ziel, der Plan sagt, dass der Baustein übersprungen wird, und der Import warnt. Geprüft wurde außerdem nur `content/` selbst: mit `content/notizen -> ein Ordner außerhalb des Projekts` schrieb der Import `notizen/durch-den-link.md` genau dorthin und meldete Erfolg ohne Warnung — die Notizen einer Vorlage im Vault eines Fremden, das eine, was diese Sperre verhindern soll. `writableTarget` prüft jetzt jedes Segment des Zielpfads, die Datei eingeschlossen, für content, fonts und styles gleichermaßen. Umgekehrt beim Export: `readdir`s `isDirectory()` antwortet für den Eintrag, nicht für sein Ziel, also war ein verlinkter Ordner eine „Datei“ und `readFile` warf EISDIR — `inspectProject` fängt mit `null`, und damit verschwand der ganze content-Baustein aus dem Export-Formular (gemessen: `inspect` antwortete ohne ihn). Links werden jetzt mit `stat` aufgelöst, Schleifen über die schon betretenen Realpfade abgeschnitten, hängende übersprungen.
 
+
+**Instanzen eines Plugins werden nach ihrer Position unterschieden, nicht nach ihrem Namen
+(2026-09-06).** Ein Eintrag in `quartz.config.yaml` hat keine Kennung: `name` leitet
+`configService.deriveName()` aus dem letzten Pfadsegment der Quelle ab. Sechs Verwendungen von
+`quartz-layout-box` sind damit sechs Einträge mit einem Namen — und eine `Map`, die danach
+schlüsselt, hält einen davon. Genau das tat der `plugins`-Baustein, und es kostete die anderen
+fünf: Die Beispielvorlage liefert sechs Instanzen aus, im Zielprojekt kam **eine** an (BEFUNDE 1).
+Mehrfachverwendung ist keine Randerscheinung — das Plugin ist dafür gemacht, und der Layout-Editor
+hat einen Knopf „Duplizieren“.
+
+`instanceKeys()` vergibt `quartz-layout-box#0`, `#1`, … in Dokumentreihenfolge, und die drei
+Stellen, die vorher nach dem Namen suchten, suchen jetzt danach: die Zuordnung in `apply`, die
+Vorschau in `plan` und die Verschmelzung nach dem Neulesen. Die n-te Instanz aus dem Paket
+aktualisiert die n-te im Projekt, alles Weitere wird in seiner Reihenfolge angehängt.
+
+Ein zweites Feld im Dateiformat wäre die andere Lösung gewesen und ist bewusst unterblieben: Die
+Reihenfolge beantwortet die Frage schon, und ein neues Feld müsste von jedem Leser dieser Datei
+verstanden werden — auch von Quartz selbst, das es nicht kennt.
+
+Nebenbei löst dasselbe Schlüsseln ein zweites Problem, das vorher der Namensabgleich verdeckt hat:
+`quartz plugin add` hängt beim Installieren einen nackten Eintrag an die Konfiguration, weil unsere
+Einträge zu dem Zeitpunkt noch nicht geschrieben sind. Er liegt als nächstes Vorkommen eines Namens,
+den der Baustein gerade schreibt, und bekommt deshalb einen unserer Einträge, statt als zusätzliche
+optionslose Instanz stehen zu bleiben.
+
+Gemessen an einem frisch angelegten Kontrollprojekt (`node scripts/build-example-template.mjs
+--only 10,11 --fresh`): „Layout-Box-Instanzen im Ziel … 6 von 6“, keine Warnung, Build grün. An
+derselben Stelle vorher: 1 von 6.
+
+**Vier Wege durch dieselbe Stelle, alle gemessen (2026-09-06).** „Sechs von sechs" zählt Zeilen und
+beantwortet damit nur ein Viertel der Frage. Nachgemessen wurde deshalb an drei Stationen —
+Quellprojekt, entpacktes `.qtpl`, Zielprojekt — und über jeden Eintrag, nicht nur über die Boxen:
+verglichen wurden `enabled`, `order`, `options` und `layout` je Instanzschlüssel.
+
+- **Leeres Ziel (0 → 6).** 52 Einträge im Paket, 57 im Ziel (die vier Frames und der Theme-Eintrag
+  reisen in ihren eigenen Bausteinen). **Null Abweichungen** an beiden Übergängen; jede der sechs
+  Boxen kommt mit ihrer eigenen Klasse, ihrer Position, ihrer Priorität und ihrer Gruppe an.
+- **Zweiter Import in dasselbe Ziel (6 → 6).** Weiterhin 57 Einträge, null Abweichungen, und die
+  Vorschau meldet jetzt wahrheitsgemäß `+0 ~52` statt sechsmal denselben Namen.
+- **Teilweise vorhanden (2 → 6).** Der Fall, den weder „leer" noch „vollständig" abdeckt: zwei
+  Boxen im Ziel, der ersten absichtlich falsche Optionen gegeben. Danach sechs, die falschen
+  Optionen **überschrieben**, die fehlenden vier in ihrer Reihenfolge angehängt (510, 520, 530,
+  540), 53 → 57 Einträge, keine Warnung.
+- **`projectWins` (6 → 6).** Alle 52 Einträge übersprungen, die sechs Boxen einzeln benannt
+  (`pluginSkipped:quartz-layout-box` sechsmal), nichts verdoppelt, nichts verloren.
+
+Die Reihenfolge im YAML-Array weicht dabei ab — die Frames stehen im Ziel woanders, weil sie ihr
+eigener Baustein schreibt. Das ist folgenlos und nachgesehen statt angenommen:
+`quartz/plugins/loader/config-loader.ts` sortiert nach `entry.order ?? manifest.defaultOrder ?? 50`
+und die Komponenten danach nach `priority`. Beide Felder stimmen exakt überein.
+
+**Ein zwölfter Baustein: die Dateien unter `quartz/static/` (2026-09-06).** Ein Paket erfasste
+`quartz/styles/` und `quartz/static/fonts/` — und sonst nichts aus dem Projekt. Damit kam jede
+Plugin-Option, die auf eine Datei zeigt, im Zielprojekt ins Leere: Gemessen an der Beispielvorlage
+rendert `layout-box-note` dort auf **0 von 334** Seiten, während die fünf Geschwister auf jeder
+stehen, und im Build-Log steht `[layout-box] Snippet file not found`. Die Vorlage wich dem aus,
+indem sie ihre übrigen Instanzen auf Inline-HTML stellte und Logos als Inline-SVG führte; das ist
+eine Umgehung, keine Lösung.
+
+Der Baustein `static` trägt jetzt alles unter `quartz/static/` außer den Schriften, die ihren
+eigenen haben. Gebaut wie `fonts`, samt dessen Regel, dass eine **inhaltsgleiche Datei weder
+Ergänzung noch Konflikt** ist — und genau die trägt hier die Entscheidung, alles mitzunehmen statt
+zu filtern: Von den sechs Dateien der Beispielvorlage sind vier byteweise Quartz' eigenes Gerüst
+(`icon.png`, `og-image.png`, zwei giscus-Stylesheets, gegen ein frisch angelegtes Projekt
+verglichen) und nur die zwei Snippets gehören der Vorlage. Die Vorschau meldet deshalb
+`static +2 ~0`, und niemandem wird das Gerüst eines anderen übergestülpt. Was *nicht* identisch ist
+— das eigene Logo eines Vorlagen-Autors — ist Gestaltung, und die trägt eine Vorlage.
+
+Kein Filter also, sondern eine Grenze: 25 MB für den ganzen Baustein, mit demselben Wortlaut wie
+beim Inhalt („eine Vorlage ist keine Mediathek"), geworfen statt stillschweigend gekürzt. Jede
+Datei geht durch `writableTarget()` — Name aus einem fremden Paket, Segment für Segment auf
+Symlinks geprüft.
+
+Gemessen an einem frisch angelegten Zielprojekt: `static +2 ~0`, keine Warnung, Build grün, und
+**alle sechs Boxen rendern** — `layout-box-note` auf 327 von 334 Seiten (Desktop-only), mit ihrem
+Text aus der Datei statt eines Platzhalters.
+

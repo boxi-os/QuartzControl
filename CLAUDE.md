@@ -231,6 +231,17 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   (nachgemessen: 0-2 px Spiel bei 1728 wie bei 1280 px) und bleiben `track`. Messungen in
   [`navigation-and-pages.md`](docs/decisions/navigation-and-pages.md) und
   [`publishing-and-credentials.md`](docs/decisions/publishing-and-credentials.md).
+- **Eine Karte hat eine Überschrift, und die hat ein Icon.** `CardHeading` (`ui.tsx`) ist das
+  einzige `<h2>` in einer Karte: `text-heading` (15px, der Name, den `tailwind.config.js` genau
+  dafür führt), halbfett, davor ein Lucide-Icon in `size={15}` und `text-text-secondary`. Kein
+  getöntes Quadrat wie bei `PageHeader` und dem `Section` der Einstellungen — die benennen eine
+  *Seite*, und eine Seite trägt sechs Karten. Welches Icon eine Karte bekommt, ist keine freie
+  Erfindung: Geht es um dasselbe wie ein Eintrag der Seitenleiste, nimmt sie dessen Icon aus
+  `navConfig` (Plugins → `Blocks`, Frames → `LayoutGrid`, Wartung → `Wrench`). Vorher waren es 30
+  handgeschriebene Karten-Überschriften in drei Größen — 14px, 15px und 16px, letzteres aus einem
+  nackten `font-medium` auf einem `<h2>`, das Tailwinds Preflight auf Grundschriftgröße lässt —,
+  zwei Gewichten und mit Icon an dreien davon. Messungen in
+  [`navigation-and-pages.md`](docs/decisions/navigation-and-pages.md).
 - **Farben heißen nach Rolle, nicht nach Palette.** Zehn Tokens in `src/index.css` (`--ground`,
   `--surface`, `--text`, `--text-secondary`, `--text-muted`, `--ink`, `--accent`, `--accent-hover`,
   `--accent-fg`, `--accent-text`), in `tailwind.config.js` als `bg-ground`, `bg-surface`, `text-text`,
@@ -343,7 +354,7 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`styles-and-fonts.md`](docs/decisions/styles-and-fonts.md) - Stile-Seite, Variablen-Graph, Community-Themes, Style Settings, Import-Reihenfolge, Webfonts, SCSS-Check, CSS-Fixes
 - [`layout-frames.md`](docs/decisions/layout-frames.md) - Frame-Box pro Breakpoint, die drei Breiten-Kappungen, projekteigene Breakpoints, Dev-Server-Neustart
 - [`plugins-and-config.md`](docs/decisions/plugins-and-config.md) - Options-Schema aus `.d.ts`, Frames in der Plugin-Liste, Drag bei Filter, Marktplatz, die zwei Config-Schreibwege, Projektbild als Favicon-Quelle
-- [`templates-and-localization.md`](docs/decisions/templates-and-localization.md) - `.qtpl`-Paket, die zehn Teile, Dry-Run-Import, `merge=ours`, Übersetzungs-Baseline
+- [`templates-and-localization.md`](docs/decisions/templates-and-localization.md) - `.qtpl`-Paket, die zwölf Teile, Dry-Run-Import, `merge=ours`, Übersetzungs-Baseline
 - [`electron-runtime-and-packaging.md`](docs/decisions/electron-runtime-and-packaging.md) - Native Chrome, Electron 43, Toolchain, `brand-electron`, Packaging (deb/AppImage/VM), PATH im Bundle, `safeStorage` auf Linux, Menü, App-Identität, Icon
 - [`i18n-and-vocabulary.md`](docs/decisions/i18n-and-vocabulary.md) - Sprachdateien, Klassenkomponente und Singleton, `mainT()`, Vokabular-Tabelle, Fachbegriffe
 - [`dark-mode-and-contrast.md`](docs/decisions/dark-mode-and-contrast.md) - `nativeTheme`, `color-scheme`, Scrollbar, Playwright-Emulation, Muted-Token, disabled-Buttons, Avatar-Farben

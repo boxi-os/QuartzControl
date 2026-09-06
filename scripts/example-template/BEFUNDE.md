@@ -16,13 +16,29 @@ den Explorer sagte. Behoben, Messung in `docs/decisions/layout-frames.md`.
 
 ## Offen
 
-### 1. Fünf Instanzen eines Plugins reisen als eine
+### 1. Fünf Instanzen eines Plugins reisen als eine — behoben am 2026-09-06
 
 `configService.deriveName()` leitet den Namen aus dem letzten Pfadsegment der Quelle ab, also heißen
-alle fünf `quartz-layout-box`-Einträge gleich. Der `plugins`-Baustein legt beim Anwenden eine
-`byName`-Map an (`parts.ts:554`) — **gemessen: von fünf Instanzen kommt eine im Zielprojekt an.**
+alle `quartz-layout-box`-Einträge gleich. Der `plugins`-Baustein legte beim Anwenden eine
+`byName`-Map an (`parts.ts`) — **gemessen: von fünf Instanzen kam eine im Zielprojekt an.**
 Die Mehrfachverwendung ist im Plugin ausdrücklich vorgesehen (das README zeigt sie) und in der App
-über „Duplizieren“ im Layout-Editor erreichbar; über eine Vorlage überlebt sie nicht.
+über „Duplizieren“ im Layout-Editor erreichbar; über eine Vorlage überlebte sie nicht.
+
+**Behoben, indem Instanzen eine Identität bekommen, die die Datei hergibt: ihre Position unter
+Gleichnamigen.** Ein Eintrag in `quartz.config.yaml` hat keine Kennung — `name` ist abgeleitet, und
+ein zweites Feld dafür zu erfinden hieße, das Dateiformat für ein Problem zu ändern, das die
+Reihenfolge schon beantwortet. `instanceKeys()` vergibt `quartz-layout-box#0`, `#1`, …, und alle
+drei Stellen, die vorher nach dem Namen suchten, suchen jetzt danach: die Zuordnung beim Anwenden,
+die Vorschau (sie meldet damit „ein Konflikt und fünf Ergänzungen“ statt sechsmal desselben), und
+die Verschmelzung nach dem Neulesen. Die n-te Instanz aus dem Paket aktualisiert die n-te im
+Projekt, der Rest wird in seiner Reihenfolge angehängt.
+
+Nebenbei erledigt sich damit der nackte Eintrag, den `quartz plugin add` hinter dem Rücken des
+Bausteins anhängt: Er liegt als nächstes Vorkommen eines Namens, den wir gerade schreiben, und
+bekommt deshalb einen unserer Einträge — statt als siebte, optionslose Box zu überleben.
+
+Gemessen an einem **frisch angelegten** Kontrollprojekt (`--only 10,11 --fresh`): „Layout-Box-Instanzen
+im Ziel … 6 von 6“, 0 Warnungen, Build grün. Vorher an derselben Stelle: 1 von 6.
 
 ### 2. Ein Stylesheet mit Ziffer am Anfang macht das Projekt unübersetzbar
 
@@ -48,13 +64,27 @@ kompilierten Übersetzungen in `dist/` mit. Gemessen: „Backlinks“, „Grapha
 bearbeitete Seiten“ überstanden die Änderung unverändert. Der Mechanismus ist nicht kaputt, er
 erreicht nur fast nichts mehr; die Oberfläche sagt darüber nichts.
 
-### 5. Ein Vorlagen-Paket kann seine eigenen Snippets nicht mitnehmen
+### 5. Ein Vorlagen-Paket kann seine eigenen Snippets nicht mitnehmen — behoben am 2026-09-06
 
-Erfasst werden `quartz/styles/` und `quartz/static/fonts/`. Alles andere unter `quartz/static/` —
-Bilder, Logos, die Snippet-Dateien von `quartz-layout-box` — bleibt zurück. Eine Vorlage, die eine
-Komponente mit `file:`-Option enthält, kommt im Zielprojekt mit einem Verweis ins Leere an. Die
-Vorlage weicht darauf aus, indem sie vier ihrer fünf Instanzen auf `html:` inline stellt und Logos
-als Inline-SVG führt; für den fünften Fall liegt eine Anleitung bei (`site/README.md`).
+Erfasst wurden `quartz/styles/` und `quartz/static/fonts/`. Alles andere unter `quartz/static/` —
+Bilder, Logos, die Snippet-Dateien von `quartz-layout-box` — blieb zurück. Eine Vorlage, die eine
+Komponente mit `file:`-Option enthielt, kam im Zielprojekt mit einem Verweis ins Leere an.
+**Gemessen im gebauten Zielprojekt: `layout-box-note` erschien auf 0 von 334 Seiten**, während die
+fünf anderen Boxen auf jeder standen; im Build-Log stand `[layout-box] Snippet file not found`.
+
+**Behoben durch einen zwölften Baustein, `static`:** alles unter `quartz/static/` außer den
+Schriften, die ihren eigenen haben. Er ist wie `fonts` gebaut, samt der Regel, dass eine
+inhaltsgleiche Datei weder Ergänzung noch Konflikt ist — und genau die trägt hier die Entscheidung.
+Nachgemessen an einem frischen Projekt: Von den sechs Dateien der Vorlage sind vier byteweise
+Quartz' eigenes Gerüst (`icon.png`, `og-image.png`, zwei giscus-Stylesheets) und nur die zwei
+Snippets gehören ihr. Die Vorschau meldet deshalb `static +2 ~0` statt sechs Konflikten, und ein
+Zielprojekt bekommt nie das Gerüst eines anderen übergestülpt. Was *nicht* identisch ist — das
+eigene Logo eines Vorlagen-Autors — ist Gestaltung, und die trägt eine Vorlage.
+
+Danach im frischen Zielprojekt gebaut: **alle sechs Boxen rendern**, `layout-box-note` auf 327 von
+334 Seiten (sie ist Desktop-only), mit ihrem Text aus der Datei statt eines Platzhalters. Die
+Umgehung der Vorlage — vier von sechs Instanzen inline, Logos als Inline-SVG — ist damit keine
+Notwendigkeit mehr, bleibt aber, weil sie den Weg `html:` vorführt.
 
 ### 6. Zwei Vorgaben, die eine Vorlage nicht vorführen kann
 

@@ -1,6 +1,6 @@
 # Example — die Beispielvorlage
 
-Eine vollständige QuartzControl-Vorlage: alle zehn Bausteine gefüllt, jede Plugin-Komponente
+Eine vollständige QuartzControl-Vorlage: alle zwölf Bausteine gefüllt, jede Plugin-Komponente
 einzeln gestaltet, jeder Farbkontrast gemessen. Sie ist zum Benutzen gedacht **und** zum Umbauen —
 dieses Dokument beschreibt beides.
 
@@ -371,13 +371,15 @@ zusätzlich die Schlüssel, die schon unter `layout.byPageType` stehen (BEFUNDE 
 Gestaltet in `styles/plugin-layout-box.scss` — inklusive `.layout-box-missing`, dem Zustand für ein
 fehlendes Snippet.
 
-> **Warum fünf von sechs `html:` statt `file:` nutzen:** Ein Vorlagen-Paket transportiert
-> `quartz/styles/` und `quartz/static/fonts/` — sonst nichts. Snippet-Dateien und Bilder bleiben
-> zurück. Inline-HTML steckt dagegen im Konfigurationseintrag und reist mit. Eine Instanz
-> nutzt bewusst den Datei-Weg und dokumentiert damit die Lücke (siehe `site/README.md`).
+> **Warum fünf von sechs `html:` statt `file:` nutzen:** Ein Vorlagen-Paket transportierte bis zum
+> 2026-09-06 nur `quartz/styles/` und `quartz/static/fonts/`; Snippet-Dateien und Bilder blieben
+> zurück, und die eine `file:`-Instanz kam im Zielprojekt leer an. Der Baustein *Statische Dateien*
+> trägt sie jetzt mit (BEFUNDE 5). Die fünf Inline-Instanzen bleiben, weil sie den anderen Weg
+> vorführen — beide funktionieren.
 >
-> **Und eine offene Einschränkung:** Beim Import überlebt derzeit nur **eine** der sechs Instanzen —
-> alle tragen denselben abgeleiteten Namen. Siehe `BEFUNDE.md`.
+> **Bis zum 2026-09-06 eine Einschränkung:** Beim Import überlebte nur **eine** der sechs Instanzen,
+> weil alle denselben abgeleiteten Namen tragen. Seitdem unterscheidet der `plugins`-Baustein sie
+> nach ihrer Position unter Gleichnamigen; die Gegenprobe meldet 6 von 6. Siehe `BEFUNDE.md`.
 
 ### 3.8 Zwei Sprachen — `plugins.mjs`, `styles/nav-language-switcher.scss`
 
@@ -491,7 +493,7 @@ Alle gemessen, nicht vermutet. Wer die Vorlage erweitert, spart sich damit diese
 ## 5. Prüfen, ob es noch stimmt
 
     npm run template:example -- --check-contrast    # 89 Farbpaare
-    npm run template:example -- --only 9            # SCSS übersetzt? alle zehn Bausteine gefüllt?
+    npm run template:example -- --only 9            # SCSS übersetzt? alle zwölf Bausteine gefüllt?
     npm run template:example -- --only 9,10,11      # exportieren und in ein leeres Projekt importieren
 
     npm run check:tokens                            # kommt jedes Token an?

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ExternalLink, RefreshCw, ServerCog } from 'lucide-react'
 import type { DiscoveredServer, ServerDiscovery } from '@shared/ipc-contract'
-import { Badge, Button, Card, InfoNote } from './ui'
+import { Badge, Button, Card, CardHeading, InfoNote } from './ui'
 import { formatIpcError } from './ErrorSurface'
 import { confirmDialog } from '../utils/confirm'
 import { announce } from '../state/announcer'
@@ -84,10 +84,7 @@ export function DiscoveredServers({ ports, onChanged }: { ports: number[]; onCha
   return (
     <Card>
       <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-        <h2 className="flex items-center gap-2 font-medium">
-          <ServerCog size={16} aria-hidden />
-          {t('buildServer.discovery.title')}
-        </h2>
+        <CardHeading icon={ServerCog}>{t('buildServer.discovery.title')}</CardHeading>
         {discovery?.state === 'ok' && <Badge tone="slate">{servers.length}</Badge>}
         <Button variant="ghost" className="ml-auto" onClick={scan} disabled={scanning}>
           <RefreshCw size={13} className={scanning ? 'animate-spin' : ''} aria-hidden />

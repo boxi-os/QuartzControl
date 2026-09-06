@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Camera, FolderClock } from 'lucide-react'
 import { confirmDialog } from '../utils/confirm'
 import { useProject } from './ProjectLayout'
 import type { BackupEntry, Snapshot, SnapshotFileChange, SnapshotSettings } from '@shared/ipc-contract'
-import { Badge, Button, Card, InfoNote, PageHeader, TextInput, Toggle } from '../components/ui'
+import { Badge, Button, Card, CardHeading, InfoNote, PageHeader, TextInput, Toggle } from '../components/ui'
 import { useAsyncAction } from '../hooks/useAsyncAction'
 import { formatBytes } from '../utils/format'
 import { useStickyState } from '../state/uiState'
@@ -180,7 +181,7 @@ export default function Backups(): JSX.Element {
       <InfoNote>{t('backups.vsGitSync')}</InfoNote>
 
       <Card>
-        <h2 className="text-sm font-semibold">{t('backups.newHeading')}</h2>
+        <CardHeading icon={Camera}>{t('backups.newHeading')}</CardHeading>
         <p className="mt-1 text-xs text-text-muted">{t('backups.newHint')}</p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <TextInput
@@ -330,7 +331,7 @@ export default function Backups(): JSX.Element {
           here, which is exactly what the old "Backups -> Inhalte" tab implied. */}
       {contentFolders.length > 0 && (
         <Card>
-          <h2 className="text-sm font-semibold">{t('backups.movedFoldersHeading')}</h2>
+          <CardHeading icon={FolderClock}>{t('backups.movedFoldersHeading')}</CardHeading>
           <p className="mt-1 text-xs text-text-muted">{t('backups.movedFoldersHint')}</p>
           <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2 2xl:grid-cols-3">
             {contentFolders.map((entry) => (

@@ -1,29 +1,27 @@
 # Was neben der Vorlage mitreisen muss
 
-Ein Vorlagen-Paket (`.qtpl`) trägt die Gestaltung eines Projekts, aber **keine Inhalte und keine
-statischen Dateien**. Erfasst werden nur `quartz/styles/` (der Baustein *Eigenes CSS*) und
-`quartz/static/fonts/` (der Baustein *Schriftdateien*) — nachzulesen in
-`electron/main/services/templatePackage/parts.ts`.
+Ein Vorlagen-Paket (`.qtpl`) trägt die Gestaltung eines Projekts — seit dem 2026-09-06 samt der
+Dateien unter `quartz/static/`: `quartz/styles/` (Baustein *Eigenes CSS*), `quartz/static/fonts/`
+(*Schriftdateien*) und alles Übrige dort (*Statische Dateien*), nachzulesen in
+`electron/main/services/templatePackage/parts.ts`. Was es weiterhin **nicht** trägt, sind die
+Inhalte.
 
-Für diese Vorlage heißt das zweierlei:
-
-## 1. `snippets/*.md` → `quartz/static/snippets/`
+## 1. `snippets/*.md` — reisen inzwischen mit
 
 Von den sechs Layout-Box-Instanzen der Vorlage laden fünf ihren Inhalt aus der Option `html:`, also
-aus dem Konfigurationseintrag selbst — die reisen vollständig mit dem Paket. Genau eine Instanz
-(„Über dieses Handbuch“, linke Spalte) lädt aus einer Datei, um den Datei-Weg des Plugins zu
-zeigen. Diese Dateien müssen von Hand kopiert werden.
+aus dem Konfigurationseintrag selbst. Genau eine Instanz („Über dieses Handbuch“, linke Spalte)
+lädt aus einer Datei, um den Datei-Weg des Plugins zu zeigen — und bis zum 2026-09-06 kam genau die
+im Zielprojekt leer an, weil das Paket ihre Datei nicht mitnahm (BEFUNDE 5). Der Baustein
+*Statische Dateien* trägt sie jetzt; von Hand zu kopieren ist nichts mehr.
 
 Es sind zwei: `sidebar-note.md` und `sidebar-note.en.md`. Die zweite ist dieselbe Box auf Englisch
 und steht seit dem 2026-09-05 in der Konfiguration unter `byLang: { en: … }`; das Plugin wählt sie
 über das Frontmatter-Feld `lang` der Seite. Vorher trug jede englische Notiz die Zuordnung selbst.
 
-Wer die Vorlage in ein einsprachiges Projekt importiert, braucht `sidebar-note.en.md` nicht — der
-`byLang`-Eintrag greift dort nie, und eine fehlende Datei ist wie oben beschrieben kein Fehler.
-
-Fehlt sie, ist das kein Fehler: Das Plugin protokolliert eine Warnung und rendert nichts. Im
-Dev-Server (`quartz build --serve`) erscheint stattdessen ein gestrichelter Platzhalter mit dem
-erwarteten Pfad — der ist in `60-layout-box.scss` mitgestaltet.
+Wer den Baustein beim Import abwählt oder die Dateien später löscht, verliert keinen Build: Das
+Plugin protokolliert eine Warnung und rendert nichts. Im Dev-Server (`quartz build --serve`)
+erscheint stattdessen ein gestrichelter Platzhalter mit dem erwarteten Pfad — der ist in
+`60-layout-box.scss` mitgestaltet.
 
 ## 2. `content/` → `content/`
 

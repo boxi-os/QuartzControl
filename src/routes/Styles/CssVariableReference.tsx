@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Card, TextInput, useCopyToClipboard } from '../../components/ui'
+import { Palette, Variable } from 'lucide-react'
+import { Card, CardHeading, TextInput, useCopyToClipboard } from '../../components/ui'
 import VariableGroup from './VariableGroup'
 import { useStickyState } from '../../state/uiState'
 import {
@@ -63,7 +64,7 @@ export default function CssVariableReference({ onInsert }: { onInsert: (text: st
 
   return (
     <Card>
-      <h2 className="mb-2 text-sm font-semibold">{t('styleEditor.cssVars.heading')}</h2>
+      <CardHeading icon={Variable} className="mb-2">{t('styleEditor.cssVars.heading')}</CardHeading>
       <p className="mb-2 text-xs text-text-muted">
         {t('styleEditor.cssVars.description')}{' '}
         <button type="button" className="underline" onClick={() => goToTab('variables')}>
@@ -99,7 +100,7 @@ export default function CssVariableReference({ onInsert }: { onInsert: (text: st
       </p>
 
       <div className="mt-4 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
-        <h2 className="mb-1 text-sm font-semibold">{t('styleEditor.cssVars.calloutsHeading')}</h2>
+        <CardHeading icon={Palette} className="mb-1">{t('styleEditor.cssVars.calloutsHeading')}</CardHeading>
         <p className="mb-2 text-xs text-text-muted">{t('styleEditor.cssVars.calloutsDescription')}</p>
         <VariableGroup
           label={t('styleEditor.cssVars.calloutsGroup')}

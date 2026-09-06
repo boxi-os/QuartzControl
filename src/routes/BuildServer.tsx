@@ -1,16 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { isInsideDirectory } from '../utils/platform'
-import {
-  Check,
-  ChevronDown,
-  ChevronRight,
-  Copy,
-  ExternalLink,
-  FolderOpen,
-  RefreshCw,
-  SlidersHorizontal
-} from 'lucide-react'
+import { Check, ChevronDown, ChevronRight, Copy, ExternalLink, FolderOpen, Hammer, MonitorPlay, RefreshCw, SlidersHorizontal } from 'lucide-react'
 import { useProject } from './ProjectLayout'
 import type {
   BuildOutputInfo,
@@ -21,7 +12,7 @@ import type {
   BuildResult
 } from '@shared/ipc-contract'
 import { DEFAULT_FRAME_BREAKPOINT_WIDTHS } from '@shared/gridFrameCss'
-import { Badge, Button, Card, Field, PageHeader, SegmentedControl, TextInput, useCopyToClipboard } from '../components/ui'
+import { Badge, Button, Card, CardHeading, Field, PageHeader, SegmentedControl, TextInput, useCopyToClipboard } from '../components/ui'
 import { LogConsole } from '../components/LogConsole'
 import { DiscoveredServers } from '../components/DiscoveredServers'
 import { formatIpcError } from '../components/ErrorSurface'
@@ -206,7 +197,7 @@ export default function BuildServer(): JSX.Element {
           its own container (reproduced at a 900px window with the tablet preset). */}
       <Card className="min-w-0">
         <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-          <h2 className="font-medium">{t('buildServer.devServer')}</h2>
+          <CardHeading icon={MonitorPlay}>{t('buildServer.devServer')}</CardHeading>
           <Badge tone={running ? 'green' : status.state === 'error' ? 'red' : 'slate'}>
             {t(`common.serverState.${status.state}`)}
           </Badge>
@@ -400,7 +391,7 @@ export default function BuildServer(): JSX.Element {
 
       <Card>
         <div className="mb-1 flex items-center justify-between gap-3">
-          <h2 className="font-medium">{t('buildServer.oneOffBuild')}</h2>
+          <CardHeading icon={Hammer}>{t('buildServer.oneOffBuild')}</CardHeading>
           <Button onClick={runBuild} disabled={building}>
             {building ? t('buildServer.building') : t('buildServer.buildNow')}
           </Button>

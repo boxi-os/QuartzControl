@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next'
 import CodeMirror from '@uiw/react-codemirror'
 import { css } from '@codemirror/lang-css'
 import type { EditorView } from '@codemirror/view'
-import { ArrowDown, ArrowUp, Check, FileWarning, Plus, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, Check, FileCode, FileWarning, Plus, X } from 'lucide-react'
 import type { FontFaceInfo, ScssCheckResult, StyleFile, StyleReferenceFile } from '@shared/ipc-contract'
-import { Button, Card, Select, TextInput, useCopyToClipboard } from '../../components/ui'
+import { Button, Card, CardHeading, Select, TextInput, useCopyToClipboard } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { useStickyState } from '../../state/uiState'
 import { componentItems } from '../LayoutEditor/utils'
@@ -373,7 +373,7 @@ export default function CustomCss(): JSX.Element {
 
           {references.length > 0 && (
             <div className="flex flex-col gap-3">
-              <h2 className="text-sm font-semibold">{t('styleEditor.referenceHeading')}</h2>
+              <CardHeading icon={FileCode}>{t('styleEditor.referenceHeading')}</CardHeading>
               {references.map((ref) => (
                 <Card key={ref.path} className="!p-0 overflow-hidden">
                   <div className="flex items-center justify-between border-b border-ink/[0.06] px-3 py-1.5 dark:border-ink/10">

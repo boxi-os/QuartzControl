@@ -13,7 +13,7 @@ import type {
   TemplatePartSummary
 } from '@shared/ipc-contract'
 import { TEMPLATE_PART_IDS } from '@shared/ipc-contract'
-import { Badge, Button, Card, Field, PageHeader, SegmentedControl, TextInput } from '../components/ui'
+import { Badge, Button, Card, CardHeading, Field, PageHeader, SegmentedControl, TextInput } from '../components/ui'
 import { formatIpcError } from '../components/ErrorSurface'
 import { ImportOutcome } from '../components/ImportOutcome'
 import { useStickyState } from '../state/uiState'
@@ -28,6 +28,7 @@ const DISPLAY_ORDER: TemplatePartId[] = [
   'cssVariables',
   'styles',
   'fonts',
+  'static',
   'layout',
   'frames',
   'plugins',
@@ -160,9 +161,7 @@ function ExportSection({ project }: { project: Project }): JSX.Element {
 
   return (
     <Card>
-      <h2 className="mb-1 flex items-center gap-2 text-sm font-semibold">
-        <Package size={15} /> {t('templates.exportHeading')}
-      </h2>
+      <CardHeading icon={Package} className="mb-1">{t('templates.exportHeading')}</CardHeading>
       <p className="mb-4 text-xs text-text-muted">{t('templates.exportHint')}</p>
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -333,9 +332,7 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
 
   return (
     <Card>
-      <h2 className="mb-1 flex items-center gap-2 text-sm font-semibold">
-        <FolderInput size={15} /> {t('templates.importHeading')}
-      </h2>
+      <CardHeading icon={FolderInput} className="mb-1">{t('templates.importHeading')}</CardHeading>
       <p className="mb-4 text-xs text-text-muted">{t('templates.importHint')}</p>
 
       <div className="flex flex-wrap items-center gap-2">

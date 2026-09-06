@@ -982,6 +982,7 @@ export type TemplatePartId =
   | 'theme'
   | 'styles'
   | 'fonts'
+  | 'static'
   | 'layout'
   | 'frames'
   | 'plugins'
@@ -1003,6 +1004,10 @@ export const TEMPLATE_PART_IDS: readonly TemplatePartId[] = [
   'translations',
   'styles',
   'fonts',
+  // Right after the fonts, because it is the rest of the same directory: everything under
+  // quartz/static that is not a font file. Before 2026-09-06 a package carried none of it, so a
+  // plugin option pointing at a snippet or a logo arrived in the target pointing at nothing.
+  'static',
   'cssVariables',
   // Last, and on its own: the notes touch nothing the other ten write, and a long file copy at the
   // end of the run is the one part whose progress a person actually watches.

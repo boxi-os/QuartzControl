@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { confirmDialog } from '../utils/confirm'
 import { titlebarStripClass } from '../utils/platform'
 import { useNavigate, Link } from 'react-router-dom'
-import { ArrowUpRight, CheckCircle2, Copy, FolderSearch, Search, TriangleAlert, Trash2 } from 'lucide-react'
+import { ArrowUpRight, BookOpen, CheckCircle2, Compass, Copy, FolderSearch, ListOrdered, Search, Trash2, TriangleAlert } from 'lucide-react'
 import type {
   AppUpdateStatus,
   CreateProjectOptions,
@@ -14,7 +14,7 @@ import type {
 } from '@shared/ipc-contract'
 import type { TFunction } from 'i18next'
 import { useAppStore } from '../state/store'
-import { Button, Card, Field, InfoNote, Modal, Select, TextInput, Toggle } from '../components/ui'
+import { Button, Card, CardHeading, Field, InfoNote, Modal, Select, TextInput, Toggle } from '../components/ui'
 import ProjectAvatar from '../components/ProjectAvatar'
 import { ImportOutcome } from '../components/ImportOutcome'
 import { GROUP_ICONS } from './navConfig'
@@ -593,7 +593,7 @@ function GettingStarted({ onOpen, onCreate }: { onOpen: () => void; onCreate: ()
 
   return (
     <Card>
-      <h2 className="text-heading font-semibold">{t('home.gettingStarted.title')}</h2>
+      <CardHeading icon={ListOrdered}>{t('home.gettingStarted.title')}</CardHeading>
       <p className="mt-0.5 text-ui text-text-muted">{t('home.gettingStarted.description')}</p>
       <ol className="mt-4 flex flex-col gap-3">
         {steps.map((step, index) => (
@@ -806,7 +806,16 @@ function WhatYouCanDo({ environment }: { environment: EnvironmentInfo | null }):
     <aside className="flex flex-col gap-4">
       {environment && <EnvironmentLine info={environment} />}
       <Card>
-        <h2 className="text-heading font-semibold">{t('home.capabilities.title')}</h2>
+        <CardHeading icon={BookOpen}>{t('home.aboutQuartz.title')}</CardHeading>
+        <p className="mt-1.5 text-xs leading-relaxed text-text-muted">{t('home.aboutQuartz.body')}</p>
+        <div className="mt-3 flex flex-col gap-1.5">
+          <ExternalLink url={QUARTZ_DOCS} label={t('home.aboutQuartz.docs')} />
+          <ExternalLink url={PLUGIN_CATALOG} label={t('home.aboutQuartz.catalog')} />
+        </div>
+      </Card>
+
+      <Card>
+        <CardHeading icon={Compass}>{t('home.capabilities.title')}</CardHeading>
         <div className="mt-3 flex flex-col gap-3.5">
           {areas.map(({ key, icon: Icon }) => (
             <div key={key} className="flex gap-2.5">
@@ -819,15 +828,6 @@ function WhatYouCanDo({ environment }: { environment: EnvironmentInfo | null }):
               </div>
             </div>
           ))}
-        </div>
-      </Card>
-
-      <Card>
-        <h2 className="text-heading font-semibold">{t('home.aboutQuartz.title')}</h2>
-        <p className="mt-1.5 text-xs leading-relaxed text-text-muted">{t('home.aboutQuartz.body')}</p>
-        <div className="mt-3 flex flex-col gap-1.5">
-          <ExternalLink url={QUARTZ_DOCS} label={t('home.aboutQuartz.docs')} />
-          <ExternalLink url={PLUGIN_CATALOG} label={t('home.aboutQuartz.catalog')} />
         </div>
       </Card>
     </aside>

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ExternalLink, RefreshCw } from 'lucide-react'
+import { ExternalLink, FolderGit2, GitBranch, RefreshCw } from 'lucide-react'
 import { useProject } from './ProjectLayout'
 import type { GitFileChange, GithubAccount, GithubRepoRef, GitStatus } from '@shared/ipc-contract'
-import { Badge, Button, Card, Field, PageHeader, TextInput, Toggle } from '../components/ui'
+import { Badge, Button, Card, CardHeading, Field, PageHeader, TextInput, Toggle } from '../components/ui'
 import { formatIpcError } from '../components/ErrorSurface'
 import { useAsyncAction } from '../hooks/useAsyncAction'
 import { useStickyState } from '../state/uiState'
@@ -177,7 +177,7 @@ function CreateRepoCard({ projectPath, onCreated }: { projectPath: string; onCre
 
   return (
     <Card className="max-w-2xl">
-      <h2 className="mb-1 font-medium">{t('gitSync.createRepo.title')}</h2>
+      <CardHeading icon={FolderGit2} className="mb-1">{t('gitSync.createRepo.title')}</CardHeading>
       <p className="mb-3 text-xs text-text-muted">
         {viewer ? t('gitSync.createRepo.asAccount', { login: viewer.login }) : t('gitSync.createRepo.noToken')}
       </p>
@@ -264,7 +264,7 @@ export default function GitSync(): JSX.Element {
 
       <Card>
         <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="font-medium">{t('gitSync.statusTitle')}</h2>
+          <CardHeading icon={GitBranch}>{t('gitSync.statusTitle')}</CardHeading>
           <Button variant="ghost" onClick={() => refreshStatus()} disabled={refresh.pending}>
             <span className="flex items-center gap-1.5">
               <RefreshCw className={`h-3.5 w-3.5 ${refresh.pending ? 'animate-spin' : ''}`} />
@@ -283,7 +283,7 @@ export default function GitSync(): JSX.Element {
       {/* Three buttons don't need the whole window; the git output that appears underneath them
           does, so the card only caps itself while there is nothing to show. */}
       <Card className={output == null ? 'max-w-2xl' : ''}>
-        <h2 className="mb-1 font-medium">{t('gitSync.title')}</h2>
+        <CardHeading icon={RefreshCw} className="mb-1">{t('gitSync.title')}</CardHeading>
         {/* What `quartz sync` actually does, in the order it does it. All three parts were
             invisible before: the commit (its --commit defaults to true, so even "Pull" committed
             the whole working tree under a generated message - measured), the force push

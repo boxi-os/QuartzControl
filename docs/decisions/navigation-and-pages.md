@@ -414,3 +414,39 @@ Rennen war in beide Richtungen zu gewinnen, deshalb sah es so lange gut aus. `ki
 gibt jetzt ein Promise zurück, das auf jeden `tree-kill`-Rückruf wartet, mit einer Frist von drei
 Sekunden — ein Kill, der nie antwortet, darf die App nicht unbeendbar machen, und was die Frist
 überlebt, ist eine verfolgte PID und damit die Waisen-Frage beim nächsten Start.
+
+**36 Karten-Überschriften, drei Größen, drei Icons (2026-09-06).** Nachgezählt statt geschätzt:
+`src/` hatte 36 `<h2>`, davon trugen **drei** ein Icon — die beiden Karten der Vorlagen-Seite und
+`DiscoveredServers`, das am selben Tag dazukam. Die Größen liefen auseinander, ohne dass es je
+jemand entschieden hätte: 22× `text-sm` (14px), 4× `text-heading` (15px), 7× ein nacktes
+`font-medium`, was 16px bedeutet — Tailwinds Preflight setzt `<h2>` auf die Grundschriftgröße
+zurück, also erbt es die 16px des `body`. (Die übrigen drei sind keine Karten-Überschriften: zwei
+Micro-Labels der Übersicht und der Titel des `Modal`.) Innerhalb *einer* Seite standen damit zwei
+Größen nebeneinander: „Dev-Server" und „Einmaliger Build" auf 16px, die Karten der Updates-Seite
+auf 14. Umgestellt sind die 30, die eine Karte überschreiben.
+
+`CardHeading` in `ui.tsx` ist jetzt die eine Form: `text-heading`, halbfett, Icon in `size={15}`
+auf `text-text-secondary`. Die Größe ist nicht neu gewählt, sondern die, die
+`tailwind.config.js` seit dem Größen-Durchgang für genau diese Rolle führt („A card's or a
+section's own heading").
+
+Zwei Entscheidungen dabei:
+
+- **Das Icon ist schlicht, kein getöntes Quadrat.** `PageHeader` und der `Section` der
+  Einstellungen setzen ihr Icon in eine 32–36px große, eingefärbte Fläche. Das ist richtig für
+  etwas, das eine *Seite* benennt, und falsch für eine Karte: Eine Seite trägt bis zu sechs davon,
+  und sechs farbige Quadrate übertönen die Überschrift der Seite selbst. Die Vorlagen-Seite hatte
+  die schlichte Form schon; sie ist geblieben.
+- **Welches Icon, ist nicht frei erfunden.** Wo eine Karte dasselbe meint wie ein Eintrag der
+  Seitenleiste, nimmt sie dessen Icon aus `navConfig` — Plugins `Blocks`, Frames `LayoutGrid`,
+  Wartung `Wrench`, Veröffentlichen `CloudUpload`. Das ist die Bildseite der Regel „ein Wort, ein
+  Name": Wenn die Leiste Plugins mit einem Bild benennt, darf die Karte darüber kein zweites
+  wählen.
+
+Der `Section` der Einstellungen bleibt bewusst, wie er ist: Die Einstellungen haben keinen
+`PageHeader`, ihre Abschnitte *sind* die Gliederung der Seite, und dort trägt das Quadrat.
+
+Gemessen an der gebauten App auf fünf Seiten in beiden Schemata und mit `npm run smoke`
+(38 Aufrufe): keine Karte bricht anders um, keine Überschrift kollidiert mit dem Knopf, der in
+derselben Zeile sitzt.
+

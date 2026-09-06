@@ -18,15 +18,14 @@
 // refuses to merge histories that share no commit. So the repository comes along and only `origin`
 // is removed, exactly as createService does after cloning: a later Git-Sync push must never land in
 // the original's remote.
-import { cp, mkdir, readdir, readlink, symlink, writeFile, rm } from 'fs/promises'
+import { cp, mkdir, readdir, symlink, writeFile, rm } from 'fs/promises'
 import { existsSync } from 'fs'
 import { basename, isAbsolute, join, relative, resolve } from 'path'
-import type { DuplicateProjectOptions, DuplicateProjectResult, PluginEntry } from '@shared/ipc-contract'
+import type { DuplicateProjectOptions, DuplicateProjectResult } from '@shared/ipc-contract'
 import { runCommand as run } from './runCommand'
 import { contentDirPath } from './contentService'
 import { readConfig, writeConfig } from './configService'
-import { readLockfile } from './pluginService'
-import { writeJsonFile } from './jsonStore'
+import { repointProjectPaths } from './projectPaths'
 import { mainT } from '../i18n'
 
 /** Relative to the project root. Everything else is copied. */
@@ -66,73 +65,6 @@ function contains(parent: string, child: string): boolean {
   return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel))
 }
 
-// An authored frame is a plugin whose source is an absolute path into the project it was authored
-// in (see layoutFrameService), and three places record that path: the plugin entry's `source` in
-// quartz.config.yaml, `source` and `resolved` in quartz.lock.json, and the symlink
-// `.quartz/plugins/<id>` that `quartz plugin add` laid down. cp copies all three verbatim, so
-// without this the copy keeps building from the *original's* frame directories: an edit made in
-// the copy is written to its own authored-frames/ (saveFrame sees the directory, considers the
-// frame registered and never re-adds it) and appears in no build, while every edit in the original
-// shows up in the copy, and deleting a frame there breaks the copy's build.
-//
-// Rewritten is every path that lies inside the source project, not only the frames: a plugin
-// installed from somewhere else on disk means the same thing in both projects and stays as it is.
-async function repointIntoCopy(source: string, target: string): Promise<void> {
-  const moved = (path: string): string | null => {
-    if (!isAbsolute(path)) return null
-    const abs = resolve(path)
-    return contains(source, abs) ? join(target, relative(source, abs)) : null
-  }
-
-  const config = await readConfig(target)
-  let configChanged = false
-  const plugins: PluginEntry[] = config.plugins.map((entry) => {
-    if (typeof entry.source !== 'string') return entry
-    const next = moved(entry.source)
-    if (next === null) return entry
-    configChanged = true
-    return { ...entry, source: next }
-  })
-  // No snapshot: the copy has no snapshot store yet (it stays behind, deliberately), and this
-  // write is part of creating it, not an edit the user could want to undo.
-  if (configChanged) await writeConfig(target, { ...config, plugins }, { snapshot: false })
-
-  // A lockfile that cannot be read is not this operation's problem to solve - the copy is no worse
-  // off than the original, and `quartz plugin install` is what reports it.
-  const lock = await readLockfile(target).catch(() => null)
-  const locked = lock?.plugins
-  if (locked && typeof locked === 'object') {
-    let lockChanged = false
-    for (const entry of Object.values(locked as Record<string, unknown>)) {
-      if (!entry || typeof entry !== 'object') continue
-      for (const key of ['source', 'resolved'] as const) {
-        const value = (entry as Record<string, unknown>)[key]
-        if (typeof value !== 'string') continue
-        const next = moved(value)
-        if (next === null) continue
-        ;(entry as Record<string, unknown>)[key] = next
-        lockChanged = true
-      }
-    }
-    if (lockChanged) await writeJsonFile(join(target, 'quartz.lock.json'), lock)
-  }
-
-  const pluginsDir = join(target, '.quartz', 'plugins')
-  let entries
-  try {
-    entries = await readdir(pluginsDir, { withFileTypes: true })
-  } catch {
-    return // a project whose plugins were never installed
-  }
-  for (const entry of entries) {
-    if (!entry.isSymbolicLink()) continue
-    const link = join(pluginsDir, entry.name)
-    const next = moved(resolve(pluginsDir, await readlink(link)))
-    if (next === null) continue
-    await rm(link, { force: true })
-    await symlink(next, link, 'dir')
-  }
-}
 
 export async function duplicateProject(options: DuplicateProjectOptions): Promise<DuplicateProjectResult> {
   const source = resolve(options.sourcePath)
@@ -172,7 +104,7 @@ export async function duplicateProject(options: DuplicateProjectOptions): Promis
     }
   })
 
-  await repointIntoCopy(source, target)
+  await repointProjectPaths(source, target)
 
   // The copy must not push where the original pushes. `remote remove` answers non-zero when there
   // is nothing to remove, which is not a failure here.

@@ -450,3 +450,31 @@ Gemessen an der gebauten App auf fünf Seiten in beiden Schemata und mit `npm ru
 (38 Aufrufe): keine Karte bricht anders um, keine Überschrift kollidiert mit dem Knopf, der in
 derselben Zeile sitzt.
 
+**Ein Projekt umzubenennen zieht die Pfade nach, die in es hineinzeigen (2026-09-06).**
+`projects.relocate` hängte den Eintrag um und behielt die ID — richtig — ließ aber jeden absoluten
+Pfad stehen, den ein selbstgebautes Frame auf seinen eigenen Ordner hält: `source:` in
+`quartz.config.yaml`, `source`/`resolved` in `quartz.lock.json` und den Symlink
+`.quartz/plugins/<id>`. Nach einem Umbenennen zeigten alle drei auf einen Ordner, den es nicht mehr
+gibt: **jedes Frame tot**, der nächste `quartz plugin add` mit `ENOENT` auf dem alten Pfad — und
+der Layout-Editor listete die Frames unbeirrt weiter, weil er sie aus `.quartz-gui/authored-frames/`
+liest und nie fragt, ob noch etwas dorthin zeigt (BEFUNDE 8).
+
+Die Reparatur gab es schon, an der anderen Stelle, an der ein Projektordner unter seinen Pfaden
+weggezogen wird: `repointIntoCopy` im Duplizieren. Sie heißt jetzt `repointProjectPaths()`
+(`projectPaths.ts`) und wird von beiden benutzt — eine zweite Umsetzung derselben drei Schreibwege
+wäre die schlechtere Antwort gewesen.
+
+**Repariert wird vor dem Umhängen, nicht danach.** Der Eintrag in der Projektliste ist das billige,
+umkehrbare Stück; die Reparatur auf der Platte ist das, was scheitern kann. Scheitert sie zuerst,
+steht die App unverändert da und die Meldung erscheint an der Projektzeile — andernfalls zeigte ein
+bereits umgehängter Eintrag auf ein halb repariertes Projekt. Ein Zielordner ohne
+`quartz.config.yaml` ist kein Fehler, sondern nichts zu tun.
+
+Vorher nachgemessen statt angenommen, was ein Projekt sonst noch auf sich selbst hält: nichts. Der
+Snapshot-Store, die Content-Backups, die Presets und die Breakpoints unter `.quartz-gui/` enthalten
+ihren eigenen Projektpfad nirgends.
+
+Gemessen am Kontrollprojekt mit vier Frames: Ordner umbenannt (danach lösten alle vier Symlinks ins
+Leere), über die App umgehängt, anschließend 0 alte Pfade und 4 + 8 neue, alle Links wieder heil,
+`quartz build` grün mit 639 Dateien, und ein danach angelegtes Frame ließ sich registrieren.
+

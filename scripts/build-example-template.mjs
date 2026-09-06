@@ -76,10 +76,13 @@ const PACKAGE_OUT = path.join(HOME, 'Documents/minimal-lesbar.qtpl')
 // built-in template download points at (builtinTemplateService.ts) and what the published copy
 // in quartzcontrol-templates is called, so renaming it would be a change to an external repo.
 const TEMPLATE_NAME = 'Example'
+// Was hier steht, liest jemand im Anlege-Assistenten, bevor er zusagt - also zählt es die Dinge auf,
+// die das Paket wirklich enthält. „Drei eigene Frames" stand hier noch, als `drawing` längst der
+// vierte war (FRAMES in frames.mjs); beim Veröffentlichen am 2026-09-06 nachgezählt statt gelesen.
 const TEMPLATE_DESCRIPTION =
-  'Eine vollständige Beispielvorlage: gemessene Kontraste (WCAG AA in hell und dunkel), drei eigene Frames, ' +
-  'selbst gehostete Schriften und jede Plugin-Komponente einzeln gestaltet — Explorer und Inhaltsverzeichnis ' +
-  'bis zur untersten Ebene.'
+  `Eine vollständige Beispielvorlage: ein Handbuch in sieben Kapiteln, zweisprachig, mit gemessenen ` +
+  `Kontrasten (WCAG AA in hell und dunkel), ${FRAMES.length} eigenen Frames, selbst gehosteten Schriften und jeder ` +
+  'Plugin-Komponente einzeln gestaltet — Explorer und Inhaltsverzeichnis bis zur untersten Ebene.'
 
 const argv = process.argv.slice(2)
 // `--only` takes a comma-separated list of phase numbers or names, so a run can stop before the

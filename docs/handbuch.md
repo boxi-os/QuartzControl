@@ -4,10 +4,9 @@ Das Handbuch zur App — nicht zu verwechseln mit dem **Example-Handbuch**, das 
 erklärt und im Vault `~/Obsidian/QuartzProjekte/Example` lebt
 (`scripts/example-template/README.md`).
 
-**Stand 2026-09-07:** Regeln, Gliederung und der Arbeitsablauf stehen (dieses Dokument und der
-Abschnitt „Was ein App-Text sagt“ in [`decisions/i18n-and-vocabulary.md`](decisions/i18n-and-vocabulary.md)).
-Vault, Projekt und das Screenshot-Skript gibt es noch nicht; die Abschnitte darüber beschreiben,
-was entstehen soll, und werden beim Anlegen auf das Gemessene umgeschrieben.
+**Stand 2026-09-07:** Regeln, Gliederung, Vault und Projekt stehen. Geschrieben ist das Gerüst —
+Startseite und acht Kapitelseiten, die nennen, was hineinkommt. Die Kapitel selbst und das
+Screenshot-Skript gibt es noch nicht; deren Abschnitte hier beschreiben, was entstehen soll.
 
 ## Warum es nicht im Example-Vault steht
 
@@ -20,18 +19,29 @@ Import — als Inhalt seiner Website.
 Also ein eigener Ort:
 
 ```
-~/Obsidian/QuartzProjekte/Handbuch/     der Vault — der Inhalt, eigenes git
+~/Obsidian/QuartzProjekte/QuartzControl-Handbuch/   der Vault — der Inhalt, eigenes git
         ↑ Symlink
-~/Documents/Handbuch/content/           das Projekt, gebaut mit der Example-Vorlage
+~/Documents/QuartzControl-Handbuch/content/         das Projekt, mit der Example-Vorlage
 ```
 
-Das Projekt entsteht aus `minimal-lesbar.qtpl` — **ohne den Baustein `content`**. Bei einem
-Symlink lehnt der Baustein sich zwar selbst ab (`contentIsSymlink`), aber abwählen ist ehrlicher
-als sich darauf zu verlassen. Damit ist das Handbuch zugleich der zweite echte Importtest des
-Pakets: Das erste Projekt, das die Vorlage benutzt, ohne sie gebaut zu haben.
+Nicht `Handbuch`: In `QuartzProjekte/` liegt bereits `brain-handbuch`, und das ist ein
+vollständiges Quartz-*Projekt*, kein Vault. Ein Vault namens `Handbuch` daneben führt beim nächsten
+Lesen in die Irre.
 
-**Die Vault-Schreibregel gilt weiter, nur für zwei Vaults:** `Example` und `Handbuch` werden
-gepflegt, alle anderen unter `~/Obsidian/` sind tabu. Gepflegt wird mit gewöhnlichen
+Das Projekt entstand aus `minimal-lesbar.qtpl` — **ohne den Baustein `content`**. Bei einem
+Symlink lehnt der Baustein sich zwar selbst ab (`contentIsSymlink`), aber abwählen ist ehrlicher
+als sich darauf zu verlassen. Gemessen am 2026-09-07: 12 Bausteine im Paket, 11 importiert, keine
+Warnung; die Website baut mit 9 Seiten zu 101 Dateien durch. Damit ist das Handbuch zugleich der
+zweite echte Importtest des Pakets — das erste Projekt, das die Vorlage benutzt, ohne sie gebaut
+zu haben.
+
+Aufgesetzt wurde es wie in `scripts/build-example-template.mjs`: `git clone` von jackyzha0/quartz
+(voll, nicht flach — ein flacher Klon lässt sich später nirgends hinpushen), `npm install`,
+`npx quartz create`, dann der Import über die **gebaute App** per Playwright, also durch dieselben
+IPC-Pfade wie ein Klick.
+
+**Die Vault-Schreibregel gilt weiter, nur für zwei Vaults:** `Example` und
+`QuartzControl-Handbuch` werden gepflegt, alle anderen unter `~/Obsidian/` sind tabu. Gepflegt wird mit gewöhnlichen
 Dateioperationen, nicht über das Obsidian-CLI — das fällt bei einem ihm unbekannten Vault-Namen
 still auf einen anderen zurück (gemessen 2026-09-04).
 

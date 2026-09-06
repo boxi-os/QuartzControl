@@ -11,6 +11,7 @@ import { needsShell } from './runCommand'
 import { looksLikeQuartzBuild } from './buildOutputGuard'
 import { quartzGuiDir, resolveBuildDir } from './projectDirs'
 import * as runningServersStore from './runningServersStore'
+import { mainT } from '../i18n'
 
 interface RunningServer {
   process: ChildProcess
@@ -108,38 +109,65 @@ function tailFile(path: string, onText: (text: string) => void): () => void {
   }
 }
 
+interface ServerLog {
+  stdout: number
+  stderr: number
+  close: () => void
+  stop: () => void
+}
+
 // Opens this run's two log files and starts tailing them. The write descriptors are the child's
 // as soon as it is spawned, so the caller closes its own copies right after; the returned stop()
 // ends both tails.
-function openServerLog(
-  projectId: string,
-  projectPath: string
-): { stdout: number; stderr: number; close: () => void; stop: () => void } {
-  const dir = quartzGuiDir(projectPath, 'logs')
+//
+// Answers `null` instead of throwing when the project cannot be written to - a read-only volume, a
+// `.quartz-gui` that belongs to another user, an ACL. Before the output moved into a file, a
+// server start touched nothing in the project and everything that could go wrong came back from
+// the child as an `error` status with a sentence the page shows; a throw from here would instead
+// have left the status on "gestoppt" and put a raw `EACCES: permission denied, open '…'` in a
+// toast, which is nobody's answer to anything. The server starts without a console in that case
+// and says so in it. Note that reaching this at all now writes to the project: `quartzGuiDir()`
+// creates the directory and adds the `.gitignore` rule if the project is a git repository, which
+// starting a server did not do before.
+function openServerLog(projectId: string, projectPath: string): ServerLog | null {
   const stops: Array<() => void> = []
-  const open = (stream: 'stdout' | 'stderr', name: string): number => {
-    const path = join(dir, name)
-    // Truncated, not appended to: the file belongs to this run, and the console it feeds is the
-    // one this run's log lines go to. What a previous run wrote is in the log buffer already.
-    const fd = openSync(path, 'w')
-    stops.push(tailFile(path, (text) => emitLog(projectId, stream, text)))
-    return fd
-  }
-  const stdout = open('stdout', 'dev-server.out.log')
-  const stderr = open('stderr', 'dev-server.err.log')
-  let closed = false
-  return {
-    stdout,
-    stderr,
-    close: () => {
-      if (closed) return
-      closed = true
-      closeSync(stdout)
-      closeSync(stderr)
-    },
-    stop: () => {
-      for (const stop of stops) stop()
+  const fds: number[] = []
+  try {
+    const dir = quartzGuiDir(projectPath, 'logs')
+    const open = (stream: 'stdout' | 'stderr', name: string): number => {
+      const path = join(dir, name)
+      // Truncated, not appended to: the file belongs to this run, and the console it feeds is the
+      // one this run's log lines go to. What a previous run wrote is in the log buffer already.
+      const fd = openSync(path, 'w')
+      fds.push(fd)
+      stops.push(tailFile(path, (text) => emitLog(projectId, stream, text)))
+      return fd
     }
+    const stdout = open('stdout', 'dev-server.out.log')
+    const stderr = open('stderr', 'dev-server.err.log')
+    let closed = false
+    return {
+      stdout,
+      stderr,
+      close: () => {
+        if (closed) return
+        closed = true
+        closeSync(stdout)
+        closeSync(stderr)
+      },
+      stop: () => {
+        for (const stop of stops) stop()
+      }
+    }
+  } catch (err) {
+    // Whatever the first of the two opens managed has to be undone here, or a failed second open
+    // leaves an interval running and a descriptor open for every attempt.
+    for (const stop of stops) stop()
+    for (const fd of fds) {
+      closeSync(fd)
+    }
+    emitLog(projectId, 'stderr', `${mainT('serverLogUnavailable', { reason: (err as Error).message })}\n`)
+    return null
   }
 }
 
@@ -158,15 +186,18 @@ export async function startServer(
   // No --watch: `quartz build --serve` sets argv.watch itself (quartz/cli/handlers.js), so passing
   // it is at best redundant and offering it as a switch was a control that could not be honoured.
 
+  // A project that cannot be written to gets no log file and no console (openServerLog says so in
+  // it); 'ignore' rather than a pipe, because a pipe is exactly what this file moved away from -
+  // the server would die on it the first time it wrote after the app was gone.
   const log = openServerLog(projectId, projectPath)
   const child = spawn('npx', args, {
     cwd: projectPath,
     shell: needsShell('npx'),
-    stdio: ['ignore', log.stdout, log.stderr]
+    stdio: ['ignore', log?.stdout ?? 'ignore', log?.stderr ?? 'ignore']
   })
   // The child has its own copies from the moment spawn() returns; holding ours open would put the
   // app back in the position this file just left, as the last thing keeping the write end alive.
-  log.close()
+  log?.close()
   const status: ServerStatus = { state: 'starting', options, pid: child.pid, startedAt: new Date().toISOString() }
   runningServers.set(projectId, { process: child, status })
   emitStatus(projectId)
@@ -187,7 +218,7 @@ export async function startServer(
   // emit an unhandled 'error', which EventEmitter rethrows and takes the whole main process
   // down - and 'exit' never fires, so the status would otherwise stay stuck on "starting".
   child.on('error', (err) => {
-    log.stop()
+    log?.stop()
     emitLog(projectId, 'stderr', `${err.message}\n`)
     runningServers.delete(projectId)
     void runningServersStore.remove(projectId)
@@ -195,7 +226,7 @@ export async function startServer(
     emitStatus(projectId)
   })
   child.on('exit', (code) => {
-    log.stop()
+    log?.stop()
     const running = runningServers.get(projectId)
     const wasStopping = running?.status.state === 'stopping'
     runningServers.delete(projectId)

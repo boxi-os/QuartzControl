@@ -423,9 +423,17 @@ Die drei niedrigen: der vierte Fundort der Zahl zehn (die Bausteine sind seit `b
 im gepflegten Vault stand sie noch sechsmal), ein Dry-Run, der verschwieg, was der Import ablehnen
 wird, und eine Nadel, deren eigenes Beispiel sie nicht traf.
 
-**Das nächste Review misst ab `review-2026-09-06`.** Anders als beim vorigen Mal markiert der Tag
-diesmal wirklich den gelesenen Stand: der Token-Durchgang, den er ursprünglich abschloss, lag im
-Diff dieses Reviews und ist damit von einem zweiten Augenpaar gesehen.
+**Das nächste Review misst ab `review-2026-09-06`, und der Tag ist dafür verschoben worden.** Er
+stand auf `0b0fb96`, dem Ende des Token-Durchgangs, und sagte in seiner eigenen Nachricht, er sei
+ausdrücklich *nicht* der Ausgangsstand — weil dieser Durchgang gemessen, aber nicht gelesen war.
+Gelesen ist er inzwischen: er lag im Diff dieses Reviews. Der Tag sitzt deshalb jetzt 67 Commits
+weiter auf `1bd69dc`, dem Stand, den das dritte Review tatsächlich vor sich hatte.
+
+**Die sechs Fixes dieses Reviews liegen bewusst dahinter** (PR #17, Merge `34b88dd`). Sie sind
+gemessen, jeder mit Vorher und Nachher, und von niemandem sonst gelesen — der größte Einzeleingriff
+ist der Dev-Server, dessen Ausgabe aus der Pipe in eine Datei umgezogen ist. Sie gehören damit in
+den Diff des nächsten Auftrags, nach derselben Regel, die die alte Tag-Nachricht aufgeschrieben
+hatte.
 
 Von dem, was beide Reviews als „beiläufig, kein sed“ führen, sind die Farbpaare am 2026-09-05
 abgearbeitet, soweit sie eine Umbenennung waren: 322 Paare, die wörtlich das Token buchstabierten,

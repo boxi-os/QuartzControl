@@ -320,9 +320,23 @@ function LocalFontImport({
     setBusy(true)
     setMessage(null)
     try {
-      await window.quartzGui.fonts.importFile(projectPath, pendingPath, family.trim())
+      const imported = await window.quartzGui.fonts.importFile(projectPath, pendingPath, family.trim())
       onImported(family.trim(), slot)
-      setMessage(t('themeEditor.fontImportSuccess', { family: family.trim() }))
+      // What the rule says now, rather than only that it was written: the weight comes out of the
+      // file, and when the file does not name one that is worth saying too - the rule is then the
+      // one it always was, and nobody can see the difference from the outside.
+      const named = { family: family.trim(), weight: imported.weight }
+      // One `t()` per branch, not one with a computed key: `npm run check:i18n` finds keys by
+      // reading literal t('…') calls, and a key assembled in a ternary is invisible to it - which
+      // is the one thing that check exists to prevent, since i18next renders a missing key as the
+      // key itself.
+      setMessage(
+        !imported.weight
+          ? t('themeEditor.fontImportUndetected', named)
+          : imported.italic
+            ? t('themeEditor.fontImportDetectedItalic', named)
+            : t('themeEditor.fontImportDetected', named)
+      )
       setPendingPath(null)
       setFamily('')
       setSlot('')

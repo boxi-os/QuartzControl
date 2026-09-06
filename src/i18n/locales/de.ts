@@ -799,6 +799,10 @@ export default {
     localFontNoSlot: '— keins —',
     localFontConfirm: 'Importieren',
     fontImportSuccess: '„{{family}}“ importiert.',
+    fontImportDetected: '„{{family}}“ importiert — Gewicht {{weight}} aus der Datei gelesen.',
+    fontImportDetectedItalic: '„{{family}}“ importiert — Gewicht {{weight}}, kursiv, aus der Datei gelesen.',
+    fontImportUndetected:
+      '„{{family}}“ importiert. Die Datei nennt kein Gewicht, die Regel bleibt deshalb ohne — bei Bedarf in custom.scss ergänzen.',
     colors: 'Farben'
   },
   themes: {

@@ -60,13 +60,30 @@ Durch die App gefahren, an einem echten Projekt: `01-typografie` wird
 `as typo-2;`, ein gewöhnlicher Name behält seine Zeile ohne `as`, und der SCSS-Check meldet nach
 jedem Schritt `ok`.
 
-### 3. `importFontFile` schreibt @font-face ohne Gewicht und Stil
+### 3. `importFontFile` schreibt @font-face ohne Gewicht und Stil — behoben am 2026-09-06
 
-Erzeugt wird nur `font-family`, `src`, `font-display`. Bei einer Variable Font heißt das: Der Browser
-behandelt sie als 400 und fälscht jeden fetten Schnitt, die mitgelieferte Achse bleibt ungenutzt.
-Bei zwei Schnitten derselben Familie (etwa aufrecht und kursiv) beanspruchen beide dieselbe
-Kennung, und der zweite verdrängt den ersten. Die Vorlage korrigiert den Block nach dem Import von
-Hand; über die Oberfläche geht das nicht.
+Erzeugt wurde nur `font-family`, `src`, `font-display`. Bei einer Variable Font hieß das: Der
+Browser behandelt sie als 400 und fälscht jeden fetten Schnitt, die mitgelieferte Achse bleibt
+ungenutzt. Bei zwei Schnitten derselben Familie (etwa aufrecht und kursiv) beanspruchten beide
+dieselbe Kennung, und der zweite verdrängte den ersten. Die Vorlage korrigierte den Block nach dem
+Import von Hand; über die Oberfläche ging das nicht.
+
+**Behoben, indem die Datei gefragt wird.** `fontFile.ts` liest aus sfnt, WOFF und WOFF2 drei Dinge:
+die `wght`-Achse aus `fvar`, sonst `usWeightClass` aus `OS/2`, dazu das Kursiv-Bit (aus `OS/2`
+*oder* `head` — die beiden widersprechen sich in freier Wildbahn). Das Gewicht einer variablen
+Schrift ist der **Bereich**, nicht ein Wert: gemessen an den vier Schriften dieser Vorlage
+`400 700`, `100 900`, `100 900` und `400 800` — Inter trägt also eine breitere Achse, als sein
+Dateiname behauptet.
+
+Ein Paket dafür gibt es nicht im Projekt und sollte es auch nicht: Was gebraucht wird, sind drei
+Zahlen aus zwei Tabellen, und der Leser ist die Teile der drei Formatspezifikationen, die sie
+berühren. Was er nicht lesen kann, beantwortet er mit `null` statt mit einer Ausnahme — gemessen an
+`LastResort.otf`, das gar keine `OS/2`-Tabelle hat: Der Import läuft durch, die Regel wird
+geschrieben wie eh und je, und die Oberfläche sagt, dass die Datei kein Gewicht nennt.
+
+Durch die App gefahren, in einem echten Projekt: aufrechtes und kursives Inter derselben Familie
+stehen jetzt nebeneinander (`font-weight: 100 900` und dasselbe plus `font-style: italic`) statt
+sich zu verdrängen, der SCSS-Check meldet `ok`.
 
 ### 4. Der `translations`-Baustein transportiert Änderungen, die man nicht sieht
 

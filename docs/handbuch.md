@@ -4,9 +4,18 @@ Das Handbuch zur App — nicht zu verwechseln mit dem **Example-Handbuch**, das 
 erklärt und im Vault `~/Obsidian/QuartzProjekte/Example` lebt
 (`scripts/example-template/README.md`).
 
-**Stand 2026-09-07:** Regeln, Gliederung, Vault und Projekt stehen. Geschrieben ist das Gerüst —
-Startseite und acht Kapitelseiten, die nennen, was hineinkommt. Die Kapitel selbst und das
-Screenshot-Skript gibt es noch nicht; deren Abschnitte hier beschreiben, was entstehen soll.
+**Stand 2026-09-07:** Die acht Kapitel sind geschrieben — 52 Seiten, 309 Wikilinks, alle
+auflösbar. Offen sind das Screenshot-Skript, der zweite Textdurchgang, der Anschluss ans
+Hilfe-Menü und die englische Fassung; deren Abschnitte hier beschreiben, was entstehen soll.
+
+Die Kapitel entstanden aus den Quellen — `de.ts`, die Routen, `electron-builder.yml`,
+`docs/decisions/` — und wurden danach gegen die **laufende** App gehalten: je Route die sichtbaren
+`h1`, Umschaltleisten und Kartenüberschriften ausgelesen und mit dem verglichen, was im Handbuch
+steht. Das fand drei Abweichungen, die aus keiner Quelldatei hervorgingen (die Handlungsbedarf-Karte
+ist immer da, nicht nur im Problemfall; die Kachel heißt „Git-Sync“, nicht „Git“; die eigenen Frames
+stehen in der Plugin-Liste zuoberst, nicht zuunterst). **Wer eine Seite ändert, hält sie wieder
+dagegen** — der Wortlaut einer Sprachdatei sagt nicht, in welcher Reihenfolge und unter welcher
+Bedingung er auf dem Bildschirm erscheint.
 
 ## Warum es nicht im Example-Vault steht
 

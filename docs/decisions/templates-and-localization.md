@@ -67,3 +67,29 @@ eigener Baustein schreibt. Das ist folgenlos und nachgesehen statt angenommen:
 `quartz/plugins/loader/config-loader.ts` sortiert nach `entry.order ?? manifest.defaultOrder ?? 50`
 und die Komponenten danach nach `priority`. Beide Felder stimmen exakt überein.
 
+**Ein zwölfter Baustein: die Dateien unter `quartz/static/` (2026-09-06).** Ein Paket erfasste
+`quartz/styles/` und `quartz/static/fonts/` — und sonst nichts aus dem Projekt. Damit kam jede
+Plugin-Option, die auf eine Datei zeigt, im Zielprojekt ins Leere: Gemessen an der Beispielvorlage
+rendert `layout-box-note` dort auf **0 von 334** Seiten, während die fünf Geschwister auf jeder
+stehen, und im Build-Log steht `[layout-box] Snippet file not found`. Die Vorlage wich dem aus,
+indem sie ihre übrigen Instanzen auf Inline-HTML stellte und Logos als Inline-SVG führte; das ist
+eine Umgehung, keine Lösung.
+
+Der Baustein `static` trägt jetzt alles unter `quartz/static/` außer den Schriften, die ihren
+eigenen haben. Gebaut wie `fonts`, samt dessen Regel, dass eine **inhaltsgleiche Datei weder
+Ergänzung noch Konflikt** ist — und genau die trägt hier die Entscheidung, alles mitzunehmen statt
+zu filtern: Von den sechs Dateien der Beispielvorlage sind vier byteweise Quartz' eigenes Gerüst
+(`icon.png`, `og-image.png`, zwei giscus-Stylesheets, gegen ein frisch angelegtes Projekt
+verglichen) und nur die zwei Snippets gehören der Vorlage. Die Vorschau meldet deshalb
+`static +2 ~0`, und niemandem wird das Gerüst eines anderen übergestülpt. Was *nicht* identisch ist
+— das eigene Logo eines Vorlagen-Autors — ist Gestaltung, und die trägt eine Vorlage.
+
+Kein Filter also, sondern eine Grenze: 25 MB für den ganzen Baustein, mit demselben Wortlaut wie
+beim Inhalt („eine Vorlage ist keine Mediathek"), geworfen statt stillschweigend gekürzt. Jede
+Datei geht durch `writableTarget()` — Name aus einem fremden Paket, Segment für Segment auf
+Symlinks geprüft.
+
+Gemessen an einem frisch angelegten Zielprojekt: `static +2 ~0`, keine Warnung, Build grün, und
+**alle sechs Boxen rendern** — `layout-box-note` auf 327 von 334 Seiten (Desktop-only), mit ihrem
+Text aus der Datei statt eines Platzhalters.
+

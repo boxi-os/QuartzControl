@@ -64,13 +64,27 @@ kompilierten Übersetzungen in `dist/` mit. Gemessen: „Backlinks“, „Grapha
 bearbeitete Seiten“ überstanden die Änderung unverändert. Der Mechanismus ist nicht kaputt, er
 erreicht nur fast nichts mehr; die Oberfläche sagt darüber nichts.
 
-### 5. Ein Vorlagen-Paket kann seine eigenen Snippets nicht mitnehmen
+### 5. Ein Vorlagen-Paket kann seine eigenen Snippets nicht mitnehmen — behoben am 2026-09-06
 
-Erfasst werden `quartz/styles/` und `quartz/static/fonts/`. Alles andere unter `quartz/static/` —
-Bilder, Logos, die Snippet-Dateien von `quartz-layout-box` — bleibt zurück. Eine Vorlage, die eine
-Komponente mit `file:`-Option enthält, kommt im Zielprojekt mit einem Verweis ins Leere an. Die
-Vorlage weicht darauf aus, indem sie vier ihrer fünf Instanzen auf `html:` inline stellt und Logos
-als Inline-SVG führt; für den fünften Fall liegt eine Anleitung bei (`site/README.md`).
+Erfasst wurden `quartz/styles/` und `quartz/static/fonts/`. Alles andere unter `quartz/static/` —
+Bilder, Logos, die Snippet-Dateien von `quartz-layout-box` — blieb zurück. Eine Vorlage, die eine
+Komponente mit `file:`-Option enthielt, kam im Zielprojekt mit einem Verweis ins Leere an.
+**Gemessen im gebauten Zielprojekt: `layout-box-note` erschien auf 0 von 334 Seiten**, während die
+fünf anderen Boxen auf jeder standen; im Build-Log stand `[layout-box] Snippet file not found`.
+
+**Behoben durch einen zwölften Baustein, `static`:** alles unter `quartz/static/` außer den
+Schriften, die ihren eigenen haben. Er ist wie `fonts` gebaut, samt der Regel, dass eine
+inhaltsgleiche Datei weder Ergänzung noch Konflikt ist — und genau die trägt hier die Entscheidung.
+Nachgemessen an einem frischen Projekt: Von den sechs Dateien der Vorlage sind vier byteweise
+Quartz' eigenes Gerüst (`icon.png`, `og-image.png`, zwei giscus-Stylesheets) und nur die zwei
+Snippets gehören ihr. Die Vorschau meldet deshalb `static +2 ~0` statt sechs Konflikten, und ein
+Zielprojekt bekommt nie das Gerüst eines anderen übergestülpt. Was *nicht* identisch ist — das
+eigene Logo eines Vorlagen-Autors — ist Gestaltung, und die trägt eine Vorlage.
+
+Danach im frischen Zielprojekt gebaut: **alle sechs Boxen rendern**, `layout-box-note` auf 327 von
+334 Seiten (sie ist Desktop-only), mit ihrem Text aus der Datei statt eines Platzhalters. Die
+Umgehung der Vorlage — vier von sechs Instanzen inline, Logos als Inline-SVG — ist damit keine
+Notwendigkeit mehr, bleibt aber, weil sie den Weg `html:` vorführt.
 
 ### 6. Zwei Vorgaben, die eine Vorlage nicht vorführen kann
 

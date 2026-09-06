@@ -1613,6 +1613,11 @@ export default {
         label: 'Font files',
         description: 'The font files you brought yourself and the @font-face rules pointing at them.'
       },
+      static: {
+        label: 'Static files',
+        description:
+          'Everything under quartz/static except the fonts: logos, images and the text snippets plugin options point at.'
+      },
       layout: {
         label: 'Layout',
         description: 'Which component appears where, per page type — and at which width things reflow.'
@@ -1685,6 +1690,8 @@ export default {
       styleFileSkipped_other: '{{count}} existing stylesheets were left unchanged.',
       fontSkipped: '{{count}} font file of the same name but different content was left unchanged.',
       fontSkipped_other: '{{count}} font files of the same name but different content were left unchanged.',
+      staticSkipped: '{{count}} file of the same name under quartz/static was left unchanged.',
+      staticSkipped_other: '{{count}} files of the same name under quartz/static were left unchanged.',
       presetSkipped: '{{count}} existing preset was left unchanged.',
       presetSkipped_other: '{{count}} existing presets were left unchanged.',
       missingKey: '{{count}} text no longer exists in this Quartz version.',

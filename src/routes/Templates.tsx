@@ -28,6 +28,7 @@ const DISPLAY_ORDER: TemplatePartId[] = [
   'cssVariables',
   'styles',
   'fonts',
+  'static',
   'layout',
   'frames',
   'plugins',

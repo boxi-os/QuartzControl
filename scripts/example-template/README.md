@@ -371,10 +371,11 @@ zusätzlich die Schlüssel, die schon unter `layout.byPageType` stehen (BEFUNDE 
 Gestaltet in `styles/plugin-layout-box.scss` — inklusive `.layout-box-missing`, dem Zustand für ein
 fehlendes Snippet.
 
-> **Warum fünf von sechs `html:` statt `file:` nutzen:** Ein Vorlagen-Paket transportiert
-> `quartz/styles/` und `quartz/static/fonts/` — sonst nichts. Snippet-Dateien und Bilder bleiben
-> zurück. Inline-HTML steckt dagegen im Konfigurationseintrag und reist mit. Eine Instanz
-> nutzt bewusst den Datei-Weg und dokumentiert damit die Lücke (siehe `site/README.md`).
+> **Warum fünf von sechs `html:` statt `file:` nutzen:** Ein Vorlagen-Paket transportierte bis zum
+> 2026-09-06 nur `quartz/styles/` und `quartz/static/fonts/`; Snippet-Dateien und Bilder blieben
+> zurück, und die eine `file:`-Instanz kam im Zielprojekt leer an. Der Baustein *Statische Dateien*
+> trägt sie jetzt mit (BEFUNDE 5). Die fünf Inline-Instanzen bleiben, weil sie den anderen Weg
+> vorführen — beide funktionieren.
 >
 > **Bis zum 2026-09-06 eine Einschränkung:** Beim Import überlebte nur **eine** der sechs Instanzen,
 > weil alle denselben abgeleiteten Namen tragen. Seitdem unterscheidet der `plugins`-Baustein sie

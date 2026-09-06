@@ -48,6 +48,10 @@ function fontsDir(projectPath: string): string {
   return join(projectPath, 'quartz', 'static', 'fonts')
 }
 
+function staticDir(projectPath: string): string {
+  return join(projectPath, 'quartz', 'static')
+}
+
 function sha(buffer: Buffer | string): string {
   return createHash('sha256').update(buffer).digest('hex')
 }
@@ -423,6 +427,89 @@ const fonts: TemplatePart<FontsPayload> = {
           ? current
           : payload.fontFaceCss
     await styleService.writeCustomScss(projectPath, styleService.upsertManagedBlock(info.content, FONTS_MARKER, body))
+  }
+}
+
+/* --------------------------------------------------------------------- static */
+
+interface StaticPayload {
+  files: string[]
+}
+
+// A package is a design, and a design has files that are not stylesheets: the snippet a layout box
+// renders, a logo, a background. All of them live under quartz/static, all of them were left
+// behind until 2026-09-06 - a template whose config said `file: sidebar-note.md` arrived in the
+// target project pointing at nothing, and the box rendered empty (BEFUNDE 5). Measured on the
+// example template: five of its six layout boxes carry their text inline to work around exactly
+// this, and the sixth exists to demonstrate the gap.
+//
+// Everything under quartz/static except the fonts, which are their own part. That includes the
+// four files quartz's own scaffold puts there (icon.png, og-image.png, two giscus stylesheets) -
+// deliberately, and it costs nothing: measured against a freshly created project they are
+// byte-identical, and an identical file is neither an addition nor a conflict here, exactly as in
+// the fonts part. What is *not* identical is a template author's own icon, and that is design,
+// which is what a template carries.
+const STATIC_MAX_BYTES = 25 * 1024 * 1024
+
+const staticFiles: TemplatePart<StaticPayload> = {
+  id: 'static',
+  async collect({ projectPath }) {
+    const dir = staticDir(projectPath)
+    const names = (await listFilesDeep(dir)).filter((name) => !name.startsWith('fonts/'))
+    if (names.length === 0) return null
+    const entries: ZipEntry[] = []
+    let bytes = 0
+    for (const name of names) {
+      const data = await readFile(join(dir, name))
+      bytes += data.length
+      // The same shape as the content part's limit, and for the same reason: a package past this
+      // is not a design any more. Thrown rather than trimmed - a package that silently dropped
+      // half its images would be worse than one that says why it stopped.
+      if (bytes > STATIC_MAX_BYTES) {
+        throw new Error(mainT('templateStaticTooLarge', { limit: Math.round(STATIC_MAX_BYTES / 1024 / 1024) }))
+      }
+      entries.push({ name: `files/static/${name}`, data })
+    }
+    return { payload: { files: names }, files: entries, stats: { files: names.length, kilobytes: Math.round(bytes / 1024) } }
+  },
+  async plan(payload, { projectPath, files }) {
+    const dir = staticDir(projectPath)
+    const plan = emptyPlan()
+    for (const name of payload.files) {
+      const target = await writableTarget(dir, name)
+      if (!target) continue
+      if (!existsSync(target)) {
+        plan.additions.push(name)
+        continue
+      }
+      const incoming = files.get(`files/static/${name}`)
+      if (incoming && sha(incoming) === sha(await readFile(target))) plan.notes.push(`identical:${name}`)
+      else plan.conflicts.push(name)
+    }
+    return plan
+  },
+  async apply(payload, { projectPath, strategy, files, warn }) {
+    const dir = staticDir(projectPath)
+    for (const name of payload.files) {
+      const data = files.get(`files/static/${name}`)
+      if (!data) continue
+      // Per file and per segment, because a name from a package is a name someone else chose:
+      // writableTarget refuses anything that leaves the directory or walks through a symlink.
+      const target = await writableTarget(dir, name)
+      if (!target) {
+        warn(`fileOutsideProject:${name}`)
+        continue
+      }
+      if (existsSync(target)) {
+        if (sha(data) === sha(await readFile(target))) continue
+        if (strategy === 'projectWins') {
+          warn(`staticSkipped:${name}`)
+          continue
+        }
+      }
+      await mkdir(dirname(target), { recursive: true })
+      await writeFile(target, data)
+    }
   }
 }
 
@@ -814,7 +901,7 @@ const CONTENT_MAX_BYTES = 100 * 1024 * 1024
 // `seen` carries the real paths of the directories already entered, because a link pointing back
 // at an ancestor would otherwise recurse until the stack ran out. A dangling link is skipped:
 // there is nothing behind it to export.
-async function listContentFiles(dir: string, prefix = '', seen?: Set<string>): Promise<string[]> {
+async function listFilesDeep(dir: string, prefix = '', seen?: Set<string>): Promise<string[]> {
   if (!existsSync(dir)) return []
   const visited = seen ?? new Set<string>([await realpath(dir)])
   const out: string[] = []
@@ -837,7 +924,7 @@ async function listContentFiles(dir: string, prefix = '', seen?: Set<string>): P
     const real = await realpath(full)
     if (visited.has(real)) continue
     visited.add(real)
-    out.push(...(await listContentFiles(full, rel, visited)))
+    out.push(...(await listFilesDeep(full, rel, visited)))
   }
   return out.sort()
 }
@@ -846,7 +933,7 @@ const content: TemplatePart<ContentPayload> = {
   id: 'content',
   async collect({ projectPath }) {
     const dir = contentService.contentDirPath(projectPath)
-    const names = await listContentFiles(dir)
+    const names = await listFilesDeep(dir)
     if (names.length === 0) return null
     const entries: ZipEntry[] = []
     let bytes = 0
@@ -920,6 +1007,7 @@ export const PARTS: Record<string, TemplatePart<any>> = {
   theme,
   styles,
   fonts,
+  static: staticFiles,
   layout,
   frames,
   plugins,

@@ -84,6 +84,8 @@ const STRINGS = {
     createCloneFailed: 'Quartz konnte nicht von GitHub geladen werden:',
     templateContentTooLarge:
       'Der Inhalt dieses Projekts ist größer als {{limit}} MB. Eine Vorlage ist eine Gestaltung, keine Sicherung — nimm den Baustein „Inhalt“ heraus.',
+    templateStaticTooLarge:
+      'Die Dateien unter quartz/static sind zusammen größer als {{limit}} MB. Eine Vorlage trägt Schnipsel, Logos und Bilder mit — keine Mediathek; nimm den Baustein „Statische Dateien“ heraus.',
     duplicateSourceNotAProject:
       'In „{{path}}“ liegt keine quartz.config.yaml — das ist kein Quartz-Projekt.',
     duplicateNested:
@@ -287,6 +289,8 @@ const STRINGS = {
     createCloneFailed: 'Quartz could not be downloaded from GitHub:',
     templateContentTooLarge:
       'This project\'s content is larger than {{limit}} MB. A template is a design, not a backup — leave the “content” part out.',
+    templateStaticTooLarge:
+      'The files under quartz/static add up to more than {{limit}} MB. A template carries snippets, logos and images — not a media library; leave the “Static files” part out.',
     duplicateSourceNotAProject: 'There is no quartz.config.yaml in “{{path}}” — that is not a Quartz project.',
     duplicateNested:
       'The copy must not sit inside the original project, nor the original inside the copy. Pick a folder beside it.',

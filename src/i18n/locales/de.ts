@@ -1622,6 +1622,11 @@ export default {
         label: 'Schriftdateien',
         description: 'Die selbst mitgebrachten Schriftdateien und die @font-face-Regeln, die auf sie zeigen.'
       },
+      static: {
+        label: 'Statische Dateien',
+        description:
+          'Alles unter quartz/static außer den Schriften: Logos, Bilder und die Textschnipsel, auf die Plugin-Optionen zeigen.'
+      },
       layout: {
         label: 'Layout',
         description: 'Welcher Baustein wo erscheint, pro Seitentyp — und ab welcher Breite umgebrochen wird.'
@@ -1694,6 +1699,8 @@ export default {
       styleFileSkipped_other: '{{count}} vorhandene Stylesheet-Dateien blieben unverändert.',
       fontSkipped: '{{count}} gleichnamige Schriftdatei mit anderem Inhalt blieb unverändert.',
       fontSkipped_other: '{{count}} gleichnamige Schriftdateien mit anderem Inhalt blieben unverändert.',
+      staticSkipped: '{{count}} gleichnamige Datei unter quartz/static blieb unverändert.',
+      staticSkipped_other: '{{count}} gleichnamige Dateien unter quartz/static blieben unverändert.',
       presetSkipped: '{{count}} vorhandenes Preset blieb unverändert.',
       presetSkipped_other: '{{count}} vorhandene Presets blieben unverändert.',
       missingKey: '{{count}} Text gibt es in diesem Quartz-Stand nicht mehr.',

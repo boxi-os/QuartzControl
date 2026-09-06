@@ -20,6 +20,11 @@ export const VARIABLE_OVERRIDES = [
      Quartz writes --headerFont/--bodyFont/--codeFont from theme.typography as the bare family
      name. A woff2 that fails to load then falls back to the browser default rather than to
      something chosen, so each slot is restated here with a stack behind it. */
+  // Quartz reads this one for `.page-title`, the site's wordmark, and nothing else. It stayed
+  // dead here for a different reason than the three below: nav-header.scss styled `.page-title`
+  // with `--headerFont`, unlayered, so quartz's rule never got a look in. Since 2026-09-06 the
+  // wordmark reads `--titleFont` again, which makes this the one place to give the site's own name
+  // a face of its own. The default is the same family as the headings, so nothing changed.
   { key: 'titleFont', light: `"Instrument Sans", ${SANS}` },
   { key: 'headerFont', light: `"Instrument Sans", ${SANS}` },
   { key: 'bodyFont', light: `"Inter", ${SANS}` },
@@ -28,13 +33,14 @@ export const VARIABLE_OVERRIDES = [
   { key: 'font-interface', light: `"Inter", ${SANS}` },
   { key: 'font-monospace', light: `"JetBrains Mono", ${MONO}` },
 
-  /* ---- the control-edge rule from palette.mjs, made real -------------------------------
-     `lightgray` is a hairline and a surface; it measures 1.34:1 against the ground and must
-     therefore never draw the edge of something a person operates. These three are exactly the
-     variables Quartz uses for that, and they move to `gray` (3.0:1+ in both modes). */
-  { key: 'background-modifier-border', light: 'var(--gray)', dark: 'var(--gray)' },
-  { key: 'background-modifier-border-hover', light: 'var(--darkgray)', dark: 'var(--dark)' },
-  { key: 'background-modifier-border-focus', light: 'var(--secondary)', dark: 'var(--secondary)' },
+  /* ---- three overrides that were removed on 2026-09-06, and why they are not here -------
+     `background-modifier-border`, `-hover` and `-focus` were set to `gray` on the grounds that
+     "these are exactly the variables quartz uses for a control's edge". They are not. Counted in
+     the built CSS: each of the three is *declared* twice - once by quartz's own theme block, once
+     by this override - and read by no `var()` anywhere, in quartz or in any component plugin.
+     Three knobs in the app's Variables tab that could not change a pixel.
+     The obligation they were carrying is real and is carried by `--tpl-rule-control` (base.scss),
+     which is measured. */
 
   /* ---- our own tokens ---------------------------------------------------------------- */
 
@@ -88,13 +94,18 @@ export const VARIABLE_OVERRIDES = [
   // paragraph reads as three separate ones - which is exactly how the layout-box in the sidebar
   // looked. Everything set in --tpl-text-sm or smaller uses this instead.
   //
-  // A length, not a ratio, and that is the whole point of the value: 1.25rem is 20px, so every
-  // line of small type sits on the same 20px step whatever its exact size - the 14px of a sidebar
-  // row and the 12.5px of a date below it line up with each other instead of each keeping its own
+  // A length, not a ratio, and that is the whole point of the value: 1.4rem is 22.4px, so every
+  // line of small type sits on the same step whatever its exact size - the 14px of a sidebar row
+  // and the 12.5px of a date below it line up with each other instead of each keeping its own
   // rhythm. It inherits as a computed length, so a descendant that changes size does *not* rescale
   // it; anything that wants its own leading back says so (the headings do, via
   // --tpl-leading-tight).
-  { key: 'tpl-leading-snug', light: '1.25rem' },
+  //
+  // It only reaches the text at all because base.scss hands `p`, `li`, `tbody`, `thead`, `tfoot`
+  // and `a.internal` back to their inherited value - quartz gives each of them a leading of its
+  // own, and an inherited one cannot reach an element that has been given one directly
+  // (BEFUNDE 59).
+  { key: 'tpl-leading-snug', light: '1.4rem' },
 
   // Tracking, and the reason there are two of it: an uppercase label needs more of it the smaller
   // it is set, so the micro-labels above every panel take more than the larger caps of an h5 or a

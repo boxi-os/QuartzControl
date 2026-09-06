@@ -7,7 +7,11 @@
 
 .page-title {
   margin: 0;
-  font-family: var(--headerFont);
+  // --titleFont, not --headerFont: quartz reads `--titleFont` for exactly this element and nothing
+  // else, and this file overriding it unlayered was what made that variable unreachable - one of
+  // the four the 2026-09-06 audit found could not change a pixel. Same family by default, so this
+  // changes nothing on the page; it gives the site's own name a slot of its own in the app.
+  font-family: var(--titleFont);
   // Follows the header as it shrinks; --tpl-header-title rests on --tpl-text-xl (base.scss).
   font-size: var(--tpl-header-title);
   font-weight: 700;

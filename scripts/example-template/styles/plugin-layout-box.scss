@@ -26,7 +26,10 @@
   color: var(--darkgray);
   line-height: var(--tpl-leading-snug);
 
-  p { margin-block: 0 var(--tpl-space-xs); }
+  // The article's rhythm at small-type scale: 12px against a 22.4px line is 0.54 of a line, where
+  // the article uses 0.94 of its own. A sidebar box is meant to be read at a glance and stays
+  // tighter than the page - but 8px was 0.36, and two paragraphs at that distance are one.
+  p { margin-block: 0 var(--tpl-space-sm); }
   p:last-child { margin-block-end: 0; }
 
   a {
@@ -40,11 +43,13 @@
   // Markdown snippets bring lists; they are rendered by the plugin's own pipeline, outside
   // <article>, so 40-content.scss does not reach them.
   ul, ol {
-    margin-block: 0 var(--tpl-space-xs);
+    margin-block: 0 var(--tpl-space-sm);
     padding-inline-start: var(--tpl-space-md);
   }
 
-  li { margin-block: var(--tpl-space-3xs); }
+  // 4px, not 2: two pixels between two items is a rounding error, not a separation. Half the
+  // article's step, because everything in this box is.
+  li { margin-block: var(--tpl-space-2xs); }
 
   code {
     font-family: var(--codeFont);

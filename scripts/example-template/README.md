@@ -457,6 +457,7 @@ Alle gemessen, nicht vermutet. Wer die Vorlage erweitert, spart sich damit diese
 | `.overflow-end` im Explorer | Steht am **Anfang** der Liste, nicht am Ende. Mit Höhe sind das 16 px Luft zwischen Überschrift und erstem Ordner (BEFUNDE 50) |
 | Zwei Regeln, die dasselbe Element verstecken | Die unbedingte gewinnt weiter, auch wenn die spätere nur die *anderen* versteckt. Auf `/en/` war der ganze Explorer-Baum weg (BEFUNDE 51) |
 | Ein `flex-basis` als Breite einer Gruppenkomponente | Setzt das Element richtig, zählt in Gecko und WebKit aber nicht in die max-content-Breite der Gruppe. Die Werkzeugleiste war dort 322 statt 452 px breit — erst zwei Zeilen, dann 102 px seitliches Scrollen. Eine `width` am Element statt eines Basis am Wrapper (BEFUNDE 58) |
+| Ein Token, das nichts bewegt | Sieht in der Datei genauso richtig aus wie eines, das wirkt. Drei Arten, es zu sein: niemand liest es, eine eigene Regel gewinnt, oder das Zielelement hat die Eigenschaft direkt. `npm run check:tokens` misst es (BEFUNDE 60) |
 | Eine Eigenschaft über Vererbung setzen | Quartz gibt `p`, `li`, `tbody`, `thead` und `a.internal` eine eigene `line-height`, also erreichte sie keiner der beiden Zeilenabstands-Tokens — seit ihrer Einführung dekorativ. `line-height: inherit` auf die fünf (BEFUNDE 59) |
 | Eine Regel aus Quartz' `base.scss` abgelesen | Ihr Selektor gibt es in einem Frame-Projekt vielleicht gar nicht. `.sidebar` heißt hier `.qgframe-area-left` — der Lesemodus tat deshalb nichts (BEFUNDE 57) |
 | Eine feste Spur im Raster | Ist nicht stauchbar und hebt die Mindestbreite, auch an einem Breakpoint, an dem sie nichts trägt (BEFUNDE 56) |
@@ -472,6 +473,8 @@ Alle gemessen, nicht vermutet. Wer die Vorlage erweitert, spart sich damit diese
     npm run template:example -- --check-contrast    # 89 Farbpaare
     npm run template:example -- --only 9            # SCSS übersetzt? alle zehn Bausteine gefüllt?
     npm run template:example -- --only 9,10,11      # exportieren und in ein leeres Projekt importieren
+
+    npm run check:tokens                            # kommt jedes Token an?
 
 **Und in mehr als einer Engine.** Ein Durchgang in Chrome allein hat am 2026-09-06 zwei Fehler
 durchgelassen, die auf jeder Seite sichtbar waren — beide an der intrinsischen Breite einer

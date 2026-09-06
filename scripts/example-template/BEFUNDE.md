@@ -931,3 +931,37 @@ Brotkrumen-Trenners, das `normal` von Mermaid.
 Die Lehre ist dieselbe wie in 57, nur teurer: Wer eine Eigenschaft über Vererbung setzt, muss
 nachsehen, ob das Zielelement sie nicht selbst gesetzt bekommt. Ein Token, das nirgends ankommt,
 sieht in der Datei genauso richtig aus wie eines, das wirkt.
+
+### 60. Vier von 53 Tokens in der Variablen-Ansicht konnten kein Pixel bewegen
+
+Nach BEFUNDE 59 lag die Frage nahe: Wenn zwei Tokens jahrelang ins Leere zeigten, wie viele noch?
+Also gemessen statt gelesen — jedes Token in einer *laufenden* Seite auf einen unmissverständlich
+anderen Wert gesetzt und gezählt, wie viele berechnete Werte sich über alle Elemente bewegen. Zwölf
+Seiten, zwei Breiten, jeweils mit fokussiertem Bedienelement. Das Skript ist geblieben:
+`npm run check:tokens`.
+
+Ergebnis: **vier tot**, und jedes auf seine eigene Art.
+
+- `background-modifier-border`, `-hover` und `-focus`. Der Kommentar daneben behauptete, das seien
+  „genau die Variablen, die Quartz für den Rand eines Bedienelements benutzt". Nachgezählt im
+  gebauten CSS: Jede der drei wird **zweimal deklariert** — einmal von Quartz' eigenem Theme-Block,
+  einmal von dieser Überschreibung — und von **keinem** `var()` gelesen, weder in Quartz noch in
+  einem Komponenten-Plugin. Drei Regler in der App, die nichts regeln. Entfernt; die Pflicht, die
+  sie tragen sollten, trägt `--tpl-rule-control`, und die ist gemessen.
+- `titleFont`. Wird sehr wohl gelesen, und zwar von Quartz für `.page-title` — die Wortmarke. Nur
+  hatte `nav-header.scss` dieselbe Eigenschaft ungeschichtet mit `--headerFont` gesetzt, und
+  ungeschichtet schlägt `@layer quartz-base`. Die Vorlage hat sich das Token also selbst
+  abgeschnitten. Jetzt liest die Wortmarke wieder `--titleFont`; die Vorgabe ist dieselbe Familie
+  wie die Überschriften, sichtbar ändert sich nichts, und der Slot ist wieder ein Regler.
+
+Zwei Dinge, die beim ersten Lauf **falsch** als tot gemeldet wurden, und beide sind eine Lehre über
+die Messung selbst:
+
+- Die drei `tpl-focus-*`. Fokusstile gelten nur, während etwas `:focus-visible` ist, und in einer
+  frisch geladenen Seite ist nichts fokussiert. Das Skript drückt jetzt dreimal Tab, bevor es misst.
+- `tpl-drawer-width`. Die Schublade gibt es nur unter 800 px. Das Skript besucht jetzt jede Seite
+  auf 1456 und auf 390 px.
+
+Eine Momentaufnahme misst nur den Zustand, in dem sie aufgenommen wurde — was nur in einem Zustand
+oder auf einer Breite existiert, muss dort aufgesucht werden. Nach beiden Korrekturen: 50 von 50
+Tokens bewegen etwas.

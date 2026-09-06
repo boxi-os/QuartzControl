@@ -14,6 +14,44 @@ es. Der Mermaid-Initialisierer ruft auf jeder Seite unbedingt
 Explorer ohne Baum und ohne Überschrift; in der Konsole stand ein Mermaid-Fehler, der nichts über
 den Explorer sagte. Behoben, Messung in `docs/decisions/layout-frames.md`.
 
+## Nachgemessen am 2026-09-06
+
+Drei vermeintlich offene Punkte stellten sich an diesem Tag nacheinander als längst erledigt heraus
+(Befund 54, dazu zwei Notizen in CLAUDE.md). Also einmal quer durch die Liste gemessen statt
+weiter einzeln auf Zuruf — gegen die *installierte* Quartz-Fassung, die Plugin-Builds unter
+`node_modules/@quartz-community/` und das gebaute `public/` des Beispielprojekts.
+
+**Zwei Antworten haben sich geändert:**
+
+| Befund | heute |
+| --- | --- |
+| **18** Aufgaben-Zustände | **Das Zeichen überlebt jetzt.** `obsidian-flavored-markdown` schreibt `data-task="<zeichen>"` an das `<li>`. Im gebauten HTML gezählt: `" "`, `"x"`, `">"`, `"/"`, `"?"`, `"-"` — alle sechs. Eine Regel wie `li[data-task="/"]` kann Obsidians Symbole also nachzeichnen; die Vorlage tut es noch nicht. |
+| **23** Ausgabeverzeichnis | **Quartz räumt auf.** `quartz/build.ts:80` macht `rm(output, { recursive: true, force: true })` vor *jedem* Bau und schreibt „Cleaned output directory"; die Zeile steht auch bei jedem Neubau unter `--serve` im Log. Die halbe Stunde von damals kostet heute niemanden mehr etwas. |
+
+**Sechs Befunde bestätigt, mit der Stelle, an der es steht:**
+
+| Befund | Beleg |
+| --- | --- |
+| **6** Inhaltsverzeichnis kappt bei 3 | `table-of-contents/dist/index.js:765` → `maxDepth: 3` |
+| **11** Bases sprechen Englisch | die englischen Zeichenketten stehen weiter im Build des Plugins |
+| **20** kein globales `box-sizing` | `base.scss` setzt `border-box` auf `body`, nicht auf `*` — und `box-sizing` erbt nicht |
+| **21** `folderDefaultState` wirkungslos | genau ein Treffer im ganzen Build: das *Schreiben* von `data-collapsed` (Zeile 426). Gelesen wird es nirgends |
+| **24** Schublade ohne Escape | kein `Escape`, kein `keydown` im Build des Explorers |
+| **25/26** Alias-Namensraum, `filterFn` als String | beide unverändert im Build vorhanden |
+
+**Was nicht nachgemessen wurde und warum:** Ein Teil der Liste beschreibt keine Version, sondern
+eine Eigenschaft — dass ein Mermaid-Block ein Codeblock ist (13, 15), dass `@property` keine `rem`
+im `initial-value` nimmt (39), dass ein `<summary>` als `content-box` rechnet (35), dass es keine
+Definitionslisten gibt (19). Das misst man einmal, nicht wieder.
+
+**Und eine Beobachtung über die Liste selbst.** Sie führt unter *Offen* zwei verschiedene Dinge:
+Randbedingungen, die eine Vorlage umgehen muss (4–39), und Berichte über Probleme, die in dieser
+Vorlage gefunden **und behoben** wurden (40–42, 49–52, 55, 57–75). Nur die erste Sorte ist offen im
+Wortsinn. Wer die Liste nach Arbeit durchsieht, findet deshalb Punkte, an denen es nichts mehr zu
+tun gibt — dreimal an einem Tag passiert. Für neue Einträge gilt ab jetzt: **die Überschrift sagt,
+was der Eintrag ist** — eine offene Randbedingung, oder ein behobener Fund mit dem Datum dahinter,
+so wie es 1, 2, 3, 5, 8 und 54 seit heute tun.
+
 ## Offen
 
 ### 1. Fünf Instanzen eines Plugins reisen als eine — behoben am 2026-09-06
@@ -235,10 +273,15 @@ unangenehme Wahl zwischen zwei Pflichten.
 `![[dokument.pdf#page=2]]` erzeugt `<iframe src="…/dokument.pdf">` — ohne den Anker. Die Einbettung
 beginnt immer auf Seite 1. Ein gewöhnlicher Link (`[Text](datei.pdf#page=2)`) behält ihn.
 
-### 18. Von den Aufgaben-Zuständen überlebt nur „offen" und „erledigt"
+### 18. Von den Aufgaben-Zuständen überlebt nur „offen" und „erledigt" — am 2026-09-06 überholt
+
+**Nachgemessen am 2026-09-06: gilt nicht mehr.** `obsidian-flavored-markdown` schreibt das Zeichen
+als `data-task` an das `<li>`; im gebauten HTML dieser Vorlage stehen alle sechs Zustände
+(`" "`, `"x"`, `">"`, `"/"`, `"?"`, `"-"`). Damit lässt sich `li[data-task="/"]` gestalten — die
+Vorlage nutzt das noch nicht. Der ursprüngliche Befund lautete:
 
 Obsidian erlaubt beliebige Zeichen im Kästchen (`[/]`, `[-]`, `[>]`, `[?]`) und zeigt dafür eigene
-Symbole. Gemessen: Quartz erkennt nur `[ ]` und `[x]`; alles andere wird zu einem leeren Kästchen,
+Symbole. Gemessen: Quartz erkannte nur `[ ]` und `[x]`; alles andere wird zu einem leeren Kästchen,
 das Zeichen geht ersatzlos verloren — die Information ist auf der Website weg, nicht nur anders
 dargestellt.
 
@@ -289,7 +332,11 @@ Ergebnis: Der Baum war auf jedem Desktop-Aufruf zugeklappt, obwohl er vollständ
 ungeschichtete Regel ein `display` aus einem Layer überschreibt, muss sie **beide** Zustände selbst
 aussprechen — sonst gewinnt sie auch dort, wo das Plugin recht hatte.
 
-### 23. `quartz build` räumt sein Ausgabeverzeichnis nicht auf
+### 23. `quartz build` räumt sein Ausgabeverzeichnis nicht auf — am 2026-09-06 überholt
+
+**Nachgemessen am 2026-09-06: gilt nicht mehr.** `quartz/build.ts:80` löscht das Ausgabeverzeichnis
+vor jedem Bau (`rm(output, { recursive: true, force: true })`) und schreibt „Cleaned output
+directory" ins Log — auch bei jedem Neubau unter `--serve`. Der ursprüngliche Befund lautete:
 
 Kostete beim Umbau auf zwölf Spalten eine halbe Stunde. Das CSS eines selbstgebauten Frames steht
 als `<style>` in *jeder* Seite; ändert sich der Frame, aber nicht die Notiz, behält die Seite ihre

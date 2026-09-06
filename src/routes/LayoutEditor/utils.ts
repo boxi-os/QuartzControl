@@ -4,7 +4,8 @@ import type {
   LayoutPosition,
   PageTypeLayoutOverride,
   PluginEntry,
-  PluginLayoutDeclaration
+  PluginLayoutDeclaration,
+  QuartzConfig
 } from '@shared/ipc-contract'
 
 // The width band a breakpoint actually covers, for the tab labels - three reiters called
@@ -168,11 +169,23 @@ export function buildPositionMap(plugins: PluginEntry[]): Record<LayoutPosition,
 // (content-page -> "content", folder-page -> "folder", ...) - verified against a real generated
 // config (CLAUDE.md's "Verified Quartz 5 CLI facts"). "404" is always available since it's a
 // built-in page type shipped with quartz itself, not a separate installable plugin.
-export function derivePageTypes(plugins: PluginEntry[]): string[] {
-  const fromPlugins = plugins
+//
+// The convention is a convention, not a rule, and a plugin is free to ignore it:
+// `obsidian-plugin-excalidraw` declares `quartz.category: ["pageType", ...]` and registers the page
+// type `excalidraw`, with no `-page` anywhere in its name. Quartz builds it either way - it reads
+// the category, not the name - but this list is what the layout editor offers, so the type was
+// unreachable here and the frame it uses could only be chosen by editing the YAML.
+//
+// So the config gets a say as well: any key already written under `layout.byPageType` is a page
+// type by demonstration. That covers the plugin above and anything else that names itself its own
+// way, without this file having to keep a list of exceptions. Order is stable and duplicates are
+// dropped - a type that is both derived and overridden appears once, where the derivation put it.
+export function derivePageTypes(config: QuartzConfig): string[] {
+  const fromPlugins = config.plugins
     .filter((p) => p.enabled && p.name.endsWith('-page'))
     .map((p) => p.name.slice(0, -'-page'.length))
-  return ['404', ...fromPlugins]
+  const fromConfig = Object.keys(config.layout?.byPageType ?? {})
+  return [...new Set(['404', ...fromPlugins, ...fromConfig])]
 }
 
 export function renumberPriorities(indices: number[]): Map<number, number> {

@@ -128,6 +128,136 @@
   }
 }
 
+/* --------------------------------------------------- the name the bar carries while you read */
+
+// From the second screen down, the bar carried the one name the reader already had - the site's -
+// and the one they needed was gone: which article is this. The heading is long out of the window
+// by then, and the table of contents in the right column answers a different question (*what* is
+// coming, not *where am I*).
+//
+// So the brand group holds two names now, and they are two states of one slot rather than two
+// things side by side: the site name until the article's h1 leaves the screen, the page's own name
+// afterwards, exchanged by a crossfade and back again on the way up.
+//
+// The group becomes a grid for exactly that reason. `display` is the one property Flex.tsx does
+// *not* write inline (it writes flex-direction, flex-wrap and gap), so it is the one that can be
+// overridden from here - and in a grid the two names can share a cell, which in a flex row they
+// cannot. Sharing the cell is what keeps the bar honest at every width: the slot is as wide as the
+// wider of the two, not as wide as both, and whichever name is showing truncates in it.
+//
+// Selected by content, never by position - `:nth-child` would be right today and wrong the day
+// something joins the group, which is the same rule the brand/toolbar selectors above follow.
+.qgframe-area-header > .flex-component:has(.page-title) {
+  display: grid;
+  grid-template-areas: "mark name";
+  // The name column may shrink to nothing before the group asks the bar for more room; `auto` for
+  // the mark, which is a fixed 26px logotype and has nothing to give.
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+
+  > :has(.site-mark) {
+    grid-area: mark;
+  }
+
+  > :has(.page-title),
+  > :has(.bar-page-name) {
+    grid-area: name;
+    // Both of these are needed and neither is obvious. Flex.tsx writes `justify-self: center` as an
+    // inline style on every wrapper it makes; in a flex row that is ignored, in a grid it is not -
+    // and a grid item with a self-alignment other than `stretch` is sized to its *max-content*
+    // rather than to its cell. Measured at 390px before this: the cell was 24px wide (Befund 28's
+    // number, unchanged) and the page name sat in it 159px wide, hanging 68px out on either side,
+    // straight across the logotype. A `width` is an ordinary declaration - no inline style sets one
+    // - so it settles the size without fighting the alignment, and then there is nothing left for
+    // the centring to distribute. `min-width: 0` keeps the item shrinkable below its content.
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+// The page name looks like the site name in the same slot - same size, same weight, same
+// truncation - because it is the same slot. It is not a link: the site name next to it leads home,
+// and this one would lead to the page you are already on.
+.qgframe-area-header .bar-page-name {
+  display: block;
+  overflow: hidden;
+  min-width: 0;
+  color: var(--dark);
+  font-family: var(--titleFont);
+  font-size: var(--tpl-header-title);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  // The resting state, and the state Firefox keeps: invisible, and out of the way of the pointer.
+  // `opacity` rather than `display`, because the crossfade needs both boxes to exist and to be
+  // measured; `aria-hidden` on the span itself (plugins.mjs) keeps it out of the accessibility
+  // tree in every engine, animated or not.
+  opacity: 0;
+  pointer-events: none;
+}
+
+// The exchange itself. The timeline is the article's own heading: `view-timeline` on it, and the
+// range `exit`, which is precisely "the h1 is leaving the top of the screen" - so the bar changes
+// over exactly while the title one is losing goes out of sight, rather than at a scroll distance
+// picked by hand.
+//
+// `timeline-scope` on :root is what makes it reach: a named view timeline is visible to the
+// declaring element's descendants and siblings, and the bar is neither - it lives in a different
+// frame area, two subtrees away. Measured in a standalone reproduction before this was built,
+// because a mechanism that does not cross the two areas would have made the whole feature a script
+// instead: Chrome and WebKit exchange the names identically (0.786 against 0.785 at the midpoint),
+// Firefox moves nothing at all and therefore keeps the site name - the same fallback the shrink,
+// the shadow and the progress line already rest on.
+//
+// Pages without an article heading - the folder and tag listings, the 404, a canvas - name a
+// timeline that does not exist. The animation is then inactive, no keyframe is applied, and both
+// names stay exactly as they are declared above: the site's visible, the page's not.
+:root {
+  timeline-scope: --tpl-article-title;
+}
+
+.article-title {
+  view-timeline: --tpl-article-title block;
+}
+
+@supports (animation-timeline: view()) {
+  .qgframe-area-header .page-title {
+    animation: tpl-bar-name-out linear both;
+    animation-timeline: --tpl-article-title;
+    animation-range: exit;
+  }
+
+  .qgframe-area-header .bar-page-name {
+    animation: tpl-bar-name-in linear both;
+    animation-timeline: --tpl-article-title;
+    animation-range: exit;
+  }
+}
+
+// Both ends written out, for the reason spelled out at tpl-header-progress: with only a `to`
+// keyframe WebKit resolves the underlying value against the already-animated one, and the fade
+// compounds instead of running straight.
+@keyframes tpl-bar-name-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes tpl-bar-name-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
 /* ------------------------------------------------------- the edge once the page moves */
 
 // Three things happen at the bottom of the bar, and two of them share a box.
@@ -265,6 +395,15 @@
 // usually does. At 480px the name has room again and comes back.
 @media (max-width: 480px) {
   .qgframe-area-header .page-title {
+    display: none;
+  }
+
+  // The page name goes with it, and for the same measured reason rather than for symmetry: the
+  // brand group has 62px in this bar, 26 of them the mark and 12 the gap, which leaves the name
+  // 24px - the exact width Befund 28 found for the site name when the fourth control arrived, and
+  // the width at which a name renders as a single letter and an ellipsis. Below 480px the bar is
+  // the logotype and the controls; above it, both names have room and the exchange happens.
+  .qgframe-area-header .bar-page-name {
     display: none;
   }
 }

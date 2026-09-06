@@ -58,7 +58,7 @@ inverse Umsetzung von allen vieren.
 | `fonts.mjs` | Welche Schriften geladen werden, woher, und die korrigierten `@font-face`-Regeln |
 | `frames.mjs` | Die vier Seitenraster (`editorial`, `index`, `focus`, `drawing`) für je drei Breakpoints |
 | `layout.mjs` | Welcher Seitentyp welches Raster nutzt, und die zwei Flex-Gruppen des Kopfbereichs |
-| `plugins.mjs` | Welches Plugin an, wo es sitzt, mit welchen Optionen — und die fünf Layout-Box-Instanzen |
+| `plugins.mjs` | Welches Plugin an, wo es sitzt, mit welchen Optionen — und die sechs Layout-Box-Instanzen |
 | `translations.mjs` | Geänderte Formulierungen in Quartz' deutscher Sprachdatei |
 | `presets.mjs` | Zwei gespeicherte Theme-Zusammenstellungen |
 | `style-order.mjs` | Die Ladereihenfolge der Stylesheets — Liste **und** Reihenfolge in einem |
@@ -228,7 +228,7 @@ Eine Datei je Komponente. Die Namen sagen, wozu sie gehören:
     aside-*         Inhaltsverzeichnis, Rückverweise, Graph, zuletzt geändert
     body-*          Fließtext, Callouts, Code, Mathematik, Diagramme, Medien
     page-*          Ordner- und Tag-Listen, Vorschau, Suchergebnisse, 404
-    plugin-*        quartz-layout-box in allen fünf Ausprägungen
+    plugin-*        quartz-layout-box in allen sechs Ausprägungen
     site-*          Fußzeile, Kommentare
     a11y            Zielgrößen, Systemeinstellungen, Druck
 
@@ -357,11 +357,12 @@ dabei ein Seitentyp, den kein `-page`-Plugin liefert: das Excalidraw-Plugin regi
 seinem eigenen Namen. Die App kannte ihn deshalb nicht; seit demselben Tag liest ihr Layout-Editor
 zusätzlich die Schlüssel, die schon unter `layout.byPageType` stehen (BEFUNDE 10).
 
-### 3.7 Die fünf Layout-Box-Instanzen — `plugins.mjs`
+### 3.7 Die sechs Layout-Box-Instanzen — `plugins.mjs`
 
 | Schlüssel | Ort | Form | Zeigt |
 | --- | --- | --- | --- |
 | `layoutBoxMark` | Kopfbereich | Inline-HTML, SVG hell/dunkel | Bildumschaltung, `{{root}}`, `{{siteTitle}}` |
+| `layoutBoxPageName` | Kopfbereich | Inline-HTML, ein `span` | `{{title}}`, und ein Ort für scroll-getriebenes CSS |
 | `layoutBoxNote` | linke Spalte | `file:` mit `.md`, aufklappbar | Markdown-Snippet, `<details>` |
 | `layoutBoxHint` | linke Spalte | Inline-HTML, nur mobil | zwei Instanzen unabhängig steuerbar |
 | `layoutBoxCta` | nach dem Inhalt | Inline-HTML, eigene Klasse | `{{frontmatter.…}}` |
@@ -370,12 +371,12 @@ zusätzlich die Schlüssel, die schon unter `layout.byPageType` stehen (BEFUNDE 
 Gestaltet in `styles/plugin-layout-box.scss` — inklusive `.layout-box-missing`, dem Zustand für ein
 fehlendes Snippet.
 
-> **Warum vier von fünf `html:` statt `file:` nutzen:** Ein Vorlagen-Paket transportiert
+> **Warum fünf von sechs `html:` statt `file:` nutzen:** Ein Vorlagen-Paket transportiert
 > `quartz/styles/` und `quartz/static/fonts/` — sonst nichts. Snippet-Dateien und Bilder bleiben
-> zurück. Inline-HTML steckt dagegen im Konfigurationseintrag und reist mit. Die fünfte Instanz
+> zurück. Inline-HTML steckt dagegen im Konfigurationseintrag und reist mit. Eine Instanz
 > nutzt bewusst den Datei-Weg und dokumentiert damit die Lücke (siehe `site/README.md`).
 >
-> **Und eine offene Einschränkung:** Beim Import überlebt derzeit nur **eine** der fünf Instanzen —
+> **Und eine offene Einschränkung:** Beim Import überlebt derzeit nur **eine** der sechs Instanzen —
 > alle tragen denselben abgeleiteten Namen. Siehe `BEFUNDE.md`.
 
 ### 3.8 Zwei Sprachen — `plugins.mjs`, `styles/nav-language-switcher.scss`

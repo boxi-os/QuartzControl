@@ -313,6 +313,14 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   nach dem Kopieren umgeschrieben, alles Instanzgebundene (Ausgabeverzeichnis, Deploy-Manifeste,
   Worktrees, Snapshots, Ziele) bleibt zurück — `duplicateService.ts` führt beide Listen mit
   Begründung.
+- **Eine PID trägt nicht über die Zeit.** Wer eine Prozessnummer aus einer Liste, einer Datei oder
+  einem früheren Scan bekommt, prüft direkt vor dem Signal noch einmal, dass sie dasselbe Programm
+  meint — das Betriebssystem vergibt Nummern wieder, und dazwischen liegt bei einer Liste in der
+  Oberfläche jede Menge Zeit. `detectOrphanedServers()` tut das seit dem ersten Tag,
+  `serverDiscovery.killServer()` genauso; beide fragen dieselbe Nadel gegen eine frisch gelesene
+  Kommandozeile. Was die App selbst gestartet hat, wird nicht signalisiert, sondern über
+  `stopServer()` beendet, sonst zeigt die Seite „Läuft" für einen Prozess, den es nicht mehr gibt.
+  Messungen in [`navigation-and-pages.md`](docs/decisions/navigation-and-pages.md).
 - **Ein Lesepfad legt nie `.quartz-gui/` an.** `quartzGuiPath()` zum Lesen, `quartzGuiDir()` zum
   Schreiben.
 - **JSON-Stores nur über `jsonStore.ts`**: atomar schreiben, Unlesbares beiseitelegen statt

@@ -39,6 +39,17 @@ export function getServerStatus(projectId: string): ServerStatus {
   return runningServers.get(projectId)?.status ?? lastTerminalStatus.get(projectId) ?? { state: 'stopped' }
 }
 
+// pid -> projectId for the servers this app has running right now, so serverDiscovery can tell
+// its own from a stranger's. The pid is the one this app spawned (npx), which is also the root of
+// the process group a scan finds - the child below it is npx's, not a second server.
+export function ownedServerPids(): Map<number, string> {
+  const owned = new Map<number, string>()
+  for (const [projectId, { process: child }] of runningServers) {
+    if (child.pid) owned.set(child.pid, projectId)
+  }
+  return owned
+}
+
 export async function startServer(
   projectId: string,
   projectPath: string,

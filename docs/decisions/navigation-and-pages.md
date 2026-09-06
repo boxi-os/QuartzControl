@@ -293,3 +293,63 @@ den Text. `npm run smoke` musste dieselbe Unterscheidung lernen: es zählte jede
 gezeigten Fehler-Toast und meldete zehn leere; es überspringt jetzt leere Regionen, denn seine Frage
 ist, ob ein Fehler *sichtbar* ist.
 
+
+**Laufende Server auf diesem Rechner, nicht nur die eigenen (2026-09-06).** Bis hierher wusste die
+App nur von Servern, die sie selbst gestartet hatte: `buildService` merkt sich die PIDs in
+`running-servers.json`, und die Waisen-Frage beim Start liest genau diese Liste. Ein Server, den
+jemand im Terminal gestartet hat, kam darin nicht vor — er hielt Port 8080, das Starten in der App
+scheiterte, und nichts in der App konnte sagen, wem der Port gehört. Der Fall ist am 2026-09-06
+aufgetreten und war von innen nicht zu beantworten.
+
+Gemessen wurde erst, was von außen überhaupt sichtbar ist. Ein Server, gestartet wie ein Nutzer ihn
+startet (`npx quartz build --serve --port 8099 --wsPort 3099`), steht als zwei Prozesse in der
+Tabelle:
+
+    12877     1  npm exec quartz build --serve --port 8099 --wsPort 3099
+    12893 12877  node --no-deprecation …/.bin/quartz build --serve --port 8099 --wsPort 3099
+
+Beide tragen `quartz` **und** `--serve`, und beide tragen die Portnummern in ihren Argumenten. Damit
+kommen die Ports aus der Kommandozeile statt aus einer Socket-Tabelle — der einzige unportable Teil
+entfällt. `lsof` bleibt für genau eine Sache: das Arbeitsverzeichnis (`lsof -a -p <pid> -d cwd -Fn`
+lieferte `/Users/boxi/Documents/Example`), unter Linux dafür `/proc/<pid>/cwd`. Das Verzeichnis ist,
+was einen gefundenen Server einem Projekt zuordnet, und deshalb steht in der Zeile ein Projektname
+statt einer PID. Zur Gegenprobe von außen antwortet der Port mit
+`<meta name="generator" content="Quartz"/>` und dem Sitenamen im `<title>` — das bestätigt, es
+entscheidet nicht: ein statisch ausgelieferter Quartz-Bau sieht genauso aus.
+
+Drei Dinge, die die Messung erzwungen hat:
+
+- **`--serve` als ganzes Wort.** `appleeventsd --server` steht in jeder macOS-Prozesstabelle und
+  passte auf eine Teilzeichenkette. Beide Nadeln zusammen, denn `quartz` allein trifft jeden Pfad
+  unterhalb eines Ordners namens Quartz — dieses Repo eingeschlossen.
+- **Ein Eintrag pro Server, nicht pro Prozess.** Die zwei Zeilen sind ein Server; zwei Zeilen in der
+  Liste hätten zweimal dasselbe zum Beenden angeboten. Signalisiert wird der oberste Prozess der
+  Gruppe, `tree-kill` nimmt das Kind mit — das Kind allein zu beenden ließe den npm-Wrapper stehen.
+- **`etime` statt `lstart`.** Die Startzeit als formatiertes Datum hängt an der Sprache des Systems
+  (`So.  6 Sep. 16:56:53 2026` auf diesem Rechner). Die verstrichene Zeit ist überall dieselbe
+  Zahl.
+
+Ein Server, den die App gestartet hat, sieht in der Tabelle anders aus als einer aus dem Terminal —
+das Kind trägt den Pfad der Electron-Binärdatei statt eines node-Pfads —, aber dieselben zwei
+Nadeln und dieselben Portargumente. Gemessen an der gebauten App mit beiden gleichzeitig:
+
+    16118 15813  npm exec quartz build --serve --port 8080 --wsPort 3001
+    16135 16118  …/QuartzControl.app/Contents/MacOS/Electron -r …/defaultapp.cjs … quartz build --serve --port 8080 …
+
+Die Karte listete beide richtig einsortiert: `localhost:8099 · Außerhalb gestartet · Example` und
+`localhost:8080 · Von dieser App · gui-test`. Das Beenden des fremden ließ beide seiner Prozesse
+verschwinden und den Port frei; das Beenden des eigenen lief über `stopServer()` statt über ein
+Signal, weshalb die Dev-Server-Karte darüber im selben Moment auf „Gestoppt" sprang — ein Signal an
+`buildService` vorbei hätte sie „Läuft" zeigen lassen für einen Prozess, den es nicht mehr gibt.
+Dritter Fall, mit `python3 -m http.server 8080` gemessen: „Port 8080 ist belegt, aber von keinem
+erkennbaren Quartz-Server."
+
+**Beendet wird nie von selbst.** Ein fremder Server gehört jemand anderem — einem Terminal, einem
+zweiten Fenster, einer hart beendeten Sitzung —, und das steht als Hinweis unter der Liste und
+noch einmal im Bestätigungsdialog, der die Herkunft benennt. Die PID wird vor dem Signal ein
+zweites Mal geprüft: zwischen dem Scan, der die Liste gefüllt hat, und dem Klick kann die Nummer
+längst jemand anderem gehören.
+
+**Windows sagt „unbekannt", nicht „keiner".** Dort gibt es kein `ps`; `Win32_Process` beantwortet
+dieselbe Frage, ist hier aber nicht messbar. Ein ungemessener Scan, der „keine gefunden" meldet,
+wäre die schlechtere Antwort — dieselbe Unterscheidung wie beim Update-Check und beim SCSS-Check.

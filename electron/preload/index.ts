@@ -225,7 +225,9 @@ const api: QuartzGuiApi = {
     status: (projectId: string) => ipcRenderer.invoke(IPC.serverStatus, projectId),
     onLog: (cb: (line: LogLine) => void) => onEvent<[LogLine]>(IPC.serverLog, cb),
     onStatus: (cb: (projectId: string, status: ServerStatus) => void) =>
-      onEvent<[string, ServerStatus]>(IPC.serverStatusChanged, cb)
+      onEvent<[string, ServerStatus]>(IPC.serverStatusChanged, cb),
+    discover: (input?: { ports?: number[] }) => ipcRenderer.invoke(IPC.serverDiscover, input),
+    kill: (input: { pid: number }) => ipcRenderer.invoke(IPC.serverKill, input)
   },
   build: {
     run: (projectId: string, projectPath: string, outputDir?: string) =>

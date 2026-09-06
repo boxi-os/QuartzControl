@@ -400,7 +400,33 @@ export default {
     reset: 'Zurücksetzen',
     success: 'Erfolgreich',
     failed: 'Fehlgeschlagen',
-    resultLine: '{{status}} in {{seconds}}s'
+    resultLine: '{{status}} in {{seconds}}s',
+    discovery: {
+      title: 'Laufende Server auf diesem Rechner',
+      refresh: 'Aktualisieren',
+      scanning: 'Suche laufende Server…',
+      unavailable:
+        'Auf diesem System lässt sich die Prozessliste nicht lesen. Ob Server laufen, ist damit unbekannt — nicht „keiner“.',
+      none: 'Es läuft kein Quartz-Server auf diesem Rechner.',
+      found_one: 'Ein Quartz-Server läuft auf diesem Rechner.',
+      found_other: '{{count}} Quartz-Server laufen auf diesem Rechner.',
+      fromApp: 'Von dieser App',
+      fromOutside: 'Außerhalb gestartet',
+      unknownProject: 'Projekt unbekannt',
+      notAnswering: 'antwortet nicht',
+      stopServer: 'Server beenden',
+      confirmOwn:
+        'Server auf Port {{port}} beenden?\n\nEr gehört zu {{name}} und wurde von dieser App gestartet. Die Vorschau im Browser ist danach nicht mehr erreichbar.',
+      confirmForeign:
+        'Server auf Port {{port}} beenden?\n\nDieser Server wurde nicht von dieser App gestartet ({{name}}). Wer ihn gestartet hat — ein Terminal, ein anderes Fenster, eine frühere Sitzung —, arbeitet vielleicht gerade damit.',
+      stopped: 'Der Server auf Port {{port}} wurde beendet.',
+      stopFailed:
+        'Der Server auf Port {{port}} konnte nicht beendet werden. Vielleicht war er schon weg, oder der Prozess gehört inzwischen jemand anderem.',
+      portTaken:
+        'Port {{ports}} ist belegt, aber von keinem erkennbaren Quartz-Server. Ein Start auf diesem Port wird scheitern.',
+      warning:
+        'Server, die außerhalb dieser App gestartet wurden, gehören jemand anderem — einem Terminal, einem zweiten Fenster, einer Sitzung, die hart beendet wurde. Die App beendet sie nie von sich aus; das Beenden ist hier jedes Mal eine Entscheidung.'
+    }
   },
   gitSync: {
     title: 'Git-Sync',

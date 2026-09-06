@@ -59,6 +59,22 @@ html {
   --icon-folder-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2'/%3E%3C/svg%3E");
   --icon-file: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z'/%3E%3Cpath d='M14 2v4a2 2 0 0 0 2 2h4'/%3E%3C/svg%3E");
   --icon-close: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E");
+  // The six task states Obsidian writes in the brackets, each drawn as one glyph: the box *and*
+  // the mark inside it. Until 2026-09-06 there was no point in having them - quartz kept only
+  // `[ ]` and `[x]` and dropped the character (BEFUNDE 18). It writes `data-task="<zeichen>"` on
+  // the `li` now, so all six arrive; measured in this site's own build.
+  //
+  // Why the box is part of the SVG rather than a `border` on the checkbox: a `mask-image` clips
+  // everything the element paints, its border included. The first draft drew a bordered square and
+  // masked a mark into it, and the border was simply gone - measured, not guessed. One glyph per
+  // state has no such seam, and the empty box is then just the state with no mark in it.
+  --icon-task-open: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='5'/%3E%3C/svg%3E");
+  --icon-task-done: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='5'/%3E%3Cpath d='m8 12.4 2.6 2.6L16.2 9'/%3E%3C/svg%3E");
+  --icon-task-doing: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='5'/%3E%3Cpath d='M15.5 8.5 8.5 15.5'/%3E%3C/svg%3E");
+  --icon-task-cancelled: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='5'/%3E%3Cpath d='M8 12h8'/%3E%3C/svg%3E");
+  --icon-task-forwarded: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='5'/%3E%3Cpath d='m10.6 8.4 3.6 3.6-3.6 3.6'/%3E%3C/svg%3E");
+  --icon-task-question: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='5'/%3E%3Cpath d='M10.3 9.7a1.9 1.9 0 0 1 3.6.7c0 1.3-1.9 1.7-1.9 1.7'/%3E%3Cpath d='M12 15.6h.01'/%3E%3C/svg%3E");
+
   // lucide `tag`. The dot is `fill`ed rather than stroked and that is not cosmetic: only the alpha
   // channel of a mask survives, so an unfilled 0.5-radius circle would leave a hole where the eye
   // of the label belongs.

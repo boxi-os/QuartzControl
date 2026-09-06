@@ -168,7 +168,6 @@ html {
     overscroll-behavior: contain;
     mask-image: var(--tpl-fade-mask);
     -webkit-mask-image: var(--tpl-fade-mask);
-    scrollbar-width: thin;
 
     // The padding is what makes the fade honest, and it is exactly as deep as the fade. At the top
     // of the list the first row then sits below the gradient instead of inside it, and at the
@@ -211,6 +210,55 @@ html {
 
   .explorer-content {
     overflow: visible;
+  }
+}
+
+/* ----------------------------------------------- the scrollbar of a box, on demand */
+
+// A box that scrolls shows its bar while the pointer is in it, and not otherwise.
+//
+// What is *not* possible, since it was the first idea: there is no CSS for "while scrolling". The
+// operating system does that - macOS' overlay scrollbars fade on their own - and a stylesheet has
+// no event to hang it on. `:hover` is the closest thing that is not a script, and it is close
+// enough: a bar you cannot see is one you were not reaching for.
+//
+// The *width* stays `thin` at all times and only the **colour** changes. The obvious version -
+// `scrollbar-width: none` at rest, `thin` on hover - was written first and measured, and it fails
+// in two different ways at once:
+//
+//   Chrome    the content narrowed from 300px to 289px on hover, so the whole panel reflowed
+//             under the pointer. `scrollbar-gutter: stable` does not save it: the gutter it
+//             reserves is *the width of the scrollbar*, and with `scrollbar-width: none` that
+//             width is zero.
+//   Firefox   nothing happened at all - the computed value stayed `none` through the hover.
+//             Gecko settles a scroll container's scrollbar width when it builds the box and does
+//             not restyle it for a hover.
+//   WebKit    worked, being the only one of the three with an overlay bar that costs no width.
+//
+// A colour has neither problem: the gutter is the same at rest and on hover, so nothing moves, and
+// a repaint is something all three do. `transparent transparent` is thumb and track.
+//
+// `:focus-within` alongside `:hover`, because tabbing into a list is also a reason to see how long
+// it is.
+//
+// The list is every box in this build that was *measured* scrolling on its own - the tree, the
+// mobile drawer, the right column, the backlinks box (quartz caps that one, not this template),
+// the search results and a board column. Two deliberate absences. The page's own scrollbar is the
+// one bar that says how long the document is, and nobody should have to find it first. And the
+// horizontal scrollers - code blocks, wide tables, KaTeX displays, the board - keep their bar
+// because sideways scrolling is the thing nobody expects, so its only sign has to be visible.
+.qgframe-area-right,
+ul.explorer-ul,
+.explorer-content,
+.backlinks,
+.results-container,
+.bases-board-column-body {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+
+  &:hover,
+  &:focus-within {
+    scrollbar-color: var(--tpl-rule-control) transparent;
   }
 }
 

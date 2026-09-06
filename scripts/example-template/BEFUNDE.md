@@ -999,3 +999,39 @@ liest jetzt dieselbe Serie in derselben Reihenfolge.
 Die orange Farbe in den Diagrammen ist übrigens `tertiary`: `--mm-3` ist `tertiary` zu 24 % im
 Grund, und `stroke: var(--tertiary)` zeichnet die Umrisse in Flowchart, Sequenz, Zustand, Gantt und
 gitGraph.
+
+### 62. Eine Rollleiste ausblenden, ohne dass der Kasten dabei umbricht
+
+Die Frage war, ob sich die Leisten in den Kästen ausblenden lassen, solange nicht gerollt wird.
+„Während gerollt wird" gibt es in CSS nicht — das macht das Betriebssystem, ein Stylesheet hat kein
+Ereignis dafür. `:hover` ist das Nächstliegende ohne Skript, und nah genug: Eine Leiste, die man
+nicht sieht, wollte man auch nicht greifen.
+
+Der naheliegende Weg ist der falsche, und zwar auf drei verschiedene Arten. `scrollbar-width: none`
+in Ruhe, `thin` beim Hovern, gemessen an derselben Seite:
+
+| | Ergebnis |
+| --- | --- |
+| Chrome | Inhalt von 300 px auf **289 px** beim Hovern — die ganze Spalte bricht unter dem Zeiger um |
+| Firefox | gar nichts; der berechnete Wert blieb `none` über den Hover hinweg. Gecko legt die Leistenbreite beim Bau der Box fest und stylt sie für einen Hover nicht neu |
+| WebKit | funktioniert, als einziges — dort ist die Leiste ein Overlay und kostet keine Breite |
+
+`scrollbar-gutter: stable` rettet den Chrome-Fall **nicht**: Die Rinne, die es reserviert, ist *die
+Breite der Leiste*, und die ist bei `scrollbar-width: none` null.
+
+Also die Breite konstant lassen und nur die **Farbe** wechseln: `scrollbar-width: thin` immer,
+`scrollbar-color: transparent transparent` in Ruhe, ein sichtbarer Daumen bei `:hover` und
+`:focus-within`. Nachgemessen in allen drei Engines: Die Farbe wechselt und `clientWidth` bleibt in
+allen dreien bei 300 — es bewegt sich nichts.
+
+Die Liste umfasst jeden Kasten, der in diesem Bau *gemessen* selbst rollt: den Baum, die mobile
+Schublade, die rechte Spalte, die Rückverweise (die kappt Quartz, nicht diese Vorlage), die
+Suchergebnisse und eine Board-Spalte. Zwei Auslassungen mit Absicht. Die Leiste des Dokuments ist
+die eine, die sagt, wie lang die Seite ist — die muss niemand erst suchen. Und die *waagerechten*
+Roller — Codeblöcke, breite Tabellen, KaTeX, das Board — behalten ihre Leiste: `scrollbar-gutter`
+reserviert am unteren Rand nichts, ein Ausblenden würde den Kasten dort beim Hovern um die
+Leistenhöhe wachsen lassen, und seitliches Rollen ist ohnehin das, womit niemand rechnet.
+
+**Nicht am Bild geprüft:** Ob der Daumen tatsächlich erscheint, ließ sich im kopflosen Screenshot
+nicht festhalten — Rollleisten werden dort nicht mitgezeichnet. Berechnete Werte und Breiten sind
+gemessen, das gemalte Pixel nicht.

@@ -1,6 +1,6 @@
 import { spawn, execFileSync, type ChildProcess } from 'child_process'
 import { createConnection } from 'net'
-import { closeSync, openSync, readSync } from 'fs'
+import { closeSync, openSync, readSync, readdirSync, renameSync, unlinkSync } from 'fs'
 import { readdir, stat } from 'fs/promises'
 import { StringDecoder } from 'string_decoder'
 import { join } from 'path'
@@ -113,7 +113,53 @@ interface ServerLog {
   stdout: number
   stderr: number
   close: () => void
+  /** Renames both files after the pid is known and starts tailing them. */
+  adopt: (pid: number | undefined) => void
   stop: () => void
+}
+
+// One pair of files per run, named after the process that writes them. A single fixed name looked
+// right as long as "the file belongs to this run" was true, and the file this fix itself created
+// is what makes it false: after "Weiterlaufen lassen" at quit the old server keeps its write
+// descriptor, without O_APPEND and at its own offset, so the next start of the same project
+// truncated the file under it and the two wrote past each other. Measured with two descriptors on
+// one file - A writes 101 bytes, B opens 'w' and writes 11, A writes 11 again: 112 bytes, 90 of
+// them NUL, and the new run's tail reads those NULs plus the *old* server's rebuild lines into the
+// new run's console, with nothing anywhere saying so. Per-run names also make the thing the PR
+// filed as "later" possible at all: the log of a server that was left running is still there after
+// the next start rather than truncated by it.
+const LOG_FILE = /^dev-server(?:-(tmp-\d+|\d+))?\.(?:out|err)\.log$/
+
+function serverLogNames(owner: string): { stdout: string; stderr: string } {
+  return { stdout: `dev-server-${owner}.out.log`, stderr: `dev-server-${owner}.err.log` }
+}
+
+// Removes the log files of runs that are over, and only those: a pid in a name is checked the way
+// every pid read back from somewhere is checked in this app (alive *and* still a quartz server -
+// the OS reuses numbers), so the files of a server the user left running survive to be read. The
+// two names without an owner are the fixed pair this directory carried before, and `tmp-` is a
+// pair whose spawn never got far enough to be renamed.
+function pruneServerLogs(dir: string): void {
+  let names: string[]
+  try {
+    names = readdirSync(dir)
+  } catch {
+    return
+  }
+  for (const name of names) {
+    const match = LOG_FILE.exec(name)
+    if (!match) continue
+    const owner = match[1]
+    if (owner !== undefined && !owner.startsWith('tmp-')) {
+      const pid = Number(owner)
+      if (isAlive(pid) && looksLikeQuartzServer(pid)) continue
+    }
+    try {
+      unlinkSync(join(dir, name))
+    } catch {
+      // someone else's file, or gone already - neither is this run's problem
+    }
+  }
 }
 
 // Opens this run's two log files and starts tailing them. The write descriptors are the child's
@@ -130,21 +176,25 @@ interface ServerLog {
 // creates the directory and adds the `.gitignore` rule if the project is a git repository, which
 // starting a server did not do before.
 function openServerLog(projectId: string, projectPath: string): ServerLog | null {
-  const stops: Array<() => void> = []
   const fds: number[] = []
+  // The name a run wants carries its pid, and the pid does not exist until spawn() has returned -
+  // so the files are opened under a temporary name and renamed once it does. Renaming a file two
+  // processes hold open changes nothing about either descriptor on POSIX; the tails are started
+  // afterwards, on whatever name the files ended up with, because a tail follows a path.
+  const temporary = `tmp-${Date.now()}`
   try {
     const dir = quartzGuiDir(projectPath, 'logs')
-    const open = (stream: 'stdout' | 'stderr', name: string): number => {
-      const path = join(dir, name)
-      // Truncated, not appended to: the file belongs to this run, and the console it feeds is the
-      // one this run's log lines go to. What a previous run wrote is in the log buffer already.
+    pruneServerLogs(dir)
+    const names = serverLogNames(temporary)
+    const paths = { stdout: join(dir, names.stdout), stderr: join(dir, names.stderr) }
+    const open = (path: string): number => {
       const fd = openSync(path, 'w')
       fds.push(fd)
-      stops.push(tailFile(path, (text) => emitLog(projectId, stream, text)))
       return fd
     }
-    const stdout = open('stdout', 'dev-server.out.log')
-    const stderr = open('stderr', 'dev-server.err.log')
+    const stdout = open(paths.stdout)
+    const stderr = open(paths.stderr)
+    const stops: Array<() => void> = []
     let closed = false
     return {
       stdout,
@@ -155,14 +205,31 @@ function openServerLog(projectId: string, projectPath: string): ServerLog | null
         closeSync(stdout)
         closeSync(stderr)
       },
+      adopt: (pid) => {
+        if (pid !== undefined) {
+          const wanted = serverLogNames(String(pid))
+          for (const stream of ['stdout', 'stderr'] as const) {
+            const target = join(dir, wanted[stream])
+            try {
+              renameSync(paths[stream], target)
+              paths[stream] = target
+            } catch {
+              // The tail below then follows the temporary name, which is a worse name and a
+              // working log. Only reachable where renaming an open file is refused, i.e. Windows.
+            }
+          }
+        }
+        for (const stream of ['stdout', 'stderr'] as const) {
+          stops.push(tailFile(paths[stream], (text) => emitLog(projectId, stream, text)))
+        }
+      },
       stop: () => {
         for (const stop of stops) stop()
       }
     }
   } catch (err) {
     // Whatever the first of the two opens managed has to be undone here, or a failed second open
-    // leaves an interval running and a descriptor open for every attempt.
-    for (const stop of stops) stop()
+    // leaves a descriptor open for every attempt.
     for (const fd of fds) {
       closeSync(fd)
     }
@@ -198,6 +265,8 @@ export async function startServer(
   // The child has its own copies from the moment spawn() returns; holding ours open would put the
   // app back in the position this file just left, as the last thing keeping the write end alive.
   log?.close()
+  // Now the pid exists, so the files can take their final name and the tails can start on it.
+  log?.adopt(child.pid)
   const status: ServerStatus = { state: 'starting', options, pid: child.pid, startedAt: new Date().toISOString() }
   runningServers.set(projectId, { process: child, status })
   emitStatus(projectId)

@@ -505,13 +505,36 @@ Die zweite Hälfte des Versprechens fiel gleich mit: Ein toter Prozess fällt be
 dem `isAlive`-Filter von `detectOrphanedServers()`, die Frage „Weiterlaufen lassen?" kam also gar
 nicht erst. Und `serversOnQuit: 'keep'` macht die Wahl zur Dauereinstellung.
 
-**Die Ausgabe geht deshalb in `.quartz-gui/logs/dev-server.{out,err}.log`, und Main tailt die zwei
-Dateien** in dasselbe `emitLog()`, das vorher am Pipe-Ereignis hing — die Zeilen leben ohnehin in
-Main (`services/logBuffer.ts`), ein Tail ist dort zu Hause. Zwei Dateien statt einer, weil
-`LogConsole` stderr rot färbt und eine gemeinsame Datei genau das verlöre. Bei jedem Start
-abgeschnitten: die Datei gehört zu diesem Lauf. Kein `detached` — die Messung oben *ist* der Fix,
-und eine eigene Prozessgruppe wäre eine Änderung an dem, was `stopServer` und `killAllServers`
-ablaufen.
+**Die Ausgabe geht deshalb in `.quartz-gui/logs/dev-server-<pid>.{out,err}.log`, und Main tailt die
+zwei Dateien** in dasselbe `emitLog()`, das vorher am Pipe-Ereignis hing — die Zeilen leben ohnehin
+in Main (`services/logBuffer.ts`), ein Tail ist dort zu Hause. Zwei Dateien statt einer, weil
+`LogConsole` stderr rot färbt und eine gemeinsame Datei genau das verlöre. Kein `detached` — die
+Messung oben *ist* der Fix, und eine eigene Prozessgruppe wäre eine Änderung an dem, was
+`stopServer` und `killAllServers` ablaufen.
+
+**Ein Name pro Lauf, und der Name ist die PID.** Zuerst hieß die Datei immer gleich und wurde bei
+jedem Start abgeschnitten — „sie gehört zu diesem Lauf". Das vierte Review hat den Fall gefunden,
+den dieser Fix selbst erst möglich macht: Nach „Weiterlaufen lassen" behält der alte Server seinen
+Schreibdeskriptor, ohne `O_APPEND` und auf seinem alten Offset. Gemessen mit zwei Läufen im selben
+Ordner (ein `npx`-Ersatz, der Zeilen mit seiner eigenen PID schreibt):
+
+| | Dateien | Konsole des zweiten Laufs |
+|---|---|---|
+| fester Name | `dev-server.{out,err}.log` | Zeilen **beider** Läufe, 32 Nullbytes |
+| Name pro Lauf | `dev-server-3882.*`, `dev-server-3907.*` | nur der eigene Lauf, keine Nullbytes |
+
+Aufgeräumt wird beim Start, und zwar nach derselben Regel, mit der dieses Projekt jede PID
+behandelt, die es aus einer Liste oder Datei zurückliest (`isAlive` *und* `looksLikeQuartzServer`,
+weil das Betriebssystem Nummern wiederverwendet): Was ein noch lebender Server schreibt, bleibt
+liegen, alles andere wird gelöscht — die alten festen Namen eingeschlossen, ein `tmp-`-Paar eines
+Spawns, der es nie bis zur Umbenennung geschafft hat, ebenso. Gemessen: aus fünf vorbereiteten
+Dateien bleiben nach einem Start die zwei des laufenden Servers und die eine, die nicht uns gehört.
+Die PID gibt es erst, wenn `spawn()` zurückkehrt, deshalb werden die Dateien unter einem
+`tmp-`-Namen geöffnet und danach umbenannt; ein Umbenennen ändert auf POSIX an keinem der offenen
+Deskriptoren etwas, und die Tails starten erst danach, weil ein Tail einem Pfad folgt.
+
+Damit ist auch lesbar, was ein weitergelaufener Server geschrieben hat — mit festem Namen war das
+nicht „später", sondern mit diesem Namen gar nicht zu haben.
 
 Zwei Listen mussten das neue Verzeichnis lernen, beide durch Nachsehen gefunden statt durch Schaden:
 `isSnapshotWorthy()` nimmt unter `.quartz-gui/` alles mit, was nicht ausdrücklich ausgeschlossen ist

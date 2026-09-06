@@ -410,7 +410,8 @@ einer Commit-Nachricht nicht weit genug reichte:
 - **„Weiterlaufen lassen“ hielt den Server bis zu seiner nächsten Log-Zeile.** Gemessen war, dass er
   *unmittelbar* nach dem Beenden noch antwortet; mit der App sterben aber die Leseenden seiner
   Pipes, und der erste Rebuild danach bringt ihn um. Die Ausgabe geht seither in
-  `.quartz-gui/logs/dev-server.{out,err}.log`, die Main tailt — Regel oben unter Prozessgrenze.
+  `.quartz-gui/logs/dev-server-<pid>.{out,err}.log`, die Main tailt — Regel oben unter
+  Prozessgrenze.
 - **Der Snapshot-Store hält den Projektpfad in jeder Aufnahme.** Der Kommentar in `projectPaths.ts`
   behauptete das Gegenteil auf Grundlage eines `grep`, und `grep` liest in einer git-Objektdatenbank
   nichts. Nach jedem Restore, der Config oder Lockfile berührt, läuft `repointAuthoredFrames()` —

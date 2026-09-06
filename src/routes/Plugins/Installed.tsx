@@ -6,7 +6,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { confirmDialog } from '../../utils/confirm'
 import type { TFunction } from 'i18next'
 import { useNavigate } from 'react-router-dom'
-import { ArrowDown, ArrowUp, ExternalLink, GripVertical, Search, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, Blocks, ExternalLink, GripVertical, LayoutGrid, Search, Trash2, Workflow, Wrench } from 'lucide-react'
 import { useProject } from '../ProjectLayout'
 import type {
   GridFrameDefinition,
@@ -15,7 +15,7 @@ import type {
   PluginOptionField,
   QuartzConfig
 } from '@shared/ipc-contract'
-import { Badge, Button, Card, Select, TextInput, Toggle } from '../../components/ui'
+import { Badge, Button, Card, CardHeading, Select, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { announce } from '../../state/announcer'
 import { primeStickyState, useStickyState } from '../../state/uiState'
@@ -559,7 +559,7 @@ export default function PluginsInstalled(): JSX.Element {
 
       {frameItems.some(matches) && (
         <section className="mb-8">
-          <h2 className="mb-1 text-sm font-semibold">{t('pluginsInstalled.framesHeading')}</h2>
+          <CardHeading icon={LayoutGrid} className="mb-1">{t('pluginsInstalled.framesHeading')}</CardHeading>
           <p className="mb-3 max-w-3xl text-xs text-text-muted">{t('pluginsInstalled.framesDescription')}</p>
           <div className={PLUGIN_LIST}>
             {/* Frames are not part of either sequence - they are registered plugins without an
@@ -573,7 +573,7 @@ export default function PluginsInstalled(): JSX.Element {
 
       {componentItems.some(matches) && (
         <section className="mb-8">
-          <h2 className="mb-1 text-sm font-semibold">{t('pluginsInstalled.componentsHeading')}</h2>
+          <CardHeading icon={Blocks} className="mb-1">{t('pluginsInstalled.componentsHeading')}</CardHeading>
           <p className="mb-3 max-w-3xl text-xs text-text-muted">{t('pluginsInstalled.componentsDescription')}</p>
           <div className="flex flex-col gap-5">
             {positionKeys.map((position) => {
@@ -609,7 +609,7 @@ export default function PluginsInstalled(): JSX.Element {
 
       {processingItems.some(matches) && (
         <section>
-          <h2 className="mb-1 text-sm font-semibold">{t('pluginsInstalled.processingHeading')}</h2>
+          <CardHeading icon={Workflow} className="mb-1">{t('pluginsInstalled.processingHeading')}</CardHeading>
           <p className="mb-3 max-w-3xl text-xs text-text-muted">{t('pluginsInstalled.processingDescription')}</p>
           <div className="flex flex-col gap-5">
             {pageTypeItems.some(matches) && (
@@ -673,7 +673,7 @@ export default function PluginsInstalled(): JSX.Element {
       )}
 
       <section className="mt-10 border-t border-ink/[0.06] pt-5 dark:border-ink/10">
-        <h2 className="mb-1 text-sm font-semibold">{t('pluginsInstalled.maintenanceHeading')}</h2>
+        <CardHeading icon={Wrench} className="mb-1">{t('pluginsInstalled.maintenanceHeading')}</CardHeading>
         <p className="mb-3 max-w-3xl text-xs text-text-muted">{t('pluginsInstalled.maintenanceDescription')}</p>
         <div className="flex flex-wrap gap-2">
           <Button variant="ghost" onClick={() => runMaintenance('install')} disabled={maintenance !== null || busy}>

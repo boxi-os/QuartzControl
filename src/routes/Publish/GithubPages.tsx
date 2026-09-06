@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Globe } from 'lucide-react'
 import type { GithubPagesInfo } from '@shared/ipc-contract'
-import { Badge, Button, Card, Field, TextInput, Toggle } from '../../components/ui'
+import { Badge, Button, Card, CardHeading, Field, TextInput, Toggle } from '../../components/ui'
 import { useAsyncAction } from '../../hooks/useAsyncAction'
 
 // The other half of a branch deploy: pushing the build somewhere is not the same as GitHub serving
@@ -57,7 +58,7 @@ export default function GithubPages({ projectPath, branch }: { projectPath: stri
   return (
     <Card>
       <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold">{t('publish.pages.title')}</h2>
+        <CardHeading icon={Globe}>{t('publish.pages.title')}</CardHeading>
         <Button variant="ghost" onClick={() => reload()} disabled={load.pending}>
           {load.pending ? t('common.saving') : t('publish.pages.reload')}
         </Button>

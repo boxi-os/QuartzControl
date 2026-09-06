@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { CloudUpload, FileDiff, Key, SquarePen, Target } from 'lucide-react'
 import { confirmDialog } from '../../utils/confirm'
 import type { TFunction } from 'i18next'
 import { Link } from 'react-router-dom'
@@ -14,7 +15,7 @@ import type {
   SaveConnectionInput,
   SavePublishTargetInput
 } from '@shared/ipc-contract'
-import { Badge, Button, Card, Field, InfoNote, PageHeader, SegmentedControl, Select, TextInput, Toggle } from '../../components/ui'
+import { Badge, Button, Card, CardHeading, Field, InfoNote, PageHeader, SegmentedControl, Select, TextInput, Toggle } from '../../components/ui'
 import {
   CONNECTION_KIND_LABEL,
   ConnectionFormFields,
@@ -408,7 +409,7 @@ export default function Publish(): JSX.Element {
       )}
 
       <Card>
-        <h2 className="mb-2 text-sm font-semibold">{t('publish.targetHeading')}</h2>
+        <CardHeading icon={Target} className="mb-2">{t('publish.targetHeading')}</CardHeading>
         {/* One of N, which is what SegmentedControl already is - this used to be a hand-rolled row
             of buttons where the selected one was blue and nothing said it was a choice: no
             radiogroup, no arrow keys, and every chip its own tab stop. "Neues Ziel" stays outside
@@ -484,7 +485,7 @@ export default function Publish(): JSX.Element {
 
       {targetDraft && (
         <Card>
-          <h2 className="mb-2 text-sm font-semibold">{t('publish.targetForm.heading')}</h2>
+          <CardHeading icon={SquarePen} className="mb-2">{t('publish.targetForm.heading')}</CardHeading>
           <p className="mb-3 text-xs text-text-muted">{t('publish.targetForm.explainer')}</p>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             <Field label={t('publish.targetForm.name')}>
@@ -753,7 +754,7 @@ export default function Publish(): JSX.Element {
 
       {connectionDraft && (
         <Card>
-          <h2 className="mb-2 text-sm font-semibold">{t('publish.connectionForm.heading')}</h2>
+          <CardHeading icon={Key} className="mb-2">{t('publish.connectionForm.heading')}</CardHeading>
           <p className="mb-3 text-xs text-text-muted">{t('publish.connectionForm.explainer')}</p>
           <ConnectionFormFields draft={connectionDraft} onChange={setConnectionDraft} />
           <div className="mt-3 flex gap-2">
@@ -788,7 +789,7 @@ export default function Publish(): JSX.Element {
       {hasFileDiff && (
         <Card>
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold">{t('publish.diffHeading')}</h2>
+            <CardHeading icon={FileDiff}>{t('publish.diffHeading')}</CardHeading>
             <div className="flex gap-2">
               <Button variant="ghost" onClick={() => buildAction.run()} disabled={buildAction.pending}>
                 {buildAction.pending ? t('common.saving') : t('publish.buildNow')}
@@ -879,7 +880,7 @@ export default function Publish(): JSX.Element {
       {activeTarget && (
         <Card>
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold">{t('publish.deployHeading')}</h2>
+            <CardHeading icon={CloudUpload}>{t('publish.deployHeading')}</CardHeading>
             <Button onClick={deploy} disabled={deployAction.pending || !canDeploy}>
               {deployAction.pending ? t('common.saving') : t('publish.deployButton')}
             </Button>

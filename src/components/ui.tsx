@@ -370,6 +370,38 @@ export function Card({ children, className = '', ...props }: HTMLAttributes<HTML
   )
 }
 
+// The heading of a card, with the icon that says what the card is about.
+//
+// It exists because the app had 36 of these written by hand and they disagreed about everything:
+// three sizes (14px `text-sm`, 15px `text-heading`, and 16px from a bare `font-medium` on an h2
+// that Tailwind's preflight leaves at the body size), two weights, and an icon on two of them.
+// `text-heading` is the size this app already names for exactly this job (tailwind.config.js), so
+// that is the one all of them speak now.
+//
+// The icon is plain rather than the tinted square `PageHeader` and Settings' `Section` use: those
+// two name a *page* and a page has one of them, while a page can hold six cards and six tinted
+// squares would out-shout the page's own header. Which icon a card gets is not free invention
+// either - where a card is about the same thing as a sidebar entry, it takes that entry's icon
+// from `navConfig`, so the app keeps saying one thing with one picture.
+//
+// `className` is placement (`mb-2` and friends), never colour - see CLAUDE.md.
+export function CardHeading({
+  icon: Icon,
+  children,
+  className = ''
+}: {
+  icon: LucideIcon
+  children: ReactNode
+  className?: string
+}): JSX.Element {
+  return (
+    <h2 className={`flex items-center gap-2 text-heading font-semibold ${className}`}>
+      <Icon size={15} aria-hidden className="shrink-0 text-text-secondary" />
+      {children}
+    </h2>
+  )
+}
+
 // A short explanation of a word the app uses, shown once at the top of the page that word belongs
 // to - what a snapshot is and how it differs from Git-Sync, what a Frame is, what separates a
 // Zugang from a Ziel. Blue rather than amber, because none of it is a warning: it is the sentence

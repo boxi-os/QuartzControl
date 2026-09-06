@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Folder } from 'lucide-react'
 import { useProject } from '../ProjectLayout'
 import type { ContentProgress, ContentStatus, ContentStrategy } from '@shared/ipc-contract'
-import { Badge, Button, Card, Field, Modal, Select, TextInput } from '../../components/ui'
+import { Badge, Button, Card, CardHeading, Field, Modal, Select, TextInput } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 
 export default function ContentFolder(): JSX.Element {
@@ -55,7 +56,7 @@ export default function ContentFolder(): JSX.Element {
       {/* The one block on this tab, and it's four short lines - the cap sits on the card rather
           than on the page, so it's this content saying how wide it wants to be. */}
       <Card className="max-w-2xl">
-        <h2 className="mb-3 font-medium">{t('content.currentFolder')}</h2>
+        <CardHeading icon={Folder} className="mb-3">{t('content.currentFolder')}</CardHeading>
         {!status && <p className="text-sm text-text-muted">{t('content.loading')}</p>}
         {status && !status.exists && <p className="text-sm text-amber-600">{t('content.noFolder')}</p>}
         {status?.exists && (

@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { confirmDialog } from '../utils/confirm'
 import { Link, useNavigate } from 'react-router-dom'
-import { RefreshCw } from 'lucide-react'
+import { Blocks, Camera, Package, RefreshCw } from 'lucide-react'
 import { useProject } from './ProjectLayout'
 import type { CoreUpdateStatus, GitStatus, PluginUpdateStatus, UpdateCheckState, UpdateResult } from '@shared/ipc-contract'
-import { Badge, Button, Card, PageHeader } from '../components/ui'
+import { Badge, Button, Card, CardHeading, PageHeader } from '../components/ui'
 import { formatIpcError } from '../components/ErrorSurface'
 import { primeStickyState } from '../state/uiState'
 import { TAB_ICONS } from './navConfig'
@@ -124,7 +124,7 @@ export default function Updates(): JSX.Element {
 
       <Card>
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold">{t('updates.core.heading')}</h2>
+          <CardHeading icon={Package}>{t('updates.core.heading')}</CardHeading>
           <div className="flex shrink-0 items-center gap-2">
             {coreStatus && <UpdateStateBadge state={coreStatus.state} />}
             {/* "Nicht prüfbar" is a network answer, and there was no way to ask again short of
@@ -193,7 +193,7 @@ export default function Updates(): JSX.Element {
 
       <Card>
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold">{t('updates.plugins.heading')}</h2>
+          <CardHeading icon={Blocks}>{t('updates.plugins.heading')}</CardHeading>
           <Button variant="ghost" onClick={() => updatePlugin(undefined)} disabled={pluginBusy !== null || actionablePlugins.length === 0}>
             {pluginBusy === '__all__' ? t('common.saving') : t('updates.plugins.updateAll')}
           </Button>
@@ -239,7 +239,7 @@ export default function Updates(): JSX.Element {
           lockfile, the content folder and the user's own stylesheets, none of which the git tags
           this card used to list ever captured. One list, on the page that is about it. */}
       <Card>
-        <h2 className="mb-1 text-sm font-semibold">{t('updates.snapshots.heading')}</h2>
+        <CardHeading icon={Camera} className="mb-1">{t('updates.snapshots.heading')}</CardHeading>
         <p className="text-xs text-text-muted">{t('updates.snapshots.movedHint')}</p>
         <Link
           to="../backups"

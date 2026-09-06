@@ -407,8 +407,11 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--headerFont);
   color: var(--dark);
   line-height: var(--tpl-leading-tight);
-  // A heading's space belongs above it, not below: the gap tells you what the heading owns.
-  margin-block: var(--tpl-space-xl) var(--tpl-space-xs);
+  // A heading's space belongs above it, not below: the gap tells you what the heading owns. 40px
+  // over 12px, and the 12 has to stay well under the 24 that separates two blocks - the moment the
+  // two are close, a heading stops belonging to the text under it and starts floating between two
+  // paragraphs. Measured: 8px was the previous value and read as attached rather than as a lead-in.
+  margin-block: var(--tpl-space-xl) var(--tpl-space-sm);
   font-weight: 600;
   letter-spacing: -0.011em;
 }

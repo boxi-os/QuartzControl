@@ -1146,3 +1146,24 @@ einen zweifarbigen srgb-Mix) und bei allem anderen einen Fehler wirft statt zu r
 Was bleibt: der Test dafür, ob etwas nach `variables.mjs` gehört, ist **nicht**, welche Zeichen der
 Wert benutzt, sondern ob jemand ihn je ändern wollen würde. Eine Farbe, eine Länge, ein
 Schriftstapel — ja. Ein vierzeiliger Verlauf oder eine 400 Zeichen lange Data-URI — nein.
+
+### 68. Nach zwei Bildschirmen zeigt die Leiste den Namen, den man schon kennt — vorgemerkt
+
+Der Sticky-Header trägt oben wie unten den *Sitenamen*. Auf einer Seite, die drei Bildschirme hoch
+ist, ist das die eine Information, die man ohnehin hat, während die verloren gegangen ist, die man
+bräuchte: welcher Artikel das hier eigentlich ist. Die Überschrift ist längst oben raus, das
+Inhaltsverzeichnis in der rechten Spalte sagt nur, welcher *Abschnitt* kommt.
+
+Gewollt wäre: Sobald die `h1` des Artikels den Bildschirm verlässt, blendet die Leiste vom
+Sitenamen auf den Seitentitel um und beim Zurückscrollen wieder zurück. Das Zeitmaß dafür gibt es
+schon — `view-timeline` auf der Überschrift mit `animation-range: exit`, also derselbe Mechanismus
+wie bei Befund 64 und 65, mit demselben `@supports`-Wächter und derselben Rückfallebene (Firefox
+behielte schlicht den Sitenamen).
+
+Warum es hier steht und nicht im Diff: Es braucht `ArticleTitle` als zweite Komponente in der
+`brand`-Gruppe, also eine Änderung an `plugins.mjs` und `layout.mjs` und damit am Layout des
+Projekts — kein Stylesheet-Kniff. Zwei Dinge sind daran vorher zu messen und nicht zu raten: was
+die zusätzliche Komponente mit der Breite der Leiste macht, die bei 390 px ohnehin schon knapp ist
+(siehe Befund 28), und ob eine `view-timeline` auf einem Element funktioniert, das in einer anderen
+Frame-Fläche liegt als das animierte. Das ist ein Feature, kein Feinschliff, und gehört in einen
+eigenen Durchgang.

@@ -118,6 +118,65 @@
   }
 }
 
+/* ------------------------------------------------------------- how far through you are */
+
+// The same edge, doing a second job: it fills from the left as the document scrolls.
+//
+// This site has several pages three screens tall, and until now nothing on them said how much was
+// left - the table of contents says what is coming, which is a different question. A progress line
+// is the cheapest possible answer: no new furniture, no space taken, it rides on a line that is
+// already there.
+//
+// Deliberately not a bar of its own above or below the header. That would be a fourth horizontal
+// line in the top 60px of the page (bar, hairline, breadcrumb trail) and this template does not
+// have that many lines to spend. Twice the hairline's width so it reads as the edge *thickening*
+// rather than as a new object sitting on it, and it covers the hairline exactly rather than
+// hanging under it.
+//
+// Only inside the guard, and that is the whole degradation story: without a scroll timeline the
+// pseudo-element is never created, so a browser that cannot drive it does not get a stripe frozen
+// at some arbitrary width. On a page too short to scroll the timeline is inactive, the animation
+// does not apply, and `scaleX(0)` leaves nothing to see - which is right, because there is no
+// progress to report.
+//
+// Nothing here is motion in the sense `prefers-reduced-motion` means: the line does not travel on
+// its own, it *is* the scroll position. There is nothing to suppress.
+@supports (animation-timeline: scroll()) {
+  .qgframe-area-header::after {
+    content: "";
+    position: absolute;
+    // The bar is `position: sticky` and therefore the containing block for this.
+    inset-block-end: calc(-1 * var(--tpl-rule-width));
+    inset-inline: 0;
+    height: calc(2 * var(--tpl-rule-width));
+    background: var(--secondary);
+    // `left`, not a logical keyword - transform-origin has none. Both languages on this site read
+    // left to right; an RTL translation would want `right` here and that is the one line it costs.
+    transform-origin: left center;
+    transform: scaleX(0);
+    pointer-events: none;
+    animation: tpl-header-progress linear both;
+    animation-timeline: scroll(root block);
+  }
+}
+
+// Both ends written out, and that is not tidiness. With only a `to` keyframe the start value is
+// the element's own underlying `scaleX(0)` - and WebKit resolves that underlying value against the
+// *already animated* one, so the progress compounds and the line reads the square of how far you
+// are: 6% at a quarter of the way down, 25% at half, 57% at three quarters. Right at both ends,
+// wrong everywhere in between, which is the one shape of wrong a progress line may not have.
+// Measured at six positions in all three engines; with the `from` spelled out, WebKit and Chromium
+// agree to three decimals.
+@keyframes tpl-header-progress {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
 // The two groups, told apart by what is inside them: quartz writes the same `flex-component` class
 // on every group it renders and puts the group's own name nowhere in the markup (Flex.tsx), so
 // `:has()` is the handle. Reading them by position (`:first-child` / `:last-child`) would work

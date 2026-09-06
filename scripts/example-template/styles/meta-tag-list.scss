@@ -21,7 +21,9 @@ a.tag-link,
   border-radius: 999px;
   background: var(--tag-background);
   color: var(--tag-color);
-  border: var(--tpl-rule-width) solid transparent;
+  // Dotted already at rest, invisibly: the style has to match the hover state or the pill's edge
+  // changes shape under the pointer as well as colour.
+  border: var(--tpl-rule-width) dotted transparent;
   font-size: var(--tpl-text-xs);
   font-family: var(--font-interface);
   text-decoration: none;
@@ -34,9 +36,12 @@ a.tag-link,
     margin-inline-end: 0.1em;
   }
 
+  // The accent used to draw this ring, and on a 20px pill a full-strength navy outline is a lot
+  // of statement for "the pointer is here" - the background already says it. The control tone
+  // says the same thing at a third of the weight.
   &:hover {
     background: var(--tag-background-hover);
-    border-color: var(--secondary);
+    border-color: var(--tpl-rule-control);
     text-decoration: none;
   }
 }

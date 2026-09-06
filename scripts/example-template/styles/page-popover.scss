@@ -7,7 +7,7 @@
 .popover {
   > .popover-inner {
     background: var(--light);
-    border: var(--tpl-rule-width) solid var(--tpl-rule-strong);
+    border: var(--tpl-rule-width) dotted var(--tpl-rule-control);
     border-radius: var(--tpl-radius-lg);
     box-shadow: var(--tpl-shadow);
     padding: var(--tpl-space-sm) var(--tpl-space-md);

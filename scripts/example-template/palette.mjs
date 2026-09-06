@@ -210,7 +210,54 @@ export function syntaxPairs() {
   return rows.map((row) => ({ ...row, ok: row.ratio >= row.min }))
 }
 
+/* ------------------------------------------------- the control edge, read from the file too */
+
+/**
+ * `--tpl-rule-control` - the edge of everything a person operates - measured, not assumed.
+ *
+ * The token is a `color-mix()` and therefore lives in base.scss rather than variables.mjs (a
+ * variable override may not contain a comma). It is read back out of that file for the same reason
+ * the callout and syntax colours are: the stylesheet is what ships. Only the percentage is read;
+ * the two colours it mixes are named in the declaration and looked up in the palette, so changing
+ * `gray` moves this row with it.
+ *
+ * `color-mix(in srgb, A p%, B)` is a plain per-channel interpolation of the two non-premultiplied
+ * sRGB values, which is what the arithmetic below does. Both ends are opaque here, so there is no
+ * alpha to premultiply.
+ *
+ * The threshold is 3.0 and not 4.5: WCAG 1.4.11 asks that of a control's boundary. That is the
+ * whole reason this token exists - `gray` measures 6.41:1 and 7.10:1, more than twice what the
+ * rule wants, and looked it.
+ */
+export function controlEdgePairs() {
+  const source = readFileSync(join(import.meta.dirname, 'styles', 'base.scss'), 'utf-8')
+  const found = source.match(
+    /--tpl-rule-control:\s*color-mix\(in srgb,\s*var\(--([\w-]+)\)\s*(\d+(?:\.\d+)?)%,\s*var\(--([\w-]+)\)\s*\)/
+  )
+  if (!found) throw new Error('base.scss no longer defines --tpl-rule-control as a color-mix of two palette colours')
+  const [, from, percent, into] = found
+  const share = Number(percent) / 100
+
+  const rows = []
+  for (const [mode, colours] of Object.entries(PALETTE)) {
+    if (!colours[from] || !colours[into]) throw new Error(`--tpl-rule-control mixes --${from} into --${into}, and the palette has no such colour`)
+    const a = parseColor(colours[from])
+    const b = parseColor(colours[into])
+    const mixed = [0, 1, 2].map((i) => Math.round(a[i] * share + b[i] * (1 - share)))
+    const hex = '#' + mixed.map((v) => v.toString(16).padStart(2, '0')).join('')
+    rows.push({
+      mode,
+      fg: `rule-control ${hex}`,
+      bg: 'light',
+      min: 3.0,
+      what: `edge of a control (${percent}% ${from} in ${into})`,
+      ratio: contrast(hex, colours.light)
+    })
+  }
+  return rows.map((row) => ({ ...row, ok: row.ratio >= row.min }))
+}
+
 /** Everything this template puts on top of something else, in one list. */
 export function checkAll() {
-  return [...checkContrast(), ...calloutPairs(), ...syntaxPairs()]
+  return [...checkContrast(), ...calloutPairs(), ...syntaxPairs(), ...controlEdgePairs()]
 }

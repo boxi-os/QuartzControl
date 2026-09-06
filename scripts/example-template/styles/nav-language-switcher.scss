@@ -70,8 +70,9 @@
     min-width: var(--tpl-target);
     min-height: var(--tpl-target);
     background: var(--light);
-    // --gray like every other control's edge; --lightgray measures 1.34:1 against the ground.
-    border: var(--tpl-rule-width) solid var(--tpl-rule-strong);
+    // The same dotted control edge as its three neighbours in the toolbar; --lightgray measures
+    // 1.34:1 against the ground and may not draw a control (base.scss).
+    border: var(--tpl-rule-width) dotted var(--tpl-rule-control);
     border-radius: var(--tpl-radius-md);
     color: var(--darkgray);
     cursor: pointer;
@@ -115,7 +116,7 @@
     margin-block-start: var(--tpl-space-2xs);
     padding-block: var(--tpl-space-2xs);
     background: var(--light);
-    border: var(--tpl-rule-width) solid var(--tpl-rule-strong);
+    border: var(--tpl-rule-width) solid var(--tpl-rule-control);
     border-radius: var(--tpl-radius-md);
     // Real depth, for the reason stated in nav-search.scss: it genuinely floats above the page.
     box-shadow: var(--tpl-shadow);
@@ -230,7 +231,7 @@
   // The current language is the one state that has to survive without colour: on a row of flags,
   // colour is already taken.
   .current {
-    border-color: var(--tpl-rule-strong);
+    border-color: var(--tpl-rule-control);
     background: var(--tpl-surface-tint);
   }
 

@@ -1,6 +1,6 @@
 # Example — die Beispielvorlage
 
-Eine vollständige QuartzControl-Vorlage: alle zehn Bausteine gefüllt, jede Plugin-Komponente
+Eine vollständige QuartzControl-Vorlage: alle zwölf Bausteine gefüllt, jede Plugin-Komponente
 einzeln gestaltet, jeder Farbkontrast gemessen. Sie ist zum Benutzen gedacht **und** zum Umbauen —
 dieses Dokument beschreibt beides.
 
@@ -493,7 +493,7 @@ Alle gemessen, nicht vermutet. Wer die Vorlage erweitert, spart sich damit diese
 ## 5. Prüfen, ob es noch stimmt
 
     npm run template:example -- --check-contrast    # 89 Farbpaare
-    npm run template:example -- --only 9            # SCSS übersetzt? alle zehn Bausteine gefüllt?
+    npm run template:example -- --only 9            # SCSS übersetzt? alle zwölf Bausteine gefüllt?
     npm run template:example -- --only 9,10,11      # exportieren und in ein leeres Projekt importieren
 
     npm run check:tokens                            # kommt jedes Token an?

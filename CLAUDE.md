@@ -154,8 +154,12 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
 - **„Wo war ich“ überlebt einen Routenwechsel, nicht einen Neustart.** `useStickyState(key)` für
   Tab, Auswahl, Suchtext, Entwurf; keyed per Pathname, Namespace pro Komponente. Nicht für Gesten
   oder Pending-Flags. Scroll-Position analog in `ProjectLayout`. Schlüssel sind stabile Kennungen
-  (ID, Name, Pfad), nie Listenindizes: `plugins.expanded.<index>` hängt an der Position, und nach
-  einem Umsortieren gehört der Zustand zum falschen Plugin (siehe offene Befunde). Ein Link in einen
+  (ID, Name, Pfad), nie Listenindizes — ein Zustand an einer Position gehört nach dem Umsortieren
+  zum falschen Ding. Die aufgeklappten Plugins waren der eine Fall, der so hing; sie hängen seit
+  dem Instanzen-Durchgang am Namen (`stickyKey()` in `Plugins/Installed.tsx`, mit `#n` für die
+  n-te Instanz desselben Plugins). Am 2026-09-06 nachgezählt: 20 `useStickyState`-Aufrufe im
+  Renderer, davon 19 mit festem Schlüssel und genau einer mit einem berechneten — dem Namen oben.
+  Keine Position. Ein Link in einen
   anderen Bereich, der mehr als einen Pfad übergeben will („diesen Frame im Layout-Editor öffnen“),
   schreibt vor der Navigation mit `primeStickyState(pathname, key, value)` in den Store der Zielroute;
   die liest es genau einmal beim Mount, danach ist der Aufruf wirkungslos.
@@ -432,12 +436,13 @@ ein Vorlagen-Paket ist keine Vertrauensgrenze; „die Datei ist da“ ist nicht 
 lesen“; eine Kopie erbt keinen Pfad, der in das Original zeigt; ein Symlink-Schutz, der nur das
 oberste Verzeichnis prüft, prüft nichts.
 
-Zwei Dinge sind dabei aufgefallen und bewusst nicht mit erledigt worden:
-
-- `builtinTemplateAvailable()` in `builtinTemplateService.ts` hat in `electron/`, `src/` und
-  `shared/` keinen Aufrufer.
-- `countFiles()` in `contentService.ts` zählt einen Link auf ein Verzeichnis als *eine* Datei —
-  dieselbe Familie wie Befund 13, aber ohne Folge außer einer zu kleinen Zahl.
+Zwei Dinge waren dabei aufgefallen und bewusst nicht mit erledigt worden — **beide sind
+inzwischen weg, nachgesehen am 2026-09-06:** `builtinTemplateAvailable()` gibt es in
+`builtinTemplateService.ts` nicht mehr (im ganzen Baum kein Treffer außer diesem Absatz), und
+`countFiles()` in `contentService.ts` folgt einem Link auf ein Verzeichnis inzwischen per `stat`
+und steigt hinein, zählt ihn also nicht mehr als eine Datei. Beide fielen bei den Durchgängen
+danach mit, ohne dass es jemand als eigenen Befund notiert hätte; hier steht es, weil ein
+Absatz über offene Punkte, der zwei geschlossene führt, beim nächsten Lesen Arbeit erzeugt.
 
 ## Claude-Skills in diesem Projekt
 

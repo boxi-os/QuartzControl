@@ -24,7 +24,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
-/** id -> [ground, the motif]. `id` is the folder name under `formatierung/`. */
+/** id -> [ground, the motif]. `id` is the section folder's name under `2-formatierung/` without its number prefix. */
 const COVERS = {
   index: ['#2A4E6C', 'grid'],
   callouts: ['#2F5D5A', 'callout'],

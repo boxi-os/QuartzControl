@@ -72,7 +72,10 @@ const VAULT = path.join(HOME, 'Obsidian/QuartzProjekte/Example')
 const CONTROL = path.join(HOME, 'Documents/quartz-vorlage-gegenprobe')
 const PACKAGE_OUT = path.join(HOME, 'Documents/minimal-lesbar.qtpl')
 
-const TEMPLATE_NAME = 'Minimal & lesbar'
+// The display name changed to "Example" on 2026-09-06; the file name did not. It is what the app's
+// built-in template download points at (builtinTemplateService.ts) and what the published copy
+// in quartzcontrol-templates is called, so renaming it would be a change to an external repo.
+const TEMPLATE_NAME = 'Example'
 const TEMPLATE_DESCRIPTION =
   'Eine vollständige Beispielvorlage: gemessene Kontraste (WCAG AA in hell und dunkel), drei eigene Frames, ' +
   'selbst gehostete Schriften und jede Plugin-Komponente einzeln gestaltet — Explorer und Inhaltsverzeichnis ' +
@@ -419,7 +422,7 @@ async function buildTemplate() {
             // one place they are checked.
             configuration: {
               ...config.configuration,
-              pageTitle: 'Minimal & lesbar',
+              pageTitle: TEMPLATE_NAME,
               locale: 'de-DE'
             },
             theme: {

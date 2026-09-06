@@ -41,15 +41,15 @@ const BASE = process.argv[2] ?? 'http://localhost:8080'
 // component is dead everywhere else, and that is not a finding - so the list has to be wide.
 const PAGES = [
   '/',
-  '/beispiele/langer-artikel',
-  '/formatierung/callouts/alle-typen',
-  '/formatierung/code/bloecke',
-  '/formatierung/tabellen/ausrichtung',
-  '/formatierung/medien/bilder',
-  '/formatierung/mathematik/bloecke',
-  '/formatierung/diagramme/fluss',
-  '/obsidian-formate/bases/alle-ansichten.base',
-  '/obsidian-formate/canvas/aufbau-der-vorlage.canvas',
+  '/1-einstieg/04-so-ist-eine-seite-aufgebaut',
+  '/2-formatierung/05-callouts/alle-typen',
+  '/2-formatierung/06-code/bloecke',
+  '/2-formatierung/07-tabellen/ausrichtung',
+  '/2-formatierung/12-medien/bilder',
+  '/2-formatierung/08-mathematik/bloecke',
+  '/2-formatierung/09-diagramme/fluss',
+  '/3-obsidian-formate/01-bases/alle-ansichten.base',
+  '/3-obsidian-formate/02-canvas/aufbau-der-vorlage.canvas',
   '/tags/callouts',
   '/gibtsnicht'
 ]

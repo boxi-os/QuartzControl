@@ -1,8 +1,9 @@
-Dieses Handbuch ist die **Beispielvorlage** für QuartzControl. Es zeigt,
-wie eine Vorlage aussieht, die alle zehn Bausteine füllt.
+Dieses Handbuch gehört zur Vorlage **Example** für QuartzControl. Es erklärt die
+Vorlage und führt zugleich alles vor, was sie kann.
 
-- [Formatierung](/formatierung/) — alle Obsidian-Elemente
-- [Handbuch](/handbuch/) — vier Ebenen tief, für den Explorer
-- [Beispiele](/beispiele/) — Entwürfe, Aliasse, Eigenschaften
+- [Einstieg](/1-einstieg/) — für den Anfang
+- [Formatierung](/2-formatierung/) — jedes Obsidian-Element
+- [Anpassen](/6-anpassen/) — Farben, Schriften, Maße
+- [Nachschlagen](/7-nachschlagen/) — Glossar und Grenzen
 
 Der Text hier kommt aus einer *Markdown-Datei*, nicht aus der Konfiguration.

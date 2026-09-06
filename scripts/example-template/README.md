@@ -1,4 +1,4 @@
-# Minimal & lesbar — die Beispielvorlage
+# Example — die Beispielvorlage
 
 Eine vollständige QuartzControl-Vorlage: alle zehn Bausteine gefüllt, jede Plugin-Komponente
 einzeln gestaltet, jeder Farbkontrast gemessen. Sie ist zum Benutzen gedacht **und** zum Umbauen —
@@ -16,11 +16,19 @@ dieses Dokument beschreibt beides.
 Seit dem Umbau ist **das Projekt die Quelle**, nicht mehr dieses Verzeichnis:
 
 ```
-~/Obsidian/QuartzProjekte/Example/     der Vault — 252 Notizen, 6 Bases, 2 Canvas, 2 Zeichnungen, 9 Mediendateien
+~/Obsidian/QuartzProjekte/Example/     der Vault — 266 Notizen in sieben Kapiteln, 8 Bases, 2 Canvas, 2 Zeichnungen, 9 Mediendateien
         ↑ Symlink
 ~/Documents/Example/content/            das Projekt
 ~/Documents/Example/quartz/styles/      die Stylesheets — hier wird gearbeitet
 ```
+
+Der Vault ist seit dem 2026-09-06 als **Handbuch in sieben Kapiteln** geschnitten — `1-einstieg`,
+`2-formatierung`, `3-obsidian-formate`, `4-seiten-steuern`, `5-gestaltung`, `6-anpassen`,
+`7-nachschlagen`, gespiegelt unter `en/`. Die Nummer steht auch im Titel, weil der Explorer nach
+dem Titel sortiert und nicht nach dem Dateinamen (`localeCompare` mit `numeric: true` in
+`@quartz-community/explorer` 0.1.0; ein eigenes `sortFn` nimmt er nur aus `quartz.ts`). Wer eine
+Seite verschiebt, zieht `scripts/variable-docs.mjs` (`SEITEN`) und `scripts/check-tokens.mjs`
+(`PAGES`) nach — beide kennen Vault-Pfade.
 
 | Was | Quelle | Versioniert in |
 | --- | --- | --- |

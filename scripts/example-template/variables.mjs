@@ -82,12 +82,19 @@ export const VARIABLE_OVERRIDES = [
   { key: 'tpl-text-2xl', light: '1.75rem' },
   { key: 'tpl-text-3xl', light: '2.25rem' },
   { key: 'tpl-leading-tight', light: '1.25' },
-  { key: 'tpl-leading-normal', light: '1.65' },
-  // Small type does not want the body's leading. 1.65 is generous at 1rem across a 690px column;
-  // at 0.875rem in a 335px sidebar the same ratio pulls the lines so far apart that a three-line
+  { key: 'tpl-leading-normal', light: '1.6' },
+  // Small type does not want the body's leading. 1.6 is generous at 1rem across a 672px column;
+  // at 0.875rem in a 300px sidebar the same ratio pulls the lines so far apart that a three-line
   // paragraph reads as three separate ones - which is exactly how the layout-box in the sidebar
   // looked. Everything set in --tpl-text-sm or smaller uses this instead.
-  { key: 'tpl-leading-snug', light: '1.45' },
+  //
+  // A length, not a ratio, and that is the whole point of the value: 1.25rem is 20px, so every
+  // line of small type sits on the same 20px step whatever its exact size - the 14px of a sidebar
+  // row and the 12.5px of a date below it line up with each other instead of each keeping its own
+  // rhythm. It inherits as a computed length, so a descendant that changes size does *not* rescale
+  // it; anything that wants its own leading back says so (the headings do, via
+  // --tpl-leading-tight).
+  { key: 'tpl-leading-snug', light: '1.25rem' },
 
   // Tracking, and the reason there are two of it: an uppercase label needs more of it the smaller
   // it is set, so the micro-labels above every panel take more than the larger caps of an h5 or a

@@ -806,6 +806,15 @@ function WhatYouCanDo({ environment }: { environment: EnvironmentInfo | null }):
     <aside className="flex flex-col gap-4">
       {environment && <EnvironmentLine info={environment} />}
       <Card>
+        <h2 className="text-heading font-semibold">{t('home.aboutQuartz.title')}</h2>
+        <p className="mt-1.5 text-xs leading-relaxed text-text-muted">{t('home.aboutQuartz.body')}</p>
+        <div className="mt-3 flex flex-col gap-1.5">
+          <ExternalLink url={QUARTZ_DOCS} label={t('home.aboutQuartz.docs')} />
+          <ExternalLink url={PLUGIN_CATALOG} label={t('home.aboutQuartz.catalog')} />
+        </div>
+      </Card>
+
+      <Card>
         <h2 className="text-heading font-semibold">{t('home.capabilities.title')}</h2>
         <div className="mt-3 flex flex-col gap-3.5">
           {areas.map(({ key, icon: Icon }) => (
@@ -819,15 +828,6 @@ function WhatYouCanDo({ environment }: { environment: EnvironmentInfo | null }):
               </div>
             </div>
           ))}
-        </div>
-      </Card>
-
-      <Card>
-        <h2 className="text-heading font-semibold">{t('home.aboutQuartz.title')}</h2>
-        <p className="mt-1.5 text-xs leading-relaxed text-text-muted">{t('home.aboutQuartz.body')}</p>
-        <div className="mt-3 flex flex-col gap-1.5">
-          <ExternalLink url={QUARTZ_DOCS} label={t('home.aboutQuartz.docs')} />
-          <ExternalLink url={PLUGIN_CATALOG} label={t('home.aboutQuartz.catalog')} />
         </div>
       </Card>
     </aside>

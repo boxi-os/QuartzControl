@@ -40,12 +40,25 @@ bekommt deshalb einen unserer Einträge — statt als siebte, optionslose Box zu
 Gemessen an einem **frisch angelegten** Kontrollprojekt (`--only 10,11 --fresh`): „Layout-Box-Instanzen
 im Ziel … 6 von 6“, 0 Warnungen, Build grün. Vorher an derselben Stelle: 1 von 6.
 
-### 2. Ein Stylesheet mit Ziffer am Anfang macht das Projekt unübersetzbar
+### 2. Ein Stylesheet mit Ziffer am Anfang macht das Projekt unübersetzbar — behoben am 2026-09-06
 
 `styleFileName` erlaubt `/^[A-Za-z0-9][A-Za-z0-9._-]*$/`, also `01-typografie.scss`. `setImportOrder`
-schreibt daraus `@use "./custom/01-typografie"` ohne `as`, und Sass leitet den Namespace aus dem
+schrieb daraus `@use "./custom/01-typografie"` ohne `as`, und Sass leitet den Namespace aus dem
 Dateinamen ab: *The default namespace "01-typografie" is not a valid Sass identifier.* Danach
-übersetzt **kein** CSS des Projekts mehr. Über die Oberfläche in zwei Klicks erreichbar.
+übersetzte **kein** CSS des Projekts mehr. Über die Oberfläche in zwei Klicks erreichbar.
+
+**Behoben, und mit dem Dateinamen war es nicht getan.** Nummerierte Stylesheets sind genau das,
+was jemand will, der die Reihenfolge sehen möchte — die Namensregel bleibt also. Stattdessen
+schreibt `setImportOrder` jetzt ein explizites `as`, aber nur dort, wo der Standard-Namensraum
+nicht trägt. Beim Messen mit dem dart-sass des Projekts kam ein zweiter Fall dazu, der in der
+Notiz fehlte: Sass leitet den Namensraum nur **bis zum ersten Punkt** ab, also kollidieren
+`typo.grafie.scss` und `typo.scss` — *There's already a module with namespace "typo"* — mit
+derselben Folge, dass gar nichts mehr übersetzt.
+
+Durch die App gefahren, an einem echten Projekt: `01-typografie` wird
+`@use "./custom/01-typografie" as ns-01-typografie;`, `typo.grafie` neben `typo` wird
+`as typo-2;`, ein gewöhnlicher Name behält seine Zeile ohne `as`, und der SCSS-Check meldet nach
+jedem Schritt `ok`.
 
 ### 3. `importFontFile` schreibt @font-face ohne Gewicht und Stil
 

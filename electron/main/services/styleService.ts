@@ -369,9 +369,51 @@ async function currentOrder(projectPath: string): Promise<string[]> {
   return parseImportOrder(projectPath, main.content)
 }
 
+// The namespace Sass derives when a `@use` has no `as`: the last path component, without its
+// extension, without a leading underscore, and only up to the first dot. Measured with the
+// project's own dart-sass, because two of its consequences are load-bearing below.
+function defaultNamespaceFor(relativePath: string): string {
+  const base = relativePath.split('/').pop() ?? relativePath
+  return base.replace(/\.(scss|css)$/, '').replace(/^_/, '').split('.')[0]
+}
+
+// A namespace has to be a Sass identifier, which above all means: not starting with a digit.
+// `styleFileName` (ipc/schemas.ts) allows a leading digit on purpose - numbering stylesheets is
+// how people order them - so this is reachable in two clicks, and the file name is not the thing
+// to restrict.
+const VALID_NAMESPACE = /^[A-Za-z_][A-Za-z0-9_-]*$/
+
+// Both failure modes measured against the project's own dart-sass, and both take the *whole*
+// project's CSS with them - one bad `@use` and nothing compiles any more:
+//
+//   @use "./custom/01-typografie";                 The default namespace "01-typografie" is not
+//                                                  a valid Sass identifier.
+//   @use "./custom/typo.grafie"; @use "./custom/typo";
+//                                                  There's already a module with namespace "typo".
+//
+// An explicit `as` fixes both, and the block is generated anyway: nobody types these namespaces,
+// they exist because Sass insists on one per module. Written only where it is needed, so an
+// ordinary stylesheet's line stays the line it has always been.
+function useLineFor(relativePath: string, taken: Set<string>): string {
+  const specifier = useSpecifierFor(relativePath)
+  const wanted = defaultNamespaceFor(relativePath)
+  if (VALID_NAMESPACE.test(wanted) && !taken.has(wanted)) {
+    taken.add(wanted)
+    return `@use "${specifier}";`
+  }
+  // `ns-` rather than a bare letter, so a sanitised namespace is recognisable as generated; the
+  // counter is for the collision case, where the sanitised name is already the taken one.
+  const base = VALID_NAMESPACE.test(wanted) ? wanted : `ns-${wanted}`
+  let namespace = base
+  for (let n = 2; taken.has(namespace); n++) namespace = `${base}-${n}`
+  taken.add(namespace)
+  return `@use "${specifier}" as ${namespace};`
+}
+
 export async function setImportOrder(projectPath: string, relativePaths: string[]): Promise<void> {
   const main = await readCustomScss(projectPath)
-  const body = relativePaths.map((p) => `@use "${useSpecifierFor(p)}";`).join('\n')
+  const taken = new Set<string>()
+  const body = relativePaths.map((p) => useLineFor(p, taken)).join('\n')
   await writeCustomScss(projectPath, upsertImportBlock(main.content, body))
 }
 

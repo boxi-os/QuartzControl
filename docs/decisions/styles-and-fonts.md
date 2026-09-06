@@ -131,3 +131,28 @@ Im Produktions-Build gemessen, in der Variablen-Ansicht: bei `#faf8f8`/`#161618`
 die Farbe und der Wähler startet dort; nach `var(--secondary)` zeigt es das aufgelöste `#10bc3b` und
 startet dort; nach `linear-gradient(red, blue)` ist es durchsichtig und der Wähler startet auf
 Schwarz, während der Titel den rohen Wert nennt. Nichts davon wurde gespeichert.
+
+**Ein `@use` bekommt einen Namensraum, sobald sein eigener nicht trägt (2026-09-06).** Der Block,
+den `setImportOrder` schreibt, bestand aus `@use "./custom/<name>";` — ohne `as`, also mit dem
+Namensraum, den Sass aus dem Dateinamen ableitet. Zwei Namen, die die App selbst erlaubt, machen
+daraus einen Fehler, der **das gesamte CSS des Projekts** stoppt (mit dem dart-sass des Projekts
+gemessen, nicht aus der Dokumentation geschlossen):
+
+    @use "./custom/01-typografie";      The default namespace "01-typografie" is not a valid
+                                        Sass identifier.
+    @use "./custom/typo.grafie";        There's already a module with namespace "typo".
+    @use "./custom/typo";
+
+Der erste stand als BEFUNDE 2 in der Liste, der zweite fiel beim Nachmessen auf: Sass leitet den
+Namensraum nur bis zum **ersten Punkt** ab, und `styleFileName` erlaubt Punkte.
+
+Nicht der Dateiname wird eingeschränkt — nummerierte Stylesheets sind der Grund, warum jemand eine
+Ziffer voranstellt. Stattdessen schreibt der Block ein explizites `as`, **nur wo es nötig ist**:
+`ns-01-typografie` für einen ungültigen Namen, `typo-2` für einen schon vergebenen, und für jeden
+gewöhnlichen Namen bleibt die Zeile, die sie immer war. Niemand tippt diese Namensräume, sie
+existieren nur, weil Sass je Modul einen verlangt.
+
+Der Rückleser trägt das ohne Änderung: `parseImportOrder` matcht `@use\s+["']([^"']+)["']` und
+ignoriert alles dahinter, die Reihenfolge überlebt den Roundtrip also. Nachgefahren durch die App
+an einem echten Projekt, mit `styles.check()` nach jedem Schritt: dreimal `ok`.
+

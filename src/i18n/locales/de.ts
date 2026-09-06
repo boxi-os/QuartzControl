@@ -1593,6 +1593,7 @@ export default {
     planReplaced: '{{count}} wird ersetzt',
     planKept: '{{count}} bleibt unverändert',
     planIdentical: '{{count}} identisch',
+    planOutside: '{{count}} wird abgelehnt',
     planContentIsSymlink:
         'Wird übersprungen: Der Content-Ordner dieses Projekts ist ein Link in einen anderen Ordner. Dorthin schreibt eine Vorlage nichts.',
     planNoChange: 'ändert nichts',

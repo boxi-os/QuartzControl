@@ -449,9 +449,9 @@ function statsSummary(t: Translate, id: TemplatePartId, stats: Record<string, nu
 // `notes` are the third thing a part's plan can report, next to additions and conflicts, and until
 // now nothing rendered them - so the content part could appear with nothing to add and no reason
 // given, get ticked, and be skipped with the explanation arriving only afterwards as a warning.
-// Two kinds exist: a count of files that are byte-identical on both sides, which belongs in the
-// summary next to the other counts, and a whole sentence about why this part cannot run, which
-// belongs on its own line.
+// Two kinds exist: a count of files - byte-identical on both sides, or refused because the name
+// would write outside the project - which belongs in the summary next to the other counts, and a
+// whole sentence about why this part cannot run, which belongs on its own line.
 function noteCount(plan: TemplatePartPlan, kind: string): number {
   return plan.notes.filter((note) => note === kind || note.startsWith(`${kind}:`)).length
 }
@@ -464,6 +464,8 @@ function planSummary(t: Translate, plan: TemplatePartPlan, strategy: TemplateCon
   }
   const identical = noteCount(plan, 'identical')
   if (identical > 0) bits.push(t('templates.planIdentical', { count: identical }))
+  const outside = noteCount(plan, 'outside')
+  if (outside > 0) bits.push(t('templates.planOutside', { count: outside }))
   if (bits.length === 0) bits.push(t('templates.planNoChange'))
   return bits.join(', ')
 }

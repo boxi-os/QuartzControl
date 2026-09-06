@@ -283,8 +283,15 @@ const styles: TemplatePart<StylesPayload> = {
     for (const relativePath of payload.files) {
       // A name that would leave quartz/styles is dropped from the plan too, not only from apply -
       // the plan is what the user ticks, and it must not promise a file that will never be written.
+      // Said out loud rather than passed over in silence: dropping it without a word made the
+      // preview show "styles +2" and the import then warn about a file the preview never mentioned.
+      // Every part that calls writableTarget per file says it the same way (fonts, static,
+      // content), so the assistant can count them without knowing which part they came from.
       const target = await writableTarget(stylesDir(projectPath), relativePath)
-      if (!target) continue
+      if (!target) {
+        plan.notes.push(`outside:${relativePath}`)
+        continue
+      }
       if (existsSync(target)) plan.conflicts.push(relativePath)
       else plan.additions.push(relativePath)
     }
@@ -378,7 +385,10 @@ const fonts: TemplatePart<FontsPayload> = {
     const plan = emptyPlan()
     for (const name of payload.files) {
       const target = await writableTarget(fontsDir(projectPath), name)
-      if (!target) continue
+      if (!target) {
+        plan.notes.push(`outside:${name}`)
+        continue
+      }
       if (!existsSync(target)) {
         plan.additions.push(name)
         continue
@@ -477,7 +487,10 @@ const staticFiles: TemplatePart<StaticPayload> = {
     const plan = emptyPlan()
     for (const name of payload.files) {
       const target = await writableTarget(dir, name)
-      if (!target) continue
+      if (!target) {
+        plan.notes.push(`outside:${name}`)
+        continue
+      }
       if (!existsSync(target)) {
         plan.additions.push(name)
         continue
@@ -959,7 +972,10 @@ const content: TemplatePart<ContentPayload> = {
     const dir = contentService.contentDirPath(projectPath)
     for (const name of payload.files) {
       const target = await writableTarget(dir, name)
-      if (!target) continue
+      if (!target) {
+        plan.notes.push(`outside:${name}`)
+        continue
+      }
       if (!existsSync(target)) {
         plan.additions.push(name)
         continue

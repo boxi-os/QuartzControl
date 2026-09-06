@@ -1584,6 +1584,7 @@ export default {
     planReplaced: '{{count}} replaced',
     planKept: '{{count}} kept as is',
     planIdentical: '{{count}} identical',
+    planOutside: '{{count}} refused',
     planContentIsSymlink:
         'Will be skipped: this project’s content folder is a link into another folder. A template never writes there.',
     planNoChange: 'changes nothing',

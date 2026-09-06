@@ -257,6 +257,26 @@ gehen also, `minmax(0, 1fr)` nicht.
 (`styles/base.scss` sagt das an der Stelle, wo die Regel früher stand). Wer den Text breiter will,
 ändert die 300 px hier, nicht eine `max-width` an einem Absatz.
 
+**Am Tablet sind nur die linken drei Spuren fest.** Dort ist die rechte Spalte keine Spalte mehr —
+sie sitzt unter dem Text, und die Spuren 10–12 gehören zum Fließtext. Eine feste Spur ist nicht
+stauchbar, also hebt jede von ihnen die Mindestbreite des Rasters: mit sechs festen Spuren kam das
+Raster nicht unter 6 × 68 + 11 × 48 + 40 = 976 px, und **jede** Seite scrollte in einem 900-px-Fenster
+92 px seitwärts (gemessen über alle 32 Seiten des Durchgangs, in beiden Farbschemata).
+
+**Warum die Rinne nicht überall 4 rem ist.** Elf Rinnen sind die Mindestbreite eines
+Zwölf-Spalten-Rasters, egal was darin steht, und sie lassen sich nicht stauchen:
+
+| Breakpoint | Schlimmster Fall | Rechnung | Rinne höchstens |
+| --- | --- | --- | --- |
+| Desktop | — | passt bei 1440 px mühelos | **4 rem** (gewählt) |
+| Tablet | 801 px | 15 px Rollleiste + 40 px Rand → 746; linke Spalte 300 inkl. zwei Rinnen, also 9 × Rinne + 300 ≤ 746 | 49,5 px → **3 rem** |
+| Mobil | 390 px | 11 × Rinne + 40 ≤ 375 | 30 px → **1 rem** |
+
+Bei 4 rem am Tablet stünde das Raster in einem 900-px-Fenster auf 916 px. Sichtbar ist die
+Spaltenrinne mobil ohnehin nicht — dort spannt jeder Bereich über alle zwölf Spalten, es arbeitet
+nur die Zeilenrinne, und die ist überall 2 rem. Einheitlich ist dafür, dass **alle vier Frames
+dieselben drei Werte** benutzen; vorher hatte nur `editorial` die 4 rem.
+
 | Frame | Verwendet von | Unterschied |
 | --- | --- | --- |
 | `editorial` | Inhaltsseiten | alle sieben Bereiche belegt |
@@ -436,6 +456,8 @@ Alle gemessen, nicht vermutet. Wer die Vorlage erweitert, spart sich damit diese
 | Der Frame, den ein Seitentyp-Plugin mitbringt | Ist nicht unbedingt benutzbar. Canvas fällt auf Quartz' `full-width` zurück und hat dort keine Höhe; Excalidraw bringt einen eigenen Rahmen ganz ohne Kopfleiste mit. Beide bekommen jetzt `drawing` (BEFUNDE 48) |
 | `.overflow-end` im Explorer | Steht am **Anfang** der Liste, nicht am Ende. Mit Höhe sind das 16 px Luft zwischen Überschrift und erstem Ordner (BEFUNDE 50) |
 | Zwei Regeln, die dasselbe Element verstecken | Die unbedingte gewinnt weiter, auch wenn die spätere nur die *anderen* versteckt. Auf `/en/` war der ganze Explorer-Baum weg (BEFUNDE 51) |
+| Eine Regel aus Quartz' `base.scss` abgelesen | Ihr Selektor gibt es in einem Frame-Projekt vielleicht gar nicht. `.sidebar` heißt hier `.qgframe-area-left` — der Lesemodus tat deshalb nichts (BEFUNDE 57) |
+| Eine feste Spur im Raster | Ist nicht stauchbar und hebt die Mindestbreite, auch an einem Breakpoint, an dem sie nichts trägt (BEFUNDE 56) |
 | Eine klebende Überschrift in einem Roller | Braucht einen deckenden Grund *und* einen kurzen Verlauf darunter. Die deckende Kante allein schneidet die durchlaufende Zeile quer durch die Buchstaben (BEFUNDE 55) |
 | Der Titel einer Galerie-Kachel | Liegt beim Plugin absolut **über** dem Bild und zählt nicht zur Höhe der Kachel. Mit echten Titelbildern ist er unlesbar und zweizeilig abgeschnitten (BEFUNDE 52) |
 | Ein `<img>` in einer fremden Komponente | Erbt die 16 px Absatzabstand aus `body-media.scss`. In einer randlosen Karte ist das ein Streifen Kartengrund über dem Bild |

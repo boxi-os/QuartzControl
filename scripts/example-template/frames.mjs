@@ -86,22 +86,48 @@ const box = (maxWidth, align, columnGap, columnSizes) => ({
 })
 
 /**
- * Twelve tracks whose outer three at each end add up to `SIDE_COLUMN` including their own gutters.
+ * Twelve tracks, of which the ones carrying a side column are fixed so that three of them plus the
+ * two gutters between them come to `SIDE_COLUMN`.
  *
- * `gutters` is the gutter written as a CSS length, and it has to be the same one the breakpoint
- * passes as `columnGap` - two gutters fit between three tracks, hence the doubling in the caller.
- * No comma appears anywhere: a frame track value may not contain one (schemas.ts).
+ * `twoGutters` is twice the breakpoint's own `columnGap`, written as a CSS length - two gutters fit
+ * between three tracks. No comma appears anywhere: a frame track value may not contain one
+ * (schemas.ts).
+ *
+ * `both` decides whether the closing three are fixed as well, and that is not symmetry for its own
+ * sake. A fixed track is incompressible, so every one of them raises the grid's minimum width.
+ * Fixing 10-12 on the *tablet*, where the right column has moved below the text and those tracks
+ * are part of the body, cost 3 x 68px of floor for nothing: the grid could not go below
+ * 6 x 68 + 11 x 48 + 40 = 976px and every page scrolled 92px sideways in a 900px window - measured
+ * on all 32 pages of the sweep, in both colour schemes. There, only the left three are fixed.
  */
 const SIDE_COLUMN = '300px'
 const sideTrack = (twoGutters) => `calc((${SIDE_COLUMN} - ${twoGutters}) / 3)`
-const fixedSides = (twoGutters) => {
+const fixedSides = (twoGutters, both) => {
   const side = sideTrack(twoGutters)
-  return [side, side, side, '1fr', '1fr', '1fr', '1fr', '1fr', '1fr', side, side, side]
+  const rest = both ? [side, side, side] : ['1fr', '1fr', '1fr']
+  return [side, side, side, '1fr', '1fr', '1fr', '1fr', '1fr', '1fr', ...rest]
 }
 
-/** Desktop and tablet: fixed sides. Mobile: twelve equal tracks, because everything spans all 12. */
-const DESKTOP_BOX = () => box('1440px', 'center', '4rem', fixedSides('8rem'))
-const TABLET_BOX = () => box('100%', 'left', '3rem', fixedSides('6rem'))
+/**
+ * The gutter per breakpoint, and why it is not one number.
+ *
+ * 4rem is the chosen value and the desktop uses it. The other two cannot: eleven gutters are the
+ * minimum width of a twelve-column grid whatever it contains, and they do not compress.
+ *
+ *   tablet, worst case 801px:  15px of scrollbar and 40px of inset leave 746. The left column is
+ *                              300px including two of its gutters, so 9 gutters + 300 <= 746, and
+ *                              the gutter cannot exceed 49.5px. 3rem = 48px is the largest step
+ *                              that fits; 4rem = 64px puts the grid at 916px in a 900px window.
+ *   mobile, worst case 390px:  11 gutters + 40 of inset <= 375, so the gutter cannot exceed 30px.
+ *                              4rem would be 744px of gutter alone. It is invisible there anyway -
+ *                              every area spans all twelve columns, so only the row gap works, and
+ *                              that one IS 2rem everywhere.
+ *
+ * Measured the hard way once already: 2rem on the phone scrolled every page sideways by 18px
+ * (BEFUNDE 34). What IS uniform is that all four frames now use the same three values.
+ */
+const DESKTOP_BOX = () => box('1440px', 'center', '4rem', fixedSides('8rem', true))
+const TABLET_BOX = () => box('100%', 'left', '3rem', fixedSides('6rem', false))
 const MOBILE_BOX = () => box('100%', 'left', '1rem', TWELVE)
 
 /**

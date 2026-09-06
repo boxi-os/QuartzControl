@@ -796,3 +796,42 @@ beide Überschriften bei y = 113.
 Verworfen wurde unterwegs die Variante „gar kein internes Rollen": Bei Rollstand 1500 war der ganze
 Apparat aus dem Bild — Inhaltsverzeichnis, Rückverweise, Graph —, und genau dagegen ist die Spalte
 überhaupt klebend.
+
+### 56. Eine feste Spur kostet Mindestbreite, auch wo sie nichts trägt — hausgemacht, behoben
+
+Beim Umstellen auf feste 300-px-Randspalten (BEFUNDE 47) bekamen die Spuren 1–3 *und* 10–12 an
+jedem Breakpoint eine feste Breite. Am Tablet ist die rechte Spalte aber keine Spalte mehr: Sie
+sitzt unter dem Text, und 10–12 gehören zum Fließtext. Eine feste Spur ist nicht stauchbar, also
+hob jede von ihnen die Mindestbreite des Rasters — mit sechs festen Spuren kam es nicht unter
+6 × 68 + 11 × 48 + 40 = 976 px.
+
+Gemessen im systematischen Durchgang: **alle 32 geprüften Seiten** scrollten in einem 900-px-Fenster
+92 px seitwärts, in beiden Farbschemata. Am Desktop war nichts davon zu sehen, weil dort genug Platz
+ist — die Art Fehler, die ein Durchgang über mehrere Breiten findet und ein Blick auf die eigene
+Fenstergröße nicht.
+
+Am Tablet sind jetzt nur die linken drei Spuren fest. Nachgemessen über fünf Breiten (1456, 1101,
+900, 801, 390) in hell und dunkel: kein seitliches Scrollen auf keiner Seite.
+
+### 57. Der Lesemodus tat nichts
+
+Quartz' Lesemodus ist eine Regel im Stylesheet des Plugins:
+
+```css
+:root[reader-mode=on] .sidebar.left, :root[reader-mode=on] .sidebar.right { opacity: 0 }
+```
+
+`.sidebar` ist, wie die *eingebaute* Anordnung von Quartz ihre beiden Spalten nennt. Ein Projekt mit
+selbstgebauten Frames hat so ein Element nicht — die Bereiche heißen `.qgframe-area-left` und
+`.qgframe-area-right` —, die Regel traf hier also nichts. Gemessen: Der Knopf setzte
+`reader-mode="on"`, färbte sich selbst ein, und beide Seitenleisten standen unverändert da. Ein
+Bedienelement, das nur sein eigenes Aussehen ändert, ist schlechter als keines.
+
+Dieselbe Geste jetzt auf den Elementen, die diese Website hat, mit `:focus-within` als Zugabe, damit
+die Leiste auch beim Durchtabben zurückkommt. Ausblenden statt Ausblenden-und-Platz-Wegnehmen ist
+Quartz' Entwurf und der richtige: Es verschiebt sich nichts, das Lesemaß bleibt, und die Navigation
+ist einen Zeiger weit weg.
+
+Das ist derselbe Fehlertyp wie 53 und 56: Eine Annahme über die eingebaute Anordnung, die ein
+selbstgebauter Frame nicht erfüllt. Wer eine Regel aus Quartz' `base.scss` abliest, muss prüfen, ob
+ihr Selektor in einem Frame-Projekt überhaupt vorkommt.

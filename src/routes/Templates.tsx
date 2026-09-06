@@ -65,7 +65,7 @@ function PartRow({
   disabled,
   onToggle,
   summary,
-  note,
+  notes,
   children
 }: {
   id: TemplatePartId
@@ -73,8 +73,8 @@ function PartRow({
   disabled?: boolean
   onToggle: () => void
   summary: string
-  /** A whole sentence the plan attached to this part, when there is one to say out loud. */
-  note?: string
+  /** Whole sentences the plan attached to this part, when there are any to say out loud. */
+  notes?: string[]
   children?: React.ReactNode
 }): JSX.Element {
   const { t } = useTranslation()
@@ -91,7 +91,11 @@ function PartRow({
         <span className="font-medium">{t(`templates.parts.${id}.label`)}</span>
         <span className="ml-2 text-xs text-text-muted">{summary}</span>
         <span className="mt-0.5 block text-xs text-text-muted">{t(`templates.parts.${id}.description`)}</span>
-        {note && <span className="mt-0.5 block text-xs text-amber-700 dark:text-amber-400">{note}</span>}
+        {notes?.map((note) => (
+          <span key={note} className="mt-0.5 block text-xs text-amber-700 dark:text-amber-400">
+            {note}
+          </span>
+        ))}
         {children}
       </span>
     </label>
@@ -394,7 +398,7 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
                 disabled={running}
                 onToggle={() => toggle(part.id)}
                 summary={planSummary(t, part, strategy)}
-                note={planNote(t, part)}
+                notes={planNotes(t, part)}
               />
             ))}
           </div>
@@ -470,9 +474,33 @@ function planSummary(t: Translate, plan: TemplatePartPlan, strategy: TemplateCon
   return bits.join(', ')
 }
 
-/** The sentence a part's plan wants said before the click, or undefined when it has none. */
-function planNote(t: Translate, plan: TemplatePartPlan): string | undefined {
-  return plan.notes.includes('contentIsSymlink') ? t('templates.planContentIsSymlink') : undefined
+// The sentences a part's plan wants said before the click. The count of refused files belongs in
+// the summary next to the other counts, but a count is all the summary can be - and unlike
+// `identical`, where the number is the whole story because there is nothing to do, a refused file
+// has a name and a reason, and the user learned both only *after* the import, from the warning.
+// Same shape as the sentence `apply` says later, and same place as the content part's own note.
+const OUTSIDE_NAMES_SHOWN = 3
+
+function planNotes(t: Translate, plan: TemplatePartPlan): string[] {
+  const notes: string[] = []
+  if (plan.notes.includes('contentIsSymlink')) notes.push(t('templates.planContentIsSymlink'))
+  const outside = plan.notes.filter((note) => note.startsWith('outside:')).map((note) => note.slice('outside:'.length))
+  if (outside.length > 0) {
+    // All of them would be a paragraph in a row that is one line; the count in the summary already
+    // says how many there are, so the names are what this line adds.
+    const shown = outside
+      .slice(0, OUTSIDE_NAMES_SHOWN)
+      // Quoted one by one, not as a list: the quotation marks differ per language and belong
+      // around a name, not around "… und 2 weitere".
+      .map((name) => t('templates.quotedName', { value: name }))
+      .join(', ')
+    const names =
+      outside.length > OUTSIDE_NAMES_SHOWN
+        ? t('templates.planOutsideMore', { names: shown, count: outside.length - OUTSIDE_NAMES_SHOWN })
+        : shown
+    notes.push(t('templates.planOutsideDetail', { names, count: outside.length }))
+  }
+  return notes
 }
 
 function formatBytes(bytes: number): string {

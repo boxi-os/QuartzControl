@@ -18,6 +18,7 @@ import type {
   ThemePreset
 } from '@shared/ipc-contract'
 import * as projectStore from '../services/projectStore'
+import { repointProjectPaths } from '../services/projectPaths'
 import * as projectOverviewService from '../services/projectOverviewService'
 import * as projectIconService from '../services/projectIconService'
 import * as configService from '../services/configService'
@@ -120,7 +121,16 @@ export function registerIpcHandlers(): void {
   handleNoArgs(IPC.projectList, () => projectStore.listProjects())
   handleNoArgs(IPC.projectOverview, () => projectOverviewService.getProjectOverviews())
   handle(IPC.projectAdd, t([s.absolutePath]), (path) => projectStore.addProject(path))
-  handle(IPC.projectRelocate, t([s.uuid, s.absolutePath]), (id, path) => projectStore.relocateProject(id, path))
+  handle(IPC.projectRelocate, t([s.uuid, s.absolutePath]), async (id, path) => {
+    // Before the row moves, not after: an authored frame records its absolute path in three
+    // places inside the project (see projectPaths.ts), and a renamed folder leaves all three
+    // naming a directory that no longer exists - every frame dead, while the layout editor goes on
+    // listing them. Repairing first means a failure here leaves the app exactly as it was, with
+    // the message on the project row, rather than a moved entry pointing at a half-fixed project.
+    const before = await projectStore.getProject(id)
+    if (before && resolve(before.path) !== resolve(path)) await repointProjectPaths(before.path, path)
+    return projectStore.relocateProject(id, path)
+  })
   handle(IPC.projectOpen, t([s.uuid]), async (id) => {
     await projectStore.touchProject(id)
     return projectStore.getProject(id)

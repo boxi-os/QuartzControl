@@ -136,7 +136,7 @@ Notwendigkeit mehr, bleibt aber, weil sie den Weg `html:` vorführt.
   Auf einer Seite mit Explorer kostet der Weg zum Artikel per Tastatur damit einen Tabstopp pro
   Baumzeile.
 
-### 8. Ein Projekt umbenennen bricht alle selbstgebauten Frames
+### 8. Ein Projekt umbenennen bricht alle selbstgebauten Frames — behoben am 2026-09-06
 
 `projects.relocate` hängt einen Projekteintrag auf einen anderen Ordner um und behält dabei die ID
 — genau richtig. Es zieht aber die **absoluten Pfade nicht nach**, die zu einem authored Frame
@@ -146,6 +146,24 @@ der nächste `quartz plugin add` starb mit `ENOENT` auf dem alten Pfad. Reparier
 
 Der Nutzer merkt davon zunächst nichts — der Layout-Editor zeigt die Frames weiter an, weil er sie
 aus `.quartz-gui/authored-frames/` liest.
+
+**Behoben, und ohne eine zweite Umsetzung:** Das Duplizieren hatte längst eine Funktion, die genau
+diese drei Stellen umschreibt (`repointIntoCopy`) — sie ist jetzt `repointProjectPaths()` in
+`projectPaths.ts` und wird von beiden benutzt. `projects.relocate` ruft sie **vor** dem Umhängen
+des Eintrags: Schlägt die Reparatur fehl, steht die App noch genau so da wie vorher, statt mit
+einem umgehängten Eintrag auf ein halb repariertes Projekt zu zeigen.
+
+Vorher nachgemessen, welche Pfade ein Projekt überhaupt auf sich selbst hält: die vier
+`source:`-Einträge in `quartz.config.yaml`, acht Werte in `quartz.lock.json`, vier Symlinks unter
+`.quartz/plugins/` — und **sonst nichts**. Der Snapshot-Store, die beiseitegelegten Content-Ordner,
+die Presets und die Breakpoints kennen ihren eigenen Ort nicht (`.quartz-gui/` nach dem eigenen
+Projektpfad durchsucht: keine Treffer).
+
+Gemessen am Kontrollprojekt mit vier Frames, Ordner umbenannt, dann über die App umgehängt: 0 alte
+Pfade übrig, 4 + 8 neue geschrieben, alle vier Symlinks lösen wieder auf, `quartz build` läuft
+durch (639 Dateien, 27 `qgframe-area`-Treffer allein auf der Startseite) — und der zweite Teil des
+Befunds, das `plugin add` mit `ENOENT`, ebenfalls: Ein neues Frame ließ sich danach anlegen
+(`✓ Added frame-probe (local symlink)`), mit dem neuen Pfad in der Konfiguration.
 
 ### 9. `plugin add` schreibt wieder keinen Config-Eintrag
 

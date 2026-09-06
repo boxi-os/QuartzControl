@@ -131,3 +131,58 @@ Im Produktions-Build gemessen, in der Variablen-Ansicht: bei `#faf8f8`/`#161618`
 die Farbe und der Wähler startet dort; nach `var(--secondary)` zeigt es das aufgelöste `#10bc3b` und
 startet dort; nach `linear-gradient(red, blue)` ist es durchsichtig und der Wähler startet auf
 Schwarz, während der Titel den rohen Wert nennt. Nichts davon wurde gespeichert.
+
+**Ein `@use` bekommt einen Namensraum, sobald sein eigener nicht trägt (2026-09-06).** Der Block,
+den `setImportOrder` schreibt, bestand aus `@use "./custom/<name>";` — ohne `as`, also mit dem
+Namensraum, den Sass aus dem Dateinamen ableitet. Zwei Namen, die die App selbst erlaubt, machen
+daraus einen Fehler, der **das gesamte CSS des Projekts** stoppt (mit dem dart-sass des Projekts
+gemessen, nicht aus der Dokumentation geschlossen):
+
+    @use "./custom/01-typografie";      The default namespace "01-typografie" is not a valid
+                                        Sass identifier.
+    @use "./custom/typo.grafie";        There's already a module with namespace "typo".
+    @use "./custom/typo";
+
+Der erste stand als BEFUNDE 2 in der Liste, der zweite fiel beim Nachmessen auf: Sass leitet den
+Namensraum nur bis zum **ersten Punkt** ab, und `styleFileName` erlaubt Punkte.
+
+Nicht der Dateiname wird eingeschränkt — nummerierte Stylesheets sind der Grund, warum jemand eine
+Ziffer voranstellt. Stattdessen schreibt der Block ein explizites `as`, **nur wo es nötig ist**:
+`ns-01-typografie` für einen ungültigen Namen, `typo-2` für einen schon vergebenen, und für jeden
+gewöhnlichen Namen bleibt die Zeile, die sie immer war. Niemand tippt diese Namensräume, sie
+existieren nur, weil Sass je Modul einen verlangt.
+
+Der Rückleser trägt das ohne Änderung: `parseImportOrder` matcht `@use\s+["']([^"']+)["']` und
+ignoriert alles dahinter, die Reihenfolge überlebt den Roundtrip also. Nachgefahren durch die App
+an einem echten Projekt, mit `styles.check()` nach jedem Schritt: dreimal `ok`.
+
+**Eine importierte Schrift bringt ihr Gewicht selbst mit (2026-09-06).** Die erzeugte
+`@font-face`-Regel bestand aus `font-family`, `src` und `font-display`. Was fehlte, entscheidet,
+wie die Schrift aussieht: Ohne `font-weight` hält ein Browser die Datei für 400 und **fälscht**
+jeden fetten Schnitt daraus, statt die mitgelieferte Achse zu benutzen; und zwei Schnitte derselben
+Familie — aufrecht und kursiv — beanspruchen dieselbe Kennung, sodass der zweite den ersten
+verdrängt (BEFUNDE 3). Die Beispielvorlage korrigierte den Block deshalb nach jedem Import von
+Hand.
+
+`fontFile.ts` liest jetzt, was die Datei sagt: die `wght`-Achse aus `fvar`, sonst `usWeightClass`
+aus `OS/2`, dazu das Kursiv-Bit aus `OS/2` **oder** `head` (beide behaupten es, und sie widersprechen
+sich in freier Wildbahn). Für eine variable Schrift ist das Gewicht ein Bereich, kein Wert —
+gemessen an den vier Schriften der Vorlage: `400 700`, `100 900`, `100 900`, `400 800`. Inter trägt
+also eine breitere Achse, als sein Dateiname sagt, und genau das hätte niemand von Hand eingetippt.
+
+Hand geschrieben statt eine Abhängigkeit dafür zu holen, aus demselben Grund wie der ZIP-Leser in
+`zipArchive.ts`: gebraucht werden drei Zahlen aus zwei Tabellen. Für WOFF2 heißt das, die
+Tabellenlängen im Brotli-Strom aufzuaddieren, um an `OS/2` und `fvar` zu kommen — mit der
+Besonderheit, dass die Transformationsregel für `glyf` und `loca` **invertiert** ist (dort ist
+Version 0 die Transformation, 3 die Null-Transformation; bei allen anderen Tabellen umgekehrt).
+
+**Jeder Fehlschlag endet bei `null`, nie bei einer Ausnahme.** Eine Schrift, die dieser Leser nicht
+versteht, ist immer noch eine, die der Browser benutzen kann, und ein Import darf daran nicht
+scheitern. Gemessen an `/System/Library/Fonts/LastResort.otf`, das gar keine `OS/2`-Tabelle hat:
+Der Import läuft durch, die Regel entsteht wie vorher, und die Oberfläche sagt es — „die Datei nennt
+kein Gewicht" ist eine eigene Meldung, keine stille Lücke. Dieselbe Unterscheidung wie bei
+`unavailable` überall sonst in dieser App.
+
+Gegen die drei Fälle in der laufenden App gefahren: `100 900`, `100 900` + `italic`, und die Regel
+ohne Gewicht — danach `styles.check()` → `ok`.
+

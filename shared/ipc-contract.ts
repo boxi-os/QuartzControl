@@ -1605,7 +1605,15 @@ export interface QuartzGuiApi {
     variableGraph(projectPath: string, themeId?: string, outputDir?: string): Promise<CssVariableGraph>
   }
   fonts: {
-    importFile(projectPath: string, sourcePath: string, family: string): Promise<{ fileName: string }>
+    /**
+     * Copies the file into the project and appends a `@font-face` for it.
+     *
+     * `weight` and `italic` are what the *file* says - the wght axis of a variable font, else its
+     * OS/2 weight class, plus the italic bit. `weight` is absent when the file does not say (a
+     * font with no OS/2 table, for instance); the rule is then written without a weight, which is
+     * what it always was, and the caller can tell the user that nothing was detected.
+     */
+    importFile(projectPath: string, sourcePath: string, family: string): Promise<{ fileName: string; weight?: string; italic?: boolean }>
   }
   localization: {
     list(projectPath: string): Promise<LocaleFile[]>

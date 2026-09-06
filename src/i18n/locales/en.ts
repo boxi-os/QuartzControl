@@ -795,6 +795,10 @@ export default {
     localFontNoSlot: '— none —',
     localFontConfirm: 'Import',
     fontImportSuccess: '“{{family}}” imported.',
+    fontImportDetected: '“{{family}}” imported — weight {{weight}}, read from the file.',
+    fontImportDetectedItalic: '“{{family}}” imported — weight {{weight}}, italic, read from the file.',
+    fontImportUndetected:
+      '“{{family}}” imported. The file names no weight, so the rule is written without one — add it in custom.scss if you need it.',
     colors: 'Colors'
   },
   themes: {

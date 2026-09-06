@@ -1,6 +1,6 @@
 ---
 title: Minimal & lesbar
-description: Die Beispielvorlage für QuartzControl — alle zehn Bausteine, jede Komponente gestaltet, jeder Kontrast gemessen.
+description: Die Beispielvorlage für QuartzControl — alle zwölf Bausteine, jede Komponente gestaltet, jeder Kontrast gemessen.
 section: Start
 tags:
   - vorlage

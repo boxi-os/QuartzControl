@@ -94,7 +94,7 @@ github:quartz-community/obsidian-plugin-excalidraw` legte das Plugin unter `.qua
 schrieb `quartz.lock.json` — und **keinen Eintrag in `quartz.config.yaml`**. Ohne den passiert beim
 Bauen nichts. Der Eintrag musste von Hand ergänzt werden.
 
-### 10. Ein Seitentyp-Plugin ohne `-page` im Namen wird nicht erkannt
+### 10. Ein Seitentyp-Plugin ohne `-page` im Namen wird nicht erkannt — behoben am 2026-09-06 (BEFUNDE 53)
 
 `derivePageTypes()` (`src/routes/LayoutEditor/utils.ts:171`) erkennt Seitentypen daran, dass der
 Pluginname auf `-page` endet. `obsidian-plugin-excalidraw` tut das nicht, trägt aber
@@ -631,3 +631,136 @@ ausgelieferte HTML, Quartz entfernt ihn wie den `%%`-Kommentar.
 
 Von den 16 kaputten Links der gebauten Website sind damit 14 erklärt und zwei Absicht (die
 Wikilink-Demo).
+
+---
+
+## Durchgang 2026-09-06
+
+### 47. Eine breitere Rinne macht die Randspalten schmaler — und `1fr` kann das nicht ausdrücken
+
+Bei zwölf `1fr`-Spalten liegen elf Rinnen im selben Budget wie die Spalten selbst. Wer die Rinne
+von 2 rem auf 4 rem hebt, nimmt damit 352 px aus den Spalten heraus: gemessen wanderten die beiden
+Randspalten von 326 px auf 302 px, ohne dass jemand die Spaltenbreite angefasst hätte.
+
+Ein festes Maß ist in einem Spaltenraster deshalb **keine Drittelung**: Zwischen drei Spuren liegen
+zwei Rinnen, die zum Block gehören. Die Spur ist `(300px − 2 × Rinne) / 3`, in `frames.mjs` als
+`calc((300px - 8rem) / 3)` — ein `calc()` ohne Komma ist im Frame-Schema erlaubt, `minmax(0, 1fr)`
+nicht. In der App steht dasselbe Feld unter *Layout → Eigene Frames → Spaltenbreiten (leer = 1fr)*,
+ein Eingabefeld je Spur.
+
+Nebenbefund: Nur `editorial` war auf 4 rem umgestellt, `index` und `focus` standen weiter auf 2 rem.
+Eine Ordnerseite legte ihren Text damit 32 px weiter links an als der Artikel, der auf sie verlinkt
+— genau das, was die reservierte rechte Spalte verhindern soll. Jetzt teilen sich alle vier Frames
+eine Rinne.
+
+### 48. Der Frame, den ein Seitentyp-Plugin mitbringt, ist keine benutzbare Seite
+
+Zwei Plugins, zwei verschiedene Arten, dieselbe Sache falsch zu machen — beide an der gebauten Site
+gemessen:
+
+- **Canvas** hatte gar keinen eigenen Frame und fiel auf Quartz' eingebauten `full-width` zurück.
+  Dessen `.center` hat keine definierte Höhe, `.canvas-page` und `.canvas-container` sind aber
+  `height: 100%`. Die Prozentangabe löst gegen nichts auf, der Kasten fiel zusammen — gemessen
+  406 px für eine Zeichnung, die 807 px hoch sein wollte — und Kopfbereich, Fußzeile und die
+  „Weiterlesen"-Box wurden **über** die Zeichnung gemalt statt um sie herum.
+- **Excalidraw** bringt einen eigenen Frame mit, und der rendert überhaupt keine Kopfleiste: kein
+  Link zur Startseite, keine Suche, kein Farbschema, keine Brotkrumen. Der einzige Weg aus der
+  Seite war der Zurück-Knopf des Browsers. Seine eigene Antwort darauf ist ein Burger-Knopf, der
+  eine 300 px breite Schublade mit den Bausteinen der *linken* Spalte öffnet — die in dieser
+  Vorlage für eine 335-px-Spalte gemacht sind und am Fensterrand abgeschnitten wurden.
+
+Beide bekommen jetzt den `drawing`-Frame der Website (`frames.mjs`, `layout.mjs`): Kopfleiste,
+Brotkrumen und Titel, die Zeichnung, was danach kommt, Fußzeile — jedes in seiner eigenen Zeile,
+auf denselben 1440 px wie jede andere Seite. Die Randspalten sind im Frame verborgen *und* über
+`positions: { left: [], right: [] }` geleert, damit sie gar nicht erst gebaut werden. Die Höhe der
+Zeichnung ist keine Rasterfrage — `1fr` in einem Raster ohne eigene Höhe ist die Höhe des Inhalts,
+und die fehlte ja gerade — und steht in `styles/page-canvas.scss` als
+`clamp(320px, 72dvh, 900px)`. Die Bedienelemente beider Plugins sind `position: fixed`, was unter
+ihren Vollbild-Frames dasselbe war wie „an der Zeichnung"; hier wären sie über der Kopfleiste
+geschwebt, also stehen sie jetzt `absolute` im Container.
+
+### 49. Der Explorer stellt den Scrollstand der *Liste* wieder her — und die stand nicht mehr zur Verfügung
+
+Das Plugin kann, was der Nutzer vermisst hat:
+
+```js
+prenav: sessionStorage.setItem("explorerScrollTop", document.querySelector(".explorer-ul").scrollTop)
+render: let l = sessionStorage.getItem("explorerScrollTop")
+        if (l) n.scrollTop = parseInt(l, 10)
+        else n.querySelector(".active")?.scrollIntoView({ behavior: "smooth" })
+```
+
+Diese Vorlage hatte die Rolle des Rollers aber auf `.explorer-content` verschoben, um einen
+Browser-Unterschied zu glätten (BEFUNDE 37). Damit las das Plugin bei jedem Seitenwechsel `0` — und
+weil `"0"` als Zeichenkette *wahr* ist, lief auch der `else`-Zweig nie, der sonst die aktuelle Seite
+in den Blick geholt hätte. Gemessen: Klick auf eine Datei vier Ordner tief, und der Baum stand
+danach wieder ganz oben. Beim Ordner genauso — dort navigiert der Klick unter
+`folderClickBehavior: 'link'` ja auch —, beim Pfeil nicht, weil der nichts lädt.
+
+Der Browser-Unterschied ist jetzt andersherum gelöst: `ul.explorer-ul` bekommt eine **absolute**
+`max-height`, die Firefox genauso auflöst wie Chrome, und ist damit wieder der Roller.
+`.explorer-content` ist nur noch der Kasten, an dem das Einklappen hängt. Nachgemessen: Scrollstand
+200 px, Klick auf eine Datei, Scrollstand danach 200 px.
+
+### 50. `.overflow-end` steht am Anfang der Liste, nicht am Ende
+
+Der Sentinel, den der Explorer für seinen eigenen Verlauf-Verlauf beobachtet, ist das **erste**
+`<li>` der Liste und bleibt es auch, nachdem der Baum gebaut ist. Mit einer Höhe sind das 16 px
+Nichts zwischen der Überschrift und dem ersten Ordner. Zusammen mit den 20 px Rand, die der weiche
+Rand der Leiste braucht, waren es 36 px — der Grund, aus dem der Abstand zu groß aussah. Der
+Sentinel behält sein Element und gibt seine Höhe ab; `--tpl-fade` sinkt von 20 auf 14 px. Bleiben
+14 px.
+
+### 51. Zwei Regeln versteckten den englischen Explorer-Baum doppelt
+
+Hausgemacht, aus BEFUNDE 26. Die erste Regel blendet den `en`-Ast unbedingt aus — das muss sie
+sein, weil eine Weiterleitungsseite ohne `<html lang>` sonst beide Bäume zeigte. Die zweite Regel
+blendet auf einer englischen Seite alles *außer* dem `en`-Ast aus. Zusammen: alles. Gemessen auf
+`/en/`: sechs Einträge oberster Ebene, alle `display: none`, unter einer Überschrift „Explorer",
+die brav dastand. Der Baum war die ganze Zeit gerendert.
+
+Die englische Fassung nimmt die erste Regel jetzt ausdrücklich zurück. Die Lehre ist dieselbe wie
+in BEFUNDE 22: Wo eine unbedingte Regel etwas versteckt, muss die Ausnahme **beide** Zustände
+aussprechen.
+
+### 52. Der Titel einer Galerie-Kachel liegt über dem Bild und zählt nicht zu ihrer Höhe
+
+Das Bases-Plugin setzt `.bases-gallery-title` auf `position: absolute; inset: auto 0 0` und die
+Kachel auf `overflow: hidden`. Solange jede Kachel denselben grauen Platzhalter zeigt, fällt das
+nicht auf. Mit echten Titelbildern zweimal:
+
+- Die Beschriftung ist `--dark`, im hellen Modus also fast schwarz — auf einem Titelbild beliebiger
+  Farbe.
+- Ein zweizeiliger Titel läuft aus der Kachel heraus und wird mitten im Wort abgeschnitten, weil
+  ein absolut positionierter Titel nichts zur Höhe seiner Kachel beiträgt. Gemessen: Kachel 145 px,
+  Bild 143 px, Titel 62 px.
+
+Die Vorlage holt ihn zurück in den Fluss (`position: static`, Kachel als zweizeiliges Grid). Damit
+liest sich die Galerie wie die Kachelansicht derselben Daten, die Beschriftung steht auf dem Grund
+der Karte, und ein Titel beliebiger Länge macht seine Kachel höher.
+
+Dabei zwei Kleinigkeiten am selben Ort: Ein `<img>` in einer fremden Komponente erbt die 16 px
+Absatzabstand aus `body-media.scss` — in einer randlos gedachten Karte ist das ein Streifen
+Kartengrund über dem Bild. Und die Kachelansicht führte `title` in ihrer Spaltenliste, obwohl die
+Karte den Titel schon als Überschrift trägt; die Zeile „Title — Ablauf-Diagramme" stand also
+zweimal dasselbe da.
+
+### 53. Ein Seitentyp ohne `-page` im Namen ist jetzt in der App erreichbar — BEFUNDE 10 behoben
+
+`derivePageTypes()` erkannte einen Seitentyp nur am Namensmuster `<name>-page`. Das ist eine
+Konvention, keine Regel: `obsidian-plugin-excalidraw` registriert den Seitentyp `excalidraw` und
+trägt `quartz.category: ["pageType", …]`. Quartz baut ihn trotzdem, der Layout-Editor der App bot
+ihn aber nicht an, und der Frame dieses Seitentyps war nur über die YAML zu wählen.
+
+Die Funktion nimmt jetzt die ganze Config und zählt zusätzlich jeden Schlüssel, der bereits unter
+`layout.byPageType` steht — ein Seitentyp durch Vorführung. Damit ist die Ausnahme keine Liste von
+Ausnahmen, und `excalidraw` steht in der App unter *Layout → Seitentypen*.
+
+### 54. Der Layout-Board der App zeigt die rechte Spalte am Tablet als umbrechende Reihe — offen
+
+`sidebarDirection()` (`src/routes/LayoutEditor/utils.ts`) gibt für `right` auf Tablet und Mobil
+`'row'` zurück, für `left` nur auf Mobil. Das stimmt für Quartz' eigenes `base.scss`, aus dem es
+abgelesen ist — und nicht für ein Projekt mit selbstgebauten Frames: `.qgframe-area` ist auf jedem
+Breakpoint `flex-direction: column`. Auf dem Tablet-Reiter des Boards stehen die Bausteine der
+rechten Spalte deshalb nebeneinander und brechen um, während sie auf der Website untereinander
+stehen. Kein Datenfehler, aber die Vorschau widerspricht dem Ergebnis.

@@ -32,7 +32,7 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   Wegwerf-Projekt auf und exportiert sie als `.qtpl`. Treibt dafür die **gebaute App** über
   Playwright und schreibt alles über `window.quartzGui.*`, also durch dieselben IPC-Pfade wie ein
   Klick — kein zweiter Frame-Codegen, kein zweiter SCSS-Writer. Phasen einzeln über
-  `--only 3,4,5`, die WCAG-Messung allein über `--check-contrast` (87 Paare, braucht weder App noch
+  `--only 3,4,5`, die WCAG-Messung allein über `--check-contrast` (89 Paare, braucht weder App noch
   Projekt). Den Rückweg geht `--sync`: Es holt die 30 Stylesheets und die Schnipsel aus dem Projekt
   zurück ins Repo, denn dort wird gearbeitet und die Kopie hier driftet sonst still (gemessen am
   2026-09-05). Config und Frames haben bewusst keinen Rückweg — sie entstehen aus `plugins.mjs`,

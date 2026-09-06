@@ -139,7 +139,14 @@ export const VARIABLE_OVERRIDES = [
 
   // How far a scrolling panel fades out at each end. See --tpl-fade-mask in base.scss, which is
   // the mask itself - it cannot live here because a variable override may not carry a comma.
-  { key: 'tpl-fade', light: '20px' },
+  //
+  // It is also the panel's own top and bottom padding, and therefore the gap between the heading
+  // of a panel and its first row: the padding is what keeps that row from being read through the
+  // gradient. At 20px, plus a 16px sentinel the explorer plugin leaves at the *top* of its list,
+  // the tree began 36px under the word "Explorer" - measured, and too far. The sentinel gives up
+  // its height in nav-explorer.scss and this drops to 14, which is still a soft edge and a third
+  // of the gap.
+  { key: 'tpl-fade', light: '14px' },
 
   // The mobile navigation drawer. `min()` keeps it off the right edge on a 360px phone while
   // giving a four-level tree room to breathe on a tablet-sized screen.

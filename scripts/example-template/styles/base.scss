@@ -59,6 +59,22 @@ html {
     black calc(100% - var(--tpl-fade)),
     transparent 100%
   );
+
+  // The edge of something you operate - the search field, the three icon buttons, the language
+  // menu, a link preview, the controls over a drawing.
+  //
+  // It used to be `--tpl-rule-strong`, which is `gray`, and gray measures 6.41:1 against the light
+  // ground and 7.10:1 against the dark one. That is more than twice what WCAG 1.4.11 asks of a
+  // control's boundary, and it looked it: a row of hard black-ish rectangles across the top of
+  // every page. This mixes 70% of the same gray into the ground and lands at 3.24:1 light /
+  // 4.11:1 dark - still above the 3:1 the rule wants, visibly quieter than what it replaces.
+  // Measured in palette.mjs, which computes the same mix rather than trusting a second copy.
+  //
+  // Here rather than in variables.mjs for the same reason as the mask above: a variable override
+  // may not contain a comma, and `color-mix()` is nothing but commas. The trade is that it is not
+  // editable in the app's Variables tab - but it follows `gray`, so changing the palette changes
+  // it too, which is the more useful half.
+  --tpl-rule-control: color-mix(in srgb, var(--gray) 70%, var(--light));
 }
 
 /* ------------------------------------------------------------------ the sticky header */
@@ -131,7 +147,7 @@ html {
 // Below 800px neither one scrolls: the tree becomes a full-height drawer and the right column is
 // laid out under the article.
 @media (min-width: 801px) {
-  .explorer-content,
+  ul.explorer-ul,
   .qgframe-area-right {
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -159,14 +175,49 @@ html {
   //   * Firefox does not resolve it - the parent's height is auto with a max - so the list grows
   //     to its full 688px and the *box* scrolls instead.
   //
-  // Measured on the same page in both: `scrollHeight - clientHeight` was 148px, but on two
-  // different elements. Everything above - the mask, the padding, the contained overscroll - sits
-  // on `.explorer-content`, so the list gives up its cap and the box is the one scroller
-  // everywhere.
+  // The first answer to that was to cap `.explorer-content` and let the list give up its own cap,
+  // so the box scrolled in both. It settled the browser difference and broke something else: the
+  // plugin saves and restores the tree's scroll position across a page change, and the element it
+  // reads is the *list*
+  //
+  //     prenav: sessionStorage.setItem("explorerScrollTop", document.querySelector(".explorer-ul").scrollTop)
+  //     render: let l = sessionStorage.getItem("explorerScrollTop"); if (l) n.scrollTop = parseInt(l, 10)
+  //             else n.querySelector(".active")?.scrollIntoView({ behavior: "smooth" })
+  //
+  // With the box scrolling, that read 0 every time - and because `"0"` is a truthy string, the
+  // else branch never ran either, so neither the saved position nor the current page was scrolled
+  // to. Measured: click a file four folders down, and the tree came back at the top on every
+  // navigation. So the list is the scroller again, and the browser difference is settled the other
+  // way instead: an absolute `max-height` on the list itself, which Firefox resolves as readily as
+  // Chrome. `.explorer-content` keeps `overflow: visible` and is only the box the fold acts on.
   ul.explorer-ul {
-    max-height: none;
+    max-height: 60vh;
+  }
+
+  .explorer-content {
     overflow: visible;
   }
+}
+
+/* ------------------------------------------------- one line for every panel heading */
+
+// Both side columns begin with a panel, and a panel begins with a heading - but two of those
+// headings are also *controls* (the explorer's and the table of contents', which fold their panel)
+// and therefore 44px tall, while the rest are plain `<h3>`s. Measured at 1440px on a page with no
+// outline: "Explorer" sat at y=134 and "Graphansicht" at 121, because the button centres its text
+// in 44px and the heading does not.
+//
+// So every panel heading gets the same line box, whether or not it is a button. The three that are
+// not are named here rather than in their own files because the point of the rule is that they
+// agree with each other; three separate copies of one number is how they stop agreeing. Their
+// typography stays where it belongs, in aside-*.scss.
+.backlinks > :is(h1, h2, h3),
+.graph > :is(h1, h2, h3),
+.recent-notes > :is(h1, h2, h3) {
+  display: flex;
+  align-items: center;
+  min-height: var(--tpl-target);
+  margin-block: 0;
 }
 
 /* ------------------------------------------------------------- jumping under the header */
@@ -437,13 +488,25 @@ h6 {
 //
 // The fade at both ends comes from the rule further up; the components inside give up their own
 // height caps in aside-toc.scss, because the scrolling now happens one level out.
+// The fade padding is also why the two side columns did not start at the same height. The rule
+// above gives the right area --tpl-fade of padding at the top so its first line clears the
+// gradient; the left column has no such padding, because there the padding sits on the tree inside
+// it. Measured at 1440px: "Explorer" at y=113, "Inhaltsverzeichnis" at y=133 - exactly the 20px.
+// The negative margin takes those 20px back off the *box*, so the first component of each column
+// begins on the same line while the padding inside the right one keeps doing its job.
 @media (min-width: 801px) {
   .qgframe-area-right {
     position: sticky;
     // Below the header, not under it. --tpl-header-h follows the header as it shrinks, so the
     // column moves up with it instead of leaving a gap that grows on every scroll.
-    top: calc(var(--tpl-header-h) + var(--tpl-space-md));
+    //
+    // The fade is subtracted here for the same reason it is subtracted from the margin: `top`
+    // positions the box, and the box now starts --tpl-fade above its own content. Without this the
+    // outline would come to rest 20px lower than intended, which on a shrunken 49px header is the
+    // difference between "under the bar" and "floating".
+    top: calc(var(--tpl-header-h) + var(--tpl-space-lg) - var(--tpl-fade));
+    margin-block-start: calc(var(--tpl-fade) * -1);
     align-self: start;
-    max-height: calc(100dvh - var(--tpl-header-h) - 2 * var(--tpl-space-md));
+    max-height: calc(100dvh - var(--tpl-header-h) - 2 * var(--tpl-space-lg) + var(--tpl-fade));
   }
 }

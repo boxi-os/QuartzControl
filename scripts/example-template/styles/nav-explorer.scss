@@ -130,17 +130,27 @@ button.title-button {
   }
 
   .explorer-content {
-    // No margin of its own any more: the panel carries --tpl-fade of padding for the soft edge
-    // (base.scss), and that is more than the gap this used to add. Two of them stacked left the
-    // first folder floating a long way under the heading.
+    // No margin of its own any more: the list inside carries --tpl-fade of padding for the soft
+    // edge (base.scss), and that is more than the gap this used to add. Two of them stacked left
+    // the first folder floating a long way under the heading.
+    //
+    // The height cap moved to `ul.explorer-ul` with the scroller (base.scss) - the plugin saves
+    // and restores the *list's* scrollTop across a page change, so the list has to be the thing
+    // that scrolls.
     margin-block-start: 0;
-    // A long tree scrolls inside the sidebar rather than pushing the frame's footer off screen.
-    // The scrolling itself, and the soft edge at both ends of it, are set in base.scss.
-    max-height: 60vh;
   }
 }
 
-ul.explorer-ul,
+// `padding-inline`, not `padding`: base.scss gives the root list --tpl-fade of *block* padding so
+// its first and last row sit outside the gradient at each end of the panel, and this file is loaded
+// after it (style-order.mjs). A blanket `padding: 0` here took that back, and the fade then ate the
+// first folder of the tree - measured after moving the scroller onto the list.
+ul.explorer-ul {
+  list-style: none;
+  margin: 0;
+  padding-inline: 0;
+}
+
 .explorer-content ul.tree-item-children {
   list-style: none;
   margin: 0;
@@ -198,8 +208,20 @@ a.nav-file-title {
   width: var(--tpl-icon-sm);
   height: var(--tpl-icon-sm);
   // The chevron alone is a 15px target; padding makes it usable without moving the row.
+  //
+  // Under `folderClickBehavior: 'link'` this is the *only* way to fold a folder shut again - the
+  // row itself navigates - so it gets a hover state of its own. Without one the two halves of the
+  // row look identical and nothing says that the arrow does something different from the name
+  // beside it.
   padding: var(--tpl-space-2xs);
   margin-inline-start: calc(var(--tpl-space-2xs) * -1);
+  border-radius: var(--tpl-radius-sm);
+  transition: color var(--tpl-motion), background-color var(--tpl-motion);
+
+  &:hover {
+    color: var(--dark);
+    background: var(--tpl-surface-tint);
+  }
 }
 
 /* ------------------------------------------------------------------ folder and file icons */
@@ -244,11 +266,26 @@ a.nav-file-title::before {
   -webkit-mask-image: var(--icon-file);
 }
 
+// Both values of `folderClickBehavior`, not just the one this template ships.
+//
+// Under `link` (what plugins.mjs sets) this element is an `<a>` and a click opens the folder page;
+// under `collapse` the plugin renders a `<button>` instead and a click only folds. The selector
+// never names the element - but a `<button>` also arrives with a grey chrome background, a border,
+// a centred label and the browser's own font, none of which an `<a>` has. Without the reset below
+// the second value turns every folder row into a system button; measured by switching the option
+// and rebuilding, which is the only way to see it.
 .folder-button {
   display: flex;
   align-items: center;
   text-decoration: none;
   min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
 }
 
 // The <div> quartz wraps the button in has no class of its own and would otherwise refuse to
@@ -343,10 +380,14 @@ a.nav-file-title {
   }
 }
 
-// Quartz's own end-of-list sentinel. It stays (the plugin's IntersectionObserver watches it) but
-// draws nothing: the fade at both ends of the panel is set once in base.scss.
+// Quartz's own end-of-list sentinel, and it is not at the end: measured on the built page, the
+// `<li class="overflow-end">` is the *first* child of the list and stays there after the tree is
+// built. With a height it was 16px of nothing between the heading and the first folder - a third
+// of the gap the tree opened with. It keeps its element (the plugin's IntersectionObserver watches
+// it, and base.scss already neutralises the one-ended mask that observer switches on) and gives up
+// its height: the fade at both ends of the panel is set once in base.scss.
 .explorer .overflow-end {
-  height: var(--tpl-space-md);
+  height: 0;
 }
 
 /* ------------------------------------------------------------------- the current branch */
@@ -419,6 +460,13 @@ li:has(> .folder-outer > ul > li > .nav-file-title.active) > .folder-outer > ul.
   // Open, the trigger says what it does: the three bars become a cross. Same technique as every
   // other icon here - the drawn lines go and the element wears the glyph as a mask - so the one
   // button carries both states without a second element and without a script.
+  // Open, the trigger is standing on the frosted drawer, and an opaque square of `--light` on top
+  // of it is a patch. Closed it keeps its ground, because then it is standing on the app bar and
+  // the article scrolls underneath.
+  .explorer:not(.collapsed) .mobile-explorer {
+    background: transparent;
+  }
+
   .explorer:not(.collapsed) .mobile-explorer .lucide-menu {
     > line {
       display: none;
@@ -452,8 +500,18 @@ li:has(> .folder-outer > ul > li > .nav-file-title.active) > .folder-outer > ul.
     margin: 0;
     // Room at the top for the trigger, which floats above the drawer rather than inside it.
     padding: calc(var(--tpl-target) + var(--tpl-space-md)) var(--tpl-space-md) var(--tpl-space-lg);
-    background: var(--light);
+    // Frosted, like the search overlay - the two are the same kind of thing (a panel that opens
+    // over the page and closes again), so they say it the same way. 88% rather than the overlay's
+    // 70%: the search overlay covers the whole window and has one line of text on it, this one is
+    // a four-level tree over running body text, and at 70% the two sets of words interleaved.
+    // Contrast is measured against the opaque ground, so the tint has to stay close to it.
+    background: color-mix(in srgb, var(--light) 88%, transparent);
+    backdrop-filter: blur(14px) saturate(1.4);
     border-inline-end: var(--tpl-rule-width) solid var(--tpl-rule);
+    // Square against the three window edges it touches, rounded on the one edge it does not - the
+    // side facing the page is where the drawer ends and the page begins.
+    border-start-end-radius: var(--tpl-radius-lg);
+    border-end-end-radius: var(--tpl-radius-lg);
     box-shadow: var(--tpl-shadow);
     // -100% rather than the plugin's -100vw: the drawer is no longer the width of the viewport,
     // and -100vw would leave it parked far enough off-screen to widen the document.
@@ -486,8 +544,11 @@ li:has(> .folder-outer > ul > li > .nav-file-title.active) > .folder-outer > ul.
     position: fixed;
     inset: 0;
     z-index: 99;
-    background: rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(1px);
+    // Lighter scrim, more blur than before. A 0.45 scrim with a 1px blur reads as a dark sheet
+    // over a page you can still read word for word; at 0.3 with a real blur the page behind is
+    // recognisably there and unmistakably not the thing in front.
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
   }
 
   // Rows get their touch height back: 32px is right for a dense sidebar and too small for a thumb.
@@ -528,6 +589,15 @@ li:has(> .folder-outer > ul > li > .nav-file-title.active) > .folder-outer > ul.
 // `en` branch would leave the whole English tree sitting one indent deep under a folder called
 // "en", so its own row goes too and its children move up to the top level.
 html[lang^="en"] {
+  // First, take back the rule above. It is unconditional - it has to be, because a page with no
+  // <html lang> at all (the redirect stubs `alias-redirects` writes) must still get the German
+  // tree - and nothing here was undoing it. Measured on `/en/`: all six top-level entries had
+  // `display: none`, the English branch included, so the English half of the site had an Explorer
+  // heading with nothing under it. The tree was rendered the whole time; the CSS hid it twice.
+  .explorer-ul > li:has(> .folder-container[data-folderpath="en/index"]) {
+    display: block;
+  }
+
   .explorer-ul > li:not(:has(> .folder-container[data-folderpath="en/index"])) {
     display: none;
   }

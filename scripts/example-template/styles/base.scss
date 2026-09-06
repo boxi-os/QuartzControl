@@ -15,6 +15,19 @@
 // the content box for its own reasons can opt out for itself and its children.
 html {
   box-sizing: border-box;
+
+  // Quartz sets `html { width: 100vw; overflow-x: hidden }`, and `100vw` includes a classic
+  // scrollbar while the content box does not. On a machine whose scrollbars always show, the
+  // document is therefore as wide as the window and the visible area is 17px narrower - so the
+  // centred content column is centred in the wrong box. Measured in Safari 26.6.2 at a 1500px
+  // window: 30px of margin on the left, 13px on the right, the whole page 17px off centre.
+  // Invisible under Playwright and in the app's own preview, because both use overlay scrollbars.
+  //
+  // `auto` rather than `100%`: it is the initial value, so the block simply fills the initial
+  // containing block, which is the viewport *minus* the scrollbar - the box the column should be
+  // centred in. Quartz's `overflow-x: hidden` stays and keeps doing its job; it is also the reason
+  // the 100vw never produced a sideways scrollbar, only the offset.
+  width: auto;
 }
 
 *,

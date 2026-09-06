@@ -1310,3 +1310,42 @@ tatsächlich vorhandenen Pseudo-Elemente nichts Messbares. Dazu vier Eigenschaft
 bewegt, wäre sonst weiter unsichtbar.
 
 Danach: 50 Tokens, keins tot, `--tpl-page-fade` mit 44 Treffern.
+
+### 74. Safari 26.6.2 direkt gemessen — und dabei fiel auf, dass die Seite außermittig steht
+
+Mit „Automatisierung erlauben" ließ sich Safari am 2026-09-06 endlich selbst befahren
+(`safaridriver` über den W3C-Endpunkt, Playwright kann Safari nicht). Ergebnis zuerst: **alles
+funktioniert.** `animation-timeline: scroll()` **und** `view()` werden unterstützt, die Leiste geht
+69 → 61 px, Polster 12 → 8, die Spur blendet über 8 px von 0 auf 1, der Füllstand läuft von 0 % auf
+100 %, der Verlauf ist 24 px hoch, kein Schatten, Marke/Name/Suche liegen alle auf derselben Mitte,
+und der Seitenname bleibt einzeilig und kürzt. Hell und dunkel je nachgemessen. Die frühere Meldung
+„in Safari nicht vollständig" ist damit erledigt; sie stammte aus der Zeit vor diesen Durchgängen.
+
+Dass `view()` da ist, ist nebenbei die Antwort auf eine offene Frage aus Befund 68: Der Seitentitel,
+der den Sitenamen ablöst, wäre in Chromium *und* Safari machbar.
+
+**Der Fund war ein anderer.** Im ersten Durchlauf meldete meine Messung 17 px waagerechten Überhang
+auf jeder Seite und bei jeder Fensterbreite — gleich groß bei 1500 wie bei 560 px, also kein Inhalt,
+der übersteht. Ursache: Quartz' eigenes Basis-CSS setzt
+
+    html { width: 100vw; overflow-x: hidden }
+
+und `100vw` **schließt eine klassische Scrollleiste ein**, der Inhaltskasten nicht. Auf einem
+Rechner, dessen Scrollleisten immer sichtbar sind, ist das Dokument also so breit wie das Fenster,
+sichtbar sind aber 17 px weniger — und die zentrierte Inhaltsspalte wird im falschen Kasten
+zentriert. Gemessen bei 1500 px Fenster: **30 px Rand links, 13 px rechts, die ganze Seite 17 px
+außermittig.** Quartz' `overflow-x: hidden` ist der Grund, warum daraus nie eine waagerechte
+Scrollleiste wurde (`scrollLeft` blieb bei 0) — nur der Versatz.
+
+Unter Playwright unsichtbar, in allen drei Engines, und in der Vorschau der App ebenso: dort gibt es
+überall Overlay-Scrollleisten, und dann ist `100vw` gleich der sichtbaren Breite. Es braucht einen
+Rechner, auf dem „Scrollleisten immer einblenden" steht — oder eine angeschlossene Maus, oder
+Windows und die meisten Linux-Desktops.
+
+Behoben mit `html { width: auto }` in `base.scss`: der Anfangswert, das Blockelement füllt damit
+schlicht den initialen umgebenden Block, und der ist das Fenster *ohne* Scrollleiste. Danach 22 px
+Rand auf beiden Seiten, Versatz 0. Quartz' `overflow-x: hidden` bleibt und tut weiter, was es tut.
+
+Die Lehre, und sie ist allgemein: **eine Overlay-Scrollleiste versteckt jeden `vw`-Fehler.** Was in
+`vw` gerechnet wird, muss auf einer Maschine mit klassischen Scrollleisten nachgesehen werden, und
+das ist genau die Maschinenklasse, die kein Prüfskript hier abdeckt.

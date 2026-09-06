@@ -478,3 +478,89 @@ Gemessen am Kontrollprojekt mit vier Frames: Ordner umbenannt (danach lösten al
 Leere), über die App umgehängt, anschließend 0 alte Pfade und 4 + 8 neue, alle Links wieder heil,
 `quartz build` grün mit 639 Dateien, und ein danach angelegtes Frame ließ sich registrieren.
 
+
+---
+
+## Der Dev-Server hing an einer Pipe zur App (2026-09-06, drittes Review)
+
+Der Beenden-Dialog verspricht: „Weiterlaufende Server bleiben im Browser erreichbar und werden beim
+nächsten Start wieder gefunden." Die Messung dahinter — der Server antwortet *unmittelbar* nach dem
+Beenden noch mit 200 — stimmt und reicht nicht. Mit der App sterben die Leseenden seiner
+stdout/stderr-Pipes, und beim nächsten Schreibversuch stirbt der Server; Quartz schreibt bei jedem
+Rebuild.
+
+Nachgestellt mit demselben Spawn (gleiche Argumente, gleiches `stdio`, kein `detached`) in einem
+Wegwerf-Projekt, Elternprozess beendet sich, sobald der Port antwortet, dann eine Notiz angelegt und
+wieder entfernt:
+
+| `stdio` | nach Ende des Elternprozesses | nach zwei Rebuilds |
+|---|---|---|
+| `['ignore', 'pipe', 'pipe']` | 2 Prozesse, HTTP 200 | 0 Prozesse, keine Verbindung |
+| `['ignore', fd, fd]` | 2 Prozesse, HTTP 200 | 2 Prozesse, HTTP 200 |
+
+Die Kontrollen des Reviews nageln die Ursache fest: dieselben Pipes, 25 s untätig, überleben; und
+derselbe Rebuild ohne Pipes überlebt. Es sind die Pipes, nicht die Zeit und nicht der Rebuild.
+
+Die zweite Hälfte des Versprechens fiel gleich mit: Ein toter Prozess fällt beim nächsten Start aus
+dem `isAlive`-Filter von `detectOrphanedServers()`, die Frage „Weiterlaufen lassen?" kam also gar
+nicht erst. Und `serversOnQuit: 'keep'` macht die Wahl zur Dauereinstellung.
+
+**Die Ausgabe geht deshalb in `.quartz-gui/logs/dev-server.{out,err}.log`, und Main tailt die zwei
+Dateien** in dasselbe `emitLog()`, das vorher am Pipe-Ereignis hing — die Zeilen leben ohnehin in
+Main (`services/logBuffer.ts`), ein Tail ist dort zu Hause. Zwei Dateien statt einer, weil
+`LogConsole` stderr rot färbt und eine gemeinsame Datei genau das verlöre. Bei jedem Start
+abgeschnitten: die Datei gehört zu diesem Lauf. Kein `detached` — die Messung oben *ist* der Fix,
+und eine eigene Prozessgruppe wäre eine Änderung an dem, was `stopServer` und `killAllServers`
+ablaufen.
+
+Zwei Listen mussten das neue Verzeichnis lernen, beide durch Nachsehen gefunden statt durch Schaden:
+`isSnapshotWorthy()` nimmt unter `.quartz-gui/` alles mit, was nicht ausdrücklich ausgeschlossen ist
+— die Logdatei wäre in jeden Snapshot zwangs-hinzugefügt worden; `duplicateService` kopiert alles,
+was nicht in `SKIP` steht. Gemessen an der gebauten App: ein Snapshot mit laufendem Server hält 363
+Dateien, keine davon unter `.quartz-gui/logs`.
+
+An der gebauten App außerdem gemessen: Starten, Neustarten, Stoppen, die Konsole füllt sich live
+(die Anfragezeilen der Live-Vorschau laufen ein, während sie offen ist), Status „Läuft" → „Gestoppt",
+kein Prozess bleibt übrig, die Logdatei nach einem Neustart frisch.
+
+---
+
+## Ein Snapshot bringt die alten Frame-Pfade zurück (2026-09-06, drittes Review)
+
+Der Absatz oben sagt, vorher sei nachgemessen worden, was ein Projekt sonst noch auf sich selbst
+hält: nichts. Gemessen wurde mit `grep` über `.quartz-gui/` — und der Snapshot-Store ist
+`snapshots.git`, eine git-Objektdatenbank, in der `grep` nichts liest. Richtig gefragt, mit
+`git grep` je Ref gegen den eigenen Projektpfad, nur `quartz.config.yaml` und `quartz.lock.json`:
+
+| Projekt | Snapshots | mit eigenem Pfad in der Config | im Lockfile |
+|---|---|---|---|
+| `gui-test` | 8 | 8 von 8 | 6 von 8 |
+| `Example` | 7 | 6 von 7 | 2 von 7 |
+
+Das sind genau die drei Einträge, die `repointProjectPaths()` umschreibt, eingefroren im Moment der
+Aufnahme, in einem Store, der mit dem Ordner mitzieht. Wer also ein Projekt umbenennt (die
+Reparatur oben läuft), und danach irgendeinen älteren Snapshot zurückholt, hat die toten Pfade
+wieder — während die Symlinks unter `.quartz/plugins/` heil bleiben, weil `/.quartz/` in keinem
+Snapshot liegt. Jedes Frame tot, der nächste `quartz plugin add` mit ENOENT, und der Layout-Editor
+listet die Frames weiter, weil er sie aus `.quartz-gui/authored-frames/` liest.
+
+Nachgestellt gegen den echten `snapshotService` (esbuild-Bündel, unveränderter Code) an einem
+Wegwerf-Projekt: Snapshot anlegen, Ordner umbenennen, Reparatur laufen lassen, Snapshot
+zurückholen.
+
+| nach dem Restore | config | lock.source | lock.resolved | symlink |
+|---|---|---|---|---|
+| vorher | alt | alt | alt | hier |
+| nachher | hier | hier | hier | hier |
+
+**Die Reparatur wird vom Muster getrieben, nicht von einem gemerkten Pfad.** Ein Frame liegt unter
+`<projekt>/.quartz-gui/authored-frames/<id>` und sonst nirgends, also ist eine Quelle, die darauf
+endet und woanders beginnt, die Quelle *dieses* Projekts — die ID ist die Identität, das Präfix
+davor ist Rauschen. Das braucht nichts im Snapshot, wirkt auf Aufnahmen von vor heute und würde
+auch ein per Finder kopiertes Projekt heilen (dort nicht angeschlossen, ein Befund pro Durchgang).
+Umgeschrieben wird nur, wenn das Frame hier auch liegt; was die Reparatur nicht belegen kann, lässt
+sie stehen. Gegenproben: ein von woanders installiertes Plugin bleibt unangetastet, ein Frame-Pfad,
+dessen Frame hier fehlt, ebenso, und einer, dessen Frame hier liegt, wird herübergezogen.
+
+Beide Reparaturen gehen jetzt durch eine Funktion (`rewriteRecordedPaths`) über dieselben drei
+Schreibwege; verschieden ist die eine Regel, die beantwortet, was aus einem Pfad wird.

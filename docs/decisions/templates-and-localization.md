@@ -93,3 +93,62 @@ Gemessen an einem frisch angelegten Zielprojekt: `static +2 ~0`, keine Warnung, 
 **alle sechs Boxen rendern** — `layout-box-note` auf 327 von 334 Seiten (Desktop-only), mit ihrem
 Text aus der Datei statt eines Platzhalters.
 
+
+---
+
+## Eine Grenze für jede Dekompression (2026-09-06, drittes Review)
+
+Zwei handgeschriebene Leser packen aus, was jemand anders geschrieben hat: `fontFile.ts` den
+Brotli-Strom eines WOFF2 (bzw. jede Deflate-Tabelle eines WOFF), `zipArchive.ts` jeden
+Deflate-Eintrag eines `.qtpl`. Beide taten es ohne `maxOutputLength`, im Hauptprozess.
+
+Gemessen mit den gebündelten Modulen (esbuild, unveränderter Code), jede Bombe erst auf Platte und
+dann in einem eigenen frischen Prozess gelesen, damit der RSS nur das Auspacken zeigt:
+
+| Eingabe | vorher | nachher |
+|---|---|---|
+| 863-Byte-WOFF2, Brotli aus 512 MiB Nullen | 881 ms, 1087 MiB | 108 ms, 120 MiB |
+| 261-KB-WOFF, Deflate aus 256 MiB Nullen | 129 ms, 567 MiB | 26 ms, 116 MiB |
+| `.qtpl`, Eintrag behauptet 4 KiB, entpackt 512 MiB | 296 ms, 1087 MiB | 1 ms, 48 MiB |
+| `.qtpl`, Eintrag behauptet ehrlich 512 MiB | 246 ms, 1086 MiB | 1 ms, 48 MiB |
+
+Die Antwort war in allen vier Fällen vorher wie nachher dieselbe (`null` bzw. eine Fehlermeldung);
+verschieden ist der Preis. Bei rund 620 000:1 erreicht eine 7-KB-Datei 4 GiB — und was darüber
+liegt, endet nicht in `null`, sondern in einem abgebrochenen Hauptprozess samt aller Fenster. Der
+`catch` in `readFontFace` fängt einen `RangeError` aus einer *begrenzten* Dekompression, nie einen
+Out-of-Memory-Abbruch.
+
+Die Grenze ist die eigene Zahl der Datei, wo sie kleiner ist — die Summe der WOFF2-Verzeichnislängen
+ist genau das, worauf sich der Strom entpackt, weil eine transformierte Tabelle ihre transformierte
+Länge trägt; `origLength` je WOFF-Tabelle; `uncompressedSize` je ZIP-Eintrag — und eine absolute
+Decke, wo sie es nicht ist: 64 MiB je Schrift, 256 MiB je Paket. Die Paket-Decke wird gegen die
+*angemeldeten* Größen geprüft, bevor das erste Byte entpackt wird, sonst zahlt man die ehrliche
+Bombe. 256 MiB ist doppelt so viel, wie der eigene Export erzeugen kann (Inhalt 100 MB, static 25).
+`fontService` fragt zusätzlich die Dateigröße *vor* `readFile`, weil auch die unkomprimierte Datei
+ganz in den Speicher geht; darüber wird die Regel geschrieben wie immer, dieselbe Antwort wie bei
+einer unlesbaren Datei.
+
+Gegenproben: Arial 400/700/400 kursiv/900 unverändert, `LastResort.otf` ohne `OS/2` und
+`Helvetica.ttc` weiter `null`, sechs absichtlich kaputte Eingaben weiter `null`, längste Dauer 1 ms;
+ein echtes 754-KB-Paket liest vorher wie nachher 354 Einträge.
+
+---
+
+## Der Dry-Run verschwieg, was der Import ablehnen wird (2026-09-06, drittes Review)
+
+Vier Bausteine rufen `writableTarget()` je Datei, und alle vier beantworteten eine Ablehnung auf den
+zwei Seiten derselben Entscheidung verschieden: `plan` ließ den Namen mit einem nackten `continue`
+fallen, `apply` warnte `fileOutsideProject`. Der Assistent zeigte also „static +2", und der Import
+meldete danach eine Warnung, die die Vorschau nie angekündigt hatte — obwohl der Plan genau das ist,
+was der Nutzer ankreuzt.
+
+Alle vier sagen jetzt `outside:<name>` in `plan.notes`, und die Zusammenfassung zählt sie neben den
+anderen Zahlen, so wie `identical` seit Befund 6 vom 2026-09-05 gezählt wird. Gemessen gegen
+`PARTS.static.plan` an einem Projekt, dessen `quartz/static/bilder` ein Symlink aus dem Projekt
+heraus ist:
+
+    vorher   additions=["logo.png"] conflicts=[] notes=[]
+    nachher  additions=["logo.png"] conflicts=[] notes=["outside:bilder/fremd.png"]
+
+`static` ist der neue Baustein und hatte das Muster von den drei älteren übernommen; sie werden
+zusammen korrigiert, weil das Schweigen eine Gewohnheit war und nicht vier Entscheidungen.

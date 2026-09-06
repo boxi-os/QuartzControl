@@ -126,6 +126,23 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   `GIT_SSL_CAINFO`. Der gemeinsame Satz hinter beiden Regeln: **es gewinnt die Quelle, die die
   Anforderung garantiert erfüllt.** Damit kann kein Werkzeug mehr „fehlen, aber nachinstallierbar"
   sein — fehlt eines, ist die Installation unvollständig, und genau das sagt das Warnband.
+- **Ein Kindprozess, der die App überleben soll, hängt nicht an einer Pipe zu ihr.** Die Leseenden
+  von stdout/stderr sterben mit dem Prozess, der sie hält, und der nächste Schreibversuch des Kindes
+  bringt es um — bei einem Dev-Server also der erste Rebuild nach dem Beenden der App, ohne Meldung,
+  weil niemand mehr liest. Die Ausgabe geht deshalb in eine Datei unter `.quartz-gui/logs/`, die
+  Main tailt (`buildService.ts`); zwei Dateien, weil die Konsole stderr einfärbt. Ein neues
+  Verzeichnis unter `.quartz-gui/` muss zwei Listen lernen: `isSnapshotWorthy()` nimmt alles mit,
+  was nicht ausdrücklich genannt ist, und `duplicateService` kopiert alles, was nicht in `SKIP`
+  steht. Messungen in [`navigation-and-pages.md`](docs/decisions/navigation-and-pages.md).
+- **Jede Dekompression bekommt eine Obergrenze, und die Datei selbst liefert sie nicht.** Ein WOFF2
+  sagt, wie lang seine Tabellen sind, ein ZIP-Eintrag, worauf er sich entpackt — geschrieben hat das
+  jeweils der, von dem die Datei kommt. Also `maxOutputLength` an *jeder* Stelle: die eigene Zahl,
+  wo sie kleiner ist, und eine absolute Decke darüber (64 MiB je Schrift, 256 MiB je Paket), geprüft
+  *bevor* das erste Byte entpackt wird. Gemessen: 863 Bytes WOFF2 wurden zu 1,1 GiB RSS, ein 522-KB-
+  Paket zu ebenso viel; darüber endet es nicht in `null`, sondern in einem abgebrochenen
+  Hauptprozess. Der `catch` fängt einen `RangeError` aus einer begrenzten Dekompression, nie einen
+  Out-of-Memory-Abbruch. Messungen in
+  [`templates-and-localization.md`](docs/decisions/templates-and-localization.md).
 - **Ja/Nein-Bestätigungen laufen über den nativen Dialog im Main-Prozess. In-App-Overlays sind nur
   für Inhalte mit Formular oder Auswahl.** Der Renderer fragt über `confirmDialog()`
   (`src/utils/confirm.ts` → Kanal `dialog.confirm`), nie über `window.confirm()`. Die sichere Antwort
@@ -319,6 +336,18 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   wird weggeräumt statt übersprungen, damit der reparierende Weg nicht blockiert bleibt.
 - **Gemessen, nicht angenommen.** Jede Regel hier steht in `docs/decisions/` mit dem Experiment, das
   sie erzwungen hat. Neue Regeln genauso.
+- **Eine Messung trägt nur so weit wie ihr Instrument.** Ein `grep` über `.quartz-gui/` fand den
+  Projektpfad im Snapshot-Store nicht und hat daraus „nichts sonst hält seinen eigenen Pfad“ gemacht
+  — der Store ist eine git-Objektdatenbank, und in einem zlib-komprimierten Objekt liest `grep`
+  nichts (`git grep` je Ref schon: 8 von 8 Aufnahmen). Genauso „der Server antwortet unmittelbar
+  nach dem Beenden noch“, was er tut, bis er das nächste Mal schreibt. Wer eine Behauptung in eine
+  Commit-Nachricht schreibt, schreibt dazu, womit sie gemessen wurde, damit der nächste Leser die
+  Reichweite prüfen kann statt die Aussage.
+- **Eine Kopie erbt keinen Pfad, aber ein Snapshot bringt einen zurück.** `repointProjectPaths()`
+  repariert beim Umbenennen und Duplizieren gegen ein bekanntes Vorher; `repointAuthoredFrames()`
+  repariert nach jedem Restore, der Config oder Lockfile berührt, und braucht dafür kein Vorher: Ein
+  Frame liegt unter `<projekt>/.quartz-gui/authored-frames/<id>`, also ist die ID die Identität und
+  das Präfix davor Rauschen. Umgeschrieben wird nur, was hier auch existiert.
 - **Ein Symlink-Schutz prüft jedes Segment, nicht das oberste Verzeichnis** — und fragt mit
   `lstat`, nicht mit `existsSync`. Letzteres folgt dem Link, also meldet ein hängender Link „ist
   nicht da“ statt „ist ein Link“, und die Sperre geht auf. Ein Link *innerhalb* des geschützten
@@ -366,18 +395,37 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Befunde aus den Reviews (Stand 2026-09-06)
+## Befunde aus den Reviews (Stand 2026-09-06, abends)
 
-Beide Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md) und
-[`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden (Auftrag daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`) stehen als Dokumente unverändert; die Messungen zu jedem Fix
-liegen in `docs/decisions/`, und was dauerhaft gilt, steht oben als Regel.
+Alle drei Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
+[`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden und
+[`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md` und `docs/REVIEW-2026-09-06-auftrag.md`) stehen als Dokumente
+unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft gilt, steht
+oben als Regel.
 
-**Das nächste Review misst ab `review-2026-09-05`, nicht ab `review-2026-09-06`.** Der jüngere Tag
-markiert das Ende des Token-Durchgangs (was er umfasst, steht in seiner eigenen Nachricht), ist aber
-ausdrücklich *nicht* der Ausgangsstand: die 615 umgestellten Klassen und die vier Aufräumpunkte sind
-gemessen, aber von keinem zweiten Augenpaar gelesen, und genau deshalb sollen sie im Diff des
-nächsten Auftrags liegen. Die Tag-Nachricht sagt dasselbe.
+Aus dem dritten Review, dessen drei mittlere Befunde alle Fälle waren, in denen eine Messung aus
+einer Commit-Nachricht nicht weit genug reichte:
+
+- **„Weiterlaufen lassen“ hielt den Server bis zu seiner nächsten Log-Zeile.** Gemessen war, dass er
+  *unmittelbar* nach dem Beenden noch antwortet; mit der App sterben aber die Leseenden seiner
+  Pipes, und der erste Rebuild danach bringt ihn um. Die Ausgabe geht seither in
+  `.quartz-gui/logs/dev-server.{out,err}.log`, die Main tailt — Regel oben unter Prozessgrenze.
+- **Der Snapshot-Store hält den Projektpfad in jeder Aufnahme.** Der Kommentar in `projectPaths.ts`
+  behauptete das Gegenteil auf Grundlage eines `grep`, und `grep` liest in einer git-Objektdatenbank
+  nichts. Nach jedem Restore, der Config oder Lockfile berührt, läuft `repointAuthoredFrames()` —
+  Regel oben unter Arbeitsweise.
+- **Der Font-Parser entpackte ohne Obergrenze.** 863 Bytes wurden zu 1,1 GiB RSS. Grenzen jetzt in
+  `fontFile.ts` *und* in `zipArchive.ts`, das dasselbe Muster länger trug — Regel oben unter
+  Prozessgrenze.
+
+Die drei niedrigen: der vierte Fundort der Zahl zehn (die Bausteine sind seit `b9831b9` zwölf, und
+im gepflegten Vault stand sie noch sechsmal), ein Dry-Run, der verschwieg, was der Import ablehnen
+wird, und eine Nadel, deren eigenes Beispiel sie nicht traf.
+
+**Das nächste Review misst ab `review-2026-09-06`.** Anders als beim vorigen Mal markiert der Tag
+diesmal wirklich den gelesenen Stand: der Token-Durchgang, den er ursprünglich abschloss, lag im
+Diff dieses Reviews und ist damit von einem zweiten Augenpaar gesehen.
 
 Von dem, was beide Reviews als „beiläufig, kein sed“ führen, sind die Farbpaare am 2026-09-05
 abgearbeitet, soweit sie eine Umbenennung waren: 322 Paare, die wörtlich das Token buchstabierten,

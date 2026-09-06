@@ -422,7 +422,7 @@ async function buildTemplate() {
             // one place they are checked.
             configuration: {
               ...config.configuration,
-              pageTitle: TEMPLATE_NAME,
+              pageTitle: a.pageTitle,
               locale: 'de-DE'
             },
             theme: {
@@ -442,6 +442,9 @@ async function buildTemplate() {
         },
         {
           path: WORKSHOP,
+          // Evaluated in the renderer, where this module's constants do not exist - the name
+          // travels as an argument like everything else in this call.
+          pageTitle: TEMPLATE_NAME,
           colors: PALETTE,
           typography: TYPOGRAPHY,
           patches: PLUGIN_PATCHES,

@@ -13,6 +13,16 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
 - `npm run start` — preview a production build
 - `npm run typecheck` — `tsc --noEmit` against both `tsconfig.node.json` (main/preload) and `tsconfig.web.json` (renderer); there is no lint script and no unit tests in this repo
 - `npm run smoke` — launches the production build (so `npm run build` first) and visits every screen in `App.tsx`, sub-tabs included, at 1280x800 and 1728x1000, reporting uncaught exceptions, console errors, `ErrorSurface` toasts, the route error boundary, a horizontally scrolling layout and an empty page. Not a test suite and it asserts nothing about content — it answers one question, *does every screen still come up*, which is otherwise only answerable by opening all seventeen of them. Each size is a fresh launch because `setViewportSize()` does not resize an Electron `BrowserWindow`
+- `npm run screenshots -- [--cards] [--only <teil>] [--lang de]` — nimmt jeden Bildschirm für das
+  Benutzerhandbuch auf, hell und dunkel, gegen ein echtes Projekt (ohne `--project` das erste, dessen
+  Pfad auf `Example` endet), und legt sie im Handbuch-Vault ab. Zwilling von `smoke.mjs`: gleicher
+  Launcher, gleiche Wartelogik, **gleiche Routenliste** aus `scripts/routes.mjs` — sonst zeigt das
+  Handbuch Bildschirme, die der Smoke-Test nicht mehr besucht. Zwei Dinge, die dabei gemessen sind:
+  eine Vollseiten-Aufnahme gibt es nicht (ein Fenster wird nicht höher als der Arbeitsbereich —
+  angefragt 2400 px, bekommen 923), deshalb nimmt `--cards` jede Karte einzeln auf; und die
+  **Zugänge-Karte wird nie automatisch aufgenommen**, weil sie echte Server, Benutzernamen und
+  Host-Key-Fingerprints des Rechners zeigt, auf dem das Skript läuft. Ablauf und Gliederung des
+  Handbuchs: [`docs/handbuch.md`](docs/handbuch.md)
 - `npm run fetch:git` — holt das mitgelieferte git (dugite-native) für diesen Rechner nach
   `resources/git/<platform>-<arch>/` und dünnt es aus; beim Packen macht das `beforePack` von selbst
 - `npm run check:runtime -- <projektpfad>` — die eingebettete Node-Laufzeit gegen ein echtes Projekt:

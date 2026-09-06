@@ -4,9 +4,10 @@ Das Handbuch zur App — nicht zu verwechseln mit dem **Example-Handbuch**, das 
 erklärt und im Vault `~/Obsidian/QuartzProjekte/Example` lebt
 (`scripts/example-template/README.md`).
 
-**Stand 2026-09-07:** Die acht Kapitel sind geschrieben — 52 Seiten, 309 Wikilinks, alle
-auflösbar. Offen sind das Screenshot-Skript, der zweite Textdurchgang, der Anschluss ans
-Hilfe-Menü und die englische Fassung; deren Abschnitte hier beschreiben, was entstehen soll.
+**Stand 2026-09-07:** Die acht Kapitel sind geschrieben — 52 Seiten, 328 Wikilinks, alle auflösbar
+— und bebildert: 106 Aufnahmen (19 Bildschirme × 2 Schemata, dazu 68 Karten), 19 davon in den
+Seiten eingesetzt. Offen sind der zweite Textdurchgang, die Handaufnahmen, der Anschluss ans
+Hilfe-Menü und die englische Fassung.
 
 Die Kapitel entstanden aus den Quellen — `de.ts`, die Routen, `electron-builder.yml`,
 `docs/decisions/` — und wurden danach gegen die **laufende** App gehalten: je Route die sichtbaren
@@ -78,23 +79,45 @@ dann stimmt, sieht niemand.
 
 ## Screenshots
 
-`scripts/screenshots.mjs` (geplant) ist der Zwilling von `scripts/smoke.mjs`: derselbe Launcher,
-dieselbe Wartelogik, dieselbe Routenliste. Die Liste zieht dafür aus `smoke.mjs` nach
-`scripts/routes.mjs`, damit beide dieselbe lesen — sonst zeigt das Handbuch Bildschirme, die der
-Smoke-Test nicht mehr prüft.
+`npm run screenshots` (`scripts/screenshots.mjs`) ist der Zwilling von `scripts/smoke.mjs`:
+derselbe Launcher, dieselbe Wartelogik, und **dieselbe Routenliste** aus `scripts/routes.mjs`, die
+beide importieren — sonst zeigt das Handbuch Bildschirme, die der Smoke-Test nicht mehr prüft.
 
-- Aufgenommen wird gegen das **Example-Projekt**: echte Plugins, echte Stile, echter Inhalt. Ein
-  leeres Demoprojekt sähe in einem Handbuch nach nichts aus.
-- Feste Fenstergröße, Sprache über die Einstellungen gesetzt, jede Route hell **und** dunkel.
-  `emulateMedia` wird hier ausdrücklich gesetzt — im Smoke-Test steht bewusst `null`, weil er das
-  Schema des Systems treffen soll.
-- Ziel: `<vault>/assets/screenshots/<sprache>/<route>-<hell|dunkel>.png`.
-- `--only <route>` für einzelne Aufnahmen, damit ein geänderter Text nicht alle Bilder neu erzeugt.
+- Aufgenommen wird gegen ein echtes Projekt (ohne `--project` das erste, dessen Pfad auf `Example`
+  endet): echte Plugins, echte Stile, echter Inhalt. Ein leeres Demoprojekt sähe nach nichts aus.
+- 1440 × 900, jede Route hell **und** dunkel. `emulateMedia` wird hier ausdrücklich gesetzt; im
+  Smoke-Test steht dort bewusst `null`, weil er das Schema des Systems treffen soll.
+- Ein Fenster je Schema statt eines Wechsels im laufenden: Das Farbschema wird im Hauptprozess
+  gesetzt, und ein Wechsel danach lässt Seiten zurück, die ihre Farben beim Mount gelesen haben.
+- Ziel: `<vault>/assets/screenshots/<sprache>/<route>-<hell|dunkel>.png`, verkleinert auf 1920 px
+  Breite (Karten auf 1400).
+- `--only <teil,teil>` für einzelne Aufnahmen, `--cards` zusätzlich für jede Karte,
+  `--lang`, `--out`, `--project`.
 
-Was eine Routenliste nicht trifft — offene Dialoge, ein laufender Build mit Konsolenausgabe, ein
-Fehlerzustand, der Marktplatz mit Ergebnissen, der Frame-Editor beim Ziehen —, wird von Hand
-aufgenommen. Der Weg dorthin gehört hierher, sobald es die erste solche Aufnahme gibt: eine
-Handaufnahme ohne notierten Weg ist beim nächsten Mal keine.
+### Zwei Dinge, die gemessen sind
+
+**Eine Vollseiten-Aufnahme gibt es nicht.** Zwei Gründe übereinander: Eine Seite dieser App rollt
+nicht im Dokument, sondern in einem Element darin, wovon `fullPage: true` nichts sieht — und ein
+Fenster wird nicht höher als der Arbeitsbereich des Bildschirms. Am 2026-09-07 gemessen: angefragt
+1200, 1600 und 2400 px Höhe, bekommen jedes Mal 923. Ein Screenshot zeigt nur, was das Fenster
+wirklich rendert. Deshalb `--cards`: Playwright rollt ein Element vor seiner Aufnahme in den
+sichtbaren Bereich und erreicht damit auch, was unter der Kante liegt. Erkannt wird eine Karte
+nicht am Klassennamen einer Komponente, sondern an dem, was sie zur Karte macht — gerundet, mit
+Rand und Fläche —, gesucht von der `<h2>` aus nach oben, denn `CardHeading` ist die einzige `<h2>`
+in einer Karte.
+
+**Die Zugänge-Karte wird nie automatisch aufgenommen.** Sie listet echte Server, Benutzernamen und
+Host-Key-Fingerprints des Rechners, auf dem das Skript läuft; am 2026-09-07 stand genau das in zwei
+Bildern, bevor sie gelöscht wurden. `CARD_BLOCKLIST` im Skript hält sie draußen. Für das Handbuch
+braucht diese Karte ein Demo-Konto — eine Handaufnahme, keine Ableitung aus dem, was auf diesem
+Rechner zufällig eingerichtet ist.
+
+### Was von Hand kommt
+
+Was eine Routenliste nicht trifft: offene Dialoge, ein laufender Build mit Konsolenausgabe, ein
+Fehlerzustand, der Frame-Editor beim Ziehen — und die Zugänge- und Ziele-Karten mit Demo-Daten. Der
+Weg zu jeder solchen Aufnahme gehört hierher, sobald es sie gibt: eine Handaufnahme ohne notierten
+Weg ist beim nächsten Mal keine.
 
 ## Der Ablauf
 

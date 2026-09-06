@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "postinstall": "node scripts/postinstall.mjs",
     "smoke": "node scripts/smoke.mjs",
+    "screenshots": "node scripts/screenshots.mjs",
     "docs:variables": "node scripts/variable-docs.mjs",
     "check:semver": "node scripts/check-semver.mjs",
     "check:i18n": "node scripts/check-i18n-keys.mjs",

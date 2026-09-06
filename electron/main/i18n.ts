@@ -33,6 +33,13 @@ const STRINGS = {
     orphanKeepRunning: 'Weiterlaufen lassen',
     orphanEntry: '{{name}} — Port {{port}}',
 
+    // Dieselben zwei Antworten wie beim Start, dieselben Worte - und `orphanEntry` beschreibt
+    // dieselbe Zeile, deshalb wird sie hier wiederverwendet statt zweimal geschrieben.
+    quitTitle: 'Laufende Server',
+    quitMessage: 'Beim Beenden laufen noch Dev-Server.',
+    quitDetail: 'Weiterlaufende Server bleiben im Browser erreichbar und werden beim nächsten Start wieder gefunden.',
+    quitStopServers: 'Server beenden',
+
     // Content folder
     contentSourceInsideTarget:
       'Der Quellordner liegt im Content-Ordner des Projekts ({{target}}). Dieser wird beim Wechsel zuerst beiseitegelegt — wähle einen Ordner außerhalb.',
@@ -235,6 +242,11 @@ const STRINGS = {
     orphanQuit: 'Quit',
     orphanKeepRunning: 'Keep running',
     orphanEntry: '{{name}} — port {{port}}',
+
+    quitTitle: 'Running servers',
+    quitMessage: 'Dev servers are still running.',
+    quitDetail: 'Servers left running stay reachable in the browser and are found again on the next start.',
+    quitStopServers: 'Stop servers',
 
     contentSourceInsideTarget:
       'The source folder is inside the project’s content folder ({{target}}), which is moved aside before the switch — pick a folder outside it.',

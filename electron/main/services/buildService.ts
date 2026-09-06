@@ -39,6 +39,15 @@ export function getServerStatus(projectId: string): ServerStatus {
   return runningServers.get(projectId)?.status ?? lastTerminalStatus.get(projectId) ?? { state: 'stopped' }
 }
 
+// What is running right now, for the question at quit: project and port, which is what the
+// dialog names. Kept next to ownedServerPids() because both answer "what does this app own".
+export function runningServerSummaries(): { projectId: string; port: number }[] {
+  return [...runningServers.entries()].map(([projectId, { status }]) => ({
+    projectId,
+    port: status.options?.port ?? DEFAULT_OPTIONS.port
+  }))
+}
+
 // pid -> projectId for the servers this app has running right now, so serverDiscovery can tell
 // its own from a stranger's. The pid is the one this app spawned (npx), which is also the root of
 // the process group a scan finds - the child below it is npx's, not a second server.

@@ -353,3 +353,39 @@ längst jemand anderem gehören.
 **Windows sagt „unbekannt", nicht „keiner".** Dort gibt es kein `ps`; `Win32_Process` beantwortet
 dieselbe Frage, ist hier aber nicht messbar. Ein ungemessener Scan, der „keine gefunden" meldet,
 wäre die schlechtere Antwort — dieselbe Unterscheidung wie beim Update-Check und beim SCSS-Check.
+
+**Beim Beenden wird gefragt, was mit dem laufenden Server geschieht (2026-09-06).** `before-quit`
+rief bis hierher `killAllServers()` ohne ein Wort — und widersprach damit der Haltung der App am
+anderen Ende: die Waisen-Frage beim Start bietet ausdrücklich „Weiterlaufen lassen" an, weil ein
+laufender Server Absicht sein kann. Seit ein weiterlaufender Server wieder sichtbar und beendbar
+ist (die Karte oben, dazu die Frage beim Start), ist „weiterlaufen lassen" eine Entscheidung, die
+sich zurücknehmen lässt — und erst das macht das Angebot ehrlich.
+
+Drei Antworten, Abbrechen auf Platz 0 mit `cancelId: 0`, damit Escape *und* Return — das unter
+macOS die erste Taste nimmt, was `defaultId` auch sagt — „nicht beenden" heißen. Die beiden
+anderen beenden die App; ihre Beschriftung sagt, was aus den Servern wird. Gefragt wird
+asynchron mit `preventDefault()`, nicht mit `showMessageBoxSync`: ein synchroner Dialog blockiert
+den ganzen Hauptprozess, und alles, was diese App von außen fährt (der `run-desktop`-Treiber,
+`npm run smoke`), schließt sie über `app.close()` und bliebe daran hängen.
+
+Gemessen an der gebauten App, je mit laufendem Dev-Server auf 8080. Der Dialog selbst wurde im
+Hauptprozess gespiegelt gelesen, weil Playwright ein natives Blatt nicht bedienen kann; **dass er
+erscheint, ist trotzdem am OS gemessen** — zweimal, unfreiwillig, als der Spiegel an einem
+`require` scheiterte und das echte Blatt aufging:
+
+    buttons: ["Abbrechen", "Weiterlaufen lassen", "Server beenden"], cancelId: 0
+    message: "Beim Beenden laufen noch Dev-Server."
+    detail:  "gui-test — Port 8080\n\nWeiterlaufende Server bleiben im Browser erreichbar …"
+
+- **Abbrechen:** Fenster bleibt, Server läuft weiter, nichts angefasst.
+- **Weiterlaufen lassen:** App beendet, der Server antwortet danach weiter mit 200, und sein
+  Eintrag bleibt in `running-servers.json` stehen. Der nächste Start findet ihn — nachgewiesen,
+  weil genau dieser Waisen-Dialog beim folgenden `launch` aufging und Playwright ins Timeout
+  laufen ließ.
+- **Server beenden:** App beendet, beide Prozesse weg, Port zu.
+
+Der Zustand liegt in einer Variablen (`quitDecision`), nicht in einem zweiten Aufruf von
+`killAllServers()`: `app.quit()` löst `before-quit` ein zweites Mal aus, und ohne die Merkung
+stünde dort dieselbe Frage noch einmal. Ein zweites Cmd+Q, während das Blatt offen ist, öffnet
+kein zweites (`quitPromptOpen`), und ein Dialog, der nicht gezeigt werden kann, macht die App
+nicht unbeendbar — dann gilt „beenden", was das bisherige Verhalten ist.

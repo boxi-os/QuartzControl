@@ -3,7 +3,12 @@ import { existsSync } from 'fs'
 import { homedir } from 'os'
 import { join } from 'path'
 import { registerIpcHandlers } from './ipc/handlers'
-import { killAllServers, detectOrphanedServers, killOrphanedServers } from './services/buildService'
+import {
+  killAllServers,
+  detectOrphanedServers,
+  killOrphanedServers,
+  runningServerSummaries
+} from './services/buildService'
 import { getProject } from './services/projectStore'
 import { getSettings } from './services/settingsService'
 import { ensureToolPath } from './services/environmentService'
@@ -241,6 +246,66 @@ app.on('window-all-closed', () => {
   if (!isMac) app.quit()
 })
 
-app.on('before-quit', () => {
-  killAllServers()
+// What happens to a running dev server when the app quits is the user's decision, not the app's.
+// It used to kill them all without a word, which contradicted the app's own stance at the other
+// end: the orphan question at startup offers "Weiterlaufen lassen" precisely because a server may
+// have been left running on purpose. Since a left-running server is now visible and stoppable
+// again - the discovery card on Vorschau & Build, and the startup question - keeping one is a
+// choice that can be undone, which is what makes offering it honest.
+//
+// Asked asynchronously with preventDefault rather than with showMessageBoxSync: a sync dialog
+// blocks the whole main process, and everything that drives this app from the outside (the
+// run-desktop driver, `npm run smoke`) closes it through app.close() and would hang on it.
+type QuitDecision = 'ask' | 'stop' | 'keep'
+let quitDecision: QuitDecision = 'ask'
+let quitPromptOpen = false
+
+app.on('before-quit', (event) => {
+  const servers = runningServerSummaries()
+  if (servers.length === 0 || quitDecision !== 'ask') {
+    if (quitDecision !== 'keep') killAllServers()
+    return
+  }
+  // A second Cmd+Q while the sheet is up must not open a second sheet.
+  event.preventDefault()
+  if (quitPromptOpen) return
+  quitPromptOpen = true
+  void promptAboutRunningServers(servers)
+    .then((decision) => {
+      quitPromptOpen = false
+      if (decision === 'ask') return // cancelled: the app stays open, nothing was touched
+      quitDecision = decision
+      app.quit()
+    })
+    .catch((error) => {
+      // A dialog that cannot be shown must not make the app unquittable.
+      console.error('[main] quit prompt failed:', error)
+      quitPromptOpen = false
+      quitDecision = 'stop'
+      app.quit()
+    })
 })
+
+async function promptAboutRunningServers(servers: { projectId: string; port: number }[]): Promise<QuitDecision> {
+  const lines = await Promise.all(
+    servers.map(async ({ projectId, port }) => {
+      const project = await getProject(projectId)
+      return mainT('orphanEntry', { name: project?.name ?? projectId, port })
+    })
+  )
+  // Cancel sits at index 0 with cancelId 0, so both Escape and Return - which on macOS takes the
+  // first button whatever defaultId says (measured, see the dialog.confirm handler) - answer
+  // "don't quit". The other two both quit; their labels say what becomes of the servers.
+  const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0]
+  const options = {
+    type: 'question' as const,
+    buttons: [mainT('confirmCancel'), mainT('orphanKeepRunning'), mainT('quitStopServers')],
+    defaultId: 0,
+    cancelId: 0,
+    title: mainT('quitTitle'),
+    message: mainT('quitMessage'),
+    detail: `${lines.join('\n')}\n\n${mainT('quitDetail')}`
+  }
+  const { response } = win ? await dialog.showMessageBox(win, options) : await dialog.showMessageBox(options)
+  return response === 0 ? 'ask' : response === 1 ? 'keep' : 'stop'
+}

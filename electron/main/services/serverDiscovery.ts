@@ -79,9 +79,18 @@ async function readProcessTable(): Promise<PsRow[]> {
 
 // `--serve` as a whole word, not as a substring: `appleeventsd --server` is in every macOS process
 // table and would otherwise match. Both needles together, because "quartz" alone appears in any
-// path under a folder called Quartz - this repo's own, for one.
+// path under a folder named after it - `~/Documents/quartz-vorlage-gegenprobe`, or any
+// `node_modules/quartz`.
+//
+// Lowercased first, which is not cosmetic: this used to name `Quartz-GUI` as the example of what
+// the second needle guards against, and a case-sensitive `includes('quartz')` never matched that
+// at all - nor `QuartzControl`, nor a project a user keeps in a folder with a capital Q, which is
+// the case that mattered. Measured with a listening process started from a directory called
+// QuartzProjekte, whose command line carries `--serve --port 8131` and no lowercase "quartz" at
+// all: the old scan found nothing on that port, this one finds it.
 function looksLikeQuartzServer(command: string): boolean {
-  return command.includes('quartz') && /(?:^|\s)--serve(?:\s|$)/.test(command)
+  const lowered = command.toLowerCase()
+  return lowered.includes('quartz') && /(?:^|\s)--serve(?:\s|$)/.test(lowered)
 }
 
 function readPortArg(command: string, flag: string): number | undefined {

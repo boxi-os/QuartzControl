@@ -344,7 +344,7 @@ export default {
     changeSource: 'Change source…',
     dialogTitle: 'Change content source',
     dialogWarning:
-      'The current content/ folder is moved to .quartz-gui/content-backups/ before the change and can be restored from the Backups view.',
+      'The previous content folder is set aside rather than deleted before the change — you can bring it back under Backups.',
     newSourceFolder: 'New source folder',
     strategy: 'Strategy',
     strategySymlink: 'Link (symbolic link, e.g. to an Obsidian vault)',
@@ -497,7 +497,7 @@ export default {
   },
   backups: {
     vsGitSync:
-      'A snapshot is a copy of this project that only this app knows about: it lives inside the project under .quartz-gui/, is never uploaded, and does not touch your own git history. Git sync is for sharing — your work ends up on GitHub and from there on other machines. A snapshot is for going back — it restores an earlier state on this machine, even if the project is not a git repository at all.',
+      'A snapshot is a copy of this project that only this app knows about: it stays inside the project, is never uploaded, and does not touch your own git history. Git sync is for sharing — your work ends up on GitHub and from there on other machines. A snapshot is for going back — it restores an earlier state on this machine, even if the project is not a git repository at all.',
     newHeading: 'New snapshot',
     newHint:
       'A snapshot captures everything that is yours in this project: the configuration, the plugin lockfile, layout frames, your own stylesheets, translations and publish targets. Not included are node_modules, the build folder and installed plugin files — the next build produces those anyway.',
@@ -507,7 +507,7 @@ export default {
     includeContent: 'Include the content folder',
     contentFolderHint: 'A real folder of markdown files — small enough to always come along.',
     contentSymlinkHint:
-      'Your content folder is a symlink to a vault outside the project. It cannot be included: git does not follow symlinks — a snapshot would hold the link, not a single note. Your vault is your own source of truth with its own backup, and a snapshot would never overwrite it anyway.',
+      'Your content folder is linked to a vault outside the project. It cannot be included — a snapshot would hold the link, not a single note. Your vault is your own source of truth with its own backup, and a snapshot would never overwrite it anyway.',
     vaultNotCompared:
       'Notes from the linked vault are not part of this — everything except the content folder is compared.',
     contentMissing: 'There is no content folder to include.',
@@ -553,7 +553,7 @@ export default {
     },
     movedFoldersHeading: 'Set-aside content folders',
     movedFoldersHint:
-      'When the content source is switched, the previous folder is moved here rather than deleted. This is not a backup of your notes: a symlink to a vault was never copied, only the link itself recorded.',
+      'When the content source is switched, the previous folder is moved here rather than deleted. This is not a backup of your notes: a linked vault was never copied, only the link itself recorded.',
     confirmRestoreFolderAction: 'Put folder back',
     confirmRestoreFolder: 'Put this content folder back? The current one is set aside as well.',
     confirmDeleteFolderAction: 'Delete folder',
@@ -646,7 +646,7 @@ export default {
       inUseEmbedded: 'In use: Node {{node}} and npm {{npm}} from the app — nothing has to be installed for it.',
       inUseSystem: 'In use: Node {{node}} from this machine.',
       noSystemNode: 'not found',
-      hintSwitchable: 'This machine has Node {{node}}. Switching only pays off when a package has to be compiled during install (node-gyp) — that needs real Node headers, which the app does not carry.',
+      hintSwitchable: 'This machine has Node {{node}}. Switching only pays off when a package has to be compiled during install — the error message then mentions node-gyp, and the embedded runtime does not carry everything that needs.',
       hintNoHostNode: 'No Node was found on this machine, so “From the system” would make builds, plugins and new projects fail.',
       hintSystem: 'Quartz requires Node 22 or newer. A project also ships a .node-version, and nvm, fnm, asdf and mise resolve that per folder — so the runtime here can differ from project to project.',
       gitBundled: 'git {{version}} from the app — this machine has none, so QuartzControl brings one.',
@@ -670,7 +670,7 @@ export default {
       reveal: 'Show in Finder',
       unreadableTitle: 'A saved file could not be read',
       unreadableHint:
-        'QuartzControl found one of its own files unreadable — most likely because the app was killed while saving it. It was moved aside instead of overwritten, so its contents are still on disk. Whatever it held (connections, the project list) is missing from the app and has to be set up again.'
+        'QuartzControl found one of its own files unreadable — most likely because the app was killed while saving it. It was moved aside instead of overwritten; whatever it held (connections, say, or the project list) is missing from the app and has to be set up again.'
     }
   },
   configEditor: {
@@ -911,7 +911,7 @@ export default {
     savedFlash: 'Saved',
     maintenanceHeading: 'Maintenance',
     maintenanceDescription:
-      'Acts on the .quartz/plugins folder, where source-installed plugins are built — not on what the site does. That folder does not belong in the git repository, so a second machine has to rebuild it first.',
+      'Acts on the built files of plugins you installed from a source — not on what the site does. They do not belong in the repository, so a second machine has to restore them first.',
     installFromLock: 'Restore from quartz.lock.json',
     installFromLockRunning: 'Restoring…',
     installDone: 'Plugins restored from the lockfile.',
@@ -1027,7 +1027,7 @@ export default {
       mobile: 'Mobile up to (px)',
       saved: 'Saved',
       invalid: 'Mobile must be smaller than tablet (240–3840 px).',
-      hint: 'The window widths at which your own frames switch to the tablet and mobile layout. Applies to every authored frame in this project and is rewritten into their CSS on save. Quartz’ built-in frames (default, full-width, minimal) and community themes carry their own breakpoints and do not follow these values. The default is 1200 / 800 — exactly what Quartz itself uses.'
+      hint: 'The window widths at which your own frames switch to the tablet and mobile layout. Quartz’ built-in frames (default, full-width, minimal) and community themes carry their own values and do not follow these. The default is 1200 / 800 — the same values Quartz uses.'
     },
     groupLabel: 'Group',
     displayLabel: 'Visibility',
@@ -1038,7 +1038,7 @@ export default {
     groupsPanel: {
       title: 'Flex groups',
       description:
-        'Components sharing the same group are rendered side by side (or stacked) in a flexbox instead of individually one after another.',
+        'Components sharing the same group sit side by side (or stacked) instead of individually one after another.',
       none: 'No flex groups defined yet.',
       newGroupPlaceholder: 'New group name',
       add: 'Add',
@@ -1070,7 +1070,7 @@ export default {
     templateMinimal: 'Minimal',
     templatePluginDefault: '“{{frame}}” (plugin default, active)',
     pluginFrameUnknownLayout:
-      'This page type automatically uses the “{{frame}}” frame provided by its plugin. Its exact grid structure can’t be previewed here, since the plugin renders it itself — this is not the standard layout.',
+      'This page type automatically uses the “{{frame}}” frame from its plugin. Only the plugin knows how that frame is built, so there is no preview here.',
     clearSlotsHeading: 'Clear slots for this page type',
     clearSlotsDescription: 'Enabled slots always stay empty for this page type, regardless of the global layout.',
     frameBuilder: {
@@ -1109,7 +1109,7 @@ export default {
       rowSizesLabel: 'Row heights (blank = auto)',
       lineNamesLabel: 'Named grid lines (optional)',
       lineNamesHint:
-        'Gives names to the lines between columns/rows (e.g. “sidebar-start”). Not needed for placing areas here in the editor — only useful if you later want to reference this exact line from your own CSS (e.g. custom.scss), like grid-column: sidebar-start / content-end.',
+        'The editor does not need this — you place areas by dragging. Names like “sidebar-start” are only useful if you want to address these lines from your own CSS later.',
       columnLinesLabel: 'Column lines',
       rowLinesLabel: 'Row lines',
       copyLayoutTo: 'Copy to {{target}}',
@@ -1167,7 +1167,7 @@ export default {
       'heading-fonts': {
         title: 'Headings ignore the theme',
         summary:
-          'The “Fonts” plugin sets the h1–h6 font with an unlayered rule, which beats both the theme and your own CSS. The fix points the headings back at the CSS variables.',
+          'The “Fonts” plugin sets the heading font in a way that beats both the theme and your own CSS. The fix points the headings back at the variables from here.',
         comment:
           'The plugin @quartz-community/quartz-fonts sets "h1,…,h6 { font-family: … }" unlayered.\nUnlayered beats every @layer - including the active theme - and because its stylesheet is\nlinked after custom.scss, it also beats an equally specific rule of your own.\n"body h1" is one step more specific and therefore wins regardless of load order.\n\nPointing at the variables puts the Variables tab back in control.\nWritten by QuartzControl - edit freely.'
       }
@@ -1230,7 +1230,7 @@ export default {
       moreKeys: '+{{count}} more',
       chipHint: 'Jump to this variable',
       themeNote:
-        'The community theme “{{themeId}}” ships its variables inside @layer, while your values here land unlayered in custom.scss — unlayered rules always win. Verified against a real build (light and dark). Only variables a theme sets exclusively inside a selector (e.g. .callout[data-callout]) cannot be overridden globally here.',
+        'Your values here beat the theme “{{themeId}}”, even where it sets the same variable. The exception is colours a theme sets for one kind of element only — callouts, for instance; change those under “Custom CSS”.',
       section: {
         current: 'Current value',
         origin: 'Origin',
@@ -1352,7 +1352,7 @@ export default {
     gitAttributesOk: 'Update protection active',
     gitAttributesMissing: 'Update protection not active',
     gitAttributesExplain:
-      'Your wording lives in Quartz’ own files. The protection keeps a core update from overwriting it, and it takes two parts: the line in .gitattributes and the merge driver in this project’s git configuration. Both are set automatically on the next save.',
+      'Your wording lives in Quartz’ own files. The protection keeps a core update from overwriting it; it is set up automatically on the next save.',
     gitAttributesEnable: 'Enable now'
   },
   updates: {
@@ -1365,7 +1365,7 @@ export default {
       commits: 'Installed: {{current}} · Latest: {{latest}}',
       runUpdate: 'Run update',
       confirm:
-        'Update Quartz’s core?\n\nA snapshot is taken first: quartz.config.yaml, quartz.lock.json, your own stylesheets and this app’s settings are part of it; your content folder only if it is a real folder and switched on under Backups. You can go back to that state any time under Backups.\n\nThis fetches changes from jackyzha0/quartz, runs npm install, and may require manual intervention on conflicts.',
+        'Update Quartz’s core?\n\nThis fetches changes from jackyzha0/quartz and reinstalls the dependencies; conflicts may require manual work.\n\nA snapshot is taken first — under Backups you can go back to the current state any time.',
       abortMerge: 'Abort merge',
       openSnapshot: 'Open the snapshot from before the update →',
       conflictHeading: 'Conflicts in these files (aside from the locale files .gitattributes protects):'

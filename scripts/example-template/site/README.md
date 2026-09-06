@@ -9,7 +9,7 @@ Für diese Vorlage heißt das zweierlei:
 
 ## 1. `snippets/*.md` → `quartz/static/snippets/`
 
-Von den fünf Layout-Box-Instanzen der Vorlage laden vier ihren Inhalt aus der Option `html:`, also
+Von den sechs Layout-Box-Instanzen der Vorlage laden fünf ihren Inhalt aus der Option `html:`, also
 aus dem Konfigurationseintrag selbst — die reisen vollständig mit dem Paket. Genau eine Instanz
 („Über dieses Handbuch“, linke Spalte) lädt aus einer Datei, um den Datei-Weg des Plugins zu
 zeigen. Diese Dateien müssen von Hand kopiert werden.

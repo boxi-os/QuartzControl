@@ -39,7 +39,7 @@ const MARK_LIGHT = `<svg class="img-light" width="26" height="26" viewBox="0 0 2
 const MARK_DARK = `<svg class="img-dark" width="26" height="26" viewBox="0 0 26 26" role="img" aria-label=""><rect width="26" height="26" rx="7" fill="#8CB8DA"/><path d="M8 17.5V8.5h3.4c2.3 0 3.8 1.2 3.8 3.1 0 1.4-.8 2.4-2.1 2.8l2.9 3.1h-2.6l-2.5-2.8h-.7v2.8H8Zm2.2-4.6h1.1c1 0 1.6-.5 1.6-1.3s-.6-1.2-1.6-1.2h-1.1v2.5Z" fill="#16171A"/></svg>`
 
 /**
- * Five instances of quartz-layout-box, one per thing the plugin can do.
+ * Six instances of quartz-layout-box, one per thing the plugin can do.
  *
  * Four use `html:` inline instead of `file:`. That is not a stylistic choice: snippet files live in
  * quartz/static/snippets/, which no part of a template package collects, so a `file:` instance
@@ -70,6 +70,32 @@ export const LAYOUT_BOXES = [
     // logotype, and saying so here is what lets the header be two flex items instead of three
     // children held apart by a margin.
     layout: { position: 'header', priority: 10, group: 'brand' }
+  },
+  {
+    // The page's own title, in the bar, for the moment the article's h1 has scrolled out of sight.
+    // Several pages here are three screens tall, and from the second screen on the bar carried the
+    // one name the reader already knew - the site's - while the one they needed was gone.
+    //
+    // Why a layout box and not a second instance of `article-title`: that component renders an
+    // `h1`, and a page has one of those. This renders a `span` that is `aria-hidden`, which is the
+    // honest shape - it is a visual echo of a heading that is still in the document, not a second
+    // heading. The exchange itself is in nav-header.scss; it is scroll-driven CSS with no script,
+    // and in Firefox, which has no scroll timelines, the site name simply stays.
+    source: LAYOUT_BOX_SOURCE,
+    name: LAYOUT_BOX_NAME,
+    enabled: true,
+    order: 505,
+    options: {
+      html: '<span class="bar-page-name" aria-hidden="true">{{title}}</span>',
+      className: 'layout-box-page-name',
+      placeholders: true,
+      frontmatterKey: 'layoutBoxPageName'
+    },
+    // Priority 30, so the brand group is mark, site name, page name in document order. The last
+    // two share one grid cell (nav-header.scss) rather than standing side by side: they are two
+    // states of the same slot, and a bar that reserves room for both at once is a bar with two
+    // names in it.
+    layout: { position: 'header', priority: 30, group: 'brand' }
   },
   {
     // The file path, with a Markdown snippet: rendered at build time, GFM, no Obsidian syntax.

@@ -1147,7 +1147,7 @@ Was bleibt: der Test dafür, ob etwas nach `variables.mjs` gehört, ist **nicht*
 Wert benutzt, sondern ob jemand ihn je ändern wollen würde. Eine Farbe, eine Länge, ein
 Schriftstapel — ja. Ein vierzeiliger Verlauf oder eine 400 Zeichen lange Data-URI — nein.
 
-### 68. Nach zwei Bildschirmen zeigt die Leiste den Namen, den man schon kennt — vorgemerkt
+### 68. Nach zwei Bildschirmen zeigt die Leiste den Namen, den man schon kennt
 
 Der Sticky-Header trägt oben wie unten den *Sitenamen*. Auf einer Seite, die drei Bildschirme hoch
 ist, ist das die eine Information, die man ohnehin hat, während die verloren gegangen ist, die man
@@ -1160,13 +1160,40 @@ schon — `view-timeline` auf der Überschrift mit `animation-range: exit`, also
 wie bei Befund 64 und 65, mit demselben `@supports`-Wächter und derselben Rückfallebene (Firefox
 behielte schlicht den Sitenamen).
 
-Warum es hier steht und nicht im Diff: Es braucht `ArticleTitle` als zweite Komponente in der
-`brand`-Gruppe, also eine Änderung an `plugins.mjs` und `layout.mjs` und damit am Layout des
-Projekts — kein Stylesheet-Kniff. Zwei Dinge sind daran vorher zu messen und nicht zu raten: was
-die zusätzliche Komponente mit der Breite der Leiste macht, die bei 390 px ohnehin schon knapp ist
-(siehe Befund 28), und ob eine `view-timeline` auf einem Element funktioniert, das in einer anderen
-Frame-Fläche liegt als das animierte. Das ist ein Feature, kein Feinschliff, und gehört in einen
-eigenen Durchgang.
+**Gebaut am 2026-09-06, nach den zwei Messungen, die hier als offen notiert waren.**
+
+*Trägt eine `view-timeline` über zwei Frame-Flächen?* Ja, mit `timeline-scope`. Eine benannte
+View-Timeline ist für die Nachkommen und die Geschwister des deklarierenden Elements sichtbar, und
+die Leiste ist weder das eine noch das andere — sie liegt in einer anderen Fläche, zwei Teilbäume
+weiter. `timeline-scope: --tpl-article-title` auf `:root` hebt sie so weit an. Vorher an einer
+eigenständigen Nachbildung gemessen und nicht am Projekt, weil ein Mechanismus, der die zwei
+Flächen nicht überbrückt, aus dem ganzen Vorhaben ein Skript gemacht hätte: Chrome und WebKit
+tauschen die Namen deckungsgleich (0,786 gegen 0,785 am Mittelpunkt), Firefox bewegt nichts.
+
+*Was kostet die zusätzliche Komponente die Leiste?* Nichts, weil beide Namen **eine** Zelle teilen
+statt nebeneinanderzustehen. Die `brand`-Gruppe wird dafür ein Grid — `display` ist die eine
+Eigenschaft, die `Flex.tsx` nicht inline schreibt. Gemessen über fünf Breiten: bei 1456, 800 und
+600 px ist die Zelle 159 px breit (der längere der beiden Namen), bei 481 px 115, bei 390 px 0. Die
+Leiste bleibt 69 px hoch wie vorher, kein Überlauf an irgendeiner Breite. Unter 480 px entfällt der
+Seitenname mit demselben Argument wie der Sitename in Befund 28: die Gruppe hat dort 62 px, davon
+26 die Marke und 12 der Abstand — die 24 px, die bleiben, sind genau die Breite, bei der ein Name
+als ein Buchstabe und drei Punkte erscheint.
+
+Zwei Entscheidungen unterwegs, beide anders als die Vormerkung sie annahm:
+
+- **Kein zweiter `article-title`, sondern eine sechste Layout-Box.** Diese Komponente rendert ein
+  `h1`, und davon hat eine Seite eines. Die Box rendert ein `span` mit `aria-hidden="true"` — die
+  ehrliche Form, denn es ist das sichtbare Echo einer Überschrift, die im Dokument noch steht, und
+  keine zweite Überschrift. Der Preis: Befund 1 wird um eine Instanz schlimmer, die Gegenprobe
+  meldet jetzt „1 von 6“ statt „1 von 5“.
+- **Der Bereich ist `exit`, nicht ein von Hand gewählter Abstand.** Der Tausch läuft genau, während
+  die `h1` den Bildschirm verlässt. Gemessen in Chrome und WebKit auf drei Seiten und zwei Breiten;
+  auf einer Seite ohne Artikelüberschrift — der 404, einer Zeichnung — heißt der Name eine Timeline,
+  die es nicht gibt, die Animation ist inaktiv, kein Keyframe greift, und die Leiste behält den
+  Sitenamen. Nachgemessen auf `/nicht-da/`: `site 1, name 0`.
+
+Firefox behält den Sitenamen an jeder Breite und auf jeder Seite (nachgemessen), so wie beim
+Schrumpfen, beim Schatten und bei der Fortschrittslinie.
 
 ### 69. Vier Korrekturen am Header, und drei davon waren an mir
 
@@ -1349,3 +1376,26 @@ Rand auf beiden Seiten, Versatz 0. Quartz' `overflow-x: hidden` bleibt und tut w
 Die Lehre, und sie ist allgemein: **eine Overlay-Scrollleiste versteckt jeden `vw`-Fehler.** Was in
 `vw` gerechnet wird, muss auf einer Maschine mit klassischen Scrollleisten nachgesehen werden, und
 das ist genau die Maschinenklasse, die kein Prüfskript hier abdeckt.
+
+### 75. Ein mittig ausgerichtetes Grid-Element ist so breit wie sein Inhalt, nicht wie seine Zelle
+
+Beim Bau von Befund 68 hing der Seitenname bei 390 px quer über der Wortmarke: die Zelle war 24 px
+breit, der Name 159 px, also 68 px Überstand nach beiden Seiten. Am Stylesheet lag es nicht — es
+setzt `minmax(0, 1fr)` auf die Spalte und `min-width: 0` auf das Element, und beides stimmt.
+
+Es lag an einer Zeile in `Flex.tsx`: Quartz schreibt an **jeden** Wrapper, den es für eine
+Komponente anlegt, `align-self` und `justify-self` als Inline-Stil, `center` als Vorgabe. In einer
+Flex-Zeile ist `justify-self` wirkungslos, deshalb fällt es dort nie auf. In einem Grid ist es das
+nicht: Ein Grid-Element mit einer anderen Selbstausrichtung als `stretch` wird nach seinem
+**fit-content** bemessen statt auf die Zelle gestreckt — und dieses fit-content war hier das
+max-content des Namens.
+
+Die Reparatur ist ein `width: 100%` auf dem Element. Eine gewöhnliche Deklaration reicht, weil
+niemand inline eine Breite setzt; danach ist die Größe entschieden, und der Ausrichtung bleibt
+nichts mehr zu verteilen. Gemessen über fünf Breiten: beide Namen liegen jetzt auf demselben
+Kasten, an jeder Breite, und der Sitename beginnt wieder unmittelbar hinter der Marke statt in der
+Mitte einer Zelle, die der längere Nachbar aufspannt.
+
+Dasselbe Muster wie beim `flex-basis` der Suche (im Kommentar an `.search`): Was `Flex.tsx` inline
+schreibt, kann kein Stylesheet ohne `!important` überstimmen — der Ausweg ist jedes Mal, eine
+*andere* Eigenschaft zu setzen, die die Frage vorher entscheidet.

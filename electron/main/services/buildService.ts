@@ -102,10 +102,24 @@ function tailFile(path: string, onText: (text: string) => void): () => void {
     }
   }
   const timer = setInterval(pump, SERVER_LOG_POLL_MS)
+  let stopped = false
+  // Idempotent, because the caller cannot promise to call it once: node says of a child process
+  // that "the 'exit' event may or may not fire after an error has occurred", and both handlers
+  // stop the tails. `clearInterval` and `pump` survive a second call by themselves, `closeSync` on
+  // an already closed descriptor does not - it throws EBADF, out of a child-process event handler
+  // where nothing catches it, i.e. as an uncaught exception in the main process. On macOS that
+  // path was measured not to exist (a failed spawn emits 'error' and no 'exit'); under Windows,
+  // where a shell sits in between and none of this has ever run, it is not decidable. A flag costs
+  // a line and makes the question moot.
   return () => {
+    if (stopped) return
+    stopped = true
     clearInterval(timer)
     pump() // whatever the server managed to write between the last tick and its exit
-    if (fd !== null) closeSync(fd)
+    if (fd !== null) {
+      closeSync(fd)
+      fd = null
+    }
   }
 }
 

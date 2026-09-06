@@ -17,11 +17,16 @@ aber die Begründung.
 Der Diff seit dem Tag `review-2026-09-06`. **Nicht seit dem Dateinamen dieses Auftrags** — der ist
 geraten, der Tag ist es nicht.
 
-    git log --oneline review-2026-09-06..main                     # 11 Commits
+    git log --oneline review-2026-09-06..main
     git diff review-2026-09-06..main -- electron/ src/ shared/    # 14 Dateien, +265/−34
 
+Die Zahl der Commits schreibe ich hier bewusst nicht hin: Dieser Auftrag liegt selbst im Bereich,
+und jeder weitere Doku-Commit macht eine notierte Zahl falsch — in einem Text, der dich gleich auf
+veraltete Zahlen ansetzt, wäre das der schlechteste erste Eindruck. Der App-Code steht fest, das ist
+die zweite Zeile.
+
 Das ist ein kleiner Diff, und das ist Absicht. Er enthält die sechs Fixes des dritten Reviews
-(`docs/REVIEW-2026-09-06.md`, PR #17) und die Doku dazu. Der Tag sitzt bewusst *vor* diesen Fixes:
+(`docs/REVIEW-2026-09-06.md`, PR #17) und die Doku dazu, diesen Auftrag eingeschlossen. Der Tag sitzt bewusst *vor* diesen Fixes:
 Sie sind gemessen, jeder mit Vorher und Nachher, und von niemandem gelesen. Genau darum geht es
 hier.
 
@@ -165,8 +170,8 @@ Drei Dinge, auf die dieses Projekt besonderen Wert legt und die im Diff mitgeles
   entstanden ist. Frag bei jeder Zahl, die du liest, womit sie gemessen wurde und was das Instrument
   nicht sehen konnte.
 
-**Dass der Diff klein ist, heißt nicht, dass die Liste kurz sein muss.** Er ist elf Commits lang und
-besteht fast nur aus Stellen, an denen jemand eine Grenze, ein Zeitfenster oder eine Bedingung neu
+**Dass der Diff klein ist, heißt nicht, dass die Liste kurz sein muss.** Er besteht fast nur aus
+Stellen, an denen jemand eine Grenze, ein Zeitfenster oder eine Bedingung neu
 gesetzt hat. Ein Review, das hier nichts findet, sagt damit etwas — dann schreib auf, was du geprüft
 und *nicht* gefunden hast, so genau wie einen Befund.
 

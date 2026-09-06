@@ -197,12 +197,13 @@ async function loadLegacyFolder(dir: string): Promise<LoadedPackage | null> {
 async function loadPackage(packagePath: string): Promise<LoadedPackage | null> {
   if (!existsSync(packagePath)) return null
   if ((await stat(packagePath)).isDirectory()) return loadLegacyFolder(packagePath)
-  let files: Map<string, Buffer>
-  try {
-    files = await readZipFile(packagePath)
-  } catch {
-    return null
-  }
+  // Deliberately not caught: readZipFile's messages are the only place that knows *what* is wrong
+  // with a package - a name that would write outside, an entry that does not match its checksum,
+  // an unsupported method, the 256-MB ceiling. Turning all of them into `null` made every one
+  // arrive as the same "Die Vorlage ließ sich nicht lesen", the ceiling string included, which was
+  // written for the user on 2026-09-02 and could never be seen. `null` keeps the two cases that
+  // have nothing to say: no file, and a file that carries no readable manifest.
+  const files = await readZipFile(packagePath)
   const raw = files.get(MANIFEST_FILE)
   if (!raw) return null
   try {

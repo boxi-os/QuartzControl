@@ -108,8 +108,9 @@ export interface BuiltinTemplate {
 }
 
 // "It exists" is not "it can be read", and the difference is the whole of this finding: an
-// unreadable copy handed out here makes planImport answer null, and the wizard then creates a
-// project without the template it promised. Measured on the real package - 552 kB, 323 entries -
+// unreadable copy handed out here makes planImport fail - with `null` when there is no manifest,
+// by throwing the reader's own message otherwise - and the wizard then creates a project without
+// the template it promised. Measured on the real package - 552 kB, 323 entries -
 // reading it whole takes 7 ms, which is nothing next to the dialog this runs behind.
 async function isReadablePackage(path: string): Promise<boolean> {
   try {

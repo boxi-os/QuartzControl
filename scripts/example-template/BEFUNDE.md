@@ -834,14 +834,31 @@ Die Funktion nimmt jetzt die ganze Config und zählt zusätzlich jeden Schlüsse
 `layout.byPageType` steht — ein Seitentyp durch Vorführung. Damit ist die Ausnahme keine Liste von
 Ausnahmen, und `excalidraw` steht in der App unter *Layout → Seitentypen*.
 
-### 54. Der Layout-Board der App zeigt die rechte Spalte am Tablet als umbrechende Reihe — offen
+### 54. Der Layout-Board der App zeigt die rechte Spalte am Tablet als umbrechende Reihe — am 2026-09-06 nicht mehr reproduzierbar
 
 `sidebarDirection()` (`src/routes/LayoutEditor/utils.ts`) gibt für `right` auf Tablet und Mobil
 `'row'` zurück, für `left` nur auf Mobil. Das stimmt für Quartz' eigenes `base.scss`, aus dem es
 abgelesen ist — und nicht für ein Projekt mit selbstgebauten Frames: `.qgframe-area` ist auf jedem
-Breakpoint `flex-direction: column`. Auf dem Tablet-Reiter des Boards stehen die Bausteine der
-rechten Spalte deshalb nebeneinander und brechen um, während sie auf der Website untereinander
-stehen. Kein Datenfehler, aber die Vorschau widerspricht dem Ergebnis.
+Breakpoint `flex-direction: column`.
+
+**Nachgemessen an der laufenden App, und der Fall tritt so nicht mehr auf.** Das Board hat für ein
+selbstgebautes Frame einen eigenen Zweig, der jede Fläche mit `direction="column"` zeichnet;
+`sidebarDirection()` wird dort gar nicht gerufen. Auf dem Tablet-Reiter stehen die drei Bausteine
+der rechten Spalte untereinander — geprüft in zwei Projekten (Example mit `editorial`, gui-test mit
+`boxi-test`), beide zeigen über dem Board an, welches Frame sie darstellen.
+
+Der andere Zweig bleibt richtig, und zwar aus demselben Grund, aus dem er geschrieben wurde: Er
+wird nur gezeichnet, wenn eine Seite wirklich mit Quartz' DefaultFrame gebaut wird — und dort
+klappt `base.scss` die rechte Spalte unterhalb von Desktop tatsächlich in eine Reihe
+(`.sidebar.right { flex-direction: column; @media all and not ($desktop) { flex-direction: row } }`,
+`.sidebar.left` dasselbe nur auf Mobil). Genau das kodiert die Funktion.
+
+Bliebe der Fall, dass ein Projekt Quartz' Seitenleisten per eigenem CSS umstellt — dann könnte das
+Board es nicht wissen. Diese Vorlage tut es nicht: Ihre Stylesheets nennen `.sidebar` nur in einer
+Fokus-Regel und in einem Kommentar, ihr Layout lebt vollständig in `.qgframe-area-*`.
+
+Kein Code geändert. Der Eintrag bleibt als Messung stehen, weil „nicht mehr reproduzierbar" eine
+andere Aussage ist als „war nie so".
 
 ### 55. Beim Rollen *in* der rechten Spalte lief die Überschrift mit bis an den Header
 

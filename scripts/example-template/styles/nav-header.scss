@@ -43,7 +43,7 @@
   // `nowrap`, and it replaces `wrap`. With three loose children and a margin pushing the last one
   // over, the only thing standing between this bar and a second row was that the three happened to
   // fit; there is no width at which a wrapped header is what anybody wanted. What gives instead is
-  // the site name, which truncates (below).
+  // the site name, which truncates - see "which group gives up width" below.
   flex-wrap: nowrap;
   justify-content: space-between;
   align-items: center;
@@ -70,6 +70,62 @@
   // No transition: the animation in base.scss is bound to the scroll position, and a transition
   // on the same property would chase it a frame behind.
   padding-block: var(--tpl-header-pad);
+}
+
+// Which of the two groups gives up width, and which may not.
+//
+// The brand goes first: it is the one part of the bar that is also the first line of every page
+// below it, so it shrinks and the name inside it truncates. The toolbar does not: its children are
+// 44px targets and a target that shrinks is a target you miss.
+//
+// The chain matters and `min-width: 0` on the title alone is not enough - measured with a longer
+// name at 620px, the bar pushed 64px past the window and at 500px 184px, because a flex item's
+// automatic minimum is its content size at *every* level. Quartz's own wrapper div sits between
+// the group and the title, so all three have to be told.
+//
+// `:has()` is the handle because quartz writes the same `flex-component` class on every group it
+// renders and puts the group's own name nowhere in the markup (Flex.tsx). By content, not by
+// position: `:first-child` / `:last-child` would work today and break the day a third thing joins
+// the bar. Below 480px the title is `display: none` and `:has()` still matches it, which is right -
+// the group is still the brand group.
+.qgframe-area-header > .flex-component:has(.page-title),
+#quartz-body > .header > .flex-component:has(.page-title) {
+  min-width: 0;
+  flex: 0 1 auto;
+
+  > * {
+    min-width: 0;
+  }
+}
+
+.qgframe-area-header > .flex-component:has(.search),
+#quartz-body > .header > .flex-component:has(.search) {
+  flex: 0 0 auto;
+}
+
+// The site name is one line, at every width and not only in the app bar: a logotype whose second
+// half drops below the first is a broken logo. So it truncates instead of wrapping.
+//
+// This block existed, was lost on 2026-09-05 when nav-page-title.scss and nav-toolbar.scss were
+// merged into this file, and nobody noticed for a day because three comments here went on
+// describing it - the header rule still says "what gives instead is the site name, which truncates
+// (below)", and the mobile rule still says the truncation "is unconditional now". Restored on
+// 2026-09-06 after measuring what actually happened without it: at 620px with a longer name the
+// title box went to 40px tall, so the name sat on two lines inside a 44px wrapper. Nothing
+// overflowed and nothing scrolled sideways, which is why every sweep passed - it just looked wrong.
+//
+// `min-width: 0` on the h2 because it is a flex item and its automatic minimum would otherwise
+// keep it at its content width; `display: block` on the link because `text-overflow` needs a block
+// box and quartz's anchor is inline.
+.qgframe-area-header .page-title {
+  min-width: 0;
+
+  a {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 /* ------------------------------------------------------- the edge once the page moves */
@@ -197,8 +253,8 @@
   }
 
   // The site name gives way first: it is the one thing in the bar that is also the first line of
-  // every page below it. Only the size is set here - the truncation is unconditional now and lives
-  // with the rest of the brand group above.
+  // every page below it. Only the size is set here - the truncation is unconditional and lives
+  // above, with the rest of the brand group.
   .qgframe-area-header .page-title {
     font-size: var(--tpl-text-base);
   }

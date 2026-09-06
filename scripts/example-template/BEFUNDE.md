@@ -1227,3 +1227,33 @@ Safari 26.6.2 ist **nicht** direkt gemessen: `safaridriver` verlangt „Automati
 den Entwicklereinstellungen, und Playwrights WebKit 26.5 ist ein anderer Bau derselben Engine-Reihe.
 Dort stimmt alles auf drei Nachkommastellen mit Chromium überein. Was bleibt, ist eine Lücke im
 Nachweis, nicht ein Befund.
+
+### 71. Der Seitenname brach seit einem Tag um, und drei Kommentare beschrieben die Regel weiter
+
+Beim Zusammenlegen von `nav-page-title.scss` und `nav-toolbar.scss` in `nav-header.scss` am
+2026-09-05 (Befund „Eine Datei pro Komponente") ging der Block verloren, der den Sitenamen auf einer
+Zeile hält. Aufgefallen ist es einen Tag lang nicht, und zwar aus einem lehrreichen Grund: **drei
+Kommentare in derselben Datei beschrieben die Regel weiterhin** — die Header-Regel sagte „was
+stattdessen nachgibt, ist der Seitenname, der kürzt (unten)", die Mobil-Regel sagte, die Kürzung
+sei „jetzt unbedingt und steht oben bei der Brand-Gruppe". Wer die Datei las, las die Regel. Nur der
+Browser nicht.
+
+Kein Test hätte es gefangen. Der Name dieser Website ist kurz, also passt er überall; gemessen mit
+einem längeren Namen bei 620 px stand er auf **zwei Zeilen** in einer 44-px-Hülle — nichts lief
+über, nichts scrollte seitlich, jeder Durchlauf war grün. Es sah nur falsch aus, und das sieht nur
+ein Mensch mit einem anderen Namen im Kopf.
+
+Wiederhergestellt, und dabei zeigte sich, dass die alte Fassung zu kurz griff: `min-width: 0` allein
+am `h2` reicht nicht. Das automatische Minimum eines Flex-Elements ist seine Inhaltsbreite auf
+*jeder* Ebene, und zwischen Gruppe und Titel sitzt noch Quartz' eigene Hülle. Mit nur der einen
+Ebene stand die Leiste bei 620 px 64 px und bei 500 px 184 px über dem Fenster. Jetzt sind alle drei
+Ebenen genannt, die Brand-Gruppe darf schrumpfen (`flex: 0 1 auto`) und die Werkzeugleiste
+ausdrücklich nicht (`flex: 0 0 auto`) — ihre Kinder sind 44-px-Ziele.
+
+Der Griff ist `:has(.page-title)` statt des früheren `:has(.site-mark)`: eine Klasse dieses Namens
+gibt es im erzeugten Markup nicht, die Marke ist eine `.layout-box-mark`. Nach Inhalt und nicht nach
+Position, denn `:first-child` funktionierte heute und bräche an dem Tag, an dem ein drittes Ding in
+die Leiste kommt.
+
+Gemessen in drei Engines bei 1456, 780, 620 und 500 px, mit dem echten und einem langen Namen: eine
+Zeile überall, Auslassungspunkte wo nötig, kein seitliches Scrollen.

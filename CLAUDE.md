@@ -321,6 +321,16 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   bleiben Englisch, weil sie Bugs beschreiben, nicht Eingaben.
 - **Ein Fachbegriff bekommt eine Zeile darunter** (`Field`/`Toggle` `hint`); ein Begriff, auf dem
   eine Seite ruht, eine `InfoNote` oben, gedeckelt auf 95ch.
+- **Ein Hinweis sagt, was passiert — nicht, warum es technisch so ist.** Höchstens zwei Sätze; die
+  Mechanik gehört ins Handbuch, der Hinweis nennt das Kapitel. Ein Begriff aus der Maschinenwelt
+  steht nur da, wo der Nutzer ihn zum Entscheiden braucht: „Host-Key“ auf der Veröffentlichen-Seite
+  ja, „ungelayert“ im Variablen-Tab nein. Ein Bestätigungsdialog hat drei Teile — die Frage, ein
+  Satz Folgen, ein Satz Rückweg. Ausgenommen sind die Sätze, die eine Verwechslung verhindern, die
+  Daten kostet (Snapshot ≠ Git-Sync, verknüpfter Vault wird nicht gesichert, ein Duplikat erbt keine
+  Ziele); die bleiben lang. Gemessen am 2026-09-07: 1475 Nutzersätze, 192 über 120 Zeichen — und die
+  Länge war nicht das Problem, sondern die 75, die Mechanik erklären statt der Entscheidung.
+  Messungen in [`i18n-and-vocabulary.md`](docs/decisions/i18n-and-vocabulary.md), der Ablauf und die
+  Gliederung des Benutzerhandbuchs in [`docs/handbuch.md`](docs/handbuch.md).
 - **Sidebar nach Tätigkeit, eine Seite ist eine Aufgabe.** Einrichtung, Gestaltung, Veröffentlichung,
   Wartung; ein Screen, der eine Karte wäre, ist ein Sub-Tab. Die Übersicht ist eine Statusseite, die
   nichts kostet: nur lokale Reads beim Mount, genau einer ins Netz, nie awaited.

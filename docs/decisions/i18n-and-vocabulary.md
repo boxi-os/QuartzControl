@@ -34,3 +34,52 @@ die Aktionen sind ohnehin stabile Referenzen. Und die Einstellungen wurden beim 
 gelesen: einmal in `main.tsx` für die Sprache, einmal von der ersten Seite für den Store. `main.tsx`
 geht jetzt durch den Store, `Home` lädt gar nicht mehr; die Einstellungsseite behält ihr eigenes
 Laden, weil dort ein von außen geänderter Wert falsch stünde.
+
+## Was ein App-Text sagt und was ins Handbuch gehört (2026-09-07)
+
+Vor dem Benutzerhandbuch einmal nachgezählt, was der Nutzer überhaupt liest: **1475 Sätze**, 1341
+in `de.ts` und 134 in `electron/main/i18n.ts`. Davon sind 192 länger als 120 Zeichen, 49 länger als
+200, 11 länger als 300.
+
+**Die Länge ist nicht die Metrik.** Der Verdacht war, die Texte seien zu lang; gelesen sind alle
+192, und die meisten sind lang, weil sie etwas erklären, das man wissen muss, bevor man klickt.
+`home.wizard.intro` (230 Zeichen) sagt, dass ein neues Projekt ein bis zwei Minuten braucht und
+warum — das ist der Grund, aus dem niemand die App für hängengeblieben hält.
+`publish.ftpPlaintextWarning` (178) ist die Warnung, die ein Passwort rettet. Diese Sätze bleiben.
+
+Die zweite Messung trifft besser: **75 Sätze nennen einen Begriff aus der Maschinenwelt** —
+gezählt gegen eine Liste von 37 (`@layer`, `ungelayert`, `Selektor`, `Spezifität`, `Flexbox`,
+`grid-column`, `var(--`, `custom.scss`, `.gitattributes`, `Merge-Treiber`, `node-gyp`,
+`.node-version`, `npm install`, `node_modules`, `origin`, `.quartz-gui`, `quartz.config.yaml`,
+`Symlink`, `CNAME`, `Sperrdatei`, `flacher Klon`, `Breakpoint`, `@font-face`, …). Auch diese Liste
+entscheidet nichts: `origin` (11 Treffer) steht auf der Git-Sync-Seite völlig zu Recht, wer dort
+etwas tut, kennt das Wort. Sie erzeugt die Kandidaten, gelesen wird jeder einzeln.
+
+Was dabei wirklich schiefgeht, ist enger und hat eine Form: **ein Hinweis erklärt die Mechanik,
+statt die Entscheidung.** `styles.variables.themeNote` (361 Zeichen) erklärt Kaskadenschichten
+(`@layer`, ungelayert, `.callout[data-callout]`), damit der Nutzer versteht, warum manche Variablen
+sich nicht überschreiben lassen — die Entscheidung, vor der er steht, ist aber nur: *hier ändern
+oder im eigenen CSS*. `layoutEditor.frameBuilder.lineNamesHint` (306) endet in
+`grid-column: sidebar-start / content-end` an einer Stelle, an der der Editor gerade sagt, dass man
+das Feld nicht braucht. `localization.gitAttributesExplain` (297) nennt zwei Dateien, die die App
+selbst schreibt.
+
+Daraus die Regeln, die für App **und** Handbuch gelten:
+
+- **Ein Hinweis sagt, was passiert — nicht, warum es technisch so ist.** Höchstens zwei Sätze. Die
+  Mechanik gehört ins Handbuch; der Hinweis nennt das Kapitel.
+- **Ein Begriff aus der Maschinenwelt steht nur da, wo der Nutzer ihn zum Entscheiden braucht.**
+  Auf der Veröffentlichen-Seite ist „Host-Key“ genau richtig — wer einen Fingerprint vergleichen
+  soll, muss wissen, wie das Ding heißt. Im Variablen-Tab ist „ungelayert“ es nicht.
+- **Ein Bestätigungsdialog hat drei Teile:** die Frage, ein Satz über die Folgen, ein Satz über den
+  Rückweg. `updates.core.confirm` (459 Zeichen) ist der Musterfall dagegen — er zählt auf, was ein
+  Snapshot enthält, an der Stelle, an der nur zu entscheiden ist, ob aktualisiert wird.
+- **Ein Satz, der eine Verwechslung verhindert, die Daten kostet, bleibt lang.** Drei tun das:
+  `backups.vsGitSync` (Snapshot ist nicht Git-Sync), `backups.contentSymlinkHint` (ein verknüpfter
+  Vault wird nicht mitgesichert), `home.duplicate.whatStaysBehind` (das Duplikat erbt keine Ziele
+  und überschriebe sonst die Website des Originals). Sie werden geschärft, nicht gekürzt.
+- **Ein Wort, ein Name — und zwar derselbe wie im Handbuch.** Die Vokabular-Tabelle oben gilt für
+  beide. Wo das Handbuch einen Begriff einführt, benutzt die App genau diesen.
+
+Die Zielgruppe ist in beiden Fällen dieselbe wie beim Example-Handbuch: jemand, der Obsidian kennt
+und Quartz nicht. Du-Anrede, wie bisher.

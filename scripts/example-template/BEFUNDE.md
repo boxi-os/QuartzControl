@@ -963,5 +963,39 @@ die Messung selbst:
   auf 1456 und auf 390 px.
 
 Eine Momentaufnahme misst nur den Zustand, in dem sie aufgenommen wurde — was nur in einem Zustand
-oder auf einer Breite existiert, muss dort aufgesucht werden. Nach beiden Korrekturen: 50 von 50
-Tokens bewegen etwas.
+oder auf einer Breite existiert, muss dort aufgesucht werden.
+
+Und ein dritter Fehler der Messung, der einen Tag später auffiel: Eine Seite steht nie ganz still.
+Eine Webschrift, die nachlädt, ein fertig gezeichnetes Mermaid-Diagramm, die Leinwand des Graphen —
+alle drei verändern zwischen zwei *identischen* Aufnahmen berechnete Werte, und die Änderung wird
+dem Token zugeschrieben, das gerade an der Reihe war. Gemessen: `--font-monospace` bestand einen
+Lauf und fiel im nächsten durch, ohne dass es in beiden irgendjemand las. Das Skript nimmt jetzt
+zuerst den Grundrauschpegel derselben Seite auf und zieht ihn von jeder Zählung ab.
+
+Mit dem Rauschpegel kamen zwei weitere tote Tokens ans Licht, beide aus derselben Familie wie die
+drei oben: `--font-text` und `--font-monospace` sind Obsidian-Aliase, die im gebauten CSS **null**
+Leser haben — weder in Quartz noch in einem Plugin noch in dieser Vorlage, die für diese beiden
+Rollen `--bodyFont` und `--codeFont` benutzt. `--font-interface` hat fünf Leser und bleibt.
+
+Endstand: **sechs von 53 waren tot**, 48 bleiben, und alle 48 bewegen etwas.
+
+### 61. Mermaid: die Platte unter der Zeichnung und die Legende, die der Palette nicht folgte
+
+Der Hintergrund einer Zeichnung kam aus dieser Vorlage, nicht aus Mermaid: `pre:has(> code.mermaid)`
+bekam `background: var(--tpl-surface)`, weil ein Mermaid-Block im Markup ein Codeblock ist
+(`<pre><code class="mermaid">`, BEFUNDE 15) und die Codeblock-Behandlung geerbt hatte. Ein Codeblock
+braucht eine Fläche, weil sein Inhalt ein Textblock ist, der sich vom Fließtext lösen muss; eine
+Zeichnung löst sich dadurch, dass sie eine Zeichnung ist. Die Fläche ist weg, die Haarlinie bleibt
+und tut die ganze Arbeit. Dazu Mermaids eigene Platte *innerhalb* des SVG (`rect.background`, bei
+journey und gantt), die sonst als einziges getöntes Rechteck übrig geblieben wäre.
+
+Dabei fiel die Legende des Kreisdiagramms auf. Das Feld neben einem Eintrag ist ein **anderes
+Element** als das Tortenstück, das es benennt, und Mermaid füllt es aus seinen eigenen
+`pie1..pieN`-Themenvariablen statt aus der Serie, die diese Vorlage setzt. Gemessen an der gebauten
+Seite: Das erste Feld kam im Hellen als `--light` und im Dunklen fast schwarz heraus — beides der
+Grund der Seite, also in beiden Modi unsichtbar —, während das Stück daneben Navy war. Die Legende
+liest jetzt dieselbe Serie in derselben Reihenfolge.
+
+Die orange Farbe in den Diagrammen ist übrigens `tertiary`: `--mm-3` ist `tertiary` zu 24 % im
+Grund, und `stroke: var(--tertiary)` zeichnet die Umrisse in Flowchart, Sequenz, Zustand, Gantt und
+gitGraph.

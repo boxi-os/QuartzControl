@@ -27,7 +27,11 @@
 pre:has(> code.mermaid) {
   padding: var(--tpl-space-md);
   padding-block-start: var(--tpl-space-md);
-  background: var(--tpl-surface);
+  // No plate under the drawing. A code block gets a surface because its content is a block of
+  // text that has to separate itself from the prose; a diagram separates itself by being a
+  // drawing, and a tinted plate behind it only adds a second edge inside the first. The hairline
+  // stays and does the whole job.
+  background: none;
   border: var(--tpl-rule-width) solid var(--tpl-rule);
   border-radius: var(--tpl-radius-md);
   margin-block: var(--tpl-space-lg);
@@ -109,9 +113,12 @@ code.mermaid > svg {
 .mermaid .node-bkg,
 .mermaid .mindmap-node .node-bkg,
 .mermaid .timeline-node .node-bkg,
+// Mermaid draws its own plate inside the svg for some kinds (journey, gantt). With the box behind
+// it now unpainted, that plate would be the only tinted rectangle on the page - so it goes too and
+// the hairline of the box is the only edge.
 .mermaid rect.background {
-  fill: var(--mm-1) !important;
-  stroke: var(--mm-edge) !important;
+  fill: none !important;
+  stroke: none !important;
 }
 
 .mermaid .section-0 .node-bkg,
@@ -396,6 +403,22 @@ code.mermaid > svg {
 .mermaid .slice {
   fill: var(--darkgray) !important;
   font-size: 12px !important;
+}
+
+// The swatch beside each legend entry is a *different element* from the slice it names, and
+// mermaid fills it from its own `pie1..pieN` theme variables rather than from the series above.
+// Measured on the built page: the first swatch came out `--light` in light mode and near black in
+// dark - the page's own ground, so invisible in both - while the slice it belonged to was navy.
+// Same series, same order; the rows are one `g.legend` each, so the count is over the groups.
+.mermaid g.legend:nth-of-type(1) rect { fill: var(--secondary) !important; }
+.mermaid g.legend:nth-of-type(2) rect { fill: var(--mm-3) !important; }
+.mermaid g.legend:nth-of-type(3) rect { fill: var(--mm-2) !important; }
+.mermaid g.legend:nth-of-type(4) rect { fill: var(--mm-4) !important; }
+.mermaid g.legend:nth-of-type(5) rect { fill: var(--mm-1) !important; }
+
+.mermaid g.legend rect {
+  stroke: var(--mm-edge) !important;
+  stroke-width: 1px !important;
 }
 
 // The legend text, which mermaid leaves at its own default size.

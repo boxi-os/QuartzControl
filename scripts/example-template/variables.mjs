@@ -29,9 +29,12 @@ export const VARIABLE_OVERRIDES = [
   { key: 'headerFont', light: `"Instrument Sans", ${SANS}` },
   { key: 'bodyFont', light: `"Inter", ${SANS}` },
   { key: 'codeFont', light: `"JetBrains Mono", ${MONO}` },
-  { key: 'font-text', light: `"Inter", ${SANS}` },
+  // Of the three Obsidian-style aliases only `font-interface` survives, and the audit is why:
+  // counted in the built CSS, `--font-interface` has five readers, `--font-text` and
+  // `--font-monospace` have none - in quartz, in any component plugin, and in this template's own
+  // stylesheets, which use `--bodyFont` and `--codeFont` for those two roles. Two more knobs that
+  // could not move a pixel (BEFUNDE 60).
   { key: 'font-interface', light: `"Inter", ${SANS}` },
-  { key: 'font-monospace', light: `"JetBrains Mono", ${MONO}` },
 
   /* ---- three overrides that were removed on 2026-09-06, and why they are not here -------
      `background-modifier-border`, `-hover` and `-focus` were set to `gray` on the grounds that

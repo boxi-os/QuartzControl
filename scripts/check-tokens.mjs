@@ -15,10 +15,12 @@
 // None of the three is visible in the file. All three are visible here, because this does not read
 // the CSS: it changes the token in a live page and counts how many computed values move.
 //
-// Two blind spots are designed around rather than lived with, because both cost a false "dead"
-// on the first run: a token that only shows in a state (the three focus ones) needs something
-// focused, and one that only shows at a breakpoint (the drawer width) needs that breakpoint. So
-// every page is visited at two widths with a control focused.
+// Three blind spots are designed around rather than lived with, because each cost a wrong answer
+// on a real run: a token that only shows in a state (the three focus ones) needs something
+// focused, one that only shows at a breakpoint (the drawer width) needs that breakpoint, and a
+// page that is still settling moves values on its own, which otherwise gets credited to whatever
+// token was being probed. So every page is visited at two widths with a control focused, and every
+// count has the page's own noise floor subtracted.
 //
 //     node scripts/check-tokens.mjs [baseUrl]        default http://localhost:8080
 //
@@ -102,6 +104,24 @@ try {
       await page.waitForTimeout(80)
       visited++
       const base = await page.evaluate(fingerprint)
+      // A page is not perfectly still: a webfont swapping in, mermaid finishing, the graph's canvas
+      // settling - all of them move a computed value between two identical reads. Without this,
+      // that noise gets attributed to whichever token was probed at the time, and a dead one is
+      // reported alive. Measured: `--font-monospace` passed one run and failed the next with
+      // nobody reading it in either. So the floor is taken first and a token has to beat it.
+      const noise = await page.evaluate(([baseline]) => {
+        const props = window.__PROPS
+        let changed = 0
+        let i = 0
+        for (const el of document.querySelectorAll('body *')) {
+          const c = getComputedStyle(el)
+          let row = ''
+          for (const p of props) row += c[p] + '|'
+          if (row !== baseline[i]) changed++
+          i++
+        }
+        return changed
+      }, [base])
       for (const token of VARIABLE_OVERRIDES) {
         const moved = await page.evaluate(
           ([key, value, baseline]) => {
@@ -124,7 +144,7 @@ try {
           },
           [token.key, probe(token.light), base]
         )
-        effect.set(token.key, effect.get(token.key) + moved)
+        effect.set(token.key, effect.get(token.key) + Math.max(0, moved - noise))
       }
     }
     await page.close()

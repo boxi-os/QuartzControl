@@ -109,6 +109,9 @@ const BASE_EXCLUDES = [
 function isSnapshotWorthy(entryName: string): boolean {
   if (entryName === STORE_DIR || entryName === SETTINGS_FILE) return false
   if (entryName === 'backups' || entryName === 'content-backups') return false
+  // The dev server's own output, which buildService tails: transient, truncated at every start,
+  // and nothing anyone would restore a project to.
+  if (entryName === 'logs') return false
   return !entryName.startsWith('deploy-manifest-')
 }
 

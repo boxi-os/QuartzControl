@@ -1,13 +1,15 @@
 import { spawn, execFileSync, type ChildProcess } from 'child_process'
 import { createConnection } from 'net'
+import { closeSync, openSync, readSync } from 'fs'
 import { readdir, stat } from 'fs/promises'
+import { StringDecoder } from 'string_decoder'
 import { join } from 'path'
 import treeKill from 'tree-kill'
 import { EventEmitter } from 'events'
 import type { BuildOutputInfo, LogLine, ServerOptions, ServerStatus, BuildResult } from '@shared/ipc-contract'
 import { needsShell } from './runCommand'
 import { looksLikeQuartzBuild } from './buildOutputGuard'
-import { resolveBuildDir } from './projectDirs'
+import { quartzGuiDir, resolveBuildDir } from './projectDirs'
 import * as runningServersStore from './runningServersStore'
 
 interface RunningServer {
@@ -59,6 +61,88 @@ export function ownedServerPids(): Map<number, string> {
   return owned
 }
 
+// A dev server's output goes to a file this process tails, not down a pipe it holds open. The
+// difference only shows once the app is gone: the read ends of a pipe die with the process that
+// owns them, and the next thing the server writes - quartz writes on every rebuild - kills it on
+// the broken pipe. Measured with the previous spawn (same arguments, same stdio, parent exits as
+// soon as the port answers): both processes alive and answering 200 right after the parent went
+// away, both gone after one note was saved and removed again. The same spawn without pipes
+// survived the same rebuild, and the same pipes survived 25 s of idling - it is the pipes, not
+// the time and not the rebuild. That mattered because "Weiterlaufen lassen" at quit *promises*
+// the server stays reachable, and because `serversOnQuit: 'keep'` makes that promise standing.
+//
+// Not `detached`: the measurement above is what the fix is, and a process group of its own is a
+// change to what stopServer and killAllServers walk. Two files rather than one, because the
+// console colours stderr and interleaving both into one file would lose which is which.
+const SERVER_LOG_POLL_MS = 200
+
+// Reads whatever has been appended since the last look and hands it on as text. Its own read
+// descriptor, positioned by hand: the writer is the child process, and a shared descriptor would
+// have the two of them moving one offset.
+function tailFile(path: string, onText: (text: string) => void): () => void {
+  let position = 0
+  let fd: number | null = null
+  const buffer = Buffer.alloc(64 * 1024)
+  // A rebuild's output is UTF-8 and a read boundary falls wherever it falls; the decoder holds
+  // back the bytes of a character it has not seen the end of yet.
+  const decoder = new StringDecoder('utf8')
+  const pump = (): void => {
+    try {
+      if (fd === null) fd = openSync(path, 'r')
+      for (;;) {
+        const bytes = readSync(fd, buffer, 0, buffer.length, position)
+        if (bytes === 0) return
+        position += bytes
+        const text = decoder.write(buffer.subarray(0, bytes))
+        if (text) onText(text)
+      }
+    } catch {
+      // The file is written by someone else and may not be there yet; the next tick asks again.
+    }
+  }
+  const timer = setInterval(pump, SERVER_LOG_POLL_MS)
+  return () => {
+    clearInterval(timer)
+    pump() // whatever the server managed to write between the last tick and its exit
+    if (fd !== null) closeSync(fd)
+  }
+}
+
+// Opens this run's two log files and starts tailing them. The write descriptors are the child's
+// as soon as it is spawned, so the caller closes its own copies right after; the returned stop()
+// ends both tails.
+function openServerLog(
+  projectId: string,
+  projectPath: string
+): { stdout: number; stderr: number; close: () => void; stop: () => void } {
+  const dir = quartzGuiDir(projectPath, 'logs')
+  const stops: Array<() => void> = []
+  const open = (stream: 'stdout' | 'stderr', name: string): number => {
+    const path = join(dir, name)
+    // Truncated, not appended to: the file belongs to this run, and the console it feeds is the
+    // one this run's log lines go to. What a previous run wrote is in the log buffer already.
+    const fd = openSync(path, 'w')
+    stops.push(tailFile(path, (text) => emitLog(projectId, stream, text)))
+    return fd
+  }
+  const stdout = open('stdout', 'dev-server.out.log')
+  const stderr = open('stderr', 'dev-server.err.log')
+  let closed = false
+  return {
+    stdout,
+    stderr,
+    close: () => {
+      if (closed) return
+      closed = true
+      closeSync(stdout)
+      closeSync(stderr)
+    },
+    stop: () => {
+      for (const stop of stops) stop()
+    }
+  }
+}
+
 export async function startServer(
   projectId: string,
   projectPath: string,
@@ -74,11 +158,15 @@ export async function startServer(
   // No --watch: `quartz build --serve` sets argv.watch itself (quartz/cli/handlers.js), so passing
   // it is at best redundant and offering it as a switch was a control that could not be honoured.
 
+  const log = openServerLog(projectId, projectPath)
   const child = spawn('npx', args, {
     cwd: projectPath,
     shell: needsShell('npx'),
-    stdio: ['ignore', 'pipe', 'pipe']
+    stdio: ['ignore', log.stdout, log.stderr]
   })
+  // The child has its own copies from the moment spawn() returns; holding ours open would put the
+  // app back in the position this file just left, as the last thing keeping the write end alive.
+  log.close()
   const status: ServerStatus = { state: 'starting', options, pid: child.pid, startedAt: new Date().toISOString() }
   runningServers.set(projectId, { process: child, status })
   emitStatus(projectId)
@@ -95,12 +183,11 @@ export async function startServer(
     status.state = 'running'
     emitStatus(projectId)
   })
-  child.stdout?.on('data', (chunk: Buffer) => emitLog(projectId, 'stdout', chunk.toString()))
-  child.stderr?.on('data', (chunk: Buffer) => emitLog(projectId, 'stderr', chunk.toString()))
   // Without this listener a failed spawn (e.g. npx missing from PATH) makes the ChildProcess
   // emit an unhandled 'error', which EventEmitter rethrows and takes the whole main process
   // down - and 'exit' never fires, so the status would otherwise stay stuck on "starting".
   child.on('error', (err) => {
+    log.stop()
     emitLog(projectId, 'stderr', `${err.message}\n`)
     runningServers.delete(projectId)
     void runningServersStore.remove(projectId)
@@ -108,6 +195,7 @@ export async function startServer(
     emitStatus(projectId)
   })
   child.on('exit', (code) => {
+    log.stop()
     const running = runningServers.get(projectId)
     const wasStopping = running?.status.state === 'stopping'
     runningServers.delete(projectId)

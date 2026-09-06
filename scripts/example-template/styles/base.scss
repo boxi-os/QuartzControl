@@ -75,6 +75,17 @@ html {
   // editable in the app's Variables tab - but it follows `gray`, so changing the palette changes
   // it too, which is the more useful half.
   --tpl-rule-control: color-mix(in srgb, var(--gray) 70%, var(--light));
+
+  // The same fade with only its lower half. The right column needs this one rather than the
+  // two-ended mask above: its panel headings stay put while their contents scroll under them
+  // (see "the right column"), so a top fade would leave a permanently half-dissolved heading.
+  // Nothing ever appears above a heading there, so there is nothing at the top edge to fade.
+  --tpl-fade-mask-end: linear-gradient(
+    to bottom,
+    black 0,
+    black calc(100% - var(--tpl-fade)),
+    transparent 100%
+  );
 }
 
 /* ------------------------------------------------------------------ the sticky header */
@@ -488,25 +499,60 @@ h6 {
 //
 // The fade at both ends comes from the rule further up; the components inside give up their own
 // height caps in aside-toc.scss, because the scrolling now happens one level out.
-// The fade padding is also why the two side columns did not start at the same height. The rule
-// above gives the right area --tpl-fade of padding at the top so its first line clears the
-// gradient; the left column has no such padding, because there the padding sits on the tree inside
-// it. Measured at 1440px: "Explorer" at y=113, "Inhaltsverzeichnis" at y=133 - exactly the 20px.
-// The negative margin takes those 20px back off the *box*, so the first component of each column
-// begins on the same line while the padding inside the right one keeps doing its job.
+// The fade padding is also why the two side columns did not start at the same height. The shared
+// rule above gives a scrolling panel --tpl-fade of padding at each end so its first and last line
+// clear the gradient; the left column has no such padding, because there the padding sits on the
+// tree inside it. Measured at 1440px: "Explorer" at y=113, "Inhaltsverzeichnis" at y=133 - exactly
+// the fade. Here the top padding goes away entirely rather than being compensated, because the top
+// of this column no longer fades (see the headings below), and the two columns then begin on the
+// same line by themselves.
 @media (min-width: 801px) {
   .qgframe-area-right {
     position: sticky;
     // Below the header, not under it. --tpl-header-h follows the header as it shrinks, so the
     // column moves up with it instead of leaving a gap that grows on every scroll.
-    //
-    // The fade is subtracted here for the same reason it is subtracted from the margin: `top`
-    // positions the box, and the box now starts --tpl-fade above its own content. Without this the
-    // outline would come to rest 20px lower than intended, which on a shrunken 49px header is the
-    // difference between "under the bar" and "floating".
-    top: calc(var(--tpl-header-h) + var(--tpl-space-lg) - var(--tpl-fade));
-    margin-block-start: calc(var(--tpl-fade) * -1);
+    top: calc(var(--tpl-header-h) + var(--tpl-space-lg));
     align-self: start;
-    max-height: calc(100dvh - var(--tpl-header-h) - 2 * var(--tpl-space-lg) + var(--tpl-fade));
+    max-height: calc(100dvh - var(--tpl-header-h) - 2 * var(--tpl-space-lg));
+    // Only the lower edge fades, and only the lower edge is padded: the upper one is covered by a
+    // heading that stays put.
+    mask-image: var(--tpl-fade-mask-end);
+    -webkit-mask-image: var(--tpl-fade-mask-end);
+    padding-block: 0 var(--tpl-fade);
+  }
+
+  // Scrolling *inside* the column used to take everything with it - the panel's own heading
+  // included, up to the line under the header. Measured: with the pointer over the outline, the
+  // words "INHALTSVERZEICHNIS" travelled to 10px below the bar and dissolved there, and what was
+  // left was a list of headings with nothing saying what the list was.
+  //
+  // The left column never had that problem: the explorer's heading is a sibling of the tree, not a
+  // row inside it, so the tree scrolls and the word "Explorer" stays. This gives the right column
+  // the same behaviour with the means available - each panel heading sticks to the top of the
+  // scrollport, and the next one pushes it out as it arrives.
+  //
+  // The opaque ground is what makes it work rather than decoration: a sticky heading with a
+  // transparent background has the list sliding through its letters. It is also why the top of
+  // this column no longer needs a fade - nothing can appear above a heading any more.
+  .qgframe-area-right :is(.toc-header, .backlinks > h3, .graph > h3) {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--light);
+
+    // And a short wash under it, because an opaque edge alone cuts a row in half: the outline's
+    // rows are 30px and the heading is 44, so whatever is passing under it is sliced through the
+    // middle of its letters and reads as a strikethrough. Measured on "Struktur und Rhythmus" at
+    // scroll 174 of the column. The gradient dissolves the same row instead - the same move the
+    // panel makes at its lower edge, in the one place a mask on the scroller cannot reach.
+    &::after {
+      content: "";
+      position: absolute;
+      inset-inline: 0;
+      inset-block-start: 100%;
+      height: var(--tpl-fade);
+      background: linear-gradient(to bottom, var(--light), transparent);
+      pointer-events: none;
+    }
   }
 }

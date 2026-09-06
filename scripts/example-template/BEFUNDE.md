@@ -764,3 +764,35 @@ abgelesen ist — und nicht für ein Projekt mit selbstgebauten Frames: `.qgfram
 Breakpoint `flex-direction: column`. Auf dem Tablet-Reiter des Boards stehen die Bausteine der
 rechten Spalte deshalb nebeneinander und brechen um, während sie auf der Website untereinander
 stehen. Kein Datenfehler, aber die Vorschau widerspricht dem Ergebnis.
+
+### 55. Beim Rollen *in* der rechten Spalte lief die Überschrift mit bis an den Header
+
+Die Spalte klebt unter der Kopfleiste und rollt ihren Inhalt selbst — und nahm dabei alles mit, die
+Überschrift des Panels eingeschlossen. Gemessen mit dem Zeiger über dem Inhaltsverzeichnis: Das Wort
+„INHALTSVERZEICHNIS" wanderte bis 10 px unter die Linie und löste sich dort im oberen Verlauf auf.
+Übrig blieb eine Liste von Überschriften, an der nichts mehr sagte, was für eine Liste das ist.
+
+Die linke Spalte hatte das Problem nie: Dort ist die Überschrift des Explorers ein *Geschwister* des
+Baums, keine Zeile darin, also rollt der Baum und das Wort „Explorer" bleibt stehen. Die rechte
+Spalte bekommt dasselbe Verhalten mit den Mitteln, die sie hat — jede Panel-Überschrift klebt am
+oberen Rand des Rollbereichs, die nächste schiebt sie hinaus, wenn sie ankommt.
+
+Zwei Dinge gehören dazu, und ohne beide sieht es schlechter aus als vorher:
+
+- **Ein deckender Grund.** Eine klebende Überschrift ohne eigenen Hintergrund lässt die Liste durch
+  ihre Buchstaben gleiten.
+- **Ein kurzer Verlauf darunter.** Eine deckende Kante allein *schneidet* eine Zeile in der Mitte
+  durch: Die Zeilen der Gliederung sind 30 px hoch, die Überschrift 44, und was gerade darunter
+  hindurchgeht, wird quer durch seine Buchstaben abgeschnitten und liest sich als Durchstreichung.
+  Gemessen an „Struktur und Rhythmus" bei Rollstand 174. Der Verlauf löst dieselbe Zeile auf statt
+  sie zu zerschneiden.
+
+Weil oben nun nichts mehr erscheinen kann, braucht die Spalte dort auch keinen Verlauf mehr: Sie
+bekommt `--tpl-fade-mask-end`, dieselbe Maske ohne ihre obere Hälfte, und Polsterung nur noch unten.
+Damit fällt zugleich die negative Marge weg, mit der die obere Polsterung vorher ausgeglichen wurde,
+und die beiden Spalten beginnen von selbst auf derselben Zeile — nachgemessen: beide bei y = 113,
+beide Überschriften bei y = 113.
+
+Verworfen wurde unterwegs die Variante „gar kein internes Rollen": Bei Rollstand 1500 war der ganze
+Apparat aus dem Bild — Inhaltsverzeichnis, Rückverweise, Graph —, und genau dagegen ist die Spalte
+überhaupt klebend.

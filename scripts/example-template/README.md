@@ -436,6 +436,7 @@ Alle gemessen, nicht vermutet. Wer die Vorlage erweitert, spart sich damit diese
 | Der Frame, den ein Seitentyp-Plugin mitbringt | Ist nicht unbedingt benutzbar. Canvas fällt auf Quartz' `full-width` zurück und hat dort keine Höhe; Excalidraw bringt einen eigenen Rahmen ganz ohne Kopfleiste mit. Beide bekommen jetzt `drawing` (BEFUNDE 48) |
 | `.overflow-end` im Explorer | Steht am **Anfang** der Liste, nicht am Ende. Mit Höhe sind das 16 px Luft zwischen Überschrift und erstem Ordner (BEFUNDE 50) |
 | Zwei Regeln, die dasselbe Element verstecken | Die unbedingte gewinnt weiter, auch wenn die spätere nur die *anderen* versteckt. Auf `/en/` war der ganze Explorer-Baum weg (BEFUNDE 51) |
+| Eine klebende Überschrift in einem Roller | Braucht einen deckenden Grund *und* einen kurzen Verlauf darunter. Die deckende Kante allein schneidet die durchlaufende Zeile quer durch die Buchstaben (BEFUNDE 55) |
 | Der Titel einer Galerie-Kachel | Liegt beim Plugin absolut **über** dem Bild und zählt nicht zur Höhe der Kachel. Mit echten Titelbildern ist er unlesbar und zweizeilig abgeschnitten (BEFUNDE 52) |
 | Ein `<img>` in einer fremden Komponente | Erbt die 16 px Absatzabstand aus `body-media.scss`. In einer randlosen Karte ist das ein Streifen Kartengrund über dem Bild |
 | Ein erzeugtes SVG mit doppeltem Attribut | Ist ein XML-Parse-Fehler, kein nachsichtiges HTML: Die Datei rendert als kaputtes Bild. Acht von vierzehn Kacheln waren so leer |

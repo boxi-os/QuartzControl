@@ -138,9 +138,16 @@ export function createZip(entries: ZipEntry[], modified = new Date()): Buffer {
 // What a whole package may unpack to. Every entry lands in memory at once and stays there - the
 // caller gets a Map of buffers - so this number is the peak the main process pays for reading a
 // package, and it is reached by a 522-KB file: deflate of one repeated byte runs at about 1000:1
-// (measured). Twice what this app's own export can produce (content stops at 100 MB, static at
-// 25), and checked against the directory's own declared sizes *before* the first byte is unpacked,
-// so an honest bomb is refused rather than paid for.
+// (measured). Checked against the directory's own declared sizes *before* the first byte is
+// unpacked, so an honest bomb is refused rather than paid for.
+//
+// Not derived from what this app's own export can produce, because that is not a number: of the
+// four parts that carry files, only two have a ceiling of their own (`CONTENT_MAX_BYTES` 100 MB
+// and `STATIC_MAX_BYTES` 25 MB in parts.ts), while `fonts` and `styles` read whatever lies under
+// quartz/static/fonts and quartz/styles. So 256 MiB is a ceiling chosen for what the main process
+// can be asked to hold, and it clears the two parts that *are* bounded by a factor of two. What it
+// costs in practice: the largest single font on this machine is 22 MB, so a full content and
+// static plus eight such fonts would be 301 MB and refused.
 const MAX_UNPACKED_BYTES = 256 * 1024 * 1024
 
 /**

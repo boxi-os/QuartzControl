@@ -52,10 +52,16 @@ html {
   --icon-tag: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z'/%3E%3Ccircle cx='7.5' cy='7.5' r='1' fill='black' stroke='none'/%3E%3C/svg%3E");
 
   // The soft edge on a panel that scrolls. Fixed to the panel, not to its content, so the fade
-  // stays at the top and bottom edges while the content moves under it. Not a token in
-  // variables.mjs: a variable override there may not contain a comma, and this is nothing but
-  // commas. The distance it fades over is --tpl-fade, which IS a token - the same one the panels
-  // use as their padding, so the gradient and the space it needs can never drift apart.
+  // stays at the top and bottom edges while the content moves under it.
+  //
+  // Not a token in variables.mjs, and the reason written here until 2026-09-06 was wrong: it said
+  // an override may not contain a comma. That rule is real but belongs to *frame* values
+  // (`cssTrackValue` / `cssGapValue`, schemas.ts); `cssVariableOverride` forbids only braces, a
+  // semicolon, a backslash and comment markers, and --tpl-shadow has carried three commas through
+  // the app the whole time. The honest reason is the one above the icons: a four-line gradient is
+  // not something anyone edits in a text field, and the number inside it that IS worth editing is
+  // --tpl-fade, which is a token - the same one the panels use as their padding, so the gradient
+  // and the space it needs can never drift apart.
   --tpl-fade-mask: linear-gradient(
     to bottom,
     transparent 0,
@@ -81,41 +87,6 @@ html {
     transparent 100%
   );
 
-  // The edge of something you operate - the search field, the three icon buttons, the language
-  // menu, a link preview, the controls over a drawing.
-  //
-  // It used to be `--tpl-rule-strong`, which is `gray`, and gray measures 6.41:1 against the light
-  // ground and 7.10:1 against the dark one. That is more than twice what WCAG 1.4.11 asks of a
-  // control's boundary, and it looked it: a row of hard black-ish rectangles across the top of
-  // every page. This mixes 70% of the same gray into the ground and lands at 3.24:1 light /
-  // 4.11:1 dark - still above the 3:1 the rule wants, visibly quieter than what it replaces.
-  // Measured in palette.mjs, which computes the same mix rather than trusting a second copy.
-  //
-  // Here rather than in variables.mjs for the same reason as the mask above: a variable override
-  // may not contain a comma, and `color-mix()` is nothing but commas. The trade is that it is not
-  // editable in the app's Variables tab - but it follows `gray`, so changing the palette changes
-  // it too, which is the more useful half.
-  --tpl-rule-control: color-mix(in srgb, var(--gray) 70%, var(--light));
-
-  // The ground of a code block, and the one surface that is neither `lightgray` nor the page.
-  //
-  // A code block is a large area, and the tint that is right for one word of inline code makes a
-  // twenty-line block a grey slab. So it sits between the two: 40% of the card colour in the page
-  // colour. In exchange it gains an edge (`--tpl-rule`), which a card does not need.
-  //
-  // It was a literal `#F1EFE9` in variables.mjs until 2026-09-06 - the only colour in the whole
-  // template that did not come from the palette, and therefore the only one that stayed put when
-  // the palette moved. As a mix it follows `lightgray` and `light`; the value it produces, #F0EFEB,
-  // is within two per channel of the hex it replaces. The price is that it is no longer a knob in
-  // the app's Variables tab, because an override there may not contain a comma.
-  --tpl-surface-code: color-mix(in srgb, var(--lightgray) 40%, var(--light));
-}
-
-// Dark keeps the full card colour rather than a mix of it. Mixing towards the ground there means
-// mixing towards *black*, which takes the block away from the eye instead of setting it apart -
-// the opposite of what the light mix does.
-:root[saved-theme="dark"] {
-  --tpl-surface-code: var(--lightgray);
 }
 
 /* ------------------------------------------------------------------ the sticky header */

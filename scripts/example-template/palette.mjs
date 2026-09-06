@@ -11,6 +11,7 @@
 
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { VARIABLE_OVERRIDES } from './variables.mjs'
 
 export const PALETTE = {
   lightMode: {
@@ -211,30 +212,52 @@ export function syntaxPairs() {
 }
 
 /**
- * The code block's own ground, read out of base.scss rather than kept as a copy.
+ * The value of one token, resolved against the palette rather than copied.
  *
- * It stopped being a literal on 2026-09-06 and became `color-mix(in srgb, var(--lightgray) 40%,
- * var(--light))` for light mode, with dark keeping `lightgray` whole. The syntax check below
- * measures its five corrected token colours against this surface, so a second copy of the number
- * here would be the exact kind of stale value that made the mix worth doing.
+ * Both tokens below are declared in variables.mjs and both are written as an expression over the
+ * nine colours - a `color-mix()` or a bare `var()`. The checks measure contrast *against* them, so
+ * a second copy of the resulting hex here would be the exact kind of stale value that made them
+ * expressions in the first place: change `gray` and this follows, a literal would not.
+ *
+ * Reading the token list rather than parsing base.scss with a regex, which is what this did while
+ * the two lived in the stylesheet. Only these two shapes are understood; anything else is an error
+ * rather than a guess.
+ */
+function tokenColour(key, mode) {
+  const entry = VARIABLE_OVERRIDES.find((o) => o.key === key)
+  if (!entry) throw new Error(`variables.mjs no longer defines --${key}`)
+  const value = (mode === 'darkMode' && entry.dark) || entry.light
+
+  const plain = value.match(/^var\(--([\w-]+)\)$/)
+  if (plain) {
+    const colour = PALETTE[mode][plain[1]]
+    if (!colour) throw new Error(`--${key} is var(--${plain[1]}), and the palette has no such colour`)
+    return colour
+  }
+
+  // `color-mix(in srgb, A p%, B)` is a plain per-channel interpolation of the two
+  // non-premultiplied sRGB values, which is what the arithmetic below does. Every colour this
+  // template mixes is opaque, so there is no alpha to premultiply.
+  const mix = value.match(/^color-mix\(in srgb,\s*var\(--([\w-]+)\)\s*(\d+(?:\.\d+)?)%,\s*var\(--([\w-]+)\)\s*\)$/)
+  if (!mix) throw new Error(`--${key} is neither a var() nor a two-colour srgb mix: ${value}`)
+  const [, from, percent, into] = mix
+  if (!PALETTE[mode][from] || !PALETTE[mode][into]) {
+    throw new Error(`--${key} mixes --${from} into --${into}, and the palette has no such colour`)
+  }
+  const share = Number(percent) / 100
+  const a = parseColor(PALETTE[mode][from])
+  const b = parseColor(PALETTE[mode][into])
+  return '#' + [0, 1, 2].map((i) => Math.round(a[i] * share + b[i] * (1 - share)).toString(16).padStart(2, '0')).join('')
+}
+
+/**
+ * The code block's own ground - `--tpl-surface-code`, resolved rather than copied.
+ *
+ * 40% of the card colour in the page colour for light mode; dark keeps `lightgray` whole. The
+ * syntax check below measures its five corrected token colours against this surface.
  */
 export function codeSurface() {
-  const source = readFileSync(join(import.meta.dirname, 'styles', 'base.scss'), 'utf-8')
-  const found = source.match(
-    /--tpl-surface-code:\s*color-mix\(in srgb,\s*var\(--([\w-]+)\)\s*(\d+(?:\.\d+)?)%,\s*var\(--([\w-]+)\)\s*\)/
-  )
-  if (!found) throw new Error('base.scss no longer defines --tpl-surface-code as a color-mix of two palette colours')
-  const [, from, percent, into] = found
-  const share = Number(percent) / 100
-  const blend = (mode) => {
-    const a = parseColor(PALETTE[mode][from])
-    const b = parseColor(PALETTE[mode][into])
-    return '#' + [0, 1, 2].map((i) => Math.round(a[i] * share + b[i] * (1 - share)).toString(16).padStart(2, '0')).join('')
-  }
-  // The dark override is a plain `var()`, so it is looked up rather than mixed.
-  const dark = source.match(/:root\[saved-theme="dark"\][^}]*--tpl-surface-code:\s*var\(--([\w-]+)\)/)
-  if (!dark) throw new Error('base.scss no longer overrides --tpl-surface-code for dark mode')
-  return { lightMode: blend('lightMode'), darkMode: PALETTE.darkMode[dark[1]] }
+  return { lightMode: tokenColour('tpl-surface-code', 'lightMode'), darkMode: tokenColour('tpl-surface-code', 'darkMode') }
 }
 
 /* ------------------------------------------------- the control edge, read from the file too */
@@ -242,42 +265,20 @@ export function codeSurface() {
 /**
  * `--tpl-rule-control` - the edge of everything a person operates - measured, not assumed.
  *
- * The token is a `color-mix()` and therefore lives in base.scss rather than variables.mjs (a
- * variable override may not contain a comma). It is read back out of that file for the same reason
- * the callout and syntax colours are: the stylesheet is what ships. Only the percentage is read;
- * the two colours it mixes are named in the declaration and looked up in the palette, so changing
- * `gray` moves this row with it.
- *
- * `color-mix(in srgb, A p%, B)` is a plain per-channel interpolation of the two non-premultiplied
- * sRGB values, which is what the arithmetic below does. Both ends are opaque here, so there is no
- * alpha to premultiply.
- *
  * The threshold is 3.0 and not 4.5: WCAG 1.4.11 asks that of a control's boundary. That is the
  * whole reason this token exists - `gray` measures 6.41:1 and 7.10:1, more than twice what the
  * rule wants, and looked it.
  */
 export function controlEdgePairs() {
-  const source = readFileSync(join(import.meta.dirname, 'styles', 'base.scss'), 'utf-8')
-  const found = source.match(
-    /--tpl-rule-control:\s*color-mix\(in srgb,\s*var\(--([\w-]+)\)\s*(\d+(?:\.\d+)?)%,\s*var\(--([\w-]+)\)\s*\)/
-  )
-  if (!found) throw new Error('base.scss no longer defines --tpl-rule-control as a color-mix of two palette colours')
-  const [, from, percent, into] = found
-  const share = Number(percent) / 100
-
   const rows = []
   for (const [mode, colours] of Object.entries(PALETTE)) {
-    if (!colours[from] || !colours[into]) throw new Error(`--tpl-rule-control mixes --${from} into --${into}, and the palette has no such colour`)
-    const a = parseColor(colours[from])
-    const b = parseColor(colours[into])
-    const mixed = [0, 1, 2].map((i) => Math.round(a[i] * share + b[i] * (1 - share)))
-    const hex = '#' + mixed.map((v) => v.toString(16).padStart(2, '0')).join('')
+    const hex = tokenColour('tpl-rule-control', mode)
     rows.push({
       mode,
       fg: `rule-control ${hex}`,
       bg: 'light',
       min: 3.0,
-      what: `edge of a control (${percent}% ${from} in ${into})`,
+      what: 'edge of a control',
       ratio: contrast(hex, colours.light)
     })
   }

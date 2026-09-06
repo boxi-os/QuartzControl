@@ -137,9 +137,8 @@ einer zweiten Liste.
 
 > **Und warum das nicht mehr `gray` selbst ist:** `gray` misst 6,41:1 hell und 7,10:1 dunkel, also
 > mehr als das Doppelte dessen, was 1.4.11 verlangt — und es sah danach aus: eine Reihe harter,
-> fast schwarzer Rechtecke über jeder Seite. `--tpl-rule-control` (in `styles/base.scss`, weil eine
-> Variablen-Überschreibung kein Komma tragen darf und `color-mix()` aus nichts anderem besteht)
-> mischt 70 % `gray` in den Grund und landet bei 3,24:1 hell und 4,11:1 dunkel. Gezeichnet wird er
+> fast schwarzer Rechtecke über jeder Seite. `--tpl-rule-control` mischt 70 % `gray` in den Grund
+> und landet bei 3,24:1 hell und 4,11:1 dunkel. Gezeichnet wird er
 > **gepunktet**: Bei 1 px trägt eine gepunktete Kante etwa die halbe Farbmenge einer durchgezogenen
 > auf, und ein Bedienelement liest sich damit als Feld statt als Kasten. Panels, die wirklich über
 > der Seite schweben — die Suche, das Sprachmenü, der Graph — bleiben durchgezogen; eine gepunktete
@@ -184,6 +183,15 @@ hat keinen eigenen Token mehr.
 **Kein Stylesheet enthält eine Farbe oder eine Länge als Zahl.** Alles liest Tokens — deshalb lässt
 sich die Vorlage nach dem Import in der App unter *Stile → Variablen* weiterdrehen, ohne SCSS
 anzufassen. Wer eine Regel ergänzt, hält sich daran, sonst bröckelt genau diese Eigenschaft.
+
+> **Was hier stehen darf, und was in `styles/base.scss` gehört.** Das Schema
+> (`cssVariableOverride`, `schemas.ts`) verbietet einer Überschreibung genau sechs Dinge: `{`, `}`,
+> `;`, `\`, `/*` und `*/`. Ein **Komma ist erlaubt** — `--tpl-shadow` trägt drei davon. Das
+> Komma-Verbot aus 3.5 gilt für *Frame*-Werte, ein anderes Schema für einen anderen Baustein; bis
+> zum 2026-09-06 stand es an fünf Stellen fälschlich auch hier und hat zwei Farben ihren Platz in
+> der App gekostet. Die Frage ist also nicht, welche Zeichen ein Wert benutzt, sondern ob jemand
+> ihn je ändern wollen würde: Farbe, Länge, Schriftstapel — ja. Ein vierzeiliger Verlauf oder eine
+> 400 Zeichen lange Data-URI — nein, die bleiben in `styles/base.scss`.
 
 ### 3.3 Schriften — `fonts.mjs`
 
@@ -250,8 +258,9 @@ Rechnung der Rinne folgt statt eine zweite Kopie von ihr zu sein.
 **So stellt man das in der App ein:** *Layout → Eigene Frames →* Frame wählen → Breakpoint-Reiter →
 Feld **„Spaltenbreiten (leer = 1fr)"**. Dort steht ein Eingabefeld je Spur; leer heißt `1fr`. Für
 einen Block über mehrere Spuren trägt man in jede seiner Spuren denselben `calc()`-Ausdruck ein.
-Ein Wert darf **kein Komma** enthalten (`schemas.ts`), `calc()`, `min()` und `max()` ohne Komma
-gehen also, `minmax(0, 1fr)` nicht.
+Ein Wert darf **kein Komma** enthalten (`cssTrackValue` in `schemas.ts`), `calc()`, `min()` und
+`max()` ohne Komma gehen also, `minmax(0, 1fr)` nicht. Das gilt **nur für Frame-Werte** — eine
+CSS-Variable darf sehr wohl ein Komma tragen, siehe *Variablen* weiter unten.
 
 672 px sind bei 1 rem rund 70 Zeichen — deshalb deckelt kein Stylesheet mehr die Zeilenlänge
 (`styles/base.scss` sagt das an der Stelle, wo die Regel früher stand). Wer den Text breiter will,
@@ -300,8 +309,9 @@ Stylesheet stehen. Bei den früheren 720 gab es ein 80-px-Band, in dem der Explo
 Schublade war, während der Frame die Seite noch als Tablet auslegte — mit dem sichtbaren Ergebnis,
 dass `.desktop-only`-Komponenten dort noch standen und `.mobile-only` fehlten.
 
-> **Zwei Regeln aus dem Schema:** Ein Wert darf **kein Komma** enthalten — also kein
-> `minmax(0, 1fr)` und kein `var(--x, fallback)`. Und Längen stehen hier absichtlich als Zahl statt
+> **Zwei Regeln aus dem Schema:** Ein Frame-Wert darf **kein Komma** enthalten — also kein
+> `minmax(0, 1fr)` und kein `var(--x, fallback)`. (Nur Frame-Werte; eine CSS-Variable darf eins,
+> siehe 3.2.) Und Längen stehen hier absichtlich als Zahl statt
 > als Token: ein Frame muss auch dann funktionieren, wenn jemand nur den Baustein *Frames*
 > importiert. Wer eine Fläche ausblendet, nutzt `hidden: true` statt sie wegzulassen — das erhält
 > ihre Platzierung auf den anderen Breakpoints.

@@ -1065,3 +1065,84 @@ Zwei Folgen, beide gewollt und beide zu nennen:
   korrigierten Farben des Syntax-Themas gegen genau diese Fläche; die neue `codeSurface()` liest
   die Mischung aus `base.scss` und rechnet sie nach, statt eine zweite Kopie zu führen — sonst wäre
   hier genau die veraltete Zahl entstanden, deretwegen die Mischung sich lohnt.
+
+### 64. Der Sticky-Header schrumpfte und sagte sonst nichts
+
+Beim Scrollen ging die Leiste von 61 px auf 49 px und änderte sonst nichts: derselbe Haarstrich,
+kein Schatten. 12 px sind fast das ganze Budget, das sie hat — die vier Bedienelemente sind 44 px
+und bleiben es —, also war das einzige Signal eine Höhenänderung, auf die niemand achtet. Umgekehrt
+trennte der Haarstrich die Leiste ganz oben von ihrem *eigenen* ersten Absatz, obwohl dort noch
+nichts dahinterlag.
+
+Jetzt trägt die Kante den Zustand: in Ruhe keine Linie und kein Schatten, gescrollt der Haarstrich
+plus `--tpl-shadow-bar`. Eigener Scroll-Bereich von 8 px statt der 4 rem des Schrumpfens, denn „da
+ist etwas hinter mir" stimmt ab dem ersten Pixel.
+
+`--tpl-shadow-bar` ist bewusst nicht `--tpl-shadow`. Das heißt in dieser Vorlage „dieses Ding
+schwebt über der Seite" und gehört den fünf Overlays, die das tun; 24 px Weichzeichnung unter einer
+randlosen Leiste liest sich wie ein Schlagschatten auf einem Foto. Die Geometrie ist gemessen, und
+der erste Versuch war auf eine Art falsch, die `getComputedStyle` nicht zeigen kann:
+`0 10px 22px -18px` schrumpft die Schattenfläche um 18 px, sodass ihr unterster Pixel 3 px unter der
+Leiste landete — ein Schatten, der in den berechneten Werten steht und praktisch nichts malt. Aus
+einem Screenshot dekodiert verdunkelt der ausgelieferte Wert den Grund in der ersten Zeile unter dem
+Haarstrich von 252 auf 220 und klettert über 19 Zeilen zurück; dunkel 22 → 11 über 15 Zeilen.
+
+Drei Engines bei 1456 px: Chromium und WebKit gleich, Firefox hat keine Scroll-Timeline, der
+`@supports`-Wächter hält, und es bleibt beim schlichten Haarstrich — dieselbe Rückfallebene, auf der
+das Schrumpfen schon ruht.
+
+### 65. Nichts sagte, wie weit man ist
+
+Mehrere Seiten hier sind drei Bildschirme hoch, und nichts darauf sagte, wie viel noch kommt; das
+Inhaltsverzeichnis sagt, *was* kommt, was eine andere Frage ist. Jetzt füllt sich der Haarstrich von
+links: ein Pseudo-Element auf der Leiste, doppelte Linienbreite, von derselben Scroll-Timeline
+getrieben wie das Schrumpfen und der Schatten. Kein eigener Balken darüber oder darunter — das wäre
+die vierte waagerechte Linie in den obersten 60 px, und so viele Linien hat diese Vorlage nicht zu
+vergeben.
+
+Das `::after` existiert nur innerhalb des `@supports`-Wächters, Firefox bekommt also keinen bei
+irgendeiner Breite eingefrorenen Streifen (nachgemessen: gar kein Pseudo-Element). Auf einer Seite,
+die zu kurz zum Scrollen ist, ist die Timeline inaktiv und `scaleX(0)` zeigt nichts — richtig so, es
+gibt keinen Fortschritt zu melden. Bewegung im Sinne von `prefers-reduced-motion` ist nichts davon:
+die Linie läuft nicht von selbst, sie *ist* die Scroll-Position.
+
+**Beide Keyframe-Enden stehen ausgeschrieben, und das ist eine Reparatur, keine Ordnungsliebe.** Mit
+nur einem `to`-Keyframe ist der Startwert der eigene `scaleX(0)` des Elements, und WebKit löst
+diesen zugrundeliegenden Wert gegen den *bereits animierten* auf — der Fortschritt potenziert sich,
+und die Linie meldet das Quadrat: 6 % nach einem Viertel, 25 % nach der Hälfte, 57 % nach drei
+Vierteln. An beiden Enden richtig, dazwischen überall falsch, also genau die eine Form von falsch,
+die eine Fortschrittslinie nicht haben darf. Mit ausgeschriebenem `from` stimmen Chromium und WebKit
+an sechs Positionen auf drei Nachkommastellen überein.
+
+### 66. Die untere Ausblendung der rechten Spalte gab es nur im Dunkeln
+
+`--tpl-fade-mask-end` stand in `:root[saved-theme="dark"]`, und daran ist nichts schemaabhängig:
+eine Maske trägt nur Alpha, `black` heißt also in beiden Modi „deckend". Im hellen Modus war die
+Custom Property leer, `mask-image: var(--tpl-fade-mask-end)` damit zur Berechnungszeit ungültig, und
+die rechte Spalte kam mit `mask-image: none` heraus — die weiche Unterkante, um die herum die
+klebenden Panel-Überschriften gebaut sind, war für jeden, der die Seite hell liest, schlicht nicht
+da. Beim Durchsehen der Kommentare im selben Block aufgefallen, nicht beim Suchen: eine leere Custom
+Property ist in der Datei unsichtbar und im Browser stumm.
+
+### 67. Fünf Kommentare behaupteten eine Regel, die es nicht gibt
+
+„Eine Variablen-Überschreibung darf kein Komma tragen" stand in `variables.mjs` (dreimal),
+`styles/base.scss` (zweimal), `palette.mjs` und im README — und stimmt nicht. Das Komma-Verbot ist
+echt, gehört aber zu den *Frame*-Werten (`cssTrackValue` / `cssGapValue` in `schemas.ts`).
+`cssVariableOverride` verbietet genau `{`, `}`, `;`, `\`, `/*` und `*/`; der Leser in
+`styleService.ts` (`--([\w-]+)\s*:\s*([^;]+);`) kommt mit Kommas klar, und `--tpl-shadow` trägt seit
+jeher drei davon durch die App.
+
+Die Behauptung hat zwei Farben ihren Platz in der Variablen-Ansicht gekostet: `--tpl-rule-control`
+und `--tpl-surface-code` waren deswegen nach `styles/base.scss` gewandert. Beide sind zurück in
+`variables.mjs`, wo eine Farbe hingehört, `--tpl-surface-code` mit seinem dunklen Wert als
+`dark`-Feld statt als eigenem Block. 50 statt 48 Tokens, alle lebendig
+(`npm run check:tokens`); die 89 Kontrastpaare stehen unverändert.
+
+`palette.mjs` liest die beiden jetzt aus der Token-Liste statt `base.scss` mit einer Regex zu
+zerlegen — eine gemeinsame `tokenColour()` für beide, die genau zwei Formen versteht (`var(--x)` und
+einen zweifarbigen srgb-Mix) und bei allem anderen einen Fehler wirft statt zu raten.
+
+Was bleibt: der Test dafür, ob etwas nach `variables.mjs` gehört, ist **nicht**, welche Zeichen der
+Wert benutzt, sondern ob jemand ihn je ändern wollen würde. Eine Farbe, eine Länge, ein
+Schriftstapel — ja. Ein vierzeiliger Verlauf oder eine 400 Zeichen lange Data-URI — nein.

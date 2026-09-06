@@ -11,6 +11,16 @@
 //    colour - and they stay editable in the app afterwards, which a value buried in SCSS is not.
 //
 // Every stylesheet below reads these; no raw hex, no magic number in a rule.
+//
+// What an override may NOT contain, checked against `cssVariableOverride` in schemas.ts rather
+// than remembered: `{`, `}`, `;`, `\`, `/*` and `*/`, and that is the whole list. A **comma is
+// fine** - `--tpl-shadow` has carried three of them through the app since it was written. Three
+// comments in this file and two in base.scss claimed the opposite until 2026-09-06 and cost two
+// colours their place in the app's Variables tab; the comma rule is real but belongs to *frame*
+// values (`cssTrackValue` / `cssGapValue`), which is a different schema for a different part.
+// So the test for whether something belongs here is not what characters it uses: it is whether a
+// person would ever want to change it. A colour, a length, a font stack - yes. A four-line
+// gradient or a 400-character data URI - no, and those stay in base.scss.
 
 const SANS = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
 const MONO = 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace'
@@ -71,12 +81,38 @@ export const VARIABLE_OVERRIDES = [
   { key: 'tpl-rule', light: 'var(--lightgray)', dark: 'var(--lightgray)' },
   { key: 'tpl-rule-strong', light: 'var(--gray)', dark: 'var(--gray)' },
   { key: 'tpl-rule-width', light: '1px' },
+  // The edge of something you operate - the search field, the three icon buttons, the language
+  // menu, a link preview, the controls over a drawing.
+  //
+  // It used to be `--tpl-rule-strong`, which is `gray`, and gray measures 6.41:1 against the light
+  // ground and 7.10:1 against the dark one. That is more than twice what WCAG 1.4.11 asks of a
+  // control's boundary, and it looked it: a row of hard black-ish rectangles across the top of
+  // every page. This mixes 70% of the same gray into the ground and lands at 3.24:1 light /
+  // 4.11:1 dark - still above the 3:1 the rule wants, visibly quieter than what it replaces.
+  // Measured in palette.mjs, which computes the same mix rather than trusting a second copy.
+  { key: 'tpl-rule-control', light: 'color-mix(in srgb, var(--gray) 70%, var(--light))' },
 
   // Surfaces. A card sits on `lightgray`; a quiet tint uses `highlight`.
   { key: 'tpl-surface', light: 'var(--lightgray)', dark: 'var(--lightgray)' },
-  // `tpl-surface-code` used to be here with a literal `#F1EFE9` for light mode - the one colour in
-  // this template that did not follow the palette. It is a `color-mix()` in base.scss since
-  // 2026-09-06 and therefore cannot live here: an override may not contain a comma.
+  // The ground of a code block, and the one surface that is neither `lightgray` nor the page.
+  //
+  // A code block is a large area, and the tint that is right for one word of inline code makes a
+  // twenty-line block a grey slab. So it sits between the two: 40% of the card colour in the page
+  // colour. In exchange it gains an edge (`--tpl-rule`), which a card does not need.
+  //
+  // Dark keeps the full card colour rather than a mix of it. Mixing towards the ground there means
+  // mixing towards *black*, which takes the block away from the eye instead of setting it apart -
+  // the opposite of what the light mix does.
+  //
+  // It was a literal `#F1EFE9` here until 2026-09-06 - the only colour in the template that did not
+  // come from the palette, and therefore the only one that stayed put when the palette moved. It
+  // then spent one day in base.scss on the mistaken grounds that an override may not contain a
+  // comma (see below), and is back where a colour belongs.
+  {
+    key: 'tpl-surface-code',
+    light: 'color-mix(in srgb, var(--lightgray) 40%, var(--light))',
+    dark: 'var(--lightgray)'
+  },
   { key: 'tpl-surface-tint', light: 'var(--highlight)', dark: 'var(--highlight)' },
 
   // Type scale, in one place so the six heading levels stay related to each other.
@@ -176,7 +212,8 @@ export const VARIABLE_OVERRIDES = [
   { key: 'tpl-icon-sm', light: '0.95rem' },
 
   // How far a scrolling panel fades out at each end. See --tpl-fade-mask in base.scss, which is
-  // the mask itself - it cannot live here because a variable override may not carry a comma.
+  // the mask itself - it stays there because a four-line gradient is not something anyone edits in
+  // a text field, not because of the comma rule that used to be given as the reason (below).
   //
   // It is also the panel's own top and bottom padding, and therefore the gap between the heading
   // of a panel and its first row: the padding is what keeps that row from being read through the

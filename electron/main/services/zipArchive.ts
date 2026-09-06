@@ -207,12 +207,23 @@ export function readZip(buffer: Buffer): Map<string, Buffer> {
     let data: Buffer
     if (method === METHOD_STORE) data = Buffer.from(body)
     else if (method === METHOD_DEFLATE) {
-      // A stream that runs past the length its own directory entry gave is a damaged entry, and
-      // that is what it is called: the RangeError zlib throws says nothing a user could act on.
-      try {
-        data = inflateRawSync(body, { maxOutputLength: uncompressedSize })
-      } catch {
-        throw new Error(mainT('zipEntryCorrupt', { name }))
+      // An empty file is not unpacked at all, and whether it lies in the archive deflated or
+      // stored is the writing tool's choice: Info-ZIP, ditto and this app's own createZip store
+      // it, Python's zipfile deflates it to the two bytes `03 00`. It must not reach the call
+      // below, because zlib validates maxOutputLength as >= 1 and throws ERR_OUT_OF_RANGE on 0
+      // before it unpacks a byte - which this reader would then have called a damaged entry,
+      // refusing a package it read before the ceiling existed (measured both ways with Electron's
+      // node). Nothing is skipped by not unpacking: the crc/length check below still runs, and
+      // crc32 of nothing is 0.
+      if (uncompressedSize === 0) data = Buffer.alloc(0)
+      else {
+        // A stream that runs past the length its own directory entry gave is a damaged entry, and
+        // that is what it is called: the RangeError zlib throws says nothing a user could act on.
+        try {
+          data = inflateRawSync(body, { maxOutputLength: uncompressedSize })
+        } catch {
+          throw new Error(mainT('zipEntryCorrupt', { name }))
+        }
       }
     } else throw new Error(mainT('zipUnsupportedMethod', { method }))
 

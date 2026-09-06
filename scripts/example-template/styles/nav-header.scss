@@ -48,6 +48,8 @@
   justify-content: space-between;
   align-items: center;
   gap: var(--tpl-space-sm);
+  // The edge in its resting state, and the fallback for a browser without scroll timelines. What
+  // it becomes once the page moves is below, under "the bar lands".
   border-block-end: var(--tpl-rule-width) solid var(--tpl-rule);
   // Sticky on every width, not only on a phone. The four controls and the way back to the home
   // page are the things a reader reaches for in the middle of a long article, and this site has
@@ -65,6 +67,55 @@
   // No transition: the animation in base.scss is bound to the scroll position, and a transition
   // on the same property would chase it a frame behind.
   padding-block: var(--tpl-header-pad);
+}
+
+/* --------------------------------------------------------------------- the bar lands */
+
+// At the top of the page the bar has nothing under it, and a line under it then separates it from
+// its own first paragraph for no reason. Once the page moves, body text is running underneath and
+// the bar has to say so. So the edge carries the state:
+//
+//   at rest    no line at all, no shadow - the bar is part of the page
+//   scrolled   the hairline, plus --tpl-shadow-bar
+//
+// This is the second half of what shrinking should have been doing on its own. Measured before:
+// the bar goes 61px -> 49px between scrollY 0 and 64, which is nearly the whole budget it has (the
+// four controls are 44px and stay 44px), and *nothing else* changed - same line, no shadow, so the
+// only signal was 12px of height that nobody watches for.
+//
+// A range of its own, and much shorter than the shrink's 4rem: the height may take a while to
+// settle, but "something is behind me" is true from the first pixel. --tpl-space-xs is 8px.
+//
+// Two properties in the keyframes rather than a registered 0-1 number that everything else reads:
+// both of them are animatable as they are, and a number would need a color-mix() around each use
+// to turn itself back into a colour. `box-shadow` interpolates layer by layer and pads the shorter
+// list with a transparent layer, which is exactly the from-state we want anyway.
+//
+// The border WIDTH never changes, only its colour - --tpl-header-h is 44px of control plus padding
+// plus that one pixel (base.scss), and a border that comes and goes would move the right column
+// with it.
+@keyframes tpl-header-land {
+  from {
+    border-block-end-color: transparent;
+    box-shadow: none;
+  }
+  to {
+    border-block-end-color: var(--tpl-rule);
+    box-shadow: var(--tpl-shadow-bar);
+  }
+}
+
+// Behind the same guard as the shrink in base.scss, and for the same measured reason: without a
+// timeline the shorthand runs as a 0s animation and `fill: both` lands on the *end* keyframe, so
+// the bar would sit permanently shadowed at the top of the page in Firefox. With the guard those
+// browsers keep the plain hairline above and never grow a shadow, which is the honest fallback.
+@supports (animation-timeline: scroll()) {
+  .qgframe-area-header,
+  #quartz-body > .header {
+    animation: tpl-header-land linear both;
+    animation-timeline: scroll(root block);
+    animation-range: 0 var(--tpl-space-xs);
+  }
 }
 
 // The two groups, told apart by what is inside them: quartz writes the same `flex-component` class
@@ -126,7 +177,10 @@
     padding-inline: var(--tpl-space-sm) var(--tpl-space-sm);
     padding-inline-start: calc(var(--tpl-target) + var(--tpl-space-sm));
     background: var(--light);
-    // The bar sits above the article as it scrolls past, so it needs its own edge.
+    // The bar sits above the article as it scrolls past, so it needs its own edge. Restated here
+    // because this rule also restates the padding; "the bar lands" above then takes it over from
+    // the first pixel of scroll, on this width as on every other - an animation outranks any
+    // normal declaration, so the media query does not need its own copy of that.
     border-block-end: var(--tpl-rule-width) solid var(--tpl-rule);
   }
 

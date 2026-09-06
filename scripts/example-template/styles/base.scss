@@ -130,6 +130,11 @@ html {
 //
 // 8px and 22.4px are --tpl-space-xs and --tpl-text-xl at the root font size. They are only the
 // fallback for a browser without scroll timelines; the keyframes below still use the tokens.
+//
+// Two lengths and nothing else. What the bar's *edge* does over the same scroll - losing its line
+// at rest, gaining --tpl-shadow-bar once text runs underneath - is in nav-header.scss under "the
+// bar lands", because it touches only properties that rule owns and no shared token. These two
+// are here because the right column reads --tpl-header-h to stick below the bar.
 @property --tpl-header-pad {
   syntax: "<length>";
   inherits: true;

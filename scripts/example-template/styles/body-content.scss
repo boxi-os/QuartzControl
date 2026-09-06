@@ -85,18 +85,89 @@ article {
     margin-block: var(--tpl-space-2xs);
   }
 
-  // Task lists: the checkbox is decoration, the text carries the state.
+  /* ------------------------------------------------------------------- task lists */
+
+  // Six states, not two. Obsidian lets any character stand in the brackets - `[/]` in Arbeit,
+  // `[-]` verworfen, `[>]` verschoben, `[?]` fraglich - and until 2026-09-06 quartz dropped all
+  // but `[ ]` and `[x]`, so this template said so on its own tasks page and left it at that
+  // (BEFUNDE 18). The plugin writes `data-task="<zeichen>"` on the `li` now; measured in this
+  // site's build, all six arrive. So they get drawn.
+  //
+  // One system, two colours. The box is always the same outlined square, the mark inside it is a
+  // masked glyph, and the colour says which half of the six a state belongs to: accent for the
+  // two that are still going somewhere (erledigt, in Arbeit), muted for the three that are not
+  // (verworfen, verschoben, fraglich). A reader who does not know the characters still sees two
+  // groups; a reader who does gets the exact one.
+  //
+  // The native checkbox stays the box rather than being hidden behind a pseudo-element: it is
+  // what the markup offers, it is focusable, and quartz leaves it enabled. `appearance: none`
+  // takes its painting away, nothing else.
   input[type="checkbox"] {
+    appearance: none;
+    // `em` on a form control means the control's own font, and WebKit gives inputs a smaller one:
+    // measured 12x12 against 14x14 in Chrome and Firefox from the same rule. One line makes the
+    // box the same size in all three.
+    font: inherit;
     margin-inline-end: var(--tpl-space-xs);
-    accent-color: var(--secondary);
-    width: 1em;
-    height: 1em;
+    inline-size: 1.1em;
+    block-size: 1.1em;
+    flex: none;
+    vertical-align: -0.2em;
+    // The whole glyph - box and mark - comes from the mask; the element paints nothing of its own.
+    // See base.scss for why the box is not a `border`.
+    background-color: var(--gray);
+    mask-image: var(--icon-task-open);
+    mask-size: 100% 100%;
+    mask-repeat: no-repeat;
   }
 
-  li:has(> input[type="checkbox"]:checked) {
+  // Driven by the character the author typed, not by `:checked` - a page states what its author
+  // wrote, and clicking a box on a built site changes nothing but the pixel. The one exception is
+  // the open state, where a reader's tick means something to them.
+  li[data-task="x"] > input[type="checkbox"],
+  li[data-task=" "] > input[type="checkbox"]:checked {
+    mask-image: var(--icon-task-done);
+    background-color: var(--secondary);
+  }
+
+  li[data-task="/"] > input[type="checkbox"] {
+    mask-image: var(--icon-task-doing);
+    background-color: var(--secondary);
+  }
+
+  li[data-task="-"] > input[type="checkbox"] {
+    mask-image: var(--icon-task-cancelled);
+  }
+
+  li[data-task=">"] > input[type="checkbox"] {
+    mask-image: var(--icon-task-forwarded);
+  }
+
+  li[data-task="?"] > input[type="checkbox"] {
+    mask-image: var(--icon-task-question);
+  }
+
+  // Done and cancelled are both finished with; the difference is whether it happened. Same
+  // treatment for the line, and the box above is what tells them apart.
+  li[data-task="x"],
+  li[data-task="-"],
+  li[data-task=" "]:has(> input[type="checkbox"]:checked) {
     color: var(--gray);
     text-decoration: line-through;
     text-decoration-color: color-mix(in srgb, var(--gray) 50%, transparent);
+  }
+
+  // And the other three have to be *un*struck, which is not obvious and was measured: the markdown
+  // parser calls every non-space character checked, so `[/]`, `[>]` and `[?]` arrive with
+  // `checked` on the input and `is-checked` on the item - and quartz's own
+  // `li:has(> input:checked) { text-decoration: line-through; color: var(--gray) }` then strikes
+  // four of the six states. In Arbeit, verschoben und fraglich sind nicht erledigt; sie sind noch
+  // offen, und ein durchgestrichener offener Punkt sagt das Gegenteil.
+  li[data-task="/"],
+  li[data-task=">"],
+  li[data-task="?"] {
+    color: inherit;
+    text-decoration: none;
   }
 
   ul:has(> li > input[type="checkbox"]) {

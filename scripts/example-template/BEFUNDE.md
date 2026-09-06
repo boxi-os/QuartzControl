@@ -277,8 +277,15 @@ beginnt immer auf Seite 1. Ein gewöhnlicher Link (`[Text](datei.pdf#page=2)`) b
 
 **Nachgemessen am 2026-09-06: gilt nicht mehr.** `obsidian-flavored-markdown` schreibt das Zeichen
 als `data-task` an das `<li>`; im gebauten HTML dieser Vorlage stehen alle sechs Zustände
-(`" "`, `"x"`, `">"`, `"/"`, `"?"`, `"-"`). Damit lässt sich `li[data-task="/"]` gestalten — die
-Vorlage nutzt das noch nicht. Der ursprüngliche Befund lautete:
+(`" "`, `"x"`, `">"`, `"/"`, `"?"`, `"-"`). **Die Vorlage zeichnet sie seit demselben Tag**: ein
+gerundetes Kästchen mit der Marke darin, in Akzentfarbe für die zwei, die noch irgendwohin führen
+(erledigt, in Arbeit), gedämpft für die drei, die es nicht tun (verworfen, verschoben, fraglich) —
+zwei Gruppen für den, der die Zeichen nicht kennt, und der genaue Zustand für den, der sie kennt.
+Zwei Dinge daran mussten gemessen werden und stehen als eigene Befunde: 76 (eine Maske schneidet
+den Rahmen des Elements weg) und 77 (der Parser hält jedes Zeichen außer dem Leerzeichen für
+„checked", weshalb Quartz vier der sechs Zustände durchstreicht).
+
+Der ursprüngliche Befund lautete:
 
 Obsidian erlaubt beliebige Zeichen im Kästchen (`[/]`, `[-]`, `[>]`, `[?]`) und zeigt dafür eigene
 Symbole. Gemessen: Quartz erkannte nur `[ ]` und `[x]`; alles andere wird zu einem leeren Kästchen,
@@ -1541,3 +1548,35 @@ Mitte einer Zelle, die der längere Nachbar aufspannt.
 Dasselbe Muster wie beim `flex-basis` der Suche (im Kommentar an `.search`): Was `Flex.tsx` inline
 schreibt, kann kein Stylesheet ohne `!important` überstimmen — der Ausweg ist jedes Mal, eine
 *andere* Eigenschaft zu setzen, die die Frage vorher entscheidet.
+
+### 76. Eine Maske schneidet den Rahmen des Elements weg
+
+Beim Zeichnen der Aufgaben-Zustände (Befund 18): Der erste Entwurf gab dem Kästchen einen `border`
+und legte die Marke als `mask-image` darauf. Im Bild war der Rahmen dann nicht da — und zwar in
+allen drei Engines, also kein Interop-Problem, sondern die Definition: Eine Maske beschneidet
+*alles*, was das Element malt, den Rahmen eingeschlossen. Was außerhalb der Maskenfläche liegt,
+verschwindet, auch wenn es gar kein Hintergrund ist.
+
+Die Lösung ist, den Kasten in die Maske zu nehmen: Jeder der sechs Zustände ist **ein** Glyph aus
+gerundetem Rechteck plus Marke, das Element selbst malt nichts. Der offene Zustand ist dann
+schlicht das Rechteck ohne Inhalt, und es gibt keine Naht zwischen zwei Zeichenwegen.
+
+Nebenbei gemessen: `em` an einem Formularelement rechnet gegen dessen *eigene* Schriftgröße, und
+WebKit gibt Eingabefeldern eine kleinere. Dieselbe Regel ergab 12×12 px in WebKit gegen 14×14 in
+Chrome und Firefox; `font: inherit` macht daraus überall dasselbe Kästchen.
+
+### 77. Für den Parser ist jedes Zeichen außer dem Leerzeichen „erledigt"
+
+Ebenfalls beim Zeichnen der Zustände, und der Grund, warum es nicht mit fünf Regeln getan war:
+`[/]`, `[-]`, `[>]` und `[?]` kommen mit `checked` am `<input>` und `is-checked` am `<li>` an —
+gemessen, nicht vermutet. Für Markdown ist alles, was nicht das Leerzeichen ist, ein Haken.
+
+Quartz baut darauf eine eigene Regel: `li:has(> input:checked)` bekommt `text-decoration:
+line-through` und `color: var(--gray)`. Damit sind vier der sechs Zustände durchgestrichen, obwohl
+nur zwei davon erledigt sind — „in Arbeit", „verschoben" und „fraglich" sind offen, und eine
+Durchstreichung sagt das Gegenteil. Die Vorlage nimmt sie für diese drei ausdrücklich zurück.
+
+Die Regel steckt in einem verschachtelten Block, weshalb ein erster Sondenlauf sie nicht fand: Wer
+`document.styleSheets` nach der Ursache einer berechneten Eigenschaft durchsucht, muss in
+`@media`- und `@layer`-Blöcke hineinsteigen, sonst sieht er nur die oberste Ebene und schließt
+daraus auf die eigene Regel.

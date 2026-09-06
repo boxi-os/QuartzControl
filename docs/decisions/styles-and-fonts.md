@@ -186,3 +186,28 @@ kein Gewicht" ist eine eigene Meldung, keine stille Lücke. Dieselbe Unterscheid
 Gegen die drei Fälle in der laufenden App gefahren: `100 900`, `100 900` + `italic`, und die Regel
 ohne Gewicht — danach `styles.check()` → `ok`.
 
+**Sechs Aufgaben-Zustände statt zwei (2026-09-06).** Obsidian lässt in den Klammern jedes Zeichen
+zu — `[/]` in Arbeit, `[-]` verworfen, `[>]` verschoben, `[?]` fraglich — und Quartz warf sie bis
+vor kurzem weg. Seit `obsidian-flavored-markdown` das Zeichen als `data-task` an das `<li>`
+schreibt, kommen alle sechs an (im Build der Beispielvorlage gezählt), und die Vorlage zeichnet
+sie: ein gerundetes Kästchen mit der Marke darin, Akzentfarbe für die zwei, die noch irgendwohin
+führen, gedämpft für die drei, die es nicht tun.
+
+Zwei Dinge daran waren nicht vorherzusehen und sind gemessen:
+
+**Eine Maske schneidet den Rahmen weg.** Der erste Entwurf gab dem Kästchen einen `border` und
+legte die Marke als `mask-image` darauf; der Rahmen war im Bild nicht da, in allen drei Engines.
+Eine Maske beschneidet alles, was das Element malt — Rahmen, Schatten, Hintergrund. Also gehört
+der Kasten *in* die Maske: Jeder Zustand ist ein Glyph aus Rechteck plus Marke, das Element selbst
+malt nichts, und der offene Zustand ist das Rechteck ohne Inhalt.
+
+**Für den Parser ist jedes Zeichen außer dem Leerzeichen ein Haken.** `[/]`, `[-]`, `[>]` und `[?]`
+kommen mit `checked` am Input an, und Quartz' eigenes `li:has(> input:checked)` streicht sie durch.
+Vier der sechs Zustände waren damit durchgestrichen, obwohl nur zwei erledigt sind. Für die drei
+offenen nimmt die Vorlage das ausdrücklich zurück.
+
+Dazu eine Kleinigkeit, die dieselbe Regel in WebKit anders aussehen ließ: `em` an einem
+Formularelement rechnet gegen dessen eigene Schriftgröße, und WebKit gibt Eingabefeldern eine
+kleinere — 12×12 px gegen 14×14 in Chrome und Firefox. `font: inherit` macht daraus überall
+dasselbe Kästchen.
+

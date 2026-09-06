@@ -44,3 +44,26 @@ optionslose Instanz stehen zu bleiben.
 Gemessen an einem frisch angelegten Kontrollprojekt (`node scripts/build-example-template.mjs
 --only 10,11 --fresh`): „Layout-Box-Instanzen im Ziel … 6 von 6“, keine Warnung, Build grün. An
 derselben Stelle vorher: 1 von 6.
+
+**Vier Wege durch dieselbe Stelle, alle gemessen (2026-09-06).** „Sechs von sechs" zählt Zeilen und
+beantwortet damit nur ein Viertel der Frage. Nachgemessen wurde deshalb an drei Stationen —
+Quellprojekt, entpacktes `.qtpl`, Zielprojekt — und über jeden Eintrag, nicht nur über die Boxen:
+verglichen wurden `enabled`, `order`, `options` und `layout` je Instanzschlüssel.
+
+- **Leeres Ziel (0 → 6).** 52 Einträge im Paket, 57 im Ziel (die vier Frames und der Theme-Eintrag
+  reisen in ihren eigenen Bausteinen). **Null Abweichungen** an beiden Übergängen; jede der sechs
+  Boxen kommt mit ihrer eigenen Klasse, ihrer Position, ihrer Priorität und ihrer Gruppe an.
+- **Zweiter Import in dasselbe Ziel (6 → 6).** Weiterhin 57 Einträge, null Abweichungen, und die
+  Vorschau meldet jetzt wahrheitsgemäß `+0 ~52` statt sechsmal denselben Namen.
+- **Teilweise vorhanden (2 → 6).** Der Fall, den weder „leer" noch „vollständig" abdeckt: zwei
+  Boxen im Ziel, der ersten absichtlich falsche Optionen gegeben. Danach sechs, die falschen
+  Optionen **überschrieben**, die fehlenden vier in ihrer Reihenfolge angehängt (510, 520, 530,
+  540), 53 → 57 Einträge, keine Warnung.
+- **`projectWins` (6 → 6).** Alle 52 Einträge übersprungen, die sechs Boxen einzeln benannt
+  (`pluginSkipped:quartz-layout-box` sechsmal), nichts verdoppelt, nichts verloren.
+
+Die Reihenfolge im YAML-Array weicht dabei ab — die Frames stehen im Ziel woanders, weil sie ihr
+eigener Baustein schreibt. Das ist folgenlos und nachgesehen statt angenommen:
+`quartz/plugins/loader/config-loader.ts` sortiert nach `entry.order ?? manifest.defaultOrder ?? 50`
+und die Komponenten danach nach `priority`. Beide Felder stimmen exakt überein.
+

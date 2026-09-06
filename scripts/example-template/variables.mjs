@@ -203,6 +203,17 @@ export const VARIABLE_OVERRIDES = [
   // of the gap.
   { key: 'tpl-fade', light: '14px' },
 
+  // How far the page itself dissolves before it goes under the sticky bar - the same gesture the
+  // scrolling panels make at their own edges, one size larger because it acts on running text
+  // rather than on a list of short rows. Its own token and not --tpl-fade: the two are the same
+  // idea at two scales, and tying them together would mean a panel's soft edge could not be tuned
+  // without moving the page's.
+  //
+  // The ceiling is measured: the first painted thing below the bar starts 32px down on every page
+  // at every width, and a fade longer than that would be visible at the top of the page, where
+  // there is nothing scrolled under the bar to soften.
+  { key: 'tpl-page-fade', light: '24px' },
+
   // The mobile navigation drawer. `min()` keeps it off the right edge on a 360px phone while
   // giving a four-level tree room to breathe on a tablet-sized screen.
   { key: 'tpl-drawer-width', light: 'min(86vw, 340px)' }

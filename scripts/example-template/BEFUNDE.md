@@ -1257,3 +1257,56 @@ die Leiste kommt.
 
 Gemessen in drei Engines bei 1456, 780, 620 und 500 px, mit dem echten und einem langen Namen: eine
 Zeile überall, Auslassungspunkte wo nötig, kein seitliches Scrollen.
+
+### 72. Der Inhalt verschwand an einer harten Kante unter der Leiste
+
+Die rollenden Boxen lösen ihren Inhalt an den Rändern auf (`--tpl-fade-mask`), die Seite selbst tat
+es nicht: Text lief unter die undurchsichtige Leiste und war von einer Zeile zur nächsten weg. Jetzt
+macht der Seitenkörper dieselbe Geste — ein 24 px hoher Verlauf von `--light` nach durchsichtig,
+direkt unter der Leiste, `pointer-events: none`.
+
+Zwei Dinge daran sind gemessen statt entschieden.
+
+**Er darf statisch sein**, also ohne Scroll-Timeline, und das ist der ganze Gewinn: unter der Leiste
+beginnt das erste gezeichnete Element auf **jeder** Seite und bei 1456, 810 und 390 px genau 32 px
+tiefer. Ein Verlauf, der kürzer ist als dieser Abstand, ist im Ruhezustand unsichtbar und muss
+deshalb nicht ein- und ausgeblendet werden. Damit steht er außerhalb des `@supports`-Wächters — und
+ist das einzige Stück des Headers, das **auch Firefox bekommt** (siehe Befund 70).
+
+**Er brauchte ein Pseudo-Element, und es gab keins mehr.** Die Leiste hatte beide vergeben: `::before`
+an die graue Spur, `::after` an den Fortschritt. Zusammengelegt: die Linie ist jetzt *ein* Kasten mit
+zwei Hintergrundebenen — Akzent über Steuerton — und der Füllstand ist die `background-size` der
+Akzentebene, von 0 % auf 100 %. Ein `transform` war die Alternative und kann den Kasten nicht teilen,
+weil das Skalieren die Spur mitskaliert. Nachgemessen an fünf Scroll-Positionen: Chromium und WebKit
+interpolieren `background-size` auf drei Nachkommastellen gleich.
+
+Der Verlauf beginnt eine Haarlinie unter der Leiste statt an ihrer Kante, sonst deckte er das untere
+Pixel der Linie zu — `::after` kommt nach `::before` und malt darüber. Die klebende rechte Spalte
+setzt bei `--tpl-header-h + --tpl-space-lg` an, also 1 px unter dem Ende des Verlaufs; dort ist er
+bereits durchsichtig.
+
+`--tpl-page-fade` ist ein eigenes Token und nicht `--tpl-fade`: dieselbe Idee in zwei Maßstäben, und
+zusammengebunden ließe sich die weiche Kante einer Box nicht mehr einstellen, ohne die der Seite zu
+verschieben. 50 Tokens.
+
+### 73. Die Token-Prüfung konnte Pseudo-Elemente nicht sehen
+
+`scripts/check-tokens.mjs` beantwortet die Frage „bewegt dieses Token etwas", indem es die Variable
+in einer laufenden Seite verdreht und zählt, wie viele berechnete Werte sich ändern. Die Liste der
+Kästen dafür war `document.querySelectorAll('body *')` — und **ein Pseudo-Element steht da nicht
+drin**. Ein Token, das nur ein `::before` oder `::after` erreicht, konnte also keinen einzigen
+gemessenen Wert bewegen und kam als „liest niemand" heraus.
+
+Aufgefallen an `--tpl-page-fade` (Befund 72): Es setzt die Höhe des Verlaufs unter der Leiste, malt
+auf jeder Seite, und die Prüfung meldete null. Im selben Loch saßen drei weitere: die Linie am
+unteren Rand der Leiste liest `--tpl-rule-control`, `--secondary` und `--tpl-rule-width`, und alle
+drei kamen bisher nur deshalb durch, weil sie *woanders* auch noch gelesen werden.
+
+Die Kastenliste wird jetzt einmal pro Seite gebaut und enthält jedes Element plus jedes `::before`
+und `::after`, dessen `content` nicht `none` ist. Einmal statt bei jeder Messung, weil sonst jede
+der 50 Sonden alle Elemente zweimal zusätzlich fragen müsste; so kosten die paar Dutzend
+tatsächlich vorhandenen Pseudo-Elemente nichts Messbares. Dazu vier Eigenschaften mehr in der Liste
+(`backgroundSize`, `transform`, `insetBlockStart`, `insetBlockEnd`) — ein Token, das nur eine davon
+bewegt, wäre sonst weiter unsichtbar.
+
+Danach: 50 Tokens, keins tot, `--tpl-page-fade` mit 44 Treffern.

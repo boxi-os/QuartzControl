@@ -130,70 +130,68 @@
 
 /* ------------------------------------------------------- the edge once the page moves */
 
-// Two things ride on the bottom edge, both driven by the document's own scroll:
+// Three things happen at the bottom of the bar, and two of them share a box.
 //
-//   a track   a grey line, two hairlines thick, that fades in as soon as the page moves. This is
-//             what says "text is running underneath me". It was a shadow until 2026-09-06 and a
-//             line is the better answer here: this template draws with lines, and a shadow under a
-//             full-width bar reads as a drop shadow on a photograph rather than as depth.
-//   a fill    the same line in the accent colour, filling from the left with how far down the
-//             document you are. Several pages here are three screens tall and nothing on them said
-//             how much was left; the table of contents says what is *coming*, a different question.
+//   the line    ::before, two hairlines thick. A grey track that fades in as soon as the page
+//               moves - this is what says "text is running underneath me" - with the accent
+//               filling it from the left to say how far down the document you are. One line, two
+//               jobs: the track *is* the unfilled part of the progress line, which is what a
+//               progress line has always looked like. A second bar above or below would be the
+//               fourth horizontal line in the top 60px of the page, and this template does not
+//               have that many lines to spend.
+//   the fade    ::after, below the bar. The article does not vanish at a hard edge, it dissolves
+//               into the page over the last few pixels before it goes under - the same gesture the
+//               scrolling panels make at their own edges (--tpl-fade-mask in base.scss).
 //
-// One line doing both jobs rather than two stacked: the track is the unfilled part of the progress
-// line, which is what a progress line has always looked like. A second bar above or below would be
-// the fourth horizontal line in the top 60px of the page, and this template does not have that
-// many lines to spend.
+// Track and fill share ::before because there are only two pseudo-elements and the fade needs one.
+// They are two background layers - the accent over the control tone - and the *fill* is the accent
+// layer's `background-size`, animated from 0% to 100%. A transform would have been the other way
+// to do it and cannot share the box: scaling the element scales the track with it.
 //
-// At rest neither is visible - the track is transparent, the fill is scaled to nothing - and what
+// At rest neither is visible: the line's opacity is 0 and the accent layer has no width. What
 // remains is the 1px hairline above, which the bar keeps at every scroll position.
-//
-// Track is ::before and fill is ::after so the fill paints over the track: both are positioned,
-// neither carries a z-index, so document order decides.
-//
-// Only inside the guard, and that is the whole degradation story: without a scroll timeline
-// neither pseudo-element is created, so a browser that cannot drive them does not get a grey line
-// stuck on or a stripe frozen at an arbitrary width - it gets the plain hairline. On a page too
-// short to scroll the timeline is inactive, the animations do not apply, and the same is true.
-//
-// Nothing here is motion in the sense `prefers-reduced-motion` means: neither travels on its own,
-// they are the scroll position.
 @supports (animation-timeline: scroll()) {
-  .qgframe-area-header::before,
-  .qgframe-area-header::after {
+  .qgframe-area-header::before {
     content: "";
     position: absolute;
-    // The bar is `position: sticky` and therefore the containing block for both.
+    // The bar is `position: sticky` and therefore the containing block.
     inset-block-end: calc(-1 * var(--tpl-rule-width));
     inset-inline: 0;
     // Twice the hairline, so the edge reads as *thickening* rather than as a new object sitting on
     // it, and so it covers the hairline exactly instead of hanging under it.
     height: calc(2 * var(--tpl-rule-width));
     pointer-events: none;
-    animation-timeline: scroll(root block);
-  }
-
-  .qgframe-area-header::before {
-    background: var(--tpl-rule-control);
+    background-image:
+      linear-gradient(var(--secondary), var(--secondary)),
+      linear-gradient(var(--tpl-rule-control), var(--tpl-rule-control));
+    background-repeat: no-repeat;
+    background-size: 0% 100%, 100% 100%;
     opacity: 0;
-    animation-name: tpl-header-track;
-    animation-fill-mode: both;
-    animation-timing-function: linear;
-    // Its own range, and much shorter than the shrink's: the height may take a while to settle,
-    // but "something is behind me" is true from the first pixel. --tpl-space-xs is 8px.
-    animation-range: 0 var(--tpl-space-xs);
+    // Two animations, two ranges, one timeline each. The track's range is much shorter than the
+    // shrink's: the height may take a while to settle, but "something is behind me" is true from
+    // the first pixel. --tpl-space-xs is 8px; `normal` is the whole document.
+    animation: tpl-header-track linear both, tpl-header-progress linear both;
+    animation-timeline: scroll(root block), scroll(root block);
+    animation-range: 0 var(--tpl-space-xs), normal;
   }
+}
 
-  .qgframe-area-header::after {
-    background: var(--secondary);
-    // `left`, not a logical keyword - transform-origin has none. Both languages on this site read
-    // left to right; an RTL translation would want `right` here and that is the one line it costs.
-    transform-origin: left center;
-    transform: scaleX(0);
-    animation-name: tpl-header-progress;
-    animation-fill-mode: both;
-    animation-timing-function: linear;
-  }
+// The fade is deliberately *outside* the guard, and it is the one part of this that Firefox gets:
+// a fixed gradient needs no scroll timeline. It can be static because there is nothing under it to
+// wash out at rest - measured at 1456, 810 and 390px, the first painted thing below the bar starts
+// 32px down on every page, and the fade is shorter than that.
+//
+// It begins one hairline below the bar rather than at its edge, so that it does not paint over the
+// line above: ::after comes after ::before in document order and would otherwise cover its lower
+// pixel with opaque --light.
+.qgframe-area-header::after {
+  content: "";
+  position: absolute;
+  inset-block-start: calc(100% + var(--tpl-rule-width));
+  inset-inline: 0;
+  height: var(--tpl-page-fade);
+  background: linear-gradient(to bottom, var(--light), transparent);
+  pointer-events: none;
 }
 
 @keyframes tpl-header-track {
@@ -211,15 +209,15 @@
 // *already animated* one, so the progress compounds and the line reads the square of how far you
 // are: 6% at a quarter of the way down, 25% at half, 57% at three quarters. Right at both ends,
 // wrong everywhere in between, which is the one shape of wrong a progress line may not have.
-// Measured at six positions in all three engines; with the `from` spelled out, WebKit and Chromium
-// agree to three decimals. The track's keyframes are written out for the same reason.
+// Measured at six positions in all three engines. The track's keyframes are written out for the
+// same reason.
 @keyframes tpl-header-progress {
   from {
-    transform: scaleX(0);
+    background-size: 0% 100%, 100% 100%;
   }
 
   to {
-    transform: scaleX(1);
+    background-size: 100% 100%, 100% 100%;
   }
 }
 

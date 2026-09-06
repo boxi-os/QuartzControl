@@ -456,6 +456,7 @@ Alle gemessen, nicht vermutet. Wer die Vorlage erweitert, spart sich damit diese
 | Der Frame, den ein Seitentyp-Plugin mitbringt | Ist nicht unbedingt benutzbar. Canvas fällt auf Quartz' `full-width` zurück und hat dort keine Höhe; Excalidraw bringt einen eigenen Rahmen ganz ohne Kopfleiste mit. Beide bekommen jetzt `drawing` (BEFUNDE 48) |
 | `.overflow-end` im Explorer | Steht am **Anfang** der Liste, nicht am Ende. Mit Höhe sind das 16 px Luft zwischen Überschrift und erstem Ordner (BEFUNDE 50) |
 | Zwei Regeln, die dasselbe Element verstecken | Die unbedingte gewinnt weiter, auch wenn die spätere nur die *anderen* versteckt. Auf `/en/` war der ganze Explorer-Baum weg (BEFUNDE 51) |
+| Ein `flex-basis` als Breite einer Gruppenkomponente | Setzt das Element richtig, zählt in Gecko und WebKit aber nicht in die max-content-Breite der Gruppe. Die Werkzeugleiste war dort 322 statt 452 px breit — erst zwei Zeilen, dann 102 px seitliches Scrollen. Eine `width` am Element statt eines Basis am Wrapper (BEFUNDE 58) |
 | Eine Regel aus Quartz' `base.scss` abgelesen | Ihr Selektor gibt es in einem Frame-Projekt vielleicht gar nicht. `.sidebar` heißt hier `.qgframe-area-left` — der Lesemodus tat deshalb nichts (BEFUNDE 57) |
 | Eine feste Spur im Raster | Ist nicht stauchbar und hebt die Mindestbreite, auch an einem Breakpoint, an dem sie nichts trägt (BEFUNDE 56) |
 | Eine klebende Überschrift in einem Roller | Braucht einen deckenden Grund *und* einen kurzen Verlauf darunter. Die deckende Kante allein schneidet die durchlaufende Zeile quer durch die Buchstaben (BEFUNDE 55) |
@@ -470,6 +471,13 @@ Alle gemessen, nicht vermutet. Wer die Vorlage erweitert, spart sich damit diese
     npm run template:example -- --check-contrast    # 89 Farbpaare
     npm run template:example -- --only 9            # SCSS übersetzt? alle zehn Bausteine gefüllt?
     npm run template:example -- --only 9,10,11      # exportieren und in ein leeres Projekt importieren
+
+**Und in mehr als einer Engine.** Ein Durchgang in Chrome allein hat am 2026-09-06 zwei Fehler
+durchgelassen, die auf jeder Seite sichtbar waren — beide an der intrinsischen Breite einer
+Flex-Gruppe, wo Gecko und WebKit anders rechnen als Blink (BEFUNDE 58). Was von Flexbox- oder
+Grid-Größen abhängt, wird in mindestens zwei Engines gemessen:
+
+    node node_modules/playwright-core/cli.js install firefox webkit
 
 Phase 11 ist der eigentliche Beweis: Sie legt ein zweites Projekt an, macht einen echten Dry-Run,
 importiert und baut. Was dort ankommt, ist das, was ein anderer Mensch bekommt.

@@ -155,25 +155,24 @@ export const PLUGIN_PATCHES = {
   //
   // `grow` is gone with the move: in a 335px sidebar the search field wanting the leftover width
   // was right, in a header row it would push the two icon buttons to the far edge of a 1440px page.
-  // A fixed basis takes its place, and it has to be set *here* rather than in nav-toolbar.scss:
-  // quartz wraps every component of a group in a `div` of its own and writes that div's flex values
-  // as an inline style from this config, so the flex item is the wrapper and not `.search`. A basis
-  // in the stylesheet landed on a box that was already sized to its content - measured at 1728,
-  // 1440, 1100 and 900px, the field came out 110px wide every time, reading as a button rather than
-  // a field.
   //
-  // `shrink: false` belongs with it. A shrinkable item contributes only its content width to the
-  // group's intrinsic size, so the group stayed 322px wide while its children wanted 452, and the
-  // toolbar wrapped onto a second row: the header went from 61 to 101px on every page. With the
-  // shrink off the group measures 452px and the header is 61px again. The one width where shrinking
-  // would matter is the phone, and there nav-toolbar.scss takes the basis back off.
+  // What replaced it was `basis: '15rem'` here, and that is gone again since 2026-09-06: the width
+  // is now `width: 15rem` on `.search` in nav-header.scss. A flex-basis sizes the item correctly in
+  // every engine - measured 240px in all three - but Gecko and WebKit do not count it towards the
+  // *group's* max-content contribution; they use the item's content width, 110px. The group came
+  // out 322px wide instead of 452 in Firefox and Safari and its own children hung 130px out of the
+  // window. A width on the component makes the wrapper's content size 240px, which every engine
+  // agrees on. See nav-header.scss for the full measurement.
+  //
+  // `shrink: false` stays: without it the field gives up its width to the two icon buttons long
+  // before the bar is full.
   search: {
     enabled: true,
     layout: {
       position: 'header',
       priority: 30,
       group: 'toolbar',
-      groupOptions: { basis: '15rem', shrink: false }
+      groupOptions: { shrink: false }
     }
   },
   darkmode: { enabled: true, layout: { position: 'header', priority: 40, group: 'toolbar' } },

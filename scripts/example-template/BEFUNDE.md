@@ -835,3 +835,49 @@ ist einen Zeiger weit weg.
 Das ist derselbe Fehlertyp wie 53 und 56: Eine Annahme über die eingebaute Anordnung, die ein
 selbstgebauter Frame nicht erfüllt. Wer eine Regel aus Quartz' `base.scss` abliest, muss prüfen, ob
 ihr Selektor in einem Frame-Projekt überhaupt vorkommt.
+
+### 58. Zweimal derselbe Interop-Unterschied im Kopfbereich — nur in Firefox und Safari sichtbar
+
+Gemeldet als „Umbrüche der Elemente rechts im Header: in Chrome ist alles richtig". Reproduziert mit
+Playwrights Firefox- und WebKit-Bauten gegen dieselbe gebaute Site, und es waren zwei Symptome
+derselben Ursache.
+
+**Die Ursache.** Die Werkzeugleiste ist eine Flex-Gruppe, und ihr Suchfeld bekam seine Breite über
+`layout.groupOptions.basis: '15rem'` — also als Inline-`flex-basis` auf dem Wrapper, den Quartz um
+jede Komponente einer Gruppe legt. Das *Element* ist damit in jeder Engine 240 px breit, gemessen in
+allen dreien. Aber:
+
+| | Chrome | Firefox | WebKit |
+| --- | ---: | ---: | ---: |
+| Suchfeld | 240 px | 240 px | 240 px |
+| Beitrag zur max-content-Breite der Gruppe | 240 px | **110 px** | **110 px** |
+| Breite der Gruppe | 452 px | **322 px** | **322 px** |
+
+Gecko und WebKit rechnen einen `flex-basis` nicht in den max-content-Beitrag des Flex-Items ein, sie
+nehmen dessen Inhaltsbreite — und 110 px ist genau die Breite, die das Feld ohne Vorgabe hätte
+(steht seit 2026-09-04 als Messung in `nav-header.scss`). Die Gruppe war also 130 px schmaler als
+ihr eigener Inhalt.
+
+**Symptom eins:** Mit `wrap: 'wrap'` an der Gruppe brachen die vier Bedienelemente auf zwei Zeilen
+um, der Kopf ging von 61 px auf 113 px — auf *jeder* Seite und bei jeder Breite von 900 bis 1456 px.
+
+**Symptom zwei:** Mit `wrap: 'nowrap'` hörte der Umbruch auf, und stattdessen hing das letzte Kind
+130 px aus dem Fenster: **jede Seite scrollte 102 px seitwärts** (94 px bei 900 px Fenster). Der
+Kopf war 61 px hoch und sah in der Messung geheilt aus — die zweite Prüfung fand es nur, weil sie
+auch auf seitliches Scrollen sah.
+
+**Behoben** an der Wurzel: `width: 15rem` auf `.search` statt eines `flex-basis` auf dem Wrapper.
+Eine Breite am Element macht die Inhaltsbreite des Wrappers zu 240 px, und darüber sind sich alle
+drei Engines einig — nachgemessen: Gruppe 436 px in Chrome, Firefox und WebKit. `wrap: 'nowrap'`
+bleibt trotzdem, weil eine umbrechende Flex-Gruppe auch sonst keine verlässliche Größe hat, und
+`shrink: false` bleibt, damit das Feld seine Breite nicht an die Icon-Knöpfe abgibt.
+
+Der ganze Durchgang danach in drei Engines: 38 Seiten × 3 Breiten × 3 Engines = 342 Aufrufe, kein
+seitliches Scrollen, kein zu hoher Kopf, keine umgebrochene Gruppe.
+
+**Die Lehre für die Arbeitsweise, und sie ist die eigentliche:** Der systematische Durchgang davor
+lief in Chrome allein und meldete „nichts gefunden", während zwei Seitenleisten-breite Fehler
+dastanden. Alles, was an intrinsischer Größe von Flexbox oder Grid hängt, muss in mindestens zwei
+Engines gemessen werden. Die Bauten dafür liegen jetzt auf dem Rechner:
+
+    node node_modules/playwright-core/cli.js install firefox webkit

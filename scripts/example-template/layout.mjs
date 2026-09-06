@@ -27,18 +27,31 @@ export const LAYOUT_CONFIG = {
     },
     // Search, dark mode, reader mode and the language switcher read as one control strip rather
     // than four stacked blocks. They sit at the end of the header on every breakpoint since
-    // 2026-09-04 - see plugins.mjs for why they left the sidebar. `wrap` stays: it is what keeps
-    // the strip from overflowing the app bar on a 360px phone, where the four of them share the
-    // row with the drawer trigger and the site name.
+    // 2026-09-04 - see plugins.mjs for why they left the sidebar.
     //
     // The fourth arrived with the multilanguage plugin and cost the site name its place in the
     // app bar: measured at 390px, the title had 84px with three controls and 24px with four,
-    // which renders as "M…". nav-page-title.scss drops it below 480px; the word mark next to it
+    // which renders as "M…". nav-header.scss drops it below 480px; the word mark next to it
     // is a link home and carries the same name.
+    //
+    // `nowrap`, and it is the whole reason the bar behaves the same in three engines.
+    //
+    // A wrapping flex container has no interoperable max-content size. Measured at 1456, 1280,
+    // 1100 and 900px with the same build: Chrome sizes this group to the sum of its children,
+    // 452px, and it stays on one line. Firefox and WebKit size it to 322px - narrower than its own
+    // contents - and the four controls then break onto a second row, taking the header from 61px
+    // to 113px at *every* width. Nothing in the stylesheet can fix that; `flex-wrap: nowrap` on the
+    // header itself does not reach inside the group, and the group's own wrap is written as an
+    // inline style from this file (Flex.tsx), which no rule outranks.
+    //
+    // Wrapping was here for the 360px phone, and it is not needed there: the search gives up its
+    // 15rem and becomes a 44px button, so the four controls measure 4 x 44 + 3 x 4 = 188px in the
+    // 292px the app bar leaves beside the drawer trigger. Re-measured in all three engines at 390
+    // and 360px after the change.
     toolbar: {
       priority: 35,
       direction: 'row',
-      wrap: 'wrap',
+      wrap: 'nowrap',
       gap: '0.5rem'
     }
   },

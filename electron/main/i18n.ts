@@ -77,6 +77,8 @@ const STRINGS = {
     updateBlockedByLocalChanges:
       'Eigene Änderungen an Dateien, die das Update ebenfalls anfasst, stehen im Weg. Committe oder verwirf sie unter Git-Sync und versuche es erneut.\n\n',
     warmupBuild: 'Aufwärm-Build:',
+    serverLogUnavailable:
+      'Die Ausgabe des Servers lässt sich nicht mitschreiben ({{reason}}). Der Server läuft, diese Konsole bleibt für diesen Lauf leer.',
 
     // Project creation
     createTargetExists:
@@ -284,6 +286,8 @@ const STRINGS = {
     updateBlockedByLocalChanges:
       'Your own changes to files the update touches as well are in the way. Commit or discard them under Git sync and try again.\n\n',
     warmupBuild: 'Warm-up build:',
+    serverLogUnavailable:
+      'The server’s output cannot be recorded ({{reason}}). The server is running; this console stays empty for this run.',
 
     createTargetExists:
       '“{{path}}” already contains files. Pick a different name or a different folder — an existing folder is never overwritten.',

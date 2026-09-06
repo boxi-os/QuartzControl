@@ -1594,8 +1594,13 @@ export default {
     planKept: '{{count}} bleibt unverändert',
     planIdentical: '{{count}} identisch',
     planOutside: '{{count}} wird abgelehnt',
+    planOutside_other: '{{count}} werden abgelehnt',
     planContentIsSymlink:
         'Wird übersprungen: Der Content-Ordner dieses Projekts ist ein Link in einen anderen Ordner. Dorthin schreibt eine Vorlage nichts.',
+    planOutsideDetail: 'Wird abgelehnt: {{names}} würde außerhalb des Projekts geschrieben werden.',
+    planOutsideDetail_other: 'Wird abgelehnt: {{names}} würden außerhalb des Projekts geschrieben werden.',
+    planOutsideMore: '{{names}} und {{count}} weitere',
+    quotedName: '„{{value}}“',
     planNoChange: 'ändert nichts',
     willInstall: 'Wird nachinstalliert: {{packages}}',
     importButton: 'Vorlage anwenden',

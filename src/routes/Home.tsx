@@ -17,6 +17,7 @@ import { useAppStore } from '../state/store'
 import { Button, Card, CardHeading, Field, InfoNote, Modal, Select, TextInput, Toggle } from '../components/ui'
 import ProjectAvatar from '../components/ProjectAvatar'
 import { ImportOutcome } from '../components/ImportOutcome'
+import { formatIpcError } from '../components/ErrorSurface'
 import { GROUP_ICONS } from './navConfig'
 import { formatRelativeTime } from '../utils/format'
 import { useAsyncAction } from '../hooks/useAsyncAction'
@@ -323,7 +324,10 @@ export default function Home(): JSX.Element {
                     })
                   }
                 } catch (err) {
-                  await finish(String(err))
+                  // formatIpcError, not String(err): a package that cannot be read now says why
+                  // (loadPackage no longer swallows the reader's message), and "Error: Error
+                  // invoking remote method 'templatePackage:plan': Error: …" would bury it.
+                  await finish(formatIpcError(err))
                   return
                 }
               }

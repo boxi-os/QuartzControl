@@ -123,7 +123,14 @@ ist genau das, worauf sich der Strom entpackt, weil eine transformierte Tabelle 
 Länge trägt; `origLength` je WOFF-Tabelle; `uncompressedSize` je ZIP-Eintrag — und eine absolute
 Decke, wo sie es nicht ist: 64 MiB je Schrift, 256 MiB je Paket. Die Paket-Decke wird gegen die
 *angemeldeten* Größen geprüft, bevor das erste Byte entpackt wird, sonst zahlt man die ehrliche
-Bombe. 256 MiB ist doppelt so viel, wie der eigene Export erzeugen kann (Inhalt 100 MB, static 25).
+Bombe. 256 MiB ist **nicht** aus dem eigenen Export abgeleitet — das ist keine Zahl: Von den vier
+Bausteinen, die Dateien tragen, haben nur zwei eine eigene Grenze (`CONTENT_MAX_BYTES` 100 MB,
+`STATIC_MAX_BYTES` 25 MB), `fonts` und `styles` lesen ohne. Die Decke ist also für das gewählt, was
+der Hauptprozess halten soll, und lässt den beiden begrenzten Bausteinen den Faktor zwei. Was sie
+kostet: Die größte Einzelschrift auf diesem Rechner ist 22 MB; ein volles `content` und `static`
+plus acht solcher Schriften wären 301 MB und würden abgelehnt. (Der Satz stand hier bis zum
+2026-09-07 als „doppelt so viel, wie der eigene Export erzeugen kann (Inhalt 100 MB, static 25)" —
+ein Urteil über zwei von vier Bausteinen, das viertes Review als Befund geführt hat.)
 `fontService` fragt zusätzlich die Dateigröße *vor* `readFile`, weil auch die unkomprimierte Datei
 ganz in den Speicher geht; darüber wird die Regel geschrieben wie immer, dieselbe Antwort wie bei
 einer unlesbaren Datei.

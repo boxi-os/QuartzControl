@@ -310,7 +310,8 @@ Tabelle:
 
 Beide tragen `quartz` **und** `--serve`, und beide tragen die Portnummern in ihren Argumenten. Damit
 kommen die Ports aus der Kommandozeile statt aus einer Socket-Tabelle — der einzige unportable Teil
-entfällt. `lsof` bleibt für genau eine Sache: das Arbeitsverzeichnis (`lsof -a -p <pid> -d cwd -Fn`
+entfällt, solange die Flags dastehen (was fehlt, wenn sie fehlen, steht weiter unten). `lsof` bleibt
+sonst für genau eine Sache: das Arbeitsverzeichnis (`lsof -a -p <pid> -d cwd -Fn`
 lieferte `/Users/boxi/Documents/Example`), unter Linux dafür `/proc/<pid>/cwd`. Das Verzeichnis ist,
 was einen gefundenen Server einem Projekt zuordnet, und deshalb steht in der Zeile ein Projektname
 statt einer PID. Zur Gegenprobe von außen antwortet der Port mit
@@ -344,11 +345,33 @@ Signal, weshalb die Dev-Server-Karte darüber im selben Moment auf „Gestoppt" 
 Dritter Fall, mit `python3 -m http.server 8080` gemessen: „Port 8080 ist belegt, aber von keinem
 erkennbaren Quartz-Server."
 
+**Ein Vorgabewert ist eine Vermutung, kein Fund (2026-09-07).** Ein Kandidat ohne `--port` bekam
+`8080` und wurde damit geprobt — und ein `probeHttp(8080)`, auf dem ein *echter* Server antwortet,
+gab der Zeile dessen Titel und Generator-Marke, mit der PID des Fremden. Damit stand ein Prozess in
+der Liste, der nur „quartz" im Pfad und irgendwo `--serve` in den Argumenten trug, und „Beenden"
+hätte ihn getroffen. Gemessen mit einem Skript, das mit
+`/Users/boxi/Obsidian/QuartzProjekte/Example --serve` aufgerufen wurde und keinen Port hält:
+
+| | Liste | `killServer` auf diese PID |
+|---|---|---|
+| vorher | `pid=7078 port=8080 ws=3001 reachable=false` | die Nadel sagt ja |
+| nachher | leer | `{"stopped":false}`, der Prozess lebt |
+
+Der Vorgabewert bleibt die richtige Vermutung, er muss nur bestätigt werden: `lsof -a -p <pid>
+-iTCP -sTCP:LISTEN -P -n -Fn` sagt, welche Ports der Prozess wirklich hält, und nur wenn 8080
+darunter ist, wird er zum Server auf 8080. Gefragt wird das ausschließlich bei einem Kandidaten
+ohne Flag — jeder Server dieser App und jeder mit `--port` gestartete kostet weiterhin kein `lsof`.
+Gegenprobe mit einem Prozess, der ohne `--port` tatsächlich auf 8080 hört: gefunden, `reachable:
+true`, `wsPort: undefined` (er hält 3001 nicht und nennt es nicht), und `killServer` beendet ihn.
+
 **Beendet wird nie von selbst.** Ein fremder Server gehört jemand anderem — einem Terminal, einem
 zweiten Fenster, einer hart beendeten Sitzung —, und das steht als Hinweis unter der Liste und
 noch einmal im Bestätigungsdialog, der die Herkunft benennt. Die PID wird vor dem Signal ein
 zweites Mal geprüft: zwischen dem Scan, der die Liste gefüllt hat, und dem Klick kann die Nummer
-längst jemand anderem gehören.
+längst jemand anderem gehören. Geprüft wird seit dem 2026-09-07 nicht mehr mit der Nadel allein,
+sondern mit dem ganzen Weg der Liste gegen eine frisch gelesene Prozesstabelle — die Nadel ist
+bewusst weit (ein Ordner mit großem Q im Pfad genügt für ihre eine Hälfte), und signalisiert werden
+darf nur, was auch angeboten wurde.
 
 **Windows sagt „unbekannt", nicht „keiner".** Dort gibt es kein `ps`; `Win32_Process` beantwortet
 dieselbe Frage, ist hier aber nicht messbar. Ein ungemessener Scan, der „keine gefunden" meldet,
@@ -505,13 +528,36 @@ Die zweite Hälfte des Versprechens fiel gleich mit: Ein toter Prozess fällt be
 dem `isAlive`-Filter von `detectOrphanedServers()`, die Frage „Weiterlaufen lassen?" kam also gar
 nicht erst. Und `serversOnQuit: 'keep'` macht die Wahl zur Dauereinstellung.
 
-**Die Ausgabe geht deshalb in `.quartz-gui/logs/dev-server.{out,err}.log`, und Main tailt die zwei
-Dateien** in dasselbe `emitLog()`, das vorher am Pipe-Ereignis hing — die Zeilen leben ohnehin in
-Main (`services/logBuffer.ts`), ein Tail ist dort zu Hause. Zwei Dateien statt einer, weil
-`LogConsole` stderr rot färbt und eine gemeinsame Datei genau das verlöre. Bei jedem Start
-abgeschnitten: die Datei gehört zu diesem Lauf. Kein `detached` — die Messung oben *ist* der Fix,
-und eine eigene Prozessgruppe wäre eine Änderung an dem, was `stopServer` und `killAllServers`
-ablaufen.
+**Die Ausgabe geht deshalb in `.quartz-gui/logs/dev-server-<pid>.{out,err}.log`, und Main tailt die
+zwei Dateien** in dasselbe `emitLog()`, das vorher am Pipe-Ereignis hing — die Zeilen leben ohnehin
+in Main (`services/logBuffer.ts`), ein Tail ist dort zu Hause. Zwei Dateien statt einer, weil
+`LogConsole` stderr rot färbt und eine gemeinsame Datei genau das verlöre. Kein `detached` — die
+Messung oben *ist* der Fix, und eine eigene Prozessgruppe wäre eine Änderung an dem, was
+`stopServer` und `killAllServers` ablaufen.
+
+**Ein Name pro Lauf, und der Name ist die PID.** Zuerst hieß die Datei immer gleich und wurde bei
+jedem Start abgeschnitten — „sie gehört zu diesem Lauf". Das vierte Review hat den Fall gefunden,
+den dieser Fix selbst erst möglich macht: Nach „Weiterlaufen lassen" behält der alte Server seinen
+Schreibdeskriptor, ohne `O_APPEND` und auf seinem alten Offset. Gemessen mit zwei Läufen im selben
+Ordner (ein `npx`-Ersatz, der Zeilen mit seiner eigenen PID schreibt):
+
+| | Dateien | Konsole des zweiten Laufs |
+|---|---|---|
+| fester Name | `dev-server.{out,err}.log` | Zeilen **beider** Läufe, 32 Nullbytes |
+| Name pro Lauf | `dev-server-3882.*`, `dev-server-3907.*` | nur der eigene Lauf, keine Nullbytes |
+
+Aufgeräumt wird beim Start, und zwar nach derselben Regel, mit der dieses Projekt jede PID
+behandelt, die es aus einer Liste oder Datei zurückliest (`isAlive` *und* `looksLikeQuartzServer`,
+weil das Betriebssystem Nummern wiederverwendet): Was ein noch lebender Server schreibt, bleibt
+liegen, alles andere wird gelöscht — die alten festen Namen eingeschlossen, ein `tmp-`-Paar eines
+Spawns, der es nie bis zur Umbenennung geschafft hat, ebenso. Gemessen: aus fünf vorbereiteten
+Dateien bleiben nach einem Start die zwei des laufenden Servers und die eine, die nicht uns gehört.
+Die PID gibt es erst, wenn `spawn()` zurückkehrt, deshalb werden die Dateien unter einem
+`tmp-`-Namen geöffnet und danach umbenannt; ein Umbenennen ändert auf POSIX an keinem der offenen
+Deskriptoren etwas, und die Tails starten erst danach, weil ein Tail einem Pfad folgt.
+
+Damit ist auch lesbar, was ein weitergelaufener Server geschrieben hat — mit festem Namen war das
+nicht „später", sondern mit diesem Namen gar nicht zu haben.
 
 Zwei Listen mussten das neue Verzeichnis lernen, beide durch Nachsehen gefunden statt durch Schaden:
 `isSnapshotWorthy()` nimmt unter `.quartz-gui/` alles mit, was nicht ausdrücklich ausgeschlossen ist

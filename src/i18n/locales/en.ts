@@ -1585,8 +1585,13 @@ export default {
     planKept: '{{count}} kept as is',
     planIdentical: '{{count}} identical',
     planOutside: '{{count}} refused',
+    planOutside_other: '{{count}} refused',
     planContentIsSymlink:
         'Will be skipped: this project’s content folder is a link into another folder. A template never writes there.',
+    planOutsideDetail: 'Refused: {{names}} would be written outside the project.',
+    planOutsideDetail_other: 'Refused: {{names}} would be written outside the project.',
+    planOutsideMore: '{{names}} and {{count}} more',
+    quotedName: '“{{value}}”',
     planNoChange: 'changes nothing',
     willInstall: 'Will be installed: {{packages}}',
     importButton: 'Apply template',

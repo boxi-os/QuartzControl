@@ -11,6 +11,16 @@
 const DIALOG = 'dialog[open]'
 
 /**
+ * Aus einer Vorlage mit Platzhalter ein Muster für einen Namen: "Bereich {{name}} platzieren"
+ * wird /^Bereich .* platzieren$/. Alles außer dem Platzhalter wird maskiert, damit ein Punkt oder
+ * eine Klammer im Text nicht zum Sonderzeichen wird.
+ */
+function labelPattern(template) {
+  const escaped = template.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp(`^${escaped.replace(/\\\{\\\{\w+\\\}\\\}/g, '.*')}$`)
+}
+
+/**
  * Jede Szene: wohin, was tun, was aufnehmen, wie es heißt.
  * `route` ist relativ zum Projekt; `app: true` heißt, sie gehört zu keinem (Startseite,
  * Einstellungen).
@@ -20,7 +30,7 @@ export const SCENES = [
     name: 'assistent-neues-projekt',
     app: true,
     route: '/',
-    click: 'Neues Projekt erstellen',
+    click: 'home.createNew',
     shot: DIALOG,
     caption: 'Der Assistent für ein neues Projekt.'
   },
@@ -28,28 +38,28 @@ export const SCENES = [
     name: 'dialog-duplizieren',
     app: true,
     route: '/',
-    click: 'Duplizieren',
+    click: 'home.duplicate.action',
     shot: DIALOG,
     caption: 'Duplizieren fragt, woher das Duplikat seine Notizen bekommt.'
   },
   {
     name: 'dialog-content-quelle',
     route: '/config?tab=content',
-    click: 'Quelle ändern…',
+    click: 'content.changeSource',
     shot: DIALOG,
     caption: 'Die Content-Quelle wechseln — der bisherige Ordner wird beiseitegelegt, nicht gelöscht.'
   },
   {
     name: 'formular-neues-ziel',
     route: '/publish',
-    click: '+ Neues Ziel',
+    click: 'publish.newTarget',
     caption: 'Ein neues Ziel wird nicht in einem Dialog angelegt, sondern in einem Formular unter der Liste; die Art entscheidet, welche Felder folgen.'
   },
   {
     name: 'formular-neuer-zugang',
     app: true,
     route: '/settings',
-    click: '+ SFTP / SSH',
+    click: 'settings.connections.addSsh',
     caption: 'Ein neuer SFTP-Zugang — ebenfalls ein Formular in der Seite.'
   },
   {
@@ -58,10 +68,10 @@ export const SCENES = [
     // deshalb die Bewegung in Schritten statt in einem Sprung.
     name: 'frame-editor-ziehen',
     route: '/layout?tab=frames',
-    click: 'Bearbeiten',
+    click: 'common.edit',
     wait: 1500,
-    act: async (page) => {
-      const handle = page.getByRole('button', { name: /^Bereich .* platzieren$/ }).first()
+    act: async (page, t) => {
+      const handle = page.getByRole('button', { name: labelPattern(t('layoutEditor.frameBuilder.placeArea')) }).first()
       // Erst nach oben rollen und danach messen. Der Griff saß sonst bei y=882 am unteren Rand,
       // und das Overlay - ein fixed positioniertes div mit z-index 999, das dem Zeiger folgt -
       // landete bei y=1230, also unter der Fensterkante. Im Bild sah das aus wie "kein Overlay".
@@ -84,7 +94,7 @@ export const SCENES = [
       await page.waitForTimeout(600)
       return true
     },
-    after: async (page) => {
+    after: async (page, t) => {
       // Escape statt Loslassen: Ein Loslassen würde den Bereich wirklich platzieren, und der
       // Editor stünde mit einer ungespeicherten Änderung da. @dnd-kit bricht auf Escape ab.
       await page.keyboard.press('Escape')
@@ -93,7 +103,7 @@ export const SCENES = [
       // Der offene Frame-Editor überlebt einen Routenwechsel (sticky per Pathname), und die
       // nächste Szene auf dieser Route fände ihre Knöpfe sonst nicht.
       await page
-        .getByRole('button', { name: 'Editor schließen', exact: true })
+        .getByRole('button', { name: t('layoutEditor.frameBuilder.closeEditor'), exact: true })
         .click({ timeout: 3000 })
         .catch(() => {})
       await page.waitForTimeout(400)
@@ -103,28 +113,28 @@ export const SCENES = [
   {
     name: 'formular-neuer-frame',
     route: '/layout?tab=frames',
-    click: 'Neuer Frame',
+    click: 'layoutEditor.frameBuilder.newFrame',
     caption: 'Ein neues Frame anlegen.'
   },
   {
     name: 'snapshot-vergleich',
     route: '/backups',
-    click: 'Vergleichen',
+    click: 'backups.compare',
     wait: 3000,
     caption: 'Ein Snapshot gegen den heutigen Stand.'
   },
   {
     name: 'build-fertig',
     route: '/server',
-    click: 'Jetzt bauen',
+    click: 'buildServer.buildNow',
     wait: 25_000,
-    card: 'Einmaliger Build',
+    card: 'buildServer.oneOffBuild',
     caption: 'Nach dem Build: Ergebnis, Dauer und die Ausgabe darunter.'
   },
   {
     name: 'dev-server-laeuft',
     route: '/server',
-    click: 'Starten',
+    click: 'buildServer.start',
     wait: 25_000,
     stopServer: true,
     caption: 'Der laufende Dev-Server mit seiner Ausgabe.'
@@ -136,7 +146,7 @@ export const SCENES = [
  * noch Skalierung kennt: { page, win, projectId, outDir, scheme, slug, scaleDown, ipc, shoot }.
  */
 export async function captureScenes(ctx) {
-  const { page, projectId, ipc } = ctx
+  const { page, projectId, ipc, t } = ctx
   if (ctx.wanted && SCENES.every((s) => !ctx.wanted(s.name))) {
     console.log('  (keine Szene passt zum Filter)')
     return []
@@ -158,17 +168,21 @@ export async function captureScenes(ctx) {
     }, hash)
     await page.waitForTimeout(1500)
 
-    const button = page.getByRole('button', { name: scene.click, exact: true }).first()
+    // Die Beschriftung kommt aus der Sprachdatei, nicht aus dieser Datei: Sie stand hier zehnmal
+    // auf Deutsch, und auf einer englischen App fand das Skript deshalb nichts - gemessen am
+    // 2026-09-08 an 65 englischen Bildern im Handbuch-Vault, die alle deutsch waren.
+    const label = t(scene.click)
+    const button = page.getByRole('button', { name: label, exact: true }).first()
     try {
       await button.click({ timeout: 8000 })
     } catch {
-      console.log(`  ✗ ${scene.name}: „${scene.click}" nicht gefunden`)
+      console.log(`  ✗ ${scene.name}: „${label}" nicht gefunden`)
       continue
     }
     await page.waitForTimeout(scene.wait ?? 900)
 
     if (scene.act) {
-      const ok = await scene.act(page)
+      const ok = await scene.act(page, t)
       if (!ok) {
         console.log(`  ✗ ${scene.name}: die Geste ließ sich nicht ausführen`)
         continue
@@ -177,12 +191,12 @@ export async function captureScenes(ctx) {
 
     let target = null
     if (scene.shot) target = await page.$(scene.shot)
-    else if (scene.card) target = await cardByHeading(page, scene.card)
+    else if (scene.card) target = await cardByHeading(page, t(scene.card))
     const file = await ctx.shoot(scene.name, target)
     written.push([file, scene.caption])
     console.log(`  ${scene.name} → ${file}`)
 
-    if (scene.after) await scene.after(page)
+    if (scene.after) await scene.after(page, t)
     if (scene.stopServer) {
       // stop() nimmt die id, nicht den Pfad - sonst läuft der Server nach dem Lauf weiter.
       await ipc(page, (a) => window.quartzGui.server.stop(a.id), { id: projectId }).catch(() => {})

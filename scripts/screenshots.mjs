@@ -17,6 +17,7 @@ import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 import { APP_ROUTES, PROJECT_ROUTES } from './routes.mjs'
+import { translator } from './locale.mjs'
 
 const APP_DIR = path.resolve(import.meta.dirname, '..')
 const VAULT = path.join(os.homedir(), 'Obsidian/QuartzProjekte/QuartzControl-Handbuch')
@@ -241,7 +242,7 @@ for (const [scheme, media] of SCHEMES) {
       return path.basename(file)
     }
     const wanted = (name) => !only || only.split(',').some((frag) => slug(name).includes(slug(frag)))
-    await captureScenes({ page, projectId, ipc, shoot, wanted })
+    await captureScenes({ page, projectId, ipc, shoot, wanted, t: translator(lang) })
     continue
   }
 

@@ -17,6 +17,7 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { localeStrings } from './locale.mjs'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 const VAULT = path.join(os.homedir(), 'Obsidian/QuartzProjekte/QuartzControl-Handbuch')
@@ -26,22 +27,14 @@ if (!fs.existsSync(VAULT)) {
   process.exit(0)
 }
 
-function flatten(obj, prefix = '', out = {}) {
-  for (const [k, v] of Object.entries(obj)) {
-    const key = prefix ? `${prefix}.${k}` : k
-    if (v && typeof v === 'object') flatten(v, key, out)
-    else if (typeof v === 'string') out[key] = v
-  }
-  return out
-}
 // Je Sprache ein eigener Heuhaufen: Eine englische Seite zitiert die englischen Texte, und gegen
 // de.ts geprueft waere jedes dieser Zitate ein falscher Alarm.
 const mainSrc = fs.readFileSync(path.join(ROOT, 'electron/main/i18n.ts'), 'utf8')
 
 function stringsFor(lang) {
-  let src = fs.readFileSync(path.join(ROOT, `src/i18n/locales/${lang}.ts`), 'utf8')
-  src = src.replace(/^export default\s*/, 'return ').replace(/\bas const\s*$/m, '')
-  const out = Object.values(flatten(new Function(src)()))
+  // Der Renderer-Teil kommt aus scripts/locale.mjs, weil screenshot-scenes.mjs dieselbe Tabelle
+  // braucht - zwei Leser derselben Datei laufen sonst auseinander.
+  const out = Object.values(localeStrings(lang))
   const block =
     lang === 'de'
       ? mainSrc.match(/\n  de: \{\n([\s\S]*?)\n  \},\n  en: \{/)[1]

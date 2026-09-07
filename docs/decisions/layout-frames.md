@@ -93,3 +93,74 @@ einzige, was etwas positioniert** — und eine geerbte Regel darf das nicht unte
 Die Lehre für den nächsten solchen Fix: Eine Klasse, die man wegen ihres *Verhaltens* setzt, bringt
 ihr *Aussehen* mit. Beides ist zu prüfen, und zwar am gemessenen Layout, nicht am Screenshot — 466
 gegen 796 sieht auf einem Bild nach einer Gestaltungsentscheidung aus.
+
+## Ein Bereich ist keine Belegung (2026-09-07)
+
+Gefunden im Beispielprojekt, an einem Frame, das der Nutzer selbst gebaut hatte: `editorial` hatte
+neun Bereiche, davon **drei auf der Belegung „links“**. Der Codegen mappt jeden Bereich über
+`bySlot[area.slot]`, also rendert er dieselbe Komponentenliste dreimal — Spacer, Explorer, die
+Notiz und „Neueste Notizen“ standen auf jeder gebauten Seite drei Mal untereinander. Weder der
+Editor noch der Build sagten etwas dazu; sichtbar wurde es erst auf der fertigen Website.
+
+Die Ursache war eine Vorgabe: `addNewArea()` schrieb `slot: 'left'` fest. Etwas anderes hatte es
+auch nicht anzubieten. Quartz sortiert Komponenten in genau sechs Positionen — `buildLayoutForEntries`
+in `plugins/loader/config-loader.ts` hält sie als Objektliteral mit sechs Schlüsseln, und
+`positions[layout.position]` verwirft still, was nicht dazugehört. Ein siebter Bereich hatte also
+keine eigene Quelle, und ein achter musste sich eine teilen.
+
+Damit fällt auch die Frage auseinander, ob Bereich und Belegung nicht dasselbe sind. **Ein Bereich
+ist Geometrie** — Name, Zeile, Spalte, Spanne, Sichtbarkeit, je Breakpoint. **Eine Belegung ist die
+Herkunft des Inhalts** und der einzige Punkt, an dem ein Frame an `quartz.config.yaml` andockt.
+Solange ein Frame höchstens sieben Bereiche hat, stehen sie eins zu eins, und genau das erzeugt den
+Eindruck.
+
+### Der zweite Schlüssel: `layout.group`
+
+Quartz hat neben der Position noch einen Schlüssel, und er stand in diesem Projekt längst in
+Benutzung (`brand`, `toolbar`): `resolveGroups` faltet die gruppierten Einträge einer Position zu
+*einer* Komponente zusammen und lässt die ungruppierten stehen. Ob sich diese eine Komponente beim
+Frame wiedererkennen lässt, war die ganze Frage — gemessen mit einer Probe im Frame eines
+Wegwerfprojekts, ein echter Build, danach zurückgenommen:
+
+    left: [ {name: "MobileOnly"}, {name: "Flex"}, {name: "ExplorerComponent"} ]
+
+`displayName` war bei allen dreien `undefined`. Die Gruppe ist also erkennbar, aber nur an ihrem
+Funktionsnamen — quartz baut sich mit esbuilds `keepNames: true` (`quartz/cli/handlers.js`), sonst
+gäbe es hier gar keine Identität. Das ist zugleich die Reichweite dieser Messung: sie hängt an
+einer Einstellung in Quartz' eigenem Build, nicht an einer zugesicherten Schnittstelle.
+
+Die Regel im Codegen lautet daher: **die k-te Flex einer Position ist die k-te Gruppe.** Ein
+Bereich mit Gruppe nimmt seine, der Bereich ohne nimmt alles übrige — einschließlich der Gruppen,
+denen dieses Frame keinen Bereich gegeben hat, die sonst von der Seite verschwänden.
+
+### Woher das k kommt, und was es kostet
+
+Die Reihenfolge der Gruppen kann das Frame nicht aus dem herauslesen, was es bekommt: die
+Positionsliste ist flach, und jede Gruppe darin ist eine namenlose Flex. Sie steht deshalb als
+`GROUP_ORDER` im generierten Code; `groupOrderByPosition()` in `shared/gridFrameCss.ts` bildet
+`resolveGroups`' eigene Sortierung nach (Mitglieder nach Priorität, jede Gruppe an der Stelle ihres
+ersten Mitglieds, sofern `layout.groups.<name>.priority` nichts anderes sagt).
+
+Damit hält ein Frame eine Kopie von etwas, das die Config besitzt — dasselbe Verhältnis wie bei den
+Breakpoint-Breiten, und mit derselben Folge: `writeAllFrames()` läuft nach jedem Config-Speichern,
+so wie `saveBreakpointWidths()` die Frames schon immer umgeschrieben hat. **Eine Kopie, die niemand
+auffrischt, ist eine Kopie, die still aufhört zu stimmen.**
+
+Und weil eine Kopie trotzdem veralten kann — jemand ändert die yaml von Hand —, zählt der
+generierte Code beim Rendern nach: passen Flexes und `GROUP_ORDER` nicht zusammen, wird nichts
+geraten. Der einfache Bereich bekommt alles, die Gruppen-Bereiche bleiben leer, und der Build sagt
+es. **Eine Seite ohne Aufteilung ist reparierbar, eine mit vertauschten Bereichen nicht** — dort
+sieht alles richtig aus, nur steht das Falsche darin.
+
+### Gemessen
+
+Von Hand durch die gebaute App, gegen ein echtes Projekt: Bereich anlegen, ins Raster ziehen,
+Belegung „links“, „Eigener Bereich“ an, im Reiter „Global“ den Explorer in dessen Gruppe. Danach
+`npx quartz build` und die 114 erzeugten Seiten ausgezählt — der Explorer steht **genau einmal**,
+in `.qgframe-area-custom-8`; Suche und Spacer stehen weiter in `.qgframe-area-left`. Vorher, mit
+drei Bereichen auf „links“: dieselbe Liste dreimal.
+
+Nebenbefund aus demselben Durchgang: die Gruppen-Auswahl einer Komponente listete nur, was unter
+`layout.groups` deklariert war. Eine Gruppe entsteht aber, sobald eine Komponente sie nennt —
+`layout.groups` trägt nur Richtung und Abstand. Der Bereichsname stand dort also nie, und Ziehen
+wäre der einzige Weg hinein gewesen. **Für die Tastatur wäre das gar keiner.**

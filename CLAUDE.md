@@ -362,6 +362,19 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   `prefers-color-scheme` im Renderer mit; `color-scheme: light dark` auf `:root`, explizite Farben
   auf `select option` für Linux. Neue UI mit `dark:`-Varianten. Kein Wechsel auf `'class'`: die
   nativen Dialoge, das Linux-`<select>`-Popup und die Scrollbar hängen an der Media-Query.
+- **Ein Bereich eines Frames ist Geometrie, eine Belegung ist die Herkunft seines Inhalts.** Die
+  beiden sehen wie dasselbe aus, solange ein Frame höchstens sieben Bereiche hat — mehr Quellen
+  gibt Quartz nicht her, `buildLayoutForEntries` hält seine sechs Positionen als Literal. Zwei
+  Bereiche auf derselben Belegung rendern dieselbe Liste zweimal (gemessen: drei auf `left`, also
+  die ganze Seitenleiste dreimal auf jeder Seite), deshalb ist `slot` optional — ein Bereich ohne
+  Belegung ist eine leere Zelle — und eine Doppelbelegung wird im Editor gesagt. Darüber hinaus
+  geht es über Quartz' zweiten Schlüssel: `layout.group` faltet die gruppierten Einträge einer
+  Position zu einer Flex zusammen, und **die k-te Flex einer Position ist die k-te Gruppe**. Das k
+  steht als `GROUP_ORDER` im generierten Frame, weil es aus der flachen Positionsliste nicht
+  ablesbar ist; die Frames halten damit eine Kopie aus der Config und werden nach jedem
+  Config-Speichern neu geschrieben (`writeAllFrames`), wie schon bei den Breakpoint-Breiten.
+  Stimmen die Zahlen beim Bauen nicht, wird nichts geraten: alles in den einfachen Bereich, Warnung
+  ins Log. Messungen in [`layout-frames.md`](docs/decisions/layout-frames.md).
 - **Kein natives HTML5-Drag mehr, nirgends.** Alle vier Stellen ziehen mit `@dnd-kit`
   (`Plugins/Installed`, `LayoutEditor/GlobalBoard`, `LayoutEditor/FrameBuilder`; `Styles/CustomCss`
   hatte nie eines, nur Pfeile). Eine neue Stelle nimmt `@dnd-kit` mit `KeyboardSensor`, denn natives

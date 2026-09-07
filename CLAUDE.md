@@ -590,6 +590,15 @@ Dokumentations-Sitzung, aus der mehr App-Code entstand, als der Name vermuten l�
 IPC-Kanal, der Renderer-Eingabe zu einem Dateipfad macht, eine Änderung an der Verpackung, fünf
 neue Skripte und rund fünfzig geänderte Nutzertexte. 45 Dateien, +2043/−187.
 
+**Der Auftrag für das sechste Review steht** in
+[`docs/REVIEW-2026-09-09-auftrag.md`](docs/REVIEW-2026-09-09-auftrag.md). Sein Diff hat wieder zwei
+Schichten, die nichts miteinander zu tun haben: die acht Fixes des fünften Reviews, die niemand
+gelesen hat (darunter der Handbuch-Server, +170), und den Frame-Bereichs-Umbau aus PR #24 — ein
+Bereich darf ohne Belegung leer bleiben, und über `layout.group` kann er eigene Komponenten halten.
+20 Commits, 23 Dateien, +1046/−135. Was der Auftrag als größtes Risiko nennt, ist die Grundlage des
+Umbaus selbst: die Zuordnung ruht auf einem Funktionsnamen, den es nur gibt, weil Quartz sich mit
+esbuilds `keepNames` baut.
+
 **Das nächste Review misst ab `review-2026-09-08`.** Der Tag sitzt auf `0c76d6e`, dem Stand, den
 das fünfte Review vor sich hatte, nach derselben Regel wie seine drei Vorgänger: Der Ausgangsstand
 ist das, was gelesen wurde, nicht das, was danach entstanden ist. So sitzt `review-2026-09-07` auf

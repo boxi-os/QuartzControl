@@ -11,7 +11,15 @@ import {
   type CalloutColorDef,
   type CssVariableDef
 } from '../../data/cssVariables'
-import { cssColorToHex, effectiveValue, groupLabel, isDisplayableColor, resolvedValue, type ResolveContext } from './variableGraph'
+import {
+  cssColorToHex,
+  effectiveValue,
+  groupLabel,
+  isDisplayableColor,
+  normalizeVarQuery,
+  resolvedValue,
+  type ResolveContext
+} from './variableGraph'
 import { useStyles } from './index'
 
 // Read-only reference of the CSS custom properties available at the point custom.scss is included:
@@ -30,7 +38,7 @@ export default function CssVariableReference({ onInsert }: { onInsert: (text: st
 
   const { copied, copy } = useCopyToClipboard()
   const [search, setSearch] = useState('')
-  const query = search.trim().toLowerCase()
+  const query = normalizeVarQuery(search)
   // Same rule as the Variablen tab: only the base colours start open. A search overrides it
   // entirely - a query that hides its own hits inside collapsed categories would be worse than
   // no search at all.

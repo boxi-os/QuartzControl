@@ -273,6 +273,24 @@ export default function FrameBuilder({
     return [...twice]
   }
 
+  /**
+   * Two areas holding the same group on the same slot show the same components twice - the same
+   * mistake as two areas on one slot, one level down. It only became reachable once renaming an
+   * area stopped renaming its group: an area keeps "toolbar" while its name moves on, a later area
+   * called "toolbar" switches its group on, and both now claim the k-th flex.
+   */
+  function duplicateAreaGroups(def: GridFrameDefinition): string[] {
+    const seen = new Set<string>()
+    const twice = new Set<string>()
+    for (const area of def.areas) {
+      if (!area.slot || !area.group) continue
+      const key = `${area.slot}\u0000${area.group}`
+      if (seen.has(key)) twice.add(area.group)
+      seen.add(key)
+    }
+    return [...twice]
+  }
+
   function updateLayout(patch: Partial<GridBreakpointLayout>): void {
     if (!editing) return
     const layout = editing.breakpoints[activeBreakpoint]
@@ -420,10 +438,14 @@ export default function FrameBuilder({
     const name = slugify(rawName)
     setEditing({
       ...editing,
-      // The group is the area's own name (see updateAreaGroup), so renaming has to carry it along -
-      // otherwise the members written in the layout board keep pointing at the old name and the
-      // area comes up empty.
-      areas: editing.areas.map((a) => (a.id === id ? { ...a, name, group: a.group ? name : undefined } : a))
+      // The group is deliberately left alone. It is the area's own name only at the moment the
+      // switch is flipped (see updateAreaGroup); afterwards it is a key into quartz.config.yaml,
+      // where the members carry `layout.group: <that name>` - and this editor does not know the
+      // config, let alone write it. Renaming the group along with the area would therefore point
+      // the area at a group nobody is in, and the components it used to hold would fall back into
+      // the position's plain area on every built page, with the flex count still adding up and so
+      // nothing to warn about. The panel says which group an area holds once the two differ.
+      areas: editing.areas.map((a) => (a.id === id ? { ...a, name } : a))
     })
   }
 
@@ -510,6 +532,11 @@ export default function FrameBuilder({
     const twice = duplicateAreaNames(editing)
     if (twice.length > 0) {
       setMessage(t('layoutEditor.frameBuilder.areaNameCollision', { names: twice.join(', ') }))
+      return
+    }
+    const twiceGrouped = duplicateAreaGroups(editing)
+    if (twiceGrouped.length > 0) {
+      setMessage(t('layoutEditor.frameBuilder.areaGroupCollision', { names: twiceGrouped.join(', ') }))
       return
     }
     setSaving(true)
@@ -909,7 +936,11 @@ export default function FrameBuilder({
                     {area.slot && area.slot !== 'pageBody' && (
                       <Toggle
                         label={t('layoutEditor.frameBuilder.ownGroup')}
-                        hint={t('layoutEditor.frameBuilder.ownGroupHint')}
+                        hint={
+                          area.group && area.group !== area.name
+                            ? t('layoutEditor.frameBuilder.ownGroupRenamed', { group: area.group })
+                            : t('layoutEditor.frameBuilder.ownGroupHint')
+                        }
                         checked={!!area.group}
                         onChange={(checked) => updateAreaGroup(area.id, checked)}
                       />

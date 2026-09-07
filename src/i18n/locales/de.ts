@@ -1147,6 +1147,8 @@ export default {
       ownGroupShort: 'eigen',
       ownGroupHint:
         'Zeigt nur die Komponenten, die im Reiter „Global“ hierher gezogen werden. Ohne das zeigt der Bereich alles, was die Belegung sonst noch hat.',
+      ownGroupRenamed:
+        'Hält die Gruppe „{{group}}“. Beim Umbenennen bleibt der Gruppenname stehen, damit die im Reiter „Global“ zugeordneten Komponenten hier bleiben.',
       rowSpanLabel: 'Zeilen-Spanne',
       colSpanLabel: 'Spalten-Spanne',
       removeArea: 'Bereich löschen',
@@ -1162,6 +1164,8 @@ export default {
       nameRequired: 'Bitte einen Frame-Namen vergeben.',
       areaNameCollision:
         'Zwei Bereiche heißen „{{names}}“. Ein Bereichsname darf nur einmal vorkommen — sonst verliert das Frame sein ganzes Raster, nicht nur einen Bereich.',
+      areaGroupCollision:
+        'Zwei Bereiche derselben Belegung halten die Gruppe „{{names}}“. Beide zeigten dann dieselben Komponenten, also doppelt auf jeder Seite.',
       nameCollision: 'Dieser Name ist bereits vergeben (ein eingebautes Frame oder ein anderes eigenes).',
       deleteFrame: 'Diesen Frame löschen',
       deleteConfirmAction: 'Frame löschen',

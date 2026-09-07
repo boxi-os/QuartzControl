@@ -1143,6 +1143,8 @@ export default {
       ownGroupShort: 'own',
       ownGroupHint:
         'Shows only the components dragged here on the “Global” tab. Without it the area shows everything else the slot holds.',
+      ownGroupRenamed:
+        'Holds the group “{{group}}”. Renaming the area leaves the group name alone, so the components assigned on the “Global” tab stay here.',
       rowSpanLabel: 'Row span',
       colSpanLabel: 'Column span',
       removeArea: 'Remove area',
@@ -1158,6 +1160,8 @@ export default {
       nameRequired: 'Please give the frame a name.',
       areaNameCollision:
         'Two areas are called “{{names}}”. An area name may only appear once — otherwise the frame loses its whole grid, not just one area.',
+      areaGroupCollision:
+        'Two areas on the same slot hold the group “{{names}}”. Both would show the same components, so they would appear twice on every page.',
       nameCollision: 'This name is already taken (a built-in frame, or another custom one).',
       deleteFrame: 'Delete this frame',
       deleteConfirmAction: 'Delete frame',

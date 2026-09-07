@@ -146,6 +146,15 @@ function splitsAlike(a, b) {
   return SPLIT_POSITIONS.every((p) => orderOf(a, p).join("\\u0000") === orderOf(b, p).join("\\u0000"))
 }
 
+// Same groups on every divided position, whatever their order. The difference decides which of the
+// two ambiguity messages is true: telling the groups apart by an ordering rule only works when
+// there is an ordering to fix.
+function namesAlike(a, b) {
+  return SPLIT_POSITIONS.every(
+    (p) => orderOf(a, p).slice().sort().join("\\u0000") === orderOf(b, p).slice().sort().join("\\u0000")
+  )
+}
+
 function nameOf(candidate) {
   return candidate.pageType === null ? "the config as a whole" : 'page type "' + candidate.pageType + '"'
 }
@@ -222,13 +231,31 @@ function pickGroupOrder(bySlot) {
           "Not splitting: every position's area without a group takes the lot, the group areas stay empty. " +
           "Usually a group whose members all got disabled, or a quartz.config.yaml edited by hand since this frame was written."
       )
-    } else {
+    } else if (matches.every((c) => namesAlike(c.order, matches[0].order))) {
       console.warn(
         "[" + FRAME_NAME + "] this page renders " + rendered + " group flex(es), which fits " +
           matches.map(nameOf).join(" and ") + " - and they order the groups differently (" +
           matches.map((c) => nameOf(c) + " -> " + groupsOf(c.order)).join("; ") + "). " +
           "Not splitting, because guessing would swap what the areas show. Give those groups an explicit " +
           "priority under layout.groups so their order is the same for every page type."
+      )
+    } else {
+      // Not a question of order at all: these name *different* groups, so there is nothing an
+      // ordering rule could line up - measured, with and without layout.groups priorities, the same
+      // message and the same fallback word for word. Two page types that each drop a whole group
+      // are indistinguishable from in here, because the flex count is the only thing this can
+      // measure and both produce the same one. Both ways out are measured too: keeping one member
+      // of each group leaves both groups standing, which collapses the candidates into one; and
+      // clearing the position for one page type makes its count differ, which tells them apart.
+      console.warn(
+        "[" + FRAME_NAME + "] this page renders " + rendered + " group flex(es), which fits " +
+          matches.map(nameOf).join(" and ") + " - and they name different groups there (" +
+          matches.map((c) => nameOf(c) + " -> " + groupsOf(c.order)).join("; ") + "). " +
+          "Not splitting, because guessing would put one group's components in the other's area - and no " +
+          "priority under layout.groups can line up groups that are not the same ones. All this can " +
+          "measure is how many flexes arrived, and excluding a whole group per page type leaves both of " +
+          "these with the same number. Leave one member of each group in place to keep both groups and " +
+          "both counts, or clear the position for one of the page types so the counts differ."
       )
     }
   }

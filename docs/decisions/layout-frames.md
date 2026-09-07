@@ -289,6 +289,34 @@ zurückfällt. Deshalb filtert `groupLayoutCandidates` nur, was in der Config st
 ist ein Pflichtargument — eine Kandidatenliste gehört immer zu einem Frame, und ein optionales
 Argument ließe das Vergessen wie einen gültigen Aufruf aussehen.
 
+### „Gib den Gruppen eine Priorität“ hilft nur, wenn es dieselben Gruppen sind
+
+Die Mehrdeutigkeits-Meldung behandelte jeden Fall als Reihenfolge-Problem („they order the groups
+differently“) und empfahl `layout.groups.<name>.priority`. Es gibt aber zwei verschiedene Lagen, und
+in der zweiten berührt dieser Rat den Zustand nicht: Zwei Seitentypen, die je eine *andere* Gruppe
+ganz ausschließen — `p1` verliert `gx`, `p2` verliert `gy` —, rendern beide **eine** Flex, und ihre
+Kandidatinnen nennen `[gy]` und `[gx]`. Das sind nicht dieselben Gruppen in anderer Ordnung, das sind
+andere Gruppen; keine Priorität macht sie gleich. Gemessen am erzeugten Modul, ohne und mit
+`gx.priority: 10, gy.priority: 40`: dieselbe Meldung, derselbe Rückfall, Wort für Wort.
+
+Also unterscheidet `pickGroupOrder` die beiden jetzt (`namesAlike`: dieselben Gruppen je geteilter
+Position, gleich wie geordnet). Die alte Meldung bleibt für den Reihenfolge-Fall unverändert — ihr
+Rat ist gemessen und im Reiter „Global“ erreichbar. Der andere Fall bekommt eine eigene: dass keine
+Priorität hier hilft, warum (die Flex-Zahl ist alles, was ein Frame messen kann, und beide Seitentypen
+erzeugen dieselbe), und zwei Auswege, die **beide gemessen sind**:
+
+| Ausweg | Ergebnis |
+| --- | --- |
+| je Gruppe *ein* Mitglied stehen lassen statt die ganze auszuschließen | beide Gruppen bleiben, die Kandidatinnen fallen zusammen, alles teilt richtig auf, keine Warnung |
+| die Position für einen der Seitentypen ganz leeren | dessen Zahl unterscheidet sich, die Seite wählt die richtige Kandidatin und teilt auf |
+
+Was **nicht** in der Meldung steht, obwohl es naheliegt: `display` und `condition` wickeln ein
+Mitglied, bevor `resolveGroups` gruppiert (`buildLayoutForEntries`), die Gruppe bliebe also stehen.
+Nur ist `display` `mobile-only`/`desktop-only` und `condition` eine von vier eingebauten
+(`not-index`, `has-tags`, `has-backlinks`, `has-toc`) — keins davon kann „auf Seiten dieses Typs
+nicht“ sagen. Ein Rat, den man nicht befolgen kann, ist genau der Fehler, den dieser Abschnitt
+behebt.
+
 ### Ein Wächter, der scheitert, sagt es im Build-Log
 
 `writeAllFrames()` fing alles in ein `console.error` — die Konsole des Hauptprozesses, in die kein

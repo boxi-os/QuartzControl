@@ -154,9 +154,9 @@ export default {
       projectNamePlaceholder: 'meine-notizen',
       targetPreview: 'Angelegt wird:',
       nameInvalid: 'Der Name darf kein „/“ enthalten und nicht „.“ oder „..“ sein.',
-      template: 'Quartz-Startvorlage',
+      template: 'Quartz-Grundgerüst',
       templateHint:
-        'Welche Beispielseiten und Grundeinstellungen Quartz selbst mitbringt — nicht zu verwechseln mit der Beispielvorlage weiter unten, die die Gestaltung mitbringt. „default“ ist der normale Startpunkt; alles daran lässt sich später ändern.',
+        'Welche Beispielseiten und Grundeinstellungen Quartz selbst mitbringt. „default“ ist der normale Startpunkt; alles daran lässt sich später ändern.',
       contentStrategy: 'Woher kommen die Notizen?',
       contentStrategyHint:
         'Beim Verknüpfen bleiben die Notizen dort, wo sie sind — zum Beispiel in deinem Obsidian-Vault — und werden nicht kopiert. Beim Kopieren entsteht eine zweite, unabhängige Sammlung. Auch das ist später umstellbar.',
@@ -1641,7 +1641,7 @@ export default {
       },
       layout: {
         label: 'Layout',
-        description: 'Welcher Baustein wo erscheint, pro Seitentyp — und ab welcher Breite umgebrochen wird.'
+        description: 'Welche Komponente wo erscheint, pro Seitentyp — und ab welcher Breite umgebrochen wird.'
       },
       frames: {
         label: 'Eigene Frames',

@@ -153,9 +153,9 @@ export default {
       projectNamePlaceholder: 'my-notes',
       targetPreview: 'Will be created:',
       nameInvalid: 'The name must not contain “/” and cannot be “.” or “..”.',
-      template: 'Quartz starter template',
+      template: 'Quartz starter',
       templateHint:
-        'Which example pages and starting settings Quartz itself brings — not to be confused with the example template further down, which brings the design. “default” is the normal starting point; everything about it can be changed later.',
+        'Which example pages and starting settings Quartz itself brings. “default” is the normal starting point; everything about it can be changed later.',
       contentStrategy: 'Where do the notes come from?',
       contentStrategyHint:
         'Linking leaves the notes where they are — in your Obsidian vault, for example — and copies nothing. Copying creates a second, independent collection. This can be changed later too.',

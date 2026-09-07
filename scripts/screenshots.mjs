@@ -105,6 +105,15 @@ const DEMO = argv.includes('--demo')
 // Dialoge, ein laufender Server, ein fertiger Build. Sie brauchen ein Projekt, das man verändern
 // darf, also praktisch immer zusammen mit --demo.
 const SCENES = argv.includes('--scenes')
+// "Praktisch immer zusammen mit --demo" war dokumentiert und sonst nichts. Die Szenen klicken
+// „Jetzt bauen" und „Starten", und ohne --demo tun sie das im echten Projekt dieses Rechners: Der
+// Build leert dessen public/, und danach läuft ein Dev-Server, den niemand gestartet haben wollte.
+// Wer das trotzdem will, sagt es - dann ist es eine Entscheidung und kein vergessenes Flag.
+if (SCENES && !DEMO && !argv.includes('--echtes-projekt')) {
+  console.error('--scenes ohne --demo baut und startet im echten Projekt dieses Rechners (public/ wird dabei geleert).')
+  console.error('Gemeint? Dann --echtes-projekt dazu. Sonst --demo.')
+  process.exit(2)
+}
 const scheme = arg('--scheme', 'hell')
 const SCHEMES = scheme === 'beide' ? ALL_SCHEMES : ALL_SCHEMES.filter(([name]) => name === scheme)
 if (SCHEMES.length === 0) {
@@ -196,14 +205,19 @@ for (const [scheme, media] of SCHEMES) {
   const win = await app.browserWindow(page)
   await win.evaluate((bw, s) => bw.setSize(s.w, s.h, false), SIZE)
 
-  await page.evaluate(async (l) => {
+  // Die Sprache wird gesetzt, damit die Bilder in einer Sprache herauskommen - aber ohne --demo
+  // ist das Profil das des Nutzers, und dort gehört sie ihm. Der vorherige Wert wird gemerkt und
+  // im finally unten zurückgeschrieben, auch wenn die Aufnahme dazwischen abbricht.
+  const previousLanguage = await page.evaluate(async (l) => {
     const s = await window.quartzGui.settings.get()
     await window.quartzGui.settings.save({ ...s, language: l })
+    return s.language
   }, lang)
   await page.waitForTimeout(500)
 
   console.log(`\n── ${scheme} ─────────────────────────`)
 
+  try {
   if (SCENES) {
     // Eine Szene nimmt entweder ein Element auf (ein Dialog, eine Karte) oder das Fenster.
     const shoot = async (name, target) => {
@@ -220,7 +234,6 @@ for (const [scheme, media] of SCHEMES) {
     }
     const wanted = (name) => !only || only.split(',').some((frag) => slug(name).includes(slug(frag)))
     await captureScenes({ page, projectId, ipc, shoot, wanted })
-    await app.close().catch(() => {})
     continue
   }
 
@@ -277,7 +290,19 @@ for (const [scheme, media] of SCHEMES) {
     const kb = Math.round(fs.statSync(file).size / 1024)
     console.log(`  ${label} → ${path.basename(file)} (${kb} KB${extra})`)
   }
-  await app.close().catch(() => {})
+  } finally {
+    // Zurückgestellt wird nur ohne --demo: unter --demo ist das Profil ein Wegwerf-Verzeichnis,
+    // und ein Schreibvorgang dorthin ist nach dem Lauf ohnehin fort.
+    if (!DEMO && previousLanguage !== undefined) {
+      await page
+        .evaluate(async (l) => {
+          const s = await window.quartzGui.settings.get()
+          await window.quartzGui.settings.save({ ...s, language: l })
+        }, previousLanguage)
+        .catch((err) => console.warn(`  (Sprache nicht zurückgestellt: ${err.message.split('\n')[0]})`))
+    }
+    await app.close().catch(() => {})
+  }
 }
 
 const total = written.reduce((sum, [, kb]) => sum + kb, 0)

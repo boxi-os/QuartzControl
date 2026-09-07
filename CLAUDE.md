@@ -21,6 +21,11 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   was auf diesem Rechner eingerichtet ist — inklusive echter Server. `--scenes` nimmt statt der
   Routen die zehn Szenen auf, die eine Routenliste nicht trifft (`scripts/screenshot-scenes.mjs`):
   Dialoge, Formulare, der Frame-Editor beim Ziehen, ein fertiger Build, der laufende Dev-Server.
+  Es **verlangt** `--demo`, weil es „Jetzt bauen" und „Starten" klickt und das sonst im echten
+  Projekt dieses Rechners täte (der Build leert dessen `public/`); wer genau das will, sagt
+  `--echtes-projekt` dazu. Ohne `--demo` schreibt das Skript die gewählte Sprache in das Profil des
+  Nutzers und **stellt sie danach zurück**, auch wenn die Aufnahme abbricht — vorher blieb dort
+  `de` stehen, wo `system` oder `en` stand.
   Nicht gescriptet werden können die nativen Bestätigungsdialoge — sie sind Fenster des Systems,
   kein DOM. Zwilling von `smoke.mjs`: gleicher
   Launcher, gleiche Wartelogik, **gleiche Routenliste** aus `scripts/routes.mjs` — sonst zeigt das

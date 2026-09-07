@@ -49,6 +49,12 @@ Aufgesetzt wurde es wie in `scripts/build-example-template.mjs`: `git clone` von
 `npx quartz create`, dann der Import über die **gebaute App** per Playwright, also durch dieselben
 IPC-Pfade wie ein Klick.
 
+**Der Handbuch-Vault hat bewusst kein Remote** (Stand 2026-09-07). Er ist ein git-Repo, aber nur
+auf dieser Maschine — anders als der Example-Vault, der nach `boxi-os/Quartz-Example-Vault` (privat)
+gepusht wird. Das kostet keine Funktion, weil das Handbuch gebaut in der App mitreist; es heißt
+aber, dass es außerhalb dieser Maschine keine Kopie des Quelltexts gibt. Wer das ändert, legt ein
+privates Repo an und trägt es als `origin` ein.
+
 **Die Vault-Schreibregel gilt weiter, nur für zwei Vaults:** `Example` und
 `QuartzControl-Handbuch` werden gepflegt, alle anderen unter `~/Obsidian/` sind tabu. Gepflegt wird mit gewöhnlichen
 Dateioperationen, nicht über das Obsidian-CLI — das fällt bei einem ihm unbekannten Vault-Namen

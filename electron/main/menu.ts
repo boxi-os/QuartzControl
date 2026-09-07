@@ -91,11 +91,14 @@ export async function openHandbook(page?: string): Promise<void> {
     const base = await handbookBaseUrl(handbookRoot())
     await shell.openExternal(`${base}/${urlPathFor(index)}`)
   } catch (error) {
+    // Nicht "fehlt": Die Datei ist zwei Zeilen weiter oben nachgewiesen worden. Was hier schiefgeht,
+    // ist der Server oder der Browser - und für beides hilft eine Neuinstallation nicht, die der
+    // andere Satz empfiehlt.
     await dialog.showMessageBox({
       type: 'warning',
       title: mainT('menuHandbook'),
-      message: mainT('handbookMissingTitle'),
-      detail: (error as Error).message
+      message: mainT('handbookOpenFailedTitle'),
+      detail: mainT('handbookOpenFailedDetail', { error: (error as Error).message })
     })
   }
 }

@@ -1806,8 +1806,10 @@ export interface QuartzGuiApi {
      * Opens the bundled handbook in the default browser. Takes no filesystem path for the same
      * reason revealUserData does: there is exactly one handbook, and only main knows where it is.
      * `page` names a page inside it ("4-gestaltung/04-variablen", no extension) so a screen can
-     * link the chapter that explains it; without one, the start page. Shows a native dialog when
-     * this build was packaged without the handbook, or when the page is not in it.
+     * link the chapter that explains it; without one, the start page. A page that is not in the
+     * handbook falls back to the start page without a word - a link pointing nowhere is a mistake
+     * in the handbook, and the reader cannot act on it. The native dialog is for the two cases the
+     * reader can: this build was packaged without the handbook, or it could not be opened.
      */
     openHandbook(options?: { page?: string }): Promise<void>
     /** Opens an https URL in the default browser. Refused for anything else. */

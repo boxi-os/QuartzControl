@@ -480,14 +480,46 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Befunde aus den Reviews (Stand 2026-09-07)
+## Befunde aus den Reviews (Stand 2026-09-08)
 
-Alle vier Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
+Alle fünf Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden,
-[`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs und
-[`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` und `-07-`) stehen als Dokumente unverändert; die
-Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft gilt, steht oben als Regel.
+[`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs,
+[`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht und
+[`docs/REVIEW-2026-09-08.md`](docs/REVIEW-2026-09-08.md) mit seinen acht (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-`, `-07-` und `-08-`) stehen als Dokumente unverändert;
+die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft gilt, steht oben als
+Regel.
+
+**Das fünfte Review traf das Herzstück des Diffs, den es las.** Ein Befund der Stufe Mittel und
+sieben niedrige; der mittlere war, dass das mitgereiste Handbuch unter `file://` eine Seite ohne
+Ausgang ist — von 4876 Links zeigte kein einziger auf eine Datei. Alle acht sind abgearbeitet,
+jeder mit einer Vorher-Messung; was daraus als Regel bleibt, steht oben in den passenden
+Abschnitten:
+
+- **Eine Messung reicht nur so weit wie die Frage, die sie stellt.** Dass `openPath` mit dem
+  richtigen Pfad gerufen wird, war gemessen — abgefangen im Hauptprozess, „statt zweimal einen
+  Browser zu öffnen". Genau der Browser war die Messung. Wer eine Übergabe an etwas außerhalb der
+  App prüft, prüft, was das andere Ende damit tut, nicht nur, was übergeben wurde.
+- **Eine gebaute Website wird als Adresse geöffnet, nicht als Datei** — Regel oben unter
+  Prozessgrenze, samt den Zahlen.
+- **Ein Aufräumschritt, der nach dem Wurf käme, läuft nie.** `buildHandbook()` wirft, bevor es sein
+  Ausgabeverzeichnis leert; also packte der `catch` daneben die Kopie des letzten Laufs mit,
+  während sein Log „wird ohne Handbuch gepackt" schrieb. Wer einen Fehlerpfad „weiter" nennt, sagt
+  dazu, in welchem Zustand er weitergeht.
+- **Ein Dialog beschreibt den Zustand, in dem er erscheint.** „Fehlt in dieser Installation" stand
+  an einer Stelle, an der die Datei zwei Zeilen vorher nachgewiesen worden war — und empfahl eine
+  Neuinstallation gegen ein Problem, das sie nicht berührt.
+- **Eine Warnung „nicht zu verwechseln mit…" ist der Befund, nicht seine Lösung** — auch wenn sie
+  in der App steht statt im Handbuch. Wo zwei Dinge sich ein Wort teilen, gibt das kleinere den
+  Namen ab: aus der „Quartz-Startvorlage" wurde das „Quartz-Grundgerüst", weil „Vorlage" der
+  Vorlagen-Seite gehört.
+- **Ein Skript verändert auf dem Rechner des Nutzers nichts, was ihm nicht gehört** — und wenn es
+  etwas leihen muss, gibt es es in einem `finally` zurück. Was ein echtes Projekt baut oder
+  startet, verlangt ein ausdrückliches Flag; „praktisch immer zusammen mit --demo" ist eine
+  Dokumentation, keine Sperre.
+- **Ein Wächter gehört an jede Tür zu demselben Zustand.** `mainT()` hatte ihn, `mainLanguage()`
+  las denselben Cache ohne ihn.
 
 **Das vierte Review las den Diff, den das dritte hinterlassen hatte** — seine sechs Fixes, von
 niemandem sonst gelesen. Ein Befund der Stufe Mittel, sieben niedrige, und der mittlere war eine
@@ -541,17 +573,20 @@ Dokumentations-Sitzung, aus der mehr App-Code entstand, als der Name vermuten l�
 IPC-Kanal, der Renderer-Eingabe zu einem Dateipfad macht, eine Änderung an der Verpackung, fünf
 neue Skripte und rund fünfzig geänderte Nutzertexte. 45 Dateien, +2043/−187.
 
-**Das nächste Review misst ab `review-2026-09-07`.** Der Tag gehört auf den Stand, den das vierte
-Review vor sich hatte — `1994811`, den letzten Merge vor diesen Fixes —, nach derselben Regel, die
-schon beim dritten galt: Der Ausgangsstand ist das, was gelesen wurde, nicht das, was danach
-entstanden ist. `review-2026-09-06` sitzt entsprechend auf `1bd69dc`; er war einmal 67 Commits
-früher auf `0b0fb96` gesetzt und wurde verschoben, weil jener Stand gemessen, aber nicht gelesen
-war.
+**Das nächste Review misst ab `review-2026-09-08`.** Der Tag sitzt auf `0c76d6e`, dem Stand, den
+das fünfte Review vor sich hatte, nach derselben Regel wie seine drei Vorgänger: Der Ausgangsstand
+ist das, was gelesen wurde, nicht das, was danach entstanden ist. So sitzt `review-2026-09-07` auf
+`1994811`, dem letzten Merge vor den Fixes des vierten Reviews, und `review-2026-09-06` auf
+`1bd69dc`; Letzterer war einmal 67 Commits früher auf `0b0fb96` gesetzt und wurde verschoben, weil
+jener Stand gemessen, aber nicht gelesen war.
 
-**Die acht Fixes dieses Reviews liegen bewusst dahinter.** Sie sind gemessen, jeder mit Vorher und
-Nachher, und von niemandem sonst gelesen — die größten Eingriffe sind der Dateiname des
-Server-Logs (jetzt pro Lauf, mit Aufräumen) und die Server-Erkennung, die einen Vorgabeport nur
-noch nimmt, wenn der Prozess ihn hält. Sie gehören damit in den Diff des nächsten Auftrags.
+**Die acht Fixes des fünften Reviews liegen bewusst dahinter.** Sie sind gemessen, jeder mit
+Vorher und Nachher, und von niemandem sonst gelesen — der größte Eingriff ist der Handbuch-Server
+(ein neuer Dienst im Hauptprozess, ein `will-quit`-Haken, `openExternal` statt `openPath`), dazu
+die dritte Antwort `'partial'` im Vertrag der Server-Suche und ein `/proc`-Weg, den diese Maschine
+nicht messen kann. Sie gehören damit in den Diff des nächsten Auftrags. Dasselbe galt eine Runde
+vorher für die acht Fixes des vierten Reviews — den Dateinamen des Server-Logs pro Lauf und die
+Server-Erkennung, die einen Vorgabeport nur nimmt, wenn der Prozess ihn hält.
 
 Von dem, was beide Reviews als „beiläufig, kein sed“ führen, sind die Farbpaare am 2026-09-05
 abgearbeitet, soweit sie eine Umbenennung waren: 322 Paare, die wörtlich das Token buchstabierten,

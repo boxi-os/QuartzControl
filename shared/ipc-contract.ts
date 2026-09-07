@@ -432,8 +432,13 @@ export interface ServerDiscovery {
    * 'unavailable' is its own answer, never an empty list: on Windows there is no `ps`, and a
    * failed scan must not read as "nothing is running" - see CLAUDE.md, "Kann nicht prüfen" ist
    * nie "alles gut".
+   *
+   * 'partial' is the same rule one step in: the process table was read, but for at least one
+   * candidate the socket table was not (no lsof on this machine, or /proc refused), so `servers`
+   * is real but short by an unknown number. Neither of the other two says that - 'ok' claims the
+   * list is complete, 'unavailable' would throw away servers that were actually found.
    */
-  state: 'ok' | 'unavailable'
+  state: 'ok' | 'partial' | 'unavailable'
   /** Why the scan could not answer. English, like every other diagnostic that describes a bug. */
   reason?: string
   servers: DiscoveredServer[]

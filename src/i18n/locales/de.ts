@@ -409,6 +409,12 @@ export default {
       scanning: 'Suche laufende Server…',
       unavailable:
         'Auf diesem System lässt sich die Prozessliste nicht lesen. Ob Server laufen, ist damit unbekannt — nicht „keiner“.',
+      partial_zero:
+        'Für mindestens einen Prozess ließ sich nicht feststellen, welchen Port er hält. Es kann also ein Server laufen, der hier fehlt.',
+      partial_one:
+        'Ein Quartz-Server läuft auf diesem Rechner. Für mindestens einen weiteren Prozess ließ sich der Port nicht feststellen — die Liste kann unvollständig sein.',
+      partial_other:
+        '{{count}} Quartz-Server laufen auf diesem Rechner. Für mindestens einen weiteren Prozess ließ sich der Port nicht feststellen — die Liste kann unvollständig sein.',
       none: 'Es läuft kein Quartz-Server auf diesem Rechner.',
       found_one: 'Ein Quartz-Server läuft auf diesem Rechner.',
       found_other: '{{count}} Quartz-Server laufen auf diesem Rechner.',

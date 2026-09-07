@@ -406,6 +406,12 @@ export default {
       refresh: 'Refresh',
       scanning: 'Looking for running servers…',
       unavailable: 'The process list cannot be read on this system. Whether servers are running is unknown — not “none”.',
+      partial_zero:
+        'For at least one process it could not be established which port it holds. A server may be running that is missing here.',
+      partial_one:
+        'One Quartz server is running on this machine. For at least one other process the port could not be established — this list may be incomplete.',
+      partial_other:
+        '{{count}} Quartz servers are running on this machine. For at least one other process the port could not be established — this list may be incomplete.',
       none: 'No Quartz server is running on this machine.',
       found_one: 'One Quartz server is running on this machine.',
       found_other: '{{count}} Quartz servers are running on this machine.',

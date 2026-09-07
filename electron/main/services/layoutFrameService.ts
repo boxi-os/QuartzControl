@@ -115,16 +115,26 @@ const GROUP_ORDER = ${JSON.stringify(groupOrder)}
 // is guessed: the position's plain area takes the lot, the group areas stay empty, and the build
 // log says so. A page that is missing its split is repairable; one where two areas quietly swapped
 // contents is not.
+// Said once per position per build, not once per area per page: the same mismatch is true for
+// every area of that position and for all 100-odd pages, and a warning repeated 300 times reads
+// like noise rather than like the one thing that went wrong.
+const warned = new Set()
+
 function contentsFor(area, list) {
   if (!area.slot || area.slot === "pageBody") return list
   const groups = GROUP_ORDER[area.slot] ?? []
   if (groups.length === 0) return area.group ? [] : list
   const flexes = list.filter((C) => C.name === "Flex")
   if (flexes.length !== groups.length) {
-    console.warn(
-      \`[\${${JSON.stringify(def.frameName)}}] \${area.slot}: \${groups.length} group(s) configured but \${flexes.length} rendered - \` +
-        \`showing all of them in "\${area.name}" instead of splitting. Re-save the layout to refresh this frame.\`
-    )
+    if (!warned.has(area.slot)) {
+      warned.add(area.slot)
+      const plain = AREAS.filter((a) => a.slot === area.slot && !a.group).map((a) => a.name)
+      console.warn(
+        \`[\${${JSON.stringify(def.frameName)}}] \${area.slot}: \${groups.length} group(s) in the config, \${flexes.length} rendered - \` +
+          \`not splitting. Everything goes to \${plain.length ? '"' + plain.join('", "') + '"' : "no area of this frame"}. \` +
+          \`Save the layout once to refresh this frame.\`
+      )
+    }
     return area.group ? [] : list
   }
   if (area.group) {

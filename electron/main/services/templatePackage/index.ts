@@ -16,6 +16,7 @@ import type {
 } from '@shared/ipc-contract'
 import { TEMPLATE_PART_IDS } from '@shared/ipc-contract'
 import { createSnapshot } from '../snapshotService'
+import * as layoutFrameService from '../layoutFrameService'
 import { runCommand } from '../runCommand'
 import { readZipFile, writeZipFile, type ZipEntry } from '../zipArchive'
 import { FORMAT_VERSION, MANIFEST_FILE, listFilesFlat, partFile } from './shared'
@@ -303,6 +304,18 @@ export async function importPackage(
     done++
     onProgress?.({ partId: id, message: '', done, total: todo.length })
   }
+
+  // Last, once, after everything: a frame's generated code carries the config's group ordering
+  // (see layoutFrameService's generateFrameJs), and the parts write that config in four places
+  // that all bypass the IPC handler where the refresh normally hangs. The order above cannot be
+  // the answer either - `frames` runs first by necessity, so at the moment saveFrame() generates
+  // them the groups they are meant to split are not in the config yet.
+  //
+  // A full import happened to correct itself: `layout` runs later and calls saveBreakpointWidths,
+  // which rewrites every frame. That is a side effect of a different part, and it is gone the
+  // moment someone imports without the layout part - so the guard belongs at this door too, not
+  // only at the handler's.
+  await layoutFrameService.writeAllFrames(projectPath)
 
   return { success: true, warnings }
 }

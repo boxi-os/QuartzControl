@@ -164,3 +164,50 @@ Nebenbefund aus demselben Durchgang: die Gruppen-Auswahl einer Komponente listet
 `layout.groups` deklariert war. Eine Gruppe entsteht aber, sobald eine Komponente sie nennt —
 `layout.groups` trägt nur Richtung und Abstand. Der Bereichsname stand dort also nie, und Ziehen
 wäre der einzige Weg hinein gewesen. **Für die Tastatur wäre das gar keiner.**
+
+### Nachtrag: was der Vorlagen-Rundlauf davon merkt (2026-09-07)
+
+Gefragt, weil ein Frame jetzt eine Kopie aus der Config hält: kommt beim Export und Import noch
+alles mit?
+
+Der Export ja, und zwar ohne Zutun — gemessen an einem echten `.qtpl` aus einem echten Projekt
+(Speichern-Dialog im Hauptprozess gespiegelt, weil er nativ ist):
+
+    frames.json   custom-8 → slot "left", group "custom-8"
+    plugins.json  explorer → layout.group "custom-8"   (dazu drei in "toolbar")
+    layout.json   groups: { toolbar: { priority: 35, … } }
+
+Dass `custom-8` in `layout.groups` **fehlt**, ist richtig und kein Verlust: eine Gruppe entsteht,
+sobald eine Komponente sie nennt; `layout.groups` trägt nur Richtung und Abstand. Der Teil
+`plugins` bringt sie zurück.
+
+Der Import dagegen hatte eine Lücke, und die Teil-Reihenfolge kann sie nicht schließen: `frames`
+läuft **zuerst** (es muss, weil es über die Quartz-CLI in die Config schreibt), also stehen die
+Gruppen, die ein Frame aufteilen soll, zu diesem Zeitpunkt noch gar nicht dort. Ein *vollständiger*
+Import korrigierte sich selbst, aber nur zufällig: `layout` läuft später und ruft
+`saveBreakpointWidths`, das ohnehin jedes Frame neu schreibt.
+
+Gemessen, indem genau dieser Zufall weggenommen wurde — Import ohne den Teil `layout`, in ein
+Projekt, dem die Gruppe vorher entzogen worden war:
+
+| | Config nach dem Import | `GROUP_ORDER` im Frame | gebaute Seite |
+|---|---|---|---|
+| ohne den Fix | `group: custom-8` ✓ | `{"left":["toolbar"]}` ✗ | Explorer in `left`, `custom-8` leer, Warnung im Build |
+| mit dem Fix | `group: custom-8` ✓ | `{"left":["toolbar","custom-8"]}` ✓ | Explorer genau einmal in `custom-8` |
+
+`importPackage()` ruft deshalb am Ende einmal `writeAllFrames()`. Die Regel dahinter ist die aus
+dem vierten Review, eine Ebene weiter: **ein Wächter gehört an jede Tür zu demselben Zustand** — und
+vier der sechs Stellen, die `writeConfig` rufen, gehen am IPC-Handler vorbei, an dem der erste hing.
+
+Zwei Nebenbefunde aus demselben Durchgang:
+
+- **Der Rückfall meldete sich einmal pro Bereich pro Seite** und behauptete für den Gruppen-Bereich,
+  er zeige jetzt alles — dabei bleibt genau der leer. Jetzt einmal je Position und Build, und die
+  Meldung nennt den Bereich, der wirklich alles bekommt.
+- **Eine Gruppe konnte unsichtbar weitergelten.** Löscht man den Bereich, der sie trug, verschwand
+  ihr Name aus der Auswahl der Komponente; die Komponente behielt `layout.group`, die Auswahl zeigte
+  „keine Gruppe“, und wegräumen ließ sie sich damit auch nicht. Beim Aufräumen des Testprojekts
+  aufgefallen: die yaml sagte noch `group: custom-8`, der Bildschirm nichts. Die Liste speist sich
+  jetzt aus drei Quellen — `layout.groups`, die Bereiche der Frames, und **was die Komponenten
+  tatsächlich nennen**. Dieselbe Lücke gab es vorher schon für eine unter `layout.groups` gelöschte
+  Gruppe; der Kommentar an `deleteGroup` hatte sie als harmlos notiert.

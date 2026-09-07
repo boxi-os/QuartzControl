@@ -130,7 +130,16 @@ export default function GlobalBoard({
   // could not offer it. Drag-and-drop would have been the only way in, which is no way at all for
   // anyone working by keyboard.
   const groupNames = [
-    ...new Set([...Object.keys(config.layout?.groups ?? {}), ...frames.flatMap((f) => f.areas.map((a) => a.group).filter((g): g is string => !!g))])
+    ...new Set([
+      ...Object.keys(config.layout?.groups ?? {}),
+      ...frames.flatMap((f) => f.areas.map((a) => a.group).filter((g): g is string => !!g)),
+      // …and every group a component actually names. Without this last source a group can become
+      // invisible while still being in force: delete the area that carried it (or the entry under
+      // `layout.groups`) and the member keeps `layout.group`, but the select has no option for it,
+      // so it displays as "no group" and cannot be cleared. Measured while tidying up a test
+      // project - the yaml still said `group: custom-8` after the area was gone.
+      ...config.plugins.map((p) => p.layout?.group).filter((g): g is string => !!g)
+    ])
   ]
   const nameCounts = duplicateNameCounts(config.plugins)
   const ranks = duplicateRanks(config.plugins)

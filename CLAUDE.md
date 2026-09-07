@@ -30,6 +30,13 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   **Zugänge-Karte wird nie automatisch aufgenommen**, weil sie echte Server, Benutzernamen und
   Host-Key-Fingerprints des Rechners zeigt, auf dem das Skript läuft. Ablauf und Gliederung des
   Handbuchs: [`docs/handbuch.md`](docs/handbuch.md)
+- `npm run build:handbook` — baut das Benutzerhandbuch aus seinem Quartz-Projekt nach
+  `resources/handbook/` (252 Dateien, 18 MB), von wo `extraResources` es in die App legt. Das
+  Handbuch reist mit statt als Link: Es ist ohne Netz lesbar und passt immer zu der Fassung, die
+  gerade installiert ist. Behandelt wie `resources/git` — gitignoriert und beim Packen erzeugt
+  (`beforePack`), nicht wie `resources/templates` im Repo, denn es ist ein Artefakt, dessen Bilder
+  bei jedem Textdurchgang neu entstehen. Anders als git lässt es sich **nicht** aus dem Netz holen;
+  fehlt das Projekt, warnt `beforePack` und packt weiter, und der Menüpunkt sagt es dem Nutzer
 - `npm run fetch:git` — holt das mitgelieferte git (dugite-native) für diesen Rechner nach
   `resources/git/<platform>-<arch>/` und dünnt es aus; beim Packen macht das `beforePack` von selbst
 - `npm run check:runtime -- <projektpfad>` — die eingebettete Node-Laufzeit gegen ein echtes Projekt:
@@ -170,6 +177,14 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   sitzt in `buttons[0]` mit `cancelId: 0` - `defaultId` entscheidet unter macOS nicht, was Return tut.
   Der bestätigende Button ist nach der Aktion benannt („Snapshot löschen“), nie „OK“. Die Regel steht
   als Kommentar am Handler und am `Modal`-Primitive, damit sie nicht driftet.
+- **Das Benutzerhandbuch reist in der App mit, und nur der Hauptprozess weiß wo.** `handbookIndex()`
+  in `menu.ts` löst `process.resourcesPath` (gepackt) bzw. `resources/` im Repo (Entwicklung) auf;
+  `openHandbook()` prüft die Datei, bevor es `shell.openPath` ruft — sonst käme bei einem Bau ohne
+  Handbuch eine Zeichenkette des Betriebssystems zurück, die niemandem etwas sagt. Der Renderer
+  bekommt dafür einen Kanal **ohne Argument** (`dialog.openHandbook`, Muster: `revealUserData`) und
+  ruft dieselbe Funktion: Zwei Stellen, die den Pfad selbst zusammensetzen, laufen auseinander.
+  Gemessen an der gepackten App am 2026-09-07: `isPackaged: true`, Pfad
+  `Contents/Resources/handbook/index.html`, vorhanden; Bundle 369 → 395 MB.
 - **Fenster:** ein Fenster, `hiddenInset` nur auf macOS, `will-navigate` erlaubt nur das eigene
   Dokument, `setWindowOpenHandler` gibt nur http(s) an den Browser, CSP ohne externe Hosts. Theme
   wird in Main über `nativeTheme.themeSource` gesetzt, *vor* `createWindow()`.

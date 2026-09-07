@@ -5,8 +5,9 @@ erklärt und im Vault `~/Obsidian/QuartzProjekte/Example` lebt
 (`scripts/example-template/README.md`).
 
 **Stand 2026-09-07:** Die acht Kapitel sind geschrieben (52 Seiten, 348 Wikilinks, alle auflösbar),
-bebildert (65 Aufnahmen, davon 38 in den Seiten) und einmal gegen die App gegengelesen. Offen sind
-der Anschluss ans Hilfe-Menü und die englische Fassung.
+bebildert (65 Aufnahmen, davon 38 in den Seiten), einmal gegen die App gegengelesen und in der App
+erreichbar. Offen ist die englische Fassung — und danach die Kapitelverweise in den App-Hinweisen,
+die jetzt ein Ziel hätten.
 
 Die Kapitel entstanden aus den Quellen — `de.ts`, die Routen, `electron-builder.yml`,
 `docs/decisions/` — und wurden danach gegen die **laufende** App gehalten: je Route die sichtbaren
@@ -235,3 +236,37 @@ Die Lehre daneben, die kein Skript abfängt: **Ein pauschales Ersetzen über Pro
 Grammatik.** Sechs Stellen mussten von Hand nach — „das Ausgabeordner", „des Ausgabeordnerses",
 „sein Ausgabeordner". In den Sprachdateien der App fiel das nicht an, weil dort jede Zeichenkette
 einzeln angefasst wurde.
+
+## Wie das Handbuch in die App kommt
+
+**Es reist mit**, als gebaute Website, nicht als Link. Zwei Gründe: Es ist ohne Netz lesbar, und es
+passt immer zu der Fassung, die gerade installiert ist — eine Online-Fassung beschriebe irgendwann
+eine andere.
+
+    npm run build:handbook      # aus dem Projekt nach resources/handbook/ (252 Dateien, 18 MB)
+
+`resources/handbook/` ist gitignoriert und wird beim Packen erzeugt (`beforePack`) — dieselbe
+Behandlung wie `resources/git` und ausdrücklich nicht wie `resources/templates`, das im Repo liegt.
+Der Grund: Es ist ein erzeugtes Artefakt, dessen 16 MB Bilder bei jedem Textdurchgang neu
+entstehen; im Repo wäre jede Aufnahme ein neuer Blob.
+
+Anders als git lässt es sich **nicht** aus dem Netz nachholen — es entsteht aus einem Projekt, das
+nur auf dieser Maschine liegt. Deshalb warnt `beforePack` und packt weiter, statt abzubrechen: Eine
+App ohne Handbuch ist unvollständig, aber benutzbar. Und `openHandbook()` prüft die Datei, bevor es
+sie öffnet, damit der Nutzer in diesem Fall einen Satz bekommt statt einer Fehlermeldung des
+Betriebssystems.
+
+Erreichbar an zwei Stellen, die **dieselbe Funktion** rufen — zwei Stellen, die den Pfad selbst
+zusammensetzen, laufen beim nächsten Umbau auseinander:
+
+- **Hilfe → Handbuch**, als erster Eintrag: Wer dort nachsieht, sucht meistens etwas über diese App
+  und nicht über Quartz.
+- **Startseite**, über der Quartz-Dokumentation und dem Plugin-Katalog. Der Renderer kennt den Pfad
+  nicht und bekommt dafür einen Kanal ohne Argument (`dialog.openHandbook`), nach dem Muster von
+  `revealUserData`.
+
+An der **gepackten** App gemessen (2026-09-07): `isPackaged: true`, Pfad
+`Contents/Resources/handbook/index.html`, vorhanden (36 KB); 252 Dateien, 21 MB im Bundle, das
+damit von 369 auf 395 MB wächst. Beide Wege rufen `shell.openPath` mit demselben Pfad — geprüft,
+indem `openPath` im Hauptprozess abgefangen und mitgeschrieben wurde, statt zweimal einen Browser
+zu öffnen.

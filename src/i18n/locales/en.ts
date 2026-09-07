@@ -134,6 +134,7 @@ export default {
     aboutQuartz: {
       title: 'What is Quartz?',
       body: 'Quartz 5 is a static site generator for linked notes: Markdown in, finished website out — with backlinks, a graph view and full-text search. It understands Obsidian wikilinks, so you can publish your vault directly.',
+      handbook: 'QuartzControl handbook',
       docs: 'Quartz documentation',
       catalog: 'Plugin catalogue on GitHub'
     },

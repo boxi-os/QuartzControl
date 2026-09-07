@@ -13,6 +13,7 @@ import { cpSync, rmSync } from 'fs'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 import { fetchGit } from './fetch-git.mjs'
+import { buildHandbook } from './build-handbook.mjs'
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)))
 
@@ -34,4 +35,16 @@ export default async function beforePack(context) {
   // Bundle von 26 MB auf über 1 GB.
   cpSync(dest, current, { recursive: true, dereference: false, verbatimSymlinks: true })
   console.log(`[git] für ${platform}-${arch} nach resources/git/current gespiegelt`)
+
+  // Das Benutzerhandbuch. Anders als git lässt es sich nicht aus dem Netz holen - es entsteht aus
+  // einem Quartz-Projekt, das nur auf der Maschine des Betreuers liegt (docs/handbuch.md). Deshalb
+  // warnen und weiterpacken statt abbrechen: Ein Bau ohne Handbuch ist unvollständig, aber
+  // benutzbar, und der Menüpunkt sagt es dem Nutzer statt ins Leere zu greifen.
+  try {
+    const built = buildHandbook()
+    console.log(`[handbuch] ${built.files} Dateien, ${built.megabytes} MB nach resources/handbook`)
+  } catch (err) {
+    console.warn(`[handbuch] NICHT gebaut: ${err.message}`)
+    console.warn('[handbuch] Diese Fassung wird ohne Handbuch gepackt.')
+  }
 }

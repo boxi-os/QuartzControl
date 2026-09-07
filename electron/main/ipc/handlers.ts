@@ -59,7 +59,7 @@ import * as gitRuntime from '../services/gitRuntime'
 import * as settingsService from '../services/settingsService'
 import * as templatePackageService from '../services/templatePackage'
 import { applyTheme } from '../theme'
-import { applyAppMenu } from '../menu'
+import { applyAppMenu, openHandbook } from '../menu'
 import { mainT, type MainStringKey } from '../i18n'
 import { handle, handleNoArgs } from './handle'
 import * as s from './schemas'
@@ -587,6 +587,10 @@ export function registerIpcHandlers(): void {
   handleNoArgs(IPC.dialogRevealUserData, () => {
     shell.showItemInFolder(join(app.getPath('userData'), 'settings.json'))
   })
+
+  // Derselbe Weg wie der Menüpunkt Hilfe → Handbuch, und ausdrücklich dieselbe Funktion: Zwei
+  // Stellen, die denselben Pfad selbst zusammensetzen, laufen beim nächsten Umbau auseinander.
+  handleNoArgs(IPC.dialogOpenHandbook, () => openHandbook())
 
   // The start screen links the Quartz documentation. `s.externalUrl` allows https and nothing
   // else - shell.openExternal hands the URL to whatever handler the OS registered for its scheme.

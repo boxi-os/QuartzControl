@@ -19,6 +19,10 @@ const STRINGS = {
     menuHelp: 'Hilfe',
     menuSave: 'Speichern',
     menuSettings: 'Einstellungen…',
+    menuHandbook: 'Handbuch',
+    handbookMissingTitle: 'Das Handbuch fehlt in dieser Installation',
+    handbookMissingDetail:
+      'Es reist normalerweise mit der App mit. Dass es fehlt, heißt, dass diese Fassung ohne das Handbuch gepackt wurde — am schnellsten hilft, die App neu zu installieren.',
     menuQuartzDocs: 'Quartz-Dokumentation',
     menuPluginCatalog: 'Plugin-Katalog',
     menuDataFolder: 'Datenordner von QuartzControl öffnen',
@@ -235,6 +239,10 @@ const STRINGS = {
     menuHelp: 'Help',
     menuSave: 'Save',
     menuSettings: 'Settings…',
+    menuHandbook: 'Handbook',
+    handbookMissingTitle: 'This installation has no handbook',
+    handbookMissingDetail:
+      'It normally travels with the app. Its absence means this build was packaged without it — reinstalling the app is the quickest fix.',
     menuQuartzDocs: 'Quartz documentation',
     menuPluginCatalog: 'Plugin catalog',
     menuDataFolder: 'Open QuartzControl’s data folder',

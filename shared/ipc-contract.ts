@@ -1385,6 +1385,7 @@ export const IPC = {
 
   dialogPickFolder: 'dialog:pickFolder',
   dialogRevealUserData: 'dialog:revealUserData',
+  dialogOpenHandbook: 'dialog:openHandbook',
   dialogOpenExternal: 'dialog:openExternal',
   dialogConfirm: 'dialog:confirm',
 
@@ -1801,6 +1802,12 @@ export interface QuartzGuiApi {
     openPath(path: string): Promise<void>
     /** Shows Electron's userData directory in the OS file manager. Takes no path on purpose. */
     revealUserData(): Promise<void>
+    /**
+     * Opens the bundled handbook in the default browser. Takes no path for the same reason
+     * revealUserData does: there is exactly one, and only main knows where it is. Shows a native
+     * dialog when this build was packaged without it.
+     */
+    openHandbook(): Promise<void>
     /** Opens an https URL in the default browser. Refused for anything else. */
     openExternal(url: string): Promise<void>
     /**

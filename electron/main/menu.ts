@@ -1,4 +1,6 @@
 import { app, BrowserWindow, dialog, shell, Menu, type MenuItemConstructorOptions } from 'electron'
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 import { IPC, type AppCommand } from '@shared/ipc-contract'
 import { mainT, refreshMainLanguage } from './i18n'
 
@@ -10,6 +12,46 @@ const isMac = process.platform === 'darwin'
 // outbound link in this app; these are constants here, not user input.
 const QUARTZ_DOCS = 'https://quartz.jzhao.xyz/'
 const PLUGIN_CATALOG = 'https://github.com/quartz-community'
+
+/**
+ * Das Benutzerhandbuch reist als gebaute Website mit (`extraResources`, aus `resources/handbook`,
+ * erzeugt von `npm run build:handbook`). Kein Link nach draußen, aus zwei Gründen: Es ist ohne Netz
+ * lesbar, und es passt immer zu der Fassung, die gerade installiert ist.
+ *
+ * Geöffnet wird es im Standardbrowser über `shell.openPath` - ein Pfad, keine URL, deshalb muss
+ * hier nichts kodiert werden und ein Leerzeichen im Installationspfad tut nicht weh.
+ */
+function handbookIndex(): string {
+  // Gepackt liegt es neben den anderen extraResources; in der Entwicklung im Repo, damit
+  // `npm run dev` denselben Weg nimmt und ihn nicht erst beim Packen jemand ausprobiert.
+  const base = app.isPackaged ? process.resourcesPath : join(app.getAppPath(), 'resources')
+  return join(base, 'handbook', 'index.html')
+}
+
+export async function openHandbook(): Promise<void> {
+  const index = handbookIndex()
+  // Erst nachsehen, dann öffnen: `openPath` gibt bei einer fehlenden Datei eine Zeichenkette des
+  // Betriebssystems zurück, und die erklärt niemandem, was los ist. Fehlen kann sie in genau einem
+  // Fall - ein Bau ohne `resources/handbook`, den `beforePack` mit einer Warnung durchlässt.
+  if (!existsSync(index)) {
+    await dialog.showMessageBox({
+      type: 'info',
+      title: mainT('menuHandbook'),
+      message: mainT('handbookMissingTitle'),
+      detail: mainT('handbookMissingDetail')
+    })
+    return
+  }
+  const error = await shell.openPath(index)
+  if (error) {
+    await dialog.showMessageBox({
+      type: 'warning',
+      title: mainT('menuHandbook'),
+      message: mainT('handbookMissingTitle'),
+      detail: error
+    })
+  }
+}
 
 // Where a beta tester's report goes. A constant rather than a setting: it is this app's own
 // address, the same domain as its appId, and a field for it would only invite a typo.
@@ -160,6 +202,10 @@ function buildMenu(): void {
       label: mainT('menuHelp'),
       role: 'help',
       submenu: [
+        // Zuerst das eigene Handbuch, dann die fremden Quellen: Wer hier nachsieht, sucht meistens
+        // etwas über diese App und nicht über Quartz.
+        { label: mainT('menuHandbook'), click: () => void openHandbook() },
+        { type: 'separator' },
         { label: mainT('menuFeedback'), click: () => sendFeedback() },
         { type: 'separator' },
         { label: mainT('menuQuartzDocs'), click: () => void shell.openExternal(QUARTZ_DOCS) },

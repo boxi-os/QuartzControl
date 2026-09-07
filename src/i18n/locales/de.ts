@@ -135,6 +135,7 @@ export default {
     aboutQuartz: {
       title: 'Was ist Quartz?',
       body: 'Quartz 5 ist ein statischer Website-Generator für vernetzte Notizen: Markdown rein, fertige Website raus — mit Backlinks, Graph-Ansicht und Volltextsuche. Es versteht Obsidian-Wikilinks, du kannst deinen Vault also direkt veröffentlichen.',
+      handbook: 'Handbuch zu QuartzControl',
       docs: 'Quartz-Dokumentation',
       catalog: 'Plugin-Katalog auf GitHub'
     },

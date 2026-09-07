@@ -467,9 +467,12 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   Projektpfad im Snapshot-Store nicht und hat daraus „nichts sonst hält seinen eigenen Pfad“ gemacht
   — der Store ist eine git-Objektdatenbank, und in einem zlib-komprimierten Objekt liest `grep`
   nichts (`git grep` je Ref schon: 8 von 8 Aufnahmen). Genauso „der Server antwortet unmittelbar
-  nach dem Beenden noch“, was er tut, bis er das nächste Mal schreibt. Wer eine Behauptung in eine
-  Commit-Nachricht schreibt, schreibt dazu, womit sie gemessen wurde, damit der nächste Leser die
-  Reichweite prüfen kann statt die Aussage.
+  nach dem Beenden noch“, was er tut, bis er das nächste Mal schreibt. Und genauso „der Watcher des
+  Dev-Servers sieht `.quartz-gui/` nie“: `quartz build --serve` hat **zwei** Watcher, und gemessen
+  war der, der auf eine Config-Änderung gar nicht reagiert. Das Ergebnis stimmte trotzdem — aber
+  ein Ergebnis mit einer Begründung, die es nicht trägt, ist ein Befund in Wartestellung. Wer eine
+  Behauptung in eine Commit-Nachricht schreibt, schreibt dazu, womit sie gemessen wurde, damit der
+  nächste Leser die Reichweite prüfen kann statt die Aussage.
 - **Eine Kopie erbt keinen Pfad, aber ein Snapshot bringt einen zurück.** `repointProjectPaths()`
   repariert beim Umbenennen und Duplizieren gegen ein bekanntes Vorher; `repointAuthoredFrames()`
   repariert nach jedem Restore, der Config oder Lockfile berührt, und braucht dafür kein Vorher: Ein

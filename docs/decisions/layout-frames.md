@@ -552,7 +552,27 @@ drei Dateien davon ab, halb vom einen und halb vom anderen Aufrufer zu stammen �
 direkt nach „Starten“ sind zwei Aufrufer in einer Sekunde. Nachgemessen: 120 gleichzeitige
 Auffrischungen gegen einen Leser, 35066 Lesevorgänge, kein einziger unvollständig.
 
-Der Dev-Server ist von alledem nicht betroffen, und das ist gemessen statt vermutet: Sein Watcher
-läuft mit `cwd: argv.directory` (`quartz/build.ts:160-164`), also im Content-Ordner, und sieht
-`.quartz-gui/` nie. Ein Bau, während ein Dev-Server läuft, stört ihn nicht — so wenig wie ein
-gespeichertes Frame.
+Der Dev-Server ist von diesen Schreibvorgängen nicht betroffen — aber die erste Fassung dieses
+Absatzes begründete das mit dem falschen Watcher, und ein Ergebnis mit einer Begründung, die es
+nicht trägt, ist kein Befund, sondern einer in Wartestellung. **`quartz build --serve` hat zwei
+Watcher**, nicht einen:
+
+- der in `quartz/build.ts:160-164` läuft mit `cwd: argv.directory`, also im Content-Ordner, und
+  sieht `.quartz-gui/` tatsächlich nie;
+- der in `quartz/cli/handlers.js:588-603` läuft in der Projektwurzel (die App spawnt mit
+  `cwd: projectPath`) über eine **feste Liste**, die `globby` beim Start auflöst — `**/*.ts`,
+  `quartz/cli/*.js`, `quartz/static/**/*`, `**/*.tsx`, `**/*.scss`, `package.json`,
+  `quartz.config.yaml`, `quartz.config.default.yaml` —, und *dieser* antwortet auf eine
+  Config-Änderung mit einem harten Rebuild.
+
+Mit dem zweiten gemessen, an einer Kopie des Beispielprojekts: 1478 Pfade, davon **0** unter
+`.quartz-gui/`, **0** mit `frames.js` oder `authored-frames`. `package.json` ohne `**/` trifft nur
+die Datei in der Wurzel, nicht die, die jedes Frame-Verzeichnis mitbringt; und `globby` läuft
+ohne `dot`, also fällt `.quartz-gui/` ohnehin heraus. Ein Bau, während ein Dev-Server läuft, stört
+ihn also nicht — so wenig wie ein gespeichertes Frame.
+
+Was der zweite Watcher dagegen sehr wohl auslöst, ist ein Rebuild nach einem **Config**-Speichern —
+und der liest `dist/frames.js` nicht neu, weil `frameLoader.ts:17` ein blankes
+`await import(...)` ohne Cache-Buster macht und Node ein ESM-Modul für die Prozesslebensdauer hält.
+Genau dafür gibt es den `DevServerRestartHint` nach dem Speichern im Reiter „Global“; die Zeile
+ganz oben in dieser Datei beschreibt denselben Mechanismus für den Frame-Editor.

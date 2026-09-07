@@ -257,6 +257,38 @@ eine Ebene höher: „keine Gruppe hier“ und „eine Gruppe, deren Mitglieder 
 gebauten Seite gleich aus, und dies ist die einzige Stelle, die sie noch auseinanderhalten kann.
 Die Aufteilung selbst ändert die Warnung nicht — sie ist ein Hinweis, kein Rückfall.
 
+### Eine Kandidatin für ein Frame, das dieser Seitentyp nie rendert, gehört nicht in dessen Liste
+
+Die Kandidatinnen wurden je **Projekt** gerechnet und an jedes Frame gegeben. Ein Seitentyp mit
+`template: irgendwas-anderes` rendert dieses Frame aber unter keinen Umständen: Quartz nimmt
+`overrides.frame ?? pageType.frame ?? "default"` (`dispatcher.ts`, `resolveLayout`), und ein
+unbekannter Name fällt auf das Standard-Frame zurück, nie auf ein anderes eigenes
+(`components/frames`, `resolveFrame`). Seine Ordnung stand trotzdem in `GROUP_LAYOUTS`.
+
+Das Argument „eine Kandidatin zu viel führt höchstens zum Rückfall“ hält nicht. Beides gemessen am
+erzeugten Modul, beides mit einem Seitentyp, der ein anderes Frame nennt:
+
+| | vorher | jetzt |
+| --- | --- | --- |
+| Seitentyp kippt per `exclude` die Reihenfolge | Mehrdeutigkeit auf **jeder** Seite, Rückfall, Rat nennt einen Seitentyp, der dieses Frame nie benutzt | richtig aufgeteilt, keine Warnung |
+| Seitentyp leert `right`, und auf `right` bricht wirklich eine Gruppe weg | dessen Kandidatin passte, **keine Warnung**, richtig aus Zufall | Warnung, die `right` nennt, richtig aufgeteilt |
+
+Die zweite Zeile auch am echten Build, mit demselben Bruch wie im Abschnitt davor, nur auf `right`
+statt `footer`: Vorher passte die Kandidatin des `404`-Seitentyps (`template: focus`, `right`
+geleert) auf die 201 Editorial-Seiten und verschluckte die Warnung; die Seiten waren richtig, weil
+diese fremde Ordnung auf `header` zufällig dieselbe ist. Jetzt hat `editorial` im Beispielprojekt
+noch **eine** Kandidatin statt zweier, der zweite Durchgang rettet die Aufteilung, und im Log steht
+der Satz. Eine Kandidatin zu viel kann eine Auswahl also *ermöglichen*, die es sonst nicht gäbe —
+und das ist die gefährlichere Richtung, weil sie stumm ist.
+
+**Nur ein ausdrückliches `template` zählt.** Die Kette hat drei Glieder, und das mittlere — das
+Frame, das ein Seitentyp-Plugin für sich selbst erklärt — kann die App nur raten
+(`pluginSchemaService`, `discoverBuiltinPageTypeFrames`). Ein Rat darf keine Kandidatin *entfernen*:
+zu wenige ist der Fehler, der Inhalte stumm vertauscht, zu viele höchstens der, der zu oft
+zurückfällt. Deshalb filtert `groupLayoutCandidates` nur, was in der Config steht, und `frameName`
+ist ein Pflichtargument — eine Kandidatenliste gehört immer zu einem Frame, und ein optionales
+Argument ließe das Vergessen wie einen gültigen Aufruf aussehen.
+
 ### Ein Wächter, der scheitert, sagt es im Build-Log
 
 `writeAllFrames()` fing alles in ein `console.error` — die Konsole des Hauptprozesses, in die kein

@@ -68,9 +68,9 @@ export async function getBreakpointWidths(projectPath: string): Promise<FrameBre
 export async function saveBreakpointWidths(projectPath: string, widths: FrameBreakpointWidths): Promise<void> {
   await writeJsonFile(join(quartzGuiDir(projectPath), BREAKPOINTS_FILE), widths)
   await serialised(projectPath, async () => {
-    const groupLayouts = await readGroupLayouts(projectPath)
+    const groupLayoutsFor = await readGroupLayouts(projectPath)
     for (const def of await listFrames(projectPath)) {
-      await writeFrameFiles(projectPath, def, widths, groupLayouts)
+      await writeFrameFiles(projectPath, def, widths, groupLayoutsFor)
     }
   })
 }
@@ -87,13 +87,14 @@ function frameDir(projectPath: string, id: string): string {
 // plugin's dist/ already exists on disk). `pageBody` is a single component (Content), unlike the
 // other 6 slots which are arrays - see PageFrameProps in quartz/components/frames/types.ts.
 //
-// `groupLayouts` is every group ordering this config can produce (groupLayoutCandidates), baked in
-// because it is the one thing the frame cannot work out for itself: quartz hands it a flat array
-// per position in which each group is one anonymous `Flex`, so rank is the only way to tell them
-// apart - and the ordering belongs to the page type, which the frame is never told. That makes the
-// frame files depend on the layout half of quartz.config.yaml, which is why buildService calls
-// writeAllFrames() before every build and every dev server - the one place the baked-in copy is
-// ever read (see refreshAuthoredFrames there for why it is the only guard).
+// `groupLayouts` is every group ordering this config can produce *and hand to this frame*
+// (groupLayoutCandidates with the frame's name), baked in because it is the one thing the frame
+// cannot work out for itself: quartz hands it a flat array per position in which each group is one
+// anonymous `Flex`, so rank is the only way to tell them apart - and the ordering belongs to the
+// page type, which the frame is never told. That makes the frame files depend on the layout half of
+// quartz.config.yaml, which is why buildService calls writeAllFrames() before every build and every
+// dev server - the one place the baked-in copy is ever read (see refreshAuthoredFrames there for
+// why it is the only guard).
 function generateFrameJs(
   def: GridFrameDefinition,
   widths: FrameBreakpointWidths,
@@ -121,8 +122,9 @@ const GROUP_LAYOUTS = ${JSON.stringify(groupLayouts)}
 // (loadQuartzLayout drops what \`byPageType.<t>.exclude\` names, runs buildLayoutForEntries on the
 // rest, then empties the positions \`positions\` cleared), and it hands the frame the finished
 // lists without ever saying which page type they belong to - PageFrameProps carries no name, and
-// neither does componentData. Hence GROUP_LAYOUTS: every ordering this config can produce, and
-// pickGroupOrder to work out which one arrived.
+// neither does componentData. Hence GROUP_LAYOUTS: every ordering that can reach this frame, and
+// pickGroupOrder to work out which one arrived. A page type whose \`template\` names another frame
+// is not in this list - see groupLayoutCandidates for why leaving it in was not harmless.
 const POSITIONS = ["header", "beforeBody", "afterBody", "left", "right", "footer"]
 // The positions this frame divides. Only these are ever taken apart, and only these decide when
 // the counts of all six cannot (see pickGroupOrder). A position without a group area still speaks
@@ -330,13 +332,21 @@ function generatePackageJson(def: GridFrameDefinition): string {
   )
 }
 
-// A frame's generated code carries the project's group orderings (see generateFrameJs), so every
-// write needs them. Unreadable config means no groups rather than a failed write: a frame that
-// shows a position undivided is a frame that still builds, and the alternative is a project whose
-// frames cannot be saved because of a syntax error somewhere else in the yaml.
-async function readGroupLayouts(projectPath: string, problems?: string[]): Promise<GroupLayoutCandidate[]> {
+// A frame's generated code carries the group orderings that can reach *it* (see generateFrameJs),
+// so every write needs them - and it is per frame, not per project: a page type whose `template`
+// names another frame contributes an ordering this one never renders. Hence a reader that hands
+// back a function instead of a list; the config is read once per write pass, the narrowing happens
+// per frame.
+//
+// Unreadable config means no groups rather than a failed write: a frame that shows a position
+// undivided is a frame that still builds, and the alternative is a project whose frames cannot be
+// saved because of a syntax error somewhere else in the yaml.
+type GroupLayoutsFor = (frameName: string) => GroupLayoutCandidate[]
+
+async function readGroupLayouts(projectPath: string, problems?: string[]): Promise<GroupLayoutsFor> {
   try {
-    return groupLayoutCandidates(await configService.readConfig(projectPath))
+    const config = await configService.readConfig(projectPath)
+    return (frameName) => groupLayoutCandidates(config, frameName)
   } catch (err) {
     // "No groups" and "could not tell" render the same - every position undivided, the group areas
     // empty - and the frame cannot tell them apart either, since the empty ordering is all it
@@ -344,7 +354,7 @@ async function readGroupLayouts(projectPath: string, problems?: string[]): Promi
     // place the user is looking: the build log. `console.error` alone is a message to nobody.
     console.error(`[layoutFrames] could not read the layout groups of ${projectPath}: ${String(err)}`)
     problems?.push(mainT('frameGroupsUnreadable', { error: String(err) }))
-    return [{ pageType: null, order: {} }]
+    return () => [{ pageType: null, order: {} }]
   }
 }
 
@@ -378,7 +388,7 @@ async function writeFrameFiles(
   projectPath: string,
   def: GridFrameDefinition,
   widths: FrameBreakpointWidths,
-  groupLayouts: GroupLayoutCandidate[]
+  groupLayoutsFor: GroupLayoutsFor
 ): Promise<void> {
   const dir = frameDir(projectPath, def.id)
   quartzGuiDir(projectPath, 'authored-frames') // creating: this is the write path
@@ -393,7 +403,7 @@ async function writeFrameFiles(
     // truncates before it streams. A rename cannot be seen half-done.
     writeJsonFile(join(dir, 'frame.json'), def),
     writeFileAtomic(join(dir, 'package.json'), generatePackageJson(def)),
-    writeFileAtomic(join(dir, 'dist', 'frames.js'), generateFrameJs(def, widths, groupLayouts))
+    writeFileAtomic(join(dir, 'dist', 'frames.js'), generateFrameJs(def, widths, groupLayoutsFor(def.frameName)))
   ])
 }
 
@@ -423,12 +433,12 @@ export async function writeAllFrames(projectPath: string): Promise<string[]> {
     // would then be whole, ordered, and stale, which is the failure the queue exists to prevent.
     await serialised(projectPath, async () => {
       const frames = await listFrames(projectPath)
-      const [widths, groupLayouts] = await Promise.all([
+      const [widths, groupLayoutsFor] = await Promise.all([
         getBreakpointWidths(projectPath),
         readGroupLayouts(projectPath, problems)
       ])
       for (const def of frames) {
-        await writeFrameFiles(projectPath, def, widths, groupLayouts)
+        await writeFrameFiles(projectPath, def, widths, groupLayoutsFor)
       }
     })
   } catch (err) {

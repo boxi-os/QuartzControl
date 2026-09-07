@@ -371,10 +371,14 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   geht es über Quartz' zweiten Schlüssel: `layout.group` faltet die gruppierten Einträge einer
   Position zu einer Flex zusammen, und **die k-te Flex einer Position ist die k-te Gruppe**. Das k
   steht als `GROUP_ORDER` im generierten Frame, weil es aus der flachen Positionsliste nicht
-  ablesbar ist; die Frames halten damit eine Kopie aus der Config und werden nach jedem
-  Config-Speichern neu geschrieben (`writeAllFrames`), wie schon bei den Breakpoint-Breiten.
-  Stimmen die Zahlen beim Bauen nicht, wird nichts geraten: alles in den einfachen Bereich, Warnung
-  ins Log. Messungen in [`layout-frames.md`](docs/decisions/layout-frames.md).
+  ablesbar ist. Die Frames halten damit eine Kopie aus der Config, und **der Wächter über eine
+  solche Kopie steht an der Tür, an der sie gelesen wird, nicht an denen, an denen das Original
+  sich ändert**: `buildService` ruft `writeAllFrames()` vor jedem `quartz build` und jedem
+  `--serve`-Start. Zur Config führen acht Türen (Speichern, vier Plugin-Operationen über die CLI,
+  Plugin-Update, `quartz sync --pull`, Vorlagen-Import, Restore je Datei) — eine Liste, an die die
+  nächste nicht angebaut wird; die eine Bau-Tür deckt sie alle. Stimmen die Zahlen beim Bauen
+  nicht, wird nichts geraten: alles in den einfachen Bereich, Warnung ins Log. Messungen in
+  [`layout-frames.md`](docs/decisions/layout-frames.md).
 - **Kein natives HTML5-Drag mehr, nirgends.** Alle vier Stellen ziehen mit `@dnd-kit`
   (`Plugins/Installed`, `LayoutEditor/GlobalBoard`, `LayoutEditor/FrameBuilder`; `Styles/CustomCss`
   hatte nie eines, nur Pfeile). Eine neue Stelle nimmt `@dnd-kit` mit `KeyboardSensor`, denn natives

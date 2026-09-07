@@ -142,9 +142,8 @@ Positionsliste ist flach, und jede Gruppe darin ist eine namenlose Flex. Sie ste
 ersten Mitglieds, sofern `layout.groups.<name>.priority` nichts anderes sagt).
 
 Damit hält ein Frame eine Kopie von etwas, das die Config besitzt — dasselbe Verhältnis wie bei den
-Breakpoint-Breiten, und mit derselben Folge: `writeAllFrames()` läuft nach jedem Config-Speichern,
-so wie `saveBreakpointWidths()` die Frames schon immer umgeschrieben hat. **Eine Kopie, die niemand
-auffrischt, ist eine Kopie, die still aufhört zu stimmen.**
+Breakpoint-Breiten. **Eine Kopie, die niemand auffrischt, ist eine Kopie, die still aufhört zu
+stimmen**, also braucht sie einen Wächter; wo der steht, ist unten der eigene Abschnitt.
 
 Und weil eine Kopie trotzdem veralten kann — jemand ändert die yaml von Hand —, zählt der
 generierte Code beim Rendern nach: passen Flexes und `GROUP_ORDER` nicht zusammen, wird nichts
@@ -211,3 +210,47 @@ Zwei Nebenbefunde aus demselben Durchgang:
   jetzt aus drei Quellen — `layout.groups`, die Bereiche der Frames, und **was die Komponenten
   tatsächlich nennen**. Dieselbe Lücke gab es vorher schon für eine unter `layout.groups` gelöschte
   Gruppe; der Kommentar an `deleteGroup` hatte sie als harmlos notiert.
+
+### Der Wächter steht an der Tür, an der gelesen wird (2026-09-07)
+
+Erst hing er am IPC-Handler fürs Config-Speichern. Das war naheliegend und falsch, und die Liste der
+Türen, die er nicht abdeckte, wuchs beim Nachsehen weiter:
+
+| Tür | schreibt die Config | vom ersten Wächter abgedeckt |
+|---|---|---|
+| `config:save` (die App selbst) | ja | ja |
+| `plugin add/remove/install/prune` | die Quartz-CLI schreibt sie zurück | nein |
+| `quartz plugin install --latest` (Plugin-Update) | dito | nein |
+| `quartz sync --pull` | bringt die Config des Gegenübers mit | nein |
+| Vorlagen-Import | vier Aufrufe, alle an `handle()` vorbei | nein |
+| Snapshot-Restore je Datei | kann `quartz.config.yaml` allein zurückholen | nein |
+| `npx quartz build` im Terminal | gar nicht durch die App | nein |
+| Snapshot-Restore ganz / Duplizieren / Umbenennen | — | **braucht keinen** |
+
+Die letzte Zeile ist kein Versehen: Ein ganzer Restore holt Config und Frames aus demselben Commit
+(`read-tree -u --reset`), und ein Snapshot hält die erzeugte Datei — an einem echten Store
+nachgesehen, `dist/frames.js` steht in jedem Baum neben seiner `frame.json`. Das Duplizieren kopiert
+beide Seiten (`authored-frames` steht in keiner `SKIP`-Liste), und `repointProjectPaths` fasst nur
+`entry.source` und das Lockfile an, nie `layout.group`.
+
+Für alle anderen gilt: **einen Wächter je Tür zu setzen ist eine Liste, an die die nächste Tür nicht
+angebaut wird.** Gelesen wird die Kopie aber nur an einer einzigen Stelle — beim Bauen. Also steht
+der Wächter dort: `buildService` ruft `writeAllFrames()` unmittelbar vor jedem `quartz build` und
+jedem `quartz build --serve`. Damit sind alle Zeilen der Tabelle abgedeckt, auch die, an die niemand
+gedacht hat. Es kostet drei Schreibvorgänge je Frame (ein Projekt ohne Frames kehrt sofort zurück)
+gegen einen Build, der in Sekunden misst.
+
+Gemessen an einem echten Projekt, über einen Weg **ohne jeden Wächter** — die yaml von Hand
+geändert, dann durch die App gebaut:
+
+| | `GROUP_ORDER` vor dem Bau | danach | gebaute Seite |
+|---|---|---|---|
+| Gruppe von Hand eingetragen | `{"left":["toolbar"]}` | `{"left":["toolbar","custom-8"]}` | Explorer in `custom-8` |
+| Gruppe von Hand entfernt | `{"left":["toolbar","custom-8"]}` | `{"left":["toolbar"]}` | Explorer in `left` |
+
+Dasselbe am Dev-Server: `server.start` frischte die Kopie vor dem Spawn auf, gemessen an derselben
+Zeile. Keine Warnung in beiden Fällen, in beide Richtungen.
+
+Bleibt der eine Fall, den auch das nicht erreicht: `npx quartz build` in einem Terminal. Dafür ist
+der Zähl-Abgleich im erzeugten Frame da — er rät nicht, legt alles in den einfachen Bereich und sagt
+im Build-Log, welchen.

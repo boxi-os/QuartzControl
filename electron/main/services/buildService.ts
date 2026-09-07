@@ -8,6 +8,7 @@ import treeKill from 'tree-kill'
 import { EventEmitter } from 'events'
 import type { BuildOutputInfo, LogLine, ServerOptions, ServerStatus, BuildResult } from '@shared/ipc-contract'
 import { needsShell } from './runCommand'
+import * as layoutFrameService from './layoutFrameService'
 import { looksLikeQuartzBuild } from './buildOutputGuard'
 import { quartzGuiDir, resolveBuildDir } from './projectDirs'
 import * as runningServersStore from './runningServersStore'
@@ -252,6 +253,31 @@ function openServerLog(projectId: string, projectPath: string): ServerLog | null
   }
 }
 
+/**
+ * Re-generates every authored frame from the definition and the config as they stand right now.
+ *
+ * A frame's generated module carries a copy of the config's group ordering (layoutFrameService's
+ * generateFrameJs) - it has to, because quartz hands a frame a flat array per position in which
+ * every group is one anonymous Flex, so rank is the only way to tell them apart. A copy has to be
+ * kept true, and the counting of doors that can change the original went badly: the IPC handler
+ * for a config save, four plugin operations that let the Quartz CLI rewrite the config, a per-file
+ * snapshot restore, a template import, `quartz sync --pull` bringing a colleague's config, and
+ * `quartz plugin install --latest`. A guard at each of those is a list that the next door is added
+ * without.
+ *
+ * There is only one place the copy is ever *read*, though, and it is here: the build. So the
+ * invariant is re-established at the point of use, and every one of those doors is covered by
+ * construction, including the ones nobody thought of. It costs three writes per frame - a project
+ * with none returns immediately - against a build measured in seconds.
+ *
+ * It does not cover `npx quartz build` typed into a terminal. That is what the count check inside
+ * the generated frame is for: it refuses to guess, puts everything in the position's plain area,
+ * and says which one.
+ */
+async function refreshAuthoredFrames(projectPath: string): Promise<void> {
+  await layoutFrameService.writeAllFrames(projectPath)
+}
+
 export async function startServer(
   projectId: string,
   projectPath: string,
@@ -261,6 +287,8 @@ export async function startServer(
   if (existing) return existing.status
   // a fresh attempt supersedes whatever the previous run ended as
   lastTerminalStatus.delete(projectId)
+
+  await refreshAuthoredFrames(projectPath)
 
   const args = ['quartz', 'build', '--serve', '--port', String(options.port), '--wsPort', String(options.wsPort)]
   if (options.host) args.push('--remoteDevHost', options.host)
@@ -388,7 +416,8 @@ export async function restartServer(
   return startServer(projectId, projectPath, previousOptions)
 }
 
-export function runBuild(projectId: string, projectPath: string, outputDir?: string): Promise<BuildResult> {
+export async function runBuild(projectId: string, projectPath: string, outputDir?: string): Promise<BuildResult> {
+  await refreshAuthoredFrames(projectPath)
   const start = Date.now()
   const args = ['quartz', 'build']
   if (outputDir) args.push('--output', outputDir)

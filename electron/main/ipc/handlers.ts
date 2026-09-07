@@ -163,16 +163,13 @@ export function registerIpcHandlers(): void {
   })
 
   handle(IPC.configGet, t([s.absolutePath]), (projectPath) => configService.readConfig(projectPath))
-  // The frames carry a copy of the config's group ordering (see layoutFrameService's
-  // generateFrameJs), so a layout change has to reach them - otherwise the split a frame shows is
-  // the one that was true when it was last saved. Rewriting all of them costs one file read plus
-  // three writes per frame and never throws, so it rides along with the save rather than becoming
-  // a second call the renderer has to remember.
-  handle(IPC.configSave, t([s.absolutePath, s.quartzConfig]), async (projectPath, config) => {
-    const result = await configService.writeConfig(projectPath, config as QuartzConfig)
-    await layoutFrameService.writeAllFrames(projectPath)
-    return result
-  })
+  // No frame refresh here, deliberately: the frames carry a copy of this config's group ordering,
+  // but the only thing that ever reads that copy is a build, and buildService re-establishes it
+  // there (see refreshAuthoredFrames). A guard on this one door would have covered the app's own
+  // save and left the CLI-driven writers - plugin add/remove/prune, `quartz sync --pull` - open.
+  handle(IPC.configSave, t([s.absolutePath, s.quartzConfig]), (projectPath, config) =>
+    configService.writeConfig(projectPath, config as QuartzConfig)
+  )
 
   handle(IPC.pluginAdd, t([s.absolutePath, s.pluginSource]), (projectPath, source) =>
     pluginService.addPlugin(projectPath, source)

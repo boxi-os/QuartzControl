@@ -87,7 +87,8 @@ function frameDir(projectPath: string, id: string): string {
 // because it is the only thing the frame cannot work out for itself: quartz hands it a flat array
 // per position in which each group is one anonymous `Flex`, so rank is the only way to tell them
 // apart. That makes the frame files depend on the layout half of quartz.config.yaml, which is why
-// writeAllFrames() runs after a config save.
+// buildService calls writeAllFrames() before every build and every dev server - the one place the
+// baked-in copy is ever read (see refreshAuthoredFrames there for why it is the only guard).
 function generateFrameJs(
   def: GridFrameDefinition,
   widths: FrameBreakpointWidths,
@@ -235,14 +236,14 @@ async function writeFrameFiles(
 /**
  * Rewrites every frame of a project against the config as it stands now.
  *
- * Called after a config save, for the same reason saveBreakpointWidths rewrites them: the frames
- * carry a copy of something the config owns - there, the breakpoint widths, here the group order -
- * and a copy nobody refreshes is a copy that quietly stops being true. No `quartz plugin add` is
- * involved; each frame's directory is already symlinked into .quartz/plugins, so rewriting the
- * files behind the symlink is the whole job.
+ * Same reason saveBreakpointWidths rewrites them: the frames carry a copy of something the config
+ * owns - there the breakpoint widths, here the group order - and a copy nobody refreshes is a copy
+ * that quietly stops being true. No `quartz plugin add` is involved; each frame's directory is
+ * already symlinked into .quartz/plugins, so rewriting the files behind the symlink is the whole
+ * job. The one caller is buildService, right before it spawns quartz.
  *
- * Never throws: this runs after the config has already been written, and a project with no frames
- * (the common case) must not learn about frames from a failed save.
+ * Never throws, and returns immediately for a project with no frames: it sits in front of every
+ * build, and a build must not fail because of a repair it did not ask for.
  */
 export async function writeAllFrames(projectPath: string): Promise<void> {
   try {

@@ -504,16 +504,41 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Befunde aus den Reviews (Stand 2026-09-08)
+## Befunde aus den Reviews (Stand 2026-09-09)
 
-Alle fünf Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
+Alle sechs Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs,
-[`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht und
-[`docs/REVIEW-2026-09-08.md`](docs/REVIEW-2026-09-08.md) mit seinen acht (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-`, `-07-` und `-08-`) stehen als Dokumente unverändert;
-die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft gilt, steht oben als
-Regel.
+[`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht,
+[`docs/REVIEW-2026-09-08.md`](docs/REVIEW-2026-09-08.md) mit seinen acht und
+[`docs/REVIEW-2026-09-09.md`](docs/REVIEW-2026-09-09.md) mit seinen acht (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-`, `-07-`, `-08-` und `-09-`) stehen als Dokumente
+unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft gilt, steht
+oben als Regel.
+
+**Das sechste Review traf die Grundlage des Umbaus, den es las.** Kein Befund der Stufe Hoch, drei
+Mittel, fünf Niedrig; alle acht sind abgearbeitet, jeder mit einer Vorher-Messung. Der erste
+mittlere lag an einer Stelle, die der Auftrag nicht genannt hatte: Die Gruppenordnung, die ein
+Frame eingebacken bekommt, ist keine Eigenschaft der Config, sondern eine des Seitentyps — Regel
+oben unter „Ein Bereich eines Frames ist Geometrie“, Messungen in
+[`layout-frames.md`](docs/decisions/layout-frames.md). Was daraus sonst als Regel bleibt:
+
+- **Zwei Dinge, die gleich aussehen, brauchen zwei Antworten.** „Keine Gruppen“ und „konnte nicht
+  nachsehen“ rendern identisch, also muss der Unterschied dort gesagt werden, wo er bekannt ist —
+  und zwar dorthin, wo der Nutzer liest. Ein `console.error` im Hauptprozess ist eine Meldung an
+  niemanden.
+- **Wer eine Kopplung „trägt mit“ nennt, prüft, wohin die Kopie zeigt.** Das Umbenennen eines
+  Bereichs benannte seine Gruppe mit um und zerschnitt damit genau die Bindung, die der Kommentar
+  daneben zu erhalten behauptete — stumm, weil die Zahl der Flexes weiter stimmte.
+- **Ein Wächter gehört an die Tür, an der der Wert *gelesen* wird, nicht an die Aufrufstellen.**
+  Der Vorlagen-Import reichte Frames ungeprüft an `saveFrame` durch, während der IPC-Kanal daneben
+  alles prüfte; die Prüfung sitzt jetzt in `saveFrame`, wo eine Definition zu Dateien wird.
+- **Eine optionale Einstellung zurückzustellen heißt, auch ihr Fehlen zurückzustellen.** `undefined`
+  als „nichts zu tun“ zu lesen war genau falsch herum: Der Vorgabezustand ist der häufigste.
+- **Was ein fremdes Programm liest, wird atomar geschrieben.** Gemessen: 18 von 401 Lesevorgängen
+  sahen bei `writeFile` einen Torso, 0 von 23771 bei `rename`.
+- **Eine Nachbildung sagt, wo sie nicht hinreicht.** „It mirrors X exactly“ war an zwei Rändern
+  falsch, und einer davon ist prinzipiell nicht erreichbar.
 
 **Das fünfte Review traf das Herzstück des Diffs, den es las.** Ein Befund der Stufe Mittel und
 sieben niedrige; der mittlere war, dass das mitgereiste Handbuch unter `file://` eine Seite ohne

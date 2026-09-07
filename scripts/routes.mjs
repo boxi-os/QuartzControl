@@ -10,6 +10,8 @@ export const PROJECT_ROUTES = [
   ['Konfiguration · Content-Ordner', '/config?tab=content'],
   ['Konfiguration · Übersetzungen', '/config?tab=localization'],
   ['Layout', '/layout'],
+  ['Layout · Seitentypen', '/layout?tab=pagetypes'],
+  ['Layout · Eigene Frames', '/layout?tab=frames'],
   ['Stile · Basis', '/styles'],
   ['Stile · Community-Themes', '/styles?tab=theme'],
   ['Stile · Variablen', '/styles?tab=variables'],

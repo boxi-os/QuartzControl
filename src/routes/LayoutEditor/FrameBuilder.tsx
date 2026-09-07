@@ -74,6 +74,16 @@ function slotToName(slot: FrameSlot): string {
   return slot.replace(/([A-Z])/g, '-$1').toLowerCase()
 }
 
+// "custom-3" counted areas, so deleting one and adding another produced a name that was already
+// taken - and two areas with the same name are one grid-template-areas cell, i.e. the second one
+// silently overwrites the first. Counts up until the name is free instead.
+function nextAreaName(areas: GridFrameArea[]): string {
+  const taken = new Set(areas.map((a) => a.name))
+  let n = areas.length + 1
+  while (taken.has(`custom-${n}`)) n++
+  return `custom-${n}`
+}
+
 // A brand-new frame starts with one area per real component slot (including pageBody, the actual
 // page content - almost every frame needs it), all unplaced. That way the "available areas" tray
 // has something to drag onto the grid immediately, instead of an empty editor that only gains
@@ -368,7 +378,11 @@ export default function FrameBuilder({
   function addNewArea(): void {
     if (!editing) return
     const id = `area-${Date.now()}`
-    const newArea: GridFrameArea = { id, name: `custom-${editing.areas.length + 1}`, slot: 'left' }
+    // No slot: quartz hands out seven sources of content and a frame may have more areas, so a new
+    // one starts as an empty cell and says so. It used to be born on `left`, which is why this
+    // project's "editorial" frame ended up with three areas on that slot - and built the whole
+    // left sidebar three times onto every page.
+    const newArea: GridFrameArea = { id, name: nextAreaName(editing.areas) }
     setEditing({ ...editing, areas: [...editing.areas, newArea] })
     setSelectedAreaId(id)
     setMessage(null)
@@ -384,7 +398,7 @@ export default function FrameBuilder({
     setEditing({ ...editing, areas: editing.areas.map((a) => (a.id === id ? { ...a, name } : a)) })
   }
 
-  function updateAreaSlot(id: string, slot: FrameSlot): void {
+  function updateAreaSlot(id: string, slot: FrameSlot | undefined): void {
     if (!editing) return
     setEditing({ ...editing, areas: editing.areas.map((a) => (a.id === id ? { ...a, slot } : a)) })
   }
@@ -535,13 +549,16 @@ export default function FrameBuilder({
   const box = buildFrameBox(layout)
   const hasMaxWidth = !!layout.maxWidth?.trim()
   const hasBox = hasMaxWidth || box.paddingBlock !== '0' || box.paddingInline !== '0'
-  const usedSlots = new Set(
-    editing.areas.filter((a) => {
-      const p = layout.placements[a.id]
-      return p && !p.hidden
-    }).map((a) => a.slot)
-  )
+  const visibleAreas = editing.areas.filter((a) => {
+    const p = layout.placements[a.id]
+    return p && !p.hidden
+  })
+  const usedSlots = new Set(visibleAreas.map((a) => a.slot).filter((s): s is FrameSlot => !!s))
   const unassignedSlots = SLOTS.filter((s) => s !== 'pageBody' && !usedSlots.has(s))
+  // Two visible areas on one slot render that slot's whole component list twice - measured on this
+  // project's "editorial" frame, which had three on `left`. The editor used to allow it silently;
+  // the build was the first place it showed.
+  const doubledSlots = SLOTS.filter((s) => visibleAreas.filter((a) => a.slot === s).length > 1)
   const unplacedAreas = editing.areas.filter((a) => {
     const p = layout.placements[a.id]
     return !p || p.hidden
@@ -795,7 +812,7 @@ export default function FrameBuilder({
                     <span className="truncate font-medium">{area.name}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Badge>{t(`positions.${area.slot}`, area.slot)}</Badge>
+                    <Badge>{area.slot ? t(`positions.${area.slot}`, area.slot) : t('layoutEditor.frameBuilder.slotNone')}</Badge>
                     <span aria-hidden="true" className="rounded-[4px] p-0.5 text-text-muted">
                       {isSelected ? '▲' : '▼'}
                     </span>
@@ -811,7 +828,12 @@ export default function FrameBuilder({
                       <TextInput value={nameDraft} onChange={(e) => updateAreaName(area.id, e.target.value)} autoFocus className="w-32" />
                     </Field>
                     <Field label={t('layoutEditor.frameBuilder.areaSlot')}>
-                      <Select value={area.slot} onChange={(e) => updateAreaSlot(area.id, e.target.value as FrameSlot)} className="w-32">
+                      <Select
+                        value={area.slot ?? ''}
+                        onChange={(e) => updateAreaSlot(area.id, (e.target.value || undefined) as FrameSlot | undefined)}
+                        className="w-32"
+                      >
+                        <option value="">{t('layoutEditor.frameBuilder.slotNone')}</option>
                         {SLOTS.map((slot) => (
                           <option key={slot} value={slot}>
                             {t(`positions.${slot}`, slot)}
@@ -880,6 +902,13 @@ export default function FrameBuilder({
           <p className="mt-4 text-xs text-amber-600 dark:text-amber-400">
             {t('layoutEditor.frameBuilder.unassignedWarning', {
               slots: unassignedSlots.map((s) => t(`positions.${s}`, s)).join(', ')
+            })}
+          </p>
+        )}
+        {doubledSlots.length > 0 && (
+          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+            {t('layoutEditor.frameBuilder.doubledWarning', {
+              slots: doubledSlots.map((s) => t(`positions.${s}`, s)).join(', ')
             })}
           </p>
         )}
@@ -1018,7 +1047,9 @@ function TrayChip({
       </ActivatorContext.Provider>
       <button type="button" onClick={onSelect} className="flex flex-col items-center gap-0.5 text-center">
         <span className="font-medium">{area.name}</span>
-        <span className="text-text-muted">{t(`positions.${area.slot}`, area.slot)}</span>
+        <span className="text-text-muted">
+          {area.slot ? t(`positions.${area.slot}`, area.slot) : t('layoutEditor.frameBuilder.slotNone')}
+        </span>
       </button>
     </div>
   )

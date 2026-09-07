@@ -1138,6 +1138,7 @@ export default {
       cellName: 'Cell row {{row}}, column {{col}}',
       areaName: 'Area name',
       areaSlot: 'Slot',
+      slotNone: 'None (empty)',
       rowSpanLabel: 'Row span',
       colSpanLabel: 'Column span',
       removeArea: 'Remove area',
@@ -1145,6 +1146,8 @@ export default {
       visibleOnBreakpoint: 'Visible on {{breakpoint}}',
       overlapError: 'This area overlaps an existing area.',
       unassignedWarning: 'Not assigned: {{slots}}. Components for these slots will not render in this frame.',
+      doubledWarning:
+        'Assigned twice: {{slots}}. Each of these areas shows the same components, so they appear more than once on the page.',
       neverVisibleWarning: 'Not visible on any breakpoint: {{areas}}. These areas will not render anywhere.',
       nameRequired: 'Please give the frame a name.',
       nameCollision: 'This name is already taken (a built-in frame, or another custom one).',

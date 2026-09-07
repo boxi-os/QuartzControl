@@ -1142,6 +1142,7 @@ export default {
       cellName: 'Zelle Zeile {{row}}, Spalte {{col}}',
       areaName: 'Bereichsname',
       areaSlot: 'Belegung',
+      slotNone: 'Keine (leer)',
       rowSpanLabel: 'Zeilen-Spanne',
       colSpanLabel: 'Spalten-Spanne',
       removeArea: 'Bereich löschen',
@@ -1149,6 +1150,8 @@ export default {
       visibleOnBreakpoint: 'Sichtbar auf {{breakpoint}}',
       overlapError: 'Dieser Bereich überschneidet sich mit einem bestehenden Bereich.',
       unassignedWarning: 'Nicht zugewiesen: {{slots}}. Komponenten für diese Positionen werden in diesem Frame nicht angezeigt.',
+      doubledWarning:
+        'Doppelt belegt: {{slots}}. Jeder dieser Bereiche zeigt dieselben Komponenten, sie erscheinen also mehrfach auf der Seite.',
       neverVisibleWarning: 'Auf keinem Breakpoint sichtbar: {{areas}}. Diese Bereiche werden nirgends gerendert.',
       nameRequired: 'Bitte einen Frame-Namen vergeben.',
       nameCollision: 'Dieser Name ist bereits vergeben (ein eingebautes Frame oder ein anderes eigenes).',

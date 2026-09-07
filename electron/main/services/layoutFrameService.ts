@@ -98,7 +98,8 @@ export const Frame = {
         "div",
         { class: "qgframe-grid" },
         AREAS.map((area) => {
-          const components = bySlot[area.slot] ?? []
+          // An area without a slot is an empty cell by design (a spacer) - see GridFrameArea.
+          const components = area.slot ? (bySlot[area.slot] ?? []) : []
           // The area holding pageBody also carries \`center\`, because quartz's own three frames
           // do (DefaultFrame/FullWidthFrame/MinimalFrame all render <div class="center …">) and
           // client scripts rely on it: the mermaid initialiser runs

@@ -137,7 +137,7 @@ export default function GlobalBoard({
   // it will be built, and leaving them out would show a full-width layout for a frame that is not.
   const activeBox = activeLayout ? buildFrameBox(activeLayout) : null
   const activeUsedSlots = activeAreas
-    ? new Set(activeAreas.map((a) => a.slot).filter((s): s is LayoutPosition => s !== 'pageBody'))
+    ? new Set(activeAreas.map((a) => a.slot).filter((s): s is LayoutPosition => !!s && s !== 'pageBody'))
     : null
 
   // "full-width"/"minimal" are the two other built-in frames (besides the unnamed/"default" one
@@ -374,8 +374,17 @@ export default function GlobalBoard({
             >
               {activeAreas.map((area) => (
                 <div key={area.id} style={{ gridArea: area.name }}>
-                  <AreaBox label={area.name} slotLabel={t(`positions.${area.slot}`, area.slot)}>
-                    {area.slot === 'pageBody' ? (
+                  <AreaBox
+                    label={area.name}
+                    slotLabel={area.slot ? t(`positions.${area.slot}`, area.slot) : t('layoutEditor.frameBuilder.slotNone')}
+                  >
+                    {!area.slot ? (
+                      // An area with no slot is an empty cell in the built page too, so the board
+                      // shows it as one rather than as a drop target that would not hold anything.
+                      <div className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10">
+                        {t('layoutEditor.frameBuilder.slotNone')}
+                      </div>
+                    ) : area.slot === 'pageBody' ? (
                       <div className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10">
                         {t('layoutEditor.frameBuilder.preview.pageContent')}
                       </div>

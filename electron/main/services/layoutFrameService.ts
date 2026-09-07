@@ -13,6 +13,7 @@ import type { GroupLayoutCandidate } from '@shared/gridFrameCss'
 import * as configService from './configService'
 import * as pluginService from './pluginService'
 import { quartzGuiDir, quartzGuiPath } from './projectDirs'
+import { gridFrameDefinition } from '../ipc/schemas'
 import { mainT } from '../i18n'
 
 // Authored frames live inside the project (.quartz-gui/, same convention as
@@ -375,6 +376,50 @@ export function authoredFrameDir(projectPath: string, id: string): string {
   return frameDir(projectPath, id)
 }
 
+/**
+ * Why a frame definition cannot be written, or null.
+ *
+ * This is the door: `saveFrame` is where a definition becomes files, and a template package walks
+ * through it with whatever its frames.json holds. The IPC channel declares the same shape in
+ * `gridFrameDefinition`, but a `.qtpl` is a file somebody passed along and reaches saveFrame
+ * directly - so the guard belongs here, where the value is read, not only at the one door the
+ * renderer uses. What an unchecked area name costs is not abstract: it goes verbatim into
+ * `grid-template-areas`, into a `grid-area`, into the generated module's class name and into
+ * AREAS, and an unchecked slot indexes `bySlot`, where "constructor" hands the frame a function
+ * instead of a list and every page render throws.
+ *
+ * The two structural checks are the ones no schema can express, and both cost the same thing
+ * twice: CSS rejects a whole `grid-template-areas` declaration when one name names two
+ * rectangles (measured: the frame keeps its areas and loses its layout), and two areas holding one
+ * group on one slot render that group's components twice on every page. The frame editor refuses
+ * both before saving; this is the same refusal for the way in that has no editor.
+ */
+export function frameDefinitionProblem(raw: unknown): string | null {
+  let def: GridFrameDefinition
+  try {
+    def = migrateGridFrameDefinition(raw as GridFrameDefinition | LegacyGridFrameDefinition)
+  } catch (err) {
+    return mainT('frameShapeInvalid', { detail: String(err) })
+  }
+  const parsed = gridFrameDefinition.safeParse(def)
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0]
+    const where = issue.path.join('.') || 'frame'
+    return mainT('frameShapeInvalid', { detail: `${where}: ${issue.message}` })
+  }
+  const names = new Set<string>()
+  const groups = new Set<string>()
+  for (const area of def.areas) {
+    if (names.has(area.name)) return mainT('frameAreaNameDuplicate', { name: area.name })
+    names.add(area.name)
+    if (!area.slot || !area.group) continue
+    const key = `${area.slot}\u0000${area.group}`
+    if (groups.has(key)) return mainT('frameAreaGroupDuplicate', { name: area.group })
+    groups.add(key)
+  }
+  return null
+}
+
 export async function saveFrame(
   projectPath: string,
   rawDef: GridFrameDefinition | LegacyGridFrameDefinition,
@@ -382,6 +427,8 @@ export async function saveFrame(
   // carrying ten frames does not leave ten more behind it.
   options?: { snapshot?: boolean }
 ): Promise<PluginActionResult> {
+  const problem = frameDefinitionProblem(rawDef)
+  if (problem) return { success: false, output: problem }
   // The IPC handler's zod schema already rejects a legacy-shaped payload from the renderer, but
   // importPackage() calls this directly with whatever a template package's frames.json contains -
   // possibly a pre-breakpoint export - so migrate defensively here too, not just in listFrames().

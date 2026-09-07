@@ -471,6 +471,8 @@ function planSummary(t: Translate, plan: TemplatePartPlan, strategy: TemplateCon
   if (identical > 0) bits.push(t('templates.planIdentical', { count: identical }))
   const outside = noteCount(plan, 'outside')
   if (outside > 0) bits.push(t('templates.planOutside', { count: outside }))
+  const invalidFrames = noteCount(plan, 'invalidFrame')
+  if (invalidFrames > 0) bits.push(t('templates.planInvalidFrames', { count: invalidFrames }))
   if (bits.length === 0) bits.push(t('templates.planNoChange'))
   return bits.join(', ')
 }
@@ -500,6 +502,20 @@ function planNotes(t: Translate, plan: TemplatePartPlan): string[] {
         ? t('templates.planOutsideMore', { names: shown, count: outside.length - OUTSIDE_NAMES_SHOWN })
         : shown
     notes.push(t('templates.planOutsideDetail', { names, count: outside.length }))
+  }
+  // Same shape as `outside`, and for the same reason: a frame this package cannot install has a
+  // name, and the count alone would leave the user looking for which one after the fact.
+  const invalid = plan.notes.filter((note) => note.startsWith('invalidFrame:')).map((note) => note.slice('invalidFrame:'.length))
+  if (invalid.length > 0) {
+    const shown = invalid
+      .slice(0, OUTSIDE_NAMES_SHOWN)
+      .map((name) => t('templates.quotedName', { value: name }))
+      .join(', ')
+    const names =
+      invalid.length > OUTSIDE_NAMES_SHOWN
+        ? t('templates.planOutsideMore', { names: shown, count: invalid.length - OUTSIDE_NAMES_SHOWN })
+        : shown
+    notes.push(t('templates.planInvalidFramesDetail', { names, count: invalid.length }))
   }
   return notes
 }

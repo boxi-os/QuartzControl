@@ -116,6 +116,11 @@ const STRINGS = {
 
     // Frames
     frameIdInvalid: 'Ungültige Frame-ID „{{id}}“ — erlaubt sind nur Buchstaben, Ziffern und Bindestriche.',
+    frameShapeInvalid: 'Der Frame ist nicht lesbar: {{detail}}',
+    frameAreaNameDuplicate:
+      'Zwei Bereiche heißen „{{name}}“. Ein Bereichsname darf nur einmal vorkommen — sonst verliert das Frame sein ganzes Raster.',
+    frameAreaGroupDuplicate:
+      'Zwei Bereiche derselben Belegung halten die Gruppe „{{name}}“. Beide zeigten dieselben Komponenten, also doppelt auf jeder Seite.',
 
     // Commands
     commandTimeout: 'Zeitüberschreitung nach {{ms}} ms: {{command}}',
@@ -327,6 +332,11 @@ const STRINGS = {
       'HTTPS could not be enforced yet — GitHub only issues the certificate for a custom domain a few minutes after the domain is set. Try again later.',
 
     frameIdInvalid: 'Invalid frame id “{{id}}” — only letters, digits and hyphens are allowed.',
+    frameShapeInvalid: 'The frame cannot be read: {{detail}}',
+    frameAreaNameDuplicate:
+      'Two areas are called “{{name}}”. An area name may only appear once — otherwise the frame loses its whole grid.',
+    frameAreaGroupDuplicate:
+      'Two areas on the same slot hold the group “{{name}}”. Both would show the same components, so they would appear twice on every page.',
 
     commandTimeout: 'Timed out after {{ms}} ms: {{command}}',
 

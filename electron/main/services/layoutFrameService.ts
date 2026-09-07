@@ -525,6 +525,41 @@ export function authoredFrameDir(projectPath: string, id: string): string {
  * group on one slot render that group's components twice on every page. The frame editor refuses
  * both before saving; this is the same refusal for the way in that has no editor.
  */
+// What is wrong with a frame definition, in the app's own language.
+//
+// Everywhere else in this app a zod message is left in English, because it describes a bug. Here it
+// describes an *input* - a `.qtpl` is a file somebody passed along - and it lands inside a sentence
+// the reader gets in their own language, which produced things like "Der Frame ist nicht lesbar:
+// areas: Invalid input: expected array, received null". So the issue is said in the app's words
+// instead: the path, which is data rather than prose, plus a phrase per issue code, plus whatever
+// number or list the issue carries (a limit, the allowed values - also data).
+//
+// The five codes are the ones this schema can actually produce, checked against it rather than
+// guessed: invalid_type, too_big, too_small, invalid_value (an enum) and invalid_format (a regex).
+// Anything else keeps zod's own text, and that case really is a bug - the schema grew a rule this
+// list was never told about, and an English sentence is then the right kind of ugly.
+// Derived from the schema rather than imported from zod: it is the same discriminated union, so
+// `issue.maximum` and `issue.values` below are narrowed by their `case` instead of cast.
+type FrameShapeIssue = NonNullable<ReturnType<typeof gridFrameDefinition.safeParse>['error']>['issues'][number]
+
+function shapeIssue(issue: FrameShapeIssue): string {
+  const where = issue.path.join('.') || 'frame'
+  switch (issue.code) {
+    case 'invalid_type':
+      return mainT('frameIssueType', { where })
+    case 'too_big':
+      return mainT('frameIssueTooBig', { where, limit: String(issue.maximum) })
+    case 'too_small':
+      return mainT('frameIssueTooSmall', { where, limit: String(issue.minimum) })
+    case 'invalid_value':
+      return mainT('frameIssueValue', { where, values: issue.values.join(', ') })
+    case 'invalid_format':
+      return mainT('frameIssueFormat', { where })
+    default:
+      return `${where}: ${issue.message}`
+  }
+}
+
 export function frameDefinitionProblem(raw: unknown): string | null {
   let def: GridFrameDefinition
   try {
@@ -534,9 +569,7 @@ export function frameDefinitionProblem(raw: unknown): string | null {
   }
   const parsed = gridFrameDefinition.safeParse(def)
   if (!parsed.success) {
-    const issue = parsed.error.issues[0]
-    const where = issue.path.join('.') || 'frame'
-    return mainT('frameShapeInvalid', { detail: `${where}: ${issue.message}` })
+    return mainT('frameShapeInvalid', { detail: shapeIssue(parsed.error.issues[0]) })
   }
   const names = new Set<string>()
   const groups = new Set<string>()

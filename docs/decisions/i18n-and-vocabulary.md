@@ -83,3 +83,44 @@ Daraus die Regeln, die für App **und** Handbuch gelten:
 
 Die Zielgruppe ist in beiden Fällen dieselbe wie beim Example-Handbuch: jemand, der Obsidian kennt
 und Quartz nicht. Du-Anrede, wie bisher.
+
+## Ein zod-Satz beschreibt hier eine Eingabe, keinen Bug (2026-09-07)
+
+Die Regel „zod- und `console.error`-Texte bleiben Englisch, weil sie Bugs beschreiben, nicht
+Eingaben“ hatte eine Stelle, an der beides nicht stimmte. `frameDefinitionProblem()` setzte
+`issue.path` und `issue.message` von zod in einen Satz ein, den der Nutzer in seiner Sprache liest —
+und die Eingabe ist ein `.qtpl`, also eine Datei, die jemand weitergereicht hat:
+
+    Der Frame ist nicht lesbar: frame: Invalid input: expected object, received null
+    Der Frame ist nicht lesbar: areas: Invalid input: expected array, received null
+    Der Frame ist nicht lesbar: frameName: Too big: expected string to have <=120 characters
+
+Gesagt wird das jetzt in den Worten der App: der Pfad, der Daten ist und keine Prosa, dazu ein Satz
+je Fehlercode, dazu die Zahl oder die Liste, die der Fehler mitbringt (eine Grenze, die erlaubten
+Werte — auch Daten):
+
+    Der Frame ist nicht lesbar: Das Feld „areas“ fehlt oder hat den falschen Typ.
+    Der Frame ist nicht lesbar: Der Wert bei „frameName“ ist zu groß oder zu lang (Höchstwert 120).
+    Der Frame ist nicht lesbar: Der Wert bei „areas.0.slot“ ist keine der erlaubten Angaben
+      (header, left, right, beforeBody, afterBody, footer, pageBody).
+
+Die fünf Codes sind **am Schema gemessen, nicht geraten**: `invalid_type`, `too_big`, `too_small`,
+`invalid_value` (ein Enum) und `invalid_format` (eine Regex) sind alles, was
+`gridFrameDefinition` hergibt — durchgespielt an elf kaputten Frames. Ein Code, den die Liste nicht
+kennt, behält zod' eigenen Text, und *dieser* Fall ist wirklich ein Bug: Das Schema hat eine Regel
+bekommen, von der hier niemand weiß. Der Typ der Liste ist aus dem Schema abgeleitet
+(`NonNullable<ReturnType<typeof gridFrameDefinition.safeParse>['error']>['issues'][number]`), also
+verengt der `case` die Felder `maximum`/`minimum`/`values` von selbst, statt sie zu casten.
+
+**Und der Import hängte den Satz an einen zweiten.** Eine Warnung reist als `kind:detail` und wird
+im Renderer am **ersten** Doppelpunkt getrennt (`ImportOutcome`) — ein Name, der mit einem weiteren
+Doppelpunkt an seinen Grund geklebt wird, kommt also so an:
+
+    vorher   Frame konnte nicht angelegt werden: editorial:Der Frame ist nicht lesbar: frame:
+             Invalid input: expected object, received null
+    jetzt    Frame konnte nicht angelegt werden: „editorial“ — Der Frame ist nicht lesbar:
+             Das Feld „areas“ fehlt oder hat den falschen Typ.
+
+Der Gedankenstrich und die Anführungszeichen kommen aus `mainT('frameFailedDetail')`, nicht aus
+einer Zeichenkette im Code: Deutsch zitiert „…“, Englisch “…”, und der Hauptprozess weiß, welche
+Sprache gerade gilt.

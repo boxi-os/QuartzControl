@@ -593,8 +593,14 @@ const frames: TemplatePart<FramesPayload> = {
       // Same question saveFrame will ask when the button is clicked, asked while the answer is
       // still worth something: a dry run that lists a frame as an addition and then refuses it is
       // a dry run that described a different import than the one that ran.
-      if (layoutFrameService.frameDefinitionProblem(frame) !== null) {
-        plan.notes.push(`invalidFrame:${frameLabel(frame)}`)
+      //
+      // And it carries the answer, not just its existence: the reason is right here, and a dialog
+      // that says "unreadable and skipped" while knowing *why* sends the reader to the Import
+      // button to find out. Same `name — reason` join as the failure warning below, so the two say
+      // the same thing in the same shape.
+      const problem = layoutFrameService.frameDefinitionProblem(frame)
+      if (problem !== null) {
+        plan.notes.push(`invalidFrame:${mainT('frameNameAndReason', { name: frameLabel(frame), reason: problem })}`)
         continue
       }
       if (existing.has(frame.id)) plan.conflicts.push(frame.frameName || frame.id)
@@ -615,7 +621,16 @@ const frames: TemplatePart<FramesPayload> = {
       // carried in the `plugins` part: its source is an absolute path on the exporting machine.
       const result = await layoutFrameService.saveFrame(projectPath, frame, { snapshot: false })
       if (!result.success) {
-        warn(`frameFailed:${frame.frameName || frame.id}:${result.output.slice(-400)}`)
+        // Not a second colon: `kind:detail` is split at the *first* one (ImportOutcome), so a name
+        // joined to its reason by another colon reached the screen as "Frame konnte nicht angelegt
+        // werden: editorial:Der Frame ist nicht lesbar: …" - three colons in one line. The dash and
+        // the quotes come from mainT, because German and English do not quote alike.
+        warn(
+          `frameFailed:${mainT('frameNameAndReason', {
+            name: frameLabel(frame),
+            reason: result.output.slice(-400)
+          })}`
+        )
         continue
       }
       // Verified, not assumed: with a `.quartz/plugins/<id>` link already in place - which a

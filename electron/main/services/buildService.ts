@@ -31,7 +31,7 @@ export const serverEvents = new EventEmitter()
 // host is Quartz's --remoteDevHost, not a bind address - leave it empty locally, see BuildServer.tsx
 const DEFAULT_OPTIONS: ServerOptions = { port: 8080, wsPort: 3001, host: '' }
 
-function emitLog(projectId: string, stream: 'stdout' | 'stderr', text: string): void {
+function emitLog(projectId: string, stream: LogLine['stream'], text: string): void {
   serverEvents.emit('log', { projectId, stream, text, timestamp: new Date().toISOString() } satisfies LogLine)
 }
 
@@ -290,7 +290,7 @@ export async function startServer(
   // a fresh attempt supersedes whatever the previous run ended as
   lastTerminalStatus.delete(projectId)
 
-  await refreshAuthoredFrames(projectPath, (text) => emitLog(projectId, 'stderr', text))
+  await refreshAuthoredFrames(projectPath, (text) => emitLog(projectId, 'warn', text))
 
   const args = ['quartz', 'build', '--serve', '--port', String(options.port), '--wsPort', String(options.wsPort)]
   if (options.host) args.push('--remoteDevHost', options.host)
@@ -420,7 +420,7 @@ export async function restartServer(
 
 export async function runBuild(projectId: string, projectPath: string, outputDir?: string): Promise<BuildResult> {
   await refreshAuthoredFrames(projectPath, (text) =>
-    serverEvents.emit('buildLog', { projectId, stream: 'stderr', text, timestamp: new Date().toISOString() } satisfies LogLine)
+    serverEvents.emit('buildLog', { projectId, stream: 'warn', text, timestamp: new Date().toISOString() } satisfies LogLine)
   )
   const start = Date.now()
   const args = ['quartz', 'build']

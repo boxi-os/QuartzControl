@@ -117,6 +117,12 @@ const STRINGS = {
     // Frames
     frameIdInvalid: 'Ungültige Frame-ID „{{id}}“ — erlaubt sind nur Buchstaben, Ziffern und Bindestriche.',
     frameShapeInvalid: 'Der Frame ist nicht lesbar: {{detail}}',
+    frameIssueType: 'Das Feld „{{where}}“ fehlt oder hat den falschen Typ.',
+    frameIssueTooBig: 'Der Wert bei „{{where}}“ ist zu groß oder zu lang (Höchstwert {{limit}}).',
+    frameIssueTooSmall: 'Der Wert bei „{{where}}“ ist zu klein oder zu kurz (Mindestwert {{limit}}).',
+    frameIssueValue: 'Der Wert bei „{{where}}“ ist keine der erlaubten Angaben ({{values}}).',
+    frameIssueFormat: 'Der Wert bei „{{where}}“ hat eine Form, die hier nicht erlaubt ist.',
+    frameNameAndReason: '„{{name}}“ — {{reason}}',
     frameGroupsUnreadable:
       'Die Gruppen des Layouts konnten nicht gelesen werden ({{error}}). Die Frames zeigen ihre Positionen für diesen Lauf ungeteilt.',
     frameRefreshFailed:
@@ -337,6 +343,12 @@ const STRINGS = {
 
     frameIdInvalid: 'Invalid frame id “{{id}}” — only letters, digits and hyphens are allowed.',
     frameShapeInvalid: 'The frame cannot be read: {{detail}}',
+    frameIssueType: 'The “{{where}}” field is missing or has the wrong type.',
+    frameIssueTooBig: 'The value at “{{where}}” is too large or too long (maximum {{limit}}).',
+    frameIssueTooSmall: 'The value at “{{where}}” is too small or too short (minimum {{limit}}).',
+    frameIssueValue: 'The value at “{{where}}” is none of the allowed ones ({{values}}).',
+    frameIssueFormat: 'The value at “{{where}}” has a form that is not allowed here.',
+    frameNameAndReason: '“{{name}}” — {{reason}}',
     frameGroupsUnreadable:
       'The layout groups could not be read ({{error}}). Frames show their positions undivided for this run.',
     frameRefreshFailed:

@@ -91,9 +91,12 @@ export function sidebarDirection(position: 'left' | 'right', breakpoint: FrameBr
 // Counts, by derived display name, how many component entries share it - i.e. duplicated
 // instances (two entries with the same `source` always derive the same name, see
 // configService.deriveName). Used both to disambiguate identical names in the UI and to warn
-// where Quartz's own `exclude` (matched by this same source-derived name, not array position -
-// verified against config-loader.ts's `extractPluginName`) can't target one specific instance -
-// see PageTypeOverrides.
+// where Quartz's own `exclude` can't target one specific instance - see PageTypeOverrides.
+//
+// Quartz matches `exclude` by a name derived from the source too, but not by *this* name: its
+// `extractPluginName` leaves an npm source with a scope whole. So the display name is right for
+// counting instances (they share a source, hence both names) and wrong for writing an exclusion,
+// which goes through shared/quartzPluginName.ts.
 export function duplicateNameCounts(plugins: PluginEntry[]): Map<string, number> {
   const counts = new Map<string, number>()
   for (const { plugin } of componentItems(plugins)) {

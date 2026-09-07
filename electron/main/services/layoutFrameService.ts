@@ -68,9 +68,9 @@ export async function getBreakpointWidths(projectPath: string): Promise<FrameBre
 export async function saveBreakpointWidths(projectPath: string, widths: FrameBreakpointWidths): Promise<void> {
   await writeJsonFile(join(quartzGuiDir(projectPath), BREAKPOINTS_FILE), widths)
   await serialised(projectPath, async () => {
-    const groupLayouts = await readGroupLayouts(projectPath)
+    const groupLayoutsFor = await readGroupLayouts(projectPath)
     for (const def of await listFrames(projectPath)) {
-      await writeFrameFiles(projectPath, def, widths, groupLayouts)
+      await writeFrameFiles(projectPath, def, widths, groupLayoutsFor)
     }
   })
 }
@@ -87,13 +87,14 @@ function frameDir(projectPath: string, id: string): string {
 // plugin's dist/ already exists on disk). `pageBody` is a single component (Content), unlike the
 // other 6 slots which are arrays - see PageFrameProps in quartz/components/frames/types.ts.
 //
-// `groupLayouts` is every group ordering this config can produce (groupLayoutCandidates), baked in
-// because it is the one thing the frame cannot work out for itself: quartz hands it a flat array
-// per position in which each group is one anonymous `Flex`, so rank is the only way to tell them
-// apart - and the ordering belongs to the page type, which the frame is never told. That makes the
-// frame files depend on the layout half of quartz.config.yaml, which is why buildService calls
-// writeAllFrames() before every build and every dev server - the one place the baked-in copy is
-// ever read (see refreshAuthoredFrames there for why it is the only guard).
+// `groupLayouts` is every group ordering this config can produce *and hand to this frame*
+// (groupLayoutCandidates with the frame's name), baked in because it is the one thing the frame
+// cannot work out for itself: quartz hands it a flat array per position in which each group is one
+// anonymous `Flex`, so rank is the only way to tell them apart - and the ordering belongs to the
+// page type, which the frame is never told. That makes the frame files depend on the layout half of
+// quartz.config.yaml, which is why buildService calls writeAllFrames() before every build and every
+// dev server - the one place the baked-in copy is ever read (see refreshAuthoredFrames there for
+// why it is the only guard).
 function generateFrameJs(
   def: GridFrameDefinition,
   widths: FrameBreakpointWidths,
@@ -121,12 +122,15 @@ const GROUP_LAYOUTS = ${JSON.stringify(groupLayouts)}
 // (loadQuartzLayout drops what \`byPageType.<t>.exclude\` names, runs buildLayoutForEntries on the
 // rest, then empties the positions \`positions\` cleared), and it hands the frame the finished
 // lists without ever saying which page type they belong to - PageFrameProps carries no name, and
-// neither does componentData. Hence GROUP_LAYOUTS: every ordering this config can produce, and
-// pickGroupOrder to work out which one arrived.
+// neither does componentData. Hence GROUP_LAYOUTS: every ordering that can reach this frame, and
+// pickGroupOrder to work out which one arrived. A page type whose \`template\` names another frame
+// is not in this list - see groupLayoutCandidates for why leaving it in was not harmless.
 const POSITIONS = ["header", "beforeBody", "afterBody", "left", "right", "footer"]
-// The positions this frame divides. One without a group area has nothing to work out, so it never
-// takes part in the decision and never warns - it used to, and a page type that merely cleared it
-// was enough to spend the position's one warning before a real break could have it.
+// The positions this frame divides. Only these are ever taken apart, and only these decide when
+// the counts of all six cannot (see pickGroupOrder). A position without a group area still speaks
+// as evidence, but never about its own contents - it has none to get wrong, and a page type that
+// merely cleared it was enough to spend the position's one warning before a real break could
+// have it.
 const SPLIT_POSITIONS = POSITIONS.filter((p) => AREAS.some((a) => a.slot === p && a.group))
 const warned = new Set()
 
@@ -134,12 +138,21 @@ function orderOf(order, position) {
   return order[position] || []
 }
 
-function countsLike(order, counts) {
-  return POSITIONS.every((p) => orderOf(order, p).length === counts[p])
+function countsLike(order, counts, positions) {
+  return positions.every((p) => orderOf(order, p).length === counts[p])
 }
 
 function splitsAlike(a, b) {
   return SPLIT_POSITIONS.every((p) => orderOf(a, p).join("\\u0000") === orderOf(b, p).join("\\u0000"))
+}
+
+// Same groups on every divided position, whatever their order. The difference decides which of the
+// two ambiguity messages is true: telling the groups apart by an ordering rule only works when
+// there is an ordering to fix.
+function namesAlike(a, b) {
+  return SPLIT_POSITIONS.every(
+    (p) => orderOf(a, p).slice().sort().join("\\u0000") === orderOf(b, p).slice().sort().join("\\u0000")
+  )
 }
 
 function nameOf(candidate) {
@@ -150,29 +163,67 @@ function countsOf(order) {
   return SPLIT_POSITIONS.map((p) => p + " " + orderOf(order, p).length).join(", ")
 }
 
+function renderedOf(counts, positions) {
+  return positions.map((p) => p + " " + counts[p]).join(", ")
+}
+
 function groupsOf(order) {
   return SPLIT_POSITIONS.map((p) => p + ": " + (orderOf(order, p).join(", ") || "no group")).join("; ")
 }
 
 // The only thing a frame can measure about the layout it was handed is how many Flexes each
-// position holds, so that is the whole key: the candidate whose group counts match everywhere is
-// the one this page was built with. Exactly one match is the answer; several that name the same
-// groups in the same order are the same answer said twice. Anything else means guessing, and a
-// guess here is the one failure that cannot be seen on the built page - two areas quietly showing
-// each other's contents - so it falls back to not splitting at all and says why.
+// position holds, so that is the whole key: the candidate whose group counts match is the one this
+// page was built with. Exactly one match is the answer; several that name the same groups in the
+// same order are the same answer said twice. Anything else means guessing, and a guess here is the
+// one failure that cannot be seen on the built page - two areas quietly showing each other's
+// contents - so it falls back to not splitting at all and says why.
+//
+// Matched in two passes, and the second pass is what keeps the first one honest. All six positions
+// are the sharper key: one this frame does not divide can still be the only thing telling two page
+// types apart, so it is asked first. But a count that disagrees *there* says nothing about the
+// positions that are divided - and matching everywhere and nowhere else meant a group on \`footer\`
+// that quartz renders no flex for emptied both group areas of \`header\` on every page of the site
+// (measured: 201 of 201). So when nothing matches everywhere, the divided positions are asked on
+// their own: the page still gets the division its own counts support, and the disagreement outside
+// them is said out loud instead of paid for. Only ever a widening of a match set that was empty -
+// a candidate that fits all six is still preferred over one that merely fits the divided ones.
 function pickGroupOrder(bySlot) {
   if (SPLIT_POSITIONS.length === 0) return null
   const counts = {}
   for (const p of POSITIONS) counts[p] = (bySlot[p] || []).filter((C) => C.name === "Flex").length
-  const matches = GROUP_LAYOUTS.filter((c) => countsLike(c.order, counts))
-  if (matches.length === 1) return matches[0].order
-  if (matches.length > 1 && matches.every((c) => splitsAlike(c.order, matches[0].order))) return matches[0].order
+  let matches = GROUP_LAYOUTS.filter((c) => countsLike(c.order, counts, POSITIONS))
+  const relaxed = matches.length === 0
+  if (relaxed) matches = GROUP_LAYOUTS.filter((c) => countsLike(c.order, counts, SPLIT_POSITIONS))
+  const order =
+    matches.length === 1 || (matches.length > 1 && matches.every((c) => splitsAlike(c.order, matches[0].order)))
+      ? matches[0].order
+      : null
   // Once per distinct shape, not once per page: the same mismatch is true for every one of the
   // 100-odd pages built with this layout, and a warning repeated 300 times reads like noise.
-  const key = matches.length + "@" + SPLIT_POSITIONS.map((p) => p + " " + counts[p]).join(", ")
+  if (order && !relaxed) return order
+  if (order) {
+    // Divided as usual - but the config describes flexes somewhere this frame does not divide that
+    // the page did not render. Nothing here changes what the areas show; it is said because "no
+    // groups" and "a group whose members never render" look the same on the built page, and this
+    // is the one place that can still tell them apart.
+    const off = POSITIONS.filter((p) => SPLIT_POSITIONS.indexOf(p) === -1 && orderOf(order, p).length !== counts[p])
+    const key = "undivided@" + renderedOf(counts, off)
+    if (!warned.has(key)) {
+      warned.add(key)
+      console.warn(
+        "[" + FRAME_NAME + "] " +
+          off.map((p) => p + " renders " + counts[p] + " group flex(es), not the " + orderOf(order, p).length + " " +
+            nameOf(matches[0]) + " describes").join("; ") + ". " +
+          "This frame divides none of those positions, so " + SPLIT_POSITIONS.join(" and ") + " was divided as usual. " +
+          "Usually a group whose members all got disabled, or an entry whose layout.group quartz renders no flex for."
+      )
+    }
+    return order
+  }
+  const key = matches.length + "@" + renderedOf(counts, SPLIT_POSITIONS)
   if (!warned.has(key)) {
     warned.add(key)
-    const rendered = SPLIT_POSITIONS.map((p) => p + " " + counts[p]).join(", ")
+    const rendered = renderedOf(counts, SPLIT_POSITIONS)
     if (matches.length === 0) {
       console.warn(
         "[" + FRAME_NAME + "] this page renders " + rendered + " group flex(es), which no layout in " +
@@ -180,13 +231,31 @@ function pickGroupOrder(bySlot) {
           "Not splitting: every position's area without a group takes the lot, the group areas stay empty. " +
           "Usually a group whose members all got disabled, or a quartz.config.yaml edited by hand since this frame was written."
       )
-    } else {
+    } else if (matches.every((c) => namesAlike(c.order, matches[0].order))) {
       console.warn(
         "[" + FRAME_NAME + "] this page renders " + rendered + " group flex(es), which fits " +
           matches.map(nameOf).join(" and ") + " - and they order the groups differently (" +
           matches.map((c) => nameOf(c) + " -> " + groupsOf(c.order)).join("; ") + "). " +
           "Not splitting, because guessing would swap what the areas show. Give those groups an explicit " +
           "priority under layout.groups so their order is the same for every page type."
+      )
+    } else {
+      // Not a question of order at all: these name *different* groups, so there is nothing an
+      // ordering rule could line up - measured, with and without layout.groups priorities, the same
+      // message and the same fallback word for word. Two page types that each drop a whole group
+      // are indistinguishable from in here, because the flex count is the only thing this can
+      // measure and both produce the same one. Both ways out are measured too: keeping one member
+      // of each group leaves both groups standing, which collapses the candidates into one; and
+      // clearing the position for one page type makes its count differ, which tells them apart.
+      console.warn(
+        "[" + FRAME_NAME + "] this page renders " + rendered + " group flex(es), which fits " +
+          matches.map(nameOf).join(" and ") + " - and they name different groups there (" +
+          matches.map((c) => nameOf(c) + " -> " + groupsOf(c.order)).join("; ") + "). " +
+          "Not splitting, because guessing would put one group's components in the other's area - and no " +
+          "priority under layout.groups can line up groups that are not the same ones. All this can " +
+          "measure is how many flexes arrived, and excluding a whole group per page type leaves both of " +
+          "these with the same number. Leave one member of each group in place to keep both groups and " +
+          "both counts, or clear the position for one of the page types so the counts differ."
       )
     }
   }
@@ -290,13 +359,21 @@ function generatePackageJson(def: GridFrameDefinition): string {
   )
 }
 
-// A frame's generated code carries the project's group orderings (see generateFrameJs), so every
-// write needs them. Unreadable config means no groups rather than a failed write: a frame that
-// shows a position undivided is a frame that still builds, and the alternative is a project whose
-// frames cannot be saved because of a syntax error somewhere else in the yaml.
-async function readGroupLayouts(projectPath: string, problems?: string[]): Promise<GroupLayoutCandidate[]> {
+// A frame's generated code carries the group orderings that can reach *it* (see generateFrameJs),
+// so every write needs them - and it is per frame, not per project: a page type whose `template`
+// names another frame contributes an ordering this one never renders. Hence a reader that hands
+// back a function instead of a list; the config is read once per write pass, the narrowing happens
+// per frame.
+//
+// Unreadable config means no groups rather than a failed write: a frame that shows a position
+// undivided is a frame that still builds, and the alternative is a project whose frames cannot be
+// saved because of a syntax error somewhere else in the yaml.
+type GroupLayoutsFor = (frameName: string) => GroupLayoutCandidate[]
+
+async function readGroupLayouts(projectPath: string, problems?: string[]): Promise<GroupLayoutsFor> {
   try {
-    return groupLayoutCandidates(await configService.readConfig(projectPath))
+    const config = await configService.readConfig(projectPath)
+    return (frameName) => groupLayoutCandidates(config, frameName)
   } catch (err) {
     // "No groups" and "could not tell" render the same - every position undivided, the group areas
     // empty - and the frame cannot tell them apart either, since the empty ordering is all it
@@ -304,7 +381,7 @@ async function readGroupLayouts(projectPath: string, problems?: string[]): Promi
     // place the user is looking: the build log. `console.error` alone is a message to nobody.
     console.error(`[layoutFrames] could not read the layout groups of ${projectPath}: ${String(err)}`)
     problems?.push(mainT('frameGroupsUnreadable', { error: String(err) }))
-    return [{ pageType: null, order: {} }]
+    return () => [{ pageType: null, order: {} }]
   }
 }
 
@@ -338,7 +415,7 @@ async function writeFrameFiles(
   projectPath: string,
   def: GridFrameDefinition,
   widths: FrameBreakpointWidths,
-  groupLayouts: GroupLayoutCandidate[]
+  groupLayoutsFor: GroupLayoutsFor
 ): Promise<void> {
   const dir = frameDir(projectPath, def.id)
   quartzGuiDir(projectPath, 'authored-frames') // creating: this is the write path
@@ -353,7 +430,7 @@ async function writeFrameFiles(
     // truncates before it streams. A rename cannot be seen half-done.
     writeJsonFile(join(dir, 'frame.json'), def),
     writeFileAtomic(join(dir, 'package.json'), generatePackageJson(def)),
-    writeFileAtomic(join(dir, 'dist', 'frames.js'), generateFrameJs(def, widths, groupLayouts))
+    writeFileAtomic(join(dir, 'dist', 'frames.js'), generateFrameJs(def, widths, groupLayoutsFor(def.frameName)))
   ])
 }
 
@@ -383,12 +460,12 @@ export async function writeAllFrames(projectPath: string): Promise<string[]> {
     // would then be whole, ordered, and stale, which is the failure the queue exists to prevent.
     await serialised(projectPath, async () => {
       const frames = await listFrames(projectPath)
-      const [widths, groupLayouts] = await Promise.all([
+      const [widths, groupLayoutsFor] = await Promise.all([
         getBreakpointWidths(projectPath),
         readGroupLayouts(projectPath, problems)
       ])
       for (const def of frames) {
-        await writeFrameFiles(projectPath, def, widths, groupLayouts)
+        await writeFrameFiles(projectPath, def, widths, groupLayoutsFor)
       }
     })
   } catch (err) {
@@ -448,6 +525,41 @@ export function authoredFrameDir(projectPath: string, id: string): string {
  * group on one slot render that group's components twice on every page. The frame editor refuses
  * both before saving; this is the same refusal for the way in that has no editor.
  */
+// What is wrong with a frame definition, in the app's own language.
+//
+// Everywhere else in this app a zod message is left in English, because it describes a bug. Here it
+// describes an *input* - a `.qtpl` is a file somebody passed along - and it lands inside a sentence
+// the reader gets in their own language, which produced things like "Der Frame ist nicht lesbar:
+// areas: Invalid input: expected array, received null". So the issue is said in the app's words
+// instead: the path, which is data rather than prose, plus a phrase per issue code, plus whatever
+// number or list the issue carries (a limit, the allowed values - also data).
+//
+// The five codes are the ones this schema can actually produce, checked against it rather than
+// guessed: invalid_type, too_big, too_small, invalid_value (an enum) and invalid_format (a regex).
+// Anything else keeps zod's own text, and that case really is a bug - the schema grew a rule this
+// list was never told about, and an English sentence is then the right kind of ugly.
+// Derived from the schema rather than imported from zod: it is the same discriminated union, so
+// `issue.maximum` and `issue.values` below are narrowed by their `case` instead of cast.
+type FrameShapeIssue = NonNullable<ReturnType<typeof gridFrameDefinition.safeParse>['error']>['issues'][number]
+
+function shapeIssue(issue: FrameShapeIssue): string {
+  const where = issue.path.join('.') || 'frame'
+  switch (issue.code) {
+    case 'invalid_type':
+      return mainT('frameIssueType', { where })
+    case 'too_big':
+      return mainT('frameIssueTooBig', { where, limit: String(issue.maximum) })
+    case 'too_small':
+      return mainT('frameIssueTooSmall', { where, limit: String(issue.minimum) })
+    case 'invalid_value':
+      return mainT('frameIssueValue', { where, values: issue.values.join(', ') })
+    case 'invalid_format':
+      return mainT('frameIssueFormat', { where })
+    default:
+      return `${where}: ${issue.message}`
+  }
+}
+
 export function frameDefinitionProblem(raw: unknown): string | null {
   let def: GridFrameDefinition
   try {
@@ -457,9 +569,7 @@ export function frameDefinitionProblem(raw: unknown): string | null {
   }
   const parsed = gridFrameDefinition.safeParse(def)
   if (!parsed.success) {
-    const issue = parsed.error.issues[0]
-    const where = issue.path.join('.') || 'frame'
-    return mainT('frameShapeInvalid', { detail: `${where}: ${issue.message}` })
+    return mainT('frameShapeInvalid', { detail: shapeIssue(parsed.error.issues[0]) })
   }
   const names = new Set<string>()
   const groups = new Set<string>()

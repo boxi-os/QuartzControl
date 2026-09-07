@@ -8,8 +8,10 @@ import type {
   GridBreakpointLayout,
   GridFrameArea,
   GridFrameDefinition,
-  LegacyGridFrameDefinition
+  LegacyGridFrameDefinition,
+  PluginSource
 } from './ipc-contract'
+import { quartzPluginName } from './quartzPluginName'
 
 // Order matters for buildFrameCss's cascade (desktop base, then narrowing media queries) - reused
 // by the editor/preview UI too so the breakpoint list only lives in one place.
@@ -366,8 +368,12 @@ export function migrateGridFrameDefinition(def: GridFrameDefinition | LegacyGrid
 // whose name is in no component registry (config-loader.ts:762, :773), and whether a name is
 // registered is knowable only inside quartz's own build. A plugin that declares `layout` without
 // being a component plugin, or one whose install failed, is such an entry - quartz renders no flex
-// for it, this counts its group, and the frame then falls back for that position with the message
-// pickGroupOrder writes. A fallback, not a swap; the count is what disagrees, never the order.
+// for it, this counts its group, and the counts stop matching. What that costs depends on where
+// the group sits: on a position the frame divides, no candidate fits and the whole page renders
+// undivided with the message pickGroupOrder writes; anywhere else it costs a warning and nothing
+// more, because pickGroupOrder asks all six positions first and the divided ones on their own
+// second - exactly so a break outside them cannot empty the areas inside them. A fallback, not a
+// swap; the count is what disagrees, never the order.
 //
 // `enabled` is read the way the *loader* reads it - `filter((e) => e.enabled)` on the parsed yaml,
 // so anything falsy is out. Two things about that, both measured rather than assumed. Quartz does
@@ -396,10 +402,31 @@ export interface GroupLayoutCandidate {
 // The frame gets all of these and picks the one that fits what it was handed (see the generated
 // pickGroupOrder). Identical orderings collapse: a page type that only sets `template`, or that
 // excludes something with no group, is not a second candidate.
+//
+// `frameName` is required rather than optional, and narrows the list to the orderings that can
+// actually reach *that* frame: a list of candidates is always a list for one frame, and an optional
+// parameter would make forgetting it look like a valid call. One candidate too many is not
+// harmless. Measured at the generated module: a page type with
+// `template: somewhere-else` and an exclude that flips two groups made every page of this frame
+// ambiguous - fallback everywhere, with advice naming a page type that never renders it; and in the
+// other direction, a page type that clears `right` lent its ordering to a real break on `right` and
+// swallowed the warning that break should have produced. It can enable a choice, not only prevent
+// one.
+//
+// `exclude` is matched with `quartzPluginName`, not with the app's display name, and that is not a
+// detail: quartz compares against `extractPluginName(source)`, which leaves an npm source with a
+// scope whole. An `exclude` entry that names no plugin quartz would drop has to leave the ordering
+// alone here too - otherwise this builds a candidate quartz never produces, and a phantom that hits
+// the right flex count with the wrong order is exactly the ambiguity the frame cannot resolve.
+// Measured on a real build: `content` with `exclude: [quartz-layout-box, page-title]` gave
+// `header: [toolbar]` here while quartz rendered two flexes. See shared/quartzPluginName.ts.
 export function groupLayoutCandidates(config: {
-  plugins: Array<{ name: string; enabled?: boolean; layout?: { position: string; priority: number; group?: string } }>
-  layout?: { groups?: Record<string, { priority?: number }>; byPageType?: Record<string, { exclude?: string[]; positions?: Record<string, unknown> }> }
-}): GroupLayoutCandidate[] {
+  plugins: Array<{ source: PluginSource; enabled?: boolean; layout?: { position: string; priority: number; group?: string } }>
+  layout?: {
+    groups?: Record<string, { priority?: number }>
+    byPageType?: Record<string, { exclude?: string[]; positions?: Record<string, unknown>; template?: string }>
+  }
+}, frameName: string): GroupLayoutCandidate[] {
   const candidates: GroupLayoutCandidate[] = [{ pageType: null, order: groupOrderByPosition(config) }]
   // Key order follows whichever plugin came first, so two equal orderings can serialise
   // differently - the positions get sorted before they are compared.
@@ -407,8 +434,16 @@ export function groupLayoutCandidates(config: {
     JSON.stringify(Object.keys(order).sort().map((p) => [p, order[p]]))
   const seen = new Set([key(candidates[0].order)])
   for (const [pageType, override] of Object.entries(config.layout?.byPageType ?? {})) {
+    // Only an *explicit* template is certain, which is why this asks for one rather than resolving
+    // the whole chain: quartz takes `overrides.frame ?? pageType.frame ?? "default"` (dispatcher's
+    // resolveLayout), and an unknown name falls back to the default frame, never to another custom
+    // one (components/frames' resolveFrame) - so a template naming something else means this frame
+    // is never rendered for that page type. The middle link, the frame a page type plugin declares
+    // for itself, the app can only guess (pluginSchemaService's discoverBuiltinPageTypeFrames), and
+    // a guess must not remove a candidate: too few is the failure that swaps contents silently.
+    if (override?.template != null && override.template !== frameName) continue
     const excluded = new Set(override?.exclude ?? [])
-    const plugins = excluded.size > 0 ? config.plugins.filter((p) => !excluded.has(p.name)) : config.plugins
+    const plugins = excluded.size > 0 ? config.plugins.filter((p) => !excluded.has(quartzPluginName(p.source))) : config.plugins
     const order = groupOrderByPosition({ plugins, layout: config.layout })
     // `positions` is only ever meaningful as an empty array - the position is cleared for this
     // page type, so nothing arrives there and no group of it can render (config-loader.ts:673-681).

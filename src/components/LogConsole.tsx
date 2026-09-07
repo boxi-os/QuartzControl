@@ -12,6 +12,12 @@ import type { LogLine } from '@shared/ipc-contract'
 // nothing that pushed the build card entirely below the fold - measured in the running app.
 // `label` names the console, because two of them sit on Vorschau & Build and "Konsole" twice says
 // nothing about which process is talking.
+const LINE_COLOURS: Record<LogLine['stream'], string | undefined> = {
+  stdout: undefined,
+  stderr: 'text-red-400',
+  warn: 'text-amber-400'
+}
+
 export function LogConsole({ lines, label, onClear }: { lines: LogLine[]; label: string; onClear?: () => void }): JSX.Element {
   const { t } = useTranslation()
   const ref = useRef<HTMLDivElement>(null)
@@ -47,7 +53,11 @@ export function LogConsole({ lines, label, onClear }: { lines: LogLine[]; label:
         {empty
           ? t('logConsole.noOutput')
           : lines.map((line, idx) => (
-              <div key={idx} className={line.stream === 'stderr' ? 'text-red-400' : undefined}>
+              // Three colours for three meanings, not two: red is the process's own stderr,
+              // amber is a sentence this app wrote about a build that then went on to succeed.
+              // Both stay palette colours - this surface is dark in either scheme (see the rule on
+              // colour tokens), so it has no light half to name a role for.
+              <div key={idx} className={LINE_COLOURS[line.stream]}>
                 {line.text.replace(/\n+$/, '')}
               </div>
             ))}

@@ -610,3 +610,36 @@ dessen Frame hier fehlt, ebenso, und einer, dessen Frame hier liegt, wird herüb
 
 Beide Reparaturen gehen jetzt durch eine Funktion (`rewriteRecordedPaths`) über dieselben drei
 Schreibwege; verschieden ist die eine Regel, die beantwortet, was aus einem Pfad wird.
+
+## Eine Warnung ist keine Fehlermeldung, auch nicht in einer Konsole (2026-09-07)
+
+Die zwei Sätze, die der Frame-Wächter vor einen Lauf schreibt (`frameGroupsUnreadable`,
+`frameRefreshFailed`), gingen als `stderr` in das Log. `LogConsole` färbt `stderr` rot — also stand
+vor einem Build, der danach mit Exit 0 endet und eine Seite liefert, ein roter Satz. Rot heißt
+„fehlgeschlagen“, gemeint ist „gebaut, mit dem Stand, der auf der Platte liegt“.
+
+`LogLine.stream` hat deshalb einen dritten Wert: `warn`. Nicht kosmetisch, sondern die einzige
+Stelle, an der die Unterscheidung überhaupt bekannt ist — der Hauptprozess weiß, dass *er* diesen
+Satz geschrieben hat und dass der Build weiterläuft; die Konsole sieht sonst nur einen Strom.
+`stdout` bleibt farblos, `stderr` rot, `warn` bernstein (`text-amber-400`, dieselbe Farbe, die die
+App im Dunkelmodus ohnehin für Warnungen benutzt; 12,08:1 auf `bg-slate-950` gegen 7,29:1 des Rot).
+Palette statt Token, wie bei jeder Fläche, die in beiden Schemata dunkel ist.
+
+Gemessen an der gebauten App in einem Wegwerf-Profil, an einer Kopie des Beispielprojekts, mit zwei
+Auslösern:
+
+| Auslöser | Ergebnis |
+| --- | --- |
+| `quartz.config.yaml` auf `chmod 000` | `frameGroupsUnreadable`, vorher `text-red-400`, jetzt `text-amber-400` |
+| `authored-frames/<id>/dist` auf `chmod 555` | `frameRefreshFailed` in Bernstein — **darunter „Erfolgreich in 15,4s“**, 637 Dateien gebaut |
+
+Der zweite ist der Fall, um den es geht: ein Lauf, der gelingt, mit einem Satz davor, der sagt,
+womit er gelungen ist. Der erste zeigt nebenbei, dass eine Config, die die App nicht lesen kann,
+auch Quartz nicht lesen kann — der Build scheitert dann ohnehin, und die rote Zeile daneben ist
+Quartz' eigene.
+
+**Was rot bleibt und bleiben muss:** alles, was aus dem Kindprozess kommt. Die Warnung, die ein
+Frame selbst schreibt (`console.warn` in `frames.js`), geht über Quartz' stderr und ist von einem
+echten Fehler dort nicht zu unterscheiden — in derselben Aufnahme steht sie rot unter der
+bernsteinfarbenen Zeile der App. Die Grenze verläuft dort, wo die Zuständigkeit verläuft: Diese App
+färbt, was sie selbst geschrieben hat.

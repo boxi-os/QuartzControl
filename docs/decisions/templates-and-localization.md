@@ -204,3 +204,27 @@ Und weil ein Dry-Run, der einen Frame als Zugang listet und ihn dann ablehnt, ei
 beschrieben hat als den, der läuft: `plan` stellt jetzt dieselbe Frage und legt `invalidFrame:<name>`
 in die Notizen — gezählt in der Zusammenfassung, benannt in der Zeile darunter, genau wie `outside`
 seit dem dritten Review.
+
+## Der Dry-Run kennt den Grund und sagt ihn jetzt auch (2026-09-07)
+
+`plan()` fragte `frameDefinitionProblem(frame) !== null`, warf die Antwort weg und legte
+`invalidFrame:<name>` ab. Der Dialog sagte damit „Nicht lesbar und werden übersprungen:
+„Kaputtrahmen“, „Zweitrahmen“.“ — und *warum* erfuhr man erst nach dem Klick auf Importieren.
+Die Regel aus dem vierten Review (**ein Fehler, der weiß warum, muss den Grund tragen**) gilt hier
+genauso, und der Grund ist zwei Zeilen vorher schon berechnet.
+
+Gemessen an der gebauten App, mit einem von Hand gebauten `.qtpl` (Manifest, `parts/frames.json`,
+ein heiler und zwei kaputte Frames) und einem Wegwerf-Profil; der Dateidialog ist ein Fenster des
+Systems und wurde im Hauptprozess ersetzt, alles danach ist der gewöhnliche Weg:
+
+    vorher   Nicht lesbar und werden übersprungen: „Kaputtrahmen“, „Zweitrahmen“.
+    jetzt    Wird übersprungen: „Kaputtrahmen“ — Der Frame ist nicht lesbar: Das Feld „areas“
+               fehlt oder hat den falschen Typ.
+             Wird übersprungen: „Zweitrahmen“ — Der Frame ist nicht lesbar: Der Wert bei
+               „breakpoints.desktop.rows“ ist zu klein oder zu kurz (Mindestwert 1).
+
+**Eine Zeile je Frame statt einer Liste**, weil aus Namen Sätze geworden sind: Namen lassen sich mit
+Komma reihen, Sätze nicht. Gekappt wie die Dateinamen daneben — drei, dann „und 2 weitere Frames“;
+mit fünf kaputten Frames nachgemessen. Der Name ist schon im Hauptprozess in Anführungszeichen
+gesetzt (`mainT('frameNameAndReason')`, dieselbe Fügung wie die Fehlerwarnung des Imports), denn
+Deutsch und Englisch zitieren nicht gleich.

@@ -169,8 +169,13 @@ Vorgabe ihres Manifests platziert werden und die App die nicht kennt.
 
 Also bekommt das Frame nicht eine Ordnung, sondern alle, die diese Config hergibt
 (`groupLayoutCandidates()`): die globale und je eine pro Seitentyp mit `exclude` oder geleerter
-Position, gleiche fallen weg. Beim Rendern wählt `pickGroupOrder()` einmal pro Seite die
-Kandidatin, deren Gruppenzahlen zu allen sechs Positionen passen. Genau eine ist die Antwort;
+Position, gleiche fallen weg. Der Ausschluss wird dabei mit *Quartz'* Namen gelesen
+(`shared/quartzPluginName.ts`), nicht mit dem Anzeigenamen der App — sonst entsteht eine Ordnung,
+die Quartz nie erzeugt; die Messung dazu steht in
+[`plugins-and-config.md`](plugins-and-config.md). Beim Rendern wählt `pickGroupOrder()` einmal pro Seite die
+Kandidatin, deren Gruppenzahlen passen — in zwei Durchgängen: erst auf allen sechs Positionen, und
+nur wenn dort keine passt, auf den Positionen, die dieses Frame wirklich teilt (warum zwei, steht
+unten unter „Ein Bruch außerhalb der geteilten Positionen“). Genau eine ist die Antwort;
 mehrere, die auf den geteilten Positionen dieselben Gruppen in derselben Reihenfolge nennen, sind
 dieselbe Antwort zweimal. Alles andere heißt raten, und geraten wird nicht.
 
@@ -195,12 +200,122 @@ seitentyp-unabhängig, beide Kandidatinnen fallen zusammen, und alle vier Seiten
 auf.
 
 Zwei Nebenwirkungen, beide erwünscht: Eine Position, für die dieses Frame keinen Gruppen-Bereich
-hat, nimmt an der Entscheidung nicht teil und warnt nie — sie hat nichts aufzuteilen. Und der
+hat, wird nie aufgeteilt und warnt nie über ihren eigenen Inhalt — sie hat nichts aufzuteilen. (An
+der *Entscheidung* nimmt sie sehr wohl teil, und was das kostet, steht im nächsten Abschnitt.) Und der
 Warnplatz hängt jetzt an der gemessenen Gestalt, nicht nur an der Position: zwei verschiedene
 Brüche im selben Lauf sagen beide etwas, vorher verbrauchte der erste den Platz des zweiten.
 
 **Was bleibt:** `npx quartz build` von Hand kann eine Config lesen, die kein Wächter dieser App
 gesehen hat; dann fällt es auf die erste Zeile der Tabelle zurück, statt still zu vertauschen.
+
+### Ein Bruch außerhalb der geteilten Positionen darf die geteilten nicht leeren
+
+Der Abgleich über *alle sechs* Positionen war als Schlüssel gewollt und ist es weiterhin: Eine
+Position, die dieses Frame gar nicht teilt, kann das Einzige sein, was zwei Seitentypen
+auseinanderhält — leert einer davon `right`, unterscheiden sich die Kandidatinnen nur dort, und
+ohne diese Spalte wären beide gleich gut. Nur hieß „passt überall oder gar nicht“ eben auch: Stimmt
+die Zahl auf einer Position nicht, die das Frame nie anfasst, passt *keine* Kandidatin, und die
+Aufteilung fällt für die ganze Seite aus — auch für die Positionen, auf denen alles stimmt. Vor dem
+Umbau prüfte `contentsFor` je Position, ein Bruch auf `right` ließ `header` in Ruhe.
+
+Gemessen am echten Build (Kopie des Beispielprojekts, 266 Markdown-Dateien, 334 Seiten mit einem
+qgframe-Grid, davon 201 mit dem `editorial`-Frame; dessen Bereiche `custom-8` und `custom-9`
+tragen die Gruppen `brand` und `toolbar` auf `header`). Der Bruch ist ein von Hand geschriebener
+zweiter `backlinks`-Eintrag **ohne** `enabled:` mit `layout.group: gf` auf `footer`: `configService`
+liest ihn als eingeschaltet, die Kandidatin trägt also `footer: [gf]`, Quartz' Loader wirft ihn
+hinaus und rendert dort keine Flex.
+
+| | `custom-8` | `custom-9` | `header` | Meldung |
+| --- | --- | --- | --- | --- |
+| vorher | 0 | 0 | 2 | `header 2 … which no layout produces (the config as a whole: header 2)` |
+| jetzt | 1 | 1 | 0 | `footer renders 0 group flex(es), not the 1 …` |
+
+Je 201 von 201 Seiten. Die alte Meldung ist der zweite Teil des Befunds: `rendered` und `countsOf`
+liefen beide nur über die geteilten Positionen, also kam die Position, die den Ausschlag gab, in
+dem Satz nicht vor — und was blieb, war ein Widerspruch mit `header 2` auf beiden Seiten. Der
+Leser konnte daraus nicht ableiten, was er ändern soll.
+
+Also zwei Durchgänge: erst alle sechs, dann — nur wenn nichts passte — die geteilten allein. Das
+ist immer eine Erweiterung einer *leeren* Treffermenge, nie ein Ersatz; eine Kandidatin, die überall
+passt, gewinnt weiterhin gegen eine, die nur auf den geteilten Positionen passt. Beides
+nachgemessen, am erzeugten Modul wie am Build:
+
+| Fall | Ergebnis |
+| --- | --- |
+| gesunde Config (Grundfall) | 201 von 201 aufgeteilt, keine Warnung — Wort für Wort wie vorher |
+| Bruch auf `footer` (oben) | 201 von 201 aufgeteilt, eine Warnung, die `footer` nennt |
+| Bruch auf `header` selbst (Gruppe ohne Flex) | Rückfall wie bisher, Meldung ohne Widerspruch (`header 2` gegen `header 3`) |
+| Reihenfolge gekippt (`content` ohne `quartz-layout-box`, Gruppen ohne feste Priorität) | 201 von 201 Rückfall, genau eine Warnung — der Preis aus der Tabelle oben, unverändert |
+| zwei Seitentypen, nur über `right` unterscheidbar | weiter unterschieden: global wählt `[gx, gy]`, `p1` wählt `[gy, gx]` |
+
+Die letzte Zeile ist die Gegenprobe für den ersten Durchgang: Ohne ihn wären die beiden
+Kandidatinnen auf `header` gleich zahlreich und verschieden geordnet, also mehrdeutig, also
+Rückfall. Sie ist am Modul gemessen, weil das Beispielprojekt keinen solchen Seitentyp hat.
+
+Dass der neue Fall überhaupt eine Warnung bekommt, statt still durchzugehen, ist dieselbe Regel wie
+eine Ebene höher: „keine Gruppe hier“ und „eine Gruppe, deren Mitglieder nie rendern“ sehen auf der
+gebauten Seite gleich aus, und dies ist die einzige Stelle, die sie noch auseinanderhalten kann.
+Die Aufteilung selbst ändert die Warnung nicht — sie ist ein Hinweis, kein Rückfall.
+
+### Eine Kandidatin für ein Frame, das dieser Seitentyp nie rendert, gehört nicht in dessen Liste
+
+Die Kandidatinnen wurden je **Projekt** gerechnet und an jedes Frame gegeben. Ein Seitentyp mit
+`template: irgendwas-anderes` rendert dieses Frame aber unter keinen Umständen: Quartz nimmt
+`overrides.frame ?? pageType.frame ?? "default"` (`dispatcher.ts`, `resolveLayout`), und ein
+unbekannter Name fällt auf das Standard-Frame zurück, nie auf ein anderes eigenes
+(`components/frames`, `resolveFrame`). Seine Ordnung stand trotzdem in `GROUP_LAYOUTS`.
+
+Das Argument „eine Kandidatin zu viel führt höchstens zum Rückfall“ hält nicht. Beides gemessen am
+erzeugten Modul, beides mit einem Seitentyp, der ein anderes Frame nennt:
+
+| | vorher | jetzt |
+| --- | --- | --- |
+| Seitentyp kippt per `exclude` die Reihenfolge | Mehrdeutigkeit auf **jeder** Seite, Rückfall, Rat nennt einen Seitentyp, der dieses Frame nie benutzt | richtig aufgeteilt, keine Warnung |
+| Seitentyp leert `right`, und auf `right` bricht wirklich eine Gruppe weg | dessen Kandidatin passte, **keine Warnung**, richtig aus Zufall | Warnung, die `right` nennt, richtig aufgeteilt |
+
+Die zweite Zeile auch am echten Build, mit demselben Bruch wie im Abschnitt davor, nur auf `right`
+statt `footer`: Vorher passte die Kandidatin des `404`-Seitentyps (`template: focus`, `right`
+geleert) auf die 201 Editorial-Seiten und verschluckte die Warnung; die Seiten waren richtig, weil
+diese fremde Ordnung auf `header` zufällig dieselbe ist. Jetzt hat `editorial` im Beispielprojekt
+noch **eine** Kandidatin statt zweier, der zweite Durchgang rettet die Aufteilung, und im Log steht
+der Satz. Eine Kandidatin zu viel kann eine Auswahl also *ermöglichen*, die es sonst nicht gäbe —
+und das ist die gefährlichere Richtung, weil sie stumm ist.
+
+**Nur ein ausdrückliches `template` zählt.** Die Kette hat drei Glieder, und das mittlere — das
+Frame, das ein Seitentyp-Plugin für sich selbst erklärt — kann die App nur raten
+(`pluginSchemaService`, `discoverBuiltinPageTypeFrames`). Ein Rat darf keine Kandidatin *entfernen*:
+zu wenige ist der Fehler, der Inhalte stumm vertauscht, zu viele höchstens der, der zu oft
+zurückfällt. Deshalb filtert `groupLayoutCandidates` nur, was in der Config steht, und `frameName`
+ist ein Pflichtargument — eine Kandidatenliste gehört immer zu einem Frame, und ein optionales
+Argument ließe das Vergessen wie einen gültigen Aufruf aussehen.
+
+### „Gib den Gruppen eine Priorität“ hilft nur, wenn es dieselben Gruppen sind
+
+Die Mehrdeutigkeits-Meldung behandelte jeden Fall als Reihenfolge-Problem („they order the groups
+differently“) und empfahl `layout.groups.<name>.priority`. Es gibt aber zwei verschiedene Lagen, und
+in der zweiten berührt dieser Rat den Zustand nicht: Zwei Seitentypen, die je eine *andere* Gruppe
+ganz ausschließen — `p1` verliert `gx`, `p2` verliert `gy` —, rendern beide **eine** Flex, und ihre
+Kandidatinnen nennen `[gy]` und `[gx]`. Das sind nicht dieselben Gruppen in anderer Ordnung, das sind
+andere Gruppen; keine Priorität macht sie gleich. Gemessen am erzeugten Modul, ohne und mit
+`gx.priority: 10, gy.priority: 40`: dieselbe Meldung, derselbe Rückfall, Wort für Wort.
+
+Also unterscheidet `pickGroupOrder` die beiden jetzt (`namesAlike`: dieselben Gruppen je geteilter
+Position, gleich wie geordnet). Die alte Meldung bleibt für den Reihenfolge-Fall unverändert — ihr
+Rat ist gemessen und im Reiter „Global“ erreichbar. Der andere Fall bekommt eine eigene: dass keine
+Priorität hier hilft, warum (die Flex-Zahl ist alles, was ein Frame messen kann, und beide Seitentypen
+erzeugen dieselbe), und zwei Auswege, die **beide gemessen sind**:
+
+| Ausweg | Ergebnis |
+| --- | --- |
+| je Gruppe *ein* Mitglied stehen lassen statt die ganze auszuschließen | beide Gruppen bleiben, die Kandidatinnen fallen zusammen, alles teilt richtig auf, keine Warnung |
+| die Position für einen der Seitentypen ganz leeren | dessen Zahl unterscheidet sich, die Seite wählt die richtige Kandidatin und teilt auf |
+
+Was **nicht** in der Meldung steht, obwohl es naheliegt: `display` und `condition` wickeln ein
+Mitglied, bevor `resolveGroups` gruppiert (`buildLayoutForEntries`), die Gruppe bliebe also stehen.
+Nur ist `display` `mobile-only`/`desktop-only` und `condition` eine von vier eingebauten
+(`not-index`, `has-tags`, `has-backlinks`, `has-toc`) — keins davon kann „auf Seiten dieses Typs
+nicht“ sagen. Ein Rat, den man nicht befolgen kann, ist genau der Fehler, den dieser Abschnitt
+behebt.
 
 ### Ein Wächter, der scheitert, sagt es im Build-Log
 
@@ -437,7 +552,27 @@ drei Dateien davon ab, halb vom einen und halb vom anderen Aufrufer zu stammen �
 direkt nach „Starten“ sind zwei Aufrufer in einer Sekunde. Nachgemessen: 120 gleichzeitige
 Auffrischungen gegen einen Leser, 35066 Lesevorgänge, kein einziger unvollständig.
 
-Der Dev-Server ist von alledem nicht betroffen, und das ist gemessen statt vermutet: Sein Watcher
-läuft mit `cwd: argv.directory` (`quartz/build.ts:160-164`), also im Content-Ordner, und sieht
-`.quartz-gui/` nie. Ein Bau, während ein Dev-Server läuft, stört ihn nicht — so wenig wie ein
-gespeichertes Frame.
+Der Dev-Server ist von diesen Schreibvorgängen nicht betroffen — aber die erste Fassung dieses
+Absatzes begründete das mit dem falschen Watcher, und ein Ergebnis mit einer Begründung, die es
+nicht trägt, ist kein Befund, sondern einer in Wartestellung. **`quartz build --serve` hat zwei
+Watcher**, nicht einen:
+
+- der in `quartz/build.ts:160-164` läuft mit `cwd: argv.directory`, also im Content-Ordner, und
+  sieht `.quartz-gui/` tatsächlich nie;
+- der in `quartz/cli/handlers.js:588-603` läuft in der Projektwurzel (die App spawnt mit
+  `cwd: projectPath`) über eine **feste Liste**, die `globby` beim Start auflöst — `**/*.ts`,
+  `quartz/cli/*.js`, `quartz/static/**/*`, `**/*.tsx`, `**/*.scss`, `package.json`,
+  `quartz.config.yaml`, `quartz.config.default.yaml` —, und *dieser* antwortet auf eine
+  Config-Änderung mit einem harten Rebuild.
+
+Mit dem zweiten gemessen, an einer Kopie des Beispielprojekts: 1478 Pfade, davon **0** unter
+`.quartz-gui/`, **0** mit `frames.js` oder `authored-frames`. `package.json` ohne `**/` trifft nur
+die Datei in der Wurzel, nicht die, die jedes Frame-Verzeichnis mitbringt; und `globby` läuft
+ohne `dot`, also fällt `.quartz-gui/` ohnehin heraus. Ein Bau, während ein Dev-Server läuft, stört
+ihn also nicht — so wenig wie ein gespeichertes Frame.
+
+Was der zweite Watcher dagegen sehr wohl auslöst, ist ein Rebuild nach einem **Config**-Speichern —
+und der liest `dist/frames.js` nicht neu, weil `frameLoader.ts:17` ein blankes
+`await import(...)` ohne Cache-Buster macht und Node ein ESM-Modul für die Prozesslebensdauer hält.
+Genau dafür gibt es den `DevServerRestartHint` nach dem Speichern im Reiter „Global“; die Zeile
+ganz oben in dieser Datei beschreibt denselben Mechanismus für den Frame-Editor.

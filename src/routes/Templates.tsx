@@ -503,19 +503,16 @@ function planNotes(t: Translate, plan: TemplatePartPlan): string[] {
         : shown
     notes.push(t('templates.planOutsideDetail', { names, count: outside.length }))
   }
-  // Same shape as `outside`, and for the same reason: a frame this package cannot install has a
-  // name, and the count alone would leave the user looking for which one after the fact.
+  // Not the same shape as `outside`, and the difference is the reason: main sends each of these as
+  // a finished "name — why" sentence (it knows the reason at plan time), and a comma-joined list of
+  // sentences is unreadable. So one line per frame, capped like the names above, with the rest
+  // counted. Already quoted by main, because the quotation marks differ per language.
   const invalid = plan.notes.filter((note) => note.startsWith('invalidFrame:')).map((note) => note.slice('invalidFrame:'.length))
-  if (invalid.length > 0) {
-    const shown = invalid
-      .slice(0, OUTSIDE_NAMES_SHOWN)
-      .map((name) => t('templates.quotedName', { value: name }))
-      .join(', ')
-    const names =
-      invalid.length > OUTSIDE_NAMES_SHOWN
-        ? t('templates.planOutsideMore', { names: shown, count: invalid.length - OUTSIDE_NAMES_SHOWN })
-        : shown
-    notes.push(t('templates.planInvalidFramesDetail', { names, count: invalid.length }))
+  for (const detail of invalid.slice(0, OUTSIDE_NAMES_SHOWN)) {
+    notes.push(t('templates.planInvalidFrameDetail', { detail }))
+  }
+  if (invalid.length > OUTSIDE_NAMES_SHOWN) {
+    notes.push(t('templates.planInvalidFramesMore', { count: invalid.length - OUTSIDE_NAMES_SHOWN }))
   }
   return notes
 }

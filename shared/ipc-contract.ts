@@ -372,7 +372,11 @@ export interface QuartzConfig {
 
 export interface LogLine {
   projectId: string
-  stream: 'stdout' | 'stderr'
+  // The two a child process has, plus one this app writes itself. `warn` is not cosmetic: the
+  // console colours `stderr` red, and the sentences the frame refresh puts in front of a build are
+  // warnings - the build runs on and produces a page. Red in front of an exit-0 build says
+  // "failed" where "built, with the frames as they lay" is meant.
+  stream: 'stdout' | 'stderr' | 'warn'
   text: string
   timestamp: string
 }

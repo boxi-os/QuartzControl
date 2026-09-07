@@ -260,16 +260,20 @@ Import korrigierte sich selbst, aber nur zufällig: `layout` läuft später und 
 `saveBreakpointWidths`, das ohnehin jedes Frame neu schreibt.
 
 Gemessen, indem genau dieser Zufall weggenommen wurde — Import ohne den Teil `layout`, in ein
-Projekt, dem die Gruppe vorher entzogen worden war:
+Projekt, dem die Gruppe vorher entzogen worden war. Die Tabellen dieses und des nächsten Abschnitts
+nennen die eingebackene Ordnung noch `GROUP_ORDER`, so wie sie damals hieß; seit dem sechsten
+Review sind es mehrere (`GROUP_LAYOUTS`, eine je Seitentyp), an den Messungen ändert das nichts:
 
 | | Config nach dem Import | `GROUP_ORDER` im Frame | gebaute Seite |
 |---|---|---|---|
 | ohne den Fix | `group: custom-8` ✓ | `{"left":["toolbar"]}` ✗ | Explorer in `left`, `custom-8` leer, Warnung im Build |
 | mit dem Fix | `group: custom-8` ✓ | `{"left":["toolbar","custom-8"]}` ✓ | Explorer genau einmal in `custom-8` |
 
-`importPackage()` ruft deshalb am Ende einmal `writeAllFrames()`. Die Regel dahinter ist die aus
-dem vierten Review, eine Ebene weiter: **ein Wächter gehört an jede Tür zu demselben Zustand** — und
-vier der sechs Stellen, die `writeConfig` rufen, gehen am IPC-Handler vorbei, an dem der erste hing.
+Der erste Anlauf war deshalb ein `writeAllFrames()` am Ende von `importPackage()`. Er stand genau
+zwei Commits lang: Die Regel aus dem vierten Review — **ein Wächter gehört an jede Tür zu demselben
+Zustand** — führt eine Ebene weiter zu der Frage, welche Tür das eigentlich ist, und die Antwort ist
+nicht der Import, sondern der Bau. Der Aufruf ist wieder heraus; wie es jetzt steht, sagt der
+Abschnitt „Der Wächter steht an der Tür, an der gelesen wird“ unten.
 
 Zwei Nebenbefunde aus demselben Durchgang:
 

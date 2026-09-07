@@ -8,8 +8,10 @@ import type {
   GridBreakpointLayout,
   GridFrameArea,
   GridFrameDefinition,
-  LegacyGridFrameDefinition
+  LegacyGridFrameDefinition,
+  PluginSource
 } from './ipc-contract'
+import { quartzPluginName } from './quartzPluginName'
 
 // Order matters for buildFrameCss's cascade (desktop base, then narrowing media queries) - reused
 // by the editor/preview UI too so the breakpoint list only lives in one place.
@@ -400,8 +402,16 @@ export interface GroupLayoutCandidate {
 // The frame gets all of these and picks the one that fits what it was handed (see the generated
 // pickGroupOrder). Identical orderings collapse: a page type that only sets `template`, or that
 // excludes something with no group, is not a second candidate.
+//
+// `exclude` is matched with `quartzPluginName`, not with the app's display name, and that is not a
+// detail: quartz compares against `extractPluginName(source)`, which leaves an npm source with a
+// scope whole. An `exclude` entry that names no plugin quartz would drop has to leave the ordering
+// alone here too - otherwise this builds a candidate quartz never produces, and a phantom that hits
+// the right flex count with the wrong order is exactly the ambiguity the frame cannot resolve.
+// Measured on a real build: `content` with `exclude: [quartz-layout-box, page-title]` gave
+// `header: [toolbar]` here while quartz rendered two flexes. See shared/quartzPluginName.ts.
 export function groupLayoutCandidates(config: {
-  plugins: Array<{ name: string; enabled?: boolean; layout?: { position: string; priority: number; group?: string } }>
+  plugins: Array<{ source: PluginSource; enabled?: boolean; layout?: { position: string; priority: number; group?: string } }>
   layout?: { groups?: Record<string, { priority?: number }>; byPageType?: Record<string, { exclude?: string[]; positions?: Record<string, unknown> }> }
 }): GroupLayoutCandidate[] {
   const candidates: GroupLayoutCandidate[] = [{ pageType: null, order: groupOrderByPosition(config) }]
@@ -412,7 +422,7 @@ export function groupLayoutCandidates(config: {
   const seen = new Set([key(candidates[0].order)])
   for (const [pageType, override] of Object.entries(config.layout?.byPageType ?? {})) {
     const excluded = new Set(override?.exclude ?? [])
-    const plugins = excluded.size > 0 ? config.plugins.filter((p) => !excluded.has(p.name)) : config.plugins
+    const plugins = excluded.size > 0 ? config.plugins.filter((p) => !excluded.has(quartzPluginName(p.source))) : config.plugins
     const order = groupOrderByPosition({ plugins, layout: config.layout })
     // `positions` is only ever meaningful as an empty array - the position is cleared for this
     // page type, so nothing arrives there and no group of it can render (config-loader.ts:673-681).

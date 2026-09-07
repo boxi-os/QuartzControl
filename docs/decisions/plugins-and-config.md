@@ -169,3 +169,51 @@ eins), aber diese Einträge sind für den Lesenden ohnehin nicht zu unterscheide
 Panel in jedem Projekt sichtbar war, das eine Layout-Box mehr als einmal benutzt. Frames behalten den
 blanken Namen: ihre IDs sind Verzeichnisnamen unter `authored-frames/` und schon eindeutig.
 
+
+**Der Ausschluss im Reiter „Seitentypen“ hieß nicht so, wie Quartz ihn nennt (2026-09-07).** Ein
+Schalter, den der Reiter als gesetzt zeigte, wirkte für jedes `@quartz-community/*`-Plugin nicht.
+Quartz vergleicht `layout.byPageType.<typ>.exclude` gegen `extractPluginName(source)`
+(`config-loader.ts`), und das kennt vier Formen — Objekt, lokaler Pfad, `github:`, `git+`/`https://`.
+Alles andere kommt unverändert zurück, und „alles andere“ ist jede npm-Quelle mit Scope. Die App
+schrieb `deriveName(source)`, also den Kurznamen `page-title`, so wie Quartz' eigene Dokumentation es
+zeigt (`docs/layout.md`: `exclude: [reader-mode]`). Der Fehler liegt bei Quartz; was die App tun
+kann, ist die Schreibweise zu schreiben, die wirkt.
+
+Gemessen an einer Kopie des Beispielprojekts, Seitentyp `content`, 201 Seiten:
+
+| `exclude` | wirkt | Ergebnis |
+| --- | --- | --- |
+| `quartz-layout-box` (`github:`-Quelle) | ja | 201 von 201 ohne Layout-Box |
+| `page-title` (`@quartz-community/page-title`) | **nein** | 201 von 201 mit Seitentitel |
+| `@quartz-community/page-title` | ja | 201 von 201 ohne Seitentitel |
+
+Der Name, den Quartz vergleicht, steht jetzt in `shared/quartzPluginName.ts` und wird an zwei
+Stellen gebraucht: der Reiter schreibt und **liest** ihn, und `groupLayoutCandidates` filtert damit.
+Die zweite ist die stillere: Die Kandidatenrechnung baute aus einem Ausschluss, der nichts tut, eine
+Ordnung, die Quartz nie erzeugt (gemessen: `content → header: [toolbar]`, während Quartz zwei Flexes
+rendert). Eine solche Phantom-Kandidatin trifft womöglich die Flex-Zahl und nicht die Reihenfolge,
+und das ist genau die Mehrdeutigkeit, die ein Frame nicht auflösen kann — ausgelöst von einer
+Einstellung, die in Wirklichkeit gar nichts tat. Mit dem richtigen Namen fällt sie mit der globalen
+Kandidatin zusammen, und es bleibt eine.
+
+**Gelesen wird mit Quartz' Namen, und das ist die Entscheidung dahinter.** Ein Eintrag in der alten
+Schreibweise schließt nichts aus, also zeigt der Schalter ihn als *sichtbar* — vorher stand er auf
+„ausgeblendet“, während die Seite das Gegenteil zeigte. Vorher/nachher an der gebauten App gegen
+dieselbe Config (`exclude: [quartz-layout-box, page-title]`), Wegwerf-Profil, Kopie des Projekts:
+
+| | Schalter `page-title` | nach dem Umlegen und Speichern |
+| --- | --- | --- |
+| vorher | ausgeblendet | `exclude: [quartz-layout-box]` — der Titel stand vorher wie nachher auf jeder Seite |
+| jetzt | sichtbar | `exclude: [quartz-layout-box, @quartz-community/page-title]` — der Titel verschwindet |
+
+Die tote Schreibweise wird beim nächsten Schreiben dieses Seitentyps entfernt, **nicht** umgeschrieben:
+Umschreiben würde eine Komponente auf der gebauten Seite verschwinden lassen, weil die App ein Update
+bekommen hat, und danach hat niemand gefragt. Entfernen nimmt nur eine wirkungslose Zeichenkette aus
+der Datei, und die Schalter sagen dann, was die Seite zeigt.
+
+Die Nachbildung selbst hat einen eigenen Wächter, `npm run check:plugin-names`: 18 Quellen gegen eine
+Tabelle, und mit einem Projektpfad zusätzlich gegen Quartz' **eigene** Funktion, aus
+`config-loader.ts` und `gitLoader.ts` herausgeschnitten und ausgeführt. Diese Gegenprobe hat sofort
+etwas gefunden, das beim Lesen richtig aussah: `path.basename` trennt am Backslash nur auf win32, ein
+Windows-Pfad kommt auf diesem Rechner also ungeteilt zurück. Wer eine fremde Funktion nachbaut, prüft
+sie gegen die fremde Funktion, nicht gegen die eigene Vorstellung von ihr.

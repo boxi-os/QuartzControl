@@ -169,7 +169,10 @@ Vorgabe ihres Manifests platziert werden und die App die nicht kennt.
 
 Also bekommt das Frame nicht eine Ordnung, sondern alle, die diese Config hergibt
 (`groupLayoutCandidates()`): die globale und je eine pro Seitentyp mit `exclude` oder geleerter
-Position, gleiche fallen weg. Beim Rendern wählt `pickGroupOrder()` einmal pro Seite die
+Position, gleiche fallen weg. Der Ausschluss wird dabei mit *Quartz'* Namen gelesen
+(`shared/quartzPluginName.ts`), nicht mit dem Anzeigenamen der App — sonst entsteht eine Ordnung,
+die Quartz nie erzeugt; die Messung dazu steht in
+[`plugins-and-config.md`](plugins-and-config.md). Beim Rendern wählt `pickGroupOrder()` einmal pro Seite die
 Kandidatin, deren Gruppenzahlen passen — in zwei Durchgängen: erst auf allen sechs Positionen, und
 nur wenn dort keine passt, auf den Positionen, die dieses Frame wirklich teilt (warum zwei, steht
 unten unter „Ein Bruch außerhalb der geteilten Positionen“). Genau eine ist die Antwort;

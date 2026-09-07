@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import type { LayoutPosition, PageTypeLayoutOverride, QuartzConfig } from '@shared/ipc-contract'
+import type { LayoutPosition, PageTypeLayoutOverride, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
+import { quartzPluginName } from '@shared/quartzPluginName'
 import { Card, Select, Toggle } from '../../components/ui'
 import { POSITIONS, distinctComponentChips, duplicateNameCounts, hasPageTypeOverride } from './utils'
 
@@ -38,8 +39,19 @@ export default function PageTypeOverrides({
     onChange({ ...config, layout: { ...config.layout, byPageType } })
   }
 
-  function toggleExclude(name: string, excluded: boolean): void {
-    const exclude = new Set(override.exclude ?? [])
+  // Every entry in this page type's `exclude` that names a plugin of this config in the app's
+  // display spelling rather than the one quartz compares against (see shared/quartzPluginName.ts).
+  // Those entries exclude nothing at all - the app wrote them before it knew the difference - so
+  // they are dropped the next time this page type is written, not converted. Converting would hide
+  // a component on the built site because of an app update, which nobody asked for; dropping only
+  // takes a dead string out of the file, and the toggles above now say what the site shows.
+  const deadExcludes = new Set(
+    (override.exclude ?? []).filter((name) => config.plugins.some((p) => p.name === name && quartzPluginName(p.source) !== name))
+  )
+
+  function toggleExclude(plugin: PluginEntry, excluded: boolean): void {
+    const exclude = new Set((override.exclude ?? []).filter((name) => !deadExcludes.has(name)))
+    const name = quartzPluginName(plugin.source)
     if (excluded) exclude.add(name)
     else exclude.delete(name)
     update({ exclude: [...exclude] })
@@ -100,11 +112,13 @@ export default function PageTypeOverrides({
         <p className="mb-3 text-xs text-text-muted">{t('layoutEditor.excludeDescription')}</p>
         <div className="grid grid-cols-2 gap-1.5">
           {distinctComponentChips(config.plugins).map(({ plugin }) => {
-            const excluded = (override.exclude ?? []).includes(plugin.name)
+            // Read with quartz's name, not the app's: an entry in the old spelling excludes
+            // nothing, so showing it as hidden would describe a page that shows it.
+            const excluded = (override.exclude ?? []).includes(quartzPluginName(plugin.source))
             const count = nameCounts.get(plugin.name) ?? 0
             return (
               <div key={plugin.name} className="flex flex-col gap-0.5">
-                <Toggle label={plugin.name} checked={!excluded} onChange={(checked) => toggleExclude(plugin.name, !checked)} />
+                <Toggle label={plugin.name} checked={!excluded} onChange={(checked) => toggleExclude(plugin, !checked)} />
                 {count > 1 && (
                   <p className="pl-[46px] text-micro text-amber-600 dark:text-amber-400">
                     {t('layoutEditor.excludeDuplicateHint', { count, name: plugin.name })}

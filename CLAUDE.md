@@ -55,6 +55,12 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
 - `npm run check:semver` — die 18 Versionsvergleiche, die der Update-Hinweis trifft. Braucht weder
   App noch Netz; existiert, weil die interessanten Fälle Vorabversionen sind (`beta.10` ist neuer
   als `beta.9`, `1.0.0` neuer als beide) und ein Zeichenkettenvergleich beide falsch beantwortet
+- `npm run check:plugin-names -- [projektpfad]` — die 18 Quellen, aus denen der Name entsteht, gegen
+  den Quartz `layout.byPageType.<typ>.exclude` vergleicht. Ohne Pfad nur gegen eine Tabelle; mit Pfad
+  zusätzlich gegen Quartz' **eigene** `extractPluginName`, aus `config-loader.ts` herausgeschnitten
+  und ausgeführt. Existiert, weil ein Fehler darin wie ein Schalter aussieht, der nichts tut — genau
+  das war er für jedes `@quartz-community/*`-Plugin —, und weil die Gegenprobe sofort einen Rand fand,
+  der beim Lesen richtig aussah (`path.basename` trennt am Backslash nur auf win32)
 - `npm run check:i18n` — every literal `t('…')` and `mainT('…')` key against `de.ts`, `en.ts` and
   `electron/main/i18n.ts`, plus de/en parity in both directions. Static and instant; it exists because
   i18next renders a missing key *as the key* rather than failing, so a gap is invisible until someone
@@ -445,6 +451,16 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   wird weggeräumt statt übersprungen, damit der reparierende Weg nicht blockiert bleibt.
 - **Gemessen, nicht angenommen.** Jede Regel hier steht in `docs/decisions/` mit dem Experiment, das
   sie erzwungen hat. Neue Regeln genauso.
+- **Ein Wert, den ein fremdes Programm vergleicht, wird nach dessen Regel gebildet — und die Regel
+  wird gegen das fremde Programm geprüft, nicht gegen unsere Vorstellung von ihm.** Der Ausschluss
+  im Reiter „Seitentypen“ schrieb den Anzeigenamen der App, Quartz vergleicht gegen
+  `extractPluginName(source)`, und für jede npm-Quelle mit Scope ist das die ganze Quelle — der
+  Schalter wirkte nie, und die Kandidatenrechnung daneben baute Ordnungen, die Quartz nie erzeugt.
+  Der Name steht jetzt an einer Stelle (`shared/quartzPluginName.ts`), wird auch zum *Lesen*
+  benutzt (sonst zeigt der Schalter einen Zustand, den die Seite nicht hat), und
+  `npm run check:plugin-names` schneidet Quartz' eigene Funktion aus dessen Quelldatei und
+  vergleicht. Genau diese Gegenprobe fand einen Rand, den zweimaliges Lesen nicht gefunden hatte.
+  Messungen in [`plugins-and-config.md`](docs/decisions/plugins-and-config.md).
 - **Eine Messung trägt nur so weit wie ihr Instrument.** Ein `grep` über `.quartz-gui/` fand den
   Projektpfad im Snapshot-Store nicht und hat daraus „nichts sonst hält seinen eigenen Pfad“ gemacht
   — der Store ist eine git-Objektdatenbank, und in einem zlib-komprimierten Objekt liest `grep`

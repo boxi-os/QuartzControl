@@ -513,6 +513,13 @@ Die drei niedrigen: der vierte Fundort der Zahl zehn (die Bausteine sind seit `b
 im gepflegten Vault stand sie noch sechsmal), ein Dry-Run, der verschwieg, was der Import ablehnen
 wird, und eine Nadel, deren eigenes Beispiel sie nicht traf.
 
+**Der Auftrag für das fünfte Review steht** in
+[`docs/REVIEW-2026-09-08-auftrag.md`](docs/REVIEW-2026-09-08-auftrag.md). Sein Diff hat zwei
+Schichten: die acht Fixes des vierten Reviews, die niemand gelesen hat, und eine
+Dokumentations-Sitzung, aus der mehr App-Code entstand, als der Name vermuten lässt — ein neuer
+IPC-Kanal, der Renderer-Eingabe zu einem Dateipfad macht, eine Änderung an der Verpackung, fünf
+neue Skripte und rund fünfzig geänderte Nutzertexte. 45 Dateien, +2043/−187.
+
 **Das nächste Review misst ab `review-2026-09-07`.** Der Tag gehört auf den Stand, den das vierte
 Review vor sich hatte — `1994811`, den letzten Merge vor diesen Fixes —, nach derselben Regel, die
 schon beim dritten galt: Der Ausgangsstand ist das, was gelesen wurde, nicht das, was danach

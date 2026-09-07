@@ -370,8 +370,12 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   Belegung ist eine leere Zelle — und eine Doppelbelegung wird im Editor gesagt. Darüber hinaus
   geht es über Quartz' zweiten Schlüssel: `layout.group` faltet die gruppierten Einträge einer
   Position zu einer Flex zusammen, und **die k-te Flex einer Position ist die k-te Gruppe**. Das k
-  steht als `GROUP_ORDER` im generierten Frame, weil es aus der flachen Positionsliste nicht
-  ablesbar ist. Die Frames halten damit eine Kopie aus der Config, und **der Wächter über eine
+  steht im generierten Frame, weil es aus der flachen Positionsliste nicht ablesbar ist — und zwar
+  nicht einmal, sondern einmal je Seitentyp: **Quartz baut je Seitentyp ein eigenes Layout**
+  (`exclude` und geleerte Positionen wirken vor `resolveGroups`), sagt dem Frame aber nie, welchen
+  es gerade rendert. Das Frame bekommt deshalb alle Ordnungen, die die Config hergibt, und wählt
+  beim Rendern die, deren Gruppenzahlen zu allen Positionen passen; passen zwei verschieden
+  geordnete gleich gut, wird nicht geraten, sondern gesagt. Die Frames halten damit eine Kopie aus der Config, und **der Wächter über eine
   solche Kopie steht an der Tür, an der sie gelesen wird, nicht an denen, an denen das Original
   sich ändert**: `buildService` ruft `writeAllFrames()` vor jedem `quartz build` und jedem
   `--serve`-Start. Zur Config führen acht Türen (Speichern, vier Plugin-Operationen über die CLI,

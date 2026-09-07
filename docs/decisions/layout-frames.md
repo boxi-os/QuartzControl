@@ -136,20 +136,71 @@ denen dieses Frame keinen Bereich gegeben hat, die sonst von der Seite verschwä
 ### Woher das k kommt, und was es kostet
 
 Die Reihenfolge der Gruppen kann das Frame nicht aus dem herauslesen, was es bekommt: die
-Positionsliste ist flach, und jede Gruppe darin ist eine namenlose Flex. Sie steht deshalb als
-`GROUP_ORDER` im generierten Code; `groupOrderByPosition()` in `shared/gridFrameCss.ts` bildet
-`resolveGroups`' eigene Sortierung nach (Mitglieder nach Priorität, jede Gruppe an der Stelle ihres
-ersten Mitglieds, sofern `layout.groups.<name>.priority` nichts anderes sagt).
+Positionsliste ist flach, und jede Gruppe darin ist eine namenlose Flex. Sie steht deshalb im
+generierten Code; `groupOrderByPosition()` in `shared/gridFrameCss.ts` bildet `resolveGroups`'
+eigene Sortierung nach (Mitglieder nach Priorität, jede Gruppe an der Stelle ihres ersten
+Mitglieds, sofern `layout.groups.<name>.priority` nichts anderes sagt).
 
 Damit hält ein Frame eine Kopie von etwas, das die Config besitzt — dasselbe Verhältnis wie bei den
 Breakpoint-Breiten. **Eine Kopie, die niemand auffrischt, ist eine Kopie, die still aufhört zu
 stimmen**, also braucht sie einen Wächter; wo der steht, ist unten der eigene Abschnitt.
 
 Und weil eine Kopie trotzdem veralten kann — jemand ändert die yaml von Hand —, zählt der
-generierte Code beim Rendern nach: passen Flexes und `GROUP_ORDER` nicht zusammen, wird nichts
+generierte Code beim Rendern nach: passen Flexes und Gruppenzahl nicht zusammen, wird nichts
 geraten. Der einfache Bereich bekommt alles, die Gruppen-Bereiche bleiben leer, und der Build sagt
 es. **Eine Seite ohne Aufteilung ist reparierbar, eine mit vertauschten Bereichen nicht** — dort
 sieht alles richtig aus, nur steht das Falsche darin.
+
+### Das k gehört dem Seitentyp, nicht der Config
+
+Das war der erste mittlere Befund des sechsten Reviews, und er trifft die Grundlage: `GROUP_ORDER`
+stand einmal im Modul, gerechnet aus der ganzen Config — **Quartz baut aber je Seitentyp ein
+eigenes Layout.** `loadQuartzLayout` nimmt die aktivierten Plugins, wirft die unter
+`byPageType.<t>.exclude` genannten hinaus, ruft `buildLayoutForEntries` (und darin `resolveGroups`)
+auf dieser kürzeren Liste und leert erst danach die Positionen, die `positions` mit `[]` nennt.
+Zahl *und* Reihenfolge der Flexes einer Position sind damit Eigenschaften des Seitentyps, und
+beides erreicht der Nutzer im Reiter „Seitentypen“ mit einem Klick.
+
+Sagen kann Quartz dem Frame den Seitentyp nicht: `PageFrameProps` trägt die fertigen Listen und
+sonst nichts, `componentData` auch keinen Namen, und der Dispatcher wählt das Layout, bevor das
+Frame ins Spiel kommt. Was ein Frame messen kann, ist **wie viele Flexes in jeder Position
+stehen** — die Zahl der Einträge insgesamt taugt nicht, weil Plugins ohne `layout` über die
+Vorgabe ihres Manifests platziert werden und die App die nicht kennt.
+
+Also bekommt das Frame nicht eine Ordnung, sondern alle, die diese Config hergibt
+(`groupLayoutCandidates()`): die globale und je eine pro Seitentyp mit `exclude` oder geleerter
+Position, gleiche fallen weg. Beim Rendern wählt `pickGroupOrder()` einmal pro Seite die
+Kandidatin, deren Gruppenzahlen zu allen sechs Positionen passen. Genau eine ist die Antwort;
+mehrere, die auf den geteilten Positionen dieselben Gruppen in derselben Reihenfolge nennen, sind
+dieselbe Antwort zweimal. Alles andere heißt raten, und geraten wird nicht.
+
+Gemessen am erzeugten Modul, mit vier Plugins auf `header` (Gruppe `gx` mit Priorität 10 und 60,
+`gy` mit 40, dazu eine Suche ohne Gruppe) und drei Seitentypen; das Frame hat zwei Gruppen-Bereiche
+und einen einfachen:
+
+| Seite | vorher | jetzt |
+| --- | --- | --- |
+| Standard (`gx`, `gy`, Suche) | richtig aufgeteilt | **erkannt und nicht aufgeteilt**, mit Grund |
+| Seitentyp schließt `gx`' erstes Mitglied aus | „richtig“ aufgeteilt — mit vertauschtem Inhalt | erkannt, nicht aufgeteilt |
+| Seitentyp schließt `gy` ganz aus | Rückfall, Rat „Save the layout once“ | **richtig aufgeteilt** |
+| Seitentyp leert `header` | Warnung, obwohl es nichts zu teilen gibt | still |
+| Frame ohne Gruppen-Bereich auf `header` | Warnung bei geleerter Position | still, immer |
+
+Die erste Zeile ist der Preis: Ein Ausschluss, der die Reihenfolge zweier Gruppen kippt, macht die
+Aufteilung für *alle* Seiten unentscheidbar, weil beide Ordnungen dieselbe Flex-Zahl ergeben. Das
+ist genau der Fall, den dieser Abschnitt oben als den nicht reparierbaren beschreibt — vorher sah
+er richtig aus und zeigte das Falsche, jetzt fällt er auf und sagt, was zu tun ist. Der Rat ist
+gemessen, nicht geraten: Mit `layout.groups.gx.priority` und `…gy.priority` ist die Reihenfolge
+seitentyp-unabhängig, beide Kandidatinnen fallen zusammen, und alle vier Seiten oben teilen wieder
+auf.
+
+Zwei Nebenwirkungen, beide erwünscht: Eine Position, für die dieses Frame keinen Gruppen-Bereich
+hat, nimmt an der Entscheidung nicht teil und warnt nie — sie hat nichts aufzuteilen. Und der
+Warnplatz hängt jetzt an der gemessenen Gestalt, nicht nur an der Position: zwei verschiedene
+Brüche im selben Lauf sagen beide etwas, vorher verbrauchte der erste den Platz des zweiten.
+
+**Was bleibt:** `npx quartz build` von Hand kann eine Config lesen, die kein Wächter dieser App
+gesehen hat; dann fällt es auf die erste Zeile der Tabelle zurück, statt still zu vertauschen.
 
 ### Gemessen
 

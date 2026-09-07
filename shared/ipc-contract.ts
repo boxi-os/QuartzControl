@@ -138,7 +138,9 @@ export interface GridFrameArea {
   // everything of its slot that no group claims. Meaningless without a slot, and on `pageBody`
   // (which is one component, not a list). The name is the area's own - a group exists as soon as a
   // component names it, `layout.groups` only carries its direction and gap. See
-  // groupOrderByPosition in gridFrameCss.ts for how the frame finds it again at build time.
+  // groupLayoutCandidates in gridFrameCss.ts for how the frame finds it again at build time - the
+  // ordering belongs to the page type, so the frame is given every ordering the config can produce
+  // and picks the one that fits what it was handed.
   group?: string
 }
 

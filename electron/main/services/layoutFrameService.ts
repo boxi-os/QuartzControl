@@ -8,7 +8,8 @@ import type {
   LegacyGridFrameDefinition,
   PluginActionResult
 } from '@shared/ipc-contract'
-import { DEFAULT_FRAME_BREAKPOINT_WIDTHS, buildFrameCss, groupOrderByPosition, migrateGridFrameDefinition } from '@shared/gridFrameCss'
+import { DEFAULT_FRAME_BREAKPOINT_WIDTHS, buildFrameCss, groupLayoutCandidates, migrateGridFrameDefinition } from '@shared/gridFrameCss'
+import type { GroupLayoutCandidate } from '@shared/gridFrameCss'
 import * as configService from './configService'
 import * as pluginService from './pluginService'
 import { quartzGuiDir, quartzGuiPath } from './projectDirs'
@@ -65,9 +66,9 @@ export async function getBreakpointWidths(projectPath: string): Promise<FrameBre
 // .quartz/plugins, so rewriting the files behind the symlink is all it takes.
 export async function saveBreakpointWidths(projectPath: string, widths: FrameBreakpointWidths): Promise<void> {
   await writeJsonFile(join(quartzGuiDir(projectPath), BREAKPOINTS_FILE), widths)
-  const groupOrder = await readGroupOrder(projectPath)
+  const groupLayouts = await readGroupLayouts(projectPath)
   for (const def of await listFrames(projectPath)) {
-    await writeFrameFiles(projectPath, def, widths, groupOrder)
+    await writeFrameFiles(projectPath, def, widths, groupLayouts)
   }
 }
 
@@ -83,21 +84,23 @@ function frameDir(projectPath: string, id: string): string {
 // plugin's dist/ already exists on disk). `pageBody` is a single component (Content), unlike the
 // other 6 slots which are arrays - see PageFrameProps in quartz/components/frames/types.ts.
 //
-// `groupOrder` is the project's group ordering per position (groupOrderByPosition), baked in
-// because it is the only thing the frame cannot work out for itself: quartz hands it a flat array
+// `groupLayouts` is every group ordering this config can produce (groupLayoutCandidates), baked in
+// because it is the one thing the frame cannot work out for itself: quartz hands it a flat array
 // per position in which each group is one anonymous `Flex`, so rank is the only way to tell them
-// apart. That makes the frame files depend on the layout half of quartz.config.yaml, which is why
-// buildService calls writeAllFrames() before every build and every dev server - the one place the
-// baked-in copy is ever read (see refreshAuthoredFrames there for why it is the only guard).
+// apart - and the ordering belongs to the page type, which the frame is never told. That makes the
+// frame files depend on the layout half of quartz.config.yaml, which is why buildService calls
+// writeAllFrames() before every build and every dev server - the one place the baked-in copy is
+// ever read (see refreshAuthoredFrames there for why it is the only guard).
 function generateFrameJs(
   def: GridFrameDefinition,
   widths: FrameBreakpointWidths,
-  groupOrder: Record<string, string[]>
+  groupLayouts: GroupLayoutCandidate[]
 ): string {
   return `import { h, Fragment } from "preact"
 
+const FRAME_NAME = ${JSON.stringify(def.frameName)}
 const AREAS = ${JSON.stringify(def.areas)}
-const GROUP_ORDER = ${JSON.stringify(groupOrder)}
+const GROUP_LAYOUTS = ${JSON.stringify(groupLayouts)}
 
 // What each area shows. Six positions is all quartz sorts components into
 // (config-loader.ts's buildLayoutForEntries), so a frame with more component areas than that needs
@@ -107,37 +110,96 @@ const GROUP_ORDER = ${JSON.stringify(groupOrder)}
 // group is a function literally named "Flex" (quartz builds itself with esbuild's keepNames), and
 // \`displayName\` was undefined on every entry, so that name is the whole identity available here.
 //
-// So the k-th Flex in a position is the k-th group of GROUP_ORDER, an area with a group takes its
+// So the k-th Flex in a position is the k-th group of the ordering, an area with a group takes its
 // own, and the area without one takes everything else - including any group this frame gave no
 // area, which would otherwise vanish from the page.
 //
-// If the Flexes and GROUP_ORDER disagree in number, the model is wrong for this build (a group
-// whose members all got disabled, a config edited by hand since the frame was written) and nothing
-// is guessed: the position's plain area takes the lot, the group areas stay empty, and the build
-// log says so. A page that is missing its split is repairable; one where two areas quietly swapped
-// contents is not.
-// Said once per position per build, not once per area per page: the same mismatch is true for
-// every area of that position and for all 100-odd pages, and a warning repeated 300 times reads
-// like noise rather than like the one thing that went wrong.
+// Which ordering, though, is not a property of the config: quartz builds a layout per page type
+// (loadQuartzLayout drops what \`byPageType.<t>.exclude\` names, runs buildLayoutForEntries on the
+// rest, then empties the positions \`positions\` cleared), and it hands the frame the finished
+// lists without ever saying which page type they belong to - PageFrameProps carries no name, and
+// neither does componentData. Hence GROUP_LAYOUTS: every ordering this config can produce, and
+// pickGroupOrder to work out which one arrived.
+const POSITIONS = ["header", "beforeBody", "afterBody", "left", "right", "footer"]
+// The positions this frame divides. One without a group area has nothing to work out, so it never
+// takes part in the decision and never warns - it used to, and a page type that merely cleared it
+// was enough to spend the position's one warning before a real break could have it.
+const SPLIT_POSITIONS = POSITIONS.filter((p) => AREAS.some((a) => a.slot === p && a.group))
 const warned = new Set()
 
-function contentsFor(area, list) {
-  if (!area.slot || area.slot === "pageBody") return list
-  const groups = GROUP_ORDER[area.slot] ?? []
-  if (groups.length === 0) return area.group ? [] : list
-  const flexes = list.filter((C) => C.name === "Flex")
-  if (flexes.length !== groups.length) {
-    if (!warned.has(area.slot)) {
-      warned.add(area.slot)
-      const plain = AREAS.filter((a) => a.slot === area.slot && !a.group).map((a) => a.name)
+function orderOf(order, position) {
+  return order[position] || []
+}
+
+function countsLike(order, counts) {
+  return POSITIONS.every((p) => orderOf(order, p).length === counts[p])
+}
+
+function splitsAlike(a, b) {
+  return SPLIT_POSITIONS.every((p) => orderOf(a, p).join("\\u0000") === orderOf(b, p).join("\\u0000"))
+}
+
+function nameOf(candidate) {
+  return candidate.pageType === null ? "the config as a whole" : 'page type "' + candidate.pageType + '"'
+}
+
+function countsOf(order) {
+  return SPLIT_POSITIONS.map((p) => p + " " + orderOf(order, p).length).join(", ")
+}
+
+function groupsOf(order) {
+  return SPLIT_POSITIONS.map((p) => p + ": " + (orderOf(order, p).join(", ") || "no group")).join("; ")
+}
+
+// The only thing a frame can measure about the layout it was handed is how many Flexes each
+// position holds, so that is the whole key: the candidate whose group counts match everywhere is
+// the one this page was built with. Exactly one match is the answer; several that name the same
+// groups in the same order are the same answer said twice. Anything else means guessing, and a
+// guess here is the one failure that cannot be seen on the built page - two areas quietly showing
+// each other's contents - so it falls back to not splitting at all and says why.
+function pickGroupOrder(bySlot) {
+  if (SPLIT_POSITIONS.length === 0) return null
+  const counts = {}
+  for (const p of POSITIONS) counts[p] = (bySlot[p] || []).filter((C) => C.name === "Flex").length
+  const matches = GROUP_LAYOUTS.filter((c) => countsLike(c.order, counts))
+  if (matches.length === 1) return matches[0].order
+  if (matches.length > 1 && matches.every((c) => splitsAlike(c.order, matches[0].order))) return matches[0].order
+  // Once per distinct shape, not once per page: the same mismatch is true for every one of the
+  // 100-odd pages built with this layout, and a warning repeated 300 times reads like noise.
+  const key = matches.length + "@" + SPLIT_POSITIONS.map((p) => p + " " + counts[p]).join(", ")
+  if (!warned.has(key)) {
+    warned.add(key)
+    const rendered = SPLIT_POSITIONS.map((p) => p + " " + counts[p]).join(", ")
+    if (matches.length === 0) {
       console.warn(
-        \`[\${${JSON.stringify(def.frameName)}}] \${area.slot}: \${groups.length} group(s) in the config, \${flexes.length} rendered - \` +
-          \`not splitting. Everything goes to \${plain.length ? '"' + plain.join('", "') + '"' : "no area of this frame"}. \` +
-          \`Save the layout once to refresh this frame.\`
+        "[" + FRAME_NAME + "] this page renders " + rendered + " group flex(es), which no layout in " +
+          "quartz.config.yaml produces (" + GROUP_LAYOUTS.map((c) => nameOf(c) + ": " + countsOf(c.order)).join("; ") + "). " +
+          "Not splitting: every position's area without a group takes the lot, the group areas stay empty. " +
+          "Usually a group whose members all got disabled, or a quartz.config.yaml edited by hand since this frame was written."
+      )
+    } else {
+      console.warn(
+        "[" + FRAME_NAME + "] this page renders " + rendered + " group flex(es), which fits " +
+          matches.map(nameOf).join(" and ") + " - and they order the groups differently (" +
+          matches.map((c) => nameOf(c) + " -> " + groupsOf(c.order)).join("; ") + "). " +
+          "Not splitting, because guessing would swap what the areas show. Give those groups an explicit " +
+          "priority under layout.groups so their order is the same for every page type."
       )
     }
-    return area.group ? [] : list
   }
+  return null
+}
+
+function contentsFor(area, list, order) {
+  if (!area.slot || area.slot === "pageBody") return list
+  // No area of this frame divides this position, so there is nothing to take apart - and nothing
+  // to warn about either, whatever the config says about groups here.
+  if (!AREAS.some((a) => a.slot === area.slot && a.group)) return list
+  const groups = order ? orderOf(order, area.slot) : []
+  if (groups.length === 0) return area.group ? [] : list
+  // Guaranteed equal in length: pickGroupOrder only returns an ordering whose group count matches
+  // the Flexes of every position, and it returns null when none does.
+  const flexes = list.filter((C) => C.name === "Flex")
   if (area.group) {
     // Nothing else in this position has an area to go to, so the components that are in no group
     // are about to be dropped from every page. Measured on a real build: two group areas on
@@ -154,8 +216,9 @@ function contentsFor(area, list) {
         // entry and any number of components, and this cannot see inside it. An understated
         // number would be worse than a vague noun.
         console.warn(
-          \`[\${${JSON.stringify(def.frameName)}}] \${area.slot}: every area here has a group, so \${lost} entr\${lost === 1 ? "y" : "ies"} \` +
-            \`outside those groups render on no page. Give the position an area without a group to hold them.\`
+          "[" + FRAME_NAME + "] " + area.slot + ": every area here has a group, so " + lost + " entr" +
+            (lost === 1 ? "y" : "ies") + " outside those groups render on no page. " +
+            "Give the position an area without a group to hold them."
         )
       }
     }
@@ -168,11 +231,13 @@ function contentsFor(area, list) {
 }
 
 export const Frame = {
-  name: ${JSON.stringify(def.frameName)},
+  name: FRAME_NAME,
   css: ${JSON.stringify(buildFrameCss(def, widths))},
   render(props) {
     const { componentData, header, beforeBody, pageBody, afterBody, left, right, footer } = props
     const bySlot = { header, beforeBody, afterBody, left, right, footer, pageBody: [pageBody] }
+    // Once per page, not once per area: the decision is about the whole layout that arrived.
+    const order = pickGroupOrder(bySlot)
     return h(
       Fragment,
       null,
@@ -181,7 +246,7 @@ export const Frame = {
         { class: "qgframe-grid" },
         AREAS.map((area) => {
           // An area without a slot is an empty cell by design (a spacer) - see GridFrameArea.
-          const components = area.slot ? contentsFor(area, bySlot[area.slot] ?? []) : []
+          const components = area.slot ? contentsFor(area, bySlot[area.slot] ?? [], order) : []
           // The area holding pageBody also carries \`center\`, because quartz's own three frames
           // do (DefaultFrame/FullWidthFrame/MinimalFrame all render <div class="center …">) and
           // client scripts rely on it: the mermaid initialiser runs
@@ -222,16 +287,16 @@ function generatePackageJson(def: GridFrameDefinition): string {
   )
 }
 
-// A frame's generated code carries the project's group ordering (see generateFrameJs), so every
-// write needs it. Unreadable config means no groups rather than a failed write: a frame that shows
-// a position undivided is a frame that still builds, and the alternative is a project whose frames
-// cannot be saved because of a syntax error somewhere else in the yaml.
-async function readGroupOrder(projectPath: string): Promise<Record<string, string[]>> {
+// A frame's generated code carries the project's group orderings (see generateFrameJs), so every
+// write needs them. Unreadable config means no groups rather than a failed write: a frame that
+// shows a position undivided is a frame that still builds, and the alternative is a project whose
+// frames cannot be saved because of a syntax error somewhere else in the yaml.
+async function readGroupLayouts(projectPath: string): Promise<GroupLayoutCandidate[]> {
   try {
-    return groupOrderByPosition(await configService.readConfig(projectPath))
+    return groupLayoutCandidates(await configService.readConfig(projectPath))
   } catch (err) {
     console.error(`[layoutFrames] could not read the layout groups of ${projectPath}: ${String(err)}`)
-    return {}
+    return [{ pageType: null, order: {} }]
   }
 }
 
@@ -239,7 +304,7 @@ async function writeFrameFiles(
   projectPath: string,
   def: GridFrameDefinition,
   widths: FrameBreakpointWidths,
-  groupOrder: Record<string, string[]>
+  groupLayouts: GroupLayoutCandidate[]
 ): Promise<void> {
   const dir = frameDir(projectPath, def.id)
   quartzGuiDir(projectPath, 'authored-frames') // creating: this is the write path
@@ -249,7 +314,7 @@ async function writeFrameFiles(
     // drops the frame out of listFrames() while its plugin entry stays in quartz.config.yaml.
     writeJsonFile(join(dir, 'frame.json'), def),
     writeFile(join(dir, 'package.json'), generatePackageJson(def), 'utf-8'),
-    writeFile(join(dir, 'dist', 'frames.js'), generateFrameJs(def, widths, groupOrder), 'utf-8')
+    writeFile(join(dir, 'dist', 'frames.js'), generateFrameJs(def, widths, groupLayouts), 'utf-8')
   ])
 }
 
@@ -269,9 +334,9 @@ export async function writeAllFrames(projectPath: string): Promise<void> {
   try {
     const frames = await listFrames(projectPath)
     if (frames.length === 0) return
-    const [widths, groupOrder] = await Promise.all([getBreakpointWidths(projectPath), readGroupOrder(projectPath)])
+    const [widths, groupLayouts] = await Promise.all([getBreakpointWidths(projectPath), readGroupLayouts(projectPath)])
     for (const def of frames) {
-      await writeFrameFiles(projectPath, def, widths, groupOrder)
+      await writeFrameFiles(projectPath, def, widths, groupLayouts)
     }
   } catch (err) {
     console.error(`[layoutFrames] could not refresh the frames of ${projectPath}: ${String(err)}`)
@@ -322,7 +387,7 @@ export async function saveFrame(
   // possibly a pre-breakpoint export - so migrate defensively here too, not just in listFrames().
   const def = migrateGridFrameDefinition(rawDef)
   const isNew = !existsSync(frameDir(projectPath, def.id))
-  await writeFrameFiles(projectPath, def, await getBreakpointWidths(projectPath), await readGroupOrder(projectPath))
+  await writeFrameFiles(projectPath, def, await getBreakpointWidths(projectPath), await readGroupLayouts(projectPath))
   // Only newly created frames need registering - `quartz plugin add` symlinks the directory into
   // .quartz/plugins/<id> once; editing an existing frame just rewrites the files the symlink
   // already points at, so the build picks up the change on its next run with no CLI call needed.

@@ -572,6 +572,13 @@ interface FramesPayload {
   frames: GridFrameDefinition[]
 }
 
+// The payload is whatever a package's frames.json holds - a file somebody passed along - so even
+// the name used to talk about a frame is not certain to be a string.
+function frameLabel(frame: GridFrameDefinition): string {
+  const named = typeof frame?.frameName === 'string' && frame.frameName ? frame.frameName : frame?.id
+  return typeof named === 'string' && named ? named.slice(0, 120) : '?'
+}
+
 const frames: TemplatePart<FramesPayload> = {
   id: 'frames',
   async collect({ projectPath }) {
@@ -583,6 +590,13 @@ const frames: TemplatePart<FramesPayload> = {
     const existing = new Set((await layoutFrameService.listFrames(projectPath)).map((f) => f.id))
     const plan = emptyPlan()
     for (const frame of payload.frames) {
+      // Same question saveFrame will ask when the button is clicked, asked while the answer is
+      // still worth something: a dry run that lists a frame as an addition and then refuses it is
+      // a dry run that described a different import than the one that ran.
+      if (layoutFrameService.frameDefinitionProblem(frame) !== null) {
+        plan.notes.push(`invalidFrame:${frameLabel(frame)}`)
+        continue
+      }
       if (existing.has(frame.id)) plan.conflicts.push(frame.frameName || frame.id)
       else plan.additions.push(frame.frameName || frame.id)
     }

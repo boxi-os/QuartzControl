@@ -12,3 +12,15 @@ Aus CLAUDE.md ausgelagert (2026-09-02): die Messungen und Beobachtungen hinter d
 - `quartz create`'s `-l/--links` is unconditionally required; if omitted (and every other flag can hit the same failure mode) the wizard prompts interactively. All spawned `quartz`/`git`/`npm` processes in this repo use `stdio: ['ignore', 'pipe', 'pipe']` so an unanswered prompt fails fast — but that makes the CLI **exit 0 without writing `quartz.config.yaml`**, so `createService` explicitly checks the file exists on disk before reporting success rather than trusting the exit code.
 - `quartz sync`'s `--push`/`--pull` are booleans that **both default to `true`** — `syncService` selects a single direction by negating the other (`--no-pull` for push-only), not by passing only the one wanted.
 - On disk, `quartz.config.yaml` nests `theme` *inside* `configuration` (not a sibling top-level key), and plugin entries in the `plugins:` array can carry extra keys beyond `source`/`enabled`/`order`/`options` — notably `layout` (position/priority/group/...) on roughly half the built-in plugins. `configService` reads/writes plugin entries by spreading the raw object rather than picking known fields, specifically so those extra keys round-trip through a save instead of being silently deleted. If you touch `configService.ts`, preserve that spread — re-verify against a real cloned+installed Quartz project (not just the docs) if you change how config or plugin entries are read or written.
+- **Quartz liest `enabled` an zwei Stellen verschieden.** Der Loader, der das Layout baut, wirft
+  alles Falsy hinaus (`json.plugins.filter((e) => e.enabled)`, `plugins/loader/config-loader.ts:650`);
+  die CLI, die die Liste verwaltet, hält einen Eintrag ohne den Schlüssel für eingeschaltet
+  (`entry.enabled !== false`, `cli/plugin-git-handlers.js:1574`). `readPluginsJson` parst die yaml
+  roh, es gibt also keine Normalisierung dazwischen. Ein von Hand geschriebener Eintrag **ohne**
+  `enabled:` erscheint damit in `quartz plugin list` als aktiv und wird trotzdem nicht gebaut.
+  `configService.readConfig` folgt der CLI (`enabled: p.enabled ?? true`) und schreibt den
+  Schlüssel beim Speichern, jeder Eintrag, den diese App einmal angefasst hat, trägt ihn also.
+  Aufgefallen am 2026-09-07 beim sechsten Review, beim Vergleich von `groupOrderByPosition` mit
+  `resolveGroups`; **nicht** geändert, weil die Frage größer ist als die Gruppen — sie betrifft die
+  ganze Plugin-Liste, und die Antwort darauf, welcher der beiden Quartz-Wege der maßgebliche ist,
+  gehört in einen eigenen Durchgang.

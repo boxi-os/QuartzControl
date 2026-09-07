@@ -209,10 +209,14 @@ for (const [scheme, media] of SCHEMES) {
   // Die Sprache wird gesetzt, damit die Bilder in einer Sprache herauskommen - aber ohne --demo
   // ist das Profil das des Nutzers, und dort gehört sie ihm. Der vorherige Wert wird gemerkt und
   // im finally unten zurückgeschrieben, auch wenn die Aufnahme dazwischen abbricht.
+  // `had` statt nur des Werts: Die Einstellung ist optional und der Store füllt keine Vorgabe auf
+  // (`readJsonFileOr(settingsPath(), {})`), wer die Sprache also nie angefasst hat, hat den
+  // Schlüssel nicht. Ein `undefined` als „nichts zurückzustellen“ zu lesen war genau falsch herum -
+  // das ist der häufigste Zustand, und in ihm blieb das `de` dieses Laufs stehen.
   const previousLanguage = await page.evaluate(async (l) => {
     const s = await window.quartzGui.settings.get()
     await window.quartzGui.settings.save({ ...s, language: l })
-    return s.language
+    return { had: s.language !== undefined, value: s.language ?? null }
   }, lang)
   // Und dann neu laden, sonst wirkt der Schreibvorgang für dieses Fenster gar nicht:
   // `applyLanguagePreference()` läuft im Renderer genau zweimal - beim Start aus den geladenen
@@ -302,11 +306,15 @@ for (const [scheme, media] of SCHEMES) {
   } finally {
     // Zurückgestellt wird nur ohne --demo: unter --demo ist das Profil ein Wegwerf-Verzeichnis,
     // und ein Schreibvorgang dorthin ist nach dem Lauf ohnehin fort.
-    if (!DEMO && previousLanguage !== undefined) {
+    if (!DEMO) {
       await page
-        .evaluate(async (l) => {
+        .evaluate(async (prev) => {
           const s = await window.quartzGui.settings.get()
-          await window.quartzGui.settings.save({ ...s, language: l })
+          // War keine gesetzt, wird der Schlüssel wieder entfernt - „system“ hineinzuschreiben
+          // wäre eine Antwort auf eine Frage, die der Nutzer nie beantwortet hat.
+          if (prev.had) s.language = prev.value
+          else delete s.language
+          await window.quartzGui.settings.save(s)
         }, previousLanguage)
         .catch((err) => console.warn(`  (Sprache nicht zurückgestellt: ${err.message.split('\n')[0]})`))
     }

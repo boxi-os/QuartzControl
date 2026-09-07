@@ -1138,6 +1138,13 @@ export default {
       cellName: 'Cell row {{row}}, column {{col}}',
       areaName: 'Area name',
       areaSlot: 'Slot',
+      slotNone: 'None (empty)',
+      ownGroup: 'Area of its own',
+      ownGroupShort: 'own',
+      ownGroupHint:
+        'Shows only the components dragged here on the “Global” tab. Without it the area shows everything else the slot holds.',
+      ownGroupRenamed:
+        'Holds the group “{{group}}”. Renaming the area leaves the group name alone, so the components assigned on the “Global” tab stay here.',
       rowSpanLabel: 'Row span',
       colSpanLabel: 'Column span',
       removeArea: 'Remove area',
@@ -1145,8 +1152,16 @@ export default {
       visibleOnBreakpoint: 'Visible on {{breakpoint}}',
       overlapError: 'This area overlaps an existing area.',
       unassignedWarning: 'Not assigned: {{slots}}. Components for these slots will not render in this frame.',
+      homelessWarning:
+        'No plain area for: {{slots}}. Anything in that slot and in no area of its own renders on no page at all.',
+      doubledWarning:
+        'Assigned twice: {{slots}}. Each of these areas shows the same components, so they appear more than once on the page.',
       neverVisibleWarning: 'Not visible on any breakpoint: {{areas}}. These areas will not render anywhere.',
       nameRequired: 'Please give the frame a name.',
+      areaNameCollision:
+        'Two areas are called “{{names}}”. An area name may only appear once — otherwise the frame loses its whole grid, not just one area.',
+      areaGroupCollision:
+        'Two areas on the same slot hold the group “{{names}}”. Both would show the same components, so they would appear twice on every page.',
       nameCollision: 'This name is already taken (a built-in frame, or another custom one).',
       deleteFrame: 'Delete this frame',
       deleteConfirmAction: 'Delete frame',
@@ -1599,6 +1614,10 @@ export default {
     planOutsideDetail: 'Refused: {{names}} would be written outside the project.',
     planOutsideDetail_other: 'Refused: {{names}} would be written outside the project.',
     planOutsideMore: '{{names}} and {{count}} more',
+    planInvalidFrames: '{{count}} frame unreadable',
+    planInvalidFrames_other: '{{count}} frames unreadable',
+    planInvalidFramesDetail: 'Unreadable and skipped: {{names}}.',
+    planInvalidFramesDetail_other: 'Unreadable and skipped: {{names}}.',
     quotedName: '“{{value}}”',
     planNoChange: 'changes nothing',
     willInstall: 'Will be installed: {{packages}}',

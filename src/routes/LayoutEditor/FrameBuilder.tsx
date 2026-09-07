@@ -74,6 +74,16 @@ function slotToName(slot: FrameSlot): string {
   return slot.replace(/([A-Z])/g, '-$1').toLowerCase()
 }
 
+// "custom-3" counted areas, so deleting one and adding another produced a name that was already
+// taken - and two areas with the same name are one grid-template-areas cell, i.e. the second one
+// silently overwrites the first. Counts up until the name is free instead.
+function nextAreaName(areas: GridFrameArea[]): string {
+  const taken = new Set(areas.map((a) => a.name))
+  let n = areas.length + 1
+  while (taken.has(`custom-${n}`)) n++
+  return `custom-${n}`
+}
+
 // A brand-new frame starts with one area per real component slot (including pageBody, the actual
 // page content - almost every frame needs it), all unplaced. That way the "available areas" tray
 // has something to drag onto the grid immediately, instead of an empty editor that only gains
@@ -240,6 +250,47 @@ export default function FrameBuilder({
     return (frames ?? []).some((f) => f.id !== def.id && f.frameName === def.frameName)
   }
 
+  /**
+   * Two areas sharing a name, which blocks the save rather than warning.
+   *
+   * An area's name is its `grid-area`, and two areas carrying one name put it on two rectangles of
+   * the grid. CSS requires a named area to be a single rectangle, so the browser rejects the whole
+   * `grid-template-areas` declaration - not the one name, the declaration. Measured on a real
+   * build after renaming one area to match another: `grid-template-areas` computed to `none`, the
+   * tracks collapsed to `0px 0px 0px 0px 1248px`, and every area sat at the same place with the
+   * same height. The frame does not lose an area, it loses its layout.
+   *
+   * That is more than a warning underneath the grid is worth, and the editor already refuses to
+   * save a frame whose *own* name is taken - this is the same kind of mistake, one level down.
+   */
+  function duplicateAreaNames(def: GridFrameDefinition): string[] {
+    const seen = new Set<string>()
+    const twice = new Set<string>()
+    for (const area of def.areas) {
+      if (seen.has(area.name)) twice.add(area.name)
+      seen.add(area.name)
+    }
+    return [...twice]
+  }
+
+  /**
+   * Two areas holding the same group on the same slot show the same components twice - the same
+   * mistake as two areas on one slot, one level down. It only became reachable once renaming an
+   * area stopped renaming its group: an area keeps "toolbar" while its name moves on, a later area
+   * called "toolbar" switches its group on, and both now claim the k-th flex.
+   */
+  function duplicateAreaGroups(def: GridFrameDefinition): string[] {
+    const seen = new Set<string>()
+    const twice = new Set<string>()
+    for (const area of def.areas) {
+      if (!area.slot || !area.group) continue
+      const key = `${area.slot}\u0000${area.group}`
+      if (seen.has(key)) twice.add(area.group)
+      seen.add(key)
+    }
+    return [...twice]
+  }
+
   function updateLayout(patch: Partial<GridBreakpointLayout>): void {
     if (!editing) return
     const layout = editing.breakpoints[activeBreakpoint]
@@ -368,7 +419,11 @@ export default function FrameBuilder({
   function addNewArea(): void {
     if (!editing) return
     const id = `area-${Date.now()}`
-    const newArea: GridFrameArea = { id, name: `custom-${editing.areas.length + 1}`, slot: 'left' }
+    // No slot: quartz hands out seven sources of content and a frame may have more areas, so a new
+    // one starts as an empty cell and says so. It used to be born on `left`, which is why this
+    // project's "editorial" frame ended up with three areas on that slot - and built the whole
+    // left sidebar three times onto every page.
+    const newArea: GridFrameArea = { id, name: nextAreaName(editing.areas) }
     setEditing({ ...editing, areas: [...editing.areas, newArea] })
     setSelectedAreaId(id)
     setMessage(null)
@@ -381,12 +436,40 @@ export default function FrameBuilder({
     if (!editing) return
     setNameDraft(rawName)
     const name = slugify(rawName)
-    setEditing({ ...editing, areas: editing.areas.map((a) => (a.id === id ? { ...a, name } : a)) })
+    setEditing({
+      ...editing,
+      // The group is deliberately left alone. It is the area's own name only at the moment the
+      // switch is flipped (see updateAreaGroup); afterwards it is a key into quartz.config.yaml,
+      // where the members carry `layout.group: <that name>` - and this editor does not know the
+      // config, let alone write it. Renaming the group along with the area would therefore point
+      // the area at a group nobody is in, and the components it used to hold would fall back into
+      // the position's plain area on every built page, with the flex count still adding up and so
+      // nothing to warn about. The panel says which group an area holds once the two differ.
+      areas: editing.areas.map((a) => (a.id === id ? { ...a, name } : a))
+    })
   }
 
-  function updateAreaSlot(id: string, slot: FrameSlot): void {
+  function updateAreaSlot(id: string, slot: FrameSlot | undefined): void {
     if (!editing) return
-    setEditing({ ...editing, areas: editing.areas.map((a) => (a.id === id ? { ...a, slot } : a)) })
+    // Only the six real positions can be split; "no slot" is an empty cell and pageBody is a single
+    // component, so a group left over from a previous choice would be a setting with no effect.
+    const keepsGroup = !!slot && slot !== 'pageBody'
+    setEditing({
+      ...editing,
+      areas: editing.areas.map((a) => (a.id === id ? { ...a, slot, group: keepsGroup ? a.group : undefined } : a))
+    })
+  }
+
+  // A group exists as soon as a component names it - `layout.groups` only ever holds its direction
+  // and gap - so switching this on writes nothing to quartz.config.yaml. What it does is make the
+  // area its own drop target in the layout board; the components dragged there get
+  // `layout.group: <area name>` and stop appearing in the position's plain area.
+  function updateAreaGroup(id: string, own: boolean): void {
+    if (!editing) return
+    setEditing({
+      ...editing,
+      areas: editing.areas.map((a) => (a.id === id ? { ...a, group: own ? a.name : undefined } : a))
+    })
   }
 
   function updateAreaSpan(id: string, patch: { rowSpan?: number; colSpan?: number }): void {
@@ -444,6 +527,16 @@ export default function FrameBuilder({
     }
     if (nameCollision(editing)) {
       setMessage(t('layoutEditor.frameBuilder.nameCollision'))
+      return
+    }
+    const twice = duplicateAreaNames(editing)
+    if (twice.length > 0) {
+      setMessage(t('layoutEditor.frameBuilder.areaNameCollision', { names: twice.join(', ') }))
+      return
+    }
+    const twiceGrouped = duplicateAreaGroups(editing)
+    if (twiceGrouped.length > 0) {
+      setMessage(t('layoutEditor.frameBuilder.areaGroupCollision', { names: twiceGrouped.join(', ') }))
       return
     }
     setSaving(true)
@@ -535,13 +628,26 @@ export default function FrameBuilder({
   const box = buildFrameBox(layout)
   const hasMaxWidth = !!layout.maxWidth?.trim()
   const hasBox = hasMaxWidth || box.paddingBlock !== '0' || box.paddingInline !== '0'
-  const usedSlots = new Set(
-    editing.areas.filter((a) => {
-      const p = layout.placements[a.id]
-      return p && !p.hidden
-    }).map((a) => a.slot)
-  )
+  const visibleAreas = editing.areas.filter((a) => {
+    const p = layout.placements[a.id]
+    return p && !p.hidden
+  })
+  const usedSlots = new Set(visibleAreas.map((a) => a.slot).filter((s): s is FrameSlot => !!s))
   const unassignedSlots = SLOTS.filter((s) => s !== 'pageBody' && !usedSlots.has(s))
+  // Two visible areas on one slot render that slot's whole component list twice - measured on this
+  // project's "editorial" frame, which had three on `left`. The editor used to allow it silently;
+  // the build was the first place it showed.
+  // Only areas without a group double up - two group areas on one slot are the point of the
+  // exercise, they show different components.
+  const doubledSlots = SLOTS.filter((s) => visibleAreas.filter((a) => a.slot === s && !a.group).length > 1)
+  // The other half of that: a slot whose visible areas *all* have a group has nowhere to put the
+  // components that are in no group, and they then appear on no page at all. Measured on a real
+  // build - two group areas on `left` and no plain one took the spacer, the dark-mode switch and
+  // the reader-mode switch off every page, with nothing said anywhere. Structural, so the frame
+  // editor can see it without knowing which components the project has.
+  const homelessSlots = SLOTS.filter(
+    (s) => s !== 'pageBody' && visibleAreas.some((a) => a.slot === s && a.group) && !visibleAreas.some((a) => a.slot === s && !a.group)
+  )
   const unplacedAreas = editing.areas.filter((a) => {
     const p = layout.placements[a.id]
     return !p || p.hidden
@@ -795,7 +901,10 @@ export default function FrameBuilder({
                     <span className="truncate font-medium">{area.name}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Badge>{t(`positions.${area.slot}`, area.slot)}</Badge>
+                    <Badge>
+                      {area.slot ? t(`positions.${area.slot}`, area.slot) : t('layoutEditor.frameBuilder.slotNone')}
+                      {area.group ? ` · ${t('layoutEditor.frameBuilder.ownGroupShort')}` : ''}
+                    </Badge>
                     <span aria-hidden="true" className="rounded-[4px] p-0.5 text-text-muted">
                       {isSelected ? '▲' : '▼'}
                     </span>
@@ -811,7 +920,12 @@ export default function FrameBuilder({
                       <TextInput value={nameDraft} onChange={(e) => updateAreaName(area.id, e.target.value)} autoFocus className="w-32" />
                     </Field>
                     <Field label={t('layoutEditor.frameBuilder.areaSlot')}>
-                      <Select value={area.slot} onChange={(e) => updateAreaSlot(area.id, e.target.value as FrameSlot)} className="w-32">
+                      <Select
+                        value={area.slot ?? ''}
+                        onChange={(e) => updateAreaSlot(area.id, (e.target.value || undefined) as FrameSlot | undefined)}
+                        className="w-32"
+                      >
+                        <option value="">{t('layoutEditor.frameBuilder.slotNone')}</option>
                         {SLOTS.map((slot) => (
                           <option key={slot} value={slot}>
                             {t(`positions.${slot}`, slot)}
@@ -819,6 +933,18 @@ export default function FrameBuilder({
                         ))}
                       </Select>
                     </Field>
+                    {area.slot && area.slot !== 'pageBody' && (
+                      <Toggle
+                        label={t('layoutEditor.frameBuilder.ownGroup')}
+                        hint={
+                          area.group && area.group !== area.name
+                            ? t('layoutEditor.frameBuilder.ownGroupRenamed', { group: area.group })
+                            : t('layoutEditor.frameBuilder.ownGroupHint')
+                        }
+                        checked={!!area.group}
+                        onChange={(checked) => updateAreaGroup(area.id, checked)}
+                      />
+                    )}
                     <Field label={t('layoutEditor.frameBuilder.rowSpanLabel')}>
                       <TextInput
                         type="number"
@@ -880,6 +1006,20 @@ export default function FrameBuilder({
           <p className="mt-4 text-xs text-amber-600 dark:text-amber-400">
             {t('layoutEditor.frameBuilder.unassignedWarning', {
               slots: unassignedSlots.map((s) => t(`positions.${s}`, s)).join(', ')
+            })}
+          </p>
+        )}
+        {homelessSlots.length > 0 && (
+          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+            {t('layoutEditor.frameBuilder.homelessWarning', {
+              slots: homelessSlots.map((s) => t(`positions.${s}`, s)).join(', ')
+            })}
+          </p>
+        )}
+        {doubledSlots.length > 0 && (
+          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+            {t('layoutEditor.frameBuilder.doubledWarning', {
+              slots: doubledSlots.map((s) => t(`positions.${s}`, s)).join(', ')
             })}
           </p>
         )}
@@ -1018,7 +1158,10 @@ function TrayChip({
       </ActivatorContext.Provider>
       <button type="button" onClick={onSelect} className="flex flex-col items-center gap-0.5 text-center">
         <span className="font-medium">{area.name}</span>
-        <span className="text-text-muted">{t(`positions.${area.slot}`, area.slot)}</span>
+        <span className="text-text-muted">
+          {area.slot ? t(`positions.${area.slot}`, area.slot) : t('layoutEditor.frameBuilder.slotNone')}
+          {area.group ? ` · ${t('layoutEditor.frameBuilder.ownGroupShort')}` : ''}
+        </span>
       </button>
     </div>
   )

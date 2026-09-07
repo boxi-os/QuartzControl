@@ -61,6 +61,24 @@ function areas() {
   }))
 }
 
+/**
+ * Two free areas in `editorial`, side by side under the text - `custom-8` and `custom-9`.
+ *
+ * They carry no slot, which is a statement and not an omission: quartz sorts components into six
+ * positions and the page body, so a frame with more component areas than that needs quartz'
+ * second key (`layout.group`, see docs/decisions/layout-frames.md). These two are the invitation
+ * to use it - place a component in one through "Eigener Bereich" in the frame editor and the
+ * Global tab, and it appears there alone. Until then they are empty cells.
+ *
+ * Desktop only. An area created in the editor is placed on the breakpoint being edited and stays
+ * in the tray on the others, and that is right here too: a phone reading a column of text has no
+ * use for two empty half-width boxes in the middle of it.
+ */
+const EXTRA_AREAS = [
+  { id: 'area-custom-8', name: 'custom-8' },
+  { id: 'area-custom-9', name: 'custom-9' }
+]
+
 const place = (row, col, rowSpan = 1, colSpan = 1) => ({ row, col, rowSpan, colSpan })
 const hidden = { row: 1, col: 1, rowSpan: 1, colSpan: 1, hidden: true }
 
@@ -136,25 +154,34 @@ const MOBILE_BOX = () => box('100%', 'left', '1rem', TWELVE)
  * Desktop is 3 / 6 / 3: navigation, the text, and the page's own apparatus (table of contents,
  * backlinks, graph). Tablet is 3 / 9 with the apparatus moved below the text. Mobile is one column
  * in reading order: what the page *is* comes before what surrounds it.
+ *
+ * The only frame of the four with free areas: two half-width cells under the text, on desktop
+ * (EXTRA_AREAS). They are the template's own demonstration that a frame may have more areas than
+ * quartz has positions.
  */
 const editorial = {
   id: 'frame-editorial',
   frameName: 'editorial',
-  areas: areas(),
+  areas: [...areas(), ...EXTRA_AREAS],
   breakpoints: {
     desktop: {
-      rows: 5,
+      // Six rows, not five: row 4 is the pair of free areas below the text (EXTRA_AREAS). Empty,
+      // it still costs one row gap - 2rem between the page body and what follows - and that is
+      // the price of having them stand ready in the editor rather than having to be made.
+      rows: 6,
       cols: 12,
-      rowSizes: ['auto', 'auto', '1fr', 'auto', 'auto'],
+      rowSizes: ['auto', 'auto', '1fr', 'auto', 'auto', 'auto'],
       ...DESKTOP_BOX(),
       placements: {
         'area-header': place(1, 1, 1, 12),
-        'area-left': place(2, 1, 3, 3),
+        'area-left': place(2, 1, 4, 3),
         'area-beforeBody': place(2, 4, 1, 6),
         'area-pageBody': place(3, 4, 1, 6),
-        'area-afterBody': place(4, 4, 1, 6),
-        'area-right': place(2, 10, 3, 3),
-        'area-footer': place(5, 1, 1, 12)
+        'area-custom-8': place(4, 4, 1, 3),
+        'area-custom-9': place(4, 7, 1, 3),
+        'area-afterBody': place(5, 4, 1, 6),
+        'area-right': place(2, 10, 4, 3),
+        'area-footer': place(6, 1, 1, 12)
       }
     },
     tablet: {

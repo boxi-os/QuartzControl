@@ -344,3 +344,115 @@ export function migrateGridFrameDefinition(def: GridFrameDefinition | LegacyGrid
     }
   }
 }
+
+// Which groups a position holds, in the order quartz will hand them to a frame.
+//
+// A frame area can only render what quartz sorted into one of its six positions
+// (config-loader.ts's buildLayoutForEntries), so a frame with more component areas than that needs
+// a second key - and quartz has one: `layout.group` collapses a position's grouped entries into a
+// single Flex component (resolveGroups), leaving the ungrouped ones as themselves. Measured on a
+// real build, a position holding one group arrived as [MobileOnly, Flex, ExplorerComponent]: the
+// group is a function literally named "Flex" (quartz builds itself with esbuild's `keepNames`),
+// and `displayName` was undefined on every entry, so that name is the only identity there is.
+//
+// Rank is therefore how a group is addressed, and this is where the rank comes from. It follows
+// resolveGroups and needs nothing but the config: members sorted by their own priority, each group
+// taking the position of its first member unless `layout.groups.<name>.priority` says otherwise,
+// then a stable sort by that. Plugins with no `layout` at all (quartz places those by their
+// manifest's defaultPosition) cannot carry a group and so cannot appear here - which is why the
+// frame counts Flexes rather than array positions.
+//
+// One thing it cannot follow, and saying so is the point: buildLayoutForEntries skips an entry
+// whose name is in no component registry (config-loader.ts:762, :773), and whether a name is
+// registered is knowable only inside quartz's own build. A plugin that declares `layout` without
+// being a component plugin, or one whose install failed, is such an entry - quartz renders no flex
+// for it, this counts its group, and the frame then falls back for that position with the message
+// pickGroupOrder writes. A fallback, not a swap; the count is what disagrees, never the order.
+//
+// `enabled` is read the way the *loader* reads it - `filter((e) => e.enabled)` on the parsed yaml,
+// so anything falsy is out. Two things about that, both measured rather than assumed. Quartz does
+// not agree with itself: the loader drops an entry with no `enabled` key, while its own CLI treats
+// the same entry as on (`entry.enabled !== false`, plugin-git-handlers.js:1574), and configService
+// follows the CLI when it reads (`enabled: p.enabled ?? true`). So by the time a config reaches
+// here the key is always a boolean and this filter cannot actually see the disagreement - it is
+// written this way because the frame's copy is a copy of what the *loader* builds, and because the
+// next caller may not come through configService.
+export interface GroupLayoutCandidate {
+  // The page type this ordering belongs to, or null for the config as a whole. Only ever read by
+  // a human out of the generated frame - the frame itself cannot tell which page type it is
+  // rendering (PageFrameProps carries the resolved lists and nothing else), which is the whole
+  // reason there is a list of candidates instead of one ordering.
+  pageType: string | null
+  order: Record<string, string[]>
+}
+
+// Every group ordering this config can produce, because quartz builds a layout *per page type*:
+// `loadQuartzLayout` takes the enabled plugins, drops the ones a page type's `exclude` names,
+// runs buildLayoutForEntries (and with it resolveGroups) on that shorter list, and only then
+// empties the positions the page type cleared with `[]`. So both the number of flexes in a
+// position and their order are properties of the page type, not of the config - and the app's
+// "Page types" tab writes exactly those two keys.
+//
+// The frame gets all of these and picks the one that fits what it was handed (see the generated
+// pickGroupOrder). Identical orderings collapse: a page type that only sets `template`, or that
+// excludes something with no group, is not a second candidate.
+export function groupLayoutCandidates(config: {
+  plugins: Array<{ name: string; enabled?: boolean; layout?: { position: string; priority: number; group?: string } }>
+  layout?: { groups?: Record<string, { priority?: number }>; byPageType?: Record<string, { exclude?: string[]; positions?: Record<string, unknown> }> }
+}): GroupLayoutCandidate[] {
+  const candidates: GroupLayoutCandidate[] = [{ pageType: null, order: groupOrderByPosition(config) }]
+  // Key order follows whichever plugin came first, so two equal orderings can serialise
+  // differently - the positions get sorted before they are compared.
+  const key = (order: Record<string, string[]>): string =>
+    JSON.stringify(Object.keys(order).sort().map((p) => [p, order[p]]))
+  const seen = new Set([key(candidates[0].order)])
+  for (const [pageType, override] of Object.entries(config.layout?.byPageType ?? {})) {
+    const excluded = new Set(override?.exclude ?? [])
+    const plugins = excluded.size > 0 ? config.plugins.filter((p) => !excluded.has(p.name)) : config.plugins
+    const order = groupOrderByPosition({ plugins, layout: config.layout })
+    // `positions` is only ever meaningful as an empty array - the position is cleared for this
+    // page type, so nothing arrives there and no group of it can render (config-loader.ts:673-681).
+    // Dropped rather than emptied, so "no groups here" has one spelling and the dedupe below sees
+    // two equal orderings as equal.
+    for (const [position, components] of Object.entries(override?.positions ?? {})) {
+      if (Array.isArray(components) && components.length === 0) delete order[position]
+    }
+    if (seen.has(key(order))) continue
+    seen.add(key(order))
+    candidates.push({ pageType, order })
+  }
+  return candidates
+}
+
+export function groupOrderByPosition(config: {
+  plugins: Array<{ enabled?: boolean; layout?: { position: string; priority: number; group?: string } }>
+  layout?: { groups?: Record<string, { priority?: number }> }
+}): Record<string, string[]> {
+  const groupConfigs = config.layout?.groups ?? {}
+  const result: Record<string, string[]> = {}
+  const members = config.plugins
+    .filter((p) => !!p.enabled && p.layout?.group)
+    .map((p) => p.layout!)
+    .sort((a, b) => a.priority - b.priority)
+  for (const member of members) {
+    const list = (result[member.position] ??= [])
+    if (!list.includes(member.group!)) list.push(member.group!)
+  }
+  for (const position of Object.keys(result)) {
+    // Stable, like resolveGroups' own sort - two groups on the same priority keep the order their
+    // first members gave them.
+    result[position] = result[position]
+      .map((name, index) => ({ name, index, priority: groupConfigs[name]?.priority ?? priorityOfFirstMember(members, position, name) }))
+      .sort((a, b) => a.priority - b.priority || a.index - b.index)
+      .map((g) => g.name)
+  }
+  return result
+}
+
+function priorityOfFirstMember(
+  members: Array<{ position: string; priority: number; group?: string }>,
+  position: string,
+  group: string
+): number {
+  return members.find((m) => m.position === position && m.group === group)?.priority ?? 50
+}

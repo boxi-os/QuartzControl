@@ -1142,6 +1142,13 @@ export default {
       cellName: 'Zelle Zeile {{row}}, Spalte {{col}}',
       areaName: 'Bereichsname',
       areaSlot: 'Belegung',
+      slotNone: 'Keine (leer)',
+      ownGroup: 'Eigener Bereich',
+      ownGroupShort: 'eigen',
+      ownGroupHint:
+        'Zeigt nur die Komponenten, die im Reiter „Global“ hierher gezogen werden. Ohne das zeigt der Bereich alles, was die Belegung sonst noch hat.',
+      ownGroupRenamed:
+        'Hält die Gruppe „{{group}}“. Beim Umbenennen bleibt der Gruppenname stehen, damit die im Reiter „Global“ zugeordneten Komponenten hier bleiben.',
       rowSpanLabel: 'Zeilen-Spanne',
       colSpanLabel: 'Spalten-Spanne',
       removeArea: 'Bereich löschen',
@@ -1149,8 +1156,16 @@ export default {
       visibleOnBreakpoint: 'Sichtbar auf {{breakpoint}}',
       overlapError: 'Dieser Bereich überschneidet sich mit einem bestehenden Bereich.',
       unassignedWarning: 'Nicht zugewiesen: {{slots}}. Komponenten für diese Positionen werden in diesem Frame nicht angezeigt.',
+      homelessWarning:
+        'Ohne einfachen Bereich: {{slots}}. Was dieser Belegung gehört und in keinem eigenen Bereich liegt, erscheint auf keiner Seite.',
+      doubledWarning:
+        'Doppelt belegt: {{slots}}. Jeder dieser Bereiche zeigt dieselben Komponenten, sie erscheinen also mehrfach auf der Seite.',
       neverVisibleWarning: 'Auf keinem Breakpoint sichtbar: {{areas}}. Diese Bereiche werden nirgends gerendert.',
       nameRequired: 'Bitte einen Frame-Namen vergeben.',
+      areaNameCollision:
+        'Zwei Bereiche heißen „{{names}}“. Ein Bereichsname darf nur einmal vorkommen — sonst verliert das Frame sein ganzes Raster, nicht nur einen Bereich.',
+      areaGroupCollision:
+        'Zwei Bereiche derselben Belegung halten die Gruppe „{{names}}“. Beide zeigten dann dieselben Komponenten, also doppelt auf jeder Seite.',
       nameCollision: 'Dieser Name ist bereits vergeben (ein eingebautes Frame oder ein anderes eigenes).',
       deleteFrame: 'Diesen Frame löschen',
       deleteConfirmAction: 'Frame löschen',
@@ -1608,6 +1623,10 @@ export default {
     planOutsideDetail: 'Wird abgelehnt: {{names}} würde außerhalb des Projekts geschrieben werden.',
     planOutsideDetail_other: 'Wird abgelehnt: {{names}} würden außerhalb des Projekts geschrieben werden.',
     planOutsideMore: '{{names}} und {{count}} weitere',
+    planInvalidFrames: '{{count}} Frame nicht lesbar',
+    planInvalidFrames_other: '{{count}} Frames nicht lesbar',
+    planInvalidFramesDetail: 'Nicht lesbar und wird übersprungen: {{names}}.',
+    planInvalidFramesDetail_other: 'Nicht lesbar und werden übersprungen: {{names}}.',
     quotedName: '„{{value}}“',
     planNoChange: 'ändert nichts',
     willInstall: 'Wird nachinstalliert: {{packages}}',

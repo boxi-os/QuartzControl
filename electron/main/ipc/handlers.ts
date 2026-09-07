@@ -163,6 +163,10 @@ export function registerIpcHandlers(): void {
   })
 
   handle(IPC.configGet, t([s.absolutePath]), (projectPath) => configService.readConfig(projectPath))
+  // No frame refresh here, deliberately: the frames carry a copy of this config's group ordering,
+  // but the only thing that ever reads that copy is a build, and buildService re-establishes it
+  // there (see refreshAuthoredFrames). A guard on this one door would have covered the app's own
+  // save and left the CLI-driven writers - plugin add/remove/prune, `quartz sync --pull` - open.
   handle(IPC.configSave, t([s.absolutePath, s.quartzConfig]), (projectPath, config) =>
     configService.writeConfig(projectPath, config as QuartzConfig)
   )

@@ -159,3 +159,48 @@ heraus ist:
 
 `static` ist der neue Baustein und hatte das Muster von den drei älteren übernommen; sie werden
 zusammen korrigiert, weil das Schweigen eine Gewohnheit war und nicht vier Entscheidungen.
+
+## Der Import prüfte Frames überhaupt nicht (2026-09-07, sechstes Review)
+
+Der Vorlagen-Baustein `frames` las seine Datei als `Array<{ id: string }>` — eine Typbehauptung,
+keine Prüfung — und reichte jeden Eintrag an `saveFrame` durch. Dort wurde die **ID** geprüft
+(`FRAME_ID_RE`, wirft) und sonst nichts; `migrateGridFrameDefinition` formt um und prüft nicht.
+Derselbe Inhalt wird am IPC-Kanal daneben vollständig validiert (`gridFrameDefinition`: `cssIdent`
+für Bereichsname und Gruppe, `frameSlot` für die Belegung), also stand die Regel „ein
+Vorlagen-Paket ist so wenig eine Vertrauensgrenze wie der Renderer“ an genau einer der beiden
+Türen.
+
+Was ein ungeprüfter Bereichsname kostet, ist nicht abstrakt: Er geht wörtlich in
+`grid-template-areas`, in ein `grid-area`, in den Klassennamen des erzeugten Moduls und in `AREAS`;
+eine ungeprüfte Belegung indiziert `bySlot`, wo `"constructor"` dem Frame eine Funktion statt einer
+Liste gibt und jeder Seiten-Render wirft.
+
+Der Wächter steht deshalb an der Tür, an der eine Definition zu Dateien wird
+(`frameDefinitionProblem()` in `layoutFrameService`, gerufen von `saveFrame`) — nicht an den
+Aufrufstellen, denn davon gibt es zwei und die nächste würde ihn nicht mitbekommen. Er stellt drei
+Fragen: das zod-Schema des IPC-Kanals, zwei gleiche Bereichsnamen, zwei Bereiche derselben Belegung
+mit derselben Gruppe. Die letzten beiden kann kein Schema stellen, und beide kosten dasselbe wie im
+Editor: CSS wirft eine ganze `grid-template-areas`-Deklaration weg, wenn ein Name zwei Rechtecke
+benennt, und zwei Bereiche auf einer Gruppe zeigen deren Komponenten doppelt.
+
+Gemessen über ein esbuild-Bündel des Dienstes, zehn Fälle:
+
+    gültig                              — angenommen
+    zwei Bereiche mit demselben Namen   Zwei Bereiche heißen „kopf“ …
+    Name mit Leerzeichen                areas.0.name: not a valid CSS identifier
+    Name mit }                          areas.0.name: not a valid CSS identifier
+    Belegung "constructor"              areas.0.slot: Invalid option …
+    Belegung "__proto__"                areas.0.slot: Invalid option …
+    zwei Bereiche, eine Gruppe          Zwei Bereiche derselben Belegung halten die Gruppe „tb“ …
+    Gruppe mit Leerzeichen              areas.0.group: not a valid CSS identifier
+    kein Objekt                         frame: expected object, received number
+    Bereiche fehlen                     areas: expected array, received undefined
+
+`saveFrame` mit dem zweiten Fall gab `success: false` zurück und legte **kein** Verzeichnis an.
+Gegenprobe, dass der Wächter nichts Echtes abweist: die vier Frames des Beispielprojekts und die
+vier der Beispielvorlage gehen alle durch.
+
+Und weil ein Dry-Run, der einen Frame als Zugang listet und ihn dann ablehnt, einen anderen Import
+beschrieben hat als den, der läuft: `plan` stellt jetzt dieselbe Frage und legt `invalidFrame:<name>`
+in die Notizen — gezählt in der Zusammenfassung, benannt in der Zeile darunter, genau wie `outside`
+seit dem dritten Review.

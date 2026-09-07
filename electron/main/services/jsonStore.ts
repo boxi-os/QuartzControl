@@ -107,7 +107,17 @@ export async function readJsonFileOr<T>(path: string, fallback: T): Promise<T> {
 }
 
 export async function writeJsonFile(path: string, value: unknown): Promise<void> {
-  const text = JSON.stringify(value, null, 2)
+  await writeFileAtomic(path, JSON.stringify(value, null, 2))
+}
+
+/**
+ * The write half of the story above, for a file that is not JSON.
+ *
+ * Same reason, one door: a plain `writeFile` truncates first and streams after, so anything that
+ * reads the file in between reads a torso. That matters wherever another program does the reading
+ * - a generated frame module, say, which quartz imports in a process this app has already spawned.
+ */
+export async function writeFileAtomic(path: string, text: string): Promise<void> {
   // Same directory as the target, or the rename would cross filesystems and stop being atomic.
   const tmp = `${path}.tmp-${process.pid}-${randomUUID().slice(0, 8)}`
   try {

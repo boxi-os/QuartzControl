@@ -93,3 +93,351 @@ einzige, was etwas positioniert** — und eine geerbte Regel darf das nicht unte
 Die Lehre für den nächsten solchen Fix: Eine Klasse, die man wegen ihres *Verhaltens* setzt, bringt
 ihr *Aussehen* mit. Beides ist zu prüfen, und zwar am gemessenen Layout, nicht am Screenshot — 466
 gegen 796 sieht auf einem Bild nach einer Gestaltungsentscheidung aus.
+
+## Ein Bereich ist keine Belegung (2026-09-07)
+
+Gefunden im Beispielprojekt, an einem Frame, das der Nutzer selbst gebaut hatte: `editorial` hatte
+neun Bereiche, davon **drei auf der Belegung „links“**. Der Codegen mappt jeden Bereich über
+`bySlot[area.slot]`, also rendert er dieselbe Komponentenliste dreimal — Spacer, Explorer, die
+Notiz und „Neueste Notizen“ standen auf jeder gebauten Seite drei Mal untereinander. Weder der
+Editor noch der Build sagten etwas dazu; sichtbar wurde es erst auf der fertigen Website.
+
+Die Ursache war eine Vorgabe: `addNewArea()` schrieb `slot: 'left'` fest. Etwas anderes hatte es
+auch nicht anzubieten. Quartz sortiert Komponenten in genau sechs Positionen — `buildLayoutForEntries`
+in `plugins/loader/config-loader.ts` hält sie als Objektliteral mit sechs Schlüsseln, und
+`positions[layout.position]` verwirft still, was nicht dazugehört. Ein siebter Bereich hatte also
+keine eigene Quelle, und ein achter musste sich eine teilen.
+
+Damit fällt auch die Frage auseinander, ob Bereich und Belegung nicht dasselbe sind. **Ein Bereich
+ist Geometrie** — Name, Zeile, Spalte, Spanne, Sichtbarkeit, je Breakpoint. **Eine Belegung ist die
+Herkunft des Inhalts** und der einzige Punkt, an dem ein Frame an `quartz.config.yaml` andockt.
+Solange ein Frame höchstens sieben Bereiche hat, stehen sie eins zu eins, und genau das erzeugt den
+Eindruck.
+
+### Der zweite Schlüssel: `layout.group`
+
+Quartz hat neben der Position noch einen Schlüssel, und er stand in diesem Projekt längst in
+Benutzung (`brand`, `toolbar`): `resolveGroups` faltet die gruppierten Einträge einer Position zu
+*einer* Komponente zusammen und lässt die ungruppierten stehen. Ob sich diese eine Komponente beim
+Frame wiedererkennen lässt, war die ganze Frage — gemessen mit einer Probe im Frame eines
+Wegwerfprojekts, ein echter Build, danach zurückgenommen:
+
+    left: [ {name: "MobileOnly"}, {name: "Flex"}, {name: "ExplorerComponent"} ]
+
+`displayName` war bei allen dreien `undefined`. Die Gruppe ist also erkennbar, aber nur an ihrem
+Funktionsnamen — quartz baut sich mit esbuilds `keepNames: true` (`quartz/cli/handlers.js`), sonst
+gäbe es hier gar keine Identität. Das ist zugleich die Reichweite dieser Messung: sie hängt an
+einer Einstellung in Quartz' eigenem Build, nicht an einer zugesicherten Schnittstelle.
+
+Die Regel im Codegen lautet daher: **die k-te Flex einer Position ist die k-te Gruppe.** Ein
+Bereich mit Gruppe nimmt seine, der Bereich ohne nimmt alles übrige — einschließlich der Gruppen,
+denen dieses Frame keinen Bereich gegeben hat, die sonst von der Seite verschwänden.
+
+### Woher das k kommt, und was es kostet
+
+Die Reihenfolge der Gruppen kann das Frame nicht aus dem herauslesen, was es bekommt: die
+Positionsliste ist flach, und jede Gruppe darin ist eine namenlose Flex. Sie steht deshalb im
+generierten Code; `groupOrderByPosition()` in `shared/gridFrameCss.ts` bildet `resolveGroups`'
+eigene Sortierung nach (Mitglieder nach Priorität, jede Gruppe an der Stelle ihres ersten
+Mitglieds, sofern `layout.groups.<name>.priority` nichts anderes sagt).
+
+Damit hält ein Frame eine Kopie von etwas, das die Config besitzt — dasselbe Verhältnis wie bei den
+Breakpoint-Breiten. **Eine Kopie, die niemand auffrischt, ist eine Kopie, die still aufhört zu
+stimmen**, also braucht sie einen Wächter; wo der steht, ist unten der eigene Abschnitt.
+
+Und weil eine Kopie trotzdem veralten kann — jemand ändert die yaml von Hand —, zählt der
+generierte Code beim Rendern nach: passen Flexes und Gruppenzahl nicht zusammen, wird nichts
+geraten. Der einfache Bereich bekommt alles, die Gruppen-Bereiche bleiben leer, und der Build sagt
+es. **Eine Seite ohne Aufteilung ist reparierbar, eine mit vertauschten Bereichen nicht** — dort
+sieht alles richtig aus, nur steht das Falsche darin.
+
+### Das k gehört dem Seitentyp, nicht der Config
+
+Das war der erste mittlere Befund des sechsten Reviews, und er trifft die Grundlage: `GROUP_ORDER`
+stand einmal im Modul, gerechnet aus der ganzen Config — **Quartz baut aber je Seitentyp ein
+eigenes Layout.** `loadQuartzLayout` nimmt die aktivierten Plugins, wirft die unter
+`byPageType.<t>.exclude` genannten hinaus, ruft `buildLayoutForEntries` (und darin `resolveGroups`)
+auf dieser kürzeren Liste und leert erst danach die Positionen, die `positions` mit `[]` nennt.
+Zahl *und* Reihenfolge der Flexes einer Position sind damit Eigenschaften des Seitentyps, und
+beides erreicht der Nutzer im Reiter „Seitentypen“ mit einem Klick.
+
+Sagen kann Quartz dem Frame den Seitentyp nicht: `PageFrameProps` trägt die fertigen Listen und
+sonst nichts, `componentData` auch keinen Namen, und der Dispatcher wählt das Layout, bevor das
+Frame ins Spiel kommt. Was ein Frame messen kann, ist **wie viele Flexes in jeder Position
+stehen** — die Zahl der Einträge insgesamt taugt nicht, weil Plugins ohne `layout` über die
+Vorgabe ihres Manifests platziert werden und die App die nicht kennt.
+
+Also bekommt das Frame nicht eine Ordnung, sondern alle, die diese Config hergibt
+(`groupLayoutCandidates()`): die globale und je eine pro Seitentyp mit `exclude` oder geleerter
+Position, gleiche fallen weg. Beim Rendern wählt `pickGroupOrder()` einmal pro Seite die
+Kandidatin, deren Gruppenzahlen zu allen sechs Positionen passen. Genau eine ist die Antwort;
+mehrere, die auf den geteilten Positionen dieselben Gruppen in derselben Reihenfolge nennen, sind
+dieselbe Antwort zweimal. Alles andere heißt raten, und geraten wird nicht.
+
+Gemessen am erzeugten Modul, mit vier Plugins auf `header` (Gruppe `gx` mit Priorität 10 und 60,
+`gy` mit 40, dazu eine Suche ohne Gruppe) und drei Seitentypen; das Frame hat zwei Gruppen-Bereiche
+und einen einfachen:
+
+| Seite | vorher | jetzt |
+| --- | --- | --- |
+| Standard (`gx`, `gy`, Suche) | richtig aufgeteilt | **erkannt und nicht aufgeteilt**, mit Grund |
+| Seitentyp schließt `gx`' erstes Mitglied aus | „richtig“ aufgeteilt — mit vertauschtem Inhalt | erkannt, nicht aufgeteilt |
+| Seitentyp schließt `gy` ganz aus | Rückfall, Rat „Save the layout once“ | **richtig aufgeteilt** |
+| Seitentyp leert `header` | Warnung, obwohl es nichts zu teilen gibt | still |
+| Frame ohne Gruppen-Bereich auf `header` | Warnung bei geleerter Position | still, immer |
+
+Die erste Zeile ist der Preis: Ein Ausschluss, der die Reihenfolge zweier Gruppen kippt, macht die
+Aufteilung für *alle* Seiten unentscheidbar, weil beide Ordnungen dieselbe Flex-Zahl ergeben. Das
+ist genau der Fall, den dieser Abschnitt oben als den nicht reparierbaren beschreibt — vorher sah
+er richtig aus und zeigte das Falsche, jetzt fällt er auf und sagt, was zu tun ist. Der Rat ist
+gemessen, nicht geraten: Mit `layout.groups.gx.priority` und `…gy.priority` ist die Reihenfolge
+seitentyp-unabhängig, beide Kandidatinnen fallen zusammen, und alle vier Seiten oben teilen wieder
+auf.
+
+Zwei Nebenwirkungen, beide erwünscht: Eine Position, für die dieses Frame keinen Gruppen-Bereich
+hat, nimmt an der Entscheidung nicht teil und warnt nie — sie hat nichts aufzuteilen. Und der
+Warnplatz hängt jetzt an der gemessenen Gestalt, nicht nur an der Position: zwei verschiedene
+Brüche im selben Lauf sagen beide etwas, vorher verbrauchte der erste den Platz des zweiten.
+
+**Was bleibt:** `npx quartz build` von Hand kann eine Config lesen, die kein Wächter dieser App
+gesehen hat; dann fällt es auf die erste Zeile der Tabelle zurück, statt still zu vertauschen.
+
+### Ein Wächter, der scheitert, sagt es im Build-Log
+
+`writeAllFrames()` fing alles in ein `console.error` — die Konsole des Hauptprozesses, in die kein
+Nutzer sieht. Ein `EACCES` auf einem Frame-Verzeichnis hieß damit: gebaut wird mit dem Stand von
+vorher, und nichts auf dem Bildschirm sagt es. Dasselbe eine Ebene tiefer bei der Config: „keine
+Gruppen“ und „konnte nicht nachsehen“ rendern gleich (jede Position ungeteilt), und das Frame kann
+die beiden auch nicht unterscheiden, weil es die leere Ordnung bekommt und sonst nichts.
+
+Also sagt es die Stelle, die es weiß: `writeAllFrames()` wirft weiterhin nie, gibt jetzt aber die
+Sätze zurück, die in das Log gehören, und `buildService` legt sie dorthin — beim Bauen in
+`buildLog`, beim Serverstart in das Server-Log. Gemessen über ein esbuild-Bündel des Dienstes an
+vier Wegwerf-Projekten:
+
+    heil                 []                                              frames.js geschrieben
+    plugins kaputt       ["Die Gruppen des Layouts konnten nicht …"]      frames.js geschrieben
+    config fehlt         ["Die Gruppen des Layouts konnten nicht …"]      frames.js geschrieben
+    Verzeichnis 0555     ["Die Frames konnten … nicht aufgefrischt …"]    alter Stand bleibt
+
+Der Unterschied zu `getBreakpointWidths`, wo „unlesbar → Vorgabe“ folgenlos ist, bleibt damit
+benannt statt stumm: Dort ist die Vorgabe eine richtige Antwort, hier ist sie eine Seite ohne
+Aufteilung.
+
+### Gemessen
+
+Von Hand durch die gebaute App, gegen ein echtes Projekt: Bereich anlegen, ins Raster ziehen,
+Belegung „links“, „Eigener Bereich“ an, im Reiter „Global“ den Explorer in dessen Gruppe. Danach
+`npx quartz build` und die 114 erzeugten Seiten ausgezählt — der Explorer steht **genau einmal**,
+in `.qgframe-area-custom-8`; Suche und Spacer stehen weiter in `.qgframe-area-left`. Vorher, mit
+drei Bereichen auf „links“: dieselbe Liste dreimal.
+
+Nebenbefund aus demselben Durchgang: die Gruppen-Auswahl einer Komponente listete nur, was unter
+`layout.groups` deklariert war. Eine Gruppe entsteht aber, sobald eine Komponente sie nennt —
+`layout.groups` trägt nur Richtung und Abstand. Der Bereichsname stand dort also nie, und Ziehen
+wäre der einzige Weg hinein gewesen. **Für die Tastatur wäre das gar keiner.**
+
+### Nachtrag: was der Vorlagen-Rundlauf davon merkt (2026-09-07)
+
+Gefragt, weil ein Frame jetzt eine Kopie aus der Config hält: kommt beim Export und Import noch
+alles mit?
+
+Der Export ja, und zwar ohne Zutun — gemessen an einem echten `.qtpl` aus einem echten Projekt
+(Speichern-Dialog im Hauptprozess gespiegelt, weil er nativ ist):
+
+    frames.json   custom-8 → slot "left", group "custom-8"
+    plugins.json  explorer → layout.group "custom-8"   (dazu drei in "toolbar")
+    layout.json   groups: { toolbar: { priority: 35, … } }
+
+Dass `custom-8` in `layout.groups` **fehlt**, ist richtig und kein Verlust: eine Gruppe entsteht,
+sobald eine Komponente sie nennt; `layout.groups` trägt nur Richtung und Abstand. Der Teil
+`plugins` bringt sie zurück.
+
+Der Import dagegen hatte eine Lücke, und die Teil-Reihenfolge kann sie nicht schließen: `frames`
+läuft **zuerst** (es muss, weil es über die Quartz-CLI in die Config schreibt), also stehen die
+Gruppen, die ein Frame aufteilen soll, zu diesem Zeitpunkt noch gar nicht dort. Ein *vollständiger*
+Import korrigierte sich selbst, aber nur zufällig: `layout` läuft später und ruft
+`saveBreakpointWidths`, das ohnehin jedes Frame neu schreibt.
+
+Gemessen, indem genau dieser Zufall weggenommen wurde — Import ohne den Teil `layout`, in ein
+Projekt, dem die Gruppe vorher entzogen worden war. Die Tabellen dieses und des nächsten Abschnitts
+nennen die eingebackene Ordnung noch `GROUP_ORDER`, so wie sie damals hieß; seit dem sechsten
+Review sind es mehrere (`GROUP_LAYOUTS`, eine je Seitentyp), an den Messungen ändert das nichts:
+
+| | Config nach dem Import | `GROUP_ORDER` im Frame | gebaute Seite |
+|---|---|---|---|
+| ohne den Fix | `group: custom-8` ✓ | `{"left":["toolbar"]}` ✗ | Explorer in `left`, `custom-8` leer, Warnung im Build |
+| mit dem Fix | `group: custom-8` ✓ | `{"left":["toolbar","custom-8"]}` ✓ | Explorer genau einmal in `custom-8` |
+
+Der erste Anlauf war deshalb ein `writeAllFrames()` am Ende von `importPackage()`. Er stand genau
+zwei Commits lang: Die Regel aus dem vierten Review — **ein Wächter gehört an jede Tür zu demselben
+Zustand** — führt eine Ebene weiter zu der Frage, welche Tür das eigentlich ist, und die Antwort ist
+nicht der Import, sondern der Bau. Der Aufruf ist wieder heraus; wie es jetzt steht, sagt der
+Abschnitt „Der Wächter steht an der Tür, an der gelesen wird“ unten.
+
+Zwei Nebenbefunde aus demselben Durchgang:
+
+- **Der Rückfall meldete sich einmal pro Bereich pro Seite** und behauptete für den Gruppen-Bereich,
+  er zeige jetzt alles — dabei bleibt genau der leer. Jetzt einmal je Position und Build, und die
+  Meldung nennt den Bereich, der wirklich alles bekommt.
+- **Eine Gruppe konnte unsichtbar weitergelten.** Löscht man den Bereich, der sie trug, verschwand
+  ihr Name aus der Auswahl der Komponente; die Komponente behielt `layout.group`, die Auswahl zeigte
+  „keine Gruppe“, und wegräumen ließ sie sich damit auch nicht. Beim Aufräumen des Testprojekts
+  aufgefallen: die yaml sagte noch `group: custom-8`, der Bildschirm nichts. Die Liste speist sich
+  jetzt aus drei Quellen — `layout.groups`, die Bereiche der Frames, und **was die Komponenten
+  tatsächlich nennen**. Dieselbe Lücke gab es vorher schon für eine unter `layout.groups` gelöschte
+  Gruppe; der Kommentar an `deleteGroup` hatte sie als harmlos notiert.
+
+### Der Wächter steht an der Tür, an der gelesen wird (2026-09-07)
+
+Erst hing er am IPC-Handler fürs Config-Speichern. Das war naheliegend und falsch, und die Liste der
+Türen, die er nicht abdeckte, wuchs beim Nachsehen weiter:
+
+| Tür | schreibt die Config | vom ersten Wächter abgedeckt |
+|---|---|---|
+| `config:save` (die App selbst) | ja | ja |
+| `plugin add/remove/install/prune` | die Quartz-CLI schreibt sie zurück | nein |
+| `quartz plugin install --latest` (Plugin-Update) | dito | nein |
+| `quartz sync --pull` | bringt die Config des Gegenübers mit | nein |
+| Vorlagen-Import | vier Aufrufe, alle an `handle()` vorbei | nein |
+| Snapshot-Restore je Datei | kann `quartz.config.yaml` allein zurückholen | nein |
+| `npx quartz build` im Terminal | gar nicht durch die App | nein |
+| Snapshot-Restore ganz / Duplizieren / Umbenennen | — | **braucht keinen** |
+
+Die letzte Zeile ist kein Versehen: Ein ganzer Restore holt Config und Frames aus demselben Commit
+(`read-tree -u --reset`), und ein Snapshot hält die erzeugte Datei — an einem echten Store
+nachgesehen, `dist/frames.js` steht in jedem Baum neben seiner `frame.json`. Das Duplizieren kopiert
+beide Seiten (`authored-frames` steht in keiner `SKIP`-Liste), und `repointProjectPaths` fasst nur
+`entry.source` und das Lockfile an, nie `layout.group`.
+
+Für alle anderen gilt: **einen Wächter je Tür zu setzen ist eine Liste, an die die nächste Tür nicht
+angebaut wird.** Gelesen wird die Kopie aber nur an einer einzigen Stelle — beim Bauen. Also steht
+der Wächter dort: `buildService` ruft `writeAllFrames()` unmittelbar vor jedem `quartz build` und
+jedem `quartz build --serve`. Damit sind alle Zeilen der Tabelle abgedeckt, auch die, an die niemand
+gedacht hat. Es kostet drei Schreibvorgänge je Frame (ein Projekt ohne Frames kehrt sofort zurück)
+gegen einen Build, der in Sekunden misst.
+
+Gemessen an einem echten Projekt, über einen Weg **ohne jeden Wächter** — die yaml von Hand
+geändert, dann durch die App gebaut:
+
+| | `GROUP_ORDER` vor dem Bau | danach | gebaute Seite |
+|---|---|---|---|
+| Gruppe von Hand eingetragen | `{"left":["toolbar"]}` | `{"left":["toolbar","custom-8"]}` | Explorer in `custom-8` |
+| Gruppe von Hand entfernt | `{"left":["toolbar","custom-8"]}` | `{"left":["toolbar"]}` | Explorer in `left` |
+
+Dasselbe am Dev-Server: `server.start` frischte die Kopie vor dem Spawn auf, gemessen an derselben
+Zeile. Keine Warnung in beiden Fällen, in beide Richtungen.
+
+Bleibt der eine Fall, den auch das nicht erreicht: `npx quartz build` in einem Terminal. Dafür ist
+der Zähl-Abgleich im erzeugten Frame da — er rät nicht, legt alles in den einfachen Bereich und sagt
+im Build-Log, welchen.
+
+### Die Beispielvorlage führt die freien Bereiche vor (2026-09-07)
+
+`editorial` hat seit heute zwei freie Bereiche nebeneinander unter dem Text, `custom-8` und
+`custom-9` (`EXTRA_AREAS` in `scripts/example-template/frames.mjs`) — ohne Belegung, also leer, und
+nur auf dem Desktop. Sie sind die Einladung, den zweiten Schlüssel zu benutzen: „Eigener Bereich“
+im Frame-Editor, dann im Reiter „Global“ eine Komponente hineinziehen.
+
+Was sie kosten, ist gemessen und nicht gerechnet — die gebaute Seite bei 1440 px im Browser:
+
+    grid-template-rows: 69px 376.703px 1545.52px 0px 140.312px 236.219px
+    row-gap: 32px
+    page-body  endet bei 2075
+    custom-8/9 0px hoch, beide bei 2107
+    after-body beginnt bei 2139
+
+Die Zeile selbst ist **0 px** hoch, aber sie bringt einen zweiten Zeilenabstand mit: zwischen
+Seiteninhalt und after-body stehen jetzt 64 statt 32 px. **+2rem auf jeder der 201 Inhaltsseiten**,
+und das ist der Preis dafür, dass die beiden Bereiche im Editor bereitstehen, statt erst angelegt
+werden zu müssen.
+
+Der Anlass war ein Verlust: die beiden Bereiche waren von Hand im Example-Projekt entstanden, und
+`npm run template:example` hat sie überschrieben — Phase 3 schreibt die vier Frames aus
+`frames.mjs`, und ein Rückweg ist für Config und Frames bewusst nicht vorgesehen. Kein Snapshot
+half, denn keiner hatte sie: `saveFrame` nimmt nur für ein *neues* Frame eine Aufnahme, das
+Bearbeiten eines bestehenden nicht. **Was im Werkstattprojekt bleiben soll, gehört ins Skript** —
+das ist die Regel, und dieser Absatz ist ihr Beleg.
+
+### Was das Benutzen fand, was das Lesen nicht fand (2026-09-07)
+
+Sieben Punkte durchgegangen, an der gebauten App und an echten Builds. Drei waren Fehler, zwei
+Befunde ohne Fix, zwei in Ordnung.
+
+**Die rohe ID im Ohr.** `describeDragId` löst eine Drag-ID in einen Namen auf. Die neuen
+Ablageziele heißen `<position>#<gruppe>`; das ist nicht die Palette, `Number()` macht `NaN` daraus,
+und in `POSITIONS` steht es auch nicht — also fiel es durch auf die Plugin-Suche und gab die ID
+zurück. Ein Screenreader hörte beim Ziehen **„left#custom-8"**. Nach dem Fix, an der laufenden App
+mit der Tastatur gemessen: „search liegt über custom-8." und „search bei custom-8 abgelegt."
+Gefunden wurde das durch Lesen, aber nur weil ich danach gesucht habe — bemerkt hätte es erst
+jemand, der die App benutzt.
+
+**Eine Position, deren Bereiche alle eine Gruppe haben, verliert alles andere.** Kein Fall, den der
+Vertrag verbietet, und keiner, den irgendetwas gemeldet hätte. Gemessen: `left` mit zwei
+Gruppen-Bereichen und keinem einfachen nahm den Spacer, den Dunkelmodus- und den Lesemodus-Schalter
+von **jeder** der 20 Seiten — Editor stumm, Build-Log stumm. Jetzt sagen es beide: der Editor
+strukturell („Ohne einfachen Bereich: …", er kennt die Komponenten nicht), der Build mit der Zahl.
+Die Meldung zählt *Einträge*, nicht Komponenten: einer davon kann die Flex einer anderen Gruppe
+sein, und in die kann sie nicht hineinsehen — eine zu kleine Zahl wäre schlimmer als ein vages Wort.
+
+**Zwei Bereiche mit demselben Namen kosten das ganze Raster.** Ein Bereichsname *ist* die
+`grid-area`, und zwei Bereiche mit einem Namen setzen ihn auf zwei Rechtecke. CSS verlangt ein
+einziges, also verwirft der Browser nicht den Namen, sondern **die ganze Deklaration**. Am echten
+Build im Browser gemessen, nach einem Umbenennen:
+
+    grid-template-areas: none
+    grid-template-columns: 0px 0px 0px 0px 1248px
+    left / page-body / after-body: alle drei bei top 256, bottom 1007
+
+Das Frame verliert also nicht einen Bereich, sondern seine Anordnung. Der Editor verweigert das
+Speichern jetzt, so wie er es bei einem doppelten *Frame*-Namen schon tat — derselbe Fehler eine
+Ebene tiefer. Vorbestehend, nicht durch die Gruppen entstanden; erreichbar mit einem Umbenennen.
+
+**Zwei Befunde ohne Fix**, weil beide eine Entscheidung sind und keine Panne:
+
+- *Ein Gruppen-Bereich, der nur auf Desktop platziert ist, nimmt seine Komponenten auf Tablet und
+  Mobil von der Seite.* Der Editor platziert einen neuen Bereich auf dem Breakpoint, den man gerade
+  bearbeitet — der Normalfall ist also genau dieser. Im erzeugten CSS nachgesehen:
+  `.qgframe-area-custom-8 { display: none }` in beiden schmalen Blöcken. Für einen einfachen Bereich
+  war das immer so und fällt auf (die Seitenleiste fehlt); für einen Gruppen-Bereich fehlen
+  *Komponenten*, und die sind woanders auch nicht. `neverVisibleWarning` greift nicht, sie ist ja
+  auf Desktop sichtbar.
+- *Der Hinweis am neuen Schalter liegt im blau getönten Auswahl-Panel und kommt auf 4,37:1*, wo die
+  bestehenden Hinweise auf weißem Grund 4,76 erreichen (beide 11px, beide `--text-muted`, gemessen
+  in Hell). Unter der AA-Schwelle von 4,5, und es liegt am Ort, nicht am Token: es ist der erste
+  Hinweis überhaupt in diesem Panel.
+
+**In Ordnung:** eine Komponente per Maus in einen Gruppen-Bereich ziehen (Explorer wechselte von
+`left` nach `custom-8`, Config bekam `group: custom-8`), und der Dunkelmodus der neuen Bedienelemente
+(Schalter-Label 8,48, Hinweis 4,91, Badge 11,49 — im Dunkeln also alle drei über AA).
+
+Nebenbei gemessen und **nicht** geändert: `GlobalBoard` übergibt seinem `DndContext` gar keine
+`sensors`, anders als der Frame-Builder. Der Tastatur-Sensor läuft damit auf dnd-kits Vorgabe von
+25px je Pfeildruck — die Gruppen-Bereiche sind erreichbar, aber es brauchte rund 28 Tastendrücke.
+Vorbestehend und einen eigenen Durchgang wert.
+
+### Die Datei, die Quartz importiert, wird nicht mehr halb gesehen
+
+Vor dem Gruppen-Umbau schrieb genau ein Weg die drei Dateien eines Frames: das Speichern im Editor.
+Jetzt sind es drei — Speichern, die Breakpoint-Breiten, und die Auffrischung vor jedem Bau und
+jedem Serverstart —, und ausgerechnet `dist/frames.js`, die einzige, die ein *fremdes* Programm
+liest, ging durch ein nacktes `writeFile`. Das kürzt erst und schreibt dann; wer dazwischen liest,
+liest einen Torso.
+
+Gemessen an einer 90-KB-Datei (so groß ist das erzeugte Modul des `editorial`-Frames), ein
+Schreiber und ein Leser gegeneinander:
+
+    writeFile      401 Lesevorgänge, 18 unvollständig
+    rename       23771 Lesevorgänge,  0 unvollständig
+
+Alle drei Dateien gehen deshalb über `writeFileAtomic()` — dieselbe Temp-Datei, dasselbe `fsync`,
+dasselbe `rename` wie `writeJsonFile`, das jetzt nur noch dessen JSON-Hülle ist. Dazu ein
+Schreiber je Projekt (`serialised()`): Atomarität hält jede Datei ganz, aber nicht einen *Satz* aus
+drei Dateien davon ab, halb vom einen und halb vom anderen Aufrufer zu stammen — und „Jetzt bauen“
+direkt nach „Starten“ sind zwei Aufrufer in einer Sekunde. Nachgemessen: 120 gleichzeitige
+Auffrischungen gegen einen Leser, 35066 Lesevorgänge, kein einziger unvollständig.
+
+Der Dev-Server ist von alledem nicht betroffen, und das ist gemessen statt vermutet: Sein Watcher
+läuft mit `cwd: argv.directory` (`quartz/build.ts:160-164`), also im Content-Ordner, und sieht
+`.quartz-gui/` nie. Ein Bau, während ein Dev-Server läuft, stört ihn nicht — so wenig wie ein
+gespeichertes Frame.

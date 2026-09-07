@@ -24,8 +24,11 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   Es **verlangt** `--demo`, weil es „Jetzt bauen" und „Starten" klickt und das sonst im echten
   Projekt dieses Rechners täte (der Build leert dessen `public/`); wer genau das will, sagt
   `--echtes-projekt` dazu. Ohne `--demo` schreibt das Skript die gewählte Sprache in das Profil des
-  Nutzers und **stellt sie danach zurück**, auch wenn die Aufnahme abbricht — vorher blieb dort
-  `de` stehen, wo `system` oder `en` stand.
+  Nutzers und **stellt sie danach zurück**, auch wenn die Aufnahme abbricht — und zwar auch in den
+  Zustand „keine gesetzt“, der der häufigste ist: Die Einstellung ist optional, der Store füllt
+  keine Vorgabe auf, und wer die Sprache nie angefasst hat, hat den Schlüssel nicht. Der erste
+  Anlauf las dieses fehlende `language` als „nichts zurückzustellen“ und ließ das `de` des Laufs
+  stehen.
   Nicht gescriptet werden können die nativen Bestätigungsdialoge — sie sind Fenster des Systems,
   kein DOM. Zwilling von `smoke.mjs`: gleicher
   Launcher, gleiche Wartelogik, **gleiche Routenliste** aus `scripts/routes.mjs` — sonst zeigt das
@@ -362,6 +365,27 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   `prefers-color-scheme` im Renderer mit; `color-scheme: light dark` auf `:root`, explizite Farben
   auf `select option` für Linux. Neue UI mit `dark:`-Varianten. Kein Wechsel auf `'class'`: die
   nativen Dialoge, das Linux-`<select>`-Popup und die Scrollbar hängen an der Media-Query.
+- **Ein Bereich eines Frames ist Geometrie, eine Belegung ist die Herkunft seines Inhalts.** Die
+  beiden sehen wie dasselbe aus, solange ein Frame höchstens sieben Bereiche hat — mehr Quellen
+  gibt Quartz nicht her, `buildLayoutForEntries` hält seine sechs Positionen als Literal. Zwei
+  Bereiche auf derselben Belegung rendern dieselbe Liste zweimal (gemessen: drei auf `left`, also
+  die ganze Seitenleiste dreimal auf jeder Seite), deshalb ist `slot` optional — ein Bereich ohne
+  Belegung ist eine leere Zelle — und eine Doppelbelegung wird im Editor gesagt. Darüber hinaus
+  geht es über Quartz' zweiten Schlüssel: `layout.group` faltet die gruppierten Einträge einer
+  Position zu einer Flex zusammen, und **die k-te Flex einer Position ist die k-te Gruppe**. Das k
+  steht im generierten Frame, weil es aus der flachen Positionsliste nicht ablesbar ist — und zwar
+  nicht einmal, sondern einmal je Seitentyp: **Quartz baut je Seitentyp ein eigenes Layout**
+  (`exclude` und geleerte Positionen wirken vor `resolveGroups`), sagt dem Frame aber nie, welchen
+  es gerade rendert. Das Frame bekommt deshalb alle Ordnungen, die die Config hergibt, und wählt
+  beim Rendern die, deren Gruppenzahlen zu allen Positionen passen; passen zwei verschieden
+  geordnete gleich gut, wird nicht geraten, sondern gesagt. Die Frames halten damit eine Kopie aus der Config, und **der Wächter über eine
+  solche Kopie steht an der Tür, an der sie gelesen wird, nicht an denen, an denen das Original
+  sich ändert**: `buildService` ruft `writeAllFrames()` vor jedem `quartz build` und jedem
+  `--serve`-Start. Zur Config führen acht Türen (Speichern, vier Plugin-Operationen über die CLI,
+  Plugin-Update, `quartz sync --pull`, Vorlagen-Import, Restore je Datei) — eine Liste, an die die
+  nächste nicht angebaut wird; die eine Bau-Tür deckt sie alle. Stimmen die Zahlen beim Bauen
+  nicht, wird nichts geraten: alles in den einfachen Bereich, Warnung ins Log. Messungen in
+  [`layout-frames.md`](docs/decisions/layout-frames.md).
 - **Kein natives HTML5-Drag mehr, nirgends.** Alle vier Stellen ziehen mit `@dnd-kit`
   (`Plugins/Installed`, `LayoutEditor/GlobalBoard`, `LayoutEditor/FrameBuilder`; `Styles/CustomCss`
   hatte nie eines, nur Pfeile). Eine neue Stelle nimmt `@dnd-kit` mit `KeyboardSensor`, denn natives
@@ -480,16 +504,41 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Befunde aus den Reviews (Stand 2026-09-08)
+## Befunde aus den Reviews (Stand 2026-09-09)
 
-Alle fünf Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
+Alle sechs Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs,
-[`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht und
-[`docs/REVIEW-2026-09-08.md`](docs/REVIEW-2026-09-08.md) mit seinen acht (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-`, `-07-` und `-08-`) stehen als Dokumente unverändert;
-die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft gilt, steht oben als
-Regel.
+[`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht,
+[`docs/REVIEW-2026-09-08.md`](docs/REVIEW-2026-09-08.md) mit seinen acht und
+[`docs/REVIEW-2026-09-09.md`](docs/REVIEW-2026-09-09.md) mit seinen acht (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-`, `-07-`, `-08-` und `-09-`) stehen als Dokumente
+unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft gilt, steht
+oben als Regel.
+
+**Das sechste Review traf die Grundlage des Umbaus, den es las.** Kein Befund der Stufe Hoch, drei
+Mittel, fünf Niedrig; alle acht sind abgearbeitet, jeder mit einer Vorher-Messung. Der erste
+mittlere lag an einer Stelle, die der Auftrag nicht genannt hatte: Die Gruppenordnung, die ein
+Frame eingebacken bekommt, ist keine Eigenschaft der Config, sondern eine des Seitentyps — Regel
+oben unter „Ein Bereich eines Frames ist Geometrie“, Messungen in
+[`layout-frames.md`](docs/decisions/layout-frames.md). Was daraus sonst als Regel bleibt:
+
+- **Zwei Dinge, die gleich aussehen, brauchen zwei Antworten.** „Keine Gruppen“ und „konnte nicht
+  nachsehen“ rendern identisch, also muss der Unterschied dort gesagt werden, wo er bekannt ist —
+  und zwar dorthin, wo der Nutzer liest. Ein `console.error` im Hauptprozess ist eine Meldung an
+  niemanden.
+- **Wer eine Kopplung „trägt mit“ nennt, prüft, wohin die Kopie zeigt.** Das Umbenennen eines
+  Bereichs benannte seine Gruppe mit um und zerschnitt damit genau die Bindung, die der Kommentar
+  daneben zu erhalten behauptete — stumm, weil die Zahl der Flexes weiter stimmte.
+- **Ein Wächter gehört an die Tür, an der der Wert *gelesen* wird, nicht an die Aufrufstellen.**
+  Der Vorlagen-Import reichte Frames ungeprüft an `saveFrame` durch, während der IPC-Kanal daneben
+  alles prüfte; die Prüfung sitzt jetzt in `saveFrame`, wo eine Definition zu Dateien wird.
+- **Eine optionale Einstellung zurückzustellen heißt, auch ihr Fehlen zurückzustellen.** `undefined`
+  als „nichts zu tun“ zu lesen war genau falsch herum: Der Vorgabezustand ist der häufigste.
+- **Was ein fremdes Programm liest, wird atomar geschrieben.** Gemessen: 18 von 401 Lesevorgängen
+  sahen bei `writeFile` einen Torso, 0 von 23771 bei `rename`.
+- **Eine Nachbildung sagt, wo sie nicht hinreicht.** „It mirrors X exactly“ war an zwei Rändern
+  falsch, und einer davon ist prinzipiell nicht erreichbar.
 
 **Das fünfte Review traf das Herzstück des Diffs, den es las.** Ein Befund der Stufe Mittel und
 sieben niedrige; der mittlere war, dass das mitgereiste Handbuch unter `file://` eine Seite ohne
@@ -572,6 +621,15 @@ Schichten: die acht Fixes des vierten Reviews, die niemand gelesen hat, und eine
 Dokumentations-Sitzung, aus der mehr App-Code entstand, als der Name vermuten lässt — ein neuer
 IPC-Kanal, der Renderer-Eingabe zu einem Dateipfad macht, eine Änderung an der Verpackung, fünf
 neue Skripte und rund fünfzig geänderte Nutzertexte. 45 Dateien, +2043/−187.
+
+**Der Auftrag für das sechste Review steht** in
+[`docs/REVIEW-2026-09-09-auftrag.md`](docs/REVIEW-2026-09-09-auftrag.md). Sein Diff hat wieder zwei
+Schichten, die nichts miteinander zu tun haben: die acht Fixes des fünften Reviews, die niemand
+gelesen hat (darunter der Handbuch-Server, +170), und den Frame-Bereichs-Umbau aus PR #24 — ein
+Bereich darf ohne Belegung leer bleiben, und über `layout.group` kann er eigene Komponenten halten.
+20 Commits, 23 Dateien, +1046/−135. Was der Auftrag als größtes Risiko nennt, ist die Grundlage des
+Umbaus selbst: die Zuordnung ruht auf einem Funktionsnamen, den es nur gibt, weil Quartz sich mit
+esbuilds `keepNames` baut.
 
 **Das nächste Review misst ab `review-2026-09-08`.** Der Tag sitzt auf `0c76d6e`, dem Stand, den
 das fünfte Review vor sich hatte, nach derselben Regel wie seine drei Vorgänger: Der Ausgangsstand

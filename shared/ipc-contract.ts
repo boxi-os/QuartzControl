@@ -121,10 +121,27 @@ export interface GridAreaPlacement {
 // Identity of a grid-frame area - breakpoint-invariant, since the same named/slotted area (e.g.
 // "sidebar" -> left) typically persists across breakpoints even as its geometry or visibility
 // changes. Actual geometry lives in GridBreakpointLayout.placements, keyed by this id.
+//
+// `slot` is optional, and that is not the same as "not decided yet": an area without one renders
+// as an empty cell - a deliberate spacer in the grid. It has to be expressible, because quartz
+// hands out exactly seven sources of content (six positions plus the page body, see FrameSlot) and
+// a frame may have more areas than that. Before this was optional, a new area was born on `left`,
+// and two areas on the same slot render the same component list twice: measured on this project's
+// "editorial" frame, which had three areas on `left` and therefore built the whole left sidebar
+// three times onto every page.
 export interface GridFrameArea {
   id: string
   name: string
-  slot: FrameSlot
+  slot?: FrameSlot
+  // The quartz group (`plugins[].layout.group`) this area holds, and the way past the six-position
+  // ceiling: an area with a group shows only that group's components, an area without one shows
+  // everything of its slot that no group claims. Meaningless without a slot, and on `pageBody`
+  // (which is one component, not a list). The name is the area's own - a group exists as soon as a
+  // component names it, `layout.groups` only carries its direction and gap. See
+  // groupLayoutCandidates in gridFrameCss.ts for how the frame finds it again at build time - the
+  // ordering belongs to the page type, so the frame is given every ordering the config can produce
+  // and picks the one that fits what it was handed.
+  group?: string
 }
 
 // Full grid geometry for exactly one breakpoint. columnSizes/rowSizes are optional per-track CSS

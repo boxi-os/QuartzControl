@@ -274,8 +274,10 @@ function openServerLog(projectId: string, projectPath: string): ServerLog | null
  * the generated frame is for: it refuses to guess, puts everything in the position's plain area,
  * and says which one.
  */
-async function refreshAuthoredFrames(projectPath: string): Promise<void> {
-  await layoutFrameService.writeAllFrames(projectPath)
+async function refreshAuthoredFrames(projectPath: string, report: (text: string) => void): Promise<void> {
+  // Whatever went wrong goes where the user is already looking. A repair that fails quietly is a
+  // build with the previous state of the frames, and nothing on screen says so.
+  for (const problem of await layoutFrameService.writeAllFrames(projectPath)) report(`${problem}\n`)
 }
 
 export async function startServer(
@@ -288,7 +290,7 @@ export async function startServer(
   // a fresh attempt supersedes whatever the previous run ended as
   lastTerminalStatus.delete(projectId)
 
-  await refreshAuthoredFrames(projectPath)
+  await refreshAuthoredFrames(projectPath, (text) => emitLog(projectId, 'stderr', text))
 
   const args = ['quartz', 'build', '--serve', '--port', String(options.port), '--wsPort', String(options.wsPort)]
   if (options.host) args.push('--remoteDevHost', options.host)
@@ -417,7 +419,9 @@ export async function restartServer(
 }
 
 export async function runBuild(projectId: string, projectPath: string, outputDir?: string): Promise<BuildResult> {
-  await refreshAuthoredFrames(projectPath)
+  await refreshAuthoredFrames(projectPath, (text) =>
+    serverEvents.emit('buildLog', { projectId, stream: 'stderr', text, timestamp: new Date().toISOString() } satisfies LogLine)
+  )
   const start = Date.now()
   const args = ['quartz', 'build']
   if (outputDir) args.push('--output', outputDir)

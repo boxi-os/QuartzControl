@@ -292,11 +292,16 @@ function generatePackageJson(def: GridFrameDefinition): string {
 // write needs them. Unreadable config means no groups rather than a failed write: a frame that
 // shows a position undivided is a frame that still builds, and the alternative is a project whose
 // frames cannot be saved because of a syntax error somewhere else in the yaml.
-async function readGroupLayouts(projectPath: string): Promise<GroupLayoutCandidate[]> {
+async function readGroupLayouts(projectPath: string, problems?: string[]): Promise<GroupLayoutCandidate[]> {
   try {
     return groupLayoutCandidates(await configService.readConfig(projectPath))
   } catch (err) {
+    // "No groups" and "could not tell" render the same - every position undivided, the group areas
+    // empty - and the frame cannot tell them apart either, since the empty ordering is all it
+    // gets. So the difference has to be said here, where it is known, and it has to reach the one
+    // place the user is looking: the build log. `console.error` alone is a message to nobody.
     console.error(`[layoutFrames] could not read the layout groups of ${projectPath}: ${String(err)}`)
+    problems?.push(mainT('frameGroupsUnreadable', { error: String(err) }))
     return [{ pageType: null, order: {} }]
   }
 }
@@ -330,18 +335,29 @@ async function writeFrameFiles(
  *
  * Never throws, and returns immediately for a project with no frames: it sits in front of every
  * build, and a build must not fail because of a repair it did not ask for.
+ *
+ * What it does instead of throwing is *say* so: it returns the sentences the caller should put in
+ * the build log. Silence here means "built with the frames as they were on disk", which looks
+ * exactly like success - an EACCES on one frame directory and a config that cannot be parsed both
+ * ended up in the main process's console, where no user has ever looked.
  */
-export async function writeAllFrames(projectPath: string): Promise<void> {
+export async function writeAllFrames(projectPath: string): Promise<string[]> {
+  const problems: string[] = []
   try {
     const frames = await listFrames(projectPath)
-    if (frames.length === 0) return
-    const [widths, groupLayouts] = await Promise.all([getBreakpointWidths(projectPath), readGroupLayouts(projectPath)])
+    if (frames.length === 0) return problems
+    const [widths, groupLayouts] = await Promise.all([
+      getBreakpointWidths(projectPath),
+      readGroupLayouts(projectPath, problems)
+    ])
     for (const def of frames) {
       await writeFrameFiles(projectPath, def, widths, groupLayouts)
     }
   } catch (err) {
     console.error(`[layoutFrames] could not refresh the frames of ${projectPath}: ${String(err)}`)
+    problems.push(mainT('frameRefreshFailed', { error: String(err) }))
   }
+  return problems
 }
 
 export async function listFrames(projectPath: string): Promise<GridFrameDefinition[]> {

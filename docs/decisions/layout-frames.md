@@ -202,6 +202,28 @@ Brüche im selben Lauf sagen beide etwas, vorher verbrauchte der erste den Platz
 **Was bleibt:** `npx quartz build` von Hand kann eine Config lesen, die kein Wächter dieser App
 gesehen hat; dann fällt es auf die erste Zeile der Tabelle zurück, statt still zu vertauschen.
 
+### Ein Wächter, der scheitert, sagt es im Build-Log
+
+`writeAllFrames()` fing alles in ein `console.error` — die Konsole des Hauptprozesses, in die kein
+Nutzer sieht. Ein `EACCES` auf einem Frame-Verzeichnis hieß damit: gebaut wird mit dem Stand von
+vorher, und nichts auf dem Bildschirm sagt es. Dasselbe eine Ebene tiefer bei der Config: „keine
+Gruppen“ und „konnte nicht nachsehen“ rendern gleich (jede Position ungeteilt), und das Frame kann
+die beiden auch nicht unterscheiden, weil es die leere Ordnung bekommt und sonst nichts.
+
+Also sagt es die Stelle, die es weiß: `writeAllFrames()` wirft weiterhin nie, gibt jetzt aber die
+Sätze zurück, die in das Log gehören, und `buildService` legt sie dorthin — beim Bauen in
+`buildLog`, beim Serverstart in das Server-Log. Gemessen über ein esbuild-Bündel des Dienstes an
+vier Wegwerf-Projekten:
+
+    heil                 []                                              frames.js geschrieben
+    plugins kaputt       ["Die Gruppen des Layouts konnten nicht …"]      frames.js geschrieben
+    config fehlt         ["Die Gruppen des Layouts konnten nicht …"]      frames.js geschrieben
+    Verzeichnis 0555     ["Die Frames konnten … nicht aufgefrischt …"]    alter Stand bleibt
+
+Der Unterschied zu `getBreakpointWidths`, wo „unlesbar → Vorgabe“ folgenlos ist, bleibt damit
+benannt statt stumm: Dort ist die Vorgabe eine richtige Antwort, hier ist sie eine Seite ohne
+Aufteilung.
+
 ### Gemessen
 
 Von Hand durch die gebaute App, gegen ein echtes Projekt: Bereich anlegen, ins Raster ziehen,

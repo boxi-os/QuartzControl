@@ -273,9 +273,18 @@ zusammensetzen, laufen beim nächsten Umbau auseinander:
 
 An der **gepackten** App gemessen (2026-09-07): `isPackaged: true`, Pfad
 `Contents/Resources/handbook/index.html`, vorhanden (36 KB); 252 Dateien, 21 MB im Bundle, das
-damit von 369 auf 395 MB wächst. Beide Wege rufen `shell.openPath` mit demselben Pfad — geprüft,
-indem `openPath` im Hauptprozess abgefangen und mitgeschrieben wurde, statt zweimal einen Browser
-zu öffnen.
+damit von 369 auf 395 MB wächst.
+
+Geöffnet wird das Handbuch als **Adresse, nicht als Datei**: `handbookServer.ts` liefert
+`resources/handbook` über http auf `127.0.0.1` aus, `openHandbook()` ruft `shell.openExternal`.
+Der Grund steht in CLAUDE.md und kurz hier: Was Quartz baut, ist für einen Webserver geschrieben,
+und unter `file://` zeigte am 2026-09-08 von 4876 Links kein einziger auf eine Datei — dazu
+blockierte Chrome die Modul-Skripte der Seite, also Suche, Explorer, Sprachwechsel und
+Dunkelmodus. Die frühere Messung („beide Wege rufen `shell.openPath` mit demselben Pfad — geprüft,
+indem `openPath` abgefangen wurde, statt zweimal einen Browser zu öffnen") hat den Pfad bestätigt
+und nichts darüber, was am anderen Ende eines solchen Pfads passiert; genau dafür hätte es den
+Browser gebraucht. Nach der Umstellung: 4499 von 4499 internen Links antworten mit 200, keine
+Konsolenfehler, und durch die gebaute App vier Aufrufe des Kanals auf einen Server.
 
 ## Wie ein Bildschirm sein Kapitel nennt
 

@@ -16,6 +16,7 @@ import { applyRuntimeMode } from './services/nodeRuntime'
 import { applyGitRuntime } from './services/gitRuntime'
 import { mainT } from './i18n'
 import { applyAppMenu, APP_NAME } from './menu'
+import { stopHandbookServer } from './services/handbookServer'
 import { applyStoredTheme, windowBackgroundColor } from './theme'
 
 const isMac = process.platform === 'darwin'
@@ -244,6 +245,13 @@ app.whenReady().then(async () => {
 
 app.on('window-all-closed', () => {
   if (!isMac) app.quit()
+})
+
+// The handbook server holds nothing and answers only the loopback, but a listening socket that
+// outlives the reason for it is still one nobody asked for. Closed here rather than in before-quit
+// because that one can be cancelled - will-quit means the quit went through.
+app.on('will-quit', () => {
+  stopHandbookServer()
 })
 
 // What happens to a running dev server when the app quits is the user's decision, not the app's.

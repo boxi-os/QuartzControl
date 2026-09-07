@@ -179,14 +179,30 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   sitzt in `buttons[0]` mit `cancelId: 0` - `defaultId` entscheidet unter macOS nicht, was Return tut.
   Der bestätigende Button ist nach der Aktion benannt („Snapshot löschen“), nie „OK“. Die Regel steht
   als Kommentar am Handler und am `Modal`-Primitive, damit sie nicht driftet.
-- **Das Benutzerhandbuch reist in der App mit, und nur der Hauptprozess weiß wo.** `handbookIndex()`
+- **Das Benutzerhandbuch reist in der App mit, und nur der Hauptprozess weiß wo.** `handbookRoot()`
   in `menu.ts` löst `process.resourcesPath` (gepackt) bzw. `resources/` im Repo (Entwicklung) auf;
-  `openHandbook()` prüft die Datei, bevor es `shell.openPath` ruft — sonst käme bei einem Bau ohne
-  Handbuch eine Zeichenkette des Betriebssystems zurück, die niemandem etwas sagt. Der Renderer
-  bekommt dafür einen Kanal **ohne Argument** (`dialog.openHandbook`, Muster: `revealUserData`) und
-  ruft dieselbe Funktion: Zwei Stellen, die den Pfad selbst zusammensetzen, laufen auseinander.
-  Gemessen an der gepackten App am 2026-09-07: `isPackaged: true`, Pfad
-  `Contents/Resources/handbook/index.html`, vorhanden; Bundle 369 → 395 MB.
+  `openHandbook()` prüft die Datei, bevor es sie öffnet — sonst bekäme der Nutzer bei einem Bau ohne
+  Handbuch eine Fehlerseite statt eines Satzes. Der Renderer bekommt dafür einen Kanal **ohne
+  Argument** (`dialog.openHandbook`, Muster: `revealUserData`) und ruft dieselbe Funktion: Zwei
+  Stellen, die den Pfad selbst zusammensetzen, laufen auseinander. Gemessen an der gepackten App am
+  2026-09-07: `isPackaged: true`, Pfad `Contents/Resources/handbook/index.html`, vorhanden;
+  Bundle 369 → 395 MB.
+- **Eine gebaute Website wird als Adresse geöffnet, nicht als Datei.** Was Quartz baut, ist für
+  einen Webserver geschrieben: `./tags/publishing` ohne Endung, `./4-gestaltung/` als Verzeichnis,
+  `/1-einstieg/` von der Wurzel *der Website*. Unter `file://` löst davon nichts auf — am
+  2026-09-08 über die 123 gebauten Seiten gezählt: von 4876 Links zeigte **kein einziger** auf eine
+  Datei (377 extern, 951 auf ein Verzeichnis, 2937 auf einen Namen ohne Datei, 611 auf die Wurzel
+  des Dateisystems), und Chrome blockierte die Modul-Skripte gleich mit („origin 'null' … blocked
+  by CORS policy"), also Suche, Explorer, Sprachwechsel und Dunkelmodus. Deshalb liefert
+  `handbookServer.ts` das Handbuch über http auf `127.0.0.1` mit einem Port vom Betriebssystem aus
+  und löst die drei Formen auf (Datei, `dir/index.html`, `name.html`), und `openHandbook()` ruft
+  `shell.openExternal`. Das löst zwei Fragen mit derselben Antwort: `http:` geht **immer** an den
+  Browser, während `shell.openPath` auf eine `.html` die Anwendung startet, die das System für
+  `public.html` führt — bei jemandem, der Websites baut, gern ein Editor. Nach der Umstellung
+  gemessen: 4499 von 4499 internen Links antworten mit 200, keine Konsolenfehler, und durch die
+  gebaute App vier Aufrufe des Kanals auf einen Server. Der Server bindet nur die Loopback-Adresse,
+  antwortet nur auf GET und HEAD, prüft die Einbettung nach `resolve()`/`relative()` und sendet
+  **kein** `Access-Control-Allow-Origin`.
 - **Fenster:** ein Fenster, `hiddenInset` nur auf macOS, `will-navigate` erlaubt nur das eigene
   Dokument, `setWindowOpenHandler` gibt nur http(s) an den Browser, CSP ohne externe Hosts. Theme
   wird in Main über `nativeTheme.themeSource` gesetzt, *vor* `createWindow()`.

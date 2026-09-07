@@ -1,8 +1,9 @@
 import { app, BrowserWindow, dialog, shell, Menu, type MenuItemConstructorOptions } from 'electron'
 import { existsSync } from 'node:fs'
-import { isAbsolute, join, relative, resolve } from 'node:path'
+import { isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { IPC, type AppCommand } from '@shared/ipc-contract'
 import { mainLanguage, mainT, refreshMainLanguage } from './i18n'
+import { handbookBaseUrl } from './services/handbookServer'
 
 export const APP_NAME = 'QuartzControl'
 
@@ -18,8 +19,11 @@ const PLUGIN_CATALOG = 'https://github.com/quartz-community'
  * erzeugt von `npm run build:handbook`). Kein Link nach draußen, aus zwei Gründen: Es ist ohne Netz
  * lesbar, und es passt immer zu der Fassung, die gerade installiert ist.
  *
- * Geöffnet wird es im Standardbrowser über `shell.openPath` - ein Pfad, keine URL, deshalb muss
- * hier nichts kodiert werden und ein Leerzeichen im Installationspfad tut nicht weh.
+ * Geöffnet wird es über einen kleinen Server auf 127.0.0.1 (`handbookServer.ts`), nicht über
+ * `shell.openPath` auf die Datei. Der Grund steht dort ausführlich; die Kurzfassung: Was Quartz
+ * baut, ist eine Website für einen Webserver, und unter `file://` zeigt kein einziger ihrer 4876
+ * Links auf eine Datei. Ein Pfad im Installationsverzeichnis darf deshalb Leerzeichen enthalten -
+ * in die URL geht er Segment für Segment kodiert.
  */
 function handbookRoot(): string {
   // Gepackt liegt es neben den anderen extraResources; in der Entwicklung im Repo, damit
@@ -47,15 +51,33 @@ function handbookFile(page?: string): string | null {
   return target
 }
 
+/**
+ * Die Adresse einer Handbuch-Datei auf dem Server - also der Pfad, den die Website selbst schreibt.
+ *
+ * Ohne Endung und mit dem Verzeichnis für eine index.html, weil genau so jeder Link im Handbuch
+ * aussieht: Landet der Leser auf `/4-gestaltung/04-variablen.html`, während die Links daneben
+ * `04-variablen` heißen, sieht Quartz' eigener Router zwei Adressen für dieselbe Seite.
+ */
+function urlPathFor(file: string): string {
+  const rel = relative(handbookRoot(), file).split(sep).join('/')
+  const pretty = rel === 'index.html'
+    ? ''
+    : rel.endsWith('/index.html')
+      ? rel.slice(0, -'index.html'.length)
+      : rel.slice(0, -'.html'.length)
+  // Segmentweise kodiert, nicht als Ganzes: Ein "/" trennt hier, ein "/" in einem Namen nicht.
+  return pretty.split('/').map(encodeURIComponent).join('/')
+}
+
 export async function openHandbook(page?: string): Promise<void> {
   // Eine Seite, die es nicht gibt, fällt auf die Startseite zurück statt in einen Fehler: Ein
   // Verweis, der ins Leere zeigt, ist ein Fehler im Handbuch, und der Nutzer kann nichts dafür.
   // Genauso ein Pfad, der hinausführt - der käme ohnehin nur aus einem Angriff.
   const wanted = handbookFile(page)
   const index = wanted && existsSync(wanted) ? wanted : handbookFile()!
-  // Erst nachsehen, dann öffnen: `openPath` gibt bei einer fehlenden Datei eine Zeichenkette des
-  // Betriebssystems zurück, und die erklärt niemandem, was los ist. Fehlen kann sie in genau einem
-  // Fall - ein Bau ohne `resources/handbook`, den `beforePack` mit einer Warnung durchlässt.
+  // Erst nachsehen, dann öffnen: Der Server würde die fehlende Startseite als 404 ausliefern, und
+  // ein Browser-Fenster mit „Not found" erklärt niemandem, was los ist. Fehlen kann sie in genau
+  // einem Fall - ein Bau ohne `resources/handbook`, den `beforePack` mit einer Warnung durchlässt.
   if (!existsSync(index)) {
     await dialog.showMessageBox({
       type: 'info',
@@ -65,13 +87,15 @@ export async function openHandbook(page?: string): Promise<void> {
     })
     return
   }
-  const error = await shell.openPath(index)
-  if (error) {
+  try {
+    const base = await handbookBaseUrl(handbookRoot())
+    await shell.openExternal(`${base}/${urlPathFor(index)}`)
+  } catch (error) {
     await dialog.showMessageBox({
       type: 'warning',
       title: mainT('menuHandbook'),
       message: mainT('handbookMissingTitle'),
-      detail: error
+      detail: (error as Error).message
     })
   }
 }

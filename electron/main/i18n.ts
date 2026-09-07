@@ -443,12 +443,23 @@ export type MainStringKey = keyof (typeof STRINGS)['de']
 // where applyAppMenu() already rides along.
 let language: 'de' | 'en' = 'en'
 
+let refreshed = false
+
 /** Die Sprache, in der der Hauptprozess gerade spricht. Für Entscheidungen, die keine Zeichenkette
  *  sind - etwa welche Fassung des Handbuchs geöffnet wird. */
 export function mainLanguage(): 'de' | 'en' {
+  // Derselbe Wächter wie in mainT() eine Funktion tiefer, und aus demselben Grund: Der Wert steckt
+  // vor refreshMainLanguage() für die Lebensdauer des Prozesses in der Vorgabesprache. Heute laufen
+  // beide Aufrufer nach whenReady; wer als Nächstes `const X = handbookFile()` auf Modulebene
+  // schreibt, bekäme ohne diese Zeile das englische Handbuch auf einer deutschen App und keinen
+  // Hinweis darauf - genau der Bug vom 2026-09-02, nur eine Tür weiter.
+  if (!refreshed) {
+    console.error(
+      'mainLanguage() resolved before refreshMainLanguage(); this answer is frozen in the default language. Call it inside a function, not at module scope.'
+    )
+  }
   return language
 }
-let refreshed = false
 
 export async function refreshMainLanguage(): Promise<void> {
   const setting = (await getSettings()).language

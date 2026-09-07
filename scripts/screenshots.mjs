@@ -213,6 +213,14 @@ for (const [scheme, media] of SCHEMES) {
     await window.quartzGui.settings.save({ ...s, language: l })
     return s.language
   }, lang)
+  // Und dann neu laden, sonst wirkt der Schreibvorgang für dieses Fenster gar nicht:
+  // `applyLanguagePreference()` läuft im Renderer genau zweimal - beim Start aus den geladenen
+  // Einstellungen (main.tsx) und im Select der Einstellungen-Seite. Über den IPC-Kanal geschrieben
+  // ändert sich die Datei, nicht die laufende Oberfläche; die Einstellung griffe erst beim
+  // nächsten Start, und unter --demo wird das Profil vor jedem Lauf neu angelegt. Gemessen am
+  // 2026-09-08 an den 65 Bildern in assets/screenshots/en: alle 65 waren deutsch.
+  await page.reload()
+  await page.waitForSelector('#root > *', { timeout: 60_000 })
   await page.waitForTimeout(500)
 
   console.log(`\n── ${scheme} ─────────────────────────`)

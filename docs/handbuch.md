@@ -83,10 +83,15 @@ dann stimmt, sieht niemand.
 derselbe Launcher, dieselbe Wartelogik, und **dieselbe Routenliste** aus `scripts/routes.mjs`, die
 beide importieren — sonst zeigt das Handbuch Bildschirme, die der Smoke-Test nicht mehr prüft.
 
-- Aufgenommen wird gegen ein echtes Projekt (ohne `--project` das erste, dessen Pfad auf `Example`
-  endet): echte Plugins, echte Stile, echter Inhalt. Ein leeres Demoprojekt sähe nach nichts aus.
-- 1440 × 900, jede Route hell **und** dunkel. `emulateMedia` wird hier ausdrücklich gesetzt; im
-  Smoke-Test steht dort bewusst `null`, weil er das Schema des Systems treffen soll.
+- **`--demo` ist der Normalfall.** Es legt ein frisches Profil in einem Wegwerf-Verzeichnis an
+  (`--user-data-dir`, nachgemessen: `app.getPath('userData')` folgt dem Schalter) und trägt über
+  dieselben IPC-Pfade wie ein Klick ein, was auf den Bildern zu sehen sein soll — zwei Projekte,
+  drei Zugänge und drei Veröffentlichungsziele. Was es einträgt, steht in
+  `scripts/screenshot-demo.mjs`; alle Namen liegen unter `example.com`, das RFC 2606 genau dafür
+  freihält. Ohne `--demo` wird gegen das echte Profil aufgenommen — dann zeigen die Bilder, was auf
+  diesem Rechner eingerichtet ist.
+- 1440 × 900, Vorgabe hell (`--scheme dunkel` oder `beide`). `emulateMedia` wird hier ausdrücklich
+  gesetzt; im Smoke-Test steht dort bewusst `null`, weil er das Schema des Systems treffen soll.
 - Ein Fenster je Schema statt eines Wechsels im laufenden: Das Farbschema wird im Hauptprozess
   gesetzt, und ein Wechsel danach lässt Seiten zurück, die ihre Farben beim Mount gelesen haben.
 - Ziel: `<vault>/assets/screenshots/<sprache>/<route>-<hell|dunkel>.png`, verkleinert auf 1920 px
@@ -106,11 +111,21 @@ nicht am Klassennamen einer Komponente, sondern an dem, was sie zur Karte macht 
 Rand und Fläche —, gesucht von der `<h2>` aus nach oben, denn `CardHeading` ist die einzige `<h2>`
 in einer Karte.
 
-**Die Zugänge-Karte wird nie automatisch aufgenommen.** Sie listet echte Server, Benutzernamen und
-Host-Key-Fingerprints des Rechners, auf dem das Skript läuft; am 2026-09-07 stand genau das in zwei
-Bildern, bevor sie gelöscht wurden. `CARD_BLOCKLIST` im Skript hält sie draußen. Für das Handbuch
-braucht diese Karte ein Demo-Konto — eine Handaufnahme, keine Ableitung aus dem, was auf diesem
-Rechner zufällig eingerichtet ist.
+**Die Zugänge-Karte wird ohne `--demo` nie aufgenommen.** Sie listet echte Server, Benutzernamen
+und Host-Key-Fingerprints des Rechners, auf dem das Skript läuft; am 2026-09-07 stand genau das in
+zwei Bildern, bevor sie gelöscht wurden. `CARD_BLOCKLIST` hält sie draußen. Unter `--demo` entfällt
+die Sperre, und das ist keine Nachlässigkeit: Dort legt das Skript das Profil selbst an, leer, und
+trägt seine eigenen erfundenen Zugänge ein — echte kann es dort nicht geben.
+
+Dasselbe Profil löst zwei weitere Probleme, die keine Sicherheitsfrage sind, sondern eine der
+Verständlichkeit: Die Projektliste zeigt zwei aufgeräumte Einträge statt fünf Wegwerf-Projekte, und
+die Veröffentlichen-Seite zeigt drei Ziele statt „noch kein Ziel angelegt“. Eine Seite über Ziele,
+die ein leeres Ziel-Panel abbildet, erklärt nichts.
+
+**Was hier bewusst *nicht* gefälscht wird:** die Basis-URL bleibt `localhost`, also steht auf der
+Veröffentlichen-Seite der Warnhinweis darüber — den beschreibt Kapitel 6.1, und ein Bild ohne ihn
+wäre schöner und falsch. Ebenso bleibt der Host-Key unbestätigt: Bestätigen ginge nur an einem
+echten Server.
 
 ### Was von Hand kommt
 

@@ -13,9 +13,12 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
 - `npm run start` — preview a production build
 - `npm run typecheck` — `tsc --noEmit` against both `tsconfig.node.json` (main/preload) and `tsconfig.web.json` (renderer); there is no lint script and no unit tests in this repo
 - `npm run smoke` — launches the production build (so `npm run build` first) and visits every screen in `App.tsx`, sub-tabs included, at 1280x800 and 1728x1000, reporting uncaught exceptions, console errors, `ErrorSurface` toasts, the route error boundary, a horizontally scrolling layout and an empty page. Not a test suite and it asserts nothing about content — it answers one question, *does every screen still come up*, which is otherwise only answerable by opening all seventeen of them. Each size is a fresh launch because `setViewportSize()` does not resize an Electron `BrowserWindow`
-- `npm run screenshots -- [--cards] [--only <teil>] [--lang de]` — nimmt jeden Bildschirm für das
-  Benutzerhandbuch auf, hell und dunkel, gegen ein echtes Projekt (ohne `--project` das erste, dessen
-  Pfad auf `Example` endet), und legt sie im Handbuch-Vault ab. Zwilling von `smoke.mjs`: gleicher
+- `npm run screenshots -- --demo --cards [--only <teil>] [--scheme dunkel|beide]` — nimmt jeden
+  Bildschirm für das Benutzerhandbuch auf und legt ihn im Handbuch-Vault ab. `--demo` legt dafür ein
+  frisches Profil in einem Wegwerf-Verzeichnis an (`--user-data-dir`) und trägt über dieselben
+  IPC-Pfade wie ein Klick zwei Projekte, drei Zugänge und drei Ziele ein
+  (`scripts/screenshot-demo.mjs`, alle Namen unter `example.com`). Ohne `--demo` zeigen die Bilder,
+  was auf diesem Rechner eingerichtet ist — inklusive echter Server. Zwilling von `smoke.mjs`: gleicher
   Launcher, gleiche Wartelogik, **gleiche Routenliste** aus `scripts/routes.mjs` — sonst zeigt das
   Handbuch Bildschirme, die der Smoke-Test nicht mehr besucht. Zwei Dinge, die dabei gemessen sind:
   eine Vollseiten-Aufnahme gibt es nicht (ein Fenster wird nicht höher als der Arbeitsbereich —

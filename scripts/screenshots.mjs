@@ -11,6 +11,7 @@
 // nichts aus. Welches, sagt --project; ohne Angabe das erste, dessen Name auf `Example` endet.
 import { _electron as electron } from 'playwright-core'
 import { execFileSync } from 'node:child_process'
+import { DEMO_PROFILE, resetDemoProfile, seedDemoProfile } from './screenshot-demo.mjs'
 import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
@@ -32,7 +33,7 @@ const SIZE = { w: 1440, h: 900 }
 // Also zwei Aufnahmen statt einer: das Fenster, wie man es sieht, und - mit --cards - jede Karte
 // einzeln. Playwright rollt ein Element vor seiner Aufnahme in den sichtbaren Bereich, deshalb
 // erreicht die Kartenaufnahme auch, was unter der Kante liegt.
-const SCHEMES = [
+const ALL_SCHEMES = [
   ['hell', 'light'],
   ['dunkel', 'dark']
 ]
@@ -56,6 +57,27 @@ function electronBinPath() {
   return path.join(APP_DIR, 'node_modules/electron/dist', rel)
 }
 
+/** Ein `window.quartzGui`-Aufruf im Renderer, die Argumente als ein Objekt. */
+function ipc(page, source, args) {
+  return page.evaluate(({ src, a }) => new Function('args', `return (${src})(args)`)(a), {
+    src: source.toString(),
+    a: args
+  })
+}
+
+async function launch() {
+  const app = await electron.launch({
+    executablePath: electronBinPath(),
+    // Electron reicht --user-data-dir an Chromium durch, und app.getPath('userData') folgt ihm -
+    // nachgemessen am 2026-09-07 an einem leeren Verzeichnis, in dem die Projektliste 0 ergab.
+    args: DEMO ? [APP_DIR, `--user-data-dir=${DEMO_PROFILE}`] : [APP_DIR],
+    timeout: 60_000
+  })
+  const page = app.windows().find((w) => !w.url().startsWith('devtools://')) ?? (await app.firstWindow())
+  await page.waitForSelector('#root > *', { timeout: 60_000 })
+  return { app, page }
+}
+
 function pickProject() {
   const file = path.join(userDataDir(), 'projects.json')
   if (!fs.existsSync(file)) return null
@@ -68,19 +90,51 @@ const argv = process.argv.slice(2)
 const arg = (name, fallback) => (argv.includes(name) ? argv[argv.indexOf(name) + 1] : fallback)
 const lang = arg('--lang', 'de')
 const only = arg('--only', null)
-const projectId = arg('--project', pickProject())
 const CARDS = argv.includes('--cards')
+// --demo nimmt nicht gegen das auf, was auf diesem Rechner eingerichtet ist, sondern gegen ein
+// frisches Profil mit erfundenen Daten: eine aufgeräumte Projektliste, drei Zugänge auf
+// example.com (RFC 2606 hat die Domain genau dafür reserviert) und drei Veröffentlichungsziele.
+// Das ist der Modus für Bilder, die jemand anders ansehen soll.
+const DEMO = argv.includes('--demo')
+// Vorgabe hell, nicht beides: Das Handbuch zeigt ein Schema, und 55 dunkle Bilder, die keine Seite
+// referenziert, sind 11 MB in einem Vault, der synchronisiert wird. `--scheme dunkel` oder
+// `--scheme beide`, wenn man sie doch braucht. Dass die App im Dunkeln stimmt, prüft ohnehin
+// scripts/styles-snapshot.mjs und nicht dieses Skript.
+const scheme = arg('--scheme', 'hell')
+const SCHEMES = scheme === 'beide' ? ALL_SCHEMES : ALL_SCHEMES.filter(([name]) => name === scheme)
+if (SCHEMES.length === 0) {
+  console.error(`--scheme ${scheme} kennt niemand — hell, dunkel oder beide.`)
+  process.exit(2)
+}
 
 // Karten, die niemals automatisch aufgenommen werden. "Zugänge" listet echte Server, Benutzernamen
 // und Host-Key-Fingerprints des Rechners, auf dem das Skript läuft - gemessen am 2026-09-07, als
-// genau das in zwei Bildern stand. Für das Handbuch braucht diese Karte ein Demo-Konto, und das ist
-// eine Handaufnahme, keine Ableitung aus dem, was hier zufällig eingerichtet ist.
-const CARD_BLOCKLIST = [/^zugaenge$/, /^connections$/]
+// genau das in zwei Bildern stand.
+//
+// Unter --demo entfällt die Sperre, und zwar nicht aus Nachlässigkeit: Dort legt das Skript das
+// Profil selbst an, leer, und trägt seine eigenen erfundenen Zugänge ein. Es kann dort keine
+// echten geben.
+const CARD_BLOCKLIST = DEMO ? [] : [/^zugaenge$/, /^connections$/]
 const outDir = path.resolve(arg('--out', path.join(VAULT, 'assets/screenshots', lang)))
 
 if (!fs.existsSync(path.join(APP_DIR, 'out/main/index.js'))) {
   console.error('out/main/index.js fehlt — bitte zuerst `npm run build`')
   process.exit(2)
+}
+// Das Demo-Profil wird einmal vor beiden Läufen gefüllt, nicht je Lauf: Ein zweites
+// connections.save ohne id legte denselben Zugang ein zweites Mal an.
+let projectId = arg('--project', null)
+if (DEMO) {
+  resetDemoProfile()
+  console.log(`Demo-Profil: ${DEMO_PROFILE}`)
+  const { app, page } = await launch()
+  try {
+    projectId = (await seedDemoProfile(page, ipc)) ?? projectId
+  } finally {
+    await app.close().catch(() => {})
+  }
+} else {
+  projectId ??= pickProject()
 }
 if (!projectId) {
   console.error('Kein registriertes Projekt gefunden.')
@@ -108,7 +162,7 @@ if (routes.length === 0) {
 }
 
 fs.mkdirSync(outDir, { recursive: true })
-console.log(`${routes.length} Routen × ${SCHEMES.length} Schemata → ${outDir}`)
+console.log(`${routes.length} Routen × ${SCHEMES.map(([n]) => n).join(' + ')} → ${outDir}`)
 
 let scalingReported = false
 function scaleDown(file, width = SCALE_WIDTH) {
@@ -128,9 +182,7 @@ for (const [scheme, media] of SCHEMES) {
   // Ein Fenster je Schema statt eines Wechsels im laufenden Fenster: Das Farbschema der App wird
   // im Hauptprozess gesetzt, und ein Wechsel danach lässt Seiten zurück, die ihre Farben beim
   // Mount gelesen haben.
-  const app = await electron.launch({ executablePath: electronBinPath(), args: [APP_DIR], timeout: 60_000 })
-  const page = app.windows().find((w) => !w.url().startsWith('devtools://')) ?? (await app.firstWindow())
-  await page.waitForSelector('#root > *', { timeout: 60_000 })
+  const { app, page } = await launch()
   await page.emulateMedia({ colorScheme: media })
   const win = await app.browserWindow(page)
   await win.evaluate((bw, s) => bw.setSize(s.w, s.h, false), SIZE)

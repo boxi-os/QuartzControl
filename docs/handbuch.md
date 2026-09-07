@@ -4,9 +4,9 @@ Das Handbuch zur App — nicht zu verwechseln mit dem **Example-Handbuch**, das 
 erklärt und im Vault `~/Obsidian/QuartzProjekte/Example` lebt
 (`scripts/example-template/README.md`).
 
-**Stand 2026-09-07:** Die acht Kapitel sind geschrieben (52 Seiten, 348 Wikilinks, alle auflösbar),
-bebildert (65 Aufnahmen, davon 38 in den Seiten), einmal gegen die App gegengelesen, in der App
-erreichbar und aus jedem Bildschirm heraus verlinkt. Offen ist die englische Fassung.
+**Stand 2026-09-07: fertig.** 104 Seiten in zwei Sprachen (52 und 52, jede mit ihrem Partner über
+`translationKey`), 695 Wikilinks, alle auflösbar; 130 Aufnahmen, 74 davon in den Seiten; in der App
+erreichbar und aus jedem Bildschirm heraus verlinkt, in der Sprache, die die App gerade spricht.
 
 Die Kapitel entstanden aus den Quellen — `de.ts`, die Routen, `electron-builder.yml`,
 `docs/decisions/` — und wurden danach gegen die **laufende** App gehalten: je Route die sichtbaren
@@ -255,7 +255,8 @@ App ohne Handbuch ist unvollständig, aber benutzbar. Und `openHandbook()` prüf
 sie öffnet, damit der Nutzer in diesem Fall einen Satz bekommt statt einer Fehlermeldung des
 Betriebssystems.
 
-Erreichbar an zwei Stellen, die **dieselbe Funktion** rufen — zwei Stellen, die den Pfad selbst
+Gebaut werden beide Sprachen in einem Lauf (437 Dateien, 36 MB); das Bundle wächst damit von 369
+auf rund 405 MB. Erreichbar an zwei Stellen, die **dieselbe Funktion** rufen — zwei Stellen, die den Pfad selbst
 zusammensetzen, laufen beim nächsten Umbau auseinander:
 
 - **Hilfe → Handbuch**, als erster Eintrag: Wer dort nachsieht, sucht meistens etwas über diese App
@@ -302,3 +303,43 @@ ihrer Karte „Was ist Quartz?".
 während Konfiguration, Stile und Plugins ihre Unterreiter einzeln nennen. Der Smoke-Test besucht
 „Seitentypen" und „Eigene Frames" deshalb nie, und die Screenshots zeigen sie nicht. Für diese
 Messung waren sie von Hand ergänzt.
+
+## Die englische Fassung
+
+52 Seiten unter `en/`, verknüpft über `translationKey` — derselbe Schlüssel wie auf der deutschen
+Seite, ohne Nummern-Prefix, damit ein späteres Umnummerieren die Paarung nicht anfasst. Die
+Zweisprachigkeit macht `@boxi-os/quartz-multilanguage`, das die Sprache am Ordner erkennt; im Bau
+stehen dann `hreflang`-Verweise in beide Richtungen.
+
+**Übersetzt sind auch die Pfade** — aus `4-gestaltung/04-variablen` wird
+`en/4-design/04-variables`, nicht `en/4-gestaltung/04-variablen`. Das ist der Grund für
+`src/data/handbookPages.ts`: Ein Verweis im Seitenkopf nennt eine *Kennung*, keinen Pfad, und
+`HandbookLink` löst sie über die aufgelöste Sprache der App auf. Sonst stünden an elf Aufrufstellen
+zwei Pfade nebeneinander, und beim nächsten Umbau zöge jemand nur einen davon nach. Der Menüpunkt
+ohne Seite geht denselben Weg: `mainLanguage()` entscheidet zwischen `index.html` und
+`en/index.html`.
+
+**Screenshots gibt es je Sprache** (`--lang en` schreibt nach `assets/screenshots/en/`), weil ein
+englisches Handbuch mit deutscher Oberfläche im Bild nichts erklärt.
+
+**`check:handbook` prüft jetzt zweisprachig:** Eine englische Seite wird gegen `en.ts` und den
+`en`-Block des Hauptprozesses gehalten, nicht gegen `de.ts`. Beim ersten Lauf fielen sieben Zitate
+durch — ich hatte die deutschen Sätze übersetzt, statt die englischen der App zu übernehmen. Genau
+dafür gibt es das Skript.
+
+### Eine Grenze, die bleibt
+
+Auf einer englischen Seite stehen „Inhaltsverzeichnis“, „Graphansicht“, „Zuletzt bearbeitete
+Seiten“ und die Beschriftungen der Suche weiter auf Deutsch. **Quartz' Komponenten lesen die Sprache
+der Website, nicht die der Seite**, die sie gerade bauen — nachgesehen im gebauten Code, notiert
+schon als Befund 29 in `scripts/example-template/BEFUNDE.md`. Verschieben lässt sich davon eines:
+Datumsangaben werden im Browser nachformatiert. Alles andere löst nur ein Bau je Sprache, mit zwei
+Adressen als Preis. Das Handbuch der Beispielvorlage zeigt dasselbe; die Grenze steht deshalb in
+beiden Fassungen unter „Bekannte Grenzen“.
+
+### Was der Vorlagen-Import mitgebracht hat
+
+Der `static`-Baustein brachte die Schnipsel der Beispielvorlage mit — eine Seitenleisten-Notiz, die
+das *Example*-Handbuch beschreibt und in dessen Kapitel verlinkt. Vier tote Links auf jeder Seite,
+in beiden Sprachen, bis sie neu geschrieben waren. Wer eine Vorlage importiert, sollte danach in
+`quartz/static/` nachsehen: Was dort liegt, spricht von dem Projekt, aus dem es kam.

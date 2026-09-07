@@ -83,7 +83,7 @@ export default function Settings(): JSX.Element {
           {/* Diese Seite hat keinen PageHeader - sie gehört zu keinem Projekt -, aber denselben
               Verweis: Was hier steht, erklärt Kapitel 2.5. */}
           <div className="mb-6">
-            <HandbookLink page="2-projekte/05-die-einstellungen" />
+            <HandbookLink page="settings" />
           </div>
 
           <div className="flex flex-col gap-4">

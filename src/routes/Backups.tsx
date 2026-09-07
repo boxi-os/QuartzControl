@@ -171,7 +171,7 @@ export default function Backups(): JSX.Element {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        handbook={<HandbookLink page="7-wartung/01-snapshots" />}
+        handbook={<HandbookLink page="snapshots" />}
         icon={TAB_ICONS.backups}
         title={t('projectLayout.tabs.backups')}
         description={t('projectLayout.descriptions.backups')}

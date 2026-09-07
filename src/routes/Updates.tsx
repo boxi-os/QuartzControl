@@ -118,7 +118,7 @@ export default function Updates(): JSX.Element {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        handbook={<HandbookLink page="7-wartung/03-updates" />}
+        handbook={<HandbookLink page="updates" />}
         icon={TAB_ICONS.updates}
         title={t('projectLayout.tabs.updates')}
         description={t('projectLayout.descriptions.updates')}

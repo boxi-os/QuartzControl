@@ -187,7 +187,7 @@ export default function BuildServer(): JSX.Element {
   return (
     <div className="grid gap-6">
       <PageHeader
-        handbook={<HandbookLink page="5-ansehen-und-bauen/01-die-vorschau" />}
+        handbook={<HandbookLink page="preview" />}
         icon={TAB_ICONS.server}
         title={t('projectLayout.tabs.server')}
         description={t('projectLayout.descriptions.server')}

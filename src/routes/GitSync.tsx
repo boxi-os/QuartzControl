@@ -258,7 +258,7 @@ export default function GitSync(): JSX.Element {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        handbook={<HandbookLink page="6-veroeffentlichen/03-git-sync" />}
+        handbook={<HandbookLink page="gitSync" />}
         icon={TAB_ICONS.sync}
         title={t('projectLayout.tabs.sync')}
         description={t('projectLayout.descriptions.sync')}

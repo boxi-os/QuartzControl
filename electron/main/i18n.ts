@@ -438,6 +438,12 @@ export type MainStringKey = keyof (typeof STRINGS)['de']
 // runs at startup before the window exists and again on every settings save, which is exactly
 // where applyAppMenu() already rides along.
 let language: 'de' | 'en' = 'en'
+
+/** Die Sprache, in der der Hauptprozess gerade spricht. Für Entscheidungen, die keine Zeichenkette
+ *  sind - etwa welche Fassung des Handbuchs geöffnet wird. */
+export function mainLanguage(): 'de' | 'en' {
+  return language
+}
 let refreshed = false
 
 export async function refreshMainLanguage(): Promise<void> {

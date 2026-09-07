@@ -34,12 +34,21 @@ function flatten(obj, prefix = '', out = {}) {
   }
   return out
 }
-let src = fs.readFileSync(path.join(ROOT, 'src/i18n/locales/de.ts'), 'utf8')
-src = src.replace(/^export default\s*/, 'return ').replace(/\bas const\s*$/m, '')
-const strings = Object.values(flatten(new Function(src)()))
+// Je Sprache ein eigener Heuhaufen: Eine englische Seite zitiert die englischen Texte, und gegen
+// de.ts geprueft waere jedes dieser Zitate ein falscher Alarm.
 const mainSrc = fs.readFileSync(path.join(ROOT, 'electron/main/i18n.ts'), 'utf8')
-const block = mainSrc.match(/\n  de: \{\n([\s\S]*?)\n  \},\n  en: \{/)[1]
-for (const m of block.matchAll(/^\s{4}[A-Za-z0-9_]+:\s*'((?:[^'\\]|\\.)*)'/gm)) strings.push(m[1])
+
+function stringsFor(lang) {
+  let src = fs.readFileSync(path.join(ROOT, `src/i18n/locales/${lang}.ts`), 'utf8')
+  src = src.replace(/^export default\s*/, 'return ').replace(/\bas const\s*$/m, '')
+  const out = Object.values(flatten(new Function(src)()))
+  const block =
+    lang === 'de'
+      ? mainSrc.match(/\n  de: \{\n([\s\S]*?)\n  \},\n  en: \{/)[1]
+      : mainSrc.match(/\n  en: \{\n([\s\S]*)/)[1]
+  for (const m of block.matchAll(/^\s{4}[A-Za-z0-9_]+:\s*'((?:[^'\\]|\\.)*)'/gm)) out.push(m[1])
+  return out
+}
 
 // Ein Zitat darf Platzhalter durch Beispielwerte ersetzen, kürzen und hervorheben - all das fällt
 // hier weg, damit nur der Wortlaut übrig bleibt.
@@ -56,7 +65,7 @@ const norm = (s) =>
     .trim()
     .toLowerCase()
 
-const haystack = strings.map(norm)
+const haystacks = { de: stringsFor('de').map(norm), en: stringsFor('en').map(norm) }
 
 function walk(dir, out = []) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -86,8 +95,9 @@ for (const f of walk(VAULT)) {
     if (wasCallout || quote.includes('[[')) return
     if (quote.length < 25) return
     checked++
-    if (!haystack.some((h) => h.includes(quote))) {
-      console.log(`${path.relative(VAULT, f)}: kein App-Text sagt das`)
+    const lang = path.relative(VAULT, f).startsWith('en/') ? 'en' : 'de'
+    if (!haystacks[lang].some((h) => h.includes(quote))) {
+      console.log(`${path.relative(VAULT, f)}: kein App-Text sagt das (${lang})`)
       console.log(`  „${quote.slice(0, 150)}"`)
       bad++
     }

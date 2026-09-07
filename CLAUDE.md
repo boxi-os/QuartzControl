@@ -55,7 +55,9 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
 - `npm run check:handbook` — die Blockzitate des Benutzerhandbuchs gegen das, was die App wirklich
   sagt. Existiert aus demselben Grund wie `check:i18n`, nur eine Ebene weiter: Ein Zitat, das die
   App so nicht mehr sagt, sieht aus wie ein Beleg, und kein anderer Test sieht es, weil das
-  Handbuch außerhalb dieses Repos liegt. Überspringt sich still, wenn der Vault fehlt
+  Handbuch außerhalb dieses Repos liegt. Prüft je Sprache gegen die passende Sprachdatei — beim
+  ersten Lauf gegen die englische Fassung fielen sieben Zitate durch, weil sie übersetzt statt
+  übernommen waren. Überspringt sich still, wenn der Vault fehlt
 - `npm run check:tokens -- [baseUrl]` — ändert jede Variable, die die Beispielvorlage schreibt, in
   einer *laufenden* Seite und zählt, wie viele berechnete Werte sich bewegen. Existiert, weil ein
   Token auf drei Arten wirkungslos sein kann, ohne dass die Datei es zeigt: niemand liest es, eine
@@ -379,7 +381,10 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   Ziele); die bleiben lang. Gemessen am 2026-09-07: 1475 Nutzersätze, 192 über 120 Zeichen — und die
   Länge war nicht das Problem, sondern die 75, die Mechanik erklären statt der Entscheidung.
   Messungen in [`i18n-and-vocabulary.md`](docs/decisions/i18n-and-vocabulary.md), der Ablauf und die
-  Gliederung des Benutzerhandbuchs in [`docs/handbuch.md`](docs/handbuch.md).
+  Gliederung des Benutzerhandbuchs in [`docs/handbuch.md`](docs/handbuch.md). Das Handbuch ist
+  zweisprachig, und **es übersetzt auch seine Pfade** — deshalb nennt ein Verweis im Seitenkopf eine
+  Kennung aus `src/data/handbookPages.ts` und keinen Pfad; `HandbookLink` löst sie über die
+  aufgelöste Sprache auf, der Menüpunkt über `mainLanguage()`.
 - **Sidebar nach Tätigkeit, eine Seite ist eine Aufgabe.** Einrichtung, Gestaltung, Veröffentlichung,
   Wartung; ein Screen, der eine Karte wäre, ist ein Sub-Tab. Die Übersicht ist eine Statusseite, die
   nichts kostet: nur lokale Reads beim Mount, genau einer ins Netz, nie awaited.

@@ -9,10 +9,7 @@ import Marketplace from './Marketplace'
 import HandbookLink from '../../components/HandbookLink'
 
 // Beide Reiter stehen im selben Kapitel - der Marktplatz ist dort der letzte Abschnitt.
-const HANDBOOK = {
-  installed: '4-gestaltung/08-plugins',
-  marketplace: '4-gestaltung/08-plugins'
-} as const
+const HANDBOOK = { installed: 'plugins', marketplace: 'plugins' } as const
 
 // Finding a plugin and configuring it is one job, so it is one page. Updating is not: that is
 // maintenance, it covers the Quartz core as much as the plugins, and it lives next to Backups.

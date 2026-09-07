@@ -2,7 +2,7 @@ import { app, BrowserWindow, dialog, shell, Menu, type MenuItemConstructorOption
 import { existsSync } from 'node:fs'
 import { isAbsolute, join, relative, resolve } from 'node:path'
 import { IPC, type AppCommand } from '@shared/ipc-contract'
-import { mainT, refreshMainLanguage } from './i18n'
+import { mainLanguage, mainT, refreshMainLanguage } from './i18n'
 
 export const APP_NAME = 'QuartzControl'
 
@@ -37,7 +37,10 @@ function handbookRoot(): string {
  */
 function handbookFile(page?: string): string | null {
   const root = handbookRoot()
-  if (!page) return join(root, 'index.html')
+  // Ohne Seite die Startseite - in der Sprache, in der die App gerade spricht. Für eine *benannte*
+  // Seite entscheidet der Renderer, welcher der beiden Pfade gemeint ist (handbookPages.ts): Das
+  // Handbuch übersetzt seine Kapitel und dabei auch ihre Pfade.
+  if (!page) return join(root, mainLanguage() === 'en' ? 'en' : '.', 'index.html')
   const target = resolve(root, `${page}.html`)
   const rel = relative(root, target)
   if (!rel || rel.startsWith('..') || isAbsolute(rel)) return null

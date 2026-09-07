@@ -398,7 +398,7 @@ export default function ProjectDashboard(): JSX.Element {
   return (
     <div className="grid gap-4">
       <PageHeader
-        handbook={<HandbookLink page="3-einrichtung/01-die-uebersicht" />}
+        handbook={<HandbookLink page="overview" />}
         icon={TAB_ICONS.overview}
         title={t('projectLayout.tabs.overview')}
         description={t('projectLayout.descriptions.overview')}

@@ -47,7 +47,7 @@ export default function Templates(): JSX.Element {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader icon={TAB_ICONS.templates} title={t('templates.title')} description={t('templates.description')} handbook={<HandbookLink page="4-gestaltung/09-vorlagenpakete" />} />
+      <PageHeader icon={TAB_ICONS.templates} title={t('templates.title')} description={t('templates.description')} handbook={<HandbookLink page="templates" />} />
       {/* Two independent halves of the same job - width puts them side by side rather than
           stretching each one across the window. */}
       <div className="grid items-start gap-6 xl:grid-cols-2">

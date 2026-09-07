@@ -17,12 +17,7 @@ import HandbookLink from '../../components/HandbookLink'
 
 // Ein Kapitel je Reiter, und sie stehen im Handbuch in derselben Reihenfolge wie hier: Basis,
 // Community-Themes, Variablen, eigenes CSS - also in der, in der sie einander überschreiben.
-const HANDBOOK = {
-  basics: '4-gestaltung/02-basis-farben-und-schriften',
-  theme: '4-gestaltung/03-community-themes',
-  variables: '4-gestaltung/04-variablen',
-  customCss: '4-gestaltung/05-eigenes-css'
-} as const
+const HANDBOOK = { basics: 'stylesBasics', theme: 'stylesTheme', variables: 'stylesVariables', customCss: 'stylesCustomCss' } as const
 
 export type StylesTab = 'basics' | 'theme' | 'variables' | 'customCss'
 

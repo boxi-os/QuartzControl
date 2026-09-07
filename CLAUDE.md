@@ -525,17 +525,43 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Befunde aus den Reviews (Stand 2026-09-09)
+## Befunde aus den Reviews (Stand 2026-09-10)
 
-Alle sechs Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
+Alle sieben Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht,
-[`docs/REVIEW-2026-09-08.md`](docs/REVIEW-2026-09-08.md) mit seinen acht und
-[`docs/REVIEW-2026-09-09.md`](docs/REVIEW-2026-09-09.md) mit seinen acht (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-`, `-07-`, `-08-` und `-09-`) stehen als Dokumente
-unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft gilt, steht
-oben als Regel.
+[`docs/REVIEW-2026-09-08.md`](docs/REVIEW-2026-09-08.md) mit seinen acht,
+[`docs/REVIEW-2026-09-09.md`](docs/REVIEW-2026-09-09.md) mit seinen acht und
+[`docs/REVIEW-2026-09-10.md`](docs/REVIEW-2026-09-10.md) mit seinen acht (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-`, `-07-`, `-08-`, `-09-` und `-10-`) stehen als
+Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
+gilt, steht oben als Regel.
+
+**Das siebte Review war das erste, das an einem echten `quartz build` gemessen hat** — eine Kopie
+des Beispielprojekts, 266 Markdown-Dateien, 201 Editorial-Seiten je Lauf, die gebauten Seiten mit
+`hast-util-from-html` ausgezählt. Kein Befund der Stufe Hoch, zwei Mittel, sechs Niedrig, alle acht
+abgearbeitet (PR #26). Beide mittleren waren erst an diesem Weg sichtbar: eine Regression aus dem
+Fix des sechsten Reviews, die eine ganze Seite ungeteilt rendern ließ, weil die Zahl auf einer
+Position nicht stimmte, die das Frame gar nicht teilt — und ein Quartz-Fehler, den die App geerbt
+hatte, weil sie seiner Dokumentation folgte. Was daraus als Regel bleibt, steht oben in den
+passenden Abschnitten:
+
+- **Ein Wert, den ein fremdes Programm vergleicht, wird nach dessen Regel gebildet** — und die
+  Nachbildung wird gegen das fremde Programm geprüft, nicht gegen die eigene Vorstellung von ihm.
+  `npm run check:plugin-names` schneidet dafür Quartz' eigene Funktion aus dessen Quelldatei; die
+  Gegenprobe fand sofort einen Rand, den zweimaliges Lesen nicht gefunden hatte.
+- **Ein Wächter, der eine Kopie prüft, prüft sie so scharf wie nötig und nicht schärfer.** Alle
+  sechs Positionen abzugleichen ist der bessere Schlüssel, „alles oder nichts“ war die falsche
+  Folgerung daraus.
+- **Eine Liste, die zu einem Frame gehört, wird auch je Frame gerechnet.** Eine Kandidatin zu viel
+  kann eine Auswahl *ermöglichen*, die es sonst nicht gäbe — die stumme Richtung.
+- **Ein Rat, den man nicht befolgen kann, ist der Fehler, nicht die Hilfe.** Zwei Meldungen statt
+  einer, und die zweite nennt zwei Auswege, die beide gemessen sind.
+- **Eine Warnung ist keine Fehlermeldung**, auch nicht in einer Konsole: `LogLine.stream` hat
+  einen dritten Wert für die Sätze, die die App selbst schreibt.
+- **Ein zod-Satz beschreibt nicht immer einen Bug.** Wo er eine Eingabe beschreibt und in einem
+  Nutzersatz landet, wird er in den Worten der App gesagt.
 
 **Das sechste Review traf die Grundlage des Umbaus, den es las.** Kein Befund der Stufe Hoch, drei
 Mittel, fünf Niedrig; alle acht sind abgearbeitet, jeder mit einer Vorher-Messung. Der erste
@@ -643,6 +669,13 @@ Dokumentations-Sitzung, aus der mehr App-Code entstand, als der Name vermuten l�
 IPC-Kanal, der Renderer-Eingabe zu einem Dateipfad macht, eine Änderung an der Verpackung, fünf
 neue Skripte und rund fünfzig geänderte Nutzertexte. 45 Dateien, +2043/−187.
 
+**Der Auftrag für das siebte Review steht** in
+[`docs/REVIEW-2026-09-10-auftrag.md`](docs/REVIEW-2026-09-10-auftrag.md). Sein Diff war der
+kleinste der Serie — 13 Commits, im App-Code 12 Dateien, +432/−82: die acht Fixes des sechsten
+Reviews und ein Nachtrag. Was er als erste Frage stellte, hat der Messweg beantwortet und die
+Antwort war „ja, aber“: Die Listen, die ein Frame bekommt, sind die von Quartz — für einen
+Seitentyp mit einem Ausschluss auf ein `@quartz-community/*`-Plugin aber nicht.
+
 **Der Auftrag für das sechste Review steht** in
 [`docs/REVIEW-2026-09-09-auftrag.md`](docs/REVIEW-2026-09-09-auftrag.md). Sein Diff hat wieder zwei
 Schichten, die nichts miteinander zu tun haben: die acht Fixes des fünften Reviews, die niemand
@@ -652,20 +685,28 @@ Bereich darf ohne Belegung leer bleiben, und über `layout.group` kann er eigene
 Umbaus selbst: die Zuordnung ruht auf einem Funktionsnamen, den es nur gibt, weil Quartz sich mit
 esbuilds `keepNames` baut.
 
-**Das nächste Review misst ab `review-2026-09-08`.** Der Tag sitzt auf `0c76d6e`, dem Stand, den
-das fünfte Review vor sich hatte, nach derselben Regel wie seine drei Vorgänger: Der Ausgangsstand
-ist das, was gelesen wurde, nicht das, was danach entstanden ist. So sitzt `review-2026-09-07` auf
-`1994811`, dem letzten Merge vor den Fixes des vierten Reviews, und `review-2026-09-06` auf
-`1bd69dc`; Letzterer war einmal 67 Commits früher auf `0b0fb96` gesetzt und wurde verschoben, weil
-jener Stand gemessen, aber nicht gelesen war.
+**Das nächste Review misst ab `review-2026-09-10`.** Der Tag sitzt auf `b1cf5bd`, `main` nach
+PR #25 — dem Stand, den das siebte Review vor sich hatte, nach derselben Regel wie seine vier
+Vorgänger: Der Ausgangsstand ist das, was gelesen wurde, nicht das, was danach entstanden ist. So
+sitzt `review-2026-09-09` auf `c6da3d9` („Der Auftrag für das sechste Review“),
+`review-2026-09-08` auf `0c76d6e`, `review-2026-09-07` auf `1994811`, dem letzten Merge vor den
+Fixes des vierten Reviews, und `review-2026-09-06` auf `1bd69dc`; Letzterer war einmal 67 Commits
+früher auf `0b0fb96` gesetzt und wurde verschoben, weil jener Stand gemessen, aber nicht gelesen
+war.
 
-**Die acht Fixes des fünften Reviews liegen bewusst dahinter.** Sie sind gemessen, jeder mit
-Vorher und Nachher, und von niemandem sonst gelesen — der größte Eingriff ist der Handbuch-Server
-(ein neuer Dienst im Hauptprozess, ein `will-quit`-Haken, `openExternal` statt `openPath`), dazu
-die dritte Antwort `'partial'` im Vertrag der Server-Suche und ein `/proc`-Weg, den diese Maschine
-nicht messen kann. Sie gehören damit in den Diff des nächsten Auftrags. Dasselbe galt eine Runde
-vorher für die acht Fixes des vierten Reviews — den Dateinamen des Server-Logs pro Lauf und die
-Server-Erkennung, die einen Vorgabeport nur nimmt, wenn der Prozess ihn hält.
+**Die acht Fixes des siebten Reviews liegen bewusst dahinter** (PR #26, 22 Dateien, +1200/−93).
+Sie sind gemessen, die meisten am echten Build oder an der gebauten App, und von niemandem sonst
+gelesen — die größten Eingriffe sind der zweite Durchgang in `pickGroupOrder`, der Frame-Name als
+Pflichtargument der Kandidatenrechnung, `shared/quartzPluginName.ts` samt
+`npm run check:plugin-names` und der dritte Wert in `LogLine.stream`. Sie gehören damit in den
+Diff des nächsten Auftrags.
+
+Dasselbe galt zwei Runden vorher für die acht Fixes des fünften Reviews — der Handbuch-Server (ein
+neuer Dienst im Hauptprozess, ein `will-quit`-Haken, `openExternal` statt `openPath`), die dritte
+Antwort `'partial'` im Vertrag der Server-Suche und ein `/proc`-Weg, den diese Maschine nicht
+messen kann — und eine Runde davor für die acht des vierten: den Dateinamen des Server-Logs pro
+Lauf und die Server-Erkennung, die einen Vorgabeport nur nimmt, wenn der Prozess ihn hält. Die
+Kette ist Absicht: Jede Runde liest, was die vorige gebaut hat.
 
 Von dem, was beide Reviews als „beiläufig, kein sed“ führen, sind die Farbpaare am 2026-09-05
 abgearbeitet, soweit sie eine Umbenennung waren: 322 Paare, die wörtlich das Token buchstabierten,

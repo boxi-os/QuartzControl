@@ -45,6 +45,10 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   i18next renders a missing key *as the key* rather than failing, so a gap is invisible until someone
   opens the one screen state that uses it (`publish.pages.saveSettings`, found in the alpha test, was
   missing from both files and therefore in perfect parity)
+- `npm run check:handbook` — die Blockzitate des Benutzerhandbuchs gegen das, was die App wirklich
+  sagt. Existiert aus demselben Grund wie `check:i18n`, nur eine Ebene weiter: Ein Zitat, das die
+  App so nicht mehr sagt, sieht aus wie ein Beleg, und kein anderer Test sieht es, weil das
+  Handbuch außerhalb dieses Repos liegt. Überspringt sich still, wenn der Vault fehlt
 - `npm run check:tokens -- [baseUrl]` — ändert jede Variable, die die Beispielvorlage schreibt, in
   einer *laufenden* Seite und zählt, wie viele berechnete Werte sich bewegen. Existiert, weil ein
   Token auf drei Arten wirkungslos sein kann, ohne dass die Datei es zeigt: niemand liest es, eine
@@ -332,7 +336,13 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   ist eine Geste, die man kennen muss. Messungen in
   [`plugins-and-config.md`](docs/decisions/plugins-and-config.md) und
   [`layout-frames.md`](docs/decisions/layout-frames.md).
-- **Ein Wort, ein Name.** Vokabular ist eine Tabelle (`positions`), nicht pro Seite. Deutsch „…“,
+- **Ein Wort, ein Name — und zwar über App und Handbuch hinweg.** Vokabular ist eine Tabelle
+  (`positions`), nicht pro Seite. Am 2026-09-07 fielen dabei vier Begriffe auf, die je zwei Dinge
+  meinten: „Baustein“ (Komponente auf der Seite / Teil eines Vorlagenpakets), „Vorlage“
+  (Quartz-Startvorlage / `.qtpl`), „Frame/Template“ und „Ausgabeverzeichnis“ neben
+  „Ausgabeordner“. Der Tell war jedes Mal derselbe: Das Handbuch musste eine Warnung schreiben
+  („nicht zu verwechseln mit…“). Eine solche Warnung ist der Hinweis auf den Fehler, nicht seine
+  Lösung. Deutsch „…“,
   Englisch “…”, Gedankenstrich als Em-Dash. Jeder Nutzertext steht in `de.ts`/`en.ts`
   (Schlüssel-Parität) oder `electron/main/i18n.ts`; zod- und `console.error`-Texte
   bleiben Englisch, weil sie Bugs beschreiben, nicht Eingaben.

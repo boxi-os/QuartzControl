@@ -4,10 +4,9 @@ Das Handbuch zur App — nicht zu verwechseln mit dem **Example-Handbuch**, das 
 erklärt und im Vault `~/Obsidian/QuartzProjekte/Example` lebt
 (`scripts/example-template/README.md`).
 
-**Stand 2026-09-07:** Die acht Kapitel sind geschrieben — 52 Seiten, 328 Wikilinks, alle auflösbar
-— und bebildert: 106 Aufnahmen (19 Bildschirme × 2 Schemata, dazu 68 Karten), 19 davon in den
-Seiten eingesetzt. Offen sind der zweite Textdurchgang, die Handaufnahmen, der Anschluss ans
-Hilfe-Menü und die englische Fassung.
+**Stand 2026-09-07:** Die acht Kapitel sind geschrieben (52 Seiten, 348 Wikilinks, alle auflösbar),
+bebildert (65 Aufnahmen, davon 38 in den Seiten) und einmal gegen die App gegengelesen. Offen sind
+der Anschluss ans Hilfe-Menü und die englische Fassung.
 
 Die Kapitel entstanden aus den Quellen — `de.ts`, die Routen, `electron-builder.yml`,
 `docs/decisions/` — und wurden danach gegen die **laufende** App gehalten: je Route die sichtbaren
@@ -198,3 +197,41 @@ Bildprüfung in beide Richtungen (jedes Bild wird referenziert, jede Referenz ex
 
 Und am Ende die einzige Prüfung, die zählt: das Handbuch einmal von vorn lesen, als jemand, der
 die App nicht kennt.
+
+## Der zweite Textdurchgang (2026-09-07)
+
+Der Plan sah zwei Teile vor. Der erste — die Befunde aus dem Schreiben — ist gemacht und war
+messbar statt erinnert: Vier Begriffe meinten in der App zwei Dinge, und zwar genau die vier, an
+denen mir das Schreiben schwerfiel.
+
+| Begriff | Meinte | Jetzt |
+| --- | --- | --- |
+| **Baustein** | eine Komponente auf der Seite *und* einen Teil eines Vorlagenpakets | Komponente / Baustein. Die App sagte im Layout- und im CSS-Editor längst „Komponente", das Englische überall — Deutsch war der Ausreißer. |
+| **Vorlage** | Quartz' Startvorlage *und* das `.qtpl`-Paket | Quartz-Startvorlage / Vorlage. Im Assistenten standen beide untereinander. |
+| **Frame/Template** | dasselbe wie „Frame" | Frame |
+| **Ausgabeverzeichnis** | dasselbe wie „Ausgabeordner" | Ausgabeordner — „Ordner" ist das Hauswort der App (Content-, Projekt-, Quell-, Zielordner). |
+
+Das Glossar des Handbuchs musste unter „Baustein" eine Warnung führen („nicht zu verwechseln
+mit…"). Diese Warnung war der Hinweis auf den Fehler, nicht seine Lösung; sie ist weg.
+
+**Der zweite Teil — Kapitelverweise in den App-Hinweisen — bleibt offen, und zwar mit Absicht.**
+Ein Hinweis, der „siehe Handbuch 4.4" sagt, während niemand das Handbuch öffnen kann, ist
+schlechter als keiner. Der Verweis gehört hinter den Hilfe-Menü-Eintrag, nicht davor.
+
+### `npm run check:handbook`
+
+Aus dem Durchgang blieb ein Prüfskript: `scripts/check-handbook-quotes.mjs` liest die Blockzitate
+des Handbuchs und prüft, ob die App sie noch sagt. Es entstand, weil ein pauschales Ersetzen von
+„Ausgabeverzeichnis" durch „Ausgabeordner" im Handbuch „Jeder Build löscht **sein** Ausgabeordner"
+stehen ließ, während die App längst „seinen" sagte — und weil sonst nichts danach sieht: Das
+Handbuch liegt außerhalb dieses Repos.
+
+Verglichen wird großzügig normalisiert (ohne Platzhalter, Zahlen, Anführungszeichen,
+Hervorhebungen), weil ein Zitat kürzen und Beispielwerte einsetzen darf. Callouts und Zitate mit
+einem Wikilink darin zählen nicht mit — Ersteres ist eigener Text, Letzteres ist kein wörtliches
+Zitat mehr.
+
+Die Lehre daneben, die kein Skript abfängt: **Ein pauschales Ersetzen über Prosa bricht die
+Grammatik.** Sechs Stellen mussten von Hand nach — „das Ausgabeordner", „des Ausgabeordnerses",
+„sein Ausgabeordner". In den Sprachdateien der App fiel das nicht an, weil dort jede Zeichenkette
+einzeln angefasst wurde.

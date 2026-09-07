@@ -53,11 +53,11 @@ const STRINGS = {
     buildDirIsHome: 'Das ist dein Benutzerordner.',
     buildDirReserved: 'Dieser Ordner gehört zum Projekt und wird gebraucht.',
     buildDirRefused:
-      'In „{{dir}}“ kann nicht gebaut werden: {{why}} Jeder Build löscht sein Ausgabeverzeichnis vollständig. Bitte einen eigenen Ordner wählen, z. B. „public“ oder „dist“.',
+      'In „{{dir}}“ kann nicht gebaut werden: {{why}} Jeder Build löscht seinen Ausgabeordner vollständig. Bitte einen eigenen Ordner wählen, z. B. „public“ oder „dist“.',
     buildDirConfirmTitle: 'Ordner wird geleert',
     buildDirConfirmMessage: 'In „{{dir}}“ bauen?',
     buildDirConfirmDetail:
-      'Darin liegen {{count}} Einträge, die nicht nach einem Quartz-Build aussehen. Jeder Build löscht sein Ausgabeverzeichnis vollständig — das lässt sich nicht rückgängig machen.',
+      'Darin liegen {{count}} Einträge, die nicht nach einem Quartz-Build aussehen. Jeder Build löscht seinen Ausgabeordner vollständig — das lässt sich nicht rückgängig machen.',
     buildDirConfirmCancel: 'Abbrechen',
     confirmCancel: 'Abbrechen',
     buildDirConfirmProceed: 'Ordner leeren und bauen',
@@ -265,11 +265,11 @@ const STRINGS = {
     buildDirIsHome: 'That is your home folder.',
     buildDirReserved: 'That folder belongs to the project and is needed.',
     buildDirRefused:
-      'Cannot build into “{{dir}}”: {{why}} Every build wipes its output directory completely. Please pick a folder of its own, e.g. “public” or “dist”.',
+      'Cannot build into “{{dir}}”: {{why}} Every build wipes its output folder completely. Please pick a folder of its own, e.g. “public” or “dist”.',
     buildDirConfirmTitle: 'Folder will be emptied',
     buildDirConfirmMessage: 'Build into “{{dir}}”?',
     buildDirConfirmDetail:
-      'It holds {{count}} entries that do not look like a Quartz build. Every build wipes its output directory completely — this cannot be undone.',
+      'It holds {{count}} entries that do not look like a Quartz build. Every build wipes its output folder completely — this cannot be undone.',
     buildDirConfirmCancel: 'Cancel',
     confirmCancel: 'Cancel',
     buildDirConfirmProceed: 'Empty the folder and build',

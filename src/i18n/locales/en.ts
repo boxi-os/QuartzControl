@@ -151,9 +151,9 @@ export default {
       projectNamePlaceholder: 'my-notes',
       targetPreview: 'Will be created:',
       nameInvalid: 'The name must not contain “/” and cannot be “.” or “..”.',
-      template: 'Template',
+      template: 'Quartz starter template',
       templateHint:
-        'Decides which example pages and which starting settings the project comes with. “default” is the normal starting point; everything about it can be changed later.',
+        'Which example pages and starting settings Quartz itself brings — not to be confused with the example template further down, which brings the design. “default” is the normal starting point; everything about it can be changed later.',
       contentStrategy: 'Where do the notes come from?',
       contentStrategyHint:
         'Linking leaves the notes where they are — in your Obsidian vault, for example — and copies nothing. Copying creates a second, independent collection. This can be changed later too.',
@@ -223,7 +223,7 @@ export default {
     },
     descriptions: {
       overview: 'The overview for this project: server status, key settings, and quick links to every area.',
-      layout: 'Decides which building blocks (e.g. search, table of contents, navigation) appear where on the page.',
+      layout: 'Decides which components (e.g. search, table of contents, navigation) appear where on the page.',
       styles:
         'Everything about the look in one place: base colors and fonts, community themes, CSS variables, and your own CSS — in the exact order they override each other.',
       updates:
@@ -1064,7 +1064,7 @@ export default {
     excludeHeading: 'Visible components',
     excludeDescription: 'Turn off a component to hide it on pages of this type.',
     excludeDuplicateHint: 'Affects all {{count}} instances of “{{name}}” — Quartz cannot exclude individual duplicates here separately.',
-    template: 'Frame/template',
+    template: 'Frame',
     templateDefault: 'Default',
     templateFullWidth: 'Full width',
     templateMinimal: 'Minimal',
@@ -1139,10 +1139,10 @@ export default {
       unassignedWarning: 'Not assigned: {{slots}}. Components for these slots will not render in this frame.',
       neverVisibleWarning: 'Not visible on any breakpoint: {{areas}}. These areas will not render anywhere.',
       nameRequired: 'Please give the frame a name.',
-      nameCollision: 'This name is already taken (a built-in template or another custom frame).',
+      nameCollision: 'This name is already taken (a built-in frame, or another custom one).',
       deleteFrame: 'Delete this frame',
       deleteConfirmAction: 'Delete frame',
-      deleteConfirm: 'Really delete frame “{{name}}”? Page types referencing it will fall back to the default template.',
+      deleteConfirm: 'Really delete frame “{{name}}”? Page types using it fall back to the default frame.',
       preview: {
         pageContent: 'Page content'
       }
@@ -1519,7 +1519,7 @@ export default {
       webhookUrl: 'Webhook URL',
       secretUnchangedPlaceholder: 'leave unchanged'
     },
-    outputDir: 'Output directory',
+    outputDir: 'Output folder',
     outputDirPlaceholder: 'Default: public/ in the project',
     outputDirShared: 'The same folder as under Preview & Build.',
     diffHeading: 'Changes',

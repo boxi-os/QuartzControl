@@ -152,9 +152,9 @@ export default {
       projectNamePlaceholder: 'meine-notizen',
       targetPreview: 'Angelegt wird:',
       nameInvalid: 'Der Name darf kein „/“ enthalten und nicht „.“ oder „..“ sein.',
-      template: 'Vorlage',
+      template: 'Quartz-Startvorlage',
       templateHint:
-        'Bestimmt, welche Beispielseiten und welche Grundeinstellungen das Projekt mitbringt. „default“ ist der normale Startpunkt; alles daran lässt sich später ändern.',
+        'Welche Beispielseiten und Grundeinstellungen Quartz selbst mitbringt — nicht zu verwechseln mit der Beispielvorlage weiter unten, die die Gestaltung mitbringt. „default“ ist der normale Startpunkt; alles daran lässt sich später ändern.',
       contentStrategy: 'Woher kommen die Notizen?',
       contentStrategyHint:
         'Beim Verknüpfen bleiben die Notizen dort, wo sie sind — zum Beispiel in deinem Obsidian-Vault — und werden nicht kopiert. Beim Kopieren entsteht eine zweite, unabhängige Sammlung. Auch das ist später umstellbar.',
@@ -225,7 +225,7 @@ export default {
     },
     descriptions: {
       overview: 'Der Überblick über dieses Projekt: Server-Status, wichtigste Einstellungen und Schnellzugriffe auf alle Bereiche.',
-      layout: 'Legt fest, welche Bausteine (z. B. Suche, Inhaltsverzeichnis, Navigation) wo auf der Seite erscheinen.',
+      layout: 'Legt fest, welche Komponenten (z. B. Suche, Inhaltsverzeichnis, Navigation) wo auf der Seite erscheinen.',
       styles:
         'Alles zum Aussehen an einem Ort: Basisfarben und Schriften, Community-Themes, CSS-Variablen und eigenes CSS — in genau der Reihenfolge, in der sie sich gegenseitig überschreiben.',
       updates:
@@ -898,7 +898,7 @@ export default {
     frameSource: 'Eigener Frame aus dem Layout-Editor',
     frameSummary: '{{count}} Bereiche',
     openInLayoutEditor: 'Im Layout-Editor',
-    componentsHeading: 'Sichtbare Bausteine',
+    componentsHeading: 'Sichtbare Komponenten',
     componentsDescription: 'Diese Plugins sind sichtbar auf der Seite — z. B. im Kopfbereich, in der Seitenleiste oder im Footer.',
     processingHeading: 'Verarbeitung',
     processingDescription:
@@ -1068,7 +1068,7 @@ export default {
     excludeHeading: 'Sichtbare Komponenten',
     excludeDescription: 'Schalte eine Komponente aus, um sie auf Seiten dieses Typs auszublenden.',
     excludeDuplicateHint: 'Betrifft alle {{count}} Instanzen von „{{name}}“ — Quartz kann einzelne Duplikate hier nicht getrennt ausschließen.',
-    template: 'Frame/Template',
+    template: 'Frame',
     templateDefault: 'Standard',
     templateFullWidth: 'Volle Breite',
     templateMinimal: 'Minimal',
@@ -1143,10 +1143,10 @@ export default {
       unassignedWarning: 'Nicht zugewiesen: {{slots}}. Komponenten für diese Positionen werden in diesem Frame nicht angezeigt.',
       neverVisibleWarning: 'Auf keinem Breakpoint sichtbar: {{areas}}. Diese Bereiche werden nirgends gerendert.',
       nameRequired: 'Bitte einen Frame-Namen vergeben.',
-      nameCollision: 'Dieser Name ist bereits vergeben (Standard-Templates oder ein anderer eigener Frame).',
+      nameCollision: 'Dieser Name ist bereits vergeben (ein eingebautes Frame oder ein anderes eigenes).',
       deleteFrame: 'Diesen Frame löschen',
       deleteConfirmAction: 'Frame löschen',
-      deleteConfirm: 'Frame „{{name}}“ wirklich löschen? Seitentypen, die ihn referenzieren, fallen dann auf das Standard-Template zurück.',
+      deleteConfirm: 'Frame „{{name}}“ wirklich löschen? Seitentypen, die ihn benutzen, fallen dann auf das Standard-Frame zurück.',
       preview: {
         pageContent: 'Seiteninhalt'
       }
@@ -1526,7 +1526,7 @@ export default {
       webhookUrl: 'Webhook-URL',
       secretUnchangedPlaceholder: 'unverändert lassen'
     },
-    outputDir: 'Ausgabeverzeichnis',
+    outputDir: 'Ausgabeordner',
     outputDirPlaceholder: 'Standard: public/ im Projekt',
     outputDirShared: 'Derselbe Ordner wie unter Vorschau & Build.',
     diffHeading: 'Änderungen',

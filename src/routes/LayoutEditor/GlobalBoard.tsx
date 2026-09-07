@@ -216,6 +216,16 @@ export default function GlobalBoard({
     // (appendDuplicateToPosition needs the index) - so it resolves the same way as a placed item.
     const index = id.startsWith(PALETTE_PREFIX) ? Number(id.slice(PALETTE_PREFIX.length)) : Number(id)
     if (id.startsWith(PALETTE_PREFIX)) return config.plugins[index]?.name ?? id
+    // A frame area bound to a group is `<position>#<group>` (see dropId), and it has a name of its
+    // own on the board. Without this the whole id fell through to the plugin lookup, `Number()`
+    // made NaN of it, and a drag onto such an area was announced as the literal string
+    // "left#custom-8" - the one place in this file where a screen reader heard an internal
+    // identifier instead of the thing it names.
+    const [head, group] = id.split('#')
+    if (group) {
+      const area = (activeAreas ?? []).find((a) => a.slot === head && a.group === group)
+      return area?.name ?? group
+    }
     if ((POSITIONS as string[]).includes(id)) return t(`positions.${id}`, id)
     return config.plugins[index]?.name ?? id
   }

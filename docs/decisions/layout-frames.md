@@ -281,3 +281,60 @@ Der Anlass war ein Verlust: die beiden Bereiche waren von Hand im Example-Projek
 half, denn keiner hatte sie: `saveFrame` nimmt nur für ein *neues* Frame eine Aufnahme, das
 Bearbeiten eines bestehenden nicht. **Was im Werkstattprojekt bleiben soll, gehört ins Skript** —
 das ist die Regel, und dieser Absatz ist ihr Beleg.
+
+### Was das Benutzen fand, was das Lesen nicht fand (2026-09-07)
+
+Sieben Punkte durchgegangen, an der gebauten App und an echten Builds. Drei waren Fehler, zwei
+Befunde ohne Fix, zwei in Ordnung.
+
+**Die rohe ID im Ohr.** `describeDragId` löst eine Drag-ID in einen Namen auf. Die neuen
+Ablageziele heißen `<position>#<gruppe>`; das ist nicht die Palette, `Number()` macht `NaN` daraus,
+und in `POSITIONS` steht es auch nicht — also fiel es durch auf die Plugin-Suche und gab die ID
+zurück. Ein Screenreader hörte beim Ziehen **„left#custom-8"**. Nach dem Fix, an der laufenden App
+mit der Tastatur gemessen: „search liegt über custom-8." und „search bei custom-8 abgelegt."
+Gefunden wurde das durch Lesen, aber nur weil ich danach gesucht habe — bemerkt hätte es erst
+jemand, der die App benutzt.
+
+**Eine Position, deren Bereiche alle eine Gruppe haben, verliert alles andere.** Kein Fall, den der
+Vertrag verbietet, und keiner, den irgendetwas gemeldet hätte. Gemessen: `left` mit zwei
+Gruppen-Bereichen und keinem einfachen nahm den Spacer, den Dunkelmodus- und den Lesemodus-Schalter
+von **jeder** der 20 Seiten — Editor stumm, Build-Log stumm. Jetzt sagen es beide: der Editor
+strukturell („Ohne einfachen Bereich: …", er kennt die Komponenten nicht), der Build mit der Zahl.
+Die Meldung zählt *Einträge*, nicht Komponenten: einer davon kann die Flex einer anderen Gruppe
+sein, und in die kann sie nicht hineinsehen — eine zu kleine Zahl wäre schlimmer als ein vages Wort.
+
+**Zwei Bereiche mit demselben Namen kosten das ganze Raster.** Ein Bereichsname *ist* die
+`grid-area`, und zwei Bereiche mit einem Namen setzen ihn auf zwei Rechtecke. CSS verlangt ein
+einziges, also verwirft der Browser nicht den Namen, sondern **die ganze Deklaration**. Am echten
+Build im Browser gemessen, nach einem Umbenennen:
+
+    grid-template-areas: none
+    grid-template-columns: 0px 0px 0px 0px 1248px
+    left / page-body / after-body: alle drei bei top 256, bottom 1007
+
+Das Frame verliert also nicht einen Bereich, sondern seine Anordnung. Der Editor verweigert das
+Speichern jetzt, so wie er es bei einem doppelten *Frame*-Namen schon tat — derselbe Fehler eine
+Ebene tiefer. Vorbestehend, nicht durch die Gruppen entstanden; erreichbar mit einem Umbenennen.
+
+**Zwei Befunde ohne Fix**, weil beide eine Entscheidung sind und keine Panne:
+
+- *Ein Gruppen-Bereich, der nur auf Desktop platziert ist, nimmt seine Komponenten auf Tablet und
+  Mobil von der Seite.* Der Editor platziert einen neuen Bereich auf dem Breakpoint, den man gerade
+  bearbeitet — der Normalfall ist also genau dieser. Im erzeugten CSS nachgesehen:
+  `.qgframe-area-custom-8 { display: none }` in beiden schmalen Blöcken. Für einen einfachen Bereich
+  war das immer so und fällt auf (die Seitenleiste fehlt); für einen Gruppen-Bereich fehlen
+  *Komponenten*, und die sind woanders auch nicht. `neverVisibleWarning` greift nicht, sie ist ja
+  auf Desktop sichtbar.
+- *Der Hinweis am neuen Schalter liegt im blau getönten Auswahl-Panel und kommt auf 4,37:1*, wo die
+  bestehenden Hinweise auf weißem Grund 4,76 erreichen (beide 11px, beide `--text-muted`, gemessen
+  in Hell). Unter der AA-Schwelle von 4,5, und es liegt am Ort, nicht am Token: es ist der erste
+  Hinweis überhaupt in diesem Panel.
+
+**In Ordnung:** eine Komponente per Maus in einen Gruppen-Bereich ziehen (Explorer wechselte von
+`left` nach `custom-8`, Config bekam `group: custom-8`), und der Dunkelmodus der neuen Bedienelemente
+(Schalter-Label 8,48, Hinweis 4,91, Badge 11,49 — im Dunkeln also alle drei über AA).
+
+Nebenbei gemessen und **nicht** geändert: `GlobalBoard` übergibt seinem `DndContext` gar keine
+`sensors`, anders als der Frame-Builder. Der Tastatur-Sensor läuft damit auf dnd-kits Vorgabe von
+25px je Pfeildruck — die Gruppen-Bereiche sind erreichbar, aber es brauchte rund 28 Tastendrücke.
+Vorbestehend und einen eigenen Durchgang wert.

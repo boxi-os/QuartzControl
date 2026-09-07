@@ -1150,10 +1150,14 @@ export default {
       visibleOnBreakpoint: 'Visible on {{breakpoint}}',
       overlapError: 'This area overlaps an existing area.',
       unassignedWarning: 'Not assigned: {{slots}}. Components for these slots will not render in this frame.',
+      homelessWarning:
+        'No plain area for: {{slots}}. Anything in that slot and in no area of its own renders on no page at all.',
       doubledWarning:
         'Assigned twice: {{slots}}. Each of these areas shows the same components, so they appear more than once on the page.',
       neverVisibleWarning: 'Not visible on any breakpoint: {{areas}}. These areas will not render anywhere.',
       nameRequired: 'Please give the frame a name.',
+      areaNameCollision:
+        'Two areas are called “{{names}}”. An area name may only appear once — otherwise the frame loses its whole grid, not just one area.',
       nameCollision: 'This name is already taken (a built-in frame, or another custom one).',
       deleteFrame: 'Delete this frame',
       deleteConfirmAction: 'Delete frame',

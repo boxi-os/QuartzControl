@@ -250,6 +250,29 @@ export default function FrameBuilder({
     return (frames ?? []).some((f) => f.id !== def.id && f.frameName === def.frameName)
   }
 
+  /**
+   * Two areas sharing a name, which blocks the save rather than warning.
+   *
+   * An area's name is its `grid-area`, and two areas carrying one name put it on two rectangles of
+   * the grid. CSS requires a named area to be a single rectangle, so the browser rejects the whole
+   * `grid-template-areas` declaration - not the one name, the declaration. Measured on a real
+   * build after renaming one area to match another: `grid-template-areas` computed to `none`, the
+   * tracks collapsed to `0px 0px 0px 0px 1248px`, and every area sat at the same place with the
+   * same height. The frame does not lose an area, it loses its layout.
+   *
+   * That is more than a warning underneath the grid is worth, and the editor already refuses to
+   * save a frame whose *own* name is taken - this is the same kind of mistake, one level down.
+   */
+  function duplicateAreaNames(def: GridFrameDefinition): string[] {
+    const seen = new Set<string>()
+    const twice = new Set<string>()
+    for (const area of def.areas) {
+      if (seen.has(area.name)) twice.add(area.name)
+      seen.add(area.name)
+    }
+    return [...twice]
+  }
+
   function updateLayout(patch: Partial<GridBreakpointLayout>): void {
     if (!editing) return
     const layout = editing.breakpoints[activeBreakpoint]
@@ -484,6 +507,11 @@ export default function FrameBuilder({
       setMessage(t('layoutEditor.frameBuilder.nameCollision'))
       return
     }
+    const twice = duplicateAreaNames(editing)
+    if (twice.length > 0) {
+      setMessage(t('layoutEditor.frameBuilder.areaNameCollision', { names: twice.join(', ') }))
+      return
+    }
     setSaving(true)
     try {
       const result = await window.quartzGui.layoutFrames.save(projectPath, editing)
@@ -585,6 +613,14 @@ export default function FrameBuilder({
   // Only areas without a group double up - two group areas on one slot are the point of the
   // exercise, they show different components.
   const doubledSlots = SLOTS.filter((s) => visibleAreas.filter((a) => a.slot === s && !a.group).length > 1)
+  // The other half of that: a slot whose visible areas *all* have a group has nowhere to put the
+  // components that are in no group, and they then appear on no page at all. Measured on a real
+  // build - two group areas on `left` and no plain one took the spacer, the dark-mode switch and
+  // the reader-mode switch off every page, with nothing said anywhere. Structural, so the frame
+  // editor can see it without knowing which components the project has.
+  const homelessSlots = SLOTS.filter(
+    (s) => s !== 'pageBody' && visibleAreas.some((a) => a.slot === s && a.group) && !visibleAreas.some((a) => a.slot === s && !a.group)
+  )
   const unplacedAreas = editing.areas.filter((a) => {
     const p = layout.placements[a.id]
     return !p || p.hidden
@@ -939,6 +975,13 @@ export default function FrameBuilder({
           <p className="mt-4 text-xs text-amber-600 dark:text-amber-400">
             {t('layoutEditor.frameBuilder.unassignedWarning', {
               slots: unassignedSlots.map((s) => t(`positions.${s}`, s)).join(', ')
+            })}
+          </p>
+        )}
+        {homelessSlots.length > 0 && (
+          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+            {t('layoutEditor.frameBuilder.homelessWarning', {
+              slots: homelessSlots.map((s) => t(`positions.${s}`, s)).join(', ')
             })}
           </p>
         )}

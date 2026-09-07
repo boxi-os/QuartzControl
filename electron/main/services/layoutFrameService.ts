@@ -139,6 +139,26 @@ function contentsFor(area, list) {
     return area.group ? [] : list
   }
   if (area.group) {
+    // Nothing else in this position has an area to go to, so the components that are in no group
+    // are about to be dropped from every page. Measured on a real build: two group areas on
+    // \`left\` and no plain one took the spacer and both toggles off all 20 pages, and neither the
+    // editor nor the build said a word. The editor warns about the shape now; this says what it
+    // actually cost.
+    const plain = AREAS.filter((a) => a.slot === area.slot && !a.group)
+    if (plain.length === 0 && !warned.has("homeless:" + area.slot)) {
+      warned.add("homeless:" + area.slot)
+      const claimed = AREAS.filter((a) => a.slot === area.slot && a.group).map((a) => groups.indexOf(a.group))
+      const lost = list.filter((C, i) => C.name !== "Flex" || claimed.indexOf(flexes.indexOf(C)) === -1).length
+      if (lost > 0) {
+        // "entries", not "components": one of them may be another group's Flex, which is one
+        // entry and any number of components, and this cannot see inside it. An understated
+        // number would be worse than a vague noun.
+        console.warn(
+          \`[\${${JSON.stringify(def.frameName)}}] \${area.slot}: every area here has a group, so \${lost} entr\${lost === 1 ? "y" : "ies"} \` +
+            \`outside those groups render on no page. Give the position an area without a group to hold them.\`
+        )
+      }
+    }
     const rank = groups.indexOf(area.group)
     return rank === -1 ? [] : [flexes[rank]]
   }

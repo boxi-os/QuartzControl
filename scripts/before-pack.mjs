@@ -9,11 +9,11 @@
 // resources/git/current/ gespiegelt, weil `extraResources` einen festen Pfad braucht:
 // electron-builder kennt zwar Makros, aber ein falsch geratenes Makro fällt erst als fehlendes
 // git im fertigen Bundle auf - ein Verzeichnis, das der Haken selbst setzt, kann nicht danebengehen.
-import { cpSync, rmSync } from 'fs'
+import { cpSync, existsSync, rmSync } from 'fs'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 import { fetchGit } from './fetch-git.mjs'
-import { buildHandbook } from './build-handbook.mjs'
+import { buildHandbook, HANDBOOK_OUT } from './build-handbook.mjs'
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)))
 
@@ -45,6 +45,19 @@ export default async function beforePack(context) {
     console.log(`[handbuch] ${built.files} Dateien, ${built.megabytes} MB nach resources/handbook`)
   } catch (err) {
     console.warn(`[handbuch] NICHT gebaut: ${err.message}`)
-    console.warn('[handbuch] Diese Fassung wird ohne Handbuch gepackt.')
+    // Und dann auch wirklich ohne. `buildHandbook()` wirft, *bevor* es sein Ausgabeverzeichnis
+    // leert - ohne diese Zeile nimmt `extraResources` mit, was vom letzten geglückten Lauf noch
+    // dort liegt, und die App bekäme ein Handbuch, das eine andere Fassung beschreibt, während
+    // das Bau-Log sagt, sie habe keines. Genau das Versprechen, für das es überhaupt mitreist
+    // ("passt immer zu der Fassung, die gerade installiert ist"), an der einen Stelle, an der es
+    // gebrochen werden kann. Ein frischer Klon merkt davon nichts: dort gibt es das Verzeichnis
+    // noch nicht.
+    const stale = existsSync(HANDBOOK_OUT)
+    if (stale) rmSync(HANDBOOK_OUT, { recursive: true, force: true })
+    console.warn(
+      stale
+        ? '[handbuch] Diese Fassung wird ohne Handbuch gepackt; die Kopie vom letzten Lauf wurde entfernt, damit keine veraltete mitreist.'
+        : '[handbuch] Diese Fassung wird ohne Handbuch gepackt.'
+    )
   }
 }

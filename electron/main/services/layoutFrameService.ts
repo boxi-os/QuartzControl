@@ -67,8 +67,8 @@ export async function getBreakpointWidths(projectPath: string): Promise<FrameBre
 // .quartz/plugins, so rewriting the files behind the symlink is all it takes.
 export async function saveBreakpointWidths(projectPath: string, widths: FrameBreakpointWidths): Promise<void> {
   await writeJsonFile(join(quartzGuiDir(projectPath), BREAKPOINTS_FILE), widths)
-  const groupLayouts = await readGroupLayouts(projectPath)
   await serialised(projectPath, async () => {
+    const groupLayouts = await readGroupLayouts(projectPath)
     for (const def of await listFrames(projectPath)) {
       await writeFrameFiles(projectPath, def, widths, groupLayouts)
     }
@@ -377,13 +377,16 @@ async function writeFrameFiles(
 export async function writeAllFrames(projectPath: string): Promise<string[]> {
   const problems: string[] = []
   try {
-    const frames = await listFrames(projectPath)
-    if (frames.length === 0) return problems
-    const [widths, groupLayouts] = await Promise.all([
-      getBreakpointWidths(projectPath),
-      readGroupLayouts(projectPath, problems)
-    ])
+    if ((await listFrames(projectPath)).length === 0) return problems
+    // Read *inside* the queue, not before it. Reading first and queueing after leaves a window in
+    // which two callers both read and the one holding the older config writes last - the files
+    // would then be whole, ordered, and stale, which is the failure the queue exists to prevent.
     await serialised(projectPath, async () => {
+      const frames = await listFrames(projectPath)
+      const [widths, groupLayouts] = await Promise.all([
+        getBreakpointWidths(projectPath),
+        readGroupLayouts(projectPath, problems)
+      ])
       for (const def of frames) {
         await writeFrameFiles(projectPath, def, widths, groupLayouts)
       }
@@ -485,9 +488,9 @@ export async function saveFrame(
   // possibly a pre-breakpoint export - so migrate defensively here too, not just in listFrames().
   const def = migrateGridFrameDefinition(rawDef)
   const isNew = !existsSync(frameDir(projectPath, def.id))
-  const widths = await getBreakpointWidths(projectPath)
-  const groupLayouts = await readGroupLayouts(projectPath)
-  await serialised(projectPath, () => writeFrameFiles(projectPath, def, widths, groupLayouts))
+  await serialised(projectPath, async () =>
+    writeFrameFiles(projectPath, def, await getBreakpointWidths(projectPath), await readGroupLayouts(projectPath))
+  )
   // Only newly created frames need registering - `quartz plugin add` symlinks the directory into
   // .quartz/plugins/<id> once; editing an existing frame just rewrites the files the symlink
   // already points at, so the build picks up the change on its next run with no CLI call needed.

@@ -21,6 +21,7 @@ import { EMPTY_LOG_LINES, useLogStore } from '../state/store'
 import { useStickyState } from '../state/uiState'
 import { formatBytes, formatRelativeTime } from '../utils/format'
 import { serverErrorText } from '../utils/serverStatus'
+import HandbookLink from '../components/HandbookLink'
 
 // `host` is only meaningful as Quartz's `--remoteDevHost`: an override for the live-reload
 // websocket URL when previewing through a tunnel/remote host, which makes the browser connect
@@ -186,6 +187,7 @@ export default function BuildServer(): JSX.Element {
   return (
     <div className="grid gap-6">
       <PageHeader
+        handbook={<HandbookLink page="preview" />}
         icon={TAB_ICONS.server}
         title={t('projectLayout.tabs.server')}
         description={t('projectLayout.descriptions.server')}

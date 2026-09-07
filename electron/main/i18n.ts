@@ -19,6 +19,12 @@ const STRINGS = {
     menuHelp: 'Hilfe',
     menuSave: 'Speichern',
     menuSettings: 'Einstellungen…',
+    menuHandbook: 'Handbuch',
+    handbookMissingTitle: 'Das Handbuch fehlt in dieser Installation',
+    handbookMissingDetail:
+      'Es reist normalerweise mit der App mit. Dass es fehlt, heißt, dass diese Fassung ohne das Handbuch gepackt wurde — am schnellsten hilft, die App neu zu installieren.',
+    handbookOpenFailedTitle: 'Das Handbuch ließ sich nicht öffnen',
+    handbookOpenFailedDetail: 'Es ist vorhanden, aber der Browser hat es nicht angenommen: {{error}}',
     menuQuartzDocs: 'Quartz-Dokumentation',
     menuPluginCatalog: 'Plugin-Katalog',
     menuDataFolder: 'Datenordner von QuartzControl öffnen',
@@ -53,11 +59,11 @@ const STRINGS = {
     buildDirIsHome: 'Das ist dein Benutzerordner.',
     buildDirReserved: 'Dieser Ordner gehört zum Projekt und wird gebraucht.',
     buildDirRefused:
-      'In „{{dir}}“ kann nicht gebaut werden: {{why}} Jeder Build löscht sein Ausgabeverzeichnis vollständig. Bitte einen eigenen Ordner wählen, z. B. „public“ oder „dist“.',
+      'In „{{dir}}“ kann nicht gebaut werden: {{why}} Jeder Build löscht seinen Ausgabeordner vollständig. Bitte einen eigenen Ordner wählen, z. B. „public“ oder „dist“.',
     buildDirConfirmTitle: 'Ordner wird geleert',
     buildDirConfirmMessage: 'In „{{dir}}“ bauen?',
     buildDirConfirmDetail:
-      'Darin liegen {{count}} Einträge, die nicht nach einem Quartz-Build aussehen. Jeder Build löscht sein Ausgabeverzeichnis vollständig — das lässt sich nicht rückgängig machen.',
+      'Darin liegen {{count}} Einträge, die nicht nach einem Quartz-Build aussehen. Jeder Build löscht seinen Ausgabeordner vollständig — das lässt sich nicht rückgängig machen.',
     buildDirConfirmCancel: 'Abbrechen',
     confirmCancel: 'Abbrechen',
     buildDirConfirmProceed: 'Ordner leeren und bauen',
@@ -235,6 +241,12 @@ const STRINGS = {
     menuHelp: 'Help',
     menuSave: 'Save',
     menuSettings: 'Settings…',
+    menuHandbook: 'Handbook',
+    handbookMissingTitle: 'This installation has no handbook',
+    handbookMissingDetail:
+      'It normally travels with the app. Its absence means this build was packaged without it — reinstalling the app is the quickest fix.',
+    handbookOpenFailedTitle: 'The handbook could not be opened',
+    handbookOpenFailedDetail: 'It is there, but the browser did not take it: {{error}}',
     menuQuartzDocs: 'Quartz documentation',
     menuPluginCatalog: 'Plugin catalog',
     menuDataFolder: 'Open QuartzControl’s data folder',
@@ -265,11 +277,11 @@ const STRINGS = {
     buildDirIsHome: 'That is your home folder.',
     buildDirReserved: 'That folder belongs to the project and is needed.',
     buildDirRefused:
-      'Cannot build into “{{dir}}”: {{why}} Every build wipes its output directory completely. Please pick a folder of its own, e.g. “public” or “dist”.',
+      'Cannot build into “{{dir}}”: {{why}} Every build wipes its output folder completely. Please pick a folder of its own, e.g. “public” or “dist”.',
     buildDirConfirmTitle: 'Folder will be emptied',
     buildDirConfirmMessage: 'Build into “{{dir}}”?',
     buildDirConfirmDetail:
-      'It holds {{count}} entries that do not look like a Quartz build. Every build wipes its output directory completely — this cannot be undone.',
+      'It holds {{count}} entries that do not look like a Quartz build. Every build wipes its output folder completely — this cannot be undone.',
     buildDirConfirmCancel: 'Cancel',
     confirmCancel: 'Cancel',
     buildDirConfirmProceed: 'Empty the folder and build',
@@ -430,7 +442,24 @@ export type MainStringKey = keyof (typeof STRINGS)['de']
 // runs at startup before the window exists and again on every settings save, which is exactly
 // where applyAppMenu() already rides along.
 let language: 'de' | 'en' = 'en'
+
 let refreshed = false
+
+/** Die Sprache, in der der Hauptprozess gerade spricht. Für Entscheidungen, die keine Zeichenkette
+ *  sind - etwa welche Fassung des Handbuchs geöffnet wird. */
+export function mainLanguage(): 'de' | 'en' {
+  // Derselbe Wächter wie in mainT() eine Funktion tiefer, und aus demselben Grund: Der Wert steckt
+  // vor refreshMainLanguage() für die Lebensdauer des Prozesses in der Vorgabesprache. Heute laufen
+  // beide Aufrufer nach whenReady; wer als Nächstes `const X = handbookFile()` auf Modulebene
+  // schreibt, bekäme ohne diese Zeile das englische Handbuch auf einer deutschen App und keinen
+  // Hinweis darauf - genau der Bug vom 2026-09-02, nur eine Tür weiter.
+  if (!refreshed) {
+    console.error(
+      'mainLanguage() resolved before refreshMainLanguage(); this answer is frozen in the default language. Call it inside a function, not at module scope.'
+    )
+  }
+  return language
+}
 
 export async function refreshMainLanguage(): Promise<void> {
   const setting = (await getSettings()).language

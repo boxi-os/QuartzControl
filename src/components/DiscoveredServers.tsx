@@ -99,9 +99,11 @@ export function DiscoveredServers({ ports, onChanged }: { ports: number[]; onCha
           ? t('buildServer.discovery.scanning')
           : discovery.state === 'unavailable'
             ? t('buildServer.discovery.unavailable')
-            : servers.length === 0
-              ? t('buildServer.discovery.none')
-              : t('buildServer.discovery.found', { count: servers.length })}
+            : discovery.state === 'partial'
+              ? t('buildServer.discovery.partial', { count: servers.length })
+              : servers.length === 0
+                ? t('buildServer.discovery.none')
+                : t('buildServer.discovery.found', { count: servers.length })}
       </div>
 
       {servers.length > 0 && (

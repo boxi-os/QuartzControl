@@ -58,6 +58,13 @@ extraResources:
     to: templates
   - from: resources/licenses
     to: licenses
+  # Das Benutzerhandbuch als gebaute Website (npm run build:handbook, 252 Dateien / 18 MB). Es
+  # reist mit statt als Link, damit es ohne Netz lesbar ist und immer zu der Fassung passt, die
+  # gerade installiert ist. Wie resources/git nicht im Repo, sondern beim Packen erzeugt - hier
+  # aber ohne Netz, aus dem Handbuch-Projekt (docs/handbuch.md). Fehlt es, packt beforePack mit
+  # einer Warnung weiter und der Menüpunkt sagt es.
+  - from: resources/handbook
+    to: handbook
 
 asar: true
 # Nothing here compiles against Electron's headers - ssh2 falls back to its pure-JS crypto when

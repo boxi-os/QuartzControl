@@ -18,6 +18,7 @@ import { formatIpcError } from '../components/ErrorSurface'
 import { ImportOutcome } from '../components/ImportOutcome'
 import { useStickyState } from '../state/uiState'
 import { TAB_ICONS } from './navConfig'
+import HandbookLink from '../components/HandbookLink'
 
 // Reading order for the user, which is not the order the parts are applied in (that one is
 // dependency-driven and lives in the contract): what the site looks like first, what it is built
@@ -46,7 +47,7 @@ export default function Templates(): JSX.Element {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader icon={TAB_ICONS.templates} title={t('templates.title')} description={t('templates.description')} />
+      <PageHeader icon={TAB_ICONS.templates} title={t('templates.title')} description={t('templates.description')} handbook={<HandbookLink page="templates" />} />
       {/* Two independent halves of the same job - width puts them side by side rather than
           stretching each one across the window. */}
       <div className="grid items-start gap-6 xl:grid-cols-2">

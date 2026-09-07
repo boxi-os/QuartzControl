@@ -59,7 +59,7 @@ import * as gitRuntime from '../services/gitRuntime'
 import * as settingsService from '../services/settingsService'
 import * as templatePackageService from '../services/templatePackage'
 import { applyTheme } from '../theme'
-import { applyAppMenu } from '../menu'
+import { applyAppMenu, openHandbook } from '../menu'
 import { mainT, type MainStringKey } from '../i18n'
 import { handle, handleNoArgs } from './handle'
 import * as s from './schemas'
@@ -586,6 +586,13 @@ export function registerIpcHandlers(): void {
   // main is the only side that knows where it is.
   handleNoArgs(IPC.dialogRevealUserData, () => {
     shell.showItemInFolder(join(app.getPath('userData'), 'settings.json'))
+  })
+
+  // Derselbe Weg wie der Menüpunkt Hilfe → Handbuch, und ausdrücklich dieselbe Funktion: Zwei
+  // Stellen, die denselben Pfad selbst zusammensetzen, laufen beim nächsten Umbau auseinander.
+  // Objekt-Argument, weil ein späterer optionaler Key hier dann eine Zeile ist und kein zweiter Slot.
+  handle(IPC.dialogOpenHandbook, t([z.optional(z.object({ page: z.optional(s.handbookPage) }))]), async (options) => {
+    await openHandbook(options?.page)
   })
 
   // The start screen links the Quartz documentation. `s.externalUrl` allows https and nothing

@@ -18,33 +18,12 @@ import { _electron as electron } from 'playwright-core'
 import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
+import { APP_ROUTES, PROJECT_ROUTES } from './routes.mjs'
 
 const APP_DIR = path.resolve(import.meta.dirname, '..')
 const SIZES = [
   { label: '1280x800', w: 1280, h: 800 },
   { label: '1728x1000', w: 1728, h: 1000 }
-]
-
-// Every route in App.tsx plus the sub-tabs, which are separate screens sharing a path: only one is
-// mounted at a time, so a page not listed here is never rendered by this test.
-const PROJECT_ROUTES = [
-  ['Übersicht', ''],
-  ['Konfiguration', '/config'],
-  ['Konfiguration · Content-Ordner', '/config?tab=content'],
-  ['Konfiguration · Übersetzungen', '/config?tab=localization'],
-  ['Layout', '/layout'],
-  ['Stile · Basis', '/styles'],
-  ['Stile · Community-Themes', '/styles?tab=theme'],
-  ['Stile · Variablen', '/styles?tab=variables'],
-  ['Stile · Eigenes CSS', '/styles?tab=customCss'],
-  ['Vorlagen', '/templates'],
-  ['Plugins', '/plugins'],
-  ['Plugins · Marktplatz', '/plugins?tab=marketplace'],
-  ['Vorschau & Build', '/server'],
-  ['Git-Sync', '/sync'],
-  ['Veröffentlichen', '/publish'],
-  ['Updates', '/updates'],
-  ['Backups', '/backups']
 ]
 
 // Console noise that is not this app's doing and would otherwise fail every run.
@@ -137,8 +116,7 @@ async function run() {
   if (!projectId) console.warn('Kein registriertes Projekt gefunden - nur Startseite und Einstellungen werden geprüft.')
 
   const routes = [
-    ['Startseite', '/'],
-    ['Einstellungen', '/settings'],
+    ...APP_ROUTES,
     ...(projectId ? PROJECT_ROUTES.map(([l, r]) => [l, `/project/${projectId}${r}`]) : [])
   ]
 

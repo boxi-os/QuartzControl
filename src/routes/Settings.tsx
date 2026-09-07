@@ -28,6 +28,7 @@ import { useAsyncAction } from '../hooks/useAsyncAction'
 import { applyLanguagePreference } from '../i18n'
 import { formatBytes } from '../utils/format'
 import bundledGit from '@shared/bundled-git.json'
+import HandbookLink from '../components/HandbookLink'
 
 // Five named sections instead of one card with three fields. Two of them are here because the
 // thing they configure is *app*-level and had no app-level home: connections (connectionsService
@@ -78,7 +79,12 @@ export default function Settings(): JSX.Element {
             ← {t('common.back')}
           </button>
           <h1 className="mb-1 mt-2 text-2xl font-semibold">{t('settings.title')}</h1>
-          <p className="mb-6 text-ui text-text-muted">{t('settings.subtitle')}</p>
+          <p className="text-ui text-text-muted">{t('settings.subtitle')}</p>
+          {/* Diese Seite hat keinen PageHeader - sie gehört zu keinem Projekt -, aber denselben
+              Verweis: Was hier steht, erklärt Kapitel 2.5. */}
+          <div className="mb-6">
+            <HandbookLink page="settings" />
+          </div>
 
           <div className="flex flex-col gap-4">
             <AppearanceSection settings={settings} persist={persist} />

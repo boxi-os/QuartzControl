@@ -272,6 +272,7 @@ const api: QuartzGuiApi = {
     pickFile: (filters?: { name: string; extensions: string[] }[]) => ipcRenderer.invoke(IPC.dialogPickFile, filters),
     openPath: (path: string) => ipcRenderer.invoke(IPC.dialogOpenPath, path),
     revealUserData: () => ipcRenderer.invoke(IPC.dialogRevealUserData),
+    openHandbook: (options) => ipcRenderer.invoke(IPC.dialogOpenHandbook, options),
     openExternal: (url: string) => ipcRenderer.invoke(IPC.dialogOpenExternal, url),
     confirm: (options: ConfirmDialogOptions) => ipcRenderer.invoke(IPC.dialogConfirm, options)
   },

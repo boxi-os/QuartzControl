@@ -432,8 +432,13 @@ export interface ServerDiscovery {
    * 'unavailable' is its own answer, never an empty list: on Windows there is no `ps`, and a
    * failed scan must not read as "nothing is running" - see CLAUDE.md, "Kann nicht prüfen" ist
    * nie "alles gut".
+   *
+   * 'partial' is the same rule one step in: the process table was read, but for at least one
+   * candidate the socket table was not (no lsof on this machine, or /proc refused), so `servers`
+   * is real but short by an unknown number. Neither of the other two says that - 'ok' claims the
+   * list is complete, 'unavailable' would throw away servers that were actually found.
    */
-  state: 'ok' | 'unavailable'
+  state: 'ok' | 'partial' | 'unavailable'
   /** Why the scan could not answer. English, like every other diagnostic that describes a bug. */
   reason?: string
   servers: DiscoveredServer[]
@@ -1385,6 +1390,7 @@ export const IPC = {
 
   dialogPickFolder: 'dialog:pickFolder',
   dialogRevealUserData: 'dialog:revealUserData',
+  dialogOpenHandbook: 'dialog:openHandbook',
   dialogOpenExternal: 'dialog:openExternal',
   dialogConfirm: 'dialog:confirm',
 
@@ -1801,6 +1807,16 @@ export interface QuartzGuiApi {
     openPath(path: string): Promise<void>
     /** Shows Electron's userData directory in the OS file manager. Takes no path on purpose. */
     revealUserData(): Promise<void>
+    /**
+     * Opens the bundled handbook in the default browser. Takes no filesystem path for the same
+     * reason revealUserData does: there is exactly one handbook, and only main knows where it is.
+     * `page` names a page inside it ("4-gestaltung/04-variablen", no extension) so a screen can
+     * link the chapter that explains it; without one, the start page. A page that is not in the
+     * handbook falls back to the start page without a word - a link pointing nowhere is a mistake
+     * in the handbook, and the reader cannot act on it. The native dialog is for the two cases the
+     * reader can: this build was packaged without the handbook, or it could not be opened.
+     */
+    openHandbook(options?: { page?: string }): Promise<void>
     /** Opens an https URL in the default browser. Refused for anything else. */
     openExternal(url: string): Promise<void>
     /**

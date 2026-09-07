@@ -25,9 +25,10 @@ import appIcon from '../assets/app-icon.png'
 
 const TEMPLATES: NonNullable<CreateProjectOptions['template']>[] = ['default', 'obsidian', 'ttrpg', 'blog']
 
-// Two external links, opened through dialog.openExternal (https only, validated in main) rather
-// than an <a target="_blank"> relying on the window-open handler - an explicit, allow-listed
-// channel is the same treatment dialog.openPath already gets.
+// The two *external* links, opened through dialog.openExternal (https only, validated in main)
+// rather than an <a target="_blank"> relying on the window-open handler - an explicit,
+// allow-listed channel is the same treatment dialog.openPath already gets. The handbook link above
+// them is not one of these: it travels with the app, and main is the only side that knows where.
 const QUARTZ_DOCS = 'https://quartz.jzhao.xyz/'
 const PLUGIN_CATALOG = 'https://github.com/quartz-community'
 
@@ -813,6 +814,9 @@ function WhatYouCanDo({ environment }: { environment: EnvironmentInfo | null }):
         <CardHeading icon={BookOpen}>{t('home.aboutQuartz.title')}</CardHeading>
         <p className="mt-1.5 text-xs leading-relaxed text-text-muted">{t('home.aboutQuartz.body')}</p>
         <div className="mt-3 flex flex-col gap-1.5">
+          {/* Das eigene Handbuch zuerst: Es reist mit der App mit und beantwortet die Fragen, mit
+              denen jemand hier steht, bevor die zwei fremden Quellen an der Reihe sind. */}
+          <LinkButton onClick={() => void window.quartzGui.dialog.openHandbook()} label={t('home.aboutQuartz.handbook')} />
           <ExternalLink url={QUARTZ_DOCS} label={t('home.aboutQuartz.docs')} />
           <ExternalLink url={PLUGIN_CATALOG} label={t('home.aboutQuartz.catalog')} />
         </div>
@@ -839,10 +843,16 @@ function WhatYouCanDo({ environment }: { environment: EnvironmentInfo | null }):
 }
 
 function ExternalLink({ url, label }: { url: string; label: string }): JSX.Element {
+  return <LinkButton onClick={() => void window.quartzGui.dialog.openExternal(url)} label={label} />
+}
+
+// Sieht aus wie ein Link und ist ein Knopf - beide Ziele hier verlassen die App, das eine in den
+// Browser des Systems, das andere in eine Datei, die dort geöffnet wird.
+function LinkButton({ onClick, label }: { onClick: () => void; label: string }): JSX.Element {
   return (
     <button
       type="button"
-      onClick={() => void window.quartzGui.dialog.openExternal(url)}
+      onClick={onClick}
       className="flex w-fit items-center gap-1 text-ui text-blue-600 hover:underline dark:text-blue-400"
     >
       {label}

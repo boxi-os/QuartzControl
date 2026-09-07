@@ -493,6 +493,16 @@ export const externalUrl = z
     }
   }, { message: 'Nur https-URLs erlaubt' })
 
+// Welche Seite des Handbuchs geöffnet werden soll, als Pfad ohne Endung - "4-gestaltung/04-variablen".
+// Die Zeichenklasse allein trägt die Sicherheit nicht (sie verbietet zwar "..", aber ein Schema ist
+// der falsche Ort für die Frage, ob etwas im Zielverzeichnis liegt); menu.ts prüft nach dem Auflösen
+// noch einmal, dass der Pfad das Handbuch nicht verlässt.
+export const handbookPage = z
+  .string()
+  .min(1)
+  .max(200)
+  .regex(/^[A-Za-z0-9][A-Za-z0-9/_-]*$/, { message: 'Kein Handbuch-Pfad' })
+
 export const dialogFileFilters = z
   .array(z.object({ name: z.string().max(120), extensions: z.array(z.string().max(20)).max(50) }))
   .max(20)

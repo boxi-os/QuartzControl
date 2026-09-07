@@ -12,7 +12,36 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
 - `npm run build` — production build to `out/` (main, preload, renderer)
 - `npm run start` — preview a production build
 - `npm run typecheck` — `tsc --noEmit` against both `tsconfig.node.json` (main/preload) and `tsconfig.web.json` (renderer); there is no lint script and no unit tests in this repo
-- `npm run smoke` — launches the production build (so `npm run build` first) and visits every screen in `App.tsx`, sub-tabs included, at 1280x800 and 1728x1000, reporting uncaught exceptions, console errors, `ErrorSurface` toasts, the route error boundary, a horizontally scrolling layout and an empty page. Not a test suite and it asserts nothing about content — it answers one question, *does every screen still come up*, which is otherwise only answerable by opening all seventeen of them. Each size is a fresh launch because `setViewportSize()` does not resize an Electron `BrowserWindow`
+- `npm run smoke` — launches the production build (so `npm run build` first) and visits every screen in `App.tsx`, sub-tabs included, at 1280x800 and 1728x1000, reporting uncaught exceptions, console errors, `ErrorSurface` toasts, the route error boundary, a horizontally scrolling layout and an empty page. Not a test suite and it asserts nothing about content — it answers one question, *does every screen still come up*, which is otherwise only answerable by opening all nineteen of them. Each size is a fresh launch because `setViewportSize()` does not resize an Electron `BrowserWindow`
+- `npm run screenshots -- --demo --cards [--only <teil>] [--scheme dunkel|beide]` — nimmt jeden
+  Bildschirm für das Benutzerhandbuch auf und legt ihn im Handbuch-Vault ab. `--demo` legt dafür ein
+  frisches Profil in einem Wegwerf-Verzeichnis an (`--user-data-dir`) und trägt über dieselben
+  IPC-Pfade wie ein Klick zwei Projekte, drei Zugänge und drei Ziele ein
+  (`scripts/screenshot-demo.mjs`, alle Namen unter `example.com`). Ohne `--demo` zeigen die Bilder,
+  was auf diesem Rechner eingerichtet ist — inklusive echter Server. `--scenes` nimmt statt der
+  Routen die zehn Szenen auf, die eine Routenliste nicht trifft (`scripts/screenshot-scenes.mjs`):
+  Dialoge, Formulare, der Frame-Editor beim Ziehen, ein fertiger Build, der laufende Dev-Server.
+  Es **verlangt** `--demo`, weil es „Jetzt bauen" und „Starten" klickt und das sonst im echten
+  Projekt dieses Rechners täte (der Build leert dessen `public/`); wer genau das will, sagt
+  `--echtes-projekt` dazu. Ohne `--demo` schreibt das Skript die gewählte Sprache in das Profil des
+  Nutzers und **stellt sie danach zurück**, auch wenn die Aufnahme abbricht — vorher blieb dort
+  `de` stehen, wo `system` oder `en` stand.
+  Nicht gescriptet werden können die nativen Bestätigungsdialoge — sie sind Fenster des Systems,
+  kein DOM. Zwilling von `smoke.mjs`: gleicher
+  Launcher, gleiche Wartelogik, **gleiche Routenliste** aus `scripts/routes.mjs` — sonst zeigt das
+  Handbuch Bildschirme, die der Smoke-Test nicht mehr besucht. Zwei Dinge, die dabei gemessen sind:
+  eine Vollseiten-Aufnahme gibt es nicht (ein Fenster wird nicht höher als der Arbeitsbereich —
+  angefragt 2400 px, bekommen 923), deshalb nimmt `--cards` jede Karte einzeln auf; und die
+  **Zugänge-Karte wird nie automatisch aufgenommen**, weil sie echte Server, Benutzernamen und
+  Host-Key-Fingerprints des Rechners zeigt, auf dem das Skript läuft. Ablauf und Gliederung des
+  Handbuchs: [`docs/handbuch.md`](docs/handbuch.md)
+- `npm run build:handbook` — baut das Benutzerhandbuch aus seinem Quartz-Projekt nach
+  `resources/handbook/` (252 Dateien, 18 MB), von wo `extraResources` es in die App legt. Das
+  Handbuch reist mit statt als Link: Es ist ohne Netz lesbar und passt immer zu der Fassung, die
+  gerade installiert ist. Behandelt wie `resources/git` — gitignoriert und beim Packen erzeugt
+  (`beforePack`), nicht wie `resources/templates` im Repo, denn es ist ein Artefakt, dessen Bilder
+  bei jedem Textdurchgang neu entstehen. Anders als git lässt es sich **nicht** aus dem Netz holen;
+  fehlt das Projekt, warnt `beforePack` und packt weiter, und der Menüpunkt sagt es dem Nutzer
 - `npm run fetch:git` — holt das mitgelieferte git (dugite-native) für diesen Rechner nach
   `resources/git/<platform>-<arch>/` und dünnt es aus; beim Packen macht das `beforePack` von selbst
 - `npm run check:runtime -- <projektpfad>` — die eingebettete Node-Laufzeit gegen ein echtes Projekt:
@@ -28,6 +57,12 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   i18next renders a missing key *as the key* rather than failing, so a gap is invisible until someone
   opens the one screen state that uses it (`publish.pages.saveSettings`, found in the alpha test, was
   missing from both files and therefore in perfect parity)
+- `npm run check:handbook` — die Blockzitate des Benutzerhandbuchs gegen das, was die App wirklich
+  sagt. Existiert aus demselben Grund wie `check:i18n`, nur eine Ebene weiter: Ein Zitat, das die
+  App so nicht mehr sagt, sieht aus wie ein Beleg, und kein anderer Test sieht es, weil das
+  Handbuch außerhalb dieses Repos liegt. Prüft je Sprache gegen die passende Sprachdatei — beim
+  ersten Lauf gegen die englische Fassung fielen sieben Zitate durch, weil sie übersetzt statt
+  übernommen waren. Überspringt sich still, wenn der Vault fehlt
 - `npm run check:tokens -- [baseUrl]` — ändert jede Variable, die die Beispielvorlage schreibt, in
   einer *laufenden* Seite und zählt, wie viele berechnete Werte sich bewegen. Existiert, weil ein
   Token auf drei Arten wirkungslos sein kann, ohne dass die Datei es zeigt: niemand liest es, eine
@@ -149,6 +184,30 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   sitzt in `buttons[0]` mit `cancelId: 0` - `defaultId` entscheidet unter macOS nicht, was Return tut.
   Der bestätigende Button ist nach der Aktion benannt („Snapshot löschen“), nie „OK“. Die Regel steht
   als Kommentar am Handler und am `Modal`-Primitive, damit sie nicht driftet.
+- **Das Benutzerhandbuch reist in der App mit, und nur der Hauptprozess weiß wo.** `handbookRoot()`
+  in `menu.ts` löst `process.resourcesPath` (gepackt) bzw. `resources/` im Repo (Entwicklung) auf;
+  `openHandbook()` prüft die Datei, bevor es sie öffnet — sonst bekäme der Nutzer bei einem Bau ohne
+  Handbuch eine Fehlerseite statt eines Satzes. Der Renderer bekommt dafür einen Kanal **ohne
+  Argument** (`dialog.openHandbook`, Muster: `revealUserData`) und ruft dieselbe Funktion: Zwei
+  Stellen, die den Pfad selbst zusammensetzen, laufen auseinander. Gemessen an der gepackten App am
+  2026-09-07: `isPackaged: true`, Pfad `Contents/Resources/handbook/index.html`, vorhanden;
+  Bundle 369 → 395 MB.
+- **Eine gebaute Website wird als Adresse geöffnet, nicht als Datei.** Was Quartz baut, ist für
+  einen Webserver geschrieben: `./tags/publishing` ohne Endung, `./4-gestaltung/` als Verzeichnis,
+  `/1-einstieg/` von der Wurzel *der Website*. Unter `file://` löst davon nichts auf — am
+  2026-09-08 über die 123 gebauten Seiten gezählt: von 4876 Links zeigte **kein einziger** auf eine
+  Datei (377 extern, 951 auf ein Verzeichnis, 2937 auf einen Namen ohne Datei, 611 auf die Wurzel
+  des Dateisystems), und Chrome blockierte die Modul-Skripte gleich mit („origin 'null' … blocked
+  by CORS policy"), also Suche, Explorer, Sprachwechsel und Dunkelmodus. Deshalb liefert
+  `handbookServer.ts` das Handbuch über http auf `127.0.0.1` mit einem Port vom Betriebssystem aus
+  und löst die drei Formen auf (Datei, `dir/index.html`, `name.html`), und `openHandbook()` ruft
+  `shell.openExternal`. Das löst zwei Fragen mit derselben Antwort: `http:` geht **immer** an den
+  Browser, während `shell.openPath` auf eine `.html` die Anwendung startet, die das System für
+  `public.html` führt — bei jemandem, der Websites baut, gern ein Editor. Nach der Umstellung
+  gemessen: 4499 von 4499 internen Links antworten mit 200, keine Konsolenfehler, und durch die
+  gebaute App vier Aufrufe des Kanals auf einen Server. Der Server bindet nur die Loopback-Adresse,
+  antwortet nur auf GET und HEAD, prüft die Einbettung nach `resolve()`/`relative()` und sendet
+  **kein** `Access-Control-Allow-Origin`.
 - **Fenster:** ein Fenster, `hiddenInset` nur auf macOS, `will-navigate` erlaubt nur das eigene
   Dokument, `setWindowOpenHandler` gibt nur http(s) an den Browser, CSP ohne externe Hosts. Theme
   wird in Main über `nativeTheme.themeSource` gesetzt, *vor* `createWindow()`.
@@ -315,12 +374,38 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   ist eine Geste, die man kennen muss. Messungen in
   [`plugins-and-config.md`](docs/decisions/plugins-and-config.md) und
   [`layout-frames.md`](docs/decisions/layout-frames.md).
-- **Ein Wort, ein Name.** Vokabular ist eine Tabelle (`positions`), nicht pro Seite. Deutsch „…“,
+- **Ein Wort, ein Name — und zwar über App und Handbuch hinweg.** Vokabular ist eine Tabelle
+  (`positions`), nicht pro Seite. Am 2026-09-07 fielen dabei vier Begriffe auf, die je zwei Dinge
+  meinten: „Baustein“ (Komponente auf der Seite / Teil eines Vorlagenpakets), „Vorlage“
+  (Quartz-Startvorlage / `.qtpl`), „Frame/Template“ und „Ausgabeverzeichnis“ neben
+  „Ausgabeordner“. Der Tell war jedes Mal derselbe: Das Handbuch musste eine Warnung schreiben
+  („nicht zu verwechseln mit…“). Eine solche Warnung ist der Hinweis auf den Fehler, nicht seine
+  Lösung. Deutsch „…“,
   Englisch “…”, Gedankenstrich als Em-Dash. Jeder Nutzertext steht in `de.ts`/`en.ts`
   (Schlüssel-Parität) oder `electron/main/i18n.ts`; zod- und `console.error`-Texte
   bleiben Englisch, weil sie Bugs beschreiben, nicht Eingaben.
 - **Ein Fachbegriff bekommt eine Zeile darunter** (`Field`/`Toggle` `hint`); ein Begriff, auf dem
   eine Seite ruht, eine `InfoNote` oben, gedeckelt auf 95ch.
+- **Ein Hinweis sagt, was passiert — nicht, warum es technisch so ist.** Höchstens zwei Sätze; die
+  Mechanik gehört ins Handbuch. **Das Kapitel nennt aber nicht der Hinweis, sondern die Seite:**
+  `PageHeader` nimmt einen `handbook`-Knoten, und die Seiten reichen `<HandbookLink page="…" />`
+  herein (bei Unterreitern das Kapitel des offenen Reiters, Tabelle `HANDBOOK` je Seite). Dreizehn
+  Hinweise, die je ein Kapitel nennen, wären dreizehn Stellen, die beim nächsten Umbau des
+  Handbuchs veralten — und gesucht wird die Erklärung ohnehin zu einem Bildschirm, nicht zu einem
+  Feld. Am 2026-09-07 an der laufenden App nachgemessen: 20 Bildschirme mit Verweis, jeder auf eine
+  Seite, die es gibt, keiner mit Rückfall auf die Startseite; ohne Verweis bleibt die Startseite,
+  die den Link schon in ihrer Quartz-Karte trägt. Ein Begriff aus der Maschinenwelt
+  steht nur da, wo der Nutzer ihn zum Entscheiden braucht: „Host-Key“ auf der Veröffentlichen-Seite
+  ja, „ungelayert“ im Variablen-Tab nein. Ein Bestätigungsdialog hat drei Teile — die Frage, ein
+  Satz Folgen, ein Satz Rückweg. Ausgenommen sind die Sätze, die eine Verwechslung verhindern, die
+  Daten kostet (Snapshot ≠ Git-Sync, verknüpfter Vault wird nicht gesichert, ein Duplikat erbt keine
+  Ziele); die bleiben lang. Gemessen am 2026-09-07: 1475 Nutzersätze, 192 über 120 Zeichen — und die
+  Länge war nicht das Problem, sondern die 75, die Mechanik erklären statt der Entscheidung.
+  Messungen in [`i18n-and-vocabulary.md`](docs/decisions/i18n-and-vocabulary.md), der Ablauf und die
+  Gliederung des Benutzerhandbuchs in [`docs/handbuch.md`](docs/handbuch.md). Das Handbuch ist
+  zweisprachig, und **es übersetzt auch seine Pfade** — deshalb nennt ein Verweis im Seitenkopf eine
+  Kennung aus `src/data/handbookPages.ts` und keinen Pfad; `HandbookLink` löst sie über die
+  aufgelöste Sprache auf, der Menüpunkt über `mainLanguage()`.
 - **Sidebar nach Tätigkeit, eine Seite ist eine Aufgabe.** Einrichtung, Gestaltung, Veröffentlichung,
   Wartung; ein Screen, der eine Karte wäre, ist ein Sub-Tab. Die Übersicht ist eine Statusseite, die
   nichts kostet: nur lokale Reads beim Mount, genau einer ins Netz, nie awaited.
@@ -395,14 +480,46 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Befunde aus den Reviews (Stand 2026-09-07)
+## Befunde aus den Reviews (Stand 2026-09-08)
 
-Alle vier Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
+Alle fünf Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden,
-[`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs und
-[`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` und `-07-`) stehen als Dokumente unverändert; die
-Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft gilt, steht oben als Regel.
+[`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs,
+[`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht und
+[`docs/REVIEW-2026-09-08.md`](docs/REVIEW-2026-09-08.md) mit seinen acht (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-`, `-07-` und `-08-`) stehen als Dokumente unverändert;
+die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft gilt, steht oben als
+Regel.
+
+**Das fünfte Review traf das Herzstück des Diffs, den es las.** Ein Befund der Stufe Mittel und
+sieben niedrige; der mittlere war, dass das mitgereiste Handbuch unter `file://` eine Seite ohne
+Ausgang ist — von 4876 Links zeigte kein einziger auf eine Datei. Alle acht sind abgearbeitet,
+jeder mit einer Vorher-Messung; was daraus als Regel bleibt, steht oben in den passenden
+Abschnitten:
+
+- **Eine Messung reicht nur so weit wie die Frage, die sie stellt.** Dass `openPath` mit dem
+  richtigen Pfad gerufen wird, war gemessen — abgefangen im Hauptprozess, „statt zweimal einen
+  Browser zu öffnen". Genau der Browser war die Messung. Wer eine Übergabe an etwas außerhalb der
+  App prüft, prüft, was das andere Ende damit tut, nicht nur, was übergeben wurde.
+- **Eine gebaute Website wird als Adresse geöffnet, nicht als Datei** — Regel oben unter
+  Prozessgrenze, samt den Zahlen.
+- **Ein Aufräumschritt, der nach dem Wurf käme, läuft nie.** `buildHandbook()` wirft, bevor es sein
+  Ausgabeverzeichnis leert; also packte der `catch` daneben die Kopie des letzten Laufs mit,
+  während sein Log „wird ohne Handbuch gepackt" schrieb. Wer einen Fehlerpfad „weiter" nennt, sagt
+  dazu, in welchem Zustand er weitergeht.
+- **Ein Dialog beschreibt den Zustand, in dem er erscheint.** „Fehlt in dieser Installation" stand
+  an einer Stelle, an der die Datei zwei Zeilen vorher nachgewiesen worden war — und empfahl eine
+  Neuinstallation gegen ein Problem, das sie nicht berührt.
+- **Eine Warnung „nicht zu verwechseln mit…" ist der Befund, nicht seine Lösung** — auch wenn sie
+  in der App steht statt im Handbuch. Wo zwei Dinge sich ein Wort teilen, gibt das kleinere den
+  Namen ab: aus der „Quartz-Startvorlage" wurde das „Quartz-Grundgerüst", weil „Vorlage" der
+  Vorlagen-Seite gehört.
+- **Ein Skript verändert auf dem Rechner des Nutzers nichts, was ihm nicht gehört** — und wenn es
+  etwas leihen muss, gibt es es in einem `finally` zurück. Was ein echtes Projekt baut oder
+  startet, verlangt ein ausdrückliches Flag; „praktisch immer zusammen mit --demo" ist eine
+  Dokumentation, keine Sperre.
+- **Ein Wächter gehört an jede Tür zu demselben Zustand.** `mainT()` hatte ihn, `mainLanguage()`
+  las denselben Cache ohne ihn.
 
 **Das vierte Review las den Diff, den das dritte hinterlassen hatte** — seine sechs Fixes, von
 niemandem sonst gelesen. Ein Befund der Stufe Mittel, sieben niedrige, und der mittlere war eine
@@ -449,17 +566,27 @@ Die drei niedrigen: der vierte Fundort der Zahl zehn (die Bausteine sind seit `b
 im gepflegten Vault stand sie noch sechsmal), ein Dry-Run, der verschwieg, was der Import ablehnen
 wird, und eine Nadel, deren eigenes Beispiel sie nicht traf.
 
-**Das nächste Review misst ab `review-2026-09-07`.** Der Tag gehört auf den Stand, den das vierte
-Review vor sich hatte — `1994811`, den letzten Merge vor diesen Fixes —, nach derselben Regel, die
-schon beim dritten galt: Der Ausgangsstand ist das, was gelesen wurde, nicht das, was danach
-entstanden ist. `review-2026-09-06` sitzt entsprechend auf `1bd69dc`; er war einmal 67 Commits
-früher auf `0b0fb96` gesetzt und wurde verschoben, weil jener Stand gemessen, aber nicht gelesen
-war.
+**Der Auftrag für das fünfte Review steht** in
+[`docs/REVIEW-2026-09-08-auftrag.md`](docs/REVIEW-2026-09-08-auftrag.md). Sein Diff hat zwei
+Schichten: die acht Fixes des vierten Reviews, die niemand gelesen hat, und eine
+Dokumentations-Sitzung, aus der mehr App-Code entstand, als der Name vermuten lässt — ein neuer
+IPC-Kanal, der Renderer-Eingabe zu einem Dateipfad macht, eine Änderung an der Verpackung, fünf
+neue Skripte und rund fünfzig geänderte Nutzertexte. 45 Dateien, +2043/−187.
 
-**Die acht Fixes dieses Reviews liegen bewusst dahinter.** Sie sind gemessen, jeder mit Vorher und
-Nachher, und von niemandem sonst gelesen — die größten Eingriffe sind der Dateiname des
-Server-Logs (jetzt pro Lauf, mit Aufräumen) und die Server-Erkennung, die einen Vorgabeport nur
-noch nimmt, wenn der Prozess ihn hält. Sie gehören damit in den Diff des nächsten Auftrags.
+**Das nächste Review misst ab `review-2026-09-08`.** Der Tag sitzt auf `0c76d6e`, dem Stand, den
+das fünfte Review vor sich hatte, nach derselben Regel wie seine drei Vorgänger: Der Ausgangsstand
+ist das, was gelesen wurde, nicht das, was danach entstanden ist. So sitzt `review-2026-09-07` auf
+`1994811`, dem letzten Merge vor den Fixes des vierten Reviews, und `review-2026-09-06` auf
+`1bd69dc`; Letzterer war einmal 67 Commits früher auf `0b0fb96` gesetzt und wurde verschoben, weil
+jener Stand gemessen, aber nicht gelesen war.
+
+**Die acht Fixes des fünften Reviews liegen bewusst dahinter.** Sie sind gemessen, jeder mit
+Vorher und Nachher, und von niemandem sonst gelesen — der größte Eingriff ist der Handbuch-Server
+(ein neuer Dienst im Hauptprozess, ein `will-quit`-Haken, `openExternal` statt `openPath`), dazu
+die dritte Antwort `'partial'` im Vertrag der Server-Suche und ein `/proc`-Weg, den diese Maschine
+nicht messen kann. Sie gehören damit in den Diff des nächsten Auftrags. Dasselbe galt eine Runde
+vorher für die acht Fixes des vierten Reviews — den Dateinamen des Server-Logs pro Lauf und die
+Server-Erkennung, die einen Vorgabeport nur nimmt, wenn der Prozess ihn hält.
 
 Von dem, was beide Reviews als „beiläufig, kein sed“ führen, sind die Farbpaare am 2026-09-05
 abgearbeitet, soweit sie eine Umbenennung waren: 322 Paare, die wörtlich das Token buchstabierten,

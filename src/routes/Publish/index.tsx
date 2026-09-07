@@ -30,6 +30,7 @@ import { rsyncBlockReason } from '@shared/rsyncSupport'
 import { remotePathProblem } from '@shared/remotePath'
 import { TAB_ICONS } from '../navConfig'
 import GithubPages from './GithubPages'
+import HandbookLink from '../../components/HandbookLink'
 
 // GitHub Pages used to be a built-in choice that bypassed the target list entirely. It is now a
 // regular git-branch target like any other: the special case was the one thing left that made this
@@ -389,7 +390,7 @@ export default function Publish(): JSX.Element {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader icon={TAB_ICONS.publish} title={t('publish.title')} description={t('publish.description')} />
+      <PageHeader icon={TAB_ICONS.publish} title={t('publish.title')} description={t('publish.description')} handbook={<HandbookLink page="publish" />} />
 
       {/* The Zugang/Ziel split was only explained inside the target form, i.e. after the user had
           already had to pick one of the two. The link belongs in the same paragraph: connections

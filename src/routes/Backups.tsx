@@ -9,6 +9,7 @@ import { useAsyncAction } from '../hooks/useAsyncAction'
 import { formatBytes } from '../utils/format'
 import { useStickyState } from '../state/uiState'
 import { TAB_ICONS } from './navConfig'
+import HandbookLink from '../components/HandbookLink'
 
 function SnapshotRow({
   snapshot,
@@ -170,6 +171,7 @@ export default function Backups(): JSX.Element {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
+        handbook={<HandbookLink page="snapshots" />}
         icon={TAB_ICONS.backups}
         title={t('projectLayout.tabs.backups')}
         description={t('projectLayout.descriptions.backups')}

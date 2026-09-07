@@ -9,10 +9,11 @@
 // resources/git/current/ gespiegelt, weil `extraResources` einen festen Pfad braucht:
 // electron-builder kennt zwar Makros, aber ein falsch geratenes Makro fällt erst als fehlendes
 // git im fertigen Bundle auf - ein Verzeichnis, das der Haken selbst setzt, kann nicht danebengehen.
-import { cpSync, rmSync } from 'fs'
+import { cpSync, existsSync, rmSync } from 'fs'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 import { fetchGit } from './fetch-git.mjs'
+import { buildHandbook, HANDBOOK_OUT } from './build-handbook.mjs'
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)))
 
@@ -34,4 +35,29 @@ export default async function beforePack(context) {
   // Bundle von 26 MB auf über 1 GB.
   cpSync(dest, current, { recursive: true, dereference: false, verbatimSymlinks: true })
   console.log(`[git] für ${platform}-${arch} nach resources/git/current gespiegelt`)
+
+  // Das Benutzerhandbuch. Anders als git lässt es sich nicht aus dem Netz holen - es entsteht aus
+  // einem Quartz-Projekt, das nur auf der Maschine des Betreuers liegt (docs/handbuch.md). Deshalb
+  // warnen und weiterpacken statt abbrechen: Ein Bau ohne Handbuch ist unvollständig, aber
+  // benutzbar, und der Menüpunkt sagt es dem Nutzer statt ins Leere zu greifen.
+  try {
+    const built = buildHandbook()
+    console.log(`[handbuch] ${built.files} Dateien, ${built.megabytes} MB nach resources/handbook`)
+  } catch (err) {
+    console.warn(`[handbuch] NICHT gebaut: ${err.message}`)
+    // Und dann auch wirklich ohne. `buildHandbook()` wirft, *bevor* es sein Ausgabeverzeichnis
+    // leert - ohne diese Zeile nimmt `extraResources` mit, was vom letzten geglückten Lauf noch
+    // dort liegt, und die App bekäme ein Handbuch, das eine andere Fassung beschreibt, während
+    // das Bau-Log sagt, sie habe keines. Genau das Versprechen, für das es überhaupt mitreist
+    // ("passt immer zu der Fassung, die gerade installiert ist"), an der einen Stelle, an der es
+    // gebrochen werden kann. Ein frischer Klon merkt davon nichts: dort gibt es das Verzeichnis
+    // noch nicht.
+    const stale = existsSync(HANDBOOK_OUT)
+    if (stale) rmSync(HANDBOOK_OUT, { recursive: true, force: true })
+    console.warn(
+      stale
+        ? '[handbuch] Diese Fassung wird ohne Handbuch gepackt; die Kopie vom letzten Lauf wurde entfernt, damit keine veraltete mitreist.'
+        : '[handbuch] Diese Fassung wird ohne Handbuch gepackt.'
+    )
+  }
 }

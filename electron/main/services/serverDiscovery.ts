@@ -1,7 +1,7 @@
 import { execFile } from 'child_process'
 import { createConnection } from 'net'
 import { get as httpGet } from 'http'
-import { readlink } from 'fs/promises'
+import { readdir, readFile, readlink } from 'fs/promises'
 import { resolve } from 'path'
 import treeKill from 'tree-kill'
 import type { DiscoveredServer, ServerDiscovery, ServerKillResult } from '@shared/ipc-contract'
@@ -234,29 +234,105 @@ function groupCandidates(rows: PsRow[]): Candidate[] {
   return [...groups.values()]
 }
 
-// The TCP ports a process listens on. Asked only of a candidate that did not name its port, so the
-// common case - a server this app or a user started with --port, which every one of them carries -
-// still costs no lsof at all.
-async function listeningPorts(pid: number): Promise<number[]> {
+/**
+ * The TCP ports a process listens on, or "could not find out" - which is not the same as none.
+ *
+ * Asked only of a candidate that did not name its port, so the common case - a server this app or
+ * a user started with --port, which every one of them carries - still costs nothing at all.
+ *
+ * The two answers used to be one: a catch turned "lsof is not installed" and "this process holds
+ * no port" into the same empty list, so a scan on a machine without lsof reported `state: 'ok'`
+ * with a hand-started `npx quartz build --serve` missing from it, and its 8080 showing up at most
+ * under occupiedPorts as a port nobody explains. On macOS lsof is always there; on Linux - the
+ * other platform v1 ships - it is a package a minimal Debian or Ubuntu does not install, and
+ * "kann nicht prüfen" is never "alles gut" (CLAUDE.md).
+ */
+type PortLookup = { ports: number[] } | { ports: null; reason: string }
+
+async function listeningPorts(pid: number): Promise<PortLookup> {
+  // Linux answers this out of /proc, so the one platform where lsof may be missing does not need
+  // it - the same trade readCwd already makes one screen up.
+  if (process.platform === 'linux') return listeningPortsProc(pid)
+  return listeningPortsLsof(pid)
+}
+
+async function listeningPortsProc(pid: number): Promise<PortLookup> {
+  // Which sockets *this* process holds: /proc/<pid>/fd/* are symlinks reading "socket:[<inode>]".
+  // Needed because /proc/<pid>/net/tcp lists the whole network namespace, not one process.
+  const inodes = new Set<string>()
   try {
-    // -Fn prints one field per line; -P and -n keep ports and addresses numeric, so the line is
-    // `n*:8080` or `n127.0.0.1:8080` and never a service name from /etc/services.
-    const stdout = await execFileText(
-      'lsof',
-      ['-a', '-p', String(pid), '-iTCP', '-sTCP:LISTEN', '-P', '-n', '-Fn'],
-      LSOF_TIMEOUT_MS
-    )
-    const ports: number[] = []
-    for (const line of stdout.split('\n')) {
-      const match = /^n.*:(\d{1,5})$/.exec(line)
-      if (match) ports.push(Number(match[1]))
+    for (const fd of await readdir(`/proc/${pid}/fd`)) {
+      try {
+        const match = /^socket:\[(\d+)\]$/.exec(await readlink(`/proc/${pid}/fd/${fd}`))
+        if (match) inodes.add(match[1])
+      } catch {
+        // A descriptor can close between the readdir and the readlink. One we cannot read is one
+        // we do not count; the process is alive, so this is not "cannot check".
+      }
     }
-    return ports
-  } catch {
-    // lsof missing, or no open file matched - "no port established" either way, which is what the
-    // caller does with an empty list.
-    return []
+  } catch (error) {
+    return { ports: null, reason: `/proc/${pid}/fd: ${(error as Error).message}` }
   }
+  if (inodes.size === 0) return { ports: [] }
+
+  const ports: number[] = []
+  let tables = 0
+  for (const table of ['tcp', 'tcp6']) {
+    let text: string
+    try {
+      text = await readFile(`/proc/${pid}/net/${table}`, 'utf-8')
+    } catch {
+      // tcp6 is absent on a kernel built without IPv6; tcp is not, and `tables` below catches the
+      // case where neither could be read.
+      continue
+    }
+    tables++
+    for (const line of text.split('\n').slice(1)) {
+      // sl local_address rem_address st … inode - st 0A is TCP_LISTEN, the address is hex.
+      const columns = line.trim().split(/\s+/)
+      if (columns.length < 10 || columns[3] !== '0A' || !inodes.has(columns[9])) continue
+      const port = Number.parseInt(columns[1].split(':')[1] ?? '', 16)
+      if (port >= 1 && port <= 65535) ports.push(port)
+    }
+  }
+  if (tables === 0) return { ports: null, reason: `/proc/${pid}/net/tcp not readable` }
+  return { ports: [...new Set(ports)] }
+}
+
+async function listeningPortsLsof(pid: number): Promise<PortLookup> {
+  // -Fn prints one field per line; -P and -n keep ports and addresses numeric, so the line is
+  // `n*:8080` or `n127.0.0.1:8080` and never a service name from /etc/services.
+  const args = ['-a', '-p', String(pid), '-iTCP', '-sTCP:LISTEN', '-P', '-n', '-Fn']
+  const { error, stdout, stderr } = await new Promise<{
+    error: (Error & { code?: string | number | null; killed?: boolean }) | null
+    stdout: string
+    stderr: string
+  }>((settle) => {
+    execFile('lsof', args, { timeout: LSOF_TIMEOUT_MS, maxBuffer: 8 * 1024 * 1024, encoding: 'utf-8' }, (e, out, err) =>
+      settle({ error: e, stdout: out, stderr: err })
+    )
+  })
+  if (error) {
+    // Exit 1 with nothing on stderr is lsof's way of saying "no open file matched" - a real
+    // answer, and the only one of these that means "holds no port". A missing binary (ENOENT), a
+    // timeout (killed) or an error it bothered to describe are all "could not find out".
+    if (error.code === 1 && stderr.trim() === '') return { ports: [] }
+    const why = error.code === 'ENOENT' ? 'not installed' : stderr.trim() || error.message
+    return { ports: null, reason: `lsof: ${why}` }
+  }
+  const ports: number[] = []
+  for (const line of stdout.split('\n')) {
+    const match = /^n.*:(\d{1,5})$/.exec(line)
+    if (match) ports.push(Number(match[1]))
+  }
+  return { ports: [...new Set(ports)] }
+}
+
+interface ResolvedGroups {
+  groups: Group[]
+  /** Set when at least one candidate's ports could not be read, so the list is short by an unknown
+   *  number of servers. English, like every other diagnostic that describes a bug. */
+  unavailable?: string
 }
 
 /**
@@ -270,23 +346,32 @@ async function listeningPorts(pid: number): Promise<number[]> {
  * it has to be confirmed - the process must actually hold the port for it to mean anything, and
  * the socket table is the only thing that knows.
  */
-async function resolveGroups(candidates: Candidate[]): Promise<Group[]> {
+async function resolveGroups(candidates: Candidate[]): Promise<ResolvedGroups> {
+  // Why the reason is carried out instead of swallowed: a candidate whose ports could not be read
+  // is dropped, exactly like one that holds none - that part is right, the default port stays a
+  // guess until something confirms it. What was wrong is the answer the caller then gave. A list
+  // short by an unknown number of servers must not be handed over as `state: 'ok'`.
+  let unavailable: string | undefined
   const groups = await Promise.all(
     candidates.map(async (candidate): Promise<Group | null> => {
       if (candidate.argPort !== undefined) {
         return { root: candidate.root, listener: candidate.listener, port: candidate.argPort, wsPort: candidate.argWsPort }
       }
       const held = await listeningPorts(candidate.listener.pid)
-      if (!held.includes(DEFAULT_PORT)) return null
+      if (held.ports === null) {
+        unavailable ??= held.reason
+        return null
+      }
+      if (!held.ports.includes(DEFAULT_PORT)) return null
       return {
         root: candidate.root,
         listener: candidate.listener,
         port: DEFAULT_PORT,
-        wsPort: candidate.argWsPort ?? (held.includes(DEFAULT_WS_PORT) ? DEFAULT_WS_PORT : undefined)
+        wsPort: candidate.argWsPort ?? (held.ports.includes(DEFAULT_WS_PORT) ? DEFAULT_WS_PORT : undefined)
       }
     })
   )
-  return groups.filter((group): group is Group => group !== null)
+  return { groups: groups.filter((group): group is Group => group !== null), unavailable }
 }
 
 export async function discoverServers(ports: number[] = []): Promise<ServerDiscovery> {
@@ -303,7 +388,8 @@ export async function discoverServers(ports: number[] = []): Promise<ServerDisco
     return { state: 'unavailable', reason: `ps failed: ${(error as Error).message}`, servers: [], occupiedPorts: [] }
   }
 
-  const groups = await resolveGroups(groupCandidates(rows))
+  const resolved = await resolveGroups(groupCandidates(rows))
+  const groups = resolved.groups
   const owned = ownedServerPids()
   const projects = await projectStore.listProjects()
   const now = Date.now()
@@ -336,6 +422,10 @@ export async function discoverServers(ports: number[] = []): Promise<ServerDisco
   const occupiedPorts = (await Promise.all(unexplained.map(async (port) => ((await probeTcp(port)) ? port : null))))
     .filter((port): port is number => port !== null)
 
+  // 'partial' rather than 'ok': the servers below are real, and there may be more that this
+  // machine would not say. The third answer exists because the other two both lie here - 'ok'
+  // claims the list is complete, 'unavailable' throws away servers that were found.
+  if (resolved.unavailable) return { state: 'partial', reason: resolved.unavailable, servers, occupiedPorts }
   return { state: 'ok', servers, occupiedPorts }
 }
 
@@ -358,7 +448,9 @@ export async function killServer(pid: number): Promise<ServerKillResult> {
   // because the click carries only a pid; being a root of a resolved group is the condition.
   let groups: Group[]
   try {
-    groups = await resolveGroups(groupCandidates(await readProcessTable()))
+    // Only the groups, not the reason: a candidate whose ports could not be read is not a group,
+    // and what may not be offered may not be signalled either.
+    groups = (await resolveGroups(groupCandidates(await readProcessTable()))).groups
   } catch {
     return { stopped: false }
   }

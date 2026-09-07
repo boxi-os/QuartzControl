@@ -35,6 +35,7 @@ import { Badge, Button, Card, PageHeader } from '../components/ui'
 import { TAB_ICONS } from './navConfig'
 import { formatBytes, formatRelativeTime } from '../utils/format'
 import { serverErrorText } from '../utils/serverStatus'
+import HandbookLink from '../components/HandbookLink'
 
 // Same detection quartz-themes/core convention as Styles/Theme.tsx - the active theme isn't its
 // own config field, it's read off whichever @quartz-themes/* plugin entry is enabled.
@@ -397,6 +398,7 @@ export default function ProjectDashboard(): JSX.Element {
   return (
     <div className="grid gap-4">
       <PageHeader
+        handbook={<HandbookLink page="overview" />}
         icon={TAB_ICONS.overview}
         title={t('projectLayout.tabs.overview')}
         description={t('projectLayout.descriptions.overview')}

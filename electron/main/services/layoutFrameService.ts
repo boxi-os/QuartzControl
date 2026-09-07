@@ -124,9 +124,11 @@ const GROUP_LAYOUTS = ${JSON.stringify(groupLayouts)}
 // neither does componentData. Hence GROUP_LAYOUTS: every ordering this config can produce, and
 // pickGroupOrder to work out which one arrived.
 const POSITIONS = ["header", "beforeBody", "afterBody", "left", "right", "footer"]
-// The positions this frame divides. One without a group area has nothing to work out, so it never
-// takes part in the decision and never warns - it used to, and a page type that merely cleared it
-// was enough to spend the position's one warning before a real break could have it.
+// The positions this frame divides. Only these are ever taken apart, and only these decide when
+// the counts of all six cannot (see pickGroupOrder). A position without a group area still speaks
+// as evidence, but never about its own contents - it has none to get wrong, and a page type that
+// merely cleared it was enough to spend the position's one warning before a real break could
+// have it.
 const SPLIT_POSITIONS = POSITIONS.filter((p) => AREAS.some((a) => a.slot === p && a.group))
 const warned = new Set()
 
@@ -134,8 +136,8 @@ function orderOf(order, position) {
   return order[position] || []
 }
 
-function countsLike(order, counts) {
-  return POSITIONS.every((p) => orderOf(order, p).length === counts[p])
+function countsLike(order, counts, positions) {
+  return positions.every((p) => orderOf(order, p).length === counts[p])
 }
 
 function splitsAlike(a, b) {
@@ -150,29 +152,67 @@ function countsOf(order) {
   return SPLIT_POSITIONS.map((p) => p + " " + orderOf(order, p).length).join(", ")
 }
 
+function renderedOf(counts, positions) {
+  return positions.map((p) => p + " " + counts[p]).join(", ")
+}
+
 function groupsOf(order) {
   return SPLIT_POSITIONS.map((p) => p + ": " + (orderOf(order, p).join(", ") || "no group")).join("; ")
 }
 
 // The only thing a frame can measure about the layout it was handed is how many Flexes each
-// position holds, so that is the whole key: the candidate whose group counts match everywhere is
-// the one this page was built with. Exactly one match is the answer; several that name the same
-// groups in the same order are the same answer said twice. Anything else means guessing, and a
-// guess here is the one failure that cannot be seen on the built page - two areas quietly showing
-// each other's contents - so it falls back to not splitting at all and says why.
+// position holds, so that is the whole key: the candidate whose group counts match is the one this
+// page was built with. Exactly one match is the answer; several that name the same groups in the
+// same order are the same answer said twice. Anything else means guessing, and a guess here is the
+// one failure that cannot be seen on the built page - two areas quietly showing each other's
+// contents - so it falls back to not splitting at all and says why.
+//
+// Matched in two passes, and the second pass is what keeps the first one honest. All six positions
+// are the sharper key: one this frame does not divide can still be the only thing telling two page
+// types apart, so it is asked first. But a count that disagrees *there* says nothing about the
+// positions that are divided - and matching everywhere and nowhere else meant a group on \`footer\`
+// that quartz renders no flex for emptied both group areas of \`header\` on every page of the site
+// (measured: 201 of 201). So when nothing matches everywhere, the divided positions are asked on
+// their own: the page still gets the division its own counts support, and the disagreement outside
+// them is said out loud instead of paid for. Only ever a widening of a match set that was empty -
+// a candidate that fits all six is still preferred over one that merely fits the divided ones.
 function pickGroupOrder(bySlot) {
   if (SPLIT_POSITIONS.length === 0) return null
   const counts = {}
   for (const p of POSITIONS) counts[p] = (bySlot[p] || []).filter((C) => C.name === "Flex").length
-  const matches = GROUP_LAYOUTS.filter((c) => countsLike(c.order, counts))
-  if (matches.length === 1) return matches[0].order
-  if (matches.length > 1 && matches.every((c) => splitsAlike(c.order, matches[0].order))) return matches[0].order
+  let matches = GROUP_LAYOUTS.filter((c) => countsLike(c.order, counts, POSITIONS))
+  const relaxed = matches.length === 0
+  if (relaxed) matches = GROUP_LAYOUTS.filter((c) => countsLike(c.order, counts, SPLIT_POSITIONS))
+  const order =
+    matches.length === 1 || (matches.length > 1 && matches.every((c) => splitsAlike(c.order, matches[0].order)))
+      ? matches[0].order
+      : null
   // Once per distinct shape, not once per page: the same mismatch is true for every one of the
   // 100-odd pages built with this layout, and a warning repeated 300 times reads like noise.
-  const key = matches.length + "@" + SPLIT_POSITIONS.map((p) => p + " " + counts[p]).join(", ")
+  if (order && !relaxed) return order
+  if (order) {
+    // Divided as usual - but the config describes flexes somewhere this frame does not divide that
+    // the page did not render. Nothing here changes what the areas show; it is said because "no
+    // groups" and "a group whose members never render" look the same on the built page, and this
+    // is the one place that can still tell them apart.
+    const off = POSITIONS.filter((p) => SPLIT_POSITIONS.indexOf(p) === -1 && orderOf(order, p).length !== counts[p])
+    const key = "undivided@" + renderedOf(counts, off)
+    if (!warned.has(key)) {
+      warned.add(key)
+      console.warn(
+        "[" + FRAME_NAME + "] " +
+          off.map((p) => p + " renders " + counts[p] + " group flex(es), not the " + orderOf(order, p).length + " " +
+            nameOf(matches[0]) + " describes").join("; ") + ". " +
+          "This frame divides none of those positions, so " + SPLIT_POSITIONS.join(" and ") + " was divided as usual. " +
+          "Usually a group whose members all got disabled, or an entry whose layout.group quartz renders no flex for."
+      )
+    }
+    return order
+  }
+  const key = matches.length + "@" + renderedOf(counts, SPLIT_POSITIONS)
   if (!warned.has(key)) {
     warned.add(key)
-    const rendered = SPLIT_POSITIONS.map((p) => p + " " + counts[p]).join(", ")
+    const rendered = renderedOf(counts, SPLIT_POSITIONS)
     if (matches.length === 0) {
       console.warn(
         "[" + FRAME_NAME + "] this page renders " + rendered + " group flex(es), which no layout in " +

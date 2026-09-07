@@ -366,8 +366,12 @@ export function migrateGridFrameDefinition(def: GridFrameDefinition | LegacyGrid
 // whose name is in no component registry (config-loader.ts:762, :773), and whether a name is
 // registered is knowable only inside quartz's own build. A plugin that declares `layout` without
 // being a component plugin, or one whose install failed, is such an entry - quartz renders no flex
-// for it, this counts its group, and the frame then falls back for that position with the message
-// pickGroupOrder writes. A fallback, not a swap; the count is what disagrees, never the order.
+// for it, this counts its group, and the counts stop matching. What that costs depends on where
+// the group sits: on a position the frame divides, no candidate fits and the whole page renders
+// undivided with the message pickGroupOrder writes; anywhere else it costs a warning and nothing
+// more, because pickGroupOrder asks all six positions first and the divided ones on their own
+// second - exactly so a break outside them cannot empty the areas inside them. A fallback, not a
+// swap; the count is what disagrees, never the order.
 //
 // `enabled` is read the way the *loader* reads it - `filter((e) => e.enabled)` on the parsed yaml,
 // so anything falsy is out. Two things about that, both measured rather than assumed. Quartz does

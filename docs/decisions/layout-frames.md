@@ -170,7 +170,9 @@ Vorgabe ihres Manifests platziert werden und die App die nicht kennt.
 Also bekommt das Frame nicht eine Ordnung, sondern alle, die diese Config hergibt
 (`groupLayoutCandidates()`): die globale und je eine pro Seitentyp mit `exclude` oder geleerter
 Position, gleiche fallen weg. Beim Rendern wählt `pickGroupOrder()` einmal pro Seite die
-Kandidatin, deren Gruppenzahlen zu allen sechs Positionen passen. Genau eine ist die Antwort;
+Kandidatin, deren Gruppenzahlen passen — in zwei Durchgängen: erst auf allen sechs Positionen, und
+nur wenn dort keine passt, auf den Positionen, die dieses Frame wirklich teilt (warum zwei, steht
+unten unter „Ein Bruch außerhalb der geteilten Positionen“). Genau eine ist die Antwort;
 mehrere, die auf den geteilten Positionen dieselben Gruppen in derselben Reihenfolge nennen, sind
 dieselbe Antwort zweimal. Alles andere heißt raten, und geraten wird nicht.
 
@@ -195,12 +197,62 @@ seitentyp-unabhängig, beide Kandidatinnen fallen zusammen, und alle vier Seiten
 auf.
 
 Zwei Nebenwirkungen, beide erwünscht: Eine Position, für die dieses Frame keinen Gruppen-Bereich
-hat, nimmt an der Entscheidung nicht teil und warnt nie — sie hat nichts aufzuteilen. Und der
+hat, wird nie aufgeteilt und warnt nie über ihren eigenen Inhalt — sie hat nichts aufzuteilen. (An
+der *Entscheidung* nimmt sie sehr wohl teil, und was das kostet, steht im nächsten Abschnitt.) Und der
 Warnplatz hängt jetzt an der gemessenen Gestalt, nicht nur an der Position: zwei verschiedene
 Brüche im selben Lauf sagen beide etwas, vorher verbrauchte der erste den Platz des zweiten.
 
 **Was bleibt:** `npx quartz build` von Hand kann eine Config lesen, die kein Wächter dieser App
 gesehen hat; dann fällt es auf die erste Zeile der Tabelle zurück, statt still zu vertauschen.
+
+### Ein Bruch außerhalb der geteilten Positionen darf die geteilten nicht leeren
+
+Der Abgleich über *alle sechs* Positionen war als Schlüssel gewollt und ist es weiterhin: Eine
+Position, die dieses Frame gar nicht teilt, kann das Einzige sein, was zwei Seitentypen
+auseinanderhält — leert einer davon `right`, unterscheiden sich die Kandidatinnen nur dort, und
+ohne diese Spalte wären beide gleich gut. Nur hieß „passt überall oder gar nicht“ eben auch: Stimmt
+die Zahl auf einer Position nicht, die das Frame nie anfasst, passt *keine* Kandidatin, und die
+Aufteilung fällt für die ganze Seite aus — auch für die Positionen, auf denen alles stimmt. Vor dem
+Umbau prüfte `contentsFor` je Position, ein Bruch auf `right` ließ `header` in Ruhe.
+
+Gemessen am echten Build (Kopie des Beispielprojekts, 266 Markdown-Dateien, 334 Seiten mit einem
+qgframe-Grid, davon 201 mit dem `editorial`-Frame; dessen Bereiche `custom-8` und `custom-9`
+tragen die Gruppen `brand` und `toolbar` auf `header`). Der Bruch ist ein von Hand geschriebener
+zweiter `backlinks`-Eintrag **ohne** `enabled:` mit `layout.group: gf` auf `footer`: `configService`
+liest ihn als eingeschaltet, die Kandidatin trägt also `footer: [gf]`, Quartz' Loader wirft ihn
+hinaus und rendert dort keine Flex.
+
+| | `custom-8` | `custom-9` | `header` | Meldung |
+| --- | --- | --- | --- | --- |
+| vorher | 0 | 0 | 2 | `header 2 … which no layout produces (the config as a whole: header 2)` |
+| jetzt | 1 | 1 | 0 | `footer renders 0 group flex(es), not the 1 …` |
+
+Je 201 von 201 Seiten. Die alte Meldung ist der zweite Teil des Befunds: `rendered` und `countsOf`
+liefen beide nur über die geteilten Positionen, also kam die Position, die den Ausschlag gab, in
+dem Satz nicht vor — und was blieb, war ein Widerspruch mit `header 2` auf beiden Seiten. Der
+Leser konnte daraus nicht ableiten, was er ändern soll.
+
+Also zwei Durchgänge: erst alle sechs, dann — nur wenn nichts passte — die geteilten allein. Das
+ist immer eine Erweiterung einer *leeren* Treffermenge, nie ein Ersatz; eine Kandidatin, die überall
+passt, gewinnt weiterhin gegen eine, die nur auf den geteilten Positionen passt. Beides
+nachgemessen, am erzeugten Modul wie am Build:
+
+| Fall | Ergebnis |
+| --- | --- |
+| gesunde Config (Grundfall) | 201 von 201 aufgeteilt, keine Warnung — Wort für Wort wie vorher |
+| Bruch auf `footer` (oben) | 201 von 201 aufgeteilt, eine Warnung, die `footer` nennt |
+| Bruch auf `header` selbst (Gruppe ohne Flex) | Rückfall wie bisher, Meldung ohne Widerspruch (`header 2` gegen `header 3`) |
+| Reihenfolge gekippt (`content` ohne `quartz-layout-box`, Gruppen ohne feste Priorität) | 201 von 201 Rückfall, genau eine Warnung — der Preis aus der Tabelle oben, unverändert |
+| zwei Seitentypen, nur über `right` unterscheidbar | weiter unterschieden: global wählt `[gx, gy]`, `p1` wählt `[gy, gx]` |
+
+Die letzte Zeile ist die Gegenprobe für den ersten Durchgang: Ohne ihn wären die beiden
+Kandidatinnen auf `header` gleich zahlreich und verschieden geordnet, also mehrdeutig, also
+Rückfall. Sie ist am Modul gemessen, weil das Beispielprojekt keinen solchen Seitentyp hat.
+
+Dass der neue Fall überhaupt eine Warnung bekommt, statt still durchzugehen, ist dieselbe Regel wie
+eine Ebene höher: „keine Gruppe hier“ und „eine Gruppe, deren Mitglieder nie rendern“ sehen auf der
+gebauten Seite gleich aus, und dies ist die einzige Stelle, die sie noch auseinanderhalten kann.
+Die Aufteilung selbst ändert die Warnung nicht — sie ist ein Hinweis, kein Rückfall.
 
 ### Ein Wächter, der scheitert, sagt es im Build-Log
 

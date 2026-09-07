@@ -9,6 +9,7 @@ import { Badge, Button, Card, CardHeading, PageHeader } from '../components/ui'
 import { formatIpcError } from '../components/ErrorSurface'
 import { primeStickyState } from '../state/uiState'
 import { TAB_ICONS } from './navConfig'
+import HandbookLink from '../components/HandbookLink'
 
 function shortCommit(commit?: string | null): string {
   return commit ? commit.slice(0, 7) : '—'
@@ -117,6 +118,7 @@ export default function Updates(): JSX.Element {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
+        handbook={<HandbookLink page="7-wartung/03-updates" />}
         icon={TAB_ICONS.updates}
         title={t('projectLayout.tabs.updates')}
         description={t('projectLayout.descriptions.updates')}

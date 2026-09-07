@@ -364,7 +364,14 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
 - **Ein Fachbegriff bekommt eine Zeile darunter** (`Field`/`Toggle` `hint`); ein Begriff, auf dem
   eine Seite ruht, eine `InfoNote` oben, gedeckelt auf 95ch.
 - **Ein Hinweis sagt, was passiert — nicht, warum es technisch so ist.** Höchstens zwei Sätze; die
-  Mechanik gehört ins Handbuch, der Hinweis nennt das Kapitel. Ein Begriff aus der Maschinenwelt
+  Mechanik gehört ins Handbuch. **Das Kapitel nennt aber nicht der Hinweis, sondern die Seite:**
+  `PageHeader` nimmt einen `handbook`-Knoten, und die Seiten reichen `<HandbookLink page="…" />`
+  herein (bei Unterreitern das Kapitel des offenen Reiters, Tabelle `HANDBOOK` je Seite). Dreizehn
+  Hinweise, die je ein Kapitel nennen, wären dreizehn Stellen, die beim nächsten Umbau des
+  Handbuchs veralten — und gesucht wird die Erklärung ohnehin zu einem Bildschirm, nicht zu einem
+  Feld. Am 2026-09-07 an der laufenden App nachgemessen: 20 Bildschirme mit Verweis, jeder auf eine
+  Seite, die es gibt, keiner mit Rückfall auf die Startseite; ohne Verweis bleibt die Startseite,
+  die den Link schon in ihrer Quartz-Karte trägt. Ein Begriff aus der Maschinenwelt
   steht nur da, wo der Nutzer ihn zum Entscheiden braucht: „Host-Key“ auf der Veröffentlichen-Seite
   ja, „ungelayert“ im Variablen-Tab nein. Ein Bestätigungsdialog hat drei Teile — die Frage, ein
   Satz Folgen, ein Satz Rückweg. Ausgenommen sind die Sätze, die eine Verwechslung verhindern, die

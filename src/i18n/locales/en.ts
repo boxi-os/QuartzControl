@@ -2,6 +2,7 @@ export default {
   common: {
     back: 'Back',
     save: 'Save',
+    handbookFor: 'Read this in the handbook',
     saving: 'Saving…',
     saved: 'Saved.',
     cancel: 'Cancel',

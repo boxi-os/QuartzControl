@@ -8,6 +8,7 @@ import { formatIpcError } from '../components/ErrorSurface'
 import { useAsyncAction } from '../hooks/useAsyncAction'
 import { useStickyState } from '../state/uiState'
 import { TAB_ICONS } from './navConfig'
+import HandbookLink from '../components/HandbookLink'
 
 // The branch `quartz sync --pull` fetches, hardcoded in the CLI itself
 // (quartz/cli/constants.js: QUARTZ_SOURCE_BRANCH = "v5"), not derived from what is checked out -
@@ -257,6 +258,7 @@ export default function GitSync(): JSX.Element {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
+        handbook={<HandbookLink page="6-veroeffentlichen/03-git-sync" />}
         icon={TAB_ICONS.sync}
         title={t('projectLayout.tabs.sync')}
         description={t('projectLayout.descriptions.sync')}

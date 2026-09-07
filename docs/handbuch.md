@@ -5,9 +5,8 @@ erklärt und im Vault `~/Obsidian/QuartzProjekte/Example` lebt
 (`scripts/example-template/README.md`).
 
 **Stand 2026-09-07:** Die acht Kapitel sind geschrieben (52 Seiten, 348 Wikilinks, alle auflösbar),
-bebildert (65 Aufnahmen, davon 38 in den Seiten), einmal gegen die App gegengelesen und in der App
-erreichbar. Offen ist die englische Fassung — und danach die Kapitelverweise in den App-Hinweisen,
-die jetzt ein Ziel hätten.
+bebildert (65 Aufnahmen, davon 38 in den Seiten), einmal gegen die App gegengelesen, in der App
+erreichbar und aus jedem Bildschirm heraus verlinkt. Offen ist die englische Fassung.
 
 Die Kapitel entstanden aus den Quellen — `de.ts`, die Routen, `electron-builder.yml`,
 `docs/decisions/` — und wurden danach gegen die **laufende** App gehalten: je Route die sichtbaren
@@ -270,3 +269,36 @@ An der **gepackten** App gemessen (2026-09-07): `isPackaged: true`, Pfad
 damit von 369 auf 395 MB wächst. Beide Wege rufen `shell.openPath` mit demselben Pfad — geprüft,
 indem `openPath` im Hauptprozess abgefangen und mitgeschrieben wurde, statt zweimal einen Browser
 zu öffnen.
+
+## Wie ein Bildschirm sein Kapitel nennt
+
+Jede Seite trägt unter ihrer Beschreibung einen Verweis auf das Kapitel, das *sie* erklärt —
+`PageHeader` nimmt dafür einen `handbook`-Knoten, so wie er `status` und `actions` schon nimmt, und
+die Seiten reichen `<HandbookLink page="4-gestaltung/04-variablen" />` herein. Bei einer Seite mit
+Unterreitern entscheidet der offene Reiter; welche Kapitel das sind, steht als Tabelle `HANDBOOK`
+oben in der Datei.
+
+**Warum die Seite und nicht der Hinweis.** Die Regel in CLAUDE.md sagte ursprünglich, der Hinweis
+nenne das Kapitel. Dreizehn Hinweise, die je ein Kapitel nennen, wären aber dreizehn Stellen, die
+beim nächsten Umbau des Handbuchs veralten — und gesucht wird die Erklärung ohnehin nicht zu einem
+Feld, sondern zu dem Bildschirm, auf dem man steht. Ein Verweis pro Seite deckt alle Hinweise
+darauf ab und steht an einer Stelle.
+
+**Warum ein Knoten und kein Pfad.** `ui.tsx` übersetzt nichts und spricht mit keinem Kanal; das ist
+der Grund, aus dem dort Primitives leben. `HandbookLink` tut beides und liegt deshalb daneben, in
+`src/components/`.
+
+**Warum ein Rückfall statt eines Fehlers.** Zeigt ein Verweis ins Leere, öffnet sich die Startseite
+des Handbuchs. Ein falscher Verweis ist ein Fehler im Handbuch, und der Nutzer kann nichts dafür.
+Derselbe Rückfall fängt einen Pfad ab, der aus dem Handbuch hinausführte — geprüft in `menu.ts`
+über `resolve()` und `relative()`, nach demselben Muster wie `containedPath()` im Vorlagen-Paket,
+und davor durch ein zod-Schema, das nur Buchstaben, Ziffern und `/-_` durchlässt.
+
+An der laufenden App gemessen (2026-09-07): 20 Bildschirme mit Verweis, jeder auf eine Seite, die
+es gibt, keiner mit Rückfall. Ohne Verweis bleibt die Startseite — die trägt den Link schon in
+ihrer Karte „Was ist Quartz?".
+
+**Nebenbei aufgefallen, nicht behoben:** `scripts/routes.mjs` führt Layout als *einen* Eintrag,
+während Konfiguration, Stile und Plugins ihre Unterreiter einzeln nennen. Der Smoke-Test besucht
+„Seitentypen" und „Eigene Frames" deshalb nie, und die Screenshots zeigen sie nicht. Für diese
+Messung waren sie von Hand ergänzt.

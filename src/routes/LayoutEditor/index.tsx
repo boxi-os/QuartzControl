@@ -14,6 +14,15 @@ import GlobalBoard from './GlobalBoard'
 import PageTypeOverrides from './PageTypeOverrides'
 import FrameBuilder from './FrameBuilder'
 import { derivePageTypes, hasPageTypeOverride } from './utils'
+import HandbookLink from '../../components/HandbookLink'
+
+// Zwei der drei Reiter teilen sich ein Kapitel: "Global" und "Seitentypen" beantworten dieselbe
+// Frage (was erscheint wo), die eigenen Frames die andere (wie ist die Seite aufgeteilt).
+const HANDBOOK = {
+  global: '4-gestaltung/07-layout-global-und-seitentypen',
+  pagetypes: '4-gestaltung/07-layout-global-und-seitentypen',
+  frames: '4-gestaltung/06-layout-frames'
+} as const
 
 type Tab = 'global' | 'pagetypes' | 'frames'
 const TAB_ORDER: Tab[] = ['global', 'pagetypes', 'frames']
@@ -173,6 +182,7 @@ export default function LayoutEditor(): JSX.Element {
   return (
     <div>
       <PageHeader
+        handbook={<HandbookLink page={HANDBOOK[tab]} />}
         icon={TAB_ICONS.layout}
         title={t('projectLayout.tabs.layout')}
         description={t('projectLayout.descriptions.layout')}

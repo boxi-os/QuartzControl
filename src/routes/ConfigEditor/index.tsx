@@ -13,6 +13,15 @@ import SiteSettings from './SiteSettings'
 import ProjectImage from './ProjectImage'
 import ContentFolder from './ContentFolder'
 import Localization from './Localization'
+import HandbookLink from '../../components/HandbookLink'
+
+// Welches Kapitel diesen Reiter erklärt. Der Verweis im Kopf folgt dem offenen Reiter, nicht der
+// Seite - drei Reiter, drei Kapitel.
+const HANDBOOK = {
+  site: '3-einrichtung/02-titel-adresse-und-verhalten',
+  content: '3-einrichtung/04-der-content-ordner',
+  localization: '3-einrichtung/05-uebersetzungen'
+} as const
 
 // The three things that describe *what* the site is rather than how it looks: its own settings,
 // where its notes come from, and the wording of its fixed interface texts. They used to be three
@@ -112,6 +121,7 @@ export default function ConfigEditor(): JSX.Element {
   return (
     <div className="flex flex-col">
       <PageHeader
+        handbook={<HandbookLink page={HANDBOOK[tab]} />}
         icon={TAB_ICONS.config}
         title={t('projectLayout.tabs.config')}
         description={t(`configEditor.descriptions.${tab}`)}

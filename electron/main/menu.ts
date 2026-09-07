@@ -1,6 +1,6 @@
 import { app, BrowserWindow, dialog, shell, Menu, type MenuItemConstructorOptions } from 'electron'
 import { existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { isAbsolute, join, relative, resolve } from 'node:path'
 import { IPC, type AppCommand } from '@shared/ipc-contract'
 import { mainT, refreshMainLanguage } from './i18n'
 
@@ -21,15 +21,35 @@ const PLUGIN_CATALOG = 'https://github.com/quartz-community'
  * Geöffnet wird es im Standardbrowser über `shell.openPath` - ein Pfad, keine URL, deshalb muss
  * hier nichts kodiert werden und ein Leerzeichen im Installationspfad tut nicht weh.
  */
-function handbookIndex(): string {
+function handbookRoot(): string {
   // Gepackt liegt es neben den anderen extraResources; in der Entwicklung im Repo, damit
   // `npm run dev` denselben Weg nimmt und ihn nicht erst beim Packen jemand ausprobiert.
   const base = app.isPackaged ? process.resourcesPath : join(app.getAppPath(), 'resources')
-  return join(base, 'handbook', 'index.html')
+  return join(base, 'handbook')
 }
 
-export async function openHandbook(): Promise<void> {
-  const index = handbookIndex()
+/**
+ * Die Datei zu einer Seite des Handbuchs, oder null, wenn der Pfad hinausführt.
+ *
+ * Das zod-Schema lässt kein ".." durch, aber ein Schema ist der falsche Ort für die Frage, ob ein
+ * Pfad in einem Verzeichnis liegt - dieselbe Trennung wie bei `containedPath()` im Vorlagen-Paket:
+ * entschieden wird über `resolve()` und `relative()`, hier wie dort.
+ */
+function handbookFile(page?: string): string | null {
+  const root = handbookRoot()
+  if (!page) return join(root, 'index.html')
+  const target = resolve(root, `${page}.html`)
+  const rel = relative(root, target)
+  if (!rel || rel.startsWith('..') || isAbsolute(rel)) return null
+  return target
+}
+
+export async function openHandbook(page?: string): Promise<void> {
+  // Eine Seite, die es nicht gibt, fällt auf die Startseite zurück statt in einen Fehler: Ein
+  // Verweis, der ins Leere zeigt, ist ein Fehler im Handbuch, und der Nutzer kann nichts dafür.
+  // Genauso ein Pfad, der hinausführt - der käme ohnehin nur aus einem Angriff.
+  const wanted = handbookFile(page)
+  const index = wanted && existsSync(wanted) ? wanted : handbookFile()!
   // Erst nachsehen, dann öffnen: `openPath` gibt bei einer fehlenden Datei eine Zeichenkette des
   // Betriebssystems zurück, und die erklärt niemandem, was los ist. Fehlen kann sie in genau einem
   // Fall - ein Bau ohne `resources/handbook`, den `beforePack` mit einer Warnung durchlässt.

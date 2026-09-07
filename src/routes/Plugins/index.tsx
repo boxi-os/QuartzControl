@@ -6,6 +6,13 @@ import { useStickyState } from '../../state/uiState'
 import { TAB_ICONS } from '../navConfig'
 import Installed from './Installed'
 import Marketplace from './Marketplace'
+import HandbookLink from '../../components/HandbookLink'
+
+// Beide Reiter stehen im selben Kapitel - der Marktplatz ist dort der letzte Abschnitt.
+const HANDBOOK = {
+  installed: '4-gestaltung/08-plugins',
+  marketplace: '4-gestaltung/08-plugins'
+} as const
 
 // Finding a plugin and configuring it is one job, so it is one page. Updating is not: that is
 // maintenance, it covers the Quartz core as much as the plugins, and it lives next to Backups.
@@ -40,6 +47,7 @@ export default function Plugins(): JSX.Element {
   return (
     <div className="flex flex-col">
       <PageHeader
+        handbook={<HandbookLink page={HANDBOOK[tab]} />}
         icon={TAB_ICONS.plugins}
         title={t('projectLayout.tabs.plugins')}
         description={t(`plugins.descriptions.${tab}`)}

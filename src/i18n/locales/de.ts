@@ -2,6 +2,7 @@ export default {
   common: {
     back: 'Zurück',
     save: 'Speichern',
+    handbookFor: 'Im Handbuch nachlesen',
     saving: 'Speichere…',
     saved: 'Gespeichert.',
     cancel: 'Abbrechen',

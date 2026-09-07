@@ -590,7 +590,10 @@ export function registerIpcHandlers(): void {
 
   // Derselbe Weg wie der Menüpunkt Hilfe → Handbuch, und ausdrücklich dieselbe Funktion: Zwei
   // Stellen, die denselben Pfad selbst zusammensetzen, laufen beim nächsten Umbau auseinander.
-  handleNoArgs(IPC.dialogOpenHandbook, () => openHandbook())
+  // Objekt-Argument, weil ein späterer optionaler Key hier dann eine Zeile ist und kein zweiter Slot.
+  handle(IPC.dialogOpenHandbook, t([z.optional(z.object({ page: z.optional(s.handbookPage) }))]), async (options) => {
+    await openHandbook(options?.page)
+  })
 
   // The start screen links the Quartz documentation. `s.externalUrl` allows https and nothing
   // else - shell.openExternal hands the URL to whatever handler the OS registered for its scheme.

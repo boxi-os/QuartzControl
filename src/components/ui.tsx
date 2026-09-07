@@ -561,18 +561,31 @@ export function Badge({
 // has to be in the document *before* its text arrives, which is why a page passes `null` rather than
 // leaving the prop out: an undefined prop means "this page has nothing to say" and renders no
 // region at all, while `null` mounts the empty one that a later "Gespeichert" drops into.
+/**
+ * Der Kopf einer Seite. `handbook` ist der Verweis auf das Kapitel, das *diesen* Bildschirm
+ * erklärt - ein Knoten wie `status` und `actions`, denn dieses Modul übersetzt nichts und spricht
+ * mit keinem Kanal; die Seiten reichen `<HandbookLink page="…" />` herein.
+ *
+ * Warum ein Verweis pro Seite und nicht eine Zeile in jedem Hinweis: Ein Hinweis sagt, was
+ * passiert; die Mechanik dahinter gehört ins Handbuch (CLAUDE.md). Dreizehn Hinweise, die je ein
+ * Kapitel nennen, wären dreizehn Stellen, die beim nächsten Umbau des Handbuchs veralten - und
+ * gesucht wird die Erklärung ohnehin nicht zu einem Feld, sondern zu dem Bildschirm, auf dem man
+ * steht. Bei einer Seite mit Unterreitern zeigt der Verweis auf das Kapitel des offenen Reiters.
+ */
 export function PageHeader({
   icon: Icon,
   title,
   description,
   status,
-  actions
+  actions,
+  handbook
 }: {
   icon: LucideIcon
   title: string
   description?: string
   status?: ReactNode
   actions?: ReactNode
+  handbook?: ReactNode
 }): JSX.Element {
   return (
     <div className="mb-6 flex items-start justify-between gap-4">
@@ -583,6 +596,7 @@ export function PageHeader({
         <div>
           <h1 className="text-lg font-semibold text-text">{title}</h1>
           {description && <p className="mt-0.5 max-w-xl text-ui text-text-muted">{description}</p>}
+          {handbook}
         </div>
       </div>
       {(status !== undefined || actions) && (

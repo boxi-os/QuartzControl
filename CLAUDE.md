@@ -18,7 +18,11 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   frisches Profil in einem Wegwerf-Verzeichnis an (`--user-data-dir`) und trägt über dieselben
   IPC-Pfade wie ein Klick zwei Projekte, drei Zugänge und drei Ziele ein
   (`scripts/screenshot-demo.mjs`, alle Namen unter `example.com`). Ohne `--demo` zeigen die Bilder,
-  was auf diesem Rechner eingerichtet ist — inklusive echter Server. Zwilling von `smoke.mjs`: gleicher
+  was auf diesem Rechner eingerichtet ist — inklusive echter Server. `--scenes` nimmt statt der
+  Routen die zehn Szenen auf, die eine Routenliste nicht trifft (`scripts/screenshot-scenes.mjs`):
+  Dialoge, Formulare, der Frame-Editor beim Ziehen, ein fertiger Build, der laufende Dev-Server.
+  Nicht gescriptet werden können die nativen Bestätigungsdialoge — sie sind Fenster des Systems,
+  kein DOM. Zwilling von `smoke.mjs`: gleicher
   Launcher, gleiche Wartelogik, **gleiche Routenliste** aus `scripts/routes.mjs` — sonst zeigt das
   Handbuch Bildschirme, die der Smoke-Test nicht mehr besucht. Zwei Dinge, die dabei gemessen sind:
   eine Vollseiten-Aufnahme gibt es nicht (ein Fenster wird nicht höher als der Arbeitsbereich —

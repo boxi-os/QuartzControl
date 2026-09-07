@@ -127,12 +127,42 @@ Veröffentlichen-Seite der Warnhinweis darüber — den beschreibt Kapitel 6.1, 
 wäre schöner und falsch. Ebenso bleibt der Host-Key unbestätigt: Bestätigen ginge nur an einem
 echten Server.
 
-### Was von Hand kommt
+### Die Szenen
 
-Was eine Routenliste nicht trifft: offene Dialoge, ein laufender Build mit Konsolenausgabe, ein
-Fehlerzustand, der Frame-Editor beim Ziehen — und die Zugänge- und Ziele-Karten mit Demo-Daten. Der
-Weg zu jeder solchen Aufnahme gehört hierher, sobald es sie gibt: eine Handaufnahme ohne notierten
-Weg ist beim nächsten Mal keine.
+`--scenes` nimmt auf, was eine Routenliste nicht trifft. Sie heißen im Plan „Handaufnahmen“, sind
+aber gescriptet (`scripts/screenshot-scenes.mjs`) — eine Handaufnahme ohne notierten Weg ist beim
+nächsten Mal keine, und ein geänderter Text macht sie still falsch. Zehn Stück: der Assistent, der
+Duplizieren-Dialog, der Content-Quelle-Dialog, die Formulare für Ziel, Zugang und Frame, der
+Frame-Editor beim Ziehen, der Snapshot-Vergleich, ein fertiger Build mit Konsolenausgabe und der
+laufende Dev-Server mit Live-Vorschau.
+
+Vier Dinge, die dabei zu wissen sind:
+
+- **Nicht alles, was wie ein Dialog aussieht, ist einer.** Vier Szenen treffen ein natives
+  `<dialog open>`; Ziel, Zugang und Frame sind Formulare *in* der Seite, und `dialog[open]` blieb
+  bei ihnen leer. Die Szenen heißen entsprechend `dialog-…` oder `formular-…`, und die Kapitel
+  sagen es genauso.
+- **Zwischen zwei Szenen auf derselben Route muss man weg und wieder hin.** Ein Hash, der sich
+  nicht ändert, mountet nichts neu, und das Formular der vorigen Szene verdeckte den Knopf der
+  nächsten. Beim Frame-Editor reicht das nicht einmal: Er überlebt einen Routenwechsel (sticky per
+  Pathname) und wird deshalb ausdrücklich geschlossen.
+- **Das Ziehen wird mit Escape abgebrochen, nicht losgelassen.** Ein Loslassen würde den Bereich
+  wirklich platzieren. Und der Griff muss vorher an den *oberen* Rand gerollt werden: Das Overlay
+  ist ein `position: fixed`-Element mit `z-index: 999`, das dem Zeiger folgt — bei einem Griff am
+  unteren Rand landete es bei y = 1230 und damit außerhalb des 900 px hohen Fensters. Im Bild sah
+  das aus wie „kein Overlay“.
+- **Der Dev-Server wird über `server.stop(id)` beendet**, nicht über den Pfad — sonst läuft er nach
+  dem Lauf weiter.
+
+### Was wirklich von Hand kommt
+
+**Die nativen Bestätigungsdialoge.** Sie sind Fenster des Betriebssystems, kein DOM: Playwright
+sieht sie nicht, und der Hauptprozess wartet auf ihre Antwort. Wer eine davon im Handbuch zeigen
+will, nimmt sie mit dem Bildschirmfoto des Systems auf und notiert den Weg dorthin hier.
+
+**Fehlerzustände.** Ein SCSS-Fehler oder ein fehlgeschlagener Build ließe sich herstellen, indem
+man das Projekt kaputtmacht — und ein abgebrochener Lauf ließe es kaputt. Auch das bleibt Handarbeit
+oder braucht ein Wegwerf-Projekt.
 
 ## Der Ablauf
 

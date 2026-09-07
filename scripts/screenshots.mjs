@@ -12,6 +12,7 @@
 import { _electron as electron } from 'playwright-core'
 import { execFileSync } from 'node:child_process'
 import { DEMO_PROFILE, resetDemoProfile, seedDemoProfile } from './screenshot-demo.mjs'
+import { captureScenes } from './screenshot-scenes.mjs'
 import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
@@ -100,6 +101,10 @@ const DEMO = argv.includes('--demo')
 // referenziert, sind 11 MB in einem Vault, der synchronisiert wird. `--scheme dunkel` oder
 // `--scheme beide`, wenn man sie doch braucht. Dass die App im Dunkeln stimmt, prüft ohnehin
 // scripts/styles-snapshot.mjs und nicht dieses Skript.
+// --scenes nimmt statt der Routen die Szenen auf, die eine Routenliste nicht trifft: offene
+// Dialoge, ein laufender Server, ein fertiger Build. Sie brauchen ein Projekt, das man verändern
+// darf, also praktisch immer zusammen mit --demo.
+const SCENES = argv.includes('--scenes')
 const scheme = arg('--scheme', 'hell')
 const SCHEMES = scheme === 'beide' ? ALL_SCHEMES : ALL_SCHEMES.filter(([name]) => name === scheme)
 if (SCHEMES.length === 0) {
@@ -156,13 +161,17 @@ const routes = [
   ...PROJECT_ROUTES.map(([l, r]) => [l, `/project/${projectId}${r}`])
 ].filter(([l]) => !only || only.split(',').some((frag) => slug(l).includes(slug(frag))))
 
-if (routes.length === 0) {
+if (routes.length === 0 && !SCENES) {
   console.error(`--only ${only} passt auf keine Route.`)
   process.exit(2)
 }
 
 fs.mkdirSync(outDir, { recursive: true })
-console.log(`${routes.length} Routen × ${SCHEMES.map(([n]) => n).join(' + ')} → ${outDir}`)
+console.log(
+  SCENES
+    ? `Szenen × ${SCHEMES.map(([n]) => n).join(' + ')} → ${outDir}`
+    : `${routes.length} Routen × ${SCHEMES.map(([n]) => n).join(' + ')} → ${outDir}`
+)
 
 let scalingReported = false
 function scaleDown(file, width = SCALE_WIDTH) {
@@ -194,6 +203,27 @@ for (const [scheme, media] of SCHEMES) {
   await page.waitForTimeout(500)
 
   console.log(`\n── ${scheme} ─────────────────────────`)
+
+  if (SCENES) {
+    // Eine Szene nimmt entweder ein Element auf (ein Dialog, eine Karte) oder das Fenster.
+    const shoot = async (name, target) => {
+      const file = path.join(outDir, `szene-${slug(name)}-${scheme}.png`)
+      if (target) {
+        await target.screenshot({ path: file })
+        scaleDown(file, CARD_SCALE_WIDTH)
+      } else {
+        await page.screenshot({ path: file })
+        scaleDown(file)
+      }
+      written.push([path.basename(file), Math.round(fs.statSync(file).size / 1024)])
+      return path.basename(file)
+    }
+    const wanted = (name) => !only || only.split(',').some((frag) => slug(name).includes(slug(frag)))
+    await captureScenes({ page, projectId, ipc, shoot, wanted })
+    await app.close().catch(() => {})
+    continue
+  }
+
   for (const [label, hash] of routes) {
     await page.evaluate((h) => {
       location.hash = h

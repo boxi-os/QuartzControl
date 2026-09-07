@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, rmSync } from 'fs'
-import { readFile, readdir, writeFile } from 'fs/promises'
-import { readJsonFileOr, writeJsonFile } from './jsonStore'
+import { readFile, readdir } from 'fs/promises'
+import { readJsonFileOr, writeFileAtomic, writeJsonFile } from './jsonStore'
 import { join } from 'path'
 import type {
   FrameBreakpointWidths,
@@ -68,9 +68,11 @@ export async function getBreakpointWidths(projectPath: string): Promise<FrameBre
 export async function saveBreakpointWidths(projectPath: string, widths: FrameBreakpointWidths): Promise<void> {
   await writeJsonFile(join(quartzGuiDir(projectPath), BREAKPOINTS_FILE), widths)
   const groupLayouts = await readGroupLayouts(projectPath)
-  for (const def of await listFrames(projectPath)) {
-    await writeFrameFiles(projectPath, def, widths, groupLayouts)
-  }
+  await serialised(projectPath, async () => {
+    for (const def of await listFrames(projectPath)) {
+      await writeFrameFiles(projectPath, def, widths, groupLayouts)
+    }
+  })
 }
 
 function frameDir(projectPath: string, id: string): string {
@@ -306,6 +308,32 @@ async function readGroupLayouts(projectPath: string, problems?: string[]): Promi
   }
 }
 
+// One writer per project at a time. Three ways write the same three files now - saving a frame,
+// changing the breakpoint widths, and the refresh in front of every build and every server start -
+// and "Jetzt bauen" right after "Starten" is two of them within a second. Atomic writes keep each
+// file whole; this keeps a set of them from being written half by one caller and half by another,
+// which no single-file guarantee can. A chained promise rather than a real lock: these are
+// sub-millisecond writes and the only thing that has to hold is the order.
+const frameWrites = new Map<string, Promise<unknown>>()
+
+function serialised<T>(projectPath: string, work: () => Promise<T>): Promise<T> {
+  const previous = frameWrites.get(projectPath) ?? Promise.resolve()
+  // `work` on both paths: the next caller waits for the previous one to be *done*, not to have
+  // succeeded - a failed refresh must not block the save that would fix it.
+  const result = previous.then(work, work)
+  const tail = result.then(
+    () => undefined,
+    () => undefined
+  )
+  frameWrites.set(projectPath, tail)
+  void tail.then(() => {
+    // Only if nothing queued behind it in the meantime, so the map holds one entry per project
+    // while writes are in flight and nothing afterwards.
+    if (frameWrites.get(projectPath) === tail) frameWrites.delete(projectPath)
+  })
+  return result
+}
+
 async function writeFrameFiles(
   projectPath: string,
   def: GridFrameDefinition,
@@ -316,11 +344,16 @@ async function writeFrameFiles(
   quartzGuiDir(projectPath, 'authored-frames') // creating: this is the write path
   mkdirSync(join(dir, 'dist'), { recursive: true })
   await Promise.all([
-    // Atomic: frame.json is the frame's definition and its only copy, and a half-written one
-    // drops the frame out of listFrames() while its plugin entry stays in quartz.config.yaml.
+    // All three atomic, and `frames.js` is the one that made it necessary. frame.json is this
+    // app's own copy - a half-written one drops the frame out of listFrames() while its plugin
+    // entry stays in quartz.config.yaml - but frames.js is the file *quartz* imports, and since
+    // the group order moved into it, three ways write it: saving a frame, changing the breakpoint
+    // widths, and the refresh in front of every build and every server start. A build that has
+    // already been spawned reads whatever lies there at that moment, and a plain writeFile
+    // truncates before it streams. A rename cannot be seen half-done.
     writeJsonFile(join(dir, 'frame.json'), def),
-    writeFile(join(dir, 'package.json'), generatePackageJson(def), 'utf-8'),
-    writeFile(join(dir, 'dist', 'frames.js'), generateFrameJs(def, widths, groupLayouts), 'utf-8')
+    writeFileAtomic(join(dir, 'package.json'), generatePackageJson(def)),
+    writeFileAtomic(join(dir, 'dist', 'frames.js'), generateFrameJs(def, widths, groupLayouts))
   ])
 }
 
@@ -350,9 +383,11 @@ export async function writeAllFrames(projectPath: string): Promise<string[]> {
       getBreakpointWidths(projectPath),
       readGroupLayouts(projectPath, problems)
     ])
-    for (const def of frames) {
-      await writeFrameFiles(projectPath, def, widths, groupLayouts)
-    }
+    await serialised(projectPath, async () => {
+      for (const def of frames) {
+        await writeFrameFiles(projectPath, def, widths, groupLayouts)
+      }
+    })
   } catch (err) {
     console.error(`[layoutFrames] could not refresh the frames of ${projectPath}: ${String(err)}`)
     problems.push(mainT('frameRefreshFailed', { error: String(err) }))
@@ -450,7 +485,9 @@ export async function saveFrame(
   // possibly a pre-breakpoint export - so migrate defensively here too, not just in listFrames().
   const def = migrateGridFrameDefinition(rawDef)
   const isNew = !existsSync(frameDir(projectPath, def.id))
-  await writeFrameFiles(projectPath, def, await getBreakpointWidths(projectPath), await readGroupLayouts(projectPath))
+  const widths = await getBreakpointWidths(projectPath)
+  const groupLayouts = await readGroupLayouts(projectPath)
+  await serialised(projectPath, () => writeFrameFiles(projectPath, def, widths, groupLayouts))
   // Only newly created frames need registering - `quartz plugin add` symlinks the directory into
   // .quartz/plugins/<id> once; editing an existing frame just rewrites the files the symlink
   // already points at, so the build picks up the change on its next run with no CLI call needed.

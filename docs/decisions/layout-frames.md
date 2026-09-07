@@ -411,3 +411,29 @@ Nebenbei gemessen und **nicht** geändert: `GlobalBoard` übergibt seinem `DndCo
 `sensors`, anders als der Frame-Builder. Der Tastatur-Sensor läuft damit auf dnd-kits Vorgabe von
 25px je Pfeildruck — die Gruppen-Bereiche sind erreichbar, aber es brauchte rund 28 Tastendrücke.
 Vorbestehend und einen eigenen Durchgang wert.
+
+### Die Datei, die Quartz importiert, wird nicht mehr halb gesehen
+
+Vor dem Gruppen-Umbau schrieb genau ein Weg die drei Dateien eines Frames: das Speichern im Editor.
+Jetzt sind es drei — Speichern, die Breakpoint-Breiten, und die Auffrischung vor jedem Bau und
+jedem Serverstart —, und ausgerechnet `dist/frames.js`, die einzige, die ein *fremdes* Programm
+liest, ging durch ein nacktes `writeFile`. Das kürzt erst und schreibt dann; wer dazwischen liest,
+liest einen Torso.
+
+Gemessen an einer 90-KB-Datei (so groß ist das erzeugte Modul des `editorial`-Frames), ein
+Schreiber und ein Leser gegeneinander:
+
+    writeFile      401 Lesevorgänge, 18 unvollständig
+    rename       23771 Lesevorgänge,  0 unvollständig
+
+Alle drei Dateien gehen deshalb über `writeFileAtomic()` — dieselbe Temp-Datei, dasselbe `fsync`,
+dasselbe `rename` wie `writeJsonFile`, das jetzt nur noch dessen JSON-Hülle ist. Dazu ein
+Schreiber je Projekt (`serialised()`): Atomarität hält jede Datei ganz, aber nicht einen *Satz* aus
+drei Dateien davon ab, halb vom einen und halb vom anderen Aufrufer zu stammen — und „Jetzt bauen“
+direkt nach „Starten“ sind zwei Aufrufer in einer Sekunde. Nachgemessen: 120 gleichzeitige
+Auffrischungen gegen einen Leser, 35066 Lesevorgänge, kein einziger unvollständig.
+
+Der Dev-Server ist von alledem nicht betroffen, und das ist gemessen statt vermutet: Sein Watcher
+läuft mit `cwd: argv.directory` (`quartz/build.ts:160-164`), also im Content-Ordner, und sieht
+`.quartz-gui/` nie. Ein Bau, während ein Dev-Server läuft, stört ihn nicht — so wenig wie ein
+gespeichertes Frame.

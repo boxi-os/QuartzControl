@@ -355,12 +355,28 @@ export function migrateGridFrameDefinition(def: GridFrameDefinition | LegacyGrid
 // group is a function literally named "Flex" (quartz builds itself with esbuild's `keepNames`),
 // and `displayName` was undefined on every entry, so that name is the only identity there is.
 //
-// Rank is therefore how a group is addressed, and this is where the rank comes from. It mirrors
-// resolveGroups exactly and needs nothing but the config: members sorted by their own priority,
-// each group taking the position of its first member unless `layout.groups.<name>.priority` says
-// otherwise, then a stable sort by that. Plugins with no `layout` at all (quartz places those by
-// their manifest's defaultPosition) cannot carry a group and so cannot appear here - which is why
-// the frame counts Flexes rather than array positions.
+// Rank is therefore how a group is addressed, and this is where the rank comes from. It follows
+// resolveGroups and needs nothing but the config: members sorted by their own priority, each group
+// taking the position of its first member unless `layout.groups.<name>.priority` says otherwise,
+// then a stable sort by that. Plugins with no `layout` at all (quartz places those by their
+// manifest's defaultPosition) cannot carry a group and so cannot appear here - which is why the
+// frame counts Flexes rather than array positions.
+//
+// One thing it cannot follow, and saying so is the point: buildLayoutForEntries skips an entry
+// whose name is in no component registry (config-loader.ts:762, :773), and whether a name is
+// registered is knowable only inside quartz's own build. A plugin that declares `layout` without
+// being a component plugin, or one whose install failed, is such an entry - quartz renders no flex
+// for it, this counts its group, and the frame then falls back for that position with the message
+// pickGroupOrder writes. A fallback, not a swap; the count is what disagrees, never the order.
+//
+// `enabled` is read the way the *loader* reads it - `filter((e) => e.enabled)` on the parsed yaml,
+// so anything falsy is out. Two things about that, both measured rather than assumed. Quartz does
+// not agree with itself: the loader drops an entry with no `enabled` key, while its own CLI treats
+// the same entry as on (`entry.enabled !== false`, plugin-git-handlers.js:1574), and configService
+// follows the CLI when it reads (`enabled: p.enabled ?? true`). So by the time a config reaches
+// here the key is always a boolean and this filter cannot actually see the disagreement - it is
+// written this way because the frame's copy is a copy of what the *loader* builds, and because the
+// next caller may not come through configService.
 export interface GroupLayoutCandidate {
   // The page type this ordering belongs to, or null for the config as a whole. Only ever read by
   // a human out of the generated frame - the frame itself cannot tell which page type it is
@@ -415,7 +431,7 @@ export function groupOrderByPosition(config: {
   const groupConfigs = config.layout?.groups ?? {}
   const result: Record<string, string[]> = {}
   const members = config.plugins
-    .filter((p) => p.enabled !== false && p.layout?.group)
+    .filter((p) => !!p.enabled && p.layout?.group)
     .map((p) => p.layout!)
     .sort((a, b) => a.priority - b.priority)
   for (const member of members) {

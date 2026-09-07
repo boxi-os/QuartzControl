@@ -648,7 +648,7 @@ export default {
       inUseEmbedded: 'In use: Node {{node}} and npm {{npm}} from the app — nothing has to be installed for it.',
       inUseSystem: 'In use: Node {{node}} from this machine.',
       noSystemNode: 'not found',
-      hintSwitchable: 'This machine has Node {{node}}. Switching only pays off when a package has to be compiled during install — the error message then mentions node-gyp, and the embedded runtime does not carry everything that needs.',
+      hintSwitchable: 'This machine has Node {{node}}. Switching only pays off when a package has to be compiled during install — the error message then mentions node-gyp, and the embedded runtime does not carry everything needed for that.',
       hintNoHostNode: 'No Node was found on this machine, so “From the system” would make builds, plugins and new projects fail.',
       hintSystem: 'Quartz requires Node 22 or newer. A project also ships a .node-version, and nvm, fnm, asdf and mise resolve that per folder — so the runtime here can differ from project to project.',
       gitBundled: 'git {{version}} from the app — this machine has none, so QuartzControl brings one.',

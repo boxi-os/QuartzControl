@@ -1131,7 +1131,7 @@ export default {
       newArea: '+ Add area',
       allPlaced: 'All areas are placed.',
       hintDragToPlace:
-        'Drag an area onto an open cell to place it — or drag a placed one back into this list to unplace it. Click an area to select it and show its settings below, including the row/column span — changes apply right away.',
+        'Drag an area onto an open cell to place it — or drag a placed one back into this list to unplace it. Click an area to open its settings where it currently sits; the row and column span are there only for a placed one.',
       expandArea: 'Expand area settings',
       placeArea: 'Place area {{name}}',
       moveArea: 'Move area {{name}}',

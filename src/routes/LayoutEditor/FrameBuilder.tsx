@@ -648,6 +648,95 @@ export default function FrameBuilder({
   const homelessSlots = SLOTS.filter(
     (s) => s !== 'pageBody' && visibleAreas.some((a) => a.slot === s && a.group) && !visibleAreas.some((a) => a.slot === s && !a.group)
   )
+  /**
+   * The one form for an area, wherever it currently lies.
+   *
+   * It used to live inside `PlacedBox` only - and `PlacedBox` renders nothing for an area without a
+   * placement on this breakpoint, so an area in the tray had no name field, no slot picker and, the
+   * part that made it a trap, no way to delete it. A brand-new area is born exactly like that
+   * (`addNewArea` gives it neither slot nor placement), so the first thing anyone does here led
+   * straight into it: the area could only be worked on after being dragged onto the grid.
+   *
+   * `placement` is what the two cases differ by, and only the fields that describe a placement are
+   * conditional on it - the spans, "visible on this breakpoint", and taking it back off the grid.
+   * Name, slot, group and deleting the area belong to the area itself and are always there.
+   */
+  function areaForm(area: GridFrameArea, placement?: GridAreaPlacement): JSX.Element {
+    return (
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="flex flex-wrap items-end gap-2 border-t border-ink/[0.06] pt-2 dark:border-ink/10"
+      >
+        <Field label={t('layoutEditor.frameBuilder.areaName')}>
+          <TextInput value={nameDraft} onChange={(e) => updateAreaName(area.id, e.target.value)} autoFocus className="w-32" />
+        </Field>
+        <Field label={t('layoutEditor.frameBuilder.areaSlot')}>
+          <Select
+            value={area.slot ?? ''}
+            onChange={(e) => updateAreaSlot(area.id, (e.target.value || undefined) as FrameSlot | undefined)}
+            className="w-32"
+          >
+            <option value="">{t('layoutEditor.frameBuilder.slotNone')}</option>
+            {SLOTS.map((slot) => (
+              <option key={slot} value={slot}>
+                {t(`positions.${slot}`, slot)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        {area.slot && area.slot !== 'pageBody' && (
+          <Toggle
+            label={t('layoutEditor.frameBuilder.ownGroup')}
+            hint={
+              area.group && area.group !== area.name
+                ? t('layoutEditor.frameBuilder.ownGroupRenamed', { group: area.group })
+                : t('layoutEditor.frameBuilder.ownGroupHint')
+            }
+            checked={!!area.group}
+            onChange={(checked) => updateAreaGroup(area.id, checked)}
+          />
+        )}
+        {placement && (
+          <>
+            <Field label={t('layoutEditor.frameBuilder.rowSpanLabel')}>
+              <TextInput
+                type="number"
+                min={1}
+                max={layout.rows}
+                value={placement.rowSpan}
+                onChange={(e) => updateAreaSpan(area.id, { rowSpan: Number(e.target.value) || 1 })}
+                className="w-16"
+              />
+            </Field>
+            <Field label={t('layoutEditor.frameBuilder.colSpanLabel')}>
+              <TextInput
+                type="number"
+                min={1}
+                max={layout.cols}
+                value={placement.colSpan}
+                onChange={(e) => updateAreaSpan(area.id, { colSpan: Number(e.target.value) || 1 })}
+                className="w-16"
+              />
+            </Field>
+            <Toggle
+              label={t('layoutEditor.frameBuilder.visibleOnBreakpoint', {
+                breakpoint: t(`layoutEditor.frameBuilder.breakpoint.${activeBreakpoint}`)
+              })}
+              checked={!placement.hidden}
+              onChange={(checked) => updateAreaHidden(area.id, !checked)}
+            />
+            <Button variant="ghost" onClick={() => unplaceAreaById(area.id)}>
+              {t('layoutEditor.frameBuilder.unplace')}
+            </Button>
+          </>
+        )}
+        <Button variant="danger" onClick={() => deleteAreaById(area.id)}>
+          {t('layoutEditor.frameBuilder.removeArea')}
+        </Button>
+      </div>
+    )
+  }
+
   const unplacedAreas = editing.areas.filter((a) => {
     const p = layout.placements[a.id]
     return !p || p.hidden
@@ -851,8 +940,10 @@ export default function FrameBuilder({
               area={a}
               selected={selectedAreaId === a.id}
               dragging={dragAreaId === a.id}
-              onSelect={() => setSelectedAreaId(a.id)}
-            />
+              onSelect={() => setSelectedAreaId(selectedAreaId === a.id ? null : a.id)}
+            >
+              {areaForm(a)}
+            </TrayChip>
           ))}
         </UnplacedTray>
 
@@ -911,75 +1002,7 @@ export default function FrameBuilder({
                   </div>
                 </div>
 
-                {isSelected && (
-                  <div
-                    onClick={(e) => e.stopPropagation()}
-                    className="flex flex-wrap items-end gap-2 border-t border-ink/[0.06] pt-2 dark:border-ink/10"
-                  >
-                    <Field label={t('layoutEditor.frameBuilder.areaName')}>
-                      <TextInput value={nameDraft} onChange={(e) => updateAreaName(area.id, e.target.value)} autoFocus className="w-32" />
-                    </Field>
-                    <Field label={t('layoutEditor.frameBuilder.areaSlot')}>
-                      <Select
-                        value={area.slot ?? ''}
-                        onChange={(e) => updateAreaSlot(area.id, (e.target.value || undefined) as FrameSlot | undefined)}
-                        className="w-32"
-                      >
-                        <option value="">{t('layoutEditor.frameBuilder.slotNone')}</option>
-                        {SLOTS.map((slot) => (
-                          <option key={slot} value={slot}>
-                            {t(`positions.${slot}`, slot)}
-                          </option>
-                        ))}
-                      </Select>
-                    </Field>
-                    {area.slot && area.slot !== 'pageBody' && (
-                      <Toggle
-                        label={t('layoutEditor.frameBuilder.ownGroup')}
-                        hint={
-                          area.group && area.group !== area.name
-                            ? t('layoutEditor.frameBuilder.ownGroupRenamed', { group: area.group })
-                            : t('layoutEditor.frameBuilder.ownGroupHint')
-                        }
-                        checked={!!area.group}
-                        onChange={(checked) => updateAreaGroup(area.id, checked)}
-                      />
-                    )}
-                    <Field label={t('layoutEditor.frameBuilder.rowSpanLabel')}>
-                      <TextInput
-                        type="number"
-                        min={1}
-                        max={layout.rows}
-                        value={placement.rowSpan}
-                        onChange={(e) => updateAreaSpan(area.id, { rowSpan: Number(e.target.value) || 1 })}
-                        className="w-16"
-                      />
-                    </Field>
-                    <Field label={t('layoutEditor.frameBuilder.colSpanLabel')}>
-                      <TextInput
-                        type="number"
-                        min={1}
-                        max={layout.cols}
-                        value={placement.colSpan}
-                        onChange={(e) => updateAreaSpan(area.id, { colSpan: Number(e.target.value) || 1 })}
-                        className="w-16"
-                      />
-                    </Field>
-                    <Toggle
-                      label={t('layoutEditor.frameBuilder.visibleOnBreakpoint', {
-                        breakpoint: t(`layoutEditor.frameBuilder.breakpoint.${activeBreakpoint}`)
-                      })}
-                      checked={!placement.hidden}
-                      onChange={(checked) => updateAreaHidden(area.id, !checked)}
-                    />
-                    <Button variant="ghost" onClick={() => unplaceAreaById(area.id)}>
-                      {t('layoutEditor.frameBuilder.unplace')}
-                    </Button>
-                    <Button variant="danger" onClick={() => deleteAreaById(area.id)}>
-                      {t('layoutEditor.frameBuilder.removeArea')}
-                    </Button>
-                  </div>
-                )}
+                {isSelected && areaForm(area, placement)}
 
                 {area.slot === 'pageBody' && (
                   <div className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10">
@@ -1135,34 +1158,43 @@ function TrayChip({
   area,
   selected,
   dragging,
-  onSelect
+  onSelect,
+  children
 }: {
   area: GridFrameArea
   selected: boolean
   dragging: boolean
   onSelect: () => void
+  // The area's form, same as a placed box gets - rendered only while this chip is the selected one.
+  // A selected chip takes a whole row of the wrapping tray rather than staying chip-sized, because
+  // the form is a row of fields and squeezing it between two other chips would leave neither
+  // readable.
+  children?: React.ReactNode
 }): JSX.Element {
   const { t } = useTranslation()
   const { attributes, listeners, setNodeRef, setActivatorNodeRef } = useDraggable({ id: area.id })
   return (
     <div
       ref={setNodeRef}
-      className={`flex items-center gap-1 rounded-[6px] border border-dashed px-1.5 py-1 text-micro ${
+      className={`rounded-[6px] border border-dashed px-1.5 py-1 text-micro ${
         selected
-          ? 'border-blue-500 bg-blue-100 ring-2 ring-blue-500/40 dark:border-blue-400 dark:bg-blue-500/20'
+          ? 'w-full border-blue-500 bg-blue-100 ring-2 ring-blue-500/40 dark:border-blue-400 dark:bg-blue-500/20'
           : 'border-blue-300 bg-blue-50/60 dark:border-blue-500/40 dark:bg-blue-500/10'
       } ${dragging ? 'opacity-30' : ''}`}
     >
-      <ActivatorContext.Provider value={{ attributes, listeners, setActivatorNodeRef }}>
-        <AreaDragHandle label={t('layoutEditor.frameBuilder.placeArea', { name: area.name })} />
-      </ActivatorContext.Provider>
-      <button type="button" onClick={onSelect} className="flex flex-col items-center gap-0.5 text-center">
-        <span className="font-medium">{area.name}</span>
-        <span className="text-text-muted">
-          {area.slot ? t(`positions.${area.slot}`, area.slot) : t('layoutEditor.frameBuilder.slotNone')}
-          {area.group ? ` · ${t('layoutEditor.frameBuilder.ownGroupShort')}` : ''}
-        </span>
-      </button>
+      <div className="flex items-center gap-1">
+        <ActivatorContext.Provider value={{ attributes, listeners, setActivatorNodeRef }}>
+          <AreaDragHandle label={t('layoutEditor.frameBuilder.placeArea', { name: area.name })} />
+        </ActivatorContext.Provider>
+        <button type="button" onClick={onSelect} className="flex flex-col items-center gap-0.5 text-center">
+          <span className="font-medium">{area.name}</span>
+          <span className="text-text-muted">
+            {area.slot ? t(`positions.${area.slot}`, area.slot) : t('layoutEditor.frameBuilder.slotNone')}
+            {area.group ? ` · ${t('layoutEditor.frameBuilder.ownGroupShort')}` : ''}
+          </span>
+        </button>
+      </div>
+      {selected && children}
     </div>
   )
 }

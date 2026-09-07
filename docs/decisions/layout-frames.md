@@ -576,3 +576,39 @@ und der liest `dist/frames.js` nicht neu, weil `frameLoader.ts:17` ein blankes
 `await import(...)` ohne Cache-Buster macht und Node ein ESM-Modul für die Prozesslebensdauer hält.
 Genau dafür gibt es den `DevServerRestartHint` nach dem Speichern im Reiter „Global“; die Zeile
 ganz oben in dieser Datei beschreibt denselben Mechanismus für den Frame-Editor.
+
+## Ein Bereich wird dort bearbeitet, wo er gerade liegt (2026-09-07)
+
+Das Formular eines Bereichs — Name, Belegung, eigene Gruppe, Spannweiten, „Aus Raster lösen“,
+„Bereich löschen“ — steckte in `PlacedBox`. Und `PlacedBox` rendert für einen Bereich, der auf
+diesem Breakpoint keine Platzierung hat, gar nichts. Ein Bereich in der Ablage hatte damit kein
+Namensfeld, keine Belegung und, der Teil, der es zur Falle machte, keinen Weg zum Löschen.
+
+Ein **neu angelegter** Bereich beginnt genau so: `addNewArea` gibt ihm weder Belegung noch
+Platzierung (aus gutem Grund — er wurde einmal auf `left` geboren, und so bekam das
+`editorial`-Frame dieses Projekts drei Bereiche auf dieser Position). Wer also auf
+„+ Bereich hinzufügen“ klickte, hatte einen Bereich, den er erst aufs Raster ziehen musste, um ihm
+überhaupt eine Belegung geben oder ihn wieder loswerden zu können. `deleteAreaById` konnte das die
+ganze Zeit; es führte nur kein Bedienelement dorthin.
+
+Gemessen an der gebauten App, derselbe Ablauf in beiden Fassungen — Frame öffnen,
+„+ Bereich hinzufügen“, dann den Chip in der Ablage anklicken:
+
+| | vorher | jetzt |
+| --- | --- | --- |
+| Felder am Chip | keine | Bereichsname, Belegung |
+| nach Belegung „Kopfbereich“ | — | zusätzlich „Eigener Bereich“, Chip zeigt die Belegung |
+| „Bereich löschen“ | nicht vorhanden | vorhanden, `custom-8` verschwindet |
+
+Das Formular ist jetzt eine Funktion (`areaForm(area, placement?)`) und wird von beiden Seiten
+gerufen. **`placement` ist der ganze Unterschied**, und nur die Felder, die eine Platzierung
+beschreiben, hängen daran: die beiden Spannweiten, „Sichtbar auf …“ und „Aus Raster lösen“. Name,
+Belegung, Gruppe und das Löschen gehören dem Bereich selbst und sind immer da. Gegenprobe an
+derselben Aufnahme: Ein platzierter Bereich zeigt vorher wie nachher dieselben zehn Felder und
+dieselben zwei Knöpfe, in derselben Reihenfolge.
+
+Ein ausgewählter Chip nimmt eine ganze Zeile der umbrechenden Ablage, statt chipgroß zu bleiben —
+das Formular ist eine Feldreihe, und zwischen zwei anderen Chips eingequetscht wäre keins von
+beiden lesbar. Der Hinweis über der Ablage sagt jetzt „öffnet seine Einstellungen dort, wo er
+gerade liegt“ statt „zeigt seine Einstellungen unten“; das war schon vorher nicht der Ort, an dem
+sie erschienen.

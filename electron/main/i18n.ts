@@ -122,7 +122,7 @@ const STRINGS = {
     frameIssueTooSmall: 'Der Wert bei „{{where}}“ ist zu klein oder zu kurz (Mindestwert {{limit}}).',
     frameIssueValue: 'Der Wert bei „{{where}}“ ist keine der erlaubten Angaben ({{values}}).',
     frameIssueFormat: 'Der Wert bei „{{where}}“ hat eine Form, die hier nicht erlaubt ist.',
-    frameFailedDetail: '„{{name}}“ — {{reason}}',
+    frameNameAndReason: '„{{name}}“ — {{reason}}',
     frameGroupsUnreadable:
       'Die Gruppen des Layouts konnten nicht gelesen werden ({{error}}). Die Frames zeigen ihre Positionen für diesen Lauf ungeteilt.',
     frameRefreshFailed:
@@ -348,7 +348,7 @@ const STRINGS = {
     frameIssueTooSmall: 'The value at “{{where}}” is too small or too short (minimum {{limit}}).',
     frameIssueValue: 'The value at “{{where}}” is none of the allowed ones ({{values}}).',
     frameIssueFormat: 'The value at “{{where}}” has a form that is not allowed here.',
-    frameFailedDetail: '“{{name}}” — {{reason}}',
+    frameNameAndReason: '“{{name}}” — {{reason}}',
     frameGroupsUnreadable:
       'The layout groups could not be read ({{error}}). Frames show their positions undivided for this run.',
     frameRefreshFailed:

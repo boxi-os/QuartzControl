@@ -17,6 +17,7 @@ import type {
   FlexGroupConfig,
   FrameBreakpoint,
   FrameBreakpointWidths,
+  GridFrameArea,
   GridFrameDefinition,
   LayoutPosition,
   PluginEntry,
@@ -67,10 +68,29 @@ const collisionDetection: CollisionDetection = (args) => {
   return pointerCollisions.length > 0 ? pointerCollisions : closestCenter(args)
 }
 
-function findContainer(positions: Record<LayoutPosition, number[]>, id: string): LayoutPosition | null {
-  if ((POSITIONS as string[]).includes(id)) return id as LayoutPosition
+// A frame can give one position several areas - one per quartz group, plus one for everything
+// ungrouped (see GridFrameArea.group) - so a position is no longer a single drop target. The id
+// carries both halves; "#" cannot occur in either, a position is one of six literals and a group
+// name is a CSS identifier.
+function dropId(position: LayoutPosition, group?: string): string {
+  return group ? `${position}#${group}` : position
+}
+
+interface DropTarget {
+  position: LayoutPosition
+  // undefined means the position's plain area: everything no group area claims.
+  group?: string
+}
+
+function findContainer(
+  positions: Record<LayoutPosition, number[]>,
+  plugins: PluginEntry[],
+  id: string
+): DropTarget | null {
+  const [head, group] = id.split('#')
+  if ((POSITIONS as string[]).includes(head)) return { position: head as LayoutPosition, group: group || undefined }
   for (const pos of POSITIONS) {
-    if (positions[pos].some((i) => String(i) === id)) return pos
+    if (positions[pos].some((i) => String(i) === id)) return { position: pos, group: plugins[Number(id)]?.layout?.group }
   }
   return null
 }
@@ -104,7 +124,14 @@ export default function GlobalBoard({
   // which reports back here so the labels follow a save without a remount.
   const [breakpointWidths, setBreakpointWidths] = useState<FrameBreakpointWidths>(DEFAULT_FRAME_BREAKPOINT_WIDTHS)
   const positions = buildPositionMap(config.plugins)
-  const groupNames = Object.keys(config.layout?.groups ?? {})
+  // Declared groups plus the ones the frames' areas name. A group exists as soon as a component
+  // names it - `layout.groups` only holds direction and gap - so an area's group is missing from
+  // that object until someone gives it those, and until then the component's own "Gruppe" select
+  // could not offer it. Drag-and-drop would have been the only way in, which is no way at all for
+  // anyone working by keyboard.
+  const groupNames = [
+    ...new Set([...Object.keys(config.layout?.groups ?? {}), ...frames.flatMap((f) => f.areas.map((a) => a.group).filter((g): g is string => !!g))])
+  ]
   const nameCounts = duplicateNameCounts(config.plugins)
   const ranks = duplicateRanks(config.plugins)
   const pageTypes = derivePageTypes(config)
@@ -136,6 +163,18 @@ export default function GlobalBoard({
   // A custom frame's width cap, alignment and padding belong on this board too - it is the page as
   // it will be built, and leaving them out would show a full-width layout for a frame that is not.
   const activeBox = activeLayout ? buildFrameBox(activeLayout) : null
+  // Which of a position's components each area of the active frame shows. It is the renderer's
+  // half of the frame's own contentsFor(): a group area holds its group, and the area without one
+  // holds everything the frame's group areas did not claim - including groups this frame gave no
+  // area, which quartz would otherwise render nowhere.
+  function indicesForArea(area: GridFrameArea): number[] {
+    const position = area.slot as LayoutPosition
+    const all = positions[position] ?? []
+    if (area.group) return all.filter((i) => config.plugins[i]?.layout?.group === area.group)
+    const claimed = new Set((activeAreas ?? []).filter((a) => a.slot === position && a.group).map((a) => a.group))
+    return all.filter((i) => !claimed.has(config.plugins[i]?.layout?.group))
+  }
+
   const activeUsedSlots = activeAreas
     ? new Set(activeAreas.map((a) => a.slot).filter((s): s is LayoutPosition => !!s && s !== 'pageBody'))
     : null
@@ -193,21 +232,23 @@ export default function GlobalBoard({
       return
     }
 
-    const toContainer = findContainer(positions, String(over.id))
-    if (!toContainer) return
+    const target = findContainer(positions, config.plugins, String(over.id))
+    if (!target) return
+    const toContainer = target.position
 
     if (activeId.startsWith(PALETTE_PREFIX)) {
       const sourceIndex = Number(activeId.slice(PALETTE_PREFIX.length))
       const overIndex = positions[toContainer].indexOf(Number(over.id))
       const result = appendDuplicateToPosition(config.plugins, sourceIndex, toContainer, overIndex === -1 ? undefined : overIndex)
       if (!result) return
-      onChange({ ...config, plugins: result.plugins })
+      onChange({ ...config, plugins: withGroup(result.plugins, result.newIndex, target.group ?? '') })
       setExpandedIndex(result.newIndex)
       return
     }
 
-    const fromContainer = findContainer(positions, activeId)
-    if (!fromContainer) return
+    const source = findContainer(positions, config.plugins, activeId)
+    if (!source) return
+    const fromContainer = source.position
 
     const sourceIndex = positions[fromContainer].indexOf(Number(activeId))
     const next: Record<LayoutPosition, number[]> = { ...positions }
@@ -225,7 +266,8 @@ export default function GlobalBoard({
       next[toContainer].splice(targetIndex, 0, Number(activeId))
     }
 
-    if (next[fromContainer].join(',') === positions[fromContainer].join(',') && fromContainer === toContainer) return
+    const groupChanged = source.group !== target.group
+    if (!groupChanged && next[fromContainer].join(',') === positions[fromContainer].join(',') && fromContainer === toContainer) return
 
     const renumbered = new Map<number, { position: LayoutPosition; priority: number }>()
     for (const pos of fromContainer === toContainer ? [fromContainer] : [fromContainer, toContainer]) {
@@ -234,10 +276,19 @@ export default function GlobalBoard({
       }
     }
 
+    const moved = Number(activeId)
     const plugins: PluginEntry[] = config.plugins.map((plugin, index) => {
       const update = renumbered.get(index)
       if (!update || !plugin.layout) return plugin
-      return { ...plugin, layout: { ...plugin.layout, position: update.position, priority: update.priority } }
+      const layout = { ...plugin.layout, position: update.position, priority: update.priority }
+      // Which area of a position a component lands in is its group, and the drop decided it - a
+      // move into a group area joins that group, a move into the plain area leaves whatever group
+      // it was in. Only the dragged one: the others are being renumbered, not re-homed.
+      if (index === moved) {
+        if (target.group) layout.group = target.group
+        else delete layout.group
+      }
+      return { ...plugin, layout }
     })
     onChange({ ...config, plugins })
   }
@@ -389,7 +440,13 @@ export default function GlobalBoard({
                         {t('layoutEditor.frameBuilder.preview.pageContent')}
                       </div>
                     ) : (
-                      <PositionSlot position={area.slot} indices={positions[area.slot]} direction="column" {...slotProps} />
+                      <PositionSlot
+                        position={area.slot}
+                        group={area.group}
+                        indices={indicesForArea(area)}
+                        direction="column"
+                        {...slotProps}
+                      />
                     )}
                   </AreaBox>
                 </div>
@@ -587,6 +644,7 @@ function AreaBox({ label, slotLabel, children }: { label: string; slotLabel?: st
 
 function PositionSlot({
   position,
+  group,
   indices,
   direction,
   config,
@@ -601,6 +659,9 @@ function PositionSlot({
   onRemove
 }: {
   position: LayoutPosition
+  // Set when this box is a frame area bound to one quartz group; it makes the box its own drop
+  // target, so a component dropped here joins that group instead of the position at large.
+  group?: string
   indices: number[]
   direction: 'row' | 'column'
   config: QuartzConfig
@@ -615,7 +676,7 @@ function PositionSlot({
   onRemove: (index: number) => void
 }): JSX.Element {
   const { t } = useTranslation()
-  const { setNodeRef } = useDroppable({ id: position })
+  const { setNodeRef } = useDroppable({ id: dropId(position, group) })
   const ids = indices.map(String)
 
   return (

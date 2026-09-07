@@ -1139,6 +1139,10 @@ export default {
       areaName: 'Area name',
       areaSlot: 'Slot',
       slotNone: 'None (empty)',
+      ownGroup: 'Area of its own',
+      ownGroupShort: 'own',
+      ownGroupHint:
+        'Shows only the components dragged here on the “Global” tab. Without it the area shows everything else the slot holds.',
       rowSpanLabel: 'Row span',
       colSpanLabel: 'Column span',
       removeArea: 'Remove area',

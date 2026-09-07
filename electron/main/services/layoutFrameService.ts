@@ -8,7 +8,8 @@ import type {
   LegacyGridFrameDefinition,
   PluginActionResult
 } from '@shared/ipc-contract'
-import { DEFAULT_FRAME_BREAKPOINT_WIDTHS, buildFrameCss, migrateGridFrameDefinition } from '@shared/gridFrameCss'
+import { DEFAULT_FRAME_BREAKPOINT_WIDTHS, buildFrameCss, groupOrderByPosition, migrateGridFrameDefinition } from '@shared/gridFrameCss'
+import * as configService from './configService'
 import * as pluginService from './pluginService'
 import { quartzGuiDir, quartzGuiPath } from './projectDirs'
 import { mainT } from '../i18n'
@@ -64,8 +65,9 @@ export async function getBreakpointWidths(projectPath: string): Promise<FrameBre
 // .quartz/plugins, so rewriting the files behind the symlink is all it takes.
 export async function saveBreakpointWidths(projectPath: string, widths: FrameBreakpointWidths): Promise<void> {
   await writeJsonFile(join(quartzGuiDir(projectPath), BREAKPOINTS_FILE), widths)
+  const groupOrder = await readGroupOrder(projectPath)
   for (const def of await listFrames(projectPath)) {
-    await writeFrameFiles(projectPath, def, widths)
+    await writeFrameFiles(projectPath, def, widths, groupOrder)
   }
 }
 
@@ -80,10 +82,59 @@ function frameDir(projectPath: string, id: string): string {
 // as plain compiled JS with no build step (frameLoader.ts skips npm install/build whenever a
 // plugin's dist/ already exists on disk). `pageBody` is a single component (Content), unlike the
 // other 6 slots which are arrays - see PageFrameProps in quartz/components/frames/types.ts.
-function generateFrameJs(def: GridFrameDefinition, widths: FrameBreakpointWidths): string {
+//
+// `groupOrder` is the project's group ordering per position (groupOrderByPosition), baked in
+// because it is the only thing the frame cannot work out for itself: quartz hands it a flat array
+// per position in which each group is one anonymous `Flex`, so rank is the only way to tell them
+// apart. That makes the frame files depend on the layout half of quartz.config.yaml, which is why
+// writeAllFrames() runs after a config save.
+function generateFrameJs(
+  def: GridFrameDefinition,
+  widths: FrameBreakpointWidths,
+  groupOrder: Record<string, string[]>
+): string {
   return `import { h, Fragment } from "preact"
 
 const AREAS = ${JSON.stringify(def.areas)}
+const GROUP_ORDER = ${JSON.stringify(groupOrder)}
+
+// What each area shows. Six positions is all quartz sorts components into
+// (config-loader.ts's buildLayoutForEntries), so a frame with more component areas than that needs
+// a second key, and quartz has one: \`layout.group\` collapses a position's grouped entries into a
+// single Flex component (resolveGroups) and leaves the ungrouped ones as themselves. Measured on a
+// real build, a position holding one group arrived as [MobileOnly, Flex, ExplorerComponent] - the
+// group is a function literally named "Flex" (quartz builds itself with esbuild's keepNames), and
+// \`displayName\` was undefined on every entry, so that name is the whole identity available here.
+//
+// So the k-th Flex in a position is the k-th group of GROUP_ORDER, an area with a group takes its
+// own, and the area without one takes everything else - including any group this frame gave no
+// area, which would otherwise vanish from the page.
+//
+// If the Flexes and GROUP_ORDER disagree in number, the model is wrong for this build (a group
+// whose members all got disabled, a config edited by hand since the frame was written) and nothing
+// is guessed: the position's plain area takes the lot, the group areas stay empty, and the build
+// log says so. A page that is missing its split is repairable; one where two areas quietly swapped
+// contents is not.
+function contentsFor(area, list) {
+  if (!area.slot || area.slot === "pageBody") return list
+  const groups = GROUP_ORDER[area.slot] ?? []
+  if (groups.length === 0) return area.group ? [] : list
+  const flexes = list.filter((C) => C.name === "Flex")
+  if (flexes.length !== groups.length) {
+    console.warn(
+      \`[\${${JSON.stringify(def.frameName)}}] \${area.slot}: \${groups.length} group(s) configured but \${flexes.length} rendered - \` +
+        \`showing all of them in "\${area.name}" instead of splitting. Re-save the layout to refresh this frame.\`
+    )
+    return area.group ? [] : list
+  }
+  if (area.group) {
+    const rank = groups.indexOf(area.group)
+    return rank === -1 ? [] : [flexes[rank]]
+  }
+  // The plain area keeps every group no area of this frame claimed, in place among the others.
+  const claimed = AREAS.filter((a) => a.slot === area.slot && a.group).map((a) => groups.indexOf(a.group))
+  return list.filter((C) => C.name !== "Flex" || claimed.indexOf(flexes.indexOf(C)) === -1)
+}
 
 export const Frame = {
   name: ${JSON.stringify(def.frameName)},
@@ -99,7 +150,7 @@ export const Frame = {
         { class: "qgframe-grid" },
         AREAS.map((area) => {
           // An area without a slot is an empty cell by design (a spacer) - see GridFrameArea.
-          const components = area.slot ? (bySlot[area.slot] ?? []) : []
+          const components = area.slot ? contentsFor(area, bySlot[area.slot] ?? []) : []
           // The area holding pageBody also carries \`center\`, because quartz's own three frames
           // do (DefaultFrame/FullWidthFrame/MinimalFrame all render <div class="center …">) and
           // client scripts rely on it: the mermaid initialiser runs
@@ -140,7 +191,25 @@ function generatePackageJson(def: GridFrameDefinition): string {
   )
 }
 
-async function writeFrameFiles(projectPath: string, def: GridFrameDefinition, widths: FrameBreakpointWidths): Promise<void> {
+// A frame's generated code carries the project's group ordering (see generateFrameJs), so every
+// write needs it. Unreadable config means no groups rather than a failed write: a frame that shows
+// a position undivided is a frame that still builds, and the alternative is a project whose frames
+// cannot be saved because of a syntax error somewhere else in the yaml.
+async function readGroupOrder(projectPath: string): Promise<Record<string, string[]>> {
+  try {
+    return groupOrderByPosition(await configService.readConfig(projectPath))
+  } catch (err) {
+    console.error(`[layoutFrames] could not read the layout groups of ${projectPath}: ${String(err)}`)
+    return {}
+  }
+}
+
+async function writeFrameFiles(
+  projectPath: string,
+  def: GridFrameDefinition,
+  widths: FrameBreakpointWidths,
+  groupOrder: Record<string, string[]>
+): Promise<void> {
   const dir = frameDir(projectPath, def.id)
   quartzGuiDir(projectPath, 'authored-frames') // creating: this is the write path
   mkdirSync(join(dir, 'dist'), { recursive: true })
@@ -149,8 +218,33 @@ async function writeFrameFiles(projectPath: string, def: GridFrameDefinition, wi
     // drops the frame out of listFrames() while its plugin entry stays in quartz.config.yaml.
     writeJsonFile(join(dir, 'frame.json'), def),
     writeFile(join(dir, 'package.json'), generatePackageJson(def), 'utf-8'),
-    writeFile(join(dir, 'dist', 'frames.js'), generateFrameJs(def, widths), 'utf-8')
+    writeFile(join(dir, 'dist', 'frames.js'), generateFrameJs(def, widths, groupOrder), 'utf-8')
   ])
+}
+
+/**
+ * Rewrites every frame of a project against the config as it stands now.
+ *
+ * Called after a config save, for the same reason saveBreakpointWidths rewrites them: the frames
+ * carry a copy of something the config owns - there, the breakpoint widths, here the group order -
+ * and a copy nobody refreshes is a copy that quietly stops being true. No `quartz plugin add` is
+ * involved; each frame's directory is already symlinked into .quartz/plugins, so rewriting the
+ * files behind the symlink is the whole job.
+ *
+ * Never throws: this runs after the config has already been written, and a project with no frames
+ * (the common case) must not learn about frames from a failed save.
+ */
+export async function writeAllFrames(projectPath: string): Promise<void> {
+  try {
+    const frames = await listFrames(projectPath)
+    if (frames.length === 0) return
+    const [widths, groupOrder] = await Promise.all([getBreakpointWidths(projectPath), readGroupOrder(projectPath)])
+    for (const def of frames) {
+      await writeFrameFiles(projectPath, def, widths, groupOrder)
+    }
+  } catch (err) {
+    console.error(`[layoutFrames] could not refresh the frames of ${projectPath}: ${String(err)}`)
+  }
 }
 
 export async function listFrames(projectPath: string): Promise<GridFrameDefinition[]> {
@@ -197,7 +291,7 @@ export async function saveFrame(
   // possibly a pre-breakpoint export - so migrate defensively here too, not just in listFrames().
   const def = migrateGridFrameDefinition(rawDef)
   const isNew = !existsSync(frameDir(projectPath, def.id))
-  await writeFrameFiles(projectPath, def, await getBreakpointWidths(projectPath))
+  await writeFrameFiles(projectPath, def, await getBreakpointWidths(projectPath), await readGroupOrder(projectPath))
   // Only newly created frames need registering - `quartz plugin add` symlinks the directory into
   // .quartz/plugins/<id> once; editing an existing frame just rewrites the files the symlink
   // already points at, so the build picks up the change on its next run with no CLI call needed.

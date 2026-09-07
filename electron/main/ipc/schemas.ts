@@ -286,7 +286,9 @@ export const gridFrameDefinition = z.looseObject({
         id: z.string().max(128),
         name: cssIdent,
         // optional: an area without a slot is an empty cell - see GridFrameArea in the contract
-        slot: frameSlot.optional()
+        slot: frameSlot.optional(),
+        // a quartz group name; it lands in `plugins[].layout.group`, so it is a plain identifier
+        group: cssIdent.optional()
       })
     )
     .max(200),

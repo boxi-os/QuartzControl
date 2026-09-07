@@ -395,12 +395,36 @@ export default function FrameBuilder({
     if (!editing) return
     setNameDraft(rawName)
     const name = slugify(rawName)
-    setEditing({ ...editing, areas: editing.areas.map((a) => (a.id === id ? { ...a, name } : a)) })
+    setEditing({
+      ...editing,
+      // The group is the area's own name (see updateAreaGroup), so renaming has to carry it along -
+      // otherwise the members written in the layout board keep pointing at the old name and the
+      // area comes up empty.
+      areas: editing.areas.map((a) => (a.id === id ? { ...a, name, group: a.group ? name : undefined } : a))
+    })
   }
 
   function updateAreaSlot(id: string, slot: FrameSlot | undefined): void {
     if (!editing) return
-    setEditing({ ...editing, areas: editing.areas.map((a) => (a.id === id ? { ...a, slot } : a)) })
+    // Only the six real positions can be split; "no slot" is an empty cell and pageBody is a single
+    // component, so a group left over from a previous choice would be a setting with no effect.
+    const keepsGroup = !!slot && slot !== 'pageBody'
+    setEditing({
+      ...editing,
+      areas: editing.areas.map((a) => (a.id === id ? { ...a, slot, group: keepsGroup ? a.group : undefined } : a))
+    })
+  }
+
+  // A group exists as soon as a component names it - `layout.groups` only ever holds its direction
+  // and gap - so switching this on writes nothing to quartz.config.yaml. What it does is make the
+  // area its own drop target in the layout board; the components dragged there get
+  // `layout.group: <area name>` and stop appearing in the position's plain area.
+  function updateAreaGroup(id: string, own: boolean): void {
+    if (!editing) return
+    setEditing({
+      ...editing,
+      areas: editing.areas.map((a) => (a.id === id ? { ...a, group: own ? a.name : undefined } : a))
+    })
   }
 
   function updateAreaSpan(id: string, patch: { rowSpan?: number; colSpan?: number }): void {
@@ -558,7 +582,9 @@ export default function FrameBuilder({
   // Two visible areas on one slot render that slot's whole component list twice - measured on this
   // project's "editorial" frame, which had three on `left`. The editor used to allow it silently;
   // the build was the first place it showed.
-  const doubledSlots = SLOTS.filter((s) => visibleAreas.filter((a) => a.slot === s).length > 1)
+  // Only areas without a group double up - two group areas on one slot are the point of the
+  // exercise, they show different components.
+  const doubledSlots = SLOTS.filter((s) => visibleAreas.filter((a) => a.slot === s && !a.group).length > 1)
   const unplacedAreas = editing.areas.filter((a) => {
     const p = layout.placements[a.id]
     return !p || p.hidden
@@ -812,7 +838,10 @@ export default function FrameBuilder({
                     <span className="truncate font-medium">{area.name}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Badge>{area.slot ? t(`positions.${area.slot}`, area.slot) : t('layoutEditor.frameBuilder.slotNone')}</Badge>
+                    <Badge>
+                      {area.slot ? t(`positions.${area.slot}`, area.slot) : t('layoutEditor.frameBuilder.slotNone')}
+                      {area.group ? ` · ${t('layoutEditor.frameBuilder.ownGroupShort')}` : ''}
+                    </Badge>
                     <span aria-hidden="true" className="rounded-[4px] p-0.5 text-text-muted">
                       {isSelected ? '▲' : '▼'}
                     </span>
@@ -841,6 +870,14 @@ export default function FrameBuilder({
                         ))}
                       </Select>
                     </Field>
+                    {area.slot && area.slot !== 'pageBody' && (
+                      <Toggle
+                        label={t('layoutEditor.frameBuilder.ownGroup')}
+                        hint={t('layoutEditor.frameBuilder.ownGroupHint')}
+                        checked={!!area.group}
+                        onChange={(checked) => updateAreaGroup(area.id, checked)}
+                      />
+                    )}
                     <Field label={t('layoutEditor.frameBuilder.rowSpanLabel')}>
                       <TextInput
                         type="number"
@@ -1049,6 +1086,7 @@ function TrayChip({
         <span className="font-medium">{area.name}</span>
         <span className="text-text-muted">
           {area.slot ? t(`positions.${area.slot}`, area.slot) : t('layoutEditor.frameBuilder.slotNone')}
+          {area.group ? ` · ${t('layoutEditor.frameBuilder.ownGroupShort')}` : ''}
         </span>
       </button>
     </div>

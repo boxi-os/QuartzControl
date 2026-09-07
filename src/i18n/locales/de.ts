@@ -1143,6 +1143,10 @@ export default {
       areaName: 'Bereichsname',
       areaSlot: 'Belegung',
       slotNone: 'Keine (leer)',
+      ownGroup: 'Eigener Bereich',
+      ownGroupShort: 'eigen',
+      ownGroupHint:
+        'Zeigt nur die Komponenten, die im Reiter „Global“ hierher gezogen werden. Ohne das zeigt der Bereich alles, was die Belegung sonst noch hat.',
       rowSpanLabel: 'Zeilen-Spanne',
       colSpanLabel: 'Spalten-Spanne',
       removeArea: 'Bereich löschen',

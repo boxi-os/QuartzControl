@@ -133,6 +133,13 @@ export interface GridFrameArea {
   id: string
   name: string
   slot?: FrameSlot
+  // The quartz group (`plugins[].layout.group`) this area holds, and the way past the six-position
+  // ceiling: an area with a group shows only that group's components, an area without one shows
+  // everything of its slot that no group claims. Meaningless without a slot, and on `pageBody`
+  // (which is one component, not a list). The name is the area's own - a group exists as soon as a
+  // component names it, `layout.groups` only carries its direction and gap. See
+  // groupOrderByPosition in gridFrameCss.ts for how the frame finds it again at build time.
+  group?: string
 }
 
 // Full grid geometry for exactly one breakpoint. columnSizes/rowSizes are optional per-track CSS

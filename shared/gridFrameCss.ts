@@ -344,3 +344,52 @@ export function migrateGridFrameDefinition(def: GridFrameDefinition | LegacyGrid
     }
   }
 }
+
+// Which groups a position holds, in the order quartz will hand them to a frame.
+//
+// A frame area can only render what quartz sorted into one of its six positions
+// (config-loader.ts's buildLayoutForEntries), so a frame with more component areas than that needs
+// a second key - and quartz has one: `layout.group` collapses a position's grouped entries into a
+// single Flex component (resolveGroups), leaving the ungrouped ones as themselves. Measured on a
+// real build, a position holding one group arrived as [MobileOnly, Flex, ExplorerComponent]: the
+// group is a function literally named "Flex" (quartz builds itself with esbuild's `keepNames`),
+// and `displayName` was undefined on every entry, so that name is the only identity there is.
+//
+// Rank is therefore how a group is addressed, and this is where the rank comes from. It mirrors
+// resolveGroups exactly and needs nothing but the config: members sorted by their own priority,
+// each group taking the position of its first member unless `layout.groups.<name>.priority` says
+// otherwise, then a stable sort by that. Plugins with no `layout` at all (quartz places those by
+// their manifest's defaultPosition) cannot carry a group and so cannot appear here - which is why
+// the frame counts Flexes rather than array positions.
+export function groupOrderByPosition(config: {
+  plugins: Array<{ enabled?: boolean; layout?: { position: string; priority: number; group?: string } }>
+  layout?: { groups?: Record<string, { priority?: number }> }
+}): Record<string, string[]> {
+  const groupConfigs = config.layout?.groups ?? {}
+  const result: Record<string, string[]> = {}
+  const members = config.plugins
+    .filter((p) => p.enabled !== false && p.layout?.group)
+    .map((p) => p.layout!)
+    .sort((a, b) => a.priority - b.priority)
+  for (const member of members) {
+    const list = (result[member.position] ??= [])
+    if (!list.includes(member.group!)) list.push(member.group!)
+  }
+  for (const position of Object.keys(result)) {
+    // Stable, like resolveGroups' own sort - two groups on the same priority keep the order their
+    // first members gave them.
+    result[position] = result[position]
+      .map((name, index) => ({ name, index, priority: groupConfigs[name]?.priority ?? priorityOfFirstMember(members, position, name) }))
+      .sort((a, b) => a.priority - b.priority || a.index - b.index)
+      .map((g) => g.name)
+  }
+  return result
+}
+
+function priorityOfFirstMember(
+  members: Array<{ position: string; priority: number; group?: string }>,
+  position: string,
+  group: string
+): number {
+  return members.find((m) => m.position === position && m.group === group)?.priority ?? 50
+}

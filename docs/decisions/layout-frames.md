@@ -254,3 +254,30 @@ Zeile. Keine Warnung in beiden Fällen, in beide Richtungen.
 Bleibt der eine Fall, den auch das nicht erreicht: `npx quartz build` in einem Terminal. Dafür ist
 der Zähl-Abgleich im erzeugten Frame da — er rät nicht, legt alles in den einfachen Bereich und sagt
 im Build-Log, welchen.
+
+### Die Beispielvorlage führt die freien Bereiche vor (2026-09-07)
+
+`editorial` hat seit heute zwei freie Bereiche nebeneinander unter dem Text, `custom-8` und
+`custom-9` (`EXTRA_AREAS` in `scripts/example-template/frames.mjs`) — ohne Belegung, also leer, und
+nur auf dem Desktop. Sie sind die Einladung, den zweiten Schlüssel zu benutzen: „Eigener Bereich“
+im Frame-Editor, dann im Reiter „Global“ eine Komponente hineinziehen.
+
+Was sie kosten, ist gemessen und nicht gerechnet — die gebaute Seite bei 1440 px im Browser:
+
+    grid-template-rows: 69px 376.703px 1545.52px 0px 140.312px 236.219px
+    row-gap: 32px
+    page-body  endet bei 2075
+    custom-8/9 0px hoch, beide bei 2107
+    after-body beginnt bei 2139
+
+Die Zeile selbst ist **0 px** hoch, aber sie bringt einen zweiten Zeilenabstand mit: zwischen
+Seiteninhalt und after-body stehen jetzt 64 statt 32 px. **+2rem auf jeder der 201 Inhaltsseiten**,
+und das ist der Preis dafür, dass die beiden Bereiche im Editor bereitstehen, statt erst angelegt
+werden zu müssen.
+
+Der Anlass war ein Verlust: die beiden Bereiche waren von Hand im Example-Projekt entstanden, und
+`npm run template:example` hat sie überschrieben — Phase 3 schreibt die vier Frames aus
+`frames.mjs`, und ein Rückweg ist für Config und Frames bewusst nicht vorgesehen. Kein Snapshot
+half, denn keiner hatte sie: `saveFrame` nimmt nur für ein *neues* Frame eine Aufnahme, das
+Bearbeiten eines bestehenden nicht. **Was im Werkstattprojekt bleiben soll, gehört ins Skript** —
+das ist die Regel, und dieser Absatz ist ihr Beleg.

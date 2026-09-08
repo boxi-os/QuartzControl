@@ -237,9 +237,18 @@ zwei kaputten Frames stand der erste damit zweimal da, und der Gedankenstrich, d
 Name und Grund trennt, sah aus wie der Trenner der Liste. Für 45 übersprungene Plugins ist die
 Gruppierung richtig; für Sätze ist sie es hier so wenig wie im Dry-Run.
 
-Drei Arten tragen einen fertigen Satz als `detail` — `frameFailed`, `themeInstallFailed`,
-`pluginInstallFailed` —, und die bekommen jetzt eine Zeile je Fall, gekappt bei sechs mit „und N
-weitere Fälle“. Alles andere bleibt gruppiert.
+Wer eine Zeile je Fall bekommt, ist **an i18next gefragt, nicht als Namensliste gepflegt**: Eine
+Interpolation mit einem Wert, der in keiner Übersetzung vorkommen kann, sagt, ob die Vorlage
+`{{detail}}` überhaupt verbraucht. Der erste Anlauf war eine handgeschriebene Liste mit drei Namen —
+und sie war schon beim Schreiben falsch. Gemessen gegen echtes i18next mit den gebündelten
+Sprachdateien: von 22 Arten verbrauchen **sieben** ein `detail`, in beiden Sprachen dieselben
+(`contentIsSymlink`, `frameFailed`, `partFailed`, `partUnreadable`, `pluginInstallFailed`,
+`themeInstallFailed`, `translationFailed`). Die Liste hätte vier davon verloren, und zwar genau die,
+die niemand vor Augen hat. Dieselbe Bauart wie die fünf zod-Codes eine Datei weiter, die vier Runden
+hielten und dann nicht mehr — deshalb hier keine Liste.
+
+Gekappt wird bei sechs mit „und N weitere Fälle“. Alles ohne `detail` bleibt gruppiert: Dort ist die
+Kommareihe eine Liste von Namen, und für die ist sie richtig.
 
 Gemessen an der gebauten App am **echten Import** eines von Hand gebauten `.qtpl` (Manifest,
 `parts/frames.json` mit zwei kaputten Frames), Wegwerf-Profil, Klon des Beispielprojekts; die

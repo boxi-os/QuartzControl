@@ -5,7 +5,7 @@
   "version": "1.0.0-beta.1",
   "description": "Desktop GUI for managing Quartz 5 sites: config, plugins, content source, builds and the local dev server.",
   "main": "./out/main/index.js",
-  "author": "Holger Borker",
+  "author": "boxi-os",
   "private": true,
   "type": "module",
   "scripts": {

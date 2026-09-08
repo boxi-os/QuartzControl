@@ -410,7 +410,11 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   `nearestDroppableCoordinates` aus `utils/dndKeyboard.ts` - ohne einen der beiden schiebt ein
   Pfeildruck um 25px und damit um nichts; `PointerSensor` mit `distance: 4`, wo derselbe Griff auch
   klickbar ist. Sortierbare Zeilen tragen zusätzlich „nach oben / nach unten“: die Tastatur-Aufnahme
-  ist eine Geste, die man kennen muss. Messungen in
+  ist eine Geste, die man kennen muss. **Und über einem Drag steht nie ein `stopPropagation()`:**
+  Der `KeyboardSensor` hört, sobald ein Drag läuft, auf dem *Dokument*, und React ruft für ein
+  `stopPropagation()` im Renderer auch das native an der Wurzel — ein Guard, der ein Zeichen vom
+  Elternknoten fernhalten soll, nimmt damit dem laufenden Drag Pfeile und Escape ab. Wer zu viel
+  hört, verengt am Hörer (`e.target === e.currentTarget`), nicht an dem, was aufsteigt. Messungen in
   [`plugins-and-config.md`](docs/decisions/plugins-and-config.md) und
   [`layout-frames.md`](docs/decisions/layout-frames.md).
 - **Ein Wort, ein Name — und zwar über App und Handbuch hinweg.** Vokabular ist eine Tabelle
@@ -532,19 +536,41 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Befunde aus den Reviews (Stand 2026-09-11)
+## Befunde aus den Reviews (Stand 2026-09-12)
 
-Alle acht Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
+Alle neun Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht,
 [`docs/REVIEW-2026-09-08.md`](docs/REVIEW-2026-09-08.md) mit seinen acht,
 [`docs/REVIEW-2026-09-09.md`](docs/REVIEW-2026-09-09.md) mit seinen acht,
 [`docs/REVIEW-2026-09-10.md`](docs/REVIEW-2026-09-10.md) mit seinen acht und
-[`docs/REVIEW-2026-09-11.md`](docs/REVIEW-2026-09-11.md) mit seinen acht (Aufträge daneben in
+[`docs/REVIEW-2026-09-11.md`](docs/REVIEW-2026-09-11.md) mit seinen acht und
+[`docs/REVIEW-2026-09-12.md`](docs/REVIEW-2026-09-12.md) mit seinen fünf (Aufträge daneben in
 `docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-11-`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel.
+
+**Das neunte Review las die acht Fixes des achten und den Nachtrag daneben.** Kein Befund der Stufe
+Hoch, einer Mittel, vier Niedrig, alle fünf abgearbeitet. Der mittlere war wieder eine Regression
+aus einem Fix des Vorgängers: Der Tastatur-Guard am Bereichsformular hielt nicht nur die
+Tastendrücke auf, die zum Kasten wollten, sondern auch die, die zu `@dnd-kit` wollten — Pfeile und
+Escape kamen nicht mehr an, und ein Tastatur-Drag endete beim ersten Tastendruck außerhalb des
+Formulars als Ablage auf einer Zelle, die niemand gewählt hatte. Was daraus als Regel bleibt, steht
+oben in den passenden Abschnitten:
+
+- **Ein Guard hält die Kette für jeden an, der weiter oben hört — auch für den, den man nicht
+  sieht.** Der `KeyboardSensor` hört während eines Drags auf dem Dokument. Wer zu viel hört,
+  verengt am Hörer, nicht an dem, was aufsteigt.
+- **Ein Hinweis beschreibt die Tür, hinter der die Sache passiert.** „Verschwindet beim nächsten
+  Speichern" stand über einem Filter, der in `update` sitzt; ein Klick auf Speichern schrieb die
+  Datei neu und ließ den toten Ausschluss darin.
+- **Eine Zahl gehört zu dem, woran sie gemessen wurde.** 3110 und 3105 waren beide richtig, für
+  `columnLineNames` und für `placements` — und keine der zwei Stellen nannte das Feld, also liest
+  der Nächste eine davon als falsch.
+- **Wer einen zweiten Fall einführt, liest die Sätze daneben noch einmal.** Der Chip lernte
+  „ausgeblendet"; die Überschrift über ihm und der Hinweis unter ihm sprachen weiter so, als läge
+  in der Ablage nur Unplatziertes.
 
 **Das achte Review las die acht Fixes des siebten und die zwei kleinen Vorhaben darunter** (PR #27
 und #28). Kein Befund der Stufe Hoch, einer Mittel, sieben Niedrig, alle acht abgearbeitet. Der
@@ -719,20 +745,28 @@ Bereich darf ohne Belegung leer bleiben, und über `layout.group` kann er eigene
 Umbaus selbst: die Zuordnung ruht auf einem Funktionsnamen, den es nur gibt, weil Quartz sich mit
 esbuilds `keepNames` baut.
 
-**Das nächste Review misst ab `review-2026-09-11`.** Der Tag sitzt auf `59de3a5`, dem Stand, den
-das achte Review gelesen hat (`main` nach PR #27 plus die Variablensuche aus PR #28) — nach
-derselben Regel wie seine fünf Vorgänger: Der Ausgangsstand ist das, was gelesen wurde, nicht das,
-was danach entstanden ist. So sitzt `review-2026-09-10` auf `b1cf5bd`, `main` nach PR #25,
-`review-2026-09-09` auf `c6da3d9` („Der Auftrag für das sechste Review“),
+**Das nächste Review misst ab `review-2026-09-12`.** Der Tag sitzt auf `7568803`, dem Stand, den
+das neunte Review gelesen hat (`main` nach PR #29 plus der Nachtrag und der Auftrag aus PR #30) —
+nach derselben Regel wie seine sechs Vorgänger: Der Ausgangsstand ist das, was gelesen wurde, nicht
+das, was danach entstanden ist. So sitzt `review-2026-09-11` auf `59de3a5`, dem Stand des achten
+Reviews (`main` nach PR #27 plus die Variablensuche aus PR #28), `review-2026-09-10` auf `b1cf5bd`,
+`main` nach PR #25, `review-2026-09-09` auf `c6da3d9` („Der Auftrag für das sechste Review“),
 `review-2026-09-08` auf `0c76d6e`, `review-2026-09-07` auf `1994811`, dem letzten Merge vor den
 Fixes des vierten Reviews, und `review-2026-09-06` auf `1bd69dc`; Letzterer war einmal 67 Commits
 früher auf `0b0fb96` gesetzt und wurde verschoben, weil jener Stand gemessen, aber nicht gelesen
 war.
 
-**Die acht Fixes des achten Reviews liegen bewusst dahinter.** Sie sind gemessen — der mittlere
-vorher und nachher am echten Build eines Klons des Beispielprojekts, fünf weitere an der gebauten
-App in einem Wegwerf-Profil (darunter ein echter Import eines von Hand gebauten `.qtpl`) — und von
-niemandem sonst gelesen. Die größten Eingriffe sind `countsFit` samt der Rückfall-Meldung, die
+**Die fünf Fixes des neunten Reviews liegen bewusst dahinter.** Sie sind gemessen — der mittlere
+vorher und nachher an der gebauten App mit echten Tastendrücken, der zweite an einem Testprojekt
+mit einem toten Ausschluss (dessen Config danach zurückgestellt ist), der vierte an einem
+esbuild-Bündel des Hauptprozesses, der fünfte an der gebauten App — und von niemandem sonst
+gelesen. Die größten Eingriffe sind der Guard, der vom Formular an den Kasten gewandert ist, und
+die zwei Sätze um die Ablage. Sie gehören damit in den Diff des nächsten Auftrags.
+
+**Die acht Fixes des achten Reviews hat das neunte gelesen** — mit dem Ergebnis, dass einer davon
+eine Regression war (der Tastatur-Guard, oben). Gemessen waren sie am echten Build eines Klons des
+Beispielprojekts und an der gebauten App in einem Wegwerf-Profil (darunter ein echter Import eines
+von Hand gebauten `.qtpl`). Die größten Eingriffe waren `countsFit` samt der Rückfall-Meldung, die
 sagt, was eine Kandidatin ausgeschlossen hat, die Platzierung, die die Ablage jetzt durchreicht,
 der Tastatur-Guard am Bereichsformular, der sechste zod-Code samt Kappung je Pfadsegment und der
 Filter für tote Ausschlüsse in `update`.

@@ -230,8 +230,15 @@ bleiben — dieselbe Spurlosigkeit, für die `hasPageTypeOverride` existiert.
 **Und der Reiter sagt es jetzt.** „Nie ausgeschlossen“ und „ausgeschlossen unter einem Namen, der
 nichts tut“ rendern denselben Schalter; ohne einen Satz dazu findet der Nutzer seinen Eintrag beim
 nächsten Klick weg, ohne dass jemand ihn gewarnt hätte. Über der Schalterliste steht deshalb, was in
-der Datei steht und dass es beim nächsten Speichern dieses Seitentyps verschwindet
-(`excludeDeadHint`, de/en, mit Plural).
+der Datei steht und dass es verschwindet, sobald an diesem Seitentyp etwas umgelegt und
+gespeichert wird (`excludeDeadHint`, de/en, mit Plural) — die Tür, an der der Filter sitzt, und
+nicht die daneben. Der Satz hieß bis zum neunten Review „beim nächsten Speichern dieses
+Seitentyps“, und das ist eine andere Tür: `save` in `index.tsx` schreibt die Config, wie sie ist.
+Gemessen an der gebauten App (`gui-test`, Seitentyp `tag`, `exclude: [reader-mode]` neben
+`@quartz-community/reader-mode`): Reiter offen, „Speichern“ geklickt — die Datei ist neu
+geschrieben, ihr Inhalt Byte für Byte derselbe, der tote Ausschluss steht weiter darin. Erst nach
+einem Umlegen an diesem Seitentyp verschwindet er, und dann ist er auch das Einzige, was der Diff
+zeigt.
 
 Die Nachbildung selbst hat einen eigenen Wächter, `npm run check:plugin-names`: 18 Quellen gegen eine
 Tabelle, und mit einem Projektpfad zusätzlich gegen Quartz' **eigene** Funktion, aus

@@ -579,16 +579,32 @@ export function authoredFrameDir(projectPath: string, id: string): string {
 // instead: the path, which is data rather than prose, plus a phrase per issue code, plus whatever
 // number or list the issue carries (a limit, the allowed values - also data).
 //
-// The five codes are the ones this schema can actually produce, checked against it rather than
-// guessed: invalid_type, too_big, too_small, invalid_value (an enum) and invalid_format (a regex).
-// Anything else keeps zod's own text, and that case really is a bug - the schema grew a rule this
-// list was never told about, and an English sentence is then the right kind of ugly.
+// The six codes are the ones this schema can actually produce, checked against it by parsing
+// broken frames rather than by reading: invalid_type, too_big, too_small, invalid_value (an enum),
+// invalid_format (a regex) and invalid_key. The last one is what a `z.record(keySchema, ...)`
+// reports for a key its key schema rejects - this schema has three such fields (columnLineNames,
+// rowLineNames, placements), and it was missed by reading the schema for rules rather than running
+// broken input through it. Anything else keeps zod's own text, and that case really is a bug - the
+// schema grew a rule this list was never told about, and an English sentence is then the right
+// kind of ugly.
+//
+// The path is data, not prose, and for an invalid_key it *is* the foreign key: zod appends it as
+// the last segment. A `.qtpl` from anywhere can therefore make the sentence any length it likes
+// (measured: a 3000-character key gave a 3110-character sentence, which the dry run puts in
+// `plan.notes` whole). So every segment is capped before it is shown.
 // Derived from the schema rather than imported from zod: it is the same discriminated union, so
 // `issue.maximum` and `issue.values` below are narrowed by their `case` instead of cast.
 type FrameShapeIssue = NonNullable<ReturnType<typeof gridFrameDefinition.safeParse>['error']>['issues'][number]
 
+// A path segment can be a key from the file - so it is truncated, not the whole joined path: the
+// part that says *which field* is at the front and has to survive.
+function shortSegment(segment: string | number | symbol): string {
+  const text = String(segment)
+  return text.length > 40 ? text.slice(0, 40) + '\u2026' : text
+}
+
 function shapeIssue(issue: FrameShapeIssue): string {
-  const where = issue.path.join('.') || 'frame'
+  const where = issue.path.map(shortSegment).join('.') || 'frame'
   switch (issue.code) {
     case 'invalid_type':
       return mainT('frameIssueType', { where })
@@ -600,6 +616,8 @@ function shapeIssue(issue: FrameShapeIssue): string {
       return mainT('frameIssueValue', { where, values: issue.values.join(', ') })
     case 'invalid_format':
       return mainT('frameIssueFormat', { where })
+    case 'invalid_key':
+      return mainT('frameIssueKey', { where })
     default:
       return `${where}: ${issue.message}`
   }

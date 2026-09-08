@@ -104,11 +104,23 @@ Werte — auch Daten):
     Der Frame ist nicht lesbar: Der Wert bei „areas.0.slot“ ist keine der erlaubten Angaben
       (header, left, right, beforeBody, afterBody, footer, pageBody).
 
-Die fünf Codes sind **am Schema gemessen, nicht geraten**: `invalid_type`, `too_big`, `too_small`,
-`invalid_value` (ein Enum) und `invalid_format` (eine Regex) sind alles, was
-`gridFrameDefinition` hergibt — durchgespielt an elf kaputten Frames. Ein Code, den die Liste nicht
-kennt, behält zod' eigenen Text, und *dieser* Fall ist wirklich ein Bug: Das Schema hat eine Regel
-bekommen, von der hier niemand weiß. Der Typ der Liste ist aus dem Schema abgeleitet
+Die **sechs** Codes sind am Schema gemessen: `invalid_type`, `too_big`, `too_small`,
+`invalid_value` (ein Enum), `invalid_format` (eine Regex) und `invalid_key` sind alles, was
+`gridFrameDefinition` hergibt. Der sechste fehlte zuerst, und er zeigt, wie die Messung gemeint
+ist: Er entsteht, wenn ein `z.record(keySchema, …)` einen Schlüssel bekommt, den sein
+Schlüssel-Schema ablehnt — davon hat das Schema drei Felder (`columnLineNames`, `rowLineNames`,
+`placements`). Gefunden wurde er nicht durch Lesen des Schemas, sondern indem kaputte Frames
+hindurchgeschickt wurden; „am Schema gemessen“ heißt genau das und nicht „im Schema nachgesehen“.
+Ein Code, den die Liste nicht kennt, behält zod' eigenen Text, und *dieser* Fall ist wirklich ein
+Bug: Das Schema hat eine Regel bekommen, von der hier niemand weiß.
+
+**Der Pfad ist Daten, und bei einem `invalid_key` ist er der fremde Schlüssel selbst** — zod hängt
+ihn als letztes Segment an. Ein `.qtpl` kann den Satz damit beliebig lang machen; gemessen mit
+einem Schlüssel aus `<script>alert(1)</script>` und 3000 weiteren Zeichen ergab das einen Satz von
+3105 Zeichen, den der Dry-Run ungekürzt in `plan.notes` legt. Gekappt wird deshalb **je Segment**
+(40 Zeichen, dann `…`), nicht der zusammengesetzte Pfad: Vorn steht, um welches Feld es geht, und
+das muss überleben. Derselbe Fall jetzt: 132 Zeichen, in den Worten der App. Die fünf anderen Codes
+sind dabei Wort für Wort unverändert (gemessen an acht kaputten Frames, vorher und nachher). Der Typ der Liste ist aus dem Schema abgeleitet
 (`NonNullable<ReturnType<typeof gridFrameDefinition.safeParse>['error']>['issues'][number]`), also
 verengt der `case` die Felder `maximum`/`minimum`/`values` von selbst, statt sie zu casten.
 

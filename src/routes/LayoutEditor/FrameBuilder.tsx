@@ -374,7 +374,9 @@ export default function FrameBuilder({
     useSensor(KeyboardSensor, { coordinateGetter: nearestDroppableCoordinates })
   )
   // Every id on this board in words: an area by its name, a cell by its coordinates, the tray by
-  // its label - see dndAccessibility.
+  // its label - see dndAccessibility. Which is why that label is a name and not an instruction: it
+  // is read out as a drop target ("right is over ..."), and the sentence under the tray carries the
+  // instruction anyway.
   const { announcements, screenReaderInstructions } = dndAccessibility(t, (id) => {
     if (id === TRAY_ID) return t('layoutEditor.frameBuilder.availableAreasLabel')
     const cell = parseCellId(id)
@@ -671,13 +673,10 @@ export default function FrameBuilder({
     return (
       <div
         onClick={(e) => e.stopPropagation()}
-        // The keyboard's half of the same guard. A placed area's box is itself a role="button" with
-        // an Enter/Space handler, and this form is a child of it - so every keystroke in a field
-        // rose to the box, which called preventDefault() and collapsed the form. The character
-        // never arrived: no space in a name, no toggle by Space, no Return anywhere. The click path
-        // had this line from the start; the key path never did, and in the tray, where nothing
-        // listens above, the same form always worked - which is what made the difference visible.
-        onKeyDown={(e) => e.stopPropagation()}
+        // No keyboard guard here on purpose. The box above this form listens only for keystrokes
+        // aimed at itself (PlacedBox), so a character typed in a field never reaches it - and a
+        // guard that stopped the bubbling would stop it for @dnd-kit too, whose keyboard sensor
+        // listens on the document while a drag runs.
         className="flex flex-wrap items-end gap-2 border-t border-ink/[0.06] pt-2 dark:border-ink/10"
       >
         <Field label={t('layoutEditor.frameBuilder.areaName')}>
@@ -1272,6 +1271,13 @@ function PlacedBox({
       aria-label={label}
       onClick={onToggle}
       onKeyDown={(e) => {
+        // Only what was aimed at the box itself. Everything inside it - the fields of the area
+        // form, and above all the drag handle, whose Space starts a keyboard drag - keeps its
+        // keystroke: the alternative, stopping the bubbling down in the form, takes the arrows and
+        // Escape away from @dnd-kit's keyboard sensor, which listens on the document once a drag
+        // runs. A drag that cannot be steered and cannot be cancelled then ends on whatever cell it
+        // started over, at the first keystroke outside the form.
+        if (e.target !== e.currentTarget) return
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
           onToggle()

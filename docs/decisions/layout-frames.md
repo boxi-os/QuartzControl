@@ -685,3 +685,39 @@ dieser Vergleich hat es sichtbar gemacht. Gemessen mit echten Tastendrücken: `t
 Namensfeld ergab vorher ein geschlossenes Formular und `activeElement: body`, jetzt den Namen
 „rightx y“; die Leertaste auf „Eigener Bereich“ schloss vorher das Formular, ohne den Schalter
 umzulegen, und legt ihn jetzt um.
+
+**Nachtrag (2026-09-08, neuntes Review): Dieser Guard saß an der falschen Tür.** Er lag auf dem
+Formular (`onKeyDown={(e) => e.stopPropagation()}`), und React ruft dafür auch das native
+`stopPropagation()` am Wurzelknoten — über dem liegt das Dokument, und dort hört `@dnd-kit`s
+`KeyboardSensor`, sobald ein Drag läuft (`core.esm.js:1147`). Ein Tastatur-Nutzer nimmt einen
+platzierten Bereich mit der Leertaste auf dem Griff auf; derselbe Tastendruck stieg zum Kasten auf,
+klappte das Formular auf, und dessen Namensfeld holte sich per `autoFocus` den Fokus — mitten im
+Drag. Von da an kam beim Sensor nichts mehr an.
+
+Gemessen an der gebauten App mit echten Tastendrücken, Bereich `right` des `editorial`-Frames
+(`2 / span 4`, `10 / span 3`), Griff fokussiert:
+
+| | vorher | jetzt |
+| --- | --- | --- |
+| Leertaste | Drag läuft, Formular offen, Fokus im Namensfeld, „liegt über Zeile 2, Spalte 11“ | Drag läuft, Formular zu, Fokus auf dem Griff, dieselbe Ansage |
+| Pfeil links | nichts | „… Spalte 10“ |
+| Escape | nichts | „right abgebrochen, nichts verschoben“ |
+
+Und vorher endete der Drag beim neunten Tab — dem ersten Tastendruck außerhalb des Formulars — als
+Ablage: `11 / span 2` statt `10 / span 3`. Der Guard sitzt jetzt am Hörer statt an dem, was
+aufsteigt: `PlacedBox` reagiert nur noch auf `e.target === e.currentTarget`, das Formular braucht
+keinen eigenen mehr, und der Griff behält seine Leertaste für sich. Gegengeprobt, dass der Fix
+oben seine Wirkung behält: Leertaste auf dem Kasten klappt auf, „a b“ im Namensfeld kommt an,
+Return lässt das Formular offen.
+
+**Nachtrag (2026-09-08, neuntes Review): Die zwei Sätze um die Ablage wussten davon nichts.** Ihre
+Überschrift hieß „Verfügbare Bereiche (ins Raster ziehen, um sie zu platzieren)“, der Hinweis
+darunter endete mit „Zeilen- und Spalten-Spanne gibt es nur für einen platzierten Bereich“ — und
+darüber lag seit dem Nachtrag oben ein Chip, der platziert ist, „ausgeblendet“ sagt und seine
+Spannen zeigt. Beides war wörtlich wahr und las sich als Widerspruch zu dem, was daneben stand.
+Die Überschrift heißt jetzt „Bereiche, die hier nicht im Raster liegen“ — beide Arten, ohne
+Anweisung: Sie ist zugleich der Name, mit dem `dndAccessibility` das Ablageziel ansagt („right
+liegt über …“), und die Anweisung steht ohnehin im Satz eine Zeile darunter. Der endet jetzt mit
+„ein hier ausgeblendeter Bereich behält dabei Zeilen- und Spalten-Spanne, ein nie platzierter hat
+keine“. Gemessen an der gebauten App, `right` des `editorial`-Frames auf Desktop ausgeblendet:
+Überschrift, Chip („right · Rechte Seitenleiste · ausgeblendet“) und Hinweis sagen dasselbe.

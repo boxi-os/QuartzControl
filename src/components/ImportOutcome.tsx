@@ -13,7 +13,7 @@ import { Check } from 'lucide-react'
  * separator next to the dash inside every one of them - and the head line has already said
  * details[0], so the tail repeated it. With two broken frames the first appeared twice.
  *
- * Which kinds those are is asked of i18next, not kept as a list of names. Six of the twenty-two
+ * Which kinds those are is asked of i18next, not kept as a list of names. Seven of the twenty-two
  * carry a `{{detail}}` today, and a hand-written list is exactly the thing that is right until the
  * twenty-third arrives - the five zod codes in layoutFrameService were that list, correct for four
  * rounds and then not. The probe is an interpolation whose result cannot occur in a translation:

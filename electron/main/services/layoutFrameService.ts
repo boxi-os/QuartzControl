@@ -589,9 +589,12 @@ export function authoredFrameDir(projectPath: string, id: string): string {
 // kind of ugly.
 //
 // The path is data, not prose, and for an invalid_key it *is* the foreign key: zod appends it as
-// the last segment. A `.qtpl` from anywhere can therefore make the sentence any length it likes
-// (measured: a 3000-character key gave a 3110-character sentence, which the dry run puts in
-// `plan.notes` whole). So every segment is capped before it is shown.
+// the last segment. A `.qtpl` from anywhere can therefore make the sentence any length it likes:
+// measured with a key of `<script>alert(1)</script>` plus 3000 characters on `columnLineNames`,
+// whose path prefix is the longest of the three at 36 characters, that was a 3110-character
+// sentence, which the dry run puts in `plan.notes` whole. So every segment is capped before it is
+// shown, and the same case then comes out at 137. On `placements`, prefix 31, the two numbers are
+// 3105 and 132 - the pair `i18n-and-vocabulary.md` writes down.
 // Derived from the schema rather than imported from zod: it is the same discriminated union, so
 // `issue.maximum` and `issue.values` below are narrowed by their `case` instead of cast.
 type FrameShapeIssue = NonNullable<ReturnType<typeof gridFrameDefinition.safeParse>['error']>['issues'][number]

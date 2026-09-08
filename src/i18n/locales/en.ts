@@ -101,6 +101,7 @@ export default {
       ready: 'Tools ready',
       secretsBackend: 'Credentials encrypted via {{backend}}',
       secretsTitle: 'Credentials are stored unencrypted',
+      secretsTitleUnavailable: 'Credentials cannot be saved',
       secretsBody:
         'No keyring is running on this system, so Electron stores passwords and tokens with a hardcoded key ({{backend}}) — effectively plaintext. Running gnome-keyring or KWallet protects them properly.',
       secretsUnavailable:

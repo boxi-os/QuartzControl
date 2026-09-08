@@ -109,9 +109,12 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   SVG-Konverter hat, und liest die zwei x-Werte aus derselben Quelle wie die Konfiguration
 - `npm run dist` / `dist:mac` / `dist:linux` / `dist:flatpak` — electron-builder (see
   `docs/decisions/electron-runtime-and-packaging.md`). `dist:flatpak` ist ein eigenes Skript, weil
-  das Ziel flatpak und flatpak-builder auf der Baumaschine braucht und **noch nie gebaut wurde** —
-  die Konfiguration ist abgeleitet, nicht gemessen. Der erste Bau ist am 2026-09-03 bewusst auf die
-  Version nach v1 verschoben worden; v1 liefert macOS, AppImage und deb
+  das Ziel flatpak und flatpak-builder auf der Baumaschine braucht. **Am 2026-09-08 zum ersten Mal
+  gebaut** (Debian 13, aarch64): das Paket entsteht, installiert sich als
+  `io.github.boxi_os.quartzcontrol`, startet, und in der Sandbox antworten der `node`-Shim mit
+  24.18.1, npm mit 11.17.0 und `/app/bin/git` mit 2.53.0. Die Baumaschine braucht flathub als
+  **user**-Remote, nicht nur systemweit — sonst scheitert der Bau an einem `flatpak failed with
+  status code 1`, das seinen Grund verschweigt. v1 liefert weiterhin macOS, AppImage und deb
 
 If `npm install` leaves `node_modules/electron` half-installed (`electron-vite dev` fails with `Error: Electron uninstall`), the postinstall's `extract-zip` step may have silently produced a partial extraction in a sandboxed shell. Fix: `rm -rf node_modules/electron/dist node_modules/electron/path.txt`, then `unzip -q <cached zip under ~/Library/Caches/electron/...> -d node_modules/electron/dist` and write the platform binary path (e.g. `Electron.app/Contents/MacOS/Electron`) into `node_modules/electron/path.txt` with no trailing newline.
 

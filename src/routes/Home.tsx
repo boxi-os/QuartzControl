@@ -718,8 +718,17 @@ function EnvironmentBand({ info, onRecheck }: { info: EnvironmentInfo; onRecheck
         <div className={broken.length > 0 ? 'mt-4 border-t border-amber-300/60 pt-3 dark:border-amber-500/30' : ''}>
           <div className="flex items-center gap-2">
             <TriangleAlert size={15} className="shrink-0 text-amber-600 dark:text-amber-400" />
+            {/* Two states, two headlines. "Zugangsdaten liegen unverschlüsselt" is true for the
+                hardcoded-key backend, and false for the other case this band covers: when
+                encryption is unavailable nothing is stored at all, which is what the body below
+                says - so the one headline contradicted its own paragraph. Measured on Debian 13 /
+                GNOME 50 (2026-09-08): on Linux without a keyring Electron reports
+                isEncryptionAvailable() === false, so that second case is the one a Linux user
+                actually meets. */}
             <h2 className="text-sm font-semibold text-amber-900 dark:text-amber-200">
-              {t('home.environment.secretsTitle')}
+              {info.secretStorage.available
+                ? t('home.environment.secretsTitle')
+                : t('home.environment.secretsTitleUnavailable')}
             </h2>
           </div>
           <p className="mt-1.5 text-ui leading-relaxed text-amber-900/80 dark:text-amber-200/80">

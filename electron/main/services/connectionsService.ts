@@ -19,9 +19,10 @@ import { mainT } from '../i18n'
 // every marketplace call. Both are migrated in on first read (see migrate() below).
 //
 // Secrets are encrypted at rest via Electron's safeStorage (OS keychain-backed: Keychain on macOS,
-// DPAPI on Windows, libsecret on Linux) and never leave the main process. This project's pinned
-// Electron version (33.x) only ships the sync encryptString/decryptString API - the newer async
-// variants Electron's current docs recommend don't exist in it.
+// DPAPI on Windows, libsecret on Linux) and never leave the main process. The sync
+// encryptString/decryptString pair is what this file uses; since the Electron 43 upgrade the async
+// variants exist too (`encryptStringAsync`, `isAsyncEncryptionAvailable`), and the sentence here
+// used to say they did not - it was written against 33.x and outlived it.
 interface StoredConnection {
   id: string
   kind: 'ssh' | 'ftp' | 'github' | 'webhook'
@@ -54,13 +55,25 @@ function settingsPath(): string {
 }
 
 // Whether a secret written here is actually protected - which is not the same question on every
-// platform. On Linux without a running keyring (gnome-keyring, kwallet) Electron falls back to the
-// `basic_text` backend, which encrypts with a hardcoded key and still reports
-// isEncryptionAvailable() === true. Every check in this file trusts that flag, so an SFTP password
-// or the GitHub token would land in connections.json effectively in the clear with nothing saying
-// so. The rest of this app is careful to distinguish "cannot check" from "fine" (see
-// styleService's `unavailable` and updateService's 'unknown'); this is the same distinction for
-// secrets, and the user is the only one who can fix it.
+// platform. On Linux the answer depends on the password store Chromium picked: with a keyring it
+// runs (gnome-libsecret, kwallet) there is a key and secrets are encrypted; without one the backend
+// is `basic_text` and Electron reports isEncryptionAvailable() === false. It does *not* quietly
+// encrypt with a hardcoded key - that is what `setUsePlainTextEncryption(true)` opts into, and this
+// app never calls it. So the flag is honest, and a credential cannot land in connections.json in
+// the clear: it cannot be stored at all, and saveConnection says so.
+//
+// Measured on Debian 13 / GNOME 50 (2026-09-08, Electron 43.4.1): with the session's own
+// environment the backend is `gnome_libsecret`, available is true, and the ciphertext carries
+// Chromium's `v11` marker; with `--password-store=basic` forced, available is false and
+// encryptString throws. This comment used to claim the opposite - that basic_text still reported
+// true - which was 33.x behaviour and was never re-measured after the upgrade.
+//
+// The distinction is still worth reporting rather than collapsing into "encrypted / not
+// encrypted": `basic_text` also appears when the desktop could not be detected at all (over ssh
+// without XDG_CURRENT_DESKTOP, measured the same day), and that is an environment the user can
+// fix. Same shape as styleService's `unavailable` and updateService's 'unknown'. The
+// `backend !== 'basic_text'` half of `secure` is belt and braces: it is what would still be true
+// if anyone ever called setUsePlainTextEncryption().
 export function getSecretStorageInfo(): SecretStorageInfo {
   const available = safeStorage.isEncryptionAvailable()
   // getSelectedStorageBackend() only exists on Linux; elsewhere the backend is the OS keychain

@@ -101,6 +101,7 @@ export default {
       ready: 'Werkzeuge bereit',
       secretsBackend: 'Zugangsdaten verschlüsselt über {{backend}}',
       secretsTitle: 'Zugangsdaten liegen unverschlüsselt',
+      secretsTitleUnavailable: 'Zugangsdaten lassen sich nicht speichern',
       secretsBody:
         'Auf diesem System ist kein Schlüsselbund aktiv, deshalb speichert Electron Passwörter und Token nur mit einem fest eingebauten Schlüssel ({{backend}}) — das ist praktisch Klartext. Mit gnome-keyring oder KWallet werden sie richtig geschützt.',
       secretsUnavailable:

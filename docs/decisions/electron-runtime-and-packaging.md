@@ -43,8 +43,10 @@ Aus CLAUDE.md ausgelagert (2026-09-02): die Messungen und Beobachtungen hinter d
 
 **`npm run check:runtime -- <projekt>`** prüft diese Kette von außen, weil keiner ihrer Fehler im Typcheck oder im Build sichtbar wird — sie passieren alle in einem Kindprozess, derselbe Grund, aus dem `check:i18n` existiert. Zwei Prüfungen sind nach dem geformt, was sie *nicht* durchlassen dürfen: die Loader-Prüfung liest `process.defaultApp` direkt und fährt die Gegenprobe im selben Atemzug (mit `-r`: true, ohne: undefined), und die CLI-Prüfung ist `quartz plugin list` statt `--help`, weil Hilfe ihre Verwendung ausgibt, egal wie argv zugeschnitten war. Beim ersten Lauf hat das Skript sofort einen echten Fehler gefunden: `replace()` hatte den Platzhalter im Kommentar der eigenen Vorlage ersetzt und den Befehl mit einem literalen `__SCRIPT__` stehen lassen, der `node`-Shim der App war also kaputt. Beide Seiten benutzen jetzt `replaceAll`.
 
-**Flatpak: konfiguriert, nicht gemessen (Phase 7b, 2026-09-03).** flatpak-builder läuft nur unter Linux; was in `electron-builder.yml` unter `flatpak:` steht, ist aus `app-builder-lib/out/targets/FlatpakTarget.js` und den BaseApp-Manifesten abgeleitet, und der erste echte Build gehört auf eine Linux-Maschine. Bis dahin ist der Abschnitt eine begründete Vermutung - anders als alles andere in dieser Datei. **Verschoben, nicht liegengeblieben:** der erste Bau gehört am 2026-09-03 auf Entscheidung hin in die Version nach v1, die genau die drei Ziele ausliefert, die gemessen sind - dmg/zip, AppImage und deb.
-- **Erst mit der eingebetteten Laufzeit ist Flatpak überhaupt möglich.** In der Sandbox gibt es kein Host-Node, und `flatpak-spawn --host` bräuchte `--talk-name=org.freedesktop.Flatpak` - faktisch ein Sandbox-Ausbruch, um ein `npm install` zu starten. Phase 7a ist die Voraussetzung, nicht der Komfort.
+**Flatpak: gebaut und gemessen (2026-09-08).** Bis dahin war der Abschnitt unter `flatpak:` in `electron-builder.yml` aus `app-builder-lib/out/targets/FlatpakTarget.js` und den BaseApp-Manifesten *abgeleitet* - als einziger Teil dieser Datei eine begründete Vermutung. Der erste echte Bau lief am 2026-09-08 auf einer Debian-13-VM (aarch64, GNOME 50 auf Wayland): `release/QuartzControl-1.0.0-beta.1-aarch64.flatpak`, 144 MB, mit `runtimeVersion`/`baseVersion` 25.08 wie konfiguriert, BaseApp `org.electronjs.Electron2.BaseApp` von Flathub gezogen. Installiert wird er unter der appId als `io.github.boxi_os.quartzcontrol` - die Form mit Unterstrich ist damit auch als Flatpak-ID nachgewiesen, nicht nur als Konvention. Gestartet, 30 s gelaufen, nicht abgestürzt; dass er wirklich hochkam, steht in seiner Sandbox: `~/.var/app/io.github.boxi_os.quartzcontrol/config/QuartzControl/runtime/bin/` trägt die drei Shims, die `nodeRuntime.ts` bei jedem Start schreibt, und daneben liegt ein `Local Storage`, das nur entsteht, wenn der Renderer lief.
+- **Erst mit der eingebetteten Laufzeit ist Flatpak überhaupt möglich.** In der Sandbox gibt es kein Host-Node, und `flatpak-spawn --host` bräuchte `--talk-name=org.freedesktop.Flatpak` - faktisch ein Sandbox-Ausbruch, um ein `npm install` zu starten. Phase 7a ist die Voraussetzung, nicht der Komfort. **Am 2026-09-08 von innerhalb der Sandbox nachgemessen** (`flatpak run --command=sh`): der `node`-Shim antwortet mit v24.18.1, das mitgelieferte npm mit 11.17.0, und `git` liegt als `/app/bin/git` in Version 2.53.0 vor. Der Satz ist damit keine Ableitung mehr.
+
+- **Der Bau braucht flathub als *user*-Remote, nicht nur als system-Remote.** electron-builder installiert Runtime und SDK über `@malept/flatpak-bundler` mit `flatpak install --user`; ist flathub nur systemweit eingetragen, scheitert das an `No remote refs found for 'runtime/org.freedesktop.Sdk/aarch64/25.08'` - und nach außen sagt electron-builder nur `flatpak failed with status code 1`, ohne Grund. Sichtbar wird der Grund erst mit `DEBUG=@malept/flatpak-bundler`. Ein `flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo` auf der Baumaschine löst es. Zweite Voraussetzung dort: `flatpak-builder` selbst (Debian: `apt install flatpak-builder`), das `flatpak` allein nicht mitbringt.
 - **git muss hier aus der Quelle gebaut werden, obwohl seit 7c eines mitreist.** Gemessen an den ELF-Kopfzeilen des Linux-Bundles: die Hauptbinärdatei braucht nur `libz` und `libc`, aber `git-remote-http` hängt an `libcurl-gnutls.so.4` - ein SONAME, den Debian und Ubuntu haben, die freedesktop-Runtime nicht (dort heißt sie `libcurl.so.4`, OpenSSL-Variante), Fedora und Arch auch nicht. Das Bundle bringt keine einzige Bibliothek mit (`find -name '*.so*'` ist leer). In der Sandbox käme es also bis `git --version` und stürbe beim ersten `clone`. Das Modul baut dieselbe Fassung (2.53.0) aus dem kernel.org-Tarball, mit `NO_GETTEXT` (wie das ausgedünnte Bundle), `NO_PERL` und `NO_PYTHON` (send-email, svn, p4 ruft diese App nie auf).
 - **Derselbe Befund hat einen Wächter im Code erzwungen:** `gitRuntime.httpsHelperLoads()` startet `git-remote-https` ohne Argumente, bevor das Bundle akzeptiert wird. Der Helfer beschwert sich über die fehlende URL, *nachdem* der Loader fertig ist (Exit 1, gemessen); fehlt eine Bibliothek, kommt er nie so weit (Exit 127 plus Loader-Meldung). Ein Bundle, das daran scheitert, wird nicht benutzt - sonst hätte die App ein git, das jede Prüfung besteht und beim ersten Klon stirbt.
 - **25.08 statt 24.08** für Runtime und BaseApp: der Zweig wird gepflegt (letzter Commit April 2026 gegen September 2024) und führt **libsecret** als SDK-Erweiterung, wo 24.08 noch libgnome-keyring hatte. `safeStorage` hängt unter Linux genau daran, und ohne Schlüsselbund landen Zugangsdaten praktisch im Klartext - deshalb steht `--talk-name=org.freedesktop.secrets` auch in den `finishArgs`. Weggelassen gegenüber electron-builders Vorgabe: `--socket=pulseaudio` und `--talk-name=org.freedesktop.Notifications`, weil diese App weder Ton ausgibt noch Systemmeldungen schickt.
@@ -113,3 +115,44 @@ scheitern, bevor seine Seite existierte — beide Fenster werden deshalb vorher 
 `electron-builder` faltet das Paar mit `tiffutil -cathidpicheck` zu einer Mehrfachauflösungs-TIFF
 (`dmgUtil.js`); im gebauten DMG nachgezählt: 540×380 und 1080×760 in einer Datei, 538554 Bytes
 statt 37298.
+
+**`safeStorage` unter Linux, gemessen statt angenommen (2026-09-08).** Auf einem Mac ist die Frage
+nicht zu stellen: Dort ist das Backend der Schlüsselbund, und `getSelectedStorageBackend()` gibt es
+gar nicht. Auf einer Debian-13-VM mit GNOME 50 auf Wayland (Electron 43.4.1, gnome-keyring-daemon
+mit `--components=pkcs11,secrets`) sind es drei Messungen:
+
+| Umgebung | Backend | `isEncryptionAvailable()` | `encryptString` |
+| --- | --- | --- | --- |
+| Sitzungsumgebung der Anmeldung | `gnome_libsecret` | true | Chiffrat mit Chromiums `v11`-Marker, Roundtrip stimmt |
+| `--password-store=basic` erzwungen | `basic_text` | **false** | wirft „Encryption is not available" |
+| über ssh, ohne `XDG_CURRENT_DESKTOP` | `basic_text` | false | wirft |
+
+Der Kommentar in `connectionsService.ts` behauptete bis dahin das Gegenteil: `basic_text` melde
+weiterhin `true` und ein Passwort lande „effectively in the clear". Das war Verhalten von Electron
+33 und ist nach dem Upgrade nie nachgemessen worden. In 43 sagt die Dokumentation es selbst — auf
+Linux ist `isEncryptionAvailable()` genau dann true, wenn der Schlüssel da ist —, und der
+gefährliche Fall existiert nur, wenn jemand `setUsePlainTextEncryption(true)` ruft, was diese App
+nie tut. Die Prüfungen in der Datei stimmten also, ihre Begründung nicht.
+
+Dabei fiel ein zweites auf: Das Warnband auf der Startseite hatte **eine** Überschrift für **zwei**
+Zustände. „Zugangsdaten liegen unverschlüsselt" passt zum Backend mit fest eingebautem Schlüssel und
+widerspricht dem eigenen Absatz darunter im anderen Fall — wo nichts unverschlüsselt liegt, weil
+gar nichts gespeichert wird. Und genau der zweite ist der, den ein Linux-Nutzer trifft. Nach der
+Änderung an der gebauten App auf derselben VM in beiden Zuständen nachgesehen: mit
+`gnome_libsecret` erscheint gar kein Band, mit erzwungenem `basic_text` steht dort „Zugangsdaten
+lassen sich nicht speichern" über dem Absatz, der dasselbe sagt.
+
+**Und die dritte Antwort, die nur ein Linux beantworten kann: der Rest läuft dort auch.** Am selben
+Tag auf derselben VM, aus einem frischen Klon des aktuellen Stands: `typecheck` grün, `build` grün
+— mit **bitgleichem Renderer-Hash** wie der Mac-Bau desselben Commits —, `check:i18n`,
+`check:semver` und `check:plugin-names` grün, `check:handbook` überspringt sich still (der Vault
+liegt nicht auf der VM, was der dokumentierte Fall ist), `check:runtime` gegen ein echtes Projekt
+grün bis zum vollständigen `quartz build` (58 Dateien in 3,7 s), und `npm run smoke` mit 42
+Aufrufen ohne Auffälligkeiten — der erste Lauf dieses Tests unter Linux überhaupt.
+
+Ein Rand, den das gekostet hat: Über ssh reicht `DISPLAY=:0` nicht. Chromium bricht mit
+„Authorization required, but no authorization protocol specified" und „Missing X server or
+$DISPLAY" ab, weil `XAUTHORITY` fehlt. Was funktioniert, ist die Sitzungsumgebung selbst:
+`eval "$(systemctl --user show-environment | sed 's/^/export /')"`. Dieselbe Zeile ist auch die
+Voraussetzung für die `gnome_libsecret`-Messung oben — ohne `XDG_CURRENT_DESKTOP` misst man das
+falsche Backend und hält es für einen Befund.

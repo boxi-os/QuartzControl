@@ -135,10 +135,12 @@ linux:
 # Komfort ist, sondern Voraussetzung: in der Sandbox gibt es kein Host-Node, und
 # `flatpak-spawn --host` wäre kein Ausweg, sondern ein Sandbox-Ausbruch.
 #
-# NICHT AUF DIESEM RECHNER GEMESSEN - flatpak-builder läuft nur unter Linux. Was hier steht, ist
-# aus den Quellen abgeleitet (app-builder-lib/out/targets/FlatpakTarget.js) und aus den Manifesten
-# der BaseApp; der erste echte Build gehört auf eine Linux-Maschine, und bis dahin ist dieser
-# Abschnitt eine begründete Vermutung.
+# Am 2026-09-08 zum ersten Mal wirklich gebaut, auf einer Debian-13-VM (aarch64, GNOME auf
+# Wayland): Paket entsteht, installiert sich unter der appId, startet, und in der Sandbox antworten
+# der node-Shim, das mitgelieferte npm und /app/bin/git. Bis dahin war dieser Abschnitt aus den
+# Quellen abgeleitet (app-builder-lib/out/targets/FlatpakTarget.js) und aus den Manifesten der
+# BaseApp. Die Baumaschine braucht flatpak-builder *und* flathub als user-Remote - siehe
+# docs/decisions/electron-runtime-and-packaging.md.
 flatpak:
   # electron-builders Vorgaben sind von 2020 (Runtime 20.08). 25.08 statt 24.08, weil dieser Zweig
   # der BaseApp aktiv gepflegt wird (letzter Commit April 2026 gegen September 2024) und weil er

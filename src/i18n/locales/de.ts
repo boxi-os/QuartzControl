@@ -1642,6 +1642,8 @@ export default {
       '{{count}} Baustein(e) anwenden? Vorhandenes in diesem Projekt wird dabei durch die Vorlage ersetzt. Vorher wird ein Snapshot angelegt.',
     confirmMerge: '{{count}} Baustein(e) anwenden? Vorhandenes in diesem Projekt bleibt unverändert.',
     importSuccessNoWarnings: 'Fertig — alles übernommen, nichts blieb offen.',
+    warningsMore: 'und {{count}} weiterer Fall',
+    warningsMore_other: 'und {{count}} weitere Fälle',
     parts: {
       appearance: {
         label: 'Farben & Schriften',

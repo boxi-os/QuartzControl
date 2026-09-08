@@ -1633,6 +1633,8 @@ export default {
       'Apply {{count}} part(s)? What this project already has will be replaced by the template. A snapshot is taken first.',
     confirmMerge: 'Apply {{count}} part(s)? What this project already has stays untouched.',
     importSuccessNoWarnings: 'Done — everything applied, nothing left open.',
+    warningsMore: 'and {{count}} more case',
+    warningsMore_other: 'and {{count}} more cases',
     parts: {
       appearance: {
         label: 'Colours & fonts',

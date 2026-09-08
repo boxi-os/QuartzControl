@@ -671,6 +671,13 @@ export default function FrameBuilder({
     return (
       <div
         onClick={(e) => e.stopPropagation()}
+        // The keyboard's half of the same guard. A placed area's box is itself a role="button" with
+        // an Enter/Space handler, and this form is a child of it - so every keystroke in a field
+        // rose to the box, which called preventDefault() and collapsed the form. The character
+        // never arrived: no space in a name, no toggle by Space, no Return anywhere. The click path
+        // had this line from the start; the key path never did, and in the tray, where nothing
+        // listens above, the same form always worked - which is what made the difference visible.
+        onKeyDown={(e) => e.stopPropagation()}
         className="flex flex-wrap items-end gap-2 border-t border-ink/[0.06] pt-2 dark:border-ink/10"
       >
         <Field label={t('layoutEditor.frameBuilder.areaName')}>

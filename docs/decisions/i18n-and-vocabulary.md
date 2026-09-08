@@ -133,6 +133,6 @@ Doppelpunkt an seinen Grund geklebt wird, kommt also so an:
     jetzt    Frame konnte nicht angelegt werden: „editorial“ — Der Frame ist nicht lesbar:
              Das Feld „areas“ fehlt oder hat den falschen Typ.
 
-Der Gedankenstrich und die Anführungszeichen kommen aus `mainT('frameFailedDetail')`, nicht aus
+Der Gedankenstrich und die Anführungszeichen kommen aus `mainT('frameNameAndReason')`, nicht aus
 einer Zeichenkette im Code: Deutsch zitiert „…“, Englisch “…”, und der Hauptprozess weiß, welche
 Sprache gerade gilt.

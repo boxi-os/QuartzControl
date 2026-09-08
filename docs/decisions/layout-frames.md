@@ -653,11 +653,35 @@ Das Formular ist jetzt eine Funktion (`areaForm(area, placement?)`) und wird von
 gerufen. **`placement` ist der ganze Unterschied**, und nur die Felder, die eine Platzierung
 beschreiben, hängen daran: die beiden Spannweiten, „Sichtbar auf …“ und „Aus Raster lösen“. Name,
 Belegung, Gruppe und das Löschen gehören dem Bereich selbst und sind immer da. Gegenprobe an
-derselben Aufnahme: Ein platzierter Bereich zeigt vorher wie nachher dieselben zehn Felder und
-dieselben zwei Knöpfe, in derselben Reihenfolge.
+derselben Aufnahme: Ein platzierter Bereich zeigt vorher wie nachher dasselbe Formular in derselben
+Reihenfolge — an der gebauten App nachgezählt (2026-09-08, Bereich `right` des `editorial`-Frames)
+sind das **sechs beschriftete Felder** (Bereichsname, Belegung, Eigener Bereich, Zeilen-Spanne,
+Spalten-Spanne, Sichtbar auf Desktop) und **zwei Knöpfe**; mit dem Ziehgriff und dem Kasten selbst
+zehn Tabstopps. Die Zahl zehn stand hier einmal für die Felder — sie war keine Messung.
 
 Ein ausgewählter Chip nimmt eine ganze Zeile der umbrechenden Ablage, statt chipgroß zu bleiben —
 das Formular ist eine Feldreihe, und zwischen zwei anderen Chips eingequetscht wäre keins von
 beiden lesbar. Der Hinweis über der Ablage sagt jetzt „öffnet seine Einstellungen dort, wo er
 gerade liegt“ statt „zeigt seine Einstellungen unten“; das war schon vorher nicht der Ort, an dem
 sie erschienen.
+
+**Nachtrag (2026-09-08): Die zwei Fälle sind nicht „im Raster“ und „in der Ablage“.** In der Ablage
+liegen zwei Arten von Bereichen — die ohne Platzierung auf diesem Breakpoint und die *mit* einer
+Platzierung, die `hidden` ist —, und der Aufrufer reichte für beide keine Platzierung durch.
+Ausgerechnet der Schalter, der einen Bereich gerade dorthin gebracht hatte („Sichtbar auf …“),
+fehlte damit im einzigen Formular, das der Bereich noch hatte; der einzige Weg zurück war ein
+Ziehen, und das vergibt eine neue Zelle. Die Ablage reicht die Platzierung jetzt durch, und weil
+die beiden Arten von Chips sonst gleich aussehen, sagt der Chip, welche er ist (`hiddenShort`).
+Gemessen an der gebauten App, Bereich `right` des `editorial`-Frames: vorher drei Felder, ein
+Schalter, ein Knopf; jetzt sechs Felder, zwei Schalter, zwei Knöpfe — und Schalter aus, Schalter
+wieder an legt den Bereich auf `2 / span 4`, `10 / span 3` zurück, genau dorthin, wo er lag.
+
+**Und ein Tastendruck im Formular blieb nicht im Formular.** Der Kasten eines platzierten Bereichs
+ist selbst ein `role="button"` mit Enter/Leertaste-Handler, das Formular liegt in ihm: Jeder
+Tastendruck stieg auf, der Handler rief `preventDefault()`, das Zeichen kam nie an und das
+Formular klappte zu. Der Klick-Pfad hatte sein `stopPropagation()` von Anfang an, der
+Tastatur-Pfad nie — in der Ablage, wo nichts darüber hört, ging dasselbe Formular immer, und genau
+dieser Vergleich hat es sichtbar gemacht. Gemessen mit echten Tastendrücken: `type('x y')` im
+Namensfeld ergab vorher ein geschlossenes Formular und `activeElement: body`, jetzt den Namen
+„rightx y“; die Leertaste auf „Eigener Bereich“ schloss vorher das Formular, ohne den Schalter
+umzulegen, und legt ihn jetzt um.

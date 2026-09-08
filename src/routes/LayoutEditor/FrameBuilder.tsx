@@ -374,7 +374,9 @@ export default function FrameBuilder({
     useSensor(KeyboardSensor, { coordinateGetter: nearestDroppableCoordinates })
   )
   // Every id on this board in words: an area by its name, a cell by its coordinates, the tray by
-  // its label - see dndAccessibility.
+  // its label - see dndAccessibility. Which is why that label is a name and not an instruction: it
+  // is read out as a drop target ("right is over ..."), and the sentence under the tray carries the
+  // instruction anyway.
   const { announcements, screenReaderInstructions } = dndAccessibility(t, (id) => {
     if (id === TRAY_ID) return t('layoutEditor.frameBuilder.availableAreasLabel')
     const cell = parseCellId(id)

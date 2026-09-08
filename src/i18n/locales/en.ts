@@ -1129,11 +1129,11 @@ export default {
         tablet: 'Tablet',
         mobile: 'Mobile'
       },
-      availableAreasLabel: 'Available areas (drag onto the grid to place them)',
+      availableAreasLabel: 'Areas not on this grid',
       newArea: '+ Add area',
       allPlaced: 'All areas are placed.',
       hintDragToPlace:
-        'Drag an area onto an open cell to place it — or drag a placed one back into this list to unplace it. Click an area to open its settings where it currently sits; the row and column span are there only for a placed one.',
+        'Drag an area onto an open cell to place it — or drag a placed one back into this list to unplace it. Click an area to open its settings where it currently sits; one hidden here keeps its row and column span, one never placed has none.',
       expandArea: 'Expand area settings',
       placeArea: 'Place area {{name}}',
       moveArea: 'Move area {{name}}',

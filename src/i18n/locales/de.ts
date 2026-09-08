@@ -1133,11 +1133,11 @@ export default {
         tablet: 'Tablet',
         mobile: 'Mobil'
       },
-      availableAreasLabel: 'Verfügbare Bereiche (ins Raster ziehen, um sie zu platzieren)',
+      availableAreasLabel: 'Bereiche, die hier nicht im Raster liegen',
       newArea: '+ Bereich hinzufügen',
       allPlaced: 'Alle Bereiche sind platziert.',
       hintDragToPlace:
-        'Ziehe einen Bereich auf eine freie Zelle, um ihn zu platzieren — oder einen platzierten Bereich zurück in diese Liste, um ihn wieder zu lösen. Ein Klick öffnet seine Einstellungen dort, wo er gerade liegt; Zeilen- und Spalten-Spanne gibt es nur für einen platzierten Bereich.',
+        'Ziehe einen Bereich auf eine freie Zelle, um ihn zu platzieren — oder einen platzierten Bereich zurück in diese Liste, um ihn wieder zu lösen. Ein Klick öffnet seine Einstellungen dort, wo er gerade liegt; ein hier ausgeblendeter Bereich behält dabei Zeilen- und Spalten-Spanne, ein nie platzierter hat keine.',
       expandArea: 'Bereichseinstellungen aufklappen',
       placeArea: 'Bereich {{name}} platzieren',
       moveArea: 'Bereich {{name}} verschieben',

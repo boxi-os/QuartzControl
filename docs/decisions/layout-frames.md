@@ -685,3 +685,15 @@ dieser Vergleich hat es sichtbar gemacht. Gemessen mit echten Tastendrücken: `t
 Namensfeld ergab vorher ein geschlossenes Formular und `activeElement: body`, jetzt den Namen
 „rightx y“; die Leertaste auf „Eigener Bereich“ schloss vorher das Formular, ohne den Schalter
 umzulegen, und legt ihn jetzt um.
+
+**Nachtrag (2026-09-08, neuntes Review): Die zwei Sätze um die Ablage wussten davon nichts.** Ihre
+Überschrift hieß „Verfügbare Bereiche (ins Raster ziehen, um sie zu platzieren)“, der Hinweis
+darunter endete mit „Zeilen- und Spalten-Spanne gibt es nur für einen platzierten Bereich“ — und
+darüber lag seit dem Nachtrag oben ein Chip, der platziert ist, „ausgeblendet“ sagt und seine
+Spannen zeigt. Beides war wörtlich wahr und las sich als Widerspruch zu dem, was daneben stand.
+Die Überschrift heißt jetzt „Bereiche, die hier nicht im Raster liegen“ — beide Arten, ohne
+Anweisung: Sie ist zugleich der Name, mit dem `dndAccessibility` das Ablageziel ansagt („right
+liegt über …“), und die Anweisung steht ohnehin im Satz eine Zeile darunter. Der endet jetzt mit
+„ein hier ausgeblendeter Bereich behält dabei Zeilen- und Spalten-Spanne, ein nie platzierter hat
+keine“. Gemessen an der gebauten App, `right` des `editorial`-Frames auf Desktop ausgeblendet:
+Überschrift, Chip („right · Rechte Seitenleiste · ausgeblendet“) und Hinweis sagen dasselbe.

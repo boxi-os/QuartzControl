@@ -1076,6 +1076,8 @@ export default {
     excludeHeading: 'Sichtbare Komponenten',
     excludeDescription: 'Schalte eine Komponente aus, um sie auf Seiten dieses Typs auszublenden.',
     excludeDuplicateHint: 'Betrifft alle {{count}} Instanzen von „{{name}}“ — Quartz kann einzelne Duplikate hier nicht getrennt ausschließen.',
+    excludeDeadHint_one: 'In der Datei steht noch der Ausschluss „{{names}}“ aus einer früheren Fassung. Er wirkt nicht und verschwindet beim nächsten Speichern dieses Seitentyps.',
+    excludeDeadHint_other: 'In der Datei stehen noch {{count}} Ausschlüsse aus einer früheren Fassung ({{names}}). Sie wirken nicht und verschwinden beim nächsten Speichern dieses Seitentyps.',
     template: 'Frame',
     templateDefault: 'Standard',
     templateFullWidth: 'Volle Breite',

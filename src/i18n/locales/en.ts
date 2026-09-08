@@ -1072,6 +1072,8 @@ export default {
     excludeHeading: 'Visible components',
     excludeDescription: 'Turn off a component to hide it on pages of this type.',
     excludeDuplicateHint: 'Affects all {{count}} instances of “{{name}}” — Quartz cannot exclude individual duplicates here separately.',
+    excludeDeadHint_one: 'The file still holds the exclusion “{{names}}” from an earlier version. It has no effect and disappears the next time this page type is saved.',
+    excludeDeadHint_other: 'The file still holds {{count}} exclusions from an earlier version ({{names}}). They have no effect and disappear the next time this page type is saved.',
     template: 'Frame',
     templateDefault: 'Default',
     templateFullWidth: 'Full width',

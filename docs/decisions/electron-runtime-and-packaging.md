@@ -85,3 +85,31 @@ ausgeliefert wurde, und ist damit keines. `shared/bundled-git.json` hält sie je
 sie mit `readFileSync` (es ist reines Node und kann kein TypeScript importieren), der Renderer
 importiert sie als JSON und baut den Link daraus.
 
+
+**Das DMG-Fenster hatte den Hintergrund von electron-builder, nicht den dieser App (2026-09-08).**
+Der Kommentar an `dmg:` behauptete das Gegenteil („the default background image ships with
+electron-builder and would put someone else's artwork on this window“) — überschrieben war aber nur
+`contents`. `dmg-builder` greift zu seiner Vorlage, sobald **weder** `background` noch
+`backgroundColor` gesetzt ist (`dmg.js:116`); `background: null` ist genau dieser Fall und hilft
+nicht. Gemessen an `QuartzControl-0.1.0-arm64.dmg`: darin liegt eine `.background.tiff` mit 37298
+Bytes, byteweise die Größe von `node_modules/dmg-builder/templates/background.tiff` — ein
+hellgraues Feld mit einem gestrichelten Kasten und einem gestrichelten Pfeil, beide nicht dort, wo
+`dmg.contents` die zwei Symbole hinstellt (x=140 und x=400 bei y=180). Als „zwei ganz blasse
+Icons“ ist das aufgefallen, und genau so sieht es aus.
+
+Jetzt liegt in `build/` ein eigener Grund, gezeichnet von `scripts/dmg-background.mjs`
+(`npm run dmg:background`): heller Verlauf mit je einem kühlen und einem warmen Hauch in den
+gegenüberliegenden Ecken (die Enden des App-Icon-Verlaufs), der Produktname oben, ein schmaler
+Pfeil genau zwischen den beiden Symbolpositionen. Das Skript liest die zwei x-Werte aus denselben
+Konstanten, aus denen der Kommentar in `electron-builder.yml` sie nennt — eine Zahl in einem
+Zeichenprogramm läuft von einer Zahl in einer Konfiguration weg.
+
+Gerastert wird über Electron, weil dieser Rechner keinen SVG-Konverter hat (kein ImageMagick, kein
+`rsvg-convert`, kein PIL) und Electron ohnehin dasteht. Zwei Fenster statt eines plus Skalierung:
+Die CSS-Größe des Fensters entscheidet, wie viele Gerätepixel `capturePage()` zurückgibt, also ist
+die `@1x`-Datei eine echte Rasterung und kein Downsample der `@2x`. Zwei Ränder dabei gemessen: Ein
+Fenster zu zerstören und im selben Durchlauf das nächste zu laden ließ das zweite mit `ERR_FAILED`
+scheitern, bevor seine Seite existierte — beide Fenster werden deshalb vorher geöffnet. Und
+`electron-builder` faltet das Paar mit `tiffutil -cathidpicheck` zu einer Mehrfachauflösungs-TIFF
+(`dmgUtil.js`); im gebauten DMG nachgezählt: 540×380 und 1080×760 in einer Datei, 538554 Bytes
+statt 37298.

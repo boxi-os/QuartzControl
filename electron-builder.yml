@@ -94,8 +94,13 @@ mac:
   identity: null
 
 dmg:
-  # Just the app and a link to /Applications - the default background image ships with
-  # electron-builder and would put someone else's artwork on this window.
+  # Just the app and a link to /Applications. The background is not named here on purpose:
+  # dmg-builder looks for background.png in buildResources before it falls back to its own template
+  # (dmgUtil.js, computeBackground), and build/background.png plus its @2x sibling are what it
+  # finds. Leaving it unset is *not* "no background" - that is the case that pulls the template in,
+  # a grey field with a dashed box and a dashed arrow that sit nowhere near the two positions
+  # below, which is exactly what the 0.1.0 DMG shipped. Drawn by scripts/dmg-background.mjs, which
+  # reads the same two x values from here.
   contents:
     - x: 140
       y: 180

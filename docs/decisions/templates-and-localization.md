@@ -228,3 +228,27 @@ Komma reihen, Sätze nicht. Gekappt wie die Dateinamen daneben — drei, dann �
 mit fünf kaputten Frames nachgemessen. Der Name ist schon im Hauptprozess in Anführungszeichen
 gesetzt (`mainT('frameNameAndReason')`, dieselbe Fügung wie die Fehlerwarnung des Imports), denn
 Deutsch und Englisch zitieren nicht gleich.
+
+## Was für den Dry-Run galt, galt auch für das Ergebnis (2026-09-08)
+
+Derselbe Satz wurde einen Commit vorher zur `detail` von `frameFailed` — und `ImportOutcome`
+behandelt jede Art als Liste: erster Eintrag in den Satz, dann alle Einträge mit Komma dahinter. Bei
+zwei kaputten Frames stand der erste damit zweimal da, und der Gedankenstrich, der in jedem Satz
+Name und Grund trennt, sah aus wie der Trenner der Liste. Für 45 übersprungene Plugins ist die
+Gruppierung richtig; für Sätze ist sie es hier so wenig wie im Dry-Run.
+
+Drei Arten tragen einen fertigen Satz als `detail` — `frameFailed`, `themeInstallFailed`,
+`pluginInstallFailed` —, und die bekommen jetzt eine Zeile je Fall, gekappt bei sechs mit „und N
+weitere Fälle“. Alles andere bleibt gruppiert.
+
+Gemessen an der gebauten App am **echten Import** eines von Hand gebauten `.qtpl` (Manifest,
+`parts/frames.json` mit zwei kaputten Frames), Wegwerf-Profil, Klon des Beispielprojekts; die
+beiden nativen Dialoge (Dateiwahl, Bestätigung) wurden im Hauptprozess ersetzt, alles danach ist
+der gewöhnliche Weg:
+
+    vorher   1. Frame konnte nicht angelegt werden: „a“ — … falschen Typ. — „a“ — … falschen
+                Typ., „b“ — … erlaubten Angaben (…).
+    jetzt    1. Frame konnte nicht angelegt werden: „a“ — Der Frame ist nicht lesbar: Das Feld
+                „areas“ fehlt oder hat den falschen Typ.
+             2. Frame konnte nicht angelegt werden: „b“ — Der Frame ist nicht lesbar: Der Wert bei
+                „areas.0.slot“ ist keine der erlaubten Angaben (…).

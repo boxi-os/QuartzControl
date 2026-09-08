@@ -7,7 +7,7 @@ import { useStickyState } from '../../state/uiState'
 import { CSS_VARIABLES } from '../../data/cssVariables'
 import VariableRow, { type OverrideValue } from './VariableRow'
 import VariableGroup from './VariableGroup'
-import { allKnownKeys, groupLabel, groupOf, type ResolveContext } from './variableGraph'
+import { allKnownKeys, groupLabel, groupOf, normalizeVarQuery, type ResolveContext } from './variableGraph'
 import { activeThemeIdOf, useStyles } from './index'
 
 // How many rows the searchable table renders at once. A community theme can declare ~1000
@@ -223,7 +223,7 @@ function AllVariables({
   const { t } = useTranslation()
 
   const overriddenCount = keys.filter((key) => key in overrides).length
-  const q = query.trim().toLowerCase()
+  const q = normalizeVarQuery(query)
   const matches = q
     ? keys.filter((key) => key.toLowerCase().includes(q) && (!onlyChanged || key in overrides))
     : onlyChanged

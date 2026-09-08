@@ -262,3 +262,14 @@ export function allKnownKeys(ctx: ResolveContext): string[] {
   for (const key of Object.keys(ctx.overrides)) keys.add(key)
   return Array.from(keys)
 }
+
+// Every list in the UI *shows* a variable as `--tpl-space-lg`, because that is its name in CSS -
+// but both the graph and the catalog key it bare (`tpl-space-lg`), so a `includes(query)` against
+// the key never matched a query that carried the leading dashes. And that is precisely the query
+// one types: the name is read off a row, copied out of custom.scss, or simply written the way it
+// appears in a stylesheet. Measured on a project with the example template installed: the search
+// for `--tpl-space-lg` found nothing in either box, while the row itself sat visible underneath.
+// Both search boxes normalise through here, so they cannot drift apart again.
+export function normalizeVarQuery(query: string): string {
+  return query.trim().toLowerCase().replace(/^-+/, '')
+}

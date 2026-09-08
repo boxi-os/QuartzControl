@@ -248,7 +248,10 @@ function openServerLog(projectId: string, projectPath: string): ServerLog | null
     for (const fd of fds) {
       closeSync(fd)
     }
-    emitLog(projectId, 'stderr', `${mainT('serverLogUnavailable', { reason: (err as Error).message })}\n`)
+    // `warn`, not `stderr`: this is a sentence this app writes, about a run that goes on - it says
+    // so itself ("the server is running, this console stays empty for this run"). Red would put a
+    // failure in front of a server that started.
+    emitLog(projectId, 'warn', `${mainT('serverLogUnavailable', { reason: (err as Error).message })}\n`)
     return null
   }
 }

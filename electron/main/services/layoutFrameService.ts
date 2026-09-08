@@ -142,6 +142,14 @@ function countsLike(order, counts, positions) {
   return positions.every((p) => orderOf(order, p).length === counts[p])
 }
 
+// The relaxed key of the second pass: every divided position exactly, every other one only as an
+// upper bound. See pickGroupOrder for why the direction is the whole point.
+function countsFit(order, counts) {
+  return POSITIONS.every((p) =>
+    SPLIT_POSITIONS.indexOf(p) === -1 ? orderOf(order, p).length >= counts[p] : orderOf(order, p).length === counts[p]
+  )
+}
+
 function splitsAlike(a, b) {
   return SPLIT_POSITIONS.every((p) => orderOf(a, p).join("\\u0000") === orderOf(b, p).join("\\u0000"))
 }
@@ -180,20 +188,33 @@ function groupsOf(order) {
 //
 // Matched in two passes, and the second pass is what keeps the first one honest. All six positions
 // are the sharper key: one this frame does not divide can still be the only thing telling two page
-// types apart, so it is asked first. But a count that disagrees *there* says nothing about the
-// positions that are divided - and matching everywhere and nowhere else meant a group on \`footer\`
-// that quartz renders no flex for emptied both group areas of \`header\` on every page of the site
-// (measured: 201 of 201). So when nothing matches everywhere, the divided positions are asked on
-// their own: the page still gets the division its own counts support, and the disagreement outside
-// them is said out loud instead of paid for. Only ever a widening of a match set that was empty -
-// a candidate that fits all six is still preferred over one that merely fits the divided ones.
+// types apart, so it is asked first. But a count that disagrees *there* need not say the candidate
+// is wrong - matching everywhere and nowhere else meant a group on \`footer\` that quartz renders no
+// flex for emptied both group areas of \`header\` on every page of the site (measured: 201 of 201).
+//
+// So the second pass relaxes the positions this frame does not divide - but only in the one
+// direction they can be wrong about *and still be this page*. A position that renders **fewer**
+// flexes than the candidate describes has the ordinary explanation: a group whose members all got
+// disabled, an entry whose \`layout.group\` quartz makes no flex for. A position that renders
+// **more** has none - nothing about this page can add a group the ordering has never heard of, so
+// that is the candidate contradicting itself, and it stays out. Measured, at the generated module
+// and at a real build: dropping the outside positions entirely instead threw away the very
+// evidence that kept a wrong candidate out. A break *inside* a divided position leaves a count
+// there that some other page type happens to hit (one that excludes a whole group), and with the
+// outside no longer looking, that candidate won - 203 of 211 editorial pages showed group
+// \`custom-8\`'s components in the area of \`custom-9\`, under a warning that said the position had
+// been "divided as usual". Asking for "described >= rendered" keeps the seventh review's case and
+// puts that one back on the fallback, where it says the counts fit nothing.
+//
+// Only ever a widening of a match set that was empty - a candidate that fits all six exactly is
+// still preferred over one that merely fits within the relaxed key.
 function pickGroupOrder(bySlot) {
   if (SPLIT_POSITIONS.length === 0) return null
   const counts = {}
   for (const p of POSITIONS) counts[p] = (bySlot[p] || []).filter((C) => C.name === "Flex").length
   let matches = GROUP_LAYOUTS.filter((c) => countsLike(c.order, counts, POSITIONS))
   const relaxed = matches.length === 0
-  if (relaxed) matches = GROUP_LAYOUTS.filter((c) => countsLike(c.order, counts, SPLIT_POSITIONS))
+  if (relaxed) matches = GROUP_LAYOUTS.filter((c) => countsFit(c.order, counts))
   const order =
     matches.length === 1 || (matches.length > 1 && matches.every((c) => splitsAlike(c.order, matches[0].order)))
       ? matches[0].order
@@ -205,15 +226,24 @@ function pickGroupOrder(bySlot) {
     // Divided as usual - but the config describes flexes somewhere this frame does not divide that
     // the page did not render. Nothing here changes what the areas show; it is said because "no
     // groups" and "a group whose members never render" look the same on the built page, and this
-    // is the one place that can still tell them apart.
+    // is the one place that can still tell them apart. Always fewer than described, never more -
+    // countsFit does not let the other direction through.
     const off = POSITIONS.filter((p) => SPLIT_POSITIONS.indexOf(p) === -1 && orderOf(order, p).length !== counts[p])
     const key = "undivided@" + renderedOf(counts, off)
     if (!warned.has(key)) {
       warned.add(key)
+      // The counts named here are the chosen ordering's. Several candidates can divide alike and
+      // still describe these positions differently, and then this one is an arbitrary pick among
+      // equals - so it says so rather than naming one as if it were the only fit.
+      const alsoFit = matches.filter((c) => POSITIONS.some((p) => orderOf(c.order, p).length !== orderOf(order, p).length))
       console.warn(
         "[" + FRAME_NAME + "] " +
           off.map((p) => p + " renders " + counts[p] + " group flex(es), not the " + orderOf(order, p).length + " " +
             nameOf(matches[0]) + " describes").join("; ") + ". " +
+          (alsoFit.length > 0
+            ? "(" + alsoFit.map(nameOf).join(" and ") + " divide" + (alsoFit.length === 1 ? "s" : "") +
+              " these positions the same way and would fit too.) "
+            : "") +
           "This frame divides none of those positions, so " + SPLIT_POSITIONS.join(" and ") + " was divided as usual. " +
           "Usually a group whose members all got disabled, or an entry whose layout.group quartz renders no flex for."
       )
@@ -225,9 +255,22 @@ function pickGroupOrder(bySlot) {
     warned.add(key)
     const rendered = renderedOf(counts, SPLIT_POSITIONS)
     if (matches.length === 0) {
+      // A candidate can hit every divided position and still be out, ruled out by a position
+      // outside them where this page rendered a group flex it has no group for (countsFit). The
+      // list below only shows the divided positions, so without this clause the message would say
+      // "no layout produces header 1" while printing a layout that says header 1 - and the one
+      // thing that actually ruled it out would be the one thing left unsaid.
+      const contradicted = GROUP_LAYOUTS.filter((c) => countsLike(c.order, counts, SPLIT_POSITIONS)).map(
+        (c) =>
+          nameOf(c) + " fits that, but " +
+          POSITIONS.filter((p) => SPLIT_POSITIONS.indexOf(p) === -1 && counts[p] > orderOf(c.order, p).length)
+            .map((p) => p + " renders " + counts[p] + " group flex(es) it has no group for")
+            .join(" and ")
+      )
       console.warn(
         "[" + FRAME_NAME + "] this page renders " + rendered + " group flex(es), which no layout in " +
-          "quartz.config.yaml produces (" + GROUP_LAYOUTS.map((c) => nameOf(c) + ": " + countsOf(c.order)).join("; ") + "). " +
+          "quartz.config.yaml accounts for (" + GROUP_LAYOUTS.map((c) => nameOf(c) + ": " + countsOf(c.order)).join("; ") + "). " +
+          (contradicted.length > 0 ? contradicted.join("; ") + ". " : "") +
           "Not splitting: every position's area without a group takes the lot, the group areas stay empty. " +
           "Usually a group whose members all got disabled, or a quartz.config.yaml edited by hand since this frame was written."
       )
@@ -270,7 +313,9 @@ function contentsFor(area, list, order) {
   const groups = order ? orderOf(order, area.slot) : []
   if (groups.length === 0) return area.group ? [] : list
   // Guaranteed equal in length: pickGroupOrder only returns an ordering whose group count matches
-  // the Flexes of every position, and it returns null when none does.
+  // the Flexes of every position it divides, and this line is only reached for one it divides (the
+  // early return above). It returns null when no candidate does. The relaxed second pass loosens
+  // the *other* positions, never these.
   const flexes = list.filter((C) => C.name === "Flex")
   if (area.group) {
     // Nothing else in this position has an area to go to, so the components that are in no group
@@ -534,16 +579,32 @@ export function authoredFrameDir(projectPath: string, id: string): string {
 // instead: the path, which is data rather than prose, plus a phrase per issue code, plus whatever
 // number or list the issue carries (a limit, the allowed values - also data).
 //
-// The five codes are the ones this schema can actually produce, checked against it rather than
-// guessed: invalid_type, too_big, too_small, invalid_value (an enum) and invalid_format (a regex).
-// Anything else keeps zod's own text, and that case really is a bug - the schema grew a rule this
-// list was never told about, and an English sentence is then the right kind of ugly.
+// The six codes are the ones this schema can actually produce, checked against it by parsing
+// broken frames rather than by reading: invalid_type, too_big, too_small, invalid_value (an enum),
+// invalid_format (a regex) and invalid_key. The last one is what a `z.record(keySchema, ...)`
+// reports for a key its key schema rejects - this schema has three such fields (columnLineNames,
+// rowLineNames, placements), and it was missed by reading the schema for rules rather than running
+// broken input through it. Anything else keeps zod's own text, and that case really is a bug - the
+// schema grew a rule this list was never told about, and an English sentence is then the right
+// kind of ugly.
+//
+// The path is data, not prose, and for an invalid_key it *is* the foreign key: zod appends it as
+// the last segment. A `.qtpl` from anywhere can therefore make the sentence any length it likes
+// (measured: a 3000-character key gave a 3110-character sentence, which the dry run puts in
+// `plan.notes` whole). So every segment is capped before it is shown.
 // Derived from the schema rather than imported from zod: it is the same discriminated union, so
 // `issue.maximum` and `issue.values` below are narrowed by their `case` instead of cast.
 type FrameShapeIssue = NonNullable<ReturnType<typeof gridFrameDefinition.safeParse>['error']>['issues'][number]
 
+// A path segment can be a key from the file - so it is truncated, not the whole joined path: the
+// part that says *which field* is at the front and has to survive.
+function shortSegment(segment: string | number | symbol): string {
+  const text = String(segment)
+  return text.length > 40 ? text.slice(0, 40) + '\u2026' : text
+}
+
 function shapeIssue(issue: FrameShapeIssue): string {
-  const where = issue.path.join('.') || 'frame'
+  const where = issue.path.map(shortSegment).join('.') || 'frame'
   switch (issue.code) {
     case 'invalid_type':
       return mainT('frameIssueType', { where })
@@ -555,6 +616,8 @@ function shapeIssue(issue: FrameShapeIssue): string {
       return mainT('frameIssueValue', { where, values: issue.values.join(', ') })
     case 'invalid_format':
       return mainT('frameIssueFormat', { where })
+    case 'invalid_key':
+      return mainT('frameIssueKey', { where })
     default:
       return `${where}: ${issue.message}`
   }

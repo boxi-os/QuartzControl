@@ -211,6 +211,28 @@ Umschreiben würde eine Komponente auf der gebauten Seite verschwinden lassen, w
 bekommen hat, und danach hat niemand gefragt. Entfernen nimmt nur eine wirkungslose Zeichenkette aus
 der Datei, und die Schalter sagen dann, was die Seite zeigt.
 
+**„Beim nächsten Schreiben“ hat drei Türen, und der Filter stand hinter einer (2026-09-08).** Er saß
+in `toggleExclude`; wer stattdessen eine Position leerte oder das Template wechselte, ging durch
+dasselbe `update` und schrieb die toten Einträge mit in die Datei. Der Filter sitzt jetzt in
+`update`, also an der einen Stelle, an der aus dem Entwurf eine Änderung wird. Gemessen an der
+gebauten App gegen `content: { template: editorial, exclude: [recent-notes] }`, je einmal pro Tür,
+je einmal vorher und nachher — die Datei nach „Speichern“:
+
+| Tür | vorher | jetzt |
+| --- | --- | --- |
+| Fußzeile leeren | `exclude: [recent-notes]` bleibt, dazu `positions: { footer: [] }` | nur `positions: { footer: [] }` |
+| Template auf `minimal` | `template: minimal`, `exclude: [recent-notes]` | nur `template: minimal` |
+| Ausschluss umlegen | `exclude: ["@quartz-community/backlinks"]` | gleich |
+
+Ist danach nichts mehr in der Liste, verschwindet der Schlüssel, statt als `exclude: []` liegen zu
+bleiben — dieselbe Spurlosigkeit, für die `hasPageTypeOverride` existiert.
+
+**Und der Reiter sagt es jetzt.** „Nie ausgeschlossen“ und „ausgeschlossen unter einem Namen, der
+nichts tut“ rendern denselben Schalter; ohne einen Satz dazu findet der Nutzer seinen Eintrag beim
+nächsten Klick weg, ohne dass jemand ihn gewarnt hätte. Über der Schalterliste steht deshalb, was in
+der Datei steht und dass es beim nächsten Speichern dieses Seitentyps verschwindet
+(`excludeDeadHint`, de/en, mit Plural).
+
 Die Nachbildung selbst hat einen eigenen Wächter, `npm run check:plugin-names`: 18 Quellen gegen eine
 Tabelle, und mit einem Projektpfad zusätzlich gegen Quartz' **eigene** Funktion, aus
 `config-loader.ts` und `gitLoader.ts` herausgeschnitten und ausgeführt. Diese Gegenprobe hat sofort

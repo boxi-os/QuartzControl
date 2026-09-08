@@ -638,6 +638,19 @@ womit er gelungen ist. Der erste zeigt nebenbei, dass eine Config, die die App n
 auch Quartz nicht lesen kann — der Build scheitert dann ohnehin, und die rote Zeile daneben ist
 Quartz' eigene.
 
+**Der Satz war ein dritter (2026-09-08).** Die Umstellung nannte zwei, und das war die Liste, die
+jemand kannte, nicht die, die es gibt: `serverLogUnavailable` ist von derselben Art — von `mainT`
+übersetzt, von der App geschrieben, und er sagt seine Harmlosigkeit ausdrücklich („Der Server
+läuft, diese Konsole bleibt für diesen Lauf leer“). Er stand rot in genau der Konsole, die er
+gerade als leer ankündigt. Die Grenze verläuft nicht bei „wer schreibt“, sondern bei „läuft es
+weiter“: Die beiden anderen `stderr`-Sätze des Hauptprozesses sind die `err.message` eines
+Spawns, der nie gestartet ist, und die bleiben rot.
+
+Gemessen an der gebauten App im Wegwerf-Profil, mit `.quartz-gui/logs` auf `chmod 500` und einem
+Klick auf „Starten“: derselbe Satz, `text-red-400` (`rgb(248, 113, 113)`) vorher, `text-amber-400`
+(`rgb(251, 191, 36)`) jetzt. Der Server lief in beiden Fällen und wurde in beiden wieder
+gestoppt.
+
 **Was rot bleibt und bleiben muss:** alles, was aus dem Kindprozess kommt. Die Warnung, die ein
 Frame selbst schreibt (`console.warn` in `frames.js`), geht über Quartz' stderr und ist von einem
 echten Fehler dort nicht zu unterscheiden — in derselben Aufnahme steht sie rot unter der

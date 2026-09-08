@@ -385,8 +385,15 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   es gerade rendert. Das Frame bekommt deshalb alle Ordnungen, die die Config hergibt **und dieses
   Frame erreichen können** — ein Seitentyp, dessen `template` ein anderes Frame nennt, ist keine
   Kandidatin — und wählt beim Rendern die, deren Gruppenzahlen passen: erst über alle sechs
-  Positionen, dann, falls dort keine passt, über die Positionen, die dieses Frame wirklich teilt;
-  passen zwei verschieden geordnete gleich gut, wird nicht geraten, sondern gesagt. Die Frames halten damit eine Kopie aus der Config, und **der Wächter über eine
+  Positionen genau, dann, falls dort keine passt, noch einmal über alle sechs, die geteilten aber
+  weiter genau und die übrigen nur noch als Obergrenze. **Eine Position außerhalb spricht nur in
+  eine Richtung:** Rendert die Seite dort *weniger* Flexes als beschrieben, hat das die gewöhnliche
+  Erklärung (eine Gruppe, deren Mitglieder alle abgeschaltet sind); rendert sie *mehr*, gibt es
+  keine, und die Kandidatin widerspricht sich selbst. Sie ganz wegzulassen warf genau das Zeugnis
+  weg, das eine falsche Kandidatin ausgeschlossen hatte — gemessen: 203 von 211 Editorial-Seiten
+  zeigten die Komponente der einen Gruppe im Bereich der anderen, unter einer Warnung, die die
+  Teilung für normal erklärte. Passen zwei verschieden geordnete gleich gut, wird nicht geraten,
+  sondern gesagt. Die Frames halten damit eine Kopie aus der Config, und **der Wächter über eine
   solche Kopie steht an der Tür, an der sie gelesen wird, nicht an denen, an denen das Original
   sich ändert**: `buildService` ruft `writeAllFrames()` vor jedem `quartz build` und jedem
   `--serve`-Start. Zur Config führen acht Türen (Speichern, vier Plugin-Operationen über die CLI,

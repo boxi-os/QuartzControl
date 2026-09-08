@@ -235,10 +235,11 @@ liefen beide nur über die geteilten Positionen, also kam die Position, die den 
 dem Satz nicht vor — und was blieb, war ein Widerspruch mit `header 2` auf beiden Seiten. Der
 Leser konnte daraus nicht ableiten, was er ändern soll.
 
-Also zwei Durchgänge: erst alle sechs, dann — nur wenn nichts passte — die geteilten allein. Das
-ist immer eine Erweiterung einer *leeren* Treffermenge, nie ein Ersatz; eine Kandidatin, die überall
-passt, gewinnt weiterhin gegen eine, die nur auf den geteilten Positionen passt. Beides
-nachgemessen, am erzeugten Modul wie am Build:
+Also zwei Durchgänge: erst alle sechs genau, dann — nur wenn nichts passte — noch einmal alle
+sechs, aber die ungeteilten nur noch als **Obergrenze**. Das ist immer eine Erweiterung einer
+*leeren* Treffermenge, nie ein Ersatz; eine Kandidatin, die überall genau passt, gewinnt weiterhin.
+Warum eine Obergrenze und nicht „die ungeteilten weglassen“, steht unten unter „Eine Position
+außerhalb spricht nur in eine Richtung“. Beides nachgemessen, am erzeugten Modul wie am Build:
 
 | Fall | Ergebnis |
 | --- | --- |
@@ -256,6 +257,54 @@ Dass der neue Fall überhaupt eine Warnung bekommt, statt still durchzugehen, is
 eine Ebene höher: „keine Gruppe hier“ und „eine Gruppe, deren Mitglieder nie rendern“ sehen auf der
 gebauten Seite gleich aus, und dies ist die einzige Stelle, die sie noch auseinanderhalten kann.
 Die Aufteilung selbst ändert die Warnung nicht — sie ist ein Hinweis, kein Rückfall.
+
+### Eine Position außerhalb spricht nur in eine Richtung, und deshalb wird sie nicht weggelassen
+
+Der zweite Durchgang ließ zuerst die ungeteilten Positionen **ganz** weg und fragte nur noch die
+geteilten. Der Kommentar daneben nannte das „immer eine Erweiterung einer leeren Treffermenge, nie
+ein Ersatz“, und das stimmte für die Menge — nicht für das Ergebnis. Denn die Menge war aus zwei
+Gründen leer, die von innen gleich aussehen: ein Bruch außerhalb der geteilten Positionen (der Fall
+oben, den der Durchgang heilen soll) oder ein Bruch *innerhalb* einer geteilten. Im zweiten Fall ist
+die Zahl auf der geteilten Position falsch, und der Durchgang fragte nur noch sie. Trifft eine
+zweite Kandidatin diese falsche Zahl zufällig — ein Seitentyp, der genau eine Gruppe ausschließt —,
+gewann sie, und ihre Ordnung schob die verbliebene Flex in den Bereich der *anderen* Gruppe.
+Vorher hatte genau die Position außerhalb das verhindert.
+
+Der Unterschied zwischen beiden Fällen steht in der **Richtung** der Abweichung, und er ist am
+echten Build ablesbar:
+
+- Die Seite rendert **weniger** Flexes, als die Kandidatin beschreibt. Dafür gibt es die
+  gewöhnliche Erklärung: eine Gruppe, deren Mitglieder alle abgeschaltet sind, ein Eintrag, für den
+  Quartz keine Flex baut. Die Kandidatin kann trotzdem die richtige sein.
+- Die Seite rendert **mehr**. Dafür gibt es keine: Nichts an einer Seite kann eine Gruppe
+  hinzufügen, von der die Ordnung nie gehört hat. Das ist die Kandidatin, die sich selbst
+  widerspricht.
+
+Also fragt der zweite Durchgang weiter alle sechs Positionen, die geteilten auf Gleichheit, die
+übrigen auf „beschrieben ≥ gerendert“ (`countsFit`). Gemessen, vorher und nachher, am erzeugten
+Modul und am echten Build (derselbe Klon, 211 Editorial-Seiten; der Geist ist diesmal
+`note-properties` ohne `enabled:` in der Gruppe `custom-9`, dazu bekommt der Seitentyp `bases`
+`template: editorial`, `exclude: ["@quartz-community/recent-notes"]` und `positions: { header: [],
+right: [] }`):
+
+| | `custom-8` | `custom-9` | `after-body` | Meldung |
+| --- | --- | --- | --- | --- |
+| vorher | leer | **Flex(recent-notes)** | Layout-Box | `header renders 2 …, not the 0 page type "bases" describes … so afterBody was divided as usual` |
+| jetzt | leer | leer | Layout-Box, Flex(recent-notes) | `this page renders afterBody 1 …, which no layout … accounts for … page type "bases" fits that, but header renders 2 group flex(es) it has no group for` |
+
+Je 203 von 211 Seiten; die übrigen 8 rendern auf `afterBody` keine Flex und fallen in beiden
+Fassungen zurück. Vorher zeigte der Bereich `custom-9` also die Komponente der Gruppe `custom-8`,
+unter einem Satz, der die Teilung ausdrücklich für normal erklärte. Die beiden Fälle, die weiter
+gelten müssen, sind mit demselben Klon gegengemessen: die gesunde Config baut Wort für Wort
+identisch (201 von 201 geteilt, keine Warnung), und der Fall des Abschnitts davor — eine Gruppe auf
+`footer`, für die Quartz keine Flex baut — bleibt bei 201 von 201 geteilt mit derselben Warnung.
+
+Zwei Nebensachen fielen dabei mit an. Die Rückfall-Meldung listet nur die geteilten Positionen,
+also stand dort „no layout produces afterBody 1“ neben einer Kandidatin, die genau `afterBody 1`
+beschreibt — sie sagt jetzt „accounts for“ und nennt die Position, die die Kandidatin
+ausgeschlossen hat. Und wo mehrere Kandidatinnen die geteilten Positionen gleich teilen und sich
+nur außerhalb unterscheiden, nannte die Hinweis-Meldung willkürlich die erste als *die*
+beschreibende; sie nennt die anderen jetzt dazu.
 
 ### Eine Kandidatin für ein Frame, das dieser Seitentyp nie rendert, gehört nicht in dessen Liste
 

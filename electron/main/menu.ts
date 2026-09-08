@@ -104,8 +104,8 @@ export async function openHandbook(page?: string): Promise<void> {
 }
 
 // Where a beta tester's report goes. A constant rather than a setting: it is this app's own
-// address, the same domain as its appId, and a field for it would only invite a typo.
-const FEEDBACK_ADDRESS = 'mail@holgerborker.de'
+// repository, the same handle as its appId, and a field for it would only invite a typo.
+const FEEDBACK_URL = 'https://github.com/boxi-os/Quartz-GUI/issues/new'
 
 // Menu items that need the renderer to go somewhere. The menu lives in the main process and the
 // routes live in a HashRouter, so the only way across is an event the renderer listens for -
@@ -125,17 +125,17 @@ function commandRenderer(command: AppCommand): void {
 // macOS puts About in the app menu and takes its content from the bundle; everywhere else it has
 // to be built, and there is no bundle to read it from.
 /**
- * Opens the user's mail client with the version and the platform already in the body.
+ * Opens a new issue in the app's repository with the version and the platform already in the body.
  *
  * The point is not convenience, it is that those two lines actually arrive. A tester writes what
  * went wrong; almost nobody writes "QuartzControl 1.0.0-beta.1, darwin arm64, Electron 43.4.1"
  * underneath it, and that is the half of the report that decides whether a finding can be placed
  * at all. Filled in rather than asked for.
  *
- * `mailto:` rather than the renderer's openExternal channel, which is restricted to https on
- * purpose: that channel takes a URL from the renderer, and a scheme handler is a "run something"
- * primitive. Here the whole string is built in the main process out of constants and Electron's own
- * version numbers, so there is nothing for a caller to smuggle in.
+ * Built here rather than handed to the renderer's openExternal channel: that channel takes a URL
+ * from a caller, and here the whole string comes out of constants and Electron's own version
+ * numbers, so there is nothing to smuggle in. `shell.openExternal` on an https URL always goes to
+ * the browser (see handbookServer), which is what an issue form needs.
  */
 function sendFeedback(): void {
   const zeilen = [
@@ -147,8 +147,8 @@ function sendFeedback(): void {
     `Electron ${process.versions.electron} · Chromium ${process.versions.chrome} · Node ${process.versions.node}`
   ]
   const url =
-    `mailto:${FEEDBACK_ADDRESS}` +
-    `?subject=${encodeURIComponent(`${APP_NAME} ${app.getVersion()} — ${mainT('feedbackSubject')}`)}` +
+    `${FEEDBACK_URL}` +
+    `?title=${encodeURIComponent(`${APP_NAME} ${app.getVersion()} — ${mainT('feedbackSubject')}`)}` +
     `&body=${encodeURIComponent(zeilen.join('\n'))}`
   void shell.openExternal(url)
 }

@@ -5,7 +5,7 @@
   "version": "1.0.0-beta.1",
   "description": "Desktop GUI for managing Quartz 5 sites: config, plugins, content source, builds and the local dev server.",
   "main": "./out/main/index.js",
-  "author": "Holger Borker",
+  "author": "boxi-os",
   "private": true,
   "type": "module",
   "scripts": {
@@ -15,6 +15,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "postinstall": "node scripts/postinstall.mjs",
     "smoke": "node scripts/smoke.mjs",
+    "dmg:background": "node scripts/dmg-background.mjs",
     "screenshots": "node scripts/screenshots.mjs",
     "build:handbook": "node scripts/build-handbook.mjs",
     "docs:variables": "node scripts/variable-docs.mjs",

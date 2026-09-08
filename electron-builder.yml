@@ -7,9 +7,15 @@
 # rights there (the Obsidian-vault feature), npx/npm are spawned through cmd.exe so free-text
 # arguments would be reinterpreted, and rsync has no equivalent. Adding a `win:` block here would
 # produce an installer for a version that does not work.
-appId: de.holgerborker.quartzcontrol
+
+# `io.github.<nutzer>.<app>`, weil das Projekt auf GitHub liegt und keine eigene Domain trägt - und
+# mit Unterstrich, weil Flathub genau diese Form für App-IDs erwartet und electron-builder die
+# appId als Flatpak-App-ID durchreicht. Der Wechsel weg von der alten Form kostet hier nichts: die
+# App ist unsigniert, ein Flatpak wurde nie gebaut, und `app.getPath('userData')` hängt am
+# Produktnamen, nicht an der ID - bestehende Profile bleiben also, wo sie sind.
+appId: io.github.boxi_os.quartzcontrol
 productName: QuartzControl
-copyright: © Holger Borker
+copyright: © boxi-os
 
 directories:
   output: release
@@ -88,8 +94,13 @@ mac:
   identity: null
 
 dmg:
-  # Just the app and a link to /Applications - the default background image ships with
-  # electron-builder and would put someone else's artwork on this window.
+  # Just the app and a link to /Applications. The background is not named here on purpose:
+  # dmg-builder looks for background.png in buildResources before it falls back to its own template
+  # (dmgUtil.js, computeBackground), and build/background.png plus its @2x sibling are what it
+  # finds. Leaving it unset is *not* "no background" - that is the case that pulls the template in,
+  # a grey field with a dashed box and a dashed arrow that sit nowhere near the two positions
+  # below, which is exactly what the 0.1.0 DMG shipped. Drawn by scripts/dmg-background.mjs, which
+  # reads the same two x values from here.
   contents:
     - x: 140
       y: 180
@@ -104,7 +115,7 @@ linux:
   icon: build/icon.png
   # deb refuses to build without a maintainer carrying an address; AppImage does not care. Change
   # this if the package is ever handed to someone else.
-  maintainer: Holger Borker <mail@holgerborker.de>
+  maintainer: boxi-os <boxi@borkel.net>
   synopsis: Manage Quartz websites
   # Without this the installed .desktop file is named after `name` in package.json
   # (quartz-gui.desktop) while the window Electron opens identifies itself as QuartzControl, so a

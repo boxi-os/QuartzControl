@@ -101,6 +101,12 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   aus. Indiziert wird über die Position im DOM, nicht über die Klasse, und genau deshalb trägt der
   Vergleich über die Umstellung hinweg
 
+- `npm run dmg:background` — zeichnet `build/background.png` und `background@2x.png`, den Grund des
+  DMG-Fensters. Muss existieren, weil „kein Hintergrund gesetzt“ bei electron-builder nicht heißt
+  „kein Hintergrund“: `dmg-builder` greift dann zu seiner eigenen Vorlage, einem grauen Feld mit
+  gestricheltem Kasten und Pfeil, die beide nicht dort liegen, wo `dmg.contents` die zwei Symbole
+  hinstellt — genau das lag im 0.1.0-DMG. Rastert über Electron, weil dieser Rechner keinen
+  SVG-Konverter hat, und liest die zwei x-Werte aus derselben Quelle wie die Konfiguration
 - `npm run dist` / `dist:mac` / `dist:linux` / `dist:flatpak` — electron-builder (see
   `docs/decisions/electron-runtime-and-packaging.md`). `dist:flatpak` ist ein eigenes Skript, weil
   das Ziel flatpak und flatpak-builder auf der Baumaschine braucht und **noch nie gebaut wurde** —

@@ -116,11 +116,15 @@ Bug: Das Schema hat eine Regel bekommen, von der hier niemand weiß.
 
 **Der Pfad ist Daten, und bei einem `invalid_key` ist er der fremde Schlüssel selbst** — zod hängt
 ihn als letztes Segment an. Ein `.qtpl` kann den Satz damit beliebig lang machen; gemessen mit
-einem Schlüssel aus `<script>alert(1)</script>` und 3000 weiteren Zeichen ergab das einen Satz von
-3105 Zeichen, den der Dry-Run ungekürzt in `plan.notes` legt. Gekappt wird deshalb **je Segment**
-(40 Zeichen, dann `…`), nicht der zusammengesetzte Pfad: Vorn steht, um welches Feld es geht, und
-das muss überleben. Derselbe Fall jetzt: 132 Zeichen, in den Worten der App. Die fünf anderen Codes
-sind dabei Wort für Wort unverändert (gemessen an acht kaputten Frames, vorher und nachher). Der Typ der Liste ist aus dem Schema abgeleitet
+einem Schlüssel aus `<script>alert(1)</script>` und 3000 weiteren Zeichen auf `placements`, dessen
+Pfadpräfix 31 Zeichen hat, ergab das einen Satz von 3105 Zeichen, den der Dry-Run ungekürzt in
+`plan.notes` legt. Gekappt wird deshalb **je Segment** (40 Zeichen, dann `…`), nicht der
+zusammengesetzte Pfad: Vorn steht, um welches Feld es geht, und das muss überleben. Derselbe Fall
+jetzt: 132 Zeichen, in den Worten der App. Das Feld gehört zur Zahl: Auf `columnLineNames`, dem
+längsten der drei Präfixe (36 Zeichen), sind es 3110 und 137 — das Paar, das der Kommentar im Code
+nennt. Zwei Zahlen für dieselbe Messung, die nicht sagen, wofür sie gelten, liest der Nächste als
+Widerspruch. Die fünf anderen Codes sind dabei Wort für Wort unverändert (gemessen an acht
+kaputten Frames, vorher und nachher). Der Typ der Liste ist aus dem Schema abgeleitet
 (`NonNullable<ReturnType<typeof gridFrameDefinition.safeParse>['error']>['issues'][number]`), also
 verengt der `case` die Felder `maximum`/`minimum`/`values` von selbst, statt sie zu casten.
 

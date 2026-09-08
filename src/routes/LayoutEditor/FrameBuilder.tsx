@@ -660,6 +660,12 @@ export default function FrameBuilder({
    * `placement` is what the two cases differ by, and only the fields that describe a placement are
    * conditional on it - the spans, "visible on this breakpoint", and taking it back off the grid.
    * Name, slot, group and deleting the area belong to the area itself and are always there.
+   *
+   * The two cases are *not* "on the grid" and "in the tray": an area that is placed but hidden sits
+   * in the tray and has a placement, so the tray passes it on. It was the caller that decided this,
+   * not the form, and the caller decided wrong - the switch that had just hidden the area was then
+   * missing from the only form the area had, and the sole way back was a drag, which assigns a new
+   * cell rather than restoring the old one.
    */
   function areaForm(area: GridFrameArea, placement?: GridAreaPlacement): JSX.Element {
     return (
@@ -737,6 +743,9 @@ export default function FrameBuilder({
     )
   }
 
+  // Two kinds of chip: never placed on this breakpoint, and placed but hidden. They read the same
+  // in the tray, so the chip says which - "no groups" and "a group whose members never render" all
+  // over again, one level up.
   const unplacedAreas = editing.areas.filter((a) => {
     const p = layout.placements[a.id]
     return !p || p.hidden
@@ -940,9 +949,14 @@ export default function FrameBuilder({
               area={a}
               selected={selectedAreaId === a.id}
               dragging={dragAreaId === a.id}
+              hidden={!!layout.placements[a.id]}
               onSelect={() => setSelectedAreaId(selectedAreaId === a.id ? null : a.id)}
             >
-              {areaForm(a)}
+              {/* With its placement where it has one: a chip is in the tray for two reasons, and a
+                  hidden area still has row, column and spans - it is just not drawn on this
+                  breakpoint. Without them the one switch that put it here ("visible on ...") was
+                  not in its form, so the only way back was a drag, which hands out a new cell. */}
+              {areaForm(a, layout.placements[a.id])}
             </TrayChip>
           ))}
         </UnplacedTray>
@@ -1158,6 +1172,7 @@ function TrayChip({
   area,
   selected,
   dragging,
+  hidden,
   onSelect,
   children
 }: {
@@ -1165,6 +1180,8 @@ function TrayChip({
   selected: boolean
   dragging: boolean
   onSelect: () => void
+  // Placed on this breakpoint but hidden, rather than not placed at all.
+  hidden: boolean
   // The area's form, same as a placed box gets - rendered only while this chip is the selected one.
   // A selected chip takes a whole row of the wrapping tray rather than staying chip-sized, because
   // the form is a row of fields and squeezing it between two other chips would leave neither
@@ -1191,6 +1208,7 @@ function TrayChip({
           <span className="text-text-muted">
             {area.slot ? t(`positions.${area.slot}`, area.slot) : t('layoutEditor.frameBuilder.slotNone')}
             {area.group ? ` · ${t('layoutEditor.frameBuilder.ownGroupShort')}` : ''}
+            {hidden ? ` · ${t('layoutEditor.frameBuilder.hiddenShort')}` : ''}
           </span>
         </button>
       </div>

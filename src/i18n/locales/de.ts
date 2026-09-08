@@ -1145,6 +1145,7 @@ export default {
       slotNone: 'Keine (leer)',
       ownGroup: 'Eigener Bereich',
       ownGroupShort: 'eigen',
+      hiddenShort: 'ausgeblendet',
       ownGroupHint:
         'Zeigt nur die Komponenten, die im Reiter „Global“ hierher gezogen werden. Ohne das zeigt der Bereich alles, was die Belegung sonst noch hat.',
       ownGroupRenamed:

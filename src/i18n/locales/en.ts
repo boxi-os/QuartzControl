@@ -1141,6 +1141,7 @@ export default {
       slotNone: 'None (empty)',
       ownGroup: 'Area of its own',
       ownGroupShort: 'own',
+      hiddenShort: 'hidden',
       ownGroupHint:
         'Shows only the components dragged here on the “Global” tab. Without it the area shows everything else the slot holds.',
       ownGroupRenamed:

@@ -532,18 +532,45 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Befunde aus den Reviews (Stand 2026-09-10)
+## Befunde aus den Reviews (Stand 2026-09-11)
 
-Alle sieben Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
+Alle acht Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht,
 [`docs/REVIEW-2026-09-08.md`](docs/REVIEW-2026-09-08.md) mit seinen acht,
-[`docs/REVIEW-2026-09-09.md`](docs/REVIEW-2026-09-09.md) mit seinen acht und
-[`docs/REVIEW-2026-09-10.md`](docs/REVIEW-2026-09-10.md) mit seinen acht (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-`, `-07-`, `-08-`, `-09-` und `-10-`) stehen als
+[`docs/REVIEW-2026-09-09.md`](docs/REVIEW-2026-09-09.md) mit seinen acht,
+[`docs/REVIEW-2026-09-10.md`](docs/REVIEW-2026-09-10.md) mit seinen acht und
+[`docs/REVIEW-2026-09-11.md`](docs/REVIEW-2026-09-11.md) mit seinen acht (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-11-`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel.
+
+**Das achte Review las die acht Fixes des siebten und die zwei kleinen Vorhaben darunter** (PR #27
+und #28). Kein Befund der Stufe Hoch, einer Mittel, sieben Niedrig, alle acht abgearbeitet. Der
+mittlere war eine Regression aus dem Fix des siebten: Der zweite Durchgang in `pickGroupOrder`
+ließ die ungeteilten Positionen ganz weg und warf damit genau das Zeugnis weg, das eine falsche
+Kandidatin ausgeschlossen hatte — am echten Build zeigten 203 von 211 Editorial-Seiten die
+Komponenten der einen Gruppe im Bereich der anderen, unter einer Warnung, die die Teilung für
+normal erklärte. Was daraus als Regel bleibt, steht oben in den passenden Abschnitten:
+
+- **Eine Position, die ein Frame nicht teilt, spricht nur in eine Richtung.** Weniger Flexes als
+  beschrieben hat die gewöhnliche Erklärung, mehr hat keine. Wer eine Prüfung lockert, lockert sie
+  in der Richtung, in der die Abweichung erklärbar ist — nicht, indem er die Spalte streicht.
+- **„Beim nächsten Schreiben“ hat so viele Türen, wie zum Schreiben führen.** Der Filter für die
+  toten Ausschlüsse saß in einer von dreien; er sitzt jetzt an der Stelle, an der aus dem Entwurf
+  eine Änderung wird.
+- **Zwei Dinge, die gleich aussehen, brauchen zwei Antworten** — noch einmal, zweimal: „nie
+  ausgeschlossen“ gegen „ausgeschlossen unter einem toten Namen“, und „nicht platziert“ gegen
+  „platziert und ausgeblendet“. Im zweiten Fall fehlte dem Formular ausgerechnet der Schalter, der
+  den Bereich dorthin gebracht hatte.
+- **Ein Guard hat zwei Hälften, Zeiger und Tastatur.** Das Bereichsformular hatte
+  `stopPropagation()` nur für den Klick; per Tastatur war es damit unbedienbar.
+- **„Am Schema gemessen“ heißt: kaputte Eingaben hindurchschicken, nicht das Schema lesen.** Der
+  sechste zod-Code (`invalid_key`) stand die ganze Zeit da, und sein Pfad *ist* der fremde
+  Schlüssel — also gekappt, je Segment.
+- **Eine Zahl in einem Dokument ist eine Messung oder sie gehört da nicht hin.** „Dieselben zehn
+  Felder“ war keine; gezählt sind es sechs.
 
 **Das siebte Review war das erste, das an einem echten `quartz build` gemessen hat** — eine Kopie
 des Beispielprojekts, 266 Markdown-Dateien, 201 Editorial-Seiten je Lauf, die gebauten Seiten mit
@@ -692,14 +719,23 @@ Bereich darf ohne Belegung leer bleiben, und über `layout.group` kann er eigene
 Umbaus selbst: die Zuordnung ruht auf einem Funktionsnamen, den es nur gibt, weil Quartz sich mit
 esbuilds `keepNames` baut.
 
-**Das nächste Review misst ab `review-2026-09-10`.** Der Tag sitzt auf `b1cf5bd`, `main` nach
-PR #25 — dem Stand, den das siebte Review vor sich hatte, nach derselben Regel wie seine vier
-Vorgänger: Der Ausgangsstand ist das, was gelesen wurde, nicht das, was danach entstanden ist. So
-sitzt `review-2026-09-09` auf `c6da3d9` („Der Auftrag für das sechste Review“),
+**Das nächste Review misst ab `review-2026-09-11`.** Der Tag sitzt auf `59de3a5`, dem Stand, den
+das achte Review gelesen hat (`main` nach PR #27 plus die Variablensuche aus PR #28) — nach
+derselben Regel wie seine fünf Vorgänger: Der Ausgangsstand ist das, was gelesen wurde, nicht das,
+was danach entstanden ist. So sitzt `review-2026-09-10` auf `b1cf5bd`, `main` nach PR #25,
+`review-2026-09-09` auf `c6da3d9` („Der Auftrag für das sechste Review“),
 `review-2026-09-08` auf `0c76d6e`, `review-2026-09-07` auf `1994811`, dem letzten Merge vor den
 Fixes des vierten Reviews, und `review-2026-09-06` auf `1bd69dc`; Letzterer war einmal 67 Commits
 früher auf `0b0fb96` gesetzt und wurde verschoben, weil jener Stand gemessen, aber nicht gelesen
 war.
+
+**Die acht Fixes des achten Reviews liegen bewusst dahinter.** Sie sind gemessen — der mittlere
+vorher und nachher am echten Build eines Klons des Beispielprojekts, fünf weitere an der gebauten
+App in einem Wegwerf-Profil (darunter ein echter Import eines von Hand gebauten `.qtpl`) — und von
+niemandem sonst gelesen. Die größten Eingriffe sind `countsFit` samt der Rückfall-Meldung, die
+sagt, was eine Kandidatin ausgeschlossen hat, die Platzierung, die die Ablage jetzt durchreicht,
+der Tastatur-Guard am Bereichsformular, der sechste zod-Code samt Kappung je Pfadsegment und der
+Filter für tote Ausschlüsse in `update`.
 
 **Die acht Fixes des siebten Reviews liegen bewusst dahinter** (PR #26, 22 Dateien, +1200/−93).
 Sie sind gemessen, die meisten am echten Build oder an der gebauten App, und von niemandem sonst

@@ -7,9 +7,11 @@
 // eine andere.
 //
 // Behandelt wie resources/git und nicht wie resources/templates: nicht im Repo, sondern beim Packen
-// erzeugt (beforePack). Der Grund ist derselbe wie dort - es ist ein erzeugtes Artefakt, hier 21 MB
-// in 252 Dateien, und die Bilder darin werden bei jedem Textdurchgang neu aufgenommen. Im Repo wäre
-// jede Aufnahme ein neuer Blob.
+// erzeugt (beforePack). Der Grund ist derselbe wie dort - es ist ein erzeugtes Artefakt, am
+// 2026-09-09 gemessene 34,9 MB in 437 Dateien, davon 29,8 MB Bilder, und die werden bei jedem
+// Textdurchgang neu aufgenommen. Im Repo wäre jede Aufnahme ein neuer Blob. Die Zahl steht hier
+// mit ihrem Datum, weil sie mit dem Handbuch wächst: vorher standen an fünf Stellen 252 Dateien
+// und wahlweise 18 oder 21 MB.
 //
 // Quelle ist das Quartz-Projekt, dessen content/ auf den Handbuch-Vault zeigt; wo das liegt, sagt
 // docs/handbuch.md. Fehlt es, bricht dieses Skript ab - ob ein Bau ohne Handbuch in Ordnung ist,

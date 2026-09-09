@@ -16,8 +16,10 @@
 //   * share/locale (12 MB, nur im Linux-Bundle) - das macOS-Bundle bringt gar keine Übersetzungen
 //     mit, also spricht git dort ohnehin Englisch; wegwerfen macht beide Plattformen gleich.
 //   * share/gitweb - ein CGI-Webinterface.
-// Übrig bleiben rund 26 MB (macOS) bzw. 28 MB (Linux), mit denen `clone`, `init`, `commit` und
-// `log` in einer leeren Umgebung nachweislich laufen.
+// Übrig bleiben, gemessen am 2026-09-09 über alle vier Bundles: 26 MB (macOS arm64), 28 MB
+// (macOS x64), 28 MB (Linux arm64) und 31 MB (Linux x64) - mit ihnen laufen `clone`, `init`,
+// `commit` und `log` in einer leeren Umgebung nachweislich. Die 31 MB waren 42, bevor die Regel
+// unten auch `.so` kannte; die anderen drei Bundles enthalten kein einziges.
 import { createHash } from 'crypto'
 import { createWriteStream, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'fs'
 import { readdir, rm, stat } from 'fs/promises'
@@ -76,9 +78,16 @@ async function prune(dir) {
 
   if (existsSync(gitCore)) {
     for (const entry of await readdir(gitCore)) {
-      // .dll/.dylib/.json in git-core gehören ausschließlich zum Credential Manager - git selbst
-      // legt dort keine ab (nachgezählt: 221 solche Dateien im macOS-Bundle, alle .NET).
-      const isCredentialManager = /\.(dll|dylib|pdb|json)$/.test(entry) || entry.startsWith('git-credential-manager')
+      // .dll/.dylib/.so/.json in git-core gehören ausschließlich zum Credential Manager - git
+      // selbst legt dort keine ab (nachgezählt: 221 solche Dateien im macOS-Bundle, alle .NET).
+      // `.so` kam am 2026-09-09 dazu, als das ubuntu-x64-Bundle zum ersten Mal geholt wurde: Es
+      // trägt libSkiaSharp.so (9,2 MB) und libHarfBuzzSharp.so (2,1 MB), beide vom 9. April 2024
+      // und beide .NET-Bindungen des GCM. Die Regel war gegen das macOS-Bundle geschrieben und
+      // kannte nur `.dylib`, also überlebten sie - 11,4 MB in jedem x86_64-Paket. Dass sie
+      // wirklich niemand braucht, ist an den ELF-Kopfzeilen gelesen und nicht vermutet: die
+      // NEEDED-Einträge von `bin/git`, `git-remote-http` und `scalar` nennen libz, libc und
+      // libcurl-gnutls, keine der beiden. Im ubuntu-arm64-Bundle gibt es überhaupt kein `.so`.
+      const isCredentialManager = /\.(dll|dylib|so|pdb|json)$/.test(entry) || entry.startsWith('git-credential-manager')
       if (isCredentialManager || entry === 'git-lfs') await remove(join(gitCore, entry))
     }
   }

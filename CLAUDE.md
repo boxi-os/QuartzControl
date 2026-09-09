@@ -106,6 +106,18 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   Paket in ein zweites leeres Projekt und baut es. Was dabei gefunden wurde, steht in
   `scripts/example-template/BEFUNDE.md`
 
+- `node scripts/stagger-vault-mtimes.mjs [--list] [--apply] [--restore <datei>]` — staffelt die
+  Änderungszeiten des Beispiel-Vaults nach der Gliederung, eine Minute je Schritt, kleine Nummer =
+  zuletzt bearbeitet. Existiert, weil die Ordner- und Tag-Listen dieses Projekts nach der mtime
+  sortieren, das Frontmatter kein Datum trägt und `content/` ein Symlink ist — git liefert dazu
+  nichts, und **git speichert auch keine mtimes**, es gibt also keinen Rückweg außer der Sicherung,
+  die `--apply` vorher schreibt. Eine Textänderung an vielen Notizen setzt sonst alle auf dieselbe
+  Sekunde und wirft jede Liste um. Die Sortierregel ist wörtlich die der Website (`index.md`
+  zuerst, dann nach Titel mit `localeCompare(numeric: true)`, Dateien und Unterordner gemischt),
+  Deutsch und Englisch paarweise verschränkt, Anker fest — zweimal laufen ändert nichts. Ohne Flag
+  zeigt es nur, was es täte. Am 2026-09-06 war dasselbe von Hand gemacht worden und deshalb halb:
+  die 149 unnummerierten Blattnotizen blieben auf einer Sekunde stehen, und sechs später angefaßte
+  Diagramm-Notizen waren danach der ganze Inhalt des Kastens „zuletzt bearbeitet"
 - `node scripts/styles-snapshot.mjs <datei.json>` bzw. `--diff <a> <b>` — nimmt die *berechneten*
   Farben und Schriftmaße jedes Elements auf jeder Route in hell und dunkel auf und vergleicht zwei
   Aufnahmen; `--hover` fährt zusätzlich jedes Element mit einer `hover:`-Farbe per echter

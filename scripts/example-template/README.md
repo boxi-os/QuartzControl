@@ -33,7 +33,7 @@ Seite verschiebt, zieht `scripts/variable-docs.mjs` (`SEITEN`) und `scripts/chec
 
 | Was | Quelle | Versioniert in |
 | --- | --- | --- |
-| Notizen, Bases, Canvas, Excalidraw | Vault | eigenes git im Vault, seit 2026-09-05 gepusht nach `boxi-os/Quartz-Example-Vault` (privat) |
+| Notizen, Bases, Canvas, Excalidraw | Vault | eigenes git im Vault, seit 2026-09-05 gepusht nach `boxi-os/Quartz-Example-Vault` (privat) — **außer den Änderungszeiten**, die git nicht speichert: `node scripts/stagger-vault-mtimes.mjs` |
 | Stylesheets | Projekt | git im Projekt **und** hier — abgeglichen mit `--sync` |
 | Config, Frames, Presets, Breakpoints | dieses Verzeichnis | QuartzControl-Repo; ins Projekt gespielt mit `--only 4` bzw. `--only 3` |
 | Messung, Bootstrap | dieses Verzeichnis | QuartzControl-Repo |

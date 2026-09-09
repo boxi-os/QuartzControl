@@ -22,3 +22,7 @@ resources/handbook/
 
 # Downloaded by scripts/build-example-template.mjs; not part of the repo.
 scripts/example-template/.fonts/
+
+# Sicherung der Vault-Änderungszeiten (scripts/stagger-vault-mtimes.mjs --apply). Sie gehört zu
+# einem Rechner und einem Zeitpunkt, nicht zum Projekt - der Rückweg ist `--restore <datei>`.
+mtimes-*.json

@@ -1633,17 +1633,27 @@ sind Artefakte des Schreibprozesses, und was sie zeigen sollen, ist eine Liste i
 Ordnung. Wer Datumsangaben braucht, die etwas bedeuten, schreibt sie ins Frontmatter — dann liest
 das Plugin sie von dort und keine Textänderung kann sie mehr bewegen.
 
-**Gestaffelt wurden dabei die Kapitel- und Abschnittsseiten, nicht die Blattnotizen** — am
-2026-09-10 am Vault nachgemessen: 100 Schritte von genau 60 s, deutsch und englisch abwechselnd,
-daneben aber **149 Dateien auf derselben Sekunde** (16:44, die Blattnotizen mitten in der Reihe)
-und **sechs auf der jüngsten Zeit überhaupt** (22:06: `ablauf`, `fluss`, `sequenz` in beiden
-Sprachen). Für die Ordnerlisten macht das nichts, die sortieren innerhalb eines Abschnitts nach
-Quartz' Tie-Break `byDateAndAlphabetical` und stehen damit alphabetisch. Für den Kasten
-**„zuletzt bearbeitet"** macht es alles: er zeigt genau die sechs Diagramm-Notizen, also die eine
-Gruppe, die die Staffelung nicht angefaßt hat — auf der deutschen Startseite drei davon in
-Englisch, weil `recent-notes` keinen Sprachfilter hat (vorbestehend). Die Staffelung ist damit
-richtig für die Listen, die sie im Blick hatte, und unvollständig für die eine, die BEFUNDE als
-ihren Zweck nennt.
+**Gestaffelt waren dabei die Kapitel- und Abschnittsseiten und die nummerierten Notizen, nicht die
+unnummerierten Blattnotizen** — am 2026-09-10 am Vault nachgemessen: 100 Schritte von genau 60 s,
+deutsch und englisch abwechselnd, daneben aber **149 Dateien auf derselben Sekunde** (16:44, die
+Blattnotizen mitten in der Reihe) und **sechs auf der jüngsten Zeit überhaupt** (22:06: `ablauf`,
+`fluss`, `sequenz` in beiden Sprachen). Für die Ordnerlisten machte das nichts, die sortieren
+innerhalb eines Abschnitts nach Quartz' Tie-Break `byDateAndAlphabetical` und standen damit
+alphabetisch. Für den Kasten **„zuletzt bearbeitet"** machte es alles: er zeigte genau die sechs
+Diagramm-Notizen, also die eine Gruppe, die die Staffelung nicht angefaßt hatte — die eine Liste,
+die BEFUNDE als ihren Zweck nennt (Review 2026-09-14, Befund 10).
+
+**Von Hand gerichtet heißt: beim nächsten Mal wieder halb.** Die Staffelung steht deshalb seit dem
+2026-09-10 in `scripts/stagger-vault-mtimes.mjs` und deckt alle 276 Seiten ab — 266 Notizen, acht
+Bases, zwei Canvas. Die Regel dort ist die Sortierregel der Website selbst: `index.md` zuerst,
+danach alles andere nach **Titel** mit `localeCompare(numeric: true)`, Dateien und Unterordner
+gemischt (deshalb steht 6.8 hinter dem Unterbaum von 6.7), Deutsch und Englisch paarweise
+verschränkt, eine Minute je Schritt rückwärts von einem festen Anker. Zweimal laufen ändert nichts.
+Der Lauf legt vorher eine Sicherung an, weil git keine mtimes kennt und es sonst keinen Rückweg
+gibt.
+
+Was das Skript **nicht** kann: `recent-notes` hat keinen Sprachfilter, also stehen auf beiden
+Startseiten beide Sprachen im Kasten. Das ist eine Eigenschaft des Plugins.
 
 ### 80. Der Header gibt die Scroll-Timelines auf — und wird dadurch besser lesbar
 

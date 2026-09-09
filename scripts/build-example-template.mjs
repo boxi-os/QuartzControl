@@ -1,6 +1,7 @@
 // Builds the example template package end to end.
 //
-//   node scripts/build-example-template.mjs [--only <phase>] [--check-contrast] [--sync] [--fresh]
+//   node scripts/build-example-template.mjs [--only <phase>] [--check-contrast] [--sync]
+//                                            [--check-sync] [--fresh]
 //
 // The whole thing runs *through the app*: it launches the production build with playwright's
 // electron driver (the same way scripts/smoke.mjs does) and does every write with
@@ -29,7 +30,8 @@
 // --check-contrast runs the WCAG measurement alone and exits; it needs no app and no project.
 // --sync copies the stylesheets and snippets back out of the project into this repo and exits; it
 // needs no app either. Phases push forward, --sync pulls back - see syncBack() for what it leaves
-// alone and why.
+// alone and why. --check-sync compares the two sides and writes nothing, which is the flag to
+// reach for when it is not yet clear which side is ahead - see checkSync().
 import { _electron as electron } from 'playwright-core'
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
@@ -218,6 +220,84 @@ function readCustomBody() {
   }
   // Collapse the gaps the removed blocks left, so the result is stable across runs.
   return text.replace(/\n{3,}/g, '\n\n').trim() + '\n'
+}
+
+/**
+ * The same comparison as --sync, without the copy.
+ *
+ * `--sync` is a one-way door: it takes the project's version, and a stylesheet that was edited *in
+ * this repo* and never pushed forward is deleted by it rather than reported. That happened - the
+ * `-2rem` rule that takes the empty row's gap back under a phone's app bar was written here on
+ * 2026-09-09, the site was built eleven minutes earlier, and a comment in BEFUNDE.md then
+ * described a measurement the built site could not have shown (review 2026-09-14, finding 4). Both
+ * flags existed; neither of them was the one to reach for, because the question at that moment was
+ * not "pull" or "push" but "do these differ at all".
+ *
+ * So this answers only that, and exits non-zero when they do. Which direction to close the gap in
+ * stays a decision: `--sync` to keep the project's version, `--only 5` to push this repo's.
+ */
+function checkSync() {
+  const ordered = STYLE_ORDER.map((name) => `${name}.scss`)
+  const customDir = path.join(WORKSHOP, 'quartz/styles/custom')
+  const repoDir = path.join(DATA_DIR, 'styles')
+
+  if (!fs.existsSync(customDir)) {
+    log(`Kein Projekt unter ${WORKSHOP} - nichts zu vergleichen.`)
+    return false
+  }
+
+  const inProject = fs.readdirSync(customDir).filter((name) => name.endsWith('.scss')).sort()
+  const differing = []
+  const onlyOneSide = []
+
+  for (const name of new Set([...ordered, ...inProject])) {
+    const here = path.join(repoDir, name)
+    const there = path.join(customDir, name)
+    const hasHere = fs.existsSync(here)
+    const hasThere = fs.existsSync(there)
+    if (!hasHere || !hasThere) {
+      onlyOneSide.push(`styles/${name} - nur ${hasHere ? 'im Repo' : 'im Projekt'}`)
+      continue
+    }
+    const a = fs.readFileSync(here, 'utf-8')
+    const b = fs.readFileSync(there, 'utf-8')
+    if (a === b) continue
+    const lines = (t) => t.split('\n').length
+    differing.push(`styles/${name} - Repo ${lines(a)} Zeilen, Projekt ${lines(b)} Zeilen`)
+  }
+
+  const bodyHere = fs.readFileSync(path.join(DATA_DIR, 'custom-scss-body.scss'), 'utf-8')
+  const bodyThere = readCustomBody()
+  if (bodyHere !== bodyThere) differing.push('custom-scss-body.scss')
+
+  const snippetDir = path.join(WORKSHOP, 'quartz/static/snippets')
+  if (fs.existsSync(snippetDir)) {
+    for (const name of fs.readdirSync(snippetDir).sort()) {
+      const here = path.join(DATA_DIR, 'site/snippets', name)
+      if (!fs.existsSync(here)) {
+        onlyOneSide.push(`site/snippets/${name} - nur im Projekt`)
+        continue
+      }
+      if (fs.readFileSync(here, 'utf-8') !== fs.readFileSync(path.join(snippetDir, name), 'utf-8')) {
+        differing.push(`site/snippets/${name}`)
+      }
+    }
+  }
+
+  log('\n═══════════════════════════════════')
+  if (!differing.length && !onlyOneSide.length) {
+    log(`${ordered.length} Stylesheets, custom.scss und die Schnipsel: Repo und Projekt deckungsgleich.`)
+    return true
+  }
+  log(`${differing.length + onlyOneSide.length} Datei(en) auseinander:`)
+  for (const entry of [...onlyOneSide, ...differing]) log(`  ${entry}`)
+  log('\nZeilenweise mit `diff scripts/example-template/styles/<name> ~/Documents/Example/quartz/styles/custom/<name>`.')
+  log('Zurückholen mit `--sync`, vorschieben mit `--only 5`. Was gemessen werden soll, wird an dem gemessen, was gebaut wurde.')
+  return false
+}
+
+if (argv.includes('--check-sync')) {
+  process.exit(checkSync() ? 0 : 1)
 }
 
 if (argv.includes('--sync')) {

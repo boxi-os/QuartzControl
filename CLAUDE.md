@@ -93,10 +93,14 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   Wegwerf-Projekt auf und exportiert sie als `.qtpl`. Treibt dafür die **gebaute App** über
   Playwright und schreibt alles über `window.quartzGui.*`, also durch dieselben IPC-Pfade wie ein
   Klick — kein zweiter Frame-Codegen, kein zweiter SCSS-Writer. Phasen einzeln über
-  `--only 3,4,5`, die WCAG-Messung allein über `--check-contrast` (89 Paare, braucht weder App noch
+  `--only 3,4,5`, die WCAG-Messung allein über `--check-contrast` (93 Paare, braucht weder App noch
   Projekt). Den Rückweg geht `--sync`: Es holt die 30 Stylesheets und die Schnipsel aus dem Projekt
   zurück ins Repo, denn dort wird gearbeitet und die Kopie hier driftet sonst still (gemessen am
-  2026-09-05). Config und Frames haben bewusst keinen Rückweg — sie entstehen aus `plugins.mjs`,
+  2026-09-05). `--check-sync` vergleicht nur und schreibt nichts — der Aufruf für den Fall, dass
+  noch nicht feststeht, welche Seite vorn ist. Er existiert, weil die Drift auch andersherum
+  läuft: eine Regel, die im Repo entstand und nie mit `--only 5` vorgeschoben wurde, hätte `--sync`
+  gelöscht statt gemeldet, und die Messung daneben war an einer Website gemacht, die sie nicht
+  hatte (2026-09-10). Config und Frames haben bewusst keinen Rückweg — sie entstehen aus `plugins.mjs`,
   `variables.mjs`, `layout.mjs` und `frames.mjs`, und ein Rückleser wäre deren zweite, inverse
   Umsetzung. Ist zugleich der einzige End-to-End-Test der Vorlagen-Funktion: Phase 11 importiert das
   Paket in ein zweites leeres Projekt und baut es. Was dabei gefunden wurde, steht in
@@ -290,6 +294,12 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   Navigation von Hand ausgelöst. Drei Antworten, wenn die Seite ein Save registriert hat
   (`saveCommand.ts`): Abbrechen, Speichern, Verwerfen - bei einem gescheiterten Speichern bleibt der
   Guard auf der Seite, weil dort die Fehlermeldung steht.
+- **Das registrierte Speichern schreibt alles, was `dirty` zählt.** Badge, Cmd+S und der
+  Verlassen-Dialog lesen dasselbe Flag; ein Save, der weniger schreibt, macht aus der dritten Tür
+  einen Datenverlust - „Speichern" gesagt, `true` zurückgemeldet, navigiert, und die Entwürfe der
+  übrigen Reiter sterben mit der Route (*Eigenes CSS*, elftes Review). Wer eine Teilmenge speichern
+  will, braucht einen eigenen Knopf, der seine Reichweite im Namen trägt - und der muss dann auch
+  dastehen.
 - **Ein Lesevorgang, dessen Schlüssel sich per Klick ändert, braucht einen Abbruch-Guard**
   (`useIpcQuery`). Zwei Antworten sind dann gleichzeitig unterwegs und die langsamere gewinnt, egal
   welche Frage später gestellt wurde. Wo der Schlüssel konstant ist oder sein Wechsel die Route neu
@@ -432,6 +442,20 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   nächste nicht angebaut wird; die eine Bau-Tür deckt sie alle. Stimmen die Zahlen beim Bauen
   nicht, wird nichts geraten: alles in den einfachen Bereich, Warnung ins Log. Messungen in
   [`layout-frames.md`](docs/decisions/layout-frames.md).
+- **Erzeugtes CSS gehört in die Kaskadenschicht dessen, was es nachspricht.** Quartz rendert
+  `frame.css` als *ungeschichtetes* `<style>` am Anfang des `<body>`; sein eigenes und das
+  Plugin-CSS liegen in `@layer quartz-base`, das `custom.scss` des Projekts dahinter ungeschichtet.
+  Ungeschichtet schlägt geschichtet unabhängig von der Spezifität — die zwei Kompat-Blöcke in
+  `shared/gridFrameCss.ts` überholten damit nicht nur die Plugins, die sie zitieren, sondern jede
+  Regel, die eine Vorlage über `.explorer` schreiben kann, und zwar an jeder Breite, weil die
+  Desktop-Hälfte unbedingt gilt. Gemessen in Firefox und WebKit: die Schublade der Vorlage war
+  wieder die des Plugins (`absolute` statt `fixed`, 100 vw statt 340 px, deckend, `overflow: hidden`
+  und damit unscrollbar), der gefaltete Explorer wieder der 19-px-Stummel. Sie stehen deshalb in
+  `@layer quartz-base` — dort schlägt der `[data-frame]`-Scope weiter das Plugin, und das Projekt
+  schlägt weiter uns. Die Grid-Regeln des Frames bleiben ungeschichtet: das ist die Antwort der App
+  auf eine Frage, die sonst niemand beantwortet. Wer fremdes CSS abschreibt, schreibt beide Hälften
+  ab — und prüft die Behauptung „vollständig“ Regel für Regel gegen die Quelle, nicht gegen die
+  Erinnerung an sie.
 - **Kein natives HTML5-Drag mehr, nirgends.** Alle vier Stellen ziehen mit `@dnd-kit`
   (`Plugins/Installed`, `LayoutEditor/GlobalBoard`, `LayoutEditor/FrameBuilder`; `Styles/CustomCss`
   hatte nie eines, nur Pfeile). Eine neue Stelle nimmt `@dnd-kit` mit `KeyboardSensor`, denn natives
@@ -495,6 +519,21 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   wird weggeräumt statt übersprungen, damit der reparierende Weg nicht blockiert bleibt.
 - **Gemessen, nicht angenommen.** Jede Regel hier steht in `docs/decisions/` mit dem Experiment, das
   sie erzwungen hat. Neue Regeln genauso.
+- **Wer einen Nutzen misst, misst auch den Preis.** „Die gleichen Höhen machen ruhigere
+  Ablageziele" war die Begründung dafür, sie aufzugeben — und niemand hatte nachgesehen, was sie
+  wirklich taten: `rectSortingStrategy` skaliert jede Karte in das Rechteck, in das sie rückt, und
+  gleiche Höhen waren das Einzige, was den Faktor bei 1 hielt. Gemessen an der gebauten App wurde
+  daraus eine 77-px-Karte, die während des Ziehens auf 733 px gestreckt wird.
+- **Eine Prüfliste ist eine Spalte, keine Zeile.** Die Kontrastliste prüfte die Ruhefarbe eines
+  Links gegen drei Flächen und die Hover-Farbe gegen eine — und meldete danach „kein Paar unter der
+  Schwelle“, während der Hover im Callout bei 4,18:1 stand. Wer ein Argument für einen Zustand
+  aufschreibt („ein Link sitzt nicht nur auf dem Grund“), trägt es in derselben Bewegung in alle
+  Zustände ein, für die es gilt.
+- **Drift läuft in beide Richtungen, und ein Werkzeug, das nur eine kennt, sieht sie nicht.**
+  `--sync` holt die Stylesheets aus dem Projekt zurück; eine Regel, die im Repo entstand und nie
+  vorgeschoben wurde, hätte es gelöscht statt gemeldet — und die Messung daneben war an einer
+  Website gemacht, die die Regel nicht hatte. `--check-sync` vergleicht nur und entscheidet nichts;
+  es ist der erste Aufruf vor jeder Messung an der gebauten Website.
 - **Ein Wert, den ein fremdes Programm vergleicht, wird nach dessen Regel gebildet — und die Regel
   wird gegen das fremde Programm geprüft, nicht gegen unsere Vorstellung von ihm.** Der Ausschluss
   im Reiter „Seitentypen“ schrieb den Anzeigenamen der App, Quartz vergleicht gegen
@@ -582,9 +621,9 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Befunde aus den Reviews (Stand 2026-09-13)
+## Befunde aus den Reviews (Stand 2026-09-14)
 
-Alle zehn Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
+Alle elf Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht,
@@ -593,10 +632,40 @@ Alle zehn Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-20
 [`docs/REVIEW-2026-09-10.md`](docs/REVIEW-2026-09-10.md) mit seinen acht und
 [`docs/REVIEW-2026-09-11.md`](docs/REVIEW-2026-09-11.md) mit seinen acht und
 [`docs/REVIEW-2026-09-12.md`](docs/REVIEW-2026-09-12.md) mit seinen fünf und
-[`docs/REVIEW-2026-09-13.md`](docs/REVIEW-2026-09-13.md) mit seinen sieben (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-13-`) stehen als
+[`docs/REVIEW-2026-09-13.md`](docs/REVIEW-2026-09-13.md) mit seinen sieben und
+[`docs/REVIEW-2026-09-14.md`](docs/REVIEW-2026-09-14.md) mit seinen zwölf (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-14-`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel.
+
+**Das elfte Review las die Beispielvorlage und den Kopfleisten-Umbau daneben** — 30 Commits, im
+App-Code nur +478/−71, der Rest Vorlage und Text. Kein Befund der Stufe Hoch, drei Mittel, neun
+Niedrig, alle zwölf abgearbeitet. Der erste saß in dem Block, den der Auftrag zuerst gelesen haben
+wollte: Das erzeugte Frame-CSS ist ungeschichtet, der neue Plugin-Kompatibilitätsblock damit auch —
+und ungeschichtet schlägt `@layer quartz-base` unabhängig von der Spezifität. Auf dem Telefon war
+die Schublade wieder die des Plugins und nicht mehr scrollbar, auf dem Desktop war der gefaltete
+Explorer wieder der 19-px-Stummel, den die Vorlage in ihrem Kommentar als behobenen Fehler führt.
+Beides in Firefox und WebKit gemessen, vorher und nachher, an der neu gebauten Website. Was daraus
+als Regel bleibt, steht oben in den passenden Abschnitten:
+
+- **Erzeugtes CSS gehört in die Schicht dessen, was es nachspricht** — sonst überholt eine Kopie
+  nicht nur ihre Quelle, sondern auch jeden, der die Quelle überschreiben dürfte.
+- **Das registrierte Speichern schreibt alles, was `dirty` zählt.** Auf *Eigenes CSS* schrieb es
+  nur den aktiven Reiter, meldete `true`, und der Verlassen-Dialog navigierte — „Speichern" gesagt
+  und einen Teil verloren. Gemessen an der gebauten App: zwei Entwürfe, ein Klick, beide auf der
+  Platte.
+- **Eine Prüfliste ist eine Spalte, keine Zeile.** Drei Flächen für die Ruhefarbe, eine für den
+  Hover — und das Ergebnis „89 Paare, keines darunter“ als Beleg für eine Palette, deren
+  Hover-Farbe auf der Karte bei 3,71:1 stand. Jetzt 93 Paare, `tertiary` hell auf `#196B6B`.
+- **Wer einen Nutzen misst, misst auch den Preis** (`rectSortingStrategy` skalierte die Nachbarn,
+  seit die Karten verschieden hoch sind; der Drag trägt jetzt `CSS.Translate`).
+- **Drift läuft in beide Richtungen** — `--check-sync` sagt es, ohne eine Seite zu bevorzugen.
+- **Eine Zahl gehört zu dem, woran sie gemessen wurde.** Die zwei Kästen stehen unter 600 px
+  *Textzeile* untereinander, nicht unter 600 px Fenster — das sind rund 1370, also auf beiden
+  gängigen Laptop-Breiten. Dazu vier weitere Sätze, die den Code beschrieben, den es nicht gibt:
+  4,87 statt 4,90, „das Kapitel wiederholt die Überschrift nie“ (auf 14 von 266 Seiten doch), eine
+  geteilte Gitterzeile, die `frames.mjs` ausdrücklich für unmöglich erklärt, und „jede Schreibweise,
+  die der Browser malen kann“ für einen Parser, der `oklch()` nicht kennt.
 
 **Das zehnte Review las die fünf Fixes des neunten und die Linux-x86_64-Schicht daneben** — und war
 das erste, dessen Befunde fast alle *außerhalb* des laufenden Programms lagen: in der
@@ -824,10 +893,11 @@ Bereich darf ohne Belegung leer bleiben, und über `layout.group` kann er eigene
 Umbaus selbst: die Zuordnung ruht auf einem Funktionsnamen, den es nur gibt, weil Quartz sich mit
 esbuilds `keepNames` baut.
 
-**Das nächste Review misst ab `review-2026-09-13`.** Der Tag sitzt auf `9305d7b`, dem Stand, den
-das zehnte Review gelesen hat (`main` nach PR #36 mit dem Auftrag) — nach derselben Regel wie seine
-sieben Vorgänger: Der Ausgangsstand ist das, was gelesen wurde, nicht das, was danach entstanden
-ist. So sitzt `review-2026-09-12` auf `7568803`, dem Stand des neunten Reviews (`main` nach PR #29
+**Das nächste Review misst ab `review-2026-09-14`.** Der Tag sitzt auf `dcf28cf`, dem Stand, den
+das elfte Review gelesen hat („Der Auftrag für das vierzehnte Review“) — nach derselben Regel wie
+seine acht Vorgänger: Der Ausgangsstand ist das, was gelesen wurde, nicht das, was danach entstanden
+ist. So sitzt `review-2026-09-13` auf `9305d7b`, dem Stand des zehnten Reviews (`main` nach PR #36
+mit dem Auftrag), `review-2026-09-12` auf `7568803`, dem Stand des neunten Reviews (`main` nach PR #29
 plus der Nachtrag und der Auftrag aus PR #30), `review-2026-09-11` auf `59de3a5`, dem Stand des achten
 Reviews (`main` nach PR #27 plus die Variablensuche aus PR #28), `review-2026-09-10` auf `b1cf5bd`,
 `main` nach PR #25, `review-2026-09-09` auf `c6da3d9` („Der Auftrag für das sechste Review“),
@@ -835,6 +905,15 @@ Reviews (`main` nach PR #27 plus die Variablensuche aus PR #28), `review-2026-09
 Fixes des vierten Reviews, und `review-2026-09-06` auf `1bd69dc`; Letzterer war einmal 67 Commits
 früher auf `0b0fb96` gesetzt und wurde verschoben, weil jener Stand gemessen, aber nicht gelesen
 war.
+
+**Die zwölf Fixes des elften Reviews liegen bewusst dahinter.** Sie sind gemessen, und zum ersten
+Mal in dieser Serie an einer *neu gebauten* Website: die Kompat-Blöcke in Firefox und WebKit bei
+390, 750, 850, 1300 px, mit und ohne JavaScript, die Schublade unter einem Wheel; die zwei
+Speichern-Wege und der Drag an der gebauten App mit Wegwerf-Profil; der Farbparser an einer
+Canvas-Probe in diesem Electron; die Palette an `--check-contrast` (93 Paare, 0 darunter). Der
+Eingriff mit der größten Reichweite ist der `@layer quartz-base` um die zwei Kompat-Blöcke — er
+gibt jedem Projekt seine Stylesheets über den Explorer zurück. Der zweite ist das Speichern auf
+*Eigenes CSS*, das jetzt alle Entwürfe schreibt. Neu daneben: `--check-sync`.
 
 **Die sieben Fixes des zehnten Reviews liegen bewusst dahinter.** Sie sind gemessen — der zweite an
 electron-builders eigener Zielrechnung mit der echten Konfiguration, der dritte an sechs

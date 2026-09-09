@@ -1627,11 +1627,23 @@ Auch der Rückweg über git hilft nicht, denn git speichert keine mtimes — der
 für alle Dateien eines Commits derselbe, was dasselbe Problem noch einmal ist.
 
 Die mtimes wurden deshalb nach der Gliederung gestaffelt (kleine Nummer = zuletzt bearbeitet, eine
-Minute je Schritt), womit die Listen der Nummernfolge folgen. Das ist eine Setzung und keine
-Wiederherstellung, und sie ist für eine Vorlage richtig: die Daten dieses Vaults sind Artefakte
-des Schreibprozesses, und was sie zeigen sollen, ist eine Liste in ihrer eigenen Ordnung. Wer
-Datumsangaben braucht, die etwas bedeuten, schreibt sie ins Frontmatter — dann liest das Plugin
-sie von dort und keine Textänderung kann sie mehr bewegen.
+Minute je Schritt), womit die **Ordner- und Tag-Listen** der Nummernfolge folgen. Das ist eine
+Setzung und keine Wiederherstellung, und sie ist für eine Vorlage richtig: die Daten dieses Vaults
+sind Artefakte des Schreibprozesses, und was sie zeigen sollen, ist eine Liste in ihrer eigenen
+Ordnung. Wer Datumsangaben braucht, die etwas bedeuten, schreibt sie ins Frontmatter — dann liest
+das Plugin sie von dort und keine Textänderung kann sie mehr bewegen.
+
+**Gestaffelt wurden dabei die Kapitel- und Abschnittsseiten, nicht die Blattnotizen** — am
+2026-09-10 am Vault nachgemessen: 100 Schritte von genau 60 s, deutsch und englisch abwechselnd,
+daneben aber **149 Dateien auf derselben Sekunde** (16:44, die Blattnotizen mitten in der Reihe)
+und **sechs auf der jüngsten Zeit überhaupt** (22:06: `ablauf`, `fluss`, `sequenz` in beiden
+Sprachen). Für die Ordnerlisten macht das nichts, die sortieren innerhalb eines Abschnitts nach
+Quartz' Tie-Break `byDateAndAlphabetical` und stehen damit alphabetisch. Für den Kasten
+**„zuletzt bearbeitet"** macht es alles: er zeigt genau die sechs Diagramm-Notizen, also die eine
+Gruppe, die die Staffelung nicht angefaßt hat — auf der deutschen Startseite drei davon in
+Englisch, weil `recent-notes` keinen Sprachfilter hat (vorbestehend). Die Staffelung ist damit
+richtig für die Listen, die sie im Blick hatte, und unvollständig für die eine, die BEFUNDE als
+ihren Zweck nennt.
 
 ### 80. Der Header gibt die Scroll-Timelines auf — und wird dadurch besser lesbar
 
@@ -1650,7 +1662,10 @@ y = −658 bzw. −698 nach 600 px Scrollweg).
 **Was den permanenten zweiten Namen erst möglich macht, ist der Wechsel des Inhalts.** Vorher stand
 dort `{{title}}`, und der durfte nur erscheinen, wenn die `h1` weg war — sonst hätte die Leiste den
 Seitentitel sechs Zeilen über dem Seitentitel wiederholt. Jetzt steht dort das **Kapitel**
-(`{{frontmatter.section}}`), und das wiederholt nichts: Es beantwortet die Frage, für die der
+(`{{frontmatter.section}}`), und das wiederholt die Überschrift nur dort, wo der Name der Seite
+selbst das Kapitel ist — die sieben Kapitelseiten je Sprache, 14 von 266 (im Vault nachgezählt am
+2026-09-10: `section` gleich `title`; die zwei Startseiten sind ein dritter Fall, dort sagt der
+**Site-Name** daneben, was die `h1` sagt). Auf den übrigen 252 beantwortet es die Frage, für die der
 Wechsel gebaut war — nicht „was lese ich“, das sagt die Überschrift, sondern „wo bin ich“.
 
 Der Fortschrittsbalken fehlt ersatzlos, und das ist die eigentliche Pointe: Das Inhaltsverzeichnis
@@ -1713,6 +1728,14 @@ nicht** mitnimmt: zwei mal 2 rem stehen weiterhin um sie herum. Eine davon holt 
 einem negativen `margin-block-start` am Block darunter zurück. Der Wert ist als `2rem`
 ausgeschrieben, nicht als Token: Er spiegelt den `rowGap` des Frames, und ein Token würde
 suggerieren, er ließe sich unabhängig davon ändern.
+
+**Der Satz stand hier zehn Tage lang ungemessen**, weil die Regel im Repo geschrieben und nie ins
+Projekt gespielt wurde — die gebaute Website hatte sie nicht, und wer nachgemessen hätte, hätte
+64 px Leere gefunden und den Kommentar für falsch gehalten (Review 2026-09-14, Befund 4; dagegen
+gibt es jetzt `--check-sync`). Am 2026-09-10 vorgeschoben, die Website neu gebaut und in Firefox
+und WebKit bei 850, 750 und 390 px nachgemessen: Leiste endet bei 61, linker Bereich 0 px hoch,
+`margin-top` −32 px, Titelblock beginnt bei **93** statt 125. Genau eine der zwei Rinnen ist
+zurückgeholt.
 
 Nebenbei: `rowSizes` nimmt **Strings**. Eine `0` als Zahl lehnt das Schema ab
 (`expected string, received number`) — sichtbar erst als abgebrochener Lauf in Phase 3, nicht beim

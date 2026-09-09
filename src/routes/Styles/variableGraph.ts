@@ -200,12 +200,20 @@ const COLOR_PROBE_SENTINEL = '#010203'
 /**
  * The same normalisation, but keeping the alpha the picker cannot show.
  *
- * Canvas answers in one of two notations and the difference is exactly alpha: an opaque colour
- * comes back as `#rrggbb`, a translucent one as `rgba(r, g, b, a)`. `cssColorToHex` treats the
- * second as "not a colour" - it tests for a leading `#` - which is why the Basis tab opened the
- * OS picker on black for every `rgba()` value in the palette. There are four of them
- * (`highlight` and `textHighlight`, per mode), and they are the two that *have* to carry alpha:
- * they are tints laid over the page.
+ * Canvas answers in one of two notations for anything it can hold in sRGB, and the difference is
+ * exactly alpha: an opaque colour comes back as `#rrggbb`, a translucent one as `rgba(r, g, b, a)`.
+ * `cssColorToHex` treats the second as "not a colour" - it tests for a leading `#` - which is why
+ * the Basis tab opened the OS picker on black for every `rgba()` value in the palette. There are
+ * four of them (`highlight` and `textHighlight`, per mode), and they are the two that *have* to
+ * carry alpha: they are tints laid over the page.
+ *
+ * There is a third notation, and it was measured in this Electron on 2026-09-10 rather than
+ * assumed: a `color-mix()` in sRGB comes back as `color(srgb r g b / a)`, channels in 0..1. It is
+ * the same colour in a different spelling and is read as one. What canvas keeps *outside* sRGB is
+ * not, and cannot honestly be: `oklch(70% .1 200 / .5)` comes back as itself and
+ * `color(display-p3 1 0 0)` as itself, and squeezing either into #rrggbb would hand the picker a
+ * colour the page is not painting. Those return `null`, the picker opens on black, and the text
+ * field beside it stays the way to edit them - the comment in Basics.tsx says so.
  *
  * Callers that only need the swatch keep using `cssColorToHex`. A caller that also writes the
  * value back needs `alpha` as well, or picking a colour turns a 10% tint into a solid fill - and
@@ -224,13 +232,21 @@ export function cssColorToHexAlpha(value: string | undefined): { hex: string; al
   if (out === COLOR_PROBE_SENTINEL && v.toLowerCase() !== COLOR_PROBE_SENTINEL) return null
   if (out.startsWith('#')) return { hex: out, alpha: 1 }
   const rgba = /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$/i.exec(out)
-  if (!rgba) return null
+  if (rgba) return fromChannels([rgba[1], rgba[2], rgba[3]], 255, rgba[4])
+  const srgb = /^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*(?:\/\s*([\d.]+)\s*)?\)$/i.exec(out)
+  if (srgb) return fromChannels([srgb[1], srgb[2], srgb[3]], 1, srgb[4])
+  return null
+}
+
+// `scale` is what a full channel reads as in the notation that was matched - 255 for `rgba()`,
+// 1 for `color(srgb …)`.
+function fromChannels(channels: string[], scale: number, rawAlpha: string | undefined): { hex: string; alpha: number } {
   const hex =
     '#' +
-    [rgba[1], rgba[2], rgba[3]]
-      .map((n) => Math.max(0, Math.min(255, Math.round(Number(n)))).toString(16).padStart(2, '0'))
+    channels
+      .map((n) => Math.max(0, Math.min(255, Math.round((Number(n) / scale) * 255))).toString(16).padStart(2, '0'))
       .join('')
-  const alpha = rgba[4] === undefined ? 1 : Math.max(0, Math.min(1, Number(rgba[4])))
+  const alpha = rawAlpha === undefined ? 1 : Math.max(0, Math.min(1, Number(rawAlpha)))
   return { hex, alpha }
 }
 

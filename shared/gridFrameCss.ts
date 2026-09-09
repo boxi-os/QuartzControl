@@ -258,6 +258,8 @@ function buildOuterGridOverride(frameName: string): string {
  * `.desktop-only` (and `.desktop-only.flex-component`) at any source order - so no core file is
  * touched, and pages rendered with a *built-in* frame keep Quartz's own widths, which is right:
  * their layout comes from Quartz, not from here.
+ *
+ * Emitted inside `@layer quartz-base`, like the stylesheet it is restating - see buildFrameCss.
  */
 function buildQuartzBreakpointCompat(frameName: string, widths: FrameBreakpointWidths): string {
   if (isDefaultBreakpointWidths(widths)) return ''
@@ -318,7 +320,12 @@ function buildQuartzBreakpointCompat(frameName: string, widths: FrameBreakpointW
  *
  * Both halves are restated, the same rule as in the core block and for the same reason: which side
  * of the band a viewport is on decides which half is *missing*, and a rule that only overrode
- * inside the media query would lose to the plugin's own base declaration below the threshold.
+ * inside the media query would lose to the plugin's own base declaration below the threshold. That
+ * is why the desktop half names properties no breakpoint question turns on (`margin-block`,
+ * `overflow`): they are the values the plugin's *mobile* block would otherwise leave standing.
+ *
+ * Search's `.search-space` width switches at Quartz's *tablet* number instead (`not (min-width:
+ * 1200px)`), so there is a third block between the two - narrowing order, like buildFrameCss's own.
  *
  * What is deliberately not here:
  *   - `canvas-page`, whose media block is already scoped `.page[data-frame=canvas]`. A project
@@ -328,15 +335,25 @@ function buildQuartzBreakpointCompat(frameName: string, widths: FrameBreakpointW
  *     polish inside a band a hundred pixels wide; without them the navigation is still correct and
  *     operable, and each one is another line that has to follow a foreign stylesheet.
  *   - search's border-radius seams between its result and preview panes, for the same reason.
+ *   - the one declaration in that band nothing here can move: search hides its preview pane with
+ *     `display: none !important` below 800. An important declaration beats every normal one
+ *     whatever the layer or the specificity, so a project whose mobile width is *below* 800 keeps
+ *     a hidden preview pane in the band between the two - unfixable from here without an
+ *     `!important` of our own, which would then also outrank the project's own stylesheet (see
+ *     buildFrameCss on why that is the thing to avoid). Above 800 the band is ours.
  */
 function buildPluginBreakpointCompat(frameName: string, widths: FrameBreakpointWidths): string {
   if (isDefaultBreakpointWidths(widths)) return ''
   const page = `.page[data-frame="${escapeAttrValue(frameName)}"]`
+  const searchSpace = `${page} .search > .search-container > .search-space`
   return [
     // --- explorer: the desktop half -------------------------------------------------------
     `${page} .explorer {`,
     `  order: 0;`,
     `  height: auto;`,
+    // The mobile half says `overflow` (both axes); the plugin's base only says `overflow-y`, so
+    // this is what "the same properties on both sides" means for that pair.
+    `  overflow-x: visible;`,
     `  overflow-y: hidden;`,
     `  flex: 0 1 auto;`,
     `  align-self: auto;`,
@@ -346,6 +363,7 @@ function buildPluginBreakpointCompat(frameName: string, widths: FrameBreakpointW
     `  flex: 0 1 1.2rem;`,
     `}`,
     `${page} .explorer .explorer-content {`,
+    `  box-sizing: content-box;`,
     `  position: static;`,
     `  z-index: auto;`,
     `  width: auto;`,
@@ -360,6 +378,13 @@ function buildPluginBreakpointCompat(frameName: string, widths: FrameBreakpointW
     `  overflow: hidden;`,
     `  overflow-y: auto;`,
     `}`,
+    // The rule that keeps the drawer shut until the explorer's script has decided whether it is:
+    // the tree renders without `.collapsed`, which the mobile half below reads as "open". Without
+    // it, a page in the band shows the drawer over its own content before the first script runs -
+    // a flash with JavaScript, the permanent state without.
+    `${page} > #quartz-body .hide-until-loaded ~ .explorer-content {`,
+    `  display: block;`,
+    `}`,
     `${page} .explorer button.mobile-explorer {`,
     `  display: none;`,
     `}`,
@@ -370,14 +395,35 @@ function buildPluginBreakpointCompat(frameName: string, widths: FrameBreakpointW
     `${page} .search {`,
     `  flex-grow: 0;`,
     `}`,
-    `${page} .search > .search-container > .search-space > .search-layout {`,
+    `${searchSpace} {`,
+    `  width: 65%;`,
+    `}`,
+    `${searchSpace} > .search-layout {`,
     `  flex-direction: row;`,
     `}`,
-    `${page} .search > .search-container > .search-space > .search-layout > .preview-container {`,
+    `${searchSpace} > .search-layout > .preview-container {`,
     `  display: block;`,
+    `}`,
+    `${searchSpace} > .search-layout[data-preview] > .results-container {`,
+    `  width: auto;`,
+    `  height: 63vh;`,
+    `  max-height: none;`,
+    `  flex: 0 0 min(30%, 450px);`,
+    `}`,
+    // Not polish: with a preview pane next to it, a result card drops its description. This is the
+    // one rule of the four that changes what a reader gets to read, which is why it is restated
+    // even though the seams beside it in the same block are not.
+    `${searchSpace} > .search-layout[data-preview] .result-card > p.card-description {`,
+    `  display: none;`,
     `}`,
     `${page} .graph > .global-graph-outer > .global-graph-container {`,
     `  width: 80vw;`,
+    `}`,
+    // --- the tablet block: search's second hard-coded number --------------------------------
+    `@media (max-width: ${widths.tablet}px) {`,
+    `${searchSpace} {`,
+    `  width: 90%;`,
+    `}`,
     `}`,
     // --- and the mobile half ----------------------------------------------------------------
     `@media (max-width: ${widths.mobile}px) {`,
@@ -417,11 +463,17 @@ function buildPluginBreakpointCompat(frameName: string, widths: FrameBreakpointW
     `  background-color: var(--light);`,
     `  overflow: hidden;`,
     `}`,
+    `${page} > #quartz-body .hide-until-loaded ~ .explorer-content {`,
+    `  display: none;`,
+    `}`,
     `${page} .explorer button.mobile-explorer {`,
     `  display: flex;`,
     `  margin: 0;`,
     `  padding: 5px;`,
     `  z-index: 101;`,
+    `}`,
+    `${page} .explorer button.mobile-explorer .lucide-menu {`,
+    `  stroke: var(--darkgray);`,
     `}`,
     `${page} .explorer button.mobile-explorer.hide-until-loaded {`,
     `  display: none;`,
@@ -432,17 +484,48 @@ function buildPluginBreakpointCompat(frameName: string, widths: FrameBreakpointW
     `${page} .search {`,
     `  flex-grow: 0.3;`,
     `}`,
-    `${page} .search > .search-container > .search-space > .search-layout {`,
+    `${searchSpace} > .search-layout {`,
     `  flex-direction: column;`,
     `}`,
-    `${page} .search > .search-container > .search-space > .search-layout > .preview-container {`,
+    `${searchSpace} > .search-layout > .preview-container {`,
     `  display: none;`,
+    `}`,
+    `${searchSpace} > .search-layout[data-preview] > .results-container {`,
+    `  width: 100%;`,
+    `  height: auto;`,
+    `  max-height: 60vh;`,
+    `  flex: 0 0 100%;`,
+    `}`,
+    `${searchSpace} > .search-layout[data-preview] .result-card > p.card-description {`,
+    `  display: block;`,
     `}`,
     `${page} .graph > .global-graph-outer > .global-graph-container {`,
     `  width: 90%;`,
     `}`,
     `}`
   ].join('\n')
+}
+
+// Quartz renders `frame.css` as one unlayered `<style>` at the top of `<body>` (renderPage.tsx),
+// after the linked `index.css` whose second half is the project's own `custom.scss` - also
+// unlayered. That is the right place for a frame's own grid, which is this app's answer to a
+// question nothing else answers. It is the wrong place for the two compat blocks: those restate
+// rules that live in `@layer quartz-base`, and an unlayered declaration beats a layered one
+// whatever the specificity. So `.page[data-frame="x"] .explorer` (0,3,0) did not just outrank the
+// plugin it was copied from - it outranked every `.explorer` rule a project can write, at every
+// width, because the desktop half is unconditional. Measured on the example site in Firefox and
+// WebKit: the template's drawer went back to being the plugin's (absolute instead of fixed, 100vw
+// instead of 340px, opaque, and `overflow: hidden`, so a tree with three chapters open could not
+// be scrolled), and its folded desktop explorer went back to the 19px stub its own comment
+// describes as a fixed bug.
+//
+// Putting them in the layer they are copies of puts both cascades back the way round they belong:
+// inside `quartz-base` the `[data-frame]` scope still outranks the plugin's bare `.explorer`, and
+// outside it any project stylesheet still outranks us. `@layer quartz-base { … }` here appends to
+// the layer `index.css` already opened in `<head>`, so the layer keeps its position and no new one
+// is created.
+function layered(css: string): string {
+  return `@layer quartz-base {\n${css}\n}`
 }
 
 // Full generated CSS for a frame: the outer-grid override first, then desktop unconditional,
@@ -456,7 +539,7 @@ export function buildFrameCss(def: GridFrameDefinition, widths: FrameBreakpointW
     return maxWidth ? `@media (max-width: ${maxWidth}px) {\n${block}\n}` : block
   })
   const compat = [buildQuartzBreakpointCompat(def.frameName, widths), buildPluginBreakpointCompat(def.frameName, widths)].filter(Boolean)
-  return [buildOuterGridOverride(def.frameName), ...compat, ...blocks].join('\n\n')
+  return [buildOuterGridOverride(def.frameName), ...compat.map(layered), ...blocks].join('\n\n')
 }
 
 function isLegacyDefinition(def: unknown): def is LegacyGridFrameDefinition {

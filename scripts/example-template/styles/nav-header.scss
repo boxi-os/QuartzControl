@@ -136,8 +136,9 @@
 // The brand group therefore holds two names. Until 2026-09-09 they were two *states* of one slot,
 // sharing a grid cell and exchanged by a scroll-driven crossfade; since the crossfade only existed
 // in two engines of three, they are now two names side by side, both showing all the time. That is
-// possible because the second one is no longer the page title - it is the chapter, which never
-// repeats the h1 below and is therefore not redundant next to the site name.
+// possible because the second one is no longer the page title - it is the chapter, which repeats
+// the h1 below only where the page's own name *is* the chapter (the 14 chapter index pages of this
+// vault's 266) and carries a name the reader does not otherwise have on all the rest.
 //
 // The group stays a grid rather than going back to a flex row. `display` is the one property
 // Flex.tsx does *not* write inline (it writes flex-direction, flex-wrap and gap), so it is the one

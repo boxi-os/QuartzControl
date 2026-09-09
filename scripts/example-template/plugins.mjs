@@ -81,9 +81,15 @@ export const LAYOUT_BOXES = [
     // since 2026-09-09 the bar has no states: it says the site and the chapter, both all the time.
     //
     // `{{frontmatter.section}}` rather than the title, and that is what makes a permanent second
-    // name possible at all. The title would repeat the h1 six lines below it; the chapter never
-    // does, and it answers exactly the question the exchange was built for - not "what am I
-    // reading", which the heading says, but "where in the site is this".
+    // name possible at all. The title would repeat the h1 six lines below it on every page; the
+    // chapter repeats it on the pages whose own name *is* the chapter and nowhere else - in this
+    // vault the seven chapter index pages per language, 14 of 266 (counted on 2026-09-10:
+    // `section` equal to `title`; the two start pages are a third case, where it is the *site
+    // name* beside it that says what the h1 says). On the other 252 it answers exactly the
+    // question the exchange was built for - not "what am I reading", which the heading says, but
+    // "where in the site is this". On the 14 it is the heading again, one line up: a small
+    // redundancy on a landing page, against a name that is otherwise missing from the second
+    // screen down.
     //
     // Why a layout box and not a component: it renders a `span` that is `aria-hidden`, which is the
     // honest shape for a visual echo. The breadcrumb below carries the same information in a
@@ -271,10 +277,18 @@ export const PLUGIN_PATCHES = {
   },
   // The two boxes under the text share one area and one group (layout.mjs), so their widths are
   // settled against each other rather than by the grid. `basis` is what decides when they stop
-  // being two columns: at 18rem each they sit side by side in the 672px text block and go under
-  // each other below roughly 600px, which is the width at which a two-column list of page titles
-  // stops being readable. `stretch` because they now have visible edges - two boxes of different
-  // heights beside each other look like one of them failed to load.
+  // being two columns: at 18rem each they sit side by side while the *text block* is at least
+  // 600px wide (2 x 288 plus the 24px gap) and go under each other below that, which is the width
+  // at which a two-column list of page titles stops being readable.
+  //
+  // That 600 is the text line, not the window, and the two are far apart - the line is 672px from
+  // 1440px of window up and narrows with it. Measured in Firefox at seven widths on 2026-09-10:
+  // side by side at 1600/1440 (line 672), 1400 (632) and 1380 (612), under each other from 1366
+  // (598) down. So on both of the common laptop widths, 1366 and 1280, these are two full-width
+  // boxes stacked - which is the design, and is worth knowing when reading "600px".
+  //
+  // `stretch` because they now have visible edges - two boxes of different heights beside each
+  // other look like one of them failed to load.
   backlinks: {
     enabled: true,
     layout: {

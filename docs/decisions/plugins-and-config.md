@@ -30,6 +30,16 @@ Drei Dinge, die dabei gemessen wurden:
   eine Abfrage im Drop-Handler.
 - **`rectSortingStrategy`, nicht `verticalListSortingStrategy`.** Ab 1500px ist die Liste zweispaltig
   (`PLUGIN_LIST`); die Listenstrategie rechnet mit einer Spalte.
+- **Der Drag trägt `CSS.Translate`, nicht `CSS.Transform`.** `rectSortingStrategy` tauscht
+  *Rechtecke* und paßt jede Karte per `scaleY` an das an, in das sie rückt. Solange die Zeilen
+  gleich hoch waren, war der Faktor 1 — seit `items-start` ist er es nicht mehr, und der Kommentar,
+  der die gleichen Höhen mit „ruhigere Ablageziele“ aufgab, hatte genau diesen Preis nie gemessen.
+  An der gebauten App bei 1728×1000, zwei Spalten, jeder Drag mit Escape abgebrochen: mit allen
+  Karten zu skalierten die Nachbarn auf 0,86 und 0,81, mit einer aufgeklappten Karte wurde eine
+  77-px-Karte auf 733 px gestreckt (9,58) und die offene auf 0,15 gestaucht, Text und alles.
+  `CSS.Translate` läßt die Skalierung weg — dnd-kits eigene Antwort für Listen mit ungleich großen
+  Elementen; die Nachbarn schieben sich, was die Geste ohnehin zeigt. Nachgemessen: die Transforms
+  während des Drags sind reine `translate3d(…)`.
 - **Der Tastatur-Sensor braucht `sortableKeyboardCoordinates`.** `DndContext` bringt den
   `KeyboardSensor` von sich aus mit, aber mit seinem Standard-Koordinatengeber: der schiebt den
   aufgenommenen Eintrag pro Pfeildruck um feste 25px. Bei Karten von ~130px Höhe erreicht das nie die

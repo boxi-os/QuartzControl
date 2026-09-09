@@ -8,6 +8,7 @@ dieses Dokument beschreibt beides.
     npm run template:example -- --only 5     # nur die Stylesheets neu einspielen
     npm run template:example -- --check-contrast   # nur messen, ohne App und ohne Projekt
     npm run template:example -- --sync             # Stylesheets aus dem Projekt zurückholen
+    npm run template:example -- --check-sync       # nur vergleichen, nichts schreiben
 
 ---
 
@@ -44,6 +45,15 @@ holt sie zurück und meldet, was sich unterschieden hat; die Prüfung dabei ist 
 Phase 5, nur andersherum. Für Config und Frames gibt es bewusst keinen Rückweg — sie entstehen aus
 `plugins.mjs`, `variables.mjs`, `layout.mjs` und `frames.mjs`, und ein Rückleser wäre eine zweite,
 inverse Umsetzung von allen vieren.
+
+**Sie kann auch andersherum driften, und dafür ist `--sync` das falsche Werkzeug:** Am 2026-09-09
+entstand die `-2rem`-Regel in `base.scss` *hier* und wurde nie mit `--only 5` vorgeschoben — die
+gebaute Website hatte sie nicht, während ein Kommentar daneben eine Messung beschrieb, die nur mit
+ihr zustande kommen kann. Ein `--sync` hätte sie gelöscht statt gemeldet. **`--check-sync`**
+vergleicht deshalb nur und schreibt nichts: Es nennt jede Datei, die auseinanderläuft, mit den
+Zeilenzahlen beider Seiten, und endet mit einem Fehlercode. Welche Richtung richtig ist, entscheidet
+dann ein Mensch — `--sync` für die Version des Projekts, `--only 5` für die dieses Repos. Vor jeder
+Messung an der gebauten Website ist das der erste Aufruf.
 
 > **Ein Content-Symlink nimmt die Notizen aus QuartzControls Obhut.** Git folgt keinen Symlinks,
 > deshalb erzwingt der Snapshot-Dienst `includeContent: false`, sobald `content/` ein Link ist.
@@ -129,8 +139,9 @@ Nach jeder Änderung:
 
     npm run template:example -- --check-contrast
 
-Das prüft **89 Paare** — jede Text-auf-Grund-Kombination in beiden Modi, die Alpha-Farben über den
-Grund gerechnet, alle zwölf Callout-Farben gegen den Grund *und* gegen ihre eigene getönte Fläche,
+Das prüft **93 Paare** — jede Text-auf-Grund-Kombination in beiden Modi, die Alpha-Farben über den
+Grund gerechnet, Ruhe- **und** Hover-Farbe eines Links jeweils auf allen drei Flächen, auf denen ein
+Link vorkommt (Seite, Karte, getönte Fläche), alle zwölf Callout-Farben gegen den Grund *und* gegen ihre eigene getönte Fläche,
 die fünf korrigierten Farben des Syntax-Themas gegen die Fläche des Codeblocks und den
 Misch-Ton `--tpl-rule-control`, aus dem jedes Bedienelement seinen Rand zieht. Unter der
 Schwelle bricht der Lauf ab.
@@ -331,6 +342,14 @@ eingestellten Breakpoint neu aus, beide Zustände jeweils vollständig. Gemessen
 bei 901 px steht der Explorer-Baum, bei 899 der Burger; bei 1201 px trägt die rechte Spalte, bei
 1199 rutscht sie unter den Text. Der Preis steht im Doc-Kommentar dort: Die App bildet fremdes
 Plugin-CSS nach und muß ihm folgen, wenn es sich ändert.
+
+Ein zweiter Preis kam erst beim Nachmessen heraus und ist seit dem 2026-09-10 bezahlt: Quartz
+rendert `frame.css` als **ungeschichtetes** `<style>`, und ungeschichtet schlägt `@layer
+quartz-base` unabhängig von der Spezifität. Der Block überholte damit nicht nur die Plugins, die er
+zitiert, sondern auch alles, was diese Vorlage über `.explorer` sagt — die Schublade war wieder die
+des Plugins und nicht mehr scrollbar, der gefaltete Explorer wieder ein 19-px-Stummel. Beide
+Kompat-Blöcke stehen deshalb jetzt selbst in `@layer quartz-base`: dort schlagen sie weiterhin das
+Plugin, und die Vorlage schlägt weiterhin sie. Das Raster des Frames bleibt ungeschichtet.
 
 > **Zwei Regeln aus dem Schema:** Ein Frame-Wert darf **kein Komma** enthalten — also kein
 > `minmax(0, 1fr)` und kein `var(--x, fallback)`. (Nur Frame-Werte; eine CSS-Variable darf eins,

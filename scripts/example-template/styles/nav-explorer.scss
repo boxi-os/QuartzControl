@@ -96,10 +96,17 @@ button.title-button {
   // touched that, and in a single-column grid `space-between` resolves to `start`: the icon sat
   // against the inline edge, about 8px off centre inside its own hover field.
   //
-  // `padding: 0` - quartz gives this button `padding: 5px` from a *resource* stylesheet, which is
-  // unlayered and linked after index.css (see body-code.scss for the full finding). The `padding:
-  // 0` on `.explorer-toggle` is a weaker selector and lost, so the 44px button had a 34px content
-  // box and the icon was centred in that.
+  // `padding: 0` - the 5px it undoes is the explorer plugin's own `.explorer .mobile-explorer`,
+  // and the reason it used to win was written down wrong here twice. It is not a *resource*
+  // stylesheet (that finding is body-code.scss's, and it is about the copy button): the plugin's
+  // rule sits in a component stylesheet inside `@layer quartz-base`, which loses to this unlayered
+  // file whatever its specificity - read out of the built site on 2026-09-10 to be sure. What beat
+  // `padding: 0` was the frame's own `<style>`, which quartz renders unlayered at the top of
+  // <body>: `buildPluginBreakpointCompat` restates that 5px scoped `.page[data-frame="…"]`, and
+  // unlayered beats layered. Since 2026-09-10 the two compat blocks are emitted inside
+  // `@layer quartz-base` as well (shared/gridFrameCss.ts), so this declaration is the one the
+  // button gets, and the icon is centred by `justify-content` above rather than by a 34px content
+  // box.
   .explorer button.mobile-explorer {
     display: grid;
     width: var(--tpl-target);
@@ -464,14 +471,18 @@ li:has(> .folder-outer > ul > li > .nav-file-title.active) > .folder-outer > ul.
   // fixed 8px was only right at one of the two.
   // The explorer keeps quartz' `flex: 0 0 34px` here, and that room is *not* used: the drawer
   // trigger is `position: fixed` in the app bar (below) and the drawer itself is `position:
-  // absolute`, so nothing of this component is in the flow. The 34px are simply where the left
-  // area sits - and since 2026-09-09 that area shares row 1 of the mobile grid with the header
-  // (frames.mjs), so its 34px lie behind a 61px bar and cost no layout at all.
+  // fixed` too, so nothing of this component is in the flow. The 34px are simply where the left
+  // area sits - a row of its own, sized `0`, directly under the header (frames.mjs). Sharing row 1
+  // with the header is what that file rules out as inexpressible, so this used to say the opposite
+  // of the code it cited; the measurement on the built site agrees with frames.mjs (left area at
+  // y=93, 0px tall, under a 61px bar).
   //
-  // Overriding the height from here was tried and does not take: the same declaration comes out of
-  // `buildPluginBreakpointCompat` scoped `.page[data-frame="…"] .explorer.collapsed`, which
-  // outranks anything this file can say about a bare `.explorer`. It does not need to be beaten -
-  // it needs to be somewhere that does not matter, and it is.
+  // Overriding the height from here used to be impossible, and it no longer is: the same
+  // declaration comes out of `buildPluginBreakpointCompat` scoped
+  // `.page[data-frame="…"] .explorer.collapsed`, which outranks anything this file can say about a
+  // bare `.explorer` - but since 2026-09-10 that block is emitted inside `@layer quartz-base`, and
+  // an unlayered file wins against a layer whatever the specificity. It still does not need to be
+  // beaten here; it is simply no longer the last word.
   .explorer button.mobile-explorer {
     position: fixed;
     top: calc((var(--tpl-header-h) - var(--tpl-target)) / 2);

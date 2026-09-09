@@ -19,12 +19,18 @@ import { VARIABLE_OVERRIDES } from './variables.mjs'
 // hue and the saturation are kept and only the lightness moves - it is the same colour, moved far
 // enough to be readable:
 //
-//   tertiary, light   #218C8B -> #1D7B7B   L 33.9 % -> 30 %     3.94:1 -> 4.87:1 on the ground
-//   secondary, dark   #6298C0 -> #699DC3   L 56.9 % -> 58.9 %   4.38:1 -> 4.66:1 on a card
+//   tertiary, light   #218C8B -> #196B6B   L 33.9 % -> 25.9 %   3.94:1 -> 6.09:1 on the ground,
+//                                                               4.61:1 on a card
+//   secondary, dark   #6298C0 -> #699DC3   L 56.9 % -> 58.8 %   4.38:1 -> 4.66:1 on a card
 //
-// The second one is the pair the eye misses: `secondary` cleared 4.5 against the page ground and
-// failed only against `lightgray`, the *card* - and a link inside a callout or a code caption sits
-// on exactly that. Both thresholds are in CHECKS below; everything else came across unchanged.
+// A link is not only ever on the page ground, and a hovered link is not either. `secondary` is the
+// pair the eye misses: it cleared 4.5 against the ground and failed only against `lightgray`, the
+// *card* - and a link inside a callout or a code caption sits on exactly that. `tertiary` was
+// picked on 2026-09-09 with that same argument written down beside it, and then measured against
+// the ground alone, because CHECKS carried three surfaces for the resting colour and one for the
+// hover: #1D7B7B read 4.90 on the ground, 3.71 on a card and 4.18 on a callout's tint. The hover
+// now has all three rows too, and that is what moved it the second time. Everything else came
+// across unchanged.
 export const PALETTE = {
   lightMode: {
     light: '#FCFCFA',        // ground - warm off-white, not paper-white
@@ -33,7 +39,7 @@ export const PALETTE = {
     darkgray: '#333333',     // body text
     dark: '#17171A',         // headings, the darkest ink
     secondary: '#1463A3',    // links, the one accent - a clear mid blue
-    tertiary: '#1D7B7B',     // link hover, active nav - the counterpart, a dark teal
+    tertiary: '#196B6B',     // link hover, active nav - the counterpart, a dark teal
     highlight: 'rgba(42, 78, 108, 0.10)',  // surface tint behind quoted/active blocks
     textHighlight: 'rgba(226, 189, 92, 0.55)' // ==mark==
   },
@@ -117,9 +123,14 @@ const PAIRS = [
   { fg: 'dark', bg: 'lightgray', min: 4.5, what: 'headings on a card' },
   { fg: 'gray', bg: 'lightgray', min: 4.5, what: 'meta text on a card' },
   { fg: 'secondary', bg: 'lightgray', min: 4.5, what: 'links on a card' },
+  // A hover is a link's second colour, so it gets the link's surfaces, all three of them. Without
+  // these two rows the list said 'no pair below the threshold' while the hovered link in a callout
+  // stood at 4.18 - see the note on `tertiary` at the top.
+  { fg: 'tertiary', bg: 'lightgray', min: 4.5, what: 'hovered links on a card' },
   { fg: 'darkgray', bg: 'highlight', min: 4.5, what: 'body text on a tinted surface' },
   { fg: 'dark', bg: 'highlight', min: 4.5, what: 'headings on a tinted surface' },
   { fg: 'secondary', bg: 'highlight', min: 4.5, what: 'links on a tinted surface' },
+  { fg: 'tertiary', bg: 'highlight', min: 4.5, what: 'hovered links on a tinted surface' },
   { fg: 'darkgray', bg: 'textHighlight', min: 4.5, what: 'text inside ==mark==' }
 ]
 

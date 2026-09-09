@@ -452,11 +452,15 @@ function ColorCell({
   onChange: (next: string) => void
 }): JSX.Element {
   const { t } = useTranslation()
-  // Every notation the browser can paint, not just `#rrggbb` - and the alpha comes back separately
-  // because `<input type="color">` has nowhere to put it. The regex that stood here matched only
-  // six-digit hex, so all four `rgba()` values in a palette (`highlight` and `textHighlight`, per
-  // mode) handed the picker `null` and it opened on black - on the values where the *tint* is the
-  // whole point.
+  // Every notation the browser can paint *and hold in sRGB* - hex, `rgb()`/`rgba()`, `hsl()`,
+  // a named colour, a `color-mix()` in sRGB - and the alpha comes back separately because
+  // `<input type="color">` has nowhere to put it. The regex that stood here matched only six-digit
+  // hex, so all four `rgba()` values in a palette (`highlight` and `textHighlight`, per mode)
+  // handed the picker `null` and it opened on black - on the values where the *tint* is the whole
+  // point. A colour in another space is where the sentence stops: `oklch()` and
+  // `color(display-p3 …)` come back as themselves, `parsed` is `null`, and the swatch behind the
+  // input still paints the value while the text field is what edits it. Not "every notation the
+  // browser can paint", which is what this said until 2026-09-10.
   const parsed = cssColorToHexAlpha(value)
   // Dimmed, not disabled: this value has no effect while the theme is on, but it is still the
   // value that applies the moment the theme is turned off - and for a theme that happens not to
@@ -474,7 +478,8 @@ function ColorCell({
         value={value}
         hex={parsed?.hex ?? null}
         // Picking on a translucent value keeps its alpha: the user reached for a colour, not for
-        // the difference between a tint and a solid fill. Written back in the notation it came in.
+        // the difference between a tint and a solid fill. Written back as `rgba()` - the one
+        // notation `withAlpha` has - whichever of the three it came in as.
         onChange={(hex) => onChange(parsed && parsed.alpha < 1 ? withAlpha(hex, parsed.alpha) : hex)}
         title={name}
         size="lg"

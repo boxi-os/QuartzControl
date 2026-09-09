@@ -30,8 +30,13 @@ import { repoUrl } from './pluginSource'
 // `items-start`, and that is the fix for a card that looked like it opened on its own. A grid row
 // is as tall as its tallest cell and stretches the other to match, so expanding one plugin gave
 // its neighbour an empty frame the same height - which reads as "both opened". The equal heights
-// were deliberate (they make calmer drop targets while dragging), but they cost more than they
-// bought: the list is expanded far more often than it is reordered.
+// were deliberate (they were said to make calmer drop targets while dragging), but they cost more
+// than they bought: the list is expanded far more often than it is reordered.
+//
+// What they bought was never measured, and when it was, it was the opposite: equal heights were
+// the only thing holding `rectSortingStrategy`'s scale factor at 1, and without them every drag
+// stretched the neighbours. That is answered where it happens, by dropping the scale out of the
+// drag transform - see SortableRow.
 const PLUGIN_LIST = 'grid items-start gap-2 min-[1500px]:grid-cols-2'
 
 // Quartz plugins fall into distinct kinds - transformers, filters, page types, emitters,
@@ -832,10 +837,19 @@ function SortableRow(props: PluginRowProps): JSX.Element {
   // The wrapper carries the transform because Card is a plain div component with no ref of its
   // own. It used to carry `h-full` too, matching the one on Card, so that the two elements did not
   // break the grid's equal-height rows - see PLUGIN_LIST for why those rows are gone.
+  //
+  // `Translate`, not `Transform`: `rectSortingStrategy` swaps *rectangles*, and its transform
+  // carries the scale factor that squeezes each card into the rectangle it moves into. With the
+  // equal-height rows gone that factor stopped being 1 - measured in the built app at 1728x1000,
+  // two columns: dragging one closed card past its neighbours scaled them to 0.86 and 0.81, and
+  // with one card expanded, a 77px card was stretched to 733px (9.58x) and the open one squashed
+  // to 0.15 while the pointer was down, text and all. Dropping the scale is dnd-kit's own answer
+  // for a list whose items are not the same size; the neighbours slide, which is what the gesture
+  // is showing anyway (review 2026-09-14, finding 12).
   return (
     <div
       ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
+      style={{ transform: CSS.Translate.toString(transform), transition }}
       className={isDragging ? 'opacity-40' : undefined}
     >
       <PluginRow {...props} handleRef={setActivatorNodeRef} handleProps={{ ...attributes, ...listeners }} />

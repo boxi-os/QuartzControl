@@ -44,7 +44,16 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   gerade installiert ist. Behandelt wie `resources/git` — gitignoriert und beim Packen erzeugt
   (`beforePack`), nicht wie `resources/templates` im Repo, denn es ist ein Artefakt, dessen Bilder
   bei jedem Textdurchgang neu entstehen. Anders als git lässt es sich **nicht** aus dem Netz holen;
-  fehlt das Projekt, warnt `beforePack` und packt weiter, und der Menüpunkt sagt es dem Nutzer
+  fehlt das Projekt, warnt `beforePack` und packt weiter, und der Menüpunkt sagt es dem Nutzer.
+  Genau das war auf jeder anderen Baumaschine der stille Normalfall — gemessen am 2026-09-09 trug
+  `resources/` auf der Linux-VM nur `git licenses runtime templates`, die Pakete vom 2026-09-08
+  reisten also alle ohne Handbuch. Deshalb gibt es einen zweiten Weg:
+  **`QUARTZCONTROL_HANDBOOK_SITE`** zeigt auf eine schon gebaute Website und wird übernommen statt
+  gebaut (`QUARTZCONTROL_HANDBOOK_PROJECT` verschiebt den ersten Weg), und das Bau-Log sagt, welcher
+  gegriffen hat. Von Hand nach `resources/handbook` zu kopieren hilft **nicht**: Der Fehlerpfad
+  räumt eine vorhandene Kopie absichtlich weg, damit keine veraltete mitreist. Beim Spiegeln von
+  einem Mac `COPYFILE_DISABLE=1` und `--no-xattrs` setzen — sonst kommen AppleDouble-Dateien mit
+  (gemessen: 901 statt 437 Dateien, 464 davon `._*`)
 - `npm run fetch:git` — holt das mitgelieferte git (dugite-native) für diesen Rechner nach
   `resources/git/<platform>-<arch>/` und dünnt es aus; beim Packen macht das `beforePack` von selbst
 - `npm run check:runtime -- <projektpfad>` — die eingebettete Node-Laufzeit gegen ein echtes Projekt:
@@ -114,7 +123,19 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   `io.github.boxi_os.quartzcontrol`, startet, und in der Sandbox antworten der `node`-Shim mit
   24.18.1, npm mit 11.17.0 und `/app/bin/git` mit 2.53.0. Die Baumaschine braucht flathub als
   **user**-Remote, nicht nur systemweit — sonst scheitert der Bau an einem `flatpak failed with
-  status code 1`, das seinen Grund verschweigt. v1 liefert weiterhin macOS, AppImage und deb
+  status code 1`, das seinen Grund verschweigt. **AppImage und deb bauen seit dem 2026-09-09 beide
+  Architekturen** (`arch: [arm64, x64]` wie bei `mac:`), und zwar cross in beide Richtungen: ein
+  `npm run dist:linux` auf einer x86_64-VM lieferte in sieben Minuten alle vier Pakete, jedes mit
+  dem git-Bundle seiner eigenen Architektur. **Der Flatpak ist die Ausnahme** — flatpak-builder
+  braucht Runtime, SDK und BaseApp der Zielarchitektur und kompiliert das git-Modul aus der Quelle,
+  ein x86_64-Flatpak entsteht also nur auf einer x86_64-Maschine. Ein Cross-Paket prüft man nicht
+  mit dem Werkzeug darin: `--appimage-extract` startet die Laufzeit des fremden Startprogramms, der
+  Inhalt kommt nur über `unsquashfs -o <offset>` heraus. **Der x86_64-Flatpak ist am 2026-09-09
+  gebaut und gestartet** (193 MB, in der Sandbox antworten node 24.18.1, npm 11.17.0 und
+  `/app/bin/git` 2.53.0, und diesmal liegt das Handbuch drin) — er kostete auf der emulierten VM
+  rund 46 Minuten gegen 7 für alle vier AppImage/deb-Pakete, praktisch vollständig das `make` von
+  git im Sandkasten. v1 liefert damit macOS (arm64/x64), AppImage und deb (arm64/x64) und Flatpak
+  (aarch64 seit 2026-09-08, x86_64 seit 2026-09-09)
 
 If `npm install` leaves `node_modules/electron` half-installed (`electron-vite dev` fails with `Error: Electron uninstall`), the postinstall's `extract-zip` step may have silently produced a partial extraction in a sandboxed shell. Fix: `rm -rf node_modules/electron/dist node_modules/electron/path.txt`, then `unzip -q <cached zip under ~/Library/Caches/electron/...> -d node_modules/electron/dist` and write the platform binary path (e.g. `Electron.app/Contents/MacOS/Electron`) into `node_modules/electron/path.txt` with no trailing newline.
 

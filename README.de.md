@@ -103,22 +103,32 @@ Paketkonfiguration würde einen Installer für eine Fassung erzeugen, die nicht 
 
 ## Wie das hier entstanden ist
 
-Ein Hobbyprojekt, aus Spaß und für den eigenen Gebrauch geschrieben — und weil die manuelle
-Konfiguration von Quartz für Einsteiger eine hohe Schwelle ist, die sich senken lässt.
+Ein Hobbyprojekt, aus Spaß, technischem Interesse und für den eigenen Gebrauch geschrieben. Die
+manuelle Konfiguration von Quartz hat mich an meine Grenzen gebracht, sodass ich QuartzControl ins
+Leben gerufen habe. Da es sich für mich selbst als sehr nützlich erwiesen hat, möchte ich es der
+Allgemeinheit zur Verfügung stellen … vielleicht findet es ja der eine oder die andere genauso
+nützlich wie ich. Im Zuge von QuartzControl sind außerdem zwei Plugins entstanden:
+[quartz-layout-box](https://github.com/boxi-os/quartz-layout-box) und
+[quartz-multilanguage](https://github.com/boxi-os/quartz-multilanguage), die ich euch ebenfalls
+gerne zur Verfügung stelle. Darüber hinaus stelle ich eine Beispiel-Vorlage bereit, die eine
+komplette Konfiguration umfasst und als Basis für ein eigenes Website-Design dienen kann.
 
-Der Code ist zum größten Teil mit [Claude Code](https://claude.com/claude-code) entstanden; die
-Commits sagen das mit einem `Co-Authored-By`-Eintrag. Die Frage dahinter ist berechtigt: Hat das
-jemand geprüft?
+Folgendes möchte ich an dieser Stelle transparent machen: Der Code ist zum größten Teil mit
+[Claude Code](https://claude.com/claude-code) entstanden; die Commits sagen das mit einem
+`Co-Authored-By`-Eintrag. Mir ist bewusst, dass Vibe-coding teilweise kontrovers diskutiert wird,
+und ich möchte hier nichts verbergen.
 
-Die Antwort, so gut sie sich geben lässt: Es gibt zehn Review-Runden mit einem zweiten Modell, die
-als Dokumente in [`docs/`](docs/) liegen — mit jedem Befund, seiner Schwere und dem, was daraus
-wurde. Jede Regel in [`CLAUDE.md`](CLAUDE.md) steht neben dem Experiment, das sie erzwungen hat, und
-die Messungen dazu in [`docs/decisions/`](docs/decisions/). Es gilt die Arbeitsregel, dass jede Zahl
-in einem Kommentar eine Messung ist oder nicht dort steht, und dass „kann nicht prüfen" nie „alles
-gut" heißt. Wo etwas nicht gemessen werden konnte, steht das dabei.
+## Wie gut ist der Code geprüft?
 
-Das ist keine Garantie, und Fehler sind sicher drin. Aber es ist nachlesbar, und das ist mehr, als
-ein Versprechen wert wäre.
+Die Antwort, so gut sie sich geben lässt: Es gibt Review-Runden mit einem zweiten Modell, die als
+Dokumente in [`docs/`](docs/) liegen — mit jedem Befund, seiner Schwere und dem, was daraus wurde.
+Jede Regel in [`CLAUDE.md`](CLAUDE.md) steht neben dem Experiment, das sie erzwungen hat, und die
+Messungen dazu in [`docs/decisions/`](docs/decisions/). Es gilt die Arbeitsregel, dass jede Zahl in
+einem Kommentar eine Messung ist oder nicht dort steht, und dass „kann nicht prüfen" nie „alles
+gut" heißt. Wo etwas nicht gemessen werden konnte, steht das dabei. Das ist keine Garantie, und
+Fehler sind sicher drin. Aber es ist nachlesbar, und das ist mehr, als ein Versprechen wert wäre.
+
+Hinzu kommen meine persönlichen Testläufe mit der App — und vielleicht auch bald Eure … feel free!
 
 ## Verwandte Repos
 

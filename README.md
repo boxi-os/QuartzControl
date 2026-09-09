@@ -99,21 +99,30 @@ installer for a version that does not work.
 
 ## How this was built
 
-A hobby project, written for fun and for my own use — and because configuring Quartz by hand is a
-high step for newcomers, and that step can be lowered.
+A hobby project, written for fun, out of technical curiosity, and for my own use. Configuring
+Quartz by hand pushed me to my limits, which is how QuartzControl came about. Since it has turned
+out to be genuinely useful to me, I would like to make it available to everyone … maybe someone
+else will find it as useful as I do. Two plugins came out of the same work:
+[quartz-layout-box](https://github.com/boxi-os/quartz-layout-box) and
+[quartz-multilanguage](https://github.com/boxi-os/quartz-multilanguage), which I am happy to share
+as well. On top of that there is an example template with a complete configuration, meant as a
+starting point for a design of your own.
 
-The code was written mostly with [Claude Code](https://claude.com/claude-code); the commits say so
-with a `Co-Authored-By` line. The question behind that is a fair one: has anyone checked it?
+One thing I want to be open about: the code was written mostly with
+[Claude Code](https://claude.com/claude-code); the commits say so with a `Co-Authored-By` line. I
+am aware that vibe coding is a contested subject, and I do not want to hide anything here.
 
-The answer, as well as it can be given: there are ten rounds of review by a second model, kept as
-documents in [`docs/`](docs/) — with every finding, its severity, and what came of it. Every rule in
-[`CLAUDE.md`](CLAUDE.md) sits next to the experiment that forced it, and the measurements behind them
-are in [`docs/decisions/`](docs/decisions/). The working rule is that a number in a comment is a
-measurement or it does not belong there, and that "cannot check" never means "all clear". Where
-something could not be measured, it says so.
+## How well is the code checked?
 
-That is not a guarantee, and there are certainly bugs in here. But it is on the record, which is
-worth more than a promise.
+The answer, as well as it can be given: there are rounds of review by a second model, kept as
+documents in [`docs/`](docs/) — with every finding, its severity, and what came of it. Every rule
+in [`CLAUDE.md`](CLAUDE.md) sits next to the experiment that forced it, and the measurements behind
+them are in [`docs/decisions/`](docs/decisions/). The working rule is that a number in a comment is
+a measurement or it does not belong there, and that "cannot check" never means "all clear". Where
+something could not be measured, it says so. That is not a guarantee, and there are certainly bugs
+in here. But it is on the record, which is worth more than a promise.
+
+On top of that come my own test runs with the app — and maybe soon yours … feel free!
 
 ## Related repositories
 

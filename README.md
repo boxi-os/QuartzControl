@@ -47,9 +47,12 @@ Damit ein erster Start nichts voraussetzt, liefert die App aus:
 
 ## Installation
 
-Fertige Pakete gibt es unter [Releases](https://github.com/boxi-os/QuartzControl/releases):
-DMG und zip für macOS (arm64 und x64), AppImage und deb für Linux (arm64 und x86_64), dazu ein
-Flatpak.
+**Noch kein Release.** Die erste Fassung wird als DMG und zip für macOS (arm64 und x64), als
+AppImage und deb für Linux (arm64 und x86_64) und als Flatpak erscheinen und dann unter
+[Releases](https://github.com/boxi-os/QuartzControl/releases) liegen. Bis dahin führt der Weg über
+[Selbst bauen](#selbst-bauen).
+
+Die zwei Hinweise darunter gelten für die fertigen Pakete wie für einen eigenen Bau.
 
 **macOS:** Die App ist nicht signiert — es gibt kein Developer-ID-Zertifikat. Beim ersten Start
 verweigert Gatekeeper sie deshalb. Entweder einmal über das Kontextmenü öffnen (Rechtsklick →
@@ -102,8 +105,8 @@ Ein Hobbyprojekt, aus Spaß und für den eigenen Gebrauch geschrieben — und we
 Konfiguration von Quartz für Einsteiger eine hohe Schwelle ist, die sich senken lässt.
 
 Der Code ist zum größten Teil mit [Claude Code](https://claude.com/claude-code) entstanden; die
-Commits sagen das mit einem `Co-Authored-By`-Eintrag. Das steht hier nicht als Entschuldigung sondern
-als Angabe, denn die Frage dahinter ist ja berechtigt: Hat das jemand geprüft?
+Commits sagen das mit einem `Co-Authored-By`-Eintrag. Die Frage dahinter ist berechtigt: Hat das
+jemand geprüft?
 
 Die Antwort, so gut sie sich geben lässt: Es gibt zehn Review-Runden mit einem zweiten Modell, die
 als Dokumente in [`docs/`](docs/) liegen — mit jedem Befund, seiner Schwere und dem, was daraus

@@ -567,9 +567,9 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Befunde aus den Reviews (Stand 2026-09-12)
+## Befunde aus den Reviews (Stand 2026-09-13)
 
-Alle neun Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
+Alle zehn Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht,
@@ -577,10 +577,43 @@ Alle neun Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-20
 [`docs/REVIEW-2026-09-09.md`](docs/REVIEW-2026-09-09.md) mit seinen acht,
 [`docs/REVIEW-2026-09-10.md`](docs/REVIEW-2026-09-10.md) mit seinen acht und
 [`docs/REVIEW-2026-09-11.md`](docs/REVIEW-2026-09-11.md) mit seinen acht und
-[`docs/REVIEW-2026-09-12.md`](docs/REVIEW-2026-09-12.md) mit seinen fünf (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-11-`) stehen als
+[`docs/REVIEW-2026-09-12.md`](docs/REVIEW-2026-09-12.md) mit seinen fünf und
+[`docs/REVIEW-2026-09-13.md`](docs/REVIEW-2026-09-13.md) mit seinen sieben (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-13-`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel.
+
+**Das zehnte Review las die fünf Fixes des neunten und die Linux-x86_64-Schicht daneben** — und war
+das erste, dessen Befunde fast alle *außerhalb* des laufenden Programms lagen: in der
+Verpackungsschicht, in den Skripten und in Sätzen über beide. Kein Befund der Stufe Hoch, einer
+Mittel, sechs Niedrig, alle sieben abgearbeitet. Der mittlere saß in der einen Stelle, die der
+Commit selbst als „nicht gemessen“ geführt hatte: Der Menüpunkt „Rückmeldung senden“ zeigte auf ein
+privates Repository, und GitHub antwortet darauf nicht „kein Zugriff“, sondern 404 — für jeden
+Beta-Tester also nichts. Was daraus als Regel bleibt, steht oben in den passenden Abschnitten:
+
+- **Ein Link nach draußen wird an dem gemessen, was am anderen Ende antwortet.** Zum dritten Mal in
+  dieser Serie war es eine Übergabe an etwas außerhalb der App, die nicht gemessen wurde (fünftes
+  Review: `openPath`; achtes: dieselbe Sorte). Wer eine URL in die App schreibt, ruft sie einmal
+  ohne Anmeldung ab.
+- **Ein Ausweg, den niemand ausprobiert hat, ist eine Vermutung.** `npm run dist:linux -- --x64`
+  stand als Ausweg im Kommentar und baut beide Architekturen; die Regel, die dagegen hilft, stand
+  zwanzig Zeilen tiefer in derselben Datei.
+- **Ein `rmSync` fragt nicht, wessen Verzeichnis das ist.** Wer ein Zielverzeichnis leert, prüft
+  vorher, ob die Quelle darin liegt — und zwar in beide Richtungen, nach `resolve()`/`relative()`.
+  Die Reihenfolge „erst prüfen, dann leeren“ hilft nur, wenn sie *das* prüft.
+- **Ein Wächter gehört an jede Tür zu demselben Zustand** — noch einmal, und diesmal waren es fünf:
+  Die `basic_text`-Korrektur hatte zwei gefunden, die anderen drei (der Vertrag, zwei Sätze im
+  Entscheidungsdokument) und das Handbuch in beiden Sprachen sagten weiter das Widerlegte.
+- **Der Rat gehört in den Absatz, den der Nutzer wirklich zu sehen bekommt.** Er stand im Zweig
+  `available === true`, den diese App nie erreicht, während der Zweig daneben zweimal sagte, dass
+  es nicht geht, und nie, was zu tun ist.
+- **Zwei Erklärungen für dasselbe Symptom sind eine zu viel.** Das `--no-sandbox` im DMG-Skript gab
+  dem Sandkasten die Schuld an einem `ERR_FAILED`, das mit wie ohne Flag auftritt — und ein Flag
+  mit einer Begründung, die nicht trägt, ist das, was der nächste Leser kopiert.
+- **„Kostet nichts“ ist eine Messung oder es gehört da nicht hin.** Der Wechsel der Bundle-ID kostet
+  eine Preferences-Datei, sieben Launch-Services-Einträge und eine TCC-Freigabe, die neu erfragt
+  wird — klein, aber nicht nichts; und die Begründung daneben („ein Flatpak wurde nie gebaut“) war
+  155 Zeilen weiter in derselben Datei überholt.
 
 **Das neunte Review las die acht Fixes des achten und den Nachtrag daneben.** Kein Befund der Stufe
 Hoch, einer Mittel, vier Niedrig, alle fünf abgearbeitet. Der mittlere war wieder eine Regression
@@ -776,10 +809,11 @@ Bereich darf ohne Belegung leer bleiben, und über `layout.group` kann er eigene
 Umbaus selbst: die Zuordnung ruht auf einem Funktionsnamen, den es nur gibt, weil Quartz sich mit
 esbuilds `keepNames` baut.
 
-**Das nächste Review misst ab `review-2026-09-12`.** Der Tag sitzt auf `7568803`, dem Stand, den
-das neunte Review gelesen hat (`main` nach PR #29 plus der Nachtrag und der Auftrag aus PR #30) —
-nach derselben Regel wie seine sechs Vorgänger: Der Ausgangsstand ist das, was gelesen wurde, nicht
-das, was danach entstanden ist. So sitzt `review-2026-09-11` auf `59de3a5`, dem Stand des achten
+**Das nächste Review misst ab `review-2026-09-13`.** Der Tag sitzt auf `9305d7b`, dem Stand, den
+das zehnte Review gelesen hat (`main` nach PR #36 mit dem Auftrag) — nach derselben Regel wie seine
+sieben Vorgänger: Der Ausgangsstand ist das, was gelesen wurde, nicht das, was danach entstanden
+ist. So sitzt `review-2026-09-12` auf `7568803`, dem Stand des neunten Reviews (`main` nach PR #29
+plus der Nachtrag und der Auftrag aus PR #30), `review-2026-09-11` auf `59de3a5`, dem Stand des achten
 Reviews (`main` nach PR #27 plus die Variablensuche aus PR #28), `review-2026-09-10` auf `b1cf5bd`,
 `main` nach PR #25, `review-2026-09-09` auf `c6da3d9` („Der Auftrag für das sechste Review“),
 `review-2026-09-08` auf `0c76d6e`, `review-2026-09-07` auf `1994811`, dem letzten Merge vor den
@@ -787,12 +821,21 @@ Fixes des vierten Reviews, und `review-2026-09-06` auf `1bd69dc`; Letzterer war 
 früher auf `0b0fb96` gesetzt und wurde verschoben, weil jener Stand gemessen, aber nicht gelesen
 war.
 
-**Die fünf Fixes des neunten Reviews liegen bewusst dahinter.** Sie sind gemessen — der mittlere
-vorher und nachher an der gebauten App mit echten Tastendrücken, der zweite an einem Testprojekt
-mit einem toten Ausschluss (dessen Config danach zurückgestellt ist), der vierte an einem
-esbuild-Bündel des Hauptprozesses, der fünfte an der gebauten App — und von niemandem sonst
-gelesen. Die größten Eingriffe sind der Guard, der vom Formular an den Kasten gewandert ist, und
-die zwei Sätze um die Ablage. Sie gehören damit in den Diff des nächsten Auftrags.
+**Die sieben Fixes des zehnten Reviews liegen bewusst dahinter.** Sie sind gemessen — der zweite an
+electron-builders eigener Zielrechnung mit der echten Konfiguration, der dritte an sechs
+Wegwerf-Verzeichnissen vorher und nachher, der fünfte an der gebauten App in einem *erzwungenen*
+Zustand (`available = false, backend = 'basic_text'` im gebauten Hauptprozess-Bündel gesetzt, weil
+ein Mac ihn nicht hergibt), der sechste an sechs Läufen einer Skriptkopie mit und ohne
+`--no-sandbox`, der siebte an `lsregister` und `~/Library/Preferences` dieses Rechners — und von
+niemandem sonst gelesen. Die größten Eingriffe sind der Einschluss-Wächter in `takeHandbook()`, der
+zweite Nutzertext für den Zweig ohne Schlüsselbund und der Kommentar an der `appId`, aus dem eine
+Behauptung eine Messung geworden ist. Sie gehören damit in den Diff des nächsten Auftrags.
+
+**Die fünf Fixes des neunten Reviews hat das zehnte gelesen** — ohne Regression, zum ersten Mal in
+vier Runden. Die dritte Fassung des Tastatur-Guards liegt richtig (`e.target === e.currentTarget`
+am Kasten), und das Muster steht an keiner der drei anderen `@dnd-kit`-Stellen. Gemessen waren sie
+vorher und nachher an der gebauten App mit echten Tastendrücken, an einem Testprojekt mit einem
+toten Ausschluss und an einem esbuild-Bündel des Hauptprozesses.
 
 **Die acht Fixes des achten Reviews hat das neunte gelesen** — mit dem Ergebnis, dass einer davon
 eine Regression war (der Tastatur-Guard, oben). Gemessen waren sie am echten Build eines Klons des

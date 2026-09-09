@@ -10,9 +10,30 @@
 
 # `io.github.<nutzer>.<app>`, weil das Projekt auf GitHub liegt und keine eigene Domain trägt - und
 # mit Unterstrich, weil Flathub genau diese Form für App-IDs erwartet und electron-builder die
-# appId als Flatpak-App-ID durchreicht. Der Wechsel weg von der alten Form kostet hier nichts: die
-# App ist unsigniert, ein Flatpak wurde nie gebaut, und `app.getPath('userData')` hängt am
-# Produktnamen, nicht an der ID - bestehende Profile bleiben also, wo sie sind.
+# appId als Flatpak-App-ID durchreicht.
+#
+# Was der Wechsel weg von der alten Bundle-ID `de.<klarname>.quartzcontrol` gekostet hat, gemessen
+# am 2026-09-09 auf der Maschine des Betreuers - klein, aber nicht nichts. (`<klarname>` steht
+# für den bürgerlichen Namen, den `afc18e7` aus der App genommen hat; er gehört nicht in eine
+# Datei, die mitreist. Wer die Messung nachvollziehen will, kennt ihn.)
+#
+#   - Das Wichtigste bleibt: `app.getPath('userData')` hängt am Produktnamen, nicht an der ID,
+#     also bleiben bestehende Profile, wo sie sind (nachgesehen:
+#     `~/Library/Application Support/QuartzControl`).
+#   - Unter macOS bleibt liegen, was *doch* an der ID hängt:
+#     `~/Library/Preferences/de.<klarname>.quartzcontrol.plist` (Größe und letztes Verzeichnis
+#     des Datei-Dialogs) beginnt unter der neuen ID bei null, und LaunchServices führt weiter
+#     sieben Registrierungen der alten Haupt-ID plus vier Helper-IDs - die Datenbank kennt danach
+#     zwei Programme desselben Namens.
+#   - Nicht messbar ohne Vollzugriff, aber gelesen: TCC führt Ordnerfreigaben („Dokumente",
+#     „Schreibtisch" - beides Orte, an denen Projekte und Vaults liegen) je Bundle-ID. Wer der
+#     0.1.0-DMG diese Freigabe erteilt hat, beantwortet die Frage unter der neuen ID noch einmal.
+#   - Für **Flatpak** ist er dagegen wirklich kostenlos, und zwar nicht aus Zufall: dort *ist* das
+#     Datenverzeichnis die ID (`~/.var/app/<appId>/`), und unter der alten existiert keines. Als
+#     dieser Satz geschrieben wurde (2026-09-08, vormittags), war noch überhaupt kein Flatpak
+#     gebaut; der erste entstand am Nachmittag desselben Tages - siehe den `flatpak:`-Abschnitt
+#     weiter unten.
+#   - Die App ist unsigniert, eine Signatur hängt also an keiner der beiden IDs.
 appId: io.github.boxi_os.quartzcontrol
 productName: QuartzControl
 copyright: © boxi-os
@@ -100,8 +121,15 @@ dmg:
   # (dmgUtil.js, computeBackground), and build/background.png plus its @2x sibling are what it
   # finds. Leaving it unset is *not* "no background" - that is the case that pulls the template in,
   # a grey field with a dashed box and a dashed arrow that sit nowhere near the two positions
-  # below, which is exactly what the 0.1.0 DMG shipped. Drawn by scripts/dmg-background.mjs, which
-  # reads the same two x values from here.
+  # below, which is exactly what the 0.1.0 DMG shipped.
+  #
+  # Drawn by scripts/dmg-background.mjs. It does **not** read these numbers - it holds its own copy
+  # (APP_X, LINK_X, ICON_Y), because reading them would need a YAML parser and js-yaml is only in
+  # this tree transitively, under electron-builder. So the two lists are kept equal by hand and
+  # nothing compares them: whoever moves an x here moves it there too, or the icons land beside the
+  # shapes drawn for them. The window size is *not* a second copy - dmg-builder reads it out of the
+  # background image (dmgUtil.js, `sips` on the folded TIFF), which is why there is no dmg.window
+  # block here.
   contents:
     - x: 140
       y: 180
@@ -132,8 +160,24 @@ linux:
   # git-Bundle (fetch-git.mjs kennt linux-x64), electron-builder lädt die Electron-Binärdatei der
   # Zielarchitektur selbst, `npmRebuild: false` heißt, dass nichts kompiliert wird, und
   # app-builder-lib trennt in toolsets/linux.js ausdrücklich Host- von Zielarchitektur
-  # ("mksquashfs/desktop-file-validate are HOST binaries"). Ein einzelner Lauf geht weiter über
-  # `npm run dist:linux -- --x64`.
+  # ("mksquashfs/desktop-file-validate are HOST binaries").
+  #
+  # Ein einzelner Lauf geht **nicht** über `npm run dist:linux -- --x64`: Das Flag allein baut
+  # beide Architekturen. Gemessen am 2026-09-09 an `computeArchToTargetNamesMap`
+  # (app-builder-lib/out/targets/targetFactory.js) mit dieser Konfiguration und den Zielkarten,
+  # die `Platform.LINUX.createTarget` für die jeweilige Kommandozeile liefert:
+  #
+  #   --linux                      → arm64: AppImage, deb · x64: AppImage, deb
+  #   --linux --x64                → x64: AppImage, deb · arm64: AppImage, deb
+  #   --linux AppImage deb --x64   → x64: AppImage, deb
+  #
+  # Der Grund steht in der Funktion: Die Kommandozeile liefert `--x64` als Karte `{x64: []}`, und
+  # weil darin keine Zielnamen stehen, gilt sie nur als *Vorgabe* für Zielangaben ohne eigene
+  # Architektur (`archs == null ? defaultArchs : asArray(archs)`). Die beiden Einträge unten haben
+  # aber eine eigene, und die gewinnt. Einen einzelnen Lauf gibt es also nur, wenn man die Ziele
+  # mitnennt — dann greift die Regel weiter unten, dass ein Ziel auf der Kommandozeile die Liste
+  # ersetzt, und die Architektur daneben wirkt:
+  # `npm run dist:linux -- AppImage deb --x64`.
   target:
     - target: AppImage
       arch: [arm64, x64]

@@ -105,7 +105,9 @@ export default {
       secretsBody:
         'No keyring is running on this system, so Electron stores passwords and tokens with a hardcoded key ({{backend}}) — effectively plaintext. Running gnome-keyring or KWallet protects them properly.',
       secretsUnavailable:
-        'No encryption is available on this system, so connections with a password or token cannot be saved.'
+        'No encryption is available on this system, so connections with a password or token cannot be saved.',
+      secretsUnavailableKeyring:
+        'No keyring is running on this system ({{backend}}), so no encryption is available and connections with a password or token cannot be saved. Running gnome-keyring or KWallet stores them encrypted.'
     },
     gettingStarted: {
       title: 'Getting started',

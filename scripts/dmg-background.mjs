@@ -29,6 +29,20 @@ import * as path from 'node:path'
 const APP_DIR = path.resolve(import.meta.dirname, '..')
 
 // The DMG window, and where dmg.contents puts the two icons in it.
+//
+// These are a **second copy** of the positions in `electron-builder.yml`, not a read of them: the
+// script would need a YAML parser, and js-yaml is only in this tree transitively, under
+// electron-builder. Same shape as `theme.ts` holding the ground colour a second time next to
+// `src/index.css` - unavoidable duplication, so both sides point at each other and neither pretends
+// to be the source. Nothing compares them, so if one of the two x values moves, the drawing and the
+// icons drift apart silently. That is the failure this script was written to prevent between a
+// drawing program and a text file; between two text files it is still possible.
+//
+//   APP_X / LINK_X / ICON_Y  ↔  dmg.contents[].x / .y in electron-builder.yml
+//   W / H                    ↔  nothing: dmg-builder reads the window size out of the background
+//                                image itself (dmgUtil.js runs `sips` on the folded TIFF and gets
+//                                the first directory, 540x380), so there is no `dmg.window` block
+//                                to keep in step. Measured 2026-09-09.
 const W = 540
 const H = 380
 const APP_X = 140
@@ -101,8 +115,11 @@ const targets = ${JSON.stringify(targets)}
 const page = ${JSON.stringify(html)}
 app.whenReady().then(async () => {
   const scale = screen.getPrimaryDisplay().scaleFactor
-  // Both windows before either capture: destroying one and opening the next in the same tick made
-  // the second load fail with ERR_FAILED before its page existed.
+  // Both windows before either capture: destroying one and opening the next in the same tick makes
+  // the second load fail with ERR_FAILED (-2) before its page exists. Re-measured 2026-09-09 with
+  // this repo's Electron, and it is not the sandbox - the same two windows fail the same way with
+  // and without --no-sandbox. Opening both up front is the fix that holds, because then no window
+  // is destroyed before the last one has loaded.
   const windows = targets.map((target) => {
     // The window is measured in CSS pixels; the capture comes back in device pixels.
     const win = new BrowserWindow({
@@ -142,9 +159,16 @@ const electronBin = path.join(
   fs.readFileSync(path.join(APP_DIR, 'node_modules/electron/path.txt'), 'utf-8')
 )
 
-// --no-sandbox: this renders a picture out of a string that this script wrote itself, and the
-// Chromium sandbox is what fails first when the script runs inside one (ERR_FAILED on load, before
-// the page exists).
+// --no-sandbox: for the build machines that run this from inside a container, where Chromium's
+// sandbox needs user namespaces that are often unavailable and Electron then refuses to start at
+// all. It is safe here for the usual reason - the page is a string this script wrote itself, no
+// remote content, no untrusted input.
+//
+// What it is *not* for: the ERR_FAILED above. That was the earlier reading here, and it is wrong.
+// Measured 2026-09-09 on this machine, three runs each of a copy of this script writing into a
+// throwaway directory, with the flag and without: both exit 0 and write byte-identical files
+// (`a75eb0c4…`, `258b02a7…` - the same checksums as the ones checked in). A --no-sandbox with a
+// reason that does not hold is what the next Electron script copies.
 const child = spawn(electronBin, [path.join(tmp, 'main.js'), '--no-sandbox'], { stdio: 'inherit' })
 child.on('exit', (code) => {
   fs.rmSync(tmp, { recursive: true, force: true })

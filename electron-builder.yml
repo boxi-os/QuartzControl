@@ -10,9 +10,28 @@
 
 # `io.github.<nutzer>.<app>`, weil das Projekt auf GitHub liegt und keine eigene Domain trägt - und
 # mit Unterstrich, weil Flathub genau diese Form für App-IDs erwartet und electron-builder die
-# appId als Flatpak-App-ID durchreicht. Der Wechsel weg von der alten Form kostet hier nichts: die
-# App ist unsigniert, ein Flatpak wurde nie gebaut, und `app.getPath('userData')` hängt am
-# Produktnamen, nicht an der ID - bestehende Profile bleiben also, wo sie sind.
+# appId als Flatpak-App-ID durchreicht.
+#
+# Was der Wechsel weg von `de.holgerborker.quartzcontrol` gekostet hat, gemessen am 2026-09-09 auf
+# der Maschine des Betreuers - klein, aber nicht nichts:
+#
+#   - Das Wichtigste bleibt: `app.getPath('userData')` hängt am Produktnamen, nicht an der ID,
+#     also bleiben bestehende Profile, wo sie sind (nachgesehen:
+#     `~/Library/Application Support/QuartzControl`).
+#   - Unter macOS bleibt liegen, was *doch* an der ID hängt:
+#     `~/Library/Preferences/de.holgerborker.quartzcontrol.plist` (Größe und letztes Verzeichnis
+#     des Datei-Dialogs) beginnt unter der neuen ID bei null, und LaunchServices führt weiter
+#     sieben Registrierungen der alten Haupt-ID plus vier Helper-IDs - die Datenbank kennt danach
+#     zwei Programme desselben Namens.
+#   - Nicht messbar ohne Vollzugriff, aber gelesen: TCC führt Ordnerfreigaben („Dokumente",
+#     „Schreibtisch" - beides Orte, an denen Projekte und Vaults liegen) je Bundle-ID. Wer der
+#     0.1.0-DMG diese Freigabe erteilt hat, beantwortet die Frage unter der neuen ID noch einmal.
+#   - Für **Flatpak** ist er dagegen wirklich kostenlos, und zwar nicht aus Zufall: dort *ist* das
+#     Datenverzeichnis die ID (`~/.var/app/<appId>/`), und unter der alten existiert keines. Als
+#     dieser Satz geschrieben wurde (2026-09-08, vormittags), war noch überhaupt kein Flatpak
+#     gebaut; der erste entstand am Nachmittag desselben Tages - siehe den `flatpak:`-Abschnitt
+#     weiter unten.
+#   - Die App ist unsigniert, eine Signatur hängt also an keiner der beiden IDs.
 appId: io.github.boxi_os.quartzcontrol
 productName: QuartzControl
 copyright: © boxi-os

@@ -12,6 +12,8 @@ keine davon wirkt auf die anderen:
 
   git      GNU General Public License, Version 2      -> git-LICENSE.txt
   Electron MIT (mit Chromium und Node.js darin)       -> electron-LICENSE.txt
+  Chromium mehrere hundert Lizenzen, volle Liste      -> LICENSES.chromium.html (nur macOS; im
+                                                         Linux-Bau liegt sie neben dem Programm)
   npm      The Artistic License 2.0                   -> ../npm/LICENSE
 
 npm liegt vollständig im Verzeichnis `npm` daneben, samt seiner eigenen Abhängigkeiten und deren

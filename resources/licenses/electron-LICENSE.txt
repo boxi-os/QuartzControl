@@ -5,14 +5,13 @@ Diese App läuft auf Electron, das Chromium und Node.js enthält. Electron selbs
 MIT-Lizenz; der vollständige Text folgt unten.
 
 Chromium bringt daneben mehrere hundert eigene Lizenzen mit (BSD, MIT, Apache-2.0 und weitere).
-Deren vollständige Liste liefert Electron als `LICENSES.chromium.html` aus. Wo diese Datei liegt,
-hängt vom Paketformat ab:
+Deren vollständige Liste liefert Electron als `LICENSES.chromium.html` aus. Sie reist mit, nur an
+unterschiedlichen Orten:
 
   Linux (AppImage, deb, Flatpak)  neben dem Programm, als LICENSES.chromium.html
-  macOS (DMG, zip)                nicht enthalten - electron-builder legt sie in einem
-                                  .app-Bundle nicht ab. Sie steht unter
-                                  https://github.com/electron/electron/blob/main/LICENSE
-                                  und in jedem Electron-Release als LICENSES.chromium.html.
+  macOS (DMG, zip)                in diesem Verzeichnis, als LICENSES.chromium.html
+
+Es ist eine HTML-Datei von rund 19 MB; ein Browser öffnet sie.
 
 Node.js steht unter der MIT-Lizenz und ist Teil von Electron.
 

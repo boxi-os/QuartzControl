@@ -98,6 +98,24 @@ mac:
   # from the context menu. Set an identity here once a certificate exists; notarisation is a
   # separate step after that.
   identity: null
+  # Chromiums Lizenzliste, 19 MB, nur hier. Electron liefert sie als `LICENSES.chromium.html` in
+  # seinem dist aus; im **Linux**-Bau legt electron-builder sie von selbst neben das Programm
+  # (nachgesehen in `release/linux-unpacked`: `LICENSE.electron.txt` und `LICENSES.chromium.html`),
+  # in ein `.app`-Bundle nicht - das ist sein Normalverhalten und bei fast jeder Electron-App so.
+  # Ein globaler `extraResources`-Eintrag würde sie unter Linux ein zweites Mal einpacken, deshalb
+  # steht sie unter `mac:`. Das ist kein Ersetzen, sondern ein Anhängen: `getFileMatchers`
+  # (app-builder-lib/out/fileMatcher.js) ruft `addPatterns(config[name])` und danach
+  # `addPatterns(options.customBuildOptions[name])`, plattformspezifische Einträge kommen also zu
+  # den globalen dazu.
+  #
+  # Die Quelle ist das dist der **Entwicklungs**-Abhängigkeit, nicht das heruntergeladene Paket der
+  # Zielarchitektur. Das trägt, weil electron-builder genau die Fassung packt, die als `electron`
+  # in `package.json` steht (beide 43.4.1, nachgesehen am 2026-09-09) - und die Lizenzliste hängt
+  # an der Chromium-Fassung, nicht an der Architektur. Zieht jemand `electron` hoch, wandert die
+  # Datei mit; das ist derselbe Weg, den `node_modules/npm` schon geht.
+  extraResources:
+    - from: node_modules/electron/dist/LICENSES.chromium.html
+      to: licenses/LICENSES.chromium.html
 
 dmg:
   # Just the app and a link to /Applications. The background is not named here on purpose:

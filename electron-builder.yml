@@ -12,6 +12,22 @@
 # mit Unterstrich, weil Flathub genau diese Form für App-IDs erwartet und electron-builder die
 # appId als Flatpak-App-ID durchreicht.
 #
+# **Diese Zeile ist nicht die ID, die auf macOS ankommt.** Apple erlaubt in `CFBundleIdentifier` nur
+# Buchstaben, Ziffern, Bindestrich und Punkt; `filterCFBundleIdentifier`
+# (app-builder-lib/out/appInfo.js:147, benutzt von `macBundleIdentifier`) wirft alles andere weg.
+# Der Unterstrich fällt damit still heraus, und es gibt zwei Kennungen statt einer:
+#
+#   Linux / Flatpak   io.github.boxi_os.quartzcontrol   (am 2026-09-08 im gebauten Flatpak belegt)
+#   macOS             io.github.boxios.quartzcontrol    (am 2026-09-09 im gebauten Bundle gemessen)
+#
+# Das ist kein Fehler und nicht zu vermeiden - eine appId ohne Unterstrich verlöre die Flathub-Form,
+# eine mit behält sie dort und wird auf macOS gefiltert. Es steht hier, weil der Absatz darunter die
+# Kosten eines ID-Wechsels beschreibt und diese Kosten auf macOS an der **gefilterten** Form hängen.
+# Nachgemessen am 2026-09-09 auf der Maschine des Betreuers: `~/Library/Preferences` trägt
+# `io.github.boxios.quartzcontrol.plist`, und LaunchServices führt sechs Registrierungen dieser Form
+# gegen **null** der Unterstrich-Form. Wer auf macOS nach der App sucht - in TCC, in den
+# Voreinstellungen, in `lsregister` -, sucht ohne Unterstrich.
+#
 # Was der Wechsel weg von der alten Bundle-ID `de.<klarname>.quartzcontrol` gekostet hat, gemessen
 # am 2026-09-09 auf der Maschine des Betreuers - klein, aber nicht nichts. (`<klarname>` steht
 # für den bürgerlichen Namen, den `afc18e7` aus der App genommen hat; er gehört nicht in eine

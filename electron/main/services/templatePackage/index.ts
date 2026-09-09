@@ -15,6 +15,7 @@ import type {
   TemplatePartSummary
 } from '@shared/ipc-contract'
 import { TEMPLATE_PART_IDS } from '@shared/ipc-contract'
+import { DEFAULT_FRAME_BREAKPOINT_WIDTHS } from '@shared/gridFrameCss'
 import { createSnapshot } from '../snapshotService'
 import { runCommand } from '../runCommand'
 import { readZipFile, writeZipFile, type ZipEntry } from '../zipArchive'
@@ -136,7 +137,10 @@ async function loadLegacyFolder(dir: string): Promise<LoadedPackage | null> {
   }
 
   const layout = await readJson<Record<string, unknown>>('layout.json')
-  if (layout) put('layout', { layout, breakpoints: { tablet: 1200, mobile: 800 } }, { groups: 0, pageTypes: 0 })
+  // The old format had no breakpoints, so the defaults are what a package of that vintage meant -
+  // they were the only widths there were. Named rather than repeated as digits: if the default ever
+  // moves, this line should keep saying "whatever quartz itself switches at", not 800.
+  if (layout) put('layout', { layout, breakpoints: DEFAULT_FRAME_BREAKPOINT_WIDTHS }, { groups: 0, pageTypes: 0 })
 
   const colors = await readJson<{ colors?: unknown; typography?: unknown; fontOrigin?: string; cssVariableOverrides?: unknown[] }>(
     'colors.json'

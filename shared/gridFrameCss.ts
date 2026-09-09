@@ -252,6 +252,8 @@ function buildOuterGridOverride(frameName: string): string {
  * scroll-padding and one popover rule, which are cosmetic and deliberately left alone. No TS or JS
  * in Quartz reads a breakpoint at all, so CSS is the whole surface.
  *
+ * Core was never the whole surface, though - see `buildPluginBreakpointCompat` below.
+ *
  * Everything here is scoped by `.page[data-frame="<name>"]`, which outranks core's bare
  * `.desktop-only` (and `.desktop-only.flex-component`) at any source order - so no core file is
  * touched, and pages rendered with a *built-in* frame keep Quartz's own widths, which is right:
@@ -298,6 +300,151 @@ function buildQuartzBreakpointCompat(frameName: string, widths: FrameBreakpointW
   ].join('\n')
 }
 
+/**
+ * The same job for the community plugins, which is where the breakpoint is actually felt.
+ *
+ * Core's rules are the smaller half. The navigation switching between a sidebar tree and a drawer
+ * is `@quartz-community/explorer`, and it hard-codes `@media all and (max-width: 800px)` in its
+ * own stylesheet - so a project on any other mobile width got a band where the frame had already
+ * reflowed to one column while the explorer was still a desktop tree, or the reverse. That band
+ * is why `BREAKPOINT_WIDTHS` in the example template sat on 800 for months: the frame was aligned
+ * to the plugin because the plugin could not be aligned to the frame.
+ *
+ * **Read this before changing it: these declarations are copied out of somebody else's stylesheet.**
+ * Taken from explorer 0.1.0, search 0.1.0 and graph 0.1.0, read out of `dist/index.js` in a real
+ * install on 2026-09-09. If a plugin changes its drawer, this copy keeps stating the old one -
+ * which is the price the alternative does not have, and the alternative is telling every project
+ * that its breakpoint is 800 whatever it configured.
+ *
+ * Both halves are restated, the same rule as in the core block and for the same reason: which side
+ * of the band a viewport is on decides which half is *missing*, and a rule that only overrode
+ * inside the media query would lose to the plugin's own base declaration below the threshold.
+ *
+ * What is deliberately not here:
+ *   - `canvas-page`, whose media block is already scoped `.page[data-frame=canvas]`. A project
+ *     with an authored frame has its own name in that attribute, so those rules never applied to
+ *     it in the first place.
+ *   - the drawer's transitions, `overscroll-behavior` and the `.lock-scroll` page-slide. They are
+ *     polish inside a band a hundred pixels wide; without them the navigation is still correct and
+ *     operable, and each one is another line that has to follow a foreign stylesheet.
+ *   - search's border-radius seams between its result and preview panes, for the same reason.
+ */
+function buildPluginBreakpointCompat(frameName: string, widths: FrameBreakpointWidths): string {
+  if (isDefaultBreakpointWidths(widths)) return ''
+  const page = `.page[data-frame="${escapeAttrValue(frameName)}"]`
+  return [
+    // --- explorer: the desktop half -------------------------------------------------------
+    `${page} .explorer {`,
+    `  order: 0;`,
+    `  height: auto;`,
+    `  overflow-y: hidden;`,
+    `  flex: 0 1 auto;`,
+    `  align-self: auto;`,
+    `  margin-block: 0;`,
+    `}`,
+    `${page} .explorer.collapsed {`,
+    `  flex: 0 1 1.2rem;`,
+    `}`,
+    `${page} .explorer .explorer-content {`,
+    `  position: static;`,
+    `  z-index: auto;`,
+    `  width: auto;`,
+    `  max-width: none;`,
+    `  height: auto;`,
+    `  max-height: none;`,
+    `  padding: 0;`,
+    `  margin-block-start: 0.5rem;`,
+    `  background-color: transparent;`,
+    `  transform: none;`,
+    `  visibility: visible;`,
+    `  overflow: hidden;`,
+    `  overflow-y: auto;`,
+    `}`,
+    `${page} .explorer button.mobile-explorer {`,
+    `  display: none;`,
+    `}`,
+    `${page} .explorer button.desktop-explorer {`,
+    `  display: flex;`,
+    `}`,
+    // --- search and graph: the desktop half ------------------------------------------------
+    `${page} .search {`,
+    `  flex-grow: 0;`,
+    `}`,
+    `${page} .search > .search-container > .search-space > .search-layout {`,
+    `  flex-direction: row;`,
+    `}`,
+    `${page} .search > .search-container > .search-space > .search-layout > .preview-container {`,
+    `  display: block;`,
+    `}`,
+    `${page} .graph > .global-graph-outer > .global-graph-container {`,
+    `  width: 80vw;`,
+    `}`,
+    // --- and the mobile half ----------------------------------------------------------------
+    `@media (max-width: ${widths.mobile}px) {`,
+    `${page} .explorer {`,
+    `  order: -1;`,
+    `  height: initial;`,
+    `  overflow: hidden;`,
+    `  flex-shrink: 0;`,
+    `  align-self: flex-start;`,
+    `  margin-block: auto;`,
+    `}`,
+    // Both states get the same basis: below the threshold the tree is a drawer, and a drawer is
+    // the width of the viewport whether or not the folder list inside it happens to be folded.
+    `${page} .explorer.collapsed, ${page} .explorer:not(.collapsed) {`,
+    `  flex: 0 0 34px;`,
+    `}`,
+    `${page} .explorer.collapsed > .explorer-content {`,
+    `  transform: translateX(-100vw);`,
+    `  visibility: hidden;`,
+    `}`,
+    `${page} .explorer:not(.collapsed) > .explorer-content {`,
+    `  transform: translateX(0);`,
+    `  visibility: visible;`,
+    `}`,
+    `${page} .explorer .explorer-content {`,
+    `  box-sizing: border-box;`,
+    `  position: absolute;`,
+    `  top: 0;`,
+    `  left: 0;`,
+    `  z-index: 100;`,
+    `  width: 100vw;`,
+    `  max-width: 100vw;`,
+    `  height: 100dvh;`,
+    `  max-height: 100dvh;`,
+    `  padding: 4rem 0 2rem 0;`,
+    `  margin-block-start: 0;`,
+    `  background-color: var(--light);`,
+    `  overflow: hidden;`,
+    `}`,
+    `${page} .explorer button.mobile-explorer {`,
+    `  display: flex;`,
+    `  margin: 0;`,
+    `  padding: 5px;`,
+    `  z-index: 101;`,
+    `}`,
+    `${page} .explorer button.mobile-explorer.hide-until-loaded {`,
+    `  display: none;`,
+    `}`,
+    `${page} .explorer button.desktop-explorer {`,
+    `  display: none;`,
+    `}`,
+    `${page} .search {`,
+    `  flex-grow: 0.3;`,
+    `}`,
+    `${page} .search > .search-container > .search-space > .search-layout {`,
+    `  flex-direction: column;`,
+    `}`,
+    `${page} .search > .search-container > .search-space > .search-layout > .preview-container {`,
+    `  display: none;`,
+    `}`,
+    `${page} .graph > .global-graph-outer > .global-graph-container {`,
+    `  width: 90%;`,
+    `}`,
+    `}`
+  ].join('\n')
+}
+
 // Full generated CSS for a frame: the outer-grid override first, then desktop unconditional,
 // then tablet/mobile cascaded via max-width media queries in narrowing order so a later, narrower
 // block always wins over an earlier, wider one at the same specificity (verified: 800px block
@@ -308,8 +455,8 @@ export function buildFrameCss(def: GridFrameDefinition, widths: FrameBreakpointW
     const maxWidth = bp === 'desktop' ? undefined : widths[bp]
     return maxWidth ? `@media (max-width: ${maxWidth}px) {\n${block}\n}` : block
   })
-  const compat = buildQuartzBreakpointCompat(def.frameName, widths)
-  return [buildOuterGridOverride(def.frameName), ...(compat ? [compat] : []), ...blocks].join('\n\n')
+  const compat = [buildQuartzBreakpointCompat(def.frameName, widths), buildPluginBreakpointCompat(def.frameName, widths)].filter(Boolean)
+  return [buildOuterGridOverride(def.frameName), ...compat, ...blocks].join('\n\n')
 }
 
 function isLegacyDefinition(def: unknown): def is LegacyGridFrameDefinition {

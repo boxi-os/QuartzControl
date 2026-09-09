@@ -257,7 +257,19 @@ export const PLUGIN_PATCHES = {
   },
   'recent-notes': {
     enabled: true,
-    options: { limit: 5 },
+    // `hideFolderPages` nimmt jede `…/index`-Seite aus der Liste, die zwei Startseiten
+    // eingeschlossen (`isFolderPath` prüft auf ein `index`-Ende, gelesen in dist/index.js 0.1.0).
+    // Ohne sie war der Kasten die Spitze der Gliederung - vier Ordner- und Startseiten von fünf,
+    // und auf der Startseite führte er sie selbst auf, zweimal, weil beide Sprachen "Example"
+    // heißen. Das ist die Folge davon, dass die Staffelung der Dateizeiten der Gliederung folgt
+    // (scripts/stagger-vault-mtimes.mjs): oben steht dann eben das Inhaltsverzeichnis. Ein Kasten,
+    // der "zuletzt bearbeitet" heißt, soll Notizen zeigen.
+    //
+    // Einen Sprachfilter gibt es nicht - `filter` ist eine Funktion und lässt sich in einer YAML-
+    // Konfiguration nicht schreiben -, also stehen in beiden Sprachfassungen beide Sprachen im
+    // Kasten. Bei einer Staffelung, die DE und EN paarweise verschränkt, ist das jeder zweite
+    // Eintrag.
+    options: { limit: 5, hideFolderPages: true },
     layout: {
       position: 'afterBody',
       priority: 60,

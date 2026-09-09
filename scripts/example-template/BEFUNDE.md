@@ -1652,8 +1652,16 @@ verschränkt, eine Minute je Schritt rückwärts von einem festen Anker. Zweimal
 Der Lauf legt vorher eine Sicherung an, weil git keine mtimes kennt und es sonst keinen Rückweg
 gibt.
 
-Was das Skript **nicht** kann: `recent-notes` hat keinen Sprachfilter, also stehen auf beiden
-Startseiten beide Sprachen im Kasten. Das ist eine Eigenschaft des Plugins.
+**Der Kasten braucht daneben noch eine Option.** Wenn die Dateizeiten der Gliederung folgen, steht
+oben eben das Inhaltsverzeichnis: die zwei Startseiten und die Kapitelseiten, vier von fünf
+Einträgen — und auf der Startseite führte der Kasten sie selbst auf, zweimal, weil beide Sprachen
+„Example" heißen. `hideFolderPages: true` nimmt jede `…/index`-Seite heraus (`isFolderPath` prüft
+auf ein `index`-Ende), und der Kasten zeigt seitdem 1.1 (DE), 1.1 (EN), 1.2 (DE), 1.2 (EN), 1.3
+(DE). Nachgesehen an der gebauten Website in beiden Sprachfassungen.
+
+Was weder Skript noch Option können: `recent-notes` hat keinen Sprachfilter — `filter` ist eine
+Funktion und in einer YAML-Konfiguration nicht zu schreiben —, also stehen auf beiden Startseiten
+beide Sprachen im Kasten, bei paarweiser Verschränkung jeder zweite Eintrag.
 
 ### 80. Der Header gibt die Scroll-Timelines auf — und wird dadurch besser lesbar
 

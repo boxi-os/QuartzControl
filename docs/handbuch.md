@@ -248,11 +248,12 @@ einzeln angefasst wurde.
 passt immer zu der Fassung, die gerade installiert ist — eine Online-Fassung beschriebe irgendwann
 eine andere.
 
-    npm run build:handbook      # aus dem Projekt nach resources/handbook/ (252 Dateien, 18 MB)
+    npm run build:handbook      # aus dem Projekt nach resources/handbook/ (437 Dateien, 34,9 MB
+                                # am 2026-09-09; die Zahl wächst mit dem Handbuch)
 
 `resources/handbook/` ist gitignoriert und wird beim Packen erzeugt (`beforePack`) — dieselbe
 Behandlung wie `resources/git` und ausdrücklich nicht wie `resources/templates`, das im Repo liegt.
-Der Grund: Es ist ein erzeugtes Artefakt, dessen 16 MB Bilder bei jedem Textdurchgang neu
+Der Grund: Es ist ein erzeugtes Artefakt, dessen 29,8 MB Bilder bei jedem Textdurchgang neu
 entstehen; im Repo wäre jede Aufnahme ein neuer Blob.
 
 Anders als git lässt es sich **nicht** aus dem Netz nachholen — es entsteht aus einem Projekt, das

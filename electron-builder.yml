@@ -64,7 +64,8 @@ extraResources:
     to: templates
   - from: resources/licenses
     to: licenses
-  # Das Benutzerhandbuch als gebaute Website (npm run build:handbook, 252 Dateien / 18 MB). Es
+  # Das Benutzerhandbuch als gebaute Website (npm run build:handbook; 437 Dateien / 34,9 MB am
+  # 2026-09-09, die Zahl wächst mit dem Handbuch). Es
   # reist mit statt als Link, damit es ohne Netz lesbar ist und immer zu der Fassung passt, die
   # gerade installiert ist. Wie resources/git nicht im Repo, sondern beim Packen erzeugt - hier
   # aber ohne Netz, aus dem Handbuch-Projekt (docs/handbuch.md). Fehlt es, packt beforePack mit
@@ -124,12 +125,44 @@ linux:
   # `desktopName` in package.json instead, which is electron-builder's own fix for this
   # (electron-userland/electron-builder#9103) and becomes the default in v27.
   syncDesktopName: true
+  # Zwei Architekturen, ausgeschrieben wie bei mac: - die Kurzform `- AppImage` heißt bei
+  # electron-builder "Architektur der Baumaschine", und die ist hier eine aarch64-VM, also gab es
+  # für x86_64 gar kein Paket. Cross ist für diese beiden Ziele gedeckt und kostet nichts:
+  # `before-pack.mjs` liest die *Ziel*-Architektur aus `context.arch` und holt das passende
+  # git-Bundle (fetch-git.mjs kennt linux-x64), electron-builder lädt die Electron-Binärdatei der
+  # Zielarchitektur selbst, `npmRebuild: false` heißt, dass nichts kompiliert wird, und
+  # app-builder-lib trennt in toolsets/linux.js ausdrücklich Host- von Zielarchitektur
+  # ("mksquashfs/desktop-file-validate are HOST binaries"). Ein einzelner Lauf geht weiter über
+  # `npm run dist:linux -- --x64`.
   target:
-    - AppImage
-    - deb
+    - target: AppImage
+      arch: [arm64, x64]
+    - target: deb
+      arch: [arm64, x64]
   # flatpak steht bewusst nicht in dieser Liste: das Ziel braucht flatpak und flatpak-builder auf
   # der Baumaschine, und `npm run dist:linux` soll auf einem Rechner ohne die beiden nicht
-  # scheitern. Gebaut wird es mit `npm run dist:flatpak`.
+  # scheitern. Gebaut wird es mit `npm run dist:flatpak`. Es ist zugleich das eine Linux-Ziel, das
+  # sich *nicht* cross bauen lässt: flatpak-builder braucht Runtime, SDK und BaseApp der
+  # Zielarchitektur und kompiliert das git-Modul unten aus der Quelle. Ein x86_64-Flatpak entsteht
+  # also nur auf einer x86_64-Maschine.
+
+# Der Name sagt die Architektur, auch bei x64. electron-builders Vorgabe für AppImage hängt das
+# Architektursuffix nur an, wenn es *nicht* x64 ist (`isUseArchIfX64`), also stand
+# `QuartzControl-1.0.0-beta.1.AppImage` neben `QuartzControl-1.0.0-beta.1-arm64.AppImage` — auf
+# einer Release-Seite zwei Dateien nebeneinander, von denen nur eine sagt, wofür sie ist. Beim deb
+# stellt sich die Frage nicht: fpm schreibt Debians eigene Namen (amd64/arm64) ohnehin in den
+# Dateinamen, und beim Flatpak tut flatpak dasselbe mit x86_64/aarch64.
+#
+# `${arch}` ist dabei nicht Node's Wort für die Architektur, sondern das des Formats:
+# `getArtifactArchName` (builder-util/out/arch.js) gibt für ein AppImage bei x64 **x86_64** aus,
+# lässt arm64 aber **arm64** — "aarch64" gilt dort nur für pacman, rpm und flatpak. Der arm64-Name
+# ändert sich durch diese Zeile also nicht; gemessen ist die x64-Hälfte am 2026-09-09
+# (`QuartzControl-1.0.0-beta.1-x86_64.AppImage`), die arm64-Hälfte an derselben Funktion gelesen,
+# die diese Messung erzeugt hat. Nebenbei gelernt: ein Ziel auf der Kommandozeile
+# (`electron-builder --linux AppImage`) ersetzt die Zielliste **samt** Architekturen und baut nur
+# für den Host - wer beide will, nimmt `npm run dist:linux`.
+appImage:
+  artifactName: ${productName}-${version}-${arch}.${ext}
 
 # Flatpak ist die einzige Auslieferungsform, in der die eingebettete Laufzeit aus Phase 7a nicht
 # Komfort ist, sondern Voraussetzung: in der Sandbox gibt es kein Host-Node, und

@@ -64,6 +64,11 @@ extraResources:
     to: templates
   - from: resources/licenses
     to: licenses
+  # Der Lizenztext der App selbst, aus der einen Datei im Wurzelverzeichnis - nicht als zweite Kopie
+  # unter resources/licenses. GPLv3 §4 verlangt, dass er die Binärdatei begleitet, und `licenses/`
+  # ist das Verzeichnis, in dem ihn jemand sucht; `resources/licenses/README.txt` verweist darauf.
+  - from: LICENSE
+    to: licenses/QuartzControl-LICENSE.txt
   # Das Benutzerhandbuch als gebaute Website (npm run build:handbook; 437 Dateien / 34,9 MB am
   # 2026-09-09, die Zahl wächst mit dem Handbuch). Es
   # reist mit statt als Link, damit es ohne Netz lesbar ist und immer zu der Fassung passt, die

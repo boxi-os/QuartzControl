@@ -28,10 +28,16 @@ const STRINGS = {
     menuQuartzDocs: 'Quartz-Dokumentation',
     menuPluginCatalog: 'Plugin-Katalog',
     menuDataFolder: 'Datenordner von QuartzControl öffnen',
+    menuLicenses: 'Lizenzen öffnen',
+    licensesMissingTitle: 'Die Lizenztexte fehlen in dieser Installation.',
+    licensesMissingDetail:
+      'Sie reisen normalerweise mit der App. Eine Neuinstallation bringt sie zurück; online stehen sie unter https://github.com/boxi-os/Quartz-GUI.',
     menuFeedback: 'Rückmeldung senden…',
     feedbackSubject: 'Rückmeldung',
     menuAbout: 'Über QuartzControl',
     aboutDetail: 'Verwaltung für Quartz-Websites',
+    aboutLicense:
+      'Freie Software unter der GNU General Public License, Version 3 oder später.\nQuelltext: https://github.com/boxi-os/Quartz-GUI',
 
     orphanTitle: 'Laufende Server gefunden',
     orphanMessage: 'Von einer vorherigen Sitzung laufen noch Dev-Server im Hintergrund:',
@@ -266,10 +272,16 @@ const STRINGS = {
     menuQuartzDocs: 'Quartz documentation',
     menuPluginCatalog: 'Plugin catalog',
     menuDataFolder: 'Open QuartzControl’s data folder',
+    menuLicenses: 'Open licences',
+    licensesMissingTitle: 'The licence texts are missing from this installation.',
+    licensesMissingDetail:
+      'They normally ship with the app. Reinstalling brings them back; online they are at https://github.com/boxi-os/Quartz-GUI.',
     menuFeedback: 'Send feedback…',
     feedbackSubject: 'Feedback',
     menuAbout: 'About QuartzControl',
     aboutDetail: 'Manage Quartz websites',
+    aboutLicense:
+      'Free software under the GNU General Public License, version 3 or later.\nSource: https://github.com/boxi-os/Quartz-GUI',
 
     orphanTitle: 'Running servers found',
     orphanMessage: 'Dev servers from a previous session are still running in the background:',

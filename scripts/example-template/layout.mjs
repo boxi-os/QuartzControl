@@ -53,6 +53,23 @@ export const LAYOUT_CONFIG = {
       direction: 'row',
       wrap: 'nowrap',
       gap: '0.5rem'
+    },
+    // The two boxes under the text - backlinks and "zuletzt bearbeitet" - as one row rather than
+    // two areas of the grid. The reason is what happens when one of them has nothing to say: the
+    // backlinks component returns `null` on a page nothing links to, but its group wrapper is
+    // built regardless, and as a child of the area that empty wrapper still collects the area's
+    // 1.5rem gap. Measured on the start page: 24px of nothing. Inside one group the two size
+    // against each other, so the one that remains simply takes the row.
+    //
+    // `wrap` because this row is the full width of the text at every breakpoint - on a phone that
+    // is 350px for two boxes, and they belong under each other there. The basis that decides when
+    // it breaks is in aside-backlinks.scss, not here: it is a length in the design system, and
+    // this file has no access to the tokens.
+    'custom-8': {
+      priority: 40,
+      direction: 'row',
+      wrap: 'wrap',
+      gap: '1.5rem'
     }
   },
   byPageType: {

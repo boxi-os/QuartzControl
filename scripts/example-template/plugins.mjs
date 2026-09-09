@@ -9,6 +9,8 @@
 // `priority` (config-loader.ts's buildLayoutForEntries). Priorities go in tens so a later insert
 // has room.
 
+import { MARK_LIGHT, MARK_DARK } from './site-mark.mjs'
+
 export const LAYOUT_BOX_SOURCE = 'github:boxi-os/quartz-layout-box'
 
 // Every instance carries the same name, and it is not a choice: configService.deriveName() takes
@@ -24,19 +26,14 @@ const LAYOUT_BOX_NAME = 'quartz-layout-box'
 
 /* ------------------------------------------------------------------ the site's own mark */
 
-// Inline SVG rather than a file: quartz/static/ travels in no part of a template package (only
-// quartz/static/fonts does), so a logo referenced as a file would resolve to nothing in whatever
-// project imports this. As markup inside the config entry it travels with the `plugins` part.
-// Two variants to exercise the plugin's .img-light/.img-dark switching; a single currentColor mark
-// would also work and is what a real site would probably use.
-// The site mark, one SVG per mode. The two fills are the palette's `secondary` written out as
-// hex, not `var(--secondary)`: this string is an option value in quartz.config.yaml that the
-// layout-box plugin drops into the page as raw HTML, and a CSS variable resolves there but the
-// *dark* copy would then be the light value - the two SVGs are both in the document at all times
-// and switched with `.img-light` / `.img-dark`, so each has to carry its own colour. Change the
-// palette in palette.mjs and these two follow by hand.
-const MARK_LIGHT = `<svg class="img-light" width="26" height="26" viewBox="0 0 26 26" role="img" aria-label=""><rect width="26" height="26" rx="7" fill="#2A4E6C"/><path d="M8 17.5V8.5h3.4c2.3 0 3.8 1.2 3.8 3.1 0 1.4-.8 2.4-2.1 2.8l2.9 3.1h-2.6l-2.5-2.8h-.7v2.8H8Zm2.2-4.6h1.1c1 0 1.6-.5 1.6-1.3s-.6-1.2-1.6-1.2h-1.1v2.5Z" fill="#FCFCFA"/></svg>`
-const MARK_DARK = `<svg class="img-dark" width="26" height="26" viewBox="0 0 26 26" role="img" aria-label=""><rect width="26" height="26" rx="7" fill="#8CB8DA"/><path d="M8 17.5V8.5h3.4c2.3 0 3.8 1.2 3.8 3.1 0 1.4-.8 2.4-2.1 2.8l2.9 3.1h-2.6l-2.5-2.8h-.7v2.8H8Zm2.2-4.6h1.1c1 0 1.6-.5 1.6-1.3s-.6-1.2-1.6-1.2h-1.1v2.5Z" fill="#16171A"/></svg>`
+// The mark is the app's own icon, and it is built rather than pasted: site-mark.mjs reads
+// build/icon-source/quartzcontrol-icon.svg and returns a light and a dark version of it. See there
+// for what the two differ in and why the gradient ids have to differ too.
+//
+// Inline SVG rather than a file. `quartz/static/` does travel in a package since 2026-09-06 (the
+// `static` part, BEFUNDE 5), so a file would work now - but as markup inside the config entry the
+// mark cannot arrive without the entry that references it, and that is one failure mode fewer for
+// something that is on every page of the site.
 
 /**
  * Six instances of quartz-layout-box, one per thing the plugin can do.
@@ -76,25 +73,45 @@ export const LAYOUT_BOXES = [
     // Several pages here are three screens tall, and from the second screen on the bar carried the
     // one name the reader already knew - the site's - while the one they needed was gone.
     //
-    // Why a layout box and not a second instance of `article-title`: that component renders an
-    // `h1`, and a page has one of those. This renders a `span` that is `aria-hidden`, which is the
-    // honest shape - it is a visual echo of a heading that is still in the document, not a second
-    // heading. The exchange itself is in nav-header.scss; it is scroll-driven CSS with no script,
-    // and in Firefox, which has no scroll timelines, the site name simply stays.
+    // The chapter, in the bar, next to the site name.
+    //
+    // It used to be `{{title}}` - the page's own name - and it was invisible until the h1 scrolled
+    // out, at which point a scroll-driven crossfade traded it against the site name. That worked in
+    // Chromium and WebKit and not in Firefox, which has no scroll timelines and never will, so
+    // since 2026-09-09 the bar has no states: it says the site and the chapter, both all the time.
+    //
+    // `{{frontmatter.section}}` rather than the title, and that is what makes a permanent second
+    // name possible at all. The title would repeat the h1 six lines below it; the chapter never
+    // does, and it answers exactly the question the exchange was built for - not "what am I
+    // reading", which the heading says, but "where in the site is this".
+    //
+    // Why a layout box and not a component: it renders a `span` that is `aria-hidden`, which is the
+    // honest shape for a visual echo. The breadcrumb below carries the same information in a
+    // structure a screen reader can actually use.
     source: LAYOUT_BOX_SOURCE,
     name: LAYOUT_BOX_NAME,
     enabled: true,
     order: 505,
     options: {
-      html: '<span class="bar-page-name" aria-hidden="true">{{title}}</span>',
+      // The chapter rides in an attribute and is painted from there with `content: attr()`, which
+      // looks roundabout and is the only way to survive a page that has no frontmatter at all.
+      //
+      // The plugin leaves a placeholder it cannot resolve standing as literal text
+      // (`resolvePlaceholder` returns undefined, `applyPlaceholders` returns the match) - so with
+      // the value in the element's text, 72 of the 345 built pages showed `{{frontmatter.section}}`
+      // in the bar: every base, canvas, excalidraw, tag page and the 404. There is no fallback
+      // syntax, and CSS cannot test what an element's text says.
+      //
+      // It can test an attribute. `[data-section^="{{"]` is exactly "this page had no frontmatter",
+      // independent of page type, and it hides the box - see nav-header.scss.
+      html: '<span class="bar-page-name" aria-hidden="true" data-section="{{frontmatter.section}}"></span>',
       className: 'layout-box-page-name',
       placeholders: true,
       frontmatterKey: 'layoutBoxPageName'
     },
-    // Priority 30, so the brand group is mark, site name, page name in document order. The last
-    // two share one grid cell (nav-header.scss) rather than standing side by side: they are two
-    // states of the same slot, and a bar that reserves room for both at once is a bar with two
-    // names in it.
+    // Priority 30: the brand group is mark, site name, chapter, in that order in the document and
+    // in three grid columns (nav-header.scss). A page without `section` - the generated listings,
+    // the 404 - renders the span empty, and `:empty` removes it and its separator.
     layout: { position: 'header', priority: 30, group: 'brand' }
   },
   {
@@ -108,12 +125,14 @@ export const LAYOUT_BOXES = [
       file: 'sidebar-note.md',
       title: 'Über dieses Handbuch',
       collapsible: true,
-      collapsed: false,
+      // Closed to begin with. It is a note *about* the handbook, not part of it, and open it was
+      // the first thing on every page of the left column - above the explorer's own heading.
+      collapsed: true,
       className: 'layout-box-note',
       frontmatterKey: 'layoutBoxNote',
       byLang: { en: { file: 'sidebar-note.en.md', title: 'About this handbook' } }
     },
-    layout: { position: 'left', priority: 60, display: 'desktop-only' }
+    layout: { position: 'left', priority: 40, display: 'desktop-only' }
   },
   {
     // Same plugin, different instance, own frontmatterKey - the two-instance pattern from the
@@ -128,7 +147,11 @@ export const LAYOUT_BOXES = [
       frontmatterKey: 'layoutBoxHint',
       byLang: { en: { html: '<p>On a narrow screen the navigation is collapsed at the top.</p>' } }
     },
-    layout: { position: 'left', priority: 15, display: 'mobile-only' }
+    // Under the article, not above it. It sat in the left area, which on a phone is the first thing
+    // between the bar and the text - 45px of explanation before a single line of what the page is
+    // about. It is still `mobile-only`, which is what this instance demonstrates; it just no longer
+    // charges the reader for the demonstration on the way in.
+    layout: { position: 'afterBody', priority: 70, display: 'mobile-only' }
   },
   {
     source: LAYOUT_BOX_SOURCE,
@@ -150,7 +173,7 @@ export const LAYOUT_BOXES = [
         }
       }
     },
-    layout: { position: 'afterBody', priority: 10 }
+    layout: { position: 'afterBody', priority: 30 }
   },
   {
     source: LAYOUT_BOX_SOURCE,
@@ -163,7 +186,7 @@ export const LAYOUT_BOXES = [
       frontmatterKey: 'layoutBoxColophon',
       byLang: { en: { html: '<p>{{siteTitle}} · Language: {{locale}} · This page: <code>{{slug}}</code></p>' } }
     },
-    layout: { position: 'footer', priority: 20 }
+    layout: { position: 'footer', priority: 10 }
   }
 ]
 
@@ -203,9 +226,11 @@ export const PLUGIN_PATCHES = {
   },
   darkmode: { enabled: true, layout: { position: 'header', priority: 40, group: 'toolbar' } },
   'reader-mode': { enabled: true, layout: { position: 'header', priority: 50, group: 'toolbar' } },
-  // Kept, and now doing its actual job: with the toolbar gone from the left sidebar, the spacer is
-  // what holds the mobile strip open above the drawer trigger.
-  spacer: { enabled: true, layout: { position: 'left', priority: 10, display: 'mobile-only' } },
+  // Off since 2026-09-09. Its whole job was to hold the mobile strip open above the drawer trigger
+  // - and there is no strip any more: the trigger is `position: fixed` in the app bar and the
+  // drawer is `position: absolute`, so the left area needs no height on a phone at all. Measured
+  // before: the spacer was 8px of nothing between two 24px gaps.
+  spacer: { enabled: false },
   explorer: {
     enabled: true,
     // `folderDefaultState: 'open'` states the intent and DOES NOT WORK - measured against
@@ -222,9 +247,18 @@ export const PLUGIN_PATCHES = {
     // written up in BEFUNDE.md, and no stylesheet can undo it - the open and the never-touched
     // state share one class name, so CSS cannot tell them apart.
     options: { folderDefaultState: 'open', folderClickBehavior: 'link', useSavedState: true },
-    layout: { position: 'left', priority: 50 }
+    layout: { position: 'left', priority: 30 }
   },
-  'recent-notes': { enabled: true, options: { limit: 5 }, layout: { position: 'left', priority: 70, display: 'desktop-only' } },
+  'recent-notes': {
+    enabled: true,
+    options: { limit: 5 },
+    layout: {
+      position: 'afterBody',
+      priority: 60,
+      group: 'custom-8',
+      groupOptions: { grow: true, shrink: true, basis: '18rem', align: 'stretch' }
+    }
+  },
 
   'table-of-contents': {
     enabled: true,
@@ -233,14 +267,28 @@ export const PLUGIN_PATCHES = {
     // depth rules in aside-toc.scss matched nothing. 6 is the whole range, which is the point of
     // styling all seven levels.
     options: { maxDepth: 6, minEntries: 1, showByDefault: true, collapseByDefault: false },
-    layout: { position: 'right', priority: 10 }
+    layout: { position: 'right', priority: 10, display: 'all' }
   },
-  backlinks: { enabled: true, layout: { position: 'right', priority: 20 } },
-  graph: { enabled: true, layout: { position: 'right', priority: 30, display: 'desktop-only' } },
+  // The two boxes under the text share one area and one group (layout.mjs), so their widths are
+  // settled against each other rather than by the grid. `basis` is what decides when they stop
+  // being two columns: at 18rem each they sit side by side in the 672px text block and go under
+  // each other below roughly 600px, which is the width at which a two-column list of page titles
+  // stops being readable. `stretch` because they now have visible edges - two boxes of different
+  // heights beside each other look like one of them failed to load.
+  backlinks: {
+    enabled: true,
+    layout: {
+      position: 'afterBody',
+      priority: 50,
+      group: 'custom-8',
+      groupOptions: { grow: true, shrink: true, basis: '18rem', align: 'stretch' }
+    }
+  },
+  graph: { enabled: true, layout: { position: 'right', priority: 20, display: 'desktop-only' } },
 
   breadcrumbs: { enabled: true, layout: { position: 'beforeBody', priority: 10, condition: 'not-index' } },
-  'article-title': { enabled: true, layout: { position: 'beforeBody', priority: 20 } },
-  'content-meta': { enabled: true, layout: { position: 'beforeBody', priority: 30 } },
+  'article-title': { enabled: true, layout: { position: 'beforeBody', priority: 30 } },
+  'content-meta': { enabled: true, layout: { position: 'beforeBody', priority: 40 } },
   'note-properties': {
     enabled: true,
     options: {
@@ -274,14 +322,24 @@ export const PLUGIN_PATCHES = {
       excludedProperties: [],
       hidePropertiesView: false
     },
-    layout: { position: 'beforeBody', priority: 40 }
+    layout: { position: 'afterBody', priority: 40 }
   },
-  'tag-list': { enabled: true, layout: { position: 'beforeBody', priority: 50 } },
+  'tag-list': { enabled: true, layout: { position: 'beforeBody', priority: 20 } },
 
   footer: {
     enabled: true,
-    options: { links: { Quartz: 'https://quartz.jzhao.xyz/', 'Layout Box': 'https://github.com/boxi-os/quartz-layout-box' } },
-    layout: { position: 'footer', priority: 10 }
+    // The four projects this site actually stands on: the generator, the app that configures it,
+    // and the two plugins the template itself uses. site-footer.scss lays them out as one wrapping
+    // row, so a fifth would cost nothing.
+    options: {
+      links: {
+        Quartz: 'https://quartz.jzhao.xyz/',
+        QuartzControl: 'https://github.com/boxi-os/QuartzControl',
+        'Layout Box': 'https://github.com/boxi-os/quartz-layout-box',
+        Multilanguage: 'https://github.com/boxi-os/quartz-multilanguage'
+      }
+    },
+    layout: { position: 'footer', priority: 20 }
   },
 
   /* --- transformers: on, with the options this template's content relies on ------------ */

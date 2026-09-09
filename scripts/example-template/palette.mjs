@@ -13,26 +13,38 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { VARIABLE_OVERRIDES } from './variables.mjs'
 
+// Reset in the app on 2026-09-09 and read back from the project's quartz.config.yaml, which is
+// why the greys are now neutral rather than warm and the two accents are a blue and a teal rather
+// than a navy and a sienna. Two values are not the ones that were set there, and in both cases the
+// hue and the saturation are kept and only the lightness moves - it is the same colour, moved far
+// enough to be readable:
+//
+//   tertiary, light   #218C8B -> #1D7B7B   L 33.9 % -> 30 %     3.94:1 -> 4.87:1 on the ground
+//   secondary, dark   #6298C0 -> #699DC3   L 56.9 % -> 58.9 %   4.38:1 -> 4.66:1 on a card
+//
+// The second one is the pair the eye misses: `secondary` cleared 4.5 against the page ground and
+// failed only against `lightgray`, the *card* - and a link inside a callout or a code caption sits
+// on exactly that. Both thresholds are in CHECKS below; everything else came across unchanged.
 export const PALETTE = {
   lightMode: {
     light: '#FCFCFA',        // ground - warm off-white, not paper-white
-    lightgray: '#DEDCD5',    // dividers, card and code backgrounds
-    gray: '#5F5D57',         // meta text, dates, muted labels
-    darkgray: '#33322E',     // body text
+    lightgray: '#DDDDDD',    // dividers, card and code backgrounds
+    gray: '#5F5F5F',         // meta text, dates, muted labels
+    darkgray: '#333333',     // body text
     dark: '#17171A',         // headings, the darkest ink
-    secondary: '#2A4E6C',    // links, the one accent - a deep, slightly grey navy
-    tertiary: '#9C4221',     // link hover, active nav - the warm counterpart, a burnt sienna
+    secondary: '#1463A3',    // links, the one accent - a clear mid blue
+    tertiary: '#1D7B7B',     // link hover, active nav - the counterpart, a dark teal
     highlight: 'rgba(42, 78, 108, 0.10)',  // surface tint behind quoted/active blocks
-    textHighlight: 'rgba(226, 189, 92, 0.45)' // ==mark==
+    textHighlight: 'rgba(226, 189, 92, 0.55)' // ==mark==
   },
   darkMode: {
     light: '#16171A',
-    lightgray: '#2E3036',
-    gray: '#A1A3A8',
-    darkgray: '#D5D7DB',
-    dark: '#F3F4F6',
-    secondary: '#8CB8DA',
-    tertiary: '#E8A56B',
+    lightgray: '#2E2E2E',
+    gray: '#A1A1A1',
+    darkgray: '#DDDDDD',
+    dark: '#FCFCFA',
+    secondary: '#699DC3',
+    tertiary: '#2CAFAD',
     highlight: 'rgba(140, 184, 218, 0.12)',
     textHighlight: 'rgba(140, 184, 218, 0.30)'
   }

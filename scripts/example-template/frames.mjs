@@ -62,21 +62,30 @@ function areas() {
 }
 
 /**
- * Two free areas in `editorial`, side by side under the text - `custom-8` and `custom-9`.
+ * One free area under the text - `custom-8`. It holds "zuletzt bearbeitet" and the backlinks, side
+ * by side, which is why this frame has more component areas than quartz has positions.
  *
- * They carry no slot, which is a statement and not an omission: quartz sorts components into six
- * positions and the page body, so a frame with more component areas than that needs quartz'
- * second key (`layout.group`, see docs/decisions/layout-frames.md). These two are the invitation
- * to use it - place a component in one through "Eigener Bereich" in the frame editor and the
- * Global tab, and it appears there alone. Until then they are empty cells.
+ * **Both keys are needed and they do different things.** `slot` says which of quartz' seven
+ * positions the area draws from - without it the area is a grid cell nothing is ever sorted into,
+ * and it renders empty on every page. `group` is the second key
+ * (docs/decisions/layout-frames.md): a component naming the same group in its own `layout` lands
+ * in this area rather than at the bottom of the slot. Until 2026-09-09 it carried neither, on the
+ * theory that it was an invitation rather than a placement - and it was empty on all 266 pages of
+ * the site, which is what an invitation nobody accepts looks like.
  *
- * Desktop only. An area created in the editor is placed on the breakpoint being edited and stays
- * in the tray on the others, and that is right here too: a phone reading a column of text has no
- * use for two empty half-width boxes in the middle of it.
+ * **One area, not two, and that is the fix for an empty box.** The two boxes sat in `custom-8` and
+ * `custom-9` and looked right - until a page had no backlinks. The backlinks component renders
+ * `null` there (`hideWhenEmpty` is its default), but the group wrapper around it is built anyway,
+ * and an empty flex child of an area still takes the area's 1.5rem gap: measured on the start
+ * page, 24px of nothing between the properties and "zuletzt bearbeitet". As one group the two are
+ * laid out against each other instead of against the grid, so the survivor simply takes the width
+ * (layout.mjs sets the group, plugin-layout-box.scss hides a childless wrapper).
+ *
+ * On all three breakpoints, not desktop only: this is content now, and a phone that drops it loses
+ * the backlinks entirely.
  */
 const EXTRA_AREAS = [
-  { id: 'area-custom-8', name: 'custom-8' },
-  { id: 'area-custom-9', name: 'custom-9' }
+  { id: 'area-custom-8', name: 'custom-8', slot: 'afterBody', group: 'custom-8' }
 ]
 
 const place = (row, col, rowSpan = 1, colSpan = 1) => ({ row, col, rowSpan, colSpan })
@@ -149,139 +158,121 @@ const TABLET_BOX = () => box('100%', 'left', '3rem', fixedSides('6rem', false))
 const MOBILE_BOX = () => box('100%', 'left', '1rem', TWELVE)
 
 /**
+ * The reading grid - used by `editorial` and by `index`.
+ *
+ * These two were separate copies of the same three breakpoints until 2026-09-09, and they drifted
+ * exactly the way two copies do: the right slot was taken out of `editorial` at tablet width and
+ * stayed in `index`, so between 901 and 1200px an article had no table of contents while a folder
+ * page did. Nothing reported that, because each frame on its own looked deliberate.
+ *
+ * A shared function rather than a shared object: `place()` returns fresh objects and a frame is
+ * free to be edited afterwards. And it stays a *function the two call*, not one frame reusing the
+ * other, because the two page types may well diverge again - at which point one of them stops
+ * calling this and says its own placements instead.
+ */
+const readingBreakpoints = () => ({
+  desktop: {
+    // Six rows, not five: row 4 is the free area below the text (EXTRA_AREAS), the full width of
+    // the text column - the two boxes inside it divide it between themselves, as a flex group.
+    rows: 6,
+    cols: 12,
+    rowSizes: ['auto', 'auto', '1fr', 'auto', 'auto', 'auto'],
+    ...DESKTOP_BOX(),
+    placements: {
+      'area-header': place(1, 1, 1, 12),
+      'area-left': place(2, 1, 4, 3),
+      'area-beforeBody': place(2, 4, 1, 6),
+      'area-pageBody': place(3, 4, 1, 6),
+      'area-custom-8': place(4, 4, 1, 6),
+      'area-afterBody': place(5, 4, 1, 6),
+      'area-right': place(2, 10, 4, 3),
+      'area-footer': place(6, 1, 1, 12)
+    }
+  },
+  tablet: {
+    // Seven rows: the free area keeps its own row here too, the full nine columns of the text.
+    rows: 7,
+    cols: 12,
+    rowSizes: ['auto', 'auto', '1fr', 'auto', 'auto', 'auto', 'auto'],
+    ...TABLET_BOX(),
+    placements: {
+      'area-header': place(1, 1, 1, 12),
+      'area-left': place(2, 1, 5, 3),
+      'area-beforeBody': place(2, 4, 1, 9),
+      'area-pageBody': place(3, 4, 1, 9),
+      'area-custom-8': place(4, 4, 1, 9),
+      'area-afterBody': place(5, 4, 1, 9),
+      'area-right': place(6, 4, 1, 9),
+      'area-footer': place(7, 1, 1, 12)
+    }
+  },
+  mobile: {
+    // The right slot sits directly under the header block, not at the bottom: on a phone it is the
+    // table of contents, and an outline one reads *after* the article is not an outline. It stood
+    // in row 6 until 2026-09-09 - below the text and below both free areas - which is why it read
+    // as missing rather than as last.
+    // `left` keeps a row of its own, and it is the row of a component that occupies no space: on a
+    // phone the explorer is a fixed trigger plus an absolutely positioned drawer, and the sidebar
+    // note is desktop-only. The row is therefore `0` rather than `auto`, and base.scss takes the
+    // gap under it back with a negative margin on `beforeBody`.
+    //
+    // Sharing row 1 with the header was tried first and is not expressible: the generated CSS is
+    // `grid-template-areas`, where every cell belongs to exactly one name. Two areas on one cell
+    // produced a template the browser could not resolve - the header ended up at y=7951, 150px
+    // wide, at the bottom of the page. `hidden: true` is the other dead end: it takes the drawer
+    // out of the document along with the area.
+    rows: 8,
+    cols: 12,
+    rowSizes: ['auto', '0', 'auto', 'auto', '1fr', 'auto', 'auto', 'auto'],
+    ...MOBILE_BOX(),
+    placements: {
+      'area-header': place(1, 1, 1, 12),
+      'area-left': place(2, 1, 1, 12),
+      'area-beforeBody': place(3, 1, 1, 12),
+      'area-right': place(4, 1, 1, 12),
+      'area-pageBody': place(5, 1, 1, 12),
+      'area-afterBody': place(6, 1, 1, 12),
+      'area-custom-8': place(7, 1, 1, 12),
+      'area-footer': place(8, 1, 1, 12)
+    }
+  }
+})
+
+/**
  * editorial - the reading frame, used by content pages.
  *
  * Desktop is 3 / 6 / 3: navigation, the text, and the page's own apparatus (table of contents,
  * backlinks, graph). Tablet is 3 / 9 with the apparatus moved below the text. Mobile is one column
  * in reading order: what the page *is* comes before what surrounds it.
  *
- * The only frame of the four with free areas: two half-width cells under the text, on desktop
- * (EXTRA_AREAS). They are the template's own demonstration that a frame may have more areas than
- * quartz has positions.
+ * The geometry itself is `readingBreakpoints()`, shared with `index` - see there for why.
  */
 const editorial = {
   id: 'frame-editorial',
   frameName: 'editorial',
   areas: [...areas(), ...EXTRA_AREAS],
-  breakpoints: {
-    desktop: {
-      // Six rows, not five: row 4 is the pair of free areas below the text (EXTRA_AREAS). Empty,
-      // it still costs one row gap - 2rem between the page body and what follows - and that is
-      // the price of having them stand ready in the editor rather than having to be made.
-      rows: 6,
-      cols: 12,
-      rowSizes: ['auto', 'auto', '1fr', 'auto', 'auto', 'auto'],
-      ...DESKTOP_BOX(),
-      placements: {
-        'area-header': place(1, 1, 1, 12),
-        'area-left': place(2, 1, 4, 3),
-        'area-beforeBody': place(2, 4, 1, 6),
-        'area-pageBody': place(3, 4, 1, 6),
-        'area-custom-8': place(4, 4, 1, 3),
-        'area-custom-9': place(4, 7, 1, 3),
-        'area-afterBody': place(5, 4, 1, 6),
-        'area-right': place(2, 10, 4, 3),
-        'area-footer': place(6, 1, 1, 12)
-      }
-    },
-    tablet: {
-      rows: 6,
-      cols: 12,
-      rowSizes: ['auto', 'auto', '1fr', 'auto', 'auto', 'auto'],
-      ...TABLET_BOX(),
-      placements: {
-        'area-header': place(1, 1, 1, 12),
-        'area-left': place(2, 1, 4, 3),
-        'area-beforeBody': place(2, 4, 1, 9),
-        'area-pageBody': place(3, 4, 1, 9),
-        'area-afterBody': place(4, 4, 1, 9),
-        'area-right': place(5, 4, 1, 9),
-        'area-footer': place(6, 1, 1, 12)
-      }
-    },
-    mobile: {
-      rows: 7,
-      cols: 12,
-      rowSizes: ['auto', 'auto', 'auto', '1fr', 'auto', 'auto', 'auto'],
-      ...MOBILE_BOX(),
-      placements: {
-        'area-header': place(1, 1, 1, 12),
-        'area-left': place(2, 1, 1, 12),
-        'area-beforeBody': place(3, 1, 1, 12),
-        'area-pageBody': place(4, 1, 1, 12),
-        'area-afterBody': place(5, 1, 1, 12),
-        'area-right': place(6, 1, 1, 12),
-        'area-footer': place(7, 1, 1, 12)
-      }
-    }
-  }
+  breakpoints: readingBreakpoints()
 }
 
 /**
  * index - listing pages (folders, tags, bases).
  *
- * Geometrically identical to `editorial`, and that is the point: a folder page keeps the right
- * column so its list of links starts exactly where the article text starts. It stays a separate
- * frame because the two page types are free to diverge again, and because the layout editor keys
- * page types to frames by name.
+ * Geometrically identical to `editorial`, and since 2026-09-09 that is said once rather than
+ * twice: both call `readingBreakpoints()`. A folder page keeps the right column so its list of
+ * links starts exactly where the article text starts. It stays a separate frame because the two
+ * page types are free to diverge again, and because the layout editor keys page types to frames
+ * by name.
  *
  * It used to drop the right slot below desktop, on the assumption that the column was empty there -
  * a listing page has no headings, so no table of contents. Measured on `/formatierung/`, it is not
  * empty: backlinks and the graph live there, and `display: none` at 900 and at 390px took both away
- * from every folder, tag and bases page. The slot now moves below the text, exactly as it does in
- * `editorial`.
+ * from every folder, tag and bases page.
  */
 const index = {
   id: 'frame-index',
   frameName: 'index',
-  areas: areas(),
-  breakpoints: {
-    desktop: {
-      rows: 5,
-      cols: 12,
-      rowSizes: ['auto', 'auto', '1fr', 'auto', 'auto'],
-      ...DESKTOP_BOX(),
-      placements: {
-        'area-header': place(1, 1, 1, 12),
-        'area-left': place(2, 1, 3, 3),
-        'area-beforeBody': place(2, 4, 1, 6),
-        'area-pageBody': place(3, 4, 1, 6),
-        'area-afterBody': place(4, 4, 1, 6),
-        'area-right': place(2, 10, 3, 3),
-        'area-footer': place(5, 1, 1, 12)
-      }
-    },
-    tablet: {
-      rows: 6,
-      cols: 12,
-      rowSizes: ['auto', 'auto', '1fr', 'auto', 'auto', 'auto'],
-      ...TABLET_BOX(),
-      placements: {
-        'area-header': place(1, 1, 1, 12),
-        'area-left': place(2, 1, 4, 3),
-        'area-beforeBody': place(2, 4, 1, 9),
-        'area-pageBody': place(3, 4, 1, 9),
-        'area-afterBody': place(4, 4, 1, 9),
-        'area-right': place(5, 4, 1, 9),
-        'area-footer': place(6, 1, 1, 12)
-      }
-    },
-    mobile: {
-      rows: 7,
-      cols: 12,
-      rowSizes: ['auto', 'auto', 'auto', '1fr', 'auto', 'auto', 'auto'],
-      ...MOBILE_BOX(),
-      placements: {
-        'area-header': place(1, 1, 1, 12),
-        'area-left': place(2, 1, 1, 12),
-        'area-beforeBody': place(3, 1, 1, 12),
-        'area-pageBody': place(4, 1, 1, 12),
-        'area-afterBody': place(5, 1, 1, 12),
-        'area-right': place(6, 1, 1, 12),
-        'area-footer': place(7, 1, 1, 12)
-      }
-    }
-  }
+  areas: [...areas(), ...EXTRA_AREAS],
+  breakpoints: readingBreakpoints()
 }
 
 /**
@@ -434,11 +425,16 @@ export const FRAMES = [editorial, index, focus, drawing]
 /**
  * The project's own breakpoint widths - see docs/decisions/layout-frames.md, finding 3.
  *
- * `mobile` is 800 and not a rounder number because the explorer plugin's own stylesheet hard-codes
- * `@media all and (max-width: 800px)` for its drawer. At the old 720 the two disagreed: between
- * 721 and 800px the explorer was already a hamburger while the frame still called it tablet, so
- * `.desktop-only` components (recent notes, the graph, the sidebar note) were still rendered and
- * `.mobile-only` ones were not. Aligning the frame to the plugin costs nothing and removes the
- * whole 80px band in which the two layouts contradicted each other.
+ * Until 2026-09-09 `mobile` was 800, and not for a design reason: the explorer plugin's own
+ * stylesheet hard-codes `@media all and (max-width: 800px)` for its drawer, so a frame switching
+ * anywhere else left a band in which the two layouts contradicted each other - the explorer
+ * already a hamburger while the frame still called it tablet, `.desktop-only` components (recent
+ * notes, the graph, the sidebar note) rendered and `.mobile-only` ones not. The frame was aligned
+ * to the plugin because the plugin could not be aligned to the frame.
+ *
+ * It can now. `buildQuartzBreakpointCompat` (shared/gridFrameCss.ts) restates the rules of quartz
+ * core *and* of the four community plugins that hard-code 800 - explorer, search, graph,
+ * canvas-page - against whatever widths a project actually sets. So these two numbers are a choice
+ * again rather than someone else's constant.
  */
-export const BREAKPOINT_WIDTHS = { tablet: 1100, mobile: 800 }
+export const BREAKPOINT_WIDTHS = { tablet: 1200, mobile: 900 }

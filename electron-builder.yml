@@ -12,14 +12,16 @@
 # mit Unterstrich, weil Flathub genau diese Form für App-IDs erwartet und electron-builder die
 # appId als Flatpak-App-ID durchreicht.
 #
-# Was der Wechsel weg von `de.holgerborker.quartzcontrol` gekostet hat, gemessen am 2026-09-09 auf
-# der Maschine des Betreuers - klein, aber nicht nichts:
+# Was der Wechsel weg von der alten Bundle-ID `de.<klarname>.quartzcontrol` gekostet hat, gemessen
+# am 2026-09-09 auf der Maschine des Betreuers - klein, aber nicht nichts. (`<klarname>` steht
+# für den bürgerlichen Namen, den `afc18e7` aus der App genommen hat; er gehört nicht in eine
+# Datei, die mitreist. Wer die Messung nachvollziehen will, kennt ihn.)
 #
 #   - Das Wichtigste bleibt: `app.getPath('userData')` hängt am Produktnamen, nicht an der ID,
 #     also bleiben bestehende Profile, wo sie sind (nachgesehen:
 #     `~/Library/Application Support/QuartzControl`).
 #   - Unter macOS bleibt liegen, was *doch* an der ID hängt:
-#     `~/Library/Preferences/de.holgerborker.quartzcontrol.plist` (Größe und letztes Verzeichnis
+#     `~/Library/Preferences/de.<klarname>.quartzcontrol.plist` (Größe und letztes Verzeichnis
 #     des Datei-Dialogs) beginnt unter der neuen ID bei null, und LaunchServices führt weiter
 #     sieben Registrierungen der alten Haupt-ID plus vier Helper-IDs - die Datenbank kennt danach
 #     zwei Programme desselben Namens.

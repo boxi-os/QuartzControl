@@ -25,6 +25,43 @@ const PLUGIN_CATALOG = 'https://github.com/quartz-community'
  * Links auf eine Datei. Ein Pfad im Installationsverzeichnis darf deshalb Leerzeichen enthalten -
  * in die URL geht er Segment für Segment kodiert.
  */
+/**
+ * Wo die Lizenztexte liegen, die mit der App reisen.
+ *
+ * Derselbe Bau wie `handbookRoot()` und aus demselben Grund: Zwei Stellen, die den Pfad selbst
+ * zusammensetzen, laufen auseinander. Was darin liegt, sagt `resources/licenses/README.txt` -
+ * die eigene GPLv3 (aus `LICENSE` im Wurzelverzeichnis, siehe `electron-builder.yml`), dazu git,
+ * Electron und der Verweis auf npm.
+ */
+function licensesRoot(): string {
+  const base = app.isPackaged ? process.resourcesPath : join(app.getAppPath(), 'resources')
+  return join(base, 'licenses')
+}
+
+/**
+ * Öffnet das Verzeichnis mit den Lizenztexten im Dateimanager.
+ *
+ * `shell.openPath` auf ein *Verzeichnis* ist hier richtig, anders als auf eine `.html` (siehe
+ * `openHandbook`): Ein Ordner öffnet den Finder bzw. den Dateimanager, und genau das ist gemeint -
+ * der Nutzer soll sehen, was drinliegt, und sich den Text aussuchen. Fehlen kann das Verzeichnis
+ * nicht: `resources/licenses` liegt im Repo und reist über `extraResources` mit. Wenn es doch
+ * fehlt, ist die Installation unvollständig, und der Nutzer bekommt denselben Satz wie beim
+ * Handbuch statt eines stumm ins Leere laufenden Klicks.
+ */
+async function openLicenses(): Promise<void> {
+  const dir = licensesRoot()
+  if (!existsSync(dir)) {
+    await dialog.showMessageBox({
+      type: 'info',
+      title: mainT('menuLicenses'),
+      message: mainT('licensesMissingTitle'),
+      detail: mainT('licensesMissingDetail')
+    })
+    return
+  }
+  await shell.openPath(dir)
+}
+
 function handbookRoot(): string {
   // Gepackt liegt es neben den anderen extraResources; in der Entwicklung im Repo, damit
   // `npm run dev` denselben Weg nimmt und ihn nicht erst beim Packen jemand ausprobiert.
@@ -169,7 +206,10 @@ function showAbout(): void {
     type: 'info',
     title: mainT('menuAbout'),
     message: `${APP_NAME} ${app.getVersion()}`,
-    detail: `${mainT('aboutDetail')}\n\nElectron ${process.versions.electron}\nChromium ${process.versions.chrome}\nNode ${process.versions.node}`
+    // Die Lizenzzeile steht hier, weil GPLv3 §5 sie für ein interaktives Programm an genau der
+    // Stelle verlangt, an der es ohnehin über sich Auskunft gibt - und weil der Verweis auf den
+    // Quelltext dazugehört: Wer die Binärdatei hat, muss erfahren, wo die Quelle liegt.
+    detail: `${mainT('aboutDetail')}\n\n${mainT('aboutLicense')}\n\nElectron ${process.versions.electron}\nChromium ${process.versions.chrome}\nNode ${process.versions.node}`
   })
 }
 
@@ -273,6 +313,7 @@ function buildMenu(): void {
         { label: mainT('menuPluginCatalog'), click: () => void shell.openExternal(PLUGIN_CATALOG) },
         { type: 'separator' },
         { label: mainT('menuDataFolder'), click: () => void shell.openPath(app.getPath('userData')) },
+        { label: mainT('menuLicenses'), click: () => void openLicenses() },
         ...(isMac
           ? []
           : ([{ type: 'separator' }, { label: mainT('menuAbout'), click: () => showAbout() }] satisfies MenuItemConstructorOptions[]))

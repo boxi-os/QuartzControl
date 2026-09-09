@@ -1,3 +1,20 @@
+/*
+ * QuartzControl - manage Quartz websites
+ * Copyright (C) 2026 boxi-os
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version. It is distributed in the hope that it will be
+ * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for details: `LICENSE` in the
+ * repository root, or <https://www.gnu.org/licenses/>.
+ *
+ * The notice sits on the two entry points rather than on all ~200 source files. A file-by-file
+ * header is the GPL's recommendation, not its requirement - what it asks for is that a recipient
+ * can find the terms, and `LICENSE`, the `license` field in `package.json`, the About dialog and
+ * Hilfe -> Lizenzen all say the same thing. Two hundred copies of this block would be two hundred
+ * places to forget when the year or the address changes.
+ */
 import { app, BrowserWindow, dialog, shell, nativeImage } from 'electron'
 import { existsSync } from 'fs'
 import { homedir } from 'os'

@@ -1,141 +1,138 @@
 # QuartzControl
 
-Eine Desktop-App zum Verwalten von [Quartz-5](https://quartz.jzhao.xyz/)-Websites: Konfiguration,
-Gestaltung, Plugins, Layout, Vorschau, Veröffentlichen und Sicherungen — ohne YAML von Hand und ohne
-Terminal.
+*Auf Deutsch: [README.de.md](README.de.md)*
 
-Quartz macht aus einem Ordner voller Markdown-Dateien eine Website. Das ist die gute Nachricht. Die
-weniger gute: Bis dahin sind eine `quartz.config.yaml`, ein Layout aus verschachtelten Komponenten,
-eine Handvoll Plugins und ein Deploy-Weg einzurichten, und nichts davon erklärt sich beim Ansehen.
-QuartzControl legt eine Oberfläche darüber, die zeigt, was es tut, und die man wieder verlassen
-kann — die Dateien bleiben normale Quartz-Dateien.
+A desktop app for managing [Quartz 5](https://quartz.jzhao.xyz/) websites: configuration, styling,
+plugins, layout, preview, publishing and snapshots — without hand-writing YAML and without a
+terminal.
 
-> **Beta.** Version 1.0.0-beta.1. Läuft auf macOS und Linux; Windows fehlt bewusst (siehe unten).
-> Rückmeldungen sind willkommen — am liebsten als Issue.
+Quartz turns a folder full of Markdown files into a website. That is the good news. The less good
+news: getting there means a `quartz.config.yaml`, a layout of nested components, a handful of
+plugins and a deployment path, and none of it explains itself by looking at it. QuartzControl puts
+a surface on top that shows what it is doing and that you can walk away from again — the files stay
+ordinary Quartz files.
 
-## Was die App kann
+> **Beta.** Version 1.0.0-beta.1. Runs on macOS and Linux; Windows is deliberately absent (see
+> below). Feedback is welcome — an issue is the easiest way.
 
-- **Einrichtung** — Titel, Adresse und Verhalten der Website; den `content/`-Ordner zwischen einem
-  echten Verzeichnis und einem Symlink umschalten (etwa in einen Obsidian-Vault); Übersetzungen.
-- **Gestaltung** — Farben und Schriften, Community-Themes, alle CSS-Variablen mit ihrem
-  Abhängigkeitsgraph, eigenes CSS. Dazu ein Layout-Editor, der die Quartz-Layouts als Raster zeigt,
-  und Frames, die man ziehen statt schreiben kann.
-- **Plugins** — installieren, konfigurieren und sortieren, offizielle wie aus dem Marktplatz. Die
-  Optionen kommen aus den `.d.ts`-Dateien des Plugins, es gibt also keine gepflegte Liste, die
-  veraltet.
-- **Vorlagenpakete** — eine fertige Gestaltung als `.qtpl` exportieren und in ein anderes Projekt
-  einspielen.
-- **Vorschau und Bauen** — Dev-Server starten und stoppen, Build mit Log.
-- **Veröffentlichen** — Zugänge (SFTP, FTP, GitHub, rsync, Ordner) app-weit, Ziele pro Projekt;
-  dazu `quartz sync` und Git-Sync.
-- **Wartung** — Snapshots als eigenes Git-Repo neben dem Projekt, Wiederherstellen einzelner
-  Dateien, Update-Prüfung für Quartz und Plugins.
+## What it does
 
-Mehrere Projekte nebeneinander sind vorgesehen; die App merkt sich für jedes, wo es liegt und wie
-es eingerichtet ist.
+- **Setup** — title, address and behaviour of the site; switch the `content/` folder between a real
+  directory and a symlink (into an Obsidian vault, for instance); translations.
+- **Styling** — colours and fonts, community themes, every CSS variable with its dependency graph,
+  custom CSS. Plus a layout editor that shows Quartz' layouts as a grid, and frames you can drag
+  instead of write.
+- **Plugins** — install, configure and reorder them, official ones and ones from the marketplace.
+  The options come from the plugin's own `.d.ts` files, so there is no curated list to go stale.
+- **Template packages** — export a finished design as a `.qtpl` and apply it to another project.
+- **Preview and build** — start and stop the dev server, build with a log.
+- **Publishing** — connections (SFTP, FTP, GitHub, rsync, folder) app-wide, targets per project;
+  plus `quartz sync` and Git sync.
+- **Maintenance** — snapshots as a git repository of their own beside the project, restoring
+  individual files, update checks for Quartz and plugins.
 
-## Was mitreist
+Several projects side by side are the norm; the app remembers for each one where it lives and how
+it is set up.
 
-Damit ein erster Start nichts voraussetzt, liefert die App aus:
+## What ships with it
+
+So that a first start needs nothing installed, the app carries:
 
 | | |
 | --- | --- |
-| **Node und npm** | Electrons eigene Node-Laufzeit über drei Shims im PATH — es muss also kein Node installiert sein |
-| **git** | nur benutzt, wenn auf dem Rechner keines antwortet; sonst gewinnt das des Systems |
-| **Das Benutzerhandbuch** | rund 100 Seiten in zwei Sprachen, ohne Netz lesbar, aus jedem Bildschirm verlinkt |
-| **Eine Beispielvorlage** | als Reserve, falls beim Anlegen eines Projekts kein Netz da ist |
+| **Node and npm** | Electron's own Node runtime, via three shims on the PATH — no Node installation required |
+| **git** | used only when the machine has none that answers; otherwise the system's own wins |
+| **The user handbook** | around 100 pages in two languages, readable offline, linked from every screen |
+| **An example template** | as a fallback, for when there is no network while creating a project |
 
 ## Installation
 
-**Noch kein Release.** Die erste Fassung wird als DMG und zip für macOS (arm64 und x64), als
-AppImage und deb für Linux (arm64 und x86_64) und als Flatpak erscheinen und dann unter
-[Releases](https://github.com/boxi-os/QuartzControl/releases) liegen. Bis dahin führt der Weg über
-[Selbst bauen](#selbst-bauen).
+**No release yet.** The first one will ship as DMG and zip for macOS (arm64 and x64), as AppImage
+and deb for Linux (arm64 and x86_64) and as a Flatpak, and will then live under
+[Releases](https://github.com/boxi-os/QuartzControl/releases). Until then the way in is
+[Building from source](#building-from-source).
 
-Die zwei Hinweise darunter gelten für die fertigen Pakete wie für einen eigenen Bau.
+The two notes below apply to the finished packages and to your own build alike.
 
-**macOS:** Die App ist nicht signiert — es gibt kein Developer-ID-Zertifikat. Beim ersten Start
-verweigert Gatekeeper sie deshalb. Entweder einmal über das Kontextmenü öffnen (Rechtsklick →
-Öffnen) oder:
+**macOS:** the app is unsigned — there is no Developer ID certificate. Gatekeeper will therefore
+refuse the first launch. Either open it once from the context menu (right-click → Open) or:
 
 ```
 xattr -dr com.apple.quarantine /Applications/QuartzControl.app
 ```
 
-**Linux:** AppImage ausführbar machen und starten, oder das deb installieren. Der Flatpak braucht
-`--filesystem`-Zugriff auf den Ort, an dem die Projekte liegen, falls das nicht das Home ist.
+**Linux:** make the AppImage executable and run it, or install the deb. The Flatpak needs
+`--filesystem` access to wherever your projects live, if that is not your home directory.
 
-## Selbst bauen
+## Building from source
 
 ```
 npm install
-npm run dev        # Entwicklungsmodus
-npm run build      # Produktionsbau nach out/
-npm run dist:mac   # bzw. dist:linux, dist:flatpak
+npm run dev        # development mode
+npm run build      # production build into out/
+npm run dist:mac   # or dist:linux, dist:flatpak
 ```
 
-Es gibt keine Testsuite. Was es stattdessen gibt, sind Prüfungen, die je eine Frage beantworten,
-die weder Typcheck noch Build beantworten:
+There is no test suite. What there is instead are checks that each answer one question neither the
+typecheck nor the build answers:
 
 | | |
 | --- | --- |
-| `npm run typecheck` | beide `tsconfig`s |
-| `npm run smoke` | startet den Bau und besucht jeden Bildschirm in zwei Fenstergrößen |
-| `npm run check:i18n` | jeden `t('…')`-Schlüssel gegen beide Sprachdateien, in beide Richtungen |
-| `npm run check:semver` | die Versionsvergleiche des Update-Hinweises |
-| `npm run check:plugin-names` | die Namensbildung gegen Quartz' *eigene* Funktion |
-| `npm run check:handbook` | die Zitate des Handbuchs gegen das, was die App wirklich sagt |
-| `npm run check:runtime` | die eingebettete Laufzeit gegen ein echtes Projekt |
-| `npm run check:tokens` | ob eine CSS-Variable in einer laufenden Seite wirklich etwas bewegt |
+| `npm run typecheck` | both `tsconfig`s |
+| `npm run smoke` | launches the build and visits every screen at two window sizes |
+| `npm run check:i18n` | every `t('…')` key against both locale files, in both directions |
+| `npm run check:semver` | the version comparisons behind the update notice |
+| `npm run check:plugin-names` | the name derivation against Quartz' *own* function |
+| `npm run check:handbook` | the handbook's quotations against what the app actually says |
+| `npm run check:runtime` | the embedded runtime against a real project |
+| `npm run check:tokens` | whether a CSS variable actually moves anything in a running page |
 
-Warum jede davon existiert, steht in [`CLAUDE.md`](CLAUDE.md) neben dem Fehler, der sie erzwungen
-hat.
+Why each of them exists is written in [`CLAUDE.md`](CLAUDE.md), next to the bug that forced it.
 
-## Warum kein Windows
+## Why no Windows
 
-Nicht aus Desinteresse, sondern weil drei Dinge dort anders sind und die App ohne sie nicht das
-täte, was sie verspricht: Verzeichnis-Symlinks brauchen erhöhte Rechte (das ist die
-Obsidian-Vault-Funktion), npm und npx werden über `cmd.exe` gestartet, wo freie Textargumente neu
-interpretiert werden, und für rsync gibt es keine Entsprechung. Ein `win:`-Block in der
-Paketkonfiguration würde einen Installer für eine Fassung erzeugen, die nicht funktioniert.
+Not for lack of interest, but because three things are different there and the app would not do
+what it promises without them: directory symlinks need elevated rights (that is the Obsidian vault
+feature), npm and npx are spawned through `cmd.exe`, where free-text arguments get reinterpreted,
+and there is no equivalent of rsync. A `win:` block in the packaging config would produce an
+installer for a version that does not work.
 
-## Wie das hier entstanden ist
+## How this was built
 
-Ein Hobbyprojekt, aus Spaß und für den eigenen Gebrauch geschrieben — und weil die manuelle
-Konfiguration von Quartz für Einsteiger eine hohe Schwelle ist, die sich senken lässt.
+A hobby project, written for fun and for my own use — and because configuring Quartz by hand is a
+high step for newcomers, and that step can be lowered.
 
-Der Code ist zum größten Teil mit [Claude Code](https://claude.com/claude-code) entstanden; die
-Commits sagen das mit einem `Co-Authored-By`-Eintrag. Die Frage dahinter ist berechtigt: Hat das
-jemand geprüft?
+The code was written mostly with [Claude Code](https://claude.com/claude-code); the commits say so
+with a `Co-Authored-By` line. The question behind that is a fair one: has anyone checked it?
 
-Die Antwort, so gut sie sich geben lässt: Es gibt zehn Review-Runden mit einem zweiten Modell, die
-als Dokumente in [`docs/`](docs/) liegen — mit jedem Befund, seiner Schwere und dem, was daraus
-wurde. Jede Regel in [`CLAUDE.md`](CLAUDE.md) steht neben dem Experiment, das sie erzwungen hat, und
-die Messungen dazu in [`docs/decisions/`](docs/decisions/). Es gilt die Arbeitsregel, dass jede Zahl
-in einem Kommentar eine Messung ist oder nicht dort steht, und dass „kann nicht prüfen" nie „alles
-gut" heißt. Wo etwas nicht gemessen werden konnte, steht das dabei.
+The answer, as well as it can be given: there are ten rounds of review by a second model, kept as
+documents in [`docs/`](docs/) — with every finding, its severity, and what came of it. Every rule in
+[`CLAUDE.md`](CLAUDE.md) sits next to the experiment that forced it, and the measurements behind them
+are in [`docs/decisions/`](docs/decisions/). The working rule is that a number in a comment is a
+measurement or it does not belong there, and that "cannot check" never means "all clear". Where
+something could not be measured, it says so.
 
-Das ist keine Garantie, und Fehler sind sicher drin. Aber es ist nachlesbar, und das ist mehr, als
-ein Versprechen wert wäre.
+That is not a guarantee, and there are certainly bugs in here. But it is on the record, which is
+worth more than a promise.
 
-## Verwandte Repos
+## Related repositories
 
-- **[quartz-layout-box](https://github.com/boxi-os/quartz-layout-box)** — Quartz-Plugin, setzt eine
-  HTML-Box ins Layout
-- **[quartz-multilanguage](https://github.com/boxi-os/quartz-multilanguage)** — Quartz-Plugin für
-  mehrsprachige Inhalte: Spracherkennung, Übersetzungsverknüpfung, Sprachumschalter, hreflang,
-  Weiterleitungen
-- **[quartzcontrol-templates](https://github.com/boxi-os/quartzcontrol-templates)** —
-  Vorlagenpakete, die die App beim Anlegen eines Projekts holt
+- **[quartz-layout-box](https://github.com/boxi-os/quartz-layout-box)** — Quartz plugin, renders an
+  HTML or Markdown snippet anywhere in the page layout
+- **[quartz-multilanguage](https://github.com/boxi-os/quartz-multilanguage)** — Quartz plugin for
+  multilingual content: language detection, translation linking, language switcher, hreflang and
+  redirects
+- **[quartzcontrol-templates](https://github.com/boxi-os/quartzcontrol-templates)** — template
+  packages the app fetches when creating a project
 
-Beide Plugins funktionieren unabhängig von QuartzControl in jedem Quartz-5-Projekt.
+Both plugins work in any Quartz 5 project, independently of QuartzControl.
 
-## Lizenz
+## Licence
 
-[GPL-3.0-or-later](LICENSE). Die mitgelieferten fremden Programme behalten ihre eigenen Lizenzen —
-git (GPLv2), Electron (MIT, mit Chromium und Node.js) und npm (Artistic-2.0); die Texte liegen in
-[`resources/licenses/`](resources/licenses/) und sind in der App unter *Hilfe → Lizenzen öffnen*
-erreichbar.
+[GPL-3.0-or-later](LICENSE). The bundled third-party programs keep their own licences — git
+(GPLv2), Electron (MIT, with Chromium and Node.js) and npm (Artistic-2.0); the texts live in
+[`resources/licenses/`](resources/licenses/) and are reachable in the app under *Help → Open
+licences*.
 
-QuartzControl ist ein eigenständiges Werkzeug und weder Teil von Quartz noch mit dem Quartz-Projekt
-verbunden.
+QuartzControl is an independent tool. It is neither part of Quartz nor affiliated with the Quartz
+project.

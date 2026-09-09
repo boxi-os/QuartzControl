@@ -105,7 +105,9 @@ export default {
       secretsBody:
         'Auf diesem System ist kein Schlüsselbund aktiv, deshalb speichert Electron Passwörter und Token nur mit einem fest eingebauten Schlüssel ({{backend}}) — das ist praktisch Klartext. Mit gnome-keyring oder KWallet werden sie richtig geschützt.',
       secretsUnavailable:
-        'Auf diesem System steht keine Verschlüsselung zur Verfügung. Zugangsdaten mit Passwort oder Token lassen sich deshalb nicht speichern.'
+        'Auf diesem System steht keine Verschlüsselung zur Verfügung. Zugangsdaten mit Passwort oder Token lassen sich deshalb nicht speichern.',
+      secretsUnavailableKeyring:
+        'Auf diesem System läuft kein Schlüsselbund ({{backend}}), deshalb steht keine Verschlüsselung zur Verfügung und Zugangsdaten mit Passwort oder Token lassen sich nicht speichern. Mit gnome-keyring oder KWallet werden sie verschlüsselt abgelegt.'
     },
     gettingStarted: {
       title: 'Erste Schritte',

@@ -731,10 +731,20 @@ function EnvironmentBand({ info, onRecheck }: { info: EnvironmentInfo; onRecheck
                 : t('home.environment.secretsTitleUnavailable')}
             </h2>
           </div>
+          {/* The advice - "run gnome-keyring or KWallet" - belongs in the paragraph a Linux user
+              actually reads. It used to sit only in secretsBody, the `available === true` branch,
+              which after the 2026-09-08 measurement is reachable only via
+              setUsePlainTextEncryption() and so is not a state anyone reaches; the branch below it
+              said twice that it does not work and never what to do about it. Which of the two
+              unavailable texts applies is decided by the backend name: it is non-null only on
+              Linux (getSelectedStorageBackend() is a Linux-only API), and only there is a keyring
+              the thing to reach for. */}
           <p className="mt-1.5 text-ui leading-relaxed text-amber-900/80 dark:text-amber-200/80">
             {info.secretStorage.available
               ? t('home.environment.secretsBody', { backend: info.secretStorage.backend ?? '?' })
-              : t('home.environment.secretsUnavailable')}
+              : info.secretStorage.backend
+                ? t('home.environment.secretsUnavailableKeyring', { backend: info.secretStorage.backend })
+                : t('home.environment.secretsUnavailable')}
           </p>
         </div>
       )}

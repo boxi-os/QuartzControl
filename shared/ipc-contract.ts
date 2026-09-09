@@ -1208,12 +1208,19 @@ export interface ToolInfo {
 export interface SecretStorageInfo {
   available: boolean
   /**
-   * Electron's chosen backend. On Linux without a running keyring this is `basic_text`, which
-   * reports as available while encrypting with a hardcoded key - so secrets are effectively
-   * plaintext and the user has to be told. Null where the platform has only one answer.
+   * Electron's chosen backend. On Linux without a running keyring this is `basic_text`, and then
+   * `available` is false too: nothing is stored rather than stored badly. Measured on Electron
+   * 43.4.1 (Debian 13 / GNOME 50, 2026-09-08); the hardcoded-key fallback that still reported
+   * available was 33.x behaviour. Reported next to `available` anyway, because `basic_text` also
+   * means "no desktop detected at all" - an environment the user can fix. Null where the platform
+   * has only one answer. The long form is in `connectionsService.getSecretStorageInfo()`.
    */
   backend: string | null
-  /** True when the backend is real OS-keychain-backed encryption rather than the text fallback. */
+  /**
+   * True when the backend is real OS-keychain-backed encryption rather than the text fallback.
+   * The `backend !== 'basic_text'` half is belt and braces: it is what would still be true if
+   * anyone ever called `setUsePlainTextEncryption()`, which this app does not.
+   */
   secure: boolean
 }
 

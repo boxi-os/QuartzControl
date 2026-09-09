@@ -80,8 +80,11 @@ const STRINGS = {
     openPathOutsideProjects: 'Dieser Pfad liegt außerhalb der registrierten Projekte und wird nicht geöffnet.',
 
     // Credentials
+    // Sagt den Grund *und* den Weg: Ohne den zweiten Satz weiß der Nutzer, dass es nicht geht, aber
+    // nicht, was er dagegen tun kann - und tun kann er etwas, das ist der ganze Grund, warum diese
+    // Antwort von „verschlüsselt" getrennt gemeldet wird.
     secretStorageUnavailable:
-      'Die Zugangsdaten können nicht sicher gespeichert werden, weil der Schlüsselbund des Systems nicht verfügbar ist.',
+      'Die Zugangsdaten können nicht sicher gespeichert werden, weil der Schlüsselbund des Systems nicht verfügbar ist. Unter Linux hilft ein laufender Schlüsselbund, etwa gnome-keyring oder KWallet.',
 
     // Core update
     updateBlockedBySymlink:
@@ -319,7 +322,8 @@ const STRINGS = {
       'QuartzControl called “{{channel}}” with unexpected data — that is a bug in the app, not a result of what you entered. Technical details:',
     openPathOutsideProjects: 'This path is outside the registered projects and will not be opened.',
 
-    secretStorageUnavailable: 'Credentials cannot be stored securely because the system keyring is unavailable.',
+    secretStorageUnavailable:
+      'Credentials cannot be stored securely because the system keyring is unavailable. On Linux, running a keyring such as gnome-keyring or KWallet fixes this.',
 
     updateBlockedBySymlink:
       'The content folder is a symlink, and git cannot write through it. Switch to a real folder under Configuration → Content folder for now and try again.\n\n',

@@ -142,6 +142,17 @@ export async function openHandbook(page?: string): Promise<void> {
 
 // Where a beta tester's report goes. A constant rather than a setting: it is this app's own
 // repository, the same handle as its appId, and a field for it would only invite a typo.
+//
+// This item rests on a state that lives outside the repository and that nothing in the repository
+// can check: **the repository has to be public.** GitHub does not answer "no access" for a private
+// one, it answers 404 - so for the very group this item exists for, everyone who is not a
+// collaborator, the browser opens "This is not the web page you are looking for" and the report
+// arrives nowhere. Measured on 2026-09-09, before the repository was opened: `gh repo view` said
+// `isPrivate: true`, and an unauthenticated `curl` on both this address and the repository itself
+// got 404. The `mailto:` version before it reached everyone; this one is the better form only once
+// the repository is readable without an invitation. Whoever changes the visibility back takes this
+// menu item with it, and the source offer in `resources/licenses/git-LICENSE.txt` does not depend
+// on it any more - that one names an address on purpose.
 const FEEDBACK_URL = 'https://github.com/boxi-os/QuartzControl/issues/new'
 
 // Menu items that need the renderer to go somewhere. The menu lives in the main process and the

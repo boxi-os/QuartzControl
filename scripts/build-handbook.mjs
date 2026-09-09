@@ -54,17 +54,50 @@ export function buildHandbook({ project = HANDBOOK_PROJECT, site = HANDBOOK_SITE
   return measure(out, null)
 }
 
-// Übernimmt eine gebaute Website. Geprüft wird die Quelle, *bevor* out geleert wird - dieselbe
-// Reihenfolge wie oben, und aus demselben Grund: Ein Wurf danach ließe den Aufrufer mit einem
-// halb geräumten Verzeichnis stehen.
+// Liegt `inner` in `outer` (echt darunter, nicht gleich)? Nach resolve() und relative() entschieden,
+// wie `containedPath()` im Vorlagen-Paket: Eine Zeichenkette sagt nicht, ob ein Pfad in einem
+// Verzeichnis liegt, das sagt erst der aufgelöste.
+function liesInside(inner, outer) {
+  const rel = path.relative(outer, inner)
+  return rel !== '' && !rel.startsWith('..') && !path.isAbsolute(rel)
+}
+
+// Übernimmt eine gebaute Website. Geprüft wird alles, was zu prüfen ist, *bevor* out geleert wird -
+// ein Wurf danach ließe den Aufrufer mit einem halb geräumten Verzeichnis stehen. Zu prüfen ist
+// dabei nicht nur, ob die Quelle eine gebaute Website ist, sondern auch, wo sie liegt: `rmSync(out)`
+// ist die zweite Stelle, an der eine Quelle sterben kann, und sie fragt nicht nach.
+//
+// Gemessen am 2026-09-09 an Wegwerf-Verzeichnissen, mit der Prüfung unten und ohne:
+//
+//   Quelle unterhalb des Ziels (`site=<out>/kopie`) → rmSync nimmt die Quelle mit, cpSync wirft
+//     ENOENT: **Ziel und Quelle sind weg**
+//   Ziel unterhalb der Quelle (`out=<site>/kapitel`) → rmSync leert ein Unterverzeichnis der
+//     Quelle, cpSync wirft "Cannot copy ... to a subdirectory of self"
+//
+// Der erste Fall ist keine erfundene Handbewegung: `QUARTZCONTROL_HANDBOOK_SITE=resources/handbook/<kopie>`
+// ist genau das, was der Kopf dieser Datei als "hilft nicht" beschreibt, nur mit der Variable
+// dazugesetzt. Beide enden jetzt in einem Satz, der sagt warum, und beide Verzeichnisse bleiben.
 function takeHandbook(site, out) {
   const from = path.resolve(site)
+  const to = path.resolve(out)
   if (!fs.existsSync(path.join(from, 'index.html'))) {
     throw new Error(`Keine gebaute Website in ${from} - dort fehlt index.html`)
   }
+  if (liesInside(from, to)) {
+    throw new Error(
+      `QUARTZCONTROL_HANDBOOK_SITE (${from}) liegt im Ausgabeverzeichnis ${to}, das übernommen wird - ` +
+        'das Leeren des Ziels nähme die Quelle mit. Die gebaute Website muss außerhalb liegen.'
+    )
+  }
+  if (liesInside(to, from)) {
+    throw new Error(
+      `Das Ausgabeverzeichnis ${to} liegt in QUARTZCONTROL_HANDBOOK_SITE (${from}) - ` +
+        'das Leeren des Ziels nähme einen Teil der Quelle mit.'
+    )
+  }
   // Zeigt QUARTZCONTROL_HANDBOOK_SITE auf das Ziel selbst, ist nichts zu kopieren; ohne diesen
   // Fall würde das rmSync die Quelle mitnehmen.
-  if (path.resolve(out) !== from) {
+  if (to !== from) {
     fs.rmSync(out, { recursive: true, force: true })
     fs.cpSync(from, out, { recursive: true })
   }

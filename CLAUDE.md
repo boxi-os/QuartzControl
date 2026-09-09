@@ -539,6 +539,21 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   Messungen in [`navigation-and-pages.md`](docs/decisions/navigation-and-pages.md).
 - **Ein Lesepfad legt nie `.quartz-gui/` an.** `quartzGuiPath()` zum Lesen, `quartzGuiDir()` zum
   Schreiben.
+- **`.quartz-gui/` und `Quartz-GUI:managed:` sind Namen auf fremder Platte und bleiben, wie sie
+  sind.** Beide tragen den alten Arbeitstitel des Projekts, und beide stehen nicht in diesem Repo,
+  sondern in den Projekten der Nutzer: das Verzeichnis mit Snapshots, Deploy-Manifesten,
+  authored-frames, Logs und Locale-Baselines, die Marker in deren `custom.scss`. Am 2026-09-09
+  nachgezählt: 121 der 161 Vorkommen des alten Namens im Baum sind das Verzeichnis, und allein auf
+  dieser Maschine hängen fünf echte Projekte daran. Umbenennen hieße, jeden bestehenden Zustand zu
+  verwaisen; es lesbar zu halten hieße, beide Namen zu lesen — dauerhaft, für einen Namen, den
+  niemand sieht. Dieselbe Regel wie beim `.qtpl`-Marker: **ein Bezeichner, den ein anderer Rechner
+  schon geschrieben hat, ist ein Format und keine Schreibweise.** Wer den einen ändert, ändert auch
+  `scripts/build-example-template.mjs` (dieselben Marker) und `scripts/example-template/`
+  (`Quartz-GUI:syntax:`) — und braucht eine Migration.
+  Der Rest ist am 2026-09-09 nachgezogen: `name` in `package.json` (`quartz-gui` →
+  `quartzcontrol`, also auch deb-Paket und Linux-Binärdatei), die Repo-URLs, eine DOM-Id. Die
+  Review- und Entscheidungsdokumente behalten den alten Namen, wo sie eine Messung protokollieren —
+  sie festzuhalten ist ihr Zweck.
 - **JSON-Stores nur über `jsonStore.ts`**: atomar schreiben, Unlesbares beiseitelegen statt
   überschreiben.
 - **Was nur ein Kindprozess beantworten kann, wird auch dort gemessen.** Die eingebettete Laufzeit,

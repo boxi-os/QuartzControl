@@ -4,7 +4,7 @@ Lizenzen
 QuartzControl selbst steht unter der GNU General Public License, Version 3 oder später
 (GPL-3.0-or-later). Der vollständige Text liegt in diesem Verzeichnis als
 `QuartzControl-LICENSE.txt`; der Quelltext der Fassung, die Sie gerade benutzen, liegt unter
-https://github.com/boxi-os/Quartz-GUI.
+https://github.com/boxi-os/QuartzControl.
 
 Diese App liefert daneben drei fremde Programme mit. Sie werden nicht in QuartzControl
 hineingebunden, sondern als eigene Prozesse gestartet - jedes behält also seine eigene Lizenz, und

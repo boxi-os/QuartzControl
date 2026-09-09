@@ -153,7 +153,7 @@ export async function openHandbook(page?: string): Promise<void> {
 // the repository is readable without an invitation. Whoever changes the visibility back takes this
 // menu item with it, and the source offer in `resources/licenses/git-LICENSE.txt` does not depend
 // on it any more - that one names an address on purpose.
-const FEEDBACK_URL = 'https://github.com/boxi-os/Quartz-GUI/issues/new'
+const FEEDBACK_URL = 'https://github.com/boxi-os/QuartzControl/issues/new'
 
 // Menu items that need the renderer to go somewhere. The menu lives in the main process and the
 // routes live in a HashRouter, so the only way across is an event the renderer listens for -

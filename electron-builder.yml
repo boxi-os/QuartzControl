@@ -132,8 +132,24 @@ linux:
   # git-Bundle (fetch-git.mjs kennt linux-x64), electron-builder lädt die Electron-Binärdatei der
   # Zielarchitektur selbst, `npmRebuild: false` heißt, dass nichts kompiliert wird, und
   # app-builder-lib trennt in toolsets/linux.js ausdrücklich Host- von Zielarchitektur
-  # ("mksquashfs/desktop-file-validate are HOST binaries"). Ein einzelner Lauf geht weiter über
-  # `npm run dist:linux -- --x64`.
+  # ("mksquashfs/desktop-file-validate are HOST binaries").
+  #
+  # Ein einzelner Lauf geht **nicht** über `npm run dist:linux -- --x64`: Das Flag allein baut
+  # beide Architekturen. Gemessen am 2026-09-09 an `computeArchToTargetNamesMap`
+  # (app-builder-lib/out/targets/targetFactory.js) mit dieser Konfiguration und den Zielkarten,
+  # die `Platform.LINUX.createTarget` für die jeweilige Kommandozeile liefert:
+  #
+  #   --linux                      → arm64: AppImage, deb · x64: AppImage, deb
+  #   --linux --x64                → x64: AppImage, deb · arm64: AppImage, deb
+  #   --linux AppImage deb --x64   → x64: AppImage, deb
+  #
+  # Der Grund steht in der Funktion: Die Kommandozeile liefert `--x64` als Karte `{x64: []}`, und
+  # weil darin keine Zielnamen stehen, gilt sie nur als *Vorgabe* für Zielangaben ohne eigene
+  # Architektur (`archs == null ? defaultArchs : asArray(archs)`). Die beiden Einträge unten haben
+  # aber eine eigene, und die gewinnt. Einen einzelnen Lauf gibt es also nur, wenn man die Ziele
+  # mitnennt — dann greift die Regel weiter unten, dass ein Ziel auf der Kommandozeile die Liste
+  # ersetzt, und die Architektur daneben wirkt:
+  # `npm run dist:linux -- AppImage deb --x64`.
   target:
     - target: AppImage
       arch: [arm64, x64]

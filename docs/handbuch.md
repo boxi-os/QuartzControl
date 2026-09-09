@@ -324,8 +324,11 @@ Messung waren sie von Hand ergänzt.
 
 52 Seiten unter `en/`, verknüpft über `translationKey` — derselbe Schlüssel wie auf der deutschen
 Seite, ohne Nummern-Prefix, damit ein späteres Umnummerieren die Paarung nicht anfasst. Die
-Zweisprachigkeit macht `@boxi-os/quartz-multilanguage`, das die Sprache am Ordner erkennt; im Bau
-stehen dann `hreflang`-Verweise in beide Richtungen.
+Zweisprachigkeit macht [`quartz-multilanguage`](https://github.com/boxi-os/quartz-multilanguage),
+eingebunden als `github:boxi-os/quartz-multilanguage` — so steht es in der `quartz.config.yaml` des
+Handbuch-Projekts, und so heißt auch das Paket. Eine npm-Fassung gibt es nicht; die Registry
+antwortet auf beide Namensformen mit 404 (gemessen 2026-09-09). Das Plugin erkennt die Sprache am
+Ordner; im Bau stehen dann `hreflang`-Verweise in beide Richtungen.
 
 **Übersetzt sind auch die Pfade** — aus `4-gestaltung/04-variablen` wird
 `en/4-design/04-variables`, nicht `en/4-gestaltung/04-variablen`. Das ist der Grund für

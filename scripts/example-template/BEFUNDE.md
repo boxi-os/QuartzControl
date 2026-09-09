@@ -1389,6 +1389,19 @@ Profil, `CSS.supports` auf eine Seite geschrieben und die Seite fotografiert:
 
     scroll() false | scroll(root block) false | view() false | @property true
 
+**Am 2026-09-09 wiederholt, an Firefox 155.0.1**, weil die Frage beim Inhaltsverzeichnis wieder
+aufkam (siehe unten). Gleiches Ergebnis, jetzt fünf Abfragen statt vier:
+
+    scroll() NEIN | scroll(root block) NEIN | view() NEIN | view-timeline NEIN | timeline-scope NEIN
+
+**Was dabei auseinanderfiel, und das ist der eigentliche Zugewinn:** „Firefox kann das nicht" gilt
+für die drei Header-Bewegungen, weil sie *reines CSS* sind — und für nichts sonst. Das
+Inhaltsverzeichnis sieht aus wie derselbe Effekt und ist ein anderer: Quartz' TOC-Plugin markiert
+den gelesenen Teil mit einem `IntersectionObserver`, also mit einem **Skript**, das in Firefox
+selbstverständlich läuft (`:has()` ebenso, seit 121 — beides an derselben Seite nachgemessen). Wer
+die beiden zusammenwirft, hält eine Stilfrage für eine Engine-Grenze. Der Grauwert-Wechsel, den
+eine Quartz-Standardseite im Firefox zeigt, ist genau dieser Skript-Weg.
+
 Damit ist es keine Frage der Version und keine der Einstellung: der Header ist dort statisch, mit
 12 px Polster und der Haarlinie, und die Fortschrittslinie fehlt ganz — der `@supports`-Wächter legt
 die beiden Pseudo-Elemente gar nicht erst an, damit nicht eine graue Linie festklebt oder ein
@@ -1580,3 +1593,128 @@ Die Regel steckt in einem verschachtelten Block, weshalb ein erster Sondenlauf s
 `document.styleSheets` nach der Ursache einer berechneten Eigenschaft durchsucht, muss in
 `@media`- und `@layer`-Blöcke hineinsteigen, sonst sieht er nur die oberste Ebene und schließt
 daraus auf die eigene Regel.
+
+### 78. Der Frame-Codegen zählt die Gruppen der Konfiguration — und läuft vor ihr
+
+Phase 3 des Vorlagenbaus schreibt die Frames, Phase 4 die Konfiguration, und der README nennt die
+Reihenfolge als bindend: die Frames tragen sich über die Quartz-CLI selbst in `quartz.config.yaml`
+ein, und Phase 4 schreibt die Datei aus einer eingelesenen Kopie zurück.
+
+Am 2026-09-09 fiel die zweite Hälfte davon auf. `generateFrameJs` erzeugt Code, der zur Laufzeit
+die gerenderten Flex-Gruppen den Bereichen des Frames zuordnet, und dafür liest es **die
+Konfiguration** — wie viele Gruppen je Position zu erwarten sind. Beim Zusammenlegen der zwei
+Kästen unter dem Text von zwei Gruppen auf eine sagte Phase 4 danach „eine", das in Phase 3
+erzeugte `frames.js` aber weiter „zwei", und jeder Bau meldete:
+
+    [editorial] this page renders afterBody 1 group flex(es), which no layout in
+    quartz.config.yaml accounts for (the config as a whole: afterBody 2). Not splitting: […]
+    the group areas stay empty.
+
+Die Meldung ist gut — sie sagt genau das Richtige, und ohne sie wäre der leere Bereich als
+Stilfehler gesucht worden. Nur die Reihenfolge stimmte nicht: **wer die Gruppen ändert, läßt
+Phase 3 danach ein zweites Mal laufen.** Ein `--only 3` allein genügt, die Frames sind sonst
+unverändert.
+
+### 79. Eine Textänderung an allen Notizen wirft die Sortierung um
+
+Die Ordner- und Tag-Listen sortieren nach dem Änderungsdatum, und dieses Projekt hat keins im
+Frontmatter (`created-modified-date` mit `priority: ['frontmatter', 'filesystem']`) — es ist die
+mtime der Datei. Der Content-Ordner ist ein Symlink, also liefert git dazu nichts (Befund 43).
+
+Das Umstellen der 104 Kapiteltitel auf „1 – Einstieg" hat damit jede angefaßte Datei auf dieselbe
+Sekunde gesetzt, und die Listen standen danach in zufälliger Folge: 2.12, 2.4, 2.6, 2.8, 2.11, 2.1.
+Auch der Rückweg über git hilft nicht, denn git speichert keine mtimes — der Commit-Zeitpunkt ist
+für alle Dateien eines Commits derselbe, was dasselbe Problem noch einmal ist.
+
+Die mtimes wurden deshalb nach der Gliederung gestaffelt (kleine Nummer = zuletzt bearbeitet, eine
+Minute je Schritt), womit die Listen der Nummernfolge folgen. Das ist eine Setzung und keine
+Wiederherstellung, und sie ist für eine Vorlage richtig: die Daten dieses Vaults sind Artefakte
+des Schreibprozesses, und was sie zeigen sollen, ist eine Liste in ihrer eigenen Ordnung. Wer
+Datumsangaben braucht, die etwas bedeuten, schreibt sie ins Frontmatter — dann liest das Plugin
+sie von dort und keine Textänderung kann sie mehr bewegen.
+
+### 80. Der Header gibt die Scroll-Timelines auf — und wird dadurch besser lesbar
+
+Befund 70 hat dreimal dasselbe gemessen und jedesmal dieselbe Antwort bekommen: `animation-timeline`
+gibt es in Firefox nicht, auch nicht in 155.0.1, und es ist nicht in Sicht. Daran hingen alle drei
+Bewegungen des Kopfes — Schrumpfen, Titelwechsel, Fortschrittslinie —, jede hinter einem
+`@supports`-Wächter, jede also in einem von drei Browsern abwesend.
+
+Am 2026-09-09 sind sie entfernt. Nicht durch eine schwächere Fassung ersetzt, sondern durch einen
+anderen Mechanismus: **Der Kopf ist eine von zwei Ebenen, und die andere scrollt weg.** `beforeBody`
+— Brotkrumen, Tags, Überschrift, Datum — ist der Titelblock der Seite und geht mit dem Text; die
+Leiste bleibt. Das ist `position: sticky` und sonst nichts, und es sieht in jeder Engine gleich aus
+(Firefox und WebKit nachgemessen: Leiste konstant 69 px, beide Namen sichtbar, Titelzone bei
+y = −658 bzw. −698 nach 600 px Scrollweg).
+
+**Was den permanenten zweiten Namen erst möglich macht, ist der Wechsel des Inhalts.** Vorher stand
+dort `{{title}}`, und der durfte nur erscheinen, wenn die `h1` weg war — sonst hätte die Leiste den
+Seitentitel sechs Zeilen über dem Seitentitel wiederholt. Jetzt steht dort das **Kapitel**
+(`{{frontmatter.section}}`), und das wiederholt nichts: Es beantwortet die Frage, für die der
+Wechsel gebaut war — nicht „was lese ich“, das sagt die Überschrift, sondern „wo bin ich“.
+
+Der Fortschrittsbalken fehlt ersatzlos, und das ist die eigentliche Pointe: Das Inhaltsverzeichnis
+markiert längst kumulativ, wie weit gelesen ist, aus dem `IntersectionObserver` des TOC-Plugins —
+in jedem Browser. Der Balken hat dieselbe Frage ein zweites Mal beantwortet, an der einen Stelle,
+an der die Antwort nicht überall ankam.
+
+### 81. Ein Platzhalter, den das Plugin nicht auflösen kann, bleibt als Text stehen
+
+`applyPlaceholders` in `quartz-layout-box` gibt bei einem unbekannten Namen den Fund selbst zurück
+(`if (value === void 0) return match`), und `resolvePlaceholder` liefert `undefined`, sobald das
+Frontmatter das Feld nicht hat. Eine Rückfall-Syntax gibt es nicht.
+
+Sichtbar wurde das in dem Moment, in dem die Kopfleiste `{{frontmatter.section}}` bekam: **72 der
+345 gebauten Seiten** zeigten daraufhin die Zeichenfolge `{{frontmatter.section}}` in der Leiste —
+jede Base, jedes Canvas, jedes Excalidraw, jede Tag-Seite und die 404. Alles Seiten, die *erzeugt*
+werden und deshalb überhaupt kein Frontmatter haben; Ordnerseiten sind nicht dabei, weil ihr
+`index.md` eines hat.
+
+CSS kann nicht prüfen, was im Text eines Elements steht — ein Attribut aber schon. Der Platzhalter
+steht deshalb in `data-section` und wird mit `content: attr(data-section)` gemalt, und
+`[data-section^="{{"]` ist genau der Zustand „diese Seite hatte kein Frontmatter“: ein Selektor,
+unabhängig vom Seitentyp, der nicht veraltet, wenn ein Typ dazukommt. Die Alternative wäre eine
+Liste aus fünf Slug-Mustern gewesen, die beim nächsten Seitentyp still falsch wird.
+
+Die saubere Lösung läge im Plugin — ein unauflösbarer Platzhalter sollte leer werden, oder es
+sollte `{{frontmatter.section|}}` geben. Das ist ein eigenes Repo und wäre dort ein kleiner Zusatz.
+
+### 82. Ein Bereich, der nichts trägt, kostet trotzdem zwei Rasterrinnen
+
+Die linke Spalte enthält auf dem Telefon nichts, was Platz braucht: Der Explorer ist ein
+`position: fixed`-Knopf in der App-Leiste und eine `position: absolute`-Schublade, die
+Seitennotiz ist `desktop-only`. Trotzdem stand zwischen der Leiste und der ersten Zeile jeder Seite
+ein Block von **135 px**, aufgeschlüsselt:
+
+| | |
+| --- | --- |
+| Explorer | 34 px — Quartz' `flex: 0 0 34px`, Platz für den Knopf, der längst in der Leiste sitzt |
+| Rinne | 24 px |
+| `spacer` | 8 px — dessen einziger Zweck es war, genau diesen Streifen offenzuhalten |
+| Rinne | 24 px |
+| Hinweistext | 45 px — der einzige echte Inhalt |
+
+Der `spacer` ist abgeschaltet, der Hinweis steht jetzt unter dem Artikel (weiter `mobile-only`,
+die Instanz führt weiter vor, was sie vorführen soll), und die Zeile des Bereichs ist `'0'` statt
+`'auto'`.
+
+**Zwei Wege dorthin funktionieren nicht, und beide sehen zuerst richtiger aus:**
+
+*Den Bereich in die Zeile des Kopfes legen.* Das erzeugte CSS ist `grid-template-areas`, und dort
+gehört jede Zelle **genau einem** Namen. Zwei Bereiche auf einer Zelle ergaben eine Vorlage, die
+der Browser nicht auflösen konnte: Der Kopf landete bei y = 7951, 150 px breit, am Fuß der Seite —
+gemessen, nicht vermutet.
+
+*`hidden: true` auf den Bereich.* Das nimmt die Schublade mit aus dem Dokument, und damit die
+Navigation.
+
+Was bleibt, ist die Zeile auf `0` zu stellen — und zu wissen, dass eine Nullzeile ihre **Rinnen
+nicht** mitnimmt: zwei mal 2 rem stehen weiterhin um sie herum. Eine davon holt `base.scss` mit
+einem negativen `margin-block-start` am Block darunter zurück. Der Wert ist als `2rem`
+ausgeschrieben, nicht als Token: Er spiegelt den `rowGap` des Frames, und ein Token würde
+suggerieren, er ließe sich unabhängig davon ändern.
+
+Nebenbei: `rowSizes` nimmt **Strings**. Eine `0` als Zahl lehnt das Schema ab
+(`expected string, received number`) — sichtbar erst als abgebrochener Lauf in Phase 3, nicht beim
+Schreiben.
+

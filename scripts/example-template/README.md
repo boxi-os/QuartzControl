@@ -59,6 +59,7 @@ inverse Umsetzung von allen vieren.
 | `frames.mjs` | Die vier Seitenraster (`editorial`, `index`, `focus`, `drawing`) für je drei Breakpoints |
 | `layout.mjs` | Welcher Seitentyp welches Raster nutzt, und die zwei Flex-Gruppen des Kopfbereichs |
 | `plugins.mjs` | Welches Plugin an, wo es sitzt, mit welchen Optionen — und die sechs Layout-Box-Instanzen |
+| `site-mark.mjs` | Die Marke im Kopf, hell und dunkel — gebaut aus `build/icon-source/quartzcontrol-icon.svg` |
 | `translations.mjs` | Geänderte Formulierungen in Quartz' deutscher Sprachdatei |
 | `presets.mjs` | Zwei gespeicherte Theme-Zusammenstellungen |
 | `style-order.mjs` | Die Ladereihenfolge der Stylesheets — Liste **und** Reihenfolge in einem |
@@ -119,8 +120,8 @@ Neun Rollen je Modus. **Zwei davon lesen sich verkehrt herum:** `light` ist der 
 | `gray` | Sekundärtext — **und die Quelle, aus der jeder Rand eines Bedienelements gemischt wird** |
 | `darkgray` | Fließtext |
 | `dark` | Überschriften |
-| `secondary` | Links, der eine Akzent — ein tiefes Navy |
-| `tertiary` | Link-Hover und aktive Navigation — ein warmes Sienna |
+| `secondary` | Links, der eine Akzent — ein klares Mittelblau |
+| `tertiary` | Link-Hover und aktive Navigation — ein dunkles Petrol |
 | `highlight` | getönte Fläche (mit Alpha) |
 | `textHighlight` | `==Hervorhebung==` (mit Alpha) |
 
@@ -296,8 +297,8 @@ dieselben drei Werte** benutzen; vorher hatte nur `editorial` die 4 rem.
 
 | Frame | Verwendet von | Unterschied |
 | --- | --- | --- |
-| `editorial` | Inhaltsseiten | alle sieben Bereiche belegt |
-| `index` | Ordner, Tags, Bases | rechte Spalte reserviert, aber leer |
+| `editorial` | Inhaltsseiten | alle acht Bereiche belegt |
+| `index` | Ordner, Tags, Bases | **dasselbe Raster** — beide rufen `readingBreakpoints()` |
 | `focus` | 404 | beide Randspalten leer, kein `beforeBody`/`afterBody` |
 | `drawing` | Canvas, Excalidraw | keine Randspalten; Kopf, Titel, Zeichnung, Fußzeile untereinander |
 
@@ -306,16 +307,30 @@ den Frame ihres eigenen Plugins bekommen — und beide damit unbrauchbar waren (
 Die Höhe der Zeichnung ist keine Rasterfrage und steht in `styles/page-canvas.scss`.
 
 Dass die rechte Spalte auch dort steht, wo nichts darin ist, ist die eigentliche Entscheidung: Der
-Text beginnt damit auf jeder Seite an derselben Stelle.
+Text beginnt damit auf jeder Seite an derselben Stelle. Seit dem 2026-09-09 steht sie nicht mehr
+zweimal beschrieben da — `editorial` und `index` rufen dieselbe Funktion, weil zwei Kopien desselben
+Rasters genau einmal auseinanderliefen: die rechte Spalte war am Tablet aus `editorial` genommen
+worden und in `index` geblieben, und zwischen 901 und 1200 px hatte ein Artikel damit kein
+Inhaltsverzeichnis, eine Ordnerseite schon.
 
 Am Tablet fällt die rechte **Spalte** weg und ihr Inhalt rutscht unter den Text — nicht weg. Mobil
 steht alles untereinander.
 
-Die Breakpoints (1100 / 800 px) stehen ebenfalls dort und gelten projektweit. Die 800 sind
-abgeschrieben, nicht gewählt: Das Explorer-Plugin hat `max-width: 800px` in seinem eigenen
-Stylesheet stehen. Bei den früheren 720 gab es ein 80-px-Band, in dem der Explorer schon eine
-Schublade war, während der Frame die Seite noch als Tablet auslegte — mit dem sichtbaren Ergebnis,
-dass `.desktop-only`-Komponenten dort noch standen und `.mobile-only` fehlten.
+Die Breakpoints (1200 / 900 px) stehen ebenfalls dort und gelten projektweit.
+
+Bis zum 2026-09-09 waren es 1100 / 800, und die 800 waren abgeschrieben statt gewählt: Das
+Explorer-Plugin hat `max-width: 800px` in seinem eigenen Stylesheet stehen, ebenso Suche, Graph und
+Canvas. Ein Frame, der woanders umbrach, hinterließ ein Band, in dem der Explorer schon eine
+Schublade war, während der Frame die Seite noch als Tablet auslegte — `.desktop-only`-Komponenten
+standen dort noch, `.mobile-only` fehlten. Der Frame wurde also an das Plugin angeglichen, weil das
+Plugin sich nicht an den Frame angleichen ließ.
+
+Seitdem läßt es sich: `buildQuartzBreakpointCompat` und `buildPluginBreakpointCompat`
+(`shared/gridFrameCss.ts`) sprechen die Regeln von Quartz' Kern **und** der vier Plugins am
+eingestellten Breakpoint neu aus, beide Zustände jeweils vollständig. Gemessen an den Kanten:
+bei 901 px steht der Explorer-Baum, bei 899 der Burger; bei 1201 px trägt die rechte Spalte, bei
+1199 rutscht sie unter den Text. Der Preis steht im Doc-Kommentar dort: Die App bildet fremdes
+Plugin-CSS nach und muß ihm folgen, wenn es sich ändert.
 
 > **Zwei Regeln aus dem Schema:** Ein Frame-Wert darf **kein Komma** enthalten — also kein
 > `minmax(0, 1fr)` und kein `var(--x, fallback)`. (Nur Frame-Werte; eine CSS-Variable darf eins,
@@ -361,10 +376,10 @@ zusätzlich die Schlüssel, die schon unter `layout.byPageType` stehen (BEFUNDE 
 
 | Schlüssel | Ort | Form | Zeigt |
 | --- | --- | --- | --- |
-| `layoutBoxMark` | Kopfbereich | Inline-HTML, SVG hell/dunkel | Bildumschaltung, `{{root}}`, `{{siteTitle}}` |
-| `layoutBoxPageName` | Kopfbereich | Inline-HTML, ein `span` | `{{title}}`, und ein Ort für scroll-getriebenes CSS |
-| `layoutBoxNote` | linke Spalte | `file:` mit `.md`, aufklappbar | Markdown-Snippet, `<details>` |
-| `layoutBoxHint` | linke Spalte | Inline-HTML, nur mobil | zwei Instanzen unabhängig steuerbar |
+| `layoutBoxMark` | Kopfbereich | Inline-HTML, SVG hell/dunkel aus `site-mark.mjs` | Bildumschaltung, `{{root}}`, `{{siteTitle}}` |
+| `layoutBoxPageName` | Kopfbereich | Inline-HTML, ein `span` | `{{frontmatter.section}}` in einem Attribut, gemalt mit `attr()` |
+| `layoutBoxNote` | linke Spalte | `file:` mit `.md`, eingeklappt | Markdown-Snippet, `<details>` |
+| `layoutBoxHint` | nach dem Inhalt | Inline-HTML, nur mobil | `display: mobile-only` an einer Instanz |
 | `layoutBoxCta` | nach dem Inhalt | Inline-HTML, eigene Klasse | `{{frontmatter.…}}` |
 | `layoutBoxColophon` | Fußzeile | Inline-HTML | `{{locale}}`, `{{slug}}` |
 
@@ -380,6 +395,26 @@ fehlendes Snippet.
 > **Bis zum 2026-09-06 eine Einschränkung:** Beim Import überlebte nur **eine** der sechs Instanzen,
 > weil alle denselben abgeleiteten Namen tragen. Seitdem unterscheidet der `plugins`-Baustein sie
 > nach ihrer Position unter Gleichnamigen; die Gegenprobe meldet 6 von 6. Siehe `BEFUNDE.md`.
+
+### 3.7a Die zwei Kästen unter dem Text — `frames.mjs`, `layout.mjs`, `plugins.mjs`
+
+Rückverweise und „zuletzt bearbeitet“ standen bis zum 2026-09-09 in den Randspalten. Sie stehen
+jetzt nebeneinander unter dem Artikel, in **einem** freien Bereich (`custom-8`) mit **einer**
+Flex-Gruppe darin. Drei Dateien sind daran beteiligt, und jede sagt einen Teil:
+
+| Datei | Was sie beiträgt |
+| --- | --- |
+| `frames.mjs` | den Bereich `custom-8` — mit `slot: 'afterBody'` *und* `group: 'custom-8'`. Ohne `slot` ist es eine Rasterzelle, in die nichts einsortiert wird; ohne `group` landet dort der ganze Slot |
+| `layout.mjs` | die Gruppe: `row`, `wrap`, 1,5 rem Abstand |
+| `plugins.mjs` | die zwei Komponenten mit `group: 'custom-8'` und `groupOptions` — `basis: '18rem'` entscheidet, wann sie untereinander rutschen |
+
+**Warum ein Bereich und nicht zwei.** Mit je einem eigenen sah es richtig aus, bis eine Seite keine
+Rückverweise hat. Die Komponente rendert dort `null` (`hideWhenEmpty` ist ihr Standard), aber der
+Wrapper der Gruppe wird trotzdem gebaut — und ein leerer Flex-Sohn kassiert den Abstand des
+Bereichs: 24 px Nichts auf der Startseite, gemessen. In *einer* Gruppe messen sich die zwei
+gegeneinander, der Übriggebliebene nimmt die Zeile, und eine Regel in `base.scss` blendet einen
+Wrapper ohne Inhalt ganz aus (`:not(:has(> div > *))`, denn `:empty` greift nicht — der Wrapper
+*hat* ein Kind, das Kind ist leer).
 
 ### 3.8 Zwei Sprachen — `plugins.mjs`, `styles/nav-language-switcher.scss`
 
@@ -438,7 +473,7 @@ Dateien, deutsch und englisch teilen sich ein Bild je Bereich), und die beiden A
 `Alle-Ansichten.base` / `All-Views.base` tragen `image: cover`.
 
 Die Farben sind absichtlich eng beieinander — gleiches Helligkeitsband, wenig Sättigung, um das
-Navy und das Sienna der Palette herum. Vierzehn volle Farben wären das Lauteste auf einer Website,
+Blau und das Petrol der Palette herum. Vierzehn volle Farben wären das Lauteste auf einer Website,
 deren ganzes Argument Zurückhaltung ist. Ein Motiv, kein Text: Der Titel steht darunter, und ein
 Bild, das ihn wiederholt, ist ein verschenktes Bild.
 
@@ -465,10 +500,11 @@ Alle gemessen, nicht vermutet. Wer die Vorlage erweitert, spart sich damit diese
 | `folderDefaultState: 'open'` | Wirkungslos in Explorer 0.1.0 — das Skript liest nur `localStorage` (BEFUNDE 21) |
 | Plugin-CSS überschreiben, zweiter Teil | Für *Ressourcen*-Stylesheets (`static/resource-style-….css`) gilt die Layer-Regel nicht: ungeschichtet und **nach** `index.css` verlinkt. Bei gleicher Spezifität gewinnt das Plugin (BEFUNDE 32) |
 | Eine Rinne in rem bei zwölf Spalten | Elf Rinnen sind die Mindestbreite des Rasters. 2 rem × 11 + 40 Rand = 392 px passen nicht auf ein 390-px-Telefon (BEFUNDE 34) |
+| Ein Platzhalter ohne Wert | Bleibt bei `quartz-layout-box` als Zeichenfolge stehen, statt zu verschwinden — auf 72 von 345 Seiten sichtbar, sobald er aus dem Frontmatter kommt. In ein `data-`-Attribut legen und mit `attr()` malen, dann kann ein Attributselektor den Fall abfangen (BEFUNDE 81) |
 | Ein `<p>` in einer Titelzeile | Behält seinen Absatzrand und verschiebt den Text gegen das Icon daneben — im Callout waren es 8 px (BEFUNDE 33) |
 | Die Farben eines Syntax-Themas | Sind nicht gemessen, nur weil die Palette es ist. Fünf von neun Token-Farben fielen durch; shiki schreibt sie inline, also hilft nur `!important` auf der Variablen (BEFUNDE 36) |
 | Eine Regel an „das scrollende Element" hängen | Welches das ist, entscheidet der Browser: bei Quartz' Explorer rollt in Chrome die innere Liste, in Firefox der Kasten darum (BEFUNDE 37). Und es ist nicht frei wählbar: Das Plugin sichert und stellt den `scrollTop` der **Liste** wieder her, also muss die Liste die Rolle behalten (BEFUNDE 49) |
-| `animation` mit `animation-timeline` | Wo es keine Scroll-Timelines gibt, bleibt der Kurzbefehl stehen, läuft 0 s und springt mit `fill: both` ans Endbild. `@supports` davor, sonst ist die Ausnahme schlimmer als gar kein Effekt (BEFUNDE 38) |
+| `animation` mit `animation-timeline` | Wo es keine Scroll-Timelines gibt, bleibt der Kurzbefehl stehen, läuft 0 s und springt mit `fill: both` ans Endbild (BEFUNDE 38). Die Vorlage benutzt sie seit dem 2026-09-09 gar nicht mehr: Ein Effekt, den ein Drittel der Browser nicht kennt, ist keine Gestaltung, sondern zwei (BEFUNDE 80) |
 | `initial-value` in `@property` | Muss einheitenfest sein — `rem` lässt Chrome durch und Firefox verwirft die ganze Regel (BEFUNDE 39) |
 | Ein `<summary>` als Bedienelement | Rechnet ohne `box-sizing` als `content-box`, und ein Plugin-`padding` überlebt, wenn man nur die eine Hälfte überschreibt. Der Sprachumschalter wurde so 51 px hoch neben 44-px-Nachbarn (BEFUNDE 27) |
 | Ein zweiter Ausklapp-Pfeil | `base.scss` gibt jedem `<summary>` eine Chevron, das Plugin setzt zusätzlich ein „▾“. Wer eine eigene hinzufügt, hat drei (BEFUNDE 27) |

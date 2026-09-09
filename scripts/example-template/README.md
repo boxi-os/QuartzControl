@@ -34,8 +34,8 @@ Seite verschiebt, zieht `scripts/variable-docs.mjs` (`SEITEN`) und `scripts/chec
 | --- | --- | --- |
 | Notizen, Bases, Canvas, Excalidraw | Vault | eigenes git im Vault, seit 2026-09-05 gepusht nach `boxi-os/Quartz-Example-Vault` (privat) |
 | Stylesheets | Projekt | git im Projekt **und** hier — abgeglichen mit `--sync` |
-| Config, Frames, Presets, Breakpoints | dieses Verzeichnis | Quartz-GUI-Repo; ins Projekt gespielt mit `--only 4` bzw. `--only 3` |
-| Messung, Bootstrap | dieses Verzeichnis | Quartz-GUI-Repo |
+| Config, Frames, Presets, Breakpoints | dieses Verzeichnis | QuartzControl-Repo; ins Projekt gespielt mit `--only 4` bzw. `--only 3` |
+| Messung, Bootstrap | dieses Verzeichnis | QuartzControl-Repo |
 
 Die zweite Zeile ist die einzige, die in beide Richtungen läuft, und sie ist deshalb die einzige,
 die driften kann. Genau das ist am 2026-09-05 passiert: `plugin-layout-box.scss` wurde im Projekt

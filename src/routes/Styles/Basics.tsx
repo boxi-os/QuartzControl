@@ -18,7 +18,7 @@ import ColorPicker from './ColorPicker'
 
 type Theme = QuartzConfig['theme']
 const TYPOGRAPHY_KEYS = ['header', 'body', 'code'] as const
-const GOOGLE_FONTS_DATALIST_ID = 'quartz-gui-google-fonts'
+const GOOGLE_FONTS_DATALIST_ID = 'quartzcontrol-google-fonts'
 
 // The bottom layer of the cascade: the 9 classic colors and 3 font slots Quartz writes straight
 // into :root (quartz/util/theme.ts::joinStyles) - everything the other three tabs do sits on top of

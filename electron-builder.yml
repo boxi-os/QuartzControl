@@ -141,12 +141,20 @@ linux:
   # this if the package is ever handed to someone else.
   maintainer: boxi-os <boxi@borkel.net>
   synopsis: Manage Quartz websites
-  # Without this the installed .desktop file is named after `name` in package.json
-  # (quartz-gui.desktop) while the window Electron opens identifies itself as QuartzControl, so a
-  # desktop environment cannot connect the running window to its launcher: the taskbar shows a
-  # generic icon and "pin to dock" pins nothing. syncDesktopName derives the filename from
-  # `desktopName` in package.json instead, which is electron-builder's own fix for this
-  # (electron-userland/electron-builder#9103) and becomes the default in v27.
+  # Without this the installed .desktop file is named after `name` in package.json while the window
+  # Electron opens identifies itself as QuartzControl, so a desktop environment cannot connect the
+  # running window to its launcher: the taskbar shows a generic icon and "pin to dock" pins
+  # nothing. syncDesktopName derives the filename from `desktopName` in package.json instead, which
+  # is electron-builder's own fix for this (electron-userland/electron-builder#9103) and becomes
+  # the default in v27.
+  #
+  # It stays on although `name` is no longer the reason it was needed. The measurement behind this
+  # paragraph was taken while `name` was still the old working title `quartz-gui`, so the two
+  # halves genuinely disagreed (`quartz-gui.desktop` against a window calling itself
+  # QuartzControl); since `name` became `quartzcontrol` the default would land on the same filename
+  # anyway. Removing the line would make the match depend on two fields staying equal by accident -
+  # and `name` is what the deb package and the Linux binary are called, so it is not a field that
+  # exists to serve the launcher.
   syncDesktopName: true
   # Zwei Architekturen, ausgeschrieben wie bei mac: - die Kurzform `- AppImage` heißt bei
   # electron-builder "Architektur der Baumaschine", und die ist hier eine aarch64-VM, also gab es

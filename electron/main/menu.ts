@@ -142,7 +142,7 @@ export async function openHandbook(page?: string): Promise<void> {
 
 // Where a beta tester's report goes. A constant rather than a setting: it is this app's own
 // repository, the same handle as its appId, and a field for it would only invite a typo.
-const FEEDBACK_URL = 'https://github.com/boxi-os/Quartz-GUI/issues/new'
+const FEEDBACK_URL = 'https://github.com/boxi-os/QuartzControl/issues/new'
 
 // Menu items that need the renderer to go somewhere. The menu lives in the main process and the
 // routes live in a HashRouter, so the only way across is an event the renderer listens for -

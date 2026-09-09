@@ -13,7 +13,7 @@ import { cpSync, existsSync, rmSync } from 'fs'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 import { fetchGit } from './fetch-git.mjs'
-import { buildHandbook, HANDBOOK_OUT } from './build-handbook.mjs'
+import { buildHandbook, HANDBOOK_OUT, HANDBOOK_SITE } from './build-handbook.mjs'
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)))
 
@@ -40,11 +40,25 @@ export default async function beforePack(context) {
   // einem Quartz-Projekt, das nur auf der Maschine des Betreuers liegt (docs/handbuch.md). Deshalb
   // warnen und weiterpacken statt abbrechen: Ein Bau ohne Handbuch ist unvollständig, aber
   // benutzbar, und der Menüpunkt sagt es dem Nutzer statt ins Leere zu greifen.
+  //
+  // Auf einer anderen Baumaschine ist genau das der Normalfall, und zwar still: Gemessen am
+  // 2026-09-09 trug resources/ auf der Debian-VM nur git, licenses, runtime und templates, die
+  // Linux-Pakete vom 2026-09-08 reisten also alle ohne Handbuch. Dort setzt man
+  // QUARTZCONTROL_HANDBOOK_SITE auf eine vom Mac herübergespiegelte, gebaute Website - von Hand
+  // nach resources/handbook zu kopieren hilft nicht, das räumt der catch unten wieder weg.
   try {
     const built = buildHandbook()
-    console.log(`[handbuch] ${built.files} Dateien, ${built.megabytes} MB nach resources/handbook`)
+    // Welcher der beiden Wege gegriffen hat, gehört ins Log: Ein übernommenes Handbuch ist nur so
+    // frisch wie der Ordner, auf den QUARTZCONTROL_HANDBOOK_SITE zeigt, und das sieht man dem
+    // Ergebnis nicht an.
+    const how = built.copiedFrom ? `übernommen aus ${built.copiedFrom}` : 'gebaut'
+    console.log(`[handbuch] ${built.files} Dateien, ${built.megabytes} MB nach resources/handbook (${how})`)
   } catch (err) {
-    console.warn(`[handbuch] NICHT gebaut: ${err.message}`)
+    // Zwei Wege, zwei Sätze: "nicht gebaut" schickt den Leser zum Handbuch-Projekt, "nicht
+    // übernommen" zu der Variablen, die er selbst gesetzt hat.
+    console.warn(
+      HANDBOOK_SITE ? `[handbuch] NICHT übernommen: ${err.message}` : `[handbuch] NICHT gebaut: ${err.message}`
+    )
     // Und dann auch wirklich ohne. `buildHandbook()` wirft, *bevor* es sein Ausgabeverzeichnis
     // leert - ohne diese Zeile nimmt `extraResources` mit, was vom letzten geglückten Lauf noch
     // dort liegt, und die App bekäme ein Handbuch, das eine andere Fassung beschreibt, während

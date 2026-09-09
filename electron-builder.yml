@@ -119,8 +119,15 @@ dmg:
   # (dmgUtil.js, computeBackground), and build/background.png plus its @2x sibling are what it
   # finds. Leaving it unset is *not* "no background" - that is the case that pulls the template in,
   # a grey field with a dashed box and a dashed arrow that sit nowhere near the two positions
-  # below, which is exactly what the 0.1.0 DMG shipped. Drawn by scripts/dmg-background.mjs, which
-  # reads the same two x values from here.
+  # below, which is exactly what the 0.1.0 DMG shipped.
+  #
+  # Drawn by scripts/dmg-background.mjs. It does **not** read these numbers - it holds its own copy
+  # (APP_X, LINK_X, ICON_Y), because reading them would need a YAML parser and js-yaml is only in
+  # this tree transitively, under electron-builder. So the two lists are kept equal by hand and
+  # nothing compares them: whoever moves an x here moves it there too, or the icons land beside the
+  # shapes drawn for them. The window size is *not* a second copy - dmg-builder reads it out of the
+  # background image (dmgUtil.js, `sips` on the folded TIFF), which is why there is no dmg.window
+  # block here.
   contents:
     - x: 140
       y: 180

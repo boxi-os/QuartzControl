@@ -29,6 +29,20 @@ import * as path from 'node:path'
 const APP_DIR = path.resolve(import.meta.dirname, '..')
 
 // The DMG window, and where dmg.contents puts the two icons in it.
+//
+// These are a **second copy** of the positions in `electron-builder.yml`, not a read of them: the
+// script would need a YAML parser, and js-yaml is only in this tree transitively, under
+// electron-builder. Same shape as `theme.ts` holding the ground colour a second time next to
+// `src/index.css` - unavoidable duplication, so both sides point at each other and neither pretends
+// to be the source. Nothing compares them, so if one of the two x values moves, the drawing and the
+// icons drift apart silently. That is the failure this script was written to prevent between a
+// drawing program and a text file; between two text files it is still possible.
+//
+//   APP_X / LINK_X / ICON_Y  ↔  dmg.contents[].x / .y in electron-builder.yml
+//   W / H                    ↔  nothing: dmg-builder reads the window size out of the background
+//                                image itself (dmgUtil.js runs `sips` on the folded TIFF and gets
+//                                the first directory, 540x380), so there is no `dmg.window` block
+//                                to keep in step. Measured 2026-09-09.
 const W = 540
 const H = 380
 const APP_X = 140

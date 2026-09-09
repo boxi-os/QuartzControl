@@ -137,6 +137,10 @@ export default function CustomCss(): JSX.Element {
     [project.path, scss.content, fileDrafts, reloadScss, clearFileDrafts, runCheck]
   )
 
+  // This is the tab's save, and since 2026-09-09 it is the only one: there was a second button in
+  // the toolbar below calling the very same `saveActive(activeTab)`, so the page offered Speichern
+  // twice for one action, once at the top and once in the middle. The page header is where the
+  // other three Stile tabs keep theirs.
   useEffect(() => registerSave(() => saveActive(activeTab)))
 
   useEffect(() => {
@@ -292,9 +296,6 @@ export default function CustomCss(): JSX.Element {
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="ghost" onClick={checkActive} disabled={checking}>
             {checking ? t('styleEditor.check.running') : t('styleEditor.check.checkActive')}
-          </Button>
-          <Button onClick={() => saveActive(activeTab)} disabled={!isDirty(activeTab)}>
-            {t('styleEditor.files.saveActive')}
           </Button>
           <Button variant="ghost" onClick={() => openExternally(activePath)}>
             {t('styleEditor.openExternally')}

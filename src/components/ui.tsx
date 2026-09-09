@@ -370,6 +370,44 @@ export function Card({ children, className = '', ...props }: HTMLAttributes<HTML
   )
 }
 
+/**
+ * The row a form ends with: its save button, and whatever belongs beside it.
+ *
+ * There was no such component, and the result was thirteen save buttons in three different places
+ * with seven different footers between them - `mt-3 flex gap-2`, `mt-2 flex justify-end gap-2`,
+ * `flex items-center justify-end gap-3`, one inside the text field it saves, one in a filter bar
+ * above the list it saves. Scrolling the wrong way to find Speichern is what that costs.
+ *
+ * **The rule, so a new screen does not have to guess.** A page that holds one document behind one
+ * button - Konfiguration, Layout, Stile - puts it in `PageHeader`'s `actions`, at the top: there is
+ * nothing else it could refer to, and those pages are long. A form or a draft *inside* a card ends
+ * with this: the button belongs to the fields above it and to nothing else on the page, and a form
+ * is read downwards.
+ *
+ * `children` is the primary action, `secondary` what sits to its left - Abbrechen, a hint, a
+ * delete. Left and right rather than both on the right, because the two are not peers.
+ */
+export function FormActions({
+  children,
+  secondary,
+  className = ''
+}: {
+  children: ReactNode
+  secondary?: ReactNode
+  className?: string
+}): JSX.Element {
+  // The gap above belongs to the component, but a call site inside a container that already spaces
+  // its children says so with its own `mt-`, and two margins of equal specificity would leave the
+  // winner to the order of the generated stylesheet. Same check as ColorPicker's border.
+  const top = /(^|\s)mt-/.test(className) ? '' : 'mt-3'
+  return (
+    <div className={`${top} flex items-center justify-end gap-3 ${className}`}>
+      {secondary !== undefined && <div className="mr-auto flex items-center gap-3">{secondary}</div>}
+      {children}
+    </div>
+  )
+}
+
 // The heading of a card, with the icon that says what the card is about.
 //
 // It exists because the app had 36 of these written by hand and they disagreed about everything:

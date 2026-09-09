@@ -35,6 +35,7 @@ import {
   Card,
   Field,
   FieldGroup,
+  FormActions,
   InfoNote,
   SegmentedControl,
   Select,
@@ -1075,18 +1076,24 @@ export default function FrameBuilder({
         )}
       </Card>
 
-      <div className="flex items-center justify-end gap-3">
-        {savedNotice && (
-          <span className="text-xs text-emerald-600 dark:text-emerald-400">{t('layoutEditor.frameBuilder.saved')}</span>
-        )}
-        <DevServerRestartHint show={savedNotice && savedWasEdit} />
+      <FormActions
+        className="mt-0"
+        secondary={
+          <>
+            {savedNotice && (
+              <span className="text-xs text-emerald-600 dark:text-emerald-400">{t('layoutEditor.frameBuilder.saved')}</span>
+            )}
+            <DevServerRestartHint show={savedNotice && savedWasEdit} />
+          </>
+        }
+      >
         <Button variant="ghost" onClick={closeEditor}>
           {t('layoutEditor.frameBuilder.closeEditor')}
         </Button>
         <Button onClick={save} disabled={saving}>
           {saving ? t('common.saving') : t('common.save')}
         </Button>
-      </div>
+      </FormActions>
       {!isNewDraft && (
         <p className="text-right">
           <button type="button" onClick={() => remove(editing)} className="text-xs text-red-600 underline dark:text-red-400">

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Folder } from 'lucide-react'
 import { useProject } from '../ProjectLayout'
 import type { ContentProgress, ContentStatus, ContentStrategy } from '@shared/ipc-contract'
-import { Badge, Button, Card, CardHeading, Field, Modal, Select, TextInput } from '../../components/ui'
+import { Badge, Button, Card, CardHeading, Field, FormActions, Modal, Select, TextInput } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 
 export default function ContentFolder(): JSX.Element {
@@ -115,14 +115,14 @@ export default function ContentFolder(): JSX.Element {
               )}
               {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
-              <div className="mt-2 flex justify-end gap-2">
+              <FormActions>
                 <Button variant="ghost" onClick={() => setShowDialog(false)} disabled={busy}>
                   {t('common.cancel')}
                 </Button>
                 <Button type="submit" disabled={busy || !source}>
                   {busy ? t('content.applying') : t('content.apply')}
                 </Button>
-              </div>
+              </FormActions>
             </div>
         </Modal>
       )}

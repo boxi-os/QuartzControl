@@ -1311,7 +1311,6 @@ export default {
       orphansHeading: 'Present, but not loaded',
       include: 'Load it',
       unsaved: 'Unsaved changes',
-      saveActive: 'Save file',
       closeTab: 'Close tab'
     },
     check: {

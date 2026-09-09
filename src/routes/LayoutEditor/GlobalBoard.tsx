@@ -25,7 +25,7 @@ import type {
   QuartzConfig
 } from '@shared/ipc-contract'
 import { DEFAULT_FRAME_BREAKPOINT_WIDTHS, FRAME_BREAKPOINTS, buildFrameBox, buildGridStyle } from '@shared/gridFrameCss'
-import { Badge, Button, Card, Field, SegmentedControl, Select, SettingsSection, TextInput } from '../../components/ui'
+import { Badge, Button, Card, Field, FormActions, SegmentedControl, Select, SettingsSection, TextInput } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import DevServerRestartHint from '../../components/DevServerRestartHint'
 import { ItemCard, PaletteChip, GROUP_COLORS } from './ComponentPill'
@@ -940,14 +940,23 @@ function FrameBreakpoints({
         <Field label={t('layoutEditor.breakpoints.mobile')} className="w-40">
           <TextInput type="number" min={240} max={3840} value={draft.mobile} onChange={(e) => edit('mobile', e.target.value)} />
         </Field>
+      </div>
+      <FormActions
+        secondary={
+          <>
+            {saved && !changed && (
+              <span className="text-xs text-emerald-600 dark:text-emerald-400">{t('layoutEditor.breakpoints.saved')}</span>
+            )}
+            <DevServerRestartHint show={saved && !changed && hasFrames} />
+            {!valid && <span className="text-xs text-red-600 dark:text-red-400">{t('layoutEditor.breakpoints.invalid')}</span>}
+            {error && <span className="text-xs text-red-600 dark:text-red-400">{error}</span>}
+          </>
+        }
+      >
         <Button onClick={save} disabled={saving || !valid || !changed}>
           {saving ? t('common.saving') : t('common.save')}
         </Button>
-        {saved && !changed && <span className="text-xs text-emerald-600 dark:text-emerald-400">{t('layoutEditor.breakpoints.saved')}</span>}
-        <DevServerRestartHint show={saved && !changed && hasFrames} />
-        {!valid && <span className="text-xs text-red-600 dark:text-red-400">{t('layoutEditor.breakpoints.invalid')}</span>}
-        {error && <span className="text-xs text-red-600 dark:text-red-400">{error}</span>}
-      </div>
+      </FormActions>
     </SettingsSection>
   )
 }

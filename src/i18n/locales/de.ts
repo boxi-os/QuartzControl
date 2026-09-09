@@ -1316,7 +1316,6 @@ export default {
       orphansHeading: 'Vorhanden, aber nicht eingebunden',
       include: 'Einbinden',
       unsaved: 'Ungespeicherte Änderungen',
-      saveActive: 'Datei speichern',
       closeTab: 'Tab schließen'
     },
     check: {

@@ -13,7 +13,7 @@ import type {
   Settings as AppSettings
 } from '@shared/ipc-contract'
 import { useAppStore } from '../state/store'
-import { Badge, Button, Card, Field, FieldGroup, SegmentedControl, Select, TextInput } from '../components/ui'
+import { Badge, Button, Card, Field, FieldGroup, FormActions, SegmentedControl, Select, TextInput } from '../components/ui'
 import {
   CONNECTION_KIND_LABEL,
   ConnectionFormFields,
@@ -359,17 +359,20 @@ function ProjectsSection({
           </Button>
         </div>
       </Field>
-      <div className="mt-3 flex items-center gap-3">
+      <FormActions
+        secondary={
+          /* Settings has no PageHeader to hand this to, so the live region sits here - mounted
+             always, filled when there is something to say. */
+          <span role="status" className="text-ui">
+            {saved && <span className="text-green-600 dark:text-green-400">{t('common.saved')}</span>}
+            {save.error && <span className="text-red-600 dark:text-red-400">{save.error}</span>}
+          </span>
+        }
+      >
         <Button onClick={() => save.run()} disabled={save.pending}>
           {save.pending ? t('common.saving') : t('common.save')}
         </Button>
-        {/* Settings has no PageHeader to hand this to, so the live region sits here - mounted
-            always, filled when there is something to say. */}
-        <span role="status" className="text-ui">
-          {saved && <span className="text-green-600 dark:text-green-400">{t('common.saved')}</span>}
-          {save.error && <span className="text-red-600 dark:text-red-400">{save.error}</span>}
-        </span>
-      </div>
+      </FormActions>
     </Section>
   )
 }
@@ -600,14 +603,14 @@ function ConnectionsSection(): JSX.Element {
       {draft ? (
         <div className="mt-4 rounded-[8px] border border-ink/[0.06] p-3 dark:border-ink/10">
           <ConnectionFormFields draft={draft} onChange={setDraft} />
-          <div className="mt-3 flex gap-2">
-            <Button onClick={() => save.run()} disabled={save.pending || connectionDraftIncomplete(draft)}>
-              {save.pending ? t('common.saving') : t('common.save')}
-            </Button>
+          <FormActions>
             <Button variant="ghost" onClick={() => setDraft(null)}>
               {t('common.cancel')}
             </Button>
-          </div>
+            <Button onClick={() => save.run()} disabled={save.pending || connectionDraftIncomplete(draft)}>
+              {save.pending ? t('common.saving') : t('common.save')}
+            </Button>
+          </FormActions>
           {save.error && <p className="mt-2 whitespace-pre-wrap break-words text-xs text-red-600 dark:text-red-400">{save.error}</p>}
         </div>
       ) : (

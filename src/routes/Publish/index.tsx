@@ -15,7 +15,20 @@ import type {
   SaveConnectionInput,
   SavePublishTargetInput
 } from '@shared/ipc-contract'
-import { Badge, Button, Card, CardHeading, Field, InfoNote, PageHeader, SegmentedControl, Select, TextInput, Toggle } from '../../components/ui'
+import {
+  Badge,
+  Button,
+  Card,
+  CardHeading,
+  Field,
+  FormActions,
+  InfoNote,
+  PageHeader,
+  SegmentedControl,
+  Select,
+  TextInput,
+  Toggle
+} from '../../components/ui'
 import {
   CONNECTION_KIND_LABEL,
   ConnectionFormFields,
@@ -739,14 +752,14 @@ export default function Publish(): JSX.Element {
             </div>
           )}
 
-          <div className="mt-3 flex gap-2">
-            <Button onClick={() => saveTargetAction.run()} disabled={saveTargetAction.pending || !targetDraft.name.trim() || !targetReady}>
-              {saveTargetAction.pending ? t('common.saving') : t('common.save')}
-            </Button>
+          <FormActions>
             <Button variant="ghost" onClick={closeTargetDraft}>
               {t('common.cancel')}
             </Button>
-          </div>
+            <Button onClick={() => saveTargetAction.run()} disabled={saveTargetAction.pending || !targetDraft.name.trim() || !targetReady}>
+              {saveTargetAction.pending ? t('common.saving') : t('common.save')}
+            </Button>
+          </FormActions>
           {saveTargetAction.error && (
             <p className="mt-2 whitespace-pre-wrap break-words text-xs text-red-600 dark:text-red-400">{saveTargetAction.error}</p>
           )}
@@ -758,17 +771,17 @@ export default function Publish(): JSX.Element {
           <CardHeading icon={Key} className="mb-2">{t('publish.connectionForm.heading')}</CardHeading>
           <p className="mb-3 text-xs text-text-muted">{t('publish.connectionForm.explainer')}</p>
           <ConnectionFormFields draft={connectionDraft} onChange={setConnectionDraft} />
-          <div className="mt-3 flex gap-2">
+          <FormActions>
+            <Button variant="ghost" onClick={() => setConnectionDraft(null)}>
+              {t('common.cancel')}
+            </Button>
             <Button
               onClick={() => saveConnectionAction.run()}
               disabled={saveConnectionAction.pending || connectionDraftIncomplete(connectionDraft)}
             >
               {saveConnectionAction.pending ? t('common.saving') : t('common.save')}
             </Button>
-            <Button variant="ghost" onClick={() => setConnectionDraft(null)}>
-              {t('common.cancel')}
-            </Button>
-          </div>
+          </FormActions>
           {saveConnectionAction.error && (
             <p className="mt-2 whitespace-pre-wrap break-words text-xs text-red-600 dark:text-red-400">
               {saveConnectionAction.error}

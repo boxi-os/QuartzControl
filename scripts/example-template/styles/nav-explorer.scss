@@ -86,13 +86,28 @@ button.title-button {
   display: none;
 }
 
-@media (max-width: 800px) {
+@media (max-width: 900px) {
+  // Two things here are corrections, and both are the same mistake: assuming a declaration is gone
+  // because this rule does not make it.
+  //
+  // `justify-content: center` - the button also carries `.explorer-toggle`, which sets
+  // `justify-content: space-between` for the desktop heading (a label at one end, a chevron at the
+  // other). `place-items` is the shorthand for `align-items` and `justify-items`, so it never
+  // touched that, and in a single-column grid `space-between` resolves to `start`: the icon sat
+  // against the inline edge, about 8px off centre inside its own hover field.
+  //
+  // `padding: 0` - quartz gives this button `padding: 5px` from a *resource* stylesheet, which is
+  // unlayered and linked after index.css (see body-code.scss for the full finding). The `padding:
+  // 0` on `.explorer-toggle` is a weaker selector and lost, so the 44px button had a 34px content
+  // box and the icon was centred in that.
   .explorer button.mobile-explorer {
     display: grid;
     width: var(--tpl-target);
     min-width: var(--tpl-target);
     min-height: var(--tpl-target);
+    padding: 0;
     place-items: center;
+    justify-content: center;
     border-radius: var(--tpl-radius-md);
 
     &:hover {
@@ -116,7 +131,7 @@ button.title-button {
 //
 // All of it is scoped above 800px, because below that `.collapsed` means something entirely
 // different - the drawer is shut, not the panel - and the two must not meet.
-@media (min-width: 801px) {
+@media (min-width: 901px) {
   .explorer.collapsed {
     flex-basis: auto;
     min-height: 0;
@@ -439,13 +454,27 @@ li:has(> .folder-outer > ul > li > .nav-file-title.active) > .folder-outer > ul.
 //
 // `mobile-no-scroll` is also toggled by the desktop fold button, so every rule below is inside the
 // media query: on a wide screen the class means "the sidebar panel is open" and must draw nothing.
-@media (max-width: 800px) {
+@media (max-width: 900px) {
   // The trigger is pinned into the app bar that nav-page-title.scss makes out of the header. It
   // cannot be moved there in the document - it belongs to the explorer, which is a different grid
   // area - so it is placed over it. The bar reserves exactly this much room at its start.
+  // Centred in the bar rather than pinned 8px from its top. The bar is --tpl-header-h tall and the
+  // button is --tpl-target, so the space above it is half the difference - written as the
+  // subtraction rather than as a number, because the bar's height changes when it shrinks and a
+  // fixed 8px was only right at one of the two.
+  // The explorer keeps quartz' `flex: 0 0 34px` here, and that room is *not* used: the drawer
+  // trigger is `position: fixed` in the app bar (below) and the drawer itself is `position:
+  // absolute`, so nothing of this component is in the flow. The 34px are simply where the left
+  // area sits - and since 2026-09-09 that area shares row 1 of the mobile grid with the header
+  // (frames.mjs), so its 34px lie behind a 61px bar and cost no layout at all.
+  //
+  // Overriding the height from here was tried and does not take: the same declaration comes out of
+  // `buildPluginBreakpointCompat` scoped `.page[data-frame="…"] .explorer.collapsed`, which
+  // outranks anything this file can say about a bare `.explorer`. It does not need to be beaten -
+  // it needs to be somewhere that does not matter, and it is.
   .explorer button.mobile-explorer {
     position: fixed;
-    top: var(--tpl-space-xs);
+    top: calc((var(--tpl-header-h) - var(--tpl-target)) / 2);
     inset-inline-start: var(--tpl-space-xs);
     z-index: 101;
     background: var(--light);

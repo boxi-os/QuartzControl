@@ -252,7 +252,7 @@
 // from the markup - the plugin writes the *label*, and `attr()` only reads the element's own
 // attributes - so the two languages of this template are named here. A third would be a third
 // line, and that is the honest cost of this shortcut.
-@media (max-width: 800px) {
+@media (max-width: 900px) {
   .multilanguage-switcher.style-dropdown > summary {
     padding-inline: var(--tpl-space-xs);
     // Collapses the label the plugin rendered. The chevron is sized in rem and is unaffected.

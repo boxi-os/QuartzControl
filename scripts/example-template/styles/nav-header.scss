@@ -64,11 +64,9 @@
   top: 0;
   z-index: 80;
   background: var(--light);
-  // The padding is what shrinks (base.scss animates it); the 44px controls inside do not, because
-  // a target that changes size while you reach for it is worse than a tall bar.
-  //
-  // No transition: the animation in base.scss is bound to the scroll position, and a transition
-  // on the same property would chase it a frame behind.
+  // Constant, at every scroll position. The padding used to be animated from 12px down to 8 and is
+  // now simply 12 (base.scss): the four controls inside are 44px targets that never shrank anyway,
+  // so the bar was giving up 8px of air around them and gaining nothing that a reader could name.
   padding-block: var(--tpl-header-pad);
 }
 
@@ -131,189 +129,131 @@
 /* --------------------------------------------------- the name the bar carries while you read */
 
 // From the second screen down, the bar carried the one name the reader already had - the site's -
-// and the one they needed was gone: which article is this. The heading is long out of the window
-// by then, and the table of contents in the right column answers a different question (*what* is
+// and the one they needed was gone: which chapter is this. The heading is long out of the window by
+// then, and the table of contents in the right column answers a different question (*what* is
 // coming, not *where am I*).
 //
-// So the brand group holds two names now, and they are two states of one slot rather than two
-// things side by side: the site name until the article's h1 leaves the screen, the page's own name
-// afterwards, exchanged by a crossfade and back again on the way up.
+// The brand group therefore holds two names. Until 2026-09-09 they were two *states* of one slot,
+// sharing a grid cell and exchanged by a scroll-driven crossfade; since the crossfade only existed
+// in two engines of three, they are now two names side by side, both showing all the time. That is
+// possible because the second one is no longer the page title - it is the chapter, which never
+// repeats the h1 below and is therefore not redundant next to the site name.
 //
-// The group becomes a grid for exactly that reason. `display` is the one property Flex.tsx does
-// *not* write inline (it writes flex-direction, flex-wrap and gap), so it is the one that can be
-// overridden from here - and in a grid the two names can share a cell, which in a flex row they
-// cannot. Sharing the cell is what keeps the bar honest at every width: the slot is as wide as the
-// wider of the two, not as wide as both, and whichever name is showing truncates in it.
+// The group stays a grid rather than going back to a flex row. `display` is the one property
+// Flex.tsx does *not* write inline (it writes flex-direction, flex-wrap and gap), so it is the one
+// that can be overridden from here - and a grid is what lets the chapter give up its width first:
+// `auto` for the mark and the site name, which have nothing to give, and the whole remainder to
+// the chapter, which truncates.
 //
 // Selected by content, never by position - `:nth-child` would be right today and wrong the day
 // something joins the group, which is the same rule the brand/toolbar selectors above follow.
 .qgframe-area-header > .flex-component:has(.page-title) {
   display: grid;
-  grid-template-areas: "mark name";
-  // The name column may shrink to nothing before the group asks the bar for more room; `auto` for
-  // the mark, which is a fixed 26px logotype and has nothing to give.
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
+  grid-template-areas: "mark name chapter";
+  // The mark is a fixed 26px logotype and the site name is short; the chapter takes what is left
+  // and is the first to run out of it.
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: 0;
 
   > :has(.site-mark) {
     grid-area: mark;
+    // The logotype sits on the line, not on the baseline of the text beside it.
+    align-self: center;
   }
 
-  > :has(.page-title),
-  > :has(.bar-page-name) {
+  > :has(.page-title) {
     grid-area: name;
+  }
+
+  > :has(.bar-page-name) {
+    grid-area: chapter;
     // Both of these are needed and neither is obvious. Flex.tsx writes `justify-self: center` as an
     // inline style on every wrapper it makes; in a flex row that is ignored, in a grid it is not -
     // and a grid item with a self-alignment other than `stretch` is sized to its *max-content*
     // rather than to its cell. Measured at 390px before this: the cell was 24px wide (Befund 28's
-    // number, unchanged) and the page name sat in it 159px wide, hanging 68px out on either side,
+    // number, unchanged) and the name sat in it 159px wide, hanging 68px out on either side,
     // straight across the logotype. A `width` is an ordinary declaration - no inline style sets one
     // - so it settles the size without fighting the alignment, and then there is nothing left for
     // the centring to distribute. `min-width: 0` keeps the item shrinkable below its content.
     width: 100%;
     min-width: 0;
+    margin-inline-start: 0.5em;
   }
 }
 
-// The page name looks like the site name in the same slot - same size, same weight, same
-// truncation - because it is the same slot. It is not a link: the site name next to it leads home,
-// and this one would lead to the page you are already on.
+// The chapter, beside the site name and clearly under it: smaller, lighter, not bold. The two are
+// a pair - "which site" and "where in it" - and if they looked alike the bar would read as one
+// long title that happens to have a dot in the middle.
+//
+// It carries `{{frontmatter.section}}` in a `data-` attribute and paints it from there
+// (plugins.mjs says why). 264 of the 266 notes have the field; every *generated* page - bases,
+// canvas, excalidraw, tags, the 404 - has no frontmatter at all, and the plugin then leaves the
+// placeholder standing as literal text. `[data-section^="{{"]` is that state, and it is the whole
+// test: no list of page types, no slug prefixes, nothing that goes stale when a type is added.
+//
+// Not a link: the site name next to it goes home, and a chapter link from inside the chapter is a
+// link to where you already are. `aria-hidden` on the span (plugins.mjs) keeps the duplicate out
+// of the accessibility tree - the breadcrumb below says the same thing in a structure a screen
+// reader can use.
 .qgframe-area-header .bar-page-name {
   display: block;
   overflow: hidden;
   min-width: 0;
-  color: var(--dark);
-  font-family: var(--titleFont);
-  font-size: var(--tpl-header-title);
-  font-weight: 700;
-  letter-spacing: -0.015em;
+  color: var(--gray);
+  font-family: var(--headerFont);
+  font-size: var(--tpl-text-sm);
+  font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
-  // The resting state, and the state Firefox keeps: invisible, and out of the way of the pointer.
-  // `opacity` rather than `display`, because the crossfade needs both boxes to exist and to be
-  // measured; `aria-hidden` on the span itself (plugins.mjs) keeps it out of the accessibility
-  // tree in every engine, animated or not.
-  opacity: 0;
   pointer-events: none;
+
+  // No frontmatter on this page, so no chapter to name.
+  &[data-section^="{{"],
+  &[data-section=""] {
+    display: none;
+  }
+
+  &::before {
+    content: "·";
+    margin-inline-end: 0.5em;
+    // The separator belongs to neither name, so it is quieter than both.
+    opacity: 0.6;
+  }
+
+  &::after {
+    content: attr(data-section);
+  }
 }
 
-// The exchange itself. The timeline is the article's own heading: `view-timeline` on it, and the
-// range `exit`, which is precisely "the h1 is leaving the top of the screen" - so the bar changes
-// over exactly while the title one is losing goes out of sight, rather than at a scroll distance
-// picked by hand.
+// Nothing exchanges any more. Until 2026-09-09 the bar swapped the site name for the page name
+// while the h1 scrolled out, driven by a `view-timeline` on the heading and reaching the bar
+// through `timeline-scope` on :root - measured to work identically in Chromium and WebKit and not
+// at all in Firefox, which has no scroll timelines.
 //
-// `timeline-scope` on :root is what makes it reach: a named view timeline is visible to the
-// declaring element's descendants and siblings, and the bar is neither - it lives in a different
-// frame area, two subtrees away. Measured in a standalone reproduction before this was built,
-// because a mechanism that does not cross the two areas would have made the whole feature a script
-// instead: Chrome and WebKit exchange the names identically (0.786 against 0.785 at the midpoint),
-// Firefox moves nothing at all and therefore keeps the site name - the same fallback the shrink,
-// the shadow and the progress line already rest on.
-//
-// Pages without an article heading - the folder and tag listings, the 404, a canvas - name a
-// timeline that does not exist. The animation is then inactive, no keyframe is applied, and both
-// names stay exactly as they are declared above: the site's visible, the page's not.
-:root {
-  timeline-scope: --tpl-article-title;
-}
-
-.article-title {
-  view-timeline: --tpl-article-title block;
-}
-
-@supports (animation-timeline: view()) {
-  .qgframe-area-header .page-title {
-    animation: tpl-bar-name-out linear both;
-    animation-timeline: --tpl-article-title;
-    animation-range: exit;
-  }
-
-  .qgframe-area-header .bar-page-name {
-    animation: tpl-bar-name-in linear both;
-    animation-timeline: --tpl-article-title;
-    animation-range: exit;
-  }
-}
-
-// Both ends written out, for the reason spelled out at tpl-header-progress: with only a `to`
-// keyframe WebKit resolves the underlying value against the already-animated one, and the fade
-// compounds instead of running straight.
-@keyframes tpl-bar-name-out {
-  from {
-    opacity: 1;
-  }
-
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes tpl-bar-name-in {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
+// The bar now says both things at once and neither of them is the h1: the site name, and the
+// chapter the page belongs to (`{{frontmatter.section}}`, plugins.mjs). There is nothing to fade
+// between, because the two never mean the same thing - and a reader who has scrolled past the
+// heading still knows which chapter they are in, which is what the exchange was really for.
 
 /* ------------------------------------------------------- the edge once the page moves */
 
-// Three things happen at the bottom of the bar, and two of them share a box.
+// One thing happens at the bottom of the bar: the fade.
 //
-//   the line    ::before, two hairlines thick. A grey track that fades in as soon as the page
-//               moves - this is what says "text is running underneath me" - with the accent
-//               filling it from the left to say how far down the document you are. One line, two
-//               jobs: the track *is* the unfilled part of the progress line, which is what a
-//               progress line has always looked like. A second bar above or below would be the
-//               fourth horizontal line in the top 60px of the page, and this template does not
-//               have that many lines to spend.
-//   the fade    ::after, below the bar. The article does not vanish at a hard edge, it dissolves
-//               into the page over the last few pixels before it goes under - the same gesture the
-//               scrolling panels make at their own edges (--tpl-fade-mask in base.scss).
+// There were three, and two of them are gone. A grey track fading in and an accent fill following
+// the scroll - a progress line - shared a pseudo-element and a scroll timeline, so they existed in
+// two engines out of three. What replaced them is not a smaller progress line but the answer that
+// the table of contents already gives: it marks how far the page has been read, cumulatively, from
+// a plugin's IntersectionObserver, and that runs everywhere (aside-toc.scss). The bar was saying
+// the same thing a second time, in the one place it could not say it reliably.
 //
-// Track and fill share ::before because there are only two pseudo-elements and the fade needs one.
-// They are two background layers - the accent over the control tone - and the *fill* is the accent
-// layer's `background-size`, animated from 0% to 100%. A transform would have been the other way
-// to do it and cannot share the box: scaling the element scales the track with it.
-//
-// At rest neither is visible: the line's opacity is 0 and the accent layer has no width. What
-// remains is the 1px hairline above, which the bar keeps at every scroll position.
-@supports (animation-timeline: scroll()) {
-  .qgframe-area-header::before {
-    content: "";
-    position: absolute;
-    // The bar is `position: sticky` and therefore the containing block.
-    inset-block-end: calc(-1 * var(--tpl-rule-width));
-    inset-inline: 0;
-    // Twice the hairline, so the edge reads as *thickening* rather than as a new object sitting on
-    // it, and so it covers the hairline exactly instead of hanging under it.
-    height: calc(2 * var(--tpl-rule-width));
-    pointer-events: none;
-    background-image:
-      linear-gradient(var(--secondary), var(--secondary)),
-      linear-gradient(var(--tpl-rule-control), var(--tpl-rule-control));
-    background-repeat: no-repeat;
-    background-size: 0% 100%, 100% 100%;
-    opacity: 0;
-    // Two animations, two ranges, one timeline each. The track's range is much shorter than the
-    // shrink's: the height may take a while to settle, but "something is behind me" is true from
-    // the first pixel. --tpl-space-xs is 8px; `normal` is the whole document.
-    animation: tpl-header-track linear both, tpl-header-progress linear both;
-    animation-timeline: scroll(root block), scroll(root block);
-    animation-range: 0 var(--tpl-space-xs), normal;
-  }
-}
-
-// The fade is deliberately *outside* the guard, and it is the one part of this that Firefox gets:
-// a fixed gradient needs no scroll timeline. It can be static because there is nothing under it to
-// wash out at rest - measured at 1456, 810 and 390px, the first painted thing below the bar starts
-// 32px down on every page, and the fade is shorter than that.
+// The fade is what is left, and it was always the part that worked everywhere: a fixed gradient
+// needs no scroll timeline. It can be static because there is nothing under it to wash out at rest
+// - measured at 1456, 810 and 390px, the first painted thing below the bar starts 32px down on
+// every page, and the fade is shorter than that.
 //
 // It begins one hairline below the bar rather than at its edge, so that it does not paint over the
-// line above: ::after comes after ::before in document order and would otherwise cover its lower
-// pixel with opaque --light.
+// bar's own bottom rule.
 .qgframe-area-header::after {
   content: "";
   position: absolute;
@@ -322,33 +262,6 @@
   height: var(--tpl-page-fade);
   background: linear-gradient(to bottom, var(--light), transparent);
   pointer-events: none;
-}
-
-@keyframes tpl-header-track {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-// Both ends written out, and that is not tidiness. With only a `to` keyframe the start value is
-// the element's own underlying value - and WebKit resolves that underlying value against the
-// *already animated* one, so the progress compounds and the line reads the square of how far you
-// are: 6% at a quarter of the way down, 25% at half, 57% at three quarters. Right at both ends,
-// wrong everywhere in between, which is the one shape of wrong a progress line may not have.
-// Measured at six positions in all three engines. The track's keyframes are written out for the
-// same reason.
-@keyframes tpl-header-progress {
-  from {
-    background-size: 0% 100%, 100% 100%;
-  }
-
-  to {
-    background-size: 100% 100%, 100% 100%;
-  }
 }
 
 /* ------------------------------------------------------------------ the mobile header */
@@ -362,7 +275,7 @@
 // of this element - it belongs to the explorer, three areas further down the document - so it is
 // placed into the bar with `position: fixed` in nav-explorer.scss rather than moved. The two
 // numbers have to agree, which is why both are written in --tpl-target plus one gap.
-@media (max-width: 800px) {
+@media (max-width: 900px) {
   .qgframe-area-header {
     position: sticky;
     top: 0;
@@ -370,7 +283,6 @@
     flex-wrap: nowrap;
     margin-block-start: -20px;
     margin-inline: -20px;
-    padding-block: var(--tpl-space-xs);
     padding-inline: var(--tpl-space-sm) var(--tpl-space-sm);
     padding-inline-start: calc(var(--tpl-target) + var(--tpl-space-sm));
     background: var(--light);
@@ -398,11 +310,11 @@
     display: none;
   }
 
-  // The page name goes with it, and for the same measured reason rather than for symmetry: the
-  // brand group has 62px in this bar, 26 of them the mark and 12 the gap, which leaves the name
-  // 24px - the exact width Befund 28 found for the site name when the fourth control arrived, and
-  // the width at which a name renders as a single letter and an ellipsis. Below 480px the bar is
-  // the logotype and the controls; above it, both names have room and the exchange happens.
+  // The chapter goes with it, and for the same measured reason rather than for symmetry: the brand
+  // group has 62px in this bar, 26 of them the mark and 12 the gap, which leaves 24px - the exact
+  // width Befund 28 found for the site name when the fourth control arrived, and the width at which
+  // a name renders as a single letter and an ellipsis. Below 480px the bar is the logotype and the
+  // controls; above it, both names have room.
   .qgframe-area-header .bar-page-name {
     display: none;
   }
@@ -474,7 +386,7 @@
 
 // In the app bar there is room for three targets and the site name, and not for the word "Suche".
 // The button keeps its 44px, so nothing gets harder to hit - it just stops being a field.
-@media (max-width: 800px) {
+@media (max-width: 900px) {
   .qgframe-area-header .flex-component:has(.search) {
     gap: var(--tpl-space-2xs);
   }

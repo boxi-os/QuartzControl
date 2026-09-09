@@ -83,10 +83,10 @@ ul.toc-content.overflow {
 
   a {
     display: block;
-    // Quartz dims an entry that is not currently on screen to `opacity: 0.35`, which at this size
-    // on this ground measures below 3:1 - the outline's lower half was barely there. The state is
-    // worth keeping; the way it was expressed was not. Opacity goes, and "in view" is said in
-    // colour, weight and the rail instead, all three of which are measured.
+    // Quartz dims a not-yet-read entry to `opacity: 0.35`, which at this size on this ground
+    // measures below 3:1 - the outline's lower half was barely there. The state is worth keeping;
+    // the way it was expressed was not. Opacity goes and the state is said in two measured steps
+    // of the palette instead - see the two rules at the end of this file.
     opacity: 1;
     color: var(--gray);
     text-decoration: none;
@@ -139,11 +139,39 @@ ul.toc-content.overflow {
 
 /* --------------------------------------------------------------- the current section */
 
-// Quartz marks the heading currently in the viewport. Colour, weight and the rail together —
-// the rail is what makes it findable while scrolling.
+/* --------------------------------------------------------------- how far, and where */
+
+// Two states, and the difference between them is what the outline is *for*.
+//
+// Quartz' observer does not mark the current heading. It adds `.in-view` to every entry whose
+// heading is above the bottom of the viewport and removes it from the rest - a cumulative "read
+// this far" mark, not a "you are here". Read the source before styling it (postscript.js): the
+// test is `boundingClientRect.y < rootBounds.height`, not intersection.
+//
+// So it was saying the wrong thing loudly. Colour, weight *and* the rail went on `.in-view`, which
+// on a long page put half the outline in the accent colour and in bold, and half of an outline
+// being marked marks nothing. Quartz' own answer is quieter and right: its default only steps the
+// opacity, 0.35 to 0.75, so the read part is simply darker. That is the grey-value change one sees
+// on a stock Quartz site.
+//
+// Here it is two steps of the palette rather than opacity - `--gray` to `--darkgray`, both
+// measured - because 0.35 of the body colour lands under 3:1 and the lower half of the outline was
+// barely there.
 .toc-content a.in-view {
+  color: var(--darkgray);
+}
+
+// And the current section: the *last* entry carrying the mark. Since the mark is cumulative from
+// the top, that is the one whose successor no longer has it - which CSS can ask for. `:has` is in
+// every engine that runs the observer (Firefox since 121), so this never disagrees with the class
+// it depends on.
+//
+// The rail lives here and not on `.in-view`: one line down the side is a position, forty of them
+// are a border. Weight stays out of it entirely - the entries are 13px, a jump to 600 reflows the
+// column on every scroll.
+.toc-content li:has(+ li > a:not(.in-view)) > a.in-view,
+.toc-content li:last-child > a.in-view {
   color: var(--secondary);
-  font-weight: 600;
   border-inline-start-color: var(--secondary);
 }
 

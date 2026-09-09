@@ -28,8 +28,25 @@ article {
   }
 }
 
-pre {
+// The block that a code block hangs in.
+//
+// `pre` is the scroller (`overflow-x: auto` below), and an absolutely positioned child of a
+// scroller scrolls away with the content - which is exactly what the copy button did: on a wide
+// block it walked off to the left and out of sight, the one direction a copy button must not go.
+// The fix is to take the containing block off `pre` and give it to whatever holds it, which does
+// not scroll. `sticky` was tried first and does not stick horizontally here in any form - with a
+// float, without one, with an explicit inline size (measured in Blink at 1440px).
+//
+// The parent is named through `:has` rather than assumed: six of the seven blocks on the code page
+// sit in a `<figure>`, the seventh in a plain `<div>`, and a rule that only knew about `figure`
+// would have left that one behind.
+:is(figure, div, li, blockquote, td):has(> pre) {
   position: relative;
+}
+
+pre {
+  // Static, so the button's containing block is the element above - see the rule just before this.
+  position: static;
   margin-block: var(--tpl-space-lg);
   padding: var(--tpl-space-md);
   padding-block-start: var(--tpl-space-lg);
@@ -69,6 +86,9 @@ pre {
 
 // The language, from the attribute shiki writes. `::before` rather than markup so it can never
 // end up in a copied selection.
+//
+// Positioned against the block around `pre`, like the copy button and for the same reason - it
+// would otherwise scroll out of the left edge on a wide block.
 pre[data-language]::before {
   content: attr(data-language);
   position: absolute;
@@ -99,6 +119,9 @@ pre[data-language]::before {
 // Measured on the built page: with `border: none` and `background: transparent` written here, the
 // button still reported a 1px border and --light behind it. One descendant in the selector settles
 // it, and `pre` is where this button always is.
+//
+// It stays `absolute`; what changed is what it is absolute *to* - see the `:has(> pre)` rule at
+// the top of this file for why `pre` is no longer the containing block.
 pre .clipboard-button {
   position: absolute;
   inset-block-start: var(--tpl-space-2xs);
@@ -108,7 +131,7 @@ pre .clipboard-button {
   // 44px is the smallest comfortable pointer target; the icon inside stays small.
   min-width: var(--tpl-target);
   min-height: var(--tpl-target);
-  // Every one of these five undoes something from the rule quoted above.
+  // Every one of these undoes something from the rule quoted above.
   float: none;
   margin: 0;
   padding: 0;

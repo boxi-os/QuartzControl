@@ -80,6 +80,10 @@ html {
   // of the label belongs.
   --icon-tag: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z'/%3E%3Ccircle cx='7.5' cy='7.5' r='1' fill='black' stroke='none'/%3E%3C/svg%3E");
 
+  // lucide `arrow-up-right`. Behind a backlink, where it says "this goes somewhere" without
+  // spending a word on it.
+  --icon-arrow-up-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 7h10v10'/%3E%3Cpath d='M7 17 17 7'/%3E%3C/svg%3E");
+
   // The soft edge on a panel that scrolls. Fixed to the panel, not to its content, so the fade
   // stays at the top and bottom edges while the content moves under it.
   //
@@ -120,72 +124,57 @@ html {
 
 /* ------------------------------------------------------------------ the sticky header */
 
-// The header stays at the top of the window and shrinks as the page scrolls. Two lengths carry
-// that, both registered so they can be interpolated and both inheriting, because the right column
-// has to know how tall the header currently is in order to stick below it rather than under it.
+// The header stays at the top of the window. It does not change size while it does - and that is a
+// decision from 2026-09-09, not an omission.
 //
-// The height is not measured anywhere: it is 44px of control plus this padding twice plus the
-// rule. That is why the padding is the thing being animated rather than a height - a height would
-// be a second place where the same number lives, and the controls may not shrink below 44px.
-// The initial values are in px, and that is a rule rather than a preference: a registered
-// property's `initial-value` has to be *computationally independent*, so no em, no rem, no
-// percentage. Chrome accepts `0.5rem` here anyway; Firefox rejects the whole @property rule, the
-// name stays unregistered, and every `var()` that reads it becomes invalid at computed-value time.
-// Measured before this was px: the header had `padding-block: 0px` and a 16px title in Firefox -
-// smaller than its own shrunken state, because both declarations had been thrown away.
+// It used to shrink, swap the name it shows and carry a progress line, all three driven by
+// `animation-timeline` - CSS bound to the scroll position rather than to the clock. Chromium and
+// WebKit do that; Firefox does not, has not for years, and nothing suggests it will. The three
+// effects were guarded with `@supports` and simply did not happen there, which meant the template's
+// most visible element was one thing in two engines and another in the third.
 //
-// 12px and 22.4px are --tpl-space-sm and --tpl-text-xl at the root font size. They are only the
-// fallback for a browser without scroll timelines; the keyframes below still use the tokens.
+// What replaces them is not a smaller effect but a different mechanism: the header is one of *two*
+// layers, and the other one scrolls away. `beforeBody` - breadcrumb, tags, the h1, the date - is
+// the page's own title block, and it leaves with the text. The bar stays, and since it now carries
+// the chapter name (plugins.mjs, `layoutBoxPageName`) it says where you are the whole time instead
+// of exchanging one name for another halfway down. `position: sticky` is the entire technique, and
+// it behaves identically in every engine this site was measured in.
 //
-// Two lengths and nothing else. What the bar's *edge* does over the same scroll - a grey track
-// fading in and an accent fill following the scroll along it - is in nav-header.scss under "the
-// edge once the page moves", because it touches only properties that rule owns and no shared
-// token. These two are here because the right column reads --tpl-header-h to stick below the bar.
-@property --tpl-header-pad {
-  syntax: "<length>";
-  inherits: true;
-  initial-value: 12px;
-}
-
-@property --tpl-header-title {
-  syntax: "<length>";
-  inherits: true;
-  initial-value: 22.4px;
-}
-
+// The height is still not written anywhere: it is 44px of control plus this padding twice plus the
+// rule. Two custom properties rather than one height, because the controls may not shrink below
+// 44px and the right column reads --tpl-header-h to stick below the bar rather than under it.
 :root {
+  --tpl-header-pad: var(--tpl-space-sm);
+  --tpl-header-title: var(--tpl-text-xl);
   --tpl-header-h: calc(var(--tpl-target) + 2 * var(--tpl-header-pad) + var(--tpl-rule-width));
 }
 
-// 12px down to 8px, not 8px down to 2px. The floor was the smallest number that still looked like
-// padding, and it is the wrong thing to optimise: the four controls are 44px targets that do not
-// shrink, so at 2px they sat in a bar barely taller than themselves and read as crammed into it
-// rather than placed in it. Measured at the old floor - 2px above and 3px below each control,
-// the extra pixel being the hairline. Now 8 and 9, and the bar still gives up 8px on the way down.
-@keyframes tpl-header-shrink {
-  from {
-    --tpl-header-pad: var(--tpl-space-sm);
-    --tpl-header-title: var(--tpl-text-xl);
-  }
-  to {
-    --tpl-header-pad: var(--tpl-space-xs);
-    --tpl-header-title: var(--tpl-text-base);
-  }
-}
-
-// Driven by the document's own scroll, over the first --tpl-space-2xl of it. Nothing here moves
-// on its own: the animation is bound to the scroll position, so with `prefers-reduced-motion` on
-// there is nothing to suppress - the header is simply smaller further down the page.
-//
-// Behind the same guard as the fade, and for the same measured reason: without a timeline the
-// shorthand runs as a 0s animation and `fill: both` lands on the end keyframe, so in Firefox the
-// header sat in its *small* state permanently - 2px of padding at the top of the page. With the
-// guard the registered initial values apply instead and the header simply does not shrink there.
-@supports (animation-timeline: scroll()) {
+// The app bar is tighter than the desktop one, and the padding is changed *here* rather than in
+// nav-header.scss, where it used to be written as a second `padding-block`. That was one place too
+// many: --tpl-header-h kept computing from 12px while the bar was built from 8, so everything that
+// positions itself against the bar was 8px out on a phone - the drawer trigger sat 13px from the
+// top of a 61px bar instead of 8.5 (measured at 390px), and every jump target reserved 8px too
+// much. One declaration, and the bar, the trigger and the scroll margins all follow it.
+@media (max-width: 900px) {
   :root {
-    animation: tpl-header-shrink linear both;
-    animation-timeline: scroll(root block);
-    animation-range: 0 var(--tpl-space-2xl);
+    --tpl-header-pad: var(--tpl-space-xs);
+  }
+
+  // The left area holds nothing that takes space on a phone - see frames.mjs, where its row is `0`
+  // rather than `auto`. What a zero row does not remove is the grid's own gap on either side of it,
+  // and two gaps around an empty row are 64px of nothing between the bar and the first line of the
+  // page. The area gives up its height, and the block below it takes one gap back.
+  //
+  // 2rem is the frame's `rowGap`, written here as the number it is: this is the one place that has
+  // to know it, and a token would suggest it could be changed independently of the frame.
+  .qgframe-area-left {
+    height: 0;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .qgframe-area-before-body {
+    margin-block-start: -2rem;
   }
 }
 
@@ -195,9 +184,16 @@ html {
 // placeholder does not cross a module boundary, so an `@extend` in nav-explorer.scss would fail
 // to compile rather than quietly do nothing.
 //
-// Below 800px neither one scrolls: the tree becomes a full-height drawer and the right column is
-// laid out under the article.
-@media (min-width: 801px) {
+// Below the mobile breakpoint neither one scrolls: the tree becomes a full-height drawer and the
+// right column is laid out under the article.
+//
+// **The number is written out here and in four other stylesheets, and it has to match the project's
+// mobile breakpoint** (frames.mjs `BREAKPOINT_WIDTHS`, `.quartz-gui/layout-breakpoints.json`). A
+// media query cannot read a custom property, and SCSS variables do not cross the module boundary
+// between these files, so there is no way to say it once. When the breakpoint moves, grep for the
+// old number: base.scss, nav-header.scss, nav-explorer.scss and nav-language-switcher.scss carry
+// it, and page-bases.scss carries the tablet one.
+@media (min-width: 901px) {
   ul.explorer-ul,
   .qgframe-area-right {
     overflow-y: auto;
@@ -319,19 +315,58 @@ ul.explorer-ul,
   margin-block: 0;
 }
 
+/* ---------------------------------------------- the two boxes that sit under the text */
+
+// Backlinks and "zuletzt bearbeitet" moved out of the side columns and under the article, where
+// they stand side by side in the open rather than at the end of a column. In a column the edge of
+// the page did the framing; out here nothing did, and the two ran into the article above them and
+// into each other.
+//
+// So they get the box the graph already has (aside-graph.scss) - same hairline, same radius, same
+// tint. Three panels of the same site that are the same kind of thing look the same.
+//
+// The heading's 44px line box (above) is a control's height and is right in a column of controls;
+// inside a bordered box it is a bald patch over the first entry. Here the two boxes say their own,
+// smaller, and they say it together - which is the whole reason this rule is in base.scss and not
+// twice in the aside files.
+.backlinks,
+.recent-notes {
+  // The group wraps each of its components in a flex item of its own, and that item is itself a
+  // flex container - so the box inside it is a flex *child* and takes its content width unless it
+  // is told to grow. Measured on a tag page, where the backlinks box is gone and this one has the
+  // row to itself: 276px of box in 672px of row, with the border drawn around the 276.
+  flex: 1 1 auto;
+  padding: var(--tpl-space-sm) var(--tpl-space-md);
+  background: var(--tpl-surface-tint);
+  border: var(--tpl-rule-width) solid var(--tpl-rule);
+  border-radius: var(--tpl-radius-md);
+}
+
+.backlinks > :is(h1, h2, h3),
+.recent-notes > :is(h1, h2, h3) {
+  min-height: 0;
+  margin-block: 0 var(--tpl-space-xs);
+}
+
 /* ------------------------------------------------------------- jumping under the header */
 
 // The header stays at the top of the window, so anything jumped to - a heading from the table of
 // contents, a footnote, a `#anchor` from outside - would land behind it. Every target keeps the
 // bar's height free above itself.
 //
-// The number is the bar in its *small* state (44px of control plus the thin padding it shrinks
-// to), because by the time a jump has happened the page has scrolled and the bar has shrunk.
+// It used to be `--tpl-target + --tpl-space-md` = 60px, described as "the bar in its small state",
+// and it was short on both counts. The bar is 61px small and 69px at rest - and in Firefox it
+// never shrinks at all, because the shrinking runs on a scroll timeline it does not have. Below it
+// sits the 24px fade that dissolves the page under the bar. So a heading needed 85 to 93px of
+// clearance and was given 60: it arrived under the bar, already dissolving.
+//
+// Written from `--tpl-header-h` rather than from the two tokens it is made of, so it follows the
+// bar instead of restating it, plus the fade and one step of air.
 :target,
 article :is(h1, h2, h3, h4, h5, h6)[id],
 article [id^="user-content-fn"],
 .footnotes li[id] {
-  scroll-margin-block-start: calc(var(--tpl-target) + var(--tpl-space-md));
+  scroll-margin-block-start: calc(var(--tpl-header-h) + var(--tpl-page-fade) + var(--tpl-space-xs));
 }
 
 /* ------------------------------------------------------------------ disclosure icons */
@@ -600,6 +635,42 @@ h6 {
   gap: var(--tpl-space-lg);
 }
 
+// Two areas that do not want that rhythm.
+//
+// The header block - breadcrumb, tags, title, date - is one unit, not four stacked components, and
+// 24px between each of them pulled it apart: the date drifted away from the title it belongs to
+// and the tags away from both. Every one of those components already carries its own margins, and
+// those are the right distances. Only the breadcrumb needs its own, because it is the one line
+// that is *not* part of the title block - it says where the page sits, and then the page starts.
+.qgframe-area-before-body {
+  gap: 0;
+}
+
+.qgframe-area-before-body .breadcrumb-container {
+  margin-block-end: var(--tpl-space-md);
+}
+
+// The footer and the colophon under it are one closing block, so they sit closer than two
+// components of a column would.
+.qgframe-area-footer {
+  gap: var(--tpl-space-sm);
+}
+
+// A flex group whose components all rendered nothing still occupies a row of its area.
+//
+// Quartz builds the group wrapper and one item wrapper per component before it knows whether the
+// component returns anything, and backlinks returns `null` on a page nothing links to
+// (`hideWhenEmpty`). The empty item is zero-high and still collects the group's gap; the group
+// itself, if every one of its components is empty, still collects the area's. Measured on the
+// start page: 24px of nothing under the properties.
+//
+// `:empty` does not reach either of them - both *have* a child, it is the child that is empty - so
+// the test is "contains no element at all", one level down for the item and two for the group.
+.flex-component > div:not(:has(*)),
+.qgframe-area > .flex-component:not(:has(> div > *)) {
+  display: none;
+}
+
 // No reading measure here.
 //
 // An earlier version capped prose at 68 characters with `max-width` on every block-level element
@@ -631,11 +702,11 @@ h6 {
 // the fade. Here the top padding goes away entirely rather than being compensated, because the top
 // of this column no longer fades (see the headings below), and the two columns then begin on the
 // same line by themselves.
-@media (min-width: 801px) {
+@media (min-width: 901px) {
   .qgframe-area-right {
     position: sticky;
-    // Below the header, not under it. --tpl-header-h follows the header as it shrinks, so the
-    // column moves up with it instead of leaving a gap that grows on every scroll.
+    // Below the header, not under it. --tpl-header-h is the bar's height, computed from the same
+    // two lengths the bar itself uses, so this offset can never disagree with it.
     top: calc(var(--tpl-header-h) + var(--tpl-space-lg));
     align-self: start;
     max-height: calc(100dvh - var(--tpl-header-h) - 2 * var(--tpl-space-lg));

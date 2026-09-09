@@ -5,7 +5,9 @@
 // types where there is one listing with two headings.
 
 .page-listing {
-  margin-block-start: var(--tpl-space-md);
+  // The list is a new thing on the page, not the next paragraph of the one above it - it gets the
+  // distance a section gets, not the one between two blocks of text.
+  margin-block-start: var(--tpl-space-xl);
 
   // The count line above the list.
   > p:first-child {
@@ -37,11 +39,23 @@ li.section-li {
 // component reuses these very class names — `.section`, `.meta`, `.desc`, `.tags` — inside a 240px
 // sidebar. Unscoped, this three-column grid landed there too and stacked the date on top of the
 // title. Measured on the built page.
+// `minmax(0, auto)` on the tag column, and `start` rather than `baseline`.
+//
+// Both are about what happens when the column gets narrow. An `auto` track takes its minimum from
+// its content, and the pills inside carry `white-space: nowrap` - so the widest single tag name
+// set the floor, and everything it needed came out of the title column, which has `min-width: 0`
+// and gives way without limit. A row could end up with two characters of title beside three tags.
+// With `minmax(0, auto)` the tag column yields too and its pills wrap, which is what
+// `flex-wrap: wrap` on `.tags` was there for all along.
+//
+// And once they wrap, `baseline` is wrong: it aligns the *first* line of the pill block with the
+// date and the title, so a second row of pills pushes the whole cell up and the row stops looking
+// like a row. `start` keeps the three cells hanging from the same top edge.
 .page-listing .section {
   display: grid;
-  grid-template-columns: 7.5rem minmax(0, 1fr) auto;
+  grid-template-columns: 7.5rem minmax(0, 1fr) minmax(0, auto);
   gap: var(--tpl-space-xs) var(--tpl-space-md);
-  align-items: baseline;
+  align-items: start;
 }
 
 .page-listing .section .meta {
@@ -84,6 +98,8 @@ li.section-li {
 .page-listing .section .tags {
   margin: 0;
   justify-content: flex-end;
+  // The grid track can shrink now; without this the flex item inside it still could not.
+  min-width: 0;
 }
 
 // One column below the tablet breakpoint: a 7.5rem date column plus a title plus tags does not
@@ -107,16 +123,30 @@ li.section-li {
 //
 // An earlier version of this file styled `.tag-listing-header`, `.tag-index` and
 // `article > h1 > a.tag-link`. None of the three is emitted by anything — the tag's name arrives
-// as plain text inside the ordinary `.article-title`.
-// The tag name as a page title. The slug attribute sits on <body>, not on .page - measured. A hash in front says what kind of page this is, without needing a
-// heading above it - and it is decoration, so it stays out of the accessibility tree.
-// Every tag link on a tag page points at a sibling tag; the current one is not linked, so no
-// "current" styling is needed here.
-
+// The tag name as a page title. The slug attribute sits on <body>, not on .page - measured.
+//
+// A mark in front says what kind of page this is without needing a heading above it, and it is the
+// same lucide `tag` the pills carry (meta-tag-list.scss) rather than a "#": the two say the same
+// thing on the same site, and a page that hands out labelled pills should not name itself with a
+// character. Decoration, so it stays out of the accessibility tree.
+//
+// Masked rather than drawn, because only a mask's alpha survives - the glyph is painted in
+// `currentColor` and follows the heading.
 body[data-slug^="tags/"] .article-title::before {
-  content: "#";
-  color: var(--gray);
-  margin-inline-end: 0.05em;
+  content: "";
+  display: inline-block;
+  width: 0.72em;
+  height: 0.72em;
+  margin-inline-end: 0.3em;
+  background-color: var(--gray);
+  mask-image: var(--icon-tag);
+  -webkit-mask-image: var(--icon-tag);
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  mask-position: center;
+  -webkit-mask-position: center;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
 }
 
 // Every tag link on a tag page points at a sibling tag; the current one is not linked, so no

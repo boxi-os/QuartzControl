@@ -13,6 +13,7 @@ import {
   withThemeFonts,
   THEME_PLUGIN_PREFIX
 } from './fontDelivery'
+import { cssColorToHexAlpha } from './variableGraph'
 import { activeThemeIdOf, useStyles } from './index'
 import ColorPicker from './ColorPicker'
 
@@ -433,6 +434,12 @@ function ColorGroup({
   )
 }
 
+/** `#rrggbb` plus an alpha, as the `rgba()` the palette writes. */
+function withAlpha(hex: string, alpha: number): string {
+  const n = parseInt(hex.slice(1), 16)
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`
+}
+
 function ColorCell({
   name,
   value,
@@ -445,7 +452,12 @@ function ColorCell({
   onChange: (next: string) => void
 }): JSX.Element {
   const { t } = useTranslation()
-  const isHex = /^#([0-9a-f]{3}){1,2}$/i.test(value)
+  // Every notation the browser can paint, not just `#rrggbb` - and the alpha comes back separately
+  // because `<input type="color">` has nowhere to put it. The regex that stood here matched only
+  // six-digit hex, so all four `rgba()` values in a palette (`highlight` and `textHighlight`, per
+  // mode) handed the picker `null` and it opened on black - on the values where the *tint* is the
+  // whole point.
+  const parsed = cssColorToHexAlpha(value)
   // Dimmed, not disabled: this value has no effect while the theme is on, but it is still the
   // value that applies the moment the theme is turned off - and for a theme that happens not to
   // declare this variable, it applies right now. The dimming is the name going muted, not
@@ -460,8 +472,10 @@ function ColorCell({
           transparent input, so a notation the picker cannot parse still shows as itself. */}
       <ColorPicker
         value={value}
-        hex={isHex ? value : null}
-        onChange={onChange}
+        hex={parsed?.hex ?? null}
+        // Picking on a translucent value keeps its alpha: the user reached for a colour, not for
+        // the difference between a tint and a solid fill. Written back in the notation it came in.
+        onChange={(hex) => onChange(parsed && parsed.alpha < 1 ? withAlpha(hex, parsed.alpha) : hex)}
         title={name}
         size="lg"
       />

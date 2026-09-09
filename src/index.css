@@ -83,6 +83,22 @@ select option {
   color: rgb(var(--text));
 }
 
+/* Selected text. There was no rule here at all, so both schemes got Chromium's own pale blue -
+   which on the light ground is merely unremarkable and on #1e1e1e is very nearly invisible: the
+   selection is lighter than the text it is meant to be marking, and a selected word reads as a
+   word someone smudged. Written from the tokens so it flips with the scheme by itself.
+
+   35% of the accent rather than the accent itself: a selection has to sit *under* text of any
+   colour the app uses, including the amber and red of a status label, and a solid blue-600 fill
+   takes those down to ~2:1. At 35% over either ground the text keeps its own contrast and the
+   marking is still unmistakable. `color` is stated as well and stays the normal text colour -
+   Chromium otherwise picks its own foreground to go with its own background, and would then be
+   painting a colour we did not choose on top of one we did. */
+::selection {
+  background-color: rgb(var(--accent) / 0.35);
+  color: rgb(var(--text));
+}
+
 body {
   @apply bg-ground text-text antialiased;
 }

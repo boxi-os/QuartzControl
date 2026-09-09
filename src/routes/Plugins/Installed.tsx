@@ -27,7 +27,12 @@ import { repoUrl } from './pluginSource'
 // and only the action group is pinned. The breakpoint below is measured in the running app, not
 // picked off Tailwind's scale: two columns need enough width that the plugin name still reads at
 // a glance, which is where a second column stops being a gain.
-const PLUGIN_LIST = 'grid gap-2 min-[1500px]:grid-cols-2'
+// `items-start`, and that is the fix for a card that looked like it opened on its own. A grid row
+// is as tall as its tallest cell and stretches the other to match, so expanding one plugin gave
+// its neighbour an empty frame the same height - which reads as "both opened". The equal heights
+// were deliberate (they make calmer drop targets while dragging), but they cost more than they
+// bought: the list is expanded far more often than it is reordered.
+const PLUGIN_LIST = 'grid items-start gap-2 min-[1500px]:grid-cols-2'
 
 // Quartz plugins fall into distinct kinds - transformers, filters, page types, emitters,
 // components (see https://quartz.jzhao.xyz/plugins/) - but that exact category isn't stored
@@ -825,13 +830,13 @@ function SortableRow(props: PluginRowProps): JSX.Element {
     id: String(props.item.index)
   })
   // The wrapper carries the transform because Card is a plain div component with no ref of its
-  // own; `h-full` on both keeps the grid's equal-height rows, which the extra element would
-  // otherwise break.
+  // own. It used to carry `h-full` too, matching the one on Card, so that the two elements did not
+  // break the grid's equal-height rows - see PLUGIN_LIST for why those rows are gone.
   return (
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`h-full ${isDragging ? 'opacity-40' : ''}`}
+      className={isDragging ? 'opacity-40' : undefined}
     >
       <PluginRow {...props} handleRef={setActivatorNodeRef} handleProps={{ ...attributes, ...listeners }} />
     </div>
@@ -903,7 +908,7 @@ function PluginRow({
         : null
 
   return (
-    <Card className={`h-full px-3 py-2.5 ${plugin.enabled ? '' : 'bg-ink/[0.02] dark:bg-ink/[0.02]'}`}>
+    <Card className={`px-3 py-2.5 ${plugin.enabled ? '' : 'bg-ink/[0.02] dark:bg-ink/[0.02]'}`}>
       <div className="flex items-start gap-2.5">
         {/* Only the handle is the drag activator. With the whole card as one, any drag gesture -
             selecting the description, dragging inside an option field - started a reorder.

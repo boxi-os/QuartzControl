@@ -197,7 +197,22 @@ export function resolveValueLiteral(value: string | undefined, mode: Mode, ctx: 
 let colorProbe: CanvasRenderingContext2D | null | undefined
 const COLOR_PROBE_SENTINEL = '#010203'
 
-export function cssColorToHex(value: string | undefined): string | null {
+/**
+ * The same normalisation, but keeping the alpha the picker cannot show.
+ *
+ * Canvas answers in one of two notations and the difference is exactly alpha: an opaque colour
+ * comes back as `#rrggbb`, a translucent one as `rgba(r, g, b, a)`. `cssColorToHex` treats the
+ * second as "not a colour" - it tests for a leading `#` - which is why the Basis tab opened the
+ * OS picker on black for every `rgba()` value in the palette. There are four of them
+ * (`highlight` and `textHighlight`, per mode), and they are the two that *have* to carry alpha:
+ * they are tints laid over the page.
+ *
+ * Callers that only need the swatch keep using `cssColorToHex`. A caller that also writes the
+ * value back needs `alpha` as well, or picking a colour turns a 10% tint into a solid fill - and
+ * the template's own contrast measurement composites those two over the ground, so the number it
+ * reports would go on being right about a colour that is no longer there.
+ */
+export function cssColorToHexAlpha(value: string | undefined): { hex: string; alpha: number } | null {
   const v = value?.trim()
   if (!v || v.includes('var(')) return null
   if (colorProbe === undefined) colorProbe = document.createElement('canvas').getContext('2d')
@@ -205,9 +220,23 @@ export function cssColorToHex(value: string | undefined): string | null {
   colorProbe.fillStyle = COLOR_PROBE_SENTINEL
   colorProbe.fillStyle = v
   const out = colorProbe.fillStyle
-  if (typeof out !== 'string' || !out.startsWith('#')) return null
+  if (typeof out !== 'string') return null
   if (out === COLOR_PROBE_SENTINEL && v.toLowerCase() !== COLOR_PROBE_SENTINEL) return null
-  return out
+  if (out.startsWith('#')) return { hex: out, alpha: 1 }
+  const rgba = /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$/i.exec(out)
+  if (!rgba) return null
+  const hex =
+    '#' +
+    [rgba[1], rgba[2], rgba[3]]
+      .map((n) => Math.max(0, Math.min(255, Math.round(Number(n)))).toString(16).padStart(2, '0'))
+      .join('')
+  const alpha = rgba[4] === undefined ? 1 : Math.max(0, Math.min(1, Number(rgba[4])))
+  return { hex, alpha }
+}
+
+export function cssColorToHex(value: string | undefined): string | null {
+  const parsed = cssColorToHexAlpha(value)
+  return parsed && parsed.alpha === 1 ? parsed.hex : null
 }
 
 export function referencedVariables(value: string): string[] {

@@ -20,6 +20,8 @@ Der Bridge-Helper kapselt hauptsächlich:
 
 Große Inhalte werden vom Helper in mehrere CLI-Aufrufe geteilt, damit kein einzelnes Kommando unnötig groß wird.
 
+Der Rückgabewert allein sagt nicht, ob eine Datei existiert: `read` auf einen fehlenden Pfad schreibt `Error: File "<pfad>" not found.` nach **stdout** und beendet sich mit **0** (gemessen am 2026-09-10). Ein Lesevorgang, der ein „gibt es noch nicht“ verträgt, muss diese Meldung deshalb am Text erkennen — `read_optional()` in `wiki_bridge.py` tut das. Wer sich auf den Rückgabewert verlässt, hält jede noch nicht existierende Datei für vorhanden und unverwaltet und legt damit gar nichts mehr an.
+
 ## Schreibgrenzen
 
 Aus `.claude/wiki-docs.json` werden berechnet:

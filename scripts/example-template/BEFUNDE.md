@@ -1759,3 +1759,60 @@ Nebenbei: `rowSizes` nimmt **Strings**. Eine `0` als Zahl lehnt das Schema ab
 (`expected string, received number`) — sichtbar erst als abgebrochener Lauf in Phase 3, nicht beim
 Schreiben.
 
+
+### 83. Eine Regel für die Kopfleiste galt für jede Gruppe der Website
+
+`flex-component` ist die Klasse, die Quartz auf **jede** Gruppe schreibt (`Flex.tsx`) — auf die
+Marke im Kopf genauso wie auf die zwei Kästen unter dem Text. In `nav-header.scss` stand dazu ein
+unqualifiziertes `.flex-component { align-items: center; > * { display: flex; align-items: center;
+min-height: var(--tpl-target) } }`. Gemeint war die Leiste: drei Elemente verschiedener Höhe, die
+auf einer Mittellinie sitzen sollen, jedes mit der Höhe eines Tippziels.
+
+Gegolten hat es überall. Gemessen bei 1600 px an einem Artikel: „Backlinks", 185 px hoch, stand
+gegen die 408 px des Kastens daneben **mittig** statt auf derselben Linie — 111 px tiefer —, und
+beide Wrapper trugen die 44 px Mindesthöhe eines Bedienelements in einer Werkzeugleiste. Der
+Kasten sah deshalb nicht nur zu hoch aus, er saß auch an der falschen Stelle.
+
+Die Regel ist jetzt auf die Kopfleiste eingegrenzt, mit denselben zwei Selektoren wie die Regeln
+daneben (`.qgframe-area-header > .flex-component` für einen eigenen Frame,
+`#quartz-body > .header > .flex-component` für Quartz' drei eigene). Danach gilt für die zwei
+Kästen wieder, was ihre Gruppe sagt: `align: 'stretch'`, gleiche Oberkante, gleiche Höhe — wobei
+gleiche Höhe erst dadurch sichtbar wird, dass der Wrapper ein Grid ist und sein einziges Kind
+streckt. Vorher hatte das die Kopfleisten-Regel unabsichtlich erledigt.
+
+**Was daraus bleibt:** Eine Klasse, die ein fremdes Programm überall schreibt, ist kein Selektor
+für einen Ort. Wer sie benutzt, nennt den Ort dazu.
+
+### 84. Ein Sticky-Rasterelement bleibt in Chromium nicht in seinem Bereich
+
+Die rechte Spalte ist `position: sticky` und liegt im Raster in den Zeilen 2 bis 5; der Footer ist
+Zeile 6. Ein Sticky-Element darf seinen Rasterbereich nicht verlassen — Chromium läßt es. Gemessen
+bei 1416 × 713 px auf einem kurzen Artikel, ganz nach unten gescrollt: Der Kasten der Spalte endete
+72 px **hinter** der Haarlinie über dem Footer, die Linie lief also durch die Graph-Ansicht.
+
+Die Gegenprobe schließt den Rasterbereich als Ursache aus: Mit `grid-row: 2 / 3` — einer einzigen
+Zeile statt vier — änderte sich die Überlappung um einen Pixel. Woran auch immer Chromium die
+Sticky-Schranke mißt, der Bereich ist es nicht, und es gibt keine Eigenschaft, die das zurückholt.
+
+Die Antwort ist deshalb die Malreihenfolge: Der Footer-Bereich ist ein Band im Seitengrund und wird
+darüber gezeichnet (`position: relative; z-index: 1`, unter den 80 des Kopfes und den 100 der
+Schublade). Die Spalte endet damit **genau an** der Linie statt über ihr. Der Befund selbst bleibt:
+Wer eine Spalte sticky macht, prüft sie am Fuß einer kurzen Seite, nicht am Fuß einer langen.
+
+### 85. Am Tablet war die rechte Spalte ein Scrollkasten in einer scrollenden Seite
+
+Zwischen 901 und 1200 px legt der Frame den Bereich `right` unter den Artikel (`frames.mjs`) — er
+ist dort keine Spalte mehr, sondern ein Block über die ganze Textbreite. Die Regeln, die ihn zu
+einer Spalte machen, standen aber in `@media (min-width: 901px)`: `position: sticky`, eine
+`max-height` von fast einer Bildschirmhöhe, `overflow-y: auto` und eine Maske an beiden Enden.
+Gemessen bei 1000 px: ein 580 px breites Band unter dem Text mit eigenem Scrollport.
+
+Die Regeln beginnen jetzt bei 1201 px. Was ein Tablet stattdessen bekommt, ist dieselbe Form wie
+das Paar unter dem Text: eine Flex-Zeile, `12rem` Basis je Kasten, gleiche Höhe, beide mit dem
+Rahmen und der Tönung, die Backlinks und „zuletzt bearbeitet" tragen — der Graph gibt dafür seine
+eigene Wanne auf, sonst wäre es ein Kasten im Kasten. Nachgemessen bei 901, 950, 1000, 1100 und
+1200 px: nebeneinander, je 228 bis 378 px; bei 1201 px steht die Spalte wieder rechts.
+
+Die 12 statt 18 rem sind gerechnet, nicht geraten: Am unteren Ende des Bandes ist der Bereich
+481 px breit, zwei 18-rem-Kästen brauchen mit der Rinne 608 und würden wieder untereinander
+umbrechen — also genau den Zustand herstellen, gegen den der Block geschrieben ist.

@@ -271,8 +271,11 @@ export const PLUGIN_PATCHES = {
     // Eintrag.
     options: { limit: 5, hideFolderPages: true },
     layout: {
+      // 50, and backlinks is 60: within a position quartz sorts by ascending priority, so this is
+      // the left of the two boxes. They were the other way round until 2026-09-10 - "was hierher
+      // zeigt" first, "zuletzt bearbeitet" second.
       position: 'afterBody',
-      priority: 60,
+      priority: 50,
       group: 'custom-8',
       groupOptions: { grow: true, shrink: true, basis: '18rem', align: 'stretch' }
     }
@@ -305,7 +308,7 @@ export const PLUGIN_PATCHES = {
     enabled: true,
     layout: {
       position: 'afterBody',
-      priority: 50,
+      priority: 60,
       group: 'custom-8',
       groupOptions: { grow: true, shrink: true, basis: '18rem', align: 'stretch' }
     }

@@ -337,7 +337,15 @@
 // The three paragraphs that used to stand here were a verbatim second copy of the ones on the two
 // rules further down, left behind when the file was merged out of two.
 
-.flex-component {
+// **Scoped to the header, and that scope is the whole point.** `flex-component` is the class quartz
+// writes on *every* group on every page (Flex.tsx), so a bare `.flex-component` here was a rule
+// about the bar that applied to the two boxes under the article as well. Measured at 1600px: the
+// backlinks box, 185px tall beside a 408px one, was centred against it rather than starting at the
+// same line, and both wrappers carried a 44px `min-height` meant for a touch target in a toolbar.
+// Two selectors for the same reason as the rules above: an authored frame has
+// `.qgframe-area-header`, quartz' own three frames have `#quartz-body > .header`.
+.qgframe-area-header > .flex-component,
+#quartz-body > .header > .flex-component {
   align-items: center;
 
   // Every direct child of the group has the same height, whatever it contains - and centres what

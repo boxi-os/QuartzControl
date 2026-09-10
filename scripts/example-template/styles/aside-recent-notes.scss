@@ -29,6 +29,11 @@
 }
 
 .recent-li {
+  // Quartz gives every `li` a 1rem margin above and below. The backlinks box resets it and this one
+  // did not, so each of the five entries carried 32px nobody had asked for - measured at 1600px,
+  // 160px of the box's 408, which is why it stood a head taller than the box beside it and why the
+  // gap under the heading read as an indent. The row's own rhythm is the padding below.
+  margin-block: 0;
   padding-block: var(--tpl-space-2xs);
   border-block-end: var(--tpl-rule-width) solid var(--tpl-rule);
   font-size: var(--tpl-text-sm);

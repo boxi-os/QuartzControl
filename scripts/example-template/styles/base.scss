@@ -193,9 +193,14 @@ html {
 // between these files, so there is no way to say it once. When the breakpoint moves, grep for the
 // old number: base.scss, nav-header.scss, nav-explorer.scss and nav-language-switcher.scss carry
 // it, and page-bases.scss carries the tablet one.
+//
+// The two halves of this rule stop at different widths, and that is not an oversight: the tree is a
+// panel in a column from 901px up, but the right column *is* a column only from 1201px - below that
+// the frame lays its area out under the article (frames.mjs), where a scrollport with a mask and a
+// height cap is a box that scrolls inside a page that scrolls. That is why the tablet number is in
+// this file now as well.
 @media (min-width: 901px) {
-  ul.explorer-ul,
-  .qgframe-area-right {
+  ul.explorer-ul {
     overflow-y: auto;
     overscroll-behavior: contain;
     mask-image: var(--tpl-fade-mask);
@@ -211,6 +216,18 @@ html {
     // `@supports` guard, it only worked in Chromium, and it still faded the first line whenever
     // the list was scrolled at all. One length of padding does the whole job in every browser.
     padding-block: var(--tpl-fade);
+  }
+
+  // The right column, from the tablet width up, where it is a column. Same three declarations; the
+  // top padding is taken away again in the desktop block below, where the heading covers that edge.
+  @media (min-width: 1201px) {
+    .qgframe-area-right {
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      mask-image: var(--tpl-fade-mask);
+      -webkit-mask-image: var(--tpl-fade-mask);
+      padding-block: var(--tpl-fade);
+    }
   }
 
   // Which element scrolls the tree is not the same in every browser, and that had to be settled
@@ -331,9 +348,10 @@ ul.explorer-ul,
 // twice in the aside files.
 .backlinks,
 .recent-notes {
-  // The group wraps each of its components in a flex item of its own, and that item is itself a
-  // flex container - so the box inside it is a flex *child* and takes its content width unless it
-  // is told to grow. Measured on a tag page, where the backlinks box is gone and this one has the
+  // The box fills the item the group wraps it in rather than shrinking to its content. Since
+  // 2026-09-10 that item is a grid wrapper (rule further down), whose only child stretches in both
+  // axes on its own; this says the same thing for the case where the wrapper is a flex box, which
+  // it was until then. Measured on a tag page, where the backlinks box is gone and this one has the
   // row to itself: 276px of box in 672px of row, with the border drawn around the 276.
   flex: 1 1 auto;
   padding: var(--tpl-space-sm) var(--tpl-space-md);
@@ -671,6 +689,19 @@ h6 {
   display: none;
 }
 
+// The two boxes under the text are one pair, so they are one height.
+//
+// `align: 'stretch'` in the group's options (plugins.mjs) stretches the *wrapper* quartz puts
+// around each component - and a wrapper is a block, so the card inside it keeps its content height
+// and the shorter of the two ends in mid-air with the group's grey ending under it. Until
+// 2026-09-10 that was invisible for the wrong reason: a rule meant for the header made every group
+// wrapper on the site a centred flex box, so the short card was centred in the tall one instead of
+// filling it (nav-header.scss). With that rule where it belongs, this is what says the two cards
+// are the same size: a grid wrapper stretches its only child by default, in both axes.
+.qgframe-area-custom-8 > .flex-component > * {
+  display: grid;
+}
+
 // No reading measure here.
 //
 // An earlier version capped prose at 68 characters with `max-width` on every block-level element
@@ -702,7 +733,12 @@ h6 {
 // the fade. Here the top padding goes away entirely rather than being compensated, because the top
 // of this column no longer fades (see the headings below), and the two columns then begin on the
 // same line by themselves.
-@media (min-width: 901px) {
+// 1201, not 901: below the desktop width the frame moves this area under the article, where it is
+// a block the page scrolls past, not a column that stands still beside one. Until 2026-09-10 the
+// rules below started at 901 and a tablet got a full-width band under the text that was sticky, had
+// a `max-height` of nearly a screen and scrolled inside itself - measured at 1000px, a 580px-wide
+// box with its own scrollport. What a tablet gets instead is the block right after this one.
+@media (min-width: 1201px) {
   .qgframe-area-right {
     position: sticky;
     // Below the header, not under it. --tpl-header-h is the bar's height, computed from the same
@@ -751,4 +787,76 @@ h6 {
       pointer-events: none;
     }
   }
+}
+
+/* ------------------------------------------- the right column at tablet: two boxes, not a stack */
+
+// Between 901 and 1200 the frame puts `right` under the article, full width (frames.mjs). Stacked,
+// its two panels are an outline and a graph that each take the whole measure - 580px of table of
+// contents at 1000px, and a 310px square below it. They are the same kind of thing as the two boxes
+// under the text, so they are laid out the same way: one flex row that wraps, `18rem` of basis
+// each, top-aligned.
+//
+// The graph is wrapped in `.desktop-only`, which is `display: contents` above the mobile width -
+// the wrapper has no box, so the flex properties have to name `.graph` itself rather than a child
+// of the area.
+@media (min-width: 901px) and (max-width: 1200px) {
+  .qgframe-area-right {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--tpl-space-lg);
+  }
+
+  // 12rem, not the 18 the two boxes under the text use: this row is narrower than the text block,
+  // because the left column keeps its 300px here. Measured at the bottom of the band, 901px, the
+  // area is 481px wide - two 18rem boxes plus the gap need 608 and would wrap back into a stack,
+  // which is the thing this block exists to prevent. At 12rem they need 408 and stand side by side
+  // across the whole band; wrapping stays possible for a case narrower than this one.
+  .qgframe-area-right > .toc,
+  .qgframe-area-right .graph {
+    flex: 1 1 12rem;
+    min-width: 0;
+  }
+
+  // And both get the box the pair under the text has - same tint, same hairline, same radius, the
+  // heading inside it - because here they are the same kind of thing as that pair: two panels
+  // standing side by side under an article. In the column at desktop they are not, and there they
+  // keep the bare column treatment.
+  //
+  // Equal height for the same reason it holds below the text (`.backlinks`, `.recent-notes`): two
+  // bordered boxes of different heights beside each other read as one of them having failed to
+  // load. The flex default does it, which is why there is no `align-items` in the rule above.
+  .qgframe-area-right > .toc,
+  .qgframe-area-right .graph {
+    padding: var(--tpl-space-sm) var(--tpl-space-md);
+    background: var(--tpl-surface-tint);
+    border: var(--tpl-rule-width) solid var(--tpl-rule);
+    border-radius: var(--tpl-radius-md);
+  }
+
+  // The graph brings a well of its own (aside-graph.scss) - the same tint inside the same hairline.
+  // Inside the box above that is a box in a box, so here it is only the clip that keeps the drawing
+  // inside the rounded corner.
+  .qgframe-area-right .graph-outer {
+    background: transparent;
+    border: none;
+  }
+}
+
+/* ------------------------------------------------ the footer paints over what the column leaves */
+
+// A sticky grid item ought to be clamped to its grid area - `right` spans rows 2 to 5 and the
+// footer is row 6 - and Chromium does not clamp it. Measured at 1416x713 on a short article: the
+// column's box ended 72px past the footer's hairline, so the line ran through the graph and the
+// graph sat on top of the footer. Shortening the area to a single row changed the number by one
+// pixel and not the behaviour, which is what says the area is not what the constraint is read
+// from; there is no property that moves it back.
+//
+// So the answer is the painting order. The footer is a band of the page ground, drawn above, and
+// the column ends exactly at the footer's line instead of crossing it. `z-index: 1` is below the
+// header's 80 and below the drawer's 100, so nothing else changes place.
+.qgframe-area-footer {
+  position: relative;
+  z-index: 1;
+  background: var(--light);
 }

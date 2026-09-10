@@ -16,6 +16,11 @@ release/
 .claude/skills/firecrawl*
 .claude/settings.local.json
 
+# Claude: Konfiguration des Dokumentations-Skills. Sie nennt einen Obsidian-Vault auf dieser
+# Platte und gilt damit fuer einen Rechner, nicht fuer das Projekt - der Skill selbst ist
+# versioniert, seine Zuordnung zu einem Vault nicht.
+.claude/wiki-docs.json
+
 # git-Bundle: wird beim Packen geholt (scripts/fetch-git.mjs), 26 MB je Architektur
 resources/git/
 resources/handbook/

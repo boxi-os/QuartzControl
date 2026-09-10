@@ -1,8 +1,0 @@
-{
-  "vault": "Brain",
-  "project_name": "QuartzControl",
-  "project_state": "Active",
-  "documentation_folder": "Documentation",
-  "handoff_root": "00 Inbox/Imports",
-  "read_roots": ["10 Wiki", "40 Collections", "90 Meta/MOCs"]
-}

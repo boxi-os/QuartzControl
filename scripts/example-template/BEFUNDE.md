@@ -1954,3 +1954,25 @@ ist nicht ausdrückbar — Quartz' eingebautes `not-index` prüft `slug !== "ind
 Startseite; alles Feinere braucht `registerCondition` aus einer `quartz.ts`, und dieses Projekt
 baut sein Layout aus `quartz.config.yaml`. Ein Ein-Zeilen-Fix im Plugin wäre es: dieselbe
 Normalisierung für beide Seiten des Vergleichs.
+
+### 92. Eine Reihenfolge, zwei Breakpoints
+
+Unter dem Text stehen drei Bereiche, und sie standen am Tablet und am Telefon in zwei verschiedenen
+Ordnungen: am Tablet `custom-8` → `afterBody` → `right`, am Telefon `afterBody` → `custom-8`. Dass
+das nie auffiel, liegt daran, dass jede Breite für sich plausibel aussieht — nebeneinander gelegt
+sind es zwei Antworten auf dieselbe Frage.
+
+Die Frage ist, was zuerst kommt: was die Seite über **sich** sagt oder was die Website über sie
+sagt. Beides steht jetzt in derselben Ordnung — die zwei Kästen („zuletzt bearbeitet" und die
+Rückverweise), dann Inhaltsverzeichnis und Graph, dann der „Weiterlesen"-Kasten und die
+Eigenschaftentabelle. Am Tablet hieß das, `right` zwischen `custom-8` und `afterBody` zu schieben:
+vorher stand die Gliederung der Seite unter einem Kasten, der zum Weggehen einlädt.
+
+**Eine Ausnahme, und die ist alt:** Am Telefon bleibt `right` über dem Artikel, weil es dort das
+Inhaltsverzeichnis ist und ein Verzeichnis, das man *nach* dem Text liest, keines ist (siehe den
+Absatz in `frames.mjs`). Unterhalb des Textes ist die Reihenfolge dieselbe wie am Tablet.
+
+Betroffen sind genau zwei Frames, `editorial` und `index`, und die teilen sich ihre Breakpoints
+(`readingBreakpoints()`) — eine Änderung deckt Inhalts-, Ordner-, Tag- und Base-Seiten ab. `focus`
+(die 404) und `drawing` (Canvas, Excalidraw) blenden `right` und `afterBody` ohnehin aus. An allen
+sechs Kombinationen nachgemessen.

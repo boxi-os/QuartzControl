@@ -191,6 +191,13 @@ const readingBreakpoints = () => ({
   },
   tablet: {
     // Seven rows: the free area keeps its own row here too, the full nine columns of the text.
+    //
+    // **The order under the text is one order, and it is the same one on the phone.** What the page
+    // says about itself comes first - the two boxes, then the outline and the graph, all four of
+    // them apparatus about *this* page - and only then what the site says about it: the "read on"
+    // box and the properties table. `right` therefore stands between `custom-8` and `afterBody`
+    // rather than behind both; until 2026-09-10 it was last, so the outline of the page sat below a
+    // box inviting the reader to leave it.
     rows: 7,
     cols: 12,
     rowSizes: ['auto', 'auto', '1fr', 'auto', 'auto', 'auto', 'auto'],
@@ -201,8 +208,8 @@ const readingBreakpoints = () => ({
       'area-beforeBody': place(2, 4, 1, 9),
       'area-pageBody': place(3, 4, 1, 9),
       'area-custom-8': place(4, 4, 1, 9),
-      'area-afterBody': place(5, 4, 1, 9),
-      'area-right': place(6, 4, 1, 9),
+      'area-right': place(5, 4, 1, 9),
+      'area-afterBody': place(6, 4, 1, 9),
       'area-footer': place(7, 1, 1, 12)
     }
   },
@@ -221,6 +228,10 @@ const readingBreakpoints = () => ({
     // produced a template the browser could not resolve - the header ended up at y=7951, 150px
     // wide, at the bottom of the page. `hidden: true` is the other dead end: it takes the drawer
     // out of the document along with the area.
+    // Below the text the order is the tablet's: `custom-8` before `afterBody`, so the two boxes
+    // about this page stand above the "read on" box and the properties table. `right` is the one
+    // area that does not follow, and the paragraph above says why - here it is the outline, and an
+    // outline belongs in front of the text it outlines.
     rows: 8,
     cols: 12,
     rowSizes: ['auto', '0', 'auto', 'auto', '1fr', 'auto', 'auto', 'auto'],
@@ -231,8 +242,8 @@ const readingBreakpoints = () => ({
       'area-beforeBody': place(3, 1, 1, 12),
       'area-right': place(4, 1, 1, 12),
       'area-pageBody': place(5, 1, 1, 12),
-      'area-afterBody': place(6, 1, 1, 12),
-      'area-custom-8': place(7, 1, 1, 12),
+      'area-custom-8': place(6, 1, 1, 12),
+      'area-afterBody': place(7, 1, 1, 12),
       'area-footer': place(8, 1, 1, 12)
     }
   }

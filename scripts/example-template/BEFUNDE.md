@@ -1976,3 +1976,37 @@ Betroffen sind genau zwei Frames, `editorial` und `index`, und die teilen sich i
 (`readingBreakpoints()`) — eine Änderung deckt Inhalts-, Ordner-, Tag- und Base-Seiten ab. `focus`
 (die 404) und `drawing` (Canvas, Excalidraw) blenden `right` und `afterBody` ohnehin aus. An allen
 sechs Kombinationen nachgemessen.
+
+### 93. Die zwei Kästen unter dem Text änderten dreimal ihre Meinung
+
+Nachdem Inhaltsverzeichnis und Graph am Tablet nebeneinander standen (Befund 85), fiel das Paar
+darüber auf: „zuletzt bearbeitet" und die Rückverweise stehen **untereinander**, direkt über zwei
+Kästen derselben Machart, die nebeneinander stehen — und zwar bei genau derselben Breite.
+
+Der Grund ist die Basis von `18rem` (plugins.mjs): zwei Spalten, solange die *Zeile* mindestens
+600 px breit ist. Die Zeile ist nicht das Fenster, und das ergibt über die Breiten hinweg drei
+Zustände statt eines: nebeneinander ab rund 1380 px Fenster, untereinander von 1366 bis 1201 (die
+schmalste Desktop-Zeile ist 433 px), und ab 1200 — am Tablet — wieder nebeneinander, weil die Zeile
+dort mit 481 bis 780 px zwar schmaler ist, das Raster aber ein anderes. Eine Anordnung, die sich
+zweimal umentscheidet, während man das Fenster zuzieht.
+
+Seit dem 2026-09-10 gilt eine Regel für den ganzen Bereich über der Telefonbreite: zwei Spalten.
+Darunter entscheidet die Basis weiter, und dort ist sie richtig — ein Telefon bekommt eine Spalte,
+ein breites Fenster im Mobil-Band zwei.
+
+**Drei Dinge mußten dafür zusammenkommen**, und zwei davon sind Eigenheiten von Quartz' `Flex`:
+
+* `flex-basis` steht als **Inline-Stil** auf jedem Wrapper, und den schlägt kein Selektor ohne
+  `!important`. Er muß auch nicht: `display` ist die eine Eigenschaft, die `Flex.tsx` *nicht* inline
+  schreibt (es schreibt `flex-direction`, `flex-wrap` und `gap`) — also wird der Container hier ein
+  Raster, und die Basis entscheidet nichts mehr. Der Inline-`gap` gilt im Raster unverändert weiter.
+* `justify-self: center` steht ebenfalls inline auf jedem Wrapper. In einer Flex-Zeile ist das
+  wirkungslos, in einem Raster nicht: Gemessen bei 1600 px saß danach eine 276-px-Karte mittig in
+  einer 324-px-Spalte, das Grau des Kastens endete beidseitig vor der Spalte. `width: 100%` füllt
+  sie — auch das eine Eigenschaft, die nicht inline steht.
+* Die Spaltenzahl ist `grid-auto-flow: column` und nicht `1fr 1fr`. Auf einer Seite, auf die nichts
+  zeigt, rendert die Rückverweis-Komponente `null` und ihr Wrapper wird ausgeblendet; bei zwei
+  festen Spalten stünde „zuletzt bearbeitet" dann auf halber Breite neben einer leeren Hälfte —
+  genau der Fall, für den in `frames.mjs` aus zwei Bereichen einer wurde. Nachgestellt, indem der
+  Wrapper aus dem Dokument genommen wurde: der verbleibende Kasten nimmt an jeder Breite die volle
+  Zeile.

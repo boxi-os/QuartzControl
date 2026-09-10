@@ -843,6 +843,48 @@ h6 {
   }
 }
 
+/* ------------------------------------------- the two boxes under the text are two, above a phone */
+
+// One rule for the whole range above the mobile width, and that is the point of it.
+//
+// The pair sizes itself by a `basis: 18rem` (plugins.mjs), which means "two columns while the line
+// is at least 600px" - and the line is not the window. Measured: side by side from about 1380px of
+// window, stacked from 1366 down. So the two boxes stood in one column exactly where the pair right
+// below them - the outline and the graph - had just been put into two, and they went back to two of
+// their own accord further down, at the tablet width, where the row is narrower still. Nobody reads
+// a breakpoint table; what one sees is a stack that changes its mind twice.
+//
+// So: two columns above the mobile width, one below it. `display` is the one property quartz' group
+// does *not* write inline (Flex.tsx writes flex-direction, flex-wrap and gap), which is why this
+// can be said at all - an inline `flex-basis` is otherwise unbeatable without `!important`. The
+// inline `gap` carries over into the grid unchanged; the other two go quiet. Same handle as the
+// header's brand group, which nav-header.scss explains at length.
+//
+// Below 901px the basis decides again, and there it is right: a phone gets one column, a wide
+// window in the mobile band gets two.
+@media (min-width: 901px) {
+  // `grid-auto-flow`, not a `grid-template-columns: 1fr 1fr`: the number of columns has to be the
+  // number of boxes that are actually there. On a page nothing links to, the backlinks component
+  // renders `null` and the rule further up takes its wrapper out of the flow - with two fixed
+  // columns that would leave "zuletzt bearbeitet" at half the width with an empty half beside it,
+  // which is the exact thing the one-area decision in frames.mjs was made to avoid. Auto columns
+  // count what is left: one box fills the row, two share it.
+  .qgframe-area-custom-8 > .flex-component {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+  }
+
+  // The other half of the same move. Quartz writes `justify-self: center` on every wrapper of a
+  // group; in a flex row that is inert, in a grid it makes the item shrink to its content and sit
+  // centred in its column - measured at 1600px, a 276px card in a 324px column, with the group's
+  // grey ending short of the column on both sides. `width` is not one of the properties written
+  // inline, so the column gets filled without an `!important` aimed at the inline style.
+  .qgframe-area-custom-8 > .flex-component > * {
+    width: 100%;
+  }
+}
+
 /* ------------------------------------------------ the footer paints over what the column leaves */
 
 // A sticky grid item ought to be clamped to its grid area - `right` spans rows 2 to 5 and the

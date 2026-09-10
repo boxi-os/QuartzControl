@@ -5,20 +5,21 @@
 // weights instead of two steps. Latin subset only - a template that ships Cyrillic and Greek for a
 // German site is 200 KB of nothing.
 //
-// FINDING (measured, not fixed): fontService.importFontFile writes
+// Why the generated block is replaced rather than used as it comes.
 //
-//     @font-face { font-family: "X"; src: url(...) format("woff2"); font-display: swap; }
+// Until 2026-09-06 importFontFile wrote no `font-weight` and no `font-style` at all, which for a
+// *variable* font meant the browser treated the face as 400 and faked every bold, and for two cuts
+// of one family meant the second displaced the first. That is fixed (BEFUNDE 3): fontFile.ts reads
+// the weight range out of `fvar`/`OS/2` and the italic bit, and writes both.
 //
-// with no `font-weight`, no `font-style` and no `unicode-range` (electron/main/services/
-// fontService.ts:30). For a single static cut that is fine. For a *variable* font it is wrong: with
-// no weight range the browser treats the face as 400 and synthesises a faux bold for every heading,
-// so the shipped variable axis is never used. Two static cuts of the same family are worse still -
-// both faces claim the same weight and the last one wins.
+// What it still does not write is `unicode-range`. Without it the browser downloads the file for
+// any character, including the ones the Latin subset does not contain, and renders those from a
+// subset that has no glyph for them instead of falling back to the stack in variables.mjs.
 //
 // So the files travel through importFontFile (that is the real path, and it puts them where the
 // emitter expects them), and the generated block is then replaced wholesale with FONT_FACE_CSS
-// below via styles.save. The `fonts` part of the package exports whatever is inside the managed
-// block, so the corrected rules are what ships.
+// below via styles.save - same weights and styles the app would write now, plus the range. The
+// `fonts` part of the package exports whatever is inside the managed block, so those rules ship.
 
 export const FONTS = [
   {

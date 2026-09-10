@@ -36,20 +36,22 @@ const LAYOUT_BOX_NAME = 'quartz-layout-box'
 // something that is on every page of the site.
 
 /**
- * Six instances of quartz-layout-box, one per thing the plugin can do.
+ * Seven instances of quartz-layout-box, one per thing the plugin can do.
  *
- * Four use `html:` inline instead of `file:`. That is not a stylistic choice: snippet files live in
- * quartz/static/snippets/, which no part of a template package collects, so a `file:` instance
- * arrives in the importing project pointing at nothing. Inline HTML rides along inside the config
- * entry. The one `file:` instance is deliberate - it demonstrates the file path *and* the gap, and
- * site/README.md says which file has to be copied along with the package.
+ * Six use `html:` inline and one uses `file:`. That split was a necessity until 2026-09-06 -
+ * snippet files live in quartz/static/snippets/, which no part of a package collected, so a
+ * `file:` instance arrived in the importing project pointing at nothing. The `static` part
+ * collects them now (BEFUNDE 5), so both ways work and the split is a demonstration: the one
+ * `file:` instance shows the file path, the six inline ones show that markup inside the config
+ * entry cannot arrive without the entry that references it.
  *
- * Four of the five carry text and therefore carry a `byLang` entry as well: the plugin reads the
+ * Four of the seven carry text and therefore carry a `byLang` entry as well: the plugin reads the
  * page's `lang` frontmatter field - the one Quartz renders <html lang> from - and merges that entry
  * over the base options. Before the plugin could do that, every one of the 126 English pages had to
  * repeat the same four blocks in its own frontmatter (876 lines), and the two headings could not be
- * translated at all. The site mark stays without one: it carries the site name, which is not
- * translated.
+ * translated at all. The other three carry no prose: the site mark carries the site name, which is
+ * not translated, the bar's chapter name comes out of the page's own frontmatter, and the
+ * folder-page marker renders nothing but a `<style>`.
  */
 export const LAYOUT_BOXES = [
   {

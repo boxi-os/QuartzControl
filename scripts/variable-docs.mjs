@@ -60,7 +60,7 @@ const SEITEN = [
   { de: '5-gestaltung/06-erzeugte-seiten/fehlerseite', en: 'en/5-design/06-generated-pages/error-page', files: ['page-404.scss'] },
   { de: '6-anpassen/06-barrierefreiheit', en: 'en/6-adapting/06-accessibility', files: ['a11y.scss'] },
   { de: '6-anpassen/04-variablen', en: 'en/6-adapting/04-variables', files: ['base.scss'] },
-  { de: '5-gestaltung/05-layout-boxen/die-fuenf-instanzen', en: 'en/5-design/05-layout-boxes/the-five-instances', files: ['plugin-layout-box.scss'] },
+  { de: '5-gestaltung/05-layout-boxen/die-instanzen', en: 'en/5-design/05-layout-boxes/the-instances', files: ['plugin-layout-box.scss'] },
   { de: '5-gestaltung/01-navigation/sprachumschalter', en: 'en/5-design/01-navigation/language-switcher', files: ['nav-language-switcher.scss'] },
   { de: '3-obsidian-formate/01-bases/index', en: 'en/3-obsidian-formats/01-bases/index', files: ['page-bases.scss'] },
   { de: '3-obsidian-formate/02-canvas/index', en: 'en/3-obsidian-formats/02-canvas/index', files: ['page-canvas.scss'] },

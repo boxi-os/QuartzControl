@@ -1,7 +1,9 @@
 # Was beim Bau der Beispielvorlage auffiel
 
-Alles hier ist an einem echten Projekt gemessen, nicht aus dem Code geschlossen. Ein Punkt wurde
-behoben (er machte die Aufgabe sonst unlösbar), die übrigen stehen offen.
+Alles hier ist an einem echten Projekt gemessen, nicht aus dem Code geschlossen. Ob ein Punkt noch
+offen ist, sagt seine eigene Überschrift — ein behobener trägt das Datum dahinter. Die
+Abschnittsüberschrift darunter sagt es nicht: Sie ist von der Zeit überholt worden und heißt nur
+noch, wo die durchnummerierte Liste anfängt.
 
 ## Behoben
 
@@ -52,7 +54,7 @@ tun gibt — dreimal an einem Tag passiert. Für neue Einträge gilt ab jetzt: *
 was der Eintrag ist** — eine offene Randbedingung, oder ein behobener Fund mit dem Datum dahinter,
 so wie es 1, 2, 3, 5, 8 und 54 seit heute tun.
 
-## Offen
+## Die Liste
 
 ### 1. Fünf Instanzen eines Plugins reisen als eine — behoben am 2026-09-06
 

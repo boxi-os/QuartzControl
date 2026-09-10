@@ -344,6 +344,25 @@ export const PLUGIN_PATCHES = {
       groupOptions: { grow: true, shrink: true, basis: '18rem', align: 'stretch' }
     }
   },
+  // **Auf einer Ordnerseite zeigt die Graphansicht einen einzelnen Punkt, und das ist ein Fehler
+  // des Plugins, den von hier aus nichts erreicht** (graph 0.1.0, gemessen am 2026-09-10).
+  //
+  // Das Skript normalisiert zweimal verschieden. Den Datensatz schlüsselt es mit `simplifySlug`,
+  // das ein `index` am Ende abschneidet und den Schrägstrich davor **stehen lässt**:
+  // `2-formatierung/01-text/index` wird zu `2-formatierung/01-text/`. Die Mitte des lokalen Graphen
+  // holt es dagegen aus `location.pathname` und schneidet dort den Schrägstrich **ab**:
+  // `/2-formatierung/01-text/` wird zu `2-formatierung/01-text`. Für jede Seite, deren Adresse auf
+  // einen Schrägstrich endet - also jede Ordnerseite - sucht es damit einen Knoten, den es selbst
+  // nicht angelegt hat: null Kanten, ein Punkt.
+  //
+  // Bewiesen mit einem Zeichen Unterschied: dieselbe Seite über `…/01-text/index` aufgerufen hat
+  // die Mitte `2-formatierung/01-text/`, findet sie im Datensatz und zeichnet acht Kanten.
+  //
+  // Was hier nicht hilft: Optionen hat das Plugin dafür keine, `depth: -1` würde aus dem lokalen
+  // überall einen globalen Graphen machen, und eine Bedingung, die den Graphen auf Ordnerseiten
+  // ausblendet, ist nicht ausdrückbar - Quartz' `not-index` prüft `slug !== "index"`, also nur die
+  // Startseite, und alles andere braucht `registerCondition` aus einer `quartz.ts`, die dieses
+  // Projekt nicht hat. Behoben werden kann es nur im Plugin.
   graph: { enabled: true, layout: { position: 'right', priority: 20, display: 'desktop-only' } },
 
   breadcrumbs: { enabled: true, layout: { position: 'beforeBody', priority: 10, condition: 'not-index' } },

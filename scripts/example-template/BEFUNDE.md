@@ -1923,3 +1923,34 @@ keinem.
 
 Die Ellipse trägt weiter: ein erfundener 75-Zeichen-Ordnername kürzt, die Zeile bleibt bei 274 px
 in einer 300-px-Spalte, und nichts scrollt quer.
+
+### 91. Die Graphansicht zeigt auf Ordnerseiten einen einzelnen Punkt
+
+Ein Fehler in `@quartz-community/graph` 0.1.0, und einer, den weder diese Vorlage noch die
+Konfiguration erreicht.
+
+Das Skript normalisiert Adressen an zwei Stellen und an jeder anders:
+
+* **Den Datensatz** schlüsselt es mit `simplifySlug`. Das schneidet ein `index` am Ende ab und
+  läßt den Schrägstrich davor stehen (`_t(u, true)` — das zweite Argument sagt „Schrägstrich
+  behalten"): aus `2-formatierung/01-text/index` wird `2-formatierung/01-text/`. Die Links im
+  Inhaltsverzeichnis der Seite sind genauso geschrieben, die passen also zueinander.
+* **Die Mitte des lokalen Graphen** holt es aus `window.location.pathname` und schneidet den
+  Schrägstrich dort **ab**: aus `/2-formatierung/01-text/` wird `2-formatierung/01-text`.
+
+Für jede Seite, deren Adresse auf einen Schrägstrich endet — also jede Ordner- und Kapitelseite —
+sucht der Graph damit einen Knoten, den er selbst nie angelegt hat. Die Breitensuche findet null
+Kanten, trägt die Mitte trotzdem ein, und übrig bleibt ein Punkt.
+
+**Gemessen** an `/2-formatierung/01-text/`: Mitte `2-formatierung/01-text`, im Datensatz *nicht*
+vorhanden, 0 Kanten. Dieselbe Seite über `/2-formatierung/01-text/index` aufgerufen — ein Zeichen
+Unterschied, dieselbe Datei: Mitte `2-formatierung/01-text/`, im Datensatz vorhanden, **8 Kanten**,
+und der Graph zeichnet neun Knoten. Eine Dateiseite hat das Problem nicht, weil ihr Slug nie auf
+`index` endet.
+
+**Was von hier aus nicht geht:** Optionen für die Mitte hat das Plugin keine. `depth: -1` machte
+aus dem lokalen überall einen globalen Graphen. Und die Komponente auf Ordnerseiten auszublenden
+ist nicht ausdrückbar — Quartz' eingebautes `not-index` prüft `slug !== "index"`, also nur die
+Startseite; alles Feinere braucht `registerCondition` aus einer `quartz.ts`, und dieses Projekt
+baut sein Layout aus `quartz.config.yaml`. Ein Ein-Zeilen-Fix im Plugin wäre es: dieselbe
+Normalisierung für beide Seiten des Vergleichs.

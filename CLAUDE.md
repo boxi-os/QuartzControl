@@ -52,9 +52,15 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   **`QUARTZCONTROL_HANDBOOK_SITE`** zeigt auf eine schon gebaute Website und wird übernommen statt
   gebaut (`QUARTZCONTROL_HANDBOOK_PROJECT` verschiebt den ersten Weg), und das Bau-Log sagt, welcher
   gegriffen hat. Von Hand nach `resources/handbook` zu kopieren hilft **nicht**: Der Fehlerpfad
-  räumt eine vorhandene Kopie absichtlich weg, damit keine veraltete mitreist. Beim Spiegeln von
-  einem Mac `COPYFILE_DISABLE=1` und `--no-xattrs` setzen — sonst kommen AppleDouble-Dateien mit
-  (gemessen: 901 statt 437 Dateien, 464 davon `._*`)
+  räumt eine vorhandene Kopie absichtlich weg, damit keine veraltete mitreist. Gespiegelt wird mit
+  **tar durch ssh**, und zwar mit beidem: `COPYFILE_DISABLE=1 tar --no-xattrs -cf -
+  -C resources/handbook . | ssh <vm> 'tar -xf - -C <ziel>'`. Ohne die Variable kommen
+  AppleDouble-Dateien mit (gemessen: 901 statt 437 Dateien, 464 davon `._*`); ohne `--no-xattrs`
+  reisen macOS' xattrs als pax-Kopfzeilen mit, die GNU tar auf der Gegenseite Zeile für Zeile als
+  `LIBARCHIVE.xattr.com.apple.provenance` anmeckert — folgenlos, aber unübersichtlich (gemessen am
+  2026-09-10: mit `COPYFILE_DISABLE=1` allein kamen 453 Dateien und keine einzige `._*` an, dafür
+  eine Meldung je Datei). **rsync ist hier kein Ausweg**: macOS liefert openrsync (Protokoll 29,
+  ohne `--no-xattrs`), und auf einer frischen Debian-13-VM ist rsync gar nicht installiert
 - `npm run fetch:git` — holt das mitgelieferte git (dugite-native) für diesen Rechner nach
   `resources/git/<platform>-<arch>/` und dünnt es aus; beim Packen macht das `beforePack` von selbst
 - `npm run check:runtime -- <projektpfad>` — die eingebettete Node-Laufzeit gegen ein echtes Projekt:

@@ -106,8 +106,8 @@ extraResources:
   # ist das Verzeichnis, in dem ihn jemand sucht; `resources/licenses/README.txt` verweist darauf.
   - from: LICENSE
     to: licenses/QuartzControl-LICENSE.txt
-  # Das Benutzerhandbuch als gebaute Website (npm run build:handbook; 437 Dateien / 34,9 MB am
-  # 2026-09-09, die Zahl wächst mit dem Handbuch). Es
+  # Das Benutzerhandbuch als gebaute Website (npm run build:handbook; 453 Dateien / 35,4 MB am
+  # 2026-09-10, die Zahl wächst mit dem Handbuch). Es
   # reist mit statt als Link, damit es ohne Netz lesbar ist und immer zu der Fassung passt, die
   # gerade installiert ist. Wie resources/git nicht im Repo, sondern beim Packen erzeugt - hier
   # aber ohne Netz, aus dem Handbuch-Projekt (docs/handbuch.md). Fehlt es, packt beforePack mit

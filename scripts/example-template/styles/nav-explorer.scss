@@ -184,9 +184,17 @@ ul.explorer-ul {
 // One rule, every depth: a nested list steps in and carries a hairline back to its parent. The
 // guide line matters more than the indent — at four levels deep, 0.85rem of padding alone does not
 // tell you which parent a file belongs to.
+//
+// **The margin is where the parent's chevron is, not where its row is.** A guide line that starts
+// at the row's edge stands beside the arrow it belongs to instead of under it, and at three levels
+// that reads as three lines slightly out of true. The arrow's glyph begins one row-padding in
+// (`--tpl-space-2xs`, the chevron's own negative margin having taken it back to the row's edge) and
+// is `--tpl-icon-sm` wide, so its middle - and the tip of the chevron, which points down when the
+// folder is open - is half that further. Measured at 1600px before: line at x=104, chevron tip at
+// 111.6.
 .explorer-content ul.tree-item-children {
   padding-inline-start: var(--tpl-indent);
-  margin-inline-start: var(--tpl-space-2xs);
+  margin-inline-start: calc(var(--tpl-space-2xs) + var(--tpl-icon-sm) / 2);
   border-inline-start: var(--tpl-rule-width) solid var(--tpl-rule);
 }
 
@@ -237,6 +245,11 @@ a.nav-file-title {
   // beside it.
   padding: var(--tpl-space-2xs);
   margin-inline-start: calc(var(--tpl-space-2xs) * -1);
+  // The plugin gives this icon `margin-right: 5px` of its own. The row is a flex box with a `gap`,
+  // so that 5px is a second spacing nobody asked for - and it is what put the folder names 5px to
+  // the right of the file names in the same list, since a file row has no icon to carry it. The
+  // row's gap is the one distance here.
+  margin-inline-end: 0;
   border-radius: var(--tpl-radius-sm);
   transition: color var(--tpl-motion), background-color var(--tpl-motion);
 
@@ -256,13 +269,16 @@ a.nav-file-title {
 // neither is named here. `:has()` on the list item is what reads the fold state: the class lives on
 // `.folder-outer`, a sibling of the container the icon sits in, and a sibling is exactly what a
 // descendant selector cannot reach.
+// The distance to the label is a `gap` and nothing else - on the file row it is the row's own
+// (`.folder-container, a.nav-file-title` above), on the folder row the button's (below). A margin
+// here as well would be that distance twice on one of the two rows and once on the other, which is
+// exactly how the file names ended up four pixels right of the folder names they sit under.
 .folder-button::before,
 a.nav-file-title::before {
   content: "";
   flex: 0 0 auto;
   width: var(--tpl-icon-sm);
   height: var(--tpl-icon-sm);
-  margin-inline-end: var(--tpl-space-2xs);
   background-color: currentColor;
   mask-size: contain;
   -webkit-mask-size: contain;
@@ -299,6 +315,7 @@ a.nav-file-title::before {
 .folder-button {
   display: flex;
   align-items: center;
+  gap: var(--tpl-space-2xs);
   text-decoration: none;
   min-width: 0;
   padding: 0;
@@ -327,6 +344,14 @@ a.nav-file-title::before {
   white-space: nowrap;
 }
 
+// A file row has no chevron - there is nothing to fold - so without this it starts where a folder
+// row's *arrow* starts, and its name sits a whole icon to the left of the name of the folder beside
+// it. Measured at 1600px: file names at x=141.8, folder names at x=170 in the same list. The row
+// reserves the arrow's column instead, so the two icons line up and the two names line up, which is
+// what makes a level read as a level.
+//
+// The width of that column, spelled out: the row's own inline padding, plus the chevron's box,
+// which is the glyph plus a padding on each side (see `.folder-icon`).
 a.nav-file-title {
   color: var(--darkgray);
   text-decoration: none;
@@ -334,6 +359,7 @@ a.nav-file-title {
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
+  padding-inline-start: calc(var(--tpl-space-2xs) * 3 + var(--tpl-icon-sm));
 
   &:hover {
     color: var(--dark);
@@ -375,6 +401,15 @@ a.nav-file-title {
 }
 
 /* --------------------------------------------------------------- the current page */
+
+// Der Kasten, der die Regel für die aktuelle Ordnerseite mitbringt, rendert nichts als ein
+// `<style>` (plugins.mjs). `display: none` nimmt ihn aus dem Fluss - ein Stylesheet wirkt
+// unabhängig davon, ob sein Element gerendert wird -, sonst stünde im Footer-Bereich eine leere
+// Rinne unter dem Kolophon.
+.layout-box-current-folder {
+  display: none;
+}
+
 
 // Colour *and* weight *and* a marker: colour alone is not a state for everyone who reads this.
 .explorer a.active {

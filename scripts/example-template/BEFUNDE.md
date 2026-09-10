@@ -1816,3 +1816,88 @@ eigene Wanne auf, sonst wäre es ein Kasten im Kasten. Nachgemessen bei 901, 950
 Die 12 statt 18 rem sind gerechnet, nicht geraten: Am unteren Ende des Bandes ist der Bereich
 481 px breit, zwei 18-rem-Kästen brauchen mit der Rinne 608 und würden wieder untereinander
 umbrechen — also genau den Zustand herstellen, gegen den der Block geschrieben ist.
+
+### 86. Zwei Selektoren in einem Block heben die Spezifität von allem darin
+
+`.toc-content` ist das `<ul>` selbst. Um Quartz' `max-height` auf dieser Liste zu schlagen, stand
+die Regel als **`.toc-content, ul.toc-content.overflow { … }`** da — die zweite Schreibweise ist die
+des Plugins, also spezifischer. Was dabei übersehen wurde: Die höhere Spezifität gilt für **jede
+Deklaration im Block**, auch für die verschachtelte `a { … }`. `ul.toc-content.overflow a` ist
+(0,2,2) und schlägt damit alles, was weiter unten in derselben Datei über `.toc-content a.in-view`
+oder `.toc-content .depth-N > a` gesagt wird — beides (0,2,1).
+
+**Gemessen** bei 1600 px auf einer gescrollten Seite: Jeder Eintrag stand in `rgb(95,95,95)`
+(`--gray`), gelesen wie ungelesen; der Farbschritt für „bis hierher gelesen" hat nie stattgefunden.
+Die Gegenprobe war die eindeutige: eine frisch injizierte Kopie derselben Regel mit `!important`
+änderte die Farbe nicht, ein `outline` in derselben injizierten Regel dagegen schon — der Selektor
+trifft also, nur die Deklaration verliert.
+
+Die zwei Kappungen, für die die andere Schreibweise gebraucht wurde, stehen jetzt als eigene Regel
+auf dem Element, das sie betrifft: drei Deklarationen statt einer zweiten Fassung jeder Regel der
+Datei. (Nötig sind sie ohnehin kaum — Quartz' Stylesheet liegt in `@layer quartz-base`, und
+ungeschichtet schlägt geschichtet unabhängig von der Spezifität. Sie bleiben als Gürtel zum
+Hosenträger.)
+
+**Was daraus bleibt:** Eine Selektorliste ist keine Bequemlichkeit. Wer zwei Schreibweisen
+desselben Elements in einen Block schreibt, gibt allem darin die Spezifität der stärkeren.
+
+### 87. Zwei Einrückungen, und die Fortschrittslinie wurde zur Treppe
+
+Quartz rückt im Inhaltsverzeichnis das **Listenelement** ein (`.depth-N { padding-left: N rem }`),
+diese Vorlage den **Link** (`--tpl-indent` je Ebene). Solange Befund 86 die zweite Hälfte
+unwirksam machte, fiel das nicht auf. Danach waren es 29,6 px je Ebene statt 13,6.
+
+Sichtbar wurde es an der Linie: Sie wird auf dem Link gezeichnet, also begann sie bei jeder Ebene
+weiter rechts, und aus dem durchgehenden Strich, der sagt, wie weit gelesen ist, wurde eine Treppe
+aus fünf Segmenten. Quartz' Einrückung ist deshalb zurückgesetzt; die Vorlage rückt einmal ein, und
+alle Einträge stehen mit derselben Kante an derselben Linie.
+
+Dazu zwei Korrekturen an derselben Stelle: Die Linie ist jetzt **kumulativ** — jeder gelesene
+Eintrag trägt sie, nicht nur der letzte —, weil das die Frage beantwortet, für die eine Linie an
+der Seite da ist. Und der aktuelle Abschnitt ist „der markierte Eintrag, nach dem kein markierter
+mehr kommt" (`li:not(:has(~ li > a.in-view))`) statt zweier Selektoren, von denen der zweite
+(`li:last-child`) nie traf: Quartz hängt einen `li.overflow-end` hinter die Einträge, also ist das
+letzte Kind der Wächter. Am Fuß einer Seite, wo alles markiert ist, war damit nichts markiert.
+
+### 88. Im Explorer stand die Führungslinie neben dem Pfeil, und die Dateien standen links der Ordner
+
+Drei Kleinigkeiten, die zusammen die Einrückung schief aussehen ließen — alle bei 1600 px gemessen:
+
+* Die Führungslinie einer verschachtelten Liste saß an der Kante der Elternzeile (x = 104), die
+  Spitze des Chevrons darüber bei 111,6. Der Rand ist jetzt die halbe Symbolbreite weiter, also
+  steht die Linie unter der Pfeilspitze.
+* Eine Dateizeile hat keinen Chevron, also begann sie dort, wo bei einer Ordnerzeile der *Pfeil*
+  steht: Dateinamen bei x = 141,8, Ordnernamen derselben Liste bei 170. Die Zeile reserviert die
+  Spalte des Pfeils jetzt als Polsterung.
+* Und das Plugin gibt dem Chevron ein eigenes `margin-right: 5px`, obwohl die Zeile ein Flexbox mit
+  `gap` ist — 5 px doppelt, aber nur auf der Ordnerzeile. Dazu lag der Abstand zwischen Symbol und
+  Beschriftung einmal als `gap` der Zeile und einmal als `margin` am `::before` vor, was auf der
+  Dateizeile beides zählte und auf der Ordnerzeile nur eines. Beides gesagt: der Abstand ist ein
+  `gap`, einmal.
+
+Danach steht jede Zeile einer Ebene mit dem Symbol an derselben Kante und mit dem Namen an
+derselben Kante — nachgemessen über drei Ebenen: Text jeweils bei Zeilenanfang + 46,4 px.
+
+### 89. Der Explorer markiert Dateien, aber nie eine Ordnerseite
+
+Das Plugin setzt `.active` ausschließlich auf Datei-Anker (`u.data.slug === D`, in `dist/index.js`
+gelesen). Steht man auf einer **Ordnerseite** — und die sieht in dieser Vorlage aus wie jede andere
+Seite —, ist im Baum nichts hinterlegt. Die Ordnerzeile trägt nur `data-folderpath`, die aktuelle
+Seite steht in `<body data-slug>`, und **zwei Attribute miteinander vergleichen kann kein
+Selektor.**
+
+Der naheliegende Ersatz trägt nicht: „der tiefste offene Ordner" ist auf einer Ordnerseite zwar der
+richtige, aber der Faltzustand gehört dem Nutzer — wer von Hand einen weiteren Ordner aufklappt,
+verschiebt damit die Markierung.
+
+Also wird die Regel gebaut statt gesucht. Eine Layout-Box rendert ein `<style>`, in dem
+`{{slug}}` steht; der Platzhalter füllt genau den einen Wert, den der Selektor braucht, und das
+Ergebnis ist ein Stylesheet, das nur diese eine Seite kennt. Die Box ist selbst ausgeblendet — ein
+Stylesheet wirkt unabhängig davon, ob sein Element gerendert wird. Nachgemessen auf einer
+Kapitelseite, einer Abschnittsseite, einer Dateiseite und der Startseite: je genau eine oder genau
+keine Markierung, und nie zwei.
+
+Die Grenze steht im Kommentar: `applyPlaceholders` escaped den Wert als HTML, ein `<style>` ist ein
+Raw-Text-Element, und eine Entity darin wird nicht zurückgelesen. Slugs sind pfadsicher, also
+trifft das hier nichts — ein Slug mit `&` oder `"` ergäbe eine Regel, die nicht mehr passt, nicht
+eine, die zu viel trifft.

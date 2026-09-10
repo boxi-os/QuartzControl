@@ -64,10 +64,18 @@
 // `.toc-content ul`, which matches nothing on any page, so the rail the whole outline hangs from
 // was never drawn. Written flat here for that reason.
 //
-// The second selector is the same element again, spelled the way quartz spells it, so this beats
-// `ul.toc-content.overflow { max-height: calc(100% - 2rem) }` on specificity as well as on layer.
-.toc-content,
-ul.toc-content.overflow {
+// **One class in the selector, and that is a fix.** The list used to be written as
+// `.toc-content, ul.toc-content.overflow { … a { … } }` - the second spelling being quartz' own,
+// added to beat its `max-height` twice over. What it also did was give every declaration in the
+// block the specificity of *that* selector: `ul.toc-content.overflow a` is (0,2,2), which outranks
+// `.toc-content a.in-view` and every `.toc-content .depth-N > a` in this file at (0,2,1). So the
+// read/unread colour step and all five indent steps were dead - measured at 1600px on a scrolled
+// page: every entry `rgb(95,95,95)`, `--gray`, in-view or not, and a freshly injected copy of the
+// same rule changed nothing while an `outline` in the same injected rule did.
+//
+// The two caps quartz puts on the list are the only thing that needed the other spelling, and they
+// get it below - three declarations rather than the whole block.
+.toc-content {
   list-style: none;
   margin-block: var(--tpl-space-xs) 0;
   margin-inline: 0;
@@ -77,8 +85,14 @@ ul.toc-content.overflow {
   // The line the whole outline hangs from.
   border-inline-start: var(--tpl-rule-width) solid var(--tpl-rule);
 
+  // Quartz indents the *list item*, 1rem per level, from its own layer. This file indents the
+  // *link* instead, one --tpl-indent per level (further down), and the two together are two
+  // indents: measured, 29.6px per level instead of 13.6. Worse than the arithmetic, the rail is
+  // drawn on the link, so every level started its border further right and the line that says how
+  // far one has read became a staircase of segments. One indent, and it is this file's.
   li {
     margin: 0;
+    padding-inline-start: 0;
   }
 
   a {
@@ -106,6 +120,14 @@ ul.toc-content.overflow {
   &.collapsed {
     display: none;
   }
+}
+
+// Quartz caps the list itself, in its own layer and with two classes. Unlayered already beats a
+// layer whatever the specificity, so this is the belt to that braces - and it is three declarations
+// on the element the caps are on, not a second spelling of every rule in this file.
+ul.toc-content.overflow {
+  max-height: none;
+  overflow: visible;
 }
 
 /* ------------------------------------------------------- one step per heading level */
@@ -148,31 +170,45 @@ ul.toc-content.overflow {
 // this far" mark, not a "you are here". Read the source before styling it (postscript.js): the
 // test is `boundingClientRect.y < rootBounds.height`, not intersection.
 //
-// So it was saying the wrong thing loudly. Colour, weight *and* the rail went on `.in-view`, which
-// on a long page put half the outline in the accent colour and in bold, and half of an outline
-// being marked marks nothing. Quartz' own answer is quieter and right: its default only steps the
-// opacity, 0.35 to 0.75, so the read part is simply darker. That is the grey-value change one sees
-// on a stock Quartz site.
+// It used to say that loudly and in the wrong register: colour, weight *and* the rail all went on
+// `.in-view` at once, so on a long page half the outline was accent-coloured and bold - and half of
+// an outline being emphasised emphasises nothing. Quartz' own answer is quieter: its default only
+// steps the opacity, 0.35 to 0.75, so the read part is simply darker. That is the grey-value change
+// one sees on a stock Quartz site. The text follows that; the rail does the other job, below.
 //
 // Here it is two steps of the palette rather than opacity - `--gray` to `--darkgray`, both
 // measured - because 0.35 of the body colour lands under 3:1 and the lower half of the outline was
 // barely there.
 .toc-content a.in-view {
   color: var(--darkgray);
+  // And the rail, which is what makes the cumulative mark useful rather than merely quiet: the
+  // read part of the outline carries an accent line, the rest carries the hairline the list hangs
+  // from, and the boundary between the two is how far down the page one is. A progress bar drawn
+  // by the entries themselves - they stack without gaps, so their 2px borders make one line.
+  //
+  // The earlier version of this file put colour *and* weight *and* the rail on `.in-view` at once
+  // and the note here said that marked nothing; that was true of the three together. The rail
+  // alone is a position on a scale, and a scale is allowed to be half full.
+  border-inline-start-color: var(--secondary);
 }
 
 // And the current section: the *last* entry carrying the mark. Since the mark is cumulative from
-// the top, that is the one whose successor no longer has it - which CSS can ask for. `:has` is in
-// every engine that runs the observer (Firefox since 121), so this never disagrees with the class
-// it depends on.
+// the top, that is simply the marked entry with no marked entry after it - which is what the
+// selector says, and it says it in one line instead of two. `:has` is in every engine that runs the
+// observer (Firefox since 121), so this never disagrees with the class it depends on.
 //
-// The rail lives here and not on `.in-view`: one line down the side is a position, forty of them
-// are a border. Weight stays out of it entirely - the entries are 13px, a jump to 600 reflows the
-// column on every scroll.
-.toc-content li:has(+ li > a:not(.in-view)) > a.in-view,
-.toc-content li:last-child > a.in-view {
+// The two-selector version it replaces asked for "the one whose successor is unmarked" plus
+// "the last child", and the second half never matched anything: quartz appends its own
+// `li.overflow-end` sentinel after the entries, so `li:last-child` is that sentinel. At the bottom
+// of a page, where every entry is marked, nothing was marked as current. Measured on a scrolled
+// page: all four entries `--darkgray`, none in the accent colour.
+//
+// It is the text that says it, because the rail above now runs the whole read length: the end of
+// the accent line is where you are, and the one entry printed in the accent colour says which
+// heading that is. Weight stays out of it entirely - the entries are 13px, a jump to 600 reflows
+// the column on every scroll.
+.toc-content li:not(:has(~ li > a.in-view)) > a.in-view {
   color: var(--secondary);
-  border-inline-start-color: var(--secondary);
 }
 
 .toc .overflow-end {

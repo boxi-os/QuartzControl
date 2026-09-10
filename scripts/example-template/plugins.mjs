@@ -193,6 +193,37 @@ export const LAYOUT_BOXES = [
       byLang: { en: { html: '<p>{{siteTitle}} · Language: {{locale}} · This page: <code>{{slug}}</code></p>' } }
     },
     layout: { position: 'footer', priority: 10 }
+  },
+  {
+    // **Ein Stylesheet, das nur diese eine Seite kennt** - und der einzige Weg, im Explorer die
+    // *Ordnerseite* zu markieren, auf der man gerade steht.
+    //
+    // Das Plugin setzt `.active` ausschließlich auf Datei-Anker (`u.data.slug === D` in
+    // `dist/index.js`, gelesen). Eine Ordnerzeile bekommt nie eine Klasse; sie trägt nur
+    // `data-folderpath`, und die aktuelle Seite steht in `<body data-slug>`. Zwei Attribute
+    // miteinander zu vergleichen kann kein Selektor - und der Fold-Zustand als Ersatz ("der
+    // tiefste offene Ordner") wäre falsch, sobald jemand von Hand einen weiteren aufklappt.
+    //
+    // Also wird die Regel gebaut statt gesucht: `{{slug}}` steht beim Rendern der Seite zur
+    // Verfügung, und der Platzhalter füllt genau den einen Wert, den der Selektor braucht. Der
+    // Kasten rendert nichts als dieses `<style>` und ist selbst ausgeblendet
+    // (`nav-explorer.scss`); ein `display: none` nimmt ihn aus dem Fluss, also kostet er auch
+    // keine Rinne im Footer-Bereich.
+    //
+    // Die Grenze dazu: `applyPlaceholders` escaped den Wert als HTML, und ein `<style>` ist ein
+    // Raw-Text-Element - eine Entity darin wird nicht zurückgelesen. Slugs sind pfadsicher
+    // (`a-z0-9/-`), also trifft das hier nichts; ein Slug mit `&` oder `"` wäre eine Regel, die
+    // nicht mehr passt, und nicht etwa eine, die zu viel trifft.
+    source: LAYOUT_BOX_SOURCE,
+    name: LAYOUT_BOX_NAME,
+    enabled: true,
+    order: 550,
+    options: {
+      html: '<style>.explorer .folder-container[data-folderpath="{{slug}}"]{background:var(--tpl-surface-tint)}.explorer .folder-container[data-folderpath="{{slug}}"] .folder-title{color:var(--secondary)}</style>',
+      className: 'layout-box-current-folder',
+      placeholders: true
+    },
+    layout: { position: 'footer', priority: 20 }
   }
 ]
 

@@ -39,7 +39,7 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   Host-Key-Fingerprints des Rechners zeigt, auf dem das Skript läuft. Ablauf und Gliederung des
   Handbuchs: [`docs/handbuch.md`](docs/handbuch.md)
 - `npm run build:handbook` — baut das Benutzerhandbuch aus seinem Quartz-Projekt nach
-  `resources/handbook/` (437 Dateien, 34,9 MB am 2026-09-09, davon 29,8 MB Bilder — die Zahl wächst
+  `resources/handbook/` (453 Dateien, 35,4 MB am 2026-09-10, davon 29,9 MB Bilder — die Zahl wächst
   mit jedem Textdurchgang), von wo `extraResources` es in die App legt. Das
   Handbuch reist mit statt als Link: Es ist ohne Netz lesbar und passt immer zu der Fassung, die
   gerade installiert ist. Behandelt wie `resources/git` — gitignoriert und beim Packen erzeugt

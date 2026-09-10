@@ -128,6 +128,20 @@ mac:
       arch: [arm64, x64]
     - target: zip
       arch: [arm64, x64]
+  # Dieselbe Zeile wie beim AppImage, aus demselben Grund - und hier ist sie nötiger. Ohne sie gilt
+  # electron-builders Vorgabe, und die lässt die Architektur bei der Standardarchitektur weg: Das
+  # dmg über `skipDefaultArch` (dmg-builder/out/dmg.js), das zip, weil sein Vorgabemuster das
+  # `-${arch}` selbst weglässt, sobald `arch === defaultArch` (ArchiveTarget.js). `defaultArch` ist
+  # unbesetzt und damit x64 (`defaultArchFromString`, builder-util/out/arch.js), die Intel-Fassung
+  # hieße also `QuartzControl-1.0.0-beta.1.dmg` neben `...-arm64.dmg` - dieselbe Zweideutigkeit, die
+  # der Kommentar beim AppImage als Grund für das Muster nennt, nur an der Stelle, an der zwei
+  # Architekturen wirklich nebeneinander zum Download liegen. Gemessen am 2026-09-10, indem die
+  # Vorgabemuster der beiden Ziele durch electron-builders eigenen `expandMacro` gelaufen sind.
+  #
+  # `${arch}` ist bei dmg und zip Node's Wort: x64 bleibt `x64` (`getArtifactArchName` kennt
+  # `x86_64` nur für AppImage, rpm und flatpak). Das zip verliert dadurch sein `-mac`, das aus dem
+  # Vorgabemuster kam; ein zweites zip gibt es hier nicht, das unterscheidbar bleiben müsste.
+  artifactName: ${productName}-${version}-${arch}.${ext}
   # No Developer ID certificate, so the bundle is left unsigned rather than signed with an ad-hoc
   # identity that Gatekeeper treats no better. Consequence for whoever installs it: macOS refuses
   # the first launch until the quarantine flag is cleared

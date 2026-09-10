@@ -8,7 +8,7 @@
 //
 // Behandelt wie resources/git und nicht wie resources/templates: nicht im Repo, sondern beim Packen
 // erzeugt (beforePack). Der Grund ist derselbe wie dort - es ist ein erzeugtes Artefakt, am
-// 2026-09-09 gemessene 34,9 MB in 437 Dateien, davon 29,8 MB Bilder, und die werden bei jedem
+// 2026-09-10 gemessene 35,4 MB in 453 Dateien, davon 29,9 MB Bilder, und die werden bei jedem
 // Textdurchgang neu aufgenommen. Im Repo wäre jede Aufnahme ein neuer Blob. Die Zahl steht hier
 // mit ihrem Datum, weil sie mit dem Handbuch wächst: vorher standen an fünf Stellen 252 Dateien
 // und wahlweise 18 oder 21 MB.

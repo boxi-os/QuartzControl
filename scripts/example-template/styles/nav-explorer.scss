@@ -316,9 +316,17 @@ a.nav-file-title::before {
   display: flex;
   align-items: center;
   gap: var(--tpl-space-2xs);
+  // Fills the <div> above in both axes - that is the half of "the whole row clicks" that lives on
+  // the button.
+  width: 100%;
+  height: 100%;
   text-decoration: none;
   min-width: 0;
+  // `padding: 0` first, then the one side that is not zero - a `<button>` under the other value of
+  // `folderClickBehavior` arrives with the browser's own padding, and the shorthand is what takes
+  // it away. The end padding is the row's, taken back from the negative margin above.
   padding: 0;
+  padding-inline-end: var(--tpl-space-2xs);
   border: none;
   background: none;
   font: inherit;
@@ -329,8 +337,22 @@ a.nav-file-title::before {
 
 // The <div> quartz wraps the button in has no class of its own and would otherwise refuse to
 // shrink, which is what stops a long folder name from ever reaching its ellipsis.
+//
+// **And it takes the rest of the row, so the whole row opens the folder.** A file row *is* the
+// anchor, so it clicks everywhere; a folder row is chevron + <div> + <a>, and the anchor was as
+// wide as the word in it - a row that lights up over its full width on hover and answers on about
+// a third of it. The <div> grows and stretches, the button below fills it, and the hit area is the
+// row minus the chevron. Which is right: the chevron is the other control, it sits *before* the
+// <div> rather than inside it, and it keeps doing the folding.
 .folder-container > div {
   min-width: 0;
+  flex: 1 1 auto;
+  align-self: stretch;
+  // Out to the row's edge, not to its content edge. A file row *is* the anchor, so the row's own
+  // inline padding is inside its hit area; here it would be a 4px strip at the end of the row that
+  // looks like the row and does not answer. The <div> reaches over it and the button takes it back
+  // as padding, so the text still stops where it did.
+  margin-inline-end: calc(var(--tpl-space-2xs) * -1);
 }
 
 .folder-title {

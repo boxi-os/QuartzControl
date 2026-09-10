@@ -1901,3 +1901,25 @@ Die Grenze steht im Kommentar: `applyPlaceholders` escaped den Wert als HTML, ei
 Raw-Text-Element, und eine Entity darin wird nicht zurückgelesen. Slugs sind pfadsicher, also
 trifft das hier nichts — ein Slug mit `&` oder `"` ergäbe eine Regel, die nicht mehr passt, nicht
 eine, die zu viel trifft.
+
+### 90. Die Ordnerzeile leuchtete auf ganzer Breite und antwortete auf einem Drittel
+
+Eine Dateizeile **ist** der Anker (`a.nav-file-title`), also klickt sie überall. Eine Ordnerzeile
+ist Chevron + `<div>` + `<a>`, und der Anker war so breit wie das Wort darin: Der Hover legt die
+ganze Zeile hell, aber nur der Name führt irgendwohin. Gemessen bei 1600 px an „2.2 – Struktur":
+Zeile 126,2 bis 400, Anker 153,4 bis 396 — und der Rest der Zeile ein Feld, das aussieht wie ein
+Ziel und keines ist.
+
+Der `<div>` nimmt jetzt den Rest der Zeile und streckt sich über ihre Höhe, der Anker füllt ihn in
+beiden Achsen, und ein negativer Rand am Ende holt auch die Innenpolsterung der Zeile dazu — auf
+einer Dateizeile liegt die ja innerhalb des Ankers. Nachgemessen: Anker 153,4 bis **400**, 32 px
+hoch; ein Klick bei 90 % der Zeilenbreite öffnet die Ordnerseite.
+
+**Der Chevron bleibt außen vor, und das ist der Punkt.** Er steht *vor* dem `<div>`, nicht darin,
+also ist die Trennung baulich und nicht eine Frage von `z-index` oder `stopPropagation`: Zwei Klicks
+auf den Pfeil falten zu und wieder auf, ohne zu navigieren (gemessen, URL unverändert). Übrig
+bleibt die 4-px-Rinne zwischen den beiden — sie liegt zwischen zwei Bedienelementen und gehört
+keinem.
+
+Die Ellipse trägt weiter: ein erfundener 75-Zeichen-Ordnername kürzt, die Zeile bleibt bei 274 px
+in einer 300-px-Spalte, und nichts scrollt quer.

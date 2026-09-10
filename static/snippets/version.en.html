@@ -1,0 +1,20 @@
+<style>
+  /* Ruhig, aber als Meta-Information erkennbar: Ohne Fläche las sich der Satz wie der erste
+     Absatz der Seite. Maße und Farben aus den Variablen der Vorlage. */
+  /* Trennt das Band vom Titel darunter - grösser als der Abstand zum Kasten darüber, weil hier
+     die Meta-Information endet und die Seite anfängt. */
+  .layout-box-version { margin-block-end: var(--tpl-space-xl); }
+  .layout-box-version .vs {
+    margin: 0;
+    padding: var(--tpl-space-xs) var(--tpl-space-md);
+    border-inline-start: var(--tpl-accent-bar) solid var(--tpl-rule-strong);
+    border-radius: var(--tpl-radius-sm);
+    background: var(--tpl-surface-tint);
+    color: var(--gray);
+    font-size: var(--tpl-text-sm);
+    line-height: var(--tpl-leading-normal);
+  }
+  .layout-box-version .vs strong { color: var(--darkgray); }
+</style>
+<p class="vs">Handbook for version <strong>1.0.0-beta.1</strong>. The installed app carries its own —
+this one describes the beta.</p>

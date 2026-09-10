@@ -54,6 +54,7 @@ import {
 import { LOCALE, TRANSLATIONS } from './example-template/translations.mjs'
 import { PRESETS } from './example-template/presets.mjs'
 import { STYLE_ORDER } from './example-template/style-order.mjs'
+import * as doku from './example-template/doku.mjs'
 
 // The expected part list, read out of the contract instead of restated here. A copy went stale the
 // first time a part was added and this line printed "11 von 10" - small, but it is exactly the kind
@@ -69,28 +70,57 @@ const APP_DIR = path.resolve(import.meta.dirname, '..')
 const DATA_DIR = path.join(APP_DIR, 'scripts/example-template')
 const HOME = os.homedir()
 
-const WORKSHOP = path.join(HOME, 'Documents/Example')
-const VAULT = path.join(HOME, 'Obsidian/QuartzProjekte/Example')
-const CONTROL = path.join(HOME, 'Documents/quartz-vorlage-gegenprobe')
-const PACKAGE_OUT = path.join(HOME, 'Documents/minimal-lesbar.qtpl')
-
-// The display name changed to "Example" on 2026-09-06; the file name did not. It is what the app's
-// built-in template download points at (builtinTemplateService.ts) and what the published copy
-// in quartzcontrol-templates is called, so renaming it would be a change to an external repo.
-const TEMPLATE_NAME = 'Example'
-// Was hier steht, liest jemand im Anlege-Assistenten, bevor er zusagt - also zählt es die Dinge auf,
-// die das Paket wirklich enthält. „Drei eigene Frames" stand hier noch, als `drawing` längst der
-// vierte war (FRAMES in frames.mjs); beim Veröffentlichen am 2026-09-06 nachgezählt statt gelesen.
-const TEMPLATE_DESCRIPTION =
-  `Eine vollständige Beispielvorlage: ein Handbuch in sieben Kapiteln, zweisprachig, mit gemessenen ` +
-  `Kontrasten (WCAG AA in hell und dunkel), ${FRAMES.length} eigenen Frames, selbst gehosteten Schriften und jeder ` +
-  'Plugin-Komponente einzeln gestaltet — Explorer und Inhaltsverzeichnis bis zur untersten Ebene.'
-
 const argv = process.argv.slice(2)
 // `--only` takes a comma-separated list of phase numbers or names, so a run can stop before the
 // slow verification step (`--only 0,1,2,3,4,5,6,7,8,9,10`) without needing a second flag.
 const only = argv.includes('--only') ? argv[argv.indexOf('--only') + 1].split(',').map((s) => s.trim()) : null
 const fresh = argv.includes('--fresh')
+
+// Two packages come out of these data files: the Example, and the documentation variant three
+// sites are built with (doku.mjs says which components it drops and why). Everything that carries
+// the design is shared - the variant is a derivation, not a copy - so this flag decides four
+// paths, two texts and two of the arguments phase 4 hands to the renderer, and nothing else.
+const VARIANT = argv.includes('--variant') ? argv[argv.indexOf('--variant') + 1] : 'example'
+const VARIANTS = ['example', 'doku', 'plugin']
+if (!VARIANTS.includes(VARIANT)) throw new Error(`unbekannte Variante: ${VARIANT} (${VARIANTS.join(', ')})`)
+// `doku` und `plugin` unterscheiden sich nur um den Graph (doku.mjs sagt, warum), teilen aber
+// alles andere - deshalb ein gemeinsames Flag für das, was beide von `example` trennt.
+const isDoku = VARIANT !== 'example'
+
+// Separate workshops on purpose. One project cannot hold both configurations, and phase 4 patches
+// the entries `quartz create` wrote rather than writing them itself: run against a project whose
+// entries a previous variant already removed, a patch would have nothing to attach to and the
+// component would silently be absent instead of switched off.
+const WORKSHOP = path.join(HOME, VARIANT === 'example' ? 'Documents/Example' : `Documents/${VARIANT}-vorlage`)
+// The same vault for both. The variant's project is a workshop, not a site - its content is only
+// there so phase 9 has something to build, and the `content` part never travels in its package.
+const VAULT = path.join(HOME, 'Obsidian/QuartzProjekte/Example')
+const CONTROL = path.join(HOME, VARIANT === 'example' ? 'Documents/quartz-vorlage-gegenprobe' : `Documents/${VARIANT}-gegenprobe`)
+const PACKAGE_OUT = path.join(HOME, VARIANT === 'example' ? 'Documents/minimal-lesbar.qtpl' : `Documents/${VARIANT}.qtpl`)
+
+// The display name changed to "Example" on 2026-09-06; the file name did not. It is what the app's
+// built-in template download points at (builtinTemplateService.ts) and what the published copy
+// in quartzcontrol-templates is called, so renaming it would be a change to an external repo.
+//
+// "Doku" is not published anywhere and is not offered in the wizard: it exists for the app's own
+// web presence and the two plugin handbooks. Its name is still set properly, because it is what
+// the import dialog shows when one of those three projects applies it.
+const TEMPLATE_NAME = { example: 'Example', doku: 'Doku', plugin: 'Doku (Plugin)' }[VARIANT]
+// Was die Gegenprobe im Zielprojekt wiederfinden muss.
+const expectedBoxes = isDoku ? doku.boxes(LAYOUT_BOXES).length : LAYOUT_BOXES.length
+// Was die Doku-Fassungen trennt, steht in einem Satz statt in einer zweiten Beschreibung.
+const VARIANT_NOTE = VARIANT === 'plugin' ? ' Ohne Graphansicht, für Anleitungen, die sich der Reihe nach lesen.' : ''
+// Was hier steht, liest jemand im Anlege-Assistenten, bevor er zusagt - also zählt es die Dinge auf,
+// die das Paket wirklich enthält. „Drei eigene Frames" stand hier noch, als `drawing` längst der
+// vierte war (FRAMES in frames.mjs); beim Veröffentlichen am 2026-09-06 nachgezählt statt gelesen.
+const TEMPLATE_DESCRIPTION = isDoku
+  ? `Die Doku-Fassung der Beispielvorlage: dieselbe Gestaltung — gemessene Kontraste (WCAG AA in ` +
+    `hell und dunkel), ${FRAMES.length} eigene Frames, selbst gehostete Schriften —, aber ohne die ` +
+    `Bausteine, die im Example nur etwas vorführen. Für Anleitungen gedacht, nicht für eine Vorführung.` +
+    VARIANT_NOTE
+  : `Eine vollständige Beispielvorlage: ein Handbuch in sieben Kapiteln, zweisprachig, mit gemessenen ` +
+    `Kontrasten (WCAG AA in hell und dunkel), ${FRAMES.length} eigenen Frames, selbst gehosteten Schriften und jeder ` +
+    'Plugin-Komponente einzeln gestaltet — Explorer und Inhaltsverzeichnis bis zur untersten Ebene.'
 
 const log = (message) => console.log(message)
 const step = (message) => process.stdout.write(`  ${message} … `)
@@ -383,6 +413,19 @@ function bootstrap(target) {
 
 /* ====================================================================== 1 · content */
 
+// Der Starterinhalt von `quartz create`: eine Datei, und die sagt selbst, was sie ist. Der Satz
+// steht so in quartz' eigener Vorlage; ändert er sich dort, schlägt dieser Zweig wieder fehl - was
+// die richtige Richtung ist, weil dann niemand mehr sicher sagen kann, wessen Ordner das ist.
+const STARTER_MARKER = 'This is a blank Quartz installation.'
+
+function isPristineStarter(dir) {
+  const entries = fs.readdirSync(dir, { withFileTypes: true })
+  if (entries.length !== 1) return false
+  const [only] = entries
+  if (!only.isFile() || only.name !== 'index.md') return false
+  return fs.readFileSync(path.join(dir, only.name), 'utf-8').includes(STARTER_MARKER)
+}
+
 function installContent(target) {
   const content = path.join(target, 'content')
 
@@ -398,11 +441,25 @@ function installContent(target) {
   }
   if (!fs.existsSync(VAULT)) throw new Error(`Vault fehlt: ${VAULT}`)
   if (existing) {
-    throw new Error(
-      `${content} ist ein echter Ordner. Umstellen auf den Vault geht über die App ` +
-      '(Konfiguration → Content-Ordner, Strategie „Verknüpfen") — die sichert den bestehenden ' +
-      'Inhalt vorher weg.'
-    )
+    // Eine Ausnahme, und nur diese eine: der Ordner, den `quartz create` in Phase 0 selbst
+    // geschrieben hat. Bis 2026-09-10 ist dieser Zweig nie gelaufen - das Example-Projekt trug
+    // seinen Symlink aus der Zeit vor dem Vault, und ein Lauf, der wirklich bei null anfängt,
+    // endete deshalb hier statt in Phase 2. Aufgefallen beim ersten Lauf der Doku-Variante, deren
+    // Werkstattprojekt es noch nicht gab.
+    //
+    // Erkannt wird er daran, was er ist, nicht daran, wann er entstand: eine einzige Datei
+    // index.md mit dem Satz, den quartz create hineinschreibt. Ein Flag aus bootstrap() täte es
+    // beim ersten Lauf auch, aber nicht beim zweiten - dort meldet bootstrap „schon vorhanden",
+    // während der Starterinhalt unverändert daliegt. Alles andere ist der Inhalt von jemandem und
+    // bleibt liegen; die Meldung darunter sagt, wo man ihn gefahrlos umstellt.
+    if (!isPristineStarter(content)) {
+      throw new Error(
+        `${content} ist ein echter Ordner. Umstellen auf den Vault geht über die App ` +
+        '(Konfiguration → Content-Ordner, Strategie „Verknüpfen") — die sichert den bestehenden ' +
+        'Inhalt vorher weg.'
+      )
+    }
+    fs.rmSync(content, { recursive: true, force: true })
   }
   fs.symlinkSync(VAULT, content, 'dir')
   copyTree(path.join(DATA_DIR, 'site/snippets'), path.join(target, 'quartz/static/snippets'))
@@ -438,21 +495,7 @@ async function buildTemplate() {
     /* ---------------------------------------------------------------- 3 · frames */
     if (phase(3, 'frames')) {
       log('\n3 · Frames')
-      for (const frame of FRAMES) {
-        step(frame.frameName)
-        const result = await ipc(page, (a) => window.quartzGui.layoutFrames.save(a.path, a.frame), {
-          path: WORKSHOP,
-          frame
-        })
-        if (result && result.success === false) throw new Error(`Frame ${frame.frameName}: ${result.output}`)
-        done()
-      }
-      step(`Breakpoints ${BREAKPOINT_WIDTHS.tablet}/${BREAKPOINT_WIDTHS.mobile}`)
-      await ipc(page, (a) => window.quartzGui.layoutFrames.saveBreakpoints(a.path, a.widths), {
-        path: WORKSHOP,
-        widths: BREAKPOINT_WIDTHS
-      })
-      done()
+      await writeFrames(page)
     }
 
     /* ---------------------------------------------------------------- 4 · config */
@@ -530,8 +573,10 @@ async function buildTemplate() {
           pageTitle: TEMPLATE_NAME,
           colors: PALETTE,
           typography: TYPOGRAPHY,
-          patches: PLUGIN_PATCHES,
-          boxes: LAYOUT_BOXES,
+          // The only two arguments the variant changes. Derived here rather than in doku.mjs'
+          // own copy of the data, so the Example stays the single source for both.
+          patches: isDoku ? doku.patches(PLUGIN_PATCHES, VARIANT) : PLUGIN_PATCHES,
+          boxes: isDoku ? doku.boxes(LAYOUT_BOXES) : LAYOUT_BOXES,
           multilanguage: MULTILANGUAGE_ENTRY,
           layout: LAYOUT_CONFIG,
           theme: THEME_ENTRY,
@@ -540,6 +585,12 @@ async function buildTemplate() {
         }
       )
       done(`${applied.plugins} Einträge`)
+
+      // Zweiter Durchgang, sobald die Gruppenordnung steht - warum, steht bei writeFrames().
+      // An Phase 4 gebunden und nicht an Phase 3: Wer `--only 4` laufen lässt, ändert die Ordnung
+      // und braucht die Frames danach genauso.
+      log('\n4b · Frames auf die neue Ordnung')
+      await writeFrames(page)
     }
 
     /* ---------------------------------------------------------------- 5 · styles */
@@ -740,6 +791,14 @@ async function buildTemplate() {
         dialog.showSaveDialog = async () => ({ canceled: false, filePath: target })
       }, PACKAGE_OUT)
 
+      // Der Baustein `content` reist in der Doku-Fassung nicht mit. Er liest durch den Symlink
+      // hindurch (templatePackage/parts.ts) und packte den ganzen Example-Vault ein - 301 Einträge
+      // unter files/content/, die bei jedem Import als Inhalt der Zielwebsite landen. Genau daran
+      // ist das Handbuch-Projekt vorbeigebaut worden (docs/handbuch.md), und die drei Sites, die
+      // diese Fassung anwenden, bringen ihren Inhalt selbst mit. Im Werkstattprojekt bleibt der
+      // Inhalt trotzdem liegen: Phase 9 braucht etwas zu bauen.
+      const exportParts = parts.map((p) => p.id).filter((id) => !(isDoku && id === 'content'))
+
       const written = await ipc(
         page,
         (a) => window.quartzGui.templatePackage.export(a.path, a.options),
@@ -748,7 +807,7 @@ async function buildTemplate() {
           options: {
             name: TEMPLATE_NAME,
             description: TEMPLATE_DESCRIPTION,
-            parts: parts.map((p) => p.id),
+            parts: exportParts,
             translationScope: 'changed'
           }
         }
@@ -759,6 +818,41 @@ async function buildTemplate() {
     }
     return null
   })
+}
+
+/* ===================================================== 3 · frames (written twice, on purpose) */
+
+// `layoutFrames.save` bakes the configuration's group ordering into the frames.js it generates -
+// GROUP_LAYOUTS inside it - and phase 4 writes that ordering only afterwards. On the Example that
+// never showed: its project carried a configuration from earlier runs, so the ordering the frames
+// captured was already the right one. A project that really starts at zero got frames holding what
+// `quartz create` left behind. Measured on 2026-09-10, the first run of the doku variant:
+// `{"left":["toolbar"]}` instead of `{"header":["brand","toolbar"]}`, after which every build
+// warned twice - "this page renders afterBody 1 group flex(es), which no layout in
+// quartz.config.yaml accounts for" - while the custom-8 area stayed empty and the backlinks
+// dropped into the undivided afterBody.
+//
+// Swapping the two phases is not the way out: phase 4 reads the configuration that
+// `layoutFrames.save` has just extended with the frames' own plugin entries through the CLI, and
+// its `byPageType` names the frames. So they are written once before, so that they exist, and once
+// after, so that they know the final ordering. Both writes are the same call - a frame written
+// twice with the same input produces the same file.
+async function writeFrames(page) {
+  for (const frame of FRAMES) {
+    step(frame.frameName)
+    const result = await ipc(page, (a) => window.quartzGui.layoutFrames.save(a.path, a.frame), {
+      path: WORKSHOP,
+      frame
+    })
+    if (result && result.success === false) throw new Error(`Frame ${frame.frameName}: ${result.output}`)
+    done()
+  }
+  step(`Breakpoints ${BREAKPOINT_WIDTHS.tablet}/${BREAKPOINT_WIDTHS.mobile}`)
+  await ipc(page, (a) => window.quartzGui.layoutFrames.saveBreakpoints(a.path, a.widths), {
+    path: WORKSHOP,
+    widths: BREAKPOINT_WIDTHS
+  })
+  done()
 }
 
 /* ==================================================================== 11 · verify */
@@ -799,7 +893,9 @@ async function verify() {
     step('Layout-Box-Instanzen im Ziel')
     const config = await ipc(page, (a) => window.quartzGui.config.get(a.path), { path: CONTROL })
     const boxes = config.plugins.filter((p) => typeof p.source === 'string' && p.source.includes('quartz-layout-box'))
-    done(`${boxes.length} von ${LAYOUT_BOXES.length}`)
+    // Gegen die Zahl der Variante, nicht gegen die des Example: „4 von 7" läse sich hier wie ein
+    // Verlust, und eine Zeile, die im grünen Fall nach einem Fehler aussieht, wird nicht gelesen.
+    done(`${boxes.length} von ${expectedBoxes}`)
 
     return { warnings: result.warnings, frames: frames.length, boxes: boxes.length }
   })

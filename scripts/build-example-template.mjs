@@ -38,6 +38,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
+import { projectPath, workshopPath } from './project-paths.mjs'
 import { PALETTE, TYPOGRAPHY, checkAll } from './example-template/palette.mjs'
 import { VARIABLE_OVERRIDES } from './example-template/variables.mjs'
 import { FONTS, fontFaceCss, resolveFontUrl } from './example-template/fonts.mjs'
@@ -91,12 +92,18 @@ const isDoku = VARIANT !== 'example'
 // the entries `quartz create` wrote rather than writing them itself: run against a project whose
 // entries a previous variant already removed, a patch would have nothing to attach to and the
 // component would silently be absent instead of switched off.
-const WORKSHOP = path.join(HOME, VARIANT === 'example' ? 'Documents/Example' : `Documents/${VARIANT}-vorlage`)
+// Für `example` das Beispielprojekt selbst - dort wird gearbeitet, und `--sync` holt von dort
+// zurück (bis zum 2026-09-04 hieß es `quartz-vorlage-werkstatt`, siehe d80f2be). Für eine Variante
+// ein Wegwerf-Projekt unter werkstatt/, das Phase 0 klont.
+const WORKSHOP = VARIANT === 'example' ? projectPath('Example') : workshopPath(`${VARIANT}-vorlage`)
 // The same vault for both. The variant's project is a workshop, not a site - its content is only
 // there so phase 9 has something to build, and the `content` part never travels in its package.
 const VAULT = path.join(HOME, 'Obsidian/QuartzProjekte/Example')
-const CONTROL = path.join(HOME, VARIANT === 'example' ? 'Documents/quartz-vorlage-gegenprobe' : `Documents/${VARIANT}-gegenprobe`)
-const PACKAGE_OUT = path.join(HOME, VARIANT === 'example' ? 'Documents/minimal-lesbar.qtpl' : `Documents/${VARIANT}.qtpl`)
+// Immer ein Wegwerf-Projekt: Phase 11 importiert das Paket dort in ein leeres Projekt und baut.
+const CONTROL = workshopPath(VARIANT === 'example' ? 'quartz-vorlage-gegenprobe' : `${VARIANT}-gegenprobe`)
+// Das Paket liegt neben den Projekten, nicht in einem eigenen Ausgabeordner: die drei .qtpl sind
+// am 2026-09-12 mit den Projekten nach ~/Documents/QuartzProjekte gewandert.
+const PACKAGE_OUT = projectPath(VARIANT === 'example' ? 'minimal-lesbar.qtpl' : `${VARIANT}.qtpl`)
 
 // The display name changed to "Example" on 2026-09-06; the file name did not. It is what the app's
 // built-in template download points at (builtinTemplateService.ts) and what the published copy
@@ -321,7 +328,7 @@ function checkSync() {
   }
   log(`${differing.length + onlyOneSide.length} Datei(en) auseinander:`)
   for (const entry of [...onlyOneSide, ...differing]) log(`  ${entry}`)
-  log('\nZeilenweise mit `diff scripts/example-template/styles/<name> ~/Documents/Example/quartz/styles/custom/<name>`.')
+  log(`\nZeilenweise mit \`diff scripts/example-template/styles/<name> ${WORKSHOP}/quartz/styles/custom/<name>\`.`)
   log('Zurückholen mit `--sync`, vorschieben mit `--only 5`. Was gemessen werden soll, wird an dem gemessen, was gebaut wurde.')
   return false
 }

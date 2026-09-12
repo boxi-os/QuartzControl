@@ -12,6 +12,7 @@ import { execFileSync } from 'node:child_process'
 import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
+import { projectPath } from './project-paths.mjs'
 
 /** Ein frisches Profilverzeichnis je Lauf: Was hier steht, hat dieses Skript hineingeschrieben. */
 export const DEMO_PROFILE = path.join(os.tmpdir(), 'quartzcontrol-screenshots-profile')
@@ -58,10 +59,7 @@ export const DEMO_TARGETS = [
 ]
 
 /** Welche Projekte in der Liste stehen sollen, in dieser Reihenfolge. */
-export const DEMO_PROJECTS = [
-  path.join(os.homedir(), 'Documents/QuartzControl-Handbuch'),
-  path.join(os.homedir(), 'Documents/Example')
-]
+export const DEMO_PROJECTS = [projectPath('QuartzControl-Handbuch'), projectPath('Example')]
 
 export function resetDemoProfile() {
   fs.rmSync(DEMO_PROFILE, { recursive: true, force: true })

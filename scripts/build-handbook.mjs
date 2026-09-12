@@ -28,12 +28,12 @@
 // Maschine, die packt.
 import { execFileSync } from 'node:child_process'
 import * as fs from 'node:fs'
-import * as os from 'node:os'
 import * as path from 'node:path'
+import { projectPath } from './project-paths.mjs'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 export const HANDBOOK_PROJECT =
-  process.env.QUARTZCONTROL_HANDBOOK_PROJECT || path.join(os.homedir(), 'Documents/QuartzControl-Handbuch')
+  process.env.QUARTZCONTROL_HANDBOOK_PROJECT || projectPath('QuartzControl-Handbuch')
 export const HANDBOOK_SITE = process.env.QUARTZCONTROL_HANDBOOK_SITE || null
 export const HANDBOOK_OUT = path.join(ROOT, 'resources/handbook')
 

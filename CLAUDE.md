@@ -51,8 +51,11 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   reisten also alle ohne Handbuch. Deshalb gibt es einen zweiten Weg:
   **`QUARTZCONTROL_HANDBOOK_SITE`** zeigt auf eine schon gebaute Website und wird übernommen statt
   gebaut (`QUARTZCONTROL_HANDBOOK_PROJECT` verschiebt den ersten Weg), und das Bau-Log sagt, welcher
-  gegriffen hat. Von Hand nach `resources/handbook` zu kopieren hilft **nicht**: Der Fehlerpfad
-  räumt eine vorhandene Kopie absichtlich weg, damit keine veraltete mitreist. Gespiegelt wird mit
+  gegriffen hat. Wo die Projekte dieses Rechners liegen, sagt `scripts/project-paths.mjs` — eine
+  Stelle für alle Skripte, Standard `~/Documents/QuartzProjekte/` (seit dem Umzug am 2026-09-12),
+  überschreibbar mit `QUARTZCONTROL_PROJECT_ROOT`. Von Hand nach `resources/handbook` zu kopieren
+  hilft **nicht**: Der Fehlerpfad räumt eine vorhandene Kopie absichtlich weg, damit keine veraltete
+  mitreist. Gespiegelt wird mit
   **tar durch ssh**, und zwar mit beidem: `COPYFILE_DISABLE=1 tar --no-xattrs -cf -
   -C resources/handbook . | ssh <vm> 'tar -xf - -C <ziel>'`. Ohne die Variable kommen
   AppleDouble-Dateien mit (gemessen: 901 statt 437 Dateien, 464 davon `._*`); ohne `--no-xattrs`
@@ -109,7 +112,11 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   hatte (2026-09-10). Config und Frames haben bewusst keinen Rückweg — sie entstehen aus `plugins.mjs`,
   `variables.mjs`, `layout.mjs` und `frames.mjs`, und ein Rückleser wäre deren zweite, inverse
   Umsetzung. Ist zugleich der einzige End-to-End-Test der Vorlagen-Funktion: Phase 11 importiert das
-  Paket in ein zweites leeres Projekt und baut es. Was dabei gefunden wurde, steht in
+  Paket in ein zweites leeres Projekt und baut es. Die Werkstatt der Variante `example` ist das
+  Beispielprojekt selbst (bis 2026-09-04 hieß es `quartz-vorlage-werkstatt`); alles, was ein Lauf
+  neu anlegen darf — die Werkstätten der Varianten, die Gegenprobe —, entsteht unter
+  `<Projektwurzel>/werkstatt/`, weil das Skript seine Werkstatt per `projects.add` in die App-Liste
+  einträgt. Was dabei gefunden wurde, steht in
   `scripts/example-template/BEFUNDE.md`
 
 - `node scripts/stagger-vault-mtimes.mjs [--list] [--apply] [--restore <datei>]` — staffelt die

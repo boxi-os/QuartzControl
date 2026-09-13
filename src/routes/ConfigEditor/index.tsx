@@ -72,6 +72,10 @@ export default function ConfigEditor(): JSX.Element {
     [config, savedSnapshot]
   )
   useUnsavedChanges(dirty)
+  const savedPlugins = useMemo(
+    () => (savedSnapshot === null ? [] : (JSON.parse(savedSnapshot) as QuartzConfig).plugins),
+    [savedSnapshot]
+  )
   // Cmd+S saves the same thing the button does, and is registered only while that button would do
   // something: no edits, a save already running, or a sub-tab that saves elsewhere means the
   // shortcut stays quiet rather than rewriting an unchanged file.
@@ -187,6 +191,7 @@ export default function ConfigEditor(): JSX.Element {
                 image={
                   <ProjectImage
                     plugins={config.plugins}
+                    savedPlugins={savedPlugins}
                     onPluginsChange={(update) => setConfig((current) => (current ? { ...current, plugins: update(current.plugins) } : current))}
                     onInstallLayoutBox={installLayoutBox}
                   />

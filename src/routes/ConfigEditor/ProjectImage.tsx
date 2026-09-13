@@ -24,10 +24,13 @@ const FAVICON_PLUGIN = 'favicon'
  */
 export default function ProjectImage({
   plugins,
+  savedPlugins,
   onPluginsChange,
   onInstallLayoutBox
 }: {
   plugins: PluginEntry[]
+  /** The plugin list as quartz.config.yaml holds it now - what the site builds from until Save. */
+  savedPlugins: PluginEntry[]
   /** A change to the page's config draft - saved with the page's Save button like every other field. */
   onPluginsChange: (update: (plugins: PluginEntry[]) => PluginEntry[]) => void
   /** Installs quartz-layout-box through the CLI and returns the plugin list read afterwards. */
@@ -66,6 +69,13 @@ export default function ProjectImage({
   // the instance in step - otherwise the dark scheme would show a broken image.
   const headerOn = findProjectImageEntry(plugins) >= 0
   const hasDark = !!icon?.darkDataUrl
+  // Whether removing the dark picture breaks the site until Save is a question about the file, not
+  // the draft: the header switch above changes `headerOn` without touching what the build reads.
+  // Asked of the draft, the hint was missing where the saved header names icon-dark.png and the
+  // draft had switched it off, and present where only the draft had switched it on (review
+  // 2026-09-17, finding 2).
+  const savedHeader = savedPlugins[findProjectImageEntry(savedPlugins)]
+  const savedNamesDark = !!savedHeader?.enabled && String(savedHeader.options?.html ?? '').includes('icon-dark.png')
 
   function darkApplied(next: ProjectIconInfo): void {
     reload()
@@ -168,7 +178,7 @@ export default function ProjectImage({
               waits for Save - so in between the saved config names a file that is gone. Said only
               in the state where that gap exists (review 2026-09-16, finding 9). */}
           <p className="text-micro text-text-muted">
-            {headerOn && hasDark ? t('projectImage.dark.hintHeaderOn') : t('projectImage.dark.hint')}
+            {savedNamesDark && hasDark ? t('projectImage.dark.hintHeaderOn') : t('projectImage.dark.hint')}
           </p>
           <div className="mt-2">
             <Toggle

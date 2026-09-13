@@ -395,7 +395,7 @@ export default function GlobalBoard({
               ? t('layoutEditor.activeFrameLabel', { name: activeFrame.frameName })
               : builtinFrame
                 ? t('layoutEditor.activeFrameLabel', {
-                    name: t(`layoutEditor.template${activeFrameName === 'full-width' ? 'FullWidth' : 'Minimal'}`)
+                    name: t(activeFrameName === 'full-width' ? 'layoutEditor.templateFullWidth' : 'layoutEditor.templateMinimal')
                   })
                 : unknownPluginFrame
                   ? t('layoutEditor.activeFrameLabel', { name: builtinDefaultFrame })

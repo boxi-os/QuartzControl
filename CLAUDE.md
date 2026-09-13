@@ -72,7 +72,9 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   das war er für jedes `@quartz-community/*`-Plugin —, und weil die Gegenprobe sofort einen Rand fand,
   der beim Lesen richtig aussah (`path.basename` trennt am Backslash nur auf win32)
 - `npm run check:i18n` — every literal `t('…')` and `mainT('…')` key against `de.ts`, `en.ts` and
-  `electron/main/i18n.ts`, plus de/en parity in both directions. Static and instant; it exists because
+  `electron/main/i18n.ts`, plus de/en parity in both directions. A literal counts wherever it can be
+  the key (both branches of `t(cond ? 'a' : 'b')`, the values of `mainT({…}[x])`); a key built from a
+  variable cannot be checked, and the script prints how many calls that leaves out. Static and instant; it exists because
   i18next renders a missing key *as the key* rather than failing, so a gap is invisible until someone
   opens the one screen state that uses it (`publish.pages.saveSettings`, found in the alpha test, was
   missing from both files and therefore in perfect parity)

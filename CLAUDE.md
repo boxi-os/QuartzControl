@@ -288,6 +288,13 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   hinweg gehalten, die Main daran schreiben könnte. Fünf Seiten halten so je eine Kopie der Config;
   das ist sicher, solange nur eine Ansicht gemountet ist. Ein `project:changed`-Event kommt erst,
   wenn zwei Ansichten gleichzeitig leben - nicht vorher.
+- **Was der Build liest, ist die Datei, nicht der Entwurf.** Ein Satz über eine Folge außerhalb der
+  Seite — die Website zeigt ein kaputtes Bild, die Config nennt eine Datei, die fehlt — fragt den
+  gespeicherten Stand (`savedSnapshot`), nicht das, was gerade im `useState` liegt. Der Hinweis am
+  dunklen Projektbild las den Kopfbereich-Schalter aus dem Entwurf, und der Schalter stand direkt
+  darüber: ausgeschaltet schwieg der Hinweis, obwohl die Datei das Bild noch nannte, eingeschaltet
+  warnte er vor etwas, das nicht passiert (dreizehntes Review, an der gebauten App in vier Fällen
+  gemessen, vorher zwei falsch).
 - **Was im Renderer lebt, stirbt mit dem Fenster - unter macOS aber nicht die App.** Ein
   geschlossenes Fenster beendet weder die App noch die Dev-Server; alles, was danach noch stimmen
   soll, gehört in den Hauptprozess. Für die Log-Zeilen ist das `services/logBuffer.ts`, gelesen über
@@ -484,7 +491,10 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   schlägt weiter uns. Die Grid-Regeln des Frames bleiben ungeschichtet: das ist die Antwort der App
   auf eine Frage, die sonst niemand beantwortet. Wer fremdes CSS abschreibt, schreibt beide Hälften
   ab — und prüft die Behauptung „vollständig“ Regel für Regel gegen die Quelle, nicht gegen die
-  Erinnerung an sie.
+  Erinnerung an sie. Was dabei absichtlich fehlt, steht mit Grund in der Liste daneben; eine
+  Auslassung ohne Satz schickt den nächsten Leser wieder in die Quelle, auch wenn sie richtig ist
+  (dreizehntes Review: die `.sidebar`-Regeln aus `base.scss` und explorer, die ein eigenes Frame nie
+  trifft, weil es seine Bereiche als `.qgframe-area-*` rendert).
 - **Kein natives HTML5-Drag mehr, nirgends.** Alle vier Stellen ziehen mit `@dnd-kit`
   (`Plugins/Installed`, `LayoutEditor/GlobalBoard`, `LayoutEditor/FrameBuilder`; `Styles/CustomCss`
   hatte nie eines, nur Pfeile). Eine neue Stelle nimmt `@dnd-kit` mit `KeyboardSensor`, denn natives
@@ -540,7 +550,11 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
 ### Arbeitsweise, die sich bewährt hat
 
 - **„Kann nicht prüfen“ ist nie „alles gut“.** `unavailable`/`'unknown'` sind eigene Antworten
-  (Style-Check, Update-Check, Kataloge, Token-Prüfung, Secret-Backend).
+  (Style-Check, Update-Check, Kataloge, Token-Prüfung, Secret-Backend). Das gilt auch für die
+  Prüfskripte: Was eines nicht lesen kann, zählt es und sagt die Zahl, statt es zu übergehen — und
+  eine Schreibweise, die ein Prüfskript nicht liest, ist eine, hinter der sich ein Fehler versteckt.
+  `check:i18n` las nur `t('…')`; `t(bedingung ? 'a' : 'b')` stand an zwölf Stellen mit 21
+  Schlüsseln, und ein Fix des zwölften Reviews hatte die Form gerade erst noch einmal geschrieben.
 - **„Die Datei ist da“ ist nicht „die Datei lässt sich lesen“.** Ein Cache, ein Download, eine
   mitgelieferte Kopie: geprüft wird, ob der Inhalt sich öffnen lässt, nicht ob ein Verzeichniseintrag
   existiert - sonst gewinnt ein Torso gegen eine heile Kopie. Geschrieben wird so etwas über
@@ -573,6 +587,16 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   `npm run check:plugin-names` schneidet Quartz' eigene Funktion aus dessen Quelldatei und
   vergleicht. Genau diese Gegenprobe fand einen Rand, den zweimaliges Lesen nicht gefunden hatte.
   Messungen in [`plugins-and-config.md`](docs/decisions/plugins-and-config.md).
+- **Liegt das fremde Programm im Projekt, fragt die App es selbst — mit denselben Eingaben, auch
+  den unsichtbaren.** Die Liste der neuen Startseite bildete Quartz' Ignore-Muster zweimal nach;
+  die zweite Fassung war gegen Quartz' eigenes `globby` geprüft und lag trotzdem bei 13 von 95
+  Antworten daneben (dreizehntes Review): `name/*` für einen Ordner ohne Unterordner, fast-globs
+  Regel, nach der nur ein statisches letztes Segment oder `/**` einen Ordner beschneidet, und
+  `.gitignore`, von der die Nachbildung nichts wusste. `createIndexPage` lädt `globby` jetzt von
+  dort, wo `quartz/util/glob.ts` es lädt, und ruft es wie Quartz — auch mit demselben cwd, `content/`
+  und nicht dessen aufgelöstem Ziel, weil `globby` `.gitignore`-Dateien bis zur Wurzel des
+  git-Repos liest. Wo das Programm fehlen kann, sagt der Ersatz, was er nicht kann. Messungen in
+  [`navigation-and-pages.md`](docs/decisions/navigation-and-pages.md).
 - **Ein Prüfskript, das Logik der App braucht, lädt sie, statt sie abzuschreiben.** Die Logik steht
   als reine Funktion in `shared/` (das Dateisystem als Parameter, weil `shared/` auch für den
   Renderer kompiliert wird), und das Skript kopiert die `.ts` in eine temporäre `.mts` und
@@ -657,9 +681,9 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Befunde aus den Reviews (Stand 2026-09-16)
+## Befunde aus den Reviews (Stand 2026-09-17)
 
-Alle zwölf Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
+Alle dreizehn Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht,
@@ -670,12 +694,35 @@ Alle zwölf Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-
 [`docs/REVIEW-2026-09-12.md`](docs/REVIEW-2026-09-12.md) mit seinen fünf und
 [`docs/REVIEW-2026-09-13.md`](docs/REVIEW-2026-09-13.md) mit seinen sieben und
 [`docs/REVIEW-2026-09-14.md`](docs/REVIEW-2026-09-14.md) mit seinen zwölf und
-[`docs/REVIEW-2026-09-16.md`](docs/REVIEW-2026-09-16.md) mit seinen neun (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-16-`) stehen als
+[`docs/REVIEW-2026-09-16.md`](docs/REVIEW-2026-09-16.md) mit seinen neun und
+[`docs/REVIEW-2026-09-17.md`](docs/REVIEW-2026-09-17.md) mit seinen vier (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-17-`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](docs/REVIEW-2026-09-15.md) gehört nicht
 in diese Zählung: Die „fünfzehnte Runde“ las die Handbücher der zwei Plugins gegen deren Code und
 aus diesem Repo nur zwei Commits der Beispielvorlage (`fe2b701`, `9592121`).
+
+**Das dreizehnte Review las die neun Fixes des zwölften und die Lücke daneben** — die 16 Commits
+zwischen `review-2026-09-14` und `review-2026-09-16`, die bis dahin kein Review dieser Zählung
+gelesen hatte (unten). Kein Befund der Stufe Hoch, keiner Mittel, vier Niedrig, alle vier
+abgearbeitet. Der Folger-Umbau, der das zwölfte am meisten beschäftigt hatte, trägt: in drei
+Szenarien an der gebauten App bewegte kein Server-Satz die Build-Aktivität und umgekehrt, und zum
+ersten Mal ist dabei auch die Oberfläche gemessen, nicht nur die Ereignisse. Zwei der vier Befunde
+waren Nachschärfungen an Fixes des zwölften (Ignore-Muster, dunkles Bild), einer ein Prüfskript,
+das eine Schreibweise nicht las, einer ein Kommentar. Was daraus als Regel bleibt, steht oben in
+den passenden Abschnitten:
+
+- **Liegt das fremde Programm im Projekt, fragt die App es selbst** — der dritte Schritt nach
+  „nach dessen Regel bilden“ und „gegen das fremde Programm prüfen“. Auch die geprüfte Nachbildung
+  lag daneben, weil eine Gegenprobe nur die Muster trifft, die man sich ausdenkt.
+- **Mit denselben Eingaben heißt auch: mit denselben unsichtbaren.** Das cwd entscheidet, welche
+  `.gitignore` gilt; gemessen zählt das `.gitignore` des Projekts nur, wenn das Projekt ein
+  git-Repo ist, und dann für App und Quartz gleich.
+- **Was der Build liest, ist die Datei, nicht der Entwurf.**
+- **Ein Prüfskript sagt, was es nicht prüfen konnte.** `check:i18n` nennt jetzt 67 Aufrufe im
+  Renderer und einen im Hauptprozess, deren Schlüssel berechnet ist; die Gegenprobe mit vier
+  gelöschten Schlüsseln, die nur in Ternären standen, sah der alte Checker nicht, der neue alle vier.
+- **Eine Liste des absichtlich Weggelassenen gehört zur Behauptung „vollständig“.**
 
 **Das zwölfte Review las die Beta-2-Liste** — fünfzehn Punkte aus den Rückmeldungen der ersten
 Beta, vierzehn Branches von `main`, die einander nie gesehen hatten und nur zum Lesen in
@@ -708,12 +755,14 @@ bei der Regel, die es schon gab:
 - **Ein Wert, den ein fremdes Programm vergleicht, wird nach dessen Regel gebildet** — noch einmal:
   Die Liste der neuen Startseite prüfte Quartz' `ignorePatterns` gegen den Namen, Quartz prüft sie
   gegen den Pfad, und `private/**` verlinkte einen Ordner, den der Build weglässt. Die Gegenprobe
-  lief diesmal gegen Quartz' eigenes `globby` aus dem Projekt.
+  lief diesmal gegen Quartz' eigenes `globby` aus dem Projekt — und traf trotzdem nicht `name/*`;
+  seit dem dreizehnten Review fragt die App `globby` selbst.
 - **Ein Prüfskript lädt die Logik der App, statt sie abzuschreiben** (`shared/macNodeBinary.ts`).
 - **Wo eine Seite sofort schreibt und im Entwurf nachzieht, sagt sie den Riss dort, wo er
   besteht.** „Dunkles Bild entfernen“ löscht die Datei sofort, der Kopfbereich hört erst mit dem
-  Speichern auf, sie zu nennen; der Hinweis dazu erscheint nur, wenn der Kopfbereich an und ein
-  dunkles Bild da ist.
+  Speichern auf, sie zu nennen; der Hinweis dazu erscheint nur, wenn die *gespeicherte* Config den
+  Kopfbereich mit dunklem Bild trägt und das Bild da ist. (Die erste Fassung fragte den Entwurf —
+  dreizehntes Review, Befund 2.)
 
 Zwei Beobachtungen des Reviews, die nicht aus dieser Runde stammen, sind nicht behoben. Ein
 YAML-Fehler im Frontmatter *einer* Notiz beendet den Dev-Server — das ist Quartz (`trace()` ruft auf
@@ -977,14 +1026,18 @@ Bereich darf ohne Belegung leer bleiben, und über `layout.group` kann er eigene
 Umbaus selbst: die Zuordnung ruht auf einem Funktionsnamen, den es nur gibt, weil Quartz sich mit
 esbuilds `keepNames` baut.
 
-**Der Auftrag für das dreizehnte Review steht** in
+**Für das vierzehnte Review gibt es noch keinen Auftrag.**
+
+**Der Auftrag für das dreizehnte Review stand** in
 [`docs/REVIEW-2026-09-17-auftrag.md`](docs/REVIEW-2026-09-17-auftrag.md). Er liest zwei Bereiche:
 die Fixes des zwölften (`review-2026-09-17..fix/review-2026-09-16`) und die Lücke
 `review-2026-09-14..review-2026-09-16` (unten), in der die zwölf Fixes des elften liegen.
 
-**Das nächste Review misst ab `review-2026-09-17`.** Der Tag sitzt auf `8136760` („Der Auftrag für
-das sechzehnte Review“, `review/beta2`), dem Stand, den das zwölfte Review gelesen hat. Die Regel ist
-dieselbe wie bei den neun Vorgängern: Der Ausgangsstand ist das, was gelesen wurde, nicht das, was
+**Das nächste Review misst ab `cc4bd50`** („Der Auftrag für das Review 2026-09-17“,
+`fix/review-2026-09-16`), dem Stand, den das dreizehnte Review gelesen hat; ein Tag dafür ist noch
+nicht gesetzt. `review-2026-09-17` sitzt auf `8136760` („Der Auftrag für das sechzehnte Review“,
+`review/beta2`), dem Stand, den das zwölfte Review gelesen hat. Die Regel ist dieselbe wie bei den
+zehn Vorgängern: Der Ausgangsstand ist das, was gelesen wurde, nicht das, was
 danach entstanden ist. So sitzt `review-2026-09-14` auf `dcf28cf`, dem Stand des elften Reviews
 („Der Auftrag für das vierzehnte Review“), `review-2026-09-13` auf `9305d7b`, dem Stand des zehnten
 Reviews (`main` nach PR #36 mit dem Auftrag), `review-2026-09-12` auf `7568803`, dem Stand des
@@ -1006,11 +1059,24 @@ x64-Benennung der macOS-Pakete — im App-Code 5 Dateien, +174/−55 (`shared/gr
 `Styles/CustomCss.tsx`, `Styles/variableGraph.ts`, `Styles/Basics.tsx`, `Plugins/Installed.tsx`),
 dazu `electron-builder.yml` und in `scripts/` +1298/−140. Die fünfzehnte Runde hat davon nur
 `fe2b701` und `9592121` gelesen. Der Auftrag für das dreizehnte Review nimmt den Bereich deshalb
-ausdrücklich mit; `review-2026-09-16` bleibt, wo er ist, weil der Auftrag des zwölften Reviews mit
-ihm rechnet.
+ausdrücklich mit, und es hat ihn gelesen: die Lücke ist geschlossen, drei seiner vier Befunde
+betreffen sie nicht, der vierte ist ein Kommentar in `shared/gridFrameCss.ts`. `review-2026-09-16`
+bleibt, wo er ist, weil der Auftrag des zwölften Reviews mit ihm rechnet.
 
-**Die neun Fixes des zwölften Reviews liegen bewusst dahinter** (`fix/review-2026-09-16`, von
-`review/beta2` abgezweigt). Sie sind gemessen, fast alle an der gebauten App mit Wegwerf-Profil
+**Die vier Fixes des dreizehnten Reviews liegen bewusst dahinter** (`fix/review-2026-09-17`, von
+`fix/review-2026-09-16` abgezweigt). Gemessen: die Startseiten-Liste an einem esbuild-Bündel von
+`contentService` gegen `globby` aus `gui-test/node_modules` (26 Muster, über `globby` 0
+Abweichungen, im Ersatz ohne `node_modules` eine, `{x,y}`; `.gitignore` im Vault und im Projekt mit
+und ohne git) und an der gebauten App; der Hinweis am dunklen Bild an der gebauten App mit
+Wegwerf-Profil in vier Fällen vorher und nachher; `check:i18n` mit einer Gegenprobe aus vier
+gelöschten Schlüsseln. Der vierte ist nur Kommentar. Der größte Eingriff ist der dynamische Import
+von `globby` aus dem Projekt im Hauptprozess — nach `sass` in `styleService` der zweite Ort, an dem
+die App zur Laufzeit Code aus dem `node_modules` eines Nutzerprojekts in sich selbst lädt, und der
+erste als ES-Modul. Sie gehören damit in den Diff des nächsten Auftrags.
+
+**Die neun Fixes des zwölften Reviews hat das dreizehnte gelesen** (`fix/review-2026-09-16`, von
+`review/beta2` abgezweigt) — ohne Regression; zwei seiner Befunde schärfen Fix 7 und Fix 9 nach.
+Sie waren gemessen, fast alle an der gebauten App mit Wegwerf-Profil
 gegen eine Kopie von `gui-test` mit Dev-Server auf 8099/3099: die Neubauten mit mitgeschriebenen
 Ereignissen im Renderer, „Rebuild failed“ über zwei von Hand an die Server-Logs gehängte Zeilen
 (echt ausgelöst wird der Weg nur von einem Emitter, der außerhalb von `trace()` wirft), der
@@ -1019,12 +1085,13 @@ Ignore-Muster zusätzlich gegen Quartz' eigenes `globby`, die Bildnormalisierung
 über SHA-256 der Ergebnisdateien vorher und nachher, die Helper-Suche alt gegen neu an neun Pfaden.
 Nur gelesen ist der sechste (electron-builders Quelle, nicht mit eingeschalteter Hardened Runtime
 gemessen). Die größten Eingriffe sind `followQuartzOutput(…, source)` samt den zwei Neubauten,
-`joinRunningBuild()` und `shared/macNodeBinary.ts`, das `check:runtime` jetzt lädt. Sie gehören
-damit in den Diff des nächsten Auftrags.
+`joinRunningBuild()` und `shared/macNodeBinary.ts`, das `check:runtime` jetzt lädt.
 
-**Die zwölf Fixes des elften Reviews liegen weiter dahinter** — das zwölfte hat sie nicht gelesen,
-weil sein Ausgangsstand hinter ihnen lag (oben). Sie sind gemessen, und zum ersten
-Mal in dieser Serie an einer *neu gebauten* Website: die Kompat-Blöcke in Firefox und WebKit bei
+**Die zwölf Fixes des elften Reviews hat das dreizehnte gelesen** — das zwölfte nicht, weil sein
+Ausgangsstand hinter ihnen lag (oben). Ohne Befund außer dem Kommentar über die Auslassungen; neu
+gemessen hat es davon den Kompat-Block in Firefox und WebKit bei 750, 850 und 950 px ohne das
+Explorer-Stylesheet der Vorlage und den Farbparser mit 15 Schreibweisen. Sie waren gemessen, und
+zum ersten Mal in dieser Serie an einer *neu gebauten* Website: die Kompat-Blöcke in Firefox und WebKit bei
 390, 750, 850, 1300 px, mit und ohne JavaScript, die Schublade unter einem Wheel; die zwei
 Speichern-Wege und der Drag an der gebauten App mit Wegwerf-Profil; der Farbparser an einer
 Canvas-Probe in diesem Electron; die Palette an `--check-contrast` (93 Paare, 0 darunter). Der

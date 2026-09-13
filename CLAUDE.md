@@ -1026,16 +1026,20 @@ Bereich darf ohne Belegung leer bleiben, und über `layout.group` kann er eigene
 Umbaus selbst: die Zuordnung ruht auf einem Funktionsnamen, den es nur gibt, weil Quartz sich mit
 esbuilds `keepNames` baut.
 
-**Für das vierzehnte Review gibt es noch keinen Auftrag.**
+**Der Auftrag für das vierzehnte Review steht** in
+[`docs/REVIEW-2026-09-18-auftrag.md`](docs/REVIEW-2026-09-18-auftrag.md). Er liest die vier Fixes
+des dreizehnten (`review-2026-09-18..fix/review-2026-09-17`, im App-Code 7 Dateien, +175/−48) und
+nennt als größtes Risiko den `import()` von `globby` aus dem Projekt in den Hauptprozess — gemessen
+an der gebauten, nicht an der gepackten App.
 
 **Der Auftrag für das dreizehnte Review stand** in
 [`docs/REVIEW-2026-09-17-auftrag.md`](docs/REVIEW-2026-09-17-auftrag.md). Er liest zwei Bereiche:
 die Fixes des zwölften (`review-2026-09-17..fix/review-2026-09-16`) und die Lücke
 `review-2026-09-14..review-2026-09-16` (unten), in der die zwölf Fixes des elften liegen.
 
-**Das nächste Review misst ab `cc4bd50`** („Der Auftrag für das Review 2026-09-17“,
-`fix/review-2026-09-16`), dem Stand, den das dreizehnte Review gelesen hat; ein Tag dafür ist noch
-nicht gesetzt. `review-2026-09-17` sitzt auf `8136760` („Der Auftrag für das sechzehnte Review“,
+**Das nächste Review misst ab `review-2026-09-18`.** Der Tag sitzt auf `cc4bd50` („Der Auftrag für
+das Review 2026-09-17“, `fix/review-2026-09-16`), dem Stand, den das dreizehnte Review gelesen hat.
+`review-2026-09-17` sitzt auf `8136760` („Der Auftrag für das sechzehnte Review“,
 `review/beta2`), dem Stand, den das zwölfte Review gelesen hat. Die Regel ist dieselbe wie bei den
 zehn Vorgängern: Der Ausgangsstand ist das, was gelesen wurde, nicht das, was
 danach entstanden ist. So sitzt `review-2026-09-14` auf `dcf28cf`, dem Stand des elften Reviews

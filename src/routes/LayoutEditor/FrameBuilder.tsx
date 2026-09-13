@@ -522,6 +522,31 @@ export default function FrameBuilder({
     setSelectedAreaId((prev) => (prev === id ? null : prev))
   }
 
+  // Deleting an area takes its placements on all three breakpoints, and two of those are out of
+  // sight while the button is - the frame itself asked before going, its areas did not. An area
+  // that holds nothing (freshly added: no placement, no slot, no group) is removed without a
+  // question, because there is nothing to lose and a dialog there would teach people to click
+  // through it. Nothing is written until Save either way, which is the dialog's way back.
+  async function requestDeleteArea(area: GridFrameArea): Promise<void> {
+    if (!editing) return
+    const placedOn = FRAME_BREAKPOINTS.filter((bp) => editing.breakpoints[bp].placements[area.id])
+    if (placedOn.length > 0 || area.slot || area.group) {
+      const consequence =
+        placedOn.length > 0
+          ? t('layoutEditor.frameBuilder.removeAreaPlaced', {
+              breakpoints: placedOn.map((bp) => t(`layoutEditor.frameBuilder.breakpoint.${bp}`)).join(', ')
+            })
+          : t('layoutEditor.frameBuilder.removeAreaUnplaced')
+      const confirmed = await confirmDialog({
+        text: t('layoutEditor.frameBuilder.removeAreaConfirm', { name: area.name || area.id, consequence }),
+        confirmLabel: t('layoutEditor.frameBuilder.removeArea'),
+        danger: true
+      })
+      if (!confirmed) return
+    }
+    deleteAreaById(area.id)
+  }
+
   async function save(): Promise<void> {
     if (!editing) return
     if (!editing.frameName.trim()) {
@@ -743,7 +768,7 @@ export default function FrameBuilder({
             </Button>
           </>
         )}
-        <Button variant="danger" onClick={() => deleteAreaById(area.id)}>
+        <Button variant="danger" onClick={() => void requestDeleteArea(area)}>
           {t('layoutEditor.frameBuilder.removeArea')}
         </Button>
       </div>

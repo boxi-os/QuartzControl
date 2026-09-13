@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   DndContext,
@@ -221,6 +221,38 @@ export default function FrameBuilder({
     // text the user is still typing.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAreaId])
+
+  // The selection survives a breakpoint switch on purpose - one area is often tuned across all
+  // three - but its form does not stay put: on one breakpoint it sits inside the area's grid box,
+  // on the next in the tray above the grid, and switching mounts it anew.
+  //
+  // Until 2026-09-13 the name field's `autoFocus` answered that, by accident: a new mount focuses
+  // the field and the browser scrolls it into view. It also took the focus off the breakpoint
+  // control - measured in the built app, ArrowLeft on the focused "Mobil" segment switched to
+  // Tablet and left focus in the name input, so the next arrow key moved the caret instead of the
+  // breakpoint. The field is now focused only when an area is chosen (click, drop, new area), not
+  // when a switch remounts its form, and the page brings the box into view itself - only when its
+  // top edge is out of sight, so a box that is already visible stays where the eye is. The previous
+  // breakpoint lives in a ref so a remount (the sticky breakpoint coming back) is not taken for a
+  // switch.
+  const focusNameOnMount = useRef(true)
+  const previousBreakpoint = useRef(activeBreakpoint)
+  function switchBreakpoint(bp: FrameBreakpoint): void {
+    focusNameOnMount.current = false
+    setActiveBreakpoint(bp)
+  }
+  useEffect(() => {
+    focusNameOnMount.current = true
+    if (previousBreakpoint.current === activeBreakpoint) return
+    previousBreakpoint.current = activeBreakpoint
+    if (!selectedAreaId) return
+    const form = document.querySelector(`[data-area-form="${CSS.escape(selectedAreaId)}"]`)
+    const box = form?.parentElement
+    if (!box) return
+    const { top } = box.getBoundingClientRect()
+    if (top < 0 || top > window.innerHeight - 120) box.scrollIntoView({ block: 'start' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeBreakpoint])
 
   function startNewFrame(): void {
     setEditing(emptyDraft())
@@ -522,6 +554,31 @@ export default function FrameBuilder({
     setSelectedAreaId((prev) => (prev === id ? null : prev))
   }
 
+  // Deleting an area takes its placements on all three breakpoints, and two of those are out of
+  // sight while the button is - the frame itself asked before going, its areas did not. An area
+  // that holds nothing (freshly added: no placement, no slot, no group) is removed without a
+  // question, because there is nothing to lose and a dialog there would teach people to click
+  // through it. Nothing is written until Save either way, which is the dialog's way back.
+  async function requestDeleteArea(area: GridFrameArea): Promise<void> {
+    if (!editing) return
+    const placedOn = FRAME_BREAKPOINTS.filter((bp) => editing.breakpoints[bp].placements[area.id])
+    if (placedOn.length > 0 || area.slot || area.group) {
+      const consequence =
+        placedOn.length > 0
+          ? t('layoutEditor.frameBuilder.removeAreaPlaced', {
+              breakpoints: placedOn.map((bp) => t(`layoutEditor.frameBuilder.breakpoint.${bp}`)).join(', ')
+            })
+          : t('layoutEditor.frameBuilder.removeAreaUnplaced')
+      const confirmed = await confirmDialog({
+        text: t('layoutEditor.frameBuilder.removeAreaConfirm', { name: area.name || area.id, consequence }),
+        confirmLabel: t('layoutEditor.frameBuilder.removeArea'),
+        danger: true
+      })
+      if (!confirmed) return
+    }
+    deleteAreaById(area.id)
+  }
+
   async function save(): Promise<void> {
     if (!editing) return
     if (!editing.frameName.trim()) {
@@ -673,6 +730,7 @@ export default function FrameBuilder({
   function areaForm(area: GridFrameArea, placement?: GridAreaPlacement): JSX.Element {
     return (
       <div
+        data-area-form={area.id}
         onClick={(e) => e.stopPropagation()}
         // No keyboard guard here on purpose. The box above this form listens only for keystrokes
         // aimed at itself (PlacedBox), so a character typed in a field never reaches it - and a
@@ -681,7 +739,12 @@ export default function FrameBuilder({
         className="flex flex-wrap items-end gap-2 border-t border-ink/[0.06] pt-2 dark:border-ink/10"
       >
         <Field label={t('layoutEditor.frameBuilder.areaName')}>
-          <TextInput value={nameDraft} onChange={(e) => updateAreaName(area.id, e.target.value)} autoFocus className="w-32" />
+          <TextInput
+            value={nameDraft}
+            onChange={(e) => updateAreaName(area.id, e.target.value)}
+            autoFocus={focusNameOnMount.current}
+            className="w-32"
+          />
         </Field>
         <Field label={t('layoutEditor.frameBuilder.areaSlot')}>
           <Select
@@ -743,7 +806,7 @@ export default function FrameBuilder({
             </Button>
           </>
         )}
-        <Button variant="danger" onClick={() => deleteAreaById(area.id)}>
+        <Button variant="danger" onClick={() => void requestDeleteArea(area)}>
           {t('layoutEditor.frameBuilder.removeArea')}
         </Button>
       </div>
@@ -777,7 +840,7 @@ export default function FrameBuilder({
       <SegmentedControl
         label={t('layoutEditor.frameBuilder.breakpointLabel')}
         value={activeBreakpoint}
-        onChange={setActiveBreakpoint}
+        onChange={switchBreakpoint}
         options={breakpointOptions}
       />
 

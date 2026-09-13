@@ -1090,6 +1090,14 @@ Bereich darf ohne Belegung leer bleiben, und über `layout.group` kann er eigene
 Umbaus selbst: die Zuordnung ruht auf einem Funktionsnamen, den es nur gibt, weil Quartz sich mit
 esbuilds `keepNames` baut.
 
+**Der Auftrag für das fünfzehnte Review steht** in
+[`docs/REVIEW-2026-09-19-auftrag.md`](docs/REVIEW-2026-09-19-auftrag.md). Er liest die vier Fixes
+des vierzehnten, den Nachtrag, die neu exportierte Vorlage und den Merge von
+`feat/beispielvorlage-und-header` (`review-2026-09-19..fix/review-2026-09-18`, ohne Review-Dokument
+und Auftrag 32 Dateien, +980/−119), und nennt als erstes Risiko den Abbruch in `beforePack`, der
+jede Baumaschine ohne Handbuch-Projekt trifft — und als zweites sieben Commits, die nie ein Review
+gesehen haben, darunter ein Python-Skript, das mit einem Obsidian-Vault spricht.
+
 **Der Auftrag für das vierzehnte Review stand** in
 [`docs/REVIEW-2026-09-18-auftrag.md`](docs/REVIEW-2026-09-18-auftrag.md). Er las die vier Fixes
 des dreizehnten (`review-2026-09-18..fix/review-2026-09-17`, im App-Code 7 Dateien, +175/−48) und

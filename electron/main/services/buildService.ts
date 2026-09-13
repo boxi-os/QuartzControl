@@ -82,10 +82,24 @@ function setActivity(projectId: string, next: BuildActivity | null): void {
 
 // Quartz prints these when stdout is not a terminal (QuartzLogger goes verbose then). Matched on the
 // words, not on colour codes, which differ between the two ways it prints them.
-function followQuartzOutput(projectId: string, text: string): void {
+//
+// Two sources call this, the one-off build's stdout and the dev server's log, and they can run at
+// once. Each moves only the activity it owns: until 2026-09-16 a server rebuild replaced a running
+// build's activity and then cleared it - measured in the built app, a note changed in the third
+// second of `quartz build` took the line and the lock away for 3.3 of its 6.9 seconds, and the
+// Übersicht read the half-written output directory as "zuletzt gebaut". A build therefore wins;
+// a rebuild beside it stays silent, as the line is the thing the user started last.
+function followQuartzOutput(projectId: string, text: string, source: 'build' | 'server'): void {
   // eslint-disable-next-line no-control-regex
   for (const line of text.replace(/\u001b\[[0-9;]*m/g, '').split('\n')) {
     const current = activities.get(projectId)
+    if (source === 'build') {
+      if (current?.kind !== 'build') continue
+      if (/Parsing input files/.test(line)) setActivity(projectId, { ...current, phase: 'parsing' })
+      else if (/Emitting files/.test(line)) setActivity(projectId, { ...current, phase: 'emitting' })
+      continue
+    }
+    if (current?.kind === 'build') continue
     if (/Detected change, rebuilding/.test(line)) {
       setActivity(projectId, { kind: 'rebuild', startedAt: new Date().toISOString(), phase: 'parsing' })
     } else if (/Done rebuilding in|Rebuild failed/.test(line)) {
@@ -301,7 +315,7 @@ function openServerLog(projectId: string, projectPath: string): ServerLog | null
           stops.push(
             tailFile(paths[stream], (text) => {
               emitLog(projectId, stream, text)
-              if (stream === 'stdout') followQuartzOutput(projectId, text)
+              if (stream === 'stdout') followQuartzOutput(projectId, text, 'server')
             })
           )
         }
@@ -517,7 +531,7 @@ async function spawnBuild(projectId: string, projectPath: string, outputDir?: st
     child.stdout?.on('data', (chunk: Buffer) => {
       const text = chunk.toString()
       serverEvents.emit('buildLog', { projectId, stream: 'stdout', text, timestamp: new Date().toISOString() } satisfies LogLine)
-      followQuartzOutput(projectId, text)
+      followQuartzOutput(projectId, text, 'build')
     })
     child.stderr?.on('data', (chunk: Buffer) =>
       serverEvents.emit('buildLog', {

@@ -252,6 +252,8 @@ export default {
       gitInProgress: 'A {{operation}} was started and never finished',
       scssError: 'Your CSS does not compile',
       line: 'line {{line}}',
+      noIndex: 'The site has no start page',
+      noIndexDetail: 'The content folder has no index.md, so the site’s own address shows a 404 page.',
       noBaseUrl: 'No base URL set',
       noBaseUrlDetail: 'Without it the build fails as soon as fonts are self-hosted.'
     },
@@ -356,9 +358,22 @@ export default {
     strategyCopy: 'Copy (real folder)',
     progress: '{{processed}} / {{total}} files copied…',
     applying: 'Applying…',
-    apply: 'Apply'
+    apply: 'Apply',
+    noIndex: 'No start page: the content folder has no index.md, so the site’s own address shows a 404 page.',
+    createIndex: 'Create start page…',
+    createIndexTitle: 'Create start page',
+    createIndexTitleLabel: 'Start page title',
+    createIndexTitleHint: 'Without a title the page would be called “index”.',
+    createIndexListHint:
+      'Below it goes a list of the folders and notes that are at the top of the content folder now. It is not updated later.',
+    createIndexLinked: 'The file is created in the linked folder, that is among your own notes: {{path}}',
+    createIndexAction: 'Create start page',
+    creatingIndex: 'Creating…',
+    indexCreated: 'The start page has been created: {{path}}'
   },
   buildServer: {
+    noIndex: 'The content folder has no index.md — so the preview shows a 404 page at its address.',
+    noIndexLink: 'Create start page →',
     devServer: 'Dev server',
     devServerHint: 'Shows your site live in the browser, reloading automatically on changes — great for trying things out.',
     oneOffBuildHint: 'Produces the finished HTML files once, e.g. to upload manually or check before you publish.',

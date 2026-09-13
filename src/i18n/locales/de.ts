@@ -254,6 +254,8 @@ export default {
       gitInProgress: 'Ein {{operation}} ist angefangen und nicht abgeschlossen',
       scssError: 'Dein CSS lässt sich nicht übersetzen',
       line: 'Zeile {{line}}',
+      noIndex: 'Die Website hat keine Startseite',
+      noIndexDetail: 'Im Content-Ordner fehlt die index.md, die Adresse der Website zeigt deshalb eine 404-Seite.',
       noBaseUrl: 'Keine Basis-URL gesetzt',
       noBaseUrlDetail: 'Ohne sie schlägt der Build fehl, sobald Schriften selbst gehostet werden.'
     },
@@ -358,10 +360,23 @@ export default {
     strategyCopy: 'Kopieren (echter Ordner)',
     progress: '{{processed}} / {{total}} Dateien kopiert…',
     applying: 'Wird angewendet…',
-    apply: 'Übernehmen'
+    apply: 'Übernehmen',
+    noIndex: 'Keine Startseite: Im Content-Ordner liegt keine index.md, deshalb zeigt die Adresse der Website eine 404-Seite.',
+    createIndex: 'Startseite anlegen…',
+    createIndexTitle: 'Startseite anlegen',
+    createIndexTitleLabel: 'Titel der Startseite',
+    createIndexTitleHint: 'Ohne Titel hieße die Seite „index“.',
+    createIndexListHint:
+      'Darunter kommt eine Liste der Ordner und Notizen, die jetzt oben im Content-Ordner liegen. Sie wird später nicht aktualisiert.',
+    createIndexLinked: 'Die Datei wird im verknüpften Ordner angelegt, also bei deinen eigenen Notizen: {{path}}',
+    createIndexAction: 'Startseite anlegen',
+    creatingIndex: 'Lege an…',
+    indexCreated: 'Die Startseite ist angelegt: {{path}}'
   },
   buildServer: {
     devServer: 'Dev-Server',
+    noIndex: 'Im Content-Ordner fehlt die index.md — die Vorschau zeigt unter ihrer Adresse deshalb eine 404-Seite.',
+    noIndexLink: 'Startseite anlegen →',
     devServerHint: 'Zeigt deine Website live im Browser an, mit automatischem Neuladen bei Änderungen — ideal zum Ausprobieren.',
     oneOffBuildHint: 'Erstellt einmalig die fertigen HTML-Dateien, z. B. um sie manuell hochzuladen oder zu prüfen, bevor du veröffentlichst.',
     port: 'Port',

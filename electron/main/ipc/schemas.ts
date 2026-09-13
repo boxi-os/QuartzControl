@@ -175,6 +175,10 @@ export const syncDirection = z.enum(['push', 'pull', 'both'])
 // `sourcePath` comes from the native file dialog and is checked again in the service, which is
 // where the accepted extensions live next to the reason for them.
 export const projectIconTarget = z.looseObject({ projectPath: absolutePath })
+
+// content.createIndex. The title ends up in YAML through `stringify`, so nothing in it is
+// interpreted; the bound is only there because it is a page title.
+export const createIndexArgs = z.looseObject({ projectPath: absolutePath, title: z.string().trim().min(1).max(200) })
 export const projectIconSource = z.looseObject({ projectPath: absolutePath, sourcePath: absolutePath })
 
 export const confirmDialog = z.looseObject({

@@ -543,6 +543,8 @@ export function registerIpcHandlers(): void {
       )
   )
 
+  handle(IPC.contentCreateIndex, t([s.createIndexArgs]), (args) => contentService.createIndexPage(args.projectPath, args.title))
+
   handleNoArgs(IPC.settingsGet, () => settingsService.getSettings())
   handle(IPC.settingsSave, t([s.settings]), async (next) => {
     await settingsService.saveSettings(next as Settings)

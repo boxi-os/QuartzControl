@@ -347,6 +347,17 @@ export default function ProjectDashboard(): JSX.Element {
       linkLabel: t('dashboard.contentTab')
     })
   }
+  if (content?.hasIndex === false) {
+    issues.push({
+      id: 'no-index',
+      tone: 'amber',
+      icon: Link2,
+      title: t('dashboard.attention.noIndex'),
+      detail: t('dashboard.attention.noIndexDetail'),
+      to: 'config?tab=content',
+      linkLabel: t('dashboard.contentTab')
+    })
+  }
   if (git?.conflictCount) {
     issues.push({
       id: 'git-conflict',

@@ -561,6 +561,8 @@ export interface ContentStatus {
   symlinkTarget?: string
   targetExists?: boolean
   fileCount?: number
+  /** Whether the content folder has an index.md (any case). Absent when the folder is unreachable. */
+  hasIndex?: boolean
 }
 
 export interface ContentProgress {
@@ -1411,6 +1413,7 @@ export const IPC = {
   contentStatus: 'content:status',
   contentChange: 'content:change',
   contentProgress: 'content:progress',
+  contentCreateIndex: 'content:createIndex',
 
   settingsGet: 'settings:get',
   settingsSave: 'settings:save',
@@ -1819,6 +1822,8 @@ export interface QuartzGuiApi {
     status(projectPath: string): Promise<ContentStatus>
     change(projectId: string, projectPath: string, sourcePath: string, strategy: ContentStrategy): Promise<void>
     onProgress(cb: (progress: ContentProgress) => void): () => void
+    /** Creates content/index.md with a title and the top-level entries; never overwrites. */
+    createIndex(args: { projectPath: string; title: string }): Promise<{ path: string }>
   }
   settings: {
     get(): Promise<Settings>

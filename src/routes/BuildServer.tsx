@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { isInsideDirectory } from '../utils/platform'
 import { Check, ChevronDown, ChevronRight, Copy, ExternalLink, FolderOpen, Hammer, MonitorPlay, RefreshCw, SlidersHorizontal } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useProject } from './ProjectLayout'
 import type {
   BuildOutputInfo,
@@ -99,6 +100,9 @@ export default function BuildServer(): JSX.Element {
     }
   }, [project.id, setOptions])
 
+  // True only once the content folder was read and has no index.md - a failed read says nothing.
+  const [missingIndex, setMissingIndex] = useState(false)
+
   const refreshOutput = useCallback(
     async (dir: string) => {
       setOutput(await window.quartzGui.build.lastOutput(project.path, dir || undefined).catch(() => null))
@@ -113,6 +117,12 @@ export default function BuildServer(): JSX.Element {
     })
     // Falls back to Quartz's own widths on its own when the project never set any.
     window.quartzGui.layoutFrames.getBreakpoints(project.path).then(setBreakpoints)
+    // A local read. The first preview of a linked vault without index.md is Quartz's 404 page at the
+    // site's own address, which reads like a broken project - so the page that opens the preview says why.
+    window.quartzGui.content
+      .status(project.path)
+      .then((c) => setMissingIndex(c.hasIndex === false))
+      .catch(() => setMissingIndex(false))
   }, [project.path, refreshOutput])
 
   // Relative ages ("gestartet vor 2 Minuten", "gebaut vor 5 Minuten") are computed at render, so
@@ -221,6 +231,14 @@ export default function BuildServer(): JSX.Element {
             )}
           </div>
         </div>
+        {missingIndex && (
+          <p className="mb-3 text-sm text-amber-700 dark:text-amber-400">
+            {t('buildServer.noIndex')}{' '}
+            <Link to="../config?tab=content" className="whitespace-nowrap text-indigo-600 hover:underline dark:text-indigo-400">
+              {t('buildServer.noIndexLink')}
+            </Link>
+          </p>
+        )}
 
         {/* The address leads, because it is what the page is for. Running or not, it is the same
             line - stopped it just says what the address will be, which nothing used to. */}

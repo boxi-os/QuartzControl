@@ -167,6 +167,8 @@ const STRINGS = {
     hostKeyAccept: 'Verbinden und merken',
     hostKeyRejected: 'Verbindung abgebrochen — der Host-Key wurde nicht bestätigt.',
     contentSourceMissing: 'Den Quellordner gibt es nicht: {{path}}',
+    indexPageExists: 'Im Content-Ordner liegt schon eine index.md. Sie bleibt, wie sie ist.',
+    indexPageNoContent: 'Es gibt keinen erreichbaren Content-Ordner, in den die Startseite gelegt werden könnte.',
 
     projectAlreadyRegistered: 'Dieser Ordner ist bereits als anderes Projekt registriert.',
     projectIconUnsupportedFormat: 'Nur PNG- und JPEG-Dateien können als Projektbild verwendet werden.',
@@ -398,6 +400,8 @@ const STRINGS = {
     hostKeyAccept: 'Connect and remember',
     hostKeyRejected: 'Connection aborted — the host key was not confirmed.',
     contentSourceMissing: 'The source folder does not exist: {{path}}',
+    indexPageExists: 'The content folder already has an index.md. It stays as it is.',
+    indexPageNoContent: 'There is no reachable content folder to put the start page in.',
 
     projectAlreadyRegistered: 'This folder is already registered as another project.',
     projectIconUnsupportedFormat: 'Only PNG and JPEG files can be used as a project image.',

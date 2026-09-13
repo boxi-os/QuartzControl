@@ -170,6 +170,8 @@ const STRINGS = {
     contentSourceMissing: 'Den Quellordner gibt es nicht: {{path}}',
     indexPageExists: 'Im Content-Ordner liegt schon eine index.md. Sie bleibt, wie sie ist.',
     indexPageNoContent: 'Es gibt keinen erreichbaren Content-Ordner, in den die Startseite gelegt werden könnte.',
+    indexPageGlobbyBroken:
+      'Die Dateisuche von Quartz im Projekt lässt sich nicht laden, deshalb ist keine Startseite angelegt ({{message}}). Ein erneutes npm install im Projekt behebt das meist.',
 
     projectAlreadyRegistered: 'Dieser Ordner ist bereits als anderes Projekt registriert.',
     projectIconUnsupportedFormat: 'Nur PNG- und JPEG-Dateien können als Projektbild verwendet werden.',
@@ -404,6 +406,8 @@ const STRINGS = {
     contentSourceMissing: 'The source folder does not exist: {{path}}',
     indexPageExists: 'The content folder already has an index.md. It stays as it is.',
     indexPageNoContent: 'There is no reachable content folder to put the start page in.',
+    indexPageGlobbyBroken:
+      'Quartz’s file search in the project cannot be loaded, so no start page was created ({{message}}). Running npm install in the project again usually fixes this.',
 
     projectAlreadyRegistered: 'This folder is already registered as another project.',
     projectIconUnsupportedFormat: 'Only PNG and JPEG files can be used as a project image.',

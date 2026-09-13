@@ -369,7 +369,9 @@ export default {
     createIndexLinked: 'Die Datei wird im verknüpften Ordner angelegt, also bei deinen eigenen Notizen: {{path}}',
     createIndexAction: 'Startseite anlegen',
     creatingIndex: 'Lege an…',
-    indexCreated: 'Die Startseite ist angelegt: {{path}}'
+    indexCreated: 'Die Startseite ist angelegt: {{path}}',
+    indexCreatedFallback:
+      'Die Liste auf der neuen Startseite entstand ohne die Ausschlussregeln von Quartz, weil im Projekt noch kein npm install gelaufen ist. Sie kann Ordner nennen, die die Website nicht hat.'
   },
   buildActivity: {
     kind: {

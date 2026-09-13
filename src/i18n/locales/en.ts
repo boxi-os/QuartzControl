@@ -368,7 +368,9 @@ export default {
     createIndexLinked: 'The file is created in the linked folder, that is among your own notes: {{path}}',
     createIndexAction: 'Create start page',
     creatingIndex: 'Creating…',
-    indexCreated: 'The start page has been created: {{path}}'
+    indexCreated: 'The start page has been created: {{path}}',
+    indexCreatedFallback:
+      'The list on the new start page was made without Quartz’s ignore rules, because npm install has not run in the project yet. It may name folders the site does not have.'
   },
   buildActivity: {
     kind: {

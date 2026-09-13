@@ -1855,8 +1855,12 @@ export interface QuartzGuiApi {
     status(projectPath: string): Promise<ContentStatus>
     change(projectId: string, projectPath: string, sourcePath: string, strategy: ContentStrategy): Promise<void>
     onProgress(cb: (progress: ContentProgress) => void): () => void
-    /** Creates content/index.md with a title and the top-level entries; never overwrites. */
-    createIndex(args: { projectPath: string; title: string }): Promise<{ path: string }>
+    /**
+     * Creates content/index.md with a title and the top-level entries; never overwrites.
+     * `listSource` says who decided what the list leaves out: Quartz's own globby from the project,
+     * or - without node_modules - a fallback that reads no `.gitignore` and differs at a few edges.
+     */
+    createIndex(args: { projectPath: string; title: string }): Promise<{ path: string; listSource: 'quartz' | 'fallback' }>
   }
   settings: {
     get(): Promise<Settings>

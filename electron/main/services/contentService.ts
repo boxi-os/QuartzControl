@@ -116,27 +116,59 @@ async function hasIndexPage(dir: string): Promise<boolean> {
 // because globby also reads the `.gitignore` files between the cwd and the root of the git repository
 // around it (measured: a project's `content/y/` counts once the project is a repository, not before).
 // Same 26 patterns, same .gitignore files: the list and Quartz's globby agree on every one.
-async function quartzInputFiles(projectPath: string, patterns: string[]): Promise<string[]> {
+//
+// Two failures, two answers (review 2026-09-18, finding 1). The first version caught both in one
+// `catch` and ran the fallback silently - measured at the built app, a project whose globby had a
+// one-line syntax error got a list with two links to pages the build does not make, and no word
+// about it. Now only "not installed" - `resolve()` failing with MODULE_NOT_FOUND - takes the
+// fallback, and says so through `source`; a globby that is there and does not load is an error
+// with a sentence, because a broken node_modules does not build either and a list pretending
+// otherwise is the silent answer "cannot check" must not be.
+type ListSource = 'quartz' | 'fallback'
+async function quartzInputFiles(projectPath: string, patterns: string[]): Promise<{ files: string[]; source: ListSource }> {
   const cwd = contentDirPath(projectPath)
-  let globby: ((pattern: string, options: object) => Promise<string[]>) | undefined
+  let entry: string
   try {
-    const resolveFromQuartz = createRequire(join(projectPath, 'quartz', 'util', 'glob.ts')).resolve
-    globby = ((await import(pathToFileURL(resolveFromQuartz('globby')).href)) as { globby: typeof globby }).globby
-  } catch {
+    entry = createRequire(join(projectPath, 'quartz', 'util', 'glob.ts')).resolve('globby')
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== 'MODULE_NOT_FOUND') throw err
     // No node_modules yet, so no build either: the list can only be as good as the fallback below.
+    return { files: await walkUnignored(await realpath(cwd), patterns), source: 'fallback' }
   }
-  if (globby) return (await globby('**/*.*', { cwd, ignore: patterns, gitignore: true })).map((p) => p.split(sep).join('/'))
-  return walkUnignored(await realpath(cwd), patterns)
+  let globby: (pattern: string, options: object) => Promise<string[]>
+  try {
+    globby = ((await import(pathToFileURL(entry).href)) as { globby: typeof globby }).globby
+    if (typeof globby !== 'function') throw new Error(`${entry} exports no globby()`)
+  } catch (err) {
+    throw new Error(mainT('indexPageGlobbyBroken', { message: err instanceof Error ? err.message : String(err) }))
+  }
+  const files = await globby('**/*.*', { cwd, ignore: patterns, gitignore: true })
+  return { files: files.map((p) => p.split(sep).join('/')), source: 'quartz' }
 }
 
 // The fallback, and it says what it is not: no `.gitignore` is read. The patterns follow fast-glob's
 // two rules - a file is tested with its own path, and a folder is pruned only by a pattern whose last
 // segment is static or which ends in `/**` (`isAffectDepthOfReadingPattern`), which is why `x/*`,
-// `*` and `[xy]` keep a folder's subfolders while `x/` and `**/x` drop them. Measured against globby
-// with 26 patterns: one answer differs, `{x,y}`, which fast-glob expands into two static patterns
-// before it applies the rule and this does not. Hidden entries are skipped the way `dot: false` skips
-// them; links are followed as fast-glob follows them, with `seen` against a link back to an ancestor.
-async function walkUnignored(root: string, patterns: string[]): Promise<string[]> {
+// `*` and `[xy]` keep a folder's subfolders while `x/` and `**/x` drop them. Before that, a pattern
+// loses what fast-glob and picomatch take off it: one leading `!` (every ignore pattern is negative
+// to fast-glob, `convertToPositivePattern`, unless it is `!(…)`) and a leading `./` (picomatch).
+// Measured against globby 16.2.2 / fast-glob 3.3.3: `./x`, `!x`, `!./x` drop `x` in both.
+//
+// Where it still differs, measured against the same globby (review 2026-09-18): `{x,y}`, which
+// fast-glob expands into two static patterns before it applies the pruning rule; `foo\*`, because
+// Node's `matchesGlob` reads a backslash as a separator (`windowsPathsNoEscape`); `!!x`, which
+// fast-glob turns into "everything but x"; and on macOS a pattern with a wildcard ignores case
+// (`priva*` drops `Privat`, `*.MD` drops `top.md`), because `matchesGlob` sets `nocase` there and
+// fast-glob does not. Of 31 patterns those are 8 answers, and apart from `{x,y}` and `!!x` every
+// one leaves out something Quartz builds - a missing link, not a dead one. Hidden entries are
+// skipped the way `dot: false` skips them.
+// Links are followed, with `seen` against a link back to an ancestor - where fast-glob runs a loop
+// to its depth limit, this stops at the first repeat; the folders found are the same.
+async function walkUnignored(root: string, rawPatterns: string[]): Promise<string[]> {
+  const patterns = rawPatterns.map((pattern) => {
+    const positive = pattern.startsWith('!') && pattern[1] !== '(' ? pattern.slice(1) : pattern
+    return positive.startsWith('./') ? positive.slice(2) : positive
+  })
   const test = (probe: string, pattern: string): boolean => {
     if (pattern === probe) return true
     try {
@@ -208,7 +240,10 @@ function entryLink(name: string, href: string): string {
  * exists under another case) is an error rather than a loss. In a linked vault this writes into the
  * user's own notes, which is why it only ever happens from a dialog that names the folder.
  */
-export async function createIndexPage(projectPath: string, title: string): Promise<{ path: string }> {
+export async function createIndexPage(
+  projectPath: string,
+  title: string
+): Promise<{ path: string; listSource: 'quartz' | 'fallback' }> {
   const status = await getContentStatus(projectPath)
   if (!status.exists || (status.isSymlink && !status.targetExists)) throw new Error(mainT('indexPageNoContent'))
   const dir = await realpath(contentDirPath(projectPath))
@@ -223,7 +258,8 @@ export async function createIndexPage(projectPath: string, title: string): Promi
   }
 
   // Quartz's test, not ours: `endsWith(".md")` in build.ts, so a `Note.MD` is an asset there too.
-  const markdown = (await quartzInputFiles(projectPath, patterns)).filter((path) => path.endsWith('.md'))
+  const listed = await quartzInputFiles(projectPath, patterns)
+  const markdown = listed.files.filter((path) => path.endsWith('.md'))
   const notes = markdown.filter((path) => !path.includes('/'))
   const folders = [...new Set(markdown.filter((path) => path.includes('/')).map((path) => path.split('/')[0]))]
   const order = (a: string, b: string): number => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
@@ -242,7 +278,7 @@ export async function createIndexPage(projectPath: string, title: string): Promi
     if ((err as NodeJS.ErrnoException).code === 'EEXIST') throw new Error(mainT('indexPageExists'))
     throw err
   }
-  return { path }
+  return { path, listSource: listed.source }
 }
 
 // Neither direction of containment is allowed between the source and the content directory.

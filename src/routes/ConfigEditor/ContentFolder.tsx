@@ -23,6 +23,10 @@ export default function ContentFolder(): JSX.Element {
   const [indexTitle, setIndexTitle] = useState('')
   const [indexBusy, setIndexBusy] = useState(false)
   const [indexError, setIndexError] = useState<string | null>(null)
+  // Set when the list on a just-created start page came from the fallback rather than Quartz's own
+  // globby. It outlives the dialog, because the dialog closes on success - and the one thing to say
+  // then is that the list may link folders the build leaves out.
+  const [indexFallback, setIndexFallback] = useState(false)
 
   async function reload(): Promise<void> {
     setStatus(await window.quartzGui.content.status(project.path))
@@ -69,9 +73,17 @@ export default function ContentFolder(): JSX.Element {
     setIndexBusy(true)
     setIndexError(null)
     try {
-      const { path } = await window.quartzGui.content.createIndex({ projectPath: project.path, title: indexTitle.trim() })
+      const { path, listSource } = await window.quartzGui.content.createIndex({
+        projectPath: project.path,
+        title: indexTitle.trim()
+      })
       setIndexDialog(false)
-      announce(t('content.indexCreated', { path }))
+      setIndexFallback(listSource === 'fallback')
+      announce(
+        listSource === 'fallback'
+          ? `${t('content.indexCreated', { path })} ${t('content.indexCreatedFallback')}`
+          : t('content.indexCreated', { path })
+      )
       await reload()
     } catch (err) {
       setIndexError(formatIpcError(err))
@@ -114,6 +126,9 @@ export default function ContentFolder(): JSX.Element {
               {t('content.createIndex')}
             </Button>
           </div>
+        )}
+        {indexFallback && status?.hasIndex && (
+          <p className="mt-3 text-sm text-amber-700 dark:text-amber-400">{t('content.indexCreatedFallback')}</p>
         )}
         <Button className="mt-4" variant="ghost" onClick={() => setShowDialog(true)}>
           {t('content.changeSource')}

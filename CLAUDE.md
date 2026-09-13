@@ -581,6 +581,25 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   eine Schreibweise, die ein Prüfskript nicht liest, ist eine, hinter der sich ein Fehler versteckt.
   `check:i18n` las nur `t('…')`; `t(bedingung ? 'a' : 'b')` stand an zwölf Stellen mit 21
   Schlüsseln, und ein Fix des zwölften Reviews hatte die Form gerade erst noch einmal geschrieben.
+  Und die Zahl zählt, was sie zu zählen behauptet: „1 Aufruf im Hauptprozess“ war die Deklaration
+  von `mainT` (vierzehntes Review).
+- **Zwei Arten zu scheitern bekommen zwei Antworten.** „Fehlt“ und „ist da, aber kaputt“ in einem
+  `catch` zu fangen macht aus dem zweiten Fall ein stilles „alles gut“. Die Liste der Startseite
+  fing ein `globby` mit Syntaxfehler wie ein fehlendes und schrieb zwei tote Links, ohne ein Wort
+  (vierzehntes Review, an der gebauten und der gepackten App). Getrennt wird am Ort des Scheiterns:
+  `resolve()` mit `MODULE_NOT_FOUND` ist „nicht installiert“, ein `import()`, der danach scheitert,
+  ist ein Fehler. Und ein Ersatz, der läuft, sagt, *dass* er lief — nicht nur im Kommentar, was er
+  nicht kann.
+- **Ein Bau, dem etwas fehlt, bricht ab, statt zu warnen.** Eine Warnung im Log eines Laufs, dessen
+  Paket schon fertig ist, liest niemand: `beforePack` packte zweimal still ohne Handbuch, erst auf
+  der VM, dann nach dem Umzug der Projekte auf dem Mac, der die Beta-Pakete baut. Wer das Fehlende
+  wirklich nicht will, sagt es mit einem Flag (`QUARTZCONTROL_WITHOUT_HANDBOOK=1`).
+- **Ein Fix auf einem Branch, der nie gemergt wurde, ist keiner.** Der Pfad-Fix für das Handbuch
+  existierte seit dem 2026-09-12 (`e6916ae`) — auf `feat/beispielvorlage-und-header`, zusammen mit
+  sechs weiteren Commits, und keiner davon kam in die Linie, aus der gebaut wird. Gefunden hat es
+  erst ein Review, weil es die App packen musste. Vor einem Release: `git cherry <release-branch>
+  <branch>` über alle lokalen und entfernten Branches, und was ein `+` zeigt, wird gemergt oder
+  bewusst verworfen.
 - **„Die Datei ist da“ ist nicht „die Datei lässt sich lesen“.** Ein Cache, ein Download, eine
   mitgelieferte Kopie: geprüft wird, ob der Inhalt sich öffnen lässt, nicht ob ein Verzeichniseintrag
   existiert - sonst gewinnt ein Torso gegen eine heile Kopie. Geschrieben wird so etwas über
@@ -707,9 +726,9 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Befunde aus den Reviews (Stand 2026-09-17)
+## Befunde aus den Reviews (Stand 2026-09-18)
 
-Alle dreizehn Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
+Alle vierzehn Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht,
@@ -721,12 +740,30 @@ Alle dreizehn Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIE
 [`docs/REVIEW-2026-09-13.md`](docs/REVIEW-2026-09-13.md) mit seinen sieben und
 [`docs/REVIEW-2026-09-14.md`](docs/REVIEW-2026-09-14.md) mit seinen zwölf und
 [`docs/REVIEW-2026-09-16.md`](docs/REVIEW-2026-09-16.md) mit seinen neun und
-[`docs/REVIEW-2026-09-17.md`](docs/REVIEW-2026-09-17.md) mit seinen vier (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-17-`) stehen als
+[`docs/REVIEW-2026-09-17.md`](docs/REVIEW-2026-09-17.md) mit seinen vier und
+[`docs/REVIEW-2026-09-18.md`](docs/REVIEW-2026-09-18.md) mit seinen vier (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-18-`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](docs/REVIEW-2026-09-15.md) gehört nicht
 in diese Zählung: Die „fünfzehnte Runde“ las die Handbücher der zwei Plugins gegen deren Code und
 aus diesem Repo nur zwei Commits der Beispielvorlage (`fe2b701`, `9592121`).
+
+**Das vierzehnte Review las die vier Fixes des dreizehnten** (`review-2026-09-18..fix/review-2026-09-17`,
+im App-Code 7 Dateien, +175/−48) — und war das erste dieser Serie, das an der *gepackten* App
+gemessen hat. Kein Befund der Stufe Hoch, keiner Mittel, drei Niedrig im Diff und einer außerhalb,
+alle vier abgearbeitet. Der `import()` von `globby` aus dem Projekt trägt auch aus `app.asar`
+heraus; der Hinweis am dunklen Bild trägt in sechs Zuständen; der Checker zählt richtig, bis auf
+eine Deklaration. Der wichtigste Befund lag außerhalb: Das Paket, das die Messung packen musste,
+kam ohne Handbuch, weil `build-handbook.mjs` das Projekt am Ort vor dem Umzug suchte — und der Fix
+dafür lag seit zwei Tagen auf einem Branch, der nie gemergt wurde. Was daraus als Regel bleibt,
+steht oben in den passenden Abschnitten:
+
+- **Zwei Arten zu scheitern bekommen zwei Antworten**, und ein Ersatz sagt, dass er lief.
+- **Code aus dem `node_modules` eines Projekts im Hauptprozess** ist eine Entscheidung mit Preis
+  (`safeStorage`), und der steht jetzt da; eine dritte Stelle begründet sich selbst.
+- **Ein Bau, dem etwas fehlt, bricht ab, statt zu warnen.**
+- **Ein Fix auf einem Branch, der nie gemergt wurde, ist keiner.**
+- **Die Zahl eines Prüfskripts zählt, was sie zu zählen behauptet.**
 
 **Das dreizehnte Review las die neun Fixes des zwölften und die Lücke daneben** — die 16 Commits
 zwischen `review-2026-09-14` und `review-2026-09-16`, die bis dahin kein Review dieser Zählung
@@ -1053,8 +1090,8 @@ Bereich darf ohne Belegung leer bleiben, und über `layout.group` kann er eigene
 Umbaus selbst: die Zuordnung ruht auf einem Funktionsnamen, den es nur gibt, weil Quartz sich mit
 esbuilds `keepNames` baut.
 
-**Der Auftrag für das vierzehnte Review steht** in
-[`docs/REVIEW-2026-09-18-auftrag.md`](docs/REVIEW-2026-09-18-auftrag.md). Er liest die vier Fixes
+**Der Auftrag für das vierzehnte Review stand** in
+[`docs/REVIEW-2026-09-18-auftrag.md`](docs/REVIEW-2026-09-18-auftrag.md). Er las die vier Fixes
 des dreizehnten (`review-2026-09-18..fix/review-2026-09-17`, im App-Code 7 Dateien, +175/−48) und
 nennt als größtes Risiko den `import()` von `globby` aus dem Projekt in den Hauptprozess — gemessen
 an der gebauten, nicht an der gepackten App.
@@ -1064,11 +1101,12 @@ an der gebauten, nicht an der gepackten App.
 die Fixes des zwölften (`review-2026-09-17..fix/review-2026-09-16`) und die Lücke
 `review-2026-09-14..review-2026-09-16` (unten), in der die zwölf Fixes des elften liegen.
 
-**Das nächste Review misst ab `review-2026-09-18`.** Der Tag sitzt auf `cc4bd50` („Der Auftrag für
-das Review 2026-09-17“, `fix/review-2026-09-16`), dem Stand, den das dreizehnte Review gelesen hat.
-`review-2026-09-17` sitzt auf `8136760` („Der Auftrag für das sechzehnte Review“,
+**Das nächste Review misst ab `review-2026-09-19`.** Der Tag sitzt auf `59e149b` („Der Auftrag für
+das Review 2026-09-18“, `fix/review-2026-09-17`), dem Stand, den das vierzehnte Review gelesen hat.
+`review-2026-09-18` sitzt auf `cc4bd50` („Der Auftrag für das Review 2026-09-17“,
+`fix/review-2026-09-16`), dem Stand, den das dreizehnte Review gelesen hat. `review-2026-09-17` sitzt auf `8136760` („Der Auftrag für das sechzehnte Review“,
 `review/beta2`), dem Stand, den das zwölfte Review gelesen hat. Die Regel ist dieselbe wie bei den
-zehn Vorgängern: Der Ausgangsstand ist das, was gelesen wurde, nicht das, was
+elf Vorgängern: Der Ausgangsstand ist das, was gelesen wurde, nicht das, was
 danach entstanden ist. So sitzt `review-2026-09-14` auf `dcf28cf`, dem Stand des elften Reviews
 („Der Auftrag für das vierzehnte Review“), `review-2026-09-13` auf `9305d7b`, dem Stand des zehnten
 Reviews (`main` nach PR #36 mit dem Auftrag), `review-2026-09-12` auf `7568803`, dem Stand des
@@ -1094,8 +1132,24 @@ ausdrücklich mit, und es hat ihn gelesen: die Lücke ist geschlossen, drei sein
 betreffen sie nicht, der vierte ist ein Kommentar in `shared/gridFrameCss.ts`. `review-2026-09-16`
 bleibt, wo er ist, weil der Auftrag des zwölften Reviews mit ihm rechnet.
 
-**Die vier Fixes des dreizehnten Reviews liegen bewusst dahinter** (`fix/review-2026-09-17`, von
-`fix/review-2026-09-16` abgezweigt). Gemessen: die Startseiten-Liste an einem esbuild-Bündel von
+**Die vier Fixes des vierzehnten Reviews liegen bewusst dahinter** (`fix/review-2026-09-18`, von
+`fix/review-2026-09-17` abgezweigt), und mit ihnen der Merge von `feat/beispielvorlage-und-header`
+(`962f079`: README zu Beta 1, Handbuch-Zahlen und tar-Anleitung, der Skill
+`projekt-dokumentieren`, zwei gesicherte `.qtpl` und `minimal-lesbar.qtpl` vom 2026-09-10).
+Gemessen: `beforePack` mit `electron-builder --dir` in drei Läufen (ohne Projekt Exit 1 und kein
+Paket, mit Flag ein Paket ohne Handbuch, normal 457 Dateien im `.app`); `check:i18n` mit zwei
+angehängten Aufrufen als Gegenprobe; der Ersatz für `globby` herausgeschnitten gegen Quartz'
+`globby` mit 31 Mustern (8 Abweichungen bleiben, im Kommentar benannt) und an der gebauten App mit
+drei Wegwerf-Projekten — ohne `node_modules`, mit echtem, mit kaputtem `globby`. Nicht neu gemessen
+ist die gepackte App. Der vierte ist Dokumentation: die Vertrauensgrenze in
+`process-model-and-ipc.md`, zwei Aussagen darin nur gelesen und so gekennzeichnet. Die größten
+Eingriffe sind `listSource` im Vertrag von `content.createIndex` und der Abbruch in `beforePack`,
+der jede Baumaschine ohne Handbuch-Projekt und ohne `QUARTZCONTROL_HANDBOOK_SITE` betrifft. Sie
+gehören damit in den Diff des nächsten Auftrags.
+
+**Die vier Fixes des dreizehnten Reviews hat das vierzehnte gelesen** (`fix/review-2026-09-17`, von
+`fix/review-2026-09-16` abgezweigt) — ohne Regression; Befund 1 schärft Fix 1 nach (der stille
+Ersatz), Befund 3 Fix 3 (die Zählung). Gemessen: die Startseiten-Liste an einem esbuild-Bündel von
 `contentService` gegen `globby` aus `gui-test/node_modules` (26 Muster, über `globby` 0
 Abweichungen, im Ersatz ohne `node_modules` eine, `{x,y}`; `.gitignore` im Vault und im Projekt mit
 und ohne git) und an der gebauten App; der Hinweis am dunklen Bild an der gebauten App mit
@@ -1103,7 +1157,7 @@ Wegwerf-Profil in vier Fällen vorher und nachher; `check:i18n` mit einer Gegenp
 gelöschten Schlüsseln. Der vierte ist nur Kommentar. Der größte Eingriff ist der dynamische Import
 von `globby` aus dem Projekt im Hauptprozess — nach `sass` in `styleService` der zweite Ort, an dem
 die App zur Laufzeit Code aus dem `node_modules` eines Nutzerprojekts in sich selbst lädt, und der
-erste als ES-Modul. Sie gehören damit in den Diff des nächsten Auftrags.
+erste als ES-Modul.
 
 **Die neun Fixes des zwölften Reviews hat das dreizehnte gelesen** (`fix/review-2026-09-16`, von
 `review/beta2` abgezweigt) — ohne Regression; zwei seiner Befunde schärfen Fix 7 und Fix 9 nach.

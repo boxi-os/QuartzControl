@@ -975,8 +975,13 @@ Bereich darf ohne Belegung leer bleiben, und über `layout.group` kann er eigene
 Umbaus selbst: die Zuordnung ruht auf einem Funktionsnamen, den es nur gibt, weil Quartz sich mit
 esbuilds `keepNames` baut.
 
-**Das nächste Review misst ab `8136760`** („Der Auftrag für das sechzehnte Review“, `review/beta2`),
-dem Stand, den das zwölfte Review gelesen hat; ein Tag dafür ist noch nicht gesetzt. Die Regel ist
+**Der Auftrag für das dreizehnte Review steht** in
+[`docs/REVIEW-2026-09-17-auftrag.md`](docs/REVIEW-2026-09-17-auftrag.md). Er liest zwei Bereiche:
+die Fixes des zwölften (`review-2026-09-17..fix/review-2026-09-16`) und die Lücke
+`review-2026-09-14..review-2026-09-16` (unten), in der die zwölf Fixes des elften liegen.
+
+**Das nächste Review misst ab `review-2026-09-17`.** Der Tag sitzt auf `8136760` („Der Auftrag für
+das sechzehnte Review“, `review/beta2`), dem Stand, den das zwölfte Review gelesen hat. Die Regel ist
 dieselbe wie bei den neun Vorgängern: Der Ausgangsstand ist das, was gelesen wurde, nicht das, was
 danach entstanden ist. So sitzt `review-2026-09-14` auf `dcf28cf`, dem Stand des elften Reviews
 („Der Auftrag für das vierzehnte Review“), `review-2026-09-13` auf `9305d7b`, dem Stand des zehnten
@@ -998,8 +1003,9 @@ Arbeit an der Beispielvorlage danach, die zwei Dokumente der fünfzehnten Runde 
 x64-Benennung der macOS-Pakete — im App-Code 5 Dateien, +174/−55 (`shared/gridFrameCss.ts`,
 `Styles/CustomCss.tsx`, `Styles/variableGraph.ts`, `Styles/Basics.tsx`, `Plugins/Installed.tsx`),
 dazu `electron-builder.yml` und in `scripts/` +1298/−140. Die fünfzehnte Runde hat davon nur
-`fe2b701` und `9592121` gelesen. Ein Auftrag, der nur ab `8136760` misst, liest diesen Bereich
-wieder nicht.
+`fe2b701` und `9592121` gelesen. Der Auftrag für das dreizehnte Review nimmt den Bereich deshalb
+ausdrücklich mit; `review-2026-09-16` bleibt, wo er ist, weil der Auftrag des zwölften Reviews mit
+ihm rechnet.
 
 **Die neun Fixes des zwölften Reviews liegen bewusst dahinter** (`fix/review-2026-09-16`, von
 `review/beta2` abgezweigt). Sie sind gemessen, fast alle an der gebauten App mit Wegwerf-Profil

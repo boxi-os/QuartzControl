@@ -149,6 +149,12 @@ export function registerIpcHandlers(): void {
     projectIconService.setProjectIcon(projectPath, sourcePath)
   )
   handle(IPC.projectIconClear, t([s.projectIconTarget]), ({ projectPath }) => projectIconService.clearProjectIcon(projectPath))
+  handle(IPC.projectIconSetDark, t([s.projectIconSource]), ({ projectPath, sourcePath }) =>
+    projectIconService.setProjectIconDark(projectPath, sourcePath)
+  )
+  handle(IPC.projectIconClearDark, t([s.projectIconTarget]), ({ projectPath }) =>
+    projectIconService.clearProjectIconDark(projectPath)
+  )
 
   handle(IPC.projectCreate, t([s.createProjectOptions]), async (options) => {
     const result = await createService.createProject(options as CreateProjectOptions)

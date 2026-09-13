@@ -1181,6 +1181,8 @@ export interface ProjectIconInfo {
   /** Pixel size of the file on disk; 0 when there is none. */
   width: number
   height: number
+  /** quartz/static/icon-dark.png scaled down, or null when the project has no dark-scheme picture. */
+  darkDataUrl: string | null
 }
 
 /** Versions and storage locations for the Settings page's maintenance section. */
@@ -1283,6 +1285,8 @@ export const IPC = {
   projectIconGet: 'projectIcon:get',
   projectIconSet: 'projectIcon:set',
   projectIconClear: 'projectIcon:clear',
+  projectIconSetDark: 'projectIcon:setDark',
+  projectIconClearDark: 'projectIcon:clearDark',
 
   configGet: 'config:get',
   configSave: 'config:save',
@@ -1593,6 +1597,9 @@ export interface QuartzGuiApi {
     set(args: { projectPath: string; sourcePath: string }): Promise<ProjectIconInfo>
     /** Puts back the icon the project came with - see projectIconService for why not a delete. */
     clear(args: { projectPath: string }): Promise<ProjectIconInfo>
+    /** The optional dark-scheme picture, quartz/static/icon-dark.png - used by the header image only. */
+    setDark(args: { projectPath: string; sourcePath: string }): Promise<ProjectIconInfo>
+    clearDark(args: { projectPath: string }): Promise<ProjectIconInfo>
   }
   config: {
     get(projectPath: string): Promise<QuartzConfig>

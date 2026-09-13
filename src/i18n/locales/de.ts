@@ -1162,6 +1162,9 @@ export default {
       visibleOnBreakpoint: 'Sichtbar auf {{breakpoint}}',
       overlapError: 'Dieser Bereich überschneidet sich mit einem bestehenden Bereich.',
       unassignedWarning: 'Nicht zugewiesen: {{slots}}. Komponenten für diese Positionen werden in diesem Frame nicht angezeigt.',
+      hiddenGroupsWarning:
+        'Auf {{breakpoint}} ausgeblendet: {{areas}}. Die Komponenten dieser eigenen Bereiche erscheinen auf dieser Breite nicht.',
+      otherBreakpointsWarning: 'Auf {{breakpoints}} gibt es Hinweise, die hier nicht stehen.',
       homelessWarning:
         'Ohne einfachen Bereich: {{slots}}. Was dieser Belegung gehört und in keinem eigenen Bereich liegt, erscheint auf keiner Seite.',
       doubledWarning:

@@ -161,6 +161,50 @@ const collisionDetection: CollisionDetection = (args) => {
   return pointerCollisions.length > 0 ? pointerCollisions : closestCenter(args)
 }
 
+/**
+ * What the frame editor warns about, for one breakpoint. Structural only - it knows the areas and
+ * their slots, not which components the project has - so it can be asked for every breakpoint.
+ *
+ * - `unassigned`: a slot no visible area shows. Its components render nowhere at this width.
+ * - `doubled`: two visible plain areas on one slot render that slot's whole list twice - measured on
+ *   this project's "editorial" frame, which had three on `left`. Areas with a group don't double up,
+ *   two of those on one slot are the point of the exercise.
+ * - `homeless`: a slot whose visible areas *all* have a group has nowhere for the components that
+ *   are in no group. Measured on a real build: two group areas on `left` and no plain one took the
+ *   spacer, the dark-mode switch and the reader-mode switch off every page.
+ * - `hiddenGroups`: areas of their own that are visible on some breakpoint but not on this one. Their
+ *   group's components are shown by nothing else here - the plain area of the slot shows only what
+ *   no group claims - so a group area placed on desktop only takes them off tablet and mobile.
+ *   Found in the review of 2026-09-09; until 2026-09-13 not one warning said so on any breakpoint.
+ *   An area visible on no breakpoint at all is the frame-wide `neverVisible` warning's, not this one.
+ */
+function slotWarnings(
+  def: GridFrameDefinition,
+  bp: FrameBreakpoint
+): { unassigned: FrameSlot[]; homeless: FrameSlot[]; doubled: FrameSlot[]; hiddenGroups: GridFrameArea[] } {
+  const isVisible = (a: GridFrameArea, on: FrameBreakpoint): boolean => {
+    const p = def.breakpoints[on].placements[a.id]
+    return !!p && !p.hidden
+  }
+  const visible = def.areas.filter((a) => isVisible(a, bp))
+  const used = new Set(visible.map((a) => a.slot).filter((s): s is FrameSlot => !!s))
+  return {
+    unassigned: SLOTS.filter((s) => s !== 'pageBody' && !used.has(s)),
+    doubled: SLOTS.filter((s) => visible.filter((a) => a.slot === s && !a.group).length > 1),
+    homeless: SLOTS.filter(
+      (s) => s !== 'pageBody' && visible.some((a) => a.slot === s && a.group) && !visible.some((a) => a.slot === s && !a.group)
+    ),
+    hiddenGroups: def.areas.filter(
+      (a) =>
+        !!a.group &&
+        !!a.slot &&
+        a.slot !== 'pageBody' &&
+        !isVisible(a, bp) &&
+        FRAME_BREAKPOINTS.some((other) => other !== bp && isVisible(a, other))
+    )
+  }
+}
+
 export default function FrameBuilder({
   projectPath,
   onFramesChanged
@@ -631,25 +675,29 @@ export default function FrameBuilder({
   const box = buildFrameBox(layout)
   const hasMaxWidth = !!layout.maxWidth?.trim()
   const hasBox = hasMaxWidth || box.paddingBlock !== '0' || box.paddingInline !== '0'
-  const visibleAreas = editing.areas.filter((a) => {
-    const p = layout.placements[a.id]
-    return p && !p.hidden
-  })
-  const usedSlots = new Set(visibleAreas.map((a) => a.slot).filter((s): s is FrameSlot => !!s))
-  const unassignedSlots = SLOTS.filter((s) => s !== 'pageBody' && !usedSlots.has(s))
-  // Two visible areas on one slot render that slot's whole component list twice - measured on this
-  // project's "editorial" frame, which had three on `left`. The editor used to allow it silently;
-  // the build was the first place it showed.
-  // Only areas without a group double up - two group areas on one slot are the point of the
-  // exercise, they show different components.
-  const doubledSlots = SLOTS.filter((s) => visibleAreas.filter((a) => a.slot === s && !a.group).length > 1)
-  // The other half of that: a slot whose visible areas *all* have a group has nowhere to put the
-  // components that are in no group, and they then appear on no page at all. Measured on a real
-  // build - two group areas on `left` and no plain one took the spacer, the dark-mode switch and
-  // the reader-mode switch off every page, with nothing said anywhere. Structural, so the frame
-  // editor can see it without knowing which components the project has.
-  const homelessSlots = SLOTS.filter(
-    (s) => s !== 'pageBody' && visibleAreas.some((a) => a.slot === s && a.group) && !visibleAreas.some((a) => a.slot === s && !a.group)
+  const {
+    unassigned: unassignedSlots,
+    homeless: homelessSlots,
+    doubled: doubledSlots,
+    hiddenGroups: hiddenGroupAreas
+  } = slotWarnings(editing, activeBreakpoint)
+  // The warnings below describe the breakpoint that is open, and a frame has three. An area of its
+  // own placed on desktop only takes its group's components off tablet and mobile, and nothing on
+  // the desktop screen hinted at it. So one line names the breakpoints that have a warning *this*
+  // one does not show - not merely different ones: from mobile, "desktop differs" would point at a
+  // breakpoint with fewer problems, which is the wrong way to send anyone.
+  const warningKeys = (bp: FrameBreakpoint): string[] => {
+    const w = slotWarnings(editing, bp)
+    return [
+      ...w.unassigned.map((x) => `unassigned:${x}`),
+      ...w.homeless.map((x) => `homeless:${x}`),
+      ...w.doubled.map((x) => `doubled:${x}`),
+      ...w.hiddenGroups.map((a) => `hiddenGroup:${a.id}`)
+    ]
+  }
+  const shownHere = new Set(warningKeys(activeBreakpoint))
+  const otherWarningBreakpoints = FRAME_BREAKPOINTS.filter(
+    (bp) => bp !== activeBreakpoint && warningKeys(bp).some((key) => !shownHere.has(key))
   )
   /**
    * The one form for an area, wherever it currently lies.
@@ -1064,6 +1112,21 @@ export default function FrameBuilder({
           <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
             {t('layoutEditor.frameBuilder.doubledWarning', {
               slots: doubledSlots.map((s) => t(`positions.${s}`, s)).join(', ')
+            })}
+          </p>
+        )}
+        {hiddenGroupAreas.length > 0 && (
+          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+            {t('layoutEditor.frameBuilder.hiddenGroupsWarning', {
+              breakpoint: t(`layoutEditor.frameBuilder.breakpoint.${activeBreakpoint}`),
+              areas: hiddenGroupAreas.map((a) => a.name).join(', ')
+            })}
+          </p>
+        )}
+        {otherWarningBreakpoints.length > 0 && (
+          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+            {t('layoutEditor.frameBuilder.otherBreakpointsWarning', {
+              breakpoints: otherWarningBreakpoints.map((bp) => t(`layoutEditor.frameBuilder.breakpoint.${bp}`)).join(', ')
             })}
           </p>
         )}

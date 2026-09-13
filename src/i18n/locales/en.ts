@@ -1158,6 +1158,9 @@ export default {
       visibleOnBreakpoint: 'Visible on {{breakpoint}}',
       overlapError: 'This area overlaps an existing area.',
       unassignedWarning: 'Not assigned: {{slots}}. Components for these slots will not render in this frame.',
+      hiddenGroupsWarning:
+        'Hidden on {{breakpoint}}: {{areas}}. The components of these areas of their own do not appear at this width.',
+      otherBreakpointsWarning: 'There are warnings on {{breakpoints}} that are not shown here.',
       homelessWarning:
         'No plain area for: {{slots}}. Anything in that slot and in no area of its own renders on no page at all.',
       doubledWarning:

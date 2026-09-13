@@ -68,7 +68,7 @@ Messung an der gebauten Website ist das der erste Aufruf.
 | `fonts.mjs` | Welche Schriften geladen werden, woher, und die korrigierten `@font-face`-Regeln |
 | `frames.mjs` | Die vier Seitenraster (`editorial`, `index`, `focus`, `drawing`) für je drei Breakpoints |
 | `layout.mjs` | Welcher Seitentyp welches Raster nutzt, und die zwei Flex-Gruppen des Kopfbereichs |
-| `plugins.mjs` | Welches Plugin an, wo es sitzt, mit welchen Optionen — und die sechs Layout-Box-Instanzen |
+| `plugins.mjs` | Welches Plugin an, wo es sitzt, mit welchen Optionen — und die sieben Layout-Box-Instanzen |
 | `site-mark.mjs` | Die Marke im Kopf, hell und dunkel — gebaut aus `build/icon-source/quartzcontrol-icon.svg` |
 | `translations.mjs` | Geänderte Formulierungen in Quartz' deutscher Sprachdatei |
 | `presets.mjs` | Zwei gespeicherte Theme-Zusammenstellungen |
@@ -240,7 +240,7 @@ Eine Datei je Komponente. Die Namen sagen, wozu sie gehören:
     aside-*         Inhaltsverzeichnis, Rückverweise, Graph, zuletzt geändert
     body-*          Fließtext, Callouts, Code, Mathematik, Diagramme, Medien
     page-*          Ordner- und Tag-Listen, Vorschau, Suchergebnisse, 404
-    plugin-*        quartz-layout-box in allen sechs Ausprägungen
+    plugin-*        quartz-layout-box: jede Form des Plugins, fünf der sieben Instanzen
     site-*          Fußzeile, Kommentare
     a11y            Zielgrößen, Systemeinstellungen, Druck
 
@@ -391,7 +391,7 @@ dabei ein Seitentyp, den kein `-page`-Plugin liefert: das Excalidraw-Plugin regi
 seinem eigenen Namen. Die App kannte ihn deshalb nicht; seit demselben Tag liest ihr Layout-Editor
 zusätzlich die Schlüssel, die schon unter `layout.byPageType` stehen (BEFUNDE 10).
 
-### 3.7 Die sechs Layout-Box-Instanzen — `plugins.mjs`
+### 3.7 Die sieben Layout-Box-Instanzen — `plugins.mjs`
 
 | Schlüssel | Ort | Form | Zeigt |
 | --- | --- | --- | --- |
@@ -401,19 +401,27 @@ zusätzlich die Schlüssel, die schon unter `layout.byPageType` stehen (BEFUNDE 
 | `layoutBoxHint` | nach dem Inhalt | Inline-HTML, nur mobil | `display: mobile-only` an einer Instanz |
 | `layoutBoxCta` | nach dem Inhalt | Inline-HTML, eigene Klasse | `{{frontmatter.…}}` |
 | `layoutBoxColophon` | Fußzeile | Inline-HTML | `{{locale}}`, `{{slug}}` |
+| — (`layout-box-current-folder`) | Fußzeile, ausgeblendet | Inline-HTML, nur ein `<style>` | `{{slug}}` in einem Selektor: markiert im Explorer die Ordnerseite, auf der man steht |
 
-Gestaltet in `styles/plugin-layout-box.scss` — inklusive `.layout-box-missing`, dem Zustand für ein
-fehlendes Snippet.
+Die letzte hat keinen Frontmatter-Schlüssel, weil sie keinen Text trägt: Das Explorer-Plugin setzt
+`.active` nur auf Datei-Anker, und zwei Attribute (`data-folderpath` und `<body data-slug>`)
+vergleicht kein Selektor — also baut der Platzhalter die Regel für jede Seite selbst.
 
-> **Warum fünf von sechs `html:` statt `file:` nutzen:** Ein Vorlagen-Paket transportierte bis zum
+Gestaltet in `styles/plugin-layout-box.scss` — jede Form des Plugins inklusive
+`.layout-box-missing`, dem Zustand für ein fehlendes Snippet, und fünf der Instanzen. Zwei gehören
+dem Bereich, in dem sie wirken: der Seitenname `nav-header.scss`, die Ordnermarke
+`nav-explorer.scss`, die den Kasten selbst ausblendet.
+
+> **Warum sechs von sieben `html:` statt `file:` nutzen:** Ein Vorlagen-Paket transportierte bis zum
 > 2026-09-06 nur `quartz/styles/` und `quartz/static/fonts/`; Snippet-Dateien und Bilder blieben
 > zurück, und die eine `file:`-Instanz kam im Zielprojekt leer an. Der Baustein *Statische Dateien*
-> trägt sie jetzt mit (BEFUNDE 5). Die fünf Inline-Instanzen bleiben, weil sie den anderen Weg
+> trägt sie jetzt mit (BEFUNDE 5). Die sechs Inline-Instanzen bleiben, weil sie den anderen Weg
 > vorführen — beide funktionieren.
 >
-> **Bis zum 2026-09-06 eine Einschränkung:** Beim Import überlebte nur **eine** der sechs Instanzen,
-> weil alle denselben abgeleiteten Namen tragen. Seitdem unterscheidet der `plugins`-Baustein sie
-> nach ihrer Position unter Gleichnamigen; die Gegenprobe meldet 6 von 6. Siehe `BEFUNDE.md`.
+> **Bis zum 2026-09-06 eine Einschränkung:** Beim Import überlebte nur **eine** der damals sechs
+> Instanzen, weil alle denselben abgeleiteten Namen tragen. Seitdem unterscheidet der
+> `plugins`-Baustein sie nach ihrer Position unter Gleichnamigen; die Gegenprobe meldete damals
+> 6 von 6. Siehe `BEFUNDE.md`.
 
 ### 3.7a Die zwei Kästen unter dem Text — `frames.mjs`, `layout.mjs`, `plugins.mjs`
 
@@ -547,7 +555,7 @@ Alle gemessen, nicht vermutet. Wer die Vorlage erweitert, spart sich damit diese
 
 ## 5. Prüfen, ob es noch stimmt
 
-    npm run template:example -- --check-contrast    # 89 Farbpaare
+    npm run template:example -- --check-contrast    # 93 Farbpaare
     npm run template:example -- --only 9            # SCSS übersetzt? alle zwölf Bausteine gefüllt?
     npm run template:example -- --only 9,10,11      # exportieren und in ein leeres Projekt importieren
 

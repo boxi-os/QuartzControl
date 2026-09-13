@@ -161,10 +161,14 @@ mac:
   # Wird ein Zertifikat angeschafft, kommt dessen Name hierher; Notarisierung ist ein Schritt danach.
   identity: '-'
   # Hardened Runtime ist bei electron-builder für mac an, sobald signiert wird. Sie schränkt nur ein
-  # und nützt erst mit Notarisierung, die es hier nicht gibt; mit einer Ad-hoc-Signatur verlangt sie
-  # zudem `disable-library-validation`, sonst lehnt dyld das Electron-Framework ab (dieselbe
-  # Funktion warnt genau davor). Also aus, statt ein Entitlement gegen eine Einschränkung zu
-  # setzen, die nichts schützt. Kommt ein Zertifikat, geht sie wieder an — Notarisierung verlangt sie.
+  # und nützt erst mit Notarisierung, die es hier nicht gibt — also aus, bis ein Zertifikat da ist;
+  # Notarisierung verlangt sie dann. Gemessen ist nur der Zustand *mit* `false` (oben: „Adhoc Signed
+  # App“, „Notary Ticket Missing“). Dass dyld das Framework mit ihr ablehnen würde, ist **nicht**
+  # der Grund: `findSigningIdentity` warnt bei `-` unbedingt, ohne die Entitlements anzusehen, und
+  # ohne eigene `build/entitlements.mac.plist` signiert electron-builder App und Helper mit seiner
+  # Vorlage, die `disable-library-validation` schon trägt (gelesen in app-builder-lib 26.15.3,
+  # `MacTargetHelper.js` und `templates/entitlements.mac.plist`). Was das für die Shims heißt, steht
+  # an `nodeBinary()` in nodeRuntime.ts.
   hardenedRuntime: false
   # Chromiums Lizenzliste, 19 MB, nur hier. Electron liefert sie als `LICENSES.chromium.html` in
   # seinem dist aus; im **Linux**-Bau legt electron-builder sie von selbst neben das Programm

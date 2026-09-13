@@ -69,8 +69,16 @@ function shellQuote(value: string): string {
  * The helper bundles Electron ships next to the framework carry `LSUIElement = true` (all four in
  * the installed app). The same run through `QuartzControl Helper` with ELECTRON_RUN_AS_NODE and the
  * loader answered Node 24.18.1 with `process.defaultApp === true` and registered as `UIElement` -
- * no Dock icon. The plain helper, not "(Renderer)" or "(GPU)": those carry entitlements and names
- * for Chromium's own process types.
+ * no Dock icon. The plain helper, not "(Renderer)" or "(GPU)": those are named for Chromium's own
+ * process types.
+ *
+ * Entitlements, for the day the hardened runtime comes back on (electron-builder.yml): without an
+ * `entitlementsInherit` the helpers are signed with the same file as the app - with no
+ * `build/entitlements.mac*.plist`, electron-builder's own template (`getOptionsForFile` in
+ * app-builder-lib/out/mac/MacTargetHelper.js, 26.15.3), which carries `allow-jit`,
+ * `allow-unsigned-executable-memory` and `disable-library-validation`: what Node in the helper
+ * needs. ELECTRON_RUN_AS_NODE is not a `DYLD_*` variable, the hardened runtime does not strip it.
+ * Read in the source, not measured with the runtime on.
  *
  * Found by listing rather than by name, because the name differs between the packaged app
  * ("QuartzControl Helper") and development ("Electron Helper"). Anything unexpected falls back to

@@ -225,6 +225,16 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   Verzeichnis unter `.quartz-gui/` muss zwei Listen lernen: `isSnapshotWorthy()` nimmt alles mit,
   was nicht ausdrücklich genannt ist, und `duplicateService` kopiert alles, was nicht in `SKIP`
   steht. Messungen in [`navigation-and-pages.md`](docs/decisions/navigation-and-pages.md).
+- **Wer einen Zustand aus fremden Ausgabezeilen liest, weiß, wessen Zeilen er liest.** Ob gerade
+  gebaut wird, hält `buildService` als *eine* Aktivität je Projekt, und zwei Quellen schreiben
+  hinein: das stdout von `quartz build` und das Log des Dev-Servers. Jede bewegt nur die Aktivität,
+  die ihr gehört, und ein laufender Build gewinnt — sonst ersetzt ein Neubau des Servers die Zeile
+  des Builds und räumt sie ab, und mit ihr die Sperre (zwölftes Review: 3,3 von 6,9 s). Ein Muster
+  wird gegen alle Ströme gelesen, auf denen Quartz den Satz schreibt („Rebuild failed“ kommt über
+  `console.error`), und gegen beide Neubauten (der harte nach jedem Speichern in der App sagt einen
+  anderen Satz als der weiche). Ein zweiter „Jetzt bauen“ tritt dem laufenden nur bei, wenn er in
+  denselben Ordner will. Messungen in
+  [`navigation-and-pages.md`](docs/decisions/navigation-and-pages.md).
 - **Jede Dekompression bekommt eine Obergrenze, und die Datei selbst liefert sie nicht.** Ein WOFF2
   sagt, wie lang seine Tabellen sind, ein ZIP-Eintrag, worauf er sich entpackt — geschrieben hat das
   jeweils der, von dem die Datei kommt. Also `maxOutputLength` an *jeder* Stelle: die eigene Zahl,
@@ -316,6 +326,11 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   (`useIpcQuery`). Zwei Antworten sind dann gleichzeitig unterwegs und die langsamere gewinnt, egal
   welche Frage später gestellt wurde. Wo der Schlüssel konstant ist oder sein Wechsel die Route neu
   mountet, ist ein Guard nur Zeremonie.
+- **Ein Ref, den ein Effekt zurücksetzt, hängt an einem Render, den React auslassen darf.** Ein
+  `setState` mit demselben Wert rendert nicht, der Effekt läuft nicht, und der Ref bleibt stehen —
+  im Frame-Editor genügte ein Klick auf das schon aktive Breakpoint-Segment (`SegmentedControl`
+  meldet auch den), und jedes Bereichsformular danach kam ohne Fokus. Wer einen Ref vor einem
+  `setState` umlegt, prüft vorher, ob sich der Wert überhaupt ändert.
 - **Kein API-Aufruf ohne Netz:** globaler `unhandledrejection`-Handler → Toast; jeder Busy-Flag wird
   in `finally` zurückgesetzt (`useAsyncAction` für boolesche, `try/finally` für keyed).
 - **URL zuerst, Sticky-State als Fallback** für Sub-Tabs (`?tab=`); alte Pfade bleiben als
@@ -556,6 +571,13 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   `npm run check:plugin-names` schneidet Quartz' eigene Funktion aus dessen Quelldatei und
   vergleicht. Genau diese Gegenprobe fand einen Rand, den zweimaliges Lesen nicht gefunden hatte.
   Messungen in [`plugins-and-config.md`](docs/decisions/plugins-and-config.md).
+- **Ein Prüfskript, das Logik der App braucht, lädt sie, statt sie abzuschreiben.** Die Logik steht
+  als reine Funktion in `shared/` (das Dateisystem als Parameter, weil `shared/` auch für den
+  Renderer kompiliert wird), und das Skript kopiert die `.ts` in eine temporäre `.mts` und
+  importiert sie — node strippt die Typen, rät aber die Endung nicht. So laden `check:semver`,
+  `check:plugin-names` und seit dem zwölften Review `check:runtime` (`shared/macNodeBinary.ts`); die
+  Helper-Suche stand vorher gleich und ungeprüft zweimal da. Eine Kopie, die heute stimmt, ist
+  genau die, die niemand mehr vergleicht.
 - **Eine Messung trägt nur so weit wie ihr Instrument.** Ein `grep` über `.quartz-gui/` fand den
   Projektpfad im Snapshot-Store nicht und hat daraus „nichts sonst hält seinen eigenen Pfad“ gemacht
   — der Store ist eine git-Objektdatenbank, und in einem zlib-komprimierten Objekt liest `grep`
@@ -633,9 +655,9 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Befunde aus den Reviews (Stand 2026-09-14)
+## Befunde aus den Reviews (Stand 2026-09-16)
 
-Alle elf Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
+Alle zwölf Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht,
@@ -645,10 +667,58 @@ Alle elf Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-202
 [`docs/REVIEW-2026-09-11.md`](docs/REVIEW-2026-09-11.md) mit seinen acht und
 [`docs/REVIEW-2026-09-12.md`](docs/REVIEW-2026-09-12.md) mit seinen fünf und
 [`docs/REVIEW-2026-09-13.md`](docs/REVIEW-2026-09-13.md) mit seinen sieben und
-[`docs/REVIEW-2026-09-14.md`](docs/REVIEW-2026-09-14.md) mit seinen zwölf (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-14-`) stehen als
+[`docs/REVIEW-2026-09-14.md`](docs/REVIEW-2026-09-14.md) mit seinen zwölf und
+[`docs/REVIEW-2026-09-16.md`](docs/REVIEW-2026-09-16.md) mit seinen neun (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-16-`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
-gilt, steht oben als Regel.
+gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](docs/REVIEW-2026-09-15.md) gehört nicht
+in diese Zählung: Die „fünfzehnte Runde“ las die Handbücher der zwei Plugins gegen deren Code und
+aus diesem Repo nur zwei Commits der Beispielvorlage (`fe2b701`, `9592121`).
+
+**Das zwölfte Review las die Beta-2-Liste** — fünfzehn Punkte aus den Rückmeldungen der ersten
+Beta, vierzehn Branches von `main`, die einander nie gesehen hatten und nur zum Lesen in
+`review/beta2` zusammengeführt waren; 42 Dateien, +1420/−178. Kein Befund der Stufe Hoch, einer
+Mittel, acht Niedrig, alle neun abgearbeitet. Der mittlere war genau das Zusammenspiel, das der
+Auftrag als ungeprüft genannt hatte: Der neue Build-Zustand im Hauptprozess hält eine Aktivität je
+Projekt, und der Dev-Server schrieb seinen Neubau ohne Rücksicht hinein — ein einmaliger Build lief
+3,3 seiner 6,9 Sekunden ohne Zeile und ohne Sperre, und die Übersicht las in dieser Zeit den halb
+geschriebenen Ausgabeordner als „zuletzt gebaut“. Drei der neun hingen an derselben Funktion, ein
+vierter am Handler daneben. Was daraus als Regel bleibt — die ersten zwei Punkte als eine Regel
+unter Prozessgrenze, der Ref unter Renderer, das Prüfskript unter Arbeitsweise, das „noch einmal“
+bei der Regel, die es schon gab:
+
+- **Wer einen Zustand aus fremden Ausgabezeilen liest, weiß, wessen Zeilen er liest** — und liest
+  jeden Strom und jeden Weg, auf dem das fremde Programm den Satz schreibt. Drei Befunde waren
+  dieselbe Lücke von drei Seiten: die Quelle (Build oder Server), der Strom („Rebuild failed“ auf
+  stderr) und der zweite Neubau, den jedes Speichern in der App auslöst und der einen anderen
+  Satz sagt.
+- **Wer einem laufenden Vorgang beitritt, prüft, ob er dasselbe will.** `IPC.buildRun` gab das
+  Ergebnis des laufenden Builds zurück, bevor es den Ordner ansah — „erfolgreich“ für `dist/`,
+  das nie entstand. Die Prüfung steht in Handler *und* Dienst, weil zwischen beiden ein
+  Lesevorgang und womöglich ein Dialog liegen.
+- **Ein Ref, den ein Effekt zurücksetzt, hängt an einem Render, den React auslassen darf** — eine
+  Regression aus einem Fix derselben Runde, gemessen mit `document.activeElement` nach jedem Klick.
+- **Eine Warnung eines Werkzeugs ist kein Befund über die eigene Konfiguration.** Der Kommentar an
+  `hardenedRuntime: false` nahm electron-builders Warnung zu `disable-library-validation` als Beleg,
+  dass dyld das Framework ablehnen würde. Die Warnung kommt bei `-` unbedingt, und die Vorlage, die
+  hier ohne eigene Datei greift, trägt das Entitlement schon. Die Entscheidung blieb, die
+  Begründung ist jetzt die, die trägt — und was nur gelesen ist, steht als gelesen da.
+- **Ein Wert, den ein fremdes Programm vergleicht, wird nach dessen Regel gebildet** — noch einmal:
+  Die Liste der neuen Startseite prüfte Quartz' `ignorePatterns` gegen den Namen, Quartz prüft sie
+  gegen den Pfad, und `private/**` verlinkte einen Ordner, den der Build weglässt. Die Gegenprobe
+  lief diesmal gegen Quartz' eigenes `globby` aus dem Projekt.
+- **Ein Prüfskript lädt die Logik der App, statt sie abzuschreiben** (`shared/macNodeBinary.ts`).
+- **Wo eine Seite sofort schreibt und im Entwurf nachzieht, sagt sie den Riss dort, wo er
+  besteht.** „Dunkles Bild entfernen“ löscht die Datei sofort, der Kopfbereich hört erst mit dem
+  Speichern auf, sie zu nennen; der Hinweis dazu erscheint nur, wenn der Kopfbereich an und ein
+  dunkles Bild da ist.
+
+Zwei Beobachtungen des Reviews, die nicht aus dieser Runde stammen, sind nicht behoben. Ein
+YAML-Fehler im Frontmatter *einer* Notiz beendet den Dev-Server — das ist Quartz (`trace()` ruft auf
+dem Hauptthread `process.exit(1)`), und die App zeigt danach korrekt „abgestürzt“. Und ein
+einmaliger Build und der Dev-Server schreiben zugleich in dasselbe `public/` (im Mitschnitt 16
+Dateien des Neubaus mitten in „Emitting files“ des Builds); ob die App das sperren soll, ist nicht
+entschieden.
 
 **Das elfte Review las die Beispielvorlage und den Kopfleisten-Umbau daneben** — 30 Commits, im
 App-Code nur +478/−71, der Rest Vorlage und Text. Kein Befund der Stufe Hoch, drei Mittel, neun
@@ -905,12 +975,14 @@ Bereich darf ohne Belegung leer bleiben, und über `layout.group` kann er eigene
 Umbaus selbst: die Zuordnung ruht auf einem Funktionsnamen, den es nur gibt, weil Quartz sich mit
 esbuilds `keepNames` baut.
 
-**Das nächste Review misst ab `review-2026-09-14`.** Der Tag sitzt auf `dcf28cf`, dem Stand, den
-das elfte Review gelesen hat („Der Auftrag für das vierzehnte Review“) — nach derselben Regel wie
-seine acht Vorgänger: Der Ausgangsstand ist das, was gelesen wurde, nicht das, was danach entstanden
-ist. So sitzt `review-2026-09-13` auf `9305d7b`, dem Stand des zehnten Reviews (`main` nach PR #36
-mit dem Auftrag), `review-2026-09-12` auf `7568803`, dem Stand des neunten Reviews (`main` nach PR #29
-plus der Nachtrag und der Auftrag aus PR #30), `review-2026-09-11` auf `59de3a5`, dem Stand des achten
+**Das nächste Review misst ab `8136760`** („Der Auftrag für das sechzehnte Review“, `review/beta2`),
+dem Stand, den das zwölfte Review gelesen hat; ein Tag dafür ist noch nicht gesetzt. Die Regel ist
+dieselbe wie bei den neun Vorgängern: Der Ausgangsstand ist das, was gelesen wurde, nicht das, was
+danach entstanden ist. So sitzt `review-2026-09-14` auf `dcf28cf`, dem Stand des elften Reviews
+(„Der Auftrag für das vierzehnte Review“), `review-2026-09-13` auf `9305d7b`, dem Stand des zehnten
+Reviews (`main` nach PR #36 mit dem Auftrag), `review-2026-09-12` auf `7568803`, dem Stand des
+neunten Reviews (`main` nach PR #29 plus der Nachtrag und der Auftrag aus PR #30),
+`review-2026-09-11` auf `59de3a5`, dem Stand des achten
 Reviews (`main` nach PR #27 plus die Variablensuche aus PR #28), `review-2026-09-10` auf `b1cf5bd`,
 `main` nach PR #25, `review-2026-09-09` auf `c6da3d9` („Der Auftrag für das sechste Review“),
 `review-2026-09-08` auf `0c76d6e`, `review-2026-09-07` auf `1994811`, dem letzten Merge vor den
@@ -918,7 +990,32 @@ Fixes des vierten Reviews, und `review-2026-09-06` auf `1bd69dc`; Letzterer war 
 früher auf `0b0fb96` gesetzt und wurde verschoben, weil jener Stand gemessen, aber nicht gelesen
 war.
 
-**Die zwölf Fixes des elften Reviews liegen bewusst dahinter.** Sie sind gemessen, und zum ersten
+**`review-2026-09-16` ist die Ausnahme von dieser Regel, und sie hat eine Lücke hinterlassen.** Der
+Tag sitzt auf `dbcefc1`, dem `main`, von dem die vierzehn Beta-2-Branches abzweigen — nicht auf
+einem Stand, den ein Review gelesen hat. Zwischen `review-2026-09-14` und ihm liegen 16 Commits,
+die kein Review dieser Zählung gelesen hat: die zwölf Fixes des elften Reviews (`6ea83fc`), die
+Arbeit an der Beispielvorlage danach, die zwei Dokumente der fünfzehnten Runde und die
+x64-Benennung der macOS-Pakete — im App-Code 5 Dateien, +174/−55 (`shared/gridFrameCss.ts`,
+`Styles/CustomCss.tsx`, `Styles/variableGraph.ts`, `Styles/Basics.tsx`, `Plugins/Installed.tsx`),
+dazu `electron-builder.yml` und in `scripts/` +1298/−140. Die fünfzehnte Runde hat davon nur
+`fe2b701` und `9592121` gelesen. Ein Auftrag, der nur ab `8136760` misst, liest diesen Bereich
+wieder nicht.
+
+**Die neun Fixes des zwölften Reviews liegen bewusst dahinter** (`fix/review-2026-09-16`, von
+`review/beta2` abgezweigt). Sie sind gemessen, fast alle an der gebauten App mit Wegwerf-Profil
+gegen eine Kopie von `gui-test` mit Dev-Server auf 8099/3099: die Neubauten mit mitgeschriebenen
+Ereignissen im Renderer, „Rebuild failed“ über zwei von Hand an die Server-Logs gehängte Zeilen
+(echt ausgelöst wird der Weg nur von einem Emitter, der außerhalb von `trace()` wirft), der
+Beitritt mit drei gleichzeitigen `build.run`, der Fokus mit dem Messskript des Reviews, die
+Ignore-Muster zusätzlich gegen Quartz' eigenes `globby`, die Bildnormalisierung als reiner Umbau
+über SHA-256 der Ergebnisdateien vorher und nachher, die Helper-Suche alt gegen neu an neun Pfaden.
+Nur gelesen ist der sechste (electron-builders Quelle, nicht mit eingeschalteter Hardened Runtime
+gemessen). Die größten Eingriffe sind `followQuartzOutput(…, source)` samt den zwei Neubauten,
+`joinRunningBuild()` und `shared/macNodeBinary.ts`, das `check:runtime` jetzt lädt. Sie gehören
+damit in den Diff des nächsten Auftrags.
+
+**Die zwölf Fixes des elften Reviews liegen weiter dahinter** — das zwölfte hat sie nicht gelesen,
+weil sein Ausgangsstand hinter ihnen lag (oben). Sie sind gemessen, und zum ersten
 Mal in dieser Serie an einer *neu gebauten* Website: die Kompat-Blöcke in Firefox und WebKit bei
 390, 750, 850, 1300 px, mit und ohne JavaScript, die Schublade unter einem Wheel; die zwei
 Speichern-Wege und der Drag an der gebauten App mit Wegwerf-Profil; der Farbparser an einer
@@ -927,15 +1024,13 @@ Eingriff mit der größten Reichweite ist der `@layer quartz-base` um die zwei K
 gibt jedem Projekt seine Stylesheets über den Explorer zurück. Der zweite ist das Speichern auf
 *Eigenes CSS*, das jetzt alle Entwürfe schreibt. Neu daneben: `--check-sync`.
 
-**Die sieben Fixes des zehnten Reviews liegen bewusst dahinter.** Sie sind gemessen — der zweite an
-electron-builders eigener Zielrechnung mit der echten Konfiguration, der dritte an sechs
-Wegwerf-Verzeichnissen vorher und nachher, der fünfte an der gebauten App in einem *erzwungenen*
-Zustand (`available = false, backend = 'basic_text'` im gebauten Hauptprozess-Bündel gesetzt, weil
-ein Mac ihn nicht hergibt), der sechste an sechs Läufen einer Skriptkopie mit und ohne
-`--no-sandbox`, der siebte an `lsregister` und `~/Library/Preferences` dieses Rechners — und von
-niemandem sonst gelesen. Die größten Eingriffe sind der Einschluss-Wächter in `takeHandbook()`, der
-zweite Nutzertext für den Zweig ohne Schlüsselbund und der Kommentar an der `appId`, aus dem eine
-Behauptung eine Messung geworden ist. Sie gehören damit in den Diff des nächsten Auftrags.
+**Die sieben Fixes des zehnten Reviews hat das elfte gelesen** — ohne Befund; die zwei Regressionen,
+die es fand, stammen aus `8c43dcc`, nicht aus diesen Fixes. Neu gemessen hat es davon nichts: Die
+Fixes 2, 3, 6 und 7 sind Kommentare und der Einschluss-Wächter in `takeHandbook()`, dessen zwei
+Richtungen es gelesen und für richtig befunden hat (`docs/REVIEW-2026-09-14.md`, „Die erste
+Hälfte“). Gemessen waren sie vorher an electron-builders eigener Zielrechnung, an sechs
+Wegwerf-Verzeichnissen, an der gebauten App in einem erzwungenen Zustand ohne Schlüsselbund, an
+sechs Läufen einer Skriptkopie und an `lsregister` und `~/Library/Preferences` dieses Rechners.
 
 **Die fünf Fixes des neunten Reviews hat das zehnte gelesen** — ohne Regression, zum ersten Mal in
 vier Runden. Die dritte Fassung des Tastatur-Guards liegt richtig (`e.target === e.currentTarget`

@@ -101,16 +101,26 @@ async function hasIndexPage(dir: string): Promise<boolean> {
   }
 }
 
-function ignoredByQuartz(name: string, patterns: string[]): boolean {
+// Quartz matches its ignore patterns against the path under content/ (globby's `ignore` in the
+// build, minimatch in the watcher), not against a name. At the top level the path of a note is its
+// name; a folder is gone when a pattern takes the folder itself or everything below it. Checked
+// against Quartz's own globby with a folder holding a note and a subfolder: `x`, `x/`, `x/**` and
+// `**/x` drop all of it, `x/**/*.md` drops every note in it, `x/*` keeps the subfolder's note - and
+// only the name, as this function tested until 2026-09-16, answered `x/**` with "listed", a link to
+// a page the build does not make. A path two levels down stands for "everything below".
+function ignoredByQuartz(name: string, isDir: boolean, patterns: string[]): boolean {
   if (name.startsWith('.')) return true
-  return patterns.some((pattern) => {
-    if (pattern === name) return true
-    try {
-      return matchesGlob(name, pattern)
-    } catch {
-      return false
-    }
-  })
+  const paths = isDir ? [name, `${name}/`, `${name}/x/y.md`] : [name]
+  return patterns.some((pattern) =>
+    paths.some((path) => {
+      if (pattern === path) return true
+      try {
+        return matchesGlob(path, pattern)
+      } catch {
+        return false
+      }
+    })
+  )
 }
 
 // A markdown link rather than a wikilink, because the folders need one: a wikilink names a note,
@@ -153,7 +163,7 @@ export async function createIndexPage(projectPath: string, title: string): Promi
   const folders: string[] = []
   const notes: string[] = []
   for (const entry of await readdir(dir, { withFileTypes: true })) {
-    if (ignoredByQuartz(entry.name, patterns)) continue
+    if (entry.name.startsWith('.')) continue
     let isDir = entry.isDirectory()
     if (entry.isSymbolicLink()) {
       try {
@@ -162,6 +172,7 @@ export async function createIndexPage(projectPath: string, title: string): Promi
         continue
       }
     }
+    if (ignoredByQuartz(entry.name, isDir, patterns)) continue
     if (isDir) folders.push(entry.name)
     else if (entry.name.toLowerCase().endsWith('.md')) notes.push(entry.name)
   }

@@ -74,6 +74,7 @@ const STRINGS = {
     confirmCancel: 'Abbrechen',
     buildDirConfirmProceed: 'Ordner leeren und bauen',
     buildDirCancelled: 'Abgebrochen — es wurde nichts gelöscht und nichts gebaut.',
+    buildDirBusy: 'Es läuft schon ein Build nach „{{running}}“. Nach „{{dir}}“ lässt sich bauen, sobald er fertig ist.',
 
     ipcInvalidArguments:
       'QuartzControl hat „{{channel}}“ mit unerwarteten Daten aufgerufen — das ist ein Fehler in der App und keine Folge deiner Eingabe. Technische Details:',
@@ -319,6 +320,7 @@ const STRINGS = {
     confirmCancel: 'Cancel',
     buildDirConfirmProceed: 'Empty the folder and build',
     buildDirCancelled: 'Cancelled — nothing was deleted and nothing was built.',
+    buildDirBusy: 'A build into “{{running}}” is already running. You can build into “{{dir}}” once it has finished.',
 
     ipcInvalidArguments:
       'QuartzControl called “{{channel}}” with unexpected data — that is a bug in the app, not a result of what you entered. Technical details:',

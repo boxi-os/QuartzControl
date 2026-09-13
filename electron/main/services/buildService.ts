@@ -3,7 +3,7 @@ import { createConnection } from 'net'
 import { closeSync, openSync, readSync, readdirSync, renameSync, unlinkSync } from 'fs'
 import { readdir, stat } from 'fs/promises'
 import { StringDecoder } from 'string_decoder'
-import { join } from 'path'
+import { join, relative } from 'path'
 import treeKill from 'tree-kill'
 import { EventEmitter } from 'events'
 import type { BuildActivity, BuildOutputInfo, LogLine, ServerOptions, ServerStatus, BuildResult } from '@shared/ipc-contract'
@@ -61,15 +61,24 @@ function emitStatus(projectId: string): void {
 // first (two pids at once, 40 s instead of 19). The state lives here now, and the pages ask for it.
 
 const activities = new Map<string, BuildActivity>()
-const runningBuilds = new Map<string, Promise<BuildResult>>()
+const runningBuilds = new Map<string, { dir: string; promise: Promise<BuildResult> }>()
 
 export function getBuildActivity(projectId: string): BuildActivity | null {
   return activities.get(projectId) ?? null
 }
 
-/** The build already running for this project, which a second "Jetzt bauen" joins. */
-export function runningBuild(projectId: string): Promise<BuildResult> | null {
-  return runningBuilds.get(projectId) ?? null
+/**
+ * The build already running for this project, which a second "Jetzt bauen" joins - but only into
+ * the same output directory. The Übersicht builds into `public/`, Vorschau & Build into the page's
+ * own choice, so the two callers can legitimately mean different folders, and joining would report
+ * "Build fertig" for a folder nobody built. Throws then, naming the folder that is being built.
+ */
+export function joinRunningBuild(projectId: string, projectPath: string, outputDir?: string): Promise<BuildResult> | null {
+  const running = runningBuilds.get(projectId)
+  if (!running) return null
+  const dir = resolveBuildDir(projectPath, outputDir)
+  if (relative(running.dir, dir) !== '') throw new Error(mainT('buildDirBusy', { running: running.dir, dir }))
+  return running.promise
 }
 
 function setActivity(projectId: string, next: BuildActivity | null): void {
@@ -515,14 +524,16 @@ export async function restartServer(
 }
 
 export function runBuild(projectId: string, projectPath: string, outputDir?: string): Promise<BuildResult> {
-  const running = runningBuilds.get(projectId)
+  // Checked again here, not only in the handler: between its check and this call lie a disk read
+  // and possibly a dialog, and a second call can arrive in that time.
+  const running = joinRunningBuild(projectId, projectPath, outputDir)
   if (running) return running
   setActivity(projectId, { kind: 'build', startedAt: new Date().toISOString(), phase: 'preparing' })
   const promise = spawnBuild(projectId, projectPath, outputDir).finally(() => {
     runningBuilds.delete(projectId)
     if (activities.get(projectId)?.kind === 'build') setActivity(projectId, null)
   })
-  runningBuilds.set(projectId, promise)
+  runningBuilds.set(projectId, { dir: resolveBuildDir(projectPath, outputDir), promise })
   return promise
 }
 

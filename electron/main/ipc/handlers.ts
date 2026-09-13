@@ -439,9 +439,9 @@ export function registerIpcHandlers(): void {
     IPC.buildRun,
     t([s.uuid, s.absolutePath, s.buildOutputDir.optional()]),
     async (projectId, projectPath, outputDir) => {
-      // A build already running for this project is joined, not asked about again: its output
-      // directory was answered for when it started, and a second process would write into it too.
-      const running = buildService.runningBuild(projectId)
+      // A build already running into the same output directory is joined, not asked about again:
+      // that directory was answered for when it started. Into a different one it is refused.
+      const running = buildService.joinRunningBuild(projectId, projectPath, outputDir)
       if (running) return running
       const verdict = await buildOutputGuard.assessOutputDir(projectPath, outputDir)
       const dir = resolveBuildDir(projectPath, outputDir)

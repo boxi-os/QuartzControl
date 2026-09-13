@@ -19,9 +19,15 @@ Seit dem Umbau ist **das Projekt die Quelle**, nicht mehr dieses Verzeichnis:
 ```
 ~/Obsidian/QuartzProjekte/Example/     der Vault — 266 Notizen in sieben Kapiteln, 8 Bases, 2 Canvas, 2 Zeichnungen, 9 Mediendateien
         ↑ Symlink
-~/Documents/Example/content/            das Projekt
-~/Documents/Example/quartz/styles/      die Stylesheets — hier wird gearbeitet
+~/Documents/QuartzProjekte/Example/content/         das Projekt
+~/Documents/QuartzProjekte/Example/quartz/styles/   die Stylesheets — hier wird gearbeitet
 ```
+
+Das Beispielprojekt **ist** die Werkstatt der Variante `example` — bis zum 2026-09-04 hieß es
+`quartz-vorlage-werkstatt` (`d80f2be`), es ist also kein zweiter Ordner daneben. Wo die Projekte
+dieses Rechners liegen, sagt `scripts/project-paths.mjs`; die Wegwerf-Projekte der Varianten und die
+Gegenprobe aus Phase 11 entstehen darunter in `werkstatt/`, damit sie nicht zwischen den echten
+Projekten in der App-Liste stehen.
 
 Der Vault ist seit dem 2026-09-06 als **Handbuch in sieben Kapiteln** geschnitten — `1-einstieg`,
 `2-formatierung`, `3-obsidian-formate`, `4-seiten-steuern`, `5-gestaltung`, `6-anpassen`,
@@ -93,7 +99,7 @@ Jede Phase ist einzeln aufrufbar und wiederholbar. Für eine Änderung reichen f
 Schritte:
 
     node scripts/build-example-template.mjs --only 5      # Änderung ins Projekt schreiben
-    cd ~/Documents/quartz-vorlage-werkstatt && npx quartz build --serve
+    cd ~/Documents/QuartzProjekte/Example && npx quartz build --serve
 
 | Phase | Name | Wann sie nötig ist |
 | --- | --- | --- |
@@ -108,7 +114,7 @@ Schritte:
 | 8 | `texts` | `translations.mjs` oder `presets.mjs` geändert |
 | 9 | `check` | prüft SCSS und zählt die Bausteine |
 | 10 | `export` | schreibt die `.qtpl` |
-| 11 | `verify` | importiert sie in ein zweites Projekt und baut es |
+| 11 | `verify` | importiert sie in ein zweites Projekt (`werkstatt/…-gegenprobe`) und baut es |
 
 > **Eine Reihenfolge ist bindend:** Phase 3 (Frames) muss vor Phase 4 (Konfiguration) laufen. Die
 > Frames tragen sich über die Quartz-CLI selbst in `quartz.config.yaml` ein, und Phase 4 schreibt

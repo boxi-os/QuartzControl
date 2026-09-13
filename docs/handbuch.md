@@ -30,12 +30,14 @@ Also ein eigener Ort:
 ```
 ~/Obsidian/QuartzProjekte/QuartzControl-Handbuch/   der Vault — der Inhalt, eigenes git
         ↑ Symlink
-~/Documents/QuartzControl-Handbuch/content/         das Projekt, mit der Example-Vorlage
+~/Documents/QuartzProjekte/QuartzControl-Handbuch/content/   das Projekt, mit der Example-Vorlage
 ```
 
-Nicht `Handbuch`: In `QuartzProjekte/` liegt bereits `brain-handbuch`, und das ist ein
-vollständiges Quartz-*Projekt*, kein Vault. Ein Vault namens `Handbuch` daneben führt beim nächsten
-Lesen in die Irre.
+Nicht `Handbuch`: Als der Vault entstand, lag in `~/Obsidian/QuartzProjekte/` bereits
+`brain-handbuch`, und das ist ein vollständiges Quartz-*Projekt*, kein Vault. Ein Vault namens
+`Handbuch` daneben führte beim nächsten Lesen in die Irre. Seit dem 2026-09-12 stehen die Projekte
+gesammelt in `~/Documents/QuartzProjekte/`, der Name bleibt aber der, unter dem der Vault überall
+steht.
 
 Das Projekt entstand aus `minimal-lesbar.qtpl` — **ohne den Baustein `content`**. Bei einem
 Symlink lehnt der Baustein sich zwar selbst ab (`contentIsSymlink`), aber abwählen ist ehrlicher

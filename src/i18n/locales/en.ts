@@ -111,7 +111,6 @@ export default {
     },
     gettingStarted: {
       title: 'Getting started',
-      description: 'QuartzControl manages Quartz projects: a folder full of Markdown files becomes a finished website.',
       step1: 'Create a new project, or open a folder where Quartz is already set up.',
       step2: 'Link the content folder to your notes — an Obsidian vault works directly.',
       step3: 'Start the preview, design the site to your taste, and publish it.'
@@ -120,19 +119,19 @@ export default {
       title: 'What you can do here',
       setup: {
         title: 'Setup',
-        body: 'Set the site’s title, address and language, install plugins from the marketplace, and link the content folder to your Obsidian vault.'
+        body: 'Title, address, plugins, content folder'
       },
       design: {
         title: 'Design',
-        body: 'Adjust colours, fonts and CSS variables, install community themes, write your own CSS, and build layout frames yourself.'
+        body: 'Colours, fonts, themes, layout'
       },
       publish: {
         title: 'Publishing',
-        body: 'Build locally and check the preview, sync via Git, and publish to GitHub Pages, SFTP, rsync or a web space.'
+        body: 'Preview, build, Git sync, upload'
       },
       maintenance: {
         title: 'Maintenance',
-        body: 'Update the Quartz core and your plugins, take snapshots, and restore single files or the whole project.'
+        body: 'Updates and snapshots'
       }
     },
     aboutQuartz: {

@@ -1135,7 +1135,9 @@ bleibt, wo er ist, weil der Auftrag des zwölften Reviews mit ihm rechnet.
 **Die vier Fixes des vierzehnten Reviews liegen bewusst dahinter** (`fix/review-2026-09-18`, von
 `fix/review-2026-09-17` abgezweigt), und mit ihnen der Merge von `feat/beispielvorlage-und-header`
 (`962f079`: README zu Beta 1, Handbuch-Zahlen und tar-Anleitung, der Skill
-`projekt-dokumentieren`, zwei gesicherte `.qtpl` und `minimal-lesbar.qtpl` vom 2026-09-10).
+`projekt-dokumentieren`, zwei gesicherte `.qtpl` und `minimal-lesbar.qtpl` vom 2026-09-10), und
+danach die mitgelieferte Vorlage neu exportiert (Phasen 3–11, Gegenprobe grün; neu sind nur die
+zwei Schnipsel aus `9592121`).
 Gemessen: `beforePack` mit `electron-builder --dir` in drei Läufen (ohne Projekt Exit 1 und kein
 Paket, mit Flag ein Paket ohne Handbuch, normal 457 Dateien im `.app`); `check:i18n` mit zwei
 angehängten Aufrufen als Gegenprobe; der Ersatz für `globby` herausgeschnitten gegen Quartz'

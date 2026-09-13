@@ -19,7 +19,7 @@ Bedingung er auf dem Bildschirm erscheint.
 
 ## Warum es nicht im Example-Vault steht
 
-Der Example-Vault reist im Vorlagenpaket mit. `resources/templates/minimal-lesbar.qtpl` (754 KB)
+Der Example-Vault reist im Vorlagenpaket mit. `resources/templates/minimal-lesbar.qtpl` (764 KB, exportiert am 2026-09-14)
 enthält 301 Einträge unter `files/content/`: der `content`-Baustein
 (`electron/main/services/templatePackage/parts.ts`) liest durch den Symlink hindurch und packt den
 ganzen Vault ein. Ein App-Handbuch als achtes Kapitel dort landete damit bei jedem Nutzer im

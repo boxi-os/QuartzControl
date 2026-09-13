@@ -179,6 +179,10 @@ export const projectIconTarget = z.looseObject({ projectPath: absolutePath })
 // update.coreStatus's optional second argument. A flag rather than a channel of its own (CLAUDE.md:
 // no new channel for what an existing one can do with a flag); an object so a later key is one line.
 export const coreStatusOptions = z.looseObject({ resolveInstalled: z.boolean().optional() })
+
+// content.createIndex. The title ends up in YAML through `stringify`, so nothing in it is
+// interpreted; the bound is only there because it is a page title.
+export const createIndexArgs = z.looseObject({ projectPath: absolutePath, title: z.string().trim().min(1).max(200) })
 export const projectIconSource = z.looseObject({ projectPath: absolutePath, sourcePath: absolutePath })
 
 export const confirmDialog = z.looseObject({

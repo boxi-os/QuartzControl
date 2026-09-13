@@ -259,7 +259,8 @@ const api: QuartzGuiApi = {
     status: (projectPath: string) => ipcRenderer.invoke(IPC.contentStatus, projectPath),
     change: (projectId: string, projectPath: string, sourcePath: string, strategy: ContentStrategy) =>
       ipcRenderer.invoke(IPC.contentChange, projectId, projectPath, sourcePath, strategy),
-    onProgress: (cb: (progress: ContentProgress) => void) => onEvent<[ContentProgress]>(IPC.contentProgress, cb)
+    onProgress: (cb: (progress: ContentProgress) => void) => onEvent<[ContentProgress]>(IPC.contentProgress, cb),
+    createIndex: (args: { projectPath: string; title: string }) => ipcRenderer.invoke(IPC.contentCreateIndex, args)
   },
   settings: {
     get: () => ipcRenderer.invoke(IPC.settingsGet),

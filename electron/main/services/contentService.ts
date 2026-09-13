@@ -1,9 +1,11 @@
 import { existsSync } from 'fs'
-import { lstat, readlink, readdir, cp, realpath, stat, symlink, mkdir } from 'fs/promises'
-import { dirname, isAbsolute, join, relative, resolve } from 'path'
+import { lstat, readlink, readdir, cp, realpath, stat, symlink, mkdir, writeFile } from 'fs/promises'
+import { dirname, isAbsolute, join, matchesGlob, relative, resolve } from 'path'
+import { stringify } from 'yaml'
 import type { ContentStatus, ContentStrategy } from '@shared/ipc-contract'
 import { snapshotContent } from './backupService'
 import { createSnapshot } from './snapshotService'
+import { readConfig } from './configService'
 import { mainT } from '../i18n'
 
 export function contentDirPath(projectPath: string): string {
@@ -77,10 +79,109 @@ export async function getContentStatus(projectPath: string): Promise<ContentStat
       isSymlink: true,
       symlinkTarget: target,
       targetExists,
-      fileCount: targetExists ? await countFiles(targetPath) : undefined
+      fileCount: targetExists ? await countFiles(targetPath) : undefined,
+      hasIndex: targetExists ? await hasIndexPage(targetPath) : undefined
     }
   }
-  return { path, exists: true, isSymlink: false, fileCount: await countFiles(path) }
+  return { path, exists: true, isSymlink: false, fileCount: await countFiles(path), hasIndex: await hasIndexPage(path) }
+}
+
+// Without content/index.md the site has no page at its own address: Quartz's dev server serves `/`
+// only when public/index.html exists and otherwise answers with 404.html ("Diese Seite ist entweder
+// nicht öffentlich oder existiert nicht."), and @quartz-community/folder-page makes a virtual page
+// for every folder *except* the root (`f !== "."` in generate(), installed 0.1.0 and GitHub main
+// alike). A linked vault almost never has one, which is how a user's first preview became a 404.
+// Case-insensitive, because Quartz lowercases every slug - measured: "Mein Ordner" became
+// ./mein-ordner/ - so an Index.md is the start page too.
+async function hasIndexPage(dir: string): Promise<boolean> {
+  try {
+    return (await readdir(dir)).some((name) => name.toLowerCase() === 'index.md')
+  } catch {
+    return false
+  }
+}
+
+function ignoredByQuartz(name: string, patterns: string[]): boolean {
+  if (name.startsWith('.')) return true
+  return patterns.some((pattern) => {
+    if (pattern === name) return true
+    try {
+      return matchesGlob(name, pattern)
+    } catch {
+      return false
+    }
+  })
+}
+
+// A markdown link rather than a wikilink, because the folders need one: a wikilink names a note,
+// and a folder without index.md has none. Angle brackets keep spaces and umlauts readable in
+// Obsidian; both forms were measured in a real `quartz build` (folder with a space, "Äpfel &
+// Birnen.md") and all resolved to a page that exists. A name that cannot sit inside angle brackets
+// is percent-encoded instead, which Quartz resolves as well.
+function entryLink(name: string, href: string): string {
+  const text = name.replace(/([\\[\]])/g, '\\$1')
+  const target = /[<>\n\r]/.test(href) ? href.split('/').map(encodeURIComponent).join('/') : `<${href}>`
+  return `- [${text}](${target})`
+}
+
+/**
+ * Creates content/index.md with the given title and a list of what lies at the top level of the
+ * content folder - the folders first, then the notes, each in the order the site sorts them.
+ *
+ * `title` goes into the frontmatter because without it @quartz-community/note-properties names the
+ * page after its file (`data.title = file.stem`), i.e. "index". `aliases` would not help: it adds
+ * redirect addresses, not a name. The list is written once and never updated - the dialog says so.
+ *
+ * Never overwrites: the file is opened with `wx`, so an index.md that appeared in the meantime (or
+ * exists under another case) is an error rather than a loss. In a linked vault this writes into the
+ * user's own notes, which is why it only ever happens from a dialog that names the folder.
+ */
+export async function createIndexPage(projectPath: string, title: string): Promise<{ path: string }> {
+  const status = await getContentStatus(projectPath)
+  if (!status.exists || (status.isSymlink && !status.targetExists)) throw new Error(mainT('indexPageNoContent'))
+  const dir = await realpath(contentDirPath(projectPath))
+  if (await hasIndexPage(dir)) throw new Error(mainT('indexPageExists'))
+
+  let patterns: string[] = []
+  try {
+    const ignore = (await readConfig(projectPath)).configuration.ignorePatterns
+    if (Array.isArray(ignore)) patterns = ignore.filter((p): p is string => typeof p === 'string')
+  } catch {
+    // A config that cannot be read still leaves the hidden entries out; the list is a starting point.
+  }
+
+  const folders: string[] = []
+  const notes: string[] = []
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    if (ignoredByQuartz(entry.name, patterns)) continue
+    let isDir = entry.isDirectory()
+    if (entry.isSymbolicLink()) {
+      try {
+        isDir = (await stat(join(dir, entry.name))).isDirectory()
+      } catch {
+        continue
+      }
+    }
+    if (isDir) folders.push(entry.name)
+    else if (entry.name.toLowerCase().endsWith('.md')) notes.push(entry.name)
+  }
+  const order = (a: string, b: string): number => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
+  folders.sort(order)
+  notes.sort(order)
+
+  const lines = [
+    ...folders.map((name) => entryLink(name, `./${name}/`)),
+    ...notes.map((name) => entryLink(name.replace(/\.md$/i, ''), `./${name}`))
+  ]
+  const body = `---\n${stringify({ title: title.trim() })}---\n\n${lines.length > 0 ? `${lines.join('\n')}\n` : ''}`
+  const path = join(dir, 'index.md')
+  try {
+    await writeFile(path, body, { encoding: 'utf-8', flag: 'wx' })
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'EEXIST') throw new Error(mainT('indexPageExists'))
+    throw err
+  }
+  return { path }
 }
 
 // Neither direction of containment is allowed between the source and the content directory.

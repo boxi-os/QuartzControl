@@ -227,6 +227,17 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   `GIT_SSL_CAINFO`. Der gemeinsame Satz hinter beiden Regeln: **es gewinnt die Quelle, die die
   Anforderung garantiert erfüllt.** Damit kann kein Werkzeug mehr „fehlen, aber nachinstallierbar"
   sein — fehlt eines, ist die Installation unvollständig, und genau das sagt das Warnband.
+- **Code aus dem `node_modules` eines Projekts läuft an genau zwei Stellen im Hauptprozess**:
+  `sass` für den SCSS-Check (`styleService`) und `globby` für die Liste der Startseite
+  (`contentService`). Beides fragt das Modul des Builds, statt eines mitzubringen oder
+  nachzubauen — und beides läuft damit neben `safeStorage`, das die Zugangsdaten entschlüsselt;
+  ein Kindprozess bekommt höchstens das eine Geheimnis seiner Aktion. Hingenommen, weil es Quartz'
+  eigene Abhängigkeiten sind, die jeder `quartz build` ohnehin ausführt: Wer dort ein feindliches
+  Paket ablegt, führt schon Code als der Nutzer aus. Eine dritte Stelle beruft sich nicht auf
+  „`sass` macht das auch“, sondern sagt selbst, warum das Modul das des Builds ist und warum es
+  nicht im Kind laufen kann; der Ausweg wäre ein Skript unter der eingebetteten Laufzeit über
+  `runCommand`, dann auch für `sass`. Begründung in
+  [`process-model-and-ipc.md`](docs/decisions/process-model-and-ipc.md).
 - **Ein Kindprozess, der die App überleben soll, hängt nicht an einer Pipe zu ihr.** Die Leseenden
   von stdout/stderr sterben mit dem Prozess, der sie hält, und der nächste Schreibversuch des Kindes
   bringt es um — bei einem Dev-Server also der erste Rebuild nach dem Beenden der App, ohne Meldung,

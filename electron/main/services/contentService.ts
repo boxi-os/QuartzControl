@@ -124,6 +124,9 @@ async function hasIndexPage(dir: string): Promise<boolean> {
 // fallback, and says so through `source`; a globby that is there and does not load is an error
 // with a sentence, because a broken node_modules does not build either and a list pretending
 // otherwise is the silent answer "cannot check" must not be.
+//
+// The import runs the project's globby inside the main process, which holds safeStorage - accepted,
+// with the reason, in docs/decisions/process-model-and-ipc.md ("Code from a project's node_modules").
 type ListSource = 'quartz' | 'fallback'
 async function quartzInputFiles(projectPath: string, patterns: string[]): Promise<{ files: string[]; source: ListSource }> {
   const cwd = contentDirPath(projectPath)

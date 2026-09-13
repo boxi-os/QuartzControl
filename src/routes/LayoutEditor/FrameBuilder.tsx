@@ -282,6 +282,10 @@ export default function FrameBuilder({
   const focusNameOnMount = useRef(true)
   const previousBreakpoint = useRef(activeBreakpoint)
   function switchBreakpoint(bp: FrameBreakpoint): void {
+    // SegmentedControl reports a click on the segment that is already chosen too, and setting the
+    // same value renders nothing - so the effect below never set the ref back, and every area
+    // clicked afterwards opened its form without focus (measured in the built app, 2026-09-16).
+    if (bp === activeBreakpoint) return
     focusNameOnMount.current = false
     setActiveBreakpoint(bp)
   }

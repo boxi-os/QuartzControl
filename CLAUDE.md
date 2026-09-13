@@ -728,7 +728,8 @@ den passenden Abschnitten:
   git-Repo ist, und dann für App und Quartz gleich.
 - **Was der Build liest, ist die Datei, nicht der Entwurf.**
 - **Ein Prüfskript sagt, was es nicht prüfen konnte.** `check:i18n` nennt jetzt 67 Aufrufe im
-  Renderer und einen im Hauptprozess, deren Schlüssel berechnet ist; die Gegenprobe mit vier
+  Renderer und keinen im Hauptprozess, deren Schlüssel berechnet ist (bis zum Review 2026-09-18
+  stand dort einer — die Deklaration von `mainT`); die Gegenprobe mit vier
   gelöschten Schlüsseln, die nur in Ternären standen, sah der alte Checker nicht, der neue alle vier.
 - **Eine Liste des absichtlich Weggelassenen gehört zur Behauptung „vollständig“.**
 

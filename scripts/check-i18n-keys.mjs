@@ -94,6 +94,10 @@ function collect(dir, extension, name, keyShape) {
   for (const file of walk(dir, extension)) {
     const source = readFileSync(file, 'utf-8')
     for (const match of source.matchAll(call)) {
+      // `export function mainT(key: MainStringKey, …)` declares the function - its "first argument"
+      // is a parameter, and counting it printed one uncheckable call for a main process that has
+      // none (review 2026-09-18, finding 3).
+      if (/\bfunction\s+$/.test(source.slice(Math.max(0, match.index - 16), match.index))) continue
       const argument = firstArgument(source, match.index + match[0].length)
       if (argument.computed) computed++
       for (const key of argument.literals) if (keyShape.test(key) && !used.has(key)) used.set(key, file)

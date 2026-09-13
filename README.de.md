@@ -56,13 +56,18 @@ AppImage und deb für Linux (arm64 und x86_64) und als Flatpak erscheinen und da
 
 Die zwei Hinweise darunter gelten für die fertigen Pakete wie für einen eigenen Bau.
 
-**macOS:** Die App ist nicht signiert — es gibt kein Developer-ID-Zertifikat. Beim ersten Start
-verweigert Gatekeeper sie deshalb. Entweder einmal über das Kontextmenü öffnen (Rechtsklick →
-Öffnen) oder:
+**macOS:** Die App ist nur ad-hoc signiert und nicht notarisiert — es gibt kein
+Developer-ID-Zertifikat. Beim ersten Start verweigert macOS sie deshalb. Freigeben lässt sie sich
+unter **Systemeinstellungen → Datenschutz & Sicherheit → Sicherheit → „Dennoch öffnen“**, und zwar
+bis etwa eine Stunde nach dem abgewiesenen Startversuch. Das Kontextmenü (Rechtsklick → Öffnen) ist
+seit macOS 15 kein Weg mehr. Oder im Terminal:
 
 ```
 xattr -dr com.apple.quarantine /Applications/QuartzControl.app
 ```
+
+Meldet macOS, die App **„ist beschädigt“**, ist es 1.0.0-beta.1: Deren Signatur war defekt, und für
+diese Fassung hilft nur der Terminal-Befehl oben.
 
 **Linux:** AppImage ausführbar machen und starten, oder das deb installieren. Der Flatpak braucht
 `--filesystem`-Zugriff auf den Ort, an dem die Projekte liegen, falls das nicht das Home ist.

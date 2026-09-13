@@ -54,12 +54,17 @@ and deb for Linux (arm64 and x86_64) and as a Flatpak, and will then live under
 
 The two notes below apply to the finished packages and to your own build alike.
 
-**macOS:** the app is unsigned — there is no Developer ID certificate. Gatekeeper will therefore
-refuse the first launch. Either open it once from the context menu (right-click → Open) or:
+**macOS:** the app is only ad-hoc signed and not notarised — there is no Developer ID
+certificate. macOS will therefore refuse the first launch. Allow it under **System Settings →
+Privacy & Security → Security → “Open Anyway”**, within about an hour of the refused launch. The
+context menu (right-click → Open) stopped being a way around this in macOS 15. Or in Terminal:
 
 ```
 xattr -dr com.apple.quarantine /Applications/QuartzControl.app
 ```
+
+If macOS says the app **“is damaged”**, it is 1.0.0-beta.1: its signature was broken, and for that
+version only the Terminal command above helps.
 
 **Linux:** make the AppImage executable and run it, or install the deb. The Flatpak needs
 `--filesystem` access to wherever your projects live, if that is not your home directory.

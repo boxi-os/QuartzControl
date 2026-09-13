@@ -49,7 +49,8 @@
 #     dieser Satz geschrieben wurde (2026-09-08, vormittags), war noch überhaupt kein Flatpak
 #     gebaut; der erste entstand am Nachmittag desselben Tages - siehe den `flatpak:`-Abschnitt
 #     weiter unten.
-#   - Die App ist unsigniert, eine Signatur hängt also an keiner der beiden IDs.
+#   - Die App ist nur ad-hoc signiert; deren Designated Requirement ist ein `cdhash`, hängt also an
+#     keiner der beiden IDs (gemessen am 2026-09-13 mit `codesign -d -r-`).
 appId: io.github.boxi_os.quartzcontrol
 productName: QuartzControl
 copyright: © boxi-os
@@ -142,13 +143,29 @@ mac:
   # `x86_64` nur für AppImage, rpm und flatpak). Das zip verliert dadurch sein `-mac`, das aus dem
   # Vorgabemuster kam; ein zweites zip gibt es hier nicht, das unterscheidbar bleiben müsste.
   artifactName: ${productName}-${version}-${arch}.${ext}
-  # No Developer ID certificate, so the bundle is left unsigned rather than signed with an ad-hoc
-  # identity that Gatekeeper treats no better. Consequence for whoever installs it: macOS refuses
-  # the first launch until the quarantine flag is cleared
-  # (`xattr -dr com.apple.quarantine /Applications/QuartzControl.app`) or the app is opened once
-  # from the context menu. Set an identity here once a certificate exists; notarisation is a
-  # separate step after that.
-  identity: null
+  # Ad-hoc signiert, weil es kein Developer-ID-Zertifikat gibt — und **nicht** unsigniert, denn
+  # „unsigniert" gibt es für eine Electron-App nicht. Bis 1.0.0-beta.1 stand hier `identity: null`
+  # mit der Begründung, ad-hoc werde von Gatekeeper nicht besser behandelt. Das war falsch herum:
+  # `null` überspringt nur electron-builders Signierschritt, Electrons Binärdateien tragen aber
+  # schon ab Werk eine `adhoc, linker-signed`-Signatur (`Identifier=Electron`), und die passt nach
+  # dem Umbenennen und Befüllen des Bundles zu nichts mehr. Gemessen am 2026-09-10 am arm64-DMG
+  # von beta.1 unter macOS 26.6.2: kein `Contents/_CodeSignature`, `codesign --verify --deep
+  # --strict` und `syspolicy_check distribution` sagen beide „code has no resources but signature
+  # indicates they must be present" (Fatal) — und das meldet macOS einer Datei aus dem Netz als
+  # **„ist beschädigt"**, ohne Weg über das Kontextmenü. Mit einer Ad-hoc-Signatur über das ganze
+  # Bundle bleibt davon nur „Adhoc Signed App" und „Notary Ticket Missing": der gewöhnliche Zustand
+  # einer nicht notarisierten App, den der Nutzer in den Systemeinstellungen freigeben kann.
+  #
+  # `-` ist electron-builders eigenes Wort dafür (`findSigningIdentity` in
+  # app-builder-lib/out/mac/MacTargetHelper.js erzeugt daraus die Identität `-` für codesign).
+  # Wird ein Zertifikat angeschafft, kommt dessen Name hierher; Notarisierung ist ein Schritt danach.
+  identity: '-'
+  # Hardened Runtime ist bei electron-builder für mac an, sobald signiert wird. Sie schränkt nur ein
+  # und nützt erst mit Notarisierung, die es hier nicht gibt; mit einer Ad-hoc-Signatur verlangt sie
+  # zudem `disable-library-validation`, sonst lehnt dyld das Electron-Framework ab (dieselbe
+  # Funktion warnt genau davor). Also aus, statt ein Entitlement gegen eine Einschränkung zu
+  # setzen, die nichts schützt. Kommt ein Zertifikat, geht sie wieder an — Notarisierung verlangt sie.
+  hardenedRuntime: false
   # Chromiums Lizenzliste, 19 MB, nur hier. Electron liefert sie als `LICENSES.chromium.html` in
   # seinem dist aus; im **Linux**-Bau legt electron-builder sie von selbst neben das Programm
   # (nachgesehen in `release/linux-unpacked`: `LICENSE.electron.txt` und `LICENSES.chromium.html`),

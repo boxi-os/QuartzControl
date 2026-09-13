@@ -315,7 +315,9 @@ function openServerLog(projectId: string, projectPath: string): ServerLog | null
           stops.push(
             tailFile(paths[stream], (text) => {
               emitLog(projectId, stream, text)
-              if (stream === 'stdout') followQuartzOutput(projectId, text, 'server')
+              // Both streams: Quartz writes "Rebuild failed:" with console.error (build.ts), so a
+              // stdout-only follower left "rebuilding since…" ticking after a failed rebuild.
+              followQuartzOutput(projectId, text, 'server')
             })
           )
         }

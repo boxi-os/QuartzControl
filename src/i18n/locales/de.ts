@@ -1397,6 +1397,8 @@ export default {
     core: {
       heading: 'Quartz-Kern',
       commits: 'Installiert: {{current}} · Neueste Version: {{latest}}',
+      missing: '{{count}} Commit fehlt',
+      missing_other: '{{count}} Commits fehlen',
       runUpdate: 'Update durchführen',
       confirm:
         'Quartz-Kern aktualisieren?\n\nDabei werden Änderungen von jackyzha0/quartz geholt und die Abhängigkeiten neu installiert; bei Konflikten kann Handarbeit nötig sein.\n\nVorher wird automatisch ein Snapshot angelegt — unter Backups holst du den jetzigen Stand jederzeit zurück.',

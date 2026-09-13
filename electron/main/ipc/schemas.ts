@@ -175,6 +175,10 @@ export const syncDirection = z.enum(['push', 'pull', 'both'])
 // `sourcePath` comes from the native file dialog and is checked again in the service, which is
 // where the accepted extensions live next to the reason for them.
 export const projectIconTarget = z.looseObject({ projectPath: absolutePath })
+
+// update.coreStatus's optional second argument. A flag rather than a channel of its own (CLAUDE.md:
+// no new channel for what an existing one can do with a flag); an object so a later key is one line.
+export const coreStatusOptions = z.looseObject({ resolveInstalled: z.boolean().optional() })
 export const projectIconSource = z.looseObject({ projectPath: absolutePath, sourcePath: absolutePath })
 
 export const confirmDialog = z.looseObject({

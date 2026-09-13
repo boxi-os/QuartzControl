@@ -149,7 +149,8 @@ const api: QuartzGuiApi = {
       ipcRenderer.invoke(IPC.snapshotSaveSettings, projectPath, includeContent)
   },
   updates: {
-    coreStatus: (projectPath: string) => ipcRenderer.invoke(IPC.updateCoreStatus, projectPath),
+    coreStatus: (projectPath: string, options?: { resolveInstalled?: boolean }) =>
+      ipcRenderer.invoke(IPC.updateCoreStatus, projectPath, options),
     runCoreUpdate: (projectPath: string) => ipcRenderer.invoke(IPC.updateCoreRun, projectPath),
     abortCoreMerge: (projectPath: string) => ipcRenderer.invoke(IPC.updateCoreAbort, projectPath),
     pluginsStatus: (projectPath: string) => ipcRenderer.invoke(IPC.updatePluginsStatus, projectPath),

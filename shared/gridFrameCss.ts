@@ -608,11 +608,11 @@ export function migrateGridFrameDefinition(def: GridFrameDefinition | LegacyGrid
 // `enabled` is read the way the *loader* reads it - `filter((e) => e.enabled)` on the parsed yaml,
 // so anything falsy is out. Two things about that, both measured rather than assumed. Quartz does
 // not agree with itself: the loader drops an entry with no `enabled` key, while its own CLI treats
-// the same entry as on (`entry.enabled !== false`, plugin-git-handlers.js:1574), and configService
-// follows the CLI when it reads (`enabled: p.enabled ?? true`). So by the time a config reaches
-// here the key is always a boolean and this filter cannot actually see the disagreement - it is
-// written this way because the frame's copy is a copy of what the *loader* builds, and because the
-// next caller may not come through configService.
+// the same entry as on (`entry.enabled !== false`, plugin-git-handlers.js:1574). configService
+// follows the loader too since 2026-09-13 (`Boolean(p.enabled)`; it followed the CLI before). So by
+// the time a config reaches here the key is always a boolean - the filter is written this way
+// because the frame's copy is a copy of what the *loader* builds, and because the next caller may
+// not come through configService.
 export interface GroupLayoutCandidate {
   // The page type this ordering belongs to, or null for the config as a whole. Only ever read by
   // a human out of the generated frame - the frame itself cannot tell which page type it is

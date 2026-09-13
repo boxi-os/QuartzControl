@@ -100,17 +100,26 @@ function followQuartzOutput(projectId: string, text: string, source: 'build' | '
       continue
     }
     if (current?.kind === 'build') continue
+    // Quartz has two rebuilds. The soft one (content watcher, build.ts) says "Detected change,
+    // rebuilding..." and ends on "Done rebuilding"; the hard one (CLI watcher on the config, *.scss,
+    // *.ts and quartz/static, cli/handlers.js) transpiles again and then prints the lines of a first
+    // build, ending on "Done processing". Every save in this app is the hard kind - measured with
+    // the config saved unchanged: five seconds of rebuilding and no line at all while only the soft
+    // sentence was known. The soft one never prints "Emitting files" (read in a real server log:
+    // "Filtered out" goes straight to "Emitted"), so "Filtered out" moves the phase too.
     if (/Detected change, rebuilding/.test(line)) {
       setActivity(projectId, { kind: 'rebuild', startedAt: new Date().toISOString(), phase: 'parsing' })
+    } else if (/Detected a source code change/.test(line)) {
+      setActivity(projectId, { kind: 'rebuild', startedAt: new Date().toISOString(), phase: 'preparing' })
     } else if (/Done rebuilding in|Rebuild failed/.test(line)) {
       if (current?.kind === 'rebuild') setActivity(projectId, null)
     } else if (!current) {
       continue
     } else if (/Parsing input files/.test(line)) {
       setActivity(projectId, { ...current, phase: 'parsing' })
-    } else if (/Emitting files/.test(line)) {
+    } else if (/Filtered out \d+ files|Emitting files/.test(line)) {
       setActivity(projectId, { ...current, phase: 'emitting' })
-    } else if (/Done processing/.test(line) && current.kind === 'serve') {
+    } else if (/Done processing/.test(line)) {
       setActivity(projectId, null)
     }
   }

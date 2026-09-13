@@ -259,10 +259,13 @@ Der Grund: Es ist ein erzeugtes Artefakt, dessen 29,8 MB Bilder bei jedem Textdu
 entstehen; im Repo wäre jede Aufnahme ein neuer Blob.
 
 Anders als git lässt es sich **nicht** aus dem Netz nachholen — es entsteht aus einem Projekt, das
-nur auf dieser Maschine liegt. Deshalb warnt `beforePack` und packt weiter, statt abzubrechen: Eine
-App ohne Handbuch ist unvollständig, aber benutzbar. Und `openHandbook()` prüft die Datei, bevor es
-sie öffnet, damit der Nutzer in diesem Fall einen Satz bekommt statt einer Fehlermeldung des
-Betriebssystems.
+nur auf dieser Maschine liegt, oder wird als gebaute Website übernommen
+(`QUARTZCONTROL_HANDBOOK_SITE`). Fehlt beides, bricht `beforePack` ab. Ein Paket ohne Handbuch gibt
+es nur auf ausdrücklichen Wunsch (`QUARTZCONTROL_WITHOUT_HANDBOOK=1`): Bis zum 2026-09-14 warnte der
+Haken nur und packte weiter, und nach dem Umzug der Projekte am 2026-09-12 kam so auch vom Mac ein
+Paket ohne Handbuch, dessen Warnung im Log niemand las (Review 2026-09-18, Befund 4). Für den
+gewollten Fall prüft `openHandbook()` die Datei, bevor es sie öffnet, damit der Nutzer einen Satz
+bekommt statt einer Fehlermeldung des Betriebssystems.
 
 Gebaut werden beide Sprachen in einem Lauf (437 Dateien, 36 MB); das Bundle wächst damit von 369
 auf rund 405 MB. Erreichbar an zwei Stellen, die **dieselbe Funktion** rufen — zwei Stellen, die den Pfad selbst

@@ -37,41 +37,59 @@ export default async function beforePack(context) {
   console.log(`[git] für ${platform}-${arch} nach resources/git/current gespiegelt`)
 
   // Das Benutzerhandbuch. Anders als git lässt es sich nicht aus dem Netz holen - es entsteht aus
-  // einem Quartz-Projekt, das nur auf der Maschine des Betreuers liegt (docs/handbuch.md). Deshalb
-  // warnen und weiterpacken statt abbrechen: Ein Bau ohne Handbuch ist unvollständig, aber
-  // benutzbar, und der Menüpunkt sagt es dem Nutzer statt ins Leere zu greifen.
+  // einem Quartz-Projekt, das nur auf der Maschine des Betreuers liegt (docs/handbuch.md), oder wird
+  // als schon gebaute Website übernommen (QUARTZCONTROL_HANDBOOK_SITE).
   //
-  // Auf einer anderen Baumaschine ist genau das der Normalfall, und zwar still: Gemessen am
-  // 2026-09-09 trug resources/ auf der Debian-VM nur git, licenses, runtime und templates, die
-  // Linux-Pakete vom 2026-09-08 reisten also alle ohne Handbuch. Dort setzt man
-  // QUARTZCONTROL_HANDBOOK_SITE auf eine vom Mac herübergespiegelte, gebaute Website - von Hand
-  // nach resources/handbook zu kopieren hilft nicht, das räumt der catch unten wieder weg.
+  // Fehlt beides, bricht der Bau ab. Bis zum Review 2026-09-18 warnte dieser Haken nur und packte
+  // weiter, und das war zweimal der stille Normalfall: am 2026-09-09 auf der Debian-VM (die
+  // Linux-Pakete vom 2026-09-08 reisten alle ohne Handbuch), und nach dem Umzug der Projekte am
+  // 2026-09-12 auch auf dem Mac, der die Beta-Pakete baut - der Pfad-Fix lag auf einem Branch, der
+  // nie gemergt wurde, und das Paket aus dem Review kam ohne Handbuch. Beide Male stand die Warnung
+  // im Log eines Laufs, dessen Paket schon fertig war, als jemand sie hätte lesen können.
+  //
+  // Wer ein Paket ohne Handbuch will - ein `--dir`-Bau zum Messen, eine Maschine ohne gebaute
+  // Website -, sagt es mit QUARTZCONTROL_WITHOUT_HANDBOOK=1. Dann wird gar nicht erst gebaut, und
+  // der Menüpunkt sagt es dem Nutzer.
+  if (process.env.QUARTZCONTROL_WITHOUT_HANDBOOK === '1') {
+    dropHandbook('QUARTZCONTROL_WITHOUT_HANDBOOK=1 gesetzt')
+    return
+  }
+  let built
   try {
-    const built = buildHandbook()
-    // Welcher der beiden Wege gegriffen hat, gehört ins Log: Ein übernommenes Handbuch ist nur so
-    // frisch wie der Ordner, auf den QUARTZCONTROL_HANDBOOK_SITE zeigt, und das sieht man dem
-    // Ergebnis nicht an.
-    const how = built.copiedFrom ? `übernommen aus ${built.copiedFrom}` : 'gebaut'
-    console.log(`[handbuch] ${built.files} Dateien, ${built.megabytes} MB nach resources/handbook (${how})`)
+    built = buildHandbook()
   } catch (err) {
+    // Auch hier erst aufräumen, dann werfen: `buildHandbook()` wirft, *bevor* es sein
+    // Ausgabeverzeichnis leert, und ein späteres `electron-builder --dir` mit dem Flag soll nicht
+    // die Kopie eines früheren Laufs vorfinden.
+    dropHandbook(null)
     // Zwei Wege, zwei Sätze: "nicht gebaut" schickt den Leser zum Handbuch-Projekt, "nicht
     // übernommen" zu der Variablen, die er selbst gesetzt hat.
-    console.warn(
-      HANDBOOK_SITE ? `[handbuch] NICHT übernommen: ${err.message}` : `[handbuch] NICHT gebaut: ${err.message}`
-    )
-    // Und dann auch wirklich ohne. `buildHandbook()` wirft, *bevor* es sein Ausgabeverzeichnis
-    // leert - ohne diese Zeile nimmt `extraResources` mit, was vom letzten geglückten Lauf noch
-    // dort liegt, und die App bekäme ein Handbuch, das eine andere Fassung beschreibt, während
-    // das Bau-Log sagt, sie habe keines. Genau das Versprechen, für das es überhaupt mitreist
-    // ("passt immer zu der Fassung, die gerade installiert ist"), an der einen Stelle, an der es
-    // gebrochen werden kann. Ein frischer Klon merkt davon nichts: dort gibt es das Verzeichnis
-    // noch nicht.
-    const stale = existsSync(HANDBOOK_OUT)
-    if (stale) rmSync(HANDBOOK_OUT, { recursive: true, force: true })
-    console.warn(
-      stale
-        ? '[handbuch] Diese Fassung wird ohne Handbuch gepackt; die Kopie vom letzten Lauf wurde entfernt, damit keine veraltete mitreist.'
-        : '[handbuch] Diese Fassung wird ohne Handbuch gepackt.'
+    const what = HANDBOOK_SITE ? 'NICHT übernommen' : 'NICHT gebaut'
+    throw new Error(
+      `[handbuch] ${what}: ${err.message}\n` +
+        '  Auswege: QUARTZCONTROL_HANDBOOK_PROJECT (ein Quartz-Projekt) oder QUARTZCONTROL_HANDBOOK_SITE ' +
+        '(eine gebaute Website) setzen - oder ausdrücklich ohne Handbuch packen mit QUARTZCONTROL_WITHOUT_HANDBOOK=1.'
     )
   }
+  // Welcher der beiden Wege gegriffen hat, gehört ins Log: Ein übernommenes Handbuch ist nur so
+  // frisch wie der Ordner, auf den QUARTZCONTROL_HANDBOOK_SITE zeigt, und das sieht man dem
+  // Ergebnis nicht an.
+  const how = built.copiedFrom ? `übernommen aus ${built.copiedFrom}` : 'gebaut'
+  console.log(`[handbuch] ${built.files} Dateien, ${built.megabytes} MB nach resources/handbook (${how})`)
+}
+
+// Räumt resources/handbook weg. Ohne das nimmt `extraResources` mit, was vom letzten geglückten Lauf
+// noch dort liegt, und die App bekäme ein Handbuch, das eine andere Fassung beschreibt - genau das
+// Versprechen, für das es überhaupt mitreist ("passt immer zu der Fassung, die gerade installiert
+// ist"), an der einen Stelle, an der es gebrochen werden kann. Deshalb hilft es auch nicht, von Hand
+// nach resources/handbook zu kopieren.
+function dropHandbook(reason) {
+  const stale = existsSync(HANDBOOK_OUT)
+  if (stale) rmSync(HANDBOOK_OUT, { recursive: true, force: true })
+  if (!reason) return
+  console.warn(
+    stale
+      ? `[handbuch] ${reason}: Diese Fassung wird ohne Handbuch gepackt; die Kopie vom letzten Lauf wurde entfernt.`
+      : `[handbuch] ${reason}: Diese Fassung wird ohne Handbuch gepackt.`
+  )
 }

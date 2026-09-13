@@ -114,7 +114,8 @@ export async function openHandbook(page?: string): Promise<void> {
   const index = wanted && existsSync(wanted) ? wanted : handbookFile()!
   // Erst nachsehen, dann öffnen: Der Server würde die fehlende Startseite als 404 ausliefern, und
   // ein Browser-Fenster mit „Not found" erklärt niemandem, was los ist. Fehlen kann sie in genau
-  // einem Fall - ein Bau ohne `resources/handbook`, den `beforePack` mit einer Warnung durchlässt.
+  // einem Fall - ein Bau ohne `resources/handbook`, den `beforePack` nur mit
+  // `QUARTZCONTROL_WITHOUT_HANDBOOK=1` durchlässt.
   if (!existsSync(index)) {
     await dialog.showMessageBox({
       type: 'info',

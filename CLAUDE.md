@@ -45,8 +45,10 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   gerade installiert ist. Behandelt wie `resources/git` — gitignoriert und beim Packen erzeugt
   (`beforePack`), nicht wie `resources/templates` im Repo, denn es ist ein Artefakt, dessen Bilder
   bei jedem Textdurchgang neu entstehen. Anders als git lässt es sich **nicht** aus dem Netz holen;
-  fehlt das Projekt, warnt `beforePack` und packt weiter, und der Menüpunkt sagt es dem Nutzer.
-  Genau das war auf jeder anderen Baumaschine der stille Normalfall — gemessen am 2026-09-09 trug
+  fehlt das Projekt, **bricht `beforePack` ab**, es sei denn, `QUARTZCONTROL_WITHOUT_HANDBOOK=1`
+  sagt ausdrücklich „ohne“ (dann sagt es der Menüpunkt dem Nutzer). Bis zum Review 2026-09-18
+  warnte es nur und packte weiter, und das war zweimal der stille Normalfall: nach dem Umzug der
+  Projekte auf diesem Mac, und vorher auf jeder anderen Baumaschine — gemessen am 2026-09-09 trug
   `resources/` auf der Linux-VM nur `git licenses runtime templates`, die Pakete vom 2026-09-08
   reisten also alle ohne Handbuch. Deshalb gibt es einen zweiten Weg:
   **`QUARTZCONTROL_HANDBOOK_SITE`** zeigt auf eine schon gebaute Website und wird übernommen statt

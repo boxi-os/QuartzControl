@@ -111,8 +111,8 @@ extraResources:
   # 2026-09-09, die Zahl wächst mit dem Handbuch). Es
   # reist mit statt als Link, damit es ohne Netz lesbar ist und immer zu der Fassung passt, die
   # gerade installiert ist. Wie resources/git nicht im Repo, sondern beim Packen erzeugt - hier
-  # aber ohne Netz, aus dem Handbuch-Projekt (docs/handbuch.md). Fehlt es, packt beforePack mit
-  # einer Warnung weiter und der Menüpunkt sagt es.
+  # aber ohne Netz, aus dem Handbuch-Projekt (docs/handbuch.md). Fehlt es, bricht beforePack ab;
+  # ohne Handbuch nur mit QUARTZCONTROL_WITHOUT_HANDBOOK=1, und dann sagt es der Menüpunkt.
   - from: resources/handbook
     to: handbook
 

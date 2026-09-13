@@ -218,7 +218,7 @@ export default {
       updates: 'Updates',
       server: 'Vorschau & Build',
       sync: 'Git-Sync',
-      backups: 'Backups',
+      backups: 'Snapshots',
       publish: 'Veröffentlichen',
       templates: 'Vorlagen'
     },
@@ -234,7 +234,7 @@ export default {
       styles:
         'Alles zum Aussehen an einem Ort: Basisfarben und Schriften, Community-Themes, CSS-Variablen und eigenes CSS — in genau der Reihenfolge, in der sie sich gegenseitig überschreiben.',
       updates:
-        'Bringt den Quartz-Kern und die installierten Plugins auf den neuesten Stand. Vor jedem Update wird automatisch ein Snapshot angelegt, über den sich der Stand unter Backups zurückholen lässt.',
+        'Bringt den Quartz-Kern und die installierten Plugins auf den neuesten Stand. Vor jedem Update wird automatisch ein Snapshot angelegt, über den sich der Stand unter Snapshots zurückholen lässt.',
       server: 'Zeigt deine Website lokal in der Vorschau an und erstellt bei Bedarf einen einmaligen Build zum Exportieren.',
       sync: 'Gleicht deine lokalen Änderungen mit dem Git-Repository ab: Hochladen (Push) und Herunterladen (Pull).',
       backups:
@@ -351,7 +351,7 @@ export default {
     changeSource: 'Quelle ändern…',
     dialogTitle: 'Content-Quelle ändern',
     dialogWarning:
-      'Der bisherige Content-Ordner wird vor der Änderung beiseitegelegt statt gelöscht — unter Backups lässt er sich zurückholen.',
+      'Der bisherige Content-Ordner wird vor der Änderung beiseitegelegt statt gelöscht — unter Snapshots lässt er sich zurückholen.',
     newSourceFolder: 'Neuer Quellordner',
     strategy: 'Strategie',
     strategySymlink: 'Verknüpfen (symbolischer Link, z. B. auf ein Obsidian-Vault)',
@@ -1401,7 +1401,7 @@ export default {
       missing_other: '{{count}} Commits fehlen',
       runUpdate: 'Update durchführen',
       confirm:
-        'Quartz-Kern aktualisieren?\n\nDabei werden Änderungen von jackyzha0/quartz geholt und die Abhängigkeiten neu installiert; bei Konflikten kann Handarbeit nötig sein.\n\nVorher wird automatisch ein Snapshot angelegt — unter Backups holst du den jetzigen Stand jederzeit zurück.',
+        'Quartz-Kern aktualisieren?\n\nDabei werden Änderungen von jackyzha0/quartz geholt und die Abhängigkeiten neu installiert; bei Konflikten kann Handarbeit nötig sein.\n\nVorher wird automatisch ein Snapshot angelegt — unter Snapshots holst du den jetzigen Stand jederzeit zurück.',
       abortMerge: 'Merge abbrechen',
       openSnapshot: 'Snapshot von vor dem Update öffnen →',
       conflictHeading: 'Konflikte in folgenden Dateien (außer den durch .gitattributes geschützten Locale-Dateien):'
@@ -1417,8 +1417,8 @@ export default {
     snapshots: {
       heading: 'Snapshots',
       movedHint:
-        'Vor jedem Kern- und Plugin-Update wird automatisch ein Snapshot angelegt. Verwaltet werden sie unter Backups — dort liegen auch die Snapshots aller anderen Bereiche.',
-      openBackups: 'Zu den Backups →'
+        'Vor jedem Kern- und Plugin-Update wird automatisch ein Snapshot angelegt. Verwaltet werden sie unter Snapshots — dort liegen auch die aller anderen Bereiche.',
+      openBackups: 'Zu den Snapshots →'
     }
   },
   publish: {
@@ -1605,7 +1605,7 @@ export default {
       'Für {{count}} Sprachen lässt sich nicht feststellen, was du geändert hast — die Vergleichsbasis entsteht erst, wenn du einen Text in dieser App bearbeitest. Nimm „Alle Texte“, wenn eine davon dabei sein soll.',
     importHeading: 'Vorlage anwenden',
     importHint:
-      'Vorher wird automatisch ein Snapshot angelegt, der Import lässt sich also über „Backups“ komplett zurücknehmen.',
+      'Vorher wird automatisch ein Snapshot angelegt, der Import lässt sich also unter „Snapshots“ komplett zurücknehmen.',
     planning: 'Paket wird geprüft…',
     pickPackage: 'Vorlage wählen…',
     previewError: 'Das ist keine lesbare Vorlage (keine manifest.json gefunden).',

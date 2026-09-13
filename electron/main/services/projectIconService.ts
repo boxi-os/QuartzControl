@@ -103,20 +103,27 @@ export async function getProjectIcon(projectPath: string): Promise<ProjectIconIn
 }
 
 // PNG and JPEG in, a PNG of at most MAX_STORED_EDGE out - a PNG that already fits byte for byte.
-async function storeImage(sourcePath: string, target: string): Promise<void> {
+// Checks now and writes on the call it returns: setProjectIcon moves the original aside in between,
+// and only for a file that is known to be stored. Both pictures go through this one function; until
+// 2026-09-16 setProjectIcon kept its own copy of every step (review finding 8).
+function prepareImage(sourcePath: string): (target: string) => Promise<void> {
   const ext = extname(sourcePath).toLowerCase()
   if (!ACCEPTED_EXTENSIONS.has(ext)) throw new Error(mainT('projectIconUnsupportedFormat'))
   const image = nativeImage.createFromPath(sourcePath)
+  // Covers a file that carries the right extension but is not an image, and the formats
+  // nativeImage cannot decode (SVG among them) - both arrive here as an empty image.
   if (image.isEmpty()) throw new Error(mainT('projectIconUnreadable'))
-  await mkdir(dirname(target), { recursive: true })
-  const scaled = fit(image, MAX_STORED_EDGE)
-  if (ext === '.png' && scaled === image) await copyFile(sourcePath, target)
-  else await writeFile(target, scaled.toPNG())
+  return async (target) => {
+    await mkdir(dirname(target), { recursive: true })
+    const scaled = fit(image, MAX_STORED_EDGE)
+    if (ext === '.png' && scaled === image) await copyFile(sourcePath, target)
+    else await writeFile(target, scaled.toPNG())
+  }
 }
 
 /** Writes the dark-scheme picture to quartz/static/icon-dark.png, normalized like the main one. */
 export async function setProjectIconDark(projectPath: string, sourcePath: string): Promise<ProjectIconInfo> {
-  await storeImage(sourcePath, darkIconPath(projectPath))
+  await prepareImage(sourcePath)(darkIconPath(projectPath))
   return getProjectIcon(projectPath)
 }
 
@@ -139,14 +146,7 @@ export async function getCustomIconThumbnail(projectPath: string): Promise<strin
  * through nativeImage would silently drop whatever it does not model.
  */
 export async function setProjectIcon(projectPath: string, sourcePath: string): Promise<ProjectIconInfo> {
-  const ext = extname(sourcePath).toLowerCase()
-  if (!ACCEPTED_EXTENSIONS.has(ext)) throw new Error(mainT('projectIconUnsupportedFormat'))
-
-  const image = nativeImage.createFromPath(sourcePath)
-  // Covers a file that carries the right extension but is not an image, and the formats
-  // nativeImage cannot decode (SVG among them) - both arrive here as an empty image.
-  if (image.isEmpty()) throw new Error(mainT('projectIconUnreadable'))
-
+  const store = prepareImage(sourcePath)
   const target = iconPath(projectPath)
   const marker = await readMarker(projectPath)
 
@@ -163,11 +163,7 @@ export async function setProjectIcon(projectPath: string, sourcePath: string): P
     }
   }
 
-  await mkdir(dirname(target), { recursive: true })
-  const scaled = fit(image, MAX_STORED_EDGE)
-  if (ext === '.png' && scaled === image) await copyFile(sourcePath, target)
-  else await writeFile(target, scaled.toPNG())
-
+  await store(target)
   await writeJsonFile(join(quartzGuiDir(projectPath), MARKER_FILE), { custom: true, hasOriginal } satisfies IconMarker)
   return getProjectIcon(projectPath)
 }

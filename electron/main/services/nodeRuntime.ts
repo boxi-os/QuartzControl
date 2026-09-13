@@ -1,6 +1,7 @@
 import { app } from 'electron'
 import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs'
-import { basename, delimiter, dirname, join } from 'path'
+import { delimiter, join } from 'path'
+import { macNodeBinary } from '@shared/macNodeBinary'
 
 // Quartz and npm run under Electron's own Node instead of one the user had to install first.
 // Electron 43 carries Node 24.18.1, which clears Quartz's `engines.node >= 22` - measured with a
@@ -83,20 +84,11 @@ function shellQuote(value: string): string {
  * Found by listing rather than by name, because the name differs between the packaged app
  * ("QuartzControl Helper") and development ("Electron Helper"). Anything unexpected falls back to
  * the main binary - a Dock icon is a nuisance, a shim that points at nothing breaks every build.
+ * The lookup itself is shared/macNodeBinary.ts, which scripts/check-runtime.mjs loads as well.
  */
 export function nodeBinary(execPath: string = process.execPath, platform: NodeJS.Platform = process.platform): string {
   if (platform !== 'darwin') return execPath
-  const macos = dirname(execPath)
-  if (basename(macos) !== 'MacOS') return execPath
-  const frameworks = join(dirname(macos), 'Frameworks')
-  try {
-    const helper = readdirSync(frameworks).find((name) => /^[^()]+ Helper\.app$/.test(name))
-    if (!helper) return execPath
-    const binary = join(frameworks, helper, 'Contents', 'MacOS', helper.slice(0, -'.app'.length))
-    return existsSync(binary) ? binary : execPath
-  } catch {
-    return execPath
-  }
+  return macNodeBinary(execPath, (dir) => readdirSync(dir), existsSync)
 }
 
 // The template is a file rather than a string here, because scripts/check-runtime.mjs fills in the

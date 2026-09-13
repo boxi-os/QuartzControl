@@ -15,7 +15,7 @@
 import { spawnSync } from 'child_process'
 import { chmodSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
-import { basename, delimiter, dirname, join } from 'path'
+import { delimiter, dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)))
@@ -53,20 +53,16 @@ if (!existsSync(pathFile)) stop('node_modules/electron/path.txt fehlt — erst `
 const electronMain = join(root, 'node_modules/electron/dist', readFileSync(pathFile, 'utf-8').trim())
 if (!existsSync(electronMain)) stop(`Electron-Binärdatei nicht gefunden: ${electronMain}`)
 // The binary the app's shims start - nodeBinary() in nodeRuntime.ts, which says why: on macOS the
-// plain helper bundle, so npm's process.title does not put a Dock icon up. Same lookup, because a
-// check that starts a different binary than the app measures something the app does not run.
-function nodeBinary(execPath) {
-  if (process.platform !== 'darwin' || basename(dirname(execPath)) !== 'MacOS') return execPath
-  const frameworks = join(dirname(dirname(execPath)), 'Frameworks')
-  try {
-    const helper = readdirSync(frameworks).find((name) => /^[^()]+ Helper\.app$/.test(name))
-    if (!helper) return execPath
-    const binary = join(frameworks, helper, 'Contents', 'MacOS', helper.slice(0, -'.app'.length))
-    return existsSync(binary) ? binary : execPath
-  } catch {
-    return execPath
-  }
-}
+// plain helper bundle, so npm's process.title does not put a Dock icon up. Not a copy of the lookup
+// but the lookup itself, shared/macNodeBinary.ts: a check that starts a different binary than the
+// app measures something the app does not run. TypeScript without a build step, as in
+// check-semver.mjs - node strips the types, but will not guess the extension.
+const lookupTmp = join(tmpdir(), `mac-node-binary-${process.pid}.mts`)
+writeFileSync(lookupTmp, readFileSync(join(root, 'shared/macNodeBinary.ts'), 'utf-8'))
+const { macNodeBinary } = await import(`file://${lookupTmp}`)
+rmSync(lookupTmp)
+const nodeBinary = (execPath) =>
+  process.platform === 'darwin' ? macNodeBinary(execPath, (dir) => readdirSync(dir), existsSync) : execPath
 const electron = nodeBinary(electronMain)
 
 const npmDir = join(root, 'node_modules/npm')

@@ -216,7 +216,7 @@ export default {
       updates: 'Updates',
       server: 'Preview & build',
       sync: 'Git sync',
-      backups: 'Backups',
+      backups: 'Snapshots',
       publish: 'Publish',
       templates: 'Templates'
     },
@@ -232,7 +232,7 @@ export default {
       styles:
         'Everything about the look in one place: base colors and fonts, community themes, CSS variables, and your own CSS — in the exact order they override each other.',
       updates:
-        'Brings Quartz’s core and the installed plugins up to date. A snapshot is taken automatically before every update, so you can go back to that state under Backups.',
+        'Brings Quartz’s core and the installed plugins up to date. A snapshot is taken automatically before every update, so you can go back to that state under Snapshots.',
       server: 'Previews your site locally, and can produce a one-off build for export.',
       sync: 'Syncs your local changes with the Git repository: uploading (push) and downloading (pull).',
       backups:
@@ -349,7 +349,7 @@ export default {
     changeSource: 'Change source…',
     dialogTitle: 'Change content source',
     dialogWarning:
-      'The previous content folder is set aside rather than deleted before the change — you can bring it back under Backups.',
+      'The previous content folder is set aside rather than deleted before the change — you can bring it back under Snapshots.',
     newSourceFolder: 'New source folder',
     strategy: 'Strategy',
     strategySymlink: 'Link (symbolic link, e.g. to an Obsidian vault)',
@@ -1393,7 +1393,7 @@ export default {
       commits: 'Installed: {{current}} · Latest: {{latest}}',
       runUpdate: 'Run update',
       confirm:
-        'Update Quartz’s core?\n\nThis fetches changes from jackyzha0/quartz and reinstalls the dependencies; conflicts may require manual work.\n\nA snapshot is taken first — under Backups you can go back to the current state any time.',
+        'Update Quartz’s core?\n\nThis fetches changes from jackyzha0/quartz and reinstalls the dependencies; conflicts may require manual work.\n\nA snapshot is taken first — under Snapshots you can go back to the current state any time.',
       abortMerge: 'Abort merge',
       openSnapshot: 'Open the snapshot from before the update →',
       conflictHeading: 'Conflicts in these files (aside from the locale files .gitattributes protects):'
@@ -1409,8 +1409,8 @@ export default {
     snapshots: {
       heading: 'Snapshots',
       movedHint:
-        'A snapshot is taken automatically before every core and plugin update. They are managed under Backups, together with the snapshots from every other area.',
-      openBackups: 'Go to Backups →'
+        'A snapshot is taken automatically before every core and plugin update. They are managed under Snapshots, together with those from every other area.',
+      openBackups: 'Go to Snapshots →'
     }
   },
   publish: {
@@ -1595,7 +1595,7 @@ export default {
     baselineHint_other:
       'For {{count}} languages there is no way to tell what you changed — the comparison baseline is created the first time you edit a text in this app. Pick “All texts” if one of them should be included.',
     importHeading: 'Apply a template',
-    importHint: 'A snapshot is taken first, so the import can be undone completely from “Backups”.',
+    importHint: 'A snapshot is taken first, so the import can be undone completely under “Snapshots”.',
     planning: 'Checking the package…',
     pickPackage: 'Choose a template…',
     previewError: 'This is not a readable template (no manifest.json found).',

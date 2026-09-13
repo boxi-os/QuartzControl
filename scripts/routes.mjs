@@ -23,7 +23,7 @@ export const PROJECT_ROUTES = [
   ['Git-Sync', '/sync'],
   ['Veröffentlichen', '/publish'],
   ['Updates', '/updates'],
-  ['Backups', '/backups']
+  ['Snapshots', '/backups']
 ]
 
 /** The two screens that exist without a project. */

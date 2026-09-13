@@ -754,9 +754,13 @@ export interface LocaleSaveResult {
 export type UpdateCheckState = 'upToDate' | 'behind' | 'unknown'
 
 export interface CoreUpdateStatus {
+  /** The newest upstream commit this project contains - not HEAD, which is the project's own last
+   *  commit once it has one. Empty when that could not be determined. */
   currentCommit: string
   latestCommit: string
   state: UpdateCheckState
+  /** Upstream commits not yet in the project; absent when unknown. */
+  missingCommits?: number
 }
 
 // One quartz.lock.json entry's update status. `commit: "local"` entries (Phase 1b's generated
@@ -1659,7 +1663,9 @@ export interface QuartzGuiApi {
     ensureGitAttributes(projectPath: string): Promise<void>
   }
   updates: {
-    coreStatus(projectPath: string): Promise<CoreUpdateStatus>
+    /** `resolveInstalled` allows a `git fetch` when the project is behind and upstream's commit is
+     *  not local yet - without it the installed commit stays unknown in that case. */
+    coreStatus(projectPath: string, options?: { resolveInstalled?: boolean }): Promise<CoreUpdateStatus>
     runCoreUpdate(projectPath: string): Promise<UpdateResult>
     abortCoreMerge(projectPath: string): Promise<PluginActionResult>
     pluginsStatus(projectPath: string): Promise<PluginUpdateStatus[]>

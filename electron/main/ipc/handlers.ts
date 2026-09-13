@@ -308,7 +308,9 @@ export function registerIpcHandlers(): void {
     localizationService.ensureGitAttributes(projectPath)
   )
 
-  handle(IPC.updateCoreStatus, t([s.absolutePath]), (projectPath) => updateService.getCoreUpdateStatus(projectPath))
+  handle(IPC.updateCoreStatus, t([s.absolutePath, s.coreStatusOptions.optional()]), (projectPath, options) =>
+    updateService.getCoreUpdateStatus(projectPath, options)
+  )
   handle(IPC.updateCoreRun, t([s.absolutePath]), (projectPath) => updateService.runCoreUpdate(projectPath))
   handle(IPC.updateCoreAbort, t([s.absolutePath]), (projectPath) => updateService.abortCoreMerge(projectPath))
   handle(IPC.updatePluginsStatus, t([s.absolutePath]), (projectPath) => updateService.getPluginsUpdateStatus(projectPath))

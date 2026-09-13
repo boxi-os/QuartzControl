@@ -1391,6 +1391,8 @@ export default {
     core: {
       heading: 'Quartz core',
       commits: 'Installed: {{current}} · Latest: {{latest}}',
+      missing: '{{count}} commit missing',
+      missing_other: '{{count}} commits missing',
       runUpdate: 'Run update',
       confirm:
         'Update Quartz’s core?\n\nThis fetches changes from jackyzha0/quartz and reinstalls the dependencies; conflicts may require manual work.\n\nA snapshot is taken first — under Backups you can go back to the current state any time.',

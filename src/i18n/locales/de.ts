@@ -753,6 +753,7 @@ export default {
       replace: 'Dunkles Bild ersetzen…',
       remove: 'Dunkles Bild entfernen',
       hint: 'Optional, nur für das Bild im Kopfbereich. Liegt als quartz/static/icon-dark.png im Projekt; das Favicon bleibt beim hellen Bild.',
+      hintHeaderOn: 'Nur für das Bild im Kopfbereich; das Favicon bleibt beim hellen Bild. „Dunkles Bild entfernen“ löscht die Datei sofort — bis zum „Speichern“ fehlt dem Kopfbereich im dunklen Modus dann sein Bild.',
       announceSet: 'Bild für den Dunkelmodus gesetzt.',
       announceCleared: 'Bild für den Dunkelmodus entfernt.'
     },

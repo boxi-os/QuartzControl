@@ -164,7 +164,12 @@ export default function ProjectImage({
               </Button>
             )}
           </div>
-          <p className="text-micro text-text-muted">{t('projectImage.dark.hint')}</p>
+          {/* Removing is a file operation and happens at once, the header's instance is a draft that
+              waits for Save - so in between the saved config names a file that is gone. Said only
+              in the state where that gap exists (review 2026-09-16, finding 9). */}
+          <p className="text-micro text-text-muted">
+            {t(headerOn && hasDark ? 'projectImage.dark.hintHeaderOn' : 'projectImage.dark.hint')}
+          </p>
           <div className="mt-2">
             <Toggle
               label={t('projectImage.header.label')}

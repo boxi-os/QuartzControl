@@ -750,6 +750,7 @@ export default {
       replace: 'Replace dark image…',
       remove: 'Remove dark image',
       hint: 'Optional, only for the image in the header. Stored as quartz/static/icon-dark.png in the project; the favicon stays with the light image.',
+      hintHeaderOn: 'Only for the image in the header; the favicon stays with the light image. “Remove dark image” deletes the file at once — until you “Save”, the header then has no image in dark mode.',
       announceSet: 'Image for dark mode set.',
       announceCleared: 'Image for dark mode removed.'
     },

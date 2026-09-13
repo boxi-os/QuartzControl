@@ -221,7 +221,7 @@ export const quartzConfig = z.looseObject({
   theme: z.record(z.string(), z.unknown()),
   plugins: z.array(
     z.looseObject({
-      // readConfig always derives `name` and defaults `enabled`, and writeConfig strips `name`
+      // readConfig always derives `name` and normalises `enabled` to a boolean, and writeConfig strips `name`
       // back off again - so both are genuinely always present on the way back in.
       name: pluginName,
       source: z.union([z.string().max(2048), z.looseObject({ repo: z.string().min(1).max(2048) })]),

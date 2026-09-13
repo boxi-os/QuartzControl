@@ -30,10 +30,19 @@ export async function readConfig(projectPath: string): Promise<QuartzConfig> {
     layout?: LayoutConfig
   }
   const { theme, ...configuration } = json.configuration ?? {}
+  // `enabled` is read the way Quartz's *build* reads it, not the way its CLI does. The loader keeps
+  // an entry only when the key is truthy (`filter((e) => e.enabled)` at every place that makes the
+  // site - transformers, emitters, dependencies, layout), while `quartz plugin list` treats a
+  // missing key as on (`entry.enabled !== false`). This used to follow the CLI, and since
+  // writeConfig writes the key for every entry, that was not only a wrong switch: a hand-written
+  // entry without `enabled:` showed as on while the build left it out, and the next save of
+  // anything at all - measured with a page-title change - wrote `enabled: true` and put the plugin
+  // on the site without anyone turning it on. Following the build instead writes `enabled: false`
+  // on that save, which changes nothing about the site and makes the CLI agree.
   const plugins: PluginEntry[] = (json.plugins ?? []).map((p) => ({
     ...p,
     name: deriveName(p.source),
-    enabled: p.enabled ?? true
+    enabled: Boolean(p.enabled)
   })) as PluginEntry[]
   return {
     configuration,

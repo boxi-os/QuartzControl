@@ -18,9 +18,18 @@ Aus CLAUDE.md ausgelagert (2026-09-02): die Messungen und Beobachtungen hinter d
   (`entry.enabled !== false`, `cli/plugin-git-handlers.js:1574`). `readPluginsJson` parst die yaml
   roh, es gibt also keine Normalisierung dazwischen. Ein von Hand geschriebener Eintrag **ohne**
   `enabled:` erscheint damit in `quartz plugin list` als aktiv und wird trotzdem nicht gebaut.
-  `configService.readConfig` folgt der CLI (`enabled: p.enabled ?? true`) und schreibt den
-  Schlüssel beim Speichern, jeder Eintrag, den diese App einmal angefasst hat, trägt ihn also.
   Aufgefallen am 2026-09-07 beim sechsten Review, beim Vergleich von `groupOrderByPosition` mit
-  `resolveGroups`; **nicht** geändert, weil die Frage größer ist als die Gruppen — sie betrifft die
-  ganze Plugin-Liste, und die Antwort darauf, welcher der beiden Quartz-Wege der maßgebliche ist,
-  gehört in einen eigenen Durchgang.
+  `resolveGroups`.
+
+  **Maßgeblich ist der Build, und die App liest seit dem 2026-09-13 wie er** (`Boolean(p.enabled)`
+  in `configService.readConfig`). Bis dahin folgte sie der CLI (`enabled: p.enabled ?? true`), und
+  weil `writeConfig` den Schlüssel für jeden Eintrag schreibt, war das mehr als ein falscher
+  Schalter: Ein Eintrag ohne `enabled:` stand in der App auf „an“, der Build ließ ihn weg, und das
+  nächste Speichern *irgendeiner* Änderung schrieb `enabled: true` und brachte das Plugin auf die
+  Website, ohne dass es jemand eingeschaltet hatte. Gemessen mit einem esbuild-Bündel von
+  `configService` an einer Wegwerf-Config: vorher gelesen `true`, nach einer reinen
+  Titeländerung `enabled: true` in der Datei; nachher gelesen `false`, geschrieben
+  `enabled: false`, beim zweiten Lauf unverändert. Am echten Build einer Kopie von `gui-test`:
+  mit `enabled: true` am Darkmode-Plugin ein Darkmode-Element in `index.html`, ohne den Schlüssel
+  keines. Die CLI-Hälfte ließ sich an diesem Eintrag nicht zeigen — `quartz plugin list` führt nur
+  git- und lokale Plugins, kein npm-Paket; sie steht hier weiter aus dem Quelltext gelesen.

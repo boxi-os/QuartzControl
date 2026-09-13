@@ -111,8 +111,6 @@ export default {
     },
     gettingStarted: {
       title: 'Erste Schritte',
-      description:
-        'QuartzControl verwaltet Quartz-Projekte: aus einem Ordner voller Markdown-Dateien wird eine fertige Website.',
       step1: 'Lege ein neues Projekt an oder öffne einen Ordner, in dem Quartz schon eingerichtet ist.',
       step2: 'Verknüpfe den Content-Ordner mit deinen Notizen — auch direkt mit einem Obsidian-Vault.',
       step3: 'Starte die Vorschau, gestalte die Seite nach deinem Geschmack und veröffentliche sie.'
@@ -121,19 +119,19 @@ export default {
       title: 'Was du hier tun kannst',
       setup: {
         title: 'Einrichtung',
-        body: 'Titel, Adresse und Sprache der Seite festlegen, Plugins aus dem Marktplatz installieren und den Content-Ordner mit deinem Obsidian-Vault verknüpfen.'
+        body: 'Titel, Adresse, Plugins, Content-Ordner'
       },
       design: {
         title: 'Gestaltung',
-        body: 'Farben, Schriften und CSS-Variablen anpassen, Community-Themes installieren, eigenes CSS schreiben und Layout-Rahmen selbst bauen.'
+        body: 'Farben, Schriften, Themes, Layout'
       },
       publish: {
         title: 'Veröffentlichung',
-        body: 'Lokal bauen und in der Vorschau ansehen, per Git synchronisieren und auf GitHub Pages, SFTP, rsync oder einen Webspace veröffentlichen.'
+        body: 'Vorschau, Build, Git-Sync, Hochladen'
       },
       maintenance: {
         title: 'Wartung',
-        body: 'Quartz-Kern und Plugins aktualisieren, Snapshots anlegen und einzelne Dateien oder das ganze Projekt zurückspielen.'
+        body: 'Updates und Snapshots'
       }
     },
     aboutQuartz: {

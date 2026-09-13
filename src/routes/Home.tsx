@@ -92,9 +92,6 @@ export default function Home(): JSX.Element {
     )
   }, [sorted, query])
 
-  // Two columns only once there is a second card to put there - a lone project rendered at half
-  // width with an empty column beside it reads as a layout fault rather than as breathing room.
-  const listColumns = filtered.length > 1 ? '2xl:grid-cols-2' : ''
 
   async function openExisting(): Promise<void> {
     const folder = await window.quartzGui.dialog.pickFolder(settings.defaultProjectDirectory)
@@ -143,10 +140,24 @@ export default function Home(): JSX.Element {
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
             <div className="min-w-0">
               <div className="mb-4 flex flex-wrap items-center gap-3">
-                <Button onClick={openExisting}>{t('home.openExisting')}</Button>
-                <Button variant="ghost" onClick={() => setShowWizard(true)}>
-                  {t('home.createNew')}
-                </Button>
+                {/* One row of the two actions, and its primary is the likelier next step: with no
+                    project yet that is creating one. "Erste Schritte" used to carry a second row of
+                    the same two buttons below, with the primary the other way round. */}
+                {projects !== null && sorted.length === 0 ? (
+                  <>
+                    <Button onClick={() => setShowWizard(true)}>{t('home.createNew')}</Button>
+                    <Button variant="ghost" onClick={openExisting}>
+                      {t('home.openExisting')}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button onClick={openExisting}>{t('home.openExisting')}</Button>
+                    <Button variant="ghost" onClick={() => setShowWizard(true)}>
+                      {t('home.createNew')}
+                    </Button>
+                  </>
+                )}
                 {sorted.length >= SEARCH_THRESHOLD && (
                   <div className="relative ml-auto">
                     <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted" />
@@ -163,9 +174,15 @@ export default function Home(): JSX.Element {
               {projects === null ? (
                 <p className="text-ui text-text-muted">{t('common.loading')}</p>
               ) : sorted.length === 0 ? (
-                <GettingStarted onOpen={openExisting} onCreate={() => setShowWizard(true)} />
+                <GettingStarted />
               ) : (
-                <div className={`grid gap-3 ${listColumns}`}>
+                // Columns follow the column, not the window. It used to be `2xl:grid-cols-2`, i.e. two
+                // cards from a 1536px window on - while the column itself is capped by max-w-6xl and
+                // the 320px aside and stops growing at `xl`, around 808px. So a 1280px window showed one
+                // card 808px wide with nearly nothing in it, and 1536px showed two in the very same
+                // width. `auto-fit` rather than `auto-fill` keeps a lone card at full width: an empty
+                // track beside it would read as a layout fault, which is what the old condition guarded.
+                <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr))]">
                   {filtered.map((project) => (
                     <ProjectRow
                       key={project.id}
@@ -590,7 +607,7 @@ function ProjectRow({
 
 // ── first run ───────────────────────────────────────────────────────────────────────────────
 
-function GettingStarted({ onOpen, onCreate }: { onOpen: () => void; onCreate: () => void }): JSX.Element {
+function GettingStarted(): JSX.Element {
   const { t } = useTranslation()
   // Numbered because it genuinely is a sequence - you cannot link a vault before there is a
   // project, and there is nothing to preview before that.
@@ -598,8 +615,9 @@ function GettingStarted({ onOpen, onCreate }: { onOpen: () => void; onCreate: ()
 
   return (
     <Card>
+      {/* No introduction sentence and no buttons of its own: "Was ist Quartz?" beside it says what
+          the app turns a folder into, and the two actions stand directly above this card. */}
       <CardHeading icon={ListOrdered}>{t('home.gettingStarted.title')}</CardHeading>
-      <p className="mt-0.5 text-ui text-text-muted">{t('home.gettingStarted.description')}</p>
       <ol className="mt-4 flex flex-col gap-3">
         {steps.map((step, index) => (
           <li key={step} className="flex gap-3">
@@ -610,12 +628,6 @@ function GettingStarted({ onOpen, onCreate }: { onOpen: () => void; onCreate: ()
           </li>
         ))}
       </ol>
-      <div className="mt-4 flex flex-wrap gap-2">
-        <Button onClick={onCreate}>{t('home.createNew')}</Button>
-        <Button variant="ghost" onClick={onOpen}>
-          {t('home.openExisting')}
-        </Button>
-      </div>
     </Card>
   )
 }
@@ -843,15 +855,16 @@ function WhatYouCanDo({ environment }: { environment: EnvironmentInfo | null }):
 
       <Card>
         <CardHeading icon={Compass}>{t('home.capabilities.title')}</CardHeading>
-        <div className="mt-3 flex flex-col gap-3.5">
+        {/* A few words per area, not a paragraph. The four paragraphs made this the tallest block on the
+            screen - taller than four project cards at 1728px - for a list of what the pages
+            themselves and the handbook say in full. */}
+        <div className="mt-3 flex flex-col gap-2">
           {areas.map(({ key, icon: Icon }) => (
             <div key={key} className="flex gap-2.5">
               <Icon size={15} className="mt-0.5 shrink-0 text-blue-600 dark:text-blue-400" />
               <div className="min-w-0">
                 <p className="text-ui font-medium">{t(`home.capabilities.${key}.title`)}</p>
-                <p className="mt-0.5 text-xs leading-relaxed text-text-muted">
-                  {t(`home.capabilities.${key}.body`)}
-                </p>
+                <p className="text-xs text-text-muted">{t(`home.capabilities.${key}.body`)}</p>
               </div>
             </div>
           ))}

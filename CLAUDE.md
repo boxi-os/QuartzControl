@@ -189,10 +189,10 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   Render vor, was `titlebarStripClass` braucht.
 - **Nur `ipcMain.handle` über `handle()`/`handleNoArgs()`; kein `ipcMain.on`.** Events von Main zum
   Renderer gehen über `broadcast()` an alle Fenster; der Renderer abonniert über `onEvent` mit
-  Rückgabe eines Abmelders. Sechs Events laufen so (`server:log`, `build:log`,
-  `server:statusChanged`, `deploy:progress`, `templatePackage:progress`, `content:progress`); das
-  siebte, `app:navigate`, sendet `menu.ts` selbst an alle Fenster, weil das Menü ohne den
-  Handler-Kontext lebt.
+  Rückgabe eines Abmelders. Sieben Events laufen so (`server:log`, `build:log`,
+  `server:statusChanged`, `build:activityChanged`, `deploy:progress`, `templatePackage:progress`,
+  `content:progress`); das achte, `app:navigate`, sendet `menu.ts` selbst an alle Fenster, weil das
+  Menü ohne den Handler-Kontext lebt.
 - **Alles, was Main aus Projektdateien liest und an Prozesse gibt, ist mit `--` getrennt; `git`
   bekommt nie eine Shell; nur npm/npx brauchen eine.** `runCommand.ts` ist der eine Spawner für
   kurzlebige Kommandos.

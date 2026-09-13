@@ -371,6 +371,18 @@ export default {
     creatingIndex: 'Lege an…',
     indexCreated: 'Die Startseite ist angelegt: {{path}}'
   },
+  buildActivity: {
+    kind: {
+      build: 'Build läuft seit {{time}}',
+      serve: 'Dev-Server baut seit {{time}}',
+      rebuild: 'Baut nach einer Änderung neu, seit {{time}}'
+    },
+    phase: {
+      preparing: 'bereitet vor',
+      parsing: 'liest die Notizen',
+      emitting: 'schreibt die Seiten'
+    }
+  },
   buildServer: {
     devServer: 'Dev-Server',
     noIndex: 'Im Content-Ordner fehlt die index.md — die Vorschau zeigt unter ihrer Adresse deshalb eine 404-Seite.',

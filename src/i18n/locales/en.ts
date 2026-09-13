@@ -370,6 +370,18 @@ export default {
     creatingIndex: 'Creating…',
     indexCreated: 'The start page has been created: {{path}}'
   },
+  buildActivity: {
+    kind: {
+      build: 'Building for {{time}}',
+      serve: 'Dev server building for {{time}}',
+      rebuild: 'Rebuilding after a change, for {{time}}'
+    },
+    phase: {
+      preparing: 'preparing',
+      parsing: 'reading the notes',
+      emitting: 'writing the pages'
+    }
+  },
   buildServer: {
     noIndex: 'The content folder has no index.md — so the preview shows a 404 page at its address.',
     noIndexLink: 'Create start page →',

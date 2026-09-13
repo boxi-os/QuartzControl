@@ -420,6 +420,20 @@ export interface BuildResult {
   exitCode: number | null
 }
 
+// What Quartz is doing right now for one project, held in the main process so every page - and a
+// page opened in the middle of it - sees the same thing. `build` is "Jetzt bauen", `serve` the dev
+// server's first build before it listens, `rebuild` the dev server building again after a change.
+// The phase comes from the lines Quartz prints when it has no terminal ("Parsing input files …",
+// "Emitting files", "Done processing …"); `preparing` covers the time before the first of them -
+// npm starting, the frames being written, Quartz loading its plugins.
+export type BuildPhase = 'preparing' | 'parsing' | 'emitting'
+
+export interface BuildActivity {
+  kind: 'build' | 'serve' | 'rebuild'
+  startedAt: string
+  phase: BuildPhase
+}
+
 // A `quartz ... --serve` process found in the machine's process table, whether or not this app
 // started it. Measured on macOS with a server started from a terminal: `npm exec quartz build
 // --serve --port 8099 --wsPort 3099` (the parent) and a `node .../.bin/quartz build --serve
@@ -1405,6 +1419,8 @@ export const IPC = {
 
   buildRun: 'build:run',
   buildLog: 'build:log',
+  buildActivity: 'build:activity',
+  buildActivityChanged: 'build:activityChanged',
   logsHistory: 'logs:history',
   logsClear: 'logs:clear',
   buildLastOutput: 'build:lastOutput',
@@ -1788,8 +1804,12 @@ export interface QuartzGuiApi {
     kill(input: { pid: number }): Promise<ServerKillResult>
   }
   build: {
+    /** A second call while this project builds joins the running build instead of starting another. */
     run(projectId: string, projectPath: string, outputDir?: string): Promise<BuildResult>
     onLog(cb: (line: LogLine) => void): () => void
+    /** What Quartz is doing for this project right now, or null. */
+    activity(input: { projectId: string }): Promise<BuildActivity | null>
+    onActivity(cb: (projectId: string, activity: BuildActivity | null) => void): () => void
     /** What is in the output directory right now - see BuildOutputInfo. Pure read, no build. */
     lastOutput(projectPath: string, outputDir?: string): Promise<BuildOutputInfo>
   }

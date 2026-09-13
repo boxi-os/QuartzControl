@@ -168,7 +168,7 @@ export default function ProjectImage({
               waits for Save - so in between the saved config names a file that is gone. Said only
               in the state where that gap exists (review 2026-09-16, finding 9). */}
           <p className="text-micro text-text-muted">
-            {t(headerOn && hasDark ? 'projectImage.dark.hintHeaderOn' : 'projectImage.dark.hint')}
+            {headerOn && hasDark ? t('projectImage.dark.hintHeaderOn') : t('projectImage.dark.hint')}
           </p>
           <div className="mt-2">
             <Toggle

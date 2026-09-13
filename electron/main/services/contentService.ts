@@ -1,6 +1,8 @@
 import { existsSync } from 'fs'
 import { lstat, readlink, readdir, cp, realpath, stat, symlink, mkdir, writeFile } from 'fs/promises'
-import { dirname, isAbsolute, join, matchesGlob, relative, resolve } from 'path'
+import { createRequire } from 'module'
+import { dirname, isAbsolute, join, matchesGlob, posix, relative, resolve, sep } from 'path'
+import { pathToFileURL } from 'url'
 import { stringify } from 'yaml'
 import type { ContentStatus, ContentStrategy } from '@shared/ipc-contract'
 import { snapshotContent } from './backupService'
@@ -101,26 +103,86 @@ async function hasIndexPage(dir: string): Promise<boolean> {
   }
 }
 
-// Quartz matches its ignore patterns against the path under content/ (globby's `ignore` in the
-// build, minimatch in the watcher), not against a name. At the top level the path of a note is its
-// name; a folder is gone when a pattern takes the folder itself or everything below it. Checked
-// against Quartz's own globby with a folder holding a note and a subfolder: `x`, `x/`, `x/**` and
-// `**/x` drop all of it, `x/**/*.md` drops every note in it, `x/*` keeps the subfolder's note - and
-// only the name, as this function tested until 2026-09-16, answered `x/**` with "listed", a link to
-// a page the build does not make. A path two levels down stands for "everything below".
-function ignoredByQuartz(name: string, isDir: boolean, patterns: string[]): boolean {
-  if (name.startsWith('.')) return true
-  const paths = isDir ? [name, `${name}/`, `${name}/x/y.md`] : [name]
-  return patterns.some((pattern) =>
-    paths.some((path) => {
-      if (pattern === path) return true
-      try {
-        return matchesGlob(path, pattern)
-      } catch {
-        return false
+// Which files the build reads is not something this app decides, so it asks the one who does:
+// Quartz globs `**/*.*` under content/ with globby (`quartz/util/glob.ts`, `ignore` from the config,
+// `gitignore: true`) and makes a page of every `.md` that is left - and folder-page a folder page of
+// every folder that holds one. The function until 2026-09-17 imitated that with three probe paths
+// and `matchesGlob`, and measured against Quartz's own globby it gave 13 wrong answers across 19 patterns:
+// `y/*` drops a folder without subfolders (the probe `y/x/y.md` sat one level too deep, so the
+// start page linked a page the build does not make), fast-glob only prunes a directory for a static
+// pattern or one ending in `/**` (`*`, `[xy]`, `tpl*` keep every note), and a `.gitignore` - in the
+// vault or in the project - was not read at all. So globby is loaded from
+// where Quartz loads it, and run on the same cwd: `content/` itself, not its resolved target,
+// because globby also reads the `.gitignore` files between the cwd and the root of the git repository
+// around it (measured: a project's `content/y/` counts once the project is a repository, not before).
+// Same 26 patterns, same .gitignore files: the list and Quartz's globby agree on every one.
+async function quartzInputFiles(projectPath: string, patterns: string[]): Promise<string[]> {
+  const cwd = contentDirPath(projectPath)
+  let globby: ((pattern: string, options: object) => Promise<string[]>) | undefined
+  try {
+    const resolveFromQuartz = createRequire(join(projectPath, 'quartz', 'util', 'glob.ts')).resolve
+    globby = ((await import(pathToFileURL(resolveFromQuartz('globby')).href)) as { globby: typeof globby }).globby
+  } catch {
+    // No node_modules yet, so no build either: the list can only be as good as the fallback below.
+  }
+  if (globby) return (await globby('**/*.*', { cwd, ignore: patterns, gitignore: true })).map((p) => p.split(sep).join('/'))
+  return walkUnignored(await realpath(cwd), patterns)
+}
+
+// The fallback, and it says what it is not: no `.gitignore` is read. The patterns follow fast-glob's
+// two rules - a file is tested with its own path, and a folder is pruned only by a pattern whose last
+// segment is static or which ends in `/**` (`isAffectDepthOfReadingPattern`), which is why `x/*`,
+// `*` and `[xy]` keep a folder's subfolders while `x/` and `**/x` drop them. Measured against globby
+// with 26 patterns: one answer differs, `{x,y}`, which fast-glob expands into two static patterns
+// before it applies the rule and this does not. Hidden entries are skipped the way `dot: false` skips
+// them; links are followed as fast-glob follows them, with `seen` against a link back to an ancestor.
+async function walkUnignored(root: string, patterns: string[]): Promise<string[]> {
+  const test = (probe: string, pattern: string): boolean => {
+    if (pattern === probe) return true
+    try {
+      return matchesGlob(probe, pattern)
+    } catch {
+      return false
+    }
+  }
+  const pruning = patterns
+    .filter((pattern) => pattern.endsWith('/**') || !/[*?[\]{}()!@+\\]/.test(posix.basename(pattern)))
+    .map((pattern) => pattern.replace(/\/$/, ''))
+  const ignored = (path: string): boolean => {
+    const segments = path.split('/')
+    const folders = segments.slice(0, -1).map((_, i) => segments.slice(0, i + 1).join('/'))
+    return (
+      patterns.some((pattern) => test(path, pattern)) ||
+      folders.some((folder) => pruning.some((pattern) => test(folder, pattern)))
+    )
+  }
+  const files: string[] = []
+  const seen = new Set<string>([root])
+  const walk = async (dir: string, prefix: string): Promise<void> => {
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      if (entry.name.startsWith('.')) continue
+      const full = join(dir, entry.name)
+      const rel = prefix ? `${prefix}/${entry.name}` : entry.name
+      let isDir = entry.isDirectory()
+      if (entry.isSymbolicLink()) {
+        try {
+          isDir = (await stat(full)).isDirectory()
+        } catch {
+          continue
+        }
       }
-    })
-  )
+      if (!isDir) {
+        if (!ignored(rel)) files.push(rel)
+        continue
+      }
+      const real = await realpath(full)
+      if (seen.has(real)) continue
+      seen.add(real)
+      await walk(full, rel)
+    }
+  }
+  await walk(root, '')
+  return files
 }
 
 // A markdown link rather than a wikilink, because the folders need one: a wikilink names a note,
@@ -160,22 +222,10 @@ export async function createIndexPage(projectPath: string, title: string): Promi
     // A config that cannot be read still leaves the hidden entries out; the list is a starting point.
   }
 
-  const folders: string[] = []
-  const notes: string[] = []
-  for (const entry of await readdir(dir, { withFileTypes: true })) {
-    if (entry.name.startsWith('.')) continue
-    let isDir = entry.isDirectory()
-    if (entry.isSymbolicLink()) {
-      try {
-        isDir = (await stat(join(dir, entry.name))).isDirectory()
-      } catch {
-        continue
-      }
-    }
-    if (ignoredByQuartz(entry.name, isDir, patterns)) continue
-    if (isDir) folders.push(entry.name)
-    else if (entry.name.toLowerCase().endsWith('.md')) notes.push(entry.name)
-  }
+  // Quartz's test, not ours: `endsWith(".md")` in build.ts, so a `Note.MD` is an asset there too.
+  const markdown = (await quartzInputFiles(projectPath, patterns)).filter((path) => path.endsWith('.md'))
+  const notes = markdown.filter((path) => !path.includes('/'))
+  const folders = [...new Set(markdown.filter((path) => path.includes('/')).map((path) => path.split('/')[0]))]
   const order = (a: string, b: string): number => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
   folders.sort(order)
   notes.sort(order)

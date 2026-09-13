@@ -358,6 +358,18 @@ export default {
     applying: 'Applying…',
     apply: 'Apply'
   },
+  buildActivity: {
+    kind: {
+      build: 'Building for {{time}}',
+      serve: 'Dev server building for {{time}}',
+      rebuild: 'Rebuilding after a change, for {{time}}'
+    },
+    phase: {
+      preparing: 'preparing',
+      parsing: 'reading the notes',
+      emitting: 'writing the pages'
+    }
+  },
   buildServer: {
     devServer: 'Dev server',
     devServerHint: 'Shows your site live in the browser, reloading automatically on changes — great for trying things out.',

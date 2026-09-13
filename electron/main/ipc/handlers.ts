@@ -116,6 +116,7 @@ export function registerIpcHandlers(): void {
     broadcast(IPC.buildLog, line)
   })
   buildService.serverEvents.on('status', (projectId, status) => broadcast(IPC.serverStatusChanged, projectId, status))
+  buildService.serverEvents.on('activity', (projectId, activity) => broadcast(IPC.buildActivityChanged, projectId, activity))
   deployService.deployEvents.on('progress', (event) => broadcast(IPC.deployProgress, event))
 
   handleNoArgs(IPC.projectList, () => projectStore.listProjects())
@@ -430,6 +431,10 @@ export function registerIpcHandlers(): void {
     IPC.buildRun,
     t([s.uuid, s.absolutePath, s.buildOutputDir.optional()]),
     async (projectId, projectPath, outputDir) => {
+      // A build already running for this project is joined, not asked about again: its output
+      // directory was answered for when it started, and a second process would write into it too.
+      const running = buildService.runningBuild(projectId)
+      if (running) return running
       const verdict = await buildOutputGuard.assessOutputDir(projectPath, outputDir)
       const dir = resolveBuildDir(projectPath, outputDir)
       if (verdict.kind === 'refused') {
@@ -624,6 +629,8 @@ export function registerIpcHandlers(): void {
   // which the renderer used for every one of these questions before, offers no control over
   // that at all: its confirming answer is always the default.
   handle(IPC.logsHistory, t([s.logHistoryInput]), (input) => logHistory(input.projectId))
+  // Same argument as logs.history: one project, by id.
+  handle(IPC.buildActivity, t([s.logHistoryInput]), (input) => buildService.getBuildActivity(input.projectId))
   handle(IPC.logsClear, t([s.logClearInput]), (input) => clearLogHistory(input.projectId, input.stream))
 
   handle(IPC.dialogConfirm, t([s.confirmDialog]), async (options) => {

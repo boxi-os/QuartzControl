@@ -22,6 +22,8 @@ import { useStickyState } from '../state/uiState'
 import { formatBytes, formatRelativeTime } from '../utils/format'
 import { serverErrorText } from '../utils/serverStatus'
 import HandbookLink from '../components/HandbookLink'
+import { BuildActivityLine } from '../components/BuildActivityLine'
+import { useBuildActivity } from '../hooks/useBuildActivity'
 
 // `host` is only meaningful as Quartz's `--remoteDevHost`: an override for the live-reload
 // websocket URL when previewing through a tunnel/remote host, which makes the browser connect
@@ -72,7 +74,11 @@ export default function BuildServer(): JSX.Element {
   const [previewMode, setPreviewMode] = useStickyState<FrameBreakpoint>('server.previewMode', 'desktop')
   const [breakpoints, setBreakpoints] = useState<FrameBreakpointWidths>(DEFAULT_FRAME_BREAKPOINT_WIDTHS)
   const [buildResult, setBuildResult] = useState<BuildResult | null>(null)
-  const [building, setBuilding] = useState(false)
+  // `clicked` covers the moment between the click and the main process reporting the build; after
+  // that the main process is the answer, which is what a page opened mid-build needs.
+  const [clicked, setClicked] = useState(false)
+  const activity = useBuildActivity(project.id)
+  const building = clicked || activity?.kind === 'build'
   const [output, setOutput] = useState<BuildOutputInfo | null>(null)
   const [outputDir, setOutputDir] = useState('')
   const [outputDirError, setOutputDirError] = useState<string | null>(null)
@@ -150,8 +156,21 @@ export default function BuildServer(): JSX.Element {
     setStatus(await window.quartzGui.server.restart(project.id, project.path, options))
   }
 
+  // A build that ends while this page is open - started here or anywhere else - changes what is in
+  // the output directory, so the card reads it again.
+  const buildRunning = activity?.kind === 'build'
+  const [sawBuild, setSawBuild] = useState(false)
+  useEffect(() => {
+    if (buildRunning) setSawBuild(true)
+    else if (sawBuild) {
+      setSawBuild(false)
+      void refreshOutput(outputDir)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [buildRunning])
+
   async function runBuild(): Promise<void> {
-    setBuilding(true)
+    setClicked(true)
     setBuildResult(null)
     try {
       setBuildResult(await window.quartzGui.build.run(project.id, project.path, outputDir || undefined))
@@ -160,7 +179,7 @@ export default function BuildServer(): JSX.Element {
       // which is where the user is already looking
       appendBuildLog({ projectId: project.id, stream: 'stderr', text: formatIpcError(err), timestamp: new Date().toISOString() })
     } finally {
-      setBuilding(false)
+      setClicked(false)
       await refreshOutput(outputDir)
     }
   }
@@ -221,6 +240,8 @@ export default function BuildServer(): JSX.Element {
             )}
           </div>
         </div>
+
+        {activity && activity.kind !== 'build' && <BuildActivityLine activity={activity} className="mb-2" />}
 
         {/* The address leads, because it is what the page is for. Running or not, it is the same
             line - stopped it just says what the address will be, which nothing used to. */}
@@ -399,6 +420,7 @@ export default function BuildServer(): JSX.Element {
           </Button>
         </div>
         <p className="mb-3 text-xs text-text-muted">{t('buildServer.oneOffBuildHint')}</p>
+        {activity?.kind === 'build' && <BuildActivityLine activity={activity} className="mb-3" />}
 
         {/* What is in the output directory right now - nothing records that a build happened, so
             this is read from the files themselves (see BuildOutputInfo). The Übersicht showed this

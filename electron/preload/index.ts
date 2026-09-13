@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { IPC } from '@shared/ipc-contract'
 import type {
   AppCommand,
+  BuildActivity,
   QuartzGuiApi,
   LogLine,
   ServerStatus,
@@ -233,6 +234,9 @@ const api: QuartzGuiApi = {
     run: (projectId: string, projectPath: string, outputDir?: string) =>
       ipcRenderer.invoke(IPC.buildRun, projectId, projectPath, outputDir),
     onLog: (cb: (line: LogLine) => void) => onEvent<[LogLine]>(IPC.buildLog, cb),
+    activity: (input: { projectId: string }) => ipcRenderer.invoke(IPC.buildActivity, input),
+    onActivity: (cb: (projectId: string, activity: BuildActivity | null) => void) =>
+      onEvent<[string, BuildActivity | null]>(IPC.buildActivityChanged, cb),
     lastOutput: (projectPath: string, outputDir?: string) =>
       ipcRenderer.invoke(IPC.buildLastOutput, projectPath, outputDir)
   },

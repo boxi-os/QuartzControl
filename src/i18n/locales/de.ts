@@ -360,6 +360,18 @@ export default {
     applying: 'Wird angewendet…',
     apply: 'Übernehmen'
   },
+  buildActivity: {
+    kind: {
+      build: 'Build läuft seit {{time}}',
+      serve: 'Dev-Server baut seit {{time}}',
+      rebuild: 'Baut nach einer Änderung neu, seit {{time}}'
+    },
+    phase: {
+      preparing: 'bereitet vor',
+      parsing: 'liest die Notizen',
+      emitting: 'schreibt die Seiten'
+    }
+  },
   buildServer: {
     devServer: 'Dev-Server',
     devServerHint: 'Zeigt deine Website live im Browser an, mit automatischem Neuladen bei Änderungen — ideal zum Ausprobieren.',

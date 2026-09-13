@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useProject } from '../ProjectLayout'
-import type { QuartzConfig } from '@shared/ipc-contract'
+import type { PluginEntry, QuartzConfig } from '@shared/ipc-contract'
+import { LAYOUT_BOX_SOURCE } from '@shared/projectImageBox'
 import { Button, PageHeader, SegmentedControl } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { useStickyState } from '../../state/uiState'
@@ -86,6 +87,19 @@ export default function ConfigEditor(): JSX.Element {
     [setSearchParams, setLastTab]
   )
 
+  // `quartz plugin add` writes quartz.config.yaml itself, and this page holds a copy of it. So the
+  // copy is saved first when it has edits (the confirmation said so), and read again afterwards -
+  // the rule for a document a route owns: after anything Main writes to it, read it anew.
+  async function installLayoutBox(): Promise<PluginEntry[]> {
+    if (dirty && !(await save())) throw new Error(t('projectImage.header.saveFirstFailed'))
+    const result = await window.quartzGui.plugins.add(project.path, LAYOUT_BOX_SOURCE)
+    if (!result.success) throw new Error(result.output.slice(-600))
+    const loaded = await window.quartzGui.config.get(project.path)
+    setConfig(loaded)
+    setSavedSnapshot(JSON.stringify(loaded))
+    return loaded.plugins
+  }
+
   // Returns whether it worked: the leave guard's "Speichern" needs to know before it navigates
   // away, and the error itself stays here in the header where the user can read it.
   async function save(): Promise<boolean> {
@@ -164,10 +178,19 @@ export default function ConfigEditor(): JSX.Element {
               <SiteSettings
                 configuration={config.configuration}
                 onChange={(configuration) => setConfig({ ...config, configuration })}
-                // The picture writes its file immediately and has nothing in the config, but the
-                // one plugin that turns it into a favicon does - so it is told the plugin list
-                // this page already holds rather than reading the config a second time.
-                image={<ProjectImage plugins={config.plugins} />}
+                // The picture writes its files immediately, but two plugins make something of it:
+                // the favicon, and the layout box that shows it in the header. Both live in the
+                // config this page holds and saves, so the card reads this page's plugin list and
+                // hands its header switch back as a change to the draft - never a second writer.
+                // The one exception is installing the layout box, which only the CLI can do: that
+                // saves pending edits first and reads the config anew, see installLayoutBox.
+                image={
+                  <ProjectImage
+                    plugins={config.plugins}
+                    onPluginsChange={(update) => setConfig((current) => (current ? { ...current, plugins: update(current.plugins) } : current))}
+                    onInstallLayoutBox={installLayoutBox}
+                  />
+                }
               />
               {/* Colors and fonts used to be a second tab here. They are the bottom layer of the
                   styling cascade, so they now live with the other three layers on the Styles page. */}

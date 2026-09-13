@@ -735,7 +735,27 @@ export default {
     faviconMissing: 'Das Favicon-Plugin ist nicht installiert — die Seite bekommt daraus kein Favicon.',
     faviconLink: 'Zu den Plugins',
     announceSet: 'Projektbild gesetzt.',
-    announceCleared: 'Projektbild entfernt, das ursprüngliche Icon ist wieder da.'
+    announceCleared: 'Projektbild entfernt, das ursprüngliche Icon ist wieder da.',
+    dark: {
+      choose: 'Bild für den Dunkelmodus…',
+      replace: 'Dunkles Bild ersetzen…',
+      remove: 'Dunkles Bild entfernen',
+      hint: 'Optional, nur für das Bild im Kopfbereich. Liegt als quartz/static/icon-dark.png im Projekt; das Favicon bleibt beim hellen Bild.',
+      announceSet: 'Bild für den Dunkelmodus gesetzt.',
+      announceCleared: 'Bild für den Dunkelmodus entfernt.'
+    },
+    header: {
+      label: 'Im Kopfbereich der Website zeigen',
+      hint: 'Als Link zur Startseite, im dunklen Modus mit dem dunklen Bild. Wird mit „Speichern“ übernommen; Platz und Reihenfolge wie jedes Plugin im Layout.',
+      hintInstall: 'Braucht das Plugin quartz-layout-box, die App bietet beim Einschalten an, es zu installieren.',
+      needsImage: 'Erst ein eigenes Projektbild wählen.',
+      installing: 'Installiere quartz-layout-box…',
+      installConfirm:
+        'Plugin quartz-layout-box installieren?\n\nDas Bild im Kopfbereich wird damit gebaut. Vorher legt die App einen Snapshot an und speichert ungespeicherte Änderungen dieser Seite.',
+      installAction: 'Installieren',
+      installed: 'quartz-layout-box ist installiert. Das Bild im Kopfbereich wird mit „Speichern“ übernommen.',
+      saveFirstFailed: 'Die ungespeicherten Änderungen ließen sich nicht speichern, deshalb wurde nichts installiert.'
+    }
   },
   siteSettings: {
     pageTitle: 'Seitentitel',

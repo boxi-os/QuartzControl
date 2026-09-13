@@ -732,7 +732,27 @@ export default {
     faviconMissing: 'The favicon plugin is not installed — no favicon is generated from this image.',
     faviconLink: 'Go to Plugins',
     announceSet: 'Project image set.',
-    announceCleared: 'Project image removed, the original icon is back.'
+    announceCleared: 'Project image removed, the original icon is back.',
+    dark: {
+      choose: 'Image for dark mode…',
+      replace: 'Replace dark image…',
+      remove: 'Remove dark image',
+      hint: 'Optional, only for the image in the header. Stored as quartz/static/icon-dark.png in the project; the favicon stays with the light image.',
+      announceSet: 'Image for dark mode set.',
+      announceCleared: 'Image for dark mode removed.'
+    },
+    header: {
+      label: 'Show in the site header',
+      hint: 'As a link to the home page, with the dark image in dark mode. Applied with “Save”; place and order like any plugin under Layout.',
+      hintInstall: 'Needs the quartz-layout-box plugin; switching it on offers to install it.',
+      needsImage: 'Choose a project image of your own first.',
+      installing: 'Installing quartz-layout-box…',
+      installConfirm:
+        'Install the quartz-layout-box plugin?\n\nThe header image is built with it. The app takes a snapshot first and saves this page’s unsaved changes.',
+      installAction: 'Install',
+      installed: 'quartz-layout-box is installed. The header image is applied with “Save”.',
+      saveFirstFailed: 'The unsaved changes could not be saved, so nothing was installed.'
+    }
   },
   siteSettings: {
     pageTitle: 'Site title',

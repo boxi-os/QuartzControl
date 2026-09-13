@@ -35,6 +35,7 @@ import { mainT } from './i18n'
 import { applyAppMenu, APP_NAME } from './menu'
 import { stopHandbookServer } from './services/handbookServer'
 import { applyStoredTheme, windowBackgroundColor } from './theme'
+import { initialWindowBounds, initialWindowMode, loadWindowState, MIN_SIZE, trackWindowState } from './services/windowState'
 
 const isMac = process.platform === 'darwin'
 
@@ -57,11 +58,13 @@ function resolveIconPath(): string | undefined {
 
 function createWindow(): void {
   const iconPath = resolveIconPath()
+  // Where the window was last time, fitted to the displays attached now - see windowState.ts.
+  const bounds = initialWindowBounds()
+  const mode = initialWindowMode()
   const win = new BrowserWindow({
-    width: 1280,
-    height: 800,
-    minWidth: 960,
-    minHeight: 600,
+    ...bounds,
+    minWidth: MIN_SIZE.width,
+    minHeight: MIN_SIZE.height,
     show: false,
     title: APP_NAME,
     // inset traffic lights over a custom header instead of a native OS title bar,
@@ -111,8 +114,13 @@ function createWindow(): void {
     if (shown || win.isDestroyed() || win.isVisible()) return
     shown = true
     if (reason !== 'ready-to-show') console.error(`[main] window shown via fallback: ${reason}`)
-    win.show()
+    // maximize() shows the window by itself, which is why it stands in for show() rather than
+    // running before it - called on the hidden window it would skip the wait for the first frame.
+    if (mode.maximized) win.maximize()
+    else win.show()
+    if (mode.fullScreen) win.setFullScreen(true)
   }
+  trackWindowState(win)
   win.on('ready-to-show', () => show('ready-to-show'))
   win.webContents.on('did-finish-load', () => setTimeout(() => show('did-finish-load'), 1000).unref())
   setTimeout(() => show('timeout'), 5000).unref()
@@ -245,6 +253,7 @@ async function stepAsync<T>(name: string, run: () => Promise<T>, fallback: T): P
 
 app.whenReady().then(async () => {
   await prepareBeforeWindow()
+  await stepAsync('window state', () => loadWindowState(), undefined)
   registerIpcHandlers()
 
   // The window comes before the orphan question, and that order is the point: the question runs

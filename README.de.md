@@ -49,10 +49,11 @@ Damit ein erster Start nichts voraussetzt, liefert die App aus:
 
 ## Installation
 
-**Noch kein Release.** Die erste Fassung wird als DMG und zip für macOS (arm64 und x64), als
-AppImage und deb für Linux (arm64 und x86_64) und als Flatpak erscheinen und dann unter
-[Releases](https://github.com/boxi-os/QuartzControl/releases) liegen. Bis dahin führt der Weg über
-[Selbst bauen](#selbst-bauen).
+**1.0.0-beta.1** ist da und liegt unter
+[Releases](https://github.com/boxi-os/QuartzControl/releases): DMG und zip für macOS (arm64 und
+x64), AppImage und deb für Linux (arm64 und x86_64) und ein Flatpak für x86_64 und aarch64. Jede
+Datei nennt ihre Architektur, zwei Downloads sehen also nie gleich aus. Selbst bauen geht
+weiterhin — siehe [Selbst bauen](#selbst-bauen).
 
 Die zwei Hinweise darunter gelten für die fertigen Pakete wie für einen eigenen Bau.
 

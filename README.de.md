@@ -113,9 +113,10 @@ Ein Hobbyprojekt, aus Spaß, technischem Interesse und für den eigenen Gebrauch
 manuelle Konfiguration von Quartz hat mich an meine Grenzen gebracht, sodass ich QuartzControl ins
 Leben gerufen habe. Da es sich für mich selbst als sehr nützlich erwiesen hat, möchte ich es der
 Allgemeinheit zur Verfügung stellen … vielleicht findet es ja der eine oder die andere genauso
-nützlich wie ich. Im Zuge von QuartzControl sind außerdem zwei Plugins entstanden:
-[quartz-layout-box](https://github.com/boxi-os/quartz-layout-box) und
-[quartz-multilanguage](https://github.com/boxi-os/quartz-multilanguage), die ich euch ebenfalls
+nützlich wie ich. Im Zuge von QuartzControl sind außerdem drei Plugins entstanden:
+[quartz-layout-box](https://github.com/boxi-os/quartz-layout-box),
+[quartz-multilanguage](https://github.com/boxi-os/quartz-multilanguage) und
+[quartz-navigations](https://github.com/boxi-os/quartz-navigations), die ich euch ebenfalls
 gerne zur Verfügung stelle. Darüber hinaus stelle ich eine Beispiel-Vorlage bereit, die eine
 komplette Konfiguration umfasst und als Basis für ein eigenes Website-Design dienen kann.
 
@@ -143,10 +144,12 @@ Hinzu kommen meine persönlichen Testläufe mit der App — und vielleicht auch 
 - **[quartz-multilanguage](https://github.com/boxi-os/quartz-multilanguage)** — Quartz-Plugin für
   mehrsprachige Inhalte: Spracherkennung, Übersetzungsverknüpfung, Sprachumschalter, hreflang,
   Weiterleitungen
+- **[quartz-navigations](https://github.com/boxi-os/quartz-navigations)** — Quartz-Plugin,
+  Navigationen aus der Ordnerstruktur des Contents: Menüleiste, Akkordeon, Sitemap, Blättern
 - **[quartzcontrol-templates](https://github.com/boxi-os/quartzcontrol-templates)** —
   Vorlagenpakete, die die App beim Anlegen eines Projekts holt
 
-Beide Plugins funktionieren unabhängig von QuartzControl in jedem Quartz-5-Projekt.
+Alle drei Plugins funktionieren unabhängig von QuartzControl in jedem Quartz-5-Projekt.
 
 ## Lizenz
 

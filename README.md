@@ -108,9 +108,10 @@ installer for a version that does not work.
 A hobby project, written for fun, out of technical curiosity, and for my own use. Configuring
 Quartz by hand pushed me to my limits, which is how QuartzControl came about. Since it has turned
 out to be genuinely useful to me, I would like to make it available to everyone … maybe someone
-else will find it as useful as I do. Two plugins came out of the same work:
-[quartz-layout-box](https://github.com/boxi-os/quartz-layout-box) and
-[quartz-multilanguage](https://github.com/boxi-os/quartz-multilanguage), which I am happy to share
+else will find it as useful as I do. Three plugins came out of the same work:
+[quartz-layout-box](https://github.com/boxi-os/quartz-layout-box),
+[quartz-multilanguage](https://github.com/boxi-os/quartz-multilanguage) and
+[quartz-navigations](https://github.com/boxi-os/quartz-navigations), which I am happy to share
 as well. On top of that there is an example template with a complete configuration, meant as a
 starting point for a design of your own.
 
@@ -137,10 +138,12 @@ On top of that come my own test runs with the app — and maybe soon yours … f
 - **[quartz-multilanguage](https://github.com/boxi-os/quartz-multilanguage)** — Quartz plugin for
   multilingual content: language detection, translation linking, language switcher, hreflang and
   redirects
+- **[quartz-navigations](https://github.com/boxi-os/quartz-navigations)** — Quartz plugin,
+  navigations from the content folder structure: menu bar, sidebar accordion, sitemap, pager
 - **[quartzcontrol-templates](https://github.com/boxi-os/quartzcontrol-templates)** — template
   packages the app fetches when creating a project
 
-Both plugins work in any Quartz 5 project, independently of QuartzControl.
+All three plugins work in any Quartz 5 project, independently of QuartzControl.
 
 ## Licence
 

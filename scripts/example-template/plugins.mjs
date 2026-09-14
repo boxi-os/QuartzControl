@@ -410,18 +410,23 @@ export const PLUGIN_PATCHES = {
   footer: {
     enabled: true,
     // The projects this site stands on: the generator, the app that configures it, this template's
-    // own published site, and the two plugins the template uses. site-footer.scss lays them out as
-    // one wrapping row. The boxi-os links point at the published sites, not the repositories - a
-    // reader of a handbook wants the next handbook, and each site links its repository itself. The
-    // Example project carried exactly these by hand until 2026-09-14, and every run of phase 4 wrote
-    // the repository links back over them; all four answered 200 without a login that day.
+    // own published site, and the plugins from the same hands - two of which the template uses
+    // (layout-box, multilanguage); Navigations is listed because the family is, not because the
+    // template loads it. site-footer.scss lays them out as one wrapping row. The boxi-os links point
+    // at the published sites, not the repositories - a reader of a handbook wants the next handbook,
+    // and each site links its repository itself. The Example project carried these by hand until
+    // 2026-09-14, and every run of phase 4 wrote the repository links back over them. Measured that
+    // day without a login: the first four answered 200, Navigations 404 - its repository is still
+    // private, and the link goes in ahead of it on purpose (the plugin's own handbook already
+    // carries it).
     options: {
       links: {
         Quartz: 'https://quartz.jzhao.xyz/',
         QuartzControl: 'https://boxi-os.github.io/QuartzControl/',
         Example: 'https://boxi-os.github.io/Quartz-Example-Template/',
         'Layout Box': 'https://boxi-os.github.io/quartz-layout-box/',
-        Multilanguage: 'https://boxi-os.github.io/quartz-multilanguage/'
+        Multilanguage: 'https://boxi-os.github.io/quartz-multilanguage/',
+        Navigations: 'https://boxi-os.github.io/quartz-navigations/'
       }
     },
     layout: { position: 'footer', priority: 20 }

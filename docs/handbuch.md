@@ -96,7 +96,11 @@ beide importieren — sonst zeigt das Handbuch Bildschirme, die der Smoke-Test n
   dieselben IPC-Pfade wie ein Klick ein, was auf den Bildern zu sehen sein soll — zwei Projekte,
   drei Zugänge und drei Veröffentlichungsziele. Was es einträgt, steht in
   `scripts/screenshot-demo.mjs`; alle Namen liegen unter `example.com`, das RFC 2606 genau dafür
-  freihält. Ohne `--demo` wird gegen das echte Profil aufgenommen — dann zeigen die Bilder, was auf
+  freihält. Wegwerf ist dabei nur das Profil: Die Ziele liegen im ersten Projekt der Liste, einem
+  echten (`QuartzControl-Handbuch`), in dessen `.quartz-gui/publish-targets.json`. Das Skript merkt
+  sich die Datei — auch, dass sie fehlt — und schreibt sie am Ende zurück, auch nach einem Abbruch
+  oder Ctrl+C; bis zum Review 2026-09-19 blieben die Demo-Ziele liegen und überschrieben ein
+  gleichnamiges echtes. Ohne `--demo` wird gegen das echte Profil aufgenommen — dann zeigen die Bilder, was auf
   diesem Rechner eingerichtet ist.
 - 1440 × 900, Vorgabe hell (`--scheme dunkel` oder `beide`). `emulateMedia` wird hier ausdrücklich
   gesetzt; im Smoke-Test steht dort bewusst `null`, weil er das Schema des Systems treffen soll.

@@ -17,7 +17,9 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   Bildschirm für das Benutzerhandbuch auf und legt ihn im Handbuch-Vault ab. `--demo` legt dafür ein
   frisches Profil in einem Wegwerf-Verzeichnis an (`--user-data-dir`) und trägt über dieselben
   IPC-Pfade wie ein Klick zwei Projekte, drei Zugänge und drei Ziele ein
-  (`scripts/screenshot-demo.mjs`, alle Namen unter `example.com`). Ohne `--demo` zeigen die Bilder,
+  (`scripts/screenshot-demo.mjs`, alle Namen unter `example.com`). Die Ziele leiht es sich im
+  ersten, echten Projekt und gibt dessen `publish-targets.json` beim Beenden zurück, auch bei
+  Ctrl+C. Ohne `--demo` zeigen die Bilder,
   was auf diesem Rechner eingerichtet ist — inklusive echter Server. `--scenes` nimmt statt der
   Routen die zehn Szenen auf, die eine Routenliste nicht trifft (`scripts/screenshot-scenes.mjs`):
   Dialoge, Formulare, der Frame-Editor beim Ziehen, ein fertiger Build, der laufende Dev-Server.

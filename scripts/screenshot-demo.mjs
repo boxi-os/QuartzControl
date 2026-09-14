@@ -8,6 +8,10 @@
 // keines hat - auch nicht.
 //
 // Alle Namen liegen unter example.com; RFC 2606 hält die Domain genau für Dokumentation frei.
+//
+// Das Profil ist ein Wegwerf-Verzeichnis, die Projekte sind es nicht: Die Ziele liegen in
+// `<projekt>/.quartz-gui/publish-targets.json` eines echten Projekts. Die Datei wird deshalb vor dem
+// Eintragen gemerkt und am Ende des Laufs zurückgeschrieben - siehe `lendProjectTargets()`.
 import { execFileSync } from 'node:child_process'
 import * as fs from 'node:fs'
 import * as os from 'node:os'
@@ -92,14 +96,18 @@ export async function seedDemoProfile(page, ipc) {
   }
   const byName = new Map(saved.map((c) => [c.name, c.id]))
 
-  // Die Ziele gehören ins Projekt, nicht ins Profil - deshalb nur ins erste, das uns gehört.
+  // Die Ziele gehören ins Projekt, nicht ins Profil - deshalb nur ins erste. Geliehen, nicht
+  // geschenkt: Was vorher in dessen publish-targets.json stand, steht nach dem Lauf wieder da.
   const project = DEMO_PROJECTS[0]
+  lendProjectTargets(project)
   // Die Ziele liegen im Projekt und überleben das Wegwerf-Profil, die Zugänge nicht: Jeder Lauf legt
   // sie mit neuen IDs an. Ein vorhandenes Ziel zu überspringen hieß deshalb, die Zugangs-ID eines
   // früheren Laufs stehen zu lassen - die Veröffentlichen-Seite zeigte dann nur den Serverpfad statt
   // `demo@sftp.example.com:22 → httpdocs` samt Host-Key, und an den Zugängen fehlte die Zahl der
   // Projekte (bemerkt am 2026-09-14 beim Abgleich der Handbuchtexte mit den Bildern). Ein vorhandenes
-  // Ziel wird also mit seiner ID neu geschrieben, nicht übersprungen.
+  // Ziel wird also mit seiner ID neu geschrieben, nicht übersprungen. Das darf es nur, weil
+  // `lendProjectTargets()` oben die Datei zurückgibt: Ein echtes Ziel namens „GitHub Pages“ trägt
+  // während des Laufs die Demo-Werte und danach wieder seine eigenen.
   const existing = await ipc(page, (a) => window.quartzGui.publishTargets.list(a.path), { path: project })
   const idByName = new Map(existing.map((t) => [t.name, t.id]))
   for (const t of DEMO_TARGETS) {
@@ -114,4 +122,54 @@ export async function seedDemoProfile(page, ipc) {
       `${DEMO_TARGETS.length} Ziele in ${path.basename(project)}`
   )
   return registered[0]?.id ?? null
+}
+
+/**
+ * Merkt sich die publish-targets.json eines echten Projekts - auch, dass sie fehlt - und schreibt
+ * diesen Stand zurück, wenn der Prozess endet.
+ *
+ * Über das `exit`-Ereignis statt über ein `finally` in screenshots.mjs: Zwischen dem Eintragen und
+ * dem Ende liegen dort zwei `process.exit(2)` (kein Projekt, `--only` ohne Treffer), und ein
+ * `finally` um den Rest der Datei liefe bei keinem von beiden. `exit` feuert bei `process.exit()`,
+ * am natürlichen Ende und nach einem unbehandelten Fehler; Ctrl+C beendet Node dagegen ohne
+ * `exit`, deshalb die zwei Signale. Der Handler muss synchron sein - `exit` wartet auf nichts.
+ *
+ * Zurückgeschrieben wird mit Bytes statt über den IPC-Kanal: Die App ist dann schon geschlossen,
+ * und `publishTargets.save` kann eine Datei nicht löschen. Atomar über Temp-Datei und rename, weil
+ * die App, falls sie doch noch läuft, dieselbe Datei liest.
+ */
+export function lendProjectTargets(project) {
+  const dir = path.join(project, '.quartz-gui')
+  const file = path.join(dir, 'publish-targets.json')
+  const hadDir = fs.existsSync(dir)
+  const before = fs.existsSync(file) ? fs.readFileSync(file) : null
+  let restored = false
+  const restore = () => {
+    if (restored) return
+    restored = true
+    try {
+      if (before) {
+        const tmp = `${file}.${process.pid}.tmp`
+        fs.writeFileSync(tmp, before)
+        fs.renameSync(tmp, file)
+      } else {
+        fs.rmSync(file, { force: true })
+        // Hat erst dieser Lauf .quartz-gui/ angelegt und liegt nichts anderes darin, geht es mit.
+        if (!hadDir) {
+          try {
+            fs.rmdirSync(dir)
+          } catch {
+            // nicht leer: dann hat die App dort noch etwas Eigenes abgelegt, und das bleibt
+          }
+        }
+      }
+      console.log(`  Ziele in ${path.basename(project)} zurückgestellt (${before ? 'vorheriger Stand' : 'Datei entfernt'})`)
+    } catch (err) {
+      console.error(`  Ziele in ${path.basename(project)} NICHT zurückgestellt: ${err.message} - ${file}`)
+    }
+  }
+  process.on('exit', restore)
+  process.once('SIGINT', () => process.exit(130))
+  process.once('SIGTERM', () => process.exit(143))
+  return restore
 }

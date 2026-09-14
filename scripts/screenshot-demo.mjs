@@ -94,11 +94,17 @@ export async function seedDemoProfile(page, ipc) {
 
   // Die Ziele gehören ins Projekt, nicht ins Profil - deshalb nur ins erste, das uns gehört.
   const project = DEMO_PROJECTS[0]
+  // Die Ziele liegen im Projekt und überleben das Wegwerf-Profil, die Zugänge nicht: Jeder Lauf legt
+  // sie mit neuen IDs an. Ein vorhandenes Ziel zu überspringen hieß deshalb, die Zugangs-ID eines
+  // früheren Laufs stehen zu lassen - die Veröffentlichen-Seite zeigte dann nur den Serverpfad statt
+  // `demo@sftp.example.com:22 → httpdocs` samt Host-Key, und an den Zugängen fehlte die Zahl der
+  // Projekte (bemerkt am 2026-09-14 beim Abgleich der Handbuchtexte mit den Bildern). Ein vorhandenes
+  // Ziel wird also mit seiner ID neu geschrieben, nicht übersprungen.
   const existing = await ipc(page, (a) => window.quartzGui.publishTargets.list(a.path), { path: project })
-  const have = new Set(existing.map((t) => t.name))
+  const idByName = new Map(existing.map((t) => [t.name, t.id]))
   for (const t of DEMO_TARGETS) {
-    if (have.has(t.name)) continue
     const input = { name: t.name, destination: t.destination }
+    if (idByName.has(t.name)) input.id = idByName.get(t.name)
     if (t.connection) input.connectionId = byName.get(t.connection)
     await ipc(page, (a) => window.quartzGui.publishTargets.save(a.path, a.input), { path: project, input })
   }

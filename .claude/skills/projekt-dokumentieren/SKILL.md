@@ -21,8 +21,8 @@ Arbeite aus dem aktuellen Repository. `$ARGUMENTS` ist optionaler Fokus, z. B. `
 
 ## 1. Preflight und Stand erfassen
 
-1. `python "${CLAUDE_SKILL_DIR}/scripts/wiki_bridge.py" preflight` ausführen. Bei Fehler abbrechen und Ursache nennen.
-2. `python "${CLAUDE_SKILL_DIR}/scripts/wiki_bridge.py" metadata` ausführen. Git-Commit, Branch und Dirty-Status übernehmen.
+1. `python3 "${CLAUDE_SKILL_DIR}/scripts/wiki_bridge.py" preflight` ausführen. Bei Fehler abbrechen und Ursache nennen.
+2. `python3 "${CLAUDE_SKILL_DIR}/scripts/wiki_bridge.py" metadata` ausführen. Git-Commit, Branch und Dirty-Status übernehmen.
 3. Repository analysieren: README, Manifest/Lockfiles, Konfiguration, `.env.example`, CI/CD, Container, Datenbankschema/Migrationen, API-Routen, Tests und relevante Quellcode-Einstiegspunkte.
 4. Generierte/vendor/build-Verzeichnisse und Secrets nicht unnötig lesen.
 
@@ -45,13 +45,13 @@ Keine leeren Platzhalterdateien erstellen.
 Für höchstens ca. 5-15 wichtige Fachbegriffe suchen:
 
 ```bash
-python "${CLAUDE_SKILL_DIR}/scripts/wiki_bridge.py" search --query "Begriff" --limit 12
+python3 "${CLAUDE_SKILL_DIR}/scripts/wiki_bridge.py" search --query "Begriff" --limit 12
 ```
 
 Nur wirklich passende Treffer lesen:
 
 ```bash
-python "${CLAUDE_SKILL_DIR}/scripts/wiki_bridge.py" read --path "10 Wiki/Concepts/Beispiel.md"
+python3 "${CLAUDE_SKILL_DIR}/scripts/wiki_bridge.py" read --path "10 Wiki/Concepts/Beispiel.md"
 ```
 
 **Wikilinks immer vollqualifiziert schreiben**, also mit vollem Vault-Pfad und Alias: `[[20 Projects/Active/<Projekt>/Documentation/Architektur|Architektur]]`. Kurzformen wie `[[Architektur]]` oder `[[Index]]` sind mehrdeutig, sobald ein zweites Projekt dokumentiert ist — jedes Projekt hat dieselben Dokumentnamen. Das gilt fuer Verweise zwischen Dokumentationsdateien, in der Projekt-Hauptnotiz und in der Handoff-Notiz.
@@ -91,7 +91,7 @@ Dokumentiere den tatsächlichen Implementierungsstand, nicht Wunscharchitektur. 
 Inhalt zuerst in eine temporäre lokale Datei schreiben, dann:
 
 ```bash
-python "${CLAUDE_SKILL_DIR}/scripts/wiki_bridge.py" write-doc \
+python3 "${CLAUDE_SKILL_DIR}/scripts/wiki_bridge.py" write-doc \
   --relative "Architektur.md" \
   --content-file "/tmp/architektur.md"
 ```
@@ -101,7 +101,7 @@ Der Helper erstellt neue generierte Dateien und ersetzt nur bereits als `managed
 Für die Projekt-Hauptnotiz einmalig:
 
 ```bash
-python "${CLAUDE_SKILL_DIR}/scripts/wiki_bridge.py" ensure-index \
+python3 "${CLAUDE_SKILL_DIR}/scripts/wiki_bridge.py" ensure-index \
   --content-file "/tmp/projekt-index.md"
 ```
 
@@ -120,7 +120,7 @@ Erzeuge eine kompakte Handoff-Notiz mit ausschließlich verallgemeinerbaren Erke
 Keine bloße Wiederholung der Projektdokumentation. Die Handoff-Notiz erhält mindestens `type: project`, `status: inbox`, `publish: false`, `source_project`, `source_repository_id`, `source_commit`, `source_branch`, `source_dirty` und `documented_at`. Übergabe mit:
 
 ```bash
-python "${CLAUDE_SKILL_DIR}/scripts/wiki_bridge.py" handoff \
+python3 "${CLAUDE_SKILL_DIR}/scripts/wiki_bridge.py" handoff \
   --content-file "/tmp/wissens-kandidaten.md"
 ```
 
@@ -129,7 +129,7 @@ Der Vault verarbeitet diese Datei später mit `/inbox-verarbeiten`.
 ## 7. Abschlussprüfung
 
 1. Geschriebene Dateien über `read` stichprobenartig zurücklesen.
-2. `python "${CLAUDE_SKILL_DIR}/scripts/wiki_bridge.py" unresolved --project-only` ausführen.
+2. `python3 "${CLAUDE_SKILL_DIR}/scripts/wiki_bridge.py" unresolved --project-only` ausführen.
 3. Keine privaten/unklaren Links erfinden; bei nicht auflösbaren Begriffen lieber normalen Text verwenden.
 4. Knapp berichten: Commit-Stand, erstellte/aktualisierte Dokumente, bestehende Vault-Links, Handoff-Datei, Topic-Kandidaten und offene Unsicherheiten.
 

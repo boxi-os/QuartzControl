@@ -20,6 +20,11 @@ from pathlib import Path, PurePosixPath
 from typing import Iterable
 
 CONFIG_REL = Path('.claude/wiki-docs.json')
+# Neben SKILL.md, nicht unter .claude/: Die echte Datei ist gitignoriert, weil sie den Vault-Namen
+# dieses Rechners trägt; die Vorlage reist mit dem Skill und lässt "vault" leer. Leer mit Absicht -
+# ein erfundener Name wäre schlimmer als keiner, denn die Obsidian-CLI fällt bei einem unbekannten
+# Vault still auf einen anderen zurück, während ein leerer hier vor dem ersten CLI-Aufruf scheitert.
+CONFIG_EXAMPLE = Path(__file__).resolve().parent.parent / 'wiki-docs.example.json'
 MANAGED_MARKER_RE = re.compile(r'(?m)^managed_by:\s*["\']?projekt-dokumentieren["\']?\s*$')
 PUBLISH_FALSE_RE = re.compile(r'(?m)^publish:\s*false\s*$')
 INVALID_NAME_RE = re.compile(r'[<>:"/\\|?*]')
@@ -106,9 +111,13 @@ def load_context(start: Path) -> Context:
     env_cfg = os.environ.get('OBSIDIAN_WIKI_CONFIG')
     cfg_path = Path(env_cfg).expanduser().resolve() if env_cfg else (repo / CONFIG_REL)
     if not cfg_path.exists():
+        try:
+            example = CONFIG_EXAMPLE.relative_to(repo)
+        except ValueError:
+            example = CONFIG_EXAMPLE
         raise BridgeError(
             f'Konfiguration fehlt: {cfg_path}\n'
-            'Kopiere wiki-docs.example.json nach .claude/wiki-docs.json und setze mindestens "vault".'
+            f'Kopiere {example} nach {CONFIG_REL} und setze mindestens "vault".'
         )
     try:
         cfg = json.loads(cfg_path.read_text(encoding='utf-8'))

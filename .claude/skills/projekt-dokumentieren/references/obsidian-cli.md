@@ -11,14 +11,16 @@
 
 Der Bridge-Helper kapselt hauptsächlich:
 
-- `obsidian vault=<ziel> vault info=name|path`
-- `obsidian vault=<ziel> search query=... path=... format=json`
+- `obsidian vault=<ziel> vault info=name`
+- `obsidian vault=<ziel> search query=... path=... limit=... format=json`
 - `obsidian vault=<ziel> read path=...`
 - `obsidian vault=<ziel> create path=... content=... [overwrite]`
-- `obsidian vault=<ziel> append path=... content=...`
-- `obsidian vault=<ziel> unresolved verbose format=json`
+- `obsidian vault=<ziel> append path=... content=... inline`
+- `obsidian vault=<ziel> unresolved verbose format=tsv`
 
-Große Inhalte werden vom Helper in mehrere CLI-Aufrufe geteilt, damit kein einzelnes Kommando unnötig groß wird.
+Diese Liste ist eine zweite Kopie der Aufrufe in `wiki_bridge.py`; wer dort ein Argument ändert, ändert es hier mit. `unresolved` nimmt `tsv`, weil der Helper die Ausgabe zeilenweise auf das Projekt filtert.
+
+Große Inhalte werden vom Helper in mehrere CLI-Aufrufe geteilt (`create` mit dem ersten Stück von 16 000 Zeichen, dann je Stück ein `append`), damit kein einzelnes Kommando unnötig groß wird. Das ist nicht atomar: Scheitert ein `append`, bricht der Befehl mit Fehler ab, aber der Anfang der Datei steht schon im Vault. Nach einem solchen Abbruch die Datei über `read` prüfen und mit `write-doc` neu schreiben — sie trägt `managed_by` und wird deshalb ersetzt.
 
 Der Rückgabewert allein sagt nicht, ob eine Datei existiert: `read` auf einen fehlenden Pfad schreibt `Error: File "<pfad>" not found.` nach **stdout** und beendet sich mit **0** (gemessen am 2026-09-10). Ein Lesevorgang, der ein „gibt es noch nicht“ verträgt, muss diese Meldung deshalb am Text erkennen — `read_optional()` in `wiki_bridge.py` tut das. Wer sich auf den Rückgabewert verlässt, hält jede noch nicht existierende Datei für vorhanden und unverwaltet und legt damit gar nichts mehr an.
 

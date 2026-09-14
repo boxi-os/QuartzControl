@@ -95,9 +95,11 @@ Außerhalb dieses Repos, alles auf Wunsch des Nutzers:
   nennt jetzt dieselben sechs Links.
 - **`boxi-os/quartz-navigations`** ist seit dem 2026-09-14 öffentlich, vorher geprüft: keine
   Zugangsdaten und keine absoluten Pfade in Quellen, `dist/` und Historie.
-  `github.com/boxi-os/quartz-navigations` antwortet mit 200, `boxi-os.github.io/quartz-navigations/`
-  mit **404** — das Handbuch des Plugins hat ein Ziel „GitHub Pages“ wie die zwei anderen, ist aber
-  nie veröffentlicht worden, und das Repo hat keinen `gh-pages`-Branch.
+  `github.com/boxi-os/quartz-navigations` antwortet mit 200. Das Handbuch des Plugins ist danach
+  über die App veröffentlicht worden (`build.run`, `deploy.run` auf das Ziel „GitHub Pages“,
+  `github.configurePages` mit `gh-pages`): `boxi-os.github.io/quartz-navigations/` antwortete nach
+  rund 40 Sekunden mit 200, dazu `/en/`, alle 36 internen Links der Startseite und alle 31
+  eingebundenen Stylesheets und Skripte.
 
 **Verändere weder Vaults noch die Projekte unter `~/Documents/QuartzProjekte/`.** Lesen und
 kopieren ist in Ordnung — siehe „Wie gemessen werden kann“, bevor du eine Kopie anfasst.
@@ -126,8 +128,8 @@ die ich selbst getroffen habe — prüf, ob sie tragen:
 - Vorlage: nur die Phasen 3–11 neu, ohne Klon, Vault und Plugin-Installation.
 - App-Text: die Zahl der Seitenraster weggelassen statt auf vier gesetzt.
 - Handbuch 4.5: das kaputte Bild der Callout-Farben entfernt statt eine Aufnahme dafür zu bauen.
-- quartz-navigations: nur das Repo öffentlich, die Handbuch-Website nicht veröffentlicht — das ist
-  eine eigene Veröffentlichung und dem Nutzer als Frage gestellt.
+- quartz-navigations: Repo öffentlich und das Handbuch veröffentlicht, beides erst auf ausdrückliche
+  Bitte des Nutzers; die anderen Websites mit dem neuen Footer nicht.
 
 ## Worauf es ankommt, in dieser Reihenfolge
 
@@ -208,9 +210,9 @@ electron-builder bricht ab.
   — am Skript oder an der Gewohnheit, die Projekt-Config von Hand zu ändern? Die Config trägt noch
   zwei weitere eigene Werte (`baseUrl`, `analytics`), die Phase 4 nicht anfasst und die nicht
   mitreisen; prüf, ob das für jede Handänderung dort so gilt.
-- **Die Footer-Links selbst**: fünf Adressen auf `boxi-os.github.io`. Am 2026-09-14 antworteten vier
-  mit 200, `quartz-navigations/` mit 404 (oben). Steht die Seite, wenn du liest? Wenn nicht, ist
-  das ein Befund für das Release, nicht für den Code.
+- **Die Footer-Links selbst**: fünf Adressen auf `boxi-os.github.io`, am 2026-09-14 nach dem
+  Veröffentlichen des Navigations-Handbuchs alle 200. Die Websites mit dem neuen Footer-Eintrag
+  sind aber nicht neu veröffentlicht — online nennt ihn bisher nur das Navigations-Handbuch selbst.
 
 ### 4a. Das Handbuch gegen Bilder und App (`983ae35`, `0fdf2d6`, `e06eed5`, `4215d76`)
 

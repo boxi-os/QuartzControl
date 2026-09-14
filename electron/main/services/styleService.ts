@@ -429,6 +429,8 @@ interface ProjectSass {
   compileString: (source: string, options?: Record<string, unknown>) => unknown
 }
 
+// This runs the project's sass inside the main process, which holds safeStorage - accepted, with
+// the reason, in docs/decisions/process-model-and-ipc.md ("Code from a project's node_modules").
 function loadProjectSass(projectPath: string): ProjectSass | null {
   try {
     return createRequire(join(projectPath, 'package.json'))('sass') as ProjectSass

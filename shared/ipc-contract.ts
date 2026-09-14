@@ -420,6 +420,20 @@ export interface BuildResult {
   exitCode: number | null
 }
 
+// What Quartz is doing right now for one project, held in the main process so every page - and a
+// page opened in the middle of it - sees the same thing. `build` is "Jetzt bauen", `serve` the dev
+// server's first build before it listens, `rebuild` the dev server building again after a change.
+// The phase comes from the lines Quartz prints when it has no terminal ("Parsing input files …",
+// "Emitting files", "Done processing …"); `preparing` covers the time before the first of them -
+// npm starting, the frames being written, Quartz loading its plugins.
+export type BuildPhase = 'preparing' | 'parsing' | 'emitting'
+
+export interface BuildActivity {
+  kind: 'build' | 'serve' | 'rebuild'
+  startedAt: string
+  phase: BuildPhase
+}
+
 // A `quartz ... --serve` process found in the machine's process table, whether or not this app
 // started it. Measured on macOS with a server started from a terminal: `npm exec quartz build
 // --serve --port 8099 --wsPort 3099` (the parent) and a `node .../.bin/quartz build --serve
@@ -561,6 +575,8 @@ export interface ContentStatus {
   symlinkTarget?: string
   targetExists?: boolean
   fileCount?: number
+  /** Whether the content folder has an index.md (any case). Absent when the folder is unreachable. */
+  hasIndex?: boolean
 }
 
 export interface ContentProgress {
@@ -754,9 +770,13 @@ export interface LocaleSaveResult {
 export type UpdateCheckState = 'upToDate' | 'behind' | 'unknown'
 
 export interface CoreUpdateStatus {
+  /** The newest upstream commit this project contains - not HEAD, which is the project's own last
+   *  commit once it has one. Empty when that could not be determined. */
   currentCommit: string
   latestCommit: string
   state: UpdateCheckState
+  /** Upstream commits not yet in the project; absent when unknown. */
+  missingCommits?: number
 }
 
 // One quartz.lock.json entry's update status. `commit: "local"` entries (Phase 1b's generated
@@ -1181,6 +1201,8 @@ export interface ProjectIconInfo {
   /** Pixel size of the file on disk; 0 when there is none. */
   width: number
   height: number
+  /** quartz/static/icon-dark.png scaled down, or null when the project has no dark-scheme picture. */
+  darkDataUrl: string | null
 }
 
 /** Versions and storage locations for the Settings page's maintenance section. */
@@ -1283,6 +1305,8 @@ export const IPC = {
   projectIconGet: 'projectIcon:get',
   projectIconSet: 'projectIcon:set',
   projectIconClear: 'projectIcon:clear',
+  projectIconSetDark: 'projectIcon:setDark',
+  projectIconClearDark: 'projectIcon:clearDark',
 
   configGet: 'config:get',
   configSave: 'config:save',
@@ -1395,6 +1419,8 @@ export const IPC = {
 
   buildRun: 'build:run',
   buildLog: 'build:log',
+  buildActivity: 'build:activity',
+  buildActivityChanged: 'build:activityChanged',
   logsHistory: 'logs:history',
   logsClear: 'logs:clear',
   buildLastOutput: 'build:lastOutput',
@@ -1411,6 +1437,7 @@ export const IPC = {
   contentStatus: 'content:status',
   contentChange: 'content:change',
   contentProgress: 'content:progress',
+  contentCreateIndex: 'content:createIndex',
 
   settingsGet: 'settings:get',
   settingsSave: 'settings:save',
@@ -1593,6 +1620,9 @@ export interface QuartzGuiApi {
     set(args: { projectPath: string; sourcePath: string }): Promise<ProjectIconInfo>
     /** Puts back the icon the project came with - see projectIconService for why not a delete. */
     clear(args: { projectPath: string }): Promise<ProjectIconInfo>
+    /** The optional dark-scheme picture, quartz/static/icon-dark.png - used by the header image only. */
+    setDark(args: { projectPath: string; sourcePath: string }): Promise<ProjectIconInfo>
+    clearDark(args: { projectPath: string }): Promise<ProjectIconInfo>
   }
   config: {
     get(projectPath: string): Promise<QuartzConfig>
@@ -1659,7 +1689,9 @@ export interface QuartzGuiApi {
     ensureGitAttributes(projectPath: string): Promise<void>
   }
   updates: {
-    coreStatus(projectPath: string): Promise<CoreUpdateStatus>
+    /** `resolveInstalled` allows a `git fetch` when the project is behind and upstream's commit is
+     *  not local yet - without it the installed commit stays unknown in that case. */
+    coreStatus(projectPath: string, options?: { resolveInstalled?: boolean }): Promise<CoreUpdateStatus>
     runCoreUpdate(projectPath: string): Promise<UpdateResult>
     abortCoreMerge(projectPath: string): Promise<PluginActionResult>
     pluginsStatus(projectPath: string): Promise<PluginUpdateStatus[]>
@@ -1772,8 +1804,12 @@ export interface QuartzGuiApi {
     kill(input: { pid: number }): Promise<ServerKillResult>
   }
   build: {
+    /** A second call while this project builds joins the running build instead of starting another. */
     run(projectId: string, projectPath: string, outputDir?: string): Promise<BuildResult>
     onLog(cb: (line: LogLine) => void): () => void
+    /** What Quartz is doing for this project right now, or null. */
+    activity(input: { projectId: string }): Promise<BuildActivity | null>
+    onActivity(cb: (projectId: string, activity: BuildActivity | null) => void): () => void
     /** What is in the output directory right now - see BuildOutputInfo. Pure read, no build. */
     lastOutput(projectPath: string, outputDir?: string): Promise<BuildOutputInfo>
   }
@@ -1819,6 +1855,12 @@ export interface QuartzGuiApi {
     status(projectPath: string): Promise<ContentStatus>
     change(projectId: string, projectPath: string, sourcePath: string, strategy: ContentStrategy): Promise<void>
     onProgress(cb: (progress: ContentProgress) => void): () => void
+    /**
+     * Creates content/index.md with a title and the top-level entries; never overwrites.
+     * `listSource` says who decided what the list leaves out: Quartz's own globby from the project,
+     * or - without node_modules - a fallback that reads no `.gitignore` and differs at a few edges.
+     */
+    createIndex(args: { projectPath: string; title: string }): Promise<{ path: string; listSource: 'quartz' | 'fallback' }>
   }
   settings: {
     get(): Promise<Settings>

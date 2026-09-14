@@ -3,10 +3,10 @@ import { createConnection } from 'net'
 import { closeSync, openSync, readSync, readdirSync, renameSync, unlinkSync } from 'fs'
 import { readdir, stat } from 'fs/promises'
 import { StringDecoder } from 'string_decoder'
-import { join } from 'path'
+import { join, relative } from 'path'
 import treeKill from 'tree-kill'
 import { EventEmitter } from 'events'
-import type { BuildOutputInfo, LogLine, ServerOptions, ServerStatus, BuildResult } from '@shared/ipc-contract'
+import type { BuildActivity, BuildOutputInfo, LogLine, ServerOptions, ServerStatus, BuildResult } from '@shared/ipc-contract'
 import { needsShell } from './runCommand'
 import * as layoutFrameService from './layoutFrameService'
 import { looksLikeQuartzBuild } from './buildOutputGuard'
@@ -36,7 +36,102 @@ function emitLog(projectId: string, stream: LogLine['stream'], text: string): vo
 }
 
 function emitStatus(projectId: string): void {
-  serverEvents.emit('status', projectId, getServerStatus(projectId))
+  const status = getServerStatus(projectId)
+  // The dev server's own build is part of its start, and nothing of it outlives the process.
+  // A one-off build keeps its own activity; there is one line per project to show, and that one is
+  // the thing the user started last. The listening port is the fallback end of the first build, in
+  // case Quartz's "Done processing" line never arrives.
+  const current = activities.get(projectId)
+  if (status.state === 'starting') {
+    if (!current) setActivity(projectId, { kind: 'serve', startedAt: new Date().toISOString(), phase: 'preparing' })
+  } else if (status.state === 'running') {
+    if (current?.kind === 'serve') setActivity(projectId, null)
+  } else if (current && current.kind !== 'build') {
+    setActivity(projectId, null)
+  }
+  serverEvents.emit('status', projectId, status)
+}
+
+// ── what Quartz is doing right now ───────────────────────────────────────────────────────────
+//
+// Until 2026-09-13 only the page that started a build knew it was running, in its own useState.
+// Measured on a copy of Example in the built app: "Baue…" after the click, nothing on the Übersicht,
+// and back on Vorschau & Build the button read "Jetzt bauen" again while the build still ran - and a
+// second click started a second `npm exec quartz build` into the same output directory beside the
+// first (two pids at once, 40 s instead of 19). The state lives here now, and the pages ask for it.
+
+const activities = new Map<string, BuildActivity>()
+const runningBuilds = new Map<string, { dir: string; promise: Promise<BuildResult> }>()
+
+export function getBuildActivity(projectId: string): BuildActivity | null {
+  return activities.get(projectId) ?? null
+}
+
+/**
+ * The build already running for this project, which a second "Jetzt bauen" joins - but only into
+ * the same output directory. The Übersicht builds into `public/`, Vorschau & Build into the page's
+ * own choice, so the two callers can legitimately mean different folders, and joining would report
+ * "Build fertig" for a folder nobody built. Throws then, naming the folder that is being built.
+ */
+export function joinRunningBuild(projectId: string, projectPath: string, outputDir?: string): Promise<BuildResult> | null {
+  const running = runningBuilds.get(projectId)
+  if (!running) return null
+  const dir = resolveBuildDir(projectPath, outputDir)
+  if (relative(running.dir, dir) !== '') throw new Error(mainT('buildDirBusy', { running: running.dir, dir }))
+  return running.promise
+}
+
+function setActivity(projectId: string, next: BuildActivity | null): void {
+  const current = activities.get(projectId) ?? null
+  if (JSON.stringify(current) === JSON.stringify(next)) return
+  if (next) activities.set(projectId, next)
+  else activities.delete(projectId)
+  serverEvents.emit('activity', projectId, next)
+}
+
+// Quartz prints these when stdout is not a terminal (QuartzLogger goes verbose then). Matched on the
+// words, not on colour codes, which differ between the two ways it prints them.
+//
+// Two sources call this, the one-off build's stdout and the dev server's log, and they can run at
+// once. Each moves only the activity it owns: until 2026-09-16 a server rebuild replaced a running
+// build's activity and then cleared it - measured in the built app, a note changed in the third
+// second of `quartz build` took the line and the lock away for 3.3 of its 6.9 seconds, and the
+// Übersicht read the half-written output directory as "zuletzt gebaut". A build therefore wins;
+// a rebuild beside it stays silent, as the line is the thing the user started last.
+function followQuartzOutput(projectId: string, text: string, source: 'build' | 'server'): void {
+  // eslint-disable-next-line no-control-regex
+  for (const line of text.replace(/\u001b\[[0-9;]*m/g, '').split('\n')) {
+    const current = activities.get(projectId)
+    if (source === 'build') {
+      if (current?.kind !== 'build') continue
+      if (/Parsing input files/.test(line)) setActivity(projectId, { ...current, phase: 'parsing' })
+      else if (/Emitting files/.test(line)) setActivity(projectId, { ...current, phase: 'emitting' })
+      continue
+    }
+    if (current?.kind === 'build') continue
+    // Quartz has two rebuilds. The soft one (content watcher, build.ts) says "Detected change,
+    // rebuilding..." and ends on "Done rebuilding"; the hard one (CLI watcher on the config, *.scss,
+    // *.ts and quartz/static, cli/handlers.js) transpiles again and then prints the lines of a first
+    // build, ending on "Done processing". Every save in this app is the hard kind - measured with
+    // the config saved unchanged: five seconds of rebuilding and no line at all while only the soft
+    // sentence was known. The soft one never prints "Emitting files" (read in a real server log:
+    // "Filtered out" goes straight to "Emitted"), so "Filtered out" moves the phase too.
+    if (/Detected change, rebuilding/.test(line)) {
+      setActivity(projectId, { kind: 'rebuild', startedAt: new Date().toISOString(), phase: 'parsing' })
+    } else if (/Detected a source code change/.test(line)) {
+      setActivity(projectId, { kind: 'rebuild', startedAt: new Date().toISOString(), phase: 'preparing' })
+    } else if (/Done rebuilding in|Rebuild failed/.test(line)) {
+      if (current?.kind === 'rebuild') setActivity(projectId, null)
+    } else if (!current) {
+      continue
+    } else if (/Parsing input files/.test(line)) {
+      setActivity(projectId, { ...current, phase: 'parsing' })
+    } else if (/Filtered out \d+ files|Emitting files/.test(line)) {
+      setActivity(projectId, { ...current, phase: 'emitting' })
+    } else if (/Done processing/.test(line)) {
+      setActivity(projectId, null)
+    }
+  }
 }
 
 export function getServerStatus(projectId: string): ServerStatus {
@@ -235,7 +330,14 @@ function openServerLog(projectId: string, projectPath: string): ServerLog | null
           }
         }
         for (const stream of ['stdout', 'stderr'] as const) {
-          stops.push(tailFile(paths[stream], (text) => emitLog(projectId, stream, text)))
+          stops.push(
+            tailFile(paths[stream], (text) => {
+              emitLog(projectId, stream, text)
+              // Both streams: Quartz writes "Rebuild failed:" with console.error (build.ts), so a
+              // stdout-only follower left "rebuilding since…" ticking after a failed rebuild.
+              followQuartzOutput(projectId, text, 'server')
+            })
+          )
         }
       },
       stop: () => {
@@ -421,7 +523,21 @@ export async function restartServer(
   return startServer(projectId, projectPath, previousOptions)
 }
 
-export async function runBuild(projectId: string, projectPath: string, outputDir?: string): Promise<BuildResult> {
+export function runBuild(projectId: string, projectPath: string, outputDir?: string): Promise<BuildResult> {
+  // Checked again here, not only in the handler: between its check and this call lie a disk read
+  // and possibly a dialog, and a second call can arrive in that time.
+  const running = joinRunningBuild(projectId, projectPath, outputDir)
+  if (running) return running
+  setActivity(projectId, { kind: 'build', startedAt: new Date().toISOString(), phase: 'preparing' })
+  const promise = spawnBuild(projectId, projectPath, outputDir).finally(() => {
+    runningBuilds.delete(projectId)
+    if (activities.get(projectId)?.kind === 'build') setActivity(projectId, null)
+  })
+  runningBuilds.set(projectId, { dir: resolveBuildDir(projectPath, outputDir), promise })
+  return promise
+}
+
+async function spawnBuild(projectId: string, projectPath: string, outputDir?: string): Promise<BuildResult> {
   await refreshAuthoredFrames(projectPath, (text) =>
     serverEvents.emit('buildLog', { projectId, stream: 'warn', text, timestamp: new Date().toISOString() } satisfies LogLine)
   )
@@ -434,14 +550,11 @@ export async function runBuild(projectId: string, projectPath: string, outputDir
       shell: needsShell('npx'),
       stdio: ['ignore', 'pipe', 'pipe']
     })
-    child.stdout?.on('data', (chunk: Buffer) =>
-      serverEvents.emit('buildLog', {
-        projectId,
-        stream: 'stdout',
-        text: chunk.toString(),
-        timestamp: new Date().toISOString()
-      } satisfies LogLine)
-    )
+    child.stdout?.on('data', (chunk: Buffer) => {
+      const text = chunk.toString()
+      serverEvents.emit('buildLog', { projectId, stream: 'stdout', text, timestamp: new Date().toISOString() } satisfies LogLine)
+      followQuartzOutput(projectId, text, 'build')
+    })
     child.stderr?.on('data', (chunk: Buffer) =>
       serverEvents.emit('buildLog', {
         projectId,

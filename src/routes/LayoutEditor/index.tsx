@@ -210,7 +210,7 @@ export default function LayoutEditor(): JSX.Element {
           onChange={goToTab}
           options={TAB_ORDER.map((key) => ({
             value: key,
-            label: t(`layoutEditor.tab${key === 'global' ? 'Global' : key === 'pagetypes' ? 'PageTypes' : 'Frames'}`)
+            label: t(key === 'global' ? 'layoutEditor.tabGlobal' : key === 'pagetypes' ? 'layoutEditor.tabPageTypes' : 'layoutEditor.tabFrames')
           }))}
         />
       </div>

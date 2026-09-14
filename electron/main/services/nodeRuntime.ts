@@ -1,6 +1,7 @@
 import { app } from 'electron'
-import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
+import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs'
 import { delimiter, join } from 'path'
+import { macNodeBinary } from '@shared/macNodeBinary'
 
 // Quartz and npm run under Electron's own Node instead of one the user had to install first.
 // Electron 43 carries Node 24.18.1, which clears Quartz's `engines.node >= 22` - measured with a
@@ -54,6 +55,42 @@ function shellQuote(value: string): string {
   return `'${value.replace(/'/g, `'\\''`)}'`
 }
 
+/**
+ * The binary the shims start. On macOS that is the app's plain helper, not the app itself.
+ *
+ * npm sets `process.title` on every run, and on macOS setting a title registers the process with
+ * LaunchServices under the bundle its binary lives in. The main binary's bundle has no
+ * `LSUIElement`, so every `npm exec quartz build` and every dev server showed up in the Dock as a
+ * bouncing "QuartzControl" Unix executable for as long as it ran - reported from the beta, measured
+ * on the installed 1.0.0-beta.1 with `lsappinfo`: a shim run without a title registers nothing,
+ * with `process.title` set it registers at once as `ApplicationType = Foreground`, and a real
+ * `npx quartz build` stayed registered for the whole build. The mechanism is inferred (libuv's
+ * darwin proctitle), the effect is measured.
+ *
+ * The helper bundles Electron ships next to the framework carry `LSUIElement = true` (all four in
+ * the installed app). The same run through `QuartzControl Helper` with ELECTRON_RUN_AS_NODE and the
+ * loader answered Node 24.18.1 with `process.defaultApp === true` and registered as `UIElement` -
+ * no Dock icon. The plain helper, not "(Renderer)" or "(GPU)": those are named for Chromium's own
+ * process types.
+ *
+ * Entitlements, for the day the hardened runtime comes back on (electron-builder.yml): without an
+ * `entitlementsInherit` the helpers are signed with the same file as the app - with no
+ * `build/entitlements.mac*.plist`, electron-builder's own template (`getOptionsForFile` in
+ * app-builder-lib/out/mac/MacTargetHelper.js, 26.15.3), which carries `allow-jit`,
+ * `allow-unsigned-executable-memory` and `disable-library-validation`: what Node in the helper
+ * needs. ELECTRON_RUN_AS_NODE is not a `DYLD_*` variable, the hardened runtime does not strip it.
+ * Read in the source, not measured with the runtime on.
+ *
+ * Found by listing rather than by name, because the name differs between the packaged app
+ * ("QuartzControl Helper") and development ("Electron Helper"). Anything unexpected falls back to
+ * the main binary - a Dock icon is a nuisance, a shim that points at nothing breaks every build.
+ * The lookup itself is shared/macNodeBinary.ts, which scripts/check-runtime.mjs loads as well.
+ */
+export function nodeBinary(execPath: string = process.execPath, platform: NodeJS.Platform = process.platform): string {
+  if (platform !== 'darwin') return execPath
+  return macNodeBinary(execPath, (dir) => readdirSync(dir), existsSync)
+}
+
 // The template is a file rather than a string here, because scripts/check-runtime.mjs fills in the
 // same one: a shim that differs from the one being measured would make that check worthless.
 function shim(target: string | null): string {
@@ -61,7 +98,7 @@ function shim(target: string | null): string {
   // line that uses them, and replacing only the first occurrence substituted the comment and left
   // the command with a literal __SCRIPT__. Found by scripts/check-runtime.mjs on its first run.
   return readFileSync(join(runtimeDir(), 'shim.sh'), 'utf-8')
-    .replaceAll('__ELECTRON__', shellQuote(process.execPath))
+    .replaceAll('__ELECTRON__', shellQuote(nodeBinary()))
     .replaceAll('__LOADER__', shellQuote(join(runtimeDir(), 'defaultapp.cjs')))
     .replaceAll('__SCRIPT__', target ? shellQuote(target) : '')
 }

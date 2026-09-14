@@ -409,15 +409,24 @@ export const PLUGIN_PATCHES = {
 
   footer: {
     enabled: true,
-    // The four projects this site actually stands on: the generator, the app that configures it,
-    // and the two plugins the template itself uses. site-footer.scss lays them out as one wrapping
-    // row, so a fifth would cost nothing.
+    // The projects this site stands on: the generator, the app that configures it, this template's
+    // own published site, and the plugins from the same hands - two of which the template uses
+    // (layout-box, multilanguage); Navigations is listed because the family is, not because the
+    // template loads it. site-footer.scss lays them out as one wrapping row. The boxi-os links point
+    // at the published sites, not the repositories - a reader of a handbook wants the next handbook,
+    // and each site links its repository itself. The Example project carried these by hand until
+    // 2026-09-14, and every run of phase 4 wrote the repository links back over them. When the
+    // Navigations link went in the same day, its repository was still private and the address
+    // answered 404 - the link went in ahead of it on purpose. Later that day repository and site
+    // were published; measured without a login on 2026-09-14, all six addresses answer 200.
     options: {
       links: {
         Quartz: 'https://quartz.jzhao.xyz/',
-        QuartzControl: 'https://github.com/boxi-os/QuartzControl',
-        'Layout Box': 'https://github.com/boxi-os/quartz-layout-box',
-        Multilanguage: 'https://github.com/boxi-os/quartz-multilanguage'
+        QuartzControl: 'https://boxi-os.github.io/QuartzControl/',
+        Example: 'https://boxi-os.github.io/Quartz-Example-Template/',
+        'Layout Box': 'https://boxi-os.github.io/quartz-layout-box/',
+        Multilanguage: 'https://boxi-os.github.io/quartz-multilanguage/',
+        Navigations: 'https://boxi-os.github.io/quartz-navigations/'
       }
     },
     layout: { position: 'footer', priority: 20 }

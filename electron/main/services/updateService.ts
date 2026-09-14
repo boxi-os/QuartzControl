@@ -1,7 +1,7 @@
 import { runCommand as run } from './runCommand'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
-import type { CoreUpdateStatus, PluginActionResult, PluginUpdateStatus, UpdateCheckState, UpdateResult } from '@shared/ipc-contract'
+import type { CoreUpdateStatus, PluginActionResult, PluginUpdateStatus, UpdateResult } from '@shared/ipc-contract'
 import { TEMPLATE_REPO } from './createService'
 import { withContentSymlinkParked } from './contentSymlink'
 import { createSnapshot } from './snapshotService'
@@ -70,13 +70,54 @@ async function historyContains(projectPath: string, commit: string): Promise<boo
   return contains.success
 }
 
-export async function getCoreUpdateStatus(projectPath: string): Promise<CoreUpdateStatus> {
-  const current = await run('git', ['rev-parse', 'HEAD'], projectPath)
-  const currentCommit = current.success ? current.output.trim() : ''
+// Fetching the missing upstream commits is bounded like ls-remote, but longer: it transfers
+// objects, and a project far behind has more of them. The same objects are what runCoreUpdate
+// fetches next, so nothing downloaded here is wasted.
+const FETCH_TIMEOUT_MS = 60_000
+
+// "Installiert" is the newest *upstream* commit this project contains, not HEAD. HEAD is the
+// project's own last commit as soon as it has one - measured on Example before its last update:
+// the card said "Installiert: 09a888c", a commit GitHub does not know, next to upstream's f1fba3f,
+// while the answer is 075afd3, f1fba3f's parent, with exactly one commit missing. That is the
+// merge base of HEAD and upstream's HEAD, which needs upstream's commit as a local object.
+//
+// Up to date means the merge base *is* upstream's HEAD, so no git call is needed. Behind with the
+// object missing needs a fetch, and that is why it only happens when the caller asks: the
+// Übersicht reads this status too, and it must cost nothing to open (docs/decisions/
+// navigation-and-pages.md). Without the fetch an unknown answer stays unknown - an empty string,
+// never HEAD standing in for it.
+async function installedUpstream(
+  projectPath: string,
+  latestCommit: string,
+  allowFetch: boolean
+): Promise<{ commit: string; missing?: number }> {
+  let known = (await run('git', ['cat-file', '-e', `${latestCommit}^{commit}`], projectPath)).success
+  if (!known && allowFetch) {
+    // Into FETCH_HEAD, not a remote-tracking ref - the same way runCoreUpdate fetches, so this
+    // leaves no ref behind that a push or `quartz sync` could carry along.
+    await run('git', ['fetch', '--no-tags', '--quiet', TEMPLATE_REPO, 'HEAD'], projectPath, undefined, FETCH_TIMEOUT_MS)
+    known = (await run('git', ['cat-file', '-e', `${latestCommit}^{commit}`], projectPath)).success
+  }
+  if (!known) return { commit: '' }
+  const base = await run('git', ['merge-base', 'HEAD', latestCommit], projectPath)
+  if (!base.success) return { commit: '' }
+  const count = await run('git', ['rev-list', '--count', `HEAD..${latestCommit}`], projectPath)
+  const missing = count.success ? Number.parseInt(count.output.trim(), 10) : Number.NaN
+  return { commit: base.output.trim(), missing: Number.isFinite(missing) ? missing : undefined }
+}
+
+export async function getCoreUpdateStatus(
+  projectPath: string,
+  options: { resolveInstalled?: boolean } = {}
+): Promise<CoreUpdateStatus> {
+  const head = await run('git', ['rev-parse', 'HEAD'], projectPath)
   const latestCommit = (await lsRemoteHead(TEMPLATE_REPO)) ?? ''
-  if (!currentCommit || !latestCommit) return { currentCommit, latestCommit, state: 'unknown' }
-  const state: UpdateCheckState = (await historyContains(projectPath, latestCommit)) ? 'upToDate' : 'behind'
-  return { currentCommit, latestCommit, state }
+  if (!head.success || !latestCommit) return { currentCommit: '', latestCommit, state: 'unknown' }
+  if (await historyContains(projectPath, latestCommit)) {
+    return { currentCommit: latestCommit, latestCommit, state: 'upToDate', missingCommits: 0 }
+  }
+  const installed = await installedUpstream(projectPath, latestCommit, options.resolveInstalled === true)
+  return { currentCommit: installed.commit, latestCommit, state: 'behind', missingCommits: installed.missing }
 }
 
 // git's own wording for the two failures a user can actually act on is either buried in a wall of

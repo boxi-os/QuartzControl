@@ -111,7 +111,6 @@ export default {
     },
     gettingStarted: {
       title: 'Getting started',
-      description: 'QuartzControl manages Quartz projects: a folder full of Markdown files becomes a finished website.',
       step1: 'Create a new project, or open a folder where Quartz is already set up.',
       step2: 'Link the content folder to your notes — an Obsidian vault works directly.',
       step3: 'Start the preview, design the site to your taste, and publish it.'
@@ -120,19 +119,19 @@ export default {
       title: 'What you can do here',
       setup: {
         title: 'Setup',
-        body: 'Set the site’s title, address and language, install plugins from the marketplace, and link the content folder to your Obsidian vault.'
+        body: 'Title, address, plugins, content folder'
       },
       design: {
         title: 'Design',
-        body: 'Adjust colours, fonts and CSS variables, install community themes, write your own CSS, and build layout frames yourself.'
+        body: 'Colours, fonts, themes, layout'
       },
       publish: {
         title: 'Publishing',
-        body: 'Build locally and check the preview, sync via Git, and publish to GitHub Pages, SFTP, rsync or a web space.'
+        body: 'Preview, build, Git sync, upload'
       },
       maintenance: {
         title: 'Maintenance',
-        body: 'Update the Quartz core and your plugins, take snapshots, and restore single files or the whole project.'
+        body: 'Updates and snapshots'
       }
     },
     aboutQuartz: {
@@ -178,7 +177,7 @@ export default {
         'The address the site will be reachable at later — without https://. If you do not know it yet, leave “localhost” and fill it in later under Configuration.',
       useTemplate: 'Install the example template',
       useTemplateHint:
-        'A finished design: measured colours for light and dark, three authored page grids, self-hosted typefaces and every component styled individually. All of it editable afterwards.',
+        'A finished design: measured colours for light and dark, authored page grids, self-hosted typefaces and every component styled individually. All of it editable afterwards.',
       templateContent: 'With the example pages',
       templateContentHint:
         'Around 270 pages that explain the template itself — for every component the page describing it. Meant for looking things up; leave it out if you bring your own notes.',
@@ -216,7 +215,7 @@ export default {
       updates: 'Updates',
       server: 'Preview & build',
       sync: 'Git sync',
-      backups: 'Backups',
+      backups: 'Snapshots',
       publish: 'Publish',
       templates: 'Templates'
     },
@@ -232,7 +231,7 @@ export default {
       styles:
         'Everything about the look in one place: base colors and fonts, community themes, CSS variables, and your own CSS — in the exact order they override each other.',
       updates:
-        'Brings Quartz’s core and the installed plugins up to date. A snapshot is taken automatically before every update, so you can go back to that state under Backups.',
+        'Brings Quartz’s core and the installed plugins up to date. A snapshot is taken automatically before every update, so you can go back to that state under Snapshots.',
       server: 'Previews your site locally, and can produce a one-off build for export.',
       sync: 'Syncs your local changes with the Git repository: uploading (push) and downloading (pull).',
       backups:
@@ -252,6 +251,8 @@ export default {
       gitInProgress: 'A {{operation}} was started and never finished',
       scssError: 'Your CSS does not compile',
       line: 'line {{line}}',
+      noIndex: 'The site has no start page',
+      noIndexDetail: 'The content folder has no index.md, so the site’s own address shows a 404 page.',
       noBaseUrl: 'No base URL set',
       noBaseUrlDetail: 'Without it the build fails as soon as fonts are self-hosted.'
     },
@@ -349,16 +350,43 @@ export default {
     changeSource: 'Change source…',
     dialogTitle: 'Change content source',
     dialogWarning:
-      'The previous content folder is set aside rather than deleted before the change — you can bring it back under Backups.',
+      'The previous content folder is set aside rather than deleted before the change — you can bring it back under Snapshots.',
     newSourceFolder: 'New source folder',
     strategy: 'Strategy',
     strategySymlink: 'Link (symbolic link, e.g. to an Obsidian vault)',
     strategyCopy: 'Copy (real folder)',
     progress: '{{processed}} / {{total}} files copied…',
     applying: 'Applying…',
-    apply: 'Apply'
+    apply: 'Apply',
+    noIndex: 'No start page: the content folder has no index.md, so the site’s own address shows a 404 page.',
+    createIndex: 'Create start page…',
+    createIndexTitle: 'Create start page',
+    createIndexTitleLabel: 'Start page title',
+    createIndexTitleHint: 'Without a title the page would be called “index”.',
+    createIndexListHint:
+      'Below it goes a list of the folders and notes that are at the top of the content folder now. It is not updated later.',
+    createIndexLinked: 'The file is created in the linked folder, that is among your own notes: {{path}}',
+    createIndexAction: 'Create start page',
+    creatingIndex: 'Creating…',
+    indexCreated: 'The start page has been created: {{path}}',
+    indexCreatedFallback:
+      'The list on the new start page was made without Quartz’s ignore rules, because npm install has not run in the project yet. It may name folders the site does not have.'
+  },
+  buildActivity: {
+    kind: {
+      build: 'Building for {{time}}',
+      serve: 'Dev server building for {{time}}',
+      rebuild: 'Rebuilding after a change, for {{time}}'
+    },
+    phase: {
+      preparing: 'preparing',
+      parsing: 'reading the notes',
+      emitting: 'writing the pages'
+    }
   },
   buildServer: {
+    noIndex: 'The content folder has no index.md — so the preview shows a 404 page at its address.',
+    noIndexLink: 'Create start page →',
     devServer: 'Dev server',
     devServerHint: 'Shows your site live in the browser, reloading automatically on changes — great for trying things out.',
     oneOffBuildHint: 'Produces the finished HTML files once, e.g. to upload manually or check before you publish.',
@@ -718,7 +746,28 @@ export default {
     faviconMissing: 'The favicon plugin is not installed — no favicon is generated from this image.',
     faviconLink: 'Go to Plugins',
     announceSet: 'Project image set.',
-    announceCleared: 'Project image removed, the original icon is back.'
+    announceCleared: 'Project image removed, the original icon is back.',
+    dark: {
+      choose: 'Image for dark mode…',
+      replace: 'Replace dark image…',
+      remove: 'Remove dark image',
+      hint: 'Optional, only for the image in the header. Stored as quartz/static/icon-dark.png in the project; the favicon stays with the light image.',
+      hintHeaderOn: 'Only for the image in the header; the favicon stays with the light image. “Remove dark image” deletes the file at once — until you “Save”, the header then has no image in dark mode.',
+      announceSet: 'Image for dark mode set.',
+      announceCleared: 'Image for dark mode removed.'
+    },
+    header: {
+      label: 'Show in the site header',
+      hint: 'As a link to the home page, with the dark image in dark mode. Applied with “Save”; place and order like any plugin under Layout.',
+      hintInstall: 'Needs the quartz-layout-box plugin; switching it on offers to install it.',
+      needsImage: 'Choose a project image of your own first.',
+      installing: 'Installing quartz-layout-box…',
+      installConfirm:
+        'Install the quartz-layout-box plugin?\n\nThe header image is built with it. The app takes a snapshot first and saves this page’s unsaved changes.',
+      installAction: 'Install',
+      installed: 'quartz-layout-box is installed. The header image is applied with “Save”.',
+      saveFirstFailed: 'The unsaved changes could not be saved, so nothing was installed.'
+    }
   },
   siteSettings: {
     pageTitle: 'Site title',
@@ -818,7 +867,7 @@ export default {
     allDisabled: 'Community themes disabled',
     active: {
       title: 'Current theme',
-      none: 'No community theme active — the classic theme from “Configuration → Theme” applies. Install one from the catalog below to get started.',
+      none: 'No community theme active — your colors and fonts from “Styles → Basics” apply. Install one from the catalog below to get started.',
       heading: 'Current theme: {{themeId}}',
       saveAsPreset: 'Save as preset',
       presetNamePlaceholder: 'Name for the preset',
@@ -826,7 +875,7 @@ export default {
         'This plugin ({{source}}) overrides the colors from the Basics layer. Changes below take effect immediately in the preview.',
       disabledHeading: 'Community theme disabled ({{themeId}})',
       disabledNote:
-        'The classic theme from “Configuration → Theme” applies again now. This community theme’s settings are kept and can be turned back on any time.',
+        'Your colors and fonts from “Styles → Basics” apply again now. This community theme’s settings are kept and can be turned back on any time.',
       reactivate: 'Turn back on',
       checkingStyleSettings: 'Checking the theme’s style settings…',
       noStyleSettingsNote:
@@ -1154,10 +1203,16 @@ export default {
       rowSpanLabel: 'Row span',
       colSpanLabel: 'Column span',
       removeArea: 'Remove area',
+      removeAreaConfirm: 'Remove area “{{name}}”?\n\n{{consequence}} Nothing is written until you save.',
+      removeAreaPlaced: 'Its placement on {{breakpoints}} goes with it.',
+      removeAreaUnplaced: 'It is not placed on any breakpoint; its assignment goes with it.',
       unplace: 'Remove from grid',
       visibleOnBreakpoint: 'Visible on {{breakpoint}}',
       overlapError: 'This area overlaps an existing area.',
       unassignedWarning: 'Not assigned: {{slots}}. Components for these slots will not render in this frame.',
+      hiddenGroupsWarning:
+        'Hidden on {{breakpoint}}: {{areas}}. The components of these areas of their own do not appear at this width.',
+      otherBreakpointsWarning: 'There are warnings on {{breakpoints}} that are not shown here.',
       homelessWarning:
         'No plain area for: {{slots}}. Anything in that slot and in no area of its own renders on no page at all.',
       doubledWarning:
@@ -1391,9 +1446,11 @@ export default {
     core: {
       heading: 'Quartz core',
       commits: 'Installed: {{current}} · Latest: {{latest}}',
+      missing: '{{count}} commit missing',
+      missing_other: '{{count}} commits missing',
       runUpdate: 'Run update',
       confirm:
-        'Update Quartz’s core?\n\nThis fetches changes from jackyzha0/quartz and reinstalls the dependencies; conflicts may require manual work.\n\nA snapshot is taken first — under Backups you can go back to the current state any time.',
+        'Update Quartz’s core?\n\nThis fetches changes from jackyzha0/quartz and reinstalls the dependencies; conflicts may require manual work.\n\nA snapshot is taken first — under Snapshots you can go back to the current state any time.',
       abortMerge: 'Abort merge',
       openSnapshot: 'Open the snapshot from before the update →',
       conflictHeading: 'Conflicts in these files (aside from the locale files .gitattributes protects):'
@@ -1409,8 +1466,8 @@ export default {
     snapshots: {
       heading: 'Snapshots',
       movedHint:
-        'A snapshot is taken automatically before every core and plugin update. They are managed under Backups, together with the snapshots from every other area.',
-      openBackups: 'Go to Backups →'
+        'A snapshot is taken automatically before every core and plugin update. They are managed under Snapshots, together with those from every other area.',
+      openBackups: 'Go to Snapshots →'
     }
   },
   publish: {
@@ -1595,7 +1652,7 @@ export default {
     baselineHint_other:
       'For {{count}} languages there is no way to tell what you changed — the comparison baseline is created the first time you edit a text in this app. Pick “All texts” if one of them should be included.',
     importHeading: 'Apply a template',
-    importHint: 'A snapshot is taken first, so the import can be undone completely from “Backups”.',
+    importHint: 'A snapshot is taken first, so the import can be undone completely under “Snapshots”.',
     planning: 'Checking the package…',
     pickPackage: 'Choose a template…',
     previewError: 'This is not a readable template (no manifest.json found).',

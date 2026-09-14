@@ -12,7 +12,7 @@ eine Handvoll Plugins und ein Deploy-Weg einzurichten, und nichts davon erklärt
 QuartzControl legt eine Oberfläche darüber, die zeigt, was es tut, und die man wieder verlassen
 kann — die Dateien bleiben normale Quartz-Dateien.
 
-> **Beta.** Version 1.0.0-beta.1. Läuft auf macOS und Linux; Windows fehlt bewusst (siehe unten).
+> **Beta.** Version 1.0.0-beta.2. Läuft auf macOS und Linux; Windows fehlt bewusst (siehe unten).
 > Rückmeldungen sind willkommen — am liebsten als Issue.
 
 ## Was die App kann
@@ -49,7 +49,7 @@ Damit ein erster Start nichts voraussetzt, liefert die App aus:
 
 ## Installation
 
-**1.0.0-beta.1** ist da und liegt unter
+**1.0.0-beta.2** ist da und liegt unter
 [Releases](https://github.com/boxi-os/QuartzControl/releases): DMG und zip für macOS (arm64 und
 x64), AppImage und deb für Linux (arm64 und x86_64) und ein Flatpak für x86_64 und aarch64. Jede
 Datei nennt ihre Architektur, zwei Downloads sehen also nie gleich aus. Selbst bauen geht
@@ -57,13 +57,18 @@ weiterhin — siehe [Selbst bauen](#selbst-bauen).
 
 Die zwei Hinweise darunter gelten für die fertigen Pakete wie für einen eigenen Bau.
 
-**macOS:** Die App ist nicht signiert — es gibt kein Developer-ID-Zertifikat. Beim ersten Start
-verweigert Gatekeeper sie deshalb. Entweder einmal über das Kontextmenü öffnen (Rechtsklick →
-Öffnen) oder:
+**macOS:** Die App ist nur ad-hoc signiert und nicht notarisiert — es gibt kein
+Developer-ID-Zertifikat. Beim ersten Start verweigert macOS sie deshalb. Freigeben lässt sie sich
+unter **Systemeinstellungen → Datenschutz & Sicherheit → Sicherheit → „Dennoch öffnen“**, und zwar
+bis etwa eine Stunde nach dem abgewiesenen Startversuch. Das Kontextmenü (Rechtsklick → Öffnen) ist
+seit macOS 15 kein Weg mehr. Oder im Terminal:
 
 ```
 xattr -dr com.apple.quarantine /Applications/QuartzControl.app
 ```
+
+Meldet macOS, die App **„ist beschädigt“**, ist es 1.0.0-beta.1: Deren Signatur war defekt, und für
+diese Fassung hilft nur der Terminal-Befehl oben.
 
 **Linux:** AppImage ausführbar machen und starten, oder das deb installieren. Der Flatpak braucht
 `--filesystem`-Zugriff auf den Ort, an dem die Projekte liegen, falls das nicht das Home ist.
@@ -108,9 +113,10 @@ Ein Hobbyprojekt, aus Spaß, technischem Interesse und für den eigenen Gebrauch
 manuelle Konfiguration von Quartz hat mich an meine Grenzen gebracht, sodass ich QuartzControl ins
 Leben gerufen habe. Da es sich für mich selbst als sehr nützlich erwiesen hat, möchte ich es der
 Allgemeinheit zur Verfügung stellen … vielleicht findet es ja der eine oder die andere genauso
-nützlich wie ich. Im Zuge von QuartzControl sind außerdem zwei Plugins entstanden:
-[quartz-layout-box](https://github.com/boxi-os/quartz-layout-box) und
-[quartz-multilanguage](https://github.com/boxi-os/quartz-multilanguage), die ich euch ebenfalls
+nützlich wie ich. Im Zuge von QuartzControl sind außerdem drei Plugins entstanden:
+[quartz-layout-box](https://github.com/boxi-os/quartz-layout-box),
+[quartz-multilanguage](https://github.com/boxi-os/quartz-multilanguage) und
+[quartz-navigations](https://github.com/boxi-os/quartz-navigations), die ich euch ebenfalls
 gerne zur Verfügung stelle. Darüber hinaus stelle ich eine Beispiel-Vorlage bereit, die eine
 komplette Konfiguration umfasst und als Basis für ein eigenes Website-Design dienen kann.
 
@@ -138,10 +144,12 @@ Hinzu kommen meine persönlichen Testläufe mit der App — und vielleicht auch 
 - **[quartz-multilanguage](https://github.com/boxi-os/quartz-multilanguage)** — Quartz-Plugin für
   mehrsprachige Inhalte: Spracherkennung, Übersetzungsverknüpfung, Sprachumschalter, hreflang,
   Weiterleitungen
+- **[quartz-navigations](https://github.com/boxi-os/quartz-navigations)** — Quartz-Plugin,
+  Navigationen aus der Ordnerstruktur des Contents: Menüleiste, Akkordeon, Sitemap, Blättern
 - **[quartzcontrol-templates](https://github.com/boxi-os/quartzcontrol-templates)** —
   Vorlagenpakete, die die App beim Anlegen eines Projekts holt
 
-Beide Plugins funktionieren unabhängig von QuartzControl in jedem Quartz-5-Projekt.
+Alle drei Plugins funktionieren unabhängig von QuartzControl in jedem Quartz-5-Projekt.
 
 ## Lizenz
 

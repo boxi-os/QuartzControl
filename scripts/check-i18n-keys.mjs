@@ -6,8 +6,12 @@
 // button appears only once Pages already reads the branch). The keys were in perfect de/en parity
 // - both files were missing it - which is why the parity rule alone did not catch it.
 //
-// Deliberately literal-only: a key built from a variable (`t(\`plugins.${kind}.title\`)`) cannot be
-// resolved statically, and guessing at the possible values would report failures that are not real.
+// Literals only, but every literal that can *be* the key: `t('a')`, both branches of
+// `t(cond ? 'a' : 'b')`, and the values of `mainT({ x: 'a' }[reason])`. Reading only the first form
+// hid both keys of every ternary (review 2026-09-17, finding 3: twelve call sites, 21 keys, found
+// after `d077648` had written one). A key built from a variable (`t(\`plugins.${kind}.title\`)`)
+// cannot be resolved statically, and guessing at the possible values would report failures that are
+// not real - so those calls are counted and the count is printed: "cannot check" is not "all good".
 import { readFileSync, readdirSync } from 'fs'
 import { join } from 'path'
 
@@ -43,24 +47,73 @@ function walk(dir, extension, files = []) {
   return files
 }
 
-function collect(dir, extension, pattern) {
+// The first argument of every `name(` call, read far enough to know where it ends: brackets nest,
+// strings and template literals are skipped whole. A string literal counts as a key when it stands
+// where a value would - at the start of the argument, after `?` or `:` - which takes the branches of
+// a ternary and the values of an object, and leaves out the `'off'` in `state === 'off' ? …`.
+function firstArgument(source, start) {
+  const literals = []
+  let computed = false
+  let depth = 0
+  let previous = '('
+  let empty = true
+  for (let i = start; i < source.length; i++) {
+    const c = source[i]
+    if (c === "'" || c === '"' || c === '`') {
+      let j = i + 1
+      let interpolated = false
+      while (j < source.length && source[j] !== c) {
+        if (source[j] === '\\') j++
+        else if (c === '`' && source[j] === '$' && source[j + 1] === '{') interpolated = true
+        j++
+      }
+      if (c === '`' && interpolated) computed = true
+      else if ('(?:'.includes(previous)) literals.push(source.slice(i + 1, j))
+      previous = c
+      empty = false
+      i = j
+      continue
+    }
+    if ('([{'.includes(c)) depth++
+    else if (')]}'.includes(c)) {
+      if (depth === 0) break
+      depth--
+    } else if (c === ',' && depth === 0) break
+    if (!/\s/.test(c)) previous = c
+    empty = empty && /\s/.test(c)
+  }
+  // `mainT()` in a comment names the function, it does not call it.
+  if (literals.length === 0 && !empty) computed = true
+  return { literals, computed }
+}
+
+function collect(dir, extension, name, keyShape) {
   const used = new Map()
+  let computed = 0
+  const call = new RegExp(`\\b${name}\\(`, 'g')
   for (const file of walk(dir, extension)) {
-    for (const match of readFileSync(file, 'utf-8').matchAll(pattern)) {
-      if (!used.has(match[1])) used.set(match[1], file)
+    const source = readFileSync(file, 'utf-8')
+    for (const match of source.matchAll(call)) {
+      // `export function mainT(key: MainStringKey, …)` declares the function - its "first argument"
+      // is a parameter, and counting it printed one uncheckable call for a main process that has
+      // none (review 2026-09-18, finding 3).
+      if (/\bfunction\s+$/.test(source.slice(Math.max(0, match.index - 16), match.index))) continue
+      const argument = firstArgument(source, match.index + match[0].length)
+      if (argument.computed) computed++
+      for (const key of argument.literals) if (keyShape.test(key) && !used.has(key)) used.set(key, file)
     }
   }
-  return used
+  return { used, computed }
 }
 
 const de = flatten(loadLocale('src/i18n/locales/de.ts'))
 const en = flatten(loadLocale('src/i18n/locales/en.ts'))
-const rendererKeys = collect('src', /\.tsx?$/, /\bt\(\s*'([A-Za-z0-9_.]+)'/g)
+const { used: rendererKeys, computed: rendererComputed } = collect('src', /\.tsx?$/, 't', /^[A-Za-z0-9_.]+$/)
 
 // The main process has one file with both languages side by side; its keys are flat.
 const mainSource = readFileSync('electron/main/i18n.ts', 'utf-8')
 const mainDefined = new Set([...mainSource.matchAll(/^\s{2,}([A-Za-z0-9_]+):/gm)].map((m) => m[1]))
-const mainKeys = collect('electron', /\.ts$/, /mainT\(\s*'([A-Za-z0-9_]+)'/g)
+const { used: mainKeys, computed: mainComputed } = collect('electron', /\.ts$/, 'mainT', /^[A-Za-z0-9_]+$/)
 
 const problems = []
 for (const [key, file] of rendererKeys) {
@@ -74,6 +127,9 @@ for (const [key, file] of mainKeys) {
 }
 
 console.log(`${rendererKeys.size} Schlüssel im Renderer, ${mainKeys.size} im Hauptprozess geprüft.`)
+console.log(
+  `Nicht prüfbar, weil der Schlüssel berechnet oder durchgereicht wird: ${rendererComputed} Aufrufe im Renderer, ${mainComputed} im Hauptprozess.`
+)
 if (problems.length === 0) {
   console.log('✓ keine fehlenden Schlüssel.')
   process.exit(0)

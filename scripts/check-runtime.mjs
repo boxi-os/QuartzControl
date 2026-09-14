@@ -50,8 +50,20 @@ console.log('\nEingebettete Laufzeit\n')
 // lives in node_modules/electron/path.txt (written by the postinstall, see scripts/postinstall.mjs).
 const pathFile = join(root, 'node_modules/electron/path.txt')
 if (!existsSync(pathFile)) stop('node_modules/electron/path.txt fehlt — erst `npm install` laufen lassen.')
-const electron = join(root, 'node_modules/electron/dist', readFileSync(pathFile, 'utf-8').trim())
-if (!existsSync(electron)) stop(`Electron-Binärdatei nicht gefunden: ${electron}`)
+const electronMain = join(root, 'node_modules/electron/dist', readFileSync(pathFile, 'utf-8').trim())
+if (!existsSync(electronMain)) stop(`Electron-Binärdatei nicht gefunden: ${electronMain}`)
+// The binary the app's shims start - nodeBinary() in nodeRuntime.ts, which says why: on macOS the
+// plain helper bundle, so npm's process.title does not put a Dock icon up. Not a copy of the lookup
+// but the lookup itself, shared/macNodeBinary.ts: a check that starts a different binary than the
+// app measures something the app does not run. TypeScript without a build step, as in
+// check-semver.mjs - node strips the types, but will not guess the extension.
+const lookupTmp = join(tmpdir(), `mac-node-binary-${process.pid}.mts`)
+writeFileSync(lookupTmp, readFileSync(join(root, 'shared/macNodeBinary.ts'), 'utf-8'))
+const { macNodeBinary } = await import(`file://${lookupTmp}`)
+rmSync(lookupTmp)
+const nodeBinary = (execPath) =>
+  process.platform === 'darwin' ? macNodeBinary(execPath, (dir) => readdirSync(dir), existsSync) : execPath
+const electron = nodeBinary(electronMain)
 
 const npmDir = join(root, 'node_modules/npm')
 if (!existsSync(npmDir)) stop('node_modules/npm fehlt — npm reist als devDependency mit, siehe package.json.')

@@ -15,25 +15,25 @@
 //
 // Quelle ist das Quartz-Projekt, dessen content/ auf den Handbuch-Vault zeigt; wo das liegt, sagt
 // docs/handbuch.md. Fehlt es, bricht dieses Skript ab - ob ein Bau ohne Handbuch in Ordnung ist,
-// entscheidet der Aufrufer (beforePack tut es mit einer Warnung).
+// entscheidet der Aufrufer (beforePack nur mit QUARTZCONTROL_WITHOUT_HANDBOOK=1, sonst bricht es ab).
 //
 // Zweiter Weg: QUARTZCONTROL_HANDBOOK_SITE zeigt auf eine *schon gebaute* Website und wird dann
 // übernommen statt gebaut. Er existiert, weil eine Baumaschine, die nicht die des Betreuers ist,
 // das Projekt gar nicht hat - gemessen am 2026-09-09 auf der Debian-VM, deren resources/ nur
 // git, licenses, runtime und templates trug. Ein AppImage von dort reiste also ohne Handbuch,
-// und ein von Hand hinkopiertes hätte der catch-Zweig in before-pack.mjs wieder weggeräumt.
+// und ein von Hand hinkopiertes hätte before-pack.mjs wieder weggeräumt (`dropHandbook`).
 // Das Versprechen "passt zu der Fassung, die installiert ist" trägt der übernommene Ordner
 // genauso, solange er unmittelbar vor dem Packen erzeugt wurde - deshalb ein Verzeichnis und
 // nicht das Projekt: Letzteres wäre ein zweiter Quartz-Baum mit eigenem node_modules auf jeder
 // Maschine, die packt.
 import { execFileSync } from 'node:child_process'
 import * as fs from 'node:fs'
-import * as os from 'node:os'
 import * as path from 'node:path'
+import { projectPath } from './project-paths.mjs'
 
 const ROOT = path.resolve(import.meta.dirname, '..')
 export const HANDBOOK_PROJECT =
-  process.env.QUARTZCONTROL_HANDBOOK_PROJECT || path.join(os.homedir(), 'Documents/QuartzControl-Handbuch')
+  process.env.QUARTZCONTROL_HANDBOOK_PROJECT || projectPath('QuartzControl-Handbuch')
 export const HANDBOOK_SITE = process.env.QUARTZCONTROL_HANDBOOK_SITE || null
 export const HANDBOOK_OUT = path.join(ROOT, 'resources/handbook')
 

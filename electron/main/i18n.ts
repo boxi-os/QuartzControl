@@ -74,6 +74,7 @@ const STRINGS = {
     confirmCancel: 'Abbrechen',
     buildDirConfirmProceed: 'Ordner leeren und bauen',
     buildDirCancelled: 'Abgebrochen — es wurde nichts gelöscht und nichts gebaut.',
+    buildDirBusy: 'Es läuft schon ein Build nach „{{running}}“. Nach „{{dir}}“ lässt sich bauen, sobald er fertig ist.',
 
     ipcInvalidArguments:
       'QuartzControl hat „{{channel}}“ mit unerwarteten Daten aufgerufen — das ist ein Fehler in der App und keine Folge deiner Eingabe. Technische Details:',
@@ -167,6 +168,10 @@ const STRINGS = {
     hostKeyAccept: 'Verbinden und merken',
     hostKeyRejected: 'Verbindung abgebrochen — der Host-Key wurde nicht bestätigt.',
     contentSourceMissing: 'Den Quellordner gibt es nicht: {{path}}',
+    indexPageExists: 'Im Content-Ordner liegt schon eine index.md. Sie bleibt, wie sie ist.',
+    indexPageNoContent: 'Es gibt keinen erreichbaren Content-Ordner, in den die Startseite gelegt werden könnte.',
+    indexPageGlobbyBroken:
+      'Die Dateisuche von Quartz im Projekt lässt sich nicht laden, deshalb ist keine Startseite angelegt ({{message}}). Ein erneutes npm install im Projekt behebt das meist.',
 
     projectAlreadyRegistered: 'Dieser Ordner ist bereits als anderes Projekt registriert.',
     projectIconUnsupportedFormat: 'Nur PNG- und JPEG-Dateien können als Projektbild verwendet werden.',
@@ -317,6 +322,7 @@ const STRINGS = {
     confirmCancel: 'Cancel',
     buildDirConfirmProceed: 'Empty the folder and build',
     buildDirCancelled: 'Cancelled — nothing was deleted and nothing was built.',
+    buildDirBusy: 'A build into “{{running}}” is already running. You can build into “{{dir}}” once it has finished.',
 
     ipcInvalidArguments:
       'QuartzControl called “{{channel}}” with unexpected data — that is a bug in the app, not a result of what you entered. Technical details:',
@@ -398,6 +404,10 @@ const STRINGS = {
     hostKeyAccept: 'Connect and remember',
     hostKeyRejected: 'Connection aborted — the host key was not confirmed.',
     contentSourceMissing: 'The source folder does not exist: {{path}}',
+    indexPageExists: 'The content folder already has an index.md. It stays as it is.',
+    indexPageNoContent: 'There is no reachable content folder to put the start page in.',
+    indexPageGlobbyBroken:
+      'Quartz’s file search in the project cannot be loaded, so no start page was created ({{message}}). Running npm install in the project again usually fixes this.',
 
     projectAlreadyRegistered: 'This folder is already registered as another project.',
     projectIconUnsupportedFormat: 'Only PNG and JPEG files can be used as a project image.',

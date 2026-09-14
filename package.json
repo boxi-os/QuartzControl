@@ -2,7 +2,7 @@
   "name": "quartzcontrol",
   "productName": "QuartzControl",
   "desktopName": "quartzcontrol.desktop",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-beta.2",
   "description": "Desktop GUI for managing Quartz 5 sites: config, plugins, content source, builds and the local dev server.",
   "main": "./out/main/index.js",
   "author": "boxi-os",

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { isInsideDirectory } from '../utils/platform'
 import { Check, ChevronDown, ChevronRight, Copy, ExternalLink, FolderOpen, Hammer, MonitorPlay, RefreshCw, SlidersHorizontal } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useProject } from './ProjectLayout'
 import type {
   BuildOutputInfo,
@@ -22,6 +23,8 @@ import { useStickyState } from '../state/uiState'
 import { formatBytes, formatRelativeTime } from '../utils/format'
 import { serverErrorText } from '../utils/serverStatus'
 import HandbookLink from '../components/HandbookLink'
+import { BuildActivityLine } from '../components/BuildActivityLine'
+import { useBuildActivity } from '../hooks/useBuildActivity'
 
 // `host` is only meaningful as Quartz's `--remoteDevHost`: an override for the live-reload
 // websocket URL when previewing through a tunnel/remote host, which makes the browser connect
@@ -72,7 +75,11 @@ export default function BuildServer(): JSX.Element {
   const [previewMode, setPreviewMode] = useStickyState<FrameBreakpoint>('server.previewMode', 'desktop')
   const [breakpoints, setBreakpoints] = useState<FrameBreakpointWidths>(DEFAULT_FRAME_BREAKPOINT_WIDTHS)
   const [buildResult, setBuildResult] = useState<BuildResult | null>(null)
-  const [building, setBuilding] = useState(false)
+  // `clicked` covers the moment between the click and the main process reporting the build; after
+  // that the main process is the answer, which is what a page opened mid-build needs.
+  const [clicked, setClicked] = useState(false)
+  const activity = useBuildActivity(project.id)
+  const building = clicked || activity?.kind === 'build'
   const [output, setOutput] = useState<BuildOutputInfo | null>(null)
   const [outputDir, setOutputDir] = useState('')
   const [outputDirError, setOutputDirError] = useState<string | null>(null)
@@ -99,6 +106,9 @@ export default function BuildServer(): JSX.Element {
     }
   }, [project.id, setOptions])
 
+  // True only once the content folder was read and has no index.md - a failed read says nothing.
+  const [missingIndex, setMissingIndex] = useState(false)
+
   const refreshOutput = useCallback(
     async (dir: string) => {
       setOutput(await window.quartzGui.build.lastOutput(project.path, dir || undefined).catch(() => null))
@@ -113,6 +123,12 @@ export default function BuildServer(): JSX.Element {
     })
     // Falls back to Quartz's own widths on its own when the project never set any.
     window.quartzGui.layoutFrames.getBreakpoints(project.path).then(setBreakpoints)
+    // A local read. The first preview of a linked vault without index.md is Quartz's 404 page at the
+    // site's own address, which reads like a broken project - so the page that opens the preview says why.
+    window.quartzGui.content
+      .status(project.path)
+      .then((c) => setMissingIndex(c.hasIndex === false))
+      .catch(() => setMissingIndex(false))
   }, [project.path, refreshOutput])
 
   // Relative ages ("gestartet vor 2 Minuten", "gebaut vor 5 Minuten") are computed at render, so
@@ -150,8 +166,21 @@ export default function BuildServer(): JSX.Element {
     setStatus(await window.quartzGui.server.restart(project.id, project.path, options))
   }
 
+  // A build that ends while this page is open - started here or anywhere else - changes what is in
+  // the output directory, so the card reads it again.
+  const buildRunning = activity?.kind === 'build'
+  const [sawBuild, setSawBuild] = useState(false)
+  useEffect(() => {
+    if (buildRunning) setSawBuild(true)
+    else if (sawBuild) {
+      setSawBuild(false)
+      void refreshOutput(outputDir)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [buildRunning])
+
   async function runBuild(): Promise<void> {
-    setBuilding(true)
+    setClicked(true)
     setBuildResult(null)
     try {
       setBuildResult(await window.quartzGui.build.run(project.id, project.path, outputDir || undefined))
@@ -160,7 +189,7 @@ export default function BuildServer(): JSX.Element {
       // which is where the user is already looking
       appendBuildLog({ projectId: project.id, stream: 'stderr', text: formatIpcError(err), timestamp: new Date().toISOString() })
     } finally {
-      setBuilding(false)
+      setClicked(false)
       await refreshOutput(outputDir)
     }
   }
@@ -221,6 +250,16 @@ export default function BuildServer(): JSX.Element {
             )}
           </div>
         </div>
+        {missingIndex && (
+          <p className="mb-3 text-sm text-amber-700 dark:text-amber-400">
+            {t('buildServer.noIndex')}{' '}
+            <Link to="../config?tab=content" className="whitespace-nowrap text-indigo-600 hover:underline dark:text-indigo-400">
+              {t('buildServer.noIndexLink')}
+            </Link>
+          </p>
+        )}
+
+        {activity && activity.kind !== 'build' && <BuildActivityLine activity={activity} className="mb-2" />}
 
         {/* The address leads, because it is what the page is for. Running or not, it is the same
             line - stopped it just says what the address will be, which nothing used to. */}
@@ -399,6 +438,7 @@ export default function BuildServer(): JSX.Element {
           </Button>
         </div>
         <p className="mb-3 text-xs text-text-muted">{t('buildServer.oneOffBuildHint')}</p>
+        {activity?.kind === 'build' && <BuildActivityLine activity={activity} className="mb-3" />}
 
         {/* What is in the output directory right now - nothing records that a build happened, so
             this is read from the files themselves (see BuildOutputInfo). The Übersicht showed this

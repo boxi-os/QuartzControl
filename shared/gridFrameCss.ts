@@ -250,7 +250,11 @@ function buildOuterGridOverride(frameName: string): string {
  * already replaces, only these are left - `.desktop-only`/`.mobile-only` (the DesktopOnly and
  * MobileOnly wrapper components), `#quartz-body`'s sub-desktop padding, plus `html`'s
  * scroll-padding and one popover rule, which are cosmetic and deliberately left alone. No TS or JS
- * in Quartz reads a breakpoint at all, so CSS is the whole surface.
+ * in Quartz reads a breakpoint at all, so CSS is the whole surface. The `$mobile` and `not
+ * ($desktop)` blocks for `.sidebar.left` and `.sidebar.right` sit inside that grid rule, and they
+ * are the ones a reader checking this list meets first: an authored frame renders its areas as
+ * `.qgframe-area-<name>` (layoutFrameService), never as `.sidebar`, so they match nothing on its
+ * pages at any width.
  *
  * Core was never the whole surface, though - see `buildPluginBreakpointCompat` below.
  *
@@ -331,6 +335,12 @@ function buildQuartzBreakpointCompat(frameName: string, widths: FrameBreakpointW
  *   - `canvas-page`, whose media block is already scoped `.page[data-frame=canvas]`. A project
  *     with an authored frame has its own name in that attribute, so those rules never applied to
  *     it in the first place.
+ *   - explorer's `.page > #quartz-body .sidebar.left:has(.explorer)` in its mobile block (sticky,
+ *     `--light` ground, 1rem block padding), for the reason core's `.sidebar` blocks are not in the
+ *     block above: an authored frame has no `.sidebar`. Measured in Firefox and WebKit on a built
+ *     copy without the example template's explorer stylesheet (review 2026-09-17, finding 4): at 750
+ *     and 850 px, with the project's mobile width at 900, explorer, toggle and drawer agree in all
+ *     six values read.
  *   - the drawer's transitions, `overscroll-behavior` and the `.lock-scroll` page-slide. They are
  *     polish inside a band a hundred pixels wide; without them the navigation is still correct and
  *     operable, and each one is another line that has to follow a foreign stylesheet.
@@ -608,11 +618,11 @@ export function migrateGridFrameDefinition(def: GridFrameDefinition | LegacyGrid
 // `enabled` is read the way the *loader* reads it - `filter((e) => e.enabled)` on the parsed yaml,
 // so anything falsy is out. Two things about that, both measured rather than assumed. Quartz does
 // not agree with itself: the loader drops an entry with no `enabled` key, while its own CLI treats
-// the same entry as on (`entry.enabled !== false`, plugin-git-handlers.js:1574), and configService
-// follows the CLI when it reads (`enabled: p.enabled ?? true`). So by the time a config reaches
-// here the key is always a boolean and this filter cannot actually see the disagreement - it is
-// written this way because the frame's copy is a copy of what the *loader* builds, and because the
-// next caller may not come through configService.
+// the same entry as on (`entry.enabled !== false`, plugin-git-handlers.js:1574). configService
+// follows the loader too since 2026-09-13 (`Boolean(p.enabled)`; it followed the CLI before). So by
+// the time a config reaches here the key is always a boolean - the filter is written this way
+// because the frame's copy is a copy of what the *loader* builds, and because the next caller may
+// not come through configService.
 export interface GroupLayoutCandidate {
   // The page type this ordering belongs to, or null for the config as a whole. Only ever read by
   // a human out of the generated frame - the frame itself cannot tell which page type it is

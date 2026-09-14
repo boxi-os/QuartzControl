@@ -31,13 +31,15 @@
 // --sync copies the stylesheets and snippets back out of the project into this repo and exits; it
 // needs no app either. Phases push forward, --sync pulls back - see syncBack() for what it leaves
 // alone and why. --check-sync compares the two sides and writes nothing, which is the flag to
-// reach for when it is not yet clear which side is ahead - see checkSync().
+// reach for when it is not yet clear which side is ahead - see checkSync(); it also holds the
+// exported package against the bundled and the published copy - see checkPackageCopies().
 import { _electron as electron } from 'playwright-core'
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
+import { projectPath, workshopPath } from './project-paths.mjs'
 import { PALETTE, TYPOGRAPHY, checkAll } from './example-template/palette.mjs'
 import { VARIABLE_OVERRIDES } from './example-template/variables.mjs'
 import { FONTS, fontFaceCss, resolveFontUrl } from './example-template/fonts.mjs'
@@ -91,12 +93,18 @@ const isDoku = VARIANT !== 'example'
 // the entries `quartz create` wrote rather than writing them itself: run against a project whose
 // entries a previous variant already removed, a patch would have nothing to attach to and the
 // component would silently be absent instead of switched off.
-const WORKSHOP = path.join(HOME, VARIANT === 'example' ? 'Documents/Example' : `Documents/${VARIANT}-vorlage`)
+// Für `example` das Beispielprojekt selbst - dort wird gearbeitet, und `--sync` holt von dort
+// zurück (bis zum 2026-09-04 hieß es `quartz-vorlage-werkstatt`, siehe d80f2be). Für eine Variante
+// ein Wegwerf-Projekt unter werkstatt/, das Phase 0 klont.
+const WORKSHOP = VARIANT === 'example' ? projectPath('Example') : workshopPath(`${VARIANT}-vorlage`)
 // The same vault for both. The variant's project is a workshop, not a site - its content is only
 // there so phase 9 has something to build, and the `content` part never travels in its package.
 const VAULT = path.join(HOME, 'Obsidian/QuartzProjekte/Example')
-const CONTROL = path.join(HOME, VARIANT === 'example' ? 'Documents/quartz-vorlage-gegenprobe' : `Documents/${VARIANT}-gegenprobe`)
-const PACKAGE_OUT = path.join(HOME, VARIANT === 'example' ? 'Documents/minimal-lesbar.qtpl' : `Documents/${VARIANT}.qtpl`)
+// Immer ein Wegwerf-Projekt: Phase 11 importiert das Paket dort in ein leeres Projekt und baut.
+const CONTROL = workshopPath(VARIANT === 'example' ? 'quartz-vorlage-gegenprobe' : `${VARIANT}-gegenprobe`)
+// Das Paket liegt neben den Projekten, nicht in einem eigenen Ausgabeordner: die drei .qtpl sind
+// am 2026-09-12 mit den Projekten nach ~/Documents/QuartzProjekte gewandert.
+const PACKAGE_OUT = projectPath(VARIANT === 'example' ? 'minimal-lesbar.qtpl' : `${VARIANT}.qtpl`)
 
 // The display name changed to "Example" on 2026-09-06; the file name did not. It is what the app's
 // built-in template download points at (builtinTemplateService.ts) and what the published copy
@@ -321,13 +329,74 @@ function checkSync() {
   }
   log(`${differing.length + onlyOneSide.length} Datei(en) auseinander:`)
   for (const entry of [...onlyOneSide, ...differing]) log(`  ${entry}`)
-  log('\nZeilenweise mit `diff scripts/example-template/styles/<name> ~/Documents/Example/quartz/styles/custom/<name>`.')
+  log(`\nZeilenweise mit \`diff scripts/example-template/styles/<name> ${WORKSHOP}/quartz/styles/custom/<name>\`.`)
   log('Zurückholen mit `--sync`, vorschieben mit `--only 5`. Was gemessen werden soll, wird an dem gemessen, was gebaut wurde.')
   return false
 }
 
+/**
+ * The package exists three times, and nothing but this keeps the copies together: next to the
+ * projects (phase 10 writes it there), in `resources/templates/` (what every installer carries) and
+ * in boxi-os/quartzcontrol-templates (what the app downloads, and prefers over the bundled one as
+ * soon as it gets an answer - `builtinTemplateService.ts`). After a new export the first two are
+ * one `cp` apart and the third one `git push` apart, and until then the app in the field serves the
+ * old template while this repo looks finished (review 2026-09-19, finding 7).
+ *
+ * Byte comparison, not the manifest: two exports of the same state differ in `createdAt`, so equal
+ * bytes mean "the same export", which is the claim. `createdAt` is printed so a difference says
+ * which side is newer. A published copy that cannot be fetched is its own answer, not a match.
+ */
+async function checkPackageCopies() {
+  if (VARIANT !== 'example') return true
+  const read = (file) => (fs.existsSync(file) ? fs.readFileSync(file) : null)
+  const createdAt = (file) => {
+    try {
+      return JSON.parse(execFileSync('unzip', ['-p', file, 'manifest.json'], { encoding: 'utf-8' })).createdAt
+    } catch {
+      return '?'
+    }
+  }
+  const bundledFile = path.join(APP_DIR, 'resources/templates', path.basename(PACKAGE_OUT))
+  const copies = [
+    ['Export', PACKAGE_OUT, read(PACKAGE_OUT)],
+    ['mitgeliefert', bundledFile, read(bundledFile)]
+  ]
+  const url = `https://raw.githubusercontent.com/boxi-os/quartzcontrol-templates/main/${path.basename(PACKAGE_OUT)}`
+  let published = null
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(15_000) })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    published = Buffer.from(await res.arrayBuffer())
+  } catch (err) {
+    log(`\nVeröffentlichte Vorlage NICHT geprüft - ${url}: ${err.message}`)
+  }
+  const tmp = published && path.join(os.tmpdir(), `qtpl-published-${process.pid}.qtpl`)
+  if (tmp) fs.writeFileSync(tmp, published)
+  if (published) copies.push(['veröffentlicht', tmp, published])
+
+  log('\nDie Vorlage in ihren Kopien:')
+  for (const [label, file, bytes] of copies) {
+    log(`  ${label.padEnd(15)} ${bytes ? `${bytes.length} Bytes, createdAt ${createdAt(file)}` : `fehlt (${file})`}`)
+  }
+  if (tmp) fs.rmSync(tmp, { force: true })
+  const [first, ...rest] = copies.map(([, , bytes]) => bytes)
+  const same = first && rest.every((bytes) => bytes && bytes.equals(first))
+  if (same && published) {
+    log(`  ${copies.length} Kopien byte-gleich.`)
+    return true
+  }
+  if (same) log(`  ${copies.length} Kopien byte-gleich, die veröffentlichte ungeprüft - das ist kein „gleich“.`)
+  else {
+    log(`  Nicht gleich. Mitliefern: \`cp ${PACKAGE_OUT} resources/templates/\`; veröffentlichen: dieselbe`)
+    log('  Datei nach boxi-os/quartzcontrol-templates committen und pushen (docs/release.md).')
+  }
+  return false
+}
+
 if (argv.includes('--check-sync')) {
-  process.exit(checkSync() ? 0 : 1)
+  const styles = checkSync()
+  const copies = await checkPackageCopies()
+  process.exit(styles && copies ? 0 : 1)
 }
 
 if (argv.includes('--sync')) {

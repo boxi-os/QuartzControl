@@ -19,9 +19,15 @@ Seit dem Umbau ist **das Projekt die Quelle**, nicht mehr dieses Verzeichnis:
 ```
 ~/Obsidian/QuartzProjekte/Example/     der Vault — 266 Notizen in sieben Kapiteln, 8 Bases, 2 Canvas, 2 Zeichnungen, 9 Mediendateien
         ↑ Symlink
-~/Documents/Example/content/            das Projekt
-~/Documents/Example/quartz/styles/      die Stylesheets — hier wird gearbeitet
+~/Documents/QuartzProjekte/Example/content/         das Projekt
+~/Documents/QuartzProjekte/Example/quartz/styles/   die Stylesheets — hier wird gearbeitet
 ```
+
+Das Beispielprojekt **ist** die Werkstatt der Variante `example` — bis zum 2026-09-04 hieß es
+`quartz-vorlage-werkstatt` (`d80f2be`), es ist also kein zweiter Ordner daneben. Wo die Projekte
+dieses Rechners liegen, sagt `scripts/project-paths.mjs`; die Wegwerf-Projekte der Varianten und die
+Gegenprobe aus Phase 11 entstehen darunter in `werkstatt/`, damit sie nicht zwischen den echten
+Projekten in der App-Liste stehen.
 
 Der Vault ist seit dem 2026-09-06 als **Handbuch in sieben Kapiteln** geschnitten — `1-einstieg`,
 `2-formatierung`, `3-obsidian-formate`, `4-seiten-steuern`, `5-gestaltung`, `6-anpassen`,
@@ -68,7 +74,7 @@ Messung an der gebauten Website ist das der erste Aufruf.
 | `fonts.mjs` | Welche Schriften geladen werden, woher, und die korrigierten `@font-face`-Regeln |
 | `frames.mjs` | Die vier Seitenraster (`editorial`, `index`, `focus`, `drawing`) für je drei Breakpoints |
 | `layout.mjs` | Welcher Seitentyp welches Raster nutzt, und die zwei Flex-Gruppen des Kopfbereichs |
-| `plugins.mjs` | Welches Plugin an, wo es sitzt, mit welchen Optionen — und die sechs Layout-Box-Instanzen |
+| `plugins.mjs` | Welches Plugin an, wo es sitzt, mit welchen Optionen — und die sieben Layout-Box-Instanzen |
 | `site-mark.mjs` | Die Marke im Kopf, hell und dunkel — gebaut aus `build/icon-source/quartzcontrol-icon.svg` |
 | `translations.mjs` | Geänderte Formulierungen in Quartz' deutscher Sprachdatei |
 | `presets.mjs` | Zwei gespeicherte Theme-Zusammenstellungen |
@@ -93,7 +99,7 @@ Jede Phase ist einzeln aufrufbar und wiederholbar. Für eine Änderung reichen f
 Schritte:
 
     node scripts/build-example-template.mjs --only 5      # Änderung ins Projekt schreiben
-    cd ~/Documents/quartz-vorlage-werkstatt && npx quartz build --serve
+    cd ~/Documents/QuartzProjekte/Example && npx quartz build --serve
 
 | Phase | Name | Wann sie nötig ist |
 | --- | --- | --- |
@@ -108,7 +114,7 @@ Schritte:
 | 8 | `texts` | `translations.mjs` oder `presets.mjs` geändert |
 | 9 | `check` | prüft SCSS und zählt die Bausteine |
 | 10 | `export` | schreibt die `.qtpl` |
-| 11 | `verify` | importiert sie in ein zweites Projekt und baut es |
+| 11 | `verify` | importiert sie in ein zweites Projekt (`werkstatt/…-gegenprobe`) und baut es |
 
 > **Eine Reihenfolge ist bindend:** Phase 3 (Frames) muss vor Phase 4 (Konfiguration) laufen. Die
 > Frames tragen sich über die Quartz-CLI selbst in `quartz.config.yaml` ein, und Phase 4 schreibt
@@ -240,7 +246,7 @@ Eine Datei je Komponente. Die Namen sagen, wozu sie gehören:
     aside-*         Inhaltsverzeichnis, Rückverweise, Graph, zuletzt geändert
     body-*          Fließtext, Callouts, Code, Mathematik, Diagramme, Medien
     page-*          Ordner- und Tag-Listen, Vorschau, Suchergebnisse, 404
-    plugin-*        quartz-layout-box in allen sechs Ausprägungen
+    plugin-*        quartz-layout-box: jede Form des Plugins, fünf der sieben Instanzen
     site-*          Fußzeile, Kommentare
     a11y            Zielgrößen, Systemeinstellungen, Druck
 
@@ -391,7 +397,7 @@ dabei ein Seitentyp, den kein `-page`-Plugin liefert: das Excalidraw-Plugin regi
 seinem eigenen Namen. Die App kannte ihn deshalb nicht; seit demselben Tag liest ihr Layout-Editor
 zusätzlich die Schlüssel, die schon unter `layout.byPageType` stehen (BEFUNDE 10).
 
-### 3.7 Die sechs Layout-Box-Instanzen — `plugins.mjs`
+### 3.7 Die sieben Layout-Box-Instanzen — `plugins.mjs`
 
 | Schlüssel | Ort | Form | Zeigt |
 | --- | --- | --- | --- |
@@ -401,19 +407,27 @@ zusätzlich die Schlüssel, die schon unter `layout.byPageType` stehen (BEFUNDE 
 | `layoutBoxHint` | nach dem Inhalt | Inline-HTML, nur mobil | `display: mobile-only` an einer Instanz |
 | `layoutBoxCta` | nach dem Inhalt | Inline-HTML, eigene Klasse | `{{frontmatter.…}}` |
 | `layoutBoxColophon` | Fußzeile | Inline-HTML | `{{locale}}`, `{{slug}}` |
+| — (`layout-box-current-folder`) | Fußzeile, ausgeblendet | Inline-HTML, nur ein `<style>` | `{{slug}}` in einem Selektor: markiert im Explorer die Ordnerseite, auf der man steht |
 
-Gestaltet in `styles/plugin-layout-box.scss` — inklusive `.layout-box-missing`, dem Zustand für ein
-fehlendes Snippet.
+Die letzte hat keinen Frontmatter-Schlüssel, weil sie keinen Text trägt: Das Explorer-Plugin setzt
+`.active` nur auf Datei-Anker, und zwei Attribute (`data-folderpath` und `<body data-slug>`)
+vergleicht kein Selektor — also baut der Platzhalter die Regel für jede Seite selbst.
 
-> **Warum fünf von sechs `html:` statt `file:` nutzen:** Ein Vorlagen-Paket transportierte bis zum
+Gestaltet in `styles/plugin-layout-box.scss` — jede Form des Plugins inklusive
+`.layout-box-missing`, dem Zustand für ein fehlendes Snippet, und fünf der Instanzen. Zwei gehören
+dem Bereich, in dem sie wirken: der Seitenname `nav-header.scss`, die Ordnermarke
+`nav-explorer.scss`, die den Kasten selbst ausblendet.
+
+> **Warum sechs von sieben `html:` statt `file:` nutzen:** Ein Vorlagen-Paket transportierte bis zum
 > 2026-09-06 nur `quartz/styles/` und `quartz/static/fonts/`; Snippet-Dateien und Bilder blieben
 > zurück, und die eine `file:`-Instanz kam im Zielprojekt leer an. Der Baustein *Statische Dateien*
-> trägt sie jetzt mit (BEFUNDE 5). Die fünf Inline-Instanzen bleiben, weil sie den anderen Weg
+> trägt sie jetzt mit (BEFUNDE 5). Die sechs Inline-Instanzen bleiben, weil sie den anderen Weg
 > vorführen — beide funktionieren.
 >
-> **Bis zum 2026-09-06 eine Einschränkung:** Beim Import überlebte nur **eine** der sechs Instanzen,
-> weil alle denselben abgeleiteten Namen tragen. Seitdem unterscheidet der `plugins`-Baustein sie
-> nach ihrer Position unter Gleichnamigen; die Gegenprobe meldet 6 von 6. Siehe `BEFUNDE.md`.
+> **Bis zum 2026-09-06 eine Einschränkung:** Beim Import überlebte nur **eine** der damals sechs
+> Instanzen, weil alle denselben abgeleiteten Namen tragen. Seitdem unterscheidet der
+> `plugins`-Baustein sie nach ihrer Position unter Gleichnamigen; die Gegenprobe meldete damals
+> 6 von 6. Siehe `BEFUNDE.md`.
 
 ### 3.7a Die zwei Kästen unter dem Text — `frames.mjs`, `layout.mjs`, `plugins.mjs`
 
@@ -547,7 +561,7 @@ Alle gemessen, nicht vermutet. Wer die Vorlage erweitert, spart sich damit diese
 
 ## 5. Prüfen, ob es noch stimmt
 
-    npm run template:example -- --check-contrast    # 89 Farbpaare
+    npm run template:example -- --check-contrast    # 93 Farbpaare
     npm run template:example -- --only 9            # SCSS übersetzt? alle zwölf Bausteine gefüllt?
     npm run template:example -- --only 9,10,11      # exportieren und in ein leeres Projekt importieren
 
@@ -562,3 +576,9 @@ Grid-Größen abhängt, wird in mindestens zwei Engines gemessen:
 
 Phase 11 ist der eigentliche Beweis: Sie legt ein zweites Projekt an, macht einen echten Dry-Run,
 importiert und baut. Was dort ankommt, ist das, was ein anderer Mensch bekommt.
+
+**Ein Export ist erst angekommen, wenn er an drei Stellen liegt.** Phase 10 schreibt das Paket
+neben die Projekte; mitgeliefert wird `resources/templates/minimal-lesbar.qtpl`, und die App
+bevorzugt, sobald sie Netz hat, die Kopie in `boxi-os/quartzcontrol-templates`. Nach einem Export
+also kopieren und dort pushen — sonst bekommt jeder, der online ist, weiter die alte Vorlage.
+`--check-sync` vergleicht die drei Kopien byte-weise; der Rest steht in `docs/release.md`.

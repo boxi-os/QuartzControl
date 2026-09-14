@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   DndContext,
@@ -161,6 +161,50 @@ const collisionDetection: CollisionDetection = (args) => {
   return pointerCollisions.length > 0 ? pointerCollisions : closestCenter(args)
 }
 
+/**
+ * What the frame editor warns about, for one breakpoint. Structural only - it knows the areas and
+ * their slots, not which components the project has - so it can be asked for every breakpoint.
+ *
+ * - `unassigned`: a slot no visible area shows. Its components render nowhere at this width.
+ * - `doubled`: two visible plain areas on one slot render that slot's whole list twice - measured on
+ *   this project's "editorial" frame, which had three on `left`. Areas with a group don't double up,
+ *   two of those on one slot are the point of the exercise.
+ * - `homeless`: a slot whose visible areas *all* have a group has nowhere for the components that
+ *   are in no group. Measured on a real build: two group areas on `left` and no plain one took the
+ *   spacer, the dark-mode switch and the reader-mode switch off every page.
+ * - `hiddenGroups`: areas of their own that are visible on some breakpoint but not on this one. Their
+ *   group's components are shown by nothing else here - the plain area of the slot shows only what
+ *   no group claims - so a group area placed on desktop only takes them off tablet and mobile.
+ *   Found in the review of 2026-09-09; until 2026-09-13 not one warning said so on any breakpoint.
+ *   An area visible on no breakpoint at all is the frame-wide `neverVisible` warning's, not this one.
+ */
+function slotWarnings(
+  def: GridFrameDefinition,
+  bp: FrameBreakpoint
+): { unassigned: FrameSlot[]; homeless: FrameSlot[]; doubled: FrameSlot[]; hiddenGroups: GridFrameArea[] } {
+  const isVisible = (a: GridFrameArea, on: FrameBreakpoint): boolean => {
+    const p = def.breakpoints[on].placements[a.id]
+    return !!p && !p.hidden
+  }
+  const visible = def.areas.filter((a) => isVisible(a, bp))
+  const used = new Set(visible.map((a) => a.slot).filter((s): s is FrameSlot => !!s))
+  return {
+    unassigned: SLOTS.filter((s) => s !== 'pageBody' && !used.has(s)),
+    doubled: SLOTS.filter((s) => visible.filter((a) => a.slot === s && !a.group).length > 1),
+    homeless: SLOTS.filter(
+      (s) => s !== 'pageBody' && visible.some((a) => a.slot === s && a.group) && !visible.some((a) => a.slot === s && !a.group)
+    ),
+    hiddenGroups: def.areas.filter(
+      (a) =>
+        !!a.group &&
+        !!a.slot &&
+        a.slot !== 'pageBody' &&
+        !isVisible(a, bp) &&
+        FRAME_BREAKPOINTS.some((other) => other !== bp && isVisible(a, other))
+    )
+  }
+}
+
 export default function FrameBuilder({
   projectPath,
   onFramesChanged
@@ -221,6 +265,42 @@ export default function FrameBuilder({
     // text the user is still typing.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAreaId])
+
+  // The selection survives a breakpoint switch on purpose - one area is often tuned across all
+  // three - but its form does not stay put: on one breakpoint it sits inside the area's grid box,
+  // on the next in the tray above the grid, and switching mounts it anew.
+  //
+  // Until 2026-09-13 the name field's `autoFocus` answered that, by accident: a new mount focuses
+  // the field and the browser scrolls it into view. It also took the focus off the breakpoint
+  // control - measured in the built app, ArrowLeft on the focused "Mobil" segment switched to
+  // Tablet and left focus in the name input, so the next arrow key moved the caret instead of the
+  // breakpoint. The field is now focused only when an area is chosen (click, drop, new area), not
+  // when a switch remounts its form, and the page brings the box into view itself - only when its
+  // top edge is out of sight, so a box that is already visible stays where the eye is. The previous
+  // breakpoint lives in a ref so a remount (the sticky breakpoint coming back) is not taken for a
+  // switch.
+  const focusNameOnMount = useRef(true)
+  const previousBreakpoint = useRef(activeBreakpoint)
+  function switchBreakpoint(bp: FrameBreakpoint): void {
+    // SegmentedControl reports a click on the segment that is already chosen too, and setting the
+    // same value renders nothing - so the effect below never set the ref back, and every area
+    // clicked afterwards opened its form without focus (measured in the built app, 2026-09-16).
+    if (bp === activeBreakpoint) return
+    focusNameOnMount.current = false
+    setActiveBreakpoint(bp)
+  }
+  useEffect(() => {
+    focusNameOnMount.current = true
+    if (previousBreakpoint.current === activeBreakpoint) return
+    previousBreakpoint.current = activeBreakpoint
+    if (!selectedAreaId) return
+    const form = document.querySelector(`[data-area-form="${CSS.escape(selectedAreaId)}"]`)
+    const box = form?.parentElement
+    if (!box) return
+    const { top } = box.getBoundingClientRect()
+    if (top < 0 || top > window.innerHeight - 120) box.scrollIntoView({ block: 'start' })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeBreakpoint])
 
   function startNewFrame(): void {
     setEditing(emptyDraft())
@@ -522,6 +602,31 @@ export default function FrameBuilder({
     setSelectedAreaId((prev) => (prev === id ? null : prev))
   }
 
+  // Deleting an area takes its placements on all three breakpoints, and two of those are out of
+  // sight while the button is - the frame itself asked before going, its areas did not. An area
+  // that holds nothing (freshly added: no placement, no slot, no group) is removed without a
+  // question, because there is nothing to lose and a dialog there would teach people to click
+  // through it. Nothing is written until Save either way, which is the dialog's way back.
+  async function requestDeleteArea(area: GridFrameArea): Promise<void> {
+    if (!editing) return
+    const placedOn = FRAME_BREAKPOINTS.filter((bp) => editing.breakpoints[bp].placements[area.id])
+    if (placedOn.length > 0 || area.slot || area.group) {
+      const consequence =
+        placedOn.length > 0
+          ? t('layoutEditor.frameBuilder.removeAreaPlaced', {
+              breakpoints: placedOn.map((bp) => t(`layoutEditor.frameBuilder.breakpoint.${bp}`)).join(', ')
+            })
+          : t('layoutEditor.frameBuilder.removeAreaUnplaced')
+      const confirmed = await confirmDialog({
+        text: t('layoutEditor.frameBuilder.removeAreaConfirm', { name: area.name || area.id, consequence }),
+        confirmLabel: t('layoutEditor.frameBuilder.removeArea'),
+        danger: true
+      })
+      if (!confirmed) return
+    }
+    deleteAreaById(area.id)
+  }
+
   async function save(): Promise<void> {
     if (!editing) return
     if (!editing.frameName.trim()) {
@@ -631,25 +736,29 @@ export default function FrameBuilder({
   const box = buildFrameBox(layout)
   const hasMaxWidth = !!layout.maxWidth?.trim()
   const hasBox = hasMaxWidth || box.paddingBlock !== '0' || box.paddingInline !== '0'
-  const visibleAreas = editing.areas.filter((a) => {
-    const p = layout.placements[a.id]
-    return p && !p.hidden
-  })
-  const usedSlots = new Set(visibleAreas.map((a) => a.slot).filter((s): s is FrameSlot => !!s))
-  const unassignedSlots = SLOTS.filter((s) => s !== 'pageBody' && !usedSlots.has(s))
-  // Two visible areas on one slot render that slot's whole component list twice - measured on this
-  // project's "editorial" frame, which had three on `left`. The editor used to allow it silently;
-  // the build was the first place it showed.
-  // Only areas without a group double up - two group areas on one slot are the point of the
-  // exercise, they show different components.
-  const doubledSlots = SLOTS.filter((s) => visibleAreas.filter((a) => a.slot === s && !a.group).length > 1)
-  // The other half of that: a slot whose visible areas *all* have a group has nowhere to put the
-  // components that are in no group, and they then appear on no page at all. Measured on a real
-  // build - two group areas on `left` and no plain one took the spacer, the dark-mode switch and
-  // the reader-mode switch off every page, with nothing said anywhere. Structural, so the frame
-  // editor can see it without knowing which components the project has.
-  const homelessSlots = SLOTS.filter(
-    (s) => s !== 'pageBody' && visibleAreas.some((a) => a.slot === s && a.group) && !visibleAreas.some((a) => a.slot === s && !a.group)
+  const {
+    unassigned: unassignedSlots,
+    homeless: homelessSlots,
+    doubled: doubledSlots,
+    hiddenGroups: hiddenGroupAreas
+  } = slotWarnings(editing, activeBreakpoint)
+  // The warnings below describe the breakpoint that is open, and a frame has three. An area of its
+  // own placed on desktop only takes its group's components off tablet and mobile, and nothing on
+  // the desktop screen hinted at it. So one line names the breakpoints that have a warning *this*
+  // one does not show - not merely different ones: from mobile, "desktop differs" would point at a
+  // breakpoint with fewer problems, which is the wrong way to send anyone.
+  const warningKeys = (bp: FrameBreakpoint): string[] => {
+    const w = slotWarnings(editing, bp)
+    return [
+      ...w.unassigned.map((x) => `unassigned:${x}`),
+      ...w.homeless.map((x) => `homeless:${x}`),
+      ...w.doubled.map((x) => `doubled:${x}`),
+      ...w.hiddenGroups.map((a) => `hiddenGroup:${a.id}`)
+    ]
+  }
+  const shownHere = new Set(warningKeys(activeBreakpoint))
+  const otherWarningBreakpoints = FRAME_BREAKPOINTS.filter(
+    (bp) => bp !== activeBreakpoint && warningKeys(bp).some((key) => !shownHere.has(key))
   )
   /**
    * The one form for an area, wherever it currently lies.
@@ -673,6 +782,7 @@ export default function FrameBuilder({
   function areaForm(area: GridFrameArea, placement?: GridAreaPlacement): JSX.Element {
     return (
       <div
+        data-area-form={area.id}
         onClick={(e) => e.stopPropagation()}
         // No keyboard guard here on purpose. The box above this form listens only for keystrokes
         // aimed at itself (PlacedBox), so a character typed in a field never reaches it - and a
@@ -681,7 +791,12 @@ export default function FrameBuilder({
         className="flex flex-wrap items-end gap-2 border-t border-ink/[0.06] pt-2 dark:border-ink/10"
       >
         <Field label={t('layoutEditor.frameBuilder.areaName')}>
-          <TextInput value={nameDraft} onChange={(e) => updateAreaName(area.id, e.target.value)} autoFocus className="w-32" />
+          <TextInput
+            value={nameDraft}
+            onChange={(e) => updateAreaName(area.id, e.target.value)}
+            autoFocus={focusNameOnMount.current}
+            className="w-32"
+          />
         </Field>
         <Field label={t('layoutEditor.frameBuilder.areaSlot')}>
           <Select
@@ -743,7 +858,7 @@ export default function FrameBuilder({
             </Button>
           </>
         )}
-        <Button variant="danger" onClick={() => deleteAreaById(area.id)}>
+        <Button variant="danger" onClick={() => void requestDeleteArea(area)}>
           {t('layoutEditor.frameBuilder.removeArea')}
         </Button>
       </div>
@@ -777,7 +892,7 @@ export default function FrameBuilder({
       <SegmentedControl
         label={t('layoutEditor.frameBuilder.breakpointLabel')}
         value={activeBreakpoint}
-        onChange={setActiveBreakpoint}
+        onChange={switchBreakpoint}
         options={breakpointOptions}
       />
 
@@ -1064,6 +1179,21 @@ export default function FrameBuilder({
           <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
             {t('layoutEditor.frameBuilder.doubledWarning', {
               slots: doubledSlots.map((s) => t(`positions.${s}`, s)).join(', ')
+            })}
+          </p>
+        )}
+        {hiddenGroupAreas.length > 0 && (
+          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+            {t('layoutEditor.frameBuilder.hiddenGroupsWarning', {
+              breakpoint: t(`layoutEditor.frameBuilder.breakpoint.${activeBreakpoint}`),
+              areas: hiddenGroupAreas.map((a) => a.name).join(', ')
+            })}
+          </p>
+        )}
+        {otherWarningBreakpoints.length > 0 && (
+          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+            {t('layoutEditor.frameBuilder.otherBreakpointsWarning', {
+              breakpoints: otherWarningBreakpoints.map((bp) => t(`layoutEditor.frameBuilder.breakpoint.${bp}`)).join(', ')
             })}
           </p>
         )}

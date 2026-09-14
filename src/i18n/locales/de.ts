@@ -111,8 +111,6 @@ export default {
     },
     gettingStarted: {
       title: 'Erste Schritte',
-      description:
-        'QuartzControl verwaltet Quartz-Projekte: aus einem Ordner voller Markdown-Dateien wird eine fertige Website.',
       step1: 'Lege ein neues Projekt an oder öffne einen Ordner, in dem Quartz schon eingerichtet ist.',
       step2: 'Verknüpfe den Content-Ordner mit deinen Notizen — auch direkt mit einem Obsidian-Vault.',
       step3: 'Starte die Vorschau, gestalte die Seite nach deinem Geschmack und veröffentliche sie.'
@@ -121,19 +119,19 @@ export default {
       title: 'Was du hier tun kannst',
       setup: {
         title: 'Einrichtung',
-        body: 'Titel, Adresse und Sprache der Seite festlegen, Plugins aus dem Marktplatz installieren und den Content-Ordner mit deinem Obsidian-Vault verknüpfen.'
+        body: 'Titel, Adresse, Plugins, Content-Ordner'
       },
       design: {
         title: 'Gestaltung',
-        body: 'Farben, Schriften und CSS-Variablen anpassen, Community-Themes installieren, eigenes CSS schreiben und Layout-Rahmen selbst bauen.'
+        body: 'Farben, Schriften, Themes, Layout'
       },
       publish: {
         title: 'Veröffentlichung',
-        body: 'Lokal bauen und in der Vorschau ansehen, per Git synchronisieren und auf GitHub Pages, SFTP, rsync oder einen Webspace veröffentlichen.'
+        body: 'Vorschau, Build, Git-Sync, Hochladen'
       },
       maintenance: {
         title: 'Wartung',
-        body: 'Quartz-Kern und Plugins aktualisieren, Snapshots anlegen und einzelne Dateien oder das ganze Projekt zurückspielen.'
+        body: 'Updates und Snapshots'
       }
     },
     aboutQuartz: {
@@ -179,7 +177,7 @@ export default {
         'Die Adresse, unter der die Website später erreichbar ist — ohne https://. Wenn du sie noch nicht kennst, lass „localhost“ stehen und trage sie später unter Konfiguration nach.',
       useTemplate: 'Beispielvorlage mitinstallieren',
       useTemplateHint:
-        'Eine fertige Gestaltung: gemessene Farben für hell und dunkel, drei eigene Seitenraster, selbst gehostete Schriften und jede Komponente einzeln gestaltet. Lässt sich hinterher überall ändern.',
+        'Eine fertige Gestaltung: gemessene Farben für hell und dunkel, eigene Seitenraster, selbst gehostete Schriften und jede Komponente einzeln gestaltet. Lässt sich hinterher überall ändern.',
       templateContent: 'Mit den Beispielseiten',
       templateContentHint:
         'Rund 270 Seiten, die die Vorlage selbst erklären — zu jeder Komponente die Seite, auf der sie beschrieben ist. Zum Nachschlagen gedacht; wenn du eigene Notizen mitbringst, lass sie weg.',
@@ -218,7 +216,7 @@ export default {
       updates: 'Updates',
       server: 'Vorschau & Build',
       sync: 'Git-Sync',
-      backups: 'Backups',
+      backups: 'Snapshots',
       publish: 'Veröffentlichen',
       templates: 'Vorlagen'
     },
@@ -234,7 +232,7 @@ export default {
       styles:
         'Alles zum Aussehen an einem Ort: Basisfarben und Schriften, Community-Themes, CSS-Variablen und eigenes CSS — in genau der Reihenfolge, in der sie sich gegenseitig überschreiben.',
       updates:
-        'Bringt den Quartz-Kern und die installierten Plugins auf den neuesten Stand. Vor jedem Update wird automatisch ein Snapshot angelegt, über den sich der Stand unter Backups zurückholen lässt.',
+        'Bringt den Quartz-Kern und die installierten Plugins auf den neuesten Stand. Vor jedem Update wird automatisch ein Snapshot angelegt, über den sich der Stand unter Snapshots zurückholen lässt.',
       server: 'Zeigt deine Website lokal in der Vorschau an und erstellt bei Bedarf einen einmaligen Build zum Exportieren.',
       sync: 'Gleicht deine lokalen Änderungen mit dem Git-Repository ab: Hochladen (Push) und Herunterladen (Pull).',
       backups:
@@ -254,6 +252,8 @@ export default {
       gitInProgress: 'Ein {{operation}} ist angefangen und nicht abgeschlossen',
       scssError: 'Dein CSS lässt sich nicht übersetzen',
       line: 'Zeile {{line}}',
+      noIndex: 'Die Website hat keine Startseite',
+      noIndexDetail: 'Im Content-Ordner fehlt die index.md, die Adresse der Website zeigt deshalb eine 404-Seite.',
       noBaseUrl: 'Keine Basis-URL gesetzt',
       noBaseUrlDetail: 'Ohne sie schlägt der Build fehl, sobald Schriften selbst gehostet werden.'
     },
@@ -351,17 +351,44 @@ export default {
     changeSource: 'Quelle ändern…',
     dialogTitle: 'Content-Quelle ändern',
     dialogWarning:
-      'Der bisherige Content-Ordner wird vor der Änderung beiseitegelegt statt gelöscht — unter Backups lässt er sich zurückholen.',
+      'Der bisherige Content-Ordner wird vor der Änderung beiseitegelegt statt gelöscht — unter Snapshots lässt er sich zurückholen.',
     newSourceFolder: 'Neuer Quellordner',
     strategy: 'Strategie',
     strategySymlink: 'Verknüpfen (symbolischer Link, z. B. auf ein Obsidian-Vault)',
     strategyCopy: 'Kopieren (echter Ordner)',
     progress: '{{processed}} / {{total}} Dateien kopiert…',
     applying: 'Wird angewendet…',
-    apply: 'Übernehmen'
+    apply: 'Übernehmen',
+    noIndex: 'Keine Startseite: Im Content-Ordner liegt keine index.md, deshalb zeigt die Adresse der Website eine 404-Seite.',
+    createIndex: 'Startseite anlegen…',
+    createIndexTitle: 'Startseite anlegen',
+    createIndexTitleLabel: 'Titel der Startseite',
+    createIndexTitleHint: 'Ohne Titel hieße die Seite „index“.',
+    createIndexListHint:
+      'Darunter kommt eine Liste der Ordner und Notizen, die jetzt oben im Content-Ordner liegen. Sie wird später nicht aktualisiert.',
+    createIndexLinked: 'Die Datei wird im verknüpften Ordner angelegt, also bei deinen eigenen Notizen: {{path}}',
+    createIndexAction: 'Startseite anlegen',
+    creatingIndex: 'Lege an…',
+    indexCreated: 'Die Startseite ist angelegt: {{path}}',
+    indexCreatedFallback:
+      'Die Liste auf der neuen Startseite entstand ohne die Ausschlussregeln von Quartz, weil im Projekt noch kein npm install gelaufen ist. Sie kann Ordner nennen, die die Website nicht hat.'
+  },
+  buildActivity: {
+    kind: {
+      build: 'Build läuft seit {{time}}',
+      serve: 'Dev-Server baut seit {{time}}',
+      rebuild: 'Baut nach einer Änderung neu, seit {{time}}'
+    },
+    phase: {
+      preparing: 'bereitet vor',
+      parsing: 'liest die Notizen',
+      emitting: 'schreibt die Seiten'
+    }
   },
   buildServer: {
     devServer: 'Dev-Server',
+    noIndex: 'Im Content-Ordner fehlt die index.md — die Vorschau zeigt unter ihrer Adresse deshalb eine 404-Seite.',
+    noIndexLink: 'Startseite anlegen →',
     devServerHint: 'Zeigt deine Website live im Browser an, mit automatischem Neuladen bei Änderungen — ideal zum Ausprobieren.',
     oneOffBuildHint: 'Erstellt einmalig die fertigen HTML-Dateien, z. B. um sie manuell hochzuladen oder zu prüfen, bevor du veröffentlichst.',
     port: 'Port',
@@ -722,7 +749,28 @@ export default {
     faviconMissing: 'Das Favicon-Plugin ist nicht installiert — die Seite bekommt daraus kein Favicon.',
     faviconLink: 'Zu den Plugins',
     announceSet: 'Projektbild gesetzt.',
-    announceCleared: 'Projektbild entfernt, das ursprüngliche Icon ist wieder da.'
+    announceCleared: 'Projektbild entfernt, das ursprüngliche Icon ist wieder da.',
+    dark: {
+      choose: 'Bild für den Dunkelmodus…',
+      replace: 'Dunkles Bild ersetzen…',
+      remove: 'Dunkles Bild entfernen',
+      hint: 'Optional, nur für das Bild im Kopfbereich. Liegt als quartz/static/icon-dark.png im Projekt; das Favicon bleibt beim hellen Bild.',
+      hintHeaderOn: 'Nur für das Bild im Kopfbereich; das Favicon bleibt beim hellen Bild. „Dunkles Bild entfernen“ löscht die Datei sofort — bis zum „Speichern“ fehlt dem Kopfbereich im dunklen Modus dann sein Bild.',
+      announceSet: 'Bild für den Dunkelmodus gesetzt.',
+      announceCleared: 'Bild für den Dunkelmodus entfernt.'
+    },
+    header: {
+      label: 'Im Kopfbereich der Website zeigen',
+      hint: 'Als Link zur Startseite, im dunklen Modus mit dem dunklen Bild. Wird mit „Speichern“ übernommen; Platz und Reihenfolge wie jedes Plugin im Layout.',
+      hintInstall: 'Braucht das Plugin quartz-layout-box, die App bietet beim Einschalten an, es zu installieren.',
+      needsImage: 'Erst ein eigenes Projektbild wählen.',
+      installing: 'Installiere quartz-layout-box…',
+      installConfirm:
+        'Plugin quartz-layout-box installieren?\n\nDas Bild im Kopfbereich wird damit gebaut. Vorher legt die App einen Snapshot an und speichert ungespeicherte Änderungen dieser Seite.',
+      installAction: 'Installieren',
+      installed: 'quartz-layout-box ist installiert. Das Bild im Kopfbereich wird mit „Speichern“ übernommen.',
+      saveFirstFailed: 'Die ungespeicherten Änderungen ließen sich nicht speichern, deshalb wurde nichts installiert.'
+    }
   },
   siteSettings: {
     pageTitle: 'Seitentitel',
@@ -822,7 +870,7 @@ export default {
     allDisabled: 'Community-Themes deaktiviert',
     active: {
       title: 'Aktuelles Theme',
-      none: 'Kein Community-Theme aktiv — es gilt das klassische Theme aus „Konfiguration → Theme“. Installiere unten eines aus dem Katalog, um loszulegen.',
+      none: 'Kein Community-Theme aktiv — es gelten deine Farben und Schriften aus „Stile → Basis“. Installiere unten eines aus dem Katalog, um loszulegen.',
       heading: 'Aktuelles Theme: {{themeId}}',
       saveAsPreset: 'Als Preset speichern',
       presetNamePlaceholder: 'Name für das Preset',
@@ -830,7 +878,7 @@ export default {
         'Dieses Plugin ({{source}}) überschreibt die Farben aus der Basis-Ebene. Änderungen unten wirken sich direkt auf die Vorschau aus.',
       disabledHeading: 'Community-Theme deaktiviert ({{themeId}})',
       disabledNote:
-        'Es gilt jetzt wieder das klassische Theme aus „Konfiguration → Theme“. Die Einstellungen dieses Community-Themes bleiben erhalten und lassen sich jederzeit wieder aktivieren.',
+        'Es gelten jetzt wieder deine Farben und Schriften aus „Stile → Basis“. Die Einstellungen dieses Community-Themes bleiben erhalten und lassen sich jederzeit wieder aktivieren.',
       reactivate: 'Wieder aktivieren',
       checkingStyleSettings: 'Prüfe Style-Settings des Themes…',
       noStyleSettingsNote:
@@ -1158,10 +1206,16 @@ export default {
       rowSpanLabel: 'Zeilen-Spanne',
       colSpanLabel: 'Spalten-Spanne',
       removeArea: 'Bereich löschen',
+      removeAreaConfirm: 'Bereich „{{name}}“ löschen?\n\n{{consequence}} Geschrieben wird erst beim Speichern.',
+      removeAreaPlaced: 'Seine Platzierung auf {{breakpoints}} geht mit.',
+      removeAreaUnplaced: 'Er liegt auf keinem Breakpoint im Raster; seine Belegung geht mit.',
       unplace: 'Aus Raster lösen',
       visibleOnBreakpoint: 'Sichtbar auf {{breakpoint}}',
       overlapError: 'Dieser Bereich überschneidet sich mit einem bestehenden Bereich.',
       unassignedWarning: 'Nicht zugewiesen: {{slots}}. Komponenten für diese Positionen werden in diesem Frame nicht angezeigt.',
+      hiddenGroupsWarning:
+        'Auf {{breakpoint}} ausgeblendet: {{areas}}. Die Komponenten dieser eigenen Bereiche erscheinen auf dieser Breite nicht.',
+      otherBreakpointsWarning: 'Auf {{breakpoints}} gibt es Hinweise, die hier nicht stehen.',
       homelessWarning:
         'Ohne einfachen Bereich: {{slots}}. Was dieser Belegung gehört und in keinem eigenen Bereich liegt, erscheint auf keiner Seite.',
       doubledWarning:
@@ -1340,7 +1394,7 @@ export default {
       noFace: 'keine @font-face-Regel gefunden',
       familyDefault: '(Standardstärke)',
       noLoader:
-        'Es lädt nichts Schriften nach: verfügbar ist nur, was ein aktives Theme mitbringt oder was du per @font-face deklarierst.',
+        'Schriften werden nicht nachgeladen: verfügbar ist nur, was ein aktives Theme mitbringt oder was du per @font-face deklarierst.',
       loader: {
         core: {
           google: 'Quartz lädt bei jedem Seitenaufruf von Google Fonts: {{specs}}.',
@@ -1397,9 +1451,11 @@ export default {
     core: {
       heading: 'Quartz-Kern',
       commits: 'Installiert: {{current}} · Neueste Version: {{latest}}',
+      missing: '{{count}} Commit fehlt',
+      missing_other: '{{count}} Commits fehlen',
       runUpdate: 'Update durchführen',
       confirm:
-        'Quartz-Kern aktualisieren?\n\nDabei werden Änderungen von jackyzha0/quartz geholt und die Abhängigkeiten neu installiert; bei Konflikten kann Handarbeit nötig sein.\n\nVorher wird automatisch ein Snapshot angelegt — unter Backups holst du den jetzigen Stand jederzeit zurück.',
+        'Quartz-Kern aktualisieren?\n\nDabei werden Änderungen von jackyzha0/quartz geholt und die Abhängigkeiten neu installiert; bei Konflikten kann Handarbeit nötig sein.\n\nVorher wird automatisch ein Snapshot angelegt — unter Snapshots holst du den jetzigen Stand jederzeit zurück.',
       abortMerge: 'Merge abbrechen',
       openSnapshot: 'Snapshot von vor dem Update öffnen →',
       conflictHeading: 'Konflikte in folgenden Dateien (außer den durch .gitattributes geschützten Locale-Dateien):'
@@ -1415,8 +1471,8 @@ export default {
     snapshots: {
       heading: 'Snapshots',
       movedHint:
-        'Vor jedem Kern- und Plugin-Update wird automatisch ein Snapshot angelegt. Verwaltet werden sie unter Backups — dort liegen auch die Snapshots aller anderen Bereiche.',
-      openBackups: 'Zu den Backups →'
+        'Vor jedem Kern- und Plugin-Update wird automatisch ein Snapshot angelegt. Verwaltet werden sie unter Snapshots — dort liegen auch die aller anderen Bereiche.',
+      openBackups: 'Zu den Snapshots →'
     }
   },
   publish: {
@@ -1603,7 +1659,7 @@ export default {
       'Für {{count}} Sprachen lässt sich nicht feststellen, was du geändert hast — die Vergleichsbasis entsteht erst, wenn du einen Text in dieser App bearbeitest. Nimm „Alle Texte“, wenn eine davon dabei sein soll.',
     importHeading: 'Vorlage anwenden',
     importHint:
-      'Vorher wird automatisch ein Snapshot angelegt, der Import lässt sich also über „Backups“ komplett zurücknehmen.',
+      'Vorher wird automatisch ein Snapshot angelegt, der Import lässt sich also unter „Snapshots“ komplett zurücknehmen.',
     planning: 'Paket wird geprüft…',
     pickPackage: 'Vorlage wählen…',
     previewError: 'Das ist keine lesbare Vorlage (keine manifest.json gefunden).',

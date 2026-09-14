@@ -5,7 +5,8 @@ erklärt und im Vault `~/Obsidian/QuartzProjekte/Example` lebt
 (`scripts/example-template/README.md`).
 
 **Stand 2026-09-07: fertig.** 104 Seiten in zwei Sprachen (52 und 52, jede mit ihrem Partner über
-`translationKey`), 695 Wikilinks, alle auflösbar; 130 Aufnahmen, 74 davon in den Seiten; in der App
+`translationKey`), 695 Wikilinks, alle auflösbar; 130 Aufnahmen, 74 davon in den Seiten (seit dem Lauf vom
+2026-09-14 134, dieselben 74 Verweise, alle auflösbar); in der App
 erreichbar und aus jedem Bildschirm heraus verlinkt, in der Sprache, die die App gerade spricht.
 
 Die Kapitel entstanden aus den Quellen — `de.ts`, die Routen, `electron-builder.yml`,
@@ -19,7 +20,7 @@ Bedingung er auf dem Bildschirm erscheint.
 
 ## Warum es nicht im Example-Vault steht
 
-Der Example-Vault reist im Vorlagenpaket mit. `resources/templates/minimal-lesbar.qtpl` (754 KB)
+Der Example-Vault reist im Vorlagenpaket mit. `resources/templates/minimal-lesbar.qtpl` (764 KB, exportiert am 2026-09-14)
 enthält 301 Einträge unter `files/content/`: der `content`-Baustein
 (`electron/main/services/templatePackage/parts.ts`) liest durch den Symlink hindurch und packt den
 ganzen Vault ein. Ein App-Handbuch als achtes Kapitel dort landete damit bei jedem Nutzer im
@@ -30,12 +31,14 @@ Also ein eigener Ort:
 ```
 ~/Obsidian/QuartzProjekte/QuartzControl-Handbuch/   der Vault — der Inhalt, eigenes git
         ↑ Symlink
-~/Documents/QuartzControl-Handbuch/content/         das Projekt, mit der Example-Vorlage
+~/Documents/QuartzProjekte/QuartzControl-Handbuch/content/   das Projekt, mit der Example-Vorlage
 ```
 
-Nicht `Handbuch`: In `QuartzProjekte/` liegt bereits `brain-handbuch`, und das ist ein
-vollständiges Quartz-*Projekt*, kein Vault. Ein Vault namens `Handbuch` daneben führt beim nächsten
-Lesen in die Irre.
+Nicht `Handbuch`: Als der Vault entstand, lag in `~/Obsidian/QuartzProjekte/` bereits
+`brain-handbuch`, und das ist ein vollständiges Quartz-*Projekt*, kein Vault. Ein Vault namens
+`Handbuch` daneben führte beim nächsten Lesen in die Irre. Seit dem 2026-09-12 stehen die Projekte
+gesammelt in `~/Documents/QuartzProjekte/`, der Name bleibt aber der, unter dem der Vault überall
+steht.
 
 Das Projekt entstand aus `minimal-lesbar.qtpl` — **ohne den Baustein `content`**. Bei einem
 Symlink lehnt der Baustein sich zwar selbst ab (`contentIsSymlink`), aber abwählen ist ehrlicher
@@ -93,7 +96,11 @@ beide importieren — sonst zeigt das Handbuch Bildschirme, die der Smoke-Test n
   dieselben IPC-Pfade wie ein Klick ein, was auf den Bildern zu sehen sein soll — zwei Projekte,
   drei Zugänge und drei Veröffentlichungsziele. Was es einträgt, steht in
   `scripts/screenshot-demo.mjs`; alle Namen liegen unter `example.com`, das RFC 2606 genau dafür
-  freihält. Ohne `--demo` wird gegen das echte Profil aufgenommen — dann zeigen die Bilder, was auf
+  freihält. Wegwerf ist dabei nur das Profil: Die Ziele liegen im ersten Projekt der Liste, einem
+  echten (`QuartzControl-Handbuch`), in dessen `.quartz-gui/publish-targets.json`. Das Skript merkt
+  sich die Datei — auch, dass sie fehlt — und schreibt sie am Ende zurück, auch nach einem Abbruch
+  oder Ctrl+C; bis zum Review 2026-09-19 blieben die Demo-Ziele liegen und überschrieben ein
+  gleichnamiges echtes. Ohne `--demo` wird gegen das echte Profil aufgenommen — dann zeigen die Bilder, was auf
   diesem Rechner eingerichtet ist.
 - 1440 × 900, Vorgabe hell (`--scheme dunkel` oder `beide`). `emulateMedia` wird hier ausdrücklich
   gesetzt; im Smoke-Test steht dort bewusst `null`, weil er das Schema des Systems treffen soll.
@@ -257,10 +264,13 @@ Der Grund: Es ist ein erzeugtes Artefakt, dessen 29,9 MB Bilder bei jedem Textdu
 entstehen; im Repo wäre jede Aufnahme ein neuer Blob.
 
 Anders als git lässt es sich **nicht** aus dem Netz nachholen — es entsteht aus einem Projekt, das
-nur auf dieser Maschine liegt. Deshalb warnt `beforePack` und packt weiter, statt abzubrechen: Eine
-App ohne Handbuch ist unvollständig, aber benutzbar. Und `openHandbook()` prüft die Datei, bevor es
-sie öffnet, damit der Nutzer in diesem Fall einen Satz bekommt statt einer Fehlermeldung des
-Betriebssystems.
+nur auf dieser Maschine liegt, oder wird als gebaute Website übernommen
+(`QUARTZCONTROL_HANDBOOK_SITE`). Fehlt beides, bricht `beforePack` ab. Ein Paket ohne Handbuch gibt
+es nur auf ausdrücklichen Wunsch (`QUARTZCONTROL_WITHOUT_HANDBOOK=1`): Bis zum 2026-09-14 warnte der
+Haken nur und packte weiter, und nach dem Umzug der Projekte am 2026-09-12 kam so auch vom Mac ein
+Paket ohne Handbuch, dessen Warnung im Log niemand las (Review 2026-09-18, Befund 4). Für den
+gewollten Fall prüft `openHandbook()` die Datei, bevor es sie öffnet, damit der Nutzer einen Satz
+bekommt statt einer Fehlermeldung des Betriebssystems.
 
 Gebaut werden beide Sprachen in einem Lauf (453 Dateien, 35,4 MB); das `.app` misst damit rund
 427 MB, gemessen am arm64-Bundle vom 2026-09-10, davon 38 MB Handbuch. Erreichbar an zwei Stellen, die **dieselbe Funktion** rufen — zwei Stellen, die den Pfad selbst
@@ -286,6 +296,10 @@ indem `openPath` abgefangen wurde, statt zweimal einen Browser zu öffnen") hat 
 und nichts darüber, was am anderen Ende eines solchen Pfads passiert; genau dafür hätte es den
 Browser gebraucht. Nach der Umstellung: 4499 von 4499 internen Links antworten mit 200, keine
 Konsolenfehler, und durch die gebaute App vier Aufrufe des Kanals auf einen Server.
+
+Was vor einem Release am Handbuch hängt — der Footer, der an sechs Stellen gleich stehen muss, und
+Band und Download-Kasten von `QuartzControl-Web`, die dieselben Seiten mit einer Fassungsnummer
+veröffentlicht —, steht in [`release.md`](release.md).
 
 ## Wie ein Bildschirm sein Kapitel nennt
 

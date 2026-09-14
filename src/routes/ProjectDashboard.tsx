@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
+import { BuildActivityLine } from '../components/BuildActivityLine'
+import { useBuildActivity } from '../hooks/useBuildActivity'
 import {
   ChevronRight,
   CircleCheck,
@@ -303,6 +305,19 @@ export default function ProjectDashboard(): JSX.Element {
       ? `http://${server.options.host || 'localhost'}:${server.options.port}`
       : null
   const serverTransitioning = server.state === 'starting' || server.state === 'stopping'
+  // What Quartz is doing right now, from the main process - a build started on another page shows here too.
+  const activity = useBuildActivity(project.id)
+  const buildRunning = activity?.kind === 'build'
+  // A build that ends while the Übersicht is open changes the output directory the tile describes.
+  const [sawBuild, setSawBuild] = useState(false)
+  useEffect(() => {
+    if (buildRunning) setSawBuild(true)
+    else if (sawBuild) {
+      setSawBuild(false)
+      loadBuild()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [buildRunning])
 
   const themePlugin = config ? findOverridingThemePlugin(config.plugins) : undefined
   const activeTheme = typeof themePlugin?.options?.theme === 'string' ? themePlugin.options.theme : null
@@ -343,6 +358,17 @@ export default function ProjectDashboard(): JSX.Element {
       tone: 'amber',
       icon: Link2,
       title: t('dashboard.attention.contentMissing'),
+      to: 'config?tab=content',
+      linkLabel: t('dashboard.contentTab')
+    })
+  }
+  if (content?.hasIndex === false) {
+    issues.push({
+      id: 'no-index',
+      tone: 'amber',
+      icon: Link2,
+      title: t('dashboard.attention.noIndex'),
+      detail: t('dashboard.attention.noIndexDetail'),
       to: 'config?tab=content',
       linkLabel: t('dashboard.contentTab')
     })
@@ -444,6 +470,7 @@ export default function ProjectDashboard(): JSX.Element {
           ) : (
             <Metric tone="muted">{t('dashboard.noPreview')}</Metric>
           )}
+          {activity && activity.kind !== 'build' && <BuildActivityLine activity={activity} />}
           <Facts>
             {server.state === 'running' ? (
               <span className="text-text-muted">
@@ -631,7 +658,12 @@ export default function ProjectDashboard(): JSX.Element {
         {/* Build - nothing records that a build happened, so this describes the output directory
             as it is on disk right now. */}
         <Tile icon={Hammer} title={t('dashboard.build.title')} to="server" linkLabel={t('projectLayout.tabs.server')}>
-          {!build ? (
+          {buildRunning && activity ? (
+            <>
+              <Metric>{t('dashboard.build.running')}</Metric>
+              <BuildActivityLine activity={activity} />
+            </>
+          ) : !build ? (
             <Skeleton className="h-5 w-2/3" />
           ) : build.exists ? (
             <>
@@ -767,10 +799,10 @@ export default function ProjectDashboard(): JSX.Element {
 
       {/* The three things worth doing from here without opening a page first. */}
       <div className="flex flex-wrap items-center gap-2">
-        <Button variant="ghost" onClick={runBuild} disabled={isBusy('build')}>
+        <Button variant="ghost" onClick={runBuild} disabled={isBusy('build') || buildRunning}>
           <span className="inline-flex items-center gap-1.5">
             <Hammer size={13} aria-hidden />
-            {isBusy('build') ? t('dashboard.build.running') : t('dashboard.build.run')}
+            {isBusy('build') || buildRunning ? t('dashboard.build.running') : t('dashboard.build.run')}
           </span>
         </Button>
         <Button variant="ghost" onClick={takeSnapshot} disabled={isBusy('snapshot')}>

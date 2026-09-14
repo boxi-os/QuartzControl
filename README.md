@@ -12,7 +12,7 @@ plugins and a deployment path, and none of it explains itself by looking at it. 
 a surface on top that shows what it is doing and that you can walk away from again — the files stay
 ordinary Quartz files.
 
-> **Beta.** Version 1.0.0-beta.1. Runs on macOS and Linux; Windows is deliberately absent (see
+> **Beta.** Version 1.0.0-beta.2. Runs on macOS and Linux; Windows is deliberately absent (see
 > below). Feedback is welcome — an issue is the easiest way.
 
 ## What it does
@@ -47,7 +47,7 @@ So that a first start needs nothing installed, the app carries:
 
 ## Installation
 
-**1.0.0-beta.1** is out and lives under
+**1.0.0-beta.2** is out and lives under
 [Releases](https://github.com/boxi-os/QuartzControl/releases): DMG and zip for macOS (arm64 and
 x64), AppImage and deb for Linux (arm64 and x86_64), and a Flatpak for x86_64 and aarch64. Every
 file names its architecture, so no two downloads look alike. Building it yourself stays open —
@@ -55,12 +55,17 @@ see [Building from source](#building-from-source).
 
 The two notes below apply to the finished packages and to your own build alike.
 
-**macOS:** the app is unsigned — there is no Developer ID certificate. Gatekeeper will therefore
-refuse the first launch. Either open it once from the context menu (right-click → Open) or:
+**macOS:** the app is only ad-hoc signed and not notarised — there is no Developer ID
+certificate. macOS will therefore refuse the first launch. Allow it under **System Settings →
+Privacy & Security → Security → “Open Anyway”**, within about an hour of the refused launch. The
+context menu (right-click → Open) stopped being a way around this in macOS 15. Or in Terminal:
 
 ```
 xattr -dr com.apple.quarantine /Applications/QuartzControl.app
 ```
+
+If macOS says the app **“is damaged”**, it is 1.0.0-beta.1: its signature was broken, and for that
+version only the Terminal command above helps.
 
 **Linux:** make the AppImage executable and run it, or install the deb. The Flatpak needs
 `--filesystem` access to wherever your projects live, if that is not your home directory.
@@ -103,9 +108,10 @@ installer for a version that does not work.
 A hobby project, written for fun, out of technical curiosity, and for my own use. Configuring
 Quartz by hand pushed me to my limits, which is how QuartzControl came about. Since it has turned
 out to be genuinely useful to me, I would like to make it available to everyone … maybe someone
-else will find it as useful as I do. Two plugins came out of the same work:
-[quartz-layout-box](https://github.com/boxi-os/quartz-layout-box) and
-[quartz-multilanguage](https://github.com/boxi-os/quartz-multilanguage), which I am happy to share
+else will find it as useful as I do. Three plugins came out of the same work:
+[quartz-layout-box](https://github.com/boxi-os/quartz-layout-box),
+[quartz-multilanguage](https://github.com/boxi-os/quartz-multilanguage) and
+[quartz-navigations](https://github.com/boxi-os/quartz-navigations), which I am happy to share
 as well. On top of that there is an example template with a complete configuration, meant as a
 starting point for a design of your own.
 
@@ -132,10 +138,12 @@ On top of that come my own test runs with the app — and maybe soon yours … f
 - **[quartz-multilanguage](https://github.com/boxi-os/quartz-multilanguage)** — Quartz plugin for
   multilingual content: language detection, translation linking, language switcher, hreflang and
   redirects
+- **[quartz-navigations](https://github.com/boxi-os/quartz-navigations)** — Quartz plugin,
+  navigations from the content folder structure: menu bar, sidebar accordion, sitemap, pager
 - **[quartzcontrol-templates](https://github.com/boxi-os/quartzcontrol-templates)** — template
   packages the app fetches when creating a project
 
-Both plugins work in any Quartz 5 project, independently of QuartzControl.
+All three plugins work in any Quartz 5 project, independently of QuartzControl.
 
 ## Licence
 

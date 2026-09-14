@@ -116,6 +116,7 @@ export function registerIpcHandlers(): void {
     broadcast(IPC.buildLog, line)
   })
   buildService.serverEvents.on('status', (projectId, status) => broadcast(IPC.serverStatusChanged, projectId, status))
+  buildService.serverEvents.on('activity', (projectId, activity) => broadcast(IPC.buildActivityChanged, projectId, activity))
   deployService.deployEvents.on('progress', (event) => broadcast(IPC.deployProgress, event))
 
   handleNoArgs(IPC.projectList, () => projectStore.listProjects())
@@ -149,6 +150,12 @@ export function registerIpcHandlers(): void {
     projectIconService.setProjectIcon(projectPath, sourcePath)
   )
   handle(IPC.projectIconClear, t([s.projectIconTarget]), ({ projectPath }) => projectIconService.clearProjectIcon(projectPath))
+  handle(IPC.projectIconSetDark, t([s.projectIconSource]), ({ projectPath, sourcePath }) =>
+    projectIconService.setProjectIconDark(projectPath, sourcePath)
+  )
+  handle(IPC.projectIconClearDark, t([s.projectIconTarget]), ({ projectPath }) =>
+    projectIconService.clearProjectIconDark(projectPath)
+  )
 
   handle(IPC.projectCreate, t([s.createProjectOptions]), async (options) => {
     const result = await createService.createProject(options as CreateProjectOptions)
@@ -308,7 +315,9 @@ export function registerIpcHandlers(): void {
     localizationService.ensureGitAttributes(projectPath)
   )
 
-  handle(IPC.updateCoreStatus, t([s.absolutePath]), (projectPath) => updateService.getCoreUpdateStatus(projectPath))
+  handle(IPC.updateCoreStatus, t([s.absolutePath, s.coreStatusOptions.optional()]), (projectPath, options) =>
+    updateService.getCoreUpdateStatus(projectPath, options)
+  )
   handle(IPC.updateCoreRun, t([s.absolutePath]), (projectPath) => updateService.runCoreUpdate(projectPath))
   handle(IPC.updateCoreAbort, t([s.absolutePath]), (projectPath) => updateService.abortCoreMerge(projectPath))
   handle(IPC.updatePluginsStatus, t([s.absolutePath]), (projectPath) => updateService.getPluginsUpdateStatus(projectPath))
@@ -430,6 +439,10 @@ export function registerIpcHandlers(): void {
     IPC.buildRun,
     t([s.uuid, s.absolutePath, s.buildOutputDir.optional()]),
     async (projectId, projectPath, outputDir) => {
+      // A build already running into the same output directory is joined, not asked about again:
+      // that directory was answered for when it started. Into a different one it is refused.
+      const running = buildService.joinRunningBuild(projectId, projectPath, outputDir)
+      if (running) return running
       const verdict = await buildOutputGuard.assessOutputDir(projectPath, outputDir)
       const dir = resolveBuildDir(projectPath, outputDir)
       if (verdict.kind === 'refused') {
@@ -543,6 +556,8 @@ export function registerIpcHandlers(): void {
       )
   )
 
+  handle(IPC.contentCreateIndex, t([s.createIndexArgs]), (args) => contentService.createIndexPage(args.projectPath, args.title))
+
   handleNoArgs(IPC.settingsGet, () => settingsService.getSettings())
   handle(IPC.settingsSave, t([s.settings]), async (next) => {
     await settingsService.saveSettings(next as Settings)
@@ -624,6 +639,8 @@ export function registerIpcHandlers(): void {
   // which the renderer used for every one of these questions before, offers no control over
   // that at all: its confirming answer is always the default.
   handle(IPC.logsHistory, t([s.logHistoryInput]), (input) => logHistory(input.projectId))
+  // Same argument as logs.history: one project, by id.
+  handle(IPC.buildActivity, t([s.logHistoryInput]), (input) => buildService.getBuildActivity(input.projectId))
   handle(IPC.logsClear, t([s.logClearInput]), (input) => clearLogHistory(input.projectId, input.stream))
 
   handle(IPC.dialogConfirm, t([s.confirmDialog]), async (options) => {

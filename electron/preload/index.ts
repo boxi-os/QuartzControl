@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { IPC } from '@shared/ipc-contract'
 import type {
   AppCommand,
+  BuildActivity,
   QuartzGuiApi,
   LogLine,
   ServerStatus,
@@ -69,7 +70,9 @@ const api: QuartzGuiApi = {
   projectIcon: {
     get: (args: { projectPath: string }) => ipcRenderer.invoke(IPC.projectIconGet, args),
     set: (args: { projectPath: string; sourcePath: string }) => ipcRenderer.invoke(IPC.projectIconSet, args),
-    clear: (args: { projectPath: string }) => ipcRenderer.invoke(IPC.projectIconClear, args)
+    clear: (args: { projectPath: string }) => ipcRenderer.invoke(IPC.projectIconClear, args),
+    setDark: (args: { projectPath: string; sourcePath: string }) => ipcRenderer.invoke(IPC.projectIconSetDark, args),
+    clearDark: (args: { projectPath: string }) => ipcRenderer.invoke(IPC.projectIconClearDark, args)
   },
   config: {
     get: (projectPath: string) => ipcRenderer.invoke(IPC.configGet, projectPath),
@@ -149,7 +152,8 @@ const api: QuartzGuiApi = {
       ipcRenderer.invoke(IPC.snapshotSaveSettings, projectPath, includeContent)
   },
   updates: {
-    coreStatus: (projectPath: string) => ipcRenderer.invoke(IPC.updateCoreStatus, projectPath),
+    coreStatus: (projectPath: string, options?: { resolveInstalled?: boolean }) =>
+      ipcRenderer.invoke(IPC.updateCoreStatus, projectPath, options),
     runCoreUpdate: (projectPath: string) => ipcRenderer.invoke(IPC.updateCoreRun, projectPath),
     abortCoreMerge: (projectPath: string) => ipcRenderer.invoke(IPC.updateCoreAbort, projectPath),
     pluginsStatus: (projectPath: string) => ipcRenderer.invoke(IPC.updatePluginsStatus, projectPath),
@@ -233,6 +237,9 @@ const api: QuartzGuiApi = {
     run: (projectId: string, projectPath: string, outputDir?: string) =>
       ipcRenderer.invoke(IPC.buildRun, projectId, projectPath, outputDir),
     onLog: (cb: (line: LogLine) => void) => onEvent<[LogLine]>(IPC.buildLog, cb),
+    activity: (input: { projectId: string }) => ipcRenderer.invoke(IPC.buildActivity, input),
+    onActivity: (cb: (projectId: string, activity: BuildActivity | null) => void) =>
+      onEvent<[string, BuildActivity | null]>(IPC.buildActivityChanged, cb),
     lastOutput: (projectPath: string, outputDir?: string) =>
       ipcRenderer.invoke(IPC.buildLastOutput, projectPath, outputDir)
   },
@@ -258,7 +265,8 @@ const api: QuartzGuiApi = {
     status: (projectPath: string) => ipcRenderer.invoke(IPC.contentStatus, projectPath),
     change: (projectId: string, projectPath: string, sourcePath: string, strategy: ContentStrategy) =>
       ipcRenderer.invoke(IPC.contentChange, projectId, projectPath, sourcePath, strategy),
-    onProgress: (cb: (progress: ContentProgress) => void) => onEvent<[ContentProgress]>(IPC.contentProgress, cb)
+    onProgress: (cb: (progress: ContentProgress) => void) => onEvent<[ContentProgress]>(IPC.contentProgress, cb),
+    createIndex: (args: { projectPath: string; title: string }) => ipcRenderer.invoke(IPC.contentCreateIndex, args)
   },
   settings: {
     get: () => ipcRenderer.invoke(IPC.settingsGet),

@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto'
 import { open, readFile, rename, rm } from 'fs/promises'
+import { closeSync, fsyncSync, openSync, renameSync, rmSync, writeSync } from 'fs'
 
 /**
  * How this app's small JSON stores are read and written.
@@ -133,6 +134,29 @@ export async function writeFileAtomic(path: string, text: string): Promise<void>
     await rename(tmp, path)
   } catch (err) {
     await rm(tmp, { force: true }).catch(() => undefined)
+    throw err
+  }
+}
+
+/**
+ * The same atomic write, synchronously - for the one moment an async write does not survive: a
+ * window's `close` handler, after which the app may quit before a pending promise settles. Measured
+ * on the window-state store: every close written with writeJsonFile left a `….tmp-<pid>-…` file
+ * behind, the rename never ran.
+ */
+export function writeJsonFileSync(path: string, value: unknown): void {
+  const tmp = `${path}.tmp-${process.pid}-${randomUUID().slice(0, 8)}`
+  try {
+    const fd = openSync(tmp, 'w')
+    try {
+      writeSync(fd, JSON.stringify(value, null, 2))
+      fsyncSync(fd)
+    } finally {
+      closeSync(fd)
+    }
+    renameSync(tmp, path)
+  } catch (err) {
+    rmSync(tmp, { force: true })
     throw err
   }
 }

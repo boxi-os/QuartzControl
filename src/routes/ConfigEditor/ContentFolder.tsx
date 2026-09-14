@@ -5,6 +5,7 @@ import { useProject } from '../ProjectLayout'
 import type { ContentProgress, ContentStatus, ContentStrategy } from '@shared/ipc-contract'
 import { Badge, Button, Card, CardHeading, Field, FormActions, Modal, Select, TextInput } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
+import { announce } from '../../state/announcer'
 
 export default function ContentFolder(): JSX.Element {
   const { t } = useTranslation()
@@ -16,6 +17,16 @@ export default function ContentFolder(): JSX.Element {
   const [progress, setProgress] = useState<ContentProgress | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // The start page. Without content/index.md the site's own address is Quartz's 404 page, and a
+  // linked vault almost never has one - offered here, written only from the dialog, never on its own.
+  const [indexDialog, setIndexDialog] = useState(false)
+  const [indexTitle, setIndexTitle] = useState('')
+  const [indexBusy, setIndexBusy] = useState(false)
+  const [indexError, setIndexError] = useState<string | null>(null)
+  // Set when the list on a just-created start page came from the fallback rather than Quartz's own
+  // globby. It outlives the dialog, because the dialog closes on success - and the one thing to say
+  // then is that the list may link folders the build leaves out.
+  const [indexFallback, setIndexFallback] = useState(false)
 
   async function reload(): Promise<void> {
     setStatus(await window.quartzGui.content.status(project.path))
@@ -51,6 +62,36 @@ export default function ContentFolder(): JSX.Element {
     setBusy(false)
   }
 
+  function openIndexDialog(): void {
+    setIndexTitle(project.name)
+    setIndexError(null)
+    setIndexDialog(true)
+  }
+
+  async function createIndex(): Promise<void> {
+    if (indexBusy || !indexTitle.trim()) return
+    setIndexBusy(true)
+    setIndexError(null)
+    try {
+      const { path, listSource } = await window.quartzGui.content.createIndex({
+        projectPath: project.path,
+        title: indexTitle.trim()
+      })
+      setIndexDialog(false)
+      setIndexFallback(listSource === 'fallback')
+      announce(
+        listSource === 'fallback'
+          ? `${t('content.indexCreated', { path })} ${t('content.indexCreatedFallback')}`
+          : t('content.indexCreated', { path })
+      )
+      await reload()
+    } catch (err) {
+      setIndexError(formatIpcError(err))
+    } finally {
+      setIndexBusy(false)
+    }
+  }
+
   return (
     <div>
       {/* The one block on this tab, and it's four short lines - the cap sits on the card rather
@@ -78,10 +119,52 @@ export default function ContentFolder(): JSX.Element {
             )}
           </div>
         )}
+        {status?.hasIndex === false && (
+          <div className="mt-3 flex flex-col items-start gap-2">
+            <p className="text-sm text-amber-700 dark:text-amber-400">{t('content.noIndex')}</p>
+            <Button variant="ghost" onClick={openIndexDialog}>
+              {t('content.createIndex')}
+            </Button>
+          </div>
+        )}
+        {indexFallback && status?.hasIndex && (
+          <p className="mt-3 text-sm text-amber-700 dark:text-amber-400">{t('content.indexCreatedFallback')}</p>
+        )}
         <Button className="mt-4" variant="ghost" onClick={() => setShowDialog(true)}>
           {t('content.changeSource')}
         </Button>
       </Card>
+
+      {indexDialog && status && (
+        <Modal
+          open
+          onClose={() => setIndexDialog(false)}
+          onSubmit={createIndex}
+          dismissible={!indexBusy}
+          title={t('content.createIndexTitle')}
+        >
+          <div className="flex flex-col gap-3">
+            <Field label={t('content.createIndexTitleLabel')} hint={t('content.createIndexTitleHint')}>
+              <TextInput data-autofocus value={indexTitle} onChange={(e) => setIndexTitle(e.target.value)} maxLength={200} />
+            </Field>
+            <p className="text-xs text-text-muted">{t('content.createIndexListHint')}</p>
+            {status.isSymlink && (
+              <p className="text-xs text-amber-700 dark:text-amber-400">
+                {t('content.createIndexLinked', { path: status.symlinkTarget })}
+              </p>
+            )}
+            {indexError && <p className="text-sm text-red-600 dark:text-red-400">{indexError}</p>}
+            <FormActions>
+              <Button variant="ghost" onClick={() => setIndexDialog(false)} disabled={indexBusy}>
+                {t('common.cancel')}
+              </Button>
+              <Button type="submit" disabled={indexBusy || !indexTitle.trim()}>
+                {indexBusy ? t('content.creatingIndex') : t('content.createIndexAction')}
+              </Button>
+            </FormActions>
+          </div>
+        </Modal>
+      )}
 
       {showDialog && (
         <Modal

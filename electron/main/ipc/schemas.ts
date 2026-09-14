@@ -175,6 +175,14 @@ export const syncDirection = z.enum(['push', 'pull', 'both'])
 // `sourcePath` comes from the native file dialog and is checked again in the service, which is
 // where the accepted extensions live next to the reason for them.
 export const projectIconTarget = z.looseObject({ projectPath: absolutePath })
+
+// update.coreStatus's optional second argument. A flag rather than a channel of its own (CLAUDE.md:
+// no new channel for what an existing one can do with a flag); an object so a later key is one line.
+export const coreStatusOptions = z.looseObject({ resolveInstalled: z.boolean().optional() })
+
+// content.createIndex. The title ends up in YAML through `stringify`, so nothing in it is
+// interpreted; the bound is only there because it is a page title.
+export const createIndexArgs = z.looseObject({ projectPath: absolutePath, title: z.string().trim().min(1).max(200) })
 export const projectIconSource = z.looseObject({ projectPath: absolutePath, sourcePath: absolutePath })
 
 export const confirmDialog = z.looseObject({
@@ -217,7 +225,7 @@ export const quartzConfig = z.looseObject({
   theme: z.record(z.string(), z.unknown()),
   plugins: z.array(
     z.looseObject({
-      // readConfig always derives `name` and defaults `enabled`, and writeConfig strips `name`
+      // readConfig always derives `name` and normalises `enabled` to a boolean, and writeConfig strips `name`
       // back off again - so both are genuinely always present on the way back in.
       name: pluginName,
       source: z.union([z.string().max(2048), z.looseObject({ repo: z.string().min(1).max(2048) })]),

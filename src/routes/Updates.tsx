@@ -43,7 +43,9 @@ export default function Updates(): JSX.Element {
     setChecking(true)
     try {
       const [core, plugins, git] = await Promise.all([
-        window.quartzGui.updates.coreStatus(project.path),
+        // This page may fetch to name the installed upstream commit; the Übersicht, which reads
+        // the same status, may not - see getCoreUpdateStatus.
+        window.quartzGui.updates.coreStatus(project.path, { resolveInstalled: true }),
         window.quartzGui.updates.pluginsStatus(project.path),
         window.quartzGui.sync.status(project.path)
       ])
@@ -145,6 +147,9 @@ export default function Updates(): JSX.Element {
         {coreStatus && (
           <p className="mt-1 text-xs text-text-muted">
             {t('updates.core.commits', { current: shortCommit(coreStatus.currentCommit), latest: shortCommit(coreStatus.latestCommit) })}
+            {coreStatus.state === 'behind' && coreStatus.missingCommits !== undefined && (
+              <> · {t('updates.core.missing', { count: coreStatus.missingCommits })}</>
+            )}
           </p>
         )}
         {/* Read from git rather than from this session's last result: the abort used to appear

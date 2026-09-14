@@ -210,9 +210,15 @@ electron-builder bricht ab.
   — am Skript oder an der Gewohnheit, die Projekt-Config von Hand zu ändern? Die Config trägt noch
   zwei weitere eigene Werte (`baseUrl`, `analytics`), die Phase 4 nicht anfasst und die nicht
   mitreisen; prüf, ob das für jede Handänderung dort so gilt.
-- **Die Footer-Links selbst**: fünf Adressen auf `boxi-os.github.io`, am 2026-09-14 nach dem
-  Veröffentlichen des Navigations-Handbuchs alle 200. Die Websites mit dem neuen Footer-Eintrag
-  sind aber nicht neu veröffentlicht — online nennt ihn bisher nur das Navigations-Handbuch selbst.
+- **Die Footer-Links selbst**: fünf Adressen auf `boxi-os.github.io`, am 2026-09-14 alle 200. Neu
+  veröffentlicht mit dem Eintrag „Navigations“ sind Example, das Layout-Box- und das
+  Multilanguage-Handbuch (über die App, je Build und Deploy auf „GitHub Pages“; online nach rund
+  40 Sekunden mit dem Link, alle eingebundenen Stylesheets und Skripte 200). **Nicht**
+  veröffentlicht ist `QuartzControl-Web`, auf Entscheidung des Nutzers: Es trägt das App-Handbuch,
+  das seit dem letzten Deploy am 2026-09-10 zwölf Commits Beta-2-Stand bekommen hat, während Band
+  („Handbuch zur Fassung 1.0.0-beta.1“) und Download-Kasten Beta 1 anbieten. Es wird mit dem Release
+  von Beta 2 veröffentlicht, Band und Kasten vorher auf die neue Fassung gesetzt. Gehört dieser
+  Schritt irgendwo aufgeschrieben, wo das Release ihn nicht vergisst?
 
 ### 4a. Das Handbuch gegen Bilder und App (`983ae35`, `0fdf2d6`, `e06eed5`, `4215d76`)
 

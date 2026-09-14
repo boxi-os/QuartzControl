@@ -1199,8 +1199,11 @@ Skill-Meldungen ohne Obsidian; die Konsolenmeldung an einem Projekt ohne `node_m
 Nicht neu gemessen: die gepackte App (die zwei App-Änderungen sind eine Zeile im Ersatz und
 Kommentare). Die größten Eingriffe sind `lendProjectTargets()`, das über `process.on('exit')` in
 ein echtes Projekt zurückschreibt, und `posix.normalize` im Ersatz. Neu ist `docs/release.md`. Sie
-gehören damit in den Diff des nächsten Auftrags. Die drei Demo-Ziele früherer Läufe stehen weiter
-im echten Handbuch-Projekt; der Fix verhindert neue, er räumt die alten nicht weg.
+gehören damit in den Diff des nächsten Auftrags. Die drei Demo-Ziele früherer Läufe sind aus dem
+echten Handbuch-Projekt entfernt (die Datei trug seit ihrem ersten Snapshot am 2026-09-07 nichts
+anderes, und keine andere Datei nannte ihre IDs). Nebenbei gefunden und in `77433ac` behoben: Die
+Bridge des Skills `projekt-dokumentieren` prüft vor dem ersten CLI-Aufruf, ob die CLI den
+konfigurierten Vault trifft — die CLI meldet einen unbekannten mit Exit 0.
 
 **Die vier Fixes des vierzehnten Reviews hat das fünfzehnte gelesen** (`fix/review-2026-09-18`, von
 `fix/review-2026-09-17` abgezweigt), und mit ihnen der Merge von `feat/beispielvorlage-und-header`

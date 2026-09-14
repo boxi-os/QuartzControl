@@ -68,6 +68,15 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   2026-09-10: mit `COPYFILE_DISABLE=1` allein kamen 453 Dateien und keine einzige `._*` an, dafür
   eine Meldung je Datei). **rsync ist hier kein Ausweg**: macOS liefert openrsync (Protokoll 29,
   ohne `--no-xattrs`), und auf einer frischen Debian-13-VM ist rsync gar nicht installiert
+- `npm run build:handbook-pdf` — macht aus dem *gebauten* Handbuch (`resources/handbook`, also nach
+  `build:handbook`) ein PDF mit Lesezeichen, nur Deutsch, nach
+  `release/QuartzControl-Handbuch-<version>.pdf`. Chrome lädt jede Seite, das Skript setzt die
+  `<article>` zu einem Dokument zusammen und druckt es getaggt mit `outline` — Kapitel, Seiten und
+  Abschnitte werden zu drei Ebenen Lesezeichen (am 2026-09-14: 10/48/235, 115 Seiten, 11 MB).
+  Braucht Google Chrome. Bricht ab, bevor es druckt, wenn ein Element über den Druckrand steht, ein
+  Verweis kein Ziel hat, ein Bild nicht lädt oder eine Seite auf oberster Ebene nicht in `APPENDIX`
+  steht — gegengeprüft mit der Tabellenregel der Vorlage (120 Elemente je 16 px über dem Rand) und
+  einer zusätzlichen Seite. Einzelheiten in [`docs/handbuch.md`](docs/handbuch.md)
 - `npm run fetch:git` — holt das mitgelieferte git (dugite-native) für diesen Rechner nach
   `resources/git/<platform>-<arch>/` und dünnt es aus; beim Packen macht das `beforePack` von selbst
 - `npm run check:runtime -- <projektpfad>` — die eingebettete Node-Laufzeit gegen ein echtes Projekt:

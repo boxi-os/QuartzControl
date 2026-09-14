@@ -301,6 +301,28 @@ Was vor einem Release am Handbuch hängt — der Footer, der an sechs Stellen gl
 Band und Download-Kasten von `QuartzControl-Web`, die dieselben Seiten mit einer Fassungsnummer
 veröffentlicht —, steht in [`release.md`](release.md).
 
+## Als PDF
+
+`npm run build:handbook-pdf` macht aus dem gebauten Handbuch ein PDF mit Lesezeichen, nur die
+deutsche Fassung, nach `release/QuartzControl-Handbuch-<version>.pdf`. Quelle ist
+`resources/handbook`, nicht der Vault: Das PDF zeigt, was die App mitbringt, mit Quartz' eigener
+Umsetzung von Callouts, Tabellen und Bildern — eine zweite Markdown-Umsetzung liefe daneben
+auseinander. Vorher also `npm run build:handbook`.
+
+Die Gliederung kommt aus der gebauten Website: Startseite, dann die Kapitelordner nach Nummer (je
+`index` zuerst), dann die Seiten auf oberster Ebene als Anhang in der Reihenfolge von `APPENDIX` im
+Skript. Eine neue Seite dort bricht den Lauf ab, bis sie eingetragen ist — sonst fehlte sie im PDF,
+ohne dass es jemand merkt. Kapitel und Seiten werden zu h1 und h2 und damit zu den ersten zwei Ebenen
+der Lesezeichen; die Zwischenüberschriften einer Kapitel-Startseite werden zu Absätzen, weil sie als
+Lesezeichen zwischen den Seitentiteln standen. Interne Links zeigen auf Anker im PDF.
+
+Drei Dinge prüft das Skript, bevor Chrome druckt, weil man sie einem fertigen PDF nicht ansieht:
+Elemente über dem Druckrand (gemessen in A4-Druckbreite), Verweise ohne Ziel, Bilder, die nicht
+geladen haben. Der erste Lauf fand 121 überstehende Elemente — das CSS der Vorlage gibt Tabellen
+16 px Außenabstand je Seite, zusammen mit `width: 100%` —, und das Diagramm aus Rahmenzeichen in 1.2
+passte erst in 8,5 pt. Das Titelblatt nimmt `build/icon.png`: `static/icon.png` der Website ist das
+Projektbild des Handbuch-Projekts, das Quartz-Kristall.
+
 ## Wie ein Bildschirm sein Kapitel nennt
 
 Jede Seite trägt unter ihrer Beschreibung einen Verweis auf das Kapitel, das *sie* erklärt —

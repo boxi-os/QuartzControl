@@ -19,6 +19,7 @@
     "dmg:background": "node scripts/dmg-background.mjs",
     "screenshots": "node scripts/screenshots.mjs",
     "build:handbook": "node scripts/build-handbook.mjs",
+    "build:handbook-pdf": "node scripts/build-handbook-pdf.mjs",
     "docs:variables": "node scripts/variable-docs.mjs",
     "check:semver": "node scripts/check-semver.mjs",
     "check:plugin-names": "node scripts/check-plugin-names.mjs",

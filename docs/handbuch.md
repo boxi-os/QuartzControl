@@ -5,7 +5,8 @@ erklärt und im Vault `~/Obsidian/QuartzProjekte/Example` lebt
 (`scripts/example-template/README.md`).
 
 **Stand 2026-09-07: fertig.** 104 Seiten in zwei Sprachen (52 und 52, jede mit ihrem Partner über
-`translationKey`), 695 Wikilinks, alle auflösbar; 130 Aufnahmen, 74 davon in den Seiten; in der App
+`translationKey`), 695 Wikilinks, alle auflösbar; 130 Aufnahmen, 74 davon in den Seiten (seit dem Lauf vom
+2026-09-14 134, dieselben 74 Verweise, alle auflösbar); in der App
 erreichbar und aus jedem Bildschirm heraus verlinkt, in der Sprache, die die App gerade spricht.
 
 Die Kapitel entstanden aus den Quellen — `de.ts`, die Routen, `electron-builder.yml`,

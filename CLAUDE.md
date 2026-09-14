@@ -1094,7 +1094,7 @@ esbuilds `keepNames` baut.
 [`docs/REVIEW-2026-09-19-auftrag.md`](docs/REVIEW-2026-09-19-auftrag.md). Er liest die vier Fixes
 des vierzehnten, den Nachtrag, die neu exportierte Vorlage und den Merge von
 `feat/beispielvorlage-und-header` (`review-2026-09-19..fix/review-2026-09-18`, ohne Review-Dokument
-und Auftrag 32 Dateien, +980/−119), und nennt als erstes Risiko den Abbruch in `beforePack`, der
+und Auftrag 33 Dateien, +998/−125), und nennt als erstes Risiko den Abbruch in `beforePack`, der
 jede Baumaschine ohne Handbuch-Projekt trifft — und als zweites sieben Commits, die nie ein Review
 gesehen haben, darunter ein Python-Skript, das mit einem Obsidian-Vault spricht.
 

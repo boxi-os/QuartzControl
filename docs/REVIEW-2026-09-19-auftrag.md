@@ -30,11 +30,11 @@ Branch `fix/review-2026-09-18`, abgezweigt von `fix/review-2026-09-17`:
 
     git log --oneline review-2026-09-19..fix/review-2026-09-18
     git diff review-2026-09-19..fix/review-2026-09-18 -- . ':!docs/REVIEW-2026-09-18.md' ':!docs/REVIEW-2026-09-19-auftrag.md'
-    # ohne Review-Dokument und Auftrag: 32 Dateien, +980 / −119
+    # ohne Review-Dokument und Auftrag: 33 Dateien, +998 / −125
 
     git diff 8fc770c..1097a6c        # die vier Fixes: 22 Dateien, +255 / −89
     git diff 1097a6c 962f079         # was der Merge hereinbringt: 13 Dateien, +656 / −17
-    git diff 962f079..be4a936        # Nachtrag und Vorlage: 3 Dateien, +70 / −14
+    git diff 962f079..1f58bf4        # Nachtrag und Vorlage: 5 Dateien, +318 / −20 (davon der Auftrag)
 
 `review-2026-09-19` sitzt auf `59e149b` („Der Auftrag für das Review 2026-09-18“), dem Stand, den das
 letzte Review gelesen hat. Die Commits:
@@ -50,6 +50,8 @@ letzte Review gelesen hat. Die Commits:
 | — | `962f079` | Merge von `feat/beispielvorlage-und-header` (unten) |
 | — | `a982cff` | `CLAUDE.md`-Nachtrag zum vierzehnten Review |
 | — | `be4a936` | `resources/templates/minimal-lesbar.qtpl` neu exportiert |
+| — | `b65af33` | dieser Auftrag |
+| — | `1f58bf4` | Footer-Links der Vorlage auf die github.io-Websites (Entscheidung des Nutzers), Paket neu exportiert |
 
 Die sieben Commits des Merges, alle aus anderen Sitzungen:
 
@@ -65,6 +67,12 @@ Die sieben Commits des Merges, alle aus anderen Sitzungen:
 
 Der Merge hatte einen Konflikt, im `build:handbook`-Eintrag von `CLAUDE.md`. Aufgelöst: der Satz zu
 `project-paths.mjs` aus `a65594c`, danach die tar-Anleitung aus `39bef46`.
+
+Außerhalb dieses Repos, beide auf Wunsch des Nutzers:
+
+- **`boxi-os/quartzcontrol-templates` `c943328`** (gepusht): `minimal-lesbar.qtpl` ist dort die
+  Fassung aus `1f58bf4`. Von dort lädt die App die Vorlage, wenn sie online ist.
+- **Handbuch-Vault `6abc6c5`** (kein Remote): 134 Screenshots, 130 ersetzt, 4 neu.
 
 **Verändere weder Vaults noch die Projekte unter `~/Documents/QuartzProjekte/`.** Lesen und
 kopieren ist in Ordnung — siehe „Wie gemessen werden kann“, bevor du eine Kopie anfasst.
@@ -144,20 +152,25 @@ electron-builder bricht ab.
 - **Die Konfliktauflösung.** Liest sich der `build:handbook`-Eintrag in `CLAUDE.md` danach als ein
   Absatz?
 
-### 4. Die neu exportierte Vorlage (`be4a936`)
+### 4. Die neu exportierte Vorlage (`be4a936`, `1f58bf4`)
 
-- **Was sich unterscheidet.** Entpackt verglichen: nur die zwei Schnipsel und `manifest.json`.
-  Prüf das selbst gegen `git show 962f079:resources/templates/minimal-lesbar.qtpl`.
+- **Was sich unterscheidet.** Entpackt verglichen, gegen `git show
+  962f079:resources/templates/minimal-lesbar.qtpl`: die zwei Schnipsel (`be4a936`), die
+  Footer-Links in `parts/plugins.json` (`1f58bf4`) und `manifest.json`. Prüf das selbst.
 - **Die veröffentlichte Kopie.** Wer online ist, bekommt nicht die mitgelieferte, sondern die aus
-  `boxi-os/quartzcontrol-templates` (`builtinTemplateService.ts`, `TEMPLATE_URL`) — und die war am
-  2026-09-14 noch die vom 2026-09-10. Der Fix erreicht also nur, wer offline ein Projekt anlegt,
-  bis jemand dort pusht. Gehört das in den Commit, in `CLAUDE.md`, in eine Liste für das Release?
-- **Die Nebenwirkung am Example-Projekt.** Phase 4 überschrieb die von Hand gesetzten
-  github.io-Footer-Links der Projekt-Config mit denen aus `plugins.mjs`; zurückgestellt aus einer
-  Sicherung. Das Skript warnt davor nicht. `--check-sync` vergleicht nur Stylesheets und Schnipsel,
-  und `CLAUDE.md` sagt, Config und Frames haben absichtlich keinen Rückweg. Ist ein Lauf, der eine
-  Handänderung still ersetzt, dann ein Befund — und wenn ja, am Skript oder an der Gewohnheit,
-  die Projekt-Config von Hand zu ändern?
+  `boxi-os/quartzcontrol-templates` (`builtinTemplateService.ts`, `TEMPLATE_URL`). Dort liegt seit
+  `c943328` dieselbe Datei wie in `1f58bf4` (per `curl` und `cmp` nachgesehen). Nichts in diesem
+  Repo hält fest, dass beide Kopien gleich sein sollen, und nichts prüft es — ein Befund?
+- **Die Nebenwirkung am Example-Projekt.** Der erste Export (`be4a936`) überschrieb die von Hand
+  gesetzten github.io-Footer-Links der Projekt-Config mit denen aus `plugins.mjs`; zurückgestellt
+  aus einer Sicherung. Seit `1f58bf4` stehen sie in `plugins.mjs`, und ein zweiter Lauf ließ die
+  Config byte-gleich. Das Skript warnt vor einer solchen Überschreibung aber weiter nicht,
+  `--check-sync` vergleicht nur Stylesheets und Schnipsel, und `CLAUDE.md` sagt, Config und Frames
+  haben absichtlich keinen Rückweg. Ist ein Lauf, der eine Handänderung still ersetzt, ein Befund
+  — am Skript oder an der Gewohnheit, die Projekt-Config von Hand zu ändern? Die Config trägt noch
+  zwei weitere eigene Werte (`baseUrl`, `analytics`), die Phase 4 nicht anfasst und die nicht
+  mitreisen; prüf, ob das für jede Handänderung dort so gilt.
+- **Die Footer-Links selbst**: vier Adressen auf `boxi-os.github.io`, am 2026-09-14 alle 200.
 
 ### 5. Die Vertrauensgrenze (`1097a6c`)
 
@@ -182,10 +195,13 @@ die Begründung „wer dort ein Paket ablegt, führt schon Code als der Nutzer a
 - **`wiki_bridge.py`** habe ich nicht gelesen.
 - **Die Live-Region** als zweiter Fundort des Satzes zum Ersatz ist vermutet, nicht einzeln
   nachgesehen.
-- **Die veröffentlichte Vorlage** ist nicht aktualisiert; die Footer-Links der Vorlage
-  (github.com in `plugins.mjs`, github.io im Example-Projekt) sind nicht entschieden.
-- **Die Handbuch-Screenshots** — seit der Umbenennung in „Snapshots“ und den Beta-2-Punkten
-  veraltet; ein Aufnahmelauf steht weiter an.
+- **Die Handbuch-Texte** gegen die neuen Screenshots: Die Bilder sind neu, die Seiten nicht
+  durchgesehen. Die zwei neuen Reiter-Bilder (Seitentypen, Eigene Frames) nutzt keine Seite.
+- **Ein Fehllauf der Screenshots.** Der erste Lauf bekam in zsh alle Optionen als *ein* Argument
+  (`$args` wird dort nicht aufgeteilt) und lief ohne `--demo` gegen das echte Profil. Seine 21
+  Bilder sind vor `6abc6c5` verworfen; im Profil des Nutzers blieben ein neues `lastOpenedAt` des
+  Example-Projekts und `window-state.json` auf 1440 × 900. Die Sperre in `screenshots.mjs` greift nur
+  für `--scenes` ohne `--demo`, nicht für einen Lauf, dem `--demo` still fehlt.
 - **Die zwei offenen Beobachtungen des zwölften Reviews** (YAML-Fehler beendet den Dev-Server; Build
   und Dev-Server schreiben zugleich in `public/`) sind weiter nicht entschieden.
 - **Nichts ist gepusht.** `origin/main` steht auf `39bef46`; dieser Branch ist 62 Commits davor. Die
@@ -199,7 +215,7 @@ die Begründung „wer dort ein Paket ablegt, führt schon Code als der Nutzer a
     npm run build && npm run smoke
     npm run check:runtime -- <kopie von gui-test>
 
-Auf `be4a936` am 2026-09-14 gelaufen, alles grün: `check:i18n` 1111 Schlüssel im Renderer und 158
+Auf `be4a936` am 2026-09-14 gelaufen (danach nur Vorlage und Text), alles grün: `check:i18n` 1111 Schlüssel im Renderer und 158
 im Hauptprozess (dazu 67 und 0 Aufrufe mit berechnetem Schlüssel), `check:handbook` 26 Zitate und 0
 ohne Entsprechung, `check:semver` 18 Vergleiche, `check:plugin-names` 18 gegen Quartz' eigene
 Funktion, `check:runtime` gegen eine `cp -Rc`-Kopie Node 24.18.1, npm 11.17.0, 8 Plugins, 264

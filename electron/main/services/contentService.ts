@@ -154,23 +154,30 @@ async function quartzInputFiles(projectPath: string, patterns: string[]): Promis
 // segment is static or which ends in `/**` (`isAffectDepthOfReadingPattern`), which is why `x/*`,
 // `*` and `[xy]` keep a folder's subfolders while `x/` and `**/x` drop them. Before that, a pattern
 // loses what fast-glob and picomatch take off it: one leading `!` (every ignore pattern is negative
-// to fast-glob, `convertToPositivePattern`, unless it is `!(…)`) and a leading `./` (picomatch).
-// Measured against globby 16.2.2 / fast-glob 3.3.3: `./x`, `!x`, `!./x` drop `x` in both.
+// to fast-glob, `convertToPositivePattern`, unless it is `!(…)`), and whatever a path normaliser
+// takes off - fast-glob and picomatch read `tpl//`, `tpl/.`, `tpl/./`, `.//x` and `x/..` as the
+// folder they name, `matchesGlob` does not, so the fallback listed `tpl` where Quartz leaves it out
+// (review 2026-09-19, finding 2). `posix.normalize` does the same, and what it reduces to the root
+// (`.`, `./`, `x/..`, the empty pattern) drops everything in globby, hence `**`.
 //
-// Where it still differs, measured against the same globby (review 2026-09-18): `{x,y}`, which
-// fast-glob expands into two static patterns before it applies the pruning rule; `foo\*`, because
-// Node's `matchesGlob` reads a backslash as a separator (`windowsPathsNoEscape`); `!!x`, which
-// fast-glob turns into "everything but x"; and on macOS a pattern with a wildcard ignores case
-// (`priva*` drops `Privat`, `*.MD` drops `top.md`), because `matchesGlob` sets `nocase` there and
-// fast-glob does not. Of 31 patterns those are 8 answers, and apart from `{x,y}` and `!!x` every
-// one leaves out something Quartz builds - a missing link, not a dead one. Hidden entries are
-// skipped the way `dot: false` skips them.
+// Where it still differs, measured against globby 16.2.2 / fast-glob 3.3.3 under Electron's Node
+// 24.18.1 and under Node 26.5.1 alike, over 63 patterns on eleven entries (review 2026-09-19; the
+// first 31 were review 2026-09-18's): `{x,y}`, which fast-glob expands into two static patterns
+// before it applies the pruning rule; `!!x`, which fast-glob turns into "everything but x"; `foo\*`,
+// because Node's `matchesGlob` reads a backslash as a separator (`windowsPathsNoEscape`); on macOS a
+// pattern with a wildcard ignores case (`priva*` drops `Privat.md`, `*.MD` drops `top.md`), because
+// `matchesGlob` sets `nocase` there and fast-glob does not; and `**/tpl/` and `tpl/./**`, which
+// globby does not apply to `tpl` at all. Those are 7 of the 63 answers, and apart from `{x,y}` and
+// `!!x` every one leaves out something Quartz builds - a missing link, not a dead one. That holds
+// for the patterns measured, not for every pattern there is. Hidden entries are skipped the way
+// `dot: false` skips them.
 // Links are followed, with `seen` against a link back to an ancestor - where fast-glob runs a loop
 // to its depth limit, this stops at the first repeat; the folders found are the same.
 async function walkUnignored(root: string, rawPatterns: string[]): Promise<string[]> {
   const patterns = rawPatterns.map((pattern) => {
     const positive = pattern.startsWith('!') && pattern[1] !== '(' ? pattern.slice(1) : pattern
-    return positive.startsWith('./') ? positive.slice(2) : positive
+    const normalized = posix.normalize(positive)
+    return normalized === '.' || normalized === './' ? '**' : normalized
   })
   const test = (probe: string, pattern: string): boolean => {
     if (pattern === probe) return true

@@ -177,7 +177,7 @@ export default {
         'The address the site will be reachable at later — without https://. If you do not know it yet, leave “localhost” and fill it in later under Configuration.',
       useTemplate: 'Install the example template',
       useTemplateHint:
-        'A finished design: measured colours for light and dark, three authored page grids, self-hosted typefaces and every component styled individually. All of it editable afterwards.',
+        'A finished design: measured colours for light and dark, authored page grids, self-hosted typefaces and every component styled individually. All of it editable afterwards.',
       templateContent: 'With the example pages',
       templateContentHint:
         'Around 270 pages that explain the template itself — for every component the page describing it. Meant for looking things up; leave it out if you bring your own notes.',
@@ -867,7 +867,7 @@ export default {
     allDisabled: 'Community themes disabled',
     active: {
       title: 'Current theme',
-      none: 'No community theme active — the classic theme from “Configuration → Theme” applies. Install one from the catalog below to get started.',
+      none: 'No community theme active — your colors and fonts from “Styles → Basics” apply. Install one from the catalog below to get started.',
       heading: 'Current theme: {{themeId}}',
       saveAsPreset: 'Save as preset',
       presetNamePlaceholder: 'Name for the preset',
@@ -875,7 +875,7 @@ export default {
         'This plugin ({{source}}) overrides the colors from the Basics layer. Changes below take effect immediately in the preview.',
       disabledHeading: 'Community theme disabled ({{themeId}})',
       disabledNote:
-        'The classic theme from “Configuration → Theme” applies again now. This community theme’s settings are kept and can be turned back on any time.',
+        'Your colors and fonts from “Styles → Basics” apply again now. This community theme’s settings are kept and can be turned back on any time.',
       reactivate: 'Turn back on',
       checkingStyleSettings: 'Checking the theme’s style settings…',
       noStyleSettingsNote:

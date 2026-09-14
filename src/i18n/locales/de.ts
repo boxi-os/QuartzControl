@@ -177,7 +177,7 @@ export default {
         'Die Adresse, unter der die Website später erreichbar ist — ohne https://. Wenn du sie noch nicht kennst, lass „localhost“ stehen und trage sie später unter Konfiguration nach.',
       useTemplate: 'Beispielvorlage mitinstallieren',
       useTemplateHint:
-        'Eine fertige Gestaltung: gemessene Farben für hell und dunkel, drei eigene Seitenraster, selbst gehostete Schriften und jede Komponente einzeln gestaltet. Lässt sich hinterher überall ändern.',
+        'Eine fertige Gestaltung: gemessene Farben für hell und dunkel, eigene Seitenraster, selbst gehostete Schriften und jede Komponente einzeln gestaltet. Lässt sich hinterher überall ändern.',
       templateContent: 'Mit den Beispielseiten',
       templateContentHint:
         'Rund 270 Seiten, die die Vorlage selbst erklären — zu jeder Komponente die Seite, auf der sie beschrieben ist. Zum Nachschlagen gedacht; wenn du eigene Notizen mitbringst, lass sie weg.',
@@ -870,7 +870,7 @@ export default {
     allDisabled: 'Community-Themes deaktiviert',
     active: {
       title: 'Aktuelles Theme',
-      none: 'Kein Community-Theme aktiv — es gilt das klassische Theme aus „Konfiguration → Theme“. Installiere unten eines aus dem Katalog, um loszulegen.',
+      none: 'Kein Community-Theme aktiv — es gelten deine Farben und Schriften aus „Stile → Basis“. Installiere unten eines aus dem Katalog, um loszulegen.',
       heading: 'Aktuelles Theme: {{themeId}}',
       saveAsPreset: 'Als Preset speichern',
       presetNamePlaceholder: 'Name für das Preset',
@@ -878,7 +878,7 @@ export default {
         'Dieses Plugin ({{source}}) überschreibt die Farben aus der Basis-Ebene. Änderungen unten wirken sich direkt auf die Vorschau aus.',
       disabledHeading: 'Community-Theme deaktiviert ({{themeId}})',
       disabledNote:
-        'Es gilt jetzt wieder das klassische Theme aus „Konfiguration → Theme“. Die Einstellungen dieses Community-Themes bleiben erhalten und lassen sich jederzeit wieder aktivieren.',
+        'Es gelten jetzt wieder deine Farben und Schriften aus „Stile → Basis“. Die Einstellungen dieses Community-Themes bleiben erhalten und lassen sich jederzeit wieder aktivieren.',
       reactivate: 'Wieder aktivieren',
       checkingStyleSettings: 'Prüfe Style-Settings des Themes…',
       noStyleSettingsNote:
@@ -1394,7 +1394,7 @@ export default {
       noFace: 'keine @font-face-Regel gefunden',
       familyDefault: '(Standardstärke)',
       noLoader:
-        'Es lädt nichts Schriften nach: verfügbar ist nur, was ein aktives Theme mitbringt oder was du per @font-face deklarierst.',
+        'Schriften werden nicht nachgeladen: verfügbar ist nur, was ein aktives Theme mitbringt oder was du per @font-face deklarierst.',
       loader: {
         core: {
           google: 'Quartz lädt bei jedem Seitenaufruf von Google Fonts: {{specs}}.',

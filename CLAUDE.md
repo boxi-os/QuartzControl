@@ -1095,7 +1095,7 @@ esbuilds `keepNames` baut.
 des vierzehnten, den Nachtrag, die neu exportierte Vorlage und den Merge von
 `feat/beispielvorlage-und-header`, dazu die drei App-Texte, quartz-navigations in Footer und README
 und den Fix am Demo-Skript (`review-2026-09-19..fix/review-2026-09-18`, ohne Review-Dokument und
-Auftrag 33 Dateien, +1034/−143). Er ist als letztes Review vor der zweiten Beta gedacht und nennt
+Auftrag 33 Dateien, +1036/−143). Er ist als letztes Review vor der zweiten Beta gedacht und nennt
 als erstes Risiko den Abbruch in `beforePack`, der jede Baumaschine ohne Handbuch-Projekt trifft —
 und als zweites sieben Commits, die nie ein Review gesehen haben, darunter ein Python-Skript, das
 mit einem Obsidian-Vault spricht.

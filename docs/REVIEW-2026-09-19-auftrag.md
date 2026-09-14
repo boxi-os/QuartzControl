@@ -37,7 +37,7 @@ Branch `fix/review-2026-09-18`, abgezweigt von `fix/review-2026-09-17`:
 
     git log --oneline review-2026-09-19..fix/review-2026-09-18
     git diff review-2026-09-19..fix/review-2026-09-18 -- . ':!docs/REVIEW-2026-09-18.md' ':!docs/REVIEW-2026-09-19-auftrag.md'
-    # ohne Review-Dokument und Auftrag: 33 Dateien, +1034 / −143
+    # ohne Review-Dokument und Auftrag: 33 Dateien, +1036 / −143 (mit dem Nachtrag in CLAUDE.md)
 
     git diff 8fc770c..1097a6c        # die vier Fixes: 22 Dateien, +255 / −89
     git diff 1097a6c 962f079         # was der Merge hereinbringt: 13 Dateien, +656 / −17
@@ -268,8 +268,8 @@ die Begründung „wer dort ein Paket ablegt, führt schon Code als der Nutzer a
   für `--scenes` ohne `--demo`, nicht für einen Lauf, dem `--demo` still fehlt.
 - **Die zwei offenen Beobachtungen des zwölften Reviews** (YAML-Fehler beendet den Dev-Server; Build
   und Dev-Server schreiben zugleich in `public/`) sind weiter nicht entschieden.
-- **Nichts aus diesem Repo ist gepusht.** `origin/main` steht auf `39bef46`; dieser Branch ist 71
-  Commits davor. Die Tags `review-2026-09-17` bis `review-2026-09-19` sind lokal.
+- **Nichts aus diesem Repo ist gepusht.** `origin/main` steht auf `39bef46`; wie weit dieser Branch
+  davor liegt, sagt `git rev-list --count origin/main..fix/review-2026-09-18` (beim Schreiben 72). Die Tags `review-2026-09-17` bis `review-2026-09-19` sind lokal.
 
 ## Ablauf
 

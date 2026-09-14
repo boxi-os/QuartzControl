@@ -290,6 +290,19 @@ linux:
 appImage:
   artifactName: ${productName}-${version}-${arch}.${ext}
 
+# Das Startprogramm der AppImage, nicht ihr Inhalt. Mit der Vorgabe (`0.0.0`, das alte
+# FUSE-2-Werkzeug) ist es dynamisch gelinkt, und die arm64-Fassung verlangt dabei die
+# *unversionierte* `libz.so` - die liefert Debian nur mit `zlib1g-dev`. Gemessen am 2026-09-14 auf
+# Debian 13 aarch64: `error while loading shared libraries: libz.so`, bei der cross gebauten
+# 1.0.0-beta.2 wie bei der dort nativ gebauten 1.0.0-beta.1; die veröffentlichte beta.1 für arm64
+# startete also auf keinem System ohne Entwicklerpakete. Die x86_64-Fassung verlangt `libz.so.1`
+# und lief. `1.0.3` bringt ein statisch gelinktes Startprogramm (readelf: keine NEEDED-Einträge,
+# beide Architekturen), und damit starteten beide Pakete auf der VM ihrer Architektur, über FUSE wie
+# mit APPIMAGE_EXTRACT_AND_RUN. electron-builder 26.15.3 führt diese Fassung noch als Beta. Nicht
+# gemessen: ein Start ohne installiertes libfuse2 (beide VMs haben es).
+toolsets:
+  appimage: '1.0.3'
+
 # Flatpak ist die einzige Auslieferungsform, in der die eingebettete Laufzeit aus Phase 7a nicht
 # Komfort ist, sondern Voraussetzung: in der Sandbox gibt es kein Host-Node, und
 # `flatpak-spawn --host` wäre kein Ausweg, sondern ein Sandbox-Ausbruch.

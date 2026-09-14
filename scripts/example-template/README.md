@@ -576,3 +576,9 @@ Grid-Größen abhängt, wird in mindestens zwei Engines gemessen:
 
 Phase 11 ist der eigentliche Beweis: Sie legt ein zweites Projekt an, macht einen echten Dry-Run,
 importiert und baut. Was dort ankommt, ist das, was ein anderer Mensch bekommt.
+
+**Ein Export ist erst angekommen, wenn er an drei Stellen liegt.** Phase 10 schreibt das Paket
+neben die Projekte; mitgeliefert wird `resources/templates/minimal-lesbar.qtpl`, und die App
+bevorzugt, sobald sie Netz hat, die Kopie in `boxi-os/quartzcontrol-templates`. Nach einem Export
+also kopieren und dort pushen — sonst bekommt jeder, der online ist, weiter die alte Vorlage.
+`--check-sync` vergleicht die drei Kopien byte-weise; der Rest steht in `docs/release.md`.

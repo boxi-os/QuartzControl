@@ -297,6 +297,10 @@ und nichts darüber, was am anderen Ende eines solchen Pfads passiert; genau daf
 Browser gebraucht. Nach der Umstellung: 4499 von 4499 internen Links antworten mit 200, keine
 Konsolenfehler, und durch die gebaute App vier Aufrufe des Kanals auf einen Server.
 
+Was vor einem Release am Handbuch hängt — der Footer, der an sechs Stellen gleich stehen muss, und
+Band und Download-Kasten von `QuartzControl-Web`, die dieselben Seiten mit einer Fassungsnummer
+veröffentlicht —, steht in [`release.md`](release.md).
+
 ## Wie ein Bildschirm sein Kapitel nennt
 
 Jede Seite trägt unter ihrer Beschreibung einen Verweis auf das Kapitel, das *sie* erklärt —

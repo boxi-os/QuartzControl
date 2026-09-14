@@ -153,7 +153,12 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   hinstellt — genau das lag im 0.1.0-DMG. Rastert über Electron, weil dieser Rechner keinen
   SVG-Konverter hat, und liest die zwei x-Werte aus derselben Quelle wie die Konfiguration
 - `npm run dist` / `dist:mac` / `dist:linux` / `dist:flatpak` — electron-builder (see
-  `docs/decisions/electron-runtime-and-packaging.md`). `dist:flatpak` ist ein eigenes Skript, weil
+  `docs/decisions/electron-runtime-and-packaging.md`). **Auf einer Baumaschine ohne
+  Handbuch-Projekt (den VMs) zuerst das gebaute Handbuch spiegeln und
+  `QUARTZCONTROL_HANDBOOK_SITE` setzen**, sonst bricht `beforePack` ab (Eintrag `build:handbook`).
+  Was ein Release außerdem braucht — Vorlage in drei Kopien, `latest.json`, Footer an sechs
+  Stellen, Band und Download-Kasten der Website —, steht in [`docs/release.md`](docs/release.md).
+  `dist:flatpak` ist ein eigenes Skript, weil
   das Ziel flatpak und flatpak-builder auf der Baumaschine braucht. **Am 2026-09-08 zum ersten Mal
   gebaut** (Debian 13, aarch64): das Paket entsteht, installiert sich als
   `io.github.boxi_os.quartzcontrol`, startet, und in der Sandbox antworten der `node`-Shim mit
@@ -603,7 +608,7 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   gebaut wird (nachgezählt im Review 2026-09-19 mit `git branch -a --contains`). Gefunden hat es
   erst ein Review, weil es die App packen musste. Vor einem Release: `git cherry <release-branch>
   <branch>` über alle lokalen und entfernten Branches, und was ein `+` zeigt, wird gemergt oder
-  bewusst verworfen.
+  bewusst verworfen (die Schleife dafür steht in `docs/release.md`).
 - **„Die Datei ist da“ ist nicht „die Datei lässt sich lesen“.** Ein Cache, ein Download, eine
   mitgelieferte Kopie: geprüft wird, ob der Inhalt sich öffnen lässt, nicht ob ein Verzeichniseintrag
   existiert - sonst gewinnt ein Torso gegen eine heile Kopie. Geschrieben wird so etwas über

@@ -598,7 +598,9 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   wirklich nicht will, sagt es mit einem Flag (`QUARTZCONTROL_WITHOUT_HANDBOOK=1`).
 - **Ein Fix auf einem Branch, der nie gemergt wurde, ist keiner.** Der Pfad-Fix für das Handbuch
   existierte seit dem 2026-09-12 (`e6916ae`) — auf `feat/beispielvorlage-und-header`, zusammen mit
-  sechs weiteren Commits, und keiner davon kam in die Linie, aus der gebaut wird. Gefunden hat es
+  sechs weiteren Commits. Die ersten zwei (`c8c143d`, `39bef46`) standen auf `origin/main`, die
+  fünf ab `b39f5d4` in keiner Linie, und keiner der sieben in `fix/review-*`, aus der die Beta
+  gebaut wird (nachgezählt im Review 2026-09-19 mit `git branch -a --contains`). Gefunden hat es
   erst ein Review, weil es die App packen musste. Vor einem Release: `git cherry <release-branch>
   <branch>` über alle lokalen und entfernten Branches, und was ein `+` zeigt, wird gemergt oder
   bewusst verworfen.

@@ -14,6 +14,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path, PurePosixPath
@@ -155,10 +156,46 @@ def load_context(start: Path) -> Context:
     return Context(repo, cfg_path, vault, project_name, state, doc_folder, handoff_root, read_roots)
 
 
+_VERIFIED_VAULTS: set[str] = set()
+VAULT_COMMAND_NOT_READY = 'Error: Command "vault" not found'
+
+
+def verify_vault(ctx: Context, exe: str) -> str:
+    """Fragt die CLI, welchen Vault `vault=<name>` wirklich trifft, bevor irgendetwas anderes läuft.
+
+    Der Rückgabewert der CLI sagt dazu nichts: Ein unbekannter Name liefert „Vault not found.“ auf
+    stdout mit Exit 0 (gemessen am 2026-09-14, CLI 1.13.7), und am 2026-09-04 fiel ein unbekannter
+    Name bei `files` noch still auf einen anderen Vault zurück. Beides endet ohne diese Prüfung in
+    einem Befehl, der „OK“ sagt oder in den falschen Vault schreibt. Verglichen wird ohne
+    Groß-/Kleinschreibung, weil die CLI `vault=example` auf „Example“ auflöst.
+
+    Der eine Wiederholungsversuch gilt der Meldung `Command "vault" not found`: Sie kam einmal als
+    erste Antwort, während Obsidian den Vault erst öffnete, und beim nächsten Aufruf nicht mehr.
+    """
+    if ctx.vault in _VERIFIED_VAULTS:
+        return ctx.vault
+    for attempt in range(2):
+        cp = run([exe, f'vault={ctx.vault}', 'vault', 'info=name'], cwd=ctx.repo, check=False)
+        answer = (cp.stdout or cp.stderr or '').strip()
+        if not answer.startswith(VAULT_COMMAND_NOT_READY) or attempt == 1:
+            break
+        time.sleep(2)
+    if cp.returncode != 0 or answer.casefold() != ctx.vault.casefold():
+        raise BridgeError(
+            f'Die Obsidian-CLI trifft nicht den Vault "{ctx.vault}" aus {ctx.config_path.name}: '
+            f'"vault info=name" antwortete {answer or "nichts"!r}. Abgebrochen, bevor gelesen oder '
+            'geschrieben wurde. Obsidian kennt nur Vaults, die es selbst schon geöffnet hat '
+            '(`obsidian vaults` listet sie).'
+        )
+    _VERIFIED_VAULTS.add(ctx.vault)
+    return answer
+
+
 def obsidian(ctx: Context, *args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
     exe = shutil.which('obsidian')
     if not exe:
         raise BridgeError('Obsidian CLI nicht gefunden (Befehl "obsidian").')
+    verify_vault(ctx, exe)
     return run([exe, f'vault={ctx.vault}', *args], cwd=ctx.repo, check=check)
 
 
@@ -262,10 +299,13 @@ def write_chunks(ctx: Context, path: str, content: str, *, overwrite: bool) -> N
 
 
 def cmd_preflight(ctx: Context) -> int:
-    name = obsidian(ctx, 'vault', 'info=name').stdout.strip()
+    exe = shutil.which('obsidian')
+    if not exe:
+        raise BridgeError('Obsidian CLI nicht gefunden (Befehl "obsidian").')
+    name = verify_vault(ctx, exe)
     meta = git_metadata(ctx)
-    print('OK: Obsidian CLI erreichbar.')
-    print(f'Vault: {name or ctx.vault}')
+    print('OK: Obsidian CLI erreichbar, Vault geprüft.')
+    print(f'Vault: {name}')
     print(f'Projekt: {ctx.project_name}')
     print(f'Ziel: {ctx.project_base}')
     print(f'Commit: {meta["git_commit_short"] or "kein Git-Commit"}')

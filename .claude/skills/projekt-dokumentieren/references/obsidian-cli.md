@@ -5,7 +5,8 @@
 - Die offizielle Obsidian CLI muss installiert sein.
 - Die Obsidian Desktop-App muss verfügbar sein; ein CLI-Aufruf startet sie bei Bedarf.
 - Der Ziel-Vault muss Obsidian bekannt sein.
-- Der Vault wird immer explizit mit `vault=<name-oder-id>` adressiert; niemals auf den aktuell aktiven Vault vertrauen.
+- Der Vault wird immer explizit mit `vault=<name>` adressiert (die CLI 1.13.7 nennt nur den Namen); niemals auf den aktuell aktiven Vault vertrauen.
+- Vor dem ersten anderen CLI-Aufruf eines Befehls fragt der Helper `vault info=name` und bricht ab, wenn die Antwort nicht der konfigurierte Name ist (ohne Groß-/Kleinschreibung). Der Rückgabewert hilft dabei nicht: Ein unbekannter Name liefert `Vault not found.` mit Exit **0** (gemessen am 2026-09-14), am 2026-09-04 fiel ein unbekannter Name bei `files` noch still auf einen anderen Vault zurück, und direkt nach dem Öffnen eines Vaults kam einmal `Error: Command "vault" not found` — ebenfalls Exit 0; dafür gibt es einen Wiederholungsversuch.
 
 ## Verwendete CLI-Funktionen
 

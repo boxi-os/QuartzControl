@@ -12,7 +12,14 @@ Commits standen in keinem Diff eines Reviews, weil sie in keiner Linie standen, 
 wurde — darunter ein Python-Skript von 419 Zeilen, das mit einem Obsidian-Vault spricht.
 
 **Der Rest ist klein**: die vier Fixes des letzten Reviews, im App-Code und in den Skripten
-15 Dateien, +205/−68, der Nachtrag in `CLAUDE.md` und eine neu exportierte Beispielvorlage.
+15 Dateien, +205/−68, der Nachtrag in `CLAUDE.md`, eine neu exportierte Beispielvorlage, drei
+korrigierte App-Texte, ein drittes Plugin in Footer und README und ein Fix am Demo-Skript der
+Screenshots. Dazu außerhalb dieses Repos: das Handbuch, dessen Texte gegen neue Bilder gelesen
+wurden, und ein Plugin-Repo, das seit heute öffentlich ist.
+
+**Es ist als letztes Review vor der zweiten Beta gedacht.** Danach kommen Merge nach `main`, die
+Pakete auf Mac und VM und das Release. Deshalb gilt ein Befund, der erst beim Paketbau sichtbar
+würde, hier mehr als sonst.
 
 In der Zählung von `CLAUDE.md` ist das das fünfzehnte Review. Die Dateinamen zählen nach Datum; die
 „fünfzehnte Runde“ aus `docs/REVIEW-2026-09-15.md` gehört nicht in diese Zählung (siehe dort).
@@ -30,11 +37,12 @@ Branch `fix/review-2026-09-18`, abgezweigt von `fix/review-2026-09-17`:
 
     git log --oneline review-2026-09-19..fix/review-2026-09-18
     git diff review-2026-09-19..fix/review-2026-09-18 -- . ':!docs/REVIEW-2026-09-18.md' ':!docs/REVIEW-2026-09-19-auftrag.md'
-    # ohne Review-Dokument und Auftrag: 33 Dateien, +998 / −125
+    # ohne Review-Dokument und Auftrag: 33 Dateien, +1034 / −143
 
     git diff 8fc770c..1097a6c        # die vier Fixes: 22 Dateien, +255 / −89
     git diff 1097a6c 962f079         # was der Merge hereinbringt: 13 Dateien, +656 / −17
     git diff 962f079..1f58bf4        # Nachtrag und Vorlage: 5 Dateien, +318 / −20 (davon der Auftrag)
+    git diff 4fafaea..4215d76        # danach: 7 Dateien, +40 / −23
 
 `review-2026-09-19` sitzt auf `59e149b` („Der Auftrag für das Review 2026-09-18“), dem Stand, den das
 letzte Review gelesen hat. Die Commits:
@@ -52,6 +60,11 @@ letzte Review gelesen hat. Die Commits:
 | — | `be4a936` | `resources/templates/minimal-lesbar.qtpl` neu exportiert |
 | — | `b65af33` | dieser Auftrag |
 | — | `1f58bf4` | Footer-Links der Vorlage auf die github.io-Websites (Entscheidung des Nutzers), Paket neu exportiert |
+| — | `4fafaea` | dieser Auftrag, erster Nachtrag |
+| — | `e06eed5` | `scripts/screenshot-demo.mjs`: ein vorhandenes Ziel wird mit der Zugangs-ID des Laufs neu geschrieben statt übersprungen |
+| — | `f61333b` | quartz-navigations als sechster Footer-Link der Vorlage (Paket neu exportiert) und in beiden READMEs (Wunsch des Nutzers) |
+| — | `4215d76` | drei App-Texte: keine Seitenraster-Zahl im Assistenten, „Stile → Basis“ statt „Konfiguration → Theme“, die kaputte Schrift-Zeile (Wunsch des Nutzers) |
+| — | *dieser Commit* | dieser Auftrag, zweiter Nachtrag |
 
 Die sieben Commits des Merges, alle aus anderen Sitzungen:
 
@@ -68,11 +81,23 @@ Die sieben Commits des Merges, alle aus anderen Sitzungen:
 Der Merge hatte einen Konflikt, im `build:handbook`-Eintrag von `CLAUDE.md`. Aufgelöst: der Satz zu
 `project-paths.mjs` aus `a65594c`, danach die tar-Anleitung aus `39bef46`.
 
-Außerhalb dieses Repos, beide auf Wunsch des Nutzers:
+Außerhalb dieses Repos, alles auf Wunsch des Nutzers:
 
-- **`boxi-os/quartzcontrol-templates` `c943328`** (gepusht): `minimal-lesbar.qtpl` ist dort die
-  Fassung aus `1f58bf4`. Von dort lädt die App die Vorlage, wenn sie online ist.
-- **Handbuch-Vault `6abc6c5`** (kein Remote): 134 Screenshots, 130 ersetzt, 4 neu.
+- **`boxi-os/quartzcontrol-templates`** (gepusht): `c943328` und `fe18af5`; `minimal-lesbar.qtpl`
+  ist dort dieselbe Datei wie in `f61333b`. Von dort lädt die App die Vorlage, wenn sie online ist.
+- **Handbuch-Vault** (lokal): `6abc6c5` — 134 Screenshots, 130 ersetzt, 4 neu; `983ae35` — die
+  Texte von 16 Seiten je Sprache gegen die Bilder und den Code korrigiert, ein kaputtes Bild aus
+  4.5 entfernt, sechs Bilder nach `e06eed5` neu; `0fdf2d6` — Stile und Assistent nach `4215d76` neu.
+- **Footer von fünf Website-Projekten** unter `~/Documents/QuartzProjekte/` (Configs nicht
+  versioniert, nicht deployt): „Navigations“ in `QuartzControl-Web`, `quartz-layout-box-handbuch`,
+  `quartz-multilanguage-handbuch` und `Example` (über die Vorlage); der Footer von
+  `QuartzControl-Handbuch`, aus dem `build:handbook` baut, stand noch auf Quartz + Layout Box und
+  nennt jetzt dieselben sechs Links.
+- **`boxi-os/quartz-navigations`** ist seit dem 2026-09-14 öffentlich, vorher geprüft: keine
+  Zugangsdaten und keine absoluten Pfade in Quellen, `dist/` und Historie.
+  `github.com/boxi-os/quartz-navigations` antwortet mit 200, `boxi-os.github.io/quartz-navigations/`
+  mit **404** — das Handbuch des Plugins hat ein Ziel „GitHub Pages“ wie die zwei anderen, ist aber
+  nie veröffentlicht worden, und das Repo hat keinen `gh-pages`-Branch.
 
 **Verändere weder Vaults noch die Projekte unter `~/Documents/QuartzProjekte/`.** Lesen und
 kopieren ist in Ordnung — siehe „Wie gemessen werden kann“, bevor du eine Kopie anfasst.
@@ -86,7 +111,10 @@ Projekt gilt eine Zahl in einer Commit-Nachricht als Messung; trägt sie nicht, 
 
 **Entscheidungen des Nutzers:** Er hat „wie vorgeschlagen“ gesagt, als ich für Befund 2 zwei Wege
 nannte (Absatz schreiben oder `globby` und `sass` in ein Kind verlegen), ohne einen zu wählen. Ich
-habe den Absatz geschrieben und das so gesagt. Er hat den Merge ausdrücklich verlangt. Abwägungen,
+habe den Absatz geschrieben und das so gesagt. Er hat den Merge ausdrücklich verlangt, die
+github.io-Links im Footer, quartz-navigations überall dort, wo die anderen zwei Plugins stehen —
+ausdrücklich auch, solange der Link noch 404 lieferte —, die drei App-Texte vor der Beta trotz
+eingefrorener Oberfläche, und das Plugin-Repo öffentlich. Abwägungen,
 die ich selbst getroffen habe — prüf, ob sie tragen:
 
 - Befund 4: Abbruch statt Warnung, mit einem Flag als Ausweg, statt nur den Pfad zu korrigieren.
@@ -96,6 +124,10 @@ die ich selbst getroffen habe — prüf, ob sie tragen:
 - Befund 3: Ein Treffer direkt nach `function` wird übersprungen, statt `i18n.ts` aus dem Lauf zu
   nehmen.
 - Vorlage: nur die Phasen 3–11 neu, ohne Klon, Vault und Plugin-Installation.
+- App-Text: die Zahl der Seitenraster weggelassen statt auf vier gesetzt.
+- Handbuch 4.5: das kaputte Bild der Callout-Farben entfernt statt eine Aufnahme dafür zu bauen.
+- quartz-navigations: nur das Repo öffentlich, die Handbuch-Website nicht veröffentlicht — das ist
+  eine eigene Veröffentlichung und dem Nutzer als Frage gestellt.
 
 ## Worauf es ankommt, in dieser Reihenfolge
 
@@ -116,6 +148,12 @@ electron-builder bricht ab.
 - **Der Pfad selbst.** `project-paths.mjs` hat einen Standard, der ein Rechnerdetail ist. Suchen
   noch andere Skripte an einem Ort vor dem Umzug (`~/Documents/<name>` ohne `QuartzProjekte`)?
   Vault-Pfade bleiben laut `e6916ae` absichtlich außen vor.
+- **Bitte an der VM messen, nicht nur lesen.** Das ist der Weg, auf dem die Linux-Pakete der Beta
+  entstehen, und der einzige, den diese Änderung zum ersten Mal abbrechen lässt. Auf `debian-x86`
+  oder `debian-vm`: einmal `npx electron-builder --linux AppImage --dir` ohne jede Variable (erwartet:
+  Abbruch mit den drei Auswegen im Text), einmal mit `QUARTZCONTROL_HANDBOOK_SITE` auf eine vom Mac
+  gespiegelte gebaute Website (erwartet: „übernommen aus …“ und ein Handbuch im Paket). Wie der
+  Klon dort auf den Stand dieses Branches kommt, ohne zu pushen, und wie gespiegelt wird, steht unten.
 
 ### 2. Die Startseiten-Liste (`5ee8947`)
 
@@ -170,7 +208,31 @@ electron-builder bricht ab.
   — am Skript oder an der Gewohnheit, die Projekt-Config von Hand zu ändern? Die Config trägt noch
   zwei weitere eigene Werte (`baseUrl`, `analytics`), die Phase 4 nicht anfasst und die nicht
   mitreisen; prüf, ob das für jede Handänderung dort so gilt.
-- **Die Footer-Links selbst**: vier Adressen auf `boxi-os.github.io`, am 2026-09-14 alle 200.
+- **Die Footer-Links selbst**: fünf Adressen auf `boxi-os.github.io`. Am 2026-09-14 antworteten vier
+  mit 200, `quartz-navigations/` mit 404 (oben). Steht die Seite, wenn du liest? Wenn nicht, ist
+  das ein Befund für das Release, nicht für den Code.
+
+### 4a. Das Handbuch gegen Bilder und App (`983ae35`, `0fdf2d6`, `e06eed5`, `4215d76`)
+
+- **Stichprobe, nicht Vollständigkeit.** Jede Seite mit Screenshot wurde gegen ihr Bild gelesen; wo
+  der Text etwas behauptet, gegen den Code. Nimm dir drei Seiten, die im Commit `983ae35` stehen, und
+  drei, die nicht darin stehen, und lies sie gegen die gebaute App. Stimmt der Rest, oder hat die
+  Durchsicht nur gesehen, was ein Bild zeigt?
+- **2.5 Einstellungen** ist in der Reihenfolge umgestellt, in der die App die Abschnitte zeigt. Der
+  Text der Abschnitte ist dabei nicht geändert worden — liest er sich in der neuen Reihenfolge, oder
+  verweist ein Abschnitt auf einen, der jetzt erst danach kommt?
+- **5.3 Konsole** zeigt jetzt die neun Zeilen eines echten Laufs. Die Tabelle der häufigen Fehler
+  darunter ist nicht gegen Quartz 5 geprüft.
+- **Das Demo-Skript** (`e06eed5`) schreibt vorhandene Ziele in einem echten Projekt
+  (`QuartzControl-Handbuch`) neu, nicht in einem Wegwerf-Verzeichnis. Das tat es beim ersten Anlegen
+  auch; ist das die Grenze, die `CLAUDE.md` für Skripte zieht („verändert nichts, was ihm nicht
+  gehört“)?
+- **Die drei App-Texte** (`4215d76`): Gibt es weitere Sätze, die auf „Konfiguration → Theme“ oder
+  eine andere nicht mehr vorhandene Stelle zeigen — auch in `electron/main/i18n.ts`, in
+  Kommentaren, im Handbuch?
+- **Der Footer** des mitgelieferten Handbuchs: Er steht in einer nicht versionierten Config. Ein
+  neues Plugin muss an fünf Projekten und in `plugins.mjs` nachgetragen werden. Ist das dokumentiert
+  genug, oder gehört es in `docs/handbuch.md`?
 
 ### 5. Die Vertrauensgrenze (`1097a6c`)
 
@@ -195,8 +257,10 @@ die Begründung „wer dort ein Paket ablegt, führt schon Code als der Nutzer a
 - **`wiki_bridge.py`** habe ich nicht gelesen.
 - **Die Live-Region** als zweiter Fundort des Satzes zum Ersatz ist vermutet, nicht einzeln
   nachgesehen.
-- **Die Handbuch-Texte** gegen die neuen Screenshots: Die Bilder sind neu, die Seiten nicht
-  durchgesehen. Die zwei neuen Reiter-Bilder (Seitentypen, Eigene Frames) nutzt keine Seite.
+- **Die englischen Screenshots** sind nur stichprobenhaft angesehen; die Durchsicht der Texte lief
+  über die deutschen Bilder, die englischen Seiten bekamen dieselben Korrekturen. Die zwei neuen
+  Reiter-Bilder (Seitentypen, Eigene Frames) nutzt keine Seite.
+- **Die Websites** mit dem neuen Footer sind nicht deployt; online zeigen sie ihn noch nicht.
 - **Ein Fehllauf der Screenshots.** Der erste Lauf bekam in zsh alle Optionen als *ein* Argument
   (`$args` wird dort nicht aufgeteilt) und lief ohne `--demo` gegen das echte Profil. Seine 21
   Bilder sind vor `6abc6c5` verworfen; im Profil des Nutzers blieben ein neues `lastOpenedAt` des
@@ -204,8 +268,8 @@ die Begründung „wer dort ein Paket ablegt, führt schon Code als der Nutzer a
   für `--scenes` ohne `--demo`, nicht für einen Lauf, dem `--demo` still fehlt.
 - **Die zwei offenen Beobachtungen des zwölften Reviews** (YAML-Fehler beendet den Dev-Server; Build
   und Dev-Server schreiben zugleich in `public/`) sind weiter nicht entschieden.
-- **Nichts ist gepusht.** `origin/main` steht auf `39bef46`; dieser Branch ist 62 Commits davor. Die
-  Tags `review-2026-09-17` bis `review-2026-09-19` sind lokal.
+- **Nichts aus diesem Repo ist gepusht.** `origin/main` steht auf `39bef46`; dieser Branch ist 71
+  Commits davor. Die Tags `review-2026-09-17` bis `review-2026-09-19` sind lokal.
 
 ## Ablauf
 
@@ -215,7 +279,8 @@ die Begründung „wer dort ein Paket ablegt, führt schon Code als der Nutzer a
     npm run build && npm run smoke
     npm run check:runtime -- <kopie von gui-test>
 
-Auf `be4a936` am 2026-09-14 gelaufen (danach nur Vorlage und Text), alles grün: `check:i18n` 1111 Schlüssel im Renderer und 158
+Auf `be4a936` am 2026-09-14 gelaufen, alles grün; nach `4215d76` noch einmal `typecheck`,
+`check:i18n`, `check:handbook`, `build` und `smoke`, mit denselben Zahlen: `check:i18n` 1111 Schlüssel im Renderer und 158
 im Hauptprozess (dazu 67 und 0 Aufrufe mit berechnetem Schlüssel), `check:handbook` 26 Zitate und 0
 ohne Entsprechung, `check:semver` 18 Vergleiche, `check:plugin-names` 18 gegen Quartz' eigene
 Funktion, `check:runtime` gegen eine `cp -Rc`-Kopie Node 24.18.1, npm 11.17.0, 8 Plugins, 264
@@ -241,6 +306,15 @@ nicht grün ist, ist das dein erster Befund.
   Ordner, aber **prüf das mit `lstat`, bevor du darunter schreibst** — bei `Example` ist es ein
   Symlink auf den echten Vault. Config und Lockfile tragen absolute Pfade auf das Original; biege sie
   auf die Kopie um, bevor du dort etwas schreibst.
+- **Die VM ohne Push:** Der Klon liegt unter `~/Development/alpha-test/Quartz-GUI`. Den Branch
+  hinüberbringen mit `git bundle create /tmp/b.bundle review-2026-09-19..fix/review-2026-09-18`,
+  per `scp` auf die VM, dort `git fetch /tmp/b.bundle fix/review-2026-09-18:fix/review-2026-09-18`
+  (setzt voraus, dass der Klon `59e149b` hat — prüf das mit `git cat-file -e 59e149b`, sonst das
+  ganze Branch-Bundle; am 2026-09-14 waren beide VMs aus und ließen sich nicht fragen). Das gebaute Handbuch
+  spiegeln mit `COPYFILE_DISABLE=1 tar --no-xattrs -cf - -C resources/handbook . | ssh debian-x86
+  'mkdir -p /tmp/handbook && tar -xf - -C /tmp/handbook'`. Über ssh fehlt die Sitzungsumgebung;
+  `eval "$(systemctl --user show-environment | sed 's/^/export /')"` setzt sie. Kein `pkill -f` über
+  ssh, es trifft die eigene Sitzung.
 - **Die veröffentlichte Vorlage:**
   `curl -sfL https://raw.githubusercontent.com/boxi-os/quartzcontrol-templates/main/minimal-lesbar.qtpl`
   und `unzip -p … manifest.json`.

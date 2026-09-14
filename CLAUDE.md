@@ -1093,10 +1093,12 @@ esbuilds `keepNames` baut.
 **Der Auftrag für das fünfzehnte Review steht** in
 [`docs/REVIEW-2026-09-19-auftrag.md`](docs/REVIEW-2026-09-19-auftrag.md). Er liest die vier Fixes
 des vierzehnten, den Nachtrag, die neu exportierte Vorlage und den Merge von
-`feat/beispielvorlage-und-header` (`review-2026-09-19..fix/review-2026-09-18`, ohne Review-Dokument
-und Auftrag 33 Dateien, +998/−125), und nennt als erstes Risiko den Abbruch in `beforePack`, der
-jede Baumaschine ohne Handbuch-Projekt trifft — und als zweites sieben Commits, die nie ein Review
-gesehen haben, darunter ein Python-Skript, das mit einem Obsidian-Vault spricht.
+`feat/beispielvorlage-und-header`, dazu die drei App-Texte, quartz-navigations in Footer und README
+und den Fix am Demo-Skript (`review-2026-09-19..fix/review-2026-09-18`, ohne Review-Dokument und
+Auftrag 33 Dateien, +1034/−143). Er ist als letztes Review vor der zweiten Beta gedacht und nennt
+als erstes Risiko den Abbruch in `beforePack`, der jede Baumaschine ohne Handbuch-Projekt trifft —
+und als zweites sieben Commits, die nie ein Review gesehen haben, darunter ein Python-Skript, das
+mit einem Obsidian-Vault spricht.
 
 **Der Auftrag für das vierzehnte Review stand** in
 [`docs/REVIEW-2026-09-18-auftrag.md`](docs/REVIEW-2026-09-18-auftrag.md). Er las die vier Fixes

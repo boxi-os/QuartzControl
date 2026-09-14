@@ -415,10 +415,10 @@ export const PLUGIN_PATCHES = {
     // template loads it. site-footer.scss lays them out as one wrapping row. The boxi-os links point
     // at the published sites, not the repositories - a reader of a handbook wants the next handbook,
     // and each site links its repository itself. The Example project carried these by hand until
-    // 2026-09-14, and every run of phase 4 wrote the repository links back over them. Measured that
-    // day without a login: the first four answered 200, Navigations 404 - its repository is still
-    // private, and the link goes in ahead of it on purpose (the plugin's own handbook already
-    // carries it).
+    // 2026-09-14, and every run of phase 4 wrote the repository links back over them. When the
+    // Navigations link went in the same day, its repository was still private and the address
+    // answered 404 - the link went in ahead of it on purpose. Later that day repository and site
+    // were published; measured without a login on 2026-09-14, all six addresses answer 200.
     options: {
       links: {
         Quartz: 'https://quartz.jzhao.xyz/',

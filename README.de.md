@@ -12,7 +12,7 @@ eine Handvoll Plugins und ein Deploy-Weg einzurichten, und nichts davon erklärt
 QuartzControl legt eine Oberfläche darüber, die zeigt, was es tut, und die man wieder verlassen
 kann — die Dateien bleiben normale Quartz-Dateien.
 
-> **Beta.** Version 1.0.0-beta.1. Läuft auf macOS und Linux; Windows fehlt bewusst (siehe unten).
+> **Beta.** Version 1.0.0-beta.2. Läuft auf macOS und Linux; Windows fehlt bewusst (siehe unten).
 > Rückmeldungen sind willkommen — am liebsten als Issue.
 
 ## Was die App kann
@@ -49,7 +49,7 @@ Damit ein erster Start nichts voraussetzt, liefert die App aus:
 
 ## Installation
 
-**1.0.0-beta.1** ist da und liegt unter
+**1.0.0-beta.2** ist da und liegt unter
 [Releases](https://github.com/boxi-os/QuartzControl/releases): DMG und zip für macOS (arm64 und
 x64), AppImage und deb für Linux (arm64 und x86_64) und ein Flatpak für x86_64 und aarch64. Jede
 Datei nennt ihre Architektur, zwei Downloads sehen also nie gleich aus. Selbst bauen geht

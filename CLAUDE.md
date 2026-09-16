@@ -829,9 +829,9 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Befunde aus den Reviews (Stand 2026-09-22)
+## Befunde aus den Reviews (Stand 2026-09-23)
 
-Alle achtzehn Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
+Alle neunzehn Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht,
@@ -848,12 +848,54 @@ Alle achtzehn Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIE
 [`docs/REVIEW-2026-09-19.md`](docs/REVIEW-2026-09-19.md) mit seinen sieben und
 [`docs/REVIEW-2026-09-20.md`](docs/REVIEW-2026-09-20.md) mit seinen neun und
 [`docs/REVIEW-2026-09-21.md`](docs/REVIEW-2026-09-21.md) mit seinen acht und
-[`docs/REVIEW-2026-09-22.md`](docs/REVIEW-2026-09-22.md) mit seinen sieben (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-22-`) stehen als
+[`docs/REVIEW-2026-09-22.md`](docs/REVIEW-2026-09-22.md) mit seinen sieben und
+[`docs/REVIEW-2026-09-23.md`](docs/REVIEW-2026-09-23.md) mit seinen sieben (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-23-`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](docs/REVIEW-2026-09-15.md) gehört nicht
 in diese Zählung: Die „fünfzehnte Runde“ las die Handbücher der zwei Plugins gegen deren Code und
 aus diesem Repo nur zwei Commits der Beispielvorlage (`fe2b701`, `9592121`).
+
+**Das neunzehnte Review las die sieben Fixes des achtzehnten** —
+`review-2026-09-23..review-2026-09-24` ohne Review-Dokument und Auftrag, 9 Dateien, +380/−88,
+davon im App-Code 3 Dateien, +168/−44 — und maß an sieben Wegen, darunter `runCoreUpdate`,
+`abortCoreMerge`, `restoreSnapshot` und `duplicateProject` als esbuild-Bündel in zwei Fassungen
+gegen ein lokales Upstream-Repo mit den Ständen A/B/C/D, git allein in Wegwerf-Repos, die gebaute
+App mit echten Tastendrücken am Layout-Board, das ausgelieferte Handbuch-PDF gegen `pdfinfo` und
+den Quelltext von `@dnd-kit/core` 6.3.1. Kein Befund der Stufe Hoch, **keiner Mittel, sieben
+Niedrig**, alle sieben abgearbeitet. Die sieben Fixes des Vorgängers tragen, und die Begründung,
+die sein Auftrag zuerst zu prüfen bat, trägt auch: Mit dem Getter kostet der Roller nichts, und
+`smoke` bleibt still. Was daraus als Regel bleibt, steht oben in den passenden Abschnitten:
+
+- **Wer zu viel hört, verengt am Hörer — auch am Hörer darüber.** Der Guard des zehnten Reviews
+  saß am Bereichsformular des Frame-Builders; die Karte des Layout-Boards hatte ihn nicht, und
+  dnd-kits Tastatur-Aktivator ruft `preventDefault()`, aber kein `stopPropagation()`. Jedes
+  Aufnehmen klappte damit die Karte auf (43 → 108 px, also verschob es die Liste unter dem Drag),
+  Escape ließ sie offen.
+- **Eine Regel gilt für jede Stelle, die sie nennt, oder sie nennt die Ausnahme mit Grund.** Zwei
+  Behauptungen derselben `@dnd-kit`-Regel trafen das Board nicht: `setActivatorNodeRef` (es war die
+  einzige der drei Stellen ohne — nach einer Ablage in eine andere Zone stand der Fokus auf der
+  Karte) und „Sortierbare Zeilen tragen zusätzlich ‚nach oben / nach unten‘“ (zwei von drei tun
+  es; die Ausnahme steht jetzt mit Grund da).
+- **Ein Satz über den Preis einer Richtung wird an der Richtung geprüft, die ihn zahlt.** „Eine
+  unschreibbare Notiz liest sich als ‚nichts steht aus‘“ stand an drei Stellen — und beschrieb die
+  *Lesehälfte*. Geschrieben wurde sie über `writeFileAtomic`, das wirft, und unbehandelt endete der
+  Lauf zwischen Merge-Commit und `npm install`, im Zustand, den die Notiz erfunden wurde zu
+  beschreiben.
+- **Ein Gürtel, der den falschen Baum fragt, ist enger als kein Gürtel.** Der vom achtzehnten
+  Review vorgeschlagene `git stash show -p | git apply --check` fragt den Baum, der mitten im Merge
+  dasteht, nicht den, den `merge --abort` macht — gemessen hätte er in einer von drei Szenen einem
+  Nutzer `git stash drop` für Einträge geraten, die der Knopf gleich zurückträgt. Die Frage, die
+  trägt, ist gits eigene: `reset --merge` befreit einen Pfad genau dann, wenn der Merge um ihn
+  geht.
+- **Ein gespeicherter Wert, der nichts entscheidet, ist ein Fehler in Wartestellung.** Der SHA in
+  der Notiz wurde nur auf „nicht leer“ gelesen; mit ihm erkennt der Lauf, der die Arbeit eines
+  früheren beendet, dessen Merge-Commit wieder und bessert ihn nach — aber nicht, wenn der Commit
+  die Maschine schon verlassen hat.
+- **Eine Zahl gehört zu dem, woran sie gemessen wurde** — dreimal: 52 px ist die `min-h` der Zone
+  und 51 px der Abstand von Zeile zu Zeile (beide richtig, keine Stelle sagte wofür); „0 / 35 /
+  118,5“ maß eine Liste, die der aufgeklappten Karte 65 px verdankte; und „ein Duplikat erbt keine
+  liegende Notiz“ stimmte nicht, es erbt sie wörtlich.
 
 **Das achtzehnte Review las die acht Fixes des siebzehnten** —
 `review-2026-09-22..review-2026-09-23` ohne Review-Dokument und Auftrag, 13 Dateien, +474/−53,
@@ -1401,7 +1443,28 @@ ausdrücklich mit, und es hat ihn gelesen: die Lücke ist geschlossen, drei sein
 betreffen sie nicht, der vierte ist ein Kommentar in `shared/gridFrameCss.ts`. `review-2026-09-16`
 bleibt, wo er ist, weil der Auftrag des zwölften Reviews mit ihm rechnet.
 
-**Die sieben Fixes des achtzehnten Reviews liegen bewusst dahinter** (`fix/review-2026-09-22`, von
+**Die sieben Fixes des neunzehnten Reviews liegen bewusst dahinter** (`fix/review-2026-09-23`, von
+`fix/review-2026-09-22` abgezweigt, nicht gepusht und nicht gemergt): ohne Review-Dokument 9
+Dateien, +264/−32, im App-Code 6 Dateien, +169/−27. Gemessen an drei Wegen: `updateService` und
+`duplicateService` als esbuild-Bündel in zwei Fassungen gegen ein lokales Upstream-Repo mit den
+Ständen A/B/D/E, npm- und npx-Attrappen (darunter ein `npm`, das mit 1 antwortet, und ein `npx`,
+das `.quartz-gui` beim Bauen selbst auf 555 setzt), je Szene ein frischer Klon — n1 und n1b (die
+zwei Türen der Notiz), n7/n7h/n7b (der Satz über den liegengebliebenen Stash in drei Lagen), n10
+und n10p (der Amend, mit und ohne gepushten Merge-Commit), n4 (das Duplikat), „norm“ als
+Gegenprobe; die gebaute App mit Wegwerf-Profil gegen eine `cp -Rc`-Kopie von
+`navigations-testprojekt`, echte Tastendrücke am Layout-Board, vorher und nachher, je frischer Bau
+— Karte, Fokus, Live-Region, Kartenhöhe, Zonen-Geometrie, dazu dieselbe Maus-Geste in beiden
+Fassungen; und die Prüfskripte (`typecheck`, `build`, `smoke` mit 42 Aufrufen, `check:i18n` mit
+1111 + 171 Schlüsseln, `check:core-update`, `check:semver`, `check:plugin-names`,
+`check:handbook`). Die größten Eingriffe sind `abortWouldFreeStashedFiles()`, der `resuming`-Zweig
+des Amends samt `headSubject()`/`headIsPushed()` und `installPendingFor()`, das jetzt den SHA
+zurückgibt. Neu ist ein Text in `i18n.ts` (`updateNoteUnwritable`), dazu drei Absätze in
+`docs/decisions/snapshots-and-updates.md` und einer in `layout-frames.md`. Nicht gemessen: die
+gepackte App, ein echtes `npm install`, die VMs, ein echter Push unter Git-Sync (die Gegenprobe
+n10p setzt `refs/remotes/origin/local` von Hand), und der Frame-Builder. Sie gehören damit in den
+Diff des nächsten Auftrags.
+
+**Die sieben Fixes des achtzehnten Reviews hat das neunzehnte gelesen** (`fix/review-2026-09-22`, von
 `main` abgezweigt, nicht gepusht und nicht gemergt): ohne Review-Dokument 8 Dateien, +300/−81, im
 App-Code 3 Dateien, +168/−44. Gemessen an fünf Wegen: `runCoreUpdate` und `abortCoreMerge` als
 esbuild-Bündel in zwei Fassungen (`af1ffed` und hier) gegen ein lokales Upstream-Repo mit den
@@ -1418,7 +1481,9 @@ der umgedrehten Leserichtung, `stashBase()` und der Wegfall beider Rückfall-Pop
 (`updateStashMine`), geändert einer (`updateStashLeftover`), dazu fünf Absätze in
 `docs/decisions/`. Nicht gemessen: die gepackte App, ein echtes `npm install`, die VMs, der
 Frame-Builder mit dem neuen Roller daneben, und die Notiz über einen Restore oder ein Duplikat
-hinweg. Sie gehören damit in den Diff des nächsten Auftrags.
+hinweg. Das neunzehnte Review fand darin keine Regression; zwei seiner sieben Befunde schärfen
+die Sensoren des Boards nach (der fehlende Guard an der Karte, der fehlende `setActivatorNodeRef`),
+drei die Notiz und den Stash, zwei sind Sätze.
 
 **Die acht Fixes des siebzehnten Reviews hat das achtzehnte gelesen** (`fix/review-2026-09-20`,
 auf `4d2b50d` = `review-2026-09-22`, nicht gepusht und nicht nach `main` gemergt). Sie sind

@@ -278,11 +278,13 @@ export default function ProjectDashboard(): JSX.Element {
     }
   }
 
-  const startServer = (): Promise<void> =>
-    withBusy('server', async () => setServer(await api.server.start(project.id, project.path)))
+  // Not setServer on the answer, for the same reason as in BuildServer: the subscription carries
+  // every transition, and a start that waits for a one-off build answers seconds after the page
+  // already knows what happened.
+  const startServer = (): Promise<void> => withBusy('server', () => api.server.start(project.id, project.path).then(() => undefined))
   const stopServer = (): Promise<void> => withBusy('server', () => api.server.stop(project.id))
   const restartServer = (): Promise<void> =>
-    withBusy('server', async () => setServer(await api.server.restart(project.id, project.path)))
+    withBusy('server', () => api.server.restart(project.id, project.path).then(() => undefined))
 
   const runBuild = (): Promise<void> =>
     withBusy('build', async () => {

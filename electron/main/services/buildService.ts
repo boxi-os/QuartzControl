@@ -31,6 +31,26 @@ const runningServers = new Map<string, RunningServer>()
 // straight through to "stopped", so a dev server that died on its own looked cleanly stopped in
 // the UI and its exit code was never shown. Terminal states therefore outlive the entry here.
 const lastTerminalStatus = new Map<string, ServerStatus>()
+
+/** A start that has been asked for but has no process yet - see pendingStarts. */
+interface PendingStart {
+  status: ServerStatus
+  outputDir: string
+  /** Set by stopServer: the only thing that can be stopped before there is a process is the wait. */
+  aborted: boolean
+}
+
+// The window between the click and the spawn. It used to be the length of refreshAuthoredFrames
+// (38 ms, measured); since 2026-09-16 a start waits for a one-off build into the same folder, so it
+// is the length of that build - 16 to 19 s for the example project. Without an entry here
+// getServerStatus said "stopped" for that whole time and the page kept offering "Starten", which is
+// exactly the state one clicks a second time: both clicks got past the guard in startServer, both
+// waited, both spawned, and the second died on the taken port and took the first one's bookkeeping
+// with it (sixteenth review, measured in the built app - the page then said "Fehler" and offered
+// "Starten" while a server nobody could see held the port). Held apart from runningServers because
+// there is no ChildProcess yet, and everything in that map is one.
+const pendingStarts = new Map<string, PendingStart>()
+
 export const serverEvents = new EventEmitter()
 
 // host is Quartz's --remoteDevHost, not a bind address - leave it empty locally, see BuildServer.tsx
@@ -100,6 +120,10 @@ export function joinRunningBuild(projectId: string, projectPath: string, outputD
  * finding it would need a port scan on every click - the Vorschau page shows those separately.
  */
 function serverWritingInto(projectId: string, dir: string): string | null {
+  // A start that is still waiting counts: it will write into that folder as soon as it spawns, and
+  // between the end of the build it waits for and the spawn there is no entry in runningServers.
+  const pending = pendingStarts.get(projectId)
+  if (pending) return relative(pending.outputDir, dir) === '' ? pending.outputDir : null
   const server = runningServers.get(projectId)
   if (!server) return null
   // A server on its way out still holds the directory: `stopping` means the signal was sent, not
@@ -168,7 +192,12 @@ function followQuartzOutput(projectId: string, text: string, source: 'build' | '
 }
 
 export function getServerStatus(projectId: string): ServerStatus {
-  return runningServers.get(projectId)?.status ?? lastTerminalStatus.get(projectId) ?? { state: 'stopped' }
+  return (
+    runningServers.get(projectId)?.status ??
+    pendingStarts.get(projectId)?.status ??
+    lastTerminalStatus.get(projectId) ??
+    { state: 'stopped' }
+  )
 }
 
 // What is running right now, for the question at quit: project and port, which is what the
@@ -418,6 +447,24 @@ async function refreshAuthoredFrames(projectPath: string, report: (text: string)
   for (const problem of await layoutFrameService.writeAllFrames(projectPath)) report(`${problem}\n`)
 }
 
+/**
+ * Drops this project's entry - and the record in running-servers.json - but only if it is still
+ * this child's. A pid does not carry over time, and neither does a Map entry keyed by project id:
+ * two starts can overlap, and the loser's exit handler used to delete the winner's entry and its
+ * store record. Measured in the built app (sixteenth review): the second server died on the taken
+ * port, the page said "Fehler" and offered "Starten", `server.stop` found nothing, and the first
+ * server kept holding the port with nothing in the app describing it.
+ *
+ * Returns false when the entry belongs to someone else, which is the caller's signal to touch
+ * nothing else either - not lastTerminalStatus, not the status event.
+ */
+function forgetServer(projectId: string, child: ChildProcess): boolean {
+  if (runningServers.get(projectId)?.process !== child) return false
+  runningServers.delete(projectId)
+  void runningServersStore.remove(projectId)
+  return true
+}
+
 export async function startServer(
   projectId: string,
   projectPath: string,
@@ -425,21 +472,54 @@ export async function startServer(
 ): Promise<ServerStatus> {
   const existing = runningServers.get(projectId)
   if (existing) return existing.status
+  const waiting = pendingStarts.get(projectId)
+  if (waiting) return waiting.status
   // a fresh attempt supersedes whatever the previous run ended as
   lastTerminalStatus.delete(projectId)
 
-  // The other half of the guard in assertOutputFree, and the only one that can wait: the server
-  // writes into the same `public/` a one-off build may be emptying right now. Waiting needs no
-  // second click, which refusing would - but it is not silent, because a start that does nothing
-  // for half a minute looks like a start that failed.
-  const build = runningBuilds.get(projectId)
-  if (build && relative(build.dir, resolveBuildDir(projectPath)) === '') {
-    emitLog(projectId, 'warn', `${mainT('serverWaitsForBuild', { dir: build.dir })}\n`)
-    await build.promise.catch(() => undefined)
+  const outputDir = resolveBuildDir(projectPath)
+  // `starting` from here on, and said out loud right away: everything after this point is
+  // asynchronous, and for as long as nothing describes the start the page shows the button that
+  // asks for it again. The renderer already swaps "Starten" for "Neu starten"/"Stoppen" on
+  // `starting`, so the abort is where it always was.
+  const status: ServerStatus = { state: 'starting', options, startedAt: new Date().toISOString() }
+  const pending: PendingStart = { status, outputDir, aborted: false }
+  pendingStarts.set(projectId, pending)
+  emitStatus(projectId)
+
+  try {
+    // The other half of the guard in assertOutputFree, and the only one that can wait: the server
+    // writes into the same `public/` a one-off build may be emptying right now. Waiting needs no
+    // second click, which refusing would - but it is not silent, because a start that does nothing
+    // for half a minute looks like a start that failed.
+    const build = runningBuilds.get(projectId)
+    if (build && relative(build.dir, outputDir) === '') {
+      emitLog(projectId, 'warn', `${mainT('serverWaitsForBuild', { dir: build.dir })}\n`)
+      await build.promise.catch(() => undefined)
+    }
+    if (pending.aborted) return getServerStatus(projectId)
+
+    await refreshAuthoredFrames(projectPath, (text) => emitLog(projectId, 'warn', text))
+    if (pending.aborted) return getServerStatus(projectId)
+
+    return spawnServer(projectId, projectPath, status, outputDir)
+  } finally {
+    // Either the entry has handed over to runningServers or the start was called off; in both
+    // cases it must not outlive this call, or the next start would return a status nothing moves.
+    // `=== pending` because an aborted start is deleted by stopServer and the id may already
+    // belong to a newer attempt.
+    if (pendingStarts.get(projectId) === pending) pendingStarts.delete(projectId)
   }
+}
 
-  await refreshAuthoredFrames(projectPath, (text) => emitLog(projectId, 'warn', text))
-
+/** The second half of startServer: everything from the spawn on, once the wait is behind us. */
+function spawnServer(
+  projectId: string,
+  projectPath: string,
+  status: ServerStatus,
+  outputDir: string
+): ServerStatus {
+  const options = status.options ?? DEFAULT_OPTIONS
   const args = ['quartz', 'build', '--serve', '--port', String(options.port), '--wsPort', String(options.wsPort)]
   if (options.host) args.push('--remoteDevHost', options.host)
   // No --watch: `quartz build --serve` sets argv.watch itself (quartz/cli/handlers.js), so passing
@@ -459,8 +539,8 @@ export async function startServer(
   log?.close()
   // Now the pid exists, so the files can take their final name and the tails can start on it.
   log?.adopt(child.pid)
-  const status: ServerStatus = { state: 'starting', options, pid: child.pid, startedAt: new Date().toISOString() }
-  runningServers.set(projectId, { process: child, status, outputDir: resolveBuildDir(projectPath) })
+  status.pid = child.pid
+  runningServers.set(projectId, { process: child, status, outputDir })
   emitStatus(projectId)
   if (child.pid) void runningServersStore.record(projectId, { pid: child.pid, port: options.port, startedAt: status.startedAt! })
 
@@ -481,19 +561,16 @@ export async function startServer(
   child.on('error', (err) => {
     log?.stop()
     emitLog(projectId, 'stderr', `${err.message}\n`)
-    runningServers.delete(projectId)
-    void runningServersStore.remove(projectId)
+    if (!forgetServer(projectId, child)) return
     lastTerminalStatus.set(projectId, { state: 'error', error: err.message })
     emitStatus(projectId)
   })
   child.on('exit', (code) => {
     log?.stop()
-    const running = runningServers.get(projectId)
-    const wasStopping = running?.status.state === 'stopping'
-    runningServers.delete(projectId)
-    void runningServersStore.remove(projectId)
+    const wasStopping = runningServers.get(projectId)?.status.state === 'stopping'
+    if (!forgetServer(projectId, child)) return
     // an explicit stop ends as "stopped"; anything else means the process died on its own
-    if (running && !wasStopping) {
+    if (!wasStopping) {
       // The code, not a sentence about it: the renderer owns every user-facing text, and this
       // one is shown on two pages in whichever language the user picked.
       lastTerminalStatus.set(projectId, { state: 'error', exitCode: code })
@@ -538,6 +615,16 @@ function waitForPort(port: number, onOpen: () => void): void {
 }
 
 export function stopServer(projectId: string): Promise<void> {
+  // Nothing to signal yet - "Stoppen" during the wait means "call the start off". The entry goes
+  // now rather than in startServer's finally, so a start clicked right after this one is not
+  // turned away by the entry of the one being abandoned.
+  const pending = pendingStarts.get(projectId)
+  if (pending) {
+    pending.aborted = true
+    pendingStarts.delete(projectId)
+    emitStatus(projectId)
+    return Promise.resolve()
+  }
   const running = runningServers.get(projectId)
   if (!running || !running.process.pid) return Promise.resolve()
   running.status.state = 'stopping'
@@ -689,6 +776,10 @@ export async function getBuildOutput(projectPath: string, outputDir?: string): P
 const KILL_ALL_DEADLINE_MS = 3_000
 
 export function killAllServers(): Promise<void> {
+  // A start still waiting for a build would otherwise spawn its server after the app decided to
+  // stop them all - a process nothing left in this run could signal.
+  for (const pending of pendingStarts.values()) pending.aborted = true
+  pendingStarts.clear()
   const pids = [...runningServers.values()].map((running) => running.process.pid).filter((pid): pid is number => !!pid)
   runningServers.clear()
   if (pids.length === 0) return Promise.resolve()

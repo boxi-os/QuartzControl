@@ -154,8 +154,13 @@ export default function BuildServer(): JSX.Element {
   const previewWidth = previewWidthPx(previewMode, breakpoints)
   const outputInProject = output ? isInsideDirectory(project.path, output.dir) : false
 
+  // No setStatus on the answer: the subscription above already carries every transition, and since
+  // a start waits for a one-off build into the same folder these calls can take as long as that
+  // build. Writing the answer when it finally arrives means writing a snapshot that is by then
+  // older than what the page already shows - and after a start that was called off and started
+  // again, one that describes the wrong attempt.
   async function start(): Promise<void> {
-    setStatus(await window.quartzGui.server.start(project.id, project.path, options))
+    await window.quartzGui.server.start(project.id, project.path, options)
   }
 
   async function stop(): Promise<void> {
@@ -163,7 +168,7 @@ export default function BuildServer(): JSX.Element {
   }
 
   async function restart(): Promise<void> {
-    setStatus(await window.quartzGui.server.restart(project.id, project.path, options))
+    await window.quartzGui.server.restart(project.id, project.path, options)
   }
 
   // A build that ends while this page is open - started here or anywhere else - changes what is in

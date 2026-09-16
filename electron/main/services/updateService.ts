@@ -301,7 +301,19 @@ export async function runCoreUpdate(projectPath: string): Promise<UpdateResult> 
       const install = await run('npm', call.args, projectPath)
       installOutput += install.output
       if (!install.success) {
-        return { success: false, output: `${mergeOutput}\n\n${mainT('npmInstallFailed')}\n${installOutput}`, snapshotId }
+        // The merge is done and package.json is upstream's, so a failure here is the one moment the
+        // project's own packages are named nowhere: npm's error is about a version range, not about
+        // what was taken out. Without this line the way back (the restore point, or installing them
+        // again) needs a list the user no longer has.
+        const missing =
+          plan.reinstall.length > 0
+            ? `\n\n${mainT('updatePackagesMissing', { packages: plan.reinstall.map((entry) => entry.name).join(', ') })}`
+            : ''
+        return {
+          success: false,
+          output: `${mergeOutput}\n\n${mainT('npmInstallFailed')}\n${installOutput}${missing}`,
+          snapshotId
+        }
       }
     }
 

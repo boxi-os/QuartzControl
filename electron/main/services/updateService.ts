@@ -280,13 +280,13 @@ async function stillMissing(projectPath: string, reinstall: PackageAddition[]): 
 // is a format and not a spelling (see CLAUDE.md); this one is new, it is what abortCoreMerge
 // matches on, and it is what the user reads in `git stash list`.
 //
-// The commit being merged is part of that name, and it is load-bearing rather than informative: a
-// stash belongs to *one* merge against *one* HEAD, and popping it against any other HEAD is a
-// merge against a state that is gone. Measured (seventeenth review, finding 1): a user who
-// resolves one half-done merge by hand keeps the stash, nothing later says so, and weeks later the
-// abort button pops it onto package.json - conflict markers in both files, `UU` in both, under
-// `success: true`. Matching on the merge's own SHA makes that impossible; what does not match
-// stays where it is and is named.
+// The commit being merged is part of that name so that anyone reading `git stash list` can see
+// which merge an entry belongs to. It is not what decides whether the abort button may pop it:
+// what a pop merges against is the *HEAD* the stash was made on, and the same merge can be
+// attempted twice against two different HEADs. Measured (eighteenth review, finding 2): after a
+// `git merge --abort` in the terminal and a commit to package.json, the second attempt found the
+// same MERGE_HEAD, popped the old stash, and left `UU package.json` with conflict markers. git
+// answers the question itself - see stashBase.
 const CORE_UPDATE_STASH = 'QuartzControl: core update'
 
 function stashMessage(mergeCommit: string): string {
@@ -297,6 +297,16 @@ async function stashRef(projectPath: string): Promise<string | null> {
   const ref = await run('git', ['rev-parse', '--verify', '--quiet', 'refs/stash'], projectPath)
   const sha = ref.success ? ref.output.trim() : ''
   return sha || null
+}
+
+/**
+ * The commit the newest stash entry was made on: a stash commit's first parent is the HEAD it was
+ * taken from, and that is the state `git stash pop` merges its diff against. Anything else is a
+ * merge against a state that is gone.
+ */
+async function stashBase(projectPath: string): Promise<string> {
+  const base = await run('git', ['rev-parse', 'refs/stash^'], projectPath)
+  return base.success ? base.output.trim() : ''
 }
 
 /** The subject of the newest stash entry, as `git stash list` shows it ("On main: <message>"). */
@@ -393,11 +403,11 @@ async function holdNpmOwnedFiles(projectPath: string, tracked: string[], mergeCo
 async function releaseNpmOwnedFiles(projectPath: string, held: HeldFiles): Promise<boolean> {
   if (held.kind !== 'held') return true
   if ((await stashRef(projectPath)) !== held.sha) return false
-  // `--index` with the plain pop as a fallback, for the reason spelled out at popCoreUpdateStash:
-  // the merge never started here, so the project goes back exactly as it was found - staging
-  // included.
-  if ((await run('git', ['stash', 'pop', '--index'], projectPath)).success) return true
-  return (await run('git', ['stash', 'pop'], projectPath)).success
+  // `--index` and nothing behind it, for the reason spelled out at popCoreUpdateStash: the merge
+  // never wrote anything here, so HEAD is still this stash's own base and the index diff applies.
+  // A refusal is the answer to hand on (the caller names the packages and the stash stays for the
+  // next run to report), not something to retry with a pop that would write conflict markers.
+  return (await run('git', ['stash', 'pop', '--index'], projectPath)).success
 }
 
 /** npm has written both files anew, so what the stash holds is history. Same ownership check. */
@@ -413,14 +423,17 @@ async function dropNpmOwnedFiles(projectPath: string, held: HeldFiles): Promise<
  * that is not this app's stash for *this* merge is the user's or an earlier run's and stays where
  * it is - named, because nothing else in this app lists stashes.
  */
-async function popCoreUpdateStash(
-  projectPath: string,
-  mergeCommit: string
-): Promise<{ success: boolean; output: string }> {
+async function popCoreUpdateStash(projectPath: string): Promise<{ success: boolean; output: string }> {
   const subject = await topStashSubject(projectPath)
-  // An empty `mergeCommit` (no MERGE_HEAD to read) must not match anything: the message is a
-  // prefix plus a SHA, so an empty SHA is a substring of every entry this app has ever written.
-  if (!mergeCommit || !subject.includes(stashMessage(mergeCommit))) {
+  const head = (await run('git', ['rev-parse', 'HEAD'], projectPath)).output.trim()
+  const base = await stashBase(projectPath)
+  // Two questions, and the second is the one that matters: is this entry ours (the prefix), and
+  // was it taken from the state the working tree has just been reset to (`refs/stash^` against
+  // HEAD, both read *after* the abort, which does not move HEAD)? An entry from another HEAD is
+  // one a pop would merge against a state that is gone - it stays where it is and is named.
+  // Empty on either side is a "no": a repository that cannot answer `rev-parse` is not one to
+  // write to.
+  if (!subject.includes(CORE_UPDATE_STASH) || !head || base !== head) {
     const leftover = (await hasCoreUpdateStash(projectPath)) ? `\n\n${mainT('updateStashLeftover')}` : ''
     return { success: true, output: leftover }
   }
@@ -429,12 +442,12 @@ async function popCoreUpdateStash(
   // as ` M` (unstaged), while with `--index` it stays `M `. For an unstaged change the two are
   // identical, so this only ever adds.
   //
-  // git says `--index` "may fail" where a plain pop would get through, so the plain one is still
-  // the fallback - and it is safe to try in that order: measured on a pop that could not apply,
-  // `--index` left the working tree, the index and the stash exactly as it found them, so nothing
-  // is applied twice.
-  let popped = await run('git', ['stash', 'pop', '--index'], projectPath)
-  if (!popped.success) popped = await run('git', ['stash', 'pop'], projectPath)
+  // No plain pop behind it any more. git says `--index` "may fail" where a plain one would get
+  // through, but with the check above there is no such case left: the index holds the two files at
+  // HEAD, HEAD is the stash's own base, so the index diff always applies. What the fallback did
+  // instead was turn a clean refusal ("conflicts in index. Try without --index.") into a
+  // package.json with conflict markers - measured, eighteenth review, finding 2.
+  const popped = await run('git', ['stash', 'pop', '--index'], projectPath)
   // A pop that hits a conflict leaves the stash standing, which is the right end - but it is not
   // an abort that put the project back, and saying "erfolgreich" over git's conflict output is how
   // the user learns about it at the next build instead of now.
@@ -500,10 +513,11 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     // which only says the plan could be worked out. The step below has to succeed as well: if it
     // does not, the files are still in the working tree and git answers the way it did before this
     // plan existed - which is a usable answer, but only if nothing afterwards assumes otherwise.
-    // A stash this run cannot name after the commit it belongs to is one the abort button cannot
-    // recognise later, so without that SHA the plan hands the two files back to git instead. Same
-    // for a file that stands at three versions at once: the stash would hold more than the plan
-    // can put back.
+    // A run that cannot even resolve what it just fetched hands the two files back to git instead:
+    // the SHA is only the label on the stash now (the abort button decides on its base, see
+    // popCoreUpdateStash), but a `rev-parse FETCH_HEAD` that does not answer after a fetch that
+    // did is not a repository to take files out of. Same for a file that stands at three versions
+    // at once: the stash would hold more than the plan can put back.
     let planApplies =
       plan.reproducible &&
       tracked.length > 0 &&
@@ -698,13 +712,13 @@ export function abortCoreMerge(projectPath: string): Promise<PluginActionResult>
   // Parked for the same reason the merge itself is: an abort has to rewrite the working tree, and
   // content/ is part of what the conflicted merge touched.
   return withContentSymlinkParked(projectPath, async () => {
-    // Which merge this is, read *before* the abort throws MERGE_HEAD away: it is the only thing
-    // that says whether the stash lying there belongs to this merge or to an earlier one.
-    const mergeHead = await run('git', ['rev-parse', 'MERGE_HEAD'], projectPath)
-    const mergeCommit = mergeHead.success ? mergeHead.output.trim() : ''
+    // Nothing to read before the abort: what decides whether the stash lying there is this run's
+    // is the HEAD it was taken from, and `merge --abort` does not move HEAD (see
+    // popCoreUpdateStash). MERGE_HEAD, which it does throw away, would only have said which merge
+    // the entry accompanied - the same merge can be attempted against two different HEADs.
     const result = await run('git', ['merge', '--abort'], projectPath)
     if (!result.success) return { success: false, output: explainGitFailure(result.output) + result.output }
-    const popped = await popCoreUpdateStash(projectPath, mergeCommit)
+    const popped = await popCoreUpdateStash(projectPath)
     return { success: popped.success, output: result.output + popped.output }
   })
 }

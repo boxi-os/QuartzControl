@@ -121,6 +121,10 @@ const STRINGS = {
     // verweigert. Gesagt, bevor der Nutzer drückt, statt danach.
     updateStashMineBlocked:
       'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen („git stash list“). „Merge abbrechen“ trägt ihn wieder ein, sobald die geänderte Datei aus dem Zusammenführen unter Git-Sync verworfen ist.',
+    // quartz.config.yaml enthält etwas, das keine Zuordnung ist. Die App liest sie nicht, statt
+    // sie als leer zu lesen und beim nächsten Speichern darüberzuschreiben.
+    configNotAMapping:
+      'In quartz.config.yaml steht keine Zuordnung aus Schlüsseln und Werten. Die App liest die Datei deshalb nicht; repariere sie in einem Editor oder nimm einen Wiederherstellungspunkt.',
     // Derselbe Stand, und er passt noch - nur ist kein Merge mehr offen, an dem der Knopf hinge.
     // Was die App nicht mehr tun kann, tut „git stash pop“; deshalb steht hier kein „drop“.
     updateStashFitsHead:
@@ -397,6 +401,8 @@ const STRINGS = {
       'An earlier update left package entries of yours stashed in git (“git stash list”). “Abort merge” puts them back.',
     updateStashMineBlocked:
       'An earlier update left package entries of yours stashed in git (“git stash list”). “Abort merge” puts them back once the changed file from the merge is discarded under Git sync.',
+    configNotAMapping:
+      'quartz.config.yaml does not hold a mapping of keys and values. The app will not read it; fix it in an editor or use a restore point.',
     updateStashFitsHead:
       'An earlier update left package entries of yours stashed in git (“git stash list”). They fit the state the project is in now, but this app has no way left to put them back: “git stash show -p” shows them, “git stash pop” puts them back.',
     updateStashPopFailed:

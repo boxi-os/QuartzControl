@@ -4,6 +4,7 @@ import { join } from 'path'
 import { parseDocument, Document, isMap } from 'yaml'
 import type { QuartzConfig, PluginEntry, PluginSource, LayoutConfig } from '@shared/ipc-contract'
 import { createSnapshot } from './snapshotService'
+import { mainT } from '../i18n'
 
 function configPath(projectPath: string): string {
   return join(projectPath, 'quartz.config.yaml')
@@ -22,7 +23,21 @@ export function deriveName(source: PluginSource): string {
 
 export async function readConfig(projectPath: string): Promise<QuartzConfig> {
   const raw = await readFile(configPath(projectPath), 'utf-8')
-  const json = parseDocument(raw).toJS() as {
+  // An empty file is a valid YAML document with no content, and `toJS()` answers `null` for it -
+  // which every `json.x` below then reads as a TypeError. Measured (twentieth review, "nebenbei"):
+  // a duplicate of a project whose config was an empty file died on `Cannot read properties of
+  // null (reading 'configuration')` out of repointProjectPaths. An empty document says the same
+  // thing as a document without any of these keys, so it is read as one.
+  //
+  // A document that is *something else* - a bare string, a list - is not the same thing and is not
+  // read as empty: every key below would come out `undefined`, the app would show a blank
+  // configuration, and the next save would write over whatever is really in there. Two ways to be
+  // unreadable, two answers.
+  const parsed = parseDocument(raw).toJS() as unknown
+  if (parsed !== null && parsed !== undefined && (typeof parsed !== 'object' || Array.isArray(parsed))) {
+    throw new Error(mainT('configNotAMapping'))
+  }
+  const json = (parsed ?? {}) as {
     // quartz nests `theme` inside `configuration` on disk; plugin entries can carry
     // extra fields (e.g. `layout`) beyond source/enabled/order/options that must round-trip
     configuration?: (QuartzConfig['configuration'] & { theme?: QuartzConfig['theme'] }) | undefined

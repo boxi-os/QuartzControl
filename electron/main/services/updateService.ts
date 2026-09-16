@@ -1,7 +1,8 @@
 import { runCommand as run } from './runCommand'
-import { readFile } from 'fs/promises'
+import { readFile, writeFile } from 'fs/promises'
 import { join } from 'path'
 import type { CoreUpdateStatus, PluginActionResult, PluginUpdateStatus, UpdateResult } from '@shared/ipc-contract'
+import { localPackageChanges, reinstallCommands, type LocalPackageChanges } from '@shared/packageJsonDeps'
 import { TEMPLATE_REPO } from './createService'
 import { withContentSymlinkParked } from './contentSymlink'
 import { createSnapshot } from './snapshotService'
@@ -120,7 +121,7 @@ export async function getCoreUpdateStatus(
   return { currentCommit: installed.commit, latestCommit, state: 'behind', missingCommits: installed.missing }
 }
 
-// git's own wording for the two failures a user can actually act on is either buried in a wall of
+// git's own wording for the three failures a user can actually act on is either buried in a wall of
 // other output or (for the symlink case) points at a state we just repaired behind their back.
 function explainGitFailure(output: string): string {
   if (/beyond a symbolic link/.test(output)) {
@@ -129,10 +130,97 @@ function explainGitFailure(output: string): string {
   if (/local changes to the following files would be overwritten/i.test(output)) {
     return mainT('updateBlockedByLocalChanges')
   }
+  // The state a conflicted merge leaves behind, which every later attempt runs into. git says
+  // "Merging is not possible because you have unmerged files" and leaves the user to know that
+  // the way out is the abort button two elements up this very page.
+  if (/unmerged files|MERGE_HEAD exists|not possible because you have/i.test(output)) {
+    return mainT('updateMergeUnfinished')
+  }
   return ''
 }
 
+// package.json and package-lock.json are not merged - they are taken from upstream and then
+// rewritten by npm. See shared/packageJsonDeps.ts for what that buys and what it costs.
+const NPM_OWNED_FILES = ['package.json', 'package-lock.json']
+
+async function mergeInProgress(projectPath: string): Promise<boolean> {
+  return (await run('git', ['rev-parse', '-q', '--verify', 'MERGE_HEAD'], projectPath)).success
+}
+
+async function jsonAtRevision(projectPath: string, revision: string, file: string): Promise<unknown> {
+  const shown = await run('git', ['show', `${revision}:${file}`], projectPath)
+  if (!shown.success) return undefined
+  try {
+    return JSON.parse(shown.output)
+  } catch {
+    return undefined
+  }
+}
+
+interface PackagePlan extends LocalPackageChanges {
+  /** False means: we could not read all three sides, so git decides and the user gets git's answer. */
+  reproducible: boolean
+}
+
+// Worked out *before* the merge, because afterwards the working tree no longer holds "ours".
+async function planPackageFiles(projectPath: string): Promise<PackagePlan> {
+  const handsOff: PackagePlan = { reinstall: [], upstreamWins: [], unreproducible: [], reproducible: false }
+  const mergeBase = await run('git', ['merge-base', 'HEAD', 'FETCH_HEAD'], projectPath)
+  if (!mergeBase.success) return handsOff
+  const base = await jsonAtRevision(projectPath, mergeBase.output.trim(), 'package.json')
+  const theirs = await jsonAtRevision(projectPath, 'FETCH_HEAD', 'package.json')
+  if (base === undefined || theirs === undefined) return handsOff
+  let ours: unknown
+  try {
+    ours = JSON.parse(await readFile(join(projectPath, 'package.json'), 'utf-8'))
+  } catch {
+    return handsOff
+  }
+  const changes = localPackageChanges(base, ours, theirs)
+  // An edit this plan cannot replay is not a reason to guess: git merges both files as before and
+  // says what it says today.
+  return { ...changes, reproducible: changes.unreproducible.length === 0 }
+}
+
+async function readNpmOwnedFiles(projectPath: string): Promise<Array<{ file: string; content: string }>> {
+  const saved: Array<{ file: string; content: string }> = []
+  for (const file of NPM_OWNED_FILES) {
+    try {
+      saved.push({ file, content: await readFile(join(projectPath, file), 'utf-8') })
+    } catch {
+      // A project without a lockfile is normal before the first install.
+    }
+  }
+  return saved
+}
+
+async function restoreNpmOwnedFiles(projectPath: string, saved: Array<{ file: string; content: string }>): Promise<void> {
+  for (const entry of saved) {
+    try {
+      await writeFile(join(projectPath, entry.file), entry.content)
+    } catch {
+      // The snapshot taken at the start of the update is the second way back.
+    }
+  }
+}
+
+async function conflictedFiles(projectPath: string): Promise<string[]> {
+  const conflicts = await run('git', ['diff', '--name-only', '--diff-filter=U'], projectPath)
+  if (!conflicts.success) return []
+  return conflicts.output
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+}
+
 export async function runCoreUpdate(projectPath: string): Promise<UpdateResult> {
+  // A merge left over from an earlier attempt blocks every git command that would write the
+  // working tree, and git's own answer to that names neither the earlier update nor the way out.
+  // Asked before the snapshot: nothing has happened yet, so there is nothing to restore to.
+  if (await mergeInProgress(projectPath)) {
+    return { success: false, output: mainT('updateMergeUnfinished'), conflicts: await conflictedFiles(projectPath) }
+  }
+
   // One snapshot mechanism for the whole app now (snapshotService). The git tag this used to
   // create captured only *tracked* files, which in a project created here is neither the config
   // nor the lockfile nor the content nor the user's own stylesheets.
@@ -151,29 +239,99 @@ export async function runCoreUpdate(projectPath: string): Promise<UpdateResult> 
   if (!fetch.success) return { success: false, output: fetch.output, snapshotId }
 
   return withContentSymlinkParked(projectPath, async () => {
-    const merge = await run('git', ['merge', 'FETCH_HEAD', '-m', 'Merge quartz-upstream (via QuartzControl)'], projectPath)
-    if (!merge.success) {
-      const conflicts = await run('git', ['diff', '--name-only', '--diff-filter=U'], projectPath)
-      const conflictFiles = conflicts.success
-        ? conflicts.output
-            .split('\n')
-            .map((l) => l.trim())
-            .filter(Boolean)
-        : []
-      return { success: false, output: explainGitFailure(merge.output) + merge.output, snapshotId, conflicts: conflictFiles }
+    const plan = await planPackageFiles(projectPath)
+    // Kept in memory so a merge that never starts - a symlink, a local change in some *other*
+    // file - leaves the project exactly as it was found.
+    const saved = plan.reproducible ? await readNpmOwnedFiles(projectPath) : []
+    if (plan.reproducible) {
+      // Takes both files back to HEAD so git has nothing to overwrite. Nothing is lost that npm
+      // cannot write again: what the plan holds is a list of packages and the ranges asked for.
+      await run('git', ['checkout', 'HEAD', '--', ...NPM_OWNED_FILES], projectPath)
     }
 
-    const install = await run('npm', ['install'], projectPath)
-    if (!install.success) {
-      return { success: false, output: `${merge.output}\n\nnpm install fehlgeschlagen:\n${install.output}`, snapshotId }
+    const merge = await run('git', ['merge', 'FETCH_HEAD', '-m', 'Merge quartz-upstream (via QuartzControl)'], projectPath)
+    let mergeOutput = merge.output
+    // Set only where *we* wrote the merge commit, which is the one commit this run may amend. A
+    // fast-forward leaves upstream's own commit at HEAD, and amending that would rewrite history
+    // this project did not make.
+    let ourMergeCommit = false
+    if (!merge.success) {
+      const conflictFiles = await conflictedFiles(projectPath)
+      const onlyNpmOwned = conflictFiles.length > 0 && conflictFiles.every((file) => NPM_OWNED_FILES.includes(file))
+      if (plan.reproducible && onlyNpmOwned) {
+        // The case that used to leave the project stuck: both sides wrote the same two generated
+        // files. Upstream's copy wins and npm writes the local packages back in below.
+        const resolved = await run('git', ['checkout', '--theirs', '--', ...NPM_OWNED_FILES], projectPath)
+        const staged = resolved.success && (await run('git', ['add', '--', ...NPM_OWNED_FILES], projectPath)).success
+        const committed = staged && (await run('git', ['commit', '--no-edit'], projectPath))
+        if (!committed || !committed.success) {
+          return {
+            success: false,
+            output: explainGitFailure(merge.output) + merge.output,
+            snapshotId,
+            conflicts: conflictFiles
+          }
+        }
+        mergeOutput = `${merge.output}\n${committed.output}`
+        ourMergeCommit = true
+      } else {
+        // Two ways to leave this: the merge never started, and then the project goes back to how
+        // it was found; or it is half-done and stays that way for the abort button on the page -
+        // in which case the packages are named, because they are no longer in package.json.
+        const inProgress = await mergeInProgress(projectPath)
+        if (!inProgress) await restoreNpmOwnedFiles(projectPath, saved)
+        const pending =
+          inProgress && plan.reinstall.length > 0
+            ? `\n\n${mainT('updatePackagesPending', { packages: plan.reinstall.map((entry) => entry.name).join(', ') })}`
+            : ''
+        return {
+          success: false,
+          output: explainGitFailure(merge.output) + merge.output + pending,
+          snapshotId,
+          conflicts: conflictFiles
+        }
+      }
     }
+
+    // One `npm install` per dependency section when this project has packages of its own, and a
+    // plain one otherwise. Either way npm writes the lockfile that upstream's copy just replaced.
+    const installCalls = plan.reinstall.length > 0 ? reinstallCommands(plan.reinstall) : [{ args: ['install'] }]
+    let installOutput = ''
+    for (const call of installCalls) {
+      const install = await run('npm', call.args, projectPath)
+      installOutput += install.output
+      if (!install.success) {
+        return { success: false, output: `${mergeOutput}\n\n${mainT('npmInstallFailed')}\n${installOutput}`, snapshotId }
+      }
+    }
+
+    // Both files were committed before this run (that is why they conflicted), so they belong in
+    // the commit that resolved them rather than standing in Git-Sync as a change nobody made. Only
+    // these two paths are staged, so anything else the user is working on stays untouched.
+    if (ourMergeCommit) {
+      await run('git', ['add', '--', ...NPM_OWNED_FILES], projectPath)
+      await run('git', ['commit', '--amend', '--no-edit'], projectPath)
+    }
+
+    const packageNotes = [
+      plan.reinstall.length > 0
+        ? mainT('updatePackagesReinstalled', { packages: plan.reinstall.map((entry) => entry.name).join(', ') })
+        : '',
+      plan.upstreamWins.length > 0 ? mainT('updatePackagesUpstreamWins', { packages: plan.upstreamWins.join(', ') }) : ''
+    ]
+      .filter(Boolean)
+      .join('\n')
 
     // Same benign first-build hiccup createService.ts already tolerates for some templates -
     // report it, but a failed warm-up build doesn't undo an otherwise-successful merge+install.
     const warmup = await run('npx', ['quartz', 'build'], projectPath)
     const warmupNote = warmup.success ? '' : `\n\n${mainT('warmupBuild')}\n${warmup.output}`
 
-    return { success: true, output: `${merge.output}\n${install.output}${warmupNote}`, snapshotId }
+    return {
+      success: true,
+      output: `${mergeOutput}\n${installOutput}${packageNotes ? `\n${packageNotes}` : ''}${warmupNote}`,
+      snapshotId
+    }
   })
 }
 

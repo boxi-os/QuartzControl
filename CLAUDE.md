@@ -1400,7 +1400,8 @@ die Frage ohnehin genauer als jede Zeile hier. Der Auftrag steht in
 [`docs/REVIEW-2026-09-21-auftrag.md`](docs/REVIEW-2026-09-21-auftrag.md). Sein Diff sind die zehn
 Fixes des sechzehnten Reviews: ohne Review-Dokument und Auftragsdatei 13 Dateien, +520/−101 (davon
 15 Zeilen dieser `CLAUDE.md`-Absatz, den der Auftrags-Commit mitbringt), im App-Code 6 Dateien,
-+322/−74. Der Branch ist **nicht gepusht und nicht nach `main` gemergt**; dazu
++322/−74. Der Branch ist am 2026-09-16 in `main` gelandet (`bc7d774`, Fast-Forward mit den zwei
+Runden danach), gepusht ist er damit noch nicht; dazu
 kommt ein Commit im Handbuch-Vault, der nicht in diesem Repo liegt (damals `b61a08d`; seine
 Nachricht trug die von Befund 4 des siebzehnten Reviews widerlegte Zeilennummer und wurde vor dem
 Push korrigiert, er heißt jetzt `b53a6c1` bei gleichem Baum). Als größtes Risiko
@@ -1444,7 +1445,8 @@ betreffen sie nicht, der vierte ist ein Kommentar in `shared/gridFrameCss.ts`. `
 bleibt, wo er ist, weil der Auftrag des zwölften Reviews mit ihm rechnet.
 
 **Die sieben Fixes des neunzehnten Reviews liegen bewusst dahinter** (`fix/review-2026-09-23`, von
-`fix/review-2026-09-22` abgezweigt, nicht gepusht und nicht gemergt): ohne Review-Dokument 9
+`fix/review-2026-09-22` abgezweigt, danach als Fast-Forward nach `main`, noch nicht gepusht): ohne
+Review-Dokument 9
 Dateien, +264/−32, im App-Code 6 Dateien, +169/−27. Gemessen an drei Wegen: `updateService` und
 `duplicateService` als esbuild-Bündel in zwei Fassungen gegen ein lokales Upstream-Repo mit den
 Ständen A/B/D/E, npm- und npx-Attrappen (darunter ein `npm`, das mit 1 antwortet, und ein `npx`,
@@ -1465,7 +1467,8 @@ n10p setzt `refs/remotes/origin/local` von Hand), und der Frame-Builder. Sie geh
 Diff des nächsten Auftrags.
 
 **Die sieben Fixes des achtzehnten Reviews hat das neunzehnte gelesen** (`fix/review-2026-09-22`, von
-`main` abgezweigt, nicht gepusht und nicht gemergt): ohne Review-Dokument 8 Dateien, +300/−81, im
+`main` abgezweigt, seit dem 2026-09-16 darin, noch nicht gepusht): ohne Review-Dokument 8 Dateien,
++300/−81, im
 App-Code 3 Dateien, +168/−44. Gemessen an fünf Wegen: `runCoreUpdate` und `abortCoreMerge` als
 esbuild-Bündel in zwei Fassungen (`af1ffed` und hier) gegen ein lokales Upstream-Repo mit den
 Ständen A/B/C, npm- und npx-Attrappen, je Szene ein frischer Klon — x1 (npm scheitert, dann
@@ -1486,7 +1489,7 @@ die Sensoren des Boards nach (der fehlende Guard an der Karte, der fehlende `set
 drei die Notiz und den Stash, zwei sind Sätze.
 
 **Die acht Fixes des siebzehnten Reviews hat das achtzehnte gelesen** (`fix/review-2026-09-20`,
-auf `4d2b50d` = `review-2026-09-22`, nicht gepusht und nicht nach `main` gemergt). Sie sind
+auf `4d2b50d` = `review-2026-09-22`, inzwischen in `main`). Sie sind
 gemessen, und von niemandem sonst gelesen. Der Messweg für die Update-Befunde ist der des
 Vorgängers, um einen vierten Upstream-Stand und ein zweites Bündel erweitert: zwei Fassungen von
 `updateService` als esbuild-Bündel gegen ein lokales Repo mit den Ständen A/B/B2/C/D, npm- und

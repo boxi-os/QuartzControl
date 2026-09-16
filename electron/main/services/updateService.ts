@@ -243,12 +243,41 @@ async function stillMissing(projectPath: string, reinstall: PackageAddition[]): 
 // The name of the stash this run writes. An identifier another machine may already have written
 // is a format and not a spelling (see CLAUDE.md); this one is new, it is what abortCoreMerge
 // matches on, and it is what the user reads in `git stash list`.
+//
+// The commit being merged is part of that name, and it is load-bearing rather than informative: a
+// stash belongs to *one* merge against *one* HEAD, and popping it against any other HEAD is a
+// merge against a state that is gone. Measured (seventeenth review, finding 1): a user who
+// resolves one half-done merge by hand keeps the stash, nothing later says so, and weeks later the
+// abort button pops it onto package.json - conflict markers in both files, `UU` in both, under
+// `success: true`. Matching on the merge's own SHA makes that impossible; what does not match
+// stays where it is and is named.
 const CORE_UPDATE_STASH = 'QuartzControl: core update'
+
+function stashMessage(mergeCommit: string): string {
+  return `${CORE_UPDATE_STASH} ${mergeCommit}`
+}
 
 async function stashRef(projectPath: string): Promise<string | null> {
   const ref = await run('git', ['rev-parse', '--verify', '--quiet', 'refs/stash'], projectPath)
   const sha = ref.success ? ref.output.trim() : ''
   return sha || null
+}
+
+/** The subject of the newest stash entry, as `git stash list` shows it ("On main: <message>"). */
+async function topStashSubject(projectPath: string): Promise<string> {
+  const subject = await run('git', ['log', '-1', '--format=%s', 'refs/stash'], projectPath)
+  return subject.success ? subject.output.trim() : ''
+}
+
+/**
+ * Whether any stash entry at all was written by this app. Only the newest can ever be popped, but
+ * one further down is just as much a leftover the user should hear about - and hears about
+ * nowhere else, because nothing in this app lists stashes.
+ */
+async function hasCoreUpdateStash(projectPath: string): Promise<boolean> {
+  const list = await run('git', ['stash', 'list', '--format=%s'], projectPath)
+  if (!list.success) return false
+  return list.output.split('\n').some((line) => line.includes(CORE_UPDATE_STASH))
 }
 
 type HeldFiles =
@@ -272,9 +301,9 @@ type HeldFiles =
  * snapshot. A stash survives the half-done merge, `git stash list` shows it to anyone tidying up
  * by hand, and abortCoreMerge pops it.
  */
-async function holdNpmOwnedFiles(projectPath: string, tracked: string[]): Promise<HeldFiles> {
+async function holdNpmOwnedFiles(projectPath: string, tracked: string[], mergeCommit: string): Promise<HeldFiles> {
   const before = await stashRef(projectPath)
-  const pushed = await run('git', ['stash', 'push', '-m', CORE_UPDATE_STASH, '--', ...tracked], projectPath)
+  const pushed = await run('git', ['stash', 'push', '-m', stashMessage(mergeCommit), '--', ...tracked], projectPath)
   if (!pushed.success) return { kind: 'failed', output: pushed.output }
   const after = await stashRef(projectPath)
   // "No local changes to save" is a success that writes no stash. Two ways to end up without one,
@@ -300,14 +329,26 @@ async function dropNpmOwnedFiles(projectPath: string, held: HeldFiles): Promise<
 /**
  * The other half of holdNpmOwnedFiles, for the abort button: `git merge --abort` resets the
  * working tree to HEAD, so the files the stash holds are only back once this has run. Anything
- * that is not this app's stash is the user's and stays where it is.
+ * that is not this app's stash for *this* merge is the user's or an earlier run's and stays where
+ * it is - named, because nothing else in this app lists stashes.
  */
-async function popCoreUpdateStash(projectPath: string): Promise<string> {
-  const subject = await run('git', ['log', '-1', '--format=%s', 'refs/stash'], projectPath)
-  if (!subject.success || !subject.output.includes(CORE_UPDATE_STASH)) return ''
-  // A pop that hits a conflict says so itself and leaves the stash standing, which is the right
-  // end: the user can still see what is in it.
-  return `\n${(await run('git', ['stash', 'pop'], projectPath)).output}`
+async function popCoreUpdateStash(
+  projectPath: string,
+  mergeCommit: string
+): Promise<{ success: boolean; output: string }> {
+  const subject = await topStashSubject(projectPath)
+  // An empty `mergeCommit` (no MERGE_HEAD to read) must not match anything: the message is a
+  // prefix plus a SHA, so an empty SHA is a substring of every entry this app has ever written.
+  if (!mergeCommit || !subject.includes(stashMessage(mergeCommit))) {
+    const leftover = (await hasCoreUpdateStash(projectPath)) ? `\n\n${mainT('updateStashLeftover')}` : ''
+    return { success: true, output: leftover }
+  }
+  const popped = await run('git', ['stash', 'pop'], projectPath)
+  // A pop that hits a conflict leaves the stash standing, which is the right end - but it is not
+  // an abort that put the project back, and saying "erfolgreich" over git's conflict output is how
+  // the user learns about it at the next build instead of now.
+  if (!popped.success) return { success: false, output: `\n\n${mainT('updateStashPopFailed')}\n${popped.output}` }
+  return { success: true, output: `\n${popped.output}` }
 }
 
 async function conflictedFiles(projectPath: string): Promise<string[]> {
@@ -319,7 +360,20 @@ async function conflictedFiles(projectPath: string): Promise<string[]> {
     .filter(Boolean)
 }
 
+/**
+ * A stash of this app's that is still there before this run has written one is a leftover: the run
+ * that wrote it never got to put it back, because the user resolved that merge by hand or the app
+ * ended in between. Measured (seventeenth review): two further updates ran afterwards and said
+ * nothing at all about it, and nothing else in this app lists stashes. Said, not acted on - it is
+ * the user's working tree, and `git stash pop` is their call.
+ */
 export async function runCoreUpdate(projectPath: string): Promise<UpdateResult> {
+  const leftover = (await hasCoreUpdateStash(projectPath)) ? `\n\n${mainT('updateStashLeftover')}` : ''
+  const result = await runCoreUpdateFrom(projectPath)
+  return leftover ? { ...result, output: result.output + leftover } : result
+}
+
+async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
   // A merge left over from an earlier attempt blocks every git command that would write the
   // working tree, and git's own answer to that names neither the earlier update nor the way out.
   // Asked before the snapshot: nothing has happened yet, so there is nothing to restore to.
@@ -343,6 +397,10 @@ export async function runCoreUpdate(projectPath: string): Promise<UpdateResult> 
   // lsRemote above for the same reasoning), then merges that directly.
   const fetch = await run('git', ['fetch', 'quartz-upstream', 'HEAD'], projectPath)
   if (!fetch.success) return { success: false, output: fetch.output, snapshotId }
+  // The commit about to be merged, resolved once: it names the stash below, and the abort button
+  // reads the same SHA back out of MERGE_HEAD to decide whether that stash is its own.
+  const fetched = await run('git', ['rev-parse', 'FETCH_HEAD'], projectPath)
+  const mergeCommit = fetched.success ? fetched.output.trim() : ''
 
   return withContentSymlinkParked(projectPath, async () => {
     const plan = await planPackageFiles(projectPath)
@@ -351,13 +409,15 @@ export async function runCoreUpdate(projectPath: string): Promise<UpdateResult> 
     // which only says the plan could be worked out. The step below has to succeed as well: if it
     // does not, the files are still in the working tree and git answers the way it did before this
     // plan existed - which is a usable answer, but only if nothing afterwards assumes otherwise.
-    let planApplies = plan.reproducible && tracked.length > 0
+    // A stash this run cannot name after the commit it belongs to is one the abort button cannot
+    // recognise later, so without that SHA the plan hands the two files back to git instead.
+    let planApplies = plan.reproducible && tracked.length > 0 && mergeCommit !== ''
     let held: HeldFiles = { kind: 'clean' }
     if (planApplies) {
       // Takes both files back to HEAD so git has nothing to overwrite - but hands them to git
       // rather than dropping them, because from here to the end of the merge there are several
       // ways out and only one of them writes them again.
-      held = await holdNpmOwnedFiles(projectPath, tracked)
+      held = await holdNpmOwnedFiles(projectPath, tracked, mergeCommit)
       if (held.kind === 'failed') planApplies = false
     }
 
@@ -491,9 +551,14 @@ export function abortCoreMerge(projectPath: string): Promise<PluginActionResult>
   // Parked for the same reason the merge itself is: an abort has to rewrite the working tree, and
   // content/ is part of what the conflicted merge touched.
   return withContentSymlinkParked(projectPath, async () => {
+    // Which merge this is, read *before* the abort throws MERGE_HEAD away: it is the only thing
+    // that says whether the stash lying there belongs to this merge or to an earlier one.
+    const mergeHead = await run('git', ['rev-parse', 'MERGE_HEAD'], projectPath)
+    const mergeCommit = mergeHead.success ? mergeHead.output.trim() : ''
     const result = await run('git', ['merge', '--abort'], projectPath)
     if (!result.success) return { success: false, output: explainGitFailure(result.output) + result.output }
-    return { success: true, output: result.output + (await popCoreUpdateStash(projectPath)) }
+    const popped = await popCoreUpdateStash(projectPath, mergeCommit)
+    return { success: popped.success, output: result.output + popped.output }
   })
 }
 

@@ -107,6 +107,13 @@ const STRINGS = {
     // gescheitert - „abbrechen und erneut" hilft dann nicht, „Fehler beheben und erneut" schon.
     updatePackagesMissing:
       'Diese eigenen Pakete stehen nicht mehr in package.json: {{packages}}. Behebe den Fehler oben und starte das Update erneut, oder nimm den Wiederherstellungspunkt.',
+    // Ein Stash, den ein früherer Lauf zurückgelegt und nie wieder eingetragen hat. Er gehört zu
+    // einem anderen Stand, also fasst ihn niemand mehr an - gesagt wird er trotzdem, weil sonst
+    // nichts in dieser App Stashes zeigt.
+    updateStashLeftover:
+      'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen („git stash list“). Er gehört nicht zu diesem Update: „git stash pop“ trägt ihn wieder ein, „git stash drop“ verwirft ihn.',
+    updateStashPopFailed:
+      'Die zurückgelegten Paketeinträge ließen sich nicht wieder eintragen und bleiben in git liegen („git stash list“).',
     npmInstallFailed: 'npm install ist fehlgeschlagen:',
     warmupBuild: 'Aufwärm-Build:',
     serverLogUnavailable:
@@ -362,6 +369,10 @@ const STRINGS = {
       'These packages of yours are currently not in package.json: {{packages}}. “Abort merge” above puts them back, and so does the restore point.',
     updatePackagesMissing:
       'These packages of yours are no longer in package.json: {{packages}}. Fix the error above and run the update again, or use the restore point.',
+    updateStashLeftover:
+      'An earlier update left package entries of yours stashed in git (“git stash list”). They do not belong to this update: “git stash pop” puts them back, “git stash drop” discards them.',
+    updateStashPopFailed:
+      'Your stashed package entries could not be put back and are still in git (“git stash list”).',
     npmInstallFailed: 'npm install failed:',
     warmupBuild: 'Warm-up build:',
     serverLogUnavailable:

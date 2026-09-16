@@ -609,8 +609,13 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   für ihn nichts, eine leere Zone erreicht er ohnehin nicht. Und die Regel gilt erst, wenn die
   Sensoren auch *übergeben* sind: `GlobalBoard` stand seit dem neunten Review in dieser Liste und
   gab seinem `DndContext` gar keine mit (achtzehntes Review, Befund 3; gemessen: ein Chip landete
-  nach drei Pfeilen wieder auf der Palette). Sortierbare Zeilen tragen zusätzlich „nach oben / nach unten“: die Tastatur-Aufnahme
-  ist eine Geste, die man kennen muss. **Und über einem Drag steht nie ein `stopPropagation()`:**
+  nach drei Pfeilen wieder auf der Palette). Zwei der drei sortierbaren Listen tragen zusätzlich „nach oben /
+  nach unten“ (`Plugins/Installed`, und die Ladereihenfolge in `Styles/CustomCss`, die nie ein Drag
+  hatte): die Tastatur-Aufnahme ist eine Geste, die man kennen muss. **Das Layout-Board ist die
+  Ausnahme, und zwar mit Grund:** Eine seiner Zeilen kann nicht nur innerhalb ihrer Liste steigen
+  und fallen, sondern in sechs andere Zonen und auf die Palette — ein Pfeilpaar beantwortet davon
+  eine Richtung von sieben und sähe aus, als beantworte es alle. Was die Geste ersetzt, sind
+  dnd-kits `screenReaderInstructions` aus `dndAccessibility` (neunzehntes Review, Befund 6). **Und über einem Drag steht nie ein `stopPropagation()`:**
   Der `KeyboardSensor` hört, sobald ein Drag läuft, auf dem *Dokument*, und React ruft für ein
   `stopPropagation()` im Renderer auch das native an der Wurzel — ein Guard, der ein Zeichen vom
   Elternknoten fernhalten soll, nimmt damit dem laufenden Drag Pfeile und Escape ab. Wer zu viel

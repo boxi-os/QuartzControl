@@ -1002,8 +1002,11 @@ function PluginRow({
           </div>
           {/* The keyboard alternative to the handle. dnd-kit's keyboard sensor can do the same
               thing (space, arrows, space), but it is a modal gesture one has to know about;
-              two arrows are one keystroke each and are the same control the CSS load order and
-              the layout editor use. They are as filter-sensitive as the drag is - see cardProps. */}
+              two arrows are one keystroke each and are the same control the CSS load order uses.
+              Not the layout editor, which this used to name as well: a card there can move into
+              six other zones and back onto the palette, so a pair of arrows would answer one of
+              seven directions and look as though it answered all of them (nineteenth review,
+              finding 6). They are as filter-sensitive as the drag is - see cardProps. */}
           {onMove && position !== undefined && groupSize !== undefined && (
             <>
               <IconButton

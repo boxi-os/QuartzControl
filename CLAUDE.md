@@ -1356,7 +1356,13 @@ PDF an einem echten Lauf gegen `pdfinfo`. Die größten Eingriffe sind die SHA a
 `MERGE_HEAD`-Blick in `abortCoreMerge`, der Index-Wächter `stagedApartFromWorkingTree()`, der
 `withBusy`-freie Serverteil der Übersicht und `pdfPageCount()`. Neu sind drei Texte in `i18n.ts`
 (`updateStashLeftover`, `updateStashPopFailed`, `updateAbortBlockedByEdit`) und sieben Absätze in
-`docs/decisions/`. Nicht gemessen: die gepackte App, ein echtes `npm install`, die VMs. Dazu kommt
+`docs/decisions/`. **Dahinter liegen fünf weitere Commits vom 2026-09-16**, die aus der Liste
+„Nebenbei aufgefallen“ desselben Reviews kommen: der Absatz, warum das Layout-Board seitwärts rollt
+und was ein Roller darum kostet (mit einem Kommentar an der `sideways`-Prüfung in `smoke.mjs`),
+drei neue Fälle in `check:core-update`, `git stash pop --index` an beiden Pop-Stellen, die
+Abkürzung bei „Already up to date“, und ein Kommentar, der festhält, dass die `planApplies`-Klausel
+am `upstreamWins`-Satz zu Recht dort steht. Nicht gemessen: die gepackte App, ein echtes
+`npm install`, die VMs. Dazu kommt
 zwei Commits im Handbuch-Vault, die nicht in diesem Repo liegen: `5d3af49` (der Halbsatz in 8.5,
 beide Sprachen) und `b53a6c1`, das gereworde `b61a08d` — sein Baum ist unverändert, nur die
 Nachricht sagt jetzt den Schnellpfad statt der Zeile 183. Beides ist gepusht, wie `main` dieses

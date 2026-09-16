@@ -92,6 +92,13 @@ const STRINGS = {
       'Der Content-Ordner ist ein Symlink, durch den git nicht schreiben kann. Wechsle unter Konfiguration → Content-Ordner vorübergehend auf einen echten Ordner und versuche es erneut.\n\n',
     updateBlockedByLocalChanges:
       'Eigene Änderungen an Dateien, die das Update ebenfalls anfasst, stehen im Weg. Committe oder verwirf sie unter Git-Sync und versuche es erneut.\n\n',
+    updateMergeUnfinished:
+      'Ein früheres Update steckt noch mitten im Zusammenführen. Brich es oben auf dieser Seite ab und starte das Update erneut.\n\n',
+    updatePackagesReinstalled: 'Eigene Pakete wieder eingetragen: {{packages}}',
+    updatePackagesUpstreamWins: 'Quartz hat diese Pakete selbst geändert, seine Fassung gilt: {{packages}}',
+    updatePackagesPending:
+      'Diese eigenen Pakete stehen gerade nicht in package.json: {{packages}}. Nach dem Abbrechen trägt sie ein erneutes Update wieder ein, und der Wiederherstellungspunkt bringt sie ebenfalls zurück.',
+    npmInstallFailed: 'npm install ist fehlgeschlagen:',
     warmupBuild: 'Aufwärm-Build:',
     serverLogUnavailable:
       'Die Ausgabe des Servers lässt sich nicht mitschreiben ({{reason}}). Der Server läuft, diese Konsole bleibt für diesen Lauf leer.',
@@ -335,6 +342,13 @@ const STRINGS = {
       'The content folder is a symlink, and git cannot write through it. Switch to a real folder under Configuration → Content folder for now and try again.\n\n',
     updateBlockedByLocalChanges:
       'Your own changes to files the update touches as well are in the way. Commit or discard them under Git sync and try again.\n\n',
+    updateMergeUnfinished:
+      'An earlier update is still half-merged. Cancel it at the top of this page and start the update again.\n\n',
+    updatePackagesReinstalled: 'Your own packages put back: {{packages}}',
+    updatePackagesUpstreamWins: 'Quartz changed these packages itself, so its version applies: {{packages}}',
+    updatePackagesPending:
+      'These packages of yours are currently not in package.json: {{packages}}. Cancelling and running the update again puts them back, and so does the restore point.',
+    npmInstallFailed: 'npm install failed:',
     warmupBuild: 'Warm-up build:',
     serverLogUnavailable:
       'The server’s output cannot be recorded ({{reason}}). The server is running; this console stays empty for this run.',

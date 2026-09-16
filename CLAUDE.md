@@ -93,6 +93,12 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   und ausgeführt. Existiert, weil ein Fehler darin wie ein Schalter aussieht, der nichts tut — genau
   das war er für jedes `@quartz-community/*`-Plugin —, und weil die Gegenprobe sofort einen Rand fand,
   der beim Lesen richtig aussah (`path.basename` trennt am Backslash nur auf win32)
+- `npm run check:core-update` — der Plan, nach dem das Core-Update `package.json` und
+  `package-lock.json` behandelt: acht Fälle gegen `shared/packageJsonDeps.ts` (das Skript lädt die
+  Datei, statt sie abzuschreiben), dazu die npm-Aufrufe, die daraus entstehen. Braucht weder App
+  noch Projekt noch Netz. Existiert, weil ein falscher Plan wie ein gelungenes Update aussieht und
+  erst auffällt, wenn ein Paket fehlt, das vorher da war — und weil er schon beim ersten Lauf einen
+  Rand zeigte: Ohne Vergleichsstand ist *jeder* Schlüssel eine Abweichung, also Finger weg
 - `npm run check:i18n` — every literal `t('…')` and `mainT('…')` key against `de.ts`, `en.ts` and
   `electron/main/i18n.ts`, plus de/en parity in both directions. A literal counts wherever it can be
   the key (both branches of `t(cond ? 'a' : 'b')`, the values of `mainT({…}[x])`); a key built from a
@@ -261,6 +267,16 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   nicht im Kind laufen kann; der Ausweg wäre ein Skript unter der eingebetteten Laufzeit über
   `runCommand`, dann auch für `sass`. Begründung in
   [`process-model-and-ipc.md`](docs/decisions/process-model-and-ipc.md).
+- **Eine Datei, die ein Werkzeug erzeugt, wird nicht gemergt, sondern neu erzeugt.** `package.json`
+  und `package-lock.json` gehören npm, und beim Core-Update schreiben beide Seiten sie: Quartz'
+  `3dff48b` hob alle Plugin-Versionen an, die Projekte hatten eigene Theme-Pakete darin. Uncommittet
+  verweigerte git den Merge, committet ließ er zwei Dateien im Konflikt und einen hängenden Merge
+  zurück, an dem jeder weitere Versuch starb. `runCoreUpdate` rechnet deshalb vorher einen Plan
+  (`shared/packageJsonDeps.ts`), nimmt Quartz' Fassung beider Dateien und lässt npm die eigenen
+  Pakete zurückschreiben. Was der Plan nicht nachspielen kann — ein lokal entferntes Paket, eine
+  Änderung außerhalb der Abhängigkeitsblöcke —, fasst die App nicht an: Dann entscheidet git, und
+  der Nutzer liest die Meldung, die er auch vorher las. Messungen in
+  [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md).
 - **Ein Kindprozess, der die App überleben soll, hängt nicht an einer Pipe zu ihr.** Die Leseenden
   von stdout/stderr sterben mit dem Prozess, der sie hält, und der nächste Schreibversuch des Kindes
   bringt es um — bei einem Dev-Server also der erste Rebuild nach dem Beenden der App, ohne Meldung,

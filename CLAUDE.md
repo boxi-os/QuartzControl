@@ -1295,7 +1295,9 @@ die Frage ohnehin genauer als jede Zeile hier. Der Auftrag steht in
 Fixes des sechzehnten Reviews: ohne Review-Dokument und Auftragsdatei 13 Dateien, +520/−101 (davon
 15 Zeilen dieser `CLAUDE.md`-Absatz, den der Auftrags-Commit mitbringt), im App-Code 6 Dateien,
 +322/−74. Der Branch ist **nicht gepusht und nicht nach `main` gemergt**; dazu
-kommt ein Commit im Handbuch-Vault (`b61a08d`), der nicht in diesem Repo liegt. Als größtes Risiko
+kommt ein Commit im Handbuch-Vault, der nicht in diesem Repo liegt (damals `b61a08d`; seine
+Nachricht trug die von Befund 4 des siebzehnten Reviews widerlegte Zeilennummer und wurde vor dem
+Push korrigiert, er heißt jetzt `b53a6c1` bei gleichem Baum). Als größtes Risiko
 nennt der Auftrag den git-Stash, den `runCoreUpdate` jetzt im Repo des Nutzers anlegt — das erste
 Mal, dass die App dessen Stash-Bereich anfasst.
 
@@ -1350,8 +1352,10 @@ PDF an einem echten Lauf gegen `pdfinfo`. Die größten Eingriffe sind die SHA a
 `withBusy`-freie Serverteil der Übersicht und `pdfPageCount()`. Neu sind drei Texte in `i18n.ts`
 (`updateStashLeftover`, `updateStashPopFailed`, `updateAbortBlockedByEdit`) und sieben Absätze in
 `docs/decisions/`. Nicht gemessen: die gepackte App, ein echtes `npm install`, die VMs. Dazu kommt
-ein Commit im Handbuch-Vault (`baeddee`, beide Sprachen), der nicht in diesem Repo liegt. Sie
-gehören damit in den Diff des nächsten Auftrags.
+zwei Commits im Handbuch-Vault, die nicht in diesem Repo liegen: `5d3af49` (der Halbsatz in 8.5,
+beide Sprachen) und `b53a6c1`, das gereworde `b61a08d` — sein Baum ist unverändert, nur die
+Nachricht sagt jetzt den Schnellpfad statt der Zeile 183. Beides ist gepusht, wie `main` dieses
+Repos. Sie gehören damit in den Diff des nächsten Auftrags.
 
 **Die sieben Fixes des fünfzehnten Reviews liegen bewusst dahinter** (`fix/review-2026-09-18`,
 `12dd7d9..b25f61b`, dazu `311f929` im Handbuch-Vault). Gemessen: das Demo-Skript an einer

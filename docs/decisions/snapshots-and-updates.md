@@ -51,9 +51,10 @@ eine ungestagete Änderung sind beide Wege gleich. Durch den Dienst gemessen (Sz
 `git add package.json` davor): vorgefunden `M `, nach „Merge abbrechen“ vorher ` M`, nachher `M `.
 Kein Datenverlust, aber ein anderer Zustand als der vorgefundene — und ein Abbruch ist das eine,
 was genau das nicht sein soll. git sagt, `--index` könne scheitern, wo ein einfacher Pop
-durchkommt, also bleibt der als Rückfall; die Reihenfolge ist gefahrlos, weil ein gescheitertes
-`--index` gemessen nichts anfasst (Arbeitsbereich, Index und Stash blieben, wie sie waren). Beide
-Pop-Stellen gehen den Weg, `popCoreUpdateStash` wie `releaseNpmOwnedFiles`.
+durchkommt, also stand der zunächst als Rückfall dahinter; die Reihenfolge schien gefahrlos, weil
+ein gescheitertes `--index` gemessen nichts anfasst (Arbeitsbereich, Index und Stash blieben, wie
+sie waren). Das achtzehnte Review hat den Rückfall wieder entfernt — siehe den Nachtrag weiter
+unten. Beide Pop-Stellen gehen den Weg, `popCoreUpdateStash` wie `releaseNpmOwnedFiles`.
 
 **„Already up to date" installiert und baut nicht mehr (2026-09-16).** Ein Lauf, dessen Merge
 nichts geholt hat, lief bis hierher trotzdem durch `npm install` und einen vollen `quartz build` —
@@ -70,6 +71,58 @@ npm-Zeilen plus „Eigene Pakete wieder eingetragen“, nachher ein `npx`-Aufruf
 date.“ — bei byte-gleicher `package.json` und `package-lock.json` und leerem Stash in beiden
 Fassungen. Was die Attrappe nicht zeigt, weil sie nicht ins Netz geht: dass der gesparte
 `npm install` ein echter war.
+
+**Nachtrag (2026-09-16, achtzehntes Review): die Abkürzung kennt den Vorlauf, und der Stash hängt
+an seinem eigenen HEAD.** Drei Ränder der zwei Absätze darüber, gemessen an zwei esbuild-Bündeln
+(dem Stand von `af1ffed` und dem danach) gegen dasselbe lokale Upstream-Repo, je Szene ein frischer
+Klon, npm- und npx-Attrappen.
+
+*Die Abkürzung entschied an HEAD allein.* HEAD ist aber auch dann unbewegt, wenn ein **früherer**
+Lauf den Merge schon committet hat und danach an `npm install` gescheitert ist — genau der Zustand,
+in den `updatePackagesMissing` den Nutzer mit „starte das Update erneut“ schickt. Szene x1 (Klon
+von A, Theme committet, Upstream B, npm scheitert im ersten Lauf): vorher sagte der zweite Lauf
+„Already up to date.“, `success: true`, ohne npm und ohne `npx` — über einem Projekt mit Quartz'
+`package.json` und dem `node_modules` von vorher. Die zweite Hälfte der Frage steht jetzt in einer
+Notiz in `.quartz-gui/core-update.json`, und zwar **umgedreht**: nicht „dieser Lauf ist fertig“,
+sondern „zwischen Merge-Commit und Aufwärm-Build steht etwas aus“, geschrieben vor dem Install und
+geleert danach. Die andere Richtung hätte den ersten Lauf jedes bestehenden Projekts wieder zum
+Volldurchlauf gemacht, also genau das zurückgeholt, was der Absatz darüber abgeschafft hat —
+gemessen in Szene „up“ (Projekt aktuell, Theme uncommittet): mit der Notiz als „fertig für HEAD“
+lief ein `npm install --save-prod` samt Aufwärm-Build, mit der Notiz als „steht aus“ null npm- und
+null npx-Aufrufe und eine unberührte `package.json`. Nachher in x1: zweiter Lauf mit `npm install`
+und einem `npx`, Lockfile von npm. Der Preis der Richtung steht am Code: Eine unschreibbare Datei
+liest sich als „nichts steht aus“, also wie vorher.
+
+*Der Stash war an den Merge-Commit gebunden, nicht an den HEAD, gegen den er entstand.* Derselbe
+Merge kann zweimal versucht werden, und zwischen den Versuchen kann HEAD sich bewegen — der
+gewöhnliche Weg nach einem Konflikt, den jemand im Terminal abbricht und danach committet. Szene x2
+(Konflikt in `quartz/index.ts`, Stash; `git merge --abort` im Terminal; `explorer ^0.2.0` in
+`package.json` committet; dasselbe Update noch einmal; dann der Knopf): vorher `UU package.json`,
+ein Konfliktmarker, kein gültiges JSON, unter `success: false`; mit gestagetem Theme verweigerte
+`pop --index` sauber und der **Rückfall-Pop** schrieb die Marker dann selbst. git hält die richtige
+Frage bereit: Der erste Elternteil eines Stash-Commits ist der HEAD, auf dem er entstand, und
+`merge --abort` bewegt HEAD nicht. `popCoreUpdateStash` vergleicht deshalb `refs/stash^` gegen
+HEAD, und `MERGE_HEAD` wird vor dem Abbruch gar nicht mehr gelesen. Nachher in x2 (beide Lagen):
+kein Pop, `package.json` gültig, der Stash bleibt und wird genannt; Gegenprobe x2h (nichts
+committet, HEAD also die Stash-Basis): Pop, `Dropped refs/stash@{0}`, das Theme zurück —
+ungestaget als ` M`, gestaget als `M `.
+
+*Der Rückfall-Pop ist damit weg, an beiden Stellen.* Der Absatz „Ein Pop gibt zurück, was er
+genommen hat“ hatte ihn stehen lassen, weil git sagt, `--index` könne scheitern, wo ein einfacher
+Pop durchkommt. Mit der Bindung an die Basis gibt es diesen Fall nicht mehr: Der Index hält die zwei
+Dateien auf HEAD, HEAD ist die Basis des Stashes, also wendet der Index-Diff immer an. Was der
+Rückfall stattdessen tat, war, aus einer sauberen Verweigerung („conflicts in index. Try without
+--index.“) eine `package.json` mit Konfliktmarkern zu machen.
+
+*Und der Satz über den liegengebliebenen Stash stellt jetzt dieselbe Frage wie der Knopf.* Er
+nannte jeden Eintrag der App „gehört nicht zu diesem Update“ und riet zu `git stash pop` — in x2h
+Sekunden bevor der Abbruch-Knopf genau diesen Eintrag selbst aufnahm, und in x2 mit einem Rat, der
+in die Marker führt. Erhoben wird vor dem Lauf, ob überhaupt einer lag (sonst antwortete ein Stash
+dieses Laufs selbst); *welcher* Satz es ist, wird danach gefragt: unserer, von diesem HEAD, und ein
+Merge hängt → `updateStashMine` („Merge abbrechen“ trägt ihn wieder ein); sonst `updateStashLeftover`
+mit `git stash show -p` und `drop`. Szene x7 (der Lauf legt einen eigenen Stash über den alten):
+der untere bekommt „gehört zu einem Stand, den es nicht mehr gibt“, der Knopf poppt den oberen, der
+untere bleibt `stash@{0}` — dass der Abbruch ihn dabei nicht erwähnt, steht weiter offen.
 
 **Zwei Ausgänge des Konfliktzweigs sagten nicht, was geschah.** Szene s4: Der Lauf bleibt mit „Diese eigenen Pakete stehen gerade nicht in package.json“ stehen, der Nutzer trägt daraufhin ein Paket von Hand ein, und „Merge abbrechen“ antwortet roh mit `error: Entry 'package.json' not uptodate. Cannot merge.` / `fatal: Could not reset index file to revision 'HEAD'.` — git nennt die Datei, aber nicht den einen Weg weiter, und es ist genau die Datei, die die Meldung davor selbst genannt hat. Szene s13: ein `pre-commit`-Hook mit `exit 1` im Projekt lässt den Merge-Commit scheitern; zurück kam die Merge-Ausgabe mit `conflicts: [package.json]` für eine Datei, die die App gerade selbst aufgelöst hatte, während der Grund in `committed.output` liegen blieb. `explainGitFailure` kennt jetzt `not uptodate`, und der `!committed`-Zweig hängt die Ausgabe des Commits an; „Merge abbrechen“ nach s13 räumt weiter auf und stellt den vorgefundenen Arbeitsbereich her.
 

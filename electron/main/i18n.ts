@@ -111,7 +111,11 @@ const STRINGS = {
     // einem anderen Stand, also fasst ihn niemand mehr an - gesagt wird er trotzdem, weil sonst
     // nichts in dieser App Stashes zeigt.
     updateStashLeftover:
-      'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen („git stash list“). Er gehört nicht zu diesem Update: „git stash pop“ trägt ihn wieder ein, „git stash drop“ verwirft ihn.',
+      'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen („git stash list“). Er gehört zu einem Stand, den es nicht mehr gibt: „git stash show -p“ zeigt ihn an, „git stash drop“ verwirft ihn.',
+    // Derselbe Stand, nur gehört er zu genau diesem Update - dann ist der Knopf auf der Seite der
+    // Weg, und ein geratenes „git stash pop“ wäre die schlechtere Hälfte desselben Vorgangs.
+    updateStashMine:
+      'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen („git stash list“). „Merge abbrechen“ trägt ihn wieder ein.',
     updateStashPopFailed:
       'Die zurückgelegten Paketeinträge ließen sich nicht wieder eintragen und bleiben in git liegen („git stash list“).',
     // Der Abbruch kann nur zurücknehmen, was seit dem Steckenbleiben unverändert ist. git nennt
@@ -374,7 +378,9 @@ const STRINGS = {
     updatePackagesMissing:
       'These packages of yours are no longer in package.json: {{packages}}. Fix the error above and run the update again, or use the restore point.',
     updateStashLeftover:
-      'An earlier update left package entries of yours stashed in git (“git stash list”). They do not belong to this update: “git stash pop” puts them back, “git stash drop” discards them.',
+      'An earlier update left package entries of yours stashed in git (“git stash list”). They belong to a state that is gone: “git stash show -p” shows them, “git stash drop” discards them.',
+    updateStashMine:
+      'An earlier update left package entries of yours stashed in git (“git stash list”). “Abort merge” puts them back.',
     updateStashPopFailed:
       'Your stashed package entries could not be put back and are still in git (“git stash list”).',
     updateAbortBlockedByEdit:

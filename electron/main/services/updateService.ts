@@ -465,16 +465,39 @@ async function conflictedFiles(projectPath: string): Promise<string[]> {
 }
 
 /**
+ * Which of the two sentences an entry that was already lying there has earned, asked *after* the
+ * run because that is when the user reads it: the one the abort button on the page will put back,
+ * or one from a state that is gone.
+ *
+ * The three halves of "the button will put it back" are the ones popCoreUpdateStash asks (ours,
+ * and taken from this very HEAD), plus the button existing at all - which it does only while a
+ * merge is half-done. Anything else, including this run having laid a stash of its own on top, is
+ * the other sentence. Measured (eighteenth review, finding 4): one run said "they do not belong to
+ * this update" and the abort button popped that same entry seconds later.
+ */
+async function leftoverStashNote(projectPath: string, before: string | null): Promise<string> {
+  if ((await stashRef(projectPath)) !== before) return mainT('updateStashLeftover')
+  const head = (await run('git', ['rev-parse', 'HEAD'], projectPath)).output.trim()
+  const ours = (await topStashSubject(projectPath)).includes(CORE_UPDATE_STASH)
+  const poppable = ours && head !== '' && (await stashBase(projectPath)) === head && (await mergeInProgress(projectPath))
+  return poppable ? mainT('updateStashMine') : mainT('updateStashLeftover')
+}
+
+/**
  * A stash of this app's that is still there before this run has written one is a leftover: the run
  * that wrote it never got to put it back, because the user resolved that merge by hand or the app
  * ended in between. Measured (seventeenth review): two further updates ran afterwards and said
  * nothing at all about it, and nothing else in this app lists stashes. Said, not acted on - it is
- * the user's working tree, and `git stash pop` is their call.
+ * the user's working tree, and what to do with it is their call.
+ *
+ * Asked before the run, because afterwards an entry of this run's own would answer the same way;
+ * *which* sentence it earns is asked afterwards, see leftoverStashNote.
  */
 export async function runCoreUpdate(projectPath: string): Promise<UpdateResult> {
-  const leftover = (await hasCoreUpdateStash(projectPath)) ? `\n\n${mainT('updateStashLeftover')}` : ''
+  const before = (await hasCoreUpdateStash(projectPath)) ? await stashRef(projectPath) : null
   const result = await runCoreUpdateFrom(projectPath)
-  return leftover ? { ...result, output: result.output + leftover } : result
+  if (before === null) return result
+  return { ...result, output: `${result.output}\n\n${await leftoverStashNote(projectPath, before)}` }
 }
 
 async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {

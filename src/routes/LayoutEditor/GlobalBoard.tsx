@@ -3,10 +3,14 @@ import { useTranslation } from 'react-i18next'
 import {
   DndContext,
   DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
   closestCenter,
   pointerWithin,
   useDraggable,
   useDroppable,
+  useSensor,
+  useSensors,
   type CollisionDetection,
   type DragEndEvent,
   type DragStartEvent
@@ -30,6 +34,7 @@ import { formatIpcError } from '../../components/ErrorSurface'
 import DevServerRestartHint from '../../components/DevServerRestartHint'
 import { ItemCard, PaletteChip, GROUP_COLORS } from './ComponentPill'
 import { dndAccessibility } from '../../utils/dndAnnouncements'
+import { nearestDroppableCoordinates } from '../../utils/dndKeyboard'
 import {
   BUILTIN_FRAME_LAYOUT,
   DEFAULT_FRAME_GRID,
@@ -231,6 +236,18 @@ export default function GlobalBoard({
   }
   const { announcements, screenReaderInstructions } = dndAccessibility(t, describeDragId)
 
+  // The pointer half is dnd-kit's own default, unchanged; the keyboard half is the whole point of
+  // saying this out loud. Without a coordinate getter an arrow press moves the picked-up item by a
+  // fixed 25px, which on a board whose rows are 52px tall and whose zones are columns wide is a
+  // press that does nothing - measured (eighteenth review, finding 3): space, arrow, arrow left the
+  // item where it was and only scrolled the page. Not sortableKeyboardCoordinates, which the
+  // sortable rows alone would be happy with: a palette chip is a plain draggable and not a
+  // droppable, so that getter returns nothing at all for it (see dndKeyboard.ts), and an empty zone
+  // has no sortable to step onto. nearestDroppableCoordinates steps to the nearest drop target in
+  // the pressed direction, which is what this board is made of - the same getter the frame builder
+  // uses, for the same reason.
+  const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: nearestDroppableCoordinates }))
+
   function handleDragStart(event: DragStartEvent): void {
     setActiveId(String(event.active.id))
   }
@@ -414,6 +431,7 @@ export default function GlobalBoard({
       {/* useDraggable/useDroppable only register with the nearest ancestor DndContext, so the
           palette has to be a child of it, not a sibling - otherwise its chips are inert. */}
       <DndContext
+        sensors={sensors}
         collisionDetection={collisionDetection}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}

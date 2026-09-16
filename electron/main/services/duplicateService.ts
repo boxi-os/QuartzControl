@@ -49,6 +49,15 @@ const SKIP = new Set([
   '.quartz-gui/logs'
 ])
 
+// Deliberately *not* skipped, so that the list above is not read as "everything instance-bound":
+// `.quartz-gui/core-update.json`. The note says "between the merge commit and npm install
+// something is outstanding for <sha>", and the copy inherits that very commit along with .git, so
+// it is as true there as in the original - it is only stale because duplicateProject runs
+// `npm install` itself. Measured (nineteenth review, finding 7): the copy carries the same SHA
+// verbatim, and the copy's first update pays one extra install for it. Kept because the direction
+// is the safe one: an install that was not needed costs a minute, and dropping the note where the
+// duplicate's own install failed would cost the state it describes.
+
 // Same reasoning as publish-targets.json, one level further: a deploy manifest records what is
 // already lying on a particular server, keyed by the id of a target that stays behind. In the copy
 // it is an orphan at best and a wrong answer to "what still has to be uploaded" at worst. Both

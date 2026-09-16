@@ -238,9 +238,10 @@ export default function GlobalBoard({
 
   // The pointer half is dnd-kit's own default, unchanged; the keyboard half is the whole point of
   // saying this out loud. Without a coordinate getter an arrow press moves the picked-up item by a
-  // fixed 25px, which on a board whose rows are 52px tall and whose zones are columns wide is a
-  // press that does nothing - measured (eighteenth review, finding 3): space, arrow, arrow left the
-  // item where it was and only scrolled the page. Not sortableKeyboardCoordinates, which the
+  // fixed 25px, which on a board whose rows step 51px (a 43px card plus the zone's 8px gap; the
+  // 52px elsewhere in this file is the zone's own min-height, not a row) and whose zones are
+  // columns wide is a press that does nothing - measured (eighteenth review, finding 3): space,
+  // arrow, arrow left the item where it was and only scrolled the page. Not sortableKeyboardCoordinates, which the
   // sortable rows alone would be happy with: a palette chip is a plain draggable and not a
   // droppable, so that getter returns nothing at all for it (see dndKeyboard.ts), and an empty zone
   // has no sortable to step onto. nearestDroppableCoordinates steps to the nearest drop target in

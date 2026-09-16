@@ -775,7 +775,9 @@ Frame-Builder genauso.
 
 Was die Messung als Kosten des Rollers las, war der Zustand des Boards ohne ihn: `GlobalBoard` gab
 seinem `DndContext` **keine Sensoren** mit, zog also mit dnd-kits Vorgabe von 25 px je Pfeildruck —
-bei 51 px Zeilenhöhe ein Treffer nach Zufall, und für einen Chip aus der Palette gar keiner.
+bei 51 px von Zeile zu Zeile (eine 43-px-Karte plus die 8 px `gap` der Zone; die 52 px daneben
+sind die `min-h` der *Zone*, nicht die einer Zeile — gemessen am 2026-09-16) ein Treffer nach
+Zufall, und für einen Chip aus der Palette gar keiner.
 `CLAUDE.md` zählte das Board dabei seit dem neunten Review zu den vier Stellen, die es richtig
 machen. Gemessen an der gebauten App, echte Tastendrücke, je frischer Mount:
 
@@ -798,6 +800,12 @@ Mit dem Getter kostet der Roller nichts mehr: dieselben Tastenfolgen mit echtem 
 im gebauten Renderer ergeben Zeile für Zeile dasselbe wie ohne (`scrollTop 0`: 0 / 35 / 118,5 und
 „liegt über page-title“; `scrollTop 280`: der zweite Pfeil bewegt; Palette: „bei page-title
 abgelegt“, `explorer #2` steht danach im Kopfbereich). Deshalb ist der Roller jetzt drin.
+
+Die drei Zahlen gehören dazu, wie das Board damals war: Das Aufnehmen klappte die Karte des Griffs
+auf (Befund 1 des neunzehnten Reviews), also maßen sie eine Liste, die 65 px länger war als die,
+die der Nutzer vor dem Space sah. Mit dem Guard an der Karte ist dieselbe Folge **0 / 2,5 / 53,5**,
+Karte durchgehend 43 px — gleiche Form, gleicher Satz („liegt über page-title“ beim zweiten Pfeil),
+andere Zahlen.
 
 **Was daraus als Regel bleibt:** Wer zwei Zustände vergleicht, vergleicht sie in beiden
 Reihenfolgen — sonst misst er den ersten Versuch. Und eine Begründung, die eine Frage schließt,

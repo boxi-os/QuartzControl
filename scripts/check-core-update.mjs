@@ -130,6 +130,48 @@ const faelle = [
     reinstall: ['@quartz-themes/default@^1.0.1'],
     upstreamWins: [],
     unreproducible: ['name']
+  },
+  // Die drei ab hier hat das siebzehnte Review gestellt: Antworten, die die Funktion gibt und die
+  // bis dahin kein Fall festgehalten hat. Die erwarteten Werte sind ihre gemessenen, nicht
+  // ausgedachte - gefragt wurde die Funktion selbst, bevor sie hier standen.
+  {
+    // Beide Seiten fügen dasselbe Paket hinzu, aber mit verschiedenem Bereich. Es ist keine
+    // Änderung *unsererseits* an einem Paket, das es schon gab, also gilt Quartz' Fassung - und
+    // npm trägt nichts nach.
+    was: 'beide fügen dasselbe Paket mit verschiedenem Bereich hinzu — Quartz gewinnt',
+    base: deps({}),
+    ours: deps({ lodash: '^4.17.0' }),
+    theirs: deps({ lodash: '^5.0.0' }),
+    reinstall: [],
+    upstreamWins: ['lodash'],
+    unreproducible: []
+  },
+  {
+    // Beide entfernen dasselbe Paket: Es wäre nichts zu tun, aber eine Entfernung ist eine
+    // Abweichung wie jede andere, und die Funktion spielt sie nicht nach. Finger weg, und das ist
+    // hier harmlos - der Fall steht da, damit ein späterer Umbau ihn nicht versehentlich ändert.
+    was: 'auf beiden Seiten entfernt — Finger weg, obwohl nichts zu tun wäre',
+    base: deps({ lodash: '^4.17.0' }),
+    ours: deps({}),
+    theirs: deps({}),
+    reinstall: [],
+    upstreamWins: [],
+    unreproducible: ['dependencies.lodash']
+  },
+  {
+    // Der Fall, der eine Entscheidung ist und keine Lücke: Quartz streicht ein Paket, das dieses
+    // Projekt auf einen eigenen Bereich umgepinnt hatte. Der Plan trägt es mit dem eigenen Bereich
+    // nach, `stillMissing` findet es in der gemergten Datei nicht, npm installiert es - ein Paket
+    // kommt zurück, das Quartz gestrichen hat. Das ist gewollt: Ein umgepinntes Paket ist eine
+    // Entscheidung des Projekts, und ein Update, das sie stillschweigend kassiert, wäre der
+    // schlechtere Ausgang. Wer das ändert, ändert es hier sichtbar.
+    was: 'Upstream streicht ein Paket, das das Projekt umgepinnt hat — es kommt zurück',
+    base: deps({ lodash: '^4.17.0' }),
+    ours: deps({ lodash: '^4.99.0' }),
+    theirs: deps({}),
+    reinstall: ['lodash@^4.99.0'],
+    upstreamWins: [],
+    unreproducible: []
   }
 ]
 

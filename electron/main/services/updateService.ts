@@ -482,6 +482,9 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
       if (held.kind === 'failed') planApplies = false
     }
 
+    // HEAD before the merge, to tell "nothing to fetch" from "merged something" without reading
+    // git's English. A merge that does anything moves HEAD, fast-forward or merge commit alike.
+    const headBefore = (await run('git', ['rev-parse', 'HEAD'], projectPath)).output.trim()
     const merge = await run('git', ['merge', 'FETCH_HEAD', '-m', 'Merge quartz-upstream (via QuartzControl)'], projectPath)
     let mergeOutput = merge.output
     // Set only where *we* wrote the merge commit, which is the one commit this run may amend. A
@@ -547,6 +550,25 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
           conflicts: conflictFiles
         }
       }
+    }
+
+    // "Already up to date": the merge moved nothing, so there is nothing for npm to install and
+    // nothing for a warm-up build to prove. Both ran anyway until now - a network install and a
+    // whole `quartz build` for a run whose own output says it did not change a thing, and on the
+    // way the two files were reset to HEAD and then written back by npm, so the user's own package
+    // lines came out of this re-generated rather than untouched. The stash goes back instead of
+    // being dropped, for exactly that reason: npm has not rewritten anything, so what git holds is
+    // not history but the working tree as it was found.
+    const headAfter = (await run('git', ['rev-parse', 'HEAD'], projectPath)).output.trim()
+    if (headBefore && headAfter === headBefore) {
+      const restored = await releaseNpmOwnedFiles(projectPath, held)
+      const pending =
+        !restored && held.kind === 'held' && plan.localEdits.reinstall.length > 0
+          ? `\n\n${mainT('updatePackagesPending', {
+              packages: plan.localEdits.reinstall.map((entry) => entry.name).join(', ')
+            })}`
+          : ''
+      return { success: true, output: mergeOutput + pending, snapshotId }
     }
 
     // One `npm install` per dependency section for the packages the merged package.json is

@@ -55,6 +55,22 @@ durchkommt, also bleibt der als Rückfall; die Reihenfolge ist gefahrlos, weil e
 `--index` gemessen nichts anfasst (Arbeitsbereich, Index und Stash blieben, wie sie waren). Beide
 Pop-Stellen gehen den Weg, `popCoreUpdateStash` wie `releaseNpmOwnedFiles`.
 
+**„Already up to date" installiert und baut nicht mehr (2026-09-16).** Ein Lauf, dessen Merge
+nichts geholt hat, lief bis hierher trotzdem durch `npm install` und einen vollen `quartz build` —
+für einen Vorgang, dessen eigene Ausgabe sagt, dass er nichts geändert hat. Schlimmer als die Zeit
+war der Weg dorthin: Die zwei Dateien waren vorher auf HEAD zurückgesetzt worden, also fehlten die
+eigenen Paketzeilen, `stillMissing` fand sie nicht, und npm schrieb sie neu — die Zeile „Eigene
+Pakete wieder eingetragen“ stand über einem Eintrag, den niemand weggenommen hatte. Erkannt wird
+es an HEAD vor und nach dem Merge, nicht an gits englischem Satz: Ein Merge, der etwas tut, bewegt
+HEAD, ob als Vorspulung oder als Merge-Commit. Der Stash geht dann **zurück statt weg** — npm hat
+nichts neu geschrieben, also ist er keine Geschichte, sondern der vorgefundene Arbeitsbereich.
+Gemessen am Bündel mit einer npx-Attrappe, die ihre Aufrufe mitschreibt, zweiter Lauf mit einem
+uncommitteten eigenen Paket: vorher zwei `npx`-Aufrufe und die Ausgabe „Already up to date.“ plus
+npm-Zeilen plus „Eigene Pakete wieder eingetragen“, nachher ein `npx`-Aufruf und nur „Already up to
+date.“ — bei byte-gleicher `package.json` und `package-lock.json` und leerem Stash in beiden
+Fassungen. Was die Attrappe nicht zeigt, weil sie nicht ins Netz geht: dass der gesparte
+`npm install` ein echter war.
+
 **Zwei Ausgänge des Konfliktzweigs sagten nicht, was geschah.** Szene s4: Der Lauf bleibt mit „Diese eigenen Pakete stehen gerade nicht in package.json“ stehen, der Nutzer trägt daraufhin ein Paket von Hand ein, und „Merge abbrechen“ antwortet roh mit `error: Entry 'package.json' not uptodate. Cannot merge.` / `fatal: Could not reset index file to revision 'HEAD'.` — git nennt die Datei, aber nicht den einen Weg weiter, und es ist genau die Datei, die die Meldung davor selbst genannt hat. Szene s13: ein `pre-commit`-Hook mit `exit 1` im Projekt lässt den Merge-Commit scheitern; zurück kam die Merge-Ausgabe mit `conflicts: [package.json]` für eine Datei, die die App gerade selbst aufgelöst hatte, während der Grund in `committed.output` liegen blieb. `explainGitFailure` kennt jetzt `not uptodate`, und der `!committed`-Zweig hängt die Ausgabe des Commits an; „Merge abbrechen“ nach s13 räumt weiter auf und stellt den vorgefundenen Arbeitsbereich her.
 
 

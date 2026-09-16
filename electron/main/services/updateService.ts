@@ -768,8 +768,20 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     }
 
     // Both files were committed before this run (that is why they conflicted), so they belong in
-    // the commit that resolved them rather than standing in Git-Sync as a change nobody made. Only
-    // these two paths are staged, so anything else the user is working on stays untouched.
+    // the commit that resolved them rather than standing in Git-Sync as a change nobody made.
+    //
+    // `--only -- <paths>` rather than `git add` and then a plain amend, because a plain amend
+    // commits the whole index, and the index is not ours. In the `ourMergeCommit` branch nothing
+    // foreign can be in it - git refuses to start a merge over a staged change, so the run that
+    // wrote that commit saw an index that matched HEAD (measured, twentieth review, finding 1:
+    // "Your local changes to the following files would be overwritten by merge", for a file
+    // upstream does not touch). Under `resuming` there is no merge in front of this run to say so,
+    // and between the two runs the user can have staged anything: measured in the same scene, a
+    // staged line in quartz/index.ts ended up inside a commit titled "Merge quartz-upstream (via
+    // QuartzControl)", with the first run's author date, and left the index empty without a word.
+    // `--only` takes these paths from the working tree, where npm has just written them, and
+    // leaves every other index entry where it is (both merge parents survive; git refuses `--only`
+    // only while a merge is still in progress, and by here it is committed).
     //
     // `resuming` is the same commit one run later: an earlier run wrote the merge and then failed
     // at `npm install`, so this run had nothing to fetch and `ourMergeCommit` is false - while HEAD
@@ -786,8 +798,7 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
       (await headSubject(projectPath)) === MERGE_MESSAGE &&
       !(await headIsPushed(projectPath))
     if ((ourMergeCommit || resuming) && tracked.length > 0) {
-      await run('git', ['add', '--', ...tracked], projectPath)
-      await run('git', ['commit', '--amend', '--no-edit'], projectPath)
+      await run('git', ['commit', '--amend', '--no-edit', '--only', '--', ...tracked], projectPath)
     }
 
     const packageNotes = [

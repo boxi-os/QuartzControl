@@ -142,6 +142,14 @@ function explainGitFailure(output: string): string {
   if (/unmerged files|MERGE_HEAD exists|not possible because you have/i.test(output)) {
     return mainT('updateMergeUnfinished')
   }
+  // `git merge --abort` refusing because a file was touched since the merge stopped. git names the
+  // file - "Entry 'package.json' not uptodate. Cannot merge." - and that is exactly the file the
+  // half-done merge's own message asks the user to look at, so this is the ordinary way to get
+  // here, not an exotic one. What git does not say is that the way out is to give that one change
+  // up; without that the abort button stays a button that does nothing.
+  if (/not uptodate\. Cannot merge|Could not reset index file/i.test(output)) {
+    return mainT('updateAbortBlockedByEdit')
+  }
   return ''
 }
 
@@ -488,9 +496,15 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
           resolved && dropped && (takeTheirs.length === 0 || (await run('git', ['add', '--', ...takeTheirs], projectPath)).success)
         const committed = staged && (await run('git', ['commit', '--no-edit'], projectPath))
         if (!committed || !committed.success) {
+          // The merge's own output only names the two files this branch has just resolved, so on
+          // its own it reads as "these two are in conflict" for two files that are not. What went
+          // wrong is in the commit's output - a pre-commit hook that exits 1, say - and it is the
+          // only part of this the user can act on. Measured (seventeenth review, finding 7): with
+          // a failing hook the reason did not reach the page at all.
+          const why = committed ? `\n${committed.output}` : ''
           return {
             success: false,
-            output: explainGitFailure(merge.output) + merge.output,
+            output: explainGitFailure(merge.output) + merge.output + why,
             snapshotId,
             conflicts: conflictFiles
           }

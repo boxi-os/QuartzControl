@@ -114,6 +114,10 @@ const STRINGS = {
       'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen („git stash list“). Er gehört nicht zu diesem Update: „git stash pop“ trägt ihn wieder ein, „git stash drop“ verwirft ihn.',
     updateStashPopFailed:
       'Die zurückgelegten Paketeinträge ließen sich nicht wieder eintragen und bleiben in git liegen („git stash list“).',
+    // Der Abbruch kann nur zurücknehmen, was seit dem Steckenbleiben unverändert ist. git nennt
+    // die Datei, nicht aber den einen Weg weiter.
+    updateAbortBlockedByEdit:
+      'Eine Datei aus dem Zusammenführen wurde inzwischen geändert, deshalb lässt sich das Update nicht abbrechen. Verwirf die Änderung an der unten genannten Datei unter Git-Sync und brich dann erneut ab.\n\n',
     npmInstallFailed: 'npm install ist fehlgeschlagen:',
     warmupBuild: 'Aufwärm-Build:',
     serverLogUnavailable:
@@ -373,6 +377,8 @@ const STRINGS = {
       'An earlier update left package entries of yours stashed in git (“git stash list”). They do not belong to this update: “git stash pop” puts them back, “git stash drop” discards them.',
     updateStashPopFailed:
       'Your stashed package entries could not be put back and are still in git (“git stash list”).',
+    updateAbortBlockedByEdit:
+      'A file from the merge has been changed since, so the update cannot be cancelled. Discard the change to the file named below under Git sync, then cancel again.\n\n',
     npmInstallFailed: 'npm install failed:',
     warmupBuild: 'Warm-up build:',
     serverLogUnavailable:

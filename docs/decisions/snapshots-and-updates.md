@@ -204,4 +204,71 @@ stehen, `M package-lock.json` bleibt — die schlechtere der zwei Möglichkeiten
 veröffentlichte Historie anfasst. Gegenprobe „norm“ (ein Lauf, npm funktioniert): beide Fassungen
 Zeile für Zeile gleich.
 
+**Nachtrag (2026-09-17, zwanzigstes Review): die vierte Frage stellt jetzt gits eigene Regel, und
+sie hat drei Antworten.** Gefragt war „gleicht HEAD **oder** liegt zwischen HEAD und `MERGE_HEAD`“,
+über `git diff --name-only HEAD` — und das liest Index *und* Arbeitsbereich. `reset --merge`
+behält aber, was „different between the index and working tree“ ist: die **ungestagete** Hälfte
+einer Änderung. Eine gestagete wirft es weg, ob der Merge um den Pfad geht oder nicht; und wo der
+Merge um ihn geht und die Änderung ungestaget ist, verweigert git den Abbruch ganz. Vier Szenen, je
+frischer Klon mit liegendem Stash und hängendem Merge, `scripts` mitten im Merge in `package.json`
+eingetragen:
+
+    s3 ungestaget  Upstream nur quartz/index.ts        Abbruch läuft, Pop scheitert
+    s3 gestaget    dasselbe, Eintrag gestaget          Abbruch läuft, Pop gelingt
+    s4 ungestaget  Upstream ändert package.json mit    Abbruch verweigert
+    s4 gestaget    dasselbe, Eintrag gestaget          Abbruch läuft, Pop gelingt
+
+    vorher   s3 gestaget „gehört zu einem Stand, den es nicht mehr gibt“ samt Rat zu
+             `git stash drop` — und der Knopf trug ihn Sekunden später zurück;
+             s4 ungestaget „Merge abbrechen trägt ihn wieder ein“ — und der Knopf verweigerte
+    nachher  beide sagen, was der Knopf tut; n7h und n7b unverändert
+
+Für die dritte Antwort gibt es einen dritten Satz (`updateStashMineBlocked`): Der Knopf *ist* der
+Weg, nur steht die eigene, nicht vorgemerkte Änderung davor. Das ist derselbe Fehler, den der
+Vorgänger dem `apply --check` nachgewiesen hat — in der eigenen Fassung, eine Lage weiter.
+
+**Nachtrag (2026-09-17, zwanzigstes Review): der Amend nimmt zwei Pfade, nicht den Index.**
+`git commit --amend --no-edit` committet den ganzen Index, und der gehört nicht der App. Im
+Konfliktzweig kann nichts Fremdes darin liegen — git beginnt einen Merge nicht über einer
+gestageten Änderung, gemessen auch für eine Datei, die Upstream gar nicht anfasst („Your local
+changes to the following files would be overwritten by merge“). Unter `resuming` gibt es diesen
+Merge nicht mehr. Szene a4 (Lauf 1 mit scheiterndem npm, dazwischen `git add quartz/index.ts`,
+Lauf 2 mit npm, das läuft):
+
+    vorher   HEAD-Commit trägt package-lock.json package.json quartz/index.ts, Index leer —
+             die gestagete Arbeit steht in einem Commit mit dem Betreff „Merge quartz-upstream
+             (via QuartzControl)“ und dem Autor-Datum des ersten Laufs, ohne ein Wort in der
+             Ausgabe
+    nachher  HEAD-Commit trägt die zwei Paketdateien, `M  quartz/index.ts` steht weiter im Index
+
+`--only -- <pfade>` nimmt sie aus dem Arbeitsbereich, wo npm sie gerade geschrieben hat, und lässt
+jeden anderen Index-Eintrag stehen; beide Merge-Eltern überleben. git verweigert `--only` nur,
+solange ein Merge läuft, und hier ist er committet.
+
+**Nachtrag (2026-09-17, zwanzigstes Review): „ein Merge-Commit dieses Laufs“ ist eine Menge, nicht
+zwei.** `ourMergeCommit` war nur im Konfliktzweig gesetzt, `resuming` meint jeden Merge-Commit
+dieser App — also amendete ein sauberer, nicht vorspulbarer Merge beim ersten Lauf nicht und beim
+erneuten doch. Szene a7 (Upstream D, ein Merge, den git selbst committet):
+
+    a7   ein Lauf, npm läuft      vorher: kein Amend,  M package-lock.json; nachher: Amend, sauber
+    a7f  npm scheitert, 2. Lauf   vorher wie nachher: Amend
+    ff   vorspulbar (Upstream B)  vorher wie nachher: kein Amend — HEAD ist upstreams Commit
+
+Erkannt wird der Fall daran, dass HEAD nach dem Merge weder dort steht, wo er stand, noch auf dem,
+was geholt wurde; ohne auflösbares `FETCH_HEAD` gibt es diesen Unterschied nicht, dann amendet der
+Lauf nicht.
+
+**Nachtrag (2026-09-17, zwanzigstes Review): der Wächter sagt, was er misst.** `headIsPushed()`
+fragt `git branch -r --contains HEAD` und hieß „has left this machine“ — gemessen wird ein
+Remote-Tracking-Ref, und das ist weniger. Dieselbe Szene zweimal, Push in ein lokales Bare-Repo:
+`git push -uf origin local` (die Argumente von `quartz sync`, aus dessen `cli/handlers.js`
+gelesen) schreibt `refs/remotes/origin/local`, es wird nicht amendet; `git push <pfad> local`
+schreibt keines, es wird amendet, und der Commit auf der Gegenseite ist danach kein Vorfahr von
+HEAD mehr. Blind ist der Wächter genauso für ein Remote ohne Fetch-Refspec und für ein Ref, das
+seit dem Push von Hand verschwunden ist. Eine lokale Spur eines Pushs per URL gibt es nicht;
+`git ls-remote` wäre die Antwort und kostet eine Verbindung in einem Lauf, der sonst nur den
+Upstream anspricht. Die Folge ist ein Force-Push später, den `quartz sync` ohnehin macht.
+Zusätzlich `@{upstream}` zu verlangen wäre teurer als der Rand: Ein Projekt ohne Git-Sync hat
+keines, und dort fiele der Amend aus, obwohl nichts die Maschine verlassen kann.
+
 **git cannot write through a symbolic link, so every git operation that touches `content/` must park it first.** With the content folder symlinked into an Obsidian vault — a headline feature — a core update died with `error: 'content/.gitkeep' is beyond a symbolic link` / `fatal: stash failed`, raw, in the output pane. `withContentSymlinkParked()` unlinks the link (not the vault), runs the operation, then discards whatever git wrote into a real `content/` and restores the link in a `finally`. The merge, its abort **and** a snapshot restore all need it - and for the restore that means its *whole write phase*, not only the optional `git reset --hard`. Measured on a project whose `content/` pointed at a vault: a whole-project restore reported `success: true` with empty output and left `content/` as a real directory holding the snapshot's old notes, i.e. the project silently disconnected from the vault, while a per-file restore of a `content/` path would have written *into* the vault. The parking helper's `finally` throws those files away with the temporary directory, which is the deliberate answer rather than a gap: a vault is the user's own primary data with its own backup and is never overwritten from a snapshot - so the result says so in a line of its own. Only wrapped when the restore actually reaches `content/`, so restoring one config file never unlinks the vault even briefly. Verified end to end, conflict-and-abort included, with the vault untouched throughout.

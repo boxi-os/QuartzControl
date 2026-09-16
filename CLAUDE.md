@@ -287,8 +287,11 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   gemessen hat und die jetzt dazugehören: **Die zwei Dateien werden nicht weggeworfen, sondern an
   git gegeben** (`git stash push -m 'QuartzControl: core update'`), weil ein Merge aus mehr Gründen
   hängen bleibt als wegen ihrer — bei einem halb fertigen Merge bleibt der Stash stehen und
-  `abortCoreMerge` poppt ihn nach `merge --abort`. **Der Plan fragt die Merge-Basis, die Türen
-  öffnen sich gegen HEAD**, also gibt es einen zweiten Vergleich (`localPackageChanges(head, ours,
+  `abortCoreMerge` poppt ihn nach `merge --abort`. **Ob der Knopf ihn tragen wird, wird nach gits
+  Regel gefragt, nicht nach einer Vereinfachung davon**: `reset --merge` behält die *ungestagete*
+  Hälfte einer Änderung und wirft die gestagete weg, und wo der Merge um denselben Pfad geht,
+  verweigert es den Abbruch ganz — drei Ausgänge, drei Sätze (zwanzigstes Review). **Der Plan
+  fragt die Merge-Basis, die Türen öffnen sich gegen HEAD**, also gibt es einen zweiten Vergleich (`localPackageChanges(head, ours,
   head)`) für das, was der Reset wegnimmt, und `stillMissing()` für das, was die gemergte Datei
   noch nicht sagt. **Und angefasst wird nur, was `git ls-files` führt**: `git checkout -- a b` ist
   alles oder nichts, und ein Pfad, den HEAD nicht kennt, wird im Konflikt als gelöscht aufgelöst
@@ -300,7 +303,17 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   ist nichts zu tun“**: HEAD steht auch still, wenn ein früherer Lauf den Merge committet hat und
   danach an `npm install` gescheitert ist — deshalb hält der Dienst zwischen Merge-Commit und
   Aufwärm-Build eine Notiz in `.quartz-gui/core-update.json`, und zwar als „steht aus“ und nicht
-  als „fertig“, damit ein Projekt, das schlicht aktuell ist, seine Abkürzung behält. Messungen in
+  als „fertig“, damit ein Projekt, das schlicht aktuell ist, seine Abkürzung behält. Drei Ränder
+  aus dem zwanzigsten Review: **Ein Amend nimmt die Pfade, um die es geht, nicht den Index**
+  (`--amend --only -- package.json package-lock.json`) — der Index gehört dem Nutzer, und nur im
+  Konfliktzweig hält git ihn frei, weil es einen Merge über einer gestageten Änderung gar nicht
+  erst beginnt; ein erneuter Lauf hat diesen Merge nicht mehr vor sich. **„Ein Merge-Commit dieses
+  Laufs“ ist eine Menge, nicht zwei**: Auch der saubere, nicht vorspulbare Merge ist einer (HEAD
+  steht danach weder, wo er stand, noch auf dem Geholten), nur die Vorspulung nicht — sonst
+  antwortet derselbe Zustand beim ersten Lauf anders als beim zweiten. Und **der Wächter davor
+  sagt, was er misst**: `git branch -r --contains HEAD` findet ein Remote-Tracking-Ref, nicht
+  „hat die Maschine verlassen“ — die Wege der App schreiben eines (`quartz sync` pusht mit `-u`),
+  ein Push per URL nicht, und eine lokale Spur davon gibt es ohne Netz nicht. Messungen in
   [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md).
 - **Ein Kindprozess, der die App überleben soll, hängt nicht an einer Pipe zu ihr.** Die Leseenden
   von stdout/stderr sterben mit dem Prozess, der sie hält, und der nächste Schreibversuch des Kindes
@@ -829,9 +842,9 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Befunde aus den Reviews (Stand 2026-09-23)
+## Befunde aus den Reviews (Stand 2026-09-24)
 
-Alle neunzehn Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
+Alle zwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht,
@@ -849,12 +862,47 @@ Alle neunzehn Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIE
 [`docs/REVIEW-2026-09-20.md`](docs/REVIEW-2026-09-20.md) mit seinen neun und
 [`docs/REVIEW-2026-09-21.md`](docs/REVIEW-2026-09-21.md) mit seinen acht und
 [`docs/REVIEW-2026-09-22.md`](docs/REVIEW-2026-09-22.md) mit seinen sieben und
-[`docs/REVIEW-2026-09-23.md`](docs/REVIEW-2026-09-23.md) mit seinen sieben (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-23-`) stehen als
+[`docs/REVIEW-2026-09-23.md`](docs/REVIEW-2026-09-23.md) mit seinen sieben und
+[`docs/REVIEW-2026-09-24.md`](docs/REVIEW-2026-09-24.md) mit seinen fünf (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-24-`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](docs/REVIEW-2026-09-15.md) gehört nicht
 in diese Zählung: Die „fünfzehnte Runde“ las die Handbücher der zwei Plugins gegen deren Code und
 aus diesem Repo nur zwei Commits der Beispielvorlage (`fe2b701`, `9592121`).
+
+**Das zwanzigste Review las die sieben Fixes des neunzehnten** —
+`review-2026-09-24..review-2026-09-25` ohne Review-Dokument und Auftrag, 9 Dateien, +353/−41,
+davon im App-Code 6 Dateien, +169/−27 — und maß an fünf Wegen, darunter `runCoreUpdate`,
+`abortCoreMerge` und `duplicateProject` als esbuild-Bündel in zwei Fassungen gegen ein lokales
+Upstream-Repo mit den Ständen A/B/D/E (sechzehn Szenen), git allein in Wegwerf-Repos, die gebaute
+App mit echten Tastendrücken am Layout-Board und im Frame-Builder, `git log` und `git cherry`
+gegen alle Zahlen und Branch-Sätze der Runde, und die Prüfskripte. Kein Befund der Stufe Hoch,
+**einer Mittel, vier Niedrig**, alle fünf abgearbeitet. Die sieben Fixes des Vorgängers tun, was
+sie sollen; der mittlere Befund sitzt dort, wo der Auftrag sein größtes Risiko vermutet hat, aber
+an einer anderen Kante — nicht der Wächter vor dem Amend ist das Problem, sondern was der Amend
+*mitnimmt*. Was daraus als Regel bleibt, steht oben in den passenden Abschnitten:
+
+- **Ein Befehl, der einen Zustand committet, nimmt so viel mit, wie man ihm lässt.**
+  `git commit --amend --no-edit` committet den ganzen Index. Im Konfliktzweig kann dort nichts
+  Fremdes liegen, weil git einen Merge über einer gestageten Änderung gar nicht erst beginnt — und
+  genau diese Zusicherung fehlt dem erneuten Lauf, der keinen Merge mehr vor sich hat. Gemessen
+  landete eine gestagete Zeile des Nutzers in einem Commit mit fremdem Betreff und fremdem Datum,
+  unter der Ausgabe „Already up to date.“
+- **Eine Bedingung, die zwei Stellen dieselbe Frage stellen, beschreibt an beiden dieselbe
+  Menge** — oder eine von beiden nennt die Ausnahme. `ourMergeCommit` hieß „ein Merge-Commit, den
+  dieser Zweig nach einem Konflikt gemacht hat“, `resuming` „ein Merge-Commit dieser App“, und der
+  Kommentar nannte beides denselben Commit eine Runde später.
+- **Wer fremdes Verhalten vorhersagt, nimmt dessen eigene Regel, nicht eine Vereinfachung
+  davon.** Die vierte Frage am Stash-Satz las `git diff HEAD` (Index *und* Arbeitsbereich),
+  `reset --merge` entscheidet aber an „different between the index and working tree“ — und wirft
+  eine gestagete Änderung weg. Das ist derselbe Fehler, den die Runde davor dem `apply --check`
+  nachgewiesen hat, in der eigenen Fassung.
+- **Ein Wächter heißt nach dem, was er misst.** `git branch -r --contains HEAD` findet ein
+  Remote-Tracking-Ref und hieß „has left this machine“; ein Push per URL schreibt keines und
+  hinterlässt ohne Netz überhaupt keine lokale Spur.
+- **Eine Zahl gehört zu dem, woran sie gemessen wurde** — zweimal, beide Male vor dem Commit
+  gezählt, der die Datei trägt: +341 statt +353 in einer Commit-Nachricht und „22 Commits vor
+  `origin/main`“ statt 23 im Auftrag.
 
 **Das neunzehnte Review las die sieben Fixes des achtzehnten** —
 `review-2026-09-23..review-2026-09-24` ohne Review-Dokument und Auftrag, 9 Dateien, +380/−88,
@@ -1459,6 +1507,27 @@ dazu `electron-builder.yml` und in `scripts/` +1298/−140. Die fünfzehnte Rund
 ausdrücklich mit, und es hat ihn gelesen: die Lücke ist geschlossen, drei seiner vier Befunde
 betreffen sie nicht, der vierte ist ein Kommentar in `shared/gridFrameCss.ts`. `review-2026-09-16`
 bleibt, wo er ist, weil der Auftrag des zwölften Reviews mit ihm rechnet.
+
+**Die fünf Fixes des zwanzigsten Reviews liegen bewusst dahinter** (`fix/review-2026-09-24`, von
+`main` abgezweigt, noch nicht gemergt und nicht gepusht): ohne Review-Dokument 5 Dateien,
++255/−47, im App-Code 2 Dateien, +103/−37 — nachgerechnet gegen den Commit, der diese Zeilen
+trägt, nicht gegen den davor. Gemessen an zwei Wegen: `runCoreUpdate` und
+`abortCoreMerge` als esbuild-Bündel in zwei Fassungen gegen ein lokales Upstream-Repo mit den
+Ständen A/B/D/E (A = Ausgangsstand, B = Paketversionen gehoben, D = nur `quartz/index.ts`,
+E = beides), npm- und npx-Attrappen, je Szene ein frischer Klon — a4 (die gestagete Fremddatei
+zwischen zwei Läufen), a7/a7f und ein vorspulbarer Klon (die zwei Antworten auf den sauberen
+Merge), zwei Klone mit Push per Remote-Name und per URL, s3 und s4 in je zwei Lagen (gestaget und
+ungestaget, Upstream D und E), n7h/n7b und die fünf Gegenproben a1/a5/a6/a7f/norm in beiden
+Fassungen; dazu git allein für `--amend --only` an einem Merge-Commit, bei unveränderten Pfaden
+und mitten in einem Merge. Und die Prüfskripte (`typecheck`, `build`, `smoke` mit 42 Aufrufen,
+`check:i18n` mit 1111 + 172 Schlüsseln, `check:core-update`, `check:semver`,
+`check:plugin-names`, `check:handbook`) — alle grün. Die größten Eingriffe sind das `--only` am
+Amend, `abortOutcomeForStash()` mit drei statt zwei Antworten und die zweite Tür zu
+`ourMergeCommit`. Neu ist ein Text in `i18n.ts` (`updateStashMineBlocked`), dazu vier Nachträge
+in `docs/decisions/snapshots-and-updates.md`. Nicht gemessen: die gebaute und die gepackte App
+(kein Befund dieser Runde liegt im Renderer), ein echtes `npm install`, ein echter Push zu
+GitHub, die VMs, und die Notiz über einen Restore oder ein Duplikat hinweg. Sie gehören damit in
+den Diff des nächsten Auftrags.
 
 **Die sieben Fixes des neunzehnten Reviews liegen bewusst dahinter** (`fix/review-2026-09-23`, von
 `fix/review-2026-09-22` abgezweigt, danach als Fast-Forward nach `main`, noch nicht gepusht): ohne

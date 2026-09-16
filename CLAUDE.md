@@ -1190,7 +1190,10 @@ an der gebauten, nicht an der gepackten App.
 die Fixes des zwölften (`review-2026-09-17..fix/review-2026-09-16`) und die Lücke
 `review-2026-09-14..review-2026-09-16` (unten), in der die zwölf Fixes des elften liegen.
 
-**Das nächste Review misst ab `review-2026-09-20`.** Der Tag sitzt auf `4e649a8` („Der Auftrag
+**Das sechzehnte Review misst ab `review-2026-09-20`** und liest bis `review-2026-09-21`, das auf
+`79baffc` („Der Auftrag für das sechzehnte Review“, `main`) sitzt — dem Stand, den es liest; der
+Auftrag steht in [`docs/REVIEW-2026-09-20-auftrag.md`](docs/REVIEW-2026-09-20-auftrag.md). Der Tag
+`review-2026-09-20` sitzt auf `4e649a8` („Der Auftrag
 2026-09-19 kennt die neu veroeffentlichten Websites“, `fix/review-2026-09-18`), dem Stand, den das
 fünfzehnte Review gelesen hat. `review-2026-09-19` sitzt auf `59e149b` („Der Auftrag für das Review
 2026-09-18“, `fix/review-2026-09-17`), dem Stand, den das vierzehnte Review gelesen hat.

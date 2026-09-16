@@ -301,8 +301,23 @@ async function headSubject(projectPath: string): Promise<string> {
   return subject.success ? subject.output.trim() : ''
 }
 
-/** Whether HEAD is already on a remote-tracking branch, i.e. has left this machine. A commit that
- *  has is not one to amend, however tidy the result would be. */
+/**
+ * Whether HEAD stands in a remote-tracking ref - which is what this can ask without the network,
+ * not the same thing as "has left this machine". A commit that does is not one to amend, however
+ * tidy the result would be, and a git call that fails answers the same way: not knowing is not
+ * permission.
+ *
+ * It holds for the ways this app pushes. `quartz sync` runs `git push -uf origin <branch>` (read
+ * in Quartz' cli/handlers.js), which writes `refs/remotes/origin/<branch>`, and the branch deploy
+ * pushes a built tree to a *different* branch and never carries this commit. Measured (twentieth
+ * review, finding 4), same scene twice: after `git push -uf origin local` there is a tracking ref
+ * and no amend; after `git push <path-to-repo> local` - a push naming a URL - there is none, the
+ * amend runs, and the commit the other side holds is no longer an ancestor of HEAD. Blind in the
+ * same way to `--mirror=push` remotes with no fetch refspec and to a tracking ref removed by hand
+ * since the push. There is no local trace of a push by URL to read instead; `git ls-remote` would
+ * answer, at the price of a connection in a run that otherwise only talks to upstream. What
+ * follows from the blind spot is one force-push later - `quartz sync` pushes with `-f` anyway.
+ */
 async function headIsPushed(projectPath: string): Promise<boolean> {
   const contains = await run('git', ['branch', '-r', '--contains', 'HEAD'], projectPath)
   return !contains.success || contains.output.trim() !== ''

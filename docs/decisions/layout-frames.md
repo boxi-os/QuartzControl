@@ -725,12 +725,12 @@ liegt über …“), und die Anweisung steht ohnehin im Satz eine Zeile darunter
 keine“. Gemessen an der gebauten App, `right` des `editorial`-Frames auf Desktop ausgeblendet:
 Überschrift, Chip („right · Rechte Seitenleiste · ausgeblendet“) und Hinweis sagen dasselbe.
 
-## Das Board darf seitwärts rollen, und ein Roller darum kostet den Tastatur-Drag (2026-09-16)
+## Das Board rollt seitwärts in sich selbst, und der Tastatur-Drag hat gefehlt (2026-09-16)
 
-`npm run smoke` meldet auf 1280×800 „Layout · layout: Inhalt scrollt horizontal“, und zwar bei
-jedem Lauf. Der Befund stimmt, ist aber keiner: Gemessen an der gebauten App mit Wegwerf-Profil
-gegen eine Kopie von `navigations-testprojekt` hat `main` dort `scrollWidth` 1100 gegen
-`clientWidth` 1030, das Board selbst 1068 gegen 966.
+`npm run smoke` meldete auf 1280×800 „Layout · layout: Inhalt scrollt horizontal“, und zwar bei
+jedem Lauf. Gemessen an der gebauten App mit Wegwerf-Profil gegen eine Kopie von
+`navigations-testprojekt` hatte `main` dort `scrollWidth` 1100 gegen `clientWidth` 1030, das Board
+selbst 1068 gegen 966.
 
 **Die Ursache ist nicht im Code dieser App, sondern in der Frame-Box des Projekts.** Das Board
 rendert die echte Geometrie: zwölf Spalten, `gap: 2rem 4rem`. Bei 966 px Platz sind die sechs
@@ -743,23 +743,63 @@ tragen `min-width: auto`, aber ein `min-width: 0` auf alle dreizehn ändert nich
 wie nachher); `overflow-wrap: anywhere` auf jeden Nachfahren ebenso wenig, einzeln wie zusammen.
 Der Inhalt ist nicht das Problem, die Lücken sind es.
 
-**Der naheliegende Fix trägt nicht.** `overflow-x: auto` am Wrapper (`div.w-full` um das Grid)
-beseitigt den Überlauf sauber — `main` steht danach auf 1030 gegen 1030, der Roller sitzt an der
-Panelkante, wie es die Regel „Wer rollt, ist nicht wer die Breite deckelt“ verlangt, und nichts
-wird abgeschnitten (kein positioniertes Kind im Board, nichts ragt vertikal heraus). Er nimmt aber
-dem **Tastatur-Drag die Bewegung**: derselbe Griff, dieselbe Tastenfolge, einmal mit und einmal
-ohne Roller —
+**Der Fix ist ein Roller am Wrapper** (`overflow-x: auto` am `div` um das Grid): `main` steht
+danach auf 1030 gegen 1030, der Roller sitzt an der Panelkante, wie es die Regel „Wer rollt, ist
+nicht wer die Breite deckelt“ für einen Panel-eigenen Roller verlangt, und nichts wird
+abgeschnitten (kein positioniertes Kind im Board, nichts ragt senkrecht heraus; das Board steht
+danach bei `clientHeight` 2147 gegen `offsetHeight` 2157, also 10 px Rollleiste). Im Code gemessen,
+nicht nur per `eval`: `npm run smoke` meldet seither nichts mehr, auf beiden Größen.
+
+### Was die erste Fassung dieses Absatzes dem Roller zuschrieb
+
+Der erste Anlauf am selben Tag ließ den Überlauf stehen, weil eine Messung ihn teuer aussehen ließ:
 
     ohne Roller, Space + ArrowDown:  „quartz-layout-box liegt über page-title.“
     mit  Roller, Space + ArrowDown:  „quartz-layout-box aufgenommen.“  (unverändert)
 
-Aufnehmen und Abbrechen leben weiter, das Ziehen nicht: `@dnd-kit`s Tastatursensor lässt einen
-Pfeil in einem Scroll-Container zuerst *scrollen* statt bewegen, und `nearestDroppableCoordinates`
-weiß davon nichts. Das ist dieselbe Klasse von Regression wie der Guard aus dem neunten Review,
-der demselben Drag die Tasten nahm — ein kosmetischer Überlauf gegen eine kaputte
-Tastaturbedienung ist kein Tausch.
+Die zwei Zeilen stimmen, und der Schluss daraus war falsch. Sie wurden in *dieser* Reihenfolge
+gemessen, Roller zuerst — und der Unterschied gehört dem Versuch, nicht dem Roller: Der **erste**
+Pfeil nach dem Aufnehmen rollt bloß den Scroll-Container, der zweite bewegt. Nachgemessen in sechs
+kontrollierten Durchgängen mit vorher gesetztem `main.scrollTop`, abwechselnd mit und ohne Roller
+(achtzehntes Review, Befund 3): bei `scrollTop 0` rollt der erste Pfeil `main` um 40 px und bewegt
+nichts, der zweite bewegt; bei `scrollTop 280` tat damals keiner von beiden etwas — mit und ohne
+Roller gleich. `main` ist ohnehin `overflow-y: auto`, also der Scroll-Container, den `@dnd-kit`
+sieht; ein Roller am Wrapper ändert daran nichts.
 
-**Also bleibt es, wie es ist**, und die Smoke-Meldung ist erwartbar statt neu. Wer sie doch
-beseitigen will, hat zwei Wege, und beide kosten mehr als der Befund: den Roller *plus* eine
-`dndKeyboard.ts`, die Scroll-Container kennt; oder die Lücken in der Vorschau proportional
-schrumpfen — dann zeigt das Board nicht mehr die Geometrie, die es zu zeigen da ist.
+Der Mechanismus, den der Absatz nannte, ist echt: `handleKeyDown` in `@dnd-kit/core` 6.3.1 ruft
+`scrollTo` und kehrt ohne `handleMove` zurück, wenn das Ziel in der unteren Hälfte des Containers
+liegt und die Bewegung rein senkrecht ist. Er wirkt nur schon vorher, über `main`, und trifft den
+Frame-Builder genauso.
+
+### Der Preis war kein Preis, sondern ein fehlender Sensor
+
+Was die Messung als Kosten des Rollers las, war der Zustand des Boards ohne ihn: `GlobalBoard` gab
+seinem `DndContext` **keine Sensoren** mit, zog also mit dnd-kits Vorgabe von 25 px je Pfeildruck —
+bei 51 px Zeilenhöhe ein Treffer nach Zufall, und für einen Chip aus der Palette gar keiner.
+`CLAUDE.md` zählte das Board dabei seit dem neunten Review zu den vier Stellen, die es richtig
+machen. Gemessen an der gebauten App, echte Tastendrücke, je frischer Mount:
+
+    Palette („explorer“), Space + 3× ArrowDown + Space
+      ohne Sensoren:  dreimal „liegt über Komponente hinzufügen“, dann „bei Komponente hinzufügen
+                      abgelegt“ — nichts eingefügt, HEADER unverändert
+      mit  Sensoren:  „liegt über quartz-layout-box“, „liegt über page-title“, dann „bei page-title
+                      abgelegt“ — HEADER trägt danach explorer #2
+    Board (erster Griff), scrollTop 280, Space + 2× ArrowDown
+      ohne Sensoren:  beide Pfeile ohne Wirkung
+      mit  Sensoren:  erster Pfeil rollt, zweiter „liegt über explorer“
+
+Der Getter ist `nearestDroppableCoordinates` und nicht `sortableKeyboardCoordinates`: Ein
+Paletten-Chip ist ein `useDraggable` und kein Droppable, und der Getter aus `@dnd-kit/sortable`
+liest `droppableContainers.get(active.id)` — für einen Chip also nichts; dazu hat das Board leere
+Zonen, auf die keine Sortierliste zeigt. Der Zeiger-Sensor ist wörtlich dnd-kits Vorgabe
+(`PointerSensor` ohne Optionen), damit sich am Ziehen mit der Maus nichts ändert.
+
+Mit dem Getter kostet der Roller nichts mehr: dieselben Tastenfolgen mit echtem `overflow-x: auto`
+im gebauten Renderer ergeben Zeile für Zeile dasselbe wie ohne (`scrollTop 0`: 0 / 35 / 118,5 und
+„liegt über page-title“; `scrollTop 280`: der zweite Pfeil bewegt; Palette: „bei page-title
+abgelegt“, `explorer #2` steht danach im Kopfbereich). Deshalb ist der Roller jetzt drin.
+
+**Was daraus als Regel bleibt:** Wer zwei Zustände vergleicht, vergleicht sie in beiden
+Reihenfolgen — sonst misst er den ersten Versuch. Und eine Begründung, die eine Frage schließt,
+wird an dem geprüft, was sie behauptet: Der Getter, den dieser Absatz für unwissend erklärte, war
+an diesem Board gar nicht angeschlossen.

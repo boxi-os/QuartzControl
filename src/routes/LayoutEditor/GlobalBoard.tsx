@@ -443,7 +443,17 @@ export default function GlobalBoard({
           removableActive={activeItem !== null && (nameCounts.get(activeItem.name) ?? 0) > 1}
         />
 
-        <div className={narrow ? 'mx-auto w-full' : 'w-full'} style={{ maxWidth: breakpoint === 'mobile' ? '22rem' : undefined }}>
+        {/* Scrolls sideways rather than pushing the page out: the board renders the project's own
+            frame geometry, and a frame whose fixed columns and gaps add up to more than the window
+            (1048px for the twelve-column example at 1280px wide) is a fact about the frame, not
+            about this app - it says so by not fitting. The scroller sits at the panel's edge, which
+            is where the rule "Wer rollt, ist nicht wer die Breite deckelt" puts a panel's own one.
+            See docs/decisions/layout-frames.md for the measurement, including the keyboard drag
+            through it. */}
+        <div
+          className={`overflow-x-auto ${narrow ? 'mx-auto w-full' : 'w-full'}`}
+          style={{ maxWidth: breakpoint === 'mobile' ? '22rem' : undefined }}
+        >
           {activeFrame && activeAreas && activeGridStyle ? (
             <div
               className="grid gap-3"

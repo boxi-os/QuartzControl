@@ -1395,7 +1395,11 @@ dem Commit „Der Auftrag für das zwanzigste Review“ (`main`) sitzt — dem S
 Auftrag steht in [`docs/REVIEW-2026-09-24-auftrag.md`](docs/REVIEW-2026-09-24-auftrag.md). Sein
 Diff sind die sieben Fixes des neunzehnten Reviews und die zwei Dokumentations-Commits daneben:
 ohne Review-Dokument und Auftragsdatei 9 Dateien, +353/−41 (davon 12 Zeilen dieser Absatz, den
-der Auftrags-Commit mitbringt), im App-Code 6 Dateien, +169/−27. Als
+der Auftrags-Commit mitbringt), im App-Code 6 Dateien, +169/−27. Die Nachricht des
+Auftrags-Commits sagt dazu +341/−41 und „nach dem Commit nachgerechnet, der die Datei trägt“ —
+gezählt war *vor* ihm, und die zwölf Zeilen dieses Absatzes sind der Unterschied (zwanzigstes
+Review, Befund 5). Sie bleibt, wie sie ist: Auf dem Commit sitzt `review-2026-09-25`, der Stand,
+den das Review gelesen hat. Als
 größtes Risiko nennt der Auftrag den `resuming`-Amend — das erste Mal, dass die App einen Commit
 umschreibt, den sie nicht in diesem Lauf gemacht hat, mit `git branch -r --contains HEAD` als
 einzigem Wächter. `review-2026-09-24` sitzt auf `ff4feba` („Der Auftrag für das neunzehnte

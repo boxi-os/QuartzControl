@@ -20,8 +20,10 @@ nur über gits `reset --merge`-Semantik statt über einen Patch — prüf sie mi
 
 **Und diese Runde hat gemergt.** 21 Commits aus zwei Review-Runden, die auf Branches lagen, sind
 per Fast-Forward nach `main` gegangen; vier Sätze in `CLAUDE.md`, die weiter „nicht gepusht und
-nicht gemergt“ sagten, sind nachgezogen. `main` steht damit 22 Commits vor `origin/main` —
-**gepusht ist nichts.**
+nicht gemergt“ sagten, sind nachgezogen. `main` steht damit 23 Commits vor `origin/main` —
+**gepusht ist nichts.** (Die Zahl stand zuerst als 22 hier: gezählt war vor dem Commit, der diese
+Datei trägt, und der zählt mit, sobald er da ist. Derselbe Fehler wie bei einem Hash, den ein
+Satz über seinen eigenen Commit nennt — zwanzigstes Review, Befund 5.)
 
 In der Zählung von `CLAUDE.md` ist das das zwanzigste Review. Die Dateinamen zählen nach Datum.
 

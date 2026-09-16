@@ -653,9 +653,12 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     const headBefore = (await run('git', ['rev-parse', 'HEAD'], projectPath)).output.trim()
     const merge = await run('git', ['merge', 'FETCH_HEAD', '-m', MERGE_MESSAGE], projectPath)
     let mergeOutput = merge.output
-    // Set only where *we* wrote the merge commit, which is the one commit this run may amend. A
-    // fast-forward leaves upstream's own commit at HEAD, and amending that would rewrite history
-    // this project did not make.
+    // Set where the commit at HEAD is one *this run* wrote, which is the one commit it may amend.
+    // Two ways in: the conflict branch below commits the resolution itself, and a merge that could
+    // not fast-forward gets its commit from git, with our -m. A fast-forward is the third case and
+    // not one of them - there HEAD *is* upstream's own commit, and amending that would rewrite
+    // history this project did not make. Set for the second case further down, where HEAD after
+    // the merge is known.
     let ourMergeCommit = false
     if (!merge.success) {
       const conflictFiles = await conflictedFiles(projectPath)
@@ -730,6 +733,18 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     // run committed the merge and then never got its `npm install` through - see
     // PENDING_UPDATE_FILE, which is the second half of this question (eighteenth review, finding 1).
     const headAfter = (await run('git', ['rev-parse', 'HEAD'], projectPath)).output.trim()
+    // The clean merge git committed itself, told from a fast-forward by HEAD being neither where
+    // it was nor what was fetched. It is this run's commit as much as the resolved one, so the
+    // lockfile npm is about to write belongs in it for the same reason. Measured (twentieth
+    // review, finding 3): without this, a project whose merge went through cleanly kept
+    // ` M package-lock.json` after the first run and had it amended away by a second - two answers
+    // to one question, and the comment on `resuming` called them the same commit.
+    // `mergeCommit` empty means this run could not resolve what it fetched, and then there is
+    // nothing to tell a fast-forward from anything else - so no amend, as everywhere else that
+    // value is missing.
+    if (merge.success && headAfter !== '' && mergeCommit !== '' && headAfter !== headBefore && headAfter !== mergeCommit) {
+      ourMergeCommit = true
+    }
     const pendingFor = await installPendingFor(projectPath)
     if (headBefore && headAfter === headBefore && pendingFor === '') {
       const restored = await releaseNpmOwnedFiles(projectPath, held)
@@ -801,9 +816,9 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     // leaves every other index entry where it is (both merge parents survive; git refuses `--only`
     // only while a merge is still in progress, and by here it is committed).
     //
-    // `resuming` is the same commit one run later: an earlier run wrote the merge and then failed
-    // at `npm install`, so this run had nothing to fetch and `ourMergeCommit` is false - while HEAD
-    // *is* that merge commit. The note says which one with the SHA it stored, and the subject says
+    // `resuming` is the same set of commits one run later: an earlier run wrote the merge and then
+    // failed at `npm install`, so this run had nothing to fetch and `ourMergeCommit` is false -
+    // while HEAD *is* that merge commit. The note says which one with the SHA it stored, and the subject says
     // the commit is this app's. Measured (nineteenth review, finding 5): without this the lockfile
     // npm had just rewritten stood in Git-Sync as ` M package-lock.json`, a change nobody made.
     // Not if the commit has left this machine, though: amending a merge the user has already

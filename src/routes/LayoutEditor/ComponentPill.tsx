@@ -40,8 +40,8 @@ export function groupColor(group: string | undefined, groupNames: string[]): (ty
 
 // A component instance's collapsed pill (name, duplicate-rank, group/display badges, expand
 // chevron) and its expanded settings panel (group/display selects, duplicate/remove). Used by
-// GlobalBoard's dnd-kit drag handle - `dragHandleProps` is spread as-is onto the handle span, so
-// this component doesn't care which DnD system wired it.
+// GlobalBoard's dnd-kit drag handle - `dragHandleProps` is spread as-is onto the handle span and
+// `dragHandleRef` is its activator ref, so this component doesn't care which DnD system wired it.
 export function ItemCard({
   plugin,
   groupNames,
@@ -54,7 +54,8 @@ export function ItemCard({
   onDuplicate,
   onRemove,
   collapsed,
-  dragHandleProps
+  dragHandleProps,
+  dragHandleRef
 }: {
   plugin: PluginEntry
   groupNames: string[]
@@ -68,6 +69,9 @@ export function ItemCard({
   onRemove?: () => void
   collapsed?: boolean
   dragHandleProps?: Record<string, unknown>
+  /** dnd-kit's setActivatorNodeRef, as its own prop: React 18 cannot carry a ref through a props
+   *  spread, and the handle is what the activator node has to be - see the drag handle below. */
+  dragHandleRef?: (node: HTMLElement | null) => void
 }): JSX.Element {
   const { t } = useTranslation()
   const layout = getLayout(plugin)
@@ -110,6 +114,7 @@ export function ItemCard({
             // plain text, so starting a drag there would just fall through to the browser's
             // native text selection instead of dnd-kit's drag.
             <span
+              ref={dragHandleRef}
               {...dragHandleProps}
               onClick={(e) => e.stopPropagation()}
               aria-label={t('layoutEditor.componentPill.dragHandle')}

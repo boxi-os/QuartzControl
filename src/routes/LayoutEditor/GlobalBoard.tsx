@@ -782,7 +782,9 @@ function SortableItem({
   onRemove: () => void
   isDuplicate: boolean
 }): JSX.Element {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
+    id
+  })
   const style = { transform: CSS.Transform.toString(transform), transition }
 
   return (
@@ -802,6 +804,12 @@ function SortableItem({
         onSetDisplay={onSetDisplay}
         onDuplicate={onDuplicate}
         onRemove={onRemove}
+        // The handle is the activator node, as at the two other @dnd-kit places. Without it
+        // dnd-kit's restoreFocus takes the first focusable element of the *drag* node, which here
+        // is the card - and after a drop into another zone the element is re-mounted in another
+        // PositionSlot, so the old handle is gone. Measured (nineteenth review, finding 2):
+        // `footer` out of custom-13 into the footer left document.activeElement on the card.
+        dragHandleRef={setActivatorNodeRef}
         dragHandleProps={{ ...attributes, ...listeners }}
       />
     </div>

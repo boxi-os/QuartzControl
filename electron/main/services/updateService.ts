@@ -855,7 +855,16 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
       pendingFor === headAfter &&
       (await headSubject(projectPath)) === MERGE_MESSAGE &&
       !(await headIsPushed(projectPath))
-    if ((ourMergeCommit || resuming) && tracked.length > 0) {
+    // And only when there is something to put in. npm rewrites the lockfile on most runs, but not
+    // on all of them - with package.json unchanged it often leaves the file alone - and an amend
+    // with nothing to add still writes a new commit: same tree, new committer time, new SHA
+    // (measured in a throwaway repo, one second apart). Rewriting a commit that lacks nothing is
+    // the one thing this whole branch exists to avoid doing lightly.
+    const amendWorth =
+      (ourMergeCommit || resuming) &&
+      tracked.length > 0 &&
+      !(await run('git', ['diff', '--quiet', 'HEAD', '--', ...tracked], projectPath)).success
+    if (amendWorth) {
       await run('git', ['commit', '--amend', '--no-edit', '--only', '--', ...tracked], projectPath)
     }
 

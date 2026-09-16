@@ -1349,8 +1349,9 @@ PDF an einem echten Lauf gegen `pdfinfo`. Die größten Eingriffe sind die SHA a
 `MERGE_HEAD`-Blick in `abortCoreMerge`, der Index-Wächter `stagedApartFromWorkingTree()`, der
 `withBusy`-freie Serverteil der Übersicht und `pdfPageCount()`. Neu sind drei Texte in `i18n.ts`
 (`updateStashLeftover`, `updateStashPopFailed`, `updateAbortBlockedByEdit`) und sieben Absätze in
-`docs/decisions/`. Nicht gemessen: die gepackte App, ein echtes `npm install`, die VMs. Sie gehören
-damit in den Diff des nächsten Auftrags.
+`docs/decisions/`. Nicht gemessen: die gepackte App, ein echtes `npm install`, die VMs. Dazu kommt
+ein Commit im Handbuch-Vault (`baeddee`, beide Sprachen), der nicht in diesem Repo liegt. Sie
+gehören damit in den Diff des nächsten Auftrags.
 
 **Die sieben Fixes des fünfzehnten Reviews liegen bewusst dahinter** (`fix/review-2026-09-18`,
 `12dd7d9..b25f61b`, dazu `311f929` im Handbuch-Vault). Gemessen: das Demo-Skript an einer

@@ -164,6 +164,32 @@ async function trackedNpmOwnedFiles(projectPath: string): Promise<string[]> {
     .filter(Boolean)
 }
 
+/**
+ * Whether one of the two files stands at three different versions at once: HEAD, a staged one, and
+ * a third in the working tree. The plan reads the working tree, the stash holds the index as well,
+ * so in that one case the stash carries something the plan cannot name - and a `drop` at the end
+ * takes it with it. Measured (seventeenth review, finding 2): a staged theme entry with the working
+ * tree back on HEAD went out of both without a word.
+ *
+ * The ordinary staged case (index and working tree the same) is not this: there the stash holds
+ * exactly what `localEdits` names. Only three-way disagreement is, and then the rule is the one
+ * this whole plan follows - what it cannot replay it does not touch, git decides, and the user
+ * reads the message they read before it existed.
+ */
+async function stagedApartFromWorkingTree(projectPath: string, tracked: string[]): Promise<boolean> {
+  const staged = await run('git', ['diff', '--name-only', '--cached', 'HEAD', '--', ...tracked], projectPath)
+  const unstaged = await run('git', ['diff', '--name-only', '--', ...tracked], projectPath)
+  // Could not look is not "all clear": hands off, exactly as an unreadable package.json does.
+  if (!staged.success || !unstaged.success) return true
+  const names = (output: string): string[] =>
+    output
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+  const differsFromHead = new Set(names(staged.output))
+  return names(unstaged.output).some((file) => differsFromHead.has(file))
+}
+
 async function mergeInProgress(projectPath: string): Promise<boolean> {
   return (await run('git', ['rev-parse', '-q', '--verify', 'MERGE_HEAD'], projectPath)).success
 }
@@ -304,12 +330,19 @@ type HeldFiles =
 async function holdNpmOwnedFiles(projectPath: string, tracked: string[], mergeCommit: string): Promise<HeldFiles> {
   const before = await stashRef(projectPath)
   const pushed = await run('git', ['stash', 'push', '-m', stashMessage(mergeCommit), '--', ...tracked], projectPath)
-  if (!pushed.success) return { kind: 'failed', output: pushed.output }
   const after = await stashRef(projectPath)
-  // "No local changes to save" is a success that writes no stash. Two ways to end up without one,
-  // and only the other is a reason to hand the merge back to git.
-  if (after === null || after === before) return { kind: 'clean' }
-  return { kind: 'held', sha: after }
+  // What git *did*, not what it said about it. Measured against git 2.54 (seventeenth review,
+  // finding 2): with the index ahead of HEAD and the working tree back on HEAD, `git stash push --
+  // <paths>` writes the stash, takes both files out of index and working tree, and then exits 1
+  // with "No valid patches in input". Reading that exit as "nothing held" left the stash standing
+  // for ever - no `drop` ever touched it, because `held.kind` was `failed` - and the staged entry
+  // was gone without a word. A new ref is a held stash whatever the exit code says.
+  if (after !== null && after !== before) return { kind: 'held', sha: after }
+  // No stash, so the two files are still where they were, and now the exit code is the whole
+  // answer: "No local changes to save" is a success that writes none, anything else is a refusal
+  // and hands the merge back to git.
+  if (!pushed.success) return { kind: 'failed', output: pushed.output }
+  return { kind: 'clean' }
 }
 
 /** Puts the held files back. Only ever touches the stash this run wrote, and only while it is the newest. */
@@ -410,8 +443,14 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     // does not, the files are still in the working tree and git answers the way it did before this
     // plan existed - which is a usable answer, but only if nothing afterwards assumes otherwise.
     // A stash this run cannot name after the commit it belongs to is one the abort button cannot
-    // recognise later, so without that SHA the plan hands the two files back to git instead.
-    let planApplies = plan.reproducible && tracked.length > 0 && mergeCommit !== ''
+    // recognise later, so without that SHA the plan hands the two files back to git instead. Same
+    // for a file that stands at three versions at once: the stash would hold more than the plan
+    // can put back.
+    let planApplies =
+      plan.reproducible &&
+      tracked.length > 0 &&
+      mergeCommit !== '' &&
+      !(await stagedApartFromWorkingTree(projectPath, tracked))
     let held: HeldFiles = { kind: 'clean' }
     if (planApplies) {
       // Takes both files back to HEAD so git has nothing to overwrite - but hands them to git

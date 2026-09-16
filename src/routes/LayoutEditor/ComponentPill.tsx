@@ -86,6 +86,15 @@ export function ItemCard({
       onKeyDown={
         interactive
           ? (e) => {
+              // Only what was aimed at the card itself. The drag handle inside it is where Space
+              // starts a keyboard drag, and @dnd-kit's activator calls preventDefault() but no
+              // stopPropagation() - so without this the keystroke arrived here too and toggled the
+              // card open on every pick-up. Measured (nineteenth review, finding 1): Space opened
+              // the card (43px -> 108px, so the list moved under the drag), Escape left it open,
+              // and only the drop closed it again. Same guard as the frame builder's area box, for
+              // the same reason - narrowing at the listener, never a stopPropagation() above a
+              // drag, which would take the arrows and Escape away from the keyboard sensor.
+              if (e.target !== e.currentTarget) return
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault()
                 onToggleExpand?.()

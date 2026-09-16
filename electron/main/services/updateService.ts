@@ -276,9 +276,12 @@ async function stillMissing(projectPath: string, reinstall: PackageAddition[]): 
   return reinstall.filter((entry) => dependencyRange(merged, entry.section, entry.name) !== entry.range)
 }
 
-// The name of the stash this run writes. An identifier another machine may already have written
-// is a format and not a spelling (see CLAUDE.md); this one is new, it is what abortCoreMerge
-// matches on, and it is what the user reads in `git stash list`.
+// The name of the stash this run writes: the prefix says "this is the app's", and it is what the
+// user reads in `git stash list`. Unlike `.quartz-gui/` or the `.qtpl` markers it is *not* an
+// identifier on someone else's disk yet - it arrived with 2f4394d (2026-09-16), after beta.2, and
+// `git grep CORE_UPDATE_STASH v1.0.0-beta.1 v1.0.0-beta.2` finds nothing. So until the next
+// release the format is free to change without a migration; a stash written by an older build can
+// only be one from a development build on this machine.
 //
 // The commit being merged is part of that name so that anyone reading `git stash list` can see
 // which merge an entry belongs to. It is not what decides whether the abort button may pop it:

@@ -561,24 +561,34 @@ async function abortOutcomeForStash(projectPath: string): Promise<StashAfterAbor
 }
 
 /**
- * Which of the two sentences an entry that was already lying there has earned, asked *after* the
- * run because that is when the user reads it: the one the abort button on the page will put back,
- * or one from a state that is gone.
+ * Which sentence an entry that was already lying there has earned, asked *after* the run because
+ * that is when the user reads it.
  *
- * The halves of "the button will put it back" are the ones popCoreUpdateStash asks (ours, and
- * taken from this very HEAD), plus the button existing at all - which it does only while a merge
- * is half-done - plus the one above, which is where the pop itself fails. Anything else, including
- * this run having laid a stash of its own on top, is the other sentence. Measured (eighteenth
- * review, finding 4): one run said "they do not belong to this update" and the abort button popped
- * that same entry seconds later.
+ * The halves of "the abort button will put it back" are the ones popCoreUpdateStash asks (ours,
+ * and taken from this very HEAD), plus the button existing at all - which it does only while a
+ * merge is half-done - plus the one above, which is where the pop itself fails. Measured
+ * (eighteenth review, finding 4): one run said "they do not belong to this update" and the abort
+ * button popped that same entry seconds later.
+ *
+ * "A state that is gone" is the answer for an entry whose base is not this HEAD - a pop would
+ * merge it against a state it was never taken from. It is *not* the answer merely because no
+ * button is there to press: with the base still at HEAD the entry fits, this app just has no way
+ * left to put it back, and `git stash pop` in a terminal does. Measured (twentieth review,
+ * follow-up to the "nebenbei" list), scene s2 staged - first run leaves a half-done merge and a
+ * stash, `git merge --abort` in the terminal, a staged edit to package.json, second run: git
+ * refuses to start a merge at all, so no button, HEAD unmoved and equal to the stash base. The
+ * old sentence advised `git stash drop` on entries that a plain pop merges in cleanly (measured:
+ * "Auto-merging package.json", both the theme entry and the staged one in the file afterwards).
+ * Against an *unstaged* change to the same file the pop refuses with git's own "commit your
+ * changes or stash them" and leaves the entry where it is - a usable answer, and the reason this
+ * is one sentence rather than two.
  */
 async function leftoverStashNote(projectPath: string, before: string | null): Promise<string> {
   if ((await stashRef(projectPath)) !== before) return mainT('updateStashLeftover')
   const head = (await run('git', ['rev-parse', 'HEAD'], projectPath)).output.trim()
   const ours = (await topStashSubject(projectPath)).includes(CORE_UPDATE_STASH)
-  const mine =
-    ours && head !== '' && (await stashBase(projectPath)) === head && (await mergeInProgress(projectPath))
-  if (!mine) return mainT('updateStashLeftover')
+  if (!ours || head === '' || (await stashBase(projectPath)) !== head) return mainT('updateStashLeftover')
+  if (!(await mergeInProgress(projectPath))) return mainT('updateStashFitsHead')
   switch (await abortOutcomeForStash(projectPath)) {
     case 'free':
       return mainT('updateStashMine')

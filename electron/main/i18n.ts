@@ -121,6 +121,10 @@ const STRINGS = {
     // verweigert. Gesagt, bevor der Nutzer drückt, statt danach.
     updateStashMineBlocked:
       'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen („git stash list“). „Merge abbrechen“ trägt ihn wieder ein, sobald die geänderte Datei aus dem Zusammenführen unter Git-Sync verworfen ist.',
+    // Derselbe Stand, und er passt noch - nur ist kein Merge mehr offen, an dem der Knopf hinge.
+    // Was die App nicht mehr tun kann, tut „git stash pop“; deshalb steht hier kein „drop“.
+    updateStashFitsHead:
+      'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen („git stash list“). Er passt auf den jetzigen Stand, wird aber von dieser App nicht mehr eingetragen: „git stash show -p“ zeigt ihn an, „git stash pop“ trägt ihn ein.',
     updateStashPopFailed:
       'Die zurückgelegten Paketeinträge ließen sich nicht wieder eintragen und bleiben in git liegen („git stash list“).',
     // Der Abbruch kann nur zurücknehmen, was seit dem Steckenbleiben unverändert ist. git nennt
@@ -393,6 +397,8 @@ const STRINGS = {
       'An earlier update left package entries of yours stashed in git (“git stash list”). “Abort merge” puts them back.',
     updateStashMineBlocked:
       'An earlier update left package entries of yours stashed in git (“git stash list”). “Abort merge” puts them back once the changed file from the merge is discarded under Git sync.',
+    updateStashFitsHead:
+      'An earlier update left package entries of yours stashed in git (“git stash list”). They fit the state the project is in now, but this app has no way left to put them back: “git stash show -p” shows them, “git stash pop” puts them back.',
     updateStashPopFailed:
       'Your stashed package entries could not be put back and are still in git (“git stash list”).',
     updateAbortBlockedByEdit:

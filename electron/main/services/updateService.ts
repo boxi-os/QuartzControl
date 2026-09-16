@@ -12,6 +12,8 @@ import {
 import { TEMPLATE_REPO } from './createService'
 import { withContentSymlinkParked } from './contentSymlink'
 import { createSnapshot } from './snapshotService'
+import { quartzGuiDir, quartzGuiPath } from './projectDirs'
+import { readJsonFileOr, writeJsonFile } from './jsonStore'
 import { mainT } from '../i18n'
 
 // `git ls-remote <url> <ref>` returns "<commit>\t<full ref>" lines, without needing to know the
@@ -314,6 +316,40 @@ async function hasCoreUpdateStash(projectPath: string): Promise<boolean> {
   return list.output.split('\n').some((line) => line.includes(CORE_UPDATE_STASH))
 }
 
+/**
+ * A note the run leaves behind between "the merge is committed" and "npm and the warm-up build
+ * have had their turn" - the one window in which this project's package.json is upstream's while
+ * its node_modules is still the one from before.
+ *
+ * It exists for the shortcut below, which decides on HEAD alone. HEAD is also unmoved when *this*
+ * run has nothing to fetch because an *earlier* one already committed the merge and then failed at
+ * `npm install` - and that is the state the app sends the user back here from, with "fix the error
+ * above and run the update again". Measured (eighteenth review, finding 1): that second run said
+ * "Already up to date.", `success: true`, and called neither npm nor the warm-up build. The same
+ * window is open when the warm-up build fails, and when the app ends in between.
+ *
+ * Written as "something is outstanding" rather than "this run finished", so that a project that is
+ * simply up to date keeps the shortcut it was given: reading it the other way round would make the
+ * first update of every existing project a full install again, which is exactly what the shortcut
+ * was for. The price of that direction is that an unwritable file reads as "nothing outstanding" -
+ * the behaviour of before this note existed.
+ */
+const PENDING_UPDATE_FILE = 'core-update.json'
+
+async function installPending(projectPath: string): Promise<boolean> {
+  // Reading must not create the directory - see quartzGuiPath.
+  const raw = await readJsonFileOr<{ installPendingFor?: unknown }>(quartzGuiPath(projectPath, PENDING_UPDATE_FILE), {})
+  return typeof raw.installPendingFor === 'string' && raw.installPendingFor !== ''
+}
+
+async function markInstallPending(projectPath: string, head: string): Promise<void> {
+  await writeJsonFile(join(quartzGuiDir(projectPath), PENDING_UPDATE_FILE), { installPendingFor: head })
+}
+
+async function clearInstallPending(projectPath: string): Promise<void> {
+  await writeJsonFile(join(quartzGuiDir(projectPath), PENDING_UPDATE_FILE), { installPendingFor: '' })
+}
+
 type HeldFiles =
   /** git is holding the working tree's version of the two files, as this stash. */
   | { kind: 'held'; sha: string }
@@ -559,8 +595,12 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     // lines came out of this re-generated rather than untouched. The stash goes back instead of
     // being dropped, for exactly that reason: npm has not rewritten anything, so what git holds is
     // not history but the working tree as it was found.
+    //
+    // An unmoved HEAD alone does not say that, though: it is unmoved just as well when an earlier
+    // run committed the merge and then never got its `npm install` through - see
+    // PENDING_UPDATE_FILE, which is the second half of this question (eighteenth review, finding 1).
     const headAfter = (await run('git', ['rev-parse', 'HEAD'], projectPath)).output.trim()
-    if (headBefore && headAfter === headBefore) {
+    if (headBefore && headAfter === headBefore && !(await installPending(projectPath))) {
       const restored = await releaseNpmOwnedFiles(projectPath, held)
       const pending =
         !restored && held.kind === 'held' && plan.localEdits.reinstall.length > 0
@@ -574,6 +614,11 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     // One `npm install` per dependency section for the packages the merged package.json is
     // actually missing, and a plain one otherwise. Either way npm writes the lockfile that
     // upstream's copy just replaced.
+    // From here on package.json is upstream's and node_modules is not: anything that ends this run
+    // before the warm-up build below leaves the project in that state, and the note says so to the
+    // next run.
+    await markInstallPending(projectPath, headAfter)
+
     const missingNow = planApplies ? await stillMissing(projectPath, plan.reinstall) : []
     const installCalls = missingNow.length > 0 ? reinstallCommands(missingNow) : [{ args: ['install'] }]
     let installOutput = ''
@@ -635,6 +680,11 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     // report it, but a failed warm-up build doesn't undo an otherwise-successful merge+install.
     const warmup = await run('npx', ['quartz', 'build'], projectPath)
     const warmupNote = warmup.success ? '' : `\n\n${mainT('warmupBuild')}\n${warmup.output}`
+
+    // The window is closed: npm has written both files and the build has had its turn. A warm-up
+    // build that failed closes it too - it does not undo the merge and install, the note above says
+    // so, and a rerun of the whole update would not build anything the next "Jetzt bauen" does not.
+    await clearInstallPending(projectPath)
 
     return {
       success: true,

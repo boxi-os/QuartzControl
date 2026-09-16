@@ -17,6 +17,11 @@ import { mainT } from '../i18n'
 interface RunningServer {
   process: ChildProcess
   status: ServerStatus
+  /**
+   * Where this server writes. `quartz build --serve` gets no `--output`, so it is the project's
+   * `public/` - kept here rather than recomputed, because the guard below has only a project id.
+   */
+  outputDir: string
 }
 
 const runningServers = new Map<string, RunningServer>()
@@ -79,6 +84,34 @@ export function joinRunningBuild(projectId: string, projectPath: string, outputD
   const dir = resolveBuildDir(projectPath, outputDir)
   if (relative(running.dir, dir) !== '') throw new Error(mainT('buildDirBusy', { running: running.dir, dir }))
   return running.promise
+}
+
+/**
+ * The dev server of this project, if it is writing into the directory this build would write into.
+ *
+ * `quartz build` empties its output directory and then writes it file by file, and a dev server
+ * rebuilds on every change to the content folder - so both of them writing the same folder is two
+ * programs taking turns on one directory with no idea of each other. Measured before this guard
+ * existed: 16 files of a server rebuild landed in the middle of a one-off build's "Emitting files",
+ * and what the folder held afterwards was neither build.
+ *
+ * Only servers *this app* started can be answered from memory. One left running by an earlier
+ * session (the "Weiterlaufen lassen" answer at quit) is a stranger's process to this map, and
+ * finding it would need a port scan on every click - the Vorschau page shows those separately.
+ */
+function serverWritingInto(projectId: string, dir: string): string | null {
+  const server = runningServers.get(projectId)
+  if (!server) return null
+  // A server on its way out still holds the directory: `stopping` means the signal was sent, not
+  // that the process is gone, and quartz writes until it is.
+  if (server.status.state === 'stopped' || server.status.state === 'error') return null
+  return relative(server.outputDir, dir) === '' ? server.outputDir : null
+}
+
+/** Throws when the dev server owns the directory this build wants. */
+export function assertOutputFree(projectId: string, projectPath: string, outputDir?: string): void {
+  const busy = serverWritingInto(projectId, resolveBuildDir(projectPath, outputDir))
+  if (busy) throw new Error(mainT('buildDirServerRunning', { dir: busy }))
 }
 
 function setActivity(projectId: string, next: BuildActivity | null): void {
@@ -395,6 +428,16 @@ export async function startServer(
   // a fresh attempt supersedes whatever the previous run ended as
   lastTerminalStatus.delete(projectId)
 
+  // The other half of the guard in assertOutputFree, and the only one that can wait: the server
+  // writes into the same `public/` a one-off build may be emptying right now. Waiting needs no
+  // second click, which refusing would - but it is not silent, because a start that does nothing
+  // for half a minute looks like a start that failed.
+  const build = runningBuilds.get(projectId)
+  if (build && relative(build.dir, resolveBuildDir(projectPath)) === '') {
+    emitLog(projectId, 'warn', `${mainT('serverWaitsForBuild', { dir: build.dir })}\n`)
+    await build.promise.catch(() => undefined)
+  }
+
   await refreshAuthoredFrames(projectPath, (text) => emitLog(projectId, 'warn', text))
 
   const args = ['quartz', 'build', '--serve', '--port', String(options.port), '--wsPort', String(options.wsPort)]
@@ -417,7 +460,7 @@ export async function startServer(
   // Now the pid exists, so the files can take their final name and the tails can start on it.
   log?.adopt(child.pid)
   const status: ServerStatus = { state: 'starting', options, pid: child.pid, startedAt: new Date().toISOString() }
-  runningServers.set(projectId, { process: child, status })
+  runningServers.set(projectId, { process: child, status, outputDir: resolveBuildDir(projectPath) })
   emitStatus(projectId)
   if (child.pid) void runningServersStore.record(projectId, { pid: child.pid, port: options.port, startedAt: status.startedAt! })
 
@@ -528,6 +571,9 @@ export function runBuild(projectId: string, projectPath: string, outputDir?: str
   // and possibly a dialog, and a second call can arrive in that time.
   const running = joinRunningBuild(projectId, projectPath, outputDir)
   if (running) return running
+  // Same reason the join check sits here as well as in the handler: between the handler's check and
+  // this call lie a disk read and possibly a dialog, and a server can be started in that time.
+  assertOutputFree(projectId, projectPath, outputDir)
   setActivity(projectId, { kind: 'build', startedAt: new Date().toISOString(), phase: 'preparing' })
   const promise = spawnBuild(projectId, projectPath, outputDir).finally(() => {
     runningBuilds.delete(projectId)

@@ -75,6 +75,11 @@ const STRINGS = {
     buildDirConfirmProceed: 'Ordner leeren und bauen',
     buildDirCancelled: 'Abgebrochen — es wurde nichts gelöscht und nichts gebaut.',
     buildDirBusy: 'Es läuft schon ein Build nach „{{running}}“. Nach „{{dir}}“ lässt sich bauen, sobald er fertig ist.',
+    // Der Dev-Server baut bei jeder Änderung neu, ein Build leert seinen Ordner zuerst - beide
+    // zugleich in denselben Ordner hinterlässt einen Stand, der von keinem der beiden ist.
+    buildDirServerRunning:
+      'Der Dev-Server schreibt gerade in „{{dir}}“. Beende ihn unter „Vorschau & Build“ oder wähle einen anderen Ausgabeordner.',
+    serverWaitsForBuild: 'Es läuft ein Build nach „{{dir}}“. Der Server startet, sobald er fertig ist.',
 
     ipcInvalidArguments:
       'QuartzControl hat „{{channel}}“ mit unerwarteten Daten aufgerufen — das ist ein Fehler in der App und keine Folge deiner Eingabe. Technische Details:',
@@ -330,6 +335,9 @@ const STRINGS = {
     buildDirConfirmProceed: 'Empty the folder and build',
     buildDirCancelled: 'Cancelled — nothing was deleted and nothing was built.',
     buildDirBusy: 'A build into “{{running}}” is already running. You can build into “{{dir}}” once it has finished.',
+    buildDirServerRunning:
+      'The dev server is writing into “{{dir}}” right now. Stop it under “Preview & build” or pick a different output folder.',
+    serverWaitsForBuild: 'A build into “{{dir}}” is running. The server starts as soon as it has finished.',
 
     ipcInvalidArguments:
       'QuartzControl called “{{channel}}” with unexpected data — that is a bug in the app, not a result of what you entered. Technical details:',

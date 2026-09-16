@@ -443,6 +443,9 @@ export function registerIpcHandlers(): void {
       // that directory was answered for when it started. Into a different one it is refused.
       const running = buildService.joinRunningBuild(projectId, projectPath, outputDir)
       if (running) return running
+      // Before the disk read and the dialog, not after: asking whether a directory may be emptied
+      // is the wrong question while a dev server is filling it.
+      buildService.assertOutputFree(projectId, projectPath, outputDir)
       const verdict = await buildOutputGuard.assessOutputDir(projectPath, outputDir)
       const dir = resolveBuildDir(projectPath, outputDir)
       if (verdict.kind === 'refused') {

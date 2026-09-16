@@ -285,6 +285,16 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   Verzeichnis unter `.quartz-gui/` muss zwei Listen lernen: `isSnapshotWorthy()` nimmt alles mit,
   was nicht ausdrücklich genannt ist, und `duplicateService` kopiert alles, was nicht in `SKIP`
   steht. Messungen in [`navigation-and-pages.md`](docs/decisions/navigation-and-pages.md).
+- **Ein Ausgabeordner hat einen Schreiber, und die zwei Richtungen bekommen zwei Antworten.** Ein
+  einmaliger Build leert `public/` und schreibt es neu, der Dev-Server baut bei jeder Änderung
+  hinein — beides zugleich hinterlässt einen Stand, der von keinem der beiden ist. „Jetzt bauen“
+  wird deshalb **abgelehnt**, solange der Server dieses Projekts denselben Ordner hält
+  (`assertOutputFree()`, im Handler vor der Ordner-Rückfrage und noch einmal in `runBuild`), mit
+  den zwei Wegen in der Meldung; „Starten“ dagegen **wartet** auf den laufenden Build, weil nur
+  diese Richtung warten kann, ohne dass jemand ein zweites Mal klickt — und sagt in der Konsole,
+  worauf. `stopping` zählt weiter als Schreiber. Ein Server aus einer früheren Sitzung gehört
+  keinem Eintrag und wird nicht gesehen; ihn zu finden hieße, bei jedem Klick Ports abzusuchen.
+  Messungen in [`navigation-and-pages.md`](docs/decisions/navigation-and-pages.md).
 - **Wer einen Zustand aus fremden Ausgabezeilen liest, weiß, wessen Zeilen er liest.** Ob gerade
   gebaut wird, hält `buildService` als *eine* Aktivität je Projekt, und zwei Quellen schreiben
   hinein: das stdout von `quartz build` und das Log des Dev-Servers. Jede bewegt nur die Aktivität,
@@ -897,12 +907,12 @@ bei der Regel, die es schon gab:
   Kopfbereich mit dunklem Bild trägt und das Bild da ist. (Die erste Fassung fragte den Entwurf —
   dreizehntes Review, Befund 2.)
 
-Zwei Beobachtungen des Reviews, die nicht aus dieser Runde stammen, sind nicht behoben. Ein
-YAML-Fehler im Frontmatter *einer* Notiz beendet den Dev-Server — das ist Quartz (`trace()` ruft auf
-dem Hauptthread `process.exit(1)`), und die App zeigt danach korrekt „abgestürzt“. Und ein
-einmaliger Build und der Dev-Server schreiben zugleich in dasselbe `public/` (im Mitschnitt 16
-Dateien des Neubaus mitten in „Emitting files“ des Builds); ob die App das sperren soll, ist nicht
-entschieden.
+Von den zwei Beobachtungen des Reviews, die nicht aus dieser Runde stammen, ist eine nicht behoben:
+Ein YAML-Fehler im Frontmatter *einer* Notiz beendet den Dev-Server — das ist Quartz (`trace()` ruft
+auf dem Hauptthread `process.exit(1)`), und die App zeigt danach korrekt „abgestürzt“. Die zweite
+ist am 2026-09-16 entschieden und umgesetzt: Ein einmaliger Build und der Dev-Server schrieben
+zugleich in dasselbe `public/` (im Mitschnitt 16 Dateien des Neubaus mitten in „Emitting files“ des
+Builds). Der Build wird jetzt abgelehnt, der Serverstart wartet — Regel oben unter Prozessgrenze.
 
 **Das elfte Review las die Beispielvorlage und den Kopfleisten-Umbau daneben** — 30 Commits, im
 App-Code nur +478/−71, der Rest Vorlage und Text. Kein Befund der Stufe Hoch, drei Mittel, neun

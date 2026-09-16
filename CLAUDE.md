@@ -290,7 +290,9 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   `abortCoreMerge` poppt ihn nach `merge --abort`. **Ob der Knopf ihn tragen wird, wird nach gits
   Regel gefragt, nicht nach einer Vereinfachung davon**: `reset --merge` behält die *ungestagete*
   Hälfte einer Änderung und wirft die gestagete weg, und wo der Merge um denselben Pfad geht,
-  verweigert es den Abbruch ganz — drei Ausgänge, drei Sätze (zwanzigstes Review). **Der Plan
+  verweigert es den Abbruch ganz — drei Ausgänge, drei Sätze. Und ein vierter für den Eintrag, der
+  auf HEAD passt, während gar kein Merge offen ist: Dann gibt es keinen Knopf, aber auch keinen
+  „Stand, den es nicht mehr gibt“ — `git stash pop` trägt ihn ein (alles zwanzigstes Review). **Der Plan
   fragt die Merge-Basis, die Türen öffnen sich gegen HEAD**, also gibt es einen zweiten Vergleich (`localPackageChanges(head, ours,
   head)`) für das, was der Reset wegnimmt, und `stillMissing()` für das, was die gemergte Datei
   noch nicht sagt. **Und angefasst wird nur, was `git ls-files` führt**: `git checkout -- a b` ist
@@ -616,7 +618,12 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   eine Liste nimmt `useSortable` mit `sortableKeyboardCoordinates`, ein Raster `useDroppable` mit
   `nearestDroppableCoordinates` aus `utils/dndKeyboard.ts` - ohne einen der beiden schiebt ein
   Pfeildruck um 25px und damit um nichts; `PointerSensor` mit `distance: 4`, wo derselbe Griff auch
-  klickbar ist. **Wer beides mischt, nimmt den Raster-Getter**: Das Layout-Board hat Sortierlisten
+  klickbar ist. **Ein Pfeildruck geht von dem Feld aus, auf dem er steht**, und ein Ziel, in dem
+  der Ausgangspunkt schon liegt, ist kein Schritt - sonst gewinnt das eigene Ablageziel jeden
+  Vergleich, sobald sein Rect und das gezogene verschieden gemessen werden (im Frame-Builder 48
+  gegen 26,5 px: ArrowDown bewegte den Bereich `header` nie, auf dem Layout-Board verpuffte der
+  erste Druck). Auf einer Sortierliste ist das Feld die gezogene Zeile selbst, dort ändert die
+  Regel nichts. **Wer beides mischt, nimmt den Raster-Getter**: Das Layout-Board hat Sortierlisten
   *und* Ablagezonen *und* eine Palette, und ein Paletten-Chip ist ein `useDraggable` und kein
   Droppable - `sortableKeyboardCoordinates` liest `droppableContainers.get(active.id)` und liefert
   für ihn nichts, eine leere Zone erreicht er ohnehin nicht. Und die Regel gilt erst, wenn die
@@ -816,6 +823,11 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   sie festzuhalten ist ihr Zweck.
 - **JSON-Stores nur über `jsonStore.ts`**: atomar schreiben, Unlesbares beiseitelegen statt
   überschreiben.
+- **Eine Datei, die leer ist, ist nicht dasselbe wie eine, die etwas anderes enthält.** Eine leere
+  `quartz.config.yaml` ist ein gültiges YAML-Dokument ohne Inhalt (`toJS()` sagt `null`) und wird
+  gelesen wie ein Dokument ohne diese Schlüssel; ein Dokument, das *kein* Mapping ist, wird gar
+  nicht gelesen, denn sonst zeigt die Seite eine leere Konfiguration und das nächste Speichern
+  schreibt darüber. Vorher war das erste ein roher `TypeError` und das zweite stumm.
 - **Was nur ein Kindprozess beantworten kann, wird auch dort gemessen.** Die eingebettete Laufzeit,
   Lifecycle-Skripte, das gepackte Bundle: `npm run check:runtime` und eine Messung an der
   *gepackten* App, nicht am Build. Vier der fünf Befunde aus Phase 7a wären in Entwicklung
@@ -903,6 +915,16 @@ an einer anderen Kante — nicht der Wächter vor dem Amend ist das Problem, son
 - **Eine Zahl gehört zu dem, woran sie gemessen wurde** — zweimal, beide Male vor dem Commit
   gezählt, der die Datei trägt: +341 statt +353 in einer Commit-Nachricht und „22 Commits vor
   `origin/main`“ statt 23 im Auftrag.
+
+Vier Punkte seiner Nebenbei-Liste sind mit abgearbeitet, und einer davon war größer als sein
+Platz: **Im Frame-Builder bewegte kein Pfeildruck einen Bereich.** Die Ursache — ein Ablageziel,
+das den Ausgangspunkt schon enthält, gewinnt jeden Vergleich — traf auch das Layout-Board, wo sie
+den ersten Druck verpuffen ließ und bis dahin dnd-kits `scrollTo` zugeschrieben war; die Messung
+mit gesetztem `scrollTop` trennt beides (Nachtrag in
+[`layout-frames.md`](docs/decisions/layout-frames.md)). Dazu: der Leftover-Satz sagte „Stand, den
+es nicht mehr gibt“ auch über einen Eintrag, der auf HEAD passt; ein Amend ohne etwas hinzuzufügen
+schrieb den Commit trotzdem um; und eine leere `quartz.config.yaml` warf einen rohen `TypeError`,
+während eine Datei mit *etwas anderem* darin still als leer gelesen wurde.
 
 **Das neunzehnte Review las die sieben Fixes des achtzehnten** —
 `review-2026-09-23..review-2026-09-24` ohne Review-Dokument und Auftrag, 9 Dateien, +380/−88,
@@ -1508,10 +1530,10 @@ ausdrücklich mit, und es hat ihn gelesen: die Lücke ist geschlossen, drei sein
 betreffen sie nicht, der vierte ist ein Kommentar in `shared/gridFrameCss.ts`. `review-2026-09-16`
 bleibt, wo er ist, weil der Auftrag des zwölften Reviews mit ihm rechnet.
 
-**Die fünf Fixes des zwanzigsten Reviews liegen bewusst dahinter** (`fix/review-2026-09-24`, von
-`main` abgezweigt, noch nicht gemergt und nicht gepusht): ohne Review-Dokument 5 Dateien,
-+255/−47, im App-Code 2 Dateien, +103/−37 — nachgerechnet gegen den Commit, der diese Zeilen
-trägt, nicht gegen den davor. Gemessen an zwei Wegen: `runCoreUpdate` und
+**Die fünf Fixes des zwanzigsten Reviews und die vier aus seiner Nebenbei-Liste liegen bewusst
+dahinter** (`fix/review-2026-09-24`, von `main` abgezweigt, als Fast-Forward darin, nicht
+gepusht): ohne Review-Dokument 9 Dateien, +425/−63, im App-Code 4 Dateien, +189/−52 — nachgerechnet gegen den Commit, der diese Zeilen
+trägt, nicht gegen den davor. Gemessen an drei Wegen: `runCoreUpdate` und
 `abortCoreMerge` als esbuild-Bündel in zwei Fassungen gegen ein lokales Upstream-Repo mit den
 Ständen A/B/D/E (A = Ausgangsstand, B = Paketversionen gehoben, D = nur `quartz/index.ts`,
 E = beides), npm- und npx-Attrappen, je Szene ein frischer Klon — a4 (die gestagete Fremddatei
@@ -1521,13 +1543,19 @@ ungestaget, Upstream D und E), n7h/n7b und die fünf Gegenproben a1/a5/a6/a7f/no
 Fassungen; dazu git allein für `--amend --only` an einem Merge-Commit, bei unveränderten Pfaden
 und mitten in einem Merge. Und die Prüfskripte (`typecheck`, `build`, `smoke` mit 42 Aufrufen,
 `check:i18n` mit 1111 + 172 Schlüsseln, `check:core-update`, `check:semver`,
-`check:plugin-names`, `check:handbook`) — alle grün. Die größten Eingriffe sind das `--only` am
-Amend, `abortOutcomeForStash()` mit drei statt zwei Antworten und die zweite Tür zu
-`ourMergeCommit`. Neu ist ein Text in `i18n.ts` (`updateStashMineBlocked`), dazu vier Nachträge
-in `docs/decisions/snapshots-and-updates.md`. Nicht gemessen: die gebaute und die gepackte App
-(kein Befund dieser Runde liegt im Renderer), ein echtes `npm install`, ein echter Push zu
-GitHub, die VMs, und die Notiz über einen Restore oder ein Duplikat hinweg. Sie gehören damit in
-den Diff des nächsten Auftrags.
+`check:plugin-names`, `check:handbook`) — alle grün. Dritter Weg für die Nebenbei-Punkte: **die
+gebaute App** mit Wegwerf-Profil (`--user-data-dir` in einer Kopie des Treibers, danach gelöscht)
+gegen eine `cp -Rc`-Kopie von `navigations-testprojekt`, `colorscheme none`, echte Tastendrücke im
+Frame-Builder und am Layout-Board, vorher und nachher, bei gesetztem `main.scrollTop` 0 und 280 —
+dazu eine Sonde im Getter, die die Kandidaten und ihre Punktzahlen mitschreibt und für die Messung
+wieder entfernt wurde. Die größten Eingriffe sind das `--only` am Amend,
+`abortOutcomeForStash()` mit drei statt zwei Antworten, die zweite Tür zu `ourMergeCommit` und die
+zwei Zeilen in `utils/dndKeyboard.ts`. Neu sind drei Texte in `i18n.ts`
+(`updateStashMineBlocked`, `updateStashFitsHead`, `configNotAMapping`), dazu sechs Nachträge in
+`docs/decisions/`. Nicht gemessen: die gepackte App, ein echtes `npm install`, ein echter Push zu
+GitHub, die VMs, die Notiz über einen Restore oder ein Duplikat hinweg, und warum dnd-kit das
+gezogene Rect im Frame-Builder 26,5 statt 48 px hoch meldet — der Fix kommt ohne diese Antwort
+aus, die Frage bleibt offen. Sie gehören damit in den Diff des nächsten Auftrags.
 
 **Die sieben Fixes des neunzehnten Reviews liegen bewusst dahinter** (`fix/review-2026-09-23`, von
 `fix/review-2026-09-22` abgezweigt, danach als Fast-Forward nach `main`, noch nicht gepusht): ohne

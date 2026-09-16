@@ -811,3 +811,35 @@ andere Zahlen.
 Reihenfolgen — sonst misst er den ersten Versuch. Und eine Begründung, die eine Frage schließt,
 wird an dem geprüft, was sie behauptet: Der Getter, den dieser Absatz für unwissend erklärte, war
 an diesem Board gar nicht angeschlossen.
+
+### Nachtrag (2026-09-17, zwanzigstes Review): der erste Pfeil verpuffte auch ohne Rollen
+
+Der Absatz oben schreibt den verschluckten ersten Pfeildruck dnd-kits `handleKeyDown` zu, das statt
+zu bewegen den Scroll-Container rollt. Der Mechanismus ist echt, aber er ist nicht der ganze Grund:
+Gemessen an der gebauten App mit **gesetztem** `main.scrollTop`, je frischer Mount, Chip
+`table-of-contents` aus der Palette, alte gegen neue Fassung des Getters:
+
+    alt, scrollTop 0     Space 0 · Palette → ArrowDown 0 · Palette → ArrowDown 194 · layout-box
+    alt, scrollTop 280   Space 280 · Palette → ArrowDown 280 · Palette → ArrowDown 280 · layout-box
+    neu, scrollTop 0     Space 0 · Palette → ArrowDown 233 · layout-box → ArrowDown 284 · page-title
+    neu, scrollTop 280   Space 280 · Palette → ArrowDown 280 · layout-box → ArrowDown 280 · page-title
+
+Bei 280 rollt **nichts** (der Wert steht still), und der erste Druck verpuffte trotzdem. Der Grund
+liegt im Getter: Die Palette ist selbst ein Ablageziel, der Chip liegt darin, und ihr Zentrum lag
+knapp „vor“ dem des Chips — also gewann sie ihren eigenen Vergleich. Im Frame-Builder ist dieselbe
+Sache handfester: Dort meldete dnd-kit das gezogene Rect 26,5 px hoch, wo das Rect derselben Box 48
+ist, das eigene Ziel lag 11 px „unter“ dem eigenen Zentrum und gewann *jeden* Druck — ArrowDown
+bewegte den Bereich `header` nie, die Live-Region sagte vor wie nach dem Druck „header liegt über
+header“.
+
+Zwei Zeilen im Getter (`utils/dndKeyboard.ts`): Ein Ziel, in dem der Ausgangspunkt schon liegt, ist
+kein Schritt; und der Ausgangspunkt ist die Mitte des **kleinsten** Ziels, in dem man steht, statt
+der Mitte des gezogenen Rects. Das zweite ist nötig, weil der erste Druck sonst in einer anderen
+Zelle *derselben* Zeile landete; auf einer Sortierliste ist das kleinste enthaltende Ziel die
+gezogene Zeile selbst, dort ändert sich damit nichts. Nachher im Frame-Builder: ArrowDown → „über
+before-body“, noch einmal → „über page-body“, ArrowUp zurück, Links/Rechts durch die Spalten, Space
+legt ab (samt Überschneidungs-Warnung), Escape bricht ab, der Fokus bleibt auf dem Griff.
+
+**Was daraus als Regel bleibt:** Ein Ergebnis mit einer Begründung, die es nur halb trägt, ist ein
+Befund in Wartestellung — hier stand die halbe Begründung neun Tage, und die andere Hälfte machte
+den Tastatur-Drag eines ganzen Reiters unbrauchbar.

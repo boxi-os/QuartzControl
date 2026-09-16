@@ -271,4 +271,25 @@ Upstream anspricht. Die Folge ist ein Force-Push später, den `quartz sync` ohne
 Zusätzlich `@{upstream}` zu verlangen wäre teurer als der Rand: Ein Projekt ohne Git-Sync hat
 keines, und dort fiele der Amend aus, obwohl nichts die Maschine verlassen kann.
 
+**Nachtrag (2026-09-17, zwanzigstes Review): ein Stash auf diesem HEAD gehört nicht zu einem
+Stand, den es nicht mehr gibt.** Der Leftover-Satz meinte „der Knopf trägt ihn nicht zurück“ und
+sagte etwas Stärkeres — samt Rat zu `git stash drop`. Ohne offenen Merge gibt es keinen Knopf, der
+Eintrag passt aber weiter, denn seine Basis *ist* HEAD. Szene s2 gestaget (erster Lauf lässt
+hängenden Merge und Stash, `git merge --abort` im Terminal, gestagete Änderung an `package.json`,
+zweiter Lauf: git beginnt den Merge gar nicht, HEAD unbewegt und gleich der Stash-Basis): vorher
+„gehört zu einem Stand, den es nicht mehr gibt“, nachher `updateStashFitsHead` — „passt auf den
+jetzigen Stand … `git stash pop` trägt ihn ein“. Gegengemessen, warum das kein `drop` verdient:
+`git stash pop` auf genau diese Lage meldet „Auto-merging package.json“, und danach stehen der
+Theme-Eintrag und der gestagete zusammen in der Datei. Gegen eine *ungestagete* Änderung derselben
+Datei verweigert der Pop mit gits eigenem „commit your changes or stash them“ und lässt den Eintrag
+liegen — ein brauchbarer Ausgang, und der Grund, warum das ein Satz ist und nicht zwei.
+
+**Nachtrag (2026-09-17, zwanzigstes Review): ein Amend, der nichts hinzufügt, unterbleibt.** npm
+schreibt das Lockfile bei den meisten Läufen neu, aber nicht bei allen — bei unverändertem
+`package.json` lässt echtes npm die Datei oft stehen. Ein Amend ohne etwas hinzuzufügen schreibt den
+Commit trotzdem um: gleicher Baum, neue Committer-Zeit, neuer SHA (in einem Wegwerf-Repo mit einer
+Sekunde Abstand gemessen; innerhalb derselben Sekunde fällt es nicht einmal auf). Mit einer dritten
+npm-Attrappe, die nichts schreibt, gemessen: vorher ein `commit (amend)` im Reflog auf einem
+Commit, dem nichts fehlte, nachher keiner, bei unverändertem Baum, Status und Ausgabe.
+
 **git cannot write through a symbolic link, so every git operation that touches `content/` must park it first.** With the content folder symlinked into an Obsidian vault — a headline feature — a core update died with `error: 'content/.gitkeep' is beyond a symbolic link` / `fatal: stash failed`, raw, in the output pane. `withContentSymlinkParked()` unlinks the link (not the vault), runs the operation, then discards whatever git wrote into a real `content/` and restores the link in a `finally`. The merge, its abort **and** a snapshot restore all need it - and for the restore that means its *whole write phase*, not only the optional `git reset --hard`. Measured on a project whose `content/` pointed at a vault: a whole-project restore reported `success: true` with empty output and left `content/` as a real directory holding the snapshot's old notes, i.e. the project silently disconnected from the vault, while a per-file restore of a `content/` path would have written *into* the vault. The parking helper's `finally` throws those files away with the temporary directory, which is the deliberate answer rather than a gap: a vault is the user's own primary data with its own backup and is never overwritten from a snapshot - so the result says so in a line of its own. Only wrapped when the restore actually reaches `content/`, so restoring one config file never unlinks the vault even briefly. Verified end to end, conflict-and-abort included, with the vault untouched throughout.

@@ -28,6 +28,28 @@ export const nearestDroppableCoordinates: KeyboardCoordinateGetter = (event, { c
   const from = { x: collisionRect.left + collisionRect.width / 2, y: collisionRect.top + collisionRect.height / 2 }
   const vertical = event.code === KeyboardCode.Down || event.code === KeyboardCode.Up
 
+  const rects = [...droppableContainers.getEnabled()]
+    .filter((entry) => entry && !entry.disabled)
+    .map((entry) => droppableRects.get(entry.id))
+    .filter((rect): rect is NonNullable<typeof rect> => !!rect)
+
+  // A step starts from the middle of the field one is standing on, not from the middle of the
+  // dragged rect - because those two are not always the same point, and where they differ the
+  // press goes half a step. `here` is the smallest target containing the dragged centre: on a
+  // sortable list that is the dragged row itself and nothing changes, on the frame board it is the
+  // cell (or the area's own box) under the handle. Measured (twentieth review, follow-up to the
+  // "nebenbei" list): dnd-kit reported the dragged area 26.5px high where its box is 48, so the
+  // first ArrowDown out of row 1 landed on another cell *in row 1* - the one whose centre sat 11px
+  // below the dragged centre - and only the second press reached row 2. Taken from `here` the
+  // first press reaches row 2 and Up comes back.
+  const here = rects
+    .filter((rect) => rect.left <= from.x && from.x <= rect.left + rect.width && rect.top <= from.y && from.y <= rect.top + rect.height)
+    .reduce<(typeof rects)[number] | null>((acc, rect) => (acc === null || rect.width * rect.height < acc.width * acc.height ? rect : acc), null)
+  if (here) {
+    if (vertical) from.y = here.top + here.height / 2
+    else from.x = here.left + here.width / 2
+  }
+
   // Two rounds, and the first one is what makes a grid behave like a grid: only targets that still
   // overlap the dragged rect on the *other* axis - the cells in this column for an up/down press,
   // the ones in this row for left/right. Without it a press compares raw distances, and a wide
@@ -37,10 +59,13 @@ export const nearestDroppableCoordinates: KeyboardCoordinateGetter = (event, { c
   // can still leave the board for the tray when nothing on-axis is left.
   const candidates: { rect: { left: number; top: number; width: number; height: number }; score: number; overlaps: boolean }[] = []
 
-  for (const entry of droppableContainers.getEnabled()) {
-    if (!entry || entry.disabled) continue
-    const rect = droppableRects.get(entry.id)
-    if (!rect) continue
+  for (const rect of rects) {
+    // A target the starting point is already inside is not a step in any direction. Without this
+    // an area's own box wins every press: it is a droppable of its own, the handle sits inside it,
+    // and with the two rects measured differently its centre lay 11px "ahead" - the smallest score
+    // there is. Measured: every ArrowDown scored that box at 11 against 77 for the nearest cell,
+    // the drag never moved, and the live region kept saying "header liegt über header".
+    if (rect.left <= from.x && from.x <= rect.left + rect.width && rect.top <= from.y && from.y <= rect.top + rect.height) continue
 
     const dx = rect.left + rect.width / 2 - from.x
     const dy = rect.top + rect.height / 2 - from.y

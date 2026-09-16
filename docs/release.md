@@ -6,9 +6,15 @@ in Dateien, die nach dem Release niemand mehr aufschlägt (Befund 7). Ein neuer 
 dem Anlass dazu, der ihn erzwungen hat.
 
 Die Liste ist an dem gemessen, was für **Beta 2** tatsächlich getan wurde: Das sechzehnte Review
-hat sie gegen `git log` und `git tag` gehalten und vier Handgriffe gefunden, die wieder nur in
-Commit-Nachrichten standen — die Fassungsnummer, der Tag, die Release-Seite und die Prüfung der
-Linux-Pakete. Sie stehen jetzt als Punkte 1, 6 und 7 hier, und die fehlende Handbuch-Seite in Punkt 3.
+hat sie gegen `git log` und `git tag` gehalten und vier Handgriffe gefunden, die in *dieser Liste*
+fehlten: die Fassungsnummer, der Tag, die Release-Seite und die Prüfung der Linux-Pakete. Für die
+ersten drei heißt das zugleich „nur in Commit-Nachrichten“ — die Fassungsnummer steht sonst nur in
+`d426f57` (vier Dateien), der Tag nur in `git tag`, die Release-Seite nur auf GitHub. Die Prüfung
+der Linux-Pakete dagegen steht seit dem 2026-09-14 mit Messung in
+[`electron-runtime-and-packaging.md`](decisions/electron-runtime-and-packaging.md) und in
+`CLAUDE.md` unter `dist` („Ein Cross-Paket prüft man nicht mit dem Werkzeug darin“); ihr fehlte nur
+der Platz hier. Alle vier stehen jetzt als Punkte 1, 6 und 7, und die fehlende Handbuch-Seite in
+Punkt 3.
 
 Die Reihenfolge ist die, in der die Punkte voneinander abhängen.
 

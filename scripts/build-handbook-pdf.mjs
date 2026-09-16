@@ -15,9 +15,10 @@
 // Gemessen am 2026-09-16 an 1.0.0-beta.2: 57 Quellseiten → 115 PDF-Seiten (pdfinfo), 10,9 MB,
 // getaggt, Lesezeichen 10/48/235 je Ebene. Die 118 hier waren die Zahl der Scratchpad-Fassung, aus
 // der das Skript entstand; die drei Seiten weniger kommen daher, dass Tabellen jetzt über einen
-// Seitenumbruch laufen dürfen. Wie viele Verweise und Bilder ein Lauf geprüft hat, sagt er seit
-// diesem Durchgang selbst - eine Zahl, die nur hier steht, veraltet still. Drei Dinge, die beim
-// ersten Lauf auffielen und deshalb unten stehen:
+// Seitenumbruch laufen dürfen. Wie viele Quellseiten, PDF-Seiten, Verweise und Bilder ein Lauf
+// geprüft hat, sagt er selbst - eine Zahl, die nur hier steht, veraltet still. Die PDF-Seitenzahl
+// war dabei zuletzt die einzige, die er nicht aussprach, und genau die musste korrigiert werden.
+// Drei Dinge, die beim ersten Lauf auffielen und deshalb unten stehen:
 //  - Das CSS der Vorlage gibt Tabellen 16 px Außenabstand je Seite; mit `width: 100%` stand jede
 //    Tabelle um 16 px über den Druckrand (121 Elemente im ersten Lauf).
 //  - Die Zwischenüberschriften der Kapitel-Startseiten („Die Seiten dieses Kapitels") landeten als
@@ -178,6 +179,19 @@ function findProblems() {
   return { problems: { overflow: [...overflow], deadLinks, brokenImages }, counted }
 }
 
+// Die Seitenzahl des fertigen PDFs, aus ihm selbst gelesen: gezählt werden die Seitenobjekte
+// (`/Type /Page`), die Chromes PDF-Ausgabe unkomprimiert schreibt. Nicht über `/Count`, obwohl das
+// näher läge: Chrome baut bei dieser Größe einen Seitenbaum mit Zwischenknoten, deren achtzehn
+// `/Type /Pages`-Objekte alle `/Count 8` tragen, und das größte `/Count` im Dokument gehört dem
+// Lesezeichenbaum (293). Gegengeprüft mit `pdfinfo`: 115 zu 115 am Handbuch, 3 zu 3 an einem
+// dreiseitigen Testdokument, während dasselbe Handbuch über `/Count` 8 ergab. `null` statt einer
+// geratenen Zahl, wenn kein Seitenobjekt zu finden ist - eine Zahl, die nicht gemessen ist, gehört
+// nicht in diese Zeile.
+function pdfPageCount(file) {
+  const found = fs.readFileSync(file).toString('latin1').match(/\/Type\s*\/Page[^s]/g)
+  return found ? found.length : null
+}
+
 export async function buildHandbookPdf({ site = SITE, out = OUT } = {}) {
   const parts = outline(site)
   const server = await serve(site)
@@ -240,9 +254,14 @@ ${sections.join('\n')}
         '<div style="width:100%;font-size:8px;color:#777;padding:0 18mm;display:flex;justify-content:space-between;font-family:-apple-system,Helvetica,sans-serif">' +
         `<span>QuartzControl – Handbuch ${VERSION}</span><span><span class="pageNumber"></span> / <span class="totalPages"></span></span></div>`
     })
-    const count = parts.reduce((n, p) => n + p.pages.length, 0)
+    const sourcePages = parts.reduce((n, p) => n + p.pages.length, 0)
+    // Zwei verschiedene Zahlen, und die Zeile sagte bis zu diesem Durchgang nur „Seiten" für die
+    // kleinere: 57 Quellseiten werden zu 115 PDF-Seiten. Genau die größere war die Zahl, die das
+    // sechzehnte Review im Kopf dieser Datei korrigieren musste — und sie war die einzige, die
+    // kein Lauf aussprach.
     console.log(
-      `[handbuch-pdf] ${count} Seiten, ${counted.links} interne Verweise mit Ziel, ${counted.images} Bilder, ` +
+      `[handbuch-pdf] ${sourcePages} Quellseiten → ${pdfPageCount(out) ?? '?'} PDF-Seiten, ` +
+        `${counted.links} interne Verweise mit Ziel, ${counted.images} Bilder, ` +
         `${(fs.statSync(out).size / 1024 / 1024).toFixed(1)} MB → ${path.relative(ROOT, out)}`
     )
     return out

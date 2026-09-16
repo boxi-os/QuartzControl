@@ -306,9 +306,12 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   diese Richtung warten kann, ohne dass jemand ein zweites Mal klickt — und sagt in der Konsole,
   worauf. **Das Warten hat dafür einen Eintrag** (`pendingStarts`, Status `starting`): Ein Fenster,
   in dem der Status „stopped“ heißt und der Knopf „Starten“ dasteht, ist genau das, worauf ein
-  zweites Mal geklickt wird — und vor der Sperre war dieses Fenster die Dauer des Builds statt der
-  38 ms von `refreshAuthoredFrames`. Wer während des Wartens stoppt, bricht das Warten ab; es gibt
-  nichts zu signalisieren. `stopping` zählt weiter als Schreiber, ein wartender Start auch. Ein Server aus einer früheren Sitzung gehört
+  zweites Mal geklickt wird — und ohne den Eintrag war dieses Fenster die Dauer des Builds statt
+  der 38 ms von `refreshAuthoredFrames`, die es vor der Sperre war. Wer während des Wartens stoppt,
+  bricht das Warten ab; es gibt nichts zu signalisieren, und beide Seiten bieten dafür bei
+  `starting` „Stoppen“ an. `startedAt` entsteht beim Spawn, nicht beim Klick — dazwischen liegt
+  jetzt ein ganzer Build, und „Gestartet vor …“ liest die Zeit.
+  `stopping` zählt weiter als Schreiber, ein wartender Start auch. Ein Server aus einer früheren Sitzung gehört
   keinem Eintrag und wird nicht gesehen; ihn zu finden hieße, bei jedem Klick Ports abzusuchen.
   Messungen in [`navigation-and-pages.md`](docs/decisions/navigation-and-pages.md).
 - **Wer einen Zustand aus fremden Ausgabezeilen liest, weiß, wessen Zeilen er liest.** Ob gerade
@@ -802,7 +805,7 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Befunde aus den Reviews (Stand 2026-09-19)
+## Befunde aus den Reviews (Stand 2026-09-21)
 
 Alle sechzehn Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden,

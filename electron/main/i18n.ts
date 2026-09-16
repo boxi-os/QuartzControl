@@ -102,7 +102,7 @@ const STRINGS = {
     updatePackagesReinstalled: 'Eigene Pakete wieder eingetragen: {{packages}}',
     updatePackagesUpstreamWins: 'Quartz hat diese Pakete selbst geändert, seine Fassung gilt: {{packages}}',
     updatePackagesPending:
-      'Diese eigenen Pakete stehen gerade nicht in package.json: {{packages}}. Nach dem Abbrechen trägt sie ein erneutes Update wieder ein, und der Wiederherstellungspunkt bringt sie ebenfalls zurück.',
+      'Diese eigenen Pakete stehen gerade nicht in package.json: {{packages}}. „Merge abbrechen“ oben trägt sie wieder ein, und der Wiederherstellungspunkt bringt sie ebenfalls zurück.',
     // Zwei Sätze für zwei Lagen: oben steckt der Merge noch fest, hier ist er durch und npm
     // gescheitert - „abbrechen und erneut" hilft dann nicht, „Fehler beheben und erneut" schon.
     updatePackagesMissing:
@@ -359,7 +359,7 @@ const STRINGS = {
     updatePackagesReinstalled: 'Your own packages put back: {{packages}}',
     updatePackagesUpstreamWins: 'Quartz changed these packages itself, so its version applies: {{packages}}',
     updatePackagesPending:
-      'These packages of yours are currently not in package.json: {{packages}}. Cancelling and running the update again puts them back, and so does the restore point.',
+      'These packages of yours are currently not in package.json: {{packages}}. “Abort merge” above puts them back, and so does the restore point.',
     updatePackagesMissing:
       'These packages of yours are no longer in package.json: {{packages}}. Fix the error above and run the update again, or use the restore point.',
     npmInstallFailed: 'npm install failed:',

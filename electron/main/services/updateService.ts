@@ -1,5 +1,5 @@
 import { runCommand as run } from './runCommand'
-import { readFile, writeFile } from 'fs/promises'
+import { readFile } from 'fs/promises'
 import { join } from 'path'
 import type { CoreUpdateStatus, PluginActionResult, PluginUpdateStatus, UpdateResult } from '@shared/ipc-contract'
 import { localPackageChanges, reinstallCommands, type LocalPackageChanges } from '@shared/packageJsonDeps'
@@ -197,26 +197,74 @@ async function planPackageFiles(projectPath: string): Promise<PackagePlan> {
   return { ...changes, reproducible: changes.unreproducible.length === 0 }
 }
 
-async function readNpmOwnedFiles(projectPath: string): Promise<Array<{ file: string; content: string }>> {
-  const saved: Array<{ file: string; content: string }> = []
-  for (const file of NPM_OWNED_FILES) {
-    try {
-      saved.push({ file, content: await readFile(join(projectPath, file), 'utf-8') })
-    } catch {
-      // A project without a lockfile is normal before the first install.
-    }
-  }
-  return saved
+// The name of the stash this run writes. An identifier another machine may already have written
+// is a format and not a spelling (see CLAUDE.md); this one is new, it is what abortCoreMerge
+// matches on, and it is what the user reads in `git stash list`.
+const CORE_UPDATE_STASH = 'QuartzControl: core update'
+
+async function stashRef(projectPath: string): Promise<string | null> {
+  const ref = await run('git', ['rev-parse', '--verify', '--quiet', 'refs/stash'], projectPath)
+  const sha = ref.success ? ref.output.trim() : ''
+  return sha || null
 }
 
-async function restoreNpmOwnedFiles(projectPath: string, saved: Array<{ file: string; content: string }>): Promise<void> {
-  for (const entry of saved) {
-    try {
-      await writeFile(join(projectPath, entry.file), entry.content)
-    } catch {
-      // The snapshot taken at the start of the update is the second way back.
-    }
-  }
+type HeldFiles =
+  /** git is holding the working tree's version of the two files, as this stash. */
+  | { kind: 'held'; sha: string }
+  /** Nothing to hold: the two files were already what HEAD has. */
+  | { kind: 'clean' }
+  /** git would not hold them, so they are still in the working tree and the plan is off. */
+  | { kind: 'failed'; output: string }
+
+/**
+ * Hands the two npm-owned files to git for the length of the merge, instead of throwing the
+ * working tree's version away with `git checkout HEAD --`.
+ *
+ * Why it matters which of the two: the merge does not only fail over these files. Any conflict in
+ * quartz.config.ts, in a plugin, any uncommitted change to something upstream touches ends in a
+ * half-done merge - and then the discarded packages were gone for good: not in the working tree,
+ * not after "Merge abbrechen", and not put back by a second update, because the plan compares
+ * against the merge base and the working tree no longer differs from it. Measured (sixteenth
+ * review, scene 4): the theme was in package.json before and in nothing afterwards but the
+ * snapshot. A stash survives the half-done merge, `git stash list` shows it to anyone tidying up
+ * by hand, and abortCoreMerge pops it.
+ */
+async function holdNpmOwnedFiles(projectPath: string, tracked: string[]): Promise<HeldFiles> {
+  const before = await stashRef(projectPath)
+  const pushed = await run('git', ['stash', 'push', '-m', CORE_UPDATE_STASH, '--', ...tracked], projectPath)
+  if (!pushed.success) return { kind: 'failed', output: pushed.output }
+  const after = await stashRef(projectPath)
+  // "No local changes to save" is a success that writes no stash. Two ways to end up without one,
+  // and only the other is a reason to hand the merge back to git.
+  if (after === null || after === before) return { kind: 'clean' }
+  return { kind: 'held', sha: after }
+}
+
+/** Puts the held files back. Only ever touches the stash this run wrote, and only while it is the newest. */
+async function releaseNpmOwnedFiles(projectPath: string, held: HeldFiles): Promise<boolean> {
+  if (held.kind !== 'held') return true
+  if ((await stashRef(projectPath)) !== held.sha) return false
+  return (await run('git', ['stash', 'pop'], projectPath)).success
+}
+
+/** npm has written both files anew, so what the stash holds is history. Same ownership check. */
+async function dropNpmOwnedFiles(projectPath: string, held: HeldFiles): Promise<void> {
+  if (held.kind !== 'held') return
+  if ((await stashRef(projectPath)) !== held.sha) return
+  await run('git', ['stash', 'drop'], projectPath)
+}
+
+/**
+ * The other half of holdNpmOwnedFiles, for the abort button: `git merge --abort` resets the
+ * working tree to HEAD, so the files the stash holds are only back once this has run. Anything
+ * that is not this app's stash is the user's and stays where it is.
+ */
+async function popCoreUpdateStash(projectPath: string): Promise<string> {
+  const subject = await run('git', ['log', '-1', '--format=%s', 'refs/stash'], projectPath)
+  if (!subject.success || !subject.output.includes(CORE_UPDATE_STASH)) return ''
+  // A pop that hits a conflict says so itself and leaves the stash standing, which is the right
+  // end: the user can still see what is in it.
+  return `\n${(await run('git', ['stash', 'pop'], projectPath)).output}`
 }
 
 async function conflictedFiles(projectPath: string): Promise<string[]> {
@@ -256,19 +304,18 @@ export async function runCoreUpdate(projectPath: string): Promise<UpdateResult> 
   return withContentSymlinkParked(projectPath, async () => {
     const plan = await planPackageFiles(projectPath)
     const tracked = await trackedNpmOwnedFiles(projectPath)
-    // Kept in memory so a merge that never starts - a symlink, a local change in some *other*
-    // file - leaves the project exactly as it was found.
-    const saved = plan.reproducible ? await readNpmOwnedFiles(projectPath) : []
     // Whether the plan is actually in charge of these two files, as opposed to `reproducible`,
     // which only says the plan could be worked out. The step below has to succeed as well: if it
     // does not, the files are still in the working tree and git answers the way it did before this
     // plan existed - which is a usable answer, but only if nothing afterwards assumes otherwise.
-    let planApplies = plan.reproducible
+    let planApplies = plan.reproducible && tracked.length > 0
+    let held: HeldFiles = { kind: 'clean' }
     if (planApplies) {
-      // Takes both files back to HEAD so git has nothing to overwrite. Nothing is lost that npm
-      // cannot write again: what the plan holds is a list of packages and the ranges asked for.
-      const reset = tracked.length > 0 && (await run('git', ['checkout', 'HEAD', '--', ...tracked], projectPath))
-      if (!reset || !reset.success) planApplies = false
+      // Takes both files back to HEAD so git has nothing to overwrite - but hands them to git
+      // rather than dropping them, because from here to the end of the merge there are several
+      // ways out and only one of them writes them again.
+      held = await holdNpmOwnedFiles(projectPath, tracked)
+      if (held.kind === 'failed') planApplies = false
     }
 
     const merge = await run('git', ['merge', 'FETCH_HEAD', '-m', 'Merge quartz-upstream (via QuartzControl)'], projectPath)
@@ -313,9 +360,12 @@ export async function runCoreUpdate(projectPath: string): Promise<UpdateResult> 
         // it was found; or it is half-done and stays that way for the abort button on the page -
         // in which case the packages are named, because they are no longer in package.json.
         const inProgress = await mergeInProgress(projectPath)
-        if (!inProgress && planApplies) await restoreNpmOwnedFiles(projectPath, saved)
+        // The merge never started: the project goes back to exactly how it was found, stash and
+        // all. Or it is half-done and stays that way for the abort button on the page - and then
+        // the stash stays with it, because a `merge --abort` would reset the working tree again.
+        const restored = inProgress ? false : await releaseNpmOwnedFiles(projectPath, held)
         const pending =
-          inProgress && planApplies && plan.reinstall.length > 0
+          !restored && held.kind === 'held' && plan.reinstall.length > 0
             ? `\n\n${mainT('updatePackagesPending', { packages: plan.reinstall.map((entry) => entry.name).join(', ') })}`
             : ''
         return {
@@ -335,6 +385,10 @@ export async function runCoreUpdate(projectPath: string): Promise<UpdateResult> 
       const install = await run('npm', call.args, projectPath)
       installOutput += install.output
       if (!install.success) {
+        // The merge is committed and npm has already rewritten both files at least once, so
+        // popping the stash here would fight with what is on disk. The restore point is the way
+        // back, and the sentence below names what to ask for.
+        await dropNpmOwnedFiles(projectPath, held)
         // The merge is done and package.json is upstream's, so a failure here is the one moment the
         // project's own packages are named nowhere: npm's error is about a version range, not about
         // what was taken out. Without this line the way back (the restore point, or installing them
@@ -370,6 +424,9 @@ export async function runCoreUpdate(projectPath: string): Promise<UpdateResult> 
       .filter(Boolean)
       .join('\n')
 
+    // npm has written both files, so what git was holding is history.
+    await dropNpmOwnedFiles(projectPath, held)
+
     // Same benign first-build hiccup createService.ts already tolerates for some templates -
     // report it, but a failed warm-up build doesn't undo an otherwise-successful merge+install.
     const warmup = await run('npx', ['quartz', 'build'], projectPath)
@@ -388,7 +445,8 @@ export function abortCoreMerge(projectPath: string): Promise<PluginActionResult>
   // content/ is part of what the conflicted merge touched.
   return withContentSymlinkParked(projectPath, async () => {
     const result = await run('git', ['merge', '--abort'], projectPath)
-    return { success: result.success, output: explainGitFailure(result.output) + result.output }
+    if (!result.success) return { success: false, output: explainGitFailure(result.output) + result.output }
+    return { success: true, output: result.output + (await popCoreUpdateStash(projectPath)) }
   })
 }
 

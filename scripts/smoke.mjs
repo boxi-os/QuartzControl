@@ -102,6 +102,10 @@ async function visit(page, size, label, hash) {
   console.log('')
   if (dom.boundary) report(size, label, 'error-boundary', 'Route error boundary rendered')
   for (const toast of dom.toasts) report(size, label, 'toast', toast)
+  // Erwartbar auf *Layout* bei 1280 px, wenn das Projekt ein Frame mit großen Spaltenlücken hat:
+  // Das Board zeigt die echte Geometrie, und Gaps schrumpfen nicht. Warum das so bleibt und was
+  // ein Roller darum kosten würde, steht in docs/decisions/layout-frames.md. Nicht unterdrückt -
+  // eine Ausnahme hier verdeckt auch die Seiten, die zum ersten Mal überlaufen.
   if (dom.sideways) report(size, label, 'layout', 'Inhalt scrollt horizontal')
   if (dom.empty) report(size, label, 'empty', 'Seite hat (fast) nichts gerendert')
   for (const [kind, text] of seen) report(size, label, kind, text)

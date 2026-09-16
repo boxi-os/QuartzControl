@@ -724,3 +724,42 @@ liegt über …“), und die Anweisung steht ohnehin im Satz eine Zeile darunter
 „ein hier ausgeblendeter Bereich behält dabei Zeilen- und Spalten-Spanne, ein nie platzierter hat
 keine“. Gemessen an der gebauten App, `right` des `editorial`-Frames auf Desktop ausgeblendet:
 Überschrift, Chip („right · Rechte Seitenleiste · ausgeblendet“) und Hinweis sagen dasselbe.
+
+## Das Board darf seitwärts rollen, und ein Roller darum kostet den Tastatur-Drag (2026-09-16)
+
+`npm run smoke` meldet auf 1280×800 „Layout · layout: Inhalt scrollt horizontal“, und zwar bei
+jedem Lauf. Der Befund stimmt, ist aber keiner: Gemessen an der gebauten App mit Wegwerf-Profil
+gegen eine Kopie von `navigations-testprojekt` hat `main` dort `scrollWidth` 1100 gegen
+`clientWidth` 1030, das Board selbst 1068 gegen 966.
+
+**Die Ursache ist nicht im Code dieser App, sondern in der Frame-Box des Projekts.** Das Board
+rendert die echte Geometrie: zwölf Spalten, `gap: 2rem 4rem`. Bei 966 px Platz sind die sechs
+`1fr`-Spalten schon auf 0 px geschrumpft, übrig bleiben sechs feste à 57,33 px = 344 px — und
+**elf Lücken à 64 px = 704 px**. Zusammen 1048 px. Gaps schrumpfen nicht, also passt das Frame bei
+dieser Fensterbreite nicht, und das Board sagt genau das.
+
+Zwei Verdächtige, die es nicht sind, beide an der laufenden Seite durchprobiert: Die Grid-Items
+tragen `min-width: auto`, aber ein `min-width: 0` auf alle dreizehn ändert nichts (1048 px vorher
+wie nachher); `overflow-wrap: anywhere` auf jeden Nachfahren ebenso wenig, einzeln wie zusammen.
+Der Inhalt ist nicht das Problem, die Lücken sind es.
+
+**Der naheliegende Fix trägt nicht.** `overflow-x: auto` am Wrapper (`div.w-full` um das Grid)
+beseitigt den Überlauf sauber — `main` steht danach auf 1030 gegen 1030, der Roller sitzt an der
+Panelkante, wie es die Regel „Wer rollt, ist nicht wer die Breite deckelt“ verlangt, und nichts
+wird abgeschnitten (kein positioniertes Kind im Board, nichts ragt vertikal heraus). Er nimmt aber
+dem **Tastatur-Drag die Bewegung**: derselbe Griff, dieselbe Tastenfolge, einmal mit und einmal
+ohne Roller —
+
+    ohne Roller, Space + ArrowDown:  „quartz-layout-box liegt über page-title.“
+    mit  Roller, Space + ArrowDown:  „quartz-layout-box aufgenommen.“  (unverändert)
+
+Aufnehmen und Abbrechen leben weiter, das Ziehen nicht: `@dnd-kit`s Tastatursensor lässt einen
+Pfeil in einem Scroll-Container zuerst *scrollen* statt bewegen, und `nearestDroppableCoordinates`
+weiß davon nichts. Das ist dieselbe Klasse von Regression wie der Guard aus dem neunten Review,
+der demselben Drag die Tasten nahm — ein kosmetischer Überlauf gegen eine kaputte
+Tastaturbedienung ist kein Tausch.
+
+**Also bleibt es, wie es ist**, und die Smoke-Meldung ist erwartbar statt neu. Wer sie doch
+beseitigen will, hat zwei Wege, und beide kosten mehr als der Befund: den Roller *plus* eine
+`dndKeyboard.ts`, die Scroll-Container kennt; oder die Lücken in der Vorschau proportional
+schrumpfen — dann zeigt das Board nicht mehr die Geometrie, die es zu zeigen da ist.

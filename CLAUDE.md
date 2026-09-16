@@ -292,7 +292,15 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   head)`) für das, was der Reset wegnimmt, und `stillMissing()` für das, was die gemergte Datei
   noch nicht sagt. **Und angefasst wird nur, was `git ls-files` führt**: `git checkout -- a b` ist
   alles oder nichts, und ein Pfad, den HEAD nicht kennt, wird im Konflikt als gelöscht aufgelöst
-  statt mit `--theirs` zurückgeholt. Messungen in
+  statt mit `--theirs` zurückgeholt. Zwei Ränder aus dem achtzehnten Review: **Der Stash gehört dem
+  HEAD, auf dem er entstand** (`refs/stash^`, nicht dem Merge-Commit — derselbe Merge kann gegen
+  zwei HEADs versucht werden, und `merge --abort` bewegt HEAD nicht); damit ist der Rückfall von
+  `pop --index` auf einen einfachen Pop überflüssig, und schädlich war er auch, weil er aus einer
+  sauberen Verweigerung Konfliktmarker machte. Und **„der Merge hat nichts geholt“ ist nicht „es
+  ist nichts zu tun“**: HEAD steht auch still, wenn ein früherer Lauf den Merge committet hat und
+  danach an `npm install` gescheitert ist — deshalb hält der Dienst zwischen Merge-Commit und
+  Aufwärm-Build eine Notiz in `.quartz-gui/core-update.json`, und zwar als „steht aus“ und nicht
+  als „fertig“, damit ein Projekt, das schlicht aktuell ist, seine Abkürzung behält. Messungen in
   [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md).
 - **Ein Kindprozess, der die App überleben soll, hängt nicht an einer Pipe zu ihr.** Die Leseenden
   von stdout/stderr sterben mit dem Prozess, der sie hält, und der nächste Schreibversuch des Kindes
@@ -595,7 +603,13 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   eine Liste nimmt `useSortable` mit `sortableKeyboardCoordinates`, ein Raster `useDroppable` mit
   `nearestDroppableCoordinates` aus `utils/dndKeyboard.ts` - ohne einen der beiden schiebt ein
   Pfeildruck um 25px und damit um nichts; `PointerSensor` mit `distance: 4`, wo derselbe Griff auch
-  klickbar ist. Sortierbare Zeilen tragen zusätzlich „nach oben / nach unten“: die Tastatur-Aufnahme
+  klickbar ist. **Wer beides mischt, nimmt den Raster-Getter**: Das Layout-Board hat Sortierlisten
+  *und* Ablagezonen *und* eine Palette, und ein Paletten-Chip ist ein `useDraggable` und kein
+  Droppable - `sortableKeyboardCoordinates` liest `droppableContainers.get(active.id)` und liefert
+  für ihn nichts, eine leere Zone erreicht er ohnehin nicht. Und die Regel gilt erst, wenn die
+  Sensoren auch *übergeben* sind: `GlobalBoard` stand seit dem neunten Review in dieser Liste und
+  gab seinem `DndContext` gar keine mit (achtzehntes Review, Befund 3; gemessen: ein Chip landete
+  nach drei Pfeilen wieder auf der Palette). Sortierbare Zeilen tragen zusätzlich „nach oben / nach unten“: die Tastatur-Aufnahme
   ist eine Geste, die man kennen muss. **Und über einem Drag steht nie ein `stopPropagation()`:**
   Der `KeyboardSensor` hört, sobald ein Drag läuft, auf dem *Dokument*, und React ruft für ein
   `stopPropagation()` im Renderer auch das native an der Wurzel — ein Guard, der ein Zeichen vom
@@ -810,9 +824,9 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Befunde aus den Reviews (Stand 2026-09-21)
+## Befunde aus den Reviews (Stand 2026-09-22)
 
-Alle siebzehn Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
+Alle achtzehn Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht,
@@ -828,12 +842,52 @@ Alle siebzehn Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIE
 [`docs/REVIEW-2026-09-18.md`](docs/REVIEW-2026-09-18.md) mit seinen vier und
 [`docs/REVIEW-2026-09-19.md`](docs/REVIEW-2026-09-19.md) mit seinen sieben und
 [`docs/REVIEW-2026-09-20.md`](docs/REVIEW-2026-09-20.md) mit seinen neun und
-[`docs/REVIEW-2026-09-21.md`](docs/REVIEW-2026-09-21.md) mit seinen acht (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-21-`) stehen als
+[`docs/REVIEW-2026-09-21.md`](docs/REVIEW-2026-09-21.md) mit seinen acht und
+[`docs/REVIEW-2026-09-22.md`](docs/REVIEW-2026-09-22.md) mit seinen sieben (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-22-`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](docs/REVIEW-2026-09-15.md) gehört nicht
 in diese Zählung: Die „fünfzehnte Runde“ las die Handbücher der zwei Plugins gegen deren Code und
 aus diesem Repo nur zwei Commits der Beispielvorlage (`fe2b701`, `9592121`).
+
+**Das achtzehnte Review las die acht Fixes des siebzehnten** —
+`review-2026-09-22..review-2026-09-23` ohne Review-Dokument und Auftrag, 13 Dateien, +474/−53,
+davon im App-Code 4 Dateien, +226/−34 — und maß an sechs Wegen, darunter `runCoreUpdate` in zwei
+Fassungen als esbuild-Bündel gegen ein lokales Upstream-Repo, git allein in Wegwerf-Repos, die
+gebaute App mit echten Tastendrücken am Layout-Board und das ausgelieferte Handbuch-PDF gegen
+`pdfinfo`. Kein Befund der Stufe Hoch, **drei Mittel, vier Niedrig**, alle sieben abgearbeitet. Die
+acht Fixes des Vorgängers tragen; zwei der drei mittleren saßen in den zwei Commits, die sein
+Auftrag als „Nebenbei“ führte, der dritte war eine Begründung, die nicht trug. Was daraus als Regel
+bleibt, steht oben in den passenden Abschnitten:
+
+- **„Der Merge hat nichts geholt“ ist nicht „es ist nichts zu tun“.** Die Abkürzung entschied an
+  HEAD, und HEAD steht auch still, wenn ein *früherer* Lauf den Merge committet hat und dann an
+  `npm install` gescheitert ist — genau der Zustand, in den die App mit „starte das Update erneut“
+  schickt. Der erneute Lauf sagte „Already up to date.“, `success: true`, und rief weder npm noch
+  den Aufwärm-Build. Die Notiz dagegen ist **umgedreht** gebaut („steht aus“ statt „fertig“), weil
+  die andere Richtung den ersten Lauf jedes bestehenden Projekts wieder zum Volldurchlauf gemacht
+  hätte — gemessen, nicht überlegt.
+- **Ein Ding, das einem Vorgang gehört, hängt an dem Zustand, gegen den es zurückgegeben wird.**
+  Der Stash war an den Merge-Commit gebunden; derselbe Merge kann gegen zwei HEADs versucht werden,
+  und dann poppt der Abbruch-Knopf auf einen fremden Stand — `UU package.json`, Konfliktmarker,
+  kein gültiges JSON. git hält die Antwort selbst: `refs/stash^` ist der HEAD, auf dem der Stash
+  entstand.
+- **Ein Rückfall, der nur noch die schlechtere Hälfte tun kann, gehört weg.** `pop --index`
+  verweigert sauber; der einfache Pop dahinter schrieb dann die Marker, die die Verweigerung gerade
+  verhindert hatte.
+- **Zwei Sätze derselben Sitzung dürfen einander nicht widersprechen.** Der Lauf nannte einen Stash
+  „gehört nicht zu diesem Update“ und riet zu `git stash pop`, während der Abbruch-Knopf ihn
+  Sekunden später selbst aufnahm. Der Satz stellt jetzt dieselbe Frage wie der Knopf.
+- **Wer zwei Zustände vergleicht, vergleicht sie in beiden Reihenfolgen** — sonst misst er den
+  ersten Versuch. Der Layout-Absatz schrieb dem Roller zu, was der erste Pfeildruck ohnehin tut, und
+  schloss damit eine Frage, die offen war: Das Board hatte gar keine `@dnd-kit`-Sensoren, ein
+  Paletten-Chip war per Tastatur nicht ins Board zu bringen. Mit dem Getter kostet der Roller
+  nichts, also ist er drin, und `npm run smoke` meldet zum ersten Mal nichts.
+- **Eine Zahl gehört zu dem, woran sie gemessen wurde** — zweimal: „achtzehn `/Type /Pages` mit je
+  `/Count 8`“ (es sind 14, dazu zwei Zwischenknoten und ein Wurzelknoten mit 115), und die Klammern
+  der Nachträge in `docs/decisions/`, die Review-Nummern als Datum lasen.
+- **Ein Bezeichner ist erst dann ein Format, wenn ihn ein fremder Rechner geschrieben hat.** Der
+  Stash-Name kam nach beiden Betas; bis zum nächsten Release darf er sich ohne Migration ändern.
 
 **Das siebzehnte Review las die zehn Fixes des sechzehnten** —
 `review-2026-09-21..review-2026-09-22` ohne Review-Dokument und Auftrag, 13 Dateien, +520/−101,
@@ -1342,7 +1396,26 @@ ausdrücklich mit, und es hat ihn gelesen: die Lücke ist geschlossen, drei sein
 betreffen sie nicht, der vierte ist ein Kommentar in `shared/gridFrameCss.ts`. `review-2026-09-16`
 bleibt, wo er ist, weil der Auftrag des zwölften Reviews mit ihm rechnet.
 
-**Die acht Fixes des siebzehnten Reviews liegen bewusst dahinter** (`fix/review-2026-09-20`,
+**Die sieben Fixes des achtzehnten Reviews liegen bewusst dahinter** (`fix/review-2026-09-22`, von
+`main` abgezweigt, nicht gepusht und nicht gemergt): ohne Review-Dokument 8 Dateien, +300/−81, im
+App-Code 3 Dateien, +168/−44. Gemessen an fünf Wegen: `runCoreUpdate` und `abortCoreMerge` als
+esbuild-Bündel in zwei Fassungen (`af1ffed` und hier) gegen ein lokales Upstream-Repo mit den
+Ständen A/B/C, npm- und npx-Attrappen, je Szene ein frischer Klon — x1 (npm scheitert, dann
+„erneut“), x2/x2s (veralteter Stash, ungestaget und gestaget), x2h (Gegenprobe: HEAD = Stash-Basis),
+x7 (zwei Stashes übereinander), „up“ und „norm“ als Gegenproben des gewöhnlichen Wegs; die gebaute
+App mit Wegwerf-Profil gegen eine `cp -Rc`-Kopie von `navigations-testprojekt`, echte Tastendrücke
+am Layout-Board, vorher und nachher, aus der Palette und aus dem Board, bei `scrollTop` 0 und 280,
+mit und ohne Roller; das ausgelieferte Handbuch-PDF gegen `pdfinfo`; `git log --date=short` für die
+Daten; und die Prüfskripte (`typecheck`, `check:i18n` mit 1111 + 170 Schlüsseln, `smoke` zum ersten
+Mal ohne Auffälligkeit). Die größten Eingriffe sind die Notiz `.quartz-gui/core-update.json` samt
+der umgedrehten Leserichtung, `stashBase()` und der Wegfall beider Rückfall-Pops, die Sensoren des
+`GlobalBoard` und der `overflow-x-auto` am Board. Neu ist ein Text in `i18n.ts`
+(`updateStashMine`), geändert einer (`updateStashLeftover`), dazu fünf Absätze in
+`docs/decisions/`. Nicht gemessen: die gepackte App, ein echtes `npm install`, die VMs, der
+Frame-Builder mit dem neuen Roller daneben, und die Notiz über einen Restore oder ein Duplikat
+hinweg. Sie gehören damit in den Diff des nächsten Auftrags.
+
+**Die acht Fixes des siebzehnten Reviews hat das achtzehnte gelesen** (`fix/review-2026-09-20`,
 auf `4d2b50d` = `review-2026-09-22`, nicht gepusht und nicht nach `main` gemergt). Sie sind
 gemessen, und von niemandem sonst gelesen. Der Messweg für die Update-Befunde ist der des
 Vorgängers, um einen vierten Upstream-Stand und ein zweites Bündel erweitert: zwei Fassungen von

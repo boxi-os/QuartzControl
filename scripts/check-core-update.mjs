@@ -89,6 +89,37 @@ const faelle = [
     unreproducible: []
   },
   {
+    // „re-pinned" steht in der Typdoku und wurde nie geprüft: derselbe Name, ein anderer Bereich,
+    // Upstream unberührt - das ist ein Nachinstallieren mit dem eigenen Bereich, kein Konflikt.
+    was: 'ein eigenes Paket umgepinnt — npm trägt den eigenen Bereich wieder ein',
+    base: deps({ '@quartz-themes/core': '^1.0.0' }),
+    ours: deps({ '@quartz-themes/core': '^1.2.0' }),
+    theirs: deps({ '@quartz-themes/core': '^1.0.0' }),
+    reinstall: ['@quartz-themes/core@^1.2.0'],
+    upstreamWins: [],
+    unreproducible: []
+  },
+  {
+    was: 'beide Seiten haben dasselbe Paket mit demselben Bereich hinzugefügt — Quartz gewinnt',
+    base: deps({}),
+    ours: deps({ '@quartz-community/graph': '^1.0.0' }),
+    theirs: deps({ '@quartz-community/graph': '^1.0.0' }),
+    reinstall: [],
+    upstreamWins: ['@quartz-community/graph'],
+    unreproducible: []
+  },
+  {
+    // Zwei Abschnitte, ein Name: die Entfernung im einen zählt für sich, also Finger weg - auch
+    // wenn daneben ein Nachinstallieren stünde.
+    was: 'ein Paket von dependencies nach devDependencies verschoben — Finger weg',
+    base: { ...deps({ prettier: '^3.0.0' }), devDependencies: {} },
+    ours: { ...deps({}), devDependencies: { prettier: '^3.0.0' } },
+    theirs: { ...deps({ prettier: '^3.0.0' }), devDependencies: {} },
+    reinstall: ['prettier@^3.0.0'],
+    upstreamWins: [],
+    unreproducible: ['dependencies.prettier']
+  },
+  {
     // Der Dienst fragt in diesem Fall gar nicht erst (planPackageFiles steigt vorher aus), aber die
     // Funktion darf auch allein nicht raten: Ohne Vergleichsstand ist *jeder* Schlüssel eine
     // Abweichung, und eine Abweichung, die sie nicht nachspielen kann, heißt Finger weg.

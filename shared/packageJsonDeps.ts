@@ -52,6 +52,15 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+/**
+ * The range a parsed package.json asks for, or undefined. Exported because the caller has the same
+ * question after the merge - is this package already there with this range - and answering it with
+ * a second reading of the file's shape is how the two drift apart.
+ */
+export function dependencyRange(pkg: unknown, name: DependencySection, dependency: string): string | undefined {
+  return section(pkg, name)[dependency]
+}
+
 function section(pkg: unknown, name: DependencySection): Record<string, string> {
   if (!isPlainObject(pkg)) return {}
   const raw = pkg[name]

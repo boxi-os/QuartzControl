@@ -2,7 +2,13 @@ import { runCommand as run } from './runCommand'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
 import type { CoreUpdateStatus, PluginActionResult, PluginUpdateStatus, UpdateResult } from '@shared/ipc-contract'
-import { localPackageChanges, reinstallCommands, type LocalPackageChanges } from '@shared/packageJsonDeps'
+import {
+  dependencyRange,
+  localPackageChanges,
+  reinstallCommands,
+  type LocalPackageChanges,
+  type PackageAddition
+} from '@shared/packageJsonDeps'
 import { TEMPLATE_REPO } from './createService'
 import { withContentSymlinkParked } from './contentSymlink'
 import { createSnapshot } from './snapshotService'
@@ -175,16 +181,27 @@ async function jsonAtRevision(projectPath: string, revision: string, file: strin
 interface PackagePlan extends LocalPackageChanges {
   /** False means: we could not read all three sides, so git decides and the user gets git's answer. */
   reproducible: boolean
+  /**
+   * The second comparison, HEAD against the working tree: what the stash below holds, expressed in
+   * packages. Two doors act on the plan and both open against HEAD - the files are handed to git
+   * and come back as HEAD's copy, and the sentence about what is missing right now describes that
+   * copy. `reinstall` against the merge base cannot answer either: after one merge the base is
+   * upstream's commit, which never had this project's own packages, so it lists them for ever.
+   */
+  localEdits: LocalPackageChanges
 }
+
+const NO_CHANGES: LocalPackageChanges = { reinstall: [], upstreamWins: [], unreproducible: [] }
 
 // Worked out *before* the merge, because afterwards the working tree no longer holds "ours".
 async function planPackageFiles(projectPath: string): Promise<PackagePlan> {
-  const handsOff: PackagePlan = { reinstall: [], upstreamWins: [], unreproducible: [], reproducible: false }
+  const handsOff: PackagePlan = { ...NO_CHANGES, reproducible: false, localEdits: NO_CHANGES }
   const mergeBase = await run('git', ['merge-base', 'HEAD', 'FETCH_HEAD'], projectPath)
   if (!mergeBase.success) return handsOff
   const base = await jsonAtRevision(projectPath, mergeBase.output.trim(), 'package.json')
   const theirs = await jsonAtRevision(projectPath, 'FETCH_HEAD', 'package.json')
-  if (base === undefined || theirs === undefined) return handsOff
+  const head = await jsonAtRevision(projectPath, 'HEAD', 'package.json')
+  if (base === undefined || theirs === undefined || head === undefined) return handsOff
   let ours: unknown
   try {
     ours = JSON.parse(await readFile(join(projectPath, 'package.json'), 'utf-8'))
@@ -192,9 +209,35 @@ async function planPackageFiles(projectPath: string): Promise<PackagePlan> {
     return handsOff
   }
   const changes = localPackageChanges(base, ours, theirs)
+  // HEAD on both sides: "theirs" is what the working tree is about to be reset to, so the only
+  // question left is what the reset takes away. A package removed here after it was committed
+  // differs from HEAD and not from the base - measured (sixteenth review, scene 3), that removal
+  // was silently undone and the package came back.
+  const localEdits = localPackageChanges(head, ours, head)
   // An edit this plan cannot replay is not a reason to guess: git merges both files as before and
-  // says what it says today.
-  return { ...changes, reproducible: changes.unreproducible.length === 0 }
+  // says what it says today. That holds for either comparison.
+  return {
+    ...changes,
+    localEdits,
+    reproducible: changes.unreproducible.length === 0 && localEdits.unreproducible.length === 0
+  }
+}
+
+/**
+ * What of the plan the merged package.json does not already say. After one merge the base is
+ * upstream's commit, so `plan.reinstall` names this project's own packages for ever - and every
+ * update then ran an `npm install` over the network that changed nothing, under a line claiming
+ * packages had been put back (sixteenth review, finding 3b).
+ */
+async function stillMissing(projectPath: string, reinstall: PackageAddition[]): Promise<PackageAddition[]> {
+  let merged: unknown
+  try {
+    merged = JSON.parse(await readFile(join(projectPath, 'package.json'), 'utf-8'))
+  } catch {
+    // Unreadable is not "nothing to do": write them all back and let npm answer.
+    return reinstall
+  }
+  return reinstall.filter((entry) => dependencyRange(merged, entry.section, entry.name) !== entry.range)
 }
 
 // The name of the stash this run writes. An identifier another machine may already have written
@@ -365,8 +408,10 @@ export async function runCoreUpdate(projectPath: string): Promise<UpdateResult> 
         // the stash stays with it, because a `merge --abort` would reset the working tree again.
         const restored = inProgress ? false : await releaseNpmOwnedFiles(projectPath, held)
         const pending =
-          !restored && held.kind === 'held' && plan.reinstall.length > 0
-            ? `\n\n${mainT('updatePackagesPending', { packages: plan.reinstall.map((entry) => entry.name).join(', ') })}`
+          !restored && held.kind === 'held' && plan.localEdits.reinstall.length > 0
+            ? `\n\n${mainT('updatePackagesPending', {
+                packages: plan.localEdits.reinstall.map((entry) => entry.name).join(', ')
+              })}`
             : ''
         return {
           success: false,
@@ -377,9 +422,11 @@ export async function runCoreUpdate(projectPath: string): Promise<UpdateResult> 
       }
     }
 
-    // One `npm install` per dependency section when this project has packages of its own, and a
-    // plain one otherwise. Either way npm writes the lockfile that upstream's copy just replaced.
-    const installCalls = planApplies && plan.reinstall.length > 0 ? reinstallCommands(plan.reinstall) : [{ args: ['install'] }]
+    // One `npm install` per dependency section for the packages the merged package.json is
+    // actually missing, and a plain one otherwise. Either way npm writes the lockfile that
+    // upstream's copy just replaced.
+    const missingNow = planApplies ? await stillMissing(projectPath, plan.reinstall) : []
+    const installCalls = missingNow.length > 0 ? reinstallCommands(missingNow) : [{ args: ['install'] }]
     let installOutput = ''
     for (const call of installCalls) {
       const install = await run('npm', call.args, projectPath)
@@ -394,8 +441,8 @@ export async function runCoreUpdate(projectPath: string): Promise<UpdateResult> 
         // what was taken out. Without this line the way back (the restore point, or installing them
         // again) needs a list the user no longer has.
         const missing =
-          planApplies && plan.reinstall.length > 0
-            ? `\n\n${mainT('updatePackagesMissing', { packages: plan.reinstall.map((entry) => entry.name).join(', ') })}`
+          missingNow.length > 0
+            ? `\n\n${mainT('updatePackagesMissing', { packages: missingNow.map((entry) => entry.name).join(', ') })}`
             : ''
         return {
           success: false,
@@ -414,8 +461,8 @@ export async function runCoreUpdate(projectPath: string): Promise<UpdateResult> 
     }
 
     const packageNotes = [
-      planApplies && plan.reinstall.length > 0
-        ? mainT('updatePackagesReinstalled', { packages: plan.reinstall.map((entry) => entry.name).join(', ') })
+      missingNow.length > 0
+        ? mainT('updatePackagesReinstalled', { packages: missingNow.map((entry) => entry.name).join(', ') })
         : '',
       planApplies && plan.upstreamWins.length > 0
         ? mainT('updatePackagesUpstreamWins', { packages: plan.upstreamWins.join(', ') })

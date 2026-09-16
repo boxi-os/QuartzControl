@@ -473,21 +473,68 @@ async function conflictedFiles(projectPath: string): Promise<string[]> {
 }
 
 /**
+ * The fourth question of "the abort button will put it back", and the one the pop actually fails
+ * on: will the files the stash holds be free in the working tree the *abort* leaves behind?
+ *
+ * `git merge --abort` is `reset --merge`: it takes the paths the merge is about back to HEAD and
+ * leaves a change to a path the merge never touched exactly where it is. So a file that differs
+ * from HEAD is free afterwards only if the merge is about it too - which is what the second diff
+ * asks. Measured (nineteenth review, finding 4) in three scenes, each a fresh clone with a
+ * leftover stash of ours and a half-done merge:
+ *
+ *   n7   upstream touches quartz/index.ts only, package.json edited by hand   pop fails
+ *   n7h  upstream touches quartz/index.ts only, nothing edited                pop succeeds
+ *   n7b  upstream touches package.json as well, nothing edited                pop succeeds
+ *
+ * Not `git stash show -p | git apply --check`, the belt the eighteenth review proposed: that asks
+ * about the tree standing there *now*, mid-merge, not about the one the abort will make. Measured
+ * in the same three scenes it answers "would not apply" in n7 **and** n7b - so it would tell a
+ * user whose entries the button is about to put back that they belong to a state that is gone, and
+ * advise `git stash drop` on them. That is the eighteenth review's own finding 4 again, in the
+ * other direction and with the worse outcome.
+ */
+async function abortWouldFreeStashedFiles(projectPath: string): Promise<boolean> {
+  const stashed = await run('git', ['stash', 'show', '--name-only', 'refs/stash'], projectPath)
+  if (!stashed.success) return false
+  const lines = (output: string): string[] =>
+    output
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+  const paths = lines(stashed.output)
+  if (paths.length === 0) return true
+  const names = async (revs: string[]): Promise<string[]> => {
+    const diff = await run('git', ['diff', '--name-only', ...revs, '--', ...paths], projectPath)
+    return diff.success ? lines(diff.output) : []
+  }
+  const changed = await names(['HEAD'])
+  if (changed.length === 0) return true
+  const fromMerge = await names(['HEAD', 'MERGE_HEAD'])
+  return changed.every((file) => fromMerge.includes(file))
+}
+
+/**
  * Which of the two sentences an entry that was already lying there has earned, asked *after* the
  * run because that is when the user reads it: the one the abort button on the page will put back,
  * or one from a state that is gone.
  *
- * The three halves of "the button will put it back" are the ones popCoreUpdateStash asks (ours,
- * and taken from this very HEAD), plus the button existing at all - which it does only while a
- * merge is half-done. Anything else, including this run having laid a stash of its own on top, is
- * the other sentence. Measured (eighteenth review, finding 4): one run said "they do not belong to
- * this update" and the abort button popped that same entry seconds later.
+ * The halves of "the button will put it back" are the ones popCoreUpdateStash asks (ours, and
+ * taken from this very HEAD), plus the button existing at all - which it does only while a merge
+ * is half-done - plus the one above, which is where the pop itself fails. Anything else, including
+ * this run having laid a stash of its own on top, is the other sentence. Measured (eighteenth
+ * review, finding 4): one run said "they do not belong to this update" and the abort button popped
+ * that same entry seconds later.
  */
 async function leftoverStashNote(projectPath: string, before: string | null): Promise<string> {
   if ((await stashRef(projectPath)) !== before) return mainT('updateStashLeftover')
   const head = (await run('git', ['rev-parse', 'HEAD'], projectPath)).output.trim()
   const ours = (await topStashSubject(projectPath)).includes(CORE_UPDATE_STASH)
-  const poppable = ours && head !== '' && (await stashBase(projectPath)) === head && (await mergeInProgress(projectPath))
+  const poppable =
+    ours &&
+    head !== '' &&
+    (await stashBase(projectPath)) === head &&
+    (await mergeInProgress(projectPath)) &&
+    (await abortWouldFreeStashedFiles(projectPath))
   return poppable ? mainT('updateStashMine') : mainT('updateStashLeftover')
 }
 

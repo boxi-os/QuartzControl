@@ -152,4 +152,35 @@ Ergebnis: Ein Lauf, der sie nicht schreiben kann, soll installieren und es sagen
 (`updateNoteUnwritable`). Die Lesehälfte bleibt, wie sie war — eine *kaputte* Datei wird
 beiseitegelegt, eine fehlende liest sich als „nichts“.
 
+**Nachtrag (2026-09-16, neunzehntes Review): „Merge abbrechen trägt ihn wieder ein“ fragt jetzt
+auch das, woran der Pop scheitert.** Der Satz stellte drei der vier Fragen, die der Knopf stellt —
+unserer, von diesem HEAD, ein Merge hängt — und nicht die vierte: ob der Arbeitsbereich die
+Dateien des Stashes frei hat. Szene n7 (Upstream ändert nur `quartz/index.ts`, eigene
+`index.ts` committet, Theme uncommittet; nach dem ersten Lauf `git merge --abort` im Terminal und
+ein ungestageter `scripts`-Eintrag in `package.json`, für den Plan unnachspielbar, also kein neuer
+Stash): Der zweite Lauf sagte „Merge abbrechen trägt ihn wieder ein“, und der Knopf antwortete
+`Your local changes to the following files would be overwritten by merge: package.json`, Stash
+blieb liegen, Theme weiter weg.
+
+`git merge --abort` ist `reset --merge`: Es setzt die Pfade, um die der Merge geht, auf HEAD
+zurück und lässt eine Änderung an einem Pfad, den der Merge nie angefasst hat, stehen. Frei nach
+dem Abbruch ist eine Datei also genau dann, wenn sie HEAD gleicht **oder** zwischen HEAD und
+`MERGE_HEAD` liegt — zwei `git diff --name-only` über die Pfade, die `git stash show --name-only`
+nennt. Drei Szenen, je frischer Klon, vorher und nachher:
+
+    n7   Upstream nur quartz/index.ts, package.json von Hand geändert   Pop scheitert
+    n7h  Upstream nur quartz/index.ts, nichts geändert                  Pop gelingt
+    n7b  Upstream ändert package.json mit, nichts geändert              Pop gelingt
+
+    vorher   n7 „Merge abbrechen trägt ihn wieder ein“ → Abbruch scheitert
+    nachher  n7 „gehört zu einem Stand, den es nicht mehr gibt“ (show -p / drop);
+             n7h und n7b unverändert „Merge abbrechen trägt ihn wieder ein“ → Pop, Theme zurück
+
+**Und nicht `git stash show -p | git apply --check`**, der Gürtel, den das achtzehnte Review
+vorgeschlagen hatte: Der fragt den Baum, der *jetzt* dasteht, mitten im Merge — nicht den, den der
+Abbruch macht. In denselben drei Szenen gemessen antwortet er „würde nicht anwenden“ in n7 **und**
+in n7b, hätte also einem Nutzer, dessen Einträge der Knopf gleich zurückträgt, gesagt, sie gehörten
+zu einem Stand, den es nicht mehr gibt — samt Rat `git stash drop`. Das ist Befund 4 des
+achtzehnten Reviews noch einmal, in der anderen Richtung und mit dem schlechteren Ausgang.
+
 **git cannot write through a symbolic link, so every git operation that touches `content/` must park it first.** With the content folder symlinked into an Obsidian vault — a headline feature — a core update died with `error: 'content/.gitkeep' is beyond a symbolic link` / `fatal: stash failed`, raw, in the output pane. `withContentSymlinkParked()` unlinks the link (not the vault), runs the operation, then discards whatever git wrote into a real `content/` and restores the link in a `finally`. The merge, its abort **and** a snapshot restore all need it - and for the restore that means its *whole write phase*, not only the optional `git reset --hard`. Measured on a project whose `content/` pointed at a vault: a whole-project restore reported `success: true` with empty output and left `content/` as a real directory holding the snapshot's old notes, i.e. the project silently disconnected from the vault, while a per-file restore of a `content/` path would have written *into* the vault. The parking helper's `finally` throws those files away with the temporary directory, which is the deliberate answer rather than a gap: a vault is the user's own primary data with its own backup and is never overwritten from a snapshot - so the result says so in a line of its own. Only wrapped when the restore actually reaches `content/`, so restoring one config file never unlinks the vault even briefly. Verified end to end, conflict-and-abort included, with the vault untouched throughout.

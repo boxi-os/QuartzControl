@@ -492,45 +492,57 @@ async function conflictedFiles(projectPath: string): Promise<string[]> {
     .filter(Boolean)
 }
 
+/** What the abort button would do to the files the stash holds: hand them a working tree they fit
+ *  into, leave one of them changed so the pop fails, or not run at all because git refuses. */
+type StashAfterAbort = 'free' | 'occupied' | 'abortRefused'
+
 /**
  * The fourth question of "the abort button will put it back", and the one the pop actually fails
  * on: will the files the stash holds be free in the working tree the *abort* leaves behind?
  *
- * `git merge --abort` is `reset --merge`: it takes the paths the merge is about back to HEAD and
- * leaves a change to a path the merge never touched exactly where it is. So a file that differs
- * from HEAD is free afterwards only if the merge is about it too - which is what the second diff
- * asks. Measured (nineteenth review, finding 4) in three scenes, each a fresh clone with a
- * leftover stash of ours and a half-done merge:
+ * Asked with git's own rule rather than a simplification of it. `git merge --abort` is
+ * `reset --merge`, and what that keeps is what is "different between the index and working tree",
+ * i.e. the *unstaged* half of a change - a staged one it throws away, whether the merge is about
+ * that path or not. Where the merge *is* about the path as well, git refuses the abort outright
+ * ("Entry 'package.json' not uptodate. Cannot merge."), and then the answer is neither of the two
+ * sentences but the one the button itself will give. Measured (twentieth review, finding 2), each
+ * a fresh clone with a leftover stash of ours and a half-done merge, `scripts` added to
+ * package.json mid-merge:
  *
- *   n7   upstream touches quartz/index.ts only, package.json edited by hand   pop fails
- *   n7h  upstream touches quartz/index.ts only, nothing edited                pop succeeds
- *   n7b  upstream touches package.json as well, nothing edited                pop succeeds
+ *   s3 unstaged  upstream touches quartz/index.ts only, edit unstaged  abort runs, pop fails
+ *   s3 staged    same, edit staged                                     abort runs, pop succeeds
+ *   s4 unstaged  upstream touches package.json as well, unstaged       abort refused
+ *   s4 staged    same, edit staged                                     abort runs, pop succeeds
+ *
+ * The version before this asked `git diff --name-only HEAD`, which reads index *and* working tree,
+ * and called a staged change "differs from HEAD and the merge is not about it": s3 staged got
+ * "they belong to a state that is gone" plus advice to `git stash drop`, seconds before the button
+ * put them back. s4 unstaged got the opposite - "puts them back", then a button that refused.
  *
  * Not `git stash show -p | git apply --check`, the belt the eighteenth review proposed: that asks
  * about the tree standing there *now*, mid-merge, not about the one the abort will make. Measured
- * in the same three scenes it answers "would not apply" in n7 **and** n7b - so it would tell a
- * user whose entries the button is about to put back that they belong to a state that is gone, and
- * advise `git stash drop` on them. That is the eighteenth review's own finding 4 again, in the
- * other direction and with the worse outcome.
+ * (nineteenth review, finding 4) it answers "would not apply" for two of three scenes whose
+ * entries the button puts back - the same wrong direction as above, one layer further out.
  */
-async function abortWouldFreeStashedFiles(projectPath: string): Promise<boolean> {
+async function abortOutcomeForStash(projectPath: string): Promise<StashAfterAbort> {
   const stashed = await run('git', ['stash', 'show', '--name-only', 'refs/stash'], projectPath)
-  if (!stashed.success) return false
+  if (!stashed.success) return 'occupied'
   const lines = (output: string): string[] =>
     output
       .split('\n')
       .map((line) => line.trim())
       .filter(Boolean)
   const paths = lines(stashed.output)
-  if (paths.length === 0) return true
+  if (paths.length === 0) return 'free'
   const names = async (revs: string[]): Promise<string[]> => {
     const diff = await run('git', ['diff', '--name-only', ...revs, '--', ...paths], projectPath)
     return diff.success ? lines(diff.output) : []
   }
-  const changed = await names(['HEAD'])
-  if (changed.length === 0) return true
+  // Working tree against index: the one half of a change `reset --merge` keeps.
+  const unstaged = await names([])
+  if (unstaged.length === 0) return 'free'
   const fromMerge = await names(['HEAD', 'MERGE_HEAD'])
-  return changed.every((file) => fromMerge.includes(file))
+  return unstaged.some((file) => fromMerge.includes(file)) ? 'abortRefused' : 'occupied'
 }
 
 /**
@@ -549,13 +561,19 @@ async function leftoverStashNote(projectPath: string, before: string | null): Pr
   if ((await stashRef(projectPath)) !== before) return mainT('updateStashLeftover')
   const head = (await run('git', ['rev-parse', 'HEAD'], projectPath)).output.trim()
   const ours = (await topStashSubject(projectPath)).includes(CORE_UPDATE_STASH)
-  const poppable =
-    ours &&
-    head !== '' &&
-    (await stashBase(projectPath)) === head &&
-    (await mergeInProgress(projectPath)) &&
-    (await abortWouldFreeStashedFiles(projectPath))
-  return poppable ? mainT('updateStashMine') : mainT('updateStashLeftover')
+  const mine =
+    ours && head !== '' && (await stashBase(projectPath)) === head && (await mergeInProgress(projectPath))
+  if (!mine) return mainT('updateStashLeftover')
+  switch (await abortOutcomeForStash(projectPath)) {
+    case 'free':
+      return mainT('updateStashMine')
+    // The button is the way back, and it is the user's own unstaged change standing in front of
+    // it - the same sentence the button gives, said before they press it.
+    case 'abortRefused':
+      return mainT('updateStashMineBlocked')
+    default:
+      return mainT('updateStashLeftover')
+  }
 }
 
 /**

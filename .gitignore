@@ -31,3 +31,9 @@ scripts/example-template/.fonts/
 # Sicherung der Vault-Änderungszeiten (scripts/stagger-vault-mtimes.mjs --apply). Sie gehört zu
 # einem Rechner und einem Zeitpunkt, nicht zum Projekt - der Rückweg ist `--restore <datei>`.
 mtimes-*.json
+
+# Python-Bauartefakt: entsteht beim Importieren von scripts/wiki_bridge.py im Skill
+# projekt-dokumentieren, traegt die Python-Fassung im Namen und steht bei jedem Rechner mit
+# einer anderen als geaendert da.
+__pycache__/
+*.pyc

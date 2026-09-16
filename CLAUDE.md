@@ -1244,6 +1244,21 @@ an der gebauten, nicht an der gepackten App.
 die Fixes des zwölften (`review-2026-09-17..fix/review-2026-09-16`) und die Lücke
 `review-2026-09-14..review-2026-09-16` (unten), in der die zwölf Fixes des elften liegen.
 
+**Das siebzehnte Review misst ab `review-2026-09-21`** und liest bis `review-2026-09-22`, das auf
+dem Commit „Der Auftrag für das siebzehnte Review“ (`fix/review-2026-09-20`) sitzt — dem Stand, den
+es liest. **Hier steht bewusst kein Hash**: Der Hash des Commits, der diesen Satz trägt, kann nicht
+in diesem Satz stehen, und der Versuch war Befund 6 des sechzehnten Reviews — die Zahl wurde vor
+einem Amend geschrieben und überlebte ihn. Die Hashes der älteren Tags stehen hier, weil sie
+nachträglich aufgeschrieben und geprüft sind; `git rev-parse review-2026-09-22^{commit}` beantwortet
+die Frage ohnehin genauer als jede Zeile hier. Der Auftrag steht in
+[`docs/REVIEW-2026-09-21-auftrag.md`](docs/REVIEW-2026-09-21-auftrag.md). Sein Diff sind die zehn
+Fixes des sechzehnten Reviews: ohne Review-Dokument und Auftragsdatei 13 Dateien, +520/−101 (davon
+15 Zeilen dieser `CLAUDE.md`-Absatz, den der Auftrags-Commit mitbringt), im App-Code 6 Dateien,
++322/−74. Der Branch ist **nicht gepusht und nicht nach `main` gemergt**; dazu
+kommt ein Commit im Handbuch-Vault (`b61a08d`), der nicht in diesem Repo liegt. Als größtes Risiko
+nennt der Auftrag den git-Stash, den `runCoreUpdate` jetzt im Repo des Nutzers anlegt — das erste
+Mal, dass die App dessen Stash-Bereich anfasst.
+
 **Das sechzehnte Review misst ab `review-2026-09-20`** und liest bis `review-2026-09-21`, das auf
 `dc06e2d` („Der Auftrag für das sechzehnte Review“, `main`) sitzt — dem Stand, den es liest; der
 Auftrag steht in [`docs/REVIEW-2026-09-20-auftrag.md`](docs/REVIEW-2026-09-20-auftrag.md). Der Tag

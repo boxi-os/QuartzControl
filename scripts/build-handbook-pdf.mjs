@@ -12,8 +12,12 @@
 // (`outline` und `tagged` in page.pdf, seit Playwright 1.42): Kapitel h1, Seite h2, Abschnitte
 // darunter. Braucht deshalb Google Chrome (`channel: 'chrome'`), nicht Electron.
 //
-// Gemessen am 2026-09-14 an 1.0.0-beta.2: 57 Seiten → 118 PDF-Seiten, 11 MB, Lesezeichen 10/48/235
-// je Ebene, 349 interne Verweise mit Ziel. Drei Dinge, die dabei auffielen und deshalb unten stehen:
+// Gemessen am 2026-09-16 an 1.0.0-beta.2: 57 Quellseiten → 115 PDF-Seiten (pdfinfo), 10,9 MB,
+// getaggt, Lesezeichen 10/48/235 je Ebene. Die 118 hier waren die Zahl der Scratchpad-Fassung, aus
+// der das Skript entstand; die drei Seiten weniger kommen daher, dass Tabellen jetzt über einen
+// Seitenumbruch laufen dürfen. Wie viele Verweise und Bilder ein Lauf geprüft hat, sagt er seit
+// diesem Durchgang selbst - eine Zahl, die nur hier steht, veraltet still. Drei Dinge, die beim
+// ersten Lauf auffielen und deshalb unten stehen:
 //  - Das CSS der Vorlage gibt Tabellen 16 px Außenabstand je Seite; mit `width: 100%` stand jede
 //    Tabelle um 16 px über den Druckrand (121 Elemente im ersten Lauf).
 //  - Die Zwischenüberschriften der Kapitel-Startseiten („Die Seiten dieses Kapitels") landeten als
@@ -167,7 +171,11 @@ function findProblems() {
   const ids = new Set([...document.querySelectorAll('[id]')].map((e) => e.id))
   const deadLinks = [...document.querySelectorAll('a[href^="#"]')].filter((a) => !ids.has(a.getAttribute('href').slice(1))).map((a) => `${where(a)}: ${a.getAttribute('href')}`)
   const brokenImages = [...document.images].filter((i) => !i.complete || i.naturalWidth === 0).map((i) => `${where(i)}: ${i.getAttribute('src')}`)
-  return { overflow: [...overflow], deadLinks, brokenImages }
+  // Gezählt, nicht nur geprüft: Die Zahl der geprüften Verweise und Bilder stand bisher nur im
+  // Kopf dieser Datei, und eine Zahl, die kein Lauf ausspricht, ist beim nächsten Lesen eine
+  // Erinnerung. Sie gehört nicht in `found` - das sind die Befunde, die abbrechen.
+  const counted = { links: document.querySelectorAll('a[href^="#"]').length, images: document.images.length }
+  return { problems: { overflow: [...overflow], deadLinks, brokenImages }, counted }
 }
 
 export async function buildHandbookPdf({ site = SITE, out = OUT } = {}) {
@@ -210,7 +218,7 @@ ${sections.join('\n')}
     await page.emulateMedia({ media: 'print', colorScheme: 'light' })
     await page.setContent(html, { waitUntil: 'networkidle' })
     await page.evaluate(() => document.fonts.ready)
-    const problems = await page.evaluate(findProblems)
+    const { problems, counted } = await page.evaluate(findProblems)
     const found = Object.entries(problems).filter(([, list]) => list.length)
     if (found.length) {
       throw new Error(
@@ -233,7 +241,10 @@ ${sections.join('\n')}
         `<span>QuartzControl – Handbuch ${VERSION}</span><span><span class="pageNumber"></span> / <span class="totalPages"></span></span></div>`
     })
     const count = parts.reduce((n, p) => n + p.pages.length, 0)
-    console.log(`[handbuch-pdf] ${count} Seiten, ${(fs.statSync(out).size / 1024 / 1024).toFixed(1)} MB → ${path.relative(ROOT, out)}`)
+    console.log(
+      `[handbuch-pdf] ${count} Seiten, ${counted.links} interne Verweise mit Ziel, ${counted.images} Bilder, ` +
+        `${(fs.statSync(out).size / 1024 / 1024).toFixed(1)} MB → ${path.relative(ROOT, out)}`
+    )
     return out
   } finally {
     await browser?.close()

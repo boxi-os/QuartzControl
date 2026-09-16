@@ -613,6 +613,14 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
       missingNow.length > 0
         ? mainT('updatePackagesReinstalled', { packages: missingNow.map((entry) => entry.name).join(', ') })
         : '',
+      // The `planApplies` here reads like it could withhold a true sentence - upstream changed
+      // those packages whether or not this run touched the files. Measured (seventeenth review,
+      // follow-up to its "only read" note): there is no way in. Every reason for `planApplies` to
+      // be false is a reason git refuses the merge as soon as upstream touches the two files -
+      // an unreproducible edit and a three-way staged file both end in "Your local changes to the
+      // following files would be overwritten by merge: package.json", so this line is never
+      // reached with a non-empty list. Left as it is, because loosening it changes nothing and a
+      // condition that mirrors the one above is easier to read than one that does not.
       planApplies && plan.upstreamWins.length > 0
         ? mainT('updatePackagesUpstreamWins', { packages: plan.upstreamWins.join(', ') })
         : ''

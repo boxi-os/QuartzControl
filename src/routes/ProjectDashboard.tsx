@@ -117,7 +117,7 @@ function Skeleton({ className = '' }: { className?: string }): JSX.Element {
 
 // ------------------------------------------------------------------------------------------
 
-type BusyKind = 'server' | 'build' | 'snapshot'
+type BusyKind = 'build' | 'snapshot'
 
 interface Issue {
   id: string
@@ -281,10 +281,14 @@ export default function ProjectDashboard(): JSX.Element {
   // Not setServer on the answer, for the same reason as in BuildServer: the subscription carries
   // every transition, and a start that waits for a one-off build answers seconds after the page
   // already knows what happened.
-  const startServer = (): Promise<void> => withBusy('server', () => api.server.start(project.id, project.path).then(() => undefined))
-  const stopServer = (): Promise<void> => withBusy('server', () => api.server.stop(project.id))
-  const restartServer = (): Promise<void> =>
-    withBusy('server', () => api.server.restart(project.id, project.path).then(() => undefined))
+  //
+  // And not under withBusy either, for the same reason again: that call is answered when the
+  // spawn happens, which is after the build it waits for, so the flag would hold all three buttons
+  // disabled for a whole build - on the page whose only way out of `starting` is "Stoppen". The
+  // state the subscription carries says which button belongs there; nothing else has to.
+  const startServer = (): Promise<void> => api.server.start(project.id, project.path).then(() => undefined)
+  const stopServer = (): Promise<void> => api.server.stop(project.id)
+  const restartServer = (): Promise<void> => api.server.restart(project.id, project.path).then(() => undefined)
 
   const runBuild = (): Promise<void> =>
     withBusy('build', async () => {
@@ -306,7 +310,6 @@ export default function ProjectDashboard(): JSX.Element {
     server.state === 'running' && server.options
       ? `http://${server.options.host || 'localhost'}:${server.options.port}`
       : null
-  const serverTransitioning = server.state === 'starting' || server.state === 'stopping'
   // What Quartz is doing right now, from the main process - a build started on another page shows here too.
   const activity = useBuildActivity(project.id)
   const buildRunning = activity?.kind === 'build'
@@ -486,25 +489,26 @@ export default function ProjectDashboard(): JSX.Element {
               </span>
             )}
           </Facts>
+          {/* "Stoppen" from `starting` on, not only from `running`, the same way Vorschau & Build
+              has it: a start now waits for a one-off build into the same folder, so `starting`
+              lasts a whole build - and for that whole build this was a state with no way out, on
+              the page that had just offered the button. Only `stopping` disables it, because that
+              is the one transition a second click cannot help. */}
           <div className="flex flex-wrap items-center gap-2">
-            {server.state === 'running' ? (
-              <Button variant="danger" onClick={stopServer} disabled={isBusy('server') || serverTransitioning}>
-                <span className="inline-flex items-center gap-1.5">
-                  <Square size={12} aria-hidden /> {t('dashboard.stop')}
-                </span>
-              </Button>
-            ) : (
-              <Button onClick={startServer} disabled={isBusy('server') || serverTransitioning}>
+            {server.state === 'stopped' || server.state === 'error' ? (
+              <Button onClick={startServer}>
                 <span className="inline-flex items-center gap-1.5">
                   <Play size={12} aria-hidden /> {t('dashboard.start')}
                 </span>
               </Button>
+            ) : (
+              <Button variant="danger" onClick={stopServer} disabled={server.state === 'stopping'}>
+                <span className="inline-flex items-center gap-1.5">
+                  <Square size={12} aria-hidden /> {t('dashboard.stop')}
+                </span>
+              </Button>
             )}
-            <Button
-              variant="ghost"
-              onClick={restartServer}
-              disabled={isBusy('server') || serverTransitioning || server.state !== 'running'}
-            >
+            <Button variant="ghost" onClick={restartServer} disabled={server.state !== 'running'}>
               <span className="inline-flex items-center gap-1.5">
                 <RotateCw size={12} aria-hidden /> {t('dashboard.restart')}
               </span>

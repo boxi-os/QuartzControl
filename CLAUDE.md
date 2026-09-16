@@ -94,11 +94,14 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   das war er für jedes `@quartz-community/*`-Plugin —, und weil die Gegenprobe sofort einen Rand fand,
   der beim Lesen richtig aussah (`path.basename` trennt am Backslash nur auf win32)
 - `npm run check:core-update` — der Plan, nach dem das Core-Update `package.json` und
-  `package-lock.json` behandelt: acht Fälle gegen `shared/packageJsonDeps.ts` (das Skript lädt die
+  `package-lock.json` behandelt: elf Fälle gegen `shared/packageJsonDeps.ts` (das Skript lädt die
   Datei, statt sie abzuschreiben), dazu die npm-Aufrufe, die daraus entstehen. Braucht weder App
   noch Projekt noch Netz. Existiert, weil ein falscher Plan wie ein gelungenes Update aussieht und
   erst auffällt, wenn ein Paket fehlt, das vorher da war — und weil er schon beim ersten Lauf einen
-  Rand zeigte: Ohne Vergleichsstand ist *jeder* Schlüssel eine Abweichung, also Finger weg
+  Rand zeigte: Ohne Vergleichsstand ist *jeder* Schlüssel eine Abweichung, also Finger weg. Die
+  drei Fälle ab dem sechzehnten Review sind die, die vorher niemand gestellt hatte: ein umgepinntes
+  Paket (die Typdoku nannte „re-pinned“, kein Fall prüfte es), eines, das beide Seiten mit demselben
+  Bereich hinzugefügt haben, und eines, das von `dependencies` nach `devDependencies` gewandert ist
 - `npm run check:i18n` — every literal `t('…')` and `mainT('…')` key against `de.ts`, `en.ts` and
   `electron/main/i18n.ts`, plus de/en parity in both directions. A literal counts wherever it can be
   the key (both branches of `t(cond ? 'a' : 'b')`, the values of `mainT({…}[x])`); a key built from a
@@ -275,7 +278,16 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   (`shared/packageJsonDeps.ts`), nimmt Quartz' Fassung beider Dateien und lässt npm die eigenen
   Pakete zurückschreiben. Was der Plan nicht nachspielen kann — ein lokal entferntes Paket, eine
   Änderung außerhalb der Abhängigkeitsblöcke —, fasst die App nicht an: Dann entscheidet git, und
-  der Nutzer liest die Meldung, die er auch vorher las. Messungen in
+  der Nutzer liest die Meldung, die er auch vorher las. Drei Ränder, die das sechzehnte Review
+  gemessen hat und die jetzt dazugehören: **Die zwei Dateien werden nicht weggeworfen, sondern an
+  git gegeben** (`git stash push -m 'QuartzControl: core update'`), weil ein Merge aus mehr Gründen
+  hängen bleibt als wegen ihrer — bei einem halb fertigen Merge bleibt der Stash stehen und
+  `abortCoreMerge` poppt ihn nach `merge --abort`. **Der Plan fragt die Merge-Basis, die Türen
+  öffnen sich gegen HEAD**, also gibt es einen zweiten Vergleich (`localPackageChanges(head, ours,
+  head)`) für das, was der Reset wegnimmt, und `stillMissing()` für das, was die gemergte Datei
+  noch nicht sagt. **Und angefasst wird nur, was `git ls-files` führt**: `git checkout -- a b` ist
+  alles oder nichts, und ein Pfad, den HEAD nicht kennt, wird im Konflikt als gelöscht aufgelöst
+  statt mit `--theirs` zurückgeholt. Messungen in
   [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md).
 - **Ein Kindprozess, der die App überleben soll, hängt nicht an einer Pipe zu ihr.** Die Leseenden
   von stdout/stderr sterben mit dem Prozess, der sie hält, und der nächste Schreibversuch des Kindes
@@ -292,7 +304,11 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   (`assertOutputFree()`, im Handler vor der Ordner-Rückfrage und noch einmal in `runBuild`), mit
   den zwei Wegen in der Meldung; „Starten“ dagegen **wartet** auf den laufenden Build, weil nur
   diese Richtung warten kann, ohne dass jemand ein zweites Mal klickt — und sagt in der Konsole,
-  worauf. `stopping` zählt weiter als Schreiber. Ein Server aus einer früheren Sitzung gehört
+  worauf. **Das Warten hat dafür einen Eintrag** (`pendingStarts`, Status `starting`): Ein Fenster,
+  in dem der Status „stopped“ heißt und der Knopf „Starten“ dasteht, ist genau das, worauf ein
+  zweites Mal geklickt wird — und vor der Sperre war dieses Fenster die Dauer des Builds statt der
+  38 ms von `refreshAuthoredFrames`. Wer während des Wartens stoppt, bricht das Warten ab; es gibt
+  nichts zu signalisieren. `stopping` zählt weiter als Schreiber, ein wartender Start auch. Ein Server aus einer früheren Sitzung gehört
   keinem Eintrag und wird nicht gesehen; ihn zu finden hieße, bei jedem Klick Ports abzusuchen.
   Messungen in [`navigation-and-pages.md`](docs/decisions/navigation-and-pages.md).
 - **Wer einen Zustand aus fremden Ausgabezeilen liest, weiß, wessen Zeilen er liest.** Ob gerade
@@ -736,7 +752,11 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   `serverDiscovery.killServer()` genauso; beide fragen dieselbe Nadel gegen eine frisch gelesene
   Kommandozeile. Was die App selbst gestartet hat, wird nicht signalisiert, sondern über
   `stopServer()` beendet, sonst zeigt die Seite „Läuft" für einen Prozess, den es nicht mehr gibt.
-  Messungen in [`navigation-and-pages.md`](docs/decisions/navigation-and-pages.md).
+  **Dasselbe gilt für einen Map-Eintrag unter einer Projekt-ID**: Zwei Starts können sich
+  überlappen, und der `exit`-Handler des Verlierers löschte den Eintrag des Gewinners samt seinem
+  Satz in `running-servers.json` — geräumt wird nur, wenn `runningServers.get(id)?.process` noch
+  dieses Kind ist (`forgetServer()`). Messungen in
+  [`navigation-and-pages.md`](docs/decisions/navigation-and-pages.md).
 - **Ein Lesepfad legt nie `.quartz-gui/` an.** `quartzGuiPath()` zum Lesen, `quartzGuiDir()` zum
   Schreiben.
 - **`.quartz-gui/` und `Quartz-GUI:managed:` sind Namen auf fremder Platte und bleiben, wie sie
@@ -784,7 +804,7 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 
 ## Befunde aus den Reviews (Stand 2026-09-19)
 
-Alle fünfzehn Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
+Alle sechzehn Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht,
@@ -798,12 +818,46 @@ Alle fünfzehn Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVI
 [`docs/REVIEW-2026-09-16.md`](docs/REVIEW-2026-09-16.md) mit seinen neun und
 [`docs/REVIEW-2026-09-17.md`](docs/REVIEW-2026-09-17.md) mit seinen vier und
 [`docs/REVIEW-2026-09-18.md`](docs/REVIEW-2026-09-18.md) mit seinen vier und
-[`docs/REVIEW-2026-09-19.md`](docs/REVIEW-2026-09-19.md) mit seinen sieben (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-19-`) stehen als
+[`docs/REVIEW-2026-09-19.md`](docs/REVIEW-2026-09-19.md) mit seinen sieben und
+[`docs/REVIEW-2026-09-20.md`](docs/REVIEW-2026-09-20.md) mit seinen neun (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-20-`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](docs/REVIEW-2026-09-15.md) gehört nicht
 in diese Zählung: Die „fünfzehnte Runde“ las die Handbücher der zwei Plugins gegen deren Code und
 aus diesem Repo nur zwei Commits der Beispielvorlage (`fe2b701`, `9592121`).
+
+**Das sechzehnte Review war das zweite Paar Augen nach der zweiten Beta** — es las
+`review-2026-09-20..review-2026-09-21` (30 Dateien, +1846/−83) und maß an sieben Wegen, darunter
+`runCoreUpdate` als esbuild-Bündel gegen ein lokales Upstream-Repo mit npm-Attrappen und die
+gebaute App gegen eine Projektkopie. Kein Befund der Stufe Hoch, zwei Mittel, sieben Niedrig, alle
+neun abgearbeitet. Beide mittleren lagen in den zwei Fixes, die der Auftrag als ungemessen benannt
+hatte, und beide waren Türen, die ein Fix erst geöffnet hatte: Der wartende Serverstart war für die
+Oberfläche unsichtbar, und das Core-Update warf die uncommitteten Paketeinträge weg, bevor es
+wußte, ob der Merge durchkommt. Was daraus als Regel bleibt, steht oben in den passenden
+Abschnitten:
+
+- **Eine Wartezeit, die niemand sieht, ist eine Einladung zum zweiten Klick** — und ein Map-Eintrag
+  unter einer Projekt-ID trägt so wenig über die Zeit wie eine PID. Gemessen: zwei Klicks kamen an
+  der Sperre vorbei, beide spawnten, der zweite starb am Port und löschte die Buchführung des
+  ersten; danach sagte die Seite „Fehler“ und bot „Starten“, während der erste Server lief.
+- **Wer etwas wegnimmt, um Platz zu machen, gibt es zurück, wenn der Platz nicht gebraucht wird** —
+  und zwar über git, nicht über den Arbeitsspeicher: ein Stash übersteht den halb fertigen Merge,
+  den `merge --abort` und die Sitzung, und `git stash list` zeigt ihn dem, der von Hand aufräumt.
+- **Zwei Fragen, zwei Vergleiche.** Der Plan fragt die Merge-Basis, die Türen öffnen sich gegen
+  HEAD. Eine uncommittete Entfernung wurde so stumm rückgängig gemacht, und ein Projekt auf dem
+  Stand installierte bei jedem Update nach, unter einer Zeile, die etwas behauptete, was nicht
+  geschah.
+- **Ein Wert, den ein fremdes Programm vergleicht** — noch einmal, diesmal ein Pathspec:
+  `git checkout -- a b` ist alles oder nichts, und für ein Projekt mit gitignoriertem Lockfile war
+  der Fix des Vorgängers still wirkungslos.
+- **Eine Zahl gehört zu dem, woran sie gemessen wurde** — dreimal: 118 PDF-Seiten für eine Fassung,
+  die es nicht mehr gibt (es sind 115); ein Commit-Hash, den ein Amend überholt hat; und eine
+  `curl`-Kette, die einen Tag später nicht mehr galt, weil Quartz ein `sharp` pinnt, das
+  `brew --prefix` fragt statt `brew environment`. Das PDF-Skript sagt seine Zahlen seit diesem
+  Durchgang selbst.
+- **Ein Handgriff, der nur in einer Commit-Nachricht steht** — noch einmal, und diesmal in der
+  Liste, die genau dagegen entstand: `docs/release.md` deckte vier der Handgriffe nicht, die Beta 2
+  gebraucht hat.
 
 **Das fünfzehnte Review las die vier Fixes des vierzehnten, den Merge und alles, was danach vor der
 zweiten Beta kam** (`review-2026-09-19..fix/review-2026-09-18`, 33 Dateien, +1036/−143) — und war

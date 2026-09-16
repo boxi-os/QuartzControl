@@ -1390,6 +1390,18 @@ an der gebauten, nicht an der gepackten App.
 die Fixes des zwölften (`review-2026-09-17..fix/review-2026-09-16`) und die Lücke
 `review-2026-09-14..review-2026-09-16` (unten), in der die zwölf Fixes des elften liegen.
 
+**Das zwanzigste Review misst ab `review-2026-09-24`** und liest bis `review-2026-09-25`, das auf
+dem Commit „Der Auftrag für das zwanzigste Review“ (`main`) sitzt — dem Stand, den es liest; der
+Auftrag steht in [`docs/REVIEW-2026-09-24-auftrag.md`](docs/REVIEW-2026-09-24-auftrag.md). Sein
+Diff sind die sieben Fixes des neunzehnten Reviews und die zwei Dokumentations-Commits daneben:
+ohne Review-Dokument und Auftragsdatei 9 Dateien, +353/−41 (davon 12 Zeilen dieser Absatz, den
+der Auftrags-Commit mitbringt), im App-Code 6 Dateien, +169/−27. Als
+größtes Risiko nennt der Auftrag den `resuming`-Amend — das erste Mal, dass die App einen Commit
+umschreibt, den sie nicht in diesem Lauf gemacht hat, mit `git branch -r --contains HEAD` als
+einzigem Wächter. `review-2026-09-24` sitzt auf `ff4feba` („Der Auftrag für das neunzehnte
+Review“), dem Stand, den das neunzehnte Review gelesen hat; mit dem Fast-Forward vom 2026-09-16
+liegt er in `main`.
+
 **Das siebzehnte Review misst ab `review-2026-09-21`** und liest bis `review-2026-09-22`, das auf
 dem Commit „Der Auftrag für das siebzehnte Review“ (`fix/review-2026-09-20`) sitzt — dem Stand, den
 es liest. **Hier steht bewusst kein Hash**: Der Hash des Commits, der diesen Satz trägt, kann nicht

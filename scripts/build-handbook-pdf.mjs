@@ -181,12 +181,14 @@ function findProblems() {
 
 // Die Seitenzahl des fertigen PDFs, aus ihm selbst gelesen: gezählt werden die Seitenobjekte
 // (`/Type /Page`), die Chromes PDF-Ausgabe unkomprimiert schreibt. Nicht über `/Count`, obwohl das
-// näher läge: Chrome baut bei dieser Größe einen Seitenbaum mit Zwischenknoten, deren achtzehn
-// `/Type /Pages`-Objekte alle `/Count 8` tragen, und das größte `/Count` im Dokument gehört dem
-// Lesezeichenbaum (293). Gegengeprüft mit `pdfinfo`: 115 zu 115 am Handbuch, 3 zu 3 an einem
-// dreiseitigen Testdokument, während dasselbe Handbuch über `/Count` 8 ergab. `null` statt einer
-// geratenen Zahl, wenn kein Seitenobjekt zu finden ist - eine Zahl, die nicht gemessen ist, gehört
-// nicht in diese Zeile.
+// näher läge, denn man müsste den *richtigen* Knoten treffen: Chrome baut bei dieser Größe einen
+// Seitenbaum aus 18 `/Type /Pages`-Objekten - 14 mit `/Count 8`, eines mit 3, zwei Zwischenknoten
+// mit 64 und 51, und der Wurzelknoten, auf den der Katalog mit `/Pages 781 0 R` zeigt, mit 115
+// (14 × 8 + 3). Der erste Treffer im Dokument ist also eine 8, und das größte `/Count` (293)
+// gehört dem Lesezeichenbaum, nicht den Seiten. Gemessen am ausgelieferten
+// `release/QuartzControl-Handbuch-1.0.0-beta.2.pdf`, gegengeprüft mit `pdfinfo`: 115 zu 115, und
+// 3 zu 3 an einem dreiseitigen Testdokument. `null` statt einer geratenen Zahl, wenn kein
+// Seitenobjekt zu finden ist - eine Zahl, die nicht gemessen ist, gehört nicht in diese Zeile.
 function pdfPageCount(file) {
   const found = fs.readFileSync(file).toString('latin1').match(/\/Type\s*\/Page[^s]/g)
   return found ? found.length : null

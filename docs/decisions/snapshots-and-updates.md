@@ -183,4 +183,25 @@ in n7b, hätte also einem Nutzer, dessen Einträge der Knopf gleich zurückträg
 zu einem Stand, den es nicht mehr gibt — samt Rat `git stash drop`. Das ist Befund 4 des
 achtzehnten Reviews noch einmal, in der anderen Richtung und mit dem schlechteren Ausgang.
 
+**Nachtrag (2026-09-16, neunzehntes Review): der Lauf, der die Arbeit eines früheren zu Ende
+bringt, darf dessen Merge-Commit auch nachbessern.** Der Amend hing an `ourMergeCommit`, und das
+ist nur gesetzt, wo *dieser* Lauf den Merge geschrieben hat. Nach einem gescheiterten
+`npm install` hat HEAD sich im zweiten Lauf nicht bewegt, also amendet er nicht — obwohl HEAD der
+Merge-Commit ist, den der erste Lauf geschrieben hat, und die Notiz genau diesen SHA trägt.
+Szene n10 (= x1 mit `git status` danach; Klon von A, Theme committet, Upstream B, npm scheitert im
+ersten Lauf):
+
+    vorher   HEAD unbewegt, `git status`:  M package-lock.json   — von npm geschrieben, unter
+             Git-Sync eine Änderung, die niemand gemacht hat
+    nachher  HEAD amendet (bb9eaa7 → df6fa49), `git status` sauber
+
+Gelesen wird dafür, was ohnehin dasteht: der SHA in der Notiz gegen HEAD, dazu der Betreff von
+HEAD gegen `MERGE_MESSAGE` — der SHA war bis dahin ein Wert, der gespeichert wurde und nichts
+entschied. **Nicht aber, wenn der Commit die Maschine schon verlassen hat:** Ein Merge, den der
+Nutzer unter Git-Sync gepusht hat, wird nicht umgeschrieben, um eine Datei aufzuräumen. Szene n10p
+(wie n10, dazwischen `refs/remotes/origin/local` auf HEAD gesetzt): beide Fassungen lassen HEAD
+stehen, `M package-lock.json` bleibt — die schlechtere der zwei Möglichkeiten ist die, die
+veröffentlichte Historie anfasst. Gegenprobe „norm“ (ein Lauf, npm funktioniert): beide Fassungen
+Zeile für Zeile gleich.
+
 **git cannot write through a symbolic link, so every git operation that touches `content/` must park it first.** With the content folder symlinked into an Obsidian vault — a headline feature — a core update died with `error: 'content/.gitkeep' is beyond a symbolic link` / `fatal: stash failed`, raw, in the output pane. `withContentSymlinkParked()` unlinks the link (not the vault), runs the operation, then discards whatever git wrote into a real `content/` and restores the link in a `finally`. The merge, its abort **and** a snapshot restore all need it - and for the restore that means its *whole write phase*, not only the optional `git reset --hard`. Measured on a project whose `content/` pointed at a vault: a whole-project restore reported `success: true` with empty output and left `content/` as a real directory holding the snapshot's old notes, i.e. the project silently disconnected from the vault, while a per-file restore of a `content/` path would have written *into* the vault. The parking helper's `finally` throws those files away with the temporary directory, which is the deliberate answer rather than a gap: a vault is the user's own primary data with its own backup and is never overwritten from a snapshot - so the result says so in a line of its own. Only wrapped when the restore actually reaches `content/`, so restoring one config file never unlinks the vault even briefly. Verified end to end, conflict-and-abort included, with the vault untouched throughout.

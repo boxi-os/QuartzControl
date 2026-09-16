@@ -292,6 +292,22 @@ async function stillMissing(projectPath: string, reinstall: PackageAddition[]): 
 // answers the question itself - see stashBase.
 const CORE_UPDATE_STASH = 'QuartzControl: core update'
 
+/** The subject of the merge commit this app writes - and, one run later, how a run recognises it
+ *  again at HEAD (see the amend in runCoreUpdateFrom). */
+const MERGE_MESSAGE = 'Merge quartz-upstream (via QuartzControl)'
+
+async function headSubject(projectPath: string): Promise<string> {
+  const subject = await run('git', ['log', '-1', '--format=%s'], projectPath)
+  return subject.success ? subject.output.trim() : ''
+}
+
+/** Whether HEAD is already on a remote-tracking branch, i.e. has left this machine. A commit that
+ *  has is not one to amend, however tidy the result would be. */
+async function headIsPushed(projectPath: string): Promise<boolean> {
+  const contains = await run('git', ['branch', '-r', '--contains', 'HEAD'], projectPath)
+  return !contains.success || contains.output.trim() !== ''
+}
+
 function stashMessage(mergeCommit: string): string {
   return `${CORE_UPDATE_STASH} ${mergeCommit}`
 }
@@ -351,13 +367,17 @@ async function hasCoreUpdateStash(projectPath: string): Promise<boolean> {
  * nineteenth review, finding 3: `.quartz-gui/` at 555, EACCES out of the run, npm never called,
  * the next run back to "Already up to date."). So both writes say so and carry on - the note is a
  * pointer, not a result, and a run that cannot write it should still install.
+ *
+ * The SHA it stores is read, not decoration: it is how the run that finishes an earlier run's work
+ * knows that the merge commit at HEAD is the one that run wrote - see the amend below.
  */
 const PENDING_UPDATE_FILE = 'core-update.json'
 
-async function installPending(projectPath: string): Promise<boolean> {
+/** The commit the outstanding install belongs to, or '' for "nothing outstanding". */
+async function installPendingFor(projectPath: string): Promise<string> {
   // Reading must not create the directory - see quartzGuiPath.
   const raw = await readJsonFileOr<{ installPendingFor?: unknown }>(quartzGuiPath(projectPath, PENDING_UPDATE_FILE), {})
-  return typeof raw.installPendingFor === 'string' && raw.installPendingFor !== ''
+  return typeof raw.installPendingFor === 'string' ? raw.installPendingFor : ''
 }
 
 async function markInstallPending(projectPath: string, head: string): Promise<void> {
@@ -613,7 +633,7 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     // HEAD before the merge, to tell "nothing to fetch" from "merged something" without reading
     // git's English. A merge that does anything moves HEAD, fast-forward or merge commit alike.
     const headBefore = (await run('git', ['rev-parse', 'HEAD'], projectPath)).output.trim()
-    const merge = await run('git', ['merge', 'FETCH_HEAD', '-m', 'Merge quartz-upstream (via QuartzControl)'], projectPath)
+    const merge = await run('git', ['merge', 'FETCH_HEAD', '-m', MERGE_MESSAGE], projectPath)
     let mergeOutput = merge.output
     // Set only where *we* wrote the merge commit, which is the one commit this run may amend. A
     // fast-forward leaves upstream's own commit at HEAD, and amending that would rewrite history
@@ -692,7 +712,8 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     // run committed the merge and then never got its `npm install` through - see
     // PENDING_UPDATE_FILE, which is the second half of this question (eighteenth review, finding 1).
     const headAfter = (await run('git', ['rev-parse', 'HEAD'], projectPath)).output.trim()
-    if (headBefore && headAfter === headBefore && !(await installPending(projectPath))) {
+    const pendingFor = await installPendingFor(projectPath)
+    if (headBefore && headAfter === headBefore && pendingFor === '') {
       const restored = await releaseNpmOwnedFiles(projectPath, held)
       const pending =
         !restored && held.kind === 'held' && plan.localEdits.reinstall.length > 0
@@ -749,7 +770,22 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     // Both files were committed before this run (that is why they conflicted), so they belong in
     // the commit that resolved them rather than standing in Git-Sync as a change nobody made. Only
     // these two paths are staged, so anything else the user is working on stays untouched.
-    if (ourMergeCommit && tracked.length > 0) {
+    //
+    // `resuming` is the same commit one run later: an earlier run wrote the merge and then failed
+    // at `npm install`, so this run had nothing to fetch and `ourMergeCommit` is false - while HEAD
+    // *is* that merge commit. The note says which one with the SHA it stored, and the subject says
+    // the commit is this app's. Measured (nineteenth review, finding 5): without this the lockfile
+    // npm had just rewritten stood in Git-Sync as ` M package-lock.json`, a change nobody made.
+    // Not if the commit has left this machine, though: amending a merge the user has already
+    // pushed under Git-Sync would rewrite published history to tidy up one file, which is the worse
+    // of the two.
+    const resuming =
+      !ourMergeCommit &&
+      pendingFor !== '' &&
+      pendingFor === headAfter &&
+      (await headSubject(projectPath)) === MERGE_MESSAGE &&
+      !(await headIsPushed(projectPath))
+    if ((ourMergeCommit || resuming) && tracked.length > 0) {
       await run('git', ['add', '--', ...tracked], projectPath)
       await run('git', ['commit', '--amend', '--no-edit'], projectPath)
     }

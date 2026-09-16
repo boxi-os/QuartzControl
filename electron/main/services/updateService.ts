@@ -143,6 +143,21 @@ function explainGitFailure(output: string): string {
 // rewritten by npm. See shared/packageJsonDeps.ts for what that buys and what it costs.
 const NPM_OWNED_FILES = ['package.json', 'package-lock.json']
 
+// Which of the two git actually has under version control. `git checkout -- a b` is all or
+// nothing: one pathspec it does not know and it checks out neither, with exit 1 and a message
+// about the pathspec - measured on a repo whose package-lock.json had been taken out of the index
+// and gitignored, where package.json stayed modified and the plan below ran on a working tree it
+// believed it had reset. A project may well do that; the lockfile is generated, and ignoring it is
+// a defensible choice.
+async function trackedNpmOwnedFiles(projectPath: string): Promise<string[]> {
+  const listed = await run('git', ['ls-files', '--', ...NPM_OWNED_FILES], projectPath)
+  if (!listed.success) return []
+  return listed.output
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+}
+
 async function mergeInProgress(projectPath: string): Promise<boolean> {
   return (await run('git', ['rev-parse', '-q', '--verify', 'MERGE_HEAD'], projectPath)).success
 }
@@ -240,13 +255,20 @@ export async function runCoreUpdate(projectPath: string): Promise<UpdateResult> 
 
   return withContentSymlinkParked(projectPath, async () => {
     const plan = await planPackageFiles(projectPath)
+    const tracked = await trackedNpmOwnedFiles(projectPath)
     // Kept in memory so a merge that never starts - a symlink, a local change in some *other*
     // file - leaves the project exactly as it was found.
     const saved = plan.reproducible ? await readNpmOwnedFiles(projectPath) : []
-    if (plan.reproducible) {
+    // Whether the plan is actually in charge of these two files, as opposed to `reproducible`,
+    // which only says the plan could be worked out. The step below has to succeed as well: if it
+    // does not, the files are still in the working tree and git answers the way it did before this
+    // plan existed - which is a usable answer, but only if nothing afterwards assumes otherwise.
+    let planApplies = plan.reproducible
+    if (planApplies) {
       // Takes both files back to HEAD so git has nothing to overwrite. Nothing is lost that npm
       // cannot write again: what the plan holds is a list of packages and the ranges asked for.
-      await run('git', ['checkout', 'HEAD', '--', ...NPM_OWNED_FILES], projectPath)
+      const reset = tracked.length > 0 && (await run('git', ['checkout', 'HEAD', '--', ...tracked], projectPath))
+      if (!reset || !reset.success) planApplies = false
     }
 
     const merge = await run('git', ['merge', 'FETCH_HEAD', '-m', 'Merge quartz-upstream (via QuartzControl)'], projectPath)
@@ -258,11 +280,23 @@ export async function runCoreUpdate(projectPath: string): Promise<UpdateResult> 
     if (!merge.success) {
       const conflictFiles = await conflictedFiles(projectPath)
       const onlyNpmOwned = conflictFiles.length > 0 && conflictFiles.every((file) => NPM_OWNED_FILES.includes(file))
-      if (plan.reproducible && onlyNpmOwned) {
+      if (planApplies && onlyNpmOwned) {
         // The case that used to leave the project stuck: both sides wrote the same two generated
         // files. Upstream's copy wins and npm writes the local packages back in below.
-        const resolved = await run('git', ['checkout', '--theirs', '--', ...NPM_OWNED_FILES], projectPath)
-        const staged = resolved.success && (await run('git', ['add', '--', ...NPM_OWNED_FILES], projectPath)).success
+        // The conflicted paths, not the pair: a conflicted file is by definition one git knows,
+        // and only those have a "theirs" side to check out. A path HEAD does not track is a
+        // modify/delete the other way round - the project took its lockfile out of the index and
+        // gitignored it, upstream changed it. Taking upstream's copy would put it back under
+        // version control against that decision; resolving as "still deleted" leaves the file on
+        // disk for npm to rewrite and the index the way the project wanted it.
+        const takeTheirs = conflictFiles.filter((file) => tracked.includes(file))
+        const keepDeleted = conflictFiles.filter((file) => !tracked.includes(file))
+        const resolved =
+          takeTheirs.length === 0 || (await run('git', ['checkout', '--theirs', '--', ...takeTheirs], projectPath)).success
+        const dropped =
+          keepDeleted.length === 0 || (await run('git', ['rm', '--cached', '--force', '--', ...keepDeleted], projectPath)).success
+        const staged =
+          resolved && dropped && (takeTheirs.length === 0 || (await run('git', ['add', '--', ...takeTheirs], projectPath)).success)
         const committed = staged && (await run('git', ['commit', '--no-edit'], projectPath))
         if (!committed || !committed.success) {
           return {
@@ -279,9 +313,9 @@ export async function runCoreUpdate(projectPath: string): Promise<UpdateResult> 
         // it was found; or it is half-done and stays that way for the abort button on the page -
         // in which case the packages are named, because they are no longer in package.json.
         const inProgress = await mergeInProgress(projectPath)
-        if (!inProgress) await restoreNpmOwnedFiles(projectPath, saved)
+        if (!inProgress && planApplies) await restoreNpmOwnedFiles(projectPath, saved)
         const pending =
-          inProgress && plan.reinstall.length > 0
+          inProgress && planApplies && plan.reinstall.length > 0
             ? `\n\n${mainT('updatePackagesPending', { packages: plan.reinstall.map((entry) => entry.name).join(', ') })}`
             : ''
         return {
@@ -295,7 +329,7 @@ export async function runCoreUpdate(projectPath: string): Promise<UpdateResult> 
 
     // One `npm install` per dependency section when this project has packages of its own, and a
     // plain one otherwise. Either way npm writes the lockfile that upstream's copy just replaced.
-    const installCalls = plan.reinstall.length > 0 ? reinstallCommands(plan.reinstall) : [{ args: ['install'] }]
+    const installCalls = planApplies && plan.reinstall.length > 0 ? reinstallCommands(plan.reinstall) : [{ args: ['install'] }]
     let installOutput = ''
     for (const call of installCalls) {
       const install = await run('npm', call.args, projectPath)
@@ -306,7 +340,7 @@ export async function runCoreUpdate(projectPath: string): Promise<UpdateResult> 
         // what was taken out. Without this line the way back (the restore point, or installing them
         // again) needs a list the user no longer has.
         const missing =
-          plan.reinstall.length > 0
+          planApplies && plan.reinstall.length > 0
             ? `\n\n${mainT('updatePackagesMissing', { packages: plan.reinstall.map((entry) => entry.name).join(', ') })}`
             : ''
         return {
@@ -320,16 +354,18 @@ export async function runCoreUpdate(projectPath: string): Promise<UpdateResult> 
     // Both files were committed before this run (that is why they conflicted), so they belong in
     // the commit that resolved them rather than standing in Git-Sync as a change nobody made. Only
     // these two paths are staged, so anything else the user is working on stays untouched.
-    if (ourMergeCommit) {
-      await run('git', ['add', '--', ...NPM_OWNED_FILES], projectPath)
+    if (ourMergeCommit && tracked.length > 0) {
+      await run('git', ['add', '--', ...tracked], projectPath)
       await run('git', ['commit', '--amend', '--no-edit'], projectPath)
     }
 
     const packageNotes = [
-      plan.reinstall.length > 0
+      planApplies && plan.reinstall.length > 0
         ? mainT('updatePackagesReinstalled', { packages: plan.reinstall.map((entry) => entry.name).join(', ') })
         : '',
-      plan.upstreamWins.length > 0 ? mainT('updatePackagesUpstreamWins', { packages: plan.upstreamWins.join(', ') }) : ''
+      planApplies && plan.upstreamWins.length > 0
+        ? mainT('updatePackagesUpstreamWins', { packages: plan.upstreamWins.join(', ') })
+        : ''
     ]
       .filter(Boolean)
       .join('\n')

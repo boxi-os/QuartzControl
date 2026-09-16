@@ -1531,9 +1531,10 @@ betreffen sie nicht, der vierte ist ein Kommentar in `shared/gridFrameCss.ts`. `
 bleibt, wo er ist, weil der Auftrag des zwölften Reviews mit ihm rechnet.
 
 **Die fünf Fixes des zwanzigsten Reviews und die vier aus seiner Nebenbei-Liste liegen bewusst
-dahinter** (`fix/review-2026-09-24`, von `main` abgezweigt, als Fast-Forward darin, nicht
-gepusht): ohne Review-Dokument 9 Dateien, +425/−63, im App-Code 4 Dateien, +189/−52 — nachgerechnet gegen den Commit, der diese Zeilen
-trägt, nicht gegen den davor. Gemessen an drei Wegen: `runCoreUpdate` und
+dahinter** (`fix/review-2026-09-24`, von `main` abgezweigt, seit dem 2026-09-17 als Fast-Forward
+darin — `main` steht damit 36 Commits vor `origin/main`, gepusht ist nichts): ohne Review-Dokument
+9 Dateien, +426/−63, im App-Code 4 Dateien, +189/−52 — nachgerechnet gegen den Commit, der diese
+Zeilen trägt, nicht gegen den davor. Gemessen an drei Wegen: `runCoreUpdate` und
 `abortCoreMerge` als esbuild-Bündel in zwei Fassungen gegen ein lokales Upstream-Repo mit den
 Ständen A/B/D/E (A = Ausgangsstand, B = Paketversionen gehoben, D = nur `quartz/index.ts`,
 E = beides), npm- und npx-Attrappen, je Szene ein frischer Klon — a4 (die gestagete Fremddatei

@@ -344,8 +344,13 @@ async function hasCoreUpdateStash(projectPath: string): Promise<boolean> {
  * Written as "something is outstanding" rather than "this run finished", so that a project that is
  * simply up to date keeps the shortcut it was given: reading it the other way round would make the
  * first update of every existing project a full install again, which is exactly what the shortcut
- * was for. The price of that direction is that an unwritable file reads as "nothing outstanding" -
- * the behaviour of before this note existed.
+ * was for. The price of that direction is one the *reading* half pays: a file that is not there
+ * reads as "nothing outstanding", the behaviour of before this note existed. An unwritable one is
+ * not that price - writeFileAtomic throws, and unhandled that ended the run between the merge
+ * commit and `npm install`, in the very state the note was invented to describe (measured,
+ * nineteenth review, finding 3: `.quartz-gui/` at 555, EACCES out of the run, npm never called,
+ * the next run back to "Already up to date."). So both writes say so and carry on - the note is a
+ * pointer, not a result, and a run that cannot write it should still install.
  */
 const PENDING_UPDATE_FILE = 'core-update.json'
 
@@ -656,8 +661,16 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     // upstream's copy just replaced.
     // From here on package.json is upstream's and node_modules is not: anything that ends this run
     // before the warm-up build below leaves the project in that state, and the note says so to the
-    // next run.
-    await markInstallPending(projectPath, headAfter)
+    // next run. If it cannot be written the run goes on and says so - see PENDING_UPDATE_FILE.
+    let noteFailure = ''
+    const noteFailed = (error: unknown): void => {
+      noteFailure = `\n\n${mainT('updateNoteUnwritable', { reason: error instanceof Error ? error.message : String(error) })}`
+    }
+    try {
+      await markInstallPending(projectPath, headAfter)
+    } catch (error) {
+      noteFailed(error)
+    }
 
     const missingNow = planApplies ? await stillMissing(projectPath, plan.reinstall) : []
     const installCalls = missingNow.length > 0 ? reinstallCommands(missingNow) : [{ args: ['install'] }]
@@ -680,7 +693,7 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
             : ''
         return {
           success: false,
-          output: `${mergeOutput}\n\n${mainT('npmInstallFailed')}\n${installOutput}${missing}`,
+          output: `${mergeOutput}\n\n${mainT('npmInstallFailed')}\n${installOutput}${missing}${noteFailure}`,
           snapshotId
         }
       }
@@ -724,11 +737,15 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     // The window is closed: npm has written both files and the build has had its turn. A warm-up
     // build that failed closes it too - it does not undo the merge and install, the note above says
     // so, and a rerun of the whole update would not build anything the next "Jetzt bauen" does not.
-    await clearInstallPending(projectPath)
+    try {
+      await clearInstallPending(projectPath)
+    } catch (error) {
+      noteFailed(error)
+    }
 
     return {
       success: true,
-      output: `${mergeOutput}\n${installOutput}${packageNotes ? `\n${packageNotes}` : ''}${warmupNote}`,
+      output: `${mergeOutput}\n${installOutput}${packageNotes ? `\n${packageNotes}` : ''}${warmupNote}${noteFailure}`,
       snapshotId
     }
   })

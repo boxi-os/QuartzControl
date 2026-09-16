@@ -90,8 +90,9 @@ Volldurchlauf gemacht, also genau das zurückgeholt, was der Absatz darüber abg
 gemessen in Szene „up“ (Projekt aktuell, Theme uncommittet): mit der Notiz als „fertig für HEAD“
 lief ein `npm install --save-prod` samt Aufwärm-Build, mit der Notiz als „steht aus“ null npm- und
 null npx-Aufrufe und eine unberührte `package.json`. Nachher in x1: zweiter Lauf mit `npm install`
-und einem `npx`, Lockfile von npm. Der Preis der Richtung steht am Code: Eine unschreibbare Datei
-liest sich als „nichts steht aus“, also wie vorher.
+und einem `npx`, Lockfile von npm. Der Preis der Richtung steht am Code, und er gehört der
+*Lesehälfte*: Eine fehlende Datei liest sich als „nichts steht aus“, also wie vorher. Eine
+unschreibbare war etwas anderes — siehe den Nachtrag unten.
 
 *Der Stash war an den Merge-Commit gebunden, nicht an den HEAD, gegen den er entstand.* Derselbe
 Merge kann zweimal versucht werden, und zwischen den Versuchen kann HEAD sich bewegen — der
@@ -126,5 +127,29 @@ untere bleibt `stash@{0}` — dass der Abbruch ihn dabei nicht erwähnt, steht w
 
 **Zwei Ausgänge des Konfliktzweigs sagten nicht, was geschah.** Szene s4: Der Lauf bleibt mit „Diese eigenen Pakete stehen gerade nicht in package.json“ stehen, der Nutzer trägt daraufhin ein Paket von Hand ein, und „Merge abbrechen“ antwortet roh mit `error: Entry 'package.json' not uptodate. Cannot merge.` / `fatal: Could not reset index file to revision 'HEAD'.` — git nennt die Datei, aber nicht den einen Weg weiter, und es ist genau die Datei, die die Meldung davor selbst genannt hat. Szene s13: ein `pre-commit`-Hook mit `exit 1` im Projekt lässt den Merge-Commit scheitern; zurück kam die Merge-Ausgabe mit `conflicts: [package.json]` für eine Datei, die die App gerade selbst aufgelöst hatte, während der Grund in `committed.output` liegen blieb. `explainGitFailure` kennt jetzt `not uptodate`, und der `!committed`-Zweig hängt die Ausgabe des Commits an; „Merge abbrechen“ nach s13 räumt weiter auf und stellt den vorgefundenen Arbeitsbereich her.
 
+
+**Nachtrag (2026-09-16, neunzehntes Review): eine Notiz, die sich nicht schreiben lässt, hält den
+Lauf nicht auf.** Der Satz „der Preis der Richtung ist, dass eine unschreibbare Datei sich als
+‚nichts steht aus‘ liest“ stand am Code, in diesem Dokument und im Auftrag — und der Code tat
+etwas anderes: `writeJsonFile` geht über `writeFileAtomic`, das bei jedem Fehler wirft, und beide
+Aufrufe standen ohne `catch`. Szene n1 (Klon von A, Theme committet, ein Lauf gegen A legt
+`.quartz-gui/` an, dann `chmod 555 .quartz-gui`, Upstream B, npm funktioniert), gegen dasselbe
+esbuild-Bündel in zwei Fassungen:
+
+    vorher   Lauf 1: Konflikt → --theirs → Merge-Commit → EACCES aus markInstallPending,
+                     unbehandelt; 0 npm, 0 npx, Theme weg, Lockfile Upstreams
+             Lauf 2 (wieder schreibbar): „Already up to date.“, success true, 0 npm, 0 npx
+    nachher  Lauf 1: Merge-Commit, npm install --save-prod @quartz-themes/default@^1.2.0,
+                     npx quartz build, Theme zurück, success true — und der Satz dazu
+             Lauf 2: „Already up to date.“, diesmal zu Recht
+
+Die zweite Tür ist `clearInstallPending` hinter dem Aufwärm-Build; gemessen in Szene n1b mit einem
+`npx`, das `.quartz-gui` beim Bauen selbst auf 555 setzt: vorher dieselbe Ausnahme *nach* Merge,
+Install und Build, der Aufrufer bekam statt `success: true` einen Wurf; nachher `success: true`,
+die Notiz bleibt auf „steht aus“, und der nächste Lauf bezahlt sie mit einem überflüssigen Install
+(npm 2 / npx 2 über beide Läufe, in beiden Fassungen gleich). Die Notiz ist ein Zeiger und kein
+Ergebnis: Ein Lauf, der sie nicht schreiben kann, soll installieren und es sagen
+(`updateNoteUnwritable`). Die Lesehälfte bleibt, wie sie war — eine *kaputte* Datei wird
+beiseitegelegt, eine fehlende liest sich als „nichts“.
 
 **git cannot write through a symbolic link, so every git operation that touches `content/` must park it first.** With the content folder symlinked into an Obsidian vault — a headline feature — a core update died with `error: 'content/.gitkeep' is beyond a symbolic link` / `fatal: stash failed`, raw, in the output pane. `withContentSymlinkParked()` unlinks the link (not the vault), runs the operation, then discards whatever git wrote into a real `content/` and restores the link in a `finally`. The merge, its abort **and** a snapshot restore all need it - and for the restore that means its *whole write phase*, not only the optional `git reset --hard`. Measured on a project whose `content/` pointed at a vault: a whole-project restore reported `success: true` with empty output and left `content/` as a real directory holding the snapshot's old notes, i.e. the project silently disconnected from the vault, while a per-file restore of a `content/` path would have written *into* the vault. The parking helper's `finally` throws those files away with the temporary directory, which is the deliberate answer rather than a gap: a vault is the user's own primary data with its own backup and is never overwritten from a snapshot - so the result says so in a line of its own. Only wrapped when the restore actually reaches `content/`, so restoring one config file never unlinks the vault even briefly. Verified end to end, conflict-and-abort included, with the vault untouched throughout.

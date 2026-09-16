@@ -122,6 +122,11 @@ const STRINGS = {
     // die Datei, nicht aber den einen Weg weiter.
     updateAbortBlockedByEdit:
       'Eine Datei aus dem Zusammenführen wurde inzwischen geändert, deshalb lässt sich das Update nicht abbrechen. Verwirf die Änderung an der unten genannten Datei unter Git-Sync und brich dann erneut ab.\n\n',
+    // Die Notiz, mit der sich ein Lauf beim nächsten meldet, ließ sich nicht schreiben. Sie ist ein
+    // Zeiger und kein Ergebnis, also läuft das Update weiter - gesagt wird es trotzdem, weil der
+    // nächste Lauf sich danach anders verhält, als er sollte.
+    updateNoteUnwritable:
+      'Die Notiz zu diesem Update ließ sich nicht schreiben ({{reason}}). Das Update lief trotzdem zu Ende; der nächste Lauf kann deshalb noch einmal installieren oder „nichts zu tun“ melden.',
     npmInstallFailed: 'npm install ist fehlgeschlagen:',
     warmupBuild: 'Aufwärm-Build:',
     serverLogUnavailable:
@@ -385,6 +390,8 @@ const STRINGS = {
       'Your stashed package entries could not be put back and are still in git (“git stash list”).',
     updateAbortBlockedByEdit:
       'A file from the merge has been changed since, so the update cannot be cancelled. Discard the change to the file named below under Git sync, then cancel again.\n\n',
+    updateNoteUnwritable:
+      'The note for this update could not be written ({{reason}}). The update still ran to the end; the next run may therefore install again or report “nothing to do”.',
     npmInstallFailed: 'npm install failed:',
     warmupBuild: 'Warm-up build:',
     serverLogUnavailable:

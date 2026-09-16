@@ -807,7 +807,7 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 
 ## Befunde aus den Reviews (Stand 2026-09-21)
 
-Alle sechzehn Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
+Alle siebzehn Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht,
@@ -822,12 +822,49 @@ Alle sechzehn Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIE
 [`docs/REVIEW-2026-09-17.md`](docs/REVIEW-2026-09-17.md) mit seinen vier und
 [`docs/REVIEW-2026-09-18.md`](docs/REVIEW-2026-09-18.md) mit seinen vier und
 [`docs/REVIEW-2026-09-19.md`](docs/REVIEW-2026-09-19.md) mit seinen sieben und
-[`docs/REVIEW-2026-09-20.md`](docs/REVIEW-2026-09-20.md) mit seinen neun (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-20-`) stehen als
+[`docs/REVIEW-2026-09-20.md`](docs/REVIEW-2026-09-20.md) mit seinen neun und
+[`docs/REVIEW-2026-09-21.md`](docs/REVIEW-2026-09-21.md) mit seinen acht (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-21-`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](docs/REVIEW-2026-09-15.md) gehört nicht
 in diese Zählung: Die „fünfzehnte Runde“ las die Handbücher der zwei Plugins gegen deren Code und
 aus diesem Repo nur zwei Commits der Beispielvorlage (`fe2b701`, `9592121`).
+
+**Das siebzehnte Review las die zehn Fixes des sechzehnten** —
+`review-2026-09-21..review-2026-09-22` ohne Review-Dokument und Auftrag, 13 Dateien, +520/−101,
+davon im App-Code 6 Dateien, +322/−74 — und maß an sieben Wegen, darunter `runCoreUpdate` in zwei
+Fassungen als esbuild-Bündel gegen ein lokales Upstream-Repo, git allein in Wegwerf-Klonen und die
+gebaute App mit mitgeschriebenen Statusereignissen. Kein Befund der Stufe Hoch, einer Mittel,
+sieben Niedrig, alle acht abgearbeitet. Beide Fixes des Vorgängers tragen; der mittlere Befund saß
+in dem, was der Auftrag als größtes Risiko genannt hatte — der Stash ist neu, und nichts band ihn
+an den Lauf, der ihn geschrieben hat. Was daraus als Regel bleibt, steht oben in den passenden
+Abschnitten:
+
+- **Ein Ding, das einem Vorgang gehört, wird nach dem Vorgang benannt, nicht nach dem Werkzeug.**
+  „Merge abbrechen“ verglich den Betreff von `refs/stash`; wer einen hängenden Merge einmal von
+  Hand auflöst, behält den Stash, kein späterer Lauf sagt es, und beim nächsten Konflikt poppt der
+  Knopf ihn auf einen HEAD, gegen den er nie gemacht wurde — `UU` in beiden Paketdateien,
+  Konfliktmarker, kein gültiges JSON, unter `success: true`. Die Nachricht trägt jetzt den Commit,
+  und `abortCoreMerge` liest `MERGE_HEAD`, bevor `merge --abort` ihn wegwirft.
+- **Was ein fremdes Programm getan hat, sagt sein Ergebnis, nicht sein Exit-Code.**
+  `git stash push -- <pfade>` legt den Stash an, nimmt beide Dateien und endet trotzdem mit 1, wenn
+  der Index vor HEAD steht und der Arbeitsbereich auf HEAD. Der Besitz hängt jetzt am Ref.
+- **Wer etwas hält, das er nicht zurückgeben kann, hält es gar nicht erst.** Der Plan liest den
+  Arbeitsbereich, der Stash hält auch den Index; wo eine Datei auf drei Ständen zugleich steht,
+  fasst die App sie nicht an — dieselbe Regel wie für jede andere Änderung, die der Plan nicht
+  nachspielen kann.
+- **Eine Wartezeit, die man sehen kann, braucht auch einen Ausgang** — und eine Zeit, die einen
+  Prozess beschreibt, entsteht mit ihm. Seit ein Start auf einen Build wartet, dauert `starting`
+  einen Build: Die Übersicht bot in dieser Zeit „Starten“ und „Neu starten“ an, beide deaktiviert,
+  und `startedAt` stand auf der Klickzeit.
+- **Zwei Arten zu scheitern bekommen zwei Antworten** — noch einmal, im Konfliktzweig: Ein Abbruch,
+  den git verweigert, kam roh, und der Grund eines gescheiterten Merge-Commits kam gar nicht an.
+- **Eine Regel ohne ihr Experiment ist eine Behauptung.** Drei Regeln verwiesen auf Messungen in
+  `docs/decisions/`, die dort nicht standen; sie standen in Review-Dokumenten und
+  Commit-Nachrichten, also in den Dateien, gegen die die Regel daneben geschrieben wurde.
+- **Eine Zahl gehört zu dem, woran sie gemessen wurde** — dreimal: `brew.sh:183` gilt nur für root
+  (der Schnellpfad ist das `exit 0` in Zeile 112), „nur in Commit-Nachrichten“ traf drei der vier
+  Handgriffe, und das PDF-Skript sagte „57 Seiten“ für ein PDF mit 115. Es zählt jetzt beide.
 
 **Das sechzehnte Review war das zweite Paar Augen nach der zweiten Beta** — es las
 `review-2026-09-20..review-2026-09-21` (30 Dateien, +1846/−83) und maß an sieben Wegen, darunter
@@ -1297,6 +1334,23 @@ dazu `electron-builder.yml` und in `scripts/` +1298/−140. Die fünfzehnte Rund
 ausdrücklich mit, und es hat ihn gelesen: die Lücke ist geschlossen, drei seiner vier Befunde
 betreffen sie nicht, der vierte ist ein Kommentar in `shared/gridFrameCss.ts`. `review-2026-09-16`
 bleibt, wo er ist, weil der Auftrag des zwölften Reviews mit ihm rechnet.
+
+**Die acht Fixes des siebzehnten Reviews liegen bewusst dahinter** (`fix/review-2026-09-20`,
+auf `4d2b50d` = `review-2026-09-22`, nicht gepusht und nicht nach `main` gemergt). Sie sind
+gemessen, und von niemandem sonst gelesen. Der Messweg für die Update-Befunde ist der des
+Vorgängers, um einen vierten Upstream-Stand und ein zweites Bündel erweitert: zwei Fassungen von
+`updateService` als esbuild-Bündel gegen ein lokales Repo mit den Ständen A/B/B2/C/D, npm- und
+npx-Attrappen, je Szene ein frischer Klon — s2b (der veraltete Stash), s5 (Index ≠ Arbeitsbereich),
+s4 und s13 (die zwei stummen Ausgänge), dazu s1, s8, s11 und s14 als Gegenprobe in beiden
+Fassungen. `git stash push` allein in vier Ausgangslagen. `startedAt` an einem Bündel von
+`buildService` mit einer npx-Attrappe. Die Knöpfe der Übersicht an der gebauten App mit
+Wegwerf-Profil gegen eine `cp -Rc`-Kopie von `navigations-testprojekt`, vorher und nachher. Das
+PDF an einem echten Lauf gegen `pdfinfo`. Die größten Eingriffe sind die SHA am Stash samt dem
+`MERGE_HEAD`-Blick in `abortCoreMerge`, der Index-Wächter `stagedApartFromWorkingTree()`, der
+`withBusy`-freie Serverteil der Übersicht und `pdfPageCount()`. Neu sind drei Texte in `i18n.ts`
+(`updateStashLeftover`, `updateStashPopFailed`, `updateAbortBlockedByEdit`) und sieben Absätze in
+`docs/decisions/`. Nicht gemessen: die gepackte App, ein echtes `npm install`, die VMs. Sie gehören
+damit in den Diff des nächsten Auftrags.
 
 **Die sieben Fixes des fünfzehnten Reviews liegen bewusst dahinter** (`fix/review-2026-09-18`,
 `12dd7d9..b25f61b`, dazu `311f929` im Handbuch-Vault). Gemessen: das Demo-Skript an einer

@@ -482,6 +482,9 @@ export async function startServer(
   // asynchronous, and for as long as nothing describes the start the page shows the button that
   // asks for it again. The renderer already swaps "Starten" for "Neu starten"/"Stoppen" on
   // `starting`, so the abort is where it always was.
+  //
+  // `startedAt` here is the click, which is all there is to say while there is no process; both
+  // pages show it only for `running`, and spawnServer sets it to the spawn before that.
   const status: ServerStatus = { state: 'starting', options, startedAt: new Date().toISOString() }
   const pending: PendingStart = { status, outputDir, aborted: false }
   pendingStarts.set(projectId, pending)
@@ -540,6 +543,12 @@ function spawnServer(
   // Now the pid exists, so the files can take their final name and the tails can start on it.
   log?.adopt(child.pid)
   status.pid = child.pid
+  // Reset here, where the process comes into being, and not in startServer where the click did:
+  // the two are the same moment only when nothing was waited for. With a build in front of the
+  // start they are a whole build apart, and both pages read this as "Gestartet vor …" for a
+  // process that young - measured (seventeenth review, finding 5): 10 seconds said for a process
+  // 6.5 seconds old, and on Example the build is 16 to 19 seconds.
+  status.startedAt = new Date().toISOString()
   runningServers.set(projectId, { process: child, status, outputDir })
   emitStatus(projectId)
   if (child.pid) void runningServersStore.record(projectId, { pid: child.pid, port: options.port, startedAt: status.startedAt! })

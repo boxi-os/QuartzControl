@@ -357,6 +357,10 @@ async function holdNpmOwnedFiles(projectPath: string, tracked: string[], mergeCo
 async function releaseNpmOwnedFiles(projectPath: string, held: HeldFiles): Promise<boolean> {
   if (held.kind !== 'held') return true
   if ((await stashRef(projectPath)) !== held.sha) return false
+  // `--index` with the plain pop as a fallback, for the reason spelled out at popCoreUpdateStash:
+  // the merge never started here, so the project goes back exactly as it was found - staging
+  // included.
+  if ((await run('git', ['stash', 'pop', '--index'], projectPath)).success) return true
   return (await run('git', ['stash', 'pop'], projectPath)).success
 }
 
@@ -384,7 +388,17 @@ async function popCoreUpdateStash(
     const leftover = (await hasCoreUpdateStash(projectPath)) ? `\n\n${mainT('updateStashLeftover')}` : ''
     return { success: true, output: leftover }
   }
-  const popped = await run('git', ['stash', 'pop'], projectPath)
+  // `--index`, because an abort should hand the project back the way it was found. A plain pop
+  // restores the content but not the staging: measured against git 2.54, a `M ` (staged) goes back
+  // as ` M` (unstaged), while with `--index` it stays `M `. For an unstaged change the two are
+  // identical, so this only ever adds.
+  //
+  // git says `--index` "may fail" where a plain pop would get through, so the plain one is still
+  // the fallback - and it is safe to try in that order: measured on a pop that could not apply,
+  // `--index` left the working tree, the index and the stash exactly as it found them, so nothing
+  // is applied twice.
+  let popped = await run('git', ['stash', 'pop', '--index'], projectPath)
+  if (!popped.success) popped = await run('git', ['stash', 'pop'], projectPath)
   // A pop that hits a conflict leaves the stash standing, which is the right end - but it is not
   // an abort that put the project back, and saying "erfolgreich" over git's conflict output is how
   // the user learns about it at the next build instead of now.

@@ -44,6 +44,17 @@ Das allein hätte den Verlust endgültig gemacht statt ihn im liegengebliebenen 
 
 **Angefasst wird nur, was `git ls-files` führt (2026-09-16).** `git checkout -- a b` ist alles oder nichts: Ein Pfadspec, den git nicht kennt, und es checkt *keinen* der beiden aus, mit Exit 1 und einer Meldung über den Pfadspec. Gemessen an einem Projekt, dessen `package-lock.json` aus dem Index genommen und gitignoriert war — `package.json` blieb modifiziert, und der Plan lief auf einem Arbeitsbereich, den er für zurückgesetzt hielt. Ein Projekt darf das: Das Lockfile ist erzeugt, es zu ignorieren ist eine vertretbare Entscheidung. Im Konfliktzweig hat derselbe Rand eine zweite Hälfte: Ein Pfad, den HEAD nicht kennt, ist ein modify/delete andersherum, und ihn mit `--theirs` zurückzuholen stellte ihn gegen die Entscheidung des Projekts wieder unter Versionskontrolle — er wird stattdessen als „weiter gelöscht“ aufgelöst (`git rm --cached`), was die Datei für npm auf der Platte lässt und den Index so, wie das Projekt ihn wollte. Nachgemessen im siebzehnten Review, Szene s9: Das ignorierte Lockfile bleibt ignoriert.
 
+**Ein Pop gibt zurück, was er genommen hat — Staging eingeschlossen (2026-09-16).** `git stash pop`
+stellt den Inhalt wieder her, aber nicht den Index: Gemessen an git 2.54 in zwei Ausgangslagen geht
+ein gestagetes `M ` als ungestagetes ` M` zurück, während `--index` es als `M ` zurückgibt; für
+eine ungestagete Änderung sind beide Wege gleich. Durch den Dienst gemessen (Szene s1 mit
+`git add package.json` davor): vorgefunden `M `, nach „Merge abbrechen“ vorher ` M`, nachher `M `.
+Kein Datenverlust, aber ein anderer Zustand als der vorgefundene — und ein Abbruch ist das eine,
+was genau das nicht sein soll. git sagt, `--index` könne scheitern, wo ein einfacher Pop
+durchkommt, also bleibt der als Rückfall; die Reihenfolge ist gefahrlos, weil ein gescheitertes
+`--index` gemessen nichts anfasst (Arbeitsbereich, Index und Stash blieben, wie sie waren). Beide
+Pop-Stellen gehen den Weg, `popCoreUpdateStash` wie `releaseNpmOwnedFiles`.
+
 **Zwei Ausgänge des Konfliktzweigs sagten nicht, was geschah.** Szene s4: Der Lauf bleibt mit „Diese eigenen Pakete stehen gerade nicht in package.json“ stehen, der Nutzer trägt daraufhin ein Paket von Hand ein, und „Merge abbrechen“ antwortet roh mit `error: Entry 'package.json' not uptodate. Cannot merge.` / `fatal: Could not reset index file to revision 'HEAD'.` — git nennt die Datei, aber nicht den einen Weg weiter, und es ist genau die Datei, die die Meldung davor selbst genannt hat. Szene s13: ein `pre-commit`-Hook mit `exit 1` im Projekt lässt den Merge-Commit scheitern; zurück kam die Merge-Ausgabe mit `conflicts: [package.json]` für eine Datei, die die App gerade selbst aufgelöst hatte, während der Grund in `committed.output` liegen blieb. `explainGitFailure` kennt jetzt `not uptodate`, und der `!committed`-Zweig hängt die Ausgabe des Commits an; „Merge abbrechen“ nach s13 räumt weiter auf und stellt den vorgefundenen Arbeitsbereich her.
 
 

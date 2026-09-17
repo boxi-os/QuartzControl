@@ -1570,12 +1570,14 @@ das auf dem Commit „Der Auftrag für das zweiundzwanzigste Review“ (`main`) 
 es liest; der Auftrag steht in
 [`docs/REVIEW-2026-09-26-auftrag.md`](docs/REVIEW-2026-09-26-auftrag.md). Sein Diff sind die sieben
 Fixes des einundzwanzigsten Reviews und die sechs Punkte seiner Nebenbei-Liste: ohne
-Review-Dokument und Auftragsdatei 18 Dateien, +636/−104, im App-Code 13 Dateien, +345/−86. Als
+Review-Dokument und Auftragsdatei 18 Dateien, +662/−104, im App-Code 13 Dateien, +345/−86. Als
 größtes Risiko nennt der Auftrag zwei Dinge, die über ihren Anlass hinausreichen: `filesAtHead`,
 das zum ersten Mal über *zwei Läufe hinweg* entscheidet, ob die App einen Commit umschreibt, und
 `carried` ohne SHA-Bindung — eine Paketliste, die jetzt gilt, gleich zu welchem Commit die Notiz
-gehört. Daneben das `w-fit` am Drag-Chip, das die Zahl bewegt, mit der beide Tastatur-Bretter
-rechnen, und das nur für die Tastatur gemessen ist. `review-2026-09-26` sitzt auf `93ba8bb` („Der
+gehört. Beide sind nach dem Auftrag an drei echten Läufen nachgemessen worden (Nachtrag in
+[`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md)); das Risiko bleibt, wo die
+Läufe nicht hinreichen. Daneben das `w-fit` am Drag-Chip, das die Zahl bewegt, mit der beide
+Tastatur-Bretter rechnen, und das nur für die Tastatur gemessen ist. `review-2026-09-26` sitzt auf `93ba8bb` („Der
 Auftrag für das einundzwanzigste Review“), dem Stand, den das einundzwanzigste Review gelesen hat;
 er ist gepusht.
 
@@ -1692,11 +1694,14 @@ vier Texte in `electron/main/i18n.ts` (`configNotParseable`, `configPluginsNotAL
 App mit echten Tastendrücken** — Wegwerf-Profil und Projektkopie im Scratchpad, `colorscheme
 none`, eine Kopie des Treibers mit `--user-data-dir` (im Repo liegt keine): Layout-Board und
 Frame-Builder je waagerecht und senkrecht, vorher und nachher, dazu die Konfigurations- und die
-Stile-Seite gegen eine fehlende und eine syntaktisch kaputte `quartz.config.yaml`. **Nicht
-gemessen**: ein echter Lauf gegen `github.com/jackyzha0/quartz` mit echtem npm (die drei des
-Reviews sind die einzigen dieser Serie), die gepackte App, die VMs, ERESOLVE, und der Maus-Drag
-mit dem schmalen Chip (der Zeiger entscheidet dort, nicht das Rechteck). Sie gehören damit in den
-Diff des nächsten Auftrags.
+Stile-Seite gegen eine fehlende und eine syntaktisch kaputte `quartz.config.yaml`. **Und
+nachgeholt: drei echte Läufe** gegen `github.com/jackyzha0/quartz` mit echtem `git fetch`, echtem
+npm und durch die gebaute App, je eine `cp -Rc`-Kopie von `navigations-testprojekt` auf `f1fba3f`
+zurückgesetzt — zwei Fehlschläge samt Fortsetzung (die Notiz hält ihre Liste, der `resuming`-Amend
+läuft), uncommittete Paketzeilen bei sauberem Merge (sie bleiben uncommittet) und die Gegenprobe
+mit committeten Dateien (der Amend läuft). **Nicht gemessen**: die gepackte App, die VMs, ERESOLVE,
+ein echter Push unter Git-Sync, und der Maus-Drag mit dem schmalen Chip (der Zeiger entscheidet
+dort, nicht das Rechteck). Sie gehören damit in den Diff des nächsten Auftrags.
 
 **Die sechs Punkte seiner Nebenbei-Liste sind mit abgearbeitet**, und einer war größer als sein
 Platz: **Das gezogene Rechteck im Frame-Builder war nie das, was gezogen wurde.** dnd-kit gibt dem

@@ -4,12 +4,13 @@ entscheidet.
 
 ## Was diese Runde anders macht
 
-**Diese Runde hat kein einziges Mal gegen eine echte Gegenseite gemessen.** Die Runde davor hatte
-das Core-Update zum ersten Mal an einem echten Repo mit echtem npm laufen lassen und dabei einen
-Fehler gefunden, den vier Runden Attrappen nicht finden konnten. Diese Runde hat wieder nur
-Attrappen benutzt — und dabei zwei Türen geschlossen, die *genau dort* saßen, wo der echte Lauf
-hingesehen hatte. **Prüf, ob die Attrappen die Lage treffen, die sie nachstellen sollen.** Wo sie
-es nicht tun, ist das der Befund.
+**Diese Runde hat erst an Attrappen gemessen und die echten Läufe nachgeholt.** Alle sieben Befunde
+und alle sechs Nebenbei-Punkte sind an einem lokalen Bare-Repo und npm-Skripten entstanden; die
+drei Läufe gegen `github.com/jackyzha0/quartz` mit echtem npm kamen danach, in einem eigenen
+Commit, und haben die zwei mittleren Befunde bestätigt. **Prüf, ob die Attrappen die Lage treffen,
+die sie nachstellen sollen** — und ob die drei echten Läufe die Fälle treffen, für die die Fixes
+gebaut wurden. Wo sie es nicht tun, ist das der Befund. Die Runde davor hat gezeigt, dass genau
+hier ein Fix verdeckt werden kann.
 
 **Dafür ist zum ersten Mal in dieser Serie die Oberfläche das Messmittel gewesen.** Sechs Punkte
 aus der Nebenbei-Liste des Reviews sind mit erledigt, und vier davon ließen sich nur an der
@@ -42,19 +43,19 @@ Auftrag dazu steht in `docs/REVIEW-2026-09-25-auftrag.md`.
 
 ## Umfang
 
-`main`, gepusht. Die achtzehn Commits zwischen `review-2026-09-26` und `review-2026-09-27`
-(siebzehn plus dieser Auftrag):
+`main`, gepusht. Die neunzehn Commits zwischen `review-2026-09-26` und `review-2026-09-27`
+(siebzehn, dieser Auftrag, und der Nachtrag über die echten Läufe danach):
 
     git log --oneline review-2026-09-26..review-2026-09-27
     git diff review-2026-09-26..review-2026-09-27 -- . \
       ':!docs/REVIEW-2026-09-25.md' ':!docs/REVIEW-2026-09-26-auftrag.md'
-    # 18 Dateien, +636 / −104
+    # 18 Dateien, +662 / −104
     # davon App-Code (electron/, src/):        13 Dateien, +345 / −86
-    # davon docs/decisions/:                    4 Dateien, +108 / −0
-    # davon CLAUDE.md:                          1 Datei,   +183 / −18
+    # davon docs/decisions/:                    4 Dateien, +129 / −0
+    # davon CLAUDE.md:                          1 Datei,   +188 / −18
 
 Ausgenommen sind zwei Dateien: `docs/REVIEW-2026-09-25.md` (das Review, das du liest, statt es zu
-prüfen) und diese Auftragsdatei. Mit dem Review-Dokument sind es 19 Dateien und +1044; die Differenz
+prüfen) und diese Auftragsdatei. Mit dem Review-Dokument sind es 19 Dateien und +1070; die Differenz
 von 408 Zeilen ist das Review. Lies den Auftrag als Behauptung wie jede andere — die Zahlen oben
 sind nach dem Commit nachgerechnet, der diese Datei trägt.
 
@@ -84,6 +85,10 @@ den das letzte Review gelesen hat. Die Commits:
 | — | `26022fa` | drei Nachträge in `docs/decisions/` |
 | — | `abe2e1e` | `CLAUDE.md`: vier Regeln, der Absatz auf dem Endstand |
 | — | — | dieser Auftrag |
+| Nachgeholt | s. u. | **drei echte Läufe gegen `jackyzha0/quartz`** — der Nachtrag dazu |
+
+Der letzte Commit ist nach diesem Auftrag entstanden und trägt keinen Hash in dieser Tabelle, aus
+demselben Grund wie der Auftrag selbst: `review-2026-09-27` sitzt auf ihm.
 
 **Nebenbei 4 fehlt in dieser Tabelle mit Absicht**: Dass die App in einem Projekt ohne
 `.gitignore` eine anlegt, ist kein Fehler, sondern die Entscheidung aus `projectDirs.ts`. Prüf das
@@ -97,7 +102,7 @@ kopieren ist in Ordnung — siehe „Wie gemessen werden kann“, bevor du eine 
 
 ## Was du wissen musst, bevor du liest
 
-**Alle siebzehn Commits stammen von demselben Modell, das diesen Auftrag schreibt**, aus einer
+**Alle achtzehn Commits stammen von demselben Modell, das diesen Auftrag schreibt**, aus einer
 Sitzung; das Review-Dokument `docs/REVIEW-2026-09-25.md` aus einer anderen. Lies Commit-Nachrichten
 als Behauptungen. In diesem Projekt gilt eine Zahl in einer Commit-Nachricht als Messung; trägt sie
 nicht, ist das ein Befund.
@@ -198,7 +203,7 @@ diese eine Seite, und sie ist in dieser Runde nur für eine beantwortet worden.
 
 ### 6. Die Dokumente (`7a9d31c`, `546816d`, `de9aaa6`, `26022fa`, `abe2e1e`)
 
-Sieben Nachträge in `docs/decisions/`, rund 183 neue Zeilen in `CLAUDE.md`, zehn neue Regeln. Jede
+Acht Nachträge in `docs/decisions/`, rund 188 neue Zeilen in `CLAUDE.md`, zehn neue Regeln. Jede
 Zahl darin ist eine Messung oder ein Befund. Zwei Stellen, an denen es diese Runde selbst schon
 einmal falsch hatte: die Diff-Zahlen dieses Absatzes (zweimal nachgerechnet, weil jede Korrektur
 die Zahl ändert) und die 178, die in einer Commit-Nachricht stand, bevor sie gezählt war.
@@ -237,17 +242,23 @@ oder eine kaputte `quartz.config.yaml`. Was misst du, das sie nicht messen?
   `[role="status"]`. Wer den Getter selbst verstehen will, baut eine Sonde hinein
   (`globalThis.__probe = {…}`) — so ist die Ursache dieser Runde gefunden worden, und ohne sie wäre
   der erste Fix als Erfolg durchgegangen.
-- **Der echte Lauf**, den diese Runde *nicht* gemacht hat und der die Mühe wert ist: `cp -Rc` von
-  `navigations-testprojekt`, dann `git reset --hard f1fba3f` — sieben Upstream-Commits zurück, von
-  denen fünf die Paketdateien anfassen —, die eigenen Pakete wieder in `package.json`,
-  `npm install`. Danach über die gebaute App: Projekt mit `window.quartzGui.projects.add` eintragen,
-  `window.quartzGui.updates.runCoreUpdate(pfad)` rufen. Ein Lauf dauert 8-9 Sekunden. npm zum
-  Scheitern bringen: `chmod 555 node_modules` (EACCES, vorübergehend) oder ein Paket, das es nicht
-  gibt (E404, dauerhaft) — nur das erste ist die Lage „der Nutzer behebt es und startet erneut“.
+- **Der echte Lauf**, dreimal gemacht und im Nachtrag zu `snapshots-and-updates.md` beschrieben:
+  `cp -Rc` von `navigations-testprojekt`, dann `git reset --hard f1fba3f` — sieben Upstream-Commits
+  zurück, von denen fünf die Paketdateien anfassen —, die eigenen Pakete wieder in `package.json`,
+  `npm install`. Danach über die gebaute App: Projekt in die `projects.json` des Wegwerf-Profils
+  eintragen (echte UUID), `window.quartzGui.updates.runCoreUpdate(pfad)` per `evalfile` rufen. npm
+  zum Scheitern bringen: `chmod 555 node_modules` (EACCES, vorübergehend) oder ein Paket, das es
+  nicht gibt (E404, dauerhaft) — nur das erste ist die Lage „der Nutzer behebt es und startet
+  erneut“. **Wo die eigenen Pakete im Abhängigkeitsblock stehen, entscheidet die Lage**:
+  alphabetisch neben `@quartz-themes/core` gibt es einen Konflikt in beiden Paketdateien, ans Ende
+  geschrieben mergt `package.json` sauber. Beides kommt vor, beides ist gemessen — such die dritte
+  Lage.
 - **Nicht gemessen** und deshalb offen für dich: die **gepackte** App; ein echter Push unter
   Git-Sync; ERESOLVE; die Notiz über einen Restore oder ein Duplikat hinweg; zwei Fenster derselben
   App; die VMs und die Linux-Pakete; der Maus-Drag mit dem schmalen Chip; die Sortierlisten in
-  `Plugins/Installed` und `Styles/CustomCss`.
+  `Plugins/Installed` und `Styles/CustomCss`. Und: was ein echter Lauf tut, wenn der Nutzer
+  *zwischen* zwei Läufen an den zwei Paketdateien arbeitet — die Lücke, die `filesAtHead` offen
+  lässt.
 
 ## Was diese Runde offen gelassen hat
 

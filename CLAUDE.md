@@ -321,7 +321,20 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   antwortet derselbe Zustand beim ersten Lauf anders als beim zweiten. Und **der Wächter davor
   sagt, was er misst**: `git branch -r --contains HEAD` findet ein Remote-Tracking-Ref, nicht
   „hat die Maschine verlassen“ — die Wege der App schreiben eines (`quartz sync` pusht mit `-u`),
-  ein Push per URL nicht, und eine lokale Spur davon gibt es ohne Netz nicht. Messungen in
+  ein Push per URL nicht, und eine lokale Spur davon gibt es ohne Netz nicht. Vier Ränder aus dem
+  einundzwanzigsten Review, drei davon an derselben Notiz: **Sie wird geschrieben, bevor sie
+  gelesen wird**, also mit dem, was der *nächste* Lauf braucht (`wanted`), nicht mit dem Plan
+  dieses Laufs — der ist im fortsetzenden Lauf leer, und die Liste überschrieb sich so selbst mit
+  `[]`, eine Zeile bevor sie benutzt wurde. **Die Bindung an den SHA gehört an das, was einen
+  Commit beschreibt**: an den Amend ja, an die Paketliste nicht — ein einziger Commit zwischen
+  zwei Läufen ließ sie sonst verfallen, und `stillMissing` räumt ohnehin weg, was schon dasteht.
+  **Und „weicht von HEAD ab“ ist nicht „npm hat es geschrieben“**: `--only` nimmt die Pfade aus
+  dem Arbeitsbereich, also committete der Amend nach einem sauberen Merge, was der Nutzer
+  uncommittet gehalten hat. Was das trennt, wird *vor* dem Merge gemessen (standen beide Dateien,
+  Index und Arbeitsbereich, auf HEAD?) und für den fortsetzenden Lauf als drittes Feld der Notiz
+  weitergereicht; eine Notiz ohne dieses Feld erlaubt nichts. Der vierte: **ein Rat, der einen
+  Befehl nennt, nennt auch sein Argument** — `git stash drop` ohne eines trifft den obersten
+  Eintrag, und der gehört dem Nutzer, sobald er selbst einen zurückgelegt hat. Messungen in
   [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md).
 - **Ein Kindprozess, der die App überleben soll, hängt nicht an einer Pipe zu ihr.** Die Leseenden
   von stdout/stderr sterben mit dem Prozess, der sie hält, und der nächste Schreibversuch des Kindes
@@ -797,7 +810,10 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
 - **Eine Kopie erbt keinen Pfad, der in das Original zeigt.** Config, Lockfile und Symlinks werden
   nach dem Kopieren umgeschrieben, alles Instanzgebundene (Ausgabeverzeichnis, Deploy-Manifeste,
   Worktrees, Snapshots, Ziele) bleibt zurück — `duplicateService.ts` führt beide Listen mit
-  Begründung.
+  Begründung. **Was dabei schiefgehen kann, wird gefragt, bevor kopiert wird**: Das Umschreiben
+  liest die Konfiguration und läuft *vor* `git remote remove origin`, also blieb ein Wurf dort als
+  halbe Kopie mit dem Remote des Originals liegen — das eine, was der Kommentar am Kopf der Datei
+  ausschließt (einundzwanzigstes Review).
 - **Eine PID trägt nicht über die Zeit.** Wer eine Prozessnummer aus einer Liste, einer Datei oder
   einem früheren Scan bekommt, prüft direkt vor dem Signal noch einmal, dass sie dasselbe Programm
   meint — das Betriebssystem vergibt Nummern wieder, und dazwischen liegt bei einer Liste in der
@@ -866,9 +882,9 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Befunde aus den Reviews (Stand 2026-09-24)
+## Befunde aus den Reviews (Stand 2026-09-25)
 
-Alle zwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
+Alle einundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht,
@@ -887,12 +903,55 @@ Alle zwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW
 [`docs/REVIEW-2026-09-21.md`](docs/REVIEW-2026-09-21.md) mit seinen acht und
 [`docs/REVIEW-2026-09-22.md`](docs/REVIEW-2026-09-22.md) mit seinen sieben und
 [`docs/REVIEW-2026-09-23.md`](docs/REVIEW-2026-09-23.md) mit seinen sieben und
-[`docs/REVIEW-2026-09-24.md`](docs/REVIEW-2026-09-24.md) mit seinen fünf (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-24-`) stehen als
+[`docs/REVIEW-2026-09-24.md`](docs/REVIEW-2026-09-24.md) mit seinen fünf und
+[`docs/REVIEW-2026-09-25.md`](docs/REVIEW-2026-09-25.md) mit seinen sieben (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-25-`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](docs/REVIEW-2026-09-15.md) gehört nicht
 in diese Zählung: Die „fünfzehnte Runde“ las die Handbücher der zwei Plugins gegen deren Code und
 aus diesem Repo nur zwei Commits der Beispielvorlage (`fe2b701`, `9592121`).
+
+**Das einundzwanzigste Review las die fünf Fixes des zwanzigsten, die vier aus seiner
+Nebenbei-Liste und den Befund aus dem ersten echten Core-Update** —
+`review-2026-09-25..review-2026-09-26` ohne Review-Dokument und Auftrag, 9 Dateien, +575/−76,
+davon im App-Code 4 Dateien, +250/−62 — und maß an vier Wegen: `runCoreUpdate`, `abortCoreMerge`,
+`readConfig`/`writeConfig` und `duplicateProject` als esbuild-Bündel in zwei Fassungen gegen ein
+lokales Upstream-Repo, **drei echte Läufe** gegen `github.com/jackyzha0/quartz` durch die gebaute
+App, die gebaute App mit echten Tastendrücken im Frame-Builder und am Layout-Board, und die
+Prüfskripte. Kein Befund der Stufe Hoch, **zwei Mittel, fünf Niedrig**, alle sieben abgearbeitet.
+Beide mittleren saßen dort, wo der Auftrag sie vermutet hat, und beide waren Türen, die ein Fix
+erst geöffnet hatte. Was daraus als Regel bleibt, steht oben in den passenden Abschnitten:
+
+- **Ein gespeicherter Wert wird geschrieben, bevor er gelesen wird — also mit dem, was der
+  *nächste* Lauf braucht, nicht mit dem, was dieser weiß.** Die Notiz trug `takenOut`, den Plan
+  dieses Laufs, und der ist im fortsetzenden Lauf leer: Sie überschrieb sich selbst mit `[]`,
+  eine Zeile bevor sie benutzt wurde, und überlebte damit genau einen Fehlschlag. Dass ein Fehler
+  beim zweiten Versuch noch da ist, ist bei EACCES, einem Proxy oder einem abgelaufenen Token der
+  Normalfall.
+- **Eine Bindung an einen SHA gehört an das, was einen Commit beschreibt.** Der Amend braucht
+  ihn, die Paketliste nicht: Sie beantwortet „was hat ein Update aus `package.json` genommen“, und
+  ein einziger Commit zwischen zwei Läufen — ein Git-Sync, eine Notiz im README — ließ sie
+  verfallen.
+- **„Weicht von HEAD ab“ ist nicht „npm hat es geschrieben“.** `--only` nimmt die Pfade aus dem
+  Arbeitsbereich, und seit der Amend auch nach einem sauberen Merge läuft, committet er, was der
+  Nutzer uncommittet gehalten hat — auch einen Eintrag, für den der Plan ausdrücklich „Finger
+  weg“ gesagt hat. Die Auskunft, die trägt, wird vor dem Merge genommen und für den fortsetzenden
+  Lauf in der Notiz weitergereicht; eine Notiz, die sie nicht kennt, erlaubt nichts.
+- **Ein Rat, der einen Befehl nennt, nennt auch sein Argument.** „`git stash drop` verwirft ihn“
+  traf den Eintrag des Nutzers, sobald der obenauf lag — gemessen: der Rat löschte wörtlich
+  befolgt dessen Arbeit und ließ unseren liegen.
+- **Zwei Arten, unlesbar zu sein, waren drei** (vier mit `plugins:`, das keine Liste ist), und die
+  häufigste — der Syntaxfehler — kam durch beide Wächter, weil `parseDocument()` dabei nicht
+  wirft, sondern `doc.errors` sammelt. **Und die Begründung daneben war eine Vorhersage, keine
+  Messung**: „das nächste Speichern schreibt darüber“ — `writeConfig` schreibt nicht darüber, es
+  wirft, und die Datei bleibt byte-gleich.
+- **Ein Wächter gehört vor den Schritt, den er verhindern soll.** Das Duplizieren las die
+  Konfiguration erst nach dem Kopieren und vor `git remote remove origin`, also blieb bei einem
+  Wurf eine halbe Kopie mit dem Remote des Originals zurück — das eine, was der Kommentar am Kopf
+  der Datei ausschließt.
+- **Eine Zahl gehört zu dem, woran sie gemessen wurde** — viermal, darunter ein Kommentar, der
+  die E404-Szene beschrieb, während drei andere Stellen denselben Befund mit EACCES und „removed
+  52 packages“ belegen, und keine die andere nannte.
 
 **Das zwanzigste Review las die sieben Fixes des neunzehnten** —
 `review-2026-09-24..review-2026-09-25` ohne Review-Dokument und Auftrag, 9 Dateien, +353/−41,
@@ -1567,6 +1626,45 @@ dazu `electron-builder.yml` und in `scripts/` +1298/−140. Die fünfzehnte Rund
 ausdrücklich mit, und es hat ihn gelesen: die Lücke ist geschlossen, drei seiner vier Befunde
 betreffen sie nicht, der vierte ist ein Kommentar in `shared/gridFrameCss.ts`. `review-2026-09-16`
 bleibt, wo er ist, weil der Auftrag des zwölften Reviews mit ihm rechnet.
+
+**Die sieben Fixes des einundzwanzigsten Reviews liegen bewusst dahinter**
+(`fix/review-2026-09-25`, von `main` abgezweigt): ohne Review-Dokument 7 Dateien, +402/−76, im
+App-Code 4 Dateien, +236/−60 — nachgerechnet gegen den Commit, der diese Zeilen trägt. Gemessen an
+**Attrappen, nicht an einem echten Lauf**: `runCoreUpdate` und `abortCoreMerge` als esbuild-Bündel
+in zwei Fassungen (dieser Stand und `main`, letzterer aus `git archive`) gegen ein lokales
+Upstream-Repo mit den Ständen A/D/E, npm in drei Betriebsarten (schreibt, scheitert, schreibt
+nichts) und einem npx, das 0 antwortet, je Szene ein eigenes Bare-Repo und ein frischer Klon —
+**h1** (npm scheitert zweimal, dritter Lauf), **h2** (ein eigener Commit zwischen zwei Läufen),
+**h5a/h5b/h5c** (uncommittete Paketeinträge, ein uncommitteter `scripts`-Eintrag, dasselbe mit
+einem npm, das nichts schreibt), **h6** (Konflikt in `package.json` neben einem zweiten,
+Terminal-Abbruch), **h7/h7b/h7c** (ein eigener Stash des Nutzers darüber, zwei Einträge der App,
+ein Eintrag, der auf HEAD passt), **h10** (der fortsetzende Lauf, D und E), **h11** (eine Notiz im
+alten Format), **s4** (beide Lagen), **norm** (der gewöhnliche Weg, D und E) — jede alt gegen neu.
+Dazu `readConfig` gegen zehn Dateien und `writeConfig` gegen fünf davon, `duplicateProject` gegen
+drei Quellen, und die Prüfskripte (`typecheck`, `build`, `smoke` mit 42 Aufrufen, `check:i18n` mit
+1111 + 178 Schlüsseln, `check:handbook` mit 26 Zitaten). Die größten Eingriffe sind das dritte Feld
+der Notiz (`filesAtHead`) samt dem Wächter vor dem Amend, `carried` ohne SHA-Bindung,
+`coreUpdateStashEntry` und die zwei neuen Würfe in `readConfig`. Neu sind drei Texte in `i18n.ts`
+(`configNotParseable`, `configPluginsNotAList`, `duplicateSourceConfigUnreadable`), geändert zwei
+(`updateStashLeftover`, `updateStashFitsHead`, beide mit `{{entry}}`), dazu fünf Nachträge in
+`docs/decisions/`. **Nicht gemessen**: ein echter Lauf gegen `github.com/jackyzha0/quartz` mit
+echtem npm (die drei des Reviews sind die einzigen dieser Serie), die gepackte App, die VMs,
+ERESOLVE, wo der Satz über eine unlesbare Konfiguration in der Oberfläche erscheint (der Weg
+dorthin ist unverändert, das Review hat ihn ausgezählt), und die sechs Punkte der Nebenbei-Liste,
+die unten stehen. Sie gehören damit in den Diff des nächsten Auftrags.
+
+**Sechs Punkte seiner Nebenbei-Liste sind nicht mit erledigt**: ein Schritt zurück auf den eigenen
+Platz wird am Layout-Board nicht angesagt (`dndAnnouncements.ts:29` gibt für
+`over.id === active.id` nichts zurück, die Region behält den letzten Satz — der Frame-Builder sagt
+in derselben Lage „header liegt über header“, also zwei Antworten); der erste waagerechte Druck aus
+einem breiten Bereich springt in die Mitte (gerechnet wird vom Zentrum des gezogenen Rects,
+abgelegt wird auf die Zelle als linke obere Ecke); `atomicWrite` in `configService.ts` prüft
+nichts, denn `parseDocument(contents) // fail fast` wirft nie — dieselbe Tür wie in Befund 5, eine
+Ebene weiter; die App legt in einem Projekt ohne `.gitignore` eine an (in *jeder* Attrappen-Szene
+dieser Runde stand danach `?? .gitignore`, vermutlich der Snapshot-Dienst); der Nachsatz auf der
+Konfigurationsseite („Existiert die Datei im Projektordner?“) steht auch unter einem Fehler, der
+gerade gesagt hat, dass die Datei da ist; und die Stile-Seite bleibt bei einem gescheiterten
+`config:get` auf „Lade…“ stehen, ohne Kopf und Reiter.
 
 **Die fünf Fixes des zwanzigsten Reviews und die vier aus seiner Nebenbei-Liste liegen bewusst
 dahinter** (`fix/review-2026-09-24`, von `main` abgezweigt, seit dem 2026-09-17 als Fast-Forward

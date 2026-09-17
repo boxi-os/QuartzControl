@@ -843,3 +843,66 @@ legt ab (samt Überschneidungs-Warnung), Escape bricht ab, der Fokus bleibt auf 
 **Was daraus als Regel bleibt:** Ein Ergebnis mit einer Begründung, die es nur halb trägt, ist ein
 Befund in Wartestellung — hier stand die halbe Begründung neun Tage, und die andere Hälfte machte
 den Tastatur-Drag eines ganzen Reiters unbrauchbar.
+
+
+## Nachtrag (2026-09-17, einundzwanzigstes Review): das gezogene Rechteck war der ganze Bereich
+
+Der erste waagerechte Pfeildruck aus einem breiten Bereich sprang in dessen Mitte: `header`
+antwortete auf ArrowRight mit „Zelle Zeile 1, Spalte 7“ und lief von dort spaltenweise zurück
+(6, 5, 4) — ein Druck, der sechs Spalten wert war, in einem Drag, in dem jeder andere eine wert
+ist.
+
+Die Ursache sitzt **nicht** im Pfeil-Getter. Mit einer Sonde in ihm an der gebauten App abgelesen:
+dnd-kit gibt dem `DragOverlay` die Größe des gezogenen Knotens — hier die Box des Bereichs,
+1060 px breit — und misst dann dessen *einziges Kind* (`getMeasurableNode`, `core.esm.js:2413`),
+und das war ein Block-`div`, also ebenfalls 1060 px. Der Getter zentriert dieses Rechteck auf der
+Zielzelle; für Spalte 2 ergab das eine linke Kante bei −70, und der `KeyboardSensor` scrollt dann,
+statt zu bewegen. Gemessen (`out.x = -69,99` beim ersten Druck, `cur.x` danach unverändert 310,
+während `cur.y` den Rückgabewert übernahm): erreichbar war nur, was weit genug rechts lag.
+
+Ein Versuch, das im Getter zu beheben — der erste Druck geht von der linken oberen Ecke des
+Bereichs aus —, machte es schlimmer: Der Druck traf dann Spalte 2, das 1060-px-Rechteck landete
+bei −70, der Sensor scrollte, und der Drag bewegte sich gar nicht. Behoben ist es deshalb dort,
+wo die Zahl entsteht: **`w-fit` am Chip im `DragOverlay`**, damit das gezogene Rechteck so breit
+ist wie das, was gezogen wird — so breit wie die Chips in der Ablage ohnehin sind.
+
+Gemessen an der gebauten App mit echten Tastendrücken (Wegwerf-Profil, Projektkopie,
+`colorscheme none`), Frame `drawing`, Bereich `header`:
+
+    waagerecht  vorher   7, 8 — zurück 7, 6
+                nachher  2, 3 — zurück 2, 1
+    senkrecht   nachher  Zeile 2 Spalte 1, Zeile 3 Spalte 1 — zurück 2, 1
+                         (vorher landete es auf den Bereichen darunter, weil das
+                          1060-px-Rechteck mit jeder Zelle der Zeile überlappte)
+    Ablage      ArrowUp aus Zeile 1 erreicht sie weiterhin
+
+`utils/dndKeyboard.ts` ist dabei unverändert geblieben; die Regel des zwanzigsten Reviews („ein
+Schritt geht von dem Feld aus, auf dem man steht“) trägt mit dem richtigen Rechteck genauso.
+
+**Was daraus als Regel bleibt:** Wer eine Rechnung nachbessert, prüft zuerst, ob ihre *Eingabe*
+stimmt. Das gezogene Rechteck war nie das, was gezogen wurde.
+
+## Nachtrag (2026-09-17): ein Schritt zurück auf den eigenen Platz wird angesagt
+
+`onDragOver` schwieg, wenn das gemeldete Ziel das eigene Feld ist. Der Grund dafür ist echt —
+dnd-kit meldet das eigene Feld in dem Augenblick, in dem etwas aufgenommen wird, und der Satz
+würde das „aufgenommen“ übertönen —, aber er gilt nur für diesen einen Augenblick. Seit der
+Pfeil-Getter jeden Druck zählen lässt, ist ein Hin und Zurück in zwei Drücken erreichbar, und dann
+behielt die Live-Region den Satz von davor. Gemessen am Layout-Board: `ArrowDown` → „liegt über
+page-title“, `ArrowUp` → derselbe Satz, obwohl das Overlay wieder auf dem Ausgangsplatz stand.
+
+Gefragt wird jetzt am **Namen**, nicht an der Id — der Name ist das, was vorgelesen wird —, und die
+Antwort auf die Rückkehr ist ein eigener Satz (`dnd.backHome`). Damit fällt auch die zweite Antwort
+auf dieselbe Lage weg: Im Frame-Builder war der eigene Platz ein Kasten mit eigener Id, der auf
+denselben Namen beschrieben wird, und dort sagte die Region schon **beim Aufnehmen** „header liegt
+über header“ — die Aufnahme-Ansage war also von Anfang an übertönt, genau das, was der Guard am
+Board verhindern sollte.
+
+Seit der Chip schmal ist (Nachtrag oben), meldet der Frame-Builder beim Aufnehmen die *Zelle*, und
+die heißt anders als der Bereich — der Namensvergleich greift dort also nicht mehr. Deshalb ein
+zweiter Ref: die **erste** Meldung eines jeden Drags schweigt. Gemessen, beide Bretter, vorher und
+nachher, mit echten Tastendrücken.
+
+`useDndAccessibility` heißt dafür so und hält seine zwei Refs: alle drei Aufrufstellen rufen sie aus
+dem Render-Body, und ein Drag rendert sie bei jedem Wechsel von `over` neu — eine einfache Variable
+wäre vor dem zweiten Satz wieder zurückgesetzt.

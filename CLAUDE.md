@@ -1565,6 +1565,20 @@ an der gebauten, nicht an der gepackten App.
 die Fixes des zwölften (`review-2026-09-17..fix/review-2026-09-16`) und die Lücke
 `review-2026-09-14..review-2026-09-16` (unten), in der die zwölf Fixes des elften liegen.
 
+**Das zweiundzwanzigste Review misst ab `review-2026-09-26`** und liest bis `review-2026-09-27`,
+das auf dem Commit „Der Auftrag für das zweiundzwanzigste Review“ (`main`) sitzt — dem Stand, den
+es liest; der Auftrag steht in
+[`docs/REVIEW-2026-09-26-auftrag.md`](docs/REVIEW-2026-09-26-auftrag.md). Sein Diff sind die sieben
+Fixes des einundzwanzigsten Reviews und die sechs Punkte seiner Nebenbei-Liste: ohne
+Review-Dokument und Auftragsdatei 18 Dateien, +636/−104, im App-Code 13 Dateien, +345/−86. Als
+größtes Risiko nennt der Auftrag zwei Dinge, die über ihren Anlass hinausreichen: `filesAtHead`,
+das zum ersten Mal über *zwei Läufe hinweg* entscheidet, ob die App einen Commit umschreibt, und
+`carried` ohne SHA-Bindung — eine Paketliste, die jetzt gilt, gleich zu welchem Commit die Notiz
+gehört. Daneben das `w-fit` am Drag-Chip, das die Zahl bewegt, mit der beide Tastatur-Bretter
+rechnen, und das nur für die Tastatur gemessen ist. `review-2026-09-26` sitzt auf `93ba8bb` („Der
+Auftrag für das einundzwanzigste Review“), dem Stand, den das einundzwanzigste Review gelesen hat;
+er ist gepusht.
+
 **Das einundzwanzigste Review misst ab `review-2026-09-25`** und liest bis `review-2026-09-26`,
 das auf dem Commit „Der Auftrag für das einundzwanzigste Review“ (`main`) sitzt — dem Stand, den
 es liest; der Auftrag steht in

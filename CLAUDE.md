@@ -475,7 +475,12 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   meldet auch den), und jedes Bereichsformular danach kam ohne Fokus. Wer einen Ref vor einem
   `setState` umlegt, prüft vorher, ob sich der Wert überhaupt ändert.
 - **Kein API-Aufruf ohne Netz:** globaler `unhandledrejection`-Handler → Toast; jeder Busy-Flag wird
-  in `finally` zurückgesetzt (`useAsyncAction` für boolesche, `try/finally` für keyed).
+  in `finally` zurückgesetzt (`useAsyncAction` für boolesche, `try/finally` für keyed). **Der Toast
+  ist aber nicht die Antwort für einen Lesevorgang, ohne den die Seite nicht existiert**: Die
+  Stile-Seite blieb bei einem gescheiterten `config:get` für immer auf „Lade…“ stehen, ohne Kopf
+  und ohne Reiter, und nur die Ecke sagte warum. Was die Seite trägt, bekommt ein `catch` und einen
+  Fehlerzustand in der Seite (durch `formatIpcError`, wie überall sonst); was sie nicht trägt, darf
+  weiter scheitern und den Toast bekommen.
 - **URL zuerst, Sticky-State als Fallback** für Sub-Tabs (`?tab=`); alte Pfade bleiben als
   Redirects. Gilt für alle vier Leisten (Konfiguration, Stile, Plugins, Layout); der Default-Tab
   löscht den Parameter, statt ihn zu setzen. Was kein Name aus einer festen Liste ist - der offene
@@ -560,6 +565,13 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   da“ und eine fehlende Eigenschaft „diese Seite sagt nichts“. Knöpfe und Badges bleiben draußen: die
   ändern sich, weil jemand tippt. Eine `<h1>` pro Seite, jede `<nav>` mit Namen. Messungen in
   [`navigation-and-pages.md`](docs/decisions/navigation-and-pages.md).
+- **Eine Ansage, die schweigt, sagt den Satz von vorhin.** Der Guard, der beim Aufnehmen eines
+  Drags das „X liegt über X“ verhindert, gilt für *diesen einen Augenblick* — später ist ein
+  Schritt zurück auf den eigenen Platz eine Bewegung wie jede andere und bekommt einen eigenen
+  Satz (`dnd.backHome`). Gefragt wird am **Namen**, nicht an der Id: der Name ist das, was
+  vorgelesen wird, und wo der eigene Platz einen eigenen Bezeichner hat (die Box im Frame-Builder),
+  hieß er trotzdem gleich. Den Augenblick selbst hält ein zweiter Ref: die erste Meldung eines
+  jeden Drags schweigt.
 - **Was keinen festen Platz hat, wird über `announce()` gesagt.** Eine Meldung, die zu *einer Zeile*
   einer Liste gehört, oder der Verlauf eines Drags, hat keinen Ort für eine eigene Region - beides
   geht in die eine Region der Seite (`state/announcer.tsx`, gemountet in `App.tsx`). Ganze Sätze mit
@@ -658,7 +670,13 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   Der `KeyboardSensor` hört, sobald ein Drag läuft, auf dem *Dokument*, und React ruft für ein
   `stopPropagation()` im Renderer auch das native an der Wurzel — ein Guard, der ein Zeichen vom
   Elternknoten fernhalten soll, nimmt damit dem laufenden Drag Pfeile und Escape ab. Wer zu viel
-  hört, verengt am Hörer (`e.target === e.currentTarget`), nicht an dem, was aufsteigt. Messungen in
+  hört, verengt am Hörer (`e.target === e.currentTarget`), nicht an dem, was aufsteigt. **Und das
+  gezogene Rechteck ist, was gezogen wird:** dnd-kit gibt dem `DragOverlay` die Größe des gezogenen
+  Knotens und misst dann dessen *einziges Kind* — ein Block-Element darin ist damit so breit wie
+  der ganze Knoten, und jede Pfeilrechnung zentriert diese Breite auf dem Ziel. Im Frame-Builder
+  waren das 1060 px, die linke Kante landete bei −70 und der `KeyboardSensor` scrollte, statt zu
+  bewegen; der Chip trägt deshalb `w-fit`. Wer eine Rechnung nachbessert, prüft zuerst, ob ihre
+  Eingabe stimmt. Messungen in
   [`plugins-and-config.md`](docs/decisions/plugins-and-config.md) und
   [`layout-frames.md`](docs/decisions/layout-frames.md).
 - **Ein Wort, ein Name — und zwar über App und Handbuch hinweg.** Vokabular ist eine Tabelle
@@ -673,6 +691,12 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   bleiben Englisch, weil sie Bugs beschreiben, nicht Eingaben.
 - **Ein Fachbegriff bekommt eine Zeile darunter** (`Field`/`Toggle` `hint`); ein Begriff, auf dem
   eine Seite ruht, eine `InfoNote` oben, gedeckelt auf 95ch.
+- **Ein Rat gehört zu dem Zustand, den er meint, und wird dort gesagt, wo der Zustand bekannt
+  ist.** „Existiert die Datei im Projektordner?“ stand im Renderer unter *jedem* Lesefehler der
+  Config, auch unter einem, der gerade gesagt hatte, dass die Datei da ist und was in ihr steht.
+  Der Hauptprozess kennt den Unterschied (`ENOENT` → `configMissing`), also sagt er ihn, und jeder
+  der 19 Aufrufer bekommt ihn mit. Dieselbe Bewegung wie bei `check:i18n`: ein Satz je Zustand,
+  nicht ein Satz über allen.
 - **Ein Hinweis sagt, was passiert — nicht, warum es technisch so ist.** Höchstens zwei Sätze; die
   Mechanik gehört ins Handbuch. **Das Kapitel nennt aber nicht der Hinweis, sondern die Seite:**
   `PageHeader` nimmt einen `handbook`-Knoten, und die Seiten reichen `<HandbookLink page="…" />`
@@ -1627,9 +1651,10 @@ ausdrücklich mit, und es hat ihn gelesen: die Lücke ist geschlossen, drei sein
 betreffen sie nicht, der vierte ist ein Kommentar in `shared/gridFrameCss.ts`. `review-2026-09-16`
 bleibt, wo er ist, weil der Auftrag des zwölften Reviews mit ihm rechnet.
 
-**Die sieben Fixes des einundzwanzigsten Reviews liegen bewusst dahinter**
-(`fix/review-2026-09-25`, von `main` abgezweigt): ohne Review-Dokument 7 Dateien, +402/−76, im
-App-Code 4 Dateien, +236/−60 — nachgerechnet gegen den Commit, der diese Zeilen trägt. Gemessen an
+**Die sieben Fixes des einundzwanzigsten Reviews und die sechs Punkte seiner Nebenbei-Liste liegen
+bewusst dahinter** (`fix/review-2026-09-25`, von `main` abgezweigt): ohne Review-Dokument
+18 Dateien, +622/−104, im App-Code 13 Dateien, +345/−86 — nachgerechnet gegen den Commit, der diese
+Zeilen trägt. Gemessen an
 **Attrappen, nicht an einem echten Lauf**: `runCoreUpdate` und `abortCoreMerge` als esbuild-Bündel
 in zwei Fassungen (dieser Stand und `main`, letzterer aus `git archive`) gegen ein lokales
 Upstream-Repo mit den Ständen A/D/E, npm in drei Betriebsarten (schreibt, scheitert, schreibt
@@ -1644,27 +1669,40 @@ Dazu `readConfig` gegen zehn Dateien und `writeConfig` gegen fünf davon, `dupli
 drei Quellen, und die Prüfskripte (`typecheck`, `build`, `smoke` mit 42 Aufrufen, `check:i18n` mit
 1111 + 178 Schlüsseln, `check:handbook` mit 26 Zitaten). Die größten Eingriffe sind das dritte Feld
 der Notiz (`filesAtHead`) samt dem Wächter vor dem Amend, `carried` ohne SHA-Bindung,
-`coreUpdateStashEntry` und die zwei neuen Würfe in `readConfig`. Neu sind drei Texte in `i18n.ts`
-(`configNotParseable`, `configPluginsNotAList`, `duplicateSourceConfigUnreadable`), geändert zwei
-(`updateStashLeftover`, `updateStashFitsHead`, beide mit `{{entry}}`), dazu fünf Nachträge in
-`docs/decisions/`. **Nicht gemessen**: ein echter Lauf gegen `github.com/jackyzha0/quartz` mit
-echtem npm (die drei des Reviews sind die einzigen dieser Serie), die gepackte App, die VMs,
-ERESOLVE, wo der Satz über eine unlesbare Konfiguration in der Oberfläche erscheint (der Weg
-dorthin ist unverändert, das Review hat ihn ausgezählt), und die sechs Punkte der Nebenbei-Liste,
-die unten stehen. Sie gehören damit in den Diff des nächsten Auftrags.
+`coreUpdateStashEntry`, die drei neuen Würfe in `readConfig` und das `w-fit` am Drag-Chip. Neu sind
+vier Texte in `electron/main/i18n.ts` (`configNotParseable`, `configPluginsNotAList`,
+`configMissing`, `duplicateSourceConfigUnreadable`) und zwei im Renderer (`dnd.backHome`,
+`styles.loadFailed`), geändert zwei (`updateStashLeftover`, `updateStashFitsHead`, beide mit
+`{{entry}}`), entfallen einer (`configEditor.loadErrorHint`), dazu acht Nachträge in
+`docs/decisions/`. Dazu die sechs Punkte der Nebenbei-Liste (unten), gemessen an **der gebauten
+App mit echten Tastendrücken** — Wegwerf-Profil und Projektkopie im Scratchpad, `colorscheme
+none`, eine Kopie des Treibers mit `--user-data-dir` (im Repo liegt keine): Layout-Board und
+Frame-Builder je waagerecht und senkrecht, vorher und nachher, dazu die Konfigurations- und die
+Stile-Seite gegen eine fehlende und eine syntaktisch kaputte `quartz.config.yaml`. **Nicht
+gemessen**: ein echter Lauf gegen `github.com/jackyzha0/quartz` mit echtem npm (die drei des
+Reviews sind die einzigen dieser Serie), die gepackte App, die VMs, ERESOLVE, und der Maus-Drag
+mit dem schmalen Chip (der Zeiger entscheidet dort, nicht das Rechteck). Sie gehören damit in den
+Diff des nächsten Auftrags.
 
-**Sechs Punkte seiner Nebenbei-Liste sind nicht mit erledigt**: ein Schritt zurück auf den eigenen
-Platz wird am Layout-Board nicht angesagt (`dndAnnouncements.ts:29` gibt für
-`over.id === active.id` nichts zurück, die Region behält den letzten Satz — der Frame-Builder sagt
-in derselben Lage „header liegt über header“, also zwei Antworten); der erste waagerechte Druck aus
-einem breiten Bereich springt in die Mitte (gerechnet wird vom Zentrum des gezogenen Rects,
-abgelegt wird auf die Zelle als linke obere Ecke); `atomicWrite` in `configService.ts` prüft
-nichts, denn `parseDocument(contents) // fail fast` wirft nie — dieselbe Tür wie in Befund 5, eine
-Ebene weiter; die App legt in einem Projekt ohne `.gitignore` eine an (in *jeder* Attrappen-Szene
-dieser Runde stand danach `?? .gitignore`, vermutlich der Snapshot-Dienst); der Nachsatz auf der
-Konfigurationsseite („Existiert die Datei im Projektordner?“) steht auch unter einem Fehler, der
-gerade gesagt hat, dass die Datei da ist; und die Stile-Seite bleibt bei einem gescheiterten
-`config:get` auf „Lade…“ stehen, ohne Kopf und Reiter.
+**Die sechs Punkte seiner Nebenbei-Liste sind mit abgearbeitet**, und einer war größer als sein
+Platz: **Das gezogene Rechteck im Frame-Builder war nie das, was gezogen wurde.** dnd-kit gibt dem
+`DragOverlay` die Größe des gezogenen Knotens und misst dann dessen einziges Kind — ein
+Block-`div`, also 1060 px breit —, und der Pfeil-Getter zentriert *dieses* Rechteck auf der
+Zielzelle: für Spalte 2 eine linke Kante bei −70, worauf der `KeyboardSensor` scrollt statt zu
+bewegen. Der erste ArrowRight aus `header` sprang deshalb auf Spalte 7. Ein Versuch, das im Getter
+zu beheben, machte es schlimmer (der Druck bewegte dann gar nichts); behoben ist es an der Stelle,
+an der die Zahl entsteht — `w-fit` am Chip. Dazu: der Schritt zurück auf den eigenen Platz wird
+angesagt (`dnd.backHome`, gefragt am Namen statt an der Id, plus ein Guard für die *erste* Meldung
+eines jeden Drags, die sonst das „aufgenommen“ übertönt); `atomicWrite` fragt `doc.errors`, statt
+ein `parseDocument` zu rufen, das nie wirft; der Rat „Existiert die Datei im Projektordner?“ steht
+nur noch dort, wo die Datei fehlen kann (`configMissing` im Hauptprozess, Nachsatz im Renderer
+weg); und die Stile-Seite hat einen Fehlerzustand statt eines ewigen „Lade…“. **Der sechste ist
+kein Fehler:** Dass die App in einem Projekt ohne `.gitignore` eine anlegt, ist die Entscheidung
+aus `projectDirs.ts` — `.quartz-gui/` liegt im Repo des Nutzers, und `quartz sync` pusht alles. In
+einem echten Quartz-Projekt gibt es die Datei längst und die App hängt eine Zeile an; nur die
+Attrappen-Szenen dieser Runde haben keine. Dabei aufgefallen und **nicht** mit erledigt: Der
+Kommentar, den die App in diese Datei schreibt, ist auch in einer englischen Installation
+deutsch.
 
 **Die fünf Fixes des zwanzigsten Reviews und die vier aus seiner Nebenbei-Liste liegen bewusst
 dahinter** (`fix/review-2026-09-24`, von `main` abgezweigt, seit dem 2026-09-17 als Fast-Forward

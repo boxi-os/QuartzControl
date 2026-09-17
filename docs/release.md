@@ -48,6 +48,14 @@ Das Handbuch sollte dabei auf dem Stand der App sein: `npm run check:handbook` n
 Textdurchgang, und die Screenshots nach der letzten sichtbaren Änderung
 (`npm run screenshots -- --demo --cards`, siehe [`handbuch.md`](handbuch.md)).
 
+**Was `check:handbook` nicht sieht, ist alles außerhalb eines Blockzitats** — also jede Aufzählung,
+die behauptet, vollständig zu sein. Beim Review 2026-09-28 war das 7.3: „Der Zustand einer Prüfung
+ist **Aktuell**, **Update verfügbar** — oder **Nicht prüfbar**“, während die Updates-Seite seit
+einer Runde einen vierten Zustand zeigt und genau dieses Kapitel im Kopf verlinkt. Wer einen
+Zustand, eine Antwort oder einen Knopf hinzufügt, sucht im Vault nach der Liste, die ihn nicht
+kennt (`grep -rn` auf die Beschriftungen der Geschwister) — und prüft dabei die englische Fassung
+mit, die dort drei Beschriftungen nannte, die es in der App nie gab.
+
 **Und es bekommt eine Seite „Neu in <Fassung>“**, zweisprachig, neben `neu-in-beta-1.md` /
 `en/new-in-beta-1.md`. Am 2026-09-16 fehlte sie: Das Handbuch, das mit Beta 2 reist, nennt als
 neueste Seite „Neu in Beta 1“, während `latest.json` vier Änderungen aufzählt — wer die App

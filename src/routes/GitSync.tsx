@@ -46,8 +46,17 @@ function RepoStatus({
   // here - and the way out used to be a terminal: this state was named and nothing more. The
   // channel is the one the Updates page uses; it is a plain `git merge --abort` with the content
   // symlink parked, which is exactly what is needed here too - only its name says "core".
+  //
+  // It answers with a sentence rather than throwing: a refusal from git, a failed stash pop and
+  // the update lock are `success: false` with a reason, and the staged file the abort throws away
+  // is `success: true` with one. `abort.error` only ever sees a throw, so all of those used to
+  // stop here - the button simply did nothing visible.
+  const [abortNote, setAbortNote] = useState<string | null>(null)
   const abort = useAsyncAction(async () => {
-    await window.quartzGui.updates.abortCoreMerge(projectPath)
+    setAbortNote(null)
+    const result = await window.quartzGui.updates.abortCoreMerge(projectPath)
+    const output = result.output.trim()
+    setAbortNote(output === '' ? null : output)
     onChanged()
   })
 
@@ -93,6 +102,7 @@ function RepoStatus({
             </Button>
           )}
           {abort.error && <span className="text-red-600 dark:text-red-400">{abort.error}</span>}
+          {abortNote && <span className="w-full whitespace-pre-wrap font-mono">{abortNote}</span>}
         </div>
       )}
 

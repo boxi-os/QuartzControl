@@ -82,11 +82,16 @@ export default function Updates(): JSX.Element {
     }
   }
 
+  // The abort answers the way the update does - with a sentence, not a throw. A refused abort, a
+  // failed stash pop and the busy lock are `success: false` with a reason; the staged file the
+  // abort throws away is `success: true` with one. Both used to end in `await` and nowhere else,
+  // so a refused abort was a button that did nothing and a named loss was a silent one. Only a
+  // plain success stays quiet, and that is also the one that may clear a stale box.
   async function abortMerge(): Promise<void> {
     setCoreBusy(true)
     try {
-      await window.quartzGui.updates.abortCoreMerge(project.path)
-      setCoreResult(null)
+      const result = await window.quartzGui.updates.abortCoreMerge(project.path)
+      setCoreResult(!result.success || result.output.trim() !== '' ? result : null)
     } catch (err) {
       setCoreResult({ success: false, output: formatIpcError(err) })
     } finally {

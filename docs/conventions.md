@@ -1,9 +1,10 @@
 # Konventionen und Architekturentscheidungen
 
 Die Regeln dieses Projekts: was gilt und warum. Sie standen bis zum 2026-09-17 in `CLAUDE.md` und
-sind von dort **wörtlich** hierher gewandert, weil die Datei auf 189 KB gewachsen war und darüber
-eine Warnung bekam — 100 KB davon waren die Review-Chronik ([`reviews.md`](reviews.md)), 66 KB
-dieser Regelteil. `CLAUDE.md` bindet diese Datei ein; sie ist damit weiter Teil dessen, was jede
+sind von dort **wörtlich** hierher gewandert, weil die Datei auf 192 KB gewachsen war und darüber
+eine Warnung bekam — 103 KB davon waren die Review-Chronik ([`reviews.md`](reviews.md)), 68 KB
+dieser Regelteil. (189 KB stand für dieselbe Datei daneben: das sind ihre 189 055 Zeichen, nicht
+ihre Bytes.) `CLAUDE.md` bindet diese Datei ein; sie ist damit weiter Teil dessen, was jede
 Sitzung liest, und nicht Nachschlagewerk.
 
 Die Kurzfassung dessen, was gilt und warum. Die Messungen hinter jedem Punkt stehen in

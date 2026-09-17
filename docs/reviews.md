@@ -3,14 +3,18 @@
 Die Chronik der Reviews: welches Review welchen Stand gelesen hat, mit welchen Zahlen, was es
 gefunden hat und was daraus als Regel geblieben ist. Sie stand bis zum 2026-09-17 in `CLAUDE.md`
 und ist von dort **wörtlich** hierher gewandert — dieselbe Bewegung wie die der Messungen nach
-`decisions/` und aus demselben Grund: `CLAUDE.md` war auf 189 KB gewachsen, von denen diese Chronik
-100 KB waren, und sie beschreibt, was *war*, nicht was *gilt*. Was gilt, steht als Regel in
-`CLAUDE.md`; die Messungen dahinter in [`decisions/`](decisions/).
+`decisions/` und aus demselben Grund: `CLAUDE.md` war auf 192 KB gewachsen (189 055 Zeichen, und
+beide Zahlen standen als „189 KB“ nebeneinander), von denen diese Chronik gut 100 KB waren, und sie
+beschreibt, was *war*, nicht was *gilt*. Was gilt, steht als Regel in
+[`conventions.md`](conventions.md); die Messungen dahinter in [`decisions/`](decisions/).
 
 Geändert ist gegenüber der Fassung in `CLAUDE.md` nur das Ziel der Markdown-Links: `](docs/…)` ist
 `](…)`, weil diese Datei selbst in `docs/` liegt. Pfade im Fließtext nennen weiter die
-Projektwurzel. Die Arbeitsregel, die am Ende dieses Abschnitts stand, ist in `CLAUDE.md` geblieben:
-sie sagt, wie gearbeitet wird, und nicht, was war.
+Projektwurzel. **„Oben“ meint in diesem Text `conventions.md`**: Der verschobene Text sagt an gut
+zwei Dutzend Stellen „Regel oben unter Prozessgrenze“ oder „steht oben in den passenden
+Abschnitten“, und oben steht hier nichts mehr — das ist der Preis dafür, dass er wörtlich gewandert
+ist (fünfundzwanzigstes Review, Befund 8). Die Arbeitsregel steht in `CLAUDE.md`: sie sagt, wie
+gearbeitet wird, und nicht, was war.
 
 ## Befunde aus den Reviews (Stand 2026-09-28)
 
@@ -59,10 +63,13 @@ sitzt; der Auftrag steht in
   ohne die Einrückung des ausklappbaren Blocks +84/−15). Dazu Kapitel 4.5 und 4.9 des Handbuchs in
   beiden Sprachen und zehn Screenshots, die im Vault liegen und nicht in diesem Repo;
 - **die Teilung dieser Datei und der Regeln**: `CLAUDE.md` war auf 192 KB gewachsen und bekam
-  dafür eine Warnung; die Chronik (diese Datei, 100 KB) und der Regelteil
-  ([`conventions.md`](conventions.md), 66 KB) sind wörtlich herausgewandert, letzterer über
-  `@docs/conventions.md` eingebunden. `CLAUDE.md` ist damit 25 KB (3 Dateien, +2023/−1884, netto
-  +139).
+  dafür eine Warnung; die Chronik (diese Datei, 103 KB) und der Regelteil
+  ([`conventions.md`](conventions.md), 68 KB) sind wörtlich herausgewandert, letzterer über
+  `@docs/conventions.md` eingebunden. `CLAUDE.md` ist damit 25 KB (3 Dateien, +2023/−1957, netto
+  +66; mit dem, was der Auftrags-Commit an denselben drei Dateien nachträgt, +2054/−1957). Die
+  −1884 einer früheren Fassung waren die Löschungen des *Gesamtdiffs* gegen den Tag, in einem
+  Absatz, der selbst sagt, dass jede Schicht gegen ihre eigene Basis gerechnet wird
+  (fünfundzwanzigstes Review, Befund 8).
 
 Als größtes Risiko nennt der Auftrag die dritte Schicht, und zwar nicht das Verschieben — das ist
 in beide Richtungen gegengeprüft und byte-gleich —, sondern die Einbindung: Greift
@@ -1256,12 +1263,10 @@ Namen. Am 2026-09-06 nachgemessen und *nicht* umgestellt: die Übersicht hat fü
 Rolle; und die zwei Faktenzeilen auf `text-ui` zu heben (12,5 → 13px, 30 Elemente) ließ die Karte
 „Kein Ziel“ eine Zeile mehr umbrechen — die halbe Pixel war genau dafür gewählt.
 
-**Arbeitsregel** für die nächste Liste: ein Befund pro Durchgang, jeweils mit `npm run typecheck`,
-`npm run build`, `npm run smoke` und eigenem Commit; was dabei nebenbei auffällt, wird gesammelt und
-genannt, nicht mit erledigt. Was nur ein laufendes Programm beantworten kann, wird an der gebauten
-App gemessen — und wo es geht mit einer Vorher-Messung, denn zwei der Befunde traten anders auf als
-das Review sie beschrieb (der geteilte Optionen-Zustand erst nach einem Routenwechsel, der hängende
-Content-Link mit ENOTDIR statt ENOENT).
+Die **Arbeitsregel** für die nächste Liste steht in `CLAUDE.md` und stand bis zum
+fünfundzwanzigsten Review wortgleich auch hier — zwei Kopien, die auseinanderlaufen. Was sie
+verlangt, in einem Satz: ein Befund pro Durchgang, mit Typcheck, Build, Smoke und eigenem Commit,
+und was ein laufendes Programm beantworten muss, wird an der gebauten App gemessen.
 
 Was aus dem 09-05-Durchgang als Regel hängengeblieben ist, steht jeweils oben im passenden Abschnitt:
 ein Vorlagen-Paket ist keine Vertrauensgrenze; „die Datei ist da“ ist nicht „die Datei lässt sich

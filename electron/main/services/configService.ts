@@ -96,7 +96,15 @@ export async function readConfig(projectPath: string): Promise<QuartzConfig> {
 }
 
 async function atomicWrite(path: string, contents: string): Promise<void> {
-  parseDocument(contents) // fail fast before touching the real file
+  // Fail before touching the real file - and that needs `errors`, not the call: `parseDocument`
+  // does not throw on a syntax error, it collects them (the same thing that let a broken config
+  // read as half empty, see readConfig). The line read like a guard and was none. Nothing here is
+  // meant to be able to produce invalid YAML - `doc.toString()` wrote it a moment ago - so this
+  // stays English like the other sentences that describe a bug rather than an input.
+  const check = parseDocument(contents)
+  if (check.errors.length > 0) {
+    throw new Error(`Refusing to write invalid YAML to ${path}: ${check.errors[0].message.split('\n')[0]}`)
+  }
   const tmpPath = `${path}.tmp-${Date.now()}`
   await writeFile(tmpPath, contents, 'utf-8')
   await rename(tmpPath, path)

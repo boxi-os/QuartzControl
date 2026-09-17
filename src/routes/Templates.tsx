@@ -48,12 +48,13 @@ export default function Templates(): JSX.Element {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader icon={TAB_ICONS.templates} title={t('templates.title')} description={t('templates.description')} handbook={<HandbookLink page="templates" />} />
-      {/* Two independent halves of the same job - width puts them side by side rather than
-          stretching each one across the window. */}
-      <div className="grid items-start gap-6 xl:grid-cols-2">
-        <ExportSection project={project} />
-        <ImportSection project={project} />
-      </div>
+      {/* Two independent halves of the same job, but not two halves of the same size: the export
+          lists twelve parts, the import shows one button until a file is picked. Side by side that
+          measured 1041px against 140px at a 1470px window - a long column left, a stub right and
+          half the page empty. Both cards take the full width now, and the width goes into columns
+          of parts rather than into longer lines (CLAUDE.md, "Breite wird in Spalten ausgegeben"). */}
+      <ExportSection project={project} />
+      <ImportSection project={project} />
     </div>
   )
 }
@@ -83,7 +84,9 @@ function PartRow({
     <label
       // Muted text rather than `opacity-45` for the row that cannot be chosen: the opacity put the
       // label at 2.35:1 (docs/REVIEW-2026-09-02.md, d). The checkbox is the UA's and dims itself.
-      className={`flex items-start gap-2.5 rounded-md px-2 py-1.5 text-sm ${
+      // `break-inside-avoid`, because the list around it is a multi-column block: without it a
+      // row's description can end up in the next column, away from its own checkbox.
+      className={`flex break-inside-avoid items-start gap-2.5 rounded-md px-2 py-1.5 text-sm ${
         disabled ? 'text-text-muted' : 'hover:bg-ink/[0.04]'
       }`}
     >
@@ -169,7 +172,9 @@ function ExportSection({ project }: { project: Project }): JSX.Element {
       <CardHeading icon={Package} className="mb-1">{t('templates.exportHeading')}</CardHeading>
       <p className="mb-4 text-xs text-text-muted">{t('templates.exportHint')}</p>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      {/* Capped: a name and a one-line description read worse, not better, as a 600px field - the
+          rest of the card's width belongs to the parts list. */}
+      <div className="grid max-w-3xl gap-3 sm:grid-cols-2">
         <Field label={t('templates.nameLabel')}>
           <TextInput value={name} onChange={(e) => setName(e.target.value)} className="w-full" />
         </Field>
@@ -189,7 +194,14 @@ function ExportSection({ project }: { project: Project }): JSX.Element {
       ) : available.length === 0 ? (
         <p className="px-2 py-1.5 text-sm text-text-muted">{t('templates.nothingToExport')}</p>
       ) : (
-        <div className="flex flex-col">
+        // Columns rather than one tall list: the twelve parts under each other made the card
+        // 1041px tall. Same mechanism as the change list in Git-Sync and the exclude list in
+        // Veröffentlichen - a multi-column block, not a grid, because these rows differ in height
+        // and a grid aligns them row by row, which puts the gaps back in; `break-inside-avoid`
+        // sits on the row. The ladder is one step later than there (`md`/`2xl` instead of
+        // `sm`/`xl`): a row here is a name plus a two-line sentence, and at 640px two columns are
+        // 250px each. Measured at 1470 and 1280px window width, two columns both times.
+        <div className="gap-x-8 md:columns-2 2xl:columns-3">
           {sortForDisplay(available).map((part) => (
             <PartRow
               key={part.id}
@@ -390,7 +402,7 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
           </div>
 
           <p className="mb-1.5 mt-4 text-xs font-semibold uppercase tracking-wide text-text-secondary">{t('templates.partsHeading')}</p>
-          <div className="flex flex-col">
+          <div className="gap-x-8 md:columns-2 2xl:columns-3">
             {sortForDisplay(plan.parts).map((part) => (
               <PartRow
                 key={part.id}

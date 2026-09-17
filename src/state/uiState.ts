@@ -25,7 +25,13 @@ const store = new Map<string, unknown>()
 export function useStickyState<T>(key: string, initial: T | (() => T)): [T, React.Dispatch<React.SetStateAction<T>>] {
   const { pathname } = useLocation()
   // Safe to build once per render rather than memoize: a route's pathname can't change while its
-  // components are mounted (a different pathname means a different route, i.e. a remount).
+  // components are mounted - with one shape of exception, which this app has no link for. A
+  // navigation *within* the same route pattern keeps the components mounted while the pathname
+  // changes (`#/project/A/styles` → `#/project/B/styles`), and the effect below then writes A's
+  // value under B's key. There is no way to that navigation from inside the app - every project
+  // switch goes over the start page, which unmounts everything - so it stays a property worth
+  // knowing rather than a guard: a project switcher in the sidebar would be the thing that needs
+  // one (twenty-fifth review, "nebenbei" 2, found with a measuring script that had such a link).
   const storeKey = `${pathname}::${key}`
 
   const [value, setValue] = useState<T>(() => {

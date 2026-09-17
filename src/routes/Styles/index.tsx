@@ -108,19 +108,32 @@ export default function Styles(): JSX.Element {
   const [graphNonce, setGraphNonce] = useState(0)
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [message, setMessage] = useState<string | null>(null)
+  // The two reads this page cannot do without. Unhandled, a rejection left the page on "Lade…" for
+  // ever - no heading, no tabs - and only the toast in the corner said why (twenty-first review,
+  // "nebenbei" 6). The other two reads below may fail without stopping the page: their state stays
+  // empty and the toast is the answer, the way it was.
+  const [loadError, setLoadError] = useState<string | null>(null)
+  // Through formatIpcError, like every other page that shows an IPC failure in place: Electron
+  // wraps the message in "Error invoking remote method 'config:get': Error: …", which buries the
+  // sentence the user needs.
+  const failed = (error: unknown): void => setLoadError(formatIpcError(error))
 
   // Assigned on every render of the active sub-tab (see registerSave below) - a ref rather than
   // state because changing it must never re-render the shell, which would remount the sub-tab.
   const saveRef = useRef<() => Promise<void>>(async () => {})
 
   useEffect(() => {
-    window.quartzGui.config.get(project.path).then((loaded) => {
-      setConfig(loaded)
-      setSavedConfig(JSON.stringify(loaded))
-    })
+    window.quartzGui.config
+      .get(project.path)
+      .then((loaded) => {
+        setConfig(loaded)
+        setSavedConfig(JSON.stringify(loaded))
+      })
+      .catch(failed)
     window.quartzGui.styles
       .get(project.path)
       .then((info) => setScss({ ...info, original: info.content, dirty: false, staleOnDisk: false }))
+      .catch(failed)
     window.quartzGui.styles.listFiles(project.path).then(setFileSet)
     window.quartzGui.styles.getVariableOverrides(project.path).then((list) => {
       const next: Record<string, { light: string; dark: string }> = {}
@@ -266,6 +279,16 @@ export default function Styles(): JSX.Element {
   // shortcut stays quiet rather than rewriting an unchanged file.
   useSaveCommand(dirty && status !== 'saving' ? save : null)
 
+  if (loadError) {
+    return (
+      <div className="max-w-xl">
+        <p className="mb-2 text-sm font-medium text-red-600 dark:text-red-400">{t('styles.loadFailed')}</p>
+        <pre className="whitespace-pre-wrap rounded-md bg-red-50 p-3 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-400">
+          {loadError}
+        </pre>
+      </div>
+    )
+  }
   if (!config || !scss) return <p className="text-sm text-text-muted">{t('common.loading')}</p>
 
   const value: StylesContextValue = {

@@ -1239,6 +1239,7 @@ export default {
     }
   },
   styles: {
+    loadFailed: 'The styles could not be loaded.',
     fixes: {
       heading: 'Known conflicts',
       description:

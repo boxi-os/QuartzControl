@@ -1242,6 +1242,7 @@ export default {
     }
   },
   styles: {
+    loadFailed: 'Die Stile ließen sich nicht laden.',
     fixes: {
       heading: 'Bekannte Konflikte',
       description:

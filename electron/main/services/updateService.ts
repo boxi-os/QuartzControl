@@ -839,8 +839,18 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     // because the answer stops being readable one line later: holdNpmOwnedFiles takes any
     // difference away into the stash, and where the plan does not apply nothing takes it away at
     // all - so `held.kind` answers this for one of the two cases and not for the other.
+    // Both halves, because `git diff HEAD` compares the *working tree* with HEAD and answers 0 for
+    // a file that stands at three versions at once - staged away from HEAD, working tree back on
+    // it. That is the very state `stagedApartFromWorkingTree` recognises for the plan, and the
+    // permission for the amend did not ask it: measured (twenty-third review, finding 5, scene s3)
+    // a staged line in package.json went out of the index, out of the working tree and into a
+    // commit of ours without a word. Under `ourMergeCommit` it could not happen - git will not
+    // begin a merge over a staged change - but under `resuming` there is no merge in front of this
+    // run to say so.
     const npmFilesAtHead =
-      tracked.length > 0 && (await run('git', ['diff', '--quiet', 'HEAD', '--', ...tracked], projectPath)).success
+      tracked.length > 0 &&
+      (await run('git', ['diff', '--quiet', 'HEAD', '--', ...tracked], projectPath)).success &&
+      (await run('git', ['diff', '--quiet', '--cached', 'HEAD', '--', ...tracked], projectPath)).success
     // Whether the plan is actually in charge of these two files, as opposed to `reproducible`,
     // which only says the plan could be worked out. The step below has to succeed as well: if it
     // does not, the files are still in the working tree and git answers the way it did before this

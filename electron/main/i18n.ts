@@ -109,6 +109,11 @@ const STRINGS = {
     // auch der einzige Ort weg, an dem die Namen standen.
     updatePackagesDropped:
       'Diese eigenen Pakete trägt das Update nicht wieder ein, weil package.json seit dem letzten Lauf von anderer Hand geändert wurde: {{packages}}.',
+    // Dieselbe Entscheidung, anderer Grund: Der Merkzettel nennt einen Commit, den git nicht mehr
+    // hat — dann ist nicht „jemand hat geantwortet“ gemessen, sondern „die App konnte nicht
+    // nachsehen“. Der erste Satz erzählte dafür von einer Änderung, die niemand gemacht hat.
+    updatePackagesDroppedUnreadable:
+      'Diese eigenen Pakete trägt das Update nicht wieder ein: {{packages}}. Der Stand, auf den sich der Merkzettel aus dem letzten Lauf bezog, lässt sich in git nicht mehr nachlesen — trage sie bei Bedarf selbst wieder ein.',
     updatePackagesUpstreamWins: 'Quartz hat diese Pakete selbst geändert, seine Fassung gilt: {{packages}}',
     updatePackagesPending:
       'Diese eigenen Pakete stehen gerade nicht in package.json: {{packages}}. „Merge abbrechen“ oben trägt sie wieder ein, und der Wiederherstellungspunkt bringt sie ebenfalls zurück.',
@@ -424,6 +429,8 @@ const STRINGS = {
     updatePackagesReinstalled: 'Your own packages put back: {{packages}}',
     updatePackagesDropped:
       'The update is not putting these packages of yours back, because package.json has been changed by another hand since the last run: {{packages}}.',
+    updatePackagesDroppedUnreadable:
+      'The update is not putting these packages of yours back: {{packages}}. The state the note from the last run referred to can no longer be read in git — add them again yourself if you need them.',
     updatePackagesUpstreamWins: 'Quartz changed these packages itself, so its version applies: {{packages}}',
     updatePackagesPending:
       'These packages of yours are currently not in package.json: {{packages}}. “Abort merge” above puts them back, and so does the restore point.',

@@ -150,7 +150,7 @@ async function installedUpstream(
 async function outstandingCoreInstall(projectPath: string): Promise<string[]> {
   const pending = await readPendingInstall(projectPath)
   if (pending.head === '' || pending.reinstall.length === 0) return []
-  if (await listTakenInHandSince(projectPath, pending)) return []
+  if ((await listTakenInHandSince(projectPath, pending)) !== 'stands') return []
   return (await stillMissing(projectPath, pending.reinstall)).map((entry) => entry.name)
 }
 
@@ -325,6 +325,30 @@ async function stillMissing(projectPath: string, reinstall: PackageAddition[]): 
   return reinstall.filter((entry) => dependencyRange(merged, entry.section, entry.name) !== entry.range)
 }
 
+/**
+ * What of a list is *not in package.json at all* - as opposed to `stillMissing`, which also counts
+ * an entry standing at another range, because for the run that is a reason to ask npm.
+ *
+ * The two questions look alike and are not, and the sentence about a dropped list is the place
+ * where the difference shows: `npm install <name>` writes the range npm resolves, not the one the
+ * note remembers, so a user who puts both lines back by hand through npm and commits gets `^2.3.1`
+ * where the note says `^2.0.0`. Measured (twenty-fifth review, finding 3, scenes G4 and G8): the
+ * run then named both themes as "not putting back" over a package.json in which both stood. Asked
+ * across all sections, because a line moved from `dependencies` to `devDependencies` is an answer
+ * too.
+ */
+async function absentFromPackageJson(projectPath: string, entries: PackageAddition[]): Promise<PackageAddition[]> {
+  let merged: unknown
+  try {
+    merged = JSON.parse(await readFile(join(projectPath, 'package.json'), 'utf-8'))
+  } catch {
+    // Unreadable: the file says nothing either way, and a sentence naming packages that may well
+    // be there is the worse of the two answers.
+    return []
+  }
+  return entries.filter((entry) => DEPENDENCY_SECTIONS.every((section) => dependencyRange(merged, section, entry.name) === undefined))
+}
+
 // The name of the stash this run writes: the prefix says "this is the app's", and it is what the
 // user reads in `git stash list`. Unlike `.quartz-gui/` or the `.qtpl` markers it is *not* an
 // identifier on someone else's disk yet - it arrived with 2f4394d (2026-09-16), after beta.2, and
@@ -476,6 +500,10 @@ interface PendingInstall {
   filesAtHead: boolean
 }
 
+/** Why a note's list does or does not still apply - three answers, because two of them end the
+ *  list and only one of them means somebody answered the question it asks. */
+type NoteVerdict = 'stands' | 'answered' | 'unreadable'
+
 /**
  * Whether somebody other than this app has taken package.json in hand since the note was written.
  *
@@ -521,8 +549,8 @@ interface PendingInstall {
  * and it is the same trade the four rounds before this one made: "did the *user* answer" cannot be
  * asked of the history while this app writes into it too.
  */
-async function listTakenInHandSince(projectPath: string, pending: PendingInstall): Promise<boolean> {
-  if (pending.head === '' || pending.reinstall.length === 0) return false
+async function listTakenInHandSince(projectPath: string, pending: PendingInstall): Promise<NoteVerdict> {
+  if (pending.head === '' || pending.reinstall.length === 0) return 'stands'
   // One call per name rather than one alternation: a name is at most a handful of entries long, and
   // the call is a `git log` over the commits since the note. The escape is for the dot in a name
   // like `quartz.foo`, and it has to be the right kind: `-G` compiles its pattern as POSIX
@@ -552,10 +580,10 @@ async function listTakenInHandSince(projectPath: string, pending: PendingInstall
     // A SHA the object database no longer has (an amended note from a run long gone, a `git gc`)
     // lands here. It is now the one door left that drops a list without the user having answered
     // anything, which is why the run says so when it does (`updatePackagesDropped`).
-    if (!touched.success) return true
-    if (touched.output.trim() !== '') return true
+    if (!touched.success) return 'unreadable'
+    if (touched.output.trim() !== '') return 'answered'
   }
-  return false
+  return 'stands'
 }
 
 /**
@@ -892,6 +920,30 @@ async function whileHoldingProject<T>(projectPath: string, busy: () => T, run: (
  * Asked before the run, because afterwards an entry of this run's own would answer the same way;
  * *which* sentence it earns is asked afterwards, see leftoverStashNote.
  */
+/**
+ * The sentence for a list this run deliberately did not act on - and which of the two it is.
+ *
+ * Dropping the list is the right answer in both cases; doing it in silence is what made the badge
+ * jump from "Nicht abgeschlossen" to "Aktuell" with nothing anywhere naming the packages it had
+ * been about. But the two reasons are not the same sentence: somebody has taken one of those lines
+ * in hand is a statement about the user's project, while "the commit the note names is not in this
+ * repository any anymore" says only that the app could not look - and saying the first for the
+ * second tells the user about a change nobody made (measured, twenty-fifth review, finding 3,
+ * scene G7).
+ *
+ * Asked after npm has had its turn, and of what is missing rather than of what differs: an entry
+ * the user has written back themselves needs no sentence, whatever range npm resolved for it.
+ */
+async function droppedNote(projectPath: string, verdict: NoteVerdict, pending: PendingInstall): Promise<string> {
+  if (verdict === 'stands' || pending.reinstall.length === 0) return ''
+  const gone = await absentFromPackageJson(projectPath, pending.reinstall)
+  if (gone.length === 0) return ''
+  const packages = gone.map((entry) => entry.name).join(', ')
+  return verdict === 'unreadable'
+    ? mainT('updatePackagesDroppedUnreadable', { packages })
+    : mainT('updatePackagesDropped', { packages })
+}
+
 export function runCoreUpdate(projectPath: string): Promise<UpdateResult> {
   return whileHoldingProject<UpdateResult>(projectPath, () => ({ success: false, output: mainT('updateAlreadyRunning') }), async () => {
     const before = (await coreUpdateStashEntry(projectPath)) !== null ? await stashRef(projectPath) : null
@@ -1121,7 +1173,7 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     // from another state naming a package the user does not want back - and that is a question
     // about package.json, not about HEAD: `noteOverruled` asks it directly, and `stillMissing`
     // drops whatever is already there anyway.
-    const carried = pendingFor !== '' && !noteOverruled ? pending.reinstall : []
+    const carried = pendingFor !== '' && noteOverruled === 'stands' ? pending.reinstall : []
     // The same question one run later: a run that takes over an earlier one's merge commit cannot
     // measure what the two files looked like before *that* run started, so it reads the answer the
     // note carries rather than its own - by then npm has written them at least once.
@@ -1175,9 +1227,14 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
           missingNow.length > 0
             ? `\n\n${mainT('updatePackagesMissing', { packages: missingNow.map((entry) => entry.name).join(', ') })}`
             : ''
+        // A list this run dropped is said here too. It used to be named on the success path only,
+        // so a run that dropped one and then failed at npm said nothing at all about it - and the
+        // note is rewritten with this run's own list either way, which makes this output the last
+        // place the names exist (measured, twenty-fifth review, finding 3, scene G5).
+        const droppedHere = await droppedNote(projectPath, noteOverruled, pending)
         return {
           success: false,
-          output: `${mergeOutput}\n\n${mainT('npmInstallFailed')}\n${installOutput}${missing}${noteFailure}`,
+          output: `${mergeOutput}\n\n${mainT('npmInstallFailed')}\n${installOutput}${missing}${droppedHere ? `\n\n${droppedHere}` : ''}${noteFailure}`,
           snapshotId
         }
       }
@@ -1286,10 +1343,7 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
       await run('git', ['commit', '--amend', '--no-edit', '--only', '--', ...tracked], projectPath)
     }
 
-    // What the dropped list is still about, asked after npm has had its turn: an entry the user has
-    // written back themselves needs no sentence, and in the scene this catches (a commit that puts
-    // one of two lines back) that is exactly half of them.
-    const dropped = noteOverruled && pending.reinstall.length > 0 ? await stillMissing(projectPath, pending.reinstall) : []
+    const dropped = await droppedNote(projectPath, noteOverruled, pending)
 
     const packageNotes = [
       missingNow.length > 0
@@ -1306,11 +1360,9 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
       planApplies && plan.upstreamWins.length > 0
         ? mainT('updatePackagesUpstreamWins', { packages: plan.upstreamWins.join(', ') })
         : '',
-      // A list this run deliberately did not act on. Dropping it is the right answer - somebody
-      // has taken one of those lines in hand since, and that somebody is not this app - but doing
-      // it in silence is what made the badge jump from "Nicht abgeschlossen" to "Aktuell" with
-      // nothing anywhere naming the packages it had been about.
-      dropped.length > 0 ? mainT('updatePackagesDropped', { packages: dropped.map((entry) => entry.name).join(', ') }) : ''
+      // A list this run deliberately did not act on - see droppedNote for which of the two
+      // sentences it is and why it is not one.
+      dropped
     ]
       .filter(Boolean)
       .join('\n')

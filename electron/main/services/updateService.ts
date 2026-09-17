@@ -491,7 +491,9 @@ interface PendingInstall {
  * Asked as "has somebody committed a change to one of these lines", not as "does package.json
  * still look the way the run left it": the file coming back byte for byte is exactly what happens
  * when the user puts a line back and later takes it out again, which is the case this has to
- * catch. A commit is also the one signal that does not fire for npm's own rewriting.
+ * catch. A commit does not fire for npm's own rewriting either - as long as what npm wrote is not
+ * in the list, which is why a run that fails between two `npm install` calls shortens it before it
+ * returns (twenty-fifth review, finding 2a).
  *
  * Asked per package name, not per file, because "has package.json been committed since" fires for
  * three commits that answer nothing. Measured (twenty-fourth review, finding 2, scenes P2, P7 and
@@ -513,15 +515,32 @@ interface PendingInstall {
  *
  * Not caught: a repair and a removal that are both left uncommitted. The list then still applies,
  * and `stillMissing` cannot tell "not back yet" from "taken out again" - both are a missing entry.
+ * Nor an answer given *inside* a merge commit - the user resolving a conflict in package.json by
+ * hand and writing one of the lines back while doing it (twenty-fifth review, finding 2c). That is
+ * the other side of what takes the hand-resolved merge and our own amend out of the picture above,
+ * and it is the same trade the four rounds before this one made: "did the *user* answer" cannot be
+ * asked of the history while this app writes into it too.
  */
 async function listTakenInHandSince(projectPath: string, pending: PendingInstall): Promise<boolean> {
   if (pending.head === '' || pending.reinstall.length === 0) return false
-  // One call per name rather than one alternation: the pickaxe takes a regex, and which flavour it
-  // is (basic or extended) is a question this does not have to answer if the pattern has no
-  // alternation in it. The escape is for the dot in a name like `quartz.foo`; a name is at most a
-  // handful of entries long, and the call is a `git log` over the commits since the note.
+  // One call per name rather than one alternation: a name is at most a handful of entries long, and
+  // the call is a `git log` over the commits since the note. The escape is for the dot in a name
+  // like `quartz.foo`, and it has to be the right kind: `-G` compiles its pattern as POSIX
+  // *extended*, so `\+` and `\|` are the literal characters (measured, twenty-fifth review,
+  // finding 8, against git 2.54 and the bundled 2.53 - `c\+\+lib`, `a\+b`, `x\(y\)`, `q\?z`,
+  // `a\{2\}`, `a\|b` each hit exactly the one commit, and `quartz\.foo` does not hit
+  // `quartzXfoo`). Basic is what `--grep` takes, not this.
+  //
+  // In quotes, because a bare name matches any line that *contains* it: `-G@quartz-themes/default`
+  // fired for a commit that added `@quartz-themes/default-dark` and nothing else, and in the first
+  // 248 names of that scope six sit inside another (everforest/everforest-spruce,
+  // neo/neovim/neon-synthwave, pale/palenight, sanctum/sanctum-reborn, spectrum/spectrumplus,
+  // termina/terminal) - the list fell, the badge went green, and both themes stayed out (measured,
+  // twenty-fifth review, finding 2b, scene G2). With the quotes it is the key rather than the
+  // text; a `scripts` value that is exactly the name still matches, which is as close as a regex
+  // over a diff gets to asking JSON.
   for (const entry of pending.reinstall) {
-    const needle = entry.name.replace(/[\\.*+?^${}()|[\]]/g, '\\$&')
+    const needle = `"${entry.name.replace(/[\\.*+?^${}()|[\]]/g, '\\$&')}"`
     const touched = await run(
       'git',
       ['log', '--max-count=1', '--format=%H', `-G${needle}`, `${pending.head}..HEAD`, '--', 'package.json'],
@@ -1132,6 +1151,22 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
         // popping the stash here would fight with what is on disk. The restore point is the way
         // back, and the sentence below names what to ask for.
         await dropNpmOwnedFiles(projectPath, held)
+        // What is left over is what the *next* run needs, and after a failure that is less than
+        // what this one wanted: `reinstallCommands` calls npm once per section, so a failure in
+        // the second call leaves the first one's packages written. `stillMissing` drops those
+        // anyway - but `listTakenInHandSince` does not, and it asks per name: the next commit
+        // that touches one of those lines is then this app's own writing read as "somebody else
+        // has answered", and the whole list falls, packages included that nobody put back.
+        // Measured (twenty-fifth review, finding 2a, scene G1): npm failed on `--save-dev`, a
+        // Git-Sync committed what the first call had written, and the badge went from "Nicht
+        // abgeschlossen" to "Aktuell" with `own-dev-tool` gone for good. The one hand this cannot
+        // tell from another is its own, so it does not leave itself in the list.
+        try {
+          const leftOver = wanted.length > 0 ? await stillMissing(projectPath, wanted) : []
+          await markInstallPending(projectPath, headAfter, leftOver, filesAtHead)
+        } catch (error) {
+          noteFailed(error)
+        }
         // The merge is done and package.json is upstream's, so a failure here is the one moment the
         // project's own packages are named nowhere: npm's error is about a version range, not about
         // what was taken out. Without this line the way back (the restore point, or installing them

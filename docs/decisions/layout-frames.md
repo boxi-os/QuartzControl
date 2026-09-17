@@ -906,3 +906,7 @@ nachher, mit echten Tastendrücken.
 `useDndAccessibility` heißt dafür so und hält seine zwei Refs: alle drei Aufrufstellen rufen sie aus
 dem Render-Body, und ein Drag rendert sie bei jedem Wechsel von `over` neu — eine einfache Variable
 wäre vor dem zweiten Satz wieder zurückgesetzt.
+
+## Nachtrag (2026-09-17): ein Ablegen, das nichts bewegt
+
+Dieselbe Frage wie in `onDragOver`, am anderen Ende des Drags: Wer aufnimmt und ohne Bewegung ablegt, hörte „X bei X abgelegt“ — ein Satz, der eine Bewegung behauptet. Erreichbar mit zwei Tastendrücken und mit einem Klick auf den Griff, der kein Pixel zieht. Gemessen am Layout-Board mit echten Tastendrücken: `Space, Space` sagte vorher „quartz-layout-box bei quartz-layout-box abgelegt“ und sagt jetzt „quartz-layout-box blieb an seinem Platz“; `Space, ArrowDown, Space` ist unverändert („… bei page-title abgelegt“). Gefragt wird am Namen, nicht an der Id, aus demselben Grund wie oben: Im Frame-Builder trägt der eigene Platz eine eigene Id.

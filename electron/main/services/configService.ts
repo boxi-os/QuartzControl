@@ -6,6 +6,18 @@ import type { QuartzConfig, PluginEntry, PluginSource, LayoutConfig } from '@sha
 import { createSnapshot } from './snapshotService'
 import { mainT } from '../i18n'
 
+/**
+ * yaml's message as a sentence that can stand inside one of ours.
+ *
+ * The first line is the one that names line and column; the rest is a source excerpt with a caret,
+ * meant for a terminal rather than for a toast. And that first line ends in a colon, because in a
+ * terminal the excerpt follows it - inside "…: {{reason}}. Repariere sie…" that came out as
+ * "at line 3, column 18:. Repariere" (twenty-third review, "nebenbei" 5).
+ */
+function yamlReason(message: string): string {
+  return message.split('\n')[0].replace(/[\s:]+$/, '')
+}
+
 function configPath(projectPath: string): string {
   return join(projectPath, 'quartz.config.yaml')
 }
@@ -58,9 +70,7 @@ export async function readConfig(projectPath: string): Promise<QuartzConfig> {
   // A blank page with no word for it is reason enough on its own.
   const doc = parseDocument(raw)
   if (doc.errors.length > 0) {
-    // The first line of yaml's message, which is the one that names line and column; the rest of it
-    // is a source excerpt with a caret, meant for a terminal rather than for a toast.
-    throw new Error(mainT('configNotParseable', { reason: doc.errors[0].message.split('\n')[0] }))
+    throw new Error(mainT('configNotParseable', { reason: yamlReason(doc.errors[0].message) }))
   }
   const parsed = doc.toJS() as unknown
   if (parsed !== null && parsed !== undefined && (typeof parsed !== 'object' || Array.isArray(parsed))) {
@@ -156,7 +166,7 @@ export async function writeConfig(
   // this the run died in `doc.toString()` with yaml's own "Document with errors cannot be
   // stringified"; nothing was lost, but nothing said what to do either.
   if (doc.errors.length > 0) {
-    throw new Error(mainT('configNotParseable', { reason: doc.errors[0].message.split('\n')[0] }))
+    throw new Error(mainT('configNotParseable', { reason: yamlReason(doc.errors[0].message) }))
   }
   // And the other half of the same question, for the same reason. An empty document is not one of
   // these - `setIn` turns it into a mapping, which is what a project whose config file is empty

@@ -86,7 +86,16 @@ export function DiscoveredServers({ ports, onChanged }: { ports: number[]; onCha
       <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
         <CardHeading icon={ServerCog}>{t('buildServer.discovery.title')}</CardHeading>
         {discovery?.state === 'ok' && <Badge tone="slate">{servers.length}</Badge>}
-        <Button variant="ghost" className="ml-auto" onClick={scan} disabled={scanning}>
+        {/* `inline-flex` ist hier keine Zierde: Als Flex-Kind der Kopfzeile ist der Knopf ein
+            Block, und Tailwinds Preflight setzt `svg { display: block }` - das Icon stand damit in
+            einer eigenen Zeile über dem Wort und der Knopf war 45 statt 29 px hoch. Dieselbe
+            Klassenfolge wie an den vier anderen Aktualisieren-Knöpfen der App. */}
+        <Button
+          variant="ghost"
+          className="ml-auto inline-flex items-center gap-1.5 whitespace-nowrap"
+          onClick={scan}
+          disabled={scanning}
+        >
           <RefreshCw size={13} className={scanning ? 'animate-spin' : ''} aria-hidden />
           {t('buildServer.discovery.refresh')}
         </Button>

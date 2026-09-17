@@ -836,19 +836,34 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     // What this run is about to take out of package.json, so that a run after a failed install can
     // put it back: from here on the file is upstream's, and a plan worked out later sees nothing.
     const takenOut = planApplies ? plan.reinstall : []
-    try {
-      await markInstallPending(projectPath, headAfter, takenOut)
-    } catch (error) {
-      noteFailed(error)
-    }
 
-    // The plan of this run, plus what an earlier one noted down for this very commit - the second
-    // half is what makes "run the update again" finish the job rather than leave two packages out.
-    const carried = pendingFor !== '' && pendingFor === headAfter ? pending.reinstall : []
+    // The plan of this run, plus what an earlier one noted down - the second half is what makes
+    // "run the update again" finish the job rather than leave two packages out.
+    //
+    // Not asked against the SHA, unlike the amend below. The list answers "which of this project's
+    // own packages has an update taken out of package.json", and that is not a property of one
+    // commit: a single commit between the two runs - a Git-Sync, a note in the README - moved HEAD
+    // and made this run read an empty list, write `[]` over the full one and delete it at the end.
+    // Measured (twenty-first review, finding 1, scene h2): "Already up to date.", `success: true`,
+    // a plain `npm install`, themes gone, note deleted. What the SHA would guard against is a list
+    // from another state naming a package the user does not want back - and to not want it back
+    // they would have to have taken it out of a package.json it was no longer in, because after
+    // the merge the file is upstream's. `stillMissing` drops whatever is already there anyway.
+    const carried = pendingFor !== '' ? pending.reinstall : []
     const wanted = [
       ...takenOut,
       ...carried.filter((entry) => !takenOut.some((own) => own.name === entry.name && own.section === entry.section))
     ]
+    try {
+      // `wanted`, not `takenOut`: the run that takes over from a failed install computes an empty
+      // plan - that is the whole reason this list exists - so writing its own plan here would put
+      // `[]` over the list it is about to use. It survived exactly one failed install. Measured
+      // (twenty-first review, finding 1, scene h1 and the real run real2): the second failure left
+      // `reinstall: []`, and the third run was verbatim the scene 32ff038 was built for.
+      await markInstallPending(projectPath, headAfter, wanted)
+    } catch (error) {
+      noteFailed(error)
+    }
     const missingNow = wanted.length > 0 ? await stillMissing(projectPath, wanted) : []
     const installCalls = missingNow.length > 0 ? reinstallCommands(missingNow) : [{ args: ['install'] }]
     let installOutput = ''

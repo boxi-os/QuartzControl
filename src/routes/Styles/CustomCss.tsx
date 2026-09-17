@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import CodeMirror from '@uiw/react-codemirror'
 import { css } from '@codemirror/lang-css'
 import type { EditorView } from '@codemirror/view'
-import { ArrowDown, ArrowUp, Check, FileCode, FileWarning, Plus, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronRight, FileCode, FileWarning, Palette, Plus, X } from 'lucide-react'
 import type { FontFaceInfo, ScssCheckResult, StyleFile, StyleReferenceFile } from '@shared/ipc-contract'
 import { Button, Card, CardHeading, Select, TextInput, useCopyToClipboard } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
@@ -735,9 +735,15 @@ function ActiveStyles(): JSX.Element {
   const { project, config, graph, overrides } = useStyles()
   const { copied, copy } = useCopyToClipboard()
   const [faces, setFaces] = useState<FontFaceInfo[]>([])
+  // Collapsed by default, and remembered per route like every other "where was I": the block is
+  // 335px of table and type samples, it is a glance one takes once, and above an editor it pushed
+  // the code itself off the first screen. What it says does not change while one types here.
+  const [open, setOpen] = useStickyState('styles.css.activeStyles', false)
   const themeId = activeThemeIdOf(config)
 
   useEffect(() => {
+    // Still read when collapsed: the summary line under the heading names the fonts, and the
+    // @font-face answer is what decides whether "nicht installiert" belongs there.
     window.quartzGui.styles.fontFaces(project.path, themeId).then(setFaces)
   }, [project.path, themeId])
 
@@ -758,129 +764,164 @@ function ActiveStyles(): JSX.Element {
   const anyMissing = families.some((family) => family && !fontIsAvailable(family))
 
   return (
-    <Card className="grid gap-6 lg:grid-cols-[auto_minmax(0,1fr)]">
-      <div>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">
-          {t('styleEditor.current.colors')}
-        </h3>
-        {/* A table rather than a wrapping row of swatch pairs: the values themselves used to live
-            only in a title attribute, and a hex one has to hover for is not a value one can read
-            off. Two columns, because a colour without its counterpart in the other scheme is half
-            an answer here. */}
-        <table className="text-xs">
-          <thead>
-            <tr className="text-[10px] font-semibold uppercase tracking-wide text-text-secondary">
-              <th className="pb-1 pr-4 text-left font-semibold">{t('styleEditor.current.variable')}</th>
-              <th className="pb-1 pr-4 text-left font-semibold">{t('styles.variables.light')}</th>
-              <th className="pb-1 text-left font-semibold">{t('styles.variables.dark')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {SUMMARY_COLORS.map((key) => (
-              <tr key={key} className="border-t border-ink/[0.05]">
-                <td className="py-0.5 pr-4 font-mono">--{key}</td>
-                {(['light', 'dark'] as const).map((mode) => {
-                  const value = resolvedValue(key, mode, ctx)
-                  const hex = cssColorToHex(value) ?? value
-                  return (
-                    <td key={mode} className="whitespace-nowrap py-0.5 pr-4">
-                      {/* Still a copy target, and still one per mode: the two halves are different
-                          colours, so "which one did I just copy" has to be unambiguous. */}
+    <Card>
+      {/* The heading is the toggle, not a chevron beside it: the row is what one aims at, and the
+          <h2> stays the card's one heading (CLAUDE.md, "Eine Karte hat eine Überschrift"). */}
+      <CardHeading icon={Palette} className={open ? 'mb-4' : ''}>
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          className="flex flex-1 items-center gap-1.5 text-left"
+        >
+          {t('styleEditor.current.heading')}
+          {open ? (
+            <ChevronDown size={14} className="shrink-0 text-text-muted" aria-hidden />
+          ) : (
+            <ChevronRight size={14} className="shrink-0 text-text-muted" aria-hidden />
+          )}
+        </button>
+      </CardHeading>
+
+      {/* Collapsed it still says what it is about, so opening it is a decision and not a lottery:
+          the colour count and the font families, the same numbers the block itself shows. */}
+      {!open && (
+        <p className="text-micro text-text-muted">
+          {t('styleEditor.current.summary', {
+            colors: SUMMARY_COLORS.length,
+            // Deduplicated: two of the four slots normally hold the same family, and "Instrument
+            // Sans · Instrument Sans" reads as a mistake rather than as two roles.
+            fonts: [...new Set(families.filter((f): f is string => Boolean(f)))].join(' · ') || '–'
+          })}
+        </p>
+      )}
+
+      {open && (
+        <div className="grid gap-6 lg:grid-cols-[auto_minmax(0,1fr)]">
+          <div>
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">
+              {t('styleEditor.current.colors')}
+            </h3>
+            {/* A table rather than a wrapping row of swatch pairs: the values themselves used to live
+                only in a title attribute, and a hex one has to hover for is not a value one can read
+                off. Two columns, because a colour without its counterpart in the other scheme is half
+                an answer here. */}
+            <table className="text-xs">
+              <thead>
+                <tr className="text-[10px] font-semibold uppercase tracking-wide text-text-secondary">
+                  <th className="pb-1 pr-4 text-left font-semibold">{t('styleEditor.current.variable')}</th>
+                  <th className="pb-1 pr-4 text-left font-semibold">{t('styles.variables.light')}</th>
+                  <th className="pb-1 text-left font-semibold">{t('styles.variables.dark')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {SUMMARY_COLORS.map((key) => (
+                  <tr key={key} className="border-t border-ink/[0.05]">
+                    <td className="py-0.5 pr-4 font-mono">--{key}</td>
+                    {(['light', 'dark'] as const).map((mode) => {
+                      const value = resolvedValue(key, mode, ctx)
+                      const hex = cssColorToHex(value) ?? value
+                      return (
+                        <td key={mode} className="whitespace-nowrap py-0.5 pr-4">
+                          {/* Still a copy target, and still one per mode: the two halves are different
+                              colours, so "which one did I just copy" has to be unambiguous. */}
+                          <button
+                            type="button"
+                            onClick={() => hex && copy(hex, `--${key} (${t(`styles.variables.${mode}`)})`)}
+                            title={t('styleEditor.cssVars.copyHint', { value: hex ?? '—' })}
+                            className="flex items-center gap-1.5 text-left"
+                          >
+                            <span
+                              className="h-3.5 w-3.5 shrink-0 rounded border border-ink/15"
+                              style={{ backgroundColor: isDisplayableColor(value) ? value : 'transparent' }}
+                            />
+                            <span className="font-mono tabular-nums text-text-muted">{hex ?? '—'}</span>
+                          </button>
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p role="status" className="mt-2 min-h-[15px] truncate text-micro text-green-700 dark:text-green-400">
+              {copied ? t('common.copied', { value: copied }) : ''}
+            </p>
+          </div>
+
+          <div>
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">
+              {t('styleEditor.current.fonts')}
+            </h3>
+            <div className="flex flex-col">
+              {SUMMARY_FONTS.map((key) => {
+                const stack = resolvedValue(key, 'light', ctx)
+                if (!stack) return null
+                const family = primaryFamily(stack)
+                const summary = summarizeFaces(faces, family)
+                const available = fontIsAvailable(family)
+                return (
+                  <div key={key} className="border-t border-ink/[0.05] py-1.5 first:border-t-0 first:pt-0">
+                    <div className="flex flex-wrap items-baseline gap-x-2 text-micro">
+                      <code className="w-[74px] shrink-0 font-mono text-text-muted">{key}</code>
                       <button
                         type="button"
-                        onClick={() => hex && copy(hex, `--${key} (${t(`styles.variables.${mode}`)})`)}
-                        title={t('styleEditor.cssVars.copyHint', { value: hex ?? '—' })}
-                        className="flex items-center gap-1.5 text-left"
+                        onClick={() => copy(stack, `--${key}`)}
+                        title={t('styleEditor.cssVars.copyHint', { value: stack })}
+                        className="font-semibold hover:underline"
                       >
-                        <span
-                          className="h-3.5 w-3.5 shrink-0 rounded border border-ink/15"
-                          style={{ backgroundColor: isDisplayableColor(value) ? value : 'transparent' }}
-                        />
-                        <span className="font-mono tabular-nums text-text-muted">{hex ?? '—'}</span>
+                        {family}
                       </button>
-                    </td>
-                  )
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <p role="status" className="mt-2 min-h-[15px] truncate text-micro text-green-700 dark:text-green-400">
-          {copied ? t('common.copied', { value: copied }) : ''}
-        </p>
-      </div>
-
-      <div>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-text-secondary">
-          {t('styleEditor.current.fonts')}
-        </h3>
-        <div className="flex flex-col">
-          {SUMMARY_FONTS.map((key) => {
-            const stack = resolvedValue(key, 'light', ctx)
-            if (!stack) return null
-            const family = primaryFamily(stack)
-            const summary = summarizeFaces(faces, family)
-            const available = fontIsAvailable(family)
-            return (
-              <div key={key} className="border-t border-ink/[0.05] py-1.5 first:border-t-0 first:pt-0">
-                <div className="flex flex-wrap items-baseline gap-x-2 text-micro">
-                  <code className="w-[74px] shrink-0 font-mono text-text-muted">{key}</code>
-                  <button
-                    type="button"
-                    onClick={() => copy(stack, `--${key}`)}
-                    title={t('styleEditor.cssVars.copyHint', { value: stack })}
-                    className="font-semibold hover:underline"
-                  >
-                    {family}
-                  </button>
-                  {/* Straight out of the @font-face declarations the site really has - a range like
-                      100–1000 is a variable font, and italic only shows when a face declares it. */}
-                  <span className="text-text-muted">
-                    {summary
-                      ? `${summary.weights.join(' · ')}${summary.italic ? ` · ${t('styleEditor.current.italic')}` : ''}`
-                      : t('styleEditor.current.noFace')}
-                  </span>
-                  {!available && <span className="text-amber-700 dark:text-amber-400">{t('styleEditor.current.notInstalled')}</span>}
-                </div>
-                <p
-                  className={`pl-[82px] text-xl leading-tight ${available ? '' : 'text-text-muted'}`}
-                  style={{ fontFamily: stack }}
-                >
-                  {t('styleEditor.current.sample')}
-                </p>
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Said once under the block, not on every line: four identical warnings read as four
-            problems. The short word sits on the line it belongs to. */}
-        {anyMissing && <p className="mt-2 text-micro text-amber-700 dark:text-amber-400">{t('styleEditor.current.notInstalledExplainer')}</p>}
-
-        {/* Where the fonts come from decides what the weights above even mean - and whether the
-            site calls Google at all. Both mechanisms are checked, not just the theme setting: the
-            Fonts plugin has its own fontOrigin and defaults to Google. */}
-        <div className="mt-2 flex flex-col gap-1 text-micro">
-          {loaders.length === 0 && <p className="text-text-muted">{t('styleEditor.current.noLoader')}</p>}
-          {loaders.map((loader) => (
-            <p
-              key={`${loader.via}-${loader.mode}`}
-              className={loader.mode === 'google' ? 'text-amber-700 dark:text-amber-400' : 'text-text-muted'}
-            >
-              {t(`styleEditor.current.loader.${loader.via}.${loader.mode}`, {
-                specs: requests
-                  .map(
-                    (r) =>
-                      `${r.family} ${r.singleWeightDropped ? t('styleEditor.current.familyDefault') : r.weights.join('/')}${
-                        r.italic ? ` + ${t('styleEditor.current.italic')}` : ''
-                      }`
-                  )
-                  .join(' · ')
+                      {/* Straight out of the @font-face declarations the site really has - a range like
+                          100–1000 is a variable font, and italic only shows when a face declares it. */}
+                      <span className="text-text-muted">
+                        {summary
+                          ? `${summary.weights.join(' · ')}${summary.italic ? ` · ${t('styleEditor.current.italic')}` : ''}`
+                          : t('styleEditor.current.noFace')}
+                      </span>
+                      {!available && <span className="text-amber-700 dark:text-amber-400">{t('styleEditor.current.notInstalled')}</span>}
+                    </div>
+                    <p
+                      className={`pl-[82px] text-xl leading-tight ${available ? '' : 'text-text-muted'}`}
+                      style={{ fontFamily: stack }}
+                    >
+                      {t('styleEditor.current.sample')}
+                    </p>
+                  </div>
+                )
               })}
-            </p>
-          ))}
+            </div>
+
+            {/* Said once under the block, not on every line: four identical warnings read as four
+                problems. The short word sits on the line it belongs to. */}
+            {anyMissing && <p className="mt-2 text-micro text-amber-700 dark:text-amber-400">{t('styleEditor.current.notInstalledExplainer')}</p>}
+
+            {/* Where the fonts come from decides what the weights above even mean - and whether the
+                site calls Google at all. Both mechanisms are checked, not just the theme setting: the
+                Fonts plugin has its own fontOrigin and defaults to Google. */}
+            <div className="mt-2 flex flex-col gap-1 text-micro">
+              {loaders.length === 0 && <p className="text-text-muted">{t('styleEditor.current.noLoader')}</p>}
+              {loaders.map((loader) => (
+                <p
+                  key={`${loader.via}-${loader.mode}`}
+                  className={loader.mode === 'google' ? 'text-amber-700 dark:text-amber-400' : 'text-text-muted'}
+                >
+                  {t(`styleEditor.current.loader.${loader.via}.${loader.mode}`, {
+                    specs: requests
+                      .map(
+                        (r) =>
+                          `${r.family} ${r.singleWeightDropped ? t('styleEditor.current.familyDefault') : r.weights.join('/')}${
+                            r.italic ? ` + ${t('styleEditor.current.italic')}` : ''
+                          }`
+                      )
+                      .join(' · ')
+                  })}
+                </p>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </Card>
   )
 }

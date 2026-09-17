@@ -1388,8 +1388,12 @@ export default {
       unavailable: 'SCSS-Prüfung nicht möglich: {{reason}}'
     },
     current: {
-      colors: 'Aktuell geltende Farben',
-      fonts: 'Aktuell geltende Schriften',
+      heading: 'Aktuell geltende Farben und Schriften',
+      summary: '{{colors}} Farben für hell und dunkel · {{fonts}}',
+      // Kurz, weil die Karten-Überschrift darüber beides schon nennt - dreimal „Aktuell
+      // geltende…“ in einer Karte liest sich als Versehen.
+      colors: 'Farben',
+      fonts: 'Schriften',
       variable: 'Variable',
       sample: 'Aa Bb Cc 123 — Beispieltext',
       notInstalled: 'nicht installiert',

@@ -1384,8 +1384,11 @@ export default {
       unavailable: 'SCSS check not possible: {{reason}}'
     },
     current: {
-      colors: 'Colors in effect',
-      fonts: 'Fonts in effect',
+      heading: 'Colors and fonts in effect',
+      summary: '{{colors}} colors for light and dark · {{fonts}}',
+      // Short, because the card's heading above says both already.
+      colors: 'Colors',
+      fonts: 'Fonts',
       variable: 'Variable',
       sample: 'Aa Bb Cc 123 — sample text',
       notInstalled: 'not installed',

@@ -101,8 +101,20 @@ function RepoStatus({
               {abort.pending ? t('common.saving') : t('gitSync.abortMerge')}
             </Button>
           )}
-          {abort.error && <span className="text-red-600 dark:text-red-400">{abort.error}</span>}
-          {abortNote && <span className="w-full whitespace-pre-wrap font-mono">{abortNote}</span>}
+        </div>
+      )}
+
+      {/* Outside the banner, because half of what the abort answers is said *after* the merge is
+          gone: the staged file it throws away is `success: true` with a sentence, and a failed
+          stash pop names a stand that is now only in `git stash list`. Inside, `onChanged()`
+          brought back a status without `inProgress` and took the sentence down with the banner -
+          visible for the length of one status read (twenty-fifth review, finding 1, measured on
+          the built app). This page is the one that shows staged files at all, so it is the one
+          where someone sees that a file is missing. */}
+      {(abort.error || abortNote) && (
+        <div className="rounded-md border border-ink/10 bg-ground p-2.5 text-xs">
+          {abort.error && <p className="text-red-600 dark:text-red-400">{abort.error}</p>}
+          {abortNote && <p className="whitespace-pre-wrap font-mono text-text-secondary">{abortNote}</p>}
         </div>
       )}
 

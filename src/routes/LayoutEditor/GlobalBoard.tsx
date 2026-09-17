@@ -238,7 +238,19 @@ export default function GlobalBoard({
     if ((POSITIONS as string[]).includes(id)) return t(`positions.${id}`, id)
     return config.plugins[index]?.name ?? id
   }
-  const { announcements, screenReaderInstructions } = useDndAccessibility(t, describeDragId)
+  // A palette chip is the one thing on this board whose own place is not its own id: it is called
+  // `palette:<index>` and it lies in `palette-drop-zone`. The default `isHome` therefore read every
+  // sentence about the tray as a move - "aufgenommen, liegt über Komponentenvorrat" on pickup,
+  // "bei Komponentenvorrat abgelegt" for a drop that does nothing (handleDragEnd finds no
+  // container for that id and returns), and never the step back the `dnd.backHome` of the last
+  // round was written for. Measured (twenty-fourth review, finding 6).
+  //
+  // Not included: a *placed* sole instance dropped on the tray, which does nothing either (the
+  // branch above needs a duplicate). The tray is not that row's place, so "blieb an seinem Platz"
+  // would be as untrue as "abgelegt" - that one needs a sentence of its own, not this question.
+  const isHomeOnBoard = (activeId: string, overId: string): boolean =>
+    activeId === overId || (overId === PALETTE_DROP_ID && activeId.startsWith(PALETTE_PREFIX))
+  const { announcements, screenReaderInstructions } = useDndAccessibility(t, describeDragId, isHomeOnBoard)
 
   // The pointer half is dnd-kit's own default, unchanged; the keyboard half is the whole point of
   // saying this out loud. Without a coordinate getter an arrow press moves the picked-up item by a

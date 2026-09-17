@@ -130,6 +130,8 @@ const STRINGS = {
     // Der häufigste Fall: ein nicht geschlossenes Anführungszeichen, ein Tab als Einrückung. yamls
     // eigene Meldung nennt Zeile und Spalte und bleibt deshalb englisch, wie die übrigen
     // Werkzeugmeldungen auch.
+    updateAlreadyRunning:
+      'Für dieses Projekt läuft gerade ein Kern-Update. Warte, bis es durch ist — sein Ergebnis steht danach auf der Updates-Seite.',
     configNotParseable:
       'quartz.config.yaml lässt sich nicht als YAML lesen: {{reason}}. Repariere sie in einem Editor oder nimm einen Wiederherstellungspunkt.',
     configMissing:
@@ -424,6 +426,8 @@ const STRINGS = {
       'An earlier update left package entries of yours stashed in git (“git stash list”). “Abort merge” puts them back once the changed file from the merge is discarded under Git sync.',
     configNotAMapping:
       'quartz.config.yaml does not hold a mapping of keys and values. The app will not read it; fix it in an editor or use a restore point.',
+    updateAlreadyRunning:
+      'A core update is already running for this project. Wait for it to finish — its result appears on the Updates page.',
     configNotParseable:
       'quartz.config.yaml cannot be read as YAML: {{reason}}. Fix it in an editor or use a restore point.',
     configMissing:

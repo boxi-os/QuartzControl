@@ -786,13 +786,39 @@ async function leftoverStashNote(projectPath: string, before: string | null): Pr
  * Asked before the run, because afterwards an entry of this run's own would answer the same way;
  * *which* sentence it earns is asked afterwards, see leftoverStashNote.
  */
-export async function runCoreUpdate(projectPath: string): Promise<UpdateResult> {
-  const before = (await coreUpdateStashEntry(projectPath)) !== null ? await stashRef(projectPath) : null
-  const result = await runCoreUpdateFrom(projectPath)
-  if (before === null) return result
-  const note = await leftoverStashNote(projectPath, before)
-  if (note === '') return result
-  return { ...result, output: `${result.output}\n\n${note}` }
+/**
+ * The projects a core update or an abort is running against right now.
+ *
+ * Both write the same repository - they stash, merge, reset and commit in it - and until now the
+ * only thing keeping two of them apart was a `useState` in the renderer, which is one window's
+ * memory of what it started and dies with the route. Two windows, two projects registered on the
+ * same folder, or a click that arrives while the page is being left are all outside what that
+ * flag can see. Here it costs one Set and one sentence, and the answer a second caller gets is
+ * the truthful one rather than a git error out of the middle of someone else's merge.
+ *
+ * Per project path, not app-wide: two different projects have nothing to do with each other.
+ */
+const coreUpdatesRunning = new Set<string>()
+
+async function whileHoldingProject<T>(projectPath: string, busy: T, run: () => Promise<T>): Promise<T> {
+  if (coreUpdatesRunning.has(projectPath)) return busy
+  coreUpdatesRunning.add(projectPath)
+  try {
+    return await run()
+  } finally {
+    coreUpdatesRunning.delete(projectPath)
+  }
+}
+
+export function runCoreUpdate(projectPath: string): Promise<UpdateResult> {
+  return whileHoldingProject(projectPath, { success: false, output: mainT('updateAlreadyRunning') }, async () => {
+    const before = (await coreUpdateStashEntry(projectPath)) !== null ? await stashRef(projectPath) : null
+    const result = await runCoreUpdateFrom(projectPath)
+    if (before === null) return result
+    const note = await leftoverStashNote(projectPath, before)
+    if (note === '') return result
+    return { ...result, output: `${result.output}\n\n${note}` }
+  })
 }
 
 async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
@@ -1233,22 +1259,24 @@ async function stagedOutsideMerge(projectPath: string): Promise<string[]> {
 }
 
 export function abortCoreMerge(projectPath: string): Promise<PluginActionResult> {
-  // Parked for the same reason the merge itself is: an abort has to rewrite the working tree, and
-  // content/ is part of what the conflicted merge touched.
-  return withContentSymlinkParked(projectPath, async () => {
-    // Nothing to read before the abort: what decides whether the stash lying there is this run's
-    // is the HEAD it was taken from, and `merge --abort` does not move HEAD (see
-    // popCoreUpdateStash). MERGE_HEAD, which it does throw away, would only have said which merge
-    // the entry accompanied - the same merge can be attempted against two different HEADs.
-    // Read before the abort: MERGE_HEAD is one of the things it throws away, and without it there is
-    // no way left to tell the user's staged work from the merge's own.
-    const losing = await stagedOutsideMerge(projectPath)
-    const result = await run('git', ['merge', '--abort'], projectPath)
-    if (!result.success) return { success: false, output: explainGitFailure(result.output) + result.output }
-    const popped = await popCoreUpdateStash(projectPath)
-    const lost = losing.length > 0 ? `\n\n${mainT('updateAbortDroppedStaged', { files: losing.join(', ') })}` : ''
-    return { success: popped.success, output: result.output + popped.output + lost }
-  })
+  // The same lock as the update: the abort rewrites the working tree of the repository an update
+  // would be merging in.
+  return whileHoldingProject(projectPath, { success: false, output: mainT('updateAlreadyRunning') }, () =>
+    // Parked for the same reason the merge itself is: an abort has to rewrite the working tree, and
+    // content/ is part of what the conflicted merge touched.
+    withContentSymlinkParked(projectPath, async () => {
+      // Read before the abort: MERGE_HEAD is one of the things it throws away, and without it
+      // there is no way left to tell the user's staged work from the merge's own. What decides
+      // whether the stash lying there is this run's is a different question - the HEAD it was
+      // taken from, which `merge --abort` does not move (see popCoreUpdateStash).
+      const losing = await stagedOutsideMerge(projectPath)
+      const result = await run('git', ['merge', '--abort'], projectPath)
+      if (!result.success) return { success: false, output: explainGitFailure(result.output) + result.output }
+      const popped = await popCoreUpdateStash(projectPath)
+      const lost = losing.length > 0 ? `\n\n${mainT('updateAbortDroppedStaged', { files: losing.join(', ') })}` : ''
+      return { success: popped.success, output: result.output + popped.output + lost }
+    })
+  )
 }
 
 interface LockfilePluginEntry {

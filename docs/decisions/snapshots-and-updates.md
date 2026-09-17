@@ -399,6 +399,17 @@ Der Preis steht in R5: ein Lockfile, das npm im zweiten Lauf neu geschrieben hat
 
 Was weiterhin **nicht** gemessen ist: ERESOLVE, ein echter Push unter Git-Sync, die Notiz über einen Restore hinweg.
 
+**Nachtrag (2026-09-17, zweiundzwanzigstes Review): die Paketliste endet, wenn npm sie eingetragen hat.** Die Liste beschreibt genau ein Fenster — von „`package.json` ist upstreams“ bis „npm hat die eigenen Pakete zurück“. Die Notiz als Ganzes überlebt es (der Aufwärm-Build kommt noch), die Liste nicht; bis hierher tat sie es doch, weil das Einzige, was sie räumt, ein Lauf ist, der bis zum Ende kommt. Stirbt einer davor — ein Absturz, ein unschreibbares `.quartz-gui/` —, blieb sie mit vollem Inhalt über einer `package.json` liegen, in der npm längst alles wieder eingetragen hatte, und galt von da an unbegrenzt. Gemessen (r2, Upstream D; die npx-Attrappe setzt beim Bauen `.quartz-gui` auf 555, so dass `clearInstallPending` scheitert):
+
+    vorher (92c9215)  Lauf 2: Notiz bleibt mit [@quartz-themes/default]
+                      der Nutzer entfernt das Theme und committet
+                      Lauf 3: `install --save-prod @quartz-themes/default@^2.0.0` — das Theme
+                              ist zurück, unter `success: true`, in einem Lauf ohne etwas zu holen
+    nachher           Lauf 2: Notiz bleibt mit [], SHA und `filesAtHead` erhalten
+                      Lauf 3: `install` schlicht, das Theme bleibt entfernt
+
+Das ist die Kehrseite von `carried` ohne SHA-Bindung (Nachtrag oben): Die Bindung hatte diese Tür zugehalten, und das Argument, das sie ersetzte („nach dem Merge ist `package.json` upstreams, er kann es gar nicht entfernt haben“), gilt für den Lauf, der unmittelbar folgt, nicht für eine Notiz, die liegen bleibt. Gegenproben: h1 (npm scheitert zweimal, der dritte Lauf trägt beide Themes wieder ein) und der gewöhnliche Lauf, beide unverändert.
+
 **Nachtrag (2026-09-17): was der Abbruch nebenbei wegwirft, wird genannt.** `git merge --abort` ist `reset --merge`, und das behält die *ungestagete* Hälfte einer Änderung und setzt den Rest zurück — ein vorgemerkter Edit an einer Datei, um die der Merge gar nicht geht, ist danach weg, ohne eine Zeile darüber. Der Stash-Satz rechnet diese Regel seit dem zwanzigsten Review ein; ausgesprochen hat sie niemand. Gemessen (h9, Upstream D): eine vorgemerkte Zeile in `README.md` neben einem Konflikt in `quartz/index.ts` — nach dem Abbruch steht die Datei wieder auf ihrem alten Stand und `git status` nennt sie nicht mehr. Der Knopf bleibt ein Knopf, weil git das erlaubt und eine Verweigerung die App wäre, die für den Nutzer entscheidet; gelesen wird **vor** dem Abbruch, weil `MERGE_HEAD` zu dem gehört, was er wegwirft, und ohne ihn die Arbeit des Nutzers nicht von der des Merges zu trennen ist.
 
 **Und was sein Pop freilegt.** Unter dem Stash, den der Abbruch zurückträgt, kann ein älterer der App liegen — von einem Lauf, der seinen nie wieder eintragen konnte. Bis hierher war genau dieser Augenblick der eine, in dem er sicher unerwähnt blieb: Der Lauf danach sagt nichts, weil sein eigener Eintrag dann weg ist und der übrige einer ist, den er nicht geschrieben hat. Gemessen (h8, zwei Einträge übereinander): vorher „Dropped refs/stash@{0}“ und sonst nichts, nachher derselbe Pop plus der Satz, der den verbliebenen beim Namen nennt — welchen der beiden Sätze er bekommt, entscheidet dieselbe Frage wie in `leftoverStashNote`.

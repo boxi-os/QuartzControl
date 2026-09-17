@@ -215,7 +215,7 @@ diese eine Seite, und sie ist in dieser Runde nur für eine beantwortet worden.
 
 ### 6. Die Dokumente (`7a9d31c`, `546816d`, `de9aaa6`, `26022fa`, `abe2e1e`)
 
-Dreizehn Nachträge in `docs/decisions/`, rund 200 neue Zeilen in `CLAUDE.md`, zehn neue Regeln. Jede
+Elf Nachträge in `docs/decisions/`, rund 200 neue Zeilen in `CLAUDE.md`, zehn neue Regeln. Jede
 Zahl darin ist eine Messung oder ein Befund. Zwei Stellen, an denen es diese Runde selbst schon
 einmal falsch hatte: die Diff-Zahlen dieses Absatzes (zweimal nachgerechnet, weil jede Korrektur
 die Zahl ändert) und die 178, die in einer Commit-Nachricht stand, bevor sie gezählt war.

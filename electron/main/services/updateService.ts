@@ -122,7 +122,7 @@ async function installedUpstream(
  *
  * The same three questions the run itself asks, in the same order and out of the same functions,
  * so that the page and the run cannot disagree: is there a note at all, is its list still this
- * app's to answer (see packageJsonCommittedSince), and is any of it actually missing from
+ * app's to answer (see listTakenInHandSince), and is any of it actually missing from
  * package.json right now (`stillMissing` - a user who wrote the lines back by hand owes nothing,
  * whether or not they committed).
  *
@@ -133,7 +133,7 @@ async function installedUpstream(
 async function outstandingCoreInstall(projectPath: string): Promise<string[]> {
   const pending = await readPendingInstall(projectPath)
   if (pending.head === '' || pending.reinstall.length === 0) return []
-  if (await packageJsonCommittedSince(projectPath, pending.head)) return []
+  if (await listTakenInHandSince(projectPath, pending)) return []
   return (await stillMissing(projectPath, pending.reinstall)).map((entry) => entry.name)
 }
 
@@ -469,29 +469,55 @@ interface PendingInstall {
  * finding of the twenty-second review, through a door its fix does not close (twenty-third review,
  * finding 2, scenes f1 and r1).
  *
- * Asked as "has package.json been committed since", not as "does package.json still look the way
- * the run left it": the file coming back byte for byte is exactly what happens when the user puts
- * a line back and later takes it out again, which is the case this has to catch. A commit is also
- * the one signal that does not fire for npm's own rewriting, and it leaves h2 of the twenty-first
- * review alone - an unrelated commit between two runs (a Git-Sync, a note in the README) does not
- * touch this file.
+ * Asked as "has somebody committed a change to one of these lines", not as "does package.json
+ * still look the way the run left it": the file coming back byte for byte is exactly what happens
+ * when the user puts a line back and later takes it out again, which is the case this has to
+ * catch. A commit is also the one signal that does not fire for npm's own rewriting.
  *
- * Asked before the merge, because the merge commit this run is about to write touches package.json
- * itself and would answer "yes" on every continuation run.
+ * Asked per package name, not per file, because "has package.json been committed since" fires for
+ * three commits that answer nothing. Measured (twenty-fourth review, finding 2, scenes P2, P7 and
+ * P9): a `scripts.mine` entry the user committed, upstream's own commits once they reach HEAD
+ * through a merge the user resolved by hand (`rev-list` with a path follows the tree-identical
+ * parent, which is upstream), and this app's own amend when the note comes back from a restore.
+ * In all three the list fell, the badge went from "Nicht abgeschlossen" straight to "Aktuell", and
+ * the packages never came back - a regression in the other direction from the door the
+ * twenty-third review closed.
+ *
+ * `git log -G` answers exactly the question the list is about: did a commit add or remove a line
+ * naming this package. It leaves the three above alone for one reason each - the scripts entry
+ * does not name them; upstream does not know the project's own packages; and a merge commit shows
+ * no diff at all without `--diff-merges`, which takes both the hand-resolved merge and our own
+ * amend out. h2 of the twenty-first review is left alone as before.
+ *
+ * Asked before the merge, for the amend's sake as much as the list's: the merge commit this run is
+ * about to write is one of those merges.
  *
  * Not caught: a repair and a removal that are both left uncommitted. The list then still applies,
  * and `stillMissing` cannot tell "not back yet" from "taken out again" - both are a missing entry.
  */
-async function packageJsonCommittedSince(projectPath: string, head: string): Promise<boolean> {
-  if (head === '') return false
-  const listed = await run('git', ['rev-list', '--count', `${head}..HEAD`, '--', 'package.json'], projectPath)
-  // Could not look is not "all clear" - and here the two answers are not symmetrical: keeping a
-  // list we cannot vouch for writes a package line nobody asked for, silently and under
-  // `success: true`, while dropping one leaves packages out where the user can see it and the
-  // restore point still stands. A SHA the object database no longer has (an amended note from a
-  // run long gone, a `git gc`) lands here.
-  if (!listed.success) return true
-  return Number.parseInt(listed.output.trim(), 10) > 0
+async function listTakenInHandSince(projectPath: string, pending: PendingInstall): Promise<boolean> {
+  if (pending.head === '' || pending.reinstall.length === 0) return false
+  // One call per name rather than one alternation: the pickaxe takes a regex, and which flavour it
+  // is (basic or extended) is a question this does not have to answer if the pattern has no
+  // alternation in it. The escape is for the dot in a name like `quartz.foo`; a name is at most a
+  // handful of entries long, and the call is a `git log` over the commits since the note.
+  for (const entry of pending.reinstall) {
+    const needle = entry.name.replace(/[\\.*+?^${}()|[\]]/g, '\\$&')
+    const touched = await run(
+      'git',
+      ['log', '--max-count=1', '--format=%H', `-G${needle}`, `${pending.head}..HEAD`, '--', 'package.json'],
+      projectPath
+    )
+    // Could not look is not "all clear" - and here the two answers are not symmetrical: keeping a
+    // list we cannot vouch for writes a package line nobody asked for, silently and under
+    // `success: true`, while dropping one leaves packages out and the restore point still stands.
+    // A SHA the object database no longer has (an amended note from a run long gone, a `git gc`)
+    // lands here. It is now the one door left that drops a list without the user having answered
+    // anything, which is why the run says so when it does (`updatePackagesDropped`).
+    if (!touched.success) return true
+    if (touched.output.trim() !== '') return true
+  }
+  return false
 }
 
 /**
@@ -853,11 +879,11 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
   return withContentSymlinkParked(projectPath, async () => {
     const plan = await planPackageFiles(projectPath)
     // An earlier run's note, and whether its list is still this app's to answer. Both read before
-    // the merge: the merge commit about to be written touches package.json itself, so asked
-    // afterwards the second question says "yes" on every continuation run (see
-    // packageJsonCommittedSince).
+    // the merge: the merge commit about to be written is one of the merges the second question
+    // deliberately does not see, and reading it afterwards would ask about a commit this run made
+    // (see listTakenInHandSince).
     const pending = await readPendingInstall(projectPath)
-    const noteOverruled = await packageJsonCommittedSince(projectPath, pending.head)
+    const noteOverruled = await listTakenInHandSince(projectPath, pending)
     const tracked = await trackedNpmOwnedFiles(projectPath)
     // Whether the two files were, before this run touched anything, exactly what HEAD has - index
     // and working tree alike. It is the one thing that makes "everything they differ by at the end
@@ -1184,6 +1210,11 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
       await run('git', ['commit', '--amend', '--no-edit', '--only', '--', ...tracked], projectPath)
     }
 
+    // What the dropped list is still about, asked after npm has had its turn: an entry the user has
+    // written back themselves needs no sentence, and in the scene this catches (a commit that puts
+    // one of two lines back) that is exactly half of them.
+    const dropped = noteOverruled && pending.reinstall.length > 0 ? await stillMissing(projectPath, pending.reinstall) : []
+
     const packageNotes = [
       missingNow.length > 0
         ? mainT('updatePackagesReinstalled', { packages: missingNow.map((entry) => entry.name).join(', ') })
@@ -1198,7 +1229,12 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
       // condition that mirrors the one above is easier to read than one that does not.
       planApplies && plan.upstreamWins.length > 0
         ? mainT('updatePackagesUpstreamWins', { packages: plan.upstreamWins.join(', ') })
-        : ''
+        : '',
+      // A list this run deliberately did not act on. Dropping it is the right answer - somebody
+      // has taken one of those lines in hand since, and that somebody is not this app - but doing
+      // it in silence is what made the badge jump from "Nicht abgeschlossen" to "Aktuell" with
+      // nothing anywhere naming the packages it had been about.
+      dropped.length > 0 ? mainT('updatePackagesDropped', { packages: dropped.map((entry) => entry.name).join(', ') }) : ''
     ]
       .filter(Boolean)
       .join('\n')

@@ -100,6 +100,11 @@ const STRINGS = {
     updateMergeUnfinished:
       'Ein früheres Update steckt noch mitten im Zusammenführen. Brich es oben auf dieser Seite ab und starte das Update erneut.\n\n',
     updatePackagesReinstalled: 'Eigene Pakete wieder eingetragen: {{packages}}',
+    // Ein voller Merkzettel, den dieser Lauf nicht abgearbeitet hat, weil seit dem letzten Lauf
+    // jemand eine dieser Zeilen committet hat. Das ist richtig so - aber schweigend fiel damit
+    // auch der einzige Ort weg, an dem die Namen standen.
+    updatePackagesDropped:
+      'Diese eigenen Pakete trägt das Update nicht wieder ein, weil package.json seit dem letzten Lauf von anderer Hand geändert wurde: {{packages}}.',
     updatePackagesUpstreamWins: 'Quartz hat diese Pakete selbst geändert, seine Fassung gilt: {{packages}}',
     updatePackagesPending:
       'Diese eigenen Pakete stehen gerade nicht in package.json: {{packages}}. „Merge abbrechen“ oben trägt sie wieder ein, und der Wiederherstellungspunkt bringt sie ebenfalls zurück.',
@@ -413,6 +418,8 @@ const STRINGS = {
     updateMergeUnfinished:
       'An earlier update is still half-merged. Cancel it at the top of this page and start the update again.\n\n',
     updatePackagesReinstalled: 'Your own packages put back: {{packages}}',
+    updatePackagesDropped:
+      'The update is not putting these packages of yours back, because package.json has been changed by another hand since the last run: {{packages}}.',
     updatePackagesUpstreamWins: 'Quartz changed these packages itself, so its version applies: {{packages}}',
     updatePackagesPending:
       'These packages of yours are currently not in package.json: {{packages}}. “Abort merge” above puts them back, and so does the restore point.',

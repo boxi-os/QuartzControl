@@ -150,6 +150,21 @@ export async function writeConfig(
   const existingRaw = existsSync(path) ? await readFile(path, 'utf-8') : ''
   // field-level setIn (rather than replacing whole subtrees) keeps existing YAML comments intact
   const doc = existingRaw ? parseDocument(existingRaw) : new Document({})
+  // The same question readConfig asks, because this path does not come through it: `config.save`
+  // hands over what the renderer loaded, and between the load and the click the file on disk can
+  // have become something else - a hand edit in another editor is the ordinary way there. Without
+  // this the run died in `doc.toString()` with yaml's own "Document with errors cannot be
+  // stringified"; nothing was lost, but nothing said what to do either.
+  if (doc.errors.length > 0) {
+    throw new Error(mainT('configNotParseable', { reason: doc.errors[0].message.split('\n')[0] }))
+  }
+  // And the other half of the same question, for the same reason. An empty document is not one of
+  // these - `setIn` turns it into a mapping, which is what a project whose config file is empty
+  // needs - but a list or a bare string is, and yaml answered it with "Expected a valid index, not
+  // configuration".
+  if (doc.contents !== null && doc.contents !== undefined && !isMap(doc.contents)) {
+    throw new Error(mainT('configNotAMapping'))
+  }
 
   // `theme` is exempt: readConfig splits it out of `configuration` into its own field, so it is
   // never a key of config.configuration and would otherwise be deleted as stale on every save.

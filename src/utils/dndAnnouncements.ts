@@ -24,12 +24,19 @@ export function useDndAccessibility(
   // every change of `over`, so a plain variable would be back to `false` before the second
   // sentence. Reset in onDragStart, which is the one place that runs before any of it.
   const movedAway = useRef(false)
+  // And whether dnd-kit's first report of a target has been and gone. It comes the moment something
+  // is picked up, before any key or any movement, and it is the one that would talk over the
+  // "aufgenommen" that just went out. Asking by name covered it wherever the thing's own place has
+  // the thing's own name; where it does not - the frame builder reports the *cell* an area lies on -
+  // the first press's sentence arrived before the pickup could be read.
+  const firstOver = useRef(true)
 
   return {
     screenReaderInstructions: { draggable: t('dnd.instructions') },
     announcements: {
       onDragStart: ({ active }) => {
         movedAway.current = false
+        firstOver.current = true
         return t('dnd.picked', { name: name(active.id) })
       },
       // dnd-kit reports the item's own place as the first target the moment it is picked up, and
@@ -45,6 +52,10 @@ export function useDndAccessibility(
       // describes to the same word - and that half said "header liegt über header", two answers to
       // one situation.
       onDragOver: ({ active, over }) => {
+        if (firstOver.current) {
+          firstOver.current = false
+          if (over) return undefined
+        }
         if (over && name(over.id) === name(active.id)) {
           return movedAway.current ? t('dnd.backHome', { name: name(active.id) }) : undefined
         }

@@ -1154,7 +1154,14 @@ export default function FrameBuilder({
             source keeps its place in the grid until the drop. */}
         <DragOverlay>
           {draggedArea && (
-            <div className="rounded-[6px] border border-blue-500 bg-blue-100 px-2 py-1 text-micro font-medium shadow-md dark:border-blue-400 dark:bg-blue-500/30">
+            // `w-fit`, because this chip *is* the dragged rect: dnd-kit sizes the overlay from the
+            // dragged node - a twelve-column area's box - and then measures its only child
+            // (core.esm.js:2413), so a block-level chip came out 1060px wide. Every arrow press
+            // centres that rect on the target cell, which put its left edge at -70 and made the
+            // KeyboardSensor scroll instead of move: measured, the first ArrowRight out of `header`
+            // reached cell 1/7 (half the area away) and the second one 1/8. See the area chips in
+            // the tray, which this now matches.
+            <div className="w-fit rounded-[6px] border border-blue-500 bg-blue-100 px-2 py-1 text-micro font-medium shadow-md dark:border-blue-400 dark:bg-blue-500/30">
               {draggedArea.name}
             </div>
           )}

@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { isAbsolute, join } from 'path'
+import { mainT } from '../i18n'
 
 // The single place that creates <project>/.quartz-gui/ - this app's own scratch area inside the
 // user's project (backups, theme presets, authored frames, the deploy manifest, the Pages
@@ -26,7 +27,11 @@ function ensureIgnored(projectPath: string): void {
     .some((line) => line === IGNORE_LINE || line === DIR_NAME)
   if (alreadyIgnored) return
   const prefix = existing.length > 0 && !existing.endsWith('\n') ? '\n' : ''
-  const block = `${prefix}\n# Arbeitsverzeichnis von QuartzControl (Backups, Presets, Deploy-Manifest)\n${IGNORE_LINE}\n`
+  // In the app's language, because this line is written into the user's own repository and they are
+  // the ones who read it. Free to change, unlike the rule below it: what decides whether the block
+  // is already there is `IGNORE_LINE`, never the comment - so a project that got the German one
+  // from an older build keeps it and gains nothing new.
+  const block = `${prefix}\n# ${mainT('gitignoreComment')}\n${IGNORE_LINE}\n`
   writeFileSync(path, existing + block, 'utf-8')
 }
 

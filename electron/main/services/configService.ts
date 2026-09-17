@@ -22,7 +22,17 @@ export function deriveName(source: PluginSource): string {
 }
 
 export async function readConfig(projectPath: string): Promise<QuartzConfig> {
-  const raw = await readFile(configPath(projectPath), 'utf-8')
+  // "It is not there" is its own answer, and the only one of these with an instruction attached.
+  // It used to be a raw ENOENT under a hint the page showed beneath *every* read error, including
+  // the ones that just said the file is there and what is in it (twenty-first review, "nebenbei"
+  // 5). Said here, the hint travels with the case it belongs to and every caller gets it.
+  let raw: string
+  try {
+    raw = await readFile(configPath(projectPath), 'utf-8')
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') throw new Error(mainT('configMissing'))
+    throw error
+  }
   // Three ways to be unreadable, three answers - and one way to be empty, which is not one of them.
   //
   // Empty: an empty file is a valid YAML document with no content, and `toJS()` answers `null` for

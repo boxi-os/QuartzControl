@@ -728,8 +728,6 @@ export default {
         'Feste Textbausteine der Website (z. B. „Suche“, „Zuletzt geändert“) in den verfügbaren Sprachen. Nur Kern-Texte — eigene Plugin-Texte werden hier nicht erfasst.'
     },
     loadError: 'quartz.config.yaml konnte nicht gelesen werden.',
-    loadErrorHint:
-      'Existiert die Datei im Projektordner? Ein neu erstelltes Projekt braucht dafür einen erfolgreich durchgelaufenen Setup-Assistenten.',
     loading: 'Lade Konfiguration…',
     themeMoved:
       'Farben und Schriften sind zu den Stilen umgezogen — dort bilden sie die Basis-Ebene, auf der Themes, Variablen und eigenes CSS aufbauen.',

@@ -132,6 +132,8 @@ const STRINGS = {
     // Werkzeugmeldungen auch.
     configNotParseable:
       'quartz.config.yaml lässt sich nicht als YAML lesen: {{reason}}. Repariere sie in einem Editor oder nimm einen Wiederherstellungspunkt.',
+    configMissing:
+      'quartz.config.yaml liegt nicht im Projektordner. Ein neu erstelltes Projekt braucht dafür einen erfolgreich durchgelaufenen Setup-Assistenten.',
     // Beim Duplizieren ist die unlesbare Datei die des *Originals*, und der Satz darüber sagt das
     // nicht von selbst - er steht sonst immer über dem Projekt, das gerade offen ist.
     duplicateSourceConfigUnreadable:
@@ -418,6 +420,8 @@ const STRINGS = {
       'quartz.config.yaml does not hold a mapping of keys and values. The app will not read it; fix it in an editor or use a restore point.',
     configNotParseable:
       'quartz.config.yaml cannot be read as YAML: {{reason}}. Fix it in an editor or use a restore point.',
+    configMissing:
+      'quartz.config.yaml is not in the project folder. A newly created project needs the setup assistant to have run through successfully.',
     duplicateSourceConfigUnreadable:
       '“{{path}}” cannot be duplicated because its configuration cannot be read. {{reason}}',
     configPluginsNotAList:

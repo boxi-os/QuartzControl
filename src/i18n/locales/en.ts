@@ -725,8 +725,6 @@ export default {
         'The site’s built-in text labels (e.g. “Search”, “Last modified”) in the available languages. Core texts only — plugin texts are not covered here.'
     },
     loadError: 'quartz.config.yaml could not be read.',
-    loadErrorHint:
-      'Does the file exist in the project folder? A newly created project needs a successfully completed setup wizard for this.',
     loading: 'Loading configuration…',
     themeMoved:
       'Colors and fonts have moved to Styles — there they form the base layer that themes, variables, and custom CSS build on.',

@@ -252,10 +252,12 @@ Chronik. Die Chronik nachzulesen lohnt für zwei Fragen: *warum* eine Regel so l
 Absatz in `docs/decisions/` sie nicht beantwortet, und *was gerade ungelesen ist* — die Serie ist
 so gebaut, dass jede Runde liest, was die vorige gebaut hat.
 
-**Stand:** Die sieben Befunde des vierundzwanzigsten Reviews sind abgearbeitet und liegen auf
-`main`. Das fünfundzwanzigste liest `review-2026-09-29..review-2026-09-30`; sein Auftrag steht in
-[`docs/REVIEW-2026-09-29-auftrag.md`](docs/REVIEW-2026-09-29-auftrag.md), und seine drei Schichten
-— die zwölf Fixes, drei Darstellungsänderungen und die Teilung dieser Datei — stehen oben in
+**Stand:** Die neun Befunde des fünfundzwanzigsten Reviews sind abgearbeitet und liegen auf
+`fix/review-2026-09-29` (nicht gepusht), dazu drei seiner vier Nebenbei-Punkte. Offen bleibt einer:
+die zwei verschieden hohen Formen des Icon-Knopfs, die erst wegfallen, wenn `inline-flex` ins
+`Button`-Primitive zieht — mit `justify-center` dazu, sonst verlieren 66 Knöpfe ihre
+Textzentrierung. Was die Runde gefunden hat, steht in
+[`docs/REVIEW-2026-09-29.md`](docs/REVIEW-2026-09-29.md), was daraus geworden ist, oben in
 [`docs/reviews.md`](docs/reviews.md).
 
 **Arbeitsregel** für die nächste Liste: ein Befund pro Durchgang, jeweils mit `npm run typecheck`,

@@ -16,9 +16,9 @@ Abschnitten“, und oben steht hier nichts mehr — das ist der Preis dafür, da
 ist (fünfundzwanzigstes Review, Befund 8). Die Arbeitsregel steht in `CLAUDE.md`: sie sagt, wie
 gearbeitet wird, und nicht, was war.
 
-## Befunde aus den Reviews (Stand 2026-09-28)
+## Befunde aus den Reviews (Stand 2026-09-18)
 
-Alle vierundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVIEW-2026-09-02.md),
+Alle fünfundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](REVIEW-2026-09-07.md) mit seinen acht,
@@ -41,8 +41,9 @@ Alle vierundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVI
 [`docs/REVIEW-2026-09-25.md`](REVIEW-2026-09-25.md) mit seinen sieben und
 [`docs/REVIEW-2026-09-26.md`](REVIEW-2026-09-26.md) mit seinen vier und
 [`docs/REVIEW-2026-09-27.md`](REVIEW-2026-09-27.md) mit seinen sechs und
-[`docs/REVIEW-2026-09-28.md`](REVIEW-2026-09-28.md) mit seinen sieben (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-28-`) stehen als
+[`docs/REVIEW-2026-09-28.md`](REVIEW-2026-09-28.md) mit seinen sieben und
+[`docs/REVIEW-2026-09-29.md`](REVIEW-2026-09-29.md) mit seinen neun (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-29-`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](REVIEW-2026-09-15.md) gehört nicht
 in diese Zählung: Die „fünfzehnte Runde“ las die Handbücher der zwei Plugins gegen deren Code und
@@ -79,6 +80,26 @@ die geteilt hat, hatte die alte Datei längst gelesen. Daneben: der `2xl`-Zweig 
 Spaltenleiter, den ein Fenster auf diesem Bildschirm (1470 px) nie erreicht, und die Zahl in der
 eingeklappten Zeile, die eine Konstante ist. Das Review geht an ein anderes Modell als die Commits.
 Der Stand ist **nicht gepusht**.
+
+**Das fünfundzwanzigste Review las die drei Schichten oben** und fand **keinen Befund Hoch, zwei
+Mittel, sieben Niedrig**, dazu vier Punkte nebenbei — von Claude Fable 5.1, also von einem anderen
+Modell als dem, das die gelesenen Commits geschrieben hat. Die zwei Mittleren sitzen beide in dem,
+was die Vorrunde gebaut hatte: der Satz des Abbruchs stand auf Git-Sync in dem Band, das ein
+geglückter Abbruch abräumt (die verworfene vorgemerkte Datei ging damit ohne ein Wort), und die
+fünfte Bindung der Paketliste hatte drei Türen offen — die „andere Hand“ konnte die App selbst
+sein, die Nadel traf Teilnamen, und eine Antwort in einem Merge-Commit sieht `-G` nicht. Alle neun
+sind abgearbeitet (`fix/review-2026-09-29`, je ein Commit mit Typcheck, Build und Smoke), dazu drei
+der vier Nebenbei-Punkte; **offen bleibt einer**: Die zwei Formen des Icon-Knopfs sind verschieden
+hoch (an der gebauten App gemessen 32,8–33,3 px mit `<span>` auf der Übersicht gegen 31,5 px mit
+`inline-flex` am Knopf auf Updates). Er fällt weg, wenn `inline-flex` ins `Button`-Primitive zieht,
+und das kostet nach der Messung des Reviews 66 Knöpfe ihre Textzentrierung — `justify-center` dazu,
+und eine eigene Runde. Zwei Befunde waren reine Beschreibungsfehler: Das Schloss deckt die
+Großschreibung längst (gemessen war an `fs.realpathSync` statt an dem `fs.promises.realpath`, das
+im Code steht), und die Zahlen um die Naht der geteilten `CLAUDE.md` mischten Bytes mit Zeichen und
+Schichtdiffs mit Gesamtdiff. Was `@docs/conventions.md` angeht, ist die offene Frage der Vorrunde
+beantwortet: **die Einbindung greift** — in der Sitzung des Reviews lag der volle Text vor dem
+ersten Werkzeugaufruf im Kontext, als eigener Block hinter `CLAUDE.md`. Geladen werden damit
+25 + 68 = 93 KB statt 192; der Rückfallsatz bleibt für Fassungen, die es nicht können.
 
 **Das vierundzwanzigste Review misst ab `review-2026-09-28`** und liest bis `review-2026-09-29`,
 das auf dem Commit „Der Auftrag fuer das vierundzwanzigste Review“ (`fix/review-2026-09-27`) sitzt;

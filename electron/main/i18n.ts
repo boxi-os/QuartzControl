@@ -122,10 +122,18 @@ const STRINGS = {
     // verweigert. Gesagt, bevor der Nutzer drückt, statt danach.
     updateStashMineBlocked:
       'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen („git stash list“). „Merge abbrechen“ trägt ihn wieder ein, sobald die geänderte Datei aus dem Zusammenführen unter Git-Sync verworfen ist.',
-    // quartz.config.yaml enthält etwas, das keine Zuordnung ist. Die App liest sie nicht, statt
-    // sie als leer zu lesen und beim nächsten Speichern darüberzuschreiben.
+    // Drei Arten, wie quartz.config.yaml unlesbar ist, drei Sätze. Gesagt wird jede, statt die
+    // Datei als halb leer zu lesen und dem Nutzer eine leere Seite ohne Begründung zu zeigen; die
+    // Datei selbst ist dabei nie in Gefahr, das Speichern scheitert an ihr ebenfalls.
     configNotAMapping:
       'In quartz.config.yaml steht keine Zuordnung aus Schlüsseln und Werten. Die App liest die Datei deshalb nicht; repariere sie in einem Editor oder nimm einen Wiederherstellungspunkt.',
+    // Der häufigste Fall: ein nicht geschlossenes Anführungszeichen, ein Tab als Einrückung. yamls
+    // eigene Meldung nennt Zeile und Spalte und bleibt deshalb englisch, wie die übrigen
+    // Werkzeugmeldungen auch.
+    configNotParseable:
+      'quartz.config.yaml lässt sich nicht als YAML lesen: {{reason}}. Repariere sie in einem Editor oder nimm einen Wiederherstellungspunkt.',
+    configPluginsNotAList:
+      'In quartz.config.yaml ist „plugins“ keine Liste. Die App liest die Datei deshalb nicht; repariere sie in einem Editor oder nimm einen Wiederherstellungspunkt.',
     // Derselbe Stand, und er passt noch - nur ist kein Merge mehr offen, an dem der Knopf hinge.
     // Was die App nicht mehr tun kann, tut „git stash pop“; deshalb steht hier kein „drop“.
     updateStashFitsHead:
@@ -404,6 +412,10 @@ const STRINGS = {
       'An earlier update left package entries of yours stashed in git (“git stash list”). “Abort merge” puts them back once the changed file from the merge is discarded under Git sync.',
     configNotAMapping:
       'quartz.config.yaml does not hold a mapping of keys and values. The app will not read it; fix it in an editor or use a restore point.',
+    configNotParseable:
+      'quartz.config.yaml cannot be read as YAML: {{reason}}. Fix it in an editor or use a restore point.',
+    configPluginsNotAList:
+      'In quartz.config.yaml, “plugins” is not a list. The app will not read it; fix it in an editor or use a restore point.',
     updateStashFitsHead:
       'An earlier update left package entries of yours stashed in git ({{entry}} in “git stash list”). They fit the state the project is in now, but this app has no way left to put them back: “git stash show -p {{entry}}” shows them, “git stash pop {{entry}}” puts them back.',
     updateStashPopFailed:

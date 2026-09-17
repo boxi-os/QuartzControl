@@ -829,11 +829,17 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   sie festzuhalten ist ihr Zweck.
 - **JSON-Stores nur über `jsonStore.ts`**: atomar schreiben, Unlesbares beiseitelegen statt
   überschreiben.
-- **Eine Datei, die leer ist, ist nicht dasselbe wie eine, die etwas anderes enthält.** Eine leere
-  `quartz.config.yaml` ist ein gültiges YAML-Dokument ohne Inhalt (`toJS()` sagt `null`) und wird
-  gelesen wie ein Dokument ohne diese Schlüssel; ein Dokument, das *kein* Mapping ist, wird gar
-  nicht gelesen, denn sonst zeigt die Seite eine leere Konfiguration und das nächste Speichern
-  schreibt darüber. Vorher war das erste ein roher `TypeError` und das zweite stumm.
+- **Eine Datei, die leer ist, ist nicht dasselbe wie eine, die etwas anderes enthält — und „etwas
+  anderes“ hat mehr als eine Form.** Eine leere `quartz.config.yaml` ist ein gültiges
+  YAML-Dokument ohne Inhalt (`toJS()` sagt `null`) und wird gelesen wie ein Dokument ohne diese
+  Schlüssel. Drei Arten, unlesbar zu sein, bekommen je einen Satz: **ein Syntaxfehler** (`parseDocument`
+  wirft dabei *nicht*, es sammelt `doc.errors` und gibt zurück, was übrig ist), ein Dokument, das
+  **kein Mapping** ist, und ein **`plugins:`, das keine Liste** ist. Die häufigste ist die erste —
+  ein nicht geschlossenes Anführungszeichen, ein Tab als Einrückung —, und sie las sich still als
+  halb leere Konfiguration: `pageTitle: "abc` schluckte die drei Zeilen darunter in den Titel, die
+  Plugin-Liste war leer, kein Toast. Was **nicht** stimmt, ist die Begründung, mit der die zweite
+  Antwort einmal eingeführt wurde („das nächste Speichern schreibt darüber“): `writeConfig` wirft an
+  denselben Dateien und lässt sie byte-gleich. Eine leere Seite ohne ein Wort ist Grund genug.
 - **Was nur ein Kindprozess beantworten kann, wird auch dort gemessen.** Die eingebettete Laufzeit,
   Lifecycle-Skripte, das gepackte Bundle: `npm run check:runtime` und eine Messung an der
   *gepackten* App, nicht am Build. Vier der fünf Befunde aus Phase 7a wären in Entwicklung

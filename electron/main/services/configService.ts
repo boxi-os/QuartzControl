@@ -23,19 +23,45 @@ export function deriveName(source: PluginSource): string {
 
 export async function readConfig(projectPath: string): Promise<QuartzConfig> {
   const raw = await readFile(configPath(projectPath), 'utf-8')
-  // An empty file is a valid YAML document with no content, and `toJS()` answers `null` for it -
-  // which every `json.x` below then reads as a TypeError. Measured (twentieth review, "nebenbei"):
-  // a duplicate of a project whose config was an empty file died on `Cannot read properties of
-  // null (reading 'configuration')` out of repointProjectPaths. An empty document says the same
-  // thing as a document without any of these keys, so it is read as one.
+  // Three ways to be unreadable, three answers - and one way to be empty, which is not one of them.
   //
-  // A document that is *something else* - a bare string, a list - is not the same thing and is not
-  // read as empty: every key below would come out `undefined`, the app would show a blank
-  // configuration, and the next save would write over whatever is really in there. Two ways to be
-  // unreadable, two answers.
-  const parsed = parseDocument(raw).toJS() as unknown
+  // Empty: an empty file is a valid YAML document with no content, and `toJS()` answers `null` for
+  // it - which every `json.x` below then reads as a TypeError. Measured (twentieth review,
+  // "nebenbei"): a duplicate of a project whose config was an empty file died on `Cannot read
+  // properties of null (reading 'configuration')` out of repointProjectPaths. An empty document
+  // says the same thing as a document without any of these keys, so it is read as one.
+  //
+  // A syntax error: `parseDocument` does not throw on one, it collects `doc.errors` and hands back
+  // whatever it could make of the rest. That is the way a config really does break - an unclosed
+  // quote, a tab where spaces belong, the half-finished hand edit two `catch` comments in this
+  // tree already assume - and it read as a half-empty configuration without a word. Measured
+  // (twenty-first review, finding 5): `pageTitle: "abc` swallowed the three lines below it into
+  // the title, plugins came out empty, and the built app showed that title on the configuration
+  // page with no toast anywhere.
+  //
+  // Not a mapping at all - a bare string, a list, a number: every key below would come out
+  // `undefined` and the app would show a blank configuration.
+  //
+  // What none of the three costs is the file. Measured against `writeConfig` on these very files:
+  // it does not write over them, it throws ("Expected a YAML collection as document contents",
+  // "Document with errors cannot be stringified") and each file stays byte for byte what it was.
+  // A blank page with no word for it is reason enough on its own.
+  const doc = parseDocument(raw)
+  if (doc.errors.length > 0) {
+    throw new Error(mainT('configNotParseable', { reason: doc.errors[0].message }))
+  }
+  const parsed = doc.toJS() as unknown
   if (parsed !== null && parsed !== undefined && (typeof parsed !== 'object' || Array.isArray(parsed))) {
     throw new Error(mainT('configNotAMapping'))
+  }
+  // `plugins:` holding something that is not a list is the same kind of broken as the three above,
+  // and it reached the page as a raw `(json.plugins ?? []).map is not a function` because the cast
+  // below promises an array that the file never had to contain.
+  if (parsed !== null && parsed !== undefined) {
+    const plugins = (parsed as Record<string, unknown>).plugins
+    if (plugins !== undefined && plugins !== null && !Array.isArray(plugins)) {
+      throw new Error(mainT('configPluginsNotAList'))
+    }
   }
   const json = (parsed ?? {}) as {
     // quartz nests `theme` inside `configuration` on disk; plugin entries can carry

@@ -23,22 +23,28 @@ import HandbookLink from '../components/HandbookLink'
 // Reading order for the user, which is not the order the parts are applied in (that one is
 // dependency-driven and lives in the contract): what the site looks like first, what it is built
 // from after.
-const DISPLAY_ORDER: TemplatePartId[] = [
-  'appearance',
-  'theme',
-  'cssVariables',
-  'styles',
-  'fonts',
-  'static',
-  'layout',
-  'frames',
-  'plugins',
-  'translations',
-  'presets'
-]
+//
+// A `Record` rather than a list, so the typecheck asks for all twelve: as a list it named eleven,
+// `indexOf` answered -1 for the twelfth, and `content` stood first by accident rather than because
+// anyone had put it there (twenty-fifth review, finding 7). It belongs first - it is the only part
+// that carries notes rather than looks - so the accident was right and now says so.
+const DISPLAY_ORDER: Record<TemplatePartId, number> = {
+  content: 0,
+  appearance: 1,
+  theme: 2,
+  cssVariables: 3,
+  styles: 4,
+  fonts: 5,
+  static: 6,
+  layout: 7,
+  frames: 8,
+  plugins: 9,
+  translations: 10,
+  presets: 11
+}
 
 function sortForDisplay<T extends { id: TemplatePartId }>(items: T[]): T[] {
-  return [...items].sort((a, b) => DISPLAY_ORDER.indexOf(a.id) - DISPLAY_ORDER.indexOf(b.id))
+  return [...items].sort((a, b) => DISPLAY_ORDER[a.id] - DISPLAY_ORDER[b.id])
 }
 
 export default function Templates(): JSX.Element {
@@ -198,9 +204,14 @@ function ExportSection({ project }: { project: Project }): JSX.Element {
         // 1041px tall. Same mechanism as the change list in Git-Sync and the exclude list in
         // Veröffentlichen - a multi-column block, not a grid, because these rows differ in height
         // and a grid aligns them row by row, which puts the gaps back in; `break-inside-avoid`
-        // sits on the row. The ladder is one step later than there (`md`/`2xl` instead of
-        // `sm`/`xl`): a row here is a name plus a two-line sentence, and at 640px two columns are
-        // 250px each. Measured at 1470 and 1280px window width, two columns both times.
+        // sits on the row. The ladder differs from theirs in the one step that can differ:
+        // `2xl` instead of `xl`, because a row here is a name plus a two-line sentence and three
+        // columns at 1280px would be 290px each - as narrow as two are at the narrowest window.
+        // The lower rung is decoration either way: the window has a minimum width of 960px
+        // (`MIN_SIZE`), so `md` and `sm` alike are always true in this app, and an argument about
+        // 640px describes a window that does not exist (twenty-fifth review, finding 7).
+        // Measured at 1470 and 1280px window width, two columns both times; at 1633 and 1960
+        // (reached through zoom) three.
         <div className="gap-x-8 md:columns-2 2xl:columns-3">
           {sortForDisplay(available).map((part) => (
             <PartRow

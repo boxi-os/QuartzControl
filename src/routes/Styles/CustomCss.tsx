@@ -742,8 +742,10 @@ function ActiveStyles(): JSX.Element {
   const themeId = activeThemeIdOf(config)
 
   useEffect(() => {
-    // Still read when collapsed: the summary line under the heading names the fonts, and the
-    // @font-face answer is what decides whether "nicht installiert" belongs there.
+    // Read whether the block is open or not, which costs one IPC call and saves a wait on every
+    // open. Not, as this used to say, because the collapsed summary needs it: that line takes its
+    // names from `resolvedValue` and asks `fontIsAvailable()`, a canvas measurement. `faces` is
+    // read at exactly one place, in the expanded block (twenty-fifth review, finding 7).
     window.quartzGui.styles.fontFaces(project.path, themeId).then(setFaces)
   }, [project.path, themeId])
 
@@ -783,8 +785,10 @@ function ActiveStyles(): JSX.Element {
         </button>
       </CardHeading>
 
-      {/* Collapsed it still says what it is about, so opening it is a decision and not a lottery:
-          the colour count and the font families, the same numbers the block itself shows. */}
+      {/* Collapsed it still says what it is about, so opening it is a decision and not a lottery -
+          and what decides is the font families, which differ per project. The colour count beside
+          them is nine in every project this can show (`SUMMARY_COLORS`), so it decides nothing; it
+          stays because the line reads as a pair and the number is true. */}
       {!open && (
         <p className="text-micro text-text-muted">
           {t('styleEditor.current.summary', {

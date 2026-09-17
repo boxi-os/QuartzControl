@@ -429,6 +429,43 @@ interface PendingInstall {
 }
 
 /**
+ * Whether somebody other than this app has taken package.json in hand since the note was written.
+ *
+ * The list answers one question - "which of this project's own packages has an update taken out of
+ * package.json and not put back" - and this app is not the only one who can answer it. After a run
+ * that failed at `npm install`, the user's way forward is to write those lines back themselves;
+ * the run that does that is not ours, and neither is the decision to take one of them out again
+ * later. Until now the list only ever ended in a run where npm got through, so it lay there with a
+ * full list and the next update re-added a package the user had removed *and committed* - the
+ * finding of the twenty-second review, through a door its fix does not close (twenty-third review,
+ * finding 2, scenes f1 and r1).
+ *
+ * Asked as "has package.json been committed since", not as "does package.json still look the way
+ * the run left it": the file coming back byte for byte is exactly what happens when the user puts
+ * a line back and later takes it out again, which is the case this has to catch. A commit is also
+ * the one signal that does not fire for npm's own rewriting, and it leaves h2 of the twenty-first
+ * review alone - an unrelated commit between two runs (a Git-Sync, a note in the README) does not
+ * touch this file.
+ *
+ * Asked before the merge, because the merge commit this run is about to write touches package.json
+ * itself and would answer "yes" on every continuation run.
+ *
+ * Not caught: a repair and a removal that are both left uncommitted. The list then still applies,
+ * and `stillMissing` cannot tell "not back yet" from "taken out again" - both are a missing entry.
+ */
+async function packageJsonCommittedSince(projectPath: string, head: string): Promise<boolean> {
+  if (head === '') return false
+  const listed = await run('git', ['rev-list', '--count', `${head}..HEAD`, '--', 'package.json'], projectPath)
+  // Could not look is not "all clear" - and here the two answers are not symmetrical: keeping a
+  // list we cannot vouch for writes a package line nobody asked for, silently and under
+  // `success: true`, while dropping one leaves packages out where the user can see it and the
+  // restore point still stands. A SHA the object database no longer has (an amended note from a
+  // run long gone, a `git gc`) lands here.
+  if (!listed.success) return true
+  return Number.parseInt(listed.output.trim(), 10) > 0
+}
+
+/**
  * The note as it is on disk, which is a file in the user's project and therefore not to be trusted
  * further than it can be checked: a list read back is only used to build `npm install name@range`
  * arguments, so a name or range that is not a plain string, or one that could pass for a flag, is
@@ -760,6 +797,12 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
 
   return withContentSymlinkParked(projectPath, async () => {
     const plan = await planPackageFiles(projectPath)
+    // An earlier run's note, and whether its list is still this app's to answer. Both read before
+    // the merge: the merge commit about to be written touches package.json itself, so asked
+    // afterwards the second question says "yes" on every continuation run (see
+    // packageJsonCommittedSince).
+    const pending = await readPendingInstall(projectPath)
+    const noteOverruled = await packageJsonCommittedSince(projectPath, pending.head)
     const tracked = await trackedNpmOwnedFiles(projectPath)
     // Whether the two files were, before this run touched anything, exactly what HEAD has - index
     // and working tree alike. It is the one thing that makes "everything they differ by at the end
@@ -889,7 +932,6 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     if (merge.success && headAfter !== '' && mergeCommit !== '' && headAfter !== headBefore && headAfter !== mergeCommit) {
       ourMergeCommit = true
     }
-    const pending = await readPendingInstall(projectPath)
     const pendingFor = pending.head
     if (headBefore && headAfter === headBefore && pendingFor === '') {
       const restored = await releaseNpmOwnedFiles(projectPath, held)
@@ -925,10 +967,10 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     // and made this run read an empty list, write `[]` over the full one and delete it at the end.
     // Measured (twenty-first review, finding 1, scene h2): "Already up to date.", `success: true`,
     // a plain `npm install`, themes gone, note deleted. What the SHA would guard against is a list
-    // from another state naming a package the user does not want back - and to not want it back
-    // they would have to have taken it out of a package.json it was no longer in, because after
-    // the merge the file is upstream's. `stillMissing` drops whatever is already there anyway.
-    const carried = pendingFor !== '' ? pending.reinstall : []
+    // from another state naming a package the user does not want back - and that is a question
+    // about package.json, not about HEAD: `noteOverruled` asks it directly, and `stillMissing`
+    // drops whatever is already there anyway.
+    const carried = pendingFor !== '' && !noteOverruled ? pending.reinstall : []
     // The same question one run later: a run that takes over an earlier one's merge commit cannot
     // measure what the two files looked like before *that* run started, so it reads the answer the
     // note carries rather than its own - by then npm has written them at least once.

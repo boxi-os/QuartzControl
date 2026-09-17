@@ -132,11 +132,11 @@ const STRINGS = {
     // Datei selbst ist dabei nie in Gefahr, das Speichern scheitert an ihr ebenfalls.
     configNotAMapping:
       'In quartz.config.yaml steht keine Zuordnung aus Schlüsseln und Werten. Die App liest die Datei deshalb nicht; repariere sie in einem Editor oder nimm einen Wiederherstellungspunkt.',
+    updateAlreadyRunning:
+      'Für dieses Projekt läuft gerade ein Kern-Update. Warte, bis es durch ist, und drücke dann „Erneut prüfen“ — die Ausgabe des Laufs sieht nur, wer diese Seite so lange offen lässt.',
     // Der häufigste Fall: ein nicht geschlossenes Anführungszeichen, ein Tab als Einrückung. yamls
     // eigene Meldung nennt Zeile und Spalte und bleibt deshalb englisch, wie die übrigen
     // Werkzeugmeldungen auch.
-    updateAlreadyRunning:
-      'Für dieses Projekt läuft gerade ein Kern-Update. Warte, bis es durch ist, und drücke dann „Erneut prüfen“ — die Ausgabe des Laufs sieht nur, wer diese Seite so lange offen lässt.',
     configNotParseable:
       'quartz.config.yaml lässt sich nicht als YAML lesen: {{reason}}. Repariere sie in einem Editor oder nimm einen Wiederherstellungspunkt.',
     configMissing:

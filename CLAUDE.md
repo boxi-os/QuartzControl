@@ -978,7 +978,7 @@ Auftrags: Die Runde davor hatte sich selbst gelesen, und der Auftrag machte desh
 `docs/REVIEW-2026-09-26.md` zum **Prüfgegenstand** statt es auszunehmen, wie es sonst die Regel
 ist. Es las `review-2026-09-27..review-2026-09-28` (ohne Auftragsdatei 12 Dateien, +353/−13, im
 App-Code 6 Dateien, +87/−8) und fand **zwei Befunde Mittel, vier Niedrig**, alle sechs abgearbeitet,
-dazu fünf der sechs Punkte seiner Nebenbei-Liste (der sechste war Teil von Befund 1). Beide
+dazu fünf der sechs Punkte seiner Nebenbei-Liste (der übrige, Nebenbei 1, war Teil von Befund 1). Beide
 mittleren hängen zusammen und beide bestätigen den Verdacht des Auftrags, nur an einer Kante, die
 er nicht genannt hatte: **Die vier Runden Arbeit an der Notiz beschreiben einen zweiten Klick, den
 die Oberfläche nicht anbietet.** Alle echten Läufe dieser Runden riefen den IPC-Kanal direkt; den

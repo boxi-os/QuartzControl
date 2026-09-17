@@ -159,10 +159,12 @@ export async function getCoreUpdateStatus(
   options: { resolveInstalled?: boolean } = {}
 ): Promise<CoreUpdateStatus> {
   // Asked first, and it wins over all three of the others, because it is true whatever they say
-  // and it is the only one of the four with something for the user to do. It also needs no
-  // network: a project can sit in this state with the answer to "is there anything newer"
-  // unknown, and "nicht prüfbar" would then be the badge over a project that is demonstrably
-  // half updated.
+  // and it is the only one of the four with something for the user to do. The *answer* needs no
+  // network either: a project can sit in this state with "is there anything newer" unknown, and
+  // "nicht prüfbar" would then be the badge over a project that is demonstrably half updated.
+  // Delivering it does wait for the network, though - the ls-remote below is on the way out for
+  // every caller, up to its 20 s deadline on a connection that hangs rather than refuses.
+
   const outstanding = await outstandingCoreInstall(projectPath)
   const head = await run('git', ['rev-parse', 'HEAD'], projectPath)
   const latestCommit = (await lsRemoteHead(TEMPLATE_REPO)) ?? ''
@@ -820,23 +822,14 @@ async function leftoverStashNote(projectPath: string, before: string | null): Pr
 }
 
 /**
- * A stash of this app's that is still there before this run has written one is a leftover: the run
- * that wrote it never got to put it back, because the user resolved that merge by hand or the app
- * ended in between. Measured (seventeenth review): two further updates ran afterwards and said
- * nothing at all about it, and nothing else in this app lists stashes. Said, not acted on - it is
- * the user's working tree, and what to do with it is their call.
- *
- * Asked before the run, because afterwards an entry of this run's own would answer the same way;
- * *which* sentence it earns is asked afterwards, see leftoverStashNote.
- */
-/**
  * The projects a core update or an abort is running against right now.
  *
  * Both write the same repository - they stash, merge, reset and commit in it - and until now the
- * only thing keeping two of them apart was a `useState` in the renderer, which is one window's
- * memory of what it started and dies with the route. Two windows, two projects registered on the
- * same folder, or a click that arrives while the page is being left are all outside what that
- * flag can see. Here it costs one Set and one sentence, and the answer a second caller gets is
+ * only thing keeping two of them apart was a `useState` in the renderer, which is one route's
+ * memory of what it started and dies with it. Two projects registered on the same folder, a click
+ * that arrives while the page is being left, and the abort button on Git-Sync - which is a second
+ * page onto the same repository - are all outside what that flag can see. Not two windows: this
+ * app has one (createWindow runs at start, and on `activate` only when none is open). Here it costs one Set and one sentence, and the answer a second caller gets is
  * the truthful one rather than a git error out of the middle of someone else's merge.
  *
  * Per project path, not app-wide: two different projects have nothing to do with each other.
@@ -867,6 +860,16 @@ async function whileHoldingProject<T>(projectPath: string, busy: T, run: () => P
   }
 }
 
+/**
+ * A stash of this app's that is still there before this run has written one is a leftover: the run
+ * that wrote it never got to put it back, because the user resolved that merge by hand or the app
+ * ended in between. Measured (seventeenth review): two further updates ran afterwards and said
+ * nothing at all about it, and nothing else in this app lists stashes. Said, not acted on - it is
+ * the user's working tree, and what to do with it is their call.
+ *
+ * Asked before the run, because afterwards an entry of this run's own would answer the same way;
+ * *which* sentence it earns is asked afterwards, see leftoverStashNote.
+ */
 export function runCoreUpdate(projectPath: string): Promise<UpdateResult> {
   return whileHoldingProject(projectPath, { success: false, output: mainT('updateAlreadyRunning') }, async () => {
     const before = (await coreUpdateStashEntry(projectPath)) !== null ? await stashRef(projectPath) : null

@@ -1476,6 +1476,19 @@ an der gebauten, nicht an der gepackten App.
 die Fixes des zwölften (`review-2026-09-17..fix/review-2026-09-16`) und die Lücke
 `review-2026-09-14..review-2026-09-16` (unten), in der die zwölf Fixes des elften liegen.
 
+**Das einundzwanzigste Review misst ab `review-2026-09-25`** und liest bis `review-2026-09-26`,
+das auf dem Commit „Der Auftrag für das einundzwanzigste Review“ (`main`) sitzt — dem Stand, den
+es liest; der Auftrag steht in
+[`docs/REVIEW-2026-09-25-auftrag.md`](docs/REVIEW-2026-09-25-auftrag.md). Sein Diff sind die fünf
+Fixes des zwanzigsten Reviews, die vier aus seiner Nebenbei-Liste, der Befund aus dem ersten echten
+Core-Update und die Dokumentations-Commits daneben: ohne Review-Dokument und Auftragsdatei
+9 Dateien, +575/−76, im App-Code 4 Dateien, +250/−62. Als größtes Risiko nennt der Auftrag die
+Messung des echten Laufs selbst — die einzige dieser Serie ohne Attrappe und die einzige, die sich
+nicht auf Knopfdruck wiederholen lässt; daneben den Amend, der in drei Runden dreimal geändert
+wurde, und die zwei Zeilen im Pfeil-Getter, die jeden Tastatur-Drag der App betreffen.
+`review-2026-09-25` sitzt auf `9052691` („Der Auftrag für das zwanzigste Review“), dem Stand, den
+das zwanzigste Review gelesen hat; seit dem 2026-09-17 ist er gepusht.
+
 **Das zwanzigste Review misst ab `review-2026-09-24`** und liest bis `review-2026-09-25`, das auf
 dem Commit „Der Auftrag für das zwanzigste Review“ (`main`) sitzt — dem Stand, den es liest; der
 Auftrag steht in [`docs/REVIEW-2026-09-24-auftrag.md`](docs/REVIEW-2026-09-24-auftrag.md). Sein

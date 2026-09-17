@@ -951,3 +951,25 @@ Aufforderung („Komponente hinzufügen“) und als solche richtig — vorgelese
 `pickedOver` bei jeder Aufnahme aus der Palette, und zwar als Ablageziel. Der Frame-Builder sagt in
 seinem Kommentar genau deshalb, warum sein Ablage-Label ein Name ist. Gemessen: vorher „page-title
 aufgenommen, liegt über Komponente hinzufügen.“, nachher „… liegt über Komponentenvorrat.“
+
+**Nachtrag (2026-09-17, vierundzwanzigstes Review): der Paletten-Chip wohnt im Vorrat, nicht unter
+seiner eigenen Id.** Die Vorgabe von `isHome` — „der eigene Platz ist die eigene Id“ — trägt an drei
+der vier Dinge, die sich in dieser App ziehen lassen. Am Layout-Board nicht: Ein Paletten-Chip heißt
+`palette:<index>`, sein Platz ist `palette-drop-zone`. Jeder Satz über den Vorrat las sich damit als
+Bewegung, und der Schritt zurück, für den `dnd.backHome` geschrieben wurde, kam dort nie vor.
+Gemessen an der gebauten App mit Wegwerf-Profil und echten Tastendrücken (Kopie von
+`navigations-testprojekt`, erster Chip fokussiert):
+
+    vorher   Space      „table-of-contents aufgenommen, liegt über Komponentenvorrat.“
+             ArrowDown  „… liegt über quartz-layout-box.“
+             ArrowUp    „… liegt über Komponentenvorrat.“
+             Space      „… bei Komponentenvorrat abgelegt.“ — es ist nichts passiert
+    nachher  Space      „table-of-contents aufgenommen.“
+             ArrowDown  „… liegt über quartz-layout-box.“
+             ArrowUp    „… liegt wieder auf seinem Ausgangsplatz.“
+             Space      „… blieb an seinem Platz.“
+
+Nicht mit eingeschlossen: eine platzierte Einzelinstanz, die auf dem Vorrat abgelegt wird. Sie
+bewegt sich ebenfalls nicht (der Zweig davor braucht ein Duplikat), aber der Vorrat ist nicht ihr
+Platz — „blieb an seinem Platz“ wäre so falsch wie „abgelegt“, und das braucht einen eigenen Satz,
+nicht diese Frage.

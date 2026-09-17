@@ -911,9 +911,9 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Befunde aus den Reviews (Stand 2026-09-25)
+## Befunde aus den Reviews (Stand 2026-09-26)
 
-Alle einundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
+Alle zweiundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht,
@@ -933,12 +933,39 @@ Alle einundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/
 [`docs/REVIEW-2026-09-22.md`](docs/REVIEW-2026-09-22.md) mit seinen sieben und
 [`docs/REVIEW-2026-09-23.md`](docs/REVIEW-2026-09-23.md) mit seinen sieben und
 [`docs/REVIEW-2026-09-24.md`](docs/REVIEW-2026-09-24.md) mit seinen fünf und
-[`docs/REVIEW-2026-09-25.md`](docs/REVIEW-2026-09-25.md) mit seinen sieben (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-25-`) stehen als
+[`docs/REVIEW-2026-09-25.md`](docs/REVIEW-2026-09-25.md) mit seinen sieben und
+[`docs/REVIEW-2026-09-26.md`](docs/REVIEW-2026-09-26.md) mit seinen vier (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-26-`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](docs/REVIEW-2026-09-15.md) gehört nicht
 in diese Zählung: Die „fünfzehnte Runde“ las die Handbücher der zwei Plugins gegen deren Code und
 aus diesem Repo nur zwei Commits der Beispielvorlage (`fe2b701`, `9592121`).
+
+**Das zweiundzwanzigste Review ist das erste dieser Serie, das vom selben Modell und aus derselben
+Sitzung stammt wie die Commits, die es liest** — der Vorbehalt steht oben in seinem Dokument, und
+er ist der Grund, warum darin fast alles gemessen und fast nichts gelesen ist. Es las
+`review-2026-09-26..review-2026-09-27` (27 Commits, ohne Review-Dokument und Auftrag 19 Dateien,
++795/−111) und fand **einen Befund Mittel, drei Niedrig**, alle vier abgearbeitet. Zwei Prüfungen
+haben dabei die Erwartung des Reviews widerlegt und stehen als „kein Befund“ da: Der schmale
+Drag-Chip bricht den Maus-Drag nicht (`pointerWithin` entscheidet, solange der Zeiger über einem
+Ziel steht), und ein Build mit kaputter `quartz.config.yaml` sagt in der Konsole zweimal, was los
+ist — Quartz scheitert an dieser Datei ohnehin. Was daraus als Regel bleibt:
+
+- **Ein gespeicherter Wert endet, wenn die Frage beantwortet ist, die er offen hält.** Die
+  Paketliste beschreibt das Fenster zwischen „`package.json` ist upstreams“ und „npm hat die
+  eigenen Pakete zurück“; geräumt wurde sie aber nur von einem Lauf, der bis zum Ende kommt. Eine
+  Notiz, die einen Absturz überlebt hat, trug damit ein Paket wieder ein, das der Nutzer entfernt
+  *und committet* hatte — unter „erfolgreich“, in einem Lauf ohne etwas zu holen. Das ist die
+  Kehrseite der Bindung, die eine Runde vorher gefallen war.
+- **Eine Seite, die auf einen Lesevorgang angewiesen ist, sagt selbst, wenn er scheitert** — und
+  „die Seite ist darauf angewiesen“ ist eine Frage je Lesevorgang, nicht je Seite. Der Reiter
+  *Übersetzungen* hielt an einem Aufruf an, der nur die Vorauswahl bestimmt; `ProjectLayout` hielt
+  an einem `null` an, das gar kein Fehler ist, sondern ein entferntes Projekt — auf dem einen
+  Bildschirm ohne Seitenleiste und damit ohne Ausgang.
+- **Schweigen ist keine Antwort, wenn es die einzige bleibt.** Der Guard, der die erste
+  Zielmeldung schluckt, war richtig gegen das Übertönen und falsch dort, wo der erste Pfeildruck
+  das Ziel nicht wechselt und deshalb gar kein Ereignis auslöst. Ein Satz trägt jetzt beide
+  Hälften.
 
 **Das einundzwanzigste Review las die fünf Fixes des zwanzigsten, die vier aus seiner
 Nebenbei-Liste und den Befund aus dem ersten echten Core-Update** —

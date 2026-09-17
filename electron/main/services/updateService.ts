@@ -849,9 +849,12 @@ async function lockKey(projectPath: string): Promise<string> {
   return realpath(projectPath).catch(() => resolve(projectPath))
 }
 
-async function whileHoldingProject<T>(projectPath: string, busy: T, run: () => Promise<T>): Promise<T> {
+// `busy` as a thunk, not a value: it is a translated sentence and would otherwise be built on every call
+// of a function that almost never needs it - including at a point where the language may not have
+// been read yet, which is what the warning in i18n.ts is about.
+async function whileHoldingProject<T>(projectPath: string, busy: () => T, run: () => Promise<T>): Promise<T> {
   const key = await lockKey(projectPath)
-  if (coreUpdatesRunning.has(key)) return busy
+  if (coreUpdatesRunning.has(key)) return busy()
   coreUpdatesRunning.add(key)
   try {
     return await run()
@@ -871,7 +874,7 @@ async function whileHoldingProject<T>(projectPath: string, busy: T, run: () => P
  * *which* sentence it earns is asked afterwards, see leftoverStashNote.
  */
 export function runCoreUpdate(projectPath: string): Promise<UpdateResult> {
-  return whileHoldingProject(projectPath, { success: false, output: mainT('updateAlreadyRunning') }, async () => {
+  return whileHoldingProject<UpdateResult>(projectPath, () => ({ success: false, output: mainT('updateAlreadyRunning') }), async () => {
     const before = (await coreUpdateStashEntry(projectPath)) !== null ? await stashRef(projectPath) : null
     const result = await runCoreUpdateFrom(projectPath)
     if (before === null) return result
@@ -1335,7 +1338,7 @@ async function stagedOutsideMerge(projectPath: string): Promise<string[]> {
 export function abortCoreMerge(projectPath: string): Promise<PluginActionResult> {
   // The same lock as the update: the abort rewrites the working tree of the repository an update
   // would be merging in.
-  return whileHoldingProject(projectPath, { success: false, output: mainT('updateAlreadyRunning') }, () =>
+  return whileHoldingProject<PluginActionResult>(projectPath, () => ({ success: false, output: mainT('updateAlreadyRunning') }), () =>
     // Parked for the same reason the merge itself is: an abort has to rewrite the working tree, and
     // content/ is part of what the conflicted merge touched.
     withContentSymlinkParked(projectPath, async () => {

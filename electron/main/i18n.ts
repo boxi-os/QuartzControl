@@ -95,8 +95,12 @@ const STRINGS = {
     // Core update
     updateBlockedBySymlink:
       'Der Content-Ordner ist ein Symlink, durch den git nicht schreiben kann. Wechsle unter Konfiguration → Content-Ordner vorübergehend auf einen echten Ordner und versuche es erneut.\n\n',
+    // Nicht „an Dateien, die das Update ebenfalls anfasst“: git verweigert einen echten Merge auch
+    // über einer vorgemerkten Änderung an einer Datei, von der upstream nichts weiß (gemessen im
+    // Wegwerf-Repo: „Your local changes to the following files would be overwritten by merge:
+    // b.txt“, während upstream nur a.txt anfasst). Welche es sind, sagt gits Ausgabe darunter.
     updateBlockedByLocalChanges:
-      'Eigene Änderungen an Dateien, die das Update ebenfalls anfasst, stehen im Weg. Committe oder verwirf sie unter Git-Sync und versuche es erneut.\n\n',
+      'Eigene Änderungen stehen im Weg — git nennt die Dateien darunter. Committe oder verwirf sie unter Git-Sync und versuche es erneut.\n\n',
     updateMergeUnfinished:
       'Ein früheres Update steckt noch mitten im Zusammenführen. Brich es oben auf dieser Seite ab und starte das Update erneut.\n\n',
     updatePackagesReinstalled: 'Eigene Pakete wieder eingetragen: {{packages}}',
@@ -414,7 +418,7 @@ const STRINGS = {
     updateBlockedBySymlink:
       'The content folder is a symlink, and git cannot write through it. Switch to a real folder under Configuration → Content folder for now and try again.\n\n',
     updateBlockedByLocalChanges:
-      'Your own changes to files the update touches as well are in the way. Commit or discard them under Git sync and try again.\n\n',
+      'Your own changes are in the way — git names the files below. Commit or discard them under Git sync and try again.\n\n',
     updateMergeUnfinished:
       'An earlier update is still half-merged. Cancel it at the top of this page and start the update again.\n\n',
     updatePackagesReinstalled: 'Your own packages put back: {{packages}}',

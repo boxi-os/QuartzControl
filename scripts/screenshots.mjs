@@ -11,7 +11,7 @@
 // nichts aus. Welches, sagt --project; ohne Angabe das erste, dessen Name auf `Example` endet.
 import { _electron as electron } from 'playwright-core'
 import { execFileSync } from 'node:child_process'
-import { DEMO_PROFILE, resetDemoProfile, seedDemoProfile } from './screenshot-demo.mjs'
+import { DEMO_PROFILE, resetDemoProfile, seedDemoProfile, shootProject } from './screenshot-demo.mjs'
 import { captureScenes } from './screenshot-scenes.mjs'
 import * as fs from 'node:fs'
 import * as os from 'node:os'
@@ -83,9 +83,9 @@ async function launch() {
 function pickProject() {
   const file = path.join(userDataDir(), 'projects.json')
   if (!fs.existsSync(file)) return null
-  const list = JSON.parse(fs.readFileSync(file, 'utf-8'))
-  if (!Array.isArray(list) || list.length === 0) return null
-  return (list.find((p) => /Example$/.test(p.path)) ?? list[0]).id
+  // Dieselbe Wahl wie mit --demo (siehe shootProject): vorher stand hier `/Example$/`, und damit
+  // zeigte ein Lauf ohne --demo ein anderes Projekt als jedes Bild im Handbuch.
+  return shootProject(JSON.parse(fs.readFileSync(file, 'utf-8')))?.id ?? null
 }
 
 const argv = process.argv.slice(2)

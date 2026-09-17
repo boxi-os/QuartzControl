@@ -65,6 +65,24 @@ export const DEMO_TARGETS = [
 /** Welche Projekte in der Liste stehen sollen, in dieser Reihenfolge. */
 export const DEMO_PROJECTS = [projectPath('QuartzControl-Handbuch'), projectPath('Example')]
 
+/**
+ * Gegen welches Projekt aufgenommen wird, aus einer Projektliste gewählt - eine Stelle für beide
+ * Modi.
+ *
+ * Mit `--demo` war es DEMO_PROJECTS[0], ohne suchte `screenshots.mjs` sich selbst eines, das auf
+ * „Example“ endet: zwei Vorgaben für dieselbe Frage, und wer vom dokumentierten Weg abweicht,
+ * bekommt andere Bilder als das Handbuch zeigt (fünfundzwanzigstes Review, Befund 9). Es gewinnt
+ * die des Demo-Modus, weil das die Bilder sind, die im Handbuch stehen. Der Basisname als zweiter
+ * Versuch, damit ein Projekt, das an anderer Stelle liegt als `projectPath()` erwartet, trotzdem
+ * dieses ist.
+ */
+export function shootProject(list) {
+  if (!Array.isArray(list) || list.length === 0) return null
+  const wanted = DEMO_PROJECTS[0]
+  const base = path.basename(wanted)
+  return list.find((p) => p.path === wanted) ?? list.find((p) => path.basename(p.path) === base) ?? list[0]
+}
+
 export function resetDemoProfile() {
   fs.rmSync(DEMO_PROFILE, { recursive: true, force: true })
   fs.mkdirSync(DEMO_PROFILE, { recursive: true })

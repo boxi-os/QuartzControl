@@ -2,7 +2,7 @@ import { execFileSync } from 'child_process'
 import { copyFileSync, existsSync, readdirSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import ts from 'typescript'
-import type { LocaleEntry, LocaleFile, LocaleSaveResult } from '@shared/ipc-contract'
+import { isLocaleCode, type LocaleEntry, type LocaleFile, type LocaleSaveResult } from '@shared/ipc-contract'
 import { quartzGuiDir } from './projectDirs'
 import { runCommand } from './runCommand'
 
@@ -20,6 +20,10 @@ export function listLocales(projectPath: string): LocaleFile[] {
   return readdirSync(dir)
     .filter((f) => f.endsWith('.ts') && f !== 'definition.ts')
     .map((f) => ({ code: f.slice(0, -'.ts'.length) }))
+    // Only what the channel below will accept: anyone can put a file in this folder, and one that
+    // is not a locale code is not a locale - offering it makes a picker entry that can only fail
+    // (see isLocaleCode).
+    .filter((l) => isLocaleCode(l.code))
     .sort((a, b) => a.code.localeCompare(b.code))
 }
 

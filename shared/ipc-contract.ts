@@ -744,6 +744,19 @@ export interface LocaleFile {
   code: string
 }
 
+/**
+ * What counts as a locale code - one answer for the channel that takes one and the listing that
+ * offers them.
+ *
+ * The listing used to take every `*.ts` in the folder, and the channel refused whatever was not a
+ * locale code, so a stray file put there by anybody - `de-DE Kopie.ts`, the name the Finder gives
+ * a duplicate - became an entry in the picker that could only fail, under a sentence saying the
+ * failure was a bug in the app rather than a file in a folder (twenty-third review, "nebenbei" 3).
+ */
+export function isLocaleCode(code: string): boolean {
+  return code.length >= 2 && code.length <= 35 && /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(code)
+}
+
 // One leaf value inside a locale file's default-exported translation object, found by walking its
 // AST (see localizationService.ts). Plain string literals are freely editable; anything else
 // (an arrow function, often with real pluralization logic - e.g. `({count}) => count === 1 ? ...

@@ -1,7 +1,7 @@
 import { isAbsolute } from 'path'
 import { z } from 'zod'
 import { remotePathProblem } from '@shared/remotePath'
-import { TEMPLATE_PART_IDS, type TemplatePartId } from '@shared/ipc-contract'
+import { isLocaleCode, TEMPLATE_PART_IDS, type TemplatePartId } from '@shared/ipc-contract'
 
 // Validation for everything crossing the IPC boundary. The renderer is not a trust boundary the
 // main process can rely on: contextIsolation keeps *our* preload honest, but any script execution
@@ -105,12 +105,9 @@ export const pluginSource = z
   .max(2048)
   .refine((s) => !s.startsWith('-'), { message: 'Quelle darf nicht mit "-" beginnen' })
 
-// Locale file basename under quartz/i18n/locales (e.g. "de-DE").
-export const localeCode = z
-  .string()
-  .min(2)
-  .max(35)
-  .regex(/^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/, 'not a valid locale code')
+// Locale file basename under quartz/i18n/locales (e.g. "de-DE"). Through the shared predicate,
+// because the listing that offers these codes has to agree with the channel that takes them.
+export const localeCode = z.string().refine(isLocaleCode, 'not a valid locale code')
 
 // A git branch name for the Pages deploy. Refuses the characters git itself rejects, plus a
 // leading "-" (flag injection). The "don't overwrite main" rule lives in githubPagesService,

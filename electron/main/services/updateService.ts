@@ -1241,8 +1241,8 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
         // Git-Sync committed what the first call had written, and the badge went from "Nicht
         // abgeschlossen" to "Aktuell" with `own-dev-tool` gone for good. The one hand this cannot
         // tell from another is its own, so it does not leave itself in the list.
+        const leftOver = wanted.length > 0 ? await stillMissing(projectPath, wanted) : []
         try {
-          const leftOver = wanted.length > 0 ? await stillMissing(projectPath, wanted) : []
           await markInstallPending(projectPath, headAfter, leftOver, filesAtHead, true)
         } catch (error) {
           noteFailed(error)
@@ -1251,9 +1251,14 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
         // project's own packages are named nowhere: npm's error is about a version range, not about
         // what was taken out. Without this line the way back (the restore point, or installing them
         // again) needs a list the user no longer has.
+        // `leftOver`, not `missingNow`: the second names what was missing *before* npm ran, and
+        // after a failure in the second of two calls the first call's packages are back in the
+        // file. The sentence says "no longer in package.json" over lines that stand there
+        // (twenty-fifth review, "nebenbei" 3 - the same sentence its finding 3 corrected one page
+        // further forward).
         const missing =
-          missingNow.length > 0
-            ? `\n\n${mainT('updatePackagesMissing', { packages: missingNow.map((entry) => entry.name).join(', ') })}`
+          leftOver.length > 0
+            ? `\n\n${mainT('updatePackagesMissing', { packages: leftOver.map((entry) => entry.name).join(', ') })}`
             : ''
         // A list this run dropped is said here too. It used to be named on the success path only,
         // so a run that dropped one and then failed at npm said nothing at all about it - and the

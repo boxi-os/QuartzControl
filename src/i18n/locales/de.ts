@@ -1436,6 +1436,7 @@ export default {
   },
   localization: {
     loadFailed: 'Die Übersetzungen ließen sich nicht laden.',
+    localeLoadFailed: 'Die Sprache „{{code}}“ ließ sich nicht laden.',
     none: 'Keine Locale-Dateien gefunden (quartz/i18n/locales fehlt).',
     searchPlaceholder: 'Nach Schlüssel oder Text suchen…',
     unsavedCount: '{{count}} ungespeichert',

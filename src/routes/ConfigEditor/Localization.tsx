@@ -20,9 +20,15 @@ export default function Localization(): JSX.Element {
   const [query, setQuery] = useStickyState('localization.query', '')
   const [saving, setSaving] = useState(false)
   const [gitAttrOk, setGitAttrOk] = useState<boolean | null>(null)
-  // The two reads this tab cannot do without: the list of locales and the entries of the open one.
-  const [loadError, setLoadError] = useState<string | null>(null)
-  const failed = (error: unknown): void => setLoadError(formatIpcError(error))
+  // Two reads that can fail, and the tab does not depend on them the same way. Without the list
+  // there is nothing to show at all; without one locale's entries there are still the thirty
+  // others, and the selector right above is the way to them - so that failure belongs where the
+  // entries would be, not in place of the whole tab. Measured (twenty-third review, finding 3):
+  // one unreadable file (`de-DE Kopie.ts`, the name the Finder gives a duplicate) took the
+  // selector with it, and because the chosen locale is sticky, leaving and coming back landed in
+  // the same dead end until the app was restarted.
+  const [listError, setListError] = useState<string | null>(null)
+  const [entriesError, setEntriesError] = useState<string | null>(null)
   const [enablingProtection, setEnablingProtection] = useState(false)
 
   useEffect(() => {
@@ -54,7 +60,7 @@ export default function Localization(): JSX.Element {
         })
       }
       })
-      .catch(failed)
+      .catch((error) => setListError(formatIpcError(error)))
     window.quartzGui.localization.gitAttributesStatus(project.path).then(setGitAttrOk)
   }, [project.path])
 
@@ -70,7 +76,13 @@ export default function Localization(): JSX.Element {
     }
     loadedCodeRef.current = code
     setEntries(null)
-    window.quartzGui.localization.getEntries(project.path, code).then(setEntries).catch(failed)
+    // Cleared with every attempt, so that picking another locale - or coming back after the file
+    // in the way has been removed - is a fresh question rather than the previous answer.
+    setEntriesError(null)
+    window.quartzGui.localization
+      .getEntries(project.path, code)
+      .then(setEntries)
+      .catch((error) => setEntriesError(formatIpcError(error)))
     // setEdits/setErrors are stable state setters
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project.path, code])
@@ -143,16 +155,16 @@ export default function Localization(): JSX.Element {
     (e) => !q || keyOf(e.path).toLowerCase().includes(q) || e.value.toLowerCase().includes(q)
   )
 
-  if (loadError) {
-    return (
-      <div className="max-w-xl">
-        <p className="mb-2 text-sm font-medium text-red-600 dark:text-red-400">{t('localization.loadFailed')}</p>
-        <pre className="whitespace-pre-wrap rounded-md bg-red-50 p-3 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-400">
-          {loadError}
-        </pre>
-      </div>
-    )
-  }
+  const errorBlock = (message: string, detail: string): JSX.Element => (
+    <div className="max-w-xl">
+      <p className="mb-2 text-sm font-medium text-red-600 dark:text-red-400">{message}</p>
+      <pre className="whitespace-pre-wrap rounded-md bg-red-50 p-3 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-400">
+        {detail}
+      </pre>
+    </div>
+  )
+
+  if (listError) return errorBlock(t('localization.loadFailed'), listError)
   if (!locales) return <p className="text-sm text-text-muted">{t('common.loading')}</p>
   if (locales.length === 0) return <p className="text-sm text-text-muted">{t('localization.none')}</p>
 
@@ -199,11 +211,13 @@ export default function Localization(): JSX.Element {
         </Button>
       </div>
 
-      {entries === null && <p className="text-sm text-text-muted">{t('common.loading')}</p>}
+      {entriesError !== null && errorBlock(t('localization.localeLoadFailed', { code }), entriesError)}
+
+      {entriesError === null && entries === null && <p className="text-sm text-text-muted">{t('common.loading')}</p>}
 
       {/* Hundreds of short strings: a second column halves the scrolling. The multi-line
           "template" entries keep the full row - they're the ones that actually need the width. */}
-      {entries !== null && (
+      {entriesError === null && entries !== null && (
         <div className="grid items-start gap-2 xl:grid-cols-2">
           {filtered.map((entry) => {
             const key = keyOf(entry.path)

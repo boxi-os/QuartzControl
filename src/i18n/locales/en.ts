@@ -1431,6 +1431,7 @@ export default {
   },
   localization: {
     loadFailed: 'The translations could not be loaded.',
+    localeLoadFailed: 'The locale “{{code}}” could not be loaded.',
     none: 'No locale files found (quartz/i18n/locales is missing).',
     searchPlaceholder: 'Search by key or text…',
     unsavedCount: '{{count}} unsaved',

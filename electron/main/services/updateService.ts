@@ -1020,9 +1020,23 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     // lines that were ` M package.json` before ended up inside merge commit 8648f0a. The
     // fast-forward beside it leaves the same lines uncommitted, which is the answer both should
     // give.
+    // Both halves of the question, and under `resuming` they are two different runs' answers. The
+    // note says what the run that made the merge commit saw before it; `npmFilesAtHead` says what
+    // *this* run saw before it. Between them lies everything the user did while the update was
+    // half-done, and this run cannot tell that from what npm left behind - so it does not try:
+    // anything standing at the start of a resuming run is reason enough not to amend. Measured
+    // (scene R4, real npm, real upstream, through the built app): first run leaves the merge commit
+    // and fails at `npm install`, the user adds `scripts.mine` to package.json and leaves it
+    // uncommitted, second run succeeds - and the entry stood inside "Merge quartz-upstream (via
+    // QuartzControl)" with `git status` clean. In the same measurement npm had left both files
+    // untouched when it failed (EACCES while moving packages into node_modules), which is why the
+    // half that costs something - a lockfile npm rewrote before failing stays uncommitted - is the
+    // rarer case and the cheaper one. In the `ourMergeCommit` branch the two halves are the same
+    // measurement, so nothing changes there.
     const amendWorth =
       (ourMergeCommit || resuming) &&
       filesAtHead &&
+      npmFilesAtHead &&
       tracked.length > 0 &&
       !(await run('git', ['diff', '--quiet', 'HEAD', '--', ...tracked], projectPath)).success
     if (amendWorth) {

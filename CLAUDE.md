@@ -332,7 +332,12 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   dem Arbeitsbereich, also committete der Amend nach einem sauberen Merge, was der Nutzer
   uncommittet gehalten hat. Was das trennt, wird *vor* dem Merge gemessen (standen beide Dateien,
   Index und Arbeitsbereich, auf HEAD?) und für den fortsetzenden Lauf als drittes Feld der Notiz
-  weitergereicht; eine Notiz ohne dieses Feld erlaubt nichts. Der vierte: **ein Rat, der einen
+  weitergereicht; eine Notiz ohne dieses Feld erlaubt nichts. **Und die Notiz beschreibt einen
+  Lauf, nicht die Zeit danach:** Zwischen dem gescheiterten und dem fortsetzenden Lauf kann der
+  Nutzer an denselben zwei Dateien gearbeitet haben, und von npms Resten ist das nicht zu
+  unterscheiden — also müssen beide Hälften stimmen, die Auskunft der Notiz und die eigene Messung
+  des fortsetzenden Laufs. Gemessen an einem echten Lauf: ohne diese zweite Hälfte stand ein
+  `scripts`-Eintrag, den der Plan ausdrücklich nicht anfasst, im Merge-Commit. Der vierte: **ein Rat, der einen
   Befehl nennt, nennt auch sein Argument** — `git stash drop` ohne eines trifft den obersten
   Eintrag, und der gehört dem Nutzer, sobald er selbst einen zurückgelegt hat. Messungen in
   [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md).
@@ -1570,7 +1575,7 @@ das auf dem Commit „Der Auftrag für das zweiundzwanzigste Review“ (`main`) 
 es liest; der Auftrag steht in
 [`docs/REVIEW-2026-09-26-auftrag.md`](docs/REVIEW-2026-09-26-auftrag.md). Sein Diff sind die sieben
 Fixes des einundzwanzigsten Reviews und die sechs Punkte seiner Nebenbei-Liste: ohne
-Review-Dokument und Auftragsdatei 18 Dateien, +662/−104, im App-Code 13 Dateien, +345/−86. Als
+Review-Dokument und Auftragsdatei 18 Dateien, +692/−104, im App-Code 13 Dateien, +359/−86. Als
 größtes Risiko nennt der Auftrag zwei Dinge, die über ihren Anlass hinausreichen: `filesAtHead`,
 das zum ersten Mal über *zwei Läufe hinweg* entscheidet, ob die App einen Commit umschreibt, und
 `carried` ohne SHA-Bindung — eine Paketliste, die jetzt gilt, gleich zu welchem Commit die Notiz
@@ -1667,8 +1672,8 @@ ausdrücklich mit, und es hat ihn gelesen: die Lücke ist geschlossen, drei sein
 betreffen sie nicht, der vierte ist ein Kommentar in `shared/gridFrameCss.ts`. `review-2026-09-16`
 bleibt, wo er ist, weil der Auftrag des zwölften Reviews mit ihm rechnet.
 
-**Die sieben Fixes des einundzwanzigsten Reviews und die sechs Punkte seiner Nebenbei-Liste liegen
-bewusst dahinter** (`fix/review-2026-09-25`, von `main` abgezweigt): ohne Review-Dokument
+**Die sieben Fixes des einundzwanzigsten Reviews, die sechs Punkte seiner Nebenbei-Liste und der
+neunte Fix aus den echten Läufen danach liegen bewusst dahinter** (`fix/review-2026-09-25`, von `main` abgezweigt): ohne Review-Dokument
 18 Dateien, +622/−104, im App-Code 13 Dateien, +345/−86 — nachgerechnet gegen den Commit, der diese
 Zeilen trägt. Gemessen an
 **Attrappen, nicht an einem echten Lauf**: `runCoreUpdate` und `abortCoreMerge` als esbuild-Bündel
@@ -1699,9 +1704,12 @@ nachgeholt: drei echte Läufe** gegen `github.com/jackyzha0/quartz` mit echtem `
 npm und durch die gebaute App, je eine `cp -Rc`-Kopie von `navigations-testprojekt` auf `f1fba3f`
 zurückgesetzt — zwei Fehlschläge samt Fortsetzung (die Notiz hält ihre Liste, der `resuming`-Amend
 läuft), uncommittete Paketzeilen bei sauberem Merge (sie bleiben uncommittet) und die Gegenprobe
-mit committeten Dateien (der Amend läuft). **Nicht gemessen**: die gepackte App, die VMs, ERESOLVE,
-ein echter Push unter Git-Sync, und der Maus-Drag mit dem schmalen Chip (der Zeiger entscheidet
-dort, nicht das Rechteck). Sie gehören damit in den Diff des nächsten Auftrags.
+mit committeten Dateien (der Amend läuft). **Ein neunter Fix ist dabei entstanden**: Eine
+Nutzeränderung *zwischen* zwei Läufen landete im Merge-Commit, weil die Notiz nur den Lauf
+beschreibt, der sie schrieb; der fortsetzende Lauf misst jetzt selbst mit (drei weitere echte
+Läufe, R4/R5/R6). **Nicht gemessen**: die gepackte App, die VMs, ERESOLVE, ein echter Push unter
+Git-Sync, und der Maus-Drag mit dem schmalen Chip (der Zeiger entscheidet dort, nicht das
+Rechteck). Sie gehören damit in den Diff des nächsten Auftrags.
 
 **Die sechs Punkte seiner Nebenbei-Liste sind mit abgearbeitet**, und einer war größer als sein
 Platz: **Das gezogene Rechteck im Frame-Builder war nie das, was gezogen wurde.** dnd-kit gibt dem

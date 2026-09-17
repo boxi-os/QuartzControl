@@ -43,19 +43,19 @@ Auftrag dazu steht in `docs/REVIEW-2026-09-25-auftrag.md`.
 
 ## Umfang
 
-`main`, gepusht. Die neunzehn Commits zwischen `review-2026-09-26` und `review-2026-09-27`
-(siebzehn, dieser Auftrag, und der Nachtrag über die echten Läufe danach):
+`main`, gepusht. Die zwanzig Commits zwischen `review-2026-09-26` und `review-2026-09-27`
+(siebzehn, dieser Auftrag, und die zwei über die echten Läufe danach):
 
     git log --oneline review-2026-09-26..review-2026-09-27
     git diff review-2026-09-26..review-2026-09-27 -- . \
       ':!docs/REVIEW-2026-09-25.md' ':!docs/REVIEW-2026-09-26-auftrag.md'
-    # 18 Dateien, +662 / −104
-    # davon App-Code (electron/, src/):        13 Dateien, +345 / −86
-    # davon docs/decisions/:                    4 Dateien, +129 / −0
-    # davon CLAUDE.md:                          1 Datei,   +188 / −18
+    # 18 Dateien, +692 / −104
+    # davon App-Code (electron/, src/):        13 Dateien, +359 / −86
+    # davon docs/decisions/:                    4 Dateien, +137 / −0
+    # davon CLAUDE.md:                          1 Datei,   +196 / −18
 
 Ausgenommen sind zwei Dateien: `docs/REVIEW-2026-09-25.md` (das Review, das du liest, statt es zu
-prüfen) und diese Auftragsdatei. Mit dem Review-Dokument sind es 19 Dateien und +1070; die Differenz
+prüfen) und diese Auftragsdatei. Mit dem Review-Dokument sind es 19 Dateien und +1100; die Differenz
 von 408 Zeilen ist das Review. Lies den Auftrag als Behauptung wie jede andere — die Zahlen oben
 sind nach dem Commit nachgerechnet, der diese Datei trägt.
 
@@ -86,9 +86,17 @@ den das letzte Review gelesen hat. Die Commits:
 | — | `abe2e1e` | `CLAUDE.md`: vier Regeln, der Absatz auf dem Endstand |
 | — | — | dieser Auftrag |
 | Nachgeholt | s. u. | **drei echte Läufe gegen `jackyzha0/quartz`** — der Nachtrag dazu |
+| Nachgeholt | s. u. | **der neunte Fix: der fortsetzende Lauf misst selbst mit** (R4/R5/R6) |
 
-Der letzte Commit ist nach diesem Auftrag entstanden und trägt keinen Hash in dieser Tabelle, aus
-demselben Grund wie der Auftrag selbst: `review-2026-09-27` sitzt auf ihm.
+Die zwei letzten Commits sind nach diesem Auftrag entstanden und tragen keinen Hash in dieser
+Tabelle, aus demselben Grund wie der Auftrag selbst: `review-2026-09-27` sitzt auf dem letzten.
+
+**Der neunte Fix ist der einzige dieser Runde, den kein Review gemeldet hat** — er kam aus einer
+Messung, die der Auftrag selbst als offene Lücke benannt hatte. `filesAtHead` beschreibt den Lauf,
+der die Notiz schrieb, nicht die Zeit danach; eine Zeile, die der Nutzer zwischen zwei Läufen
+uncommittet einträgt, landete im Merge-Commit. Jetzt müssen beide Hälften stimmen, die Notiz und
+die eigene Messung des fortsetzenden Laufs. **Prüf den Preis**: Ein Lockfile, das npm im zweiten
+Lauf neu schreibt, bleibt danach uncommittet.
 
 **Nebenbei 4 fehlt in dieser Tabelle mit Absicht**: Dass die App in einem Projekt ohne
 `.gitignore` eine anlegt, ist kein Fehler, sondern die Entscheidung aus `projectDirs.ts`. Prüf das
@@ -102,7 +110,7 @@ kopieren ist in Ordnung — siehe „Wie gemessen werden kann“, bevor du eine 
 
 ## Was du wissen musst, bevor du liest
 
-**Alle achtzehn Commits stammen von demselben Modell, das diesen Auftrag schreibt**, aus einer
+**Alle neunzehn Commits stammen von demselben Modell, das diesen Auftrag schreibt**, aus einer
 Sitzung; das Review-Dokument `docs/REVIEW-2026-09-25.md` aus einer anderen. Lies Commit-Nachrichten
 als Behauptungen. In diesem Projekt gilt eine Zahl in einer Commit-Nachricht als Messung; trägt sie
 nicht, ist das ein Befund.
@@ -124,10 +132,12 @@ nicht gepusht.
   Ordner teilen. Für den Amend ist der SHA geblieben.
 - **`filesAtHead` entscheidet über einen Amend, und es entscheidet über zwei Läufe hinweg.** Der
   Lauf, der den Merge macht, misst vor dem Merge, ob beide Paketdateien genau HEAD entsprechen, und
-  schreibt die Antwort in die Notiz; der Lauf, der die Arbeit fortsetzt, liest sie. Eine Notiz ohne
-  das Feld erlaubt keinen Amend (gemessen: ` M package-lock.json` bleibt stehen). **Was ich nicht
-  gemessen habe:** was passiert, wenn der Nutzer *zwischen* den zwei Läufen an den zwei Dateien
-  arbeitet — der fortsetzende Lauf kann das nicht von npms Arbeit unterscheiden und amendet beides.
+  schreibt die Antwort in die Notiz; der Lauf, der die Arbeit fortsetzt, liest sie *und misst
+  selbst mit* — das war zuerst nicht so und ist der neunte Fix. Eine Notiz ohne das Feld erlaubt
+  keinen Amend (gemessen: ` M package-lock.json` bleibt stehen). Die Entscheidung dahinter: Der
+  fortsetzende Lauf kann Nutzerarbeit nicht von npm-Resten unterscheiden, also gilt ihm **jede**
+  Abweichung beim Start als Grund, nicht zu amenden. Das ist streng, und der Preis ist ein
+  Lockfile, das uncommittet stehen bleibt.
 - **Die Auskunft gilt für beide Pfade zusammen, nicht je Pfad.** Wer ein Paket über die App
   installiert, hat beide Dateien uncommittet, also ist der Unterschied in der Praxis keiner. Der
   Preis steht in der Messung (Szene h5a): ein Lockfile, das npm neu geschrieben hat, bleibt
@@ -203,7 +213,7 @@ diese eine Seite, und sie ist in dieser Runde nur für eine beantwortet worden.
 
 ### 6. Die Dokumente (`7a9d31c`, `546816d`, `de9aaa6`, `26022fa`, `abe2e1e`)
 
-Acht Nachträge in `docs/decisions/`, rund 188 neue Zeilen in `CLAUDE.md`, zehn neue Regeln. Jede
+Acht Nachträge in `docs/decisions/`, rund 196 neue Zeilen in `CLAUDE.md`, zehn neue Regeln. Jede
 Zahl darin ist eine Messung oder ein Befund. Zwei Stellen, an denen es diese Runde selbst schon
 einmal falsch hatte: die Diff-Zahlen dieses Absatzes (zweimal nachgerechnet, weil jede Korrektur
 die Zahl ändert) und die 178, die in einer Commit-Nachricht stand, bevor sie gezählt war.
@@ -256,9 +266,7 @@ oder eine kaputte `quartz.config.yaml`. Was misst du, das sie nicht messen?
 - **Nicht gemessen** und deshalb offen für dich: die **gepackte** App; ein echter Push unter
   Git-Sync; ERESOLVE; die Notiz über einen Restore oder ein Duplikat hinweg; zwei Fenster derselben
   App; die VMs und die Linux-Pakete; der Maus-Drag mit dem schmalen Chip; die Sortierlisten in
-  `Plugins/Installed` und `Styles/CustomCss`. Und: was ein echter Lauf tut, wenn der Nutzer
-  *zwischen* zwei Läufen an den zwei Paketdateien arbeitet — die Lücke, die `filesAtHead` offen
-  lässt.
+  `Plugins/Installed` und `Styles/CustomCss`.
 
 ## Was diese Runde offen gelassen hat
 

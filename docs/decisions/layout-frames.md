@@ -973,3 +973,23 @@ Nicht mit eingeschlossen: eine platzierte Einzelinstanz, die auf dem Vorrat abge
 bewegt sich ebenfalls nicht (der Zweig davor braucht ein Duplikat), aber der Vorrat ist nicht ihr
 Platz — „blieb an seinem Platz“ wäre so falsch wie „abgelegt“, und das braucht einen eigenen Satz,
 nicht diese Frage.
+
+**Nachtrag (2026-09-18, fünfundzwanzigstes Review, Befund 6): die zwei Ablagen auf dem Vorrat, die
+der Absatz darüber ausdrücklich offengelassen hat.** Beide kamen als „X bei Komponentenvorrat
+abgelegt“ heraus, und beide sind etwas anderes als eine Bewegung: ein platziertes **Duplikat** wird
+dort gelöscht, eine platzierte **Einzelinstanz** bleibt liegen, wo sie war. Gemessen an der
+gebauten App mit echten Tastendrücken (Kopie eines echten Projekts, ein Duplikat in der Config):
+
+    table-of-contents (Duplikat)   Space, 12x ArrowUp, Space
+      vorher   „… bei Komponentenvorrat abgelegt.“   Zeilen auf dem Board 34 → 33
+      nachher  „table-of-contents aus dem Layout entfernt.“
+    search (einzige Instanz)       Space, 3x ArrowUp, Space
+      vorher   „… bei Komponentenvorrat abgelegt.“   Zeilen 33 → 33
+      nachher  „search bleibt, wo es war — nur ein Duplikat lässt sich in den
+               Komponentenvorrat zurücklegen.“
+
+Was eine Ablage *bedeutet*, weiß nur die Aufrufstelle — wie der Name einer Drag-Id und wie
+`isHome`. `useDndAccessibility` nimmt dafür ein drittes, optionales `dropOutcome`; wo es nichts
+sagt, bleiben die gewohnten Sätze. Genutzt wird es heute nur vom Layout-Board. Dabei fielen zwei
+Sätze im Doc-Kommentar, die seit `e5e1099` nicht mehr stimmten: die Vorgabe von `isHome` hat genau
+einen Nutzer (die Plugin-Liste), und es sind drei Stellen, die ziehen, nicht zwei.

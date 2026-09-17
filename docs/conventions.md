@@ -108,7 +108,14 @@ Projektwurzel.
   committet“ feuert auch für einen eigenen Commit aus anderem Grund, für upstreams Commits, sobald
   ein handaufgelöster Merge sie nach HEAD bringt, und für den Amend der App — ein Merge-Commit
   zeigt ohne `--diff-merges` gar keinen Diff, die beiden letzten sind damit von selbst draußen.
-  Und wenn ein Lauf eine Liste fallen lässt, sagt er es (vierundzwanzigstes Review). Und ein vierter Satz für den Eintrag, der
+  Und wenn ein Lauf eine Liste fallen lässt, sagt er es (vierundzwanzigstes Review) — und zwar mit
+  dem Grund, den er gemessen hat: „jemand hat eine dieser Zeilen angefasst“ und „der Commit der
+  Notiz ist in git nicht mehr zu finden“ sind zwei Sätze, und genannt wird, was *fehlt*, nicht, was
+  mit einem anderen Bereich dasteht (fünfundzwanzigstes Review). **Wer eine Frage an die Geschichte
+  stellt, schreibt sich nicht selbst in die Antwort**: Ein Lauf, der zwischen zwei `npm install`
+  scheitert, kürzt seine Notiz auf das, was wirklich noch fehlt — sonst ist der nächste Commit über
+  eine dieser Zeilen die eigene Schrift der App, gelesen als fremde Hand. Und die Nadel des
+  `-G` steht in Anführungszeichen, weil ein blanker Name jede Zeile trifft, die ihn *enthält*. Und ein vierter Satz für den Eintrag, der
   auf HEAD passt, während gar kein Merge offen ist: Dann gibt es keinen Knopf, aber auch keinen
   „Stand, den es nicht mehr gibt“ — `git stash pop` trägt ihn ein (alles zwanzigstes Review). **Der Plan
   fragt die Merge-Basis, die Türen öffnen sich gegen HEAD**, also gibt es einen zweiten Vergleich (`localPackageChanges(head, ours,
@@ -259,6 +266,11 @@ Projektwurzel.
   darüber: ausgeschaltet schwieg der Hinweis, obwohl die Datei das Bild noch nannte, eingeschaltet
   warnte er vor etwas, das nicht passiert (dreizehntes Review, an der gebauten App in vier Fällen
   gemessen, vorher zwei falsch).
+- **Ein Satz über einen Zustand steht nicht in dem Kasten, den dieser Zustand mit sich nimmt.** Der
+  Abbruch-Satz auf Git-Sync hing im Merge-Band; ein geglückter Abbruch räumt das Band ab, und genau
+  die Hälfte der Antworten, für die es den Knopf gibt, wird *nach* dem Abbruch gesagt — die
+  verworfene vorgemerkte Datei, der gescheiterte Stash-Pop. Zu sehen war der Satz für die Dauer
+  eines Status-Reads (fünfundzwanzigstes Review, an der gebauten App gemessen).
 - **Eine Bedingung fragt das, was sie anzeigt.** Die Zeile „n Commits fehlen“ hing am Zustand
   `behind`; seit `pending` gegen alle drei anderen Antworten gewinnt, fiel die Zahl genau dann weg,
   wenn ein Projekt halb aktualisiert *und* zugleich hinterher war — also dort, wo zwei verschiedene
@@ -418,7 +430,11 @@ Projektwurzel.
   Zeile drei Plätze gewandert war. **Die Vorgabe „der eigene Platz ist die eigene Id“ trägt an drei
   der vier Stellen**: Ein Paletten-Chip heißt `palette:<index>` und wohnt in `palette-drop-zone`,
   also las sich jeder Satz über den Vorrat als Bewegung, und ein Ablegen, bei dem nichts passiert,
-  hieß „abgelegt“ (vierundzwanzigstes Review).
+  hieß „abgelegt“ (vierundzwanzigstes Review). **Und drittens, was eine Ablage überhaupt bewirkt
+  hat** (`dropOutcome`): Auf dem Vorrat wird ein Duplikat *gelöscht* und eine Einzelinstanz
+  *abgelehnt*, und beides kam als „abgelegt“ heraus — eine Löschung als Bewegung angesagt und ein
+  Nichts ebenso (fünfundzwanzigstes Review). Eine Ansage sagt, was passiert ist, nicht, wohin
+  gezogen wurde; wo die Aufrufstelle nichts sagt, bleiben die gewohnten Sätze.
 - **Schriftgrößen heißen nach Rolle, so wie die Farben.** `text-micro` (11px: Labels, Hinweise,
   Badges), `text-ui` (13px: Text in einem Bedienelement oder einer Zeile), `text-heading` (15px: die
   Überschrift einer Karte), definiert in `tailwind.config.js`. Seit dem 2026-09-06 gibt es keine
@@ -672,7 +688,12 @@ Projektwurzel.
   `check:plugin-names` und seit dem zwölften Review `check:runtime` (`shared/macNodeBinary.ts`); die
   Helper-Suche stand vorher gleich und ungeprüft zweimal da. Eine Kopie, die heute stimmt, ist
   genau die, die niemand mehr vergleicht.
-- **Eine Messung trägt nur so weit wie ihr Instrument.** Ein `grep` über `.quartz-gui/` fand den
+- **Eine Messung trägt nur so weit wie ihr Instrument — und das Instrument ist das, das im Code
+  steht.** Vier Stellen sagten, `realpath` lasse die Großschreibung, wie sie kommt; gemessen war das
+  an `fs.realpathSync`, Nodes JS-Nachbildung, während der Code `fs.promises.realpath` ruft, das
+  native `realpath(3)`. Das gibt auf APFS die Schreibweise der Platte zurück, das Schloss deckte die
+  Großschreibung also die ganze Zeit (fünfundzwanzigstes Review; der Code war besser als seine
+  Beschreibung, und „gemessen“ stand davor). Ein `grep` über `.quartz-gui/` fand den
   Projektpfad im Snapshot-Store nicht und hat daraus „nichts sonst hält seinen eigenen Pfad“ gemacht
   — der Store ist eine git-Objektdatenbank, und in einem zlib-komprimierten Objekt liest `grep`
   nichts (`git grep` je Ref schon: 8 von 8 Aufnahmen). Genauso „der Server antwortet unmittelbar

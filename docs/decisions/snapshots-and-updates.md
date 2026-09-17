@@ -503,3 +503,64 @@ Der Code war also die ganze Zeit besser als seine Beschreibung. Was bleibt: Ein 
 Volume, das die Groß- und Kleinschreibung *unterscheidet*, hat zwei verschiedene Ordner und
 zwei Schlüssel — richtig so. Der Auftrag des fünfundzwanzigsten Reviews behält seinen Wortlaut, er
 protokolliert den Stand, den er gelesen hat.
+
+**Nachtrag (2026-09-18, fünfundzwanzigstes Review, Befunde 1, 2, 3 und 5): vier Stellen, an denen
+das Update etwas sagte oder verschwieg, das nicht stimmte.** Alle vier sind an einem Bündel dieses
+Standes gegen ein lokales Upstream-Repo gemessen, je frischer Klon, npm als Attrappe mit vier
+Betriebsarten, der Status ohne Netz über `url.<bare>.insteadOf`; die erste zusätzlich an der
+gebauten App.
+
+*Der Satz des Abbruchs stand im Band, das der Abbruch abräumt* (Befund 1). Auf Git-Sync wurde
+`abortNote` innerhalb von `{status.inProgress && …}` gerendert — nach dem Klick kam der Status ohne
+`inProgress` zurück, der Block verschwand und der Satz mit ihm. Betroffen ist genau die Hälfte, für
+die der Knopf überhaupt einen Satz hat: die verworfene vorgemerkte Datei (`success: true`) und ein
+gescheiterter Stash-Pop. Gemessen an der gebauten App mit einem Attrappen-Projekt im halben Merge
+und vorgemerkter `eigene.txt`: vorher stand nach dem Klick kein Wort mehr auf der Seite (ein
+MutationObserver sah den Satz dreimal aufblitzen, solange `sync.status()` unterwegs war), nachher
+steht er unter „Keine lokalen Änderungen“. Die Regel dahinter: **ein Satz über einen Zustand steht
+nicht in dem Kasten, den dieser Zustand mit sich nimmt.**
+
+*Die App kann ihre eigene Hand nicht von einer fremden unterscheiden* (Befund 2a). `reinstallCommands`
+ruft npm einmal je Abschnitt; scheitert der zweite Aufruf, stehen die Pakete des ersten wieder in
+`package.json`, blieben aber in der Notiz. Der nächste Commit, der eine dieser Zeilen anfasst — ein
+Git-Sync genügt —, war damit die eigene Schrift der App, gelesen als „jemand anders hat
+geantwortet“, und die ganze Liste fiel. Szene G1: vorher Notiz `[default, minimal, own-dev-tool]`,
+nach dem Commit „Aktuell“, `own-dev-tool` kam nie zurück; nachher kürzt der scheiternde Lauf die
+Notiz auf `[own-dev-tool]`, und Lauf 2 trägt es ein. **Wer eine Frage an die Geschichte stellt,
+schreibt sich nicht selbst in die Antwort.**
+
+*Die Nadel traf Teilnamen* (Befund 2b). `-G@quartz-themes/default` findet jede Zeile, die den Namen
+enthält; ein Commit, der nur `@quartz-themes/default-dark` einträgt, ließ die Liste fallen (Szene
+G2: „Aktuell“, beide Themes weg, kein Wort). Im Register stecken sechs von 248 Namen in einem
+anderen. Die Nadel steht jetzt in Anführungszeichen, ist also der JSON-Schlüssel und nicht der
+Text. Dabei ist auch der Dialekt geklärt, den der Kommentar offengelassen hatte: **`-G` übersetzt
+POSIX extended** (an git 2.54 und dem mitgelieferten 2.53 gemessen: `c\+\+lib`, `a\+b`, `x\(y\)`,
+`q\?z`, `a\{2\}`, `a\|b` treffen je genau den einen Commit, `quartz\.foo` trifft `quartzXfoo`
+nicht); basic ist, was `--grep` nimmt. Offen bleibt eine Antwort, die *in* einem Merge-Commit
+gegeben wird — die Kehrseite dessen, was den handaufgelösten Merge und den eigenen Amend
+heraushält, und im Kommentar als solche benannt.
+
+*Der Satz über eine fallengelassene Liste sagte dreimal etwas Falsches* (Befund 3). Er nannte
+Pakete, die mit einem anderen Bereich dastehen (`npm install <name>` schreibt, was npm auflöst,
+nicht was die Notiz sich merkt — Szenen G4/G8: beide Themes mit `^2.3.1` zurückgeschrieben und
+committet, genannt wurden trotzdem alle drei); er erzählte von einer Änderung, die niemand gemacht
+hat, wenn die Bindung fiel, weil git den Commit der Notiz nicht mehr hat (G7); und er fiel ganz
+aus, wenn der Lauf danach an npm scheiterte, während die Notiz mit der eigenen Liste überschrieben
+wird (G5: die Ausgabe ist der letzte Ort, an dem die Namen stehen). Jetzt fragt er
+`absentFromPackageJson` statt `stillMissing` — „fehlt“ statt „fehlt oder steht anders da“, über
+alle Abschnitte —, `listTakenInHandSince` antwortet mit drei Werten statt einem Bool, und der Satz
+steht auch auf dem Fehlerweg.
+
+*Eine leere Liste war „nichts offen“, auch nach einem gescheiterten npm* (Befund 5). Szene G0, ein
+Projekt ohne eigene Pakete: `package.json` ist upstreams, `node_modules` nicht, die Notiz sagt es
+(`installPendingFor: <merge>, reinstall: []`) — und die Seite zeigte „Aktuell“ mit deaktiviertem
+Knopf, also keinen Weg. Die leere Liste nach einem *erfolgreichen* npm ist von dort aus nicht zu
+unterscheiden, also sagt es der Lauf, der es weiß: die Notiz trägt `installFailed`, und „Nicht
+abgeschlossen“ hat einen zweiten Grund mit einem eigenen Satz auf der Seite (der alte nennt Pakete,
+und hier gibt es keine). Eine Notiz ohne das Feld liest sich wie bisher, damit keine
+liegengebliebene plötzlich pending wird.
+
+Dazu zwei Sätze, die zu viel versprachen: `updatePackagesMissing` nannte nach einem Fehlschlag den
+Stand *vor* npm (also auch Pakete, die der erste Aufruf schon zurückgeschrieben hatte), und der
+Satz des Schlosses riet zu „Erneut prüfen“ — ein Knopf, der auf Git-Sync anders heißt und auf
+Updates während des Laufs deaktiviert ist. Beide sagen jetzt, was gilt, ohne einen Knopf zu nennen.

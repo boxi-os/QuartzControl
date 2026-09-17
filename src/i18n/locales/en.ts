@@ -1839,6 +1839,7 @@ export default {
     instructions:
       'Press space or enter to pick up. While dragging, use the arrow keys to move, space or enter to drop, escape to cancel.',
     picked: '{{name}} picked up.',
+    pickedOver: '{{name}} picked up, over {{target}}.',
     over: '{{name}} is over {{target}}.',
     backHome: '{{name}} is back where it started.',
     outside: '{{name}} is over no drop target.',

@@ -54,7 +54,17 @@ export function useDndAccessibility(
       onDragOver: ({ active, over }) => {
         if (firstOver.current) {
           firstOver.current = false
-          if (over) return undefined
+          // Not silence: where the first report names a *different* place than the thing itself -
+          // the frame builder reports the cell an area lies on - silence was the only answer the
+          // user got until a press changed the target, and a first press that keeps the same target
+          // changes nothing, so no `onDragOver` follows. Measured (twenty-second review, finding 3):
+          // a chip out of the tray answered Space, ArrowDown, ArrowDown with "aufgenommen",
+          // nothing, "Zelle Zeile 2, Spalte 1". One sentence carries both halves instead.
+          if (over) {
+            return name(over.id) === name(active.id)
+              ? undefined
+              : t('dnd.pickedOver', { name: name(active.id), target: name(over.id) })
+          }
         }
         if (over && name(over.id) === name(active.id)) {
           return movedAway.current ? t('dnd.backHome', { name: name(active.id) }) : undefined

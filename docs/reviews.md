@@ -81,6 +81,16 @@ Spaltenleiter, den ein Fenster auf diesem Bildschirm (1470 px) nie erreicht, und
 eingeklappten Zeile, die eine Konstante ist. Das Review geht an ein anderes Modell als die Commits.
 Der Stand ist **nicht gepusht**.
 
+**Das sechsundzwanzigste Review misst ab `review-2026-09-30`** und liest bis `review-2026-10-01`,
+das auf dem Commit „Der Auftrag fuer das sechsundzwanzigste Review“ (`fix/review-2026-09-29`)
+sitzt; der Auftrag steht in [`docs/REVIEW-2026-09-30-auftrag.md`](REVIEW-2026-09-30-auftrag.md).
+Sein Diff sind die vierzehn Commits, mit denen die neun Befunde des fünfundzwanzigsten Reviews und
+drei Punkte seiner Nebenbei-Liste abgearbeitet wurden: ohne Review-Dokument und Auftragsdatei
+19 Dateien, +496/−113, davon in App-Code und Skripten 14 Dateien, +316/−81. Als größtes Risiko
+nennt er die sechste Runde an der Paketliste — diesmal keine neue Bindung, sondern zwei
+Verengungen — und den neuen Zustand `installFailed`, der „Nicht abgeschlossen“ einen zweiten Grund
+gibt, den das Handbuch noch nicht kennt. Der Branch ist nicht gepusht.
+
 **Das fünfundzwanzigste Review las die drei Schichten oben** und fand **keinen Befund Hoch, zwei
 Mittel, sieben Niedrig**, dazu vier Punkte nebenbei — von Claude Fable 5.1, also von einem anderen
 Modell als dem, das die gelesenen Commits geschrieben hat. Die zwei Mittleren sitzen beide in dem,

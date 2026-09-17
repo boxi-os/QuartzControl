@@ -204,6 +204,7 @@ export default {
     unsavedWarningWithSave: 'This page has changes that are not saved yet. What should happen to them?',
     unsavedBadge: 'Unsaved',
     allProjects: 'All projects',
+    notFound: 'This project is no longer in the list.',
     navLabel: 'Project areas',
     loading: 'Loading project…',
     tabs: {
@@ -1425,6 +1426,7 @@ export default {
     }
   },
   localization: {
+    loadFailed: 'The translations could not be loaded.',
     none: 'No locale files found (quartz/i18n/locales is missing).',
     searchPlaceholder: 'Search by key or text…',
     unsavedCount: '{{count}} unsaved',

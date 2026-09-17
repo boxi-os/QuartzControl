@@ -205,6 +205,7 @@ export default {
       'Auf dieser Seite gibt es Änderungen, die noch nicht gespeichert sind. Was soll damit geschehen?',
     unsavedBadge: 'Nicht gespeichert',
     allProjects: 'Alle Projekte',
+    notFound: 'Dieses Projekt steht nicht mehr in der Liste.',
     navLabel: 'Projektbereiche',
     loading: 'Lade Projekt…',
     tabs: {
@@ -1430,6 +1431,7 @@ export default {
     }
   },
   localization: {
+    loadFailed: 'Die Übersetzungen ließen sich nicht laden.',
     none: 'Keine Locale-Dateien gefunden (quartz/i18n/locales fehlt).',
     searchPlaceholder: 'Nach Schlüssel oder Text suchen…',
     unsavedCount: '{{count}} ungespeichert',

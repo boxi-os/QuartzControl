@@ -4,6 +4,7 @@ import { askDialog } from '../utils/confirm'
 import { titlebarStripClass } from '../utils/platform'
 import { NavLink, Outlet, useLocation, useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { ArrowLeft, type LucideIcon } from 'lucide-react'
+import { formatIpcError } from '../components/ErrorSurface'
 import type { Project, ProjectIconInfo } from '@shared/ipc-contract'
 import { GROUP_ICONS, TAB_ICONS, type TabKey } from './navConfig'
 import { hasUnsavedChanges } from '../state/unsavedGuard'
@@ -132,6 +133,7 @@ export default function ProjectLayout(): JSX.Element {
   const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const [project, setProject] = useState<Project | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const mainRef = useRef<HTMLElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const guardLeave = useLeaveGuard()
@@ -182,8 +184,15 @@ export default function ProjectLayout(): JSX.Element {
 
   useEffect(() => {
     if (!id) return
-    window.quartzGui.projects.open(id).then((p) => setProject(p ?? null))
-  }, [id])
+    // Two ways for this not to answer with a project, and both used to render as "Lade Projekt…"
+    // for ever - the one screen with no sidebar and no way out (twenty-second review, finding 2).
+    // `open` answering null is not an error: it is a project the list no longer has, which is what
+    // a removed or renamed one looks like from a bookmarked route.
+    window.quartzGui.projects
+      .open(id)
+      .then((p) => (p ? setProject(p) : setLoadError(t('projectLayout.notFound'))))
+      .catch((error) => setLoadError(formatIpcError(error)))
+  }, [id, t])
 
   // Only a picture the user assigned; a project still carrying the icon Quartz ships gets its
   // letter, or every project in the app would wear the same stock image. See projectIconService.
@@ -202,6 +211,16 @@ export default function ProjectLayout(): JSX.Element {
     void window.quartzGui.logs.history({ projectId: id }).then((history) => seedLogs(id, history))
   }, [id, seedLogs])
 
+  if (loadError) {
+    return (
+      <div className="titlebar-drag flex h-screen flex-col items-center justify-center gap-3 px-6 text-center">
+        <p className="text-sm font-medium text-red-600 dark:text-red-400">{loadError}</p>
+        <NavLink to="/" className="text-ui text-accent-text hover:underline">
+          {t('projectLayout.allProjects')}
+        </NavLink>
+      </div>
+    )
+  }
   if (!project) {
     return (
       <div className="titlebar-drag flex h-screen items-center justify-center text-sm text-text-muted">

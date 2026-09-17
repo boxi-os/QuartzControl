@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useProject } from '../ProjectLayout'
 import type { LocaleEntry, LocaleFile } from '@shared/ipc-contract'
 import { Badge, Button, Select, TextInput } from '../../components/ui'
+import { formatIpcError } from '../../components/ErrorSurface'
 import { useStickyState } from '../../state/uiState'
 
 export default function Localization(): JSX.Element {
@@ -19,14 +20,28 @@ export default function Localization(): JSX.Element {
   const [query, setQuery] = useStickyState('localization.query', '')
   const [saving, setSaving] = useState(false)
   const [gitAttrOk, setGitAttrOk] = useState<boolean | null>(null)
+  // The two reads this tab cannot do without: the list of locales and the entries of the open one.
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const failed = (error: unknown): void => setLoadError(formatIpcError(error))
   const [enablingProtection, setEnablingProtection] = useState(false)
 
   useEffect(() => {
-    window.quartzGui.localization.list(project.path).then((list) => {
+    window.quartzGui.localization
+      .list(project.path)
+      .then((list) => {
       setLocales(list)
       if (list.length > 0) {
-        window.quartzGui.config.get(project.path).then((config) => {
-          const configured = typeof config.configuration.locale === 'string' ? config.configuration.locale : undefined
+        // `.catch` rather than nothing: this read only decides which locale is preselected, and a
+        // page that cannot be read must not cost the page its list. Without it a broken
+        // quartz.config.yaml left `code` unset, so the effect below never ran and the entries block
+        // said "Lade…" for ever beside a locale list that had loaded fine (twenty-second review,
+        // finding 2).
+        window.quartzGui.config
+          .get(project.path)
+          .catch(() => null)
+          .then((config) => {
+          const configured =
+            config && typeof config.configuration.locale === 'string' ? config.configuration.locale : undefined
           // Functional form on purpose: a locale the user already picked in this session wins over
           // the configured default, which is what makes coming back land on the same locale.
           setCode((prev) =>
@@ -38,7 +53,8 @@ export default function Localization(): JSX.Element {
           )
         })
       }
-    })
+      })
+      .catch(failed)
     window.quartzGui.localization.gitAttributesStatus(project.path).then(setGitAttrOk)
   }, [project.path])
 
@@ -54,7 +70,7 @@ export default function Localization(): JSX.Element {
     }
     loadedCodeRef.current = code
     setEntries(null)
-    window.quartzGui.localization.getEntries(project.path, code).then(setEntries)
+    window.quartzGui.localization.getEntries(project.path, code).then(setEntries).catch(failed)
     // setEdits/setErrors are stable state setters
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project.path, code])
@@ -127,6 +143,16 @@ export default function Localization(): JSX.Element {
     (e) => !q || keyOf(e.path).toLowerCase().includes(q) || e.value.toLowerCase().includes(q)
   )
 
+  if (loadError) {
+    return (
+      <div className="max-w-xl">
+        <p className="mb-2 text-sm font-medium text-red-600 dark:text-red-400">{t('localization.loadFailed')}</p>
+        <pre className="whitespace-pre-wrap rounded-md bg-red-50 p-3 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-400">
+          {loadError}
+        </pre>
+      </div>
+    )
+  }
   if (!locales) return <p className="text-sm text-text-muted">{t('common.loading')}</p>
   if (locales.length === 0) return <p className="text-sm text-text-muted">{t('localization.none')}</p>
 

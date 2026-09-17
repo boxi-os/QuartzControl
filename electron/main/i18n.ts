@@ -141,8 +141,12 @@ const STRINGS = {
     // Datei selbst ist dabei nie in Gefahr, das Speichern scheitert an ihr ebenfalls.
     configNotAMapping:
       'In quartz.config.yaml steht keine Zuordnung aus Schlüsseln und Werten. Die App liest die Datei deshalb nicht; repariere sie in einem Editor oder nimm einen Wiederherstellungspunkt.',
+    // Nennt keinen Knopf: Der Satz wird an zwei Stellen gelesen, und der Knopf heißt dort
+    // verschieden („Erneut prüfen“ auf Updates, „Aktualisieren“ auf Git-Sync) — auf Updates ist er
+    // während des Laufs obendrein deaktiviert (fünfundzwanzigstes Review, Befund 1 und
+    // „nebenbei“ 4).
     updateAlreadyRunning:
-      'Für dieses Projekt läuft gerade ein Kern-Update. Warte, bis es durch ist, und drücke dann „Erneut prüfen“ — die Ausgabe des Laufs sieht nur, wer diese Seite so lange offen lässt.',
+      'Für dieses Projekt läuft gerade ein Kern-Update. Warte, bis es durch ist, und sieh dann noch einmal nach — die Ausgabe des Laufs sieht nur, wer die Updates-Seite so lange offen lässt.',
     // Der häufigste Fall: ein nicht geschlossenes Anführungszeichen, ein Tab als Einrückung. yamls
     // eigene Meldung nennt Zeile und Spalte und bleibt deshalb englisch, wie die übrigen
     // Werkzeugmeldungen auch.
@@ -445,7 +449,7 @@ const STRINGS = {
     configNotAMapping:
       'quartz.config.yaml does not hold a mapping of keys and values. The app will not read it; fix it in an editor or use a restore point.',
     updateAlreadyRunning:
-      'A core update is already running for this project. Wait for it to finish and then press “Check again” — the run’s own output is only seen by whoever leaves this page open until then.',
+      'A core update is already running for this project. Wait for it to finish and then look again — the run’s own output is only seen by whoever leaves the Updates page open until then.',
     configNotParseable:
       'quartz.config.yaml cannot be read as YAML: {{reason}}. Fix it in an editor or use a restore point.',
     configMissing:

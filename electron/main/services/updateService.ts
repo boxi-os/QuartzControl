@@ -1061,12 +1061,19 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     // build is still to come), the list does not.
     //
     // Without this it kept going for ever, because the only thing that clears the note is a run
-    // that reaches the end - and a run that dies after this point (a crash, an unwritable
-    // `.quartz-gui/`) leaves it behind with a full list over a package.json that already has
-    // everything. Measured (twenty-second review, finding 1): with such a note lying around, a
-    // package the user had removed *and committed* came back on the next update - `success: true`,
-    // in a run that had nothing to fetch. The SHA and `filesAtHead` stay, because the amend below
-    // still needs both.
+    // that reaches the end - and a run that dies after this point (a crash, or a `.quartz-gui/`
+    // that stops being writable in the middle of a run, which is how it was measured) leaves it
+    // behind with a full list over a package.json that already has everything. A directory that is
+    // unwritable from the start is not this case: then the first write fails too and there is no
+    // note with a list at all. Measured (twenty-second review, finding 1): with such a note lying
+    // around, a package the user had removed *and committed* came back on the next update -
+    // `success: true`, in a run that had nothing to fetch.
+    //
+    // The SHA and `filesAtHead` stay because a *later* run reads them off the disk; the amend
+    // below works from local variables and reads neither. And the SHA that stays can be one no ref
+    // reaches any more - if the amend runs, it rewrites the very commit this names (measured,
+    // twenty-third review, finding 6: `installPendingFor: 91cc795…` beside `HEAD f07a7a9…`).
+    // Harmless, because the next run is then simply not a `resuming` one.
     try {
       await markInstallPending(projectPath, headAfter, [], filesAtHead)
     } catch (error) {

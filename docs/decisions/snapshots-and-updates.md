@@ -399,13 +399,14 @@ Der Preis steht in R5: ein Lockfile, das npm im zweiten Lauf neu geschrieben hat
 
 Was weiterhin **nicht** gemessen ist: ERESOLVE, ein echter Push unter Git-Sync, die Notiz über einen Restore hinweg.
 
-**Nachtrag (2026-09-17, zweiundzwanzigstes Review): die Paketliste endet, wenn npm sie eingetragen hat.** Die Liste beschreibt genau ein Fenster — von „`package.json` ist upstreams“ bis „npm hat die eigenen Pakete zurück“. Die Notiz als Ganzes überlebt es (der Aufwärm-Build kommt noch), die Liste nicht; bis hierher tat sie es doch, weil das Einzige, was sie räumt, ein Lauf ist, der bis zum Ende kommt. Stirbt einer davor — ein Absturz, ein unschreibbares `.quartz-gui/` —, blieb sie mit vollem Inhalt über einer `package.json` liegen, in der npm längst alles wieder eingetragen hatte, und galt von da an unbegrenzt. Gemessen (r2, Upstream D; die npx-Attrappe setzt beim Bauen `.quartz-gui` auf 555, so dass `clearInstallPending` scheitert):
+**Nachtrag (2026-09-17, zweiundzwanzigstes Review): die Paketliste endet, wenn npm sie eingetragen hat.** Die Liste beschreibt genau ein Fenster — von „`package.json` ist upstreams“ bis „npm hat die eigenen Pakete zurück“. Die Notiz als Ganzes überlebt es (der Aufwärm-Build kommt noch), die Liste nicht; bis hierher tat sie es doch, weil das Einzige, was sie räumt, ein Lauf ist, der bis zum Ende kommt. Stirbt einer davor — ein Absturz, oder ein `.quartz-gui/`, das *mitten im Lauf* unschreibbar wird, wie in der Messszene —, blieb sie mit vollem Inhalt über einer `package.json` liegen, in der npm längst alles wieder eingetragen hatte, und galt von da an unbegrenzt. Gemessen (r2, Upstream D; die npx-Attrappe setzt beim Bauen `.quartz-gui` auf 555, so dass `clearInstallPending` scheitert):
 
     vorher (92c9215)  Lauf 2: Notiz bleibt mit [@quartz-themes/default]
                       der Nutzer entfernt das Theme und committet
                       Lauf 3: `install --save-prod @quartz-themes/default@^2.0.0` — das Theme
                               ist zurück, unter `success: true`, in einem Lauf ohne etwas zu holen
-    nachher           Lauf 2: Notiz bleibt mit [], SHA und `filesAtHead` erhalten
+    nachher           Lauf 2: Notiz bleibt mit [], SHA und `filesAtHead` erhalten (die
+                              beiden liest ein *späterer* Lauf, nicht der Amend darunter)
                       Lauf 3: `install` schlicht, das Theme bleibt entfernt
 
 Das ist die Kehrseite von `carried` ohne SHA-Bindung (Nachtrag oben): Die Bindung hatte diese Tür zugehalten, und das Argument, das sie ersetzte („nach dem Merge ist `package.json` upstreams, er kann es gar nicht entfernt haben“), gilt für den Lauf, der unmittelbar folgt, nicht für eine Notiz, die liegen bleibt. Gegenproben: h1 (npm scheitert zweimal, der dritte Lauf trägt beide Themes wieder ein) und der gewöhnliche Lauf, beide unverändert.

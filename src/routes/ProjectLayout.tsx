@@ -187,7 +187,8 @@ export default function ProjectLayout(): JSX.Element {
     // Two ways for this not to answer with a project, and both used to render as "Lade Projekt…"
     // for ever - the one screen with no sidebar and no way out (twenty-second review, finding 2).
     // `open` answering null is not an error: it is a project the list no longer has, which is what
-    // a removed or renamed one looks like from a bookmarked route.
+    // a removed one looks like from a bookmarked route. Not a renamed or moved one - that keeps
+    // its id, which is what `relocateProject` exists for.
     window.quartzGui.projects
       .open(id)
       .then((p) => (p ? setProject(p) : setLoadError(t('projectLayout.notFound'))))

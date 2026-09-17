@@ -941,6 +941,16 @@ gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](docs/REVIEW-2026-09-15
 in diese Zählung: Die „fünfzehnte Runde“ las die Handbücher der zwei Plugins gegen deren Code und
 aus diesem Repo nur zwei Commits der Beispielvorlage (`fe2b701`, `9592121`).
 
+**Das dreiundzwanzigste Review misst ab `review-2026-09-27`** und liest bis `review-2026-09-28`,
+das auf dem Commit „Der Auftrag für das dreiundzwanzigste Review“ (`main`) sitzt; der Auftrag steht
+in [`docs/REVIEW-2026-09-27-auftrag.md`](docs/REVIEW-2026-09-27-auftrag.md). **Er geht an ein
+anderes Modell** — das ist seine Begründung: Die Runde davor hat sich selbst gelesen, und der
+Auftrag macht das Review-Dokument `docs/REVIEW-2026-09-26.md` deshalb zum **Prüfgegenstand** statt
+es auszunehmen, wie es sonst die Regel ist. Sein Diff sind die vier Fixes dieser Runde und das
+Review selbst: ohne Auftragsdatei 12 Dateien, +353/−13, im App-Code 6 Dateien, +87/−8. Als größtes
+Risiko nennt er die Paketliste im Core-Update, die in drei aufeinander folgenden Runden dreimal
+anders gebunden wurde, und bittet ausdrücklich um den vierten Fall.
+
 **Das zweiundzwanzigste Review ist das erste dieser Serie, das vom selben Modell und aus derselben
 Sitzung stammt wie die Commits, die es liest** — der Vorbehalt steht oben in seinem Dokument, und
 er ist der Grund, warum darin fast alles gemessen und fast nichts gelesen ist. Es las

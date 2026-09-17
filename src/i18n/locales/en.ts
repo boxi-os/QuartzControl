@@ -1237,6 +1237,7 @@ export default {
     componentPill: {
       paletteLabel: 'Add component',
       paletteDropToRemove: 'Drop here to remove',
+      paletteDragName: 'component tray',
       paletteHint: 'Drag a component onto a slot to insert another instance with its own settings.',
       dragHandle: 'Drag to move',
       duplicate: 'Duplicate',

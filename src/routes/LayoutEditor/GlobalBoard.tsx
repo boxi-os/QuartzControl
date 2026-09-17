@@ -216,7 +216,11 @@ export default function GlobalBoard({
   // a drop target, one of the six layout positions, or - a bare number - the plugin at that index
   // in the config. dnd-kit would otherwise narrate "droppable area 37" in English.
   function describeDragId(id: string): string {
-    if (id === PALETTE_DROP_ID) return t('layoutEditor.componentPill.paletteLabel')
+    // Its own name, not the caption above it: the caption is an instruction ("Komponente
+    // hinzufügen"), and this string is read out as a drop target - "page-title liegt über
+    // Komponente hinzufügen". Same reasoning as the frame builder's tray label, which is a name
+    // for exactly this reason (twenty-third review, "nebenbei" 4).
+    if (id === PALETTE_DROP_ID) return t('layoutEditor.componentPill.paletteDragName')
     // A palette id carries the *index* of the plugin it would duplicate, not its name
     // (appendDuplicateToPosition needs the index) - so it resolves the same way as a placed item.
     const index = id.startsWith(PALETTE_PREFIX) ? Number(id.slice(PALETTE_PREFIX.length)) : Number(id)

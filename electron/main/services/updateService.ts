@@ -339,8 +339,8 @@ async function stashRef(projectPath: string): Promise<string | null> {
  * taken from, and that is the state `git stash pop` merges its diff against. Anything else is a
  * merge against a state that is gone.
  */
-async function stashBase(projectPath: string): Promise<string> {
-  const base = await run('git', ['rev-parse', 'refs/stash^'], projectPath)
+async function stashBase(projectPath: string, entry = 'refs/stash'): Promise<string> {
+  const base = await run('git', ['rev-parse', `${entry}^`], projectPath)
   return base.success ? base.output.trim() : ''
 }
 
@@ -576,7 +576,16 @@ async function popCoreUpdateStash(projectPath: string): Promise<{ success: boole
   // an abort that put the project back, and saying "erfolgreich" over git's conflict output is how
   // the user learns about it at the next build instead of now.
   if (!popped.success) return { success: false, output: `\n\n${mainT('updateStashPopFailed')}\n${popped.output}` }
-  return { success: true, output: `\n${popped.output}` }
+  // And what the pop uncovered. An older entry of this app's can lie underneath - a run that never
+  // got to put its own back - and until now the one moment it was certain to go unmentioned was
+  // this one: the run that follows says nothing, because by then its own stash is gone and this
+  // one is just an entry it did not write. Which of the two sentences it earns is the question
+  // leftoverStashNote asks: does it still fit the state the project is in?
+  const older = await coreUpdateStashEntry(projectPath)
+  if (older === null) return { success: true, output: `\n${popped.output}` }
+  const fits = head !== '' && (await stashBase(projectPath, older)) === head
+  const note = mainT(fits ? 'updateStashFitsHead' : 'updateStashLeftover', { entry: older })
+  return { success: true, output: `\n${popped.output}\n\n${note}` }
 }
 
 async function conflictedFiles(projectPath: string): Promise<string[]> {

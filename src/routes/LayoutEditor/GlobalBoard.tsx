@@ -250,7 +250,20 @@ export default function GlobalBoard({
   // would be as untrue as "abgelegt" - that one needs a sentence of its own, not this question.
   const isHomeOnBoard = (activeId: string, overId: string): boolean =>
     activeId === overId || (overId === PALETTE_DROP_ID && activeId.startsWith(PALETTE_PREFIX))
-  const { announcements, screenReaderInstructions } = useDndAccessibility(t, describeDragId, isHomeOnBoard)
+  // The two drops the ordinary "X bei Y abgelegt" describes wrongly, both of them onto the tray:
+  // a placed duplicate is *deleted* there (handleDragEnd calls removeDuplicate), and a placed sole
+  // instance is refused and stays where it is. Measured (twenty-fifth review, finding 6): the
+  // deletion took a row out of the configuration - 33 rows became 32 - under the word "abgelegt",
+  // and the refusal said the same thing with nothing having happened at all.
+  const describeBoardDrop = (activeId: string, overId: string): string | undefined => {
+    if (overId !== PALETTE_DROP_ID || activeId.startsWith(PALETTE_PREFIX)) return undefined
+    const plugin = config.plugins[Number(activeId)]
+    if (!plugin) return undefined
+    return (nameCounts.get(plugin.name) ?? 0) > 1
+      ? t('dnd.removed', { name: plugin.name })
+      : t('dnd.notRemovable', { name: plugin.name })
+  }
+  const { announcements, screenReaderInstructions } = useDndAccessibility(t, describeDragId, isHomeOnBoard, describeBoardDrop)
 
   // The pointer half is dnd-kit's own default, unchanged; the keyboard half is the whole point of
   // saying this out loud. Without a coordinate getter an arrow press moves the picked-up item by a

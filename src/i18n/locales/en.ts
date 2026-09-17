@@ -1860,6 +1860,8 @@ export default {
     outside: '{{name}} is over no drop target.',
     dropped: '{{name}} dropped on {{target}}.',
     droppedHome: '{{name}} stayed where it was.',
+    removed: '{{name}} removed from the layout.',
+    notRemovable: '{{name}} stays where it was — only a duplicate can go back into the component tray.',
     cancelled: '{{name}} cancelled, nothing moved.'
   },
   logConsole: {

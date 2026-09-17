@@ -7,21 +7,31 @@ import type { TFunction } from 'i18next'
  *
  * dnd-kit ships announcements and keyboard instructions of its own, and they are good - but they
  * are English ("Draggable item 37 was moved over droppable area 42"), and they name the raw ids,
- * which here are indices into `config.plugins`. Both lists that drag (the plugin list, the layout
- * board) get this instead: the same sentences, in de/en, with the names the user can see.
+ * which here are indices into `config.plugins`. All three places that drag (the plugin list, the
+ * layout board, the frame builder) get this instead: the same sentences, in de/en, with the names
+ * the user can see.
  *
  * `describe` turns an id into that name. It belongs to the caller because only the caller knows
  * what its ids mean - a config index, a palette chip, a layout position.
  *
  * `isHome` answers the other question the caller alone can answer: is this target the very place
  * the dragged thing is being dragged *from*. The default is the one that holds wherever a thing's
- * own place is its own id, which is both sortable lists and the layout board; the frame builder
- * passes its own, because there an area's place is a box with an id of its own.
+ * own place is its own id, which is the sortable plugin list - its one user. The frame builder
+ * passes its own, because there an area's place is a box with an id of its own, and the layout
+ * board does too, because a palette chip is called `palette:<index>` and lies in
+ * `palette-drop-zone` (twenty-fourth review, finding 6).
+ *
+ * `dropOutcome` is the third and last thing only the caller knows: what a drop on *this* target
+ * actually did, where "moved there" is not it. On the layout board the component tray deletes a
+ * duplicate and refuses a sole instance, and both came out as "X bei Komponentenvorrat abgelegt" -
+ * a deletion announced as a move, and a no-op announced as one too (twenty-fifth review,
+ * finding 6). Anything it does not answer keeps the ordinary sentences.
  */
 export function useDndAccessibility(
   t: TFunction,
   describe: (id: string) => string,
-  isHome: (activeId: string, overId: string) => boolean = (activeId, overId) => activeId === overId
+  isHome: (activeId: string, overId: string) => boolean = (activeId, overId) => activeId === overId,
+  dropOutcome?: (activeId: string, overId: string) => string | undefined
 ): { announcements: Announcements; screenReaderInstructions: ScreenReaderInstructions } {
   const name = (id: string | number): string => describe(String(id)) || String(id)
   const home = (active: string | number, over: string | number): boolean => isHome(String(active), String(over))
@@ -88,6 +98,11 @@ export function useDndAccessibility(
       // `isHome` for the reason given above.
       onDragEnd: ({ active, over }) => {
         if (over && home(active.id, over.id)) return t('dnd.droppedHome', { name: name(active.id) })
+        // Asked before the ordinary sentence, because the ordinary sentence is the wrong one
+        // wherever this answers: a drop that deletes and a drop that does nothing both read as a
+        // move otherwise.
+        const outcome = over ? dropOutcome?.(String(active.id), String(over.id)) : undefined
+        if (outcome) return outcome
         return over ? t('dnd.dropped', { name: name(active.id), target: name(over.id) }) : t('dnd.cancelled', { name: name(active.id) })
       },
       onDragCancel: ({ active }) => t('dnd.cancelled', { name: name(active.id) })

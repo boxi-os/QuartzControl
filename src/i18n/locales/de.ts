@@ -1869,6 +1869,10 @@ export default {
     outside: '{{name}} liegt über keinem Ablageort.',
     dropped: '{{name}} bei {{target}} abgelegt.',
     droppedHome: '{{name}} blieb an seinem Platz.',
+    // Zwei Ausgänge, die „abgelegt“ falsch beschreibt: Auf dem Komponentenvorrat wird ein
+    // Duplikat gelöscht, und eine einzelne Instanz bleibt, wo sie ist.
+    removed: '{{name}} aus dem Layout entfernt.',
+    notRemovable: '{{name}} bleibt, wo es war — nur ein Duplikat lässt sich in den Komponentenvorrat zurücklegen.',
     cancelled: '{{name}} abgebrochen, nichts verschoben.'
   },
   logConsole: {

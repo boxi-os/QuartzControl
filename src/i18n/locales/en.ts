@@ -1841,6 +1841,7 @@ export default {
     backHome: '{{name}} is back where it started.',
     outside: '{{name}} is over no drop target.',
     dropped: '{{name}} dropped on {{target}}.',
+    droppedHome: '{{name}} stayed where it was.',
     cancelled: '{{name}} cancelled, nothing moved.'
   },
   logConsole: {

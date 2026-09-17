@@ -62,8 +62,14 @@ export function useDndAccessibility(
         movedAway.current = true
         return over ? t('dnd.over', { name: name(active.id), target: name(over.id) }) : t('dnd.outside', { name: name(active.id) })
       },
-      onDragEnd: ({ active, over }) =>
-        over ? t('dnd.dropped', { name: name(active.id), target: name(over.id) }) : t('dnd.cancelled', { name: name(active.id) }),
+      // The same question as in onDragOver, at the other end of the drag: a drop on the place the
+      // thing already occupies moved nothing, and "X bei X abgelegt" says it moved. Reachable with
+      // one keystroke (Space, Space) and with a click on the handle that drags no pixel. Asked by
+      // name for the reason given above - in the frame builder the own place has an id of its own.
+      onDragEnd: ({ active, over }) => {
+        if (over && name(over.id) === name(active.id)) return t('dnd.droppedHome', { name: name(active.id) })
+        return over ? t('dnd.dropped', { name: name(active.id), target: name(over.id) }) : t('dnd.cancelled', { name: name(active.id) })
+      },
       onDragCancel: ({ active }) => t('dnd.cancelled', { name: name(active.id) })
     }
   }

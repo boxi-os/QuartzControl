@@ -1849,6 +1849,7 @@ export default {
     backHome: '{{name}} liegt wieder auf seinem Ausgangsplatz.',
     outside: '{{name}} liegt über keinem Ablageort.',
     dropped: '{{name}} bei {{target}} abgelegt.',
+    droppedHome: '{{name}} blieb an seinem Platz.',
     cancelled: '{{name}} abgebrochen, nichts verschoben.'
   },
   logConsole: {

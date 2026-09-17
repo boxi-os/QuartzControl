@@ -109,9 +109,10 @@ const STRINGS = {
       'Diese eigenen Pakete stehen nicht mehr in package.json: {{packages}}. Behebe den Fehler oben und starte das Update erneut, oder nimm den Wiederherstellungspunkt.',
     // Ein Stash, den ein früherer Lauf zurückgelegt und nie wieder eingetragen hat. Er gehört zu
     // einem anderen Stand, also fasst ihn niemand mehr an - gesagt wird er trotzdem, weil sonst
-    // nichts in dieser App Stashes zeigt.
+    // nichts in dieser App Stashes zeigt. Mit seinem Namen, weil beide Befehle ohne Argument den
+    // obersten Eintrag meinen und der dem Nutzer gehört, sobald er selbst einen zurückgelegt hat.
     updateStashLeftover:
-      'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen („git stash list“). Er gehört zu einem Stand, den es nicht mehr gibt: „git stash show -p“ zeigt ihn an, „git stash drop“ verwirft ihn.',
+      'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen ({{entry}} in „git stash list“). Er gehört zu einem Stand, den es nicht mehr gibt: „git stash show -p {{entry}}“ zeigt ihn an, „git stash drop {{entry}}“ verwirft ihn.',
     // Derselbe Stand, nur gehört er zu genau diesem Update - dann ist der Knopf auf der Seite der
     // Weg, und ein geratenes „git stash pop“ wäre die schlechtere Hälfte desselben Vorgangs.
     updateStashMine:
@@ -128,7 +129,7 @@ const STRINGS = {
     // Derselbe Stand, und er passt noch - nur ist kein Merge mehr offen, an dem der Knopf hinge.
     // Was die App nicht mehr tun kann, tut „git stash pop“; deshalb steht hier kein „drop“.
     updateStashFitsHead:
-      'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen („git stash list“). Er passt auf den jetzigen Stand, wird aber von dieser App nicht mehr eingetragen: „git stash show -p“ zeigt ihn an, „git stash pop“ trägt ihn ein.',
+      'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen ({{entry}} in „git stash list“). Er passt auf den jetzigen Stand, wird aber von dieser App nicht mehr eingetragen: „git stash show -p {{entry}}“ zeigt ihn an, „git stash pop {{entry}}“ trägt ihn ein.',
     updateStashPopFailed:
       'Die zurückgelegten Paketeinträge ließen sich nicht wieder eintragen und bleiben in git liegen („git stash list“).',
     // Der Abbruch kann nur zurücknehmen, was seit dem Steckenbleiben unverändert ist. git nennt
@@ -396,7 +397,7 @@ const STRINGS = {
     updatePackagesMissing:
       'These packages of yours are no longer in package.json: {{packages}}. Fix the error above and run the update again, or use the restore point.',
     updateStashLeftover:
-      'An earlier update left package entries of yours stashed in git (“git stash list”). They belong to a state that is gone: “git stash show -p” shows them, “git stash drop” discards them.',
+      'An earlier update left package entries of yours stashed in git ({{entry}} in “git stash list”). They belong to a state that is gone: “git stash show -p {{entry}}” shows them, “git stash drop {{entry}}” discards them.',
     updateStashMine:
       'An earlier update left package entries of yours stashed in git (“git stash list”). “Abort merge” puts them back.',
     updateStashMineBlocked:
@@ -404,7 +405,7 @@ const STRINGS = {
     configNotAMapping:
       'quartz.config.yaml does not hold a mapping of keys and values. The app will not read it; fix it in an editor or use a restore point.',
     updateStashFitsHead:
-      'An earlier update left package entries of yours stashed in git (“git stash list”). They fit the state the project is in now, but this app has no way left to put them back: “git stash show -p” shows them, “git stash pop” puts them back.',
+      'An earlier update left package entries of yours stashed in git ({{entry}} in “git stash list”). They fit the state the project is in now, but this app has no way left to put them back: “git stash show -p {{entry}}” shows them, “git stash pop {{entry}}” puts them back.',
     updateStashPopFailed:
       'Your stashed package entries could not be put back and are still in git (“git stash list”).',
     updateAbortBlockedByEdit:

@@ -351,14 +351,26 @@ async function topStashSubject(projectPath: string): Promise<string> {
 }
 
 /**
- * Whether any stash entry at all was written by this app. Only the newest can ever be popped, but
- * one further down is just as much a leftover the user should hear about - and hears about
- * nowhere else, because nothing in this app lists stashes.
+ * Where a stash entry of this app's stands in `git stash list`, as the `stash@{n}` a command needs
+ * in order to mean *that* entry. Only the newest entry of all can ever be popped, but one further
+ * down is just as much a leftover the user should hear about - and hears about nowhere else,
+ * because nothing in this app lists stashes.
+ *
+ * The name is in the sentence because `git stash show -p` and `git stash drop` without an argument
+ * mean the newest entry of all, which is the user's own as soon as they have stashed anything
+ * since. Measured (twenty-first review, finding 4): with the user's entry on top, following the
+ * advice verbatim showed their work, dropped their work, and left ours lying where it was.
+ *
+ * `from` skips the entry this run wrote itself, which is always the newest one.
  */
-async function hasCoreUpdateStash(projectPath: string): Promise<boolean> {
+async function coreUpdateStashEntry(projectPath: string, from = 0): Promise<string | null> {
   const list = await run('git', ['stash', 'list', '--format=%s'], projectPath)
-  if (!list.success) return false
-  return list.output.split('\n').some((line) => line.includes(CORE_UPDATE_STASH))
+  if (!list.success) return null
+  const lines = list.output.split('\n')
+  for (let index = from; index < lines.length; index++) {
+    if (lines[index].includes(CORE_UPDATE_STASH)) return `stash@{${index}}`
+  }
+  return null
 }
 
 /**
@@ -540,7 +552,9 @@ async function popCoreUpdateStash(projectPath: string): Promise<{ success: boole
   // Empty on either side is a "no": a repository that cannot answer `rev-parse` is not one to
   // write to.
   if (!subject.includes(CORE_UPDATE_STASH) || !head || base !== head) {
-    const leftover = (await hasCoreUpdateStash(projectPath)) ? `\n\n${mainT('updateStashLeftover')}` : ''
+    // Nothing of this app's was written here, so the newest entry of all is ours if it is anywhere.
+    const entry = await coreUpdateStashEntry(projectPath)
+    const leftover = entry ? `\n\n${mainT('updateStashLeftover', { entry })}` : ''
     return { success: true, output: leftover }
   }
   // `--index`, because an abort should hand the project back the way it was found. A plain pop
@@ -654,11 +668,23 @@ async function abortOutcomeForStash(projectPath: string): Promise<StashAfterAbor
  * is one sentence rather than two.
  */
 async function leftoverStashNote(projectPath: string, before: string | null): Promise<string> {
-  if ((await stashRef(projectPath)) !== before) return mainT('updateStashLeftover')
+  // A top of the stack that has moved means this run wrote an entry of its own and it is still
+  // lying there - nothing here pops or drops anyone else's - so the leftover being described is
+  // the next one down. Where the top has not moved, the leftover can be the top itself.
+  const mine = (await stashRef(projectPath)) !== before
+  const entry = await coreUpdateStashEntry(projectPath, mine ? 1 : 0)
+  // Nothing of ours left to describe. Only reachable if something outside this app took the entry
+  // away between the two reads, and then the sentence would name an entry that is not there.
+  if (entry === null) return ''
+  const leftover = mainT('updateStashLeftover', { entry })
+  if (mine) return leftover
   const head = (await run('git', ['rev-parse', 'HEAD'], projectPath)).output.trim()
   const ours = (await topStashSubject(projectPath)).includes(CORE_UPDATE_STASH)
-  if (!ours || head === '' || (await stashBase(projectPath)) !== head) return mainT('updateStashLeftover')
-  if (!(await mergeInProgress(projectPath))) return mainT('updateStashFitsHead')
+  if (!ours || head === '' || (await stashBase(projectPath)) !== head) return leftover
+  // From here on the entry being described is the newest one of all, so the commands in these
+  // sentences mean it without an argument - said with the name anyway, because the user reads them
+  // beside `git stash list`.
+  if (!(await mergeInProgress(projectPath))) return mainT('updateStashFitsHead', { entry })
   switch (await abortOutcomeForStash(projectPath)) {
     case 'free':
       return mainT('updateStashMine')
@@ -667,7 +693,7 @@ async function leftoverStashNote(projectPath: string, before: string | null): Pr
     case 'abortRefused':
       return mainT('updateStashMineBlocked')
     default:
-      return mainT('updateStashLeftover')
+      return leftover
   }
 }
 
@@ -682,10 +708,12 @@ async function leftoverStashNote(projectPath: string, before: string | null): Pr
  * *which* sentence it earns is asked afterwards, see leftoverStashNote.
  */
 export async function runCoreUpdate(projectPath: string): Promise<UpdateResult> {
-  const before = (await hasCoreUpdateStash(projectPath)) ? await stashRef(projectPath) : null
+  const before = (await coreUpdateStashEntry(projectPath)) !== null ? await stashRef(projectPath) : null
   const result = await runCoreUpdateFrom(projectPath)
   if (before === null) return result
-  return { ...result, output: `${result.output}\n\n${await leftoverStashNote(projectPath, before)}` }
+  const note = await leftoverStashNote(projectPath, before)
+  if (note === '') return result
+  return { ...result, output: `${result.output}\n\n${note}` }
 }
 
 async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {

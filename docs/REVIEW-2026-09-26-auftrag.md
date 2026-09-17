@@ -43,19 +43,20 @@ Auftrag dazu steht in `docs/REVIEW-2026-09-25-auftrag.md`.
 
 ## Umfang
 
-`main`, gepusht. Die zwanzig Commits zwischen `review-2026-09-26` und `review-2026-09-27`
-(siebzehn, dieser Auftrag, und die zwei über die echten Läufe danach):
+`main`, gepusht. Die 27 Commits zwischen `review-2026-09-26` und `review-2026-09-27`
+(siebzehn, dieser Auftrag und neun danach: zwei über die echten Läufe, sieben über die offenen
+Punkte):
 
     git log --oneline review-2026-09-26..review-2026-09-27
     git diff review-2026-09-26..review-2026-09-27 -- . \
       ':!docs/REVIEW-2026-09-25.md' ':!docs/REVIEW-2026-09-26-auftrag.md'
-    # 18 Dateien, +692 / −104
-    # davon App-Code (electron/, src/):        13 Dateien, +359 / −86
-    # davon docs/decisions/:                    4 Dateien, +137 / −0
-    # davon CLAUDE.md:                          1 Datei,   +196 / −18
+    # 19 Dateien, +795 / −111
+    # davon App-Code (electron/, src/):        14 Dateien, +446 / −93
+    # davon docs/decisions/:                    4 Dateien, +149 / −0
+    # davon CLAUDE.md:                          1 Datei,   +200 / −18
 
 Ausgenommen sind zwei Dateien: `docs/REVIEW-2026-09-25.md` (das Review, das du liest, statt es zu
-prüfen) und diese Auftragsdatei. Mit dem Review-Dokument sind es 19 Dateien und +1100; die Differenz
+prüfen) und diese Auftragsdatei. Mit dem Review-Dokument sind es 20 Dateien und +1203; die Differenz
 von 408 Zeilen ist das Review. Lies den Auftrag als Behauptung wie jede andere — die Zahlen oben
 sind nach dem Commit nachgerechnet, der diese Datei trägt.
 
@@ -87,8 +88,9 @@ den das letzte Review gelesen hat. Die Commits:
 | — | — | dieser Auftrag |
 | Nachgeholt | s. u. | **drei echte Läufe gegen `jackyzha0/quartz`** — der Nachtrag dazu |
 | Nachgeholt | s. u. | **der neunte Fix: der fortsetzende Lauf misst selbst mit** (R4/R5/R6) |
+| Offene Punkte | s. u. | **die sieben Punkte aus „Was diese Runde offen gelassen hat“** |
 
-Die zwei letzten Commits sind nach diesem Auftrag entstanden und tragen keinen Hash in dieser
+Die neun letzten Commits sind nach diesem Auftrag entstanden und tragen keinen Hash in dieser
 Tabelle, aus demselben Grund wie der Auftrag selbst: `review-2026-09-27` sitzt auf dem letzten.
 
 **Der neunte Fix ist der einzige dieser Runde, den kein Review gemeldet hat** — er kam aus einer
@@ -110,7 +112,7 @@ kopieren ist in Ordnung — siehe „Wie gemessen werden kann“, bevor du eine 
 
 ## Was du wissen musst, bevor du liest
 
-**Alle neunzehn Commits stammen von demselben Modell, das diesen Auftrag schreibt**, aus einer
+**Alle 27 Commits stammen von demselben Modell, das diesen Auftrag schreibt**, aus einer
 Sitzung; das Review-Dokument `docs/REVIEW-2026-09-25.md` aus einer anderen. Lies Commit-Nachrichten
 als Behauptungen. In diesem Projekt gilt eine Zahl in einer Commit-Nachricht als Messung; trägt sie
 nicht, ist das ein Befund.
@@ -213,7 +215,7 @@ diese eine Seite, und sie ist in dieser Runde nur für eine beantwortet worden.
 
 ### 6. Die Dokumente (`7a9d31c`, `546816d`, `de9aaa6`, `26022fa`, `abe2e1e`)
 
-Acht Nachträge in `docs/decisions/`, rund 196 neue Zeilen in `CLAUDE.md`, zehn neue Regeln. Jede
+Dreizehn Nachträge in `docs/decisions/`, rund 200 neue Zeilen in `CLAUDE.md`, zehn neue Regeln. Jede
 Zahl darin ist eine Messung oder ein Befund. Zwei Stellen, an denen es diese Runde selbst schon
 einmal falsch hatte: die Diff-Zahlen dieses Absatzes (zweimal nachgerechnet, weil jede Korrektur
 die Zahl ändert) und die 178, die in einer Commit-Nachricht stand, bevor sie gezählt war.
@@ -270,24 +272,30 @@ oder eine kaputte `quartz.config.yaml`. Was misst du, das sie nicht messen?
 
 ## Was diese Runde offen gelassen hat
 
-Sieben Punkte sind bekannt und bewusst nicht behoben; sie stehen hier, damit du sie nicht als Fund
-verkaufst, sondern schärfer stellst, falls sie mehr sind, als ich denke:
+Die sieben Punkte, die hier als offen standen, sind danach abgearbeitet worden — fünf mit einem
+Fix, zwei mit einer Messung. Prüf sie wie alles andere; das eine, was bleibt, steht unten.
 
-1. **Der Kommentar, den die App in eine neue `.gitignore` schreibt, ist deutsch** — auch in einer
-   englischen Installation. Aufgefallen beim Nachsehen zu Nebenbei 4, nicht mit erledigt.
-2. **`writeConfig` liest die vorhandene Datei ohne Fehlerprüfung.** `readConfig` wirft in allen
-   Wegen der App vorher, also ist der Fall nicht erreichbar — „also“ ist das Wort, das dich
-   interessiert.
-3. **Ein Abbruch, der seinen eigenen Stash poppt, erwähnt einen älteren der App darunter nicht.**
-   Unverändert seit dem achtzehnten Review; `coreUpdateStashEntry()` könnte ihn jetzt benennen.
-4. **Ein gestageter Edit an einer Datei, die der Merge nicht anfasst, geht bei `merge --abort`
-   still verloren.** Gits dokumentiertes `reset --merge`.
-5. **Ein Klick auf den Griff ohne Bewegung wird als „bei sich selbst abgelegt“ angesagt.**
-   Unverändert; der neue `backHome`-Satz betrifft `onDragOver`, nicht `onDragEnd`.
-6. **Ein fremder Worktree steht in `git worktree list`** (`…/91e0b4cf…/scratchpad/old-tree`,
-   `af1ffed`, detached). Er gehört einer anderen Sitzung; unangetastet.
-7. **Die Notiz reist wörtlich in ein Duplikat mit**, jetzt samt Paketliste und dem neuen
-   `filesAtHead`. Gemessen ist nur, *dass* sie es tut.
+1. **Der Kommentar in einer neuen `.gitignore` spricht jetzt die Sprache der App.** Frei änderbar,
+   weil über „ist der Block schon da“ `IGNORE_LINE` entscheidet und nie der Kommentar — gemessen in
+   vier Lagen (ohne Datei, mit Datei, mit vorhandener Regel, ohne git-Repo).
+2. **„`readConfig` wirft vorher, also ist der Fall nicht erreichbar“ trug nicht.** `config.save`
+   schreibt, was der Renderer geladen hat, und dazwischen kann die Datei etwas anderes geworden
+   sein. `writeConfig` stellt jetzt dieselben zwei Fragen wie das Lesen. **Prüf die Gegenprobe:**
+   Eine leere Datei muss weiter geschrieben werden können.
+3. **Der Abbruch nennt, was sein Pop freilegt** — einen älteren Eintrag der App darunter, mit dem
+   Satz, den seine Basis verdient.
+4. **Der Abbruch nennt auch, was er nebenbei wegwirft**: einen vorgemerkten Edit an einer Datei, um
+   die der Merge nicht geht. Verhindern kann die App das nicht, ohne dort zu verweigern, wo git
+   erlaubt — **prüf, ob das die richtige Abwägung ist**, und ob die Liste die richtigen Pfade
+   nennt (`--cached HEAD` minus Merge minus Konflikte).
+5. **Ein Ablegen ohne Bewegung sagt „blieb an seinem Platz“** statt „bei sich selbst abgelegt“.
+6. **Der fremde Worktree** (`…/91e0b4cf…/scratchpad/old-tree`, `af1ffed`, detached) steht weiter in
+   `git worktree list`. Er gehört einer anderen Sitzung, das Verzeichnis existiert noch, und nichts
+   Eigenes liegt darin; angefasst hat ihn keine Runde.
+7. **Die Notiz im Duplikat ist gemessen statt gelesen.** Sie reist wörtlich mit, ihr SHA stimmt
+   dort, und die Liste wirkt. Der Amend unterbleibt — weil das Duplizieren selbst das Lockfile
+   geschrieben hat und der neue Wächter das sieht. Gegenprobe mit der Fassung davor: dort landete
+   ein fremdes Lockfile im geerbten Merge-Commit.
 
 ## Form der Befunde
 

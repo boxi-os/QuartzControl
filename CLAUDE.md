@@ -1575,7 +1575,7 @@ das auf dem Commit „Der Auftrag für das zweiundzwanzigste Review“ (`main`) 
 es liest; der Auftrag steht in
 [`docs/REVIEW-2026-09-26-auftrag.md`](docs/REVIEW-2026-09-26-auftrag.md). Sein Diff sind die sieben
 Fixes des einundzwanzigsten Reviews und die sechs Punkte seiner Nebenbei-Liste: ohne
-Review-Dokument und Auftragsdatei 18 Dateien, +692/−104, im App-Code 13 Dateien, +359/−86. Als
+Review-Dokument und Auftragsdatei 19 Dateien, +795/−111, im App-Code 14 Dateien, +446/−93. Als
 größtes Risiko nennt der Auftrag zwei Dinge, die über ihren Anlass hinausreichen: `filesAtHead`,
 das zum ersten Mal über *zwei Läufe hinweg* entscheidet, ob die App einen Commit umschreibt, und
 `carried` ohne SHA-Bindung — eine Paketliste, die jetzt gilt, gleich zu welchem Commit die Notiz
@@ -1707,7 +1707,11 @@ läuft), uncommittete Paketzeilen bei sauberem Merge (sie bleiben uncommittet) u
 mit committeten Dateien (der Amend läuft). **Ein neunter Fix ist dabei entstanden**: Eine
 Nutzeränderung *zwischen* zwei Läufen landete im Merge-Commit, weil die Notiz nur den Lauf
 beschreibt, der sie schrieb; der fortsetzende Lauf misst jetzt selbst mit (drei weitere echte
-Läufe, R4/R5/R6). **Nicht gemessen**: die gepackte App, die VMs, ERESOLVE, ein echter Push unter
+Läufe, R4/R5/R6). **Und danach die sieben Punkte, die der Auftrag als offen führte** — fünf mit
+einem Fix (der `.gitignore`-Kommentar in der Sprache der App; `writeConfig` mit denselben zwei
+Fragen wie das Lesen, denn „nicht erreichbar“ war falsch; der Abbruch nennt den Stash, den sein
+Pop freilegt, *und* den vorgemerkten Edit, den er wegwirft; ein Ablegen ohne Bewegung sagt das),
+zwei mit einer Messung (die Notiz im Duplikat; der fremde Worktree). **Nicht gemessen**: die gepackte App, die VMs, ERESOLVE, ein echter Push unter
 Git-Sync, und der Maus-Drag mit dem schmalen Chip (der Zeiger entscheidet dort, nicht das
 Rechteck). Sie gehören damit in den Diff des nächsten Auftrags.
 

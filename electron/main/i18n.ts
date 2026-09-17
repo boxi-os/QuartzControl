@@ -136,7 +136,7 @@ const STRINGS = {
     // eigene Meldung nennt Zeile und Spalte und bleibt deshalb englisch, wie die übrigen
     // Werkzeugmeldungen auch.
     updateAlreadyRunning:
-      'Für dieses Projekt läuft gerade ein Kern-Update. Warte, bis es durch ist — sein Ergebnis steht danach auf der Updates-Seite.',
+      'Für dieses Projekt läuft gerade ein Kern-Update. Warte, bis es durch ist, und drücke dann „Erneut prüfen“ — die Ausgabe des Laufs sieht nur, wer diese Seite so lange offen lässt.',
     configNotParseable:
       'quartz.config.yaml lässt sich nicht als YAML lesen: {{reason}}. Repariere sie in einem Editor oder nimm einen Wiederherstellungspunkt.',
     configMissing:
@@ -434,7 +434,7 @@ const STRINGS = {
     configNotAMapping:
       'quartz.config.yaml does not hold a mapping of keys and values. The app will not read it; fix it in an editor or use a restore point.',
     updateAlreadyRunning:
-      'A core update is already running for this project. Wait for it to finish — its result appears on the Updates page.',
+      'A core update is already running for this project. Wait for it to finish and then press “Check again” — the run’s own output is only seen by whoever leaves this page open until then.',
     configNotParseable:
       'quartz.config.yaml cannot be read as YAML: {{reason}}. Fix it in an editor or use a restore point.',
     configMissing:

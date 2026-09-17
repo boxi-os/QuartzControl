@@ -1,6 +1,6 @@
 import { runCommand as run } from './runCommand'
-import { readFile } from 'fs/promises'
-import { join } from 'path'
+import { readFile, realpath } from 'fs/promises'
+import { join, resolve } from 'path'
 import type { CoreUpdateStatus, PluginActionResult, PluginUpdateStatus, UpdateResult } from '@shared/ipc-contract'
 import {
   dependencyRange,
@@ -840,16 +840,30 @@ async function leftoverStashNote(projectPath: string, before: string | null): Pr
  * the truthful one rather than a git error out of the middle of someone else's merge.
  *
  * Per project path, not app-wide: two different projects have nothing to do with each other.
+ *
+ * And the key is that path, so two spellings of one folder were two keys - `p` and `p + '/'` ran
+ * side by side (measured, twenty-fourth review, finding 5), which is exactly the case named above.
+ * `realpath` answers for the trailing slash and for a symlink; the case it leaves as written, so on
+ * a case-insensitive volume two spellings that differ only there are still two keys. Measured on
+ * APFS: `.../RealLink/sub` and `.../RealTest/sub/` both come back as `.../RealTest/sub`,
+ * `.../realtest/sub` comes back as itself.
  */
 const coreUpdatesRunning = new Set<string>()
 
+async function lockKey(projectPath: string): Promise<string> {
+  // A path that is gone answers nothing, and the run that gets there will say so far better than a
+  // lock could - so the spelling as given is the key, and the run does the complaining.
+  return realpath(projectPath).catch(() => resolve(projectPath))
+}
+
 async function whileHoldingProject<T>(projectPath: string, busy: T, run: () => Promise<T>): Promise<T> {
-  if (coreUpdatesRunning.has(projectPath)) return busy
-  coreUpdatesRunning.add(projectPath)
+  const key = await lockKey(projectPath)
+  if (coreUpdatesRunning.has(key)) return busy
+  coreUpdatesRunning.add(key)
   try {
     return await run()
   } finally {
-    coreUpdatesRunning.delete(projectPath)
+    coreUpdatesRunning.delete(key)
   }
 }
 
@@ -886,7 +900,11 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
 
   // Fetches the remote's default branch into FETCH_HEAD without needing to know its name (see
   // lsRemote above for the same reasoning), then merges that directly.
-  const fetch = await run('git', ['fetch', 'quartz-upstream', 'HEAD'], projectPath)
+  // The same deadline the status's fetch has, and for the same reason: git has none of its own, a
+  // stalled TCP connection hangs for ever, and since the run holds the project's lock a hang here
+  // holds it until the app is restarted. `npm install` and the warm-up build get none - both
+  // legitimately take minutes, and a deadline that is wrong once costs a half-finished update.
+  const fetch = await run('git', ['fetch', 'quartz-upstream', 'HEAD'], projectPath, undefined, FETCH_TIMEOUT_MS)
   if (!fetch.success) return { success: false, output: fetch.output, snapshotId }
   // The commit about to be merged, resolved once: it names the stash below, and the abort button
   // reads the same SHA back out of MERGE_HEAD to decide whether that stash is its own.

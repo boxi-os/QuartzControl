@@ -85,6 +85,25 @@ export async function duplicateProject(options: DuplicateProjectOptions): Promis
   if (!existsSync(join(source, 'quartz.config.yaml'))) {
     return { success: false, output: mainT('duplicateSourceNotAProject', { path: source }) }
   }
+  // And it has to be readable, asked here rather than where it is read. `repointProjectPaths` reads
+  // it *after* the copy and after `git remote remove origin` has not yet run, so a config the app
+  // will not read left a half copy behind carrying the original's remote - the one thing the
+  // comment at the top of this file rules out. Measured (twenty-first review, finding 6): a source
+  // with a list for a config threw out of duplicateProject instead of answering, the target held
+  // the copied files and `origin` pointed at the original's, and the second attempt answered
+  // "already contains files". The sentence says whose file it is; the reason inside it is the one
+  // readConfig gives, restore point and all, which the *source* does have.
+  try {
+    await readConfig(source)
+  } catch (error) {
+    return {
+      success: false,
+      output: mainT('duplicateSourceConfigUnreadable', {
+        path: source,
+        reason: error instanceof Error ? error.message : String(error)
+      })
+    }
+  }
   if (existsSync(target) && (await readdir(target)).length > 0) {
     return { success: false, output: mainT('createTargetExists', { path: target }) }
   }

@@ -132,6 +132,10 @@ const STRINGS = {
     // Werkzeugmeldungen auch.
     configNotParseable:
       'quartz.config.yaml lässt sich nicht als YAML lesen: {{reason}}. Repariere sie in einem Editor oder nimm einen Wiederherstellungspunkt.',
+    // Beim Duplizieren ist die unlesbare Datei die des *Originals*, und der Satz darüber sagt das
+    // nicht von selbst - er steht sonst immer über dem Projekt, das gerade offen ist.
+    duplicateSourceConfigUnreadable:
+      'Das Projekt „{{path}}“ lässt sich nicht duplizieren, weil seine Konfiguration nicht lesbar ist. {{reason}}',
     configPluginsNotAList:
       'In quartz.config.yaml ist „plugins“ keine Liste. Die App liest die Datei deshalb nicht; repariere sie in einem Editor oder nimm einen Wiederherstellungspunkt.',
     // Derselbe Stand, und er passt noch - nur ist kein Merge mehr offen, an dem der Knopf hinge.
@@ -414,6 +418,8 @@ const STRINGS = {
       'quartz.config.yaml does not hold a mapping of keys and values. The app will not read it; fix it in an editor or use a restore point.',
     configNotParseable:
       'quartz.config.yaml cannot be read as YAML: {{reason}}. Fix it in an editor or use a restore point.',
+    duplicateSourceConfigUnreadable:
+      '“{{path}}” cannot be duplicated because its configuration cannot be read. {{reason}}',
     configPluginsNotAList:
       'In quartz.config.yaml, “plugins” is not a list. The app will not read it; fix it in an editor or use a restore point.',
     updateStashFitsHead:

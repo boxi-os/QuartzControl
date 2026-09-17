@@ -48,7 +48,9 @@ export async function readConfig(projectPath: string): Promise<QuartzConfig> {
   // A blank page with no word for it is reason enough on its own.
   const doc = parseDocument(raw)
   if (doc.errors.length > 0) {
-    throw new Error(mainT('configNotParseable', { reason: doc.errors[0].message }))
+    // The first line of yaml's message, which is the one that names line and column; the rest of it
+    // is a source excerpt with a caret, meant for a terminal rather than for a toast.
+    throw new Error(mainT('configNotParseable', { reason: doc.errors[0].message.split('\n')[0] }))
   }
   const parsed = doc.toJS() as unknown
   if (parsed !== null && parsed !== undefined && (typeof parsed !== 'object' || Array.isArray(parsed))) {

@@ -1473,7 +1473,9 @@ export default {
       conflictHeading: 'Konflikte in folgenden Dateien (außer den durch .gitattributes geschützten Locale-Dateien):',
       pendingHeading: 'Ein früheres Update ist nicht zu Ende gelaufen',
       pendingDetail:
-        'Diese eigenen Pakete fehlen in package.json oder stehen dort mit einer anderen Version: {{packages}}. „Update durchführen“ trägt sie wieder ein; alternativ holst du unter Snapshots den Stand von vorher zurück — dort mit dem Schalter „Auch den Projekt-Commit zurücksetzen“.'
+        'Diese eigenen Pakete fehlen in package.json oder stehen dort mit einer anderen Version: {{packages}}. „Update durchführen“ trägt sie wieder ein; alternativ holst du unter Snapshots den Stand von vorher zurück — dort mit dem Schalter „Auch den Projekt-Commit zurücksetzen“.',
+      pendingInstallDetail:
+        'Der Kern ist zusammengeführt, aber „npm install“ ist dabei fehlgeschlagen — die Abhängigkeiten im Ordner node_modules passen nicht zu package.json. „Update durchführen“ holt das nach; alternativ holst du unter Snapshots den Stand von vorher zurück.'
     },
     plugins: {
       heading: 'Plugins',

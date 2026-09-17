@@ -187,7 +187,16 @@ export default function Updates(): JSX.Element {
         {coreStatus?.state === 'pending' && (
           <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
             <p className="mb-1 font-medium">{t('updates.core.pendingHeading')}</p>
-            <p>{t('updates.core.pendingDetail', { packages: (coreStatus.pendingPackages ?? []).join(', ') })}</p>
+            {/* Two states under one heading, and the empty list is not the smaller version of the
+                other one: a run that failed at `npm install` leaves package.json upstream's and
+                node_modules behind, with nothing of the project's own to name. Without its own
+                sentence a project without own packages read "Aktuell" over exactly that
+                (twenty-fifth review, finding 5). */}
+            <p>
+              {(coreStatus.pendingPackages ?? []).length > 0
+                ? t('updates.core.pendingDetail', { packages: (coreStatus.pendingPackages ?? []).join(', ') })
+                : t('updates.core.pendingInstallDetail')}
+            </p>
           </div>
         )}
 

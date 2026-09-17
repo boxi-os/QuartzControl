@@ -130,6 +130,14 @@ async function installedUpstream(
  * there with an empty list, and nothing is missing then - the state it describes is "this run is
  * not finished", which costs the next one a build it would have skipped and nothing else.
  *
+ * A note from a run whose `npm install` came back non-zero is the one exception, and it is a
+ * second answer rather than a longer list: package.json is upstream's, node_modules is not, and
+ * with no packages of its own to name the project got the green "Aktuell" badge over exactly that
+ * (measured, twenty-fifth review, finding 5, scene G0 - a project without own packages, note
+ * `reinstall: []`, badge green, button disabled). The empty list and the failed install look the
+ * same from here, so the run that knows says so in the note (`installFailed`), and a note that
+ * predates the field reads as "npm has had its turn", which is what it did mean.
+ *
  * `stillMissing` was written for the run, where each of its three answers is the right way round:
  * in doubt, ask npm. Here the same answers become a sentence with package names, a badge and a
  * counter, so the sentence says what the predicate actually asks - missing, or standing at another
@@ -147,11 +155,14 @@ async function installedUpstream(
  * without committing gets the badge inviting the click that brings it back - the case
  * `listTakenInHandSince` documents as "not caught", one page further forward.
  */
-async function outstandingCoreInstall(projectPath: string): Promise<string[]> {
+async function outstandingCoreInstall(projectPath: string): Promise<{ packages: string[]; unfinished: boolean }> {
   const pending = await readPendingInstall(projectPath)
-  if (pending.head === '' || pending.reinstall.length === 0) return []
-  if ((await listTakenInHandSince(projectPath, pending)) !== 'stands') return []
-  return (await stillMissing(projectPath, pending.reinstall)).map((entry) => entry.name)
+  // "npm did not get through" survives everything the list can answer: whoever wrote a package
+  // line back by hand did not run an install for the whole project.
+  const unfinished = pending.head !== '' && pending.installFailed
+  if (pending.head === '' || pending.reinstall.length === 0) return { packages: [], unfinished }
+  if ((await listTakenInHandSince(projectPath, pending)) !== 'stands') return { packages: [], unfinished }
+  return { packages: (await stillMissing(projectPath, pending.reinstall)).map((entry) => entry.name), unfinished }
 }
 
 export async function getCoreUpdateStatus(
@@ -169,7 +180,9 @@ export async function getCoreUpdateStatus(
   const head = await run('git', ['rev-parse', 'HEAD'], projectPath)
   const latestCommit = (await lsRemoteHead(TEMPLATE_REPO)) ?? ''
   const pending = (status: CoreUpdateStatus): CoreUpdateStatus =>
-    outstanding.length > 0 ? { ...status, state: 'pending', pendingPackages: outstanding } : status
+    outstanding.packages.length > 0 || outstanding.unfinished
+      ? { ...status, state: 'pending', pendingPackages: outstanding.packages }
+      : status
   if (!head.success || !latestCommit) return pending({ currentCommit: '', latestCommit, state: 'unknown' })
   if (await historyContains(projectPath, latestCommit)) {
     return pending({ currentCommit: latestCommit, latestCommit, state: 'upToDate', missingCommits: 0 })
@@ -491,13 +504,14 @@ async function coreUpdateStashEntry(projectPath: string, from = 0): Promise<stri
 const PENDING_UPDATE_FILE = 'core-update.json'
 
 /** What an earlier run left outstanding: the commit it belongs to ('' for "nothing"), the
- *  project's own packages it took out of package.json on the way, and whether the two npm-owned
+ *  project's own packages it took out of package.json on the way, whether the two npm-owned
  *  files were exactly HEAD's when that run started - which is what tells a later amend that
- *  everything they differ by now was written by npm. */
+ *  everything they differ by now was written by npm - and whether that run's `npm install` failed. */
 interface PendingInstall {
   head: string
   reinstall: PackageAddition[]
   filesAtHead: boolean
+  installFailed: boolean
 }
 
 /** Why a note's list does or does not still apply - three answers, because two of them end the
@@ -594,7 +608,12 @@ async function listTakenInHandSince(projectPath: string, pending: PendingInstall
  */
 async function readPendingInstall(projectPath: string): Promise<PendingInstall> {
   // Reading must not create the directory - see quartzGuiPath.
-  const raw = await readJsonFileOr<{ installPendingFor?: unknown; reinstall?: unknown; filesAtHead?: unknown }>(
+  const raw = await readJsonFileOr<{
+    installPendingFor?: unknown
+    reinstall?: unknown
+    filesAtHead?: unknown
+    installFailed?: unknown
+  }>(
     quartzGuiPath(projectPath, PENDING_UPDATE_FILE),
     {}
   )
@@ -616,19 +635,24 @@ async function readPendingInstall(projectPath: string): Promise<PendingInstall> 
         )
       })
     : []
-  return { head, reinstall, filesAtHead }
+  return { head, reinstall, filesAtHead, installFailed: raw.installFailed === true }
 }
 
 async function markInstallPending(
   projectPath: string,
   head: string,
   reinstall: PackageAddition[],
-  filesAtHead: boolean
+  filesAtHead: boolean,
+  // Set by the one run that knows it: the one whose `npm install` came back non-zero. Default
+  // false, so a note from a build before this field existed reads as it did - "npm has had its
+  // turn" - rather than turning every project with an old note lying around into a pending one.
+  installFailed = false
 ): Promise<void> {
   await writeJsonFile(join(quartzGuiDir(projectPath), PENDING_UPDATE_FILE), {
     installPendingFor: head,
     reinstall,
-    filesAtHead
+    filesAtHead,
+    installFailed
   })
 }
 
@@ -636,7 +660,8 @@ async function clearInstallPending(projectPath: string): Promise<void> {
   await writeJsonFile(join(quartzGuiDir(projectPath), PENDING_UPDATE_FILE), {
     installPendingFor: '',
     reinstall: [],
-    filesAtHead: false
+    filesAtHead: false,
+    installFailed: false
   })
 }
 
@@ -1218,7 +1243,7 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
         // tell from another is its own, so it does not leave itself in the list.
         try {
           const leftOver = wanted.length > 0 ? await stillMissing(projectPath, wanted) : []
-          await markInstallPending(projectPath, headAfter, leftOver, filesAtHead)
+          await markInstallPending(projectPath, headAfter, leftOver, filesAtHead, true)
         } catch (error) {
           noteFailed(error)
         }

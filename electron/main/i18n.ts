@@ -152,6 +152,10 @@ const STRINGS = {
     // die Datei, nicht aber den einen Weg weiter.
     updateAbortBlockedByEdit:
       'Eine Datei aus dem Zusammenführen wurde inzwischen geändert, deshalb lässt sich das Update nicht abbrechen. Verwirf die Änderung an der unten genannten Datei unter Git-Sync und brich dann erneut ab.\n\n',
+    // Was der Abbruch nebenbei mitnimmt. git sagt darüber nichts, und rückgängig ist es nicht -
+    // genannt wird es trotzdem, damit der Nutzer weiß, was fehlt.
+    updateAbortDroppedStaged:
+      'Der Abbruch hat den vorgemerkten Stand dieser Dateien verworfen: {{files}}. git setzt beim Abbrechen alles zurück, was vorgemerkt war und nicht zum Zusammenführen gehörte.',
     // Die Notiz, mit der sich ein Lauf beim nächsten meldet, ließ sich nicht schreiben. Sie ist ein
     // Zeiger und kein Ergebnis, also läuft das Update weiter - gesagt wird es trotzdem, weil der
     // nächste Lauf sich danach anders verhält, als er sollte.
@@ -435,6 +439,8 @@ const STRINGS = {
       'Your stashed package entries could not be put back and are still in git (“git stash list”).',
     updateAbortBlockedByEdit:
       'A file from the merge has been changed since, so the update cannot be cancelled. Discard the change to the file named below under Git sync, then cancel again.\n\n',
+    updateAbortDroppedStaged:
+      'Cancelling discarded the staged state of these files: {{files}}. When cancelling, git resets everything that was staged and not part of the merge.',
     updateNoteUnwritable:
       'The note for this update could not be written ({{reason}}). The update still ran to the end; the next run may therefore install again or report “nothing to do”.',
     npmInstallFailed: 'npm install failed:',

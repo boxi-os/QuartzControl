@@ -1096,6 +1096,36 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
   })
 }
 
+/**
+ * What `git merge --abort` is about to throw away without saying so: paths the user has staged that
+ * the merge is not about. `reset --merge` keeps what is "different between the index and working
+ * tree" - the *unstaged* half of a change - and resets the rest, so a staged edit to a file no one
+ * else touched is gone, with no line of output about it. Measured (scene h9, upstream D): a staged
+ * line in README.md next to a conflict in quartz/index.ts was not in the file afterwards and not in
+ * `git status` either.
+ *
+ * The button stays a button - git allows this, and refusing where git does not is the app deciding
+ * for the user. What it can do is name them, which is the difference between a loss and a silent
+ * one. Paths the merge itself brought into the index are not in the list: they are its work, not
+ * the user's.
+ */
+async function stagedOutsideMerge(projectPath: string): Promise<string[]> {
+  const lines = (result: { success: boolean; output: string }): string[] =>
+    result.success
+      ? result.output
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean)
+      : []
+  const staged = lines(await run('git', ['diff', '--name-only', '--cached', 'HEAD'], projectPath))
+  if (staged.length === 0) return []
+  const fromMerge = new Set([
+    ...lines(await run('git', ['diff', '--name-only', 'HEAD', 'MERGE_HEAD'], projectPath)),
+    ...(await conflictedFiles(projectPath))
+  ])
+  return staged.filter((file) => !fromMerge.has(file))
+}
+
 export function abortCoreMerge(projectPath: string): Promise<PluginActionResult> {
   // Parked for the same reason the merge itself is: an abort has to rewrite the working tree, and
   // content/ is part of what the conflicted merge touched.
@@ -1104,10 +1134,14 @@ export function abortCoreMerge(projectPath: string): Promise<PluginActionResult>
     // is the HEAD it was taken from, and `merge --abort` does not move HEAD (see
     // popCoreUpdateStash). MERGE_HEAD, which it does throw away, would only have said which merge
     // the entry accompanied - the same merge can be attempted against two different HEADs.
+    // Read before the abort: MERGE_HEAD is one of the things it throws away, and without it there is
+    // no way left to tell the user's staged work from the merge's own.
+    const losing = await stagedOutsideMerge(projectPath)
     const result = await run('git', ['merge', '--abort'], projectPath)
     if (!result.success) return { success: false, output: explainGitFailure(result.output) + result.output }
     const popped = await popCoreUpdateStash(projectPath)
-    return { success: popped.success, output: result.output + popped.output }
+    const lost = losing.length > 0 ? `\n\n${mainT('updateAbortDroppedStaged', { files: losing.join(', ') })}` : ''
+    return { success: popped.success, output: result.output + popped.output + lost }
   })
 }
 

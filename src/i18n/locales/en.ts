@@ -255,7 +255,10 @@ export default {
       noIndex: 'The site has no start page',
       noIndexDetail: 'The content folder has no index.md, so the site’s own address shows a 404 page.',
       noBaseUrl: 'No base URL set',
-      noBaseUrlDetail: 'Without it the build fails as soon as fonts are self-hosted.'
+      noBaseUrlDetail: 'Without it the build fails as soon as fonts are self-hosted.',
+      coreUpdatePending: 'A core update did not run to the end',
+      coreUpdatePendingDetail:
+        'These packages of yours are no longer in package.json: {{packages}}. Under Updates, “Run update” finishes the job.'
     },
     contentTab: 'Content',
     devServer: 'Dev server',
@@ -323,6 +326,7 @@ export default {
       pluginsOnly: 'Plugins outdated',
       allCurrent: 'All up to date',
       unknown: 'Cannot check',
+      corePending: 'Update unfinished',
       pluginsBehind: '{{count}} plugin outdated',
       pluginsBehind_other: '{{count}} plugins outdated',
       pluginsCurrent: '{{count}} plugin checked',
@@ -1443,6 +1447,7 @@ export default {
     upToDate: 'Up to date',
     updateAvailable: 'Update available',
     checkFailed: 'Check failed',
+    unfinished: 'Unfinished',
     recheck: 'Check again',
     core: {
       heading: 'Quartz core',
@@ -1454,7 +1459,10 @@ export default {
         'Update Quartz’s core?\n\nThis fetches changes from jackyzha0/quartz and reinstalls the dependencies; conflicts may require manual work.\n\nA snapshot is taken first — under Snapshots you can go back to the current state any time.',
       abortMerge: 'Abort merge',
       openSnapshot: 'Open the snapshot from before the update →',
-      conflictHeading: 'Conflicts in these files (aside from the locale files .gitattributes protects):'
+      conflictHeading: 'Conflicts in these files (aside from the locale files .gitattributes protects):',
+      pendingHeading: 'An earlier update did not run to the end',
+      pendingDetail:
+        'These packages of yours are no longer in package.json: {{packages}}. “Run update” puts them back; alternatively, take the project back to the state before it under Snapshots.'
     },
     plugins: {
       heading: 'Plugins',

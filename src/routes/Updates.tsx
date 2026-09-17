@@ -4,7 +4,7 @@ import { confirmDialog } from '../utils/confirm'
 import { Link, useNavigate } from 'react-router-dom'
 import { Blocks, Camera, Package, RefreshCw } from 'lucide-react'
 import { useProject } from './ProjectLayout'
-import type { CoreUpdateStatus, GitStatus, PluginUpdateStatus, UpdateCheckState, UpdateResult } from '@shared/ipc-contract'
+import type { CoreUpdateState, CoreUpdateStatus, GitStatus, PluginUpdateStatus, UpdateResult } from '@shared/ipc-contract'
 import { Badge, Button, Card, CardHeading, PageHeader } from '../components/ui'
 import { formatIpcError } from '../components/ErrorSurface'
 import { primeStickyState } from '../state/uiState'
@@ -15,12 +15,16 @@ function shortCommit(commit?: string | null): string {
   return commit ? commit.slice(0, 7) : '—'
 }
 
-// Three answers, three badges. "Konnte nicht pruefen" used to render as the green "Aktuell" one,
-// which is the one thing a user must not be told when the check never reached the remote.
-function UpdateStateBadge({ state }: { state: UpdateCheckState }): JSX.Element {
+// Four answers, four badges. "Konnte nicht pruefen" used to render as the green "Aktuell" one,
+// which is the one thing a user must not be told when the check never reached the remote - and
+// "nicht abgeschlossen" is the same mistake one state further on: there the check did reach the
+// remote and the answer was "aktuell", over a project whose package.json is upstream's and whose
+// node_modules is not (see CoreUpdateState). The plugin list passes the three it can have.
+function UpdateStateBadge({ state }: { state: CoreUpdateState }): JSX.Element {
   const { t } = useTranslation()
   if (state === 'upToDate') return <Badge tone="green">{t('updates.upToDate')}</Badge>
   if (state === 'behind') return <Badge tone="amber">{t('updates.updateAvailable')}</Badge>
+  if (state === 'pending') return <Badge tone="amber">{t('updates.unfinished')}</Badge>
   return <Badge>{t('updates.checkFailed')}</Badge>
 }
 
@@ -167,9 +171,20 @@ export default function Updates(): JSX.Element {
           </div>
         )}
 
+        {/* The one place outside the note where these names live. The run says them too, but in
+            `coreResult`, which is `useState` and therefore gone the first time the user leaves the
+            page - and this is the state they are most likely to leave the page from. */}
+        {coreStatus?.state === 'pending' && (
+          <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+            <p className="mb-1 font-medium">{t('updates.core.pendingHeading')}</p>
+            <p>{t('updates.core.pendingDetail', { packages: (coreStatus.pendingPackages ?? []).join(', ') })}</p>
+          </div>
+        )}
+
         <div className="mt-3 flex items-center gap-2">
           {/* Only a positive "you already have it" disables the button. An unknown state means the
-              check failed, not that there is nothing to do - the update itself may well work. */}
+              check failed, not that there is nothing to do - the update itself may well work, and
+              in 'pending' it is the one thing that finishes what an earlier run started. */}
           <Button onClick={runCoreUpdate} disabled={coreBusy || coreStatus?.state === 'upToDate'}>
             {coreBusy ? t('common.saving') : t('updates.core.runUpdate')}
           </Button>

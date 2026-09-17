@@ -769,14 +769,31 @@ export interface LocaleSaveResult {
 // come back as upToDate.
 export type UpdateCheckState = 'upToDate' | 'behind' | 'unknown'
 
+/**
+ * The core has a fourth answer the plugins do not: an update that merged and then stopped before
+ * npm could put this project's own packages back. It is not a statement about how the project
+ * stands against upstream - by then it has upstream's newest commit, so the other three would all
+ * say "aktuell" - but about the project itself: package.json is upstream's and node_modules is not.
+ *
+ * It exists because the sentence that state earns ("fix the error above and run the update again")
+ * named a button that was disabled, HEAD having the merge being exactly what turned it off.
+ * Measured (twenty-third review, finding 1): after a real failed run the badge said "Aktuell", the
+ * button was out, the overview said "Nichts zu tun", and the packages were named in one place that
+ * a single change of route cleared.
+ */
+export type CoreUpdateState = UpdateCheckState | 'pending'
+
 export interface CoreUpdateStatus {
   /** The newest upstream commit this project contains - not HEAD, which is the project's own last
    *  commit once it has one. Empty when that could not be determined. */
   currentCommit: string
   latestCommit: string
-  state: UpdateCheckState
+  state: CoreUpdateState
   /** Upstream commits not yet in the project; absent when unknown. */
   missingCommits?: number
+  /** In 'pending': the project's own packages an earlier run took out of package.json and has not
+   *  put back - the names, as the run itself would work them out. Absent otherwise. */
+  pendingPackages?: string[]
 }
 
 // One quartz.lock.json entry's update status. `commit: "local"` entries (Phase 1b's generated

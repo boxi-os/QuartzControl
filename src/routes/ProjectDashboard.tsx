@@ -412,6 +412,21 @@ export default function ProjectDashboard(): JSX.Element {
       linkLabel: t('projectLayout.tabs.styles')
     })
   }
+  // A core update that merged and then stopped before npm put this project's own packages back.
+  // The tile below says it too, but this is the band the user reads first, and until now this
+  // state was the one thing on the overview that said "Nichts zu tun" while package.json was
+  // upstream's and node_modules was not (twenty-third review, finding 1).
+  if (core?.state === 'pending') {
+    issues.push({
+      id: 'core-update-pending',
+      tone: 'amber',
+      icon: TAB_ICONS.updates,
+      title: t('dashboard.attention.coreUpdatePending'),
+      detail: t('dashboard.attention.coreUpdatePendingDetail', { packages: (core.pendingPackages ?? []).join(', ') }),
+      to: 'updates',
+      linkLabel: t('projectLayout.tabs.updates')
+    })
+  }
   if (config && !baseUrl) {
     issues.push({
       id: 'baseurl',
@@ -726,8 +741,8 @@ export default function ProjectDashboard(): JSX.Element {
           icon={TAB_ICONS.updates}
           title={t('projectLayout.tabs.updates')}
           badge={
-            !updatesPending && (core?.state === 'behind' || pluginsBehind > 0) ? (
-              <Badge tone="amber">{(core?.state === 'behind' ? 1 : 0) + pluginsBehind}</Badge>
+            !updatesPending && (core?.state === 'behind' || core?.state === 'pending' || pluginsBehind > 0) ? (
+              <Badge tone="amber">{(core?.state === 'behind' || core?.state === 'pending' ? 1 : 0) + pluginsBehind}</Badge>
             ) : undefined
           }
           to="updates"
@@ -742,13 +757,15 @@ export default function ProjectDashboard(): JSX.Element {
           ) : (
             <>
               <Metric tone={core?.state === 'upToDate' && pluginsBehind === 0 ? 'green' : undefined}>
-                {core?.state === 'behind'
-                  ? t('dashboard.updates.coreBehind')
-                  : core?.state === 'upToDate'
-                    ? pluginsBehind > 0
-                      ? t('dashboard.updates.pluginsOnly')
-                      : t('dashboard.updates.allCurrent')
-                    : t('dashboard.updates.unknown')}
+                {core?.state === 'pending'
+                  ? t('dashboard.updates.corePending')
+                  : core?.state === 'behind'
+                    ? t('dashboard.updates.coreBehind')
+                    : core?.state === 'upToDate'
+                      ? pluginsBehind > 0
+                        ? t('dashboard.updates.pluginsOnly')
+                        : t('dashboard.updates.allCurrent')
+                      : t('dashboard.updates.unknown')}
               </Metric>
               <Facts>
                 <span className="text-text-muted">

@@ -256,7 +256,10 @@ export default {
       noIndex: 'Die Website hat keine Startseite',
       noIndexDetail: 'Im Content-Ordner fehlt die index.md, die Adresse der Website zeigt deshalb eine 404-Seite.',
       noBaseUrl: 'Keine Basis-URL gesetzt',
-      noBaseUrlDetail: 'Ohne sie schlägt der Build fehl, sobald Schriften selbst gehostet werden.'
+      noBaseUrlDetail: 'Ohne sie schlägt der Build fehl, sobald Schriften selbst gehostet werden.',
+      coreUpdatePending: 'Ein Kern-Update ist nicht zu Ende gelaufen',
+      coreUpdatePendingDetail:
+        'Diese eigenen Pakete stehen nicht mehr in package.json: {{packages}}. Unter Updates führt „Update durchführen“ es zu Ende.'
     },
     contentTab: 'Content-Ordner',
     devServer: 'Dev-Server',
@@ -324,6 +327,7 @@ export default {
       pluginsOnly: 'Plugins veraltet',
       allCurrent: 'Alles aktuell',
       unknown: 'Nicht prüfbar',
+      corePending: 'Update nicht abgeschlossen',
       pluginsBehind: '{{count}} Plugin veraltet',
       pluginsBehind_other: '{{count}} Plugins veraltet',
       pluginsCurrent: '{{count}} Plugin geprüft',
@@ -1448,6 +1452,7 @@ export default {
     upToDate: 'Aktuell',
     updateAvailable: 'Update verfügbar',
     checkFailed: 'Nicht prüfbar',
+    unfinished: 'Nicht abgeschlossen',
     recheck: 'Erneut prüfen',
     core: {
       heading: 'Quartz-Kern',
@@ -1459,7 +1464,10 @@ export default {
         'Quartz-Kern aktualisieren?\n\nDabei werden Änderungen von jackyzha0/quartz geholt und die Abhängigkeiten neu installiert; bei Konflikten kann Handarbeit nötig sein.\n\nVorher wird automatisch ein Snapshot angelegt — unter Snapshots holst du den jetzigen Stand jederzeit zurück.',
       abortMerge: 'Merge abbrechen',
       openSnapshot: 'Snapshot von vor dem Update öffnen →',
-      conflictHeading: 'Konflikte in folgenden Dateien (außer den durch .gitattributes geschützten Locale-Dateien):'
+      conflictHeading: 'Konflikte in folgenden Dateien (außer den durch .gitattributes geschützten Locale-Dateien):',
+      pendingHeading: 'Ein früheres Update ist nicht zu Ende gelaufen',
+      pendingDetail:
+        'Diese eigenen Pakete stehen nicht mehr in package.json: {{packages}}. „Update durchführen“ trägt sie wieder ein; alternativ holst du unter Snapshots den Stand von vorher zurück.'
     },
     plugins: {
       heading: 'Plugins',

@@ -116,18 +116,47 @@ async function installedUpstream(
   return { commit: base.output.trim(), missing: Number.isFinite(missing) ? missing : undefined }
 }
 
+/**
+ * What an earlier run has left the project owing, in the names the user reads - empty when nothing
+ * is outstanding.
+ *
+ * The same three questions the run itself asks, in the same order and out of the same functions,
+ * so that the page and the run cannot disagree: is there a note at all, is its list still this
+ * app's to answer (see packageJsonCommittedSince), and is any of it actually missing from
+ * package.json right now (`stillMissing` - a user who wrote the lines back by hand owes nothing,
+ * whether or not they committed).
+ *
+ * Deliberately not every note: between npm getting through and the warm-up build the note is still
+ * there with an empty list, and nothing is missing then - the state it describes is "this run is
+ * not finished", which costs the next one a build it would have skipped and nothing else.
+ */
+async function outstandingCoreInstall(projectPath: string): Promise<string[]> {
+  const pending = await readPendingInstall(projectPath)
+  if (pending.head === '' || pending.reinstall.length === 0) return []
+  if (await packageJsonCommittedSince(projectPath, pending.head)) return []
+  return (await stillMissing(projectPath, pending.reinstall)).map((entry) => entry.name)
+}
+
 export async function getCoreUpdateStatus(
   projectPath: string,
   options: { resolveInstalled?: boolean } = {}
 ): Promise<CoreUpdateStatus> {
+  // Asked first, and it wins over all three of the others, because it is true whatever they say
+  // and it is the only one of the four with something for the user to do. It also needs no
+  // network: a project can sit in this state with the answer to "is there anything newer"
+  // unknown, and "nicht prüfbar" would then be the badge over a project that is demonstrably
+  // half updated.
+  const outstanding = await outstandingCoreInstall(projectPath)
   const head = await run('git', ['rev-parse', 'HEAD'], projectPath)
   const latestCommit = (await lsRemoteHead(TEMPLATE_REPO)) ?? ''
-  if (!head.success || !latestCommit) return { currentCommit: '', latestCommit, state: 'unknown' }
+  const pending = (status: CoreUpdateStatus): CoreUpdateStatus =>
+    outstanding.length > 0 ? { ...status, state: 'pending', pendingPackages: outstanding } : status
+  if (!head.success || !latestCommit) return pending({ currentCommit: '', latestCommit, state: 'unknown' })
   if (await historyContains(projectPath, latestCommit)) {
-    return { currentCommit: latestCommit, latestCommit, state: 'upToDate', missingCommits: 0 }
+    return pending({ currentCommit: latestCommit, latestCommit, state: 'upToDate', missingCommits: 0 })
   }
   const installed = await installedUpstream(projectPath, latestCommit, options.resolveInstalled === true)
-  return { currentCommit: installed.commit, latestCommit, state: 'behind', missingCommits: installed.missing }
+  return pending({ currentCommit: installed.commit, latestCommit, state: 'behind', missingCommits: installed.missing })
 }
 
 // git's own wording for the three failures a user can actually act on is either buried in a wall of

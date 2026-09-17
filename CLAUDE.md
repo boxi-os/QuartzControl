@@ -1503,7 +1503,7 @@ die Frage ohnehin genauer als jede Zeile hier. Der Auftrag steht in
 Fixes des sechzehnten Reviews: ohne Review-Dokument und Auftragsdatei 13 Dateien, +520/−101 (davon
 15 Zeilen dieser `CLAUDE.md`-Absatz, den der Auftrags-Commit mitbringt), im App-Code 6 Dateien,
 +322/−74. Der Branch ist am 2026-09-16 in `main` gelandet (`bc7d774`, Fast-Forward mit den zwei
-Runden danach), gepusht ist er damit noch nicht; dazu
+Runden danach) und mit ihnen am 2026-09-17 auf `origin/main`; dazu
 kommt ein Commit im Handbuch-Vault, der nicht in diesem Repo liegt (damals `b61a08d`; seine
 Nachricht trug die von Befund 4 des siebzehnten Reviews widerlegte Zeilennummer und wurde vor dem
 Push korrigiert, er heißt jetzt `b53a6c1` bei gleichem Baum). Als größtes Risiko
@@ -1548,7 +1548,7 @@ bleibt, wo er ist, weil der Auftrag des zwölften Reviews mit ihm rechnet.
 
 **Die fünf Fixes des zwanzigsten Reviews und die vier aus seiner Nebenbei-Liste liegen bewusst
 dahinter** (`fix/review-2026-09-24`, von `main` abgezweigt, seit dem 2026-09-17 als Fast-Forward
-darin — `main` steht damit 38 Commits vor `origin/main`, gepusht ist nichts): ohne Review-Dokument
+darin und am 2026-09-17 mit den 38 Commits davor nach `origin/main` gepusht): ohne Review-Dokument
 9 Dateien, +557/−73, im App-Code 4 Dateien, +250/−62 — nachgerechnet gegen den Commit, der diese
 Zeilen trägt, nicht gegen den davor. Gemessen an drei Wegen: `runCoreUpdate` und
 `abortCoreMerge` als esbuild-Bündel in zwei Fassungen gegen ein lokales Upstream-Repo mit den
@@ -1584,7 +1584,8 @@ gezogene Rect im Frame-Builder 26,5 statt 48 px hoch meldet — der Fix kommt oh
 aus, die Frage bleibt offen. Sie gehören damit in den Diff des nächsten Auftrags.
 
 **Die sieben Fixes des neunzehnten Reviews liegen bewusst dahinter** (`fix/review-2026-09-23`, von
-`fix/review-2026-09-22` abgezweigt, danach als Fast-Forward nach `main`, noch nicht gepusht): ohne
+`fix/review-2026-09-22` abgezweigt, danach als Fast-Forward nach `main`, seit dem 2026-09-17
+gepusht): ohne
 Review-Dokument 9
 Dateien, +264/−32, im App-Code 6 Dateien, +169/−27. Gemessen an drei Wegen: `updateService` und
 `duplicateService` als esbuild-Bündel in zwei Fassungen gegen ein lokales Upstream-Repo mit den
@@ -1606,7 +1607,8 @@ n10p setzt `refs/remotes/origin/local` von Hand), und der Frame-Builder. Sie geh
 Diff des nächsten Auftrags.
 
 **Die sieben Fixes des achtzehnten Reviews hat das neunzehnte gelesen** (`fix/review-2026-09-22`, von
-`main` abgezweigt, seit dem 2026-09-16 darin, noch nicht gepusht): ohne Review-Dokument 8 Dateien,
+`main` abgezweigt, seit dem 2026-09-16 darin und seit dem 2026-09-17 gepusht): ohne
+Review-Dokument 8 Dateien,
 +300/−81, im
 App-Code 3 Dateien, +168/−44. Gemessen an fünf Wegen: `runCoreUpdate` und `abortCoreMerge` als
 esbuild-Bündel in zwei Fassungen (`af1ffed` und hier) gegen ein lokales Upstream-Repo mit den

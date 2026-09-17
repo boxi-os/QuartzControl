@@ -290,7 +290,13 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   `abortCoreMerge` poppt ihn nach `merge --abort`. **Ob der Knopf ihn tragen wird, wird nach gits
   Regel gefragt, nicht nach einer Vereinfachung davon**: `reset --merge` behält die *ungestagete*
   Hälfte einer Änderung und wirft die gestagete weg, und wo der Merge um denselben Pfad geht,
-  verweigert es den Abbruch ganz — drei Ausgänge, drei Sätze. Und ein vierter für den Eintrag, der
+  verweigert es den Abbruch ganz — drei Ausgänge, drei Sätze. **Und die Notiz trägt nicht nur den
+  SHA, sondern auch die eigenen Pakete, die der Lauf gerade aus `package.json` genommen hat**:
+  Der Plan rechnet gegen die Merge-Basis, und nach dem Merge ist die upstreams Commit — ein
+  späterer Lauf rechnet also einen leeren Plan und installierte sie nicht wieder (gemessen am
+  ersten *echten* Core-Update: „Already up to date“, `success: true`, npm „removed 52 packages“,
+  und kein Wort darüber). Gelesen wird die Liste geprüft, nicht gecastet; sie liegt im Projekt des
+  Nutzers und wird zu `npm install name@range`. Und ein vierter Satz für den Eintrag, der
   auf HEAD passt, während gar kein Merge offen ist: Dann gibt es keinen Knopf, aber auch keinen
   „Stand, den es nicht mehr gibt“ — `git stash pop` trägt ihn ein (alles zwanzigstes Review). **Der Plan
   fragt die Merge-Basis, die Türen öffnen sich gegen HEAD**, also gibt es einen zweiten Vergleich (`localPackageChanges(head, ours,
@@ -916,6 +922,16 @@ an einer anderen Kante — nicht der Wächter vor dem Amend ist das Problem, son
   gezählt, der die Datei trägt: +341 statt +353 in einer Commit-Nachricht und „22 Commits vor
   `origin/main`“ statt 23 im Auftrag.
 
+**Danach ist das Core-Update zum ersten Mal in dieser Serie gegen echte Gegenseiten gelaufen** —
+eine `cp -Rc`-Kopie von `navigations-testprojekt`, sieben Commits hinter `jackyzha0/quartz`,
+echtes `git fetch`, echtes npm, durch die gebaute App. Drei der Fixes dieser Runde sind damit an
+echten Daten bestätigt, darunter einer von der Seite, die die Attrappe verdeckt hatte (echtes npm
+lässt das Lockfile in Ruhe, also gab es nichts zu amenden). Ein neuer Befund kam dabei heraus, den
+keine Attrappe zeigen konnte: **Der Lauf, der die Arbeit eines an `npm install` gescheiterten
+früheren beendet, trug dessen eigene Pakete nicht wieder ein** — er meldete „Already up to date“
+und Erfolg, während npm sie aus `node_modules` entfernte. Behoben, Messungen im Nachtrag in
+[`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md).
+
 Vier Punkte seiner Nebenbei-Liste sind mit abgearbeitet, und einer davon war größer als sein
 Platz: **Im Frame-Builder bewegte kein Pfeildruck einen Bereich.** Die Ursache — ein Ablageziel,
 das den Ausgangspunkt schon enthält, gewinnt jeden Vergleich — traf auch das Layout-Board, wo sie
@@ -1532,8 +1548,8 @@ bleibt, wo er ist, weil der Auftrag des zwölften Reviews mit ihm rechnet.
 
 **Die fünf Fixes des zwanzigsten Reviews und die vier aus seiner Nebenbei-Liste liegen bewusst
 dahinter** (`fix/review-2026-09-24`, von `main` abgezweigt, seit dem 2026-09-17 als Fast-Forward
-darin — `main` steht damit 36 Commits vor `origin/main`, gepusht ist nichts): ohne Review-Dokument
-9 Dateien, +426/−63, im App-Code 4 Dateien, +189/−52 — nachgerechnet gegen den Commit, der diese
+darin — `main` steht damit 38 Commits vor `origin/main`, gepusht ist nichts): ohne Review-Dokument
+9 Dateien, +557/−73, im App-Code 4 Dateien, +250/−62 — nachgerechnet gegen den Commit, der diese
 Zeilen trägt, nicht gegen den davor. Gemessen an drei Wegen: `runCoreUpdate` und
 `abortCoreMerge` als esbuild-Bündel in zwei Fassungen gegen ein lokales Upstream-Repo mit den
 Ständen A/B/D/E (A = Ausgangsstand, B = Paketversionen gehoben, D = nur `quartz/index.ts`,
@@ -1544,7 +1560,14 @@ ungestaget, Upstream D und E), n7h/n7b und die fünf Gegenproben a1/a5/a6/a7f/no
 Fassungen; dazu git allein für `--amend --only` an einem Merge-Commit, bei unveränderten Pfaden
 und mitten in einem Merge. Und die Prüfskripte (`typecheck`, `build`, `smoke` mit 42 Aufrufen,
 `check:i18n` mit 1111 + 172 Schlüsseln, `check:core-update`, `check:semver`,
-`check:plugin-names`, `check:handbook`) — alle grün. Dritter Weg für die Nebenbei-Punkte: **die
+`check:plugin-names`, `check:handbook`) — alle grün. Vierter Weg, und der einzige ohne Attrappen:
+**ein echtes Core-Update** an einer `cp -Rc`-Kopie von `navigations-testprojekt`, künstlich sieben
+Commits hinter `jackyzha0/quartz` gesetzt (`git reset --hard f1fba3f`, eigene Theme-Pakete wieder
+eingetragen), mit echtem `git fetch`, echtem npm und der gebauten App über
+`updates.runCoreUpdate` — in sechs Läufen: Fast-Forward, Konflikt-Merge, npm scheitert an einem
+Paket, das es nicht gibt (E404), npm scheitert an `node_modules` auf 555 (EACCES) mit Fortsetzung
+danach, dieselbe Lage gegen die alte Fassung, und eine Notiz im alten Format. Dazu ein Restore auf
+den Punkt vor dem gescheiterten Lauf. Dritter Weg für die Nebenbei-Punkte: **die
 gebaute App** mit Wegwerf-Profil (`--user-data-dir` in einer Kopie des Treibers, danach gelöscht)
 gegen eine `cp -Rc`-Kopie von `navigations-testprojekt`, `colorscheme none`, echte Tastendrücke im
 Frame-Builder und am Layout-Board, vorher und nachher, bei gesetztem `main.scrollTop` 0 und 280 —
@@ -1552,9 +1575,11 @@ dazu eine Sonde im Getter, die die Kandidaten und ihre Punktzahlen mitschreibt u
 wieder entfernt wurde. Die größten Eingriffe sind das `--only` am Amend,
 `abortOutcomeForStash()` mit drei statt zwei Antworten, die zweite Tür zu `ourMergeCommit` und die
 zwei Zeilen in `utils/dndKeyboard.ts`. Neu sind drei Texte in `i18n.ts`
-(`updateStashMineBlocked`, `updateStashFitsHead`, `configNotAMapping`), dazu sechs Nachträge in
-`docs/decisions/`. Nicht gemessen: die gepackte App, ein echtes `npm install`, ein echter Push zu
-GitHub, die VMs, die Notiz über einen Restore oder ein Duplikat hinweg, und warum dnd-kit das
+(`updateStashMineBlocked`, `updateStashFitsHead`, `configNotAMapping`), dazu sieben Nachträge in
+`docs/decisions/` — der letzte über das erste echte Core-Update und den Befund daraus (die Notiz
+trägt jetzt auch die Paketliste). Nicht gemessen: die gepackte App, ein echter Push zu
+GitHub, die VMs, die Notiz über einen Restore oder ein Duplikat hinweg, was echtes npm bei
+ERESOLVE oder `--save-prod` auf einen fremden Abschnitt tut, und warum dnd-kit das
 gezogene Rect im Frame-Builder 26,5 statt 48 px hoch meldet — der Fix kommt ohne diese Antwort
 aus, die Frage bleibt offen. Sie gehören damit in den Diff des nächsten Auftrags.
 

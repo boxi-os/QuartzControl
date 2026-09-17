@@ -292,4 +292,49 @@ Sekunde Abstand gemessen; innerhalb derselben Sekunde fällt es nicht einmal auf
 npm-Attrappe, die nichts schreibt, gemessen: vorher ein `commit (amend)` im Reflog auf einem
 Commit, dem nichts fehlte, nachher keiner, bei unverändertem Baum, Status und Ausgabe.
 
+**Nachtrag (2026-09-17, erstes echtes Core-Update dieser Serie): die Notiz trägt auch, was der
+Lauf weggenommen hat.** Gemessen ist bis hierher alles an Attrappen — ein lokales Upstream-Repo,
+ein npm, das tut, was das Skript ihm sagt. Der erste Lauf gegen **echte** Gegenseiten (eine
+`cp -Rc`-Kopie von `navigations-testprojekt`, sieben Commits hinter `jackyzha0/quartz`, echtes
+`git fetch`, echtes npm, durch die gebaute App über denselben IPC-Pfad wie ein Klick) hat zwei
+Dinge gezeigt, die keine Attrappe zeigen konnte.
+
+**Erstens, was trägt.** Drei Läufe, drei Lagen:
+
+    ohne eigene Commits          Fast-Forward, kein Amend (HEAD *ist* upstreams Commit), Themes
+                                 zurück, ` M package-lock.json` bleibt stehen
+    eigener Commit               Konflikt in beiden Paketdateien → Merge-Commit mit zwei Eltern,
+                                 der Amend nimmt npms Lockfile auf, `git status` danach sauber,
+                                 keine Konfliktmarker, alle drei Themes zurück
+    npm scheitert, 2. Lauf       die dazwischen *gestagete* Fremddatei blieb im Index und nicht im
+                                 Commit — der Fix von Befund 1, an echten Daten
+
+Dabei ist auch der Nebenbei-Fix bestätigt, und zwar von der Seite, die die Attrappe verdeckte:
+**Echtes npm ließ das Lockfile in Ruhe** (die Attrappe schrieb es bei jedem Aufruf neu), also gab
+es nichts zu amenden, und der neue Wächter hat den Merge-Commit nicht ohne Grund umgeschrieben.
+
+**Zweitens, was nicht trug.** Der Plan wird gegen die Merge-Basis gerechnet, und nach dem Merge
+*ist* diese Basis upstreams Commit. Der Lauf, der die Arbeit eines an `npm install` gescheiterten
+früheren beendet, rechnet deshalb einen leeren Plan und fällt auf ein schlichtes `npm install`
+zurück. Szene: eigene Themes committet, npm scheitert (`node_modules` auf 555, EACCES), der Nutzer
+behebt es, zweiter Lauf:
+
+    vorher   „Already up to date.“, `success: true`, npm: „removed 52 packages“ — `package.json`
+             trug nur noch `@quartz-themes/core`, `node_modules` ebenso, und kein Wort darüber
+    nachher  „Eigene Pakete wieder eingetragen: @quartz-themes/default, @quartz-themes/minimal“,
+             beide Dateien und `node_modules` wieder vollständig, `git status` sauber
+
+Die Notiz existiert genau für das, was der nächste Lauf wissen muss, und trug bis dahin nur den
+SHA; jetzt auch die Liste der eigenen Pakete, die der schreibende Lauf gerade aus `package.json`
+genommen hat. Gelesen wird sie **geprüft, nicht gecastet**: Sie liegt im Projekt des Nutzers und
+wird zu `npm install name@range`, also fällt heraus, was kein einfacher String ist oder als Flag
+durchgehen könnte. Eine Notiz aus einer älteren Fassung trägt keine Liste und liest sich als leere
+— gemessen, kein Absturz, Verhalten wie vorher, und mehr ist auch nicht möglich: Was der frühere
+Lauf weggenommen hat, steht dann nirgends mehr. Der genannte zweite Ausweg trägt unabhängig davon
+(gemessen: ein Restore auf den Punkt vor dem gescheiterten Lauf holt alle drei Pakete zurück).
+
+Der Rest dieses Absatzes bleibt gemessen wie er ist — **an Attrappen**. Was ein echtes npm bei
+ERESOLVE, bei `--save-prod` auf ein Paket in einem anderen Abschnitt oder bei einem Lockfile tut,
+das es nicht neu schreiben will, ist damit für drei Lagen bekannt und sonst weiter offen.
+
 **git cannot write through a symbolic link, so every git operation that touches `content/` must park it first.** With the content folder symlinked into an Obsidian vault — a headline feature — a core update died with `error: 'content/.gitkeep' is beyond a symbolic link` / `fatal: stash failed`, raw, in the output pane. `withContentSymlinkParked()` unlinks the link (not the vault), runs the operation, then discards whatever git wrote into a real `content/` and restores the link in a `finally`. The merge, its abort **and** a snapshot restore all need it - and for the restore that means its *whole write phase*, not only the optional `git reset --hard`. Measured on a project whose `content/` pointed at a vault: a whole-project restore reported `success: true` with empty output and left `content/` as a real directory holding the snapshot's old notes, i.e. the project silently disconnected from the vault, while a per-file restore of a `content/` path would have written *into* the vault. The parking helper's `finally` throws those files away with the temporary directory, which is the deliberate answer rather than a gap: a vault is the user's own primary data with its own backup and is never overwritten from a snapshot - so the result says so in a line of its own. Only wrapped when the restore actually reaches `content/`, so restoring one config file never unlinks the vault even briefly. Verified end to end, conflict-and-abort included, with the vault untouched throughout.

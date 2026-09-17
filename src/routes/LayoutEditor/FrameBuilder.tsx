@@ -464,7 +464,10 @@ export default function FrameBuilder({
     if (cell) return t('layoutEditor.frameBuilder.cellName', { row: cell.row, col: cell.col })
     const areaId = id.startsWith(BOX_PREFIX) ? id.slice(BOX_PREFIX.length) : id
     return editing?.areas.find((a) => a.id === areaId)?.name ?? id
-  })
+  },
+  // An area is dragged by its own id and its place on the grid is a droppable called `box:<id>`,
+  // so "back where it started" is that one pairing and nothing else.
+  (activeId, overId) => overId === `${BOX_PREFIX}${activeId}`)
 
   function handleDragStart(event: DragStartEvent): void {
     setDragAreaId(String(event.active.id))

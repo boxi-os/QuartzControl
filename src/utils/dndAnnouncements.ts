@@ -12,12 +12,19 @@ import type { TFunction } from 'i18next'
  *
  * `describe` turns an id into that name. It belongs to the caller because only the caller knows
  * what its ids mean - a config index, a palette chip, a layout position.
+ *
+ * `isHome` answers the other question the caller alone can answer: is this target the very place
+ * the dragged thing is being dragged *from*. The default is the one that holds wherever a thing's
+ * own place is its own id, which is both sortable lists and the layout board; the frame builder
+ * passes its own, because there an area's place is a box with an id of its own.
  */
 export function useDndAccessibility(
   t: TFunction,
-  describe: (id: string) => string
+  describe: (id: string) => string,
+  isHome: (activeId: string, overId: string) => boolean = (activeId, overId) => activeId === overId
 ): { announcements: Announcements; screenReaderInstructions: ScreenReaderInstructions } {
   const name = (id: string | number): string => describe(String(id)) || String(id)
+  const home = (active: string | number, over: string | number): boolean => isHome(String(active), String(over))
   // Whether this drag has been anywhere else yet - the one thing that tells the target dnd-kit
   // reports on pickup from a step back onto the same place. A ref rather than a variable in this
   // function: all three callers call it from their render body, and a drag re-renders them on
@@ -47,10 +54,13 @@ export function useDndAccessibility(
       // press. Measured (twenty-first review, "nebenbei" 1): the third ArrowUp put the overlay back
       // on its starting place while the region still said "liegt über page-title".
       //
-      // Asked by name, not by id, because the name is what is read out: on the layout board the
-      // item's own place *is* its id, in the frame builder it is a box with an id of its own that
-      // describes to the same word - and that half said "header liegt über header", two answers to
-      // one situation.
+      // Asked through `isHome`, not by comparing the two names. The name was the shortcut that
+      // covered the frame builder, where an area's own place is a box with an id of its own that
+      // describes to the same word - but on the layout board two *different* things share a name as
+      // a matter of course: a palette chip carries the name of the plugin it duplicates, which is
+      // the name of the row it would land next to. Measured (twenty-third review, finding 4): a row
+      // that had walked three places was announced as "blieb an seinem Platz", and so was a drop
+      // that inserted a duplicate.
       onDragOver: ({ active, over }) => {
         if (firstOver.current) {
           firstOver.current = false
@@ -61,12 +71,12 @@ export function useDndAccessibility(
           // a chip out of the tray answered Space, ArrowDown, ArrowDown with "aufgenommen",
           // nothing, "Zelle Zeile 2, Spalte 1". One sentence carries both halves instead.
           if (over) {
-            return name(over.id) === name(active.id)
+            return home(active.id, over.id)
               ? undefined
               : t('dnd.pickedOver', { name: name(active.id), target: name(over.id) })
           }
         }
-        if (over && name(over.id) === name(active.id)) {
+        if (over && home(active.id, over.id)) {
           return movedAway.current ? t('dnd.backHome', { name: name(active.id) }) : undefined
         }
         movedAway.current = true
@@ -74,10 +84,10 @@ export function useDndAccessibility(
       },
       // The same question as in onDragOver, at the other end of the drag: a drop on the place the
       // thing already occupies moved nothing, and "X bei X abgelegt" says it moved. Reachable with
-      // one keystroke (Space, Space) and with a click on the handle that drags no pixel. Asked by
-      // name for the reason given above - in the frame builder the own place has an id of its own.
+      // one keystroke (Space, Space) and with a click on the handle that drags no pixel. Through
+      // `isHome` for the reason given above.
       onDragEnd: ({ active, over }) => {
-        if (over && name(over.id) === name(active.id)) return t('dnd.droppedHome', { name: name(active.id) })
+        if (over && home(active.id, over.id)) return t('dnd.droppedHome', { name: name(active.id) })
         return over ? t('dnd.dropped', { name: name(active.id), target: name(over.id) }) : t('dnd.cancelled', { name: name(active.id) })
       },
       onDragCancel: ({ active }) => t('dnd.cancelled', { name: name(active.id) })

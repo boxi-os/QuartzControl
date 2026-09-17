@@ -184,8 +184,9 @@ Projektwurzel.
   — kein gültiges JSON mehr, kein Merge-Commit. Das Schloss hängt am Projektpfad und gilt für
   Update *und* Abbruch, weil beide dasselbe Repository schreiben; der zweite Anrufer bekommt einen
   Satz statt eines git-Fehlers. **Sein Schlüssel ist ein Ordner, nicht eine Schreibweise**: `p` und
-  `p + '/'` liefen nebeneinander, bis `realpath` davorstand — das antwortet für den Schrägstrich
-  und für einen Symlink, die Großschreibung lässt es auf APFS, wie sie kommt. Und `git fetch` im
+  `p + '/'` liefen nebeneinander, bis `realpath` davorstand — das antwortet für den Schrägstrich,
+  für einen Symlink und auf APFS auch für die Großschreibung, weil die Promises-Fassung das native
+  `realpath(3)` ist und die Schreibweise der Platte zurückgibt. Und `git fetch` im
   Lauf hat dieselbe Frist wie der des Status, weil ein Hangen das Projekt sonst bis zum Neustart
   der App hält. Messungen in
   [`snapshots-and-updates.md`](decisions/snapshots-and-updates.md).

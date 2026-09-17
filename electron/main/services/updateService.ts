@@ -883,10 +883,13 @@ async function leftoverStashNote(projectPath: string, before: string | null): Pr
  *
  * And the key is that path, so two spellings of one folder were two keys - `p` and `p + '/'` ran
  * side by side (measured, twenty-fourth review, finding 5), which is exactly the case named above.
- * `realpath` answers for the trailing slash and for a symlink; the case it leaves as written, so on
- * a case-insensitive volume two spellings that differ only there are still two keys. Measured on
- * APFS: `.../RealLink/sub` and `.../RealTest/sub/` both come back as `.../RealTest/sub`,
- * `.../realtest/sub` comes back as itself.
+ * `realpath` answers for the trailing slash, for a symlink *and* for the case: the promises API is
+ * the native `realpath(3)`, which on a case-insensitive volume returns the spelling that is on the
+ * disk. Measured on APFS (twenty-fifth review, finding 4, node 26.5 and Electron's 24.18 alike):
+ * `.../realtest/sub` and `.../REALTEST/SUB` both come back as `.../RealTest/sub`, and two runs
+ * started on `proj-lock` and `PROJ-LOCK` at once left one of them with the busy sentence. The
+ * measurement this used to quote - "comes back as itself" - was `fs.realpathSync`, the JS
+ * reimplementation beside the one this calls.
  */
 const coreUpdatesRunning = new Set<string>()
 

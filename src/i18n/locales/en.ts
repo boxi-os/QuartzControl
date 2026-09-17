@@ -258,7 +258,7 @@ export default {
       noBaseUrlDetail: 'Without it the build fails as soon as fonts are self-hosted.',
       coreUpdatePending: 'A core update did not run to the end',
       coreUpdatePendingDetail:
-        'These packages of yours are no longer in package.json: {{packages}}. Under Updates, “Run update” finishes the job.'
+        'These packages of yours are missing from package.json, or stand there at a different version: {{packages}}. Under Updates, “Run update” finishes the job.'
     },
     contentTab: 'Content',
     devServer: 'Dev server',
@@ -1464,7 +1464,7 @@ export default {
       conflictHeading: 'Conflicts in these files (aside from the locale files .gitattributes protects):',
       pendingHeading: 'An earlier update did not run to the end',
       pendingDetail:
-        'These packages of yours are no longer in package.json: {{packages}}. “Run update” puts them back; alternatively, take the project back to the state before it under Snapshots.'
+        'These packages of yours are missing from package.json, or stand there at a different version: {{packages}}. “Run update” puts them back; alternatively, take the project back to the state before it under Snapshots.'
     },
     plugins: {
       heading: 'Plugins',

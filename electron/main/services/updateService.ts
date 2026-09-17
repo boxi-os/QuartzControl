@@ -129,6 +129,23 @@ async function installedUpstream(
  * Deliberately not every note: between npm getting through and the warm-up build the note is still
  * there with an empty list, and nothing is missing then - the state it describes is "this run is
  * not finished", which costs the next one a build it would have skipped and nothing else.
+ *
+ * `stillMissing` was written for the run, where each of its three answers is the right way round:
+ * in doubt, ask npm. Here the same answers become a sentence with package names, a badge and a
+ * counter, so the sentence says what the predicate actually asks - missing, or standing at another
+ * version (measured, twenty-fourth review, finding 3, scene P4: both themes written back by hand
+ * at the current range read as "no longer in package.json"). An unreadable package.json lands here
+ * too and is the one where the plain sentence is furthest off; naming it separately would be a
+ * third answer on a page whose other one is a badge, and the file is the same one the
+ * configuration page already names when it cannot read it.
+ *
+ * What this does not do is end the note when it sees the question answered - a full list, nothing
+ * missing (scene P1: a project that never commits, the themes written back through the app's own
+ * themes page). Ending it there would be a read path writing into the user's project, unprompted,
+ * on every mount of two pages, and `.quartz-gui/` is exactly where a read path must not write. So
+ * the note stays until a run ends it, and a user who then takes one of those packages out again
+ * without committing gets the badge inviting the click that brings it back - the case
+ * `listTakenInHandSince` documents as "not caught", one page further forward.
  */
 async function outstandingCoreInstall(projectPath: string): Promise<string[]> {
   const pending = await readPendingInstall(projectPath)

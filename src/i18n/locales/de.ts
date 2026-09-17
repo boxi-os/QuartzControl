@@ -259,7 +259,7 @@ export default {
       noBaseUrlDetail: 'Ohne sie schlägt der Build fehl, sobald Schriften selbst gehostet werden.',
       coreUpdatePending: 'Ein Kern-Update ist nicht zu Ende gelaufen',
       coreUpdatePendingDetail:
-        'Diese eigenen Pakete stehen nicht mehr in package.json: {{packages}}. Unter Updates führt „Update durchführen“ es zu Ende.'
+        'Diese eigenen Pakete fehlen in package.json oder stehen dort mit einer anderen Version: {{packages}}. Unter Updates führt „Update durchführen“ es zu Ende.'
     },
     contentTab: 'Content-Ordner',
     devServer: 'Dev-Server',
@@ -1469,7 +1469,7 @@ export default {
       conflictHeading: 'Konflikte in folgenden Dateien (außer den durch .gitattributes geschützten Locale-Dateien):',
       pendingHeading: 'Ein früheres Update ist nicht zu Ende gelaufen',
       pendingDetail:
-        'Diese eigenen Pakete stehen nicht mehr in package.json: {{packages}}. „Update durchführen“ trägt sie wieder ein; alternativ holst du unter Snapshots den Stand von vorher zurück.'
+        'Diese eigenen Pakete fehlen in package.json oder stehen dort mit einer anderen Version: {{packages}}. „Update durchführen“ trägt sie wieder ein; alternativ holst du unter Snapshots den Stand von vorher zurück.'
     },
     plugins: {
       heading: 'Plugins',

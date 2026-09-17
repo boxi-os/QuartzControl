@@ -974,6 +974,24 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
       }
     }
 
+    // npm has them back, so the list has done its work - and a list that has done its work must not
+    // outlive it. It only describes the window between "package.json is upstream's" and "npm has
+    // put the project's own packages back"; the note as a whole outlives that window (the warm-up
+    // build is still to come), the list does not.
+    //
+    // Without this it kept going for ever, because the only thing that clears the note is a run
+    // that reaches the end - and a run that dies after this point (a crash, an unwritable
+    // `.quartz-gui/`) leaves it behind with a full list over a package.json that already has
+    // everything. Measured (twenty-second review, finding 1): with such a note lying around, a
+    // package the user had removed *and committed* came back on the next update - `success: true`,
+    // in a run that had nothing to fetch. The SHA and `filesAtHead` stay, because the amend below
+    // still needs both.
+    try {
+      await markInstallPending(projectPath, headAfter, [], filesAtHead)
+    } catch (error) {
+      noteFailed(error)
+    }
+
     // What npm has just written to the two files belongs in the commit this run made rather than
     // standing in Git-Sync as a change nobody made. Which of it is npm's is the question
     // `filesAtHead` answers, below.

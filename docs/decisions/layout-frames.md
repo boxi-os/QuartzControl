@@ -914,3 +914,40 @@ Dieselbe Frage wie in `onDragOver`, am anderen Ende des Drags: Wer aufnimmt und 
 ## Nachtrag (2026-09-17, zweiundzwanzigstes Review): der erste Satz nennt auch das Ziel
 
 Der Guard, der die erste Zielmeldung schluckt, damit sie das „aufgenommen“ nicht übertönt, hatte einen Preis, den erst eine Messung zeigte: Wo diese Meldung einen *anderen* Platz nennt als das Ding selbst — im Frame-Builder die Zelle, auf der ein Bereich liegt —, war Schweigen die einzige Antwort, die der Nutzer bekam. Ein erster Pfeildruck, der dasselbe Ziel behält, ändert nichts und löst deshalb gar kein `onDragOver` aus. Gemessen (Chip `left` aus der Ablage, echte Tastendrücke): `Space` → „left aufgenommen.“, `ArrowDown` → nichts, `ArrowDown` → „Zelle Zeile 2, Spalte 1“. Jetzt trägt ein Satz beide Hälften („left aufgenommen, liegt über Zelle Zeile 1, Spalte 1.“); wo das gemeldete Ziel denselben Namen hat wie das Gezogene — das Layout-Board meldet das eigene Feld —, bleibt es beim Schweigen, sonst hieße es „X aufgenommen, liegt über X“.
+
+## Nachtrag (2026-09-17, dreiundzwanzigstes Review): „eigener Platz“ ist eine Auskunft der Aufrufstelle
+
+Der Satz oben endet auf „wo das gemeldete Ziel denselben Namen hat wie das Gezogene“ — und genau
+dieser Vergleich trägt nur dort, wofür er gewählt wurde. Im Frame-Builder hat der eigene Platz eine
+eigene Id (`box:<id>`) und löst zum selben Wort auf; am Layout-Board ist Namensgleichheit dagegen
+der Normalfall zweier *verschiedener* Dinge: Ein Paletten-Chip trägt den Namen des Plugins, das er
+dupliziert, und dasselbe Plugin darf mehrfach platziert sein. Dieselbe Lage hat die Plugin-Liste,
+wo zwei Instanzen desselben Plugins gleich heißen. Jede Ablage auf dem Namensvetter galt damit als
+„nichts bewegt“ — für jemanden, der nur die Ansage hat, die gegenteilige Auskunft.
+
+`useDndAccessibility` bekommt deshalb ein `isHome` neben `describe`. Die Vorgabe vergleicht die Ids
+und stimmt überall dort, wo der eigene Platz die eigene Id ist — sortierbare Listen und das
+Layout-Board; der Frame-Builder reicht seine eigene Antwort herein. Gemessen an der gebauten App
+mit echten Tastendrücken nach `el.focus()`, gegen eine Zone mit drei `quartz-navigations`
+nebeneinander:
+
+    vorher   Space      „quartz-navigations aufgenommen.“
+             ArrowDown  (nichts — die Region behält den Satz von vorhin)
+             Space      „quartz-navigations blieb an seinem Platz.“ — die Zeile ist einen
+                        Platz gewandert
+    nachher  Space      „quartz-navigations aufgenommen.“
+             ArrowDown  „quartz-navigations liegt über quartz-navigations.“
+             Space      „quartz-navigations bei quartz-navigations abgelegt.“
+
+Gegenproben, beide nachher: `Space, Space` auf derselben Zeile sagt weiter „blieb an seinem Platz“,
+und im Frame-Builder sagen `Space` / `ArrowRight` / `Escape` weiter „aufgenommen, liegt über Zelle
+Zeile 1, Spalte 1“ / „liegt über Zelle Zeile 1, Spalte 2“ / „abgebrochen, nichts verschoben“.
+Vorher ebenfalls gemessen, wortgleich zum Review: eine Zeile, die drei Plätze gewandert war
+(`quartz-layout-box` über `page-title` und `search` auf ihren Namensvetter), meldete beim dritten
+Pfeildruck „liegt wieder auf seinem Ausgangsplatz“ und beim Ablegen „blieb an seinem Platz“.
+
+**Und die Palette bekommt einen Namen statt einer Anweisung.** Ihre Überschrift ist eine
+Aufforderung („Komponente hinzufügen“) und als solche richtig — vorgelesen wird sie aber seit
+`pickedOver` bei jeder Aufnahme aus der Palette, und zwar als Ablageziel. Der Frame-Builder sagt in
+seinem Kommentar genau deshalb, warum sein Ablage-Label ein Name ist. Gemessen: vorher „page-title
+aufgenommen, liegt über Komponente hinzufügen.“, nachher „… liegt über Komponentenvorrat.“

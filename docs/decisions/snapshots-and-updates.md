@@ -415,4 +415,46 @@ Das ist die Kehrseite von `carried` ohne SHA-Bindung (Nachtrag oben): Die Bindun
 
 **Und was sein Pop freilegt.** Unter dem Stash, den der Abbruch zurückträgt, kann ein älterer der App liegen — von einem Lauf, der seinen nie wieder eintragen konnte. Bis hierher war genau dieser Augenblick der eine, in dem er sicher unerwähnt blieb: Der Lauf danach sagt nichts, weil sein eigener Eintrag dann weg ist und der übrige einer ist, den er nicht geschrieben hat. Gemessen (h8, zwei Einträge übereinander): vorher „Dropped refs/stash@{0}“ und sonst nichts, nachher derselbe Pop plus der Satz, der den verbliebenen beim Namen nennt — welchen der beiden Sätze er bekommt, entscheidet dieselbe Frage wie in `leftoverStashNote`.
 
+**Nachtrag (2026-09-17, dreiundzwanzigstes Review): „Starte das Update erneut“ — der Knopf dafür war aus.** Vier Runden Arbeit an der Notiz, am `resuming`-Amend, an `carried` und `filesAtHead` beschreiben einen zweiten Klick; angesehen hatte den Knopf niemand. Ein Lauf, der an `npm install` scheitert, hat den Merge schon committet, also enthält HEAD upstreams neuesten Commit, `getCoreUpdateStatus` antwortet `upToDate`, und `disabled={coreBusy || coreStatus?.state === 'upToDate'}` (seit `62ab802`, 2026-08-27) schaltet ihn ab — bis upstream den nächsten Commit veröffentlicht. Gesehen hat es keine der Runden davor, weil ihre echten Läufe `window.quartzGui.updates.runCoreUpdate` direkt riefen und die Attrappen keine Seite kennen. Gemessen an der gebauten App über den echten Knopf (Wegwerf-Profil, `cp -Rc` von `navigations-testprojekt` auf `f1fba3f`, zwei eigene Themes committet, echtes `git fetch`, echtes npm, das an diesen zwei Paketen scheitert):
+
+    vorher   Badge „Aktuell“, „Installiert: 3dff48b · Neueste Version: 3dff48b“,
+             Knopf disabled; Übersicht ohne Leiste, „Nichts zu tun“, Kachel „Alles aktuell“;
+             die Paketnamen stehen genau einmal da, bis zum ersten Routenwechsel (`coreResult`
+             ist `useState`)
+    nachher  Badge „Nicht abgeschlossen“, Kasten mit beiden Namen, Knopf an; Übersicht:
+             HANDLUNGSBEDARF 1 mit beiden Namen und Weg zu Updates, Kachel „Update nicht
+             abgeschlossen“ mit Zähler
+    Klick    läuft (neuer Snapshot-Link), scheitert wieder an denselben Paketen
+    bezahlt  beide Zeilen von Hand zurück in `package.json`, „Erneut prüfen“: Badge „Aktuell“,
+             Kasten weg, Knopf wieder aus
+
+Der Kern bekommt dafür eine vierte Antwort, die die Plugins nicht haben (`CoreUpdateState`). Sie ist keine Aussage darüber, wie das Projekt zu upstream steht — dazu hat es dessen neuesten Commit —, sondern darüber, wie es selbst dasteht: `package.json` ist upstreams, `node_modules` ist es nicht. Sie gewinnt gegen alle drei anderen, weil sie unabhängig von ihnen wahr ist und als einzige etwas zu tun gibt, und sie braucht kein Netz. Gefragt wird sie aus denselben drei Funktionen, die der Lauf selbst fragt (`readPendingInstall`, `packageJsonCommittedSince`, `stillMissing`), damit Seite und Lauf nicht auseinanderlaufen können. Der Zustand zwischen erfolgreichem npm und Aufwärm-Build — Notiz mit leerer Liste — ist bewusst keiner: Dort fehlt nichts, und der Preis ist ein Lauf, der einen Build nicht überspringt.
+
+**Nachtrag (2026-09-17, dreiundzwanzigstes Review): die Liste endet auch, wenn jemand anders die Frage beantwortet hat.** Der Fix der Vorrunde beendet sie, „sobald npm sie eingetragen hat“ — gemeint: sobald *dieser Dienst* npm erfolgreich gerufen hat. Die Frage, die sie offen hält, beantwortet aber auch jeder andere, der die Pakete einträgt, und nach dem Befund oben war das der einzige Weg nach vorn. Gefragt wird deshalb, ob `package.json` seit der Notiz **committet** wurde, nicht ob sie noch so aussieht wie damals: Die Datei kommt byte-gleich zurück, wenn jemand eine Zeile einträgt und später wieder herausnimmt — genau der Fall, um den es geht. Ein Commit ist außerdem das einzige Zeichen, das npms eigenes Umschreiben nicht auslöst, und es lässt h2 der einundzwanzigsten Runde in Ruhe. Gefragt **vor** dem Merge, weil dessen Commit `package.json` selbst anfasst. Gemessen (esbuild-Bündel beider Fassungen, Upstream A/E, npm- und npx-Attrappen, je Szene ein frischer Klon):
+
+    f1      Lauf 1 scheitert · Theme von Hand zurück und committet · später entfernt und
+            committet · Lauf 2
+            alt: `install --save-prod @quartz-themes/default@^2.0.0`, deps [default, core,
+                 preact], `success: true`
+            neu: `install`, deps [core, preact]
+    h2      ein unbeteiligter Commit (README) dazwischen — alt wie neu: Theme kommt zurück
+    resume  nichts dazwischen — alt wie neu: Theme kommt zurück
+    norm    der gewöhnliche Weg — alt wie neu gleich
+
+Nicht gefangen: eine Reparatur und eine Entfernung, die beide uncommittet bleiben. Dann gilt die Liste weiter, und `stillMissing` kann „noch nicht wieder da“ nicht von „bewusst entfernt“ unterscheiden — beides ist ein fehlender Eintrag.
+
+**Nachtrag (2026-09-17, dreiundzwanzigstes Review): der Wächter vor dem Amend fragt auch den Index.** `npmFilesAtHead` ist die Erlaubnis für den einen Befehl, mit dem diese App Geschichte umschreibt, und sein Kommentar sagte „index and working tree alike“. Gemessen hat er nur den Arbeitsbereich: `git diff HEAD` vergleicht mit ihm und antwortet 0 für eine Datei, die auf drei Ständen zugleich steht — vorgemerkt geändert, im Arbeitsbereich zurück auf HEAD. Das ist die Lage, die `stagedApartFromWorkingTree` für den Plan erkennt. Unter `ourMergeCommit` folgenlos (git beginnt keinen Merge über einer gestageten Änderung), unter `resuming` nicht. Gemessen (s3, Upstream E, `scripts.mine` vorgemerkt und im Arbeitsbereich zurückgenommen, `MM package.json`, `git diff --quiet HEAD` 0, `--cached` 1):
+
+    alt   HEAD 49ff1d6 → a2d10b9 (amended), `git status` leer, `scripts.mine` weder im Index
+          noch im Baum noch in HEAD — ohne ein Wort
+    neu   HEAD steht, `scripts.mine` liegt weiter im Index, npms Schreibvorgänge stehen da
+
+**Nachtrag (2026-09-17, dreiundzwanzigstes Review): ein Lauf-Schloss im Hauptprozess.** Der Schutz gegen einen zweiten Klick war `coreBusy`, ein `useState` im Renderer — das Gedächtnis eines Fensters an das, was es selbst gestartet hat, und es stirbt mit der Route. Update und Abbruch teilen sich jetzt ein Schloss je Projektpfad, weil sie dasselbe Repository schreiben. Gemessen (zwei `runCoreUpdate` auf demselben Projekt in einem `Promise.all`, Upstream E):
+
+    alt   beide `false`; A meldet den Konflikt, B „An earlier update is still half-merged“
+          mitten aus A heraus. Danach kein Merge-Commit, in `package.json` stehen
+          Konfliktmarker — kein gültiges JSON mehr
+    neu   A `true`, Merge-Commit steht, Theme wieder eingetragen; B `false` mit
+          „Für dieses Projekt läuft gerade ein Kern-Update.“
+
 **git cannot write through a symbolic link, so every git operation that touches `content/` must park it first.** With the content folder symlinked into an Obsidian vault — a headline feature — a core update died with `error: 'content/.gitkeep' is beyond a symbolic link` / `fatal: stash failed`, raw, in the output pane. `withContentSymlinkParked()` unlinks the link (not the vault), runs the operation, then discards whatever git wrote into a real `content/` and restores the link in a `finally`. The merge, its abort **and** a snapshot restore all need it - and for the restore that means its *whole write phase*, not only the optional `git reset --hard`. Measured on a project whose `content/` pointed at a vault: a whole-project restore reported `success: true` with empty output and left `content/` as a real directory holding the snapshot's old notes, i.e. the project silently disconnected from the vault, while a per-file restore of a `content/` path would have written *into* the vault. The parking helper's `finally` throws those files away with the temporary directory, which is the deliberate answer rather than a gap: a vault is the user's own primary data with its own backup and is never overwritten from a snapshot - so the result says so in a line of its own. Only wrapped when the restore actually reaches `content/`, so restoring one config file never unlinks the vault even briefly. Verified end to end, conflict-and-abort included, with the vault untouched throughout.

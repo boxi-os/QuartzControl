@@ -144,3 +144,12 @@ einer Zeichenkette im Code: Deutsch zitiert „…“, Englisch “…”, und d
 Sprache gerade gilt.
 
 **The page is called Snapshots, not Backups (2026-09-13).** The sidebar, the page title, the dashboard tile and every "unter Backups zurückholen" said *Backups*, while everything on the page said *Snapshot* — and its second card, the content folders set aside on a switch, says in its own hint "Das ist kein Backup deiner Notizen", with a code comment calling it "not a backup". A page name that its own text contradicts is the one-word version of "nicht zu verwechseln mit…". Renamed in both languages (7 strings each in `de.ts`/`en.ts`), the handbook in both languages (20 places, 10 per language, six screenshot files renamed to the name `screenshots.mjs` derives from the new route label) and the label in `scripts/routes.mjs`. What stays: the route `/backups`, because sticky state and scroll positions are keyed by pathname and a new path would reset them for every existing profile; the component and service names; `Altes Config-Backup` for the snapshot kind imported from the old mechanism, which is what it was; and "Backup" in its generic sense in the handbook ("was ein Backup umfassen muss"). Checked in the built app with a throwaway profile, both languages: sidebar, `<h1>` and the Updates page link say Snapshots, and no rendered text on those three pages says Backups. The screenshots still show the old sidebar — every route screenshot does, not only the fourteen once estimated — and are due with the next recording run.
+
+**Nachtrag (2026-09-17, dreiundzwanzigstes Review): yamls erste Zeile endet auf einen Doppelpunkt.**
+Sie ist die, die Zeile und Spalte nennt, und in einem Terminal folgt darauf der Quelltextausschnitt.
+In unserem Satz — „quartz.config.yaml lässt sich nicht als YAML lesen: {{reason}}. Repariere sie …“
+— wurde daraus „at line 3, column 18:. Repariere“. Ein Helfer (`yamlReason` in `configService.ts`)
+schneidet Doppelpunkt und Leerraum am Ende ab, beide Aufrufstellen gehen durch ihn. Gemessen an der
+gebauten App mit `pageTitle: "abc` in der Datei: vorher „… column 1:. Repariere sie …“, nachher
+„… column 1. Repariere sie …“. Dieselbe Bewegung wie überall sonst hier — ein fremder Satz, der in
+einen eigenen eingesetzt wird, wird dafür zurechtgeschnitten, nicht durchgereicht.

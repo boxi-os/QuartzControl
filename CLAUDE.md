@@ -297,7 +297,12 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   späterer Lauf rechnet also einen leeren Plan und installierte sie nicht wieder (gemessen am
   ersten *echten* Core-Update: „Already up to date“, `success: true`, npm „removed 52 packages“,
   und kein Wort darüber). Gelesen wird die Liste geprüft, nicht gecastet; sie liegt im Projekt des
-  Nutzers und wird zu `npm install name@range`. Und ein vierter Satz für den Eintrag, der
+  Nutzers und wird zu `npm install name@range`. **Ob sie noch gilt, wird an ihren eigenen Zeilen
+  gefragt** (`git log -G<name>`), nicht an der Datei: „Wurde `package.json` seit der Notiz
+  committet“ feuert auch für einen eigenen Commit aus anderem Grund, für upstreams Commits, sobald
+  ein handaufgelöster Merge sie nach HEAD bringt, und für den Amend der App — ein Merge-Commit
+  zeigt ohne `--diff-merges` gar keinen Diff, die beiden letzten sind damit von selbst draußen.
+  Und wenn ein Lauf eine Liste fallen lässt, sagt er es (vierundzwanzigstes Review). Und ein vierter Satz für den Eintrag, der
   auf HEAD passt, während gar kein Merge offen ist: Dann gibt es keinen Knopf, aber auch keinen
   „Stand, den es nicht mehr gibt“ — `git stash pop` trägt ihn ein (alles zwanzigstes Review). **Der Plan
   fragt die Merge-Basis, die Türen öffnen sich gegen HEAD**, also gibt es einen zweiten Vergleich (`localPackageChanges(head, ours,
@@ -373,7 +378,11 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   zweiten mitten aus dem ersten heraus scheitern und hinterließen Konfliktmarker in `package.json`
   — kein gültiges JSON mehr, kein Merge-Commit. Das Schloss hängt am Projektpfad und gilt für
   Update *und* Abbruch, weil beide dasselbe Repository schreiben; der zweite Anrufer bekommt einen
-  Satz statt eines git-Fehlers. Messungen in
+  Satz statt eines git-Fehlers. **Sein Schlüssel ist ein Ordner, nicht eine Schreibweise**: `p` und
+  `p + '/'` liefen nebeneinander, bis `realpath` davorstand — das antwortet für den Schrägstrich
+  und für einen Symlink, die Großschreibung lässt es auf APFS, wie sie kommt. Und `git fetch` im
+  Lauf hat dieselbe Frist wie der des Status, weil ein Hangen das Projekt sonst bis zum Neustart
+  der App hält. Messungen in
   [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md).
 - **Wer einen Zustand aus fremden Ausgabezeilen liest, weiß, wessen Zeilen er liest.** Ob gerade
   gebaut wird, hält `buildService` als *eine* Aktivität je Projekt, und zwei Quellen schreiben
@@ -443,6 +452,10 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   darüber: ausgeschaltet schwieg der Hinweis, obwohl die Datei das Bild noch nannte, eingeschaltet
   warnte er vor etwas, das nicht passiert (dreizehntes Review, an der gebauten App in vier Fällen
   gemessen, vorher zwei falsch).
+- **Eine Bedingung fragt das, was sie anzeigt.** Die Zeile „n Commits fehlen“ hing am Zustand
+  `behind`; seit `pending` gegen alle drei anderen Antworten gewinnt, fiel die Zahl genau dann weg,
+  wenn ein Projekt halb aktualisiert *und* zugleich hinterher war — also dort, wo zwei verschiedene
+  Hashes nebeneinander stehen und der Knopf zwei Dinge tut (vierundzwanzigstes Review).
 - **Was im Renderer lebt, stirbt mit dem Fenster - unter macOS aber nicht die App.** Ein
   geschlossenes Fenster beendet weder die App noch die Dev-Server; alles, was danach noch stimmen
   soll, gehört in den Hauptprozess. Für die Log-Zeilen ist das `services/logBuffer.ts`, gelesen über
@@ -595,7 +608,10 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   (`isHome`). Der Name ist das, was vorgelesen wird; identisch macht er nichts. Am Layout-Board
   tragen ein Paletten-Chip und die Zeile, die er dupliziert, denselben, und zwei Instanzen
   desselben Plugins auch — jede Ablage auf dem Namensvetter galt als „nichts bewegt“, während die
-  Zeile drei Plätze gewandert war.
+  Zeile drei Plätze gewandert war. **Die Vorgabe „der eigene Platz ist die eigene Id“ trägt an drei
+  der vier Stellen**: Ein Paletten-Chip heißt `palette:<index>` und wohnt in `palette-drop-zone`,
+  also las sich jeder Satz über den Vorrat als Bewegung, und ein Ablegen, bei dem nichts passiert,
+  hieß „abgelegt“ (vierundzwanzigstes Review).
 - **Schriftgrößen heißen nach Rolle, so wie die Farben.** `text-micro` (11px: Labels, Hinweise,
   Badges), `text-ui` (13px: Text in einem Bedienelement oder einer Zeile), `text-heading` (15px: die
   Überschrift einer Karte), definiert in `tailwind.config.js`. Seit dem 2026-09-06 gibt es keine
@@ -749,6 +765,14 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   Schlüsseln, und ein Fix des zwölften Reviews hatte die Form gerade erst noch einmal geschrieben.
   Und die Zahl zählt, was sie zu zählen behauptet: „1 Aufruf im Hauptprozess“ war die Deklaration
   von `mainT` (vierzehntes Review).
+- **Ein Prädikat, das für einen Lauf geschrieben ist, wird als Aussagesatz nicht wahr.**
+  `stillMissing` fragt „fehlt, steht mit einem anderen Bereich da, oder ist gar nicht lesbar“, und
+  für den Lauf ist jede dieser Antworten richtig herum: im Zweifel npm fragen. Dieselben Antworten
+  wurden auf der Seite zu „Diese eigenen Pakete stehen nicht mehr in package.json“, mit Namen,
+  Badge und Zähler — über Zeilen, die dastehen (vierundzwanzigstes Review). Und was ein Prüfskript
+  nicht sehen kann, gehört in `docs/release.md`: `check:handbook` prüft Blockzitate, also sah es
+  nicht, dass das Handbuch drei Prüfzustände aufzählt, während die Updates-Seite vier zeigt und
+  genau dieses Kapitel im Kopf verlinkt.
 - **Ein Ausweg, den eine Meldung nennt, wird an der Oberfläche gemessen, nicht am Kanal darunter.**
   „Behebe den Fehler oben und starte das Update erneut“ stand vier Runden lang über einem Knopf,
   den derselbe Lauf deaktiviert hatte — HEAD enthielt den Merge, der Status hieß „Aktuell“. Gesehen
@@ -756,7 +780,11 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   Attrappen keine Seite kennen. Dazu gehört die Gegenrichtung: Ein Zustand, den die App sich selbst
   notiert, bekommt eine Antwort neben aktuell/dahinter/unbekannt und steht dort, wo der Nutzer
   nachsieht — die Namen der fehlenden Pakete standen an genau einer Stelle, bis zum ersten
-  Routenwechsel.
+  Routenwechsel. **Und dieselbe Lücke eine Tür weiter:** Ein Kanal, der einen Satz *antwortet*
+  statt zu werfen, braucht einen Aufrufer, der ihn liest. `abortCoreMerge` hat zwei, und beide
+  warfen das Ergebnis weg — ein verweigerter Abbruch war damit ein Knopf, der nichts tut, und die
+  vorgemerkte Datei, die der Abbruch wegwirft, ging ohne ein Wort, obwohl der Kanal sie nennt
+  (vierundzwanzigstes Review).
 - **Zwei Arten zu scheitern bekommen zwei Antworten.** „Fehlt“ und „ist da, aber kaputt“ in einem
   `catch` zu fangen macht aus dem zweiten Fall ein stilles „alles gut“. Die Liste der Startseite
   fing ein `globby` mit Syntaxfehler wie ein fehlendes und schrieb zwei tote Links, ohne ein Wort
@@ -932,9 +960,9 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Befunde aus den Reviews (Stand 2026-09-27)
+## Befunde aus den Reviews (Stand 2026-09-28)
 
-Alle dreiundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
+Alle vierundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht,
@@ -956,8 +984,9 @@ Alle dreiundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs
 [`docs/REVIEW-2026-09-24.md`](docs/REVIEW-2026-09-24.md) mit seinen fünf und
 [`docs/REVIEW-2026-09-25.md`](docs/REVIEW-2026-09-25.md) mit seinen sieben und
 [`docs/REVIEW-2026-09-26.md`](docs/REVIEW-2026-09-26.md) mit seinen vier und
-[`docs/REVIEW-2026-09-27.md`](docs/REVIEW-2026-09-27.md) mit seinen sechs (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-27-`) stehen als
+[`docs/REVIEW-2026-09-27.md`](docs/REVIEW-2026-09-27.md) mit seinen sechs und
+[`docs/REVIEW-2026-09-28.md`](docs/REVIEW-2026-09-28.md) mit seinen sieben (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-28-`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](docs/REVIEW-2026-09-15.md) gehört nicht
 in diese Zählung: Die „fünfzehnte Runde“ las die Handbücher der zwei Plugins gegen deren Code und
@@ -972,6 +1001,50 @@ größtes Risiko nennt er den vierten Zustand `'pending'`, der gegen alle drei a
 gewinnt und bei jedem Mount der Übersicht gelesen wird — und die Paketliste, die damit in vier
 aufeinander folgenden Runden viermal anders gebunden ist; er bittet um die Lage, die keine der vier
 Bindungen trifft. Der Branch ist nicht gepusht.
+
+**Das vierundzwanzigste Review las die sechs Fixes des dreiundzwanzigsten und fünf Punkte seiner
+Nebenbei-Liste** (`review-2026-09-28..review-2026-09-29`, ohne Review-Dokument und Auftragsdatei
+20 Dateien, +528/−123, im App-Code 15 Dateien, +344/−99) und fand **zwei Befunde Mittel, fünf
+Niedrig**, alle sieben abgearbeitet, dazu die vier Punkte seiner Nebenbei-Liste und das
+Handbuch-Kapitel, das es daneben als niedrigen Befund führt. Es stammt vom selben Modell wie die
+Commits, aber aus einer anderen Sitzung; es hat die Kette „npm scheitert, Nutzer behebt es, klickt
+erneut, Lauf kommt durch“ zum ersten Mal am echten Knopf und am Stück gemessen, und sie trägt.
+Beide mittleren sitzen dort, wo der Auftrag sie vermutet hat — an der Oberfläche über einem Kanal,
+der stimmt, und an der Paketliste, die in fünf Runden fünfmal anders gebunden ist. Was daraus als
+Regel bleibt, steht oben in den passenden Abschnitten:
+
+- **Ein Kanal, der einen Satz antwortet statt zu werfen, braucht einen Aufrufer, der ihn liest.**
+  `abortCoreMerge` hat zwei, und beide behandelten ihn als „läuft durch oder wirft“; die
+  Updates-Seite setzte danach sogar das Feld auf `null`, in dem der Satz hätte stehen können. Fünf
+  Runden haben Sätze für genau die Lagen geschrieben, in denen der Knopf allein nicht reicht — ein
+  verweigerter Abbruch war trotzdem ein Knopf, der nichts tut, und die vorgemerkte Datei, die er
+  wegwirft, ging ohne ein Wort. Dieselbe Lücke wie beim Knopf der Vorrunde, eine Tür weiter: an
+  Bündeln gemessen, und ein Bündel hat keine Seite.
+- **Eine Frage an die Geschichte wird an dem gestellt, worum es geht.** „Wurde `package.json` seit
+  der Notiz committet“ sollte heißen „hat der Nutzer die Paketfrage selbst beantwortet“ — es feuert
+  aber auch für einen eigenen Commit aus anderem Grund, für upstreams Commits, sobald ein
+  handaufgelöster Merge sie nach HEAD bringt, und für den Amend der App. `git log -G<name>` fragt
+  die Zeilen der Liste, und ein Merge-Commit zeigt ohne `--diff-merges` gar keinen Diff — die
+  beiden letzten sind damit von selbst draußen. **Und wenn ein Lauf eine Liste fallen lässt, sagt
+  er es.**
+- **Ein Prädikat, das für einen Lauf geschrieben ist, wird als Aussagesatz nicht wahr.**
+  `stillMissing` fragt „fehlt, oder steht mit einem anderen Bereich da, oder ist nicht lesbar“, und
+  für den Lauf ist jede dieser Antworten richtig herum. Der Status machte daraus „stehen nicht mehr
+  in package.json“, mit Namen, Badge und Zähler — für Zeilen, die dastehen.
+- **Eine Bedingung fragt das, was sie anzeigt.** Die Zeile „n Commits fehlen“ hing am Zustand
+  `behind`, und seit `pending` gegen alle drei anderen gewinnt, verschwand die Zahl genau dann,
+  wenn sie zu zwei Hashes nebeneinander gehört hätte.
+- **Ein Schlüssel, der ein Pfad ist, meint erst nach `realpath` einen Ordner.** Das Lauf-Schloss
+  hielt `p` und `p + '/'` auseinander — und genau diese Lage führte sein Kommentar als gedeckt.
+  Zwei weitere Sätze daneben trugen nicht: „sein Ergebnis steht danach auf der Updates-Seite“ (das
+  hält `useState` nicht) und „Two windows“ (die App hat eines).
+- **Eine Vorgabe, die „an drei von vier Stellen“ trägt, ist eine Vorgabe mit einer Ausnahme.** Der
+  eigene Platz eines Paletten-Chips ist nicht seine Id, sondern der Vorrat; jeder Satz darüber las
+  sich als Bewegung, und ein Ablegen, bei dem nichts passiert, hieß „abgelegt“.
+- **Was ein Prüfskript nicht sehen kann, gehört in die Liste vor dem Release.** `check:handbook`
+  prüft Blockzitate; eine Aufzählung daneben, die behauptet vollständig zu sein, sieht es nicht —
+  das Handbuch nannte drei Prüfzustände, während die Updates-Seite vier zeigt und genau dieses
+  Kapitel im Kopf verlinkt.
 
 **Das dreiundzwanzigste Review ging an ein anderes Modell** — das war die Begründung seines
 Auftrags: Die Runde davor hatte sich selbst gelesen, und der Auftrag machte deshalb

@@ -156,7 +156,12 @@ export default function Updates(): JSX.Element {
         {coreStatus && (
           <p className="mt-1 text-xs text-text-muted">
             {t('updates.core.commits', { current: shortCommit(coreStatus.currentCommit), latest: shortCommit(coreStatus.latestCommit) })}
-            {coreStatus.state === 'behind' && coreStatus.missingCommits !== undefined && (
+            {/* Asked of the number, not of the state. Since 'pending' wins over all three others,
+                a project that is half updated *and* behind said neither how far behind it is nor
+                that the button does two things - the box above only says the first half
+                (twenty-fourth review, finding 4: `missingCommits: 2` on the channel, nothing on
+                the page). `> 0` because 'upToDate' carries a zero. */}
+            {coreStatus.missingCommits !== undefined && coreStatus.missingCommits > 0 && (
               <> · {t('updates.core.missing', { count: coreStatus.missingCommits })}</>
             )}
           </p>

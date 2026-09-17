@@ -963,6 +963,16 @@ gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](docs/REVIEW-2026-09-15
 in diese Zählung: Die „fünfzehnte Runde“ las die Handbücher der zwei Plugins gegen deren Code und
 aus diesem Repo nur zwei Commits der Beispielvorlage (`fe2b701`, `9592121`).
 
+**Das vierundzwanzigste Review misst ab `review-2026-09-28`** und liest bis `review-2026-09-29`,
+das auf dem Commit „Der Auftrag fuer das vierundzwanzigste Review“ (`fix/review-2026-09-27`) sitzt;
+der Auftrag steht in [`docs/REVIEW-2026-09-28-auftrag.md`](docs/REVIEW-2026-09-28-auftrag.md). Sein
+Diff sind die sechs Fixes des dreiundzwanzigsten Reviews und fünf Punkte seiner Nebenbei-Liste:
+ohne Review-Dokument und Auftragsdatei 20 Dateien, +528/−123, im App-Code 15 Dateien, +344/−99. Als
+größtes Risiko nennt er den vierten Zustand `'pending'`, der gegen alle drei anderen Antworten
+gewinnt und bei jedem Mount der Übersicht gelesen wird — und die Paketliste, die damit in vier
+aufeinander folgenden Runden viermal anders gebunden ist; er bittet um die Lage, die keine der vier
+Bindungen trifft. Der Branch ist nicht gepusht.
+
 **Das dreiundzwanzigste Review ging an ein anderes Modell** — das war die Begründung seines
 Auftrags: Die Runde davor hatte sich selbst gelesen, und der Auftrag machte deshalb
 `docs/REVIEW-2026-09-26.md` zum **Prüfgegenstand** statt es auszunehmen, wie es sonst die Regel

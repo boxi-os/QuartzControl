@@ -44,6 +44,35 @@ gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](REVIEW-2026-09-15.md) 
 in diese Zählung: Die „fünfzehnte Runde“ las die Handbücher der zwei Plugins gegen deren Code und
 aus diesem Repo nur zwei Commits der Beispielvorlage (`fe2b701`, `9592121`).
 
+**Das fünfundzwanzigste Review misst ab `review-2026-09-29`** und liest bis
+`review-2026-09-30`, das auf dem Commit „Der Auftrag fuer das fuenfundzwanzigste Review“ (`main`)
+sitzt; der Auftrag steht in
+[`docs/REVIEW-2026-09-29-auftrag.md`](REVIEW-2026-09-29-auftrag.md). Es ist das erste, dessen Diff
+**drei Schichten** hat, von denen zwei kein Review angestoßen hat:
+
+- die zwölf Commits, mit denen die sieben Befunde des vierundzwanzigsten Reviews und drei Punkte
+  seiner Nebenbei-Liste abgearbeitet wurden (11 Dateien, +327/−75, im App-Code 7 Dateien,
+  +186/−66) — gepusht;
+- **drei Sätze des Nutzers über die Darstellung**: ein umbrechender Knopf in der Serverliste, die
+  Vorlagen-Seite, die ihre Breite jetzt in Spalten ausgibt statt in eine 1041 px lange Karte, und
+  die Box „Aktuell geltende Farben und Schriften“, die eingeklappt beginnt (5 Dateien, +199/−130,
+  ohne die Einrückung des ausklappbaren Blocks +84/−15). Dazu Kapitel 4.5 und 4.9 des Handbuchs in
+  beiden Sprachen und zehn Screenshots, die im Vault liegen und nicht in diesem Repo;
+- **die Teilung dieser Datei und der Regeln**: `CLAUDE.md` war auf 192 KB gewachsen und bekam
+  dafür eine Warnung; die Chronik (diese Datei, 100 KB) und der Regelteil
+  ([`conventions.md`](conventions.md), 66 KB) sind wörtlich herausgewandert, letzterer über
+  `@docs/conventions.md` eingebunden. `CLAUDE.md` ist damit 25 KB (3 Dateien, +2023/−1884, netto
+  +139).
+
+Als größtes Risiko nennt der Auftrag die dritte Schicht, und zwar nicht das Verschieben — das ist
+in beide Richtungen gegengeprüft und byte-gleich —, sondern die Einbindung: Greift
+`@docs/conventions.md` in einer Sitzung nicht, gilt eine Regel, die niemand mehr vor Augen hat. Der
+Rückfallsatz daneben („lies die Datei zuerst“) ist dafür da und ist **nicht gemessen**; die Sitzung,
+die geteilt hat, hatte die alte Datei längst gelesen. Daneben: der `2xl`-Zweig der neuen
+Spaltenleiter, den ein Fenster auf diesem Bildschirm (1470 px) nie erreicht, und die Zahl in der
+eingeklappten Zeile, die eine Konstante ist. Das Review geht an ein anderes Modell als die Commits.
+Der Stand ist **nicht gepusht**.
+
 **Das vierundzwanzigste Review misst ab `review-2026-09-28`** und liest bis `review-2026-09-29`,
 das auf dem Commit „Der Auftrag fuer das vierundzwanzigste Review“ (`fix/review-2026-09-27`) sitzt;
 der Auftrag steht in [`docs/REVIEW-2026-09-28-auftrag.md`](REVIEW-2026-09-28-auftrag.md). Sein

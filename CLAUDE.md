@@ -1491,7 +1491,10 @@ Core-Update und die Dokumentations-Commits daneben: ohne Review-Dokument und Auf
 9 Dateien, +575/−76, im App-Code 4 Dateien, +250/−62. Als größtes Risiko nennt der Auftrag die
 Messung des echten Laufs selbst — die einzige dieser Serie ohne Attrappe und die einzige, die sich
 nicht auf Knopfdruck wiederholen lässt; daneben den Amend, der in drei Runden dreimal geändert
-wurde, und die zwei Zeilen im Pfeil-Getter, die jeden Tastatur-Drag der App betreffen.
+wurde, und die zwei Zeilen im Pfeil-Getter. Der trägt nicht „jeden Tastatur-Drag der App“, wie
+der Auftrag zweimal sagt, sondern die zwei, die ihn benutzen — `FrameBuilder` und `GlobalBoard`;
+`Plugins/Installed` nimmt `sortableKeyboardCoordinates`, `Styles/CustomCss` hat nie ein Drag
+gehabt. Beide sind gemessen (einundzwanzigstes Review, Befund 7).
 `review-2026-09-25` sitzt auf `9052691` („Der Auftrag für das zwanzigste Review“), dem Stand, den
 das zwanzigste Review gelesen hat; seit dem 2026-09-17 ist er gepusht.
 
@@ -1578,7 +1581,7 @@ Merge), zwei Klone mit Push per Remote-Name und per URL, s3 und s4 in je zwei La
 ungestaget, Upstream D und E), n7h/n7b und die fünf Gegenproben a1/a5/a6/a7f/norm in beiden
 Fassungen; dazu git allein für `--amend --only` an einem Merge-Commit, bei unveränderten Pfaden
 und mitten in einem Merge. Und die Prüfskripte (`typecheck`, `build`, `smoke` mit 42 Aufrufen,
-`check:i18n` mit 1111 + 172 Schlüsseln, `check:core-update`, `check:semver`,
+`check:i18n` mit 1111 + 174 Schlüsseln, `check:core-update`, `check:semver`,
 `check:plugin-names`, `check:handbook`) — alle grün. Vierter Weg, und der einzige ohne Attrappen:
 **ein echtes Core-Update** an einer `cp -Rc`-Kopie von `navigations-testprojekt`, künstlich sieben
 Commits hinter `jackyzha0/quartz` gesetzt (`git reset --hard f1fba3f`, eigene Theme-Pakete wieder
@@ -1598,9 +1601,15 @@ zwei Zeilen in `utils/dndKeyboard.ts`. Neu sind drei Texte in `i18n.ts`
 `docs/decisions/` — der letzte über das erste echte Core-Update und den Befund daraus (die Notiz
 trägt jetzt auch die Paketliste). Nicht gemessen: die gepackte App, ein echter Push zu
 GitHub, die VMs, die Notiz über einen Restore oder ein Duplikat hinweg, was echtes npm bei
-ERESOLVE oder `--save-prod` auf einen fremden Abschnitt tut, und warum dnd-kit das
-gezogene Rect im Frame-Builder 26,5 statt 48 px hoch meldet — der Fix kommt ohne diese Antwort
-aus, die Frage bleibt offen. Sie gehören damit in den Diff des nächsten Auftrags.
+ERESOLVE oder `--save-prod` auf einen fremden Abschnitt tut. Sie gehören damit in den Diff des
+nächsten Auftrags. **Die Frage nach den 26,5 px ist beantwortet** (einundzwanzigstes Review; hier
+gegen `@dnd-kit/core` 6.3.1 und den `DragOverlay` im Frame-Builder *nachgelesen*, nicht noch einmal
+gemessen): `draggingNodeRect` ist `dragOverlay.rect` (`core.esm.js:2948`), und
+`getMeasurableNode()` (Zeile 2413) vermisst das *einzige Kind* des Overlays, sobald der Knoten nur
+eines hat — im Frame-Builder den Chip mit dem Bereichsnamen (`px-2 py-1 text-micro`, also 16,5 px
+Zeile + 8 px Polster + 2 px Rand), nicht die 48 px hohe Box; am
+Layout-Board die eingeklappte `ItemCard` mit 38,5 px. Die Messung war also richtig, und für die
+Maus ändert sie nichts: `pointerWithin` entscheidet, solange der Zeiger über einem Ziel steht.
 
 **Die sieben Fixes des neunzehnten Reviews liegen bewusst dahinter** (`fix/review-2026-09-23`, von
 `fix/review-2026-09-22` abgezweigt, danach als Fast-Forward nach `main`, seit dem 2026-09-17

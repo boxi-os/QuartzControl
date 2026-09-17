@@ -406,11 +406,15 @@ async function coreUpdateStashEntry(projectPath: string, from = 0): Promise<stri
  * merge that base is upstream's commit - so the run that takes over from a failed `npm install`
  * computes an *empty* plan and falls back to a plain `npm install`. Measured (2026-09-17, first
  * run of a real core update against jackyzha0/quartz with real npm, through the built app): the
- * first run failed on a package that does not exist, the second said "Already up to date.",
- * `success: true`, and npm answered "removed 2 packages" - the project's own themes were gone from
- * package.json *and* node_modules, and nothing in the output said so. The list is what the earlier
- * run took away, so the later one can put it back; `stillMissing` then drops whatever the user or
- * the merge has already put back.
+ * first run failed at `npm install` - once on a package that does not exist, once on EACCES over a
+ * `node_modules` set to 555 - the second said "Already up to date.", `success: true`, and npm
+ * answered "removed 2 packages" in the first scene and "added 4 packages, removed 52 packages,
+ * changed 81 packages" in the second. Either way the project's own themes were gone from
+ * package.json *and* node_modules, and nothing in the output said so. (The numbers matter because
+ * the note elsewhere quotes the EACCES scene: it is the one that fits "fix the error above and run
+ * the update again", the missing package is not.) The list is what the earlier run took away, so
+ * the later one can put it back; `stillMissing` then drops whatever the user or the merge has
+ * already put back.
  */
 const PENDING_UPDATE_FILE = 'core-update.json'
 

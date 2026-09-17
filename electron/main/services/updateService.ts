@@ -385,7 +385,10 @@ async function hasCoreUpdateStash(projectPath: string): Promise<boolean> {
  * pointer, not a result, and a run that cannot write it should still install.
  *
  * The SHA it stores is read, not decoration: it is how the run that finishes an earlier run's work
- * knows that the merge commit at HEAD is the one that run wrote - see the amend below.
+ * knows that the merge commit at HEAD is the one that run wrote - see the amend below. The flag
+ * beside it belongs to the same question: only the run that started the merge can see what the two
+ * files looked like before anything wrote them, and the amend needs that to tell npm's work from
+ * the user's.
  *
  * So is the package list beside it. The plan is worked out against the merge base, and after the
  * merge that base is upstream's commit - so the run that takes over from a failed `npm install`
@@ -399,11 +402,14 @@ async function hasCoreUpdateStash(projectPath: string): Promise<boolean> {
  */
 const PENDING_UPDATE_FILE = 'core-update.json'
 
-/** What an earlier run left outstanding: the commit it belongs to ('' for "nothing"), and the
- *  project's own packages it took out of package.json on the way. */
+/** What an earlier run left outstanding: the commit it belongs to ('' for "nothing"), the
+ *  project's own packages it took out of package.json on the way, and whether the two npm-owned
+ *  files were exactly HEAD's when that run started - which is what tells a later amend that
+ *  everything they differ by now was written by npm. */
 interface PendingInstall {
   head: string
   reinstall: PackageAddition[]
+  filesAtHead: boolean
 }
 
 /**
@@ -414,11 +420,15 @@ interface PendingInstall {
  */
 async function readPendingInstall(projectPath: string): Promise<PendingInstall> {
   // Reading must not create the directory - see quartzGuiPath.
-  const raw = await readJsonFileOr<{ installPendingFor?: unknown; reinstall?: unknown }>(
+  const raw = await readJsonFileOr<{ installPendingFor?: unknown; reinstall?: unknown; filesAtHead?: unknown }>(
     quartzGuiPath(projectPath, PENDING_UPDATE_FILE),
     {}
   )
   const head = typeof raw.installPendingFor === 'string' ? raw.installPendingFor : ''
+  // A note from a build before this field existed does not know, and not knowing is not
+  // permission: the amend is skipped and the lockfile npm rewrote stands as a change to commit by
+  // hand - the state before the nineteenth review, not a lost one.
+  const filesAtHead = raw.filesAtHead === true
   const safe = (value: unknown): value is string => typeof value === 'string' && value.length > 0 && !value.startsWith('-')
   const reinstall = Array.isArray(raw.reinstall)
     ? raw.reinstall.filter((entry): entry is PackageAddition => {
@@ -432,15 +442,28 @@ async function readPendingInstall(projectPath: string): Promise<PendingInstall> 
         )
       })
     : []
-  return { head, reinstall }
+  return { head, reinstall, filesAtHead }
 }
 
-async function markInstallPending(projectPath: string, head: string, reinstall: PackageAddition[]): Promise<void> {
-  await writeJsonFile(join(quartzGuiDir(projectPath), PENDING_UPDATE_FILE), { installPendingFor: head, reinstall })
+async function markInstallPending(
+  projectPath: string,
+  head: string,
+  reinstall: PackageAddition[],
+  filesAtHead: boolean
+): Promise<void> {
+  await writeJsonFile(join(quartzGuiDir(projectPath), PENDING_UPDATE_FILE), {
+    installPendingFor: head,
+    reinstall,
+    filesAtHead
+  })
 }
 
 async function clearInstallPending(projectPath: string): Promise<void> {
-  await writeJsonFile(join(quartzGuiDir(projectPath), PENDING_UPDATE_FILE), { installPendingFor: '', reinstall: [] })
+  await writeJsonFile(join(quartzGuiDir(projectPath), PENDING_UPDATE_FILE), {
+    installPendingFor: '',
+    reinstall: [],
+    filesAtHead: false
+  })
 }
 
 type HeldFiles =
@@ -690,6 +713,14 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
   return withContentSymlinkParked(projectPath, async () => {
     const plan = await planPackageFiles(projectPath)
     const tracked = await trackedNpmOwnedFiles(projectPath)
+    // Whether the two files were, before this run touched anything, exactly what HEAD has - index
+    // and working tree alike. It is the one thing that makes "everything they differ by at the end
+    // was written by npm" true, and therefore the permission the amend below needs. Asked here
+    // because the answer stops being readable one line later: holdNpmOwnedFiles takes any
+    // difference away into the stash, and where the plan does not apply nothing takes it away at
+    // all - so `held.kind` answers this for one of the two cases and not for the other.
+    const npmFilesAtHead =
+      tracked.length > 0 && (await run('git', ['diff', '--quiet', 'HEAD', '--', ...tracked], projectPath)).success
     // Whether the plan is actually in charge of these two files, as opposed to `reproducible`,
     // which only says the plan could be worked out. The step below has to succeed as well: if it
     // does not, the files are still in the working tree and git answers the way it did before this
@@ -850,6 +881,10 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     // they would have to have taken it out of a package.json it was no longer in, because after
     // the merge the file is upstream's. `stillMissing` drops whatever is already there anyway.
     const carried = pendingFor !== '' ? pending.reinstall : []
+    // The same question one run later: a run that takes over an earlier one's merge commit cannot
+    // measure what the two files looked like before *that* run started, so it reads the answer the
+    // note carries rather than its own - by then npm has written them at least once.
+    const filesAtHead = pendingFor !== '' && pendingFor === headAfter ? pending.filesAtHead : npmFilesAtHead
     const wanted = [
       ...takenOut,
       ...carried.filter((entry) => !takenOut.some((own) => own.name === entry.name && own.section === entry.section))
@@ -860,7 +895,7 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
       // `[]` over the list it is about to use. It survived exactly one failed install. Measured
       // (twenty-first review, finding 1, scene h1 and the real run real2): the second failure left
       // `reinstall: []`, and the third run was verbatim the scene 32ff038 was built for.
-      await markInstallPending(projectPath, headAfter, wanted)
+      await markInstallPending(projectPath, headAfter, wanted, filesAtHead)
     } catch (error) {
       noteFailed(error)
     }
@@ -891,8 +926,9 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
       }
     }
 
-    // Both files were committed before this run (that is why they conflicted), so they belong in
-    // the commit that resolved them rather than standing in Git-Sync as a change nobody made.
+    // What npm has just written to the two files belongs in the commit this run made rather than
+    // standing in Git-Sync as a change nobody made. Which of it is npm's is the question
+    // `filesAtHead` answers, below.
     //
     // `--only -- <paths>` rather than `git add` and then a plain amend, because a plain amend
     // commits the whole index, and the index is not ours. In the `ourMergeCommit` branch nothing
@@ -921,13 +957,33 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
       pendingFor === headAfter &&
       (await headSubject(projectPath)) === MERGE_MESSAGE &&
       !(await headIsPushed(projectPath))
-    // And only when there is something to put in. npm rewrites the lockfile on most runs, but not
-    // on all of them - with package.json unchanged it often leaves the file alone - and an amend
-    // with nothing to add still writes a new commit: same tree, new committer time, new SHA
-    // (measured in a throwaway repo, one second apart). Rewriting a commit that lacks nothing is
-    // the one thing this whole branch exists to avoid doing lightly.
+    // And only when there is something to put in, and only when everything there is to put in was
+    // written by npm.
+    //
+    // "Something to put in": npm rewrites the lockfile on most runs, but not on all of them - with
+    // package.json unchanged it often leaves the file alone - and an amend with nothing to add
+    // still writes a new commit: same tree, new committer time, new SHA (measured in a throwaway
+    // repo, one second apart). Rewriting a commit that lacks nothing is the one thing this whole
+    // branch exists to avoid doing lightly.
+    //
+    // "Written by npm": `git diff HEAD` answers "differs", not "npm wrote it", and the two part
+    // company wherever the user held a package line uncommitted. `filesAtHead` is the difference -
+    // measured before the merge, carried in the note for the run that finishes another's work.
+    // Until the amend also ran after a clean merge, the comment above covered every case it could
+    // reach: a conflict means both files were committed. It does not cover the clean merge, where
+    // nothing conflicts and an uncommitted package line is exactly what the app's own theme
+    // install leaves behind - nor the case where the plan says "hands off" and nothing was stashed
+    // at all. Measured (twenty-first review, finding 2, upstream D, each a fresh clone): with the
+    // themes uncommitted the merge commit carried package.json (+7/-2) and `git status` came back
+    // clean; with a `scripts.mine` entry the plan will not reproduce, that entry stood in a commit
+    // titled "Merge quartz-upstream (via QuartzControl)" - in the run where npm wrote nothing, it
+    // was the *only* thing in it. Same at the real run (real3, real npm, real upstream): two theme
+    // lines that were ` M package.json` before ended up inside merge commit 8648f0a. The
+    // fast-forward beside it leaves the same lines uncommitted, which is the answer both should
+    // give.
     const amendWorth =
       (ourMergeCommit || resuming) &&
+      filesAtHead &&
       tracked.length > 0 &&
       !(await run('git', ['diff', '--quiet', 'HEAD', '--', ...tracked], projectPath)).success
     if (amendWorth) {

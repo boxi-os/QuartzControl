@@ -616,8 +616,15 @@ async function abortOutcomeForStash(projectPath: string): Promise<StashAfterAbor
     const diff = await run('git', ['diff', '--name-only', ...revs, '--', ...paths], projectPath)
     return diff.success ? lines(diff.output) : []
   }
-  // Working tree against index: the one half of a change `reset --merge` keeps.
-  const unstaged = await names([])
+  // Working tree against index: the one half of a change `reset --merge` keeps. Minus the paths
+  // standing in conflict, which `git diff --name-only` lists as well - an unmerged path is not a
+  // change of the user's that the abort would have to keep, it is the merge itself, and
+  // `reset --merge` resets it without further ado. Measured (twenty-first review, finding 3): with
+  // `UU package.json` beside a second conflict the answer was `abortRefused`, so the run advised
+  // discarding a changed file under Git-Sync that does not exist, seconds before the button ran
+  // and put the entry back.
+  const conflicted = await conflictedFiles(projectPath)
+  const unstaged = (await names([])).filter((file) => !conflicted.includes(file))
   if (unstaged.length === 0) return 'free'
   const fromMerge = await names(['HEAD', 'MERGE_HEAD'])
   return unstaged.some((file) => fromMerge.includes(file)) ? 'abortRefused' : 'occupied'

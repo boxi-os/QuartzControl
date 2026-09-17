@@ -4,6 +4,7 @@ import { join } from 'path'
 import type { CoreUpdateStatus, PluginActionResult, PluginUpdateStatus, UpdateResult } from '@shared/ipc-contract'
 import {
   dependencyRange,
+  DEPENDENCY_SECTIONS,
   localPackageChanges,
   reinstallCommands,
   type LocalPackageChanges,
@@ -385,22 +386,61 @@ async function hasCoreUpdateStash(projectPath: string): Promise<boolean> {
  *
  * The SHA it stores is read, not decoration: it is how the run that finishes an earlier run's work
  * knows that the merge commit at HEAD is the one that run wrote - see the amend below.
+ *
+ * So is the package list beside it. The plan is worked out against the merge base, and after the
+ * merge that base is upstream's commit - so the run that takes over from a failed `npm install`
+ * computes an *empty* plan and falls back to a plain `npm install`. Measured (2026-09-17, first
+ * run of a real core update against jackyzha0/quartz with real npm, through the built app): the
+ * first run failed on a package that does not exist, the second said "Already up to date.",
+ * `success: true`, and npm answered "removed 2 packages" - the project's own themes were gone from
+ * package.json *and* node_modules, and nothing in the output said so. The list is what the earlier
+ * run took away, so the later one can put it back; `stillMissing` then drops whatever the user or
+ * the merge has already put back.
  */
 const PENDING_UPDATE_FILE = 'core-update.json'
 
-/** The commit the outstanding install belongs to, or '' for "nothing outstanding". */
-async function installPendingFor(projectPath: string): Promise<string> {
-  // Reading must not create the directory - see quartzGuiPath.
-  const raw = await readJsonFileOr<{ installPendingFor?: unknown }>(quartzGuiPath(projectPath, PENDING_UPDATE_FILE), {})
-  return typeof raw.installPendingFor === 'string' ? raw.installPendingFor : ''
+/** What an earlier run left outstanding: the commit it belongs to ('' for "nothing"), and the
+ *  project's own packages it took out of package.json on the way. */
+interface PendingInstall {
+  head: string
+  reinstall: PackageAddition[]
 }
 
-async function markInstallPending(projectPath: string, head: string): Promise<void> {
-  await writeJsonFile(join(quartzGuiDir(projectPath), PENDING_UPDATE_FILE), { installPendingFor: head })
+/**
+ * The note as it is on disk, which is a file in the user's project and therefore not to be trusted
+ * further than it can be checked: a list read back is only used to build `npm install name@range`
+ * arguments, so a name or range that is not a plain string, or one that could pass for a flag, is
+ * dropped rather than handed on.
+ */
+async function readPendingInstall(projectPath: string): Promise<PendingInstall> {
+  // Reading must not create the directory - see quartzGuiPath.
+  const raw = await readJsonFileOr<{ installPendingFor?: unknown; reinstall?: unknown }>(
+    quartzGuiPath(projectPath, PENDING_UPDATE_FILE),
+    {}
+  )
+  const head = typeof raw.installPendingFor === 'string' ? raw.installPendingFor : ''
+  const safe = (value: unknown): value is string => typeof value === 'string' && value.length > 0 && !value.startsWith('-')
+  const reinstall = Array.isArray(raw.reinstall)
+    ? raw.reinstall.filter((entry): entry is PackageAddition => {
+        if (typeof entry !== 'object' || entry === null) return false
+        const candidate = entry as Record<string, unknown>
+        return (
+          safe(candidate.name) &&
+          safe(candidate.range) &&
+          typeof candidate.section === 'string' &&
+          (DEPENDENCY_SECTIONS as string[]).includes(candidate.section)
+        )
+      })
+    : []
+  return { head, reinstall }
+}
+
+async function markInstallPending(projectPath: string, head: string, reinstall: PackageAddition[]): Promise<void> {
+  await writeJsonFile(join(quartzGuiDir(projectPath), PENDING_UPDATE_FILE), { installPendingFor: head, reinstall })
 }
 
 async function clearInstallPending(projectPath: string): Promise<void> {
-  await writeJsonFile(join(quartzGuiDir(projectPath), PENDING_UPDATE_FILE), { installPendingFor: '' })
+  await writeJsonFile(join(quartzGuiDir(projectPath), PENDING_UPDATE_FILE), { installPendingFor: '', reinstall: [] })
 }
 
 type HeldFiles =
@@ -770,7 +810,8 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     if (merge.success && headAfter !== '' && mergeCommit !== '' && headAfter !== headBefore && headAfter !== mergeCommit) {
       ourMergeCommit = true
     }
-    const pendingFor = await installPendingFor(projectPath)
+    const pending = await readPendingInstall(projectPath)
+    const pendingFor = pending.head
     if (headBefore && headAfter === headBefore && pendingFor === '') {
       const restored = await releaseNpmOwnedFiles(projectPath, held)
       const pending =
@@ -792,13 +833,23 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     const noteFailed = (error: unknown): void => {
       noteFailure = `\n\n${mainT('updateNoteUnwritable', { reason: error instanceof Error ? error.message : String(error) })}`
     }
+    // What this run is about to take out of package.json, so that a run after a failed install can
+    // put it back: from here on the file is upstream's, and a plan worked out later sees nothing.
+    const takenOut = planApplies ? plan.reinstall : []
     try {
-      await markInstallPending(projectPath, headAfter)
+      await markInstallPending(projectPath, headAfter, takenOut)
     } catch (error) {
       noteFailed(error)
     }
 
-    const missingNow = planApplies ? await stillMissing(projectPath, plan.reinstall) : []
+    // The plan of this run, plus what an earlier one noted down for this very commit - the second
+    // half is what makes "run the update again" finish the job rather than leave two packages out.
+    const carried = pendingFor !== '' && pendingFor === headAfter ? pending.reinstall : []
+    const wanted = [
+      ...takenOut,
+      ...carried.filter((entry) => !takenOut.some((own) => own.name === entry.name && own.section === entry.section))
+    ]
+    const missingNow = wanted.length > 0 ? await stillMissing(projectPath, wanted) : []
     const installCalls = missingNow.length > 0 ? reinstallCommands(missingNow) : [{ args: ['install'] }]
     let installOutput = ''
     for (const call of installCalls) {

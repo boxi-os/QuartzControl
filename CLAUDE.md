@@ -367,6 +367,14 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   `stopping` zählt weiter als Schreiber, ein wartender Start auch. Ein Server aus einer früheren Sitzung gehört
   keinem Eintrag und wird nicht gesehen; ihn zu finden hieße, bei jedem Klick Ports abzusuchen.
   Messungen in [`navigation-and-pages.md`](docs/decisions/navigation-and-pages.md).
+- **Ein Vorgang, der ein Repository schreibt, wird im Hauptprozess gesperrt, nicht im Renderer.**
+  `coreBusy` war ein `useState`: das Gedächtnis eines Fensters an das, was es selbst gestartet hat,
+  und es stirbt mit der Route. Zwei gleichzeitige Core-Updates auf demselben Projekt ließen den
+  zweiten mitten aus dem ersten heraus scheitern und hinterließen Konfliktmarker in `package.json`
+  — kein gültiges JSON mehr, kein Merge-Commit. Das Schloss hängt am Projektpfad und gilt für
+  Update *und* Abbruch, weil beide dasselbe Repository schreiben; der zweite Anrufer bekommt einen
+  Satz statt eines git-Fehlers. Messungen in
+  [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md).
 - **Wer einen Zustand aus fremden Ausgabezeilen liest, weiß, wessen Zeilen er liest.** Ob gerade
   gebaut wird, hält `buildService` als *eine* Aktivität je Projekt, und zwei Quellen schreiben
   hinein: das stdout von `quartz build` und das Log des Dev-Servers. Jede bewegt nur die Aktivität,
@@ -574,16 +582,20 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
 - **Eine Ansage, die schweigt, sagt den Satz von vorhin.** Der Guard, der beim Aufnehmen eines
   Drags das „X liegt über X“ verhindert, gilt für *diesen einen Augenblick* — später ist ein
   Schritt zurück auf den eigenen Platz eine Bewegung wie jede andere und bekommt einen eigenen
-  Satz (`dnd.backHome`). Gefragt wird am **Namen**, nicht an der Id: der Name ist das, was
-  vorgelesen wird, und wo der eigene Platz einen eigenen Bezeichner hat (die Box im Frame-Builder),
-  hieß er trotzdem gleich. Den Augenblick selbst hält ein zweiter Ref: die erste Meldung eines
-  jeden Drags schweigt.
+  Satz (`dnd.backHome`). Gefragt wird über `isHome`, das die Aufrufstelle mitbringt — der Name war
+  die Abkürzung, die den Frame-Builder deckte (dort hat der eigene Platz einen eigenen Bezeichner
+  und heißt trotzdem gleich) und am Layout-Board falsch lag. Den Augenblick selbst hält ein zweiter
+  Ref: die erste Meldung eines jeden Drags schweigt.
 - **Was keinen festen Platz hat, wird über `announce()` gesagt.** Eine Meldung, die zu *einer Zeile*
   einer Liste gehört, oder der Verlauf eines Drags, hat keinen Ort für eine eigene Region - beides
   geht in die eine Region der Seite (`state/announcer.tsx`, gemountet in `App.tsx`). Ganze Sätze mit
   Subjekt, nicht „Gespeichert“. Drag-Ansagen kommen aus `utils/dndAnnouncements.ts`, damit die
   beiden Listen dieselben Sätze in derselben Sprache sagen; die Aufrufstelle liefert nur, wie aus
-  einer Drag-ID ein Name wird.
+  einer Drag-ID ein Name wird — **und, getrennt davon, wann zwei IDs dasselbe Ding meinen**
+  (`isHome`). Der Name ist das, was vorgelesen wird; identisch macht er nichts. Am Layout-Board
+  tragen ein Paletten-Chip und die Zeile, die er dupliziert, denselben, und zwei Instanzen
+  desselben Plugins auch — jede Ablage auf dem Namensvetter galt als „nichts bewegt“, während die
+  Zeile drei Plätze gewandert war.
 - **Schriftgrößen heißen nach Rolle, so wie die Farben.** `text-micro` (11px: Labels, Hinweise,
   Badges), `text-ui` (13px: Text in einem Bedienelement oder einer Zeile), `text-heading` (15px: die
   Überschrift einer Karte), definiert in `tailwind.config.js`. Seit dem 2026-09-06 gibt es keine
@@ -737,6 +749,14 @@ das sie erzwungen hat - in den Code als Kommentar, in `docs/decisions/` als Absa
   Schlüsseln, und ein Fix des zwölften Reviews hatte die Form gerade erst noch einmal geschrieben.
   Und die Zahl zählt, was sie zu zählen behauptet: „1 Aufruf im Hauptprozess“ war die Deklaration
   von `mainT` (vierzehntes Review).
+- **Ein Ausweg, den eine Meldung nennt, wird an der Oberfläche gemessen, nicht am Kanal darunter.**
+  „Behebe den Fehler oben und starte das Update erneut“ stand vier Runden lang über einem Knopf,
+  den derselbe Lauf deaktiviert hatte — HEAD enthielt den Merge, der Status hieß „Aktuell“. Gesehen
+  hat es keine dieser Runden, weil ihre echten Läufe `runCoreUpdate` per `evalfile` riefen und die
+  Attrappen keine Seite kennen. Dazu gehört die Gegenrichtung: Ein Zustand, den die App sich selbst
+  notiert, bekommt eine Antwort neben aktuell/dahinter/unbekannt und steht dort, wo der Nutzer
+  nachsieht — die Namen der fehlenden Pakete standen an genau einer Stelle, bis zum ersten
+  Routenwechsel.
 - **Zwei Arten zu scheitern bekommen zwei Antworten.** „Fehlt“ und „ist da, aber kaputt“ in einem
   `catch` zu fangen macht aus dem zweiten Fall ein stilles „alles gut“. Die Liste der Startseite
   fing ein `globby` mit Syntaxfehler wie ein fehlendes und schrieb zwei tote Links, ohne ein Wort
@@ -912,9 +932,9 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 - [`snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md) - Snapshot-Store als eigenes Git-Repo, Thinning, Restore, Warteschlange, Migration, Update-Check, geparkter Content-Symlink
 - [`quartz-cli.md`](docs/decisions/quartz-cli.md) - Was die Quartz-5-CLI wirklich tut (unveröffentlicht, Flags, Exit-Codes, Config-Form)
 
-## Befunde aus den Reviews (Stand 2026-09-26)
+## Befunde aus den Reviews (Stand 2026-09-27)
 
-Alle zweiundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
+Alle dreiundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs/REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](docs/REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](docs/REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](docs/REVIEW-2026-09-07.md) mit seinen acht,
@@ -935,22 +955,52 @@ Alle zweiundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](docs
 [`docs/REVIEW-2026-09-23.md`](docs/REVIEW-2026-09-23.md) mit seinen sieben und
 [`docs/REVIEW-2026-09-24.md`](docs/REVIEW-2026-09-24.md) mit seinen fünf und
 [`docs/REVIEW-2026-09-25.md`](docs/REVIEW-2026-09-25.md) mit seinen sieben und
-[`docs/REVIEW-2026-09-26.md`](docs/REVIEW-2026-09-26.md) mit seinen vier (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-26-`) stehen als
+[`docs/REVIEW-2026-09-26.md`](docs/REVIEW-2026-09-26.md) mit seinen vier und
+[`docs/REVIEW-2026-09-27.md`](docs/REVIEW-2026-09-27.md) mit seinen sechs (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-27-`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](docs/REVIEW-2026-09-15.md) gehört nicht
 in diese Zählung: Die „fünfzehnte Runde“ las die Handbücher der zwei Plugins gegen deren Code und
 aus diesem Repo nur zwei Commits der Beispielvorlage (`fe2b701`, `9592121`).
 
-**Das dreiundzwanzigste Review misst ab `review-2026-09-27`** und liest bis `review-2026-09-28`,
-das auf dem Commit „Der Auftrag für das dreiundzwanzigste Review“ (`main`) sitzt; der Auftrag steht
-in [`docs/REVIEW-2026-09-27-auftrag.md`](docs/REVIEW-2026-09-27-auftrag.md). **Er geht an ein
-anderes Modell** — das ist seine Begründung: Die Runde davor hat sich selbst gelesen, und der
-Auftrag macht das Review-Dokument `docs/REVIEW-2026-09-26.md` deshalb zum **Prüfgegenstand** statt
-es auszunehmen, wie es sonst die Regel ist. Sein Diff sind die vier Fixes dieser Runde und das
-Review selbst: ohne Auftragsdatei 12 Dateien, +353/−13, im App-Code 6 Dateien, +87/−8. Als größtes
-Risiko nennt er die Paketliste im Core-Update, die in drei aufeinander folgenden Runden dreimal
-anders gebunden wurde, und bittet ausdrücklich um den vierten Fall.
+**Das dreiundzwanzigste Review ging an ein anderes Modell** — das war die Begründung seines
+Auftrags: Die Runde davor hatte sich selbst gelesen, und der Auftrag machte deshalb
+`docs/REVIEW-2026-09-26.md` zum **Prüfgegenstand** statt es auszunehmen, wie es sonst die Regel
+ist. Es las `review-2026-09-27..review-2026-09-28` (ohne Auftragsdatei 12 Dateien, +353/−13, im
+App-Code 6 Dateien, +87/−8) und fand **zwei Befunde Mittel, vier Niedrig**, alle sechs abgearbeitet,
+dazu fünf der sechs Punkte seiner Nebenbei-Liste (der sechste war Teil von Befund 1). Beide
+mittleren hängen zusammen und beide bestätigen den Verdacht des Auftrags, nur an einer Kante, die
+er nicht genannt hatte: **Die vier Runden Arbeit an der Notiz beschreiben einen zweiten Klick, den
+die Oberfläche nicht anbietet.** Alle echten Läufe dieser Runden riefen den IPC-Kanal direkt; den
+Knopf hatte niemand angesehen, und er ist nach einem gescheiterten `npm install` deaktiviert, weil
+HEAD den Merge schon enthält. Der vierte Fall, um den der Auftrag bat, folgt daraus: Wer nicht
+erneut klicken kann, trägt seine Pakete von Hand ein — und die Liste räumte nur ein Lauf, in dem
+npm durchkommt. Was daraus als Regel bleibt, steht oben in den passenden Abschnitten:
+
+- **Ein Ausweg, den eine Meldung nennt, wird an der Oberfläche gemessen, nicht am Kanal darunter.**
+  „Behebe den Fehler oben und starte das Update erneut“ stand vier Runden lang über einem
+  deaktivierten Knopf; die Attrappen kennen keine Seite, und der `evalfile`-Weg, den die Aufträge
+  empfehlen, geht an genau dieser Stelle vorbei. Zugleich: Ein Zustand, den die App selbst notiert,
+  gehört dorthin, wo der Nutzer nachsieht — die Paketnamen standen an genau einer Stelle, bis zum
+  ersten Routenwechsel.
+- **Eine Frage, die ein gespeicherter Wert offen hält, kann auch jemand anders beantworten als die
+  App.** Der Fix der Vorrunde beendete die Liste, „sobald npm sie eingetragen hat“ — gemeint war:
+  sobald *dieser Dienst* npm erfolgreich gerufen hat. Gefragt wird deshalb, ob `package.json` seit
+  der Notiz committet wurde, nicht ob sie noch so aussieht: Die Datei kommt byte-gleich zurück, wenn
+  jemand eine Zeile einträgt und später wieder herausnimmt.
+- **„Dasselbe Ding“ wird an der Identität gefragt, nicht am Namen.** Der Name ist das, was
+  vorgelesen wird; identisch macht er nichts. Am Layout-Board tragen ein Paletten-Chip und die
+  Zeile, die er dupliziert, denselben — und jede Ablage auf dem Namensvetter galt als „nichts
+  bewegt“.
+- **Ein Wächter misst, was sein Kommentar behauptet.** `git diff HEAD` vergleicht den
+  Arbeitsbereich; „index and working tree alike“ stand daneben, und die eine Lage dazwischen ließ
+  den Amend eine vorgemerkte Zeile schlucken.
+- **Ein Schutz im Renderer schützt ein Fenster, keinen Vorgang.** `coreBusy` ist ein `useState` und
+  stirbt mit der Route; das Schloss gegen zwei gleichzeitige Core-Updates gehört in den
+  Hauptprozess, zusammen mit dem Abbruch, der dasselbe Repository schreibt.
+- **Was eine Liste anbietet, muss die Tür dahinter annehmen.** `listLocales` führte jede `*.ts`, der
+  Kanal wies alles ab, was kein Locale-Code ist — eine fremde Datei im Ordner wurde damit zu einem
+  Eintrag, der nur scheitern kann, unter einem Satz, der den Fehlschlag der App zuschrieb.
 
 **Das zweiundzwanzigste Review ist das erste dieser Serie, das vom selben Modell und aus derselben
 Sitzung stammt wie die Commits, die es liest** — der Vorbehalt steht oben in seinem Dokument, und

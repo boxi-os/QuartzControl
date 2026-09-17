@@ -33,7 +33,7 @@ import { Badge, Button, Card, Field, FormActions, SegmentedControl, Select, Sett
 import { formatIpcError } from '../../components/ErrorSurface'
 import DevServerRestartHint from '../../components/DevServerRestartHint'
 import { ItemCard, PaletteChip, GROUP_COLORS } from './ComponentPill'
-import { dndAccessibility } from '../../utils/dndAnnouncements'
+import { useDndAccessibility } from '../../utils/dndAnnouncements'
 import { nearestDroppableCoordinates } from '../../utils/dndKeyboard'
 import {
   BUILTIN_FRAME_LAYOUT,
@@ -234,7 +234,7 @@ export default function GlobalBoard({
     if ((POSITIONS as string[]).includes(id)) return t(`positions.${id}`, id)
     return config.plugins[index]?.name ?? id
   }
-  const { announcements, screenReaderInstructions } = dndAccessibility(t, describeDragId)
+  const { announcements, screenReaderInstructions } = useDndAccessibility(t, describeDragId)
 
   // The pointer half is dnd-kit's own default, unchanged; the keyboard half is the whole point of
   // saying this out loud. Without a coordinate getter an arrow press moves the picked-up item by a

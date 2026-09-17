@@ -48,7 +48,7 @@ import DevServerRestartHint from '../../components/DevServerRestartHint'
 import { breakpointRangeLabel } from './utils'
 import { announce } from '../../state/announcer'
 import { useStickyState } from '../../state/uiState'
-import { dndAccessibility } from '../../utils/dndAnnouncements'
+import { useDndAccessibility } from '../../utils/dndAnnouncements'
 import { nearestDroppableCoordinates } from '../../utils/dndKeyboard'
 
 const RESERVED_FRAME_NAMES = ['default', 'full-width', 'minimal']
@@ -455,10 +455,10 @@ export default function FrameBuilder({
     useSensor(KeyboardSensor, { coordinateGetter: nearestDroppableCoordinates })
   )
   // Every id on this board in words: an area by its name, a cell by its coordinates, the tray by
-  // its label - see dndAccessibility. Which is why that label is a name and not an instruction: it
+  // its label - see useDndAccessibility. Which is why that label is a name and not an instruction: it
   // is read out as a drop target ("right is over ..."), and the sentence under the tray carries the
   // instruction anyway.
-  const { announcements, screenReaderInstructions } = dndAccessibility(t, (id) => {
+  const { announcements, screenReaderInstructions } = useDndAccessibility(t, (id) => {
     if (id === TRAY_ID) return t('layoutEditor.frameBuilder.availableAreasLabel')
     const cell = parseCellId(id)
     if (cell) return t('layoutEditor.frameBuilder.cellName', { row: cell.row, col: cell.col })

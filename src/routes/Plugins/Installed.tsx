@@ -19,7 +19,7 @@ import { Badge, Button, Card, CardHeading, Select, TextInput, Toggle } from '../
 import { formatIpcError } from '../../components/ErrorSurface'
 import { announce } from '../../state/announcer'
 import { primeStickyState, useStickyState } from '../../state/uiState'
-import { dndAccessibility } from '../../utils/dndAnnouncements'
+import { useDndAccessibility } from '../../utils/dndAnnouncements'
 import { repoUrl } from './pluginSource'
 
 // A row is one line of text plus two fixed-width controls, so it no longer needs the ~710px the
@@ -788,7 +788,7 @@ function ReorderableList({
   children: React.ReactNode
 }): JSX.Element {
   const { t } = useTranslation()
-  const { announcements, screenReaderInstructions } = dndAccessibility(t, (id) => names.get(id) ?? '')
+  const { announcements, screenReaderInstructions } = useDndAccessibility(t, (id) => names.get(id) ?? '')
   // The keyboard sensor is a default of DndContext, but its default coordinate getter is not:
   // it moves the picked-up item by a fixed 25px per arrow press, which in this list (cards ~130px
   // tall, two columns above 1500px) never reaches the next card - measured in the running app,

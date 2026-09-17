@@ -1847,6 +1847,7 @@ export default {
       'Mit Leertaste oder Eingabetaste aufnehmen. Beim Ziehen mit den Pfeiltasten bewegen, mit Leertaste oder Eingabetaste ablegen, mit Escape abbrechen.',
     picked: '{{name}} aufgenommen.',
     over: '{{name}} liegt über {{target}}.',
+    backHome: '{{name}} liegt wieder auf seinem Ausgangsplatz.',
     outside: '{{name}} liegt über keinem Ablageort.',
     dropped: '{{name}} bei {{target}} abgelegt.',
     cancelled: '{{name}} abgebrochen, nichts verschoben.'

@@ -98,13 +98,14 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   Datei, statt sie abzuschreiben), dazu die npm-Aufrufe, die daraus entstehen. Braucht weder App
   noch Projekt noch Netz. Existiert, weil ein falscher Plan wie ein gelungenes Update aussieht und
   erst auffällt, wenn ein Paket fehlt, das vorher da war — und weil er schon beim ersten Lauf einen
-  Rand zeigte: Ohne Vergleichsstand ist *jeder* Schlüssel eine Abweichung, also Finger weg. Die
-  drei ab dem siebzehnten sind die, die das Review daneben gestellt hat und deren Antwort vorher
+  Rand zeigte: Ohne Vergleichsstand ist *jeder* Schlüssel eine Abweichung, also Finger weg. Drei der
+  vierzehn kamen mit dem siebzehnten Review dazu (nicht: ab Fall Nummer siebzehn — so viele gibt es
+  nicht); es sind die, die das Review daneben gestellt hat und deren Antwort vorher
   nirgends stand: ein Paket, das beide Seiten mit *verschiedenem* Bereich hinzugefügt haben (Quartz
   gewinnt), eines, das beide entfernt haben (Finger weg, obwohl nichts zu tun wäre), und Quartz,
   das ein Paket streicht, welches das Projekt umgepinnt hat — dann kommt es zurück, und das ist
-  eine Entscheidung, die jetzt als Fall dasteht. Die drei ab dem sechzehnten Review sind die, die
-  vorher niemand gestellt hatte: ein umgepinntes
+  eine Entscheidung, die jetzt als Fall dasteht. Drei weitere kamen mit dem sechzehnten Review dazu;
+  es sind die, die vorher niemand gestellt hatte: ein umgepinntes
   Paket (die Typdoku nannte „re-pinned“, kein Fall prüfte es), eines, das beide Seiten mit demselben
   Bereich hinzugefügt haben, und eines, das von `dependencies` nach `devDependencies` gewandert ist
 - `npm run check:i18n` — every literal `t('…')` and `mainT('…')` key against `de.ts`, `en.ts` and

@@ -136,6 +136,11 @@ const STRINGS = {
     // verweigert. Gesagt, bevor der Nutzer drückt, statt danach.
     updateStashMineBlocked:
       'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen („git stash list“). „Merge abbrechen“ trägt ihn wieder ein, sobald die geänderte Datei aus dem Zusammenführen unter Git-Sync verworfen ist.',
+    // Derselbe Stand, der Knopf bricht auch ab - aber eine Datei, die er hält, steht ungestaget
+    // geändert da, und daran scheitert das Eintragen. Nicht „gehört zu einem Stand, den es nicht mehr
+    // gibt“: er passt auf HEAD und hält die eigenen Pakete (zweiunddreißigstes Review, nebenbei).
+    updateStashMineOccupied:
+      'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen ({{entry}} in „git stash list“). „Merge abbrechen“ kann ihn nicht wieder eintragen, solange diese Dateien geändert sind: {{files}}. Sichere deine Änderung daran und verwirf sie (im Terminal: „git checkout -- <Datei>“), dann trägt der Knopf ihn ein.',
     // Drei Arten, wie quartz.config.yaml unlesbar ist, drei Sätze. Gesagt wird jede, statt die
     // Datei als halb leer zu lesen und dem Nutzer eine leere Seite ohne Begründung zu zeigen; die
     // Datei selbst ist dabei nie in Gefahr, das Speichern scheitert an ihr ebenfalls.
@@ -480,6 +485,8 @@ const STRINGS = {
       'An earlier update left package entries of yours stashed in git (“git stash list”). “Abort merge” puts them back.',
     updateStashMineBlocked:
       'An earlier update left package entries of yours stashed in git (“git stash list”). “Abort merge” puts them back once the changed file from the merge is discarded under Git sync.',
+    updateStashMineOccupied:
+      'An earlier update left package entries of yours stashed in git ({{entry}} in “git stash list”). “Abort merge” cannot put them back while these files are changed: {{files}}. Save your change to them and discard it (in a terminal: “git checkout -- <file>”), then the button puts them back.',
     configNotAMapping:
       'quartz.config.yaml does not hold a mapping of keys and values. The app will not read it; fix it in an editor or use a restore point.',
     updateAlreadyRunning:

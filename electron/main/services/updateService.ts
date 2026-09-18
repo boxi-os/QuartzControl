@@ -951,7 +951,7 @@ async function conflictedFiles(projectPath: string): Promise<string[]> {
 
 /** What the abort button would do to the files the stash holds: hand them a working tree they fit
  *  into, leave one of them changed so the pop fails, or not run at all because git refuses. */
-type StashAfterAbort = 'free' | 'occupied' | 'abortRefused'
+type StashAfterAbort = { kind: 'free' } | { kind: 'occupied'; files: string[] } | { kind: 'abortRefused' }
 
 /**
  * The fourth question of "the abort button will put it back", and the one the pop actually fails
@@ -960,8 +960,9 @@ type StashAfterAbort = 'free' | 'occupied' | 'abortRefused'
  * Asked with git's own rule rather than a simplification of it. `git merge --abort` is
  * `reset --merge`, and what that keeps is what is "different between the index and working tree",
  * i.e. the *unstaged* half of a change - a staged one it throws away, whether the merge is about
- * that path or not. Where the merge *is* about the path as well, git refuses the abort outright
- * ("Entry 'package.json' not uptodate. Cannot merge."), and then the answer is neither of the two
+ * that path or not. Where the index differs from HEAD as well - the merge's work, or a staged edit
+ * of the user's - git refuses the abort outright ("Entry 'package.json' not uptodate. Cannot
+ * merge."), over any such file and not only the stash's, and then the answer is neither of the two
  * sentences but the one the button itself will give. Measured (twentieth review, finding 2), each
  * a fresh clone with a leftover stash of ours and a half-done merge, `scripts` added to
  * package.json mid-merge:
@@ -982,19 +983,18 @@ type StashAfterAbort = 'free' | 'occupied' | 'abortRefused'
  * entries the button puts back - the same wrong direction as above, one layer further out.
  */
 async function abortOutcomeForStash(projectPath: string): Promise<StashAfterAbort> {
-  const stashed = await run('git', ['stash', 'show', '--name-only', 'refs/stash'], projectPath)
-  if (!stashed.success) return 'occupied'
-  const lines = (output: string): string[] =>
-    output
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean)
-  const paths = lines(stashed.output)
-  if (paths.length === 0) return 'free'
-  const names = async (revs: string[]): Promise<string[]> => {
-    const diff = await run('git', ['diff', '--name-only', ...revs, '--', ...paths], projectPath)
-    return diff.success ? lines(diff.output) : []
-  }
+  // First whether the button runs at all, and that is not a question about the stash's files: git
+  // refuses over *any* file staged and changed again since, and asking "is it one the merge is
+  // about" compared the two trees (`HEAD MERGE_HEAD`), in which package.json differs whenever the
+  // project has packages of its own. Measured with upstream touching only package-lock.json and
+  // quartz/index.ts and package.json changed unstaged: the note said "puts them back once the
+  // changed file from the merge is discarded", the button ran and the pop failed (thirty-second
+  // review, found while fixing finding 1). editedSinceMergeStopped is git's rule, measured there.
+  if ((await editedSinceMergeStopped(projectPath)).length > 0) return { kind: 'abortRefused' }
+  const stashed = await run('git', ['stash', 'show', '--name-only', '-z', 'refs/stash'], projectPath)
+  if (!stashed.success) return { kind: 'occupied', files: [] }
+  const paths = stashed.output.split('\0').filter(Boolean)
+  if (paths.length === 0) return { kind: 'free' }
   // Working tree against index: the one half of a change `reset --merge` keeps. Minus the paths
   // standing in conflict, which `git diff --name-only` lists as well - an unmerged path is not a
   // change of the user's that the abort would have to keep, it is the merge itself, and
@@ -1002,11 +1002,9 @@ async function abortOutcomeForStash(projectPath: string): Promise<StashAfterAbor
   // `UU package.json` beside a second conflict the answer was `abortRefused`, so the run advised
   // discarding a changed file under Git-Sync that does not exist, seconds before the button ran
   // and put the entry back.
-  const conflicted = await conflictedFiles(projectPath)
-  const unstaged = (await names([])).filter((file) => !conflicted.includes(file))
-  if (unstaged.length === 0) return 'free'
-  const fromMerge = await names(['HEAD', 'MERGE_HEAD'])
-  return unstaged.some((file) => fromMerge.includes(file)) ? 'abortRefused' : 'occupied'
+  const conflicted = await diffNames(projectPath, '--diff-filter=U')
+  const unstaged = (await diffNames(projectPath, '--', ...paths)).filter((file) => !conflicted.includes(file))
+  return unstaged.length === 0 ? { kind: 'free' } : { kind: 'occupied', files: unstaged }
 }
 
 /**
@@ -1050,15 +1048,20 @@ async function leftoverStashNote(projectPath: string, before: string | null): Pr
   // sentences mean it without an argument - said with the name anyway, because the user reads them
   // beside `git stash list`.
   if (!(await mergeInProgress(projectPath))) return mainT('updateStashFitsHead', { entry })
-  switch (await abortOutcomeForStash(projectPath)) {
+  const outcome = await abortOutcomeForStash(projectPath)
+  switch (outcome.kind) {
     case 'free':
       return mainT('updateStashMine')
     // The button is the way back, and it is the user's own unstaged change standing in front of
     // it - the same sentence the button gives, said before they press it.
     case 'abortRefused':
       return mainT('updateStashMineBlocked')
-    default:
-      return leftover
+    // The abort runs, the pop does not: a file of the entry stands changed. Not `leftover` - that
+    // says "a state that is gone" and advises `git stash drop`, and this entry fits HEAD and holds
+    // the user's packages (thirty-second review, found while fixing finding 1; the twentieth
+    // review's scene s3 had the same answer).
+    case 'occupied':
+      return outcome.files.length > 0 ? mainT('updateStashMineOccupied', { entry, files: outcome.files.join(', ') }) : leftover
   }
 }
 

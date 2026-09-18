@@ -49,7 +49,7 @@ Alle einunddreißig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVI
 [`docs/REVIEW-2026-10-03.md`](REVIEW-2026-10-03.md) mit seinen fünf und
 [`docs/REVIEW-2026-10-04.md`](REVIEW-2026-10-04.md) mit seinen fünf und
 [`docs/REVIEW-2026-10-05.md`](REVIEW-2026-10-05.md) mit seinen fünf (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-30-`, `2026-10-01-` bis `-05-auftrag.md`) stehen als
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-30-`, `2026-10-01-` bis `-06-auftrag.md`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](REVIEW-2026-09-15.md) gehört nicht
 in diese Zählung: Die „fünfzehnte Runde“ las die Handbücher der zwei Plugins gegen deren Code und
@@ -151,6 +151,18 @@ Abarbeiten gefundenen Punkten (12 Dateien, +331/−113), **sieben Code-Commits o
 größtes Risiko nennt der Auftrag `0920f95`, weil er für jeden Tastatur-Drag im Frame-Builder
 ändert, was „noch nicht bewegt“ heißt — die Annahme, die das dreißigste Review ausdrücklich
 bestätigt hatte —, und bittet, die zweite Schicht zuerst anzugreifen.
+
+**Das zweiunddreißigste Review misst ab `review-2026-10-06`** und liest bis `review-2026-10-07`,
+das auf dem Commit „Der Auftrag fuer das zweiunddreissigste Review“ sitzt; der Auftrag steht in
+[`docs/REVIEW-2026-10-06-auftrag.md`](REVIEW-2026-10-06-auftrag.md). Zwei Schichten: die fünf
+Befunde des einunddreißigsten Reviews (ohne Review-Dokument 11 Dateien, +256/−28) und seine
+Nebenbei-Liste (9 Dateien, +182/−11). **Es ist die erste Runde, in der Review, Fixes und Auftrag
+vom selben Modell stammen** (Claude Fable 5.1, eine Sitzung) — der Auftrag sagt das an erster
+Stelle und bittet einen Leser desselben Modells, mehr zu messen als zu lesen. Als größtes Risiko
+nennt er die zwei Eingriffe in geteilten Code (`inSight` in `stepFrom`, das beide Boards bedient,
+und `editedSinceMergeStopped`, eine Nachbildung von gits Regel, geprüft an einer Szene), als
+wertvollste einzelne Messung die von `179afbf` an einem übersetzten git auf der Debian-VM. Und er
+fragt, ob eine weitere Runde noch sinnvoll ist.
 
 **Das neunundzwanzigste Review las alle drei Schichten** und fand **keinen Befund Hoch, keinen
 Mittel, fünf Niedrig**, dazu fünf Punkte nebenbei — wieder von Claude Fable 5.1, die zweite Runde

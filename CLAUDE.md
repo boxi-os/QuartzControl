@@ -261,8 +261,10 @@ Fast-Forward auf `main` und gepusht. Was die Runde gefunden hat, steht in
 [`docs/REVIEW-2026-10-05.md`](docs/REVIEW-2026-10-05.md), was daraus geworden ist und was aus
 ihrer Nebenbei-Liste geworden ist, oben in [`docs/reviews.md`](docs/reviews.md) — die vier offenen
 Punkte daraus sind über `fix/review-2026-10-05-rest` ebenfalls auf `main` und gepusht, und einer
-davon (die Sprache von gits Text) ist ungemessen, bis die Debian-VM läuft. Einen Auftrag für eine
-weitere Runde gibt es nicht; keinen dieser Fixes hat ein Review gelesen.
+davon (die Sprache von gits Text) ist ungemessen, bis die Debian-VM läuft. Keinen dieser Fixes hat ein Review
+gelesen; der Auftrag dafür — das zweiunddreißigste, und das erste, in dem Review, Fixes und Auftrag
+vom selben Modell stammen — steht in
+[`docs/REVIEW-2026-10-06-auftrag.md`](docs/REVIEW-2026-10-06-auftrag.md), Tag `review-2026-10-07`.
 
 **Arbeitsregel** für die nächste Liste: ein Befund pro Durchgang, jeweils mit `npm run typecheck`,
 `npm run build`, `npm run smoke` und eigenem Commit; was dabei nebenbei auffällt, wird gesammelt und

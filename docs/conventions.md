@@ -537,7 +537,11 @@ Projektwurzel.
   nicht rollt:** Der `KeyboardSensor` rollt nur entlang der Achse der Taste, also ist ein Ziel,
   dessen Mitte auf der *anderen* Achse außerhalb des Fensters liegt, kein Schritt — am
   Layout-Board setzte → aus dem Kopfbereich den Chip 685 px unter den Fensterrand, in die rechte
-  Seitenleiste (einunddreißigstes Review, Befund 4). **Wer beides mischt, nimmt den Raster-Getter**: Das Layout-Board hat Sortierlisten
+  Seitenleiste (einunddreißigstes Review, Befund 4). **Das Layout-Board geht gar keinen schrägen
+Schritt:** Dort hing „im Fenster“ am Rollstand und an der Fensterbreite, dieselbe Taste am selben
+Ort hatte zwei Antworten, und bei 1280 px war ← mit Leertaste ein Löschweg über den Vorrat
+(zweiunddreißigstes Review, nebenbei 1 und 2). Der Frame-Builder behält die Runde, weil er über
+sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Getter**: Das Layout-Board hat Sortierlisten
   *und* Ablagezonen *und* eine Palette, und ein Paletten-Chip ist ein `useDraggable` und kein
   Droppable - `sortableKeyboardCoordinates` liest `droppableContainers.get(active.id)` und liefert
   für ihn nichts, eine leere Zone erreicht er ohnehin nicht. Und die Regel gilt erst, wenn die

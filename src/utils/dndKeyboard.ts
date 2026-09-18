@@ -22,7 +22,18 @@ const DIRECTIONS: string[] = [KeyboardCode.Down, KeyboardCode.Up, KeyboardCode.L
  * frame board, below) the centres line up on the key's axis only, and the board's collision
  * detection has to resolve the step another way - see collisionDetectionWith in FrameBuilder.tsx.
  */
-export const nearestDroppableCoordinates: KeyboardCoordinateGetter = (event, args) => stepFrom(event, args, null)
+/*
+ * Without the second, off-axis round (below): on the layout board a press with nothing ahead on its
+ * own axis does nothing. The round's one limit, "the target's centre is in the window", made the
+ * same key at the same place answer by scroll position and window width - ArrowRight from the nav
+ * zone went diagonally to table-of-contents at scrollTop 900 and nowhere at 591, ArrowLeft from a
+ * header row reached the component tray at 1280px and nothing at 1470, and there Space deletes a
+ * duplicate (thirty-second review, nebenbei 1 and 2). Measured over the review's eleven scenes at
+ * both widths: before, three answers differed between them; without the round, none. The board
+ * does not need it: its zones are side by side or stacked, and a palette chip reaches the board with
+ * ArrowDown - at 1470px that was already the only way.
+ */
+export const nearestDroppableCoordinates: KeyboardCoordinateGetter = (event, args) => stepFrom(event, args, null, false, false)
 
 /**
  * The same, for a board that knows better than the geometry which field the dragged thing stands
@@ -47,7 +58,8 @@ function stepFrom(
   event: KeyboardEvent,
   { context }: Parameters<KeyboardCoordinateGetter>[1],
   standingOn: UniqueIdentifier | null,
-  keepCrossAxis = false
+  keepCrossAxis = false,
+  offAxis = true
 ): ReturnType<KeyboardCoordinateGetter> {
   if (!DIRECTIONS.includes(event.code)) return undefined
   event.preventDefault()
@@ -115,7 +127,8 @@ function stepFrom(
     candidates.push({ rect, score: along + across * 2, overlaps })
   }
 
-  // The second round has one limit: a target whose centre lies outside the window *on the other
+  // The second round (only where `offAxis`, i.e. the frame board, which needs it to leave the grid
+  // for the tray) has one limit: a target whose centre lies outside the window *on the other
   // axis* is not a step. The KeyboardSensor scrolls only along the axis of the key, so a sideways
   // press onto such a target takes the chip out of sight and leaves it there. Measured on the
   // layout board (thirty-first review, finding 4, 1280x900): from a row of the full-width header
@@ -129,7 +142,7 @@ function stepFrom(
       ? rect.left + rect.width / 2 >= 0 && rect.left + rect.width / 2 <= window.innerWidth
       : rect.top + rect.height / 2 >= 0 && rect.top + rect.height / 2 <= window.innerHeight
   const onAxis = candidates.filter((c) => c.overlaps)
-  const pool = onAxis.length > 0 ? onAxis : candidates.filter((c) => inSight(c.rect))
+  const pool = onAxis.length > 0 || !offAxis ? onAxis : candidates.filter((c) => inSight(c.rect))
   const best = pool.reduce<(typeof pool)[number] | null>((acc, c) => (acc === null || c.score < acc.score ? c : acc), null)?.rect ?? null
 
   if (!best) return undefined

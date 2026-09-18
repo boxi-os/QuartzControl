@@ -1283,3 +1283,21 @@ Der Satz sagt das jetzt („bekommt dort eine eigene Spalte und Zeile hinter dem
 erzeugten CSS wie einen ausgeblendeten behandeln, dann stimmte der alte Satz — ist bewusst nicht
 genommen: Für `page-body` hieße das, der Hauptinhalt verschwindet von der gebauten Seite, und eine
 gequetschte Spalte mit Warnung im Editor ist der kleinere Schaden. Kein echter `quartz build`.
+
+**Nachtrag (2026-09-18, zweiunddreißigstes Review, nebenbei 1 und 2): Das Layout-Board geht keinen
+schrägen Schritt mehr.** Die Grenze aus `bbc51c4` („die Mitte des Ziels liegt auf der anderen Achse
+im Fenster“) macht die Antwort vom Rollstand und von der Fensterbreite abhängig: → aus der Nav-Zone
+ging bei `scrollTop` 900 schräg nach `table-of-contents` und bei 591 nirgendhin, ← aus einer
+Kopfzeile erreichte bei 1280 px den Komponentenvorrat — wo die Leertaste ein Duplikat löscht — und
+bei 1470 px nichts. `nearestDroppableCoordinates` läuft deshalb ohne die zweite Runde; der
+Frame-Builder (`nearestDroppableCoordinatesFrom`) behält sie, er verlässt über sie das Raster zur
+Ablage. Gebaute App, Testprojekt, elf Szenen des Reviews mit echten Tastendrücken, je 1280 und
+1470 px:
+
+    vorher   drei Ansagen unterscheiden sich zwischen den Breiten (← Kopfzeile, → Vorrat-Chip,
+             ← page-title); → Nav-Zone bei scrollTop 900 geht schräg
+    nachher  beide Breiten wortgleich; → Nav-Zone tut bei jedem Rollstand nichts; ← + Leertaste aus
+             der Kopfzeile: „blieb an seinem Platz“
+
+Was wegfällt: Ein Paletten-Chip erreichte bei 1280 px das Board mit →; jetzt mit ↓, wie bei 1470 px
+schon vorher. Die senkrechten Rundwege und die drei Spalten antworten wie zuvor.

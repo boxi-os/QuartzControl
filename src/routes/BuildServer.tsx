@@ -258,7 +258,7 @@ export default function BuildServer(): JSX.Element {
         {missingIndex && (
           <p className="mb-3 text-sm text-amber-700 dark:text-amber-400">
             {t('buildServer.noIndex')}{' '}
-            <Link to="../config" className="whitespace-nowrap text-indigo-600 hover:underline dark:text-indigo-400">
+            <Link to="../config?tab=site" className="whitespace-nowrap text-indigo-600 hover:underline dark:text-indigo-400">
               {t('buildServer.noIndexLink')}
             </Link>
           </p>

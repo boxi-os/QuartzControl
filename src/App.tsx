@@ -68,7 +68,7 @@ export default function App(): JSX.Element {
           {/* The former standalone Content-Ordner, Übersetzungen and Marktplatz tabs are now part of
               Konfiguration resp. Plugins (the content folder a card on its "Website" tab) - kept as
               redirects so bookmarks and older in-app links still land in the right place. */}
-          <Route path='content' element={<Navigate to='../config' replace />} />
+          <Route path='content' element={<Navigate to='../config?tab=site' replace />} />
           <Route path='localization' element={<Navigate to='../config?tab=localization' replace />} />
           <Route path='plugins/marketplace' element={<Navigate to='../plugins?tab=marketplace' replace />} />
           <Route path='updates' element={<Updates />} />

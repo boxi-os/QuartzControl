@@ -207,6 +207,11 @@ const STRINGS = {
     // übrigen selbst (einunddreißigstes Review, Befund 3).
     updateAbortBlockedByEditNamed:
       'An Dateien aus dem Merge wurde inzwischen weitergearbeitet, deshalb lässt sich das Update nicht abbrechen: {{files}}. Verwirf, was du dort seitdem geändert hast (im Terminal je Datei: „git checkout -- <Datei>“), und brich dann erneut ab.\n\n',
+    // Die dritte Verweigerung: eine Datei, die HEAD kennt, ist aus der Vormerkung genommen
+    // („git rm --cached“) und liegt noch im Ordner. „git checkout --“ hilft dort nicht, wieder
+    // vormerken schon (zweiunddreißigstes Review, nebenbei 6).
+    updateAbortBlockedByUntracked:
+      'Diese Dateien sind nicht mehr vorgemerkt, liegen aber noch im Projektordner, deshalb lässt sich das Update nicht abbrechen: {{files}}. Merke sie wieder vor (im Terminal je Datei: „git add -- <Datei>“) und brich dann erneut ab.\n\n',
     // Dieselbe Verweigerung über Dateien, die der Nutzer selbst vorgemerkt hat. Für sie ist der Rat
     // oben teuer: „git checkout --“ nimmt die ungestagete Hälfte, der Abbruch danach die gestagete.
     // „git reset --“ nimmt nur die Vormerkung, beide Hälften bleiben (zweiunddreißigstes Review,
@@ -513,6 +518,8 @@ const STRINGS = {
       'A file from the merge has been changed since, so the update cannot be cancelled. Discard what you changed in it since the merge (in a terminal: “git checkout -- <file>”), then cancel again.\n\n',
     updateAbortBlockedByEditNamed:
       'Work has continued on files from the merge, so the update cannot be cancelled: {{files}}. Discard what you changed there since (in a terminal, for each file: “git checkout -- <file>”), then cancel again.\n\n',
+    updateAbortBlockedByUntracked:
+      'These files are no longer staged but still lie in the project folder, so the update cannot be cancelled: {{files}}. Stage them again (in a terminal, for each file: “git add -- <file>”), then cancel again.\n\n',
     updateAbortBlockedByOwnStaged:
       'You staged these files yourself and changed them again afterwards, so the update cannot be cancelled: {{files}}. Undo only the staging there (in a terminal, for each file: “git reset -- <file>”), which keeps your changes, then cancel again.\n\n',
     updateAbortDroppedStaged:

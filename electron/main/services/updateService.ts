@@ -225,7 +225,7 @@ function gitTextEnv(): Record<string, string> {
 
 // git's own wording for the three failures a user can actually act on is either buried in a wall of
 // other output or (for the symlink case) points at a state we just repaired behind their back.
-function explainGitFailure(output: string, editedSinceMerge: string[] = [], ownStaged: string[] = []): string {
+function explainGitFailure(output: string, editedSinceMerge: string[] = [], ownStaged: string[] = [], untrackedInTheWay: string[] = []): string {
   if (/beyond a symbolic link/.test(output)) {
     return mainT('updateBlockedBySymlink')
   }
@@ -262,6 +262,18 @@ function explainGitFailure(output: string, editedSinceMerge: string[] = [], ownS
   // working tree - for a new file the difference is the whole file (thirty-second review,
   // finding 2, measured with git 2.54).
   if (/not uptodate\. Cannot merge|Could not reset index file/i.test(output)) {
+    // A third way to stop it: a file HEAD has, taken out of the index (`git rm --cached`) and still
+    // lying in the folder. The reset would have to write it over an untracked file, and git says
+    // "Untracked working tree file 'x' would be overwritten by merge." - the advice for edited
+    // files does nothing there; staging it again does (thirty-second review, nebenbei 6, measured
+    // with git 2.54: `git add --`, then the abort goes through). If the user had edits in it, the
+    // abort drops them as a staged state and the sentence after the abort names the file.
+    const untracked = [
+      ...new Set([...[...output.matchAll(/^error: Untracked working tree file '(.+)' would be overwritten by merge\.$/gm)].map((m) => m[1]), ...untrackedInTheWay])
+    ]
+    if (/Untracked working tree file/.test(output) && untracked.length > 0) {
+      return mainT('updateAbortBlockedByUntracked', { files: untracked.join(', ') })
+    }
     const named = [...output.matchAll(/^error: Entry '(.+)' not uptodate\. Cannot merge\.$/gm)].map((m) => m[1])
     const files = [...new Set([...named, ...editedSinceMerge])]
     if (files.length === 0) return mainT('updateAbortBlockedByEdit')
@@ -1716,6 +1728,19 @@ async function editedSinceMergeStopped(projectPath: string): Promise<string[]> {
   return (await diffNames(projectPath, '--diff-filter=d')).filter((file) => staged.has(file) && !unmerged.has(file))
 }
 
+/**
+ * Files HEAD has, the index no longer has, and the folder still holds as untracked - what
+ * `reset --merge` refuses to write over. Asked like editedSinceMergeStopped, because git names only
+ * the first. Without renames: a file taken out of the index must stay a deletion here, not pair up
+ * with some added file as a rename.
+ */
+async function untrackedInTheWay(projectPath: string): Promise<string[]> {
+  const gone = await diffNames(projectPath, '--cached', '--no-renames', '--diff-filter=D', 'HEAD')
+  if (gone.length === 0) return []
+  const result = await run('git', ['ls-files', '--others', '-z', '--', ...gone], projectPath)
+  return result.success ? result.output.split('\0').filter(Boolean) : []
+}
+
 export function abortCoreMerge(projectPath: string): Promise<CoreAbortResult> {
   // The same lock as the update: the abort rewrites the working tree of the repository an update
   // would be merging in.
@@ -1732,7 +1757,7 @@ export function abortCoreMerge(projectPath: string): Promise<CoreAbortResult> {
       const result = await run('git', ['merge', '--abort'], projectPath, gitTextEnv())
       if (!result.success) {
         // A refused abort has changed nothing, so the list is read from the state git refused over.
-        const why = explainGitFailure(result.output, await editedSinceMergeStopped(projectPath), losing)
+        const why = explainGitFailure(result.output, await editedSinceMergeStopped(projectPath), losing, await untrackedInTheWay(projectPath))
         // Split at the paragraph: the merge's files and the user's own can be two sentences.
         const sentences = why.split('\n\n').map((sentence) => sentence.trim()).filter(Boolean)
         return { success: false, output: why + result.output, sentences }

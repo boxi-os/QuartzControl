@@ -241,7 +241,7 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 
 ## Die Reviews
 
-Alle vierundzwanzig Listen sind abgearbeitet. Die Chronik steht in
+Alle fünfundzwanzig Listen sind abgearbeitet. Die Chronik steht in
 [`docs/reviews.md`](docs/reviews.md) — welches Review welchen Stand gelesen hat, mit welchen
 Zahlen, was es gefunden hat und welche Fixes noch niemand gelesen hat. Sie stand bis zum
 2026-09-17 hier und ist wörtlich dorthin gewandert; die Review-Dokumente selbst liegen als
@@ -254,7 +254,7 @@ so gebaut, dass jede Runde liest, was die vorige gebaut hat.
 
 **Stand:** Die neun Befunde des fünfundzwanzigsten Reviews sind abgearbeitet und auf `main`, dazu
 alle vier Nebenbei-Punkte — der letzte, `inline-flex` im `Button`-Primitive, am 2026-09-18 auf
-`fix/button-inline-flex` (nicht gepusht). Was die Runde gefunden hat, steht in
+`fix/button-inline-flex`, per Fast-Forward auf `main` und gepusht. Was die Runde gefunden hat, steht in
 [`docs/REVIEW-2026-09-29.md`](docs/REVIEW-2026-09-29.md), was daraus geworden ist, oben in
 [`docs/reviews.md`](docs/reviews.md).
 

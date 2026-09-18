@@ -45,9 +45,9 @@ const VARIANTS = {
 //
 // The button is its own flex row because Tailwind's preflight makes every <svg> `display: block`:
 // an icon inside a plain inline-block button stood on a line of its own above the label (45 px
-// instead of 31.5). Until the twenty-fifth review each of the 13 icon buttons solved that itself,
-// in two shapes - `inline-flex` on the button, or a flex <span> inside it - and the two came out
-// 31.5 and 33 px high next to each other. `justify-center` belongs to the same move: `text-align`
+// instead of 31.5). Until the twenty-fifth review each of the 14 icon buttons solved that itself,
+// in two shapes - `inline-flex` on the button (4), or a flex <span> inside it (10) - and the two
+// came out 31.5 and 32.8-33.3 px high next to each other. `justify-center` belongs to the same move: `text-align`
 // does not reach a flex item, and the 66 fixed-width buttons on Plugins would otherwise lose their
 // centred label. `gap-1.5` only acts between an icon and its label; a text-only button has one item.
 export function Button({

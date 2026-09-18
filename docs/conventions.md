@@ -366,8 +366,9 @@ Projektwurzel.
   tragen ihn seit U3 ebenfalls.
   Und er ist seine eigene Flex-Zeile (`inline-flex items-center justify-center gap-1.5`): Ein Icon
   kommt direkt neben das Wort, ohne `<span>` und ohne Klassen am Aufrufer. Vorher löste jeder der
-  13 Icon-Knöpfe Tailwinds `svg { display: block }` selbst, in zwei Formen, und die standen mit
-  31,5 und 33 px nebeneinander (fünfundzwanzigstes Review).
+  14 Icon-Knöpfe Tailwinds `svg { display: block }` selbst, in zwei Formen (vier mit
+  `inline-flex` am Knopf, zehn mit `<span>`), und die standen mit 31,5 und 32,8–33,3 px
+  nebeneinander (fünfundzwanzigstes Review; gezählt im sechsundzwanzigsten, Befund 8).
 - **`SegmentedControl` ist eine Radiogruppe, keine Knopfreihe.** `role="radiogroup"` mit
   `role="radio"`-Segmenten, `aria-checked`, Roving-Tabindex (die Gruppe ist ein Tabstopp), Pfeile
   links/rechts/hoch/runter wandern durch die Optionen und *ändern dabei die Auswahl*, mit Umbruch an

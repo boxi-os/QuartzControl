@@ -260,7 +260,7 @@ Befund über Niedrig) sind abgearbeitet, am 2026-09-18 auf `fix/review-2026-10-0
 Fast-Forward auf `main` und gepusht. Was die Runde gefunden hat, steht in
 [`docs/REVIEW-2026-10-05.md`](docs/REVIEW-2026-10-05.md), was daraus geworden ist und was aus
 ihrer Nebenbei-Liste geworden ist, oben in [`docs/reviews.md`](docs/reviews.md) — die vier offenen
-Punkte daraus liegen auf `fix/review-2026-10-05-rest`, **nicht gemergt, nicht gepusht**, und einer
+Punkte daraus sind über `fix/review-2026-10-05-rest` ebenfalls auf `main` und gepusht, und einer
 davon (die Sprache von gits Text) ist ungemessen, bis die Debian-VM läuft. Einen Auftrag für eine
 weitere Runde gibt es nicht; keinen dieser Fixes hat ein Review gelesen.
 

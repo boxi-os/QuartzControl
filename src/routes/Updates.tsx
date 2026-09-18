@@ -94,8 +94,8 @@ export default function Updates(): JSX.Element {
       const result = await window.quartzGui.updates.abortCoreMerge(project.path)
       setCoreResult(!result.success || result.output.trim() !== '' ? result : null)
       // Said as well as shown, for the same reason as on Git-Sync: the box appears on its own
-      // (twenty-sixth review, finding 6). The first paragraph is the app's sentence.
-      if (result.output.trim() !== '') announce(result.output.trim().split('\n\n')[0])
+      // (twenty-sixth review, finding 6). The first line is the app's sentence - see Git-Sync.
+      if (result.output.trim() !== '') announce(result.output.trim().split('\n')[0])
     } catch (err) {
       setCoreResult({ success: false, output: formatIpcError(err) })
     } finally {

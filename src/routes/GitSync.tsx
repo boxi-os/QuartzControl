@@ -69,8 +69,11 @@ function RepoStatus({
     setAbortNote(output === '' ? null : output)
     // The box does not exist before the click and appears on its own - and after an abort that
     // went through it is the one thing on the page that did not change for a screen reader, the
-    // banner being gone. Its first paragraph is the app's sentence; git's output follows.
-    if (output !== '') announce(output.split('\n\n')[0])
+    // banner being gone. Its first line is the app's sentence - every sentence this channel says is
+    // one line - and git's output follows. Not its first paragraph: after a failed stash pop git's
+    // text follows the sentence after a single line break, and the paragraph ran twelve lines of
+    // it (twenty-seventh review, finding 4).
+    if (output !== '') announce(output.split('\n')[0])
     onChanged()
   })
 

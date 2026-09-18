@@ -1,4 +1,4 @@
-import { KeyboardCode, type KeyboardCoordinateGetter } from '@dnd-kit/core'
+import { KeyboardCode, type KeyboardCoordinateGetter, type UniqueIdentifier } from '@dnd-kit/core'
 
 const DIRECTIONS: string[] = [KeyboardCode.Down, KeyboardCode.Up, KeyboardCode.Left, KeyboardCode.Right]
 
@@ -18,7 +18,32 @@ const DIRECTIONS: string[] = [KeyboardCode.Down, KeyboardCode.Up, KeyboardCode.L
  * coordinate is the dragged rect's new top-left (that is what the sensor subtracts from), chosen so
  * the two centres line up and `closestCenter` resolves to the target we picked.
  */
-export const nearestDroppableCoordinates: KeyboardCoordinateGetter = (event, { context }) => {
+export const nearestDroppableCoordinates: KeyboardCoordinateGetter = (event, args) => stepFrom(event, args, null)
+
+/**
+ * The same, for a board that knows better than the geometry which field the dragged thing stands
+ * on. `standingOn` gets the sensor's context and returns that field's id, or null to fall back to
+ * the smallest target under the dragged centre. Where it answers, the step starts from the middle
+ * of that field on both axes.
+ *
+ * The frame editor needs it because a placed area is not where its chip is: the chip sits at the
+ * box's top-left corner, the area's place is the cell its placement starts at, and the smallest
+ * target under the chip's centre is either the box itself - then the first press started from the
+ * middle of a six-column box, and "left" went *right* - or another cell of the box when the first
+ * column is narrow. Measured (twenty-ninth review, finding 5, frame "focus", `page-body` on
+ * columns 4-9): Space · ArrowLeft was "liegt über Zelle Zeile 2, Spalte 6".
+ */
+export function nearestDroppableCoordinatesFrom(
+  standingOn: (context: Parameters<KeyboardCoordinateGetter>[1]['context']) => UniqueIdentifier | null
+): KeyboardCoordinateGetter {
+  return (event, args) => stepFrom(event, args, standingOn(args.context))
+}
+
+function stepFrom(
+  event: KeyboardEvent,
+  { context }: Parameters<KeyboardCoordinateGetter>[1],
+  standingOn: UniqueIdentifier | null
+): ReturnType<KeyboardCoordinateGetter> {
   if (!DIRECTIONS.includes(event.code)) return undefined
   event.preventDefault()
 
@@ -42,10 +67,14 @@ export const nearestDroppableCoordinates: KeyboardCoordinateGetter = (event, { c
   // first ArrowDown out of row 1 landed on another cell *in row 1* - the one whose centre sat 11px
   // below the dragged centre - and only the second press reached row 2. Taken from `here` the
   // first press reaches row 2 and Up comes back.
+  const field = standingOn !== null ? droppableRects.get(standingOn) : undefined
   const here = rects
     .filter((rect) => rect.left <= from.x && from.x <= rect.left + rect.width && rect.top <= from.y && from.y <= rect.top + rect.height)
     .reduce<(typeof rects)[number] | null>((acc, rect) => (acc === null || rect.width * rect.height < acc.width * acc.height ? rect : acc), null)
-  if (here) {
+  if (field) {
+    from.x = field.left + field.width / 2
+    from.y = field.top + field.height / 2
+  } else if (here) {
     if (vertical) from.y = here.top + here.height / 2
     else from.x = here.left + here.width / 2
   }

@@ -48,7 +48,7 @@ import DevServerRestartHint from '../../components/DevServerRestartHint'
 import { breakpointRangeLabel } from './utils'
 import { useStickyState } from '../../state/uiState'
 import { useDndAccessibility } from '../../utils/dndAnnouncements'
-import { nearestDroppableCoordinates } from '../../utils/dndKeyboard'
+import { nearestDroppableCoordinatesFrom } from '../../utils/dndKeyboard'
 
 const RESERVED_FRAME_NAMES = ['default', 'full-width', 'minimal']
 const SLOTS: FrameSlot[] = ['header', 'left', 'right', 'beforeBody', 'pageBody', 'afterBody', 'footer']
@@ -163,6 +163,15 @@ function parseCellId(id: string): { row: number; col: number } | null {
 // chip there had the cell been free (twenty-eighth review, "nebenbei" 4, measured on the built app).
 // So when no target's centre is where the dragged one is, it stands on the smallest target that
 // contains its centre - the same "field one is standing on" the arrow keys step from.
+//
+// Except for a placed area that has not moved yet: its place is the cell its placement starts at
+// (`home`, carried by PlacedBox's draggable), and the chip that is the dragged rect only sits at
+// that cell's corner. Its centre lies in a column gap - then the smallest target was the box and
+// the first arrow started from the box's middle - or, with a narrow first column, in *another cell
+// of the same box*, and Space · Space moved the area one column right and cut its span without a
+// word (twenty-ninth review, findings 3 and 5, measured with columns of 20px). "Not moved yet" is
+// the sensor's translate being zero, not the distance: a step the KeyboardSensor spends on
+// scrolling leaves both behind for a moment, and only the first says it is still the pickup.
 const collisionDetection: CollisionDetection = (args) => {
   const pointerCollisions = pointerWithin(args)
   if (pointerCollisions.length > 0) return pointerCollisions
@@ -171,6 +180,11 @@ const collisionDetection: CollisionDetection = (args) => {
   const distance = closest[0]?.data?.value
   if (typeof distance !== 'number' || distance <= 1) return closest
   const { collisionRect } = args
+  const initial = args.active.rect.current.initial
+  const unmoved = !initial || (Math.abs(initial.left - collisionRect.left) < 0.5 && Math.abs(initial.top - collisionRect.top) < 0.5)
+  const homeId: unknown = args.active.data.current?.home
+  const homeCell = unmoved && typeof homeId === 'string' ? args.droppableContainers.find((c) => c.id === homeId) : undefined
+  if (homeCell) return [{ id: homeCell.id, data: { droppableContainer: homeCell, value: 0 } }]
   const x = collisionRect.left + collisionRect.width / 2
   const y = collisionRect.top + collisionRect.height / 2
   let home: { container: (typeof args.droppableContainers)[number]; area: number } | null = null
@@ -483,7 +497,14 @@ export default function FrameBuilder({
   // press on the chip's handle is a drag of zero pixels and the click never lands.
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: nearestDroppableCoordinates })
+    // Standing on a cell means standing in its middle - which for a placed area just picked up is
+    // its start cell, not where its chip's centre happens to fall (see collisionDetection). Over a
+    // box or the tray the geometry decides as on the global board.
+    useSensor(KeyboardSensor, {
+      coordinateGetter: nearestDroppableCoordinatesFrom((context) =>
+        context.over && parseCellId(String(context.over.id)) ? context.over.id : null
+      )
+    })
   )
   // Every id on this board in words: an area by its name, a cell by its coordinates, the tray by
   // its label - see useDndAccessibility. Which is why that label is a name and not an instruction: it
@@ -1475,7 +1496,11 @@ function PlacedBox({
   children: React.ReactNode
 }): JSX.Element {
   const { setNodeRef: setDropRef, isOver } = useDroppable({ id: `${BOX_PREFIX}${areaId}` })
-  const { attributes, listeners, setNodeRef: setDragRef, setActivatorNodeRef } = useDraggable({ id: areaId })
+  // `home` is where the area is, for collisionDetection's moment of pickup.
+  const { attributes, listeners, setNodeRef: setDragRef, setActivatorNodeRef } = useDraggable({
+    id: areaId,
+    data: { home: cellId(placement.row, placement.col) }
+  })
   return (
     <div
       ref={(node) => {

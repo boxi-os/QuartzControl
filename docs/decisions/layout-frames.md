@@ -1043,3 +1043,31 @@ Ablage. Gebaute App, `header`:
     Space · ↓ · ↑ · Space          … „liegt wieder auf seinem Ausgangsplatz.“ · „blieb an seinem Platz.“
     Space · ↓ · Space              weiter „bleibt, wo es war — dort überschneidet es sich …“
     danach                         kein Bereichsformular offen
+
+**Nachtrag (2026-09-18, neunundzwanzigstes Review, Befunde 3 und 5): Der Platz eines platzierten
+Bereichs ist seine Startzelle, nicht die Mitte seines Chips.** Beim Tastatur-Drag ist das gezogene
+Rechteck der Chip des `DragOverlay`, und der sitzt an der linken oberen Ecke des Kastens. Das
+kleinste Ziel unter seiner Mitte ist in den echten Frames meist der Kasten selbst (die Mitte liegt
+in einem 68-px-Spaltenabstand), bei schmaler erster Spalte aber eine *andere Zelle desselben
+Kastens*. Zwei Folgen, beide älter als die Regel darüber: Der erste Pfeil ging von der Mitte des
+Kastens aus (`page-body` auf Spalten 4–9 im Frame „focus“: ← „Zeile 2, Spalte 6“, → „Spalte 7“),
+und mit Spalten von 20 px verschob Leertaste · Leertaste den Bereich um eine Spalte und kappte
+dabei still seine Spanne. Jetzt trägt der Draggable eines platzierten Kastens seine Startzelle
+(`data.home`), die Kollisionsrechnung gibt sie zurück, solange der Sensor nichts verschoben hat
+(Translate null — nicht „keine Zielmitte liegt auf der gezogenen“, denn ein Schritt, den der
+`KeyboardSensor` aufs Scrollen verwendet, lässt beides kurz zurück), und die Pfeile gehen von der
+Mitte des Feldes aus, das die Kollisionsrechnung nennt, sobald das eine Zelle ist
+(`nearestDroppableCoordinatesFrom`). Über einem Kasten oder der Ablage entscheidet weiter die
+Geometrie, und das Layout-Board behält `nearestDroppableCoordinates` unverändert. Gemessen an der
+gebauten App mit den Szenen des Reviews:
+
+    focus, page-body (Sp. 4–9)   Space · ←   vorher Spalte 6    jetzt Spalte 3
+                                 Space · →   vorher Spalte 7    jetzt Spalte 5
+    drawing, Spalten 1–3 auf 20 px, Space · Space, alle fünf Kästen
+                                 vorher je eine Spalte nach rechts abgelegt   jetzt „blieb an seinem Platz“
+    alle vier Frames, alle platzierten Kästen, Space · Space   33 × „blieb an seinem Platz“
+
+Gegenprobe ohne Änderung: Scrollen beim Pfeil nach unten (drawing, index), `custom-8` ↑ ↓ zurück
+auf den Ausgangsplatz, Mobil mit der Zeile der Größe 0, ein Chip aus der Ablage (↓ landet weiter
+auf Zeile 1, Spalte 1), `right` in die Ablage und zurück, die Maus 8 px und 400 px im eigenen
+Kasten.

@@ -310,10 +310,11 @@ Punkt 6); die Drag-Ansagen des Layout-Boards nummerieren Instanzen wie die Griff
 Punkt 3, nicht mit VoiceOver gehört); und das Layout-Board geht keinen schrägen Pfeilschritt mehr,
 womit Rollstand und Fensterbreite die Antwort nicht mehr ändern und ← + Leertaste kein Löschweg
 mehr ist (`96ab045`, Punkt 1 und 2, elf Szenen bei 1280 und 1470 px wortgleich, Regel in
-`conventions.md`). Dabei neu aufgefallen und offen: die Vorschau eines Branch-Ziels liest
-`git ls-tree` und `git diff --name-status` ohne `-z` (`deploy/gitBranch.ts`, Umlaute kämen dort als
-`\303\244` an; gelesen, nicht gemessen), und die Felder für Zeilen und Spalten sagen `max={12}`,
-ohne dass jemand es durchsetzt — „18“ ergibt 18 Spalten. **Diese Fixes hat kein Review gelesen.**
+`conventions.md`). Die zwei Punkte, die dabei neu auffielen, sind ebenfalls erledigt: Die Vorschau
+eines Branch-Ziels liest mit `-z` und `--no-renames` — vorher `"\303\244.html"` und eine
+verschobene Seite als ein Pfad mit Tab darin, „geändert“ (`8923e78`, Adapter als Bündel mit
+lokalem Remote); und `NumberInput` kappt getippte Werte auf `max`, „18“ ergibt 12 Spalten statt 18
+(`96d3fa7`, gebaute App). **Diese Fixes hat kein Review gelesen.**
 
 **Das siebenundzwanzigste Review las beide Schichten** und fand **keinen Befund Hoch, einen
 Mittel, fünf Niedrig**, dazu drei Punkte nebenbei — und der mittlere ist ein Fehler im eigenen

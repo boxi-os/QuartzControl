@@ -117,6 +117,18 @@ Die Seite, auf die Punkt 8 zeigt. Drei Teile:
   `npm run build:handbook-pdf` war nicht dabei),
 - **die Notizen** — was sich seit der vorigen Fassung geändert hat, in derselben Gliederung wie
   die Seite „Neu in …“ aus Punkt 3,
+- **was eine ältere Fassung auf einem zweiten Rechner nicht mehr versteht.** Ein Satz, wenn die
+  neue Fassung etwas in das Projekt schreibt, das die alte nicht liest. Der erste Fall ist der
+  Marker in `custom.scss` (`Quartz-GUI:managed:` → `QuartzControl:managed:`, erste Fassung nach
+  beta.2): Das erste Speichern auf der Stile-Seite — eine Variable, eine Schrift, die
+  Reihenfolge — benennt *alle* Abschnitte der Datei um, und beta.2 sieht danach 0 Variablen,
+  0 importierte Dateien und keinen Schriftblock; ein Klick dort bricht den Build. Gemessen am
+  Bündel beider Fassungen für eine gespeicherte Variable (achtundzwanzigstes Review, Befund 2);
+  Schrift und Reihenfolge gehen durch dieselbe Funktion (`renameLegacyMarkers`). Der Satz für die Notizen:
+  „Wer ein Projekt auf mehreren Rechnern bearbeitet (Git-Sync), aktualisiert zuerst alle Rechner
+  und öffnet das Projekt erst danach mit der neuen Fassung.“ Dasselbe Release benennt den Marker
+  `Quartz-GUI:syntax:` in `scripts/example-template/` um (siehe `docs/conventions.md`, Absatz zu
+  `.quartz-gui/`), und dann gehört der Satz auch in die Notizen der Vorlage.
 - **die Prüfsummen** als eigener Abschnitt „Checksums (SHA-256)“:
 
       cd release && shasum -a 256 <die Paketdateien>

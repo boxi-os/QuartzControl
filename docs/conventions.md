@@ -787,7 +787,10 @@ Projektwurzel.
   eine Datei einschaltet, bekommt dessen Import-Block *in* unseren geschachtelt — zwei `@use`
   desselben Namensraums, der Build ist in beiden Fassungen kaputt, bis diese Seite die Reihenfolge
   einmal speichert. Der gewöhnliche Weg dorthin sind zwei Rechner mit verschiedenen Fassungen und
-  ein Projekt, das per Git-Sync zwischen ihnen reist. Der Marker `Quartz-GUI:syntax:` in `scripts/example-template/` ist noch der alte — er
+  ein Projekt, das per Git-Sync zwischen ihnen reist. Und weil ein Schreiben alle Abschnitte
+  umbenennt, ist der Preis beim ersten Speichern ganz fällig, nicht je Abschnitt — eine
+  eingeführte Schrift genügt (achtundzwanzigstes Review, Befund 2). Beantwortet wird das nicht im
+  Code, sondern in den Release-Notizen ([`release.md`](release.md), Punkt 7). Der Marker `Quartz-GUI:syntax:` in `scripts/example-template/` ist noch der alte — er
   reist in drei Kopien der Vorlage, die `--check-sync` byte-weise vergleicht, und wird mit dem
   nächsten Release der Vorlage umbenannt.
   Der Rest ist am 2026-09-09 nachgezogen: `name` in `package.json` (`quartz-gui` →

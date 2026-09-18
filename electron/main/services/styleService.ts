@@ -95,7 +95,11 @@ export async function importStyleFile(projectPath: string, sourcePath: string): 
 // when a variable was saved, and put its imports block *inside* ours when one file was switched
 // on - two `@use` of the same namespace, and the build broke for both versions. The usual way
 // there is two machines with different versions and a project travelling between them through
-// Git-Sync; this side cannot prevent it, only read what the other one leaves behind.
+// Git-Sync; this side cannot prevent it, only read what the other one leaves behind. And the
+// renaming above makes that price due sooner and wider: before it, a write cost the old side the
+// one section it wrote; now any write - importing a font is enough - costs it all three
+// (twenty-eighth review, finding 2). Kept, because a file that carries both names for good is the
+// worse end; what answers it is a sentence in the release notes (docs/release.md, point 7).
 //
 // Where both copies of a section stand, both are read, in file order, and the later one wins -
 // the same rule the browser applies, so the page shows what the site shows. Reading only the new

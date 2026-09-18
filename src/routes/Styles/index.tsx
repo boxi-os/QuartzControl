@@ -9,6 +9,7 @@ import { useSaveCommand } from '../../state/saveCommand'
 import { UnsavedBadge, useUnsavedChanges } from '../../state/unsavedGuard'
 import { TAB_ICONS } from '../navConfig'
 import { useProject } from '../ProjectLayout'
+import { fetchesGoogleFonts, persistFontDelivery, presentFontDelivery } from './fontDelivery'
 import Basics from './Basics'
 import Theme from './Theme'
 import Variables from './Variables'
@@ -22,7 +23,7 @@ const HANDBOOK = { basics: 'stylesBasics', theme: 'stylesTheme', variables: 'sty
 export type StylesTab = 'basics' | 'theme' | 'variables' | 'customCss'
 
 /** What can rewrite custom.scss while the CSS tab holds a draft of it. */
-export type ScssWriter = 'variables' | 'fontImport' | 'fontRemoval' | 'stylesheets'
+export type ScssWriter = 'variables' | 'fontImport' | 'fontRemoval' | 'googleFonts' | 'stylesheets'
 
 const TAB_ORDER: StylesTab[] = ['basics', 'theme', 'variables', 'customCss']
 
@@ -41,6 +42,14 @@ export interface StylesContextValue {
   config: QuartzConfig
   setConfig: (next: QuartzConfig) => void
   saveConfig: () => Promise<void>
+  /** The page's save, as the header button runs it. Returns whether it worked. */
+  savePage: () => Promise<boolean>
+  /**
+   * The config on disk still has Quartz download the Google fonts at build time (`cdnCaching:
+   * false` without the app's block): the switch reads "served locally", and the next save fetches
+   * them into the project - see fontDelivery.ts.
+   */
+  quartzStillDownloadsFonts: boolean
   overrides: Record<string, { light: string; dark: string }>
   setOverrides: React.Dispatch<React.SetStateAction<Record<string, { light: string; dark: string }>>>
   /** `staleBy`: what rewrote custom.scss under an unsaved draft, or null - see reloadScss. */
@@ -105,6 +114,7 @@ export default function Styles(): JSX.Element {
     staleBy: ScssWriter | null
   } | null>(null)
   const [savedConfig, setSavedConfig] = useState<string | null>(null)
+  const [quartzStillDownloadsFonts, setQuartzStillDownloadsFonts] = useState(false)
   const [savedOverrides, setSavedOverrides] = useState<string | null>(null)
   const [fileSet, setFileSet] = useState<StyleFileSet | null>(null)
   const [fileDrafts, setFileDrafts] = useState<Record<string, string>>({})
@@ -128,16 +138,16 @@ export default function Styles(): JSX.Element {
   const saveRef = useRef<() => Promise<void>>(async () => {})
 
   useEffect(() => {
-    window.quartzGui.config
-      .get(project.path)
-      .then((loaded) => {
-        setConfig(loaded)
-        setSavedConfig(JSON.stringify(loaded))
+    // Together, because the config is only read right with custom.scss beside it: whether the
+    // Google fonts live in the project is the block there (presentFontDelivery).
+    Promise.all([window.quartzGui.config.get(project.path), window.quartzGui.styles.get(project.path)])
+      .then(([loaded, info]) => {
+        const presented = presentFontDelivery(loaded, info.content)
+        setConfig(presented)
+        setSavedConfig(JSON.stringify(presented))
+        setQuartzStillDownloadsFonts(fetchesGoogleFonts(loaded) && presented === loaded)
+        setScss({ ...info, original: info.content, dirty: false, staleBy: null })
       })
-      .catch(failed)
-    window.quartzGui.styles
-      .get(project.path)
-      .then((info) => setScss({ ...info, original: info.content, dirty: false, staleBy: null }))
       .catch(failed)
     window.quartzGui.styles.listFiles(project.path).then(setFileSet)
     window.quartzGui.styles.getVariableOverrides(project.path).then((list) => {
@@ -250,10 +260,17 @@ export default function Styles(): JSX.Element {
     [project.path]
   )
 
+  // The fonts first and the config after: a fetch that fails (no network, a misspelt name) leaves
+  // the file as it was, rather than a config that says `local` over a block that is not there.
   const saveConfig = useCallback(async () => {
     if (!config) return
-    await window.quartzGui.config.save(project.path, config)
-  }, [config, project.path])
+    const touched = fetchesGoogleFonts(config)
+      ? (await window.quartzGui.fonts.fetchGoogle({ projectPath: project.path, typography: config.theme.typography ?? {} })).changed
+      : (await window.quartzGui.fonts.dropGoogle({ projectPath: project.path })).dropped
+    await window.quartzGui.config.save(project.path, persistFontDelivery(config))
+    setQuartzStillDownloadsFonts(false)
+    if (touched) await reloadScss('googleFonts')
+  }, [config, project.path, reloadScss])
 
   // Returns whether it worked - see the leave guard in ProjectLayout.
   async function save(): Promise<boolean> {
@@ -304,6 +321,8 @@ export default function Styles(): JSX.Element {
     config,
     setConfig,
     saveConfig,
+    savePage: save,
+    quartzStillDownloadsFonts,
     overrides,
     setOverrides,
     scss,

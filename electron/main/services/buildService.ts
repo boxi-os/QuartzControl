@@ -9,6 +9,7 @@ import { EventEmitter } from 'events'
 import type { BuildActivity, BuildOutputInfo, LogLine, ServerOptions, ServerStatus, BuildResult } from '@shared/ipc-contract'
 import { needsShell } from './runCommand'
 import * as layoutFrameService from './layoutFrameService'
+import * as fontService from './fontService'
 import { looksLikeQuartzBuild } from './buildOutputGuard'
 import { quartzGuiDir, resolveBuildDir } from './projectDirs'
 import * as runningServersStore from './runningServersStore'
@@ -447,6 +448,14 @@ async function refreshAuthoredFrames(projectPath: string, report: (text: string)
   for (const problem of await layoutFrameService.writeAllFrames(projectPath)) report(`${problem}\n`)
 }
 
+// The second copy Quartz reads at the same door: the Google fonts a project holds itself follow
+// its typography, which reaches the config through more than the Basis tab (fontService,
+// refreshGoogleFonts). A failure is a warning - the build goes on with the files that are there.
+async function refreshGoogleFonts(projectPath: string, report: (stream: 'stdout' | 'warn', text: string) => void): Promise<void> {
+  const result = await fontService.refreshGoogleFonts(projectPath)
+  if (result) report(result.failed ? 'warn' : 'stdout', `${result.text}\n`)
+}
+
 /**
  * Drops this project's entry - and the record in running-servers.json - but only if it is still
  * this child's. A pid does not carry over time, and neither does a Map entry keyed by project id:
@@ -503,6 +512,8 @@ export async function startServer(
     if (pending.aborted) return getServerStatus(projectId)
 
     await refreshAuthoredFrames(projectPath, (text) => emitLog(projectId, 'warn', text))
+    if (pending.aborted) return getServerStatus(projectId)
+    await refreshGoogleFonts(projectPath, (stream, text) => emitLog(projectId, stream, text))
     if (pending.aborted) return getServerStatus(projectId)
 
     return spawnServer(projectId, projectPath, status, outputDir)
@@ -682,6 +693,9 @@ export function runBuild(projectId: string, projectPath: string, outputDir?: str
 async function spawnBuild(projectId: string, projectPath: string, outputDir?: string): Promise<BuildResult> {
   await refreshAuthoredFrames(projectPath, (text) =>
     serverEvents.emit('buildLog', { projectId, stream: 'warn', text, timestamp: new Date().toISOString() } satisfies LogLine)
+  )
+  await refreshGoogleFonts(projectPath, (stream, text) =>
+    serverEvents.emit('buildLog', { projectId, stream, text, timestamp: new Date().toISOString() } satisfies LogLine)
   )
   const start = Date.now()
   const args = ['quartz', 'build']

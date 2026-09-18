@@ -42,7 +42,13 @@ export default function Basics(): JSX.Element {
   const [faces, setFaces] = useState<FontFaceInfo[]>([])
   const themeId = activeThemeIdOf(config)
 
-  useEffect(() => registerSave(saveConfig))
+  // The faces again after a save: saving may have fetched the Google fonts into the project.
+  useEffect(() =>
+    registerSave(async () => {
+      await saveConfig()
+      reloadFaces()
+    })
+  )
 
   // Under "local" the suggestions are the families the project itself declares - that is all a
   // local font source can render. Read again after a font import below adds one.
@@ -229,8 +235,20 @@ function FontDelivery({
   buildState: ReturnType<typeof fontBuildState>
 }): JSX.Element {
   const { t } = useTranslation()
+  const { quartzStillDownloadsFonts, savePage } = useStyles()
+  const [fetching, setFetching] = useState(false)
   const loaders = fontLoaders(config)
   const google = callsGoogle(config)
+  // The page's own save, not a second path to the same files: it also writes whatever else is
+  // pending on this tab, and it is what resets the page's dirty state.
+  async function fetchNow(): Promise<void> {
+    setFetching(true)
+    try {
+      await savePage()
+    } finally {
+      setFetching(false)
+    }
+  }
   const themeFonts = themeFontsEnabled(config)
   const hasTheme = config.plugins.some(
     (p) => p.enabled && typeof p.source === 'string' && p.source.startsWith(THEME_PLUGIN_PREFIX)
@@ -267,6 +285,20 @@ function FontDelivery({
           {t('styleEditor.current.fontsMissingFromBuild', { families: buildState.families.join(', ') })}
         </p>
       )}
+      {quartzStillDownloadsFonts ? (
+        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+          <p className="text-xs text-amber-700 dark:text-amber-400">{t('themeEditor.delivery.quartzStillDownloads')}</p>
+          <Button onClick={fetchNow} disabled={fetching}>
+            {fetching ? t('themeEditor.delivery.fetching') : t('themeEditor.delivery.fetchNow')}
+          </Button>
+        </div>
+      ) : (
+        buildState?.kind === 'notFetched' && (
+          <p className="mt-1.5 text-xs text-amber-700 dark:text-amber-400">
+            {t('styleEditor.current.fontsNotFetched', { families: buildState.families.join(', ') })}
+          </p>
+        )
+      )}
 
       {/* Its own control, not part of the switch above: there is no option to serve the theme's
           fonts locally, so the only way to stop the CDN requests is to drop them - which changes
@@ -291,9 +323,10 @@ function FontDelivery({
           <p className="mt-1.5 text-xs text-text-muted">{t('themeEditor.delivery.themeFontsOff')}</p>
         </div>
       )}
-      {/* Both self-hosting paths rewrite the font URLs to <baseUrl>/static/fonts, and the plugin
-          throws outright without one - so an empty baseUrl is a build failure, not a detail. */}
-      {!google && loaders.length > 0 && !baseUrl && (
+      {/* The plugin's self-hosting rewrites the font URLs to <baseUrl>/static/fonts and throws
+          outright without one - so an empty baseUrl is a build failure, not a detail. Core's no
+          longer needs one: the app holds those files in the project (fontDelivery.ts). */}
+      {loaders.some((l) => l.via === 'plugin' && l.mode === 'selfHosted') && !baseUrl && (
         <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{t('themeEditor.delivery.baseUrlMissing')}</p>
       )}
     </div>

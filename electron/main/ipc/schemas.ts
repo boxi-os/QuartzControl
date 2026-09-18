@@ -203,6 +203,13 @@ export const unusedImportedFontsInput = z.looseObject({
   draftFamilies: z.array(z.string().max(200)).max(8)
 })
 export const removeImportedFontInput = z.looseObject({ projectPath: absolutePath, family: z.string().min(1).max(200) })
+// A typography entry is a family name or { name, weights?, includeItalic? }; the service reads
+// either through googleFontRequest(), which ignores what it does not know.
+export const fetchGoogleFontsInput = z.looseObject({
+  projectPath: absolutePath,
+  typography: z.record(z.string().max(20), z.union([z.string().max(200), z.looseObject({ name: z.string().max(200) })]))
+})
+export const dropGoogleFontsInput = z.looseObject({ projectPath: absolutePath })
 
 export const logHistoryInput = z.looseObject({ projectId: uuid })
 export const logClearInput = z.looseObject({ projectId: uuid, stream: z.enum(['server', 'build']) })

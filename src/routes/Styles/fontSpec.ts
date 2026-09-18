@@ -1,44 +1,8 @@
 import type { FontFaceInfo } from '@shared/ipc-contract'
 
-export type TypographySlot = 'header' | 'body' | 'code'
-
-// What Quartz asks Google Fonts for, reproduced from its own formatFontSpecification()
-// (quartz/util/theme.ts, read from a real clone). The defaults are *per slot*, which is easy to
-// get wrong: body is the only one that gets italic, and header is the only one that gets 700.
-const SLOT_DEFAULTS: Record<TypographySlot, { weights: number[]; italic: boolean }> = {
-  header: { weights: [400, 700], italic: false },
-  body: { weights: [400, 600], italic: true },
-  code: { weights: [400, 600], italic: false }
-}
-
-export interface GoogleFontRequest {
-  slot: TypographySlot
-  family: string
-  weights: number[]
-  italic: boolean
-  /**
-   * Quartz emits the `wght@` parameter only when more than one weight is configured
-   * (`if (weights.length > 1)`), so a single configured weight is silently dropped and Google
-   * serves the family's own default instead. Worth saying out loud rather than showing a number
-   * the site never actually loads.
-   */
-  singleWeightDropped: boolean
-}
-
-// A typography entry is either a bare family name or { name, weights?, includeItalic? }.
-export function googleFontRequest(slot: TypographySlot, spec: unknown): GoogleFontRequest | null {
-  const defaults = SLOT_DEFAULTS[slot]
-  if (typeof spec === 'string') {
-    return spec ? { slot, family: spec, weights: defaults.weights, italic: defaults.italic, singleWeightDropped: false } : null
-  }
-  if (!spec || typeof spec !== 'object') return null
-  const obj = spec as { name?: unknown; weights?: unknown; includeItalic?: unknown }
-  if (typeof obj.name !== 'string' || !obj.name) return null
-  const configured = Array.isArray(obj.weights) ? obj.weights.filter((w): w is number => typeof w === 'number') : undefined
-  const weights = configured ?? defaults.weights
-  const italic = typeof obj.includeItalic === 'boolean' ? obj.includeItalic : defaults.italic
-  return { slot, family: obj.name, weights, italic, singleWeightDropped: weights.length <= 1 }
-}
+// The request rule lives in shared/, where the main process reads it too (fetching the Google
+// fonts into the project asks Google for exactly what Quartz would).
+export { googleFontRequest, type GoogleFontRequest, type TypographySlot } from '@shared/googleFontRequest'
 
 export interface FaceSummary {
   weights: string[]

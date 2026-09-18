@@ -1,7 +1,9 @@
-import { mkdirSync } from 'fs'
-import { copyFile, readFile, rm, stat } from 'fs/promises'
-import { basename, extname, join } from 'path'
+import { existsSync, mkdirSync } from 'fs'
+import { copyFile, mkdir, readFile, rename, rm, stat, writeFile } from 'fs/promises'
+import { basename, dirname, extname, join } from 'path'
 import type { UnusedImportedFont } from '@shared/ipc-contract'
+import { googleFontsCss2Url } from '@shared/googleFontRequest'
+import { mainT } from '../i18n'
 import { readConfig } from './configService'
 import {
   customScssPath,
@@ -13,6 +15,7 @@ import {
   projectStylesheets,
   readCustomScss,
   splitRules,
+  stripManagedBlock,
   upsertManagedBlock,
   writeCustomScss
 } from './styleService'
@@ -148,7 +151,12 @@ export async function removeImportedFont(projectPath: string, family: string): P
   if (removed.length === 0) return { removedFiles: [] }
 
   await writeCustomScss(projectPath, upsertManagedBlock(info.content, FONTS_MARKER, joinUniqueRules(rules.filter((r) => !isFamily(r)))))
+  return { removedFiles: await deleteUnreferencedFontFiles(projectPath, removed.join('\n')) }
+}
 
+// Deletes the files the rules in `css` pointed at - but only a file no rule in any stylesheet of
+// the project still points at. Called after those rules have left custom.scss.
+async function deleteUnreferencedFontFiles(projectPath: string, css: string): Promise<string[]> {
   const stillNamed = new Set<string>()
   for (const path of await projectStylesheets(projectPath)) {
     for (const face of parseFontFaces(await readFile(path, 'utf-8'))) {
@@ -157,11 +165,140 @@ export async function removeImportedFont(projectPath: string, family: string): P
     }
   }
   const removedFiles: string[] = []
-  for (const face of removed.flatMap(parseFontFaces)) {
+  for (const face of parseFontFaces(css)) {
     const file = fontFileIn(projectFontsDir(projectPath), face.url)
     if (!file || stillNamed.has(file) || removedFiles.includes(basename(file))) continue
     await rm(file, { force: true })
     removedFiles.push(basename(file))
   }
-  return { removedFiles }
+  return removedFiles
+}
+
+// ── Google fonts, held by the project ───────────────────────────────────────
+
+// "Serve fonts locally" used to mean Quartz's own `cdnCaching: false`: Quartz downloads the files
+// at build time into the build output and points at them as `https://<baseUrl>/static/fonts/…`
+// (processGoogleFonts in quartz/util/theme.ts). The local preview therefore loaded them from the
+// published site, and before the first publish from nowhere - measured in gui-test: all seven
+// files 404 online, every font fell back. Since 2026-09-19 the switch means this instead: the app
+// asks Google for exactly what Quartz would (shared/googleFontRequest.ts), puts the files under
+// quartz/static/fonts and their @font-face rules, relative, into a managed block of their own, and
+// the config says `fontOrigin: local`, so Quartz fetches nothing. The block is separate from
+// 'fonts' because that one is the user's imports: removing an unused import must not touch a
+// Google font, and replacing the Google fonts must not touch an import. Its first line is the
+// request it came from, which is how a later call knows whether anything changed.
+const GOOGLE_MARKER = 'google-fonts'
+const GOOGLE_TIMEOUT_MS = 20_000
+// Google answers with the format the User-Agent can read. A browser gets woff2 split by
+// unicode-range, so a page loads only the subsets it needs; without one it gets a whole ttf.
+const BROWSER_UA =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+const GSTATIC_URL = /url\(\s*(https:\/\/fonts\.gstatic\.com\/[^)\s'"]+)\s*\)/g
+const FONT_FILE_NAME = /^[\w-]+\.(?:woff2|woff|ttf|otf)$/
+
+export function hasGoogleFontsBlock(content: string): boolean {
+  return getManagedBlock(content, GOOGLE_MARKER) !== null
+}
+
+function requestOf(body: string | null): string | null {
+  return body ? (/^\s*\/\*\s*(https:\/\/fonts\.googleapis\.com\/\S+)\s*\*\//.exec(body)?.[1] ?? null) : null
+}
+
+function allFilesPresent(projectPath: string, body: string): boolean {
+  return parseFontFaces(body).every((face) => {
+    const file = fontFileIn(projectFontsDir(projectPath), face.url)
+    return file !== undefined && existsSync(file)
+  })
+}
+
+// One file, written beside its final name and renamed into place, so an interrupted download never
+// leaves a torso that the next call would take for the real file.
+async function downloadFontFile(url: string, target: string): Promise<void> {
+  const response = await fetch(url, { signal: AbortSignal.timeout(GOOGLE_TIMEOUT_MS) })
+  const file = basename(target)
+  if (!response.ok) throw new Error(mainT('googleFontsFileFailed', { file, status: response.status }))
+  const declared = Number(response.headers.get('content-length') ?? 0)
+  if (declared > MAX_FONT_FILE_BYTES) throw new Error(mainT('googleFontsFileTooLarge', { file }))
+  const data = Buffer.from(await response.arrayBuffer())
+  if (data.length > MAX_FONT_FILE_BYTES) throw new Error(mainT('googleFontsFileTooLarge', { file }))
+  const temp = join(dirname(target), `.${basename(target)}.download`)
+  await writeFile(temp, data)
+  await rename(temp, target)
+}
+
+/**
+ * Fetches the Google fonts the typography names into the project and writes their block. Does
+ * nothing when the block already answers the same request and all its files are there - which is
+ * what makes it cheap enough to call before every build. Files the previous block named and no
+ * rule names any more are deleted.
+ */
+export async function fetchGoogleFonts(
+  projectPath: string,
+  typography: Record<string, unknown>
+): Promise<{ changed: boolean; files: string[]; removedFiles: string[] }> {
+  const request = googleFontsCss2Url(typography)
+  if (!request) throw new Error(mainT('googleFontsNoFamily'))
+  const before = getManagedBlock((await readCustomScss(projectPath)).content, GOOGLE_MARKER)
+  if (before && requestOf(before) === request && allFilesPresent(projectPath, before)) {
+    return { changed: false, files: [], removedFiles: [] }
+  }
+
+  const response = await fetch(request, { headers: { 'User-Agent': BROWSER_UA }, signal: AbortSignal.timeout(GOOGLE_TIMEOUT_MS) })
+  if (!response.ok) throw new Error(mainT('googleFontsRequestFailed', { status: response.status }))
+  const css = await response.text()
+
+  const urls = new Map<string, string>()
+  for (const match of css.matchAll(GSTATIC_URL)) {
+    const name = decodeURIComponent(match[1].split('/').pop() ?? '')
+    if (FONT_FILE_NAME.test(name)) urls.set(match[1], name)
+  }
+  if (urls.size === 0) throw new Error(mainT('googleFontsNothingFound'))
+
+  const dir = projectFontsDir(projectPath)
+  await mkdir(dir, { recursive: true })
+  // Google's file names are content hashes, so a file of that name that is already here is the
+  // same file.
+  for (const [url, name] of urls) {
+    const target = join(dir, name)
+    if (!existsSync(target)) await downloadFontFile(url, target)
+  }
+
+  let body = css
+  for (const [url, name] of urls) body = body.split(url).join(`static/fonts/${name}`)
+  const block = `/* ${request} */\n${body.trim()}`
+  // Read again: the downloads took a while, and custom.scss may have been written meanwhile.
+  const info = await readCustomScss(projectPath)
+  const previous = getManagedBlock(info.content, GOOGLE_MARKER) ?? ''
+  await writeCustomScss(projectPath, upsertManagedBlock(info.content, GOOGLE_MARKER, block))
+  return { changed: true, files: [...urls.values()], removedFiles: await deleteUnreferencedFontFiles(projectPath, previous) }
+}
+
+/** Removes the block and every file of it that no other rule names. Nothing when there is none. */
+export async function dropGoogleFonts(projectPath: string): Promise<{ dropped: boolean; removedFiles: string[] }> {
+  const info = await readCustomScss(projectPath)
+  const body = getManagedBlock(info.content, GOOGLE_MARKER)
+  if (body === null) return { dropped: false, removedFiles: [] }
+  await writeCustomScss(projectPath, stripManagedBlock(info.content, GOOGLE_MARKER))
+  return { dropped: true, removedFiles: await deleteUnreferencedFontFiles(projectPath, body) }
+}
+
+/**
+ * The guard at the door where the fonts are read (buildService, before every build and server
+ * start), the same place the frames are regenerated: the config reaches the typography through
+ * more doors than the Basis tab - a template import, `quartz sync --pull`, a restore. A project
+ * that holds its Google fonts gets them brought in line with the config; anything else is left
+ * alone. Never throws: a failed fetch is a sentence in the log, and the build goes on with the
+ * files that are there.
+ */
+export async function refreshGoogleFonts(projectPath: string): Promise<{ failed: boolean; text: string } | null> {
+  try {
+    const info = await readCustomScss(projectPath)
+    if (!hasGoogleFontsBlock(info.content)) return null
+    const config = await readConfig(projectPath)
+    if (config.theme.fontOrigin !== 'local') return null
+    const result = await fetchGoogleFonts(projectPath, (config.theme.typography ?? {}) as Record<string, unknown>)
+    return result.changed ? { failed: false, text: mainT('googleFontsRefreshed', { count: result.files.length }) } : null
+  } catch (error) {
+    return { failed: true, text: mainT('googleFontsRefreshFailed', { message: error instanceof Error ? error.message : String(error) }) }
+  }
 }

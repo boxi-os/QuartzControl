@@ -394,7 +394,16 @@ const STRINGS = {
     githubPagesSaveFailed: 'Die Pages-Einstellungen konnten nicht gespeichert werden.',
     githubHttpsEnforced: 'HTTPS erzwingen: {{state}}',
     githubOn: 'an',
-    githubOff: 'aus'
+    githubOff: 'aus',
+    googleFontsNoFamily: 'Keine Schriftart gewählt — es gibt nichts, was von Google geholt werden könnte.',
+    googleFontsRequestFailed:
+      'Google Fonts hat die Anfrage abgelehnt (HTTP {{status}}). Meist ist ein Schriftname falsch geschrieben — Google unterscheidet Groß- und Kleinschreibung.',
+    googleFontsFileFailed: 'Die Schriftdatei {{file}} ließ sich nicht von Google laden (HTTP {{status}}).',
+    googleFontsFileTooLarge: 'Die Schriftdatei {{file}} ist größer, als eine Schrift sein sollte, und wurde nicht gespeichert.',
+    googleFontsNothingFound: 'Google Fonts hat für diese Schriften keine Dateien geliefert.',
+    googleFontsRefreshFailed:
+      'Die Google-Schriften ließen sich nicht ins Projekt holen: {{message}} Gebaut wird mit den Dateien, die schon im Projekt liegen.',
+    googleFontsRefreshed: 'Die gewählten Google-Schriften wurden ins Projekt geholt ({{count}} Dateien).'
   },
   en: {
     menuFile: 'File',
@@ -674,7 +683,16 @@ const STRINGS = {
     githubPagesSaveFailed: 'The Pages settings could not be saved.',
     githubHttpsEnforced: 'Enforce HTTPS: {{state}}',
     githubOn: 'on',
-    githubOff: 'off'
+    githubOff: 'off',
+    googleFontsNoFamily: 'No font is selected — there is nothing to fetch from Google.',
+    googleFontsRequestFailed:
+      'Google Fonts rejected the request (HTTP {{status}}). Usually a font name is misspelled — Google is case-sensitive.',
+    googleFontsFileFailed: 'The font file {{file}} could not be loaded from Google (HTTP {{status}}).',
+    googleFontsFileTooLarge: 'The font file {{file}} is larger than a font should be and was not saved.',
+    googleFontsNothingFound: 'Google Fonts returned no files for these fonts.',
+    googleFontsRefreshFailed:
+      'The Google fonts could not be fetched into the project: {{message}} The build uses the files already in the project.',
+    googleFontsRefreshed: 'The selected Google fonts were fetched into the project ({{count}} files).'
   }
 } as const
 

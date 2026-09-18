@@ -307,3 +307,41 @@ Das betrifft nicht die Google-Schriften, die Quartz bei „Schriften lokal ausli
 herunterlädt: Deren Adressen schreibt Quartz absolut auf die `baseUrl`
 (`quartz/util/theme.ts`, `processGoogleFonts`), und die lokale Vorschau lädt sie deshalb von der
 veröffentlichten Website — solange dort nichts liegt, gar nicht.
+
+**„Schriften lokal ausliefern“ holt die Google-Schriften ins Projekt (2026-09-19).** Der Schalter
+war Quartz' `cdnCaching: false`: Quartz lädt beim Build herunter, legt die Dateien *nur in den
+Build* und schreibt ihre Adressen absolut auf die `baseUrl` (`processGoogleFonts`). Die lokale
+Vorschau lud sie damit von der veröffentlichten Website, und solange dort nichts lag, von nirgends:
+gui-test, alle sieben Dateien 404 unter `boxi-os.github.io/quartzcontrol-testing`, jede Schrift
+fiel auf die Ausweichschrift. Jetzt stellt die App dieselbe Anfrage wie Quartz
+(`shared/googleFontRequest.ts`, gegen Quartz' eigenes `googleFontHref` in vier Fällen
+parametergleich, auch mit Objektform, einem Gewicht und Kursiv), legt die Dateien nach
+`quartz/static/fonts/` und ihre Regeln relativ in einen eigenen verwalteten Block `google-fonts`,
+und die Config sagt `fontOrigin: local`. Eigener Block, weil `fonts` die Importe des Nutzers
+sind: „ungenutzte Schriften entfernen“ darf keine Google-Schrift treffen, ein Schriftwechsel keinen
+Import. Die erste Zeile des Blocks ist die Anfrage, aus der er stammt — daran erkennt der nächste
+Aufruf, ob es etwas zu tun gibt (1 ms statt eines Netzaufrufs). Mit einem Browser-User-Agent
+liefert Google woff2 nach `unicode-range` geteilt, und eine Seite lädt nur die Teilmengen, die sie
+braucht.
+
+Wann geholt wird: beim Speichern auf der Stile-Seite (vor der Config, damit ein Fehlschlag die
+Datei lässt, wie sie war) und vor jedem Build und Serverstart (`refreshGoogleFonts` in
+`buildService`, neben den Frames), weil die Schriften die Config auch über Vorlagen-Import,
+`quartz sync --pull` und Restore erreichen. Ein Fehlschlag dort ist eine Zeile im Log, gebaut wird
+mit dem, was da ist. Die Stile-Seite liest `local` plus Block als „Google, lokal ausgeliefert“
+(`presentFontDelivery`), der Entwurf behält die alte Schreibweise, und nur Laden und Speichern
+übersetzen. Ein Projekt, das noch `cdnCaching: false` ohne Block trägt, zeigt den Schalter an, sagt
+es und bietet „Jetzt ins Projekt holen“ an. Der Block reist mit dem Vorlagen-Teil `fonts`, nicht mit
+dem freien Rest von `custom.scss`.
+
+Gemessen an Kopien von gui-test mit der gebauten App (Wegwerf-Profil, Playwright): alter Modus →
+Hinweis → Klick → `local`, Block, 29 Dateien; Schalter aus und speichern → `googleFonts`,
+`cdnCaching: true`, Block und alle Dateien weg; wieder an → „Noch nicht im Projekt: …“, speichern →
+29 Dateien; Routenwechsel → derselbe Zustand, nichts ungespeichert. Textschrift in der Datei auf
+Inter gesetzt und über die App gebaut → „… ins Projekt geholt (23 Dateien)“, Open Sans weg; im
+gebauten CSS kein `fonts.gstatic.com`, kein `fonts.googleapis.com`, keine `baseUrl`-Adresse, 43
+relative Verweise; in Chrome unter `/quartzcontrol-testing/` alle drei Schriften `loaded`, jede
+Datei 200. Export als `.qtpl` und Import in eine frische Kopie: ein Block, nicht verschachtelt,
+`local`, 23 Dateien. Nicht davon betroffen: das Plugin „Fonts“ mit `selfHosted` (lädt weiter beim
+Build auf die `baseUrl`) und `@quartz-community/og-image`, das beim Build selbst bei Google fragt,
+um die Vorschaubilder zu zeichnen.

@@ -51,7 +51,11 @@ export async function loadPreviewFonts(projectPath: string, families: string[]):
   return result.built
 }
 
-export type FontBuildState = { kind: 'notBuilt' } | { kind: 'missing'; families: string[] } | null
+export type FontBuildState =
+  | { kind: 'notBuilt' }
+  | { kind: 'missing'; families: string[] }
+  | { kind: 'notFetched'; families: string[] }
+  | null
 
 /**
  * Whether the fonts the site asks Google for are still waiting for a build. Only when the files are
@@ -60,16 +64,25 @@ export type FontBuildState = { kind: 'notBuilt' } | { kind: 'missing'; families:
  * Asked per family against the faces the build really has, not by comparing timestamps: a build
  * after an unrelated change is newer than the config and still lacks a font chosen since.
  */
+// Since 2026-09-19 core's "served locally" is the app's own fetch into the project (fontDelivery.ts),
+// so its files are there once the page is saved and no build is waited for; only the Fonts
+// plugin's `selfHosted` still downloads at build time.
 export function fontBuildState(config: QuartzConfig, faces: FontFaceInfo[], built: boolean | null): FontBuildState {
-  if (built === null) return null
-  const selfHosted = fontLoaders(config).some((l) => l.via !== 'theme' && l.mode === 'selfHosted')
-  if (!selfHosted) return null
-  if (!built) return { kind: 'notBuilt' }
+  const loaders = fontLoaders(config)
+  const heldByProject = loaders.some((l) => l.via === 'core' && l.mode === 'selfHosted')
+  const pluginAtBuild = loaders.some((l) => l.via === 'plugin' && l.mode === 'selfHosted')
+  if (!heldByProject && !pluginAtBuild) return null
   const typography = (config.theme.typography ?? {}) as Record<string, unknown>
-  const have = new Set(faces.map((f) => f.family.toLowerCase()))
+  // Held by the project means in the project: a family an older build still carries (Quartz's own
+  // download, from before the switch) is no answer to whether the project has it.
+  const counted = heldByProject ? faces.filter((f) => f.origin !== 'build') : faces
+  const have = new Set(counted.map((f) => f.family.toLowerCase()))
   const missing = (['header', 'body', 'code'] as TypographySlot[])
     .map((slot) => googleFontRequest(slot, typography[slot])?.family)
     .filter((family): family is string => Boolean(family) && !have.has(family!.toLowerCase()))
   const unique = [...new Set(missing)]
+  if (heldByProject) return unique.length > 0 ? { kind: 'notFetched', families: unique } : null
+  if (built === null) return null
+  if (!built) return { kind: 'notBuilt' }
   return unique.length > 0 ? { kind: 'missing', families: unique } : null
 }

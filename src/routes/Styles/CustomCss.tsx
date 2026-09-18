@@ -316,6 +316,7 @@ export default function CustomCss(): JSX.Element {
                 variables: t('styles.scssStaleBy.variables'),
                 fontImport: t('styles.scssStaleBy.fontImport'),
                 fontRemoval: t('styles.scssStaleBy.fontRemoval'),
+                googleFonts: t('styles.scssStaleBy.googleFonts'),
                 stylesheets: t('styles.scssStaleBy.stylesheets')
               }[scss.staleBy]
             }
@@ -810,7 +811,8 @@ function ActiveStyles(): JSX.Element {
   const anyMissing = families.some((family) => family && !fontIsAvailable(family))
   const buildState = fontBuildState(config, faces, built)
   const googleFamilies = new Set(requests.map((r) => r.family.toLowerCase()))
-  const selfHosted = loaders.some((l) => l.via !== 'theme' && l.mode === 'selfHosted')
+  const heldByProject = loaders.some((l) => l.via === 'core' && l.mode === 'selfHosted')
+  const selfHosted = loaders.some((l) => l.via === 'plugin' && l.mode === 'selfHosted')
   const atPageView = loaders.some((l) => l.via !== 'theme' && l.mode === 'google')
 
   return (
@@ -932,7 +934,9 @@ function ActiveStyles(): JSX.Element {
                           : // No rule yet is not the same as none: a Google font has its rules after
                             // the build, or in the visitor's browser - only for anything else it means
                             // nothing will declare this family.
-                            googleFamilies.has(family.toLowerCase()) && selfHosted
+                            googleFamilies.has(family.toLowerCase()) && heldByProject
+                            ? t('styleEditor.current.faceOnSave')
+                            : googleFamilies.has(family.toLowerCase()) && selfHosted
                             ? t('styleEditor.current.faceAtBuild')
                             : googleFamilies.has(family.toLowerCase()) && atPageView
                               ? t('styleEditor.current.faceFromGoogle')
@@ -960,6 +964,11 @@ function ActiveStyles(): JSX.Element {
             {buildState?.kind === 'missing' && (
               <p className="mt-2 text-micro text-amber-700 dark:text-amber-400">
                 {t('styleEditor.current.fontsMissingFromBuild', { families: buildState.families.join(', ') })}
+              </p>
+            )}
+            {buildState?.kind === 'notFetched' && (
+              <p className="mt-2 text-micro text-amber-700 dark:text-amber-400">
+                {t('styleEditor.current.fontsNotFetched', { families: buildState.families.join(', ') })}
               </p>
             )}
 

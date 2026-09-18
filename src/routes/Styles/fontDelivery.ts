@@ -116,3 +116,41 @@ export function withSelfHostedFonts(config: QuartzConfig, selfHosted: boolean): 
   }
   return { ...config, theme: nextTheme, plugins }
 }
+
+// ── Google fonts held by the project ────────────────────────────────────────
+//
+// "Serve locally" is one switch on the Basis tab and two things on disk. Until 2026-09-19 it was
+// Quartz's `cdnCaching: false`, which downloads at build time into the build output and points at
+// `https://<baseUrl>/static/fonts/…` - so the local preview loaded the fonts from the published
+// site, or not at all. Now the app fetches them into the project (fontService.fetchGoogleFonts):
+// the files go to quartz/static/fonts, their rules into custom.scss's "google-fonts" block, and the
+// config says `fontOrigin: local`, so Quartz fetches nothing. On this page the draft keeps the old
+// spelling - `googleFonts` with `cdnCaching: false` - because that is what the switch and the
+// font fields mean: the fields offer Google's list, the switch is on. The two functions below
+// translate on the way in and out; nothing else on the page needs to know.
+
+const GOOGLE_BLOCK_START = /\/\* --- [\w-]+:managed:google-fonts:start --- \*\//
+
+export function holdsGoogleFonts(scss: string): boolean {
+  return GOOGLE_BLOCK_START.test(scss)
+}
+
+type ThemeFonts = { fontOrigin?: unknown; cdnCaching?: unknown }
+
+/** On the way in: `local` plus the block reads as "Google, served locally". */
+export function presentFontDelivery(config: QuartzConfig, scss: string): QuartzConfig {
+  const theme = config.theme as ThemeFonts
+  if (theme.fontOrigin !== 'local' || !holdsGoogleFonts(scss)) return config
+  return { ...config, theme: { ...config.theme, fontOrigin: 'googleFonts', cdnCaching: false } }
+}
+
+/** Whether the draft asks for Google fonts served from the project. */
+export function fetchesGoogleFonts(config: QuartzConfig): boolean {
+  const theme = config.theme as ThemeFonts
+  return (theme.fontOrigin === 'googleFonts' || theme.fontOrigin === undefined) && theme.cdnCaching === false
+}
+
+/** On the way out: what the config file says once the fonts are in the project. */
+export function persistFontDelivery(config: QuartzConfig): QuartzConfig {
+  return fetchesGoogleFonts(config) ? { ...config, theme: { ...config.theme, fontOrigin: 'local' } } : config
+}

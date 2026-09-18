@@ -827,7 +827,7 @@ export default {
     fontSource: 'Font-Quelle',
     googleFonts: 'Google Fonts',
     googleFontsHint:
-      'Quartz holt die gewählten Schriften bei Google; die Schriftfelder bieten alle {{count}} Google Fonts zur Auswahl, Tippen filtert. Wie sie ausgeliefert werden, entscheidet der Schalter unten.',
+      'Die gewählten Schriften kommen von Google; die Schriftfelder bieten alle {{count}} Google Fonts zur Auswahl, Tippen filtert. Wie sie ausgeliefert werden, entscheidet der Schalter unten.',
     fontCategory: {
       sansSerif: 'Serifenlos',
       serif: 'Serif',
@@ -847,14 +847,18 @@ export default {
     delivery: {
       heading: 'Schrift-Auslieferung',
       description:
-        'Lokal ausliefern heißt: Quartz lädt die Schriftdateien einmal beim Build herunter und legt sie unter static/fonts ab. Die Seite ruft dann nichts mehr bei Google auf — das ist die DSGVO-freundliche Variante.',
+        'Lokal ausliefern heißt: QuartzControl holt die Schriftdateien beim Speichern ins Projekt, und die Website ruft nichts mehr bei Google auf — die DSGVO-freundliche Variante.',
+      quartzStillDownloads:
+        'Noch lädt Quartz diese Schriften erst beim Build und verweist dabei auf die veröffentlichte Website — die Vorschau zeigt sie deshalb nicht. Speichern holt sie ins Projekt.',
+      fetchNow: 'Jetzt ins Projekt holen',
+      fetching: 'Hole Schriften…',
       selfHost: 'Schriften lokal ausliefern (kein Google-Aufruf beim Besuch)',
       baseUrlMissing:
         'Dafür muss eine Basis-URL gesetzt sein (Konfiguration → Basis-URL) — die Schrift-URLs werden darauf umgeschrieben, sonst bricht der Build ab.',
       state: {
         core: {
           google: 'Quartz-Kern: verlinkt Google Fonts direkt.',
-          selfHosted: 'Quartz-Kern: lädt beim Build herunter und liefert lokal aus.'
+          selfHosted: 'QuartzControl: holt die Schriften ins Projekt, die Website liefert sie selbst aus.'
         },
         plugin: {
           google: 'Plugin „Fonts“: verlinkt Google Fonts direkt.',
@@ -1327,6 +1331,8 @@ export default {
         'custom.scss wurde inzwischen beim Import einer Schrift geändert. Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
       fontRemoval:
         'custom.scss wurde inzwischen beim Entfernen einer ungenutzten Schrift geändert. Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
+      googleFonts:
+        'custom.scss wurde inzwischen geändert, weil die Google-Schriften ins Projekt geholt oder entfernt wurden. Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
       stylesheets:
         'custom.scss wurde inzwischen geändert, weil sich die Stylesheets geändert haben (Ladereihenfolge, Import oder neue Datei). Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.'
     },
@@ -1458,9 +1464,11 @@ export default {
       italic: 'kursiv',
       noFace: 'keine @font-face-Regel gefunden',
       faceAtBuild: 'kommt beim nächsten Build von Google',
+      faceOnSave: 'kommt beim Speichern von Google ins Projekt',
       faceFromGoogle: 'lädt beim Seitenaufruf von Google',
       fontsNotBuilt:
         'Dieses Projekt wurde noch nicht gebaut. Quartz lädt die Google-Schriften erst beim Build herunter — „Jetzt bauen“ oder den Dev-Server starten.',
+      fontsNotFetched: 'Noch nicht im Projekt: {{families}}. Speichern holt sie von Google.',
       fontsMissingFromBuild:
         'Der letzte Build enthält {{families}} noch nicht: Quartz lädt die Schrift erst beim nächsten Build herunter — nach dem Speichern „Jetzt bauen“ oder den Dev-Server starten.',
       familyDefault: '(Standardstärke)',
@@ -1469,7 +1477,7 @@ export default {
       loader: {
         core: {
           google: 'Quartz lädt bei jedem Seitenaufruf von Google Fonts: {{specs}}.',
-          selfHosted: 'Quartz lädt beim Build von Google und liefert die Dateien selbst aus: {{specs}}.'
+          selfHosted: 'QuartzControl holt diese Schriften von Google ins Projekt, die Website liefert sie selbst aus: {{specs}}.'
         },
         plugin: {
           google: 'Das Plugin „Fonts“ lädt bei jedem Seitenaufruf von Google Fonts.',

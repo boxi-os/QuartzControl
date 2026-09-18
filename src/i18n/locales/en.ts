@@ -824,7 +824,7 @@ export default {
     fontSource: 'Font source',
     googleFonts: 'Google Fonts',
     googleFontsHint:
-      'Quartz fetches the chosen fonts from Google; the font fields offer all {{count}} Google Fonts, typing filters. How they are delivered is the switch below.',
+      'The chosen fonts come from Google; the font fields offer all {{count}} Google Fonts, typing filters. How they are delivered is the switch below.',
     fontCategory: {
       sansSerif: 'Sans serif',
       serif: 'Serif',
@@ -844,14 +844,18 @@ export default {
     delivery: {
       heading: 'Font delivery',
       description:
-        'Serving locally means Quartz downloads the font files once at build time and puts them under static/fonts. The site then makes no request to Google at all — the GDPR-friendly option.',
+        'Serving locally means QuartzControl fetches the font files into the project when you save, and the site makes no request to Google at all — the GDPR-friendly option.',
+      quartzStillDownloads:
+        'Quartz still downloads these fonts only at build time and points at the published site for them — which is why the preview does not show them. Saving fetches them into the project.',
+      fetchNow: 'Fetch into the project now',
+      fetching: 'Fetching fonts…',
       selfHost: 'Serve fonts locally (no Google request on visit)',
       baseUrlMissing:
         'This needs a base URL (Configuration → base URL) — the font URLs are rewritten to it, and the build fails without one.',
       state: {
         core: {
           google: 'Quartz core: links Google Fonts directly.',
-          selfHosted: 'Quartz core: downloads at build time and serves locally.'
+          selfHosted: 'QuartzControl: fetches the fonts into the project, the site serves them itself.'
         },
         plugin: {
           google: '“Fonts” plugin: links Google Fonts directly.',
@@ -1322,6 +1326,8 @@ export default {
         'custom.scss has since been changed by importing a font. Your draft here is still unsaved — saving it would overwrite that change.',
       fontRemoval:
         'custom.scss has since been changed by removing an unused font. Your draft here is still unsaved — saving it would overwrite that change.',
+      googleFonts:
+        'custom.scss has since been changed because the Google fonts were fetched into the project or removed. Your draft here is still unsaved — saving it would overwrite that change.',
       stylesheets:
         'custom.scss has since been changed because the stylesheets changed (load order, an import or a new file). Your draft here is still unsaved — saving it would overwrite that change.'
     },
@@ -1449,9 +1455,11 @@ export default {
       italic: 'italic',
       noFace: 'no @font-face rule found',
       faceAtBuild: 'comes from Google with the next build',
+      faceOnSave: 'comes from Google into the project on save',
       faceFromGoogle: 'loads from Google on page view',
       fontsNotBuilt:
         'This project has not been built yet. Quartz downloads the Google fonts only at build time — “Build now” or start the dev server.',
+      fontsNotFetched: 'Not in the project yet: {{families}}. Saving fetches them from Google.',
       fontsMissingFromBuild:
         'The last build does not contain {{families}} yet: Quartz downloads the font only with the next build — after saving, “Build now” or start the dev server.',
       familyDefault: '(family default)',
@@ -1460,7 +1468,7 @@ export default {
       loader: {
         core: {
           google: 'Quartz links Google Fonts on every page view: {{specs}}.',
-          selfHosted: 'Quartz downloads from Google at build time and serves the files itself: {{specs}}.'
+          selfHosted: 'QuartzControl fetches these fonts from Google into the project, the site serves them itself: {{specs}}.'
         },
         plugin: {
           google: 'The “Fonts” plugin links Google Fonts on every page view.',

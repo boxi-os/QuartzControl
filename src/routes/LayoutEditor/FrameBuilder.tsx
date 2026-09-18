@@ -47,6 +47,7 @@ import { formatIpcError } from '../../components/ErrorSurface'
 import DevServerRestartHint from '../../components/DevServerRestartHint'
 import { breakpointRangeLabel } from './utils'
 import { useStickyState } from '../../state/uiState'
+import { announce } from '../../state/announcer'
 import { useDndAccessibility } from '../../utils/dndAnnouncements'
 import { nearestDroppableCoordinatesFrom } from '../../utils/dndKeyboard'
 
@@ -270,6 +271,15 @@ export default function FrameBuilder({
   const [nameDraft, setNameDraft] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  // A change made in an area's own form that was refused - a span that would overlap, a hidden
+  // area whose cells have been taken since. Shown in that form and said through announce(), not
+  // through `message`: that one renders at the top of the editor, and the form sits a screen
+  // further down. Measured at the built app (thirty-first review, finding 1): the switch "visible
+  // on desktop" stayed off, its sentence stood 273px above the window, and no live region said
+  // it - a button that does nothing, in all 15 hidden placements of the test project. Cleared by
+  // the effect below whenever the draft, the selection or the breakpoint changes; a refusal
+  // changes none of them, so it stays until the user does something else.
+  const [formRefusal, setFormRefusal] = useState<{ areaId: string; text: string } | null>(null)
   // Saving keeps the editor open (a frame is built in many passes, and being thrown back to the
   // list after every save meant clicking back in each time), so a save that worked needs to say so
   // - otherwise the button just flickers and nothing visibly happens. Held as the serialized
@@ -304,6 +314,18 @@ export default function FrameBuilder({
     // text the user is still typing.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAreaId])
+
+  // See `formRefusal`: gone with the next thing that actually changes.
+  useEffect(() => {
+    setFormRefusal(null)
+  }, [editing, selectedAreaId, activeBreakpoint])
+
+  // And brought into view when it appears: it is the form's last line, and a form opened at the
+  // window's lower edge had it 76px below (measured while fixing the finding, span field of
+  // `left` at 1280x900). `nearest`, so a line that is already visible moves nothing.
+  useEffect(() => {
+    if (formRefusal) document.querySelector('[data-form-refusal]')?.scrollIntoView({ block: 'nearest' })
+  }, [formRefusal])
 
   // The selection survives a breakpoint switch on purpose - one area is often tuned across all
   // three - but its form does not stay put: on one breakpoint it sits inside the area's grid box,
@@ -692,6 +714,13 @@ export default function FrameBuilder({
     })
   }
 
+  // The sentence comes from the caller as a literal key, so that check:i18n can read it.
+  function refuseInForm(id: string, text: string): void {
+    setFormRefusal({ areaId: id, text })
+    announce(text)
+  }
+  const areaName = (id: string): string => editing?.areas.find((a) => a.id === id)?.name ?? id
+
   function updateAreaSpan(id: string, patch: { rowSpan?: number; colSpan?: number }): void {
     if (!editing) return
     const layout = editing.breakpoints[activeBreakpoint]
@@ -700,7 +729,7 @@ export default function FrameBuilder({
     const rowSpan = patch.rowSpan !== undefined ? Math.min(Math.max(1, patch.rowSpan), layout.rows - existing.row + 1) : existing.rowSpan
     const colSpan = patch.colSpan !== undefined ? Math.min(Math.max(1, patch.colSpan), layout.cols - existing.col + 1) : existing.colSpan
     if (overlaps(layout, editing.areas, existing.row, existing.col, rowSpan, colSpan, id)) {
-      setMessage(t('layoutEditor.frameBuilder.overlapError'))
+      refuseInForm(id, t('layoutEditor.frameBuilder.spanRefused', { name: areaName(id) }))
       return
     }
     setEditing(withPlacement(editing, activeBreakpoint, id, { ...existing, rowSpan, colSpan }))
@@ -717,7 +746,7 @@ export default function FrameBuilder({
     // no longer formed a rectangle in `grid-template-areas` - which makes the whole declaration
     // invalid (thirtieth review, "nebenbei" 1).
     if (!hidden && overlaps(layout, editing.areas, existing.row, existing.col, existing.rowSpan, existing.colSpan, id)) {
-      setMessage(t('layoutEditor.frameBuilder.overlapError'))
+      refuseInForm(id, t('layoutEditor.frameBuilder.showRefused', { name: areaName(id) }))
       return
     }
     setEditing(withPlacement(editing, activeBreakpoint, id, { ...existing, hidden }))
@@ -1018,6 +1047,13 @@ export default function FrameBuilder({
         <Button variant="danger" onClick={() => void requestDeleteArea(area)}>
           {t('layoutEditor.frameBuilder.removeArea')}
         </Button>
+        {/* Not a live region: refuseInForm says the sentence through announce(), and a second
+            region would say it twice. */}
+        {formRefusal?.areaId === area.id && (
+          <p data-form-refusal className="basis-full text-sm text-red-600 dark:text-red-400">
+            {formRefusal.text}
+          </p>
+        )}
       </div>
     )
   }

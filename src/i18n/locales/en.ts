@@ -1214,6 +1214,9 @@ export default {
       visibleOnBreakpoint: 'Visible on {{breakpoint}}',
       overlapError: 'This area overlaps an existing area.',
       dropRefused: '{{name}} stays where it was — there it would overlap an existing area.',
+      spanRefused: '{{name}} keeps its span — with the new one it would overlap an existing area.',
+      showRefused:
+        '{{name}} stays hidden — another area lies on its cells by now. Drag it onto a free cell to show it.',
       dropNarrowed: '{{name}} dropped on {{target}}. The grid ends there: {{changes}}.',
       colSpanCut: 'column span now {{now}} instead of {{before}}',
       rowSpanCut: 'row span now {{now}} instead of {{before}}',

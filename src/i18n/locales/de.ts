@@ -1217,6 +1217,9 @@ export default {
       visibleOnBreakpoint: 'Sichtbar auf {{breakpoint}}',
       overlapError: 'Dieser Bereich überschneidet sich mit einem bestehenden Bereich.',
       dropRefused: '{{name}} bleibt, wo es war — dort überschneidet es sich mit einem bestehenden Bereich.',
+      spanRefused: '{{name}} behält seine Spanne — mit der neuen würde es sich mit einem bestehenden Bereich überschneiden.',
+      showRefused:
+        '{{name}} bleibt ausgeblendet — auf seinen Zellen liegt inzwischen ein anderer Bereich. Ziehe es auf eine freie Zelle, um es zu zeigen.',
       dropNarrowed: '{{name}} bei {{target}} abgelegt. Dort endet das Raster: {{changes}}.',
       colSpanCut: 'Spalten-Spanne jetzt {{now}} statt {{before}}',
       rowSpanCut: 'Zeilen-Spanne jetzt {{now}} statt {{before}}',

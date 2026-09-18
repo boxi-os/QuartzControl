@@ -1180,3 +1180,30 @@ Fenster.
   das Überschreiten der Kappung das gewollte Rollen; ein Hinweis, der das sagt, stünde bei 1280 px
   in 64 Breakpoints und träfe keinen echten Fall.
 - *Die Zeilenzahl des Auftrags* (Punkt 7) hat das Review selbst erklärt.
+
+**Nachtrag (2026-09-18, einunddreißigstes Review, Befund 1): Eine Ablehnung aus dem
+Bereichsformular steht im Formular und wird gesagt.** Das abgelehnte Einblenden (`5feb5f5`) und die
+abgelehnte Spanne schrieben nach `message`, und die rendert als erste Zeile des Editors — das
+Formular liegt einen Bildschirm tiefer. Gebaute App, „focus“, Desktop, 1280 × 900, `before-body`
+(ausgeblendet auf 1/1 unter `header`), Schalter „Sichtbar auf Desktop“, Leertaste:
+
+    vorher   Schalter false → false · Meldung bei top −273 (über dem Fenster) · keine Live-Region
+    jetzt    Schalter false → false · „before-body bleibt ausgeblendet — auf seinen Zellen liegt
+             inzwischen ein anderer Bereich. Ziehe es auf eine freie Zelle, um es zu zeigen.“
+             im Formular bei top 705, einmal über announce(); ein zweiter Druck sagt es wieder
+    Spanne   `left` 3 → 4 Spalten: Feld springt auf 3 zurück, „left behält seine Spanne — …“ im
+             Formular und gesagt; 3 → 2 geht durch und räumt die Zeile ab
+
+Im Testprojekt ist die Ablehnung der Normalfall des Schalters: 15 ausgeblendete Platzierungen in
+den vier Frames, alle auf 1/1 unter `header`, alle 15 abgelehnt. Deshalb nennt der Satz den Weg,
+der geht. Die Zeile ist ein eigener Zustand (`formRefusal`) und verschwindet mit der nächsten
+Änderung an Entwurf, Auswahl oder Breakpoint — eine Ablehnung ändert keines der drei, also bleibt
+sie stehen, bis der Nutzer etwas anderes tut. **Sie ist die letzte Zeile des Formulars und wird
+beim Erscheinen in den Blick gerollt** (`block: 'nearest'`): Beim ersten Anlauf stand sie für das
+Spannen-Feld bei top 976 in einem 900 px hohen Fenster, weil ein Formular, dessen Feld gerade so
+im Fenster liegt, sein Ende darunter hat. Keine eigene Live-Region — `announce()` sagt den Satz,
+eine zweite Region sagte ihn doppelt. Die abgelehnte *Ablage* eines Drags bleibt bei `message` und
+wird weiter von der Drag-Ansage gesagt (`dropRefused`). Die beiden Sätze werden als wörtliche
+Schlüssel an der Aufrufstelle übergeben, weil `check:i18n` einen zusammengesetzten nicht liest
+(1141 + 185, weiter 67 nicht prüfbar). Gegenlauf: drei Tastatur-Szenen wortgleich, `footer` aus
+und wieder ein geht, `smoke` 40 Aufrufe ohne Auffälligkeit.

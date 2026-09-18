@@ -618,3 +618,32 @@ Absatz über `announce()`, auf beiden Seiten, per MutationObserver an der gebaut
 geht mit dem nächsten Schritt des Nutzers auf der Seite — vorher stand er nach „Aktualisieren“ noch
 da. Und der Satz nach einem gescheiterten Stash-Pop nennt jetzt `stash@{n}` und
 `git stash show -p` wie die zwei Sätze daneben (nebenbei 2, Szene mit E4 am Bündel).
+
+**Nachtrag (2026-09-18, siebenundzwanzigstes Review, Befund 1): `putBack` fragt, welche Zeile sich
+bewegt hat, nicht, was `stillMissing` für erledigt hält.** Der Absatz darüber sagt „fehlten vorher,
+stehen jetzt“, und gebaut war es als „fehlten vorher, `stillMissing` hält sie nicht mehr für
+fehlend“. Das ist dasselbe nur für eine npm-Attrappe, die den Bereich wörtlich schreibt. Echtes npm
+schreibt `^<aufgelöste Version>`: `npm install --save-prod is-odd@^3.0.0 left-pad@^1.1.0` ergab
+`"is-odd": "^3.0.1", "left-pad": "^1.3.0"` (npm 11.17.0). Die Zeile, die npm gerade zurückgeschrieben
+hat, galt damit weiter als fehlend, `putBack` blieb leer, und der nächste Git-Sync ließ die Liste
+als fremde Antwort fallen — Szene G1 war unter echtem npm nie zu, auch nicht nach der Kürzung des
+fünfundzwanzigsten Reviews. Die Markierung vergleicht jetzt die Zeilen der fehlenden Einträge vor
+den npm-Aufrufen mit denen danach, über alle Abschnitte (`packageLines`). Und der Satz des
+Fehlerwegs („stehen nicht mehr in package.json“) fragt `absentFromPackageJson`, weil `stillMissing`
+dieselbe frisch geschriebene Zeile für fehlend hielt und der Satz zwei Pakete nannte, die im Diff
+derselben Datei standen.
+
+    G1  failsecond, Git-Sync committet, Lauf 2 scheitert ganz, Lauf 3 geht
+      Attrappe wie npm (NPM_RESOLVE=1)   vorher putBack [], nach dem Commit pending [],
+                                         Lauf 3 upToDate ohne own-dev-tool
+                                         jetzt putBack [default, minimal], pending [own-dev-tool]
+                                         über beide Fehlschläge, Lauf 3 trägt es ein
+      Attrappe wörtlich                  unverändert wie vorher
+    H1  failsecond, git checkout, Lauf 2 ok: in beiden Betriebsarten alle drei zurück
+    R1  echtes npm, eigene Pakete is-odd/left-pad + eine devDependency, die es nicht gibt (E404)
+      Lauf 1   putBack [is-odd, left-pad], Satz nennt nur qc-gibt-es-nicht-xyz
+      Git-Sync, Lauf 2 (scheitert wieder an E404): Liste steht, Status pending [qc-gibt-es-nicht-xyz]
+
+Die Attrappe bekommt die Betriebsart „wie npm“ als Normalfall (Messgeschirr, nicht im Repo): Eine
+Szene um die Paketliste, die mit wörtlich geschriebenen Bereichen gemessen ist, misst an einem npm,
+das es nicht gibt.

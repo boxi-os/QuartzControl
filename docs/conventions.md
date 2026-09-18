@@ -121,7 +121,11 @@ Projektwurzel.
   fremde Hand. **Markiert, nicht gestrichen**: Diese Zeilen stehen uncommittet da, und ein
   `git checkout -- package.json` nach dem gescheiterten Update nimmt sie wieder weg; eine auf den
   Rest gekürzte Liste nannte sie danach nirgends mehr (sechsundzwanzigstes Review, Befund 1 — die
-  Kürzung war der Fix der Runde davor, und ihr Preis stand nicht daneben). Und die Nadel des
+  Kürzung war der Fix der Runde davor, und ihr Preis stand nicht daneben). **Und „zurückgeschrieben“
+  heißt „die Zeile hat sich in diesem Lauf bewegt“**, verglichen vor und nach den npm-Aufrufen:
+  npm schreibt den Bereich, den es auflöst (`^3.0.1` für `is-odd@^3.0.0`), also sagt ein Vergleich
+  mit dem Bereich der Notiz nicht, wer geschrieben hat — gemessen war vorher nur an einer
+  Attrappe, die wörtlich schrieb (siebenundzwanzigstes Review, Befund 1). Und die Nadel des
   `-G` steht in Anführungszeichen, weil ein blanker Name jede Zeile trifft, die ihn *enthält*. Und ein vierter Satz für den Eintrag, der
   auf HEAD passt, während gar kein Merge offen ist: Dann gibt es keinen Knopf, aber auch keinen
   „Stand, den es nicht mehr gibt“ — `git stash pop` trägt ihn ein (alles zwanzigstes Review). **Der Plan

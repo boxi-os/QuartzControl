@@ -362,6 +362,38 @@ async function absentFromPackageJson(projectPath: string, entries: PackageAdditi
   return entries.filter((entry) => DEPENDENCY_SECTIONS.every((section) => dependencyRange(merged, section, entry.name) === undefined))
 }
 
+/**
+ * Where each of a list's names stands in package.json right now, across all sections, as one
+ * string per name ('' for nowhere) - or null when the file cannot be read. Only ever compared with
+ * itself, before and after npm: the question is "did this line move", not "what does it say".
+ *
+ * It exists because neither of the two predicates above can tell which lines npm has just written:
+ * npm writes `^<resolved version>`, not the range it was given, so `stillMissing` still counts a
+ * line it has just put back (`is-odd@^3.0.0` comes back as `^3.0.1`), and `absentFromPackageJson`
+ * also says "stands" for a line the user wrote back by hand before the run. Measured (twenty-seventh
+ * review, finding 1, scene G1 against npm 11.17.0): `putBack` stayed empty for every package with a
+ * newer version inside its range, and the next Git-Sync dropped the list as somebody else's answer.
+ */
+async function packageLines(projectPath: string, entries: PackageAddition[]): Promise<Map<string, string> | null> {
+  let pkg: unknown
+  try {
+    pkg = JSON.parse(await readFile(join(projectPath, 'package.json'), 'utf-8'))
+  } catch {
+    return null
+  }
+  return new Map(
+    entries.map((entry) => [
+      entry.name,
+      DEPENDENCY_SECTIONS.map((section) => {
+        const range = dependencyRange(pkg, section, entry.name)
+        return range === undefined ? '' : `${section}:${range}`
+      })
+        .filter(Boolean)
+        .join(' ')
+    ])
+  )
+}
+
 // The name of the stash this run writes: the prefix says "this is the app's", and it is what the
 // user reads in `git stash list`. Unlike `.quartz-gui/` or the `.qtpl` markers it is *not* an
 // identifier on someone else's disk yet - it arrived with 2f4394d (2026-09-16), after beta.2, and
@@ -1274,6 +1306,8 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     }
     const missingNow = wanted.length > 0 ? await stillMissing(projectPath, wanted) : []
     const installCalls = missingNow.length > 0 ? reinstallCommands(missingNow) : [{ args: ['install'] }]
+    // The lines as they stand before npm touches them - see packageLines, and `putBack` below.
+    const linesBefore = missingNow.length > 0 ? await packageLines(projectPath, missingNow) : null
     let installOutput = ''
     for (const call of installCalls) {
       const install = await run('npm', call.args, projectPath)
@@ -1297,17 +1331,26 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
         //   twenty-fifth review's fix answered the first case by *shortening* the list to what was
         //   still missing, and lost them in the second - measured (twenty-sixth review, finding 1,
         //   scene H1): both themes gone for good, "Your own packages put back: own-dev-tool", badge
-        //   green. `stillMissing` drops whatever stands anyway, so the full list costs nothing
-        //   while the lines are there.
+        //   green. The full list costs little while the lines are there: the next run asks npm
+        //   for them once more, and npm writes what it wrote.
         //
-        // Marked by what npm moved in *this* run (missing before, standing now), not by what
-        // stands: a line the user wrote back by hand before this run is not this app's writing.
-        const leftOver = wanted.length > 0 ? await stillMissing(projectPath, wanted) : []
+        // Marked by what npm moved in *this* run - the line as it stood before the npm calls
+        // against the line now, in any section - not by what stands: a line the user wrote back
+        // by hand before this run is not this app's writing. And not by `stillMissing` either,
+        // which the twenty-sixth review's fix used and which marks nothing under real npm: npm
+        // writes the range it resolves, so a line it has just put back still differs from the
+        // note (twenty-seventh review, finding 1 - measured against npm 11.17.0, `putBack: []`,
+        // `own-dev-tool` gone after the next Git-Sync; the harness's npm had written ranges
+        // verbatim). An unreadable file on either side marks nothing, which is the state before
+        // `putBack` existed.
+        const linesAfter = linesBefore !== null ? await packageLines(projectPath, missingNow) : null
         const putBack = [
           ...carriedPutBack,
-          ...missingNow
-            .filter((entry) => !leftOver.some((left) => left.name === entry.name && left.section === entry.section))
-            .map((entry) => entry.name)
+          ...(linesAfter === null
+            ? []
+            : missingNow
+                .filter((entry) => linesAfter.get(entry.name) !== '' && linesAfter.get(entry.name) !== linesBefore?.get(entry.name))
+                .map((entry) => entry.name))
         ]
         try {
           await markInstallPending(projectPath, headAfter, wanted, filesAtHead, true, putBack)
@@ -1318,14 +1361,16 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
         // project's own packages are named nowhere: npm's error is about a version range, not about
         // what was taken out. Without this line the way back (the restore point, or installing them
         // again) needs a list the user no longer has.
-        // `leftOver`, not `missingNow`: the second names what was missing *before* npm ran, and
-        // after a failure in the second of two calls the first call's packages are back in the
-        // file. The sentence says "no longer in package.json" over lines that stand there
-        // (twenty-fifth review, "nebenbei" 3 - the same sentence its finding 3 corrected one page
-        // further forward).
+        // Asked of the file after npm, not of `missingNow`: that names what was missing *before*
+        // npm ran, and after a failure in the second of two calls the first call's packages are
+        // back in the file (twenty-fifth review, "nebenbei" 3). And asked as "not in package.json
+        // at all", because that is what the sentence says - `stillMissing` also counts the line
+        // npm has just written at its resolved range, and the sentence named two packages whose
+        // lines stood in the same diff (twenty-seventh review, finding 1).
+        const gone = wanted.length > 0 ? await absentFromPackageJson(projectPath, wanted) : []
         const missing =
-          leftOver.length > 0
-            ? `\n\n${mainT('updatePackagesMissing', { packages: leftOver.map((entry) => entry.name).join(', ') })}`
+          gone.length > 0
+            ? `\n\n${mainT('updatePackagesMissing', { packages: gone.map((entry) => entry.name).join(', ') })}`
             : ''
         // A list this run dropped is said here too. It used to be named on the success path only,
         // so a run that dropped one and then failed at npm said nothing at all about it - and the

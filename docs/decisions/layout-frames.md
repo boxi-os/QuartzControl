@@ -993,3 +993,13 @@ Was eine Ablage *bedeutet*, weiß nur die Aufrufstelle — wie der Name einer Dr
 sagt, bleiben die gewohnten Sätze. Genutzt wird es heute nur vom Layout-Board. Dabei fielen zwei
 Sätze im Doc-Kommentar, die seit `e5e1099` nicht mehr stimmten: die Vorgabe von `isHome` hat genau
 einen Nutzer (die Plugin-Liste), und es sind drei Stellen, die ziehen, nicht zwei.
+
+**Nachtrag (2026-09-18, sechsundzwanzigstes Review, Befund 7): die Ablehnung im Frame-Builder.**
+`handleDrop` lehnt eine Ablage ab, die einen anderen Bereich überdeckt, und sagte das über
+`announce()`; dnd-kits Region sagte im selben Augenblick „left bei Zelle Zeile 2, Spalte 2
+abgelegt.“ Der Frame-Builder gibt jetzt ein `dropOutcome` mit, das dieselbe Rechnung fragt wie
+`handleDrop` (`landing()`), und der zweite `announce()` fällt weg. Gemessen an der gebauten App mit
+echten Tasten (Space, Down, Down, Right, Space auf `left`): „left bleibt, wo es war — dort
+überschneidet es sich mit einem bestehenden Bereich.“, die Region der Seite schweigt. Dazu der Satz
+des Layout-Boards für eine Löschung auf dem Vorrat: Sie trifft immer eine Instanz von mehreren und
+heißt jetzt „Ein Duplikat von X aus dem Layout entfernt.“

@@ -49,7 +49,10 @@ Projektwurzel.
   Menü ohne den Handler-Kontext lebt.
 - **Alles, was Main aus Projektdateien liest und an Prozesse gibt, ist mit `--` getrennt; `git`
   bekommt nie eine Shell; nur npm/npx brauchen eine.** `runCommand.ts` ist der eine Spawner für
-  kurzlebige Kommandos.
+  kurzlebige Kommandos. Was *vor* dem `--` stehen muss — eine Revision wie `<sha>..HEAD` —, wird
+  vorher auf seine Form geprüft: Die SHA aus `.quartz-gui/core-update.json` ging ungeprüft an
+  `git log`, und `--output=<datei>` leerte beim Mount der Übersicht eine Datei
+  (sechsundzwanzigstes Review).
 - **Quartz und npm laufen unter Electrons eigener Node-Laufzeit; git kommt vom System, wenn es dort
   eines gibt, und sonst ebenfalls aus der App.**
   `nodeRuntime.ts` schreibt bei *jedem* Start drei Shell-Skripte (`node`, `npm`, `npx`) nach
@@ -113,8 +116,12 @@ Projektwurzel.
   Notiz ist in git nicht mehr zu finden“ sind zwei Sätze, und genannt wird, was *fehlt*, nicht, was
   mit einem anderen Bereich dasteht (fünfundzwanzigstes Review). **Wer eine Frage an die Geschichte
   stellt, schreibt sich nicht selbst in die Antwort**: Ein Lauf, der zwischen zwei `npm install`
-  scheitert, kürzt seine Notiz auf das, was wirklich noch fehlt — sonst ist der nächste Commit über
-  eine dieser Zeilen die eigene Schrift der App, gelesen als fremde Hand. Und die Nadel des
+  scheitert, markiert in seiner Notiz, was er selbst schon zurückgeschrieben hat (`putBack`) —
+  sonst ist der nächste Commit über eine dieser Zeilen die eigene Schrift der App, gelesen als
+  fremde Hand. **Markiert, nicht gestrichen**: Diese Zeilen stehen uncommittet da, und ein
+  `git checkout -- package.json` nach dem gescheiterten Update nimmt sie wieder weg; eine auf den
+  Rest gekürzte Liste nannte sie danach nirgends mehr (sechsundzwanzigstes Review, Befund 1 — die
+  Kürzung war der Fix der Runde davor, und ihr Preis stand nicht daneben). Und die Nadel des
   `-G` steht in Anführungszeichen, weil ein blanker Name jede Zeile trifft, die ihn *enthält*. Und ein vierter Satz für den Eintrag, der
   auf HEAD passt, während gar kein Merge offen ist: Dann gibt es keinen Knopf, aber auch keinen
   „Stand, den es nicht mehr gibt“ — `git stash pop` trägt ihn ein (alles zwanzigstes Review). **Der Plan
@@ -439,7 +446,11 @@ Projektwurzel.
   hat** (`dropOutcome`): Auf dem Vorrat wird ein Duplikat *gelöscht* und eine Einzelinstanz
   *abgelehnt*, und beides kam als „abgelegt“ heraus — eine Löschung als Bewegung angesagt und ein
   Nichts ebenso (fünfundzwanzigstes Review). Eine Ansage sagt, was passiert ist, nicht, wohin
-  gezogen wurde; wo die Aufrufstelle nichts sagt, bleiben die gewohnten Sätze.
+  gezogen wurde; wo die Aufrufstelle nichts sagt, bleiben die gewohnten Sätze. **Und eine
+  Ablehnung wird in der Region gesagt, die gerade spricht**: Der Frame-Builder lehnte eine Ablage
+  auf einem belegten Feld ab und sagte das über `announce()`, während dnd-kits Region im selben
+  Augenblick „abgelegt“ sagte — zwei Sätze, einer falsch (sechsundzwanzigstes Review). Er gibt
+  dafür jetzt selbst ein `dropOutcome` mit.
 - **Schriftgrößen heißen nach Rolle, so wie die Farben.** `text-micro` (11px: Labels, Hinweise,
   Badges), `text-ui` (13px: Text in einem Bedienelement oder einer Zeile), `text-heading` (15px: die
   Überschrift einer Karte), definiert in `tailwind.config.js`. Seit dem 2026-09-06 gibt es keine

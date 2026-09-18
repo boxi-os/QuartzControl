@@ -564,3 +564,57 @@ Dazu zwei Sätze, die zu viel versprachen: `updatePackagesMissing` nannte nach e
 Stand *vor* npm (also auch Pakete, die der erste Aufruf schon zurückgeschrieben hatte), und der
 Satz des Schlosses riet zu „Erneut prüfen“ — ein Knopf, der auf Git-Sync anders heißt und auf
 Updates während des Laufs deaktiviert ist. Beide sagen jetzt, was gilt, ohne einen Knopf zu nennen.
+
+**Nachtrag (2026-09-18, sechsundzwanzigstes Review, Befunde 1 bis 6 und nebenbei 2): die Ränder
+des Zustands `installFailed` und der Preis einer Kürzung.** Gemessen an einem Bündel dieses Standes
+gegen dasselbe lokale Upstream-Repo (neu: E4, nur `quartz/index.ts`), je frischer Klon, npm als
+Attrappe; Befunde 2 und 6 zusätzlich an der gebauten App.
+
+*Die gekürzte Notiz verlor, was nur uncommittet dastand* (Befund 1). Der Fix für 2a der Vorrunde
+kürzte die Notiz nach einem Fehlschlag im zweiten npm-Aufruf auf das, was noch fehlte. Die Themes
+des ersten Aufrufs standen dann nur noch als Änderung im Arbeitsbereich, die der Nutzer nicht
+gemacht hat — und genau die setzt man nach einem gescheiterten Update zurück:
+
+    H1  failsecond, git checkout -- package.json package-lock.json, Lauf 2 mit npm ok
+      gekürzt   pending [own-dev-tool] → „put back: own-dev-tool“, upToDate, beide Themes weg
+      jetzt     pending [alle drei]    → alle drei zurück, upToDate
+    G1  failsecond, Git-Sync committet, Lauf 2 scheitert ganz, Lauf 3 geht
+      gekürzt und jetzt gleich: pending [own-dev-tool] über beide Fehlschläge, Lauf 3 trägt es ein
+
+Die Notiz behält jetzt `wanted` und trägt `putBack`, die Namen, die npm *in diesem Lauf* bewegt hat
+(fehlten vorher, stehen jetzt) — nicht, was dasteht, denn eine Zeile, die der Nutzer vorher von
+Hand zurückgeschrieben hat, ist nicht die Schrift der App. `listTakenInHandSince` überspringt sie,
+`stillMissing` räumt sie weg, solange sie dastehen, ein fortsetzender Lauf trägt die Markierung
+weiter. Nicht gefangen und im Kommentar benannt: ein *committetes* Entfernen einer solchen Zeile —
+dann kommt das Paket zurück, und von den zwei Arten, falsch zu liegen, ist das die, die ein Klick
+rückgängig macht.
+
+*Die Übersicht sagte über `installFailed` den Paket-Satz mit leerer Liste* (Befund 2): „… mit einer
+anderen Version: .“ Updates hatte die Weiche, die Übersicht bekommt dieselbe. An der gebauten App
+mit einem Projekt ohne eigene Pakete und gescheitertem npm nachgesehen.
+
+*Der Snapshot-Ausweg ohne den Schalter endet grün* (Befund 3). Ein Restore ohne „Auch den
+Projekt-Commit zurücksetzen“ lässt HEAD auf dem Merge, dreht den Arbeitsbereich zurück und räumt
+die Notiz mit ab: Status `upToDate` über ` M` an vier Dateien, und der nächste Git-Sync committet
+die Rücknahme des ganzen Updates (Szene H2b; mit Schalter H2: HEAD zurück, `behind`). Beide Sätze,
+die dorthin führen — `pendingInstallDetail` und `updatePackagesMissing` —, nennen jetzt den
+Schalter, das Handbuch (7.3) auch.
+
+*Die SHA der Notiz ging ungeprüft an git* (Befund 4). `listTakenInHandSince` baut `<sha>..HEAD`,
+vor dem `--`. Szene H3, Notiz mit `"installPendingFor": "--output=<scratch>/victim/datei"` und einem
+Eintrag, danach nur `getCoreUpdateStatus`: vorher wurde `victim/datei..HEAD` von 8 auf 41 Bytes
+überschrieben, jetzt bleibt sie; eine SHA gilt nur als 40 oder 64 Hexzeichen.
+
+*Ein Duplikat erbte `installFailed`* (Befund 5). Die Kopie nimmt die Notiz mit Absicht mit; seit
+sie angezeigt wird, sagte die Kopie „npm install ist fehlgeschlagen“ eine Sekunde nach ihrem
+eigenen, geglückten Install. `duplicateProject` sagt der Notiz jetzt nach dem Install, dass es
+durch ist (`noteInstallSucceeded`), und lässt die Liste stehen. Gemessen an einem Bündel mit
+`duplicateProject`: vorher `installFailed: true` und `pending`, jetzt `false` und `upToDate`.
+
+*Der Satz der Verweigerung nannte einen Ausweg, den die Seite nicht hat* (Befund 6): „Verwirf die
+Änderung … unter Git-Sync“, gelesen auf Git-Sync, das nichts verwerfen kann. Er nennt jetzt
+`git checkout -- <Datei>`; gemessen: danach geht der Abbruch durch. Der Kasten wird angesagt (erster
+Absatz über `announce()`, auf beiden Seiten, per MutationObserver an der gebauten App gesehen) und
+geht mit dem nächsten Schritt des Nutzers auf der Seite — vorher stand er nach „Aktualisieren“ noch
+da. Und der Satz nach einem gescheiterten Stash-Pop nennt jetzt `stash@{n}` und
+`git stash show -p` wie die zwei Sätze daneben (nebenbei 2, Szene mit E4 am Bündel).

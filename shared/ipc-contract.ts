@@ -1972,13 +1972,12 @@ export interface QuartzGuiApi {
     /** Shows Electron's userData directory in the OS file manager. Takes no path on purpose. */
     revealUserData(): Promise<void>
     /**
-     * Opens the bundled handbook in the default browser. Takes no filesystem path for the same
-     * reason revealUserData does: there is exactly one handbook, and only main knows where it is.
-     * `page` names a page inside it ("4-gestaltung/04-variablen", no extension) so a screen can
-     * link the chapter that explains it; without one, the start page. A page that is not in the
-     * handbook falls back to the start page without a word - a link pointing nowhere is a mistake
-     * in the handbook, and the reader cannot act on it. The native dialog is for the two cases the
-     * reader can: this build was packaged without the handbook, or it could not be opened.
+     * Opens the online handbook in the default browser. Takes no URL: there is exactly one
+     * handbook, and only main knows its address. `page` names a page inside it
+     * ("4-gestaltung/04-variablen", no extension) so a screen can link the chapter that explains
+     * it; without one, the start page in the app's language. Whether the page exists is not asked
+     * - that would be a network round trip per click; a missing one shows the site's 404 page.
+     * The native dialog is for the one case the reader can act on: the browser could not be opened.
      */
     openHandbook(options?: { page?: string }): Promise<void>
     /** Opens an https URL in the default browser. Refused for anything else. */

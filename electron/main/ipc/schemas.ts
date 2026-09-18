@@ -514,9 +514,8 @@ export const externalUrl = z
   }, { message: 'Nur https-URLs erlaubt' })
 
 // Welche Seite des Handbuchs geöffnet werden soll, als Pfad ohne Endung - "4-gestaltung/04-variablen".
-// Die Zeichenklasse allein trägt die Sicherheit nicht (sie verbietet zwar "..", aber ein Schema ist
-// der falsche Ort für die Frage, ob etwas im Zielverzeichnis liegt); menu.ts prüft nach dem Auflösen
-// noch einmal, dass der Pfad das Handbuch nicht verlässt.
+// Die Zeichenklasse hält den Pfad auf der Website des Handbuchs: kein ".", also kein "..", kein
+// "?", "#" oder ":", mit denen er an eine andere Adresse käme.
 export const handbookPage = z
   .string()
   .min(1)

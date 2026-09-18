@@ -1,31 +1,15 @@
-// Baut das Benutzerhandbuch nach resources/handbook/, von wo electron-builder es in die App legt.
+// Baut das Benutzerhandbuch nach resources/handbook/ - als Quelle für `npm run build:handbook-pdf`.
 //
 //   npm run build:handbook
 //
-// Das Handbuch reist mit der App statt als Link, aus zwei Gründen: Es ist ohne Netz lesbar, und es
-// passt immer zu der Fassung, die gerade installiert ist - eine Online-Fassung beschriebe irgendwann
-// eine andere.
-//
-// Behandelt wie resources/git und nicht wie resources/templates: nicht im Repo, sondern beim Packen
-// erzeugt (beforePack). Der Grund ist derselbe wie dort - es ist ein erzeugtes Artefakt, am
-// 2026-09-10 gemessene 35,4 MB in 453 Dateien, davon 29,9 MB Bilder, und die werden bei jedem
-// Textdurchgang neu aufgenommen. Im Repo wäre jede Aufnahme ein neuer Blob. Die Zahl steht hier
-// mit ihrem Datum, weil sie mit dem Handbuch wächst: vorher standen an fünf Stellen 252 Dateien
-// und wahlweise 18 oder 21 MB.
+// Mit der App reist es seit dem 2026-09-18 nicht mehr: Das Handbuch wird nur online gepflegt
+// (HANDBOOK_URL in electron/main/menu.ts), und die Website baut `QuartzControl-Web` aus demselben
+// Vault (docs/release.md, Punkt 9). resources/handbook bleibt gitignoriert.
 //
 // Quelle ist das Quartz-Projekt, dessen content/ auf den Handbuch-Vault zeigt; wo das liegt, sagt
-// docs/handbuch.md. Fehlt es, bricht dieses Skript ab - ob ein Bau ohne Handbuch in Ordnung ist,
-// entscheidet der Aufrufer (beforePack nur mit QUARTZCONTROL_WITHOUT_HANDBOOK=1, sonst bricht es ab).
-//
-// Zweiter Weg: QUARTZCONTROL_HANDBOOK_SITE zeigt auf eine *schon gebaute* Website und wird dann
-// übernommen statt gebaut. Er existiert, weil eine Baumaschine, die nicht die des Betreuers ist,
-// das Projekt gar nicht hat - gemessen am 2026-09-09 auf der Debian-VM, deren resources/ nur
-// git, licenses, runtime und templates trug. Ein AppImage von dort reiste also ohne Handbuch,
-// und ein von Hand hinkopiertes hätte before-pack.mjs wieder weggeräumt (`dropHandbook`).
-// Das Versprechen "passt zu der Fassung, die installiert ist" trägt der übernommene Ordner
-// genauso, solange er unmittelbar vor dem Packen erzeugt wurde - deshalb ein Verzeichnis und
-// nicht das Projekt: Letzteres wäre ein zweiter Quartz-Baum mit eigenem node_modules auf jeder
-// Maschine, die packt.
+// docs/handbuch.md. Fehlt es, bricht dieses Skript ab. QUARTZCONTROL_HANDBOOK_SITE zeigt statt
+// dessen auf eine *schon gebaute* Website, die übernommen wird - für eine Maschine, die das
+// Projekt nicht hat.
 import { execFileSync } from 'node:child_process'
 import * as fs from 'node:fs'
 import * as path from 'node:path'

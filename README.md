@@ -42,7 +42,6 @@ So that a first start needs nothing installed, the app carries:
 | --- | --- |
 | **Node and npm** | Electron's own Node runtime, via three shims on the PATH — no Node installation required |
 | **git** | used only when the machine has none that answers; otherwise the system's own wins |
-| **The user handbook** | around 100 pages in two languages, readable offline, linked from every screen |
 | **An example template** | as a fallback, for when there is no network while creating a project |
 
 ## Installation

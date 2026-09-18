@@ -1,9 +1,8 @@
 import { app, BrowserWindow, dialog, shell, Menu, type MenuItemConstructorOptions } from 'electron'
 import { existsSync } from 'node:fs'
-import { isAbsolute, join, relative, resolve, sep } from 'node:path'
+import { join } from 'node:path'
 import { IPC, type AppCommand } from '@shared/ipc-contract'
 import { mainLanguage, mainT, refreshMainLanguage } from './i18n'
-import { handbookBaseUrl } from './services/handbookServer'
 
 export const APP_NAME = 'QuartzControl'
 
@@ -15,21 +14,20 @@ const QUARTZ_DOCS = 'https://quartz.jzhao.xyz/'
 const PLUGIN_CATALOG = 'https://github.com/quartz-community'
 
 /**
- * Das Benutzerhandbuch reist als gebaute Website mit (`extraResources`, aus `resources/handbook`,
- * erzeugt von `npm run build:handbook`). Kein Link nach draußen, aus zwei Gründen: Es ist ohne Netz
- * lesbar, und es passt immer zu der Fassung, die gerade installiert ist.
+ * Das Benutzerhandbuch wird nur online gepflegt und nicht mehr mitgeliefert (seit 2026-09-18).
+ * Es ist die Website, die `QuartzControl-Web` aus dem Handbuch-Vault baut; wie sie veröffentlicht
+ * wird, steht in `docs/release.md`. Der Preis: ohne Netz kein Handbuch, und es beschreibt die
+ * zuletzt veröffentlichte Fassung, nicht zwingend die installierte.
  *
- * Geöffnet wird es über einen kleinen Server auf 127.0.0.1 (`handbookServer.ts`), nicht über
- * `shell.openPath` auf die Datei. Der Grund steht dort ausführlich; die Kurzfassung: Was Quartz
- * baut, ist eine Website für einen Webserver, und unter `file://` zeigt kein einziger ihrer 4876
- * Links auf eine Datei. Ein Pfad im Installationsverzeichnis darf deshalb Leerzeichen enthalten -
- * in die URL geht er Segment für Segment kodiert.
+ * Eine Konstante wie `FEEDBACK_URL` und nicht eine Einstellung: Die Pfade in `handbookPages.ts`
+ * gehören zu genau dieser Website.
  */
+const HANDBOOK_URL = 'https://boxi-os.github.io/QuartzControl'
+
 /**
  * Wo die Lizenztexte liegen, die mit der App reisen.
  *
- * Derselbe Bau wie `handbookRoot()` und aus demselben Grund: Zwei Stellen, die den Pfad selbst
- * zusammensetzen, laufen auseinander. Was darin liegt, sagt `resources/licenses/README.txt` -
+ * Eine Funktion statt zweier Stellen, die den Pfad selbst zusammensetzen - die laufen auseinander. Was darin liegt, sagt `resources/licenses/README.txt` -
  * die eigene GPLv3 (aus `LICENSE` im Wurzelverzeichnis, siehe `electron-builder.yml`), dazu git,
  * Electron und der Verweis auf npm.
  */
@@ -41,12 +39,12 @@ function licensesRoot(): string {
 /**
  * Öffnet das Verzeichnis mit den Lizenztexten im Dateimanager.
  *
- * `shell.openPath` auf ein *Verzeichnis* ist hier richtig, anders als auf eine `.html` (siehe
- * `openHandbook`): Ein Ordner öffnet den Finder bzw. den Dateimanager, und genau das ist gemeint -
+ * `shell.openPath` auf ein *Verzeichnis* ist hier richtig, anders als auf eine `.html`, für die das
+ * System womöglich einen Editor führt: Ein Ordner öffnet den Finder bzw. den Dateimanager, und genau das ist gemeint -
  * der Nutzer soll sehen, was drinliegt, und sich den Text aussuchen. Fehlen kann das Verzeichnis
  * nicht: `resources/licenses` liegt im Repo und reist über `extraResources` mit. Wenn es doch
- * fehlt, ist die Installation unvollständig, und der Nutzer bekommt denselben Satz wie beim
- * Handbuch statt eines stumm ins Leere laufenden Klicks.
+ * fehlt, ist die Installation unvollständig, und der Nutzer bekommt einen Satz statt eines stumm
+ * ins Leere laufenden Klicks.
  */
 async function openLicenses(): Promise<void> {
   const dir = licensesRoot()
@@ -62,76 +60,24 @@ async function openLicenses(): Promise<void> {
   await shell.openPath(dir)
 }
 
-function handbookRoot(): string {
-  // Gepackt liegt es neben den anderen extraResources; in der Entwicklung im Repo, damit
-  // `npm run dev` denselben Weg nimmt und ihn nicht erst beim Packen jemand ausprobiert.
-  const base = app.isPackaged ? process.resourcesPath : join(app.getAppPath(), 'resources')
-  return join(base, 'handbook')
-}
-
 /**
- * Die Datei zu einer Seite des Handbuchs, oder null, wenn der Pfad hinausführt.
+ * Öffnet das Handbuch im Browser, auf der Seite `page` ("4-gestaltung/04-variablen", ohne Endung)
+ * oder ohne sie auf der Startseite in der Sprache, in der die App gerade spricht. Für eine
+ * *benannte* Seite entscheidet der Renderer, welcher der beiden Pfade gemeint ist
+ * (handbookPages.ts): Das Handbuch übersetzt seine Kapitel und dabei auch ihre Pfade.
  *
- * Das zod-Schema lässt kein ".." durch, aber ein Schema ist der falsche Ort für die Frage, ob ein
- * Pfad in einem Verzeichnis liegt - dieselbe Trennung wie bei `containedPath()` im Vorlagen-Paket:
- * entschieden wird über `resolve()` und `relative()`, hier wie dort.
+ * Ob die Seite existiert, wird hier nicht gefragt - das hieße, bei jedem Klick erst ins Netz zu
+ * gehen. Eine Seite, die fehlt, zeigt die 404-Seite der Website.
  */
-function handbookFile(page?: string): string | null {
-  const root = handbookRoot()
-  // Ohne Seite die Startseite - in der Sprache, in der die App gerade spricht. Für eine *benannte*
-  // Seite entscheidet der Renderer, welcher der beiden Pfade gemeint ist (handbookPages.ts): Das
-  // Handbuch übersetzt seine Kapitel und dabei auch ihre Pfade.
-  if (!page) return join(root, mainLanguage() === 'en' ? 'en' : '.', 'index.html')
-  const target = resolve(root, `${page}.html`)
-  const rel = relative(root, target)
-  if (!rel || rel.startsWith('..') || isAbsolute(rel)) return null
-  return target
-}
-
-/**
- * Die Adresse einer Handbuch-Datei auf dem Server - also der Pfad, den die Website selbst schreibt.
- *
- * Ohne Endung und mit dem Verzeichnis für eine index.html, weil genau so jeder Link im Handbuch
- * aussieht: Landet der Leser auf `/4-gestaltung/04-variablen.html`, während die Links daneben
- * `04-variablen` heißen, sieht Quartz' eigener Router zwei Adressen für dieselbe Seite.
- */
-function urlPathFor(file: string): string {
-  const rel = relative(handbookRoot(), file).split(sep).join('/')
-  const pretty = rel === 'index.html'
-    ? ''
-    : rel.endsWith('/index.html')
-      ? rel.slice(0, -'index.html'.length)
-      : rel.slice(0, -'.html'.length)
-  // Segmentweise kodiert, nicht als Ganzes: Ein "/" trennt hier, ein "/" in einem Namen nicht.
-  return pretty.split('/').map(encodeURIComponent).join('/')
-}
-
 export async function openHandbook(page?: string): Promise<void> {
-  // Eine Seite, die es nicht gibt, fällt auf die Startseite zurück statt in einen Fehler: Ein
-  // Verweis, der ins Leere zeigt, ist ein Fehler im Handbuch, und der Nutzer kann nichts dafür.
-  // Genauso ein Pfad, der hinausführt - der käme ohnehin nur aus einem Angriff.
-  const wanted = handbookFile(page)
-  const index = wanted && existsSync(wanted) ? wanted : handbookFile()!
-  // Erst nachsehen, dann öffnen: Der Server würde die fehlende Startseite als 404 ausliefern, und
-  // ein Browser-Fenster mit „Not found" erklärt niemandem, was los ist. Fehlen kann sie in genau
-  // einem Fall - ein Bau ohne `resources/handbook`, den `beforePack` nur mit
-  // `QUARTZCONTROL_WITHOUT_HANDBOOK=1` durchlässt.
-  if (!existsSync(index)) {
-    await dialog.showMessageBox({
-      type: 'info',
-      title: mainT('menuHandbook'),
-      message: mainT('handbookMissingTitle'),
-      detail: mainT('handbookMissingDetail')
-    })
-    return
-  }
+  // Segmentweise kodiert, nicht als Ganzes: Ein "/" trennt hier, ein "/" in einem Namen nicht. Das
+  // Schema lässt ohnehin nur Buchstaben, Ziffern, "/", "_" und "-" durch.
+  const path = page
+    ? page.split('/').map(encodeURIComponent).join('/')
+    : mainLanguage() === 'en' ? 'en/' : ''
   try {
-    const base = await handbookBaseUrl(handbookRoot())
-    await shell.openExternal(`${base}/${urlPathFor(index)}`)
+    await shell.openExternal(`${HANDBOOK_URL}/${path}`)
   } catch (error) {
-    // Nicht "fehlt": Die Datei ist zwei Zeilen weiter oben nachgewiesen worden. Was hier schiefgeht,
-    // ist der Server oder der Browser - und für beides hilft eine Neuinstallation nicht, die der
-    // andere Satz empfiehlt.
     await dialog.showMessageBox({
       type: 'warning',
       title: mainT('menuHandbook'),
@@ -184,7 +130,7 @@ function commandRenderer(command: AppCommand): void {
  * Built here rather than handed to the renderer's openExternal channel: that channel takes a URL
  * from a caller, and here the whole string comes out of constants and Electron's own version
  * numbers, so there is nothing to smuggle in. `shell.openExternal` on an https URL always goes to
- * the browser (see handbookServer), which is what an issue form needs.
+ * the browser, which is what an issue form needs.
  */
 function sendFeedback(): void {
   const zeilen = [

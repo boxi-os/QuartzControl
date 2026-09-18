@@ -54,8 +54,8 @@ IPC-Pfade wie ein Klick.
 
 **Der Handbuch-Vault hat bewusst kein Remote** (Stand 2026-09-07). Er ist ein git-Repo, aber nur
 auf dieser Maschine — anders als der Example-Vault, der nach `boxi-os/Quartz-Example-Vault` (privat)
-gepusht wird. Das kostet keine Funktion, weil das Handbuch gebaut in der App mitreist; es heißt
-aber, dass es außerhalb dieser Maschine keine Kopie des Quelltexts gibt. Wer das ändert, legt ein
+gepusht wird. Seit dem 2026-09-18 reist das Handbuch nicht mehr mit, die Website ist die einzige veröffentlichte
+Fassung; es heißt weiter, dass es außerhalb dieser Maschine keine Kopie des Quelltexts gibt. Wer das ändert, legt ein
 privates Repo an und trägt es als `origin` ein.
 
 **Die Vault-Schreibregel gilt weiter, nur für zwei Vaults:** `Example` und
@@ -249,53 +249,25 @@ Grammatik.** Sechs Stellen mussten von Hand nach — „das Ausgabeordner", „d
 „sein Ausgabeordner". In den Sprachdateien der App fiel das nicht an, weil dort jede Zeichenkette
 einzeln angefasst wurde.
 
-## Wie das Handbuch in die App kommt
+## Wie die App das Handbuch öffnet
 
-**Es reist mit**, als gebaute Website, nicht als Link. Zwei Gründe: Es ist ohne Netz lesbar, und es
-passt immer zu der Fassung, die gerade installiert ist — eine Online-Fassung beschriebe irgendwann
-eine andere.
+**Nur online, seit dem 2026-09-18.** Bis dahin reiste es als gebaute Website mit (rund 38 MB im
+Bundle), wurde von `beforePack` gebaut und über einen Server auf `127.0.0.1` geöffnet
+(`handbookServer.ts`). Beides ist entfernt; die Begründungen von damals — ohne Netz lesbar, passt
+zur installierten Fassung — sind damit bewusst aufgegeben. Gepflegt wird eine Fassung: die Website
+`https://boxi-os.github.io/QuartzControl/`, die `QuartzControl-Web` aus demselben Vault baut.
 
-    npm run build:handbook      # aus dem Projekt nach resources/handbook/ (453 Dateien, 35,4 MB
-                                # am 2026-09-10; die Zahl wächst mit dem Handbuch)
+`openHandbook()` in `menu.ts` setzt die Adresse aus `HANDBOOK_URL` und einer Kennung aus
+`src/data/handbookPages.ts` zusammen und ruft `shell.openExternal`. Ob die Seite existiert, fragt es
+nicht (das wäre ein Netzaufruf je Klick); am 2026-09-18 antworteten alle 36 Pfade der Tabelle mit
+200. Wer ein Kapitel umbenennt, zieht die Tabelle nach **und veröffentlicht die Website** — sonst
+landet der Verweis auf der 404-Seite. Erreichbar an drei Stellen, die dieselbe Funktion rufen:
+**Hilfe → Handbuch**, die **Startseite** und der Verweis im Kopf jeder Seite (`HandbookLink`).
+An der gebauten App gemessen (`shell.openExternal` abgefangen): Startseite, eine deutsche und eine
+englische Kennung und der Verweis der Einstellungen öffnen je die erwartete Adresse, ein Pfad mit
+`..` wird vom Schema abgelehnt.
 
-`resources/handbook/` ist gitignoriert und wird beim Packen erzeugt (`beforePack`) — dieselbe
-Behandlung wie `resources/git` und ausdrücklich nicht wie `resources/templates`, das im Repo liegt.
-Der Grund: Es ist ein erzeugtes Artefakt, dessen 29,9 MB Bilder bei jedem Textdurchgang neu
-entstehen; im Repo wäre jede Aufnahme ein neuer Blob.
-
-Anders als git lässt es sich **nicht** aus dem Netz nachholen — es entsteht aus einem Projekt, das
-nur auf dieser Maschine liegt, oder wird als gebaute Website übernommen
-(`QUARTZCONTROL_HANDBOOK_SITE`). Fehlt beides, bricht `beforePack` ab. Ein Paket ohne Handbuch gibt
-es nur auf ausdrücklichen Wunsch (`QUARTZCONTROL_WITHOUT_HANDBOOK=1`): Bis zum 2026-09-14 warnte der
-Haken nur und packte weiter, und nach dem Umzug der Projekte am 2026-09-12 kam so auch vom Mac ein
-Paket ohne Handbuch, dessen Warnung im Log niemand las (Review 2026-09-18, Befund 4). Für den
-gewollten Fall prüft `openHandbook()` die Datei, bevor es sie öffnet, damit der Nutzer einen Satz
-bekommt statt einer Fehlermeldung des Betriebssystems.
-
-Gebaut werden beide Sprachen in einem Lauf (453 Dateien, 35,4 MB); das `.app` misst damit rund
-427 MB, gemessen am arm64-Bundle vom 2026-09-10, davon 38 MB Handbuch. Erreichbar an zwei Stellen, die **dieselbe Funktion** rufen — zwei Stellen, die den Pfad selbst
-zusammensetzen, laufen beim nächsten Umbau auseinander:
-
-- **Hilfe → Handbuch**, als erster Eintrag: Wer dort nachsieht, sucht meistens etwas über diese App
-  und nicht über Quartz.
-- **Startseite**, über der Quartz-Dokumentation und dem Plugin-Katalog. Der Renderer kennt den Pfad
-  nicht und bekommt dafür einen Kanal ohne Argument (`dialog.openHandbook`), nach dem Muster von
-  `revealUserData`.
-
-An der **gepackten** App gemessen (2026-09-07): `isPackaged: true`, Pfad
-`Contents/Resources/handbook/index.html`, vorhanden (36 KB); 252 Dateien, 21 MB im Bundle, das
-damit von 369 auf 395 MB wächst.
-
-Geöffnet wird das Handbuch als **Adresse, nicht als Datei**: `handbookServer.ts` liefert
-`resources/handbook` über http auf `127.0.0.1` aus, `openHandbook()` ruft `shell.openExternal`.
-Der Grund steht in CLAUDE.md und kurz hier: Was Quartz baut, ist für einen Webserver geschrieben,
-und unter `file://` zeigte am 2026-09-08 von 4876 Links kein einziger auf eine Datei — dazu
-blockierte Chrome die Modul-Skripte der Seite, also Suche, Explorer, Sprachwechsel und
-Dunkelmodus. Die frühere Messung („beide Wege rufen `shell.openPath` mit demselben Pfad — geprüft,
-indem `openPath` abgefangen wurde, statt zweimal einen Browser zu öffnen") hat den Pfad bestätigt
-und nichts darüber, was am anderen Ende eines solchen Pfads passiert; genau dafür hätte es den
-Browser gebraucht. Nach der Umstellung: 4499 von 4499 internen Links antworten mit 200, keine
-Konsolenfehler, und durch die gebaute App vier Aufrufe des Kanals auf einen Server.
+`npm run build:handbook` gibt es weiter, aber nur noch als Quelle für das PDF (unten).
 
 Was vor einem Release am Handbuch hängt — der Footer, der an sechs Stellen gleich stehen muss, und
 Band und Download-Kasten von `QuartzControl-Web`, die dieselben Seiten mit einer Fassungsnummer
@@ -305,7 +277,7 @@ veröffentlicht —, steht in [`release.md`](release.md).
 
 `npm run build:handbook-pdf` macht aus dem gebauten Handbuch ein PDF mit Lesezeichen, nur die
 deutsche Fassung, nach `release/QuartzControl-Handbuch-<version>.pdf`. Quelle ist
-`resources/handbook`, nicht der Vault: Das PDF zeigt, was die App mitbringt, mit Quartz' eigener
+`resources/handbook`, nicht der Vault: Das PDF zeigt, was die Website zeigt, mit Quartz' eigener
 Umsetzung von Callouts, Tabellen und Bildern — eine zweite Markdown-Umsetzung liefe daneben
 auseinander. Vorher also `npm run build:handbook`.
 

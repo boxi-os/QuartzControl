@@ -36,15 +36,15 @@ Was ein `+` zeigt, wird gemergt oder bewusst verworfen (Regel in `CLAUDE.md`, �
 Branch, der nie gemergt wurde, ist keiner“). Am 2026-09-14 zeigte nur `origin/gh-pages` eines —
 der Deploy-Branch, erwartet.
 
-## 3. Das Handbuch reist mit
+## 3. Das Handbuch steht online auf dem Stand der Fassung
 
-`beforePack` baut es aus `~/Documents/QuartzProjekte/QuartzControl-Handbuch` und **bricht ab**,
-wenn das Projekt fehlt. Auf einer Baumaschine ohne das Projekt (die VMs) vorher die auf dem Mac
-gebaute Website spiegeln und `QUARTZCONTROL_HANDBOOK_SITE` darauf setzen; wie, steht im Eintrag
-`build:handbook` in `CLAUDE.md` (tar durch ssh, mit `COPYFILE_DISABLE=1` und `--no-xattrs`).
-Im Bau-Log steht, welcher Weg gegriffen hat.
+Es reist seit dem 2026-09-18 nicht mehr mit; die App öffnet
+`https://boxi-os.github.io/QuartzControl/` (`HANDBOOK_URL` in `electron/main/menu.ts`), und diese
+Website wird mit dem Release veröffentlicht (Punkt 9). Die Pfade in `src/data/handbookPages.ts`
+müssen dort existieren — nach einer Umbenennung im Vault alle 36 prüfen (sie antworten mit 200 oder
+404).
 
-Das Handbuch sollte dabei auf dem Stand der App sein: `npm run check:handbook` nach dem letzten
+Das Handbuch sollte auf dem Stand der App sein: `npm run check:handbook` nach dem letzten
 Textdurchgang, und die Screenshots nach der letzten sichtbaren Änderung
 (`npm run screenshots -- --demo --cards`, siehe [`handbuch.md`](handbuch.md)).
 
@@ -57,9 +57,9 @@ kennt (`grep -rn` auf die Beschriftungen der Geschwister) — und prüft dabei d
 mit, die dort drei Beschriftungen nannte, die es in der App nie gab.
 
 **Und es bekommt eine Seite „Neu in <Fassung>“**, zweisprachig, neben `neu-in-beta-1.md` /
-`en/new-in-beta-1.md`. Am 2026-09-16 fehlte sie: Das Handbuch, das mit Beta 2 reist, nennt als
+`en/new-in-beta-1.md`. Am 2026-09-16 fehlte sie: Das Handbuch zu Beta 2 nannte als
 neueste Seite „Neu in Beta 1“, während `latest.json` vier Änderungen aufzählt — wer die App
-aktualisiert und im mitgelieferten Handbuch nachsieht, findet nichts davon. Eine neue Seite auf
+aktualisiert und im Handbuch nachsieht, findet nichts davon. Eine neue Seite auf
 oberster Ebene muss außerdem in die `APPENDIX`-Liste in `scripts/build-handbook-pdf.mjs`; das
 Skript bricht sonst ab, und genau dafür ist es da.
 
@@ -83,20 +83,20 @@ Die Links auf Quartz, QuartzControl, Example und die Plugin-Handbücher stehen i
 `quartz.config.yaml` von fünf Projekten, die nicht versioniert sind:
 
 - `QuartzControl-Web`
-- `QuartzControl-Handbuch` (erreicht die App erst über `build:handbook`)
+- `QuartzControl-Handbuch` (nur noch Quelle des PDFs; online geht `QuartzControl-Web`)
 - `quartz-layout-box-handbuch`
 - `quartz-multilanguage-handbuch`
 - `quartz-navigations-handbuch`
 
 Am 2026-09-14 trugen alle sechs dieselben sechs Links. Ein neues Plugin oder eine neue Website
 heißt: alle sechs anfassen, Vorlage neu exportieren (Punkt 4), die vier Websites neu
-veröffentlichen. Der Footer des mitgelieferten Handbuchs hatte bis `f61333b` zwei Links, während
+veröffentlichen. Der Footer des damals mitgelieferten Handbuchs hatte bis `f61333b` zwei Links, während
 die Vorlage vier trug — genau die Drift, die eine Liste an sechs Orten erzeugt.
 
 ## 6. Die Pakete entstehen, starten und bekommen einen Tag
 
 `npm run dist:mac` auf diesem Mac, `dist:linux` und `dist:flatpak` auf den VMs (Eintrag `dist` in
-`CLAUDE.md`, und Punkt 3 oben für das Handbuch). Für Beta 2 waren das zehn Pakete: dmg und zip je
+`CLAUDE.md`). Für Beta 2 waren das zehn Pakete: dmg und zip je
 für arm64 und x64, AppImage und deb je für arm64 und x86_64, Flatpak für aarch64 und x86_64.
 
 **Jedes Paket wird auf einer Maschine seiner Architektur einmal gestartet**, und zwar bevor die
@@ -147,7 +147,7 @@ vier Änderungen.
 
 ## 9. Die Website nennt die neue Fassung — und wird erst mit dem Release veröffentlicht
 
-`QuartzControl-Web` baut aus demselben Vault wie das mitgelieferte Handbuch (`content` ist ein Link
+`QuartzControl-Web` baut aus dem Handbuch-Vault (`content` ist ein Link
 auf `~/Obsidian/QuartzProjekte/QuartzControl-Handbuch`), trägt also sofort den neuen Text. Band und
 Download-Kasten sind Schnipsel und nennen die Fassung ausdrücklich:
 

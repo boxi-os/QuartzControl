@@ -6,6 +6,9 @@
  * Eine Tabelle statt zweier Einträge je Aufrufstelle: Sonst stünde an elf Stellen ein deutscher und
  * ein englischer Pfad nebeneinander, und beim nächsten Umbau des Handbuchs zöge jemand nur einen
  * von beiden nach. `HandbookLink` löst über die Sprache der App auf.
+ *
+ * Die Pfade sind die der Online-Fassung (`HANDBOOK_URL` in `menu.ts`). Am 2026-09-18 antworteten
+ * alle 36 dort mit 200.
  */
 export const HANDBOOK_PAGES = {
   overview: { de: '3-einrichtung/01-die-uebersicht', en: 'en/3-setup/01-the-overview' },

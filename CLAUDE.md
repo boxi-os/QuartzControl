@@ -41,33 +41,16 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   Host-Key-Fingerprints des Rechners zeigt, auf dem das Skript läuft. Ablauf und Gliederung des
   Handbuchs: [`docs/handbuch.md`](docs/handbuch.md)
 - `npm run build:handbook` — baut das Benutzerhandbuch aus seinem Quartz-Projekt nach
-  `resources/handbook/` (453 Dateien, 35,4 MB am 2026-09-10, davon 29,9 MB Bilder — die Zahl wächst
-  mit jedem Textdurchgang), von wo `extraResources` es in die App legt. Das
-  Handbuch reist mit statt als Link: Es ist ohne Netz lesbar und passt immer zu der Fassung, die
-  gerade installiert ist. Behandelt wie `resources/git` — gitignoriert und beim Packen erzeugt
-  (`beforePack`), nicht wie `resources/templates` im Repo, denn es ist ein Artefakt, dessen Bilder
-  bei jedem Textdurchgang neu entstehen. Anders als git lässt es sich **nicht** aus dem Netz holen;
-  fehlt das Projekt, **bricht `beforePack` ab**, es sei denn, `QUARTZCONTROL_WITHOUT_HANDBOOK=1`
-  sagt ausdrücklich „ohne“ (dann sagt es der Menüpunkt dem Nutzer). Bis zum Review 2026-09-18
-  warnte es nur und packte weiter, und das war zweimal der stille Normalfall: nach dem Umzug der
-  Projekte auf diesem Mac, und vorher auf jeder anderen Baumaschine — gemessen am 2026-09-09 trug
-  `resources/` auf der Linux-VM nur `git licenses runtime templates`, die Pakete vom 2026-09-08
-  reisten also alle ohne Handbuch. Deshalb gibt es einen zweiten Weg:
-  **`QUARTZCONTROL_HANDBOOK_SITE`** zeigt auf eine schon gebaute Website und wird übernommen statt
-  gebaut (`QUARTZCONTROL_HANDBOOK_PROJECT` verschiebt den ersten Weg), und das Bau-Log sagt, welcher
-  gegriffen hat. Wo die Projekte dieses Rechners liegen, sagt `scripts/project-paths.mjs` — eine
-  Stelle für alle Skripte, Standard `~/Documents/QuartzProjekte/` (seit dem Umzug am 2026-09-12),
-  überschreibbar mit `QUARTZCONTROL_PROJECT_ROOT`. Von Hand nach `resources/handbook` zu kopieren
-  hilft **nicht**: Der Fehlerpfad räumt eine vorhandene Kopie absichtlich weg, damit keine veraltete
-  mitreist. Gespiegelt wird mit
-  **tar durch ssh**, und zwar mit beidem: `COPYFILE_DISABLE=1 tar --no-xattrs -cf -
-  -C resources/handbook . | ssh <vm> 'tar -xf - -C <ziel>'`. Ohne die Variable kommen
-  AppleDouble-Dateien mit (gemessen: 901 statt 437 Dateien, 464 davon `._*`); ohne `--no-xattrs`
-  reisen macOS' xattrs als pax-Kopfzeilen mit, die GNU tar auf der Gegenseite Zeile für Zeile als
-  `LIBARCHIVE.xattr.com.apple.provenance` anmeckert — folgenlos, aber unübersichtlich (gemessen am
-  2026-09-10: mit `COPYFILE_DISABLE=1` allein kamen 453 Dateien und keine einzige `._*` an, dafür
-  eine Meldung je Datei). **rsync ist hier kein Ausweg**: macOS liefert openrsync (Protokoll 29,
-  ohne `--no-xattrs`), und auf einer frischen Debian-13-VM ist rsync gar nicht installiert
+  `resources/handbook/` (gitignoriert), **nur noch als Quelle für `build:handbook-pdf`**. Seit dem
+  2026-09-18 reist das Handbuch nicht mehr in der App mit: Es wird ausschließlich online gepflegt,
+  die App öffnet `https://boxi-os.github.io/QuartzControl/` (`HANDBOOK_URL` in
+  `electron/main/menu.ts`, Pfade aus `src/data/handbookPages.ts`), und diese Website baut
+  `QuartzControl-Web` aus demselben Vault ([`docs/release.md`](docs/release.md), Punkte 3 und 9).
+  `beforePack` baut kein Handbuch mehr, `handbookServer.ts` ist entfernt, und die Variablen
+  `QUARTZCONTROL_WITHOUT_HANDBOOK` und `QUARTZCONTROL_HANDBOOK_SITE` braucht kein Packen mehr
+  (letztere übernimmt für das PDF weiter eine schon gebaute Website). Wo die Projekte dieses
+  Rechners liegen, sagt `scripts/project-paths.mjs` — Standard `~/Documents/QuartzProjekte/`,
+  überschreibbar mit `QUARTZCONTROL_PROJECT_ROOT`
 - `npm run build:handbook-pdf` — macht aus dem *gebauten* Handbuch (`resources/handbook`, also nach
   `build:handbook`) ein PDF mit Lesezeichen, nur Deutsch, nach
   `release/QuartzControl-Handbuch-<version>.pdf`. Chrome lädt jede Seite, das Skript setzt die
@@ -180,10 +163,8 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   hinstellt — genau das lag im 0.1.0-DMG. Rastert über Electron, weil dieser Rechner keinen
   SVG-Konverter hat, und liest die zwei x-Werte aus derselben Quelle wie die Konfiguration
 - `npm run dist` / `dist:mac` / `dist:linux` / `dist:flatpak` — electron-builder (see
-  `docs/decisions/electron-runtime-and-packaging.md`). **Auf einer Baumaschine ohne
-  Handbuch-Projekt (den VMs) zuerst das gebaute Handbuch spiegeln und
-  `QUARTZCONTROL_HANDBOOK_SITE` setzen**, sonst bricht `beforePack` ab (Eintrag `build:handbook`).
-  Was ein Release außerdem braucht — Vorlage in drei Kopien, `latest.json`, Footer an sechs
+  `docs/decisions/electron-runtime-and-packaging.md`). Das Handbuch reist nicht mehr mit
+  (Eintrag `build:handbook`), eine VM braucht dafür also nichts mehr. Was ein Release außerdem braucht — Vorlage in drei Kopien, `latest.json`, Footer an sechs
   Stellen, Band und Download-Kasten der Website —, steht in [`docs/release.md`](docs/release.md).
   `dist:flatpak` ist ein eigenes Skript, weil
   das Ziel flatpak und flatpak-builder auf der Baumaschine braucht. **Am 2026-09-08 zum ersten Mal

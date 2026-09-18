@@ -44,7 +44,6 @@ Damit ein erster Start nichts voraussetzt, liefert die App aus:
 | --- | --- |
 | **Node und npm** | Electrons eigene Node-Laufzeit über drei Shims im PATH — es muss also kein Node installiert sein |
 | **git** | nur benutzt, wenn auf dem Rechner keines antwortet; sonst gewinnt das des Systems |
-| **Das Benutzerhandbuch** | rund 100 Seiten in zwei Sprachen, ohne Netz lesbar, aus jedem Bildschirm verlinkt |
 | **Eine Beispielvorlage** | als Reserve, falls beim Anlegen eines Projekts kein Netz da ist |
 
 ## Installation

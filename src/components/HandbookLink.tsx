@@ -5,13 +5,10 @@ import { HANDBOOK_PAGES, type HandbookPage } from '../data/handbookPages'
 /**
  * Verweist auf die Seite des Benutzerhandbuchs, die den aktuellen Bildschirm erklärt.
  *
- * Das Handbuch reist als gebaute Website in der App mit; wo es liegt, weiß nur der Hauptprozess
- * (`menu.ts`), deshalb geht der Klick über einen Kanal und nicht über eine URL. `page` ist eine
- * Kennung aus `handbookPages.ts`, kein Pfad: Das Handbuch übersetzt seine Kapitel *und* ihre Pfade,
- * und welcher der beiden gemeint ist, entscheidet die Sprache der App.
- *
- * Zeigt der Pfad ins Leere, öffnet sich die Startseite des Handbuchs statt eines Fehlers: Ein
- * falscher Verweis ist ein Fehler im Handbuch, und der Nutzer kann nichts dafür.
+ * Das Handbuch liegt online; seine Adresse kennt nur der Hauptprozess (`menu.ts`), deshalb geht
+ * der Klick über einen Kanal und nicht über eine URL. `page` ist eine Kennung aus
+ * `handbookPages.ts`, kein Pfad: Das Handbuch übersetzt seine Kapitel *und* ihre Pfade, und welcher
+ * der beiden gemeint ist, entscheidet die Sprache der App.
  */
 export default function HandbookLink({ page }: { page: HandbookPage }): JSX.Element {
   const { t, i18n } = useTranslation()

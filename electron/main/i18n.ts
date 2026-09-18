@@ -20,11 +20,8 @@ const STRINGS = {
     menuSave: 'Speichern',
     menuSettings: 'Einstellungen…',
     menuHandbook: 'Handbuch',
-    handbookMissingTitle: 'Das Handbuch fehlt in dieser Installation',
-    handbookMissingDetail:
-      'Es reist normalerweise mit der App mit. Dass es fehlt, heißt, dass diese Fassung ohne das Handbuch gepackt wurde — am schnellsten hilft, die App neu zu installieren.',
     handbookOpenFailedTitle: 'Das Handbuch ließ sich nicht öffnen',
-    handbookOpenFailedDetail: 'Es ist vorhanden, aber der Browser hat es nicht angenommen: {{error}}',
+    handbookOpenFailedDetail: 'Der Browser ließ sich nicht öffnen: {{error}}',
     menuQuartzDocs: 'Quartz-Dokumentation',
     menuPluginCatalog: 'Plugin-Katalog',
     menuDataFolder: 'Datenordner von QuartzControl öffnen',
@@ -408,11 +405,8 @@ const STRINGS = {
     menuSave: 'Save',
     menuSettings: 'Settings…',
     menuHandbook: 'Handbook',
-    handbookMissingTitle: 'This installation has no handbook',
-    handbookMissingDetail:
-      'It normally travels with the app. Its absence means this build was packaged without it — reinstalling the app is the quickest fix.',
     handbookOpenFailedTitle: 'The handbook could not be opened',
-    handbookOpenFailedDetail: 'It is there, but the browser did not take it: {{error}}',
+    handbookOpenFailedDetail: 'The browser could not be opened: {{error}}',
     menuQuartzDocs: 'Quartz documentation',
     menuPluginCatalog: 'Plugin catalog',
     menuDataFolder: 'Open QuartzControl’s data folder',
@@ -700,7 +694,7 @@ let refreshed = false
 export function mainLanguage(): 'de' | 'en' {
   // Derselbe Wächter wie in mainT() eine Funktion tiefer, und aus demselben Grund: Der Wert steckt
   // vor refreshMainLanguage() für die Lebensdauer des Prozesses in der Vorgabesprache. Heute laufen
-  // beide Aufrufer nach whenReady; wer als Nächstes `const X = handbookFile()` auf Modulebene
+  // beide Aufrufer nach whenReady; wer als Nächstes `const X = mainLanguage()` auf Modulebene
   // schreibt, bekäme ohne diese Zeile das englische Handbuch auf einer deutschen App und keinen
   // Hinweis darauf - genau der Bug vom 2026-09-02, nur eine Tür weiter.
   if (!refreshed) {

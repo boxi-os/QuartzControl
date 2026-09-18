@@ -107,14 +107,8 @@ extraResources:
   # ist das Verzeichnis, in dem ihn jemand sucht; `resources/licenses/README.txt` verweist darauf.
   - from: LICENSE
     to: licenses/QuartzControl-LICENSE.txt
-  # Das Benutzerhandbuch als gebaute Website (npm run build:handbook; 453 Dateien / 35,4 MB am
-  # 2026-09-10, die Zahl wächst mit dem Handbuch). Es
-  # reist mit statt als Link, damit es ohne Netz lesbar ist und immer zu der Fassung passt, die
-  # gerade installiert ist. Wie resources/git nicht im Repo, sondern beim Packen erzeugt - hier
-  # aber ohne Netz, aus dem Handbuch-Projekt (docs/handbuch.md). Fehlt es, bricht beforePack ab;
-  # ohne Handbuch nur mit QUARTZCONTROL_WITHOUT_HANDBOOK=1, und dann sagt es der Menüpunkt.
-  - from: resources/handbook
-    to: handbook
+  # Das Benutzerhandbuch reist seit dem 2026-09-18 nicht mehr mit; es wird nur online gepflegt
+  # (HANDBOOK_URL in electron/main/menu.ts).
 
 asar: true
 # Nothing here compiles against Electron's headers - ssh2 falls back to its pure-JS crypto when

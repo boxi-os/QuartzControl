@@ -94,6 +94,19 @@ gibt, den das Handbuch noch nicht kennt. **Nachgetragen:** Der Tag ist danach au
 zum Auftrag versetzt worden, damit die Runde auch `a684e37` liest (`inline-flex` im
 `Button`-Primitive, Schicht 2: 12 Dateien, +45/−60); beide Schichten sind auf `main` gepusht.
 
+**Das siebenundzwanzigste Review misst ab `review-2026-10-01`** und liest bis `review-2026-10-02`,
+das auf dem Commit „Der Auftrag fuer das siebenundzwanzigste Review“ (`main`) sitzt; der Auftrag
+steht in [`docs/REVIEW-2026-10-01-auftrag.md`](REVIEW-2026-10-01-auftrag.md). Sein Diff hat zwei
+Schichten: die Fixes der neun Befunde des sechsundzwanzigsten Reviews und eines Nebenbei-Punkts
+(ohne Review-Dokument 17 Dateien, +336/−86), und zwei Wünsche des Nutzers, die kein Review
+angestoßen hat — der Marker in `custom.scss` heißt `QuartzControl:managed:`, mit Migration und
+gegen die Regel, die das bis dahin ausschloss, und der Content-Ordner ist kein eigener Reiter mehr,
+sondern die erste Gruppe unter „Website“ (13 Dateien, +179/−104). Als größtes Risiko nennt er die
+Migration, weil der Marker ein Format auf fremder Platte ist. Das Review geht wieder an Claude
+Fable 5.1 — an dasselbe Modell, dessen Vorschläge (`putBack`, die SHA-Prüfung, `dropOutcome` im
+Frame-Builder) diese Runde umsetzt; der Auftrag bittet deshalb, zuerst die Vorschläge anzugreifen
+und dann die Umsetzung.
+
 **Das sechsundzwanzigste Review las die vierzehn Commits und den Button** und fand **keinen
 Befund Hoch, einen Mittel, acht Niedrig**, dazu zwei Punkte nebenbei — wieder von Claude Fable 5.1,
 also vom selben Modell wie das Review, dessen Behauptungen die gelesenen Commits übernommen hatten;

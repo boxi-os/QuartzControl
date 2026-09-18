@@ -1106,6 +1106,9 @@ genau dieses Rollen. Gebaute App, Frames „drawing“ und „focus“:
     1728 px   57 ×3 · 48 ×6 · 57 ×3                           passt, rollt nicht
     Seite     rollt in keiner Breite waagerecht
 
+**Korrektur (dreißigstes Review, Befund 5):** Die Tabelle nennt nur Desktop. Tablet rollt bei
+1280 px ebenfalls (Fläche 990 in 932, 58 px), bei 1470 px nicht; Mobil nie.
+
 Die Tastatur- und Mausszenen der Befunde 3 und 5 und des Nachtrags zur Spanne bei 1280 und 1470 px
 unverändert. Eine Verschiebung: Beim zweiten ↑ von `right` in die Ablage (Frame „focus“) nennt die
 Ansage während des weichen Scrollens „Zeile 1, Spalte 8“ als Zwischenziel, wo vorher „liegt über

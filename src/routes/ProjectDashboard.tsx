@@ -531,11 +531,14 @@ export default function ProjectDashboard(): JSX.Element {
           </div>
         </Tile>
 
-        {/* Die Seite - what this project *is*, from quartz.config.yaml plus the content folder. */}
+        {/* Die Seite - what this project *is*, from quartz.config.yaml plus the content folder.
+            All four rows are fields of the Website tab, two of them with an amber badge when
+            something is missing - so the link names that tab rather than whichever one the page
+            last had open (twenty-eighth review, finding 5). */}
         <Tile
           icon={TAB_ICONS.config}
           title={t('dashboard.site')}
-          to="config"
+          to="config?tab=site"
           linkLabel={t('projectLayout.tabs.config')}
         >
           <dl className="grid gap-1.5">

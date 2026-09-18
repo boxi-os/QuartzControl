@@ -1032,6 +1032,17 @@ steht“, von dem die Pfeiltasten ausgehen. Gemessen an der gebauten App, Kopie 
     Chip left, Space · ↓ · ↓ · Escape   Zeile 1, dann Zeile 2, abgebrochen
     header (platziert), Space · Space und Space · ↓ · ↑ · Escape   vorher wie jetzt
 
+**Korrektur (neunundzwanzigstes Review, Befund 4):** „vorher wie jetzt“ gilt für `header` im
+ersten Frame und nicht allgemein. In den Frames „focus“ und „index“ zielte Leertaste · Leertaste
+vor dieser Regel bei 5 von 13 platzierten Kästen auf eine *fremde* Zelle (`right` auf „Zeile 1,
+Spalte 10“, `page-body` und die Körper-Bereiche in „index“ je auf „Spalte 5“) und wurde nur
+abgelehnt, weil dort etwas lag; auf freiem Feld wäre der Kasten gewandert. Die Regel hat das
+repariert, ohne dass es hier stand. Ebenso stimmte die Annahme des Auftrags nicht, gemessen sei
+nur ohne Scrollen: Der Fokus auf dem Griff rollt `<main>` schon beim Aufnehmen, und der
+`KeyboardSensor` scrollt bei jedem Pfeil nach unten, dessen Ziel unter der Mitte des Rollers
+liegt — ein Zwischenziel erschien dabei in keiner Szene. Beides zugunsten des Codes; gemessen vom
+Review an zwei gebauten Apps (alt und neu).
+
 Dabei aufgefallen und nicht mit erledigt: Leertaste · Leertaste auf einem *platzierten* Bereich
 sagt „header bei Zelle Zeile 1, Spalte 1 abgelegt“, obwohl nichts wandert — vorher genauso.
 **Erledigt im Anschluss:** Die Zelle, an der die Platzierung eines Bereichs beginnt, ist jetzt sein

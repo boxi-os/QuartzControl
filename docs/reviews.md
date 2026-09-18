@@ -18,7 +18,7 @@ gearbeitet wird, und nicht, was war.
 
 ## Befunde aus den Reviews (Stand 2026-09-18)
 
-Alle neunundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVIEW-2026-09-02.md),
+Alle dreißig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](REVIEW-2026-09-07.md) mit seinen acht,
@@ -46,8 +46,9 @@ Alle neunundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVI
 [`docs/REVIEW-2026-09-30.md`](REVIEW-2026-09-30.md) mit seinen neun und
 [`docs/REVIEW-2026-10-01.md`](REVIEW-2026-10-01.md) mit seinen sechs und
 [`docs/REVIEW-2026-10-02.md`](REVIEW-2026-10-02.md) mit seinen fünf und
-[`docs/REVIEW-2026-10-03.md`](REVIEW-2026-10-03.md) mit seinen fünf (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-30-`, `2026-10-01-` bis `-03-auftrag.md`) stehen als
+[`docs/REVIEW-2026-10-03.md`](REVIEW-2026-10-03.md) mit seinen fünf und
+[`docs/REVIEW-2026-10-04.md`](REVIEW-2026-10-04.md) mit seinen fünf (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-30-`, `2026-10-01-` bis `-04-auftrag.md`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](REVIEW-2026-09-15.md) gehört nicht
 in diese Zählung: Die „fünfzehnte Runde“ las die Handbücher der zwei Plugins gegen deren Code und
@@ -169,6 +170,30 @@ der Ablagefläche sind mindestens 24 px breit, die Fläche rollt dafür bei 1470
 Status zählt eine Zeile aus `putBack` nur, solange sie ganz fehlt (`a0233eb`, R2 mit echtem npm,
 vier statt zwei Namen vorher). Derselbe R2-Lauf bestätigt Befund 2 nachträglich mit echtem npm.
 **Diese Fixes hat kein Review gelesen.**
+
+**Das dreißigste Review las beide Schichten** und fand **keinen Befund Hoch, keinen Mittel, fünf
+Niedrig**, dazu sieben Punkte nebenbei — die dritte Runde in Folge von Claude Fable 5.1 ohne
+mittleren Befund. Die Startzelle als Platz (`fd23703`) trägt in jeder Szene, die der Auftrag
+ungemessen nannte, der Abbruch-Kanal (`6991fe6`) ebenso. Zwei der vier Nebenbei-Fixes haben etwas
+mitgebracht, beide für Fixes ohne Richtung aus dem Review davor und beide an einem Geschirr
+vorbei, das für den Fall davor gebaut war: Seit den 24-px-Spalten rollt der `KeyboardSensor` bei
+jedem breiten Kasten auf Desktop, weich über rund 300 ms, und dazwischen sagte die Ansage „liegt
+wieder auf seinem Ausgangsplatz“ (Befund 1 — senkrecht gab es das schon vorher); und der Status
+ließ mit Bereichen, wie npm sie schreibt, ein Paket aus, weil `absentFromPackageJson` nur die
+fehlende Hälfte der Liste bekam (Befund 2). Die übrigen: Der neue Roller schnitt den Auswahl-Ring
+eines Frames ohne Innenabstand ab (3), der verweigerte Abbruch sagte „die unten genannte Datei“ in
+einer Ansage, die gits Text nie sagt (4), und Behauptungen der Runde, die nicht trugen (5; darunter
+`check:i18n`, das 1139 und nicht 1136 Schlüssel zählte). Alle fünf sind abgearbeitet
+(`fix/review-2026-10-04`, je ein Commit mit Typcheck, Build und Smoke): `scrollBehavior: 'auto'` am
+`KeyboardSensor` des Frame-Builders (`3d5f2b2`, gebaute App mit den Szenen des Reviews, 1280 und
+1470 px, 40-ms-Pfeile und mehrzeilig — keine Zwischenansage, vier Pfeile landen auf Spalte 8; das
+Layout-Board behält die Vorgabe und ist nicht gemessen); der Status fragt `absent` über die ganze
+Liste (`3865910`, R2N mit echtem npm jetzt `is-odd, kind-of` wie der Satz des Laufs, R2
+unverändert); `-m-1 p-1` am Roller (`171822d`, Bildausschnitt alt gegen neu); der Satz nennt den
+Dateinamen aus `Entry '…' not uptodate` (`5acf57b`, am Bündel, nicht an der Seite); und die
+Korrekturen in `layout-frames.md` (in `3d5f2b2` und `26edb1c`). Die sieben Nebenbei-Punkte sind
+**nicht** mit erledigt, darunter `updateAreaHidden`, das beim Einblenden keine Überschneidung
+prüft. **Diese Fixes hat kein Review gelesen.**
 
 **Das siebenundzwanzigste Review las beide Schichten** und fand **keinen Befund Hoch, einen
 Mittel, fünf Niedrig**, dazu drei Punkte nebenbei — und der mittlere ist ein Fehler im eigenen

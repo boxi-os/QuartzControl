@@ -719,6 +719,17 @@ Geschirr des Reviews (AB3: echtes git, nur `stash pop` über eine Attrappe gesch
                    Der Abbruch hat den vorgemerkten Stand dieser Dateien verworfen: notes.txt. …“
     AB2   jetzt    sentences = [verworfene Datei, „Das Update ist abgebrochen, …“] (Bündel)
 
+**Nachtrag (2026-09-18, dreißigstes Review, nebenbei 5):** „Nach Gewicht“ galt im geglückten Fall
+nicht ganz: Der Satz über einen älteren Eintrag — der einzige, nach dem der Nutzer etwas tun muss —
+stand hinter der guten Nachricht. `popCoreUpdateStash` gibt die gute Nachricht jetzt getrennt
+zurück (`restored`), und der Abbruch ordnet in beiden Fällen gleich: was zu tun ist, dann was
+verloren ist, dann was geglückt ist. Bündel mit echtem git:
+
+    älterer Eintrag derselben App auf demselben HEAD, notes.txt vorgemerkt
+          vorher   [verworfene Datei, abgebrochen, älterer Eintrag]
+          jetzt    [älterer Eintrag, verworfene Datei, abgebrochen]
+    AB3   unverändert [Pop gescheitert, verworfene Datei]
+
 **Nachtrag (2026-09-18, neunundzwanzigstes Review, nebenbei 4): Der Status nennt als ausstehend
 nicht mehr, was ein gescheiterter Lauf schon zurückgeschrieben hat.** `outstandingCoreInstall`
 fragte `stillMissing` — die Frage des Laufs („fehlt oder steht mit einem anderen Bereich da, im

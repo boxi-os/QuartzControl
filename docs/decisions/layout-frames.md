@@ -1235,3 +1235,33 @@ nannte 33-mal denselben Satz. Jetzt „{{name}} verschieben“, bei mehreren Ins
 die neben dem Namen steht („quartz-navigations #5 verschieben“) — dieselbe Form wie „Umsortieren:
 {{name}}“ in der Plugin-Liste und „Bereich {{name}} verschieben“ im Frame-Builder. Gebaute App:
 33 von 33 Griffen verschieden benannt, keiner doppelt. Nicht mit VoiceOver gehört.
+
+**Nachtrag (2026-09-18, einunddreißigstes Review, nebenbei 3 und 4): Der Editor warnt vor
+Platzierungen, die das Raster nicht trägt.** Zwei Zustände, die der Editor selbst nicht mehr
+herstellt (Ablage, Spanne und Sichtbarkeits-Schalter prüfen alle), die aber in einem Entwurf stehen
+können, und für beide gab es kein Wort:
+
+- *Zwei sichtbare Bereiche auf derselben Zelle.* Kommt über die Datei — ein Frame, gespeichert
+  bevor der Schalter prüfte, oder von Hand bearbeitet. `buildTemplateAreas` schreibt zellenweise,
+  der spätere Bereich verdrängt also den früheren; bleibt dabei kein Rechteck übrig, ist die ganze
+  `grid-template-areas`-Deklaration ungültig (`CSS.supports` in diesem Chromium: `false`). Ein
+  1 × 1 an der Ecke eines einzeiligen `header` lässt noch ein Rechteck, in der Mitte nicht —
+  deshalb sagt der Satz „wo dabei kein Rechteck übrig bleibt“ und nicht „immer“.
+- *Ein sichtbarer Bereich über die letzte Zeile oder Spalte hinaus.* Kommt vom Verkleinern des
+  Rasters, das Platzierungen absichtlich nicht anfasst: Das Zahlenfeld läuft auf dem Weg von 12 nach
+  10 durch „1“, und ein Verkleinern, das Bereiche verschöbe oder löste, zerlegte das Layout beim
+  Tippen. Gebaute App, „focus“, zwölf Spalten auf sechs:
+
+      vorher   right bleibt auf 2/10, die Fläche bekommt sechs implizite Spalten, keine Warnung
+      jetzt    „Diese Bereiche reichen über das Raster hinaus: header, page-body, footer. …“;
+               zurück auf zwölf verschwindet sie; von Tablet aus nennt die Zeile „Auf Desktop … gibt
+               es Hinweise“ den Breakpoint mit
+
+Dazu die eine Tür, die Nebenbei 4 nannte: Ein *ausgeblendeter* Bereich jenseits des verkleinerten
+Rasters bestand die Überschneidungsprüfung (dort liegt nichts) und wäre außerhalb zurückgekommen.
+Der Schalter lehnt jetzt auch das ab, mit eigenem Satz im Formular und über `announce()` („right
+bleibt ausgeblendet — seine Zellen liegen nicht mehr im Raster. …“); bei wieder zwölf Spalten geht
+das Einblenden durch. Beide Warnungen stehen vor den übrigen, weil sie die gebaute Seite brechen,
+statt etwas von ihr wegzulassen, und zählen in der Zeile über die anderen Breakpoints mit. Der Frame
+mit der Überschneidung in der Datei (Szene des Reviews) zeigt „header + before-body“.
+Ein Commit für beide Punkte: Es ist eine Funktion (`placementWarnings`) und eine Messung.

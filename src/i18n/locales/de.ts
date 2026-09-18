@@ -1220,6 +1220,12 @@ export default {
       spanRefused: '{{name}} behält seine Spanne — mit der neuen würde es sich mit einem bestehenden Bereich überschneiden.',
       showRefused:
         '{{name}} bleibt ausgeblendet — auf seinen Zellen liegt inzwischen ein anderer Bereich. Ziehe es auf eine freie Zelle, um es zu zeigen.',
+      showRefusedOutside:
+        '{{name}} bleibt ausgeblendet — seine Zellen liegen nicht mehr im Raster. Ziehe es auf eine freie Zelle, um es zu zeigen.',
+      overlapWarning:
+        'Diese Bereiche liegen übereinander: {{pairs}}. Auf der gebauten Seite verdrängt einer den anderen, und wo dabei kein Rechteck übrig bleibt, gilt die ganze Anordnung dieses Breakpoints nicht — ziehe einen davon auf freie Zellen.',
+      outsideWarning:
+        'Diese Bereiche reichen über das Raster hinaus: {{areas}}. Die gebaute Seite schneidet ab, was außerhalb liegt, und ein Bereich ganz außerhalb hat dort keinen Platz.',
       dropNarrowed: '{{name}} bei {{target}} abgelegt. Dort endet das Raster: {{changes}}.',
       colSpanCut: 'Spalten-Spanne jetzt {{now}} statt {{before}}',
       rowSpanCut: 'Zeilen-Spanne jetzt {{now}} statt {{before}}',

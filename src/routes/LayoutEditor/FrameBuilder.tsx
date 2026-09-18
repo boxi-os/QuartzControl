@@ -252,6 +252,47 @@ function slotWarnings(
   }
 }
 
+/**
+ * Placements the grid does not carry, for one breakpoint - the other half of what the editor warns
+ * about. Nothing in the editor *makes* either state any more (a drop, a span and the visibility
+ * switch all check), but both can stand in a draft:
+ *
+ * - `overlapping`: two visible areas on the same cell. It comes in through the file - a frame saved
+ *   before the switch checked, or edited by hand. buildTemplateAreas writes cell by cell, so the
+ *   later area displaces the earlier one; where that leaves a name that is not a rectangle, the
+ *   whole `grid-template-areas` declaration is invalid (checked with CSS.supports in this
+ *   Chromium) - a 1x1 on the corner of a one-row header is still one, in the middle it is not.
+ * - `outside`: a visible area reaching past the last row or column. It comes from shrinking the
+ *   grid, which deliberately leaves placements alone: the number field passes through "1" on the
+ *   way from 12 to 10, and a shrink that moved or dropped areas would wreck the layout mid-typing.
+ *   Measured at the built app (thirty-first review, "nebenbei" 3 and 4): twelve columns cut to
+ *   six left `right` on column 10, the board grew six implicit columns for it, and not one
+ *   warning said so - while buildTemplateAreas clips what lies outside, so on the built page that
+ *   area has no place at all.
+ */
+function placementWarnings(def: GridFrameDefinition, bp: FrameBreakpoint): { overlapping: [GridFrameArea, GridFrameArea][]; outside: GridFrameArea[] } {
+  const layout = def.breakpoints[bp]
+  const visible = def.areas.flatMap((area) => {
+    const p = layout.placements[area.id]
+    return p && !p.hidden ? [{ area, p }] : []
+  })
+  const overlapping: [GridFrameArea, GridFrameArea][] = []
+  for (let i = 0; i < visible.length; i++) {
+    for (let j = i + 1; j < visible.length; j++) {
+      const a = visible[i].p
+      const b = visible[j].p
+      if (a.row < b.row + b.rowSpan && b.row < a.row + a.rowSpan && a.col < b.col + b.colSpan && b.col < a.col + a.colSpan) {
+        overlapping.push([visible[i].area, visible[j].area])
+      }
+    }
+  }
+  return { overlapping, outside: visible.filter(({ p }) => !fitsGrid(layout, p)).map(({ area }) => area) }
+}
+
+function fitsGrid(layout: GridBreakpointLayout, p: GridAreaPlacement): boolean {
+  return p.row >= 1 && p.col >= 1 && p.row + p.rowSpan - 1 <= layout.rows && p.col + p.colSpan - 1 <= layout.cols
+}
+
 export default function FrameBuilder({
   projectPath,
   onFramesChanged
@@ -752,6 +793,12 @@ export default function FrameBuilder({
     // it was hidden. Without this check a 1x1 area came back inside a two-row box, whose name then
     // no longer formed a rectangle in `grid-template-areas` - which makes the whole declaration
     // invalid (thirtieth review, "nebenbei" 1).
+    // And its cells may be gone: shrinking the grid leaves placements alone (see placementWarnings),
+    // so a hidden area can lie past the last column, where nothing overlaps it.
+    if (!hidden && !fitsGrid(layout, existing)) {
+      refuseInForm(id, t('layoutEditor.frameBuilder.showRefusedOutside', { name: areaName(id) }))
+      return
+    }
     if (!hidden && overlaps(layout, editing.areas, existing.row, existing.col, existing.rowSpan, existing.colSpan, id)) {
       refuseInForm(id, t('layoutEditor.frameBuilder.showRefused', { name: areaName(id) }))
       return
@@ -935,6 +982,7 @@ export default function FrameBuilder({
     doubled: doubledSlots,
     hiddenGroups: hiddenGroupAreas
   } = slotWarnings(editing, activeBreakpoint)
+  const { overlapping: overlappingAreas, outside: outsideAreas } = placementWarnings(editing, activeBreakpoint)
   // The warnings below describe the breakpoint that is open, and a frame has three. An area of its
   // own placed on desktop only takes its group's components off tablet and mobile, and nothing on
   // the desktop screen hinted at it. So one line names the breakpoints that have a warning *this*
@@ -942,7 +990,10 @@ export default function FrameBuilder({
   // breakpoint with fewer problems, which is the wrong way to send anyone.
   const warningKeys = (bp: FrameBreakpoint): string[] => {
     const w = slotWarnings(editing, bp)
+    const p = placementWarnings(editing, bp)
     return [
+      ...p.overlapping.map(([a, b]) => `overlap:${a.id}:${b.id}`),
+      ...p.outside.map((a) => `outside:${a.id}`),
       ...w.unassigned.map((x) => `unassigned:${x}`),
       ...w.homeless.map((x) => `homeless:${x}`),
       ...w.doubled.map((x) => `doubled:${x}`),
@@ -1388,6 +1439,19 @@ export default function FrameBuilder({
         </DragOverlay>
         </DndContext>
 
+        {/* First, because these two break the built page rather than leave something off it. */}
+        {overlappingAreas.length > 0 && (
+          <p className="mt-4 text-xs text-amber-600 dark:text-amber-400">
+            {t('layoutEditor.frameBuilder.overlapWarning', {
+              pairs: overlappingAreas.map(([a, b]) => `${a.name} + ${b.name}`).join(', ')
+            })}
+          </p>
+        )}
+        {outsideAreas.length > 0 && (
+          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+            {t('layoutEditor.frameBuilder.outsideWarning', { areas: outsideAreas.map((a) => a.name).join(', ') })}
+          </p>
+        )}
         {unassignedSlots.length > 0 && (
           <p className="mt-4 text-xs text-amber-600 dark:text-amber-400">
             {t('layoutEditor.frameBuilder.unassignedWarning', {

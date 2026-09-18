@@ -1,11 +1,13 @@
 import { existsSync, mkdirSync } from 'fs'
-import { copyFile, readFile, readdir, rename, rm, writeFile } from 'fs/promises'
+import { copyFile, readFile, readdir, rename, rm, stat, writeFile } from 'fs/promises'
 import { createRequire } from 'module'
 import { basename, dirname, join, relative, sep } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
 import type {
   CssVariableOverride,
   FontFaceInfo,
+  PreviewFontFace,
+  PreviewFonts,
   ScssCheckResult,
   ScssDiagnostic,
   StyleFile,
@@ -15,6 +17,7 @@ import type {
 } from '@shared/ipc-contract'
 import { resolveBuildDir } from './projectDirs'
 import { mainT } from '../i18n'
+import { MAX_FONT_FILE_BYTES } from './fontFile'
 
 // The file Quartz's build imports directly (quartz/plugins/emitters/componentResources.ts) -
 // verified against a real clone. Already inside the dev server's esbuild watch graph, so saving
@@ -657,15 +660,130 @@ function declaration(body: string, property: string): string | undefined {
   return match ? match[1].trim().replace(/^["']|["']$/g, '') : undefined
 }
 
+interface ParsedFace {
+  family: string
+  weight: string
+  style: string
+  unicodeRange?: string
+  /** The first url() of `src`, verbatim. */
+  url?: string
+}
+
+function parseFontFaces(content: string): ParsedFace[] {
+  const out: ParsedFace[] = []
+  FONT_FACE_RE.lastIndex = 0
+  let match: RegExpExecArray | null
+  while ((match = FONT_FACE_RE.exec(content)) !== null) {
+    const family = declaration(match[1], 'font-family')
+    if (!family) continue
+    const src = declaration(match[1], 'src')
+    out.push({
+      family,
+      weight: declaration(match[1], 'font-weight') ?? '400',
+      style: declaration(match[1], 'font-style') ?? 'normal',
+      unicodeRange: declaration(match[1], 'unicode-range'),
+      url: src ? /url\(\s*["']?([^"')]+)["']?\s*\)/.exec(src)?.[1] : undefined
+    })
+  }
+  return out
+}
+
+// A face's file on disk, for the one URL shape both sources write: `…/static/fonts/<file>`. The
+// app's font import writes it root-relative, Quartz writes it absolute on the baseUrl
+// (`https://<baseUrl>/static/fonts/<hash>.ttf`, read from a real build). Anything else - a CDN, a
+// data: URI, a path elsewhere - has no file here. Only a bare file name is accepted, so the result
+// cannot leave `dir`.
+function fontFileIn(dir: string, url: string | undefined): string | undefined {
+  if (!url) return undefined
+  const match = /\/static\/fonts\/([^/?#]+)(?:[?#].*)?$/.exec(url)
+  if (!match) return undefined
+  let name: string
+  try {
+    name = decodeURIComponent(match[1])
+  } catch {
+    return undefined
+  }
+  if (name !== basename(name) || name.startsWith('.') || name.includes('\\')) return undefined
+  return join(dir, name)
+}
+
+function projectFontsDir(projectPath: string): string {
+  return join(projectPath, 'quartz', 'static', 'fonts')
+}
+
+async function projectStylesheets(projectPath: string): Promise<string[]> {
+  const files = [customScssPath(projectPath)]
+  for (const dir of STYLE_DIRS) {
+    const full = join(stylesDir(projectPath), dir)
+    if (!existsSync(full)) continue
+    for (const entry of await readdir(full, { withFileTypes: true })) {
+      if (entry.isFile() && /\.(scss|css)$/.test(entry.name)) files.push(join(full, entry.name))
+    }
+  }
+  return files.filter((f) => existsSync(f))
+}
+
+// The stylesheets of a build that can hold @font-face rules Quartz wrote: index.css (core, with
+// cdnCaching off, downloads the Google fonts and inlines their rules there) and the Fonts plugin's
+// static/fonts/quartz-fonts.css (its `selfHosted` mode). The built index.css also carries every
+// rule of custom.scss, compiled - the caller drops those, they are the project's own.
+async function buildStylesheets(projectPath: string): Promise<string[]> {
+  const buildDir = resolveBuildDir(projectPath)
+  const files = [join(buildDir, 'index.css')]
+  const fontsDir = join(buildDir, 'static', 'fonts')
+  if (existsSync(fontsDir)) {
+    for (const entry of await readdir(fontsDir, { withFileTypes: true })) {
+      if (entry.isFile() && entry.name.endsWith('.css')) files.push(join(fontsDir, entry.name))
+    }
+  }
+  return files.filter((f) => existsSync(f))
+}
+
+interface LocatedFace extends ParsedFace {
+  origin: 'project' | 'build'
+  source: string
+  file?: string
+}
+
+async function projectAndBuildFaces(projectPath: string): Promise<LocatedFace[]> {
+  const out: LocatedFace[] = []
+  for (const path of await projectStylesheets(projectPath)) {
+    for (const face of parseFontFaces(await readFile(path, 'utf-8'))) {
+      out.push({
+        ...face,
+        origin: 'project',
+        source: relative(stylesDir(projectPath), path).split(sep).join('/'),
+        file: fontFileIn(projectFontsDir(projectPath), face.url)
+      })
+    }
+  }
+  const own = new Set(out.map((f) => f.family.toLowerCase()))
+  const buildFonts = join(resolveBuildDir(projectPath), 'static', 'fonts')
+  for (const path of await buildStylesheets(projectPath)) {
+    for (const face of parseFontFaces(await readFile(path, 'utf-8'))) {
+      if (own.has(face.family.toLowerCase())) continue
+      out.push({
+        ...face,
+        origin: 'build',
+        source: relative(projectPath, path).split(sep).join('/'),
+        file: fontFileIn(buildFonts, face.url)
+      })
+    }
+  }
+  return out
+}
+
 /**
- * Every @font-face the built site will have, from the only two places one can come from.
+ * Every @font-face the built site will have, from the three places one can come from.
  *
  * Quartz downloads fonts *only* for `fontOrigin: "googleFonts"` - its local branch in
  * componentResources.ts is a comment reading "let the user do it themselves in css" and emits
  * nothing at all. So under "local" the available weights and styles are exactly what the project's
  * own stylesheets declare (the app's own font import writes one such block) plus whatever font
  * files the active community theme ships, which theme.json lists under `meta.fontFiles` with the
- * family, style and weight of each - including variable ranges like "100 1000".
+ * family, style and weight of each - including variable ranges like "100 1000". Under
+ * "googleFonts" with the files served locally, the rules exist only after a build, in the build
+ * output - until 2026-09-18 they were not read, and every Google font said "no @font-face rule".
  */
 export async function collectFontFaces(projectPath: string, themeId?: string): Promise<FontFaceInfo[]> {
   const out: FontFaceInfo[] = []
@@ -693,32 +811,34 @@ export async function collectFontFaces(projectPath: string, themeId?: string): P
     }
   }
 
-  const files = [customScssPath(projectPath)]
-  for (const dir of STYLE_DIRS) {
-    const full = join(stylesDir(projectPath), dir)
-    if (!existsSync(full)) continue
-    for (const entry of await readdir(full, { withFileTypes: true })) {
-      if (entry.isFile() && /\.(scss|css)$/.test(entry.name)) files.push(join(full, entry.name))
-    }
+  for (const face of await projectAndBuildFaces(projectPath)) {
+    out.push({ family: face.family, weight: face.weight, style: face.style, origin: face.origin, source: face.source })
   }
-
-  for (const path of files) {
-    if (!existsSync(path)) continue
-    const content = await readFile(path, 'utf-8')
-    FONT_FACE_RE.lastIndex = 0
-    let match: RegExpExecArray | null
-    while ((match = FONT_FACE_RE.exec(content)) !== null) {
-      const family = declaration(match[1], 'font-family')
-      if (!family) continue
-      out.push({
-        family,
-        weight: declaration(match[1], 'font-weight') ?? '400',
-        style: declaration(match[1], 'font-style') ?? 'normal',
-        origin: 'project',
-        source: relative(stylesDir(projectPath), path).split(sep).join('/')
-      })
-    }
-  }
-
   return out
+}
+
+// A ceiling over all faces together; each file is held to MAX_FONT_FILE_BYTES on its own as well.
+// The four families of a preview come to well under 5 MB in the projects measured.
+const MAX_PREVIEW_BYTES = 32 * 1024 * 1024
+
+/**
+ * The files behind the faces of `families`, read here because the renderer may not: its CSP allows
+ * no font URL but its own, and a file path in the renderer would be a read-anything channel. What
+ * comes back goes into `new FontFace(family, data)`, which is how the preview shows the font the
+ * site will have instead of whatever this machine happens to have installed.
+ */
+export async function readPreviewFonts(projectPath: string, families: string[]): Promise<PreviewFonts> {
+  const wanted = new Set(families.map((f) => f.toLowerCase()))
+  const faces: PreviewFontFace[] = []
+  let total = 0
+  for (const face of await projectAndBuildFaces(projectPath)) {
+    if (!face.file || !wanted.has(face.family.toLowerCase())) continue
+    const size = await stat(face.file).then((s) => (s.isFile() ? s.size : -1)).catch(() => -1)
+    if (size < 0 || size > MAX_FONT_FILE_BYTES || total + size > MAX_PREVIEW_BYTES) continue
+    total += size
+    const data = await readFile(face.file).catch(() => null)
+    if (!data) continue
+    faces.push({ family: face.family, weight: face.weight, style: face.style, unicodeRange: face.unicodeRange, data: new Uint8Array(data) })
+  }
+  return { faces, built: existsSync(join(resolveBuildDir(projectPath), 'index.css')) }
 }

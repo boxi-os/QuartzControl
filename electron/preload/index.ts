@@ -29,7 +29,8 @@ import type {
   TemplateExportOptions,
   TemplateImportProgress,
   TemplatePartId,
-  ConfirmDialogOptions
+  ConfirmDialogOptions,
+  PreviewFontsInput
 } from '@shared/ipc-contract'
 
 function onEvent<Args extends unknown[]>(channel: string, cb: (...args: Args) => void): () => void {
@@ -118,6 +119,7 @@ const api: QuartzGuiApi = {
     checkSource: (projectPath: string, relativePath: string, content: string) =>
       ipcRenderer.invoke(IPC.stylesCheckSource, projectPath, relativePath, content),
     fontFaces: (projectPath: string, themeId?: string) => ipcRenderer.invoke(IPC.stylesFontFaces, projectPath, themeId),
+    previewFonts: (input: PreviewFontsInput) => ipcRenderer.invoke(IPC.stylesPreviewFonts, input),
     getVariableOverrides: (projectPath: string) => ipcRenderer.invoke(IPC.stylesGetVariableOverrides, projectPath),
     saveVariableOverrides: (projectPath: string, overrides: CssVariableOverride[]) =>
       ipcRenderer.invoke(IPC.stylesSaveVariableOverrides, projectPath, overrides),

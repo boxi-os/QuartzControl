@@ -675,9 +675,37 @@ export interface FontFaceInfo {
   weight: string
   /** Verbatim: "normal", "italic", … */
   style: string
-  origin: 'theme' | 'project'
-  /** Which file it was found in - the theme package or a path relative to quartz/styles. */
+  /**
+   * `build`: written by Quartz into the build output (the Google fonts it downloads when fonts are
+   * served locally) - there is no rule for them anywhere in the project before the first build.
+   */
+  origin: 'theme' | 'project' | 'build'
+  /**
+   * Which file it was found in - the theme package, a path relative to quartz/styles, or for a
+   * `build` face a path relative to the project.
+   */
   source: string
+}
+
+export interface PreviewFontsInput {
+  projectPath: string
+  /** Only these families are read - the four the preview shows, not every face in the project. */
+  families: string[]
+}
+
+/** One face with its file, for `new FontFace()` in the renderer. */
+export interface PreviewFontFace {
+  family: string
+  weight: string
+  style: string
+  unicodeRange?: string
+  data: Uint8Array<ArrayBuffer>
+}
+
+export interface PreviewFonts {
+  faces: PreviewFontFace[]
+  /** Whether the default build output (`public/`) holds a built site at all. */
+  built: boolean
 }
 
 // A Sass compile error, located in the file it actually came from - which is frequently not the
@@ -1393,6 +1421,7 @@ export const IPC = {
   stylesCheck: 'styles:check',
   stylesCheckSource: 'styles:checkSource',
   stylesFontFaces: 'styles:fontFaces',
+  stylesPreviewFonts: 'styles:previewFonts',
   stylesGetVariableOverrides: 'styles:getVariableOverrides',
   stylesSaveVariableOverrides: 'styles:saveVariableOverrides',
   stylesVariableGraph: 'styles:variableGraph',
@@ -1711,6 +1740,11 @@ export interface QuartzGuiApi {
     /** Compiles one file's *unsaved* content on its own - each stylesheet is its own Sass module. */
     checkSource(projectPath: string, relativePath: string, content: string): Promise<ScssCheckResult>
     fontFaces(projectPath: string, themeId?: string): Promise<FontFaceInfo[]>
+    /**
+     * The font files behind the faces of these families, from the project's quartz/static/fonts and
+     * from the build output - so the preview can draw the real font, not whatever is installed here.
+     */
+    previewFonts(input: PreviewFontsInput): Promise<PreviewFonts>
     getVariableOverrides(projectPath: string): Promise<CssVariableOverride[]>
     saveVariableOverrides(projectPath: string, overrides: CssVariableOverride[]): Promise<void>
     variableGraph(projectPath: string, themeId?: string, outputDir?: string): Promise<CssVariableGraph>

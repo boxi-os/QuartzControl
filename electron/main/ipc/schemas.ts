@@ -192,6 +192,12 @@ export const confirmDialog = z.looseObject({
 
 // The two log-buffer channels. Object arguments per the new-channel rule; the project id is the
 // key of an in-memory map, so a uuid is all that has to hold.
+// Four slots in the preview; a longer list is not something the page asks for.
+export const previewFontsInput = z.looseObject({
+  projectPath: absolutePath,
+  families: z.array(z.string().min(1).max(200)).max(8)
+})
+
 export const logHistoryInput = z.looseObject({ projectId: uuid })
 export const logClearInput = z.looseObject({ projectId: uuid, stream: z.enum(['server', 'build']) })
 

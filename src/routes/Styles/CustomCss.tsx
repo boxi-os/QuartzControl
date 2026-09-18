@@ -13,6 +13,7 @@ import CssVariableReference from './CssVariableReference'
 import { cssColorToHex, isDisplayableColor, resolvedValue, type ResolveContext } from './variableGraph'
 import { fontIsAvailable, googleFontRequest, primaryFamily, summarizeFaces, type TypographySlot } from './fontSpec'
 import { fontLoaders } from './fontDelivery'
+import { fontBuildState, loadPreviewFonts } from './previewFonts'
 import { activeThemeIdOf, useStyles } from './index'
 
 // What this file is writing on top of, as it actually looks right now - resolved through the same
@@ -786,7 +787,30 @@ function ActiveStyles(): JSX.Element {
     .filter((r): r is NonNullable<typeof r> => r !== null)
 
   const families = SUMMARY_FONTS.map((key) => primaryFamily(resolvedValue(key, 'light', ctx) ?? undefined))
+
+  // The real files, where the project or its build has them, so the samples below are the site's
+  // fonts and not this machine's. `fontsLoaded` only forces the render after which
+  // fontIsAvailable() measures again.
+  const [built, setBuilt] = useState<boolean | null>(null)
+  const [, setFontsLoaded] = useState(0)
+  const familyKey = [...new Set(families.filter(Boolean))].join('|')
+  useEffect(() => {
+    let cancelled = false
+    loadPreviewFonts(project.path, familyKey ? familyKey.split('|') : []).then((isBuilt) => {
+      if (cancelled) return
+      setBuilt(isBuilt)
+      setFontsLoaded((n) => n + 1)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [project.path, familyKey])
+
   const anyMissing = families.some((family) => family && !fontIsAvailable(family))
+  const buildState = fontBuildState(config, faces, built)
+  const googleFamilies = new Set(requests.map((r) => r.family.toLowerCase()))
+  const selfHosted = loaders.some((l) => l.via !== 'theme' && l.mode === 'selfHosted')
+  const atPageView = loaders.some((l) => l.via !== 'theme' && l.mode === 'google')
 
   return (
     <Card>
@@ -904,7 +928,14 @@ function ActiveStyles(): JSX.Element {
                       <span className="text-text-muted">
                         {summary
                           ? `${summary.weights.join(' · ')}${summary.italic ? ` · ${t('styleEditor.current.italic')}` : ''}`
-                          : t('styleEditor.current.noFace')}
+                          : // No rule yet is not the same as none: a Google font has its rules after
+                            // the build, or in the visitor's browser - only for anything else it means
+                            // nothing will declare this family.
+                            googleFamilies.has(family.toLowerCase()) && selfHosted
+                            ? t('styleEditor.current.faceAtBuild')
+                            : googleFamilies.has(family.toLowerCase()) && atPageView
+                              ? t('styleEditor.current.faceFromGoogle')
+                              : t('styleEditor.current.noFace')}
                       </span>
                       {!available && <span className="text-amber-700 dark:text-amber-400">{t('styleEditor.current.notInstalled')}</span>}
                     </div>
@@ -922,6 +953,14 @@ function ActiveStyles(): JSX.Element {
             {/* Said once under the block, not on every line: four identical warnings read as four
                 problems. The short word sits on the line it belongs to. */}
             {anyMissing && <p className="mt-2 text-micro text-amber-700 dark:text-amber-400">{t('styleEditor.current.notInstalledExplainer')}</p>}
+            {buildState?.kind === 'notBuilt' && (
+              <p className="mt-2 text-micro text-amber-700 dark:text-amber-400">{t('styleEditor.current.fontsNotBuilt')}</p>
+            )}
+            {buildState?.kind === 'missing' && (
+              <p className="mt-2 text-micro text-amber-700 dark:text-amber-400">
+                {t('styleEditor.current.fontsMissingFromBuild', { families: buildState.families.join(', ') })}
+              </p>
+            )}
 
             {/* Where the fonts come from decides what the weights above even mean - and whether the
                 site calls Google at all. Both mechanisms are checked, not just the theme setting: the

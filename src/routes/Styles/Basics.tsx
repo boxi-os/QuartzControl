@@ -14,6 +14,7 @@ import {
   THEME_PLUGIN_PREFIX
 } from './fontDelivery'
 import { cssColorToHexAlpha } from './variableGraph'
+import { fontBuildState } from './previewFonts'
 import { activeThemeIdOf, useStyles } from './index'
 import ColorPicker from './ColorPicker'
 
@@ -44,8 +45,11 @@ export default function Basics(): JSX.Element {
 
   // Under "local" the suggestions are the families the project itself declares - that is all a
   // local font source can render. Read again after a font import below adds one.
+  // `built` for the same card: whether a build exists at all, asked without reading any font file.
+  const [built, setBuilt] = useState<boolean | null>(null)
   const reloadFaces = useCallback(() => {
     window.quartzGui.styles.fontFaces(project.path, themeId).then(setFaces)
+    window.quartzGui.styles.previewFonts({ projectPath: project.path, families: [] }).then((r) => setBuilt(r.built))
   }, [project.path, themeId])
   useEffect(reloadFaces, [reloadFaces])
 
@@ -173,7 +177,7 @@ export default function Basics(): JSX.Element {
         })}
       </div>
 
-      <FontDelivery config={config} onChange={setConfig} />
+      <FontDelivery config={config} onChange={setConfig} buildState={fontBuildState(config, faces, built)} />
 
       <CssFixes />
 
@@ -206,10 +210,12 @@ export default function Basics(): JSX.Element {
 // reported and both are flipped together; see fontDelivery.ts for what each one does.
 function FontDelivery({
   config,
-  onChange
+  onChange,
+  buildState
 }: {
   config: QuartzConfig
   onChange: (next: QuartzConfig) => void
+  buildState: ReturnType<typeof fontBuildState>
 }): JSX.Element {
   const { t } = useTranslation()
   const loaders = fontLoaders(config)
@@ -240,6 +246,16 @@ function FontDelivery({
         onChange={(checked) => onChange(withSelfHostedFonts(config, checked))}
       />
       <p className="mt-1.5 text-xs text-text-muted">{t('themeEditor.delivery.description')}</p>
+      {/* Self-hosting means "downloaded at build time", and until then the files exist nowhere -
+          which is what the preview on "Eigenes CSS" then shows. Said here too, where the choice is. */}
+      {buildState?.kind === 'notBuilt' && (
+        <p className="mt-1.5 text-xs text-amber-700 dark:text-amber-400">{t('styleEditor.current.fontsNotBuilt')}</p>
+      )}
+      {buildState?.kind === 'missing' && (
+        <p className="mt-1.5 text-xs text-amber-700 dark:text-amber-400">
+          {t('styleEditor.current.fontsMissingFromBuild', { families: buildState.families.join(', ') })}
+        </p>
+      )}
 
       {/* Its own control, not part of the switch above: there is no option to serve the theme's
           fonts locally, so the only way to stop the CDN requests is to drop them - which changes

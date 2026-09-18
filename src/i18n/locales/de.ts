@@ -1437,11 +1437,17 @@ export default {
       fonts: 'Schriften',
       variable: 'Variable',
       sample: 'Aa Bb Cc 123 — Beispieltext',
-      notInstalled: 'nicht installiert',
+      notInstalled: 'Ersatzschrift',
       notInstalledExplainer:
-        '„Nicht installiert“ heißt: die Schrift liegt auf diesem Rechner nicht vor und die App lädt nichts aus dem Netz — die Probe zeigt die Ersatzschrift, nicht die echte.',
+        '„Ersatzschrift“ heißt: Die Datei liegt weder im Projekt noch in dessen Build noch auf diesem Rechner, und die App lädt nichts aus dem Netz — die Probe zeigt eine andere Schrift als die Website.',
       italic: 'kursiv',
       noFace: 'keine @font-face-Regel gefunden',
+      faceAtBuild: 'kommt beim nächsten Build von Google',
+      faceFromGoogle: 'lädt beim Seitenaufruf von Google',
+      fontsNotBuilt:
+        'Dieses Projekt wurde noch nicht gebaut. Quartz lädt die Google-Schriften erst beim Build herunter — „Jetzt bauen“ oder den Dev-Server starten.',
+      fontsMissingFromBuild:
+        'Der letzte Build enthält {{families}} noch nicht: Quartz lädt die Schrift erst beim nächsten Build herunter — nach dem Speichern „Jetzt bauen“ oder den Dev-Server starten.',
       familyDefault: '(Standardstärke)',
       noLoader:
         'Schriften werden nicht nachgeladen: verfügbar ist nur, was ein aktives Theme mitbringt oder was du per @font-face deklarierst.',

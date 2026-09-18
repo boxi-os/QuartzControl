@@ -1428,11 +1428,17 @@ export default {
       fonts: 'Fonts',
       variable: 'Variable',
       sample: 'Aa Bb Cc 123 — sample text',
-      notInstalled: 'not installed',
+      notInstalled: 'fallback',
       notInstalledExplainer:
-        '“Not installed” means the font is not on this machine and the app fetches nothing from the network — the sample shows the fallback, not the real face.',
+        '“Fallback” means the file is neither in the project nor in its build nor on this machine, and the app fetches nothing from the network — the sample shows a different font from the site.',
       italic: 'italic',
       noFace: 'no @font-face rule found',
+      faceAtBuild: 'comes from Google with the next build',
+      faceFromGoogle: 'loads from Google on page view',
+      fontsNotBuilt:
+        'This project has not been built yet. Quartz downloads the Google fonts only at build time — “Build now” or start the dev server.',
+      fontsMissingFromBuild:
+        'The last build does not contain {{families}} yet: Quartz downloads the font only with the next build — after saving, “Build now” or start the dev server.',
       familyDefault: '(family default)',
       noLoader:
         'Nothing fetches fonts: only what an active theme ships, or what you declare via @font-face, is available.',

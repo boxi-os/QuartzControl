@@ -90,6 +90,11 @@ export function summarizeFaces(faces: FontFaceInfo[], family: string): FaceSumma
 let measure: CanvasRenderingContext2D | null = null
 const availability = new Map<string, boolean>()
 
+/** After faces were added to or removed from `document.fonts`, the cached answers are stale. */
+export function forgetFontAvailability(): void {
+  availability.clear()
+}
+
 export function fontIsAvailable(family: string): boolean {
   if (!family) return false
   const cached = availability.get(family)

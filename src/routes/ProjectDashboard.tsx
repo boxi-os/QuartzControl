@@ -408,7 +408,10 @@ export default function ProjectDashboard(): JSX.Element {
       detail: [relativePath, line != null ? t('dashboard.attention.line', { line }) : null, message]
         .filter(Boolean)
         .join(' · '),
-      to: 'styles?tab=css',
+      // `customCss`, the tab's name in Styles' TAB_ORDER. It said `css`, which no tab is called, so
+      // the link opened whichever tab was open last (found while working through the
+      // twenty-eighth review, measured on the built app).
+      to: 'styles?tab=customCss',
       linkLabel: t('projectLayout.tabs.styles')
     })
   }

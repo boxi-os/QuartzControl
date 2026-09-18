@@ -1229,8 +1229,13 @@ export default function FrameBuilder({
             4rem gaps and six fixed columns, and at a 1470px window their six `1fr` columns came
             out 5px wide, under spanning boxes a mouse could not aim at (twenty-ninth review,
             "nebenbei" 3). Where the minimum does not fit, the board grows past the panel and
-            scrolls sideways, instead of squeezing it back to nothing. */}
-        <div className="overflow-x-auto">
+            scrolls sideways, instead of squeezing it back to nothing. The scroller has a few
+            pixels of room that its negative margin gives back: `overflow-x: auto` clips on both
+            axes, and a ring is a shadow outside its box - in a frame without padding, which is
+            every new one, the selected box lost its ring on the left and top (thirtieth review,
+            finding 3). The room is the scroller's, not the board's: the board's box is the
+            frame's. */}
+        <div className="-m-1 overflow-x-auto p-1">
         <div
           className={`relative grid gap-1 ${
             hasBox ? 'rounded-[8px] border border-dashed border-blue-400/50 dark:border-blue-400/40' : ''

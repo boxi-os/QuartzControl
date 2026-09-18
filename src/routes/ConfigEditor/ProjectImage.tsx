@@ -2,7 +2,8 @@ import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import type { PluginEntry, ProjectIconInfo } from '@shared/ipc-contract'
 import { useProject, useRefreshProjectIcon } from '../ProjectLayout'
-import { Button, FieldGroup, Toggle } from '../../components/ui'
+import { ImageIcon } from 'lucide-react'
+import { Button, Card, CardHeading, Toggle } from '../../components/ui'
 import { confirmDialog } from '../../utils/confirm'
 import { findProjectImageEntry, isLayoutBox, withProjectImage, withoutProjectImage } from '@shared/projectImageBox'
 import ProjectAvatar from '../../components/ProjectAvatar'
@@ -119,7 +120,8 @@ export default function ProjectImage({
   const actionError = choose.error ?? clear.error ?? chooseDark.error ?? clearDark.error ?? toggleHeader.error
 
   return (
-    <FieldGroup label={t('projectImage.label')} className="md:col-span-2 2xl:col-span-3">
+    <Card className="text-ui">
+      <CardHeading icon={ImageIcon} className="mb-3">{t('projectImage.label')}</CardHeading>
       <div className="flex flex-wrap items-start gap-3">
         <ProjectAvatar
           id={project.id}
@@ -198,6 +200,6 @@ export default function ProjectImage({
           {actionError && <p className="text-micro text-red-600 dark:text-red-400">{actionError}</p>}
         </div>
       </div>
-    </FieldGroup>
+    </Card>
   )
 }

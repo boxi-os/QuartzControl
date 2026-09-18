@@ -177,51 +177,46 @@ export default function ConfigEditor(): JSX.Element {
 
       {tab === 'site' && (
         <>
-          {/* Outside the config's own loading and error states: the content folder is not in
-              quartz.config.yaml, and a config the app cannot read is no reason to hide where the
-              notes come from. The same grid as the form below, so it lines up with it. */}
-          <div className="mb-4 grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+          {/* Five cards stacked like on the Updates page. The content folder sits outside the
+              config's own loading and error states: it is not in quartz.config.yaml, and a config
+              the app cannot read is no reason to hide where the notes come from. */}
+          <div className="flex flex-col gap-4">
             <ContentFolder />
+            {loadError && (
+              <div className="max-w-xl">
+                <p className="mb-2 text-sm font-medium text-red-600 dark:text-red-400">{t('configEditor.loadError')}</p>
+                <pre className="whitespace-pre-wrap rounded-md bg-red-50 p-3 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-400">
+                  {loadError}
+                </pre>
+              </div>
+            )}
+            {!loadError && !config && <p className="text-sm text-text-muted">{t('configEditor.loading')}</p>}
+            {config && (
+              <>
+                {/* The picture writes its files immediately, but two plugins make something of it:
+                    the favicon, and the layout box that shows it in the header. Both live in the
+                    config this page holds and saves, so the card reads this page's plugin list and
+                    hands its header switch back as a change to the draft - never a second writer.
+                    The one exception is installing the layout box, which only the CLI can do: that
+                    saves pending edits first and reads the config anew, see installLayoutBox. */}
+                <ProjectImage
+                  plugins={config.plugins}
+                  savedPlugins={savedPlugins}
+                  onPluginsChange={(update) => setConfig((current) => (current ? { ...current, plugins: update(current.plugins) } : current))}
+                  onInstallLayoutBox={installLayoutBox}
+                />
+                <SiteSettings configuration={config.configuration} onChange={(configuration) => setConfig({ ...config, configuration })} />
+                {/* Colors and fonts are the bottom layer of the styling cascade, so they live with
+                    the other three layers on the Styles page. */}
+                <p className="max-w-xl text-xs text-text-muted">
+                  {t('configEditor.stylesHint')}{' '}
+                  <Link to="../styles" className="underline">
+                    {t('configEditor.stylesHintLink')}
+                  </Link>
+                </p>
+              </>
+            )}
           </div>
-          {loadError && (
-            <div className="max-w-xl">
-              <p className="mb-2 text-sm font-medium text-red-600 dark:text-red-400">{t('configEditor.loadError')}</p>
-              <pre className="whitespace-pre-wrap rounded-md bg-red-50 p-3 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-400">
-                {loadError}
-              </pre>
-            </div>
-          )}
-          {!loadError && !config && <p className="text-sm text-text-muted">{t('configEditor.loading')}</p>}
-          {config && (
-            <>
-              <SiteSettings
-                configuration={config.configuration}
-                onChange={(configuration) => setConfig({ ...config, configuration })}
-                // The picture writes its files immediately, but two plugins make something of it:
-                // the favicon, and the layout box that shows it in the header. Both live in the
-                // config this page holds and saves, so the card reads this page's plugin list and
-                // hands its header switch back as a change to the draft - never a second writer.
-                // The one exception is installing the layout box, which only the CLI can do: that
-                // saves pending edits first and reads the config anew, see installLayoutBox.
-                image={
-                  <ProjectImage
-                    plugins={config.plugins}
-                    savedPlugins={savedPlugins}
-                    onPluginsChange={(update) => setConfig((current) => (current ? { ...current, plugins: update(current.plugins) } : current))}
-                    onInstallLayoutBox={installLayoutBox}
-                  />
-                }
-              />
-              {/* Colors and fonts used to be a second tab here. They are the bottom layer of the
-                  styling cascade, so they now live with the other three layers on the Styles page. */}
-              <p className="mt-8 max-w-xl text-xs text-text-muted">
-                {t('configEditor.themeMoved')}{' '}
-                <Link to="../styles" className="underline">
-                  {t('configEditor.themeMovedLink')}
-                </Link>
-              </p>
-            </>
-          )}
         </>
       )}
       {tab === 'localization' && <Localization />}

@@ -732,9 +732,9 @@ export default {
     },
     loadError: 'quartz.config.yaml could not be read.',
     loading: 'Loading configuration…',
-    themeMoved:
-      'Colors and fonts have moved to Styles — there they form the base layer that themes, variables, and custom CSS build on.',
-    themeMovedLink: 'Go to Styles'
+    stylesHint:
+      'Colors and fonts are set in Styles.',
+    stylesHintLink: 'Go to Styles'
   },
   projectImage: {
     label: 'Project image',
@@ -774,6 +774,7 @@ export default {
     }
   },
   siteSettings: {
+    heading: 'Site settings',
     pageTitle: 'Site title',
     pageTitleHint: 'The name of your site. It appears in the browser tab, in the RSS feed and usually at the top of the sidebar.',
     pageTitleSuffix: 'Title suffix',
@@ -787,7 +788,8 @@ export default {
       'Clicking an internal link swaps the content instead of reloading the whole page. It feels faster; the site still works without JavaScript.',
     popovers: 'Preview on hovering a link',
     popoversHint: 'Hovering an internal link shows a small window with the beginning of the target page.',
-    ignorePatterns: 'Exclude notes (one pattern per line)',
+    ignoreHeading: 'Exclude notes and folders',
+    ignorePatterns: 'Patterns (one per line)',
     ignorePatternsHint:
       'Files and folders in the content folder that never make it into the site — e.g. private/** or *.excalidraw.md. Affects this build only, not publishing.',
     localeHint: 'Sets the site’s built-in text labels (Search, Last modified, …). The choices are the language files this project ships.',

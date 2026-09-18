@@ -735,9 +735,9 @@ export default {
     },
     loadError: 'quartz.config.yaml konnte nicht gelesen werden.',
     loading: 'Lade Konfiguration…',
-    themeMoved:
-      'Farben und Schriften sind zu den Stilen umgezogen — dort bilden sie die Basis-Ebene, auf der Themes, Variablen und eigenes CSS aufbauen.',
-    themeMovedLink: 'Zu den Stilen'
+    stylesHint:
+      'Farben und Schriften stellst du bei den Stilen ein.',
+    stylesHintLink: 'Zu den Stilen'
   },
   projectImage: {
     label: 'Projektbild',
@@ -777,6 +777,7 @@ export default {
     }
   },
   siteSettings: {
+    heading: 'Seiteneinstellungen',
     pageTitle: 'Seitentitel',
     pageTitleHint: 'Der Name deiner Website. Er steht im Browser-Tab, im RSS-Feed und meist oben in der Seitenleiste.',
     pageTitleSuffix: 'Titel-Zusatz',
@@ -790,7 +791,8 @@ export default {
       'Beim Klick auf einen internen Link wird nur der Inhalt ausgetauscht statt die ganze Seite neu geladen. Das fühlt sich schneller an; ohne JavaScript funktioniert die Website trotzdem.',
     popovers: 'Vorschau beim Zeigen auf einen Link',
     popoversHint: 'Zeigt beim Überfahren eines internen Links ein kleines Fenster mit dem Anfang der Zielseite.',
-    ignorePatterns: 'Notizen ausschließen (ein Muster pro Zeile)',
+    ignoreHeading: 'Notizen und Ordner ausschließen',
+    ignorePatterns: 'Muster (eins pro Zeile)',
     ignorePatternsHint:
       'Dateien und Ordner im Content-Ordner, die gar nicht erst in die Website kommen — z. B. privat/** oder *.excalidraw.md. Betrifft nur diesen Build, nicht das Veröffentlichen.',
     localeHint: 'Bestimmt die festen Textbausteine der Website (Suche, Zuletzt geändert, …). Zur Auswahl stehen die Sprachdateien, die dieses Projekt mitbringt.',

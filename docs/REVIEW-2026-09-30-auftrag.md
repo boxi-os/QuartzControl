@@ -27,15 +27,15 @@ und ob sie vollständig beschrieben ist.
 
 **Ein Zustand ist dazugekommen, den es vorher nicht gab.** „Nicht abgeschlossen“ hat jetzt zwei
 Gründe: die alte Paketliste und ein `npm install`, das nicht durchkam (`installFailed` in der
-Notiz). Der zweite hat einen eigenen Satz auf der Seite und **kein Handbuch-Kapitel** — siehe „Was
-diese Runde offen gelassen hat“.
+Notiz). Der zweite hat einen eigenen Satz auf der Seite und seit einem Nachtrag auch einen Absatz
+im Handbuch (7.3, Vault-Commit `d4c10b6`) — siehe „Was diese Runde offen gelassen hat“, Punkt 2.
 
 **Nachgetragen, nachdem dieser Auftrag stand: eine zweite, kleine Schicht.** Der vierte
 Nebenbei-Punkt des letzten Reviews — der letzte offene — ist doch noch vor dieser Runde behoben
 worden (`a684e37`, „Der Button ist seine eigene Flex-Zeile“): `inline-flex items-center
 justify-center gap-1.5` im `Button`-Primitive, die `<span>`-Hüllen und Klassenfolgen an den
 13 Icon-Knöpfen sind weg. Der Tag `review-2026-10-01` ist deshalb vom ersten Auftrags-Commit
-(`3aa1e0f`) auf den Commit dieses Nachtrags versetzt worden. Siehe „Worauf es ankommt“, Punkt 7.
+(`3aa1e0f`) auf den letzten Nachtrag zu diesem Auftrag versetzt worden. Siehe „Worauf es ankommt“, Punkt 7.
 
 In der Zählung von `CLAUDE.md` ist das das sechsundzwanzigste Review. Die Dateinamen zählen nach
 Datum.
@@ -78,9 +78,9 @@ statt als Behauptung. Rechne nach:
     #   davon App-Code und Skripte (electron/, src/, scripts/):  14 Dateien, +316 / −81
     #   davon docs/ und CLAUDE.md:                                5 Dateien, +180 / −32
 
-**Schicht 2 für sich** (`3aa1e0f..a684e37`, ohne den Commit dieses Nachtrags): 12 Dateien,
+**Schicht 2 für sich** (`3aa1e0f..a684e37`, ohne die Commits der Nachträge): 12 Dateien,
 +45/−60, davon `src/` 9 Dateien, +30/−54. Die Zahlen oben gelten weiter für Schicht 1 bis
-`3aa1e0f`; wer den Gesamtdiff bis zum Tag zählt, bekommt beide Schichten *und* diesen Nachtrag
+`3aa1e0f`; wer den Gesamtdiff bis zum Tag zählt, bekommt beide Schichten *und* die Nachträge
 (Auftrag und `docs/reviews.md`) — also mehr als die Summe.
 
 `review-2026-09-30` sitzt auf `dca65ff` („Der Auftrag fuer das fuenfundzwanzigste Review“), dem
@@ -105,13 +105,17 @@ Stand, den das letzte Review gelesen hat. Die Commits:
 | — | `77743c2` | die Chronik trägt die Runde |
 | — | `3aa1e0f` | dieser Auftrag, samt dem Absatz über diese Runde in `docs/reviews.md` |
 | Nebenbei 1 | `a684e37` | **Schicht 2: der Button ist seine eigene Flex-Zeile** |
-| — | — | dieser Nachtrag zum Auftrag; der Tag sitzt hier |
+| — | `144d833` | erster Nachtrag zum Auftrag (Schicht 2) |
+| — | — | zweiter Nachtrag: Handbuch-Commit im Vault, Vault-Pfad; der Tag sitzt hier |
 
 Steht in `git log` etwas anderes als hier, gilt `git log`.
 
-**Im Handbuch-Vault liegt von dieser Runde nichts.** Der Stand dort ist der der Vorrunde; ob er
-committet ist, sagt `git -C ~/Documents/QuartzProjekte/QuartzControl-Handbuch status`. **Lies dort,
-schreib dort nichts.**
+**Im Handbuch-Vault liegt von dieser Runde ein Commit**, `d4c10b6` („7.3: "Nicht abgeschlossen"
+hat zwei Gruende“), deutsch und englisch, gepusht. Der Vault ist
+`~/Obsidian/QuartzProjekte/QuartzControl-Handbuch` mit eigenem git — **nicht** das Quartz-Projekt
+unter `~/Documents/QuartzProjekte/QuartzControl-Handbuch`, dessen `content/` nur ein Symlink darauf
+ist und dessen `git status` etwas anderes beantwortet (bis zu diesem Nachtrag nannte der Auftrag
+diesen Pfad). **Lies dort, schreib dort nichts.**
 
 **Verändere weder Vaults noch die Projekte unter `~/Documents/QuartzProjekte/`.** Lesen und
 kopieren ist in Ordnung.
@@ -235,8 +239,9 @@ fünfundzwanzigsten Review und dieser Messung.
 `npm run typecheck`, `build`, `smoke` (42 Aufrufe), `check:i18n` (1126 + 183 Schlüssel),
 `check:handbook` (26 Zitate), `check:core-update` (14 Pläne, 3 npm-Aufrufe) und `check:semver`
 sind auf diesem Stand grün. Keines sieht: eine Notiz, den Status, ein Schloss, einen Merge, einen
-Amend, einen Tastatur-Drag, eine Kartenhöhe — und keines sieht, dass das Handbuch einen Zustand
-der Updates-Seite jetzt **nicht mehr vollständig** beschreibt. Was misst du, das sie nicht messen?
+Amend, einen Tastatur-Drag, eine Kartenhöhe — und keines sieht, ob das Handbuch einen Zustand der
+Updates-Seite vollständig beschreibt (bis zum Nachtrag tat es das nicht). Was misst du, das sie
+nicht messen?
 
 ## Wie gemessen werden kann
 
@@ -266,10 +271,12 @@ der Updates-Seite jetzt **nicht mehr vollständig** beschreibt. Was misst du, da
 
 1. ~~Der vierte Nebenbei-Punkt des letzten Reviews bleibt stehen~~ — nachgeholt in Schicht 2
    (`a684e37`, Punkt 7 oben).
-2. **Das Handbuch kennt den neuen Zustand nicht.** „Nicht abgeschlossen“ hat jetzt zwei Gründe, und
-   das Kapitel zur Updates-Seite zählt die Prüfzustände auf. `check:handbook` sieht das nicht (es
-   prüft Blockzitate), und der Vault liegt außerhalb dieses Repos. Dasselbe gilt für die zwei neuen
-   Drag-Ansagen.
+2. ~~Das Handbuch kennt den neuen Zustand nicht~~ — nachgeholt im Vault (`d4c10b6`): 7.3 nennt
+   beide Gründe für „Nicht abgeschlossen“, deutsch und englisch, `check:handbook` 26/26. Geschrieben
+   gegen die Sprachdateien und den Code, **nicht** gegen die laufende Seite in diesem Zustand; prüf,
+   ob „die Karte sagt es ohne Namen“ und „auch ein Projekt ohne eigene Pakete“ stimmen, und ob die
+   Übersicht dasselbe sagt wie die Updates-Seite. Offen bleiben die zwei neuen Drag-Ansagen: Das
+   Handbuch beschreibt keine einzelne Ansage, nur die Zeile, die sie vorliest (1.4).
 3. **Das mitgelieferte Handbuch ist weiter nicht neu gebaut** (`resources/handbook/`), und das PDF
    auch nicht. Bis dahin zeigt die App den Stand der vorletzten Runde.
 4. **Der Zweig `2xl:columns-3` der Vorlagen-Seite** ist weiter nur über Zoom gemessen, nicht an

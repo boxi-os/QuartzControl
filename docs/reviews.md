@@ -18,7 +18,7 @@ gearbeitet wird, und nicht, was war.
 
 ## Befunde aus den Reviews (Stand 2026-09-18)
 
-Alle fünfundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVIEW-2026-09-02.md),
+Alle sechsundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](REVIEW-2026-09-07.md) mit seinen acht,
@@ -42,8 +42,9 @@ Alle fünfundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REV
 [`docs/REVIEW-2026-09-26.md`](REVIEW-2026-09-26.md) mit seinen vier und
 [`docs/REVIEW-2026-09-27.md`](REVIEW-2026-09-27.md) mit seinen sechs und
 [`docs/REVIEW-2026-09-28.md`](REVIEW-2026-09-28.md) mit seinen sieben und
-[`docs/REVIEW-2026-09-29.md`](REVIEW-2026-09-29.md) mit seinen neun (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-29-`) stehen als
+[`docs/REVIEW-2026-09-29.md`](REVIEW-2026-09-29.md) mit seinen neun und
+[`docs/REVIEW-2026-09-30.md`](REVIEW-2026-09-30.md) mit seinen neun (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-30-`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](REVIEW-2026-09-15.md) gehört nicht
 in diese Zählung: Die „fünfzehnte Runde“ las die Handbücher der zwei Plugins gegen deren Code und
@@ -92,6 +93,25 @@ Verengungen — und den neuen Zustand `installFailed`, der „Nicht abgeschlosse
 gibt, den das Handbuch noch nicht kennt. **Nachgetragen:** Der Tag ist danach auf den Nachtrag
 zum Auftrag versetzt worden, damit die Runde auch `a684e37` liest (`inline-flex` im
 `Button`-Primitive, Schicht 2: 12 Dateien, +45/−60); beide Schichten sind auf `main` gepusht.
+
+**Das sechsundzwanzigste Review las die vierzehn Commits und den Button** und fand **keinen
+Befund Hoch, einen Mittel, acht Niedrig**, dazu zwei Punkte nebenbei — wieder von Claude Fable 5.1,
+also vom selben Modell wie das Review, dessen Behauptungen die gelesenen Commits übernommen hatten;
+das Dokument sagt das selbst. Der mittlere Befund beantwortet die Frage, die der Auftrag gestellt
+hatte: Die gekürzte Notiz des fünfundzwanzigsten Reviews (2a) *konnte* etwas verlieren — die Themes
+des ersten npm-Aufrufs standen danach nur uncommittet da, und ein `git checkout` nach dem
+gescheiterten Update nahm sie für immer mit, unter grünem Badge. Die Notiz behält jetzt die ganze
+Liste und markiert die eigene Hand (`putBack`). Die Niedrigen saßen fast alle an den Rändern von
+`installFailed` (Übersicht mit leerer Paketliste, der Snapshot-Ausweg ohne seinen Schalter, ein
+Duplikat, das den Zustand erbt), dazu eine SHA aus der Notiz, die ungeprüft als git-Argument ging,
+ein Abbruch-Satz, der auf Git-Sync „unter Git-Sync verwerfen“ riet, eine abgelehnte Ablage im
+Frame-Builder, die „abgelegt“ hieß, und `shootProject`, das nur ohne `--demo` entschied. Und der
+Fall, nach dem der Auftrag zuerst fragte — ein Fix trägt eine Behauptung des Reviews ungemessen —,
+existierte: **14 Icon-Knöpfe und 10 `<span>`, nicht 13 und 9.** Alle neun sind abgearbeitet
+(`fix/review-2026-09-30`, je ein Commit mit Typcheck, Build und Smoke), dazu der zweite
+Nebenbei-Punkt (der Satz nach einem gescheiterten Stash-Pop nennt seinen Eintrag); der erste — die
+Nummerierung im Auftrag — bleibt, weil Review-Dokumente bleiben, wie sie sind. Das Handbuch 7.3
+kennt den Schalter jetzt auch (Vault-Commit `f0fa3a3`). Nicht gepusht.
 
 **Das fünfundzwanzigste Review las die drei Schichten oben** und fand **keinen Befund Hoch, zwei
 Mittel, sieben Niedrig**, dazu vier Punkte nebenbei — von Claude Fable 5.1, also von einem anderen

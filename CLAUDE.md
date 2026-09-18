@@ -241,7 +241,7 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 
 ## Die Reviews
 
-Alle fünfundzwanzig Listen sind abgearbeitet. Die Chronik steht in
+Alle sechsundzwanzig Listen sind abgearbeitet. Die Chronik steht in
 [`docs/reviews.md`](docs/reviews.md) — welches Review welchen Stand gelesen hat, mit welchen
 Zahlen, was es gefunden hat und welche Fixes noch niemand gelesen hat. Sie stand bis zum
 2026-09-17 hier und ist wörtlich dorthin gewandert; die Review-Dokumente selbst liegen als
@@ -252,10 +252,10 @@ Chronik. Die Chronik nachzulesen lohnt für zwei Fragen: *warum* eine Regel so l
 Absatz in `docs/decisions/` sie nicht beantwortet, und *was gerade ungelesen ist* — die Serie ist
 so gebaut, dass jede Runde liest, was die vorige gebaut hat.
 
-**Stand:** Die neun Befunde des fünfundzwanzigsten Reviews sind abgearbeitet und auf `main`, dazu
-alle vier Nebenbei-Punkte — der letzte, `inline-flex` im `Button`-Primitive, am 2026-09-18 auf
-`fix/button-inline-flex`, per Fast-Forward auf `main` und gepusht. Was die Runde gefunden hat, steht in
-[`docs/REVIEW-2026-09-29.md`](docs/REVIEW-2026-09-29.md), was daraus geworden ist, oben in
+**Stand:** Die neun Befunde des sechsundzwanzigsten Reviews sind abgearbeitet, dazu einer der
+zwei Nebenbei-Punkte (der andere betrifft nur die Nummerierung im Auftrag), am 2026-09-18 auf
+`fix/review-2026-09-30` (nicht gepusht). Was die Runde gefunden hat, steht in
+[`docs/REVIEW-2026-09-30.md`](docs/REVIEW-2026-09-30.md), was daraus geworden ist, oben in
 [`docs/reviews.md`](docs/reviews.md).
 
 **Arbeitsregel** für die nächste Liste: ein Befund pro Durchgang, jeweils mit `npm run typecheck`,

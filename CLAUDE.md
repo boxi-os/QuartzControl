@@ -252,11 +252,12 @@ Chronik. Die Chronik nachzulesen lohnt für zwei Fragen: *warum* eine Regel so l
 Absatz in `docs/decisions/` sie nicht beantwortet, und *was gerade ungelesen ist* — die Serie ist
 so gebaut, dass jede Runde liest, was die vorige gebaut hat.
 
-**Stand:** Die fünf Befunde des achtundzwanzigsten Reviews sind abgearbeitet, am 2026-09-18 auf
-`fix/review-2026-10-02`, nicht gepusht. Was die Runde gefunden hat, steht in
-[`docs/REVIEW-2026-10-02.md`](docs/REVIEW-2026-10-02.md), was daraus geworden ist und was offen
-bleibt (vier Nebenbei-Punkte des Reviews), oben in [`docs/reviews.md`](docs/reviews.md). Ein
-Auftrag für das neunundzwanzigste Review steht noch nicht.
+**Stand:** Die fünf Befunde des achtundzwanzigsten Reviews sind abgearbeitet, dazu die vier
+Nebenbei-Punkte, die etwas brauchten, am 2026-09-18 auf `fix/review-2026-10-02`, per Fast-Forward
+auf `main` und gepusht. Was die Runde gefunden hat, steht in
+[`docs/REVIEW-2026-10-02.md`](docs/REVIEW-2026-10-02.md), was daraus geworden ist und die zwei
+beim Abarbeiten gesammelten Punkte oben in [`docs/reviews.md`](docs/reviews.md). Ein Auftrag für
+das neunundzwanzigste Review steht noch nicht.
 
 **Arbeitsregel** für die nächste Liste: ein Befund pro Durchgang, jeweils mit `npm run typecheck`,
 `npm run build`, `npm run smoke` und eigenem Commit; was dabei nebenbei auffällt, wird gesammelt und

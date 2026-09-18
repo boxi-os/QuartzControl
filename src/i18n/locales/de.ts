@@ -1384,6 +1384,11 @@ export default {
       failed: 'SCSS-Fehler — der Build würde fehlschlagen:',
       location: 'In {{file}}, Zeile {{line}} öffnen',
       locationExternal: 'In {{file}}, Zeile {{line}} (nicht hier bearbeitbar)',
+      // Nur für den einen Fehler, dessen Ausweg die Seite kennt: den Import-Block einer älteren
+      // Fassung (beta.2) innerhalb des eigenen (achtundzwanzigstes Review, nebenbei 5).
+      nestedImports:
+        'Eine ältere Fassung von QuartzControl hat ihren Import-Block in den dieser App geschrieben. Die Ladereihenfolge einmal neu zu schreiben, macht daraus wieder einen Block; die Reihenfolge bleibt, wie sie ist.',
+      nestedImportsRepair: 'Ladereihenfolge neu schreiben',
       recheck: 'Erneut prüfen',
       checkActive: 'Code prüfen',
       running: 'Prüfe…',

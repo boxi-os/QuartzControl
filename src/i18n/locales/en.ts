@@ -1380,6 +1380,9 @@ export default {
       failed: 'SCSS error — the build would fail:',
       location: 'Open {{file}}, line {{line}}',
       locationExternal: 'In {{file}}, line {{line}} (not editable here)',
+      nestedImports:
+        'An older version of QuartzControl wrote its import block inside this app’s. Writing the load order once turns them back into one block; the order stays as it is.',
+      nestedImportsRepair: 'Rewrite load order',
       recheck: 'Check again',
       checkActive: 'Check code',
       running: 'Checking…',

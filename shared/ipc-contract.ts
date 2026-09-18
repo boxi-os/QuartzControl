@@ -688,6 +688,9 @@ export interface ScssDiagnostic {
   relativePath?: string
   line?: number
   column?: number
+  /** custom.scss holds an imports block of an older build *inside* this app's - two `@use` of the
+   *  same namespace, and rewriting the load order once is the way out (see styleService). */
+  nestedImportBlock?: boolean
 }
 
 // "unavailable" is not a failure: a project that has never had `npm install` run in it has no

@@ -260,3 +260,17 @@ Zwei-Kopien-Datei des Reviews (Kopie von `navigations-testprojekt`), `aus-alt.qt
     Schrift #2 (dies. Datei)  15              5
 
 Zwei Regeln derselben Familie mit verschiedenem Schnitt (`Inter` zweimal) bleiben zwei.
+
+**Nachtrag (2026-09-18, achtundzwanzigstes Review, nebenbei 5): Der eine Sass-Fehler, dessen
+Ausweg die App kennt, nennt ihn.** Schaltet beta.2 in einem Projekt, das schon den neuen Marker
+trägt, eine Datei ein, schreibt es seinen Import-Block *in* den der App — zwei `@use` desselben
+Namensraums, und der Check sagt „There's already a module with namespace …“ über einen Block, den
+der Nutzer nicht geschrieben hat. Jedes Schreiben der Ladereihenfolge ersetzt das Paar durch einen
+Block. `checkStyles` fragt deshalb bei einem Fehler die Datei (nicht Sass' Wortlaut, der für einen
+von Hand verdoppelten Namensraum derselbe ist), ob eine Kopie des Import-Blocks in der anderen
+steht, und setzt `nestedImportBlock`; „Eigenes CSS“ sagt dann einen Satz und bietet
+„Ladereihenfolge neu schreiben“ an, das die bestehende Reihenfolge über `setImportOrder` schreibt.
+Gemessen an der gebauten App mit der Zwei-Kopien-Datei des Reviews: Fehler in Zeile 36 mit Satz
+und Knopf; nach dem Klick ein Import-Block statt zwei, 30 von 30 Einträgen in derselben
+Reihenfolge, „SCSS kompiliert fehlerfrei“. Die Übersicht zeigt denselben Fehler weiter ohne den
+Satz.

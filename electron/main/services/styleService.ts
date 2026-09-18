@@ -582,8 +582,24 @@ export async function checkStyles(projectPath: string): Promise<ScssCheckResult>
     sass.compile(entry, { loadPaths: [stylesDir(projectPath)], quietDeps: true, verbose: false })
     return { status: 'ok' }
   } catch (err) {
-    return { status: 'error', diagnostic: toDiagnostic(projectPath, err) }
+    const diagnostic = toDiagnostic(projectPath, err)
+    // The one error this app can name the way out of: an older build (beta.2) that switched a
+    // file on wrote its own imports block inside ours, two `@use` of the same namespace. The Sass
+    // message says "There's already a module with namespace …" about a block the user did not
+    // write, and any write of the load order replaces the nested pair with one block (measured,
+    // twenty-eighth review, "nebenbei" 5). Asked of the file, not of the message: the message is
+    // Sass's wording and the same for a namespace the user doubled by hand.
+    const content = await readFile(entry, 'utf-8').catch(() => '')
+    return { status: 'error', diagnostic: hasNestedManagedCopy(content, 'imports') ? { ...diagnostic, nestedImportBlock: true } : diagnostic }
   }
+}
+
+// Whether one copy of a section stands inside another - the shape findManagedBlocks reads through.
+function hasNestedManagedCopy(content: string, markerId: string): boolean {
+  const spans = MARKER_NAMES.map((name) => findManagedBlock(content, markerId, [name])).filter(
+    (span): span is ManagedSpan => span !== null
+  )
+  return spans.some((span) => spans.some((other) => other !== span && other.from < span.from && span.to <= other.to))
 }
 
 // Checks one file's *unsaved* content, standing alone. That is not an approximation: with Sass

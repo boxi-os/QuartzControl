@@ -316,7 +316,15 @@ export default function CustomCss(): JSX.Element {
         </div>
       )}
 
-      <CheckBanner result={check} checking={checking} onRecheck={runCheck} onJump={jumpToFile} tabForFile={tabForFile} />
+      <CheckBanner
+        result={check}
+        checking={checking}
+        onRecheck={runCheck}
+        // The load order as it stands, written once: that replaces the nested pair with one block.
+        onRepairImports={() => void applyOrder(imported.map((f) => f.relativePath))}
+        onJump={jumpToFile}
+        tabForFile={tabForFile}
+      />
 
       <ActiveStyles />
 
@@ -669,12 +677,14 @@ function CheckBanner({
   result,
   checking,
   onRecheck,
+  onRepairImports,
   onJump,
   tabForFile
 }: {
   result: ScssCheckResult | null
   checking: boolean
   onRecheck: () => void
+  onRepairImports: () => void
   onJump: (relativePath: string, line: number | undefined) => void
   tabForFile: (relativePath: string) => string | null
 }): JSX.Element | null {
@@ -682,7 +692,7 @@ function CheckBanner({
   if (!result) return null
 
   if (result.status === 'error') {
-    const { message, relativePath, line } = result.diagnostic
+    const { message, relativePath, line, nestedImportBlock } = result.diagnostic
     return (
       <div className="flex flex-wrap items-start gap-x-3 gap-y-1 rounded-md border border-red-300 bg-red-50 p-2.5 text-xs text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
         <FileWarning size={14} className="mt-0.5 shrink-0" aria-hidden />
@@ -699,6 +709,15 @@ function CheckBanner({
               // node_modules): the location is still worth printing, but there is nothing to open.
               <p className="mt-1">{t('styleEditor.check.locationExternal', { file: relativePath, line: line ?? '?' })}</p>
             ))}
+          {/* The one error the page knows the way out of - see checkStyles. */}
+          {nestedImportBlock && (
+            <p className="mt-1.5">
+              {t('styleEditor.check.nestedImports')}{' '}
+              <button type="button" className="underline" onClick={onRepairImports} disabled={checking}>
+                {t('styleEditor.check.nestedImportsRepair')}
+              </button>
+            </p>
+          )}
         </div>
         <button type="button" className="shrink-0 underline" onClick={onRecheck} disabled={checking}>
           {checking ? t('styleEditor.check.running') : t('styleEditor.check.recheck')}

@@ -89,7 +89,9 @@ drei Punkte seiner Nebenbei-Liste abgearbeitet wurden: ohne Review-Dokument und 
 19 Dateien, +496/−113, davon in App-Code und Skripten 14 Dateien, +316/−81. Als größtes Risiko
 nennt er die sechste Runde an der Paketliste — diesmal keine neue Bindung, sondern zwei
 Verengungen — und den neuen Zustand `installFailed`, der „Nicht abgeschlossen“ einen zweiten Grund
-gibt, den das Handbuch noch nicht kennt. Der Branch ist nicht gepusht.
+gibt, den das Handbuch noch nicht kennt. **Nachgetragen:** Der Tag ist danach auf den Nachtrag
+zum Auftrag versetzt worden, damit die Runde auch `a684e37` liest (`inline-flex` im
+`Button`-Primitive, Schicht 2: 12 Dateien, +45/−60); beide Schichten sind auf `main` gepusht.
 
 **Das fünfundzwanzigste Review las die drei Schichten oben** und fand **keinen Befund Hoch, zwei
 Mittel, sieben Niedrig**, dazu vier Punkte nebenbei — von Claude Fable 5.1, also von einem anderen

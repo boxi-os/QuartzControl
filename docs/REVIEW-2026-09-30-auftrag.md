@@ -30,6 +30,13 @@ Gründe: die alte Paketliste und ein `npm install`, das nicht durchkam (`install
 Notiz). Der zweite hat einen eigenen Satz auf der Seite und **kein Handbuch-Kapitel** — siehe „Was
 diese Runde offen gelassen hat“.
 
+**Nachgetragen, nachdem dieser Auftrag stand: eine zweite, kleine Schicht.** Der vierte
+Nebenbei-Punkt des letzten Reviews — der letzte offene — ist doch noch vor dieser Runde behoben
+worden (`a684e37`, „Der Button ist seine eigene Flex-Zeile“): `inline-flex items-center
+justify-center gap-1.5` im `Button`-Primitive, die `<span>`-Hüllen und Klassenfolgen an den
+13 Icon-Knöpfen sind weg. Der Tag `review-2026-10-01` ist deshalb vom ersten Auftrags-Commit
+(`3aa1e0f`) auf den Commit dieses Nachtrags versetzt worden. Siehe „Worauf es ankommt“, Punkt 7.
+
 In der Zählung von `CLAUDE.md` ist das das sechsundzwanzigste Review. Die Dateinamen zählen nach
 Datum.
 
@@ -51,7 +58,8 @@ das eine Messung und gehört in dein Dokument.
 
 ## Umfang
 
-Alles auf `fix/review-2026-09-29`, **nicht gepusht**. Von `review-2026-09-30` bis
+Schicht 1 lag auf `fix/review-2026-09-29`, Schicht 2 auf `fix/button-inline-flex`; **beide sind
+per Fast-Forward auf `main` und gepusht** (2026-09-18), die Tags auch. Von `review-2026-09-30` bis
 `review-2026-10-01`:
 
     git log --oneline review-2026-09-30..review-2026-10-01
@@ -69,6 +77,11 @@ statt als Behauptung. Rechne nach:
     # ohne Review-Dokument und Auftrag: 19 Dateien, +496 / −113
     #   davon App-Code und Skripte (electron/, src/, scripts/):  14 Dateien, +316 / −81
     #   davon docs/ und CLAUDE.md:                                5 Dateien, +180 / −32
+
+**Schicht 2 für sich** (`3aa1e0f..a684e37`, ohne den Commit dieses Nachtrags): 12 Dateien,
++45/−60, davon `src/` 9 Dateien, +30/−54. Die Zahlen oben gelten weiter für Schicht 1 bis
+`3aa1e0f`; wer den Gesamtdiff bis zum Tag zählt, bekommt beide Schichten *und* diesen Nachtrag
+(Auftrag und `docs/reviews.md`) — also mehr als die Summe.
 
 `review-2026-09-30` sitzt auf `dca65ff` („Der Auftrag fuer das fuenfundzwanzigste Review“), dem
 Stand, den das letzte Review gelesen hat. Die Commits:
@@ -90,7 +103,9 @@ Stand, den das letzte Review gelesen hat. Die Commits:
 | Nebenbei 2 | `5268c71` | was „der Pfad einer Route ändert sich nicht“ wirklich heißt |
 | — | `ad16174` | die Nachträge in `docs/decisions/` und vier Regeln in `conventions.md` |
 | — | `77743c2` | die Chronik trägt die Runde |
-| — | — | dieser Auftrag, samt dem Absatz über diese Runde in `docs/reviews.md` |
+| — | `3aa1e0f` | dieser Auftrag, samt dem Absatz über diese Runde in `docs/reviews.md` |
+| Nebenbei 1 | `a684e37` | **Schicht 2: der Button ist seine eigene Flex-Zeile** |
+| — | — | dieser Nachtrag zum Auftrag; der Tag sitzt hier |
 
 Steht in `git log` etwas anderes als hier, gilt `git log`.
 
@@ -200,6 +215,21 @@ Knöpfe, 960 px Mindestbreite, +2023/−1957, 189 055 Zeichen gegen 192 422 Byte
 Prüf sie. Und prüf, ob die vier neuen Regeln in `docs/conventions.md` das beschreiben, was der
 Code tut — sie sind aus dieser Runde entstanden und von niemandem gelesen.
 
+### 7. Der Button (`a684e37`, Schicht 2)
+
+Das Primitive trägt die Anordnung jetzt selbst, und das trifft **jeden** der 138 Aufrufe, nicht nur
+die 13 mit Icon. Gemessen ist an der gebauten App, 1728×1000, hell, der Projektstand des ersten
+Projekts in der Liste: alle 806 Knöpfe auf 21 Bildschirmen, Kasten und Lage des Inhalts, vorher und
+nachher. Sechs Kästen ändern ihre Höhe (32,8–33,3 → 31,5 px), kein Inhalt verschiebt sich, unter
+„Neue Datei“ rückt die Spalte um 1,8 px nach. Was diese Messung **nicht** sieht: dunkel,
+1280 px, einen Knopf, der auf diesem Stand nicht gerendert war (Dialoge, „Stoppen“ bei laufendem
+Server, Fehlerzustände, leere Listen), und einen Knopf, dessen Beschriftung umbrechen *soll* — in
+einer Flex-Zeile wird zusammenhängender Text zu einem anonymen Element, ein Inline-Element darin
+(`<code>`, `<strong>`) aber zu einem eigenen, und der Leerraum dazwischen fällt weg. Die Suche
+danach war ein Skript über die JSX-Kinder, kein Rendern. Prüf auch, ob die Regel in
+`docs/conventions.md` und der Kommentar am Primitive stimmen — die Zahlen darin kommen aus dem
+fünfundzwanzigsten Review und dieser Messung.
+
 ### 6. Was die Prüfskripte nicht sehen
 
 `npm run typecheck`, `build`, `smoke` (42 Aufrufe), `check:i18n` (1126 + 183 Schlüssel),
@@ -234,11 +264,8 @@ der Updates-Seite jetzt **nicht mehr vollständig** beschreibt. Was misst du, da
 
 ## Was diese Runde offen gelassen hat
 
-1. **Der vierte Nebenbei-Punkt des letzten Reviews bleibt stehen**: Die zwei Formen des
-   Icon-Knopfs sind verschieden hoch (32,8–33,3 px mit `<span>` auf der Übersicht gegen 31,5 px mit
-   `inline-flex` am Knopf). Er fällt weg, wenn `inline-flex items-center` ins `Button`-Primitive
-   zieht — und das kostet nach der Messung des Reviews 66 Knöpfe ihre Textzentrierung, braucht also
-   `justify-center` dazu. Eine eigene Runde, keine Zeile.
+1. ~~Der vierte Nebenbei-Punkt des letzten Reviews bleibt stehen~~ — nachgeholt in Schicht 2
+   (`a684e37`, Punkt 7 oben).
 2. **Das Handbuch kennt den neuen Zustand nicht.** „Nicht abgeschlossen“ hat jetzt zwei Gründe, und
    das Kapitel zur Updates-Seite zählt die Prüfzustände auf. `check:handbook` sieht das nicht (es
    prüft Blockzitate), und der Vault liegt außerhalb dieses Repos. Dasselbe gilt für die zwei neuen
@@ -249,7 +276,7 @@ der Updates-Seite jetzt **nicht mehr vollständig** beschreibt. Was misst du, da
    einem Fenster dieser Breite.
 5. **Aus der offenen Liste der Vorrunde ist nichts nachgeholt**: die gepackte App, ein echter Push,
    ERESOLVE, ein Screenreader, der Maus-Drag, die VMs.
-6. **Nichts ist gepusht.** `fix/review-2026-09-29` liegt lokal.
+6. ~~Nichts ist gepusht.~~ Beide Schichten liegen seit dem 2026-09-18 auf `origin/main`.
 
 ## Form der Befunde
 

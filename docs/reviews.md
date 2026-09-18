@@ -18,7 +18,7 @@ gearbeitet wird, und nicht, was war.
 
 ## Befunde aus den Reviews (Stand 2026-09-18)
 
-Alle einunddreißig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVIEW-2026-09-02.md),
+Alle zweiunddreißig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](REVIEW-2026-09-07.md) mit seinen acht,
@@ -48,7 +48,8 @@ Alle einunddreißig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVI
 [`docs/REVIEW-2026-10-02.md`](REVIEW-2026-10-02.md) mit seinen fünf und
 [`docs/REVIEW-2026-10-03.md`](REVIEW-2026-10-03.md) mit seinen fünf und
 [`docs/REVIEW-2026-10-04.md`](REVIEW-2026-10-04.md) mit seinen fünf und
-[`docs/REVIEW-2026-10-05.md`](REVIEW-2026-10-05.md) mit seinen fünf (Aufträge daneben in
+[`docs/REVIEW-2026-10-05.md`](REVIEW-2026-10-05.md) mit seinen fünf und
+[`docs/REVIEW-2026-10-06.md`](REVIEW-2026-10-06.md) mit seinen sechs (Aufträge daneben in
 `docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-30-`, `2026-10-01-` bis `-06-auftrag.md`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](REVIEW-2026-09-15.md) gehört nicht
@@ -266,6 +267,39 @@ Layout-Boards tragen den Namen ihrer Komponente (`9f213f6`, 33 von 33 verschiede
 VoiceOver gehört); und der Editor warnt vor zwei sichtbaren Bereichen auf einer Zelle und vor einem
 Bereich über das Raster hinaus, der Schalter lehnt auch das Einblenden jenseits des verkleinerten
 Rasters ab (`487d5e7`, ein Commit für Punkt 3 und 4 — eine Funktion, eine Messung). **Diese Fixes hat kein Review gelesen.**
+
+**Das zweiunddreißigste Review las beide Schichten** und fand **keinen Befund Hoch, keinen Mittel,
+sechs Niedrig**, dazu sechs Punkte nebenbei — geschrieben von Claude Fable 5.1, demselben Modell,
+das die gelesenen Commits und den Auftrag geschrieben hatte (der Vorbehalt steht im Dokument).
+Die zwei Eingriffe in geteilten Code (`bbc51c4`, `bce9470`) trugen in jeder gestellten Szene, und
+`179afbf` ist jetzt gemessen, an einem git 2.53.0 mit Übersetzungen, im Scratchpad aus der Quelle
+gebaut. Gefunden hat die Runde durch **Verstellen der Szenen**, nicht durch Lesen: Der Abbruch
+verschwieg den vorgemerkten Stand jeder Datei, in der sich Projekt und Upstream unterscheiden, weil
+`stagedOutsideMerge` die zwei Bäume verglich statt zu fragen, was Upstream geändert hat — acht
+Runden lang gemessen mit einer *neu angelegten* Datei, die in keinem der beiden Bäume steht (1);
+der verweigerte Abbruch nannte eigene vorgemerkte Dateien „aus dem Zusammenführen“ und riet dort
+`git checkout --`, das beide Hälften der Arbeit kostet (2); Backspace im Spannen-Feld machte die
+Spanne still zu 1, die nächste Ziffer eine abgelehnte 12 (3); ein Bereich ganz außerhalb des
+Rasters bekommt auf der Seite eine eigene Spalte, statt keinen Platz zu haben (4); der neue
+Stash-Satz riet vom Pop ab, wo die zwei Einträge verschiedene Dateien halten und der Pop durchgeht
+(5); und drei Behauptungen um `gitTextEnv()` (6). Alle sechs sind abgearbeitet
+(`fix/review-2026-10-06`, je ein Commit mit Typcheck, Build und Smoke, diesmal von Claude Opus 5):
+drei Punkte statt zwei (`f3ab898`, Bündel mit echtem git, vorher eine von drei vorgemerkten Dateien
+genannt, nachher alle drei); die Liste der Verweigerung geteilt, für eigene Dateien
+`git reset --`, gelöschte nicht mehr genannt, zwei Sätze als zwei Einträge der Ansage (`01f19e8`,
+Bündel, der neue Rat befolgt: beide Hälften bleiben); `NumberInput` in `ui.tsx` hält den Entwurf
+und wendet nur ganze Zahlen an (`02d1404`, gebaute App mit echten Tastendrücken vorher/nachher);
+der Satz sagt, wo der Bereich landet — gemessen auch für einen Bereich nur *unterhalb* des
+Rasters, und das Ausblenden im CSS bewusst nicht genommen, weil es `page-body` von der Seite nähme
+(`36efbb1`); der Stash-Satz fragt die Schnittmenge (`f00bbf2`, beide Szenen des Reviews); und
+Kommentar und Nachtrag zu `gitTextEnv()` (`81f8005`, glibc bleibt ungemessen).
+Offen aus der eigenen Nebenbei-Liste der Abarbeitung: dieselbe Zwei-Punkt-Form steht noch in der
+Stash-Klassifikation vor dem Lauf (`HEAD MERGE_HEAD` über die zurückgelegten Pfade); die Felder für
+Zeilen und Spalten des Rasters haben dasselbe `|| 1` wie die Spannen-Felder vorher; `conflictedFiles`
+liest ohne `-z`; und eine eigene vorgemerkte Zeile *auf* einer Datei, die der Merge ebenfalls
+vorgemerkt hat, geht beim Abbruch weiter ohne Wort — nach Pfad ist sie von der Arbeit des Merges
+nicht zu unterscheiden. Aus der Nebenbei-Liste des Reviews ist nichts erledigt. **Diese Fixes hat
+kein Review gelesen.**
 
 **Das siebenundzwanzigste Review las beide Schichten** und fand **keinen Befund Hoch, einen
 Mittel, fünf Niedrig**, dazu drei Punkte nebenbei — und der mittlere ist ein Fehler im eigenen

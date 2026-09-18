@@ -244,7 +244,7 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 
 ## Die Reviews
 
-Alle einunddreißig Listen sind abgearbeitet. Die Chronik steht in
+Alle zweiunddreißig Listen sind abgearbeitet. Die Chronik steht in
 [`docs/reviews.md`](docs/reviews.md) — welches Review welchen Stand gelesen hat, mit welchen
 Zahlen, was es gefunden hat und welche Fixes noch niemand gelesen hat. Sie stand bis zum
 2026-09-17 hier und ist wörtlich dorthin gewandert; die Review-Dokumente selbst liegen als
@@ -255,16 +255,15 @@ Chronik. Die Chronik nachzulesen lohnt für zwei Fragen: *warum* eine Regel so l
 Absatz in `docs/decisions/` sie nicht beantwortet, und *was gerade ungelesen ist* — die Serie ist
 so gebaut, dass jede Runde liest, was die vorige gebaut hat.
 
-**Stand:** Die fünf Befunde des einunddreißigsten Reviews (der letzten Runde vor dem RC, kein
-Befund über Niedrig) sind abgearbeitet, am 2026-09-18 auf `fix/review-2026-10-05`, per
-Fast-Forward auf `main` und gepusht. Was die Runde gefunden hat, steht in
-[`docs/REVIEW-2026-10-05.md`](docs/REVIEW-2026-10-05.md), was daraus geworden ist und was aus
-ihrer Nebenbei-Liste geworden ist, oben in [`docs/reviews.md`](docs/reviews.md) — die vier offenen
-Punkte daraus sind über `fix/review-2026-10-05-rest` ebenfalls auf `main` und gepusht, und einer
-davon (die Sprache von gits Text) ist ungemessen, bis die Debian-VM läuft. Keinen dieser Fixes hat ein Review
-gelesen; der Auftrag dafür — das zweiunddreißigste, und das erste, in dem Review, Fixes und Auftrag
-vom selben Modell stammen — steht in
-[`docs/REVIEW-2026-10-06-auftrag.md`](docs/REVIEW-2026-10-06-auftrag.md), Tag `review-2026-10-07`.
+**Stand:** Die sechs Befunde des zweiunddreißigsten Reviews (kein Befund über Niedrig; Review,
+gelesene Fixes und Auftrag vom selben Modell) sind abgearbeitet, am 2026-09-18 auf
+`fix/review-2026-10-06`, **nicht gemergt, nicht gepusht**. Was die Runde gefunden hat, steht in
+[`docs/REVIEW-2026-10-06.md`](docs/REVIEW-2026-10-06.md), was daraus geworden ist und welche vier
+Punkte die Abarbeitung nebenbei gefunden und offen gelassen hat, oben in
+[`docs/reviews.md`](docs/reviews.md). Die Sprache von gits Text ist inzwischen gemessen (an GNU
+`libintl`, nicht an glibc). Das Review empfiehlt vor dem RC keine weitere Runde dieser Art, sondern
+die Liste, die nur der Nutzer abarbeiten kann: VoiceOver über Git-Sync und die zwei Boards, die
+gepackte App je Plattform, glibc. Keinen dieser Fixes hat ein Review gelesen.
 
 **Arbeitsregel** für die nächste Liste: ein Befund pro Durchgang, jeweils mit `npm run typecheck`,
 `npm run build`, `npm run smoke` und eigenem Commit; was dabei nebenbei auffällt, wird gesammelt und

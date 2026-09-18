@@ -170,8 +170,14 @@ async function outstandingCoreInstall(projectPath: string): Promise<{ packages: 
   // 4). A line this app's npm wrote back (`putBack`) is therefore outstanding only while it is not
   // there at all; any other line at another range still is, because that may be upstream's range
   // where the project had its own.
+  //
+  // `absent` is asked about the whole list, not about `missing`: which sections the list claims
+  // for a name is read from the entries it is given, and a dev line that stands at the note's
+  // range is not in `missing` - its section then looked unclaimed, and the gone peer line counted
+  // as "moved" there and fell out (thirtieth review, finding 2, scene R2N with the ranges npm
+  // writes). The identity of the entries survives, because `stillMissing` filters, not copies.
   const missing = await stillMissing(projectPath, pending.reinstall)
-  const absent = new Set(await absentFromPackageJson(projectPath, missing))
+  const absent = new Set(await absentFromPackageJson(projectPath, pending.reinstall))
   const outstanding = missing.filter((entry) => !pending.putBack.includes(entry.name) || absent.has(entry))
   // One name per package: an entry in two sections is one package to the reader, and the page
   // counted it twice (twenty-eighth review, finding 4).

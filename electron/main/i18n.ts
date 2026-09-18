@@ -181,6 +181,10 @@ const STRINGS = {
     // den Leser auf die Seite, auf der er stand (sechsundzwanzigstes Review, Befund 6).
     updateAbortBlockedByEdit:
       'Eine Datei aus dem Zusammenführen wurde inzwischen geändert, deshalb lässt sich das Update nicht abbrechen. Verwirf die Änderung an der unten genannten Datei (im Terminal: „git checkout -- <Datei>“) und brich dann erneut ab.\n\n',
+    // Dasselbe, wenn git die Datei nennt: Die Ansage sagt nur die Sätze, nie gits Text, und „die
+    // unten genannte Datei“ verwies dort auf etwas, das niemand sagt (dreißigstes Review, Befund 4).
+    updateAbortBlockedByEditNamed:
+      'Eine Datei aus dem Zusammenführen wurde inzwischen geändert, deshalb lässt sich das Update nicht abbrechen: {{files}}. Verwirf die Änderung daran (im Terminal: „git checkout -- <Datei>“) und brich dann erneut ab.\n\n',
     // Was der Abbruch nebenbei mitnimmt. git sagt darüber nichts, und rückgängig ist es nicht -
     // genannt wird es trotzdem, damit der Nutzer weiß, was fehlt.
     updateAbortDroppedStaged:
@@ -475,6 +479,8 @@ const STRINGS = {
       'Your stashed package entries could not be put back and are still in git ({{entry}} in “git stash list”): “git stash show -p {{entry}}” shows them.',
     updateAbortBlockedByEdit:
       'A file from the merge has been changed since, so the update cannot be cancelled. Discard the change to the file named below (in a terminal: “git checkout -- <file>”), then cancel again.\n\n',
+    updateAbortBlockedByEditNamed:
+      'A file from the merge has been changed since, so the update cannot be cancelled: {{files}}. Discard the change to it (in a terminal: “git checkout -- <file>”), then cancel again.\n\n',
     updateAbortDroppedStaged:
       'Cancelling discarded the staged state of these files: {{files}}. When cancelling, git resets everything that was staged and not part of the merge.',
     updateNoteUnwritable:

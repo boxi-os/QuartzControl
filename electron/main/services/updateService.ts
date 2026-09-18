@@ -230,8 +230,13 @@ function explainGitFailure(output: string): string {
   // half-done merge's own message asks the user to look at, so this is the ordinary way to get
   // here, not an exotic one. What git does not say is that the way out is to give that one change
   // up; without that the abort button stays a button that does nothing.
+  //
+  // The name goes into the sentence where git gives one: the announcement says the sentences and
+  // never git's text, and "the file named below" pointed there at something nobody says (thirtieth
+  // review, finding 4). Read as text for a sentence, never passed on as an argument.
   if (/not uptodate\. Cannot merge|Could not reset index file/i.test(output)) {
-    return mainT('updateAbortBlockedByEdit')
+    const files = [...new Set([...output.matchAll(/^error: Entry '(.+)' not uptodate\. Cannot merge\.$/gm)].map((m) => m[1]))]
+    return files.length > 0 ? mainT('updateAbortBlockedByEditNamed', { files: files.join(', ') }) : mainT('updateAbortBlockedByEdit')
   }
   return ''
 }

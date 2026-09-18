@@ -256,8 +256,8 @@ Absatz in `docs/decisions/` sie nicht beantwortet, und *was gerade ungelesen ist
 so gebaut, dass jede Runde liest, was die vorige gebaut hat.
 
 **Stand:** Die fünf Befunde des einunddreißigsten Reviews (der letzten Runde vor dem RC, kein
-Befund über Niedrig) sind abgearbeitet, am 2026-09-18 auf `fix/review-2026-10-05` — **nicht
-gemergt, nicht gepusht**. Was die Runde gefunden hat, steht in
+Befund über Niedrig) sind abgearbeitet, am 2026-09-18 auf `fix/review-2026-10-05`, per
+Fast-Forward auf `main` und gepusht. Was die Runde gefunden hat, steht in
 [`docs/REVIEW-2026-10-05.md`](docs/REVIEW-2026-10-05.md), was daraus geworden ist und was aus
 ihrer Nebenbei-Liste offen bleibt, oben in [`docs/reviews.md`](docs/reviews.md). Einen Auftrag für
 eine weitere Runde gibt es nicht; die fünf Fixes hat kein Review gelesen.

@@ -131,6 +131,15 @@ einen fehlenden einspringen darf, die Kollisionsrechnung für Tastatur-Drags im 
 `isOwnPlace`. Als größtes Risiko nennt der Auftrag die Kollisionsrechnung, weil sie für jeden
 Tastatur-Drag gilt und nur an einem Frame ohne Scrollen gemessen ist.
 
+**Das dreißigste Review misst ab `review-2026-10-04`** und liest bis `review-2026-10-05`, das auf
+dem Commit „Der Auftrag fuer das dreissigste Review“ sitzt; der Auftrag steht in
+[`docs/REVIEW-2026-10-04-auftrag.md`](REVIEW-2026-10-04-auftrag.md). Es ist bewusst kurz und steht
+vor dem RC: zwei Schichten (die fünf Befunde, 10 Dateien +204/−39 ohne Review-Dokument; die vier
+Nebenbei-Punkte, 13 Dateien +187/−36). Als größtes Risiko nennt der Auftrag den Frame-Builder, weil
+zwei Commits ändern, was ein Drag dort tut — die Startzelle als Platz beim Aufnehmen und die
+24-px-Spalten der Ablagefläche samt waagerechtem Rollen —, und weil das *Wie* in beiden eine eigene
+Entscheidung ist, die kein zweites Modell geprüft hat.
+
 **Das neunundzwanzigste Review las alle drei Schichten** und fand **keinen Befund Hoch, keinen
 Mittel, fünf Niedrig**, dazu fünf Punkte nebenbei — wieder von Claude Fable 5.1, die zweite Runde
 in Folge ohne mittleren Befund. Die vier Entscheidungen ohne Vorschlag tragen alle, zwei besser als

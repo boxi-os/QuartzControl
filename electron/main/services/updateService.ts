@@ -615,9 +615,13 @@ async function listTakenInHandSince(projectPath: string, pending: PendingInstall
 
 /**
  * The note as it is on disk, which is a file in the user's project and therefore not to be trusted
- * further than it can be checked: a list read back is only used to build `npm install name@range`
- * arguments, so a name or range that is not a plain string, or one that could pass for a flag, is
- * dropped rather than handed on.
+ * further than it can be checked. Two of its fields reach a child process: the list becomes
+ * `npm install name@range` arguments, so a name or range that is not a plain string, or one that
+ * could pass for a flag, is dropped rather than handed on; and the SHA becomes `<sha>..HEAD` for
+ * `git log` (see listTakenInHandSince), where it has to stand before the `--`. A SHA that is not
+ * hex reads as "no note" - measured (twenty-sixth review, finding 4, scene H3):
+ * `"installPendingFor": "--output=<file>"` made the status read of the overview's mount empty that
+ * file (`git log --output=<file>..HEAD`).
  */
 async function readPendingInstall(projectPath: string): Promise<PendingInstall> {
   // Reading must not create the directory - see quartzGuiPath.
@@ -631,7 +635,12 @@ async function readPendingInstall(projectPath: string): Promise<PendingInstall> 
     quartzGuiPath(projectPath, PENDING_UPDATE_FILE),
     {}
   )
-  const head = typeof raw.installPendingFor === 'string' ? raw.installPendingFor : ''
+  // 40 for SHA-1, 64 for a SHA-256 repository; the run writes `git rev-parse HEAD`, which is always
+  // the full form.
+  const head =
+    typeof raw.installPendingFor === 'string' && /^[0-9a-f]{40}([0-9a-f]{24})?$/.test(raw.installPendingFor)
+      ? raw.installPendingFor
+      : ''
   // A note from a build before this field existed does not know, and not knowing is not
   // permission: the amend is skipped and the lockfile npm rewrote stands as a change to commit by
   // hand - the state before the nineteenth review, not a lost one.

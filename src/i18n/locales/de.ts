@@ -1279,8 +1279,16 @@ export default {
         'Reihenfolge: Basis → Community-Theme → Variablen → eigenes CSS. Kein Community-Theme aktiv — es gelten deine Basis-Farben und -Schriften.',
       overrides: '{{count}} Variable(n) überschrieben.'
     },
-    scssStale:
-      'custom.scss wurde inzwischen von einem anderen Tab geändert (Variablen-Überschreibung oder Font-Import). Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
+    // Einer je Schreiber: Der eine Satz „von einem anderen Tab (Variablen-Überschreibung oder
+    // Font-Import)“ stand auch nach der Ladereihenfolge und dem Reparaturknopf dieses Reiters.
+    scssStaleBy: {
+      variables:
+        'custom.scss wurde inzwischen beim Speichern der Variablen geändert. Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
+      fontImport:
+        'custom.scss wurde inzwischen beim Import einer Schrift geändert. Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
+      stylesheets:
+        'custom.scss wurde inzwischen geändert, weil sich die Stylesheets geändert haben (Ladereihenfolge, Import oder neue Datei). Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.'
+    },
     scssStaleReload: 'Von Festplatte neu laden (Entwurf verwerfen)',
     styleSettings: {
       sourceNote:

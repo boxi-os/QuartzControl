@@ -50,7 +50,7 @@ export default function Variables(): JSX.Element {
         dark: v.dark
       }))
       await window.quartzGui.styles.saveVariableOverrides(project.path, list)
-      await reloadScss()
+      await reloadScss('variables')
     })
   )
 

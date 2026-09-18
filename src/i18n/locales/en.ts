@@ -1276,8 +1276,14 @@ export default {
         'Order: basics → community theme → variables → custom CSS. No community theme active — your base colors and fonts apply.',
       overrides: '{{count}} variable(s) overridden.'
     },
-    scssStale:
-      'custom.scss has since been changed from another tab (a variable override or a font import). Your draft here is still unsaved — saving it would overwrite that change.',
+    scssStaleBy: {
+      variables:
+        'custom.scss has since been changed by saving the variables. Your draft here is still unsaved — saving it would overwrite that change.',
+      fontImport:
+        'custom.scss has since been changed by importing a font. Your draft here is still unsaved — saving it would overwrite that change.',
+      stylesheets:
+        'custom.scss has since been changed because the stylesheets changed (load order, an import or a new file). Your draft here is still unsaved — saving it would overwrite that change.'
+    },
     scssStaleReload: 'Reload from disk (discard draft)',
     styleSettings: {
       sourceNote: 'Descriptions from the original theme “{{theme}}” by {{author}} — {{count}} options.',

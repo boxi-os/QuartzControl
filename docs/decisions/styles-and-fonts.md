@@ -274,3 +274,14 @@ Gemessen an der gebauten App mit der Zwei-Kopien-Datei des Reviews: Fehler in Ze
 und Knopf; nach dem Klick ein Import-Block statt zwei, 30 von 30 Einträgen in derselben
 Reihenfolge, „SCSS kompiliert fehlerfrei“. Die Übersicht zeigt denselben Fehler weiter ohne den
 Satz.
+
+**Nachtrag (2026-09-18, neunundzwanzigstes Review, nebenbei 1): Das Band über einem veralteten
+Entwurf sagt, wer die Datei geschrieben hat.** Es hieß für jeden Schreiber „von einem anderen Tab
+geändert (Variablen-Überschreibung oder Font-Import)“, auch nach Ladereihenfolge, Pfeilen und dem
+Knopf „Ladereihenfolge neu schreiben“ auf demselben Reiter, und nach einer CSS-Korrektur aus den
+Grundlagen, die ebenfalls den Import-Block schreibt. `reloadScss` nimmt jetzt den Schreiber
+(`'variables' | 'fontImport' | 'stylesheets'`, oder `'force'` für Speichern und Neu laden), und
+das Band hat einen Satz je Schreiber. Gemessen an der gebauten App mit der Zwei-Kopien-Datei des
+Reviews: Entwurf getippt, Knopf geklickt — das Band sagt „… geändert, weil sich die Stylesheets
+geändert haben (Ladereihenfolge, Import oder neue Datei) …“. Handbuch 4.5 in beiden Sprachen
+nachgezogen.

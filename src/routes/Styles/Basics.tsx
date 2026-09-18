@@ -136,7 +136,7 @@ export default function Basics(): JSX.Element {
           if (slot) setTypography(slot, family)
           // The import wrote an @font-face block into custom.scss - pull that change into the
           // draft the "Eigenes CSS" tab edits, or its next save would undo it.
-          void reloadScss()
+          void reloadScss('fontImport')
         }}
       />
 
@@ -246,7 +246,7 @@ function CssFixes(): JSX.Element | null {
       await reloadFiles()
       // createFile rewrote custom.scss's import block - the CSS tab's draft has to be re-read, or
       // its next save would put the pre-change file back.
-      await reloadScss()
+      await reloadScss('stylesheets')
       goToTab('customCss')
     } catch (err) {
       setError(formatIpcError(err))

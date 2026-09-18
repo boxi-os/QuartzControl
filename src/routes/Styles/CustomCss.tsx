@@ -126,7 +126,7 @@ export default function CustomCss(): JSX.Element {
     if (scss.dirty) {
       await window.quartzGui.styles.save(project.path, scss.content)
       // Re-reads what is now on disk, which clears the dirty/stale flags in one step.
-      await reloadScss(true)
+      await reloadScss('force')
     }
     // Read off `fileDrafts` rather than filtering `files` by it, so a draft for a file that has
     // since left the list still gets written instead of being dropped silently. (A list built that
@@ -232,7 +232,7 @@ export default function CustomCss(): JSX.Element {
   // forced: an unsaved draft is kept and flagged stale rather than thrown away.
   async function afterFileOp(): Promise<void> {
     await reloadFiles()
-    await reloadScss()
+    await reloadScss('stylesheets')
     await runCheck()
   }
 
@@ -307,10 +307,18 @@ export default function CustomCss(): JSX.Element {
         </div>
       </div>
 
-      {scss.staleOnDisk && (
+      {scss.staleBy && (
         <div className="flex flex-wrap items-center gap-3 rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
-          <span>{t('styles.scssStale')}</span>
-          <button type="button" className="underline" onClick={() => reloadScss(true)}>
+          <span>
+            {
+              {
+                variables: t('styles.scssStaleBy.variables'),
+                fontImport: t('styles.scssStaleBy.fontImport'),
+                stylesheets: t('styles.scssStaleBy.stylesheets')
+              }[scss.staleBy]
+            }
+          </span>
+          <button type="button" className="underline" onClick={() => reloadScss('force')}>
             {t('styles.scssStaleReload')}
           </button>
         </div>

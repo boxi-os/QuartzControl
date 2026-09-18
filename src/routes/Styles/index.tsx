@@ -21,6 +21,9 @@ const HANDBOOK = { basics: 'stylesBasics', theme: 'stylesTheme', variables: 'sty
 
 export type StylesTab = 'basics' | 'theme' | 'variables' | 'customCss'
 
+/** What can rewrite custom.scss while the CSS tab holds a draft of it. */
+export type ScssWriter = 'variables' | 'fontImport' | 'stylesheets'
+
 const TAB_ORDER: StylesTab[] = ['basics', 'theme', 'variables', 'customCss']
 
 function isTab(value: string | null): value is StylesTab {
@@ -40,11 +43,13 @@ export interface StylesContextValue {
   saveConfig: () => Promise<void>
   overrides: Record<string, { light: string; dark: string }>
   setOverrides: React.Dispatch<React.SetStateAction<Record<string, { light: string; dark: string }>>>
-  scss: { path: string; content: string; dirty: boolean; staleOnDisk: boolean }
+  /** `staleBy`: what rewrote custom.scss under an unsaved draft, or null - see reloadScss. */
+  scss: { path: string; content: string; dirty: boolean; staleBy: ScssWriter | null }
   /** True while anything on this page differs from what is on disk. */
   dirty: boolean
   setScssContent: (content: string) => void
-  reloadScss: (force?: boolean) => Promise<void>
+  /** 'force' drops the draft; the others name what just wrote the file, for the banner. */
+  reloadScss: (after: 'force' | ScssWriter) => Promise<void>
   /** custom.scss plus every additional stylesheet, in the order the import block loads them. */
   fileSet: StyleFileSet | null
   /** Unsaved editor content per relativePath - only files the user actually typed in appear. */
@@ -97,7 +102,7 @@ export default function Styles(): JSX.Element {
     content: string
     original: string
     dirty: boolean
-    staleOnDisk: boolean
+    staleBy: ScssWriter | null
   } | null>(null)
   const [savedConfig, setSavedConfig] = useState<string | null>(null)
   const [savedOverrides, setSavedOverrides] = useState<string | null>(null)
@@ -132,7 +137,7 @@ export default function Styles(): JSX.Element {
       .catch(failed)
     window.quartzGui.styles
       .get(project.path)
-      .then((info) => setScss({ ...info, original: info.content, dirty: false, staleOnDisk: false }))
+      .then((info) => setScss({ ...info, original: info.content, dirty: false, staleBy: null }))
       .catch(failed)
     window.quartzGui.styles.listFiles(project.path).then(setFileSet)
     window.quartzGui.styles.getVariableOverrides(project.path).then((list) => {
@@ -229,14 +234,17 @@ export default function Styles(): JSX.Element {
   // Saving variable overrides and importing a local font both rewrite custom.scss behind the
   // editor's back (each replaces its own marker-delimited managed block), so the in-memory draft
   // has to be re-read afterwards or the next save from the CSS tab would write it straight back to
-  // the pre-change state. An unsaved draft is never silently thrown away: it stays, flagged
-  // staleOnDisk, and the CSS tab offers an explicit reload.
+  // the pre-change state. An unsaved draft is never silently thrown away: it stays, flagged with
+  // what wrote the file, and the CSS tab offers an explicit reload. The writer is named because the
+  // banner used to say "another tab (variable override or font import)" for every one of them,
+  // including the load order, the arrows and the repair button on the CSS tab itself (twenty-ninth
+  // review, "nebenbei" 1).
   const reloadScss = useCallback(
-    async (force = false) => {
+    async (after: 'force' | ScssWriter) => {
       const info = await window.quartzGui.styles.get(project.path)
       setScss((prev) => {
-        if (prev?.dirty && !force) return { ...prev, original: info.content, staleOnDisk: true }
-        return { ...info, original: info.content, dirty: false, staleOnDisk: false }
+        if (prev?.dirty && after !== 'force') return { ...prev, original: info.content, staleBy: after }
+        return { ...info, original: info.content, dirty: false, staleBy: null }
       })
     },
     [project.path]

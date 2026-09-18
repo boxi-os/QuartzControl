@@ -1219,9 +1219,9 @@ export default {
       dropRefused: '{{name}} bleibt, wo es war — dort überschneidet es sich mit einem bestehenden Bereich.',
       spanRefused: '{{name}} behält seine Spanne — mit der neuen würde es sich mit einem bestehenden Bereich überschneiden.',
       showRefused:
-        '{{name}} bleibt ausgeblendet — auf seinen Zellen liegt inzwischen ein anderer Bereich. Ziehe es auf eine freie Zelle, um es zu zeigen.',
+        '{{name}} bleibt ausgeblendet — auf seinen Zellen liegt ein anderer Bereich. Ziehe es auf eine freie Zelle, um es zu zeigen; gibt es keine, gib dem Raster erst eine Zeile mehr.',
       showRefusedOutside:
-        '{{name}} bleibt ausgeblendet — seine Zellen liegen nicht mehr im Raster. Ziehe es auf eine freie Zelle, um es zu zeigen.',
+        '{{name}} bleibt ausgeblendet — seine Zellen liegen nicht mehr im Raster. Ziehe es auf eine freie Zelle, um es zu zeigen; gibt es keine, gib dem Raster erst eine Zeile mehr.',
       overlapWarning:
         'Diese Bereiche liegen übereinander: {{pairs}}. Auf der gebauten Seite verdrängt einer den anderen, und wo dabei kein Rechteck übrig bleibt, gilt die ganze Anordnung dieses Breakpoints nicht — ziehe einen davon auf freie Zellen.',
       outsideWarning:

@@ -1216,9 +1216,9 @@ export default {
       dropRefused: '{{name}} stays where it was — there it would overlap an existing area.',
       spanRefused: '{{name}} keeps its span — with the new one it would overlap an existing area.',
       showRefused:
-        '{{name}} stays hidden — another area lies on its cells by now. Drag it onto a free cell to show it.',
+        '{{name}} stays hidden — another area lies on its cells. Drag it onto a free cell to show it; if there is none, give the grid another row first.',
       showRefusedOutside:
-        '{{name}} stays hidden — its cells are no longer in the grid. Drag it onto a free cell to show it.',
+        '{{name}} stays hidden — its cells are no longer in the grid. Drag it onto a free cell to show it; if there is none, give the grid another row first.',
       overlapWarning:
         'These areas lie on top of each other: {{pairs}}. On the built page one displaces the other, and where that leaves no rectangle, this breakpoint’s whole arrangement does not apply — drag one of them onto free cells.',
       outsideWarning:

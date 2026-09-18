@@ -93,17 +93,21 @@ async function stageBuild(ctx: DeployContext, branch: string, worktreeDir: strin
   return { tree: writeTree.output.trim(), remoteTip, output }
 }
 
+// Read with -z and --no-renames. Without -z git quotes a name like `ä.html` as "\303\244.html",
+// and the preview showed exactly that; without --no-renames a moved page came as one R line with
+// two paths, which this read as a single path with a tab in it, marked "changed" (thirty-second
+// review, found while working through its "nebenbei" list; measured with the adapter as a bundle).
+// A rename is what the branch gets anyway: one file gone, one new.
 function parseNameStatus(raw: string): DeployDiffEntry[] {
   const entries: DeployDiffEntry[] = []
-  for (const line of raw.split('\n')) {
-    const [code, ...rest] = line.split('\t')
-    const path = rest.join('\t').trim()
-    if (!path) continue
+  const fields = raw.split('\0')
+  for (let i = 0; i + 1 < fields.length; i += 2) {
+    const code = fields[i]
+    const path = fields[i + 1]
+    if (!code || !path) continue
     if (code.startsWith('A')) entries.push({ path, status: 'added' })
     else if (code.startsWith('D')) entries.push({ path, status: 'removed' })
-    else if (code.startsWith('M') || code.startsWith('T') || code.startsWith('R') || code.startsWith('C')) {
-      entries.push({ path, status: 'changed' })
-    }
+    else if (code.startsWith('M') || code.startsWith('T')) entries.push({ path, status: 'changed' })
   }
   return entries
 }
@@ -153,15 +157,14 @@ export const gitBranchAdapter: DeployAdapter = {
       const staged = await stageBuild(ctx, destination.branch, worktreeDir, auth)
       if (!staged.remoteTip) {
         // Branch does not exist yet - everything in the tree is new.
-        const listing = await run('git', ['ls-tree', '-r', '--name-only', staged.tree], ctx.projectPath)
+        const listing = await run('git', ['ls-tree', '-r', '--name-only', '-z', staged.tree], ctx.projectPath)
         if (!listing.success) throw new Error(listing.output)
         return listing.output
-          .split('\n')
-          .map((p) => p.trim())
+          .split('\0')
           .filter(Boolean)
           .map((path) => ({ path, status: 'added' as const }))
       }
-      const diff = await run('git', ['diff', '--name-status', `${staged.remoteTip}^{tree}`, staged.tree], ctx.projectPath)
+      const diff = await run('git', ['diff', '--name-status', '-z', '--no-renames', `${staged.remoteTip}^{tree}`, staged.tree], ctx.projectPath)
       if (!diff.success) throw new Error(diff.output)
       return parseNameStatus(diff.output).sort((a, b) => a.path.localeCompare(b.path))
     } finally {

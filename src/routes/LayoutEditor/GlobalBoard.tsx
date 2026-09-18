@@ -275,8 +275,15 @@ export default function GlobalBoard({
   // droppable, so that getter returns nothing at all for it (see dndKeyboard.ts), and an empty zone
   // has no sortable to step onto. nearestDroppableCoordinates steps to the nearest drop target in
   // the pressed direction, which is what this board is made of - the same getter the frame builder
-  // uses, for the same reason.
-  const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: nearestDroppableCoordinates }))
+  // uses, for the same reason. And like there without the smooth scroll: an arrow whose target lies
+  // past the middle of <main> scrolls instead of moving, over ~300ms, and every press that came in
+  // meanwhile was lost - six ArrowDowns 40ms apart (a held key) got two rows down (thirtieth
+  // review, measured while checking the frame builder's fix on this board; no wrong intermediate
+  // announcement here, closestCenter always has an answer).
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { scrollBehavior: 'auto', coordinateGetter: nearestDroppableCoordinates })
+  )
 
   function handleDragStart(event: DragStartEvent): void {
     setActiveId(String(event.active.id))

@@ -697,7 +697,16 @@ export default function FrameBuilder({
     const layout = editing.breakpoints[activeBreakpoint]
     const existing = layout.placements[id]
     if (!existing) return
+    // Showing an area puts it back on its cells, and something may have been placed there while
+    // it was hidden. Without this check a 1x1 area came back inside a two-row box, whose name then
+    // no longer formed a rectangle in `grid-template-areas` - which makes the whole declaration
+    // invalid (thirtieth review, "nebenbei" 1).
+    if (!hidden && overlaps(layout, editing.areas, existing.row, existing.col, existing.rowSpan, existing.colSpan, id)) {
+      setMessage(t('layoutEditor.frameBuilder.overlapError'))
+      return
+    }
     setEditing(withPlacement(editing, activeBreakpoint, id, { ...existing, hidden }))
+    setMessage(null)
   }
 
   // Removes just this breakpoint's placement, sending the area back to the "available areas"

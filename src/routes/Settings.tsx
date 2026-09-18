@@ -457,7 +457,7 @@ function GithubSection(): JSX.Element {
             variant="ghost"
             onClick={() => void reload()}
             disabled={status === 'checking'}
-            className="ml-auto inline-flex items-center gap-1.5 whitespace-nowrap"
+            className="ml-auto whitespace-nowrap"
           >
             <RefreshCw size={13} className={status === 'checking' ? 'animate-spin' : ''} aria-hidden />
             {t('settings.github.recheck')}

@@ -364,6 +364,10 @@ Projektwurzel.
 - **`Button` hat `type="button"` als Default.** In einem Formular reicht ein untypisierter `<button>`
   ein; der eine Button pro Dialog, der das soll, sagt `type="submit"`. `SegmentedControl`s Segmente
   tragen ihn seit U3 ebenfalls.
+  Und er ist seine eigene Flex-Zeile (`inline-flex items-center justify-center gap-1.5`): Ein Icon
+  kommt direkt neben das Wort, ohne `<span>` und ohne Klassen am Aufrufer. Vorher löste jeder der
+  13 Icon-Knöpfe Tailwinds `svg { display: block }` selbst, in zwei Formen, und die standen mit
+  31,5 und 33 px nebeneinander (fünfundzwanzigstes Review).
 - **`SegmentedControl` ist eine Radiogruppe, keine Knopfreihe.** `role="radiogroup"` mit
   `role="radio"`-Segmenten, `aria-checked`, Roving-Tabindex (die Gruppe ist ein Tabstopp), Pfeile
   links/rechts/hoch/runter wandern durch die Optionen und *ändern dabei die Auswahl*, mit Umbruch an

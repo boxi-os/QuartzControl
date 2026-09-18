@@ -86,19 +86,9 @@ export function DiscoveredServers({ ports, onChanged }: { ports: number[]; onCha
       <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
         <CardHeading icon={ServerCog}>{t('buildServer.discovery.title')}</CardHeading>
         {discovery?.state === 'ok' && <Badge tone="slate">{servers.length}</Badge>}
-        {/* `inline-flex` ist hier keine Zierde: Als Flex-Kind der Kopfzeile ist der Knopf ein
-            Block, und Tailwinds Preflight setzt `svg { display: block }` - das Icon stand damit in
-            einer eigenen Zeile über dem Wort und der Knopf war 45 statt 31,5 px hoch (an der
-            gebauten App nachgemessen; „29“ und „32“ waren gerundet). Dieselbe Klassenfolge wie an
-            den anderen Aktualisieren-Knöpfen mit Icon - gemessen sind es drei (Updates
-            „Erneut prüfen“, Marktplatz „Katalog neu laden“, und dieser), alle 31,5 px, plus
-            Git-Sync, das die Klassen um einen `<span>` legt und auf dieselbe Höhe kommt. Die Ebene
-            stimmt für diese eine Stelle: `inline-flex` im Primitive kostete im fünfundzwanzigsten
-            Review 66 Knöpfe ihre Textzentrierung, weil `text-align` auf Flex-Kinder nicht wirkt -
-            das wäre `justify-center` dazu und eine eigene Runde. */}
         <Button
           variant="ghost"
-          className="ml-auto inline-flex items-center gap-1.5 whitespace-nowrap"
+          className="ml-auto whitespace-nowrap"
           onClick={scan}
           disabled={scanning}
         >

@@ -572,18 +572,14 @@ function ProjectRow({
         )}
         {project.missing && (
           <Button variant="ghost" className="ml-auto" onClick={() => relocate.run()} disabled={relocate.pending}>
-            <span className="flex items-center gap-1.5">
-              <FolderSearch size={13} />
-              {t('home.locateFolder')}
-            </span>
+            <FolderSearch size={13} />
+            {t('home.locateFolder')}
           </Button>
         )}
         {!broken && (
           <Button variant="ghost" className="ml-auto" onClick={onDuplicate}>
-            <span className="flex items-center gap-1.5">
-              <Copy size={13} />
-              {t('home.duplicate.action')}
-            </span>
+            <Copy size={13} />
+            {t('home.duplicate.action')}
           </Button>
         )}
       </div>

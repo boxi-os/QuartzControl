@@ -512,21 +512,15 @@ export default function ProjectDashboard(): JSX.Element {
           <div className="flex flex-wrap items-center gap-2">
             {server.state === 'stopped' || server.state === 'error' ? (
               <Button onClick={startServer}>
-                <span className="inline-flex items-center gap-1.5">
-                  <Play size={12} aria-hidden /> {t('dashboard.start')}
-                </span>
+                <Play size={12} aria-hidden /> {t('dashboard.start')}
               </Button>
             ) : (
               <Button variant="danger" onClick={stopServer} disabled={server.state === 'stopping'}>
-                <span className="inline-flex items-center gap-1.5">
-                  <Square size={12} aria-hidden /> {t('dashboard.stop')}
-                </span>
+                <Square size={12} aria-hidden /> {t('dashboard.stop')}
               </Button>
             )}
             <Button variant="ghost" onClick={restartServer} disabled={server.state !== 'running'}>
-              <span className="inline-flex items-center gap-1.5">
-                <RotateCw size={12} aria-hidden /> {t('dashboard.restart')}
-              </span>
+              <RotateCw size={12} aria-hidden /> {t('dashboard.restart')}
             </Button>
           </div>
         </Tile>
@@ -823,22 +817,16 @@ export default function ProjectDashboard(): JSX.Element {
       {/* The three things worth doing from here without opening a page first. */}
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="ghost" onClick={runBuild} disabled={isBusy('build') || buildRunning}>
-          <span className="inline-flex items-center gap-1.5">
-            <Hammer size={13} aria-hidden />
-            {isBusy('build') || buildRunning ? t('dashboard.build.running') : t('dashboard.build.run')}
-          </span>
+          <Hammer size={13} aria-hidden />
+          {isBusy('build') || buildRunning ? t('dashboard.build.running') : t('dashboard.build.run')}
         </Button>
         <Button variant="ghost" onClick={takeSnapshot} disabled={isBusy('snapshot')}>
-          <span className="inline-flex items-center gap-1.5">
-            <TAB_ICONS.backups size={13} aria-hidden />
-            {isBusy('snapshot') ? t('dashboard.backups.saving') : t('dashboard.backups.save')}
-          </span>
+          <TAB_ICONS.backups size={13} aria-hidden />
+          {isBusy('snapshot') ? t('dashboard.backups.saving') : t('dashboard.backups.save')}
         </Button>
         <Button variant="ghost" onClick={() => void api.dialog.openPath(project.path)}>
-          <span className="inline-flex items-center gap-1.5">
-            <FolderOpen size={13} aria-hidden />
-            {t('dashboard.openProjectFolder')}
-          </span>
+          <FolderOpen size={13} aria-hidden />
+          {t('dashboard.openProjectFolder')}
         </Button>
         {buildMessage && <span className="text-xs text-text-muted">{buildMessage}</span>}
       </div>

@@ -103,7 +103,14 @@ der vier Nebenbei-Punkte; **offen bleibt einer**: Die zwei Formen des Icon-Knopf
 hoch (an der gebauten App gemessen 32,8–33,3 px mit `<span>` auf der Übersicht gegen 31,5 px mit
 `inline-flex` am Knopf auf Updates). Er fällt weg, wenn `inline-flex` ins `Button`-Primitive zieht,
 und das kostet nach der Messung des Reviews 66 Knöpfe ihre Textzentrierung — `justify-center` dazu,
-und eine eigene Runde. Zwei Befunde waren reine Beschreibungsfehler: Das Schloss deckt die
+und eine eigene Runde. **Nachgetragen am 2026-09-18** (`fix/button-inline-flex`): Das Primitive
+trägt jetzt `inline-flex items-center justify-center gap-1.5`, die neun `<span>` und die vier
+Klassenfolgen an den Aufrufstellen sind weg. Gemessen an der gebauten App, alle 806 Knöpfe auf 21
+Bildschirmen vorher und nachher: sechs Kästen ändern ihre Höhe (32,8–33,3 → 31,5 px, die mit
+`<span>` auf Übersicht und „Neue Datei“), der Inhalt keines einzigen Knopfs verschiebt sich —
+auch nicht in den 66 mit fester Breite —, und unter „Neue Datei“ rückt der Rest der Spalte um
+1,8 px nach. Die zwei Knöpfe der Startseite hatten schon vorher 31,5 px (ein `flex`-`<span>`, kein
+`inline-flex`). Zwei Befunde waren reine Beschreibungsfehler: Das Schloss deckt die
 Großschreibung längst (gemessen war an `fs.realpathSync` statt an dem `fs.promises.realpath`, das
 im Code steht), und die Zahlen um die Naht der geteilten `CLAUDE.md` mischten Bytes mit Zeichen und
 Schichtdiffs mit Gesamtdiff. Was `@docs/conventions.md` angeht, ist die offene Frage der Vorrunde

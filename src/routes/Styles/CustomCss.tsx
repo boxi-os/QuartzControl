@@ -627,12 +627,8 @@ function FileOrder({
       )}
 
       {creating === null ? (
-        <Button variant="ghost" className="mt-3" onClick={() => setCreating('')}>
-          {/* Tailwind's preflight makes an <svg> display:block, which breaks the line inside an
-              inline-block button - the icon and the label need their own flex row. */}
-          <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-            <Plus size={13} aria-hidden /> {t('styleEditor.files.create')}
-          </span>
+        <Button variant="ghost" className="mt-3 whitespace-nowrap" onClick={() => setCreating('')}>
+          <Plus size={13} aria-hidden /> {t('styleEditor.files.create')}
         </Button>
       ) : (
         <div className="mt-3 flex items-center gap-2">

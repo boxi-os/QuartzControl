@@ -42,6 +42,14 @@ const VARIANTS = {
 // without a type submits - so a Cancel or "Ordner wählen" button would have confirmed the dialog
 // on click. Outside a form the attribute changes nothing, which is why this is safe for the 125
 // existing call sites; the one button per dialog that should submit says `type="submit"`.
+//
+// The button is its own flex row because Tailwind's preflight makes every <svg> `display: block`:
+// an icon inside a plain inline-block button stood on a line of its own above the label (45 px
+// instead of 31.5). Until the twenty-fifth review each of the 13 icon buttons solved that itself,
+// in two shapes - `inline-flex` on the button, or a flex <span> inside it - and the two came out
+// 31.5 and 33 px high next to each other. `justify-center` belongs to the same move: `text-align`
+// does not reach a flex item, and the 66 fixed-width buttons on Plugins would otherwise lose their
+// centred label. `gap-1.5` only acts between an icon and its label; a text-only button has one item.
 export function Button({
   variant = 'primary',
   className = '',
@@ -52,7 +60,7 @@ export function Button({
     <button
       type={type}
       {...props}
-      className={`rounded-[7px] px-3 py-1.5 text-ui font-medium transition-colors disabled:cursor-not-allowed ${VARIANTS[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-[7px] px-3 py-1.5 text-ui font-medium transition-colors disabled:cursor-not-allowed ${VARIANTS[variant]} ${className}`}
     />
   )
 }

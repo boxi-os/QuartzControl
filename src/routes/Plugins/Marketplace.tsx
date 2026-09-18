@@ -145,7 +145,7 @@ export default function PluginsMarketplace(): JSX.Element {
             className="w-full pl-8"
           />
         </div>
-        <Button variant="ghost" onClick={refresh} disabled={refreshing} className="inline-flex items-center gap-1.5 whitespace-nowrap">
+        <Button variant="ghost" onClick={refresh} disabled={refreshing} className="whitespace-nowrap">
           <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} aria-hidden />
           {refreshing ? t('pluginsMarketplace.refreshing') : t('pluginsMarketplace.refresh')}
         </Button>

@@ -146,7 +146,7 @@ export default function Updates(): JSX.Element {
               variant="ghost"
               onClick={reload}
               disabled={checking || coreBusy}
-              className="inline-flex items-center gap-1.5 whitespace-nowrap"
+              className="whitespace-nowrap"
             >
               <RefreshCw size={13} className={checking ? 'animate-spin' : ''} aria-hidden />
               {t('updates.recheck')}

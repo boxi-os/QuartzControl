@@ -290,10 +290,8 @@ export default function GitSync(): JSX.Element {
         <div className="mb-3 flex items-center justify-between gap-2">
           <CardHeading icon={GitBranch}>{t('gitSync.statusTitle')}</CardHeading>
           <Button variant="ghost" onClick={() => refreshStatus()} disabled={refresh.pending}>
-            <span className="flex items-center gap-1.5">
-              <RefreshCw className={`h-3.5 w-3.5 ${refresh.pending ? 'animate-spin' : ''}`} />
-              {t('gitSync.refresh')}
-            </span>
+            <RefreshCw className={`h-3.5 w-3.5 ${refresh.pending ? 'animate-spin' : ''}`} />
+            {t('gitSync.refresh')}
           </Button>
         </div>
         {refresh.error && <p className="text-xs text-red-600 dark:text-red-400">{refresh.error}</p>}

@@ -252,11 +252,9 @@ Chronik. Die Chronik nachzulesen lohnt für zwei Fragen: *warum* eine Regel so l
 Absatz in `docs/decisions/` sie nicht beantwortet, und *was gerade ungelesen ist* — die Serie ist
 so gebaut, dass jede Runde liest, was die vorige gebaut hat.
 
-**Stand:** Die neun Befunde des fünfundzwanzigsten Reviews sind abgearbeitet und liegen auf
-`fix/review-2026-09-29` (nicht gepusht), dazu drei seiner vier Nebenbei-Punkte. Offen bleibt einer:
-die zwei verschieden hohen Formen des Icon-Knopfs, die erst wegfallen, wenn `inline-flex` ins
-`Button`-Primitive zieht — mit `justify-center` dazu, sonst verlieren 66 Knöpfe ihre
-Textzentrierung. Was die Runde gefunden hat, steht in
+**Stand:** Die neun Befunde des fünfundzwanzigsten Reviews sind abgearbeitet und auf `main`, dazu
+alle vier Nebenbei-Punkte — der letzte, `inline-flex` im `Button`-Primitive, am 2026-09-18 auf
+`fix/button-inline-flex` (nicht gepusht). Was die Runde gefunden hat, steht in
 [`docs/REVIEW-2026-09-29.md`](docs/REVIEW-2026-09-29.md), was daraus geworden ist, oben in
 [`docs/reviews.md`](docs/reviews.md).
 

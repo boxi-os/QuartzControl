@@ -211,3 +211,32 @@ Formularelement rechnet gegen dessen eigene Schriftgröße, und WebKit gibt Eing
 kleinere — 12×12 px gegen 14×14 in Chrome und Firefox. `font: inherit` macht daraus überall
 dasselbe Kästchen.
 
+
+**Der Marker über die Versionsgrenze (2026-09-18, siebenundzwanzigstes Review, Befund 3).** Seit
+der Umbenennung `Quartz-GUI:managed:` → `QuartzControl:managed:` liest die App beide Namen. Was
+auf der anderen Seite passiert, war nur als „hängt einen zweiten an“ beschrieben; gemessen am
+`styleService` aus `v1.0.0-beta.2` (Bündel) gegen eine Kopie von `navigations-testprojekt`, das
+dieser Stand einmal geschrieben hat: beta.2 liest 0 von 50 Variablen und 0 von 30 importierten
+Dateien, hängt beim Speichern einer Variable einen alten css-vars-Block ans Dateiende, und wer
+eine Datei einschaltet, bekommt den alten imports-Block **in** den neuen (Zeile 35–37 von 3–38) —
+Sass: „There's already a module with namespace "base".“ Verhindern kann ein neuer Stand das nicht,
+nur lesen, was der alte hinterlässt. Drei Änderungen, gemessen mit demselben Ablauf (Bündel vor
+und nach dem Fix, dazu beta.2):
+
+    nach einem Schreiben (Variablen)   vorher imports/fonts alt, css-vars neu → jetzt alle drei neu
+    beta.2 speichert --secondary, neu liest
+                                       vorher 50 Variablen, --secondary fehlt, das nächste
+                                       Speichern löscht sie von der Website
+                                       jetzt 51, --secondary = beta.2s Wert, bleibt beim Speichern
+    Leerzeilen im eigenen CSS          vorher beim Entfernen der alten Kopie über die ganze Datei
+                                       zusammengezogen, jetzt nur an der Schnittstelle
+    geschachtelter imports-Block       unverändert: gelesen 30, beim Speichern im Ganzen ersetzt,
+                                       Check danach grün
+
+Gelesen werden beide Kopien, in Dateireihenfolge, und bei den Variablen gewinnt je Schlüssel die
+spätere — so wendet der Browser sie an. Geschrieben wird die Vereinigung an die Stelle der
+*ersten* Kopie: Die spätere ist die, die der alte Build ans Ende gehängt hat, und an ihrer Stelle
+wanderten alle 50 Variablen hinter die eigenen Regeln des Nutzers, um die eine zu behalten.
+`stripManagedBlock` zieht Leerzeilen weiter über die ganze Datei zusammen, wie es das immer tat;
+sein Ergebnis geht in den Vorlagen-Export, der ohnehin `trim()` ruft, und in das Leeren der
+Variablen.

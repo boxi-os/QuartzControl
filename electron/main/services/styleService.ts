@@ -84,12 +84,23 @@ export async function importStyleFile(projectPath: string, sourcePath: string): 
 // The name in the marker is the app's. Until 2026-09-18 it was the old working title,
 // `Quartz-GUI`, and unlike `.quartz-gui/` this one is read by people: it is a comment in the
 // project's own custom.scss. So it was renamed - with both spellings read, and only the new one
-// written. A block under the old name is replaced where it stands the next time its section is
-// written, so a project migrates on its first save and never ends up with the same section twice.
+// written. Whatever section is written, every managed block in the file moves to the new name
+// with it (renameLegacyMarkers), so a project migrates on its first save rather than one section
+// at a time - a font is imported once, and its block would otherwise carry the old name for good.
 //
-// The price is on the other side of the version line: a build from before the rename (beta.2 and
-// older) does not see a block under the new name and appends one of its own. Where both stand,
-// the new one is read and the old one is removed on the next write.
+// The price is on the other side of the version line, and it is more than a second block: a build
+// from before the rename (beta.2 and older) sees none of the new blocks. Measured (twenty-seventh
+// review, finding 3, beta.2's styleService as a bundle against a migrated copy of a real project):
+// it read 0 of 50 variables and 0 of 30 imported files, appended its own css-vars block at the end
+// when a variable was saved, and put its imports block *inside* ours when one file was switched
+// on - two `@use` of the same namespace, and the build broke for both versions. The usual way
+// there is two machines with different versions and a project travelling between them through
+// Git-Sync; this side cannot prevent it, only read what the other one leaves behind.
+//
+// Where both copies of a section stand, both are read, in file order, and the later one wins -
+// the same rule the browser applies, so the page shows what the site shows. Reading only the new
+// one showed a value the site did not have and dropped the one it had on the next save. The next
+// write puts the union where the first copy stood and removes the other (replaceManagedBlocks).
 const MARKER_NAMES = ['QuartzControl', 'Quartz-GUI'] as const
 
 function managedBlockMarkers(markerId: string, name: (typeof MARKER_NAMES)[number] = MARKER_NAMES[0]): { start: string; end: string } {
@@ -119,20 +130,70 @@ function findManagedBlock(content: string, markerId: string, names: readonly str
   return null
 }
 
-// What a write leaves of the old spelling: nothing. Only reached with a current block in hand, so
-// a legacy block here is a second copy - one an older build appended beside ours.
-function withoutLegacyBlock(content: string, markerId: string): string {
-  const legacy = findManagedBlock(content, markerId, MARKER_NAMES.slice(1))
-  if (!legacy) return content
-  return (content.slice(0, legacy.from) + content.slice(legacy.to)).replace(/\n{3,}/g, '\n\n').replace(/\n+$/, '\n')
+// Every copy of a section, in the order they stand in the file. A copy nested inside another is
+// part of that one's body rather than a copy of its own - which is where beta.2 puts its imports
+// block when ours is there (see MARKER_NAMES), and reading through it is what lists the files.
+function findManagedBlocks(content: string, markerId: string): ManagedSpan[] {
+  const spans = MARKER_NAMES.map((name) => findManagedBlock(content, markerId, [name])).filter(
+    (span): span is ManagedSpan => span !== null
+  )
+  return spans
+    .filter((span) => !spans.some((other) => other !== span && other.from < span.from && span.to <= other.to))
+    .sort((a, b) => a.from - b.from)
+}
+
+// Cuts a span out and closes the gap where it was - only there: a blank line elsewhere in the
+// file is the user's.
+function cutSpan(content: string, span: { from: number; to: number }): string {
+  const before = content.slice(0, span.from).replace(/\n+$/, '')
+  const after = content.slice(span.to).replace(/^\n+/, '')
+  if (!before) return after
+  if (!after) return `${before}\n`
+  return `${before}\n\n${after}`
+}
+
+// Writes `block` over the first copy of the section and removes the others. The first, because it
+// is the one the file was arranged around - an older build appends its copy at the end, and
+// writing the union there moved all fifty variables of a real project behind the user's own rules
+// to keep the one that build had added (measured, twenty-seventh review, finding 3). From the end
+// backwards, so the earlier offsets still hold.
+function replaceManagedBlocks(content: string, spans: ManagedSpan[], block: string): string {
+  let next = content
+  for (let i = spans.length - 1; i >= 0; i--) {
+    const span = spans[i]
+    next = i === 0 ? next.slice(0, span.from) + block + next.slice(span.to) : cutSpan(next, span)
+  }
+  return next
+}
+
+// The old name, wherever it still stands on a section that has no copy under the new one. Only the
+// two marker comments change; a section with both copies is left to the write of that section.
+function renameLegacyMarkers(content: string): string {
+  const [current, ...legacy] = MARKER_NAMES
+  let next = content
+  for (const name of legacy) {
+    const ids = new Set([...next.matchAll(new RegExp(`/\\* --- ${name}:managed:([\\w-]+):start --- \\*/`, 'g'))].map((m) => m[1]))
+    for (const id of ids) {
+      if (!findManagedBlock(next, id, [name]) || findManagedBlock(next, id, [current])) continue
+      const old = managedBlockMarkers(id, name)
+      const renamed = managedBlockMarkers(id, current)
+      next = next.replace(old.start, renamed.start)
+      next = next.replace(old.end, renamed.end)
+    }
+  }
+  return next
 }
 
 // Reads the current body of a marker-delimited managed section, or null if it doesn't exist yet -
 // lets a caller accumulate onto an existing section (e.g. another @font-face rule) instead of only
 // ever appending a fresh one.
 export function getManagedBlock(content: string, markerId: string): string | null {
-  const span = findManagedBlock(content, markerId)
-  return span ? span.body.trim() : null
+  const spans = findManagedBlocks(content, markerId)
+  if (spans.length === 0) return null
+  return spans
+    .map((span) => span.body.trim())
+    .filter(Boolean)
+    .join('\n\n')
 }
 
 // Replaces a marker-delimited managed section in-place (appending a new one at the end if it
@@ -142,12 +203,12 @@ export function getManagedBlock(content: string, markerId: string): string | nul
 export function upsertManagedBlock(content: string, markerId: string, body: string): string {
   const { start, end } = managedBlockMarkers(markerId)
   const block = `${start}\n${body}\n${end}`
-  const span = findManagedBlock(content, markerId)
-  if (!span) {
+  const spans = findManagedBlocks(content, markerId)
+  if (spans.length === 0) {
     const trimmed = content.replace(/\s+$/, '')
-    return trimmed ? `${trimmed}\n\n${block}\n` : `${block}\n`
+    return renameLegacyMarkers(trimmed ? `${trimmed}\n\n${block}\n` : `${block}\n`)
   }
-  return withoutLegacyBlock(content.slice(0, span.from) + block + content.slice(span.to), markerId)
+  return renameLegacyMarkers(replaceManagedBlocks(content, spans, block))
 }
 
 // Managed section for Phase-3a's CSS variable overrides - separate marker from fonts' so both
@@ -170,11 +231,13 @@ function parseDeclarations(block: string): Record<string, string> {
   return decls
 }
 
+// Every rule of each kind, the later one winning per variable: a body read from two copies of the
+// section (see MARKER_NAMES) carries two of each, and the browser applies them the same way.
 function parseVariableOverrides(body: string): CssVariableOverride[] {
-  const rootMatch = /:root\s*\{([^}]*)\}/.exec(body)
-  const darkMatch = /:root\[saved-theme=["']dark["']\]\s*\{([^}]*)\}/.exec(body)
-  const light = rootMatch ? parseDeclarations(rootMatch[1]) : {}
-  const dark = darkMatch ? parseDeclarations(darkMatch[1]) : {}
+  const light: Record<string, string> = {}
+  const dark: Record<string, string> = {}
+  for (const match of body.matchAll(/:root\s*\{([^}]*)\}/g)) Object.assign(light, parseDeclarations(match[1]))
+  for (const match of body.matchAll(/:root\[saved-theme=["']dark["']\]\s*\{([^}]*)\}/g)) Object.assign(dark, parseDeclarations(match[1]))
   return Object.entries(light).map(([key, value]) => ({ key, light: value, dark: dark[key] }))
 }
 
@@ -202,7 +265,7 @@ export async function saveVariableOverrides(projectPath: string, overrides: CssV
       ? // an empty override list still clears a previously-written block rather than leaving stale
         // rules behind - upsertManagedBlock always needs a non-empty body, so remove the markers
         // outright by upserting an intentionally-empty :root rule then stripping it back out.
-        stripManagedBlock(info.content, CSS_VARS_MARKER)
+        renameLegacyMarkers(stripManagedBlock(info.content, CSS_VARS_MARKER))
       : upsertManagedBlock(info.content, CSS_VARS_MARKER, renderVariableOverrides(overrides))
   await writeCustomScss(projectPath, next)
 }
@@ -269,10 +332,10 @@ function parseImportOrder(projectPath: string, content: string): string[] {
 // and stops at the first line that is anything else.
 function upsertImportBlock(content: string, body: string): string {
   const { start, end } = managedBlockMarkers(IMPORTS_MARKER)
-  const span = findManagedBlock(content, IMPORTS_MARKER)
-  if (span) {
-    if (!body) return stripManagedBlock(content, IMPORTS_MARKER)
-    return withoutLegacyBlock(content.slice(0, span.from) + `${start}\n${body}\n${end}` + content.slice(span.to), IMPORTS_MARKER)
+  const spans = findManagedBlocks(content, IMPORTS_MARKER)
+  if (spans.length > 0) {
+    if (!body) return renameLegacyMarkers(stripManagedBlock(content, IMPORTS_MARKER))
+    return renameLegacyMarkers(replaceManagedBlocks(content, spans, `${start}\n${body}\n${end}`))
   }
   if (!body) return content
 
@@ -309,7 +372,7 @@ function upsertImportBlock(content: string, body: string): string {
   }
   if (insertAt === 0) insertAt = cursor
   lines.splice(insertAt, 0, '', `${start}\n${body}\n${end}`)
-  return lines.join('\n').replace(/\n{3,}/g, '\n\n')
+  return renameLegacyMarkers(lines.join('\n').replace(/\n{3,}/g, '\n\n'))
 }
 
 export async function listStyleFiles(projectPath: string): Promise<StyleFileSet> {

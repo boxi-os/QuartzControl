@@ -766,13 +766,21 @@ Projektwurzel.
   `QuartzControl:managed:`), und zwar genau aus dem Grund, den der Satz oben für den Ordner
   ausschließt: Ihn *sieht* jemand — er ist ein Kommentar in der eigenen Stildatei des Nutzers. Also
   mit Migration: Gelesen werden beide Namen (`MARKER_NAMES` in `styleService.ts`, derselbe Satz in
-  `scripts/build-example-template.mjs`), geschrieben nur der neue, und ein alter Block wird an
-  seiner Stelle ersetzt, wenn sein Abschnitt das nächste Mal geschrieben wird; stehen beide da,
-  gilt der neue, und der alte fällt beim Schreiben weg. Gemessen an der gebauten App mit einer
-  Kopie von `navigations-testprojekt`: alle drei Blöcke nach je einem Schreibvorgang unter dem
-  neuen Namen und am alten Platz, sonst byte-gleich, SCSS-Check grün. Der Preis liegt jenseits der
-  Versionsgrenze: Ein Build von vorher (beta.2) erkennt den neuen Block nicht und hängt einen
-  zweiten an. Der Marker `Quartz-GUI:syntax:` in `scripts/example-template/` ist noch der alte — er
+  `scripts/build-example-template.mjs`), geschrieben nur der neue, und **wer einen Abschnitt
+  schreibt, benennt die Marker aller anderen mit um** — je Abschnitt migriert, trug eine Datei
+  beide Namen auf unbestimmte Zeit, denn eine Schrift importiert man einmal. Stehen beide Kopien
+  eines Abschnitts da, werden **beide gelesen, und die spätere gewinnt** — die Regel der Kaskade,
+  also zeigt die Seite, was die Website zeigt; das nächste Schreiben legt die Vereinigung an die
+  Stelle der ersten Kopie. Gemessen an der gebauten App mit einer Kopie von
+  `navigations-testprojekt`: alle drei Blöcke nach je einem Schreibvorgang unter dem neuen Namen und
+  am alten Platz, sonst byte-gleich, SCSS-Check grün. **Der Preis liegt jenseits der
+  Versionsgrenze, und er ist mehr als ein zweiter Block** (siebenundzwanzigstes Review, Befund 3,
+  am `styleService` von beta.2 als Bündel): beta.2 liest 0 von 50 Variablen und 0 von 30
+  importierten Dateien, hängt beim Speichern einer Variable einen eigenen Block an, und wer dort
+  eine Datei einschaltet, bekommt dessen Import-Block *in* unseren geschachtelt — zwei `@use`
+  desselben Namensraums, der Build ist in beiden Fassungen kaputt, bis diese Seite die Reihenfolge
+  einmal speichert. Der gewöhnliche Weg dorthin sind zwei Rechner mit verschiedenen Fassungen und
+  ein Projekt, das per Git-Sync zwischen ihnen reist. Der Marker `Quartz-GUI:syntax:` in `scripts/example-template/` ist noch der alte — er
   reist in drei Kopien der Vorlage, die `--check-sync` byte-weise vergleicht, und wird mit dem
   nächsten Release der Vorlage umbenannt.
   Der Rest ist am 2026-09-09 nachgezogen: `name` in `package.json` (`quartz-gui` →

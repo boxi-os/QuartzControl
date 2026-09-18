@@ -346,7 +346,7 @@ Die erste: geschrieben wurde `takenOut`, der Plan *dieses* Laufs — und der ist
     Lauf 3  npm läuft       „Already up to date.“, `success: true`, ein schlichtes `npm install`,
                             `dependencies` nur noch `@quartz-themes/core` und `preact`
 
-Die zweite: `carried` galt nur bei `pendingFor === headAfter`. Ein einziger Commit zwischen zwei Läufen — ein Git-Sync, eine Notiz im README — genügte (Szene h2): Lauf 2 mit laufendem npm sagte „Already up to date.“, rief `npm install` schlicht, und die Themes waren fort. Geschrieben wird jetzt `wanted` (Plan plus Übernommenes), und `carried` fragt nicht mehr nach dem SHA: Die Liste beantwortet „was hat ein Update aus `package.json` genommen“, und das ist keine Eigenschaft eines Commits. Wogegen der SHA hier schützte — eine Liste aus einem fremden Stand mit einem Paket, das der Nutzer nicht mehr will —, setzt voraus, dass er es aus einer `package.json` genommen hat, in der es nach dem Merge gar nicht mehr steht; `stillMissing` räumt ohnehin weg, was schon dasteht. Für den **Amend** bleibt der SHA, denn der beschreibt genau einen Commit. Gegenprobe (Upstream E und D, ein Lauf, npm läuft): npm-Aufrufe, `dependencies`, Status, Merge-Commit und Notiz unverändert.
+Die zweite: `carried` galt nur bei `pendingFor === headAfter`. Ein einziger Commit zwischen zwei Läufen — ein Git-Sync, eine Notiz im README — genügte (Szene h2): Lauf 2 mit laufendem npm sagte „Already up to date.“, rief `npm install` schlicht, und die Themes waren fort. Geschrieben wird jetzt `wanted` (Plan plus Übernommenes), und `carried` fragt nicht mehr nach dem SHA: Die Liste beantwortet „was hat ein Update aus `package.json` genommen“, und das ist keine Eigenschaft eines Commits. Wogegen der SHA hier schützte — eine Liste aus einem fremden Stand mit einem Paket, das der Nutzer nicht mehr will —, setzt voraus, dass er es aus einer `package.json` genommen hat, in der es nach dem Merge gar nicht mehr steht; `stillMissing` räumt ohnehin weg, was schon dasteht. (Nur mit demselben Bereich: Eine Zeile, die npm geschrieben hat, steht mit dem aufgelösten, und die gibt der Lauf npm noch einmal — folgenlos, siebenundzwanzigstes Review.) Für den **Amend** bleibt der SHA, denn der beschreibt genau einen Commit. Gegenprobe (Upstream E und D, ein Lauf, npm läuft): npm-Aufrufe, `dependencies`, Status, Merge-Commit und Notiz unverändert.
 
 **Nachtrag (2026-09-17, einundzwanzigstes Review): der Amend nahm mit, was der Nutzer uncommittet gehalten hat.** `--only -- <pfade>` nimmt die zwei Pfade aus dem *Arbeitsbereich*, und `git diff HEAD` sagt „weicht ab“, nicht „npm hat es geschrieben“. Solange der Amend nur im Konfliktzweig lief, fielen die beiden zusammen — ein Konflikt heißt, dass beide Dateien committet waren, sonst hätten sie nicht konfligieren können. Seit `fda4132` läuft er auch nach einem sauberen Merge, und dort fallen sie auseinander: es konfligiert nichts, und eine uncommittete Paketzeile ist genau das, was die Theme-Installation dieser App hinterlässt. Gemessen (Upstream D, je frischer Klon, ein eigener Commit am README):
 
@@ -584,7 +584,7 @@ gemacht hat — und genau die setzt man nach einem gescheiterten Update zurück:
 Die Notiz behält jetzt `wanted` und trägt `putBack`, die Namen, die npm *in diesem Lauf* bewegt hat
 (fehlten vorher, stehen jetzt) — nicht, was dasteht, denn eine Zeile, die der Nutzer vorher von
 Hand zurückgeschrieben hat, ist nicht die Schrift der App. `listTakenInHandSince` überspringt sie,
-`stillMissing` räumt sie weg, solange sie dastehen, ein fortsetzender Lauf trägt die Markierung
+`stillMissing` räumt sie weg, solange sie dastehen (so gemessen an der wörtlich schreibenden Attrappe; unter echtem npm nicht — Nachtrag unten), ein fortsetzender Lauf trägt die Markierung
 weiter. Nicht gefangen und im Kommentar benannt: ein *committetes* Entfernen einer solchen Zeile —
 dann kommt das Paket zurück, und von den zwei Arten, falsch zu liegen, ist das die, die ein Klick
 rückgängig macht.
@@ -603,7 +603,13 @@ Schalter, das Handbuch (7.3) auch.
 *Die SHA der Notiz ging ungeprüft an git* (Befund 4). `listTakenInHandSince` baut `<sha>..HEAD`,
 vor dem `--`. Szene H3, Notiz mit `"installPendingFor": "--output=<scratch>/victim/datei"` und einem
 Eintrag, danach nur `getCoreUpdateStatus`: vorher wurde `victim/datei..HEAD` von 8 auf 41 Bytes
-überschrieben, jetzt bleibt sie; eine SHA gilt nur als 40 oder 64 Hexzeichen.
+überschrieben, jetzt bleibt sie; eine SHA gilt nur als 40 oder 64 Hexzeichen. (Das Review nennt
+für dieselbe Szene 0 Bytes. Beides stimmt: `--output=<pfad>..HEAD` nimmt den Revisionsbereich mit,
+`git log` läuft dann über die ganze Geschichte und schreibt die SHA eines Commits, der die Nadel
+trifft — 41 Bytes, wenn einer den Paketnamen trägt, sonst eine leere Datei. Nachgemessen am Bündel
+von `review-2026-10-01`: `own-dev-tool`, im ersten Commit des Projekts eingetragen, 41 Bytes; ein
+Name, den kein Commit kennt, 0 Bytes. Geleert oder überschrieben wird die Datei in beiden Fällen;
+siebenundzwanzigstes Review, nebenbei 2.)
 
 *Ein Duplikat erbte `installFailed`* (Befund 5). Die Kopie nimmt die Notiz mit Absicht mit; seit
 sie angezeigt wird, sagte die Kopie „npm install ist fehlgeschlagen“ eine Sekunde nach ihrem

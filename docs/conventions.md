@@ -157,7 +157,8 @@ Projektwurzel.
   dieses Laufs — der ist im fortsetzenden Lauf leer, und die Liste überschrieb sich so selbst mit
   `[]`, eine Zeile bevor sie benutzt wurde. **Die Bindung an den SHA gehört an das, was einen
   Commit beschreibt**: an den Amend ja, an die Paketliste nicht — ein einziger Commit zwischen
-  zwei Läufen ließ sie sonst verfallen, und `stillMissing` räumt ohnehin weg, was schon dasteht.
+  zwei Läufen ließ sie sonst verfallen, und was schon dasteht, kostet höchstens einen npm-Aufruf,
+  der nichts ändert.
   **Und „weicht von HEAD ab“ ist nicht „npm hat es geschrieben“**: `--only` nimmt die Pfade aus
   dem Arbeitsbereich, also committete der Amend nach einem sauberen Merge, was der Nutzer
   uncommittet gehalten hat. Was das trennt, wird *vor* dem Merge gemessen (standen beide Dateien,

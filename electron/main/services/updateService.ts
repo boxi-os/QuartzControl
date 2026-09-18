@@ -531,7 +531,9 @@ async function coreUpdateStashEntry(projectPath: string, from = 0): Promise<stri
  * the note elsewhere quotes the EACCES scene: it is the one that fits "fix the error above and run
  * the update again", the missing package is not.) The list is what the earlier run took away, so
  * the later one can put it back; `stillMissing` then drops whatever the user or the merge has
- * already put back.
+ * already put back at the same range. A line standing at another range - which is what npm writes,
+ * see packageLines - is handed to npm once more, and npm writes it as it resolves it: a network
+ * call that changes nothing, not a package the user did not want.
  */
 const PENDING_UPDATE_FILE = 'core-update.json'
 
@@ -1280,8 +1282,8 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     // Measured (twenty-first review, finding 1, scene h2): "Already up to date.", `success: true`,
     // a plain `npm install`, themes gone, note deleted. What the SHA would guard against is a list
     // from another state naming a package the user does not want back - and that is a question
-    // about package.json, not about HEAD: `noteOverruled` asks it directly, and `stillMissing`
-    // drops whatever is already there anyway.
+    // about package.json, not about HEAD: `noteOverruled` asks it directly, and a line that is
+    // already there costs at most an `npm install` that changes nothing (see PENDING_UPDATE_FILE).
     const carried = pendingFor !== '' && noteOverruled === 'stands' ? pending.reinstall : []
     // What an earlier run's npm wrote back stays marked as such for as long as the list is carried:
     // the lines are no less this app's writing for a second run having started.

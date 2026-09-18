@@ -17,7 +17,7 @@ import Localization from './Localization'
 import HandbookLink from '../../components/HandbookLink'
 
 // Welches Kapitel diesen Reiter erklärt. Der Verweis im Kopf folgt dem offenen Reiter, nicht der
-// Seite - zwei Reiter, zwei Kapitel. Das Kapitel zum Content-Ordner verlinkt seine Karte selbst.
+// Seite - zwei Reiter, zwei Kapitel. Das Kapitel zum Content-Ordner verlinkt seine Gruppe selbst.
 const HANDBOOK = { site: 'site', localization: 'localization' } as const
 
 // The things that describe *what* the site is rather than how it looks: its own settings, where
@@ -34,7 +34,7 @@ function isTab(value: string | null): value is ConfigTab {
 }
 
 // `?tab=content` is what every link into the content folder said until it moved, and a bookmark or
-// an older in-app link still may: it means the tab that holds the card now.
+// an older in-app link still may: it means the tab that holds the group now.
 const LEGACY_SITE_TAB = 'content'
 
 export default function ConfigEditor(): JSX.Element {

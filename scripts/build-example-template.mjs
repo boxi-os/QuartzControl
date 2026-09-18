@@ -538,7 +538,7 @@ function installContent(target) {
     if (!isPristineStarter(content)) {
       throw new Error(
         `${content} ist ein echter Ordner. Umstellen auf den Vault geht über die App ` +
-        '(Konfiguration → Content-Ordner, Strategie „Verknüpfen") — die sichert den bestehenden ' +
+        '(Konfiguration → Website, Gruppe „Content-Ordner“, Strategie „Verknüpfen") — die sichert den bestehenden ' +
         'Inhalt vorher weg.'
       )
     }

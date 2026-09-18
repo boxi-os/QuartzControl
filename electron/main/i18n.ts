@@ -94,7 +94,7 @@ const STRINGS = {
 
     // Core update
     updateBlockedBySymlink:
-      'Der Content-Ordner ist ein Symlink, durch den git nicht schreiben kann. Wechsle unter Konfiguration → Content-Ordner vorübergehend auf einen echten Ordner und versuche es erneut.\n\n',
+      'Der Content-Ordner ist ein Symlink, durch den git nicht schreiben kann. Wechsle unter Konfiguration → Website, Gruppe „Content-Ordner“, vorübergehend auf einen echten Ordner und versuche es erneut.\n\n',
     // Nicht „an Dateien, die das Update ebenfalls anfasst“: git verweigert einen echten Merge auch
     // über einer vorgemerkten Änderung an einer Datei, von der upstream nichts weiß (gemessen im
     // Wegwerf-Repo: „Your local changes to the following files would be overwritten by merge:
@@ -204,7 +204,7 @@ const STRINGS = {
     duplicateNested:
       'Das Duplikat darf nicht im Originalprojekt liegen und das Original nicht im Duplikat. Wähle einen Ordner daneben.',
     duplicateBlankContent:
-      'Dieses Projekt ist eine Kopie und hat noch keinen Inhalt. Unter „Einrichtung → Content-Ordner“ kannst du einen Ordner oder einen Obsidian-Vault verknüpfen.',
+      'Dieses Projekt ist eine Kopie und hat noch keinen Inhalt. Unter „Konfiguration → Website“, Gruppe „Content-Ordner“, kannst du einen Ordner oder einen Obsidian-Vault verknüpfen.',
     createInstallFailed: 'npm install ist fehlgeschlagen:',
     createNoConfig:
       '\n\nDer Setup-Assistent hat quartz.config.yaml nicht geschrieben (vermutlich fehlt eine Antwort auf eine interaktive Rückfrage oben).',
@@ -430,7 +430,7 @@ const STRINGS = {
       'Credentials cannot be stored securely because the system keyring is unavailable. On Linux, running a keyring such as gnome-keyring or KWallet fixes this.',
 
     updateBlockedBySymlink:
-      'The content folder is a symlink, and git cannot write through it. Switch to a real folder under Configuration → Content folder for now and try again.\n\n',
+      'The content folder is a symlink, and git cannot write through it. Switch to a real folder under Configuration → Site, group “Content folder”, for now and try again.\n\n',
     updateBlockedByLocalChanges:
       'Your own changes are in the way — git names the files below. Commit or discard them under Git sync and try again.\n\n',
     updateMergeUnfinished:
@@ -490,7 +490,7 @@ const STRINGS = {
     duplicateNested:
       'The copy must not sit inside the original project, nor the original inside the copy. Pick a folder beside it.',
     duplicateBlankContent:
-      'This project is a copy and has no content yet. Under “Setup → Content folder” you can link a folder or an Obsidian vault.',
+      'This project is a copy and has no content yet. Under “Configuration → Site”, group “Content folder”, you can link a folder or an Obsidian vault.',
     createInstallFailed: 'npm install failed:',
     createNoConfig:
       '\n\nThe setup wizard did not write quartz.config.yaml (most likely an interactive question above went unanswered).',

@@ -154,16 +154,20 @@ export function TextInput(props: InputHTMLAttributes<HTMLInputElement>): JSX.Ele
 // the next digit into a 1 and applied it, then read "1" + "2" as 12: someone going from 3 to 2 got
 // 1, a capped 12 and a refusal saying the span stayed (thirty-second review, finding 3). The field
 // keeps what is typed as a draft; `onValue` hears only whole numbers from `min` up, and leaving the
-// field shows the value that holds again.
+// field shows the value that holds again. A typed number above `max` arrives as `max`, which is what
+// the browser's own arrows do: the grid's fields said max 12 and "18" made 18 columns, up to the 50
+// the IPC schema allows (thirty-second review, found while working through its list).
 export function NumberInput({
   value,
   onValue,
   min = 1,
+  max,
   ...props
-}: Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'type' | 'min'> & {
+}: Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'type' | 'min' | 'max'> & {
   value: number
   onValue: (value: number) => void
   min?: number
+  max?: number
 }): JSX.Element {
   const [draft, setDraft] = useState<string | null>(null)
   return (
@@ -171,11 +175,12 @@ export function NumberInput({
       {...props}
       type="number"
       min={min}
+      max={max}
       value={draft ?? String(value)}
       onChange={(e) => {
         setDraft(e.target.value)
         const n = Number(e.target.value)
-        if (e.target.value.trim() !== '' && Number.isInteger(n) && n >= min) onValue(n)
+        if (e.target.value.trim() !== '' && Number.isInteger(n) && n >= min) onValue(max !== undefined ? Math.min(n, max) : n)
       }}
       onBlur={(e) => {
         setDraft(null)

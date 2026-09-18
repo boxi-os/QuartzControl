@@ -117,7 +117,14 @@ export function ItemCard({
               ref={dragHandleRef}
               {...dragHandleProps}
               onClick={(e) => e.stopPropagation()}
-              aria-label={t('layoutEditor.componentPill.dragHandle')}
+              // With the component's name, and its number where it is one of several: the board
+              // has one handle per row, and all 33 of the test project's read "Zum Verschieben
+              // ziehen" in a screen reader's list of controls - the drag's announcements named
+              // the component, the handle one picks it up by did not (thirty-first review,
+              // "nebenbei" 2). Same shape as the plugin list and the frame builder.
+              aria-label={t('layoutEditor.componentPill.dragHandle', {
+                name: isDuplicate && rank !== undefined ? `${plugin.name} #${rank}` : plugin.name
+              })}
               className="-ml-1 flex shrink-0 cursor-grab select-none items-center rounded-[6px] border border-ink/10 bg-ink/[0.03] p-1 text-text-muted transition-colors hover:border-ink/20 hover:bg-ink/[0.08] hover:text-text active:cursor-grabbing dark:bg-ink/[0.04]"
             >
               <GripVertical size={15} />

@@ -1227,3 +1227,11 @@ Schritt. Gebaute App, 1280 × 900:
 Was bleibt, ist ← aus dem Kopfbereich: Das geht zum Komponentenvorrat darüber, sichtbar und
 angesagt, und eine Leertaste dort entfernt ein Duplikat oder wird abgelehnt — das ist die Regel
 des Vorrats, nicht die des Getters. Ein Druck ohne Ziel sagt nichts, wie ↓ in der letzten Zeile.
+
+**Nachtrag (2026-09-18, einunddreißigstes Review, nebenbei 2): Die Griffe des Layout-Boards tragen
+den Namen ihrer Komponente.** Alle 33 Zeilengriffe des Testprojekts hießen „Zum Verschieben
+ziehen“ — die Drag-Ansagen nannten die Komponente, die Liste der Bedienelemente eines Screenreaders
+nannte 33-mal denselben Satz. Jetzt „{{name}} verschieben“, bei mehreren Instanzen mit der Nummer,
+die neben dem Namen steht („quartz-navigations #5 verschieben“) — dieselbe Form wie „Umsortieren:
+{{name}}“ in der Plugin-Liste und „Bereich {{name}} verschieben“ im Frame-Builder. Gebaute App:
+33 von 33 Griffen verschieden benannt, keiner doppelt. Nicht mit VoiceOver gehört.

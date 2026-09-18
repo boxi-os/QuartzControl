@@ -1250,7 +1250,7 @@ export default {
       paletteDropToRemove: 'Hier ablegen zum Entfernen',
       paletteDragName: 'Komponentenvorrat',
       paletteHint: 'Ziehe eine Komponente auf einen Bereich, um eine weitere Instanz mit eigenen Einstellungen einzufügen.',
-      dragHandle: 'Zum Verschieben ziehen',
+      dragHandle: '{{name}} verschieben',
       duplicate: 'Duplizieren',
       removeDuplicate: 'Duplikat entfernen'
     }

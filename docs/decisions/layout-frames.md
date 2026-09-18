@@ -1090,3 +1090,24 @@ schmaler werden, wer hört, erfuhr es nicht. Das `dropOutcome` des Frame-Builder
 gekürzte Spanne. Gebaute App, Frame „focus“, `right` in die Ablage, dann `page-body` (Spalten 4–9)
 mit fünfmal → auf Spalte 9: „page-body bei Zelle Zeile 2, Spalte 9 abgelegt. Dort endet das
 Raster: Spalten-Spanne jetzt 4 statt 6.“ Ein Schritt ohne Kürzung sagt weiter nur „abgelegt“.
+
+**Nachtrag (2026-09-18, neunundzwanzigstes Review, nebenbei 3): Eine flexible Spalte der
+Ablagefläche ist mindestens 24 px breit.** Die Fläche gibt das Raster des Frames in Panelbreite
+wieder, und in Panelbreite fressen die Abstände eines echten Frames die flexiblen Spalten auf: Die
+vier Frames dieses Projekts haben 4rem Abstand und sechs feste Spalten, und bei 1470 px Fenster
+kamen ihre sechs `1fr`-Spalten auf 5 px — Zellen, die eine Maus unter einem überspannenden Kasten
+nicht treffen konnte. Nur auf der Ablagefläche (nicht im erzeugten CSS, nicht in der Vorschau) wird
+jetzt aus einem blanken `<n>fr` ein `minmax(24px, <n>fr)` (WCAG 2.2, Mindestgröße einer Zielfläche),
+und die Fläche bekommt `min-width: min-content` in einem waagerecht rollenden Rahmen. Der Preis ist
+genau dieses Rollen. Gebaute App, Frames „drawing“ und „focus“:
+
+    1280 px   Spalten 57 · 57 · 57 · 24 ×6 · 57 · 57 · 57   Fläche 1234 in 932, rollt 302 px
+    1470 px   dieselben                                       Fläche 1234 in 1122, rollt 112 px
+    1728 px   57 ×3 · 48 ×6 · 57 ×3                           passt, rollt nicht
+    Seite     rollt in keiner Breite waagerecht
+
+Die Tastatur- und Mausszenen der Befunde 3 und 5 und des Nachtrags zur Spanne bei 1280 und 1470 px
+unverändert. Eine Verschiebung: Beim zweiten ↑ von `right` in die Ablage (Frame „focus“) nennt die
+Ansage während des weichen Scrollens „Zeile 1, Spalte 8“ als Zwischenziel, wo vorher „liegt über
+header“ stand — ein Zwischenziel gab es also schon; jetzt ist es eine Zelle statt des Kastens,
+weil die Mitte des Chips nicht mehr in einen 64-px-Abstand fällt.

@@ -28,7 +28,7 @@ import type {
   GridFrameArea,
   GridFrameDefinition
 } from '@shared/ipc-contract'
-import { DEFAULT_FRAME_BREAKPOINT_WIDTHS, FRAME_BREAKPOINTS, buildFrameBox, buildGridStyle } from '@shared/gridFrameCss'
+import { DEFAULT_FRAME_BREAKPOINT_WIDTHS, FRAME_BREAKPOINTS, buildFrameBox, buildGridStyle, buildTrackList } from '@shared/gridFrameCss'
 import {
   Badge,
   Button,
@@ -845,6 +845,17 @@ export default function FrameBuilder({
   const savedNotice = savedSnapshot !== null && savedSnapshot === JSON.stringify(editing)
   const layout = editing.breakpoints[activeBreakpoint]
   const gridStyle = buildGridStyle(layout, editing.areas)
+  // The drop board's columns - the frame's own, with a floor under every flexible one (see the
+  // board below). Only a bare `<n>fr` is touched: anything else already says how wide it is.
+  const boardColumns = buildTrackList(
+    Array.from({ length: layout.cols }, (_, i) => {
+      const size = layout.columnSizes?.[i]?.trim() || '1fr'
+      return /^\d*\.?\d+fr$/.test(size) ? `minmax(24px, ${size})` : size
+    }),
+    layout.cols,
+    '1fr',
+    layout.columnLineNames
+  )
   const box = buildFrameBox(layout)
   const hasMaxWidth = !!layout.maxWidth?.trim()
   const hasBox = hasMaxWidth || box.paddingBlock !== '0' || box.paddingInline !== '0'
@@ -1200,17 +1211,27 @@ export default function FrameBuilder({
         {/* The drop board carries the frame's own box, so a cap, an alignment or a padding is
             something you can see rather than a value you have to imagine. It is the same box the
             codegen writes - both come out of buildFrameBox - but at panel width, so a cap wider
-            than this panel legitimately looks like nothing happened. */}
+            than this panel legitimately looks like nothing happened.
+
+            One departure, in the columns only: a flexible track gets at least 24px (WCAG 2.2's
+            minimum target size), because it is a drop target and not a picture of the site. At
+            panel width the gaps of a real frame can eat all of it - this project's frames have
+            4rem gaps and six fixed columns, and at a 1470px window their six `1fr` columns came
+            out 5px wide, under spanning boxes a mouse could not aim at (twenty-ninth review,
+            "nebenbei" 3). Where the minimum does not fit, the board grows past the panel and
+            scrolls sideways, instead of squeezing it back to nothing. */}
+        <div className="overflow-x-auto">
         <div
           className={`relative grid gap-1 ${
             hasBox ? 'rounded-[8px] border border-dashed border-blue-400/50 dark:border-blue-400/40' : ''
           }`}
           style={{
-            gridTemplateColumns: gridStyle.gridTemplateColumns,
+            gridTemplateColumns: boardColumns,
             gridTemplateRows: gridStyle.gridTemplateRows,
             rowGap: gridStyle.rowGap,
             columnGap: gridStyle.columnGap,
             width: box.width,
+            minWidth: 'min-content',
             maxWidth: box.maxWidth,
             marginInline: box.marginInline,
             paddingBlock: box.paddingBlock,
@@ -1260,6 +1281,7 @@ export default function FrameBuilder({
               </PlacedBox>
             )
           })}
+        </div>
         </div>
 
         {/* What follows the cursor - without it a dnd-kit drag moves nothing visible, since the

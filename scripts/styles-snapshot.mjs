@@ -28,7 +28,7 @@ import { fileURLToPath } from 'url'
 const APP_DIR = path.dirname(path.dirname(fileURLToPath(import.meta.url)))
 
 // Dieselbe Liste wie in smoke.mjs: jede Route aus App.tsx samt Sub-Tabs.
-const PROJECT_ROUTES = ['', '/config', '/config?tab=content', '/config?tab=localization', '/layout',
+const PROJECT_ROUTES = ['', '/config', '/config?tab=localization', '/layout',
   '/styles', '/styles?tab=theme', '/styles?tab=variables', '/styles?tab=customCss', '/templates',
   '/plugins', '/plugins?tab=marketplace', '/server', '/sync', '/publish', '/updates', '/backups']
 

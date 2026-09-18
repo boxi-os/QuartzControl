@@ -44,7 +44,7 @@ export const SCENES = [
   },
   {
     name: 'dialog-content-quelle',
-    route: '/config?tab=content',
+    route: '/config',
     click: 'content.changeSource',
     shot: DIALOG,
     caption: 'Die Content-Quelle wechseln — der bisherige Ordner wird beiseitegelegt, nicht gelöscht.'

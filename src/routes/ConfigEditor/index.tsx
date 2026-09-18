@@ -17,19 +17,25 @@ import Localization from './Localization'
 import HandbookLink from '../../components/HandbookLink'
 
 // Welches Kapitel diesen Reiter erklärt. Der Verweis im Kopf folgt dem offenen Reiter, nicht der
-// Seite - drei Reiter, drei Kapitel.
-const HANDBOOK = { site: 'site', content: 'content', localization: 'localization' } as const
+// Seite - zwei Reiter, zwei Kapitel. Das Kapitel zum Content-Ordner verlinkt seine Karte selbst.
+const HANDBOOK = { site: 'site', localization: 'localization' } as const
 
-// The three things that describe *what* the site is rather than how it looks: its own settings,
-// where its notes come from, and the wording of its fixed interface texts. They used to be three
-// sidebar entries; two of them are a single card and a single form, so they are sub-tabs here.
-export type ConfigTab = 'site' | 'content' | 'localization'
+// The things that describe *what* the site is rather than how it looks: its own settings, where
+// its notes come from, and the wording of its fixed interface texts. They used to be three sidebar
+// entries, then three sub-tabs here. The content folder was a tab of its own until 2026-09-18 and
+// never more than one card on it - a screen that is a card is a card, so it now sits at the top of
+// "Website", as the first thing the site is made of.
+export type ConfigTab = 'site' | 'localization'
 
-const TAB_ORDER: ConfigTab[] = ['site', 'content', 'localization']
+const TAB_ORDER: ConfigTab[] = ['site', 'localization']
 
 function isTab(value: string | null): value is ConfigTab {
   return value !== null && (TAB_ORDER as string[]).includes(value)
 }
+
+// `?tab=content` is what every link into the content folder said until it moved, and a bookmark or
+// an older in-app link still may: it means the tab that holds the card now.
+const LEGACY_SITE_TAB = 'content'
 
 export default function ConfigEditor(): JSX.Element {
   const { t } = useTranslation()
@@ -40,7 +46,7 @@ export default function ConfigEditor(): JSX.Element {
   // any in-app link land where they say), and the remembered tab only fills in when the URL says
   // nothing - which is exactly the sidebar's own NavLink, since it carries no search string.
   const [lastTab, setLastTab] = useStickyState<ConfigTab>('config.tab', 'site')
-  const tab: ConfigTab = isTab(rawTab) ? rawTab : lastTab
+  const tab: ConfigTab = rawTab === LEGACY_SITE_TAB ? 'site' : isTab(rawTab) ? rawTab : isTab(lastTab) ? lastTab : 'site'
 
   const [config, setConfig] = useState<QuartzConfig | null>(null)
   // What the file held when it was read, so "unsaved" is a comparison. Stringified once per change
@@ -65,7 +71,11 @@ export default function ConfigEditor(): JSX.Element {
   // sidebar round-trip drops the user on a tab they never chose.
   useEffect(() => {
     if (isTab(rawTab)) setLastTab(rawTab)
-  }, [rawTab, setLastTab])
+    if (rawTab === LEGACY_SITE_TAB) {
+      setLastTab('site')
+      setSearchParams({}, { replace: true })
+    }
+  }, [rawTab, setLastTab, setSearchParams])
 
   const dirty = useMemo(
     () => config !== null && savedSnapshot !== null && JSON.stringify(config) !== savedSnapshot,
@@ -167,6 +177,12 @@ export default function ConfigEditor(): JSX.Element {
 
       {tab === 'site' && (
         <>
+          {/* Outside the config's own loading and error states: the content folder is not in
+              quartz.config.yaml, and a config the app cannot read is no reason to hide where the
+              notes come from. The same grid as the form below, so it lines up with it. */}
+          <div className="mb-4 grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+            <ContentFolder />
+          </div>
           {loadError && (
             <div className="max-w-xl">
               <p className="mb-2 text-sm font-medium text-red-600 dark:text-red-400">{t('configEditor.loadError')}</p>
@@ -208,7 +224,6 @@ export default function ConfigEditor(): JSX.Element {
           )}
         </>
       )}
-      {tab === 'content' && <ContentFolder />}
       {tab === 'localization' && <Localization />}
     </div>
   )

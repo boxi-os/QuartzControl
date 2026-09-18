@@ -347,7 +347,8 @@ export default {
     }
   },
   content: {
-    currentFolder: 'Current content folder',
+    label: 'Content folder',
+    cardHint: 'The folder with your Markdown notes — as a real copy, or linked to an existing folder, e.g. your Obsidian vault.',
     loading: 'Loading…',
     noFolder: 'No content/ folder found.',
     symlinkBadge: 'Symbolic link',
@@ -722,12 +723,10 @@ export default {
   configEditor: {
     tabs: {
       site: 'Site',
-      content: 'Content folder',
       localization: 'Localization'
     },
     descriptions: {
-      site: 'Basic settings for your site — title, address, and language.',
-      content: 'The folder with your Markdown notes — as a real copy, or linked to an existing folder, e.g. your Obsidian vault.',
+      site: 'Basic settings for your site — the folder with your notes, title, address, and language.',
       localization:
         'The site’s built-in text labels (e.g. “Search”, “Last modified”) in the available languages. Core texts only — plugin texts are not covered here.'
     },

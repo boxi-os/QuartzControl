@@ -353,7 +353,7 @@ export default function ProjectDashboard(): JSX.Element {
       icon: Link2,
       title: t('dashboard.attention.contentTargetMissing'),
       detail: content.symlinkTarget,
-      to: 'config?tab=content',
+      to: 'config',
       linkLabel: t('dashboard.contentTab')
     })
   }
@@ -363,7 +363,7 @@ export default function ProjectDashboard(): JSX.Element {
       tone: 'amber',
       icon: Link2,
       title: t('dashboard.attention.contentMissing'),
-      to: 'config?tab=content',
+      to: 'config',
       linkLabel: t('dashboard.contentTab')
     })
   }
@@ -374,7 +374,7 @@ export default function ProjectDashboard(): JSX.Element {
       icon: Link2,
       title: t('dashboard.attention.noIndex'),
       detail: t('dashboard.attention.noIndexDetail'),
-      to: 'config?tab=content',
+      to: 'config',
       linkLabel: t('dashboard.contentTab')
     })
   }

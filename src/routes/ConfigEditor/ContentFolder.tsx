@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Folder } from 'lucide-react'
 import { useProject } from '../ProjectLayout'
 import type { ContentProgress, ContentStatus, ContentStrategy } from '@shared/ipc-contract'
-import { Badge, Button, Card, CardHeading, Field, FormActions, Modal, Select, TextInput } from '../../components/ui'
+import { Badge, Button, Field, FieldGroup, FormActions, Modal, Select, TextInput } from '../../components/ui'
+import HandbookLink from '../../components/HandbookLink'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { announce } from '../../state/announcer'
 
@@ -93,15 +93,16 @@ export default function ContentFolder(): JSX.Element {
   }
 
   return (
-    <div>
-      {/* The one block on this tab, and it's four short lines - the cap sits on the card rather
-          than on the page, so it's this content saying how wide it wants to be. */}
-      <Card className="max-w-2xl">
-        <CardHeading icon={Folder} className="mb-3">{t('content.currentFolder')}</CardHeading>
-        {!status && <p className="text-sm text-text-muted">{t('content.loading')}</p>}
-        {status && !status.exists && <p className="text-sm text-amber-600">{t('content.noFolder')}</p>}
+    <>
+      {/* A group of the "Website" form rather than a card of its own: every other part of that
+          tab is a labelled field or group (the project picture is the model), and a lone card
+          above them read as a different kind of thing. It is the one part of the tab with a
+          chapter of its own - the header's link names the tab's, so this one names the folder's. */}
+      <FieldGroup label={t('content.label')} className="md:col-span-2 2xl:col-span-3">
+        {!status && <p className="text-text-muted">{t('content.loading')}</p>}
+        {status && !status.exists && <p className="text-amber-600">{t('content.noFolder')}</p>}
         {status?.exists && (
-          <div className="flex flex-col gap-1 text-sm">
+          <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
               <Badge tone={status.isSymlink ? (status.targetExists ? 'slate' : 'red') : 'green'}>
                 {status.isSymlink ? t('content.symlinkBadge') : t('content.realFolderBadge')}
@@ -110,9 +111,9 @@ export default function ContentFolder(): JSX.Element {
                 <span className="text-text-muted">{t('content.filesCount', { count: status.fileCount })}</span>
               )}
             </div>
-            <p className="text-text-muted">{status.path}</p>
+            <p className="break-all text-text-muted">{status.path}</p>
             {status.isSymlink && (
-              <p className={status.targetExists ? 'text-text-muted' : 'text-red-600 dark:text-red-400'}>
+              <p className={`break-all ${status.targetExists ? 'text-text-muted' : 'text-red-600 dark:text-red-400'}`}>
                 → {status.symlinkTarget}
                 {!status.targetExists && t('content.targetMissingSuffix')}
               </p>
@@ -120,20 +121,22 @@ export default function ContentFolder(): JSX.Element {
           </div>
         )}
         {status?.hasIndex === false && (
-          <div className="mt-3 flex flex-col items-start gap-2">
-            <p className="text-sm text-amber-700 dark:text-amber-400">{t('content.noIndex')}</p>
+          <div className="mt-1 flex flex-col items-start gap-2">
+            <p className="text-amber-700 dark:text-amber-400">{t('content.noIndex')}</p>
             <Button variant="ghost" onClick={openIndexDialog}>
               {t('content.createIndex')}
             </Button>
           </div>
         )}
         {indexFallback && status?.hasIndex && (
-          <p className="mt-3 text-sm text-amber-700 dark:text-amber-400">{t('content.indexCreatedFallback')}</p>
+          <p className="mt-1 text-amber-700 dark:text-amber-400">{t('content.indexCreatedFallback')}</p>
         )}
-        <Button className="mt-4" variant="ghost" onClick={() => setShowDialog(true)}>
+        <Button className="mt-1 self-start" variant="ghost" onClick={() => setShowDialog(true)}>
           {t('content.changeSource')}
         </Button>
-      </Card>
+        <span className="text-micro text-text-muted">{t('content.cardHint')}</span>
+        <HandbookLink page="content" />
+      </FieldGroup>
 
       {indexDialog && status && (
         <Modal
@@ -209,6 +212,6 @@ export default function ContentFolder(): JSX.Element {
             </div>
         </Modal>
       )}
-    </div>
+    </>
   )
 }

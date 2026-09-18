@@ -7,7 +7,6 @@
 export const PROJECT_ROUTES = [
   ['Übersicht', ''],
   ['Konfiguration', '/config'],
-  ['Konfiguration · Content-Ordner', '/config?tab=content'],
   ['Konfiguration · Übersetzungen', '/config?tab=localization'],
   ['Layout', '/layout'],
   ['Layout · Seitentypen', '/layout?tab=pagetypes'],

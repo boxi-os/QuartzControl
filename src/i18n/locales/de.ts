@@ -348,7 +348,8 @@ export default {
     }
   },
   content: {
-    currentFolder: 'Aktueller Content-Ordner',
+    label: 'Content-Ordner',
+    cardHint: 'Der Ordner mit deinen Markdown-Notizen — als echte Kopie oder verknüpft mit einem bestehenden Ordner, z. B. deinem Obsidian-Vault.',
     loading: 'Lade…',
     noFolder: 'Kein Content-Ordner gefunden.',
     symlinkBadge: 'Symbolischer Link',
@@ -725,12 +726,10 @@ export default {
   configEditor: {
     tabs: {
       site: 'Website',
-      content: 'Content-Ordner',
       localization: 'Übersetzungen'
     },
     descriptions: {
-      site: 'Grundeinstellungen deiner Website — Titel, Adresse und Sprache.',
-      content: 'Der Ordner mit deinen Markdown-Notizen — als echte Kopie oder verknüpft mit einem bestehenden Ordner, z. B. deinem Obsidian-Vault.',
+      site: 'Grundeinstellungen deiner Website — der Ordner mit deinen Notizen, Titel, Adresse und Sprache.',
       localization:
         'Feste Textbausteine der Website (z. B. „Suche“, „Zuletzt geändert“) in den verfügbaren Sprachen. Nur Kern-Texte — eigene Plugin-Texte werden hier nicht erfasst.'
     },

@@ -807,3 +807,23 @@ auf diesem Rechner nicht — Apples und das mitgelieferte tragen keine, die Debi
 erreichbar. **Auf der VM nachzuholen:** `LANG=de_DE.UTF-8` in der Sitzung, halber Merge, eine
 gemergte Datei ändern, „Merge abbrechen“ — der Kasten muss den Satz der App über gits englischem
 Text zeigen; ohne diese Änderung stünde dort nur gits deutscher.
+
+**Nachtrag (2026-09-18, zweiunddreißigstes Review, Befund 6): Die Sprache von gits Text ist jetzt
+gemessen — an GNU `libintl`, nicht an glibc.** Das Review hat ein git 2.53.0 mit Übersetzungen aus
+der Quelle gebaut (gegen Homebrews `gettext`, im Scratchpad, nichts installiert, zwei Minuten) und
+den Dienst als Bündel alt gegen neu laufen lassen, „would be overwritten“ und der verweigerte
+Abbruch:
+
+    alt, LANG=de                                gits Text deutsch, KEIN Satz der App
+    neu, LANG=de                                Satz da, gits Text englisch
+    neu, LC_ALL=de (LANG=en)                    Satz da
+    neu, LANGUAGE=de:en, LANG=de                Satz da
+    neu, LANGUAGE + LC_ALL + LC_MESSAGES alle de Satz da
+
+Zwei Sätze oben tragen dabei nicht: „Entry '%s' not uptodate“ steht nicht im Katalog, **sein
+Vorsatz schon** (`error: ` → `Fehler: `) — am alten Stand griff das äußere Muster, das innere
+(`^error: Entry`) nicht, und der Satz kam ohne Namen. Und „überall sonst wird gits Text gezeigt,
+nicht gelesen“ verschweigt, dass er bei diesen zwei Aufrufen gelesen *und* gezeigt wird: Wer ein
+deutsches git hat, liest in ihrem Kasten jetzt englischen git-Text. Hingenommen, jetzt gesagt.
+Offen bleibt glibc (`LC_ALL=''` als „nicht gesetzt“); gelesen verhält es sich dort gleich. Den
+Nachholpunkt für die VM oben ersetzt das bis auf diese eine Frage.

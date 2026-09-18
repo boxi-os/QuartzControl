@@ -500,7 +500,17 @@ export default function FrameBuilder({
     // Standing on a cell means standing in its middle - which for a placed area just picked up is
     // its start cell, not where its chip's centre happens to fall (see collisionDetection). Over a
     // box or the tray the geometry decides as on the global board.
+    //
+    // `scrollBehavior: 'auto'`, because an arrow whose target lies past the middle of a scroller
+    // does not move the chip but scrolls, and dnd-kit's default scrolls smoothly over ~300ms.
+    // Meanwhile no target centre sits on the chip, the fallback takes the smallest target under
+    // it - a column gap, which belongs to the area's own box - and the announcement said "back on
+    // its starting place" between two columns; a Space in that window dropped the area there, and
+    // held arrows lost steps. Since the board scrolls sideways (24px columns) that was every wide
+    // box on desktop (thirtieth review, finding 1, measured at 1280 and 1470px; a jump instead of
+    // a glide: no intermediate sentence either way, four arrows 40ms apart all count).
     useSensor(KeyboardSensor, {
+      scrollBehavior: 'auto',
       coordinateGetter: nearestDroppableCoordinatesFrom((context) =>
         context.over && parseCellId(String(context.over.id)) ? context.over.id : null
       )

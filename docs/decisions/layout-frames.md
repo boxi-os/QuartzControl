@@ -1111,3 +1111,25 @@ unverändert. Eine Verschiebung: Beim zweiten ↑ von `right` in die Ablage (Fra
 Ansage während des weichen Scrollens „Zeile 1, Spalte 8“ als Zwischenziel, wo vorher „liegt über
 header“ stand — ein Zwischenziel gab es also schon; jetzt ist es eine Zelle statt des Kastens,
 weil die Mitte des Chips nicht mehr in einen 64-px-Abstand fällt.
+
+**Nachtrag (2026-09-18, dreißigstes Review, Befund 1): Der `KeyboardSensor` des Frame-Builders
+rollt ohne Gleiten.** Liegt das Ziel eines Pfeils jenseits der Mitte des Rollers, bewegt dnd-kit
+nicht den Chip, sondern rollt den Behälter, per Vorgabe weich über rund 300 ms. In diesem Fenster
+liegt keine Zielmitte auf dem Chip, der Rückfall nimmt das kleinste Ziel darunter — einen
+Spaltenabstand, also den eigenen Kasten —, und die Ansage sagte zwischen zwei Spalten „liegt
+wieder auf seinem Ausgangsplatz“; eine Leertaste in dem Fenster legte dort ab, gehaltene Pfeile
+verloren Schritte. Seit dem waagerechten Roller (Nachtrag darüber) war das jeder breite Kasten auf
+Desktop. Damit tragen zwei Sätze oben nicht: „ein Zwischenziel erschien dabei in keiner Szene“
+(senkrecht gab es das schon vorher, mehrzeiliger Kasten durch die eigenen Zeilen) und „die
+Tastatur- und Mausszenen … unverändert“ — die Szene des 29. Durchgangs stand mit dem Roller schon
+am Anschlag, bevor der erste Pfeil fiel; der echte Tastaturweg (Tab auf den Griff, Pause) rollte.
+Jetzt `scrollBehavior: 'auto'`. Gebaute App, Kopie mit `right` ausgeblendet, Frame „focus“,
+`page-body`, Tab · Space · → → → → · Space:
+
+    1280 px, 1200 ms je Taste   vorher dreimal „… Ausgangsplatz“ dazwischen   jetzt Spalte 5 · 6 · 7 · 8, keine Zwischenansage
+    1280 px,   40 ms je Taste   vorher Spalte 7                                jetzt Spalte 8
+    1470 px                     vorher einmal „… Ausgangsplatz“                jetzt keine
+    mehrzeilig (left 3 × 1), ↓ ↓ ↑   vorher „Zeile 4 · Ausgangsplatz · Zeile 3“   jetzt ohne Zwischenansage, Plätze wie vorher
+
+Nicht gemessen: ob der Sprung statt des Gleitens für Sehende stört, und das Layout-Board — es
+behält die Vorgabe; ob dort ein weiches Rollen dasselbe Zwischenziel erzeugt, ist offen.

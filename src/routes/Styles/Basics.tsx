@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { QuartzConfig } from '@shared/ipc-contract'
-import { Button, Field, Select, TextInput, Toggle } from '../../components/ui'
-import { CURATED_GOOGLE_FONTS } from '../../data/googleFonts'
+import type { FontFaceInfo, QuartzConfig } from '@shared/ipc-contract'
+import { Button, Combobox, Field, Select, TextInput, Toggle, type ComboboxOption } from '../../components/ui'
+import { GOOGLE_FONTS, GOOGLE_FONTS_FETCHED, type GoogleFontCategory } from '../../data/googleFonts'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { CSS_FIXES, type CssFix } from './cssFixes'
 import {
@@ -19,7 +19,15 @@ import ColorPicker from './ColorPicker'
 
 type Theme = QuartzConfig['theme']
 const TYPOGRAPHY_KEYS = ['header', 'body', 'code'] as const
-const GOOGLE_FONTS_DATALIST_ID = 'quartzcontrol-google-fonts'
+const GOOGLE_FAMILIES = new Set(GOOGLE_FONTS.map(([family]) => family))
+
+// A typography entry is a bare family name or `{ name, weights?, includeItalic? }` (fontSpec.ts
+// reads both); the field edits the name and leaves the rest of an object alone.
+function familyOf(spec: unknown): string {
+  if (typeof spec === 'string') return spec
+  if (spec && typeof spec === 'object' && typeof (spec as { name?: unknown }).name === 'string') return (spec as { name: string }).name
+  return ''
+}
 
 // The bottom layer of the cascade: the 9 classic colors and 3 font slots Quartz writes straight
 // into :root (quartz/util/theme.ts::joinStyles) - everything the other three tabs do sits on top of
@@ -29,8 +37,17 @@ export default function Basics(): JSX.Element {
   const { t } = useTranslation()
   const { config, setConfig, saveConfig, registerSave, goToTab, reloadScss, project, graph, graphLoading } = useStyles()
   const theme = config.theme
+  const [faces, setFaces] = useState<FontFaceInfo[]>([])
+  const themeId = activeThemeIdOf(config)
 
   useEffect(() => registerSave(saveConfig))
+
+  // Under "local" the suggestions are the families the project itself declares - that is all a
+  // local font source can render. Read again after a font import below adds one.
+  const reloadFaces = useCallback(() => {
+    window.quartzGui.styles.fontFaces(project.path, themeId).then(setFaces)
+  }, [project.path, themeId])
+  useEffect(reloadFaces, [reloadFaces])
 
   function onChange(next: Theme): void {
     setConfig({ ...config, theme: next })
@@ -41,7 +58,11 @@ export default function Basics(): JSX.Element {
   }
 
   function setTypography(key: string, value: string): void {
-    onChange({ ...theme, typography: { ...(theme.typography ?? {}), [key]: value } })
+    const current: unknown = theme.typography?.[key]
+    // The contract types an entry as a string, but Quartz also takes the object form, and a field
+    // that edits the name must not throw away the weights next to it.
+    const next = current && typeof current === 'object' ? ({ ...current, name: value } as unknown as string) : value
+    onChange({ ...theme, typography: { ...(theme.typography ?? {}), [key]: next } })
   }
 
   // Matches regardless of which theme is picked - the warning is about the plugin overriding these
@@ -50,6 +71,17 @@ export default function Basics(): JSX.Element {
     (p) => p.enabled && typeof p.source === 'string' && p.source.startsWith('@quartz-themes/')
   )
   const fontOrigin = (theme.fontOrigin as string) ?? 'googleFonts'
+  const categoryLabel: Record<GoogleFontCategory, string> = {
+    'sans-serif': t('themeEditor.fontCategory.sansSerif'),
+    serif: t('themeEditor.fontCategory.serif'),
+    monospace: t('themeEditor.fontCategory.monospace'),
+    display: t('themeEditor.fontCategory.display'),
+    handwriting: t('themeEditor.fontCategory.handwriting')
+  }
+  const fontOptions: ComboboxOption[] =
+    fontOrigin === 'local'
+      ? [...new Map(faces.map((f) => [f.family, { value: f.family, meta: f.origin === 'theme' ? t('themeEditor.fontFromTheme') : f.source }])).values()]
+      : GOOGLE_FONTS.map(([family, category]) => ({ value: family, meta: categoryLabel[category] }))
 
   // Which of these values the active theme actually takes over, asked per variable rather than
   // assumed for all of them. The answer comes from the installed theme's own :root block (see
@@ -100,24 +132,39 @@ export default function Basics(): JSX.Element {
               serve locally", it means Quartz fetches nothing at all. Whether the fetched fonts are
               self-hosted is the separate switch below. */}
           <span className="text-micro text-text-muted">
-            {fontOrigin === 'local' ? t('themeEditor.localHint') : t('themeEditor.googleFontsHint')}
+            {fontOrigin === 'local' ? t('themeEditor.localHint') : t('themeEditor.googleFontsHint', { count: GOOGLE_FONTS.length })}
           </span>
         </Field>
 
-        <datalist id={GOOGLE_FONTS_DATALIST_ID}>
-          {CURATED_GOOGLE_FONTS.map((name) => (
-            <option key={name} value={name} />
-          ))}
-        </datalist>
         {TYPOGRAPHY_KEYS.map((key) => {
           const overridden = overriddenByTheme(FONT_VARIABLE[key])
+          const family = familyOf(theme.typography?.[key])
+          // Google's CSS2 API answers an unknown family with an error page, and it is case-sensitive:
+          // "open sans" fails where "Open Sans" works (measured). The list is from a fixed date, so a
+          // name missing from it is worth a sentence, not a refusal.
+          const unknownToGoogle = fontOrigin !== 'local' && family.trim() !== '' && !GOOGLE_FAMILIES.has(family.trim())
+          const spelledDifferently = unknownToGoogle
+            ? GOOGLE_FONTS.find(([name]) => name.toLowerCase() === family.trim().toLowerCase())?.[0]
+            : undefined
           return (
             <Field key={key} label={t('themeEditor.fontFor', { slot: key })} muted={overridden}>
-              <TextInput
-                list={GOOGLE_FONTS_DATALIST_ID}
-                value={theme.typography?.[key] ?? ''}
-                onChange={(e) => setTypography(key, e.target.value)}
+              <Combobox
+                value={family}
+                onChange={(next) => setTypography(key, next)}
+                options={fontOptions}
+                emptyText={fontOrigin === 'local' ? t('themeEditor.fontNoLocalMatch') : t('themeEditor.fontNoGoogleMatch')}
               />
+              {spelledDifferently ? (
+                <span className="text-micro text-amber-700 dark:text-amber-400">
+                  {t('themeEditor.fontSpelledDifferently', { name: spelledDifferently })}
+                </span>
+              ) : (
+                unknownToGoogle && (
+                  <span className="text-micro text-amber-700 dark:text-amber-400">
+                    {t('themeEditor.fontUnknownToGoogle', { date: GOOGLE_FONTS_FETCHED })}
+                  </span>
+                )
+              )}
               {overridden && (
                 <span className="text-micro text-amber-700 dark:text-amber-400">{t('themeEditor.overriddenByTheme')}</span>
               )}
@@ -134,6 +181,7 @@ export default function Basics(): JSX.Element {
         projectPath={project.path}
         onImported={(family, slot) => {
           if (slot) setTypography(slot, family)
+          reloadFaces()
           // The import wrote an @font-face block into custom.scss - pull that change into the
           // draft the "Eigenes CSS" tab edits, or its next save would undo it.
           void reloadScss('fontImport')

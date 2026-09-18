@@ -821,7 +821,21 @@ export default {
     overriddenShort: 'theme',
     fontSource: 'Font source',
     googleFonts: 'Google Fonts',
-    googleFontsHint: 'Quartz fetches the chosen fonts from Google. How they are delivered is the switch below.',
+    googleFontsHint:
+      'Quartz fetches the chosen fonts from Google; the font fields offer all {{count}} Google Fonts, typing filters. How they are delivered is the switch below.',
+    fontCategory: {
+      sansSerif: 'Sans serif',
+      serif: 'Serif',
+      monospace: 'Monospace',
+      display: 'Display',
+      handwriting: 'Handwriting'
+    },
+    fontFromTheme: 'Theme',
+    fontNoGoogleMatch: 'No Google font by this name',
+    fontNoLocalMatch: 'No font by this name is declared in the project',
+    fontSpelledDifferently: 'Google is case-sensitive — you probably mean “{{name}}”.',
+    fontUnknownToGoogle:
+      'Google does not list this name (list from {{date}}). If Google really does not know it, the site will be missing the font.',
     localHint: 'Quartz then fetches nothing at all — the font has to be present already, e.g. via “Import your own font” below.',
     local: 'Bring your own',
     fontFor: 'Font ({{slot}})',

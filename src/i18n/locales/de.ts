@@ -824,7 +824,21 @@ export default {
     overriddenShort: 'Theme',
     fontSource: 'Font-Quelle',
     googleFonts: 'Google Fonts',
-    googleFontsHint: 'Quartz holt die gewählten Schriften bei Google. Wie sie ausgeliefert werden, entscheidet der Schalter unten.',
+    googleFontsHint:
+      'Quartz holt die gewählten Schriften bei Google; die Schriftfelder bieten alle {{count}} Google Fonts zur Auswahl, Tippen filtert. Wie sie ausgeliefert werden, entscheidet der Schalter unten.',
+    fontCategory: {
+      sansSerif: 'Serifenlos',
+      serif: 'Serif',
+      monospace: 'Monospace',
+      display: 'Display',
+      handwriting: 'Handschrift'
+    },
+    fontFromTheme: 'Theme',
+    fontNoGoogleMatch: 'Keine Google-Schrift mit diesem Namen',
+    fontNoLocalMatch: 'Keine im Projekt deklarierte Schrift mit diesem Namen',
+    fontSpelledDifferently: 'Google unterscheidet Groß- und Kleinschreibung — gemeint ist wohl „{{name}}“.',
+    fontUnknownToGoogle:
+      'Diesen Namen führt Google nicht (Liste vom {{date}}). Kennt Google ihn wirklich nicht, fehlt die Schrift auf der Website.',
     localHint: 'Quartz lädt dann gar nichts — die Schrift muss selbst vorliegen, z. B. über „Eigene Schriftart importieren“ unten.',
     local: 'Selbst mitgebracht',
     fontFor: 'Schriftart ({{slot}})',

@@ -199,6 +199,160 @@ export function Select(props: SelectHTMLAttributes<HTMLSelectElement>): JSX.Elem
   )
 }
 
+export interface ComboboxOption {
+  value: string
+  // A word to the right of the name (a font's category). Decoration: filtering reads `value` only.
+  meta?: string
+}
+
+// A text field with a list of suggestions that scrolls. It replaces `<datalist>`, whose popup
+// Chromium draws itself as a native widget: in this app it could not be scrolled, so with 78 fonts
+// the entries past the bottom edge of the window were out of reach (reported from the alpha, not
+// reproducible under Playwright, which cannot see that widget). A list of 1946 fonts needs one that
+// is part of the page.
+//
+// The value is free text, as it was with the datalist: the list suggests, it does not gate. The
+// ARIA combobox pattern with `aria-activedescendant`, so the focus stays in the field while the
+// arrows walk the list. It opens on a press in the field and on typing, not on focus: a Tab through
+// the page should not drop a list over the next field.
+//
+// It sits inside `Field`, which is a `<label>`, so there is no toggle button (a button inside a
+// label is what `FieldGroup` exists to avoid). The press that opens it is `mousedown` on the input,
+// not `click`: a click on an option inside the label is forwarded to the input as a click, and a
+// click handler would reopen the list the pick had just closed.
+export function Combobox({
+  value,
+  onChange,
+  options,
+  emptyText,
+  className = '',
+  ...props
+}: Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'role'> & {
+  value: string
+  onChange: (value: string) => void
+  options: readonly ComboboxOption[]
+  // What the list says when nothing matches the typed text.
+  emptyText: string
+}): JSX.Element {
+  const listId = useId()
+  const [open, setOpen] = useState(false)
+  // `null` while nothing has been typed since the list opened: then it shows everything, with the
+  // current value highlighted, rather than a list filtered down to the one name already there.
+  const [query, setQuery] = useState<string | null>(null)
+  const [active, setActive] = useState(-1)
+  const listRef = useRef<HTMLUListElement>(null)
+
+  const needle = (query ?? '').trim().toLowerCase()
+  const filtered = !needle
+    ? options
+    : [
+        ...options.filter((o) => o.value.toLowerCase().startsWith(needle)),
+        ...options.filter((o) => !o.value.toLowerCase().startsWith(needle) && o.value.toLowerCase().includes(needle))
+      ]
+
+  function openList(): void {
+    setOpen(true)
+    setQuery(null)
+    setActive(options.findIndex((o) => o.value === value))
+  }
+
+  function pick(option: ComboboxOption): void {
+    onChange(option.value)
+    setOpen(false)
+    setQuery(null)
+  }
+
+  useLayoutEffect(() => {
+    if (!open || active < 0) return
+    listRef.current?.querySelector(`[data-index="${active}"]`)?.scrollIntoView({ block: 'nearest' })
+  }, [open, active])
+
+  return (
+    <div className="relative">
+      <input
+        {...props}
+        role="combobox"
+        aria-expanded={open}
+        aria-controls={listId}
+        aria-autocomplete="list"
+        aria-activedescendant={open && active >= 0 ? `${listId}-${active}` : undefined}
+        autoComplete="off"
+        spellCheck={false}
+        value={value}
+        onMouseDown={(e) => {
+          props.onMouseDown?.(e)
+          if (open) setOpen(false)
+          else openList()
+        }}
+        onChange={(e) => {
+          onChange(e.target.value)
+          setQuery(e.target.value)
+          setOpen(true)
+          setActive(e.target.value.trim() ? 0 : -1)
+        }}
+        onKeyDown={(e) => {
+          props.onKeyDown?.(e)
+          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault()
+            if (!open) {
+              openList()
+              return
+            }
+            if (filtered.length === 0) return
+            const step = e.key === 'ArrowDown' ? 1 : -1
+            setActive((i) => (i < 0 ? (step > 0 ? 0 : filtered.length - 1) : (i + step + filtered.length) % filtered.length))
+          } else if (e.key === 'Enter' && open && active >= 0 && filtered[active]) {
+            e.preventDefault()
+            pick(filtered[active])
+          } else if (e.key === 'Escape' && open) {
+            // Only while open: a closed field lets Escape through to whatever owns it (a Modal).
+            e.preventDefault()
+            e.stopPropagation()
+            setOpen(false)
+          }
+        }}
+        onBlur={(e) => {
+          props.onBlur?.(e)
+          setOpen(false)
+        }}
+        className={`w-full rounded-[7px] border border-ink/10 bg-surface px-2.5 py-1.5 text-ui text-text shadow-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 disabled:bg-ground disabled:text-text-muted ${className}`}
+      />
+      {open && (
+        <ul
+          ref={listRef}
+          id={listId}
+          role="listbox"
+          // Keeps the focus in the input: a pick is a click, and without this the input would blur
+          // (and close the list) before the click lands.
+          onMouseDown={(e) => e.preventDefault()}
+          className="absolute left-0 top-full z-30 mt-1 max-h-72 w-full min-w-[16rem] overflow-y-auto rounded-[7px] border border-ink/10 bg-surface py-1 text-ui shadow-lg"
+        >
+          {filtered.length === 0 && <li className="px-2.5 py-1.5 text-text-muted">{emptyText}</li>}
+          {filtered.map((option, index) => (
+            <li
+              key={option.value}
+              id={`${listId}-${index}`}
+              data-index={index}
+              role="option"
+              aria-selected={option.value === value}
+              onClick={() => pick(option)}
+              onMouseMove={() => active !== index && setActive(index)}
+              className={`flex cursor-default items-baseline justify-between gap-3 px-2.5 py-1 ${
+                index === active ? 'bg-accent text-accent-fg' : 'text-text'
+              }`}
+            >
+              <span className={`truncate ${option.value === value ? 'font-semibold' : ''}`}>{option.value}</span>
+              {option.meta && (
+                <span className={`shrink-0 text-micro ${index === active ? 'text-accent-fg' : 'text-text-muted'}`}>{option.meta}</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 // A macOS-style switch, used instead of raw checkboxes for boolean settings.
 export function Toggle({
   label,

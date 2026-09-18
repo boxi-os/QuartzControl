@@ -30,6 +30,7 @@
     "template:example": "node scripts/build-example-template.mjs",
     "check:runtime": "node scripts/check-runtime.mjs",
     "fetch:git": "node scripts/fetch-git.mjs",
+    "fetch:google-fonts": "node scripts/fetch-google-fonts.mjs",
     "icon": "node scripts/build-icon.mjs",
     "dist": "npm run build && electron-builder",
     "dist:mac": "npm run build && electron-builder --mac",

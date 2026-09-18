@@ -26,6 +26,7 @@ import { runCommand as run } from './runCommand'
 import { contentDirPath } from './contentService'
 import { readConfig, writeConfig } from './configService'
 import { repointProjectPaths } from './projectPaths'
+import { noteInstallSucceeded } from './updateService'
 import { mainT } from '../i18n'
 
 /** Relative to the project root. Everything else is copied. */
@@ -57,6 +58,12 @@ const SKIP = new Set([
 // verbatim, and the copy's first update pays one extra install for it. Kept because the direction
 // is the safe one: an install that was not needed costs a minute, and dropping the note where the
 // duplicate's own install failed would cost the state it describes.
+//
+// One field of it is corrected after the copy's own install, though: since the note is shown
+// (the badge "Nicht abgeschlossen"), `installFailed` inherited over an install that went through
+// is no longer a minute of npm but a wrong sentence - "npm install failed" a second after it did
+// not (twenty-sixth review, finding 5). The list stays: a plain `npm install` does not put the
+// project's own packages back into package.json.
 
 // Same reasoning as publish-targets.json, one level further: a deploy manifest records what is
 // already lying on a particular server, keyed by the id of a target that stays behind. In the copy
@@ -164,6 +171,8 @@ export async function duplicateProject(options: DuplicateProjectOptions): Promis
   if (!install.success) {
     return { success: false, output: `${mainT('createInstallFailed')}\n${install.output}` }
   }
+  // Not worth failing a finished copy over: at worst the copy keeps the original's sentence.
+  await noteInstallSucceeded(target).catch((error) => console.error('duplicate: could not update the core-update note', error))
 
   return { success: true, output: install.output }
 }

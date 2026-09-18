@@ -685,6 +685,20 @@ async function markInstallPending(
   })
 }
 
+/**
+ * Tells a note that an `npm install` over the whole project has since gone through - for the one
+ * caller that runs one outside a core update: duplicateProject. The copy inherits the note with
+ * its commit (see there), and with `installFailed` it then said "npm install failed" a second after
+ * its own install had not (twenty-sixth review, finding 5). Only that field: the list is a
+ * statement about package.json, and a plain `npm install` does not write the project's own
+ * packages back into it.
+ */
+export async function noteInstallSucceeded(projectPath: string): Promise<void> {
+  const pending = await readPendingInstall(projectPath)
+  if (pending.head === '' || !pending.installFailed) return
+  await markInstallPending(projectPath, pending.head, pending.reinstall, pending.filesAtHead, false, pending.putBack)
+}
+
 async function clearInstallPending(projectPath: string): Promise<void> {
   await writeJsonFile(join(quartzGuiDir(projectPath), PENDING_UPDATE_FILE), {
     installPendingFor: '',

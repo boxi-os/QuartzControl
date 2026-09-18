@@ -236,7 +236,14 @@ export default function GlobalBoard({
       return area?.name ?? group
     }
     if ((POSITIONS as string[]).includes(id)) return t(`positions.${id}`, id)
-    return config.plugins[index]?.name ?? id
+    // With its number where it is one of several, as on its handle (ComponentPill): twelve
+    // instances of quartz-navigations had handles "quartz-navigations #5 verschieben" and
+    // announcements "quartz-navigations aufgenommen … liegt über quartz-navigations" - which one
+    // lay over which, nobody could hear (thirty-second review, nebenbei 3). A palette chip above
+    // stays the bare name: it stands for the component, not for an instance.
+    const plugin = config.plugins[index]
+    if (!plugin) return id
+    return (nameCounts.get(plugin.name) ?? 0) > 1 ? `${plugin.name} #${ranks.get(index) ?? 1}` : plugin.name
   }
   // A palette chip is the one thing on this board whose own place is not its own id: it is called
   // `palette:<index>` and it lies in `palette-drop-zone`. The default `isHome` therefore read every

@@ -171,11 +171,13 @@ steht beim Aufnehmen auf seinem eigenen Feld, ein Chip also auf der Ablage statt
 Spalte 1 (`7466ab5`, gebaute App); und der Sass-Fehler des geschachtelten Import-Blocks sagt einen
 Satz und bietet „Ladereihenfolge neu schreiben“ an (`6ce4c82`, gebaute App: danach ein Block,
 30 von 30 in derselben Reihenfolge, Check grün). Die übrigen zwei (ein Satz in `conventions.md`,
-der seit dieser Runde stimmt, und eine erklärte Zeilenzahl) brauchen nichts. **Dabei aufgefallen,
-nicht mit erledigt:** Der SCSS-Fehler auf der Übersicht verlinkt `styles?tab=css`, einen Reiter,
-den es nicht gibt (er heißt `customCss`), und landet damit auf dem zuletzt offenen; und
-Leertaste · Leertaste auf einem *platzierten* Frame-Bereich sagt „bei Zelle … abgelegt“, obwohl
-nichts wandert (vorher genauso). **Beim Abarbeiten gelesen, nicht gemessen:** die verschobene Zeile in
+der seit dieser Runde stimmt, und eine erklärte Zeilenzahl) brauchen nichts. **Dabei aufgefallen
+und danach, wieder auf Wunsch des Nutzers, auch erledigt:** Der SCSS-Fehler auf der Übersicht
+verlinkte `styles?tab=css`, einen Reiter, den es nicht gibt (er heißt `customCss`), und landete
+damit auf dem zuletzt offenen (`70cde5d`, gebaute App; alle anderen `?tab=` in `src/` und
+`scripts/` nennen echte Reiter); und Leertaste · Leertaste auf einem *platzierten* Frame-Bereich
+sagte „bei Zelle … abgelegt“ und wählte ihn aus, obwohl nichts wanderte — die linke obere Zelle
+der eigenen Platzierung zählt jetzt als eigener Platz (`isOwnPlace`, `08d3f15`, gebaute App). **Beim Abarbeiten gelesen, nicht gemessen:** die verschobene Zeile in
 `absentFromPackageJson` (ein Eintrag, Name nur in einem anderen Abschnitt) und der Weg ohne Plan
 in den zwei `putBack`-Sätzen. Die Frage des Reviews nach einem Release Candidate ist keine Frage an
 den Code; was es dafür vor den Bau stellt — gepackte App je Plattform, neu gebautes Handbuch und

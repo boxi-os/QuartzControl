@@ -257,9 +257,10 @@ so gebaut, dass jede Runde liest, was die vorige gebaut hat.
 
 **Stand:** Die sechs Befunde des zweiunddreißigsten Reviews (kein Befund über Niedrig; Review,
 gelesene Fixes und Auftrag vom selben Modell) sind abgearbeitet, am 2026-09-18 auf
-`fix/review-2026-10-06`, **nicht gemergt, nicht gepusht**. Was die Runde gefunden hat, steht in
-[`docs/REVIEW-2026-10-06.md`](docs/REVIEW-2026-10-06.md), was daraus geworden ist und welche vier
-Punkte die Abarbeitung nebenbei gefunden und offen gelassen hat, oben in
+`fix/review-2026-10-06`, **nicht gemergt, nicht gepusht** — und auf demselben Branch die vier
+Punkte, die die Abarbeitung nebenbei fand, und die ganze Nebenbei-Liste des Reviews. Was die Runde
+gefunden hat, steht in [`docs/REVIEW-2026-10-06.md`](docs/REVIEW-2026-10-06.md), was daraus
+geworden ist und die zwei Punkte, die dabei neu auffielen und offen sind, oben in
 [`docs/reviews.md`](docs/reviews.md). Die Sprache von gits Text ist inzwischen gemessen (an GNU
 `libintl`, nicht an glibc). Das Review empfiehlt vor dem RC keine weitere Runde dieser Art, sondern
 die Liste, die nur der Nutzer abarbeiten kann: VoiceOver über Git-Sync und die zwei Boards, die

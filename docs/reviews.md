@@ -293,13 +293,27 @@ der Satz sagt, wo der Bereich landet — gemessen auch für einen Bereich nur *u
 Rasters, und das Ausblenden im CSS bewusst nicht genommen, weil es `page-body` von der Seite nähme
 (`36efbb1`); der Stash-Satz fragt die Schnittmenge (`f00bbf2`, beide Szenen des Reviews); und
 Kommentar und Nachtrag zu `gitTextEnv()` (`81f8005`, glibc bleibt ungemessen).
-Offen aus der eigenen Nebenbei-Liste der Abarbeitung: dieselbe Zwei-Punkt-Form steht noch in der
-Stash-Klassifikation vor dem Lauf (`HEAD MERGE_HEAD` über die zurückgelegten Pfade); die Felder für
-Zeilen und Spalten des Rasters haben dasselbe `|| 1` wie die Spannen-Felder vorher; `conflictedFiles`
-liest ohne `-z`; und eine eigene vorgemerkte Zeile *auf* einer Datei, die der Merge ebenfalls
-vorgemerkt hat, geht beim Abbruch weiter ohne Wort — nach Pfad ist sie von der Arbeit des Merges
-nicht zu unterscheiden. Aus der Nebenbei-Liste des Reviews ist nichts erledigt. **Diese Fixes hat
-kein Review gelesen.**
+**Danach, auf Wunsch des Nutzers, die vier eigenen Nebenbei-Punkte und die ganze Nebenbei-Liste
+des Reviews** (gleicher Branch, je Commit Typcheck, Build und Smoke): Die Notiz vor einem Abbruch
+fragt gits Regel statt der Zwei-Punkt-Form, und ein Eintrag, dessen Pop an einer geänderten Datei
+scheitern wird, bekommt einen eigenen Satz statt „ein Stand, den es nicht mehr gibt … `git stash
+drop`“ (`e727c0d`, Bündel mit einem neuen Upstream-Stand `L`); die Konfliktliste liest mit `-z`
+(`93facf8`); Zeilen- und Spaltenfeld nehmen `NumberInput` (`c0dcdda`, gebaute App); eine eigene
+Zeile *auf* einer vom Merge vorgemerkten Datei wird über `git merge-tree --write-tree` erkannt, und
+eine von Hand gelöste, vorgemerkte Konfliktdatei damit auch (`fe30ca4`, git ≥ 2.38, ein älteres
+nicht gemessen). Aus der Liste des Reviews: ein Wort „Merge“ statt „Zusammenführen“, und der
+Blockiert-Satz verweist auf den Knopf statt einen Rat zu geben, der seit Befund 2 nicht mehr für
+jede Datei stimmt (`f208f94`, Punkt 4); der Rat für ein volles Raster, ohne „inzwischen“
+(`ae59787`, Punkt 5 und die Anmerkung zu `showRefused`, an der gebauten App befolgt); „this cancel“
+(`9812a84`); ein eigener Satz mit `git add --` für eine aus dem Index genommene Datei (`e2e75b1`,
+Punkt 6); die Drag-Ansagen des Layout-Boards nummerieren Instanzen wie die Griffe (`1b491b6`,
+Punkt 3, nicht mit VoiceOver gehört); und das Layout-Board geht keinen schrägen Pfeilschritt mehr,
+womit Rollstand und Fensterbreite die Antwort nicht mehr ändern und ← + Leertaste kein Löschweg
+mehr ist (`96ab045`, Punkt 1 und 2, elf Szenen bei 1280 und 1470 px wortgleich, Regel in
+`conventions.md`). Dabei neu aufgefallen und offen: die Vorschau eines Branch-Ziels liest
+`git ls-tree` und `git diff --name-status` ohne `-z` (`deploy/gitBranch.ts`, Umlaute kämen dort als
+`\303\244` an; gelesen, nicht gemessen), und die Felder für Zeilen und Spalten sagen `max={12}`,
+ohne dass jemand es durchsetzt — „18“ ergibt 18 Spalten. **Diese Fixes hat kein Review gelesen.**
 
 **Das siebenundzwanzigste Review las beide Schichten** und fand **keinen Befund Hoch, einen
 Mittel, fünf Niedrig**, dazu drei Punkte nebenbei — und der mittlere ist ein Fehler im eigenen

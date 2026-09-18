@@ -915,11 +915,24 @@ async function popCoreUpdateStash(projectPath: string): Promise<StashPopOutcome>
   const older = await coreUpdateStashEntry(projectPath)
   if (older === null) return { success: true, sentences: [], restored, git: popped.output }
   const fits = head !== '' && (await stashBase(projectPath, older)) === head
-  // Not `updateStashFitsHead` here: that sentence advises `git stash pop`, which is right while
-  // nothing has been put back, and refused by git a moment after this pop - both entries hold the
-  // same two files, and they have just been changed again (thirty-first review, finding 2).
-  const note = mainT(fits ? 'updateStashUnderRestored' : 'updateStashLeftover', { entry: older })
+  // Not `updateStashFitsHead` here if the two entries share a file: that sentence advises
+  // `git stash pop`, which git refuses a moment after this pop over any file of the older entry
+  // that has just been changed again (thirty-first review, finding 2). Asked, not assumed: an older
+  // entry holding only package-lock.json under a newer one holding only package.json pops fine,
+  // and the sentence sent the user to copy it by hand (thirty-second review, finding 5).
+  const blocked = fits && (await stashTouchesChangedFiles(projectPath, older))
+  const note = mainT(!fits ? 'updateStashLeftover' : blocked ? 'updateStashUnderRestored' : 'updateStashFitsHead', { entry: older })
   return { success: true, sentences: [note], restored, git: popped.output }
+}
+
+/** Would `git stash pop <entry>` run into a file that stands changed right now? That is what git
+ *  refuses over ("Your local changes to the following files would be overwritten"); a change to
+ *  any other file is no obstacle. Unanswerable counts as yes - the careful sentence. */
+async function stashTouchesChangedFiles(projectPath: string, entry: string): Promise<boolean> {
+  const shown = await run('git', ['stash', 'show', '--name-only', '-z', entry], projectPath)
+  if (!shown.success) return true
+  const changed = new Set(await diffNames(projectPath, 'HEAD'))
+  return shown.output.split('\0').filter(Boolean).some((file) => changed.has(file))
 }
 
 async function conflictedFiles(projectPath: string): Promise<string[]> {

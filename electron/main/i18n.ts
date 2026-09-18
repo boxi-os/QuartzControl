@@ -167,12 +167,14 @@ const STRINGS = {
     updateStashFitsHead:
       'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen ({{entry}} in „git stash list“). Er passt auf den jetzigen Stand, wird aber von dieser App nicht mehr eingetragen: „git stash show -p {{entry}}“ zeigt ihn an, „git stash pop {{entry}}“ trägt ihn ein.',
     // Derselbe ältere Stand, aber unmittelbar nachdem der Abbruch den neueren eingetragen hat. Dann
-    // stimmt „git stash pop trägt ihn ein“ nicht: Beide Einträge dieser App halten package.json
-    // und package-lock.json, die stehen gerade wieder geändert da, und git verweigert den Pop mit
+    // stimmt „git stash pop trägt ihn ein“ nicht, wenn beide Einträge dieselbe Datei halten: die
+    // steht gerade wieder geändert da, und git verweigert den Pop mit
     // „Your local changes … would be overwritten“ (einunddreißigstes Review, Befund 2, gemessen mit
     // einem Eintrag, wie die App ihn schreibt - die Szene davor hielt README.md). Der Satz steht
     // seit der dreißigsten Runde vorn, also sagt er zuerst, dass er von einem *anderen* Eintrag
-    // spricht als der Satz am Ende („… sind wieder eingetragen“).
+    // spricht als der Satz am Ende („… sind wieder eingetragen“). Halten die zwei Einträge
+    // verschiedene Dateien, geht der Pop durch, und es gilt der Satz darüber (zweiunddreißigstes
+    // Review, Befund 5).
     updateStashUnderRestored:
       'Außer dem Stand, den dieser Abbruch wieder einträgt, liegt in git noch ein älterer mit eigenen Paketeinträgen ({{entry}} in „git stash list“). „git stash pop“ nimmt git für ihn jetzt nicht an, weil dieselben Dateien gerade wieder geändert sind: „git stash show -p {{entry}}“ zeigt ihn an — übertrage von Hand, was dir daraus fehlt, und verwirf ihn dann mit „git stash drop {{entry}}“.',
     // Mit seinem Namen wie die zwei Sätze darüber - ohne ihn blieb „git stash list“ eine Liste,

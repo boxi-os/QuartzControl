@@ -496,11 +496,8 @@ export default function FrameBuilder({
     const areaId = id.startsWith(BOX_PREFIX) ? id.slice(BOX_PREFIX.length) : id
     return editing?.areas.find((a) => a.id === areaId)?.name ?? id
   },
-  // An area is dragged by its own id and its place on the grid is a droppable called `box:<id>` -
-  // or, for a chip, the tray it lies in (see inTray). Without the second half a chip let go on its
-  // own tray was "abgelegt" (twenty-seventh review, "nebenbei" 1 - the Layout board's palette chip
-  // of the twenty-fourth, one editor further on).
-  (activeId, overId) => overId === `${BOX_PREFIX}${activeId}` || (overId === TRAY_ID && inTray(activeId)),
+  // Where an area already is - see isOwnPlace.
+  (activeId, overId) => isOwnPlace(activeId, overId),
   // A drop on a cell - or on a box, which means that box's cell - that overlaps another area is
   // refused by handleDrop, and "abgelegt" is then the wrong sentence.
   (activeId, overId) => {
@@ -515,6 +512,21 @@ export default function FrameBuilder({
   function inTray(areaId: string): boolean {
     const placement = editing?.breakpoints[activeBreakpoint].placements[areaId]
     return !placement || placement.hidden === true
+  }
+
+  // Whether a drop target is where the area already is, so that letting go there changes nothing.
+  // Three forms: its own box (`box:<id>`), for a chip the tray it lies in (see inTray), and the cell
+  // its placement starts at - which is also what a keyboard drag of a placed box stands on when it
+  // is picked up. Without the second, a chip let go on its own tray was "abgelegt" (twenty-seventh
+  // review, "nebenbei" 1); without the third, Space · Space on a placed box was "header bei Zelle
+  // Zeile 1, Spalte 1 abgelegt" and selected it, while nothing moved (found while working through
+  // the twenty-eighth review, measured on the built app).
+  function isOwnPlace(areaId: string, over: string): boolean {
+    if (over === `${BOX_PREFIX}${areaId}`) return true
+    if (over === TRAY_ID) return inTray(areaId)
+    const cell = parseCellId(over)
+    const placement = editing?.breakpoints[activeBreakpoint].placements[areaId]
+    return !!cell && !!placement && !placement.hidden && placement.row === cell.row && placement.col === cell.col
   }
 
   // The cell a drop target stands for: a cell by its coordinates, a placed box by where it starts.
@@ -540,13 +552,14 @@ export default function FrameBuilder({
     const areaId = String(event.active.id)
     const over = event.over ? String(event.over.id) : null
     if (!over) return
+    // A drag that ended where it began changes nothing, the selection included - the same answer
+    // the announcement gives. For a chip that is not nothing to lose: unplaceAreaById deletes the
+    // placement of a hidden area, and with it the row, column and spans the chip still shows
+    // (twenty-seventh review, "nebenbei" 1, which read it as a no-op; the review's chip was a
+    // hidden one).
+    if (isOwnPlace(areaId, over)) return
 
     if (over === TRAY_ID) {
-      // A chip let go on its own tray stays what it was. For a hidden area that is not nothing to
-      // lose: unplaceAreaById deletes the placement, and with it the row, column and spans the
-      // chip still shows - on a drag that ended where it began (twenty-seventh review, "nebenbei"
-      // 1, which read it as a no-op; the review's chip was a hidden one).
-      if (inTray(areaId)) return
       unplaceAreaById(areaId)
       setSelectedAreaId(areaId)
       return

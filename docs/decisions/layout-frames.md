@@ -1034,3 +1034,12 @@ steht“, von dem die Pfeiltasten ausgehen. Gemessen an der gebauten App, Kopie 
 
 Dabei aufgefallen und nicht mit erledigt: Leertaste · Leertaste auf einem *platzierten* Bereich
 sagt „header bei Zelle Zeile 1, Spalte 1 abgelegt“, obwohl nichts wandert — vorher genauso.
+**Erledigt im Anschluss:** Die Zelle, an der die Platzierung eines Bereichs beginnt, ist jetzt sein
+eigener Platz, neben `box:<id>` und der Ablage für einen Chip (`isOwnPlace`, zugleich `isHome` der
+Ansagen). Ein Drag, der dort endet, ändert nichts — auch nicht die Auswahl, wie beim Chip auf der
+Ablage. Gebaute App, `header`:
+
+    Space · Space                  „header aufgenommen.“ · „header blieb an seinem Platz.“
+    Space · ↓ · ↑ · Space          … „liegt wieder auf seinem Ausgangsplatz.“ · „blieb an seinem Platz.“
+    Space · ↓ · Space              weiter „bleibt, wo es war — dort überschneidet es sich …“
+    danach                         kein Bereichsformular offen

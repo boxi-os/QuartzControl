@@ -244,10 +244,16 @@ gegengelesen); der verweigerte Abbruch fragt die geänderten Dateien selbst, mit
 Runde des Pfeil-Getters ist ein Ziel, dessen Mitte auf der anderen Achse außerhalb des Fensters
 liegt, kein Schritt (`bbc51c4`, Layout-Board und fünf Frame-Builder-Szenen an der gebauten App,
 Regel in `conventions.md`); und die zwei Kommentare samt einem ungenutzten Import (`2204ff1`).
-Offen aus der Nebenbei-Liste: die drei übersetzten Muster in `explainGitFailure` (gelesen an gits
-`de.po`, nicht gemessen — die VM war aus), die 33 gleichnamigen Griffe des Layout-Boards (für den
-VoiceOver-Durchgang), eine Überschneidung, die in der Datei steht, und `updateLayout`, das
-Platzierungen nicht anfasst. **Diese Fixes hat kein Review gelesen.**
+**Danach, auf Wunsch des Nutzers, die vier offenen Nebenbei-Punkte**
+(`fix/review-2026-10-05-rest`, je Commit Typcheck, Build und Smoke): Die zwei git-Aufrufe, deren
+*Text* `explainGitFailure` liest, bekommen `LC_MESSAGES=C` und ein leeres `LANGUAGE`, weil git drei
+der vier Sätze übersetzt (`179afbf` — **gelesen an gits `de.po`, nicht gemessen**: auf diesem
+Rechner gab es kein git mit Übersetzungen, die VM war aus; gemessen ist nur, dass die Variablen
+ankommen, und was auf der VM nachzuholen ist, steht in `snapshots-and-updates.md`); die Griffe des
+Layout-Boards tragen den Namen ihrer Komponente (`9f213f6`, 33 von 33 verschieden, nicht mit
+VoiceOver gehört); und der Editor warnt vor zwei sichtbaren Bereichen auf einer Zelle und vor einem
+Bereich über das Raster hinaus, der Schalter lehnt auch das Einblenden jenseits des verkleinerten
+Rasters ab (`487d5e7`, ein Commit für Punkt 3 und 4 — eine Funktion, eine Messung). **Diese Fixes hat kein Review gelesen.**
 
 **Das siebenundzwanzigste Review las beide Schichten** und fand **keinen Befund Hoch, einen
 Mittel, fünf Niedrig**, dazu drei Punkte nebenbei — und der mittlere ist ein Fehler im eigenen

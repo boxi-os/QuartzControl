@@ -506,12 +506,15 @@ const PENDING_UPDATE_FILE = 'core-update.json'
 /** What an earlier run left outstanding: the commit it belongs to ('' for "nothing"), the
  *  project's own packages it took out of package.json on the way, whether the two npm-owned
  *  files were exactly HEAD's when that run started - which is what tells a later amend that
- *  everything they differ by now was written by npm - and whether that run's `npm install` failed. */
+ *  everything they differ by now was written by npm - whether that run's `npm install` failed,
+ *  and which names of the list that run's npm wrote back before it failed (see
+ *  listTakenInHandSince - those lines are this app's writing, not an answer). */
 interface PendingInstall {
   head: string
   reinstall: PackageAddition[]
   filesAtHead: boolean
   installFailed: boolean
+  putBack: string[]
 }
 
 /** Why a note's list does or does not still apply - three answers, because two of them end the
@@ -533,9 +536,15 @@ type NoteVerdict = 'stands' | 'answered' | 'unreadable'
  * Asked as "has somebody committed a change to one of these lines", not as "does package.json
  * still look the way the run left it": the file coming back byte for byte is exactly what happens
  * when the user puts a line back and later takes it out again, which is the case this has to
- * catch. A commit does not fire for npm's own rewriting either - as long as what npm wrote is not
- * in the list, which is why a run that fails between two `npm install` calls shortens it before it
- * returns (twenty-fifth review, finding 2a).
+ * catch. A commit does not fire for npm's own rewriting either: a run that fails between two
+ * `npm install` calls has already written the first call's packages back, and the next commit
+ * over those lines - a Git-Sync, say - is then this app's writing, not somebody's answer
+ * (twenty-fifth review, finding 2a). Those names are skipped (`putBack`) rather than taken out of
+ * the list: the lines they stand on are uncommitted and the user did not write them, so a
+ * `git checkout -- package.json` after a failed update takes them away again - and a list that
+ * had been shortened to the rest then named them nowhere. Measured (twenty-sixth review, finding
+ * 1, scene H1): both themes gone for good under "Your own packages put back: own-dev-tool" and a
+ * green badge, where the build before the shortening brought all three back.
  *
  * Asked per package name, not per file, because "has package.json been committed since" fires for
  * three commits that answer nothing. Measured (twenty-fourth review, finding 2, scenes P2, P7 and
@@ -557,6 +566,9 @@ type NoteVerdict = 'stands' | 'answered' | 'unreadable'
  *
  * Not caught: a repair and a removal that are both left uncommitted. The list then still applies,
  * and `stillMissing` cannot tell "not back yet" from "taken out again" - both are a missing entry.
+ * Nor a committed removal of a line this app's npm wrote back itself (`putBack`): the commit that
+ * brings such a line into the history is as likely to be a Git-Sync of the app's writing as the
+ * user's, and of the two ways to be wrong, bringing a package back is the one a click undoes.
  * Nor an answer given *inside* a merge commit - the user resolving a conflict in package.json by
  * hand and writing one of the lines back while doing it (twenty-fifth review, finding 2c). That is
  * the other side of what takes the hand-resolved merge and our own amend out of the picture above,
@@ -582,6 +594,7 @@ async function listTakenInHandSince(projectPath: string, pending: PendingInstall
   // text; a `scripts` value that is exactly the name still matches, which is as close as a regex
   // over a diff gets to asking JSON.
   for (const entry of pending.reinstall) {
+    if (pending.putBack.includes(entry.name)) continue
     const needle = `"${entry.name.replace(/[\\.*+?^${}()|[\]]/g, '\\$&')}"`
     const touched = await run(
       'git',
@@ -613,6 +626,7 @@ async function readPendingInstall(projectPath: string): Promise<PendingInstall> 
     reinstall?: unknown
     filesAtHead?: unknown
     installFailed?: unknown
+    putBack?: unknown
   }>(
     quartzGuiPath(projectPath, PENDING_UPDATE_FILE),
     {}
@@ -635,7 +649,10 @@ async function readPendingInstall(projectPath: string): Promise<PendingInstall> 
         )
       })
     : []
-  return { head, reinstall, filesAtHead, installFailed: raw.installFailed === true }
+  // Names only, and only as a filter over `reinstall` - a name here that the list does not carry
+  // does nothing, so there is nothing further to check.
+  const putBack = Array.isArray(raw.putBack) ? raw.putBack.filter(safe) : []
+  return { head, reinstall, filesAtHead, installFailed: raw.installFailed === true, putBack }
 }
 
 async function markInstallPending(
@@ -646,13 +663,16 @@ async function markInstallPending(
   // Set by the one run that knows it: the one whose `npm install` came back non-zero. Default
   // false, so a note from a build before this field existed reads as it did - "npm has had its
   // turn" - rather than turning every project with an old note lying around into a pending one.
-  installFailed = false
+  installFailed = false,
+  // The names of `reinstall` this app's own npm has written back (see listTakenInHandSince).
+  putBack: string[] = []
 ): Promise<void> {
   await writeJsonFile(join(quartzGuiDir(projectPath), PENDING_UPDATE_FILE), {
     installPendingFor: head,
     reinstall,
     filesAtHead,
-    installFailed
+    installFailed,
+    putBack: putBack.filter((name) => reinstall.some((entry) => entry.name === name))
   })
 }
 
@@ -661,7 +681,8 @@ async function clearInstallPending(projectPath: string): Promise<void> {
     installPendingFor: '',
     reinstall: [],
     filesAtHead: false,
-    installFailed: false
+    installFailed: false,
+    putBack: []
   })
 }
 
@@ -1202,6 +1223,9 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     // about package.json, not about HEAD: `noteOverruled` asks it directly, and `stillMissing`
     // drops whatever is already there anyway.
     const carried = pendingFor !== '' && noteOverruled === 'stands' ? pending.reinstall : []
+    // What an earlier run's npm wrote back stays marked as such for as long as the list is carried:
+    // the lines are no less this app's writing for a second run having started.
+    const carriedPutBack = carried.length > 0 ? pending.putBack : []
     // The same question one run later: a run that takes over an earlier one's merge commit cannot
     // measure what the two files looked like before *that* run started, so it reads the answer the
     // note carries rather than its own - by then npm has written them at least once.
@@ -1216,7 +1240,7 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
       // `[]` over the list it is about to use. It survived exactly one failed install. Measured
       // (twenty-first review, finding 1, scene h1 and the real run real2): the second failure left
       // `reinstall: []`, and the third run was verbatim the scene 32ff038 was built for.
-      await markInstallPending(projectPath, headAfter, wanted, filesAtHead)
+      await markInstallPending(projectPath, headAfter, wanted, filesAtHead, false, carriedPutBack)
     } catch (error) {
       noteFailed(error)
     }
@@ -1231,19 +1255,34 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
         // popping the stash here would fight with what is on disk. The restore point is the way
         // back, and the sentence below names what to ask for.
         await dropNpmOwnedFiles(projectPath, held)
-        // What is left over is what the *next* run needs, and after a failure that is less than
-        // what this one wanted: `reinstallCommands` calls npm once per section, so a failure in
-        // the second call leaves the first one's packages written. `stillMissing` drops those
-        // anyway - but `listTakenInHandSince` does not, and it asks per name: the next commit
-        // that touches one of those lines is then this app's own writing read as "somebody else
-        // has answered", and the whole list falls, packages included that nobody put back.
-        // Measured (twenty-fifth review, finding 2a, scene G1): npm failed on `--save-dev`, a
-        // Git-Sync committed what the first call had written, and the badge went from "Nicht
-        // abgeschlossen" to "Aktuell" with `own-dev-tool` gone for good. The one hand this cannot
-        // tell from another is its own, so it does not leave itself in the list.
+        // After a failure in the second of two calls (`reinstallCommands` calls npm once per
+        // section), the first call's packages are written back - uncommitted, in lines the user
+        // did not write. The note keeps the whole list and marks those names as this app's
+        // (`putBack`), for the two ways that state can end:
+        //
+        // - The lines get committed (a Git-Sync). `listTakenInHandSince` asks per name, and
+        //   without the mark it read this app's own writing as "somebody else has answered" and
+        //   dropped the whole list - measured (twenty-fifth review, finding 2a, scene G1):
+        //   `own-dev-tool` gone for good under a green badge.
+        // - The lines get thrown away (`git checkout -- package.json`, the obvious move after a
+        //   failed update that leaves ` M package.json`). The list must still name them then. The
+        //   twenty-fifth review's fix answered the first case by *shortening* the list to what was
+        //   still missing, and lost them in the second - measured (twenty-sixth review, finding 1,
+        //   scene H1): both themes gone for good, "Your own packages put back: own-dev-tool", badge
+        //   green. `stillMissing` drops whatever stands anyway, so the full list costs nothing
+        //   while the lines are there.
+        //
+        // Marked by what npm moved in *this* run (missing before, standing now), not by what
+        // stands: a line the user wrote back by hand before this run is not this app's writing.
         const leftOver = wanted.length > 0 ? await stillMissing(projectPath, wanted) : []
+        const putBack = [
+          ...carriedPutBack,
+          ...missingNow
+            .filter((entry) => !leftOver.some((left) => left.name === entry.name && left.section === entry.section))
+            .map((entry) => entry.name)
+        ]
         try {
-          await markInstallPending(projectPath, headAfter, leftOver, filesAtHead, true)
+          await markInstallPending(projectPath, headAfter, wanted, filesAtHead, true, putBack)
         } catch (error) {
           noteFailed(error)
         }

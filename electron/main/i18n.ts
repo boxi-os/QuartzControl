@@ -169,9 +169,11 @@ const STRINGS = {
     updateStashPopFailed:
       'Die zurückgelegten Paketeinträge ließen sich nicht wieder eintragen und bleiben in git liegen („git stash list“).',
     // Der Abbruch kann nur zurücknehmen, was seit dem Steckenbleiben unverändert ist. git nennt
-    // die Datei, nicht aber den einen Weg weiter.
+    // die Datei, nicht aber den einen Weg weiter. Der Weg steht im Satz selbst, weil keine der zwei
+    // Seiten, auf denen er gelesen wird, eine Änderung verwerfen kann - „unter Git-Sync“ schickte
+    // den Leser auf die Seite, auf der er stand (sechsundzwanzigstes Review, Befund 6).
     updateAbortBlockedByEdit:
-      'Eine Datei aus dem Zusammenführen wurde inzwischen geändert, deshalb lässt sich das Update nicht abbrechen. Verwirf die Änderung an der unten genannten Datei unter Git-Sync und brich dann erneut ab.\n\n',
+      'Eine Datei aus dem Zusammenführen wurde inzwischen geändert, deshalb lässt sich das Update nicht abbrechen. Verwirf die Änderung an der unten genannten Datei (im Terminal: „git checkout -- <Datei>“) und brich dann erneut ab.\n\n',
     // Was der Abbruch nebenbei mitnimmt. git sagt darüber nichts, und rückgängig ist es nicht -
     // genannt wird es trotzdem, damit der Nutzer weiß, was fehlt.
     updateAbortDroppedStaged:
@@ -464,7 +466,7 @@ const STRINGS = {
     updateStashPopFailed:
       'Your stashed package entries could not be put back and are still in git (“git stash list”).',
     updateAbortBlockedByEdit:
-      'A file from the merge has been changed since, so the update cannot be cancelled. Discard the change to the file named below under Git sync, then cancel again.\n\n',
+      'A file from the merge has been changed since, so the update cannot be cancelled. Discard the change to the file named below (in a terminal: “git checkout -- <file>”), then cancel again.\n\n',
     updateAbortDroppedStaged:
       'Cancelling discarded the staged state of these files: {{files}}. When cancelling, git resets everything that was staged and not part of the merge.',
     updateNoteUnwritable:

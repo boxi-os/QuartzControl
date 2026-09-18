@@ -6,6 +6,7 @@ import type { GitFileChange, GithubAccount, GithubRepoRef, GitStatus } from '@sh
 import { Badge, Button, Card, CardHeading, Field, PageHeader, TextInput, Toggle } from '../components/ui'
 import { formatIpcError } from '../components/ErrorSurface'
 import { useAsyncAction } from '../hooks/useAsyncAction'
+import { announce } from '../state/announcer'
 import { useStickyState } from '../state/uiState'
 import { TAB_ICONS } from './navConfig'
 import HandbookLink from '../components/HandbookLink'
@@ -34,12 +35,15 @@ function RepoStatus({
   status,
   repo,
   projectPath,
-  onChanged
+  onChanged,
+  noteEpoch
 }: {
   status: GitStatus
   repo: GithubRepoRef | null
   projectPath: string
   onChanged: () => void
+  /** Moves on every step the user takes on this page after an abort - see abortNote. */
+  noteEpoch: number
 }): JSX.Element {
   const { t } = useTranslation()
   // `quartz sync --pull` merges (--no-rebase), so a conflict leaves a half-finished merge right
@@ -51,12 +55,22 @@ function RepoStatus({
   // the update lock are `success: false` with a reason, and the staged file the abort throws away
   // is `success: true` with one. `abort.error` only ever sees a throw, so all of those used to
   // stop here - the button simply did nothing visible.
+  //
+  // The sentence belongs to the moment after the click and to nothing after it: it hangs on no
+  // state any more (that was the point of taking it out of the banner), so it goes with the next
+  // step the user takes here - "Aktualisieren", or a sync. Until then it stood over whatever came
+  // next (twenty-sixth review, finding 6, measured after "Aktualisieren").
   const [abortNote, setAbortNote] = useState<string | null>(null)
+  useEffect(() => setAbortNote(null), [noteEpoch])
   const abort = useAsyncAction(async () => {
     setAbortNote(null)
     const result = await window.quartzGui.updates.abortCoreMerge(projectPath)
     const output = result.output.trim()
     setAbortNote(output === '' ? null : output)
+    // The box does not exist before the click and appears on its own - and after an abort that
+    // went through it is the one thing on the page that did not change for a screen reader, the
+    // banner being gone. Its first paragraph is the app's sentence; git's output follows.
+    if (output !== '') announce(output.split('\n\n')[0])
     onChanged()
   })
 
@@ -254,10 +268,14 @@ export default function GitSync(): JSX.Element {
     window.quartzGui.github.originRepo(project.path).then(setRepo).catch(() => setRepo(null))
   }, [project.path, refreshStatus])
 
+  // See abortNote in RepoStatus.
+  const [noteEpoch, setNoteEpoch] = useState(0)
+
   const run = useCallback(
     async (direction: 'push' | 'pull' | 'both'): Promise<void> => {
       setBusy(direction)
       setOutput(null)
+      setNoteEpoch((epoch) => epoch + 1)
       try {
         const result = await window.quartzGui.sync.run(project.path, direction, { commit, message })
         setSuccess(result.success)
@@ -289,14 +307,27 @@ export default function GitSync(): JSX.Element {
       <Card>
         <div className="mb-3 flex items-center justify-between gap-2">
           <CardHeading icon={GitBranch}>{t('gitSync.statusTitle')}</CardHeading>
-          <Button variant="ghost" onClick={() => refreshStatus()} disabled={refresh.pending}>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setNoteEpoch((epoch) => epoch + 1)
+              refreshStatus()
+            }}
+            disabled={refresh.pending}
+          >
             <RefreshCw className={`h-3.5 w-3.5 ${refresh.pending ? 'animate-spin' : ''}`} />
             {t('gitSync.refresh')}
           </Button>
         </div>
         {refresh.error && <p className="text-xs text-red-600 dark:text-red-400">{refresh.error}</p>}
         {status && (
-          <RepoStatus status={status} repo={repo} projectPath={project.path} onChanged={refreshStatus} />
+          <RepoStatus
+            status={status}
+            repo={repo}
+            projectPath={project.path}
+            onChanged={refreshStatus}
+            noteEpoch={noteEpoch}
+          />
         )}
       </Card>
 

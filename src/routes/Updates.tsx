@@ -8,6 +8,7 @@ import type { CoreUpdateState, CoreUpdateStatus, GitStatus, PluginUpdateStatus, 
 import { Badge, Button, Card, CardHeading, PageHeader } from '../components/ui'
 import { formatIpcError } from '../components/ErrorSurface'
 import { primeStickyState } from '../state/uiState'
+import { announce } from '../state/announcer'
 import { TAB_ICONS } from './navConfig'
 import HandbookLink from '../components/HandbookLink'
 
@@ -92,6 +93,9 @@ export default function Updates(): JSX.Element {
     try {
       const result = await window.quartzGui.updates.abortCoreMerge(project.path)
       setCoreResult(!result.success || result.output.trim() !== '' ? result : null)
+      // Said as well as shown, for the same reason as on Git-Sync: the box appears on its own
+      // (twenty-sixth review, finding 6). The first paragraph is the app's sentence.
+      if (result.output.trim() !== '') announce(result.output.trim().split('\n\n')[0])
     } catch (err) {
       setCoreResult({ success: false, output: formatIpcError(err) })
     } finally {

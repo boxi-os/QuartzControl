@@ -17,6 +17,10 @@ const DIRECTIONS: string[] = [KeyboardCode.Down, KeyboardCode.Up, KeyboardCode.L
  * in a grid "down" means the cell below rather than the one diagonally across. The returned
  * coordinate is the dragged rect's new top-left (that is what the sensor subtracts from), chosen so
  * the two centres line up and `closestCenter` resolves to the target we picked.
+ *
+ * That last half holds for this getter, which the layout board uses. With `keepCrossAxis` (the
+ * frame board, below) the centres line up on the key's axis only, and the board's collision
+ * detection has to resolve the step another way - see collisionDetectionWith in FrameBuilder.tsx.
  */
 export const nearestDroppableCoordinates: KeyboardCoordinateGetter = (event, args) => stepFrom(event, args, null)
 

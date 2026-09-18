@@ -157,13 +157,20 @@ function parseCellId(id: string): { row: number; col: number } | null {
 // the pointer decides while it is over something and the centre only settles ties - the same
 // reasoning (and the same pair) as on the global board.
 //
-// Without a pointer - a keyboard drag - the centre decides alone, and that is right for every step:
-// nearestDroppableCoordinates puts the dragged centre exactly on the target's. It is wrong for the
-// moment of pickup, before any step: a chip then sits in the tray, and the tray's centre is far off
-// while a cell's is close, so Space · Space aimed at "Zeile 1, Spalte 1" and would have placed the
-// chip there had the cell been free (twenty-eighth review, "nebenbei" 4, measured on the built app).
-// So when no target's centre is where the dragged one is, it stands on the smallest target that
-// contains its centre - the same "field one is standing on" the arrow keys step from.
+// Without a pointer - a keyboard drag - the centre decides alone, and where a target's centre is
+// exactly under the dragged one, that target is it. That was every step while the getter lined the
+// two centres up on both axes, and the rule below was written for the one moment it failed, the
+// pickup: a chip then sits in the tray, and the tray's centre is far off while a cell's is close,
+// so Space · Space aimed at "Zeile 1, Spalte 1" and would have placed the chip there had the cell
+// been free (twenty-eighth review, "nebenbei" 4, measured on the built app). So when no target's
+// centre is where the dragged one is, it stands on the smallest target that contains its centre -
+// the same "field one is standing on" the arrow keys step from.
+//
+// **Since a press keeps the chip's cross axis (`keepCrossAxis`, dndKeyboard.ts) that rule is the
+// ordinary way every step resolves, not a pickup exception**: the centres line up on the key's
+// axis only, the getter keeps the chip inside its target on the other one, and "smallest target
+// under the centre" is what turns that into the target. Narrow it and every arrow loses its aim
+// (thirty-first review, finding 5; measured there across tray, tall rows and wide columns).
 //
 // Except for a placed area that has not moved yet: its place is the cell its placement starts at
 // (`home`, carried by PlacedBox's draggable), and the chip that is the dragged rect only sits at

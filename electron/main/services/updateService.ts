@@ -11,7 +11,6 @@ import {
   outstandingPackages,
   reinstallCommands,
   UNREADABLE,
-  type DependencySection,
   type LocalPackageChanges,
   type PackageAddition
 } from '@shared/packageJsonDeps'

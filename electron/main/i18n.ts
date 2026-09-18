@@ -102,7 +102,7 @@ const STRINGS = {
     updateBlockedByLocalChanges:
       'Eigene Änderungen stehen im Weg — git nennt die Dateien darunter. Committe oder verwirf sie unter Git-Sync und versuche es erneut.\n\n',
     updateMergeUnfinished:
-      'Ein früheres Update steckt noch mitten im Zusammenführen. Brich es oben auf dieser Seite ab und starte das Update erneut.\n\n',
+      'Ein früheres Update steckt noch mitten in einem Merge. Brich es oben auf dieser Seite ab und starte das Update erneut.\n\n',
     updatePackagesReinstalled: 'Eigene Pakete wieder eingetragen: {{packages}}',
     // Ein voller Merkzettel, den dieser Lauf nicht abgearbeitet hat, weil seit dem letzten Lauf
     // jemand eine dieser Zeilen committet hat. Das ist richtig so - aber schweigend fiel damit
@@ -132,10 +132,12 @@ const STRINGS = {
     updateStashMine:
       'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen („git stash list“). „Merge abbrechen“ trägt ihn wieder ein.',
     // Derselbe Stand, und der Knopf ist auch hier der Weg - nur steht eine eigene, nicht
-    // vorgemerkte Änderung an einer Datei aus dem Zusammenführen davor, an der git den Abbruch
-    // verweigert. Gesagt, bevor der Nutzer drückt, statt danach.
+    // vorgemerkte Änderung davor, an der git den Abbruch verweigert. Gesagt, bevor der Nutzer drückt,
+    // statt danach - und ohne eigenen Rat: Ob die Datei aus dem Merge stammt („git checkout --“)
+    // oder selbst vorgemerkt ist („git reset --“), sagt der Knopf je Datei (zweiunddreißigstes
+    // Review, Befund 2); hier stand der eine Rat für beide.
     updateStashMineBlocked:
-      'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen („git stash list“). „Merge abbrechen“ trägt ihn wieder ein, sobald die geänderte Datei aus dem Zusammenführen unter Git-Sync verworfen ist.',
+      'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen („git stash list“). „Merge abbrechen“ trägt ihn wieder ein, sobald git den Abbruch zulässt; woran es gerade scheitert und was zu tun ist, sagt der Knopf selbst.',
     // Derselbe Stand, der Knopf bricht auch ab - aber eine Datei, die er hält, steht ungestaget
     // geändert da, und daran scheitert das Eintragen. Nicht „gehört zu einem Stand, den es nicht mehr
     // gibt“: er passt auf HEAD und hält die eigenen Pakete (zweiunddreißigstes Review, nebenbei).
@@ -196,7 +198,7 @@ const STRINGS = {
     // Seiten, auf denen er gelesen wird, eine Änderung verwerfen kann - „unter Git-Sync“ schickte
     // den Leser auf die Seite, auf der er stand (sechsundzwanzigstes Review, Befund 6).
     updateAbortBlockedByEdit:
-      'Eine Datei aus dem Zusammenführen wurde inzwischen geändert, deshalb lässt sich das Update nicht abbrechen. Verwirf, was du seit dem Zusammenführen an ihr geändert hast (im Terminal: „git checkout -- <Datei>“), und brich dann erneut ab.\n\n',
+      'Eine Datei aus dem Merge wurde inzwischen geändert, deshalb lässt sich das Update nicht abbrechen. Verwirf, was du seit dem Merge an ihr geändert hast (im Terminal: „git checkout -- <Datei>“), und brich dann erneut ab.\n\n',
     // Dasselbe, wenn git die Datei nennt: Die Ansage sagt nur die Sätze, nie gits Text, und „die
     // unten genannte Datei“ verwies dort auf etwas, das niemand sagt (dreißigstes Review, Befund 4).
     // Der Satz darüber ist der Rückfall, wenn git keinen Namen liefert, und verspricht deshalb
@@ -204,7 +206,7 @@ const STRINGS = {
     // Für eine wie für mehrere Dateien geschrieben: git nennt nur die erste, die App fragt die
     // übrigen selbst (einunddreißigstes Review, Befund 3).
     updateAbortBlockedByEditNamed:
-      'An Dateien aus dem Zusammenführen wurde inzwischen weitergearbeitet, deshalb lässt sich das Update nicht abbrechen: {{files}}. Verwirf, was du dort seitdem geändert hast (im Terminal je Datei: „git checkout -- <Datei>“), und brich dann erneut ab.\n\n',
+      'An Dateien aus dem Merge wurde inzwischen weitergearbeitet, deshalb lässt sich das Update nicht abbrechen: {{files}}. Verwirf, was du dort seitdem geändert hast (im Terminal je Datei: „git checkout -- <Datei>“), und brich dann erneut ab.\n\n',
     // Dieselbe Verweigerung über Dateien, die der Nutzer selbst vorgemerkt hat. Für sie ist der Rat
     // oben teuer: „git checkout --“ nimmt die ungestagete Hälfte, der Abbruch danach die gestagete.
     // „git reset --“ nimmt nur die Vormerkung, beide Hälften bleiben (zweiunddreißigstes Review,
@@ -484,7 +486,7 @@ const STRINGS = {
     updateStashMine:
       'An earlier update left package entries of yours stashed in git (“git stash list”). “Abort merge” puts them back.',
     updateStashMineBlocked:
-      'An earlier update left package entries of yours stashed in git (“git stash list”). “Abort merge” puts them back once the changed file from the merge is discarded under Git sync.',
+      'An earlier update left package entries of yours stashed in git (“git stash list”). “Abort merge” puts them back once git allows the cancel; the button itself says what is in the way and what to do.',
     updateStashMineOccupied:
       'An earlier update left package entries of yours stashed in git ({{entry}} in “git stash list”). “Abort merge” cannot put them back while these files are changed: {{files}}. Save your change to them and discard it (in a terminal: “git checkout -- <file>”), then the button puts them back.',
     configNotAMapping:

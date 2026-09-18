@@ -200,7 +200,7 @@ export async function getCoreUpdateStatus(
 
 // git's own wording for the three failures a user can actually act on is either buried in a wall of
 // other output or (for the symlink case) points at a state we just repaired behind their back.
-function explainGitFailure(output: string): string {
+function explainGitFailure(output: string, editedSinceMerge: string[] = []): string {
   if (/beyond a symbolic link/.test(output)) {
     return mainT('updateBlockedBySymlink')
   }
@@ -222,8 +222,15 @@ function explainGitFailure(output: string): string {
   // The name goes into the sentence where git gives one: the announcement says the sentences and
   // never git's text, and "the file named below" pointed there at something nobody says (thirtieth
   // review, finding 4). Read as text for a sentence, never passed on as an argument.
+  //
+  // git gives *one*: it stops at the first entry it cannot reset. Measured with git 2.54 and four
+  // files edited after the merge stopped - four refusals, each naming the next file and each
+  // ending in "then cancel again" (thirty-first review, finding 3). So the abort asks for the whole
+  // list itself (`editedSinceMerge`) and hands it in; git's own name comes first and is the
+  // fallback where that question has no answer.
   if (/not uptodate\. Cannot merge|Could not reset index file/i.test(output)) {
-    const files = [...new Set([...output.matchAll(/^error: Entry '(.+)' not uptodate\. Cannot merge\.$/gm)].map((m) => m[1]))]
+    const named = [...output.matchAll(/^error: Entry '(.+)' not uptodate\. Cannot merge\.$/gm)].map((m) => m[1])
+    const files = [...new Set([...named, ...editedSinceMerge])]
     return files.length > 0 ? mainT('updateAbortBlockedByEditNamed', { files: files.join(', ') }) : mainT('updateAbortBlockedByEdit')
   }
   return ''
@@ -1604,6 +1611,22 @@ async function stagedOutsideMerge(projectPath: string): Promise<string[]> {
   return staged.filter((file) => !fromMerge.has(file))
 }
 
+/**
+ * The files `git merge --abort` refuses over: staged by the merge and changed again since - the
+ * index differs from HEAD *and* the working tree from the index. Conflicted paths are not among
+ * them; the abort resets those whatever they look like. With `-z`, because without it git quotes
+ * a name like `ä.md` as "\303\244.md" and the sentence would say that.
+ */
+async function editedSinceMergeStopped(projectPath: string): Promise<string[]> {
+  const names = async (...args: string[]): Promise<string[]> => {
+    const result = await run('git', ['diff', '--name-only', '-z', ...args], projectPath)
+    return result.success ? result.output.split('\0').filter(Boolean) : []
+  }
+  const unmerged = new Set(await names('--diff-filter=U'))
+  const staged = new Set(await names('--cached'))
+  return (await names()).filter((file) => staged.has(file) && !unmerged.has(file))
+}
+
 export function abortCoreMerge(projectPath: string): Promise<CoreAbortResult> {
   // The same lock as the update: the abort rewrites the working tree of the repository an update
   // would be merging in.
@@ -1619,7 +1642,8 @@ export function abortCoreMerge(projectPath: string): Promise<CoreAbortResult> {
       const losing = await stagedOutsideMerge(projectPath)
       const result = await run('git', ['merge', '--abort'], projectPath)
       if (!result.success) {
-        const why = explainGitFailure(result.output)
+        // A refused abort has changed nothing, so the list is read from the state git refused over.
+        const why = explainGitFailure(result.output, await editedSinceMergeStopped(projectPath))
         return { success: false, output: why + result.output, sentences: why.trim() ? [why.trim()] : [] }
       }
       const popped = await popCoreUpdateStash(projectPath)

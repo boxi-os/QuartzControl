@@ -194,8 +194,10 @@ const STRINGS = {
     // unten genannte Datei“ verwies dort auf etwas, das niemand sagt (dreißigstes Review, Befund 4).
     // Der Satz darüber ist der Rückfall, wenn git keinen Namen liefert, und verspricht deshalb
     // auch keinen.
+    // Für eine wie für mehrere Dateien geschrieben: git nennt nur die erste, die App fragt die
+    // übrigen selbst (einunddreißigstes Review, Befund 3).
     updateAbortBlockedByEditNamed:
-      'Eine Datei aus dem Zusammenführen wurde inzwischen geändert, deshalb lässt sich das Update nicht abbrechen: {{files}}. Verwirf die Änderung daran (im Terminal: „git checkout -- <Datei>“) und brich dann erneut ab.\n\n',
+      'An Dateien aus dem Zusammenführen wurde inzwischen weitergearbeitet, deshalb lässt sich das Update nicht abbrechen: {{files}}. Verwirf, was du dort seitdem geändert hast (im Terminal je Datei: „git checkout -- <Datei>“), und brich dann erneut ab.\n\n',
     // Was der Abbruch nebenbei mitnimmt. git sagt darüber nichts, und rückgängig ist es nicht -
     // genannt wird es trotzdem, damit der Nutzer weiß, was fehlt.
     updateAbortDroppedStaged:
@@ -493,7 +495,7 @@ const STRINGS = {
     updateAbortBlockedByEdit:
       'A file from the merge has been changed since, so the update cannot be cancelled. Discard what you changed in it since the merge (in a terminal: “git checkout -- <file>”), then cancel again.\n\n',
     updateAbortBlockedByEditNamed:
-      'A file from the merge has been changed since, so the update cannot be cancelled: {{files}}. Discard the change to it (in a terminal: “git checkout -- <file>”), then cancel again.\n\n',
+      'Work has continued on files from the merge, so the update cannot be cancelled: {{files}}. Discard what you changed there since (in a terminal, for each file: “git checkout -- <file>”), then cancel again.\n\n',
     updateAbortDroppedStaged:
       'Cancelling discarded the staged state of these files: {{files}}. When cancelling, git resets everything that was staged and not part of the merge.',
     updateNoteUnwritable:

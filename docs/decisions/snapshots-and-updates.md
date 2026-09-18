@@ -767,3 +767,22 @@ und ohne ihn hörte ein Zuhörer zwei Aussagen über scheinbar denselben Eintrag
 der gebauten App gegengelesen (Kasten und Ansage). Der Fall „passt nicht auf HEAD“ behält
 `updateStashLeftover`, und `leftoverStashNote` — kein Merge offen, nichts eingetragen — behält
 `updateStashFitsHead`.
+
+**Nachtrag (2026-09-18, einunddreißigstes Review, Befund 3): Der verweigerte Abbruch fragt die
+Dateien selbst.** git bricht `merge --abort` an der ersten Datei ab, die es nicht zurücksetzen
+kann, und nennt nur die. Gemessen mit git 2.54, halber Merge, danach vier sauber gemergte Dateien
+geändert: vier Verweigerungen, jede nannte die nächste, jede endete auf „brich dann erneut ab“. Der
+Komma-Zweig der dreißigsten Runde (`files.join(', ')`) war damit toter Code. `abortCoreMerge` fragt
+jetzt nach der Verweigerung selbst (`editedSinceMergeStopped`): vorgemerkt *und* im Arbeitsbereich
+geändert, ohne die Konfliktpfade — die setzt der Abbruch zurück, wie sie auch aussehen. Mit `-z`,
+weil git `ä.md` sonst als `"\303\244.md"` schreibt. gits eigener Name steht vorn und bleibt der
+Rückfall, wo die Frage nichts antwortet.
+
+    vier Dateien (a.txt, b c.txt, it's.txt, ä.md), dazu die Konfliktdatei bearbeitet und eine gemergte unberührt
+      vorher   vier Runden, je eine Datei
+      jetzt    ein Satz mit allen vier, Konflikt- und unberührte Datei nicht darunter;
+               viermal `git checkout --`, ein Abbruch: success, Arbeitsbereich sauber
+    eine Datei (Geschirr, README.md)   wie vorher eine; an der Updates-Seite gegengelesen
+
+Der Satz ist für eine wie für mehrere Dateien geschrieben („… weitergearbeitet: {{files}}. Verwirf,
+was du dort seitdem geändert hast (im Terminal je Datei: …)“), weil `mainT` keinen Plural kennt.

@@ -1207,3 +1207,23 @@ wird weiter von der Drag-Ansage gesagt (`dropRefused`). Die beiden Sätze werden
 Schlüssel an der Aufrufstelle übergeben, weil `check:i18n` einen zusammengesetzten nicht liest
 (1141 + 185, weiter 67 nicht prüfbar). Gegenlauf: drei Tastatur-Szenen wortgleich, `footer` aus
 und wieder ein geht, `smoke` 40 Aufrufe ohne Auffälligkeit.
+
+**Nachtrag (2026-09-18, einunddreißigstes Review, Befund 4): Die zweite Runde des Pfeil-Getters
+endet nicht außerhalb des Fensters.** `stepFrom` sucht erst Ziele, die den Chip auf der anderen
+Achse noch überlappen, und lässt die Bedingung fallen, wenn es keines gibt — damit ↑ aus dem Raster
+die Ablage erreicht. Am Layout-Board gibt es eine Zone voller Breite (Kopfbereich) über drei
+Spalten: Rechts von ihr liegt auf ihrer Höhe nichts, und das beste Ziel irgendwo war die rechte
+Seitenleiste 980 px tiefer. Der `KeyboardSensor` rollt nur entlang der Achse der Taste, der Chip
+stand also bei y 1585 in einem 900 px hohen Fenster, → ← führte nicht zurück, und eine Leertaste
+legte die Komponente ungesehen in die Seitenleiste. Alt wie neu, nicht aus `d9ace7d`. Jetzt ist in
+der zweiten Runde ein Ziel, dessen Mitte auf der *anderen* Achse außerhalb des Fensters liegt, kein
+Schritt. Gebaute App, 1280 × 900:
+
+    Kopfbereich, → → bei scrollTop 0            vorher Chip y 1585, „liegt über table-of-contents“   jetzt nichts, Chip bleibt
+    linke Spalte, → ← (Spalten im Fenster)      „liegt über breadcrumbs“ · „wieder auf seinem Ausgangsplatz“
+    drei Spalten → → → ← ↑ ↑, Palette-Chip ↓ ↓ ↓, spacer ↓ ↓ ↓ ↑ ↑ ↑ ↑    wie vorher
+    Frame-Builder: Ablage → nach 1/5, Raster ↔ Ablage, Chip aus der Ablage, page-body → → → →, footer ↑ ↑ ↑ ↑    wortgleich
+
+Was bleibt, ist ← aus dem Kopfbereich: Das geht zum Komponentenvorrat darüber, sichtbar und
+angesagt, und eine Leertaste dort entfernt ein Duplikat oder wird abgelehnt — das ist die Regel
+des Vorrats, nicht die des Getters. Ein Druck ohne Ziel sagt nichts, wie ↓ in der letzten Zeile.

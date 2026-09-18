@@ -111,8 +111,21 @@ function stepFrom(
     candidates.push({ rect, score: along + across * 2, overlaps })
   }
 
+  // The second round has one limit: a target whose centre lies outside the window *on the other
+  // axis* is not a step. The KeyboardSensor scrolls only along the axis of the key, so a sideways
+  // press onto such a target takes the chip out of sight and leaves it there. Measured on the
+  // layout board (thirty-first review, finding 4, 1280x900): from a row of the full-width header
+  // zone nothing lies to the right at its height, the best target anywhere was the right sidebar
+  // 980px further down, and ArrowRight put the chip at y 1585 in a window 900 high - with a Space
+  // there moving the component into that sidebar unseen. Such a press now does nothing, like
+  // ArrowDown in the last row. On-axis targets need no such test: they overlap the chip on that
+  // axis, and the chip is where the user is looking.
+  const inSight = (rect: { left: number; top: number; width: number; height: number }): boolean =>
+    vertical
+      ? rect.left + rect.width / 2 >= 0 && rect.left + rect.width / 2 <= window.innerWidth
+      : rect.top + rect.height / 2 >= 0 && rect.top + rect.height / 2 <= window.innerHeight
   const onAxis = candidates.filter((c) => c.overlaps)
-  const pool = onAxis.length > 0 ? onAxis : candidates
+  const pool = onAxis.length > 0 ? onAxis : candidates.filter((c) => inSight(c.rect))
   const best = pool.reduce<(typeof pool)[number] | null>((acc, c) => (acc === null || c.score < acc.score ? c : acc), null)?.rect ?? null
 
   if (!best) return undefined

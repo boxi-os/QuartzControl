@@ -533,7 +533,11 @@ Projektwurzel.
   Vergleich, sobald sein Rect und das gezogene verschieden gemessen werden (im Frame-Builder 48
   gegen 26,5 px: ArrowDown bewegte den Bereich `header` nie, auf dem Layout-Board verpuffte der
   erste Druck). Auf einer Sortierliste ist das Feld die gezogene Zeile selbst, dort ändert die
-  Regel nichts. **Wer beides mischt, nimmt den Raster-Getter**: Das Layout-Board hat Sortierlisten
+  Regel nichts. **Und ein Schritt ohne Ziel auf der eigenen Achse endet nie dort, wohin der Sensor
+  nicht rollt:** Der `KeyboardSensor` rollt nur entlang der Achse der Taste, also ist ein Ziel,
+  dessen Mitte auf der *anderen* Achse außerhalb des Fensters liegt, kein Schritt — am
+  Layout-Board setzte → aus dem Kopfbereich den Chip 685 px unter den Fensterrand, in die rechte
+  Seitenleiste (einunddreißigstes Review, Befund 4). **Wer beides mischt, nimmt den Raster-Getter**: Das Layout-Board hat Sortierlisten
   *und* Ablagezonen *und* eine Palette, und ein Paletten-Chip ist ein `useDraggable` und kein
   Droppable - `sortableKeyboardCoordinates` liest `droppableContainers.get(active.id)` und liefert
   für ihn nichts, eine leere Zone erreicht er ohnehin nicht. Und die Regel gilt erst, wenn die

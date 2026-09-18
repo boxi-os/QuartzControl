@@ -18,7 +18,7 @@ gearbeitet wird, und nicht, was war.
 
 ## Befunde aus den Reviews (Stand 2026-09-18)
 
-Alle siebenundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVIEW-2026-09-02.md),
+Alle achtundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](REVIEW-2026-09-07.md) mit seinen acht,
@@ -44,8 +44,9 @@ Alle siebenundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](RE
 [`docs/REVIEW-2026-09-28.md`](REVIEW-2026-09-28.md) mit seinen sieben und
 [`docs/REVIEW-2026-09-29.md`](REVIEW-2026-09-29.md) mit seinen neun und
 [`docs/REVIEW-2026-09-30.md`](REVIEW-2026-09-30.md) mit seinen neun und
-[`docs/REVIEW-2026-10-01.md`](REVIEW-2026-10-01.md) mit seinen sechs (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-30-` und `2026-10-01-auftrag.md`) stehen als
+[`docs/REVIEW-2026-10-01.md`](REVIEW-2026-10-01.md) mit seinen sechs und
+[`docs/REVIEW-2026-10-02.md`](REVIEW-2026-10-02.md) mit seinen fünf (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-30-`, `2026-10-01-` und `-02-auftrag.md`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](REVIEW-2026-09-15.md) gehört nicht
 in diese Zählung: Die „fünfzehnte Runde“ las die Handbücher der zwei Plugins gegen deren Code und
@@ -144,6 +145,35 @@ gegen alle zehn echten `custom.scss` verglichen, Vorlagen-Export byte-gleich); H
 „Gruppe“ statt „Karte“ (Vault-Commit `391f77a`). Der dritte Nebenbei-Punkt des Reviews — die
 npm-Attrappe schreibt Bereiche wie npm — betrifft das Messgeschirr außerhalb des Repos. **Diese
 Fixes hat kein Review gelesen.**
+
+**Das achtundzwanzigste Review las beide Schichten** und fand **keinen Befund Hoch, keinen
+Mittel, fünf Niedrig**, dazu sechs Punkte nebenbei — die erste Runde der Serie ohne mittleren
+Befund, wieder von Claude Fable 5.1 und damit vom selben Modell wie die Richtungen, die sie prüfte;
+das Dokument sagt das. Beide Richtungen tragen: `putBack` unter echtem npm mit eigenen Paketen in
+allen vier Abschnitten, die Marker-Vereinigung an der gebauten App. Die Niedrigen: Die Ansage nach
+einem Abbruch war „On branch v5“, sobald ein Stash zurückkam, weil zwei der fünf Sätze hinter gits
+Ausgabe standen; „ein Schreiben benennt alle um“ macht beta.2 schon nach einer eingeführten Schrift
+für alle drei Abschnitte blind, und das stand nirgends als Abwägung; zwei Sätze über `putBack`
+beschrieben einen Weg, den der Lauf im Normalfall nicht geht; ein Paket in zwei Abschnitten stand
+doppelt in Liste und Notiz, und der Satz verschwieg seinen fehlenden Eintrag; und die Kachel „Die
+Seite“ verlinkte `config` ohne Reiter. Alle fünf sind abgearbeitet (`fix/review-2026-10-02`, je
+ein Commit mit Typcheck, Build und Smoke): der Abbruch stellt seine Sätze vor gits Text und hat für
+einen geglückten Pop einen eigenen (`b415b86`, Szenen AB1/AB2 am Bündel mit echtem npm), der Preis
+der Umbenennung steht in Kommentar, Regel und als Punkt der Release-Notizen in `docs/release.md`
+(`1aea7fa`, kein Code), die zwei Sätze nennen den Weg, den sie meinen (`b310bc9`, kein
+Verhalten), Namen werden dedupliziert und ein Abschnitt springt nur für einen ein, den die Liste
+nicht beansprucht (`1bd5c1e`, Szene R2 mit echtem npm), und die Kachel nennt „Website“
+(`97787cc`, gebaute App). **Offen** aus der Nebenbei-Liste: Handbuch 2.2 nennt den Ort noch
+„Einrichtung → Content-Ordner“ (Vault nicht angefasst), `projectWins` hängt wortgleiche
+`@font-face`-Regeln ein zweites Mal an, Space · Space auf einem Chip zielt auf eine Zelle, und der
+Sass-Fehler des geschachtelten Import-Blocks nennt an der Oberfläche keinen Ausweg; die übrigen
+zwei (ein Satz in `conventions.md`, der seit dieser Runde stimmt, und eine erklärte Zeilenzahl)
+brauchen nichts. **Beim Abarbeiten gelesen, nicht gemessen:** die verschobene Zeile in
+`absentFromPackageJson` (ein Eintrag, Name nur in einem anderen Abschnitt) und der Weg ohne Plan
+in den zwei `putBack`-Sätzen. Die Frage des Reviews nach einem Release Candidate ist keine Frage an
+den Code; was es dafür vor den Bau stellt — gepackte App je Plattform, neu gebautes Handbuch und
+PDF, der Satz zum Marker in den Notizen, und die offene Liste (Push, ERESOLVE, VoiceOver, VMs) —,
+steht im Dokument. **Diese Fixes hat kein Review gelesen.**
 
 **Das sechsundzwanzigste Review las die vierzehn Commits und den Button** und fand **keinen
 Befund Hoch, einen Mittel, acht Niedrig**, dazu zwei Punkte nebenbei — wieder von Claude Fable 5.1,

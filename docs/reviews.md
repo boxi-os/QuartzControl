@@ -150,10 +150,16 @@ haben eine Wurzel und einen Commit — ein platzierter Bereich steht beim Aufneh
 Startzelle, und die Pfeile des Frame-Builders gehen von der Zelle aus, die die Kollisionsrechnung
 nennt (`fd23703`, alle Szenen des Reviews an der gebauten App, 33 von 33 Kästen bleiben, `page-body`
 ← → jetzt Spalte 3/5 statt 6/7); Befund 4 ist eine Korrektur in `layout-frames.md` (`0c7b077`).
-Das Layout-Board behält seinen Getter unverändert. **Offen** aus der Nebenbei-Liste: das Band
-„von einem anderen Tab geändert“ nach einer Aktion desselben Reiters, `landing()` kappt die Spanne
-am Rand ohne Ansage, die 5 px breiten `1fr`-Spalten der Raster-Vorschau, und der Status nennt als
-„ausstehend“ auch Zeilen, die dastehen. **Diese Fixes hat kein Review gelesen.**
+Das Layout-Board behält seinen Getter unverändert. **Danach, auf Wunsch des Nutzers, auch die
+vier Nebenbei-Punkte** (`fix/review-2026-10-03-rest`, je ein Commit mit Typcheck, Build und
+Smoke): Das Band über einem veralteten Entwurf nennt den Schreiber statt „ein anderer Tab“
+(`ffe925a`, gebaute App; Handbuch 4.5 in beiden Sprachen, Vault-Commit `370cfab`); eine Ablage am
+Rand sagt, auf wie viel sie die Spanne gekürzt hat (`0939d27`, gebaute App); die flexiblen Spalten
+der Ablagefläche sind mindestens 24 px breit, die Fläche rollt dafür bei 1470 px 112 px und bei
+1280 px 302 px waagerecht (`d1125b0`, gebaute App, alle Drag-Szenen bei beiden Breiten); und der
+Status zählt eine Zeile aus `putBack` nur, solange sie ganz fehlt (`a0233eb`, R2 mit echtem npm,
+vier statt zwei Namen vorher). Derselbe R2-Lauf bestätigt Befund 2 nachträglich mit echtem npm.
+**Diese Fixes hat kein Review gelesen.**
 
 **Das siebenundzwanzigste Review las beide Schichten** und fand **keinen Befund Hoch, einen
 Mittel, fünf Niedrig**, dazu drei Punkte nebenbei — und der mittlere ist ein Fehler im eigenen

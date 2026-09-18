@@ -252,10 +252,11 @@ Chronik. Die Chronik nachzulesen lohnt für zwei Fragen: *warum* eine Regel so l
 Absatz in `docs/decisions/` sie nicht beantwortet, und *was gerade ungelesen ist* — die Serie ist
 so gebaut, dass jede Runde liest, was die vorige gebaut hat.
 
-**Stand:** Die fünf Befunde des neunundzwanzigsten Reviews sind abgearbeitet, am 2026-09-18 auf
-`fix/review-2026-10-03`, nicht gepusht. Was die Runde gefunden hat, steht in
-[`docs/REVIEW-2026-10-03.md`](docs/REVIEW-2026-10-03.md), was daraus geworden ist und was offen
-bleibt (vier Nebenbei-Punkte des Reviews), oben in [`docs/reviews.md`](docs/reviews.md). Ein
+**Stand:** Die fünf Befunde des neunundzwanzigsten Reviews und seine vier Nebenbei-Punkte sind
+abgearbeitet, am 2026-09-18 auf `fix/review-2026-10-03` und `fix/review-2026-10-03-rest`, nicht
+gepusht. Was die Runde gefunden hat, steht in
+[`docs/REVIEW-2026-10-03.md`](docs/REVIEW-2026-10-03.md), was daraus geworden ist, oben in
+[`docs/reviews.md`](docs/reviews.md). Ein
 Auftrag für das dreißigste Review steht noch nicht.
 
 **Arbeitsregel** für die nächste Liste: ein Befund pro Durchgang, jeweils mit `npm run typecheck`,

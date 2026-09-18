@@ -108,6 +108,16 @@ Fable 5.1 — an dasselbe Modell, dessen Vorschläge (`putBack`, die SHA-Prüfun
 Frame-Builder) diese Runde umsetzt; der Auftrag bittet deshalb, zuerst die Vorschläge anzugreifen
 und dann die Umsetzung.
 
+**Das achtundzwanzigste Review misst ab `review-2026-10-02`** und liest bis `review-2026-10-03`,
+das auf dem Commit „Der Auftrag fuer das achtundzwanzigste Review“ (`main`) sitzt; der Auftrag
+steht in [`docs/REVIEW-2026-10-02-auftrag.md`](REVIEW-2026-10-02-auftrag.md). Sein Diff hat zwei
+Schichten: die Fixes der sechs Befunde des siebenundzwanzigsten Reviews (ohne Review-Dokument
+16 Dateien, +294/−81) und, auf Wunsch des Nutzers, alles, was danach noch offen stand
+(10 Dateien, +71/−29). Als größtes Risiko nennt er die zweite Runde an den Markern, weil sie nicht
+mehr nur den Namen, sondern die Semantik ändert (zwei Kopien werden als Vereinigung gelesen und
+geschrieben), und das bisher nur an Bündeln gemessen ist. Er bittet außerdem um einen eigenen
+Abschnitt dazu, ob der Stand ein Release Candidate sein kann.
+
 **Das siebenundzwanzigste Review las beide Schichten** und fand **keinen Befund Hoch, einen
 Mittel, fünf Niedrig**, dazu drei Punkte nebenbei — und der mittlere ist ein Fehler im eigenen
 Vorschlag der Vorrunde: `putBack` markierte unter echtem npm nichts, weil npm den Bereich schreibt,

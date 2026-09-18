@@ -1613,6 +1613,13 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
  * for the user. What it can do is name them, which is the difference between a loss and a silent
  * one. Paths the merge itself brought into the index are not in the list: they are its work, not
  * the user's.
+ *
+ * "The merge's" is what upstream changed since the merge base - three dots, not two. `HEAD
+ * MERGE_HEAD` compares the two trees, and in a project they differ in every file the project ever
+ * touched: a staged line in notes.md (committed, only in the project) and one in .gitignore (edited
+ * by the project, not by upstream) were both gone after the abort, and the list was empty
+ * (thirty-second review, finding 1). The scenes before measured with a *new* file, which is in
+ * neither tree and was therefore always named.
  */
 async function stagedOutsideMerge(projectPath: string): Promise<string[]> {
   const lines = (result: { success: boolean; output: string }): string[] =>
@@ -1625,7 +1632,7 @@ async function stagedOutsideMerge(projectPath: string): Promise<string[]> {
   const staged = lines(await run('git', ['diff', '--name-only', '--cached', 'HEAD'], projectPath))
   if (staged.length === 0) return []
   const fromMerge = new Set([
-    ...lines(await run('git', ['diff', '--name-only', 'HEAD', 'MERGE_HEAD'], projectPath)),
+    ...lines(await run('git', ['diff', '--name-only', 'HEAD...MERGE_HEAD'], projectPath)),
     ...(await conflictedFiles(projectPath))
   ])
   return staged.filter((file) => !fromMerge.has(file))

@@ -440,7 +440,7 @@ export default function ProjectDashboard(): JSX.Element {
       icon: Globe,
       title: t('dashboard.attention.noBaseUrl'),
       detail: t('dashboard.attention.noBaseUrlDetail'),
-      to: 'config',
+      to: 'config?tab=site',
       linkLabel: t('projectLayout.tabs.config')
     })
   }

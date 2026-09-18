@@ -1,7 +1,7 @@
 import { mkdirSync } from 'fs'
 import { copyFile, readFile, stat } from 'fs/promises'
 import { basename, extname, join } from 'path'
-import { getManagedBlock, readCustomScss, upsertManagedBlock, writeCustomScss } from './styleService'
+import { getManagedBlock, joinUniqueRules, readCustomScss, upsertManagedBlock, writeCustomScss } from './styleService'
 import { MAX_FONT_FILE_BYTES, readFontFace } from './fontFile'
 
 const FORMAT_MAP: Record<string, string> = { ttf: 'truetype', otf: 'opentype', woff: 'woff', woff2: 'woff2' }
@@ -53,7 +53,9 @@ export async function importFontFile(
 
   const info = await readCustomScss(projectPath)
   const existingBody = getManagedBlock(info.content, FONTS_MARKER)
-  const nextBody = existingBody ? `${existingBody}\n\n${cssBlock}` : cssBlock
+  // Joined rule by rule: the same file imported twice is the same face, and so is a font that two
+  // copies of the section (old and new marker name) both held - see joinUniqueRules.
+  const nextBody = joinUniqueRules([existingBody ?? '', cssBlock])
   await writeCustomScss(projectPath, upsertManagedBlock(info.content, FONTS_MARKER, nextBody))
 
   return { fileName, weight: face?.weight, italic: face?.italic }

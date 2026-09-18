@@ -429,10 +429,13 @@ const fonts: TemplatePart<FontsPayload> = {
     const info = await styleService.readCustomScss(projectPath)
     const current = styleService.getManagedBlock(info.content, FONTS_MARKER)
     // Under 'projectWins' the target's own rules stay, but the package's are still appended - a
-    // @font-face that is dropped leaves the font files it shipped unreferenced and useless.
+    // @font-face that is dropped leaves the font files it shipped unreferenced and useless. Only
+    // the ones that are not there yet, though: appended whole, every repeated import of the same
+    // template doubled the block (measured, twenty-eighth review, "nebenbei" 3: 5 + 4 = 9 rules,
+    // "Instrument Sans" three times).
     const body =
       current && strategy === 'projectWins'
-        ? `${current}\n\n${payload.fontFaceCss}`
+        ? styleService.joinUniqueRules([current, payload.fontFaceCss])
         : current === payload.fontFaceCss
           ? current
           : payload.fontFaceCss

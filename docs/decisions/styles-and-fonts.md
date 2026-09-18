@@ -242,3 +242,21 @@ wanderten alle 50 Variablen hinter die eigenen Regeln des Nutzers, um die eine z
 `~/Documents/QuartzProjekte/` verglichen, nur gelesen: Der Vorlagen-Export (alle vier Blöcke
 heraus, dann `trim()`) ist in allen zehn byte-gleich; der css-vars-Block allein heraus weicht in
 acht ab, und zwar nur um die Leerzeile, die die alte Fassung am Dateiende stehen ließ.
+
+**Nachtrag (2026-09-18, achtundzwanzigstes Review, nebenbei 3): Der Schriftblock nimmt jede Regel
+einmal.** Unter `projectWins` hängte der Vorlagen-Import die `@font-face`-Regeln des Pakets an die
+des Projekts, auch wenn sie wortgleich dastanden, und der Schrift-Import hängte eine Datei, die
+schon eingeführt war, ein zweites Mal an. Beide gehen jetzt über `joinUniqueRules`
+(`styleService.ts`): eine Regel ist alles bis zu ihrer schließenden Klammer auf Tiefe 0, gleich
+ist, was bis auf Leerraum gleich ist, die erste gewinnt. Das räumt nebenbei die Vereinigung zweier
+Marker-Kopien auf, die dieselbe Schrift trugen. Gemessen an Bündeln beider Stände gegen die
+Zwei-Kopien-Datei des Reviews (Kopie von `navigations-testprojekt`), `aus-alt.qtpl`:
+
+                      vorher                 jetzt
+    Ausgang           5 (Instrument Sans ×2)  5
+    projectWins #1    9                       4
+    projectWins #2    13                      4
+    Schrift #1        14                      5
+    Schrift #2 (dies. Datei)  15              5
+
+Zwei Regeln derselben Familie mit verschiedenem Schnitt (`Inter` zweimal) bleiben zwei.

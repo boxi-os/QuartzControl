@@ -188,6 +188,41 @@ function renameLegacyMarkers(content: string): string {
   return next
 }
 
+/**
+ * Joins the bodies of a rules-only section (the @font-face rules in 'fonts'), keeping each rule
+ * once. A rule is everything up to its closing brace at depth 0, comments in front of it
+ * included, and two rules are the same when they are the same text up to whitespace. Two equal
+ * `@font-face` are one face to a browser, but a block that says it three times reads as broken -
+ * and it grew with every repeated import of the same template under 'projectWins', and with the
+ * union of two marker copies that each held the same font (twenty-eighth review, "nebenbei" 3 and
+ * the question about two fonts blocks). Text after the last rule is kept as it is.
+ */
+export function joinUniqueRules(bodies: string[]): string {
+  const seen = new Set<string>()
+  const out: string[] = []
+  const keep = (chunk: string): void => {
+    const trimmed = chunk.trim()
+    if (!trimmed) return
+    const key = trimmed.replace(/\s+/g, ' ')
+    if (seen.has(key)) return
+    seen.add(key)
+    out.push(trimmed)
+  }
+  for (const body of bodies) {
+    let depth = 0
+    let start = 0
+    for (let i = 0; i < body.length; i++) {
+      if (body[i] === '{') depth++
+      else if (body[i] === '}' && depth > 0 && --depth === 0) {
+        keep(body.slice(start, i + 1))
+        start = i + 1
+      }
+    }
+    keep(body.slice(start))
+  }
+  return out.join('\n\n')
+}
+
 // Reads the current body of a marker-delimited managed section, or null if it doesn't exist yet -
 // lets a caller accumulate onto an existing section (e.g. another @font-face rule) instead of only
 // ever appending a fresh one.

@@ -237,6 +237,8 @@ Gelesen werden beide Kopien, in Dateireihenfolge, und bei den Variablen gewinnt 
 spätere — so wendet der Browser sie an. Geschrieben wird die Vereinigung an die Stelle der
 *ersten* Kopie: Die spätere ist die, die der alte Build ans Ende gehängt hat, und an ihrer Stelle
 wanderten alle 50 Variablen hinter die eigenen Regeln des Nutzers, um die eine zu behalten.
-`stripManagedBlock` zieht Leerzeilen weiter über die ganze Datei zusammen, wie es das immer tat;
-sein Ergebnis geht in den Vorlagen-Export, der ohnehin `trim()` ruft, und in das Leeren der
-Variablen.
+`stripManagedBlock` schließt die Lücke seitdem ebenfalls nur an der Schnittstelle (vorher
+`\n{3,}` über die ganze Datei). Vorher gegen die zehn `custom.scss` unter
+`~/Documents/QuartzProjekte/` verglichen, nur gelesen: Der Vorlagen-Export (alle vier Blöcke
+heraus, dann `trim()`) ist in allen zehn byte-gleich; der css-vars-Block allein heraus weicht in
+acht ab, und zwar nur um die Leerzeile, die die alte Fassung am Dateiende stehen ließ.

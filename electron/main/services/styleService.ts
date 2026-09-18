@@ -273,9 +273,14 @@ export async function saveVariableOverrides(projectPath: string, overrides: CssV
 export function stripManagedBlock(content: string, markerId: string): string {
   const span = findManagedBlock(content, markerId)
   if (!span) return content
-  const stripped = (content.slice(0, span.from) + content.slice(span.to)).replace(/\n{3,}/g, '\n\n')
+  // The gap closed where the block was and nowhere else, as when the old copy goes on a write
+  // (cutSpan). It used to be `\n{3,}` over the whole file, which also pulled together blank lines in
+  // the user's own CSS. Measured against the ten custom.scss under ~/Documents/QuartzProjekte: the
+  // template export (all four blocks out, then trimmed) is byte-identical either way; taking the
+  // css-vars block alone out differs in eight of them, by the one blank line the old way left at
+  // the end of the file (twenty-seventh review, finding 3, "daneben").
   // Both copies go: "no overrides" means no block under either name.
-  return stripManagedBlock(stripped, markerId)
+  return stripManagedBlock(cutSpan(content, span), markerId)
 }
 
 const IMPORTS_MARKER = 'imports'

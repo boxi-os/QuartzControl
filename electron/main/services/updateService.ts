@@ -531,9 +531,13 @@ async function coreUpdateStashEntry(projectPath: string, from = 0): Promise<stri
  * the note elsewhere quotes the EACCES scene: it is the one that fits "fix the error above and run
  * the update again", the missing package is not.) The list is what the earlier run took away, so
  * the later one can put it back; `stillMissing` then drops whatever the user or the merge has
- * already put back at the same range. A line standing at another range - which is what npm writes,
- * see packageLines - is handed to npm once more, and npm writes it as it resolves it: a network
- * call that changes nothing, not a package the user did not want.
+ * already put back at the same range. In the ordinary case that range is npm's own: a run whose
+ * plan applies takes the lines out of the working tree as they stand, and those go into the list
+ * ahead of the note's (`wanted`) - so what npm wrote at its resolved range in one run is what the
+ * next one asks for, and it asks npm for nothing that stands. Measured (twenty-eighth review,
+ * finding 3, scene R2, real npm): after a Git-Sync the second run made one npm call, not four.
+ * Only where the plan does not apply does a line at another range reach npm once more - a call
+ * that changes nothing, not a package the user did not want (read, not measured).
  */
 const PENDING_UPDATE_FILE = 'core-update.json'
 
@@ -1348,8 +1352,16 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
         //   for them once more, and npm writes what it wrote.
         //
         // Marked by what npm moved in *this* run - the line as it stood before the npm calls
-        // against the line now, in any section - not by what stands: a line the user wrote back
-        // by hand before this run is not this app's writing. And not by `stillMissing` either,
+        // against the line now, in any section - not by what stands. What that comparison does
+        // *not* do in the ordinary case is tell the user's hand from npm's: where the plan
+        // applies, holdNpmOwnedFiles takes both files away before `linesBefore` is read, so a line
+        // the user wrote back by hand is taken out and written again by npm - at the user's range,
+        // because this run's plan goes into `wanted` ahead of the note's - and is marked with the
+        // rest. That is right: it stands in the diff for the same reason the others do. Measured
+        // (twenty-eighth review, finding 3, scene R3, real npm): `left-pad` written back by hand
+        // between two failed runs, `putBack` names it. Only where the plan does not apply does a
+        // hand-written line survive unmarked - at the note's range `stillMissing` does not ask for
+        // it at all (read, not measured). And not by `stillMissing` either,
         // which the twenty-sixth review's fix used and which marks nothing under real npm: npm
         // writes the range it resolves, so a line it has just put back still differs from the
         // note (twenty-seventh review, finding 1 - measured against npm 11.17.0, `putBack: []`,

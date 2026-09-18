@@ -158,7 +158,8 @@ Projektwurzel.
   `[]`, eine Zeile bevor sie benutzt wurde. **Die Bindung an den SHA gehört an das, was einen
   Commit beschreibt**: an den Amend ja, an die Paketliste nicht — ein einziger Commit zwischen
   zwei Läufen ließ sie sonst verfallen, und was schon dasteht, kostet höchstens einen npm-Aufruf,
-  der nichts ändert.
+  der nichts ändert — im Normalfall nicht einmal den, weil ein Lauf, dessen Plan greift, die
+  Zeilen mit npms Bereich in die Liste legt (achtundzwanzigstes Review, Befund 3).
   **Und „weicht von HEAD ab“ ist nicht „npm hat es geschrieben“**: `--only` nimmt die Pfade aus
   dem Arbeitsbereich, also committete der Amend nach einem sauberen Merge, was der Nutzer
   uncommittet gehalten hat. Was das trennt, wird *vor* dem Merge gemessen (standen beide Dateien,

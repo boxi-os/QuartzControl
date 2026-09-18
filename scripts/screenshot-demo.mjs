@@ -114,9 +114,14 @@ export async function seedDemoProfile(page, ipc) {
   }
   const byName = new Map(saved.map((c) => [c.name, c.id]))
 
-  // Die Ziele gehören ins Projekt, nicht ins Profil - deshalb nur ins erste. Geliehen, nicht
-  // geschenkt: Was vorher in dessen publish-targets.json stand, steht nach dem Lauf wieder da.
-  const project = DEMO_PROJECTS[0]
+  // Die Ziele gehören ins Projekt, nicht ins Profil - deshalb nur in das, gegen das aufgenommen
+  // wird. Welches das ist, sagt shootProject() auch hier: Bis zum sechsundzwanzigsten Review
+  // (Befund 9) stand hier DEMO_PROJECTS[0], und fehlte das Handbuch-Projekt, lieh der Lauf die Ziele
+  // bei dem Pfad, den er zwei Zeilen vorher als „kein Quartz-Projekt“ übersprungen hatte, und nahm
+  // gegen Example auf. Geliehen, nicht geschenkt: Was vorher in dessen publish-targets.json stand,
+  // steht nach dem Lauf wieder da.
+  const shot = shootProject(registered)
+  const project = shot.path
   lendProjectTargets(project)
   // Die Ziele liegen im Projekt und überleben das Wegwerf-Profil, die Zugänge nicht: Jeder Lauf legt
   // sie mit neuen IDs an. Ein vorhandenes Ziel zu überspringen hieß deshalb, die Zugangs-ID eines
@@ -139,7 +144,7 @@ export async function seedDemoProfile(page, ipc) {
     `  Profil: ${registered.length} Projekte, ${saved.length} Zugänge, ` +
       `${DEMO_TARGETS.length} Ziele in ${path.basename(project)}`
   )
-  return registered[0]?.id ?? null
+  return shot.id
 }
 
 /**

@@ -8,7 +8,8 @@
 // ausdrücklich gesetzt: dort steht `null`, weil er das Schema des Systems treffen soll.
 //
 // Aufgenommen wird gegen ein echtes Projekt - ein leeres Demoprojekt sähe in einem Handbuch nach
-// nichts aus. Welches, sagt --project; ohne Angabe das erste, dessen Name auf `Example` endet.
+// nichts aus. Welches, sagt --project; ohne Angabe wählt shootProject() in screenshot-demo.mjs, mit
+// und ohne --demo dasselbe: das Handbuch-Projekt, und fehlt es, das erste der Liste.
 import { _electron as electron } from 'playwright-core'
 import { execFileSync } from 'node:child_process'
 import { DEMO_PROFILE, resetDemoProfile, seedDemoProfile, shootProject } from './screenshot-demo.mjs'

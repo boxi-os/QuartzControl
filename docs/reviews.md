@@ -18,7 +18,7 @@ gearbeitet wird, und nicht, was war.
 
 ## Befunde aus den Reviews (Stand 2026-09-18)
 
-Alle achtundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVIEW-2026-09-02.md),
+Alle neunundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](REVIEW-2026-09-07.md) mit seinen acht,
@@ -45,8 +45,9 @@ Alle achtundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVI
 [`docs/REVIEW-2026-09-29.md`](REVIEW-2026-09-29.md) mit seinen neun und
 [`docs/REVIEW-2026-09-30.md`](REVIEW-2026-09-30.md) mit seinen neun und
 [`docs/REVIEW-2026-10-01.md`](REVIEW-2026-10-01.md) mit seinen sechs und
-[`docs/REVIEW-2026-10-02.md`](REVIEW-2026-10-02.md) mit seinen fünf (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-30-`, `2026-10-01-` und `-02-auftrag.md`) stehen als
+[`docs/REVIEW-2026-10-02.md`](REVIEW-2026-10-02.md) mit seinen fünf und
+[`docs/REVIEW-2026-10-03.md`](REVIEW-2026-10-03.md) mit seinen fünf (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-30-`, `2026-10-01-` bis `-03-auftrag.md`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](REVIEW-2026-09-15.md) gehört nicht
 in diese Zählung: Die „fünfzehnte Runde“ las die Handbücher der zwei Plugins gegen deren Code und
@@ -129,6 +130,30 @@ kein zweites Modell vorgeschlagen — ein sechster Satz auf dem Abbruch-Kanal, w
 einen fehlenden einspringen darf, die Kollisionsrechnung für Tastatur-Drags im Frame-Builder und
 `isOwnPlace`. Als größtes Risiko nennt der Auftrag die Kollisionsrechnung, weil sie für jeden
 Tastatur-Drag gilt und nur an einem Frame ohne Scrollen gemessen ist.
+
+**Das neunundzwanzigste Review las alle drei Schichten** und fand **keinen Befund Hoch, keinen
+Mittel, fünf Niedrig**, dazu fünf Punkte nebenbei — wieder von Claude Fable 5.1, die zweite Runde
+in Folge ohne mittleren Befund. Die vier Entscheidungen ohne Vorschlag tragen alle, zwei besser als
+beschrieben: Die Kollisionsrechnung war längst unter Scrollen gemessen und reparierte nebenbei fünf
+von dreizehn Kästen, die bei Leertaste · Leertaste auf eine fremde Zelle zielten. Die Niedrigen:
+Der Abbruch sagte von bis zu drei Sätzen nur den ersten, nach einem gescheiterten Pop also nicht
+den, für den `success: false` steht; der Satz des Normalfalls nannte ein Paket in zwei Abschnitten
+weiter doppelt; „eigener Platz“ war die linke obere Zelle, die Chip-Mitte aber lag bei schmaler
+erster Spalte in einer anderen Zelle desselben Kastens; zwei Behauptungen des Auftrags stimmten
+nicht, beide zugunsten des Codes; und — älter als der Diff — der erste Pfeil aus einem breiten
+Kasten ging von dessen Mitte aus, „links“ wanderte nach rechts. Alle fünf sind abgearbeitet
+(`fix/review-2026-10-03`, Typcheck, Build und Smoke je Code-Commit): Der Abbruch gibt seine Sätze
+getrennt von gits Text zurück, nach Gewicht, und beide Seiten sagen alle (`6991fe6`, AB3 mit der
+git-Attrappe des Reviews am Bündel und an beiden Seiten der gebauten App); die drei übrigen Sätze
+gehen über `entryLabels` (`d9a9fa8`, nur per `node -e` geprüft, nicht mit npm gefahren); 3 und 5
+haben eine Wurzel und einen Commit — ein platzierter Bereich steht beim Aufnehmen auf seiner
+Startzelle, und die Pfeile des Frame-Builders gehen von der Zelle aus, die die Kollisionsrechnung
+nennt (`fd23703`, alle Szenen des Reviews an der gebauten App, 33 von 33 Kästen bleiben, `page-body`
+← → jetzt Spalte 3/5 statt 6/7); Befund 4 ist eine Korrektur in `layout-frames.md` (`0c7b077`).
+Das Layout-Board behält seinen Getter unverändert. **Offen** aus der Nebenbei-Liste: das Band
+„von einem anderen Tab geändert“ nach einer Aktion desselben Reiters, `landing()` kappt die Spanne
+am Rand ohne Ansage, die 5 px breiten `1fr`-Spalten der Raster-Vorschau, und der Status nennt als
+„ausstehend“ auch Zeilen, die dastehen. **Diese Fixes hat kein Review gelesen.**
 
 **Das siebenundzwanzigste Review las beide Schichten** und fand **keinen Befund Hoch, einen
 Mittel, fünf Niedrig**, dazu drei Punkte nebenbei — und der mittlere ist ein Fehler im eigenen

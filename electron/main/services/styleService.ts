@@ -81,23 +81,58 @@ export async function importStyleFile(projectPath: string, sourcePath: string): 
   return { importLine: `@use "${useSpecifier}";`, relativePath: `imported/${fileName}` }
 }
 
-function managedBlockMarkers(markerId: string): { start: string; end: string } {
+// The name in the marker is the app's. Until 2026-09-18 it was the old working title,
+// `Quartz-GUI`, and unlike `.quartz-gui/` this one is read by people: it is a comment in the
+// project's own custom.scss. So it was renamed - with both spellings read, and only the new one
+// written. A block under the old name is replaced where it stands the next time its section is
+// written, so a project migrates on its first save and never ends up with the same section twice.
+//
+// The price is on the other side of the version line: a build from before the rename (beta.2 and
+// older) does not see a block under the new name and appends one of its own. Where both stand,
+// the new one is read and the old one is removed on the next write.
+const MARKER_NAMES = ['QuartzControl', 'Quartz-GUI'] as const
+
+function managedBlockMarkers(markerId: string, name: (typeof MARKER_NAMES)[number] = MARKER_NAMES[0]): { start: string; end: string } {
   return {
-    start: `/* --- Quartz-GUI:managed:${markerId}:start --- */`,
-    end: `/* --- Quartz-GUI:managed:${markerId}:end --- */`
+    start: `/* --- ${name}:managed:${markerId}:start --- */`,
+    end: `/* --- ${name}:managed:${markerId}:end --- */`
   }
+}
+
+interface ManagedSpan {
+  /** Where the start marker begins and where the end marker ends. */
+  from: number
+  to: number
+  body: string
+}
+
+// A section under either name, the current one first. An unterminated start marker is no section.
+function findManagedBlock(content: string, markerId: string, names: readonly string[] = MARKER_NAMES): ManagedSpan | null {
+  for (const name of names) {
+    const { start, end } = managedBlockMarkers(markerId, name as (typeof MARKER_NAMES)[number])
+    const startIdx = content.indexOf(start)
+    if (startIdx === -1) continue
+    const endIdx = content.indexOf(end, startIdx)
+    if (endIdx === -1) continue
+    return { from: startIdx, to: endIdx + end.length, body: content.slice(startIdx + start.length, endIdx) }
+  }
+  return null
+}
+
+// What a write leaves of the old spelling: nothing. Only reached with a current block in hand, so
+// a legacy block here is a second copy - one an older build appended beside ours.
+function withoutLegacyBlock(content: string, markerId: string): string {
+  const legacy = findManagedBlock(content, markerId, MARKER_NAMES.slice(1))
+  if (!legacy) return content
+  return (content.slice(0, legacy.from) + content.slice(legacy.to)).replace(/\n{3,}/g, '\n\n').replace(/\n+$/, '\n')
 }
 
 // Reads the current body of a marker-delimited managed section, or null if it doesn't exist yet -
 // lets a caller accumulate onto an existing section (e.g. another @font-face rule) instead of only
 // ever appending a fresh one.
 export function getManagedBlock(content: string, markerId: string): string | null {
-  const { start, end } = managedBlockMarkers(markerId)
-  const startIdx = content.indexOf(start)
-  if (startIdx === -1) return null
-  const endIdx = content.indexOf(end, startIdx)
-  if (endIdx === -1) return null
-  return content.slice(startIdx + start.length, endIdx).trim()
+  const span = findManagedBlock(content, markerId)
+  return span ? span.body.trim() : null
 }
 
 // Replaces a marker-delimited managed section in-place (appending a new one at the end if it
@@ -107,13 +142,12 @@ export function getManagedBlock(content: string, markerId: string): string | nul
 export function upsertManagedBlock(content: string, markerId: string, body: string): string {
   const { start, end } = managedBlockMarkers(markerId)
   const block = `${start}\n${body}\n${end}`
-  const startIdx = content.indexOf(start)
-  const endIdx = startIdx === -1 ? -1 : content.indexOf(end, startIdx)
-  if (startIdx === -1 || endIdx === -1) {
+  const span = findManagedBlock(content, markerId)
+  if (!span) {
     const trimmed = content.replace(/\s+$/, '')
     return trimmed ? `${trimmed}\n\n${block}\n` : `${block}\n`
   }
-  return content.slice(0, startIdx) + block + content.slice(endIdx + end.length)
+  return withoutLegacyBlock(content.slice(0, span.from) + block + content.slice(span.to), markerId)
 }
 
 // Managed section for Phase-3a's CSS variable overrides - separate marker from fonts' so both
@@ -174,12 +208,11 @@ export async function saveVariableOverrides(projectPath: string, overrides: CssV
 }
 
 export function stripManagedBlock(content: string, markerId: string): string {
-  const { start, end } = managedBlockMarkers(markerId)
-  const startIdx = content.indexOf(start)
-  if (startIdx === -1) return content
-  const endIdx = content.indexOf(end, startIdx)
-  if (endIdx === -1) return content
-  return (content.slice(0, startIdx) + content.slice(endIdx + end.length)).replace(/\n{3,}/g, '\n\n')
+  const span = findManagedBlock(content, markerId)
+  if (!span) return content
+  const stripped = (content.slice(0, span.from) + content.slice(span.to)).replace(/\n{3,}/g, '\n\n')
+  // Both copies go: "no overrides" means no block under either name.
+  return stripManagedBlock(stripped, markerId)
 }
 
 const IMPORTS_MARKER = 'imports'
@@ -236,16 +269,10 @@ function parseImportOrder(projectPath: string, content: string): string[] {
 // and stops at the first line that is anything else.
 function upsertImportBlock(content: string, body: string): string {
   const { start, end } = managedBlockMarkers(IMPORTS_MARKER)
-  const startIdx = content.indexOf(start)
-  if (startIdx !== -1) {
-    const endIdx = content.indexOf(end, startIdx)
-    if (endIdx !== -1) {
-      if (!body) {
-        const stripped = content.slice(0, startIdx) + content.slice(endIdx + end.length)
-        return stripped.replace(/\n{3,}/g, '\n\n')
-      }
-      return content.slice(0, startIdx) + `${start}\n${body}\n${end}` + content.slice(endIdx + end.length)
-    }
+  const span = findManagedBlock(content, IMPORTS_MARKER)
+  if (span) {
+    if (!body) return stripManagedBlock(content, IMPORTS_MARKER)
+    return withoutLegacyBlock(content.slice(0, span.from) + `${start}\n${body}\n${end}` + content.slice(span.to), IMPORTS_MARKER)
   }
   if (!body) return content
 

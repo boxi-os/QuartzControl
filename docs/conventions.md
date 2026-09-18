@@ -750,17 +750,27 @@ Projektwurzel.
   [`navigation-and-pages.md`](decisions/navigation-and-pages.md).
 - **Ein Lesepfad legt nie `.quartz-gui/` an.** `quartzGuiPath()` zum Lesen, `quartzGuiDir()` zum
   Schreiben.
-- **`.quartz-gui/` und `Quartz-GUI:managed:` sind Namen auf fremder Platte und bleiben, wie sie
-  sind.** Beide tragen den alten Arbeitstitel des Projekts, und beide stehen nicht in diesem Repo,
-  sondern in den Projekten der Nutzer: das Verzeichnis mit Snapshots, Deploy-Manifesten,
-  authored-frames, Logs und Locale-Baselines, die Marker in deren `custom.scss`. Am 2026-09-09
-  nachgezählt: 121 der 161 Vorkommen des alten Namens im Baum sind das Verzeichnis, und allein auf
-  dieser Maschine hängen fünf echte Projekte daran. Umbenennen hieße, jeden bestehenden Zustand zu
-  verwaisen; es lesbar zu halten hieße, beide Namen zu lesen — dauerhaft, für einen Namen, den
-  niemand sieht. Dieselbe Regel wie beim `.qtpl`-Marker: **ein Bezeichner, den ein anderer Rechner
-  schon geschrieben hat, ist ein Format und keine Schreibweise.** Wer den einen ändert, ändert auch
-  `scripts/build-example-template.mjs` (dieselben Marker) und `scripts/example-template/`
-  (`Quartz-GUI:syntax:`) — und braucht eine Migration.
+- **`.quartz-gui/` ist ein Name auf fremder Platte und bleibt, wie er ist.** Er trägt den alten
+  Arbeitstitel des Projekts und steht nicht in diesem Repo, sondern in den Projekten der Nutzer:
+  das Verzeichnis mit Snapshots, Deploy-Manifesten, authored-frames, Logs und Locale-Baselines. Am
+  2026-09-09 nachgezählt: 121 der 161 Vorkommen des alten Namens im Baum sind das Verzeichnis, und
+  allein auf dieser Maschine hängen fünf echte Projekte daran. Umbenennen hieße, jeden bestehenden
+  Zustand zu verwaisen; es lesbar zu halten hieße, beide Namen zu lesen — dauerhaft, für einen
+  Namen, den niemand sieht. Dieselbe Regel wie beim `.qtpl`-Marker: **ein Bezeichner, den ein
+  anderer Rechner schon geschrieben hat, ist ein Format und keine Schreibweise.**
+  **Der Marker in `custom.scss` ist seit dem 2026-09-18 umbenannt** (`Quartz-GUI:managed:` →
+  `QuartzControl:managed:`), und zwar genau aus dem Grund, den der Satz oben für den Ordner
+  ausschließt: Ihn *sieht* jemand — er ist ein Kommentar in der eigenen Stildatei des Nutzers. Also
+  mit Migration: Gelesen werden beide Namen (`MARKER_NAMES` in `styleService.ts`, derselbe Satz in
+  `scripts/build-example-template.mjs`), geschrieben nur der neue, und ein alter Block wird an
+  seiner Stelle ersetzt, wenn sein Abschnitt das nächste Mal geschrieben wird; stehen beide da,
+  gilt der neue, und der alte fällt beim Schreiben weg. Gemessen an der gebauten App mit einer
+  Kopie von `navigations-testprojekt`: alle drei Blöcke nach je einem Schreibvorgang unter dem
+  neuen Namen und am alten Platz, sonst byte-gleich, SCSS-Check grün. Der Preis liegt jenseits der
+  Versionsgrenze: Ein Build von vorher (beta.2) erkennt den neuen Block nicht und hängt einen
+  zweiten an. Der Marker `Quartz-GUI:syntax:` in `scripts/example-template/` ist noch der alte — er
+  reist in drei Kopien der Vorlage, die `--check-sync` byte-weise vergleicht, und wird mit dem
+  nächsten Release der Vorlage umbenannt.
   Der Rest ist am 2026-09-09 nachgezogen: `name` in `package.json` (`quartz-gui` →
   `quartzcontrol`, also auch deb-Paket und Linux-Binärdatei), die Repo-URLs, eine DOM-Id. Die
   Review- und Entscheidungsdokumente behalten den alten Namen, wo sie eine Messung protokollieren —

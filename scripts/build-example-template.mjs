@@ -241,6 +241,23 @@ function syncBack() {
 }
 
 /**
+ * A managed block under either name the app has written it with - `QuartzControl` since
+ * 2026-09-18, `Quartz-GUI` before (see MARKER_NAMES in styleService.ts). A workshop keeps the old
+ * spelling until the app writes that section again.
+ */
+const MARKER_NAMES = ['QuartzControl', 'Quartz-GUI']
+function findManagedBlock(text, marker) {
+  for (const name of MARKER_NAMES) {
+    const start = `/* --- ${name}:managed:${marker}:start --- */`
+    const end = `/* --- ${name}:managed:${marker}:end --- */`
+    const from = text.indexOf(start)
+    const to = from === -1 ? -1 : text.indexOf(end, from)
+    if (from !== -1 && to !== -1) return { from, to: to + end.length }
+  }
+  return null
+}
+
+/**
  * The project's custom.scss minus the three blocks the app owns (imports, fonts, css-vars).
  * Phase 5 puts fonts and css-vars back from the project itself and rewrites imports through
  * setImportOrder, so what belongs in the repo is exactly the remainder.
@@ -249,12 +266,9 @@ function readCustomBody() {
   const source = path.join(WORKSHOP, 'quartz/styles/custom.scss')
   let text = fs.readFileSync(source, 'utf-8')
   for (const marker of ['imports', 'fonts', 'css-vars']) {
-    const start = `/* --- Quartz-GUI:managed:${marker}:start --- */`
-    const end = `/* --- Quartz-GUI:managed:${marker}:end --- */`
-    const from = text.indexOf(start)
-    const to = text.indexOf(end)
-    if (from === -1 || to === -1) throw new Error(`Block ${marker} fehlt in ${source}`)
-    text = text.slice(0, from) + text.slice(to + end.length)
+    const span = findManagedBlock(text, marker)
+    if (!span) throw new Error(`Block ${marker} fehlt in ${source}`)
+    text = text.slice(0, span.from) + text.slice(span.to)
   }
   // Collapse the gaps the removed blocks left, so the result is stable across runs.
   return text.replace(/\n{3,}/g, '\n\n').trim() + '\n'
@@ -686,17 +700,23 @@ async function buildTemplate() {
         async (a) => {
           const info = await window.quartzGui.styles.get(a.path)
           const kept = []
+          // Runs in the renderer, so findManagedBlock is out of reach - the names come along.
           for (const marker of ['fonts', 'css-vars']) {
-            const start = `/* --- Quartz-GUI:managed:${marker}:start --- */`
-            const end = `/* --- Quartz-GUI:managed:${marker}:end --- */`
-            const from = info.content.indexOf(start)
-            const to = info.content.indexOf(end)
-            if (from !== -1 && to !== -1) kept.push(info.content.slice(from, to + end.length))
+            for (const name of a.names) {
+              const start = `/* --- ${name}:managed:${marker}:start --- */`
+              const end = `/* --- ${name}:managed:${marker}:end --- */`
+              const from = info.content.indexOf(start)
+              const to = from === -1 ? -1 : info.content.indexOf(end, from)
+              if (from !== -1 && to !== -1) {
+                kept.push(info.content.slice(from, to + end.length))
+                break
+              }
+            }
           }
           await window.quartzGui.styles.save(a.path, [a.body, ...kept].join('\n\n'))
           return kept.length
         },
-        { path: WORKSHOP, body: fs.readFileSync(path.join(DATA_DIR, 'custom-scss-body.scss'), 'utf-8') }
+        { path: WORKSHOP, body: fs.readFileSync(path.join(DATA_DIR, 'custom-scss-body.scss'), 'utf-8'), names: MARKER_NAMES }
       )
       done()
 
@@ -761,16 +781,19 @@ async function buildTemplate() {
         page,
         async (a) => {
           const info = await window.quartzGui.styles.get(a.path)
-          const start = '/* --- Quartz-GUI:managed:fonts:start --- */'
-          const end = '/* --- Quartz-GUI:managed:fonts:end --- */'
+          // Same two names as findManagedBlock; this runs in the renderer.
+          const found = a.names.find((name) => info.content.includes(`/* --- ${name}:managed:fonts:start --- */`))
+          if (!found) return false
+          const start = `/* --- ${found}:managed:fonts:start --- */`
+          const end = `/* --- ${found}:managed:fonts:end --- */`
           const from = info.content.indexOf(start)
-          const to = info.content.indexOf(end)
-          if (from === -1 || to === -1) return false
+          const to = info.content.indexOf(end, from)
+          if (to === -1) return false
           const next = info.content.slice(0, from + start.length) + '\n' + a.css + '\n' + info.content.slice(to)
           await window.quartzGui.styles.save(a.path, next)
           return true
         },
-        { path: WORKSHOP, css: fontFaceCss() }
+        { path: WORKSHOP, css: fontFaceCss(), names: MARKER_NAMES }
       )
       done(fixed ? `${FONTS.length} Regeln mit font-weight` : 'Block nicht gefunden!')
       if (!fixed) throw new Error('der fonts-Block in custom.scss wurde nicht gefunden')

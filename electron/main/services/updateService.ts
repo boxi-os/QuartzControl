@@ -806,7 +806,16 @@ async function dropNpmOwnedFiles(projectPath: string, held: HeldFiles): Promise<
  * that is not this app's stash for *this* merge is the user's or an earlier run's and stays where
  * it is - named, because nothing else in this app lists stashes.
  */
-async function popCoreUpdateStash(projectPath: string): Promise<{ success: boolean; output: string }> {
+/** What the pop said, in two halves: the app's own sentences, and git's text after them. Kept
+ *  apart because the caller puts every sentence of the app before any of git's - the abort's
+ *  announcement is the first line of what it returns (twenty-eighth review, finding 1). */
+interface StashPopOutcome {
+  success: boolean
+  sentences: string[]
+  git: string
+}
+
+async function popCoreUpdateStash(projectPath: string): Promise<StashPopOutcome> {
   const subject = await topStashSubject(projectPath)
   const head = (await run('git', ['rev-parse', 'HEAD'], projectPath)).output.trim()
   const base = await stashBase(projectPath)
@@ -819,8 +828,7 @@ async function popCoreUpdateStash(projectPath: string): Promise<{ success: boole
   if (!subject.includes(CORE_UPDATE_STASH) || !head || base !== head) {
     // Nothing of this app's was written here, so the newest entry of all is ours if it is anywhere.
     const entry = await coreUpdateStashEntry(projectPath)
-    const leftover = entry ? `\n\n${mainT('updateStashLeftover', { entry })}` : ''
-    return { success: true, output: leftover }
+    return { success: true, sentences: entry ? [mainT('updateStashLeftover', { entry })] : [], git: '' }
   }
   // `--index`, because an abort should hand the project back the way it was found. A plain pop
   // restores the content but not the staging: measured against git 2.54, a `M ` (staged) goes back
@@ -840,18 +848,21 @@ async function popCoreUpdateStash(projectPath: string): Promise<{ success: boole
     // Asked again rather than assumed to be `stash@{0}`: a pop that fails leaves the entry where it
     // was, but the name is the one thing the sentence must not get wrong.
     const entry = (await coreUpdateStashEntry(projectPath)) ?? 'stash@{0}'
-    return { success: false, output: `\n\n${mainT('updateStashPopFailed', { entry })}\n${popped.output}` }
+    return { success: false, sentences: [mainT('updateStashPopFailed', { entry })], git: popped.output }
   }
   // And what the pop uncovered. An older entry of this app's can lie underneath - a run that never
   // got to put its own back - and until now the one moment it was certain to go unmentioned was
   // this one: the run that follows says nothing, because by then its own stash is gone and this
   // one is just an entry it did not write. Which of the two sentences it earns is the question
   // leftoverStashNote asks: does it still fit the state the project is in?
+  // The pop itself gets a sentence too: git's answer to it is a whole `git status`, and without a
+  // sentence of the app's in front, that is what the abort announced ("On branch v5").
+  const restored = mainT('updateStashRestored')
   const older = await coreUpdateStashEntry(projectPath)
-  if (older === null) return { success: true, output: `\n${popped.output}` }
+  if (older === null) return { success: true, sentences: [restored], git: popped.output }
   const fits = head !== '' && (await stashBase(projectPath, older)) === head
   const note = mainT(fits ? 'updateStashFitsHead' : 'updateStashLeftover', { entry: older })
-  return { success: true, output: `\n${popped.output}\n\n${note}` }
+  return { success: true, sentences: [restored, note], git: popped.output }
 }
 
 async function conflictedFiles(projectPath: string): Promise<string[]> {
@@ -1584,8 +1595,14 @@ export function abortCoreMerge(projectPath: string): Promise<PluginActionResult>
       const result = await run('git', ['merge', '--abort'], projectPath)
       if (!result.success) return { success: false, output: explainGitFailure(result.output) + result.output }
       const popped = await popCoreUpdateStash(projectPath)
-      const lost = losing.length > 0 ? `\n\n${mainT('updateAbortDroppedStaged', { files: losing.join(', ') })}` : ''
-      return { success: popped.success, output: result.output + popped.output + lost }
+      // The app's sentences first, git's text after them. Both callers announce the first line of
+      // this, and git's `stash pop` is not quiet: in the ordinary conflict case - the run held the
+      // two package files - it prints the whole `git status`, and the sentence about the staged
+      // file that was just thrown away came after it and was never said (twenty-eighth review,
+      // finding 1, measured: the announcement was "On branch v5").
+      const sentences = [...(losing.length > 0 ? [mainT('updateAbortDroppedStaged', { files: losing.join(', ') })] : []), ...popped.sentences]
+      const git = [result.output.trim(), popped.git.trim()].filter(Boolean).join('\n')
+      return { success: popped.success, output: [...sentences, git].filter(Boolean).join('\n\n') }
     })
   )
 }

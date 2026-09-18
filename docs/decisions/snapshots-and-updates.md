@@ -653,3 +653,21 @@ derselben Datei standen.
 Die Attrappe bekommt die Betriebsart „wie npm“ als Normalfall (Messgeschirr, nicht im Repo): Eine
 Szene um die Paketliste, die mit wörtlich geschriebenen Bereichen gemessen ist, misst an einem npm,
 das es nicht gibt.
+
+**Nachtrag (2026-09-18, achtundzwanzigstes Review, Befund 1): Der Abbruch stellt seine Sätze vor
+gits Text.** Beide Seiten sagen die erste Zeile dessen an, was `abortCoreMerge` zurückgibt, und das
+setzte voraus, dass vorn ein Satz der App steht. Vorn standen aber nur drei der fünf:
+`updateAbortDroppedStaged` und die Notiz über einen älteren Stash-Eintrag kamen *hinter*
+`git stash pop`, und das antwortet im gewöhnlichen Konfliktfall — der Lauf hielt die zwei
+Paketdateien — mit einem ganzen `git status`. `popCoreUpdateStash` gibt seine Sätze und gits Text
+jetzt getrennt zurück, der Abbruch reiht erst alle Sätze, dann gits Ausgabe, und ein geglückter Pop
+hat einen eigenen Satz (`updateStashRestored`), damit dort nicht gits erste Zeile angesagt wird.
+Ein Abbruch ohne Stash bleibt still, wie vorher. Szene am Bündel, echtes npm, Upstream E3 gegen ein
+eigenes `quartz/index.ts`, `kind-of` uncommittet in `package.json`:
+
+    AB2 (notes.txt während des Merges vorgemerkt)
+      vorher   Ansage „On branch v5“, der Satz über notes.txt als letzter Absatz des Kastens
+      jetzt    Ansage „Cancelling discarded the staged state of these files: notes.txt. …“
+    AB1 (ohne vorgemerkte Datei)
+      vorher   Ansage „On branch v5“
+      jetzt    Ansage „The update is cancelled, and your stashed package entries are back in place.“

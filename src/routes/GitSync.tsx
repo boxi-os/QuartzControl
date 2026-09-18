@@ -70,9 +70,10 @@ function RepoStatus({
     // The box does not exist before the click and appears on its own - and after an abort that
     // went through it is the one thing on the page that did not change for a screen reader, the
     // banner being gone. Its first line is the app's sentence - every sentence this channel says is
-    // one line - and git's output follows. Not its first paragraph: after a failed stash pop git's
-    // text follows the sentence after a single line break, and the paragraph ran twelve lines of
-    // it (twenty-seventh review, finding 4).
+    // one line, and the channel puts all of them before git's output (twenty-eighth review,
+    // finding 1: the sentence about a dropped staged file used to come after `git stash pop`'s
+    // status and was never said). Not its first paragraph: that once ran twelve lines of git
+    // (twenty-seventh review, finding 4), and a line is what the channel promises.
     if (output !== '') announce(output.split('\n')[0])
     onChanged()
   })

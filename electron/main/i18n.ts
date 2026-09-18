@@ -169,6 +169,10 @@ const STRINGS = {
     // Mit seinem Namen wie die zwei Sätze darüber - ohne ihn blieb „git stash list“ eine Liste,
     // in der der Nutzer den Eintrag selbst suchen musste (sechsundzwanzigstes Review, nebenbei 2).
     // Kein „pop“: genau der ist gerade gescheitert.
+    // Der Abbruch hat die Paketeinträge wieder eingetragen, die der Lauf zurückgelegt hatte. Ein
+    // eigener Satz, weil git darauf mit einem ganzen „git status“ antwortet und dessen erste Zeile
+    // sonst die Ansage war (achtundzwanzigstes Review, Befund 1).
+    updateStashRestored: 'Das Update ist abgebrochen, und die zurückgelegten Paketeinträge sind wieder eingetragen.',
     updateStashPopFailed:
       'Die zurückgelegten Paketeinträge ließen sich nicht wieder eintragen und bleiben in git liegen ({{entry}} in „git stash list“): „git stash show -p {{entry}}“ zeigt sie an.',
     // Der Abbruch kann nur zurücknehmen, was seit dem Steckenbleiben unverändert ist. git nennt
@@ -466,6 +470,7 @@ const STRINGS = {
       'In quartz.config.yaml, “plugins” is not a list. The app will not read it; fix it in an editor or use a restore point.',
     updateStashFitsHead:
       'An earlier update left package entries of yours stashed in git ({{entry}} in “git stash list”). They fit the state the project is in now, but this app has no way left to put them back: “git stash show -p {{entry}}” shows them, “git stash pop {{entry}}” puts them back.',
+    updateStashRestored: 'The update is cancelled, and your stashed package entries are back in place.',
     updateStashPopFailed:
       'Your stashed package entries could not be put back and are still in git ({{entry}} in “git stash list”): “git stash show -p {{entry}}” shows them.',
     updateAbortBlockedByEdit:

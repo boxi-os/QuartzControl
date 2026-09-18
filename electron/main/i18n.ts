@@ -120,7 +120,7 @@ const STRINGS = {
     // Zwei Sätze für zwei Lagen: oben steckt der Merge noch fest, hier ist er durch und npm
     // gescheitert - „abbrechen und erneut" hilft dann nicht, „Fehler beheben und erneut" schon.
     updatePackagesMissing:
-      'Diese eigenen Pakete stehen nicht mehr in package.json: {{packages}}. Behebe den Fehler oben und starte das Update erneut, oder nimm den Wiederherstellungspunkt.',
+      'Diese eigenen Pakete stehen nicht mehr in package.json: {{packages}}. Behebe den Fehler oben und starte das Update erneut, oder nimm den Wiederherstellungspunkt — mit dem Schalter „Auch den Projekt-Commit zurücksetzen“.',
     // Ein Stash, den ein früherer Lauf zurückgelegt und nie wieder eingetragen hat. Er gehört zu
     // einem anderen Stand, also fasst ihn niemand mehr an - gesagt wird er trotzdem, weil sonst
     // nichts in dieser App Stashes zeigt. Mit seinem Namen, weil beide Befehle ohne Argument den
@@ -439,7 +439,7 @@ const STRINGS = {
     updatePackagesPending:
       'These packages of yours are currently not in package.json: {{packages}}. “Abort merge” above puts them back, and so does the restore point.',
     updatePackagesMissing:
-      'These packages of yours are no longer in package.json: {{packages}}. Fix the error above and run the update again, or use the restore point.',
+      'These packages of yours are no longer in package.json: {{packages}}. Fix the error above and run the update again, or use the restore point — with the “Also reset the project commit” switch on.',
     updateStashLeftover:
       'An earlier update left package entries of yours stashed in git ({{entry}} in “git stash list”). They belong to a state that is gone: “git stash show -p {{entry}}” shows them, “git stash drop {{entry}}” discards them.',
     updateStashMine:

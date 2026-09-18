@@ -1471,7 +1471,7 @@ export default {
       pendingDetail:
         'These packages of yours are missing from package.json, or stand there at a different version: {{packages}}. “Run update” puts them back; alternatively, take the project back to the state before it under Snapshots — there with the “Also reset the project commit” switch on.',
       pendingInstallDetail:
-        'The core has been merged, but “npm install” failed while doing it — the dependencies in node_modules do not match package.json. “Run update” catches up; alternatively, take the project back to the state before it under Snapshots.'
+        'The core has been merged, but “npm install” failed while doing it — the dependencies in node_modules do not match package.json. “Run update” catches up; alternatively, take the project back to the state before it under Snapshots — there with the “Also reset the project commit” switch on.'
     },
     plugins: {
       heading: 'Plugins',

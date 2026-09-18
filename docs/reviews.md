@@ -191,9 +191,20 @@ Layout-Board behält die Vorgabe und ist nicht gemessen); der Status fragt `abse
 Liste (`3865910`, R2N mit echtem npm jetzt `is-odd, kind-of` wie der Satz des Laufs, R2
 unverändert); `-m-1 p-1` am Roller (`171822d`, Bildausschnitt alt gegen neu); der Satz nennt den
 Dateinamen aus `Entry '…' not uptodate` (`5acf57b`, am Bündel, nicht an der Seite); und die
-Korrekturen in `layout-frames.md` (in `3d5f2b2` und `26edb1c`). Die sieben Nebenbei-Punkte sind
-**nicht** mit erledigt, darunter `updateAreaHidden`, das beim Einblenden keine Überschneidung
-prüft. **Diese Fixes hat kein Review gelesen.**
+Korrekturen in `layout-frames.md` (in `3d5f2b2` und `26edb1c`). **Danach, auf Wunsch des
+Nutzers, die Nebenbei-Liste**, je ein Commit mit Typcheck, Build und Smoke: Einblenden prüft auf
+Überschneidung (`5feb5f5`); ein Pfeil lässt den Chip auf seiner Querachse, und „noch nicht bewegt“
+heißt seitdem „noch kein Pfeil hat einen Schritt ergeben“, weil ein erster Schritt ohne
+Querkomponente, der nur rollt, sonst als Aufnahme galt — gefunden an der eigenen Gegenprobe, bevor
+es committet war (`0920f95`); eine Kopfzeile in einer 57-px-Spalte bricht um und die Badge kürzt
+(`45a4b1e`, neue Eigenschaft `truncate` an `Badge`); der Abbruch ordnet auch im geglückten Fall nach
+Gewicht (`4e1e1ac`). Punkt 2 war mit Befund 1 erledigt, 6 und 7 bleiben ohne Code (begründet in
+`layout-frames.md`), die zweite Hälfte von 3 — beim Aufnehmen eines hohen Kastens steht der Chip
+über dem Fenster — ist nicht angefasst. Dazu drei Punkte, die beim Abarbeiten auffielen: Das
+Layout-Board verlor bei gehaltener Taste Schritte und rollt jetzt ebenfalls ohne Gleiten
+(`d9ace7d`), der Rückfallsatz des verweigerten Abbruchs verspricht keine Datei mehr (`7bb3f67`), und
+`check:core-update` prüft die Statusliste, die dafür als reine Funktion in `shared/` steht
+(`3afe5ae`; mit dem alten Argument meldet er R2N). **Diese Fixes hat kein Review gelesen.**
 
 **Das siebenundzwanzigste Review las beide Schichten** und fand **keinen Befund Hoch, einen
 Mittel, fünf Niedrig**, dazu drei Punkte nebenbei — und der mittlere ist ein Fehler im eigenen

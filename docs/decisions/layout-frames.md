@@ -1134,8 +1134,8 @@ Jetzt `scrollBehavior: 'auto'`. Gebaute App, Kopie mit `right` ausgeblendet, Fra
     1470 px                     vorher einmal „… Ausgangsplatz“                jetzt keine
     mehrzeilig (left 3 × 1), ↓ ↓ ↑   vorher „Zeile 4 · Ausgangsplatz · Zeile 3“   jetzt ohne Zwischenansage, Plätze wie vorher
 
-Nicht gemessen: ob der Sprung statt des Gleitens für Sehende stört, und das Layout-Board — es
-behält die Vorgabe; ob dort ein weiches Rollen dasselbe Zwischenziel erzeugt, ist offen.
+Nicht gemessen: ob der Sprung statt des Gleitens für Sehende stört. **Das Layout-Board** ist im
+Anschluss gemessen (nebenbei, unten) und bekommt dasselbe.
 
 **Nachtrag (2026-09-18, dreißigstes Review, nebenbei 3): Ein Pfeil im Frame-Builder lässt den
 Chip auf seiner Querachse.** Der Getter setzte die Mitte des Chips auf die Mitte des Ziels, auf
@@ -1164,3 +1164,19 @@ Getter setzt und `onDragStart` zurücksetzt), nicht mehr „Translate null“. G
 Die zweite Hälfte des Punktes ist nicht angefasst: Beim Aufnehmen eines hohen Kastens zentriert
 dnd-kit den *Kasten* (`scrollIntoViewIfNeeded`), und der Chip an seiner Ecke steht dann über dem
 Fenster.
+
+**Nachtrag (2026-09-18, dreißigstes Review, die übrigen Nebenbei-Punkte).**
+
+- *Schnelle Pfeile verlieren Schritte* (Punkt 2) war dieselbe Ursache wie Befund 1 und ist mit ihm
+  erledigt: vier → im Abstand von 40 ms kommen auf Spalte 8 an.
+- *Das Layout-Board* hat kein Zwischenziel — `closestCenter` antwortet dort immer —, aber es
+  verlor Schritte: sechs ↓ im Abstand von 40 ms (eine gehaltene Taste) kamen zwei Zeilen weit,
+  weil jeder Druck während der rund 300 ms des weichen Rollens von `<main>` verfiel. Mit
+  `scrollBehavior: 'auto'` zählen alle sechs; langsame Drücke, Leertaste · ↓ · Leertaste,
+  Leertaste · Leertaste und ↑ am unteren Ende laufen wie vorher (gebaute App, 1280 px).
+- *Die Kappung gegen `min-width: min-content`* (Punkt 6) bleibt ohne Code. Gezählt über alle
+  Projekte dieses Rechners: 99 Breakpoints, davon 64 mit `100%`, 32 mit `1440px` und 3 ohne
+  Kappung — keine ist schmaler als die Mindestbreite der Fläche (1234 px). Und bei `100%` *ist*
+  das Überschreiten der Kappung das gewollte Rollen; ein Hinweis, der das sagt, stünde bei 1280 px
+  in 64 Breakpoints und träfe keinen echten Fall.
+- *Die Zeilenzahl des Auftrags* (Punkt 7) hat das Review selbst erklärt.

@@ -244,7 +244,7 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 
 ## Die Reviews
 
-Alle dreißig Listen sind abgearbeitet. Die Chronik steht in
+Alle einunddreißig Listen sind abgearbeitet. Die Chronik steht in
 [`docs/reviews.md`](docs/reviews.md) — welches Review welchen Stand gelesen hat, mit welchen
 Zahlen, was es gefunden hat und welche Fixes noch niemand gelesen hat. Sie stand bis zum
 2026-09-17 hier und ist wörtlich dorthin gewandert; die Review-Dokumente selbst liegen als
@@ -255,13 +255,12 @@ Chronik. Die Chronik nachzulesen lohnt für zwei Fragen: *warum* eine Regel so l
 Absatz in `docs/decisions/` sie nicht beantwortet, und *was gerade ungelesen ist* — die Serie ist
 so gebaut, dass jede Runde liest, was die vorige gebaut hat.
 
-**Stand:** Die fünf Befunde des dreißigsten Reviews (der kurzen Runde vor dem RC) sind
-abgearbeitet, ebenso ihre Nebenbei-Liste (bis auf das, was dort begründet ohne Code bleibt), am
-2026-09-18 auf `fix/review-2026-10-04`, per Fast-Forward auf `main` und gepusht. Was die Runde
-gefunden hat, steht in [`docs/REVIEW-2026-10-04.md`](docs/REVIEW-2026-10-04.md), was daraus
-geworden ist, oben in [`docs/reviews.md`](docs/reviews.md). Der Auftrag für das
-einunddreißigste Review — die letzte Runde vor dem RC — steht in
-[`docs/REVIEW-2026-10-05-auftrag.md`](docs/REVIEW-2026-10-05-auftrag.md), Tag `review-2026-10-06`.
+**Stand:** Die fünf Befunde des einunddreißigsten Reviews (der letzten Runde vor dem RC, kein
+Befund über Niedrig) sind abgearbeitet, am 2026-09-18 auf `fix/review-2026-10-05` — **nicht
+gemergt, nicht gepusht**. Was die Runde gefunden hat, steht in
+[`docs/REVIEW-2026-10-05.md`](docs/REVIEW-2026-10-05.md), was daraus geworden ist und was aus
+ihrer Nebenbei-Liste offen bleibt, oben in [`docs/reviews.md`](docs/reviews.md). Einen Auftrag für
+eine weitere Runde gibt es nicht; die fünf Fixes hat kein Review gelesen.
 
 **Arbeitsregel** für die nächste Liste: ein Befund pro Durchgang, jeweils mit `npm run typecheck`,
 `npm run build`, `npm run smoke` und eigenem Commit; was dabei nebenbei auffällt, wird gesammelt und

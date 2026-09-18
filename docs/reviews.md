@@ -18,7 +18,7 @@ gearbeitet wird, und nicht, was war.
 
 ## Befunde aus den Reviews (Stand 2026-09-18)
 
-Alle dreißig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVIEW-2026-09-02.md),
+Alle einunddreißig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](REVIEW-2026-09-07.md) mit seinen acht,
@@ -47,7 +47,8 @@ Alle dreißig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVIEW-202
 [`docs/REVIEW-2026-10-01.md`](REVIEW-2026-10-01.md) mit seinen sechs und
 [`docs/REVIEW-2026-10-02.md`](REVIEW-2026-10-02.md) mit seinen fünf und
 [`docs/REVIEW-2026-10-03.md`](REVIEW-2026-10-03.md) mit seinen fünf und
-[`docs/REVIEW-2026-10-04.md`](REVIEW-2026-10-04.md) mit seinen fünf (Aufträge daneben in
+[`docs/REVIEW-2026-10-04.md`](REVIEW-2026-10-04.md) mit seinen fünf und
+[`docs/REVIEW-2026-10-05.md`](REVIEW-2026-10-05.md) mit seinen fünf (Aufträge daneben in
 `docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-30-`, `2026-10-01-` bis `-05-auftrag.md`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](REVIEW-2026-09-15.md) gehört nicht
@@ -215,6 +216,38 @@ Layout-Board verlor bei gehaltener Taste Schritte und rollt jetzt ebenfalls ohne
 (`d9ace7d`), der Rückfallsatz des verweigerten Abbruchs verspricht keine Datei mehr (`7bb3f67`), und
 `check:core-update` prüft die Statusliste, die dafür als reine Funktion in `shared/` steht
 (`3afe5ae`; mit dem alten Argument meldet er R2N). **Diese Fixes hat kein Review gelesen.**
+
+**Das einunddreißigste Review las beide Schichten** und fand **keinen Befund Hoch, keinen Mittel,
+fünf Niedrig**, dazu fünf Punkte nebenbei — die vierte Runde in Folge von Claude Fable 5.1 ohne
+mittleren Befund. `0920f95`, vor dem der Auftrag warnte, trägt in jeder Szene, die er ungemessen
+nannte (Raster ↔ Ablage, Chip aus der Ablage, Pfeile über Kästen, hohe Zeile, breite Spalten eines
+neuen Frames, 40 ms, Maus, Überschneidung in der Datei), und macht nebenbei aus der Ablage einen
+Rundweg; die Statusrechnung in `shared/` antwortet für R4 wortgleich wie das Bündel davor, und die
+Gegenprobe zu R2N stimmt. Was die Runde fand, lag daneben, und zweimal an der Messung vorbei statt
+am Lesen: Das abgelehnte Einblenden (`5feb5f5`) schrieb seine Meldung 273 px über das Fenster und
+in keine Live-Region, während im Testprojekt alle 15 ausgeblendeten Platzierungen abgelehnt werden
+— die Szene dazu fragte, ob der Satz im Dokument steht, nicht ob im Fenster (Befund 1); der Satz,
+den `4e1e1ac` nach vorn stellte, rät `git stash pop` für einen Eintrag, den git in genau diesem
+Augenblick verweigert, weil beide Einträge der App `package.json` halten — der ältere Eintrag des
+Geschirrs hielt `README.md` (2); git nennt bei einem verweigerten Abbruch je Runde *eine* Datei,
+der Komma-Zweig aus `5acf57b` lief nie (3); am Layout-Board setzte → aus der Zone voller Breite den
+Chip 685 px unter den Fensterrand, alt wie neu (4); und zwei Kommentare beschrieben den Rückfall
+der Kollisionsrechnung noch als Aufnahme-Sonderregel, der seit `keepCrossAxis` jeder Schritt ist
+(5). Alle fünf sind abgearbeitet (`fix/review-2026-10-05`, je ein Commit mit Typcheck, Build und
+Smoke): Eine Ablehnung aus dem Bereichsformular ist ein eigener Zustand, steht als letzte Zeile im
+Formular, wird in den Blick gerollt und über `announce()` gesagt, mit dem Weg, der geht — auch für
+die Spannen-Felder (`22e55fb`, gebaute App vorher/nachher); der ältere Eintrag unter einem eben
+eingetragenen bekommt `updateStashUnderRestored` statt des Pop-Rats (`f14b9a6`, Bündel mit einem
+Eintrag, wie die App ihn schreibt, beide geratenen Befehle ausgeführt, an der Git-Sync-Seite
+gegengelesen); der verweigerte Abbruch fragt die geänderten Dateien selbst, mit `-z`
+(`bce9470`, vier Dateien in einem Satz statt vier Runden, danach ein Abbruch); in der zweiten
+Runde des Pfeil-Getters ist ein Ziel, dessen Mitte auf der anderen Achse außerhalb des Fensters
+liegt, kein Schritt (`bbc51c4`, Layout-Board und fünf Frame-Builder-Szenen an der gebauten App,
+Regel in `conventions.md`); und die zwei Kommentare samt einem ungenutzten Import (`2204ff1`).
+Offen aus der Nebenbei-Liste: die drei übersetzten Muster in `explainGitFailure` (gelesen an gits
+`de.po`, nicht gemessen — die VM war aus), die 33 gleichnamigen Griffe des Layout-Boards (für den
+VoiceOver-Durchgang), eine Überschneidung, die in der Datei steht, und `updateLayout`, das
+Platzierungen nicht anfasst. **Diese Fixes hat kein Review gelesen.**
 
 **Das siebenundzwanzigste Review las beide Schichten** und fand **keinen Befund Hoch, einen
 Mittel, fünf Niedrig**, dazu drei Punkte nebenbei — und der mittlere ist ein Fehler im eigenen

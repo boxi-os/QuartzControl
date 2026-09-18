@@ -18,7 +18,7 @@ gearbeitet wird, und nicht, was war.
 
 ## Befunde aus den Reviews (Stand 2026-09-18)
 
-Alle sechsundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVIEW-2026-09-02.md),
+Alle siebenundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](REVIEW-2026-09-07.md) mit seinen acht,
@@ -43,8 +43,9 @@ Alle sechsundzwanzig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REV
 [`docs/REVIEW-2026-09-27.md`](REVIEW-2026-09-27.md) mit seinen sechs und
 [`docs/REVIEW-2026-09-28.md`](REVIEW-2026-09-28.md) mit seinen sieben und
 [`docs/REVIEW-2026-09-29.md`](REVIEW-2026-09-29.md) mit seinen neun und
-[`docs/REVIEW-2026-09-30.md`](REVIEW-2026-09-30.md) mit seinen neun (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-30-`) stehen als
+[`docs/REVIEW-2026-09-30.md`](REVIEW-2026-09-30.md) mit seinen neun und
+[`docs/REVIEW-2026-10-01.md`](REVIEW-2026-10-01.md) mit seinen sechs (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-30-` und `2026-10-01-auftrag.md`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](REVIEW-2026-09-15.md) gehört nicht
 in diese Zählung: Die „fünfzehnte Runde“ las die Handbücher der zwei Plugins gegen deren Code und
@@ -106,6 +107,31 @@ Migration, weil der Marker ein Format auf fremder Platte ist. Das Review geht wi
 Fable 5.1 — an dasselbe Modell, dessen Vorschläge (`putBack`, die SHA-Prüfung, `dropOutcome` im
 Frame-Builder) diese Runde umsetzt; der Auftrag bittet deshalb, zuerst die Vorschläge anzugreifen
 und dann die Umsetzung.
+
+**Das siebenundzwanzigste Review las beide Schichten** und fand **keinen Befund Hoch, einen
+Mittel, fünf Niedrig**, dazu drei Punkte nebenbei — und der mittlere ist ein Fehler im eigenen
+Vorschlag der Vorrunde: `putBack` markierte unter echtem npm nichts, weil npm den Bereich schreibt,
+den es auflöst (`^3.0.1` für `is-odd@^3.0.0`), und `stillMissing` die frisch geschriebene Zeile
+deshalb weiter für fehlend hielt. Gesehen hat das fünf Runden lang niemand, weil die npm-Attrappe
+des Messgeschirrs Bereiche wörtlich schrieb; das Review stellte zum ersten Mal echtes npm daneben.
+Die Niedrigen: die Links in den Content-Ordner landeten per Sticky-State auf „Übersetzungen“, der
+Marker kostet jenseits der Versionsgrenze mehr als beschrieben (beta.2 liest nichts, ein Klick
+bricht Sass) und „gilt der neue“ widersprach der Kaskade, die Ansage nach einem gescheiterten
+Stash-Pop las zwölf Zeilen git vor, der zweite Handbuch-Verweis fehlte als Ausnahme in der Regel,
+und drei Sätze nannten den alten Reiter. Alle sechs sind abgearbeitet (`fix/review-2026-10-01`, je
+ein Commit mit Typcheck, Build und Smoke): `putBack` vergleicht die Zeilen vor und nach den
+npm-Aufrufen (gemessen mit beiden Attrappen-Arten und mit echtem npm 11.17.0), beide Kopien eines
+Blocks werden gelesen und ein Schreiben benennt alle um (gemessen am `styleService` von beta.2 als
+Bündel), die übrigen an der gebauten App. **Offen** aus der Nebenbei-Liste des Reviews: ein
+unplatzierter Frame-Bereich zurück auf seine Ablage heißt weiter „abgelegt“, und die zwei
+Byte-Zahlen zu H3 stehen ohne Satz nebeneinander; der dritte Punkt (die Attrappe schreibt wie npm)
+betrifft das Geschirr außerhalb des Repos. **Beim Abarbeiten aufgefallen, nicht mit erledigt:** Der
+baseUrl-Hinweis der Übersicht verlinkt ebenfalls `config` ohne Reiter und landet damit genauso auf
+„Übersetzungen“; der Satz „`stillMissing` räumt ohnehin weg, was schon dasteht“ steht noch in
+`conventions.md`, `decisions/snapshots-and-updates.md` und am `carried` in `updateService.ts` und
+stimmt unter echtem npm nur halb (eine Zeile mit anderem Bereich wird npm noch einmal gegeben —
+folgenlos, aber nicht „weggeräumt“); `stripManagedBlock` zieht Leerzeilen weiter über die ganze
+Datei zusammen; und das Handbuch (Kapitel 3.4) nennt die Gruppe noch „Karte“.
 
 **Das sechsundzwanzigste Review las die vierzehn Commits und den Button** und fand **keinen
 Befund Hoch, einen Mittel, acht Niedrig**, dazu zwei Punkte nebenbei — wieder von Claude Fable 5.1,

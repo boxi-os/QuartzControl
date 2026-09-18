@@ -37,6 +37,7 @@ import {
   FieldGroup,
   FormActions,
   InfoNote,
+  NumberInput,
   SegmentedControl,
   Select,
   SettingsSection,
@@ -1071,22 +1072,18 @@ export default function FrameBuilder({
         {placement && (
           <>
             <Field label={t('layoutEditor.frameBuilder.rowSpanLabel')}>
-              <TextInput
-                type="number"
-                min={1}
+              <NumberInput
                 max={layout.rows}
                 value={placement.rowSpan}
-                onChange={(e) => updateAreaSpan(area.id, { rowSpan: Number(e.target.value) || 1 })}
+                onValue={(rowSpan) => updateAreaSpan(area.id, { rowSpan })}
                 className="w-16"
               />
             </Field>
             <Field label={t('layoutEditor.frameBuilder.colSpanLabel')}>
-              <TextInput
-                type="number"
-                min={1}
+              <NumberInput
                 max={layout.cols}
                 value={placement.colSpan}
-                onChange={(e) => updateAreaSpan(area.id, { colSpan: Number(e.target.value) || 1 })}
+                onValue={(colSpan) => updateAreaSpan(area.id, { colSpan })}
                 className="w-16"
               />
             </Field>

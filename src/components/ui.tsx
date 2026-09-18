@@ -149,6 +149,42 @@ export function TextInput(props: InputHTMLAttributes<HTMLInputElement>): JSX.Ele
   )
 }
 
+// A number field whose value is applied as it is typed - but only once it is a number. A
+// controlled `type="number"` with `Number(value) || 1` turned the empty field between Backspace and
+// the next digit into a 1 and applied it, then read "1" + "2" as 12: someone going from 3 to 2 got
+// 1, a capped 12 and a refusal saying the span stayed (thirty-second review, finding 3). The field
+// keeps what is typed as a draft; `onValue` hears only whole numbers from `min` up, and leaving the
+// field shows the value that holds again.
+export function NumberInput({
+  value,
+  onValue,
+  min = 1,
+  ...props
+}: Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'type' | 'min'> & {
+  value: number
+  onValue: (value: number) => void
+  min?: number
+}): JSX.Element {
+  const [draft, setDraft] = useState<string | null>(null)
+  return (
+    <TextInput
+      {...props}
+      type="number"
+      min={min}
+      value={draft ?? String(value)}
+      onChange={(e) => {
+        setDraft(e.target.value)
+        const n = Number(e.target.value)
+        if (e.target.value.trim() !== '' && Number.isInteger(n) && n >= min) onValue(n)
+      }}
+      onBlur={(e) => {
+        setDraft(null)
+        props.onBlur?.(e)
+      }}
+    />
+  )
+}
+
 export function Select(props: SelectHTMLAttributes<HTMLSelectElement>): JSX.Element {
   return (
     <select

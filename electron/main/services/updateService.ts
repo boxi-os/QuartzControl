@@ -802,7 +802,12 @@ async function popCoreUpdateStash(projectPath: string): Promise<{ success: boole
   // A pop that hits a conflict leaves the stash standing, which is the right end - but it is not
   // an abort that put the project back, and saying "erfolgreich" over git's conflict output is how
   // the user learns about it at the next build instead of now.
-  if (!popped.success) return { success: false, output: `\n\n${mainT('updateStashPopFailed')}\n${popped.output}` }
+  if (!popped.success) {
+    // Asked again rather than assumed to be `stash@{0}`: a pop that fails leaves the entry where it
+    // was, but the name is the one thing the sentence must not get wrong.
+    const entry = (await coreUpdateStashEntry(projectPath)) ?? 'stash@{0}'
+    return { success: false, output: `\n\n${mainT('updateStashPopFailed', { entry })}\n${popped.output}` }
+  }
   // And what the pop uncovered. An older entry of this app's can lie underneath - a run that never
   // got to put its own back - and until now the one moment it was certain to go unmentioned was
   // this one: the run that follows says nothing, because by then its own stash is gone and this

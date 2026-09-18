@@ -166,8 +166,11 @@ const STRINGS = {
     // Was die App nicht mehr tun kann, tut „git stash pop“; deshalb steht hier kein „drop“.
     updateStashFitsHead:
       'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen ({{entry}} in „git stash list“). Er passt auf den jetzigen Stand, wird aber von dieser App nicht mehr eingetragen: „git stash show -p {{entry}}“ zeigt ihn an, „git stash pop {{entry}}“ trägt ihn ein.',
+    // Mit seinem Namen wie die zwei Sätze darüber - ohne ihn blieb „git stash list“ eine Liste,
+    // in der der Nutzer den Eintrag selbst suchen musste (sechsundzwanzigstes Review, nebenbei 2).
+    // Kein „pop“: genau der ist gerade gescheitert.
     updateStashPopFailed:
-      'Die zurückgelegten Paketeinträge ließen sich nicht wieder eintragen und bleiben in git liegen („git stash list“).',
+      'Die zurückgelegten Paketeinträge ließen sich nicht wieder eintragen und bleiben in git liegen ({{entry}} in „git stash list“): „git stash show -p {{entry}}“ zeigt sie an.',
     // Der Abbruch kann nur zurücknehmen, was seit dem Steckenbleiben unverändert ist. git nennt
     // die Datei, nicht aber den einen Weg weiter. Der Weg steht im Satz selbst, weil keine der zwei
     // Seiten, auf denen er gelesen wird, eine Änderung verwerfen kann - „unter Git-Sync“ schickte
@@ -464,7 +467,7 @@ const STRINGS = {
     updateStashFitsHead:
       'An earlier update left package entries of yours stashed in git ({{entry}} in “git stash list”). They fit the state the project is in now, but this app has no way left to put them back: “git stash show -p {{entry}}” shows them, “git stash pop {{entry}}” puts them back.',
     updateStashPopFailed:
-      'Your stashed package entries could not be put back and are still in git (“git stash list”).',
+      'Your stashed package entries could not be put back and are still in git ({{entry}} in “git stash list”): “git stash show -p {{entry}}” shows them.',
     updateAbortBlockedByEdit:
       'A file from the merge has been changed since, so the update cannot be cancelled. Discard the change to the file named below (in a terminal: “git checkout -- <file>”), then cancel again.\n\n',
     updateAbortDroppedStaged:

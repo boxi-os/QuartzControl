@@ -268,8 +268,11 @@ function slotWarnings(
  *   way from 12 to 10, and a shrink that moved or dropped areas would wreck the layout mid-typing.
  *   Measured at the built app (thirty-first review, "nebenbei" 3 and 4): twelve columns cut to
  *   six left `right` on column 10, the board grew six implicit columns for it, and not one
- *   warning said so - while buildTemplateAreas clips what lies outside, so on the built page that
- *   area has no place at all.
+ *   warning said so. buildTemplateAreas clips what lies outside, but an area entirely outside
+ *   still gets its `grid-area: <name>`, and an unknown name in CSS is an implicit column and row
+ *   behind the grid, not a disappearance: measured with this file's CSS in the app's Chromium, the
+ *   six columns shrank from 200 to 187 px for a 77 px column of its own - whether the area lay
+ *   past the last column or only below the last row (thirty-second review, finding 4).
  */
 function placementWarnings(def: GridFrameDefinition, bp: FrameBreakpoint): { overlapping: [GridFrameArea, GridFrameArea][]; outside: GridFrameArea[] } {
   const layout = def.breakpoints[bp]

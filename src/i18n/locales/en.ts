@@ -1222,7 +1222,7 @@ export default {
       overlapWarning:
         'These areas lie on top of each other: {{pairs}}. On the built page one displaces the other, and where that leaves no rectangle, this breakpoint’s whole arrangement does not apply — drag one of them onto free cells.',
       outsideWarning:
-        'These areas reach beyond the grid: {{areas}}. The built page cuts off what lies outside, and an area entirely outside has no place there.',
+        'These areas reach beyond the grid: {{areas}}. The built page cuts off what lies outside; an area entirely outside gets a column and a row of its own behind the grid there, and the other columns get narrower for it.',
       dropNarrowed: '{{name}} dropped on {{target}}. The grid ends there: {{changes}}.',
       colSpanCut: 'column span now {{now}} instead of {{before}}',
       rowSpanCut: 'row span now {{now}} instead of {{before}}',

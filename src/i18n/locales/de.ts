@@ -1225,7 +1225,7 @@ export default {
       overlapWarning:
         'Diese Bereiche liegen übereinander: {{pairs}}. Auf der gebauten Seite verdrängt einer den anderen, und wo dabei kein Rechteck übrig bleibt, gilt die ganze Anordnung dieses Breakpoints nicht — ziehe einen davon auf freie Zellen.',
       outsideWarning:
-        'Diese Bereiche reichen über das Raster hinaus: {{areas}}. Die gebaute Seite schneidet ab, was außerhalb liegt, und ein Bereich ganz außerhalb hat dort keinen Platz.',
+        'Diese Bereiche reichen über das Raster hinaus: {{areas}}. Die gebaute Seite schneidet ab, was außerhalb liegt; ein Bereich ganz außerhalb bekommt dort eine eigene Spalte und Zeile hinter dem Raster, und die übrigen Spalten werden dafür schmaler.',
       dropNarrowed: '{{name}} bei {{target}} abgelegt. Dort endet das Raster: {{changes}}.',
       colSpanCut: 'Spalten-Spanne jetzt {{now}} statt {{before}}',
       rowSpanCut: 'Zeilen-Spanne jetzt {{now}} statt {{before}}',

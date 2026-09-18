@@ -1265,3 +1265,21 @@ das Einblenden durch. Beide Warnungen stehen vor den übrigen, weil sie die geba
 statt etwas von ihr wegzulassen, und zählen in der Zeile über die anderen Breakpoints mit. Der Frame
 mit der Überschneidung in der Datei (Szene des Reviews) zeigt „header + before-body“.
 Ein Commit für beide Punkte: Es ist eine Funktion (`placementWarnings`) und eine Messung.
+
+**Nachtrag (2026-09-18, zweiunddreißigstes Review, Befund 4): Ein Bereich ganz außerhalb hat auf
+der Seite doch einen Platz.** Der zweite Satz der Warnung sagte „ein Bereich ganz außerhalb hat
+dort keinen Platz“, belegt mit `CSS.supports` statt mit einem Rendern. `buildBreakpointBlock`
+schreibt aber für jeden sichtbaren Bereich `grid-area: <name>`, auch wenn der Name in
+`grid-template-areas` nicht mehr vorkommt, und ein unbekannter Name ist in CSS eine implizite Linie
+hinter dem Raster — auf *beiden* Achsen. `shared/gridFrameCss.ts` geladen (nicht abgeschrieben),
+im Chromium der App in einen 1200 px breiten Kasten gerendert, 2 × 6:
+
+    alles im Raster          sechs Spalten à 200 px, Frame 60 px hoch
+    right auf Spalte 10      sechs à 187 px, dazu 0 und 77 px; right bei x 1123..1200, y 60..90
+    right nur auf Zeile 5    dasselbe — auch ein Bereich nur unterhalb bekommt eine eigene Spalte
+
+Der Satz sagt das jetzt („bekommt dort eine eigene Spalte und Zeile hinter dem Raster, und die
+übrigen Spalten werden dafür schmaler“). Die andere Richtung des Reviews — einen solchen Bereich im
+erzeugten CSS wie einen ausgeblendeten behandeln, dann stimmte der alte Satz — ist bewusst nicht
+genommen: Für `page-body` hieße das, der Hauptinhalt verschwindet von der gebauten Seite, und eine
+gequetschte Spalte mit Warnung im Editor ist der kleinere Schaden. Kein echter `quartz build`.

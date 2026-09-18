@@ -15,7 +15,7 @@ import path from 'node:path'
 const quelle = fs.readFileSync(path.join(import.meta.dirname, '../shared/packageJsonDeps.ts'), 'utf-8')
 const tmp = path.join(os.tmpdir(), `packageJsonDeps-${process.pid}.mts`)
 fs.writeFileSync(tmp, quelle)
-const { localPackageChanges, reinstallCommands } = await import(`file://${tmp}`)
+const { localPackageChanges, reinstallCommands, outstandingPackages, UNREADABLE } = await import(`file://${tmp}`)
 fs.unlinkSync(tmp)
 
 const deps = (eintraege) => ({ name: 'quartz', dependencies: { ...eintraege } })
@@ -216,7 +216,59 @@ if (reinstallCommands([]).length !== 0) {
   console.error('✗ ein leerer Plan erzeugt einen npm-Aufruf')
 }
 
-console.log(`${faelle.length} Pläne und ${aufrufe.length + 1} npm-Aufrufe geprüft.`)
+// Der dritte Teil: Was die Updates- und die Git-Sync-Seite nach einem gescheiterten Lauf als
+// ausstehend nennen. Die Liste der Notiz, das package.json danach und `putBack` sind die der Szenen
+// R2 und R2N mit echtem npm 11.17.0 (Fehlschlag im `--save-peer`-Aufruf, zwei Pakete in zwei
+// Abschnitten); R2N ist der Fall, den erst das dreißigste Review gefunden hat — npm hatte die
+// Bereiche schon einmal geschrieben, und die dev-Zeile von is-odd stand mit dem Bereich der Notiz.
+const r2Notiz = (b) => [
+  { name: 'left-pad', section: 'dependencies', range: b[0] },
+  { name: 'is-odd', section: 'devDependencies', range: b[1] },
+  { name: 'is-buffer', section: 'optionalDependencies', range: b[2] },
+  { name: 'is-odd', section: 'peerDependencies', range: b[1] },
+  { name: 'kind-of', section: 'peerDependencies', range: b[3] }
+]
+const nachLauf = {
+  name: 'quartz',
+  dependencies: { 'left-pad': '^1.3.0' },
+  devDependencies: { 'is-odd': '^3.0.1' },
+  optionalDependencies: { 'is-buffer': '^2.0.5' }
+}
+const zurueck = ['left-pad', 'is-odd', 'is-buffer']
+const statusFaelle = [
+  { was: 'R2: npm hat andere Bereiche geschrieben als die Notiz', pkg: nachLauf, reinstall: r2Notiz(['^1.1.0', '^3.0.0', '^2.0.0', '^6.0.0']), putBack: zurueck, soll: ['is-odd', 'kind-of'] },
+  { was: 'R2N: die Notiz trägt schon npms Bereiche', pkg: nachLauf, reinstall: r2Notiz(['^1.3.0', '^3.0.1', '^2.0.5', '^6.0.3']), putBack: zurueck, soll: ['is-odd', 'kind-of'] },
+  {
+    was: 'alles zurückgeschrieben, nichts steht aus',
+    pkg: { ...nachLauf, peerDependencies: { 'is-odd': '^3.0.1', 'kind-of': '^6.0.3' } },
+    reinstall: r2Notiz(['^1.3.0', '^3.0.1', '^2.0.5', '^6.0.3']),
+    putBack: [...zurueck, 'kind-of'],
+    soll: []
+  },
+  {
+    was: 'eine Zeile, die der Lauf nicht geschrieben hat, mit anderem Bereich — zählt',
+    pkg: { name: 'quartz', dependencies: { 'left-pad': '^1.0.0' } },
+    reinstall: [{ name: 'left-pad', section: 'dependencies', range: '^1.3.0' }],
+    putBack: [],
+    soll: ['left-pad']
+  },
+  {
+    was: 'package.json unlesbar — alles, was der Lauf nicht selbst geschrieben hat',
+    pkg: UNREADABLE,
+    reinstall: r2Notiz(['^1.3.0', '^3.0.1', '^2.0.5', '^6.0.3']),
+    putBack: zurueck,
+    soll: ['kind-of']
+  }
+]
+for (const fall of statusFaelle) {
+  const ist = outstandingPackages(fall.pkg, fall.reinstall, fall.putBack)
+  if ([...ist].sort().join(', ') !== [...fall.soll].sort().join(', ')) {
+    fehler++
+    console.error(`✗ Status: ${fall.was}\n  erwartet [${fall.soll.join(', ')}], bekommen [${ist.join(', ')}]`)
+  }
+}
+
+console.log(`${faelle.length} Pläne, ${aufrufe.length + 1} npm-Aufrufe und ${statusFaelle.length} Statuslisten geprüft.`)
 if (fehler > 0) {
   console.error(`✗ ${fehler} Abweichung(en).`)
   process.exit(1)

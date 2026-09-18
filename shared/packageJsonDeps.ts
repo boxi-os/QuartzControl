@@ -134,3 +134,84 @@ export function reinstallCommands(reinstall: PackageAddition[]): Array<{ args: s
   }
   return calls
 }
+
+/** What a caller passes for a package.json it could not read or parse - distinct from any value
+ *  JSON.parse can return, `null` included. */
+export const UNREADABLE: unique symbol = Symbol('unreadable package.json')
+
+/**
+ * What of the plan the merged package.json does not already say. After one merge the base is
+ * upstream's commit, so `plan.reinstall` names this project's own packages for ever - and every
+ * update then ran an `npm install` over the network that changed nothing, under a line claiming
+ * packages had been put back (sixteenth review, finding 3b). Unreadable is not "nothing to do":
+ * then all of them, and npm answers.
+ */
+export function missingFrom(pkg: unknown, reinstall: PackageAddition[]): PackageAddition[] {
+  if (pkg === UNREADABLE) return reinstall
+  return reinstall.filter((entry) => dependencyRange(pkg, entry.section, entry.name) !== entry.range)
+}
+
+/**
+ * What of a list is *not in package.json at all* - as opposed to `missingFrom`, which also counts
+ * an entry standing at another range, because for the run that is a reason to ask npm.
+ *
+ * The two questions look alike and are not, and the sentence about a dropped list is the place
+ * where the difference shows: `npm install <name>` writes the range npm resolves, not the one the
+ * note remembers, so a user who puts both lines back by hand through npm and commits gets `^2.3.1`
+ * where the note says `^2.0.0`. Measured (twenty-fifth review, finding 3, scenes G4 and G8): the
+ * run then named both themes as "not putting back" over a package.json in which both stood. Asked
+ * across all sections, because a line moved from `dependencies` to `devDependencies` is an answer
+ * too.
+ *
+ * But only a section the list does not claim for the same name stands in for a missing one. A
+ * package can be in two sections at once - `devDependencies` and `peerDependencies` is the usual
+ * form for one that is developed against and required - and asked purely by name, the `dev` line
+ * answered for the missing `peer` line: the sentence named `kind-of` and not the second entry that
+ * was just as gone (twenty-eighth review, finding 4, scene R2 with real npm). Which sections are
+ * claimed is read from `entries`, so a caller hands it the whole list, never a filtered part.
+ *
+ * Unreadable: the file says nothing either way, and a sentence naming packages that may well be
+ * there is the worse of the two answers.
+ */
+export function absentFrom(pkg: unknown, entries: PackageAddition[]): PackageAddition[] {
+  if (pkg === UNREADABLE) return []
+  const holds = (section: DependencySection, name: string): boolean => dependencyRange(pkg, section, name) !== undefined
+  const absent: PackageAddition[] = []
+  for (const name of new Set(entries.map((entry) => entry.name))) {
+    const own = entries.filter((entry) => entry.name === name)
+    const claimed = new Set(own.map((entry) => entry.section))
+    // Sections that hold the name without the list asking for it there: each one is a line that
+    // may have moved, and answers for one entry whose own section is empty.
+    let moved = DEPENDENCY_SECTIONS.filter((section) => !claimed.has(section) && holds(section, name)).length
+    for (const entry of own) {
+      if (holds(entry.section, name)) continue
+      if (moved > 0) moved--
+      else absent.push(entry)
+    }
+  }
+  return absent
+}
+
+/**
+ * The packages the Updates and Git-Sync pages name as still to be put back, one name per package.
+ *
+ * `missingFrom` is the run's question - "fehlt oder steht mit einem anderen Bereich da", and in
+ * doubt ask npm - and as a list on the page it named lines that stand: npm writes the range it
+ * resolves, so every line a failed run had already put back still differed from the note (R2:
+ * left-pad, is-odd and is-buffer beside the one missing kind-of - twenty-ninth review, "nebenbei"
+ * 4). A line this app's npm wrote back (`putBack`) is therefore outstanding only while it is not
+ * there at all; any other line at another range still is, because that may be upstream's range
+ * where the project had its own.
+ *
+ * `absentFrom` is asked about the whole list, not about the missing part: a dev line standing at
+ * the note's range is not missing, its section then looked unclaimed, and the gone peer line of
+ * the same package counted as "moved" there and fell out (thirtieth review, finding 2, scene R2N
+ * with the ranges npm writes). The identity of the entries survives, because `missingFrom`
+ * filters and does not copy. One name per package: an entry in two sections is one package to
+ * the reader, and the page counted it twice (twenty-eighth review, finding 4).
+ */
+export function outstandingPackages(pkg: unknown, reinstall: PackageAddition[], putBack: string[]): string[] {
+  const absent = new Set(absentFrom(pkg, reinstall))
+  const outstanding = missingFrom(pkg, reinstall).filter((entry) => !putBack.includes(entry.name) || absent.has(entry))
+  return [...new Set(outstanding.map((entry) => entry.name))]
+}

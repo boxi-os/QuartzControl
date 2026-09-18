@@ -3,10 +3,14 @@ import { readFile, realpath } from 'fs/promises'
 import { join, resolve } from 'path'
 import type { CoreAbortResult, CoreUpdateStatus, PluginActionResult, PluginUpdateStatus, UpdateResult } from '@shared/ipc-contract'
 import {
+  absentFrom,
   dependencyRange,
   DEPENDENCY_SECTIONS,
   localPackageChanges,
+  missingFrom,
+  outstandingPackages,
   reinstallCommands,
+  UNREADABLE,
   type DependencySection,
   type LocalPackageChanges,
   type PackageAddition
@@ -163,25 +167,9 @@ async function outstandingCoreInstall(projectPath: string): Promise<{ packages: 
   const unfinished = pending.head !== '' && pending.installFailed
   if (pending.head === '' || pending.reinstall.length === 0) return { packages: [], unfinished }
   if ((await listTakenInHandSince(projectPath, pending)) !== 'stands') return { packages: [], unfinished }
-  // `stillMissing` is the run's question - "fehlt oder steht mit einem anderen Bereich da", and in
-  // doubt ask npm - and as a list on the page it named lines that stand: npm writes the range it
-  // resolves, so every line a failed run had already put back still differed from the note (R2:
-  // left-pad, is-odd and is-buffer beside the one missing kind-of - twenty-ninth review, "nebenbei"
-  // 4). A line this app's npm wrote back (`putBack`) is therefore outstanding only while it is not
-  // there at all; any other line at another range still is, because that may be upstream's range
-  // where the project had its own.
-  //
-  // `absent` is asked about the whole list, not about `missing`: which sections the list claims
-  // for a name is read from the entries it is given, and a dev line that stands at the note's
-  // range is not in `missing` - its section then looked unclaimed, and the gone peer line counted
-  // as "moved" there and fell out (thirtieth review, finding 2, scene R2N with the ranges npm
-  // writes). The identity of the entries survives, because `stillMissing` filters, not copies.
-  const missing = await stillMissing(projectPath, pending.reinstall)
-  const absent = new Set(await absentFromPackageJson(projectPath, pending.reinstall))
-  const outstanding = missing.filter((entry) => !pending.putBack.includes(entry.name) || absent.has(entry))
-  // One name per package: an entry in two sections is one package to the reader, and the page
-  // counted it twice (twenty-eighth review, finding 4).
-  return { packages: [...new Set(outstanding.map((entry) => entry.name))], unfinished }
+  // Which lines count is a pure function in shared/packageJsonDeps.ts, so that
+  // `npm run check:core-update` can replay the scenes that found its edges (thirtieth review).
+  return { packages: outstandingPackages(await readPackageJson(projectPath), pending.reinstall, pending.putBack), unfinished }
 }
 
 export async function getCoreUpdateStatus(
@@ -345,65 +333,23 @@ async function planPackageFiles(projectPath: string): Promise<PackagePlan> {
   }
 }
 
-/**
- * What of the plan the merged package.json does not already say. After one merge the base is
- * upstream's commit, so `plan.reinstall` names this project's own packages for ever - and every
- * update then ran an `npm install` over the network that changed nothing, under a line claiming
- * packages had been put back (sixteenth review, finding 3b).
- */
-async function stillMissing(projectPath: string, reinstall: PackageAddition[]): Promise<PackageAddition[]> {
-  let merged: unknown
+/** package.json as parsed, or UNREADABLE - the one read the three questions below share. */
+async function readPackageJson(projectPath: string): Promise<unknown> {
   try {
-    merged = JSON.parse(await readFile(join(projectPath, 'package.json'), 'utf-8'))
+    return JSON.parse(await readFile(join(projectPath, 'package.json'), 'utf-8'))
   } catch {
-    // Unreadable is not "nothing to do": write them all back and let npm answer.
-    return reinstall
+    return UNREADABLE
   }
-  return reinstall.filter((entry) => dependencyRange(merged, entry.section, entry.name) !== entry.range)
 }
 
-/**
- * What of a list is *not in package.json at all* - as opposed to `stillMissing`, which also counts
- * an entry standing at another range, because for the run that is a reason to ask npm.
- *
- * The two questions look alike and are not, and the sentence about a dropped list is the place
- * where the difference shows: `npm install <name>` writes the range npm resolves, not the one the
- * note remembers, so a user who puts both lines back by hand through npm and commits gets `^2.3.1`
- * where the note says `^2.0.0`. Measured (twenty-fifth review, finding 3, scenes G4 and G8): the
- * run then named both themes as "not putting back" over a package.json in which both stood. Asked
- * across all sections, because a line moved from `dependencies` to `devDependencies` is an answer
- * too.
- *
- * But only a section the list does not claim for the same name stands in for a missing one. A
- * package can be in two sections at once - `devDependencies` and `peerDependencies` is the usual
- * form for one that is developed against and required - and asked purely by name, the `dev` line
- * answered for the missing `peer` line: the sentence named `kind-of` and not the second entry that
- * was just as gone (twenty-eighth review, finding 4, scene R2 with real npm).
- */
+/** `missingFrom` against the file on disk; see shared/packageJsonDeps.ts. */
+async function stillMissing(projectPath: string, reinstall: PackageAddition[]): Promise<PackageAddition[]> {
+  return missingFrom(await readPackageJson(projectPath), reinstall)
+}
+
+/** `absentFrom` against the file on disk; see shared/packageJsonDeps.ts. */
 async function absentFromPackageJson(projectPath: string, entries: PackageAddition[]): Promise<PackageAddition[]> {
-  let merged: unknown
-  try {
-    merged = JSON.parse(await readFile(join(projectPath, 'package.json'), 'utf-8'))
-  } catch {
-    // Unreadable: the file says nothing either way, and a sentence naming packages that may well
-    // be there is the worse of the two answers.
-    return []
-  }
-  const holds = (section: DependencySection, name: string): boolean => dependencyRange(merged, section, name) !== undefined
-  const absent: PackageAddition[] = []
-  for (const name of new Set(entries.map((entry) => entry.name))) {
-    const own = entries.filter((entry) => entry.name === name)
-    const claimed = new Set(own.map((entry) => entry.section))
-    // Sections that hold the name without the list asking for it there: each one is a line that
-    // may have moved, and answers for one entry whose own section is empty.
-    let moved = DEPENDENCY_SECTIONS.filter((section) => !claimed.has(section) && holds(section, name)).length
-    for (const entry of own) {
-      if (holds(entry.section, name)) continue
-      if (moved > 0) moved--
-      else absent.push(entry)
-    }
-  }
-  return absent
+  return absentFrom(await readPackageJson(projectPath), entries)
 }
 
 /**

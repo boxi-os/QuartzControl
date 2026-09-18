@@ -95,7 +95,10 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   der beim Lesen richtig aussah (`path.basename` trennt am Backslash nur auf win32)
 - `npm run check:core-update` — der Plan, nach dem das Core-Update `package.json` und
   `package-lock.json` behandelt: vierzehn Fälle gegen `shared/packageJsonDeps.ts` (das Skript lädt die
-  Datei, statt sie abzuschreiben), dazu die npm-Aufrufe, die daraus entstehen. Braucht weder App
+  Datei, statt sie abzuschreiben), dazu die npm-Aufrufe, die daraus entstehen, und seit dem
+  dreißigsten Review fünf Statuslisten — was Updates- und Git-Sync-Seite nach einem gescheiterten
+  Lauf als ausstehend nennen, darunter die Szenen R2 und R2N mit den Bereichen, die echtes npm
+  schreibt. Braucht weder App
   noch Projekt noch Netz. Existiert, weil ein falscher Plan wie ein gelungenes Update aussieht und
   erst auffällt, wenn ein Paket fehlt, das vorher da war — und weil er schon beim ersten Lauf einen
   Rand zeigte: Ohne Vergleichsstand ist *jeder* Schlüssel eine Abweichung, also Finger weg. Drei der

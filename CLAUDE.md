@@ -253,9 +253,9 @@ Absatz in `docs/decisions/` sie nicht beantwortet, und *was gerade ungelesen ist
 so gebaut, dass jede Runde liest, was die vorige gebaut hat.
 
 **Stand:** Die sechs Befunde des siebenundzwanzigsten Reviews sind abgearbeitet, am 2026-09-18
-auf `fix/review-2026-10-01`, nicht gepusht. Was die Runde gefunden hat, steht in
-[`docs/REVIEW-2026-10-01.md`](docs/REVIEW-2026-10-01.md), was daraus geworden ist und was offen
-bleibt (zwei Nebenbei-Punkte des Reviews, vier beim Abarbeiten gesammelte), oben in
+auf `fix/review-2026-10-01`, dazu die zwei Nebenbei-Punkte des Reviews und vier beim Abarbeiten
+gefundene, nicht gepusht. Was die Runde gefunden hat, steht in
+[`docs/REVIEW-2026-10-01.md`](docs/REVIEW-2026-10-01.md), was daraus geworden ist, oben in
 [`docs/reviews.md`](docs/reviews.md). Ein Auftrag für das achtundzwanzigste Review steht noch
 nicht.
 

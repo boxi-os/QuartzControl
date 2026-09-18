@@ -122,16 +122,18 @@ und drei Sätze nannten den alten Reiter. Alle sechs sind abgearbeitet (`fix/rev
 ein Commit mit Typcheck, Build und Smoke): `putBack` vergleicht die Zeilen vor und nach den
 npm-Aufrufen (gemessen mit beiden Attrappen-Arten und mit echtem npm 11.17.0), beide Kopien eines
 Blocks werden gelesen und ein Schreiben benennt alle um (gemessen am `styleService` von beta.2 als
-Bündel), die übrigen an der gebauten App. **Offen** aus der Nebenbei-Liste des Reviews: ein
-unplatzierter Frame-Bereich zurück auf seine Ablage heißt weiter „abgelegt“, und die zwei
-Byte-Zahlen zu H3 stehen ohne Satz nebeneinander; der dritte Punkt (die Attrappe schreibt wie npm)
-betrifft das Geschirr außerhalb des Repos. **Beim Abarbeiten aufgefallen, nicht mit erledigt:** Der
-baseUrl-Hinweis der Übersicht verlinkt ebenfalls `config` ohne Reiter und landet damit genauso auf
-„Übersetzungen“; der Satz „`stillMissing` räumt ohnehin weg, was schon dasteht“ steht noch in
-`conventions.md`, `decisions/snapshots-and-updates.md` und am `carried` in `updateService.ts` und
-stimmt unter echtem npm nur halb (eine Zeile mit anderem Bereich wird npm noch einmal gegeben —
-folgenlos, aber nicht „weggeräumt“); `stripManagedBlock` zieht Leerzeilen weiter über die ganze
-Datei zusammen; und das Handbuch (Kapitel 3.4) nennt die Gruppe noch „Karte“.
+Bündel), die übrigen an der gebauten App. **Danach, auf Wunsch des Nutzers, auch der Rest**, je
+ein Commit: Der baseUrl-Hinweis der Übersicht verlinkte ebenfalls `config` ohne Reiter
+(`c9e968c`); ein Chip im Frame-Builder, auf seiner eigenen Ablage losgelassen, bleibt, wie er war
+(`dcb221b` — das Review hatte die Ablage für wirkungslos gehalten, sein Chip war aber ein
+ausgeblendeter, und der verlor dabei still seine Platzierung); „`stillMissing` räumt ohnehin weg“
+sagt jetzt, dass das nur für denselben Bereich gilt, und die zwei Byte-Zahlen zu H3 haben ihren
+Satz (`585a0d7`, nachgemessen: 41 Bytes, wenn ein Commit den Paketnamen trägt, sonst 0);
+`stripManagedBlock` zieht Leerzeilen nur noch an der Schnittstelle zusammen (`ca5780b`, vorher
+gegen alle zehn echten `custom.scss` verglichen, Vorlagen-Export byte-gleich); Handbuch 3.4 sagt
+„Gruppe“ statt „Karte“ (Vault-Commit `391f77a`). Der dritte Nebenbei-Punkt des Reviews — die
+npm-Attrappe schreibt Bereiche wie npm — betrifft das Messgeschirr außerhalb des Repos. **Diese
+Fixes hat kein Review gelesen.**
 
 **Das sechsundzwanzigste Review las die vierzehn Commits und den Button** und fand **keinen
 Befund Hoch, einen Mittel, acht Niedrig**, dazu zwei Punkte nebenbei — wieder von Claude Fable 5.1,

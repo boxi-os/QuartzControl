@@ -97,7 +97,9 @@ export default function ContentFolder(): JSX.Element {
       {/* A group of the "Website" form rather than a card of its own: every other part of that
           tab is a labelled field or group (the project picture is the model), and a lone card
           above them read as a different kind of thing. It is the one part of the tab with a
-          chapter of its own - the header's link names the tab's, so this one names the folder's. */}
+          chapter of its own - the header's link names the tab's, so this one names the folder's.
+          The one link in a page body beside the header's; docs/conventions.md names it as the
+          exception it is (Settings has one link only, having no PageHeader). */}
       <FieldGroup label={t('content.label')} className="md:col-span-2 2xl:col-span-3">
         {!status && <p className="text-text-muted">{t('content.loading')}</p>}
         {status && !status.exists && <p className="text-amber-600">{t('content.noFolder')}</p>}

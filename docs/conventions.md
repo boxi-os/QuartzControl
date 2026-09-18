@@ -582,7 +582,13 @@ Projektwurzel.
   Handbuchs veralten — und gesucht wird die Erklärung ohnehin zu einem Bildschirm, nicht zu einem
   Feld. Am 2026-09-07 an der laufenden App nachgemessen: 20 Bildschirme mit Verweis, jeder auf eine
   Seite, die es gibt, keiner mit Rückfall auf die Startseite; ohne Verweis bleibt die Startseite,
-  die den Link schon in ihrer Quartz-Karte trägt. Ein Begriff aus der Maschinenwelt
+  die den Link schon in ihrer Quartz-Karte trägt. **Eine Ausnahme, und bisher nur diese:** Ein Teil eines
+  Reiters, der ein Kapitel für sich hat, das keinem Reiter gehört, trägt einen zweiten Verweis am
+  Teil selbst — der Content-Ordner im Reiter „Website“ (Kapitel 3.4), seit er kein eigener Reiter
+  mehr ist. Der Einwand der Regel, Verweise in Hinweisen veralten, trifft ihn nicht, weil er eine
+  Kennung aus `handbookPages.ts` nennt. Die Einstellungen sind kein Vorgänger: Sie haben keinen
+  `PageHeader`, ihr Verweis ist der einzige der Seite. Eine zweite solche Gruppe wird hier
+  eingetragen, nicht mit dieser begründet (siebenundzwanzigstes Review, Befund 5). Ein Begriff aus der Maschinenwelt
   steht nur da, wo der Nutzer ihn zum Entscheiden braucht: „Host-Key“ auf der Veröffentlichen-Seite
   ja, „ungelayert“ im Variablen-Tab nein. Ein Bestätigungsdialog hat drei Teile — die Frage, ein
   Satz Folgen, ein Satz Rückweg. Ausgenommen sind die Sätze, die eine Verwechslung verhindern, die

@@ -371,6 +371,19 @@ interface FontsPayload {
   files: string[]
 }
 
+// A package made before 2026-09-19 carries root-relative font URLs (`/static/fonts/…`), which break
+// on a site under a sub-path (relativeFontUrls in styleService.ts). Read as the relative form, so
+// such a package neither lands broken nor reads as a conflict against a block already migrated.
+function incomingFontFaceCss(payload: FontsPayload): string | null {
+  return payload.fontFaceCss && styleService.relativeFontUrls(payload.fontFaceCss)
+}
+
+// The project's side of the same comparison: a block not yet migrated is the same block.
+function currentFontFaceCss(content: string): string | null {
+  const body = styleService.getManagedBlock(content, FONTS_MARKER)
+  return body && styleService.relativeFontUrls(body)
+}
+
 const fonts: TemplatePart<FontsPayload> = {
   id: 'fonts',
   async collect({ projectPath }) {
@@ -383,6 +396,7 @@ const fonts: TemplatePart<FontsPayload> = {
   },
   async plan(payload, { projectPath, files }) {
     const plan = emptyPlan()
+    const faceCss = incomingFontFaceCss(payload)
     for (const name of payload.files) {
       const target = await writableTarget(fontsDir(projectPath), name)
       if (!target) {
@@ -399,14 +413,15 @@ const fonts: TemplatePart<FontsPayload> = {
       if (incoming && sha(incoming) === sha(await readFile(target))) plan.notes.push(`identical:${name}`)
       else plan.conflicts.push(name)
     }
-    if (payload.fontFaceCss) {
-      const current = styleService.getManagedBlock((await styleService.readCustomScss(projectPath)).content, FONTS_MARKER)
-      if (current && current !== payload.fontFaceCss) plan.conflicts.push('@font-face')
+    if (faceCss) {
+      const current = currentFontFaceCss((await styleService.readCustomScss(projectPath)).content)
+      if (current && current !== faceCss) plan.conflicts.push('@font-face')
       else if (!current) plan.additions.push('@font-face')
     }
     return plan
   },
   async apply(payload, { projectPath, strategy, files, warn }) {
+    const faceCss = incomingFontFaceCss(payload)
     await mkdir(fontsDir(projectPath), { recursive: true })
     for (const name of payload.files) {
       const data = files.get(`files/fonts/${name}`)
@@ -425,9 +440,9 @@ const fonts: TemplatePart<FontsPayload> = {
       }
       await writeFile(target, data)
     }
-    if (!payload.fontFaceCss) return
+    if (!faceCss) return
     const info = await styleService.readCustomScss(projectPath)
-    const current = styleService.getManagedBlock(info.content, FONTS_MARKER)
+    const current = currentFontFaceCss(info.content)
     // Under 'projectWins' the target's own rules stay, but the package's are still appended - a
     // @font-face that is dropped leaves the font files it shipped unreferenced and useless. Only
     // the ones that are not there yet, though: appended whole, every repeated import of the same
@@ -435,10 +450,10 @@ const fonts: TemplatePart<FontsPayload> = {
     // "Instrument Sans" three times).
     const body =
       current && strategy === 'projectWins'
-        ? styleService.joinUniqueRules([current, payload.fontFaceCss])
-        : current === payload.fontFaceCss
+        ? styleService.joinUniqueRules([current, faceCss])
+        : current === faceCss
           ? current
-          : payload.fontFaceCss
+          : faceCss
     await styleService.writeCustomScss(projectPath, styleService.upsertManagedBlock(info.content, FONTS_MARKER, body))
   }
 }

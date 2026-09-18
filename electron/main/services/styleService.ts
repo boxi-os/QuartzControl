@@ -232,6 +232,31 @@ export function splitRules(body: string): string[] {
   return out
 }
 
+// A font file under the site's own static/fonts, addressed relative to the stylesheet rather than
+// to the domain. Quartz compiles custom.scss into the one index.css at the site's root, and a url()
+// resolves against the stylesheet, so `static/fonts/x` finds the file locally, online, on every
+// page depth and under a sub-path. `/static/fonts/x` - what the font import wrote until
+// 2026-09-19 - finds it only on a site at the root of its domain: measured on the handbook
+// (baseUrl boxi-os.github.io/QuartzControl), the published CSS asked for
+// boxi-os.github.io/static/fonts/inter-latin-400-700.woff2 (404) while the file stood one level
+// down (200). Only the managed fonts block is rewritten; a rule the user wrote is theirs.
+export function relativeFontUrls(css: string): string {
+  return css.replace(/url\(\s*(["']?)\/static\/fonts\//g, 'url($1static/fonts/')
+}
+
+// What every write of custom.scss does on the way: the marker's new name, and relative font URLs
+// in the fonts block - both migrate the whole file on its first save, not one section at a time.
+function migrateOnWrite(content: string): string {
+  const next = renameLegacyMarkers(content)
+  const spans = findManagedBlocks(next, 'fonts')
+  let out = next
+  for (let i = spans.length - 1; i >= 0; i--) {
+    const span = spans[i]
+    out = out.slice(0, span.from) + relativeFontUrls(out.slice(span.from, span.to)) + out.slice(span.to)
+  }
+  return out
+}
+
 // Reads the current body of a marker-delimited managed section, or null if it doesn't exist yet -
 // lets a caller accumulate onto an existing section (e.g. another @font-face rule) instead of only
 // ever appending a fresh one.
@@ -254,9 +279,9 @@ export function upsertManagedBlock(content: string, markerId: string, body: stri
   const spans = findManagedBlocks(content, markerId)
   if (spans.length === 0) {
     const trimmed = content.replace(/\s+$/, '')
-    return renameLegacyMarkers(trimmed ? `${trimmed}\n\n${block}\n` : `${block}\n`)
+    return migrateOnWrite(trimmed ? `${trimmed}\n\n${block}\n` : `${block}\n`)
   }
-  return renameLegacyMarkers(replaceManagedBlocks(content, spans, block))
+  return migrateOnWrite(replaceManagedBlocks(content, spans, block))
 }
 
 // Managed section for Phase-3a's CSS variable overrides - separate marker from fonts' so both
@@ -313,7 +338,7 @@ export async function saveVariableOverrides(projectPath: string, overrides: CssV
       ? // an empty override list still clears a previously-written block rather than leaving stale
         // rules behind - upsertManagedBlock always needs a non-empty body, so remove the markers
         // outright by upserting an intentionally-empty :root rule then stripping it back out.
-        renameLegacyMarkers(stripManagedBlock(info.content, CSS_VARS_MARKER))
+        migrateOnWrite(stripManagedBlock(info.content, CSS_VARS_MARKER))
       : upsertManagedBlock(info.content, CSS_VARS_MARKER, renderVariableOverrides(overrides))
   await writeCustomScss(projectPath, next)
 }
@@ -387,8 +412,8 @@ function upsertImportBlock(content: string, body: string): string {
   const { start, end } = managedBlockMarkers(IMPORTS_MARKER)
   const spans = findManagedBlocks(content, IMPORTS_MARKER)
   if (spans.length > 0) {
-    if (!body) return renameLegacyMarkers(stripManagedBlock(content, IMPORTS_MARKER))
-    return renameLegacyMarkers(replaceManagedBlocks(content, spans, `${start}\n${body}\n${end}`))
+    if (!body) return migrateOnWrite(stripManagedBlock(content, IMPORTS_MARKER))
+    return migrateOnWrite(replaceManagedBlocks(content, spans, `${start}\n${body}\n${end}`))
   }
   if (!body) return content
 
@@ -425,7 +450,7 @@ function upsertImportBlock(content: string, body: string): string {
   }
   if (insertAt === 0) insertAt = cursor
   lines.splice(insertAt, 0, '', `${start}\n${body}\n${end}`)
-  return renameLegacyMarkers(lines.join('\n').replace(/\n{3,}/g, '\n\n'))
+  return migrateOnWrite(lines.join('\n').replace(/\n{3,}/g, '\n\n'))
 }
 
 export async function listStyleFiles(projectPath: string): Promise<StyleFileSet> {
@@ -694,14 +719,15 @@ export function parseFontFaces(content: string): ParsedFace[] {
   return out
 }
 
-// A face's file on disk, for the one URL shape both sources write: `…/static/fonts/<file>`. The
-// app's font import writes it root-relative, Quartz writes it absolute on the baseUrl
+// A face's file on disk, for the one URL shape both sources write: `…static/fonts/<file>`. The
+// app's font import writes it relative (root-relative until 2026-09-19, see relativeFontUrls),
+// Quartz writes it absolute on the baseUrl
 // (`https://<baseUrl>/static/fonts/<hash>.ttf`, read from a real build). Anything else - a CDN, a
 // data: URI, a path elsewhere - has no file here. Only a bare file name is accepted, so the result
 // cannot leave `dir`.
 export function fontFileIn(dir: string, url: string | undefined): string | undefined {
   if (!url) return undefined
-  const match = /\/static\/fonts\/([^/?#]+)(?:[?#].*)?$/.exec(url)
+  const match = /(?:^|\/)static\/fonts\/([^/?#]+)(?:[?#].*)?$/.exec(url)
   if (!match) return undefined
   let name: string
   try {

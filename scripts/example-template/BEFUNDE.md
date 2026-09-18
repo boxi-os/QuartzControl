@@ -2028,3 +2028,12 @@ Die fünf Zeilen sagten also nichts, was Quartz nicht schon sagte — aber unges
 gegen jede Schrift, die jemand im Reiter „Basis“ wählt. Aufgefallen in gui-test: Dort ließ sich
 Inter erst entfernen, nachdem die Zeilen von Hand gelöscht waren. Die Stylesheets lesen alle fünf
 weiter, Quartz deklariert sie. Die Vorlage hat damit 45 statt 50 Variablen.
+
+### 95. Online fand keine Website unter einem Unterpfad ihre Schriften — behoben am 2026-09-19
+
+`fonts.mjs` schrieb `url("/static/fonts/…")`, und der Schrägstrich meint die Wurzel der Domain.
+Das veröffentlichte Handbuch unter `boxi-os.github.io/QuartzControl` fragte nach
+`boxi-os.github.io/static/fonts/…` (404) und zeigte Inter, Instrument Sans und JetBrains Mono nie.
+Jetzt `static/fonts/…`, relativ zur Stildatei im Wurzelordner der Website; Messung in
+`docs/decisions/styles-and-fonts.md`. Die App stellt bestehende Blöcke beim nächsten Schreiben von
+`custom.scss` um und liest ein älteres Paket in der neuen Form.

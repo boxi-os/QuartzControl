@@ -285,3 +285,25 @@ das Band hat einen Satz je Schreiber. Gemessen an der gebauten App mit der Zwei-
 Reviews: Entwurf getippt, Knopf geklickt — das Band sagt „… geändert, weil sich die Stylesheets
 geändert haben (Ladereihenfolge, Import oder neue Datei) …“. Handbuch 4.5 in beiden Sprachen
 nachgezogen.
+
+**Schriftdateien werden relativ zur Stildatei adressiert, nicht zur Domain (2026-09-19).** Der
+Schriftimport und die Beispielvorlage schrieben `url("/static/fonts/<datei>")`. Der führende
+Schrägstrich meint die Wurzel der Domain, und eine Website unter einem Unterpfad liegt nicht dort:
+Das veröffentlichte Handbuch (`baseUrl: boxi-os.github.io/QuartzControl`) fragte nach
+`boxi-os.github.io/static/fonts/inter-latin-400-700.woff2` (404), während die Datei eine Ebene
+tiefer stand (200). Lokal fiel das nie auf, weil die Vorschau an der Wurzel läuft. Quartz baut
+`custom.scss` in die eine `index-<hash>.css` im Wurzelordner der Website ein, und ein `url()` löst
+sich gegen die Stildatei auf, nicht gegen die Seite. Also `static/fonts/<datei>`: Gemessen an einem
+gebauten Example (Kopie im Scratchpad, `npx quartz build`), Chrome über Playwright, `python3 -m
+http.server`: unter `/QuartzControl/`, auf einer Seite drei Ebenen tiefer und an der Wurzel alle
+drei benutzten Schriften `loaded`, jede Datei mit 200. Gegenprobe mit dem Schrägstrich im gebauten
+CSS unter dem Unterpfad: alle drei `error`, jede Datei 404. Der relative Pfad kommt unverändert
+durch Sass und Quartz' CSS-Verarbeitung. Bestehende Blöcke stellt jedes Schreiben von
+`custom.scss` mit um (`migrateOnWrite`, dieselbe Stelle wie die Markerumbenennung), ein Paket von
+vorher wird beim Einspielen umgeschrieben und gilt nicht als Konflikt. Regeln außerhalb des
+verwalteten Blocks fasst die App nicht an.
+
+Das betrifft nicht die Google-Schriften, die Quartz bei „Schriften lokal ausliefern“ selbst
+herunterlädt: Deren Adressen schreibt Quartz absolut auf die `baseUrl`
+(`quartz/util/theme.ts`, `processGoogleFonts`), und die lokale Vorschau lädt sie deshalb von der
+veröffentlichten Website — solange dort nichts liegt, gar nicht.

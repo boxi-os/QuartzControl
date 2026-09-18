@@ -21,9 +21,10 @@ import { MAX_FONT_FILE_BYTES, readFontFace } from './fontFile'
 const FORMAT_MAP: Record<string, string> = { ttf: 'truetype', otf: 'opentype', woff: 'woff', woff2: 'woff2' }
 
 // quartz/static/ is copied verbatim to the build output's static/ dir (quartz/plugins/emitters/
-// static.ts) - verified against a real project that already ships hand-placed font files at
-// exactly this path, referenced from custom.scss as url('/static/fonts/<file>'). The directory is
-// projectFontsDir(), shared with the preview, which reads the same files.
+// static.ts). The rule points at it relative to the stylesheet, `static/fonts/<file>` without a
+// leading slash - see relativeFontUrls in styleService.ts for why the root-relative form this
+// wrote until 2026-09-19 broke every site under a sub-path. The directory is projectFontsDir(),
+// shared with the preview, which reads the same files.
 
 const FONTS_MARKER = 'fonts'
 
@@ -56,7 +57,7 @@ export async function importFontFile(
   const face = readable ? readFontFace(await readFile(sourcePath)) : null
   const declarations = [
     `  font-family: "${family}";`,
-    `  src: url("/static/fonts/${fileName}") format("${format}");`,
+    `  src: url("static/fonts/${fileName}") format("${format}");`,
     ...(face ? [`  font-weight: ${face.weight};`] : []),
     ...(face?.italic ? ['  font-style: italic;'] : []),
     '  font-display: swap;'

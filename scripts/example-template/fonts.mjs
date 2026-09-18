@@ -67,7 +67,7 @@ export function fontFaceCss() {
   return FONTS.map(
     (font) => `@font-face {
   font-family: "${font.family}";
-  src: url("/static/fonts/${font.file}") format("woff2");
+  src: url("static/fonts/${font.file}") format("woff2");
   font-weight: ${font.weight};
   font-style: ${font.style};
   font-display: swap;

@@ -254,7 +254,7 @@ so gebaut, dass jede Runde liest, was die vorige gebaut hat.
 
 **Stand:** Die neun Befunde des sechsundzwanzigsten Reviews sind abgearbeitet, dazu einer der
 zwei Nebenbei-Punkte (der andere betrifft nur die Nummerierung im Auftrag), am 2026-09-18 auf
-`fix/review-2026-09-30` (nicht gepusht). Was die Runde gefunden hat, steht in
+`fix/review-2026-09-30`, per Fast-Forward auf `main` und gepusht. Was die Runde gefunden hat, steht in
 [`docs/REVIEW-2026-09-30.md`](docs/REVIEW-2026-09-30.md), was daraus geworden ist, oben in
 [`docs/reviews.md`](docs/reviews.md).
 

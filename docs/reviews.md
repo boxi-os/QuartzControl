@@ -111,7 +111,7 @@ existierte: **14 Icon-Knöpfe und 10 `<span>`, nicht 13 und 9.** Alle neun sind 
 (`fix/review-2026-09-30`, je ein Commit mit Typcheck, Build und Smoke), dazu der zweite
 Nebenbei-Punkt (der Satz nach einem gescheiterten Stash-Pop nennt seinen Eintrag); der erste — die
 Nummerierung im Auftrag — bleibt, weil Review-Dokumente bleiben, wie sie sind. Das Handbuch 7.3
-kennt den Schalter jetzt auch (Vault-Commit `f0fa3a3`). Nicht gepusht.
+kennt den Schalter jetzt auch (Vault-Commit `f0fa3a3`). Per Fast-Forward auf `main` und gepusht.
 
 **Das fünfundzwanzigste Review las die drei Schichten oben** und fand **keinen Befund Hoch, zwei
 Mittel, sieben Niedrig**, dazu vier Punkte nebenbei — von Claude Fable 5.1, also von einem anderen

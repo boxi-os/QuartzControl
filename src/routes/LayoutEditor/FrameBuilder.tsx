@@ -46,7 +46,6 @@ import {
 import { formatIpcError } from '../../components/ErrorSurface'
 import DevServerRestartHint from '../../components/DevServerRestartHint'
 import { breakpointRangeLabel } from './utils'
-import { announce } from '../../state/announcer'
 import { useStickyState } from '../../state/uiState'
 import { useDndAccessibility } from '../../utils/dndAnnouncements'
 import { nearestDroppableCoordinates } from '../../utils/dndKeyboard'
@@ -428,19 +427,28 @@ export default function FrameBuilder({
   // not) on the way to the intended target, silently expanding/moving the placement from wherever
   // that graze happened rather than from where the drag started. Span is set exclusively through
   // the row/col span number fields in the area form below, which don't have that failure mode.
-  function handleDrop(areaId: string, row: number, col: number): void {
-    if (!editing) return
+  // The span an area keeps when it lands at (row, col), and whether it would lie over another one
+  // there. Asked twice per drop - by handleDrop, which refuses, and by the drag's narration, which
+  // has to say so in the same breath (see useDndAccessibility's `dropOutcome`).
+  function landing(areaId: string, row: number, col: number): { rowSpan: number; colSpan: number; refused: boolean } | null {
+    if (!editing) return null
     const layout = editing.breakpoints[activeBreakpoint]
-    const area = editing.areas.find((a) => a.id === areaId)
-    if (!area) return
+    if (!editing.areas.some((a) => a.id === areaId)) return null
     const existing = layout.placements[areaId]
     const rowSpan = Math.min(existing?.rowSpan ?? 1, layout.rows - row + 1)
     const colSpan = Math.min(existing?.colSpan ?? 1, layout.cols - col + 1)
-    if (overlaps(layout, editing.areas, row, col, rowSpan, colSpan, areaId)) {
-      // Said as well as shown: the drag's own narration ends with "bei Zelle ... abgelegt", which
-      // would otherwise be the last thing anyone hears about a drop that was refused.
+    return { rowSpan, colSpan, refused: overlaps(layout, editing.areas, row, col, rowSpan, colSpan, areaId) }
+  }
+
+  function handleDrop(areaId: string, row: number, col: number): void {
+    const target = landing(areaId, row, col)
+    if (!target) return
+    const { rowSpan, colSpan } = target
+    if (target.refused) {
+      // Shown here; *said* by the drag's own last sentence, which used to be "bei Zelle …
+      // abgelegt" and was followed by this one through a second region - two sentences, one of
+      // them wrong (twenty-sixth review, finding 7).
       setMessage(t('layoutEditor.frameBuilder.overlapError'))
-      announce(t('layoutEditor.frameBuilder.overlapError'))
       return
     }
     setEditing((prev) => (prev ? withPlacement(prev, activeBreakpoint, areaId, { row, col, rowSpan, colSpan, hidden: false }) : prev))
@@ -467,7 +475,26 @@ export default function FrameBuilder({
   },
   // An area is dragged by its own id and its place on the grid is a droppable called `box:<id>`,
   // so "back where it started" is that one pairing and nothing else.
-  (activeId, overId) => overId === `${BOX_PREFIX}${activeId}`)
+  (activeId, overId) => overId === `${BOX_PREFIX}${activeId}`,
+  // A drop on a cell - or on a box, which means that box's cell - that overlaps another area is
+  // refused by handleDrop, and "abgelegt" is then the wrong sentence.
+  (activeId, overId) => {
+    const cell = dropCell(overId)
+    if (!cell || !landing(activeId, cell.row, cell.col)?.refused) return undefined
+    const name = editing?.areas.find((a) => a.id === activeId)?.name ?? activeId
+    return t('layoutEditor.frameBuilder.dropRefused', { name })
+  })
+
+  // The cell a drop target stands for: a cell by its coordinates, a placed box by where it starts.
+  function dropCell(over: string): { row: number; col: number } | null {
+    const cell = parseCellId(over)
+    if (cell) return cell
+    if (over.startsWith(BOX_PREFIX) && editing) {
+      const placement = editing.breakpoints[activeBreakpoint].placements[over.slice(BOX_PREFIX.length)]
+      if (placement) return { row: placement.row, col: placement.col }
+    }
+    return null
+  }
 
   function handleDragStart(event: DragStartEvent): void {
     setDragAreaId(String(event.active.id))
@@ -488,16 +515,8 @@ export default function FrameBuilder({
       return
     }
 
-    const cell = parseCellId(over)
-    if (cell) {
-      handleDrop(areaId, cell.row, cell.col)
-      return
-    }
-
-    if (over.startsWith(BOX_PREFIX) && editing) {
-      const placement = editing.breakpoints[activeBreakpoint].placements[over.slice(BOX_PREFIX.length)]
-      if (placement) handleDrop(areaId, placement.row, placement.col)
-    }
+    const cell = dropCell(over)
+    if (cell) handleDrop(areaId, cell.row, cell.col)
   }
 
   // Created immediately (not as a buffered draft) so it's live the moment it exists: it shows up

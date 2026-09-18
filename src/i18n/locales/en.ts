@@ -1214,6 +1214,7 @@ export default {
       unplace: 'Remove from grid',
       visibleOnBreakpoint: 'Visible on {{breakpoint}}',
       overlapError: 'This area overlaps an existing area.',
+      dropRefused: '{{name}} stays where it was — there it would overlap an existing area.',
       unassignedWarning: 'Not assigned: {{slots}}. Components for these slots will not render in this frame.',
       hiddenGroupsWarning:
         'Hidden on {{breakpoint}}: {{areas}}. The components of these areas of their own do not appear at this width.',
@@ -1862,7 +1863,7 @@ export default {
     outside: '{{name}} is over no drop target.',
     dropped: '{{name}} dropped on {{target}}.',
     droppedHome: '{{name}} stayed where it was.',
-    removed: '{{name}} removed from the layout.',
+    removed: 'A duplicate of {{name}} removed from the layout.',
     notRemovable: '{{name}} stays where it was — only a duplicate can go back into the component tray.',
     cancelled: '{{name}} cancelled, nothing moved.'
   },

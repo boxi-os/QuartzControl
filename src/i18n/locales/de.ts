@@ -1217,6 +1217,7 @@ export default {
       unplace: 'Aus Raster lösen',
       visibleOnBreakpoint: 'Sichtbar auf {{breakpoint}}',
       overlapError: 'Dieser Bereich überschneidet sich mit einem bestehenden Bereich.',
+      dropRefused: '{{name}} bleibt, wo es war — dort überschneidet es sich mit einem bestehenden Bereich.',
       unassignedWarning: 'Nicht zugewiesen: {{slots}}. Komponenten für diese Positionen werden in diesem Frame nicht angezeigt.',
       hiddenGroupsWarning:
         'Auf {{breakpoint}} ausgeblendet: {{areas}}. Die Komponenten dieser eigenen Bereiche erscheinen auf dieser Breite nicht.',
@@ -1873,7 +1874,7 @@ export default {
     droppedHome: '{{name}} blieb an seinem Platz.',
     // Zwei Ausgänge, die „abgelegt“ falsch beschreibt: Auf dem Komponentenvorrat wird ein
     // Duplikat gelöscht, und eine einzelne Instanz bleibt, wo sie ist.
-    removed: '{{name}} aus dem Layout entfernt.',
+    removed: 'Ein Duplikat von {{name}} aus dem Layout entfernt.',
     notRemovable: '{{name}} bleibt, wo es war — nur ein Duplikat lässt sich in den Komponentenvorrat zurücklegen.',
     cancelled: '{{name}} abgebrochen, nichts verschoben.'
   },

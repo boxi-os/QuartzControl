@@ -214,7 +214,7 @@ const STRINGS = {
     // Was der Abbruch nebenbei mitnimmt. git sagt darüber nichts, und rückgängig ist es nicht -
     // genannt wird es trotzdem, damit der Nutzer weiß, was fehlt.
     updateAbortDroppedStaged:
-      'Der Abbruch hat den vorgemerkten Stand dieser Dateien verworfen: {{files}}. git setzt beim Abbrechen alles zurück, was vorgemerkt war und nicht zum Zusammenführen gehörte.',
+      'Der Abbruch hat den vorgemerkten Stand dieser Dateien verworfen: {{files}}. git setzt beim Abbrechen alles zurück, was vorgemerkt war — auch, was du selbst dazu vorgemerkt hast, und von Hand gelöste Konflikte.',
     // Die Notiz, mit der sich ein Lauf beim nächsten meldet, ließ sich nicht schreiben. Sie ist ein
     // Zeiger und kein Ergebnis, also läuft das Update weiter - gesagt wird es trotzdem, weil der
     // nächste Lauf sich danach anders verhält, als er sollte.
@@ -514,7 +514,7 @@ const STRINGS = {
     updateAbortBlockedByOwnStaged:
       'You staged these files yourself and changed them again afterwards, so the update cannot be cancelled: {{files}}. Undo only the staging there (in a terminal, for each file: “git reset -- <file>”), which keeps your changes, then cancel again.\n\n',
     updateAbortDroppedStaged:
-      'Cancelling discarded the staged state of these files: {{files}}. When cancelling, git resets everything that was staged and not part of the merge.',
+      'Cancelling discarded the staged state of these files: {{files}}. When cancelling, git resets everything that was staged — including what you staged yourself and conflicts you resolved by hand.',
     updateNoteUnwritable:
       'The note for this update could not be written ({{reason}}). The update still ran to the end; the next run may therefore install again or report “nothing to do”.',
     npmInstallFailed: 'npm install failed:',

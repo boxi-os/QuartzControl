@@ -1643,8 +1643,8 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
  *
  * The button stays a button - git allows this, and refusing where git does not is the app deciding
  * for the user. What it can do is name them, which is the difference between a loss and a silent
- * one. Paths the merge itself brought into the index are not in the list: they are its work, not
- * the user's.
+ * one. What the merge itself brought into the index is not in the list: it is its work, not the
+ * user's - unless the user staged something on top of it (stagedOnTopOfMerge).
  *
  * "The merge's" is what upstream changed since the merge base - three dots, not two. `HEAD
  * MERGE_HEAD` compares the two trees, and in a project they differ in every file the project ever
@@ -1656,8 +1656,41 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
 async function stagedOutsideMerge(projectPath: string): Promise<string[]> {
   const staged = await diffNames(projectPath, '--cached', 'HEAD')
   if (staged.length === 0) return []
-  const fromMerge = new Set([...(await diffNames(projectPath, 'HEAD...MERGE_HEAD')), ...(await diffNames(projectPath, '--diff-filter=U'))])
-  return staged.filter((file) => !fromMerge.has(file))
+  const conflicted = new Set(await diffNames(projectPath, '--diff-filter=U'))
+  const fromMerge = new Set(await diffNames(projectPath, 'HEAD...MERGE_HEAD'))
+  const onTop = new Set(await stagedOnTopOfMerge(projectPath, staged.filter((file) => fromMerge.has(file) && !conflicted.has(file))))
+  return staged.filter((file) => (!fromMerge.has(file) && !conflicted.has(file)) || onTop.has(file))
+}
+
+/**
+ * The half stagedOutsideMerge cannot see by path: a line the user staged on top of a file the merge
+ * staged as well. By name it is the merge's; by content it is not what the merge wrote. So the
+ * merge is computed again without touching anything - `git merge-tree --write-tree`, the same
+ * default strategy `git merge FETCH_HEAD` used - and every cleanly merged file whose index entry
+ * differs from that result has something of the user's in it (thirty-second review, found while
+ * fixing finding 1). merge-tree exits 1 on conflicts and still prints the tree first; a git older
+ * than 2.38 does not know `--write-tree`, and then the answer is the one from before: nothing.
+ */
+async function stagedOnTopOfMerge(projectPath: string, files: string[]): Promise<string[]> {
+  if (files.length === 0) return []
+  const merged = await run('git', ['merge-tree', '--write-tree', 'HEAD', 'MERGE_HEAD'], projectPath)
+  const tree = merged.output.split('\n')[0]?.trim() ?? ''
+  if (!/^[0-9a-f]{40}([0-9a-f]{24})?$/.test(tree)) return []
+  const entries = async (args: string[], pick: (fields: string[]) => string): Promise<Map<string, string> | null> => {
+    const result = await run('git', [...args, '--', ...files], projectPath)
+    if (!result.success) return null
+    const map = new Map<string, string>()
+    for (const record of result.output.split('\0').filter(Boolean)) {
+      const tab = record.indexOf('\t')
+      map.set(record.slice(tab + 1), pick(record.slice(0, tab).split(' ')))
+    }
+    return map
+  }
+  // "mode type oid" from ls-tree, "mode oid stage" from ls-files; compared as "mode oid".
+  const result = await entries(['ls-tree', '-z', tree], ([mode, , oid]) => `${mode} ${oid}`)
+  const index = await entries(['ls-files', '-s', '-z'], ([mode, oid]) => `${mode} ${oid}`)
+  if (!result || !index) return []
+  return files.filter((file) => result.get(file) !== index.get(file))
 }
 
 /**

@@ -868,6 +868,17 @@ export default {
       themeFontsOff:
         'Die Schriften des Themes sind abgeschaltet — es wird nichts bei unpkg.com geladen, dafür sieht das Theme anders aus als vorgesehen.'
     },
+    unusedFonts: {
+      heading: 'Ungenutzte Schriften',
+      description:
+        'custom.scss deklariert diese Schriften, aber keine Schriftart-Einstellung, kein Stylesheet und keine Variable nennt sie. Ihre Dateien werden trotzdem mit jedem Build veröffentlicht.',
+      noFile: 'keine Datei im Projekt',
+      remove: 'Entfernen',
+      removing: 'Entferne…',
+      confirm:
+        '„{{family}}“ entfernen?\n\nDie @font-face-Regeln verschwinden aus custom.scss und {{count}} Datei(en) aus quartz/static/fonts. Zurück geht es nur über einen Snapshot oder git.',
+      confirmButton: 'Schrift entfernen'
+    },
     localFontHeading: 'Eigene Schriftart importieren',
     localFontDescription: 'Lädt eine .ttf/.otf/.woff/.woff2-Datei ins Projekt und erzeugt die passende @font-face-Regel in custom.scss.',
     localFontPick: 'Datei auswählen…',
@@ -1312,6 +1323,8 @@ export default {
         'custom.scss wurde inzwischen beim Speichern der Variablen geändert. Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
       fontImport:
         'custom.scss wurde inzwischen beim Import einer Schrift geändert. Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
+      fontRemoval:
+        'custom.scss wurde inzwischen beim Entfernen einer ungenutzten Schrift geändert. Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
       stylesheets:
         'custom.scss wurde inzwischen geändert, weil sich die Stylesheets geändert haben (Ladereihenfolge, Import oder neue Datei). Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.'
     },

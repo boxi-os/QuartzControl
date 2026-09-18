@@ -315,6 +315,7 @@ export default function CustomCss(): JSX.Element {
               {
                 variables: t('styles.scssStaleBy.variables'),
                 fontImport: t('styles.scssStaleBy.fontImport'),
+                fontRemoval: t('styles.scssStaleBy.fontRemoval'),
                 stylesheets: t('styles.scssStaleBy.stylesheets')
               }[scss.staleBy]
             }

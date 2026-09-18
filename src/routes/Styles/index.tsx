@@ -22,7 +22,7 @@ const HANDBOOK = { basics: 'stylesBasics', theme: 'stylesTheme', variables: 'sty
 export type StylesTab = 'basics' | 'theme' | 'variables' | 'customCss'
 
 /** What can rewrite custom.scss while the CSS tab holds a draft of it. */
-export type ScssWriter = 'variables' | 'fontImport' | 'stylesheets'
+export type ScssWriter = 'variables' | 'fontImport' | 'fontRemoval' | 'stylesheets'
 
 const TAB_ORDER: StylesTab[] = ['basics', 'theme', 'variables', 'customCss']
 

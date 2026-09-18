@@ -865,6 +865,17 @@ export default {
       themeFontsOff:
         'The theme’s fonts are off — nothing is loaded from unpkg.com, but the theme looks different from how it was designed.'
     },
+    unusedFonts: {
+      heading: 'Unused fonts',
+      description:
+        'custom.scss declares these fonts, but no font setting, stylesheet or variable names them. Their files are still published with every build.',
+      noFile: 'no file in the project',
+      remove: 'Remove',
+      removing: 'Removing…',
+      confirm:
+        'Remove “{{family}}”?\n\nIts @font-face rules leave custom.scss and {{count}} file(s) leave quartz/static/fonts. The only way back is a snapshot or git.',
+      confirmButton: 'Remove font'
+    },
     localFontHeading: 'Import a custom font',
     localFontDescription: 'Copies a .ttf/.otf/.woff/.woff2 file into the project and generates the matching @font-face rule in custom.scss.',
     localFontPick: 'Choose file…',
@@ -1307,6 +1318,8 @@ export default {
         'custom.scss has since been changed by saving the variables. Your draft here is still unsaved — saving it would overwrite that change.',
       fontImport:
         'custom.scss has since been changed by importing a font. Your draft here is still unsaved — saving it would overwrite that change.',
+      fontRemoval:
+        'custom.scss has since been changed by removing an unused font. Your draft here is still unsaved — saving it would overwrite that change.',
       stylesheets:
         'custom.scss has since been changed because the stylesheets changed (load order, an import or a new file). Your draft here is still unsaved — saving it would overwrite that change.'
     },

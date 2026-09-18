@@ -301,6 +301,12 @@ export function registerIpcHandlers(): void {
   handle(IPC.fontsImportFile, t([s.absolutePath, s.absolutePath, s.shortText]), (projectPath, sourcePath, family) =>
     fontService.importFontFile(projectPath, sourcePath, family)
   )
+  handle(IPC.fontsUnusedImported, t([s.unusedImportedFontsInput]), (input) =>
+    fontService.unusedImportedFonts(input.projectPath, input.draftFamilies)
+  )
+  handle(IPC.fontsRemoveImported, t([s.removeImportedFontInput]), (input) =>
+    fontService.removeImportedFont(input.projectPath, input.family)
+  )
 
   handle(IPC.localizationList, t([s.absolutePath]), (projectPath) => localizationService.listLocales(projectPath))
   handle(IPC.localizationGetEntries, t([s.absolutePath, s.localeCode]), (projectPath, code) =>

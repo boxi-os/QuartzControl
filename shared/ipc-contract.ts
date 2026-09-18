@@ -687,6 +687,13 @@ export interface FontFaceInfo {
   source: string
 }
 
+/** A family in custom.scss's managed fonts block that no slot, stylesheet or variable names. */
+export interface UnusedImportedFont {
+  family: string
+  /** File names under quartz/static/fonts its rules point at. */
+  files: string[]
+}
+
 export interface PreviewFontsInput {
   projectPath: string
   /** Only these families are read - the four the preview shows, not every face in the project. */
@@ -1427,6 +1434,8 @@ export const IPC = {
   stylesVariableGraph: 'styles:variableGraph',
 
   fontsImportFile: 'fonts:importFile',
+  fontsUnusedImported: 'fonts:unusedImported',
+  fontsRemoveImported: 'fonts:removeImported',
 
   localizationList: 'localization:list',
   localizationGetEntries: 'localization:getEntries',
@@ -1759,6 +1768,10 @@ export interface QuartzGuiApi {
      * what it always was, and the caller can tell the user that nothing was detected.
      */
     importFile(projectPath: string, sourcePath: string, family: string): Promise<{ fileName: string; weight?: string; italic?: boolean }>
+    /** `draftFamilies`: the typography slots as the page shows them, unsaved values included. */
+    unusedImported(input: { projectPath: string; draftFamilies: string[] }): Promise<UnusedImportedFont[]>
+    /** Removes the family's rules from the managed fonts block and files nothing else names. */
+    removeImported(input: { projectPath: string; family: string }): Promise<{ removedFiles: string[] }>
   }
   localization: {
     list(projectPath: string): Promise<LocaleFile[]>

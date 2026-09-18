@@ -198,6 +198,12 @@ export const previewFontsInput = z.looseObject({
   families: z.array(z.string().min(1).max(200)).max(8)
 })
 
+export const unusedImportedFontsInput = z.looseObject({
+  projectPath: absolutePath,
+  draftFamilies: z.array(z.string().max(200)).max(8)
+})
+export const removeImportedFontInput = z.looseObject({ projectPath: absolutePath, family: z.string().min(1).max(200) })
+
 export const logHistoryInput = z.looseObject({ projectId: uuid })
 export const logClearInput = z.looseObject({ projectId: uuid, stream: z.enum(['server', 'build']) })
 

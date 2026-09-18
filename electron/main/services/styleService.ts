@@ -203,27 +203,33 @@ function renameLegacyMarkers(content: string): string {
 export function joinUniqueRules(bodies: string[]): string {
   const seen = new Set<string>()
   const out: string[] = []
-  const keep = (chunk: string): void => {
-    const trimmed = chunk.trim()
-    if (!trimmed) return
-    const key = trimmed.replace(/\s+/g, ' ')
-    if (seen.has(key)) return
+  for (const chunk of bodies.flatMap(splitRules)) {
+    const key = chunk.replace(/\s+/g, ' ')
+    if (seen.has(key)) continue
     seen.add(key)
-    out.push(trimmed)
-  }
-  for (const body of bodies) {
-    let depth = 0
-    let start = 0
-    for (let i = 0; i < body.length; i++) {
-      if (body[i] === '{') depth++
-      else if (body[i] === '}' && depth > 0 && --depth === 0) {
-        keep(body.slice(start, i + 1))
-        start = i + 1
-      }
-    }
-    keep(body.slice(start))
+    out.push(chunk)
   }
   return out.join('\n\n')
+}
+
+/** The rules of a rules-only section, trimmed, in the cut joinUniqueRules describes. */
+export function splitRules(body: string): string[] {
+  const out: string[] = []
+  const keep = (chunk: string): void => {
+    const trimmed = chunk.trim()
+    if (trimmed) out.push(trimmed)
+  }
+  let depth = 0
+  let start = 0
+  for (let i = 0; i < body.length; i++) {
+    if (body[i] === '{') depth++
+    else if (body[i] === '}' && depth > 0 && --depth === 0) {
+      keep(body.slice(start, i + 1))
+      start = i + 1
+    }
+  }
+  keep(body.slice(start))
+  return out
 }
 
 // Reads the current body of a marker-delimited managed section, or null if it doesn't exist yet -
@@ -660,7 +666,7 @@ function declaration(body: string, property: string): string | undefined {
   return match ? match[1].trim().replace(/^["']|["']$/g, '') : undefined
 }
 
-interface ParsedFace {
+export interface ParsedFace {
   family: string
   weight: string
   style: string
@@ -669,7 +675,7 @@ interface ParsedFace {
   url?: string
 }
 
-function parseFontFaces(content: string): ParsedFace[] {
+export function parseFontFaces(content: string): ParsedFace[] {
   const out: ParsedFace[] = []
   FONT_FACE_RE.lastIndex = 0
   let match: RegExpExecArray | null
@@ -693,7 +699,7 @@ function parseFontFaces(content: string): ParsedFace[] {
 // (`https://<baseUrl>/static/fonts/<hash>.ttf`, read from a real build). Anything else - a CDN, a
 // data: URI, a path elsewhere - has no file here. Only a bare file name is accepted, so the result
 // cannot leave `dir`.
-function fontFileIn(dir: string, url: string | undefined): string | undefined {
+export function fontFileIn(dir: string, url: string | undefined): string | undefined {
   if (!url) return undefined
   const match = /\/static\/fonts\/([^/?#]+)(?:[?#].*)?$/.exec(url)
   if (!match) return undefined
@@ -707,11 +713,11 @@ function fontFileIn(dir: string, url: string | undefined): string | undefined {
   return join(dir, name)
 }
 
-function projectFontsDir(projectPath: string): string {
+export function projectFontsDir(projectPath: string): string {
   return join(projectPath, 'quartz', 'static', 'fonts')
 }
 
-async function projectStylesheets(projectPath: string): Promise<string[]> {
+export async function projectStylesheets(projectPath: string): Promise<string[]> {
   const files = [customScssPath(projectPath)]
   for (const dir of STYLE_DIRS) {
     const full = join(stylesDir(projectPath), dir)

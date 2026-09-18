@@ -128,7 +128,9 @@ const api: QuartzGuiApi = {
   },
   fonts: {
     importFile: (projectPath: string, sourcePath: string, family: string) =>
-      ipcRenderer.invoke(IPC.fontsImportFile, projectPath, sourcePath, family)
+      ipcRenderer.invoke(IPC.fontsImportFile, projectPath, sourcePath, family),
+    unusedImported: (input: { projectPath: string; draftFamilies: string[] }) => ipcRenderer.invoke(IPC.fontsUnusedImported, input),
+    removeImported: (input: { projectPath: string; family: string }) => ipcRenderer.invoke(IPC.fontsRemoveImported, input)
   },
   localization: {
     list: (projectPath: string) => ipcRenderer.invoke(IPC.localizationList, projectPath),

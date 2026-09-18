@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { FontFaceInfo, QuartzConfig } from '@shared/ipc-contract'
+import type { FontFaceInfo, QuartzConfig, UnusedImportedFont } from '@shared/ipc-contract'
 import { Button, Combobox, Field, Select, TextInput, Toggle, type ComboboxOption } from '../../components/ui'
 import { GOOGLE_FONTS, GOOGLE_FONTS_FETCHED, type GoogleFontCategory } from '../../data/googleFonts'
 import { formatIpcError } from '../../components/ErrorSurface'
+import { confirmDialog } from '../../utils/confirm'
 import { CSS_FIXES, type CssFix } from './cssFixes'
 import {
   callsGoogle,
@@ -192,6 +193,16 @@ export default function Basics(): JSX.Element {
         }}
       />
 
+      <UnusedImportedFonts
+        projectPath={project.path}
+        draftFamilies={TYPOGRAPHY_KEYS.map((key) => familyOf(theme.typography?.[key])).filter(Boolean)}
+        faces={faces}
+        onRemoved={() => {
+          reloadFaces()
+          void reloadScss('fontRemoval')
+        }}
+      />
+
       <div>
         <h3 className="mb-2 text-sm font-semibold text-text">{t('themeEditor.colors')}</h3>
         <ColorGroup
@@ -347,6 +358,83 @@ function CssFixes(): JSX.Element | null {
             </div>
           )
         })}
+      </div>
+      {error && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p>}
+    </div>
+  )
+}
+
+// Fonts a template or an import brought along that nothing names any more. Offered for removal one
+// by one and never removed by itself: the block is the user's as much as the app's, and a family
+// can be named in ways the search in fontService does not see (a stylesheet outside
+// quartz/styles, an inline style in a note). `faces` is only a trigger - it is re-read after an
+// import or a removal, and the list with it.
+function UnusedImportedFonts({
+  projectPath,
+  draftFamilies,
+  faces,
+  onRemoved
+}: {
+  projectPath: string
+  draftFamilies: string[]
+  faces: FontFaceInfo[]
+  onRemoved: () => void
+}): JSX.Element | null {
+  const { t } = useTranslation()
+  const [unused, setUnused] = useState<UnusedImportedFont[]>([])
+  const [busy, setBusy] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const draftKey = draftFamilies.join('|')
+
+  useEffect(() => {
+    let cancelled = false
+    window.quartzGui.fonts
+      .unusedImported({ projectPath, draftFamilies: draftKey ? draftKey.split('|') : [] })
+      .then((list) => !cancelled && setUnused(list))
+    return () => {
+      cancelled = true
+    }
+  }, [projectPath, draftKey, faces])
+
+  if (unused.length === 0) return null
+
+  async function remove(font: UnusedImportedFont): Promise<void> {
+    const ok = await confirmDialog({
+      text: t('themeEditor.unusedFonts.confirm', { family: font.family, count: font.files.length }),
+      confirmLabel: t('themeEditor.unusedFonts.confirmButton'),
+      danger: true
+    })
+    if (!ok) return
+    setBusy(font.family)
+    setError(null)
+    try {
+      await window.quartzGui.fonts.removeImported({ projectPath, family: font.family })
+      onRemoved()
+    } catch (err) {
+      setError(formatIpcError(err))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  return (
+    <div className="rounded-md border border-ink/[0.06] p-3 dark:border-ink/10">
+      <h3 className="mb-1 text-sm font-semibold">{t('themeEditor.unusedFonts.heading')}</h3>
+      <p className="mb-2 text-xs text-text-muted">{t('themeEditor.unusedFonts.description')}</p>
+      <div className="flex flex-col gap-2">
+        {unused.map((font) => (
+          <div key={font.family} className="flex flex-wrap items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium">{font.family}</p>
+              <p className="truncate font-mono text-micro text-text-muted" title={font.files.join(', ')}>
+                {font.files.length > 0 ? font.files.join(', ') : t('themeEditor.unusedFonts.noFile')}
+              </p>
+            </div>
+            <Button variant="ghost" className="shrink-0" disabled={busy !== null} onClick={() => remove(font)}>
+              {busy === font.family ? t('themeEditor.unusedFonts.removing') : t('themeEditor.unusedFonts.remove')}
+            </Button>
+          </div>
+        ))}
       </div>
       {error && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p>}
     </div>

@@ -220,7 +220,7 @@ function gitTextEnv(): Record<string, string> {
 
 // git's own wording for the three failures a user can actually act on is either buried in a wall of
 // other output or (for the symlink case) points at a state we just repaired behind their back.
-function explainGitFailure(output: string, editedSinceMerge: string[] = []): string {
+function explainGitFailure(output: string, editedSinceMerge: string[] = [], ownStaged: string[] = []): string {
   if (/beyond a symbolic link/.test(output)) {
     return mainT('updateBlockedBySymlink')
   }
@@ -248,10 +248,24 @@ function explainGitFailure(output: string, editedSinceMerge: string[] = []): str
   // ending in "then cancel again" (thirty-first review, finding 3). So the abort asks for the whole
   // list itself (`editedSinceMerge`) and hands it in; git's own name comes first and is the
   // fallback where that question has no answer.
+  //
+  // git refuses over *every* file whose index differs from HEAD and whose working tree differs from
+  // the index, not only over the merge's. A file the user staged themselves (`ownStaged`, see
+  // stagedOutsideMerge) is not "from the merge", and the advice for merge files costs both halves
+  // of the work there: `git checkout --` drops the unstaged half, the abort then the staged one.
+  // `git reset --` drops only the staging, the abort goes through, and both halves stay in the
+  // working tree - for a new file the difference is the whole file (thirty-second review,
+  // finding 2, measured with git 2.54).
   if (/not uptodate\. Cannot merge|Could not reset index file/i.test(output)) {
     const named = [...output.matchAll(/^error: Entry '(.+)' not uptodate\. Cannot merge\.$/gm)].map((m) => m[1])
     const files = [...new Set([...named, ...editedSinceMerge])]
-    return files.length > 0 ? mainT('updateAbortBlockedByEditNamed', { files: files.join(', ') }) : mainT('updateAbortBlockedByEdit')
+    if (files.length === 0) return mainT('updateAbortBlockedByEdit')
+    const own = files.filter((file) => ownStaged.includes(file))
+    const merged = files.filter((file) => !ownStaged.includes(file))
+    return [
+      ...(merged.length > 0 ? [mainT('updateAbortBlockedByEditNamed', { files: merged.join(', ') })] : []),
+      ...(own.length > 0 ? [mainT('updateAbortBlockedByOwnStaged', { files: own.join(', ') })] : [])
+    ].join('')
   }
   return ''
 }
@@ -1622,36 +1636,33 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
  * neither tree and was therefore always named.
  */
 async function stagedOutsideMerge(projectPath: string): Promise<string[]> {
-  const lines = (result: { success: boolean; output: string }): string[] =>
-    result.success
-      ? result.output
-          .split('\n')
-          .map((line) => line.trim())
-          .filter(Boolean)
-      : []
-  const staged = lines(await run('git', ['diff', '--name-only', '--cached', 'HEAD'], projectPath))
+  const staged = await diffNames(projectPath, '--cached', 'HEAD')
   if (staged.length === 0) return []
-  const fromMerge = new Set([
-    ...lines(await run('git', ['diff', '--name-only', 'HEAD...MERGE_HEAD'], projectPath)),
-    ...(await conflictedFiles(projectPath))
-  ])
+  const fromMerge = new Set([...(await diffNames(projectPath, 'HEAD...MERGE_HEAD')), ...(await diffNames(projectPath, '--diff-filter=U'))])
   return staged.filter((file) => !fromMerge.has(file))
 }
 
 /**
- * The files `git merge --abort` refuses over: staged by the merge and changed again since - the
- * index differs from HEAD *and* the working tree from the index. Conflicted paths are not among
- * them; the abort resets those whatever they look like. With `-z`, because without it git quotes
- * a name like `ä.md` as "\303\244.md" and the sentence would say that.
+ * `git diff --name-only` with `-z`, because without it git quotes a name like `ä.md` as
+ * "\303\244.md" and a sentence would say that - and two lists, one read with and one without,
+ * would not find the same file in each other.
+ */
+async function diffNames(projectPath: string, ...args: string[]): Promise<string[]> {
+  const result = await run('git', ['diff', '--name-only', '-z', ...args], projectPath)
+  return result.success ? result.output.split('\0').filter(Boolean) : []
+}
+
+/**
+ * The files `git merge --abort` refuses over: staged - by the merge or by the user - and changed
+ * again since, the index differs from HEAD *and* the working tree from the index. Conflicted paths
+ * are not among them; the abort resets those whatever they look like. Nor is a deleted file: git
+ * does not refuse over it, the abort only brings it back, and naming it asked for a step nobody
+ * needs (thirty-second review, finding 2).
  */
 async function editedSinceMergeStopped(projectPath: string): Promise<string[]> {
-  const names = async (...args: string[]): Promise<string[]> => {
-    const result = await run('git', ['diff', '--name-only', '-z', ...args], projectPath)
-    return result.success ? result.output.split('\0').filter(Boolean) : []
-  }
-  const unmerged = new Set(await names('--diff-filter=U'))
-  const staged = new Set(await names('--cached'))
-  return (await names()).filter((file) => staged.has(file) && !unmerged.has(file))
+  const unmerged = new Set(await diffNames(projectPath, '--diff-filter=U'))
+  const staged = new Set(await diffNames(projectPath, '--cached'))
+  return (await diffNames(projectPath, '--diff-filter=d')).filter((file) => staged.has(file) && !unmerged.has(file))
 }
 
 export function abortCoreMerge(projectPath: string): Promise<CoreAbortResult> {
@@ -1670,8 +1681,10 @@ export function abortCoreMerge(projectPath: string): Promise<CoreAbortResult> {
       const result = await run('git', ['merge', '--abort'], projectPath, gitTextEnv())
       if (!result.success) {
         // A refused abort has changed nothing, so the list is read from the state git refused over.
-        const why = explainGitFailure(result.output, await editedSinceMergeStopped(projectPath))
-        return { success: false, output: why + result.output, sentences: why.trim() ? [why.trim()] : [] }
+        const why = explainGitFailure(result.output, await editedSinceMergeStopped(projectPath), losing)
+        // Split at the paragraph: the merge's files and the user's own can be two sentences.
+        const sentences = why.split('\n\n').map((sentence) => sentence.trim()).filter(Boolean)
+        return { success: false, output: why + result.output, sentences }
       }
       const popped = await popCoreUpdateStash(projectPath)
       // The app's sentences first, git's text after them, and the sentences by weight: what the

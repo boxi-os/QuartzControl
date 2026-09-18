@@ -198,6 +198,12 @@ const STRINGS = {
     // übrigen selbst (einunddreißigstes Review, Befund 3).
     updateAbortBlockedByEditNamed:
       'An Dateien aus dem Zusammenführen wurde inzwischen weitergearbeitet, deshalb lässt sich das Update nicht abbrechen: {{files}}. Verwirf, was du dort seitdem geändert hast (im Terminal je Datei: „git checkout -- <Datei>“), und brich dann erneut ab.\n\n',
+    // Dieselbe Verweigerung über Dateien, die der Nutzer selbst vorgemerkt hat. Für sie ist der Rat
+    // oben teuer: „git checkout --“ nimmt die ungestagete Hälfte, der Abbruch danach die gestagete.
+    // „git reset --“ nimmt nur die Vormerkung, beide Hälften bleiben (zweiunddreißigstes Review,
+    // Befund 2).
+    updateAbortBlockedByOwnStaged:
+      'Diese Dateien hast du selbst vorgemerkt und danach weiter geändert, deshalb lässt sich das Update nicht abbrechen: {{files}}. Nimm dort nur die Vormerkung zurück (im Terminal je Datei: „git reset -- <Datei>“), deine Änderungen bleiben dabei erhalten, und brich dann erneut ab.\n\n',
     // Was der Abbruch nebenbei mitnimmt. git sagt darüber nichts, und rückgängig ist es nicht -
     // genannt wird es trotzdem, damit der Nutzer weiß, was fehlt.
     updateAbortDroppedStaged:
@@ -496,6 +502,8 @@ const STRINGS = {
       'A file from the merge has been changed since, so the update cannot be cancelled. Discard what you changed in it since the merge (in a terminal: “git checkout -- <file>”), then cancel again.\n\n',
     updateAbortBlockedByEditNamed:
       'Work has continued on files from the merge, so the update cannot be cancelled: {{files}}. Discard what you changed there since (in a terminal, for each file: “git checkout -- <file>”), then cancel again.\n\n',
+    updateAbortBlockedByOwnStaged:
+      'You staged these files yourself and changed them again afterwards, so the update cannot be cancelled: {{files}}. Undo only the staging there (in a terminal, for each file: “git reset -- <file>”), which keeps your changes, then cancel again.\n\n',
     updateAbortDroppedStaged:
       'Cancelling discarded the staged state of these files: {{files}}. When cancelling, git resets everything that was staged and not part of the merge.',
     updateNoteUnwritable:

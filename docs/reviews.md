@@ -119,6 +119,17 @@ mehr nur den Namen, sondern die Semantik ändert (zwei Kopien werden als Vereini
 geschrieben), und das bisher nur an Bündeln gemessen ist. Er bittet außerdem um einen eigenen
 Abschnitt dazu, ob der Stand ein Release Candidate sein kann.
 
+**Das neunundzwanzigste Review misst ab `review-2026-10-03`** und liest bis `review-2026-10-04`,
+das auf dem Commit „Der Auftrag fuer das neunundzwanzigste Review“ sitzt; der Auftrag steht in
+[`docs/REVIEW-2026-10-03-auftrag.md`](REVIEW-2026-10-03-auftrag.md). Sein Diff hat drei Schichten:
+die fünf Befunde des achtundzwanzigsten Reviews (ohne Review-Dokument 10 Dateien, +199/−37), die
+vier Nebenbei-Punkte (12 Dateien, +189/−19) und zwei beim Abarbeiten gefundene Punkte (5 Dateien,
++47/−20). Anders als in den Vorrunden sind nicht alle Richtungen vom Review: Vier Entscheidungen hat
+kein zweites Modell vorgeschlagen — ein sechster Satz auf dem Abbruch-Kanal, welcher Abschnitt für
+einen fehlenden einspringen darf, die Kollisionsrechnung für Tastatur-Drags im Frame-Builder und
+`isOwnPlace`. Als größtes Risiko nennt der Auftrag die Kollisionsrechnung, weil sie für jeden
+Tastatur-Drag gilt und nur an einem Frame ohne Scrollen gemessen ist.
+
 **Das siebenundzwanzigste Review las beide Schichten** und fand **keinen Befund Hoch, einen
 Mittel, fünf Niedrig**, dazu drei Punkte nebenbei — und der mittlere ist ein Fehler im eigenen
 Vorschlag der Vorrunde: `putBack` markierte unter echtem npm nichts, weil npm den Bereich schreibt,

@@ -256,8 +256,9 @@ so gebaut, dass jede Runde liest, was die vorige gebaut hat.
 Nebenbei-Punkte, die etwas brauchten, und zwei beim Abarbeiten gefundene, am 2026-09-18 auf
 `fix/review-2026-10-02` und `fix/review-2026-10-02-rest`. Was die Runde gefunden hat, steht in
 [`docs/REVIEW-2026-10-02.md`](docs/REVIEW-2026-10-02.md), was daraus geworden ist, oben in
-[`docs/reviews.md`](docs/reviews.md). Ein Auftrag für
-das neunundzwanzigste Review steht noch nicht.
+[`docs/reviews.md`](docs/reviews.md), per Fast-Forward auf `main`. Der Auftrag für das
+neunundzwanzigste Review steht in
+[`docs/REVIEW-2026-10-03-auftrag.md`](docs/REVIEW-2026-10-03-auftrag.md), Tag `review-2026-10-04`.
 
 **Arbeitsregel** für die nächste Liste: ein Befund pro Durchgang, jeweils mit `npm run typecheck`,
 `npm run build`, `npm run smoke` und eigenem Commit; was dabei nebenbei auffällt, wird gesammelt und

@@ -940,13 +940,10 @@ async function stashTouchesChangedFiles(projectPath: string, entry: string): Pro
   return shown.output.split('\0').filter(Boolean).some((file) => changed.has(file))
 }
 
+// Through diffNames, so with -z: the list goes to the page as it is, and without it a conflict in
+// `ä.md` stood there as "\303\244.md" (thirty-second review, found while fixing finding 2).
 async function conflictedFiles(projectPath: string): Promise<string[]> {
-  const conflicts = await run('git', ['diff', '--name-only', '--diff-filter=U'], projectPath)
-  if (!conflicts.success) return []
-  return conflicts.output
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
+  return diffNames(projectPath, '--diff-filter=U')
 }
 
 /** What the abort button would do to the files the stash holds: hand them a working tree they fit

@@ -1013,3 +1013,24 @@ bei einem Drag, der dort endete, wo er begann. Gemessen per Maus an der gebauten
 der Satz „abgelegt“, jetzt bleibt der Chip, wie er war, und die Ansage sagt „left blieb an seinem
 Platz.“ Die Ablage gilt für jeden Chip als sein eigener Platz (`inTray`, dieselbe Frage, nach der die
 Ablage ihre Chips rendert), in `isHome` wie in `handleDragEnd`.
+
+**Nachtrag (2026-09-18, achtundzwanzigstes Review, nebenbei 4): Ohne Zeiger steht ein Drag beim
+Aufnehmen auf seinem eigenen Feld.** Die Kollisionsrechnung des Frame-Builders fragt erst den
+Zeiger, dann `closestCenter`. Bei einem Tastatur-Drag gibt es keinen Zeiger, und das ist für jeden
+Schritt richtig — `nearestDroppableCoordinates` legt die Mitte des Gezogenen genau auf die des
+Ziels —, nur nicht für den Augenblick des Aufnehmens: Ein Chip liegt dann in der Ablage, deren
+Mitte weit weg ist, und die Mitte der nächsten Zelle ist nah. Leertaste · Leertaste zielte so auf
+eine Zelle und hätte den Chip dort platziert, wäre sie frei gewesen. Steht jetzt keine Zielmitte
+auf der gezogenen, gilt das kleinste Ziel, das die Mitte enthält — dasselbe „Feld, auf dem man
+steht“, von dem die Pfeiltasten ausgehen. Gemessen an der gebauten App, Kopie von
+`navigations-testprojekt`, erstes Frame:
+
+    Chip left (ausgeblendet), Space · Space
+      vorher   „left aufgenommen, liegt über Zelle Zeile 1, Spalte 1.“ · „… bleibt, wo es war —
+               dort überschneidet es sich …“
+      jetzt    „left aufgenommen.“ · „left blieb an seinem Platz.“
+    Chip left, Space · ↓ · ↓ · Escape   Zeile 1, dann Zeile 2, abgebrochen
+    header (platziert), Space · Space und Space · ↓ · ↑ · Escape   vorher wie jetzt
+
+Dabei aufgefallen und nicht mit erledigt: Leertaste · Leertaste auf einem *platzierten* Bereich
+sagt „header bei Zelle Zeile 1, Spalte 1 abgelegt“, obwohl nichts wandert — vorher genauso.

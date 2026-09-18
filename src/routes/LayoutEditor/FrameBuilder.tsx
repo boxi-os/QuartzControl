@@ -155,9 +155,32 @@ function parseCellId(id: string): { row: number; col: number } | null {
 // Grabbing a wide box by its small handle puts the dragged rect's centre far from the cursor, so
 // the pointer decides while it is over something and the centre only settles ties - the same
 // reasoning (and the same pair) as on the global board.
+//
+// Without a pointer - a keyboard drag - the centre decides alone, and that is right for every step:
+// nearestDroppableCoordinates puts the dragged centre exactly on the target's. It is wrong for the
+// moment of pickup, before any step: a chip then sits in the tray, and the tray's centre is far off
+// while a cell's is close, so Space · Space aimed at "Zeile 1, Spalte 1" and would have placed the
+// chip there had the cell been free (twenty-eighth review, "nebenbei" 4, measured on the built app).
+// So when no target's centre is where the dragged one is, it stands on the smallest target that
+// contains its centre - the same "field one is standing on" the arrow keys step from.
 const collisionDetection: CollisionDetection = (args) => {
   const pointerCollisions = pointerWithin(args)
-  return pointerCollisions.length > 0 ? pointerCollisions : closestCenter(args)
+  if (pointerCollisions.length > 0) return pointerCollisions
+  const closest = closestCenter(args)
+  if (args.pointerCoordinates !== null) return closest
+  const distance = closest[0]?.data?.value
+  if (typeof distance !== 'number' || distance <= 1) return closest
+  const { collisionRect } = args
+  const x = collisionRect.left + collisionRect.width / 2
+  const y = collisionRect.top + collisionRect.height / 2
+  let home: { container: (typeof args.droppableContainers)[number]; area: number } | null = null
+  for (const container of args.droppableContainers) {
+    const rect = args.droppableRects.get(container.id)
+    if (!rect || x < rect.left || x > rect.left + rect.width || y < rect.top || y > rect.top + rect.height) continue
+    const area = rect.width * rect.height
+    if (home === null || area < home.area) home = { container, area }
+  }
+  return home ? [{ id: home.container.id, data: { droppableContainer: home.container, value: 0 } }] : closest
 }
 
 /**

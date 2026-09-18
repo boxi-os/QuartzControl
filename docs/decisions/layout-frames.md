@@ -1136,3 +1136,31 @@ Jetzt `scrollBehavior: 'auto'`. Gebaute App, Kopie mit `right` ausgeblendet, Fra
 
 Nicht gemessen: ob der Sprung statt des Gleitens für Sehende stört, und das Layout-Board — es
 behält die Vorgabe; ob dort ein weiches Rollen dasselbe Zwischenziel erzeugt, ist offen.
+
+**Nachtrag (2026-09-18, dreißigstes Review, nebenbei 3): Ein Pfeil im Frame-Builder lässt den
+Chip auf seiner Querachse.** Der Getter setzte die Mitte des Chips auf die Mitte des Ziels, auf
+beiden Achsen. Eine Zeile ist so hoch wie ihr höchster Kasten, und mit einem offenen
+Bereichsformular sind das schnell 650 px: Das erste → ließ den Chip um die halbe Zeile fallen, bei
+einer höheren Zeile unter den Fensterrand. Der `KeyboardSensor` rollt dafür nicht, weil er nur die
+Achse der Taste ansieht. Jetzt bleibt ein waagerechter Schritt auf der Höhe des Chips und ein
+senkrechter an seiner Stelle, soweit das Ziel reicht (`keepCrossAxis` in `utils/dndKeyboard.ts`,
+nur für den Frame-Builder; das Layout-Board behält die Mitte, weil dort die Stelle in der Liste
+zählt). Die Kollisionsrechnung nimmt ohnehin das kleinste Ziel unter der Chip-Mitte, sobald keine
+Zielmitte passt.
+
+**Der Preis stand eine Messung später da:** Mit einem ersten ↓, das der Sensor ganz aufs Rollen
+verwendet, blieb der Translate null, und „noch nicht bewegt“ war genau so definiert — der Kasten
+`left` (3 × 1) blieb bei ↓ · Leertaste stehen. Das Review hatte diese Lücke gesucht und nicht
+gefunden, weil der erste Schritt bis dahin immer eine Querkomponente hatte. „Noch nicht bewegt“
+heißt deshalb jetzt „in diesem Drag hat noch kein Pfeil einen Schritt ergeben“ (ein Ref, den der
+Getter setzt und `onDragStart` zurücksetzt), nicht mehr „Translate null“. Gebaute App:
+
+    focus, left-Formular offen (Zeile 2: 650 px), left → → ← ← Space   Chip-y 387 → vorher 699, jetzt 387; Ansagen gleich
+    mehrzeilig (left 3 × 1), alle fünf Szenen                          Ansagen und Plätze gleich wie vor der Änderung
+    page-body Tab · Space · → → → → · Space, 1280 px                    Spalte 5 · 6 · 7 · 8, keine Zwischenansage
+    vier Frames, Desktop, Space · Space                                 31 von 31 „blieb an seinem Platz“
+    index, Tablet und Mobil, Rundwege und Escape                        enden auf dem Ausgangsplatz, Plätze gleich
+
+Die zweite Hälfte des Punktes ist nicht angefasst: Beim Aufnehmen eines hohen Kastens zentriert
+dnd-kit den *Kasten* (`scrollIntoViewIfNeeded`), und der Chip an seiner Ecke steht dann über dem
+Fenster.

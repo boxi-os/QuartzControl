@@ -36,13 +36,14 @@ export const nearestDroppableCoordinates: KeyboardCoordinateGetter = (event, arg
 export function nearestDroppableCoordinatesFrom(
   standingOn: (context: Parameters<KeyboardCoordinateGetter>[1]['context']) => UniqueIdentifier | null
 ): KeyboardCoordinateGetter {
-  return (event, args) => stepFrom(event, args, standingOn(args.context))
+  return (event, args) => stepFrom(event, args, standingOn(args.context), true)
 }
 
 function stepFrom(
   event: KeyboardEvent,
   { context }: Parameters<KeyboardCoordinateGetter>[1],
-  standingOn: UniqueIdentifier | null
+  standingOn: UniqueIdentifier | null,
+  keepCrossAxis = false
 ): ReturnType<KeyboardCoordinateGetter> {
   if (!DIRECTIONS.includes(event.code)) return undefined
   event.preventDefault()
@@ -115,8 +116,24 @@ function stepFrom(
   const best = pool.reduce<(typeof pool)[number] | null>((acc, c) => (acc === null || c.score < acc.score ? c : acc), null)?.rect ?? null
 
   if (!best) return undefined
-  return {
+  const target = {
     x: best.left + best.width / 2 - collisionRect.width / 2,
     y: best.top + best.height / 2 - collisionRect.height / 2
   }
+  // On the frame board a sideways press keeps the chip at its height, and an up/down press at its
+  // horizontal place, as far as the target allows - instead of the target's centre on both axes.
+  // A row is as tall as its tallest box, and one with an open area form was 650px: the first
+  // ArrowRight dropped the chip by half of that, and in a taller row below the window's edge,
+  // which the KeyboardSensor does not scroll for because it only looks at the axis of the key
+  // (thirtieth review, "nebenbei" 3). The board's collision detection already takes the smallest
+  // target under the dragged centre when no target's centre is exactly there, so a centre that
+  // stays inside the target resolves to it all the same. The global board keeps the centre: its
+  // zones are lists, and where in a list the chip lands is what its collision decides.
+  if (keepCrossAxis) {
+    const keep = (start: number, size: number, own: number, current: number): number =>
+      size <= own ? start + size / 2 - own / 2 : Math.min(Math.max(current - own / 2, start), start + size - own)
+    if (vertical) target.x = keep(best.left, best.width, collisionRect.width, collisionRect.left + collisionRect.width / 2)
+    else target.y = keep(best.top, best.height, collisionRect.height, collisionRect.top + collisionRect.height / 2)
+  }
+  return target
 }

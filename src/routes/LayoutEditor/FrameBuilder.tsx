@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   DndContext,
@@ -170,9 +170,13 @@ function parseCellId(id: string): { row: number; col: number } | null {
 // the first arrow started from the box's middle - or, with a narrow first column, in *another cell
 // of the same box*, and Space · Space moved the area one column right and cut its span without a
 // word (twenty-ninth review, findings 3 and 5, measured with columns of 20px). "Not moved yet" is
-// the sensor's translate being zero, not the distance: a step the KeyboardSensor spends on
-// scrolling leaves both behind for a moment, and only the first says it is still the pickup.
-const collisionDetection: CollisionDetection = (args) => {
+// "no arrow has made a step in this drag" (`stepped`, set by the board's coordinate getter), not
+// the distance and not the sensor's translate: a step the KeyboardSensor spends on scrolling
+// leaves the translate at zero. That used to be harmless because every first step had a sideways
+// component; since a press keeps the chip's cross axis (dndKeyboard.ts), a first ArrowDown that
+// only scrolls did not, and it came back as "blieb an seinem Platz" (thirtieth review, "nebenbei" 3,
+// measured before this change with a three-row `left`).
+const collisionDetectionWith = (stepped: { readonly current: boolean }): CollisionDetection => (args) => {
   const pointerCollisions = pointerWithin(args)
   if (pointerCollisions.length > 0) return pointerCollisions
   const closest = closestCenter(args)
@@ -180,8 +184,7 @@ const collisionDetection: CollisionDetection = (args) => {
   const distance = closest[0]?.data?.value
   if (typeof distance !== 'number' || distance <= 1) return closest
   const { collisionRect } = args
-  const initial = args.active.rect.current.initial
-  const unmoved = !initial || (Math.abs(initial.left - collisionRect.left) < 0.5 && Math.abs(initial.top - collisionRect.top) < 0.5)
+  const unmoved = !stepped.current
   const homeId: unknown = args.active.data.current?.home
   const homeCell = unmoved && typeof homeId === 'string' ? args.droppableContainers.find((c) => c.id === homeId) : undefined
   if (homeCell) return [{ id: homeCell.id, data: { droppableContainer: homeCell, value: 0 } }]
@@ -493,6 +496,15 @@ export default function FrameBuilder({
     setMessage(null)
   }
 
+  // Whether an arrow has made a step in the running drag - the pickup moment of collisionDetection.
+  const keyStepped = useRef(false)
+  const collisionDetection = useMemo(() => collisionDetectionWith(keyStepped), [])
+  const stepToward = useMemo(
+    () =>
+      nearestDroppableCoordinatesFrom((context) => (context.over && parseCellId(String(context.over.id)) ? context.over.id : null)),
+    []
+  )
+
   // Distance before a drag starts, so a click on a tray chip still selects it: without it every
   // press on the chip's handle is a drag of zero pixels and the click never lands.
   const sensors = useSensors(
@@ -511,9 +523,11 @@ export default function FrameBuilder({
     // a glide: no intermediate sentence either way, four arrows 40ms apart all count).
     useSensor(KeyboardSensor, {
       scrollBehavior: 'auto',
-      coordinateGetter: nearestDroppableCoordinatesFrom((context) =>
-        context.over && parseCellId(String(context.over.id)) ? context.over.id : null
-      )
+      coordinateGetter: (event, args) => {
+        const next = stepToward(event, args)
+        if (next) keyStepped.current = true
+        return next
+      }
     })
   )
   // Every id on this board in words: an area by its name, a cell by its coordinates, the tray by
@@ -591,6 +605,7 @@ export default function FrameBuilder({
   }
 
   function handleDragStart(event: DragStartEvent): void {
+    keyStepped.current = false
     setDragAreaId(String(event.active.id))
   }
 

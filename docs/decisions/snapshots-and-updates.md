@@ -786,3 +786,24 @@ Rückfall, wo die Frage nichts antwortet.
 
 Der Satz ist für eine wie für mehrere Dateien geschrieben („… weitergearbeitet: {{files}}. Verwirf,
 was du dort seitdem geändert hast (im Terminal je Datei: …)“), weil `mainT` keinen Plural kennt.
+
+**Nachtrag (2026-09-18, einunddreißigstes Review, nebenbei 1): Wo die App gits *Text* liest, legt
+sie dessen Sprache fest — gelesen, nicht gemessen.** `explainGitFailure` erkennt vier Lagen an
+englischen Sätzen, und drei davon übersetzt git (`po/de.po`, v2.53.0: „Konnte Index-Datei nicht zu
+Commit '%s' setzen.“, „Ihre lokalen Änderungen … würden durch den Merge überschrieben werden“,
+„Sie haben Ihren Merge nicht abgeschlossen (MERGE_HEAD existiert).“); nur „Entry '%s' not uptodate.
+Cannot merge.“ steht gar nicht im Katalog. Kein Spawn der App legte die Sprache fest, mit dem git
+des Systems auf einem deutschen Linux-Desktop (Debian liefert `git.mo` mit) fiele der Satz der App
+also still weg und mit ihm die Ansage. Die zwei Aufrufe, deren Ausgabe gelesen wird (`git merge
+FETCH_HEAD`, `git merge --abort`), bekommen jetzt `LC_MESSAGES=C` und ein leeres `LANGUAGE`
+(gettext fragt es vor `LC_MESSAGES`); ein gesetztes `LC_ALL` wandert nach `LC_CTYPE`, weil es beide
+überstimmte. Nichts Breiteres, damit Namen und Kodierung die des Nutzers bleiben, und nur diese
+zwei Aufrufe: Überall sonst wird gits Text gezeigt, nicht gelesen.
+
+**Gemessen ist nur die Hälfte:** dass die Variablen bei git ankommen (git-Attrappe, die ihre
+Umgebung mitschreibt, mit `LANGUAGE=de_DE:de` und einmal mit `LC_ALL=de_DE.UTF-8` im Aufrufer) und
+dass die Szene des verweigerten Abbruchs wie vorher antwortet. Ein git *mit* Übersetzungen gab es
+auf diesem Rechner nicht — Apples und das mitgelieferte tragen keine, die Debian-VM war nicht
+erreichbar. **Auf der VM nachzuholen:** `LANG=de_DE.UTF-8` in der Sitzung, halber Merge, eine
+gemergte Datei ändern, „Merge abbrechen“ — der Kasten muss den Satz der App über gits englischem
+Text zeigen; ohne diese Änderung stünde dort nur gits deutscher.

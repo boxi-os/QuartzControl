@@ -197,6 +197,27 @@ export async function getCoreUpdateStatus(
   return pending({ currentCommit: installed.commit, latestCommit, state: 'behind', missingCommits: installed.missing })
 }
 
+// The environment for a git call whose *text* explainGitFailure reads. git translates three of
+// the four sentences matched there - its po/de.po (v2.53.0) has "Could not reset index file to
+// revision '%s'." as "Konnte Index-Datei nicht zu Commit '%s' setzen.", likewise "Your local
+// changes ... would be overwritten by merge" and "You have not concluded your merge (MERGE_HEAD
+// exists)" - and no spawn of this app pinned the language. With the system's git on a German Linux
+// desktop (Debian ships git.mo) the app's sentence would silently go missing, and with it the
+// announcement. Only "Entry '%s' not uptodate. Cannot merge." is not in the catalogue at all.
+//
+// LC_MESSAGES and nothing wider, so that names and encodings stay the user's; LANGUAGE emptied,
+// because gettext asks it before LC_MESSAGES; and an LC_ALL the user has set moves to LC_CTYPE,
+// because it would override both. Only for these calls: everywhere else git's text is shown, not
+// read, and may stay in the user's language.
+//
+// **Read, not measured** (thirty-first review, "nebenbei" 1): neither Apple's git nor the bundled
+// one carries translations, and the Debian VM was not reachable. Measured is only that the
+// variables arrive at git and that the scenes of this file answer as before.
+function gitTextEnv(): Record<string, string> {
+  const all = process.env.LC_ALL
+  return { LC_MESSAGES: 'C', LANGUAGE: '', ...(all ? { LC_ALL: '', LC_CTYPE: all } : {}) }
+}
+
 // git's own wording for the three failures a user can actually act on is either buried in a wall of
 // other output or (for the symlink case) points at a state we just repaired behind their back.
 function explainGitFailure(output: string, editedSinceMerge: string[] = []): string {
@@ -1185,7 +1206,7 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
     // HEAD before the merge, to tell "nothing to fetch" from "merged something" without reading
     // git's English. A merge that does anything moves HEAD, fast-forward or merge commit alike.
     const headBefore = (await run('git', ['rev-parse', 'HEAD'], projectPath)).output.trim()
-    const merge = await run('git', ['merge', 'FETCH_HEAD', '-m', MERGE_MESSAGE], projectPath)
+    const merge = await run('git', ['merge', 'FETCH_HEAD', '-m', MERGE_MESSAGE], projectPath, gitTextEnv())
     let mergeOutput = merge.output
     // Set where the commit at HEAD is one *this run* wrote, which is the one commit it may amend.
     // Two ways in: the conflict branch below commits the resolution itself, and a merge that could
@@ -1639,7 +1660,7 @@ export function abortCoreMerge(projectPath: string): Promise<CoreAbortResult> {
       // whether the stash lying there is this run's is a different question - the HEAD it was
       // taken from, which `merge --abort` does not move (see popCoreUpdateStash).
       const losing = await stagedOutsideMerge(projectPath)
-      const result = await run('git', ['merge', '--abort'], projectPath)
+      const result = await run('git', ['merge', '--abort'], projectPath, gitTextEnv())
       if (!result.success) {
         // A refused abort has changed nothing, so the list is read from the state git refused over.
         const why = explainGitFailure(result.output, await editedSinceMergeStopped(projectPath))

@@ -671,3 +671,23 @@ eigenes `quartz/index.ts`, `kind-of` uncommittet in `package.json`:
     AB1 (ohne vorgemerkte Datei)
       vorher   Ansage „On branch v5“
       jetzt    Ansage „The update is cancelled, and your stashed package entries are back in place.“
+
+**Nachtrag (2026-09-18, achtundzwanzigstes Review, Befund 4): Ein Paket in zwei Abschnitten ist
+zwei Einträge, aber ein Name.** `is-odd` in `devDependencies` und `peerDependencies` — die übliche
+Form für ein Paket, gegen das man entwickelt und das man zugleich voraussetzt — stand zweimal in
+`putBack` (und mit jedem gescheiterten Lauf öfter) und zweimal in der Liste der Seite, und der Satz
+des Fehlerwegs ließ den fehlenden `peer`-Eintrag weg, weil `absentFromPackageJson` nur nach dem
+Namen fragte und die `dev`-Zeile für ihn antwortete. `markInstallPending` und
+`outstandingCoreInstall` deduplizieren jetzt die Namen; `absentFromPackageJson` lässt nur einen
+Abschnitt für einen fehlenden einspringen, den die Liste für denselben Namen *nicht* beansprucht —
+die verschobene Zeile bleibt eine Antwort —, und der Satz nennt den Abschnitt, wo ein Name mehrfach
+in der Liste steht. Szene R2 am Bündel, echtes npm, Fehlschlag im `--save-peer`-Aufruf:
+
+    vorher   putBack [left-pad, is-odd, is-buffer, is-odd], Status pending mit fünf Namen,
+             Satz „… no longer in package.json: kind-of.“
+    jetzt    putBack [left-pad, is-odd, is-buffer], Status pending mit vier,
+             Satz „… no longer in package.json: is-odd (peerDependencies), kind-of.“
+    Lauf 2   upToDate, alle fünf Einträge in ihren Abschnitten
+
+Die verschobene Zeile (ein Eintrag, Name nur in einem anderen Abschnitt) ist gelesen, nicht
+nachgemessen.

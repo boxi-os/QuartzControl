@@ -7,6 +7,7 @@ import {
   DEPENDENCY_SECTIONS,
   localPackageChanges,
   reinstallCommands,
+  type DependencySection,
   type LocalPackageChanges,
   type PackageAddition
 } from '@shared/packageJsonDeps'
@@ -162,7 +163,9 @@ async function outstandingCoreInstall(projectPath: string): Promise<{ packages: 
   const unfinished = pending.head !== '' && pending.installFailed
   if (pending.head === '' || pending.reinstall.length === 0) return { packages: [], unfinished }
   if ((await listTakenInHandSince(projectPath, pending)) !== 'stands') return { packages: [], unfinished }
-  return { packages: (await stillMissing(projectPath, pending.reinstall)).map((entry) => entry.name), unfinished }
+  // One name per package: an entry in two sections is one package to the reader, and the page
+  // counted it twice (twenty-eighth review, finding 4).
+  return { packages: [...new Set((await stillMissing(projectPath, pending.reinstall)).map((entry) => entry.name))], unfinished }
 }
 
 export async function getCoreUpdateStatus(
@@ -349,6 +352,12 @@ async function stillMissing(projectPath: string, reinstall: PackageAddition[]): 
  * run then named both themes as "not putting back" over a package.json in which both stood. Asked
  * across all sections, because a line moved from `dependencies` to `devDependencies` is an answer
  * too.
+ *
+ * But only a section the list does not claim for the same name stands in for a missing one. A
+ * package can be in two sections at once - `devDependencies` and `peerDependencies` is the usual
+ * form for one that is developed against and required - and asked purely by name, the `dev` line
+ * answered for the missing `peer` line: the sentence named `kind-of` and not the second entry that
+ * was just as gone (twenty-eighth review, finding 4, scene R2 with real npm).
  */
 async function absentFromPackageJson(projectPath: string, entries: PackageAddition[]): Promise<PackageAddition[]> {
   let merged: unknown
@@ -359,7 +368,33 @@ async function absentFromPackageJson(projectPath: string, entries: PackageAdditi
     // be there is the worse of the two answers.
     return []
   }
-  return entries.filter((entry) => DEPENDENCY_SECTIONS.every((section) => dependencyRange(merged, section, entry.name) === undefined))
+  const holds = (section: DependencySection, name: string): boolean => dependencyRange(merged, section, name) !== undefined
+  const absent: PackageAddition[] = []
+  for (const name of new Set(entries.map((entry) => entry.name))) {
+    const own = entries.filter((entry) => entry.name === name)
+    const claimed = new Set(own.map((entry) => entry.section))
+    // Sections that hold the name without the list asking for it there: each one is a line that
+    // may have moved, and answers for one entry whose own section is empty.
+    let moved = DEPENDENCY_SECTIONS.filter((section) => !claimed.has(section) && holds(section, name)).length
+    for (const entry of own) {
+      if (holds(entry.section, name)) continue
+      if (moved > 0) moved--
+      else absent.push(entry)
+    }
+  }
+  return absent
+}
+
+/**
+ * How a sentence names the entries of a list: by name, and with its section where the same name
+ * stands in the list more than once - "is-odd" alone over a package.json whose dev line is there
+ * reads as a mistake.
+ */
+function entryLabels(entries: PackageAddition[], list: PackageAddition[] = entries): string {
+  const labels = entries.map((entry) =>
+    list.filter((other) => other.name === entry.name).length > 1 ? `${entry.name} (${entry.section})` : entry.name
+  )
+  return [...new Set(labels)].join(', ')
 }
 
 /**
@@ -719,7 +754,10 @@ async function markInstallPending(
     reinstall,
     filesAtHead,
     installFailed,
-    putBack: putBack.filter((name) => reinstall.some((entry) => entry.name === name))
+    // Deduplicated here, for every writer: the failing run adds what it marked to what it carried,
+    // and a name in two sections is marked once per section - the list grew with each failed run
+    // (twenty-eighth review, finding 4).
+    putBack: [...new Set(putBack)].filter((name) => reinstall.some((entry) => entry.name === name))
   })
 }
 
@@ -1064,7 +1102,7 @@ async function droppedNote(projectPath: string, verdict: NoteVerdict, pending: P
   if (verdict === 'stands' || pending.reinstall.length === 0) return ''
   const gone = await absentFromPackageJson(projectPath, pending.reinstall)
   if (gone.length === 0) return ''
-  const packages = gone.map((entry) => entry.name).join(', ')
+  const packages = entryLabels(gone, pending.reinstall)
   return verdict === 'unreadable'
     ? mainT('updatePackagesDroppedUnreadable', { packages })
     : mainT('updatePackagesDropped', { packages })
@@ -1395,7 +1433,7 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
         const gone = wanted.length > 0 ? await absentFromPackageJson(projectPath, wanted) : []
         const missing =
           gone.length > 0
-            ? `\n\n${mainT('updatePackagesMissing', { packages: gone.map((entry) => entry.name).join(', ') })}`
+            ? `\n\n${mainT('updatePackagesMissing', { packages: entryLabels(gone, wanted) })}`
             : ''
         // A list this run dropped is said here too. It used to be named on the success path only,
         // so a run that dropped one and then failed at npm said nothing at all about it - and the

@@ -48,7 +48,7 @@ Alle dreißig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVIEW-202
 [`docs/REVIEW-2026-10-02.md`](REVIEW-2026-10-02.md) mit seinen fünf und
 [`docs/REVIEW-2026-10-03.md`](REVIEW-2026-10-03.md) mit seinen fünf und
 [`docs/REVIEW-2026-10-04.md`](REVIEW-2026-10-04.md) mit seinen fünf (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-30-`, `2026-10-01-` bis `-04-auftrag.md`) stehen als
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-30-`, `2026-10-01-` bis `-05-auftrag.md`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](REVIEW-2026-09-15.md) gehört nicht
 in diese Zählung: Die „fünfzehnte Runde“ las die Handbücher der zwei Plugins gegen deren Code und
@@ -140,6 +140,16 @@ Nebenbei-Punkte, 13 Dateien +187/−36). Als größtes Risiko nennt der Auftrag 
 zwei Commits ändern, was ein Drag dort tut — die Startzelle als Platz beim Aufnehmen und die
 24-px-Spalten der Ablagefläche samt waagerechtem Rollen —, und weil das *Wie* in beiden eine eigene
 Entscheidung ist, die kein zweites Modell geprüft hat.
+
+**Das einunddreißigste Review misst ab `review-2026-10-05`** und liest bis `review-2026-10-06`,
+das auf dem Commit „Der Auftrag fuer das einunddreissigste Review“ sitzt; der Auftrag steht in
+[`docs/REVIEW-2026-10-05-auftrag.md`](REVIEW-2026-10-05-auftrag.md). Es ist die letzte Runde vor
+dem RC. Zwei Schichten: die fünf Befunde des dreißigsten Reviews (ohne Review-Dokument 6 Dateien,
++95/−15), vier davon mit einer Richtung vom Review, und die Nebenbei-Liste samt drei beim
+Abarbeiten gefundenen Punkten (12 Dateien, +331/−113), **sieben Code-Commits ohne Richtung**. Als
+größtes Risiko nennt der Auftrag `0920f95`, weil er für jeden Tastatur-Drag im Frame-Builder
+ändert, was „noch nicht bewegt“ heißt — die Annahme, die das dreißigste Review ausdrücklich
+bestätigt hatte —, und bittet, die zweite Schicht zuerst anzugreifen.
 
 **Das neunundzwanzigste Review las alle drei Schichten** und fand **keinen Befund Hoch, keinen
 Mittel, fünf Niedrig**, dazu fünf Punkte nebenbei — wieder von Claude Fable 5.1, die zweite Runde

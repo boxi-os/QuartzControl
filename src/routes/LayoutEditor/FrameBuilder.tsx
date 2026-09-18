@@ -473,9 +473,11 @@ export default function FrameBuilder({
     const areaId = id.startsWith(BOX_PREFIX) ? id.slice(BOX_PREFIX.length) : id
     return editing?.areas.find((a) => a.id === areaId)?.name ?? id
   },
-  // An area is dragged by its own id and its place on the grid is a droppable called `box:<id>`,
-  // so "back where it started" is that one pairing and nothing else.
-  (activeId, overId) => overId === `${BOX_PREFIX}${activeId}`,
+  // An area is dragged by its own id and its place on the grid is a droppable called `box:<id>` -
+  // or, for a chip, the tray it lies in (see inTray). Without the second half a chip let go on its
+  // own tray was "abgelegt" (twenty-seventh review, "nebenbei" 1 - the Layout board's palette chip
+  // of the twenty-fourth, one editor further on).
+  (activeId, overId) => overId === `${BOX_PREFIX}${activeId}` || (overId === TRAY_ID && inTray(activeId)),
   // A drop on a cell - or on a box, which means that box's cell - that overlaps another area is
   // refused by handleDrop, and "abgelegt" is then the wrong sentence.
   (activeId, overId) => {
@@ -484,6 +486,13 @@ export default function FrameBuilder({
     const name = editing?.areas.find((a) => a.id === activeId)?.name ?? activeId
     return t('layoutEditor.frameBuilder.dropRefused', { name })
   })
+
+  // Whether an area is one of the tray's chips on this breakpoint: never placed, or placed but hidden
+  // - the same test the tray itself renders by (unplacedAreas).
+  function inTray(areaId: string): boolean {
+    const placement = editing?.breakpoints[activeBreakpoint].placements[areaId]
+    return !placement || placement.hidden === true
+  }
 
   // The cell a drop target stands for: a cell by its coordinates, a placed box by where it starts.
   function dropCell(over: string): { row: number; col: number } | null {
@@ -510,6 +519,11 @@ export default function FrameBuilder({
     if (!over) return
 
     if (over === TRAY_ID) {
+      // A chip let go on its own tray stays what it was. For a hidden area that is not nothing to
+      // lose: unplaceAreaById deletes the placement, and with it the row, column and spans the
+      // chip still shows - on a drag that ended where it began (twenty-seventh review, "nebenbei"
+      // 1, which read it as a no-op; the review's chip was a hidden one).
+      if (inTray(areaId)) return
       unplaceAreaById(areaId)
       setSelectedAreaId(areaId)
       return

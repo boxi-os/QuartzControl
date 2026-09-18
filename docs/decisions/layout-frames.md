@@ -1003,3 +1003,13 @@ echten Tasten (Space, Down, Down, Right, Space auf `left`): „left bleibt, wo e
 überschneidet es sich mit einem bestehenden Bereich.“, die Region der Seite schweigt. Dazu der Satz
 des Layout-Boards für eine Löschung auf dem Vorrat: Sie trifft immer eine Instanz von mehreren und
 heißt jetzt „Ein Duplikat von X aus dem Layout entfernt.“
+
+**Ein Chip auf seiner eigenen Ablage (2026-09-18, siebenundzwanzigstes Review, nebenbei 1).** Das
+Review hörte „left bei Bereiche, die hier nicht im Raster liegen abgelegt“ und las die Ablage als
+wirkungslos. Sie war es nicht: Der Chip in seiner Szene war ein *ausgeblendeter* Bereich, und
+`unplaceAreaById` löschte dessen Platzierung — Zeile, Spalte und Spannen, die der Chip noch trägt —
+bei einem Drag, der dort endete, wo er begann. Gemessen per Maus an der gebauten App
+(`navigations-testprojekt`-Kopie, erstes Frame, Chip `left`): vorher „· ausgeblendet“ danach weg und
+der Satz „abgelegt“, jetzt bleibt der Chip, wie er war, und die Ansage sagt „left blieb an seinem
+Platz.“ Die Ablage gilt für jeden Chip als sein eigener Platz (`inTray`, dieselbe Frage, nach der die
+Ablage ihre Chips rendert), in `isHome` wie in `handleDragEnd`.

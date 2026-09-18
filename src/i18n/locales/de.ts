@@ -1217,6 +1217,9 @@ export default {
       visibleOnBreakpoint: 'Sichtbar auf {{breakpoint}}',
       overlapError: 'Dieser Bereich überschneidet sich mit einem bestehenden Bereich.',
       dropRefused: '{{name}} bleibt, wo es war — dort überschneidet es sich mit einem bestehenden Bereich.',
+      dropNarrowed: '{{name}} bei {{target}} abgelegt. Dort endet das Raster: {{changes}}.',
+      colSpanCut: 'Spalten-Spanne jetzt {{now}} statt {{before}}',
+      rowSpanCut: 'Zeilen-Spanne jetzt {{now}} statt {{before}}',
       unassignedWarning: 'Nicht zugewiesen: {{slots}}. Komponenten für diese Positionen werden in diesem Frame nicht angezeigt.',
       hiddenGroupsWarning:
         'Auf {{breakpoint}} ausgeblendet: {{areas}}. Die Komponenten dieser eigenen Bereiche erscheinen auf dieser Breite nicht.',

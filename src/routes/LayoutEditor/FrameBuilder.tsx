@@ -520,12 +520,31 @@ export default function FrameBuilder({
   // Where an area already is - see isOwnPlace.
   (activeId, overId) => isOwnPlace(activeId, overId),
   // A drop on a cell - or on a box, which means that box's cell - that overlaps another area is
-  // refused by handleDrop, and "abgelegt" is then the wrong sentence.
+  // refused by handleDrop, and "abgelegt" is then the wrong sentence. One that lands too close to
+  // the grid's edge for its span goes through, narrower - and "abgelegt" alone was then half the
+  // sentence: the span shrank with no word said (twenty-ninth review, "nebenbei" 2: 12 → 11 and
+  // 6 → 4 columns). A sighted user sees the box change width; a listener heard only where it went.
   (activeId, overId) => {
     const cell = dropCell(overId)
-    if (!cell || !landing(activeId, cell.row, cell.col)?.refused) return undefined
+    const target = cell ? landing(activeId, cell.row, cell.col) : null
+    if (!cell || !target) return undefined
     const name = editing?.areas.find((a) => a.id === activeId)?.name ?? activeId
-    return t('layoutEditor.frameBuilder.dropRefused', { name })
+    if (target.refused) return t('layoutEditor.frameBuilder.dropRefused', { name })
+    const before = editing?.breakpoints[activeBreakpoint].placements[activeId]
+    const cut = [
+      before && target.colSpan < before.colSpan
+        ? t('layoutEditor.frameBuilder.colSpanCut', { now: target.colSpan, before: before.colSpan })
+        : '',
+      before && target.rowSpan < before.rowSpan
+        ? t('layoutEditor.frameBuilder.rowSpanCut', { now: target.rowSpan, before: before.rowSpan })
+        : ''
+    ].filter(Boolean)
+    if (cut.length === 0) return undefined
+    return t('layoutEditor.frameBuilder.dropNarrowed', {
+      name,
+      target: t('layoutEditor.frameBuilder.cellName', { row: cell.row, col: cell.col }),
+      changes: cut.join(', ')
+    })
   })
 
   // Whether an area is one of the tray's chips on this breakpoint: never placed, or placed but hidden

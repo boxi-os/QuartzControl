@@ -1082,3 +1082,11 @@ Gegenprobe ohne Änderung: Scrollen beim Pfeil nach unten (drawing, index), `cus
 auf den Ausgangsplatz, Mobil mit der Zeile der Größe 0, ein Chip aus der Ablage (↓ landet weiter
 auf Zeile 1, Spalte 1), `right` in die Ablage und zurück, die Maus 8 px und 400 px im eigenen
 Kasten.
+
+**Nachtrag (2026-09-18, neunundzwanzigstes Review, nebenbei 2): Eine Ablage am Rand, die die
+Spanne kürzt, sagt das.** `landing()` kappt Zeilen- und Spalten-Spanne auf das, was ab der
+Zielzelle noch ins Raster passt, und die Ansage sagte nur „abgelegt“ — wer sieht, sieht den Kasten
+schmaler werden, wer hört, erfuhr es nicht. Das `dropOutcome` des Frame-Builders nennt jetzt die
+gekürzte Spanne. Gebaute App, Frame „focus“, `right` in die Ablage, dann `page-body` (Spalten 4–9)
+mit fünfmal → auf Spalte 9: „page-body bei Zelle Zeile 2, Spalte 9 abgelegt. Dort endet das
+Raster: Spalten-Spanne jetzt 4 statt 6.“ Ein Schritt ohne Kürzung sagt weiter nur „abgelegt“.

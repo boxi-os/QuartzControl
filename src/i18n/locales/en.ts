@@ -1214,6 +1214,9 @@ export default {
       visibleOnBreakpoint: 'Visible on {{breakpoint}}',
       overlapError: 'This area overlaps an existing area.',
       dropRefused: '{{name}} stays where it was — there it would overlap an existing area.',
+      dropNarrowed: '{{name}} dropped on {{target}}. The grid ends there: {{changes}}.',
+      colSpanCut: 'column span now {{now}} instead of {{before}}',
+      rowSpanCut: 'row span now {{now}} instead of {{before}}',
       unassignedWarning: 'Not assigned: {{slots}}. Components for these slots will not render in this frame.',
       hiddenGroupsWarning:
         'Hidden on {{breakpoint}}: {{areas}}. The components of these areas of their own do not appear at this width.',

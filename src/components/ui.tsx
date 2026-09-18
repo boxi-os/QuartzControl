@@ -581,12 +581,17 @@ export function Modal({
   )
 }
 
+// `truncate` for a badge in a place that can get narrower than its text - it then ends in an
+// ellipsis instead of running out of its box (the frame builder's boxes, thirtieth review,
+// "nebenbei" 4). Its parent has to be allowed to shrink (`min-w-0`) for it to have any effect.
 export function Badge({
   children,
-  tone = 'slate'
+  tone = 'slate',
+  truncate = false
 }: {
   children: ReactNode
   tone?: 'slate' | 'green' | 'red' | 'amber'
+  truncate?: boolean
 }): JSX.Element {
   const tones = {
     slate: 'bg-ink/[0.06] text-text-secondary dark:bg-ink/10',
@@ -594,7 +599,11 @@ export function Badge({
     red: 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400',
     amber: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400'
   }
-  return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${tones[tone]}`}>{children}</span>
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${tones[tone]}${truncate ? ' inline-block max-w-full truncate align-middle' : ''}`}>
+      {children}
+    </span>
+  )
 }
 
 // The consistent "where am I" headline at the top of every project area: an icon that echoes

@@ -1294,13 +1294,17 @@ export default function FrameBuilder({
                 label={t('layoutEditor.frameBuilder.expandArea')}
                 onToggle={() => setSelectedAreaId(isSelected ? null : area.id)}
               >
-                <div className="flex items-center justify-between gap-1">
+                {/* Wraps, and the badge truncates: a box can be one 57px column wide (a span cut
+                    at the grid's edge), and a header that did not fit ran out of the box - at the
+                    last column past the board, lengthening the scroller by 59px (thirtieth review,
+                    "nebenbei" 4). Where it fits, nothing changes. */}
+                <div className="flex flex-wrap items-center justify-between gap-1">
                   <div className="flex min-w-0 items-center gap-1.5">
                     <AreaDragHandle label={t('layoutEditor.frameBuilder.moveArea', { name: area.name })} />
                     <span className="truncate font-medium">{area.name}</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Badge>
+                  <div className="flex min-w-0 max-w-full items-center gap-1">
+                    <Badge truncate>
                       {area.slot ? t(`positions.${area.slot}`, area.slot) : t('layoutEditor.frameBuilder.slotNone')}
                       {area.group ? ` · ${t('layoutEditor.frameBuilder.ownGroupShort')}` : ''}
                     </Badge>

@@ -691,3 +691,14 @@ in der Liste steht. Szene R2 am Bündel, echtes npm, Fehlschlag im `--save-peer`
 
 Die verschobene Zeile (ein Eintrag, Name nur in einem anderen Abschnitt) ist gelesen, nicht
 nachgemessen.
+
+**Nachtrag (2026-09-18, neunundzwanzigstes Review, Befund 2): Der Satz des Normalfalls nennt ein
+Paket in zwei Abschnitten auch nur einmal je Abschnitt.** Der Nachtrag darüber hatte den Status,
+`putBack` und die zwei Sätze des Fehlerwegs behandelt; der Satz, den jeder durchgehende Lauf sagt
+(`updatePackagesReinstalled`), und zweimal `updatePackagesPending` reihten weiter die blanken Namen
+aneinander — gemessen mit echtem npm (R5, das Projekt von R2 ohne Fehlschlag): „Your own packages
+put back: left-pad, is-odd, is-buffer, is-odd, kind-of“. Alle drei gehen jetzt über `entryLabels`,
+also „… is-odd (devDependencies), is-buffer, is-odd (peerDependencies), kind-of“. Nicht neu
+mit npm gefahren: es ist dieselbe Funktion, die der Fehlerweg seit Befund 4 der Vorrunde benutzt,
+und ihre Ausgabe für die Liste von R5 ist die oben zitierte (per `node -e` mit einer Kopie der
+Funktion).

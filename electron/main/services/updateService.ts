@@ -1263,7 +1263,7 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
         const pending =
           !restored && held.kind === 'held' && plan.localEdits.reinstall.length > 0
             ? `\n\n${mainT('updatePackagesPending', {
-                packages: plan.localEdits.reinstall.map((entry) => entry.name).join(', ')
+                packages: entryLabels(plan.localEdits.reinstall)
               })}`
             : ''
         return {
@@ -1305,7 +1305,7 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
       const pending =
         !restored && held.kind === 'held' && plan.localEdits.reinstall.length > 0
           ? `\n\n${mainT('updatePackagesPending', {
-              packages: plan.localEdits.reinstall.map((entry) => entry.name).join(', ')
+              packages: entryLabels(plan.localEdits.reinstall)
             })}`
           : ''
       return { success: true, output: mergeOutput + pending, snapshotId }
@@ -1555,7 +1555,7 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
 
     const packageNotes = [
       missingNow.length > 0
-        ? mainT('updatePackagesReinstalled', { packages: missingNow.map((entry) => entry.name).join(', ') })
+        ? mainT('updatePackagesReinstalled', { packages: entryLabels(missingNow) })
         : '',
       // The `planApplies` here reads like it could withhold a true sentence - upstream changed
       // those packages whether or not this run touched the files. Measured (seventeenth review,

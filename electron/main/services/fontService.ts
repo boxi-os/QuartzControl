@@ -79,6 +79,14 @@ function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
+// A stylesheet without its comments, strings kept. A comment names a font without using it:
+// gui-test's body-code.scss says "next to Inter", and that kept Inter off the list after every
+// variable naming it was gone - with no other way to remove it. A `//` inside an unquoted url()
+// cuts that line short, which can only hide a mention, never invent one.
+function withoutComments(text: string): string {
+  return text.replace(/("(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*')|\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, (match, quoted?: string) => quoted ?? ' ')
+}
+
 // The family as a name of its own - "Inter" in `"Inter", sans-serif`, not in "Interstate".
 function mentions(text: string, family: string): boolean {
   return new RegExp(`(^|[^\\w-])${escapeRegExp(family)}(?![\\w-])`, 'i').test(text)
@@ -101,9 +109,9 @@ export async function unusedImportedFonts(projectPath: string, draftFamilies: st
   const body = getManagedBlock(info.content, FONTS_MARKER)
   if (!body) return []
 
-  const texts = [upsertManagedBlock(info.content, FONTS_MARKER, '')]
+  const texts = [withoutComments(upsertManagedBlock(info.content, FONTS_MARKER, ''))]
   for (const path of await projectStylesheets(projectPath)) {
-    if (path !== customScssPath(projectPath)) texts.push(await readFile(path, 'utf-8'))
+    if (path !== customScssPath(projectPath)) texts.push(withoutComments(await readFile(path, 'utf-8')))
   }
   const typography = await readConfig(projectPath)
     .then((config) => Object.values((config.theme.typography ?? {}) as Record<string, unknown>))

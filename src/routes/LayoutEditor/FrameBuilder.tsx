@@ -1188,22 +1188,10 @@ export default function FrameBuilder({
           >
             <div className="grid max-w-3xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <Field label={t('layoutEditor.frameBuilder.rows')}>
-                <TextInput
-                  type="number"
-                  min={1}
-                  max={12}
-                  value={layout.rows}
-                  onChange={(e) => updateLayout({ rows: Math.max(1, Number(e.target.value) || 1) })}
-                />
+                <NumberInput max={12} value={layout.rows} onValue={(rows) => updateLayout({ rows })} />
               </Field>
               <Field label={t('layoutEditor.frameBuilder.cols')}>
-                <TextInput
-                  type="number"
-                  min={1}
-                  max={12}
-                  value={layout.cols}
-                  onChange={(e) => updateLayout({ cols: Math.max(1, Number(e.target.value) || 1) })}
-                />
+                <NumberInput max={12} value={layout.cols} onValue={(cols) => updateLayout({ cols })} />
               </Field>
               <Field label={t('layoutEditor.frameBuilder.rowGap')}>
                 <TextInput value={layout.rowGap} onChange={(e) => updateLayout({ rowGap: e.target.value })} />

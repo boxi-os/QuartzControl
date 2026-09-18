@@ -70,7 +70,7 @@ Messung an der gebauten Website ist das der erste Aufruf.
 | Datei | Was darin entschieden wird |
 | --- | --- |
 | `palette.mjs` | Die neun Quartz-Farben für hell und dunkel, die drei Schriftrollen — **und die WCAG-Messung**, die sie prüft |
-| `variables.mjs` | 50 CSS-Variablen: Abstände, Radien, Schriftgrößen, Lesemaß, Fokus, Zielgrößen |
+| `variables.mjs` | 45 CSS-Variablen: Abstände, Radien, Schriftgrößen, Lesemaß, Fokus, Zielgrößen |
 | `fonts.mjs` | Welche Schriften geladen werden, woher, und die korrigierten `@font-face`-Regeln |
 | `frames.mjs` | Die vier Seitenraster (`editorial`, `index`, `focus`, `drawing`) für je drei Breakpoints |
 | `layout.mjs` | Welcher Seitentyp welches Raster nutzt, und die zwei Flex-Gruppen des Kopfbereichs |
@@ -180,9 +180,11 @@ Farben scheitern übrigens zu elf Zwölfteln im hellen Modus — deshalb sind si
 
 ### 3.2 Maße, Formen, Rhythmus — `variables.mjs`
 
-50 Variablen, in drei Gruppen:
+45 Variablen, in drei Gruppen (bis zum 2026-09-19 waren es 50, davon fünf Schriften):
 
-1. **Schriftstapel** (`--bodyFont` …) — die Familie plus ein echter Fallback.
+1. **Keine Schriften.** `--headerFont`, `--bodyFont`, `--codeFont`, `--titleFont` und
+   `--font-interface` schreibt Quartz selbst aus den Schriften der Config, samt Ausweichschriften.
+   Stünden sie hier, gewännen sie gegen die Wahl im Reiter „Basis“ (BEFUNDE 94).
 2. **Quartz-Variablen, wo die Vorlage widerspricht** — etwa `--background-modifier-border`, das von
    `lightgray` auf `gray` wandert (siehe die Kontrastregel oben). Diese werden von *Quartz* gelesen,
    nicht von unseren Stylesheets; sie sehen deshalb ungenutzt aus und sind es nicht.

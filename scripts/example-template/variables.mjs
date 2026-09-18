@@ -22,29 +22,15 @@
 // person would ever want to change it. A colour, a length, a font stack - yes. A four-line
 // gradient or a 400-character data URI - no, and those stay in base.scss.
 
-const SANS = 'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
-const MONO = 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace'
-
 export const VARIABLE_OVERRIDES = [
-  /* ---- fonts: the self-hosted family plus a real fallback stack ------------------------
-     Quartz writes --headerFont/--bodyFont/--codeFont from theme.typography as the bare family
-     name. A woff2 that fails to load then falls back to the browser default rather than to
-     something chosen, so each slot is restated here with a stack behind it. */
-  // Quartz reads this one for `.page-title`, the site's wordmark, and nothing else. It stayed
-  // dead here for a different reason than the three below: nav-header.scss styled `.page-title`
-  // with `--headerFont`, unlayered, so quartz's rule never got a look in. Since 2026-09-06 the
-  // wordmark reads `--titleFont` again, which makes this the one place to give the site's own name
-  // a face of its own. The default is the same family as the headings, so nothing changed.
-  { key: 'titleFont', light: `"Instrument Sans", ${SANS}` },
-  { key: 'headerFont', light: `"Instrument Sans", ${SANS}` },
-  { key: 'bodyFont', light: `"Inter", ${SANS}` },
-  { key: 'codeFont', light: `"JetBrains Mono", ${MONO}` },
-  // Of the three Obsidian-style aliases only `font-interface` survives, and the audit is why:
-  // counted in the built CSS, `--font-interface` has five readers, `--font-text` and
-  // `--font-monospace` have none - in quartz, in any component plugin, and in this template's own
-  // stylesheets, which use `--bodyFont` and `--codeFont` for those two roles. Two more knobs that
-  // could not move a pixel (BEFUNDE 60).
-  { key: 'font-interface', light: `"Inter", ${SANS}` },
+  /* ---- no fonts here, and why (BEFUNDE 94) ---------------------------------------------
+     `--titleFont`, `--headerFont`, `--bodyFont`, `--codeFont` and `--font-interface` stood here
+     until 2026-09-19, "because Quartz writes the bare family name". It does not: joinStyles()
+     (quartz/util/theme.ts) writes each slot as `"<family>", <fallback stack>`, `--titleFont` from
+     `typography.title` or else `header`, and `--font-interface` as `var(--bodyFont)`. The five
+     overrides restated what Quartz already derives from TYPOGRAPHY (palette.mjs) - and, being
+     unlayered, they outranked it, so a font chosen in the app's Basis tab changed nothing on the
+     site. The stylesheets still read all five; Quartz declares them. */
 
   /* ---- three overrides that were removed on 2026-09-06, and why they are not here -------
      `background-modifier-border`, `-hover` and `-focus` were set to `gray` on the grounds that

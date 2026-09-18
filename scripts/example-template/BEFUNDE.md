@@ -2012,3 +2012,19 @@ ein breites Fenster im Mobil-Band zwei.
   genau der Fall, für den in `frames.mjs` aus zwei Bereichen einer wurde. Nachgestellt, indem der
   Wrapper aus dem Dokument genommen wurde: der verbleibende Kasten nimmt an jeder Breite die volle
   Zeile.
+
+### 94. Die Vorlage überschrieb die Schriftwahl der App — behoben am 2026-09-19
+
+Fünf Schriftvariablen standen im `css-vars`-Block: `--titleFont`, `--headerFont`, `--bodyFont`,
+`--codeFont` und `--font-interface`, mit derselben Familie, die die Vorlage ohnehin in
+`theme.typography` schreibt. Die Begründung in `variables.mjs` lautete, Quartz schreibe nur den
+nackten Familiennamen, eine Schrift, die nicht lädt, falle also auf die Vorgabe des Browsers
+zurück. Das stimmt nicht: `joinStyles()` (`quartz/util/theme.ts`, Zeilen 191–194 im Stand von
+gui-test, Example und brain-handbuch gleich) schreibt jeden Platz als `"<Familie>", <Stapel>`,
+`--titleFont` aus `typography.title` oder sonst `header`, und `--font-interface` als
+`var(--bodyFont)`.
+
+Die fünf Zeilen sagten also nichts, was Quartz nicht schon sagte — aber ungeschichtet, und damit
+gegen jede Schrift, die jemand im Reiter „Basis“ wählt. Aufgefallen in gui-test: Dort ließ sich
+Inter erst entfernen, nachdem die Zeilen von Hand gelöscht waren. Die Stylesheets lesen alle fünf
+weiter, Quartz deklariert sie. Die Vorlage hat damit 45 statt 50 Variablen.

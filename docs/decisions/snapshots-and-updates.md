@@ -746,3 +746,24 @@ das upstreams Bereich sein kann, wo das Projekt einen eigenen hatte. Gemessen mi
              is-odd (peerDependencies), kind-of“, Status upToDate
 
 Die letzte Zeile ist zugleich die Messung mit echtem npm, die beim Nachtrag zu Befund 2 fehlte.
+
+**Nachtrag (2026-09-18, einunddreißigstes Review, Befund 2): Der ältere Eintrag unter einem eben
+eingetragenen bekommt einen eigenen Satz.** `updateStashFitsHead` rät „git stash pop {{entry}}“ und
+stimmt, solange nichts eingetragen wurde. Unmittelbar nach dem Pop des Abbruchs stimmt er nicht:
+Ein Eintrag dieser App hält nie etwas anderes als `package.json` und `package-lock.json`, beide
+Einträge also dieselben Dateien, und die stehen gerade wieder geändert da. Die Szene des Geschirrs
+hielt im älteren Eintrag `README.md` und sah es deshalb nie. Mit einem Eintrag, wie die App ihn
+schreibt (Bündel, echtes git 2.54):
+
+    vorher   Satz „… „git stash pop stash@{0}“ trägt ihn ein“ ·  $ git stash pop 'stash@{0}'
+             error: Your local changes to the following files would be overwritten by merge: package.json
+    jetzt    `updateStashUnderRestored`: nennt den Eintrag als *älteren neben* dem eingetragenen, sagt,
+             dass git den Pop jetzt nicht annimmt, und rät `stash show -p` · von Hand · `stash drop`
+             — beide Befehle an der Szene ausgeführt: der Diff zeigt die eine Zeile, der Drop leert die Liste
+
+Der erste Halbsatz („Außer dem Stand, den dieser Abbruch wieder einträgt …“) ist die Antwort auf
+die Reihenfolge der dreißigsten Runde: Der Satz steht vorn, „… sind wieder eingetragen“ am Ende,
+und ohne ihn hörte ein Zuhörer zwei Aussagen über scheinbar denselben Eintrag. An der Git-Sync-Seite
+der gebauten App gegengelesen (Kasten und Ansage). Der Fall „passt nicht auf HEAD“ behält
+`updateStashLeftover`, und `leftoverStashNote` — kein Merge offen, nichts eingetragen — behält
+`updateStashFitsHead`.

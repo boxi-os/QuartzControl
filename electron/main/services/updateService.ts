@@ -874,7 +874,10 @@ async function popCoreUpdateStash(projectPath: string): Promise<StashPopOutcome>
   const older = await coreUpdateStashEntry(projectPath)
   if (older === null) return { success: true, sentences: [], restored, git: popped.output }
   const fits = head !== '' && (await stashBase(projectPath, older)) === head
-  const note = mainT(fits ? 'updateStashFitsHead' : 'updateStashLeftover', { entry: older })
+  // Not `updateStashFitsHead` here: that sentence advises `git stash pop`, which is right while
+  // nothing has been put back, and refused by git a moment after this pop - both entries hold the
+  // same two files, and they have just been changed again (thirty-first review, finding 2).
+  const note = mainT(fits ? 'updateStashUnderRestored' : 'updateStashLeftover', { entry: older })
   return { success: true, sentences: [note], restored, git: popped.output }
 }
 

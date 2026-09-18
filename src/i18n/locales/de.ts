@@ -259,7 +259,9 @@ export default {
       noBaseUrlDetail: 'Ohne sie schlägt der Build fehl, sobald Schriften selbst gehostet werden.',
       coreUpdatePending: 'Ein Kern-Update ist nicht zu Ende gelaufen',
       coreUpdatePendingDetail:
-        'Diese eigenen Pakete fehlen in package.json oder stehen dort mit einer anderen Version: {{packages}}. Unter Updates führt „Update durchführen“ es zu Ende.'
+        'Diese eigenen Pakete fehlen in package.json oder stehen dort mit einer anderen Version: {{packages}}. Unter Updates führt „Update durchführen“ es zu Ende.',
+      coreUpdatePendingInstallDetail:
+        'Der Kern ist zusammengeführt, aber „npm install“ ist dabei fehlgeschlagen. Unter Updates führt „Update durchführen“ es zu Ende.'
     },
     contentTab: 'Content-Ordner',
     devServer: 'Dev-Server',

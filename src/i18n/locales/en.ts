@@ -258,7 +258,9 @@ export default {
       noBaseUrlDetail: 'Without it the build fails as soon as fonts are self-hosted.',
       coreUpdatePending: 'A core update did not run to the end',
       coreUpdatePendingDetail:
-        'These packages of yours are missing from package.json, or stand there at a different version: {{packages}}. Under Updates, “Run update” finishes the job.'
+        'These packages of yours are missing from package.json, or stand there at a different version: {{packages}}. Under Updates, “Run update” finishes the job.',
+      coreUpdatePendingInstallDetail:
+        'The core has been merged, but “npm install” failed while doing it. Under Updates, “Run update” finishes the job.'
     },
     contentTab: 'Content',
     devServer: 'Dev server',

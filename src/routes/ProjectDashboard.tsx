@@ -422,7 +422,13 @@ export default function ProjectDashboard(): JSX.Element {
       tone: 'amber',
       icon: TAB_ICONS.updates,
       title: t('dashboard.attention.coreUpdatePending'),
-      detail: t('dashboard.attention.coreUpdatePendingDetail', { packages: (core.pendingPackages ?? []).join(', ') }),
+      // The same two states under one title as on Updates, and the same switch: with nothing of
+      // its own to name, the package sentence came out as "… with a different version: ." over a
+      // project whose `npm install` had failed (twenty-sixth review, finding 2).
+      detail:
+        (core.pendingPackages ?? []).length > 0
+          ? t('dashboard.attention.coreUpdatePendingDetail', { packages: (core.pendingPackages ?? []).join(', ') })
+          : t('dashboard.attention.coreUpdatePendingInstallDetail'),
       to: 'updates',
       linkLabel: t('projectLayout.tabs.updates')
     })

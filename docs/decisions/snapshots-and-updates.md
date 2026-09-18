@@ -718,3 +718,20 @@ Geschirr des Reviews (AB3: echtes git, nur `stash pop` über eine Attrappe gesch
           jetzt    Ansage „Die zurückgelegten Paketeinträge ließen sich nicht wieder eintragen …
                    Der Abbruch hat den vorgemerkten Stand dieser Dateien verworfen: notes.txt. …“
     AB2   jetzt    sentences = [verworfene Datei, „Das Update ist abgebrochen, …“] (Bündel)
+
+**Nachtrag (2026-09-18, neunundzwanzigstes Review, nebenbei 4): Der Status nennt als ausstehend
+nicht mehr, was ein gescheiterter Lauf schon zurückgeschrieben hat.** `outstandingCoreInstall`
+fragte `stillMissing` — die Frage des Laufs („fehlt oder steht mit einem anderen Bereich da, im
+Zweifel npm fragen“) als Aussagesatz, der Punkt des vierundzwanzigsten Reviews. Weil npm den
+aufgelösten Bereich schreibt, galten alle Zeilen, die der Lauf vor seinem Fehlschlag schon
+zurückgeschrieben hatte, weiter als ausstehend. Eine Zeile aus `putBack` zählt jetzt nur noch, wenn
+sie ganz fehlt (`absentFromPackageJson`); jede andere Zeile mit anderem Bereich zählt weiter, weil
+das upstreams Bereich sein kann, wo das Projekt einen eigenen hatte. Gemessen mit echtem npm
+(11.17.0), Szene R2 (Fehlschlag im `--save-peer`-Aufruf), am Bündel alt gegen neu:
+
+    vorher   pending: left-pad, is-odd, is-buffer, kind-of
+    jetzt    pending: is-odd, kind-of          (der peer-Eintrag von is-odd und kind-of fehlen)
+    danach   fortsetzender Lauf success, „put back: left-pad, is-odd (devDependencies), is-buffer,
+             is-odd (peerDependencies), kind-of“, Status upToDate
+
+Die letzte Zeile ist zugleich die Messung mit echtem npm, die beim Nachtrag zu Befund 2 fehlte.

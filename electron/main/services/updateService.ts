@@ -163,9 +163,19 @@ async function outstandingCoreInstall(projectPath: string): Promise<{ packages: 
   const unfinished = pending.head !== '' && pending.installFailed
   if (pending.head === '' || pending.reinstall.length === 0) return { packages: [], unfinished }
   if ((await listTakenInHandSince(projectPath, pending)) !== 'stands') return { packages: [], unfinished }
+  // `stillMissing` is the run's question - "fehlt oder steht mit einem anderen Bereich da", and in
+  // doubt ask npm - and as a list on the page it named lines that stand: npm writes the range it
+  // resolves, so every line a failed run had already put back still differed from the note (R2:
+  // left-pad, is-odd and is-buffer beside the one missing kind-of - twenty-ninth review, "nebenbei"
+  // 4). A line this app's npm wrote back (`putBack`) is therefore outstanding only while it is not
+  // there at all; any other line at another range still is, because that may be upstream's range
+  // where the project had its own.
+  const missing = await stillMissing(projectPath, pending.reinstall)
+  const absent = new Set(await absentFromPackageJson(projectPath, missing))
+  const outstanding = missing.filter((entry) => !pending.putBack.includes(entry.name) || absent.has(entry))
   // One name per package: an entry in two sections is one package to the reader, and the page
   // counted it twice (twenty-eighth review, finding 4).
-  return { packages: [...new Set((await stillMissing(projectPath, pending.reinstall)).map((entry) => entry.name))], unfinished }
+  return { packages: [...new Set(outstanding.map((entry) => entry.name))], unfinished }
 }
 
 export async function getCoreUpdateStatus(

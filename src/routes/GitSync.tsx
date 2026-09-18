@@ -69,12 +69,14 @@ function RepoStatus({
     setAbortNote(output === '' ? null : output)
     // The box does not exist before the click and appears on its own - and after an abort that
     // went through it is the one thing on the page that did not change for a screen reader, the
-    // banner being gone. Its first line is the app's sentence - every sentence this channel says is
-    // one line, and the channel puts all of them before git's output (twenty-eighth review,
-    // finding 1: the sentence about a dropped staged file used to come after `git stash pop`'s
-    // status and was never said). Not its first paragraph: that once ran twelve lines of git
-    // (twenty-seventh review, finding 4), and a line is what the channel promises.
-    if (output !== '') announce(output.split('\n')[0])
+    // banner being gone. What is said is the app's sentences, all of them and heaviest first, as
+    // the channel returns them apart from git's text (twenty-ninth review, finding 1: the first
+    // line was said, and after a failed stash pop that was not the one `success: false` stands
+    // for). Never git's text: that once ran twelve lines (twenty-seventh review, finding 4), and
+    // its first line was "On branch v5" (twenty-eighth, finding 1). Only an answer without a
+    // sentence of the app falls back to the first line of the box.
+    const said = result.sentences.length > 0 ? result.sentences.join(' ') : output.split('\n')[0]
+    if (said !== '') announce(said)
     onChanged()
   })
 

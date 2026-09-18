@@ -94,8 +94,10 @@ export default function Updates(): JSX.Element {
       const result = await window.quartzGui.updates.abortCoreMerge(project.path)
       setCoreResult(!result.success || result.output.trim() !== '' ? result : null)
       // Said as well as shown, for the same reason as on Git-Sync: the box appears on its own
-      // (twenty-sixth review, finding 6). The first line is the app's sentence - see Git-Sync.
-      if (result.output.trim() !== '') announce(result.output.trim().split('\n')[0])
+      // (twenty-sixth review, finding 6). What is said is the app's sentences, not git's text -
+      // see Git-Sync.
+      const said = result.sentences.length > 0 ? result.sentences.join(' ') : result.output.trim().split('\n')[0]
+      if (said !== '') announce(said)
     } catch (err) {
       setCoreResult({ success: false, output: formatIpcError(err) })
     } finally {

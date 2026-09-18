@@ -702,3 +702,19 @@ also „… is-odd (devDependencies), is-buffer, is-odd (peerDependencies), kind
 mit npm gefahren: es ist dieselbe Funktion, die der Fehlerweg seit Befund 4 der Vorrunde benutzt,
 und ihre Ausgabe für die Liste von R5 ist die oben zitierte (per `node -e` mit einer Kopie der
 Funktion).
+
+**Nachtrag (2026-09-18, neunundzwanzigstes Review, Befund 1): Der Abbruch sagt alle seine Sätze,
+den schwersten zuerst.** Seit der Vorrunde standen die Sätze der App vor gits Text, und angesagt
+wurde die erste Zeile. Der Kanal hat aber bis zu drei (verworfene vorgemerkte Datei · Pop geglückt
+oder gescheitert · älterer Eintrag), und bei einem gescheiterten Pop war die erste Zeile die über
+die verworfene Datei — nicht die, für die `success: false` steht. `abortCoreMerge` gibt seine Sätze
+jetzt zusätzlich getrennt zurück (`CoreAbortResult.sentences`), nach Gewicht geordnet (gescheiterter
+Pop vor verworfener Datei vor der guten Nachricht), und beide Seiten sagen alle davon an; gits Text
+nie, weil er am Text allein von einem Satz der App nicht zu unterscheiden ist. Gemessen mit dem
+Geschirr des Reviews (AB3: echtes git, nur `stash pop` über eine Attrappe gescheitert, vorgemerkte
+`notes.txt`), am Bündel und an beiden Seiten der gebauten App:
+
+    AB3   vorher   Ansage „Der Abbruch hat den vorgemerkten Stand dieser Dateien verworfen: …“
+          jetzt    Ansage „Die zurückgelegten Paketeinträge ließen sich nicht wieder eintragen …
+                   Der Abbruch hat den vorgemerkten Stand dieser Dateien verworfen: notes.txt. …“
+    AB2   jetzt    sentences = [verworfene Datei, „Das Update ist abgebrochen, …“] (Bündel)

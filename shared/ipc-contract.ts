@@ -882,6 +882,18 @@ export interface SnapshotSettings {
   contentIsSymlink: boolean
 }
 
+/**
+ * The abort's answer. `sentences` are the app's own, heaviest first - a failed stash pop before the
+ * staged file the abort threw away, that before the good news - and `output` is those plus git's
+ * text for the box. Separate because the page announces all of them, and in the text alone a
+ * sentence of the app and a paragraph of git cannot be told apart (twenty-ninth review, finding 1:
+ * the first line was announced, and after a failed pop that was the staged-file sentence rather
+ * than the one `success: false` stands for).
+ */
+export interface CoreAbortResult extends PluginActionResult {
+  sentences: string[]
+}
+
 export interface UpdateResult {
   success: boolean
   output: string
@@ -1726,7 +1738,7 @@ export interface QuartzGuiApi {
      *  not local yet - without it the installed commit stays unknown in that case. */
     coreStatus(projectPath: string, options?: { resolveInstalled?: boolean }): Promise<CoreUpdateStatus>
     runCoreUpdate(projectPath: string): Promise<UpdateResult>
-    abortCoreMerge(projectPath: string): Promise<PluginActionResult>
+    abortCoreMerge(projectPath: string): Promise<CoreAbortResult>
     pluginsStatus(projectPath: string): Promise<PluginUpdateStatus[]>
     updatePlugin(projectPath: string, name?: string): Promise<PluginActionResult>
   }

@@ -1,7 +1,7 @@
 import { runCommand as run } from './runCommand'
 import { readFile, realpath } from 'fs/promises'
 import { join, resolve } from 'path'
-import type { CoreUpdateStatus, PluginActionResult, PluginUpdateStatus, UpdateResult } from '@shared/ipc-contract'
+import type { CoreAbortResult, CoreUpdateStatus, PluginActionResult, PluginUpdateStatus, UpdateResult } from '@shared/ipc-contract'
 import {
   dependencyRange,
   DEPENDENCY_SECTIONS,
@@ -1630,10 +1630,11 @@ async function stagedOutsideMerge(projectPath: string): Promise<string[]> {
   return staged.filter((file) => !fromMerge.has(file))
 }
 
-export function abortCoreMerge(projectPath: string): Promise<PluginActionResult> {
+export function abortCoreMerge(projectPath: string): Promise<CoreAbortResult> {
   // The same lock as the update: the abort rewrites the working tree of the repository an update
   // would be merging in.
-  return whileHoldingProject<PluginActionResult>(projectPath, () => ({ success: false, output: mainT('updateAlreadyRunning') }), () =>
+  const busy = mainT('updateAlreadyRunning')
+  return whileHoldingProject<CoreAbortResult>(projectPath, () => ({ success: false, output: busy, sentences: [busy] }), () =>
     // Parked for the same reason the merge itself is: an abort has to rewrite the working tree, and
     // content/ is part of what the conflicted merge touched.
     withContentSymlinkParked(projectPath, async () => {
@@ -1643,16 +1644,21 @@ export function abortCoreMerge(projectPath: string): Promise<PluginActionResult>
       // taken from, which `merge --abort` does not move (see popCoreUpdateStash).
       const losing = await stagedOutsideMerge(projectPath)
       const result = await run('git', ['merge', '--abort'], projectPath)
-      if (!result.success) return { success: false, output: explainGitFailure(result.output) + result.output }
+      if (!result.success) {
+        const why = explainGitFailure(result.output)
+        return { success: false, output: why + result.output, sentences: why.trim() ? [why.trim()] : [] }
+      }
       const popped = await popCoreUpdateStash(projectPath)
-      // The app's sentences first, git's text after them. Both callers announce the first line of
-      // this, and git's `stash pop` is not quiet: in the ordinary conflict case - the run held the
-      // two package files - it prints the whole `git status`, and the sentence about the staged
-      // file that was just thrown away came after it and was never said (twenty-eighth review,
+      // The app's sentences first, git's text after them, and the sentences by weight: a pop that
+      // failed is what `success: false` stands for and goes before the staged file the abort threw
+      // away, which goes before the good news (twenty-ninth review, finding 1). git's `stash pop`
+      // is not quiet - in the ordinary conflict case it prints the whole `git status` - so the
+      // sentences come back separately as well, for the announcement (twenty-eighth review,
       // finding 1, measured: the announcement was "On branch v5").
-      const sentences = [...(losing.length > 0 ? [mainT('updateAbortDroppedStaged', { files: losing.join(', ') })] : []), ...popped.sentences]
+      const dropped = losing.length > 0 ? [mainT('updateAbortDroppedStaged', { files: losing.join(', ') })] : []
+      const sentences = popped.success ? [...dropped, ...popped.sentences] : [...popped.sentences, ...dropped]
       const git = [result.output.trim(), popped.git.trim()].filter(Boolean).join('\n')
-      return { success: popped.success, output: [...sentences, git].filter(Boolean).join('\n\n') }
+      return { success: popped.success, output: [...sentences, git].filter(Boolean).join('\n\n'), sentences }
     })
   )
 }

@@ -30,10 +30,11 @@ const VISIBLE_THEME_LIMIT = 30
 
 export default function Theme(): JSX.Element {
   const { t } = useTranslation()
-  const { project, config, setConfig, saveConfig, registerSave } = useStyles()
+  const { project, config, setConfig, registerSave } = useStyles()
   const [presets, setPresets] = useState<ThemePreset[]>([])
 
-  useEffect(() => registerSave(saveConfig))
+  // Nothing follows a save here; the page writes the config itself.
+  useEffect(() => registerSave(async () => {}))
 
   useEffect(() => {
     window.quartzGui.themePresets.list(project.path).then(setPresets)

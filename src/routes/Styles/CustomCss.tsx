@@ -112,38 +112,18 @@ export default function CustomCss(): JSX.Element {
     }
   }, [project.path, openTabs, loaded])
 
-  // Writes every open file that has unsaved work, not only the one in front. Since 2026-09-09 this
-  // is the page's single save: the second button in the toolbar below, which saved the active file
-  // and said so, is gone, and the header's is the one the other three Stile tabs use. What is left
-  // therefore has to mean what the header means - and the header's badge, the Cmd+S guard and the
-  // leave dialog all read the *page's* `dirty`, which counts every draft.
-  //
-  // Saving only the active tab made the leave dialog a way to lose work: it offered Speichern, the
-  // guard got `true` back, the navigation went ahead, and the drafts of the other tabs died with
-  // the route - the user had said save and kept a part of it (review 2026-09-14, finding 2). The
-  // tab bar's dots make the scope visible while the page is open; after the navigation they are
-  // not there to make anything visible.
-  const saveAll = useCallback(async () => {
-    if (scss.dirty) {
-      await window.quartzGui.styles.save(project.path, scss.content)
-      // Re-reads what is now on disk, which clears the dirty/stale flags in one step.
-      await reloadScss('force')
-    }
-    // Read off `fileDrafts` rather than filtering `files` by it, so a draft for a file that has
-    // since left the list still gets written instead of being dropped silently. (A list built that
-    // way stood here unused since the toolbar button went; `isDirty` below is what the tabs use.)
-    const drafts = Object.entries(fileDrafts).filter(([rel, draft]) => draft !== loaded[rel])
-    for (const [rel, draft] of drafts) {
-      await window.quartzGui.styles.saveFile(project.path, rel, draft)
-    }
-    if (drafts.length > 0) {
-      setLoaded((prev) => ({ ...prev, ...Object.fromEntries(drafts) }))
-      clearFileDrafts(drafts.map(([rel]) => rel))
-    }
+  // The page writes custom.scss and every file draft on any save, whichever tab is in front (see
+  // save() in index.tsx; until 2026-09-19 this tab wrote them itself, and the other three tabs
+  // did not). What is left here is what follows: the tabs show what was written as the content
+  // they loaded - read off `fileDrafts` as it stood before the page cleared it - and the check
+  // runs again.
+  const afterSave = useCallback(async () => {
+    const drafts = Object.entries(fileDrafts)
+    if (drafts.length > 0) setLoaded((prev) => ({ ...prev, ...Object.fromEntries(drafts) }))
     await runCheck()
-  }, [project.path, scss.dirty, scss.content, fileDrafts, loaded, reloadScss, clearFileDrafts, runCheck])
+  }, [fileDrafts, runCheck])
 
-  useEffect(() => registerSave(saveAll))
+  useEffect(() => registerSave(afterSave))
 
   useEffect(() => {
     if (!selectedComponent) {

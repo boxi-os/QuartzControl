@@ -345,3 +345,18 @@ Datei 200. Export als `.qtpl` und Import in eine frische Kopie: ein Block, nicht
 `local`, 23 Dateien. Nicht davon betroffen: das Plugin „Fonts“ mit `selfHosted` (lädt weiter beim
 Build auf die `baseUrl`) und `@quartz-community/og-image`, das beim Build selbst bei Google fragt,
 um die Vorschaubilder zu zeichnen.
+
+**Das Speichern der Stile-Seite schreibt alle vier Reiter, egal welcher vorn ist (2026-09-19).**
+`save()` rief nur, was der vordere Reiter registriert hatte, und nahm danach die Vergleichsstände
+für Config *und* Variablen neu. Gemessen an der gebauten App (Kopie von gui-test): Textschrift in
+„Basis“ auf Lora, auf „Variablen“, „Eigenes CSS“ oder „Community-Themes“ gespeichert → Badge weg,
+`quartz.config.yaml` weiter Open Sans, nach einem Routenwechsel Open Sans im Feld. Dieselbe Regel
+wie beim elften Review, nur eine Ebene höher: Dort schrieb „Eigenes CSS“ nicht alle seine Dateien,
+hier schrieb die Seite nicht alle ihre Reiter. Jetzt schreibt `save()` selbst, in dieser
+Reihenfolge: `custom.scss` als Ganzes, die übrigen Stylesheets, die Config (samt Google-Schriften),
+die Variablen — die letzten beiden ersetzen je einen verwalteten Block, und in der anderen
+Reihenfolge schriebe der Entwurf die alten Blöcke zurück. Ein Reiter registriert nur noch, was
+*nach* einem Speichern kommt (Schriften neu lesen, SCSS-Check). Nachgemessen: die drei Fälle oben
+→ Lora in der Datei und nach dem Routenwechsel; CSS-Entwurf und `--secondary` zugleich, auf
+„Basis“ gespeichert → beides in der Datei, der Editor zeigt die Datei, kein Veraltet-Band. Der Fall
+„Entwurf in einer weiteren Stildatei, auf einem anderen Reiter gespeichert“ ist nur gelesen.

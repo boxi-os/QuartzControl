@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, ChevronRight } from 'lucide-react'
-import type { CssVariableOverride } from '@shared/ipc-contract'
 import { Button, Card, InfoNote, TextInput } from '../../components/ui'
 import { useStickyState } from '../../state/uiState'
 import { CSS_VARIABLES } from '../../data/cssVariables'
@@ -20,12 +19,11 @@ const MAX_RESULTS = 150
 // everything a theme or plugin brings (long, search-driven). Before this split both lived in one
 // flat list that a "scan build output" button dumped hundreds of unlabelled keys into.
 //
-// Overrides are written into a marker-delimited managed block in custom.scss, so saving here
-// rewrites that file - hence the reloadScss() afterwards, which keeps the CSS tab's draft in sync.
+// Overrides are written into a marker-delimited managed block in custom.scss - by the page's save
+// (index.tsx), which also re-reads the file afterwards so the CSS tab's draft stays in sync.
 export default function Variables(): JSX.Element {
   const { t } = useTranslation()
-  const { project, config, overrides, setOverrides, graph, graphLoading, reloadGraph, registerSave, reloadScss } =
-    useStyles()
+  const { config, overrides, setOverrides, graph, graphLoading, reloadGraph, registerSave } = useStyles()
 
   // Which rows are open, which query is active: kept across a trip to another area, since with
   // nothing rendered until a query is typed, losing it means losing the whole result list.
@@ -42,17 +40,8 @@ export default function Variables(): JSX.Element {
   // coming back from another area would yank the page around for no reason.
   const [pendingScroll, setPendingScroll] = useState<string | null>(null)
 
-  useEffect(() =>
-    registerSave(async () => {
-      const list: CssVariableOverride[] = Object.entries(overrides).map(([key, v]) => ({
-        key,
-        light: v.light,
-        dark: v.dark
-      }))
-      await window.quartzGui.styles.saveVariableOverrides(project.path, list)
-      await reloadScss('variables')
-    })
-  )
+  // Nothing follows a save here; the page writes the overrides itself.
+  useEffect(() => registerSave(async () => {}))
 
   const ctx: ResolveContext = {
     graph,

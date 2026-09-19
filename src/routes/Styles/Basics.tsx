@@ -37,18 +37,13 @@ function familyOf(spec: unknown): string {
 // is the single place these values are edited.
 export default function Basics(): JSX.Element {
   const { t } = useTranslation()
-  const { config, setConfig, saveConfig, registerSave, goToTab, reloadScss, project, graph, graphLoading } = useStyles()
+  const { config, setConfig, registerSave, goToTab, reloadScss, project, graph, graphLoading } = useStyles()
   const theme = config.theme
   const [faces, setFaces] = useState<FontFaceInfo[]>([])
   const themeId = activeThemeIdOf(config)
 
   // The faces again after a save: saving may have fetched the Google fonts into the project.
-  useEffect(() =>
-    registerSave(async () => {
-      await saveConfig()
-      reloadFaces()
-    })
-  )
+  useEffect(() => registerSave(async () => reloadFaces()))
 
   // Under "local" the suggestions are the families the project itself declares - that is all a
   // local font source can render. Read again after a font import below adds one.

@@ -41,8 +41,7 @@ export interface StylesContextValue {
   project: Project
   config: QuartzConfig
   setConfig: (next: QuartzConfig) => void
-  saveConfig: () => Promise<void>
-  /** The page's save, as the header button runs it. Returns whether it worked. */
+  /** The page's save, as the header button runs it: everything `dirty` counts. Returns whether it worked. */
   savePage: () => Promise<boolean>
   /**
    * The config on disk still has Quartz download the Google fonts at build time (`cdnCaching:
@@ -69,6 +68,10 @@ export interface StylesContextValue {
   graph: CssVariableGraph | null
   graphLoading: boolean
   reloadGraph: () => void
+  /**
+   * What follows a save while this sub-tab is in front - not the writing itself, which the page
+   * does for every tab at once (see save()).
+   */
   registerSave: (fn: () => Promise<void>) => void
   goToTab: (tab: StylesTab) => void
 }
@@ -262,26 +265,51 @@ export default function Styles(): JSX.Element {
 
   // The fonts first and the config after: a fetch that fails (no network, a misspelt name) leaves
   // the file as it was, rather than a config that says `local` over a block that is not there.
-  const saveConfig = useCallback(async () => {
+  async function saveConfig(): Promise<void> {
     if (!config) return
-    const touched = fetchesGoogleFonts(config)
-      ? (await window.quartzGui.fonts.fetchGoogle({ projectPath: project.path, typography: config.theme.typography ?? {} })).changed
-      : (await window.quartzGui.fonts.dropGoogle({ projectPath: project.path })).dropped
+    if (fetchesGoogleFonts(config)) {
+      await window.quartzGui.fonts.fetchGoogle({ projectPath: project.path, typography: config.theme.typography ?? {} })
+    } else {
+      await window.quartzGui.fonts.dropGoogle({ projectPath: project.path })
+    }
     await window.quartzGui.config.save(project.path, persistFontDelivery(config))
     setQuartzStillDownloadsFonts(false)
-    if (touched) await reloadScss('googleFonts')
-  }, [config, project.path, reloadScss])
+  }
 
-  // Returns whether it worked - see the leave guard in ProjectLayout.
+  // The page's one save, and it writes everything `dirty` counts - whichever sub-tab is in front.
+  // It used to run only the save the front tab had registered and then take *both* snapshots
+  // again: a font picked on Basis and saved from the Variables tab never reached the config, the
+  // badge went out, and the next route change dropped it (measured 2026-09-19 in the built app,
+  // Variablen and Eigenes CSS alike; the rule is in docs/conventions.md, "Das registrierte
+  // Speichern schreibt alles, was dirty zählt"). What a tab registers now is only what follows a
+  // save on that tab: reading the faces again, the SCSS check.
+  //
+  // custom.scss as a whole goes first. The two writers after it replace one managed block each
+  // (the Google fonts, the variables), and in the other order the draft would put the old blocks
+  // back. Each snapshot is taken right after its own write, so a failure half-way leaves dirty
+  // exactly what was not written.
   async function save(): Promise<boolean> {
     setStatus('saving')
     setMessage(null)
     try {
+      if (!config || !scss) return false
+      const configDirty = JSON.stringify(config) !== savedConfig || quartzStillDownloadsFonts
+      const overridesDirty = JSON.stringify(overrides) !== savedOverrides
+      const drafts = Object.entries(fileDrafts)
+      if (scss.dirty) await window.quartzGui.styles.save(project.path, scss.content)
+      for (const [relativePath, draft] of drafts) await window.quartzGui.styles.saveFile(project.path, relativePath, draft)
+      if (drafts.length > 0) clearFileDrafts(drafts.map(([relativePath]) => relativePath))
+      if (configDirty) {
+        await saveConfig()
+        setSavedConfig(JSON.stringify(config))
+      }
+      if (overridesDirty) {
+        const list = Object.entries(overrides).map(([key, v]) => ({ key, light: v.light, dark: v.dark }))
+        await window.quartzGui.styles.saveVariableOverrides(project.path, list)
+        setSavedOverrides(JSON.stringify(overrides))
+      }
+      if (scss.dirty || configDirty || overridesDirty) await reloadScss('force')
       await saveRef.current()
-      // Every sub-tab's save ends with what it wrote being on disk, so both snapshots are taken
-      // again here rather than in four places - the scss/file drafts clear themselves.
-      setSavedConfig(JSON.stringify(config))
-      setSavedOverrides(JSON.stringify(overrides))
       setStatus('saved')
       setTimeout(() => setStatus('idle'), 2000)
       return true
@@ -320,7 +348,6 @@ export default function Styles(): JSX.Element {
     project,
     config,
     setConfig,
-    saveConfig,
     savePage: save,
     quartzStillDownloadsFonts,
     overrides,

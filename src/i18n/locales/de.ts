@@ -1294,6 +1294,10 @@ export default {
   },
   styles: {
     loadFailed: 'Die Stile ließen sich nicht laden.',
+    googleFontsRemoved_one: 'Nicht mehr gewählt und aus dem Projekt entfernt: {{families}} (1 Datei).',
+    googleFontsRemoved_other: 'Nicht mehr gewählt und aus dem Projekt entfernt: {{families}} ({{count}} Dateien).',
+    googleFontsDropped_one: 'Die lokale Kopie der Google-Schriften ist entfernt (1 Datei), die Website lädt sie jetzt von Google.',
+    googleFontsDropped_other: 'Die lokalen Kopien der Google-Schriften sind entfernt ({{count}} Dateien), die Website lädt sie jetzt von Google.',
     fixes: {
       heading: 'Bekannte Konflikte',
       description:

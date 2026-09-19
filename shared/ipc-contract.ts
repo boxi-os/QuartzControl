@@ -1778,15 +1778,17 @@ export interface QuartzGuiApi {
      * Fetches the Google fonts `typography` names into quartz/static/fonts and writes their
      * @font-face rules into custom.scss's managed "google-fonts" block. `changed: false` when the
      * block already answers the same request and its files are all there. `removedFiles`: files
-     * of the previous block no rule names any more.
+     * of the previous block no rule names any more; `removedFamilies`: the families of the
+     * previous block the new one no longer declares.
      */
     fetchGoogle(input: { projectPath: string; typography: Record<string, unknown> }): Promise<{
       changed: boolean
       files: string[]
       removedFiles: string[]
+      removedFamilies: string[]
     }>
     /** Removes the "google-fonts" block and the files of it nothing else names. */
-    dropGoogle(input: { projectPath: string }): Promise<{ dropped: boolean; removedFiles: string[] }>
+    dropGoogle(input: { projectPath: string }): Promise<{ dropped: boolean; removedFiles: string[]; removedFamilies: string[] }>
   }
   localization: {
     list(projectPath: string): Promise<LocaleFile[]>

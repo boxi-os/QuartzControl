@@ -126,6 +126,9 @@ export default function Styles(): JSX.Element {
   const [graphNonce, setGraphNonce] = useState(0)
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [message, setMessage] = useState<string | null>(null)
+  // What the last save deleted without asking - the Google fonts chosen away. Stays until the next
+  // save, unlike "Saved", because it names files that are gone.
+  const [fontNote, setFontNote] = useState<string | null>(null)
   // The two reads this page cannot do without. Unhandled, a rejection left the page on "Lade…" for
   // ever - no heading, no tabs - and only the toast in the corner said why (twenty-first review,
   // "nebenbei" 6). The other two reads below may fail without stopping the page: their state stays
@@ -268,9 +271,15 @@ export default function Styles(): JSX.Element {
   async function saveConfig(): Promise<void> {
     if (!config) return
     if (fetchesGoogleFonts(config)) {
-      await window.quartzGui.fonts.fetchGoogle({ projectPath: project.path, typography: config.theme.typography ?? {} })
+      const result = await window.quartzGui.fonts.fetchGoogle({ projectPath: project.path, typography: config.theme.typography ?? {} })
+      if (result.removedFamilies.length > 0) {
+        setFontNote(
+          t('styles.googleFontsRemoved', { families: result.removedFamilies.join(', '), count: result.removedFiles.length })
+        )
+      }
     } else {
-      await window.quartzGui.fonts.dropGoogle({ projectPath: project.path })
+      const result = await window.quartzGui.fonts.dropGoogle({ projectPath: project.path })
+      if (result.removedFiles.length > 0) setFontNote(t('styles.googleFontsDropped', { count: result.removedFiles.length }))
     }
     await window.quartzGui.config.save(project.path, persistFontDelivery(config))
     setQuartzStillDownloadsFonts(false)
@@ -291,6 +300,7 @@ export default function Styles(): JSX.Element {
   async function save(): Promise<boolean> {
     setStatus('saving')
     setMessage(null)
+    setFontNote(null)
     try {
       if (!config || !scss) return false
       const configDirty = JSON.stringify(config) !== savedConfig || quartzStillDownloadsFonts
@@ -383,6 +393,7 @@ export default function Styles(): JSX.Element {
             <>
               {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
               {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{message}</span>}
+              {fontNote && <span className="text-sm text-text-secondary">{fontNote}</span>}
             </>
           }
           actions={

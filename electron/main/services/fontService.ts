@@ -235,12 +235,12 @@ async function downloadFontFile(url: string, target: string): Promise<void> {
 export async function fetchGoogleFonts(
   projectPath: string,
   typography: Record<string, unknown>
-): Promise<{ changed: boolean; files: string[]; removedFiles: string[] }> {
+): Promise<{ changed: boolean; files: string[]; removedFiles: string[]; removedFamilies: string[] }> {
   const request = googleFontsCss2Url(typography)
   if (!request) throw new Error(mainT('googleFontsNoFamily'))
   const before = getManagedBlock((await readCustomScss(projectPath)).content, GOOGLE_MARKER)
   if (before && requestOf(before) === request && allFilesPresent(projectPath, before)) {
-    return { changed: false, files: [], removedFiles: [] }
+    return { changed: false, files: [], removedFiles: [], removedFamilies: [] }
   }
 
   const response = await fetch(request, { headers: { 'User-Agent': BROWSER_UA }, signal: AbortSignal.timeout(GOOGLE_TIMEOUT_MS) })
@@ -270,16 +270,30 @@ export async function fetchGoogleFonts(
   const info = await readCustomScss(projectPath)
   const previous = getManagedBlock(info.content, GOOGLE_MARKER) ?? ''
   await writeCustomScss(projectPath, upsertManagedBlock(info.content, GOOGLE_MARKER, block))
-  return { changed: true, files: [...urls.values()], removedFiles: await deleteUnreferencedFontFiles(projectPath, previous) }
+  // Said by name after the save: the files of a font chosen away go without a question, and the
+  // "unused fonts" card never sees them - it lists the 'fonts' block only.
+  const kept = new Set(familiesOf(block).map((f) => f.toLowerCase()))
+  return {
+    changed: true,
+    files: [...urls.values()],
+    removedFiles: await deleteUnreferencedFontFiles(projectPath, previous),
+    removedFamilies: familiesOf(previous).filter((f) => !kept.has(f.toLowerCase()))
+  }
+}
+
+function familiesOf(css: string): string[] {
+  return [...new Set(parseFontFaces(css).map((face) => face.family))]
 }
 
 /** Removes the block and every file of it that no other rule names. Nothing when there is none. */
-export async function dropGoogleFonts(projectPath: string): Promise<{ dropped: boolean; removedFiles: string[] }> {
+export async function dropGoogleFonts(
+  projectPath: string
+): Promise<{ dropped: boolean; removedFiles: string[]; removedFamilies: string[] }> {
   const info = await readCustomScss(projectPath)
   const body = getManagedBlock(info.content, GOOGLE_MARKER)
-  if (body === null) return { dropped: false, removedFiles: [] }
+  if (body === null) return { dropped: false, removedFiles: [], removedFamilies: [] }
   await writeCustomScss(projectPath, stripManagedBlock(info.content, GOOGLE_MARKER))
-  return { dropped: true, removedFiles: await deleteUnreferencedFontFiles(projectPath, body) }
+  return { dropped: true, removedFiles: await deleteUnreferencedFontFiles(projectPath, body), removedFamilies: familiesOf(body) }
 }
 
 /**

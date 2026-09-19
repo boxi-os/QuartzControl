@@ -1291,6 +1291,10 @@ export default {
   },
   styles: {
     loadFailed: 'The styles could not be loaded.',
+    googleFontsRemoved_one: 'No longer selected and removed from the project: {{families}} (1 file).',
+    googleFontsRemoved_other: 'No longer selected and removed from the project: {{families}} ({{count}} files).',
+    googleFontsDropped_one: 'The local copy of the Google fonts was removed (1 file); the website now loads them from Google.',
+    googleFontsDropped_other: 'The local copies of the Google fonts were removed ({{count}} files); the website now loads them from Google.',
     fixes: {
       heading: 'Known conflicts',
       description:

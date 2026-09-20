@@ -170,6 +170,10 @@ const STRINGS = {
     // Was die App nicht mehr tun kann, tut „git stash pop“; deshalb steht hier kein „drop“.
     updateStashFitsHead:
       'Aus einem früheren Update liegt in git noch ein zurückgelegter Stand mit eigenen Paketeinträgen ({{entry}} in „git stash list“). Er passt auf den jetzigen Stand, wird aber von dieser App nicht mehr eingetragen: „git stash show -p {{entry}}“ zeigt ihn an, „git stash pop {{entry}}“ trägt ihn ein.',
+    // Derselbe Satz an der Stelle, an der unmittelbar darunter „… sind wieder eingetragen“ steht:
+    // ohne den Vorspann lesen sich die beiden als Widerspruch über dieselbe Sache.
+    updateStashFitsHeadBesides:
+      'Neben den Einträgen, die der Abbruch zurückgebracht hat, liegt in git noch ein älterer zurückgelegter Stand mit eigenen Paketeinträgen ({{entry}} in „git stash list“). Er passt auf den jetzigen Stand, wird aber von dieser App nicht mehr eingetragen: „git stash show -p {{entry}}“ zeigt ihn an, „git stash pop {{entry}}“ trägt ihn ein.',
     // Derselbe ältere Stand, aber unmittelbar nachdem der Abbruch den neueren eingetragen hat. Dann
     // stimmt „git stash pop trägt ihn ein“ nicht, wenn beide Einträge dieselbe Datei halten: die
     // steht gerade wieder geändert da, und git verweigert den Pop mit
@@ -534,6 +538,8 @@ const STRINGS = {
       'In quartz.config.yaml, “plugins” is not a list. The app will not read it; fix it in an editor or use a restore point.',
     updateStashFitsHead:
       'An earlier update left package entries of yours stashed in git ({{entry}} in “git stash list”). They fit the state the project is in now, but this app has no way left to put them back: “git stash show -p {{entry}}” shows them, “git stash pop {{entry}}” puts them back.',
+    updateStashFitsHeadBesides:
+      'Besides the entries cancelling put back, git still holds an older stash with package entries of yours ({{entry}} in “git stash list”). They fit the state the project is in now, but this app has no way left to put them back: “git stash show -p {{entry}}” shows them, “git stash pop {{entry}}” puts them back.',
     updateStashUnderRestored:
       'Besides the entries cancelling puts back, git still holds an older stash with package entries of yours ({{entry}} in “git stash list”). git will not take “git stash pop” for it right now, because the same files have just been changed again: “git stash show -p {{entry}}” shows it — copy over by hand what you are missing, then discard it with “git stash drop {{entry}}”.',
     updateStashRestored: 'The update is cancelled, and your stashed package entries are back in place.',

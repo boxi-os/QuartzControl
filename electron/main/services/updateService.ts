@@ -950,7 +950,11 @@ async function popCoreUpdateStash(projectPath: string): Promise<StashPopOutcome>
   // entry holding only package-lock.json under a newer one holding only package.json pops fine,
   // and the sentence sent the user to copy it by hand (thirty-second review, finding 5).
   const blocked = fits && (await stashTouchesChangedFiles(projectPath, older))
-  const note = mainT(!fits ? 'updateStashLeftover' : blocked ? 'updateStashUnderRestored' : 'updateStashFitsHead', { entry: older })
+  // `updateStashFitsHeadBesides`, not `updateStashFitsHead`: this sentence stands directly before
+  // "… are back in place", and without the preamble the two read as a contradiction about the same
+  // thing. updateStashUnderRestored got its preamble for exactly this spot (thirty-third review,
+  // "nebenbei" 6).
+  const note = mainT(!fits ? 'updateStashLeftover' : blocked ? 'updateStashUnderRestored' : 'updateStashFitsHeadBesides', { entry: older })
   return { success: true, sentences: [note], restored, git: popped.output }
 }
 
@@ -1678,10 +1682,15 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
  * neither tree and was therefore always named.
  */
 async function stagedOutsideMerge(projectPath: string): Promise<{ files: string[]; onTop: string[]; unchecked: boolean }> {
-  const staged = await diffNames(projectPath, '--cached', 'HEAD')
+  // `--no-renames` in both, for the same reason untrackedInTheWay has it: the two questions are
+  // asked over different pairs of trees, and rename detection pairs them differently. A merge with
+  // files renamed *and* changed on both sides named four files as discarded that nobody had
+  // staged - one list saw a rename, the other an addition beside a deletion (thirty-third review,
+  // "nebenbei" 6). The question here is about paths, and a path is a path.
+  const staged = await diffNames(projectPath, '--cached', '--no-renames', 'HEAD')
   if (staged.length === 0) return { files: [], onTop: [], unchecked: false }
   const conflicted = new Set(await diffNames(projectPath, '--diff-filter=U'))
-  const fromMerge = new Set(await diffNames(projectPath, 'HEAD...MERGE_HEAD'))
+  const fromMerge = new Set(await diffNames(projectPath, '--no-renames', 'HEAD...MERGE_HEAD'))
   const candidates = staged.filter((file) => fromMerge.has(file) && !conflicted.has(file))
   const onTopList = await stagedOnTopOfMerge(projectPath, candidates)
   const onTop = new Set(onTopList ?? [])

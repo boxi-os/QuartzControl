@@ -886,9 +886,45 @@ kommt jetzt ohne `merge-tree` aus: Eine Datei, deren Index-Eintrag gleich dem vo
 ist, hat der Merge unverändert von upstream übernommen, da liegt nichts Eigenes obenauf. Nur was
 sich unterscheidet — beide Seiten haben geändert, das Ergebnis ist keiner der beiden Bäume —
 braucht den nachgerechneten Merge. Gemessen an einem aus der Quelle gebauten git 2.37.0 und am
-System-git 2.54.0, mit dem Geschirr des Reviews: halber Merge, nichts angefasst — Satz vorher,
-Schweigen jetzt; dieselbe Szene ohne eine beidseitig geänderte Datei schweigt auch unter 2.37, denn
-sieben Dateien werden ohne `merge-tree` beantwortet.
+System-git 2.54.0, mit dem Geschirr des Reviews: eine Szene ohne eine beidseitig geänderte Datei
+schweigt jetzt auch unter 2.37, denn ihre sieben Dateien werden ohne `merge-tree` beantwortet.
+
+**Die andere Hälfte kam mit dem Alpha-Test dazu, und sie ist die häufigere.** Der Satz „halber
+Merge, nichts angefasst — Schweigen jetzt“, mit dem die Messung oben einmal dastand, trug nur für
+die Szene *ohne* beidseitig geänderte Datei; die Messung daneben war dieselbe Messung ein zweites
+Mal. An der gebauten App gefahren, mit einem halben Merge, der eine solche Datei enthält, stand
+der Warnsatz weiter da — bei leerem `git status` nach dem Abbruch und ohne dass jemand etwas
+vorgemerkt hätte. Genau diese Datei ist beim echten Kern-Update der Grund, aus dem jemand
+überhaupt in einem halben Merge landet (Alpha-Test 2026-09-20, Befund 1).
+
+Beantwortet wird sie jetzt mit den Mitteln, die ein altes git hat: die drei Blobs und
+`git merge-file`, also die Rechnung, die auch die resolve-Strategie macht. Kommt dabei der Blob
+heraus, der im Index steht, dann hält der Index genau das, was ein schlichter Drei-Wege-Merge der
+beiden Seiten ergibt, und etwas Eigenes kann nicht darin sein. Gemessen: byte-gleich zu dem, was
+`git merge` geschrieben hat, Oid für Oid. Das alte `merge-tree` (die Form vor 2.38) hilft dafür
+**nicht** — für eine beidseitig geänderte Datei schreibt es „changed in both“ und einen Diff, aber
+keinen `result`-Oid; das war der erste Versuch und ist gemessen verworfen.
+
+**Die Gegenrichtung wird bewusst nicht beantwortet.** Ein Ergebnis, das abweicht, hat zwei
+Erklärungen — der Nutzer hat etwas vorgemerkt, oder der Merge hat etwas getan, was diese Rechnung
+nicht nachspielt (`merge.renormalize`, ein Merge-Treiber aus `.gitattributes`, eine
+Criss-Cross-Geschichte, deren virtuelle Basis nicht die von `merge-base` ist) —, und ohne ein
+Mittel, sie zu trennen, wäre die Datei als Arbeit des Nutzers zu nennen geraten. Sie bleibt
+ungeprüft, und das ist der Zustand, für den der Satz geschrieben ist. Die vier Szenen an der
+gebauten App, jede unter 2.37 und unter 2.54:
+
+| Szene | 2.37 vorher | 2.37 jetzt | 2.54 |
+|---|---|---|---|
+| nichts angefasst, eine beidseitig geänderte Datei | Satz | **still** | still |
+| eigene Zeile auf einer solchen Datei vorgemerkt | Satz | Satz | nennt `shared.md` |
+| Konflikt von Hand gelöst und vorgemerkt | Satz | Satz | nennt `quartz/index.ts` |
+| vorgemerkt und danach weiter geändert (Verweigerung) | Satz | Satz | rät `git reset --`, schweigt daneben |
+
+Die zweite Zeile ist die, auf die es ankommt: Der Weg, der still werden *darf*, darf nicht still
+werden, wo wirklich etwas obendrauf liegt. Die Blobs werden dafür in ein Wegwerf-Verzeichnis unter
+dem Temp-Ordner des Systems ausgepackt, nicht in das Projekt — `git unpack-file` schreibt
+`.merge_file_XXXXXX` in das aktuelle Verzeichnis, und das ist hier der Wegwerf-Ordner mit `GIT_DIR`
+zurück auf das Repository.
 
 **Und die Lücke bedeutet in den zwei Zweigen Verschiedenes.** Nach einem geglückten Abbruch heißt
 sie „der Liste fehlt vielleicht ein Name“; in der Verweigerung heißt sie „der Rat oben ist

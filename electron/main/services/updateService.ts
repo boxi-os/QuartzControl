@@ -1,5 +1,6 @@
 import { runCommand as run } from './runCommand'
-import { readFile, realpath } from 'fs/promises'
+import { mkdtemp, readFile, realpath, rm } from 'fs/promises'
+import { tmpdir } from 'os'
 import { join, resolve } from 'path'
 import type { CoreAbortResult, CoreUpdateStatus, PluginActionResult, PluginUpdateStatus, UpdateResult } from '@shared/ipc-contract'
 import {
@@ -1702,8 +1703,8 @@ async function stagedOutsideMerge(projectPath: string): Promise<{ files: string[
   const conflicted = new Set(await diffNames(projectPath, '--diff-filter=U'))
   const fromMerge = new Set(await diffNames(projectPath, '--no-renames', 'HEAD...MERGE_HEAD'))
   const candidates = staged.filter((file) => fromMerge.has(file) && !conflicted.has(file))
-  const onTopList = await stagedOnTopOfMerge(projectPath, candidates)
-  const onTop = new Set(onTopList ?? [])
+  const answer = await stagedOnTopOfMerge(projectPath, candidates)
+  const onTop = new Set(answer.onTop)
   return {
     files: staged.filter((file) => (!fromMerge.has(file) && !conflicted.has(file)) || onTop.has(file)),
     // Of those, the ones that are the merge's own files with something of the user's staged on top.
@@ -1713,8 +1714,9 @@ async function stagedOutsideMerge(projectPath: string): Promise<{ files: string[
     onTop: [...onTop],
     // "Cannot check" is never "all good": under a git that does not know merge-tree --write-tree
     // the answer is silently the one from before, and the sentence about what the abort discarded
-    // reads as complete while it names only half (thirty-third review, finding 11).
-    unchecked: onTopList === null
+    // reads as complete while it names only half (thirty-third review, finding 11). It is asked
+    // per file, so it is the files still open that decide - not whether an old git was in play.
+    unchecked: answer.unchecked.length > 0
   }
 }
 
@@ -1726,14 +1728,15 @@ async function stagedOutsideMerge(projectPath: string): Promise<{ files: string[
  * differs from that result has something of the user's in it (thirty-second review, found while
  * fixing finding 1). merge-tree exits 1 on conflicts and still prints the tree first; a git older
  * than 2.38 does not know `--write-tree` and answers `fatal: unknown rev --write-tree` with 128
- * (measured against a git 2.37.0 built from source). `null` then, not an empty list: the caller
- * says so rather than letting the sentence read as complete.
+ * (measured against a git 2.37.0 built from source). Then the question is asked file by file with
+ * means an old git has (plainThreeWayMatches), and whatever that leaves open comes back in
+ * `unchecked` - the caller says so rather than letting the sentence read as complete.
  *
  * The tree is looked for over all lines, not only the first: `run` joins stdout and stderr, so a
  * warning before it would otherwise be the same silent nothing.
  */
-async function stagedOnTopOfMerge(projectPath: string, files: string[]): Promise<string[] | null> {
-  if (files.length === 0) return []
+async function stagedOnTopOfMerge(projectPath: string, files: string[]): Promise<{ onTop: string[]; unchecked: string[] }> {
+  if (files.length === 0) return { onTop: [], unchecked: [] }
   const entries = async (args: string[], paths: string[], pick: (fields: string[]) => string): Promise<Map<string, string> | null> => {
     const result = await run('git', [...args, '--', ...paths], projectPath)
     if (!result.success) return null
@@ -1758,13 +1761,100 @@ async function stagedOnTopOfMerge(projectPath: string, files: string[]): Promise
   // 22.04 ships 2.34).
   const theirs = await entries(['ls-tree', '-z', 'MERGE_HEAD'], files, ([mode, , oid]) => `${mode} ${oid}`)
   const rest = index && theirs ? files.filter((file) => index.get(file) !== theirs.get(file)) : files
-  if (rest.length === 0) return []
+  if (rest.length === 0) return { onTop: [], unchecked: [] }
   const merged = await run('git', ['merge-tree', '--write-tree', 'HEAD', 'MERGE_HEAD'], projectPath)
   const tree = merged.output.split('\n').map((line) => line.trim()).find((line) => /^[0-9a-f]{40}([0-9a-f]{24})?$/.test(line))
-  if (tree === undefined) return null
+  if (tree === undefined) return { onTop: [], unchecked: await plainThreeWayMatches(projectPath, rest, index) }
   const result = await entries(['ls-tree', '-z', tree], rest, ([mode, , oid]) => `${mode} ${oid}`)
-  if (!result || !index) return null
-  return rest.filter((file) => result.get(file) !== index.get(file))
+  if (!result || !index) return { onTop: [], unchecked: rest }
+  return { onTop: rest.filter((file) => result.get(file) !== index.get(file)), unchecked: [] }
+}
+
+/**
+ * The same question under a git before 2.38, which has no `merge-tree --write-tree` - and it can
+ * only ever answer it one way round.
+ *
+ * A file the merge stages straight from MERGE_HEAD is already answered by its index entry
+ * (stagedOnTopOfMerge). What is left is the case both sides changed and the merge resolved: its
+ * entry equals neither tree, so until now every such file fell back on "could not be checked" -
+ * and one of them is enough to put the sentence under an abort where nobody had touched anything.
+ * In an ordinary core update that is not the edge case but the reason somebody is in a half merge
+ * at all: own changes in `quartz/` that upstream changed too (alpha test of 2026-09-20, finding 1).
+ *
+ * So the merge is recomputed for those files the way the resolve strategy does it, with the three
+ * blobs and `git merge-file` - a command git has had since long before 2.38. If the result is the
+ * blob that is in the index, then the index holds exactly what a plain three-way merge of the two
+ * sides produces, and nothing of the user's can be in it. Measured: byte-identical to what
+ * `git merge` wrote, oid for oid (git 2.37.0 built from source).
+ *
+ * The other direction is *not* answered here, and that is the point. A result that differs has two
+ * explanations - the user staged something, or the merge did something this recomputation does not
+ * reproduce (merge.renormalize, a merge driver from .gitattributes, a criss-cross history whose
+ * virtual base is not `merge-base`'s answer) - and with no way to tell them apart, naming the file
+ * as the user's work would be a guess. It stays unchecked, which is the answer the sentence is
+ * written for. Same shape as the frame's group orders: a statement that only carries one way.
+ *
+ * The blobs are unpacked into a throwaway directory rather than the project: `git unpack-file`
+ * writes `.merge_file_XXXXXX` into the current directory, and the current directory here is a
+ * folder under the system's temp dir with GIT_DIR pointing back at the repository - so an abort
+ * that goes wrong leaves nothing behind in the user's project.
+ */
+async function plainThreeWayMatches(projectPath: string, files: string[], index: Map<string, string> | null): Promise<string[]> {
+  if (!index) return files
+  const oid = (output: string): string | undefined =>
+    output.split('\n').map((line) => line.trim()).find((line) => /^[0-9a-f]{40}([0-9a-f]{24})?$/.test(line))
+  const base = await run('git', ['merge-base', 'HEAD', 'MERGE_HEAD'], projectPath)
+  const baseRev = base.success ? oid(base.output) : undefined
+  if (baseRev === undefined) return files
+  const trees = async (rev: string): Promise<Map<string, string> | null> => {
+    const result = await run('git', ['ls-tree', '-z', rev, '--', ...files], projectPath)
+    if (!result.success) return null
+    const map = new Map<string, string>()
+    for (const record of result.output.split('\0').filter(Boolean)) {
+      const tab = record.indexOf('\t')
+      const [mode, , object] = record.slice(0, tab).split(' ')
+      map.set(record.slice(tab + 1), `${mode} ${object}`)
+    }
+    return map
+  }
+  const ours = await trees('HEAD')
+  const theirs = await trees('MERGE_HEAD')
+  const ancestors = await trees(baseRev)
+  if (!ours || !theirs || !ancestors) return files
+  const dir = await mkdtemp(join(tmpdir(), 'quartzcontrol-merge-'))
+  const env = { GIT_DIR: join(projectPath, '.git') }
+  const unchecked: string[] = []
+  try {
+    for (const file of files) {
+      const sides = [ours.get(file), ancestors.get(file), theirs.get(file)]
+      const staged = index.get(file)
+      // Only a plain content merge of three regular blobs of the same mode is reproduced here. A
+      // mode change, a file missing on one side - anything the strategy resolves by other means
+      // than merging lines - is left to the sentence.
+      if (staged === undefined || sides.some((side) => side === undefined || side.split(' ')[0] !== staged.split(' ')[0])) {
+        unchecked.push(file)
+        continue
+      }
+      const unpacked: string[] = []
+      for (const side of sides) {
+        const result = await run('git', ['unpack-file', side!.split(' ')[1]], dir, env)
+        const name = result.success ? result.output.split('\n').map((line) => line.trim()).find((line) => line.startsWith('.merge_file_')) : undefined
+        if (name !== undefined) unpacked.push(name)
+      }
+      if (unpacked.length < 3) {
+        unchecked.push(file)
+        continue
+      }
+      // merge-file writes the result into the first file and exits with the number of conflicts;
+      // a conflict here means the recomputation is not what the merge wrote, so the file stays open.
+      const merged = await run('git', ['merge-file', ...unpacked], dir, env)
+      const hashed = merged.success ? await run('git', ['hash-object', unpacked[0]], dir, env) : null
+      if (hashed === null || !hashed.success || oid(hashed.output) !== staged.split(' ')[1]) unchecked.push(file)
+    }
+  } finally {
+    await rm(dir, { recursive: true, force: true }).catch(() => undefined)
+  }
+  return unchecked
 }
 
 /**

@@ -668,6 +668,20 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   Schlüsseln, und ein Fix des zwölften Reviews hatte die Form gerade erst noch einmal geschrieben.
   Und die Zahl zählt, was sie zu zählen behauptet: „1 Aufruf im Hauptprozess“ war die Deklaration
   von `mainT` (vierzehntes Review).
+- **„Kann nicht prüfen“ wird je Ding gefragt, nicht je Werkzeug — und ein Ersatz antwortet nur in
+  die Richtung, die er beweisen kann.** Fehlt das Werkzeug für die genaue Antwort, ist „dann eben
+  für alles ungeprüft“ die bequeme und die falsche Auskunft: Der Abbruch eines Kern-Updates sagte
+  unter einem git vor 2.38 seinen Warnsatz auch dort, wo niemand etwas vorgemerkt hatte, weil
+  *eine* Datei die teure Frage brauchte. Gefragt wird deshalb Datei für Datei, und was ein
+  billigeres Mittel beantworten kann, beantwortet es: `git merge-file` rechnet den Merge nach, und
+  kommt der Blob heraus, der im Index steht, dann liegt nichts Eigenes obenauf — **bewiesen**.
+  Weicht er ab, heißt das nicht das Gegenteil, denn dafür gäbe es eine zweite Erklärung
+  (`merge.renormalize`, ein Merge-Treiber, eine Criss-Cross-Basis); dann bleibt es ungeprüft.
+  Dieselbe Form wie die Gruppenordnungen eines Frames: eine Aussage, die nur in eine Richtung
+  trägt, ist mehr wert als eine, die in beide rät. Und die Gegenprobe gehört dazu — der Weg, der
+  still werden *darf*, wird gegen die Szene gemessen, in der er nicht still werden darf
+  (Alpha-Test 2026-09-20, Befund 1). Messungen in
+  [`snapshots-and-updates.md`](decisions/snapshots-and-updates.md).
 - **Wer fragt, ob etwas noch gebraucht wird, sucht breit; wer löscht, löscht schmal.** Die Frage
   „nennt noch eine Regel diese Datei“ entschied über ein `rm`, und gestellt wurde sie an die zwei
   flachen Ordner, die die App selbst beschreibt, und je Regel an die erste `url()`. Eine Regel, die

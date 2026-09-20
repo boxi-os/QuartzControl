@@ -19,7 +19,7 @@
 //    2 plugin      install quartz-layout-box through the quartz CLI
 //    3 frames      three authored frames + the project's breakpoints
 //    4 config      colours, fonts, plugin patches, layout, theme entry
-//    5 styles      custom.scss body, 31 stylesheets, load order
+//    5 styles      custom.scss body, every stylesheet in STYLE_ORDER, load order
 //    6 fonts       import the woff2 files, then correct the @font-face block
 //    7 variables   the css-vars block
 //    8 texts       translations and theme presets
@@ -51,6 +51,8 @@ import {
   LAYOUT_BOX_SOURCE,
   MULTILANGUAGE_SOURCE,
   MULTILANGUAGE_ENTRY,
+  NAVIGATIONS_SOURCE,
+  NAVIGATION_ENTRIES,
   THEME_ENTRY
 } from './example-template/plugins.mjs'
 import { LOCALE, TRANSLATIONS } from './example-template/translations.mjs'
@@ -99,9 +101,10 @@ const TEMPLATE_NAME = V.name
 // Deshalb bildet variants.mjs den Satz gegen die wirklichen Zahlen statt ihn hinzuschreiben.
 const TEMPLATE_DESCRIPTION = V.describe({ frames: FRAMES.length })
 // Die Daten dieser Variante: die des Example, durch ihre Ableitung geschickt.
-const DATA = V.derive({ patches: PLUGIN_PATCHES, boxes: LAYOUT_BOXES })
+const DATA = V.derive({ patches: PLUGIN_PATCHES, boxes: LAYOUT_BOXES, navigations: NAVIGATION_ENTRIES })
 // Was die Gegenprobe im Zielprojekt wiederfinden muss.
 const expectedBoxes = DATA.boxes.length
+const expectedNavigations = DATA.navigations.length
 
 const log = (message) => console.log(message)
 const step = (message) => process.stdout.write(`  ${message} … `)
@@ -612,7 +615,7 @@ async function buildTemplate() {
               (entry) =>
                 !(
                   typeof entry.source === 'string' &&
-                  (entry.source === a.layoutBoxSource || entry.source === a.multilanguageSource)
+                  a.appendedSources.includes(entry.source)
                 )
             )
             .map((entry) => {
@@ -653,7 +656,7 @@ async function buildTemplate() {
               fontOrigin: 'local',
               cdnCaching: false
             },
-            plugins: [...plugins, ...a.boxes, a.multilanguage],
+            plugins: [...plugins, ...a.boxes, a.multilanguage, ...a.navigations],
             layout: a.layout
           }
           await window.quartzGui.config.save(a.path, next)
@@ -670,11 +673,16 @@ async function buildTemplate() {
           // than held as a second copy, so the Example stays the single source for all of them.
           patches: DATA.patches,
           boxes: DATA.boxes,
+          navigations: DATA.navigations,
           multilanguage: MULTILANGUAGE_ENTRY,
           layout: LAYOUT_CONFIG,
           theme: THEME_ENTRY,
-          layoutBoxSource: LAYOUT_BOX_SOURCE,
-          multilanguageSource: MULTILANGUAGE_SOURCE
+          // Jede Quelle, die dieser Lauf unten anhängt, muss vorher herausgefiltert werden, sonst
+          // legt jeder zweite `--only 4` eine weitere Kopie an. Eine Liste statt dreier
+          // Vergleiche, weil der vierte Eintrag sonst wieder vergessen wird - der dritte wurde es:
+          // die Multilanguage-Quelle stand hier anfangs nicht, und ein versehentlicher zweiter
+          // Lauf hatte sie doppelt im Projekt.
+          appendedSources: [LAYOUT_BOX_SOURCE, MULTILANGUAGE_SOURCE, NAVIGATIONS_SOURCE]
         }
       )
       done(`${applied.plugins} Einträge`)
@@ -994,12 +1002,26 @@ async function verify() {
 
     step('Layout-Box-Instanzen im Ziel')
     const config = await ipc(page, (a) => window.quartzGui.config.get(a.path), { path: CONTROL })
-    const boxes = config.plugins.filter((p) => typeof p.source === 'string' && p.source.includes('quartz-layout-box'))
+    const instances = (needle) =>
+      config.plugins.filter((p) => typeof p.source === 'string' && p.source.includes(needle))
+    const boxes = instances('quartz-layout-box')
     // Gegen die Zahl der Variante, nicht gegen die des Example: „4 von 7" läse sich hier wie ein
     // Verlust, und eine Zeile, die im grünen Fall nach einem Fehler aussieht, wird nicht gelesen.
     done(`${boxes.length} von ${expectedBoxes}`)
 
-    return { warnings: result.warnings, frames: frames.length, boxes: boxes.length }
+    // Dieselbe Frage für die Navigation, und sie ist die schärfere: Der Baustein `plugins`
+    // schlüsselt gleichnamige Einträge nach ihrer Position, mehrere Instanzen desselben Plugins
+    // sind also genau der Fall, in dem ein Import stillschweigend eine davon verlieren kann.
+    step('Navigations-Instanzen im Ziel')
+    const navigations = instances('quartz-navigations')
+    done(`${navigations.length} von ${expectedNavigations}`)
+
+    return {
+      warnings: result.warnings,
+      frames: frames.length,
+      boxes: boxes.length,
+      navigations: navigations.length
+    }
   })
 
   step('bauen')
@@ -1042,7 +1064,7 @@ async function main() {
     const outcome = await verify()
     log('\n═══════════════════════════════════')
     log(written ? `Paket: ${written.filePath}` : 'Paket: (nicht in diesem Lauf geschrieben)')
-    log(`Gegenprobe: ${outcome.frames} Frames, ${outcome.boxes} Layout-Boxen, ${outcome.warnings.length} Warnungen, Build grün.`)
+    log(`Gegenprobe: ${outcome.frames} Frames, ${outcome.boxes} Layout-Boxen, ${outcome.navigations} Navigationen, ${outcome.warnings.length} Warnungen, Build grün.`)
   } else if (written) {
     log('\n═══════════════════════════════════')
     log(`Paket: ${written.filePath}`)

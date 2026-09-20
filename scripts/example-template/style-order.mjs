@@ -29,6 +29,10 @@ export const STYLE_ORDER = [
   'nav-darkmode',
   'nav-reader-mode',
   'nav-explorer',
+  // Nach dem Explorer, weil beide denselben Platz in der linken Spalte belegen: Wer den Explorer
+  // wieder einschaltet, liest die zwei Dateien nebeneinander. Seit dem 2026-09-20 ist die
+  // Navigation die, die dort steht.
+  'nav-navigations',
   'nav-language-switcher',
 
   // the apparatus above the article

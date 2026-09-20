@@ -202,5 +202,21 @@ export const VARIABLE_OVERRIDES = [
 
   // The mobile navigation drawer. `min()` keeps it off the right edge on a 360px phone while
   // giving a four-level tree room to breathe on a tablet-sized screen.
-  { key: 'tpl-drawer-width', light: 'min(86vw, 340px)' }
+  { key: 'tpl-drawer-width', light: 'min(86vw, 340px)' },
+
+  // The scrim behind an open drawer, and the blur under it. Measured when the explorer's drawer
+  // was built: a 0.45 scrim with a 1px blur reads as a dark sheet over a page you can still read
+  // word for word; at 0.3 with a real blur the page behind is recognisably there and
+  // unmistakably not the thing in front.
+  //
+  // A token rather than the literal it was, because there are two drawers now. The explorer has
+  // one and every `mobile: offcanvas` navigation has another, and the second one's colour is a
+  // variable the plugin reads (`--quartz-nav-backdrop`), so the two would have drifted the first
+  // time either was tuned. One value, both drawers, and the app's variable tab can reach it.
+  //
+  // No dark value: a scrim is not a surface. It darkens whatever is behind it, and in dark mode
+  // that page is already dark - a second, lighter black would read as a grey veil rather than as
+  // depth.
+  { key: 'tpl-backdrop', light: 'rgba(0, 0, 0, 0.3)' },
+  { key: 'tpl-backdrop-blur', light: '4px' }
 ]

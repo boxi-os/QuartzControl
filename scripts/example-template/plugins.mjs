@@ -270,8 +270,24 @@ export const PLUGIN_PATCHES = {
   // drawer is `position: absolute`, so the left area needs no height on a phone at all. Measured
   // before: the spacer was 8px of nothing between two 24px gaps.
   spacer: { enabled: false },
+  // Aus seit dem 2026-09-20, und nur aus - nicht weg.
+  //
+  // Die Hauptnavigation dieser Website läuft seither über quartz-navigations (NAVIGATION_ENTRIES
+  // unten): eine Leiste der Kapitelebene im Kopf und ein Baum in der linken Spalte, an genau dem
+  // Platz und mit genau der Priorität, die der Explorer hatte. Zwei Bäume nebeneinander wären
+  // zwei Antworten auf dieselbe Frage.
+  //
+  // `enabled: false` statt eines gestrichenen Eintrags, aus dem Grund, den doku.mjs für seine
+  // vier nennt: Ein Patch kann einen Eintrag überschreiben, nicht entfernen - und eine Vorlage,
+  // die ihn stehen lässt, erlaubt der App, ihn mit einem Häkchen wiederzubekommen. Sein
+  // Stylesheet (nav-explorer.scss, 32 KB, bis zur untersten Ebene gestaltet) reist deshalb
+  // unverändert mit; wer den Haken setzt, bekommt den Explorer, der hier am 2026-09-19 noch
+  // stand, und nicht einen ungestalteten.
+  //
+  // Die Optionen und der Platz bleiben ebenfalls stehen, damit das Häkchen nicht nur die
+  // Komponente zurückholt, sondern auch ihre Einstellung.
   explorer: {
-    enabled: true,
+    enabled: false,
     // `folderDefaultState: 'open'` states the intent and DOES NOT WORK - measured against
     // @quartz-community/explorer 0.1.0. The component writes the option into `data-collapsed`, but
     // its own inline script never reads that attribute: it takes the fold state from
@@ -567,6 +583,104 @@ export const MULTILANGUAGE_ENTRY = {
   },
   layout: { position: 'header', group: 'toolbar', priority: 60 }
 }
+
+/* ------------------------------------------------------- the navigation, as a plugin */
+
+// Der dritte github:-Eintrag dieser Vorlage, und der, der den Explorer ablöst.
+//
+// quartz-navigations hat *eine* Komponente; ihre zehn Darstellungen liegen auf der Option
+// `variant`. Diese Website setzt zwei davon ein - mehr wäre eine Vorführung an einer Stelle, an
+// der ein Leser navigieren will. Gestaltet sind trotzdem alle zehn (nav-navigations.scss): wer
+// eine der acht anderen einschaltet, bekommt sie fertig, so wie es beim Explorer der Fall ist.
+export const NAVIGATIONS_SOURCE = 'github:boxi-os/quartz-navigations'
+
+// Wie bei den Layout-Boxen leitet configService.deriveName() den Namen aus dem letzten Segment
+// der Quelle ab, alle Instanzen heißen also `quartz-navigations`, was auch hier stehen muss.
+const NAVIGATIONS_NAME = 'quartz-navigations'
+
+// Die Breakpoints des Plugins und die dieser Vorlage sind zwei verschiedene Zahlen, und das ist
+// der Grund, sie hier zu nennen: Das Plugin ersetzt `__NAV_BP_MOBILE__`/`__NAV_BP_DESKTOP__` in
+// seinem SCSS beim Bauen aus `quartz/styles/variables.scss` - den Werten von Quartz -, während
+// die Frames dieser Vorlage bei 900 und 1200 px umschalten (BREAKPOINT_WIDTHS in frames.mjs).
+// Ohne diese Option klappte die Navigation an einer anderen Breite um als die Spalte, in der sie
+// steht.
+const NAV_BREAKPOINTS = { mobile: '900px', desktop: '1200px' }
+
+export const NAVIGATION_ENTRIES = [
+  {
+    // Das Menü in der linken Spalte, an Platz und Priorität des Explorers.
+    //
+    // `accordion` statt `tree`: Beides ist eine Gliederung in einer schmalen Spalte, und der
+    // Unterschied ist, wie viel davon zugleich offen steht. Dieses Handbuch hat sieben Kapitel mit
+    // zusammen 122 Notizen; als Baum sind das im aufgeklappten Zustand mehr Zeilen, als die Spalte
+    // hoch ist. Das Akkordeon hält jeweils ein Kapitel offen (`exclusive`), und welches, entscheidet
+    // die gelesene Seite (`expandActive`, Vorgabe des Plugins).
+    //
+    // `folderClick: 'link'` statt `'toggle'`: Jede Kapitelseite dieser Website ist eine Seite mit
+    // Text, kein bloßer Ordner — ein Klick auf ihren Namen soll sie öffnen. Aufgeklappt wird über
+    // den Pfeil daneben, den `chevrons` (Vorgabe) stehen lässt. Dieselbe Entscheidung, die der
+    // Explorer mit `folderClickBehavior: 'link'` trug.
+    //
+    // `persistState`: Was der Leser selbst auf- oder zugeklappt hat, überlebt den Seitenwechsel.
+    // Der Explorer versprach das mit `useSavedState: true` und hielt es nicht — die Option steht
+    // dort bis heute wirkungslos im Eintrag (siehe den Kommentar darüber).
+    //
+    // `mobile: 'offcanvas'`: Burger, Schublade, Scrim — dieselbe Geste, die der Explorer am selben
+    // Platz hatte, diesmal vom Plugin und ohne eigenes JavaScript.
+    //
+    // KEIN `stripNumericPrefix`, obwohl die Ordner dieses Vaults `1-einstieg` heißen und die Option
+    // dafür gemacht ist. Gemessen an der gebauten Website: Die Kapitel tragen ihre Nummer im
+    // *Titel* („1 – Einstieg", Frontmatter `title`), und die Option schnitt sie dort mit ab — im
+    // Menü stand „– Einstieg", während die Seiten darunter ihre „1 – Text" behielten. Eine halb
+    // durchgeführte Nummerierung liest sich als Fehler, und sie ist einer.
+    source: NAVIGATIONS_SOURCE,
+    name: NAVIGATIONS_NAME,
+    enabled: true,
+    order: 600,
+    options: {
+      variant: 'accordion',
+      showHome: true,
+      folderClick: 'link',
+      exclusive: true,
+      persistState: true,
+      mobile: 'offcanvas',
+      id: 'menue',
+      className: 'nav-menue',
+      breakpoints: NAV_BREAKPOINTS
+    },
+    layout: { position: 'left', priority: 30 }
+  },
+  {
+    // Vor und zurück, unter dem Text.
+    //
+    // Die zweite Darstellung, die diese Website einsetzt, und die einzige, die eine Frage
+    // beantwortet, die das Menü links nicht beantwortet: nicht „wo bin ich", sondern „was kommt
+    // als Nächstes". Ein Handbuch wird der Reihe nach gelesen, und am Fuß einer Seite steht sonst
+    // nur, worauf sie zurückverweist.
+    //
+    // `order: 'tree'` ist die Vorgabe des Plugins und hier die richtige: Die Lesereihenfolge läuft
+    // durch die ganze Gliederung, über Kapitelgrenzen hinweg. `siblings` bliebe im Ordner stehen
+    // und endete an jedem Kapitelende in einer Sackgasse.
+    //
+    // Priorität 5, also vor den Eigenschaften (40) und den zwei Kästen (50/60): Der Weg weiter
+    // gehört an das Ende des Textes, nicht hinter drei Kästen mit Metadaten. Ohne `group` — die
+    // Gruppe `custom-8` stellt die zwei Kästen nebeneinander, und der Pager ist eine eigene Reihe.
+    //
+    // `mobile` bleibt auf der Vorgabe `same`: Zwei Knöpfe nebeneinander sind auf einem Telefon
+    // dasselbe wie auf einem Bildschirm, nur untereinander (nav-navigations.scss).
+    source: NAVIGATIONS_SOURCE,
+    name: NAVIGATIONS_NAME,
+    enabled: true,
+    order: 601,
+    options: {
+      variant: 'pager',
+      id: 'seiten-pager',
+      className: 'nav-pager',
+      breakpoints: NAV_BREAKPOINTS
+    },
+    layout: { position: 'afterBody', priority: 5 }
+  }
+]
 
 /**
  * The community theme entry.

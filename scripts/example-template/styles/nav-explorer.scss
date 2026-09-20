@@ -643,9 +643,11 @@ li:has(> .folder-outer > ul > li > .nav-file-title.active) > .folder-outer > ul.
     z-index: 99;
     // Lighter scrim, more blur than before. A 0.45 scrim with a 1px blur reads as a dark sheet
     // over a page you can still read word for word; at 0.3 with a real blur the page behind is
-    // recognisably there and unmistakably not the thing in front.
-    background: rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(4px);
+    // recognisably there and unmistakably not the thing in front. The two values moved into
+    // tokens when the navigation plugin brought a second drawer with a scrim of its own - see
+    // variables.mjs.
+    background: var(--tpl-backdrop);
+    backdrop-filter: blur(var(--tpl-backdrop-blur));
   }
 
   // Rows get their touch height back: 32px is right for a dense sidebar and too small for a thumb.

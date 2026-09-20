@@ -20,7 +20,7 @@ import * as path from 'node:path'
 
 import { projectPath, workshopPath } from '../project-paths.mjs'
 import * as doku from './doku.mjs'
-import { LAYOUT_BOX_SOURCE, MULTILANGUAGE_SOURCE } from './plugins.mjs'
+import { LAYOUT_BOX_SOURCE, MULTILANGUAGE_SOURCE, NAVIGATIONS_SOURCE } from './plugins.mjs'
 
 // Der Vault des Beispielprojekts. Er steht hier und nicht in `project-paths.mjs`, aus dem Grund,
 // den diese Datei selbst nennt: ein Vault ist die Quelle eines Projekts, nicht seine Kopie, und
@@ -31,6 +31,7 @@ const EXAMPLE_VAULT = path.join(os.homedir(), 'Obsidian/QuartzProjekte/Example')
 // Skript nach dem Verzeichnis unter `.quartz/plugins/<name>` prüft, ob es schon da ist.
 const LAYOUT_BOX = ['quartz-layout-box', LAYOUT_BOX_SOURCE]
 const MULTILANGUAGE = ['quartz-multilanguage', MULTILANGUAGE_SOURCE]
+const NAVIGATIONS = ['quartz-navigations', NAVIGATIONS_SOURCE]
 
 /**
  * Eine Variante. Die Felder, in der Reihenfolge, in der das Bauskript sie braucht:
@@ -47,7 +48,8 @@ const MULTILANGUAGE = ['quartz-multilanguage', MULTILANGUAGE_SOURCE]
  *   builtin       Ob dieses Paket das eingebaute der App ist - dann vergleicht
  *                 `checkPackageCopies()` seine drei Kopien.
  *   allowFresh    Ob `--fresh` die Werkstatt löschen darf (siehe unten).
- *   derive        Wie die Example-Daten zu denen dieser Variante werden.
+ *   derive        Wie die Example-Daten zu denen dieser Variante werden. Bekommt
+ *                 { patches, boxes, navigations } und gibt dieselbe Form zurück.
  *   describe      Der Beschreibungstext des Pakets, gegen die wirklichen Zahlen gebildet.
  *
  * `stylesSource` ist keine Vorliebe, sondern eine Aussage über den Beweiswert. Die 30 Stylesheets
@@ -73,7 +75,7 @@ export const VARIANTS = {
     workshop: () => projectPath('Example'),
     control: () => workshopPath('quartz-vorlage-gegenprobe'),
     content: { mode: 'vault', vault: EXAMPLE_VAULT, ships: true },
-    plugins: [LAYOUT_BOX, MULTILANGUAGE],
+    plugins: [LAYOUT_BOX, MULTILANGUAGE, NAVIGATIONS],
     stylesSource: true,
     builtin: true,
     allowFresh: false,
@@ -96,6 +98,10 @@ export const VARIANTS = {
     // Derselbe Vault wie beim Example. Das Projekt der Variante ist eine Werkstatt, keine Website -
     // ihr Inhalt ist nur da, damit Phase 9 etwas zu bauen hat, und reist nie mit.
     content: { mode: 'vault', vault: EXAMPLE_VAULT, ships: false },
+    // Ohne quartz-navigations, und das ist eine Sicherung, keine Auslassung. Der Baustein
+    // `plugins` schlüsselt gleichnamige Einträge nach ihrer Position (parts.ts, instanceKeys):
+    // Ein Doku-Paket mit zwei `quartz-navigations`-Einträgen überschriebe beim Import in das
+    // Navigations-Handbuch - das genau diese Variante anwendet - zwei seiner fünf Instanzen.
     plugins: [LAYOUT_BOX, MULTILANGUAGE],
     stylesSource: false,
     builtin: false,
@@ -103,7 +109,8 @@ export const VARIANTS = {
     derive: (data) => ({
       ...data,
       patches: doku.patches(data.patches, 'doku'),
-      boxes: doku.boxes(data.boxes)
+      boxes: doku.boxes(data.boxes),
+      navigations: []
     }),
     describe: ({ frames }) => dokuDescription(frames, '')
   },
@@ -114,6 +121,8 @@ export const VARIANTS = {
     workshop: () => workshopPath('plugin-vorlage'),
     control: () => workshopPath('plugin-gegenprobe'),
     content: { mode: 'vault', vault: EXAMPLE_VAULT, ships: false },
+    // Ohne quartz-navigations, aus demselben Grund wie bei `doku` - hier wiegt er schwerer, weil
+    // das Navigations-Handbuch genau diese Variante anwendet.
     plugins: [LAYOUT_BOX, MULTILANGUAGE],
     stylesSource: false,
     builtin: false,
@@ -121,7 +130,8 @@ export const VARIANTS = {
     derive: (data) => ({
       ...data,
       patches: doku.patches(data.patches, 'plugin'),
-      boxes: doku.boxes(data.boxes)
+      boxes: doku.boxes(data.boxes),
+      navigations: []
     }),
     describe: ({ frames }) =>
       dokuDescription(frames, ' Ohne Graphansicht, für Anleitungen, die sich der Reihe nach lesen.')

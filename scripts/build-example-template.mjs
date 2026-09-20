@@ -56,7 +56,7 @@ import {
 import { LOCALE, TRANSLATIONS } from './example-template/translations.mjs'
 import { PRESETS } from './example-template/presets.mjs'
 import { STYLE_ORDER } from './example-template/style-order.mjs'
-import * as doku from './example-template/doku.mjs'
+import * as variants from './example-template/variants.mjs'
 
 // The expected part list, read out of the contract instead of restated here. A copy went stale the
 // first time a part was added and this line printed "11 von 10" - small, but it is exactly the kind
@@ -78,57 +78,30 @@ const argv = process.argv.slice(2)
 const only = argv.includes('--only') ? argv[argv.indexOf('--only') + 1].split(',').map((s) => s.trim()) : null
 const fresh = argv.includes('--fresh')
 
-// Two packages come out of these data files: the Example, and the documentation variant three
-// sites are built with (doku.mjs says which components it drops and why). Everything that carries
-// the design is shared - the variant is a derivation, not a copy - so this flag decides four
-// paths, two texts and two of the arguments phase 4 hands to the renderer, and nothing else.
+// Welche Variante gebaut wird. Die Stammdaten aller Varianten - Werkstatt, Gegenprobe, Paketname,
+// Inhalt, Plugins, Prüfgatter - stehen als Tabelle in example-template/variants.mjs; was eine
+// Variante an der *Gestaltung* ändert, steht als Aufsatz daneben (doku.mjs). Alles, was das Design
+// trägt, ist geteilt: eine Variante ist eine Ableitung, keine Kopie.
 const VARIANT = argv.includes('--variant') ? argv[argv.indexOf('--variant') + 1] : 'example'
-const VARIANTS = ['example', 'doku', 'plugin']
-if (!VARIANTS.includes(VARIANT)) throw new Error(`unbekannte Variante: ${VARIANT} (${VARIANTS.join(', ')})`)
-// `doku` und `plugin` unterscheiden sich nur um den Graph (doku.mjs sagt, warum), teilen aber
-// alles andere - deshalb ein gemeinsames Flag für das, was beide von `example` trennt.
-const isDoku = VARIANT !== 'example'
+const V = variants.resolve(VARIANT)
 
-// Separate workshops on purpose. One project cannot hold both configurations, and phase 4 patches
-// the entries `quartz create` wrote rather than writing them itself: run against a project whose
-// entries a previous variant already removed, a patch would have nothing to attach to and the
-// component would silently be absent instead of switched off.
-// Für `example` das Beispielprojekt selbst - dort wird gearbeitet, und `--sync` holt von dort
-// zurück (bis zum 2026-09-04 hieß es `quartz-vorlage-werkstatt`, siehe d80f2be). Für eine Variante
-// ein Wegwerf-Projekt unter werkstatt/, das Phase 0 klont.
-const WORKSHOP = VARIANT === 'example' ? projectPath('Example') : workshopPath(`${VARIANT}-vorlage`)
-// The same vault for both. The variant's project is a workshop, not a site - its content is only
-// there so phase 9 has something to build, and the `content` part never travels in its package.
-const VAULT = path.join(HOME, 'Obsidian/QuartzProjekte/Example')
+const WORKSHOP = V.workshop
 // Immer ein Wegwerf-Projekt: Phase 11 importiert das Paket dort in ein leeres Projekt und baut.
-const CONTROL = workshopPath(VARIANT === 'example' ? 'quartz-vorlage-gegenprobe' : `${VARIANT}-gegenprobe`)
+const CONTROL = V.control
 // Das Paket liegt neben den Projekten, nicht in einem eigenen Ausgabeordner: die drei .qtpl sind
 // am 2026-09-12 mit den Projekten nach ~/Documents/QuartzProjekte gewandert.
-const PACKAGE_OUT = projectPath(VARIANT === 'example' ? 'minimal-lesbar.qtpl' : `${VARIANT}.qtpl`)
+const PACKAGE_OUT = projectPath(V.file)
 
-// The display name changed to "Example" on 2026-09-06; the file name did not. It is what the app's
-// built-in template download points at (builtinTemplateService.ts) and what the published copy
-// in quartzcontrol-templates is called, so renaming it would be a change to an external repo.
-//
-// "Doku" is not published anywhere and is not offered in the wizard: it exists for the app's own
-// web presence and the two plugin handbooks. Its name is still set properly, because it is what
-// the import dialog shows when one of those three projects applies it.
-const TEMPLATE_NAME = { example: 'Example', doku: 'Doku', plugin: 'Doku (Plugin)' }[VARIANT]
-// Was die Gegenprobe im Zielprojekt wiederfinden muss.
-const expectedBoxes = isDoku ? doku.boxes(LAYOUT_BOXES).length : LAYOUT_BOXES.length
-// Was die Doku-Fassungen trennt, steht in einem Satz statt in einer zweiten Beschreibung.
-const VARIANT_NOTE = VARIANT === 'plugin' ? ' Ohne Graphansicht, für Anleitungen, die sich der Reihe nach lesen.' : ''
+const TEMPLATE_NAME = V.name
 // Was hier steht, liest jemand im Anlege-Assistenten, bevor er zusagt - also zählt es die Dinge auf,
 // die das Paket wirklich enthält. „Drei eigene Frames" stand hier noch, als `drawing` längst der
 // vierte war (FRAMES in frames.mjs); beim Veröffentlichen am 2026-09-06 nachgezählt statt gelesen.
-const TEMPLATE_DESCRIPTION = isDoku
-  ? `Die Doku-Fassung der Beispielvorlage: dieselbe Gestaltung — gemessene Kontraste (WCAG AA in ` +
-    `hell und dunkel), ${FRAMES.length} eigene Frames, selbst gehostete Schriften —, aber ohne die ` +
-    `Bausteine, die im Example nur etwas vorführen. Für Anleitungen gedacht, nicht für eine Vorführung.` +
-    VARIANT_NOTE
-  : `Eine vollständige Beispielvorlage: ein Handbuch in sieben Kapiteln, zweisprachig, mit gemessenen ` +
-    `Kontrasten (WCAG AA in hell und dunkel), ${FRAMES.length} eigenen Frames, selbst gehosteten Schriften und jeder ` +
-    'Plugin-Komponente einzeln gestaltet — Explorer und Inhaltsverzeichnis bis zur untersten Ebene.'
+// Deshalb bildet variants.mjs den Satz gegen die wirklichen Zahlen statt ihn hinzuschreiben.
+const TEMPLATE_DESCRIPTION = V.describe({ frames: FRAMES.length })
+// Die Daten dieser Variante: die des Example, durch ihre Ableitung geschickt.
+const DATA = V.derive({ patches: PLUGIN_PATCHES, boxes: LAYOUT_BOXES })
+// Was die Gegenprobe im Zielprojekt wiederfinden muss.
+const expectedBoxes = DATA.boxes.length
 
 const log = (message) => console.log(message)
 const step = (message) => process.stdout.write(`  ${message} … `)
@@ -179,7 +152,29 @@ if (argv.includes('--check-contrast')) {
  * to colours, plugins, frames or layout is therefore made in those modules and pushed forward with
  * `--only 4`, never synced backwards. The same holds for the frames in .quartz-gui/.
  */
+/**
+ * Die Stylesheets werden in *einer* Werkstatt bearbeitet - der des Example - und von dort ins Repo
+ * zurückgeholt. Für jede andere Variante ist die Werkstatt eine frisch beschriebene Kopie des
+ * Repos: ein Vergleich antwortet dort immer „deckungsgleich", und ein `--sync` holte zurück, was
+ * dieser Lauf gerade selbst hingeschrieben hat. Beides ist keine Auskunft, sondern eine
+ * Tautologie, die sich als eine liest - also wird sie nicht gegeben.
+ *
+ * Der Rückgabewert der beiden Aufrufer ist deshalb dreiwertig: `true` bestanden, `false` nicht
+ * bestanden, `null` nicht zuständig. Ein `false` hier hätte `--check-sync` für die eingebaute
+ * Variante scheitern lassen, obwohl ihr Kopienvergleich - die eine Frage, die sie beantworten
+ * kann - grün war.
+ */
+function stylesSourceOrExplain(what) {
+  if (V.stylesSource) return true
+  log(`${what} gilt nur für die Variante example.`)
+  log(`Die Stylesheets der Variante ${V.id} kommen aus dem Repo; ihre Werkstatt ist eine Kopie,`)
+  log('die dieser Lauf selbst beschreibt. Ein Vergleich sagte dort immer „gleich".')
+  log('Gemeint ist vermutlich: `npm run template:example -- --variant example ' + what + '`.')
+  return false
+}
+
 function syncBack() {
+  if (!stylesSourceOrExplain('--sync')) return null
   const ordered = STYLE_ORDER.map((name) => `${name}.scss`)
   const customDir = path.join(WORKSHOP, 'quartz/styles/custom')
   const repoDir = path.join(DATA_DIR, 'styles')
@@ -289,6 +284,7 @@ function readCustomBody() {
  * stays a decision: `--sync` to keep the project's version, `--only 5` to push this repo's.
  */
 function checkSync() {
+  if (!stylesSourceOrExplain('--check-sync')) return null
   const ordered = STYLE_ORDER.map((name) => `${name}.scss`)
   const customDir = path.join(WORKSHOP, 'quartz/styles/custom')
   const repoDir = path.join(DATA_DIR, 'styles')
@@ -361,7 +357,7 @@ function checkSync() {
  * which side is newer. A published copy that cannot be fetched is its own answer, not a match.
  */
 async function checkPackageCopies() {
-  if (VARIANT !== 'example') return true
+  if (!V.builtin) return true
   const read = (file) => (fs.existsSync(file) ? fs.readFileSync(file) : null)
   const createdAt = (file) => {
     try {
@@ -410,11 +406,13 @@ async function checkPackageCopies() {
 if (argv.includes('--check-sync')) {
   const styles = checkSync()
   const copies = await checkPackageCopies()
-  process.exit(styles && copies ? 0 : 1)
+  // `null` heißt „diese Variante beantwortet das nicht" und zählt weder als bestanden noch als
+  // durchgefallen - sonst wäre jede Variante außer example dauerhaft rot.
+  process.exit([styles, copies].every((answer) => answer !== false) ? 0 : 1)
 }
 
 if (argv.includes('--sync')) {
-  process.exit(syncBack() ? 0 : 1)
+  process.exit(syncBack() === false ? 1 : 0)
 }
 
 /* ================================================================================= helpers */
@@ -474,6 +472,16 @@ function ipc(page, source, args) {
 /* ==================================================================== 0 · bootstrap */
 
 function bootstrap(target) {
+  // `--fresh` ist ein `rm -rf` auf ein Projektverzeichnis, und für die Variante `example` ist das
+  // Ziel kein Wegwerfordner, sondern das echte Projekt ~/Documents/QuartzProjekte/Example - samt
+  // seinem Symlink in den Obsidian-Vault. Welche Variante das verträgt, sagt ihr Registereintrag;
+  // eine, die es nicht verträgt, bekommt statt der Löschung einen Satz.
+  if (fresh && !V.allowFresh) {
+    throw new Error(
+      `--fresh ist für die Variante ${V.id} gesperrt: ${target} ist ein echtes Projekt, kein ` +
+      'Wegwerfordner (variants.mjs, allowFresh). Wer wirklich neu anfangen will, löscht von Hand.'
+    )
+  }
   if (fresh && fs.existsSync(target)) fs.rmSync(target, { recursive: true, force: true })
   if (fs.existsSync(path.join(target, 'quartz.config.yaml'))) {
     done('schon vorhanden')
@@ -511,6 +519,7 @@ function isPristineStarter(dir) {
 
 function installContent(target) {
   const content = path.join(target, 'content')
+  const vault = V.content.vault
 
   // The content lives in an Obsidian vault now, and `content/` is a symlink to it. This phase used
   // to `rm -rf` the directory and copy a fresh one in - which would silently replace the link with
@@ -519,10 +528,10 @@ function installContent(target) {
   const existing = fs.existsSync(content) ? fs.lstatSync(content) : null
   if (existing?.isSymbolicLink()) {
     const target_ = fs.readlinkSync(content)
-    done(target_ === VAULT ? 'Symlink steht' : `Symlink zeigt woanders hin: ${target_}`)
+    done(target_ === vault ? 'Symlink steht' : `Symlink zeigt woanders hin: ${target_}`)
     return
   }
-  if (!fs.existsSync(VAULT)) throw new Error(`Vault fehlt: ${VAULT}`)
+  if (!fs.existsSync(vault)) throw new Error(`Vault fehlt: ${vault}`)
   if (existing) {
     // Eine Ausnahme, und nur diese eine: der Ordner, den `quartz create` in Phase 0 selbst
     // geschrieben hat. Bis 2026-09-10 ist dieser Zweig nie gelaufen - das Example-Projekt trug
@@ -544,7 +553,7 @@ function installContent(target) {
     }
     fs.rmSync(content, { recursive: true, force: true })
   }
-  fs.symlinkSync(VAULT, content, 'dir')
+  fs.symlinkSync(vault, content, 'dir')
   copyTree(path.join(DATA_DIR, 'site/snippets'), path.join(target, 'quartz/static/snippets'))
   done('Symlink auf den Vault gelegt')
 }
@@ -554,10 +563,11 @@ function installContent(target) {
 function installGithubPlugins(target) {
   // A github: source has to go through the CLI - it clones, builds and writes quartz.lock.json,
   // none of which can be reproduced by writing a config entry.
-  const wanted = [
-    ['quartz-layout-box', LAYOUT_BOX_SOURCE],
-    ['quartz-multilanguage', MULTILANGUAGE_SOURCE]
-  ]
+  //
+  // Welche das sind, sagt die Variante: ein Plugin, das eine Variante gar nicht einsetzt, soll
+  // auch nicht in ihrer Werkstatt liegen - sonst steht es in `quartz.lock.json` und reist im
+  // Baustein `plugins` mit, obwohl kein Eintrag es nennt.
+  const wanted = V.plugins
   const added = []
   for (const [name, source] of wanted) {
     const installed = path.join(target, '.quartz/plugins', name)
@@ -656,10 +666,10 @@ async function buildTemplate() {
           pageTitle: TEMPLATE_NAME,
           colors: PALETTE,
           typography: TYPOGRAPHY,
-          // The only two arguments the variant changes. Derived here rather than in doku.mjs'
-          // own copy of the data, so the Example stays the single source for both.
-          patches: isDoku ? doku.patches(PLUGIN_PATCHES, VARIANT) : PLUGIN_PATCHES,
-          boxes: isDoku ? doku.boxes(LAYOUT_BOXES) : LAYOUT_BOXES,
+          // The only two arguments the variant changes. Derived from the Example data rather
+          // than held as a second copy, so the Example stays the single source for all of them.
+          patches: DATA.patches,
+          boxes: DATA.boxes,
           multilanguage: MULTILANGUAGE_ENTRY,
           layout: LAYOUT_CONFIG,
           theme: THEME_ENTRY,
@@ -889,7 +899,7 @@ async function buildTemplate() {
       // ist das Handbuch-Projekt vorbeigebaut worden (docs/handbuch.md), und die drei Sites, die
       // diese Fassung anwenden, bringen ihren Inhalt selbst mit. Im Werkstattprojekt bleibt der
       // Inhalt trotzdem liegen: Phase 9 braucht etwas zu bauen.
-      const exportParts = parts.map((p) => p.id).filter((id) => !(isDoku && id === 'content'))
+      const exportParts = parts.map((p) => p.id).filter((id) => !(id === 'content' && !V.content.ships))
 
       const written = await ipc(
         page,

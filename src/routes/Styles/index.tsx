@@ -143,6 +143,10 @@ export default function Styles(): JSX.Element {
   // Assigned on every render of the active sub-tab (see registerSave below) - a ref rather than
   // state because changing it must never re-render the shell, which would remount the sub-tab.
   const saveRef = useRef<(written: Record<string, string>) => Promise<void>>(async () => {})
+  // The timer that takes "Saved" away again. Held, because a save that fails less than two seconds
+  // after one that worked used to show nothing at all: the first save's timer set the status to
+  // 'idle', and the error message hangs on 'error' (thirty-third review, finding 10).
+  const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     // Together, because the config is only read right with custom.scss beside it: whether the
@@ -307,6 +311,7 @@ export default function Styles(): JSX.Element {
   // back. Each snapshot is taken right after its own write, so a failure half-way leaves dirty
   // exactly what was not written.
   async function save(): Promise<boolean> {
+    if (savedTimer.current) clearTimeout(savedTimer.current)
     setStatus('saving')
     setMessage(null)
     setFontNote(null)
@@ -361,7 +366,7 @@ export default function Styles(): JSX.Element {
         return false
       }
       setStatus('saved')
-      setTimeout(() => setStatus('idle'), 2000)
+      savedTimer.current = setTimeout(() => setStatus((prev) => (prev === 'saved' ? 'idle' : prev)), 2000)
       return true
     } catch (err) {
       // A step after the block writers can throw with custom.scss already rewritten on disk, while
@@ -438,7 +443,6 @@ export default function Styles(): JSX.Element {
             <>
               {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
               {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{message}</span>}
-              {fontNote && <span className="text-sm text-text-secondary">{fontNote}</span>}
             </>
           }
           actions={
@@ -450,6 +454,16 @@ export default function Styles(): JSX.Element {
             </>
           }
         />
+
+        {/* Below the header rather than in its status slot. The slot is shrink-0 beside the title,
+            and this note names families and file counts: at 1280 px it took 566 px, left 237 px for
+            the title and description, broke the description from three lines to six and pushed
+            everything under it down by some 60 px - and its two spans read as "Saved.No longer
+            selected …" here and in the live region (thirty-third review, finding 10). Its own
+            region, mounted empty, because it appears after a save without anyone asking for it. */}
+        <p role="status" className="mb-3 text-sm text-text-secondary empty:mb-0">
+          {fontNote}
+        </p>
 
         <div className="mb-2 flex flex-wrap items-center gap-3">
           <SegmentedControl

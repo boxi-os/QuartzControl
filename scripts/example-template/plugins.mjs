@@ -616,14 +616,29 @@ export const NAVIGATION_ENTRIES = [
     // hoch ist. Das Akkordeon hält jeweils ein Kapitel offen (`exclusive`), und welches, entscheidet
     // die gelesene Seite (`expandActive`, Vorgabe des Plugins).
     //
-    // `folderClick: 'link'` statt `'toggle'`: Jede Kapitelseite dieser Website ist eine Seite mit
-    // Text, kein bloßer Ordner — ein Klick auf ihren Namen soll sie öffnen. Aufgeklappt wird über
-    // den Pfeil daneben, den `chevrons` (Vorgabe) stehen lässt. Dieselbe Entscheidung, die der
-    // Explorer mit `folderClickBehavior: 'link'` trug.
+    // `folderClick: 'toggle'` — die ganze Zeile klappt auf, und `exclusive` schließt dabei das
+    // vorige Kapitel. Das ist die Vorgabe des Plugins, und sie stand hier trotzdem einen Tag lang
+    // auf `'link'`, aus Gewohnheit: Der Explorer trug `folderClickBehavior: 'link'`, weil jede
+    // Kapitelseite dieser Website eine Seite mit Text ist und ein Klick auf ihren Namen sie
+    // öffnen sollte. Für ein Akkordeon ist das die falsche Übertragung — mit `link` ist die Zeile
+    // ein Link und nur der Pfeil ein `<summary>`, aufklappen ging also nur über ein 24 px breites
+    // Ziel am rechten Rand.
     //
-    // `persistState`: Was der Leser selbst auf- oder zugeklappt hat, überlebt den Seitenwechsel.
-    // Der Explorer versprach das mit `useSavedState: true` und hielt es nicht — die Option steht
-    // dort bis heute wirkungslos im Eintrag (siehe den Kommentar darüber).
+    // `indexEntry: 'first'` ist die Gegenleistung dafür und das Paar, das die README des Plugins
+    // dazu nennt: Die Kapitelseite steht als erster Eintrag *im* aufgeklappten Kapitel, unter
+    // ihrer eigenen Überschrift („Übersicht", vom Plugin übersetzt). Ohne sie wäre sie von der
+    // Navigation aus nicht mehr erreichbar.
+    //
+    // **Kein `persistState`,** und das ist gemessen, nicht ausgelassen. Zusammen mit `exclusive`
+    // widersprechen sich die beiden: `exclusive` ist eine native `<details name>`-Gruppe, in der
+    // der Browser höchstens eines offen lässt. Das Skript des Plugins stellt nach dem Rendern den
+    // gemerkten Zustand her — für einen Ordner, der *nicht* auf dem aktiven Pfad liegt, ohne
+    // Wenn und Aber (`navigations.inline.ts`, `stored !== undefined && !(expandActive && onTrail)`).
+    // Der Browser schließt dafür den aktiven. An der gebauten Website gemessen: Nach einem Klick
+    // auf „1 – Einstieg" blieb dieses Kapitel offen, und die Kapitel 3 und 5 klappten danach nicht
+    // mehr auf, obwohl die Adresse stimmte. Welches Kapitel offen steht, entscheidet ohnehin schon
+    // der gelesene Pfad (`expandActive`, Vorgabe) — ein zweites Gedächtnis daneben kann nur
+    // widersprechen.
     //
     // `mobile: 'offcanvas'`: Burger, Schublade, Scrim — dieselbe Geste, die der Explorer am selben
     // Platz hatte, diesmal vom Plugin und ohne eigenes JavaScript.
@@ -640,9 +655,9 @@ export const NAVIGATION_ENTRIES = [
     options: {
       variant: 'accordion',
       showHome: true,
-      folderClick: 'link',
+      folderClick: 'toggle',
+      indexEntry: 'first',
       exclusive: true,
-      persistState: true,
       mobile: 'offcanvas',
       id: 'menue',
       className: 'nav-menue',

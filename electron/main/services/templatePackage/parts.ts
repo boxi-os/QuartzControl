@@ -329,6 +329,13 @@ const styles: TemplatePart<StylesPayload> = {
 
     const before = await styleService.readCustomScss(projectPath)
     const keptFonts = styleService.getManagedBlock(before.content, FONTS_MARKER)
+    // Like keptFonts, and for the same reason: the section belongs to the `fonts` part, which may
+    // or may not be running, and stripAllManaged takes it out along with the rest. Left out, an
+    // import of the `styles` part alone took the Google fonts off a site that serves them itself -
+    // every slot fell back to a substitute, and nothing said so, because both the build door
+    // (refreshGoogleFonts) and the Basis tab read "this project holds its own Google fonts" off
+    // the very block that was gone (thirty-third review, finding 3).
+    const keptGoogleFonts = styleService.getManagedBlock(before.content, GOOGLE_FONTS_MARKER)
     const keptVariables = await styleService.getVariableOverrides(projectPath)
     const existingOrder = (await styleService.listStyleFiles(projectPath)).files.filter((f) => f.imported).map((f) => f.relativePath)
 
@@ -353,6 +360,18 @@ const styles: TemplatePart<StylesPayload> = {
     if (keptFonts) {
       const restored = await styleService.readCustomScss(projectPath)
       await styleService.writeCustomScss(projectPath, styleService.upsertManagedBlock(restored.content, FONTS_MARKER, keptFonts))
+    }
+    // `fonts` runs after `styles` (see PARTS), so a package that brings its own Google fonts still
+    // has the last word: applyGoogleFontsCss replaces this under 'packageWins' and leaves it under
+    // 'projectWins'.
+    // `!== null`, not truthy: an empty block is the project's mark that it holds its own Google
+    // fonts, and both the build door and the Basis tab read that mark off the block's presence.
+    if (keptGoogleFonts !== null) {
+      const restored = await styleService.readCustomScss(projectPath)
+      await styleService.writeCustomScss(
+        projectPath,
+        styleService.upsertManagedBlock(restored.content, GOOGLE_FONTS_MARKER, keptGoogleFonts)
+      )
     }
     if (keptVariables.length > 0) await styleService.saveVariableOverrides(projectPath, keptVariables)
 

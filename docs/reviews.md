@@ -1739,3 +1739,12 @@ selbst geht. Gegen einen RC sprachen aus seiner Sicht Befund 2, mit Abstrichen B
 mitzunehmen Befund 3 — alle drei sind behoben. Was danach offen bleibt, ist die Liste, die nur der
 Nutzer abarbeiten kann (VoiceOver, die gepackte App je Plattform, glibc), und `dist`, das seit dem
 Handbuch-Rückbau ungelaufen ist.
+
+Die Szenen, die es dafür nennt, stehen seit dem 2026-09-20 als Checkliste in
+[`alpha-test.md`](alpha-test.md), zusammen mit den zwei Vorgaben der Vorrunde und der Liste, die
+danebensteht (VoiceOver, gepackte App je Plattform, glibc, die zwei offenen Punkte aus
+`release.md`). Beim Schreiben fiel dabei ein Punkt auf, der nicht mit erledigt ist und in der
+Liste als Prüfpunkt steht: Der Bestätigungsdialog der Karte „Ungenutzte Schriften“ kündigt an, wie
+viele Dateien *die Regeln dieser Familie* nennen — nicht, wie viele danach wirklich fehlen, was
+erst `deleteUnreferencedFontFiles` entscheidet; und bei einer Regel mit mehreren `url()` zählt er
+nur die erste. Gelesen, nicht gemessen.

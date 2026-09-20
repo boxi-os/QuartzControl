@@ -258,10 +258,10 @@ auf `main`; das vierunddreißigste hat sie gelesen und achtzehn ihrer zwanzig Fi
 die Liste, die nur der Nutzer abarbeiten kann: VoiceOver über Git-Sync und die zwei Boards, die
 gepackte App je Plattform, glibc — und den Alpha-Test, an Projekten aus der Beispielvorlage und
 mit einer gebauten Website am Ende jeder Szene, weil die Befunde, auf die es ankommt, in der App
-unsichtbar und erst im Browser zu sehen sind. Das vierunddreißigste Review nennt dafür sieben
-Szenen, die aus dieser Schicht dazugehören (darunter eine CJK-Schrift mit „lokal ausliefern“,
-Tippen und sofort Cmd+S am echten Tastendruck, und ein Abbruch auf einem Linux mit altem
-System-git); sie stehen am Ende von [`docs/REVIEW-2026-10-08.md`](docs/REVIEW-2026-10-08.md).
+unsichtbar und erst im Browser zu sehen sind. **Die Szenen stehen als Checkliste in
+[`docs/alpha-test.md`](docs/alpha-test.md)** — sieben aus dieser Schicht, in drei Gruppen
+(Schriften, Speichern, Kern-Update), je mit Vorbedingung, Schritten und dem, was der *Browser*
+danach zeigen muss.
 
 **Davor, am 2026-09-19, ein Durchgang ohne Review dahinter:** die Schriften der Stile-Seite von
 der Auswahl bis zu den Dateien im Projekt (Combobox über alle Google-Familien, Vorschau aus dem

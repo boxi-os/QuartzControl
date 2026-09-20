@@ -15,6 +15,7 @@ import type {
   StyleReferenceFile,
   StylesInfo
 } from '@shared/ipc-contract'
+import { writeFileAtomic } from './jsonStore'
 import { resolveBuildDir } from './projectDirs'
 import { mainT } from '../i18n'
 import { MAX_FONT_FILE_BYTES } from './fontFile'
@@ -32,8 +33,13 @@ export async function readCustomScss(projectPath: string): Promise<StylesInfo> {
   return { path, content }
 }
 
+// Atomically, like every other file this app writes that something else reads: a plain writeFile
+// truncates first and streams after, so a build running beside it - the dev server rebuilds on
+// every change to this very file - can compile a torso. It has always been written this way; with
+// the build door as a third writer there is now one more moment nobody asked for (thirty-fourth
+// review, "nebenbei" 3).
 export async function writeCustomScss(projectPath: string, content: string): Promise<void> {
-  await writeFile(customScssPath(projectPath), content, 'utf-8')
+  await writeFileAtomic(customScssPath(projectPath), content)
 }
 
 const IGNORED_DIRS = new Set(['node_modules', '.git', 'dist', '.changeset'])

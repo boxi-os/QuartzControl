@@ -147,6 +147,14 @@ export default function Styles(): JSX.Element {
   // after one that worked used to show nothing at all: the first save's timer set the status to
   // 'idle', and the error message hangs on 'error' (thirty-third review, finding 10).
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Cleared on unmount: harmless in React 18, which ignores a setState on an unmounted component,
+  // but a timer nobody owns any more is a timer nobody can reason about.
+  useEffect(
+    () => () => {
+      if (savedTimer.current) clearTimeout(savedTimer.current)
+    },
+    []
+  )
 
   useEffect(() => {
     // Together, because the config is only read right with custom.scss beside it: whether the
@@ -275,10 +283,16 @@ export default function Styles(): JSX.Element {
   // the file as it was, rather than a config that says `local` over a block that is not there.
   // Returns whether custom.scss was rewritten, which save() needs for the case where a later step
   // throws: the draft in the editor then predates the block that is now on disk.
-  async function saveConfig(): Promise<boolean> {
+  // `blockWritten` is called as soon as custom.scss may have been rewritten, not at the end: the
+  // caller reads that in its catch, and a throw after the fetch - config.save failing, say - left
+  // it unset, so the draft was not flagged stale and the next save would put the old block back
+  // over files that are gone (thirty-fourth review, "nebenbei" 1; the case healed itself through
+  // the config staying dirty, which is one hop too many to rely on).
+  async function saveConfig(blockWritten: () => void): Promise<boolean> {
     if (!config) return false
     if (fetchesGoogleFonts(config)) {
       const result = await window.quartzGui.fonts.fetchGoogle({ projectPath: project.path, typography: config.theme.typography ?? {} })
+      blockWritten()
       // Both sentences, because they are about different families: what was taken out, and what
       // Google did not send. A misspelt name among three right ones comes back as a 200 with the
       // other three in it, so this is the one moment where it can be named (thirty-third review,
@@ -292,6 +306,7 @@ export default function Styles(): JSX.Element {
       if (notes.length > 0) setFontNote(notes.join(' '))
     } else {
       const result = await window.quartzGui.fonts.dropGoogle({ projectPath: project.path })
+      blockWritten()
       if (result.removedFiles.length > 0) setFontNote(t('styles.googleFontsDropped', { count: result.removedFiles.length }))
     }
     await window.quartzGui.config.save(project.path, persistFontDelivery(config))
@@ -347,7 +362,9 @@ export default function Styles(): JSX.Element {
         draftsWritten[relativePath] = draft
       }
       if (configDirty) {
-        if (await saveConfig()) blocksWritten = 'googleFonts'
+        await saveConfig(() => {
+          blocksWritten = 'googleFonts'
+        })
         setSavedConfig(JSON.stringify(config))
       }
       if (overridesDirty) {

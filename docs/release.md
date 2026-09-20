@@ -132,6 +132,23 @@ Installationen ihre Online-Vorlage. Kosten fürs Liegenlassen: eine Datei.
 Die Example-Vorlage heißt seither `qc-example.qtpl` und ist kein eingebautes Paket mehr. Sie dort
 abzulegen ist optional — die App fragt sie nicht, es ist ein Link für Menschen.
 
+**Offen, Stand 2026-09-20 abends:**
+
+1. `qc-basic.qtpl` nach `boxi-os/quartzcontrol-templates` pushen. Bis dahin antwortet die Adresse
+   mit 404, die App fällt auf die mitgelieferte Kopie zurück (gemessen: sie tut es, Quelle
+   „bundled“), und ein Vorlagen-Update ohne App-Release ist nicht möglich.
+2. Danach `npm run template:example -- --variant basic --check-sync` — erst dann sagt es „3 Kopien
+   byte-gleich“ statt „die veröffentlichte ungeprüft“.
+3. `curl -sfI https://raw.githubusercontent.com/boxi-os/quartzcontrol-templates/main/qc-basic.qtpl`
+   nach dem Push. Das ist die einzige Messung, die sagt, dass eine ausgelieferte App die Datei
+   findet; alles davor prüft nur, was in diesem Repo liegt.
+4. `minimal-lesbar.qtpl` dort **nicht** löschen (Begründung oben).
+5. Die zwei Doku-Pakete (`doku.qtpl`, `plugin.qtpl` in `scripts/example-template/pakete/`) sind
+   vom 2026-09-10 und kennen weder `nav-navigations.scss` noch die dreizehn Callout-Tokens. Drei
+   echte Websites wenden sie an — die der App und die zwei Plugin-Handbücher. Ein Neubau braucht
+   je ein frisches Werkstattprojekt (`--variant doku` bzw. `plugin`, Phase 0 klont und installiert)
+   und danach einen Import in drei Projekte; das ist eine eigene Sitzung wert.
+
 **Was `--check-sync` nicht sieht:** die Drift zwischen diesem Repo und den drei Kopien, sobald sie
 aus `plugins.mjs`, `variables.mjs`, `layout.mjs` oder `frames.mjs` kommt. Die vier haben bewusst
 keinen Rückweg (ein Rückleser wäre ihre zweite, inverse Umsetzung, siehe `CLAUDE.md`), und die
@@ -147,6 +164,11 @@ weiter die Vorlage vom 2026-09-14, denn die App zieht die veröffentlichte der m
 Die Vorlage hat jetzt 45 statt 50 Variablen. Am 2026-09-20 nachgemessen, nach dem Push:
 `--check-sync` nennt alle drei Kopien mit 782 654 Bytes und demselben `createdAt`
 (`2026-09-20T15:30:22.197Z`).
+
+**Überholt seit dem 2026-09-20, abends.** Das eingebaute Paket ist seither nicht mehr diese
+Vorlage, sondern `qc-basic.qtpl` (Abschnitt 4 oben sagt, warum). Was von diesem Absatz bleibt, ist
+die Messung: Die drei Kopien *waren* an diesem Tag gleich. Was jetzt offen ist, steht am Ende von
+Abschnitt 4.
 
 Dieser Absatz stand bis dahin auf „offen“, obwohl derselbe Commit den Push enthielt: `a54e3c4`
 hat an dieser Datei nur Punkt 3 nachgezogen. Ein Punkt, der beschreibt, was noch zu tun ist, wird

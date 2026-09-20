@@ -19,7 +19,7 @@ import ProjectAvatar from '../components/ProjectAvatar'
 import { ImportOutcome } from '../components/ImportOutcome'
 import { formatIpcError } from '../components/ErrorSurface'
 import { GROUP_ICONS } from './navConfig'
-import { formatRelativeTime } from '../utils/format'
+import { formatRelativeTime, versionNumber } from '../utils/format'
 import { useAsyncAction } from '../hooks/useAsyncAction'
 import appIcon from '../assets/app-icon.png'
 
@@ -767,14 +767,6 @@ function EnvironmentBand({ info, onRecheck }: { info: EnvironmentInfo; onRecheck
   )
 }
 
-// The tools disagree on what --version prints: node answers "v26.5.1", npm a bare "11.17.0", git a
-// whole sentence with a vendor suffix ("git version 2.50.1 (Apple Git-155)"). This line is a
-// reassurance, not a diagnosis, so it shows the number and nothing else - the full string is what
-// the warning band prints when something is actually wrong.
-function versionNumber(version: string | null): string {
-  return /\d[\d.]*/.exec(version ?? '')?.[0] ?? ''
-}
-
 // Grouped by origin rather than listed flat, because the origin is the point: two of the three
 // tools are the app's own and need nothing from the user. Naming that once per group beats a
 // "(bundled)" tag repeated behind every version.
@@ -787,7 +779,9 @@ function toolSummary(info: EnvironmentInfo, t: TFunction): string {
     .map(([label, source]) => {
       const tools = info.tools.filter((tool) => tool.source === source)
       if (tools.length === 0) return null
-      return `${label}: ${tools.map((tool) => `${tool.name} ${versionNumber(tool.version)}`).join(', ')}`
+      // Diese Zeile ist eine Beruhigung, keine Diagnose, also steht die Zahl da und sonst nichts -
+      // die vollständige Antwort des Werkzeugs zeigt das Warnband, wenn wirklich etwas fehlt.
+      return `${label}: ${tools.map((tool) => `${tool.name} ${versionNumber(tool.version) ?? ''}`).join(', ')}`
     })
     .filter((part): part is string => part !== null)
     .join(' · ')

@@ -26,7 +26,7 @@ import {
 } from '../components/ConnectionForm'
 import { useAsyncAction } from '../hooks/useAsyncAction'
 import { applyLanguagePreference } from '../i18n'
-import { formatBytes } from '../utils/format'
+import { formatBytes, versionNumber } from '../utils/format'
 import bundledGit from '@shared/bundled-git.json'
 import HandbookLink from '../components/HandbookLink'
 
@@ -279,8 +279,8 @@ function RuntimeSection({
       <div className="mt-4 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
         <p className="text-ui text-text-muted">
           {git?.source === 'embedded'
-            ? t('settings.runtime.gitBundled', { version: versionNumber(git.version) })
-            : t('settings.runtime.gitHost', { version: versionNumber(git?.version ?? null) })}
+            ? t('settings.runtime.gitBundled', { version: versionNumber(git.version) ?? '—' })
+            : t('settings.runtime.gitHost', { version: versionNumber(git?.version ?? null) ?? '—' })}
         </p>
         {git?.source === 'embedded' && (
           <p className="mt-1 text-xs text-text-muted">
@@ -304,12 +304,6 @@ function RuntimeSection({
 // noch einmal in scripts/fetch-git.mjs, jeweils mit einem Kommentar, der zum Nachziehen der anderen
 // Stelle aufforderte; heute gleich, morgen vielleicht nicht.
 const GIT_SOURCE_URL = `https://github.com/git/git/tree/v${bundledGit.version}`
-
-// "git version 2.53.0 (Apple Git-155)" → "2.53.0". Dieselbe Frage wie auf der Startseite, dieselbe
-// Antwort: die Zeile ist eine Auskunft, keine Diagnose.
-function versionNumber(version: string | null): string {
-  return /\d[\d.]*/.exec(version ?? '')?.[0] ?? '—'
-}
 
 // ── Projekte ────────────────────────────────────────────────────────────────────────────────
 

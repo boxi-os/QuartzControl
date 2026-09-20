@@ -210,16 +210,25 @@ gesagt hat.
 
 ## D — Was danebensteht
 
-Diese Punkte gehören **nicht** in den Alpha-Test, sind aber dieselbe Art Arbeit und ebenso offen:
+Diese Punkte gehören **nicht** in den Alpha-Test, sind aber dieselbe Art Arbeit. Zwei davon sind
+am 2026-09-20 gefahren — die Pakete und glibc, Ergebnisse in
+[`GRUPPE-D-2026-09-20.md`](GRUPPE-D-2026-09-20.md); dort steht auch, was aus dieser Gruppe offen
+bleibt.
 
 - **VoiceOver** über Git-Sync, das Layout-Board und den Frame-Builder. Insbesondere: Kündigt
   VoiceOver die gefilterte Schriftliste der Combobox an? Eine Live-Region für die Trefferzahl gibt
   es nicht (gemessen, 34. Review, Abwägung 10).
-- **Die gepackte App je Plattform** — macOS (arm64/x64), AppImage und deb (arm64/x64), Flatpak.
-  `npm run dist` ist seit dem Handbuch-Rückbau vom 2026-09-18 **ungelaufen**.
-- **glibc** — gegen welche Mindestversion die Linux-Pakete wirklich laufen.
-- Die zwei offenen Punkte aus [`release.md`](release.md): Handbuch- und Web-Projekt einmal durch
-  einen Bau schicken (Punkt 3), und `d4da5ef` ausrollen oder als bewusst offen benennen (Punkt 4).
+- ~~**Die gepackte App je Plattform**~~ — gefahren: zehn Pakete gebaut, neun auf einer Maschine
+  ihrer Architektur gestartet. Offen bleibt **macOS x64**, wofür es hier keine Maschine gibt.
+- ~~**glibc**~~ — gemessen: die App selbst verlangt `GLIBC_2.25`, das mitgelieferte git
+  `GLIBC_2.34`. Offen bleibt ein System *unter* 2.34, um die Degradation zu sehen statt sie zu
+  lesen.
+- ~~Die zwei offenen Punkte aus [`release.md`](release.md)~~ — beide erledigt und nachgemessen.
+
+Ungefahren ist damit von dieser Gruppe nur noch VoiceOver — und daneben, aus Gruppe C, [C1 gegen
+ein echtes System-git vor 2.38](#c1-ein-abbruch-auf-einem-linux-mit-altem-system-git): beide
+Debian-VMs liefern git 2.47.3, gemessen ist der Abbruch bisher nur unter macOS mit einem aus der
+Quelle gebauten 2.37.0.
 
 ## Wenn etwas gefunden wird
 
@@ -235,3 +244,7 @@ was gemessen wurde, `decisions/`.
   weiter, wo er nicht müsste (`1efa1f5` deckt nur die Hälfte der Fälle), und die *veröffentlichte*
   Beispielvorlage macht die Schriftauswahl auf der Website wirkungslos (`d4da5ef`, `release.md`
   Punkt 4). Alles andere hält, B2 einschließlich des Nachsatzes auf Konfiguration und Layout.
+- **2026-09-20, Gruppe D:** die Pakete und glibc, Ergebnisse in
+  [`GRUPPE-D-2026-09-20.md`](GRUPPE-D-2026-09-20.md). Zwei Befunde — die Version des
+  mitgelieferten git trug auf Linux einen Punkt zu viel (`19ecf30`), und `release.md` Punkt 4
+  nannte offen, was derselbe Commit getan hatte (`469059a`). Die Pakete selbst halten.

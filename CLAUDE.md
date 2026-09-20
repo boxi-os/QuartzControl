@@ -257,8 +257,18 @@ Adresse nachgemessen; die relativen Schrift-URLs waren dort schon seit dem Deplo
 
 **Der Alpha-Test ist gefahren** (A1–A4, B1–B2, C1): Ergebnisse in
 [`docs/ALPHA-2026-09-20.md`](docs/ALPHA-2026-09-20.md), Checkliste und Durchgänge in
-[`docs/alpha-test.md`](docs/alpha-test.md). Zwei Befunde, beide behoben. Offen bleibt daraus
-Gruppe D — VoiceOver, die gepackte App je Plattform, glibc — und C1 auf einem echten Linux.
+[`docs/alpha-test.md`](docs/alpha-test.md). Zwei Befunde, beide behoben.
+
+**Aus Gruppe D sind die Pakete und glibc nachgezogen** (2026-09-20,
+[`docs/GRUPPE-D-2026-09-20.md`](docs/GRUPPE-D-2026-09-20.md)): `npm run dist` ist seit dem
+Handbuch-Rückbau erstmals wieder gelaufen, zehn Pakete entstanden, **neun sind auf einer Maschine
+ihrer Architektur gestartet**. Die Linux-Pakete verlangen **glibc ≥ 2.34** — nicht wegen Electron
+(das kommt mit 2.25 aus), sondern wegen des mitgelieferten git, dessen Bauplatz die
+libpthread-Verschmelzung hineinträgt. Zwei Befunde, beide behoben: die Version des mitgelieferten
+git trug auf Linux einen Punkt zu viel, und `release.md` Punkt 4 nannte offen, was derselbe Commit
+getan hatte. Offen bleiben aus dieser Gruppe **VoiceOver**, **macOS x64 auf einer Maschine seiner
+Architektur** (kein Intel-Mac, kein Rosetta) und **ein Linux mit glibc unter 2.34** — dazu weiter
+**C1 auf einem echten Linux mit git vor 2.38**; beide VMs liefern 2.47.3.
 
 Die Runde davor (dreiunddreißigstes Review, dreizehn Befunde, vier Mittel) ist abgearbeitet und
 auf `main`; das vierunddreißigste hat sie gelesen und achtzehn ihrer zwanzig Fixes bestätigt.

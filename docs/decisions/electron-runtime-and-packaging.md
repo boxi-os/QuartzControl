@@ -174,3 +174,34 @@ $DISPLAY" ab, weil `XAUTHORITY` fehlt. Was funktioniert, ist die Sitzungsumgebun
 `eval "$(systemctl --user show-environment | sed 's/^/export /')"`. Dieselbe Zeile ist auch die
 Voraussetzung für die `gnome_libsecret`-Messung oben — ohne `XDG_CURRENT_DESKTOP` misst man das
 falsche Backend und hält es für einen Befund.
+
+**Gegen welche glibc die Linux-Pakete laufen, und woher die Zahl kommt (2026-09-20).** Bis dahin
+war das eine offene Frage in [`alpha-test.md`](../alpha-test.md), Gruppe D; der Lauf dazu steht in
+[`GRUPPE-D-2026-09-20.md`](../GRUPPE-D-2026-09-20.md). Gemessen nicht an einem Testlauf, sondern an
+den Binärdateien: `objdump -T` über jede ELF-Datei beider `*-unpacked`-Bäume, höchste geforderte
+`GLIBC_x.y`-Symbolversion. **Die App selbst verlangt `GLIBC_2.25`** (arm64 wie x86_64; `libEGL.so`
+und `libvulkan.so.1` im x64-Bau sogar nur 2.16), **das mitgelieferte git `GLIBC_2.34`** — beide
+Architekturen. Kein `GLIBCXX` irgendwo, Electron bringt seine C++-Bibliothek mit.
+
+Das 2.34 ist **kein Funktionsbedarf**, und das ist der Teil, den eine Zahl allein verschweigt: Die
+Symbole, die es fordern, sind `__libc_start_main@GLIBC_2.34` und die `pthread_*`-Reihe, also die
+Verschmelzung von libpthread in libc, die glibc 2.34 gebracht hat. dugite-native baut sein git auf
+einer Maschine mit glibc ≥ 2.34, und jedes Programm von dort verlangt die Zahl, ohne etwas Neues zu
+benutzen. Wer die Untergrenze senken will, senkt sie also am git-Bundle, nicht an Electron.
+
+Damit: ab 2.34 (Ubuntu 22.04, Debian 12 mit 2.36, RHEL 9) läuft alles; zwischen 2.25 und 2.33
+(Ubuntu 20.04 und Debian 11, je 2.31) startet die App, und das mitgelieferte git startet nicht.
+`applyGitRuntime()` führt `git --version` wirklich aus und gibt bei einem Fehlschlag `null` zurück,
+es müsste dort also das Warnband erscheinen statt einer falschen Erfolgsmeldung — **gelesen im
+Code, nicht gemessen**: ein System unter 2.34 stand nicht zur Verfügung, und ohne Container-Werkzeug
+auf den VMs gab es keinen Weg, eines nachzustellen.
+
+Was an Bibliotheken danebensteht, weil es zur selben Frage gehört: Das Programm führt als `NEEDED`
+`libgtk-3`, `libnss3`, `libcups`, `libasound`, `libdbus-1`, `libgbm`, `libxkbcommon` und die
+X11-Reihe; das mitgelieferte git nur `libz.so.1` und `libc`.
+
+**Und der Weg zum mitgelieferten git ist schwerer zu erzwingen als er aussieht.** Ein `PATH` ohne
+git genügt nicht: `ensureToolPath()` fragt danach die Login-Shell (`$SHELL -ilc`) und findet das
+System-git dort wieder. Gemessen mit einem Verzeichnis aus 1895 Symlinks auf `/usr/bin` ohne
+`git*` — das Band nannte weiter „vom System: git 2.47.3". Erst `env -u SHELL` dazu schaltet den Weg
+um. Wer den mitgelieferten git-Pfad prüfen will, braucht beides.

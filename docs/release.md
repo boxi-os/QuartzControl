@@ -221,6 +221,15 @@ von Beta 2 auf — der Fix war `toolsets.appimage: '1.0.3'` (`ab29d48`), ein sta
 Startprogramm. Ein Cross-Paket wird nicht mit dem Werkzeug darin geprüft (`--appimage-extract`
 startet die fremde Laufzeit), sondern auf der VM seiner Architektur.
 
+**Am 2026-09-20 ohne Release durchgespielt**, weil `npm run dist` seit dem Handbuch-Rückbau vom
+2026-09-18 ungelaufen war: zehn Pakete, neun davon auf einer Maschine ihrer Architektur gestartet,
+Einzelheiten in [`GRUPPE-D-2026-09-20.md`](GRUPPE-D-2026-09-20.md). Zwei Dinge daraus für die
+nächste Runde. **macOS x64 lässt sich hier nicht starten** — kein Intel-Mac, und Rosetta 2 wäre
+eine Messung unter Übersetzung, nicht die, die dieser Punkt verlangt; wer den Satz „jedes Paket
+gestartet“ schreiben will, braucht dafür eine Maschine. Und **die Linux-Pakete verlangen
+glibc ≥ 2.34**, nicht wegen Electron (2.25 genügt ihm), sondern wegen des mitgelieferten git; das
+gehört in die Release-Notizen, solange es so bleibt.
+
 Dann der Tag: `git tag v<version>` auf dem Commit, der die Fassungsnummer trägt (Punkt 1), und
 pushen. Beta 2 ist `v1.0.0-beta.2`.
 

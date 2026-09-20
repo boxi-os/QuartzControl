@@ -814,12 +814,15 @@ export default {
   },
   themeEditor: {
     goToThemeTab: 'Go to community themes',
+    goToVariablesTab: 'Go to the “Variables” tab',
     overrideChecking: 'Checking which of these values the active theme overrides…',
     overrideCounted:
         'The theme “{{themeId}}” overrides {{colors}} of {{totalColors}} colors and {{fonts}} of {{totalFonts}} fonts — those are dimmed below.',
     overrideStillEditable:
         'You can still edit them: they apply again the moment the theme is off, and can be overridden individually in the Variables tab.',
     overriddenByTheme: 'Overridden by the active theme',
+    overriddenByVariable:
+      'Your own variable --{{variable}} overrides this font — this field changes nothing on the site.',
     overriddenShort: 'theme',
     fontSource: 'Font source',
     googleFonts: 'Google Fonts',

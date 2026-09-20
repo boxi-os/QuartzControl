@@ -817,12 +817,15 @@ export default {
   },
   themeEditor: {
     goToThemeTab: 'Zu den Community-Themes',
+    goToVariablesTab: 'Zum Reiter „Variablen“',
     overrideChecking: 'Prüfe, welche dieser Werte das aktive Theme überschreibt…',
     overrideCounted:
         'Das Theme „{{themeId}}“ überschreibt {{colors}} von {{totalColors}} Farben und {{fonts}} von {{totalFonts}} Schriften — diese sind unten abgeblendet.',
     overrideStillEditable:
         'Bearbeiten geht trotzdem: die Werte gelten wieder, sobald das Theme aus ist, und lassen sich jederzeit im Variablen-Tab gezielt überschreiben.',
     overriddenByTheme: 'Wird vom aktiven Theme überschrieben',
+    overriddenByVariable:
+      'Deine eigene Variable --{{variable}} überschreibt diese Schrift — auf der Website ändert dieses Feld nichts.',
     overriddenShort: 'Theme',
     fontSource: 'Font-Quelle',
     googleFonts: 'Google Fonts',

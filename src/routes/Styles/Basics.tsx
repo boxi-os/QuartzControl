@@ -37,7 +37,7 @@ function familyOf(spec: unknown): string {
 // is the single place these values are edited.
 export default function Basics(): JSX.Element {
   const { t } = useTranslation()
-  const { config, setConfig, registerSave, goToTab, reloadScss, project, graph, graphLoading } = useStyles()
+  const { config, setConfig, registerSave, goToTab, reloadScss, project, graph, graphLoading, overrides } = useStyles()
   const theme = config.theme
   const [faces, setFaces] = useState<FontFaceInfo[]>([])
   const themeId = activeThemeIdOf(config)
@@ -107,6 +107,15 @@ export default function Basics(): JSX.Element {
     code: 'codeFont'
   }
   const overriddenFonts = TYPOGRAPHY_KEYS.filter((key) => overriddenByTheme(FONT_VARIABLE[key])).length
+  // The project's own css-vars block beats whatever Quartz writes from theme.typography, because
+  // that block is unlayered and comes after. Eight of the nine projects on the machine this was
+  // measured on carry exactly these variables - every project made from the built-in example
+  // template does (d4da5ef found the cause and fixed the template; the projects keep it) - and
+  // there a font picked here changed nothing on the site while the page fetched 26 files from
+  // Google without a word (thirty-third review, finding 4). Same answer as the colours get one
+  // card down, asked at the page's own override state rather than at the variable graph, which
+  // only knows 'theme' and 'build'.
+  const overriddenByVariable = (key: (typeof TYPOGRAPHY_KEYS)[number]): boolean => FONT_VARIABLE[key] in overrides
 
   return (
     <div className="grid gap-6">
@@ -144,6 +153,7 @@ export default function Basics(): JSX.Element {
 
         {TYPOGRAPHY_KEYS.map((key) => {
           const overridden = overriddenByTheme(FONT_VARIABLE[key])
+          const ownVariable = overriddenByVariable(key)
           const family = familyOf(theme.typography?.[key])
           // Google's CSS2 API answers an unknown family with an error page, and it is case-sensitive:
           // "open sans" fails where "Open Sans" works (measured). The list is from a fixed date, so a
@@ -153,7 +163,7 @@ export default function Basics(): JSX.Element {
             ? GOOGLE_FONTS.find(([name]) => name.toLowerCase() === family.trim().toLowerCase())?.[0]
             : undefined
           return (
-            <Field key={key} label={t('themeEditor.fontFor', { slot: key })} muted={overridden}>
+            <Field key={key} label={t('themeEditor.fontFor', { slot: key })} muted={overridden || ownVariable}>
               <Combobox
                 value={family}
                 onChange={(next) => setTypography(key, next)}
@@ -173,6 +183,14 @@ export default function Basics(): JSX.Element {
               )}
               {overridden && (
                 <span className="text-micro text-amber-700 dark:text-amber-400">{t('themeEditor.overriddenByTheme')}</span>
+              )}
+              {ownVariable && (
+                <span className="text-micro text-amber-700 dark:text-amber-400">
+                  {t('themeEditor.overriddenByVariable', { variable: FONT_VARIABLE[key] })}{' '}
+                  <button type="button" className="underline" onClick={() => goToTab('variables')}>
+                    {t('themeEditor.goToVariablesTab')}
+                  </button>
+                </span>
               )}
             </Field>
           )

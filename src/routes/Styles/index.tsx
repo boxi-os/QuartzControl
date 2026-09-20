@@ -468,12 +468,7 @@ export default function Styles(): JSX.Element {
           icon={TAB_ICONS.styles}
           title={t('projectLayout.tabs.styles')}
           description={t('projectLayout.descriptions.styles')}
-          status={
-            <>
-              {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
-              {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{message}</span>}
-            </>
-          }
+          status={status === 'saved' ? <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span> : null}
           actions={
             <>
               {dirty && status !== 'saving' && <UnsavedBadge />}
@@ -483,6 +478,16 @@ export default function Styles(): JSX.Element {
             </>
           }
         />
+
+        {/* The save error, below the header for the same reason as the note beneath it - and with
+            more at stake: it is the longest sentence on the page and a planned answer rather than
+            an exception. In the slot it was one line 1457 px wide at a 1280 px window, cut off at
+            "Alles and", i.e. before the half that says nothing is lost and how to go on, and the
+            page got a horizontal scrollbar (thirty-fourth review, finding 3). Its own region,
+            separate from the note, so the two are not read as one sentence. */}
+        <p role="status" className="mb-3 text-sm text-red-600 empty:mb-0 dark:text-red-400">
+          {status === 'error' ? message : null}
+        </p>
 
         {/* Below the header rather than in its status slot. The slot is shrink-0 beside the title,
             and this note names families and file counts: at 1280 px it took 566 px, left 237 px for

@@ -875,7 +875,17 @@ export function PageHeader({
             // role="status" is aria-live="polite" plus aria-atomic - the whole line is read, not
             // the diff. `empty:hidden` would take it out of the tree again, so it stays: an empty
             // span is zero-width, it only costs the flex gap next to it.
-            <span role="status">{status}</span>
+            //
+            // This slot is for the short answer - "Gespeichert", a badge-sized word. A sentence
+            // that names a way out belongs under the header, where it can wrap (the font note went
+            // there in 920c3c1, the save errors of Stile, Konfiguration and Layout after the
+            // thirty-fourth review, finding 3). The width is the net under that rule rather than
+            // the rule itself: the slot sits in a shrink-0 flex beside the title, so a long
+            // sentence grew it to 1457 px at a 1280 px window, squeezed the title block to 91 px
+            // and was cut off at the window edge - before the half that said nothing was lost.
+            <span role="status" className="block max-w-[18rem] whitespace-normal break-words">
+              {status}
+            </span>
           )}
           {actions}
         </div>

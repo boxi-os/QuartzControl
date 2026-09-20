@@ -183,10 +183,9 @@ export default function LayoutEditor(): JSX.Element {
         description={t('projectLayout.descriptions.layout')}
         status={
           tab !== 'frames' ? (
-            <>
-              {status === 'saved' && <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>}
-              {status === 'error' && <span className="text-sm text-red-600 dark:text-red-400">{error}</span>}
-            </>
+            status === 'saved' ? (
+              <span className="text-sm text-green-600 dark:text-green-400">{t('common.saved')}</span>
+            ) : null
           ) : undefined
         }
         actions={
@@ -202,6 +201,13 @@ export default function LayoutEditor(): JSX.Element {
           )
         }
       />
+      {/* The save error below the header, not in its slot: the slot is shrink-0 beside the title
+          and does not wrap, so a long sentence pushed the title block aside and was cut off at the
+          window edge (thirty-fourth review, finding 3, measured on Stile). Its own live region,
+          mounted empty, because it appears after a save without anyone asking for it. */}
+      <p role="status" className="mb-3 text-sm text-red-600 empty:mb-0 dark:text-red-400">
+        {tab !== 'frames' && status === 'error' ? error : null}
+      </p>
       <div className="mb-4">
         <SegmentedControl
           label={t('common.viewSwitcher')}

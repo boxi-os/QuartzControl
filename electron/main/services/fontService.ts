@@ -272,13 +272,24 @@ function allFilesPresent(projectPath: string, body: string): boolean {
 async function downloadFontFile(url: string, target: string): Promise<number> {
   const file = basename(target)
   const signal = AbortSignal.timeout(GOOGLE_TIMEOUT_MS)
+  // Request *and* body under the same catch: a network that hangs hangs in the middle of a file
+  // as readily as before it, and with the catch on net.fetch alone the raw "The operation was
+  // aborted due to timeout" came through after 20 s - the half-English sentence this was written
+  // to replace (thirty-fourth review, finding 6). Whether it is a timeout is asked of the signal,
+  // not of the error's name: through Electron's net.fetch a request that never answers rejects
+  // with TimeoutError and a body that hangs with AbortError, and the signal is ours either way
+  // (measured in the real main process).
   const response = await net.fetch(url, { signal }).catch(() => {
     throw new Error(mainT(signal.aborted ? 'googleFontsFileTimedOut' : 'googleFontsFileUnreachable', { file }))
   })
   if (!response.ok) throw new Error(mainT('googleFontsFileFailed', { file, status: response.status }))
   const declared = Number(response.headers.get('content-length') ?? 0)
   if (declared > MAX_FONT_FILE_BYTES) throw new Error(mainT('googleFontsFileTooLarge', { file }))
-  const data = Buffer.from(await response.arrayBuffer())
+  const data = Buffer.from(
+    await response.arrayBuffer().catch(() => {
+      throw new Error(mainT(signal.aborted ? 'googleFontsFileTimedOut' : 'googleFontsFileUnreachable', { file }))
+    })
+  )
   if (data.length > MAX_FONT_FILE_BYTES) throw new Error(mainT('googleFontsFileTooLarge', { file }))
   const temp = join(dirname(target), `.${basename(target)}.download`)
   await writeFile(temp, data)
@@ -312,7 +323,10 @@ export async function fetchGoogleFonts(
     throw new Error(mainT(cssSignal.aborted ? 'googleFontsTimedOut' : 'googleFontsUnreachable'))
   })
   if (!response.ok) throw new Error(mainT('googleFontsRequestFailed', { status: response.status }))
-  const css = await response.text()
+  // Same reason as in downloadFontFile: the body can hang after the head has arrived.
+  const css = await response.text().catch(() => {
+    throw new Error(mainT(cssSignal.aborted ? 'googleFontsTimedOut' : 'googleFontsUnreachable'))
+  })
 
   const urls = new Map<string, string>()
   for (const match of css.matchAll(GSTATIC_URL)) {

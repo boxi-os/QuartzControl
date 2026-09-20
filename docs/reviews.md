@@ -1688,3 +1688,18 @@ seinem letzten Abschnitt: aus *diesem* Stand keinen RC, aus dem Stand nach den F
 schon; und als nächsten Schritt nicht Runde 34, sondern den Alpha-Test, an Projekten aus der
 Beispielvorlage und mit einer gebauten Website am Ende jeder Szene, weil drei der vier mittleren
 Befunde in der App unsichtbar und erst im Browser zu sehen sind.
+
+**Das vierunddreißigste Review misst ab `review-2026-10-08`** und liest bis `review-2026-10-09`,
+das auf dem Commit „Der Auftrag fuer das vierunddreissigste Review“ sitzt; der Auftrag steht in
+[`docs/REVIEW-2026-10-08-auftrag.md`](REVIEW-2026-10-08-auftrag.md). **Es ist die erste Runde, von
+der das vorige Review abgeraten hat** — es empfahl statt dessen den Alpha-Test; der Nutzer hat sie
+trotzdem angefordert, und der Auftrag sagt an erster Stelle, dass sie damit eine andere Frage
+stellt: nicht „finde das Nächste“, sondern „halten die zweiundzwanzig Fixes, die niemand gelesen
+hat“. Zwei Schichten, und die zweite ist fast kein Code: die abgearbeitete dreiunddreißigste Runde
+(23 Commits, davon 22 Fixes; 20 Dateien, +895/−127, davon Code 14 Dateien, +583/−108) und was
+danach geschah (3 Commits — die Website veröffentlicht, die Google-Liste geholt, drei Sätze in
+`docs/release.md` korrigiert; 3 Dateien, +1784/−1737, davon 1728 Zeilen umsortierte Namensliste). Als größtes Risiko
+nennt der Auftrag `save()` in seinen drei Ausgängen und die Abbruch-Sätze in `updateService.ts`,
+als schwächste Messung die Attrappe, die für Befund 11 an der Stelle eines echten alten git stand.
+Geschrieben ist er von demselben Modell wie die Commits **und aus derselben Sitzung** — der
+ungünstigste Fall für seine Zahlen, und er sagt das.

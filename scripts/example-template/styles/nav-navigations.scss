@@ -250,6 +250,22 @@
   letter-spacing: var(--tpl-tracking-label);
 }
 
+// Der Platzhalter für die fehlende Richtung. Auf der Startseite gibt es kein „Zurück", und das
+// Plugin rendert dafür ein leeres `<span class="quartz-nav__prev quartz-nav__prev--empty">`
+// (render.tsx:542) — eine Regel dafür hat es nicht, also bekommt der Platzhalter die volle Karte
+// der beiden Knöpfe: Rand, Radius, Polsterung. Auf der Startseite stand deshalb ein leerer
+// Kasten links neben „Weiter".
+//
+// `display: none` und nicht `visibility: hidden`: Der Platzhalter soll die Zeile nicht ausrichten,
+// das tut `margin-left: auto` auf `__next` schon (navigations.scss:728). Gemessen, nachdem er weg
+// war: „Weiter" steht auf der Startseite an derselben x-Position wie auf jeder anderen Seite.
+//
+// Ein Kandidat für einen Vorschlag ans Plugin — dort wäre es eine Zeile, die jede Website
+// erreicht, statt einer je Vorlage.
+.quartz-nav__prev--empty {
+  display: none;
+}
+
 /* ------------------------------------------------------------------- offcanvas */
 
 // Die Schublade. Das Plugin färbt den Scrim über `--quartz-nav-backdrop` (oben verkabelt), aber

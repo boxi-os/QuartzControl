@@ -112,14 +112,21 @@ dem Schriftfeld.
 
     npm run fetch:google-fonts
 
-schreibt `src/data/googleFonts.ts` neu und setzt dabei `GOOGLE_FONTS_FETCHED`. **Diese Zahl steht
-dem Nutzer auf der Stile-Seite vor Augen** („Liste vom …“), sie ist also keine interne Notiz. Die
+schreibt `src/data/googleFonts.ts` neu und setzt dabei `GOOGLE_FONTS_FETCHED`. **Das Datum liest
+der Nutzer** — in dem einen Satz unter einem Schriftnamen, den die Liste nicht hat („Diesen Namen
+führt Google nicht (Liste vom …)“), also gerade dort, wo er entscheiden muss, ob er sich vertippt
+hat oder die Liste alt ist. Es ist keine interne Notiz. Die
 Liste ist eine Tipphilfe und keine Sperre — eine Familie, die dort fehlt, wird trotzdem geholt,
 wenn sie richtig geschrieben ist —, aber eine Liste, die zwei Fassungen alt ist, bietet neue
 Familien nicht an und sagt über sie „kennt Google nicht“. Der Lauf braucht nur Netz — Quelle ist
 `fonts.google.com/metadata/fonts`, dieselbe Datei, aus der fonts.google.com seine eigene Liste
 baut, kein Schlüssel. Der Kopfkommentar der Datei entsteht aus der Vorlage im Skript und übersteht
-den Lauf (nachgeprüft: Zeile für Zeile gleich).
+den Lauf (nachgeprüft: Zeile für Zeile gleich bis auf das Datum darin).
+
+**Der Diff ist groß und sagt wenig.** Sortiert wird nach Googles Beliebtheitsrang, und der bewegt
+sich täglich: Am 2026-09-20, zwei Tage nach dem Lauf davor, waren 1945 von 1946 Positionen
+verschoben — und dabei **keine Familie dazugekommen, keine weggefallen, keine Kategorie geändert**.
+Wer den Diff liest, liest also eine Rangliste, nicht einen Zuwachs.
 
 ## 5. Der Footer steht an sechs Stellen gleich
 

@@ -229,7 +229,7 @@ const STRINGS = {
     // Änderung liegen bleibt. Ein Befehl ohne Preis gibt es hier nicht — `git checkout --` kostet die
     // eigene Arbeit.
     updateAbortBlockedByOwnStagedOnMerge:
-      'Diese Dateien ändert das Update selbst, und du hast zusätzlich etwas darauf vorgemerkt: {{files}}. Nimm dort nur die Vormerkung zurück („git reset -- <Datei>“) und brich erneut ab — deine Arbeit bleibt, die Zeilen des Updates bleiben aber als ungespeicherte Änderung liegen und müssen weg, bevor das nächste Update läuft.\n\n',
+      'Diese Dateien ändert das Update selbst, und du hast zusätzlich etwas darauf vorgemerkt: {{files}}. Nimm dort nur die Vormerkung zurück („git reset -- <Datei>“) und brich erneut ab — deine Arbeit bleibt, die Zeilen des Updates bleiben aber als ungespeicherte Änderung liegen; committe oder verwirf sie über Git-Sync, bevor das nächste Update läuft.\n\n',
     // Was der Abbruch nebenbei mitnimmt. git sagt darüber nichts, und rückgängig ist es nicht -
     // genannt wird es trotzdem, damit der Nutzer weiß, was fehlt.
     updateAbortDroppedStaged:
@@ -430,14 +430,17 @@ const STRINGS = {
       'Google Fonts hat eine Datei unter einem unerwarteten Namen angeboten („{{name}}“). Es wurde nichts ins Projekt geholt.',
     googleFontsTooManyFiles:
       'Google Fonts hat {{count}} Dateien angeboten — mehr als die {{max}}, die für Schriften vorgesehen sind. Es wurde nichts ins Projekt geholt.',
-    googleFontsTooLarge: 'Die Schriften von Google sind zusammen größer, als Schriften sein sollten — der Rest wurde nicht geholt.',
+    googleFontsTooLarge:
+      'Die Schriften von Google sind zusammen größer, als Schriften sein sollten. Es wurde nichts ins Projekt geholt.',
     googleFontsUnreachable: 'Google Fonts ist nicht erreichbar.',
     googleFontsFileUnreachable:
       'Die Schriftdatei {{file}} ließ sich nicht laden — Google Fonts ist nicht erreichbar.',
     googleFontsTimedOut: 'Google Fonts antwortet nicht (20 Sekunden gewartet).',
     googleFontsFileTimedOut: 'Die Schriftdatei {{file}} kam nicht an — Google Fonts antwortet nicht.',
+    // Ohne Gedankenstrich davor: Jeder Satz, der hier als {{message}} einsteht, bringt seinen
+    // eigenen Punkt mit, und daraus wurde „. —“ (34. Review, Befund 9).
     googleFontsRefreshFailed:
-      'Die Google-Schriften ließen sich nicht ins Projekt holen: {{message}} — gebaut wird mit den Dateien, die schon im Projekt liegen.',
+      'Die Google-Schriften ließen sich nicht ins Projekt holen: {{message}} Gebaut wird mit den Dateien, die schon im Projekt liegen.',
     googleFontsRefreshed: 'Die gewählten Google-Schriften wurden ins Projekt geholt ({{count}} Dateien).',
     fontUrlsMigrated:
       'Die Schriftdateien in custom.scss werden jetzt relativ zum Stylesheet adressiert — so findet sie die Website auch unter einem Unterpfad.'
@@ -567,7 +570,7 @@ const STRINGS = {
     updateAbortBlockedByOwnStaged:
       'You staged these files yourself and changed them again afterwards, so the update cannot be cancelled: {{files}}. Undo only the staging there (in a terminal, for each file: “git reset -- <file>”), which keeps your changes, then cancel again.\n\n',
     updateAbortBlockedByOwnStagedOnMerge:
-      'The update changes these files itself, and you staged something on top of them: {{files}}. Undo only the staging there (“git reset -- <file>”) and cancel again — your work stays, but the update\u2019s lines stay behind as an unsaved change and have to go before the next update runs.\n\n',
+      'The update changes these files itself, and you staged something on top of them: {{files}}. Undo only the staging there (“git reset -- <file>”) and cancel again — your work stays, but the update\u2019s lines stay behind as an unsaved change; commit or discard them in Git-Sync before the next update runs.\n\n',
     updateAbortDroppedStaged:
       'Cancelling discarded the staged state of these files: {{files}}. When cancelling, git resets everything that was staged — including what you staged yourself and conflicts you resolved by hand.',
     updateAbortStagedUnchecked:
@@ -741,13 +744,13 @@ const STRINGS = {
       'Google Fonts offered a file under an unexpected name (“{{name}}”). Nothing was fetched into the project.',
     googleFontsTooManyFiles:
       'Google Fonts offered {{count}} files — more than the {{max}} meant for fonts. Nothing was fetched into the project.',
-    googleFontsTooLarge: 'The fonts from Google are larger together than fonts should be — the rest was not fetched.',
+    googleFontsTooLarge: 'The fonts from Google are larger together than fonts should be. Nothing was fetched into the project.',
     googleFontsUnreachable: 'Google Fonts cannot be reached.',
     googleFontsFileUnreachable: 'The font file {{file}} could not be loaded — Google Fonts cannot be reached.',
     googleFontsTimedOut: 'Google Fonts is not answering (waited 20 seconds).',
     googleFontsFileTimedOut: 'The font file {{file}} did not arrive — Google Fonts is not answering.',
     googleFontsRefreshFailed:
-      'The Google fonts could not be fetched into the project: {{message}} — the build uses the files already in the project.',
+      'The Google fonts could not be fetched into the project: {{message}} The build uses the files already in the project.',
     googleFontsRefreshed: 'The selected Google fonts were fetched into the project ({{count}} files).',
     fontUrlsMigrated:
       'The font files in custom.scss are now addressed relative to the stylesheet — the site finds them under a sub-path too.'

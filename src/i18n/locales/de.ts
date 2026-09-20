@@ -826,7 +826,7 @@ export default {
         'Bearbeiten geht trotzdem: die Werte gelten wieder, sobald das Theme aus ist, und lassen sich jederzeit im Variablen-Tab gezielt überschreiben.',
     overriddenByTheme: 'Wird vom aktiven Theme überschrieben',
     overriddenByVariable:
-      'Deine eigene Variable --{{variable}} überschreibt diese Schrift — auf der Website ändert dieses Feld nichts.',
+      'Die Variable --{{variable}} im Projekt überschreibt diese Schrift — auf der Website ändert dieses Feld nichts.',
     overriddenShort: 'Theme',
     fontSource: 'Font-Quelle',
     googleFonts: 'Google Fonts',

@@ -823,7 +823,7 @@ export default {
         'You can still edit them: they apply again the moment the theme is off, and can be overridden individually in the Variables tab.',
     overriddenByTheme: 'Overridden by the active theme',
     overriddenByVariable:
-      'Your own variable --{{variable}} overrides this font — this field changes nothing on the site.',
+      'The project’s variable --{{variable}} overrides this font — this field changes nothing on the site.',
     overriddenShort: 'theme',
     fontSource: 'Font source',
     googleFonts: 'Google Fonts',

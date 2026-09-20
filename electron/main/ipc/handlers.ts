@@ -601,7 +601,10 @@ export function registerIpcHandlers(): void {
       // 'embedded' auch dann, wenn gar keines gefunden wurde: dass git fehlt, heißt seit dem
       // mitgelieferten Bundle nicht mehr "installier dir eins", sondern "diese Installation ist
       // unvollständig" - und genau diesen Satz zeigt das Warnband für eingebettete Werkzeuge.
-      gitRuntime.gitRuntime()?.source === 'host' ? 'host' : 'embedded'
+      // Mit einer Ausnahme, und die steht daneben: liegt das Bundle da und lässt sich auf diesem
+      // System nicht laden, ist "installier dir eins" wieder der richtige Rat.
+      gitRuntime.gitRuntime()?.source === 'host' ? 'host' : 'embedded',
+      gitRuntime.bundledGitFailure()
     )
   )
   handleNoArgs(IPC.settingsClearThemeDocsCache, () => styleSettingsSchemaService.clearThemeDocsCache())

@@ -90,11 +90,15 @@ export default {
       '„{{name}}“ aus der Liste entfernen?\n\nDer laufende Dev-Server wird dabei beendet. Der Ordner auf der Festplatte bleibt unangetastet.',
     environment: {
       titleProblem: 'Diese Werkzeuge fehlen',
+      titleUnusable: 'Diese Werkzeuge lassen sich nicht benutzen',
       description: 'Ohne sie schlagen Builds, neue Projekte, Plugins aus einer Git-Quelle und Snapshots fehl.',
       missing: 'nicht gefunden',
       brokenTool: 'gefunden, lässt sich aber nicht ausführen',
+      incompatibleTool: 'liegt bei, passt aber nicht zu diesem System',
       embeddedBroken:
         'Diese Werkzeuge gehören zur App. Dass sie sich nicht ausführen lassen, heißt, dass diese Installation unvollständig ist — am schnellsten hilft, die App neu zu installieren.',
+      embeddedIncompatible:
+        'Das mitgelieferte git lässt sich auf diesem System nicht starten — seine Systembibliotheken sind älter als die, für die es gebaut wurde. Installiere git über die Paketverwaltung; die App benutzt dann das deines Systems.',
       bundled: 'in der App',
       fromSystem: 'vom System',
       recheck: 'Erneut prüfen',

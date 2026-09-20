@@ -1304,6 +1304,14 @@ export interface ToolInfo {
    * is a stub that opens an installer instead of doing anything.
    */
   version: string | null
+  /**
+   * Set only on a tool that does not run: true when *this system* cannot load the file, rather
+   * than the file being wrong. The case it exists for is the bundled git on a Linux whose glibc
+   * is older than the one it was built against - there the usual advice for an embedded tool
+   * ("reinstall the app") is the one thing that does not help, while installing the system's own
+   * git does. Absent means the question was not asked, which is every tool that runs.
+   */
+  incompatible?: boolean
 }
 
 /** How the app's secrets are actually protected, which is not the same question everywhere. */

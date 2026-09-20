@@ -697,6 +697,11 @@ function EnvironmentBand({ info, onRecheck }: { info: EnvironmentInfo; onRecheck
   if (environmentIsHealthy(info)) return null
 
   const broken = info.tools.filter((tool) => tool.version === null)
+  // Zwei Arten zu scheitern, zwei Sätze. Der Rat „neu installieren“ gilt für ein Werkzeug, das zur
+  // App gehört und kaputt ist - nicht für eines, das dasteht und von *diesem System* nicht geladen
+  // werden kann. Dort ist er der einzige, der nicht hilft: Am mitgelieferten git ändert kein
+  // zweites Auspacken etwas, an einem git aus der Paketverwaltung schon.
+  const incompatible = broken.some((tool) => tool.incompatible)
   return (
     <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-500/40 dark:bg-amber-950/40">
       {broken.length > 0 && (
@@ -704,7 +709,10 @@ function EnvironmentBand({ info, onRecheck }: { info: EnvironmentInfo; onRecheck
           <div className="flex items-center gap-2">
             <TriangleAlert size={15} className="shrink-0 text-amber-600 dark:text-amber-400" />
             <h2 className="text-sm font-semibold text-amber-900 dark:text-amber-200">
-              {t('home.environment.titleProblem')}
+              {/* „Fehlen" ist nur wahr, solange keines der Werkzeuge dasteht. Ein macOS-Stub und
+                  ein mitgeliefertes git, das dieses System nicht laden kann, liegen beide da -
+                  die Überschrift sagte dann das Gegenteil der Zeile direkt darunter. */}
+              {t(broken.every((tool) => tool.path === null) ? 'home.environment.titleProblem' : 'home.environment.titleUnusable')}
             </h2>
           </div>
           <p className="mt-1.5 text-ui leading-relaxed text-amber-900/80 dark:text-amber-200/80">
@@ -713,12 +721,17 @@ function EnvironmentBand({ info, onRecheck }: { info: EnvironmentInfo; onRecheck
           <ul className="mt-2.5 flex flex-col gap-1">
             {broken.map((tool) => (
               <li key={tool.name} className="font-mono text-xs text-amber-900 dark:text-amber-200">
-                {tool.name} — {tool.path ? t('home.environment.brokenTool') : t('home.environment.missing')}
+                {tool.name} —{' '}
+                {tool.incompatible
+                  ? t('home.environment.incompatibleTool')
+                  : tool.path
+                    ? t('home.environment.brokenTool')
+                    : t('home.environment.missing')}
               </li>
             ))}
           </ul>
           <p className="mt-2.5 text-xs leading-relaxed text-amber-900/70 dark:text-amber-200/70">
-            {t('home.environment.embeddedBroken')}
+            {t(incompatible ? 'home.environment.embeddedIncompatible' : 'home.environment.embeddedBroken')}
           </p>
         </>
       )}

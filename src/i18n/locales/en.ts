@@ -90,11 +90,15 @@ export default {
       'Remove “{{name}}” from the list?\n\nIts running dev server will be stopped. The folder on disk is left untouched.',
     environment: {
       titleProblem: 'These tools are missing',
+      titleUnusable: 'These tools cannot be used',
       description: 'Without them builds, new projects, plugins from a git source and snapshots all fail.',
       missing: 'not found',
       brokenTool: 'found, but does not run',
+      incompatibleTool: 'included, but does not fit this system',
       embeddedBroken:
         'These tools are part of the app. If they cannot run, this installation is incomplete — reinstalling the app is the quickest fix.',
+      embeddedIncompatible:
+        'The bundled git will not start on this system — its system libraries are older than the ones it was built for. Install git through your package manager; the app will then use your system\'s own.',
       bundled: 'in the app',
       fromSystem: 'from the system',
       recheck: 'Check again',

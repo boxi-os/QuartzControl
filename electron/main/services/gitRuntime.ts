@@ -23,7 +23,22 @@ export interface GitRuntime {
   version: string | null
 }
 
+/**
+ * Warum das mitgelieferte git nicht benutzt wird, obwohl es dasteht. Der Unterschied ist keiner
+ * für den Code - beide Fälle enden in `null` -, aber einer für den Satz, den der Nutzer liest:
+ * `'incompatible'` heißt, dieses System kann die Datei nicht laden (zu alte Systembibliotheken -
+ * das Bundle von dugite-native verlangt glibc 2.34, siehe
+ * `docs/decisions/electron-runtime-and-packaging.md`), und dagegen hilft kein Neuinstallieren,
+ * sondern ein git aus der Paketverwaltung. `'broken'` ist alles andere und heißt, was der Satz
+ * für eingebettete Werkzeuge schon immer sagte: diese Installation ist unvollständig.
+ */
+export interface BundledGitFailure {
+  path: string
+  reason: 'incompatible' | 'broken'
+}
+
 let runtime: GitRuntime | null = null
+let bundledFailure: BundledGitFailure | null = null
 
 function bundleDir(): string {
   const packaged = join(process.resourcesPath, 'git')
@@ -32,19 +47,35 @@ function bundleDir(): string {
   return join(app.getAppPath(), 'resources/git', `${process.platform}-${process.arch}`)
 }
 
-/** Führt `git --version` aus; null, wenn die Datei nicht läuft (der macOS-Stub tut das nicht). */
-function probeVersion(path: string, env?: NodeJS.ProcessEnv): string | null {
+/**
+ * Die Meldungen, mit denen ein Loader sagt, dass er die Datei nicht laden *kann* - nicht, dass das
+ * Programm darin einen Fehler hat. Dieselbe Liste benutzt `httpsHelperLoads()` weiter unten, und
+ * aus demselben Grund: Ein Exit 127 und diese Sätze sind das, was von einem Programm übrigbleibt,
+ * das nie angelaufen ist.
+ */
+const LOADER_FAILURE =
+  /error while loading shared libraries|cannot open shared object|version `GLIBC_[\d.]+' not found|dyld: Library not loaded|Library not loaded:/
+
+/** Führt `git --version` aus; `version` ist null, wenn die Datei nicht läuft. */
+function probe(path: string, env?: NodeJS.ProcessEnv): { version: string | null; loaderFailure: boolean } {
   try {
     const out = execFileSync(path, ['--version'], {
       encoding: 'utf-8',
       timeout: 10_000,
-      stdio: ['ignore', 'pipe', 'ignore'],
+      stdio: ['ignore', 'pipe', 'pipe'],
       ...(env ? { env } : {})
     })
-    return out.trim().split('\n')[0] || null
-  } catch {
-    return null
+    return { version: out.trim().split('\n')[0] || null, loaderFailure: false }
+  } catch (error) {
+    const failure = error as { status?: number; stderr?: string | Buffer }
+    const stderr = failure.stderr?.toString() ?? ''
+    return { version: null, loaderFailure: failure.status === 127 || LOADER_FAILURE.test(stderr) }
   }
+}
+
+/** Führt `git --version` aus; null, wenn die Datei nicht läuft (der macOS-Stub tut das nicht). */
+function probeVersion(path: string, env?: NodeJS.ProcessEnv): string | null {
+  return probe(path, env).version
 }
 
 /**
@@ -85,9 +116,18 @@ export function applyGitRuntime(): GitRuntime | null {
   const caBundle = join(dir, 'ssl/cacert.pem')
   if (existsSync(caBundle)) env.GIT_SSL_CAINFO = caBundle
 
-  const version = probeVersion(path, env)
-  if (!version) return null
-  if (!httpsHelperLoads(dir, env)) return null
+  const answer = probe(path, env)
+  if (!answer.version) {
+    bundledFailure = { path, reason: answer.loaderFailure ? 'incompatible' : 'broken' }
+    return null
+  }
+  // Ein Helfer, dem eine Bibliothek fehlt, ist derselbe Befund wie ein git, das gar nicht anläuft:
+  // die Datei passt nicht zu diesem System. Dass `git --version` vorher geantwortet hat, ändert
+  // daran nichts - es ist die Binärdatei, die nichts nachlädt.
+  if (!httpsHelperLoads(dir, env)) {
+    bundledFailure = { path, reason: 'incompatible' }
+    return null
+  }
 
   // Erst schreiben, wenn die Binärdatei geantwortet hat: eine halb gesetzte Umgebung wäre
   // schlimmer als gar keine, weil sie auch ein später gefundenes Host-git verbiegen würde.
@@ -98,7 +138,7 @@ export function applyGitRuntime(): GitRuntime | null {
   })
   process.env.PATH = [join(dir, 'bin'), ...(process.env.PATH ?? '').split(delimiter).filter(Boolean)].join(delimiter)
 
-  runtime = { source: 'bundled', path, version }
+  runtime = { source: 'bundled', path, version: answer.version }
   return runtime
 }
 
@@ -130,4 +170,14 @@ function httpsHelperLoads(dir: string, env: NodeJS.ProcessEnv): boolean {
 /** Was aufgelöst wurde, für die Startseite und die Einstellungen. Null vor applyGitRuntime(). */
 export function gitRuntime(): GitRuntime | null {
   return runtime
+}
+
+/**
+ * Das mitgelieferte git, das dasteht und nicht läuft - null, wenn keines gebraucht wurde oder
+ * keines da ist. Ohne diese Auskunft sucht das Warnband git auf dem PATH, findet nichts (der
+ * Bundle-Ordner kommt ja gerade nicht dorthin) und meldet „nicht gefunden“ für eine Datei, die
+ * im Paket liegt.
+ */
+export function bundledGitFailure(): BundledGitFailure | null {
+  return runtime ? null : bundledFailure
 }

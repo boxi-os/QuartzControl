@@ -209,13 +209,33 @@ function probe(name: string, versionArgs: string[], source: ToolInfo['source'], 
  * `secretStorage` is passed in rather than read here so this file keeps needing no Electron API -
  * safeStorage belongs to connectionsService, which owns every secret in the app.
  */
+/**
+ * git ist das eine Werkzeug, das an zwei Orten liegen kann, und der Ort entscheidet über den Satz.
+ * Der gewöhnliche Weg ist der PATH - dort steht entweder das des Rechners oder, wenn das
+ * mitgelieferte angelaufen ist, dessen `bin`. Läuft das mitgelieferte *nicht* an, kommt sein
+ * Ordner gar nicht erst in den PATH (gitRuntime.applyGitRuntime), und eine Suche dort meldet
+ * „nicht gefunden“ für eine Datei, die im Paket liegt. Dann zählt, was der Lauf gemessen hat.
+ */
+function gitTool(
+  source: ToolInfo['source'],
+  failure: { path: string; reason: 'incompatible' | 'broken' } | null
+): ToolInfo {
+  const found = probe('git', ['--version'], source)
+  if (found.path || !failure) return found
+  return { name: 'git', source, path: failure.path, version: null, incompatible: failure.reason === 'incompatible' }
+}
+
 export function getEnvironmentInfo(
   secretStorage: SecretStorageInfo,
   // Where node and npm currently come from, i.e. whether nodeRuntime's shims are on PATH, and
   // whether git is the machine's or the app's. Passed in rather than read here so this file keeps
   // needing no Electron API - the same reasoning as secretStorage above.
   embeddedBinDir: string | null,
-  gitSource: ToolInfo['source']
+  gitSource: ToolInfo['source'],
+  // Das mitgelieferte git, das dasteht und nicht läuft (gitRuntime.bundledGitFailure()). Es kommt
+  // hier herein statt gelesen zu werden, wie secretStorage und embeddedBinDir auch: diese Datei
+  // soll ohne Electron-API auskommen.
+  bundledGitFailure: { path: string; reason: 'incompatible' | 'broken' } | null = null
 ): EnvironmentInfo {
   const path = ensureToolPath()
   // node and npm are answered by whatever PATH resolves - the shims when the embedded runtime is
@@ -226,7 +246,7 @@ export function getEnvironmentInfo(
   const tools = [
     probe('node', ['--version'], source),
     probe('npm', ['--version'], source),
-    probe('git', ['--version'], gitSource)
+    gitTool(gitSource, bundledGitFailure)
   ]
   return {
     hostNodeVersion: embeddedBinDir ? probe('node', ['--version'], 'host', embeddedBinDir).version : tools[0].version,

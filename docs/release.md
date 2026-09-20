@@ -131,9 +131,17 @@ Kopien sind *untereinander* gleich, auch wenn alle drei veraltet sind. Der Aufru
 **`d4da5ef` ist am 2026-09-20 ausgerollt** (Befund 2 des Alpha-Tests, siehe
 [`ALPHA-2026-09-20.md`](ALPHA-2026-09-20.md)): Phase 7 in der Werkstatt, Phase 5 für den
 umbenannten Syntax-Marker, Phase 9/10 neu geprüft und exportiert, Phase 11 grün, und die
-mitgelieferte Kopie ist gleichgezogen. **Offen ist nur noch die dritte Kopie** — die Datei muss
-nach `boxi-os/quartzcontrol-templates` committet und gepusht werden, sonst bekommt jeder, der
-online ist, weiter die Vorlage vom 2026-09-14. Die Vorlage hat jetzt 45 statt 50 Variablen.
+mitgelieferte Kopie ist gleichgezogen. **Auch die dritte** — `a54e3c4` hat die Datei nach
+`boxi-os/quartzcontrol-templates` gepusht (`96ca8fe`); bis dahin bekam jeder, der online ist,
+weiter die Vorlage vom 2026-09-14, denn die App zieht die veröffentlichte der mitgelieferten vor.
+Die Vorlage hat jetzt 45 statt 50 Variablen. Am 2026-09-20 nachgemessen, nach dem Push:
+`--check-sync` nennt alle drei Kopien mit 782 654 Bytes und demselben `createdAt`
+(`2026-09-20T15:30:22.197Z`).
+
+Dieser Absatz stand bis dahin auf „offen“, obwohl derselbe Commit den Push enthielt: `a54e3c4`
+hat an dieser Datei nur Punkt 3 nachgezogen. Ein Punkt, der beschreibt, was noch zu tun ist, wird
+von dem Commit geschlossen, der es tut — sonst liest der nächste Leser eine Liste, die ihn in
+Arbeit schickt, die getan ist.
 
 **Was die Gegenprobe gezeigt hat, und was hier vorher falsch stand.** Der Satz „die berechneten
 Schriften dürfen sich dabei **nicht** ändern, denn Quartz' `joinStyles()` schreibt dieselben

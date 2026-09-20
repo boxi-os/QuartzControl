@@ -70,9 +70,18 @@ und genau dort liegt das Handbuch (`boxi-os.github.io/QuartzControl`). Am 2026-0
 veröffentlichte CSS fragte `boxi-os.github.io/static/fonts/inter-latin-400-700.woff2` (404), die
 Datei lag eine Ebene tiefer (200) — vier Schriften, keine geladen. Seit dem dreiunddreißigsten
 Review zieht die Bau-Tür das nach (`styleService.migrateFontUrls`), also genügt **ein Bau** des
-Handbuch- und des Web-Projekts durch die App; das Log sagt, wenn es passiert ist. Danach
-`custom.scss` mit committen und veröffentlichen. **Und ein Satz in den Release-Notizen** für alle,
-deren Website unter einem Unterpfad liegt: Ihr nächster Bau in der App bringt die Schriften zurück.
+Handbuch- und des Web-Projekts **durch die App** — ein `npx quartz build` im Terminal geht an
+dieser Tür vorbei; das Log sagt, wenn es passiert ist. Zu committen ist dabei nichts: Beide
+Projekte sitzen auf Quartz' eigenem Commit und halten alles Eigene uncommittet, und das
+Web-Projekt hat `origin` nur, um `gh-pages` zu schieben. Veröffentlicht wird also der *Bau*, über
+das Ziel „GitHub Pages“ auf der Veröffentlichen-Seite. **Und ein Satz in den Release-Notizen** für
+alle, deren Website unter einem Unterpfad liegt: Ihr nächster Bau in der App bringt die Schriften
+zurück.
+
+Am 2026-09-20 getan: beide Projekte gebaut (je 4 root-relative `url()` vorher, 0 nachher, die
+Zeile im Log), im Bau des Web-Projekts vier `url(static/fonts/…)`, kein `fonts.gstatic.com` und
+vier Dateien unter `public/static/fonts`; veröffentlicht nach `gh-pages`
+(`9ee7a37` → `53445ee`, forced update), 171 geänderte, 10 entfernte, 8 neue Dateien.
 
 ## 4. Die Beispielvorlage liegt dreimal gleich
 

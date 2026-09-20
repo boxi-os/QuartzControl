@@ -143,7 +143,13 @@ abzulegen ist optional — die App fragt sie nicht, es ist ein Link für Mensche
    nach dem Push. Das ist die einzige Messung, die sagt, dass eine ausgelieferte App die Datei
    findet; alles davor prüft nur, was in diesem Repo liegt.
 4. `minimal-lesbar.qtpl` dort **nicht** löschen (Begründung oben).
-5. Die zwei Doku-Pakete (`doku.qtpl`, `plugin.qtpl` in `scripts/example-template/pakete/`) sind
+5. Das Benutzerhandbuch nennt die eingebaute Vorlage an **je sieben Stellen** in beiden Sprachen
+   „Beispielvorlage" bzw. „example template" und beziffert die Beispielseiten auf „rund 270"
+   (`2-projekte/02-ein-neues-projekt-anlegen.md:63`). Beides stimmt nicht mehr: Der Assistent sagt
+   seit dem 2026-09-20 „Basis-Template" und bringt zwanzig Seiten mit. `check:handbook` sieht das
+   nicht — es prüft Blockzitate, und diese Nennungen stehen im Fließtext. Der Vault liegt außerhalb
+   dieses Repos und wird online gepflegt.
+6. Die zwei Doku-Pakete (`doku.qtpl`, `plugin.qtpl` in `scripts/example-template/pakete/`) sind
    vom 2026-09-10 und kennen weder `nav-navigations.scss` noch die dreizehn Callout-Tokens. Drei
    echte Websites wenden sie an — die der App und die zwei Plugin-Handbücher. Ein Neubau braucht
    je ein frisches Werkstattprojekt (`--variant doku` bzw. `plugin`, Phase 0 klont und installiert)

@@ -222,10 +222,12 @@ html {
   // top padding is taken away again in the desktop block below, where the heading covers that edge.
   @media (min-width: 1201px) {
     .qgframe-area-right {
+      // Der Roller braucht keinen Schalter: Steht `--tpl-col-right-height` auf `none`, läuft
+      // nichts über, und dann rollt auch nichts.
       overflow-y: auto;
       overscroll-behavior: contain;
-      mask-image: var(--tpl-fade-mask);
-      -webkit-mask-image: var(--tpl-fade-mask);
+      mask-image: var(--tpl-col-right-mask);
+      -webkit-mask-image: var(--tpl-col-right-mask);
       padding-block: var(--tpl-fade);
     }
   }
@@ -739,20 +741,23 @@ h6 {
 // a `max-height` of nearly a screen and scrolled inside itself - measured at 1000px, a 580px-wide
 // box with its own scrollport. What a tablet gets instead is the block right after this one.
 @media (min-width: 1201px) {
+  // Ob diese Spalte stehen bleibt, entscheiden drei Variablen (variables.mjs, `tpl-col-right-*`).
+  // Hier stehen keine Werte mehr, sondern nur, wo sie hingehören.
   .qgframe-area-right {
-    position: sticky;
+    position: var(--tpl-col-right-position);
     // Below the header, not under it. --tpl-header-h is the bar's height, computed from the same
-    // two lengths the bar itself uses, so this offset can never disagree with it.
+    // two lengths the bar itself uses, so this offset can never disagree with it. Ohne
+    // `position: sticky` ist die Zeile wirkungslos und braucht deshalb keinen eigenen Schalter.
     top: calc(var(--tpl-header-h) + var(--tpl-space-lg));
     align-self: start;
-    max-height: calc(100dvh - var(--tpl-header-h) - 2 * var(--tpl-space-lg));
+    max-height: var(--tpl-col-right-height);
     // Only the lower edge fades, and only the lower edge is padded: the upper one is covered by a
     // heading that stays put.
     //
     // Eine Maske beschneidet auch ein `position: fixed` in ihrem Stapelkontext. Was das für die
     // Vollansicht des Graphen heißt und wie es zurückgenommen wird, steht in aside-graph.scss.
-    mask-image: var(--tpl-fade-mask-end);
-    -webkit-mask-image: var(--tpl-fade-mask-end);
+    mask-image: var(--tpl-col-right-mask);
+    -webkit-mask-image: var(--tpl-col-right-mask);
     padding-block: 0 var(--tpl-fade);
   }
 
@@ -900,6 +905,35 @@ h6 {
   .qgframe-area-custom-8 > .flex-component {
     grid-auto-flow: column;
     grid-auto-columns: 1fr;
+  }
+}
+
+/* --------------------------------------------- die linke Spalte, wenn sie stehen bleiben soll */
+
+// Dieselben drei Variablen wie rechts, dieselbe Mechanik — und eine andere Breite, an der sie
+// greift. Gemessen am 2026-09-21: Links ist ab **901px** eine Spalte neben dem Artikel (300px bei
+// x=36), rechts erst ab 1201px; dazwischen liegt der rechte Bereich unter dem Text. Unterhalb von
+// 901 sind beide volle Bänder unter dem Artikel, wo Stehenbleiben nichts bedeutet.
+//
+// In der Vorgabe ist hier alles aus (`static` / `none` / `none`), diese Regeln ändern also nichts
+// an dem, was die Vorlage zeigt. Sie machen nur erreichbar, was vorher gar nicht ging.
+//
+// Ein Wort zur Höhe, weil es die Entscheidung trägt: Der Example hat hier 1637px mit offenem
+// Kapitel und 2555px auf der Startseite, bei 900px Fensterhöhe. „Bleibt stehen" heißt dort
+// zwingend „rollt in sich selbst" — für zwei Drittel des Inhalts gibt es keinen anderen Weg. Das
+// Basis-Template kommt auf 696px und stünde einfach still.
+@media (min-width: 901px) {
+  .qgframe-area-left {
+    position: var(--tpl-col-left-position);
+    top: calc(var(--tpl-header-h) + var(--tpl-space-lg));
+    align-self: start;
+    max-height: var(--tpl-col-left-height);
+    // Wie rechts: ohne Deckel läuft nichts über, also rollt ohne ihn auch nichts.
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    mask-image: var(--tpl-col-left-mask);
+    -webkit-mask-image: var(--tpl-col-left-mask);
+    padding-block: 0 var(--tpl-fade);
   }
 }
 

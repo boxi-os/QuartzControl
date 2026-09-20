@@ -70,7 +70,7 @@ Messung an der gebauten Website ist das der erste Aufruf.
 | Datei | Was darin entschieden wird |
 | --- | --- |
 | `palette.mjs` | Die neun Quartz-Farben für hell und dunkel, die drei Schriftrollen — **und die WCAG-Messung**, die sie prüft |
-| `variables.mjs` | 60 CSS-Variablen: Abstände, Radien, Schriftgrößen, Lesemaß, Fokus, Zielgrößen, Callout-Farben |
+| `variables.mjs` | 66 CSS-Variablen: Abstände, Radien, Schriftgrößen, Lesemaß, Fokus, Zielgrößen, Callout-Farben, die zwei Spaltenschalter |
 | `fonts.mjs` | Welche Schriften geladen werden, woher, und die korrigierten `@font-face`-Regeln |
 | `frames.mjs` | Die vier Seitenraster (`editorial`, `index`, `focus`, `drawing`) für je drei Breakpoints |
 | `layout.mjs` | Welcher Seitentyp welches Raster nutzt, und die zwei Flex-Gruppen des Kopfbereichs |
@@ -180,8 +180,9 @@ Farben scheitern übrigens zu elf Zwölfteln im hellen Modus — deshalb sind si
 
 ### 3.2 Maße, Formen, Rhythmus — `variables.mjs`
 
-60 Variablen, in drei Gruppen (bis zum 2026-09-19 waren es 50, davon fünf Schriften; am
-2026-09-20 kamen der Scrim der Schublade und die dreizehn Callout-Farben dazu):
+66 Variablen, in drei Gruppen (bis zum 2026-09-19 waren es 50, davon fünf Schriften; am
+2026-09-20 kamen der Scrim der Schublade und die dreizehn Callout-Farben dazu, am 2026-09-21 die
+sechs, mit denen jede der zwei Spalten stehen bleibt oder mitläuft):
 
 1. **Keine Schriften.** `--headerFont`, `--bodyFont`, `--codeFont`, `--titleFont` und
    `--font-interface` schreibt Quartz selbst aus den Schriften der Config, samt Ausweichschriften.

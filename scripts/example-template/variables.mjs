@@ -256,5 +256,38 @@ export const VARIABLE_OVERRIDES = [
   { key: 'tpl-callout-quote', light: 'var(--secondary)', dark: 'var(--secondary)' },
 
   { key: 'tpl-backdrop', light: 'rgba(0, 0, 0, 0.3)' },
-  { key: 'tpl-backdrop-blur', light: '4px' }
+  { key: 'tpl-backdrop-blur', light: '4px' },
+
+  /* ---- ob eine Spalte stehen bleibt ------------------------------------------------------
+     Drei Variablen je Spalte, und drei sind es, weil „klebt" nicht eine Eigenschaft ist, sondern
+     drei, die zusammengehören: Eine Spalte, die stehen bleibt, braucht einen Höhendeckel (sonst
+     ragt sie aus dem Fenster und bleibt gar nicht stehen) und eine weiche Unterkante (sonst
+     schneidet der Deckel eine Zeile mitten durch). Der eigene Roller braucht keinen Schalter:
+     Ohne Deckel läuft nichts über, also rollt auch nichts.
+
+     Die Vorgaben sind der Stand vom 2026-09-20 und ändern nichts: rechts bleibt stehen, links
+     nicht. Wer eine Spalte umstellt, stellt alle drei ihrer Zeilen um — ein halber Zustand ist
+     möglich und sieht aus wie ein Fehler: `static` mit Höhendeckel ist eine Spalte, die mitten im
+     Text aufhört und in sich selbst rollt.
+
+     **Die Höhe der linken Spalte ist der Grund, das nicht leichtfertig umzulegen.** Gemessen bei
+     900px Fensterhöhe: Der Example hat links 1637px mit offenem Kapitel und 2555px auf der
+     Startseite — stehen bleiben heißt dort zwingend „rollt in sich selbst", mit allem, was das
+     für Rad und Tastatur bedeutet. Das Basis-Template kommt auf 696px und stünde einfach still.
+
+     Und eine klebende Spalte ist ein Stapelkontext: Die Vollansicht des Graphen hängt daran
+     (aside-graph.scss). Wer die linke Spalte klebrig macht, legt dort einen neuen an.
+
+     Die zwei Spalten schalten an verschiedenen Breiten um, und das ist gemessen, nicht gewählt:
+     Links ist ab 901px eine Spalte, rechts erst ab 1201px — darunter legt das Frame den Bereich
+     unter den Artikel (frames.mjs), wo Stehenbleiben nichts bedeutet. */
+  { key: 'tpl-col-left-position', light: 'static' },
+  { key: 'tpl-col-left-height', light: 'none' },
+  { key: 'tpl-col-left-mask', light: 'none' },
+  { key: 'tpl-col-right-position', light: 'sticky' },
+  {
+    key: 'tpl-col-right-height',
+    light: 'calc(100dvh - var(--tpl-header-h) - 2 * var(--tpl-space-lg))'
+  },
+  { key: 'tpl-col-right-mask', light: 'var(--tpl-fade-mask-end)' }
 ]

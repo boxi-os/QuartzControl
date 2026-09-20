@@ -210,8 +210,8 @@ export function calloutPairs() {
  */
 export function syntaxPairs() {
   const source = readFileSync(join(import.meta.dirname, 'styles', 'body-code.scss'), 'utf-8')
-  const start = source.indexOf('/* --- Quartz-GUI:syntax:start --- */')
-  const end = source.indexOf('/* --- Quartz-GUI:syntax:end --- */')
+  const start = source.indexOf('/* --- QuartzControl:syntax:start --- */')
+  const end = source.indexOf('/* --- QuartzControl:syntax:end --- */')
   if (start === -1 || end === -1) throw new Error('body-code.scss no longer marks its syntax block')
   const block = source.slice(start, end)
 

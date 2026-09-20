@@ -2037,3 +2037,38 @@ Das veröffentlichte Handbuch unter `boxi-os.github.io/QuartzControl` fragte nac
 Jetzt `static/fonts/…`, relativ zur Stildatei im Wurzelordner der Website; Messung in
 `docs/decisions/styles-and-fonts.md`. Die App stellt bestehende Blöcke beim nächsten Schreiben von
 `custom.scss` um und liest ein älteres Paket in der neuen Form.
+
+### 96. Befund 94 ausgerollt, und was die Gegenprobe dabei zeigte — 2026-09-20
+
+Befund 94 stand seit dem 2026-09-19 im Repo und in keiner Kopie der Vorlage. Der Alpha-Test hat den
+Preis gemessen: Ein Projekt, das heute über den Assistenten entsteht, bekommt die fünf Zeilen, und
+die Schriftwahl im Reiter „Basis“ ändert auf der Website nichts (Befund 2 des Alpha-Tests). Also
+ausgerollt — Phase 7 in der Werkstatt, Phase 9/10, die mitgelieferte Kopie; die veröffentlichte
+Kopie fehlt noch.
+
+**Die Gegenprobe war eine Aufnahme der berechneten Schriften vor und nach Phase 7**, acht Seiten in
+hell und dunkel, 11 330 Elemente, indiziert über die Position im DOM (dieselbe Bauart wie
+`scripts/styles-snapshot.mjs`, und aus demselben Grund: Ob eine entfernte Zeile hinterher etwas
+ändert, beantwortet kein Diff der Datei):
+
+- **0 von 11 330** haben ihre erste Familie, ihre Größe oder ihr Gewicht geändert.
+- **10 680** haben einen anderen Rückfall-Stapel. Die Vorlage schrieb
+  `ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`; Quartz schreibt
+  `system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji",
+  "Segoe UI Emoji", "Segoe UI Symbol"`, und im Code-Stapel fehlt `Consolas`.
+
+`docs/release.md` behauptete an dieser Stelle, die berechneten Schriften dürften sich **nicht**
+ändern, „denn `joinStyles()` schreibt dieselben Werte“. Dieselbe *Familie*, nicht denselben
+Stapel — und der Stapel ist genau das, was zählt, wenn die Familie nicht lädt. Sichtbar ist der
+Unterschied nur dann, und dann ist Quartz' Stapel der richtige. Der Satz ist korrigiert.
+
+Danach die Probe, um die es geht: ein frisches Projekt aus dem neuen Paket, `Noto Sans JP` im Feld
+„Schriftart (body)“, speichern, bauen — die gebaute Website rendert die Familie wirklich (CDP
+`CSS.getPlatformFontsForNode`, 20 von 20 japanischen Zeichen), ohne eine Anfrage an
+`fonts.gstatic.com`, und **ohne** den Umweg über den Variablen-Reiter. Vorher stand an allen drei
+Feldern der Hinweis, dass die Variable sie schlägt.
+
+Mitgezogen: der Marker `Quartz-GUI:syntax:` in `styles/body-code.scss` heißt jetzt
+`QuartzControl:syntax:` — `conventions.md` hatte ihn an „das nächste Release der Vorlage“ gebunden,
+und das ist dieses Paket. Gegengeprüft mit `--check-contrast`, das seine fünf Token-Farben aus
+diesem Block liest: 93 Paare gemessen, 0 unter der Schwelle.

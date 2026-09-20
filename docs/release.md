@@ -100,29 +100,42 @@ Exit 0 heißt: alle drei gleich. Ist die veröffentlichte nicht abrufbar, sagt e
 aus `plugins.mjs`, `variables.mjs`, `layout.mjs` oder `frames.mjs` kommt. Die vier haben bewusst
 keinen Rückweg (ein Rückleser wäre ihre zweite, inverse Umsetzung, siehe `CLAUDE.md`), und die
 Kopien sind *untereinander* gleich, auch wenn alle drei veraltet sind. Der Aufruf antwortet dann
-„deckungsgleich“ und meint nur die Stylesheets und die Schnipsel. **Offen seit `d4da5ef`
-(2026-09-19):** Die Vorlage schreibt `--titleFont`, `--headerFont`, `--bodyFont`, `--codeFont` und
-`--font-interface` nicht mehr in den `css-vars`-Block, aber ausgerollt ist das nirgends — nicht im
-Beispielprojekt (`template:example -- --only 7`), nicht im Export, nicht in den drei Kopien. Vor
-dem Release: ausrollen oder als bewusst offen benennen.
+„deckungsgleich“ und meint nur die Stylesheets und die Schnipsel.
 
-**Am 2026-09-20 bewusst zurückgestellt**, bis der nächste Durchgang an der Vorlage ansteht — das
-Ausrollen ist ein Paket (Phase 7 in der Werkstatt, Phase 10 als Export, die zwei Kopien, der Push
-nach `quartzcontrol-templates`), und es zweimal zu schnüren ist doppelte Arbeit. Tragbar ist das,
-weil der Schaden benannt ist: Ein Projekt aus der veröffentlichten Vorlage trägt die fünf
-Variablen zwar weiter, aber der Reiter „Basis“ sagt seit dem dreiunddreißigsten Review unter jedem
-Schriftfeld, dass sie das Feld schlagen, und verweist auf den Variablen-Reiter. Dasselbe gilt für
-die **bestehenden** Projekte, die das Ausrollen ohnehin nie erreicht (ein Import unter
-`projectWins` behält die Variablen, `styles.apply` holt den Block sogar zurück) — am 2026-09-20
-acht von neun auf diesem Rechner, alle bis auf `gui-test`.
+**`d4da5ef` ist am 2026-09-20 ausgerollt** (Befund 2 des Alpha-Tests, siehe
+[`ALPHA-2026-09-20.md`](ALPHA-2026-09-20.md)): Phase 7 in der Werkstatt, Phase 5 für den
+umbenannten Syntax-Marker, Phase 9/10 neu geprüft und exportiert, Phase 11 grün, und die
+mitgelieferte Kopie ist gleichgezogen. **Offen ist nur noch die dritte Kopie** — die Datei muss
+nach `boxi-os/quartzcontrol-templates` committet und gepusht werden, sonst bekommt jeder, der
+online ist, weiter die Vorlage vom 2026-09-14. Die Vorlage hat jetzt 45 statt 50 Variablen.
 
-**Kommt ein Release vor diesem Durchgang**, geht die Vorlage vom 2026-09-14 mit, und dann gehört
-ein Satz in die Release-Notizen statt ein Fix in den Code. **Und wer als Nächstes an der Vorlage
-arbeitet, fängt nicht bei null an:** Die Werkstatt (das Example-Projekt) hat 50 Variablen, das Repo
-meint 45; `--check-sync` sagt dazu nichts, weil es die Stylesheets vergleicht und die drei Kopien
-gegeneinander, nicht das Repo gegen die Kopien. Der erste Schritt dort ist `--only 7`, mit einer
-gebauten Website als Gegenprobe: Die berechneten Schriften dürfen sich dabei **nicht** ändern,
-denn Quartz' `joinStyles()` schreibt dieselben Werte, aus denen die fünf Zeilen stammen.
+**Was die Gegenprobe gezeigt hat, und was hier vorher falsch stand.** Der Satz „die berechneten
+Schriften dürfen sich dabei **nicht** ändern, denn Quartz' `joinStyles()` schreibt dieselben
+Werte“ trifft nur die halbe Aussage. Gemessen an der gebauten Website der Werkstatt, acht Seiten
+in hell und dunkel, 11 330 Elemente vorher und nachher:
+
+- **Keine erste Familie, keine Schriftgröße und kein Gewicht hat sich bewegt** — 0 von 11 330.
+- Die **Rückfall-Stapel dahinter** dagegen bei 10 680 Elementen. Die Vorlage schrieb
+  `ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`, Quartz schreibt
+  `system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif` plus die drei Emoji-Familien; beim
+  Code-Stapel fällt `Consolas` weg.
+
+Sichtbar wird das erst, wenn die erste Familie *nicht* lädt — und genau dann ist Quartz' eigener
+Stapel die richtige Antwort, denn das ist der Zustand, den die fünf Zeilen verdeckt haben. Wer so
+eine Zeile entfernt, misst also die erste Familie **und** den Stapel und sagt, welche Hälfte sich
+bewegt.
+
+**Bestehende Projekte erreicht das Ausrollen nicht** (ein Import unter `projectWins` behält die
+Variablen, `styles.apply` holt den Block sogar zurück) — am 2026-09-20 acht von neun auf diesem
+Rechner, alle bis auf `gui-test`. Für sie bleibt der Weg, den der Reiter „Basis“ seit dem
+dreiunddreißigsten Review selbst nennt: der Hinweis unter jedem Schriftfeld und der Verweis auf
+den Variablen-Reiter, wo „Zurücksetzen“ die Zeile wegnimmt. Das gehört in die Release-Notizen.
+
+**Und wer als Nächstes an der Vorlage arbeitet:** `--check-sync` vergleicht die Stylesheets und
+die drei Kopien gegeneinander, nicht das Repo gegen die Kopien — eine Drift, die aus `plugins.mjs`,
+`variables.mjs`, `layout.mjs` oder `frames.mjs` kommt, sieht es nicht. Der Vergleich dafür ist von
+Hand: die `key:`-Liste aus `variables.mjs` gegen den `css-vars`-Block der Werkstatt (am 2026-09-20
+vor dem Ausrollen 45 gegen 50, Differenz genau die fünf Schriften).
 
 ## 4b. Die Liste der Google-Schriften ist nicht älter als das Release
 

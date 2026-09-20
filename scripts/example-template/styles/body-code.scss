@@ -207,13 +207,13 @@ pre:focus-within .clipboard-button {
 // whose tokens produce a tenth colour would arrive unmeasured; the audit above is repeatable by
 // grepping `--shiki-light:` out of `public/`.
 
-/* --- Quartz-GUI:syntax:start --- */
+/* --- QuartzControl:syntax:start --- */
 pre span[style*="--shiki-light:#22863A"] { --shiki-light: #1F7A35 !important; }  // 4.02 -> 4.72
 pre span[style*="--shiki-light:#D73A49"] { --shiki-light: #CA2938 !important; }  // 3.98 -> 4.70
 pre span[style*="--shiki-light:#E36209"] { --shiki-light: #B04C07 !important; }  // 3.04 -> 4.71
 pre span[style*="--shiki-light:#6A737D"] { --shiki-light: #636B74 !important; }  // 4.19 -> 4.71
 pre span[style*="--shiki-dark:#6A737D"] { --shiki-dark: #949CA4 !important; }    // 2.74 -> 4.72
-/* --- Quartz-GUI:syntax:end --- */
+/* --- QuartzControl:syntax:end --- */
 
 /* ------------------------------------------------------------------- block title */
 

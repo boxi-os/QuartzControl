@@ -889,9 +889,14 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   ein Projekt, das per Git-Sync zwischen ihnen reist. Und weil ein Schreiben alle Abschnitte
   umbenennt, ist der Preis beim ersten Speichern ganz fällig, nicht je Abschnitt — eine
   eingeführte Schrift genügt (achtundzwanzigstes Review, Befund 2). Beantwortet wird das nicht im
-  Code, sondern in den Release-Notizen ([`release.md`](release.md), Punkt 7). Der Marker `Quartz-GUI:syntax:` in `scripts/example-template/` ist noch der alte — er
-  reist in drei Kopien der Vorlage, die `--check-sync` byte-weise vergleicht, und wird mit dem
-  nächsten Release der Vorlage umbenannt.
+  Code, sondern in den Release-Notizen ([`release.md`](release.md), Punkt 7). Der Marker
+  `Quartz-GUI:syntax:` in `scripts/example-template/` war der letzte alte; er reist in drei Kopien
+  der Vorlage, die `--check-sync` byte-weise vergleicht, und ist deshalb **mit dem Vorlagen-Paket
+  vom 2026-09-20 umgezogen** (`QuartzControl:syntax:`, in `styles/body-code.scss` und in
+  `palette.mjs`, das den Block liest). Anders als der Marker in `custom.scss` braucht er keine
+  Migration: Ihn schreibt und liest nur die Vorlage selbst, die App kennt ihn nicht.
+  Gegengeprüft mit `template:example -- --check-contrast`, das seine fünf Token-Farben aus genau
+  diesem Block liest — 93 Paare gemessen, also wurde er gefunden.
   Der Rest ist am 2026-09-09 nachgezogen: `name` in `package.json` (`quartz-gui` →
   `quartzcontrol`, also auch deb-Paket und Linux-Binärdatei), die Repo-URLs, eine DOM-Id. Die
   Review- und Entscheidungsdokumente behalten den alten Namen, wo sie eine Messung protokollieren —

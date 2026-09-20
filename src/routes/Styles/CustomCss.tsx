@@ -115,13 +115,16 @@ export default function CustomCss(): JSX.Element {
   // The page writes custom.scss and every file draft on any save, whichever tab is in front (see
   // save() in index.tsx; until 2026-09-19 this tab wrote them itself, and the other three tabs
   // did not). What is left here is what follows: the tabs show what was written as the content
-  // they loaded - read off `fileDrafts` as it stood before the page cleared it - and the check
-  // runs again.
-  const afterSave = useCallback(async () => {
-    const drafts = Object.entries(fileDrafts)
-    if (drafts.length > 0) setLoaded((prev) => ({ ...prev, ...Object.fromEntries(drafts) }))
-    await runCheck()
-  }, [fileDrafts, runCheck])
+  // they loaded - `written`, handed over by save(), because the page has cleared the drafts by
+  // now and this callback's own closure may be one render too young to have seen them - and the
+  // check runs again.
+  const afterSave = useCallback(
+    async (written: Record<string, string>) => {
+      if (Object.keys(written).length > 0) setLoaded((prev) => ({ ...prev, ...written }))
+      await runCheck()
+    },
+    [runCheck]
+  )
 
   useEffect(() => registerSave(afterSave))
 

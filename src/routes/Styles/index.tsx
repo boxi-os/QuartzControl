@@ -70,9 +70,10 @@ export interface StylesContextValue {
   reloadGraph: () => void
   /**
    * What follows a save while this sub-tab is in front - not the writing itself, which the page
-   * does for every tab at once (see save()).
+   * does for every tab at once (see save()). `written` holds the file drafts that save just wrote,
+   * keyed by relativePath, because by the time this runs the page has already cleared them.
    */
-  registerSave: (fn: () => Promise<void>) => void
+  registerSave: (fn: (written: Record<string, string>) => Promise<void>) => void
   goToTab: (tab: StylesTab) => void
 }
 
@@ -141,7 +142,7 @@ export default function Styles(): JSX.Element {
 
   // Assigned on every render of the active sub-tab (see registerSave below) - a ref rather than
   // state because changing it must never re-render the shell, which would remount the sub-tab.
-  const saveRef = useRef<() => Promise<void>>(async () => {})
+  const saveRef = useRef<(written: Record<string, string>) => Promise<void>>(async () => {})
 
   useEffect(() => {
     // Together, because the config is only read right with custom.scss beside it: whether the
@@ -214,7 +215,7 @@ export default function Styles(): JSX.Element {
     [setSearchParams, setLastTab]
   )
 
-  const registerSave = useCallback((fn: () => Promise<void>) => {
+  const registerSave = useCallback((fn: (written: Record<string, string>) => Promise<void>) => {
     saveRef.current = fn
   }, [])
 
@@ -319,7 +320,14 @@ export default function Styles(): JSX.Element {
         setSavedOverrides(JSON.stringify(overrides))
       }
       if (scss.dirty || configDirty || overridesDirty) await reloadScss('force')
-      await saveRef.current()
+      // The drafts go along rather than being read from the registered callback's closure. That
+      // closure is the one from the render in which it was registered, and registerSave runs in an
+      // effect after *every* render: with any await between clearFileDrafts() and here - one
+      // changed colour is enough - the re-registered callback sees an already emptied fileDrafts,
+      // never updates `loaded`, and the editor drops back to the content from before the save.
+      // Typing on top of that then wrote the pre-save state over the file that was just saved
+      // (thirty-third review, finding 1, measured in the built app).
+      await saveRef.current(Object.fromEntries(drafts))
       setStatus('saved')
       setTimeout(() => setStatus('idle'), 2000)
       return true

@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync } from 'fs'
-import { copyFile, readFile, readdir, rename, rm, stat, writeFile } from 'fs/promises'
+import { copyFile, lstat, readFile, readdir, rename, rm, stat, writeFile } from 'fs/promises'
 import { createRequire } from 'module'
 import { basename, dirname, join, relative, sep } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
@@ -929,7 +929,11 @@ export async function readPreviewFonts(projectPath: string, families: string[]):
   let total = 0
   for (const face of await projectAndBuildFaces(projectPath)) {
     if (!face.file || !wanted.has(face.family.toLowerCase())) continue
-    const size = await stat(face.file).then((s) => (s.isFile() ? s.size : -1)).catch(() => -1)
+    // `lstat`, not `stat`: a symlink under quartz/static/fonts is not a font file of this project,
+    // and following it would hand the renderer the bytes of whatever it points at (thirty-third
+    // review, "nebenbei" 5). The template export was already safe - readdir's Dirent does not
+    // follow links, so isFile() is false for one.
+    const size = await lstat(face.file).then((s) => (s.isFile() ? s.size : -1)).catch(() => -1)
     if (size < 0 || size > MAX_FONT_FILE_BYTES || total + size > MAX_PREVIEW_BYTES) continue
     total += size
     const data = await readFile(face.file).catch(() => null)

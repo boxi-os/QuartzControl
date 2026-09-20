@@ -662,9 +662,21 @@ export const NAVIGATION_ENTRIES = [
     // durch die ganze Gliederung, über Kapitelgrenzen hinweg. `siblings` bliebe im Ordner stehen
     // und endete an jedem Kapitelende in einer Sackgasse.
     //
-    // Priorität 5, also vor den Eigenschaften (40) und den zwei Kästen (50/60): Der Weg weiter
-    // gehört an das Ende des Textes, nicht hinter drei Kästen mit Metadaten. Ohne `group` — die
-    // Gruppe `custom-8` stellt die zwei Kästen nebeneinander, und der Pager ist eine eigene Reihe.
+    // Priorität 80: das Letzte auf der Seite. Ohne `group` — die Gruppe `custom-8` stellt die zwei
+    // Kästen nebeneinander, und der Pager ist eine eigene Reihe.
+    //
+    // Er stand zuerst auf 5, mit der Begründung „der Weg weiter gehört an das Ende des Textes,
+    // nicht hinter drei Kästen mit Metadaten". Das war falsch, und zwar auf eine Art, die man der
+    // Konfiguration nicht ansieht: **Eine Priorität ordnet innerhalb eines Bereichs, nicht
+    // zwischen Bereichen.** Die zwei Kästen stehen zwar auch auf `afterBody`, aber in der Gruppe
+    // `custom-8`, und das Frame legt sie in eine eigene Rasterzeile *über* `after-body`
+    // (frames.mjs, `grid-template-areas`). An der gebauten Website gelesen: Der Pager war das
+    // erste Kind von `after-body` und erschien trotzdem unter den Kästen — vor „Weiterlesen" und
+    // den Eigenschaften, also mitten in der Fußzone statt an ihrem Anfang.
+    //
+    // Was bleibt, ist die Wahl zwischen „mittendrin" und „ganz unten", und ganz unten ist der
+    // Platz, an dem ein Leser „Zurück/Weiter" sucht: Artikel, die zwei Kästen, „Weiterlesen",
+    // Eigenschaften, und dann der Weg zur nächsten Seite.
     //
     // `mobile` bleibt auf der Vorgabe `same`: Zwei Knöpfe nebeneinander sind auf einem Telefon
     // dasselbe wie auf einem Bildschirm, nur untereinander (nav-navigations.scss).
@@ -678,7 +690,7 @@ export const NAVIGATION_ENTRIES = [
       className: 'nav-pager',
       breakpoints: NAV_BREAKPOINTS
     },
-    layout: { position: 'afterBody', priority: 5 }
+    layout: { position: 'afterBody', priority: 80 }
   }
 ]
 

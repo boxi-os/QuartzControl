@@ -246,6 +246,14 @@ steht in [`docs/REVIEW-2026-10-06.md`](docs/REVIEW-2026-10-06.md), was daraus ge
 die Liste, die nur der Nutzer abarbeiten kann: VoiceOver über Git-Sync und die zwei Boards, die
 gepackte App je Plattform, glibc. Keinen dieser Fixes hat ein Review gelesen.
 
+**Danach, am 2026-09-19, ein Durchgang ohne Review dahinter:** die Schriften der Stile-Seite von
+der Auswahl bis zu den Dateien im Projekt (Combobox über alle Google-Familien, Vorschau aus dem
+Bau, ungenutzte Importe, „lokal ausliefern“ holt die Dateien wirklich ins Projekt, relative
+`url()`, `save()` über alle Reiter), der Rückbau des mitreisenden Handbuchs und der Reiter
+„Website“ als fünf Karten. **Der Auftrag für das dreiunddreißigste Review liest beides**
+(`docs/REVIEW-2026-10-07-auftrag.md`, Tag `review-2026-10-08`); sein größtes Risiko ist der
+Code, der aus dem Netz in das Projekt schreibt und dort löscht.
+
 **Arbeitsregel** für die nächste Liste: ein Befund pro Durchgang, jeweils mit `npm run typecheck`,
 `npm run build`, `npm run smoke` und eigenem Commit; was dabei nebenbei auffällt, wird gesammelt und
 genannt, nicht mit erledigt. Was nur ein laufendes Programm beantworten kann, wird an der gebauten

@@ -165,6 +165,19 @@ und `editedSinceMergeStopped`, eine Nachbildung von gits Regel, geprüft an eine
 wertvollste einzelne Messung die von `179afbf` an einem übersetzten git auf der Debian-VM. Und er
 fragt, ob eine weitere Runde noch sinnvoll ist.
 
+**Das dreiunddreißigste Review misst ab `review-2026-10-07`** und liest bis `review-2026-10-08`,
+das auf dem Commit „Der Auftrag fuer das dreiunddreissigste Review“ sitzt; der Auftrag steht in
+[`docs/REVIEW-2026-10-07-auftrag.md`](REVIEW-2026-10-07-auftrag.md). Zwei Schichten, und die
+zweite ist **zum ersten Mal in dieser Serie kein Review-Fix**: die abgearbeitete zweiunddreißigste
+Runde (ohne Review-Dokument 14 Dateien, +425/−143) und ein Funktionsdurchgang, den kein Review
+angestoßen hat (47 Dateien, +3919/−1010, davon 1957 Zeilen erzeugte Namensliste) — die Schriften
+der Stile-Seite von der Auswahl bis zu den Dateien im Projekt, der Rückbau des mitreisenden
+Handbuchs und der Reiter „Website“ als fünf Karten. Als größtes Risiko nennt der Auftrag den Code,
+der **aus dem Netz in das Projekt des Nutzers schreibt und dort löscht** — das gab es hier vorher
+nicht, und ein Build hängt seitdem am Netz —, dazu die drei Stellen, die `custom.scss` ohne
+Rückfrage anfassen. Geschrieben ist er von demselben Modell wie die gelesenen Commits (Claude
+Opus 5), aber nicht aus deren Sitzung; das Review selbst liest wieder ein anderes Modell.
+
 **Das neunundzwanzigste Review las alle drei Schichten** und fand **keinen Befund Hoch, keinen
 Mittel, fünf Niedrig**, dazu fünf Punkte nebenbei — wieder von Claude Fable 5.1, die zweite Runde
 in Folge ohne mittleren Befund. Die vier Entscheidungen ohne Vorschlag tragen alle, zwei besser als

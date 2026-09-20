@@ -317,6 +317,11 @@ function FontDelivery({
           </p>
         )
       )}
+      {buildState?.kind === 'noRule' && (
+        <p className="mt-1.5 text-xs text-amber-700 dark:text-amber-400">
+          {t('styleEditor.current.fontsNoRule', { families: buildState.families.join(', ') })}
+        </p>
+      )}
 
       {/* Its own control, not part of the switch above: there is no option to serve the theme's
           fonts locally, so the only way to stop the CDN requests is to drop them - which changes

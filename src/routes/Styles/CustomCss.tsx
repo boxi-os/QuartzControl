@@ -954,6 +954,11 @@ function ActiveStyles(): JSX.Element {
                 {t('styleEditor.current.fontsNotFetched', { families: buildState.families.join(', ') })}
               </p>
             )}
+            {buildState?.kind === 'noRule' && (
+              <p className="mt-2 text-micro text-amber-700 dark:text-amber-400">
+                {t('styleEditor.current.fontsNoRule', { families: buildState.families.join(', ') })}
+              </p>
+            )}
 
             {/* Where the fonts come from decides what the weights above even mean - and whether the
                 site calls Google at all. Both mechanisms are checked, not just the theme setting: the

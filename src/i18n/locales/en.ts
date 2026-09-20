@@ -1471,6 +1471,8 @@ export default {
       fontsNotBuilt:
         'This project has not been built yet. Quartz downloads the Google fonts only at build time — “Build now” or start the dev server.',
       fontsNotFetched: 'Not in the project yet: {{families}}. Saving fetches them from Google.',
+      fontsNoRule:
+        'No @font-face rule in the project names: {{families}}. The site shows a substitute for them — import the file below, or pick Google Fonts as the font source.',
       fontsMissingFromBuild:
         'The last build does not contain {{families}} yet: Quartz downloads the font only with the next build — after saving, “Build now” or start the dev server.',
       familyDefault: '(family default)',

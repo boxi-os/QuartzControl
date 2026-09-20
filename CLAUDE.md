@@ -264,9 +264,12 @@ Adresse nachgemessen; die relativen Schrift-URLs waren dort schon seit dem Deplo
 Handbuch-Rückbau erstmals wieder gelaufen, zehn Pakete entstanden, **neun sind auf einer Maschine
 ihrer Architektur gestartet**. Die Linux-Pakete verlangen **glibc ≥ 2.34** — nicht wegen Electron
 (das kommt mit 2.25 aus), sondern wegen des mitgelieferten git, dessen Bauplatz die
-libpthread-Verschmelzung hineinträgt. Zwei Befunde, beide behoben: die Version des mitgelieferten
-git trug auf Linux einen Punkt zu viel, und `release.md` Punkt 4 nannte offen, was derselbe Commit
-getan hatte. Offen bleiben aus dieser Gruppe **VoiceOver**, **macOS x64 auf einer Maschine seiner
+libpthread-Verschmelzung hineinträgt. **Systeme darunter werden nicht unterstützt** (Anforderung
+in beiden READMEs und `release.md` Punkt 7) — was aber nur sagt, was zugesagt wird, und nicht, was
+die App dort sagt: Sie riet zum Neuinstallieren, dem einen Handgriff, der nichts ändert. Drei
+Befunde, alle behoben: die Version des mitgelieferten git trug auf Linux einen Punkt zu viel,
+`release.md` Punkt 4 nannte offen, was derselbe Commit getan hatte, und das Warnband gab einem
+alten Linux den falschen Rat. Offen bleiben aus dieser Gruppe **VoiceOver**, **macOS x64 auf einer Maschine seiner
 Architektur** (kein Intel-Mac, kein Rosetta) und **ein Linux mit glibc unter 2.34** — dazu weiter
 **C1 auf einem echten Linux mit git vor 2.38**; beide VMs liefern 2.47.3.
 

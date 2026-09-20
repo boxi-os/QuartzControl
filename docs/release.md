@@ -227,8 +227,9 @@ Einzelheiten in [`GRUPPE-D-2026-09-20.md`](GRUPPE-D-2026-09-20.md). Zwei Dinge d
 nächste Runde. **macOS x64 lässt sich hier nicht starten** — kein Intel-Mac, und Rosetta 2 wäre
 eine Messung unter Übersetzung, nicht die, die dieser Punkt verlangt; wer den Satz „jedes Paket
 gestartet“ schreiben will, braucht dafür eine Maschine. Und **die Linux-Pakete verlangen
-glibc ≥ 2.34**, nicht wegen Electron (2.25 genügt ihm), sondern wegen des mitgelieferten git; das
-gehört in die Release-Notizen, solange es so bleibt.
+glibc ≥ 2.34**, nicht wegen Electron (2.25 genügt ihm), sondern wegen des mitgelieferten git. Das
+steht seit dem 2026-09-20 in beiden READMEs unter „Linux“ und gehört in die Release-Notizen,
+solange es so bleibt (Punkt 7).
 
 Dann der Tag: `git tag v<version>` auf dem Commit, der die Fassungsnummer trägt (Punkt 1), und
 pushen. Beta 2 ist `v1.0.0-beta.2`.
@@ -240,7 +241,10 @@ Die Seite, auf die Punkt 8 zeigt. Drei Teile:
 - **die Pakete** aus Punkt 6 als Assets (Beta 2: zehn; das Handbuch-PDF aus
   `npm run build:handbook-pdf` war nicht dabei),
 - **die Notizen** — was sich seit der vorigen Fassung geändert hat, in derselben Gliederung wie
-  die Seite „Neu in …“ aus Punkt 3,
+  die Seite „Neu in …“ aus Punkt 3, **und die Untergrenze der Linux-Pakete**: glibc ≥ 2.34, also
+  Ubuntu 22.04, Debian 12, RHEL 9 und neuer. Sie hängt am mitgelieferten git und ändert sich,
+  sobald dessen Bundle von woanders kommt — also nachsehen statt abschreiben
+  ([`GRUPPE-D-2026-09-20.md`](GRUPPE-D-2026-09-20.md) sagt, wie sie gemessen wird),
 - **was eine ältere Fassung auf einem zweiten Rechner nicht mehr versteht.** Ein Satz, wenn die
   neue Fassung etwas in das Projekt schreibt, das die alte nicht liest. Der erste Fall ist der
   Marker in `custom.scss` (`Quartz-GUI:managed:` → `QuartzControl:managed:`, erste Fassung nach

@@ -192,9 +192,26 @@ benutzen. Wer die Untergrenze senken will, senkt sie also am git-Bundle, nicht a
 Damit: ab 2.34 (Ubuntu 22.04, Debian 12 mit 2.36, RHEL 9) läuft alles; zwischen 2.25 und 2.33
 (Ubuntu 20.04 und Debian 11, je 2.31) startet die App, und das mitgelieferte git startet nicht.
 `applyGitRuntime()` führt `git --version` wirklich aus und gibt bei einem Fehlschlag `null` zurück,
-es müsste dort also das Warnband erscheinen statt einer falschen Erfolgsmeldung — **gelesen im
-Code, nicht gemessen**: ein System unter 2.34 stand nicht zur Verfügung, und ohne Container-Werkzeug
-auf den VMs gab es keinen Weg, eines nachzustellen.
+dort erscheint also das Warnband statt einer falschen Erfolgsmeldung.
+
+**Was dieses Band sagte, war allerdings dreimal falsch** (`e90c191`, am selben Tag): „git — nicht
+gefunden“ für eine Datei, die im Paket liegt, unter der Überschrift „Diese Werkzeuge fehlen“, und
+darunter der Rat, die App neu zu installieren — der einzige, der dort nichts ändert, während ein
+`apt install git` es löst, denn die App bevorzugt ohnehin das git des Rechners. Der Grund war eine
+Verkettung, die man dem Code nicht ansieht: Läuft das mitgelieferte git nicht an, kommt sein
+`bin`-Ordner gar nicht erst in den PATH, und die Suche danach findet folgerichtig nichts.
+`gitRuntime` merkt sich seither, *warum* es nicht benutzt wird — ein Loader-Fehler (Exit 127 oder
+die Meldungen, auf die `httpsHelperLoads()` schon prüft) ist etwas anderes als ein kaputtes
+Programm —, und reicht es über `ToolInfo.incompatible` an das Band.
+
+Gemessen an der gebauten App auf der arm64-VM, mit einer Attrappe je Szene an der Stelle des
+Bundles und erzwungenem mitgeliefertem git: Exit 127 mit ``version `GLIBC_2.34' not found`` →
+„liegt bei, passt aber nicht zu diesem System“ plus Paketverwaltungs-Rat; Exit 1 ohne
+Loader-Meldung → „gefunden, lässt sich aber nicht ausführen“ plus Neuinstallieren; gar kein
+Bundle → „nicht gefunden“ plus Neuinstallieren. **Eine Attrappe, kein echtes glibc 2.31** — ein
+solches System stand nicht zur Verfügung, und ohne Container-Werkzeug auf den VMs gab es keinen
+Weg, eines nachzustellen; was die Attrappe nachstellt, ist genau das, was von einem Loader-Fehler
+bei `execFileSync` ankommt.
 
 Was an Bibliotheken danebensteht, weil es zur selben Frage gehört: Das Programm führt als `NEEDED`
 `libgtk-3`, `libnss3`, `libcups`, `libasound`, `libdbus-1`, `libgbm`, `libxkbcommon` und die

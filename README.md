@@ -69,6 +69,12 @@ version only the Terminal command above helps.
 **Linux:** make the AppImage executable and run it, or install the deb. The Flatpak needs
 `--filesystem` access to wherever your projects live, if that is not your home directory.
 
+You need **glibc 2.34 or newer** — Ubuntu 22.04, Debian 12, RHEL 9, Fedora 35 and anything after
+them. The number comes from the bundled git, not from Electron, which gets by with 2.25. On an
+older system the app starts but tells you it cannot use its own git there; installing `git`
+through your package manager gets you going, since the app prefers the machine's git anyway. The
+Flatpak does not raise the question: its git is built inside the sandbox.
+
 ## Building from source
 
 ```

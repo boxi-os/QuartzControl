@@ -16,7 +16,14 @@
 //
 //    0 bootstrap   clone quartz, npm install, quartz create              (slow, once)
 //    1 content     copy the example vault and the snippet file
-//    2 plugin      install quartz-layout-box through the quartz CLI
+//    2 plugin      install the variant's github: plugins through the quartz CLI
+//
+// **`--only 2` ohne 4 hinterlässt einen Streuner.** `quartz plugin add` hängt der Konfiguration
+// einen Eintrag mit den Vorgabeoptionen des Manifests an (volle `defaultOptions`, `order: 50`,
+// die Vorgabeposition aus dem Manifest), und herausgefiltert wird der erst von Phase 4, die
+// jede Quelle aus `appendedSources` entfernt und die eigenen Einträge neu anhängt. Am
+// 2026-09-20 beim Neuinstallieren des Navigationsplugins gemessen: Example 3 statt 2 Einträge,
+// Basis 2 statt 1, und beide Pakete gingen so in den Export. Wer 2 laufen lässt, lässt 4 mit.
 //    3 frames      three authored frames + the project's breakpoints
 //    4 config      colours, fonts, plugin patches, layout, theme entry
 //    5 styles      custom.scss body, every stylesheet in STYLE_ORDER, load order

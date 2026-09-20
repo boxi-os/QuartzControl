@@ -240,27 +240,18 @@
 // verkabelt sind. Die Karte ist also bereits die dieser Vorlage; eine zweite Fassung derselben
 // Regel wäre die Kopie, die beim nächsten Mal driftet.
 //
+// Zwei weitere standen hier bis zum 2026-09-20 als Übergangsregeln: der leere Kasten auf der
+// Startseite, wo es kein „Zurück" gibt, und der Umbruch am Telefon, wo `max-width: 48%` einem
+// Seitentitel 168px lässt. Das Plugin tut seit **0.3.1** beides selbst (die Befunde kamen aus
+// dieser Vorlage), und die Vorlage installiert es über `github:` von `main` — zwei Fassungen
+// derselben Entscheidung sind eine zu viel.
+//
 // Was bleibt, ist die Beschriftung: „Zurück"/„Weiter" ist in dieser Vorlage ein Micro-Label und
 // sieht überall gleich aus — klein, versal, gesperrt, gedämpft (so wie in meta-breadcrumbs und
 // in den Überschriften der Kästen daneben). Das Plugin setzt nur Größe und Farbe.
 .quartz-nav__pager-label {
   text-transform: uppercase;
   letter-spacing: var(--tpl-tracking-label);
-}
-
-// **Übergangsregel — sie kann weg, sobald das Plugin veröffentlicht ist.**
-//
-// Auf der Startseite gibt es kein „Zurück", und das Plugin rendert dafür ein leeres
-// `<span class="quartz-nav__prev quartz-nav__prev--empty">` (render.tsx:542). Eine Regel dafür
-// hatte es nicht, also bekam der Platzhalter die volle Karte der beiden Knöpfe: Rand, Radius,
-// Polsterung. Auf der Startseite stand ein leerer Kasten links neben „Weiter".
-//
-// Behoben ist das seit dem 2026-09-20 im Plugin selbst (`fix/pager-and-exclusive-persistence`),
-// zusammen mit dem Umbruch darunter. Die Vorlage installiert es über `github:` von `main`, also
-// trägt diese Regel, bis der Zweig dort liegt — und ist danach zu streichen, nicht zu behalten:
-// zwei Fassungen derselben Entscheidung sind eine zu viel.
-.quartz-nav__prev--empty {
-  display: none;
 }
 
 /* ------------------------------------------------------------------- offcanvas */
@@ -323,40 +314,5 @@
   .nav-menue .quartz-nav__burger svg {
     width: var(--tpl-icon);
     height: var(--tpl-icon);
-  }
-}
-
-/* --------------------------------------------------- der Pager unter dem Text */
-
-// **Übergangsregel wie oben — dieselbe Änderung liegt im Plugin und wartet auf die
-// Veröffentlichung.**
-//
-// Zwei Knöpfe nebeneinander, und auf einem Telefon untereinander. Das Plugin legte sie mit
-// `justify-content: space-between` in eine Reihe und deckelte jeden auf `max-width: 48%`; ein
-// Titel wie „4 – So ist eine Seite aufgebaut" hat in 48% von 350px keine Chance.
-//
-// Der Flex-Container ist das `<nav>` selbst, nicht ein `__panel` darin — der Pager ist die eine
-// Darstellung ohne Panel (zwei `<a>` als direkte Kinder, aus dem gebauten HTML gelesen). Ein
-// Selektor auf `.quartz-nav__panel` traf hier nichts, und das war er im ersten Entwurf.
-@media (max-width: 900px) {
-  .nav-pager {
-    flex-direction: column;
-    gap: var(--tpl-space-xs);
-  }
-
-  .nav-pager .quartz-nav__prev,
-  .nav-pager .quartz-nav__next {
-    max-width: 100%;
-  }
-
-  // `margin-left: auto` schiebt den zweiten Knopf in einer Reihe nach rechts; in einer Spalte
-  // wäre das eine Einrückung um die ganze Restbreite.
-  .nav-pager .quartz-nav__next {
-    margin-left: 0;
-    text-align: start;
-  }
-
-  .nav-pager .quartz-nav__next .quartz-nav__pager-body {
-    align-items: flex-start;
   }
 }

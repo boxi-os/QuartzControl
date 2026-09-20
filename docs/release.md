@@ -104,9 +104,25 @@ Kopien sind *untereinander* gleich, auch wenn alle drei veraltet sind. Der Aufru
 (2026-09-19):** Die Vorlage schreibt `--titleFont`, `--headerFont`, `--bodyFont`, `--codeFont` und
 `--font-interface` nicht mehr in den `css-vars`-Block, aber ausgerollt ist das nirgends — nicht im
 Beispielprojekt (`template:example -- --only 7`), nicht im Export, nicht in den drei Kopien. Vor
-dem Release: ausrollen oder als bewusst offen benennen. Die **bestehenden** Projekte erreicht das
-Ausrollen ohnehin nicht; dort sagt es seit dem dreiunddreißigsten Review der Reiter „Basis“ unter
-dem Schriftfeld.
+dem Release: ausrollen oder als bewusst offen benennen.
+
+**Am 2026-09-20 bewusst zurückgestellt**, bis der nächste Durchgang an der Vorlage ansteht — das
+Ausrollen ist ein Paket (Phase 7 in der Werkstatt, Phase 10 als Export, die zwei Kopien, der Push
+nach `quartzcontrol-templates`), und es zweimal zu schnüren ist doppelte Arbeit. Tragbar ist das,
+weil der Schaden benannt ist: Ein Projekt aus der veröffentlichten Vorlage trägt die fünf
+Variablen zwar weiter, aber der Reiter „Basis“ sagt seit dem dreiunddreißigsten Review unter jedem
+Schriftfeld, dass sie das Feld schlagen, und verweist auf den Variablen-Reiter. Dasselbe gilt für
+die **bestehenden** Projekte, die das Ausrollen ohnehin nie erreicht (ein Import unter
+`projectWins` behält die Variablen, `styles.apply` holt den Block sogar zurück) — am 2026-09-20
+acht von neun auf diesem Rechner, alle bis auf `gui-test`.
+
+**Kommt ein Release vor diesem Durchgang**, geht die Vorlage vom 2026-09-14 mit, und dann gehört
+ein Satz in die Release-Notizen statt ein Fix in den Code. **Und wer als Nächstes an der Vorlage
+arbeitet, fängt nicht bei null an:** Die Werkstatt (das Example-Projekt) hat 50 Variablen, das Repo
+meint 45; `--check-sync` sagt dazu nichts, weil es die Stylesheets vergleicht und die drei Kopien
+gegeneinander, nicht das Repo gegen die Kopien. Der erste Schritt dort ist `--only 7`, mit einer
+gebauten Website als Gegenprobe: Die berechneten Schriften dürfen sich dabei **nicht** ändern,
+denn Quartz' `joinStyles()` schreibt dieselben Werte, aus denen die fünf Zeilen stammen.
 
 ## 4b. Die Liste der Google-Schriften ist nicht älter als das Release
 

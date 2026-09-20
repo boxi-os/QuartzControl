@@ -213,6 +213,11 @@ const BROWSER_UA =
 const GSTATIC_URL = /url\(\s*(https:\/\/fonts\.gstatic\.com\/[^)\s'"]+)\s*\)/g
 const FONT_FILE_NAME = /^[\w-]+\.(?:woff2|woff|ttf|otf)$/
 
+/** AbortSignal.timeout rejects with a DOMException named TimeoutError; no answer is not no route. */
+function timedOut(error: unknown): boolean {
+  return error instanceof Error && error.name === 'TimeoutError'
+}
+
 export function hasGoogleFontsBlock(content: string): boolean {
   return getManagedBlock(content, GOOGLE_MARKER) !== null
 }
@@ -231,8 +236,10 @@ function allFilesPresent(projectPath: string, body: string): boolean {
 // One file, written beside its final name and renamed into place, so an interrupted download never
 // leaves a torso that the next call would take for the real file.
 async function downloadFontFile(url: string, target: string): Promise<void> {
-  const response = await fetch(url, { signal: AbortSignal.timeout(GOOGLE_TIMEOUT_MS) })
   const file = basename(target)
+  const response = await fetch(url, { signal: AbortSignal.timeout(GOOGLE_TIMEOUT_MS) }).catch((error: unknown) => {
+    throw new Error(mainT(timedOut(error) ? 'googleFontsFileTimedOut' : 'googleFontsFileUnreachable', { file }))
+  })
   if (!response.ok) throw new Error(mainT('googleFontsFileFailed', { file, status: response.status }))
   const declared = Number(response.headers.get('content-length') ?? 0)
   if (declared > MAX_FONT_FILE_BYTES) throw new Error(mainT('googleFontsFileTooLarge', { file }))
@@ -260,7 +267,15 @@ export async function fetchGoogleFonts(
     return { changed: false, files: [], removedFiles: [], removedFamilies: [], missingFamilies: notDelivered(typography, before) }
   }
 
-  const response = await fetch(request, { headers: { 'User-Agent': BROWSER_UA }, signal: AbortSignal.timeout(GOOGLE_TIMEOUT_MS) })
+  // "Not reachable" and "refused the request" are two ways to fail and get two sentences. Without
+  // this catch the page showed node's own "TypeError: fetch failed (fonts:fetchGoogle)" for the
+  // most ordinary of the two, no network (thirty-third review, finding 7).
+  const response = await fetch(request, {
+    headers: { 'User-Agent': BROWSER_UA },
+    signal: AbortSignal.timeout(GOOGLE_TIMEOUT_MS)
+  }).catch((error: unknown) => {
+    throw new Error(mainT(timedOut(error) ? 'googleFontsTimedOut' : 'googleFontsUnreachable'))
+  })
   if (!response.ok) throw new Error(mainT('googleFontsRequestFailed', { status: response.status }))
   const css = await response.text()
 

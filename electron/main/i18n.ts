@@ -401,8 +401,13 @@ const STRINGS = {
     googleFontsFileFailed: 'Die Schriftdatei {{file}} ließ sich nicht von Google laden (HTTP {{status}}).',
     googleFontsFileTooLarge: 'Die Schriftdatei {{file}} ist größer, als eine Schrift sein sollte, und wurde nicht gespeichert.',
     googleFontsNothingFound: 'Google Fonts hat für diese Schriften keine Dateien geliefert.',
+    googleFontsUnreachable: 'Google Fonts ist nicht erreichbar.',
+    googleFontsFileUnreachable:
+      'Die Schriftdatei {{file}} ließ sich nicht laden — Google Fonts ist nicht erreichbar.',
+    googleFontsTimedOut: 'Google Fonts antwortet nicht (20 Sekunden gewartet).',
+    googleFontsFileTimedOut: 'Die Schriftdatei {{file}} kam nicht an — Google Fonts antwortet nicht.',
     googleFontsRefreshFailed:
-      'Die Google-Schriften ließen sich nicht ins Projekt holen: {{message}} Gebaut wird mit den Dateien, die schon im Projekt liegen.',
+      'Die Google-Schriften ließen sich nicht ins Projekt holen: {{message}} — gebaut wird mit den Dateien, die schon im Projekt liegen.',
     googleFontsRefreshed: 'Die gewählten Google-Schriften wurden ins Projekt geholt ({{count}} Dateien).'
   },
   en: {
@@ -690,8 +695,12 @@ const STRINGS = {
     googleFontsFileFailed: 'The font file {{file}} could not be loaded from Google (HTTP {{status}}).',
     googleFontsFileTooLarge: 'The font file {{file}} is larger than a font should be and was not saved.',
     googleFontsNothingFound: 'Google Fonts returned no files for these fonts.',
+    googleFontsUnreachable: 'Google Fonts cannot be reached.',
+    googleFontsFileUnreachable: 'The font file {{file}} could not be loaded — Google Fonts cannot be reached.',
+    googleFontsTimedOut: 'Google Fonts is not answering (waited 20 seconds).',
+    googleFontsFileTimedOut: 'The font file {{file}} did not arrive — Google Fonts is not answering.',
     googleFontsRefreshFailed:
-      'The Google fonts could not be fetched into the project: {{message}} The build uses the files already in the project.',
+      'The Google fonts could not be fetched into the project: {{message}} — the build uses the files already in the project.',
     googleFontsRefreshed: 'The selected Google fonts were fetched into the project ({{count}} files).'
   }
 } as const

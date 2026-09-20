@@ -225,7 +225,13 @@ function gitTextEnv(): Record<string, string> {
 
 // git's own wording for the three failures a user can actually act on is either buried in a wall of
 // other output or (for the symlink case) points at a state we just repaired behind their back.
-function explainGitFailure(output: string, editedSinceMerge: string[] = [], ownStaged: string[] = [], untrackedInTheWay: string[] = []): string {
+function explainGitFailure(
+  output: string,
+  editedSinceMerge: string[] = [],
+  ownStaged: string[] = [],
+  untrackedInTheWay: string[] = [],
+  ownStagedOnMerge: string[] = []
+): string {
   if (/beyond a symbolic link/.test(output)) {
     return mainT('updateBlockedBySymlink')
   }
@@ -277,11 +283,17 @@ function explainGitFailure(output: string, editedSinceMerge: string[] = [], ownS
     const named = [...output.matchAll(/^error: Entry '(.+)' not uptodate\. Cannot merge\.$/gm)].map((m) => m[1])
     const files = [...new Set([...named, ...editedSinceMerge])]
     if (files.length === 0) return mainT('updateAbortBlockedByEdit')
-    const own = files.filter((file) => ownStaged.includes(file))
+    // Three classes, not two. `01f19e8` wrote the advice while ownStaged meant "not from the
+    // merge"; `fe30ca4` widened it to the merge's own files with something staged on top, and for
+    // those "you staged these yourself" is only half true and the advice only half an abort
+    // (thirty-third review, finding 12).
+    const onMerge = files.filter((file) => ownStagedOnMerge.includes(file))
+    const own = files.filter((file) => ownStaged.includes(file) && !ownStagedOnMerge.includes(file))
     const merged = files.filter((file) => !ownStaged.includes(file))
     return [
       ...(merged.length > 0 ? [mainT('updateAbortBlockedByEditNamed', { files: merged.join(', ') })] : []),
-      ...(own.length > 0 ? [mainT('updateAbortBlockedByOwnStaged', { files: own.join(', ') })] : [])
+      ...(own.length > 0 ? [mainT('updateAbortBlockedByOwnStaged', { files: own.join(', ') })] : []),
+      ...(onMerge.length > 0 ? [mainT('updateAbortBlockedByOwnStagedOnMerge', { files: onMerge.join(', ') })] : [])
     ].join('')
   }
   return ''
@@ -1665,9 +1677,9 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
  * (thirty-second review, finding 1). The scenes before measured with a *new* file, which is in
  * neither tree and was therefore always named.
  */
-async function stagedOutsideMerge(projectPath: string): Promise<{ files: string[]; unchecked: boolean }> {
+async function stagedOutsideMerge(projectPath: string): Promise<{ files: string[]; onTop: string[]; unchecked: boolean }> {
   const staged = await diffNames(projectPath, '--cached', 'HEAD')
-  if (staged.length === 0) return { files: [], unchecked: false }
+  if (staged.length === 0) return { files: [], onTop: [], unchecked: false }
   const conflicted = new Set(await diffNames(projectPath, '--diff-filter=U'))
   const fromMerge = new Set(await diffNames(projectPath, 'HEAD...MERGE_HEAD'))
   const candidates = staged.filter((file) => fromMerge.has(file) && !conflicted.has(file))
@@ -1675,6 +1687,11 @@ async function stagedOutsideMerge(projectPath: string): Promise<{ files: string[
   const onTop = new Set(onTopList ?? [])
   return {
     files: staged.filter((file) => (!fromMerge.has(file) && !conflicted.has(file)) || onTop.has(file)),
+    // Of those, the ones that are the merge's own files with something of the user's staged on top.
+    // They need a different sentence: `git reset --` lets the abort through and keeps the user's
+    // work, but it also drops the merge's staged half, which then stays behind as an unsaved change
+    // (thirty-third review, finding 12).
+    onTop: [...onTop],
     // "Cannot check" is never "all good": under a git that does not know merge-tree --write-tree
     // the answer is silently the one from before, and the sentence about what the abort discarded
     // reads as complete while it names only half (thirty-third review, finding 11).
@@ -1774,7 +1791,13 @@ export function abortCoreMerge(projectPath: string): Promise<CoreAbortResult> {
       const result = await run('git', ['merge', '--abort'], projectPath, gitTextEnv())
       if (!result.success) {
         // A refused abort has changed nothing, so the list is read from the state git refused over.
-        const why = explainGitFailure(result.output, await editedSinceMergeStopped(projectPath), losing.files, await untrackedInTheWay(projectPath))
+        const why = explainGitFailure(
+          result.output,
+          await editedSinceMergeStopped(projectPath),
+          losing.files,
+          await untrackedInTheWay(projectPath),
+          losing.onTop
+        )
         // Split at the paragraph: the merge's files and the user's own can be two sentences.
         const sentences = [...why.split('\n\n').map((sentence) => sentence.trim()).filter(Boolean), ...unchecked]
         return { success: false, output: [why + result.output, ...unchecked].join('\n\n'), sentences }

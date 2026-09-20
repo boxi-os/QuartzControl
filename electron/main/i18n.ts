@@ -215,6 +215,12 @@ const STRINGS = {
     // Befund 2).
     updateAbortBlockedByOwnStaged:
       'Diese Dateien hast du selbst vorgemerkt und danach weiter geändert, deshalb lässt sich das Update nicht abbrechen: {{files}}. Nimm dort nur die Vormerkung zurück (im Terminal je Datei: „git reset -- <Datei>“), deine Änderungen bleiben dabei erhalten, und brich dann erneut ab.\n\n',
+    // Dieselbe Lage, aber auf einer Datei, die das Update selbst geändert hat. Derselbe Befehl hilft
+    // und kostet: Er nimmt auch die vorgemerkte Hälfte des Updates weg, die danach als ungespeicherte
+    // Änderung liegen bleibt. Ein Befehl ohne Preis gibt es hier nicht — `git checkout --` kostet die
+    // eigene Arbeit.
+    updateAbortBlockedByOwnStagedOnMerge:
+      'Diese Dateien ändert das Update selbst, und du hast zusätzlich etwas darauf vorgemerkt: {{files}}. Nimm dort nur die Vormerkung zurück („git reset -- <Datei>“) und brich erneut ab — deine Arbeit bleibt, die Zeilen des Updates bleiben aber als ungespeicherte Änderung liegen und müssen weg, bevor das nächste Update läuft.\n\n',
     // Was der Abbruch nebenbei mitnimmt. git sagt darüber nichts, und rückgängig ist es nicht -
     // genannt wird es trotzdem, damit der Nutzer weiß, was fehlt.
     updateAbortDroppedStaged:
@@ -541,6 +547,8 @@ const STRINGS = {
       'These files are no longer staged but still lie in the project folder, so the update cannot be cancelled: {{files}}. Stage them again (in a terminal, for each file: “git add -- <file>”), then cancel again.\n\n',
     updateAbortBlockedByOwnStaged:
       'You staged these files yourself and changed them again afterwards, so the update cannot be cancelled: {{files}}. Undo only the staging there (in a terminal, for each file: “git reset -- <file>”), which keeps your changes, then cancel again.\n\n',
+    updateAbortBlockedByOwnStagedOnMerge:
+      'The update changes these files itself, and you staged something on top of them: {{files}}. Undo only the staging there (“git reset -- <file>”) and cancel again — your work stays, but the update\u2019s lines stay behind as an unsaved change and have to go before the next update runs.\n\n',
     updateAbortDroppedStaged:
       'Cancelling discarded the staged state of these files: {{files}}. When cancelling, git resets everything that was staged — including what you staged yourself and conflicts you resolved by hand.',
     updateAbortStagedUnchecked:

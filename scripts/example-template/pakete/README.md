@@ -1,13 +1,21 @@
 # Exportierte Vorlagenpakete
 
-Zwei `.qtpl`-Pakete, die am 2026-09-10 aus den Projekten `doku-vorlage` und `plugin-vorlage`
-exportiert wurden. Die Projekte sind am selben Tag gelöscht worden; diese Dateien sind seither die
-einzige Fassung, und deshalb liegen sie hier.
+Zwei `.qtpl`-Pakete, die aus den Projekten `doku-vorlage` und `plugin-vorlage` exportiert wurden.
+Die Werkstätten sind Wegwerfordner unter `werkstatt/` und werden nach jedem Lauf gelöscht; diese
+Dateien sind seither die einzige Fassung, und deshalb liegen sie hier.
 
 | Datei | Name im Paket | exportiert | Inhalt |
 | --- | --- | --- | --- |
-| `doku.qtpl` | Doku | 2026-09-10 11:40 | 4 Frames, 49 Plugins (36 aktiv), 30 Stylesheets, 50 CSS-Variablen, 3 Gruppen, 7 Seitentypen |
-| `plugin.qtpl` | Doku (Plugin) | 2026-09-10 12:17 | dasselbe, 35 statt 36 aktive Plugins |
+| `doku.qtpl` | Doku | 2026-09-21 00:44 | 4 Frames, 49 Plugins (35 aktiv), 31 Stylesheets, 66 CSS-Variablen, 3 Schriftdateien, 3 Gruppen, 7 Seitentypen |
+| `plugin.qtpl` | Doku (Plugin) | 2026-09-21 00:45 | dasselbe, 34 statt 35 aktive Plugins (ohne Graphansicht) |
+
+Neu gebaut am 2026-09-21. Die Fassung davor war vom 2026-09-10 und kannte weder
+`nav-navigations.scss` noch die dreizehn Callout-Tokens, weder Noto Sans noch die sechs Schalter
+für die Seitenspalten — 30 Stylesheets, 50 Variablen, vier Schriftdateien aus drei Familien.
+Beide Pakete tragen **kein** quartz-navigations: Der Baustein `plugins` schlüsselt gleichnamige
+Einträge nach ihrer Position, und ein Doku-Paket mit eigenen Navigationseinträgen überschriebe beim
+Import ins Navigations-Handbuch dessen eigene (`variants.mjs` sagt es an den zwei Stellen, an denen
+die Liste steht).
 
 Beide tragen **keinen** `content`-Baustein — sie sind Gestaltung, kein Text. Gemessen am Manifest,
 nicht aus der Erinnerung.

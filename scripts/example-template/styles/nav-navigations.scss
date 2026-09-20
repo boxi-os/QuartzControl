@@ -175,9 +175,11 @@
 // Variablen oben. An einer Probe-Instanz nachgesehen — das Flyout-Panel trägt den Schatten dieser
 // Vorlage und ihren Radius.
 //
-// `columns` ist der eine Fall, der etwas braucht: Es öffnet nichts, steht meist im Fuß und
-// zerfällt in Spalten, deren Kopf eine Überschrift sein muss und ohne Regel eine Zeile wie jede
-// andere ist.
+// `columns` ist der eine Fall, der etwas bekommt, und das ist eine Entscheidung dieser Vorlage
+// und keine Lücke des Plugins: Es setzt der Spaltenüberschrift `margin-bottom: 0.25rem`
+// (navigations.scss:658), also Abstand, aber keine Linie. In einem Fuß mit sieben Spalten liest
+// sich ein Abstand allein nicht als Überschrift — hier steht dieselbe Haarlinie, die die
+// Vorlage überall zum Abtrennen benutzt.
 //
 // **Nur die erste Ebene.** Der erste Entwurf traf `.quartz-nav__item--folder` überall und zog
 // damit auch unter jeden Unterordner einen Strich — an der Probe gemessen: eine Linie unter
@@ -191,46 +193,42 @@
 
 /* ---------------------------------------------------------------------- tabs */
 
-// Der aktive Reiter braucht eine Kante, und zwar dieselbe, die die Vorlage sonst für „hier bist
-// du" benutzt. `--quartz-nav-accent-bar` ist die Breite dieses Balkens, aber wo er sitzt,
-// entscheidet die Darstellung: im Baum links von der Zeile, im Reiter unter ihr. Eine Variable
-// kann keine Kante wechseln.
-.quartz-nav--tabs .quartz-nav__tabs > .quartz-nav__item > .quartz-nav__link.active {
-  border-block-end: var(--quartz-nav-accent-bar) solid var(--quartz-nav-color-active);
-}
+// Hier steht nichts, und das ist eine Korrektur. Der erste Entwurf gab dem aktiven Reiter eine
+// Unterkante mit der Begründung, eine Variable könne keine Kante wechseln — im Baum sitzt der
+// Akzent links von der Zeile, im Reiter unter ihr.
+//
+// Das Plugin tut es selbst (navigations.scss:630): `.quartz-nav__tabs > .active > .link` bekommt
+// `border-bottom-color: var(--quartz-nav-color-active)` auf einer 2px-Kante, die schon
+// transparent dasteht. Der Unterschied war eine Kante von 3 statt 2 Pixeln, und dafür stand ein
+// Satz da, der das Gegenteil dessen behauptete, was die Quelle sagt.
 
 /* ---------------------------------------------------------------------- select */
 
-// Das native `<select>`. Es erbt weder Schrift noch Farbe von seinem Elternelement, und keine der
-// Variablen des Plugins erreicht es — ein Formularelement wird vom Betriebssystem gezeichnet,
-// solange man ihm nicht ausdrücklich widerspricht.
+// Das Auswahlfeld und der Knopf daneben, und hier steht nur noch, was die Vorlage wirklich
+// hinzufügt.
+//
+// Der erste Entwurf setzte Schrift, Farbe, Hintergrund, Radius und Polsterung und begründete das
+// damit, ein Formularelement werde vom Betriebssystem gezeichnet und keine Variable des Plugins
+// erreiche es. Beides ist falsch: Das Plugin gestaltet beide (navigations.scss:376) mit
+// `font: inherit`, `--quartz-nav-color-heading`, `--quartz-nav-bg-panel`,
+// `--quartz-nav-border` und `--quartz-nav-panel-radius` — und die Variablen sind oben schon auf
+// die Tokens dieser Vorlage verdrahtet. Die Hälfte der Deklarationen schrieb also einen Wert
+// durch sich selbst.
+//
+// Was bleibt, sind zwei Entscheidungen, die die Vorlage trifft und das Plugin nicht:
+//
+//   --tpl-target        44px Mindesthöhe. Ein Auswahlfeld ist ein Ziel für einen Daumen, und die
+//                       Vorlage misst Ziele (a11y.scss); das Plugin kommt mit 0.35rem Polsterung
+//                       auf rund 32px.
+//   --tpl-rule-control  Die Kante eines Bedienelements. `--quartz-nav-border` ist `--lightgray`
+//                       und damit die Linie zwischen zwei Zeilen; eine Kante, die ein Feld vom
+//                       Grund trennt, ist in dieser Vorlage ein eigener, auf 3:1 gemessener Wert
+//                       (palette.mjs, `controlEdgePairs`).
 .quartz-nav__select,
-.quartz-nav__mobile-select {
-  font-family: var(--quartz-nav-font);
-  font-size: var(--tpl-text-sm);
-  color: var(--quartz-nav-color);
-  background: var(--quartz-nav-bg-panel);
-  border: var(--tpl-rule-width) solid var(--tpl-rule-control);
-  border-radius: var(--quartz-nav-radius);
-  padding: var(--quartz-nav-item-padding-y) var(--quartz-nav-item-padding-x);
-  min-height: var(--tpl-target);
-}
-
-// Der Knopf neben dem Auswahlfeld (`select.button`), wenn er eingeschaltet ist.
+.quartz-nav__mobile-select,
 .quartz-nav__go {
-  font-family: var(--quartz-nav-font);
-  font-size: var(--tpl-text-sm);
   min-height: var(--tpl-target);
-  padding-inline: var(--tpl-space-sm);
-  border: var(--tpl-rule-width) solid var(--tpl-rule-control);
-  border-radius: var(--quartz-nav-radius);
-  background: var(--tpl-surface);
-  color: var(--quartz-nav-color);
-  cursor: pointer;
-
-  &:hover {
-    background: var(--quartz-nav-bg-hover);
-  }
+  border-color: var(--tpl-rule-control);
 }
 
 /* ---------------------------------------------------------------------- pager */
@@ -250,18 +248,17 @@
   letter-spacing: var(--tpl-tracking-label);
 }
 
-// Der Platzhalter für die fehlende Richtung. Auf der Startseite gibt es kein „Zurück", und das
-// Plugin rendert dafür ein leeres `<span class="quartz-nav__prev quartz-nav__prev--empty">`
-// (render.tsx:542) — eine Regel dafür hat es nicht, also bekommt der Platzhalter die volle Karte
-// der beiden Knöpfe: Rand, Radius, Polsterung. Auf der Startseite stand deshalb ein leerer
-// Kasten links neben „Weiter".
+// **Übergangsregel — sie kann weg, sobald das Plugin veröffentlicht ist.**
 //
-// `display: none` und nicht `visibility: hidden`: Der Platzhalter soll die Zeile nicht ausrichten,
-// das tut `margin-left: auto` auf `__next` schon (navigations.scss:728). Gemessen, nachdem er weg
-// war: „Weiter" steht auf der Startseite an derselben x-Position wie auf jeder anderen Seite.
+// Auf der Startseite gibt es kein „Zurück", und das Plugin rendert dafür ein leeres
+// `<span class="quartz-nav__prev quartz-nav__prev--empty">` (render.tsx:542). Eine Regel dafür
+// hatte es nicht, also bekam der Platzhalter die volle Karte der beiden Knöpfe: Rand, Radius,
+// Polsterung. Auf der Startseite stand ein leerer Kasten links neben „Weiter".
 //
-// Ein Kandidat für einen Vorschlag ans Plugin — dort wäre es eine Zeile, die jede Website
-// erreicht, statt einer je Vorlage.
+// Behoben ist das seit dem 2026-09-20 im Plugin selbst (`fix/pager-and-exclusive-persistence`),
+// zusammen mit dem Umbruch darunter. Die Vorlage installiert es über `github:` von `main`, also
+// trägt diese Regel, bis der Zweig dort liegt — und ist danach zu streichen, nicht zu behalten:
+// zwei Fassungen derselben Entscheidung sind eine zu viel.
 .quartz-nav__prev--empty {
   display: none;
 }
@@ -331,8 +328,11 @@
 
 /* --------------------------------------------------- der Pager unter dem Text */
 
-// Zwei Knöpfe nebeneinander, und auf einem Telefon untereinander. Das Plugin legt sie mit
-// `justify-content: space-between` in eine Reihe und deckelt jeden auf `max-width: 48%`; ein
+// **Übergangsregel wie oben — dieselbe Änderung liegt im Plugin und wartet auf die
+// Veröffentlichung.**
+//
+// Zwei Knöpfe nebeneinander, und auf einem Telefon untereinander. Das Plugin legte sie mit
+// `justify-content: space-between` in eine Reihe und deckelte jeden auf `max-width: 48%`; ein
 // Titel wie „4 – So ist eine Seite aufgebaut" hat in 48% von 350px keine Chance.
 //
 // Der Flex-Container ist das `<nav>` selbst, nicht ein `__panel` darin — der Pager ist die eine

@@ -1335,6 +1335,8 @@ export default {
       stylesheets:
         'custom.scss has since been changed because the stylesheets changed (load order, an import or a new file). Your draft here is still unsaved — saving it would overwrite that change.'
     },
+    scssStaleNotSaved:
+      'custom.scss has changed since you typed in the “Custom CSS” tab, so your draft there was not saved. Everything else was; the “Custom CSS” tab lets you reload it or deliberately overwrite.',
     scssStaleReload: 'Reload from disk (discard draft)',
     styleSettings: {
       sourceNote: 'Descriptions from the original theme “{{theme}}” by {{author}} — {{count}} options.',

@@ -1340,6 +1340,8 @@ export default {
       stylesheets:
         'custom.scss wurde inzwischen geändert, weil sich die Stylesheets geändert haben (Ladereihenfolge, Import oder neue Datei). Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.'
     },
+    scssStaleNotSaved:
+      'custom.scss hat sich geändert, seit du im Reiter „Eigenes CSS“ getippt hast — dein Entwurf dort wurde nicht gespeichert. Alles andere ist gespeichert; im Reiter „Eigenes CSS“ kannst du neu laden oder bewusst überschreiben.',
     scssStaleReload: 'Von Festplatte neu laden (Entwurf verwerfen)',
     styleSettings: {
       sourceNote:

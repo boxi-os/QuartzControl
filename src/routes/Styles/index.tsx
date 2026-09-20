@@ -269,8 +269,10 @@ export default function Styles(): JSX.Element {
 
   // The fonts first and the config after: a fetch that fails (no network, a misspelt name) leaves
   // the file as it was, rather than a config that says `local` over a block that is not there.
-  async function saveConfig(): Promise<void> {
-    if (!config) return
+  // Returns whether custom.scss was rewritten, which save() needs for the case where a later step
+  // throws: the draft in the editor then predates the block that is now on disk.
+  async function saveConfig(): Promise<boolean> {
+    if (!config) return false
     if (fetchesGoogleFonts(config)) {
       const result = await window.quartzGui.fonts.fetchGoogle({ projectPath: project.path, typography: config.theme.typography ?? {} })
       if (result.removedFamilies.length > 0) {
@@ -284,6 +286,7 @@ export default function Styles(): JSX.Element {
     }
     await window.quartzGui.config.save(project.path, persistFontDelivery(config))
     setQuartzStillDownloadsFonts(false)
+    return true
   }
 
   // The page's one save, and it writes everything `dirty` counts - whichever sub-tab is in front.
@@ -302,24 +305,41 @@ export default function Styles(): JSX.Element {
     setStatus('saving')
     setMessage(null)
     setFontNote(null)
+    // Which of the block writers below has already rewritten custom.scss - read in the catch, so
+    // it has to live outside the try.
+    let blocksWritten: ScssWriter | null = null
     try {
       if (!config || !scss) return false
       const configDirty = JSON.stringify(config) !== savedConfig || quartzStillDownloadsFonts
       const overridesDirty = JSON.stringify(overrides) !== savedOverrides
       const drafts = Object.entries(fileDrafts)
-      if (scss.dirty) await window.quartzGui.styles.save(project.path, scss.content)
+      // A draft of custom.scss that something else has written under (staleBy) is only written from
+      // the tab that shows the banner saying so. Overwriting under that banner is a choice the CSS
+      // tab has always offered; from the other three it was a silent one, and since this save
+      // writes every tab's drafts it was reachable from all of them - "type CSS, import a font,
+      // save" cost the @font-face rule of the font just imported (thirty-third review, finding 2).
+      const scssRefused = scss.dirty && scss.staleBy !== null && tab !== 'customCss'
+      if (scss.dirty && !scssRefused) await window.quartzGui.styles.save(project.path, scss.content)
       for (const [relativePath, draft] of drafts) await window.quartzGui.styles.saveFile(project.path, relativePath, draft)
       if (drafts.length > 0) clearFileDrafts(drafts.map(([relativePath]) => relativePath))
       if (configDirty) {
-        await saveConfig()
+        if (await saveConfig()) blocksWritten = 'googleFonts'
         setSavedConfig(JSON.stringify(config))
       }
       if (overridesDirty) {
         const list = Object.entries(overrides).map(([key, v]) => ({ key, light: v.light, dark: v.dark }))
         await window.quartzGui.styles.saveVariableOverrides(project.path, list)
+        blocksWritten = 'variables'
         setSavedOverrides(JSON.stringify(overrides))
       }
-      if (scss.dirty || configDirty || overridesDirty) await reloadScss('force')
+      // 'force' drops the draft, which is exactly wrong for the refused one: it is re-read under
+      // its own name so the banner stays and the draft survives.
+      if (scssRefused) {
+        if (configDirty) await reloadScss('googleFonts')
+        else if (overridesDirty) await reloadScss('variables')
+      } else if (scss.dirty || configDirty || overridesDirty) {
+        await reloadScss('force')
+      }
       // The drafts go along rather than being read from the registered callback's closure. That
       // closure is the one from the render in which it was registered, and registerSave runs in an
       // effect after *every* render: with any await between clearFileDrafts() and here - one
@@ -328,10 +348,22 @@ export default function Styles(): JSX.Element {
       // Typing on top of that then wrote the pre-save state over the file that was just saved
       // (thirty-third review, finding 1, measured in the built app).
       await saveRef.current(Object.fromEntries(drafts))
+      if (scssRefused) {
+        // Not "saved": the page stays dirty, and the leave dialog has to keep the user here, where
+        // the sentence is.
+        setStatus('error')
+        setMessage(t('styles.scssStaleNotSaved'))
+        return false
+      }
       setStatus('saved')
       setTimeout(() => setStatus('idle'), 2000)
       return true
     } catch (err) {
+      // A step after the block writers can throw with custom.scss already rewritten on disk, while
+      // the draft in the editor still predates that block. Re-read under the writer's name so the
+      // draft is flagged stale: the banner appears, and the next save does not put the old block
+      // back over files that are gone (thirty-third review, finding 2, last paragraph).
+      if (blocksWritten) await reloadScss(blocksWritten).catch(() => {})
       setStatus('error')
       setMessage(formatIpcError(err))
       return false

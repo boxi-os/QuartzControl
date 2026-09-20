@@ -1,3 +1,4 @@
+import { net } from 'electron'
 import { existsSync, mkdirSync, statSync } from 'fs'
 import { copyFile, mkdir, readFile, rename, rm, stat, writeFile } from 'fs/promises'
 import { basename, dirname, extname, join } from 'path'
@@ -206,6 +207,13 @@ async function deleteUnreferencedFontFiles(projectPath: string, css: string): Pr
 // request it came from, which is how a later call knows whether anything changed.
 const GOOGLE_MARKER = 'google-fonts'
 const GOOGLE_TIMEOUT_MS = 20_000
+// Electron's `net.fetch` rather than node's global fetch, like the update check and the bundled
+// template: it goes through Chromium's stack, so the machine's proxy configuration and its
+// certificate store apply - the two things that decide whether this works inside a company
+// network. A save hangs on this one (thirty-third review, "nebenbei" 4). Whether a rejection is a
+// timeout is asked of the signal, not of the error's name: the two stacks do not have to agree on
+// what they throw, and the signal is ours.
+//
 // Google answers with the format the User-Agent can read. A browser gets woff2 split by
 // unicode-range, so a page loads only the subsets it needs; without one it gets a whole ttf.
 const BROWSER_UA =
@@ -218,11 +226,6 @@ const FONT_FILE_NAME = /^[\w-]+\.(?:woff2|woff|ttf|otf)$/
 // 1 MiB each were written without a word before this (thirty-third review, finding 8).
 const MAX_FONT_FILES = 200
 const MAX_FONT_TOTAL_BYTES = 128 * 1024 * 1024
-
-/** AbortSignal.timeout rejects with a DOMException named TimeoutError; no answer is not no route. */
-function timedOut(error: unknown): boolean {
-  return error instanceof Error && error.name === 'TimeoutError'
-}
 
 export function hasGoogleFontsBlock(content: string): boolean {
   return getManagedBlock(content, GOOGLE_MARKER) !== null
@@ -254,8 +257,9 @@ function allFilesPresent(projectPath: string, body: string): boolean {
 // leaves a torso that the next call would take for the real file.
 async function downloadFontFile(url: string, target: string): Promise<number> {
   const file = basename(target)
-  const response = await fetch(url, { signal: AbortSignal.timeout(GOOGLE_TIMEOUT_MS) }).catch((error: unknown) => {
-    throw new Error(mainT(timedOut(error) ? 'googleFontsFileTimedOut' : 'googleFontsFileUnreachable', { file }))
+  const signal = AbortSignal.timeout(GOOGLE_TIMEOUT_MS)
+  const response = await net.fetch(url, { signal }).catch(() => {
+    throw new Error(mainT(signal.aborted ? 'googleFontsFileTimedOut' : 'googleFontsFileUnreachable', { file }))
   })
   if (!response.ok) throw new Error(mainT('googleFontsFileFailed', { file, status: response.status }))
   const declared = Number(response.headers.get('content-length') ?? 0)
@@ -288,11 +292,9 @@ export async function fetchGoogleFonts(
   // "Not reachable" and "refused the request" are two ways to fail and get two sentences. Without
   // this catch the page showed node's own "TypeError: fetch failed (fonts:fetchGoogle)" for the
   // most ordinary of the two, no network (thirty-third review, finding 7).
-  const response = await fetch(request, {
-    headers: { 'User-Agent': BROWSER_UA },
-    signal: AbortSignal.timeout(GOOGLE_TIMEOUT_MS)
-  }).catch((error: unknown) => {
-    throw new Error(mainT(timedOut(error) ? 'googleFontsTimedOut' : 'googleFontsUnreachable'))
+  const cssSignal = AbortSignal.timeout(GOOGLE_TIMEOUT_MS)
+  const response = await net.fetch(request, { headers: { 'User-Agent': BROWSER_UA }, signal: cssSignal }).catch(() => {
+    throw new Error(mainT(cssSignal.aborted ? 'googleFontsTimedOut' : 'googleFontsUnreachable'))
   })
   if (!response.ok) throw new Error(mainT('googleFontsRequestFailed', { status: response.status }))
   const css = await response.text()

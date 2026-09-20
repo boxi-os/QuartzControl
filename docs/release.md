@@ -89,8 +89,20 @@ Website unter einem Unterpfad (`/QuartzControl/`, wie GitHub Pages sie ausliefer
 | mit `url(static/…)`, jetzt | 4 | Instrument Sans | 0 |
 
 Die erste Zeile ist keine Erinnerung, sondern nachgestellt: in der *gebauten* CSS den Schrägstrich
-wieder eingesetzt, gemessen, zurückgestellt. Offen bleibt das Veröffentlichen selbst — der Bau
-liegt in `public/`, auf `gh-pages` geschoben ist er nicht.
+wieder eingesetzt, gemessen, zurückgestellt.
+
+**Die Messung gehört zum Deploy um 13:47 (`53445ee`), nicht zu dem am Abend.** Die CSS dieses
+Deploys trägt die relativen URLs bereits; die des Deploys davor (`9ee7a37`, `index-03307897.css`)
+trug die absoluten. Der Abend-Deploy (`7ececb0`, force-push, 1 neu / 135 geändert / 1 entfernt)
+brachte die **Schriftvariablen** aus Punkt 4 auf die Website, nicht die URL-Form. An der echten
+Adresse danach nachgemessen: `h1` in Instrument Sans, Fließtext in Inter, alle vier `@font-face`
+geladen, keine Antwort über 400.
+
+Zwei Dinge, die dabei auffielen und beim nächsten Mal Zeit sparen: Der Knopf „Jetzt
+veröffentlichen" ist deaktiviert, solange in *dieser* Sitzung kein Diff berechnet wurde
+(`canDeploy` in `Publish/index.tsx`) — also erst „Diff aktualisieren", dann veröffentlichen. Und
+GitHub Pages liefert ein paar Minuten lang weiter die alte CSS aus; wer sofort nachsieht, misst
+den Stand von vorher.
 
 Am 2026-09-20 getan: beide Projekte gebaut (je 4 root-relative `url()` vorher, 0 nachher, die
 Zeile im Log), im Bau des Web-Projekts vier `url(static/fonts/…)`, kein `fonts.gstatic.com` und

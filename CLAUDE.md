@@ -251,7 +251,8 @@ neuen Regeln in [`docs/conventions.md`](docs/conventions.md). Offen ist aus dies
 Was `docs/release.md` daraus verlangte, ist am 2026-09-20 mit dem Alpha-Test erledigt: Punkt 3
 (Handbuch- und Web-Projekt einmal durch die App bauen, damit die Schrift-URLs relativ werden) und
 Punkt 4 (`d4da5ef` ausrollen — die Vorlage liegt in drei Kopien gleich, die sieben bestehenden
-Projekte sind nachgezogen). Veröffentlicht ist der Bau der Website noch nicht.
+Projekte sind nachgezogen). Die Website ist am selben Tag veröffentlicht und an ihrer echten
+Adresse nachgemessen; die relativen Schrift-URLs waren dort schon seit dem Deploy um 13:47.
 **Keinen dieser Fixes hat ein Review gelesen.**
 
 **Der Alpha-Test ist gefahren** (A1–A4, B1–B2, C1): Ergebnisse in

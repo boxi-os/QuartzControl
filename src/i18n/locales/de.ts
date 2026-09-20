@@ -886,8 +886,12 @@ export default {
       noFile: 'keine Datei im Projekt',
       remove: 'Entfernen',
       removing: 'Entferne…',
-      confirm:
-        '„{{family}}“ entfernen?\n\nDie @font-face-Regeln verschwinden aus custom.scss und {{count}} Datei(en) aus quartz/static/fonts. Zurück geht es nur über einen Snapshot oder git.',
+      confirm_one:
+        '„{{family}}“ entfernen?\n\nDie @font-face-Regeln verschwinden aus custom.scss und eine Datei aus quartz/static/fonts. Zurück geht es nur über einen Snapshot oder git.',
+      confirm_other:
+        '„{{family}}“ entfernen?\n\nDie @font-face-Regeln verschwinden aus custom.scss und {{count}} Dateien aus quartz/static/fonts. Zurück geht es nur über einen Snapshot oder git.',
+      confirmNoFiles:
+        '„{{family}}“ entfernen?\n\nDie @font-face-Regeln verschwinden aus custom.scss; gelöscht wird keine Datei, weil andere Regeln sie noch nennen oder sie nicht im Projekt liegt. Zurück geht es nur über einen Snapshot oder git.',
       confirmButton: 'Schrift entfernen'
     },
     localFontHeading: 'Eigene Schriftart importieren',

@@ -1743,8 +1743,9 @@ Handbuch-Rückbau ungelaufen ist.
 Die Szenen, die es dafür nennt, stehen seit dem 2026-09-20 als Checkliste in
 [`alpha-test.md`](alpha-test.md), zusammen mit den zwei Vorgaben der Vorrunde und der Liste, die
 danebensteht (VoiceOver, gepackte App je Plattform, glibc, die zwei offenen Punkte aus
-`release.md`). Beim Schreiben fiel dabei ein Punkt auf, der nicht mit erledigt ist und in der
-Liste als Prüfpunkt steht: Der Bestätigungsdialog der Karte „Ungenutzte Schriften“ kündigt an, wie
-viele Dateien *die Regeln dieser Familie* nennen — nicht, wie viele danach wirklich fehlen, was
-erst `deleteUnreferencedFontFiles` entscheidet; und bei einer Regel mit mehreren `url()` zählt er
-nur die erste. Gelesen, nicht gemessen.
+`release.md`). Beim Schreiben fiel dabei ein Punkt auf, der zuerst nur gelesen war und dann auf
+Wunsch des Nutzers an der gebauten App nachgemessen wurde: Der Bestätigungsdialog der Karte
+„Ungenutzte Schriften“ nannte, wie viele Dateien *die Regeln dieser Familie* nennen — je Regel nur
+die erste `url()` — und nicht, wie viele danach wirklich fehlen. Gemessen lag er in beide
+Richtungen daneben (1 statt 0 und 1 statt 3, bei einer Kontrolle von 1/1). Behoben: Beide Seiten
+fragen dieselbe Funktion, und „keine Datei“ hat einen eigenen Satz.

@@ -143,16 +143,30 @@ export async function unusedImportedFonts(projectPath: string, draftFamilies: st
   }
   const everything = texts.join('\n')
 
-  const byFamily = new Map<string, Set<string>>()
-  for (const face of parseFontFaces(body)) {
-    const files = byFamily.get(face.family) ?? new Set<string>()
-    const file = fontFileIn(projectFontsDir(projectPath), face.url)
-    if (file) files.add(basename(file))
-    byFamily.set(face.family, files)
+  // Per family the rules that would go - and from them the files that would go *with* them. That is
+  // the question deleteUnreferencedFontFiles answers afterwards, asked before: how many files are
+  // gone once this button is pressed. Counting each rule's own first url() instead put "1
+  // Datei(en)" in the dialog in both directions of wrong - with another rule naming the same file
+  // none went, and with three url() in the rule three did (thirty-fourth review, measured in the
+  // built app: 1/0 and 1/3, against a control of 1/1). The number is the part of that sentence a
+  // user believes.
+  const rulesOf = new Map<string, string[]>()
+  for (const rule of splitRules(body)) {
+    for (const family of new Set(parseFontFaces(rule).map((face) => face.family))) {
+      rulesOf.set(family, [...(rulesOf.get(family) ?? []), rule])
+    }
   }
-  return [...byFamily]
-    .filter(([family]) => !mentions(everything, family))
-    .map(([family, files]) => ({ family, files: [...files] }))
+  return Promise.all(
+    [...rulesOf]
+      .filter(([family]) => !mentions(everything, family))
+      .map(async ([family, rules]) => {
+        const stillNamed = await fontFilesStillNamed(projectPath, rules)
+        const files = [...fontFilesNamedBy(projectPath, rules.join('\n'), false)]
+          .filter((file) => !stillNamed.has(file))
+          .map((file) => basename(file))
+        return { family, files: [...new Set(files)] }
+      })
+  )
 }
 
 /**
@@ -210,39 +224,59 @@ async function whileHoldingFonts<T>(projectPath: string, run: () => Promise<T>):
   }
 }
 
-// Deletes the files the rules in `css` pointed at - but only a file no rule in any stylesheet of
-// the project still points at. Called after those rules have left custom.scss.
-async function deleteUnreferencedFontFiles(projectPath: string, css: string): Promise<string[]> {
-  // Two widenings over the list the editor shows, both for the same reason: here, finding a
-  // mention too many costs nothing, and missing one costs a file the site needs. Every stylesheet
-  // under quartz/styles rather than the two flat directories the app writes, and every url() of a
-  // rule rather than its first - a hand-written rule lists local() and two or three formats, and
-  // the file was deleted out from under the second of them (thirty-third review, finding 6).
-  const stillNamed = new Set<string>()
-  for (const path of await allStylesheets(projectPath)) {
-    for (const face of parseFontFaces(await readFile(path, 'utf-8'))) {
-      for (const url of face.urls) {
-        const file = fontFileIn(projectFontsDir(projectPath), url)
-        if (file) stillNamed.add(file)
-        // And a third widening, on this side only: the bare file name of any url(), whether or not
-        // the path resolves. `url("#{$f}/shared.woff2")` is a path Sass builds at compile time, so
-        // fontFileIn sees no static/fonts in it and the file went out from under it. A name too
-        // many protects a file nobody is using; a name too few deletes one the site needs. The
-        // deleting side below keeps asking fontFileIn, so nothing outside the fonts folder is
-        // touched either way.
-        const named = url.split(/[/\\]/).pop()
-        if (named) stillNamed.add(join(projectFontsDir(projectPath), named))
-      }
-    }
-  }
-  const removedFiles: string[] = []
+// The files the @font-face rules in `css` point at, as paths in the project's font folder.
+//
+// Two widenings over the list the editor shows, both for the same reason: whoever asks this
+// question is deciding about an `rm`, so finding a mention too many costs nothing and missing one
+// costs a file the site needs. Every stylesheet under quartz/styles rather than the two flat
+// directories the app writes (see allStylesheets), and every url() of a rule rather than its first
+// - a hand-written rule lists local() and two or three formats, and the file was deleted out from
+// under the second of them (thirty-third review, finding 6).
+//
+// `protecting` adds the third: the bare file name of any url(), whether or not the path resolves.
+// `url("#{$f}/shared.woff2")` is a path Sass builds at compile time, so fontFileIn sees no
+// static/fonts in it and the file went out from under it. A name too many protects a file nobody
+// is using; a name too few deletes one the site needs. Asking whether a rule is *about to lose*
+// its file stays on fontFileIn, so nothing outside the fonts folder is ever touched.
+function fontFilesNamedBy(projectPath: string, css: string, protecting: boolean): Set<string> {
+  const files = new Set<string>()
   for (const face of parseFontFaces(css)) {
     for (const url of face.urls) {
       const file = fontFileIn(projectFontsDir(projectPath), url)
-      if (!file || stillNamed.has(file) || removedFiles.includes(basename(file))) continue
-      await rm(file, { force: true })
-      removedFiles.push(basename(file))
+      if (file) files.add(file)
+      if (!protecting) continue
+      const named = url.split(/[/\\]/).pop()
+      if (named) files.add(join(projectFontsDir(projectPath), named))
     }
+  }
+  return files
+}
+
+/**
+ * Every file any stylesheet of the project still points at. `except` are rules taken out of
+ * custom.scss first - the ones that are about to go, when the question is asked before they do.
+ * Rule by rule, because splitRules() returns them trimmed and separately: their concatenation is
+ * not a string the file contains.
+ */
+async function fontFilesStillNamed(projectPath: string, except: string[] = []): Promise<Set<string>> {
+  const stillNamed = new Set<string>()
+  for (const path of await allStylesheets(projectPath)) {
+    let css = await readFile(path, 'utf-8')
+    if (path === customScssPath(projectPath)) for (const rule of except) css = css.split(rule).join('')
+    for (const file of fontFilesNamedBy(projectPath, css, true)) stillNamed.add(file)
+  }
+  return stillNamed
+}
+
+// Deletes the files the rules in `css` pointed at - but only a file no rule in any stylesheet of
+// the project still points at. Called after those rules have left custom.scss.
+async function deleteUnreferencedFontFiles(projectPath: string, css: string): Promise<string[]> {
+  const stillNamed = await fontFilesStillNamed(projectPath)
+  const removedFiles: string[] = []
+  for (const file of fontFilesNamedBy(projectPath, css, false)) {
+    if (stillNamed.has(file) || removedFiles.includes(basename(file))) continue
+    await rm(file, { force: true })
+    removedFiles.push(basename(file))
   }
   return removedFiles
 }

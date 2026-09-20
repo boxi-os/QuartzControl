@@ -883,8 +883,12 @@ export default {
       noFile: 'no file in the project',
       remove: 'Remove',
       removing: 'Removing…',
-      confirm:
-        'Remove “{{family}}”?\n\nIts @font-face rules leave custom.scss and {{count}} file(s) leave quartz/static/fonts. The only way back is a snapshot or git.',
+      confirm_one:
+        'Remove “{{family}}”?\n\nIts @font-face rules leave custom.scss and one file leaves quartz/static/fonts. The only way back is a snapshot or git.',
+      confirm_other:
+        'Remove “{{family}}”?\n\nIts @font-face rules leave custom.scss and {{count}} files leave quartz/static/fonts. The only way back is a snapshot or git.',
+      confirmNoFiles:
+        'Remove “{{family}}”?\n\nIts @font-face rules leave custom.scss; no file is deleted, because other rules still name it or it is not in the project. The only way back is a snapshot or git.',
       confirmButton: 'Remove font'
     },
     localFontHeading: 'Import a custom font',

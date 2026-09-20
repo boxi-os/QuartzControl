@@ -513,3 +513,18 @@ mit Klick, 0 ms und 150 ms mit Cmd+S, 150 ms mit einem zweiten SCSS-Entwurf und 
 fielen alle auf den alten Stand zurück und schrieben ihn beim nächsten Speichern über die Datei;
 mit dem Leeren im selben Tick wie das Nachziehen hält jede. Die Grenze lag zwischen 150 und 300 ms
 und hängt an der Dauer der IPC-Aufrufe, ist also keine Zahl zum Zitieren.
+
+**Wer vorher fragt, was ein Löschen kostet, stellt dieselbe Frage wie der, der löscht.** Der
+Bestätigungsdialog der Karte „Ungenutzte Schriften“ nannte die Zahl aus `unusedImportedFonts`, und
+die zählte, wie viele Dateien die *Regeln dieser Familie* nennen — je Regel nur die erste `url()`,
+und ohne zu fragen, ob eine andere Regel die Datei noch hält. `deleteUnreferencedFontFiles` fragt
+beides. An der gebauten App gemessen (2026-09-20, Dialog im Hauptprozess gespiegelt), und der Satz
+lag in beide Richtungen daneben: Mit einer eigenen Regel auf derselben Datei sagte er „1 Datei(en)“
+und es ging keine; mit drei `url()` in der Regel der Familie sagte er „1“ und es gingen drei. Die
+Kontrolle ohne beides sagte „1“ und es ging eine — die Zahl war also nicht offensichtlich falsch,
+sondern nur meistens. Beide Seiten fragen jetzt dieselbe Funktion (`fontFilesNamedBy`,
+`fontFilesStillNamed`), und der Fall „keine Datei“ hat einen eigenen Satz statt einer Null:
+gemessen 1/1, 0/0 und 3/3. Die erste Messung des Drei-`url()`-Falls war ungültig und meldete
+trotzdem ein Ergebnis — das Ersetzungsmuster im Skript nahm `../static/fonts/…` an, wo der Import
+`static/fonts/…` schreibt, sodass die Regel nie umgeschrieben wurde; seither bricht der Lauf ab,
+statt über eine Regel zu berichten, die er nicht geschrieben hat.

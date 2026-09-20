@@ -456,8 +456,14 @@ function UnusedImportedFonts({
   if (unused.length === 0) return null
 
   async function remove(font: UnusedImportedFont): Promise<void> {
+    // Its own sentence when nothing is deleted: "und 0 Datei(en)" is the shape of a number, not an
+    // answer. `files` is what would really go - the same question deleteUnreferencedFontFiles
+    // answers afterwards (fontService) - so zero is a state that happens, not an edge case.
     const ok = await confirmDialog({
-      text: t('themeEditor.unusedFonts.confirm', { family: font.family, count: font.files.length }),
+      text:
+        font.files.length === 0
+          ? t('themeEditor.unusedFonts.confirmNoFiles', { family: font.family })
+          : t('themeEditor.unusedFonts.confirm', { family: font.family, count: font.files.length }),
       confirmLabel: t('themeEditor.unusedFonts.confirmButton'),
       danger: true
     })

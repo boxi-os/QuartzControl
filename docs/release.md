@@ -87,6 +87,31 @@ die nicht gepusht ist, erreicht also niemanden, der online ist.
 vergleicht außer den Stylesheets auch die drei Kopien byte-weise und nennt je Kopie `createdAt`.
 Exit 0 heißt: alle drei gleich. Ist die veröffentlichte nicht abrufbar, sagt es das und endet mit 1.
 
+**Was `--check-sync` nicht sieht:** die Drift zwischen diesem Repo und den drei Kopien, sobald sie
+aus `plugins.mjs`, `variables.mjs`, `layout.mjs` oder `frames.mjs` kommt. Die vier haben bewusst
+keinen Rückweg (ein Rückleser wäre ihre zweite, inverse Umsetzung, siehe `CLAUDE.md`), und die
+Kopien sind *untereinander* gleich, auch wenn alle drei veraltet sind. Der Aufruf antwortet dann
+„deckungsgleich“ und meint nur die Stylesheets und die Schnipsel. **Offen seit `d4da5ef`
+(2026-09-19):** Die Vorlage schreibt `--titleFont`, `--headerFont`, `--bodyFont`, `--codeFont` und
+`--font-interface` nicht mehr in den `css-vars`-Block, aber ausgerollt ist das nirgends — nicht im
+Beispielprojekt (`template:example -- --only 7`), nicht im Export, nicht in den drei Kopien. Vor
+dem Release: ausrollen oder als bewusst offen benennen. Die **bestehenden** Projekte erreicht das
+Ausrollen ohnehin nicht; dort sagt es seit dem dreiunddreißigsten Review der Reiter „Basis“ unter
+dem Schriftfeld.
+
+## 4b. Die Liste der Google-Schriften ist nicht älter als das Release
+
+    npm run fetch:google-fonts
+
+schreibt `src/data/googleFonts.ts` neu und setzt dabei `GOOGLE_FONTS_FETCHED`. **Diese Zahl steht
+dem Nutzer auf der Stile-Seite vor Augen** („Liste vom …“), sie ist also keine interne Notiz. Die
+Liste ist eine Tipphilfe und keine Sperre — eine Familie, die dort fehlt, wird trotzdem geholt,
+wenn sie richtig geschrieben ist —, aber eine Liste, die zwei Fassungen alt ist, bietet neue
+Familien nicht an und sagt über sie „kennt Google nicht“. Der Lauf braucht nur Netz — Quelle ist
+`fonts.google.com/metadata/fonts`, dieselbe Datei, aus der fonts.google.com seine eigene Liste
+baut, kein Schlüssel. Der Kopfkommentar der Datei entsteht aus der Vorlage im Skript und übersteht
+den Lauf (nachgeprüft: Zeile für Zeile gleich).
+
 ## 5. Der Footer steht an sechs Stellen gleich
 
 Die Links auf Quartz, QuartzControl, Example und die Plugin-Handbücher stehen in

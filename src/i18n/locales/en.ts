@@ -177,7 +177,7 @@ export default {
         'The address the site will be reachable at later — without https://. If you do not know it yet, leave “localhost” and fill it in later under Configuration.',
       useTemplate: 'Install the example template',
       useTemplateHint:
-        'A finished design: measured colours for light and dark, authored page grids, self-hosted typefaces and every component styled individually. All of it editable afterwards.',
+        'A finished design: measured colours for light and dark, authored page grids, locally served typefaces and every component styled individually. All of it editable afterwards.',
       templateContent: 'With the example pages',
       templateContentHint:
         'Around 270 pages that explain the template itself — for every component the page describing it. Meant for looking things up; leave it out if you bring your own notes.',
@@ -255,7 +255,8 @@ export default {
       noIndex: 'The site has no start page',
       noIndexDetail: 'The content folder has no index.md, so the site’s own address shows a 404 page.',
       noBaseUrl: 'No base URL set',
-      noBaseUrlDetail: 'Without it the build fails as soon as fonts are self-hosted.',
+      noBaseUrlDetail:
+        'Links, the RSS feed and preview images are built from it. With the “Fonts” plugin serving the fonts itself, the build fails outright without it.',
       coreUpdatePending: 'A core update did not run to the end',
       coreUpdatePendingDetail:
         'These packages of yours are missing from package.json, or stand there at a different version: {{packages}}. Under Updates, “Run update” finishes the job.',
@@ -781,7 +782,7 @@ export default {
     pageTitleSuffixHint: 'Appended after each page’s own title in the browser tab, e.g. “ · My wiki”. It does not appear on the page itself.',
     baseUrl: 'Base URL',
     baseUrlHint:
-      'The address the site will be reachable at — without https://, e.g. notes.example.com. Links, the RSS feed and preview images are built from it; without it the build fails as soon as fonts are self-hosted.',
+      'The address the site will be reachable at — without https://, e.g. notes.example.com. Links, the RSS feed and preview images are built from it; with the “Fonts” plugin serving the fonts itself, the build fails outright without it.',
     locale: 'Site language',
     spa: 'Switch pages without reloading',
     spaHint:

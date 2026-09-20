@@ -639,7 +639,9 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
 - **Ein Bau, dem etwas fehlt, bricht ab, statt zu warnen.** Eine Warnung im Log eines Laufs, dessen
   Paket schon fertig ist, liest niemand: `beforePack` packte zweimal still ohne Handbuch, erst auf
   der VM, dann nach dem Umzug der Projekte auf dem Mac, der die Beta-Pakete baut. Wer das Fehlende
-  wirklich nicht will, sagt es mit einem Flag (`QUARTZCONTROL_WITHOUT_HANDBOOK=1`).
+  wirklich nicht will, sagt es mit einem Flag. (Das Handbuch reist seit dem 2026-09-18 nicht mehr
+  mit, `QUARTZCONTROL_WITHOUT_HANDBOOK` gibt es nicht mehr; dasselbe gilt heute für das
+  mitgelieferte git — `fetch-git` bricht ab, statt ohne es zu packen.)
 - **Ein Fix auf einem Branch, der nie gemergt wurde, ist keiner.** Der Pfad-Fix für das Handbuch
   existierte seit dem 2026-09-12 (`e6916ae`) — auf `feat/beispielvorlage-und-header`, zusammen mit
   sechs weiteren Commits. Die ersten zwei (`c8c143d`, `39bef46`) standen auf `origin/main`, die

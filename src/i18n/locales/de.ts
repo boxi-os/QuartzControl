@@ -177,7 +177,7 @@ export default {
         'Die Adresse, unter der die Website später erreichbar ist — ohne https://. Wenn du sie noch nicht kennst, lass „localhost“ stehen und trage sie später unter Konfiguration nach.',
       useTemplate: 'Beispielvorlage mitinstallieren',
       useTemplateHint:
-        'Eine fertige Gestaltung: gemessene Farben für hell und dunkel, eigene Seitenraster, selbst gehostete Schriften und jede Komponente einzeln gestaltet. Lässt sich hinterher überall ändern.',
+        'Eine fertige Gestaltung: gemessene Farben für hell und dunkel, eigene Seitenraster, lokal ausgelieferte Schriften und jede Komponente einzeln gestaltet. Lässt sich hinterher überall ändern.',
       templateContent: 'Mit den Beispielseiten',
       templateContentHint:
         'Rund 270 Seiten, die die Vorlage selbst erklären — zu jeder Komponente die Seite, auf der sie beschrieben ist. Zum Nachschlagen gedacht; wenn du eigene Notizen mitbringst, lass sie weg.',
@@ -256,7 +256,8 @@ export default {
       noIndex: 'Die Website hat keine Startseite',
       noIndexDetail: 'Im Content-Ordner fehlt die index.md, die Adresse der Website zeigt deshalb eine 404-Seite.',
       noBaseUrl: 'Keine Basis-URL gesetzt',
-      noBaseUrlDetail: 'Ohne sie schlägt der Build fehl, sobald Schriften selbst gehostet werden.',
+      noBaseUrlDetail:
+        'Links, RSS-Feed und Vorschaubilder werden daraus gebaut. Liefert das Plugin „Fonts“ die Schriften selbst aus, schlägt der Build ohne sie ganz fehl.',
       coreUpdatePending: 'Ein Kern-Update ist nicht zu Ende gelaufen',
       coreUpdatePendingDetail:
         'Diese eigenen Pakete fehlen in package.json oder stehen dort mit einer anderen Version: {{packages}}. Unter Updates führt „Update durchführen“ es zu Ende.',
@@ -784,7 +785,7 @@ export default {
     pageTitleSuffixHint: 'Wird im Browser-Tab hinter den Titel der einzelnen Seite gehängt, z. B. „ · Mein Wiki“. Auf der Seite selbst erscheint er nicht.',
     baseUrl: 'Basis-URL',
     baseUrlHint:
-      'Die Adresse, unter der die Website später erreichbar ist — ohne https://, z. B. notizen.example.com. Links, RSS-Feed und Vorschaubilder werden daraus gebaut; ohne sie schlägt der Build fehl, sobald Schriften selbst ausgeliefert werden.',
+      'Die Adresse, unter der die Website später erreichbar ist — ohne https://, z. B. notizen.example.com. Links, RSS-Feed und Vorschaubilder werden daraus gebaut; liefert das Plugin „Fonts“ die Schriften selbst aus, schlägt der Build ohne sie ganz fehl.',
     locale: 'Sprache der Website',
     spa: 'Seitenwechsel ohne Neuladen',
     spaHint:

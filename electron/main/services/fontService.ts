@@ -177,6 +177,14 @@ async function deleteUnreferencedFontFiles(projectPath: string, css: string): Pr
       for (const url of face.urls) {
         const file = fontFileIn(projectFontsDir(projectPath), url)
         if (file) stillNamed.add(file)
+        // And a third widening, on this side only: the bare file name of any url(), whether or not
+        // the path resolves. `url("#{$f}/shared.woff2")` is a path Sass builds at compile time, so
+        // fontFileIn sees no static/fonts in it and the file went out from under it. A name too
+        // many protects a file nobody is using; a name too few deletes one the site needs. The
+        // deleting side below keeps asking fontFileIn, so nothing outside the fonts folder is
+        // touched either way.
+        const named = url.split(/[/\\]/).pop()
+        if (named) stillNamed.add(join(projectFontsDir(projectPath), named))
       }
     }
   }

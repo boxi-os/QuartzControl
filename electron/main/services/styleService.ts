@@ -715,7 +715,11 @@ function toDiagnostic(projectPath: string, err: unknown): ScssDiagnostic {
 
 // ── which fonts the site actually has ───────────────────────────────────────
 
-const FONT_FACE_RE = /@font-face\s*\{([^}]*)\}/g
+// The `#{…}` of a Sass interpolation is stepped over rather than read as the rule's closing brace:
+// `src: url("#{$f}/shared.woff2")` ended the body at the interpolation's own brace, so the rule
+// had no url() at all and the file it names was deleted as unused (thirty-fourth review, finding
+// 7). Each position matches exactly one branch, so there is nothing to backtrack over.
+const FONT_FACE_RE = /@font-face\s*\{((?:[^#}]|#(?!\{)|#\{[^}]*\})*)\}/g
 
 function declaration(body: string, property: string): string | undefined {
   const match = new RegExp(`(?:^|;)\\s*${property}\\s*:\\s*([^;]+)`, 'i').exec(body)
@@ -730,9 +734,13 @@ export interface ParsedFace {
   /** The first url() of `src`, verbatim - what the app's own rules and Quartz's have. */
   url?: string
   /**
-   * Every url() of `src`, in order. A hand-written rule commonly lists two or three formats after
-   * a local(), and the question "does a rule still point at this file" has to see all of them:
-   * asking only the first deleted a file a second url() was using (thirty-third review, finding 6).
+   * Every url() of the rule, in order. A hand-written rule commonly lists two or three formats
+   * after a local(), and the question "does a rule still point at this file" has to see all of
+   * them: asking only the first deleted a file a second url() was using (thirty-third review,
+   * finding 6). Of the whole body, not of one `src` declaration - the old "bulletproof" spelling
+   * that generators emit writes two, an .eot one for old IE and the real one after it, and the
+   * file the second named was deleted (thirty-fourth review, finding 7). Nothing else in a
+   * @font-face carries a url().
    */
   urls: string[]
 }
@@ -744,8 +752,7 @@ export function parseFontFaces(content: string): ParsedFace[] {
   while ((match = FONT_FACE_RE.exec(content)) !== null) {
     const family = declaration(match[1], 'font-family')
     if (!family) continue
-    const src = declaration(match[1], 'src')
-    const urls = src ? [...src.matchAll(/url\(\s*["']?([^"')]+)["']?\s*\)/g)].map((m) => m[1]) : []
+    const urls = [...match[1].matchAll(/url\(\s*["']?([^"')]+)["']?\s*\)/g)].map((m) => m[1])
     out.push({
       family,
       weight: declaration(match[1], 'font-weight') ?? '400',
@@ -790,17 +797,25 @@ export function projectFontsDir(projectPath: string): string {
  * in quartz/styles/meine.scss and loads with @use is outside that list, and deleting the file it
  * points at was the one way a still-needed font file could go (thirty-third review, finding 6).
  *
- * A symlinked directory is not descended into: readdir's Dirent does not follow links, so
- * isDirectory() is false for one, and a loop cannot arise.
+ * A link is followed, and with a depth limit rather than a rule against it: readdir's Dirent never
+ * follows one, so isDirectory() and isFile() are both false for a link - and this walk decides
+ * whether a font file may be deleted, where finding too little costs the file. A `custom/` or a
+ * `custom.scss` that is a symlink kept its font before the walk got here and lost it after
+ * (thirty-fourth review, finding 7); sharing stylesheets between projects that way is not an
+ * outlandish user in an app that offers the content folder as a link itself. The limit is the one
+ * findScssFiles uses, and it is what a loop runs into.
  */
 export async function allStylesheets(projectPath: string): Promise<string[]> {
   const out: string[] = []
-  const walk = async (dir: string): Promise<void> => {
-    if (!existsSync(dir)) return
+  const walk = async (dir: string, depth = 0): Promise<void> => {
+    if (depth > 6 || !existsSync(dir)) return
     for (const entry of await readdir(dir, { withFileTypes: true })) {
       const full = join(dir, entry.name)
-      if (entry.isDirectory()) await walk(full)
-      else if (entry.isFile() && /\.(scss|css)$/.test(entry.name)) out.push(full)
+      // `stat`, not the Dirent, for a link: it says what the link points at, and a hanging one
+      // throws rather than answering "not a directory".
+      const kind = entry.isSymbolicLink() ? await stat(full).catch(() => null) : entry
+      if (kind?.isDirectory()) await walk(full, depth + 1)
+      else if (kind?.isFile() && /\.(scss|css)$/.test(entry.name)) out.push(full)
     }
   }
   await walk(stylesDir(projectPath))

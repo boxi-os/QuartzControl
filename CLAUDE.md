@@ -225,7 +225,7 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 
 ## Die Reviews
 
-Alle zweiunddreißig Listen sind abgearbeitet. Die Chronik steht in
+Alle vierunddreißig Listen sind abgearbeitet. Die Chronik steht in
 [`docs/reviews.md`](docs/reviews.md) — welches Review welchen Stand gelesen hat, mit welchen
 Zahlen, was es gefunden hat und welche Fixes noch niemand gelesen hat. Sie stand bis zum
 2026-09-17 hier und ist wörtlich dorthin gewandert; die Review-Dokumente selbst liegen als
@@ -236,25 +236,32 @@ Chronik. Die Chronik nachzulesen lohnt für zwei Fragen: *warum* eine Regel so l
 Absatz in `docs/decisions/` sie nicht beantwortet, und *was gerade ungelesen ist* — die Serie ist
 so gebaut, dass jede Runde liest, was die vorige gebaut hat.
 
-**Stand:** Die dreizehn Befunde des dreiunddreißigsten Reviews (vier Mittel, neun Niedrig) sind
-abgearbeitet, am 2026-09-20 auf `fix/review-2026-10-07`, dazu alle sieben Nebenbei-Punkte — 22
-Commits, je einer mit Typcheck, Build und Smoke. Was die Runde gefunden hat, steht in
-[`docs/REVIEW-2026-10-07.md`](docs/REVIEW-2026-10-07.md), was daraus geworden ist in
-[`docs/reviews.md`](docs/reviews.md); die Messungen in
+**Stand:** Die neun Befunde des vierunddreißigsten Reviews (zwei Mittel, sieben Niedrig) sind
+abgearbeitet, am 2026-09-20 auf `fix/review-2026-10-08`, dazu alle vier Nebenbei-Punkte — 12
+Commits, je einer mit Typcheck, Build und Smoke. Die Runde las die zwanzig Fixes der vorigen und
+fand zwei, die nicht halten, weil die Messung in der Commit-Nachricht einen Weg ausgelassen hatte:
+der Editor fällt weiter auf den alten Stand zurück, wenn binnen einer Viertelsekunde nach dem
+Tippen gespeichert wird (1), und „ein unbrauchbarer Dateiname ist ein Fehler“ war an lateinischen
+Schriften gemessen und sperrte jede japanische, koreanische und chinesische Familie aus (2). Was
+die Runde gefunden hat, steht in [`docs/REVIEW-2026-10-08.md`](docs/REVIEW-2026-10-08.md), was
+daraus geworden ist in [`docs/reviews.md`](docs/reviews.md); die Messungen in
 [`docs/decisions/styles-and-fonts.md`](docs/decisions/styles-and-fonts.md) und
-[`docs/decisions/snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md), die sechs
+[`docs/decisions/snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md), die fünf
 neuen Regeln in [`docs/conventions.md`](docs/conventions.md). Offen ist aus dieser Runde nichts;
 noch nicht getan ist, was `docs/release.md` daraus verlangt (Punkt 3: Handbuch- und Web-Projekt
 einmal durch einen Bau schicken, damit die Schrift-URLs relativ werden; Punkt 4: `d4da5ef`
 ausrollen oder als bewusst offen benennen). **Keinen dieser Fixes hat ein Review gelesen.**
 
-Die Runde davor (zweiunddreißigstes Review, sechs Befunde, kein Befund über Niedrig) ist auf
-`main` und gepusht; die Sprache von gits Text ist inzwischen gemessen (an GNU `libintl`, nicht an
-glibc). **Was beide Reviews vor dem RC empfehlen, ist keine weitere Runde dieser Art**, sondern
+Die Runde davor (dreiunddreißigstes Review, dreizehn Befunde, vier Mittel) ist abgearbeitet und
+auf `main`; das vierunddreißigste hat sie gelesen und achtzehn ihrer zwanzig Fixes bestätigt.
+**Was drei Reviews in Folge vor dem RC empfehlen, ist keine weitere Runde dieser Art**, sondern
 die Liste, die nur der Nutzer abarbeiten kann: VoiceOver über Git-Sync und die zwei Boards, die
-gepackte App je Plattform, glibc — und nach dem dreiunddreißigsten Review der Alpha-Test, an
-Projekten aus der Beispielvorlage und mit einer gebauten Website am Ende jeder Szene, weil drei
-der vier mittleren Befunde in der App unsichtbar und erst im Browser zu sehen waren.
+gepackte App je Plattform, glibc — und den Alpha-Test, an Projekten aus der Beispielvorlage und
+mit einer gebauten Website am Ende jeder Szene, weil die Befunde, auf die es ankommt, in der App
+unsichtbar und erst im Browser zu sehen sind. Das vierunddreißigste Review nennt dafür sieben
+Szenen, die aus dieser Schicht dazugehören (darunter eine CJK-Schrift mit „lokal ausliefern“,
+Tippen und sofort Cmd+S am echten Tastendruck, und ein Abbruch auf einem Linux mit altem
+System-git); sie stehen am Ende von [`docs/REVIEW-2026-10-08.md`](docs/REVIEW-2026-10-08.md).
 
 **Davor, am 2026-09-19, ein Durchgang ohne Review dahinter:** die Schriften der Stile-Seite von
 der Auswahl bis zu den Dateien im Projekt (Combobox über alle Google-Familien, Vorschau aus dem

@@ -198,6 +198,16 @@ Projektwurzel.
   `stopping` zählt weiter als Schreiber, ein wartender Start auch. Ein Server aus einer früheren Sitzung gehört
   keinem Eintrag und wird nicht gesehen; ihn zu finden hieße, bei jedem Klick Ports abzusuchen.
   Messungen in [`navigation-and-pages.md`](decisions/navigation-and-pages.md).
+- **Zwei Türen auf denselben Ordner brauchen ein Schloss, und ein Schloss, das keinen Klick
+  abweist, wartet.** Der Schriftordner hat zwei Schreiber — das Speichern der Stile-Seite und die
+  Bau-Tür vor jedem Build —, und beide holen Dateien und löschen danach, was keine Regel mehr
+  nennt. Nebeneinander räumt der, der abbricht, die Dateien weg, die der andere als „schon da“
+  übersprungen hat und gerade in seinen Block schreibt; gemessen scheiterten *beide*, einer mit
+  `ENOENT` beim `rename`. `whileHoldingFonts` reiht deshalb je Projektpfad auf, statt abzulehnen:
+  Keiner der beiden Aufrufer ist ein Klick, den man wiederholen könnte, und die Bau-Tür muss den
+  fertigen Stand sehen. Der Schlüssel entsteht wie bei `coreUpdatesRunning` über `realpath`, und
+  geräumt wird nur, solange der Eintrag noch dieser Lauf ist. Messungen in
+  [`styles-and-fonts.md`](decisions/styles-and-fonts.md).
 - **Ein Vorgang, der ein Repository schreibt, wird im Hauptprozess gesperrt, nicht im Renderer.**
   `coreBusy` war ein `useState`: das Gedächtnis eines Fensters an das, was es selbst gestartet hat,
   und es stirbt mit der Route. Zwei gleichzeitige Core-Updates auf demselben Projekt ließen den
@@ -332,6 +342,25 @@ Projektwurzel.
   Liste: der Editor fiel auf den Stand von vor dem Speichern zurück, und der nächste Tastendruck
   schrieb ihn über das Gespeicherte. Messungen in
   [`styles-and-fonts.md`](decisions/styles-and-fonts.md).
+- **Ein Bedienelement, das seinen Wert von außen bekommt, darf nicht durch einen Zwischenstand
+  geschickt werden.** Zwei Zustände, die zusammengehören, werden im selben Tick gesetzt — nicht der
+  eine früh und der andere nach drei `await`. `contentOf` liest `fileDrafts[tab] ?? loaded[tab]`,
+  und das Speichern leerte die Entwürfe lange vor dem Nachziehen: Der Wert ging Entwurf → alter
+  Stand → Entwurf. `@uiw/react-codemirror` wendet eine Änderung von außen nicht an, solange getippt
+  wird, sondern legt sie als `pendingUpdate` zurück und holt sie nach einem Latch nach, mit dem
+  Wert von damals — der dritte Wert erzeugt kein neues, also schrieb das alte rund 0,8 s *nach* dem
+  „Gespeichert.“ den alten Stand in den Editor, und Weitertippen schrieb ihn über die Datei. Die
+  Regel ist die Fortsetzung der vorigen: Der Fix, der den Stand als Argument mitgibt, behebt die
+  Ursache und nicht die Wertfolge. Messungen in
+  [`styles-and-fonts.md`](decisions/styles-and-fonts.md).
+- **Der Statusplatz des Seitenkopfes ist für die kurze Antwort; ein Satz, der einen Weg nennt,
+  steht unter dem Kopf.** Der Platz sitzt in einem `shrink-0`-Flex neben dem Titel und bricht
+  nicht um: Bei 1280 px wurde die Verweigerung des Speicherns eine Zeile von 1457 px, drückte den
+  Titelblock von 576 auf 91 px, machte aus der Beschreibung neun Zeilen und war am Fensterrand
+  abgeschnitten — genau vor der Hälfte, die sagt, dass nichts verloren ist. Stile, Konfiguration
+  und Layout sagen ihren Fehlersatz seither unter dem Kopf, in einer eigenen Live-Region, wie die
+  Schrift-Notiz seit `920c3c1`; der Platz selbst hat eine Breite und bricht um, aber das ist das
+  Netz unter der Regel und nicht die Regel.
 - **Wer vor einem Überschreiben warnt, warnt dort, wo überschrieben wird — sonst wird dort nicht
   überschrieben.** Das Band über einen veralteten `custom.scss`-Entwurf steht auf dem CSS-Reiter;
   seit das Speichern alle vier Reiter schreibt, schrieben auch die drei ohne Band. Jetzt schreibt
@@ -647,7 +676,14 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   die sie brauchten. Dort, wo ein Fund zu viel nichts kostet und ein Fund zu wenig eine Datei,
   wird rekursiv und vollständig gesucht; die Liste, die der Editor anbietet, bleibt davon
   unberührt. **Und die Oberfläche sagt, wo gesucht wurde**, damit die Antwort als das gelesen
-  werden kann, was sie ist.
+  werden kann, was sie ist. **„Breit“ heißt auch: durch jeden Symlink und durch jede Schreibweise**
+  — `readdir`s Dirent folgt keinem Link, also war für einen sowohl `isDirectory()` als auch
+  `isFile()` falsch und die Suche blieb davor stehen (gegen Schleifen genügt eine Tiefengrenze);
+  die zweite `src:`-Deklaration der alten „bulletproof“-Form wurde nie gelesen; und
+  `url("#{$f}/…")` ließ die `@font-face`-Regex am Brace der Interpolation enden, sodass die Regel
+  gar keine `url()` hatte. Auf der schützenden Seite zählt deshalb auch der blanke Dateiname einer
+  `url()`, deren Pfad sich nicht auflösen lässt — die löschende Seite fragt weiter nach dem
+  vollständigen Pfad, damit nichts außerhalb des Schriftordners angefasst wird.
 - **Ein fremder Dienst, der nicht scheitert, hat nicht unbedingt geliefert.** Googles CSS2-API
   antwortet mit 400 nur, wenn *keine* Familie der Anfrage stimmt; unter anderen, die stimmen, wird
   eine unbekannte still ausgelassen. Die App fragt drei oder vier auf einmal, der gewöhnliche Fall
@@ -756,6 +792,14 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   `check:plugin-names` und seit dem zwölften Review `check:runtime` (`shared/macNodeBinary.ts`); die
   Helper-Suche stand vorher gleich und ungeprüft zweimal da. Eine Kopie, die heute stimmt, ist
   genau die, die niemand mehr vergleicht.
+- **Eine Messung trägt nur so weit wie ihre Stichprobe, und eine Decke wird an dem gemessen, was
+  sie treffen soll.** „Gemessen am echten Google: 7 bis 29 Dateien“ war an lateinischen Schriften
+  gemessen; Google zerlegt eine CJK-Familie in 92 bis 126 Dateien, und beide Zahlen, die daran
+  hingen, lagen daneben — die Namensregel sperrte jede japanische, koreanische und chinesische
+  Schrift aus, und die Dateidecke von 200 hätte zwei solche Familien getroffen. Wer eine Grenze
+  zieht, hält eine Eingabe daneben, die am anderen Ende des Feldes liegt. Dasselbe in der Zeit: Die
+  Messung, die einen Fix belegte, hatte eine Pause vor dem Klick, und ohne sie fiel er durch — eine
+  Szene mit 0 ms gehört ins Geschirr, denn mit Pause ist sie blind.
 - **Eine Messung trägt nur so weit wie ihr Instrument — und das Instrument ist das, das im Code
   steht.** Vier Stellen sagten, `realpath` lasse die Großschreibung, wie sie kommt; gemessen war das
   an `fs.realpathSync`, Nodes JS-Nachbildung, während der Code `fs.promises.realpath` ruft, das

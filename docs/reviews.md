@@ -18,7 +18,7 @@ gearbeitet wird, und nicht, was war.
 
 ## Befunde aus den Reviews (Stand 2026-09-20)
 
-Alle dreiunddreißig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVIEW-2026-09-02.md),
+Alle vierunddreißig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](REVIEW-2026-09-07.md) mit seinen acht,
@@ -1703,3 +1703,39 @@ nennt der Auftrag `save()` in seinen drei Ausgängen und die Abbruch-Sätze in `
 als schwächste Messung die Attrappe, die für Befund 11 an der Stelle eines echten alten git stand.
 Geschrieben ist er von demselben Modell wie die Commits **und aus derselben Sitzung** — der
 ungünstigste Fall für seine Zahlen, und er sagt das.
+
+**Gelesen hat es Claude Fable 5.1, und es fand neun Befunde — zwei Mittel, sieben Niedrig, keinen
+Hoch.** Von den zwanzig Fixes hielten achtzehn auf den Wegen, die das Review nachgefahren ist; die
+zwei, die nicht halten, brechen aus demselben Grund wie in der Vorrunde: Der Weg, auf dem sie
+brechen, ist einer, den die Messung in der Commit-Nachricht nicht gegangen ist. Bei Befund 1 war
+das eine Pause vor dem Klick — ohne sie fällt der Editor weiter auf den alten Stand zurück, und
+Weitertippen überschreibt das Gespeicherte; bei Befund 2 eine Messung, die nur lateinische Schriften
+gesehen hatte, weshalb der Fix „ein unbrauchbarer Dateiname ist ein Fehler“ aus einem stillen
+Fehler eine Sperre für jede japanische, koreanische und chinesische Familie machte. Die übrigen
+sieben: der Verweigerungssatz der Vorrunde steht 1457 px breit im Statusplatz und ist vor der
+Hälfte abgeschnitten, die den Weg nennt (3); eine gerade importierte Schrift bekommt „Google kennt
+diese Schrift nicht — prüfe die Schreibweise“ (4); unter einem echten git 2.37 sagt *jeder* Abbruch
+„ließ sich nicht prüfen“ (5); hängt die Antwort nach dem Kopf, kommt weiter der rohe englische Satz
+(6); die breitere Suche folgt keinem Symlink und liest nur die erste `src:`-Deklaration (7); `noRule`
+warnt vor einer Ersatzschrift, wo eine Systemschrift gewählt ist (8); und vier Sätze, die nicht mehr
+tragen (9).
+
+**Alle neun sind abgearbeitet, dazu alle vier Nebenbei-Punkte** — auf `fix/review-2026-10-08`, je
+ein Commit mit Typcheck, Build und Smoke, von Claude Opus 5. Gemessen wurde auf denselben fünf
+Wegen wie das Review, mit seinem Geschirr: die gebaute App, die Dienste als Bündel (alt gegen neu),
+das echte Google, Electrons `net.fetch` und echte git-Repos unter 2.54.0 und dem aus der Quelle
+gebauten 2.37.0. Drei Ränder kamen dabei dazu, die das Review nicht genannt hatte: ein
+`custom/own.scss`, das ein Symlink ist, verlor seine Schrift schon vor der breiteren Suche; ein
+`url("#{$f}/…")` ließ `FONT_FACE_RE` am Brace der Interpolation enden, sodass die Regel gar keine
+`url()` hatte; und zwei gleichzeitige Läufe (Speichern und Bau-Tür) ließen sich *beide* scheitern,
+einer mit `ENOENT` beim Umbenennen. Was als Regel bleibt, steht in
+[`conventions.md`](conventions.md), die Messungen in
+[`styles-and-fonts.md`](decisions/styles-and-fonts.md) und
+[`snapshots-and-updates.md`](decisions/snapshots-and-updates.md).
+
+**Seine Empfehlung hält das Review aufrecht**, und nennt diese Runde das Argument dafür: Sie hat
+gefunden, was eine Runde dieser Art finden kann, und beide Wege sind solche, die ein Alpha-Test von
+selbst geht. Gegen einen RC sprachen aus seiner Sicht Befund 2, mit Abstrichen Befund 1 und
+mitzunehmen Befund 3 — alle drei sind behoben. Was danach offen bleibt, ist die Liste, die nur der
+Nutzer abarbeiten kann (VoiceOver, die gepackte App je Plattform, glibc), und `dist`, das seit dem
+Handbuch-Rückbau ungelaufen ist.

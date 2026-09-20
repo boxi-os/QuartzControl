@@ -465,3 +465,51 @@ gelesen wird: `buildService` ruft `styleService.migrateFontUrls()` neben `writeA
 lesen kann, und wer „Bauen“ drückt, hat das nicht bestellt. Gemessen an einer Kopie von
 `navigations-testprojekt`: 4 root-relative `url()` vorher, 0 nach dem Start des Dev-Servers, und
 der Satz im Log.
+
+**Außerhalb des lateinischen Alphabets kostet eine Familie das Zwanzigfache, und beide Zahlen
+daneben waren an Latein gemessen.** Der Fix des dreiunddreißigsten Reviews — „ein Dateiname, den
+der Code nicht verwenden kann, ist ein Fehler“ — prüfte gegen `^[\w-]+\.(?:woff2|…)$`, und Google
+benennt jede Scheibe einer CJK-Familie `<hash>.<n>.woff2`. Damit war jede japanische, koreanische
+und chinesische Schrift nicht mehr speicherbar, unter einem Satz, der die Schuld bei Google sucht;
+vorher war dieselbe Familie still zu sieben Achteln von Google ausgeliefert worden. Am echten
+Google gemessen (User-Agent der App, 2026-09-20): eine lateinische Familie sind 7 bis 29 Dateien,
+eine CJK-Familie 92 bis 126, vier CJK-Slots 439 bis 495 — die Dateidecke von 200 hätte also den
+Normalfall dieser Nutzer getroffen, und steht seither auf 800. Die Byte-Decke ist reichlich: Alle
+124 Dateien von Noto Sans JP sind 5,4 MB, die vier Familien zusammen 14,0 MB. Am Bündel gegen das
+echte Google, drei Stände: vor dem Fix des dreiunddreißigsten 17 Dateien und 240 Regeln, die weiter
+auf `fonts.gstatic.com` zeigten; danach 0 Dateien und ein Fehler; jetzt 137 Dateien und keine
+fremde Adresse mehr.
+
+**Die breitere Suche war an drei Stellen schmaler, als ihr Kommentar sagte.** `allStylesheets`
+entscheidet, ob eine Schriftdatei gelöscht werden darf, und blieb an jedem Symlink stehen —
+`readdir`s Dirent folgt keinem, also ist für einen Link sowohl `isDirectory()` als auch `isFile()`
+falsch. Gemessen am Bündel, je ein Mini-Projekt mit einer eigenen Regel auf `shared.woff2` und
+`removeImportedFont('Alt')`: `custom/` als Link, `custom.scss` als Link und `custom/own.scss` als
+Link verloren die Datei alle drei. Dazu zwei Schreibweisen, die keine `url()` hergaben: die alte
+„bulletproof“-Form mit zwei `src:`-Deklarationen (gelesen wurde die erste, die auf das `.eot`
+zeigt) und `url("#{$f}/shared.woff2")`, bei dem `FONT_FACE_RE` am Brace der Interpolation endete
+und die Regel deshalb gar keine `url()` hatte. Alle fünf behalten die Datei jetzt; der Lesepfad
+ist unverändert (`navigations-testprojekt`: 4 Regeln, 3 Familien), und die Regex kostet nichts
+messbar (2000 Rauten in 1 ms).
+
+**Zwei Schreiber auf demselben Schriftordner lassen beide scheitern.** Speichern und Bau-Tür rufen
+dieselbe Funktion, und wer abbricht, räumt auf — auch die Dateien, die der andere als „schon da“
+übersprungen hat. Am Bündel gemessen, zwei überlappende Läufe, der zweite scheitert an seiner
+siebten Datei: vorher scheiterten *beide*, der erste mit `ENOENT` beim `rename` einer Datei, die
+der zweite gerade gelöscht hatte, und der Ordner blieb leer. Mit einem wartenden Schloss je
+Projektpfad (`whileHoldingFonts`) läuft der erste durch, der zweite scheitert für sich, und jede
+Datei, die der Block nennt, liegt da. Wartend und nicht ablehnend, weil keiner der beiden Aufrufer
+ein Klick ist, den man wiederholen könnte, und die Bau-Tür den fertigen Stand sehen muss.
+
+**Der Editor darf zwischen zwei Ständen nicht durch einen dritten.** `contentOf` liest
+`fileDrafts[tab] ?? loaded[tab]`, und das Speichern leerte die Entwürfe mehrere `await` bevor der
+Reiter `loaded` nachzog: Der Wert ging Entwurf → alter Stand → Entwurf. `@uiw/react-codemirror`
+wendet eine Änderung von außen nicht an, solange getippt wird — es legt sie als `pendingUpdate`
+zurück und holt sie nach Ablauf eines Latches nach, mit dem Wert von damals. Der dritte Wert ist
+gleich dem Dokument, erzeugt also kein neues `pendingUpdate`, und rund 0,8 s *nach* dem
+„Gespeichert.“ schrieb das alte den alten Stand in den Editor. An der gebauten App gemessen (Kopie
+von `gui-test`, `custom/a11y.scss`, daneben eine Farbe geändert), vorher/nachher, fünf Zeilen: 0 ms
+mit Klick, 0 ms und 150 ms mit Cmd+S, 150 ms mit einem zweiten SCSS-Entwurf und 300 ms mit Klick
+fielen alle auf den alten Stand zurück und schrieben ihn beim nächsten Speichern über die Datei;
+mit dem Leeren im selben Tick wie das Nachziehen hält jede. Die Grenze lag zwischen 150 und 300 ms
+und hängt an der Dauer der IPC-Aufrufe, ist also keine Zahl zum Zitieren.

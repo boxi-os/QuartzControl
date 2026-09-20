@@ -875,3 +875,25 @@ Er steht dort unmittelbar vor „… sind wieder eingetragen“, und ohne ihn le
 Widerspruch über dieselbe Sache. Gemessen mit zwei Einträgen der App auf demselben HEAD und
 getrennten Dateien: vorher „Aus einem früheren Update liegt in git noch …“, jetzt „Neben den
 Einträgen, die der Abbruch zurückgebracht hat, liegt in git noch ein älterer …“.
+
+**„Kann nicht prüfen“ darf nicht bei jedem Abbruch dastehen.** Die Frage, ob auf einer Datei *des
+Merges* zusätzlich etwas Eigenes vorgemerkt ist, braucht `merge-tree --write-tree` und damit git
+2.38; gefragt wurde sie für jede Datei, die vorgemerkt ist und aus dem Merge kommt — und ein Merge
+merkt seine sauber gemergten Dateien selbst vor. Die Menge war also in jedem gewöhnlichen halben
+Merge nicht leer, und unter einem älteren git sagte *jeder* Abbruch den Warnsatz, auch wenn niemand
+etwas angefasst hatte und keine Liste danebenstand (Ubuntu 22.04 liefert 2.34). Die billige Hälfte
+kommt jetzt ohne `merge-tree` aus: Eine Datei, deren Index-Eintrag gleich dem von `MERGE_HEAD`
+ist, hat der Merge unverändert von upstream übernommen, da liegt nichts Eigenes obenauf. Nur was
+sich unterscheidet — beide Seiten haben geändert, das Ergebnis ist keiner der beiden Bäume —
+braucht den nachgerechneten Merge. Gemessen an einem aus der Quelle gebauten git 2.37.0 und am
+System-git 2.54.0, mit dem Geschirr des Reviews: halber Merge, nichts angefasst — Satz vorher,
+Schweigen jetzt; dieselbe Szene ohne eine beidseitig geänderte Datei schweigt auch unter 2.37, denn
+sieben Dateien werden ohne `merge-tree` beantwortet.
+
+**Und die Lücke bedeutet in den zwei Zweigen Verschiedenes.** Nach einem geglückten Abbruch heißt
+sie „der Liste fehlt vielleicht ein Name“; in der Verweigerung heißt sie „der Rat oben ist
+vielleicht der teurere“, denn auf einer solchen Datei nimmt `git checkout --` die vorgemerkte
+Hälfte mit und `git reset --` nicht. Beides stand als *ein* Satz da („Die Liste oben kann
+unvollständig sein“) — in der Verweigerung über einer Liste, die es dort gar nicht gibt. Gemessen
+unter 2.37: der Rat lautet `git checkout --`, und der zweite Satz sagt jetzt, was das kostet und
+was es nicht tut; unter 2.54 erkennt die App den Fall, rät `git reset --` und schweigt daneben.

@@ -275,11 +275,16 @@ export default function Styles(): JSX.Element {
     if (!config) return false
     if (fetchesGoogleFonts(config)) {
       const result = await window.quartzGui.fonts.fetchGoogle({ projectPath: project.path, typography: config.theme.typography ?? {} })
-      if (result.removedFamilies.length > 0) {
-        setFontNote(
-          t('styles.googleFontsRemoved', { families: result.removedFamilies.join(', '), count: result.removedFiles.length })
-        )
-      }
+      // Both sentences, because they are about different families: what was taken out, and what
+      // Google did not send. A misspelt name among three right ones comes back as a 200 with the
+      // other three in it, so this is the one moment where it can be named (thirty-third review,
+      // finding 5).
+      const notes = [
+        result.removedFamilies.length > 0 &&
+          t('styles.googleFontsRemoved', { families: result.removedFamilies.join(', '), count: result.removedFiles.length }),
+        result.missingFamilies.length > 0 && t('styles.googleFontsMissing', { families: result.missingFamilies.join(', ') })
+      ].filter((note): note is string => typeof note === 'string')
+      if (notes.length > 0) setFontNote(notes.join(' '))
     } else {
       const result = await window.quartzGui.fonts.dropGoogle({ projectPath: project.path })
       if (result.removedFiles.length > 0) setFontNote(t('styles.googleFontsDropped', { count: result.removedFiles.length }))

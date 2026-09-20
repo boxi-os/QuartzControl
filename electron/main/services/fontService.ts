@@ -2,7 +2,7 @@ import { existsSync, mkdirSync } from 'fs'
 import { copyFile, mkdir, readFile, rename, rm, stat, writeFile } from 'fs/promises'
 import { basename, dirname, extname, join } from 'path'
 import type { UnusedImportedFont } from '@shared/ipc-contract'
-import { googleFontsCss2Url } from '@shared/googleFontRequest'
+import { googleFontRequest, googleFontsCss2Url } from '@shared/googleFontRequest'
 import { mainT } from '../i18n'
 import { readConfig } from './configService'
 import {
@@ -235,12 +235,12 @@ async function downloadFontFile(url: string, target: string): Promise<void> {
 export async function fetchGoogleFonts(
   projectPath: string,
   typography: Record<string, unknown>
-): Promise<{ changed: boolean; files: string[]; removedFiles: string[]; removedFamilies: string[] }> {
+): Promise<{ changed: boolean; files: string[]; removedFiles: string[]; removedFamilies: string[]; missingFamilies: string[] }> {
   const request = googleFontsCss2Url(typography)
   if (!request) throw new Error(mainT('googleFontsNoFamily'))
   const before = getManagedBlock((await readCustomScss(projectPath)).content, GOOGLE_MARKER)
   if (before && requestOf(before) === request && allFilesPresent(projectPath, before)) {
-    return { changed: false, files: [], removedFiles: [], removedFamilies: [] }
+    return { changed: false, files: [], removedFiles: [], removedFamilies: [], missingFamilies: notDelivered(typography, before) }
   }
 
   const response = await fetch(request, { headers: { 'User-Agent': BROWSER_UA }, signal: AbortSignal.timeout(GOOGLE_TIMEOUT_MS) })
@@ -277,12 +277,29 @@ export async function fetchGoogleFonts(
     changed: true,
     files: [...urls.values()],
     removedFiles: await deleteUnreferencedFontFiles(projectPath, previous),
-    removedFamilies: familiesOf(previous).filter((f) => !kept.has(f.toLowerCase()))
+    removedFamilies: familiesOf(previous).filter((f) => !kept.has(f.toLowerCase())),
+    missingFamilies: notDelivered(typography, block)
   }
 }
 
 function familiesOf(css: string): string[] {
   return [...new Set(parseFontFaces(css).map((face) => face.family))]
+}
+
+/**
+ * The families that were asked for and are not in the answer. A 400 only comes back when *no*
+ * family matches: measured against the real CSS2 API with the app's User-Agent, `family=Inter…
+ * &family=MeineSchrift` answers 200 with fourteen rules, all of them 'Inter'. The app asks for
+ * three or four at once, so the usual shape of a misspelt name is a silent omission - and the one
+ * sentence that would have named it, "a font name is usually misspelt", is the one that does not
+ * come (thirty-third review, finding 5).
+ */
+function notDelivered(typography: Record<string, unknown>, block: string): string[] {
+  const delivered = new Set(familiesOf(block).map((f) => f.toLowerCase()))
+  const asked = (['header', 'body', 'code', 'title'] as const)
+    .map((role) => googleFontRequest(role, typography[role])?.family.trim())
+    .filter((family): family is string => Boolean(family))
+  return [...new Set(asked)].filter((family) => !delivered.has(family.toLowerCase()))
 }
 
 /** Removes the block and every file of it that no other rule names. Nothing when there is none. */

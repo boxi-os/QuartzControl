@@ -1786,6 +1786,8 @@ export interface QuartzGuiApi {
       files: string[]
       removedFiles: string[]
       removedFamilies: string[]
+      /** Families that were asked for and are not in the answer - Google omits an unknown one silently. */
+      missingFamilies: string[]
     }>
     /** Removes the "google-fonts" block and the files of it nothing else names. */
     dropGoogle(input: { projectPath: string }): Promise<{ dropped: boolean; removedFiles: string[]; removedFamilies: string[] }>

@@ -155,10 +155,15 @@ export default function Basics(): JSX.Element {
           const overridden = overriddenByTheme(FONT_VARIABLE[key])
           const ownVariable = overriddenByVariable(key)
           const family = familyOf(theme.typography?.[key])
-          // Google's CSS2 API answers an unknown family with an error page, and it is case-sensitive:
-          // "open sans" fails where "Open Sans" works (measured). The list is from a fixed date, so a
-          // name missing from it is worth a sentence, not a refusal.
-          const unknownToGoogle = fontOrigin !== 'local' && family.trim() !== '' && !GOOGLE_FAMILIES.has(family.trim())
+          // Google's CSS2 API is case-sensitive: "open sans" fails where "Open Sans" works. It
+          // answers with an error page only when *no* family of the request matches - among others
+          // that do, an unknown one is left out silently (measured against the real API). The list
+          // here is from a fixed date, so a name missing from it is worth a sentence, not a refusal
+          // - and not even that when the project declares the family itself, which is the normal
+          // state right after importing a font into a slot (thirty-third review, finding 5).
+          const declaredHere = faces.some((f) => f.family.toLowerCase() === family.trim().toLowerCase())
+          const unknownToGoogle =
+            fontOrigin !== 'local' && family.trim() !== '' && !GOOGLE_FAMILIES.has(family.trim()) && !declaredHere
           const spelledDifferently = unknownToGoogle
             ? GOOGLE_FONTS.find(([name]) => name.toLowerCase() === family.trim().toLowerCase())?.[0]
             : undefined

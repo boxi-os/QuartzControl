@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync } from 'fs'
+import { existsSync, mkdirSync, statSync } from 'fs'
 import { copyFile, mkdir, readFile, rename, rm, stat, writeFile } from 'fs/promises'
 import { basename, dirname, extname, join } from 'path'
 import type { UnusedImportedFont } from '@shared/ipc-contract'
@@ -212,6 +212,12 @@ const BROWSER_UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 const GSTATIC_URL = /url\(\s*(https:\/\/fonts\.gstatic\.com\/[^)\s'"]+)\s*\)/g
 const FONT_FILE_NAME = /^[\w-]+\.(?:woff2|woff|ttf|otf)$/
+// A ceiling over the whole answer, beside the one per file. The file's own header says how long it
+// is, and so does the answer - both written by whoever the answer comes from, so neither is the
+// limit. Measured against the real Google: 7 to 29 files for three or four families; 300 files of
+// 1 MiB each were written without a word before this (thirty-third review, finding 8).
+const MAX_FONT_FILES = 200
+const MAX_FONT_TOTAL_BYTES = 128 * 1024 * 1024
 
 /** AbortSignal.timeout rejects with a DOMException named TimeoutError; no answer is not no route. */
 function timedOut(error: unknown): boolean {
@@ -226,16 +232,27 @@ function requestOf(body: string | null): string | null {
   return body ? (/^\s*\/\*\s*(https:\/\/fonts\.googleapis\.com\/\S+)\s*\*\//.exec(body)?.[1] ?? null) : null
 }
 
+// "The file is there" is not "the file can be read": a zero-byte file under the right name passed
+// as present, the shortcut kept every build from noticing, and the download below walked past it
+// as well (thirty-third review, finding 8). One predicate for both questions.
+function usableFile(path: string): boolean {
+  try {
+    return statSync(path).size > 0
+  } catch {
+    return false
+  }
+}
+
 function allFilesPresent(projectPath: string, body: string): boolean {
   return parseFontFaces(body).every((face) => {
     const file = fontFileIn(projectFontsDir(projectPath), face.url)
-    return file !== undefined && existsSync(file)
+    return file !== undefined && usableFile(file)
   })
 }
 
 // One file, written beside its final name and renamed into place, so an interrupted download never
 // leaves a torso that the next call would take for the real file.
-async function downloadFontFile(url: string, target: string): Promise<void> {
+async function downloadFontFile(url: string, target: string): Promise<number> {
   const file = basename(target)
   const response = await fetch(url, { signal: AbortSignal.timeout(GOOGLE_TIMEOUT_MS) }).catch((error: unknown) => {
     throw new Error(mainT(timedOut(error) ? 'googleFontsFileTimedOut' : 'googleFontsFileUnreachable', { file }))
@@ -248,6 +265,7 @@ async function downloadFontFile(url: string, target: string): Promise<void> {
   const temp = join(dirname(target), `.${basename(target)}.download`)
   await writeFile(temp, data)
   await rename(temp, target)
+  return data.length
 }
 
 /**
@@ -282,17 +300,26 @@ export async function fetchGoogleFonts(
   const urls = new Map<string, string>()
   for (const match of css.matchAll(GSTATIC_URL)) {
     const name = decodeURIComponent(match[1].split('/').pop() ?? '')
-    if (FONT_FILE_NAME.test(name)) urls.set(match[1], name)
+    // A name this cannot use is an error, not something to walk past. Skipped, its rule kept the
+    // https://fonts.gstatic.com address: the site that "serves locally" loaded from Google, and
+    // every build went to the network again, because fontFileIn() has no file for that address
+    // and allFilesPresent could never become true (thirty-third review, finding 8).
+    if (!FONT_FILE_NAME.test(name)) throw new Error(mainT('googleFontsBadFileName', { name: name.slice(0, 80) }))
+    urls.set(match[1], name)
   }
   if (urls.size === 0) throw new Error(mainT('googleFontsNothingFound'))
+  if (urls.size > MAX_FONT_FILES) throw new Error(mainT('googleFontsTooManyFiles', { count: urls.size, max: MAX_FONT_FILES }))
 
   const dir = projectFontsDir(projectPath)
   await mkdir(dir, { recursive: true })
-  // Google's file names are content hashes, so a file of that name that is already here is the
-  // same file.
+  // Google's file names are content hashes, so a readable file of that name that is already here is
+  // the same file - a torso of that name is not, and gets fetched again.
+  let total = 0
   for (const [url, name] of urls) {
     const target = join(dir, name)
-    if (!existsSync(target)) await downloadFontFile(url, target)
+    if (usableFile(target)) continue
+    total += await downloadFontFile(url, target)
+    if (total > MAX_FONT_TOTAL_BYTES) throw new Error(mainT('googleFontsTooLarge'))
   }
 
   let body = css

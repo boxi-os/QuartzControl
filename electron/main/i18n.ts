@@ -401,6 +401,11 @@ const STRINGS = {
     googleFontsFileFailed: 'Die Schriftdatei {{file}} ließ sich nicht von Google laden (HTTP {{status}}).',
     googleFontsFileTooLarge: 'Die Schriftdatei {{file}} ist größer, als eine Schrift sein sollte, und wurde nicht gespeichert.',
     googleFontsNothingFound: 'Google Fonts hat für diese Schriften keine Dateien geliefert.',
+    googleFontsBadFileName:
+      'Google Fonts hat eine Datei unter einem unerwarteten Namen angeboten („{{name}}“). Es wurde nichts ins Projekt geholt.',
+    googleFontsTooManyFiles:
+      'Google Fonts hat {{count}} Dateien angeboten — mehr als die {{max}}, die für Schriften vorgesehen sind. Es wurde nichts ins Projekt geholt.',
+    googleFontsTooLarge: 'Die Schriften von Google sind zusammen größer, als Schriften sein sollten — der Rest wurde nicht geholt.',
     googleFontsUnreachable: 'Google Fonts ist nicht erreichbar.',
     googleFontsFileUnreachable:
       'Die Schriftdatei {{file}} ließ sich nicht laden — Google Fonts ist nicht erreichbar.',
@@ -695,6 +700,11 @@ const STRINGS = {
     googleFontsFileFailed: 'The font file {{file}} could not be loaded from Google (HTTP {{status}}).',
     googleFontsFileTooLarge: 'The font file {{file}} is larger than a font should be and was not saved.',
     googleFontsNothingFound: 'Google Fonts returned no files for these fonts.',
+    googleFontsBadFileName:
+      'Google Fonts offered a file under an unexpected name (“{{name}}”). Nothing was fetched into the project.',
+    googleFontsTooManyFiles:
+      'Google Fonts offered {{count}} files — more than the {{max}} meant for fonts. Nothing was fetched into the project.',
+    googleFontsTooLarge: 'The fonts from Google are larger together than fonts should be — the rest was not fetched.',
     googleFontsUnreachable: 'Google Fonts cannot be reached.',
     googleFontsFileUnreachable: 'The font file {{file}} could not be loaded — Google Fonts cannot be reached.',
     googleFontsTimedOut: 'Google Fonts is not answering (waited 20 seconds).',

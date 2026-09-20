@@ -224,10 +224,17 @@ anzufassen. Wer eine Regel ergänzt, hält sich daran, sonst bröckelt genau die
 
 ### 3.3 Schriften — `fonts.mjs`
 
-Drei Familien, vier Dateien (Inter zusätzlich kursiv), alle OFL, alle selbst gehostet, nur der
-Latin-Ausschnitt. Zum Tauschen: Eintrag ändern (Name, Dateiname, Google-CSS-URL, Gewichtsbereich),
-dann `--only 6`. Die Datei wird geladen, im Ordner `.fonts/` zwischengespeichert und über
-`fonts.importFile` ins Projekt gelegt.
+Zwei Familien, drei Dateien: **Noto Sans** für Überschriften *und* Fließtext (aufrecht und
+kursiv), **Noto Sans Mono** für Code. Beide OFL, beide selbst gehostet, nur der Latin-Ausschnitt.
+Bis zum 2026-09-20 waren es drei Familien und vier Dateien (Instrument Sans, Inter, JetBrains
+Mono); der Unterschied zwischen Überschrift und Text entsteht jetzt über Größe und Gewicht statt
+über einen Wechsel der Familie.
+
+Zum Tauschen: Eintrag ändern (Name, Dateiname, Google-CSS-URL, Gewichtsbereich) und in
+`palette.mjs` die Rolle nachziehen, dann `--only 6`. Die Datei wird geladen, im Ordner `.fonts/`
+zwischengespeichert und über `fonts.importFile` ins Projekt gelegt. Was danach keine
+`@font-face`-Regel mehr nennt, räumt Phase 6 aus `quartz/static/fonts` — der Baustein
+*Schriftdateien* packt ein, was dort liegt, nicht, was der Block nennt.
 
 > **Warum die `@font-face`-Regeln danach überschrieben werden:** `importFontFile` schreibt weder
 > `font-weight` noch `font-style`. Bei einer Variable Font heißt das, dass der Browser sie als 400

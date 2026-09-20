@@ -870,6 +870,24 @@ async function buildTemplate() {
         done()
       }
 
+      // Was keine Regel mehr nennt, muss weg, und zwar hier: Der Baustein `fonts` packt ein, was
+      // in `quartz/static/fonts` liegt, nicht, was der Block nennt. Beim Wechsel der Schriften am
+      // 2026-09-20 blieben sonst vier Dateien von Instrument Sans, Inter und JetBrains Mono neben
+      // den drei neuen liegen und reisten mit - 300 KB, die keine `@font-face`-Regel erreicht.
+      //
+      // Die App räumt dasselbe vor jedem Bau auf (die Bau-Tür in buildService), aber dieses Skript
+      // baut mit `npx quartz build` daneben und nicht durch sie hindurch.
+      const fontDir = path.join(WORKSHOP, 'quartz/static/fonts')
+      if (fs.existsSync(fontDir)) {
+        const wanted = new Set(FONTS.map((font) => font.file))
+        const stale = fs.readdirSync(fontDir).filter((name) => !wanted.has(name))
+        if (stale.length) {
+          step(`${stale.length} Datei(en) aus früheren Schriften`)
+          for (const name of stale) fs.rmSync(path.join(fontDir, name))
+          done(stale.join(', '))
+        }
+      }
+
       step('@font-face korrigieren')
       // importFile writes no font-weight and no font-style (fontService.ts:30). With a variable
       // font that means the whole axis is ignored and every bold is synthesised; with two cuts of

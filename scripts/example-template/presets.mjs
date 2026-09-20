@@ -22,9 +22,9 @@ export const PRESETS = [
       mode: 'light',
       themeFonts: false,
       fonts: {
-        header: 'Instrument Sans',
-        body: 'Inter',
-        code: 'JetBrains Mono'
+        header: 'Noto Sans',
+        body: 'Noto Sans',
+        code: 'Noto Sans Mono'
       }
     }
   },
@@ -38,9 +38,9 @@ export const PRESETS = [
       mode: 'dark',
       themeFonts: false,
       fonts: {
-        header: 'Instrument Sans',
-        body: 'Inter',
-        code: 'JetBrains Mono'
+        header: 'Noto Sans',
+        body: 'Noto Sans',
+        code: 'Noto Sans Mono'
       }
     }
   }

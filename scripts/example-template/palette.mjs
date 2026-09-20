@@ -56,10 +56,20 @@ export const PALETTE = {
   }
 }
 
+// Eine Textschrift für beides, Überschriften und Fließtext, und eine dicktengleiche für Code.
+//
+// Bis zum 2026-09-20 waren es drei Familien (Instrument Sans für Überschriften, Inter für den
+// Text, JetBrains Mono für Code) und vier Dateien. Noto Sans trägt beide Rollen: Der Unterschied
+// zwischen Überschrift und Text entsteht hier über Größe und Gewicht — Überschriften stehen auf
+// 600 (base.scss) —, nicht über einen Wechsel der Schriftfamilie. Das spart der Website eine
+// Datei und nimmt ihr nichts, was ein Leser benennen könnte.
+//
+// `title` steht nicht hier: Quartz leitet `--titleFont` aus `typography.title` ab und, wenn das
+// fehlt, aus `header` (quartz/util/theme.ts, joinStyles).
 export const TYPOGRAPHY = {
-  header: 'Instrument Sans',
-  body: 'Inter',
-  code: 'JetBrains Mono'
+  header: 'Noto Sans',
+  body: 'Noto Sans',
+  code: 'Noto Sans Mono'
 }
 
 /* ------------------------------------------------------------------ WCAG arithmetic */

@@ -1,4 +1,4 @@
-// The three self-hosted families, and the @font-face rules that point at them.
+// The two self-hosted families, and the @font-face rules that point at them.
 //
 // Variable fonts, one file per family: `wght@400..700` makes Google return a single woff2 that
 // covers the whole range, which is smaller than two static cuts and gives real intermediate
@@ -21,35 +21,30 @@
 // below via styles.save - same weights and styles the app would write now, plus the range. The
 // `fonts` part of the package exports whatever is inside the managed block, so those rules ship.
 
+// Drei Dateien für zwei Familien: Noto Sans trägt Überschriften und Fließtext (palette.mjs sagt,
+// warum), also braucht es davon den aufrechten und den kursiven Schnitt; Noto Sans Mono steht im
+// Code und braucht kein Kursiv, weil nichts darin kursiv gesetzt wird.
 export const FONTS = [
   {
-    family: 'Instrument Sans',
-    file: 'instrument-sans-latin-400-700.woff2',
-    css: 'https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&display=swap',
+    family: 'Noto Sans',
+    file: 'noto-sans-latin-400-700.woff2',
+    css: 'https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400..700&display=swap',
     weight: '400 700',
     style: 'normal',
-    role: 'header'
+    role: 'header + body'
   },
   {
-    family: 'Inter',
-    file: 'inter-latin-400-700.woff2',
-    css: 'https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap',
-    weight: '400 700',
-    style: 'normal',
-    role: 'body'
-  },
-  {
-    family: 'Inter',
-    file: 'inter-latin-italic-400-700.woff2',
-    css: 'https://fonts.googleapis.com/css2?family=Inter:ital,wght@1,400..700&display=swap',
+    family: 'Noto Sans',
+    file: 'noto-sans-latin-italic-400-700.woff2',
+    css: 'https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@1,400..700&display=swap',
     weight: '400 700',
     style: 'italic',
-    role: 'body-italic'
+    role: 'header + body, italic'
   },
   {
-    family: 'JetBrains Mono',
-    file: 'jetbrains-mono-latin-400-700.woff2',
-    css: 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400..700&display=swap',
+    family: 'Noto Sans Mono',
+    file: 'noto-sans-mono-latin-400-700.woff2',
+    css: 'https://fonts.googleapis.com/css2?family=Noto+Sans+Mono:wght@400..700&display=swap',
     weight: '400 700',
     style: 'normal',
     role: 'code'

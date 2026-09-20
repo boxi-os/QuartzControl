@@ -133,6 +133,19 @@ details.layout-box > summary.layout-box-title {
     border-radius: var(--tpl-radius-sm);
   }
 
+  // Dasselbe für ein Bild. Die Example-Vorlage setzt die Marke als Inline-SVG in die Konfiguration,
+  // die Basis-Vorlage als zwei PNG aus `quartz/static/` (mark-png.mjs) — weil das der Weg ist, den
+  // ein Nutzer für sein eigenes Logo geht. Beide Wege teilen sich diese Datei, und die Regel für
+  // den einen ist im anderen wirkungslos statt falsch.
+  //
+  // `display` steht auch hier nicht: Der Umschalter des Plugins hängt an den Klassen
+  // `.img-light`/`.img-dark` und nicht am Element, er trägt ein `<img>` also genauso wie ein
+  // `<svg>`. Eine Wiederholung hier schaltete beide ein, gemessen am 2026-09-05 für das SVG.
+  img {
+    flex: 0 0 auto;
+    border-radius: var(--tpl-radius-sm);
+  }
+
   // The link's accessible name. page-title already prints the site title right next to this, so
   // showing it again would say everything twice - but `display: none` was the wrong way to stop
   // that: the anchor contains nothing else but an SVG with an empty alt, so hiding this span left

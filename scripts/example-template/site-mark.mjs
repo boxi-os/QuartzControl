@@ -32,8 +32,12 @@ const scale = ([r, g, b], f) => `rgb(${Math.round(r * f)},${Math.round(g * f)},$
  *
  * The transform matrices are deliberately *not* rounded. They scale every child of their group, so
  * 0.395064 -> 0.4 is a full percent of distortion on the Q - measured by rendering both.
+ *
+ * Exported since 2026-09-20: mark-png.mjs rasterises the same drawing for the basic template,
+ * which uses `<img>` rather than inline markup. Two trimmers would be two drawings the day one of
+ * them is touched.
  */
-function trimmed() {
+export function trimmed() {
   let s = readFileSync(ICON, 'utf8')
   s = s.replace(/<\?xml[^>]*\?>\s*/, '').replace(/<!DOCTYPE[^>]*>\s*/, '')
   s = s.replace(/\s*xmlns:(xlink|serif)="[^"]*"/g, '').replace(/\s*xml:space="[^"]*"/g, '')
@@ -43,18 +47,29 @@ function trimmed() {
 }
 
 /**
- * One version. `id` makes the gradient's id unique: both versions are in the same document at the
- * same time - the plugin switches them with `display`, it does not remove one - and two
- * `<linearGradient id="_Linear1">` in one document is the first one winning for both.
+ * The drawing with its gradient stepped down by `dim` and its gradient id renamed.
+ *
+ * `id` matters wherever two versions share a document - the layout box switches them with
+ * `display`, it does not remove one, and two `<linearGradient id="_Linear1">` in one document is
+ * the first one winning for both. It is passed anyway when only one version is rendered, because
+ * a function that is only safe in one of its two call sites is one nobody re-reads.
  */
-function version(cls, id, dim) {
+export function recoloured(id, dim) {
   return trimmed()
-    .replace('<svg', `<svg class="${cls}" role="img" aria-label=""`)
-    .replace('width="100%" height="100%"', 'width="26" height="26"')
     .replace(/_Linear1/g, id)
     .replace(/stop-color:rgb\(69,\s*91,\s*155\)/, `stop-color:${scale(STOPS[0], dim)}`)
     .replace(/stop-color:rgb\(221,\s*120,\s*127\)/, `stop-color:${scale(STOPS[1], dim)}`)
 }
 
+/** How far the dark version's gradient is stepped down. See the head of this file for why. */
+export const DIM_DARK = 0.85
+
+/** One version, sized and classed for the header's layout box. */
+function version(cls, id, dim) {
+  return recoloured(id, dim)
+    .replace('<svg', `<svg class="${cls}" role="img" aria-label=""`)
+    .replace('width="100%" height="100%"', 'width="26" height="26"')
+}
+
 export const MARK_LIGHT = version('img-light', 'qcMarkLight', 1)
-export const MARK_DARK = version('img-dark', 'qcMarkDark', 0.85)
+export const MARK_DARK = version('img-dark', 'qcMarkDark', DIM_DARK)

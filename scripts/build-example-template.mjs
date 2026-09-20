@@ -99,9 +99,25 @@ const TEMPLATE_NAME = V.name
 // die das Paket wirklich enthält. „Drei eigene Frames" stand hier noch, als `drawing` längst der
 // vierte war (FRAMES in frames.mjs); beim Veröffentlichen am 2026-09-06 nachgezählt statt gelesen.
 // Deshalb bildet variants.mjs den Satz gegen die wirklichen Zahlen statt ihn hinzuschreiben.
-const TEMPLATE_DESCRIPTION = V.describe({ frames: FRAMES.length })
+const TEMPLATE_DESCRIPTION = V.describe({
+  frames: FRAMES.length,
+  styles: STYLE_ORDER.length,
+  // Nur für die Varianten, die Inhalt mitbringen. Gezählt statt hingeschrieben, aus demselben
+  // Grund wie die Frames: „Drei eigene Frames" stand hier noch, als `drawing` längst der vierte war.
+  pages:
+    V.content.mode === 'copy'
+      ? fs
+          .readdirSync(path.join(DATA_DIR, V.content.from), { recursive: true })
+          .filter((name) => String(name).endsWith('.md') && String(name) !== 'README.md').length
+      : 0
+})
 // Die Daten dieser Variante: die des Example, durch ihre Ableitung geschickt.
-const DATA = V.derive({ patches: PLUGIN_PATCHES, boxes: LAYOUT_BOXES, navigations: NAVIGATION_ENTRIES })
+const DATA = V.derive({
+  patches: PLUGIN_PATCHES,
+  boxes: LAYOUT_BOXES,
+  navigations: NAVIGATION_ENTRIES,
+  presets: PRESETS
+})
 // Was die Gegenprobe im Zielprojekt wiederfinden muss.
 const expectedBoxes = DATA.boxes.length
 const expectedNavigations = DATA.navigations.length
@@ -522,6 +538,7 @@ function isPristineStarter(dir) {
 
 function installContent(target) {
   const content = path.join(target, 'content')
+  if (V.content.mode === 'copy') return copyContent(target, content)
   const vault = V.content.vault
 
   // The content lives in an Obsidian vault now, and `content/` is a symlink to it. This phase used
@@ -559,6 +576,69 @@ function installContent(target) {
   fs.symlinkSync(vault, content, 'dir')
   copyTree(path.join(DATA_DIR, 'site/snippets'), path.join(target, 'quartz/static/snippets'))
   done('Symlink auf den Vault gelegt')
+}
+
+/**
+ * Der zweite Weg, an einen Inhalt zu kommen: ein echtes Verzeichnis, aus diesem Repo kopiert.
+ *
+ * Die Reihenfolge der Prüfungen ist die Sache selbst. **Zuerst der Symlink**, und zwar als
+ * Abbruch: Für die Vault-Variante ist ein bestehender Symlink der gutartige Fall - sie legt ihn
+ * an und fasst ihn nie wieder an. Für diesen Zweig ist er der gefährliche, denn dahinter liegt
+ * ein Obsidian-Vault, und in den schreibt dieses Skript nie (dieselbe Regel wie bei
+ * `writableTarget` in templatePackage).
+ *
+ * Danach der echte Ordner. Erlaubt ist er, wenn er leer ist, wenn er der Starterinhalt von
+ * `quartz create` ist, oder wenn alles darin aus einem früheren Lauf dieses Skripts stammt -
+ * sonst gehört er jemandem, und dann bleibt er liegen.
+ */
+function copyContent(target, content) {
+  const source = path.join(DATA_DIR, V.content.from)
+  if (!fs.existsSync(source)) throw new Error(`Inhalt der Variante fehlt: ${source}`)
+
+  // `lstat` statt `existsSync`: Letzteres folgt dem Link, also meldete ein hängender Symlink
+  // „ist nicht da" statt „ist ein Link", und die Sperre darunter ginge auf.
+  const existing = fs.lstatSync(content, { throwIfNoEntry: false }) ?? null
+  if (existing?.isSymbolicLink()) {
+    throw new Error(
+      `${content} ist ein Symlink (${fs.readlinkSync(content)}). Die Variante ${V.id} legt ihren ` +
+      'Inhalt als echten Ordner an und schreibt nie in einen Vault. Wer dieses Projekt als ' +
+      'Werkstatt will, löst den Link von Hand.'
+    )
+  }
+
+  // Was dieser Lauf schreiben wird - und damit zugleich die Liste, gegen die ein vorhandener
+  // Ordner geprüft wird. Ein zweiter Lauf soll durchgehen, ein Ordner mit fremden Notizen nicht.
+  const own = new Set(relativeFiles(source).filter((rel) => path.basename(rel) !== 'README.md'))
+  if (existing) {
+    const there = relativeFiles(content)
+    const foreign = there.filter((rel) => !own.has(rel))
+    if (there.length && !isPristineStarter(content) && foreign.length) {
+      throw new Error(
+        `${content} enthält ${foreign.length} Datei(en), die nicht aus dieser Vorlage stammen ` +
+        `(z. B. ${foreign.slice(0, 3).join(', ')}). Sie bleiben liegen; wer hier bauen will, ` +
+        'räumt den Ordner von Hand.'
+      )
+    }
+    fs.rmSync(content, { recursive: true, force: true })
+  }
+
+  fs.mkdirSync(content, { recursive: true })
+  for (const rel of own) {
+    const to = path.join(content, rel)
+    fs.mkdirSync(path.dirname(to), { recursive: true })
+    fs.copyFileSync(path.join(source, rel), to)
+  }
+  if (V.content.static) copyTree(path.join(DATA_DIR, V.content.static), path.join(target, 'quartz/static'))
+  done(`${own.size} Seiten kopiert`)
+}
+
+/** Alle Dateien unter `dir`, relativ zu ihm, als sortierte Liste. */
+function relativeFiles(dir) {
+  return fs
+    .readdirSync(dir, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => path.relative(dir, path.join(entry.parentPath ?? entry.path, entry.name)))
+    .sort()
 }
 
 /* ======================================================================= 2 · plugin */
@@ -855,8 +935,8 @@ async function buildTemplate() {
       }
       done()
 
-      step(`${PRESETS.length} Presets`)
-      for (const preset of PRESETS) {
+      step(`${DATA.presets.length} Presets`)
+      for (const preset of DATA.presets) {
         await ipc(page, (a) => window.quartzGui.themePresets.save(a.path, a.preset), { path: WORKSHOP, preset })
       }
       done()

@@ -19,6 +19,7 @@ import * as os from 'node:os'
 import * as path from 'node:path'
 
 import { projectPath, workshopPath } from '../project-paths.mjs'
+import * as basic from './basic.mjs'
 import * as doku from './doku.mjs'
 import { LAYOUT_BOX_SOURCE, MULTILANGUAGE_SOURCE, NAVIGATIONS_SOURCE } from './plugins.mjs'
 
@@ -41,8 +42,11 @@ const NAVIGATIONS = ['quartz-navigations', NAVIGATIONS_SOURCE]
  *   workshop      Das Projekt, in dem gebaut wird.
  *   control       Das Wegwerf-Projekt der Gegenprobe (Phase 11).
  *   content       Woher `content/` kommt und ob es im Paket mitreist:
- *                   { mode: 'vault', vault, ships }  - Symlink auf einen Obsidian-Vault
- *                   { mode: 'copy',  from,  ships }  - echter Ordner, aus diesem Repo kopiert
+ *                   { mode: 'vault', vault, ships }          - Symlink auf einen Obsidian-Vault
+ *                   { mode: 'copy',  from, static?, ships }  - echte Ordner, aus diesem Repo
+ *                 `from` und `static` sind Pfade unter scripts/example-template/ und stehen
+ *                 ausgeschrieben da: Ein aus `from` abgeleiteter zweiter Name („basic-content" ->
+ *                 „basic-site") wäre eine Kopplung, die niemand sieht, bis einer der zwei umzieht.
  *   plugins       Die github:-Plugins, die Phase 2 installiert.
  *   stylesSource  Ob `--sync`/`--check-sync` für diese Variante etwas beweisen (siehe unten).
  *   builtin       Ob dieses Paket das eingebaute der App ist - dann vergleicht
@@ -85,6 +89,35 @@ export const VARIANTS = {
       `gemessenen Kontrasten (WCAG AA in hell und dunkel), ${frames} eigenen Frames, selbst ` +
       `gehosteten Schriften und jeder Plugin-Komponente einzeln gestaltet — Explorer und ` +
       'Inhaltsverzeichnis bis zur untersten Ebene.'
+  },
+
+  // Die Grundlage für ein neues Projekt: dieselbe Gestaltung wie das Example, so wenig Inhalt wie
+  // möglich. Was sie davon trennt und warum, steht in basic.mjs.
+  basic: {
+    name: 'Basis-Template',
+    file: 'qc-basic.qtpl',
+    workshop: () => workshopPath('basic-vorlage'),
+    control: () => workshopPath('basic-gegenprobe'),
+    // Der einzige Eintrag mit `mode: 'copy'`: Sein Inhalt liegt als zwanzig Notizen im Repo
+    // (basic-content/README.md sagt, warum) und wird als echtes Verzeichnis in die Werkstatt
+    // kopiert statt als Symlink in einen Vault gelegt. Und er reist mit — er ist der Grund, warum
+    // der Assistent ein Häkchen „Inhalte mitnehmen" anbietet.
+    content: { mode: 'copy', from: 'basic-content', static: 'basic-site/static', ships: true },
+    plugins: [LAYOUT_BOX, MULTILANGUAGE, NAVIGATIONS],
+    stylesSource: false,
+    builtin: false,
+    allowFresh: true,
+    derive: (data) => ({
+      patches: basic.patches(data.patches),
+      boxes: basic.boxes(data.boxes),
+      navigations: basic.navigations(data.navigations),
+      presets: basic.presets(data.presets)
+    }),
+    describe: ({ frames, pages, styles }) =>
+      `Die Grundlage für ein neues Projekt: gemessene Kontraste (WCAG AA in hell und dunkel), ` +
+      `${frames} eigene Frames, ${styles} Stylesheets — jede Plugin-Komponente ist gestaltet, auch ` +
+      `die, die hier ausgeschaltet sind. Dazu ${pages} Beispielseiten in zwei Sprachen, die zeigen, ` +
+      'wie die Website aussieht, und die gelöscht werden, sobald eigene Notizen da sind.'
   },
 
   // „Doku" ist nirgends veröffentlicht und steht nicht im Assistenten: sie existiert für die

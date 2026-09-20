@@ -219,6 +219,10 @@ const STRINGS = {
     // genannt wird es trotzdem, damit der Nutzer weiß, was fehlt.
     updateAbortDroppedStaged:
       'Der Abbruch hat den vorgemerkten Stand dieser Dateien verworfen: {{files}}. git setzt beim Abbrechen alles zurück, was vorgemerkt war — auch, was du selbst dazu vorgemerkt hast, und von Hand gelöste Konflikte.',
+    // „Kann nicht prüfen“ ist nie „alles gut“: Ohne `merge-tree --write-tree` (git vor 2.38) bleibt
+    // die Hälfte der Antwort ungeprüft, und der Satz darüber las sich trotzdem als vollständig.
+    updateAbortStagedUnchecked:
+      'Ob auf den Dateien des Merges zusätzlich etwas Eigenes vorgemerkt war, ließ sich mit diesem git nicht prüfen — dafür braucht es git 2.38 oder neuer. Die Liste oben kann also unvollständig sein.',
     // Die Notiz, mit der sich ein Lauf beim nächsten meldet, ließ sich nicht schreiben. Sie ist ein
     // Zeiger und kein Ergebnis, also läuft das Update weiter - gesagt wird es trotzdem, weil der
     // nächste Lauf sich danach anders verhält, als er sollte.
@@ -539,6 +543,8 @@ const STRINGS = {
       'You staged these files yourself and changed them again afterwards, so the update cannot be cancelled: {{files}}. Undo only the staging there (in a terminal, for each file: “git reset -- <file>”), which keeps your changes, then cancel again.\n\n',
     updateAbortDroppedStaged:
       'Cancelling discarded the staged state of these files: {{files}}. When cancelling, git resets everything that was staged — including what you staged yourself and conflicts you resolved by hand.',
+    updateAbortStagedUnchecked:
+      'Whether anything of yours was staged on top of the merge\u2019s own files could not be checked with this git — that needs git 2.38 or newer. The list above may therefore be incomplete.',
     updateNoteUnwritable:
       'The note for this update could not be written ({{reason}}). The update still ran to the end; the next run may therefore install again or report “nothing to do”.',
     npmInstallFailed: 'npm install failed:',

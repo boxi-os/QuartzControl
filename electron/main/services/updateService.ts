@@ -1665,13 +1665,21 @@ async function runCoreUpdateFrom(projectPath: string): Promise<UpdateResult> {
  * (thirty-second review, finding 1). The scenes before measured with a *new* file, which is in
  * neither tree and was therefore always named.
  */
-async function stagedOutsideMerge(projectPath: string): Promise<string[]> {
+async function stagedOutsideMerge(projectPath: string): Promise<{ files: string[]; unchecked: boolean }> {
   const staged = await diffNames(projectPath, '--cached', 'HEAD')
-  if (staged.length === 0) return []
+  if (staged.length === 0) return { files: [], unchecked: false }
   const conflicted = new Set(await diffNames(projectPath, '--diff-filter=U'))
   const fromMerge = new Set(await diffNames(projectPath, 'HEAD...MERGE_HEAD'))
-  const onTop = new Set(await stagedOnTopOfMerge(projectPath, staged.filter((file) => fromMerge.has(file) && !conflicted.has(file))))
-  return staged.filter((file) => (!fromMerge.has(file) && !conflicted.has(file)) || onTop.has(file))
+  const candidates = staged.filter((file) => fromMerge.has(file) && !conflicted.has(file))
+  const onTopList = await stagedOnTopOfMerge(projectPath, candidates)
+  const onTop = new Set(onTopList ?? [])
+  return {
+    files: staged.filter((file) => (!fromMerge.has(file) && !conflicted.has(file)) || onTop.has(file)),
+    // "Cannot check" is never "all good": under a git that does not know merge-tree --write-tree
+    // the answer is silently the one from before, and the sentence about what the abort discarded
+    // reads as complete while it names only half (thirty-third review, finding 11).
+    unchecked: onTopList === null
+  }
 }
 
 /**
@@ -1681,13 +1689,18 @@ async function stagedOutsideMerge(projectPath: string): Promise<string[]> {
  * default strategy `git merge FETCH_HEAD` used - and every cleanly merged file whose index entry
  * differs from that result has something of the user's in it (thirty-second review, found while
  * fixing finding 1). merge-tree exits 1 on conflicts and still prints the tree first; a git older
- * than 2.38 does not know `--write-tree`, and then the answer is the one from before: nothing.
+ * than 2.38 does not know `--write-tree` and answers `fatal: unknown rev --write-tree` with 128
+ * (measured against a git 2.37.0 built from source). `null` then, not an empty list: the caller
+ * says so rather than letting the sentence read as complete.
+ *
+ * The tree is looked for over all lines, not only the first: `run` joins stdout and stderr, so a
+ * warning before it would otherwise be the same silent nothing.
  */
-async function stagedOnTopOfMerge(projectPath: string, files: string[]): Promise<string[]> {
+async function stagedOnTopOfMerge(projectPath: string, files: string[]): Promise<string[] | null> {
   if (files.length === 0) return []
   const merged = await run('git', ['merge-tree', '--write-tree', 'HEAD', 'MERGE_HEAD'], projectPath)
-  const tree = merged.output.split('\n')[0]?.trim() ?? ''
-  if (!/^[0-9a-f]{40}([0-9a-f]{24})?$/.test(tree)) return []
+  const tree = merged.output.split('\n').map((line) => line.trim()).find((line) => /^[0-9a-f]{40}([0-9a-f]{24})?$/.test(line))
+  if (tree === undefined) return null
   const entries = async (args: string[], pick: (fields: string[]) => string): Promise<Map<string, string> | null> => {
     const result = await run('git', [...args, '--', ...files], projectPath)
     if (!result.success) return null
@@ -1701,7 +1714,7 @@ async function stagedOnTopOfMerge(projectPath: string, files: string[]): Promise
   // "mode type oid" from ls-tree, "mode oid stage" from ls-files; compared as "mode oid".
   const result = await entries(['ls-tree', '-z', tree], ([mode, , oid]) => `${mode} ${oid}`)
   const index = await entries(['ls-files', '-s', '-z'], ([mode, oid]) => `${mode} ${oid}`)
-  if (!result || !index) return []
+  if (!result || !index) return null
   return files.filter((file) => result.get(file) !== index.get(file))
 }
 
@@ -1754,13 +1767,17 @@ export function abortCoreMerge(projectPath: string): Promise<CoreAbortResult> {
       // whether the stash lying there is this run's is a different question - the HEAD it was
       // taken from, which `merge --abort` does not move (see popCoreUpdateStash).
       const losing = await stagedOutsideMerge(projectPath)
+      // Said in both branches, because it qualifies both: what the abort would discard, and what
+      // it refuses over. Only when there was something to check - with nothing staged on the
+      // merge's files there is nothing this git could not answer.
+      const unchecked = losing.unchecked ? [mainT('updateAbortStagedUnchecked')] : []
       const result = await run('git', ['merge', '--abort'], projectPath, gitTextEnv())
       if (!result.success) {
         // A refused abort has changed nothing, so the list is read from the state git refused over.
-        const why = explainGitFailure(result.output, await editedSinceMergeStopped(projectPath), losing, await untrackedInTheWay(projectPath))
+        const why = explainGitFailure(result.output, await editedSinceMergeStopped(projectPath), losing.files, await untrackedInTheWay(projectPath))
         // Split at the paragraph: the merge's files and the user's own can be two sentences.
-        const sentences = why.split('\n\n').map((sentence) => sentence.trim()).filter(Boolean)
-        return { success: false, output: why + result.output, sentences }
+        const sentences = [...why.split('\n\n').map((sentence) => sentence.trim()).filter(Boolean), ...unchecked]
+        return { success: false, output: [why + result.output, ...unchecked].join('\n\n'), sentences }
       }
       const popped = await popCoreUpdateStash(projectPath)
       // The app's sentences first, git's text after them, and the sentences by weight: what the
@@ -1771,8 +1788,8 @@ export function abortCoreMerge(projectPath: string): Promise<CoreAbortResult> {
       // is not quiet - in the ordinary conflict case it prints the whole `git status` - so the
       // sentences come back separately as well, for the announcement (twenty-eighth review,
       // finding 1, measured: the announcement was "On branch v5").
-      const dropped = losing.length > 0 ? [mainT('updateAbortDroppedStaged', { files: losing.join(', ') })] : []
-      const sentences = [...popped.sentences, ...dropped, ...(popped.restored ? [popped.restored] : [])]
+      const dropped = losing.files.length > 0 ? [mainT('updateAbortDroppedStaged', { files: losing.files.join(', ') })] : []
+      const sentences = [...popped.sentences, ...dropped, ...unchecked, ...(popped.restored ? [popped.restored] : [])]
       const git = [result.output.trim(), popped.git.trim()].filter(Boolean).join('\n')
       return { success: popped.success, output: [...sentences, git].filter(Boolean).join('\n\n'), sentences }
     })

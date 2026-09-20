@@ -16,9 +16,9 @@ Abschnitten“, und oben steht hier nichts mehr — das ist der Preis dafür, da
 ist (fünfundzwanzigstes Review, Befund 8). Die Arbeitsregel steht in `CLAUDE.md`: sie sagt, wie
 gearbeitet wird, und nicht, was war.
 
-## Befunde aus den Reviews (Stand 2026-09-18)
+## Befunde aus den Reviews (Stand 2026-09-20)
 
-Alle zweiunddreißig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVIEW-2026-09-02.md),
+Alle dreiunddreißig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](REVIEW-2026-09-07.md) mit seinen acht,
@@ -49,8 +49,9 @@ Alle zweiunddreißig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REV
 [`docs/REVIEW-2026-10-03.md`](REVIEW-2026-10-03.md) mit seinen fünf und
 [`docs/REVIEW-2026-10-04.md`](REVIEW-2026-10-04.md) mit seinen fünf und
 [`docs/REVIEW-2026-10-05.md`](REVIEW-2026-10-05.md) mit seinen fünf und
-[`docs/REVIEW-2026-10-06.md`](REVIEW-2026-10-06.md) mit seinen sechs (Aufträge daneben in
-`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-30-`, `2026-10-01-` bis `-06-auftrag.md`) stehen als
+[`docs/REVIEW-2026-10-06.md`](REVIEW-2026-10-06.md) mit seinen sechs und
+[`docs/REVIEW-2026-10-07.md`](REVIEW-2026-10-07.md) mit seinen dreizehn (Aufträge daneben in
+`docs/REVIEW-2026-09-05-auftrag.md`, `-06-` bis `-30-`, `2026-10-01-` bis `-07-auftrag.md`) stehen als
 Dokumente unverändert; die Messungen zu jedem Fix liegen in `docs/decisions/`, und was dauerhaft
 gilt, steht oben als Regel. [`docs/REVIEW-2026-09-15.md`](REVIEW-2026-09-15.md) gehört nicht
 in diese Zählung: Die „fünfzehnte Runde“ las die Handbücher der zwei Plugins gegen deren Code und
@@ -1642,3 +1643,48 @@ und steigt hinein, zählt ihn also nicht mehr als eine Datei. Beide fielen bei d
 danach mit, ohne dass es jemand als eigenen Befund notiert hätte; hier steht es, weil ein
 Absatz über offene Punkte, der zwei geschlossene führt, beim nächsten Lesen Arbeit erzeugt.
 
+**Das dreiunddreißigste Review las beide Schichten** und fand **keinen Befund Hoch, vier Mittel,
+neun Niedrig**, dazu sieben Punkte nebenbei — geschrieben von Claude Fable 5.1, gegen Commits und
+Auftrag von Claude Opus 5, gemessen an sechs Wegen (Bündel von `fontService` mit ersetztem
+`fetch`, dem echten Google, der gebauten App, der veröffentlichten Handbuch-Website, den neun
+echten Projekten lesend, und Schicht 1 über einen Hilfsagenten mit einem aus der Quelle gebauten
+git 2.37.0). **Nach fünf Runden ohne mittleren Befund ist das ein anderes Bild, und die Erklärung
+steht im Dokument:** Zum ersten Mal lag kein Fix vor dem Leser, sondern eine Funktion, die nur ihr
+Autor benutzt hatte — alle vier mittleren Befunde liegen auf Wegen, die er nicht gegangen ist.
+
+Die vier Mittleren: Ein gespeicherter Entwurf in einem weiteren Stylesheet verschwand aus dem
+Editor, und der nächste Tastendruck überschrieb ihn auf der Platte (1); ein veralteter
+`custom.scss`-Entwurf wurde jetzt von *jedem* Reiter geschrieben, während das Band davor nur auf
+einem steht — der gewöhnliche Weg dahin kostet die `@font-face`-Regel der gerade importierten
+Schrift (2); der Vorlagen-Import streicht den `google-fonts`-Block, meldet Erfolg, und die Bau-Tür
+sieht es nicht, weil sie am Block erkennt, ob es etwas zu tun gibt (3); und in acht der neun
+Projekte dieses Rechners — allen aus der Beispielvorlage — ändert eine in „Basis“ gewählte Schrift
+nichts an der Website, während die Seite 26 Dateien aus dem Netz holt und kein Wort dazu sagt (4).
+Die neun Niedrigen: Google lässt eine unbekannte Familie still aus, und drei Sätze der App gehen
+vom Gegenteil aus (5); „keine Regel nennt sie mehr“ fragte zwei flache Ordner und je Regel die
+erste `url()` (6); ohne Netz sagte die Seite „TypeError: fetch failed“ (7); eine Grenze je Datei,
+keine über alles, und ein unbekannter Dateiname blieb als Google-Adresse stehen (8); der Fix für
+relative Schrift-URLs erreichte nur Projekte, in denen zufällig jemand schreibt — die
+Handbuch-Website lud keine ihrer vier Schriften (9); die Notiz über entfernte Schriften drückte
+den Seitenkopf auf 237 px und klebte an „Gespeichert.“, und ein Fehler kurz nach einem Erfolg wurde
+vom Zwei-Sekunden-Timer gelöscht (10); unter einem git vor 2.38 schaltete sich `fe30ca4` still ab
+(11); eine Datei *des Merges* mit eigener Vormerkung obenauf bekam einen Rat, dessen Preis niemand
+nannte (12); und sechs Behauptungen, von denen vier nicht mehr trugen (13).
+
+**Alle dreizehn sind abgearbeitet, dazu alle sieben Nebenbei-Punkte** — auf
+`fix/review-2026-10-07`, je ein Commit mit Typcheck, Build und Smoke, von Claude Opus 5. Was dabei
+an Messungen entstanden ist, steht in [`styles-and-fonts.md`](decisions/styles-and-fonts.md) und
+[`snapshots-and-updates.md`](decisions/snapshots-and-updates.md), was als Regel bleibt, in
+[`conventions.md`](conventions.md) — sechs neue, darunter „ein Rückruf, den ein Effekt bei jedem
+Render neu setzt, ist nicht der Stand, den der Aufrufer meint“ und „wer fragt, ob etwas noch
+gebraucht wird, sucht breit; wer löscht, löscht schmal“. Zwei Unterpunkte des dreizehnten Befunds
+trugen nicht und sind stattdessen nachgeprüft: Der Kopfkommentar von `src/data/googleFonts.ts`
+steht Zeile für Zeile in der Vorlage des Skripts und übersteht einen Lauf, und der Exit-Code eines
+alten git für `merge-tree --write-tree` ändert am Code nichts, weil er den Hash prüft. Den
+falschen Satz des Handbuchs (4.2, beide Sprachen) hat dieselbe Runde im Vault nachgezogen.
+
+**Was das Review getrennt von den Befunden empfiehlt** — der Nutzer hat danach gefragt —, steht in
+seinem letzten Abschnitt: aus *diesem* Stand keinen RC, aus dem Stand nach den Fixes zu 1 bis 4
+schon; und als nächsten Schritt nicht Runde 34, sondern den Alpha-Test, an Projekten aus der
+Beispielvorlage und mit einer gebauten Website am Ende jeder Szene, weil drei der vier mittleren
+Befunde in der App unsichtbar und erst im Browser zu sehen sind.

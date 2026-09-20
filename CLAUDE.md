@@ -236,23 +236,34 @@ Chronik. Die Chronik nachzulesen lohnt für zwei Fragen: *warum* eine Regel so l
 Absatz in `docs/decisions/` sie nicht beantwortet, und *was gerade ungelesen ist* — die Serie ist
 so gebaut, dass jede Runde liest, was die vorige gebaut hat.
 
-**Stand:** Die sechs Befunde des zweiunddreißigsten Reviews (kein Befund über Niedrig; Review,
-gelesene Fixes und Auftrag vom selben Modell) sind abgearbeitet, am 2026-09-18 auf
-`fix/review-2026-10-06`, per Fast-Forward auf `main` und gepusht — samt den Punkten, die die
-Abarbeitung nebenbei fand, und der ganzen Nebenbei-Liste des Reviews. Was die Runde gefunden hat,
-steht in [`docs/REVIEW-2026-10-06.md`](docs/REVIEW-2026-10-06.md), was daraus geworden ist oben in
-[`docs/reviews.md`](docs/reviews.md). Offen ist aus dieser Runde nichts. Die Sprache von gits Text ist inzwischen gemessen (an GNU
-`libintl`, nicht an glibc). Das Review empfiehlt vor dem RC keine weitere Runde dieser Art, sondern
-die Liste, die nur der Nutzer abarbeiten kann: VoiceOver über Git-Sync und die zwei Boards, die
-gepackte App je Plattform, glibc. Keinen dieser Fixes hat ein Review gelesen.
+**Stand:** Die dreizehn Befunde des dreiunddreißigsten Reviews (vier Mittel, neun Niedrig) sind
+abgearbeitet, am 2026-09-20 auf `fix/review-2026-10-07`, dazu alle sieben Nebenbei-Punkte — 22
+Commits, je einer mit Typcheck, Build und Smoke. Was die Runde gefunden hat, steht in
+[`docs/REVIEW-2026-10-07.md`](docs/REVIEW-2026-10-07.md), was daraus geworden ist in
+[`docs/reviews.md`](docs/reviews.md); die Messungen in
+[`docs/decisions/styles-and-fonts.md`](docs/decisions/styles-and-fonts.md) und
+[`docs/decisions/snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md), die sechs
+neuen Regeln in [`docs/conventions.md`](docs/conventions.md). Offen ist aus dieser Runde nichts;
+noch nicht getan ist, was `docs/release.md` daraus verlangt (Punkt 3: Handbuch- und Web-Projekt
+einmal durch einen Bau schicken, damit die Schrift-URLs relativ werden; Punkt 4: `d4da5ef`
+ausrollen oder als bewusst offen benennen). **Keinen dieser Fixes hat ein Review gelesen.**
 
-**Danach, am 2026-09-19, ein Durchgang ohne Review dahinter:** die Schriften der Stile-Seite von
+Die Runde davor (zweiunddreißigstes Review, sechs Befunde, kein Befund über Niedrig) ist auf
+`main` und gepusht; die Sprache von gits Text ist inzwischen gemessen (an GNU `libintl`, nicht an
+glibc). **Was beide Reviews vor dem RC empfehlen, ist keine weitere Runde dieser Art**, sondern
+die Liste, die nur der Nutzer abarbeiten kann: VoiceOver über Git-Sync und die zwei Boards, die
+gepackte App je Plattform, glibc — und nach dem dreiunddreißigsten Review der Alpha-Test, an
+Projekten aus der Beispielvorlage und mit einer gebauten Website am Ende jeder Szene, weil drei
+der vier mittleren Befunde in der App unsichtbar und erst im Browser zu sehen waren.
+
+**Davor, am 2026-09-19, ein Durchgang ohne Review dahinter:** die Schriften der Stile-Seite von
 der Auswahl bis zu den Dateien im Projekt (Combobox über alle Google-Familien, Vorschau aus dem
 Bau, ungenutzte Importe, „lokal ausliefern“ holt die Dateien wirklich ins Projekt, relative
 `url()`, `save()` über alle Reiter), der Rückbau des mitreisenden Handbuchs und der Reiter
-„Website“ als fünf Karten. **Der Auftrag für das dreiunddreißigste Review liest beides**
-(`docs/REVIEW-2026-10-07-auftrag.md`, Tag `review-2026-10-08`); sein größtes Risiko ist der
-Code, der aus dem Netz in das Projekt schreibt und dort löscht.
+„Website“ als fünf Karten. **Das dreiunddreißigste Review hat beides gelesen**
+(`docs/REVIEW-2026-10-07-auftrag.md`, Tag `review-2026-10-08`) — sein größtes Risiko war der
+Code, der aus dem Netz in das Projekt schreibt und dort löscht, und genau dort lagen drei der vier
+mittleren Befunde.
 
 **Arbeitsregel** für die nächste Liste: ein Befund pro Durchgang, jeweils mit `npm run typecheck`,
 `npm run build`, `npm run smoke` und eigenem Commit; was dabei nebenbei auffällt, wird gesammelt und

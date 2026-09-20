@@ -212,7 +212,12 @@ const STRINGS = {
     // („git rm --cached“) und liegt noch im Ordner. „git checkout --“ hilft dort nicht, wieder
     // vormerken schon (zweiunddreißigstes Review, nebenbei 6).
     updateAbortBlockedByUntracked:
-      'Diese Dateien sind nicht mehr vorgemerkt, liegen aber noch im Projektordner, deshalb lässt sich das Update nicht abbrechen: {{files}}. Merke sie wieder vor (im Terminal je Datei: „git add -- <Datei>“) und brich dann erneut ab.\n\n',
+      'Diese Dateien sind nicht mehr vorgemerkt, liegen aber noch im Projektordner, deshalb lässt sich das Update nicht abbrechen: {{files}}. Merke sie wieder vor (im Terminal je Datei: „git add -- <Datei>“) und brich dann erneut ab — der Abbruch stellt darin danach den Stand von vor dem Merge wieder her, sichere also vorher, was du seitdem hineingeschrieben hast.\n\n',
+    // Eine Datei, die nur angekündigt ist („git add -N“): Der Index kennt den Pfad mit einem leeren
+    // Blob, den Inhalt hat nur der Ordner. Der Rat für geänderte Merge-Dateien schreibt genau diesen
+    // leeren Blob darüber — er leert die Datei und der Abbruch scheitert weiter.
+    updateAbortBlockedByIntentToAdd:
+      'Diese Dateien sind mit „git add -N“ nur angekündigt, deshalb lässt sich das Update nicht abbrechen: {{files}}. Nimm die Ankündigung zurück (im Terminal je Datei: „git rm --cached -- <Datei>“) und brich dann erneut ab; der Inhalt bleibt dabei im Ordner liegen.\n\n',
     // Dieselbe Verweigerung über Dateien, die der Nutzer selbst vorgemerkt hat. Für sie ist der Rat
     // oben teuer: „git checkout --“ nimmt die ungestagete Hälfte, der Abbruch danach die gestagete.
     // „git reset --“ nimmt nur die Vormerkung, beide Hälften bleiben (zweiunddreißigstes Review,
@@ -550,7 +555,9 @@ const STRINGS = {
     updateAbortBlockedByEditNamed:
       'Work has continued on files from the merge, so the update cannot be cancelled: {{files}}. Discard what you changed there since (in a terminal, for each file: “git checkout -- <file>”), then cancel again.\n\n',
     updateAbortBlockedByUntracked:
-      'These files are no longer staged but still lie in the project folder, so the update cannot be cancelled: {{files}}. Stage them again (in a terminal, for each file: “git add -- <file>”), then cancel again.\n\n',
+      'These files are no longer staged but still lie in the project folder, so the update cannot be cancelled: {{files}}. Stage them again (in a terminal, for each file: “git add -- <file>”), then cancel again — cancelling restores the state from before the merge in them, so save whatever you have written into them since.\n\n',
+    updateAbortBlockedByIntentToAdd:
+      'These files are only announced with “git add -N”, so the update cannot be cancelled: {{files}}. Take the announcement back (in a terminal, for each file: “git rm --cached -- <file>”), then cancel again; the content stays in the folder.\n\n',
     updateAbortBlockedByOwnStaged:
       'You staged these files yourself and changed them again afterwards, so the update cannot be cancelled: {{files}}. Undo only the staging there (in a terminal, for each file: “git reset -- <file>”), which keeps your changes, then cancel again.\n\n',
     updateAbortBlockedByOwnStagedOnMerge:

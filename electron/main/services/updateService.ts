@@ -230,7 +230,8 @@ function explainGitFailure(
   editedSinceMerge: string[] = [],
   ownStaged: string[] = [],
   untrackedInTheWay: string[] = [],
-  ownStagedOnMerge: string[] = []
+  ownStagedOnMerge: string[] = [],
+  declaredToAdd: string[] = []
 ): string {
   if (/beyond a symbolic link/.test(output)) {
     return mainT('updateBlockedBySymlink')
@@ -274,15 +275,22 @@ function explainGitFailure(
     // files does nothing there; staging it again does (thirty-second review, nebenbei 6, measured
     // with git 2.54: `git add --`, then the abort goes through). If the user had edits in it, the
     // abort drops them as a staged state and the sentence after the abort names the file.
+    // git stops at the first entry it cannot handle, so its text names one reason even when two
+    // apply. The app asks for every list itself, so it says all of them rather than the one git
+    // happened to reach (thirty-third review, "nebenbei" 7).
     const untracked = [
       ...new Set([...[...output.matchAll(/^error: Untracked working tree file '(.+)' would be overwritten by merge\.$/gm)].map((m) => m[1]), ...untrackedInTheWay])
     ]
-    if (/Untracked working tree file/.test(output) && untracked.length > 0) {
-      return mainT('updateAbortBlockedByUntracked', { files: untracked.join(', ') })
-    }
+    const untrackedSentence =
+      untracked.length > 0 ? [mainT('updateAbortBlockedByUntracked', { files: untracked.join(', ') })] : []
+    const declaredSentence =
+      declaredToAdd.length > 0 ? [mainT('updateAbortBlockedByIntentToAdd', { files: declaredToAdd.join(', ') })] : []
     const named = [...output.matchAll(/^error: Entry '(.+)' not uptodate\. Cannot merge\.$/gm)].map((m) => m[1])
-    const files = [...new Set([...named, ...editedSinceMerge])]
-    if (files.length === 0) return mainT('updateAbortBlockedByEdit')
+    const files = [...new Set([...named, ...editedSinceMerge])].filter((file) => !declaredToAdd.includes(file))
+    if (files.length === 0) {
+      const rest = [...untrackedSentence, ...declaredSentence]
+      return rest.length > 0 ? rest.join('') : mainT('updateAbortBlockedByEdit')
+    }
     // Three classes, not two. `01f19e8` wrote the advice while ownStaged meant "not from the
     // merge"; `fe30ca4` widened it to the merge's own files with something staged on top, and for
     // those "you staged these yourself" is only half true and the advice only half an abort
@@ -293,7 +301,9 @@ function explainGitFailure(
     return [
       ...(merged.length > 0 ? [mainT('updateAbortBlockedByEditNamed', { files: merged.join(', ') })] : []),
       ...(own.length > 0 ? [mainT('updateAbortBlockedByOwnStaged', { files: own.join(', ') })] : []),
-      ...(onMerge.length > 0 ? [mainT('updateAbortBlockedByOwnStagedOnMerge', { files: onMerge.join(', ') })] : [])
+      ...(onMerge.length > 0 ? [mainT('updateAbortBlockedByOwnStagedOnMerge', { files: onMerge.join(', ') })] : []),
+      ...untrackedSentence,
+      ...declaredSentence
     ].join('')
   }
   return ''
@@ -1764,7 +1774,25 @@ async function diffNames(projectPath: string, ...args: string[]): Promise<string
 async function editedSinceMergeStopped(projectPath: string): Promise<string[]> {
   const unmerged = new Set(await diffNames(projectPath, '--diff-filter=U'))
   const staged = new Set(await diffNames(projectPath, '--cached'))
-  return (await diffNames(projectPath, '--diff-filter=d')).filter((file) => staged.has(file) && !unmerged.has(file))
+  const declared = new Set(await intentToAdd(projectPath))
+  return (await diffNames(projectPath, '--diff-filter=d')).filter(
+    (file) => staged.has(file) && !unmerged.has(file) && !declared.has(file)
+  )
+}
+
+/**
+ * Paths declared with `git add -N` (intent to add): the index holds the path with an empty blob,
+ * the file itself is still only in the folder. git refuses the abort over them like any other
+ * entry that is not up to date, but the advice for those is wrong twice over - the file is not
+ * from the merge, and `git checkout --` writes the empty blob over it, which empties it and leaves
+ * the abort refused all the same (thirty-third review, "nebenbei" 7).
+ *
+ * Asked of diff-files, the index against the working tree: a path added there is one whose content
+ * the index does not have, which is what intent-to-add means. A file staged the ordinary way shows
+ * no difference here.
+ */
+async function intentToAdd(projectPath: string): Promise<string[]> {
+  return diffNames(projectPath, '--diff-filter=A')
 }
 
 /**
@@ -1805,7 +1833,8 @@ export function abortCoreMerge(projectPath: string): Promise<CoreAbortResult> {
           await editedSinceMergeStopped(projectPath),
           losing.files,
           await untrackedInTheWay(projectPath),
-          losing.onTop
+          losing.onTop,
+          await intentToAdd(projectPath)
         )
         // Split at the paragraph: the merge's files and the user's own can be two sentences.
         const sentences = [...why.split('\n\n').map((sentence) => sentence.trim()).filter(Boolean), ...unchecked]

@@ -318,6 +318,17 @@ export default function Styles(): JSX.Element {
     // Which of the block writers below has already rewritten custom.scss - read in the catch, so
     // it has to live outside the try.
     let blocksWritten: ScssWriter | null = null
+    // The file drafts that have reached disk. Read in the catch for the same reason, so that a
+    // step failing after them still hands them over instead of leaving the editor on a draft the
+    // file no longer has.
+    const draftsWritten: Record<string, string> = {}
+    // Both state updates in one tick: clearFileDrafts here, and the `loaded` the sub-tab pulls up
+    // from `written` - saveRef's body runs synchronously up to its first await, so React 18
+    // batches the pair and the editor never sees a value in between.
+    const commitDrafts = async (): Promise<void> => {
+      if (Object.keys(draftsWritten).length > 0) clearFileDrafts(Object.keys(draftsWritten))
+      await saveRef.current(draftsWritten)
+    }
     try {
       if (!config || !scss) return false
       const configDirty = JSON.stringify(config) !== savedConfig || quartzStillDownloadsFonts
@@ -330,8 +341,10 @@ export default function Styles(): JSX.Element {
       // save" cost the @font-face rule of the font just imported (thirty-third review, finding 2).
       const scssRefused = scss.dirty && scss.staleBy !== null && tab !== 'customCss'
       if (scss.dirty && !scssRefused) await window.quartzGui.styles.save(project.path, scss.content)
-      for (const [relativePath, draft] of drafts) await window.quartzGui.styles.saveFile(project.path, relativePath, draft)
-      if (drafts.length > 0) clearFileDrafts(drafts.map(([relativePath]) => relativePath))
+      for (const [relativePath, draft] of drafts) {
+        await window.quartzGui.styles.saveFile(project.path, relativePath, draft)
+        draftsWritten[relativePath] = draft
+      }
       if (configDirty) {
         if (await saveConfig()) blocksWritten = 'googleFonts'
         setSavedConfig(JSON.stringify(config))
@@ -357,7 +370,18 @@ export default function Styles(): JSX.Element {
       // never updates `loaded`, and the editor drops back to the content from before the save.
       // Typing on top of that then wrote the pre-save state over the file that was just saved
       // (thirty-third review, finding 1, measured in the built app).
-      await saveRef.current(Object.fromEntries(drafts))
+      //
+      // And they are dropped here rather than right after being written, in the same tick as the
+      // sub-tab pulls `loaded` up: `contentOf` reads `fileDrafts[tab] ?? loaded[tab]`, so clearing
+      // them earlier sent the editor through draft -> pre-save state -> draft, and
+      // react-codemirror does not apply an outside change while typing - it puts it aside as a
+      // pendingUpdate and replays it once its latch expires, with the value of back then. The
+      // third value equals the document, so no new pendingUpdate replaces the old one, and ~0.8 s
+      // after everything looks saved the editor fell back to the pre-save state; typing on top of
+      // that wrote it over the file (thirty-fourth review, finding 1: save within a quarter second
+      // of the last keystroke, i.e. Cmd+S out of typing). Batched, the value goes draft to draft
+      // and no pendingUpdate arises at all.
+      await commitDrafts()
       if (scssRefused) {
         // Not "saved": the page stays dirty, and the leave dialog has to keep the user here, where
         // the sentence is.
@@ -374,6 +398,11 @@ export default function Styles(): JSX.Element {
       // draft is flagged stale: the banner appears, and the next save does not put the old block
       // back over files that are gone (thirty-third review, finding 2, last paragraph).
       if (blocksWritten) await reloadScss(blocksWritten).catch(() => {})
+      // Whatever did reach disk is committed here too, so that a failure half-way leaves dirty
+      // exactly what was not written - and never an editor showing a draft that is already the
+      // file's content. Only then: without a written draft there is nothing to hand over, and the
+      // registered callback re-runs the SCSS check, which is not what a failed save should do.
+      if (Object.keys(draftsWritten).length > 0) await commitDrafts().catch(() => {})
       setStatus('error')
       setMessage(formatIpcError(err))
       return false

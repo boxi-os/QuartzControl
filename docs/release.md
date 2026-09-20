@@ -78,6 +78,20 @@ das Ziel „GitHub Pages“ auf der Veröffentlichen-Seite. **Und ein Satz in de
 alle, deren Website unter einem Unterpfad liegt: Ihr nächster Bau in der App bringt die Schriften
 zurück.
 
+**Beide Projekte sind am 2026-09-20 durch die App gebaut** — nebenbei beim Entfernen der
+Schriftvariablen (Punkt 4), denn dieselbe Tür schreibt beide Änderungen. Gemessen an der gebauten
+Website unter einem Unterpfad (`/QuartzControl/`, wie GitHub Pages sie ausliefert), mit Chrome und
+`CSS.getPlatformFontsForNode`:
+
+| | geladene `@font-face` | `h1` rendert | 404 |
+|---|---|---|---|
+| mit `url(/static/…)`, dem alten Stand | **0** | `.SF NS` (Systemschrift) | 4 |
+| mit `url(static/…)`, jetzt | 4 | Instrument Sans | 0 |
+
+Die erste Zeile ist keine Erinnerung, sondern nachgestellt: in der *gebauten* CSS den Schrägstrich
+wieder eingesetzt, gemessen, zurückgestellt. Offen bleibt das Veröffentlichen selbst — der Bau
+liegt in `public/`, auf `gh-pages` geschoben ist er nicht.
+
 Am 2026-09-20 getan: beide Projekte gebaut (je 4 root-relative `url()` vorher, 0 nachher, die
 Zeile im Log), im Bau des Web-Projekts vier `url(static/fonts/…)`, kein `fonts.gstatic.com` und
 vier Dateien unter `public/static/fonts`; veröffentlicht nach `gh-pages`

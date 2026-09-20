@@ -247,10 +247,17 @@ die Runde gefunden hat, steht in [`docs/REVIEW-2026-10-08.md`](docs/REVIEW-2026-
 daraus geworden ist in [`docs/reviews.md`](docs/reviews.md); die Messungen in
 [`docs/decisions/styles-and-fonts.md`](docs/decisions/styles-and-fonts.md) und
 [`docs/decisions/snapshots-and-updates.md`](docs/decisions/snapshots-and-updates.md), die fünf
-neuen Regeln in [`docs/conventions.md`](docs/conventions.md). Offen ist aus dieser Runde nichts;
-noch nicht getan ist, was `docs/release.md` daraus verlangt (Punkt 3: Handbuch- und Web-Projekt
-einmal durch einen Bau schicken, damit die Schrift-URLs relativ werden; Punkt 4: `d4da5ef`
-ausrollen oder als bewusst offen benennen). **Keinen dieser Fixes hat ein Review gelesen.**
+neuen Regeln in [`docs/conventions.md`](docs/conventions.md). Offen ist aus dieser Runde nichts.
+Was `docs/release.md` daraus verlangte, ist am 2026-09-20 mit dem Alpha-Test erledigt: Punkt 3
+(Handbuch- und Web-Projekt einmal durch die App bauen, damit die Schrift-URLs relativ werden) und
+Punkt 4 (`d4da5ef` ausrollen — die Vorlage liegt in drei Kopien gleich, die sieben bestehenden
+Projekte sind nachgezogen). Veröffentlicht ist der Bau der Website noch nicht.
+**Keinen dieser Fixes hat ein Review gelesen.**
+
+**Der Alpha-Test ist gefahren** (A1–A4, B1–B2, C1): Ergebnisse in
+[`docs/ALPHA-2026-09-20.md`](docs/ALPHA-2026-09-20.md), Checkliste und Durchgänge in
+[`docs/alpha-test.md`](docs/alpha-test.md). Zwei Befunde, beide behoben. Offen bleibt daraus
+Gruppe D — VoiceOver, die gepackte App je Plattform, glibc — und C1 auf einem echten Linux.
 
 Die Runde davor (dreiunddreißigstes Review, dreizehn Befunde, vier Mittel) ist abgearbeitet und
 auf `main`; das vierunddreißigste hat sie gelesen und achtzehn ihrer zwanzig Fixes bestätigt.

@@ -12,7 +12,7 @@ import {
   joinUniqueRules,
   parseFontFaces,
   projectFontsDir,
-  projectStylesheets,
+  allStylesheets,
   readCustomScss,
   splitRules,
   stripManagedBlock,
@@ -107,14 +107,22 @@ function mentions(text: string, family: string): boolean {
  *
  * `draftFamilies` are the slots as the page shows them, unsaved included: the saved config alone
  * would offer to remove a family the user has just picked.
+ *
+ * Where it looks is quartz/styles, recursively, and that is the limit: a rule in a stylesheet
+ * somewhere else in the project is not seen, and neither is a family a plugin names in its own
+ * code. The card says where it looked, so the answer can be read for what it is.
  */
 export async function unusedImportedFonts(projectPath: string, draftFamilies: string[]): Promise<UnusedImportedFont[]> {
   const info = await readCustomScss(projectPath)
   const body = getManagedBlock(info.content, FONTS_MARKER)
   if (!body) return []
 
+  // Every stylesheet under quartz/styles, at any depth: a `body { font-family: "Alt" }` in a file
+  // the user wrote there and loads with @use is a use of the family, and offering it for removal
+  // because a flat two-directory list did not see it costs the file it points at (thirty-third
+  // review, finding 6).
   const texts = [withoutComments(upsertManagedBlock(info.content, FONTS_MARKER, ''))]
-  for (const path of await projectStylesheets(projectPath)) {
+  for (const path of await allStylesheets(projectPath)) {
     if (path !== customScssPath(projectPath)) texts.push(withoutComments(await readFile(path, 'utf-8')))
   }
   const typography = await readConfig(projectPath)
@@ -157,19 +165,28 @@ export async function removeImportedFont(projectPath: string, family: string): P
 // Deletes the files the rules in `css` pointed at - but only a file no rule in any stylesheet of
 // the project still points at. Called after those rules have left custom.scss.
 async function deleteUnreferencedFontFiles(projectPath: string, css: string): Promise<string[]> {
+  // Two widenings over the list the editor shows, both for the same reason: here, finding a
+  // mention too many costs nothing, and missing one costs a file the site needs. Every stylesheet
+  // under quartz/styles rather than the two flat directories the app writes, and every url() of a
+  // rule rather than its first - a hand-written rule lists local() and two or three formats, and
+  // the file was deleted out from under the second of them (thirty-third review, finding 6).
   const stillNamed = new Set<string>()
-  for (const path of await projectStylesheets(projectPath)) {
+  for (const path of await allStylesheets(projectPath)) {
     for (const face of parseFontFaces(await readFile(path, 'utf-8'))) {
-      const file = fontFileIn(projectFontsDir(projectPath), face.url)
-      if (file) stillNamed.add(file)
+      for (const url of face.urls) {
+        const file = fontFileIn(projectFontsDir(projectPath), url)
+        if (file) stillNamed.add(file)
+      }
     }
   }
   const removedFiles: string[] = []
   for (const face of parseFontFaces(css)) {
-    const file = fontFileIn(projectFontsDir(projectPath), face.url)
-    if (!file || stillNamed.has(file) || removedFiles.includes(basename(file))) continue
-    await rm(file, { force: true })
-    removedFiles.push(basename(file))
+    for (const url of face.urls) {
+      const file = fontFileIn(projectFontsDir(projectPath), url)
+      if (!file || stillNamed.has(file) || removedFiles.includes(basename(file))) continue
+      await rm(file, { force: true })
+      removedFiles.push(basename(file))
+    }
   }
   return removedFiles
 }

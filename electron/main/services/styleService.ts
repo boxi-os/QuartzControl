@@ -696,8 +696,14 @@ export interface ParsedFace {
   weight: string
   style: string
   unicodeRange?: string
-  /** The first url() of `src`, verbatim. */
+  /** The first url() of `src`, verbatim - what the app's own rules and Quartz's have. */
   url?: string
+  /**
+   * Every url() of `src`, in order. A hand-written rule commonly lists two or three formats after
+   * a local(), and the question "does a rule still point at this file" has to see all of them:
+   * asking only the first deleted a file a second url() was using (thirty-third review, finding 6).
+   */
+  urls: string[]
 }
 
 export function parseFontFaces(content: string): ParsedFace[] {
@@ -708,12 +714,14 @@ export function parseFontFaces(content: string): ParsedFace[] {
     const family = declaration(match[1], 'font-family')
     if (!family) continue
     const src = declaration(match[1], 'src')
+    const urls = src ? [...src.matchAll(/url\(\s*["']?([^"')]+)["']?\s*\)/g)].map((m) => m[1]) : []
     out.push({
       family,
       weight: declaration(match[1], 'font-weight') ?? '400',
       style: declaration(match[1], 'font-style') ?? 'normal',
       unicodeRange: declaration(match[1], 'unicode-range'),
-      url: src ? /url\(\s*["']?([^"')]+)["']?\s*\)/.exec(src)?.[1] : undefined
+      url: urls[0],
+      urls
     })
   }
   return out
@@ -741,6 +749,31 @@ export function fontFileIn(dir: string, url: string | undefined): string | undef
 
 export function projectFontsDir(projectPath: string): string {
   return join(projectPath, 'quartz', 'static', 'fonts')
+}
+
+/**
+ * Every .scss/.css under quartz/styles, at any depth - for the questions "does a rule still point
+ * at this file" and "does anything still name this family", where finding too much is the safe
+ * side. projectStylesheets() below stays what it was: the flat two-directory list the editor
+ * offers and the face listing reports, i.e. the files the app itself writes. A rule the user put
+ * in quartz/styles/meine.scss and loads with @use is outside that list, and deleting the file it
+ * points at was the one way a still-needed font file could go (thirty-third review, finding 6).
+ *
+ * A symlinked directory is not descended into: readdir's Dirent does not follow links, so
+ * isDirectory() is false for one, and a loop cannot arise.
+ */
+export async function allStylesheets(projectPath: string): Promise<string[]> {
+  const out: string[] = []
+  const walk = async (dir: string): Promise<void> => {
+    if (!existsSync(dir)) return
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name)
+      if (entry.isDirectory()) await walk(full)
+      else if (entry.isFile() && /\.(scss|css)$/.test(entry.name)) out.push(full)
+    }
+  }
+  await walk(stylesDir(projectPath))
+  return out
 }
 
 export async function projectStylesheets(projectPath: string): Promise<string[]> {

@@ -1734,11 +1734,8 @@ async function stagedOutsideMerge(projectPath: string): Promise<{ files: string[
  */
 async function stagedOnTopOfMerge(projectPath: string, files: string[]): Promise<string[] | null> {
   if (files.length === 0) return []
-  const merged = await run('git', ['merge-tree', '--write-tree', 'HEAD', 'MERGE_HEAD'], projectPath)
-  const tree = merged.output.split('\n').map((line) => line.trim()).find((line) => /^[0-9a-f]{40}([0-9a-f]{24})?$/.test(line))
-  if (tree === undefined) return null
-  const entries = async (args: string[], pick: (fields: string[]) => string): Promise<Map<string, string> | null> => {
-    const result = await run('git', [...args, '--', ...files], projectPath)
+  const entries = async (args: string[], paths: string[], pick: (fields: string[]) => string): Promise<Map<string, string> | null> => {
+    const result = await run('git', [...args, '--', ...paths], projectPath)
     if (!result.success) return null
     const map = new Map<string, string>()
     for (const record of result.output.split('\0').filter(Boolean)) {
@@ -1748,10 +1745,26 @@ async function stagedOnTopOfMerge(projectPath: string, files: string[]): Promise
     return map
   }
   // "mode type oid" from ls-tree, "mode oid stage" from ls-files; compared as "mode oid".
-  const result = await entries(['ls-tree', '-z', tree], ([mode, , oid]) => `${mode} ${oid}`)
-  const index = await entries(['ls-files', '-s', '-z'], ([mode, oid]) => `${mode} ${oid}`)
+  const index = await entries(['ls-files', '-s', '-z'], files, ([mode, oid]) => `${mode} ${oid}`)
+  // The cheap half first, and it costs no merge-tree: a file the merge staged straight from
+  // MERGE_HEAD - anything only upstream touched - has an index entry equal to MERGE_HEAD's, and
+  // there is nothing of the user's on top of it. Only what differs needs the recomputed merge,
+  // which is the case where both sides changed the file and the result is neither tree.
+  //
+  // Without this, `candidates` was never empty in an ordinary half merge - the merge stages its
+  // own cleanly merged files - so every abort under a git before 2.38 said "could not be checked
+  // … the list above may be incomplete", with nobody having touched anything and no list above
+  // it (thirty-fourth review, finding 5, measured against a git 2.37.0 built from source; Ubuntu
+  // 22.04 ships 2.34).
+  const theirs = await entries(['ls-tree', '-z', 'MERGE_HEAD'], files, ([mode, , oid]) => `${mode} ${oid}`)
+  const rest = index && theirs ? files.filter((file) => index.get(file) !== theirs.get(file)) : files
+  if (rest.length === 0) return []
+  const merged = await run('git', ['merge-tree', '--write-tree', 'HEAD', 'MERGE_HEAD'], projectPath)
+  const tree = merged.output.split('\n').map((line) => line.trim()).find((line) => /^[0-9a-f]{40}([0-9a-f]{24})?$/.test(line))
+  if (tree === undefined) return null
+  const result = await entries(['ls-tree', '-z', tree], rest, ([mode, , oid]) => `${mode} ${oid}`)
   if (!result || !index) return null
-  return files.filter((file) => result.get(file) !== index.get(file))
+  return rest.filter((file) => result.get(file) !== index.get(file))
 }
 
 /**
@@ -1821,10 +1834,16 @@ export function abortCoreMerge(projectPath: string): Promise<CoreAbortResult> {
       // whether the stash lying there is this run's is a different question - the HEAD it was
       // taken from, which `merge --abort` does not move (see popCoreUpdateStash).
       const losing = await stagedOutsideMerge(projectPath)
-      // Said in both branches, because it qualifies both: what the abort would discard, and what
-      // it refuses over. Only when there was something to check - with nothing staged on the
-      // merge's files there is nothing this git could not answer.
-      const unchecked = losing.unchecked ? [mainT('updateAbortStagedUnchecked')] : []
+      // Said in both branches, because it qualifies both - but not with the same sentence: after a
+      // successful abort the gap means a name may be missing from the list, while in the refusal
+      // it means the advice may be the dearer of the two, since `git checkout --` takes a staged
+      // half along and `git reset --` does not (thirty-fourth review, finding 5). Only when there
+      // was something to check: a file the merge staged straight from MERGE_HEAD is answered
+      // without merge-tree (stagedOnTopOfMerge).
+      // Both spelled out, rather than one call with the key in a variable: check:i18n reads a
+      // literal, and a key it cannot read is one a gap can hide behind.
+      const uncheckedAfter = losing.unchecked ? [mainT('updateAbortStagedUnchecked')] : []
+      const uncheckedBlocked = losing.unchecked ? [mainT('updateAbortStagedUncheckedBlocked')] : []
       const result = await run('git', ['merge', '--abort'], projectPath, gitTextEnv())
       if (!result.success) {
         // A refused abort has changed nothing, so the list is read from the state git refused over.
@@ -1837,8 +1856,8 @@ export function abortCoreMerge(projectPath: string): Promise<CoreAbortResult> {
           await intentToAdd(projectPath)
         )
         // Split at the paragraph: the merge's files and the user's own can be two sentences.
-        const sentences = [...why.split('\n\n').map((sentence) => sentence.trim()).filter(Boolean), ...unchecked]
-        return { success: false, output: [why + result.output, ...unchecked].join('\n\n'), sentences }
+        const sentences = [...why.split('\n\n').map((sentence) => sentence.trim()).filter(Boolean), ...uncheckedBlocked]
+        return { success: false, output: [why + result.output, ...uncheckedBlocked].join('\n\n'), sentences }
       }
       const popped = await popCoreUpdateStash(projectPath)
       // The app's sentences first, git's text after them, and the sentences by weight: what the
@@ -1850,7 +1869,12 @@ export function abortCoreMerge(projectPath: string): Promise<CoreAbortResult> {
       // sentences come back separately as well, for the announcement (twenty-eighth review,
       // finding 1, measured: the announcement was "On branch v5").
       const dropped = losing.files.length > 0 ? [mainT('updateAbortDroppedStaged', { files: losing.files.join(', ') })] : []
-      const sentences = [...popped.sentences, ...dropped, ...unchecked, ...(popped.restored ? [popped.restored] : [])]
+      const sentences = [
+        ...popped.sentences,
+        ...dropped,
+        ...uncheckedAfter,
+        ...(popped.restored ? [popped.restored] : [])
+      ]
       const git = [result.output.trim(), popped.git.trim()].filter(Boolean).join('\n')
       return { success: popped.success, output: [...sentences, git].filter(Boolean).join('\n\n'), sentences }
     })

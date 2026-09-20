@@ -236,8 +236,14 @@ const STRINGS = {
       'Der Abbruch hat den vorgemerkten Stand dieser Dateien verworfen: {{files}}. git setzt beim Abbrechen alles zurück, was vorgemerkt war — auch, was du selbst dazu vorgemerkt hast, und von Hand gelöste Konflikte.',
     // „Kann nicht prüfen“ ist nie „alles gut“: Ohne `merge-tree --write-tree` (git vor 2.38) bleibt
     // die Hälfte der Antwort ungeprüft, und der Satz darüber las sich trotzdem als vollständig.
+    // Zwei Sätze, weil die Lücke zweierlei bedeutet: nach einem geglückten Abbruch fehlt der Liste
+    // womöglich ein Name, in der Verweigerung ist der Rat womöglich der teurere von beiden —
+    // `git checkout --` nimmt auf einer solchen Datei auch die Vormerkung mit, `git reset --`
+    // nicht (34. Review, Befund 5).
     updateAbortStagedUnchecked:
-      'Ob auf den Dateien des Merges zusätzlich etwas Eigenes vorgemerkt war, ließ sich mit diesem git nicht prüfen — dafür braucht es git 2.38 oder neuer. Die Liste oben kann also unvollständig sein.',
+      'Ob auf den Dateien des Merges zusätzlich etwas Eigenes vorgemerkt war, ließ sich mit diesem git nicht prüfen — dafür braucht es git 2.38 oder neuer. Der Abbruch kann also noch etwas Vorgemerktes verworfen haben, das hier nicht steht.',
+    updateAbortStagedUncheckedBlocked:
+      'Ob auf den Dateien des Merges zusätzlich etwas Eigenes vorgemerkt war, ließ sich mit diesem git nicht prüfen — dafür braucht es git 2.38 oder neuer. Steht dort etwas Eigenes vorgemerkt, nimmt „git checkout --“ es mit; „git reset -- <Datei>“ lässt es stehen.',
     // Die Notiz, mit der sich ein Lauf beim nächsten meldet, ließ sich nicht schreiben. Sie ist ein
     // Zeiger und kein Ergebnis, also läuft das Update weiter - gesagt wird es trotzdem, weil der
     // nächste Lauf sich danach anders verhält, als er sollte.
@@ -565,7 +571,9 @@ const STRINGS = {
     updateAbortDroppedStaged:
       'Cancelling discarded the staged state of these files: {{files}}. When cancelling, git resets everything that was staged — including what you staged yourself and conflicts you resolved by hand.',
     updateAbortStagedUnchecked:
-      'Whether anything of yours was staged on top of the merge\u2019s own files could not be checked with this git — that needs git 2.38 or newer. The list above may therefore be incomplete.',
+      'Whether anything of yours was staged on top of the merge\u2019s own files could not be checked with this git — that needs git 2.38 or newer. Cancelling may therefore have discarded something staged that is not named here.',
+    updateAbortStagedUncheckedBlocked:
+      'Whether anything of yours was staged on top of the merge\u2019s own files could not be checked with this git — that needs git 2.38 or newer. If something of yours is staged there, \u201Cgit checkout --\u201D takes it along; \u201Cgit reset -- <file>\u201D leaves it.',
     updateNoteUnwritable:
       'The note for this update could not be written ({{reason}}). The update still ran to the end; the next run may therefore install again or report “nothing to do”.',
     npmInstallFailed: 'npm install failed:',

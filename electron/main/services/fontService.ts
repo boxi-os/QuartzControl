@@ -298,9 +298,10 @@ export async function fetchGoogleFonts(
 ): Promise<{ changed: boolean; files: string[]; removedFiles: string[]; removedFamilies: string[]; missingFamilies: string[] }> {
   const request = googleFontsCss2Url(typography)
   if (!request) throw new Error(mainT('googleFontsNoFamily'))
-  const before = getManagedBlock((await readCustomScss(projectPath)).content, GOOGLE_MARKER)
+  const current = (await readCustomScss(projectPath)).content
+  const before = getManagedBlock(current, GOOGLE_MARKER)
   if (before && requestOf(before) === request && allFilesPresent(projectPath, before)) {
-    return { changed: false, files: [], removedFiles: [], removedFamilies: [], missingFamilies: notDelivered(typography, before) }
+    return { changed: false, files: [], removedFiles: [], removedFamilies: [], missingFamilies: notDelivered(typography, before, current) }
   }
 
   // "Not reachable" and "refused the request" are two ways to fail and get two sentences. Without
@@ -365,7 +366,7 @@ export async function fetchGoogleFonts(
     files: [...urls.values()],
     removedFiles: await deleteUnreferencedFontFiles(projectPath, previous),
     removedFamilies: familiesOf(previous).filter((f) => !kept.has(f.toLowerCase())),
-    missingFamilies: notDelivered(typography, block)
+    missingFamilies: notDelivered(typography, block, info.content)
   }
 }
 
@@ -381,8 +382,19 @@ function familiesOf(css: string): string[] {
  * sentence that would have named it, "a font name is usually misspelt", is the one that does not
  * come (thirty-third review, finding 5).
  */
-function notDelivered(typography: Record<string, unknown>, block: string): string[] {
+function notDelivered(typography: Record<string, unknown>, block: string, wholeCss: string): string[] {
   const delivered = new Set(familiesOf(block).map((f) => f.toLowerCase()))
+  // Plus whatever the rest of custom.scss declares itself: a slot may hold a font the user
+  // imported, and mixing the two is what the page offers. Asking the block alone warned "Google
+  // does not know this font … check the spelling" about a family whose rule is in the file, whose
+  // file is in the project and which the site does show - after every save that changes the
+  // request (thirty-fourth review, finding 4). Same question as `declaredHere` on Basis, which
+  // 77d143b taught the hint under the field and not this list.
+  //
+  // Without the Google block, and deliberately: `wholeCss` is the file as it was before this run
+  // wrote, so its old block can still name a family this answer left out - counting that would
+  // hide exactly the omission the sentence is for.
+  for (const family of familiesOf(stripManagedBlock(wholeCss, GOOGLE_MARKER))) delivered.add(family.toLowerCase())
   const asked = (['header', 'body', 'code', 'title'] as const)
     .map((role) => googleFontRequest(role, typography[role])?.family.trim())
     .filter((family): family is string => Boolean(family))

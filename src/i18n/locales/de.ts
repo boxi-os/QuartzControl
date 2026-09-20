@@ -1299,8 +1299,10 @@ export default {
   },
   styles: {
     loadFailed: 'Die Stile ließen sich nicht laden.',
-    googleFontsMissing:
+    googleFontsMissing_one:
       'Google kennt diese Schrift nicht und hat sie stillschweigend weggelassen: {{families}}. Auf der Website fällt dieser Platz auf eine Ersatzschrift zurück — prüfe die Schreibweise.',
+    googleFontsMissing_other:
+      'Google kennt diese Schriften nicht und hat sie stillschweigend weggelassen: {{families}}. Auf der Website fallen diese Plätze auf eine Ersatzschrift zurück — prüfe die Schreibweise.',
     googleFontsRemoved_one: 'Nicht mehr gewählt und aus dem Projekt entfernt: {{families}} (1 Datei).',
     googleFontsRemoved_other: 'Nicht mehr gewählt und aus dem Projekt entfernt: {{families}} ({{count}} Dateien).',
     googleFontsDropped_one: 'Die lokale Kopie der Google-Schriften ist entfernt (1 Datei), die Website lädt sie jetzt von Google.',

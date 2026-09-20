@@ -1296,8 +1296,10 @@ export default {
   },
   styles: {
     loadFailed: 'The styles could not be loaded.',
-    googleFontsMissing:
+    googleFontsMissing_one:
       'Google does not know this font and left it out silently: {{families}}. That slot falls back to a substitute on the site — check the spelling.',
+    googleFontsMissing_other:
+      'Google does not know these fonts and left them out silently: {{families}}. Those slots fall back to a substitute on the site — check the spelling.',
     googleFontsRemoved_one: 'No longer selected and removed from the project: {{families}} (1 file).',
     googleFontsRemoved_other: 'No longer selected and removed from the project: {{families}} ({{count}} files).',
     googleFontsDropped_one: 'The local copy of the Google fonts was removed (1 file); the website now loads them from Google.',

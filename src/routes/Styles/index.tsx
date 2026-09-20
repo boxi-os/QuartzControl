@@ -286,7 +286,8 @@ export default function Styles(): JSX.Element {
       const notes = [
         result.removedFamilies.length > 0 &&
           t('styles.googleFontsRemoved', { families: result.removedFamilies.join(', '), count: result.removedFiles.length }),
-        result.missingFamilies.length > 0 && t('styles.googleFontsMissing', { families: result.missingFamilies.join(', ') })
+        result.missingFamilies.length > 0 &&
+          t('styles.googleFontsMissing', { families: result.missingFamilies.join(', '), count: result.missingFamilies.length })
       ].filter((note): note is string => typeof note === 'string')
       if (notes.length > 0) setFontNote(notes.join(' '))
     } else {

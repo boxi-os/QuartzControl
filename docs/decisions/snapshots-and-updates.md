@@ -827,3 +827,51 @@ nicht gelesen“ verschweigt, dass er bei diesen zwei Aufrufen gelesen *und* gez
 deutsches git hat, liest in ihrem Kasten jetzt englischen git-Text. Hingenommen, jetzt gesagt.
 Offen bleibt glibc (`LC_ALL=''` als „nicht gesetzt“); gelesen verhält es sich dort gleich. Den
 Nachholpunkt für die VM oben ersetzt das bis auf diese eine Frage.
+
+## Was der Abbruch nicht prüfen konnte, und was er nur halb erklärte (2026-09-20, dreiunddreißigstes Review)
+
+Vier Ränder am `merge --abort`, alle am Bündel von `updateService` gegen echte Repos gemessen,
+git 2.54 dieses Rechners; für die Frage nach altem git daneben eine Attrappe, die
+`merge-tree --write-tree` genau so beantwortet, wie es ein aus der Quelle gebautes git 2.37.0 tut
+(`fatal: unknown rev --write-tree`, Exit 128, vom Review gemessen) und alles andere an das echte
+git weiterreicht.
+
+**„Kann nicht prüfen“ war hier still.** `stagedOnTopOfMerge` gab `[]` zurück, wenn git
+`--write-tree` nicht kennt — und der Satz darüber, was der Abbruch verworfen hat, las sich weiter
+als vollständig. Gemessen mit einem Merge, auf dessen Datei `shared.md` eine eigene Zeile
+vorgemerkt war: 2.54 nennt `notes.md` und `shared.md`, 2.37 nur `notes.md`, mit demselben Satz,
+der „von Hand gelöste Konflikte“ verspricht. Jetzt `null` statt `[]`, und der Abbruch sagt es in
+beiden Zweigen. Den Baum-Hash sucht die Funktion außerdem über alle Zeilen: `run` hängt stdout und
+stderr zusammen, eine Warnung davor wäre dieselbe stille Null gewesen.
+
+**Eine Datei des Merges mit eigener Vormerkung obenauf ist eine dritte Klasse.** `01f19e8` schrieb
+den Rat, als `losing` „nicht aus dem Merge“ hieß; `fe30ca4` nahm die Merge-Dateien dazu. Für die
+ist `git reset --` kein Abbruch, sondern die Hälfte davon: Die eigene Arbeit bleibt, die
+vorgemerkte Hälfte des Merges fällt in den Arbeitsbereich und blockiert das nächste Update.
+Gemessen (`shared.md` sauber gemergt, eigene Zeile vorgemerkt, danach weiter geändert;
+`notes.md` rein eigen, gleich behandelt): vorher ein Satz über beide, jetzt zwei, und der zweite
+nennt den Preis. Einen Befehl ohne Preis gibt es für diese Lage nicht — `git checkout --` kostet
+die eigene Arbeit.
+
+**Eine Umbenennung ist keine vorgemerkte Datei.** Die zwei `diffNames` in `stagedOutsideMerge`
+fragen verschiedene Baumpaare, und die Umbenennungserkennung paart sie verschieden. Gemessen mit
+vier Dateien, die upstream umbenannt *und* geändert hat, während das Projekt sie neu schrieb:
+`alt1.md` bis `alt4.md` standen als „vorgemerkter Stand verworfen“ da, obwohl niemand etwas
+vorgemerkt hatte. `--no-renames` in beiden, wie es `untrackedInTheWay` schon hatte — gefragt wird
+nach Pfaden, und ein Pfad ist ein Pfad.
+
+**Drei Verweigerungen, die anders lauten mussten.** Ein mit `git add -N` angekündigter Pfad bekam
+den Rat für geänderte Merge-Dateien; `git checkout --` schreibt den leeren Blob des Index darüber,
+leert die Datei und ändert an der Verweigerung nichts. Er ist jetzt eine eigene Klasse — gefragt
+an `diff-files`, also an dem, wofür der Index keinen Inhalt hat — mit dem Rat
+`git rm --cached --`; befolgt, geht der Abbruch durch und die Datei liest, was der Nutzer
+geschrieben hat. Der Rat `git add --` für eine vom Merge gelöschte, neu angelegte Datei sagt jetzt,
+was er kostet (der Abbruch stellt darin den Stand von vor dem Merge her). Und weil git beim ersten
+Eintrag stehenbleibt, den es nicht behandeln kann, nannte `explainGitFailure` von zwei gleichzeitig
+geltenden Gründen nur einen; die App fragt jede Liste selbst und sagt jetzt alle.
+
+**Und der Satz über einen älteren Stash, der noch passt, hat an einer Stelle einen Vorspann.**
+Er steht dort unmittelbar vor „… sind wieder eingetragen“, und ohne ihn lesen sich die beiden als
+Widerspruch über dieselbe Sache. Gemessen mit zwei Einträgen der App auf demselben HEAD und
+getrennten Dateien: vorher „Aus einem früheren Update liegt in git noch …“, jetzt „Neben den
+Einträgen, die der Abbruch zurückgebracht hat, liegt in git noch ein älterer …“.

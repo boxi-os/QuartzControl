@@ -360,3 +360,108 @@ Reihenfolge schriebe der Entwurf die alten Blöcke zurück. Ein Reiter registrie
 → Lora in der Datei und nach dem Routenwechsel; CSS-Entwurf und `--secondary` zugleich, auf
 „Basis“ gespeichert → beides in der Datei, der Editor zeigt die Datei, kein Veraltet-Band. Der Fall
 „Entwurf in einer weiteren Stildatei, auf einem anderen Reiter gespeichert“ ist nur gelesen.
+
+**Was das Speichern aller vier Reiter gekostet hat, und was es nicht mehr kostet (2026-09-20,
+dreiunddreißigstes Review).** Zwei Dinge hielten vorher und hielten danach nicht mehr, beide an
+der gebauten App mit frischen Kopien von `gui-test` gemessen:
+
+*Der Entwurf in einer weiteren Stildatei.* `afterSave` las `fileDrafts` aus der Closure des
+Renders, in dem es registriert wurde — und `registerSave` läuft in einem Effekt nach *jedem*
+Render. Liegt zwischen `clearFileDrafts()` und dem Aufruf ein `await` (eine geänderte Farbe auf
+„Basis“ genügt), ist die neu registrierte Closure leer, `loaded` wird nie nachgezogen, und der
+Editor zeigt `fileDrafts[tab] ?? loaded[tab]`, also den Stand von vor dem Speichern. Gemessen:
+Entwurf in `custom/a11y.scss`, eine Farbe geändert, vom CSS-Reiter gespeichert → Platte richtig,
+Editor zurück auf „// Accessibility …“; eine weitere Zeile getippt und gespeichert → der Entwurf
+war von der Platte weg. Mit nur einem kurzen `await` dazwischen gewann die alte Closure das Rennen
+— es ist eines, kein Entwurf. `save()` reicht die geschriebenen Entwürfe jetzt an
+`saveRef.current(drafts)` durch.
+
+*Der veraltete `custom.scss`-Entwurf.* Schreibt jemand anderes die Datei, während der CSS-Reiter
+einen Entwurf hält, bleibt der Entwurf mit `staleBy` stehen und der CSS-Reiter zeigt ein Band.
+Seit alle vier Reiter schreiben, schrieben auch die drei ohne Band. Gemessen: Entwurf in
+`custom.scss`, Pfeil „nach unten“ an der ersten Datei, auf „Basis“ gespeichert → die Reihenfolge
+war zurückgenommen; Entwurf in `custom.scss`, Schrift importiert, auf „Basis“ gespeichert → die
+`@font-face`-Regel der gerade importierten Schrift war weg, ihre Datei lag verwaist im Projekt.
+`save()` schreibt `custom.scss` jetzt nur noch vom CSS-Reiter aus, wenn `staleBy` gesetzt ist,
+sagt sonst, warum nicht, lässt die Seite `dirty` und gibt dem Verlassen-Dialog `false`. Auf dem
+CSS-Reiter selbst bleibt das Überschreiben die Wahl, die es immer war — dort steht das Band.
+
+**Der `google-fonts`-Block ist Datum und Kennzeichen zugleich, und das hat zwei Preise.** Er kam
+mit `2c5a9b7` in `MANAGED_MARKERS`, also strich `stripAllManaged()` ihn beim Vorlagen-Import mit —
+auf die Liste dessen, was `styles.apply` danach zurückholt, kam er nicht. Gemessen an Kopien von
+`gui-test`, nur der Teil `styles` aus `minimal-lesbar.qtpl`: `projectWins` wie `packageWins`
+hinterher ohne Block, `success: true`, 28 Schriftdateien verwaist, und die Bau-Tür sah es nicht,
+weil `refreshGoogleFonts` am Block erkennt, ob es etwas zu tun gibt. Jetzt wird er wie `keptFonts`
+zurückgeholt, und zwar nach Vorhandensein, nicht nach Inhalt: ein leerer Block ist das Kennzeichen
+auch. Der zweite Preis blieb: `fontOrigin: local` ohne Block ist ein Zustand, den niemand nannte —
+er entsteht auch bei einem Restore von `custom.scss` aus einem Snapshot von vor dem Holen. Dafür
+gibt es jetzt `fontBuildState` mit `noRule`: Lädt gar niemand eine Webschrift und nennt keine
+`@font-face`-Regel des Projekts die gewählte Familie, sagen beide Karten das. Gemessen: Block von
+Hand herausgeschnitten → „Keine @font-face-Regel im Projekt nennt: Just Another Hand, Open Sans,
+Roboto Mono“; Block wieder da → nichts.
+
+**Was die Vorlage schreibt, schlägt, was „Basis“ wählt — in acht der neun Projekte dieses
+Rechners.** `d4da5ef` hat die fünf ungeschichteten Schriftvariablen aus der Vorlage genommen; die
+Projekte tragen sie weiter. Gemessen an einer Kopie von `navigations-testprojekt`: Quelle auf
+Google, `body` auf Lora, „lokal ausliefern“, gespeichert → 26 Dateien, 28 Lora-Regeln,
+`fontOrigin: local` — und `--bodyFont: "Inter", …` unverändert, die Website weiter Inter. Der
+Reiter sagt es jetzt unter dem Feld, gefragt am `overrides`-Zustand der Seite; der Variablen-Graph
+kennt nur `theme` und `build`, nicht den eigenen Block. Gegenprobe in `gui-test`, wo die vier
+Variablen von Hand entfernt sind: kein Hinweis.
+
+**Google lässt eine unbekannte Familie still aus.** Gemessen an der echten CSS2-API mit dem
+User-Agent der App: `family=MeineSchrift` allein → 400; `family=Inter:wght@400;700&family=
+MeineSchrift…` → 200 mit 14 Regeln, alle `Inter`. Die App fragt drei oder vier auf einmal, der
+gewöhnliche Fall ist also die 200 — und der Satz, der für genau diesen Fall geschrieben ist
+(„Meist ist ein Schriftname falsch geschrieben“), kam nie. `fetchGoogleFonts` hält die Familien
+der Antwort jetzt gegen die der Anfrage und meldet die fehlenden; die Seite nennt sie nach dem
+Speichern neben dem, was entfernt wurde. Und `unknownToGoogle` fragt `faces`: eine Familie, die
+das Projekt selbst deklariert, ist niemandem unbekannt — der Satz stand unter einer Schrift, die
+der Nutzer gerade importiert hatte.
+
+**Wer fragt, ob eine Datei noch gebraucht wird, sucht breit.** `deleteUnreferencedFontFiles` und
+`unusedImportedFonts` lasen `custom.scss` plus die zwei flachen Ordner, die die App selbst
+beschreibt, und je Regel nur die erste `url()`. Am Bündel mit Mini-Projekten gemessen, eine
+Familie „Alt“ auf `shared.woff2` und daneben eine eigene Regel des Nutzers auf dieselbe Datei:
+zweite `url()` einer Regel, `custom/teil/own.scss`, `quartz/styles/meine.scss` — jedes Mal wurde
+die Datei gelöscht, und `body { font-family: "Alt" }` in `quartz/styles/meine.scss` machte die
+Familie „ungenutzt“. Jetzt: alle `.scss`/`.css` unter `quartz/styles`, rekursiv, und jede `url()`
+einer Regel. `projectStylesheets()` bleibt, was es war — die Liste, die der Editor anbietet und
+die Face-Liste meldet.
+
+**Drei Grenzen an dem, was aus dem Netz ins Projekt geht.** Am Bündel mit selbst geschriebenen
+Antworten: 300 Dateien à 1 MiB wurden in 242 ms geschrieben, ohne ein Wort; ein Dateiname, den
+`FONT_FILE_NAME` nicht kennt, wurde übersprungen und ließ die Google-Adresse in der Regel stehen,
+womit die Website „lokal“ bei Google lud und *jeder* Build wieder ins Netz ging (`fontFileIn()`
+liefert für sie `undefined`, `allFilesPresent` wird nie wahr); eine 0-Byte-Datei unter dem
+richtigen Namen galt zweimal als vorhanden — die Abkürzung nahm sie, und der Download ging an ihr
+vorbei. Jetzt: eine Zahl (200) vor dem ersten Download, eine Summe (128 MiB) währenddessen, ein
+unbekannter Name ist ein Fehler, und `usableFile()` beantwortet beide Fragen nach der Größe.
+Gemessen danach: 300 Dateien abgelehnt ohne eine geschriebene, 20 × 8 MiB bei 17 abgebrochen,
+10 × 8 MiB und die drei kleinen Dateien des Normalfalls durch, die 0-Byte-Datei neu geholt.
+Und ein Lauf, der in der Mitte abbricht, nimmt mit, was er schon geschrieben hat: der Block
+entsteht am Ende, also standen die Dateien sonst unter gar keiner Regel und wurden von nichts
+mehr gelöscht.
+
+**„Kein Netz“ ist eine eigene Antwort.** Ohne `catch` um die zwei `fetch` sagte die Seite
+„TypeError: fetch failed (fonts:fetchGoogle)“ und das Build-Log klebte den englischen Fehler in
+einen deutschen Satz. Drei Arten zu scheitern, drei Sätze: keine Route, keine Antwort in 20 s,
+eine abgelehnte Anfrage. Gemessen am Bündel (6 ms / 20 001 ms / 2 ms) und an der gebauten App mit
+einem `fetch`, das wirft wie Node ohne DNS: „Google Fonts ist nicht erreichbar.
+(fonts:fetchGoogle)“, Badge bleibt, Config unberührt. Ob eine Verweigerung ein Timeout war, fragt
+seither das Signal und nicht der Name des Fehlers — seit dem Wechsel auf Electrons `net.fetch`
+(Proxy und Zertifikatsspeicher des Rechners, wie Update-Check und mitgelieferte Vorlage) ist es
+nicht mehr Nodes Stack, der wirft.
+
+**Der Fix für relative Schrift-URLs erreicht ein Projekt nur, wenn jemand darin schreibt.**
+`migrateOnWrite` hängt an `upsertManagedBlock`, `upsertImportBlock` und `saveVariableOverrides`.
+Gelesen in den neun echten Projekten: acht hatten noch `url("/static/fonts/…")`, darunter das
+Handbuch — dessen veröffentlichte CSS fragte
+`boxi-os.github.io/static/fonts/inter-latin-400-700.woff2` (404), während die Datei unter
+`…/QuartzControl/static/fonts/…` lag (200). Der Wächter steht deshalb an der Tür, an der die Datei
+gelesen wird: `buildService` ruft `styleService.migrateFontUrls()` neben `writeAllFrames()` und
+`refreshGoogleFonts()`. Nur die URLs, nicht die Marker-Umbenennung der zweiten Hälfte von
+`migrateOnWrite` — die kostet eine Fassung vor dem 2026-09-18 jeden verwalteten Block, den sie
+lesen kann, und wer „Bauen“ drückt, hat das nicht bestellt. Gemessen an einer Kopie von
+`navigations-testprojekt`: 4 root-relative `url()` vorher, 0 nach dem Start des Dev-Servers, und
+der Satz im Log.

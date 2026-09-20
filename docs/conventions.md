@@ -221,6 +221,15 @@ Projektwurzel.
   anderen Satz als der weiche). Ein zweiter „Jetzt bauen“ tritt dem laufenden nur bei, wenn er in
   denselben Ordner will. Messungen in
   [`navigation-and-pages.md`](decisions/navigation-and-pages.md).
+- **Was eine Liste wegnimmt, holt dieselbe Liste zurück.** `styles.apply` baut `custom.scss` aus
+  dem gestrippten Rumpf neu auf und setzt die verwalteten Abschnitte wieder ein, die anderen Teilen
+  gehören. Der `google-fonts`-Block kam in die Strip-Liste und nicht in die Rückhol-Liste: Ein
+  Import des Teils `styles` allein nahm einer Website ihre Schriften, meldete Erfolg, und die
+  Bau-Tür sah es nicht, weil sie am Block erkennt, ob es etwas zu tun gibt. **Ein Kennzeichen wird
+  nach Vorhandensein zurückgeholt, nicht nach Inhalt** — ein leerer Block ist das Kennzeichen auch.
+  Und wo ein Datum zugleich das Kennzeichen ist, gibt es einen Zustand, den niemand nennt: Dafür
+  gibt es einen eigenen Satz statt eines Schweigens. Messungen in
+  [`styles-and-fonts.md`](decisions/styles-and-fonts.md).
 - **Jede Dekompression bekommt eine Obergrenze, und die Datei selbst liefert sie nicht.** Ein WOFF2
   sagt, wie lang seine Tabellen sind, ein ZIP-Eintrag, worauf er sich entpackt — geschrieben hat das
   jeweils der, von dem die Datei kommt. Also `maxOutputLength` an *jeder* Stelle: die eigene Zahl,
@@ -228,8 +237,14 @@ Projektwurzel.
   *bevor* das erste Byte entpackt wird. Gemessen: 863 Bytes WOFF2 wurden zu 1,1 GiB RSS, ein 522-KB-
   Paket zu ebenso viel; darüber endet es nicht in `null`, sondern in einem abgebrochenen
   Hauptprozess. Der `catch` fängt einen `RangeError` aus einer begrenzten Dekompression, nie einen
-  Out-of-Memory-Abbruch. Messungen in
-  [`templates-and-localization.md`](decisions/templates-and-localization.md).
+  Out-of-Memory-Abbruch. **Dasselbe gilt für alles, was aus dem Netz in das Projekt geschrieben
+  wird**, und dort sind es drei Zahlen: wie viele Dateien (vor dem ersten Download geprüft), wie
+  viel zusammen (währenddessen), und wie groß eine einzelne. Ein Name, den der Code nicht verwenden
+  kann, ist dabei ein Fehler und kein stilles Überspringen — übersprungen blieb die fremde Adresse
+  in der Regel stehen, und die Website, die „lokal ausliefert“, lud bei Google. Ein Lauf, der in
+  der Mitte abbricht, nimmt mit, was er schon geschrieben hat. Messungen in
+  [`templates-and-localization.md`](decisions/templates-and-localization.md) und
+  [`styles-and-fonts.md`](decisions/styles-and-fonts.md).
 - **Ja/Nein-Bestätigungen laufen über den nativen Dialog im Main-Prozess. In-App-Overlays sind nur
   für Inhalte mit Formular oder Auswahl.** Der Renderer fragt über `confirmDialog()`
   (`src/utils/confirm.ts` → Kanal `dialog.confirm`), nie über `window.confirm()`. Die sichere Antwort
@@ -309,6 +324,21 @@ Projektwurzel.
   übrigen Reiter sterben mit der Route (*Eigenes CSS*, elftes Review). Wer eine Teilmenge speichern
   will, braucht einen eigenen Knopf, der seine Reichweite im Namen trägt - und der muss dann auch
   dastehen.
+- **Ein Rückruf, den ein Effekt bei jedem Render neu setzt, ist nicht der Stand, den der Aufrufer
+  meint.** Wer ihn nach einem `await` ruft, ruft die Fassung eines *späteren* Renders, und deren
+  Closure hat den Zustand von dann. Was der Aufrufer weitergeben will, gibt er als Argument mit.
+  `afterSave` las die Dateientwürfe aus seiner Closure, und ein einziges `await` zwischen
+  `clearFileDrafts()` und dem Aufruf — eine geänderte Farbe genügt — machte daraus eine leere
+  Liste: der Editor fiel auf den Stand von vor dem Speichern zurück, und der nächste Tastendruck
+  schrieb ihn über das Gespeicherte. Messungen in
+  [`styles-and-fonts.md`](decisions/styles-and-fonts.md).
+- **Wer vor einem Überschreiben warnt, warnt dort, wo überschrieben wird — sonst wird dort nicht
+  überschrieben.** Das Band über einen veralteten `custom.scss`-Entwurf steht auf dem CSS-Reiter;
+  seit das Speichern alle vier Reiter schreibt, schrieben auch die drei ohne Band. Jetzt schreibt
+  `save()` diesen einen Entwurf nur vom Reiter mit dem Band, sagt sonst, warum nicht, und lässt die
+  Seite `dirty` — der Verlassen-Dialog bekommt `false`, und die Meldung steht dort, wo der Nutzer
+  bleibt. Die Regel ist die Umkehrung der Save-Regel darüber: Was der Nutzer nicht sehen kann,
+  schreibt das Speichern nicht mit.
 - **Ein Lesevorgang, dessen Schlüssel sich per Klick ändert, braucht einen Abbruch-Guard**
   (`useIpcQuery`). Zwei Antworten sind dann gleichzeitig unterwegs und die langsamere gewinnt, egal
   welche Frage später gestellt wurde. Wo der Schlüssel konstant ist oder sein Wechsel die Route neu
@@ -609,6 +639,21 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   Schlüsseln, und ein Fix des zwölften Reviews hatte die Form gerade erst noch einmal geschrieben.
   Und die Zahl zählt, was sie zu zählen behauptet: „1 Aufruf im Hauptprozess“ war die Deklaration
   von `mainT` (vierzehntes Review).
+- **Wer fragt, ob etwas noch gebraucht wird, sucht breit; wer löscht, löscht schmal.** Die Frage
+  „nennt noch eine Regel diese Datei“ entschied über ein `rm`, und gestellt wurde sie an die zwei
+  flachen Ordner, die die App selbst beschreibt, und je Regel an die erste `url()`. Eine Regel, die
+  der Nutzer in `quartz/styles/meine.scss` geschrieben und per `@use` geladen hat, war unsichtbar,
+  und die zweite `url()` einer Regel mit drei Formaten auch — beide Male wurde die Datei gelöscht,
+  die sie brauchten. Dort, wo ein Fund zu viel nichts kostet und ein Fund zu wenig eine Datei,
+  wird rekursiv und vollständig gesucht; die Liste, die der Editor anbietet, bleibt davon
+  unberührt. **Und die Oberfläche sagt, wo gesucht wurde**, damit die Antwort als das gelesen
+  werden kann, was sie ist.
+- **Ein fremder Dienst, der nicht scheitert, hat nicht unbedingt geliefert.** Googles CSS2-API
+  antwortet mit 400 nur, wenn *keine* Familie der Anfrage stimmt; unter anderen, die stimmen, wird
+  eine unbekannte still ausgelassen. Die App fragt drei oder vier auf einmal, der gewöhnliche Fall
+  ist also die 200 — und der Satz, der für genau diesen Fehler geschrieben war, kam nie. Wer
+  mehrere Dinge in einer Anfrage holt, hält die Antwort gegen die Anfrage und nennt, was fehlt.
+  Messungen in [`styles-and-fonts.md`](decisions/styles-and-fonts.md).
 - **Ein Prädikat, das für einen Lauf geschrieben ist, wird als Aussagesatz nicht wahr.**
   `stillMissing` fragt „fehlt, steht mit einem anderen Bereich da, oder ist gar nicht lesbar“, und
   für den Lauf ist jede dieser Antworten richtig herum: im Zweifel npm fragen. Dieselben Antworten

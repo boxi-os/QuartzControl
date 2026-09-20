@@ -244,6 +244,37 @@ export function relativeFontUrls(css: string): string {
   return css.replace(/url\(\s*(["']?)\/static\/fonts\//g, 'url($1static/fonts/')
 }
 
+/**
+ * The font URLs of the managed fonts block made relative, written back when that changed anything.
+ * The guard at the door where the file is read: buildService calls this before every build and
+ * server start, beside writeAllFrames() and refreshGoogleFonts().
+ *
+ * migrateOnWrite below does the same on every write - but only a project in which somebody happens
+ * to save a variable, import a font or reorder the stylesheets is ever written to, and the rest
+ * keep `url("/static/fonts/…")`, which finds nothing on a site under a sub-path. Eight of the nine
+ * projects on the machine this was measured on still had it, the published handbook among them:
+ * its CSS asked for boxi-os.github.io/static/fonts/inter-latin-400-700.woff2 (404) while the file
+ * stood at boxi-os.github.io/QuartzControl/static/fonts/… (200), so the site loaded none of its
+ * four fonts (thirty-third review, finding 9).
+ *
+ * Deliberately not the marker rename, the other half of migrateOnWrite: that one costs a build
+ * from before 2026-09-18 every managed block it can read (see MARKER_NAMES), and paying that for
+ * somebody who only pressed "build" is not this door's business.
+ */
+export async function migrateFontUrls(projectPath: string): Promise<boolean> {
+  const info = await readCustomScss(projectPath)
+  if (!info.content) return false
+  const spans = findManagedBlocks(info.content, 'fonts')
+  let out = info.content
+  for (let i = spans.length - 1; i >= 0; i--) {
+    const span = spans[i]
+    out = out.slice(0, span.from) + relativeFontUrls(out.slice(span.from, span.to)) + out.slice(span.to)
+  }
+  if (out === info.content) return false
+  await writeCustomScss(projectPath, out)
+  return true
+}
+
 // What every write of custom.scss does on the way: the marker's new name, and relative font URLs
 // in the fonts block - both migrate the whole file on its first save, not one section at a time.
 function migrateOnWrite(content: string): string {

@@ -10,6 +10,7 @@ import type { BuildActivity, BuildOutputInfo, LogLine, ServerOptions, ServerStat
 import { needsShell } from './runCommand'
 import * as layoutFrameService from './layoutFrameService'
 import * as fontService from './fontService'
+import * as styleService from './styleService'
 import { looksLikeQuartzBuild } from './buildOutputGuard'
 import { quartzGuiDir, resolveBuildDir } from './projectDirs'
 import * as runningServersStore from './runningServersStore'
@@ -452,6 +453,14 @@ async function refreshAuthoredFrames(projectPath: string, report: (text: string)
 // its typography, which reaches the config through more than the Basis tab (fontService,
 // refreshGoogleFonts). A failure is a warning - the build goes on with the files that are there.
 async function refreshGoogleFonts(projectPath: string, report: (stream: 'stdout' | 'warn', text: string) => void): Promise<void> {
+  // The third copy at the same door, and the cheapest: font URLs in the managed block that are
+  // addressed to the domain instead of to the stylesheet find nothing on a site under a sub-path.
+  // A project nobody has saved since 2026-09-19 still has them (styleService.migrateFontUrls).
+  try {
+    if (await styleService.migrateFontUrls(projectPath)) report('stdout', `${mainT('fontUrlsMigrated')}\n`)
+  } catch (error) {
+    report('warn', `${error instanceof Error ? error.message : String(error)}\n`)
+  }
   const result = await fontService.refreshGoogleFonts(projectPath)
   if (result) report(result.failed ? 'warn' : 'stdout', `${result.text}\n`)
 }

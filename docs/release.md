@@ -63,6 +63,17 @@ aktualisiert und im Handbuch nachsieht, findet nichts davon. Eine neue Seite auf
 oberster Ebene muss außerdem in die `APPENDIX`-Liste in `scripts/build-handbook-pdf.mjs`; das
 Skript bricht sonst ab, und genau dafür ist es da.
 
+**Die Handbuch-Website lädt ihre eigenen Schriften nur, wenn sie einmal gebaut wurde, seit die
+Schrift-URLs relativ sind.** `1df4ee4` schreibt `url("static/fonts/…")` statt
+`url("/static/fonts/…")`; die zweite Form findet auf einer Website unter einem Unterpfad nichts,
+und genau dort liegt das Handbuch (`boxi-os.github.io/QuartzControl`). Am 2026-09-19 gemessen: die
+veröffentlichte CSS fragte `boxi-os.github.io/static/fonts/inter-latin-400-700.woff2` (404), die
+Datei lag eine Ebene tiefer (200) — vier Schriften, keine geladen. Seit dem dreiunddreißigsten
+Review zieht die Bau-Tür das nach (`styleService.migrateFontUrls`), also genügt **ein Bau** des
+Handbuch- und des Web-Projekts durch die App; das Log sagt, wenn es passiert ist. Danach
+`custom.scss` mit committen und veröffentlichen. **Und ein Satz in den Release-Notizen** für alle,
+deren Website unter einem Unterpfad liegt: Ihr nächster Bau in der App bringt die Schriften zurück.
+
 ## 4. Die Beispielvorlage liegt dreimal gleich
 
 Die Vorlage existiert als Export (`~/Documents/QuartzProjekte/minimal-lesbar.qtpl`, Phase 10), als

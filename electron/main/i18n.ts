@@ -413,7 +413,9 @@ const STRINGS = {
     googleFontsFileTimedOut: 'Die Schriftdatei {{file}} kam nicht an — Google Fonts antwortet nicht.',
     googleFontsRefreshFailed:
       'Die Google-Schriften ließen sich nicht ins Projekt holen: {{message}} — gebaut wird mit den Dateien, die schon im Projekt liegen.',
-    googleFontsRefreshed: 'Die gewählten Google-Schriften wurden ins Projekt geholt ({{count}} Dateien).'
+    googleFontsRefreshed: 'Die gewählten Google-Schriften wurden ins Projekt geholt ({{count}} Dateien).',
+    fontUrlsMigrated:
+      'Die Schriftdateien in custom.scss werden jetzt relativ zum Stylesheet adressiert — so findet sie die Website auch unter einem Unterpfad.'
   },
   en: {
     menuFile: 'File',
@@ -711,7 +713,9 @@ const STRINGS = {
     googleFontsFileTimedOut: 'The font file {{file}} did not arrive — Google Fonts is not answering.',
     googleFontsRefreshFailed:
       'The Google fonts could not be fetched into the project: {{message}} — the build uses the files already in the project.',
-    googleFontsRefreshed: 'The selected Google fonts were fetched into the project ({{count}} files).'
+    googleFontsRefreshed: 'The selected Google fonts were fetched into the project ({{count}} files).',
+    fontUrlsMigrated:
+      'The font files in custom.scss are now addressed relative to the stylesheet — the site finds them under a sub-path too.'
   }
 } as const
 

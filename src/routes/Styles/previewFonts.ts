@@ -86,6 +86,11 @@ export function fontBuildState(config: QuartzConfig, faces: FontFaceInfo[], buil
     // emits nothing, so a face in the build output is the leftover of an earlier setting, and with
     // every loader gone there is no emitter left that could have written it. A theme's own faces
     // arrive as origin 'theme' and do count - but an enabled theme is a loader and left above.
+    //
+    // The state is right, and the sentence says less than it used to: under `local` a system font
+    // is the obvious choice - no file, no network - and it needs no rule. "The site shows a
+    // substitute" was simply wrong for it (thirty-fourth review, finding 8), so the sentence now
+    // says visitors see it if they have it, and keeps the advice for the other reading.
     const unique = missingFrom(typography, faces.filter((f) => f.origin !== 'build'))
     return unique.length > 0 ? { kind: 'noRule', families: unique } : null
   }

@@ -1485,7 +1485,7 @@ export default {
         'Dieses Projekt wurde noch nicht gebaut. Quartz lädt die Google-Schriften erst beim Build herunter — „Jetzt bauen“ oder den Dev-Server starten.',
       fontsNotFetched: 'Noch nicht im Projekt: {{families}}. Speichern holt sie von Google.',
       fontsNoRule:
-        'Keine @font-face-Regel im Projekt nennt: {{families}}. Die Website zeigt dafür eine Ersatzschrift — importiere die Datei unten oder wähle bei der Font-Quelle Google Fonts.',
+        'Keine @font-face-Regel im Projekt nennt: {{families}}. Besucher sehen sie nur, wenn die Schrift auf ihrem Rechner installiert ist — sonst importiere die Datei unten oder wähle bei der Font-Quelle Google Fonts.',
       fontsMissingFromBuild:
         'Der letzte Build enthält {{families}} noch nicht: Quartz lädt die Schrift erst beim nächsten Build herunter — nach dem Speichern „Jetzt bauen“ oder den Dev-Server starten.',
       familyDefault: '(Standardstärke)',

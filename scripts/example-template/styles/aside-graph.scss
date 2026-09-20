@@ -57,3 +57,53 @@
   border-radius: var(--tpl-radius-lg);
   box-shadow: var(--tpl-shadow);
 }
+
+/* ----------------------------------------------------- die Vollansicht darf hinaus */
+
+// Der Knopf „Global Graph" öffnet ein Overlay über die ganze Seite — und bis zum 2026-09-20 tat
+// er das nicht: Die Vollansicht stand als schmaler Streifen in der rechten Spalte, rund 120 px
+// breit, und der Rest der Seite war weiter bedienbar.
+//
+// Die Ursache ist **keine** z-index-Frage, auch wenn sie danach aussieht. Gemessen an der
+// gebauten Seite: `.global-graph-outer` ist `position: fixed; inset: 0; z-index: 9999`, und sein
+// Rechteck ist auch wirklich das ganze Fenster (1440×1000 @ 0,0 bei 1440×1000 Fenster). Es war
+// also richtig positioniert und nur **beschnitten**: `.qgframe-area-right` trägt eine
+// `mask-image` für die weiche Unterkante der Spalte (base.scss), und eine Maske beschneidet
+// alles, was in ihrem Stapelkontext gemalt wird — ein `position: fixed` darin eingeschlossen.
+//
+// Gegenprobe, drei Läufe mit eingespeistem CSS: nur die Maske aus → `elementFromPoint` in der
+// Bildschirmmitte liefert das `<canvas>` des Graphen statt eines `<li>` der Seite. Sticky und
+// `max-height` zusätzlich abzuräumen ändert daran nichts mehr; deshalb bleibt beides stehen, und
+// die Spalte verliert weder ihre Haftung noch ihre Höhe.
+//
+// `:has()` auf `.qgframe-area` statt auf `-right`, weil der Graph in jeder Spalte stehen darf —
+// das Layout-Board der App verschiebt ihn mit einem Zug. Die Spezifität (0,3,0) schlägt beide
+// Maskenregeln, die Reihenfolge der Dateien spielt also keine Rolle.
+//
+// **Die zweite Zeile ist die, nach der es aussah.** Die Spalte ist `position: sticky` und damit
+// ein Stapelkontext, auch ohne z-index; die 9999 des Overlays gelten also nur *innerhalb* der
+// Spalte, und nach außen zählt, wo die Spalte selbst steht. Gemessen mit abgeräumter Maske: Der
+// Kopfbereich lag weiter darüber — scharf statt abgedunkelt, und das Suchfeld war durch den
+// Schleier hindurch anklickbar (`elementFromPoint(1095, 54)` → `button.search-button`).
+//
+// Die Leiter dieser Vorlage, damit die Zahl nicht geraten ist:
+//
+//     80   die Leiste am Schreibtisch (nav-header.scss)
+//     90   die Leiste am Telefon
+//     98   der Burger der Navigation (nav-navigations.scss)
+//     99   der Schleier der Explorer-Schublade
+//    100   „Zum Inhalt springen" (base.scss), die Explorer-Schublade
+//    101   der Auslöser dieser Schublade (nav-explorer.scss)
+//
+// 110 steht über allem, was die Vorlage selbst vergibt. Darüber liegt nur noch Quartz' eigenes
+// Suchfenster (999) — das ist ein zweiter modaler Dialog, und wer die Suche über dem Graphen
+// öffnet, will sie auch sehen. Nach der Änderung: `elementFromPoint` liefert an allen vier
+// gemessenen Stellen `div.global-graph-outer`.
+//
+// Die Sperre bleibt trotzdem stehen, statt sie aufzulösen: `position: sticky` und `max-height`
+// tragen die Spalte, und gemessen ändert ihr Abräumen am Overlay nichts mehr.
+.qgframe-area:has(.global-graph-outer.active) {
+  mask-image: none;
+  -webkit-mask-image: none;
+  z-index: 110;
+}

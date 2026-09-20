@@ -748,6 +748,9 @@ h6 {
     max-height: calc(100dvh - var(--tpl-header-h) - 2 * var(--tpl-space-lg));
     // Only the lower edge fades, and only the lower edge is padded: the upper one is covered by a
     // heading that stays put.
+    //
+    // Eine Maske beschneidet auch ein `position: fixed` in ihrem Stapelkontext. Was das für die
+    // Vollansicht des Graphen heißt und wie es zurückgenommen wird, steht in aside-graph.scss.
     mask-image: var(--tpl-fade-mask-end);
     -webkit-mask-image: var(--tpl-fade-mask-end);
     padding-block: 0 var(--tpl-fade);

@@ -116,12 +116,20 @@ kein abwegiger Nutzer.*
    **„Entfernen“**, bestätigen.
 4. Erwartet: Die Regel verschwindet aus `custom.scss`, die **Datei unter `quartz/static/fonts/`
    bleibt liegen** — die eigene Regel hinter dem Symlink nennt sie noch.
-5. **Und hier genau hinsehen:** Der Bestätigungsdialog kündigt „1 Datei(en)“ an, obwohl keine
-   gelöscht wird. `unusedImportedFonts` zählt die Dateien, die die *Regeln dieser Familie* nennen,
-   und nicht die, die danach wirklich fehlen — die zweite Frage stellt erst
-   `deleteUnreferencedFontFiles`, beim Löschen. Gelesen, nicht gemessen (2026-09-20); wenn der
-   Dialog das wirklich sagt, ist es ein Befund, und die Zahl ist der Teil des Satzes, dem der
-   Nutzer glaubt. Gleiches gilt für eine Regel mit mehreren `url()`: Gezählt wird nur die erste.
+5. **Die Zahl im Bestätigungsdialog.** `unusedImportedFonts` zählt, wie viele Dateien die *Regeln
+   dieser Familie* nennen — und zwar je Regel nur die **erste** `url()`. Wie viele wirklich
+   verschwinden, entscheidet erst `deleteUnreferencedFontFiles` beim Löschen, und das fragt alle
+   `url()` und alle Stylesheets. An der gebauten App gemessen (2026-09-20, drei Läufe, Dialog im
+   Hauptprozess gespiegelt), und der Satz liegt in **beide** Richtungen daneben:
+
+   | Szene                                             | Dialog | wirklich weg |
+   |---------------------------------------------------|--------|--------------|
+   | nichts schützt die Datei *(Kontrolle)*            | 1      | 1            |
+   | eine eigene Regel nennt dieselbe Datei            | 1      | **0**        |
+   | die Regel der Familie nennt drei Dateien          | 1      | **3**        |
+
+   Solange das so ist, ist die Zahl im Dialog kein Maß — die Frage „ist danach noch da, was ich
+   brauche?“ beantwortet nur der Ordner.
 6. Bauen. **Website:** Die Datei ist in `public/static/fonts/` und wird ausgeliefert.
 
 Dieselbe Frage lohnt mit `quartz/styles/custom.scss` als Symlink, und mit einer einzelnen Datei

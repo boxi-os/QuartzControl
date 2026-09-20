@@ -219,12 +219,26 @@ const GOOGLE_TIMEOUT_MS = 20_000
 const BROWSER_UA =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 const GSTATIC_URL = /url\(\s*(https:\/\/fonts\.gstatic\.com\/[^)\s'"]+)\s*\)/g
-const FONT_FILE_NAME = /^[\w-]+\.(?:woff2|woff|ttf|otf)$/
+// Dots inside the name, but never a leading one and never a separator: Google names every slice of
+// a CJK family `<hash>.<n>.woff2`, and `[\w-]+\.(?:woff2|…)` matched none of them. What was a
+// silent half-local site before the name became an error (thirty-third review, finding 8) turned
+// into a refusal to save any Japanese, Korean or Chinese family at all, under a sentence that
+// blames Google (thirty-fourth review, finding 2). fontFileIn() keeps the name inside the folder
+// either way - it asks basename(), a leading dot and a backslash separately.
+const FONT_FILE_NAME = /^[\w-]+(?:\.[\w-]+)*\.(?:woff2|woff|ttf|otf)$/
 // A ceiling over the whole answer, beside the one per file. The file's own header says how long it
 // is, and so does the answer - both written by whoever the answer comes from, so neither is the
-// limit. Measured against the real Google: 7 to 29 files for three or four families; 300 files of
-// 1 MiB each were written without a word before this (thirty-third review, finding 8).
-const MAX_FONT_FILES = 200
+// limit. 300 files of 1 MiB each were written without a word before this (thirty-third review,
+// finding 8).
+//
+// The number is what four families outside the Latin alphabet really cost, not what three Latin
+// ones do: a Latin family comes in 7 to 29 files, but Google splits a CJK family by unicode-range
+// into 92 to 126. Measured at the real Google with the app's User-Agent on 2026-09-20: 124 for
+// Noto Sans JP alone, 439 to 495 for the four slots filled with CJK families (the most expensive
+// being Noto Serif JP + Noto Sans JP italic + M PLUS 1p + Zen Kaku Gothic New). At 200 the ceiling
+// hit the ordinary case for those users; the byte ceiling beside it is the one that has room to
+// spare - all 124 files of Noto Sans JP are 5.4 MB.
+const MAX_FONT_FILES = 800
 const MAX_FONT_TOTAL_BYTES = 128 * 1024 * 1024
 
 export function hasGoogleFontsBlock(content: string): boolean {

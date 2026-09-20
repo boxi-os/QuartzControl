@@ -217,6 +217,44 @@ export const VARIABLE_OVERRIDES = [
   // No dark value: a scrim is not a surface. It darkens whatever is behind it, and in dark mode
   // that page is already dark - a second, lighter black would read as a grey veil rather than as
   // depth.
+
+  /* ---- die dreizehn Callout-Farben -------------------------------------------------------
+     Sie standen bis zum 2026-09-20 als 26 Zeilen in body-callouts.scss, und sie stehen jetzt
+     hier, weil sie genau den Test bestehen, den der Kopf dieser Datei formuliert: „ob ein Mensch
+     das je ändern wollen würde. Eine Farbe, eine Länge, ein Schriftstapel - ja."
+
+     Dreizehn Zeilen und nicht sechsundzwanzig: `saveVariableOverrides` trägt Hell und Dunkel in
+     *einem* Eintrag, der Variablen-Tab zeigt beide Felder nebeneinander, und die zweite Hälfte
+     des Stylesheets - ein ganzer `:root[saved-theme="dark"]`-Block - entfällt damit.
+
+     Die Werte sind **gemessen, nicht gewählt**: Elf von Quartz' zwölf Callout-Farben fallen auf
+     hellem Grund durch AA, deshalb gibt es sie überhaupt. Daran ändert der Umzug nichts, und das
+     ist der Preis, der hier danebenstehen muss: Wer eine davon im Variablen-Tab ändert, kann sie
+     unter die Schwelle setzen, und die App sagt nichts dazu. Geprüft wird weiter beim Bauen der
+     Vorlage (`--check-contrast`, 93 Paare), und die Prüfung liest jetzt diese Tokens - über die
+     Zeile im Stylesheet, die sagt, welcher Callout welches Token liest. Beide Hälften müssen also
+     stimmen, damit ein Wert gemessen wird.
+
+     `quote` hat keine eigene Farbe, sondern nimmt die Palette. Als Token statt als Sonderfall im
+     Stylesheet, damit die dreizehn gleich aussehen und der Auflöser einen Fall weniger kennt. Es
+     ist zugleich das einzige, das im geschriebenen `css-vars`-Block nur *einmal* steht: Hell und
+     Dunkel sind derselbe Ausdruck, und die Bauphase wirft einen Dunkelwert weg, der dem hellen
+     gleicht. Gekippt wird trotzdem — `--secondary` tut es selbst. Gemessen an der gebauten
+     Website: 13 Tokens im hellen Block, 12 im dunklen, und `quote` ist in beiden Modi richtig. */
+  { key: 'tpl-callout-note', light: '#1D4ED8', dark: '#93B8FF' },
+  { key: 'tpl-callout-abstract', light: '#0369A1', dark: '#67C7EF' },
+  { key: 'tpl-callout-info', light: '#0E7490', dark: '#5AC8DE' },
+  { key: 'tpl-callout-todo', light: '#0E7490', dark: '#5AC8DE' },
+  { key: 'tpl-callout-tip', light: '#0F766E', dark: '#5AD3BC' },
+  { key: 'tpl-callout-success', light: '#136B34', dark: '#6DD68F' },
+  { key: 'tpl-callout-question', light: '#8A5A00', dark: '#E8C25E' },
+  { key: 'tpl-callout-warning', light: '#9A4B06', dark: '#F0A868' },
+  { key: 'tpl-callout-failure', light: '#B02020', dark: '#FF9C93' },
+  { key: 'tpl-callout-danger', light: '#B02020', dark: '#FF9C93' },
+  { key: 'tpl-callout-bug', light: '#A21D62', dark: '#FF9BC8' },
+  { key: 'tpl-callout-example', light: '#6D28D9', dark: '#C3A6F7' },
+  { key: 'tpl-callout-quote', light: 'var(--secondary)', dark: 'var(--secondary)' },
+
   { key: 'tpl-backdrop', light: 'rgba(0, 0, 0, 0.3)' },
   { key: 'tpl-backdrop-blur', light: '4px' }
 ]

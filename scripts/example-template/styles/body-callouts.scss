@@ -4,12 +4,12 @@
 // measured against this template's page colour, `note` (#448aff) reaches 3.23:1, `question`
 // (#dba642) 2.14:1, and the red used by danger/failure/bug fails in *both* modes at ~4.2:1. Since
 // the callout title is text and the type colour is the only thing distinguishing one callout from
-// another, every one of them is restated here per mode.
+// another, every one of them gets a corrected colour of its own, in both modes.
 //
-// The values below are measured, not picked: `npm run template:example -- --check-contrast` reads
-// this file, extracts these declarations and checks each one against the ground it sits on and
-// against its own tinted background. The check reads the stylesheet rather than a copy in JS, so
-// a value edited here can never silently drift out of the measurement.
+// The values are measured, not picked: `npm run template:example -- --check-contrast` checks each
+// one against the ground it sits on and against its own tinted background. Seit dem 2026-09-20
+// stehen sie als `--tpl-callout-*` in variables.mjs; die Prüfung liest die Zuordnung hier und löst
+// das Token dahinter auf, beide Hälften müssen also stimmen, damit ein Wert gemessen wird.
 //
 // Hue is preserved throughout — blue stays blue — so the type is still recognisable at a glance
 // for anyone who reads these by colour.
@@ -27,43 +27,40 @@
   overflow: hidden;
 }
 
-/* -------------------------------------------------------------- light mode colours */
+/* ------------------------------------------------------------------- the type colours */
 
-.callout[data-callout="note"] { --color: #1D4ED8; }
-.callout[data-callout="abstract"] { --color: #0369A1; }
-.callout[data-callout="info"] { --color: #0E7490; }
-.callout[data-callout="todo"] { --color: #0E7490; }
-.callout[data-callout="tip"] { --color: #0F766E; }
-.callout[data-callout="success"] { --color: #136B34; }
-.callout[data-callout="question"] { --color: #8A5A00; }
-.callout[data-callout="warning"] { --color: #9A4B06; }
-.callout[data-callout="failure"] { --color: #B02020; }
-.callout[data-callout="danger"] { --color: #B02020; }
-.callout[data-callout="bug"] { --color: #A21D62; }
-.callout[data-callout="example"] { --color: #6D28D9; }
-.callout[data-callout="quote"] { --color: var(--secondary); }
+// Dreizehn Zeilen, die sagen, welcher Callout welche Farbe liest — die Werte selbst stehen als
+// `--tpl-callout-*` in variables.mjs und damit im Variablen-Tab der App.
+//
+// Sie standen bis zum 2026-09-20 hier, als 26 Literale in zwei Blöcken. Der Umzug hat drei Folgen,
+// und die dritte ist der Grund: Der Dunkelmodus-Block mit seinen dreizehn Farben entfällt ganz
+// (ein Token trägt Hell und Dunkel), die Werte sind in der App änderbar, und diese Datei sagt
+// jetzt nur noch *welcher* Callout *welche* Farbe hat — eine Zuordnung, keine Entscheidung.
+//
+// Die Kontrastprüfung liest weiter diese Zeilen und löst die Tokens dahinter auf
+// (`calloutPairs()` in palette.mjs). Dass die Werte woanders stehen, nimmt ihr also nichts: Ein
+// Callout, der hier ein Token liest, das es nicht gibt, ist ein Fehler und kein übersprungener
+// Wert.
+.callout[data-callout="note"] { --color: var(--tpl-callout-note); }
+.callout[data-callout="abstract"] { --color: var(--tpl-callout-abstract); }
+.callout[data-callout="info"] { --color: var(--tpl-callout-info); }
+.callout[data-callout="todo"] { --color: var(--tpl-callout-todo); }
+.callout[data-callout="tip"] { --color: var(--tpl-callout-tip); }
+.callout[data-callout="success"] { --color: var(--tpl-callout-success); }
+.callout[data-callout="question"] { --color: var(--tpl-callout-question); }
+.callout[data-callout="warning"] { --color: var(--tpl-callout-warning); }
+.callout[data-callout="failure"] { --color: var(--tpl-callout-failure); }
+.callout[data-callout="danger"] { --color: var(--tpl-callout-danger); }
+.callout[data-callout="bug"] { --color: var(--tpl-callout-bug); }
+.callout[data-callout="example"] { --color: var(--tpl-callout-example); }
+.callout[data-callout="quote"] { --color: var(--tpl-callout-quote); }
 
-/* --------------------------------------------------------------- dark mode colours */
+/* ------------------------------------------------------------------ dark mode tint */
 
-:root[saved-theme="dark"] {
-  .callout {
-    // A tint has to be stronger on a dark ground to be visible at all.
-    --callout-tint: 12%;
-  }
-
-  .callout[data-callout="note"] { --color: #93B8FF; }
-  .callout[data-callout="abstract"] { --color: #67C7EF; }
-  .callout[data-callout="info"] { --color: #5AC8DE; }
-  .callout[data-callout="todo"] { --color: #5AC8DE; }
-  .callout[data-callout="tip"] { --color: #5AD3BC; }
-  .callout[data-callout="success"] { --color: #6DD68F; }
-  .callout[data-callout="question"] { --color: #E8C25E; }
-  .callout[data-callout="warning"] { --color: #F0A868; }
-  .callout[data-callout="failure"] { --color: #FF9C93; }
-  .callout[data-callout="danger"] { --color: #FF9C93; }
-  .callout[data-callout="bug"] { --color: #FF9BC8; }
-  .callout[data-callout="example"] { --color: #C3A6F7; }
-  .callout[data-callout="quote"] { --color: var(--secondary); }
+:root[saved-theme="dark"] .callout {
+  // A tint has to be stronger on a dark ground to be visible at all. Die Farben selbst kommen aus
+  // den Tokens und brauchen hier keinen zweiten Block mehr.
+  --callout-tint: 12%;
 }
 
 /* ------------------------------------------------------------------------ structure */

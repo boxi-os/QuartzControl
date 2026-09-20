@@ -157,32 +157,42 @@ export function checkContrast() {
  */
 export function calloutPairs() {
   const source = readFileSync(join(import.meta.dirname, 'styles', 'body-callouts.scss'), 'utf-8')
-  const darkAt = source.indexOf(':root[saved-theme="dark"]')
-  if (darkAt === -1) throw new Error('body-callouts.scss no longer has a dark-mode block')
 
-  // A callout may name a palette colour instead of writing its own (`quote` uses --secondary).
-  // Those used to be skipped here, on the grounds that the base check already measures the colour
-  // against the ground - but it does not measure it against its own tinted box, which is the second
-  // pair every other callout gets. So the variable is resolved instead of dropped: the file states
-  // thirteen callouts and thirteen get measured. An unknown name throws rather than disappearing.
-  const read = (mode, text) => {
+  // Gelesen wird die *Zuordnung* aus dem Stylesheet, der *Wert* aus den Tokens.
+  //
+  // Bis zum 2026-09-20 standen beide in der Datei, einmal je Modus, und diese Funktion las zwei
+  // Hälften davon. Seit die Farben als `--tpl-callout-*` in variables.mjs stehen (dort steht,
+  // warum), sagt das Stylesheet nur noch, welcher Callout welches Token liest - und genau das ist
+  // die Hälfte, die hier weiter gelesen werden muss: Ein Token, das kein Callout nennt, wird nicht
+  // gemessen, und ein Callout, der ein Token ohne Wert nennt, ist ein Fehler. Beide Hälften müssen
+  // stimmen, sonst fällt ein Wert aus der Messung.
+  //
+  // Ein Callout darf statt einer eigenen Farbe eine der Palette nehmen (`quote` nimmt
+  // `--secondary`, über sein Token). Aufgelöst statt übersprungen: Die Grundprüfung misst diese
+  // Farbe zwar gegen den Grund, nicht aber gegen ihren eigenen getönten Kasten, und das ist das
+  // zweite Paar, das jeder andere Callout bekommt. Dreizehn stehen in der Datei, dreizehn werden
+  // gemessen.
+  const declared = [...source.matchAll(/\.callout\[data-callout="([a-z]+)"\]\s*\{\s*--color:\s*([^;]+);/g)]
+  if (!declared.length) throw new Error('body-callouts.scss no longer states a colour per callout')
+
+  const read = (mode) => {
     const out = {}
-    for (const [, type, raw] of text.matchAll(/\.callout\[data-callout="([a-z]+)"\]\s*\{\s*--color:\s*([^;]+);/g)) {
-      const colour = raw.trim()
-      const named = colour.match(/^var\(--([\w-]+)\)$/)
-      if (!named) { out[type] = colour; continue }
-      const resolved = PALETTE[mode][named[1]]
-      if (!resolved) throw new Error(`callout ${type} reads --${named[1]}, which the palette does not define`)
-      out[type] = resolved
+    for (const [, type, raw] of declared) {
+      const value = raw.trim()
+      const named = value.match(/^var\(--([\w-]+)\)$/)
+      if (!named) { out[type] = value; continue }
+      // Erst die Palette, dann die Tokens: `--secondary` ist eine Farbe der Palette,
+      // `--tpl-callout-note` ein Token, das eine sein kann oder eine nennt.
+      out[type] = PALETTE[mode][named[1]] ?? tokenColour(named[1], mode)
     }
     return out
   }
 
   const rows = []
-  for (const [mode, text] of [['lightMode', source.slice(0, darkAt)], ['darkMode', source.slice(darkAt)]]) {
+  for (const mode of Object.keys(PALETTE)) {
     const ground = PALETTE[mode].light
     const tint = mode === 'lightMode' ? 0.08 : 0.12
-    for (const [type, colour] of Object.entries(read(mode, text))) {
+    for (const [type, colour] of Object.entries(read(mode))) {
       const [r, g, b] = parseColor(colour)
       const tinted = `rgba(${r}, ${g}, ${b}, ${tint})`
       rows.push(
@@ -243,13 +253,17 @@ export function syntaxPairs() {
  * expressions in the first place: change `gray` and this follows, a literal would not.
  *
  * Reading the token list rather than parsing base.scss with a regex, which is what this did while
- * the two lived in the stylesheet. Only these two shapes are understood; anything else is an error
- * rather than a guess.
+ * the two lived in the stylesheet. Only these three shapes are understood; anything else is an
+ * error rather than a guess.
  */
 function tokenColour(key, mode) {
   const entry = VARIABLE_OVERRIDES.find((o) => o.key === key)
   if (!entry) throw new Error(`variables.mjs no longer defines --${key}`)
   const value = (mode === 'darkMode' && entry.dark) || entry.light
+
+  // Ein Literal. Die dreizehn Callout-Tokens sind welche - sie sind gemessene Farben und lassen
+  // sich nicht als Ausdruck über die neun Palettenfarben schreiben.
+  if (/^#[0-9a-fA-F]{3,8}$/.test(value)) return value
 
   const plain = value.match(/^var\(--([\w-]+)\)$/)
   if (plain) {

@@ -113,6 +113,17 @@
     max-width: none;
   }
 
+  // Die zwei einzigen Farbliterale dieser Vorlage, die nicht in einem Attributselektor stehen —
+  // und sie bleiben es.
+  //
+  // Ein Token liest sich hier falsch: `--tpl-rule` und die neun Palettenfarben kippen mit dem
+  // Modus, und `:root[saved-theme="dark"]` steht beim Drucken genauso da wie am Bildschirm. Wer
+  // im Dunkelmodus druckt, bekäme also hellgraue Schrift und eine fast weiße Linie auf weißem
+  // Papier. Druckfarben sind Tinte und keine Oberfläche; sie kennen nur einen Modus.
+  //
+  // `#555` ist die Adresse unter einem Link, `#999` die Kante um einen Kasten — beide dunkel
+  // genug für Papier und hell genug, um nicht mit dem Text zu konkurrieren.
+
   // A link's destination is lost on paper unless it is written out.
   article a[href^="http"]::after {
     content: " (" attr(href) ")";

@@ -225,6 +225,7 @@ export function Combobox({
   onChange,
   options,
   emptyText,
+  listLabel,
   className = '',
   ...props
 }: Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'role'> & {
@@ -233,6 +234,12 @@ export function Combobox({
   options: readonly ComboboxOption[]
   // What the list says when nothing matches the typed text.
   emptyText: string
+  /**
+   * The listbox's own name. A `<label>` names the input, not the popup, and a popup a screen reader
+   * enters without a name is "list" (thirty-third review, "nebenbei" 2). Required, like
+   * SegmentedControl's `label`, so a caller without one is visibly wrong.
+   */
+  listLabel: string
 }): JSX.Element {
   const listId = useId()
   const [open, setOpen] = useState(false)
@@ -288,7 +295,11 @@ export function Combobox({
           onChange(e.target.value)
           setQuery(e.target.value)
           setOpen(true)
-          setActive(e.target.value.trim() ? 0 : -1)
+          // Nothing is highlighted by typing. The value here is free text - under "local" the user
+          // types a name the list does not have - and highlighting the first match made Enter
+          // replace what was typed with it: "Inte" + Enter became "Inter" (thirty-third review,
+          // "nebenbei" 1). The arrows are how an option is chosen, and they say so.
+          setActive(-1)
         }}
         onKeyDown={(e) => {
           props.onKeyDown?.(e)
@@ -301,9 +312,14 @@ export function Combobox({
             if (filtered.length === 0) return
             const step = e.key === 'ArrowDown' ? 1 : -1
             setActive((i) => (i < 0 ? (step > 0 ? 0 : filtered.length - 1) : (i + step + filtered.length) % filtered.length))
-          } else if (e.key === 'Enter' && open && active >= 0 && filtered[active]) {
+          } else if (e.key === 'Enter' && open) {
+            // With an option walked to, that one; otherwise what was typed, and the list closes.
             e.preventDefault()
-            pick(filtered[active])
+            if (active >= 0 && filtered[active]) pick(filtered[active])
+            else {
+              setOpen(false)
+              setQuery(null)
+            }
           } else if (e.key === 'Escape' && open) {
             // Only while open: a closed field lets Escape through to whatever owns it (a Modal).
             e.preventDefault()
@@ -322,6 +338,7 @@ export function Combobox({
           ref={listRef}
           id={listId}
           role="listbox"
+          aria-label={listLabel}
           // Keeps the focus in the input: a pick is a click, and without this the input would blur
           // (and close the list) before the click lands.
           onMouseDown={(e) => e.preventDefault()}
@@ -333,8 +350,11 @@ export function Combobox({
               key={option.value}
               id={`${listId}-${index}`}
               data-index={index}
+              // What aria-activedescendant points at, which is what a screen reader reads as
+              // selected. The current value is the bold one below, which is a different statement
+              // (thirty-third review, "nebenbei" 2).
               role="option"
-              aria-selected={option.value === value}
+              aria-selected={index === active}
               onClick={() => pick(option)}
               onMouseMove={() => active !== index && setActive(index)}
               className={`flex cursor-default items-baseline justify-between gap-3 px-2.5 py-1 ${

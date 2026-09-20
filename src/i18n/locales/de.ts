@@ -848,6 +848,7 @@ export default {
     localHint: 'Quartz lädt dann gar nichts — die Schrift muss selbst vorliegen, z. B. über „Eigene Schriftart importieren“ unten.',
     local: 'Selbst mitgebracht',
     fontFor: 'Schriftart ({{slot}})',
+    fontListFor: 'Schriftarten zur Auswahl ({{slot}})',
     delivery: {
       heading: 'Schrift-Auslieferung',
       description:

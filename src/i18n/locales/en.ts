@@ -845,6 +845,7 @@ export default {
     localHint: 'Quartz then fetches nothing at all — the font has to be present already, e.g. via “Import your own font” below.',
     local: 'Bring your own',
     fontFor: 'Font ({{slot}})',
+    fontListFor: 'Fonts to choose from ({{slot}})',
     delivery: {
       heading: 'Font delivery',
       description:

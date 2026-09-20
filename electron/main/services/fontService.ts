@@ -315,11 +315,23 @@ export async function fetchGoogleFonts(
   // Google's file names are content hashes, so a readable file of that name that is already here is
   // the same file - a torso of that name is not, and gets fetched again.
   let total = 0
-  for (const [url, name] of urls) {
-    const target = join(dir, name)
-    if (usableFile(target)) continue
-    total += await downloadFontFile(url, target)
-    if (total > MAX_FONT_TOTAL_BYTES) throw new Error(mainT('googleFontsTooLarge'))
+  // What this run wrote, so a fetch that breaks off in the middle leaves nothing behind. Only files
+  // that were absent or unreadable are downloaded, so none of them can be one an existing rule was
+  // using - and the block is written at the end, so half a set of files under no rule at all would
+  // be published with every build and removed by nothing: deleteUnreferencedFontFiles only ever
+  // looks at what the *previous* block named (thirty-third review, "nebenbei" 3).
+  const written: string[] = []
+  try {
+    for (const [url, name] of urls) {
+      const target = join(dir, name)
+      if (usableFile(target)) continue
+      total += await downloadFontFile(url, target)
+      written.push(target)
+      if (total > MAX_FONT_TOTAL_BYTES) throw new Error(mainT('googleFontsTooLarge'))
+    }
+  } catch (error) {
+    for (const file of written) await rm(file, { force: true }).catch(() => undefined)
+    throw error
   }
 
   let body = css

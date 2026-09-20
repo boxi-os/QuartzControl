@@ -70,10 +70,13 @@ const NAVIGATIONS = ['quartz-navigations', NAVIGATIONS_SOURCE]
 export const VARIANTS = {
   example: {
     name: 'Example',
-    // Der Anzeigename wurde am 2026-09-06 zu „Example", der Dateiname nicht. Er ist das, worauf
-    // der Vorlagen-Download der App zeigt (`builtinTemplateService.ts`) und wie die
-    // veröffentlichte Kopie in `quartzcontrol-templates` heißt.
-    file: 'minimal-lesbar.qtpl',
+    // Hieß bis zum 2026-09-20 `minimal-lesbar.qtpl` - ein Name aus der Zeit, als dieses Paket das
+    // eingebaute der App war und „Minimal und lesbar" hieß. Der Anzeigename wurde am 2026-09-06
+    // zu „Example", der Dateiname blieb, weil ihn `builtinTemplateService.ts` und das Repo
+    // `quartzcontrol-templates` nannten. Beides zeigt jetzt auf `qc-basic.qtpl`, also kann er
+    // sagen, was er ist. Die alte Datei bleibt im veröffentlichten Repo liegen: Jede
+    // ausgelieferte App-Fassung vor dieser Änderung fragt genau diese Adresse.
+    file: 'qc-example.qtpl',
     // Das Beispielprojekt selbst - dort wird gearbeitet, und `--sync` holt von dort zurück (bis
     // zum 2026-09-04 hieß es `quartz-vorlage-werkstatt`, siehe d80f2be).
     workshop: () => projectPath('Example'),
@@ -81,7 +84,7 @@ export const VARIANTS = {
     content: { mode: 'vault', vault: EXAMPLE_VAULT, ships: true },
     plugins: [LAYOUT_BOX, MULTILANGUAGE, NAVIGATIONS],
     stylesSource: true,
-    builtin: true,
+    builtin: false,
     allowFresh: false,
     derive: (data) => data,
     describe: ({ frames }) =>
@@ -91,8 +94,10 @@ export const VARIANTS = {
       'Inhaltsverzeichnis bis zur untersten Ebene.'
   },
 
-  // Die Grundlage für ein neues Projekt: dieselbe Gestaltung wie das Example, so wenig Inhalt wie
-  // möglich. Was sie davon trennt und warum, steht in basic.mjs.
+  // Das eingebaute Paket der App seit dem 2026-09-20: Wer ein Projekt anlegt und „Vorlage
+  // anwenden" ankreuzt, bekommt dieses. Vorher war es das Example - ein Handbuch in sieben
+  // Kapiteln mit 301 Inhaltsdateien, also entweder ein fremdes Handbuch im eigenen Projekt oder
+  // eine Vorführung ohne Text. Was die Basis davon trennt und warum, steht in basic.mjs.
   basic: {
     name: 'Basis-Template',
     file: 'qc-basic.qtpl',
@@ -105,7 +110,7 @@ export const VARIANTS = {
     content: { mode: 'copy', from: 'basic-content', static: 'basic-site/static', ships: true },
     plugins: [LAYOUT_BOX, MULTILANGUAGE, NAVIGATIONS],
     stylesSource: false,
-    builtin: false,
+    builtin: true,
     allowFresh: true,
     derive: (data) => ({
       patches: basic.patches(data.patches),

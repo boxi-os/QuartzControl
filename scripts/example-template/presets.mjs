@@ -10,6 +10,9 @@
 
 export const PRESETS = [
   {
+    // Die ID trägt den alten Namen der Vorlage und bleibt, wie sie ist: Der Import vergleicht
+    // nach `id`, eine Umbenennung gäbe jedem Projekt, das die alte und die neue Fassung anwendet,
+    // vier Presets statt zwei. Der *Name* darf sich ändern, die Kennung nicht.
     id: 'tpl-minimal-lesbar-hell',
     name: 'Example — hell',
     createdAt: '2026-09-04T00:00:00.000Z',

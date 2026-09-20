@@ -16,7 +16,8 @@ nicht aus der Erinnerung.
 
 Weil das Verzeichnis dort keine Liste ist, sondern ein Dateiname.
 `builtinTemplateService.ts` löst seine mitgelieferte Kopie über die Konstante `TEMPLATE_FILENAME`
-auf (`minimal-lesbar.qtpl`) und scannt nichts; ein zweites Paket daneben würde über
+auf (`qc-basic.qtpl`, bis zum 2026-09-20 `minimal-lesbar.qtpl`) und scannt nichts; ein zweites
+Paket daneben würde über
 `extraResources` in jedes Installationspaket reisen, ohne dass die App es je öffnet. Hier ist es
 versioniert und kostet kein Byte in der Auslieferung.
 

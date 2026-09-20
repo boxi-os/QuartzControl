@@ -20,8 +20,9 @@ Bedingung er auf dem Bildschirm erscheint.
 
 ## Warum es nicht im Example-Vault steht
 
-Der Example-Vault reist im Vorlagenpaket mit. `resources/templates/minimal-lesbar.qtpl` (764 KB, exportiert am 2026-09-14)
-enthält 301 Einträge unter `files/content/`: der `content`-Baustein
+Der Example-Vault reist im Vorlagenpaket mit. `qc-example.qtpl` (bis zum 2026-09-20
+`minimal-lesbar.qtpl`, und bis dahin auch die mitgelieferte Kopie; 764 KB, exportiert am
+2026-09-14) enthält 301 Einträge unter `files/content/`: der `content`-Baustein
 (`electron/main/services/templatePackage/parts.ts`) liest durch den Symlink hindurch und packt den
 ganzen Vault ein. Ein App-Handbuch als achtes Kapitel dort landete damit bei jedem Nutzer im
 Import — als Inhalt seiner Website.
@@ -40,7 +41,8 @@ Nicht `Handbuch`: Als der Vault entstand, lag in `~/Obsidian/QuartzProjekte/` be
 gesammelt in `~/Documents/QuartzProjekte/`, der Name bleibt aber der, unter dem der Vault überall
 steht.
 
-Das Projekt entstand aus `minimal-lesbar.qtpl` — **ohne den Baustein `content`**. Bei einem
+Das Projekt entstand aus der Example-Vorlage (damals `minimal-lesbar.qtpl`, heute
+`qc-example.qtpl`) — **ohne den Baustein `content`**. Bei einem
 Symlink lehnt der Baustein sich zwar selbst ab (`contentIsSymlink`), aber abwählen ist ehrlicher
 als sich darauf zu verlassen. Gemessen am 2026-09-07: 12 Bausteine im Paket, 11 importiert, keine
 Warnung; die Website baut mit 9 Seiten zu 101 Dateien durch. Damit ist das Handbuch zugleich der

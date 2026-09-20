@@ -27,9 +27,19 @@ import { MANIFEST_FILE } from './templatePackage/shared'
  * read it without one.
  */
 export const TEMPLATE_URL =
-  'https://raw.githubusercontent.com/boxi-os/quartzcontrol-templates/main/minimal-lesbar.qtpl'
+  'https://raw.githubusercontent.com/boxi-os/quartzcontrol-templates/main/qc-basic.qtpl'
 
-const TEMPLATE_FILENAME = 'minimal-lesbar.qtpl'
+// Hieß bis zum 2026-09-20 `minimal-lesbar.qtpl`, und das war die Example-Vorlage: 354 Dateien,
+// davon 301 Inhaltsdateien eines Handbuchs in sieben Kapiteln. Wer ein Projekt anlegte, bekam
+// damit entweder ein fremdes Handbuch oder - ohne das Häkchen - eine Gestaltung ohne einen
+// einzigen Satz. Das eingebaute Paket ist seither das Basis-Template (scripts/example-template/
+// basic.mjs): dieselbe Gestaltung, zwanzig Seiten statt 301.
+//
+// **Die alte Datei bleibt im veröffentlichten Repo liegen.** Jede ausgelieferte App-Fassung vor
+// dieser Änderung fragt genau diese Adresse; sie zu löschen nähme allen bestehenden
+// Installationen ihre Online-Vorlage und ließe sie leise für immer auf die mitgelieferte Kopie
+// zurückfallen. Kosten fürs Liegenlassen: eine Datei.
+const TEMPLATE_FILENAME = 'qc-basic.qtpl'
 const MAX_AGE_MS = 24 * 60 * 60 * 1000
 const TIMEOUT_MS = 15_000
 // A template is a design plus, in this one case, its manual. Anything past this is not that, and

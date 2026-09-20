@@ -179,12 +179,12 @@ export default {
       baseUrl: 'Base URL',
       baseUrlHint:
         'The address the site will be reachable at later — without https://. If you do not know it yet, leave “localhost” and fill it in later under Configuration.',
-      useTemplate: 'Install the example template',
+      useTemplate: 'Install the basic template',
       useTemplateHint:
-        'A finished design: measured colours for light and dark, authored page grids, locally served typefaces and every component styled individually. All of it editable afterwards.',
+        'A finished design: measured colours for light and dark, authored page grids, locally served typefaces and every component styled individually — including the ones that start switched off. All of it editable afterwards.',
       templateContent: 'With the example pages',
       templateContentHint:
-        'Around 270 pages that explain the template itself — for every component the page describing it. Meant for looking things up; leave it out if you bring your own notes.',
+        'Twenty short pages in two languages that show what the site looks like before you have notes of your own. They are meant to be deleted; leave them out if you bring your own notes.',
       templateContentHintCopy:
         'Not available: the notes come from the folder you chose. The example pages would overwrite files of the same name in it — the template brings an index.md of its own.',
       templateContentHintSymlink:

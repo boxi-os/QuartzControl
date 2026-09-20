@@ -179,12 +179,12 @@ export default {
       baseUrl: 'Basis-URL',
       baseUrlHint:
         'Die Adresse, unter der die Website später erreichbar ist — ohne https://. Wenn du sie noch nicht kennst, lass „localhost“ stehen und trage sie später unter Konfiguration nach.',
-      useTemplate: 'Beispielvorlage mitinstallieren',
+      useTemplate: 'Basis-Template mitinstallieren',
       useTemplateHint:
-        'Eine fertige Gestaltung: gemessene Farben für hell und dunkel, eigene Seitenraster, lokal ausgelieferte Schriften und jede Komponente einzeln gestaltet. Lässt sich hinterher überall ändern.',
+        'Eine fertige Gestaltung: gemessene Farben für hell und dunkel, eigene Seitenraster, lokal ausgelieferte Schriften und jede Komponente einzeln gestaltet — auch die, die zunächst ausgeschaltet sind. Lässt sich hinterher überall ändern.',
       templateContent: 'Mit den Beispielseiten',
       templateContentHint:
-        'Rund 270 Seiten, die die Vorlage selbst erklären — zu jeder Komponente die Seite, auf der sie beschrieben ist. Zum Nachschlagen gedacht; wenn du eigene Notizen mitbringst, lass sie weg.',
+        'Zwanzig kurze Seiten in zwei Sprachen, die zeigen, wie die Website aussieht, bevor du eigene Notizen hast. Sie sind zum Löschen gedacht; wenn du eigene Notizen mitbringst, lass sie weg.',
       templateContentHintCopy:
         'Nicht verfügbar: Die Notizen kommen aus dem gewählten Ordner. Die Beispielseiten würden gleichnamige Dateien daraus überschreiben — die Vorlage bringt eine eigene index.md mit.',
       templateContentHintSymlink:

@@ -109,18 +109,28 @@ Zeile im Log), im Bau des Web-Projekts vier `url(static/fonts/…)`, kein `fonts
 vier Dateien unter `public/static/fonts`; veröffentlicht nach `gh-pages`
 (`9ee7a37` → `53445ee`, forced update), 171 geänderte, 10 entfernte, 8 neue Dateien.
 
-## 4. Die Beispielvorlage liegt dreimal gleich
+## 4. Das Basis-Template liegt dreimal gleich
 
-Die Vorlage existiert als Export (`~/Documents/QuartzProjekte/minimal-lesbar.qtpl`, Phase 10), als
-mitgelieferte Kopie (`resources/templates/minimal-lesbar.qtpl`) und veröffentlicht in
+**Das eingebaute Paket ist seit dem 2026-09-20 das Basis-Template, nicht mehr das Example.**
+Es existiert als Export (`~/Documents/QuartzProjekte/qc-basic.qtpl`, Phase 10 der Variante
+`basic`), als mitgelieferte Kopie (`resources/templates/qc-basic.qtpl`) und veröffentlicht in
 `boxi-os/quartzcontrol-templates`. Die App nimmt die veröffentlichte, sobald das Netz antwortet,
 und die mitgelieferte nur ohne Netz (`builtinTemplateService.ts`) — eine neu exportierte Vorlage,
 die nicht gepusht ist, erreicht also niemanden, der online ist.
 
-    npm run template:example -- --check-sync
+    npm run template:example -- --variant basic --check-sync
 
-vergleicht außer den Stylesheets auch die drei Kopien byte-weise und nennt je Kopie `createdAt`.
-Exit 0 heißt: alle drei gleich. Ist die veröffentlichte nicht abrufbar, sagt es das und endet mit 1.
+vergleicht die drei Kopien byte-weise und nennt je Kopie `createdAt`. Exit 0 heißt: alle drei
+gleich. Ist die veröffentlichte nicht abrufbar, sagt es das und endet mit 1. Die Stylesheets
+vergleicht dieser Aufruf **nicht** — das tut nur `--variant example`, weil nur dort die Werkstatt
+die Quelle ist und nicht eine Kopie, die der Lauf selbst geschrieben hat.
+
+**`minimal-lesbar.qtpl` bleibt im veröffentlichten Repo liegen.** Jede ausgelieferte App-Fassung
+vor dieser Änderung fragt genau diese Adresse; sie zu löschen nähme allen bestehenden
+Installationen ihre Online-Vorlage. Kosten fürs Liegenlassen: eine Datei.
+
+Die Example-Vorlage heißt seither `qc-example.qtpl` und ist kein eingebautes Paket mehr. Sie dort
+abzulegen ist optional — die App fragt sie nicht, es ist ein Link für Menschen.
 
 **Was `--check-sync` nicht sieht:** die Drift zwischen diesem Repo und den drei Kopien, sobald sie
 aus `plugins.mjs`, `variables.mjs`, `layout.mjs` oder `frames.mjs` kommt. Die vier haben bewusst

@@ -227,3 +227,11 @@ Ein Befund gehört hierher wie in ein Review: **die Stelle, was schiefgeht, wie 
 bei allem, was die Website betrifft, **was der Browser zeigt**, nicht was die App sagt. Was daraus
 wird, trägt [`reviews.md`](reviews.md) nach; was als Regel bleibt, [`conventions.md`](conventions.md);
 was gemessen wurde, `decisions/`.
+
+## Durchgänge
+
+- **2026-09-20, erster Durchgang:** A1–A4, B1–B2 und C1 gefahren, Ergebnisse in
+  [`ALPHA-2026-09-20.md`](ALPHA-2026-09-20.md). Zwei Befunde — der Abbruch unter altem git warnt
+  weiter, wo er nicht müsste (`1efa1f5` deckt nur die Hälfte der Fälle), und die *veröffentlichte*
+  Beispielvorlage macht die Schriftauswahl auf der Website wirkungslos (`d4da5ef`, `release.md`
+  Punkt 4). Alles andere hält, B2 einschließlich des Nachsatzes auf Konfiguration und Layout.

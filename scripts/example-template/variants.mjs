@@ -87,11 +87,14 @@ export const VARIANTS = {
     builtin: false,
     allowFresh: false,
     derive: (data) => data,
-    describe: ({ frames }) =>
+    describe: ({ frames, explorerOn }) =>
       `Eine vollständige Beispielvorlage: ein Handbuch in sieben Kapiteln, zweisprachig, mit ` +
       `gemessenen Kontrasten (WCAG AA in hell und dunkel), ${frames} eigenen Frames, selbst ` +
-      `gehosteten Schriften und jeder Plugin-Komponente einzeln gestaltet — Explorer und ` +
-      'Inhaltsverzeichnis bis zur untersten Ebene.'
+      `gehosteten Schriften und jeder Plugin-Komponente einzeln gestaltet — ` +
+      (explorerOn
+        ? 'Explorer und Inhaltsverzeichnis bis zur untersten Ebene.'
+        : 'die Navigation und das Inhaltsverzeichnis bis zur untersten Ebene, und auch der ' +
+          'Explorer, der hier abgeschaltet ist.')
   },
 
   // Das eingebaute Paket der App seit dem 2026-09-20: Wer ein Projekt anlegt und „Vorlage

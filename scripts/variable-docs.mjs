@@ -19,7 +19,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
 
-import { PALETTE } from './example-template/palette.mjs'
+import { PALETTE, TYPOGRAPHY } from './example-template/palette.mjs'
 import { VARIABLE_OVERRIDES } from './example-template/variables.mjs'
 
 const APP_DIR = path.resolve(import.meta.dirname, '..')
@@ -37,6 +37,7 @@ const END = '<!-- QuartzControl:variables:end -->'
  */
 const SEITEN = [
   { de: '5-gestaltung/01-navigation/explorer', en: 'en/5-design/01-navigation/explorer', files: ['nav-explorer.scss'] },
+  { de: '5-gestaltung/01-navigation/navigation', en: 'en/5-design/01-navigation/navigation', files: ['nav-navigations.scss'] },
   { de: '5-gestaltung/01-navigation/suche', en: 'en/5-design/01-navigation/search', files: ['nav-search.scss'] },
   { de: '5-gestaltung/01-navigation/farbschema', en: 'en/5-design/01-navigation/colour-scheme', files: ['nav-darkmode.scss'] },
   { de: '5-gestaltung/01-navigation/lesemodus', en: 'en/5-design/01-navigation/reader-mode', files: ['nav-reader-mode.scss'] },
@@ -120,6 +121,22 @@ const WERTE = (() => {
   for (const [key, value] of Object.entries(PALETTE.lightMode)) {
     if (!out.has(`--${key}`)) out.set(`--${key}`, { light: value, dark: PALETTE.darkMode[key] })
   }
+  // Die Schriftvariablen schreibt Quartz selbst aus `typography`, seit die Vorlage am 2026-09-20
+  // ihre eigenen Stapel aufgegeben hat - ohne diese Zeilen stand in 28 Tabellen ein „—“, wo die
+  // Familie hingehört. Die Stapel dahinter sind Quartz' eigene, abgelesen am gebauten CSS der
+  // Example-Website; `title` fällt wie in Quartz auf `header` zurück.
+  const stapel = (family, mono) =>
+    `"${family}", ${mono ? 'ui-monospace, SFMono-Regular, SF Mono, Menlo, monospace' : 'system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'}`
+  for (const [name, family, mono] of [
+    ['--headerFont', TYPOGRAPHY.header, false],
+    ['--titleFont', TYPOGRAPHY.title ?? TYPOGRAPHY.header, false],
+    ['--bodyFont', TYPOGRAPHY.body, false],
+    ['--codeFont', TYPOGRAPHY.code, true]
+  ]) {
+    if (!out.has(name)) out.set(name, { light: stapel(family, mono) })
+  }
+  // Quartz schreibt sie als Alias (variables.mjs, Kopf); `aufgeloest()` zeigt dann die Familie dahinter.
+  if (!out.has('--font-interface')) out.set('--font-interface', { light: 'var(--bodyFont)' })
   return out
 })()
 

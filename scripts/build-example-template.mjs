@@ -102,22 +102,6 @@ const CONTROL = V.control
 const PACKAGE_OUT = projectPath(V.file)
 
 const TEMPLATE_NAME = V.name
-// Was hier steht, liest jemand im Anlege-Assistenten, bevor er zusagt - also zählt es die Dinge auf,
-// die das Paket wirklich enthält. „Drei eigene Frames" stand hier noch, als `drawing` längst der
-// vierte war (FRAMES in frames.mjs); beim Veröffentlichen am 2026-09-06 nachgezählt statt gelesen.
-// Deshalb bildet variants.mjs den Satz gegen die wirklichen Zahlen statt ihn hinzuschreiben.
-const TEMPLATE_DESCRIPTION = V.describe({
-  frames: FRAMES.length,
-  styles: STYLE_ORDER.length,
-  // Nur für die Varianten, die Inhalt mitbringen. Gezählt statt hingeschrieben, aus demselben
-  // Grund wie die Frames: „Drei eigene Frames" stand hier noch, als `drawing` längst der vierte war.
-  pages:
-    V.content.mode === 'copy'
-      ? fs
-          .readdirSync(path.join(DATA_DIR, V.content.from), { recursive: true })
-          .filter((name) => String(name).endsWith('.md') && String(name) !== 'README.md').length
-      : 0
-})
 // Die Daten dieser Variante: die des Example, durch ihre Ableitung geschickt.
 const DATA = V.derive({
   patches: PLUGIN_PATCHES,
@@ -128,6 +112,26 @@ const DATA = V.derive({
 // Was die Gegenprobe im Zielprojekt wiederfinden muss.
 const expectedBoxes = DATA.boxes.length
 const expectedNavigations = DATA.navigations.length
+
+// Was hier steht, liest jemand im Anlege-Assistenten, bevor er zusagt - also zählt es die Dinge auf,
+// die das Paket wirklich enthält. „Drei eigene Frames" stand hier noch, als `drawing` längst der
+// vierte war (FRAMES in frames.mjs); beim Veröffentlichen am 2026-09-06 nachgezählt statt gelesen.
+// Deshalb bildet variants.mjs den Satz gegen die wirklichen Zahlen statt ihn hinzuschreiben.
+const TEMPLATE_DESCRIPTION = V.describe({
+  frames: FRAMES.length,
+  // Ob der Explorer eingeschaltet ist, steht im Patch - der Satz „Explorer und Inhaltsverzeichnis
+  // bis zur untersten Ebene“ stand noch da, als er längst `enabled: false` war (35. Review).
+  explorerOn: DATA.patches.explorer?.enabled !== false,
+  styles: STYLE_ORDER.length,
+  // Nur für die Varianten, die Inhalt mitbringen. Gezählt statt hingeschrieben, aus demselben
+  // Grund wie die Frames: „Drei eigene Frames" stand hier noch, als `drawing` längst der vierte war.
+  pages:
+    V.content.mode === 'copy'
+      ? fs
+          .readdirSync(path.join(DATA_DIR, V.content.from), { recursive: true })
+          .filter((name) => String(name).endsWith('.md') && String(name) !== 'README.md').length
+      : 0
+})
 
 const log = (message) => console.log(message)
 const step = (message) => process.stdout.write(`  ${message} … `)

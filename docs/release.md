@@ -166,6 +166,12 @@ Pakete tragen seither keine Schnipsel mehr (`dropSnippetsThatDoNotShip()` vor Ph
 dieselbe Frage stellt sich für `icon.png` und `og-image.png`, die jedes Paket aus Quartz' Gerüst
 mitnimmt: Ein Projekt mit eigenem Favicon verliert es an derselben Stelle.
 
+**Und nach dem Import die Updates-Seite.** Ein `github:`-Plugin, das im Projekt schon liegt, behält
+beim Import seine Fassung (`parts.ts` installiert nur, was fehlt), während die Stylesheets des
+Pakets sich auf eine neuere verlassen können: Das Navigations-Handbuch stand bis zum 35. Review
+auf quartz-navigations 0.3.0 und zeigte die zwei Pager-Fehler, deren Übergangsregeln die Vorlage
+gerade gestrichen hatte. Am 2026-09-21 über die App auf 0.3.1 gehoben und veröffentlicht.
+
 **Was `--check-sync` nicht sieht:** die Drift zwischen diesem Repo und den drei Kopien, sobald sie
 aus `plugins.mjs`, `variables.mjs`, `layout.mjs` oder `frames.mjs` kommt. Die vier haben bewusst
 keinen Rückweg (ein Rückleser wäre ihre zweite, inverse Umsetzung, siehe `CLAUDE.md`), und die

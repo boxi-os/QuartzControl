@@ -592,6 +592,18 @@ export const MULTILANGUAGE_ENTRY = {
 // `variant`. Diese Website setzt zwei davon ein - mehr wäre eine Vorführung an einer Stelle, an
 // der ein Leser navigieren will. Gestaltet sind trotzdem alle zehn (nav-navigations.scss): wer
 // eine der acht anderen einschaltet, bekommt sie fertig, so wie es beim Explorer der Fall ist.
+//
+// **Die Vorlage setzt 0.3.1 voraus, und nichts sorgt dafür.** nav-navigations.scss hat seit
+// `b785f8a` keine Übergangsregeln mehr für den leeren Pager-Platz und die Knöpfe am Telefon, weil
+// das Plugin beides seit 0.3.1 selbst tut. Wer das Plugin nicht hat, bekommt beim Import `main`;
+// wer es schon hat, behält seine Fassung (parts.ts installiert eine github:-Quelle nur, wenn
+// `.quartz/plugins/<name>` fehlt). So stand das Navigations-Handbuch bis zum 35. Review auf 0.3.0
+// und zeigte genau die zwei Fehler, die 0.3.1 behebt — nach dem Import also: Updates-Seite.
+//
+// Kein Pin auf einen Tag (`#v0.3.1`), obwohl Quartz ihn beim Klonen versteht (`git clone
+// --branch`). Seine Update-Prüfung fragt `refs/heads/<ref>` und setzt auf `origin/<ref>` zurück
+// (quartz/cli/plugin-git-handlers.js, gelesen am 2026-09-21) — für einen Tag findet beides nichts,
+// jedes Projekt aus dieser Vorlage wäre für Updates des Plugins also blind.
 export const NAVIGATIONS_SOURCE = 'github:boxi-os/quartz-navigations'
 
 // Wie bei den Layout-Boxen leitet configService.deriveName() den Namen aus dem letzten Segment
@@ -629,16 +641,19 @@ export const NAVIGATION_ENTRIES = [
     // ihrer eigenen Überschrift („Übersicht", vom Plugin übersetzt). Ohne sie wäre sie von der
     // Navigation aus nicht mehr erreichbar.
     //
-    // **Kein `persistState`,** und das ist gemessen, nicht ausgelassen. Zusammen mit `exclusive`
-    // widersprechen sich die beiden: `exclusive` ist eine native `<details name>`-Gruppe, in der
-    // der Browser höchstens eines offen lässt. Das Skript des Plugins stellt nach dem Rendern den
-    // gemerkten Zustand her — für einen Ordner, der *nicht* auf dem aktiven Pfad liegt, ohne
-    // Wenn und Aber (`navigations.inline.ts`, `stored !== undefined && !(expandActive && onTrail)`).
-    // Der Browser schließt dafür den aktiven. An der gebauten Website gemessen: Nach einem Klick
-    // auf „1 – Einstieg" blieb dieses Kapitel offen, und die Kapitel 3 und 5 klappten danach nicht
-    // mehr auf, obwohl die Adresse stimmte. Welches Kapitel offen steht, entscheidet ohnehin schon
-    // der gelesene Pfad (`expandActive`, Vorgabe) — ein zweites Gedächtnis daneben kann nur
-    // widersprechen.
+    // **Kein `persistState`.** Bis 0.3.0 widersprachen sich die beiden Optionen zusammen mit
+    // `exclusive`, und das ist gemessen; 0.3.1 hat es im Plugin behoben (`trailClaimedGroups`).
+    // Was damals geschah: `exclusive` ist eine native `<details name>`-Gruppe, in der der Browser
+    // höchstens eines offen lässt. Das Skript des Plugins stellte nach dem Rendern den gemerkten
+    // Zustand her — für einen Ordner, der *nicht* auf dem aktiven Pfad liegt, ohne Wenn und Aber
+    // (`navigations.inline.ts`, `stored !== undefined && !(expandActive && onTrail)`). Der Browser
+    // schloss dafür den aktiven. An der gebauten Website gemessen: Nach einem Klick auf
+    // „1 – Einstieg" blieb dieses Kapitel offen, und die Kapitel 3 und 5 klappten danach nicht
+    // mehr auf, obwohl die Adresse stimmte.
+    //
+    // Die Entscheidung bleibt, und ihr Grund ist seither ein anderer: Welches Kapitel offen steht,
+    // entscheidet schon der gelesene Pfad (`expandActive`, Vorgabe) — ein zweites Gedächtnis
+    // daneben kann höchstens widersprechen.
     //
     // `mobile: 'offcanvas'`: Burger, Schublade, Scrim — dieselbe Geste, die der Explorer am selben
     // Platz hatte, diesmal vom Plugin und ohne eigenes JavaScript.
@@ -694,7 +709,8 @@ export const NAVIGATION_ENTRIES = [
     // Eigenschaften, und dann der Weg zur nächsten Seite.
     //
     // `mobile` bleibt auf der Vorgabe `same`: Zwei Knöpfe nebeneinander sind auf einem Telefon
-    // dasselbe wie auf einem Bildschirm, nur untereinander (nav-navigations.scss).
+    // dasselbe wie auf einem Bildschirm, nur untereinander — das tut das Plugin seit 0.3.1 selbst
+    // (navigations.scss, der `@media`-Block am Ende des Pager-Abschnitts).
     source: NAVIGATIONS_SOURCE,
     name: NAVIGATIONS_NAME,
     enabled: true,

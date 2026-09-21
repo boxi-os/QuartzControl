@@ -185,7 +185,8 @@ Plugin-Handbücher einen Tag lang ohne jede Navigation da.
 beim Import seine Fassung (`parts.ts` installiert nur, was fehlt), während die Stylesheets des
 Pakets sich auf eine neuere verlassen können: Das Navigations-Handbuch stand bis zum 35. Review
 auf quartz-navigations 0.3.0 und zeigte die zwei Pager-Fehler, deren Übergangsregeln die Vorlage
-gerade gestrichen hatte. Am 2026-09-21 über die App auf 0.3.1 gehoben und veröffentlicht.
+gerade gestrichen hatte. Am 2026-09-21 über die App auf 0.3.1 gehoben und veröffentlicht, am
+selben Tag alle fünf Websites und die Werkstätten auf 0.3.2.
 
 **Was `--check-sync` nicht sieht:** die Drift zwischen diesem Repo und den drei Kopien, sobald sie
 aus `plugins.mjs`, `variables.mjs`, `layout.mjs` oder `frames.mjs` kommt. Die vier haben bewusst

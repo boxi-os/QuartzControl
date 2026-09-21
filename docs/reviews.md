@@ -1819,3 +1819,15 @@ Kästen beschnitten ihn (die Komponente, ihre Rollliste, die Liste eines offenen
 1000 und 390 px in Chrome, WebKit und Firefox, Zeilen auf denselben Pixeln, Einklappen und
 Schublade wie vorher. `overflow-clip-margin` war der erste Versuch und trug nicht: WebKit ignoriert
 den Rand, Chromium nimmt kein `calc()` dafür. Alle vier Pakete und alle fünf Websites nachgezogen.
+
+**Danach, ebenfalls auf Wunsch des Nutzers:** Die Titel des QuartzControl-Handbuchs heißen jetzt
+wie die der Plugin-Handbücher („2.3 – Ein vorhandenes Projekt hinzufügen“, Kapitel 8 nummeriert;
+Vault-Commit `7cb1ec8`, 112 Dateien, `check:handbook` grün). Und **ein umbrochener Titel behält
+sein Symbol neben der ersten Zeile**: quartz-navigations 0.3.2 richtet die Zeilen oben aus und
+macht Symbol und Pfeil eine Zeile hoch (`1lh`); die Vorlage gibt den Zeilen unter 900 px ihre
+44 px über den Innenabstand statt über `min-height`, die sonst eine einzeilige Zeile oben in ihren
+Kasten gestellt hätte — und die bisher auch den Link *in* einer Ordnerzeile traf, weshalb
+Ordnerzeilen 52 statt 44 px hoch waren. Live gemessen an „2.3“: Versatz Symbol zu erster Zeile
+11,9 → 0,7 px in Chrome, 0 px in WebKit, einzeilige Zeilen bei 1400 px unverändert 30 px, bei
+390 px alle 44. Plugin in allen Werkstätten und fünf Websites auf 0.3.2, vier Pakete neu
+exportiert (Gegenproben grün), Basis und Example im Vorlagen-Repo (`7da4330`).

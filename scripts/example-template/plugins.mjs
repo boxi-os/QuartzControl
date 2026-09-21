@@ -599,6 +599,9 @@ export const MULTILANGUAGE_ENTRY = {
 // wer es schon hat, behält seine Fassung (parts.ts installiert eine github:-Quelle nur, wenn
 // `.quartz/plugins/<name>` fehlt). So stand das Navigations-Handbuch bis zum 35. Review auf 0.3.0
 // und zeigte genau die zwei Fehler, die 0.3.1 behebt — nach dem Import also: Updates-Seite.
+// 0.3.2 stellt das Symbol eines umbrochenen Titels neben dessen erste Zeile; die Vorlage gibt
+// den Zeilen am Telefon ihre Daumenhöhe seither über den Innenabstand statt über `min-height`.
+// Mit 0.3.1 geht das auch - das Symbol steht dann nur mittig neben dem zweizeiligen Titel.
 //
 // Kein Pin auf einen Tag (`#v0.3.1`), obwohl Quartz ihn beim Klonen versteht (`git clone
 // --branch`). Seine Update-Prüfung fragt `refs/heads/<ref>` und setzt auf `origin/<ref>` zurück

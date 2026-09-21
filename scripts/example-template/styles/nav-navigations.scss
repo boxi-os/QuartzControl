@@ -291,10 +291,22 @@
 // Es steht dort, wo der Explorer stand, und hat dessen Platz mitsamt seiner einen Regel geerbt:
 // Die Zeilen bekommen unter 900px ihre Daumenhöhe zurück. 32px sind für eine dichte Seitenleiste
 // richtig und für einen Finger zu wenig.
+//
+// Die Höhe kommt aus dem Innenabstand, nicht aus `min-height`: Seit quartz-navigations 0.3.2
+// oben ausrichtet, damit ein umbrochener Titel sein Symbol neben der ersten Zeile behält, stünde
+// eine einzeilige Zeile mit Mindesthöhe oben in ihrem Kasten statt in der Mitte. Ausgenommen sind
+// der Link *in* einer Ordnerzeile (`--static`) und der Umschaltknopf (`--toggle`) — die Regel traf
+// beide mit, deshalb waren Ordnerzeilen 52 statt 44 px hoch.
 @media (max-width: 900px) {
-  .nav-menue .quartz-nav__link,
-  .nav-menue .quartz-nav__summary {
-    min-height: var(--tpl-target);
+  .nav-menue
+    :is(
+      .quartz-nav__link:not(.quartz-nav__link--static),
+      .quartz-nav__summary:not(.quartz-nav__summary--toggle)
+    ) {
+    padding-block: max(
+      var(--quartz-nav-item-padding-y),
+      calc((var(--tpl-target) - 1lh) / 2)
+    );
   }
 
   // Der Burger gehört in die App-Leiste, und dorthin kommt er nur so: Er ist ein Kind des linken

@@ -122,10 +122,12 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   Projekt). **Vier Varianten** (`--variant example|basic|doku|plugin`), deren Stammdaten als
   Tabelle in `example-template/variants.mjs` stehen und deren Gestaltungsentscheidungen als Aufsatz
   daneben (`doku.mjs`, `basic.mjs`) — ein Zwei-Wege-Schalter beantwortete für die vierte jede Frage
-  falsch. Zwei Felder der Tabelle sind Wächter: `allowFresh` sperrt `--fresh` für `example`, dessen
-  Ziel das *echte* Projekt samt Vault-Symlink ist, und `stylesSource` verweigert `--sync` und
+  falsch. Ein Feld der Tabelle ist ein Wächter: `stylesSource` verweigert `--sync` und
   `--check-sync` jeder Variante außer `example`, weil deren Werkstatt eine Kopie ist, die derselbe
   Lauf geschrieben hat — „deckungsgleich“ wäre dort eine Tautologie, die sich als Auskunft liest.
+  Gelöscht wird dagegen nach Pfad, nicht nach Variante: `removeDisposable()` löscht nur unter
+  `<Projektwurzel>/werkstatt/`, also nie das Example-Projekt, auch nicht ohne `--fresh`, wenn ihm
+  die Config fehlt (bis zum 35. Review tat das die zweite Löschstelle in `bootstrap()`).
   Den Rückweg geht `--sync`: Es holt die 31 Stylesheets und die Schnipsel aus dem Projekt
   zurück ins Repo, denn dort wird gearbeitet und die Kopie hier driftet sonst still (gemessen am
   2026-09-05). `--check-sync` vergleicht nur und schreibt nichts — der Aufruf für den Fall, dass

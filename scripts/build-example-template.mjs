@@ -46,7 +46,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { projectPath, workshopPath } from './project-paths.mjs'
+import { projectPath, workshopPath, WORKSHOP_ROOT } from './project-paths.mjs'
 import { PALETTE, TYPOGRAPHY, checkAll } from './example-template/palette.mjs'
 import { VARIABLE_OVERRIDES } from './example-template/variables.mjs'
 import { FONTS, fontFaceCss, resolveFontUrl } from './example-template/fonts.mjs'
@@ -501,23 +501,37 @@ function ipc(page, source, args) {
 
 /* ==================================================================== 0 · bootstrap */
 
-function bootstrap(target) {
-  // `--fresh` ist ein `rm -rf` auf ein Projektverzeichnis, und für die Variante `example` ist das
-  // Ziel kein Wegwerfordner, sondern das echte Projekt ~/Documents/QuartzProjekte/Example - samt
-  // seinem Symlink in den Obsidian-Vault. Welche Variante das verträgt, sagt ihr Registereintrag;
-  // eine, die es nicht verträgt, bekommt statt der Löschung einen Satz.
-  if (fresh && !V.allowFresh) {
+/**
+ * Löscht ein Verzeichnis nur, wenn es unter `WORKSHOP_ROOT` liegt - dem Ort, den project-paths.mjs
+ * „für alles, was ein Lauf neu anlegen darf“ nennt. Die Frage hängt am Pfad, nicht an der
+ * Variante: Bis zum 35. Review bewachte `allowFresh` im Register eine der zwei Löschstellen in
+ * `bootstrap()`, und die zweite löschte jedes Ziel ohne `quartz.config.yaml`, ohne Flag und ohne
+ * Wort. Gemessen in einer Wegwerf-Wurzel: ein `Example/` mit Notizen und Snapshot-Store, keine
+ * Config, `--only 0` ohne `--fresh` - danach lag dort ein frischer Quartz-Klon, von den Notizen
+ * nichts mehr. Eine Absicht im Register ist kein Beweis, ein Pfad unter der Werkstatt schon.
+ */
+function removeDisposable(target, why) {
+  const rel = path.relative(WORKSHOP_ROOT, path.resolve(target))
+  if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) {
     throw new Error(
-      `--fresh ist für die Variante ${V.id} gesperrt: ${target} ist ein echtes Projekt, kein ` +
-      'Wegwerfordner (variants.mjs, allowFresh). Wer wirklich neu anfangen will, löscht von Hand.'
+      `${target} liegt nicht unter ${WORKSHOP_ROOT} und ist damit kein Wegwerfordner - ${why}. ` +
+      'Gelöscht wird nichts; wer dort wirklich neu anfangen will, räumt von Hand.'
     )
   }
-  if (fresh && fs.existsSync(target)) fs.rmSync(target, { recursive: true, force: true })
+  fs.rmSync(target, { recursive: true, force: true })
+}
+
+function bootstrap(target) {
+  if (fresh && fs.existsSync(target)) removeDisposable(target, '`--fresh` hätte es gelöscht')
   if (fs.existsSync(path.join(target, 'quartz.config.yaml'))) {
     done('schon vorhanden')
     return
   }
-  fs.rmSync(target, { recursive: true, force: true })
+  // Ein Ordner ohne Config ist ein halber Lauf von vorhin - oder jemandes Projekt, dem gerade die
+  // Config fehlt. Leer ist er harmlos (git klont in einen leeren Ordner), sonst entscheidet der Pfad.
+  if (fs.existsSync(target) && fs.readdirSync(target).length > 0) {
+    removeDisposable(target, 'es hat keine quartz.config.yaml, und ein neuer Klon bräuchte den Platz')
+  }
   // The same three steps createService.ts takes, in the same order and for the same reasons - a
   // full clone rather than --depth 1, because a shallow clone cannot be pushed anywhere later.
   run('git', ['clone', 'https://github.com/jackyzha0/quartz.git', target], HOME)

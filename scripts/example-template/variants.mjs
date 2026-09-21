@@ -51,7 +51,6 @@ const NAVIGATIONS = ['quartz-navigations', NAVIGATIONS_SOURCE]
  *   stylesSource  Ob `--sync`/`--check-sync` für diese Variante etwas beweisen (siehe unten).
  *   builtin       Ob dieses Paket das eingebaute der App ist - dann vergleicht
  *                 `checkPackageCopies()` seine drei Kopien.
- *   allowFresh    Ob `--fresh` die Werkstatt löschen darf (siehe unten).
  *   derive        Wie die Example-Daten zu denen dieser Variante werden. Bekommt
  *                 { patches, boxes, navigations } und gibt dieselbe Form zurück.
  *   describe      Der Beschreibungstext des Pakets, gegen die wirklichen Zahlen gebildet.
@@ -62,10 +61,12 @@ const NAVIGATIONS = ['quartz-navigations', NAVIGATIONS_SOURCE]
  * Repos, ein Vergleich sagt also immer „deckungsgleich". Das ist keine Auskunft, sondern eine
  * Tautologie, die sich als Auskunft liest.
  *
- * `allowFresh` ist eine Sperre, kein Beiwerk. `bootstrap()` löscht bei `--fresh` das Zielverzeichnis
- * mit `rmSync(..., { recursive: true })`, und das Ziel der Variante `example` ist das *echte*
- * Projekt `~/Documents/QuartzProjekte/Example` samt seinem Symlink in den Vault. Ein
- * `--fresh --variant example` löschte es wortlos.
+ * Ob `--fresh` eine Werkstatt löschen darf, steht **nicht** hier. Bis zum 35. Review tat es das
+ * (`allowFresh`), und es bewachte eine von zwei Löschstellen in `bootstrap()`; die Antwort hängt
+ * jetzt am Pfad (`removeDisposable()` in build-example-template.mjs): Gelöscht wird nur unter
+ * `werkstatt/`. Damit ist das Example-Projekt geschützt, weil es woanders liegt, und seine
+ * Gegenprobe darf frisch werden, weil sie dort liegt - beides ohne ein Feld, das jemand beim
+ * Anlegen einer fünften Variante richtig abschreiben müsste.
  */
 export const VARIANTS = {
   example: {
@@ -85,7 +86,6 @@ export const VARIANTS = {
     plugins: [LAYOUT_BOX, MULTILANGUAGE, NAVIGATIONS],
     stylesSource: true,
     builtin: false,
-    allowFresh: false,
     derive: (data) => data,
     describe: ({ frames, explorerOn }) =>
       `Eine vollständige Beispielvorlage: ein Handbuch in sieben Kapiteln, zweisprachig, mit ` +
@@ -114,7 +114,6 @@ export const VARIANTS = {
     plugins: [LAYOUT_BOX, MULTILANGUAGE, NAVIGATIONS],
     stylesSource: false,
     builtin: true,
-    allowFresh: true,
     derive: (data) => ({
       patches: basic.patches(data.patches),
       boxes: basic.boxes(data.boxes),
@@ -146,7 +145,6 @@ export const VARIANTS = {
     plugins: [LAYOUT_BOX, MULTILANGUAGE],
     stylesSource: false,
     builtin: false,
-    allowFresh: true,
     derive: (data) => ({
       ...data,
       patches: doku.patches(data.patches, 'doku'),
@@ -167,7 +165,6 @@ export const VARIANTS = {
     plugins: [LAYOUT_BOX, MULTILANGUAGE],
     stylesSource: false,
     builtin: false,
-    allowFresh: true,
     derive: (data) => ({
       ...data,
       patches: doku.patches(data.patches, 'plugin'),

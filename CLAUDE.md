@@ -317,7 +317,8 @@ in beiden READMEs und `release.md` Punkt 7) — was aber nur sagt, was zugesagt 
 die App dort sagt: Sie riet zum Neuinstallieren, dem einen Handgriff, der nichts ändert. Drei
 Befunde, alle behoben: die Version des mitgelieferten git trug auf Linux einen Punkt zu viel,
 `release.md` Punkt 4 nannte offen, was derselbe Commit getan hatte, und das Warnband gab einem
-alten Linux den falschen Rat. Offen bleiben aus dieser Gruppe **VoiceOver**, **macOS x64 auf einer Maschine seiner
+alten Linux den falschen Rat. Offen bleiben aus dieser Gruppe (VoiceOver ist am 2026-09-21 gefahren, ein Befund in der
+Schriftliste, behoben) **macOS x64 auf einer Maschine seiner
 Architektur** (kein Intel-Mac, kein Rosetta) und **ein Linux mit glibc unter 2.34** — dazu weiter
 **C1 auf einem echten Linux mit git vor 2.38**; beide VMs liefern 2.47.3.
 

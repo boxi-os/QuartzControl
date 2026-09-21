@@ -293,8 +293,16 @@ export function Combobox({
   }, [open, active])
 
   const activeOption = open && active >= 0 ? filtered[active] : undefined
+  // A moment late, on purpose. Said at once, VoiceOver spoke the name and then cut it off with its
+  // own "2 von 214" for the activedescendant change, which it handles after the live region - the
+  // caption panel showed the name for an instant and the position after it (VoiceOver test,
+  // 2026-09-21). Said later, the polite region is queued behind the position instead of being
+  // overwritten by it. Walking fast, only the entry one stops on is said.
   useEffect(() => {
-    if (activeOption) setAnnouncement(activeOption.meta ? `${activeOption.value}, ${activeOption.meta}` : activeOption.value)
+    if (!activeOption) return
+    const text = activeOption.meta ? `${activeOption.value}, ${activeOption.meta}` : activeOption.value
+    const timer = setTimeout(() => setAnnouncement(text), 350)
+    return () => clearTimeout(timer)
   }, [activeOption])
 
   // While typing, how many there are - a moment after the last key, so a fast typist hears one

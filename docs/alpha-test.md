@@ -215,9 +215,14 @@ am 2026-09-20 gefahren — die Pakete und glibc, Ergebnisse in
 [`GRUPPE-D-2026-09-20.md`](GRUPPE-D-2026-09-20.md); dort steht auch, was aus dieser Gruppe offen
 bleibt.
 
-- **VoiceOver** über Git-Sync, das Layout-Board und den Frame-Builder. Insbesondere: Kündigt
-  VoiceOver die gefilterte Schriftliste der Combobox an? Eine Live-Region für die Trefferzahl gibt
-  es nicht (gemessen, 34. Review, Abwägung 10).
+- ~~**VoiceOver** über Git-Sync, das Layout-Board und den Frame-Builder~~ — am 2026-09-21 vom
+  Nutzer gefahren: Git-Sync, Layout-Board und Frame-Builder sagen, was sie sollen. Ein Befund, in
+  der Schriftliste der Combobox: VoiceOver nannte nur den ersten Eintrag beim Namen, danach nur
+  noch „2 von 214“. Chromiums Accessibility-Baum war richtig; der Name des Felds änderte sich mit
+  jedem Pfeil, weil die Liste in einem `<label>` sitzt. Behoben mit einem festen `aria-label` und
+  einer Live-Region, die den Eintrag nennt und beim Tippen die Trefferzahl — und die erst einen
+  Augenblick nach VoiceOvers eigener Ansage spricht, weil diese sie sonst abschnitt (`deac593` und
+  der Commit danach). Vom Nutzer nachgehört: Der Name kommt jetzt.
 - ~~**Die gepackte App je Plattform**~~ — gefahren: zehn Pakete gebaut, neun auf einer Maschine
   ihrer Architektur gestartet. Offen bleibt **macOS x64**, wofür es hier keine Maschine gibt.
 - ~~**glibc**~~ — gemessen: die App selbst verlangt `GLIBC_2.25`, das mitgelieferte git

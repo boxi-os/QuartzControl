@@ -528,3 +528,27 @@ gemessen 1/1, 0/0 und 3/3. Die erste Messung des Drei-`url()`-Falls war ungülti
 trotzdem ein Ergebnis — das Ersetzungsmuster im Skript nahm `../static/fonts/…` an, wo der Import
 `static/fonts/…` schreibt, sodass die Regel nie umgeschrieben wurde; seither bricht der Lauf ab,
 statt über eine Regel zu berichten, die er nicht geschrieben hat.
+
+**Was diese Schicht in Gecko tut, ist am 2026-09-21 nachgemessen — und der Weg dorthin gehört
+dazu.** Die Befunde vom 20. September (die Maske über der Graph-Vollansicht, die drei
+Spaltenschalter, der Umbruch der zwei Kästen an der Mobilbreite, die drei Plugin-Korrekturen)
+waren in Chromium und WebKit belegt und in Firefox nicht — er startet auf diesem Mac weder über
+Playwright (Timeout nach 240 s) noch headless mit eigenem Profil („Could not find profile folder",
+drei Wege probiert). Das ist die Lücke, die „kann nicht prüfen ist nicht alles gut" meint.
+
+Der Weg, der trägt, ist die Debian-VM (`reference_debian_vm`): `npm i playwright` und
+`npx playwright install firefox` laufen dort auf aarch64 durch und holen Playwrights **eigenen**
+Firefox-Build — Playwright kann kein Standard-Firefox steuern, das System-Firefox 140 ESR der VM
+ist also nicht der gemessene. Gemessen wurde gegen die *veröffentlichte* Website, nicht gegen einen
+lokalen Bau, damit die Messung dasselbe trifft wie ein Besucher.
+
+Sieben Messungen, und alle sieben stimmen mit Chromium und WebKit überein: der Schalter in drei
+Zuständen; die Kästen bei 1440/902/901/900/390 px, mit der Kante genau zwischen 901 und 900; das
+Overlay der Vollansicht 1440×1000 mit allen drei Messpunkten darauf; der Kopf 69 px hoch mit zwei
+Kindern (274 + 435 gegen Chromes 267 + 436, also Schriftmetrik und keine Layoutfrage) und ohne
+Überlauf; der leere Pager-Platzhalter 0×0; der Pager am Telefon zweizeilig; und das Akkordeon, das
+nach einem Kapitelwechsel das gelesene Kapitel offen hat und nicht das gemerkte.
+
+Zweimal gemessen, weil der erste Lauf eine ältere Engine traf: Playwright 1.49 bringt Firefox 132,
+das aktuelle Playwright Firefox 155. Beide Läufe liefern Zeile für Zeile dasselbe. Ein Ergebnis aus
+einer Engine, die drei Jahrgänge alt ist, wäre sonst ein Ergebnis über eine andere Frage gewesen.

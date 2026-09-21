@@ -1899,6 +1899,8 @@ export default {
       styleFileSkipped_other: '{{count}} existing stylesheets were left unchanged.',
       fontSkipped: '{{count}} font file of the same name but different content was left unchanged.',
       fontSkipped_other: '{{count}} font files of the same name but different content were left unchanged.',
+      fontRemoved: '{{count}} font file of the replaced rules was removed — no rule names it any more.',
+      fontRemoved_other: '{{count}} font files of the replaced rules were removed — no rule names them any more.',
       staticSkipped: '{{count}} file of the same name under quartz/static was left unchanged.',
       staticSkipped_other: '{{count}} files of the same name under quartz/static were left unchanged.',
       presetSkipped: '{{count}} existing preset was left unchanged.',

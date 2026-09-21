@@ -14,6 +14,7 @@ import type {
 } from '@shared/ipc-contract'
 import * as configService from '../configService'
 import * as contentService from '../contentService'
+import * as fontService from '../fontService'
 import * as layoutFrameService from '../layoutFrameService'
 import * as localizationService from '../localizationService'
 import * as pluginService from '../pluginService'
@@ -416,12 +417,14 @@ function currentFontFaceCss(content: string): string | null {
 // 'projectWins' a project that has its own Google fonts keeps them whole, otherwise the package's
 // replace them. Which families the block should hold is the config's business - the next build
 // brings it in line (fontService.refreshGoogleFonts).
-async function applyGoogleFontsCss(projectPath: string, css: string | null, strategy: Strategy): Promise<void> {
-  if (!css) return
+// Returns the block it replaced, so the caller can take away the files only that one named.
+async function applyGoogleFontsCss(projectPath: string, css: string | null, strategy: Strategy): Promise<string | null> {
+  if (!css) return null
   const info = await styleService.readCustomScss(projectPath)
   const current = styleService.getManagedBlock(info.content, GOOGLE_FONTS_MARKER)
-  if (current === css || (current && strategy === 'projectWins')) return
+  if (current === css || (current && strategy === 'projectWins')) return null
   await styleService.writeCustomScss(projectPath, styleService.upsertManagedBlock(info.content, GOOGLE_FONTS_MARKER, css))
+  return current
 }
 
 const fonts: TemplatePart<FontsPayload> = {
@@ -487,23 +490,42 @@ const fonts: TemplatePart<FontsPayload> = {
       }
       await writeFile(target, data)
     }
-    await applyGoogleFontsCss(projectPath, payload.googleFontsCss ?? null, strategy)
-    if (!faceCss) return
-    const info = await styleService.readCustomScss(projectPath)
-    const current = currentFontFaceCss(info.content)
-    // Under 'projectWins' the target's own rules stay, but the package's are still appended - a
-    // @font-face that is dropped leaves the font files it shipped unreferenced and useless. Only
-    // the ones that are not there yet, though: appended whole, every repeated import of the same
-    // template doubled the block (measured, twenty-eighth review, "nebenbei" 3: 5 + 4 = 9 rules,
-    // "Instrument Sans" three times).
-    const body =
-      current && strategy === 'projectWins'
-        ? styleService.joinUniqueRules([current, faceCss])
-        : current === faceCss
-          ? current
-          : faceCss
-    await styleService.writeCustomScss(projectPath, styleService.upsertManagedBlock(info.content, FONTS_MARKER, body))
+    // What the replaced rules pointed at goes too, once both blocks are written: the files the
+    // package's own rules name are then protected by those rules, and a file some other stylesheet
+    // of the project still names stays (fontService asks every one of them). Only under
+    // 'packageWins' - under 'projectWins' nothing is replaced.
+    const replaced: string[] = []
+    const replacedGoogle = await applyGoogleFontsCss(projectPath, payload.googleFontsCss ?? null, strategy)
+    if (replacedGoogle) replaced.push(replacedGoogle)
+    if (faceCss) {
+      const info = await styleService.readCustomScss(projectPath)
+      const previous = await writeFontFaceBlock(projectPath, info.content, faceCss, strategy)
+      if (previous) replaced.push(previous)
+    }
+    for (const css of replaced) {
+      for (const name of await fontService.deleteFontFilesOfReplacedRules(projectPath, css)) warn(`fontRemoved:${name}`)
+    }
   }
+}
+
+// Writes the package's @font-face rules and returns the block they replaced - under 'packageWins'
+// only, because under 'projectWins' the project's rules stay in the block.
+async function writeFontFaceBlock(projectPath: string, content: string, faceCss: string, strategy: Strategy): Promise<string | null> {
+  const current = currentFontFaceCss(content)
+  // Under 'projectWins' the target's own rules stay, but the package's are still appended - a
+  // @font-face that is dropped leaves the font files it shipped unreferenced and useless. Only
+  // the ones that are not there yet, though: appended whole, every repeated import of the same
+  // template doubled the block (measured, twenty-eighth review, "nebenbei" 3: 5 + 4 = 9 rules,
+  // "Instrument Sans" three times).
+  const body =
+    current && strategy === 'projectWins'
+      ? styleService.joinUniqueRules([current, faceCss])
+      : current === faceCss
+        ? current
+        : faceCss
+  await styleService.writeCustomScss(projectPath, styleService.upsertManagedBlock(content, FONTS_MARKER, body))
+  // The raw block, not the relative-URL reading of it: fontService resolves both URL forms.
+  return strategy === 'packageWins' && current && current !== body ? styleService.getManagedBlock(content, FONTS_MARKER) : null
 }
 
 /* --------------------------------------------------------------------- static */

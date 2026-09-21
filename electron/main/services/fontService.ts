@@ -268,6 +268,18 @@ async function fontFilesStillNamed(projectPath: string, except: string[] = []): 
   return stillNamed
 }
 
+/**
+ * For a template import that has just replaced a managed font block: the files only the old rules
+ * pointed at. The import wrote the package's files and its block, and left the previous ones'
+ * files lying - on the four sites that apply the documentation packages that was Instrument Sans,
+ * Inter and JetBrains Mono beside the three Noto files, published and reachable, and invisible to
+ * the "unused fonts" card, which lists families from the block (thirty-fifth review, finding 7).
+ * Same question as every other removal here, under the same lock.
+ */
+export function deleteFontFilesOfReplacedRules(projectPath: string, previousCss: string): Promise<string[]> {
+  return whileHoldingFonts(projectPath, () => deleteUnreferencedFontFiles(projectPath, previousCss))
+}
+
 // Deletes the files the rules in `css` pointed at - but only a file no rule in any stylesheet of
 // the project still points at. Called after those rules have left custom.scss.
 async function deleteUnreferencedFontFiles(projectPath: string, css: string): Promise<string[]> {

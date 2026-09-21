@@ -1912,6 +1912,8 @@ export default {
       styleFileSkipped_other: '{{count}} vorhandene Stylesheet-Dateien blieben unverändert.',
       fontSkipped: '{{count}} gleichnamige Schriftdatei mit anderem Inhalt blieb unverändert.',
       fontSkipped_other: '{{count}} gleichnamige Schriftdateien mit anderem Inhalt blieben unverändert.',
+      fontRemoved: '{{count}} Schriftdatei der ersetzten Regeln wurde entfernt — keine Regel nennt sie mehr.',
+      fontRemoved_other: '{{count}} Schriftdateien der ersetzten Regeln wurden entfernt — keine Regel nennt sie mehr.',
       staticSkipped: '{{count}} gleichnamige Datei unter quartz/static blieb unverändert.',
       staticSkipped_other: '{{count}} gleichnamige Dateien unter quartz/static blieben unverändert.',
       presetSkipped: '{{count}} vorhandenes Preset blieb unverändert.',

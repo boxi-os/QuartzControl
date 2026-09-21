@@ -12,7 +12,7 @@ weiteren Pfad aufruft. Sie liegt als `index.md` in der Wurzel deines Content-Ord
 
 Alles, was hier und in den drei Ordnern daneben steht, ist Platzhalter. Er ist so gebaut, dass
 du sehen kannst, wie die Website aussieht, bevor du eigene Notizen hast: drei Ebenen
-Gliederung, zwei Sprachen, ein Bild, eine Tabelle, ein Codeblock. Lösche ihn, sobald du ihn
+Gliederung, zwei Sprachen, eine Tabelle, ein Codeblock. Lösche ihn, sobald du ihn
 nicht mehr brauchst.
 
 ## Wo du anfängst

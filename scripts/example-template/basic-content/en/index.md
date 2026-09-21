@@ -13,7 +13,7 @@ It lives as `index.md` at the root of your content folder.
 
 Everything here and in the three folders beside it is placeholder. It is built so you can see
 what the site looks like before you have notes of your own: three levels of structure, two
-languages, an image, a table, a code block. Delete it once you no longer need it.
+languages, a table, a code block. Delete it once you no longer need it.
 
 ## Where to start
 

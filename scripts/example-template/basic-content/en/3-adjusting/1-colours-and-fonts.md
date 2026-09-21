@@ -16,5 +16,6 @@ lang: en
 | Single rules                 | Styles → Custom CSS             |
 | What sits where on the page  | Layout                          |
 
-The order is also the recommendation: what stands higher up survives an update of the
-template; custom CSS is the last step, not the first.
+The order is also the recommendation: custom CSS is the last step, not the first. Whether
+your changes survive an update of the template is decided when you import it: “Project wins”
+keeps them, “Template wins” resets all five rows to the template's state.

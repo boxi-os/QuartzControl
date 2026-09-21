@@ -15,5 +15,7 @@ translationKey: farben-und-schriften
 | Einzelne Regeln             | Stile → Eigenes CSS                |
 | Was wo auf der Seite steht  | Layout                             |
 
-Die Reihenfolge ist zugleich die Empfehlung: Was weiter oben steht, überlebt ein Update der
-Vorlage; eigenes CSS ist der letzte Schritt, nicht der erste.
+Die Reihenfolge ist zugleich die Empfehlung: Eigenes CSS ist der letzte Schritt, nicht der
+erste. Ob deine Änderungen ein Update der Vorlage überleben, entscheidest du beim Import:
+„Projekt gewinnt“ behält sie, „Vorlage gewinnt“ setzt alle fünf Zeilen auf den Stand der
+Vorlage zurück.

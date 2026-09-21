@@ -41,6 +41,20 @@ export const DISABLED = ['tag-list', 'recent-notes', 'comments', 'stacked-pages'
 // costs a sidebar block on every page. The app's site keeps it.
 export const PLUGIN_DISABLED = ['graph']
 
+// And one that is switched *on*, whatever the Example says. These sites navigate with the explorer
+// (see "tag-list" above: "the explorer already is") and carry no quartz-navigations entry - on
+// purpose, see variants.mjs. Deriving from the Example meant inheriting its switches, and when the
+// Example moved to quartz-navigations on 2026-09-20 and turned its explorer off, the doku packages
+// turned it off too: the import of 2026-09-21 left the app's website and two plugin handbooks
+// without any navigation at all - noticed by the user a day later, on the live site. Only the one
+// flag differed before and after that import (compared across every `enabled:` of all four sites).
+// Named here so the next change to the Example cannot take it again without a line in this file.
+//
+// The navigations handbook applies the plugin package too and navigates with its own
+// quartz-navigations instances instead; after an import into it, its explorer is switched off by
+// hand again (docs/release.md).
+export const ENABLED = ['explorer']
+
 // Layout boxes are appended to the config rather than patched into it, so these simply do not
 // travel.
 export const BOXES_OUT = ['layoutBoxHint', 'layoutBoxCta', 'layoutBoxColophon']
@@ -59,6 +73,10 @@ export function patches(base, variant = 'doku') {
   for (const name of off) {
     if (!next[name]) throw new Error(`doku.mjs: ${name} steht nicht in PLUGIN_PATCHES`)
     next[name] = { ...next[name], enabled: false }
+  }
+  for (const name of ENABLED) {
+    if (!next[name]) throw new Error(`doku.mjs: ${name} steht nicht in PLUGIN_PATCHES`)
+    next[name] = { ...next[name], enabled: true }
   }
   if (!next['note-properties']) throw new Error('doku.mjs: note-properties steht nicht in PLUGIN_PATCHES')
   next['note-properties'] = {

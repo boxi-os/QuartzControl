@@ -1800,3 +1800,14 @@ entfernte Schriftdatei (die importierte, deren Regel die Vorlage ersetzt hat) un
 Projektbild; die Datei, die das eigene Stylesheet nennt, bleibt; der Snapshot vor dem Import trägt
 die entfernte Schrift und das Bild; die gebaute Website liefert das eigene Bild aus. Derselbe Lauf
 mit dem Code davor: Projektbild wortlos ersetzt, die Website zeigt Quartz' Standardbild.
+
+**Nach dem RC gefunden (2026-09-21, vom Nutzer an der Website bemerkt):** Der Import der
+Doku-Pakete in der Nacht hatte auf der App-Website und zwei Plugin-Handbüchern den Explorer
+abgeschaltet — geerbt vom Example, das auf quartz-navigations umgestiegen war — und damit jede
+Navigation. Weder das Review noch die Befunde danach haben es gesehen, weil alle nach dem gesucht
+hatten, was der Import *überschreibt*, nicht nach einem Schalter, der umgelegt wird. Behoben in
+`doku.mjs` (`ENABLED`), die drei Websites über die App wieder eingeschaltet und veröffentlicht, beide
+Pakete neu. **Offen und neu gemessen:** Im Explorer schneiden seine eigenen Rollbereiche
+(`.explorer-ul`, `.explorer`) die Fokusringe an — 13 bis 19 von 11 bis 20 fokussierbaren Elementen
+der linken Spalte, live in Chrome. Das Stylesheet ist älter als diese Runde; Befund 2 hatte nur die
+Spalten behoben, und das Review hatte genau diese Frage offengelassen.

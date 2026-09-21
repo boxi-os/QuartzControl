@@ -43,6 +43,7 @@
 import { _electron as electron } from 'playwright-core'
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
+import { createHash } from 'node:crypto'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -669,13 +670,23 @@ function copyContent(target, content) {
     // Die `.DS_Store` des Finders zählt nicht: Sie gehört niemandem, und als Beispiel für
     // „gehört jemandem“ stand sie vorher im Satz. Ein Symlink zählt dagegen als fremd -
     // `isFile()` ist für ihn falsch, also wurde er übersehen und mit dem Ordner entfernt.
+    //
+    // „Dieselben Bytes“ heißt: wie die Quelle jetzt **oder** wie dieser Lauf die Datei zuletzt
+    // hingelegt hat. Der erste Fix fragte nur die Quelle von jetzt, und die erste Korrektur an
+    // `basic-content/` danach sah in der Werkstatt aus wie eine Bearbeitung - der Lauf, der sie
+    // ausliefern sollte, verweigerte sich. Was zuletzt geschrieben wurde, steht deshalb als Hash
+    // neben dem Ordner (CONTENT_MANIFEST).
+    const written = readContentManifest(target)
     const there = relativeFiles(content, { withLinks: true }).filter((rel) => path.basename(rel) !== '.DS_Store')
-    const foreign = there.filter((rel) => !own.has(rel))
-    const edited = there.filter(
-      (rel) =>
-        own.has(rel) &&
-        !fs.readFileSync(path.join(content, rel)).equals(fs.readFileSync(path.join(source, rel)))
-    )
+    const foreign = there.filter((rel) => !own.has(rel) && !written.has(rel))
+    const edited = there.filter((rel) => {
+      if (!own.has(rel) && !written.has(rel)) return false
+      const file = path.join(content, rel)
+      if (!fs.lstatSync(file).isFile()) return true
+      const bytes = fs.readFileSync(file)
+      if (own.has(rel) && bytes.equals(fs.readFileSync(path.join(source, rel)))) return false
+      return written.get(rel) !== sha256(bytes)
+    })
     if (there.length && !isPristineStarter(content) && (foreign.length || edited.length)) {
       const parts = [
         foreign.length && `${foreign.length} Datei(en), die nicht aus dieser Vorlage stammen (z. B. ${foreign.slice(0, 3).join(', ')})`,
@@ -691,13 +702,32 @@ function copyContent(target, content) {
   }
 
   fs.mkdirSync(content, { recursive: true })
+  const manifest = {}
   for (const rel of own) {
     const to = path.join(content, rel)
     fs.mkdirSync(path.dirname(to), { recursive: true })
     fs.copyFileSync(path.join(source, rel), to)
+    manifest[rel] = sha256(fs.readFileSync(to))
   }
+  fs.writeFileSync(path.join(target, CONTENT_MANIFEST), JSON.stringify(manifest, null, 2) + '\n')
   if (V.content.static) copyTree(path.join(DATA_DIR, V.content.static), path.join(target, 'quartz/static'))
   done(`${own.size} Seiten kopiert`)
+}
+
+// Was copyContent zuletzt in `content/` geschrieben hat, Pfad -> sha256. Neben dem Ordner, nicht
+// darin, damit es weder gebaut noch als Inhalt exportiert wird.
+const CONTENT_MANIFEST = '.qc-content-manifest.json'
+
+function readContentManifest(target) {
+  try {
+    return new Map(Object.entries(JSON.parse(fs.readFileSync(path.join(target, CONTENT_MANIFEST), 'utf-8'))))
+  } catch {
+    return new Map()
+  }
+}
+
+function sha256(bytes) {
+  return createHash('sha256').update(bytes).digest('hex')
 }
 
 /**

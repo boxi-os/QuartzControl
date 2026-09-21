@@ -581,7 +581,11 @@ function installContent(target) {
     fs.rmSync(content, { recursive: true, force: true })
   }
   fs.symlinkSync(vault, content, 'dir')
-  copyTree(path.join(DATA_DIR, 'site/snippets'), path.join(target, 'quartz/static/snippets'))
+  // Die Schnipsel sind Inhalt: Sie sprechen vom Example-Handbuch und verlinken seine Kapitel. Sie
+  // reisen aber im Baustein `static`, den `ships` nicht kennt - und so gingen sie am 2026-09-21
+  // mit den Doku-Paketen in vier Websites und ersetzten deren eigenen Kasten (35. Review,
+  // Befund 1). Wessen Inhalt nicht mitreist, bekommt sie deshalb gar nicht erst.
+  if (V.content.ships) copyTree(path.join(DATA_DIR, 'site/snippets'), path.join(target, 'quartz/static/snippets'))
   done('Symlink auf den Vault gelegt')
 }
 
@@ -999,6 +1003,7 @@ async function buildTemplate() {
     /* --------------------------------------------------------------- 10 · export */
     if (phase(10, 'export')) {
       log('\n10 · Export')
+      if (!V.content.ships) dropSnippetsThatDoNotShip()
       step(path.basename(PACKAGE_OUT))
       // The save path is chosen in the main process by design (handlers.ts:356), so the dialog is
       // answered there rather than driven through the UI.
@@ -1033,6 +1038,36 @@ async function buildTemplate() {
     }
     return null
   })
+}
+
+/**
+ * Nimmt einer Werkstatt, deren Inhalt nicht mitreist, die Schnipsel, bevor der Export sie in den
+ * Baustein `static` packt. Phase 1 legt sie dort seit dem 35. Review nicht mehr an; die
+ * Werkstätten, die es davor gab, tragen sie aber, und ein Export daraus legt beim Import unter
+ * `packageWins` den Kasten des Example über den der Zielwebsite.
+ *
+ * Gelöscht wird nur, was byte-gleich mit der Quelle in diesem Repo ist - dann hat dieses Skript
+ * es hingelegt. Eine abweichende Datei hat jemand in der Werkstatt bearbeitet; die bleibt liegen,
+ * und der Export bricht ab, statt sie in fremde Websites zu tragen.
+ */
+function dropSnippetsThatDoNotShip() {
+  const dir = path.join(WORKSHOP, 'quartz/static/snippets')
+  if (!fs.existsSync(dir)) return
+  const source = path.join(DATA_DIR, 'site/snippets')
+  const foreign = fs.readdirSync(dir, { withFileTypes: true }).filter((e) => {
+    const ours = path.join(source, e.name)
+    return !e.isFile() || !fs.existsSync(ours) ||
+      !fs.readFileSync(path.join(dir, e.name)).equals(fs.readFileSync(ours))
+  })
+  if (foreign.length) {
+    throw new Error(
+      `${dir} enthält ${foreign.map((e) => e.name).join(', ')}, und das stammt nicht aus ` +
+      'scripts/example-template/site/snippets. Diese Variante nimmt ihren Inhalt nicht mit - ' +
+      'die Schnipsel landeten beim Import in jeder Zielwebsite. Bitte ansehen und entfernen.'
+    )
+  }
+  fs.rmSync(dir, { recursive: true })
+  log('  Schnipsel aus der Werkstatt genommen - sie gehören der Website, nicht dem Paket')
 }
 
 /* ===================================================== 3 · frames (written twice, on purpose) */

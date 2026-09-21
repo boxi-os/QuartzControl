@@ -155,6 +155,17 @@ abzulegen ist optional — die App fragt sie nicht, es ist ein Link für Mensche
    je ein frisches Werkstattprojekt (`--variant doku` bzw. `plugin`, Phase 0 klont und installiert)
    und danach einen Import in drei Projekte; das ist eine eigene Sitzung wert.
 
+**Wer ein Paket unter „Paket gewinnt“ in eine echte Website importiert, liest vorher die
+Konfliktliste des Dry-Runs** — Datei für Datei, und bei allem außerhalb der Stylesheets mit der
+Frage, wem die Datei gehört. Am 2026-09-21 hat ein Skript die zwei Doku-Pakete in vier Websites
+eingespielt, ohne dass jemand die Liste las; der Baustein `static` trug die Schnipsel des Example,
+und auf jeder Seite der App-Website und der drei Plugin-Handbücher stand danach „Dieses Handbuch
+gehört zur Vorlage Example“, mit drei Links auf 404 (35. Review, Befund 1). Zurückgeholt aus dem
+Snapshot, den der Import selbst vorher angelegt hatte, und am selben Tag neu veröffentlicht. Die
+Pakete tragen seither keine Schnipsel mehr (`dropSnippetsThatDoNotShip()` vor Phase 10), aber
+dieselbe Frage stellt sich für `icon.png` und `og-image.png`, die jedes Paket aus Quartz' Gerüst
+mitnimmt: Ein Projekt mit eigenem Favicon verliert es an derselben Stelle.
+
 **Was `--check-sync` nicht sieht:** die Drift zwischen diesem Repo und den drei Kopien, sobald sie
 aus `plugins.mjs`, `variables.mjs`, `layout.mjs` oder `frames.mjs` kommt. Die vier haben bewusst
 keinen Rückweg (ein Rückleser wäre ihre zweite, inverse Umsetzung, siehe `CLAUDE.md`), und die

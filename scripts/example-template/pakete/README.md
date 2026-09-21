@@ -6,8 +6,8 @@ Dateien sind seither die einzige Fassung, und deshalb liegen sie hier.
 
 | Datei | Name im Paket | exportiert | Inhalt |
 | --- | --- | --- | --- |
-| `doku.qtpl` | Doku | 2026-09-21 00:44 | 4 Frames, 49 Plugins (35 aktiv), 31 Stylesheets, 66 CSS-Variablen, 3 Schriftdateien, 3 Gruppen, 7 Seitentypen |
-| `plugin.qtpl` | Doku (Plugin) | 2026-09-21 00:45 | dasselbe, 34 statt 35 aktive Plugins (ohne Graphansicht) |
+| `doku.qtpl` | Doku | 2026-09-21 09:02 | 4 Frames, 49 Plugins (35 aktiv), 31 Stylesheets, 66 CSS-Variablen, 3 Schriftdateien, 3 Gruppen, 7 Seitentypen |
+| `plugin.qtpl` | Doku (Plugin) | 2026-09-21 09:03 | dasselbe, 34 statt 35 aktive Plugins (ohne Graphansicht) |
 
 Neu gebaut am 2026-09-21. Die Fassung davor war vom 2026-09-10 und kannte weder
 `nav-navigations.scss` noch die dreizehn Callout-Tokens, weder Noto Sans noch die sechs Schalter
@@ -19,6 +19,12 @@ die Liste steht).
 
 Beide tragen **keinen** `content`-Baustein — sie sind Gestaltung, kein Text. Gemessen am Manifest,
 nicht aus der Erinnerung.
+
+**Und keine Schnipsel.** Die Fassung von 00:44/00:45 trug `static/snippets/sidebar-note*.md` aus
+dem Example — Inhalt, der im Baustein `static` reiste statt in `content` — und ersetzte beim
+Import den Seitenleisten-Kasten der vier Websites, die sie anwenden (35. Review, Befund 1). Um
+09:02/09:03 aus denselben Werkstätten neu exportiert; gegen die Fassung davor fehlen genau diese
+zwei Dateien, alles andere außer `createdAt` ist gleich (`diff -r` der entpackten Pakete).
 
 ## Warum hier und nicht unter `resources/templates/`
 

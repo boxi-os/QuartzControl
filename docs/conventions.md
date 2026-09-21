@@ -770,7 +770,9 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   Download-Kasten der Website umstellen: Das stand bis zum fünfzehnten Review in Commits und im
   Auftrag, also in Dateien, die nach dem Release niemand aufschlägt. Was ein Release außerhalb von
   `npm run dist` braucht, steht in `docs/release.md`, und wo es geht, prüft es ein Skript
-  (`template:example -- --check-sync` hält die drei Kopien der Vorlage byte-weise gegeneinander).
+  (`template:example -- --variant basic --check-sync` hält die drei Kopien des eingebauten Pakets
+  byte-weise gegeneinander, `--variant example --check-sync` Export und veröffentlichte Kopie des
+  Example; ohne `--variant` ist es `example`).
 - **Was ein Skript leiht, gibt es zurück — an jedem Ausgang.** Ein Wegwerf-Profil macht die
   Projekte darin nicht zu Wegwerf-Projekten: Das Demo-Skript der Screenshots schrieb seine Ziele in
   die `publish-targets.json` eines echten Projekts und überschrieb dort ein gleichnamiges

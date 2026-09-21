@@ -8,7 +8,8 @@ dieses Dokument beschreibt beides.
     npm run template:example -- --only 5     # nur die Stylesheets neu einspielen
     npm run template:example -- --check-contrast   # nur messen, ohne App und ohne Projekt
     npm run template:example -- --sync             # Stylesheets aus dem Projekt zurückholen
-    npm run template:example -- --check-sync       # nur vergleichen, nichts schreiben
+    npm run template:example -- --check-sync       # nur vergleichen: Stylesheets und Paketkopien
+    npm run template:example -- --variant basic --check-sync   # die drei Kopien des eingebauten Pakets
 
 ---
 

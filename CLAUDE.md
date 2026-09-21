@@ -123,7 +123,7 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   Tabelle in `example-template/variants.mjs` stehen und deren Gestaltungsentscheidungen als Aufsatz
   daneben (`doku.mjs`, `basic.mjs`) — ein Zwei-Wege-Schalter beantwortete für die vierte jede Frage
   falsch. Ein Feld der Tabelle ist ein Wächter: `stylesSource` verweigert `--sync` und
-  `--check-sync` jeder Variante außer `example`, weil deren Werkstatt eine Kopie ist, die derselbe
+  die Stylesheet-Hälfte von `--check-sync` jeder Variante außer `example`, weil deren Werkstatt eine Kopie ist, die derselbe
   Lauf geschrieben hat — „deckungsgleich“ wäre dort eine Tautologie, die sich als Auskunft liest.
   Gelöscht wird dagegen nach Pfad, nicht nach Variante: `removeDisposable()` löscht nur unter
   `<Projektwurzel>/werkstatt/`, also nie das Example-Projekt, auch nicht ohne `--fresh`, wenn ihm

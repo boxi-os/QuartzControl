@@ -196,6 +196,12 @@ if (argv.includes('--check-contrast')) {
  */
 function stylesSourceOrExplain(what) {
   if (V.stylesSource) return true
+  // Für eine Variante mit Paketkopien ist `--check-sync` trotzdem der richtige Aufruf (release.md,
+  // Punkt 4) - dann reicht eine Zeile, sonst liest sich die richtige Antwort wie ein Bedienfehler.
+  if (what === '--check-sync' && (V.builtin || V.published)) {
+    log(`Stylesheets: für die Variante ${V.id} nicht zuständig (ihre Werkstatt ist eine Kopie des Repos).`)
+    return false
+  }
   log(`${what} gilt nur für die Variante example.`)
   log(`Die Stylesheets der Variante ${V.id} kommen aus dem Repo; ihre Werkstatt ist eine Kopie,`)
   log('die dieser Lauf selbst beschreibt. Ein Vergleich sagte dort immer „gleich".')
@@ -387,7 +393,13 @@ function checkSync() {
  * which side is newer. A published copy that cannot be fetched is its own answer, not a match.
  */
 async function checkPackageCopies() {
-  if (!V.builtin) return true
+  // `null`, nicht `true`: „nicht zuständig“ ist kein Bestehen. Bis zum 35. Review stand hier
+  // `return true` für jede Variante außer der eingebauten, und `--check-sync` ohne `--variant
+  // basic` meldete Grün, ohne ein Paket angesehen zu haben (Befund 8).
+  if (!V.builtin && !V.published) {
+    log(`\nPaketkopien: Die Variante ${V.id} liegt weder in der App noch im Vorlagen-Repo - nichts zu vergleichen.`)
+    return null
+  }
   const read = (file) => (fs.existsSync(file) ? fs.readFileSync(file) : null)
   const createdAt = (file) => {
     try {
@@ -397,18 +409,18 @@ async function checkPackageCopies() {
     }
   }
   const bundledFile = path.join(APP_DIR, 'resources/templates', path.basename(PACKAGE_OUT))
-  const copies = [
-    ['Export', PACKAGE_OUT, read(PACKAGE_OUT)],
-    ['mitgeliefert', bundledFile, read(bundledFile)]
-  ]
+  const copies = [['Export', PACKAGE_OUT, read(PACKAGE_OUT)]]
+  if (V.builtin) copies.push(['mitgeliefert', bundledFile, read(bundledFile)])
   const url = `https://raw.githubusercontent.com/boxi-os/quartzcontrol-templates/main/${path.basename(PACKAGE_OUT)}`
   let published = null
-  try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(15_000) })
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    published = Buffer.from(await res.arrayBuffer())
-  } catch (err) {
-    log(`\nVeröffentlichte Vorlage NICHT geprüft - ${url}: ${err.message}`)
+  if (V.published) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(15_000) })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      published = Buffer.from(await res.arrayBuffer())
+    } catch (err) {
+      log(`\nVeröffentlichte Vorlage NICHT geprüft - ${url}: ${err.message}`)
+    }
   }
   const tmp = published && path.join(os.tmpdir(), `qtpl-published-${process.pid}.qtpl`)
   if (tmp) fs.writeFileSync(tmp, published)
@@ -421,14 +433,17 @@ async function checkPackageCopies() {
   if (tmp) fs.rmSync(tmp, { force: true })
   const [first, ...rest] = copies.map(([, , bytes]) => bytes)
   const same = first && rest.every((bytes) => bytes && bytes.equals(first))
-  if (same && published) {
+  if (same && (published || !V.published)) {
     log(`  ${copies.length} Kopien byte-gleich.`)
     return true
   }
   if (same) log(`  ${copies.length} Kopien byte-gleich, die veröffentlichte ungeprüft - das ist kein „gleich“.`)
   else {
-    log(`  Nicht gleich. Mitliefern: \`cp ${PACKAGE_OUT} resources/templates/\`; veröffentlichen: dieselbe`)
-    log('  Datei nach boxi-os/quartzcontrol-templates committen und pushen (docs/release.md).')
+    const steps = [
+      V.builtin && `mitliefern: \`cp ${PACKAGE_OUT} resources/templates/\``,
+      V.published && 'veröffentlichen: dieselbe Datei nach boxi-os/quartzcontrol-templates committen und pushen'
+    ].filter(Boolean)
+    log(`  Nicht gleich. ${steps.join('; ')} (docs/release.md).`)
   }
   return false
 }
@@ -438,7 +453,13 @@ if (argv.includes('--check-sync')) {
   const copies = await checkPackageCopies()
   // `null` heißt „diese Variante beantwortet das nicht" und zählt weder als bestanden noch als
   // durchgefallen - sonst wäre jede Variante außer example dauerhaft rot.
-  process.exit([styles, copies].every((answer) => answer !== false) ? 0 : 1)
+  const answers = [styles, copies]
+  // Beide nicht zuständig heißt: nichts geprüft - und das ist kein Grün.
+  if (answers.every((answer) => answer === null)) {
+    log('\nFür diese Variante beantwortet `--check-sync` keine der beiden Fragen.')
+    process.exit(1)
+  }
+  process.exit(answers.every((answer) => answer !== false) ? 0 : 1)
 }
 
 if (argv.includes('--sync')) {

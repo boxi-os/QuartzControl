@@ -49,8 +49,12 @@ const NAVIGATIONS = ['quartz-navigations', NAVIGATIONS_SOURCE]
  *                 „basic-site") wäre eine Kopplung, die niemand sieht, bis einer der zwei umzieht.
  *   plugins       Die github:-Plugins, die Phase 2 installiert.
  *   stylesSource  Ob `--sync`/`--check-sync` für diese Variante etwas beweisen (siehe unten).
- *   builtin       Ob dieses Paket das eingebaute der App ist - dann vergleicht
- *                 `checkPackageCopies()` seine drei Kopien.
+ *   builtin       Ob dieses Paket das eingebaute der App ist - dann liegt eine Kopie unter
+ *                 `resources/templates/`, und `checkPackageCopies()` vergleicht sie mit dem Export.
+ *   published     Ob das Paket in boxi-os/quartzcontrol-templates liegt - dann vergleicht
+ *                 `checkPackageCopies()` auch diese Kopie. Seit dem 35. Review (Befund 8): Vorher
+ *                 hing der ganze Vergleich an `builtin`, und `qc-example.qtpl` verglich niemand,
+ *                 obwohl es seit `201eb0d` dort liegt.
  *   derive        Wie die Example-Daten zu denen dieser Variante werden. Bekommt
  *                 { patches, boxes, navigations } und gibt dieselbe Form zurück.
  *   describe      Der Beschreibungstext des Pakets, gegen die wirklichen Zahlen gebildet.
@@ -86,6 +90,7 @@ export const VARIANTS = {
     plugins: [LAYOUT_BOX, MULTILANGUAGE, NAVIGATIONS],
     stylesSource: true,
     builtin: false,
+    published: true,
     derive: (data) => data,
     describe: ({ frames, explorerOn }) =>
       `Eine vollständige Beispielvorlage: ein Handbuch in sieben Kapiteln, zweisprachig, mit ` +
@@ -114,6 +119,7 @@ export const VARIANTS = {
     plugins: [LAYOUT_BOX, MULTILANGUAGE, NAVIGATIONS],
     stylesSource: false,
     builtin: true,
+    published: true,
     derive: (data) => ({
       patches: basic.patches(data.patches),
       boxes: basic.boxes(data.boxes),
@@ -145,6 +151,7 @@ export const VARIANTS = {
     plugins: [LAYOUT_BOX, MULTILANGUAGE],
     stylesSource: false,
     builtin: false,
+    published: false,
     derive: (data) => ({
       ...data,
       patches: doku.patches(data.patches, 'doku'),
@@ -165,6 +172,7 @@ export const VARIANTS = {
     plugins: [LAYOUT_BOX, MULTILANGUAGE],
     stylesSource: false,
     builtin: false,
+    published: false,
     derive: (data) => ({
       ...data,
       patches: doku.patches(data.patches, 'plugin'),

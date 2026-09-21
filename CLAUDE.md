@@ -249,6 +249,9 @@ Chronik. Die Chronik nachzulesen lohnt für zwei Fragen: *warum* eine Regel so l
 Absatz in `docs/decisions/` sie nicht beantwortet, und *was gerade ungelesen ist* — die Serie ist
 so gebaut, dass jede Runde liest, was die vorige gebaut hat.
 
+**Release:** `1.0.0-rc.1` ist am 2026-09-21 veröffentlicht (Release-Seite, `latest.json`,
+Website); Ablauf und Funde oben in [`docs/release.md`](docs/release.md).
+
 **Stand:** Die neun Befunde des vierunddreißigsten Reviews (zwei Mittel, sieben Niedrig) sind
 abgearbeitet, am 2026-09-20 auf `fix/review-2026-10-08`, dazu alle vier Nebenbei-Punkte — 12
 Commits, je einer mit Typcheck, Build und Smoke. Die Runde las die zwanzig Fixes der vorigen und

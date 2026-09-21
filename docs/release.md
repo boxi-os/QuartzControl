@@ -1,5 +1,13 @@
 # Vor einem Release
 
+> **Zuletzt durchlaufen für 1.0.0-rc.1 am 2026-09-21** (Tag `v1.0.0-rc.1` auf `224c08d`). Zehn
+> Pakete, neun auf einer Maschine ihrer Architektur gestartet (macOS x64 nicht, kein Intel-Mac),
+> alle mit Node 24.18.1, npm 11.17.0 und git 2.53.0; Prüfsummen auf der Release-Seite gegen die
+> Dateien auf den VMs gehalten. Drei Dinge, die dabei auffielen: Das Handbuch nannte für Linux
+> noch „ab Ubuntu 18.04“ (jetzt glibc 2.34), das Band der Website behauptete, die App bringe ihr
+> eigenes Handbuch mit, und ein `pkill -f` über ssh beendet die eigene Sitzung — auf der VM über
+> die gemerkte PID beenden.
+
 Was außerhalb von `npm run dist` getan werden muss, damit ein Release vollständig ist. Jeder Punkt
 hier stand bis zum Review 2026-09-19 nur in Commit-Nachrichten und im Auftrag eines Reviews, also
 in Dateien, die nach dem Release niemand mehr aufschlägt (Befund 7). Ein neuer Handgriff kommt mit

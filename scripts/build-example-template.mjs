@@ -1128,6 +1128,16 @@ async function writeFrames(page) {
 async function verify() {
   log('\n11 · Gegenprobe')
   step('zweites Projekt')
+  // Jedes Mal frisch. `bootstrap()` antwortet „schon vorhanden“, sobald eine Config daliegt, und
+  // dann prüfte diese Phase, ob ein Import *über den vorigen* baut - was nie zeigen kann, dass dem
+  // Paket etwas fehlt, weil es vom letzten Mal noch daliegt. Gemessen am 2026-09-21: Die
+  // Gegenprobe des Example stammte vom 14. September, trug noch die drei alten Schriftfamilien,
+  // und der erste Lauf nach dem Schriftwechsel meldete `fonts +3` und `cssVariables +6` - das
+  // veröffentlichte Paket von 00:10 war nie durch ein leeres Projekt gegangen (35. Review,
+  // Befund 5). Die Gegenprobe liegt unter `werkstatt/`, ist also nach der eigenen Definition
+  // Wegwerfware; removeDisposable() verweigert alles andere. Der Preis ist ein Klon und ein
+  // `npm install` je Lauf.
+  if (fs.existsSync(CONTROL)) removeDisposable(CONTROL, 'die Gegenprobe braucht ein leeres Projekt')
   bootstrap(CONTROL)
 
   const outcome = await withApp(async (page) => {
@@ -1174,11 +1184,18 @@ async function verify() {
     const navigations = instances('quartz-navigations')
     done(`${navigations.length} von ${expectedNavigations}`)
 
+    // Erst in einem frischen Projekt eine Aussage: Vorher lagen die Dateien vom letzten Lauf da.
+    step('Schriftdateien im Ziel')
+    const fontDir = path.join(CONTROL, 'quartz/static/fonts')
+    const fontsThere = FONTS.filter((font) => fs.existsSync(path.join(fontDir, font.file))).length
+    done(`${fontsThere} von ${FONTS.length}`)
+
     return {
       warnings: result.warnings,
       frames: frames.length,
       boxes: boxes.length,
-      navigations: navigations.length
+      navigations: navigations.length,
+      fonts: fontsThere
     }
   })
 
@@ -1222,7 +1239,7 @@ async function main() {
     const outcome = await verify()
     log('\n═══════════════════════════════════')
     log(written ? `Paket: ${written.filePath}` : 'Paket: (nicht in diesem Lauf geschrieben)')
-    log(`Gegenprobe: ${outcome.frames} Frames, ${outcome.boxes} Layout-Boxen, ${outcome.navigations} Navigationen, ${outcome.warnings.length} Warnungen, Build grün.`)
+    log(`Gegenprobe: ${outcome.frames} Frames, ${outcome.boxes} Layout-Boxen, ${outcome.navigations} Navigationen, ${outcome.fonts} Schriftdateien, ${outcome.warnings.length} Warnungen, Build grün.`)
   } else if (written) {
     log('\n═══════════════════════════════════')
     log(`Paket: ${written.filePath}`)

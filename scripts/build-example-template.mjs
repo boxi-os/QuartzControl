@@ -660,13 +660,31 @@ function copyContent(target, content) {
   // Ordner geprüft wird. Ein zweiter Lauf soll durchgehen, ein Ordner mit fremden Notizen nicht.
   const own = new Set(relativeFiles(source).filter((rel) => path.basename(rel) !== 'README.md'))
   if (existing) {
-    const there = relativeFiles(content)
+    // Eigen ist, was denselben Pfad **und** dieselben Bytes hat wie die Quelle. Bis zum 35. Review
+    // (Befund 12) genügte der Name: Ein Projekt, in dem jemand die zwanzig Seiten umgeschrieben
+    // statt ersetzt hatte - `index.md` sagt selbst „Schreibe einfach in index.md“ -, bestand die
+    // Probe vollständig und wurde geleert. Gemessen in der Werkstatt: eine Zeile an
+    // `1-einstieg/index.md` angehängt, Phase 1, danach war sie weg und kein Wort dazu.
+    //
+    // Die `.DS_Store` des Finders zählt nicht: Sie gehört niemandem, und als Beispiel für
+    // „gehört jemandem“ stand sie vorher im Satz. Ein Symlink zählt dagegen als fremd -
+    // `isFile()` ist für ihn falsch, also wurde er übersehen und mit dem Ordner entfernt.
+    const there = relativeFiles(content, { withLinks: true }).filter((rel) => path.basename(rel) !== '.DS_Store')
     const foreign = there.filter((rel) => !own.has(rel))
-    if (there.length && !isPristineStarter(content) && foreign.length) {
+    const edited = there.filter(
+      (rel) =>
+        own.has(rel) &&
+        !fs.readFileSync(path.join(content, rel)).equals(fs.readFileSync(path.join(source, rel)))
+    )
+    if (there.length && !isPristineStarter(content) && (foreign.length || edited.length)) {
+      const parts = [
+        foreign.length && `${foreign.length} Datei(en), die nicht aus dieser Vorlage stammen (z. B. ${foreign.slice(0, 3).join(', ')})`,
+        edited.length && `${edited.length} Datei(en), die hier bearbeitet wurden (z. B. ${edited.slice(0, 3).join(', ')})`
+      ].filter(Boolean)
       throw new Error(
-        `${content} enthält ${foreign.length} Datei(en), die nicht aus dieser Vorlage stammen ` +
-        `(z. B. ${foreign.slice(0, 3).join(', ')}). Sie bleiben liegen; wer hier bauen will, ` +
-        'räumt den Ordner von Hand.'
+        `${content} enthält ${parts.join(' und ')}. Sie bleiben liegen; wer hier bauen will, ` +
+        'räumt den Ordner von Hand - eine Korrektur gehört nach ' +
+        `scripts/example-template/${V.content.from}/, dort reist sie mit.`
       )
     }
     fs.rmSync(content, { recursive: true, force: true })
@@ -682,13 +700,29 @@ function copyContent(target, content) {
   done(`${own.size} Seiten kopiert`)
 }
 
-/** Alle Dateien unter `dir`, relativ zu ihm, als sortierte Liste. */
-function relativeFiles(dir) {
-  return fs
-    .readdirSync(dir, { recursive: true, withFileTypes: true })
-    .filter((entry) => entry.isFile())
-    .map((entry) => path.relative(dir, path.join(entry.parentPath ?? entry.path, entry.name)))
-    .sort()
+/**
+ * Alle Dateien unter `dir`, relativ zu ihm, als sortierte Liste. Mit `withLinks` auch Symlinks -
+ * gebraucht dort, wo gefragt wird, was ein Löschen mitnähme.
+ *
+ * Von Hand gelaufen und mit `lstat`, nicht über `readdirSync(…, { recursive: true })`: Das folgt
+ * einem Symlink auf ein Verzeichnis und listet, was dahinter liegt. Gemessen mit einem Link auf
+ * `/tmp` in `content/`: Der Lauf endete in einem EACCES aus einem fremden Ordner, statt den Link
+ * als das zu melden, was er ist.
+ */
+function relativeFiles(dir, { withLinks = false } = {}) {
+  const out = []
+  const walk = (rel) => {
+    for (const name of fs.readdirSync(path.join(dir, rel))) {
+      const child = path.join(rel, name)
+      const stat = fs.lstatSync(path.join(dir, child))
+      if (stat.isSymbolicLink()) {
+        if (withLinks) out.push(child)
+      } else if (stat.isDirectory()) walk(child)
+      else if (stat.isFile()) out.push(child)
+    }
+  }
+  walk('')
+  return out.sort()
 }
 
 /* ======================================================================= 2 · plugin */

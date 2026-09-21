@@ -850,6 +850,8 @@ export default {
     local: 'Bring your own',
     fontFor: 'Font ({{slot}})',
     fontListFor: 'Fonts to choose from ({{slot}})',
+    fontMatches: '{{count}} font matches',
+    fontMatches_other: '{{count}} fonts match',
     delivery: {
       heading: 'Font delivery',
       description:

@@ -225,7 +225,9 @@ export function Combobox({
   onChange,
   options,
   emptyText,
+  label,
   listLabel,
+  countText,
   className = '',
   ...props
 }: Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'role'> & {
@@ -240,8 +242,24 @@ export function Combobox({
    * SegmentedControl's `label`, so a caller without one is visibly wrong.
    */
   listLabel: string
+  /**
+   * The field's own name, as `aria-label`. It sits inside `Field`'s `<label>`, and a label names
+   * its combobox by its whole content - which, per the accessible-name rules, includes the
+   * combobox's *chosen option*. So the field's name changed with every arrow ("Schriftart (header)
+   * Noto Sans Mono custom.scss", read off Chromium's accessibility tree), and VoiceOver, hearing the
+   * option's text as part of the focused field, said only "2 von 214" for every entry after the
+   * first (reported from the VoiceOver test, 2026-09-21).
+   */
+  label: string
+  /** What the live region says about the matches while typing - "12 Schriften". */
+  countText?: (count: number) => string
 }): JSX.Element {
   const listId = useId()
+  // The one place a screen reader hears the walked-to option by name. aria-activedescendant alone
+  // is not enough for VoiceOver in Chromium (see `label`); the libraries that implement this
+  // pattern keep a live region for the same reason. Always rendered, so the region exists before
+  // its text (conventions: "Was ohne Zutun erscheint, wird angesagt").
+  const [announcement, setAnnouncement] = useState('')
   const [open, setOpen] = useState(false)
   // `null` while nothing has been typed since the list opened: then it shows everything, with the
   // current value highlighted, rather than a list filtered down to the one name already there.
@@ -274,11 +292,29 @@ export function Combobox({
     listRef.current?.querySelector(`[data-index="${active}"]`)?.scrollIntoView({ block: 'nearest' })
   }, [open, active])
 
+  const activeOption = open && active >= 0 ? filtered[active] : undefined
+  useEffect(() => {
+    if (activeOption) setAnnouncement(activeOption.meta ? `${activeOption.value}, ${activeOption.meta}` : activeOption.value)
+  }, [activeOption])
+
+  // While typing, how many there are - a moment after the last key, so a fast typist hears one
+  // number, not one per letter. Nothing is said for the full, unfiltered list.
+  useEffect(() => {
+    if (!open || query === null || !countText) return
+    const timer = setTimeout(() => setAnnouncement(filtered.length === 0 ? emptyText : countText(filtered.length)), 600)
+    return () => clearTimeout(timer)
+  }, [open, query, filtered.length, countText, emptyText])
+
+  useEffect(() => {
+    if (!open) setAnnouncement('')
+  }, [open])
+
   return (
     <div className="relative">
       <input
         {...props}
         role="combobox"
+        aria-label={label}
         aria-expanded={open}
         aria-controls={listId}
         aria-autocomplete="list"
@@ -369,6 +405,9 @@ export function Combobox({
           ))}
         </ul>
       )}
+      <span role="status" className="sr-only">
+        {announcement}
+      </span>
     </div>
   )
 }

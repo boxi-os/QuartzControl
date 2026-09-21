@@ -173,7 +173,9 @@ export default function Basics(): JSX.Element {
                 value={family}
                 onChange={(next) => setTypography(key, next)}
                 options={fontOptions}
+                label={t('themeEditor.fontFor', { slot: key })}
                 listLabel={t('themeEditor.fontListFor', { slot: key })}
+                countText={(count) => t('themeEditor.fontMatches', { count })}
                 emptyText={fontOrigin === 'local' ? t('themeEditor.fontNoLocalMatch') : t('themeEditor.fontNoGoogleMatch')}
               />
               {spelledDifferently ? (

@@ -853,6 +853,8 @@ export default {
     local: 'Selbst mitgebracht',
     fontFor: 'Schriftart ({{slot}})',
     fontListFor: 'Schriftarten zur Auswahl ({{slot}})',
+    fontMatches: '{{count}} Schriftart passt',
+    fontMatches_other: '{{count}} Schriftarten passen',
     delivery: {
       heading: 'Schrift-Auslieferung',
       description:

@@ -108,6 +108,10 @@ function leserProVariable() {
   for (const file of fs.readdirSync(STYLE_DIR).filter((n) => n.endsWith('.scss'))) {
     const src = ohneKommentare(fs.readFileSync(path.join(STYLE_DIR, file), 'utf-8'))
     for (const m of src.matchAll(/var\(\s*(--[\w-]+)/g)) {
+      // Die Variablen von quartz-navigations deklariert das Plugin auf seinem eigenen Element; ein
+      // Wert aus dem Variablen-Tab käme dort nie an (nav-navigations.scss, Kopf). Die Tabelle
+      // verspricht aber genau das, also stehen sie nicht darin.
+      if (m[1].startsWith('--quartz-nav-')) continue
       if (!map.has(m[1])) map.set(m[1], new Set())
       map.get(m[1]).add(file)
     }
@@ -217,7 +221,7 @@ function tabelle(seite, sprache, leser) {
   const eigene = new Set()
   for (const file of seite.files) {
     const src = ohneKommentare(fs.readFileSync(path.join(STYLE_DIR, file), 'utf-8'))
-    for (const m of src.matchAll(/var\(\s*(--[\w-]+)/g)) eigene.add(m[1])
+    for (const m of src.matchAll(/var\(\s*(--[\w-]+)/g)) if (!m[1].startsWith('--quartz-nav-')) eigene.add(m[1])
   }
   const namen = [...eigene].sort()
   if (namen.length === 0) return null

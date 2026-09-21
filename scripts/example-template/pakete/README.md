@@ -6,8 +6,8 @@ Dateien sind seither die einzige Fassung, und deshalb liegen sie hier.
 
 | Datei | Name im Paket | exportiert | Inhalt |
 | --- | --- | --- | --- |
-| `doku.qtpl` | Doku | 2026-09-21 09:16 | 4 Frames, 49 Plugins (35 aktiv), 31 Stylesheets, 66 CSS-Variablen, 3 Schriftdateien, 3 Gruppen, 7 Seitentypen |
-| `plugin.qtpl` | Doku (Plugin) | 2026-09-21 09:16 | dasselbe, 34 statt 35 aktive Plugins (ohne Graphansicht) |
+| `doku.qtpl` | Doku | 2026-09-21 10:26 | 4 Frames, 49 Plugins (35 aktiv), 31 Stylesheets, 66 CSS-Variablen, 3 Schriftdateien, 3 Gruppen, 7 Seitentypen |
+| `plugin.qtpl` | Doku (Plugin) | 2026-09-21 10:26 | dasselbe, 34 statt 35 aktive Plugins (ohne Graphansicht) |
 
 Neu gebaut am 2026-09-21. Die Fassung davor war vom 2026-09-10 und kannte weder
 `nav-navigations.scss` noch die dreizehn Callout-Tokens, weder Noto Sans noch die sechs Schalter
@@ -26,7 +26,9 @@ Import den Seitenleisten-Kasten der vier Websites, die sie anwenden (35. Review,
 09:02/09:03 aus denselben Werkstätten neu exportiert; gegen die Fassung davor fehlen genau diese
 zwei Dateien, alles andere außer `createdAt` ist gleich (`diff -r` der entpackten Pakete).
 Um 09:16 noch einmal, mit dem `base.scss`, das den Fokusring in den Seitenspalten nicht mehr
-abschneidet (Befund 2 derselben Runde).
+abschneidet (Befund 2 derselben Runde). Um 10:26 ein drittes Mal, mit den Stylesheets aus
+Befund 9: Die offene Suche liegt über Graph-Vollansicht und Burger, und Burger und „Los“-Knopf
+haben ihren Hover zurück.
 
 ## Warum hier und nicht unter `resources/templates/`
 

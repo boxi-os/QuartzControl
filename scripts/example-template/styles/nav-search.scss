@@ -1,5 +1,17 @@
 // Search — the button in the toolbar, and the overlay it opens.
 
+// Die offene Suche liegt über allem, und das muss die Leiste tun, nicht die Suche. Ihr Fenster
+// hat z-index 999, aber es sitzt im Kopfbereich, und der ist `sticky` mit z-index 80 (90 am
+// Telefon) und damit ein Stapelkontext: Die 999 gelten nur darin. Gemessen an der gebauten
+// Website (35. Review, Befund 9a): Mit offener Graph-Vollansicht (110) lag die Suche unsichtbar
+// darunter - `elementFromPoint` am Suchfeld lieferte das `<canvas>` -, und am Telefon stand der
+// Burger der Navigation (98) scharf und klickbar im Schleier des Suchdialogs. Mit dieser Regel:
+// am Suchfeld `input.search-bar`, in der Bildmitte und am Burger `div.search-container`.
+// 120 ist die höchste Zahl der Leiter in aside-graph.scss.
+.qgframe-area-header:has(.search-container.active) {
+  z-index: 120;
+}
+
 .search {
   min-width: 0;
 }

@@ -59,7 +59,8 @@
   // several pages that are three screens tall.
   //
   // It needs its own ground: what scrolls underneath is body text, and a transparent bar over it
-  // is unreadable within one line. The z-index sits under the search overlay and the drawer.
+  // is unreadable within one line. The z-index sits under the drawers; the search overlay lives
+// *inside* this bar, so while it is open the bar itself moves up (nav-search.scss).
   position: sticky;
   top: 0;
   z-index: 80;

@@ -113,8 +113,10 @@
     max-width: none;
   }
 
-  // Die zwei einzigen Farbliterale dieser Vorlage, die nicht in einem Attributselektor stehen —
-  // und sie bleiben es.
+  // Zwei Farbliterale, die nicht in einem Attributselektor stehen — und sie bleiben es. Nicht die
+  // einzigen, wie hier bis zum 35. Review stand: body-mermaid.scss setzt Mermaids „crit“ in
+  // gewöhnlichen Klassenselektoren auf `#B02020` / `#FF9C93`, die Werte von
+  // `--tpl-callout-danger`. Wer die Warnfarbe im Variablen-Tab ändert, ändert dort also nichts mit.
   //
   // Ein Token liest sich hier falsch: `--tpl-rule` und die neun Palettenfarben kippen mit dem
   // Modus, und `:root[saved-theme="dark"]` steht beim Drucken genauso da wie am Bildschirm. Wer

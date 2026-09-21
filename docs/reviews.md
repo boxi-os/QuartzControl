@@ -16,9 +16,10 @@ Abschnitten“, und oben steht hier nichts mehr — das ist der Preis dafür, da
 ist (fünfundzwanzigstes Review, Befund 8). Die Arbeitsregel steht in `CLAUDE.md`: sie sagt, wie
 gearbeitet wird, und nicht, was war.
 
-## Befunde aus den Reviews (Stand 2026-09-20)
+## Befunde aus den Reviews (Stand 2026-09-21)
 
-Alle vierunddreißig Listen sind abgearbeitet. [`docs/REVIEW-2026-09-02.md`](REVIEW-2026-09-02.md),
+Alle fünfunddreißig Listen sind abgearbeitet; die zwei jüngsten (`REVIEW-2026-10-08.md`,
+`REVIEW-2026-10-09.md`) stehen am Ende dieser Datei. [`docs/REVIEW-2026-09-02.md`](REVIEW-2026-09-02.md),
 [`docs/REVIEW-2026-09-05.md`](REVIEW-2026-09-05.md) mit seinen 15 Befunden,
 [`docs/REVIEW-2026-09-06.md`](REVIEW-2026-09-06.md) mit seinen sechs,
 [`docs/REVIEW-2026-09-07.md`](REVIEW-2026-09-07.md) mit seinen acht,
@@ -1749,3 +1750,40 @@ Wunsch des Nutzers an der gebauten App nachgemessen wurde: Der Bestätigungsdial
 die erste `url()` — und nicht, wie viele danach wirklich fehlen. Gemessen lag er in beide
 Richtungen daneben (1 statt 0 und 1 statt 3, bei einer Kontrolle von 1/1). Behoben: Beide Seiten
 fragen dieselbe Funktion, und „keine Datei“ hat einen eigenen Satz.
+
+**Das fünfunddreißigste Review liest die Vorlagen-Runde** (`review-2026-10-09..review-2026-10-10`,
+Auftrag [`REVIEW-2026-10-09-auftrag.md`](REVIEW-2026-10-09-auftrag.md), Dokument
+[`REVIEW-2026-10-09.md`](REVIEW-2026-10-09.md), von Claude Fable 5.1). Ein Befund Hoch, vier Mittel,
+neun Niedrig; der App-Code der Runde war unauffällig, das Gewicht lag bei dem, was draußen liegt, und
+bei den Begründungen in den Kommentaren. **Abgearbeitet am 2026-09-21**, je Befund ein Commit mit
+Typcheck, Build und Smoke, und alles, was veröffentlicht ist, danach an der echten Adresse
+nachgemessen:
+
+- **1 (Hoch):** Der Import der Doku-Pakete hatte vier Websites den Seitenleisten-Text genommen. Aus
+  den Snapshots zurückgeholt und neu veröffentlicht; die Pakete tragen keine Schnipsel mehr.
+- **2:** Die Seitenspalten schnitten jeden Fokusring an — auch die rechte, die das Review nicht
+  gemessen hatte. Die Kante rückt um die Reichweite des Rings nach außen.
+- **3:** Das Example-Handbuch beschreibt die Navigation, Noto Sans und 66 Variablen.
+- **4, 5:** Gelöscht wird nur unter `werkstatt/` (`removeDisposable()`), und die Gegenprobe ist
+  jedes Mal leer. Die Vorher-Messung zu 4 ging weiter als das Review annahm: `/usr/bin/git` gibt es
+  immer, der Ordner wurde also nicht nur gelöscht, sondern durch einen Klon ersetzt.
+- **6, 7:** Schriftdateien werden nur gelöscht, wenn keine Regel sie mehr nennt — im Vorlagenbau
+  und, neu in der App, beim Import unter „Vorlage gewinnt“ (`fontRemoved`).
+- **8:** `--check-sync` sagt, welche Kopien es verglichen hat, vergleicht jetzt auch das Example
+  mit seiner veröffentlichten Kopie, und „nichts zuständig“ ist Exit 1.
+- **9:** Die offene Suche liegt über Graph und Burger; neun Kommentare an ihrer Quelle korrigiert.
+- **10, 14:** Das Basis-Template sagt, wie die Navigation klappt, was die Spaltenschalter sind und
+  dass die Callout-Farben gemessen sind.
+- **11:** `release.md` hat keine erledigten Punkte mehr als offen; `BEFUNDE.md` Eintrag 97.
+- **12:** Eigen ist, was gleiche Bytes hat — mit der Quelle oder mit dem, was der letzte Lauf
+  schrieb. Die erste Fassung des Fixes kannte nur die Quelle und blockierte die nächste Korrektur
+  daran; die Nachbesserung steht als eigener Commit.
+- **13:** Das Navigations-Handbuch läuft auf quartz-navigations 0.3.1. Kein Pin auf einen Tag, weil
+  Quartz' Update-Prüfung `refs/heads/<ref>` fragt.
+
+**Keinen dieser Fixes hat ein Review gelesen.** Nebenbei aufgefallen und nicht erledigt, sondern
+hier gesammelt: `variants.mjs` nennt im Doc-Kommentar zu `stylesSource` „30 Stylesheets“ (es sind
+31); README und `variants.mjs` sagen „Inhalte mitnehmen“, die App „Mit den Beispielseiten“; der
+Assistent nennt „zwanzig kurze Seiten“ als festen Text, die Zahl im Paket wird gezählt; `--only 1`
+startet trotzdem die App und schreibt per `projects.add` ins Profil; `icon.png` und `og-image.png`
+reisen in jedem Paket und überschreiben unter „Vorlage gewinnt“ ein eigenes Favicon.

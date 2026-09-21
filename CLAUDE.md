@@ -236,9 +236,11 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 
 ## Die Reviews
 
-Alle vierunddreißig Listen sind abgearbeitet. Die Chronik steht in
-[`docs/reviews.md`](docs/reviews.md) — welches Review welchen Stand gelesen hat, mit welchen
-Zahlen, was es gefunden hat und welche Fixes noch niemand gelesen hat. Sie stand bis zum
+Alle fünfunddreißig Listen sind abgearbeitet (die fünfunddreißigste am 2026-09-21,
+[`docs/REVIEW-2026-10-09.md`](docs/REVIEW-2026-10-09.md); was daraus geworden ist und was nebenbei
+offen blieb, steht am Ende der Chronik — **keinen dieser Fixes hat ein Review gelesen**). Die
+Chronik steht in [`docs/reviews.md`](docs/reviews.md) — welches Review welchen Stand gelesen hat,
+mit welchen Zahlen, was es gefunden hat und welche Fixes noch niemand gelesen hat. Sie stand bis zum
 2026-09-17 hier und ist wörtlich dorthin gewandert; die Review-Dokumente selbst liegen als
 `docs/REVIEW-<datum>.md`, die Aufträge daneben als `docs/REVIEW-<datum>-auftrag.md`.
 

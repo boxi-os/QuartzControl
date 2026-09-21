@@ -1812,6 +1812,10 @@ Doku-Varianten tragen Akkordeon und Pager, der Import nur des Bausteins „Plugi
 Kopien der drei Projekte (Eintrag für Eintrag: zwei Navigationen dazu, Explorer aus, sonst nichts),
 live gemessen auf allen vier in beiden Sprachen und bei 390 px. Das Navigations-Handbuch behält
 seine fünf eigenen Instanzen und bekommt die Pakete nur ohne „Plugins“ (`docs/release.md`).
-**Offen:** Im Explorer schneiden seine eigenen Rollbereiche (`.explorer-ul`, `.explorer`) die
-Fokusringe an — gemessen, als er kurz wieder an war. Er ist jetzt überall aus; wer ihn einschaltet,
-bekommt das mit. Das Stylesheet ist älter als diese Runde.
+Danach, ebenfalls auf Wunsch des Nutzers — die Vorlage soll jede Komponente fertig gestaltet
+mitbringen, auch eine abgeschaltete —: **Der Explorer schneidet keinen Fokusring mehr ab.** Drei
+Kästen beschnitten ihn (die Komponente, ihre Rollliste, die Liste eines offenen Ordners), gemessen
+6 von 6 an einer Kopie des Basis-Templates mit eingeschaltetem Explorer; jetzt 0 von 6 bei 1400,
+1000 und 390 px in Chrome, WebKit und Firefox, Zeilen auf denselben Pixeln, Einklappen und
+Schublade wie vorher. `overflow-clip-margin` war der erste Versuch und trug nicht: WebKit ignoriert
+den Rand, Chromium nimmt kein `calc()` dafür. Alle vier Pakete und alle fünf Websites nachgezogen.

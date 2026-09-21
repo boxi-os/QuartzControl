@@ -173,10 +173,53 @@ ul.explorer-ul {
   padding-inline: 0;
 }
 
-.explorer-content ul.tree-item-children {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+/* ------------------------------------------------ the focus ring, not cut off by the tree */
+
+// Three boxes in the explorer clip what is painted past their edge, and the focus ring of this
+// template (2px, 2px away) is painted past the edge of every row that sits flush against one of
+// them. Measured with the explorer switched on in a copy of the basic template, 2026-09-21: 6 of 6
+// visible controls lost part of their ring at 1400, 1000 and 390px (drawer open). The Example and
+// the handbooks navigate with quartz-navigations and have the explorer off, which is why nobody saw
+// it - but this template styles every component so that switching one on needs nothing else, and
+// the explorer is the one Quartz ships.
+//
+//   .explorer        the whole component; quartz gives it `overflow: auto / hidden`, and the
+//                    heading button is exactly as wide. Nothing here needs that clip any more - the
+//                    fold is on the content (above) and the drawer is its own box - so it goes.
+//                    Collapsing at 1400 and opening the drawer at 390 measured the same before and
+//                    after (heights, visibility, no sideways scroll).
+//   ul.explorer-ul   the scroller from 901px up (base.scss). Rows have indent on the left and none
+//                    on the right. The edge moves out by the ring's reach and the content is padded
+//                    back in, the same answer as the side columns in base.scss.
+//   ul.content       each folder's list; the plugin clips it so the fold can animate. It has to
+//                    keep clipping - a shut folder must not show its rows -, so only an *open* one
+//                    gets the same move as the scroller, on the three sides where rows sit flush
+//                    (top, bottom, end); its start side carries the level's indent and must keep
+//                    it - setting `padding` there moved the rows 25px to the left (measured).
+//
+// Why not `overflow: clip` with an `overflow-clip-margin`, which says exactly this: WebKit 26.5
+// ignores the margin (two rings still cut), and Chromium 152 takes no calc() for it and computes 0px,
+// so it would have needed a literal 4px. Margin and padding take calc() in every engine. Measured
+// with the explorer on in a copy of the basic template: 0 of 6 rings cut at 1400, 1000 and 390px
+// (drawer open) in Chrome and in WebKit, row positions unchanged to the pixel, collapsing and the
+// drawer as before.
+.explorer {
+  --explorer-ring-reach: calc(var(--tpl-focus-width) + var(--tpl-focus-offset));
+  overflow: visible;
+}
+
+@media (min-width: 901px) {
+  ul.explorer-ul {
+    margin-inline: calc(-1 * var(--explorer-ring-reach));
+    padding-inline: var(--explorer-ring-reach);
+  }
+}
+
+.explorer .folder-outer.open > ul.content {
+  margin-block: calc(-1 * var(--explorer-ring-reach));
+  margin-inline-end: calc(-1 * var(--explorer-ring-reach));
+  padding-block: var(--explorer-ring-reach);
+  padding-inline-end: var(--explorer-ring-reach);
 }
 
 /* ------------------------------------------------------- indentation and guide lines */

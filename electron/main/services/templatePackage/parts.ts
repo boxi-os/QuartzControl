@@ -18,6 +18,7 @@ import * as fontService from '../fontService'
 import * as layoutFrameService from '../layoutFrameService'
 import * as localizationService from '../localizationService'
 import * as pluginService from '../pluginService'
+import * as projectIconService from '../projectIconService'
 import * as styleService from '../styleService'
 import * as themePresetsService from '../themePresetsService'
 import { runCommand } from '../runCommand'
@@ -547,6 +548,12 @@ interface StaticPayload {
 // byte-identical, and an identical file is neither an addition nor a conflict here, exactly as in
 // the fonts part. What is *not* identical is a template author's own icon, and that is design,
 // which is what a template carries.
+//
+// With one exception, and it is the project's own picture: when the user chose it in this app
+// (projectIconService records that), icon.png - and icon-dark.png, which Quartz never ships - is
+// theirs and not a design, and a template does not replace it, whichever side wins. Until the
+// thirty-fifth review ("nebenbei") every package did under 'packageWins', because every package
+// carries Quartz's own icon.png. The dry run says so beforehand, the result afterwards.
 const STATIC_MAX_BYTES = 25 * 1024 * 1024
 
 const staticFiles: TemplatePart<StaticPayload> = {
@@ -573,6 +580,7 @@ const staticFiles: TemplatePart<StaticPayload> = {
   async plan(payload, { projectPath, files }) {
     const dir = staticDir(projectPath)
     const plan = emptyPlan()
+    const usersOwn = await projectIconService.userChosenStaticFiles(projectPath)
     for (const name of payload.files) {
       const target = await writableTarget(dir, name)
       if (!target) {
@@ -585,12 +593,14 @@ const staticFiles: TemplatePart<StaticPayload> = {
       }
       const incoming = files.get(`files/static/${name}`)
       if (incoming && sha(incoming) === sha(await readFile(target))) plan.notes.push(`identical:${name}`)
+      else if (usersOwn.has(name)) plan.notes.push(`projectIcon:${name}`)
       else plan.conflicts.push(name)
     }
     return plan
   },
   async apply(payload, { projectPath, strategy, files, warn }) {
     const dir = staticDir(projectPath)
+    const usersOwn = await projectIconService.userChosenStaticFiles(projectPath)
     for (const name of payload.files) {
       const data = files.get(`files/static/${name}`)
       if (!data) continue
@@ -603,6 +613,10 @@ const staticFiles: TemplatePart<StaticPayload> = {
       }
       if (existsSync(target)) {
         if (sha(data) === sha(await readFile(target))) continue
+        if (usersOwn.has(name)) {
+          warn(`projectIconKept:${name}`)
+          continue
+        }
         if (strategy === 'projectWins') {
           warn(`staticSkipped:${name}`)
           continue

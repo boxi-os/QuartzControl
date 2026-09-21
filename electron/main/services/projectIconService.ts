@@ -88,6 +88,19 @@ function fit(image: Electron.NativeImage, edge: number): Electron.NativeImage {
 }
 
 /** What the project's icon is right now, ready to render. */
+/**
+ * The files under quartz/static that are the user's picture rather than a design: icon.png only
+ * when this app recorded that the user chose it (the marker - Quartz ships its own icon.png, so the
+ * file alone says nothing), icon-dark.png whenever it exists, because Quartz ships none. A template
+ * import leaves these alone (templatePackage/parts.ts, static).
+ */
+export async function userChosenStaticFiles(projectPath: string): Promise<Set<string>> {
+  const names = new Set<string>()
+  if ((await readMarker(projectPath)).custom) names.add('icon.png')
+  if (existsSync(darkIconPath(projectPath))) names.add('icon-dark.png')
+  return names
+}
+
 export async function getProjectIcon(projectPath: string): Promise<ProjectIconInfo> {
   const path = iconPath(projectPath)
   const marker = await readMarker(projectPath)

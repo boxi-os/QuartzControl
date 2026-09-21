@@ -1776,6 +1776,8 @@ export default {
     planReplaced: '{{count}} replaced',
     planKept: '{{count}} kept as is',
     planIdentical: '{{count}} identical',
+    planProjectIconKept: 'The project picture stays: you chose it in the app, and the template does not replace it.',
+    planProjectIconKept_other: 'The project pictures stay: you chose them in the app, and the template does not replace them.',
     planOutside: '{{count}} refused',
     planOutside_other: '{{count}} refused',
     planContentIsSymlink:
@@ -1899,6 +1901,8 @@ export default {
       styleFileSkipped_other: '{{count}} existing stylesheets were left unchanged.',
       fontSkipped: '{{count}} font file of the same name but different content was left unchanged.',
       fontSkipped_other: '{{count}} font files of the same name but different content were left unchanged.',
+      projectIconKept: '{{count}} project picture was left unchanged — you chose it in the app.',
+      projectIconKept_other: '{{count}} project pictures were left unchanged — you chose them in the app.',
       fontRemoved: '{{count}} font file of the replaced rules was removed — no rule names it any more.',
       fontRemoved_other: '{{count}} font files of the replaced rules were removed — no rule names them any more.',
       staticSkipped: '{{count}} file of the same name under quartz/static was left unchanged.',

@@ -1785,5 +1785,18 @@ nachgemessen:
 hier gesammelt: `variants.mjs` nennt im Doc-Kommentar zu `stylesSource` „30 Stylesheets“ (es sind
 31); README und `variants.mjs` sagen „Inhalte mitnehmen“, die App „Mit den Beispielseiten“; der
 Assistent nennt „zwanzig kurze Seiten“ als festen Text, die Zahl im Paket wird gezählt; `--only 1`
-startet trotzdem die App und schreibt per `projects.add` ins Profil; `icon.png` und `og-image.png`
-reisen in jedem Paket und überschreiben unter „Vorlage gewinnt“ ein eigenes Favicon.
+startet trotzdem die App und schreibt per `projects.add` ins Profil. Der fünfte Punkt — `icon.png`
+reiste in jedem Paket und überschrieb unter „Vorlage gewinnt“ ein eigenes Projektbild — ist
+behoben: Was der Nutzer in der App als Projektbild gewählt hat (die Markierung von
+`projectIconService`, dazu `icon-dark.png`), ersetzt keine Vorlage mehr, und Dry-Run und Ergebnis
+sagen es.
+
+**Statt eines weiteren Reviews eine Alpha-Szene über die Oberfläche** (2026-09-21, gebaute App,
+Wegwerf-Profil, Kopie einer frischen Basis-Gegenprobe): eigenes Projektbild, eine über die App
+importierte Schrift, ein eigenes Stylesheet, das eine weitere Schriftdatei nennt; dann
+`qc-example.qtpl` mit allen zwölf Bausteinen unter „Vorlage gewinnt“ über „Vorlage wählen…“ und
+„Vorlage anwenden“. Der Dry-Run kündigt an, dass das Projektbild bleibt; das Ergebnis nennt eine
+entfernte Schriftdatei (die importierte, deren Regel die Vorlage ersetzt hat) und das unveränderte
+Projektbild; die Datei, die das eigene Stylesheet nennt, bleibt; der Snapshot vor dem Import trägt
+die entfernte Schrift und das Bild; die gebaute Website liefert das eigene Bild aus. Derselbe Lauf
+mit dem Code davor: Projektbild wortlos ersetzt, die Website zeigt Quartz' Standardbild.

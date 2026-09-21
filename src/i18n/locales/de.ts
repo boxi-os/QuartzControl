@@ -1789,6 +1789,8 @@ export default {
     planReplaced: '{{count}} wird ersetzt',
     planKept: '{{count}} bleibt unverändert',
     planIdentical: '{{count}} identisch',
+    planProjectIconKept: 'Das Projektbild bleibt: Du hast es in der App gewählt, die Vorlage ersetzt es nicht.',
+    planProjectIconKept_other: 'Die Projektbilder bleiben: Du hast sie in der App gewählt, die Vorlage ersetzt sie nicht.',
     planOutside: '{{count}} wird abgelehnt',
     planOutside_other: '{{count}} werden abgelehnt',
     planContentIsSymlink:
@@ -1912,6 +1914,8 @@ export default {
       styleFileSkipped_other: '{{count}} vorhandene Stylesheet-Dateien blieben unverändert.',
       fontSkipped: '{{count}} gleichnamige Schriftdatei mit anderem Inhalt blieb unverändert.',
       fontSkipped_other: '{{count}} gleichnamige Schriftdateien mit anderem Inhalt blieben unverändert.',
+      projectIconKept: '{{count}} Projektbild blieb unverändert — du hast es in der App gewählt.',
+      projectIconKept_other: '{{count}} Projektbilder blieben unverändert — du hast sie in der App gewählt.',
       fontRemoved: '{{count}} Schriftdatei der ersetzten Regeln wurde entfernt — keine Regel nennt sie mehr.',
       fontRemoved_other: '{{count}} Schriftdateien der ersetzten Regeln wurden entfernt — keine Regel nennt sie mehr.',
       staticSkipped: '{{count}} gleichnamige Datei unter quartz/static blieb unverändert.',

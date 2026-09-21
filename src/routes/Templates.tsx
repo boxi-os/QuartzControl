@@ -510,6 +510,7 @@ const OUTSIDE_NAMES_SHOWN = 3
 function planNotes(t: Translate, plan: TemplatePartPlan): string[] {
   const notes: string[] = []
   if (plan.notes.includes('contentIsSymlink')) notes.push(t('templates.planContentIsSymlink'))
+  if (noteCount(plan, 'projectIcon') > 0) notes.push(t('templates.planProjectIconKept', { count: noteCount(plan, 'projectIcon') }))
   const outside = plan.notes.filter((note) => note.startsWith('outside:')).map((note) => note.slice('outside:'.length))
   if (outside.length > 0) {
     // All of them would be a paragraph in a row that is one line; the count in the summary already

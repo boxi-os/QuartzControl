@@ -233,9 +233,11 @@ Mono); der Unterschied zwischen Überschrift und Text entsteht jetzt über Grö�
 
 Zum Tauschen: Eintrag ändern (Name, Dateiname, Google-CSS-URL, Gewichtsbereich) und in
 `palette.mjs` die Rolle nachziehen, dann `--only 6`. Die Datei wird geladen, im Ordner `.fonts/`
-zwischengespeichert und über `fonts.importFile` ins Projekt gelegt. Was danach keine
-`@font-face`-Regel mehr nennt, räumt Phase 6 aus `quartz/static/fonts` — der Baustein
-*Schriftdateien* packt ein, was dort liegt, nicht, was der Block nennt.
+zwischengespeichert und über `fonts.importFile` ins Projekt gelegt. Die Dateien der alten
+Schrift räumt Phase 6 aus `quartz/static/fonts` — der Baustein *Schriftdateien* packt ein, was dort
+liegt, nicht, was der Block nennt. Gelöscht wird dabei nur, was in `RETIRED_FONT_FILES`
+(`fonts.mjs`) steht **und** von keinem Stylesheet mehr genannt wird; wer `FONTS` austauscht, trägt
+die alten Dateinamen dort nach. Eine Schrift, die jemand selbst in den Ordner gelegt hat, bleibt.
 
 > **Warum die `@font-face`-Regeln danach überschrieben werden:** `importFontFile` schreibt weder
 > `font-weight` noch `font-style`. Bei einer Variable Font heißt das, dass der Browser sie als 400

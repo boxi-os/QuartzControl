@@ -49,7 +49,7 @@ import path from 'node:path'
 import { projectPath, workshopPath, WORKSHOP_ROOT } from './project-paths.mjs'
 import { PALETTE, TYPOGRAPHY, checkAll } from './example-template/palette.mjs'
 import { VARIABLE_OVERRIDES } from './example-template/variables.mjs'
-import { FONTS, fontFaceCss, resolveFontUrl } from './example-template/fonts.mjs'
+import { FONTS, RETIRED_FONT_FILES, fontFaceCss, resolveFontUrl } from './example-template/fonts.mjs'
 import { FRAMES, BREAKPOINT_WIDTHS } from './example-template/frames.mjs'
 import { LAYOUT_CONFIG } from './example-template/layout.mjs'
 import {
@@ -899,24 +899,6 @@ async function buildTemplate() {
         done()
       }
 
-      // Was keine Regel mehr nennt, muss weg, und zwar hier: Der Baustein `fonts` packt ein, was
-      // in `quartz/static/fonts` liegt, nicht, was der Block nennt. Beim Wechsel der Schriften am
-      // 2026-09-20 blieben sonst vier Dateien von Instrument Sans, Inter und JetBrains Mono neben
-      // den drei neuen liegen und reisten mit - 300 KB, die keine `@font-face`-Regel erreicht.
-      //
-      // Die App räumt dasselbe vor jedem Bau auf (die Bau-Tür in buildService), aber dieses Skript
-      // baut mit `npx quartz build` daneben und nicht durch sie hindurch.
-      const fontDir = path.join(WORKSHOP, 'quartz/static/fonts')
-      if (fs.existsSync(fontDir)) {
-        const wanted = new Set(FONTS.map((font) => font.file))
-        const stale = fs.readdirSync(fontDir).filter((name) => !wanted.has(name))
-        if (stale.length) {
-          step(`${stale.length} Datei(en) aus früheren Schriften`)
-          for (const name of stale) fs.rmSync(path.join(fontDir, name))
-          done(stale.join(', '))
-        }
-      }
-
       step('@font-face korrigieren')
       // importFile writes no font-weight and no font-style (fontService.ts:30). With a variable
       // font that means the whole axis is ignored and every bold is synthesised; with two cuts of
@@ -942,6 +924,8 @@ async function buildTemplate() {
       )
       done(fixed ? `${FONTS.length} Regeln mit font-weight` : 'Block nicht gefunden!')
       if (!fixed) throw new Error('der fonts-Block in custom.scss wurde nicht gefunden')
+
+      retireOldFontFiles()
     }
 
     /* ------------------------------------------------------------- 7 · variables */
@@ -1086,6 +1070,53 @@ function dropSnippetsThatDoNotShip() {
   }
   fs.rmSync(dir, { recursive: true })
   log('  Schnipsel aus der Werkstatt genommen - sie gehören der Website, nicht dem Paket')
+}
+
+/**
+ * Räumt die Schriftdateien früherer Fassungen aus der Werkstatt. Nötig ist das, weil der Baustein
+ * `fonts` einpackt, was in `quartz/static/fonts` liegt, nicht, was der Block nennt: Beim Wechsel
+ * am 2026-09-20 blieben sonst vier Dateien von Instrument Sans, Inter und JetBrains Mono neben den
+ * drei neuen liegen und reisten mit.
+ *
+ * Bis zum 35. Review (Befund 6) löschte der Schritt jede Datei, deren Name nicht in FONTS stand,
+ * mit der Begründung „was keine Regel mehr nennt“ - gefragt hat er keine Regel. Eine Schrift, die
+ * jemand dort abgelegt und in einem eigenen Stylesheet eingebunden hatte, war damit weg, ohne
+ * Snapshot, denn das geht an der App vorbei. Jetzt gelten zwei Bedingungen zugleich: Die Datei
+ * steht in RETIRED_FONT_FILES (dieses Skript hat sie einmal hingelegt), und kein Stylesheet unter
+ * `quartz/styles` nennt ihren Namen noch. Der Schritt läuft deshalb *nach* der Korrektur des
+ * Blocks - vorher stehen die alten Regeln noch darin.
+ *
+ * Die Bau-Tür der App (deleteUnreferencedFontFiles) ist nicht „dasselbe“, wie hier einmal stand:
+ * Sie löscht nur, worauf gerade entfernte Regeln zeigten.
+ */
+function retireOldFontFiles() {
+  const fontDir = path.join(WORKSHOP, 'quartz/static/fonts')
+  if (!fs.existsSync(fontDir)) return
+  const current = new Set(FONTS.map((font) => font.file))
+  const candidates = RETIRED_FONT_FILES.filter((name) => {
+    if (current.has(name)) return false
+    const file = path.join(fontDir, name)
+    return fs.existsSync(file) && fs.lstatSync(file).isFile()
+  })
+  if (!candidates.length) return
+
+  const styleDir = path.join(WORKSHOP, 'quartz/styles')
+  const sources = fs
+    .readdirSync(styleDir, { recursive: true })
+    .map((name) => path.join(styleDir, String(name)))
+    .filter((file) => /\.s?css$/.test(file) && fs.statSync(file).isFile())
+    .map((file) => fs.readFileSync(file, 'utf-8'))
+  const named = (name) => sources.some((source) => source.includes(name))
+
+  const stale = candidates.filter((name) => !named(name))
+  const kept = candidates.filter(named)
+  step(`${candidates.length} Datei(en) aus früheren Schriften`)
+  for (const name of stale) fs.rmSync(path.join(fontDir, name))
+  done(
+    [stale.length && `entfernt: ${stale.join(', ')}`, kept.length && `bleiben, weil ein Stylesheet sie nennt: ${kept.join(', ')}`]
+      .filter(Boolean)
+      .join('; ')
+  )
 }
 
 /* ===================================================== 3 · frames (written twice, on purpose) */

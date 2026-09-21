@@ -24,6 +24,18 @@
 // Drei Dateien für zwei Familien: Noto Sans trägt Überschriften und Fließtext (palette.mjs sagt,
 // warum), also braucht es davon den aufrechten und den kursiven Schnitt; Noto Sans Mono steht im
 // Code und braucht kein Kursiv, weil nichts darin kursiv gesetzt wird.
+// Die Dateien, die frühere Fassungen von FONTS genannt haben - aus der Geschichte dieser Datei
+// abgelesen (`git log -p`), nicht aus der Erinnerung. Phase 6 räumt nur diese weg: Eine Datei, die
+// hier nicht steht, hat nicht dieses Skript in `quartz/static/fonts` gelegt, und wer löscht,
+// löscht schmal. Wer FONTS austauscht, trägt die alten Namen hier nach.
+export const RETIRED_FONT_FILES = [
+  // bis 2026-09-20: Instrument Sans, Inter, JetBrains Mono
+  'instrument-sans-latin-400-700.woff2',
+  'inter-latin-400-700.woff2',
+  'inter-latin-italic-400-700.woff2',
+  'jetbrains-mono-latin-400-700.woff2'
+]
+
 export const FONTS = [
   {
     family: 'Noto Sans',

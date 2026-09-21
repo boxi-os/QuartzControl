@@ -173,11 +173,13 @@ Pakete tragen seither keine Schnipsel mehr (`dropSnippetsThatDoNotShip()` vor Ph
 dieselbe Frage stellt sich für `icon.png` und `og-image.png`, die jedes Paket aus Quartz' Gerüst
 mitnimmt: Ein Projekt mit eigenem Favicon verliert es an derselben Stelle.
 
-**Und nach einem Import in das Navigations-Handbuch den Explorer wieder aus.** Die Doku-Pakete
-schalten ihn ein (`doku.mjs`, `ENABLED`), weil die App-Website und zwei Plugin-Handbücher mit ihm
-navigieren; das Navigations-Handbuch navigiert mit seinen eigenen quartz-navigations-Instanzen. Am
-2026-09-21 lief es umgekehrt: Die Pakete trugen den Explorer aus, geerbt vom Example, und drei
-Websites standen einen Tag lang ohne jede Navigation da.
+**Das Navigations-Handbuch bekommt die Doku-Pakete nur ohne den Baustein „Plugins“.** Seit dem
+2026-09-21 tragen beide Doku-Pakete dieselben zwei quartz-navigations-Einträge wie das Example
+(Akkordeon links, Pager unten), und der Baustein `plugins` ordnet gleichnamige Einträge nach ihrer
+Position zu — im Navigations-Handbuch überschriebe er zwei seiner fünf eigenen Instanzen, die dort
+die Vorführung des Plugins sind. Vorher gingen die Pakete ohne quartz-navigations und mit dem
+Explorer des Example, und als das Example ihn abschaltete, standen die App-Website und zwei
+Plugin-Handbücher einen Tag lang ohne jede Navigation da.
 
 **Und nach dem Import die Updates-Seite.** Ein `github:`-Plugin, das im Projekt schon liegt, behält
 beim Import seine Fassung (`parts.ts` installiert nur, was fehlt), während die Stylesheets des

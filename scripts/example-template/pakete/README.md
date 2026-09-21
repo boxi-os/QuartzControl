@@ -28,10 +28,13 @@ zwei Dateien, alles andere außer `createdAt` ist gleich (`diff -r` der entpackt
 Um 09:16 noch einmal, mit dem `base.scss`, das den Fokusring in den Seitenspalten nicht mehr
 abschneidet (Befund 2 derselben Runde). Um 10:26 ein drittes Mal, mit den Stylesheets aus
 Befund 9: Die offene Suche liegt über Graph-Vollansicht und Burger, und Burger und „Los“-Knopf
-haben ihren Hover zurück. Am selben Tag ein viertes Mal: Beide
-trugen den **Explorer abgeschaltet**, geerbt vom Example, und ließen nach dem Import der Nacht drei
-Websites ohne Navigation (`doku.mjs`, `ENABLED`). Gegen die Fassung davor unterscheidet sich genau
-dieser eine Schalter.
+haben ihren Hover zurück. Am selben Tag noch einmal: Beide tragen
+jetzt **quartz-navigations** wie das Example (Akkordeon `menue` und Pager `seiten-pager`), der
+Explorer ist aus. Vorher navigierten die Doku-Websites mit dem Explorer, und den hatte das Example
+abgeschaltet — nach dem Import der Nacht standen drei Websites ohne Navigation da. Gegen die
+Fassung davor: zwei Einträge dazu, ein Schalter anders, sonst nichts (Eintrag für Eintrag
+verglichen). Das Navigations-Handbuch bekommt sie nur ohne den Baustein „Plugins“
+(`docs/release.md`).
 
 ## Warum hier und nicht unter `resources/templates/`
 

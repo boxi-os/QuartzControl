@@ -144,11 +144,15 @@ export const VARIANTS = {
     // Derselbe Vault wie beim Example. Das Projekt der Variante ist eine Werkstatt, keine Website -
     // ihr Inhalt ist nur da, damit Phase 9 etwas zu bauen hat, und reist nie mit.
     content: { mode: 'vault', vault: EXAMPLE_VAULT, ships: false },
-    // Ohne quartz-navigations, und das ist eine Sicherung, keine Auslassung. Der Baustein
-    // `plugins` schlüsselt gleichnamige Einträge nach ihrer Position (parts.ts, instanceKeys):
-    // Ein Doku-Paket mit zwei `quartz-navigations`-Einträgen überschriebe beim Import in das
-    // Navigations-Handbuch - das genau diese Variante anwendet - zwei seiner fünf Instanzen.
-    plugins: [LAYOUT_BOX, MULTILANGUAGE],
+    // Mit quartz-navigations, wie Example und Basis: das Akkordeon links (am Telefon die
+    // Schublade) und „Zurück“/„Weiter“ unter dem Text, denn ein Handbuch wird der Reihe nach
+    // gelesen. Bis zum 2026-09-21 stand hier das Gegenteil, als Sicherung: Der Baustein `plugins`
+    // schlüsselt gleichnamige Einträge nach ihrer Position (parts.ts, instanceKeys), und ein Import
+    // in das Navigations-Handbuch überschriebe zwei seiner fünf Instanzen. Die Sicherung ist jetzt
+    // eine Regel in docs/release.md: Das Navigations-Handbuch bekommt diese Pakete nur ohne den
+    // Baustein „Plugins“. Ohne sie navigierten die übrigen drei Websites mit dem Explorer - und als
+    // das Example ihn abschaltete, mit gar nichts mehr.
+    plugins: [LAYOUT_BOX, MULTILANGUAGE, NAVIGATIONS],
     stylesSource: false,
     builtin: false,
     published: false,
@@ -156,7 +160,7 @@ export const VARIANTS = {
       ...data,
       patches: doku.patches(data.patches, 'doku'),
       boxes: doku.boxes(data.boxes),
-      navigations: []
+      navigations: data.navigations
     }),
     describe: ({ frames }) => dokuDescription(frames, '')
   },
@@ -167,9 +171,10 @@ export const VARIANTS = {
     workshop: () => workshopPath('plugin-vorlage'),
     control: () => workshopPath('plugin-gegenprobe'),
     content: { mode: 'vault', vault: EXAMPLE_VAULT, ships: false },
-    // Ohne quartz-navigations, aus demselben Grund wie bei `doku` - hier wiegt er schwerer, weil
-    // das Navigations-Handbuch genau diese Variante anwendet.
-    plugins: [LAYOUT_BOX, MULTILANGUAGE],
+    // Mit quartz-navigations wie `doku`. Das Navigations-Handbuch wendet genau diese Variante an,
+    // aber ohne den Baustein „Plugins“ (docs/release.md) - seine fünf eigenen Instanzen sind die
+    // Vorführung des Plugins.
+    plugins: [LAYOUT_BOX, MULTILANGUAGE, NAVIGATIONS],
     stylesSource: false,
     builtin: false,
     published: false,
@@ -177,7 +182,7 @@ export const VARIANTS = {
       ...data,
       patches: doku.patches(data.patches, 'plugin'),
       boxes: doku.boxes(data.boxes),
-      navigations: []
+      navigations: data.navigations
     }),
     describe: ({ frames }) =>
       dokuDescription(frames, ' Ohne Graphansicht, für Anleitungen, die sich der Reihe nach lesen.')

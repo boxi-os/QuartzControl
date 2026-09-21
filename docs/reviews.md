@@ -1805,9 +1805,13 @@ mit dem Code davor: Projektbild wortlos ersetzt, die Website zeigt Quartz' Stand
 Doku-Pakete in der Nacht hatte auf der App-Website und zwei Plugin-Handbüchern den Explorer
 abgeschaltet — geerbt vom Example, das auf quartz-navigations umgestiegen war — und damit jede
 Navigation. Weder das Review noch die Befunde danach haben es gesehen, weil alle nach dem gesucht
-hatten, was der Import *überschreibt*, nicht nach einem Schalter, der umgelegt wird. Behoben in
-`doku.mjs` (`ENABLED`), die drei Websites über die App wieder eingeschaltet und veröffentlicht, beide
-Pakete neu. **Offen und neu gemessen:** Im Explorer schneiden seine eigenen Rollbereiche
-(`.explorer-ul`, `.explorer`) die Fokusringe an — 13 bis 19 von 11 bis 20 fokussierbaren Elementen
-der linken Spalte, live in Chrome. Das Stylesheet ist älter als diese Runde; Befund 2 hatte nur die
-Spalten behoben, und das Review hatte genau diese Frage offengelassen.
+hatten, was der Import *überschreibt*, nicht nach einem Schalter, der umgelegt wird. Zuerst mit
+eingeschaltetem Explorer geflickt; dann, auf Wunsch des Nutzers, wie gemeint: **Alle vier
+Handbuch-Websites navigieren jetzt über quartz-navigations** wie Example und Basis — die
+Doku-Varianten tragen Akkordeon und Pager, der Import nur des Bausteins „Plugins“ lief vorher an
+Kopien der drei Projekte (Eintrag für Eintrag: zwei Navigationen dazu, Explorer aus, sonst nichts),
+live gemessen auf allen vier in beiden Sprachen und bei 390 px. Das Navigations-Handbuch behält
+seine fünf eigenen Instanzen und bekommt die Pakete nur ohne „Plugins“ (`docs/release.md`).
+**Offen:** Im Explorer schneiden seine eigenen Rollbereiche (`.explorer-ul`, `.explorer`) die
+Fokusringe an — gemessen, als er kurz wieder an war. Er ist jetzt überall aus; wer ihn einschaltet,
+bekommt das mit. Das Stylesheet ist älter als diese Runde.

@@ -288,7 +288,10 @@ hat.
   `qc-example.qtpl`; `minimal-lesbar.qtpl` bleibt im Vorlagen-Repo **eingefroren** liegen, weil
   jede vor diesem Tag ausgelieferte App genau diese Adresse fragt.
 - **Die Example-Website navigiert über quartz-navigations** (Akkordeon links mit Schublade, Pager
-  unter dem Text). Der Explorer ist abgeschaltet und bleibt gestaltet. Eine Kapitelleiste im Kopf
+  unter dem Text), **seit dem 2026-09-21 auch die vier Handbuch-Websites** — die Doku-Pakete
+  trugen bis dahin den Explorer, und als das Example ihn abschaltete, gingen drei Websites ohne
+  Navigation online. Das Navigations-Handbuch bekommt die Doku-Pakete nur ohne den Baustein
+  „Plugins“ (`docs/release.md`). Der Explorer ist abgeschaltet und bleibt gestaltet. Eine Kapitelleiste im Kopf
   stand einen Nachmittag lang und ist an einer Rechnung gescheitert, die kein CSS löst: sieben
   Kapitelnamen sind 880 px, der Kopf hat neben Marke und Bedienelementen 680 px.
 - **Drei Befunde gingen ins Plugin zurück** (quartz-navigations 0.3.1): `persistState` schloss mit

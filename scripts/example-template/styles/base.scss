@@ -224,6 +224,8 @@ html {
     .qgframe-area-right {
       // Der Roller braucht keinen Schalter: Steht `--tpl-col-right-height` auf `none`, läuft
       // nichts über, und dann rollt auch nichts.
+      // Beschnitten wird trotzdem, an der Polsterkante - warum das den Fokusring trifft und wie die
+      // Kante nach außen rückt, steht bei `.qgframe-area-left` weiter unten.
       overflow-y: auto;
       overscroll-behavior: contain;
       mask-image: var(--tpl-col-right-mask);
@@ -744,21 +746,32 @@ h6 {
   // Ob diese Spalte stehen bleibt, entscheiden drei Variablen (variables.mjs, `tpl-col-right-*`).
   // Hier stehen keine Werte mehr, sondern nur, wo sie hingehören.
   .qgframe-area-right {
+    --col-ring-reach: calc(var(--tpl-focus-width) + var(--tpl-focus-offset));
     position: var(--tpl-col-right-position);
     // Below the header, not under it. --tpl-header-h is the bar's height, computed from the same
     // two lengths the bar itself uses, so this offset can never disagree with it. Ohne
     // `position: sticky` ist die Zeile wirkungslos und braucht deshalb keinen eigenen Schalter.
-    top: calc(var(--tpl-header-h) + var(--tpl-space-lg));
+    // Die Ring-Reichweite zieht `top` ab, weil die Kante um sie nach außen rückt (unten).
+    top: calc(var(--tpl-header-h) + var(--tpl-space-lg) - var(--col-ring-reach));
     align-self: start;
     max-height: var(--tpl-col-right-height);
-    // Only the lower edge fades, and only the lower edge is padded: the upper one is covered by a
-    // heading that stays put.
+    // Dieselbe Antwort wie bei `.qgframe-area-left` weiter unten: Die Spalte rollt, also
+    // beschneidet sie an ihrer Polsterkante, und die Einträge des Inhaltsverzeichnisses stehen
+    // bündig daran - gemessen verloren 4 von 5 fokussierbaren Elementen links und rechts ihren
+    // Ring, und der Knopf „Inhaltsverzeichnis“ ganz oben auch oben. Die Kante rückt um die
+    // Reichweite des Rings nach außen, der Inhalt bleibt stehen.
+    margin-block-start: calc(-1 * var(--col-ring-reach));
+    margin-inline: calc(-1 * var(--col-ring-reach));
+    padding-inline: var(--col-ring-reach);
+    // Only the lower edge fades, and only the lower edge is padded for it: the upper one is covered
+    // by a heading that stays put. Oben steht nur die Reichweite des Rings - die Überschrift ist
+    // ein Knopf.
     //
     // Eine Maske beschneidet auch ein `position: fixed` in ihrem Stapelkontext. Was das für die
     // Vollansicht des Graphen heißt und wie es zurückgenommen wird, steht in aside-graph.scss.
     mask-image: var(--tpl-col-right-mask);
     -webkit-mask-image: var(--tpl-col-right-mask);
-    padding-block: 0 var(--tpl-fade);
+    padding-block: var(--col-ring-reach) var(--tpl-fade);
   }
 
   // Scrolling *inside* the column used to take everything with it - the panel's own heading
@@ -915,8 +928,21 @@ h6 {
 // x=36), rechts erst ab 1201px; dazwischen liegt der rechte Bereich unter dem Text. Unterhalb von
 // 901 sind beide volle Bänder unter dem Artikel, wo Stehenbleiben nichts bedeutet.
 //
-// In der Vorgabe ist hier alles aus (`static` / `none` / `none`), diese Regeln ändern also nichts
-// an dem, was die Vorlage zeigt. Sie machen nur erreichbar, was vorher gar nicht ging.
+// In der Vorgabe sind die drei Schalter aus (`static` / `none` / `none`). Das heißt **nicht**,
+// dass diese Regel dann nichts tut, und hier stand bis zum 35. Review genau das: `overflow-y`,
+// `align-self` und das Polster hängen an keinem Schalter. Gemessen an der gebauten Website:
+// `overflow: auto/auto`, `align-self: start`, 14px Polster unten, auch bei `static`. Die Spalte
+// ist damit ein Rollcontainer, der nie rollt — und ein Rollcontainer beschneidet an seiner
+// Polsterkante. Die Zeilen des Akkordeons stehen bündig an dieser Kante, also verlor jeder
+// Fokusring links und rechts, und beim ersten Eintrag auch oben, seine äußeren 4px.
+//
+// `overflow` bedingt zu setzen geht mit einer Custom Property nicht, und der Roller muss bleiben,
+// wenn jemand die Spalte klebrig macht. Also rückt die Kante statt des Inhalts: Die Spalte wächst
+// um die Reichweite des Rings (Breite + Versatz) nach außen und polstert dieselbe Strecke wieder
+// ein. Der Inhalt steht, wo er stand (gemessen: erstes Kind vorher und nachher bei 20..320), die
+// Beschneidung liegt 4px weiter draußen, und `top` zieht die Strecke ab, damit eine klebende
+// Spalte ihren Inhalt an derselben Stelle hält. `align-self` und das untere Polster bleiben
+// wirksam; beides ist in der Vorgabe unsichtbar, weil die Spalte keinen eigenen Grund hat.
 //
 // Ein Wort zur Höhe, weil es die Entscheidung trägt: Der Example hat hier 1637px mit offenem
 // Kapitel und 2555px auf der Startseite, bei 900px Fensterhöhe. „Bleibt stehen" heißt dort
@@ -924,16 +950,20 @@ h6 {
 // Basis-Template kommt auf 696px und stünde einfach still.
 @media (min-width: 901px) {
   .qgframe-area-left {
+    --col-ring-reach: calc(var(--tpl-focus-width) + var(--tpl-focus-offset));
     position: var(--tpl-col-left-position);
-    top: calc(var(--tpl-header-h) + var(--tpl-space-lg));
+    top: calc(var(--tpl-header-h) + var(--tpl-space-lg) - var(--col-ring-reach));
     align-self: start;
+    margin-block-start: calc(-1 * var(--col-ring-reach));
+    margin-inline: calc(-1 * var(--col-ring-reach));
+    padding-inline: var(--col-ring-reach);
     max-height: var(--tpl-col-left-height);
     // Wie rechts: ohne Deckel läuft nichts über, also rollt ohne ihn auch nichts.
     overflow-y: auto;
     overscroll-behavior: contain;
     mask-image: var(--tpl-col-left-mask);
     -webkit-mask-image: var(--tpl-col-left-mask);
-    padding-block: 0 var(--tpl-fade);
+    padding-block: var(--col-ring-reach) var(--tpl-fade);
   }
 }
 

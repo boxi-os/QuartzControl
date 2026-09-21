@@ -547,6 +547,26 @@ Projektwurzel.
   nächste nicht angebaut wird; die eine Bau-Tür deckt sie alle. Stimmen die Zahlen beim Bauen
   nicht, wird nichts geraten: alles in den einfachen Bereich, Warnung ins Log. Messungen in
   [`layout-frames.md`](decisions/layout-frames.md).
+- **Eine Priorität ordnet innerhalb eines Bereichs, nicht zwischen Bereichen.** Zwei Komponenten
+  auf derselben Position können in verschiedenen Rasterzeilen landen, sobald eine von ihnen in
+  einer Gruppe sitzt, die das Frame als eigenen Bereich führt — die Priorität entscheidet dann gar
+  nichts mehr über ihr Verhältnis. Der Pager des Example stand auf 5 und damit als erstes Kind von
+  `after-body`, erschien aber unter den zwei Kästen, weil deren Gruppe `custom-8` eine Zeile
+  darüber liegt. Wer eine Reihenfolge über Prioritäten begründet, prüft vorher, ob beide Dinge im
+  selben Bereich sind; sonst begründet er etwas, das der Bau nicht hergibt.
+- **Eine Maske beschneidet auch ein `position: fixed` in ihrem Stapelkontext.** `mask-image`
+  erzeugt einen Stapelkontext, und was darin gemalt wird, ist auf die Maske beschnitten — auch ein
+  Element, dessen Rechteck korrekt das ganze Fenster ist. Die Vollansicht des Graphen stand
+  deshalb als 120px breiter Streifen in der rechten Spalte, obwohl sie `inset: 0` und `z-index:
+  9999` trug. Der zweite Teil desselben Falls: Eine klebende Spalte ist ebenfalls ein
+  Stapelkontext, also zählt nach außen nicht die 9999, sondern wo die Spalte steht. Wer ein
+  Overlay in einem Bereich rendert, fragt beide Fragen — beschneidet ihn etwas, und wo steht sein
+  Kontext.
+- **Was ein Baustein einpackt, ist der Ordner, nicht die Regel.** Der Teil `fonts` sammelt, was in
+  `quartz/static/fonts` liegt, nicht, was der `@font-face`-Block nennt. Beim Wechsel der Schriften
+  blieben deshalb vier Dateien der alten Familien neben den drei neuen liegen und reisten mit —
+  300 KB, die keine Regel erreicht. Wer eine Menge austauscht, räumt die alte weg, und zwar dort,
+  wo der Baustein liest.
 - **Erzeugtes CSS gehört in die Kaskadenschicht dessen, was es nachspricht.** Quartz rendert
   `frame.css` als *ungeschichtetes* `<style>` am Anfang des `<body>`; sein eigenes und das
   Plugin-CSS liegen in `@layer quartz-base`, das `custom.scss` des Projekts dahinter ungeschichtet.
@@ -762,6 +782,20 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   existiert - sonst gewinnt ein Torso gegen eine heile Kopie. Geschrieben wird so etwas über
   Temp-Datei, `fsync` und `rename` (`jsonStore.ts` ist das Muster), und was sich nicht lesen lässt,
   wird weggeräumt statt übersprungen, damit der reparierende Weg nicht blockiert bleibt.
+- **Wer fremdem Code eine Lücke nachsagt, liest erst, was er schon tut.** Drei Regeln in
+  `nav-navigations.scss` standen mit der Begründung da, das Plugin gestalte dies oder jenes nicht:
+  den Unterstrich am aktiven Reiter, das native `<select>`, die Kante der Spaltenüberschrift. Zwei
+  der drei waren falsch — das Plugin tut beides, und die Hälfte der Deklarationen schrieb einen
+  Wert durch sich selbst. Aufgefallen ist es erst, als dieselben Befunde für das Plugin
+  aufgeschrieben werden sollten und seine Quelle Zeile für Zeile gelesen wurde. Eine Regel, deren
+  Grund „das andere tut es nicht" lautet, ist keine Regel, bis jemand nachgesehen hat.
+- **Eine Vorlage zu bauen ist der schärfste Test für das Plugin, auf dem sie steht.** Drei Befunde
+  dieser Art gingen an quartz-navigations zurück, und keiner davon war in seinen eigenen Tests zu
+  sehen: Zwei Optionen, die einzeln stimmen, widersprechen sich zusammen (`persistState` schließt
+  mit `exclusive` den Ordner der gelesenen Seite); ein Platzhalter, der auf genau einer Seite einer
+  Website erscheint, hat keine Regel; ein Deckel von 48 % trifft erst an einer Breite, die ein Test
+  nicht besucht. Wer beides in der Hand hat, führt den Fund dorthin zurück, wo er jede Website
+  erreicht, statt ihn je Vorlage zu umgehen.
 - **Gemessen, nicht angenommen.** Jede Regel hier steht in `docs/decisions/` mit dem Experiment, das
   sie erzwungen hat. Neue Regeln genauso.
 - **Wer einen Nutzen misst, misst auch den Preis.** „Die gleichen Höhen machen ruhigere

@@ -119,7 +119,14 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   Playwright und schreibt alles über `window.quartzGui.*`, also durch dieselben IPC-Pfade wie ein
   Klick — kein zweiter Frame-Codegen, kein zweiter SCSS-Writer. Phasen einzeln über
   `--only 3,4,5`, die WCAG-Messung allein über `--check-contrast` (93 Paare, braucht weder App noch
-  Projekt). Den Rückweg geht `--sync`: Es holt die 30 Stylesheets und die Schnipsel aus dem Projekt
+  Projekt). **Vier Varianten** (`--variant example|basic|doku|plugin`), deren Stammdaten als
+  Tabelle in `example-template/variants.mjs` stehen und deren Gestaltungsentscheidungen als Aufsatz
+  daneben (`doku.mjs`, `basic.mjs`) — ein Zwei-Wege-Schalter beantwortete für die vierte jede Frage
+  falsch. Zwei Felder der Tabelle sind Wächter: `allowFresh` sperrt `--fresh` für `example`, dessen
+  Ziel das *echte* Projekt samt Vault-Symlink ist, und `stylesSource` verweigert `--sync` und
+  `--check-sync` jeder Variante außer `example`, weil deren Werkstatt eine Kopie ist, die derselbe
+  Lauf geschrieben hat — „deckungsgleich“ wäre dort eine Tautologie, die sich als Auskunft liest.
+  Den Rückweg geht `--sync`: Es holt die 31 Stylesheets und die Schnipsel aus dem Projekt
   zurück ins Repo, denn dort wird gearbeitet und die Kopie hier driftet sonst still (gemessen am
   2026-09-05). `--check-sync` vergleicht nur und schreibt nichts — der Aufruf für den Fall, dass
   noch nicht feststeht, welche Seite vorn ist. Er existiert, weil die Drift auch andersherum
@@ -132,8 +139,10 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   Beispielprojekt selbst (bis 2026-09-04 hieß es `quartz-vorlage-werkstatt`); alles, was ein Lauf
   neu anlegen darf — die Werkstätten der Varianten, die Gegenprobe —, entsteht unter
   `<Projektwurzel>/werkstatt/`, weil das Skript seine Werkstatt per `projects.add` in die App-Liste
-  einträgt. Was dabei gefunden wurde, steht in
-  `scripts/example-template/BEFUNDE.md`
+  einträgt. **Wer Phase 2 laufen lässt, lässt Phase 4 mit**: `quartz plugin add` hängt der Config
+  einen Eintrag mit den Vorgabeoptionen des Manifests an, und herausgefiltert wird der erst von
+  Phase 4 — am 2026-09-21 gingen so drei statt zwei Navigationseinträge in den Export. Was dabei
+  gefunden wurde, steht in `scripts/example-template/BEFUNDE.md`
 
 - `node scripts/stagger-vault-mtimes.mjs [--list] [--apply] [--restore <datei>]` — staffelt die
   Änderungszeiten des Beispiel-Vaults nach der Gliederung, eine Minute je Schritt, kleine Nummer =
@@ -258,6 +267,40 @@ Adresse nachgemessen; die relativen Schrift-URLs waren dort schon seit dem Deplo
 **Der Alpha-Test ist gefahren** (A1–A4, B1–B2, C1): Ergebnisse in
 [`docs/ALPHA-2026-09-20.md`](docs/ALPHA-2026-09-20.md), Checkliste und Durchgänge in
 [`docs/alpha-test.md`](docs/alpha-test.md). Zwei Befunde, beide behoben.
+
+**Danach, am 2026-09-20 und -21, eine Runde ohne Review dahinter: die Vorlagen.** Was dauerhaft
+gilt, steht in [`docs/conventions.md`](docs/conventions.md); hier nur, was sich am Stand geändert
+hat.
+
+- **Das eingebaute Paket ist nicht mehr das Example.** Wer ein Projekt anlegte, bekam entweder ein
+  fremdes Handbuch mit 301 Inhaltsdateien oder — ohne das Häkchen — eine Gestaltung ohne einen
+  einzigen Satz. `qc-basic.qtpl` („Basis-Template") ist die vierte Variante und seither das, was
+  `builtinTemplateService.ts` holt: dieselbe Gestaltung, je eigenem Plugin ein oder zwei
+  Komponenten, zwanzig Seiten in zwei Sprachen, **trotzdem alle 31 Stylesheets** — wer eine
+  abgeschaltete Komponente einschaltet, bekommt sie fertig. Das Example heißt jetzt
+  `qc-example.qtpl`; `minimal-lesbar.qtpl` bleibt im Vorlagen-Repo **eingefroren** liegen, weil
+  jede vor diesem Tag ausgelieferte App genau diese Adresse fragt.
+- **Die Example-Website navigiert über quartz-navigations** (Akkordeon links mit Schublade, Pager
+  unter dem Text). Der Explorer ist abgeschaltet und bleibt gestaltet. Eine Kapitelleiste im Kopf
+  stand einen Nachmittag lang und ist an einer Rechnung gescheitert, die kein CSS löst: sieben
+  Kapitelnamen sind 880 px, der Kopf hat neben Marke und Bedienelementen 680 px.
+- **Drei Befunde gingen ins Plugin zurück** (quartz-navigations 0.3.1): `persistState` schloss mit
+  `exclusive` den Ordner der gelesenen Seite, der Pager zeigte einen leeren Kasten, und er quetschte
+  zwei Knöpfe in 48 % einer Telefonzeile. Eine Vorlage zu bauen ist der schärfste Test für das
+  Plugin, auf dem sie steht.
+- **Schriften:** Noto Sans und Noto Sans Mono, zwei Familien statt drei, drei Dateien statt vier.
+  Phase 6 räumt jetzt auf — der Baustein `fonts` packt ein, was im Ordner liegt, nicht, was der
+  Block nennt.
+- **66 CSS-Variablen** (waren 45): die dreizehn Callout-Farben zogen aus `body-callouts.scss` in
+  den Variablen-Tab, dazu der Scrim der Schublade und sechs Schalter, mit denen jede Seitenspalte
+  stehen bleibt oder mitläuft.
+- **Fünf Websites sind auf diesem Stand veröffentlicht**: die App-Website, die drei
+  Plugin-Handbücher und die Example-Vorführung. Die zwei Doku-Pakete sind neu gebaut; das
+  Benutzerhandbuch nennt an fünf Stellen je Sprache den richtigen Knopf.
+- **Gegengeprüft in drei Engines.** Chromium und WebKit auf dem Mac, Gecko in der Debian-VM — auf
+  dem Mac startet Firefox nicht, und die VM braucht Playwrights eigenen Build, nicht ihr
+  System-Firefox. Sieben Messungen, alle drei Engines einig
+  ([`docs/decisions/styles-and-fonts.md`](docs/decisions/styles-and-fonts.md)).
 
 **Aus Gruppe D sind die Pakete und glibc nachgezogen** (2026-09-20,
 [`docs/GRUPPE-D-2026-09-20.md`](docs/GRUPPE-D-2026-09-20.md)): `npm run dist` ist seit dem

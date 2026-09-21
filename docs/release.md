@@ -132,28 +132,27 @@ Installationen ihre Online-Vorlage. Kosten fürs Liegenlassen: eine Datei.
 Die Example-Vorlage heißt seither `qc-example.qtpl` und ist kein eingebautes Paket mehr. Sie dort
 abzulegen ist optional — die App fragt sie nicht, es ist ein Link für Menschen.
 
-**Offen, Stand 2026-09-20 abends:**
+**Stand 2026-09-21: nichts offen.** Hier stand bis zum 35. Review (Befund 11) eine Liste „Offen,
+Stand 2026-09-20 abends“ mit sechs Punkten, von denen fünf in derselben Nacht erledigt worden
+waren — und diese Datei schickte den nächsten Leser in Arbeit, die getan war. Nachgemessen am
+2026-09-21, je Punkt:
 
-1. `qc-basic.qtpl` nach `boxi-os/quartzcontrol-templates` pushen. Bis dahin antwortet die Adresse
-   mit 404, die App fällt auf die mitgelieferte Kopie zurück (gemessen: sie tut es, Quelle
-   „bundled“), und ein Vorlagen-Update ohne App-Release ist nicht möglich.
-2. Danach `npm run template:example -- --variant basic --check-sync` — erst dann sagt es „3 Kopien
-   byte-gleich“ statt „die veröffentlichte ungeprüft“.
-3. `curl -sfI https://raw.githubusercontent.com/boxi-os/quartzcontrol-templates/main/qc-basic.qtpl`
-   nach dem Push. Das ist die einzige Messung, die sagt, dass eine ausgelieferte App die Datei
-   findet; alles davor prüft nur, was in diesem Repo liegt.
-4. `minimal-lesbar.qtpl` dort **nicht** löschen (Begründung oben).
-5. Das Benutzerhandbuch nennt die eingebaute Vorlage an **je sieben Stellen** in beiden Sprachen
-   „Beispielvorlage" bzw. „example template" und beziffert die Beispielseiten auf „rund 270"
-   (`2-projekte/02-ein-neues-projekt-anlegen.md:63`). Beides stimmt nicht mehr: Der Assistent sagt
-   seit dem 2026-09-20 „Basis-Template" und bringt zwanzig Seiten mit. `check:handbook` sieht das
-   nicht — es prüft Blockzitate, und diese Nennungen stehen im Fließtext. Der Vault liegt außerhalb
-   dieses Repos und wird online gepflegt.
-6. Die zwei Doku-Pakete (`doku.qtpl`, `plugin.qtpl` in `scripts/example-template/pakete/`) sind
-   vom 2026-09-10 und kennen weder `nav-navigations.scss` noch die dreizehn Callout-Tokens. Drei
-   echte Websites wenden sie an — die der App und die zwei Plugin-Handbücher. Ein Neubau braucht
-   je ein frisches Werkstattprojekt (`--variant doku` bzw. `plugin`, Phase 0 klont und installiert)
-   und danach einen Import in drei Projekte; das ist eine eigene Sitzung wert.
+1. `qc-basic.qtpl` liegt in `boxi-os/quartzcontrol-templates` (`a4fa9b3`, seither mehrfach
+   nachgezogen). `curl -sfI` auf die Rohadresse antwortet mit 200.
+2. `npm run template:example -- --variant basic --check-sync` sagt „3 Kopien byte-gleich“, Exit 0.
+   Seit Befund 8 derselben Runde vergleicht `--variant example --check-sync` auch das Example mit
+   seiner veröffentlichten Kopie.
+3. Siehe 1: Die Adresse, die eine ausgelieferte App fragt, antwortet.
+4. **Bleibt als Regel:** `minimal-lesbar.qtpl` im veröffentlichten Repo **nicht** löschen
+   (Begründung oben).
+5. Das Benutzerhandbuch nennt die eingebaute Vorlage „Basis-Template“ bzw. „basic template“ und
+   die Beispielseiten „zwanzig kurze Seiten“ — Vault-Commit `a038586`, drei Dateien je Sprache;
+   gezählt mit `grep -o` stehen heute je Sprache vier Nennungen da. Die übrigen Nennungen von
+   „Beispielvorlage“ meinen das Example und sind richtig. Live nachgesehen.
+6. Beide Doku-Pakete sind neu gebaut (`8d1c38d`) und in die vier Websites importiert — mit dem
+   Schaden, den Befund 1 beschreibt, und seither dreimal neu exportiert (ohne Schnipsel, mit dem
+   Fokusring, mit der Suche über dem Graphen); die Websites tragen den Stand, geprüft per `cmp`
+   gegen das Repo und am ausgelieferten CSS.
 
 **Wer ein Paket unter „Paket gewinnt“ in eine echte Website importiert, liest vorher die
 Konfliktliste des Dry-Runs** — Datei für Datei, und bei allem außerhalb der Stylesheets mit der

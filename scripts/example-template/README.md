@@ -11,6 +11,10 @@ dieses Dokument beschreibt beides.
     npm run template:example -- --check-sync       # nur vergleichen: Stylesheets und Paketkopien
     npm run template:example -- --variant basic --check-sync   # die drei Kopien des eingebauten Pakets
 
+`--variant example|basic|doku|plugin` wählt, welches Paket gebaut wird (Vorgabe `example`); was
+die vier trennt, steht als Tabelle in `variants.mjs`. `--fresh` baut eine Werkstatt neu auf und
+löscht dafür nur unter `<Projektwurzel>/werkstatt/` — das Example-Projekt nie.
+
 ---
 
 ## 0. Wo der Inhalt lebt
@@ -18,7 +22,7 @@ dieses Dokument beschreibt beides.
 Seit dem Umbau ist **das Projekt die Quelle**, nicht mehr dieses Verzeichnis:
 
 ```
-~/Obsidian/QuartzProjekte/Example/     der Vault — 266 Notizen in sieben Kapiteln, 8 Bases, 2 Canvas, 2 Zeichnungen, 9 Mediendateien
+~/Obsidian/QuartzProjekte/Example/     der Vault — 268 Notizen in sieben Kapiteln, 8 Bases, 2 Canvas, 2 Zeichnungen, 9 Mediendateien
         ↑ Symlink
 ~/Documents/QuartzProjekte/Example/content/         das Projekt
 ~/Documents/QuartzProjekte/Example/quartz/styles/   die Stylesheets — hier wird gearbeitet
@@ -32,9 +36,13 @@ Projekten in der App-Liste stehen.
 
 Der Vault ist seit dem 2026-09-06 als **Handbuch in sieben Kapiteln** geschnitten — `1-einstieg`,
 `2-formatierung`, `3-obsidian-formate`, `4-seiten-steuern`, `5-gestaltung`, `6-anpassen`,
-`7-nachschlagen`, gespiegelt unter `en/`. Die Nummer steht auch im Titel, weil der Explorer nach
-dem Titel sortiert und nicht nach dem Dateinamen (`localeCompare` mit `numeric: true` in
-`@quartz-community/explorer` 0.1.0; ein eigenes `sortFn` nimmt er nur aus `quartz.ts`). Wer eine
+`7-nachschlagen`, gespiegelt unter `en/`. Die Nummer steht im Dateinamen **und** im Titel. Die
+Navigation, die seit dem 2026-09-20 durch das Handbuch führt (quartz-navigations, Akkordeon links
+und Pager unter dem Text, Optionen und Gründe in `plugins.mjs`), sortiert zuerst nach der Nummer
+vor dem Dateinamen, erst dann nach dem Titel; der Explorer, abgeschaltet und weiter gestaltet,
+sortiert nur nach dem Titel (`localeCompare` mit `numeric: true` in `@quartz-community/explorer`
+0.1.0; ein eigenes `sortFn` nimmt er nur aus `quartz.ts`). Im Titel steht die Nummer für den
+Leser. Wer eine
 Seite verschiebt, zieht `scripts/variable-docs.mjs` (`SEITEN`) und `scripts/check-tokens.mjs`
 (`PAGES`) nach — beide kennen Vault-Pfade.
 
@@ -255,8 +263,9 @@ Phase 4 `fontOrigin` auf `googleFonts` setzen. Dann sind Phase 6 und der Baustei
 Eine Datei je Komponente. Die Namen sagen, wozu sie gehören:
 
     base            Typografie, Lesemaß, Fokus, Bewegung
-    nav-*           Kopfzeile, Werkzeugleiste, Suche, Farbschema, Lesemodus, Explorer,
-                    Navigation (alle zehn Darstellungen), Sprachumschalter
+    nav-*           Kopfzeile, Werkzeugleiste, Suche, Farbschema, Lesemodus, Explorer
+                    (abgeschaltet, gestaltet), Navigation (alle zehn Darstellungen; im Einsatz
+                    das Akkordeon links und der Pager unter dem Text), Sprachumschalter
     meta-*          Brotkrumen, Titel, Datum, Eigenschaften, Tags
     aside-*         Inhaltsverzeichnis, Rückverweise, Graph, zuletzt geändert
     body-*          Fließtext, Callouts, Code, Mathematik, Diagramme, Medien

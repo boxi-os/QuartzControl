@@ -298,7 +298,8 @@ hat.
   stehen bleibt oder mitläuft.
 - **Fünf Websites sind auf diesem Stand veröffentlicht**: die App-Website, die drei
   Plugin-Handbücher und die Example-Vorführung. Die zwei Doku-Pakete sind neu gebaut; das
-  Benutzerhandbuch nennt an fünf Stellen je Sprache den richtigen Knopf.
+  Benutzerhandbuch nennt den richtigen Knopf (heute vier Nennungen je Sprache,
+  gezählt am 2026-09-21).
 - **Gegengeprüft in drei Engines.** Chromium und WebKit auf dem Mac, Gecko in der Debian-VM — auf
   dem Mac startet Firefox nicht, und die VM braucht Playwrights eigenen Build, nicht ihr
   System-Firefox. Sieben Messungen, alle drei Engines einig

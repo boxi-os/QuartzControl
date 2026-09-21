@@ -2072,3 +2072,28 @@ Mitgezogen: der Marker `Quartz-GUI:syntax:` in `styles/body-code.scss` heißt je
 `QuartzControl:syntax:` — `conventions.md` hatte ihn an „das nächste Release der Vorlage“ gebunden,
 und das ist dieses Paket. Gegengeprüft mit `--check-contrast`, das seine fünf Token-Farben aus
 diesem Block liest: 93 Paare gemessen, 0 unter der Schwelle.
+
+### 97. Die Navigationsrunde vom 20./21. September — und was das 35. Review daran fand
+
+Die Entscheidungen dieser Runde standen bis zum 35. Review nur in Commit-Nachrichten und
+Kommentaren (Befund 11). Hier je ein Satz und der Ort, an dem der Grund steht:
+
+- **Der Explorer ist aus, quartz-navigations führt.** Ein Baum zeigt aufgeklappt mehr Zeilen, als
+  die Spalte hoch ist; das Akkordeon hält ein Kapitel offen. Der Explorer bleibt gestaltet
+  (`plugins.mjs`, `PLUGIN_PATCHES.explorer`).
+- **Keine Kapitelleiste im Kopf.** Sieben Kapitelnamen sind rund 880 px, der Kopf hat neben Marke
+  und Bedienelementen rund 680 px (`nav-navigations.scss`, Kopf).
+- **`folderClick: 'toggle'` mit `indexEntry: 'first'`.** Mit `'link'` war der Pfeil das einzige
+  Ziel zum Aufklappen, 28 px breit (`plugins.mjs`).
+- **Kein `persistState`.** Bis 0.3.0 widersprach es `exclusive`; seit 0.3.1 nicht mehr, und die
+  Entscheidung bleibt, weil der gelesene Pfad schon entscheidet (`plugins.mjs`).
+- **Drei Variablen je Seitenspalte** statt einer mit Zauberwert (`variables.mjs`; erklärt im
+  Handbuch unter 6.4).
+- **Noto Sans und Noto Sans Mono**, zwei Familien statt drei (`palette.mjs`, `fonts.mjs`).
+
+Was das 35. Review daran fand, und wo es behoben ist: Die Doku-Pakete trugen die Schnipsel des
+Example in vier Websites (Befund 1); die linke Spalte schnitt jeden Fokusring an (2); das Handbuch
+kannte die Navigation nicht (3); zwei Löschstellen hingen an keinem Pfad (4, 6); die Gegenprobe
+war nie leer (5); ein Import ließ alte Schriftdateien liegen (7); `--check-sync` prüfte ohne Wort
+nichts (8); die Suche lag unter dem Graphen (9a). Alles in `docs/REVIEW-2026-10-09.md` und den
+Commits danach.

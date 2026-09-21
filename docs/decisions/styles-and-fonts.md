@@ -552,3 +552,19 @@ nach einem Kapitelwechsel das gelesene Kapitel offen hat und nicht das gemerkte.
 Zweimal gemessen, weil der erste Lauf eine ältere Engine traf: Playwright 1.49 bringt Firefox 132,
 das aktuelle Playwright Firefox 155. Beide Läufe liefern Zeile für Zeile dasselbe. Ein Ergebnis aus
 einer Engine, die drei Jahrgänge alt ist, wäre sonst ein Ergebnis über eine andere Frage gewesen.
+
+**Die zwei CSS-Fixes des fünfunddreißigsten Reviews in drei Engines** (2026-09-21, gegen die
+veröffentlichten Websites, ohne eingespeistes CSS): Chrome 152, WebKit 26.5 (Playwright 1.62.1 auf
+dem Mac, der Build in einem Wegwerf-Verzeichnis statt im globalen Speicher) und Firefox 153 (in
+der aarch64-VM, dort Playwrights eigener Build). Gezählt wird je sichtbarem fokussierbarem Element
+einer Seitenspalte, ob sein Ring (Box ± 4 px) die Polsterbox eines beschneidenden Vorfahren
+verlässt, an allen vier Kanten.
+
+| | Example, Start | Example, Kapitel offen | Navigations-Handbuch | Suche über Graph | Suche über Burger |
+| --- | --- | --- | --- | --- | --- |
+| alle drei | links 0/9, rechts 0/5 | 0/23, 0/4 | 0/11, 0/4 | am Feld `input.search-bar`, Mitte `div.search-container` | `div.search-container` |
+
+Vorher (nur Chrome gemessen): links 8/9 und 22/23, rechts 4/5 und 3/4; am Suchfeld das `<canvas>`
+des Graphen, am Burger sein Icon. Die drei Engines sind sich Zeile für Zeile einig, auch in der
+Frage, an der sie am ehesten auseinandergehen könnten — `:has()` auf dem Kopfbereich und ein
+Stapelkontext aus `position: sticky`.

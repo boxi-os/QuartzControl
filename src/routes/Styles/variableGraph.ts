@@ -255,6 +255,21 @@ export function cssColorToHex(value: string | undefined): string | null {
   return parsed && parsed.alpha === 1 ? parsed.hex : null
 }
 
+// Whether a variable holds a colour - the one question that decides if a row gets swatches and a
+// picker, and whether light and dark are offered as two fields from the start. Asked of the value
+// *without* the user's override: asked of the draft, the answer flipped while typing (`var(--x` is
+// no colour yet) and the dark field vanished under the cursor. A key only the user declares has no
+// other value, so there the override is what is asked.
+export function isColorVariable(key: string, ctx: ResolveContext): boolean {
+  const def = catalogDef(key)
+  if (def && def.kind !== 'discovered') return def.kind === 'color'
+  const own = key in ctx.overrides && !ctx.graph?.vars[key]
+  return (['light', 'dark'] as Mode[]).some((mode) => {
+    const value = own ? effectiveValue(key, mode, ctx) : baseValue(key, mode, ctx)
+    return cssColorToHexAlpha(resolveValueLiteral(value, mode, ctx)) !== null
+  })
+}
+
 export function referencedVariables(value: string): string[] {
   const out = new Set<string>()
   ANY_REFERENCE.lastIndex = 0

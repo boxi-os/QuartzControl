@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { Badge, TextInput } from '../../components/ui'
@@ -6,6 +7,7 @@ import {
   catalogDef,
   cssColorToHex,
   effectiveValue,
+  isColorVariable,
   isDisplayableColor,
   originOf,
   referencedVariables,
@@ -76,6 +78,16 @@ export default function VariableRow({
     dark: override?.dark || base.dark
   }
 
+  // Light and dark are two fields from the start only where that is the usual case: a colour, or a
+  // value that already differs between the modes (the theme's or the user's). Everything else -
+  // a size, a font, a hue number - gets one field, and the dark one behind a link: a shadow, an
+  // opacity or a font weight can want a different value on a dark ground, but for most of them
+  // the second field was an invitation to nothing, next to two swatches that stayed empty.
+  const isColor = isColorVariable(varKey, ctx)
+  const baseDiffers = base.dark !== base.light
+  const [darkOpen, setDarkOpen] = useState(false)
+  const splitModes = isColor || baseDiffers || Boolean(override?.dark) || darkOpen
+
   function setMode(mode: Mode, value: string): void {
     const next: OverrideValue =
       mode === 'light'
@@ -109,7 +121,8 @@ export default function VariableRow({
           title={t('styles.variables.chainToggle')}
         >
           {expanded ? <ChevronDown size={12} className="shrink-0" /> : <ChevronRight size={12} className="shrink-0" />}
-          <span className="flex shrink-0 gap-0.5">
+          {/* Kept as an empty slot for a value that is no colour, so the names still line up. */}
+          <span className={`flex shrink-0 gap-0.5 ${isColor ? '' : 'invisible'}`} aria-hidden={!isColor}>
             <Swatch value={lightResolved} />
             <Swatch value={darkResolved} />
           </span>
@@ -138,7 +151,7 @@ export default function VariableRow({
           up a screen apart from the row they belong to. */}
       {expanded && (
         <div className="ml-[18px] mt-1.5 flex max-w-5xl flex-col gap-3 border-l-2 border-ink/[0.08] pl-3 dark:border-ink/10">
-          <CurrentValues varKey={varKey} ctx={ctx} />
+          <CurrentValues varKey={varKey} ctx={ctx} split={isColor || lightResolved !== darkResolved} />
 
           <section>
             <SectionLabel>{t('styles.variables.section.origin')}</SectionLabel>
@@ -184,18 +197,39 @@ export default function VariableRow({
                 varKey={varKey}
                 ctx={ctx}
                 mode="light"
-                label={t('styles.variables.light')}
+                label={splitModes ? t('styles.variables.light') : t('styles.variables.bothModes')}
                 value={draft.light}
                 onChange={(v) => setMode('light', v)}
               />
-              <ValueInput
-                varKey={varKey}
-                ctx={ctx}
-                mode="dark"
-                label={t('styles.variables.dark')}
-                value={draft.dark}
-                onChange={(v) => setMode('dark', v)}
-              />
+              {splitModes && (
+                <ValueInput
+                  varKey={varKey}
+                  ctx={ctx}
+                  mode="dark"
+                  label={t('styles.variables.dark')}
+                  value={draft.dark}
+                  onChange={(v) => setMode('dark', v)}
+                />
+              )}
+              {!splitModes && (
+                <button type="button" onClick={() => setDarkOpen(true)} className="text-micro text-text-muted underline">
+                  {t('styles.variables.splitDark')}
+                </button>
+              )}
+              {/* The way back, where there is one: only the user's own dark value can be taken away,
+                  a theme's stays and keeps the two fields. */}
+              {splitModes && !isColor && !baseDiffers && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode('dark', base.dark)
+                    setDarkOpen(false)
+                  }}
+                  className="text-micro text-text-muted underline"
+                >
+                  {t('styles.variables.unsplitDark')}
+                </button>
+              )}
               {override && (
                 <button type="button" onClick={() => onChange(null)} className="text-micro text-text-muted underline">
                   {t('styles.variables.resetToOriginal')}
@@ -215,18 +249,19 @@ function SectionLabel({ children }: { children: React.ReactNode }): JSX.Element 
 
 // The literal both modes paint right now, spelled out rather than left to a 12px swatch - a hex
 // next to the color is what makes "the picker shows something else than the swatch" checkable.
-function CurrentValues({ varKey, ctx }: { varKey: string; ctx: ResolveContext }): JSX.Element {
+// `split` false: one line for both modes, for a value that is no colour and the same in both.
+function CurrentValues({ varKey, ctx, split }: { varKey: string; ctx: ResolveContext; split: boolean }): JSX.Element {
   const { t } = useTranslation()
   return (
     <section>
       <SectionLabel>{t('styles.variables.section.current')}</SectionLabel>
       <div className="flex flex-wrap gap-x-6 gap-y-1">
-        {(['light', 'dark'] as Mode[]).map((mode) => {
+        {(split ? (['light', 'dark'] as Mode[]) : (['light'] as Mode[])).map((mode) => {
           const resolved = resolvedValue(varKey, mode, ctx)
           const hex = cssColorToHex(resolved)
           return (
             <div key={mode} className="flex items-center gap-1.5 text-micro">
-              <span className="text-text-muted">{t(`styles.variables.${mode}`)}:</span>
+              <span className="text-text-muted">{split ? t(`styles.variables.${mode}`) : t('styles.variables.bothModes')}:</span>
               {isDisplayableColor(resolved) && <Swatch value={resolved} size="md" />}
               <code className="font-mono text-text">
                 {resolved ?? t('styles.variables.unresolved')}

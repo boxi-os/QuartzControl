@@ -15,11 +15,11 @@ import {
   cssColorToHex,
   effectiveValue,
   groupLabel,
-  isDisplayableColor,
   normalizeVarQuery,
   resolvedValue,
   type ResolveContext
 } from './variableGraph'
+import { pageGround, paletteGround, swatchStyle } from './swatch'
 import { useStyles } from './index'
 
 // Read-only reference of the CSS custom properties available at the point custom.scss is included:
@@ -180,11 +180,7 @@ function VariableRow({
                 mode: t(`styles.variables.${mode}`)
               })}
               className="h-4 w-4 shrink-0 rounded-sm border border-ink/10 hover:outline hover:outline-2 hover:outline-offset-1 hover:outline-blue-500/50 dark:border-ink/20"
-              style={{
-                backgroundColor: isDisplayableColor(mode === 'light' ? light : dark)
-                  ? (mode === 'light' ? light : dark)
-                  : 'transparent'
-              }}
+              style={swatchStyle(mode === 'light' ? light : dark, pageGround(mode, ctx))}
             />
           ))}
         </span>
@@ -265,7 +261,7 @@ function CalloutRow({
                 onClick={(e) => (e.altKey ? onCopy(literal, `[!${def.type}] ${name}`) : onInsert(literal))}
                 title={t('styleEditor.cssVars.insertValueHint', { value: literal })}
                 className="h-4 w-4 shrink-0 rounded-sm border border-ink/10 hover:outline hover:outline-2 hover:outline-offset-1 hover:outline-blue-500/50 dark:border-ink/20"
-                style={{ backgroundColor: isDisplayableColor(value) ? value : 'transparent' }}
+                style={swatchStyle(value, paletteGround('light', colors.lightMode))}
               />
             )
           })}

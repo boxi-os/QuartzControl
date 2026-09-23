@@ -10,7 +10,8 @@ import { formatIpcError } from '../../components/ErrorSurface'
 import { useStickyState } from '../../state/uiState'
 import { componentItems } from '../LayoutEditor/utils'
 import CssVariableReference from './CssVariableReference'
-import { cssColorToHex, isDisplayableColor, resolvedValue, type ResolveContext } from './variableGraph'
+import { cssColorToHex, resolvedValue, type ResolveContext } from './variableGraph'
+import { pageGround, swatchStyle } from './swatch'
 import { fontIsAvailable, googleFontRequest, primaryFamily, summarizeFaces, type TypographySlot } from './fontSpec'
 import { fontLoaders } from './fontDelivery'
 import { fontBuildState, loadPreviewFonts } from './previewFonts'
@@ -870,7 +871,7 @@ function ActiveStyles(): JSX.Element {
                           >
                             <span
                               className="h-3.5 w-3.5 shrink-0 rounded border border-ink/15"
-                              style={{ backgroundColor: isDisplayableColor(value) ? value : 'transparent' }}
+                              style={swatchStyle(value, pageGround(mode, ctx))}
                             />
                             <span className="font-mono tabular-nums text-text-muted">{hex ?? '—'}</span>
                           </button>

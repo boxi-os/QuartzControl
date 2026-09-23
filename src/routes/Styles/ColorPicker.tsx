@@ -1,4 +1,4 @@
-import { isDisplayableColor } from './variableGraph'
+import { swatchStyle } from './swatch'
 
 /**
  * A colour swatch that opens the OS picker, for a value that is not always a colour the picker can
@@ -26,6 +26,7 @@ export default function ColorPicker({
   hex,
   onChange,
   title,
+  ground,
   size = 'sm',
   className = ''
 }: {
@@ -35,6 +36,8 @@ export default function ColorPicker({
   hex: string | null
   onChange: (hex: string) => void
   title?: string
+  /** What the colour sits on in the website (see pageGround); without it a translucent value shows the app behind it. */
+  ground?: string
   size?: 'sm' | 'lg'
   className?: string
 }): JSX.Element {
@@ -52,7 +55,7 @@ export default function ColorPicker({
       className={`relative shrink-0 overflow-hidden rounded border ${border} ${
         size === 'lg' ? 'h-10 w-10' : 'h-6 w-8'
       } ${className}`}
-      style={{ backgroundColor: isDisplayableColor(value) ? value : 'transparent' }}
+      style={swatchStyle(value, ground)}
     >
       <input
         type="color"

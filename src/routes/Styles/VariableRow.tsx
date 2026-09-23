@@ -19,6 +19,7 @@ import {
   type VariableOrigin
 } from './variableGraph'
 import ColorPicker from './ColorPicker'
+import { pageGround, swatchStyle } from './swatch'
 
 const ORIGIN_TONE: Record<VariableOrigin, 'slate' | 'green' | 'amber'> = {
   core: 'slate',
@@ -123,8 +124,8 @@ export default function VariableRow({
           {expanded ? <ChevronDown size={12} className="shrink-0" /> : <ChevronRight size={12} className="shrink-0" />}
           {/* Kept as an empty slot for a value that is no colour, so the names still line up. */}
           <span className={`flex shrink-0 gap-0.5 ${isColor ? '' : 'invisible'}`} aria-hidden={!isColor}>
-            <Swatch value={lightResolved} />
-            <Swatch value={darkResolved} />
+            <Swatch value={lightResolved} ground={pageGround('light', ctx)} />
+            <Swatch value={darkResolved} ground={pageGround('dark', ctx)} />
           </span>
           <code className="shrink-0 font-mono">--{varKey}</code>
           <span className="truncate text-text-muted">{light ?? '—'}</span>
@@ -262,7 +263,7 @@ function CurrentValues({ varKey, ctx, split }: { varKey: string; ctx: ResolveCon
           return (
             <div key={mode} className="flex items-center gap-1.5 text-micro">
               <span className="text-text-muted">{split ? t(`styles.variables.${mode}`) : t('styles.variables.bothModes')}:</span>
-              {isDisplayableColor(resolved) && <Swatch value={resolved} size="md" />}
+              {isDisplayableColor(resolved) && <Swatch value={resolved} ground={pageGround(mode, ctx)} size="md" />}
               <code className="font-mono text-text">
                 {resolved ?? t('styles.variables.unresolved')}
               </code>
@@ -364,18 +365,18 @@ function ValueInput({
     <div className="flex items-center gap-1.5">
       <span className="text-micro text-text-muted">{label}</span>
       {isColor && (
-        <ColorPicker value={resolved ?? value} hex={hex} onChange={onChange} title={resolved ?? value} />
+        <ColorPicker value={resolved ?? value} hex={hex} onChange={onChange} title={resolved ?? value} ground={pageGround(mode, ctx)} />
       )}
       <TextInput value={value} onChange={(e) => onChange(e.target.value)} className="w-44 font-mono text-xs" />
     </div>
   )
 }
 
-function Swatch({ value, size = 'sm' }: { value: string | undefined; size?: 'sm' | 'md' }): JSX.Element {
+function Swatch({ value, ground, size = 'sm' }: { value: string | undefined; ground: string; size?: 'sm' | 'md' }): JSX.Element {
   return (
     <span
       className={`${size === 'md' ? 'h-4 w-4' : 'h-3 w-3'} shrink-0 rounded-sm border border-ink/10 dark:border-ink/20`}
-      style={{ backgroundColor: isDisplayableColor(value) ? value : 'transparent' }}
+      style={swatchStyle(value, ground)}
     />
   )
 }

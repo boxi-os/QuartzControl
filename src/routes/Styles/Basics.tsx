@@ -14,7 +14,8 @@ import {
   withThemeFonts,
   THEME_PLUGIN_PREFIX
 } from './fontDelivery'
-import { cssColorToHexAlpha } from './variableGraph'
+import { cssColorToHexAlpha, type Mode } from './variableGraph'
+import { paletteGround } from './swatch'
 import { fontBuildState } from './previewFonts'
 import { activeThemeIdOf, useStyles } from './index'
 import ColorPicker from './ColorPicker'
@@ -612,11 +613,15 @@ function LocalFontImport({
 function ColorGroup({
   value,
   onChange,
-  isOverridden
+  isOverridden,
+  mode
 }: {
   value: Record<string, unknown>
   onChange: (next: Record<string, unknown>) => void
   isOverridden: (key: string) => boolean
+  // Known once the recursion is inside lightMode/darkMode; the swatches then sit on that mode's
+  // `light`, which is what the website paints behind them.
+  mode?: Mode
 }): JSX.Element {
   const entries = Object.entries(value)
   const nested = entries.filter(([, v]) => v !== null && typeof v === 'object')
@@ -633,6 +638,7 @@ function ColorGroup({
               value={v}
               overridden={isOverridden(key)}
               onChange={(next) => onChange({ ...value, [key]: next })}
+              ground={mode ? paletteGround(mode, value) : undefined}
             />
           ))}
         </div>
@@ -644,6 +650,7 @@ function ColorGroup({
             value={v as Record<string, unknown>}
             onChange={(next) => onChange({ ...value, [key]: next })}
             isOverridden={isOverridden}
+            mode={key === 'lightMode' ? 'light' : key === 'darkMode' ? 'dark' : mode}
           />
         </div>
       ))}
@@ -661,12 +668,14 @@ function ColorCell({
   name,
   value,
   overridden,
-  onChange
+  onChange,
+  ground
 }: {
   name: string
   value: string
   overridden: boolean
   onChange: (next: string) => void
+  ground?: string
 }): JSX.Element {
   const { t } = useTranslation()
   // Every notation the browser can paint *and hold in sRGB* - hex, `rgb()`/`rgba()`, `hsl()`,
@@ -699,6 +708,7 @@ function ColorCell({
         // notation `withAlpha` has - whichever of the three it came in as.
         onChange={(hex) => onChange(parsed && parsed.alpha < 1 ? withAlpha(hex, parsed.alpha) : hex)}
         title={name}
+        ground={ground}
         size="lg"
       />
       <div className="flex min-w-0 flex-1 flex-col gap-1">

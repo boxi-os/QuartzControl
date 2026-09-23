@@ -347,7 +347,9 @@ export default function Publish(): JSX.Element {
   }
 
   const baseUrl = typeof config?.configuration.baseUrl === 'string' ? config.configuration.baseUrl : ''
-  const baseUrlWarning = !baseUrl || baseUrl === 'localhost'
+  // Asked of the file once it is read, not of the empty state before: while config:get is still on
+  // its way, `baseUrl` is '' and the warning flashed up on every visit with „—“ in it.
+  const baseUrlWarning = config !== null && (!baseUrl || baseUrl === 'localhost')
 
   const grouped = useMemo(() => {
     const groups: Record<'added' | 'changed' | 'removed', DeployDiffEntry[]> = { added: [], changed: [], removed: [] }

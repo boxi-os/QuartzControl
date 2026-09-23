@@ -1381,11 +1381,16 @@ export default {
       allDescription:
         'Alles, was das aktive Theme, Plugins oder der letzte Build an Variablen mitbringen — getrennt von den Hauptvariablen, weil es sehr viele werden können.',
       allDescriptionTheme:
-        'Alles, was das Theme „{{themeId}}“, Plugins oder der letzte Build mitbringen: {{count}} Variablen. Suche eingeben, um darin zu blättern.',
+        'Alles, was das Theme „{{themeId}}“, Plugins oder der letzte Build mitbringen: {{count}} Variablen, nach Namensanfang gruppiert. Gruppe aufklappen oder suchen.',
       counter: '{{overridden}} von {{total}} überschrieben',
       searchPlaceholder: 'Variable suchen (z. B. callout, h1, background)…',
       onlyChanged: 'Nur geänderte',
-      searchHint: 'Suchbegriff eingeben, um in {{count}} Variablen zu suchen.',
+      kind: {
+        label: 'Art des Werts',
+        all: 'Alle',
+        color: 'Farben ({{count}})',
+        other: 'Andere Werte ({{count}})'
+      },
       noResults: 'Keine Treffer.',
       moreResults: '{{count}} weitere Treffer — weiter tippen zum Eingrenzen.',
       noSources: 'Keine zusätzlichen Variablen gefunden.',
@@ -1416,6 +1421,7 @@ export default {
         dependents: 'Wird von diesen Variablen verwendet',
         edit: 'Eigener Wert'
       },
+      singlesGroup: 'Einzelne Variablen',
       groupChanged: '{{count}} geändert',
       groups: {
         baseColors: 'Grundfarben',

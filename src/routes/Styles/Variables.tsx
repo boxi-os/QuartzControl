@@ -1,18 +1,24 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, ChevronRight } from 'lucide-react'
-import { Button, Card, InfoNote, TextInput } from '../../components/ui'
+import { Button, Card, InfoNote, SegmentedControl, TextInput } from '../../components/ui'
 import { useStickyState } from '../../state/uiState'
 import { CSS_VARIABLES } from '../../data/cssVariables'
 import VariableRow, { type OverrideValue } from './VariableRow'
 import VariableGroup from './VariableGroup'
-import { allKnownKeys, groupLabel, groupOf, normalizeVarQuery, type ResolveContext } from './variableGraph'
+import { allKnownKeys, groupLabel, groupOf, isColorVariable, normalizeVarQuery, type ResolveContext } from './variableGraph'
 import { activeThemeIdOf, useStyles } from './index'
 
-// How many rows the searchable table renders at once. A community theme can declare ~1000
-// variables (tokyo-night: 978), and every row that is on screen resolves its own derivation chain,
-// so the list is capped and says so rather than quietly truncating.
+// How many rows a search renders at once. A community theme can declare ~1000 variables
+// (tokyo-night: 978), and every row that is on screen resolves its own derivation chain, so the
+// list is capped and says so rather than quietly truncating. Browsing needs no cap: there the rows
+// come one group at a time, and only the groups someone opened.
 const MAX_RESULTS = 150
+
+export type VariableKind = 'all' | 'color' | 'other'
+
+// Not a name prefix any CSS variable can produce: groupOf() upper-cases, this has lower-case letters.
+const SINGLES_GROUP = 'singles'
 
 // The only place CSS custom properties are *edited*. Two deliberately separate tables: the curated
 // catalog of variables Quartz itself derives from the classic colors (short, always visible), and
@@ -36,6 +42,9 @@ export default function Variables(): JSX.Element {
   const [allOpen, setAllOpen] = useStickyState('styles.allVars.open', false)
   const [query, setQuery] = useStickyState('styles.allVars.query', '')
   const [onlyChanged, setOnlyChanged] = useStickyState('styles.allVars.onlyChanged', false)
+  const [kind, setKind] = useStickyState<VariableKind>('styles.allVars.kind', 'all')
+  // Which prefix groups are open while browsing. Starts with none: a theme brings dozens.
+  const [openBrowseGroups, setOpenBrowseGroups] = useStickyState<string[]>('styles.allVars.openGroups', [])
   // Deliberately not sticky: a pending jump is transient interaction state, and re-running it after
   // coming back from another area would yank the page around for no reason.
   const [pendingScroll, setPendingScroll] = useState<string | null>(null)
@@ -124,6 +133,13 @@ export default function Variables(): JSX.Element {
     [graph, overrides, curatedKeys]
   )
 
+  // Asked once per key and graph, not per render: it resolves the value, and a theme has ~1000.
+  const colorKeys = useMemo(
+    () => new Set(extraKeys.filter((key) => isColorVariable(key, ctx))),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [extraKeys, graph, overrides]
+  )
+
   const themeId = activeThemeIdOf(config)
 
   return (
@@ -170,16 +186,24 @@ export default function Variables(): JSX.Element {
         setQuery={setQuery}
         onlyChanged={onlyChanged}
         setOnlyChanged={setOnlyChanged}
+        kind={kind}
+        setKind={setKind}
+        colorKeys={colorKeys}
+        openGroups={openBrowseGroups}
+        toggleGroup={(group) =>
+          setOpenBrowseGroups((prev) => (prev.includes(group) ? prev.filter((g) => g !== group) : [...prev, group]))
+        }
         renderRow={(key) => <VariableRow key={key} {...rowProps(key)} />}
       />
     </div>
   )
 }
 
-// Search-driven rather than a rendered list: with ~1000 keys, "show me everything" is never the
-// useful default, and the two things a user actually wants - "what did I change" and "where is the
-// callout background" - are a filter and a query. Nothing is rendered until one of them is active.
-// Its state is owned by the page above, so a dependency chip in any row can steer it.
+// Two ways in. Without a query the table is browsed: the variables sorted into their prefix groups
+// (--callout-*, --background-*), all collapsed, each with its count - with ~1000 keys a flat list
+// is no more useful than none, but a search alone asked for a name one cannot know without having
+// seen the list. With a query it is the capped search it always was. The colour filter applies to
+// both. Its state is owned by the page above, so a dependency chip in any row can steer it.
 function AllVariables({
   keys,
   overrides,
@@ -193,6 +217,11 @@ function AllVariables({
   setQuery,
   onlyChanged,
   setOnlyChanged,
+  kind,
+  setKind,
+  colorKeys,
+  openGroups,
+  toggleGroup,
   renderRow
 }: {
   keys: string[]
@@ -207,18 +236,23 @@ function AllVariables({
   setQuery: React.Dispatch<React.SetStateAction<string>>
   onlyChanged: boolean
   setOnlyChanged: React.Dispatch<React.SetStateAction<boolean>>
+  kind: VariableKind
+  setKind: (kind: VariableKind) => void
+  colorKeys: Set<string>
+  openGroups: string[]
+  toggleGroup: (group: string) => void
   renderRow: (key: string) => JSX.Element
 }): JSX.Element {
   const { t } = useTranslation()
 
   const overriddenCount = keys.filter((key) => key in overrides).length
   const q = normalizeVarQuery(query)
+  const ofKind = kind === 'all' ? keys : keys.filter((key) => colorKeys.has(key) === (kind === 'color'))
+  const browsing = !q && !onlyChanged
   const matches = q
-    ? keys.filter((key) => key.toLowerCase().includes(q) && (!onlyChanged || key in overrides))
-    : onlyChanged
-      ? keys.filter((key) => key in overrides)
-      : []
-  const visible = matches.slice(0, MAX_RESULTS)
+    ? ofKind.filter((key) => key.toLowerCase().includes(q) && (!onlyChanged || key in overrides))
+    : ofKind.filter((key) => key in overrides || browsing)
+  const visible = browsing ? matches : matches.slice(0, MAX_RESULTS)
 
   const grouped = new Map<string, string[]>()
   for (const key of visible) {
@@ -226,6 +260,17 @@ function AllVariables({
     const list = grouped.get(group) ?? []
     list.push(key)
     grouped.set(group, list)
+  }
+  // A prefix that only one variable carries is a heading repeating that variable's name - the
+  // minimal theme has 60 of them among 150 groups. Browsing collects them at the end instead.
+  if (browsing) {
+    const singles: string[] = []
+    for (const [group, list] of grouped) {
+      if (list.length > 1) continue
+      singles.push(...list)
+      grouped.delete(group)
+    }
+    if (singles.length > 0) grouped.set(SINGLES_GROUP, singles)
   }
 
   return (
@@ -276,27 +321,48 @@ function AllVariables({
                   <input type="checkbox" checked={onlyChanged} onChange={(e) => setOnlyChanged(e.target.checked)} />
                   {t('styles.variables.onlyChanged')}
                 </label>
+                <SegmentedControl
+                  label={t('styles.variables.kind.label')}
+                  value={kind}
+                  onChange={setKind}
+                  options={[
+                    { value: 'all', label: t('styles.variables.kind.all') },
+                    { value: 'color', label: t('styles.variables.kind.color', { count: colorKeys.size }) },
+                    { value: 'other', label: t('styles.variables.kind.other', { count: keys.length - colorKeys.size }) }
+                  ]}
+                />
                 <Button variant="ghost" onClick={onReload}>
                   {t('styles.variables.reload')}
                 </Button>
               </div>
 
-              {matches.length === 0 && (
-                <p className="text-xs text-text-muted">
-                  {q || onlyChanged
-                    ? t('styles.variables.noResults')
-                    : t('styles.variables.searchHint', { count: keys.length })}
-                </p>
-              )}
+              {matches.length === 0 && <p className="text-xs text-text-muted">{t('styles.variables.noResults')}</p>}
 
-              <div className="flex flex-col gap-4">
-                {Array.from(grouped.entries()).map(([group, groupKeys]) => (
-                  <div key={group}>
-                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-text-secondary">{groupLabel(t, group)}</p>
-                    <div className="flex flex-col gap-0.5">{groupKeys.map(renderRow)}</div>
-                  </div>
-                ))}
-              </div>
+              {browsing ? (
+                <div className="flex flex-col gap-1">
+                  {Array.from(grouped.entries()).map(([group, groupKeys]) => (
+                    <VariableGroup
+                      key={group}
+                      label={group === SINGLES_GROUP ? t('styles.variables.singlesGroup') : groupLabel(t, group)}
+                      count={groupKeys.length}
+                      changed={groupKeys.filter((key) => key in overrides).length}
+                      open={openGroups.includes(group)}
+                      onToggle={() => toggleGroup(group)}
+                    >
+                      {groupKeys.map(renderRow)}
+                    </VariableGroup>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {Array.from(grouped.entries()).map(([group, groupKeys]) => (
+                    <div key={group}>
+                      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-text-secondary">{groupLabel(t, group)}</p>
+                      <div className="flex flex-col gap-0.5">{groupKeys.map(renderRow)}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {matches.length > visible.length && (
                 <p className="mt-2 text-xs text-text-muted">

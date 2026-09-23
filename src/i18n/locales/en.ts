@@ -1375,11 +1375,16 @@ export default {
       allDescription:
         'Everything the active theme, plugins, or the last build bring along — kept separate from the main variables, because there can be a great many.',
       allDescriptionTheme:
-        'Everything the theme “{{themeId}}”, plugins, or the last build bring along: {{count}} variables. Type a search to browse them.',
+        'Everything the theme “{{themeId}}”, plugins, or the last build bring along: {{count}} variables, grouped by name prefix. Open a group or search.',
       counter: '{{overridden}} of {{total}} overridden',
       searchPlaceholder: 'Search variable (e.g. callout, h1, background)…',
       onlyChanged: 'Changed only',
-      searchHint: 'Type a search term to look through {{count}} variables.',
+      kind: {
+        label: 'Kind of value',
+        all: 'All',
+        color: 'Colors ({{count}})',
+        other: 'Other values ({{count}})'
+      },
       noResults: 'No matches.',
       moreResults: '{{count}} more matches — keep typing to narrow down.',
       noSources: 'No additional variables found.',
@@ -1410,6 +1415,7 @@ export default {
         dependents: 'Used by these variables',
         edit: 'Your own value'
       },
+      singlesGroup: 'Single variables',
       groupChanged: '{{count}} changed',
       groups: {
         baseColors: 'Base colors',

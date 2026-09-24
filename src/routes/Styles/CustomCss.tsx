@@ -3,9 +3,10 @@ import { useTranslation } from 'react-i18next'
 import CodeMirror from '@uiw/react-codemirror'
 import { css } from '@codemirror/lang-css'
 import type { EditorView } from '@codemirror/view'
-import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronRight, FileCode, FileWarning, Palette, Plus, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronRight, FileCode, FileWarning, Palette, Pencil, Plus, Trash2, X } from 'lucide-react'
 import type { FontFaceInfo, ScssCheckResult, StyleFile, StyleReferenceFile } from '@shared/ipc-contract'
-import { Button, Card, CardHeading, Select, TextInput, useCopyToClipboard } from '../../components/ui'
+import { Button, Card, CardHeading, IconButton, Select, TextInput, useCopyToClipboard } from '../../components/ui'
+import { confirmDialog } from '../../utils/confirm'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { useStickyState } from '../../state/uiState'
 import { componentSelectors } from '../../data/componentSelectors'
@@ -491,7 +492,6 @@ function FileOrder({
   const { t } = useTranslation()
   const [creating, setCreating] = useState<string | null>(null)
   const [renaming, setRenaming] = useState<{ relativePath: string; name: string } | null>(null)
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const imported = files.filter((f) => f.imported)
   const orphans = files.filter((f) => !f.imported)
@@ -549,60 +549,42 @@ function FileOrder({
                 <button type="button" onClick={() => onOpen(file.relativePath)} className="min-w-0 flex-1 truncate text-left font-mono hover:underline">
                   {file.name}
                 </button>
-                {/* Secondary / muted / text for enabled / disabled / hover, all explicit: the
-                    `disabled:opacity-30` this replaces left the arrow at 1.69:1. */}
-                <button
-                  type="button"
+                {/* Four icons with their names in the tooltip, like every list entry: the rename
+                    and delete words next to two arrows made the row the busiest in the app. */}
+                <IconButton
+                  icon={ArrowUp}
+                  tone="neutral"
+                  title={t('styleEditor.files.moveUp')}
                   disabled={index === 0}
                   onClick={() => onMove(file.relativePath, -1)}
-                  className="shrink-0 text-text-secondary hover:text-text disabled:text-text-muted"
-                  title={t('styleEditor.files.moveUp')}
-                >
-                  <ArrowUp size={12} />
-                </button>
-                <button
-                  type="button"
+                />
+                <IconButton
+                  icon={ArrowDown}
+                  tone="neutral"
+                  title={t('styleEditor.files.moveDown')}
                   disabled={index === imported.length - 1}
                   onClick={() => onMove(file.relativePath, 1)}
-                  className="shrink-0 text-text-secondary hover:text-text disabled:text-text-muted"
-                  title={t('styleEditor.files.moveDown')}
-                >
-                  <ArrowDown size={12} />
-                </button>
-                <button
-                  type="button"
-                  className="shrink-0 text-micro text-text-muted underline"
+                />
+                <IconButton
+                  icon={Pencil}
+                  tone="neutral"
+                  title={t('styleEditor.files.rename')}
                   onClick={() => setRenaming({ relativePath: file.relativePath, name: file.name })}
-                >
-                  {t('styleEditor.files.rename')}
-                </button>
-                {confirmDelete === file.relativePath ? (
-                  <>
-                    <button
-                      type="button"
-                      className="shrink-0 text-micro font-medium text-red-600 underline"
-                      onClick={() =>
-                        run(async () => {
-                          await window.quartzGui.styles.deleteFile(projectPath, file.relativePath)
-                          setConfirmDelete(null)
-                        })
-                      }
-                    >
-                      {t('styleEditor.files.deleteConfirm')}
-                    </button>
-                    <button type="button" className="shrink-0 text-micro underline" onClick={() => setConfirmDelete(null)}>
-                      {t('common.cancel')}
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    className="shrink-0 text-micro text-text-muted underline"
-                    onClick={() => setConfirmDelete(file.relativePath)}
-                  >
-                    {t('styleEditor.files.delete')}
-                  </button>
-                )}
+                />
+                <IconButton
+                  icon={Trash2}
+                  title={t('common.deleteNamed', { name: file.name })}
+                  onClick={() =>
+                    run(async () => {
+                      const confirmed = await confirmDialog({
+                        text: t('styleEditor.files.confirmDelete', { name: file.name }),
+                        confirmLabel: t('styleEditor.files.confirmDeleteAction'),
+                        danger: true
+                      })
+                      if (confirmed) await window.quartzGui.styles.deleteFile(projectPath, file.relativePath)
+                    })
+                  }
+                />
               </>
             )}
           </div>

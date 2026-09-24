@@ -8,8 +8,10 @@ import type {
   ThemePreset,
   ThemeStyleSettingsInfo
 } from '@shared/ipc-contract'
-import { Badge, Button, Card, TextInput, Toggle } from '../../components/ui'
+import { Badge, Button, Card, IconButton, TextInput, Toggle } from '../../components/ui'
+import { confirmDialog } from '../../utils/confirm'
 import { formatIpcError } from '../../components/ErrorSurface'
+import { Trash2 } from 'lucide-react'
 import { useStickyState } from '../../state/uiState'
 import { useIpcQuery } from '../../state/useIpcQuery'
 import StyleSettingsForm from './StyleSettingsForm'
@@ -327,8 +329,16 @@ function PresetsSection({
   onDeleted: () => void
 }): JSX.Element {
   const { t } = useTranslation()
-  async function remove(id: string): Promise<void> {
-    await window.quartzGui.themePresets.delete(projectPath, id)
+  async function remove(preset: ThemePreset): Promise<void> {
+    // Asked since the word became a bin: the underlined "Löschen" deleted at once, and a bin that
+    // does not ask would be the only one in the app.
+    const confirmed = await confirmDialog({
+      text: t('themes.presets.confirmDelete', { name: preset.name }),
+      confirmLabel: t('themes.presets.confirmDeleteAction'),
+      danger: true
+    })
+    if (!confirmed) return
+    await window.quartzGui.themePresets.delete(projectPath, preset.id)
     onDeleted()
   }
 
@@ -355,9 +365,7 @@ function PresetsSection({
                   {t('themes.presets.apply')}
                 </Button>
               )}
-              <button type="button" onClick={() => remove(preset.id)} className="text-xs text-text-muted underline">
-                {t('themes.presets.delete')}
-              </button>
+              <IconButton icon={Trash2} title={t('common.deleteNamed', { name: preset.name })} onClick={() => void remove(preset)} />
             </div>
           </div>
         ))}

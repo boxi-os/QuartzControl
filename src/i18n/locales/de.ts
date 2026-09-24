@@ -10,6 +10,10 @@ export default {
     select: 'Auswählen',
     copy: 'Kopieren',
     remove: 'Entfernen',
+    // Der Name eines Mülleimer-Knopfs: sein Tooltip und das, was ein Screenreader vorliest. Mit dem
+    // Namen des Eintrags, weil in einer Liste sonst zehn Knöpfe gleich heißen.
+    removeNamed: '„{{name}}“ entfernen',
+    deleteNamed: '„{{name}}“ löschen',
     edit: 'Bearbeiten',
     loading: 'Lade…',
     openInBrowser: 'Im Browser öffnen',
@@ -952,7 +956,9 @@ export default {
       active: 'Aktiv',
       apply: 'Anwenden',
       saveSettings: 'Einstellungen speichern',
-      delete: 'Löschen'
+      delete: 'Löschen',
+      confirmDelete: 'Preset „{{name}}“ löschen?\n\nDas eingestellte Theme bleibt, wie es ist; nur der gespeicherte Eintrag verschwindet. Zurückholen lässt er sich nicht.',
+      confirmDeleteAction: 'Preset löschen'
     },
     catalog: {
       title: 'Katalog',
@@ -1469,7 +1475,8 @@ export default {
       moveDown: 'Nach unten',
       rename: 'Umbenennen',
       delete: 'Löschen',
-      deleteConfirm: 'Wirklich löschen',
+      confirmDelete: 'Datei „{{name}}“ löschen?\n\nSie wird aus der Ladereihenfolge genommen und aus dem Projekt gelöscht. Zurück kommt sie nur über einen Snapshot von vorher.',
+      confirmDeleteAction: 'Datei löschen',
       create: 'Neue Datei',
       createConfirm: 'Anlegen',
       namePlaceholder: 'Dateiname (z. B. typografie)',

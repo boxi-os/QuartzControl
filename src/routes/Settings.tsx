@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { confirmDialog } from '../utils/confirm'
 import { expandHome, isAbsolutePath, titlebarStripClass } from '../utils/platform'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Database, Key, Monitor, Moon, FolderOpen, Plug, PowerOff, RefreshCw, Sun, Terminal, TriangleAlert } from 'lucide-react'
+import { Database, Key, Monitor, Moon, FolderOpen, Plug, PowerOff, RefreshCw, Sun, Terminal, Trash2, TriangleAlert } from 'lucide-react'
 import type {
   AppInfo,
   Connection,
@@ -13,7 +13,7 @@ import type {
   Settings as AppSettings
 } from '@shared/ipc-contract'
 import { useAppStore } from '../state/store'
-import { Badge, Button, Card, Field, FieldGroup, FormActions, SegmentedControl, Select, TextInput } from '../components/ui'
+import { Badge, Button, Card, Field, FieldGroup, FormActions, IconButton, SegmentedControl, Select, TextInput } from '../components/ui'
 import {
   CONNECTION_KIND_LABEL,
   ConnectionFormFields,
@@ -575,7 +575,7 @@ function ConnectionsSection(): JSX.Element {
                 </p>
               )}
             </div>
-            <div className="flex shrink-0 flex-wrap gap-2 whitespace-nowrap sm:ml-auto">
+            <div className="flex shrink-0 flex-wrap items-center gap-2 whitespace-nowrap sm:ml-auto">
               {connection.kind === 'ssh' && connection.hostKey && (
                 <Button variant="ghost" onClick={() => forgetHostKey.run(connection)} disabled={forgetHostKey.pending}>
                   {t('publish.forgetHostKey')}
@@ -584,9 +584,7 @@ function ConnectionsSection(): JSX.Element {
               <Button variant="ghost" onClick={() => setDraft(draftFromConnection(connection))}>
                 {t('common.edit')}
               </Button>
-              <Button variant="ghost" onClick={() => remove.run(connection.id)} disabled={remove.pending}>
-                {t('common.remove')}
-              </Button>
+              <IconButton icon={Trash2} title={t('common.deleteNamed', { name: connection.name })} onClick={() => remove.run(connection.id)} disabled={remove.pending} />
             </div>
           </div>
         ))}

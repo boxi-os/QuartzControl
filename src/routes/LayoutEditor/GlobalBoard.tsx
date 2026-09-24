@@ -29,7 +29,8 @@ import type {
   QuartzConfig
 } from '@shared/ipc-contract'
 import { DEFAULT_FRAME_BREAKPOINT_WIDTHS, FRAME_BREAKPOINTS, buildFrameBox, buildGridStyle } from '@shared/gridFrameCss'
-import { Badge, Button, Card, Field, FormActions, SegmentedControl, Select, SettingsSection, TextInput } from '../../components/ui'
+import { Badge, Button, Card, Field, FormActions, IconButton, SegmentedControl, Select, SettingsSection, TextInput } from '../../components/ui'
+import { Trash2 } from 'lucide-react'
 import { formatIpcError } from '../../components/ErrorSurface'
 import DevServerRestartHint from '../../components/DevServerRestartHint'
 import { ItemCard, PaletteChip, GROUP_COLORS } from './ComponentPill'
@@ -917,9 +918,7 @@ function GroupsPanel({
                   placeholder={t('layoutEditor.groupsPanel.priorityPlaceholder')}
                 />
               </Field>
-              <button type="button" onClick={() => onDelete(name)} className="mb-2 ml-auto text-xs text-text-muted underline">
-                {t('layoutEditor.groupsPanel.delete')}
-              </button>
+              <IconButton icon={Trash2} title={t('common.deleteNamed', { name })} onClick={() => onDelete(name)} className="mb-1.5 ml-auto" />
             </div>
           )
         })}

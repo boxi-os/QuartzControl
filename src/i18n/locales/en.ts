@@ -10,6 +10,8 @@ export default {
     select: 'Select',
     copy: 'Copy',
     remove: 'Remove',
+    removeNamed: 'Remove “{{name}}”',
+    deleteNamed: 'Delete “{{name}}”',
     edit: 'Edit',
     loading: 'Loading…',
     openInBrowser: 'Open in browser',
@@ -949,7 +951,9 @@ export default {
       active: 'Active',
       apply: 'Apply',
       saveSettings: 'Save settings',
-      delete: 'Delete'
+      delete: 'Delete',
+      confirmDelete: 'Delete preset “{{name}}”?\n\nThe theme as set stays as it is; only the saved entry goes. It cannot be brought back.',
+      confirmDeleteAction: 'Delete preset'
     },
     catalog: {
       title: 'Catalog',
@@ -1463,7 +1467,8 @@ export default {
       moveDown: 'Move down',
       rename: 'Rename',
       delete: 'Delete',
-      deleteConfirm: 'Really delete',
+      confirmDelete: 'Delete file “{{name}}”?\n\nIt is taken out of the load order and deleted from the project. Only a snapshot from before brings it back.',
+      confirmDeleteAction: 'Delete file',
       create: 'New file',
       createConfirm: 'Create',
       namePlaceholder: 'File name (e.g. typography)',

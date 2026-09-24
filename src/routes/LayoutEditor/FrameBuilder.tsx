@@ -17,7 +17,7 @@ import {
   type DragStartEvent
 } from '@dnd-kit/core'
 import { confirmDialog } from '../../utils/confirm'
-import { GripVertical } from 'lucide-react'
+import { GripVertical, Trash2 } from 'lucide-react'
 import type {
   FrameAlign,
   FrameBreakpoint,
@@ -36,6 +36,7 @@ import {
   Field,
   FieldGroup,
   FormActions,
+  IconButton,
   InfoNote,
   NumberInput,
   SegmentedControl,
@@ -952,9 +953,7 @@ export default function FrameBuilder({
                 <Button variant="ghost" onClick={() => startEditFrame(def)}>
                   {t('common.edit')}
                 </Button>
-                <Button variant="danger" onClick={() => remove(def)}>
-                  {t('common.remove')}
-                </Button>
+                <IconButton icon={Trash2} title={t('common.deleteNamed', { name: def.frameName })} onClick={() => void remove(def)} />
               </div>
             </Card>
           ))}

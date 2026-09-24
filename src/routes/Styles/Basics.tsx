@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { FontFaceInfo, QuartzConfig, UnusedImportedFont } from '@shared/ipc-contract'
-import { Button, Combobox, Field, Select, TextInput, Toggle, type ComboboxOption } from '../../components/ui'
+import { Button, Combobox, Field, IconButton, Select, TextInput, Toggle, type ComboboxOption } from '../../components/ui'
+import { Trash2 } from 'lucide-react'
 import { GOOGLE_FONTS, GOOGLE_FONTS_FETCHED, type GoogleFontCategory } from '../../data/googleFonts'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { confirmDialog } from '../../utils/confirm'
@@ -496,9 +497,12 @@ function UnusedImportedFonts({
                 {font.files.length > 0 ? font.files.join(', ') : t('themeEditor.unusedFonts.noFile')}
               </p>
             </div>
-            <Button variant="ghost" className="shrink-0" disabled={busy !== null} onClick={() => remove(font)}>
-              {busy === font.family ? t('themeEditor.unusedFonts.removing') : t('themeEditor.unusedFonts.remove')}
-            </Button>
+            <IconButton
+              icon={Trash2}
+              title={busy === font.family ? t('themeEditor.unusedFonts.removing') : t('common.removeNamed', { name: font.family })}
+              disabled={busy !== null}
+              onClick={() => void remove(font)}
+            />
           </div>
         ))}
       </div>

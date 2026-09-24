@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Camera, FolderClock } from 'lucide-react'
+import { Camera, FolderClock, Trash2 } from 'lucide-react'
 import { confirmDialog } from '../utils/confirm'
 import { useProject } from './ProjectLayout'
 import type { BackupEntry, Snapshot, SnapshotFileChange, SnapshotSettings } from '@shared/ipc-contract'
-import { Badge, Button, Card, CardHeading, InfoNote, PageHeader, TextInput, Toggle } from '../components/ui'
+import { Badge, Button, Card, CardHeading, IconButton, InfoNote, PageHeader, TextInput, Toggle } from '../components/ui'
 import { useAsyncAction } from '../hooks/useAsyncAction'
 import { formatBytes } from '../utils/format'
 import { useStickyState } from '../state/uiState'
@@ -15,27 +15,37 @@ function SnapshotRow({
   snapshot,
   expanded,
   onToggle,
+  onDelete,
+  deleting,
   children
 }: {
   snapshot: Snapshot
   expanded: boolean
   onToggle: () => void
+  onDelete: () => void
+  deleting: boolean
   children?: React.ReactNode
 }): JSX.Element {
   const { t, i18n } = useTranslation()
+  const when = new Date(snapshot.createdAt).toLocaleString(i18n.language)
   return (
     <Card className={expanded ? 'col-span-full' : ''}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone={snapshot.kind === 'manual' ? 'green' : 'slate'}>{t(`backups.kinds.${snapshot.kind}`)}</Badge>
-            <span className="text-sm">{new Date(snapshot.createdAt).toLocaleString(i18n.language)}</span>
+            <span className="text-sm">{when}</span>
           </div>
           {snapshot.label && <p className="mt-1 break-words text-sm text-text-secondary">{snapshot.label}</p>}
         </div>
-        <Button variant="ghost" className="shrink-0 whitespace-nowrap" onClick={onToggle}>
-          {expanded ? t('backups.close') : t('backups.compare')}
-        </Button>
+        <div className="flex shrink-0 items-center gap-1">
+          <Button variant="ghost" className="whitespace-nowrap" onClick={onToggle}>
+            {expanded ? t('backups.close') : t('backups.compare')}
+          </Button>
+          {/* On the tile rather than inside it: until 2026-09-24 deleting a snapshot meant opening
+              it with "Vergleichen" first, and the red button sat at the bottom of the comparison. */}
+          <IconButton icon={Trash2} title={t('common.deleteNamed', { name: snapshot.label || when })} onClick={onDelete} disabled={deleting} />
+        </div>
       </div>
       {children}
     </Card>
@@ -235,6 +245,8 @@ export default function Backups(): JSX.Element {
             snapshot={snapshot}
             expanded={openId === snapshot.id}
             onToggle={() => setOpenId(openId === snapshot.id ? null : snapshot.id)}
+            onDelete={() => deleteAction.run(snapshot.id)}
+            deleting={deleteAction.pending}
           >
             {openId === snapshot.id && (
               <div className="mt-4 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
@@ -317,9 +329,6 @@ export default function Backups(): JSX.Element {
                   <Button variant="ghost" onClick={() => exportAction.run(snapshot.id)} disabled={exportAction.pending}>
                     {t('backups.export')}
                   </Button>
-                  <Button variant="danger" onClick={() => deleteAction.run(snapshot.id)} disabled={deleteAction.pending}>
-                    {t('backups.delete')}
-                  </Button>
                 </div>
               </div>
             )}
@@ -359,9 +368,12 @@ export default function Backups(): JSX.Element {
                   <Button variant="ghost" onClick={() => restoreFolderAction.run(entry)} disabled={restoreFolderAction.pending}>
                     {t('backups.restore')}
                   </Button>
-                  <Button variant="danger" onClick={() => deleteFolderAction.run(entry)} disabled={deleteFolderAction.pending}>
-                    {t('backups.delete')}
-                  </Button>
+                  <IconButton
+                    icon={Trash2}
+                    title={t('common.deleteNamed', { name: new Date(entry.createdAt).toLocaleString(i18n.language) })}
+                    onClick={() => deleteFolderAction.run(entry)}
+                    disabled={deleteFolderAction.pending}
+                  />
                 </div>
               </div>
             ))}

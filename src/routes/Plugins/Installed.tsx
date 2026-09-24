@@ -15,7 +15,7 @@ import type {
   PluginOptionField,
   QuartzConfig
 } from '@shared/ipc-contract'
-import { Badge, Button, Card, CardHeading, Select, TextInput, Toggle } from '../../components/ui'
+import { Badge, Button, Card, CardHeading, IconButton, Select, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { announce } from '../../state/announcer'
 import { primeStickyState, useStickyState } from '../../state/uiState'
@@ -711,41 +711,6 @@ function GroupHeading({ label, rawKey, count }: { label: string; rawKey?: string
       {rawKey && <span className="font-mono text-micro font-normal normal-case tracking-normal text-text-muted">{rawKey}</span>}
       <span className="font-normal text-text-muted">({count})</span>
     </h3>
-  )
-}
-
-function IconButton({
-  icon: Icon,
-  title,
-  onClick,
-  disabled,
-  tone = 'danger'
-}: {
-  icon: typeof Trash2
-  title: string
-  onClick: () => void
-  disabled?: boolean
-  tone?: 'danger' | 'neutral'
-}): JSX.Element {
-  return (
-    <button
-      type="button"
-      title={title}
-      aria-label={title}
-      onClick={onClick}
-      disabled={disabled}
-      // Enabled is the secondary tone and disabled the muted one, both explicit: `disabled:opacity-40`
-      // on a muted icon measured 1.69:1 (docs/REVIEW-2026-09-02.md, d), and one step below muted
-      // is below the floor - so the enabled icon moved up a step instead. Only a destructive
-      // button turns red on hover; the two move arrows next to it are ordinary edits.
-      className={`rounded-[7px] p-1.5 text-text-secondary transition-colors disabled:cursor-not-allowed disabled:text-text-muted ${
-        tone === 'danger'
-          ? 'hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/15 dark:hover:text-red-400'
-          : 'hover:bg-ink/[0.06] hover:text-text'
-      }`}
-    >
-      <Icon size={15} strokeWidth={2} aria-hidden />
-    </button>
   )
 }
 

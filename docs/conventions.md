@@ -426,6 +426,16 @@ Projektwurzel.
   14 Icon-Knöpfe Tailwinds `svg { display: block }` selbst, in zwei Formen (vier mit
   `inline-flex` am Knopf, zehn mit `<span>`), und die standen mit 31,5 und 32,8–33,3 px
   nebeneinander (fünfundzwanzigstes Review; gezählt im sechsundzwanzigsten, Befund 8).
+- **Einen Eintrag aus einer Liste nehmen ist ein Mülleimer.** `IconButton` (`ui.tsx`) mit
+  `Trash2`, neben dem Eintrag, und sein `title` nennt ihn (`common.deleteNamed` /
+  `common.removeNamed`) — in einer Liste hießen sonst zehn Knöpfe gleich. Bis zum 2026-09-24 war
+  dieselbe Handlung je nach Seite ein roter gefüllter Knopf (eigene Frames, Snapshots, verschobene
+  Ordner), ein unterstrichenes Wort (Theme-Presets, CSS-Dateien, Gruppen, Ziele), ein grauer Knopf
+  (Zugänge, ungenutzte Schriften) oder ein selbstgebauter Mülleimer (Startseite). Gefragt wird
+  weiter über `confirmDialog()`, wo die Handlung nicht über „Speichern“ läuft; das Preset löschte
+  vorher ohne Frage. **Eine Aktion in einem Formular oder Panel behält ihr Wort** („Bereich
+  löschen“, „Duplikat entfernen“, „Bild entfernen“, „Frame löschen“ unter dem Editor): Dort steht
+  sie zwischen anderen Wörtern, und ein Symbol wäre das eine, was man entziffern muss.
 - **`SegmentedControl` ist eine Radiogruppe, keine Knopfreihe.** `role="radiogroup"` mit
   `role="radio"`-Segmenten, `aria-checked`, Roving-Tabindex (die Gruppe ist ein Tabstopp), Pfeile
   links/rechts/hoch/runter wandern durch die Optionen und *ändern dabei die Auswahl*, mit Umbruch an

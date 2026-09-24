@@ -65,6 +65,53 @@ export function Button({
   )
 }
 
+// A button that is only an icon, with its name in `title` and `aria-label` - which is why `title`
+// is required: an icon alone names nothing to a screen reader. Moved here from the plugin list,
+// where it was a local helper, when removing an entry became a bin everywhere (2026-09-24): until
+// then the same act was a red filled button (own frames, snapshots), an underlined word (theme
+// presets, CSS files, groups), a ghost button (connections, unused fonts) or a hand-made bin (start
+// page), depending on the page. The rule that came with it: taking an entry out of a list is this
+// button with `Trash2`, next to the entry, and the title names the entry. An action inside a form
+// or panel keeps its word, because there it stands among other words and an icon would be the one
+// thing to decode.
+//
+// Enabled is the secondary tone and disabled the muted one, both explicit: `disabled:opacity-40`
+// on a muted icon measured 1.69:1 (docs/REVIEW-2026-09-02.md, d), and one step below muted is below
+// the floor - so the enabled icon moved up a step instead. Only a destructive button turns red on
+// hover; a move arrow next to it is an ordinary edit.
+export function IconButton({
+  icon: Icon,
+  title,
+  onClick,
+  disabled,
+  tone = 'danger',
+  className = ''
+}: {
+  icon: LucideIcon
+  title: string
+  onClick: () => void
+  disabled?: boolean
+  tone?: 'danger' | 'neutral'
+  className?: string
+}): JSX.Element {
+  return (
+    <button
+      type="button"
+      title={title}
+      aria-label={title}
+      onClick={onClick}
+      disabled={disabled}
+      className={`shrink-0 rounded-[7px] p-1.5 text-text-secondary transition-colors disabled:cursor-not-allowed disabled:text-text-muted ${
+        tone === 'danger'
+          ? 'hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/15 dark:hover:text-red-400'
+          : 'hover:bg-ink/[0.06] hover:text-text'
+      } ${className}`}
+    >
+      <Icon size={15} strokeWidth={2} aria-hidden />
+    </button>
+  )
+}
+
 // Copy-to-clipboard with the only feedback that matters here: which value was just copied, for a
 // moment. Shared because both the CSS tab's colour strip and its variable reference offer it, and a
 // second copy of the timeout bookkeeping in each would drift.

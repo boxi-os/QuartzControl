@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CloudUpload, FileDiff, Key, SquarePen, Target } from 'lucide-react'
+import { CloudUpload, FileDiff, Key, SquarePen, Target, Trash2 } from 'lucide-react'
 import { confirmDialog } from '../../utils/confirm'
 import type { TFunction } from 'i18next'
 import { Link } from 'react-router-dom'
@@ -22,6 +22,7 @@ import {
   CardHeading,
   Field,
   FormActions,
+  IconButton,
   InfoNote,
   PageHeader,
   SegmentedControl,
@@ -478,7 +479,7 @@ export default function Publish(): JSX.Element {
                 </span>
               )}
             </span>
-            <div className="flex shrink-0 gap-2 whitespace-nowrap">
+            <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
               <button
                 type="button"
                 className="text-text-muted underline"
@@ -491,9 +492,7 @@ export default function Publish(): JSX.Element {
                   {t('publish.forgetHostKey')}
                 </button>
               )}
-              <button type="button" className="text-red-600 underline dark:text-red-400" onClick={() => deleteTarget(activeTarget.id)}>
-                {t('common.remove')}
-              </button>
+              <IconButton icon={Trash2} title={t('common.deleteNamed', { name: activeTarget.name })} onClick={() => void deleteTarget(activeTarget.id)} />
             </div>
           </div>
         )}

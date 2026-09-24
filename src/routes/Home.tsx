@@ -14,7 +14,7 @@ import type {
 } from '@shared/ipc-contract'
 import type { TFunction } from 'i18next'
 import { useAppStore } from '../state/store'
-import { Button, Card, CardHeading, Field, InfoNote, Modal, Select, TextInput, Toggle } from '../components/ui'
+import { Button, Card, CardHeading, Field, IconButton, InfoNote, Modal, Select, TextInput, Toggle } from '../components/ui'
 import ProjectAvatar from '../components/ProjectAvatar'
 import { ImportOutcome } from '../components/ImportOutcome'
 import { formatIpcError } from '../components/ErrorSurface'
@@ -588,15 +588,8 @@ function ProjectRow({
         {relocate.error}
       </p>
 
-      <button
-        type="button"
-        aria-label={t('common.remove')}
-        title={t('common.remove')}
-        onClick={onRemove}
-        className="absolute right-3 top-3 rounded-[6px] p-1 text-text-muted transition-colors hover:bg-ink/[0.05] hover:text-text dark:hover:bg-ink/10"
-      >
-        <Trash2 size={14} />
-      </button>
+      {/* Takes the project off this list; its folder stays where it is (the dialog says so). */}
+      <IconButton icon={Trash2} title={t('common.removeNamed', { name: project.name })} onClick={onRemove} className="absolute right-3 top-3" />
     </Card>
   )
 }

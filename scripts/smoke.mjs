@@ -136,8 +136,16 @@ async function run() {
     // Playwright emulates a colour scheme by default, which overrides prefers-color-scheme and
     // would hide anything that only goes wrong in the theme the OS is actually set to.
     await page.emulateMedia({ colorScheme: null })
-    const win = await app.browserWindow(page)
-    await win.evaluate((bw, s) => bw.setSize(s.w, s.h, false), { w: size.w, h: size.h })
+    // In the main process rather than through app.browserWindow(page): that hands back a JSHandle,
+    // and once a run ended before the first screen with "jsHandle.evaluate: Resulting promise was
+    // garbage collected" (thirty-seventh review, nebenbei) - an abort that reads like a finding.
+    // The app has one window.
+    const actual = await app.evaluate(({ BrowserWindow }, s) => {
+      const [bw] = BrowserWindow.getAllWindows()
+      bw.setSize(s.w, s.h, false)
+      return bw.getSize()
+    }, { w: size.w, h: size.h })
+    if (actual[0] !== size.w) console.warn(`Fenster ist ${actual.join('x')} statt ${size.w}x${size.h}.`)
 
     for (const [label, hash] of routes) await visit(page, size.label, label, hash)
     await app.close().catch(() => {})

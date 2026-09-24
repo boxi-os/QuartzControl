@@ -19,8 +19,10 @@ function iconPath(projectPath: string): string {
 
 // The optional second picture, for the dark scheme. Only the header image uses it (see
 // shared/projectImageBox.ts) - the favicon emitter reads icon.png and nothing else. Quartz ships no
-// file of this name, so unlike icon.png its presence *is* the answer to "did the user choose one",
-// and removing it is a plain delete: there is no original to restore.
+// file of this name, so removing it is a plain delete: there is no original to restore. But its
+// presence is not the answer to "did the user choose one" either: every template package ships one
+// since 2026-09-24 (`cf91aba`), and until the thirty-seventh review (finding 1) an import called
+// that file the user's own and kept it, while it replaced the icon.png beside it.
 function darkIconPath(projectPath: string): string {
   return join(projectPath, 'quartz', 'static', 'icon-dark.png')
 }
@@ -38,9 +40,11 @@ interface IconMarker {
   custom: boolean
   /** Whether the icon.png that was displaced is kept in ORIGINAL_FILE. False when there was none. */
   hasOriginal: boolean
+  /** Whether icon-dark.png was chosen in this app. */
+  customDark: boolean
 }
 
-const NO_MARKER: IconMarker = { custom: false, hasOriginal: false }
+const NO_MARKER: IconMarker = { custom: false, hasOriginal: false, customDark: false }
 
 // The longest edge an icon is stored at. The favicon emitter only ever needs 48px; the rest is
 // headroom for whatever a later use (an og-image, a retina avatar) wants, and it keeps a 4000px
@@ -55,7 +59,24 @@ const ACCEPTED_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg'])
 async function readMarker(projectPath: string): Promise<IconMarker> {
   // A read path must not create .quartz-gui/ - see quartzGuiPath.
   const raw = await readJsonFileOr<Partial<IconMarker>>(quartzGuiPath(projectPath, MARKER_FILE), NO_MARKER)
-  return { custom: raw.custom === true, hasOriginal: raw.hasOriginal === true }
+  const custom = raw.custom === true
+  return {
+    custom,
+    hasOriginal: raw.hasOriginal === true,
+    // A marker written before `customDark` existed. Up to then the card only let a dark picture be
+    // chosen once a light one was (`disabled={!icon?.custom}`), so an icon-dark.png next to a
+    // recorded icon.png is the user's, and one without is not - a template's.
+    customDark: typeof raw.customDark === 'boolean' ? raw.customDark : custom && existsSync(darkIconPath(projectPath))
+  }
+}
+
+async function writeMarker(projectPath: string, marker: IconMarker): Promise<void> {
+  // Nothing left to record: the file goes, so a read gets NO_MARKER rather than a legacy guess.
+  if (!marker.custom && !marker.customDark) {
+    await rm(quartzGuiPath(projectPath, MARKER_FILE), { force: true })
+    return
+  }
+  await writeJsonFile(join(quartzGuiDir(projectPath), MARKER_FILE), marker)
 }
 
 // Decoding a PNG on every read would happen once per project on every start-screen refresh, so the
@@ -88,18 +109,26 @@ function fit(image: Electron.NativeImage, edge: number): Electron.NativeImage {
   return width >= height ? image.resize({ width: edge, quality: 'best' }) : image.resize({ height: edge, quality: 'best' })
 }
 
-/** What the project's icon is right now, ready to render. */
 /**
- * The files under quartz/static that are the user's picture rather than a design: icon.png only
- * when this app recorded that the user chose it (the marker - Quartz ships its own icon.png, so the
- * file alone says nothing), icon-dark.png whenever it exists, because Quartz ships none. A template
- * import leaves these alone (templatePackage/parts.ts, static).
+ * The files under quartz/static that are the user's picture rather than a design: each only when
+ * this app recorded that the user chose it (the marker). Quartz ships its own icon.png and every
+ * template an icon-dark.png, so neither file alone says anything. A template import leaves these
+ * alone (templatePackage/parts.ts, static).
  */
 export async function userChosenStaticFiles(projectPath: string): Promise<Set<string>> {
+  const marker = await readMarker(projectPath)
   const names = new Set<string>()
-  if ((await readMarker(projectPath)).custom) names.add('icon.png')
-  if (existsSync(darkIconPath(projectPath))) names.add('icon-dark.png')
+  if (marker.custom) names.add('icon.png')
+  if (marker.customDark && existsSync(darkIconPath(projectPath))) names.add('icon-dark.png')
   return names
+}
+
+/**
+ * Whether icon-dark.png is there and nobody recorded choosing it - in practice a template's. The
+ * counterpart of hasUnrecordedIcon without the Quartz blob to compare against: Quartz ships none.
+ */
+export async function hasUnrecordedDarkIcon(projectPath: string): Promise<boolean> {
+  return existsSync(darkIconPath(projectPath)) && !(await readMarker(projectPath)).customDark
 }
 
 // The git blob id of the icon.png Quartz ships. One since the file was added (2023-05-30,
@@ -141,6 +170,7 @@ export async function getProjectIcon(projectPath: string): Promise<ProjectIconIn
     width: size?.width ?? 0,
     height: size?.height ?? 0,
     darkDataUrl: existsSync(darkIconPath(projectPath)) ? thumbnailFor(darkIconPath(projectPath)) : null,
+    darkCustom: marker.customDark && existsSync(darkIconPath(projectPath)),
     unrecorded: await hasUnrecordedIcon(projectPath)
   }
 }
@@ -167,11 +197,13 @@ function prepareImage(sourcePath: string): (target: string) => Promise<void> {
 /** Writes the dark-scheme picture to quartz/static/icon-dark.png, normalized like the main one. */
 export async function setProjectIconDark(projectPath: string, sourcePath: string): Promise<ProjectIconInfo> {
   await prepareImage(sourcePath)(darkIconPath(projectPath))
+  await writeMarker(projectPath, { ...(await readMarker(projectPath)), customDark: true })
   return getProjectIcon(projectPath)
 }
 
 export async function clearProjectIconDark(projectPath: string): Promise<ProjectIconInfo> {
   await rm(darkIconPath(projectPath), { force: true })
+  await writeMarker(projectPath, { ...(await readMarker(projectPath)), customDark: false })
   return getProjectIcon(projectPath)
 }
 
@@ -207,7 +239,7 @@ export async function setProjectIcon(projectPath: string, sourcePath: string): P
   }
 
   await store(target)
-  await writeJsonFile(join(quartzGuiDir(projectPath), MARKER_FILE), { custom: true, hasOriginal } satisfies IconMarker)
+  await writeMarker(projectPath, { custom: true, hasOriginal, customDark: marker.customDark })
   return getProjectIcon(projectPath)
 }
 
@@ -229,6 +261,7 @@ export async function clearProjectIcon(projectPath: string): Promise<ProjectIcon
   }
 
   await rm(original, { force: true })
-  await rm(quartzGuiPath(projectPath, MARKER_FILE), { force: true })
+  // The dark picture is a choice of its own and outlives the light one.
+  await writeMarker(projectPath, { custom: false, hasOriginal: false, customDark: marker.customDark })
   return getProjectIcon(projectPath)
 }

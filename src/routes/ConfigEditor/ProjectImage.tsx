@@ -194,6 +194,11 @@ export default function ProjectImage({
                 ? t('projectImage.dark.hintHeaderOn')
                 : t('projectImage.dark.hint')}
           </p>
+          {/* A light picture of the user's own next to the template's dark one: the header shows the
+              user's in light mode and the template's mark in dark (thirty-seventh review, finding 1). */}
+          {icon?.custom && hasDark && !icon.darkCustom && (
+            <p className="text-micro text-text-muted">{t('projectImage.dark.notChosen')}</p>
+          )}
           {markShows && !headerOn ? (
             <p className="mt-2 text-micro text-text-muted">{t('projectImage.header.shownByMark')}</p>
           ) : (

@@ -767,6 +767,7 @@ export default {
       remove: 'Dunkles Bild entfernen',
       hint: 'Optional, nur für das Bild im Kopfbereich. Liegt als quartz/static/icon-dark.png im Projekt; das Favicon bleibt beim hellen Bild.',
       hintHeaderOn: 'Nur für das Bild im Kopfbereich; das Favicon bleibt beim hellen Bild. „Dunkles Bild entfernen“ löscht die Datei sofort — bis zum „Speichern“ fehlt dem Kopfbereich im dunklen Modus dann sein Bild.',
+      notChosen: 'Das dunkle Bild wurde nicht in der App gewählt — meist ist es das der Vorlage. Zeigt der Kopfbereich das Projektbild, dann im dunklen Modus dieses, bis du ein eigenes wählst.',
       hintMark: 'Für den Dunkelmodus im Kopfbereich; das Favicon bleibt beim hellen Bild. Die Marke der Vorlage nennt quartz/static/icon-dark.png — ohne die Datei fehlt ihr im dunklen Modus das Bild. Ersetzen statt entfernen.',
       announceSet: 'Bild für den Dunkelmodus gesetzt.',
       announceCleared: 'Bild für den Dunkelmodus entfernt.'
@@ -1811,8 +1812,11 @@ export default {
     planIdentical: '{{count}} identisch',
     planProjectIconKept: 'Das Projektbild bleibt: Du hast es in der App gewählt, die Vorlage ersetzt es nicht.',
     planProjectIconKept_other: 'Die Projektbilder bleiben: Du hast sie in der App gewählt, die Vorlage ersetzt sie nicht.',
-    planUnrecordedIconReplaced: '„icon.png“ ist nicht das Bild von Quartz und wurde nicht in dieser App gewählt — vielleicht auf einem anderen Rechner oder mit einer früheren Vorlage. „Vorlage gewinnt“ ersetzt es; „Projekt gewinnt“ behält es.',
-    planUnrecordedIconKept: '„icon.png“ ist nicht das Bild von Quartz und wurde nicht in dieser App gewählt — vielleicht auf einem anderen Rechner oder mit einer früheren Vorlage. Es bleibt, weil „Projekt gewinnt“ gewählt ist.',
+    planUnrecordedIconReplaced: '{{names}} ist nicht das Bild von Quartz und wurde nicht in dieser App gewählt — vielleicht auf einem anderen Rechner oder mit einer früheren Vorlage. „Vorlage gewinnt“ ersetzt es; „Projekt gewinnt“ behält es.',
+    planUnrecordedIconReplaced_other: '{{names}} wurden nicht in dieser App gewählt — vielleicht auf einem anderen Rechner oder mit einer früheren Vorlage. „Vorlage gewinnt“ ersetzt sie; „Projekt gewinnt“ behält sie.',
+    planUnrecordedIconKept: '{{names}} ist nicht das Bild von Quartz und wurde nicht in dieser App gewählt — vielleicht auf einem anderen Rechner oder mit einer früheren Vorlage. Es bleibt, weil „Projekt gewinnt“ gewählt ist.',
+    planUnrecordedIconKept_other: '{{names}} wurden nicht in dieser App gewählt — vielleicht auf einem anderen Rechner oder mit einer früheren Vorlage. Sie bleiben, weil „Projekt gewinnt“ gewählt ist.',
+    namesAnd: ' und ',
     planOutside: '{{count}} wird abgelehnt',
     planOutside_other: '{{count}} werden abgelehnt',
     planContentIsSymlink:

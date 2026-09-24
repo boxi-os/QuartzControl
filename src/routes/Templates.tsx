@@ -512,9 +512,16 @@ function planNotes(t: Translate, plan: TemplatePartPlan, strategy: TemplateConfl
   if (plan.notes.includes('contentIsSymlink')) notes.push(t('templates.planContentIsSymlink'))
   if (noteCount(plan, 'projectIcon') > 0) notes.push(t('templates.planProjectIconKept', { count: noteCount(plan, 'projectIcon') }))
   // A picture that is neither Quartz's nor recorded as chosen here - from another machine, or from
-  // an earlier template. Main cannot tell which, so the sentence names the file and the choice.
-  if (noteCount(plan, 'unrecordedIcon') > 0) {
-    notes.push(t(strategy === 'packageWins' ? 'templates.planUnrecordedIconReplaced' : 'templates.planUnrecordedIconKept'))
+  // an earlier template. Main cannot tell which, so the sentence names the files and the choice.
+  // icon-dark.png is one of them since every package ships one (thirty-seventh review, finding 1).
+  const unrecorded = plan.notes.filter((note) => note.startsWith('unrecordedIcon:')).map((note) => note.slice('unrecordedIcon:'.length))
+  if (unrecorded.length > 0) {
+    notes.push(
+      t(strategy === 'packageWins' ? 'templates.planUnrecordedIconReplaced' : 'templates.planUnrecordedIconKept', {
+        count: unrecorded.length,
+        names: unrecorded.map((name) => t('templates.quotedName', { value: name })).join(t('templates.namesAnd'))
+      })
+    )
   }
   const outside = plan.notes.filter((note) => note.startsWith('outside:')).map((note) => note.slice('outside:'.length))
   if (outside.length > 0) {

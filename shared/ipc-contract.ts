@@ -1284,6 +1284,11 @@ export interface ProjectIconInfo {
   /** quartz/static/icon-dark.png scaled down, or null when the project has no dark-scheme picture. */
   darkDataUrl: string | null
   /**
+   * True when icon-dark.png was chosen in this app. False for one a template brought - every
+   * package ships one - even when icon.png beside it is the user's.
+   */
+  darkCustom: boolean
+  /**
    * True when icon.png is neither Quartz's own nor chosen in this app - usually a template's mark,
    * or a picture chosen on another machine (the marker is not in git). Only ever with `custom` false.
    */

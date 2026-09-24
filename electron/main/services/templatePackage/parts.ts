@@ -550,7 +550,7 @@ interface StaticPayload {
 // which is what a template carries.
 //
 // With one exception, and it is the project's own picture: when the user chose it in this app
-// (projectIconService records that), icon.png - and icon-dark.png, which Quartz never ships - is
+// (projectIconService records that, for icon.png and icon-dark.png each), the file is
 // theirs and not a design, and a template does not replace it, whichever side wins. Until the
 // thirty-fifth review ("nebenbei") every package did under 'packageWins', because every package
 // carries Quartz's own icon.png. The dry run says so beforehand, the result afterwards.
@@ -581,7 +581,9 @@ const staticFiles: TemplatePart<StaticPayload> = {
     const dir = staticDir(projectPath)
     const plan = emptyPlan()
     const usersOwn = await projectIconService.userChosenStaticFiles(projectPath)
-    const unrecordedIcon = await projectIconService.hasUnrecordedIcon(projectPath)
+    const unrecorded = new Set<string>()
+    if (await projectIconService.hasUnrecordedIcon(projectPath)) unrecorded.add('icon.png')
+    if (await projectIconService.hasUnrecordedDarkIcon(projectPath)) unrecorded.add('icon-dark.png')
     for (const name of payload.files) {
       const target = await writableTarget(dir, name)
       if (!target) {
@@ -597,7 +599,7 @@ const staticFiles: TemplatePart<StaticPayload> = {
       else if (usersOwn.has(name)) plan.notes.push(`projectIcon:${name}`)
       else {
         plan.conflicts.push(name)
-        if (name === 'icon.png' && unrecordedIcon) plan.notes.push(`unrecordedIcon:${name}`)
+        if (unrecorded.has(name)) plan.notes.push(`unrecordedIcon:${name}`)
       }
     }
     return plan

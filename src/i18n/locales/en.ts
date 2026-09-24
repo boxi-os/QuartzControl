@@ -764,6 +764,7 @@ export default {
       remove: 'Remove dark image',
       hint: 'Optional, only for the image in the header. Stored as quartz/static/icon-dark.png in the project; the favicon stays with the light image.',
       hintHeaderOn: 'Only for the image in the header; the favicon stays with the light image. “Remove dark image” deletes the file at once — until you “Save”, the header then has no image in dark mode.',
+      notChosen: 'The dark image was not chosen in the app — usually it is the template’s. If the header shows the project image, it shows this one in dark mode until you choose your own.',
       hintMark: 'For dark mode in the header; the favicon stays with the light image. The template’s mark names quartz/static/icon-dark.png — without the file it has no image in dark mode. Replace rather than remove.',
       announceSet: 'Image for dark mode set.',
       announceCleared: 'Image for dark mode removed.'
@@ -1798,8 +1799,11 @@ export default {
     planIdentical: '{{count}} identical',
     planProjectIconKept: 'The project picture stays: you chose it in the app, and the template does not replace it.',
     planProjectIconKept_other: 'The project pictures stay: you chose them in the app, and the template does not replace them.',
-    planUnrecordedIconReplaced: '“icon.png” is not Quartz’s picture and was not chosen in this app — perhaps on another computer or by an earlier template. “Template wins” replaces it; “Project wins” keeps it.',
-    planUnrecordedIconKept: '“icon.png” is not Quartz’s picture and was not chosen in this app — perhaps on another computer or by an earlier template. It stays, because “Project wins” is selected.',
+    planUnrecordedIconReplaced: '{{names}} is not Quartz’s picture and was not chosen in this app — perhaps on another computer or by an earlier template. “Template wins” replaces it; “Project wins” keeps it.',
+    planUnrecordedIconReplaced_other: '{{names}} were not chosen in this app — perhaps on another computer or by an earlier template. “Template wins” replaces them; “Project wins” keeps them.',
+    planUnrecordedIconKept: '{{names}} is not Quartz’s picture and was not chosen in this app — perhaps on another computer or by an earlier template. It stays, because “Project wins” is selected.',
+    planUnrecordedIconKept_other: '{{names}} were not chosen in this app — perhaps on another computer or by an earlier template. They stay, because “Project wins” is selected.',
+    namesAnd: ' and ',
     planOutside: '{{count}} refused',
     planOutside_other: '{{count}} refused',
     planContentIsSymlink:

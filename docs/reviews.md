@@ -1849,6 +1849,11 @@ stehen in den Commit-Nachrichten):
   des jeweiligen Modus), nicht über den der App: Eine Farbe mit Alpha zeigte vorher das, was die
   App dahinter hatte, in beiden Feldern gleich. Alle sechs Stellen mit Farbfeldern.
 
+`024c005` und `512fea9` haben ein Handbuchkapitel nach sich gezogen: 4.4 „Variablen“ ist im Vault
+neu (`99011c7`, beide Sprachen, gepusht), **die Website noch nicht** — sie zeigt die Seite von
+rc.1 und wird mit dem Release gebaut (`docs/release.md`, Punkt 3; nachgetragen nach dem
+sechsunddreißigsten Review, Befund 10).
+
 **Am 2026-09-24 die vier Nebenbei-Punkte des fünfunddreißigsten Reviews**, auf
 `fix/nebenbei-nach-rc1`, drei Commits, Typcheck, `check:i18n`, `check:handbook`, Build und Smoke
 grün:

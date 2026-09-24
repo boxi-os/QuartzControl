@@ -52,6 +52,13 @@ Website wird mit dem Release veröffentlicht (Punkt 9). Die Pfade in `src/data/h
 müssen dort existieren — nach einer Umbenennung im Vault alle 36 prüfen (sie antworten mit 200 oder
 404).
 
+**Für 1.0.0 ausstehend** (sechsunddreißigstes Review, Befund 10): Kapitel 4.4 „Variablen“ ist im
+Vault neu (`99011c7`, 2026-09-23, beide Sprachen, gepusht) und beschreibt die Seite nach `024c005`
+und `512fea9` — ein Feld „Hell und dunkel“, Blättern ohne Suche. Online steht die Fassung von rc.1
+(am 2026-09-24 mit `curl` gegen `4-gestaltung/04-variablen` und `en/4-design/04-variables`
+gehalten: weder „Einzelne Variablen“ noch „Hell und dunkel“). Für rc.1 ist das richtig, also wird
+die Website erst mit dem Release gebaut (Punkt 9); streichen, sobald sie es ist.
+
 Das Handbuch sollte auf dem Stand der App sein: `npm run check:handbook` nach dem letzten
 Textdurchgang, und die Screenshots nach der letzten sichtbaren Änderung
 (`npm run screenshots -- --demo --cards`, siehe [`handbuch.md`](handbuch.md)).

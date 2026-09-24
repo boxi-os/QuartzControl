@@ -1,12 +1,20 @@
 # Vor einem Release
 
-> **Zuletzt durchlaufen für 1.0.0-rc.1 am 2026-09-21** (Tag `v1.0.0-rc.1` auf `224c08d`). Zehn
-> Pakete, neun auf einer Maschine ihrer Architektur gestartet (macOS x64 nicht, kein Intel-Mac),
-> alle mit Node 24.18.1, npm 11.17.0 und git 2.53.0; Prüfsummen auf der Release-Seite gegen die
-> Dateien auf den VMs gehalten. Drei Dinge, die dabei auffielen: Das Handbuch nannte für Linux
-> noch „ab Ubuntu 18.04“ (jetzt glibc 2.34), das Band der Website behauptete, die App bringe ihr
-> eigenes Handbuch mit, und ein `pkill -f` über ssh beendet die eigene Sitzung — auf der VM über
-> die gemerkte PID beenden.
+> **Zuletzt durchlaufen für 1.0.0 am 2026-09-24/25** (Tag `v1.0.0` auf `f98a991`, vom Branch
+> `release/1.0.0` per Fast-Forward). Zehn Pakete, neun auf einer Maschine ihrer Architektur
+> gestartet (macOS x64 nicht, kein Intel-Mac), alle mit App-Version 1.0.0, Node 24.18.1 und npm
+> 11.17.0 gelesen, git 2.53.0 im macOS-Paket und in beiden Flatpaks. Die Digests der Release-Seite
+> stimmen mit `shasum` über `release/` überein. Veröffentlicht durch die gebaute App (`build.run`,
+> dann `deploy.diff` und `deploy.run` je Ziel): App-Website, drei Plugin-Handbücher und Example;
+> danach alle 36 Pfade aus `handbookPages.ts` mit 200 und das neue `icon.png` auf allen fünf.
+> Drei Dinge, die dabei auffielen: Der Code kommt ohne Push auf die VMs, per `git bundle
+> 224c08d..release/1.0.0`. Ein `nohup … &` über ssh hält die Sitzung offen, bis der Bau endet —
+> `setsid nohup … < /dev/null > /dev/null 2>&1 &` kehrt sofort zurück. Und GitHub Pages liefert
+> eine geänderte statische Datei ein paar Minuten lang aus dem Cache (`x-cache: HIT`), auch mit
+> Abfrageparameter; das Icon des Example sah so zunächst alt aus.
+>
+> Davor 1.0.0-rc.1 am 2026-09-21 (Tag auf `224c08d`); dabei fiel auf, dass ein `pkill -f` über ssh
+> die eigene Sitzung beendet — auf der VM über die gemerkte PID beenden.
 
 Was außerhalb von `npm run dist` getan werden muss, damit ein Release vollständig ist. Jeder Punkt
 hier stand bis zum Review 2026-09-19 nur in Commit-Nachrichten und im Auftrag eines Reviews, also
@@ -52,26 +60,9 @@ Website wird mit dem Release veröffentlicht (Punkt 9). Die Pfade in `src/data/h
 müssen dort existieren — nach einer Umbenennung im Vault alle 36 prüfen (sie antworten mit 200 oder
 404).
 
-**Für 1.0.0 ausstehend** (sechsunddreißigstes Review, Befund 10): Kapitel 4.4 „Variablen“ ist im
-Vault neu (`99011c7`, 2026-09-23, beide Sprachen, gepusht) und beschreibt die Seite nach `024c005`
-und `512fea9` — ein Feld „Hell und dunkel“, Blättern ohne Suche. Online steht die Fassung von rc.1
-(am 2026-09-24 mit `curl` gegen `4-gestaltung/04-variablen` und `en/4-design/04-variables`
-gehalten: weder „Einzelne Variablen“ noch „Hell und dunkel“). Dazu `2250e2b` im Vault (gepusht am
-2026-09-24): der zweite Satz zu „nicht auflösbar“. Für rc.1 ist das richtig, also wird
-die Website erst mit dem Release gebaut (Punkt 9); streichen, sobald sie es ist.
-
-**Für 1.0.0 ausstehend: die drei Plugin-Handbücher** (Layout Box, Multilanguage, Navigations;
-vom Nutzer am 2026-09-24 genannt). Online stehen sie nicht auf dem Stand des Basis-Templates:
-altes Icon, und im Navigations-Handbuch klappt die Navigation noch nicht aus. Lokal ist die Marke
-seit dem 2026-09-24 das Projektbild, veröffentlicht ist das nicht. Dazu bekommt jede Startseite
-dieselbe Darstellung wie die App-Website: was das Plugin kann, in Kästen, statt nur Text.
-**Inhaltlich erledigt am 2026-09-24** (Vaults gepusht: Navigations `990ec95`, Layout Box
-`b2fe83f`, Multilanguage `b77349c`): Das Navigations-Handbuch navigiert jetzt mit dem Akkordeon
-und dem Pager der Vorlage — seine Config und seine Stylesheets sind bis auf Titel und Adresse die
-des Layout-Box-Handbuchs, `plugin-navigations.scss` ist entfernt —, 8.1 dort und 8.1 bei Layout
-Box (die Marke ist kein Inline-SVG mehr) sind nachgezogen, alle drei Startseiten haben die Kästen.
-Offen ist nur das Veröffentlichen der drei Websites mit 1.0.0 (Punkt 9). Streichen, sobald alle
-drei so online stehen.
+**Für 1.0.0 erledigt:** Kapitel 4.4 „Variablen“ (sechsunddreißigstes Review, Befund 10) und die
+drei Plugin-Handbücher (Akkordeon und Pager im Navigations-Handbuch, Marke als Projektbild,
+Startseiten mit den Fähigkeiten) stehen seit dem 2026-09-25 online, zusammen mit der App-Website.
 
 Das Handbuch sollte auf dem Stand der App sein: `npm run check:handbook` nach dem letzten
 Textdurchgang, und die Screenshots nach der letzten sichtbaren Änderung

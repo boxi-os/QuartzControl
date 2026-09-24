@@ -249,8 +249,10 @@ Chronik. Die Chronik nachzulesen lohnt für zwei Fragen: *warum* eine Regel so l
 Absatz in `docs/decisions/` sie nicht beantwortet, und *was gerade ungelesen ist* — die Serie ist
 so gebaut, dass jede Runde liest, was die vorige gebaut hat.
 
-**Release:** `1.0.0-rc.1` ist am 2026-09-21 veröffentlicht (Release-Seite, `latest.json`,
-Website); Ablauf und Funde oben in [`docs/release.md`](docs/release.md).
+**Release:** `1.0.0` ist am 2026-09-25 veröffentlicht (Tag `v1.0.0` auf `f98a991`, Release-Seite
+mit zehn Paketen, `latest.json`, die App-Website, die drei Plugin-Handbücher und die
+Example-Website); Ablauf und Funde oben in [`docs/release.md`](docs/release.md). Davor
+`1.0.0-rc.1` am 2026-09-21.
 
 **Das siebenunddreißigste Review ist abgearbeitet** (gelesen 2026-09-24,
 [`docs/REVIEW-2026-10-11.md`](docs/REVIEW-2026-10-11.md), Auftrag
@@ -260,9 +262,8 @@ zurückzunehmen. Alle neun Befunde und die Nebenbei-Liste auf `fix/review-2026-1
 Fast-Forward auf `main` und gepusht — die dunkle Marke der Vorlagen gilt nicht mehr als in der App
 gewählt, ein verweigerter Schlüsselbund wird als solcher gesagt, und der Preis je Tastendruck auf
 der Variablen-Seite ist gesenkt (Hub-Variablen 47–85 → 21–48 ms ohne Long Task). Was daraus
-geworden ist, steht am Ende von [`docs/reviews.md`](docs/reviews.md). **Die nächste Fassung ist
-1.0.0**, kein weiterer RC; offen dafür ist die Handbuch-Website (Kapitel 4.4, `docs/release.md`
-Punkt 3). **Keinen dieser Fixes hat ein Review gelesen.**
+geworden ist, steht am Ende von [`docs/reviews.md`](docs/reviews.md). Diese Fixes sind in
+1.0.0 enthalten. **Keinen dieser Fixes hat ein Review gelesen.**
 
 Die Runde davor (sechsunddreißigstes Review, [`docs/REVIEW-2026-10-10.md`](docs/REVIEW-2026-10-10.md),
 1 Mittel, 10 Niedrig) ist abgearbeitet; das siebenunddreißigste hat ihre Fixes gelesen.

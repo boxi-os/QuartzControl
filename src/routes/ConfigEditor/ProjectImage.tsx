@@ -175,7 +175,11 @@ export default function ProjectImage({
             {icon?.darkDataUrl && (
               <img src={icon.darkDataUrl} alt="" className="h-10 w-10 rounded-md border border-ink/[0.06] bg-slate-900 object-contain dark:border-ink/10" />
             )}
-            <Button variant="ghost" onClick={() => chooseDark.run()} disabled={busy || !icon?.custom}>
+            {/* Replacing a dark picture that is there needs no light one of the user's: that is the
+                state a template leaves, and the hint below says "replace rather than remove" -
+                while only "remove" worked (thirty-seventh review, finding 4). Choosing a first one
+                still waits for a light picture, which the header image needs. */}
+            <Button variant="ghost" onClick={() => chooseDark.run()} disabled={busy || (!icon?.custom && !hasDark)}>
               {hasDark ? t('projectImage.dark.replace') : t('projectImage.dark.choose')}
             </Button>
             {hasDark && (

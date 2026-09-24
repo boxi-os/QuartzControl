@@ -765,7 +765,7 @@ export default {
       hint: 'Optional, only for the image in the header. Stored as quartz/static/icon-dark.png in the project; the favicon stays with the light image.',
       hintHeaderOn: 'Only for the image in the header; the favicon stays with the light image. “Remove dark image” deletes the file at once — until you “Save”, the header then has no image in dark mode.',
       notChosen: 'The dark image was not chosen in the app — usually it is the template’s. If the header shows the project image, it shows this one in dark mode until you choose your own.',
-      hintMark: 'For dark mode in the header; the favicon stays with the light image. The template’s mark names quartz/static/icon-dark.png — without the file it has no image in dark mode. Replace rather than remove.',
+      hintMark: 'For dark mode in the header; the favicon stays with the light image. A layout box names quartz/static/icon-dark.png — without the file it has no image in dark mode. Replace rather than remove.',
       announceSet: 'Image for dark mode set.',
       announceCleared: 'Image for dark mode removed.'
     },
@@ -774,7 +774,7 @@ export default {
       hint: 'As a link to the home page, with the dark image in dark mode. Applied with “Save”; place and order like any plugin under Layout.',
       hintInstall: 'Needs the quartz-layout-box plugin; switching it on offers to install it.',
       needsImage: 'Choose a project image of your own first.',
-      shownByMark: 'Already in the site header: the template’s mark shows this image, and the dark one in dark mode.',
+      shownByMark: 'Already in the site header: a layout box shows this image, and the dark one in dark mode — from a template, that is usually its mark.',
       installing: 'Installing quartz-layout-box…',
       installConfirm:
         'Install the quartz-layout-box plugin?\n\nThe header image is built with it. The app takes a snapshot first and saves this page’s unsaved changes.',

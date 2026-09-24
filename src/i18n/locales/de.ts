@@ -768,7 +768,7 @@ export default {
       hint: 'Optional, nur für das Bild im Kopfbereich. Liegt als quartz/static/icon-dark.png im Projekt; das Favicon bleibt beim hellen Bild.',
       hintHeaderOn: 'Nur für das Bild im Kopfbereich; das Favicon bleibt beim hellen Bild. „Dunkles Bild entfernen“ löscht die Datei sofort — bis zum „Speichern“ fehlt dem Kopfbereich im dunklen Modus dann sein Bild.',
       notChosen: 'Das dunkle Bild wurde nicht in der App gewählt — meist ist es das der Vorlage. Zeigt der Kopfbereich das Projektbild, dann im dunklen Modus dieses, bis du ein eigenes wählst.',
-      hintMark: 'Für den Dunkelmodus im Kopfbereich; das Favicon bleibt beim hellen Bild. Die Marke der Vorlage nennt quartz/static/icon-dark.png — ohne die Datei fehlt ihr im dunklen Modus das Bild. Ersetzen statt entfernen.',
+      hintMark: 'Für den Dunkelmodus im Kopfbereich; das Favicon bleibt beim hellen Bild. Eine Layout-Box nennt quartz/static/icon-dark.png — ohne die Datei fehlt ihr im dunklen Modus das Bild. Ersetzen statt entfernen.',
       announceSet: 'Bild für den Dunkelmodus gesetzt.',
       announceCleared: 'Bild für den Dunkelmodus entfernt.'
     },
@@ -777,7 +777,7 @@ export default {
       hint: 'Als Link zur Startseite, im dunklen Modus mit dem dunklen Bild. Wird mit „Speichern“ übernommen; Platz und Reihenfolge wie jedes Plugin im Layout.',
       hintInstall: 'Braucht das Plugin quartz-layout-box, die App bietet beim Einschalten an, es zu installieren.',
       needsImage: 'Erst ein eigenes Projektbild wählen.',
-      shownByMark: 'Steht schon im Kopfbereich: Die Marke der Vorlage zeigt dieses Bild, im dunklen Modus das dunkle.',
+      shownByMark: 'Steht schon im Kopfbereich: Eine Layout-Box zeigt dieses Bild, im dunklen Modus das dunkle — bei einer Vorlage ist das meist ihre Marke.',
       installing: 'Installiere quartz-layout-box…',
       installConfirm:
         'Plugin quartz-layout-box installieren?\n\nDas Bild im Kopfbereich wird damit gebaut. Vorher legt die App einen Snapshot an und speichert ungespeicherte Änderungen dieser Seite.',

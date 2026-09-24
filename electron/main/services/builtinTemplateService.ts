@@ -16,7 +16,7 @@
 // half-written cache file is still a file, and it beat the bundled copy for a whole day.
 import { app, net } from 'electron'
 import { existsSync } from 'fs'
-import { mkdir, open, readFile, rename, rm, stat } from 'fs/promises'
+import { mkdir, open, rename, rm, stat } from 'fs/promises'
 import { join } from 'path'
 import { readZip, readZipFile } from './zipArchive'
 import { MANIFEST_FILE, partFile } from './templatePackage/shared'
@@ -173,18 +173,4 @@ export async function getBuiltinTemplate(): Promise<BuiltinTemplate | null> {
   const shipped = await inspectPackage(bundled)
   if (shipped) return { path: bundled, source: 'bundled', ...shipped }
   return null
-}
-
-/**
- * The package's own manifest, for the wizard's description and part list. Read from whichever copy
- * getBuiltinTemplate() picks, so what the dialog promises is what would be applied.
- */
-export async function readBundledManifest(): Promise<Buffer | null> {
-  const template = await getBuiltinTemplate()
-  if (!template) return null
-  try {
-    return await readFile(template.path)
-  } catch {
-    return null
-  }
 }

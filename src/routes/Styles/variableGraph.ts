@@ -281,7 +281,9 @@ export function cssColorToHex(value: string | undefined): string | null {
 // values" (finding 2). Whether the picker is offered is asked separately, of the hex.
 export function isColorVariable(key: string, ctx: ResolveContext, which: 'base' | 'shown' = 'shown'): boolean {
   const def = catalogDef(key)
-  if (def && def.kind !== 'discovered') return def.kind === 'color'
+  // The catalog's own answer. `'discovered'` is a kind the CSS reference panel gives to keys
+  // *outside* the catalog, so a catalog entry never carries it.
+  if (def) return def.kind === 'color'
   const own = key in ctx.overrides && !ctx.graph?.vars[key]
   return (['light', 'dark'] as Mode[]).some((mode) => {
     const base = own ? effectiveValue(key, mode, ctx) : baseValue(key, mode, ctx)

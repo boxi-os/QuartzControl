@@ -34,7 +34,9 @@ interface GithubRepo {
 async function fetchFromGithub(): Promise<{ results: MarketplacePlugin[]; unavailable: boolean }> {
   // Read here rather than passed in from the renderer: the token is a credential, and relaying it
   // out to the renderer and back on every search was one round-trip more exposure than necessary.
-  const githubToken = await connectionsService.getGithubToken()
+  // The token only raises the rate limit; a stored one that cannot be read (Keychain access denied)
+  // leaves the listing anonymous rather than failing it.
+  const githubToken = await connectionsService.getGithubToken().catch(() => undefined)
   try {
     const headers: Record<string, string> = { Accept: 'application/vnd.github+json' }
     if (githubToken) headers.Authorization = `Bearer ${githubToken}`

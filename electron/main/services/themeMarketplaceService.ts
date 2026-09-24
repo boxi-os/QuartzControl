@@ -97,7 +97,9 @@ interface GithubRepo {
 // (sampled tokyo-night/catppuccin/obsidian/nord/minimal/default and 5 more at random) - real, but
 // sparse; callers should not assume every theme gets a badge.
 async function fetchGithubMetadata(): Promise<Map<string, GithubRepoMeta>> {
-  const githubToken = await connectionsService.getGithubToken()
+  // The token only raises the rate limit; a stored one that cannot be read (Keychain access denied)
+  // leaves the listing anonymous rather than failing it.
+  const githubToken = await connectionsService.getGithubToken().catch(() => undefined)
   const byRepoName = new Map<string, GithubRepoMeta>()
   const headers: Record<string, string> = { Accept: 'application/vnd.github+json' }
   if (githubToken) headers.Authorization = `Bearer ${githubToken}`

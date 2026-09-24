@@ -22,7 +22,14 @@ interface ApiResult<T> {
 }
 
 async function api<T>(path: string, init?: { method?: string; body?: unknown }): Promise<ApiResult<T>> {
-  const token = await connectionsService.getGithubToken()
+  let token: string | undefined
+  try {
+    token = await connectionsService.getGithubToken()
+  } catch (err) {
+    // A stored token that cannot be read. Same path as a missing one, for the reason above, but
+    // with its own sentence - "no token stored" was what this said before, over a stored token.
+    return { status: 401, data: null, message: (err as Error).message }
+  }
   // 401 is exactly what GitHub answers for a bad token, so an absent one takes the same path and
   // every caller's existing error handling covers it.
   // mainT() at the call site, not in a module-level const: this file is imported before

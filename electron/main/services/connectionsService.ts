@@ -83,8 +83,11 @@ function settingsPath(): string {
 // and 65538, measured 2026-09-24). This function runs for the start page's environment check, so
 // every start after an update asked twice before anyone had touched a credential; now the two come
 // with the first real use of one, once per run. The one case it could still catch there - access denied -
-// is caught where it matters: saveConnection asks isEncryptionAvailable() itself before storing a
-// secret and refuses with secretStorageUnavailable, and decrypt() answers null.
+// is caught where it becomes known: saveConnection asks isEncryptionAvailable() itself before
+// storing a secret and refuses, and decrypt() throws a sentence that says so. Until the
+// thirty-seventh review (findings 2 and 8) decrypt() answered null, which every caller reads as
+// "no credential stored" - "Kein GitHub-Token hinterlegt" over a stored token, a webhook with "no
+// URL", a server's "authentication failed" - and the save refusal named Linux keyrings on a Mac.
 export function getSecretStorageInfo(): SecretStorageInfo {
   if (process.platform === 'darwin') return { available: true, backend: null, secure: true }
   const available = safeStorage.isEncryptionAvailable()
@@ -102,12 +105,26 @@ function encrypt(secret: string): string | undefined {
   return safeStorage.encryptString(secret).toString('base64')
 }
 
+// The sentence for a store that cannot be used, per platform: on macOS the Keychain is always
+// there, and the state that gets here is a "Nicht erlauben" in its dialog; on Linux it is a keyring
+// that is not running.
+function storageUnavailableMessage(key: 'secretStorageUnavailable' | 'secretStorageUnreadable'): string {
+  return mainT(process.platform === 'darwin' ? `${key}Mac` : key)
+}
+
+// Null only when there is nothing stored. A stored secret that cannot be read is an error with a
+// sentence, not a null: every caller treats null as "no credential", and says so. The two ways
+// to get here are told apart as far as Chromium lets us - an unavailable store (on macOS: access
+// to the Keychain item denied, which leaves Chromium without a key; read in
+// keychain_password_mac.mm, not measured, because measuring means clicking the dialog) and a
+// ciphertext the key does not open (a connections.json from another machine).
 function decrypt(encrypted?: string): string | null {
-  if (!encrypted || !safeStorage.isEncryptionAvailable()) return null
+  if (!encrypted) return null
+  if (!safeStorage.isEncryptionAvailable()) throw new Error(storageUnavailableMessage('secretStorageUnreadable'))
   try {
     return safeStorage.decryptString(Buffer.from(encrypted, 'base64'))
   } catch {
-    return null
+    throw new Error(mainT('secretUndecryptable'))
   }
 }
 
@@ -289,9 +306,7 @@ export async function saveConnection(input: SaveConnectionInput): Promise<Connec
   // Refuse rather than fall back to plaintext: silently writing an unencrypted credential defeats
   // the point, and silently dropping it would leave the user thinking it was saved.
   if (input.secret && !safeStorage.isEncryptionAvailable()) {
-    throw new Error(
-      mainT('secretStorageUnavailable')
-    )
+    throw new Error(storageUnavailableMessage('secretStorageUnavailable'))
   }
 
   // Changing the auth method invalidates whatever was stored for the previous one - a password is
@@ -349,13 +364,16 @@ export async function deleteConnection(id: string): Promise<void> {
   await writeAll(all.filter((c) => c.id !== id))
 }
 
-/** Main-process only - never sent to the renderer. */
+/** Main-process only - never sent to the renderer. Throws when a stored secret cannot be read. */
 export async function getSecret(id: string): Promise<string | null> {
   const found = (await readAll()).find((c) => c.id === id)
   return found ? decrypt(found.encryptedSecret) : null
 }
 
-/** The GitHub token, resolved in main rather than relayed through the renderer on every call. */
+/**
+ * The GitHub token, resolved in main rather than relayed through the renderer on every call.
+ * Throws when one is stored and cannot be read - see decrypt().
+ */
 export async function getGithubToken(): Promise<string | undefined> {
   const github = (await readAll()).find((c) => c.kind === 'github' && c.encryptedSecret)
   return (github ? decrypt(github.encryptedSecret) : null) ?? undefined

@@ -88,6 +88,14 @@ const STRINGS = {
     // Antwort von „verschlüsselt" getrennt gemeldet wird.
     secretStorageUnavailable:
       'Die Zugangsdaten können nicht sicher gespeichert werden, weil der Schlüsselbund des Systems nicht verfügbar ist. Unter Linux hilft ein laufender Schlüsselbund, etwa gnome-keyring oder KWallet.',
+    secretStorageUnavailableMac:
+      'Die Zugangsdaten können nicht gespeichert werden: macOS hat dieser Fassung der App den Zugriff auf den Schlüsselbund verweigert. Beende die App, starte sie neu und wähle im Dialog „Immer erlauben“.',
+    secretStorageUnreadable:
+      'Die gespeicherten Zugangsdaten lassen sich nicht lesen, weil der Schlüsselbund des Systems nicht verfügbar ist. Unter Linux hilft ein laufender Schlüsselbund, etwa gnome-keyring oder KWallet.',
+    secretStorageUnreadableMac:
+      'Die gespeicherten Zugangsdaten lassen sich nicht lesen: macOS hat dieser Fassung der App den Zugriff auf den Schlüsselbund verweigert. Beende die App, starte sie neu und wähle im Dialog „Immer erlauben“ — die Zugangsdaten sind dann wieder da.',
+    secretUndecryptable:
+      'Die gespeicherten Zugangsdaten lassen sich mit dem Schlüssel dieses Rechners nicht entschlüsseln — etwa weil sie von einem anderen Rechner stammen. Gib sie unter Einstellungen → Zugänge neu ein.',
 
     // Core update
     updateBlockedBySymlink:
@@ -512,6 +520,14 @@ const STRINGS = {
 
     secretStorageUnavailable:
       'Credentials cannot be stored securely because the system keyring is unavailable. On Linux, running a keyring such as gnome-keyring or KWallet fixes this.',
+    secretStorageUnavailableMac:
+      'Credentials cannot be stored: macOS denied this version of the app access to the Keychain. Quit the app, start it again and choose “Always Allow” in the dialog.',
+    secretStorageUnreadable:
+      'The stored credentials cannot be read because the system keyring is unavailable. On Linux, running a keyring such as gnome-keyring or KWallet fixes this.',
+    secretStorageUnreadableMac:
+      'The stored credentials cannot be read: macOS denied this version of the app access to the Keychain. Quit the app, start it again and choose “Always Allow” in the dialog — the credentials will be back.',
+    secretUndecryptable:
+      'The stored credentials cannot be decrypted with this computer’s key — for example because they come from another computer. Enter them again under Settings → Connections.',
 
     updateBlockedBySymlink:
       'The content folder is a symlink, and git cannot write through it. Switch to a real folder under Configuration → Site, group “Content folder”, for now and try again.\n\n',

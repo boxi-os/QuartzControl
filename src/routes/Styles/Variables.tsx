@@ -71,7 +71,10 @@ export default function Variables(): JSX.Element {
     () => ({ graph, overrides, colors: colors ?? NO_COLORS, typography }),
     [graph, overrides, colors, typography]
   )
-  const readLog = useRef(new Map<string, Set<string>>()).current
+  // Created once: `useRef(new Map())` built a map on every render and threw it away.
+  const readLogRef = useRef<Map<string, Set<string>> | null>(null)
+  readLogRef.current ??= new Map()
+  const readLog = readLogRef.current
 
   function setOverride(key: string, next: OverrideValue | null): void {
     setOverrides((prev) => {

@@ -1986,5 +1986,9 @@ gemessen an der gebauten App mit Kopien von `gui-test` und `brain-handbuch` (The
   bis `72aceaf`, also ohne den Commit des Auftrags; mit ihm (ohne dessen Datei) sind es +1163.
   Der Auftrag selbst bleibt, wie er ist.
 - **9** `3aada79` — „Eine Layout-Box zeigt dieses Bild“ statt „die Marke der Vorlage“.
+- **Nebenbei:** `73cb28e` — `smoke.mjs` setzt die Fenstergröße über `app.evaluate` statt über ein
+  `JSHandle` (drei Läufe sauber; `screenshots.mjs` und `styles-snapshot.mjs` tragen dasselbe Handle
+  noch); `a72b2d6` — die Lese-Map der Variablen entsteht einmal. Die wachsende Liste der vertrauten
+  Apps steht in `decisions/electron-runtime-and-packaging.md`, der vierte Punkt ist Befund 8.
 
 **Keinen dieser Fixes hat ein Review gelesen.**

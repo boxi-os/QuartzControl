@@ -1899,7 +1899,9 @@ Review (Theme `minimal` über das eingeschaltete Plugin, 1057 Variablen):
   Rendern liest (Proxy auf `ctx.overrides`); neu gerendert wird nur, wenn sich einer davon ändert.
   Alle 101 Gruppen offen, Tippen in `--lightgray`: vorher 25–60 ms je Tastendruck und ein Long
   Task von 60 ms, jetzt 7–9 ms ohne Long Task. `--light` selbst rendert weiter alles, weil jedes
-  Farbfeld es als Grund liest. Gegenprobe: Eine Alias-Zeile folgt dem Override ihres Ziels.
+  Farbfeld es als Grund liest. (Das siebenunddreißigste Review hat die 7–9 ms am Weg der App nicht
+  wiedergefunden, es misst 11–19 ms, und die Zeilen sind 1057 + 64, nicht 1066 + 64; womit die
+  Zahl hier gemessen war, steht nicht da. Sein Befund 3 hat den Preis danach gesenkt.) Gegenprobe: Eine Alias-Zeile folgt dem Override ihres Ziels.
 - **2, 3, 5** `b42ea54` — „Farbe“ heißt, was Canvas parsen kann, in jedem Farbraum
   (`probeColor`); `isDisplayableColor` fragt dasselbe (ohne `currentColor`). Zwei Antworten von
   `isColorVariable`: `'base'` für das, was sich beim Tippen nicht bewegen darf (zwei Felder,
@@ -1947,3 +1949,42 @@ dahinter; der Auftrag für das siebenunddreißigste liest sie
   dass ein Zugriff einer ad-hoc signierten App zwei Dialoge zeigt und der Code daran nichts ändert.
 
 **Keinen dieser Commits hat ein Review gelesen.**
+
+**Das siebenunddreißigste Review** ([`REVIEW-2026-10-11.md`](REVIEW-2026-10-11.md), gelesen von
+Claude Fable 5.1 am 2026-09-24, `review-2026-10-11..review-2026-10-12`): 0 Hoch, 3 Mittel, 6
+Niedrig. Seine Antwort: nichts zurücknehmen; vor 1.0.0 Befund 1 und Befund 2 mit 8 beheben,
+Befund 3 entscheiden. Der Nutzer hat entschieden, alle drei zu beheben.
+
+Abgearbeitet am 2026-09-24 auf `fix/review-2026-10-11`, je Commit Typcheck, Build und Smoke;
+gemessen an der gebauten App mit Kopien von `gui-test` und `brain-handbuch` (Theme `minimal`):
+
+- **1 (Mittel)** `4a4b6d9` — der Marker trägt `customDark`; ein `icon-dark.png` ohne ihn ist
+  „nicht in der App gewählt“ wie das helle, und die Probe nennt beide Dateien. Ein Marker von vor
+  dem Feld zählt `icon-dark.png` nur neben einem gewählten `icon.png`, weil die Karte bis dahin
+  nur dann eines zuließ.
+- **2 und 8 (Mittel, Niedrig)** `3485b83` — `decrypt()` antwortet `null` nur, wenn nichts
+  gespeichert ist, sonst wirft es einen Satz je Plattform (macOS: Zugriff verweigert, „Immer
+  erlauben“ beim nächsten Start; Linux: der Schlüsselbund) oder den Satz für einen fremden
+  Schlüssel. Gemessen mit einer `safeStorage`-Attrappe; dass ein echtes „Nicht erlauben“
+  `isEncryptionAvailable()` falsch macht, ist in Chromium gelesen, nicht gemessen.
+- **3 (Mittel)** `fbf3083` — `probeColor` merkt sich seine Antwort, `colorKeys` hängt nur an
+  den eigenen Overrides, eine Zeile ohne Farbfeld liest `--light` nicht. Hub-Variablen 47–85 →
+  21–48 ms ohne Long Task, eine Gruppe offen 8–17 → 4–11 ms.
+- **4** `e547e5e` — „Dunkles Bild ersetzen…“ geht, sobald eines da ist.
+- **5** — kein Code. Die Configs der fünf Handbuch-Projekte von vor dem 2026-09-24 liegen
+  unter `~/Documents/QuartzControl-Sicherungen/marks-vor-2026-09-24/` statt im Scratchpad; das
+  alte Bild liegt ohnehin in jedem Projekt (`.quartz-gui/icon-original.png`). In den fünf
+  Projekten steht der Marker `{ custom: true, hasOriginal: true }`: Die Marke gilt dort als in
+  der App gewählt, hell und — nach der Übergangsregel aus Befund 1 — auch dunkel, ein späterer
+  Vorlagen-Import lässt beide stehen. Das ist so gewollt; wer das ändern will, entfernt das Bild
+  auf der Karte.
+- **6** `4a5dee5` — ein geleertes Wertfeld bleibt leer, eine leere Hälfte wird nicht als
+  `--x: ;` geschrieben.
+- **7** — die Zahlen oben richtiggestellt (7–9 ms, 1066 + 64) und in
+  `decisions/electron-runtime-and-packaging.md` die zehn Sekunden, die nachgeschlagenen
+  ACL-Nummern und die wachsende Liste der vertrauten Apps. „+1138 / −237“ im Auftrag ist der Diff
+  bis `72aceaf`, also ohne den Commit des Auftrags; mit ihm (ohne dessen Datei) sind es +1163.
+  Der Auftrag selbst bleibt, wie er ist.
+- **9** `3aada79` — „Eine Layout-Box zeigt dieses Bild“ statt „die Marke der Vorlage“.
+
+**Keinen dieser Fixes hat ein Review gelesen.**

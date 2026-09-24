@@ -134,10 +134,19 @@ statt 37298.
 Hash des Builds (`codesign -dr -` sagt `designated => cdhash H"…"`). Nach jedem Neubau oder Update
 kennt der Schlüsselbund sie nicht, und der erste Lesezugriff auf „QuartzControl Safe Storage“ zeigt
 **zwei** Dialoge. Im Systemprotokoll (`/usr/bin/log show --info --debug`, Prozess `securityd`,
-„displaying keychain prompt“) stehen beide für dieselbe PID, rund zehn Sekunden auseinander — die
-Zeit bis zum ersten Klick —, mit zwei Prüfungen: `action:24`, die Liste der vertrauten Apps des
-Eintrags, und `action:65538`, seine Partitionsliste, die für eine App ohne Team-ID wieder am
-Build-Hash hängt. Ein Zugriff, zwei Fragen des Betriebssystems.
+„displaying keychain prompt“) stehen beide für dieselbe PID, in drei von vier Paaren rund zehn
+Sekunden auseinander, im vierten 17 Minuten (13:31:41 und 13:48:47) — das passt zu „die Zeit bis
+zum ersten Klick“, wenn der erste Dialog so lange stand; gemessen ist das nicht. Die zwei
+Prüfungen: `action:24`, die Liste der vertrauten Apps des Eintrags, und `action:65538`, seine
+Partitionsliste. Die Nummern hat das siebenunddreißigste Review in Apples Headern nachgeschlagen:
+24 ist `CSSM_ACL_AUTHORIZATION_DECRYPT` (`cssmtype.h`), 65538 ist
+`CSSM_ACL_AUTHORIZATION_PARTITION_ID` (`cssmapple.h`, `VENDOR_DEFINED_START + 2`). Dass die
+Partitionsliste für eine App ohne Team-ID wieder am Build-Hash hängt, passt zum Protokoll
+(`SUBJECT[not-init]`), ist aber nicht nachgeschlagen. Ein Zugriff, zwei Fragen des
+Betriebssystems. Und die Liste der vertrauten Apps **wächst** mit jedem Bau, den der Nutzer
+erlaubt — 12, 13, 14 Einträge an einem Tag, je einer mit dem `cdhash` eines Builds: Ein neuer
+Bau ist ein neuer Eintrag, nicht der alte, deshalb gilt „Immer erlauben“ bis zum nächsten Update
+und nicht darüber hinaus.
 
 Was die App daran ändern konnte, ist der *Zeitpunkt*: Die Umgebungsprüfung der Startseite rief
 `isEncryptionAvailable()` und fragte damit bei jedem Start nach einem Update nach dem Schlüsselbund,
@@ -145,7 +154,9 @@ bevor irgendein Zugangsdatum gebraucht wurde. Auf macOS fragt sie das nicht mehr
 kommt beim Start nur die Ordner-Abfrage des Datenschutzes, die aus demselben Grund je Update
 wiederkommt. Die zwei Schlüsselbund-Dialoge kommen mit der ersten echten Verwendung, gemessen beim
 ersten Git-Sync — und dort einmal je Lauf der App, denn Electron behält den Schlüssel, sobald er
-gelesen ist. Die Vermutung, der zweite Dialog stamme aus der Vorab-Frage `isEncryptionAvailable()`
+gelesen ist. Ein „Nicht erlauben“ lässt die Zugangsdaten verschlüsselt liegen; seit dem
+siebenunddreißigsten Review (Befund 2) sagt das Lesen dann, dass macOS den Zugriff verweigert hat,
+statt als „kein Token hinterlegt“ zu antworten. Die Vermutung, der zweite Dialog stamme aus der Vorab-Frage `isEncryptionAvailable()`
 vor `decryptString()`, war falsch: Ohne sie waren es an einem frischen Build weiter zwei
 (`76918e9`, zurückgenommen mit `4d2a96b`).
 

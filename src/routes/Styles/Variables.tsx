@@ -282,7 +282,7 @@ function AllVariables({
     grouped.set(group, list)
   }
   // A prefix that only one variable carries is a heading repeating that variable's name - the
-  // minimal theme has 60 of them among 150 groups. Browsing collects them at the end instead.
+  // minimal theme has 50 of them among 150 groups (measured through the theme plugin, 2026-09-24). Browsing collects them at the end instead.
   if (browsing) {
     const singles: string[] = []
     for (const [group, list] of grouped) {

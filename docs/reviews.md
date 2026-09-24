@@ -1844,7 +1844,14 @@ stehen in den Commit-Nachrichten):
   am Grundwert, nicht am Entwurf, damit das Feld beim Tippen nicht verschwindet.
 - `512fea9` — Theme- und Build-Variablen lassen sich ohne Suche durchblättern, gruppiert nach
   Präfix wie die Hauptkarte; neuer Filter „Art des Werts“ (Farben / Andere Werte). Gemessen mit
-  den 1057 Variablen des minimal-Themes: 91 Gruppen, alle geöffnet in 108 ms.
+  den 1057 Variablen des minimal-Themes: 91 Gruppen, alle geöffnet in 108 ms. **Nicht
+  reproduzierbar** (sechsunddreißigstes Review, Befund 11): Die Messung ersetzte den Graphen im
+  Hauptprozess, ohne zu sagen, womit. Über den Weg der App — in einer `cp -Rc`-Kopie von
+  `brain-handbuch` das Plugin `@quartz-themes/core` (Theme `minimal`) eingeschaltet, sodass der
+  Graph `theme.json` aus dem `node_modules` des Projekts liest — sind es **101 Gruppen** (die
+  letzte „Einzelne Variablen“ mit 50), alle geöffnet in **133 ms**, und die Suche „callout“ gibt
+  23 Zeilen statt 32; gemessen im Review und am 2026-09-24 noch einmal (133 ms, Long Tasks 81 und
+  51 ms).
 - `ab9ceb3` — Ein Farbfeld malt seinen Wert über den Grund, den die Website malt (`var(--light)`
   des jeweiligen Modus), nicht über den der App: Eine Farbe mit Alpha zeigte vorher das, was die
   App dahinter hatte, in beiden Feldern gleich. Alle sechs Stellen mit Farbfeldern.

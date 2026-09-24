@@ -44,7 +44,7 @@ import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 
-import { cropped, recoloured, DARK_STOPS, LIGHT_STOPS } from './site-mark.mjs'
+import { cropped, recoloured, MARK_DARK, MARK_LIGHT } from './site-mark.mjs'
 
 const APP_DIR = path.resolve(import.meta.dirname, '../..')
 const OUT_DIR = path.join(APP_DIR, 'scripts/example-template/site/static')
@@ -63,8 +63,8 @@ const page = (svg) => `<!doctype html><meta charset="utf-8">
 ${svg}`
 
 const targets = [
-  { file: path.join(OUT_DIR, 'icon.png'), html: page(cropped(recoloured('qcMarkLight', LIGHT_STOPS))) },
-  { file: path.join(OUT_DIR, 'icon-dark.png'), html: page(cropped(recoloured('qcMarkDark', DARK_STOPS))) }
+  { file: path.join(OUT_DIR, 'icon.png'), html: page(cropped(recoloured('qcMarkLight', MARK_LIGHT))) },
+  { file: path.join(OUT_DIR, 'icon-dark.png'), html: page(cropped(recoloured('qcMarkDark', MARK_DARK))) }
 ]
 
 fs.mkdirSync(OUT_DIR, { recursive: true })

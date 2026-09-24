@@ -7,12 +7,11 @@
 // pasted into plugins.mjs would be the third place this drawing lives (the .icns and the .ico are
 // generated from the same file), and the one that silently stops matching the other two.
 //
-// What the two versions differ in is the tile, not the mark. The light one is the app icon's own
-// blue-to-rose gradient. The dark one is the tile macOS itself draws for this icon when its
-// appearance is set to dark icons (macOS 27, `AppleIconAppearanceTheme = RegularDark`): rendered
-// through NSWorkspace and sampled on 2026-09-24 - rgb(47,49,49) at the top, rgb(24,24,24) at the
-// bottom, the gear a light grey that the drawing's own rgb(235,235,235) already is. Until then the
-// dark version was the gradient stepped down 15%; the user liked Apple's better.
+// The two versions, since 2026-09-24. Light mode: the tile macOS 27 draws for this icon under dark
+// icon appearance (`AppleIconAppearanceTheme = RegularDark`), rendered through NSWorkspace and
+// sampled - rgb(47,49,49) at the top, rgb(24,24,24) at the bottom - with the drawing's own light
+// grey gear. Dark mode: the exact colour inverse of that, a light tile with a near-black gear.
+// Neither is the icon's blue-to-rose gradient any more; that stays the app's own icon.
 //
 // Both are cropped to the tile (`cropped()`): the icon source keeps Apple's grid - a tile of 824
 // in a 1024 canvas, the rest room for the shadow - which a project image in a website header has
@@ -25,17 +24,28 @@ import { dirname, join } from 'node:path'
 const HERE = dirname(fileURLToPath(import.meta.url))
 const ICON = join(HERE, '../../build/icon-source/quartzcontrol-icon.svg')
 
-/** The gradient's two stops, as written in the source file. */
-export const LIGHT_STOPS = [
-  [69, 91, 155],   // top - the blue
-  [221, 120, 127]  // bottom - the rose
-]
+/** The tile's two gradient stops and the gear's fill, as written in the source file. */
+const SOURCE = {
+  stops: [
+    [69, 91, 155],   // top - the blue
+    [221, 120, 127]  // bottom - the rose
+  ],
+  gear: [235, 235, 235]
+}
 
-/** The dark tile macOS draws for this icon (see the head of this file). */
-export const DARK_STOPS = [
-  [47, 49, 49],    // top
-  [24, 24, 24]     // bottom
-]
+const invert = ([r, g, b]) => [255 - r, 255 - g, 255 - b]
+
+/** The light-mode mark: macOS's dark tile, the source's gear (see the head of this file). */
+export const MARK_LIGHT = {
+  stops: [
+    [47, 49, 49],   // top
+    [24, 24, 24]    // bottom
+  ],
+  gear: SOURCE.gear
+}
+
+/** The dark-mode mark: the colour inverse of the light one, computed rather than written twice. */
+export const MARK_DARK = { stops: MARK_LIGHT.stops.map(invert), gear: invert(MARK_LIGHT.gear) }
 
 const rgb = ([r, g, b]) => `rgb(${r},${g},${b})`
 
@@ -65,16 +75,27 @@ export function trimmed() {
 }
 
 /**
- * The drawing with the tile's gradient set to `stops` and its gradient id renamed.
+ * The drawing with the tile's gradient and the gear's fill set to `colors`, and its gradient id
+ * renamed. Every replacement is checked: a source that no longer carries the colour it looks for
+ * would otherwise come out in the icon's own colours, silently.
  *
  * `id` matters wherever two versions share a document, and it is passed anyway when only one is
  * rendered, because a function that is only safe in one of its two call sites is one nobody re-reads.
  */
-export function recoloured(id, stops) {
-  return trimmed()
-    .replace(/_Linear1/g, id)
-    .replace(/stop-color:rgb\(69,\s*91,\s*155\)/, `stop-color:${rgb(stops[0])}`)
-    .replace(/stop-color:rgb\(221,\s*120,\s*127\)/, `stop-color:${rgb(stops[1])}`)
+export function recoloured(id, colors) {
+  const pattern = ([r, g, b]) => new RegExp(`rgb\\(${r},\\s*${g},\\s*${b}\\)`, 'g')
+  let svg = trimmed().replace(/_Linear1/g, id)
+  const swaps = [
+    [`stop-color:`, SOURCE.stops[0], colors.stops[0]],
+    [`stop-color:`, SOURCE.stops[1], colors.stops[1]],
+    [`fill:`, SOURCE.gear, colors.gear]
+  ]
+  for (const [prop, from, to] of swaps) {
+    const re = new RegExp(prop + pattern(from).source, 'g')
+    if (!re.test(svg)) throw new Error(`site-mark.mjs: ${prop}rgb(${from}) steht nicht mehr in der Quelle`)
+    svg = svg.replace(re, `${prop}${rgb(to)}`)
+  }
+  return svg
 }
 
 /** The same drawing with the viewBox on the tile - no margin around it. */

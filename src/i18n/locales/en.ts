@@ -885,7 +885,7 @@ export default {
     unusedFonts: {
       heading: 'Unused fonts',
       description:
-        'custom.scss declares these fonts, but no font setting, no variable and no stylesheet under quartz/styles names them. Their files are still published with every build.',
+        'custom.scss declares these fonts, but no font setting, no variable and no stylesheet under quartz/styles, quartz/components/styles or quartz/static names them. Their files are still published with every build.',
       noFile: 'no file in the project',
       remove: 'Remove',
       removing: 'Removing…',

@@ -796,7 +796,8 @@ export function projectFontsDir(projectPath: string): string {
 }
 
 /**
- * Every .scss/.css under quartz/styles, at any depth - for the questions "does a rule still point
+ * Every .scss/.css under quartz/styles, quartz/components/styles and quartz/static, at any depth -
+ * for the questions "does a rule still point
  * at this file" and "does anything still name this family", where finding too much is the safe
  * side. projectStylesheets() below stays what it was: the flat two-directory list the editor
  * offers and the face listing reports, i.e. the files the app itself writes. A rule the user put
@@ -810,6 +811,12 @@ export function projectFontsDir(projectPath: string): string {
  * (thirty-fourth review, finding 7); sharing stylesheets between projects that way is not an
  * outlandish user in an app that offers the content folder as a link itself. The limit is the one
  * findScssFiles uses, and it is what a loop runs into.
+ *
+ * The two other roots are where else a project keeps stylesheets: quartz/components/styles is the
+ * directory Quartz itself provides for a component's own styles, and quartz/static carries plain
+ * CSS that is copied into the site as it is (the Giscus themes live there). A rule in either that
+ * names a font file the app fetched kept nothing from being deleted (thirty-sixth review,
+ * finding 8); a find too many there costs nothing.
  */
 export async function allStylesheets(projectPath: string): Promise<string[]> {
   const out: string[] = []
@@ -825,6 +832,8 @@ export async function allStylesheets(projectPath: string): Promise<string[]> {
     }
   }
   await walk(stylesDir(projectPath))
+  await walk(join(projectPath, 'quartz', 'components', 'styles'))
+  await walk(join(projectPath, 'quartz', 'static'))
   return out
 }
 

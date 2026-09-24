@@ -888,7 +888,7 @@ export default {
     unusedFonts: {
       heading: 'Ungenutzte Schriften',
       description:
-        'custom.scss deklariert diese Schriften, aber weder eine Schriftart-Einstellung noch eine Variable noch ein Stylesheet unter quartz/styles nennt sie. Ihre Dateien werden trotzdem mit jedem Build veröffentlicht.',
+        'custom.scss deklariert diese Schriften, aber weder eine Schriftart-Einstellung noch eine Variable noch ein Stylesheet unter quartz/styles, quartz/components/styles oder quartz/static nennt sie. Ihre Dateien werden trotzdem mit jedem Build veröffentlicht.',
       noFile: 'keine Datei im Projekt',
       remove: 'Entfernen',
       removing: 'Entferne…',

@@ -72,12 +72,12 @@ Zustand, eine Antwort oder einen Knopf hinzufügt, sucht im Vault nach der Liste
 kennt (`grep -rn` auf die Beschriftungen der Geschwister) — und prüft dabei die englische Fassung
 mit, die dort drei Beschriftungen nannte, die es in der App nie gab.
 
-**Und es bekommt eine Seite „Neu in <Fassung>“**, zweisprachig, neben `neu-in-beta-1.md` /
-`en/new-in-beta-1.md`. Am 2026-09-16 fehlte sie: Das Handbuch zu Beta 2 nannte als
-neueste Seite „Neu in Beta 1“, während `latest.json` vier Änderungen aufzählt — wer die App
-aktualisiert und im Handbuch nachsieht, findet nichts davon. Eine neue Seite auf
-oberster Ebene muss außerdem in die `APPENDIX`-Liste in `scripts/build-handbook-pdf.mjs`; das
-Skript bricht sonst ab, und genau dafür ist es da.
+**Eine Seite „Neu in <Fassung>“ bekommt es nicht mehr.** Bis zum 2026-09-24 gab es `neu-in-beta-1`
+und `neu-in-rc-1`; sie sind gestrichen, weil der Versionsverlauf auf den Release-Seiten auf GitHub
+nachzulesen ist und die Startseite des Handbuchs dorthin verweist. Was sich geändert hat, steht
+also in den Release-Notizen, nicht im Vault. Eine neue Seite auf oberster Ebene muss weiterhin in
+die `APPENDIX`-Liste in `scripts/build-handbook-pdf.mjs`; das Skript bricht sonst ab, und genau
+dafür ist es da.
 
 **Die Handbuch-Website lädt ihre eigenen Schriften nur, wenn sie einmal gebaut wurde, seit die
 Schrift-URLs relativ sind.** `1df4ee4` schreibt `url("static/fonts/…")` statt
@@ -355,12 +355,14 @@ vier Änderungen.
 ## 9. Die Website nennt die neue Fassung — und wird erst mit dem Release veröffentlicht
 
 `QuartzControl-Web` baut aus dem Handbuch-Vault (`content` ist ein Link
-auf `~/Obsidian/QuartzProjekte/QuartzControl-Handbuch`), trägt also sofort den neuen Text. Band und
-Download-Kasten sind Schnipsel und nennen die Fassung ausdrücklich:
+auf `~/Obsidian/QuartzProjekte/QuartzControl-Handbuch`), trägt also sofort den neuen Text. Zwei
+Schnipselpaare nennen die Fassung ausdrücklich:
 
-- `quartz/static/snippets/version.html` und `version.en.html` („Handbuch zur Fassung …“)
+- `quartz/static/snippets/sidebar-note.md` und `sidebar-note.en.md` (die Box „Über dieses
+  Handbuch“ links; bis zum 2026-09-24 stand die Fassung in einem eigenen Band über jedem
+  Seitentitel, `version.html`, das gestrichen ist)
 - `quartz/static/snippets/download.html` und `download.en.html` (Fassung und Pakete)
 
-Die Kopie derselben vier Dateien im Handbuch-Vault unter `private/snippets/` wird mitgezogen (am
-2026-09-14 alle vier byte-gleich). Veröffentlicht wird die Website erst zusammen mit dem Release,
+Die Kopie dieser Dateien im Handbuch-Vault unter `private/snippets/` wird mitgezogen
+(`diff -r` gegen den Schnipselordner des Projekts muss still bleiben). Veröffentlicht wird die Website erst zusammen mit dem Release,
 nicht vorher — sonst beschreibt sie eine Fassung, die es zum Herunterladen noch nicht gibt.

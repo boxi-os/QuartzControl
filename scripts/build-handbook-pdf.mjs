@@ -43,7 +43,7 @@ const OUT = path.resolve(arg('--out', path.join(ROOT, 'release', `QuartzControl-
 
 // Seiten auf oberster Ebene außer der Startseite, in der Reihenfolge des Anhangs. Eine neue Seite
 // dort muss hier eingetragen werden - sonst fehlte sie im PDF, ohne dass es jemand merkt.
-const APPENDIX = ['systemvoraussetzungen', 'beziehen-und-aktualisieren', 'aus-dem-quelltext-bauen', 'neu-in-rc-1', 'neu-in-beta-1']
+const APPENDIX = ['systemvoraussetzungen', 'beziehen-und-aktualisieren', 'aus-dem-quelltext-bauen']
 
 const PRINT_CSS = `
 @page { size: A4; }

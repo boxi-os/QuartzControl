@@ -145,19 +145,35 @@ export default function Variables(): JSX.Element {
   }, [])
 
   const curatedKeys = useMemo(() => new Set(CSS_VARIABLES.map((def) => def.key)), [])
+  // Which keys carry an override - not their values, which change with every keystroke. The key
+  // list only moves when an override appears or goes.
+  const overrideKeys = Object.keys(overrides).sort().join('\n')
   const extraKeys = useMemo(
     () => allKnownKeys(ctx).filter((key) => !curatedKeys.has(key)).sort(),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [graph, overrides, curatedKeys]
+    [graph, overrideKeys, curatedKeys]
   )
 
-  // Asked once per key and graph, not per render: it resolves the value, and a theme has ~1000.
+  // Asked once per key and graph, not per keystroke: it resolves the value, and a theme has ~1000.
   // Of the value without the override, so a row does not leave the filtered list while someone
-  // types a colour into it (see isColorVariable).
+  // types a colour into it (see isColorVariable) - and resolved without *any* override but those of
+  // keys only the user declares, which have no other value. Asked with all of them, a keystroke in
+  // any variable re-ran the whole list: 1057 keys, ~3 500 canvas assignments, 8-22 ms before a
+  // single row had rendered (thirty-seventh review, finding 3), and a half-typed value in a
+  // variable could flip the filter of every alias of it, the flip 'base' exists to prevent.
+  const ownOverrides = useMemo(() => {
+    const own: ResolveContext['overrides'] = {}
+    for (const key of Object.keys(overrides)) if (!graph?.vars[key] && !curatedKeys.has(key)) own[key] = overrides[key]
+    return own
+  }, [overrides, graph, curatedKeys])
+  const ownSignature = JSON.stringify(ownOverrides)
   const colorKeys = useMemo(
-    () => new Set(extraKeys.filter((key) => isColorVariable(key, ctx, 'base'))),
+    () => {
+      const baseCtx: ResolveContext = { ...ctx, overrides: ownOverrides }
+      return new Set(extraKeys.filter((key) => isColorVariable(key, baseCtx, 'base')))
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [extraKeys, graph, overrides]
+    [extraKeys, graph, ownSignature]
   )
 
   const themeId = activeThemeIdOf(config)

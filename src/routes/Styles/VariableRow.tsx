@@ -178,10 +178,22 @@ function VariableRow({
           title={t('styles.variables.chainToggle')}
         >
           {expanded ? <ChevronDown size={12} className="shrink-0" /> : <ChevronRight size={12} className="shrink-0" />}
-          {/* Kept as an empty slot for a value that is no colour, so the names still line up. */}
+          {/* Kept as an empty slot for a value that is no colour, so the names still line up. The
+              slot does not ask for the page's ground: that reads --light, and a row that reads it
+              re-renders with every keystroke in --light and in whatever a theme derives it from -
+              703 rows without a swatch did, under the minimal theme (thirty-seventh review, finding 3). */}
           <span className={`flex shrink-0 gap-0.5 ${showsColor ? '' : 'invisible'}`} aria-hidden={!showsColor}>
-            <Swatch value={lightResolved} ground={pageGround('light', ctx)} />
-            <Swatch value={darkResolved} ground={pageGround('dark', ctx)} />
+            {showsColor ? (
+              <>
+                <Swatch value={lightResolved} ground={pageGround('light', ctx)} />
+                <Swatch value={darkResolved} ground={pageGround('dark', ctx)} />
+              </>
+            ) : (
+              <>
+                <span className="h-3 w-3 shrink-0 rounded-sm border border-transparent" />
+                <span className="h-3 w-3 shrink-0 rounded-sm border border-transparent" />
+              </>
+            )}
           </span>
           <code className="shrink-0 font-mono">--{varKey}</code>
           <span className="truncate text-text-muted">{light ?? '—'}</span>

@@ -234,16 +234,29 @@ export function cssColorToHexAlpha(value: string | undefined): { hex: string; al
 // What canvas makes of a value: its own spelling of the colour, or null if it is none. Every
 // notation the browser can paint answers, including those outside sRGB (`oklch()`,
 // `color-mix(in oklch, …)`, `color(display-p3 …)`), which come back as themselves.
+//
+// Remembered per string: the answer is the browser's parser and never changes, and the same few
+// hundred values are asked thousands of times - every row that renders asks about twenty times, and
+// a theme's hub variable re-renders hundreds of rows. Unremembered that was 24 000 canvas
+// assignments and a 47-85 ms long task per keystroke on `--background-primary` (minimal theme,
+// thirty-seventh review, finding 3). Cleared when it grows past PROBE_CACHE_MAX, because every
+// half-typed draft is a new key.
+const probeCache = new Map<string, string | null>()
+const PROBE_CACHE_MAX = 5000
+
 function probeColor(value: string | undefined): string | null {
   const v = value?.trim()
   if (!v || v.includes('var(')) return null
+  const known = probeCache.get(v)
+  if (known !== undefined) return known
   if (colorProbe === undefined) colorProbe = document.createElement('canvas').getContext('2d')
   if (!colorProbe) return null
   colorProbe.fillStyle = COLOR_PROBE_SENTINEL
   colorProbe.fillStyle = v
-  const out = colorProbe.fillStyle
-  if (typeof out !== 'string') return null
-  if (out === COLOR_PROBE_SENTINEL && v.toLowerCase() !== COLOR_PROBE_SENTINEL) return null
+  const raw = colorProbe.fillStyle
+  const out = typeof raw !== 'string' || (raw === COLOR_PROBE_SENTINEL && v.toLowerCase() !== COLOR_PROBE_SENTINEL) ? null : raw
+  if (probeCache.size >= PROBE_CACHE_MAX) probeCache.clear()
+  probeCache.set(v, out)
   return out
 }
 

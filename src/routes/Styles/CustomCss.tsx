@@ -8,7 +8,7 @@ import type { FontFaceInfo, ScssCheckResult, StyleFile, StyleReferenceFile } fro
 import { Button, Card, CardHeading, Select, TextInput, useCopyToClipboard } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { useStickyState } from '../../state/uiState'
-import { distinctComponentChips } from '../LayoutEditor/utils'
+import { componentSelectors } from '../../data/componentSelectors'
 import CssVariableReference from './CssVariableReference'
 import { cssColorToHex, resolvedValue, type ResolveContext } from './variableGraph'
 import { pageGround, swatchStyle } from './swatch'
@@ -129,13 +129,19 @@ export default function CustomCss(): JSX.Element {
 
   useEffect(() => registerSave(afterSave))
 
+  // The picker holds a selector; the reference panel asks by plugin name.
+  const selectedPlugin = useMemo(
+    () => componentSelectors(config.plugins).find((c) => c.selector === selectedComponent)?.plugin ?? '',
+    [config.plugins, selectedComponent]
+  )
+
   useEffect(() => {
-    if (!selectedComponent) {
+    if (!selectedPlugin) {
       setReferences([])
       return
     }
-    window.quartzGui.styles.reference(project.path, selectedComponent).then(setReferences)
-  }, [project.path, selectedComponent])
+    window.quartzGui.styles.reference(project.path, selectedPlugin).then(setReferences)
+  }, [project.path, selectedPlugin])
 
   // A tab whose file was deleted (or renamed) must not stay open pointing at nothing.
   useEffect(() => {
@@ -251,8 +257,8 @@ export default function CustomCss(): JSX.Element {
     view?.focus()
   }
 
-  function insertSnippet(name: string): void {
-    insertAtCursor(`\n.${name} {\n  \n}\n`)
+  function insertSnippet(selector: string): void {
+    insertAtCursor(`\n${selector} {\n  \n}\n`)
   }
 
   async function openExternally(targetPath: string): Promise<void> {
@@ -269,10 +275,9 @@ export default function CustomCss(): JSX.Element {
     openTab(result.relativePath)
   }
 
-  // One entry per component, not per placement: the selector inserted is `.<name>`, the same for
-  // every instance, so a component placed three times stood three times in the list, each doing
-  // the same. The layout editor's palette answers the same question the same way.
-  const components = useMemo(() => distinctComponentChips(config.plugins), [config.plugins])
+  // One entry per selector, not per placement - and the selector the site actually renders, which
+  // for a third of the components is not `.<name>` (see componentSelectors).
+  const components = useMemo(() => componentSelectors(config.plugins), [config.plugins])
   const activeFile = files.find((f) => f.relativePath === activeTab)
   const activePath = activeTab === MAIN_TAB ? scss.path : (activeFile?.path ?? '')
   const isDirty = (tab: string): boolean =>
@@ -327,11 +332,13 @@ export default function CustomCss(): JSX.Element {
       <ActiveStyles />
 
       <Card className="flex flex-wrap items-center gap-2">
-        <Select value={selectedComponent} onChange={(e) => setSelectedComponent(e.target.value)} className="w-56">
+        <Select value={selectedComponent} onChange={(e) => setSelectedComponent(e.target.value)} className="w-80">
           <option value="">{t('styleEditor.componentPlaceholder')}</option>
-          {components.map(({ plugin }) => (
-            <option key={plugin.name} value={plugin.name}>
-              {plugin.name}
+          {components.map(({ name, selector, measured }) => (
+            <option key={selector} value={selector}>
+              {measured
+                ? t('styleEditor.componentOption', { name, selector })
+                : t('styleEditor.componentOptionUnverified', { name, selector })}
             </option>
           ))}
         </Select>

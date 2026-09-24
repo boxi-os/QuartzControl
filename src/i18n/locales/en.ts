@@ -1448,6 +1448,8 @@ export default {
     openExternally: 'Open externally',
     importFile: 'Import file…',
     componentPlaceholder: 'Choose a component…',
+    componentOption: '{{name}} — {{selector}}',
+    componentOptionUnverified: '{{name}} — {{selector}} (class unverified)',
     componentHint: 'Inserts a selector for the chosen component at the cursor position.',
     insertSelector: 'Insert selector',
     referenceHeading: 'Original styles (read-only)',

@@ -1454,6 +1454,8 @@ export default {
     openExternally: 'Extern öffnen',
     importFile: 'Datei importieren…',
     componentPlaceholder: 'Komponente wählen…',
+    componentOption: '{{name}} — {{selector}}',
+    componentOptionUnverified: '{{name}} — {{selector}} (Klasse ungeprüft)',
     componentHint: 'Fügt einen Selektor für die gewählte Komponente an der Cursor-Position ein.',
     insertSelector: 'Selektor einfügen',
     referenceHeading: 'Original-Styles (nur lesend)',

@@ -60,6 +60,13 @@ gehalten: weder „Einzelne Variablen“ noch „Hell und dunkel“). Dazu `2250
 2026-09-24): der zweite Satz zu „nicht auflösbar“. Für rc.1 ist das richtig, also wird
 die Website erst mit dem Release gebaut (Punkt 9); streichen, sobald sie es ist.
 
+**Für 1.0.0 ausstehend: die drei Plugin-Handbücher** (Layout Box, Multilanguage, Navigations;
+vom Nutzer am 2026-09-24 genannt). Online stehen sie nicht auf dem Stand des Basis-Templates:
+altes Icon, und im Navigations-Handbuch klappt die Navigation noch nicht aus. Lokal ist die Marke
+seit dem 2026-09-24 das Projektbild, veröffentlicht ist das nicht. Dazu bekommt jede Startseite
+dieselbe Darstellung wie die App-Website: was das Plugin kann, in Kästen, statt nur Text.
+Streichen, sobald alle drei so online stehen.
+
 Das Handbuch sollte auf dem Stand der App sein: `npm run check:handbook` nach dem letzten
 Textdurchgang, und die Screenshots nach der letzten sichtbaren Änderung
 (`npm run screenshots -- --demo --cards`, siehe [`handbuch.md`](handbuch.md)).

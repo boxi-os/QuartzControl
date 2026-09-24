@@ -19,7 +19,7 @@ import {
   type VariableOrigin
 } from './variableGraph'
 import ColorPicker from './ColorPicker'
-import { pageGround, swatchStyle } from './swatch'
+import { pageGround, swatchStyle, swatchTitle } from './swatch'
 
 const ORIGIN_TONE: Record<VariableOrigin, 'slate' | 'green' | 'amber'> = {
   core: 'slate',
@@ -409,6 +409,7 @@ function ValueInput({
   value: string
   onChange: (value: string) => void
 }): JSX.Element {
+  const { t } = useTranslation()
   const resolved = resolveValueLiteral(value, mode, ctx)
   const hex = cssColorToHex(resolved)
   const isColor = catalogDef(varKey)?.kind === 'color' || hex !== null
@@ -416,7 +417,13 @@ function ValueInput({
     <div className="flex items-center gap-1.5">
       <span className="text-micro text-text-muted">{label}</span>
       {isColor && (
-        <ColorPicker value={resolved ?? value} hex={hex} onChange={onChange} title={resolved ?? value} ground={pageGround(mode, ctx)} />
+        <ColorPicker
+          value={resolved ?? value}
+          hex={hex}
+          onChange={onChange}
+          title={swatchTitle(t, resolved ?? value, pageGround(mode, ctx))}
+          ground={pageGround(mode, ctx)}
+        />
       )}
       <TextInput value={value} onChange={(e) => onChange(e.target.value)} className="w-44 font-mono text-xs" />
     </div>
@@ -424,8 +431,10 @@ function ValueInput({
 }
 
 function Swatch({ value, ground, size = 'sm' }: { value: string | undefined; ground: string; size?: 'sm' | 'md' }): JSX.Element {
+  const { t } = useTranslation()
   return (
     <span
+      title={swatchTitle(t, value, ground)}
       className={`${size === 'md' ? 'h-4 w-4' : 'h-3 w-3'} shrink-0 rounded-sm border border-ink/10 dark:border-ink/20`}
       style={swatchStyle(value, ground)}
     />

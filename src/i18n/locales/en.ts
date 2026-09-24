@@ -1400,6 +1400,8 @@ export default {
       unsplitDark: 'Same in both modes',
       chainToggle: 'Show origin and dependencies',
       unresolved: 'not resolvable (only set inside a selector)',
+      swatchOver: '{{value}} over {{ground}}, the website’s page background',
+      swatchNone: 'No colour in this mode',
       dependents: '{{count}} depend on it',
       dependentsWarning: 'Your own value here affects {{count}} other variables.',
       dependentsNone: 'No other variable references this one.',

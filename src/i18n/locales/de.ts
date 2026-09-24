@@ -1406,6 +1406,8 @@ export default {
       unsplitDark: 'In beiden Modi gleich',
       chainToggle: 'Herkunft und Abhängigkeiten anzeigen',
       unresolved: 'nicht auflösbar (nur in einem Selektor gesetzt)',
+      swatchOver: '{{value}} über {{ground}}, dem Seitengrund der Website',
+      swatchNone: 'In diesem Modus keine Farbe',
       dependents: '{{count}} abhängig',
       dependentsWarning: 'Ein eigener Wert hier wirkt sich auf {{count}} weitere Variablen aus.',
       dependentsNone: 'Keine andere Variable verweist hierauf.',

@@ -32,3 +32,19 @@ export function swatchStyle(value: string | undefined, ground: string | undefine
   if (!ground) return { backgroundColor: value }
   return { backgroundColor: ground, backgroundImage: `linear-gradient(${value}, ${value})` }
 }
+
+/**
+ * What a swatch says on hover: the value *and* the ground it is painted over. `pageGround` is the
+ * ground Quartz paints `body` with - right for a tint laid over the page, and not for one that
+ * sits on a callout or a column with its own fill. The swatch cannot know which, so it names the
+ * ground it used rather than leave the field to be read as "this is what it looks like"
+ * (thirty-sixth review, finding 4). `t` is passed in: this module has no translation of its own.
+ */
+export function swatchTitle(
+  t: (key: string, options?: Record<string, unknown>) => string,
+  value: string | undefined,
+  ground: string | undefined
+): string {
+  if (!isDisplayableColor(value)) return t('styles.variables.swatchNone')
+  return ground ? t('styles.variables.swatchOver', { value, ground }) : value
+}

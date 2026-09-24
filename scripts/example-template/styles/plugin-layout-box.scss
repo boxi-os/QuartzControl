@@ -141,8 +141,13 @@ details.layout-box > summary.layout-box-title {
   // `display` steht auch hier nicht: Der Umschalter des Plugins hängt an den Klassen
   // `.img-light`/`.img-dark` und nicht am Element, er trägt ein `<img>` also genauso wie ein
   // `<svg>`. Eine Wiederholung hier schaltete beide ein, gemessen am 2026-09-05 für das SVG.
+  //
+  // `margin: 0`, weil Quartz' base.scss jedem `<img>` der Website `margin: 1rem 0` gibt - richtig im
+  // Artikel, im Kopf aber machte es aus der 26-px-Marke einen 58 px hohen Kasten und den Kopf 32 px
+  // höher als mit dem Inline-SVG (gemessen am 2026-09-24, dem Tag, an dem die Marke ein Bild wurde).
   img {
     flex: 0 0 auto;
+    margin: 0;
     border-radius: var(--tpl-radius-sm);
   }
 

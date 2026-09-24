@@ -19,7 +19,7 @@ import { existsSync } from 'fs'
 import { mkdir, open, readFile, rename, rm, stat } from 'fs/promises'
 import { join } from 'path'
 import { readZip, readZipFile } from './zipArchive'
-import { MANIFEST_FILE } from './templatePackage/shared'
+import { MANIFEST_FILE, partFile } from './templatePackage/shared'
 
 /**
  * The published package. A raw file rather than a release asset: a release asset in a *private*
@@ -115,6 +115,8 @@ async function refresh(): Promise<boolean> {
 export interface BuiltinTemplate {
   path: string
   source: 'downloaded' | 'bundled'
+  /** Markdown files in the package's content part, 0 when it has none. */
+  pages: number
 }
 
 // "It exists" is not "it can be read", and the difference is the whole of this finding: an
@@ -122,31 +124,54 @@ export interface BuiltinTemplate {
 // by throwing the reader's own message otherwise - and the wizard then creates a project without
 // the template it promised. Measured on the real package - 552 kB, 323 entries -
 // reading it whole takes 7 ms, which is nothing next to the dialog this runs behind.
-async function isReadablePackage(path: string): Promise<boolean> {
+//
+// The same read counts the sample pages, because the wizard names their number: it said
+// "zwanzig" as fixed text while the package the text describes is replaced by a push to the
+// templates repository, and nothing would have noticed the two drifting apart.
+async function inspectPackage(path: string): Promise<{ pages: number } | null> {
+  let files: Map<string, Buffer>
   try {
-    return (await readZipFile(path)).has(MANIFEST_FILE)
+    files = await readZipFile(path)
   } catch {
-    return false
+    return null
+  }
+  if (!files.has(MANIFEST_FILE)) return null
+  return { pages: countPages(files.get(partFile('content'))) }
+}
+
+// A content part that is missing or cannot be parsed has no pages to offer - the import skips it
+// the same way (planImport lists only the parts it can read).
+function countPages(raw: Buffer | undefined): number {
+  if (!raw) return 0
+  try {
+    const payload = JSON.parse(raw.toString('utf-8')) as { files?: unknown }
+    if (!Array.isArray(payload.files)) return 0
+    return payload.files.filter((f) => typeof f === 'string' && f.toLowerCase().endsWith('.md')).length
+  } catch {
+    return 0
   }
 }
 
 // A cached copy that cannot be read is not merely skipped but deleted: its mtime would otherwise
 // keep ageMs under a day and block the re-download that repairs it. One download is then attempted
 // on the spot, so the recovery is now rather than tomorrow.
-async function cacheIsUsable(cached: string): Promise<boolean> {
-  if (!existsSync(cached)) return false
-  if (await isReadablePackage(cached)) return true
+async function usableCache(cached: string): Promise<{ pages: number } | null> {
+  if (!existsSync(cached)) return null
+  const info = await inspectPackage(cached)
+  if (info) return info
   await rm(cached, { force: true }).catch(() => undefined)
-  return refresh()
+  return (await refresh()) ? inspectPackage(cached) : null
 }
 
 /** The best package available right now, and where it came from. Never throws. */
 export async function getBuiltinTemplate(): Promise<BuiltinTemplate | null> {
   const cached = cachedPath()
   if ((await ageMs(cached)) > MAX_AGE_MS) await refresh()
-  if (await cacheIsUsable(cached)) return { path: cached, source: 'downloaded' }
+  const downloaded = await usableCache(cached)
+  if (downloaded) return { path: cached, source: 'downloaded', ...downloaded }
   const bundled = bundledPath()
-  if (await isReadablePackage(bundled)) return { path: bundled, source: 'bundled' }
+  const shipped = await inspectPackage(bundled)
+  if (shipped) return { path: bundled, source: 'bundled', ...shipped }
   return null
 }
 

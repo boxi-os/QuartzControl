@@ -1860,9 +1860,10 @@ export interface QuartzGuiApi {
      * The example template the app can offer while a project is being created - a path, so that
      * everything after this point is the ordinary import: plan(), then import(). Null when neither
      * a downloaded nor a bundled copy exists. `source` says which of the two answered, because a
-     * dialog that has been offline for a week should be able to say so.
+     * dialog that has been offline for a week should be able to say so. `pages` counts the Markdown
+     * files of its content part, so the wizard names the number the package actually carries.
      */
-    builtin(): Promise<{ path: string; source: 'downloaded' | 'bundled' } | null>
+    builtin(): Promise<{ path: string; source: 'downloaded' | 'bundled'; pages: number } | null>
     /** Opens the package chooser. Accepts a folder too, for packages in the pre-1 folder format. */
     pick(): Promise<string | null>
     /** Resolves to null when the user cancelled the save dialog. */

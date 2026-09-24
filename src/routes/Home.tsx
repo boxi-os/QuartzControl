@@ -932,7 +932,7 @@ function CreateWizard({
   // The example template, if the app has one to offer. Asked for once on mount: the answer may
   // involve a download, and a dialog that re-checks on every keystroke would be checking the
   // network while somebody types a folder name.
-  const [builtin, setBuiltin] = useState<{ path: string; source: 'downloaded' | 'bundled' } | null>(null)
+  const [builtin, setBuiltin] = useState<{ path: string; source: 'downloaded' | 'bundled'; pages: number } | null>(null)
   const [useTemplate, setUseTemplate] = useState(true)
   const [withContent, setWithContent] = useState(true)
 
@@ -1095,13 +1095,15 @@ function CreateWizard({
                 checked={useTemplate}
                 onChange={setUseTemplate}
               />
-              {useTemplate && (
+              {/* Only when the package has pages to offer: a hint about "0 short pages" would be
+                  the fixed number's problem in another form. */}
+              {useTemplate && builtin.pages > 0 && (
                 <div className="mt-2 border-t border-ink/10 pt-2">
                   <Toggle
                     label={t('home.wizard.templateContent')}
                     hint={
                       contentAllowed
-                        ? t('home.wizard.templateContentHint')
+                        ? t('home.wizard.templateContentHint', { count: builtin.pages })
                         : strategy === 'copy'
                           ? t('home.wizard.templateContentHintCopy')
                           : t('home.wizard.templateContentHintSymlink')

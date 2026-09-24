@@ -81,8 +81,8 @@ function settingsPath(): string {
 // the build - that read is a password dialog. This function runs for the start page's environment
 // check, so every start after an update asked for the Keychain before anyone had touched a
 // credential, and asked once more later. The one case it could still catch there - access denied -
-// is caught where it matters: saveConnection refuses with secretStorageUnavailable when
-// encrypting the secret fails, and decrypt() answers null.
+// is caught where it matters: saveConnection asks isEncryptionAvailable() itself before storing a
+// secret and refuses with secretStorageUnavailable, and decrypt() answers null.
 export function getSecretStorageInfo(): SecretStorageInfo {
   if (process.platform === 'darwin') return { available: true, backend: null, secure: true }
   const available = safeStorage.isEncryptionAvailable()
@@ -92,27 +92,16 @@ export function getSecretStorageInfo(): SecretStorageInfo {
   return { available, backend, secure: available && backend !== 'basic_text' }
 }
 
-// One safeStorage call per operation, not two. On macOS each call reads the Keychain, and for an
-// app the Keychain does not know yet (every update - see getSecretStorageInfo) each read is a
-// dialog: a Git-Sync push, which decrypts the GitHub token once, showed two - one for the
-// isEncryptionAvailable() that used to guard these two functions, one for the decryptString()
-// after it. The guard said nothing the call does not say itself: encryptString and decryptString
-// throw when encryption is unavailable (measured on Linux with --password-store=basic, see the
-// comment above getSecretStorageInfo), and that throw is caught here.
 function encrypt(secret: string): string | undefined {
   // An empty secret is not a secret. encryptString('') still produces bytes on some platforms, and
   // storing those would make hasSecret true for a credential that is not there - a row reading
   // "password stored" next to a connection that cannot log in anywhere.
-  if (!secret) return undefined
-  try {
-    return safeStorage.encryptString(secret).toString('base64')
-  } catch {
-    return undefined
-  }
+  if (!secret || !safeStorage.isEncryptionAvailable()) return undefined
+  return safeStorage.encryptString(secret).toString('base64')
 }
 
 function decrypt(encrypted?: string): string | null {
-  if (!encrypted) return null
+  if (!encrypted || !safeStorage.isEncryptionAvailable()) return null
   try {
     return safeStorage.decryptString(Buffer.from(encrypted, 'base64'))
   } catch {
@@ -296,10 +285,8 @@ export async function saveConnection(input: SaveConnectionInput): Promise<Connec
   const existing = index !== -1 ? all[index] : undefined
 
   // Refuse rather than fall back to plaintext: silently writing an unencrypted credential defeats
-  // the point, and silently dropping it would leave the user thinking it was saved. Encrypted once
-  // here and reused below - asking first and encrypting after were two Keychain reads on macOS.
-  const encrypted = input.secret ? encrypt(input.secret) : undefined
-  if (input.secret && !encrypted) {
+  // the point, and silently dropping it would leave the user thinking it was saved.
+  if (input.secret && !safeStorage.isEncryptionAvailable()) {
     throw new Error(
       mainT('secretStorageUnavailable')
     )
@@ -320,7 +307,7 @@ export async function saveConnection(input: SaveConnectionInput): Promise<Connec
     id: existing?.id ?? randomUUID(),
     kind: input.kind,
     name: input.name,
-    encryptedSecret: keepStoredSecret ? existing?.encryptedSecret : encrypted,
+    encryptedSecret: keepStoredSecret ? existing?.encryptedSecret : encrypt(input.secret as string),
     // Carried over on edit: changing a password does not change which server we trust.
     hostKey: existing?.hostKey
   }
@@ -332,7 +319,7 @@ export async function saveConnection(input: SaveConnectionInput): Promise<Connec
     stored.authMethod = input.authMethod
     stored.keyPath = input.keyPath
     // A key read from a file is never copied into the store; a pasted one has no path.
-    if (input.authMethod === 'agent' || input.keyPath) stored.encryptedSecret = encrypted
+    if (input.authMethod === 'agent' || input.keyPath) stored.encryptedSecret = input.secret ? encrypt(input.secret) : undefined
   } else if (input.kind === 'ftp') {
     stored.host = input.host
     stored.port = input.port

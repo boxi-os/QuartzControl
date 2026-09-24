@@ -12,8 +12,8 @@ plugins and a deployment path, and none of it explains itself by looking at it. 
 a surface on top that shows what it is doing and that you can walk away from again — the files stay
 ordinary Quartz files.
 
-> **Release candidate.** Version 1.0.0-rc.1. Runs on macOS and Linux; Windows is deliberately absent (see
-> below). Feedback is welcome — an issue is the easiest way.
+> **Version 1.0.0.** Runs on macOS and Linux; Windows is deliberately absent (see below). Feedback
+> is welcome — an issue is the easiest way.
 
 ## What it does
 
@@ -42,11 +42,11 @@ So that a first start needs nothing installed, the app carries:
 | --- | --- |
 | **Node and npm** | Electron's own Node runtime, via three shims on the PATH — no Node installation required |
 | **git** | used only when the machine has none that answers; otherwise the system's own wins |
-| **An example template** | as a fallback, for when there is no network while creating a project |
+| **The basic template** | as a fallback, for when there is no network while creating a project |
 
 ## Installation
 
-**1.0.0-rc.1** is out and lives under
+**1.0.0** is out and lives under
 [Releases](https://github.com/boxi-os/QuartzControl/releases): DMG and zip for macOS (arm64 and
 x64), AppImage and deb for Linux (arm64 and x86_64), and a Flatpak for x86_64 and aarch64. Every
 file names its architecture, so no two downloads look alike. Building it yourself stays open —

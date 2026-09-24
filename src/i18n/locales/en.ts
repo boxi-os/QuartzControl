@@ -1791,6 +1791,8 @@ export default {
     planIdentical: '{{count}} identical',
     planProjectIconKept: 'The project picture stays: you chose it in the app, and the template does not replace it.',
     planProjectIconKept_other: 'The project pictures stay: you chose them in the app, and the template does not replace them.',
+    planUnrecordedIconReplaced: '“icon.png” is not Quartz’s picture and was not chosen in this app — perhaps on another computer or by an earlier template. “Template wins” replaces it; “Project wins” keeps it.',
+    planUnrecordedIconKept: '“icon.png” is not Quartz’s picture and was not chosen in this app — perhaps on another computer or by an earlier template. It stays, because “Project wins” is selected.',
     planOutside: '{{count}} refused',
     planOutside_other: '{{count}} refused',
     planContentIsSymlink:

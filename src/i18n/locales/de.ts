@@ -1804,6 +1804,8 @@ export default {
     planIdentical: '{{count}} identisch',
     planProjectIconKept: 'Das Projektbild bleibt: Du hast es in der App gewählt, die Vorlage ersetzt es nicht.',
     planProjectIconKept_other: 'Die Projektbilder bleiben: Du hast sie in der App gewählt, die Vorlage ersetzt sie nicht.',
+    planUnrecordedIconReplaced: '„icon.png“ ist nicht das Bild von Quartz und wurde nicht in dieser App gewählt — vielleicht auf einem anderen Rechner oder mit einer früheren Vorlage. „Vorlage gewinnt“ ersetzt es; „Projekt gewinnt“ behält es.',
+    planUnrecordedIconKept: '„icon.png“ ist nicht das Bild von Quartz und wurde nicht in dieser App gewählt — vielleicht auf einem anderen Rechner oder mit einer früheren Vorlage. Es bleibt, weil „Projekt gewinnt“ gewählt ist.',
     planOutside: '{{count}} wird abgelehnt',
     planOutside_other: '{{count}} werden abgelehnt',
     planContentIsSymlink:

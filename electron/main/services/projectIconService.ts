@@ -1,6 +1,7 @@
 import { nativeImage } from 'electron'
+import { createHash } from 'crypto'
 import { existsSync, statSync } from 'fs'
-import { copyFile, mkdir, rm, writeFile } from 'fs/promises'
+import { copyFile, mkdir, readFile, rm, writeFile } from 'fs/promises'
 import { dirname, extname, join } from 'path'
 import type { ProjectIconInfo } from '@shared/ipc-contract'
 import { quartzGuiDir, quartzGuiPath } from './projectDirs'
@@ -99,6 +100,33 @@ export async function userChosenStaticFiles(projectPath: string): Promise<Set<st
   if ((await readMarker(projectPath)).custom) names.add('icon.png')
   if (existsSync(darkIconPath(projectPath))) names.add('icon-dark.png')
   return names
+}
+
+// The git blob id of the icon.png Quartz ships. One since the file was added (2023-05-30,
+// `ad6ce0d`), measured on 2026-09-24: `git log --all -- quartz/static/icon.png` in a v5 clone has
+// that one commit, and all eight projects on this machine without a picture of their own carry
+// this blob. A git blob id rather than a sha256 so it can be checked with `git hash-object`.
+const QUARTZ_ICON_BLOB = 'b6656a7a819cf41ba6502b9eddf4e580617bbaba'
+
+function gitBlobId(data: Buffer): string {
+  return createHash('sha1').update(`blob ${data.length}\0`).update(data).digest('hex')
+}
+
+/**
+ * Whether icon.png is a picture nobody recorded: not Quartz's own, and not chosen in this app.
+ * The marker lives in .quartz-gui/, which git ignores, so a project cloned through Git-Sync has the
+ * user's picture and no marker - and a template import treated it as a design file like any other
+ * (thirty-sixth review, finding 7). It cannot be told apart from a picture an earlier template
+ * brought (every package ships an icon.png), so this does not protect the file; it makes the
+ * import's dry run name it before "the template wins" replaces it.
+ */
+export async function hasUnrecordedIcon(projectPath: string): Promise<boolean> {
+  if ((await readMarker(projectPath)).custom) return false
+  try {
+    return gitBlobId(await readFile(iconPath(projectPath))) !== QUARTZ_ICON_BLOB
+  } catch {
+    return false
+  }
 }
 
 export async function getProjectIcon(projectPath: string): Promise<ProjectIconInfo> {

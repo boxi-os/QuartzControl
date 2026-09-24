@@ -581,6 +581,7 @@ const staticFiles: TemplatePart<StaticPayload> = {
     const dir = staticDir(projectPath)
     const plan = emptyPlan()
     const usersOwn = await projectIconService.userChosenStaticFiles(projectPath)
+    const unrecordedIcon = await projectIconService.hasUnrecordedIcon(projectPath)
     for (const name of payload.files) {
       const target = await writableTarget(dir, name)
       if (!target) {
@@ -594,7 +595,10 @@ const staticFiles: TemplatePart<StaticPayload> = {
       const incoming = files.get(`files/static/${name}`)
       if (incoming && sha(incoming) === sha(await readFile(target))) plan.notes.push(`identical:${name}`)
       else if (usersOwn.has(name)) plan.notes.push(`projectIcon:${name}`)
-      else plan.conflicts.push(name)
+      else {
+        plan.conflicts.push(name)
+        if (name === 'icon.png' && unrecordedIcon) plan.notes.push(`unrecordedIcon:${name}`)
+      }
     }
     return plan
   },

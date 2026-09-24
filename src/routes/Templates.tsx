@@ -422,7 +422,7 @@ function ImportSection({ project }: { project: Project }): JSX.Element {
                 disabled={running}
                 onToggle={() => toggle(part.id)}
                 summary={planSummary(t, part, strategy)}
-                notes={planNotes(t, part)}
+                notes={planNotes(t, part, strategy)}
               />
             ))}
           </div>
@@ -507,10 +507,15 @@ function planSummary(t: Translate, plan: TemplatePartPlan, strategy: TemplateCon
 // Same shape as the sentence `apply` says later, and same place as the content part's own note.
 const OUTSIDE_NAMES_SHOWN = 3
 
-function planNotes(t: Translate, plan: TemplatePartPlan): string[] {
+function planNotes(t: Translate, plan: TemplatePartPlan, strategy: TemplateConflictStrategy): string[] {
   const notes: string[] = []
   if (plan.notes.includes('contentIsSymlink')) notes.push(t('templates.planContentIsSymlink'))
   if (noteCount(plan, 'projectIcon') > 0) notes.push(t('templates.planProjectIconKept', { count: noteCount(plan, 'projectIcon') }))
+  // A picture that is neither Quartz's nor recorded as chosen here - from another machine, or from
+  // an earlier template. Main cannot tell which, so the sentence names the file and the choice.
+  if (noteCount(plan, 'unrecordedIcon') > 0) {
+    notes.push(t(strategy === 'packageWins' ? 'templates.planUnrecordedIconReplaced' : 'templates.planUnrecordedIconKept'))
+  }
   const outside = plan.notes.filter((note) => note.startsWith('outside:')).map((note) => note.slice('outside:'.length))
   if (outside.length > 0) {
     // All of them would be a paragraph in a row that is one line; the count in the summary already

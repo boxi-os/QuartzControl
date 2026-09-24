@@ -258,6 +258,25 @@ for (const [scheme, media] of SCHEMES) {
     // Dieselbe Wartezeit wie im Smoke-Test: Marktplatz und Theme-Katalog holen beim Mount aus dem
     // Netz, und ein halb geladener Katalog ist als Bild wertlos.
     await page.waitForTimeout(2500)
+    // Die 2,5 s reichen nicht immer: Am 2026-09-24 stand der Theme-Katalog nach dieser Zeit noch
+    // auf „Lade Community-Themes…“, und das Bild ging so ins Handbuch, dessen Unterschrift den
+    // Katalog verspricht. Also zusätzlich warten, bis kein sichtbares Blatt-Element mehr mit
+    // „Lade…“/„Lädt…“/„Loading…“ dasteht - und wenn die Frist abläuft, das sagen statt schweigen.
+    const settled = await page
+      .waitForFunction(
+        () =>
+          ![...document.querySelectorAll('body *')].some(
+            (el) =>
+              el.children.length === 0 &&
+              el.getClientRects().length > 0 &&
+              /^(Lade|Lädt|Loading)\b.*…$/.test((el.textContent ?? '').trim())
+          ),
+        null,
+        { timeout: 30_000, polling: 250 }
+      )
+      .then(() => true)
+      .catch(() => false)
+    if (!settled) console.warn(`  ! ${label}: nach 30 s steht noch ein Lade-Platzhalter im Bild`)
 
     const file = path.join(outDir, `${slug(label)}-${scheme}.png`)
     await page.screenshot({ path: file })

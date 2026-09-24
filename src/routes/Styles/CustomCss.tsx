@@ -8,7 +8,7 @@ import type { FontFaceInfo, ScssCheckResult, StyleFile, StyleReferenceFile } fro
 import { Button, Card, CardHeading, Select, TextInput, useCopyToClipboard } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { useStickyState } from '../../state/uiState'
-import { componentItems } from '../LayoutEditor/utils'
+import { distinctComponentChips } from '../LayoutEditor/utils'
 import CssVariableReference from './CssVariableReference'
 import { cssColorToHex, resolvedValue, type ResolveContext } from './variableGraph'
 import { pageGround, swatchStyle } from './swatch'
@@ -269,7 +269,10 @@ export default function CustomCss(): JSX.Element {
     openTab(result.relativePath)
   }
 
-  const components = useMemo(() => componentItems(config.plugins), [config.plugins])
+  // One entry per component, not per placement: the selector inserted is `.<name>`, the same for
+  // every instance, so a component placed three times stood three times in the list, each doing
+  // the same. The layout editor's palette answers the same question the same way.
+  const components = useMemo(() => distinctComponentChips(config.plugins), [config.plugins])
   const activeFile = files.find((f) => f.relativePath === activeTab)
   const activePath = activeTab === MAIN_TAB ? scss.path : (activeFile?.path ?? '')
   const isDirty = (tab: string): boolean =>

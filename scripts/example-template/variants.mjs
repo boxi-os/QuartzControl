@@ -59,7 +59,7 @@ const NAVIGATIONS = ['quartz-navigations', NAVIGATIONS_SOURCE]
  *                 { patches, boxes, navigations } und gibt dieselbe Form zurück.
  *   describe      Der Beschreibungstext des Pakets, gegen die wirklichen Zahlen gebildet.
  *
- * `stylesSource` ist keine Vorliebe, sondern eine Aussage über den Beweiswert. Die 30 Stylesheets
+ * `stylesSource` ist keine Vorliebe, sondern eine Aussage über den Beweiswert. Die 31 Stylesheets
  * werden in *einer* Werkstatt bearbeitet - der des Example - und von dort mit `--sync` ins Repo
  * zurückgeholt. Für jede andere Variante ist die Werkstatt eine frisch beschriebene Kopie des
  * Repos, ein Vergleich sagt also immer „deckungsgleich". Das ist keine Auskunft, sondern eine
@@ -114,7 +114,7 @@ export const VARIANTS = {
     // Der einzige Eintrag mit `mode: 'copy'`: Sein Inhalt liegt als zwanzig Notizen im Repo
     // (basic-content/README.md sagt, warum) und wird als echtes Verzeichnis in die Werkstatt
     // kopiert statt als Symlink in einen Vault gelegt. Und er reist mit — er ist der Grund, warum
-    // der Assistent ein Häkchen „Inhalte mitnehmen" anbietet.
+    // der Assistent ein Häkchen „Mit den Beispielseiten" anbietet.
     content: { mode: 'copy', from: 'basic-content', static: 'basic-site/static', ships: true },
     plugins: [LAYOUT_BOX, MULTILANGUAGE, NAVIGATIONS],
     stylesSource: false,

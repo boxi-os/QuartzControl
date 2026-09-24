@@ -1,8 +1,8 @@
 # Der Inhalt der Basis-Vorlage
 
 Zwanzig Notizen, zehn je Sprache. Sie reisen im Baustein `content` des Pakets `qc-basic.qtpl` mit
-und sind das, was jemand sieht, der ein neues Projekt mit der Basis-Vorlage anlegt und „Inhalte
-mitnehmen" ankreuzt.
+und sind das, was jemand sieht, der ein neues Projekt mit der Basis-Vorlage anlegt und „Mit den
+Beispielseiten" eingeschaltet lässt.
 
 ## Warum sie hier liegen und nicht in einem Vault
 

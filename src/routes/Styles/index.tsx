@@ -368,10 +368,14 @@ export default function Styles(): JSX.Element {
         setSavedConfig(JSON.stringify(config))
       }
       if (overridesDirty) {
-        const list = Object.entries(overrides).map(([key, v]) => ({ key, light: v.light, dark: v.dark }))
+        // A row whose fields were both emptied is no override; the file gets nothing for it, and
+        // the page drops it too, so after the save it reads what the file holds.
+        const kept = Object.fromEntries(Object.entries(overrides).filter(([, v]) => v.light.trim() !== '' || !!v.dark?.trim()))
+        const list = Object.entries(kept).map(([key, v]) => ({ key, light: v.light, dark: v.dark }))
         await window.quartzGui.styles.saveVariableOverrides(project.path, list)
         blocksWritten = 'variables'
-        setSavedOverrides(JSON.stringify(overrides))
+        setOverrides(kept)
+        setSavedOverrides(JSON.stringify(kept))
       }
       // 'force' drops the draft, which is exactly wrong for the refused one: it is re-read under
       // its own name so the banner stays and the draft survives.

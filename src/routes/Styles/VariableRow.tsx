@@ -130,8 +130,13 @@ function VariableRow({
   // the file's dark block", which is how a mode-independent variable is stored, and effectiveValue()
   // resolves it back to the light value. Carrying the display default into the saved value is what
   // made one edit write forty extra declarations.
+  //
+  // An emptied light field stays empty: with `||` it jumped back to the base value under the
+  // cursor, and the next character was appended to that - `var(--background-secondary, var(--bg2))#`
+  // - while the override held '' and saving wrote `--x: ;` (thirty-seventh review, finding 6). An
+  // empty light half is not written (styleService, renderVariableOverrides).
   const draft: OverrideValue = {
-    light: override?.light || base.light,
+    light: override ? override.light : base.light,
     dark: override?.dark || base.dark
   }
 

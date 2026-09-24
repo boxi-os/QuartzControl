@@ -348,18 +348,23 @@ function parseVariableOverrides(body: string): CssVariableOverride[] {
   const dark: Record<string, string> = {}
   for (const match of body.matchAll(/:root\s*\{([^}]*)\}/g)) Object.assign(light, parseDeclarations(match[1]))
   for (const match of body.matchAll(/:root\[saved-theme=["']dark["']\]\s*\{([^}]*)\}/g)) Object.assign(dark, parseDeclarations(match[1]))
-  return Object.entries(light).map(([key, value]) => ({ key, light: value, dark: dark[key] }))
+  // A key with only a dark declaration is one whose light half was left empty (see below).
+  const keys = new Set([...Object.keys(light), ...Object.keys(dark)])
+  return Array.from(keys, (key) => ({ key, light: light[key] ?? '', dark: dark[key] }))
 }
 
+// An empty half is no declaration. `--x: ;` is valid CSS and Dart Sass passes it through, and in
+// the browser it is an empty custom property: every `var(--x)` resolves to nothing. The Variables
+// tab left one after an emptied field (thirty-seventh review, finding 6).
 function renderVariableOverrides(overrides: CssVariableOverride[]): string {
-  const lightLines = overrides.map((o) => `  --${o.key}: ${o.light};`).join('\n')
-  const darkOverrides = overrides.filter((o) => o.dark !== undefined && o.dark !== '')
+  const lightOverrides = overrides.filter((o) => o.light.trim() !== '')
+  const lightLines = lightOverrides.map((o) => `  --${o.key}: ${o.light};`).join('\n')
+  const darkOverrides = overrides.filter((o) => o.dark !== undefined && o.dark.trim() !== '')
   const darkLines = darkOverrides.map((o) => `  --${o.key}: ${o.dark};`).join('\n')
-  let out = `:root {\n${lightLines}\n}`
-  if (darkOverrides.length > 0) {
-    out += `\n\n:root[saved-theme="dark"] {\n${darkLines}\n}`
-  }
-  return out
+  const rules: string[] = []
+  if (lightOverrides.length > 0) rules.push(`:root {\n${lightLines}\n}`)
+  if (darkOverrides.length > 0) rules.push(`:root[saved-theme="dark"] {\n${darkLines}\n}`)
+  return rules.join('\n\n')
 }
 
 export async function getVariableOverrides(projectPath: string): Promise<CssVariableOverride[]> {
@@ -370,13 +375,15 @@ export async function getVariableOverrides(projectPath: string): Promise<CssVari
 
 export async function saveVariableOverrides(projectPath: string, overrides: CssVariableOverride[]): Promise<void> {
   const info = await readCustomScss(projectPath)
+  // Asked of the rendered body, not of the list: a list of emptied values renders nothing.
+  const body = renderVariableOverrides(overrides)
   const next =
-    overrides.length === 0
+    body === ''
       ? // an empty override list still clears a previously-written block rather than leaving stale
         // rules behind - upsertManagedBlock always needs a non-empty body, so remove the markers
         // outright by upserting an intentionally-empty :root rule then stripping it back out.
         migrateOnWrite(stripManagedBlock(info.content, CSS_VARS_MARKER))
-      : upsertManagedBlock(info.content, CSS_VARS_MARKER, renderVariableOverrides(overrides))
+      : upsertManagedBlock(info.content, CSS_VARS_MARKER, body)
   await writeCustomScss(projectPath, next)
 }
 

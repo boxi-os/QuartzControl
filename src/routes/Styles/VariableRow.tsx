@@ -1,4 +1,4 @@
-import { memo, useState } from 'react'
+import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { Badge, TextInput } from '../../components/ui'
@@ -44,6 +44,9 @@ export type VariableRowProps = {
   dependents: string[]
   expanded: boolean
   onToggle: () => void
+  /** "Im Dunkelmodus abweichend" was clicked - held by the page, like `expanded`. */
+  darkOpen: boolean
+  onDarkOpen: (open: boolean) => void
   onChange: (next: OverrideValue | null) => void
   onNavigate?: (key: string) => void
   /** Which override keys each row read while it last rendered - owned by the page, one per key. */
@@ -60,9 +63,10 @@ export type VariableRowProps = {
 // its own override, anything along its chain or inside a `color-mix()`, and `--light`, which
 // every swatch reads as its ground. Not a list of keys worked out beside the resolver, which
 // would be a second copy of it that drifts. The callbacks are left out of the comparison: all
-// three the page passes close over the key and state setters only.
+// four the page passes close over the key and state setters only.
 function sameRow(prev: VariableRowProps, next: VariableRowProps): boolean {
-  if (prev.varKey !== next.varKey || prev.expanded !== next.expanded || prev.readLog !== next.readLog) return false
+  if (prev.varKey !== next.varKey || prev.expanded !== next.expanded || prev.darkOpen !== next.darkOpen) return false
+  if (prev.readLog !== next.readLog) return false
   if (prev.dependents !== next.dependents && (prev.dependents.length > 0 || next.dependents.length > 0)) return false
   const a = prev.ctx
   const b = next.ctx
@@ -96,6 +100,8 @@ function VariableRow({
   dependents,
   expanded,
   onToggle,
+  darkOpen,
+  onDarkOpen,
   onChange,
   onNavigate,
   readLog
@@ -137,7 +143,6 @@ function VariableRow({
   const isColor = isColorVariable(varKey, ctx, 'base')
   const showsColor = isColorVariable(varKey, ctx)
   const baseDiffers = base.dark !== base.light
-  const [darkOpen, setDarkOpen] = useState(false)
   const splitModes = isColor || baseDiffers || Boolean(override?.dark) || darkOpen
 
   function setMode(mode: Mode, value: string): void {
@@ -264,7 +269,7 @@ function VariableRow({
                 />
               )}
               {!splitModes && (
-                <button type="button" onClick={() => setDarkOpen(true)} className="text-micro text-text-muted underline">
+                <button type="button" onClick={() => onDarkOpen(true)} className="text-micro text-text-muted underline">
                   {t('styles.variables.splitDark')}
                 </button>
               )}
@@ -275,7 +280,7 @@ function VariableRow({
                   type="button"
                   onClick={() => {
                     setMode('dark', base.dark)
-                    setDarkOpen(false)
+                    onDarkOpen(false)
                   }}
                   className="text-micro text-text-muted underline"
                 >

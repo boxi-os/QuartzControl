@@ -40,6 +40,11 @@ export default function Variables(): JSX.Element {
   // Which rows are open, which query is active: kept across a trip to another area, since with
   // nothing rendered until a query is typed, losing it means losing the whole result list.
   const [expandedKeys, setExpandedKeys] = useStickyState<string[]>('styles.vars.expanded', [])
+  // Rows whose second field was opened with "Im Dunkelmodus abweichend". Held here rather than in
+  // the row, which a closed group unmounts: the row came back expanded and the field was gone
+  // (thirty-sixth review, finding 6). An empty dark field loses nothing, but it is a choice the
+  // page forgot at the one row it otherwise remembered everything about.
+  const [darkOpenKeys, setDarkOpenKeys] = useStickyState<string[]>('styles.vars.darkOpen', [])
   // Which categories are open. Only the base colours to start with: the other nine are derived
   // from them, and with all ten open the card was three screens long (measured at 1728x1000).
   // Sticky like every other "where was I" state - it survives a trip to another area, not a
@@ -122,6 +127,9 @@ export default function Variables(): JSX.Element {
     dependents: graph?.dependents[key] ?? NO_DEPENDENTS,
     expanded: expandedKeys.includes(key),
     onToggle: () => toggleExpanded(key),
+    darkOpen: darkOpenKeys.includes(key),
+    onDarkOpen: (open) =>
+      setDarkOpenKeys((prev) => (open ? (prev.includes(key) ? prev : [...prev, key]) : prev.filter((k) => k !== key))),
     onChange: (next) => setOverride(key, next),
     onNavigate: navigateTo
   })

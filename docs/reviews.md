@@ -1927,3 +1927,23 @@ englische Fassung zitiert den ersten so, wie die App ihn sagt — sie sagte „c
 only inside a selector)“, was `check:handbook` nicht sieht, weil es kein Blockzitat ist.
 
 **Keinen dieser Fixes hat ein Review gelesen.**
+
+**Danach, am 2026-09-24, beim Durchklicken der gepackten App**, dreizehn Commits ohne Review
+dahinter; der Auftrag für das siebenunddreißigste liest sie
+([`REVIEW-2026-10-11-auftrag.md`](REVIEW-2026-10-11-auftrag.md)):
+
+- `05240c4` — `<main>` ist `relative`: 60 `sr-only`-Spans auf Plugins → Installiert verlängerten
+  das Dokument auf 6353 px und brachten eine zweite Rollleiste. `cdaecb0` — Git-Sync-Karte in
+  voller Breite.
+- `7d7b90d`, `b0fea2f` — „Komponente wählen“ ohne Dubletten und mit dem Selektor, den die
+  Komponente wirklich rendert (gemessene Tabelle, `src/data/componentSelectors.ts`).
+- `efad25c`, `cf91aba`, `8d06f8c`, `3dd2025`, `72aceaf` — die Marke im Kopf aller vier Vorlagen
+  ist das Projektbild, randlos, hell die dunkle macOS-Kachel und dunkel ihre Umkehrung, ohne
+  Quartz' Bildabstand; die Karte „Projektbild“ erkennt sie. Veröffentlicht in
+  `boxi-os/quartzcontrol-templates` (`48c9d42`, `639a199`); die fünf Handbuch-Projekte von Hand
+  nachgezogen, nicht veröffentlicht.
+- `0ee9356` — die Startseite fragt auf macOS den Schlüsselbund nicht mehr ab; `76918e9` war eine
+  falsche Vermutung zum zweiten Dialog und ist mit `4d2a96b` zurückgenommen; `1123831` hält fest,
+  dass ein Zugriff einer ad-hoc signierten App zwei Dialoge zeigt und der Code daran nichts ändert.
+
+**Keinen dieser Commits hat ein Review gelesen.**

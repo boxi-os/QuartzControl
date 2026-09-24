@@ -259,6 +259,11 @@ elf Befunde und die Nebenbei-Liste auf `fix/review-2026-10-10`, was daraus gewor
 dafür ist die Handbuch-Website (Kapitel 4.4, `docs/release.md` Punkt 3). **Keinen dieser Fixes hat
 ein Review gelesen.**
 
+**Das siebenunddreißigste Review ist beauftragt** (2026-09-24,
+[`docs/REVIEW-2026-10-11-auftrag.md`](docs/REVIEW-2026-10-11-auftrag.md), Tag `review-2026-10-12`):
+Es liest die Fixes der 36. Runde und die Korrekturen danach — Schlüsselbund auf macOS, die Marke der
+Vorlagen als Projektbild, die Komponentenauswahl — und sagt, ob 1.0.0 trägt.
+
 **Stand:** Die neun Befunde des vierunddreißigsten Reviews (zwei Mittel, sieben Niedrig) sind
 abgearbeitet, am 2026-09-20 auf `fix/review-2026-10-08`, dazu alle vier Nebenbei-Punkte — 12
 Commits, je einer mit Typcheck, Build und Smoke. Die Runde las die zwanzig Fixes der vorigen und

@@ -144,8 +144,10 @@ export default function Variables(): JSX.Element {
   )
 
   // Asked once per key and graph, not per render: it resolves the value, and a theme has ~1000.
+  // Of the value without the override, so a row does not leave the filtered list while someone
+  // types a colour into it (see isColorVariable).
   const colorKeys = useMemo(
-    () => new Set(extraKeys.filter((key) => isColorVariable(key, ctx))),
+    () => new Set(extraKeys.filter((key) => isColorVariable(key, ctx, 'base'))),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [extraKeys, graph, overrides]
   )

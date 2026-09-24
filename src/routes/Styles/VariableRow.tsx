@@ -134,7 +134,8 @@ function VariableRow({
   // a size, a font, a hue number - gets one field, and the dark one behind a link: a shadow, an
   // opacity or a font weight can want a different value on a dark ground, but for most of them
   // the second field was an invitation to nothing, next to two swatches that stayed empty.
-  const isColor = isColorVariable(varKey, ctx)
+  const isColor = isColorVariable(varKey, ctx, 'base')
+  const showsColor = isColorVariable(varKey, ctx)
   const baseDiffers = base.dark !== base.light
   const [darkOpen, setDarkOpen] = useState(false)
   const splitModes = isColor || baseDiffers || Boolean(override?.dark) || darkOpen
@@ -173,7 +174,7 @@ function VariableRow({
         >
           {expanded ? <ChevronDown size={12} className="shrink-0" /> : <ChevronRight size={12} className="shrink-0" />}
           {/* Kept as an empty slot for a value that is no colour, so the names still line up. */}
-          <span className={`flex shrink-0 gap-0.5 ${isColor ? '' : 'invisible'}`} aria-hidden={!isColor}>
+          <span className={`flex shrink-0 gap-0.5 ${showsColor ? '' : 'invisible'}`} aria-hidden={!showsColor}>
             <Swatch value={lightResolved} ground={pageGround('light', ctx)} />
             <Swatch value={darkResolved} ground={pageGround('dark', ctx)} />
           </span>

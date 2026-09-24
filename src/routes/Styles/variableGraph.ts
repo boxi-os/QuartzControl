@@ -221,6 +221,20 @@ const COLOR_PROBE_SENTINEL = '#010203'
  * reports would go on being right about a colour that is no longer there.
  */
 export function cssColorToHexAlpha(value: string | undefined): { hex: string; alpha: number } | null {
+  const out = probeColor(value)
+  if (out === null) return null
+  if (out.startsWith('#')) return { hex: out, alpha: 1 }
+  const rgba = /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$/i.exec(out)
+  if (rgba) return fromChannels([rgba[1], rgba[2], rgba[3]], 255, rgba[4])
+  const srgb = /^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*(?:\/\s*([\d.]+)\s*)?\)$/i.exec(out)
+  if (srgb) return fromChannels([srgb[1], srgb[2], srgb[3]], 1, srgb[4])
+  return null
+}
+
+// What canvas makes of a value: its own spelling of the colour, or null if it is none. Every
+// notation the browser can paint answers, including those outside sRGB (`oklch()`,
+// `color-mix(in oklch, …)`, `color(display-p3 …)`), which come back as themselves.
+function probeColor(value: string | undefined): string | null {
   const v = value?.trim()
   if (!v || v.includes('var(')) return null
   if (colorProbe === undefined) colorProbe = document.createElement('canvas').getContext('2d')
@@ -230,12 +244,7 @@ export function cssColorToHexAlpha(value: string | undefined): { hex: string; al
   const out = colorProbe.fillStyle
   if (typeof out !== 'string') return null
   if (out === COLOR_PROBE_SENTINEL && v.toLowerCase() !== COLOR_PROBE_SENTINEL) return null
-  if (out.startsWith('#')) return { hex: out, alpha: 1 }
-  const rgba = /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)$/i.exec(out)
-  if (rgba) return fromChannels([rgba[1], rgba[2], rgba[3]], 255, rgba[4])
-  const srgb = /^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*(?:\/\s*([\d.]+)\s*)?\)$/i.exec(out)
-  if (srgb) return fromChannels([srgb[1], srgb[2], srgb[3]], 1, srgb[4])
-  return null
+  return out
 }
 
 // `scale` is what a full channel reads as in the notation that was matched - 255 for `rgba()`,
@@ -255,18 +264,29 @@ export function cssColorToHex(value: string | undefined): string | null {
   return parsed && parsed.alpha === 1 ? parsed.hex : null
 }
 
-// Whether a variable holds a colour - the one question that decides if a row gets swatches and a
-// picker, and whether light and dark are offered as two fields from the start. Asked of the value
-// *without* the user's override: asked of the draft, the answer flipped while typing (`var(--x` is
-// no colour yet) and the dark field vanished under the cursor. A key only the user declares has no
-// other value, so there the override is what is asked.
-export function isColorVariable(key: string, ctx: ResolveContext): boolean {
+// Whether a variable holds a colour. Two questions, because a row asks both:
+//
+// - `'base'`, the value *without* the user's override, decides what does not move while someone
+//   types: whether light and dark are two fields from the start, and under which filter the row
+//   is found. Asked of the draft, the answer flipped while typing (`var(--x` is no colour yet) and
+//   the dark field vanished under the cursor. A key only the user declares has no other value, so
+//   there the override is what is asked.
+// - `'shown'` (the default) also says yes when the override is a colour, and decides the swatches:
+//   a size overridden with `#ff0000` had a picker in its field and empty swatches in its header
+//   (thirty-sixth review, finding 5). A draft can only add colour here, never take it away, so a
+//   half-typed value leaves a colour row alone.
+//
+// "A colour" is what canvas can parse, not what it can squeeze into sRGB: `oklch()` and
+// `color-mix(in oklch, …)` are colours the picker cannot hold, and they were filed under "other
+// values" (finding 2). Whether the picker is offered is asked separately, of the hex.
+export function isColorVariable(key: string, ctx: ResolveContext, which: 'base' | 'shown' = 'shown'): boolean {
   const def = catalogDef(key)
   if (def && def.kind !== 'discovered') return def.kind === 'color'
   const own = key in ctx.overrides && !ctx.graph?.vars[key]
   return (['light', 'dark'] as Mode[]).some((mode) => {
-    const value = own ? effectiveValue(key, mode, ctx) : baseValue(key, mode, ctx)
-    return cssColorToHexAlpha(resolveValueLiteral(value, mode, ctx)) !== null
+    const base = own ? effectiveValue(key, mode, ctx) : baseValue(key, mode, ctx)
+    if (isDisplayableColor(resolveValueLiteral(base, mode, ctx))) return true
+    return which === 'shown' && key in ctx.overrides && isDisplayableColor(resolveValueLiteral(effectiveValue(key, mode, ctx), mode, ctx))
   })
 }
 
@@ -291,9 +311,14 @@ export function originOf(key: string, ctx: ResolveContext): VariableOrigin {
 
 // Only a value CSS can actually paint - anything still containing an unresolved var() would make
 // the swatch silently fall back to transparent and read as "no color" rather than "not resolved".
+// Asked of canvas, not of a list of function names: the list had no `color-mix(`, no `lch(`/`oklab(`
+// and no keyword, so `transparent` - which over the ground *is* the ground - showed as an empty
+// field on 72 of 345 colour rows of the minimal theme (thirty-sixth review, finding 3).
+// `currentColor` stays out: it paints the colour of the element it is used on, and a swatch here
+// would show the app's text colour instead.
 export function isDisplayableColor(value: string | undefined): value is string {
-  if (!value || value.includes('var(')) return false
-  return /^(#[0-9a-f]{3,8}|(rgb|rgba|hsl|hsla|color|oklch|lab)\()/i.test(value.trim())
+  if (!value || /^\s*currentcolor\s*$/i.test(value)) return false
+  return probeColor(value) !== null
 }
 
 // Groups a variable by its name prefix, which is how both Quartz's and Obsidian's variables are

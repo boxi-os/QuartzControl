@@ -44,7 +44,7 @@ import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 
-import { recoloured, DIM_DARK } from './site-mark.mjs'
+import { cropped, recoloured, DARK_STOPS, LIGHT_STOPS } from './site-mark.mjs'
 
 const APP_DIR = path.resolve(import.meta.dirname, '../..')
 const OUT_DIR = path.join(APP_DIR, 'scripts/example-template/site/static')
@@ -63,8 +63,8 @@ const page = (svg) => `<!doctype html><meta charset="utf-8">
 ${svg}`
 
 const targets = [
-  { file: path.join(OUT_DIR, 'icon.png'), html: page(recoloured('qcMarkLight', 1)) },
-  { file: path.join(OUT_DIR, 'icon-dark.png'), html: page(recoloured('qcMarkDark', DIM_DARK)) }
+  { file: path.join(OUT_DIR, 'icon.png'), html: page(cropped(recoloured('qcMarkLight', LIGHT_STOPS))) },
+  { file: path.join(OUT_DIR, 'icon-dark.png'), html: page(cropped(recoloured('qcMarkDark', DARK_STOPS))) }
 ]
 
 fs.mkdirSync(OUT_DIR, { recursive: true })
@@ -110,8 +110,15 @@ app.whenReady().then(async () => {
     if (corners.some((a) => a !== 0)) {
       throw new Error(path.basename(target.file) + ': Ecken nicht durchsichtig (Alpha ' + corners.join(', ') + ')')
     }
+    // Und die Mitten der vier Kanten deckend: Die Kachel reicht bis an den Rand (cropped() in
+    // site-mark.mjs). Ein stehen gebliebener Rand wäre hier durchsichtig.
+    const half = Math.floor(got.width / 2)
+    const edges = [at(half, 1), at(half, got.height - 2), at(1, half), at(got.width - 2, half)]
+    if (edges.some((a) => a < 200)) {
+      throw new Error(path.basename(target.file) + ': Kanten nicht deckend, ein Rand ist stehen geblieben (Alpha ' + edges.join(', ') + ')')
+    }
     fs.writeFileSync(target.file, image.toPNG())
-    done.push(path.basename(target.file) + ' ' + got.width + 'x' + got.height + ', Ecken durchsichtig')
+    done.push(path.basename(target.file) + ' ' + got.width + 'x' + got.height + ', Ecken durchsichtig, Kanten deckend')
   }
   console.log(done.join('\\n'))
   for (const { win } of windows) win.destroy()

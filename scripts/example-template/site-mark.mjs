@@ -7,11 +7,16 @@
 // pasted into plugins.mjs would be the third place this drawing lives (the .icns and the .ico are
 // generated from the same file), and the one that silently stops matching the other two.
 //
-// What the two versions differ in is the tile, not the mark: the drawing sits on its own gradient
-// and covers the page ground completely, so neither version needs the ground's colour. On
-// #16171A the full-strength gradient reads as a lit square in the corner of an otherwise quiet
-// header, which is why the dark one is stepped down 15%. The Q itself stays as it is - at 26px
-// it is three shapes and a hole, and dimming those costs the hole.
+// What the two versions differ in is the tile, not the mark. The light one is the app icon's own
+// blue-to-rose gradient. The dark one is the tile macOS itself draws for this icon when its
+// appearance is set to dark icons (macOS 27, `AppleIconAppearanceTheme = RegularDark`): rendered
+// through NSWorkspace and sampled on 2026-09-24 - rgb(47,49,49) at the top, rgb(24,24,24) at the
+// bottom, the gear a light grey that the drawing's own rgb(235,235,235) already is. Until then the
+// dark version was the gradient stepped down 15%; the user liked Apple's better.
+//
+// Both are cropped to the tile (`cropped()`): the icon source keeps Apple's grid - a tile of 824
+// in a 1024 canvas, the rest room for the shadow - which a project image in a website header has
+// no use for. Without the margin the mark is a fifth larger at the same 26 px.
 
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -21,12 +26,24 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 const ICON = join(HERE, '../../build/icon-source/quartzcontrol-icon.svg')
 
 /** The gradient's two stops, as written in the source file. */
-const STOPS = [
+export const LIGHT_STOPS = [
   [69, 91, 155],   // top - the blue
   [221, 120, 127]  // bottom - the rose
 ]
 
-const scale = ([r, g, b], f) => `rgb(${Math.round(r * f)},${Math.round(g * f)},${Math.round(b * f)})`
+/** The dark tile macOS draws for this icon (see the head of this file). */
+export const DARK_STOPS = [
+  [47, 49, 49],    // top
+  [24, 24, 24]     // bottom
+]
+
+const rgb = ([r, g, b]) => `rgb(${r},${g},${b})`
+
+// The tile's own rectangle in the source's 1024 canvas: its path runs from -9 to 183 and from 8 to
+// 200, inside `matrix(4.291667,0,0,4.291667,135.99405,59.880111)` - so x 97.369, y 94.213, 824.0
+// on each side. Read off the file rather than measured from a rendering, and checked by
+// mark-png.mjs, which insists the crop leaves the four corners transparent and nothing else.
+const TILE = { x: 97.369, y: 94.213, size: 824 }
 
 /**
  * Trim the source down to what belongs in a config value: no XML preamble, no editor namespaces,
@@ -48,19 +65,21 @@ export function trimmed() {
 }
 
 /**
- * The drawing with its gradient stepped down by `dim` and its gradient id renamed.
+ * The drawing with the tile's gradient set to `stops` and its gradient id renamed.
  *
- * `id` matters wherever two versions share a document - the layout box switches them with
- * `display`, it does not remove one, and two `<linearGradient id="_Linear1">` in one document is
- * the first one winning for both. It is passed anyway when only one version is rendered, because
- * a function that is only safe in one of its two call sites is one nobody re-reads.
+ * `id` matters wherever two versions share a document, and it is passed anyway when only one is
+ * rendered, because a function that is only safe in one of its two call sites is one nobody re-reads.
  */
-export function recoloured(id, dim) {
+export function recoloured(id, stops) {
   return trimmed()
     .replace(/_Linear1/g, id)
-    .replace(/stop-color:rgb\(69,\s*91,\s*155\)/, `stop-color:${scale(STOPS[0], dim)}`)
-    .replace(/stop-color:rgb\(221,\s*120,\s*127\)/, `stop-color:${scale(STOPS[1], dim)}`)
+    .replace(/stop-color:rgb\(69,\s*91,\s*155\)/, `stop-color:${rgb(stops[0])}`)
+    .replace(/stop-color:rgb\(221,\s*120,\s*127\)/, `stop-color:${rgb(stops[1])}`)
 }
 
-/** How far the dark version's gradient is stepped down. See the head of this file for why. */
-export const DIM_DARK = 0.85
+/** The same drawing with the viewBox on the tile - no margin around it. */
+export function cropped(svg) {
+  const out = svg.replace(/viewBox="0 0 1024 1024"/, `viewBox="${TILE.x} ${TILE.y} ${TILE.size} ${TILE.size}"`)
+  if (out === svg) throw new Error('site-mark.mjs: viewBox of the icon source is no longer 0 0 1024 1024')
+  return out
+}

@@ -74,7 +74,17 @@ function settingsPath(): string {
 // fix. Same shape as styleService's `unavailable` and updateService's 'unknown'. The
 // `backend !== 'basic_text'` half of `secure` is belt and braces: it is what would still be true
 // if anyone ever called setUsePlainTextEncryption().
+//
+// Not asked on macOS. There the backend is always the Keychain, and isEncryptionAvailable() is no
+// cheap flag: it reads the app's "Safe Storage" item, and for an app whose signature the Keychain
+// does not know yet - every update, since the app is signed ad hoc and its identity is the hash of
+// the build - that read is a password dialog. This function runs for the start page's environment
+// check, so every start after an update asked for the Keychain before anyone had touched a
+// credential, and asked once more later. The one case it could still catch there - access denied -
+// is caught where it matters: saveConnection asks isEncryptionAvailable() itself before storing a
+// secret and refuses with secretStorageUnavailable, and decrypt() answers null.
 export function getSecretStorageInfo(): SecretStorageInfo {
+  if (process.platform === 'darwin') return { available: true, backend: null, secure: true }
   const available = safeStorage.isEncryptionAvailable()
   // getSelectedStorageBackend() only exists on Linux; elsewhere the backend is the OS keychain
   // and there is nothing to choose or to warn about.

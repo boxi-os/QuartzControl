@@ -1321,6 +1321,7 @@ export interface ToolInfo {
 
 /** How the app's secrets are actually protected, which is not the same question everywhere. */
 export interface SecretStorageInfo {
+  /** On macOS not asked but stated: asking reads the Keychain (see getSecretStorageInfo). */
   available: boolean
   /**
    * Electron's chosen backend. On Linux without a running keyring this is `basic_text`, and then

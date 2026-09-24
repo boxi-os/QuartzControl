@@ -65,7 +65,13 @@ vom Nutzer am 2026-09-24 genannt). Online stehen sie nicht auf dem Stand des Bas
 altes Icon, und im Navigations-Handbuch klappt die Navigation noch nicht aus. Lokal ist die Marke
 seit dem 2026-09-24 das Projektbild, veröffentlicht ist das nicht. Dazu bekommt jede Startseite
 dieselbe Darstellung wie die App-Website: was das Plugin kann, in Kästen, statt nur Text.
-Streichen, sobald alle drei so online stehen.
+**Inhaltlich erledigt am 2026-09-24** (Vaults gepusht: Navigations `990ec95`, Layout Box
+`b2fe83f`, Multilanguage `b77349c`): Das Navigations-Handbuch navigiert jetzt mit dem Akkordeon
+und dem Pager der Vorlage — seine Config und seine Stylesheets sind bis auf Titel und Adresse die
+des Layout-Box-Handbuchs, `plugin-navigations.scss` ist entfernt —, 8.1 dort und 8.1 bei Layout
+Box (die Marke ist kein Inline-SVG mehr) sind nachgezogen, alle drei Startseiten haben die Kästen.
+Offen ist nur das Veröffentlichen der drei Websites mit 1.0.0 (Punkt 9). Streichen, sobald alle
+drei so online stehen.
 
 Das Handbuch sollte auf dem Stand der App sein: `npm run check:handbook` nach dem letzten
 Textdurchgang, und die Screenshots nach der letzten sichtbaren Änderung

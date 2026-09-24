@@ -321,7 +321,16 @@ function CurrentValues({ varKey, ctx, split }: { varKey: string; ctx: ResolveCon
               <span className="text-text-muted">{split ? t(`styles.variables.${mode}`) : t('styles.variables.bothModes')}:</span>
               {isDisplayableColor(resolved) && <Swatch value={resolved} ground={pageGround(mode, ctx)} size="md" />}
               <code className="font-mono text-text">
-                {resolved ?? t('styles.variables.unresolved')}
+                {resolved ??
+                  // Two reasons, two sentences: the variable has no value this table can see, or it
+                  // has one and something it refers to has none. `blur-background: color-mix(in srgb,
+                  // var(--background-primary) …)` is set in :root and was told it was "only set
+                  // inside a selector" (thirty-sixth review, in passing).
+                  t(
+                    effectiveValue(varKey, mode, ctx) === undefined
+                      ? 'styles.variables.unresolved'
+                      : 'styles.variables.unresolvedReference'
+                  )}
               </code>
               {hex && hex.toLowerCase() !== (resolved ?? '').toLowerCase() && (
                 <code className="font-mono text-text-muted">{hex}</code>

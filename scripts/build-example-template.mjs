@@ -1349,7 +1349,11 @@ async function main() {
     installGithubPlugins(WORKSHOP)
   }
 
-  const written = await buildTemplate()
+  // Phasen 0 bis 2 und 11 brauchen dieses Fenster nicht - 11 startet sein eigenes. Ohne die
+  // Abfrage startete `--only 1` trotzdem die App und trug die Werkstatt per `projects.add` in die
+  // Projektliste des Profils ein, für einen Lauf, der nur Notizen kopiert.
+  const appPhases = [[3, 'frames'], [4, 'config'], [5, 'styles'], [6, 'fonts'], [7, 'variables'], [8, 'texts'], [9, 'check'], [10, 'export']]
+  const written = appPhases.some(([number, name]) => phase(number, name)) ? await buildTemplate() : null
 
   if (phase(11, 'verify')) {
     const outcome = await verify()

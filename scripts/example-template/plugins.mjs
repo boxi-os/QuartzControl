@@ -9,7 +9,6 @@
 // `priority` (config-loader.ts's buildLayoutForEntries). Priorities go in tens so a later insert
 // has room.
 
-import { MARK_LIGHT, MARK_DARK } from './site-mark.mjs'
 
 export const LAYOUT_BOX_SOURCE = 'github:boxi-os/quartz-layout-box'
 
@@ -26,14 +25,24 @@ const LAYOUT_BOX_NAME = 'quartz-layout-box'
 
 /* ------------------------------------------------------------------ the site's own mark */
 
-// The mark is the app's own icon, and it is built rather than pasted: site-mark.mjs reads
-// build/icon-source/quartzcontrol-icon.svg and returns a light and a dark version of it. See there
-// for what the two differ in and why the gradient ids have to differ too.
+// The mark is the project image: `quartz/static/icon.png` and `icon-dark.png`, the two files the
+// app replaces under "Konfiguration → Projektbild" - so a user's own picture reaches the header,
+// not only the favicon. Phase 4 of the build script sets them through that same channel, from
+// site/static/ (rasterised by mark-png.mjs from build/icon-source/quartzcontrol-icon.svg), and
+// they travel in the `static` part.
 //
-// Inline SVG rather than a file. `quartz/static/` does travel in a package since 2026-09-06 (the
-// `static` part, BEFUNDE 5), so a file would work now - but as markup inside the config entry the
-// mark cannot arrive without the entry that references it, and that is one failure mode fewer for
-// something that is on every page of the site.
+// Until 2026-09-24 it was inline SVG in this entry (site-mark.mjs), on the ground that markup
+// cannot arrive without the entry that names it. The price was that no picture chosen in the app
+// ever showed in the header of a site built from this template - the case the mark exists for.
+//
+// `alt=""` on both images, and that is no oversight: the link carries its accessible name in
+// `.site-mark-text` (visually hidden, plugin-layout-box.scss). An `alt` would say it twice.
+const MARK_HTML =
+  '<a class="site-mark" href="{{root}}/">' +
+  '<img class="img-light" src="{{root}}/static/icon.png" width="26" height="26" alt="">' +
+  '<img class="img-dark" src="{{root}}/static/icon-dark.png" width="26" height="26" alt="">' +
+  '<span class="site-mark-text">{{siteTitle}}</span>' +
+  '</a>'
 
 /**
  * Seven instances of quartz-layout-box, one per thing the plugin can do.
@@ -60,7 +69,7 @@ export const LAYOUT_BOXES = [
     enabled: true,
     order: 500,
     options: {
-      html: `<a class="site-mark" href="{{root}}/">${MARK_LIGHT}${MARK_DARK}<span class="site-mark-text">{{siteTitle}}</span></a>`,
+      html: MARK_HTML,
       className: 'layout-box-mark',
       placeholders: true,
       frontmatterKey: 'layoutBoxMark'

@@ -84,30 +84,6 @@ export function patches(base) {
   return next
 }
 
-// Die Marke als Bild statt als Inline-SVG.
-//
-// Das Example schreibt die Zeichnung als SVG in den Konfigurationseintrag — dort kann sie nicht
-// ankommen, ohne dass der Eintrag ankommt, der sie nennt, und das ist für eine Marke auf jeder
-// Seite eine Fehlerquelle weniger. Die Basis-Vorlage geht den anderen Weg, und zwar mit Absicht:
-// Ein Nutzer, der seine eigene Marke einsetzt, hat eine Bilddatei und kein SVG-Markup. Der Weg,
-// den die Vorlage vorführt, soll der sein, den er gehen wird.
-//
-// Die zwei PNG entstehen aus derselben Quelle wie das Inline-SVG (`mark-png.mjs` aus
-// `site-mark.mjs` aus `build/icon-source/quartzcontrol-icon.svg`) und reisen im Baustein `static`
-// mit. Umgeschaltet wird über die Klassen `.img-light`/`.img-dark`, die das Plugin selbst per
-// `display` bedient — es fragt nicht nach dem Elementtyp, also trägt es ein `<img>` wie ein
-// `<svg>`.
-//
-// `alt=""` an beiden Bildern, und das ist kein Versehen: Der Link daneben trägt seinen
-// zugänglichen Namen im `.site-mark-text` (sichtbar verborgen, plugin-layout-box.scss). Ein `alt`
-// am Bild sagte denselben Namen ein zweites Mal.
-const MARK_HTML =
-  '<a class="site-mark" href="{{root}}/">' +
-  '<img class="img-light" src="{{root}}/static/qc-mark-light.png" width="26" height="26" alt="">' +
-  '<img class="img-dark" src="{{root}}/static/qc-mark-dark.png" width="26" height="26" alt="">' +
-  '<span class="site-mark-text">{{siteTitle}}</span>' +
-  '</a>'
-
 /**
  * Zwei Kästen: die Marke im Kopf und eine Notiz in der linken Spalte.
  *
@@ -125,7 +101,8 @@ export function boxes(base) {
   if (!mark) throw new Error('basic.mjs: layoutBoxMark steht nicht in LAYOUT_BOXES')
 
   return [
-    { ...mark, options: { ...mark.options, html: MARK_HTML } },
+    // Die Marke unverändert aus dem Example: das Projektbild (plugins.mjs, MARK_HTML).
+    mark,
     {
       source: mark.source,
       name: mark.name,

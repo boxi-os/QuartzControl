@@ -1,25 +1,27 @@
-// Rastert die Marke der Basis-Vorlage nach PNG, hell und dunkel.
+// Rastert die Marke nach PNG, hell und dunkel - als Projektbild aller vier Vorlagen.
 //
 //   node scripts/example-template/mark-png.mjs
 //
-// Warum PNG und nicht das Inline-SVG, das die Example-Vorlage benutzt: Die Basis-Vorlage soll
-// zeigen, wie ein Bild aus `quartz/static/` in eine Layout-Box kommt — das ist der Weg, den ein
-// Nutzer für sein eigenes Logo geht, und eine Vorlage, die nur den Weg vorführt, den niemand hat
-// (ein SVG als Zeichenkette in der Konfiguration), führt am Fall vorbei.
+// Die Marke im Kopf ist seit dem 2026-09-24 in allen vier Varianten das Projektbild:
+// `quartz/static/icon.png` und `icon-dark.png`, die zwei Dateien, die die App unter
+// „Konfiguration → Projektbild“ ersetzt. Vorher stand sie im Example (und damit in Doku und Plugin)
+// als Inline-SVG in der Konfiguration und in der Basis als `qc-mark-*.png` - in beiden Fällen
+// erreichte ein Bild, das der Nutzer in der App wählte, das Favicon, aber nicht den Kopf.
 //
 // Warum ein Skript und nicht zwei eingecheckte Exporte aus einem Zeichenprogramm: Es ist dieselbe
-// Zeichnung wie das Inline-SVG und wie das App-Icon, und die einzige Quelle dafür ist
+// Zeichnung wie das App-Icon, und die einzige Quelle dafür ist
 // `build/icon-source/quartzcontrol-icon.svg`. Die zwei PNG werden aus `site-mark.mjs` gebildet,
-// also aus demselben `trimmed()` und derselben Abdunklung — eine zweite, von Hand exportierte
+// also aus demselben `trimmed()` und derselben Abdunklung - eine zweite, von Hand exportierte
 // Kopie wäre die, die stillschweigend aufhört zu passen.
 //
 // Die Ausgabe ist **eingecheckt**, wie `build/background.png`. Das Skript ist der reproduzierbare
-// Weg dorthin, nicht ein Schritt des Vorlagenbaus: Phase 3 von build-example-template.mjs startet
-// schon eine Electron-Instanz über Playwright, und eine zweite daneben für zwei Bilder, die sich
-// nur ändern, wenn sich das Icon ändert, wäre eine Minute pro Lauf für nichts.
+// Weg dorthin, nicht ein Schritt des Vorlagenbaus: Phase 4 von build-example-template.mjs setzt
+// die zwei Dateien über die App als Projektbild der Werkstatt, und eine zweite Electron-Instanz
+// für zwei Bilder, die sich nur ändern, wenn sich das Icon ändert, wäre eine Minute pro Lauf für
+// nichts.
 //
 // Rastert über Electron, weil dieser Rechner keinen SVG-Konverter hat (kein ImageMagick, kein
-// rsvg-convert, kein PIL) und Electron ohnehin hier liegt — derselbe Weg und dieselben drei
+// rsvg-convert, kein PIL) und Electron ohnehin hier liegt - derselbe Weg und dieselben drei
 // Fallen wie in scripts/dmg-background.mjs, von dort übernommen:
 //
 //   * Das Fenster wird in CSS-Pixeln gemessen, die Aufnahme kommt in Gerätepixeln zurück. Also
@@ -34,7 +36,7 @@
 //
 // Eine vierte, die dort nicht vorkommt: Das Icon ist eine abgerundete Kachel, außerhalb ihrer
 // Ecken ist nichts. Ein Fenster ist standardmäßig weiß, und eine Aufnahme davon hätte vier weiße
-// Zipfel — auf dem hellen Grund unsichtbar, im Dunkelmodus vier leuchtende Punkte. Also
+// Zipfel - auf dem hellen Grund unsichtbar, im Dunkelmodus vier leuchtende Punkte. Also
 // `transparent: true` samt durchsichtiger Fensterfarbe, und geprüft wird es auch: Das Skript
 // liest hinterher die vier Eckpixel der PNG-Datei und besteht darauf, dass sie durchsichtig sind.
 import { spawn } from 'node:child_process'
@@ -45,13 +47,13 @@ import * as path from 'node:path'
 import { recoloured, DIM_DARK } from './site-mark.mjs'
 
 const APP_DIR = path.resolve(import.meta.dirname, '../..')
-const OUT_DIR = path.join(APP_DIR, 'scripts/example-template/basic-site/static')
+const OUT_DIR = path.join(APP_DIR, 'scripts/example-template/site/static')
 
-// 78 = 3 × 26. Die Layout-Box zeigt die Marke mit `width="26" height="26"`, genau wie das Inline-
-// SVG der Example-Vorlage; 3× deckt die Bildschirme ab, die es gibt, ohne dass eine vierte Datei
-// nötig wird. Ein SVG bräuchte diese Zahl nicht — das ist der Preis dieses Weges und der Grund,
-// warum die Example-Vorlage ihn nicht geht.
-const SIZE = 78
+// 512 - die längste Kante, mit der die App ein Projektbild ablegt (MAX_STORED_EDGE in
+// projectIconService.ts): Eine Datei in genau dieser Größe kopiert sie Byte für Byte, statt sie neu
+// zu kodieren. Der Kopf zeigt die Marke mit 26 px, das Favicon entsteht daraus mit 48 px; bis zum
+// 2026-09-24 waren es 78 px, gerade genug für den Kopf auf einem 3×-Bildschirm.
+const SIZE = 512
 
 const page = (svg) => `<!doctype html><meta charset="utf-8">
 <style>
@@ -61,8 +63,8 @@ const page = (svg) => `<!doctype html><meta charset="utf-8">
 ${svg}`
 
 const targets = [
-  { file: path.join(OUT_DIR, 'qc-mark-light.png'), html: page(recoloured('qcMarkLight', 1)) },
-  { file: path.join(OUT_DIR, 'qc-mark-dark.png'), html: page(recoloured('qcMarkDark', DIM_DARK)) }
+  { file: path.join(OUT_DIR, 'icon.png'), html: page(recoloured('qcMarkLight', 1)) },
+  { file: path.join(OUT_DIR, 'icon-dark.png'), html: page(recoloured('qcMarkDark', DIM_DARK)) }
 ]
 
 fs.mkdirSync(OUT_DIR, { recursive: true })

@@ -80,6 +80,8 @@ const TEMPLATE_PART_IDS = (() => {
 
 const APP_DIR = path.resolve(import.meta.dirname, '..')
 const DATA_DIR = path.join(APP_DIR, 'scripts/example-template')
+// Dateien unter quartz/static, die eine frühere Fassung der Vorlage schrieb und keine mehr nennt.
+const RETIRED_STATIC_FILES = ['qc-mark-light.png', 'qc-mark-dark.png']
 const HOME = os.homedir()
 
 const argv = process.argv.slice(2)
@@ -710,7 +712,6 @@ function copyContent(target, content) {
     manifest[rel] = sha256(fs.readFileSync(to))
   }
   fs.writeFileSync(path.join(target, CONTENT_MANIFEST), JSON.stringify(manifest, null, 2) + '\n')
-  if (V.content.static) copyTree(path.join(DATA_DIR, V.content.static), path.join(target, 'quartz/static'))
   done(`${own.size} Seiten kopiert`)
 }
 
@@ -791,6 +792,30 @@ async function buildTemplate() {
     /* ---------------------------------------------------------------- 4 · config */
     if (phase(4, 'config')) {
       log('\n4 · Konfiguration')
+      // Die Marke im Kopf ist das Projektbild (plugins.mjs, MARK_HTML), also wird sie gesetzt wie
+      // ein Klick unter „Konfiguration → Projektbild“ sie setzt: Die App legt die Markierung an,
+      // sichert Quartz' eigenes icon.png und schreibt icon-dark.png. Die zwei Dateien reisen im
+      // Baustein `static`. Vor der Konfiguration, weil deren Marke beide Dateien nennt.
+      step('Projektbild, hell und dunkel')
+      await ipc(
+        page,
+        async (a) => {
+          await window.quartzGui.projectIcon.set({ projectPath: a.path, sourcePath: a.light })
+          await window.quartzGui.projectIcon.setDark({ projectPath: a.path, sourcePath: a.dark })
+        },
+        {
+          path: WORKSHOP,
+          light: path.join(DATA_DIR, 'site/static/icon.png'),
+          dark: path.join(DATA_DIR, 'site/static/icon-dark.png')
+        }
+      )
+      // Die zwei Dateien, die bis zum 2026-09-24 die Marke der Basis waren. Der Baustein `static`
+      // packt ein, was im Ordner liegt, nicht, was die Konfiguration nennt - ohne das hier reisten
+      // sie im nächsten qc-basic.qtpl weiter mit, von keiner Box mehr genannt (gemessen am ersten
+      // Lauf danach). Eine feste Liste wie RETIRED_FONT_FILES, keine Suche nach Unbenutztem.
+      const retired = RETIRED_STATIC_FILES.filter((name) => fs.existsSync(path.join(WORKSHOP, 'quartz/static', name)))
+      for (const name of retired) fs.rmSync(path.join(WORKSHOP, 'quartz/static', name))
+      done(retired.length ? `icon.png, icon-dark.png; entfernt: ${retired.join(', ')}` : 'icon.png, icon-dark.png')
       step('Farben, Schriften, Plugins, Layout')
       // Read *after* the frames: saveFrame appends their plugin entries through the CLI, and an
       // in-memory copy taken before that would drop them on the next write.

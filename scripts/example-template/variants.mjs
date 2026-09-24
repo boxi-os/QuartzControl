@@ -43,10 +43,10 @@ const NAVIGATIONS = ['quartz-navigations', NAVIGATIONS_SOURCE]
  *   control       Das Wegwerf-Projekt der Gegenprobe (Phase 11).
  *   content       Woher `content/` kommt und ob es im Paket mitreist:
  *                   { mode: 'vault', vault, ships }          - Symlink auf einen Obsidian-Vault
- *                   { mode: 'copy',  from, static?, ships }  - echte Ordner, aus diesem Repo
- *                 `from` und `static` sind Pfade unter scripts/example-template/ und stehen
- *                 ausgeschrieben da: Ein aus `from` abgeleiteter zweiter Name („basic-content" ->
- *                 „basic-site") wäre eine Kopplung, die niemand sieht, bis einer der zwei umzieht.
+ *                   { mode: 'copy',  from, ships }           - echte Ordner, aus diesem Repo
+ *                 `from` ist ein Pfad unter scripts/example-template/. Bis zum 2026-09-24 gab es
+ *                 daneben `static` für die Marke der Basis (`basic-site/static`); die Marke ist
+ *                 seither in allen Varianten das Projektbild und kommt in Phase 4 (plugins.mjs).
  *   plugins       Die github:-Plugins, die Phase 2 installiert.
  *   stylesSource  Ob `--sync`/`--check-sync` für diese Variante etwas beweisen (siehe unten).
  *   builtin       Ob dieses Paket das eingebaute der App ist - dann liegt eine Kopie unter
@@ -115,7 +115,7 @@ export const VARIANTS = {
     // (basic-content/README.md sagt, warum) und wird als echtes Verzeichnis in die Werkstatt
     // kopiert statt als Symlink in einen Vault gelegt. Und er reist mit — er ist der Grund, warum
     // der Assistent ein Häkchen „Mit den Beispielseiten" anbietet.
-    content: { mode: 'copy', from: 'basic-content', static: 'basic-site/static', ships: true },
+    content: { mode: 'copy', from: 'basic-content', ships: true },
     plugins: [LAYOUT_BOX, MULTILANGUAGE, NAVIGATIONS],
     stylesSource: false,
     builtin: true,

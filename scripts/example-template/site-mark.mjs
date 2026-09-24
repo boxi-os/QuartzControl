@@ -1,5 +1,7 @@
 // The site mark in the header, in a light and a dark version - built from the app's own icon
-// rather than copied out of it.
+// rather than copied out of it. mark-png.mjs rasterises both into site/static/icon.png and
+// icon-dark.png, the project image of every template variant (see plugins.mjs); until 2026-09-24
+// this file also returned them as inline SVG for the config.
 //
 // `build/icon-source/quartzcontrol-icon.svg` is the single source. A second, hand-trimmed copy
 // pasted into plugins.mjs would be the third place this drawing lives (the .icns and the .ico are
@@ -33,9 +35,8 @@ const scale = ([r, g, b], f) => `rgb(${Math.round(r * f)},${Math.round(g * f)},$
  * The transform matrices are deliberately *not* rounded. They scale every child of their group, so
  * 0.395064 -> 0.4 is a full percent of distortion on the Q - measured by rendering both.
  *
- * Exported since 2026-09-20: mark-png.mjs rasterises the same drawing for the basic template,
- * which uses `<img>` rather than inline markup. Two trimmers would be two drawings the day one of
- * them is touched.
+ * Used by mark-png.mjs, which rasterises the drawing. Two trimmers would be two drawings the day
+ * one of them is touched.
  */
 export function trimmed() {
   let s = readFileSync(ICON, 'utf8')
@@ -63,13 +64,3 @@ export function recoloured(id, dim) {
 
 /** How far the dark version's gradient is stepped down. See the head of this file for why. */
 export const DIM_DARK = 0.85
-
-/** One version, sized and classed for the header's layout box. */
-function version(cls, id, dim) {
-  return recoloured(id, dim)
-    .replace('<svg', `<svg class="${cls}" role="img" aria-label=""`)
-    .replace('width="100%" height="100%"', 'width="26" height="26"')
-}
-
-export const MARK_LIGHT = version('img-light', 'qcMarkLight', 1)
-export const MARK_DARK = version('img-dark', 'qcMarkDark', DIM_DARK)

@@ -13,13 +13,11 @@ Er steht in der App unter **Konfiguration → Website** und erscheint oben links
 
 ## 2 · Die Marke
 
-Das kleine Bild daneben kommt aus `quartz/static/qc-mark-light.png` und
-`qc-mark-dark.png` — zwei Dateien, hell und dunkel; die Vorlage schaltet zwischen ihnen um,
-sobald jemand den Dunkelmodus wählt. Lege deine eigenen **unter eigenem Namen** daneben und
-trage die zwei Namen unter **Plugins → quartz-layout-box** in die erste Box ein. Überschreibe
-die zwei Dateien nicht: Sie gehören der Vorlage, und ein späterer Import mit „Vorlage gewinnt“
-legt sie wieder darüber. Derselbe Import setzt auch die Box zurück — dann trägst du die zwei
-Namen noch einmal ein, deine Dateien bleiben liegen.
+Das kleine Bild daneben ist das **Projektbild** des Projekts — `quartz/static/icon.png`, im
+Dunkelmodus `icon-dark.png`. Ein eigenes wählst du in der App unter **Konfiguration → Website →
+Projektbild**: **Bild wählen…** für hell, danach **Bild für den Dunkelmodus…** für dunkel. Es
+ersetzt die Marke im Kopf und wird zugleich das Favicon der Website, und ein späterer Import der
+Vorlage lässt es stehen.
 
 ## 3 · Diesen Text
 

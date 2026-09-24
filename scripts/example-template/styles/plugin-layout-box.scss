@@ -133,10 +133,10 @@ details.layout-box > summary.layout-box-title {
     border-radius: var(--tpl-radius-sm);
   }
 
-  // Dasselbe für ein Bild. Die Example-Vorlage setzt die Marke als Inline-SVG in die Konfiguration,
-  // die Basis-Vorlage als zwei PNG aus `quartz/static/` (mark-png.mjs) — weil das der Weg ist, den
-  // ein Nutzer für sein eigenes Logo geht. Beide Wege teilen sich diese Datei, und die Regel für
-  // den einen ist im anderen wirkungslos statt falsch.
+  // Dasselbe für ein Bild. Seit dem 2026-09-24 ist die Marke in allen Vorlagen das Projektbild
+  // (`quartz/static/icon.png`, `icon-dark.png`), das die App unter „Konfiguration → Projektbild“
+  // ersetzt; bis dahin stand sie im Example als Inline-SVG in der Konfiguration. Die Regel für das
+  // SVG oben bleibt für jeden, der seine Marke so einsetzt, und ist sonst wirkungslos statt falsch.
   //
   // `display` steht auch hier nicht: Der Umschalter des Plugins hängt an den Klassen
   // `.img-light`/`.img-dark` und nicht am Element, er trägt ein `<img>` also genauso wie ein

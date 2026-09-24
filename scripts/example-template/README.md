@@ -84,7 +84,7 @@ Messung an der gebauten Website ist das der erste Aufruf.
 | `frames.mjs` | Die vier Seitenraster (`editorial`, `index`, `focus`, `drawing`) für je drei Breakpoints |
 | `layout.mjs` | Welcher Seitentyp welches Raster nutzt, und die zwei Flex-Gruppen des Kopfbereichs |
 | `plugins.mjs` | Welches Plugin an, wo es sitzt, mit welchen Optionen — und die sieben Layout-Box-Instanzen |
-| `site-mark.mjs` | Die Marke im Kopf, hell und dunkel — gebaut aus `build/icon-source/quartzcontrol-icon.svg` |
+| `site-mark.mjs`, `mark-png.mjs` | Die Marke im Kopf, hell und dunkel — gebaut aus `build/icon-source/quartzcontrol-icon.svg`, gerastert nach `site/static/icon.png` und `icon-dark.png` (512 px); Phase 4 setzt sie als Projektbild der Werkstatt |
 | `translations.mjs` | Geänderte Formulierungen in Quartz' deutscher Sprachdatei |
 | `presets.mjs` | Zwei gespeicherte Theme-Zusammenstellungen |
 | `style-order.mjs` | Die Ladereihenfolge der Stylesheets — Liste **und** Reihenfolge in einem |
@@ -425,7 +425,7 @@ zusätzlich die Schlüssel, die schon unter `layout.byPageType` stehen (BEFUNDE 
 
 | Schlüssel | Ort | Form | Zeigt |
 | --- | --- | --- | --- |
-| `layoutBoxMark` | Kopfbereich | Inline-HTML, SVG hell/dunkel aus `site-mark.mjs` | Bildumschaltung, `{{root}}`, `{{siteTitle}}` |
+| `layoutBoxMark` | Kopfbereich | Inline-HTML, das Projektbild hell/dunkel (`static/icon.png`, `icon-dark.png`) — in der App unter „Konfiguration → Projektbild“ ersetzbar | Bildumschaltung, `{{root}}`, `{{siteTitle}}` |
 | `layoutBoxPageName` | Kopfbereich | Inline-HTML, ein `span` | `{{frontmatter.section}}` in einem Attribut, gemalt mit `attr()` |
 | `layoutBoxNote` | linke Spalte | `file:` mit `.md`, eingeklappt | Markdown-Snippet, `<details>` |
 | `layoutBoxHint` | nach dem Inhalt | Inline-HTML, nur mobil | `display: mobile-only` an einer Instanz |

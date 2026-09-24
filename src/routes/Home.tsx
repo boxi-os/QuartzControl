@@ -976,7 +976,12 @@ function CreateWizard({
         source: strategy === 'new' ? undefined : source,
         baseUrl: baseUrl || undefined
       },
-      builtin && useTemplate ? { path: builtin.path, withContent: withContent && contentAllowed } : null
+      // `pages > 0` as well: where the package has no page the switch is not shown, and a part
+      // nobody could see a choice for is not taken along - images alone are not example pages
+      // (thirty-sixth review, finding 9).
+      builtin && useTemplate
+        ? { path: builtin.path, withContent: withContent && contentAllowed && builtin.pages > 0 }
+        : null
     )
   }
 

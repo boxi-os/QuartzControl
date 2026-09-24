@@ -299,8 +299,15 @@ export default function ProjectLayout(): JSX.Element {
             they fill whatever this gives them and lay their own content out responsively - so the
             window's width is actually used instead of every page picking its own arbitrary cap.
             The guard here is only against absurdity on a very wide display; below it the content
-            column simply grows with the window. */}
-        <main ref={mainRef} className="flex-1 overflow-y-auto px-8 pb-8">
+            column simply grows with the window.
+
+            `relative` because the scroller has to be the containing block of what it scrolls: an
+            `absolute` element with no positioned ancestor inside it is placed against the page
+            instead, and `overflow` clips only what it contains. Each `sr-only` label of a Toggle
+            is such an element; on Plugins → Installiert sixty of them sat below the fold, the
+            document grew to 6353 px at a 800 px window, and a second scrollbar moved the whole
+            window beside the one of this element (measured 2026-09-24, Example project). */}
+        <main ref={mainRef} className="relative flex-1 overflow-y-auto px-8 pb-8">
           <div ref={contentRef} className="mx-auto w-full max-w-[1800px]">
             <Outlet context={{ project, refreshIcon } satisfies ProjectContext} />
           </div>

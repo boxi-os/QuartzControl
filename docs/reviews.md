@@ -1831,3 +1831,42 @@ Ordnerzeilen 52 statt 44 px hoch waren. Live gemessen an „2.3“: Versatz Symb
 11,9 → 0,7 px in Chrome, 0 px in WebKit, einzeilige Zeilen bei 1400 px unverändert 30 px, bei
 390 px alle 44. Plugin in allen Werkstätten und fünf Websites auf 0.3.2, vier Pakete neu
 exportiert (Gegenproben grün), Basis und Example im Vorlagen-Repo (`7da4330`).
+
+**Nach dem RC, am 2026-09-23: vier Commits an der Stile-Seite und an Veröffentlichen**, ohne Review
+dahinter, je einer mit Typcheck, Build und Smoke und an der gebauten App gemessen (die Zahlen
+stehen in den Commit-Nachrichten):
+
+- `72e7632` — Die baseUrl-Warnung auf Veröffentlichen blitzte bei jedem Besuch mit „—“ auf, solange
+  `config:get` unterwegs war (nach 46 ms); jetzt erst, wenn die Config gelesen ist.
+- `024c005` — Eine Variable, die keine Farbe hält, bekommt ein Wertfeld „Hell und dunkel“ statt
+  eines Paares mit Farbfeldern; das dunkle Feld liegt hinter „Im Dunkelmodus abweichend“. Die
+  Speicherung ist unverändert (leere dunkle Hälfte heißt schon „in beiden gleich“). Klassifiziert
+  am Grundwert, nicht am Entwurf, damit das Feld beim Tippen nicht verschwindet.
+- `512fea9` — Theme- und Build-Variablen lassen sich ohne Suche durchblättern, gruppiert nach
+  Präfix wie die Hauptkarte; neuer Filter „Art des Werts“ (Farben / Andere Werte). Gemessen mit
+  den 1057 Variablen des minimal-Themes: 91 Gruppen, alle geöffnet in 108 ms.
+- `ab9ceb3` — Ein Farbfeld malt seinen Wert über den Grund, den die Website malt (`var(--light)`
+  des jeweiligen Modus), nicht über den der App: Eine Farbe mit Alpha zeigte vorher das, was die
+  App dahinter hatte, in beiden Feldern gleich. Alle sechs Stellen mit Farbfeldern.
+
+**Am 2026-09-24 die vier Nebenbei-Punkte des fünfunddreißigsten Reviews**, auf
+`fix/nebenbei-nach-rc1`, drei Commits, Typcheck, `check:i18n`, `check:handbook`, Build und Smoke
+grün:
+
+- `3e37817` — `variants.mjs` nennt 31 Stylesheets, und es und `basic-content/README.md` nennen das
+  Häkchen so wie die App: „Mit den Beispielseiten“ (und es ist vorab an, also wird es nicht
+  „angekreuzt“). Die „30 Stylesheets“ in `pakete/README.md` bleiben: Sie beschreiben die Fassung
+  vom 2026-09-10.
+- `eb89fe7` — Der Assistent zählt die Beispielseiten, statt „Zwanzig“ als festen Text zu sagen:
+  `templatePackage.builtin()` liefert `pages`, gezählt an `parts/content.json` im selben Lesevorgang,
+  der die Lesbarkeit prüft. Ein Paket ohne Seiten zeigt das Häkchen nicht. Gemessen an der gebauten
+  App mit Wegwerf-Profil: `{source: 'downloaded', pages: 20}`, Hinweis „20 kurze Seiten in zwei
+  Sprachen, …“.
+- `1560257` — `template:example` startet die App nur noch für eine der Phasen 3 bis 10; `--only 1`
+  trug vorher die Werkstatt per `projects.add` ins Profil ein. Gemessen: ein Lauf ohne App-Phase
+  endet nach 0,3 s ohne Fenster, die Projektliste des Profils ist byte-gleich. Der Lauf mit dem
+  alten Code ist nicht wiederholt, weil er das echte Profil beschrieben hätte.
+
+**Keinen dieser sieben Commits hat ein Review gelesen.** Nebenbei aufgefallen und nicht erledigt:
+`readBundledManifest()` in `builtinTemplateService.ts` hat keinen Aufrufer; und „in zwei Sprachen“
+steht im Hinweis des Assistenten weiter als fester Text, genau wie vorher die Zahl.

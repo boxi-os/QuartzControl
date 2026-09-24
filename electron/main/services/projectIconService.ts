@@ -118,7 +118,8 @@ function gitBlobId(data: Buffer): string {
  * user's picture and no marker - and a template import treated it as a design file like any other
  * (thirty-sixth review, finding 7). It cannot be told apart from a picture an earlier template
  * brought (every package ships an icon.png), so this does not protect the file; it makes the
- * import's dry run name it before "the template wins" replaces it.
+ * import's dry run name it before "the template wins" replaces it, and it keeps the Projektbild
+ * card from saying the site shows Quartz's icon when it shows a template's mark.
  */
 export async function hasUnrecordedIcon(projectPath: string): Promise<boolean> {
   if ((await readMarker(projectPath)).custom) return false
@@ -139,7 +140,8 @@ export async function getProjectIcon(projectPath: string): Promise<ProjectIconIn
     custom: marker.custom && size !== null,
     width: size?.width ?? 0,
     height: size?.height ?? 0,
-    darkDataUrl: existsSync(darkIconPath(projectPath)) ? thumbnailFor(darkIconPath(projectPath)) : null
+    darkDataUrl: existsSync(darkIconPath(projectPath)) ? thumbnailFor(darkIconPath(projectPath)) : null,
+    unrecorded: await hasUnrecordedIcon(projectPath)
   }
 }
 

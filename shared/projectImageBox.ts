@@ -43,6 +43,23 @@ export function isFreshLayoutBoxEntry(entry: PluginEntry): boolean {
   return isLayoutBox(entry) && !entry.options?.html && !entry.options?.className
 }
 
+/**
+ * A layout box other than the app's own that already shows the project image - the mark of every
+ * template variant since 2026-09-24 (`<img src="{{root}}/static/icon.png">` in `layout-box-mark`).
+ * The header switch cannot see it (it looks for PROJECT_IMAGE_CLASS), so it stood at "off" while
+ * the image was in the header, and switching it on put the image there twice. Recognised by what
+ * it shows, not by the template's class name: any box that names the file is showing it.
+ */
+export function findOtherProjectImage(plugins: PluginEntry[]): number {
+  return plugins.findIndex(
+    (p) =>
+      isLayoutBox(p) &&
+      p.enabled !== false &&
+      p.options?.className !== PROJECT_IMAGE_CLASS &&
+      /\/static\/icon\.png["']/.test(String(p.options?.html ?? ''))
+  )
+}
+
 /** The plugin list with the header image switched on (or its HTML brought up to date). */
 export function withProjectImage(plugins: PluginEntry[], hasDark: boolean, replaceIndex?: number): PluginEntry[] {
   const html = projectImageHtml(hasDark)

@@ -1283,6 +1283,11 @@ export interface ProjectIconInfo {
   height: number
   /** quartz/static/icon-dark.png scaled down, or null when the project has no dark-scheme picture. */
   darkDataUrl: string | null
+  /**
+   * True when icon.png is neither Quartz's own nor chosen in this app - usually a template's mark,
+   * or a picture chosen on another machine (the marker is not in git). Only ever with `custom` false.
+   */
+  unrecorded: boolean
 }
 
 /** Versions and storage locations for the Settings page's maintenance section. */

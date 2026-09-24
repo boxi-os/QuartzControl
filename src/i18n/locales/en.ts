@@ -749,6 +749,8 @@ export default {
     fileFilter: 'Images (PNG, JPEG)',
     defaultHint:
       'Without an image of its own the app shows the initial, and the site gets the default Quartz icon. PNG or JPEG, square works best.',
+    unrecordedHint:
+      'The site shows an image that was not chosen in the app — usually the template’s mark. One of your own replaces it in the header and as the favicon; until then the app shows the initial. PNG or JPEG, square works best.',
     customHint: 'Stored as quartz/static/icon.png in the project, {{width}} × {{height}} pixels.',
     faviconOn: "The site's favicon is generated from this image on the next build.",
     faviconOff: 'The favicon plugin is switched off — no favicon is generated from this image.',
@@ -762,6 +764,7 @@ export default {
       remove: 'Remove dark image',
       hint: 'Optional, only for the image in the header. Stored as quartz/static/icon-dark.png in the project; the favicon stays with the light image.',
       hintHeaderOn: 'Only for the image in the header; the favicon stays with the light image. “Remove dark image” deletes the file at once — until you “Save”, the header then has no image in dark mode.',
+      hintMark: 'For dark mode in the header; the favicon stays with the light image. The template’s mark names quartz/static/icon-dark.png — without the file it has no image in dark mode. Replace rather than remove.',
       announceSet: 'Image for dark mode set.',
       announceCleared: 'Image for dark mode removed.'
     },
@@ -770,6 +773,7 @@ export default {
       hint: 'As a link to the home page, with the dark image in dark mode. Applied with “Save”; place and order like any plugin under Layout.',
       hintInstall: 'Needs the quartz-layout-box plugin; switching it on offers to install it.',
       needsImage: 'Choose a project image of your own first.',
+      shownByMark: 'Already in the site header: the template’s mark shows this image, and the dark one in dark mode.',
       installing: 'Installing quartz-layout-box…',
       installConfirm:
         'Install the quartz-layout-box plugin?\n\nThe header image is built with it. The app takes a snapshot first and saves this page’s unsaved changes.',

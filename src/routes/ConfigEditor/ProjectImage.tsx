@@ -5,7 +5,7 @@ import { useProject, useRefreshProjectIcon } from '../ProjectLayout'
 import { ImageIcon } from 'lucide-react'
 import { Button, Card, CardHeading, Toggle } from '../../components/ui'
 import { confirmDialog } from '../../utils/confirm'
-import { findProjectImageEntry, isLayoutBox, withProjectImage, withoutProjectImage } from '@shared/projectImageBox'
+import { findOtherProjectImage, findProjectImageEntry, isLayoutBox, withProjectImage, withoutProjectImage } from '@shared/projectImageBox'
 import ProjectAvatar from '../../components/ProjectAvatar'
 import { useIpcQuery } from '../../state/useIpcQuery'
 import { useAsyncAction } from '../../hooks/useAsyncAction'
@@ -77,6 +77,12 @@ export default function ProjectImage({
   // 2026-09-17, finding 2).
   const savedHeader = savedPlugins[findProjectImageEntry(savedPlugins)]
   const savedNamesDark = !!savedHeader?.enabled && String(savedHeader.options?.html ?? '').includes('icon-dark.png')
+  // A template's mark that shows this image already (findOtherProjectImage). Its HTML is the
+  // template's, not ours, so nothing here rewrites it: removing the dark picture leaves it naming a
+  // file that is gone, for good rather than until Save.
+  const markShows = findOtherProjectImage(plugins) >= 0
+  const savedMark = savedPlugins[findOtherProjectImage(savedPlugins)]
+  const markNamesDark = String(savedMark?.options?.html ?? '').includes('icon-dark.png')
 
   function darkApplied(next: ProjectIconInfo): void {
     reload()
@@ -146,7 +152,9 @@ export default function ProjectImage({
           <p className="text-micro text-text-muted">
             {icon?.custom
               ? t('projectImage.customHint', { width: icon.width, height: icon.height })
-              : t('projectImage.defaultHint')}
+              : icon?.unrecorded
+                ? t('projectImage.unrecordedHint')
+                : t('projectImage.defaultHint')}
           </p>
           {/* Read-only on purpose: switching a plugin on is what the Plugins page is for, and
               this tab's Save button owns quartz.config.yaml - a second writer for one checkbox
@@ -180,23 +188,31 @@ export default function ProjectImage({
               waits for Save - so in between the saved config names a file that is gone. Said only
               in the state where that gap exists (review 2026-09-16, finding 9). */}
           <p className="text-micro text-text-muted">
-            {savedNamesDark && hasDark ? t('projectImage.dark.hintHeaderOn') : t('projectImage.dark.hint')}
+            {markNamesDark && hasDark
+              ? t('projectImage.dark.hintMark')
+              : savedNamesDark && hasDark
+                ? t('projectImage.dark.hintHeaderOn')
+                : t('projectImage.dark.hint')}
           </p>
-          <div className="mt-2">
-            <Toggle
-              label={t('projectImage.header.label')}
-              hint={
-                !icon?.custom
-                  ? t('projectImage.header.needsImage')
-                  : toggleHeader.pending
-                    ? t('projectImage.header.installing')
-                    : t(plugins.some(isLayoutBox) ? 'projectImage.header.hint' : 'projectImage.header.hintInstall')
-              }
-              checked={headerOn}
-              onChange={(on) => void toggleHeader.run(on)}
-              disabled={busy || (!icon?.custom && !headerOn)}
-            />
-          </div>
+          {markShows && !headerOn ? (
+            <p className="mt-2 text-micro text-text-muted">{t('projectImage.header.shownByMark')}</p>
+          ) : (
+            <div className="mt-2">
+              <Toggle
+                label={t('projectImage.header.label')}
+                hint={
+                  !icon?.custom
+                    ? t('projectImage.header.needsImage')
+                    : toggleHeader.pending
+                      ? t('projectImage.header.installing')
+                      : t(plugins.some(isLayoutBox) ? 'projectImage.header.hint' : 'projectImage.header.hintInstall')
+                }
+                checked={headerOn}
+                onChange={(on) => void toggleHeader.run(on)}
+                disabled={busy || (!icon?.custom && !headerOn)}
+              />
+            </div>
+          )}
           {actionError && <p className="text-micro text-red-600 dark:text-red-400">{actionError}</p>}
         </div>
       </div>

@@ -752,6 +752,8 @@ export default {
     fileFilter: 'Bilder (PNG, JPEG)',
     defaultHint:
       'Ohne eigenes Bild zeigt die App den Anfangsbuchstaben, und die Seite bekommt das Standard-Icon von Quartz. PNG oder JPEG, quadratisch am besten.',
+    unrecordedHint:
+      'Die Seite zeigt ein Bild, das nicht in der App gewählt wurde — meist die Marke der Vorlage. Ein eigenes ersetzt es im Kopfbereich und als Favicon; bis dahin zeigt die App den Anfangsbuchstaben. PNG oder JPEG, quadratisch am besten.',
     customHint: 'Liegt als quartz/static/icon.png im Projekt, {{width}} × {{height}} Pixel.',
     faviconOn: 'Das Favicon der Seite wird beim nächsten Build aus diesem Bild erzeugt.',
     faviconOff: 'Das Favicon-Plugin ist ausgeschaltet — die Seite bekommt daraus kein Favicon.',
@@ -765,6 +767,7 @@ export default {
       remove: 'Dunkles Bild entfernen',
       hint: 'Optional, nur für das Bild im Kopfbereich. Liegt als quartz/static/icon-dark.png im Projekt; das Favicon bleibt beim hellen Bild.',
       hintHeaderOn: 'Nur für das Bild im Kopfbereich; das Favicon bleibt beim hellen Bild. „Dunkles Bild entfernen“ löscht die Datei sofort — bis zum „Speichern“ fehlt dem Kopfbereich im dunklen Modus dann sein Bild.',
+      hintMark: 'Für den Dunkelmodus im Kopfbereich; das Favicon bleibt beim hellen Bild. Die Marke der Vorlage nennt quartz/static/icon-dark.png — ohne die Datei fehlt ihr im dunklen Modus das Bild. Ersetzen statt entfernen.',
       announceSet: 'Bild für den Dunkelmodus gesetzt.',
       announceCleared: 'Bild für den Dunkelmodus entfernt.'
     },
@@ -773,6 +776,7 @@ export default {
       hint: 'Als Link zur Startseite, im dunklen Modus mit dem dunklen Bild. Wird mit „Speichern“ übernommen; Platz und Reihenfolge wie jedes Plugin im Layout.',
       hintInstall: 'Braucht das Plugin quartz-layout-box, die App bietet beim Einschalten an, es zu installieren.',
       needsImage: 'Erst ein eigenes Projektbild wählen.',
+      shownByMark: 'Steht schon im Kopfbereich: Die Marke der Vorlage zeigt dieses Bild, im dunklen Modus das dunkle.',
       installing: 'Installiere quartz-layout-box…',
       installConfirm:
         'Plugin quartz-layout-box installieren?\n\nDas Bild im Kopfbereich wird damit gebaut. Vorher legt die App einen Snapshot an und speichert ungespeicherte Änderungen dieser Seite.',

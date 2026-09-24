@@ -252,17 +252,20 @@ so gebaut, dass jede Runde liest, was die vorige gebaut hat.
 **Release:** `1.0.0-rc.1` ist am 2026-09-21 veröffentlicht (Release-Seite, `latest.json`,
 Website); Ablauf und Funde oben in [`docs/release.md`](docs/release.md).
 
-**Das sechsunddreißigste Review ist abgearbeitet** (gelesen 2026-09-24,
-[`docs/REVIEW-2026-10-10.md`](docs/REVIEW-2026-10-10.md); 0 Hoch, 1 Mittel, 10 Niedrig): alle
-elf Befunde und die Nebenbei-Liste auf `fix/review-2026-10-10`, was daraus geworden ist am Ende von
-[`docs/reviews.md`](docs/reviews.md). **Die nächste Fassung ist 1.0.0**, kein weiterer RC; offen
-dafür ist die Handbuch-Website (Kapitel 4.4, `docs/release.md` Punkt 3). **Keinen dieser Fixes hat
-ein Review gelesen.**
+**Das siebenunddreißigste Review ist abgearbeitet** (gelesen 2026-09-24,
+[`docs/REVIEW-2026-10-11.md`](docs/REVIEW-2026-10-11.md), Auftrag
+[`docs/REVIEW-2026-10-11-auftrag.md`](docs/REVIEW-2026-10-11-auftrag.md); 0 Hoch, 3 Mittel, 6
+Niedrig): Es las die Fixes der 36. Runde und die Korrekturen danach und riet, nichts
+zurückzunehmen. Alle neun Befunde und die Nebenbei-Liste auf `fix/review-2026-10-11`, per
+Fast-Forward auf `main` und gepusht — die dunkle Marke der Vorlagen gilt nicht mehr als in der App
+gewählt, ein verweigerter Schlüsselbund wird als solcher gesagt, und der Preis je Tastendruck auf
+der Variablen-Seite ist gesenkt (Hub-Variablen 47–85 → 21–48 ms ohne Long Task). Was daraus
+geworden ist, steht am Ende von [`docs/reviews.md`](docs/reviews.md). **Die nächste Fassung ist
+1.0.0**, kein weiterer RC; offen dafür ist die Handbuch-Website (Kapitel 4.4, `docs/release.md`
+Punkt 3). **Keinen dieser Fixes hat ein Review gelesen.**
 
-**Das siebenunddreißigste Review ist beauftragt** (2026-09-24,
-[`docs/REVIEW-2026-10-11-auftrag.md`](docs/REVIEW-2026-10-11-auftrag.md), Tag `review-2026-10-12`):
-Es liest die Fixes der 36. Runde und die Korrekturen danach — Schlüsselbund auf macOS, die Marke der
-Vorlagen als Projektbild, die Komponentenauswahl — und sagt, ob 1.0.0 trägt.
+Die Runde davor (sechsunddreißigstes Review, [`docs/REVIEW-2026-10-10.md`](docs/REVIEW-2026-10-10.md),
+1 Mittel, 10 Niedrig) ist abgearbeitet; das siebenunddreißigste hat ihre Fixes gelesen.
 
 **Stand:** Die neun Befunde des vierunddreißigsten Reviews (zwei Mittel, sieben Niedrig) sind
 abgearbeitet, am 2026-09-20 auf `fix/review-2026-10-08`, dazu alle vier Nebenbei-Punkte — 12

@@ -1922,7 +1922,7 @@ Review (Theme `minimal` über das eingeschaltete Plugin, 1057 Variablen):
   `readBundledManifest()` und der tote `'discovered'`-Zweig entfernt; `b208399` — „in zwei
   Sprachen“ ist aus dem Hinweis des Assistenten gestrichen, statt geraten zu werden.
 
-Im Handbuch-Vault dazu `2250e2b` (lokal, nicht gepusht): 4.4 nennt den zweiten Satz, und die
+Im Handbuch-Vault dazu `2250e2b` (gepusht): 4.4 nennt den zweiten Satz, und die
 englische Fassung zitiert den ersten so, wie die App ihn sagt — sie sagte „cannot be resolved (set
 only inside a selector)“, was `check:handbook` nicht sieht, weil es kein Blockzitat ist.
 

@@ -252,10 +252,12 @@ so gebaut, dass jede Runde liest, was die vorige gebaut hat.
 **Release:** `1.0.0-rc.1` ist am 2026-09-21 veröffentlicht (Release-Seite, `latest.json`,
 Website); Ablauf und Funde oben in [`docs/release.md`](docs/release.md).
 
-**Das sechsunddreißigste Review ist beauftragt** (2026-09-24,
-[`docs/REVIEW-2026-10-10-auftrag.md`](docs/REVIEW-2026-10-10-auftrag.md), Tag `review-2026-10-11`):
-Es liest die Fixes der 35. Runde, den Weg zum RC und alles danach — vier Änderungen an der
-Stile-Seite und die Nebenbei-Liste — und beantwortet, ob die nächste Fassung 1.0.0 oder rc.2 wird.
+**Das sechsunddreißigste Review ist abgearbeitet** (gelesen 2026-09-24,
+[`docs/REVIEW-2026-10-10.md`](docs/REVIEW-2026-10-10.md); 0 Hoch, 1 Mittel, 10 Niedrig): alle
+elf Befunde und die Nebenbei-Liste auf `fix/review-2026-10-10`, was daraus geworden ist am Ende von
+[`docs/reviews.md`](docs/reviews.md). **Die nächste Fassung ist 1.0.0**, kein weiterer RC; offen
+dafür ist die Handbuch-Website (Kapitel 4.4, `docs/release.md` Punkt 3). **Keinen dieser Fixes hat
+ein Review gelesen.**
 
 **Stand:** Die neun Befunde des vierunddreißigsten Reviews (zwei Mittel, sieben Niedrig) sind
 abgearbeitet, am 2026-09-20 auf `fix/review-2026-10-08`, dazu alle vier Nebenbei-Punkte — 12

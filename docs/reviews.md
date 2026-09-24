@@ -1882,3 +1882,48 @@ grün:
 **Keinen dieser sieben Commits hat ein Review gelesen.** Nebenbei aufgefallen und nicht erledigt:
 `readBundledManifest()` in `builtinTemplateService.ts` hat keinen Aufrufer; und „in zwei Sprachen“
 steht im Hinweis des Assistenten weiter als fester Text, genau wie vorher die Zahl.
+
+## Das sechsunddreißigste Review (2026-09-24), abgearbeitet
+
+Gelesen von Claude Fable 5.1, Stand `review-2026-10-10..review-2026-10-11`
+([`REVIEW-2026-10-10.md`](REVIEW-2026-10-10.md)): kein Befund Hoch, einer Mittel, zehn Niedrig,
+vier Nebenbei. Seine Antwort auf die Frage des Auftrags: Aus dem Code spricht nichts gegen 1.0.0;
+vorher Befund 1 entscheiden und die Handbuch-Website bauen. **Die nächste Fassung ist 1.0.0**, kein
+weiterer RC (Entscheidung des Nutzers, 2026-09-24).
+
+Abgearbeitet am 2026-09-24 auf `fix/review-2026-10-10`, je Commit Typcheck, Build und Smoke, wo
+Code sich ändert; gemessen an der gebauten App mit derselben Kopie von `brain-handbuch` wie das
+Review (Theme `minimal` über das eingeschaltete Plugin, 1057 Variablen):
+
+- **1 (Mittel)** `f661f11` — `VariableRow` ist gememot und zeichnet auf, welche Overrides es beim
+  Rendern liest (Proxy auf `ctx.overrides`); neu gerendert wird nur, wenn sich einer davon ändert.
+  Alle 101 Gruppen offen, Tippen in `--lightgray`: vorher 25–60 ms je Tastendruck und ein Long
+  Task von 60 ms, jetzt 7–9 ms ohne Long Task. `--light` selbst rendert weiter alles, weil jedes
+  Farbfeld es als Grund liest. Gegenprobe: Eine Alias-Zeile folgt dem Override ihres Ziels.
+- **2, 3, 5** `b42ea54` — „Farbe“ heißt, was Canvas parsen kann, in jedem Farbraum
+  (`probeColor`); `isDisplayableColor` fragt dasselbe (ohne `currentColor`). Zwei Antworten von
+  `isColorVariable`: `'base'` für das, was sich beim Tippen nicht bewegen darf (zwei Felder,
+  Filter), `'shown'` für die Farbfelder im Kopf. Farben 345 → 354, leere helle Farbfelder 72 → 1.
+- **4** `54d14c5` — Farbfeld und Picker sagen im `title`, über welchem Grund sie malen; ein Feld
+  ohne Farbe sagt das.
+- **6** `2dd0059` — „Im Dunkelmodus abweichend“ ist sticky wie die aufgeklappte Zeile.
+- **7** `78780fe` — **nicht wie vom Review vorgeschlagen**: „weicht von Quartz' `icon.png` ab“
+  schützt zu viel, weil alle sechs Pakete ein eigenes mitbringen. Stattdessen nennt die Probe vor
+  dem Import ein `icon.png`, das weder Quartz' eigenes (Blob `b6656a7`) noch in der App markiert
+  ist, mit dem Satz für beide Strategien. `icon-dark.png` aus einer Vorlage bleibt bewusst offen.
+- **8** `889316a` — `allStylesheets()` sucht auch unter `quartz/components/styles` und
+  `quartz/static`; vorher/nachher an einem echten Import gemessen (vier gelöscht → drei).
+- **9** `c8ec7b3` — ohne Seiten kein `content`-Teil. Nur gelesen, es gibt kein solches Paket.
+- **10** `e3914a9` — Kapitel 4.4 steht in der Chronik und in `docs/release.md` Punkt 3 als
+  ausstehend; die Website wird mit dem Release gebaut.
+- **11** `7264971` — die Zahlen von `512fea9` oben richtiggestellt (101 Gruppen, 133 ms,
+  23 Treffer; 50 statt 60 Einzel-Präfixe im Kommentar).
+- **Nebenbei:** `3e9fc73` — „nicht auflösbar“ hat zwei Gründe und zwei Sätze; `42cf561` —
+  `readBundledManifest()` und der tote `'discovered'`-Zweig entfernt; `b208399` — „in zwei
+  Sprachen“ ist aus dem Hinweis des Assistenten gestrichen, statt geraten zu werden.
+
+Im Handbuch-Vault dazu `2250e2b` (lokal, nicht gepusht): 4.4 nennt den zweiten Satz, und die
+englische Fassung zitiert den ersten so, wie die App ihn sagt — sie sagte „cannot be resolved (set
+only inside a selector)“, was `check:handbook` nicht sieht, weil es kein Blockzitat ist.
+
+**Keinen dieser Fixes hat ein Review gelesen.**

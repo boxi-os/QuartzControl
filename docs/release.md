@@ -56,7 +56,8 @@ müssen dort existieren — nach einer Umbenennung im Vault alle 36 prüfen (sie
 Vault neu (`99011c7`, 2026-09-23, beide Sprachen, gepusht) und beschreibt die Seite nach `024c005`
 und `512fea9` — ein Feld „Hell und dunkel“, Blättern ohne Suche. Online steht die Fassung von rc.1
 (am 2026-09-24 mit `curl` gegen `4-gestaltung/04-variablen` und `en/4-design/04-variables`
-gehalten: weder „Einzelne Variablen“ noch „Hell und dunkel“). Für rc.1 ist das richtig, also wird
+gehalten: weder „Einzelne Variablen“ noch „Hell und dunkel“). Dazu `2250e2b` im Vault, lokal und
+noch nicht gepusht: der zweite Satz zu „nicht auflösbar“. Für rc.1 ist das richtig, also wird
 die Website erst mit dem Release gebaut (Punkt 9); streichen, sobald sie es ist.
 
 Das Handbuch sollte auf dem Stand der App sein: `npm run check:handbook` nach dem letzten

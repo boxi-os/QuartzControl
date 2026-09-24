@@ -78,9 +78,11 @@ function settingsPath(): string {
 // Not asked on macOS. There the backend is always the Keychain, and isEncryptionAvailable() is no
 // cheap flag: it reads the app's "Safe Storage" item, and for an app whose signature the Keychain
 // does not know yet - every update, since the app is signed ad hoc and its identity is the hash of
-// the build - that read is a password dialog. This function runs for the start page's environment
-// check, so every start after an update asked for the Keychain before anyone had touched a
-// credential, and asked once more later. The one case it could still catch there - access denied -
+// the build - that read is two dialogs: macOS checks the item's list of trusted apps and then its
+// partition list, which for an app without a Team ID is the build hash too (securityd, actions 24
+// and 65538, measured 2026-09-24). This function runs for the start page's environment check, so
+// every start after an update asked twice before anyone had touched a credential; now the two come
+// with the first real use of one, once per run. The one case it could still catch there - access denied -
 // is caught where it matters: saveConnection asks isEncryptionAvailable() itself before storing a
 // secret and refuses with secretStorageUnavailable, and decrypt() answers null.
 export function getSecretStorageInfo(): SecretStorageInfo {

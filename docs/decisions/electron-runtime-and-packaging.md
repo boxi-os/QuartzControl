@@ -129,6 +129,30 @@ scheitern, bevor seine Seite existierte — beide Fenster werden deshalb vorher 
 (`dmgUtil.js`); im gebauten DMG nachgezählt: 540×380 und 1080×760 in einer Datei, 538554 Bytes
 statt 37298.
 
+**`safeStorage` auf macOS: zwei Dialoge je Update, und keiner davon lässt sich im Code sparen
+(2026-09-24).** Die App ist ad hoc signiert (`identity: '-'`), ihre Identität für macOS ist also der
+Hash des Builds (`codesign -dr -` sagt `designated => cdhash H"…"`). Nach jedem Neubau oder Update
+kennt der Schlüsselbund sie nicht, und der erste Lesezugriff auf „QuartzControl Safe Storage“ zeigt
+**zwei** Dialoge. Im Systemprotokoll (`/usr/bin/log show --info --debug`, Prozess `securityd`,
+„displaying keychain prompt“) stehen beide für dieselbe PID, rund zehn Sekunden auseinander — die
+Zeit bis zum ersten Klick —, mit zwei Prüfungen: `action:24`, die Liste der vertrauten Apps des
+Eintrags, und `action:65538`, seine Partitionsliste, die für eine App ohne Team-ID wieder am
+Build-Hash hängt. Ein Zugriff, zwei Fragen des Betriebssystems.
+
+Was die App daran ändern konnte, ist der *Zeitpunkt*: Die Umgebungsprüfung der Startseite rief
+`isEncryptionAvailable()` und fragte damit bei jedem Start nach einem Update nach dem Schlüsselbund,
+bevor irgendein Zugangsdatum gebraucht wurde. Auf macOS fragt sie das nicht mehr (`0ee9356`); seither
+kommt beim Start nur die Ordner-Abfrage des Datenschutzes, die aus demselben Grund je Update
+wiederkommt. Die zwei Schlüsselbund-Dialoge kommen mit der ersten echten Verwendung, gemessen beim
+ersten Git-Sync — und dort einmal je Lauf der App, denn Electron behält den Schlüssel, sobald er
+gelesen ist. Die Vermutung, der zweite Dialog stamme aus der Vorab-Frage `isEncryptionAvailable()`
+vor `decryptString()`, war falsch: Ohne sie waren es an einem frischen Build weiter zwei
+(`76918e9`, zurückgenommen mit `4d2a96b`).
+
+Beide Prüfungen über Updates hinweg stabil zu halten, kann nur eine Signatur mit Team-ID — also
+eine Developer ID aus dem kostenpflichtigen Apple-Entwicklerprogramm. Bis dahin ist „Immer erlauben“
+der Weg für die Nutzer, und er gilt bis zum nächsten Update.
+
 **`safeStorage` unter Linux, gemessen statt angenommen (2026-09-08).** Auf einem Mac ist die Frage
 nicht zu stellen: Dort ist das Backend der Schlüsselbund, und `getSelectedStorageBackend()` gibt es
 gar nicht. Auf einer Debian-13-VM mit GNOME 50 auf Wayland (Electron 43.4.1, gnome-keyring-daemon

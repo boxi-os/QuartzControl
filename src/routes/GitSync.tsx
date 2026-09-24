@@ -339,15 +339,16 @@ export default function GitSync(): JSX.Element {
 
       {status?.isRepo && !status.remoteUrl && <CreateRepoCard projectPath={project.path} onCreated={refreshStatus} />}
 
-      {/* Three buttons don't need the whole window; the git output that appears underneath them
-          does, so the card only caps itself while there is nothing to show. */}
-      <Card className={output == null ? 'max-w-2xl' : ''}>
+      {/* The full width like the status card above it: capped while there was no output, the
+          card changed its width on the first run and stood as a narrow block under a wide one.
+          The explainer keeps a line length of its own instead. */}
+      <Card>
         <CardHeading icon={RefreshCw} className="mb-1">{t('gitSync.title')}</CardHeading>
         {/* What `quartz sync` actually does, in the order it does it. All three parts were
             invisible before: the commit (its --commit defaults to true, so even "Pull" committed
             the whole working tree under a generated message - measured), the force push
             (`git push -uf origin <current branch>`) and the fixed pull branch. */}
-        <p className="mb-3 text-xs text-text-muted">
+        <p className="mb-3 max-w-[95ch] text-xs text-text-muted">
           {t('gitSync.explainer', { branch: QUARTZ_SOURCE_BRANCH })}
         </p>
 

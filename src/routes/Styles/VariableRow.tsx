@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { Badge, TextInput } from '../../components/ui'
@@ -38,15 +38,7 @@ export type OverrideValue = { light: string; dark: string }
 // Expanding is *not* the same as overriding: the inputs open pre-filled with the value that
 // applies today (see baseValue), and an override is only created once a draft actually differs
 // from it - which is also how it disappears again when the user types the original back.
-export default function VariableRow({
-  varKey,
-  ctx,
-  dependents,
-  expanded,
-  onToggle,
-  onChange,
-  onNavigate
-}: {
+export type VariableRowProps = {
   varKey: string
   ctx: ResolveContext
   dependents: string[]
@@ -54,8 +46,66 @@ export default function VariableRow({
   onToggle: () => void
   onChange: (next: OverrideValue | null) => void
   onNavigate?: (key: string) => void
-}): JSX.Element {
+  /** Which override keys each row read while it last rendered - owned by the page, one per key. */
+  readLog: Map<string, Set<string>>
+}
+
+// Every row of an open group is mounted, and browsing has no cap: with all groups of a large
+// theme open that is ~1000 rows, and every keystroke in any value field changes `overrides` and
+// with it `ctx`. Unmemoized, each of them re-resolved its value, its chain and the page ground -
+// 24-59 ms per keystroke instead of 7 (thirty-sixth review, finding 1, minimal theme, 1057
+// variables). A row's output depends on the overrides only through the keys it looks up, and
+// every lookup goes through `ctx.overrides[key]` or `key in ctx.overrides`: those reads are
+// recorded while the row renders, and the row renders again only when one of *them* changed -
+// its own override, anything along its chain or inside a `color-mix()`, and `--light`, which
+// every swatch reads as its ground. Not a list of keys worked out beside the resolver, which
+// would be a second copy of it that drifts. The callbacks are left out of the comparison: all
+// three the page passes close over the key and state setters only.
+function sameRow(prev: VariableRowProps, next: VariableRowProps): boolean {
+  if (prev.varKey !== next.varKey || prev.expanded !== next.expanded || prev.readLog !== next.readLog) return false
+  if (prev.dependents !== next.dependents && (prev.dependents.length > 0 || next.dependents.length > 0)) return false
+  const a = prev.ctx
+  const b = next.ctx
+  if (a.graph !== b.graph || a.colors !== b.colors || a.typography !== b.typography) return false
+  if (a.overrides === b.overrides) return true
+  const read = next.readLog.get(next.varKey)
+  if (!read) return false
+  for (const key of read) if (a.overrides[key] !== b.overrides[key]) return false
+  return true
+}
+
+function trackReads(ctx: ResolveContext, read: Set<string>): ResolveContext {
+  const overrides = new Proxy(ctx.overrides, {
+    get(target, key, receiver) {
+      if (typeof key === 'string') read.add(key)
+      return Reflect.get(target, key, receiver)
+    },
+    has(target, key) {
+      if (typeof key === 'string') read.add(key)
+      return Reflect.has(target, key)
+    }
+  })
+  return { ...ctx, overrides }
+}
+
+export default memo(VariableRow, sameRow)
+
+function VariableRow({
+  varKey,
+  ctx: pageCtx,
+  dependents,
+  expanded,
+  onToggle,
+  onChange,
+  onNavigate,
+  readLog
+}: VariableRowProps): JSX.Element {
   const { t } = useTranslation()
+  // A fresh set per render, handed on to the parts below: they resolve through the same context,
+  // and a part that renders later (the expanded panel) adds to the set this render logged.
+  const read = new Set<string>()
+  readLog.set(varKey, read)
+  const ctx = trackReads(pageCtx, read)
   const override = ctx.overrides[varKey]
   const origin = originOf(varKey, ctx)
   const light = effectiveValue(varKey, 'light', ctx)

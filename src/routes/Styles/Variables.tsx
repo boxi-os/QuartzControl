@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { Button, Card, InfoNote, SegmentedControl, TextInput } from '../../components/ui'
 import { useStickyState } from '../../state/uiState'
 import { CSS_VARIABLES } from '../../data/cssVariables'
-import VariableRow, { type OverrideValue } from './VariableRow'
+import VariableRow, { type OverrideValue, type VariableRowProps } from './VariableRow'
 import VariableGroup from './VariableGroup'
 import { allKnownKeys, groupLabel, groupOf, isColorVariable, normalizeVarQuery, type ResolveContext } from './variableGraph'
 import { activeThemeIdOf, useStyles } from './index'
@@ -12,10 +12,16 @@ import { activeThemeIdOf, useStyles } from './index'
 // How many rows a search renders at once. A community theme can declare ~1000 variables
 // (tokyo-night: 978), and every row that is on screen resolves its own derivation chain, so the
 // list is capped and says so rather than quietly truncating. Browsing needs no cap: there the rows
-// come one group at a time, and only the groups someone opened.
+// come one group at a time, and only the groups someone opened. That keeps *opening* cheap, not
+// typing: open groups stay open, so with all of them open every row is mounted, and what keeps a
+// keystroke from re-rendering all of them is the memo on VariableRow.
 const MAX_RESULTS = 150
 
 export type VariableKind = 'all' | 'color' | 'other'
+
+// Stable stand-ins for "nothing", so a memoized row does not see a new object on every render.
+const NO_DEPENDENTS: string[] = []
+const NO_COLORS: ResolveContext['colors'] = {}
 
 // Not a name prefix any CSS variable can produce: groupOf() upper-cases, this has lower-case letters.
 const SINGLES_GROUP = 'singles'
@@ -52,12 +58,15 @@ export default function Variables(): JSX.Element {
   // Nothing follows a save here; the page writes the overrides itself.
   useEffect(() => registerSave(async () => {}))
 
-  const ctx: ResolveContext = {
-    graph,
-    overrides,
-    colors: (config.theme.colors as { lightMode?: Record<string, string>; darkMode?: Record<string, string> }) ?? {},
-    typography: config.theme.typography as Record<string, string> | undefined
-  }
+  // Memoized so a row can tell "the overrides changed" from "everything changed" (see sameRow in
+  // VariableRow): a context rebuilt on every render made each row look new to it.
+  const colors = config.theme.colors as ResolveContext['colors'] | undefined
+  const typography = config.theme.typography as Record<string, string> | undefined
+  const ctx: ResolveContext = useMemo(
+    () => ({ graph, overrides, colors: colors ?? NO_COLORS, typography }),
+    [graph, overrides, colors, typography]
+  )
+  const readLog = useRef(new Map<string, Set<string>>()).current
 
   function setOverride(key: string, next: OverrideValue | null): void {
     setOverrides((prev) => {
@@ -106,10 +115,11 @@ export default function Variables(): JSX.Element {
     setPendingScroll(null)
   })
 
-  const rowProps = (key: string): Parameters<typeof VariableRow>[0] => ({
+  const rowProps = (key: string): VariableRowProps => ({
     varKey: key,
     ctx,
-    dependents: graph?.dependents[key] ?? [],
+    readLog,
+    dependents: graph?.dependents[key] ?? NO_DEPENDENTS,
     expanded: expandedKeys.includes(key),
     onToggle: () => toggleExpanded(key),
     onChange: (next) => setOverride(key, next),

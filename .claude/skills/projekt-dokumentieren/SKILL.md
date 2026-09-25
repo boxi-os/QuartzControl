@@ -69,6 +69,7 @@ topics: []
 status: active
 created: YYYY-MM-DD
 updated: YYYY-MM-DD
+reviewed: YYYY-MM-DD
 publish: false
 source_project: "<project_name>"
 source_repository_id: "<repository_id aus metadata>"
@@ -79,6 +80,8 @@ documented_at: YYYY-MM-DD
 managed_by: projekt-dokumentieren
 ---
 ```
+
+`reviewed` erhält dasselbe Datum wie `documented_at`: Der Lauf hat die Dokumentation an diesem Tag gegen den Code geprüft. Der Vault erwartet das Feld bei `status: active`.
 
 **`topics` bleibt leer.** Der Ziel-Vault fuehrt eine geschlossene Topic-Liste und laesst eigene Werte nicht zu. Erfinde keine — weder englische noch deutsche, und schon gar keine, die nur einen Dokumentabschnitt benennen (`architektur`, `konfiguration`, `testing`, `release`). Passende Topics vergibt der Vault beim Verarbeiten. Nenne stattdessen Kandidaten im Abschlussbericht.
 

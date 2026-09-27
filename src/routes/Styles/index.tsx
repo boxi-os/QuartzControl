@@ -298,6 +298,11 @@ export default function Styles(): JSX.Element {
       // other three in it, so this is the one moment where it can be named (thirty-third review,
       // finding 5).
       const notes = [
+        // Said when it changes something, not on every save: the first save after 1.0.1 takes a
+        // family out of the Google block because the project already declares it.
+        result.changed &&
+          result.ownFamilies.length > 0 &&
+          t('styles.googleFontsOwn', { families: result.ownFamilies.join(', '), count: result.ownFamilies.length }),
         result.removedFamilies.length > 0 &&
           t('styles.googleFontsRemoved', { families: result.removedFamilies.join(', '), count: result.removedFiles.length }),
         result.missingFamilies.length > 0 &&

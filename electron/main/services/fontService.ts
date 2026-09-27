@@ -415,13 +415,59 @@ export function fetchGoogleFonts(
 async function fetchGoogleFontsNow(
   projectPath: string,
   typography: Record<string, unknown>
-): Promise<{ changed: boolean; files: string[]; removedFiles: string[]; removedFamilies: string[]; missingFamilies: string[] }> {
-  const request = googleFontsCss2Url(typography)
-  if (!request) throw new Error(mainT('googleFontsNoFamily'))
+): Promise<{
+  changed: boolean
+  files: string[]
+  removedFiles: string[]
+  removedFamilies: string[]
+  missingFamilies: string[]
+  ownFamilies: string[]
+}> {
+  if (!googleFontsCss2Url(typography)) throw new Error(mainT('googleFontsNoFamily'))
   const current = (await readCustomScss(projectPath)).content
+  // A family the project declares itself - an imported font, the 'fonts' block a template brings -
+  // is not asked of Google. Asked anyway, the same family stood in custom.scss twice: the Basis
+  // template's three Noto Sans rules in 'fonts' and Google's 54 in this block, with a second set
+  // of files under quartz/static/fonts (gui-test, 1.0.0). Same question as notDelivered() asks.
+  const own = ownFamilies(current)
+  const ownFamiliesAsked: string[] = []
+  const wanted: Record<string, unknown> = { ...typography }
+  for (const role of TYPOGRAPHY_ROLES) {
+    const family = googleFontRequest(role, typography[role])?.family.trim()
+    if (family && own.has(family.toLowerCase())) {
+      delete wanted[role]
+      if (!ownFamiliesAsked.includes(family)) ownFamiliesAsked.push(family)
+    }
+  }
+  const request = googleFontsCss2Url(wanted)
   const before = getManagedBlock(current, GOOGLE_MARKER)
+  // Nothing left to ask: the block stays, empty, because it is the mark that the project holds its
+  // Google fonts (the build door asks for it), and a later font chosen from Google fills it again.
+  if (!request) {
+    if (before !== null && before.trim() === NOTHING_FROM_GOOGLE) {
+      return { changed: false, files: [], removedFiles: [], removedFamilies: [], missingFamilies: [], ownFamilies: ownFamiliesAsked }
+    }
+    const info = await readCustomScss(projectPath)
+    const previous = getManagedBlock(info.content, GOOGLE_MARKER) ?? ''
+    await writeCustomScss(projectPath, upsertManagedBlock(info.content, GOOGLE_MARKER, NOTHING_FROM_GOOGLE))
+    return {
+      changed: true,
+      files: [],
+      removedFiles: await deleteUnreferencedFontFiles(projectPath, previous),
+      removedFamilies: familiesOf(previous).filter((f) => !own.has(f.toLowerCase())),
+      missingFamilies: [],
+      ownFamilies: ownFamiliesAsked
+    }
+  }
   if (before && requestOf(before) === request && allFilesPresent(projectPath, before)) {
-    return { changed: false, files: [], removedFiles: [], removedFamilies: [], missingFamilies: notDelivered(typography, before, current) }
+    return {
+      changed: false,
+      files: [],
+      removedFiles: [],
+      removedFamilies: [],
+      missingFamilies: notDelivered(typography, before, current),
+      ownFamilies: ownFamiliesAsked
+    }
   }
 
   // "Not reachable" and "refused the request" are two ways to fail and get two sentences. Without
@@ -483,14 +529,26 @@ async function fetchGoogleFontsNow(
   await writeCustomScss(projectPath, upsertManagedBlock(info.content, GOOGLE_MARKER, block))
   // Said by name after the save: the files of a font chosen away go without a question, and the
   // "unused fonts" card never sees them - it lists the 'fonts' block only.
-  const kept = new Set(familiesOf(block).map((f) => f.toLowerCase()))
+  // A family that moved from this block to the project's own rules is not "removed": the site
+  // still has it, from the other block.
+  const kept = new Set([...familiesOf(block).map((f) => f.toLowerCase()), ...own])
   return {
     changed: true,
     files: [...urls.values()],
     removedFiles: await deleteUnreferencedFontFiles(projectPath, previous),
     removedFamilies: familiesOf(previous).filter((f) => !kept.has(f.toLowerCase())),
-    missingFamilies: notDelivered(typography, block, info.content)
+    missingFamilies: notDelivered(typography, block, info.content),
+    ownFamilies: ownFamiliesAsked
   }
+}
+
+const TYPOGRAPHY_ROLES = ['header', 'body', 'code', 'title'] as const
+// The body of the block when every family the typography names is declared by the project itself.
+const NOTHING_FROM_GOOGLE = '/* QuartzControl: every family is declared by the project itself, nothing is fetched from Google */'
+
+/** Lower-cased families custom.scss declares outside the Google block. */
+function ownFamilies(wholeCss: string): Set<string> {
+  return new Set(familiesOf(stripManagedBlock(wholeCss, GOOGLE_MARKER)).map((f) => f.toLowerCase()))
 }
 
 function familiesOf(css: string): string[] {
@@ -554,7 +612,11 @@ export async function refreshGoogleFonts(projectPath: string): Promise<{ failed:
     const config = await readConfig(projectPath)
     if (config.theme.fontOrigin !== 'local') return null
     const result = await fetchGoogleFonts(projectPath, (config.theme.typography ?? {}) as Record<string, unknown>)
-    return result.changed ? { failed: false, text: mainT('googleFontsRefreshed', { count: result.files.length }) } : null
+    // No sentence for a block emptied because the project declares every family itself: nothing
+    // was fetched, and "0 files" would say the opposite of what happened.
+    return result.changed && result.files.length > 0
+      ? { failed: false, text: mainT('googleFontsRefreshed', { count: result.files.length }) }
+      : null
   } catch (error) {
     return { failed: true, text: mainT('googleFontsRefreshFailed', { message: error instanceof Error ? error.message : String(error) }) }
   }

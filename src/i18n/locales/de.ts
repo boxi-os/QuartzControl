@@ -1326,6 +1326,8 @@ export default {
       'Google kennt diese Schrift nicht und hat sie stillschweigend weggelassen: {{families}}. Auf der Website fällt dieser Platz auf eine Ersatzschrift zurück — prüfe die Schreibweise.',
     googleFontsMissing_other:
       'Google kennt diese Schriften nicht und hat sie stillschweigend weggelassen: {{families}}. Auf der Website fallen diese Plätze auf eine Ersatzschrift zurück — prüfe die Schreibweise.',
+    googleFontsOwn_one: 'Nicht bei Google geholt, weil das Projekt die Schrift schon selbst einbindet: {{families}}.',
+    googleFontsOwn_other: 'Nicht bei Google geholt, weil das Projekt die Schriften schon selbst einbindet: {{families}}.',
     googleFontsRemoved_one: 'Nicht mehr gewählt und aus dem Projekt entfernt: {{families}} (1 Datei).',
     googleFontsRemoved_other: 'Nicht mehr gewählt und aus dem Projekt entfernt: {{families}} ({{count}} Dateien).',
     googleFontsDropped_one: 'Die lokale Kopie der Google-Schriften ist entfernt (1 Datei), die Website lädt sie jetzt von Google.',

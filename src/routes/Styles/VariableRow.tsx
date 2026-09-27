@@ -135,9 +135,13 @@ function VariableRow({
   // cursor, and the next character was appended to that - `var(--background-secondary, var(--bg2))#`
   // - while the override held '' and saving wrote `--x: ;` (thirty-seventh review, finding 6). An
   // empty light half is not written (styleService, renderVariableOverrides).
+  //
+  // The dark field shows what applies in dark mode, which for an override without a dark half is
+  // its light value - the file has no dark declaration, and the unlayered :root line beats Quartz's
+  // layered dark colour. It showed base.dark there, a value written nowhere (1.0.1, gui-test).
   const draft: OverrideValue = {
     light: override ? override.light : base.light,
-    dark: override?.dark || base.dark
+    dark: override ? override.dark || override.light || base.dark : base.dark
   }
 
   // Light and dark are two fields from the start only where that is the usual case: a colour, or a
@@ -150,14 +154,19 @@ function VariableRow({
   const baseDiffers = base.dark !== base.light
   const splitModes = isColor || baseDiffers || Boolean(override?.dark) || darkOpen
 
+  // The dark half is stored only where it differs from the light one: an empty `dark` means "no
+  // declaration in the dark block", and in the built CSS that means "the light value, in both
+  // modes". So a variable whose base differs between the modes keeps its dark value explicitly
+  // when only the light one is edited - until 1.0.1 it got '' and the site showed the new light
+  // colour in dark mode too (--secondary in gui-test). A variable that is the same in both modes
+  // stays one declaration, which is what kept one edit from writing forty.
   function setMode(mode: Mode, value: string): void {
-    const next: OverrideValue =
-      mode === 'light'
-        ? { light: value, dark: override?.dark ?? '' }
-        : // Typing the applying value back into the dark field removes the dark declaration again,
-          // the same way typing the original into the light field removes the whole override.
-          { light: override?.light || base.light, dark: value === base.dark ? '' : value }
-    onChange(next.light === base.light && next.dark === '' ? null : next)
+    const lightValue = mode === 'light' ? value : override?.light || base.light
+    const darkValue = mode === 'dark' ? value : override?.dark || (baseDiffers ? base.dark : lightValue)
+    const next: OverrideValue = { light: lightValue, dark: darkValue === lightValue ? '' : darkValue }
+    // Back where it started in both modes: no override at all.
+    const unchanged = next.light === base.light && (next.dark || next.light) === base.dark
+    onChange(unchanged ? null : next)
   }
 
   // Which variables this one is built out of - the counterpart to `dependents`, and the half that

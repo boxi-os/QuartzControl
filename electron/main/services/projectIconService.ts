@@ -207,10 +207,14 @@ export async function clearProjectIconDark(projectPath: string): Promise<Project
   return getProjectIcon(projectPath)
 }
 
-/** The thumbnail the launcher shows, or null when the project has no icon of its own. */
+/**
+ * The thumbnail the launcher shows, or null when the project shows Quartz's own icon. A picture
+ * nobody recorded counts - a template's mark is what the site shows, and until 1.0.1 the app showed
+ * the initial for it while the dark picture beside it did appear.
+ */
 export async function getCustomIconThumbnail(projectPath: string): Promise<string | null> {
   const marker = await readMarker(projectPath)
-  if (!marker.custom) return null
+  if (!marker.custom && !(await hasUnrecordedIcon(projectPath))) return null
   return thumbnailFor(iconPath(projectPath))
 }
 

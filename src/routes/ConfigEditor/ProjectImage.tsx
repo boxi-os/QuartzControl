@@ -132,7 +132,7 @@ export default function ProjectImage({
         <ProjectAvatar
           id={project.id}
           name={project.name}
-          icon={icon?.custom ? icon.dataUrl : null}
+          icon={icon?.custom || icon?.unrecorded ? icon.dataUrl : null}
           size={64}
           className="border border-ink/[0.06] dark:border-ink/10"
         />
@@ -141,7 +141,7 @@ export default function ProjectImage({
         <div className="flex min-w-0 max-w-[80ch] flex-col gap-1.5">
           <div className="flex flex-wrap items-center gap-2">
             <Button onClick={() => choose.run()} disabled={busy}>
-              {icon?.custom ? t('projectImage.replace') : t('projectImage.choose')}
+              {icon?.custom || icon?.unrecorded ? t('projectImage.replace') : t('projectImage.choose')}
             </Button>
             {icon?.custom && (
               <Button variant="ghost" onClick={() => clear.run()} disabled={busy}>

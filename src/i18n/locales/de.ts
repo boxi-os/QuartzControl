@@ -757,7 +757,7 @@ export default {
     defaultHint:
       'Ohne eigenes Bild zeigt die App den Anfangsbuchstaben, und die Seite bekommt das Standard-Icon von Quartz. PNG oder JPEG, quadratisch am besten.',
     unrecordedHint:
-      'Die Seite zeigt ein Bild, das nicht in der App gewählt wurde — meist die Marke der Vorlage. Ein eigenes ersetzt es im Kopfbereich und als Favicon; bis dahin zeigt die App den Anfangsbuchstaben. PNG oder JPEG, quadratisch am besten.',
+      'Die Seite zeigt ein Bild, das nicht in der App gewählt wurde — meist die Marke der Vorlage. Ein eigenes ersetzt es im Kopfbereich und als Favicon. PNG oder JPEG, quadratisch am besten.',
     customHint: 'Liegt als quartz/static/icon.png im Projekt, {{width}} × {{height}} Pixel.',
     faviconOn: 'Das Favicon der Seite wird beim nächsten Build aus diesem Bild erzeugt.',
     faviconOff: 'Das Favicon-Plugin ist ausgeschaltet — die Seite bekommt daraus kein Favicon.',

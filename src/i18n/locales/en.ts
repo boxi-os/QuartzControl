@@ -752,7 +752,7 @@ export default {
     defaultHint:
       'Without an image of its own the app shows the initial, and the site gets the default Quartz icon. PNG or JPEG, square works best.',
     unrecordedHint:
-      'The site shows an image that was not chosen in the app — usually the template’s mark. One of your own replaces it in the header and as the favicon; until then the app shows the initial. PNG or JPEG, square works best.',
+      'The site shows an image that was not chosen in the app — usually the template’s mark. One of your own replaces it in the header and as the favicon. PNG or JPEG, square works best.',
     customHint: 'Stored as quartz/static/icon.png in the project, {{width}} × {{height}} pixels.',
     faviconOn: "The site's favicon is generated from this image on the next build.",
     faviconOff: 'The favicon plugin is switched off — no favicon is generated from this image.',

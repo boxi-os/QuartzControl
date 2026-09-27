@@ -1310,7 +1310,9 @@ export default {
       paletteHint: 'Drag a component onto a slot to insert another instance with its own settings.',
       dragHandle: 'Move {{name}}',
       duplicate: 'Duplicate',
-      removeDuplicate: 'Remove duplicate'
+      removeDuplicate: 'Remove duplicate',
+      disabled: 'Disabled',
+      disabledHint: 'Not built. Turn it on under Plugins.'
     }
   },
   styles: {

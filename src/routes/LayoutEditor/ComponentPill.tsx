@@ -130,10 +130,17 @@ export function ItemCard({
               <GripVertical size={15} />
             </span>
           )}
-          <span className="truncate text-sm font-medium">{plugin.name}</span>
+          <span className={`truncate text-sm font-medium ${plugin.enabled ? '' : 'text-text-muted'}`}>{plugin.name}</span>
           {isDuplicate && rank !== undefined && <span className="text-micro text-text-muted">#{rank}</span>}
         </div>
         <div className="flex flex-wrap items-center justify-end gap-1.5">
+          {/* Quartz drops a disabled entry before it builds the layout, so it keeps its place in
+              the config but renders nowhere - the board said nothing about that until 1.0.1. */}
+          {!plugin.enabled && (
+            <span className="inline-flex" title={t('layoutEditor.componentPill.disabledHint')}>
+              <Badge tone="slate">{t('layoutEditor.componentPill.disabled')}</Badge>
+            </span>
+          )}
           {layout?.group && (
             <span className={`rounded-full px-2 py-0.5 text-micro font-medium ${color?.bg} ${color?.text}`}>{layout.group}</span>
           )}

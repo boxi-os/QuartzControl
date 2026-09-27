@@ -1315,7 +1315,9 @@ export default {
       paletteHint: 'Ziehe eine Komponente auf einen Bereich, um eine weitere Instanz mit eigenen Einstellungen einzufügen.',
       dragHandle: '{{name}} verschieben',
       duplicate: 'Duplizieren',
-      removeDuplicate: 'Duplikat entfernen'
+      removeDuplicate: 'Duplikat entfernen',
+      disabled: 'Deaktiviert',
+      disabledHint: 'Wird nicht gebaut. Einschalten unter Plugins.'
     }
   },
   styles: {

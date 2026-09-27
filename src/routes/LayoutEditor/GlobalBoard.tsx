@@ -174,7 +174,12 @@ export default function GlobalBoard({
           return p && !p.hidden
         })
       : null
-  const activeGridStyle = activeFrame && activeLayout ? buildGridStyle(activeLayout, activeFrame.areas) : null
+  // Columns are the frame's geometry and stay; row heights do not. A row size describes the built
+  // page's content, and the board's cells hold editing cards instead: the example frames give the
+  // left sidebar a 0px row on mobile (it is a drawer there), so the board collapsed that area to
+  // nothing and drew the next one over its cards. Every row sizes to what it holds here.
+  const activeGridStyle =
+    activeFrame && activeLayout ? buildGridStyle({ ...activeLayout, rowSizes: undefined }, activeFrame.areas) : null
   // A custom frame's width cap, alignment and padding belong on this board too - it is the page as
   // it will be built, and leaving them out would show a full-width layout for a frame that is not.
   const activeBox = activeLayout ? buildFrameBox(activeLayout) : null

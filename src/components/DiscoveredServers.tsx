@@ -18,6 +18,9 @@ import { formatRelativeTime } from '../utils/format'
  * still be using it, which is what the warning under the list says and what the confirmation
  * repeats. Stopping is always a decision made here, per server.
  */
+/** How long after a stop the list is scanned a second time; see the status subscription below. */
+const SETTLE_MS = 1000
+
 export function DiscoveredServers({ ports, onChanged }: { ports: number[]; onChanged?: () => void }): JSX.Element {
   const { t, i18n } = useTranslation()
   const [discovery, setDiscovery] = useState<ServerDiscovery | null>(null)
@@ -48,7 +51,24 @@ export function DiscoveredServers({ ports, onChanged }: { ports: number[]; onCha
     // list that changes a handful of times a day.
     const onFocus = (): void => void scan()
     window.addEventListener('focus', onFocus)
-    return () => window.removeEventListener('focus', onFocus)
+    // A server this app starts or stops - from the box above, from the overview - changes the list
+    // without the window losing focus, and until 1.0.1 it stayed on the old answer until someone
+    // clicked "Refresh". Any project counts: the list is the whole machine.
+    let settle: ReturnType<typeof setTimeout> | undefined
+    const offStatus = window.quartzGui.server.onStatus((_projectId, status) => {
+      if (status.state !== 'stopped' && status.state !== 'running' && status.state !== 'error') return
+      void scan()
+      // "stopped" is sent when npx exits, and the child holding the port can outlive it by a few
+      // milliseconds; a scan in that gap lists the child as started elsewhere. One more scan once
+      // it has gone, rather than a claim the first one cannot back.
+      clearTimeout(settle)
+      settle = setTimeout(() => void scan(), SETTLE_MS)
+    })
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      offStatus()
+      clearTimeout(settle)
+    }
   }, [scan])
 
   async function stop(server: DiscoveredServer): Promise<void> {

@@ -254,7 +254,15 @@ mit zehn Paketen, `latest.json`, die App-Website, die drei Plugin-Handbücher un
 Example-Website); Ablauf und Funde oben in [`docs/release.md`](docs/release.md). Davor
 `1.0.0-rc.1` am 2026-09-21.
 
-**Das siebenunddreißigste Review ist abgearbeitet** (gelesen 2026-09-24,
+**Das achtunddreißigste Review ist abgearbeitet** (gelesen 2026-09-28,
+[`docs/REVIEW-2026-10-12.md`](docs/REVIEW-2026-10-12.md); 0 Hoch, 2 Mittel, 7 Niedrig): Es las die
+Fehlerbehebung für 1.0.1 auf `fix/1.0.1`. Die Google-Schriften holen jetzt, was die eigenen Regeln
+eines Projekts nicht decken, statt die ganze Familie auszulassen; „In beiden Modi gleich“ tut, was
+es sagt; das Schloss der Stylesheets sagt, wo es endet, und die Bau-Tür hält es selbst. Neun Commits
+auf `fix/1.0.1`, nicht gepusht, 1.0.1 noch nicht veröffentlicht; was daraus geworden ist, steht am
+Ende von [`docs/reviews.md`](docs/reviews.md). **Keinen dieser Fixes hat ein Review gelesen.**
+
+Das siebenunddreißigste Review ist abgearbeitet (gelesen 2026-09-24,
 [`docs/REVIEW-2026-10-11.md`](docs/REVIEW-2026-10-11.md), Auftrag
 [`docs/REVIEW-2026-10-11-auftrag.md`](docs/REVIEW-2026-10-11-auftrag.md); 0 Hoch, 3 Mittel, 6
 Niedrig): Es las die Fixes der 36. Runde und die Korrekturen danach und riet, nichts

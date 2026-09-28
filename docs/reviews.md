@@ -1992,3 +1992,49 @@ gemessen an der gebauten App mit Kopien von `gui-test` und `brain-handbuch` (The
   Apps steht in `decisions/electron-runtime-and-packaging.md`, der vierte Punkt ist Befund 8.
 
 **Keinen dieser Fixes hat ein Review gelesen.**
+
+**Nach 1.0.0: die Fehlerbehebung für 1.0.1** (2026-09-27/28, auf `fix/1.0.1`, nicht gepusht):
+sieben Befunde des Nutzers am veröffentlichten 1.0.0, sechs davon behoben (`8ac60f9` Serverliste
+folgt dem Start und Stopp, `c4cc7ab` Board-Zeilen ohne die Zeilenhöhen des Frames, `93d7765`
+„Deaktiviert“ auf dem Board, `d5538ef` keine Google-Abfrage für eine selbst deklarierte Familie,
+`0c9f95c` das Projektbild einer Vorlage in der App, `e51a4cb` die dunkle Hälfte einer Variable
+bleibt), dazu `b4e32ba` (jede Kopie eines Abschnitts wird gelesen) und `18f68db` (das Schloss der
+Stylesheets für jeden Schreiber von `custom.scss`). Der siebte Befund — die einzige Instanz in den
+Vorrat ziehen — ist verschoben: Quartz kennt „nicht zugewiesen“ nicht. Auftrag
+[`REVIEW-2026-10-12-auftrag.md`](REVIEW-2026-10-12-auftrag.md), Tag `review-2026-10-13`.
+
+**Das achtunddreißigste Review** ([`REVIEW-2026-10-12.md`](REVIEW-2026-10-12.md), gelesen von
+Claude Fable 5.1 am 2026-09-28, `main..review-2026-10-13`): 0 Hoch, 2 Mittel, 7 Niedrig. Seine
+Antwort auf die Frage des Auftrags: Das Schloss gehört in 1.0.1; `d5538ef` nicht in dieser Form.
+
+Abgearbeitet am 2026-09-28 auf `fix/1.0.1`, je Commit Typcheck, Build und Smoke (bei den reinen
+Kommentar-Commits Typcheck; Build und Smoke liefen mit dem nächsten Code-Commit):
+
+- **1 (Mittel)** `fe5eda8` — der Nutzer hat entschieden: nur Lücken holen. Die Familie wird
+  wieder bei Google gefragt, aus der Antwort fallen nur die Regeln, die eine eigene deckt (Stil,
+  Gewicht, `unicode-range`); nur eine eigene Regel ohne Bereich nimmt die ganze Familie heraus.
+  Ein Abdruck der eigenen Regeln im Kopf des Blocks lässt dieselbe Anfrage neu stellen, wenn sie
+  sich ändern. Bau-Tür und Stile-Seite sagen, was fehlt und was gelöscht wurde. Am Bündel gegen
+  das echte Google: 1.0.0-Stand von `gui-test` 54 → 47 Google-Regeln (die sieben Latin), 26 → 23
+  Dateien; der Stand des Test-Builds kommt auf dieselben Zahlen; ohne eigene Regeln bleibt der
+  Block byte-gleich. Die Sätze der Stile-Seite sind nicht an der App gemessen.
+- **2 (Mittel)** `c97790b` — „In beiden Modi gleich“ ruft `followLight()` und nimmt die dunkle
+  Hälfte weg, statt `base.dark` hineinzuschreiben. An der gebauten App mit `--titleFont`
+  vorher/nachher gemessen.
+- **3** `46a6f33` — wo das Schloss endet, am Schloss und in `conventions.md`, dazu die Bedingung
+  aus Abwägung 1.
+- **4** `af824ef` — `refreshGoogleFonts` nimmt das Schloss selbst. Am Bündel: vorher `null` in
+  der Lücke eines Imports, nachher wartet die Tür.
+- **5** `4c35807` — ein Kommentar, keine Änderung, wie das Review rät.
+- **6** `afdf82e` — Folgennummer in `scan()`. An der gebauten App mit ersetztem Handler: vorher
+  stand der Server nach 2,5 s wieder in der Liste, nachher nicht.
+- **7** — nicht für 1.0.1, wie das Review rät: Die helle Überschreibung als
+  `:root:not([saved-theme="dark"])` zu schreiben ist eine Formänderung mit Lesern auf beiden
+  Seiten und braucht eine eigene Runde mit Messung.
+- **8** `bb65411` — die Zahl als Spanne (34–44 und 27–34).
+- **9** — keine Änderung; das Board entscheidet keine Höhen.
+- **Nebenbei:** `27f9151` — `writeStyleFileNow` schreibt atomar; `15d3712` — der Nachlauf der
+  Serversuche nur nach `stopped`. Nicht angefasst: die drei Suchläufe nach einem Stopp aus der
+  Karte (harmlos) und das Hashen von `icon.png` je Auffrischung (nichts).
+
+**Keinen dieser Fixes hat ein Review gelesen.**

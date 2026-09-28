@@ -17,8 +17,9 @@ import { resolve } from 'path'
  * Every other writer of custom.scss read the file, changed its own section and wrote the whole of
  * it back - outside the lock, so a font writer's write between those two steps was undone, and the
  * other way round. Measured (1.0.1) on a bundle of both services, a Google fetch whose download
- * took 20 ms and a variable save started 0-40 ms after it: of 300 runs, 44 lost the variable and
- * 27 the Google block. The file is written atomically with an fsync, which is what makes the
+ * took 20 ms and a variable save started 0-40 ms after it: of 300 runs, 34 to 44 lost the
+ * variable and 27 to 34 the Google block (three runs, one of them the thirty-eighth review's; a
+ * measurement, not a constant), none with the lock. The file is written atomically with an fsync, which is what makes the
  * window that wide. So every writer of a stylesheet in these services holds it: custom.scss (the
  * whole file from the CSS tab, the variables, the import order, the font URL migration at the
  * build door, a template import) and the files under quartz/styles, which the font deletion reads

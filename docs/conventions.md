@@ -207,11 +207,12 @@ Projektwurzel.
   auf, statt abzulehnen: Keiner der beiden Aufrufer ist ein Klick, den man wiederholen könnte, und
   die Bau-Tür muss den fertigen Stand sehen. Der Schlüssel entsteht wie bei `coreUpdatesRunning`
   über `realpath`, und geräumt wird nur, solange der Eintrag noch dieser Lauf ist. **Das Schloss
-  gilt für jeden, der ein Stylesheet schreibt, nicht nur für die Schriften**: Die übrigen
+  gilt für jeden Schreiber eines Stylesheets in der App, nicht nur für die Schriften**: Die übrigen
   Schreiber von `custom.scss` lasen die Datei, änderten ihren Abschnitt und schrieben alles
   zurück, am Schloss vorbei — ein Schriftabruf dazwischen war danach weg, oder umgekehrt
-  (gemessen für 1.0.1: 44 von 300 Läufen verloren die Variable, 27 den Google-Block). Weil sich
-  die Schreiber gegenseitig rufen, ist es wiedereintrittsfähig. **Wo es endet, steht am Schloss:**
+  (gemessen für 1.0.1 in drei Durchgängen zu je 300 Läufen: 34 bis 44 verloren die Variable, 27
+  bis 34 den Google-Block, mit Schloss keiner). Weil sich die Schreiber gegenseitig rufen, ist
+  es wiedereintrittsfähig. **Wo es endet, steht am Schloss:**
   Es gilt für die Schreiber der beiden Dienste und die drei Teile des Imports, nicht für die vier
   Wege, die die Datei als Teil eines Repositorys schreiben (Restore, `quartz sync --pull`,
   Core-Update, der Editor des Nutzers), und nicht für einen Entwurf, der älter ist als die Datei —

@@ -506,7 +506,8 @@ Importreihenfolge, der ganze CSS-Reiter, die Adress-Migration an der Bau-Tür un
 Vorlagen-Import lasen die Datei, änderten ihren Abschnitt und schrieben alles zurück, ohne das
 Schloss. Gemessen für 1.0.1 an einem Bündel beider Dienste: ein Google-Abruf, dessen Download
 20 ms dauert, und ein Speichern der Variablen 0–40 ms danach. Ohne Schloss verloren 44 von 300
-Läufen die Variable und 27 den Google-Block (ein zweiter Lauf: 34 und 27), mit Schloss 0 und 0.
+Läufen die Variable und 27 den Google-Block (ein zweiter Lauf: 34 und 27, der des
+achtunddreißigsten Reviews: 42 und 34), mit Schloss 0 und 0 — eine Messung, keine Konstante.
 So breit ist das Fenster wegen des atomaren Schreibens mit `fsync`. Das Schloss liegt deshalb in
 einem eigenen Modul (`styleLock.ts`) und gilt für jeden Schreiber eines Stylesheets, auch der
 Dateien unter `quartz/styles`, die die Löschung der Schriften mitliest. Es ist

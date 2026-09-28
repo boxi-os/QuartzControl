@@ -1,7 +1,7 @@
 import { net } from 'electron'
 import { existsSync, mkdirSync, statSync } from 'fs'
-import { copyFile, mkdir, readFile, realpath, rename, rm, stat, writeFile } from 'fs/promises'
-import { basename, dirname, extname, join, resolve } from 'path'
+import { copyFile, mkdir, readFile, rename, rm, stat, writeFile } from 'fs/promises'
+import { basename, dirname, extname, join } from 'path'
 import type { UnusedImportedFont } from '@shared/ipc-contract'
 import { googleFontRequest, googleFontsCss2Url } from '@shared/googleFontRequest'
 import { mainT } from '../i18n'
@@ -21,6 +21,7 @@ import {
   writeCustomScss
 } from './styleService'
 import { MAX_FONT_FILE_BYTES, readFontFace } from './fontFile'
+import { whileHoldingStyles } from './styleLock'
 
 const FORMAT_MAP: Record<string, string> = { ttf: 'truetype', otf: 'opentype', woff: 'woff', woff2: 'woff2' }
 
@@ -43,7 +44,7 @@ export function importFontFile(
   sourcePath: string,
   family: string
 ): ReturnType<typeof importFontFileNow> {
-  return whileHoldingFonts(projectPath, () => importFontFileNow(projectPath, sourcePath, family))
+  return whileHoldingStyles(projectPath, () => importFontFileNow(projectPath, sourcePath, family))
 }
 
 async function importFontFileNow(
@@ -175,7 +176,7 @@ export async function unusedImportedFonts(projectPath: string, draftFamilies: st
  * under quartz/static/fonts - but only a file no remaining rule in any stylesheet points at.
  */
 export function removeImportedFont(projectPath: string, family: string): ReturnType<typeof removeImportedFontNow> {
-  return whileHoldingFonts(projectPath, () => removeImportedFontNow(projectPath, family))
+  return whileHoldingStyles(projectPath, () => removeImportedFontNow(projectPath, family))
 }
 
 async function removeImportedFontNow(projectPath: string, family: string): Promise<{ removedFiles: string[] }> {
@@ -188,41 +189,6 @@ async function removeImportedFontNow(projectPath: string, family: string): Promi
 
   await writeCustomScss(projectPath, upsertManagedBlock(info.content, FONTS_MARKER, joinUniqueRules(rules.filter((r) => !isFamily(r)))))
   return { removedFiles: await deleteUnreferencedFontFiles(projectPath, removed.join('\n')) }
-}
-
-/**
- * One writer at a time per project, and this one waits rather than refusing: the four functions
- * below all rewrite a managed block in custom.scss and then delete the files no rule names any
- * more, and two of them are reached from two doors at once - a save on the Styles page and the
- * build door that refreshes the Google fonts before every build. Run side by side, the one that
- * breaks off deletes files the other skipped as "already there" and is about to name in its block
- * (thirty-fourth review, "nebenbei" 2). Refusing would be wrong here: neither caller is a click
- * that could be repeated, and the build door has to see the finished state.
- *
- * Per project path through `realpath`, for the reason spelled out at coreUpdatesRunning in
- * updateService: two spellings of one folder must not be two keys. The entry is cleared only when
- * it is still this run's, the way forgetServer() does it - a later caller has already chained onto
- * it and owns the key.
- */
-const fontWritesRunning = new Map<string, Promise<unknown>>()
-
-async function whileHoldingFonts<T>(projectPath: string, run: () => Promise<T>): Promise<T> {
-  const key = await realpath(projectPath).catch(() => resolve(projectPath))
-  const previous = fontWritesRunning.get(key)
-  // The predecessor's failure is not this run's business, hence the swallowing catch on both
-  // sides: one that stays would reject every later caller in the chain.
-  const mine = (previous ?? Promise.resolve()).then(run, run)
-  const queued = mine.then(
-    () => undefined,
-    () => undefined
-  )
-  fontWritesRunning.set(key, queued)
-  try {
-    return await mine
-  } finally {
-    await queued
-    if (fontWritesRunning.get(key) === queued) fontWritesRunning.delete(key)
-  }
 }
 
 // The files the @font-face rules in `css` point at, as paths in the project's font folder.
@@ -278,7 +244,7 @@ async function fontFilesStillNamed(projectPath: string, except: string[] = []): 
  * Same question as every other removal here, under the same lock.
  */
 export function deleteFontFilesOfReplacedRules(projectPath: string, previousCss: string): Promise<string[]> {
-  return whileHoldingFonts(projectPath, () => deleteUnreferencedFontFiles(projectPath, previousCss))
+  return whileHoldingStyles(projectPath, () => deleteUnreferencedFontFiles(projectPath, previousCss))
 }
 
 // Deletes the files the rules in `css` pointed at - but only a file no rule in any stylesheet of
@@ -409,7 +375,7 @@ export function fetchGoogleFonts(
   projectPath: string,
   typography: Record<string, unknown>
 ): ReturnType<typeof fetchGoogleFontsNow> {
-  return whileHoldingFonts(projectPath, () => fetchGoogleFontsNow(projectPath, typography))
+  return whileHoldingStyles(projectPath, () => fetchGoogleFontsNow(projectPath, typography))
 }
 
 async function fetchGoogleFontsNow(
@@ -584,7 +550,7 @@ function notDelivered(typography: Record<string, unknown>, block: string, wholeC
 
 /** Removes the block and every file of it that no other rule names. Nothing when there is none. */
 export function dropGoogleFonts(projectPath: string): ReturnType<typeof dropGoogleFontsNow> {
-  return whileHoldingFonts(projectPath, () => dropGoogleFontsNow(projectPath))
+  return whileHoldingStyles(projectPath, () => dropGoogleFontsNow(projectPath))
 }
 
 async function dropGoogleFontsNow(

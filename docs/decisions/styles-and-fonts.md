@@ -497,9 +497,24 @@ dieselbe Funktion, und wer abbricht, räumt auf — auch die Dateien, die der an
 übersprungen hat. Am Bündel gemessen, zwei überlappende Läufe, der zweite scheitert an seiner
 siebten Datei: vorher scheiterten *beide*, der erste mit `ENOENT` beim `rename` einer Datei, die
 der zweite gerade gelöscht hatte, und der Ordner blieb leer. Mit einem wartenden Schloss je
-Projektpfad (`whileHoldingFonts`) läuft der erste durch, der zweite scheitert für sich, und jede
+Projektpfad (damals `whileHoldingFonts`, heute `whileHoldingStyles`) läuft der erste durch, der zweite scheitert für sich, und jede
 Datei, die der Block nennt, liegt da. Wartend und nicht ablehnend, weil keiner der beiden Aufrufer
 ein Klick ist, den man wiederholen könnte, und die Bau-Tür den fertigen Stand sehen muss.
+
+**Das Schloss hielt nur die Schriften, geschrieben wird `custom.scss` von allen.** Variablen,
+Importreihenfolge, der ganze CSS-Reiter, die Adress-Migration an der Bau-Tür und der
+Vorlagen-Import lasen die Datei, änderten ihren Abschnitt und schrieben alles zurück, ohne das
+Schloss. Gemessen für 1.0.1 an einem Bündel beider Dienste: ein Google-Abruf, dessen Download
+20 ms dauert, und ein Speichern der Variablen 0–40 ms danach. Ohne Schloss verloren 44 von 300
+Läufen die Variable und 27 den Google-Block (ein zweiter Lauf: 34 und 27), mit Schloss 0 und 0.
+So breit ist das Fenster wegen des atomaren Schreibens mit `fsync`. Das Schloss liegt deshalb in
+einem eigenen Modul (`styleLock.ts`) und gilt für jeden Schreiber eines Stylesheets, auch der
+Dateien unter `quartz/styles`, die die Löschung der Schriften mitliest. Es ist
+wiedereintrittsfähig (`AsyncLocalStorage`), weil die Schreiber einander rufen: Ein Umbenennen
+setzt die Importreihenfolge, ein Vorlagen-Import speichert die Variablen, und ein Schloss, das auf
+sich selbst wartete, hielte den Import für immer an. Gegengeprüft: Anlegen, Umbenennen, Löschen
+und drei gleichzeitige Schreiber laufen durch, der Vorlagen-Import mit `styles`, `fonts` und
+`cssVariables` ebenso.
 
 **Der Editor darf zwischen zwei Ständen nicht durch einen dritten.** `contentOf` liest
 `fileDrafts[tab] ?? loaded[tab]`, und das Speichern leerte die Entwürfe mehrere `await` bevor der

@@ -203,10 +203,15 @@ Projektwurzel.
   Bau-Tür vor jedem Build —, und beide holen Dateien und löschen danach, was keine Regel mehr
   nennt. Nebeneinander räumt der, der abbricht, die Dateien weg, die der andere als „schon da“
   übersprungen hat und gerade in seinen Block schreibt; gemessen scheiterten *beide*, einer mit
-  `ENOENT` beim `rename`. `whileHoldingFonts` reiht deshalb je Projektpfad auf, statt abzulehnen:
-  Keiner der beiden Aufrufer ist ein Klick, den man wiederholen könnte, und die Bau-Tür muss den
-  fertigen Stand sehen. Der Schlüssel entsteht wie bei `coreUpdatesRunning` über `realpath`, und
-  geräumt wird nur, solange der Eintrag noch dieser Lauf ist. Messungen in
+  `ENOENT` beim `rename`. `whileHoldingStyles` (`styleLock.ts`) reiht deshalb je Projektpfad
+  auf, statt abzulehnen: Keiner der beiden Aufrufer ist ein Klick, den man wiederholen könnte, und
+  die Bau-Tür muss den fertigen Stand sehen. Der Schlüssel entsteht wie bei `coreUpdatesRunning`
+  über `realpath`, und geräumt wird nur, solange der Eintrag noch dieser Lauf ist. **Das Schloss
+  gilt für jeden, der ein Stylesheet schreibt, nicht nur für die Schriften**: Die übrigen
+  Schreiber von `custom.scss` lasen die Datei, änderten ihren Abschnitt und schrieben alles
+  zurück, am Schloss vorbei — ein Schriftabruf dazwischen war danach weg, oder umgekehrt
+  (gemessen für 1.0.1: 44 von 300 Läufen verloren die Variable, 27 den Google-Block). Weil sich
+  die Schreiber gegenseitig rufen, ist es wiedereintrittsfähig. Messungen in
   [`styles-and-fonts.md`](decisions/styles-and-fonts.md).
 - **Ein Vorgang, der ein Repository schreibt, wird im Hauptprozess gesperrt, nicht im Renderer.**
   `coreBusy` war ein `useState`: das Gedächtnis eines Fensters an das, was es selbst gestartet hat,

@@ -239,7 +239,7 @@ export function registerIpcHandlers(): void {
 
   handle(IPC.stylesGet, t([s.absolutePath]), (projectPath) => styleService.readCustomScss(projectPath))
   handle(IPC.stylesSave, t([s.absolutePath, s.longText]), (projectPath, content) =>
-    styleService.writeCustomScss(projectPath, content)
+    styleService.saveCustomScss(projectPath, content)
   )
   handle(IPC.stylesReference, t([s.absolutePath, s.pluginName]), (projectPath, pluginName) =>
     styleService.getStyleReferences(projectPath, pluginName)

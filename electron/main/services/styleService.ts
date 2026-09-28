@@ -16,6 +16,7 @@ import type {
   StylesInfo
 } from '@shared/ipc-contract'
 import { writeFileAtomic } from './jsonStore'
+import { whileHoldingStyles } from './styleLock'
 import { resolveBuildDir } from './projectDirs'
 import { mainT } from '../i18n'
 import { MAX_FONT_FILE_BYTES } from './fontFile'
@@ -40,6 +41,12 @@ export async function readCustomScss(projectPath: string): Promise<StylesInfo> {
 // review, "nebenbei" 3).
 export async function writeCustomScss(projectPath: string, content: string): Promise<void> {
   await writeFileAtomic(customScssPath(projectPath), content)
+}
+
+// The whole file, from the CSS tab. writeCustomScss above is the step every writer here takes
+// while holding the lock; this is the door from outside, and it takes the lock itself.
+export function saveCustomScss(projectPath: string, content: string): Promise<void> {
+  return whileHoldingStyles(projectPath, () => writeCustomScss(projectPath, content))
 }
 
 const IGNORED_DIRS = new Set(['node_modules', '.git', 'dist', '.changeset'])
@@ -81,7 +88,11 @@ export async function getStyleReferences(projectPath: string, pluginName: string
   )
 }
 
-export async function importStyleFile(projectPath: string, sourcePath: string): Promise<{ importLine: string; relativePath: string }> {
+export function importStyleFile(projectPath: string, sourcePath: string): Promise<{ importLine: string; relativePath: string }> {
+  return whileHoldingStyles(projectPath, () => importStyleFileNow(projectPath, sourcePath))
+}
+
+async function importStyleFileNow(projectPath: string, sourcePath: string): Promise<{ importLine: string; relativePath: string }> {
   const importedDir = join(projectPath, 'quartz', 'styles', 'imported')
   mkdirSync(importedDir, { recursive: true })
   const fileName = basename(sourcePath)
@@ -282,7 +293,11 @@ export function relativeFontUrls(css: string): string {
  * from before 2026-09-18 every managed block it can read (see MARKER_NAMES), and paying that for
  * somebody who only pressed "build" is not this door's business.
  */
-export async function migrateFontUrls(projectPath: string): Promise<boolean> {
+export function migrateFontUrls(projectPath: string): Promise<boolean> {
+  return whileHoldingStyles(projectPath, () => migrateFontUrlsNow(projectPath))
+}
+
+async function migrateFontUrlsNow(projectPath: string): Promise<boolean> {
   const info = await readCustomScss(projectPath)
   if (!info.content) return false
   const spans = findManagedBlocks(info.content, 'fonts')
@@ -388,7 +403,11 @@ export async function getVariableOverrides(projectPath: string): Promise<CssVari
   return body ? parseVariableOverrides(body) : []
 }
 
-export async function saveVariableOverrides(projectPath: string, overrides: CssVariableOverride[]): Promise<void> {
+export function saveVariableOverrides(projectPath: string, overrides: CssVariableOverride[]): Promise<void> {
+  return whileHoldingStyles(projectPath, () => saveVariableOverridesNow(projectPath, overrides))
+}
+
+async function saveVariableOverridesNow(projectPath: string, overrides: CssVariableOverride[]): Promise<void> {
   const info = await readCustomScss(projectPath)
   // Asked of the rendered body, not of the list: a list of emptied values renders nothing.
   const body = renderVariableOverrides(overrides)
@@ -547,13 +566,21 @@ export async function readStyleFile(projectPath: string, relativePath: string): 
   return existsSync(path) ? readFile(path, 'utf-8') : ''
 }
 
-export async function writeStyleFile(projectPath: string, relativePath: string, content: string): Promise<void> {
+export function writeStyleFile(projectPath: string, relativePath: string, content: string): Promise<void> {
+  return whileHoldingStyles(projectPath, () => writeStyleFileNow(projectPath, relativePath, content))
+}
+
+async function writeStyleFileNow(projectPath: string, relativePath: string, content: string): Promise<void> {
   const path = styleFilePath(projectPath, relativePath)
   mkdirSync(dirname(path), { recursive: true })
   await writeFile(path, content, 'utf-8')
 }
 
-export async function createStyleFile(projectPath: string, name: string): Promise<StyleFile> {
+export function createStyleFile(projectPath: string, name: string): Promise<StyleFile> {
+  return whileHoldingStyles(projectPath, () => createStyleFileNow(projectPath, name))
+}
+
+async function createStyleFileNow(projectPath: string, name: string): Promise<StyleFile> {
   const fileName = /\.(scss|css)$/.test(name) ? name : `${name}.scss`
   const relativePath = `custom/${fileName}`
   const path = styleFilePath(projectPath, relativePath)
@@ -564,7 +591,11 @@ export async function createStyleFile(projectPath: string, name: string): Promis
   return { relativePath, path, name: fileName, imported: true }
 }
 
-export async function renameStyleFile(projectPath: string, relativePath: string, newName: string): Promise<StyleFile> {
+export function renameStyleFile(projectPath: string, relativePath: string, newName: string): Promise<StyleFile> {
+  return whileHoldingStyles(projectPath, () => renameStyleFileNow(projectPath, relativePath, newName))
+}
+
+async function renameStyleFileNow(projectPath: string, relativePath: string, newName: string): Promise<StyleFile> {
   const dir = relativePath.split('/')[0]
   const fileName = /\.(scss|css)$/.test(newName) ? newName : `${newName}.scss`
   const nextRelative = `${dir}/${fileName}`
@@ -580,7 +611,11 @@ export async function renameStyleFile(projectPath: string, relativePath: string,
   return { relativePath: nextRelative, path: target, name: fileName, imported: order.includes(nextRelative) }
 }
 
-export async function deleteStyleFile(projectPath: string, relativePath: string): Promise<void> {
+export function deleteStyleFile(projectPath: string, relativePath: string): Promise<void> {
+  return whileHoldingStyles(projectPath, () => deleteStyleFileNow(projectPath, relativePath))
+}
+
+async function deleteStyleFileNow(projectPath: string, relativePath: string): Promise<void> {
   const path = styleFilePath(projectPath, relativePath)
   // The order is rewritten first: a file left in the block after being deleted breaks the build,
   // which is a worse outcome than an orphaned file left on disk after a failed unlink.
@@ -637,7 +672,11 @@ function useLineFor(relativePath: string, taken: Set<string>): string {
   return `@use "${specifier}" as ${namespace};`
 }
 
-export async function setImportOrder(projectPath: string, relativePaths: string[]): Promise<void> {
+export function setImportOrder(projectPath: string, relativePaths: string[]): Promise<void> {
+  return whileHoldingStyles(projectPath, () => setImportOrderNow(projectPath, relativePaths))
+}
+
+async function setImportOrderNow(projectPath: string, relativePaths: string[]): Promise<void> {
   const main = await readCustomScss(projectPath)
   const taken = new Set<string>()
   const body = relativePaths.map((p) => useLineFor(p, taken)).join('\n')

@@ -21,6 +21,7 @@ import { runCommand } from '../runCommand'
 import { readZipFile, writeZipFile, type ZipEntry } from '../zipArchive'
 import { FORMAT_VERSION, MANIFEST_FILE, listFilesFlat, partFile } from './shared'
 import { PARTS } from './parts'
+import { whileHoldingStyles } from '../styleLock'
 
 /**
  * A default file name for the save dialog, derived from the package name. Only the *suggestion* is
@@ -283,6 +284,7 @@ export async function importPackage(
   // Runs in TEMPLATE_PART_IDS order, not in the order the caller listed them: frames and plugins
   // mutate quartz.config.yaml through the Quartz CLI and have to precede the parts that write it
   // from an in-memory copy, and the three parts that share custom.scss run last, one at a time.
+  const STYLESHEET_PARTS = new Set<TemplatePartId>(['styles', 'fonts', 'cssVariables'])
   const todo = TEMPLATE_PART_IDS.filter((id) => selected.includes(id) && PARTS[id] && pkg.files.has(partFile(id)))
   let done = 0
   for (const id of todo) {
@@ -294,13 +296,18 @@ export async function importPackage(
     }
     onProgress?.({ partId: id, message: '', done, total: todo.length })
     try {
-      await PARTS[id].apply(payload, {
-        projectPath,
-        strategy,
-        files: pkg.files,
-        warn: (message) => warnings.push(message),
-        progress: (message) => onProgress?.({ partId: id, message, done, total: todo.length })
-      })
+      const apply = (): Promise<void> =>
+        PARTS[id].apply(payload, {
+          projectPath,
+          strategy,
+          files: pkg.files,
+          warn: (message) => warnings.push(message),
+          progress: (message) => onProgress?.({ partId: id, message, done, total: todo.length })
+        })
+      // Each of these reads custom.scss, rewrites it in several steps and, for the fonts, deletes
+      // what the replaced rules named - one part at a time under the stylesheets' lock, so a build
+      // door or a save on the Styles page cannot write between the steps (see styleLock).
+      await (STYLESHEET_PARTS.has(id) ? whileHoldingStyles(projectPath, apply) : apply())
     } catch (err) {
       warnings.push(`partFailed:${id}:${err instanceof Error ? err.message : String(err)}`)
     }

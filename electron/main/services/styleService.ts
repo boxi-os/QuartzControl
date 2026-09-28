@@ -159,6 +159,14 @@ function findManagedBlock(content: string, markerId: string, names: readonly str
 // left the second out of the page and in the file, where it stood later and won: measured (1.0.1)
 // with two css-vars blocks, the page read one variable of two, and after a save the site still
 // showed the old value of the other one.
+//
+// A copy nested inside one of the *same* name is not two copies: the outer start pairs with the
+// inner end, no start follows, and the outer end is left over. A save writes one block and keeps
+// that end marker as a comment for good - so two end markers of one section in a file come from
+// here (thirty-eighth review, finding 5). And two google-fonts copies are read as one body whose
+// first line is the first copy's request: if that still matches and its files are there, the
+// fetch reports "unchanged" and the stale second copy stays until something writes the section.
+// Both are merge artefacts that one write of the section heals; neither is repaired here.
 function managedCopies(content: string, markerId: string, name: string): ManagedSpan[] {
   const spans: ManagedSpan[] = []
   let from = 0

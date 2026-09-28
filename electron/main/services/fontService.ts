@@ -680,7 +680,16 @@ async function dropGoogleFontsNow(
  * alone. Never throws: a failed fetch is a sentence in the log, and the build goes on with the
  * files that are there.
  */
-export async function refreshGoogleFonts(projectPath: string): Promise<{ failed: boolean; text: string } | null> {
+export function refreshGoogleFonts(projectPath: string): Promise<{ failed: boolean; text: string } | null> {
+  // Under the lock from the first read, not only from the fetch: the `styles` part of a template
+  // import takes the Google block out of custom.scss for the length of two writes, and a door that
+  // asked in between read "this project holds no Google fonts" and built without them. That it
+  // waited anyway was the order of the calls at the build door - migrateFontUrls came first and
+  // held the lock (thirty-eighth review, finding 4). Reentrant, so the fetch inside costs nothing.
+  return whileHoldingStyles(projectPath, () => refreshGoogleFontsNow(projectPath))
+}
+
+async function refreshGoogleFontsNow(projectPath: string): Promise<{ failed: boolean; text: string } | null> {
   try {
     const info = await readCustomScss(projectPath)
     if (!hasGoogleFontsBlock(info.content)) return null

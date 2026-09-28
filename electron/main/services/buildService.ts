@@ -456,6 +456,8 @@ async function refreshGoogleFonts(projectPath: string, report: (stream: 'stdout'
   // The third copy at the same door, and the cheapest: font URLs in the managed block that are
   // addressed to the domain instead of to the stylesheet find nothing on a site under a sub-path.
   // A project nobody has saved since 2026-09-19 still has them (styleService.migrateFontUrls).
+  // Each of the two calls takes the stylesheets' lock for itself (styleLock.ts), so a template
+  // import or a save still writing custom.scss is waited for whatever the order here.
   try {
     if (await styleService.migrateFontUrls(projectPath)) report('stdout', `${mainT('fontUrlsMigrated')}\n`)
   } catch (error) {

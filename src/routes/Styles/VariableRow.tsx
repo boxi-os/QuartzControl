@@ -169,6 +169,15 @@ function VariableRow({
     onChange(unchanged ? null : next)
   }
 
+  // "Same in both modes" means the dark half is *absent*, not that it holds some value. Routed
+  // through setMode('dark', base.dark) it stored base.dark as an explicit dark half as soon as the
+  // light one was overridden - the site then showed the old value in dark mode, the fields stayed
+  // split and the link stayed there, doing the same again (thirty-eighth review, finding 2).
+  function followLight(): void {
+    const light = override?.light || base.light
+    onChange(light === base.light ? null : { light, dark: '' })
+  }
+
   // Which variables this one is built out of - the counterpart to `dependents`, and the half that
   // was missing: the expanded row said what depends on this variable but never what it depends on.
   const uses = Array.from(new Set([...referencedVariables(light ?? ''), ...referencedVariables(dark ?? '')]))
@@ -305,7 +314,7 @@ function VariableRow({
                 <button
                   type="button"
                   onClick={() => {
-                    setMode('dark', base.dark)
+                    followLight()
                     onDarkOpen(false)
                   }}
                   className="text-micro text-text-muted underline"

@@ -68,7 +68,9 @@ export function DiscoveredServers({ ports, onChanged }: { ports: number[]; onCha
       void scan()
       // "stopped" is sent when npx exits, and the child holding the port can outlive it by a few
       // milliseconds; a scan in that gap lists the child as started elsewhere. One more scan once
-      // it has gone, rather than a claim the first one cannot back.
+      // it has gone, rather than a claim the first one cannot back. Only then: after "running" or
+      // "error" there is nothing left to go.
+      if (status.state !== 'stopped') return
       clearTimeout(settle)
       settle = setTimeout(() => void scan(), SETTLE_MS)
     })

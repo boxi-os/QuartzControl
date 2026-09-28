@@ -7,7 +7,7 @@
 > überein. Veröffentlicht wurde nur die App-Website (die Fixes ändern weder Vorlagen noch
 > Plugin-Handbücher), durch die gebaute App mit Wegwerf-Profil: 139 geänderte Dateien, nichts neu,
 > nichts entfernt; danach alle 36 Pfade aus `handbookPages.ts` mit 200. Zwei Dinge für das nächste
-> Mal: Der x86_64-Flatpak brauchte diesmal rund 30 statt 46 Minuten, weil flatpak-builder das
+> Mal: Der x86_64-Flatpak brauchte diesmal rund 35 statt 46 Minuten, weil flatpak-builder das
 > git-Modul aus dem Cache des vorigen Baus nahm — die meiste Zeit war `flatpak build-bundle`. Und
 > ein lokaler Klon von `quartzcontrol-templates` existiert nicht; `latest.json` geht über einen
 > Wegwerf-Klon (`gh repo clone`).

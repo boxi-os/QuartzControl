@@ -578,10 +578,13 @@ export function writeStyleFile(projectPath: string, relativePath: string, conten
   return whileHoldingStyles(projectPath, () => writeStyleFileNow(projectPath, relativePath, content))
 }
 
+// Atomic like custom.scss: the dev server imports this file on its own schedule, and a plain
+// writeFile truncates first, so a rebuild in between read a torso. It was the one stylesheet
+// writer under the lock that was not atomic (thirty-eighth review, "nebenbei").
 async function writeStyleFileNow(projectPath: string, relativePath: string, content: string): Promise<void> {
   const path = styleFilePath(projectPath, relativePath)
   mkdirSync(dirname(path), { recursive: true })
-  await writeFile(path, content, 'utf-8')
+  await writeFileAtomic(path, content)
 }
 
 export function createStyleFile(projectPath: string, name: string): Promise<StyleFile> {

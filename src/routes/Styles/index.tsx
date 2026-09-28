@@ -303,8 +303,17 @@ export default function Styles(): JSX.Element {
         result.changed &&
           result.ownFamilies.length > 0 &&
           t('styles.googleFontsOwn', { families: result.ownFamilies.join(', '), count: result.ownFamilies.length }),
+        result.changed &&
+          result.coveredFamilies.length > 0 &&
+          t('styles.googleFontsCovered', { families: result.coveredFamilies.join(', '), count: result.coveredFamilies.length }),
         result.removedFamilies.length > 0 &&
           t('styles.googleFontsRemoved', { families: result.removedFamilies.join(', '), count: result.removedFiles.length }),
+        // Files go without a family going too: a family whose rules the project now brings itself,
+        // or a subset the own rules cover. Unsaid, 23 files left gui-test under a sentence that
+        // named only the families (thirty-eighth review, finding 1).
+        result.removedFamilies.length === 0 &&
+          result.removedFiles.length > 0 &&
+          t('styles.googleFontsFilesRemoved', { count: result.removedFiles.length }),
         result.missingFamilies.length > 0 &&
           t('styles.googleFontsMissing', { families: result.missingFamilies.join(', '), count: result.missingFamilies.length })
       ].filter((note): note is string => typeof note === 'string')

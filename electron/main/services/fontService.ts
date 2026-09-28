@@ -2,6 +2,7 @@ import { net } from 'electron'
 import { existsSync, mkdirSync, statSync } from 'fs'
 import { copyFile, mkdir, readFile, rename, rm, stat, writeFile } from 'fs/promises'
 import { basename, dirname, extname, join } from 'path'
+import { createHash } from 'crypto'
 import type { UnusedImportedFont } from '@shared/ipc-contract'
 import { googleFontRequest, googleFontsCss2Url } from '@shared/googleFontRequest'
 import { mainT } from '../i18n'
@@ -12,6 +13,7 @@ import {
   getManagedBlock,
   joinUniqueRules,
   parseFontFaces,
+  type ParsedFace,
   projectFontsDir,
   allStylesheets,
   readCustomScss,
@@ -388,19 +390,33 @@ async function fetchGoogleFontsNow(
   removedFamilies: string[]
   missingFamilies: string[]
   ownFamilies: string[]
+  coveredFamilies: string[]
 }> {
   if (!googleFontsCss2Url(typography)) throw new Error(mainT('googleFontsNoFamily'))
   const current = (await readCustomScss(projectPath)).content
-  // A family the project declares itself - an imported font, the 'fonts' block a template brings -
-  // is not asked of Google. Asked anyway, the same family stood in custom.scss twice: the Basis
-  // template's three Noto Sans rules in 'fonts' and Google's 54 in this block, with a second set
-  // of files under quartz/static/fonts (gui-test, 1.0.0). Same question as notDelivered() asks.
-  const own = ownFamilies(current)
+  // What the project declares itself - an imported font, the 'fonts' block a template brings - is
+  // not asked of Google a second time. Asked anyway, the same family stood in custom.scss twice:
+  // the Basis template's three Noto Sans rules in 'fonts' and Google's 54 in this block, with a
+  // second set of files under quartz/static/fonts (gui-test, 1.0.0).
+  //
+  // But "declares the family" is not "covers what Google would have sent". The Basis template's
+  // rules are Latin only, on purpose, and leaving the whole family out took Cyrillic, Greek and
+  // Vietnamese off a site whose owner had chosen all seven subsets - 54 rules and 23 files, at the
+  // build door, without a word (thirty-eighth review, finding 1). So two steps: a family with an
+  // own rule *without* unicode-range covers everything and is not asked at all (an imported font);
+  // any other family is asked, and out of the answer go only the rules an own rule already covers
+  // - same style, weight inside its range, characters inside its unicode-range (coveredByOwn).
+  //
+  // custom.scss only, like notDelivered(), while unusedImportedFonts reads every stylesheet: a
+  // family declared in quartz/styles/custom/*.scss is still fetched. That is the safe side - one
+  // fetch too many costs duplicate files, one too few costs the site its characters.
+  const ownFaces = parseFontFaces(stripManagedBlock(current, GOOGLE_MARKER))
+  const own = new Set(ownFaces.map((face) => face.family.toLowerCase()))
   const ownFamiliesAsked: string[] = []
   const wanted: Record<string, unknown> = { ...typography }
   for (const role of TYPOGRAPHY_ROLES) {
     const family = googleFontRequest(role, typography[role])?.family.trim()
-    if (family && own.has(family.toLowerCase())) {
+    if (family && ownFaces.some((face) => face.family.toLowerCase() === family.toLowerCase() && !face.unicodeRange)) {
       delete wanted[role]
       if (!ownFamiliesAsked.includes(family)) ownFamiliesAsked.push(family)
     }
@@ -411,7 +427,7 @@ async function fetchGoogleFontsNow(
   // Google fonts (the build door asks for it), and a later font chosen from Google fills it again.
   if (!request) {
     if (before !== null && before.trim() === NOTHING_FROM_GOOGLE) {
-      return { changed: false, files: [], removedFiles: [], removedFamilies: [], missingFamilies: [], ownFamilies: ownFamiliesAsked }
+      return { changed: false, files: [], removedFiles: [], removedFamilies: [], missingFamilies: [], ownFamilies: ownFamiliesAsked, coveredFamilies: [] }
     }
     const info = await readCustomScss(projectPath)
     const previous = getManagedBlock(info.content, GOOGLE_MARKER) ?? ''
@@ -422,17 +438,27 @@ async function fetchGoogleFontsNow(
       removedFiles: await deleteUnreferencedFontFiles(projectPath, previous),
       removedFamilies: familiesOf(previous).filter((f) => !own.has(f.toLowerCase())),
       missingFamilies: [],
-      ownFamilies: ownFamiliesAsked
+      ownFamilies: ownFamiliesAsked,
+      coveredFamilies: []
     }
   }
-  if (before && requestOf(before) === request && allFilesPresent(projectPath, before)) {
+  // The own rules that can leave something out of the answer, as a short fingerprint in the
+  // block's head: when they change, the same request has a different answer, and a block written
+  // before this rule existed (1.0.0, with the duplicate Latin rules) has none.
+  const askedFamilies = new Set(
+    TYPOGRAPHY_ROLES.map((role) => googleFontRequest(role, wanted[role])?.family.trim().toLowerCase()).filter(Boolean)
+  )
+  const relevantOwn = ownFaces.filter((face) => askedFamilies.has(face.family.toLowerCase()))
+  const ownPrint = ownRulesPrint(relevantOwn)
+  if (before && requestOf(before) === request && ownPrintOf(before) === ownPrint && allFilesPresent(projectPath, before)) {
     return {
       changed: false,
       files: [],
       removedFiles: [],
       removedFamilies: [],
       missingFamilies: notDelivered(typography, before, current),
-      ownFamilies: ownFamiliesAsked
+      ownFamilies: ownFamiliesAsked,
+      coveredFamilies: []
     }
   }
 
@@ -449,8 +475,19 @@ async function fetchGoogleFontsNow(
     throw new Error(mainT(cssSignal.aborted ? 'googleFontsTimedOut' : 'googleFontsUnreachable'))
   })
 
+  if ([...css.matchAll(GSTATIC_URL)].length === 0) throw new Error(mainT('googleFontsNothingFound'))
+  // Out of the answer: every rule an own rule covers. Before the downloads, so its file is not
+  // fetched either.
+  const coveredFamilies: string[] = []
+  const answer = css.replace(GOOGLE_RULE, (rule) => {
+    const face = parseFontFaces(rule)[0]
+    if (!face || !coveredByOwn(face, relevantOwn)) return rule
+    if (!coveredFamilies.includes(face.family)) coveredFamilies.push(face.family)
+    return ''
+  })
+
   const urls = new Map<string, string>()
-  for (const match of css.matchAll(GSTATIC_URL)) {
+  for (const match of answer.matchAll(GSTATIC_URL)) {
     const name = decodeURIComponent(match[1].split('/').pop() ?? '')
     // A name this cannot use is an error, not something to walk past. Skipped, its rule kept the
     // https://fonts.gstatic.com address: the site that "serves locally" loaded from Google, and
@@ -459,7 +496,6 @@ async function fetchGoogleFontsNow(
     if (!FONT_FILE_NAME.test(name)) throw new Error(mainT('googleFontsBadFileName', { name: name.slice(0, 80) }))
     urls.set(match[1], name)
   }
-  if (urls.size === 0) throw new Error(mainT('googleFontsNothingFound'))
   if (urls.size > MAX_FONT_FILES) throw new Error(mainT('googleFontsTooManyFiles', { count: urls.size, max: MAX_FONT_FILES }))
 
   const dir = projectFontsDir(projectPath)
@@ -486,9 +522,10 @@ async function fetchGoogleFontsNow(
     throw error
   }
 
-  let body = css
+  let body = answer
   for (const [url, name] of urls) body = body.split(url).join(`static/fonts/${name}`)
-  const block = `/* ${request} */\n${body.trim()}`
+  const head = ownPrint ? `/* ${request} */\n/* ${OWN_RULES_NOTE} ${ownPrint} */` : `/* ${request} */`
+  const block = body.trim() ? `${head}\n${body.trim()}` : head
   // Read again: the downloads took a while, and custom.scss may have been written meanwhile.
   const info = await readCustomScss(projectPath)
   const previous = getManagedBlock(info.content, GOOGLE_MARKER) ?? ''
@@ -504,7 +541,8 @@ async function fetchGoogleFontsNow(
     removedFiles: await deleteUnreferencedFontFiles(projectPath, previous),
     removedFamilies: familiesOf(previous).filter((f) => !kept.has(f.toLowerCase())),
     missingFamilies: notDelivered(typography, block, info.content),
-    ownFamilies: ownFamiliesAsked
+    ownFamilies: ownFamiliesAsked,
+    coveredFamilies
   }
 }
 
@@ -512,9 +550,80 @@ const TYPOGRAPHY_ROLES = ['header', 'body', 'code', 'title'] as const
 // The body of the block when every family the typography names is declared by the project itself.
 const NOTHING_FROM_GOOGLE = '/* QuartzControl: every family is declared by the project itself, nothing is fetched from Google */'
 
-/** Lower-cased families custom.scss declares outside the Google block. */
-function ownFamilies(wholeCss: string): Set<string> {
-  return new Set(familiesOf(stripManagedBlock(wholeCss, GOOGLE_MARKER)).map((f) => f.toLowerCase()))
+// One @font-face of Google's answer with the comment Google puts above it (`/* cyrillic-ext */`).
+const GOOGLE_RULE = /(?:\/\*[^*]*\*\/\s*)?@font-face\s*\{[^}]*\}\s*/g
+const OWN_RULES_NOTE = 'QuartzControl: left out what the project\'s own rules cover'
+
+function ownRulesPrint(faces: ParsedFace[]): string {
+  if (faces.length === 0) return ''
+  const rows = faces.map((f) => [f.family.toLowerCase(), f.style.toLowerCase(), f.weight, f.unicodeRange ?? ''].join('|')).sort()
+  return createHash('sha1').update(rows.join('\n')).digest('hex').slice(0, 12)
+}
+
+function ownPrintOf(body: string): string {
+  return /left out what the project's own rules cover ([0-9a-f]+)/.exec(body)?.[1] ?? ''
+}
+
+/**
+ * Whether the project's own rules already cover a rule of Google's answer: same family and style,
+ * its weight inside theirs, its characters inside the union of their unicode-ranges. Only a yes
+ * leaves something out, so every doubt - an unparsable range, a weight keyword - keeps the rule.
+ */
+function coveredByOwn(face: ParsedFace, ownFaces: ParsedFace[]): boolean {
+  const weight = weightRange(face.weight)
+  const chars = unicodeIntervals(face.unicodeRange)
+  if (!weight || chars === undefined) return false
+  const matching = ownFaces.filter((own) => {
+    const ownWeight = weightRange(own.weight)
+    return (
+      own.family.toLowerCase() === face.family.toLowerCase() &&
+      own.style.toLowerCase() === face.style.toLowerCase() &&
+      ownWeight !== undefined &&
+      ownWeight[0] <= weight[0] &&
+      weight[1] <= ownWeight[1]
+    )
+  })
+  const union: Array<[number, number]> = []
+  for (const own of matching) {
+    const ranges = unicodeIntervals(own.unicodeRange)
+    if (ranges === null) return true
+    if (ranges) union.push(...ranges)
+  }
+  if (chars === null) return false
+  return coveredByUnion(chars, union)
+}
+
+// The inner intervals against the merged outer ones - Google's Latin range is one list, the
+// template's another, and a character may be covered by two adjacent entries together.
+function coveredByUnion(inner: Array<[number, number]>, outer: Array<[number, number]>): boolean {
+  const merged: Array<[number, number]> = []
+  for (const [a, b] of [...outer].sort((x, y) => x[0] - y[0])) {
+    const last = merged[merged.length - 1]
+    if (last && a <= last[1] + 1) last[1] = Math.max(last[1], b)
+    else merged.push([a, b])
+  }
+  return inner.every(([lo, hi]) => merged.some(([a, b]) => a <= lo && hi <= b))
+}
+
+/** `null` for a rule without unicode-range (it covers everything), `undefined` if unreadable. */
+function unicodeIntervals(range: string | undefined): Array<[number, number]> | null | undefined {
+  if (range === undefined) return null
+  const out: Array<[number, number]> = []
+  for (const token of range.split(',')) {
+    const match = /^\s*U\+([0-9A-F?]{1,6})(?:-([0-9A-F]{1,6}))?\s*$/i.exec(token)
+    if (!match) return undefined
+    const lo = parseInt(match[1].replace(/\?/g, '0'), 16)
+    const hi = match[2] ? parseInt(match[2], 16) : parseInt(match[1].replace(/\?/g, 'F'), 16)
+    out.push([lo, hi])
+  }
+  return out
+}
+
+function weightRange(weight: string): [number, number] | undefined {
+  const named: Record<string, number> = { normal: 400, bold: 700 }
+  const values = weight.trim().split(/\s+/).map((w) => named[w.toLowerCase()] ?? Number(w))
+  if (values.length === 0 || values.length > 2 || values.some((v) => !Number.isFinite(v))) return undefined
+  return [values[0], values[values.length - 1]]
 }
 
 function familiesOf(css: string): string[] {
@@ -578,11 +687,17 @@ export async function refreshGoogleFonts(projectPath: string): Promise<{ failed:
     const config = await readConfig(projectPath)
     if (config.theme.fontOrigin !== 'local') return null
     const result = await fetchGoogleFonts(projectPath, (config.theme.typography ?? {}) as Record<string, unknown>)
-    // No sentence for a block emptied because the project declares every family itself: nothing
-    // was fetched, and "0 files" would say the opposite of what happened.
-    return result.changed && result.files.length > 0
-      ? { failed: false, text: mainT('googleFontsRefreshed', { count: result.files.length }) }
-      : null
+    if (!result.changed) return null
+    // A run that deletes says so, also when it fetched nothing: the first build after 1.0.1 took
+    // 54 rules and 23 files off gui-test and the log was silent, because the one sentence here
+    // was "fetched n files" and n was 0 (thirty-eighth review, finding 1).
+    const own = [...result.ownFamilies, ...result.coveredFamilies.filter((f) => !result.ownFamilies.includes(f))]
+    const sentences = [
+      result.files.length > 0 && mainT('googleFontsRefreshed', { count: result.files.length }),
+      own.length > 0 && mainT('googleFontsRefreshOwn', { families: own.join(', ') }),
+      result.removedFiles.length > 0 && mainT('googleFontsRefreshRemoved', { count: result.removedFiles.length })
+    ].filter((sentence): sentence is string => typeof sentence === 'string')
+    return sentences.length > 0 ? { failed: false, text: sentences.join(' ') } : null
   } catch (error) {
     return { failed: true, text: mainT('googleFontsRefreshFailed', { message: error instanceof Error ? error.message : String(error) }) }
   }

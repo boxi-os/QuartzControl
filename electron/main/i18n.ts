@@ -450,6 +450,9 @@ const STRINGS = {
     googleFontsRefreshFailed:
       'Die Google-Schriften ließen sich nicht ins Projekt holen: {{message}} Gebaut wird mit den Dateien, die schon im Projekt liegen.',
     googleFontsRefreshed: 'Die gewählten Google-Schriften wurden ins Projekt geholt ({{count}} Dateien).',
+    googleFontsRefreshOwn:
+      'Das Projekt bindet {{families}} selbst ein; was seine eigenen Regeln abdecken, holt die App nicht bei Google.',
+    googleFontsRefreshRemoved: 'Schriftdateien, die keine Regel mehr nennt, sind aus dem Projekt entfernt ({{count}} Dateien).',
     fontUrlsMigrated:
       'Die Schriftdateien in custom.scss werden jetzt relativ zum Stylesheet adressiert — so findet sie die Website auch unter einem Unterpfad.'
   },
@@ -768,6 +771,9 @@ const STRINGS = {
     googleFontsRefreshFailed:
       'The Google fonts could not be fetched into the project: {{message}} The build uses the files already in the project.',
     googleFontsRefreshed: 'The selected Google fonts were fetched into the project ({{count}} files).',
+    googleFontsRefreshOwn:
+      'The project includes {{families}} itself; what its own rules cover is not fetched from Google.',
+    googleFontsRefreshRemoved: 'Font files no rule names any more were removed from the project ({{count}} files).',
     fontUrlsMigrated:
       'The font files in custom.scss are now addressed relative to the stylesheet — the site finds them under a sub-path too.'
   }

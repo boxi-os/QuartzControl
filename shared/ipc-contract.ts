@@ -1807,8 +1807,13 @@ export interface QuartzGuiApi {
       removedFamilies: string[]
       /** Families that were asked for and are not in the answer - Google omits an unknown one silently. */
       missingFamilies: string[]
-      /** Families the typography names that custom.scss declares itself; they are not fetched. */
+      /**
+       * Families the typography names that custom.scss declares itself with a rule that has no
+       * unicode-range; they are not fetched.
+       */
       ownFamilies: string[]
+      /** Families of which Google's answer lost rules that the project's own rules already cover. */
+      coveredFamilies: string[]
     }>
     /** Removes the "google-fonts" block and the files of it nothing else names. */
     dropGoogle(input: { projectPath: string }): Promise<{ dropped: boolean; removedFiles: string[]; removedFamilies: string[] }>

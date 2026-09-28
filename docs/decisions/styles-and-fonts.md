@@ -516,6 +516,23 @@ sich selbst wartete, hielte den Import für immer an. Gegengeprüft: Anlegen, Um
 und drei gleichzeitige Schreiber laufen durch, der Vorlagen-Import mit `styles`, `fonts` und
 `cssVariables` ebenso.
 
+**„Das Projekt deklariert die Familie“ ist nicht „es deckt, was Google geschickt hätte“.** Für
+1.0.1 fragte die App eine Familie gar nicht mehr bei Google, sobald `custom.scss` sie außerhalb
+des Google-Blocks deklarierte — gegen die doppelten Regeln, die die Basis-Vorlage neben ihrem
+`fonts`-Block bekam. Deren Regeln sind aber mit Absicht nur Latin, und am 1.0.0-Stand von
+`gui-test` (aus seinem Snapshot-Store) nahm die Bau-Tür damit 54 Regeln und 23 Dateien weg:
+Kyrillisch, Griechisch, Vietnamesisch, die der Nutzer ausdrücklich behalten wollte, und im Log
+kein Wort, weil der einzige Satz „n Dateien geholt“ war und n null (achtunddreißigstes Review,
+Befund 1). Jetzt wird die Familie weiter gefragt, und aus der Antwort fallen nur die Regeln, die
+eine eigene deckt: gleicher Stil, Gewicht innerhalb ihres Bereichs, Zeichen innerhalb der
+Vereinigung ihrer `unicode-range`. Nur eine eigene Regel *ohne* Bereich (eine importierte Schrift)
+nimmt die ganze Familie aus der Anfrage. Ein Abdruck der eigenen Regeln steht im Kopf des Blocks,
+damit dieselbe Anfrage neu gestellt wird, wenn sie sich ändern — und ein Block von vor der Regel
+keinen hat. Gemessen am Bündel gegen das echte Google: 1.0.0-Stand 54 → 47 Google-Regeln (genau
+die sieben Latin-Regeln), 26 → 23 Dateien, die Bau-Tür sagt beides; der Stand des Test-Builds
+(Block leer, 3 Dateien) kommt auf dieselben 47 und 23; ein zweiter Lauf ändert nichts; ohne
+eigene Regeln bleibt der Block byte-gleich und es wird nicht neu geholt.
+
 **Der Editor darf zwischen zwei Ständen nicht durch einen dritten.** `contentOf` liest
 `fileDrafts[tab] ?? loaded[tab]`, und das Speichern leerte die Entwürfe mehrere `await` bevor der
 Reiter `loaded` nachzog: Der Wert ging Entwurf → alter Stand → Entwurf. `@uiw/react-codemirror`

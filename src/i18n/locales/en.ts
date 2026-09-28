@@ -1323,6 +1323,12 @@ export default {
       'Google does not know these fonts and left them out silently: {{families}}. Those slots fall back to a substitute on the site — check the spelling.',
     googleFontsOwn_one: 'Not fetched from Google, because the project already includes this font itself: {{families}}.',
     googleFontsOwn_other: 'Not fetched from Google, because the project already includes these fonts itself: {{families}}.',
+    googleFontsCovered_one:
+      'The project includes part of {{families}} itself; only what its own rules do not cover was fetched from Google.',
+    googleFontsCovered_other:
+      'The project includes part of {{families}} itself; only what its own rules do not cover was fetched from Google.',
+    googleFontsFilesRemoved_one: 'One font file no rule names any more was removed from the project.',
+    googleFontsFilesRemoved_other: '{{count}} font files no rule names any more were removed from the project.',
     googleFontsRemoved_one: 'No longer selected and removed from the project: {{families}} (1 file).',
     googleFontsRemoved_other: 'No longer selected and removed from the project: {{families}} ({{count}} files).',
     googleFontsDropped_one: 'The local copy of the Google fonts was removed (1 file); the website now loads them from Google.',

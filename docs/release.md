@@ -1,6 +1,18 @@
 # Vor einem Release
 
-> **Zuletzt durchlaufen für 1.0.0 am 2026-09-24/25** (Tag `v1.0.0` auf `f98a991`, vom Branch
+> **Zuletzt durchlaufen für 1.0.1 am 2026-09-28** (Tag `v1.0.1` auf `1653dc0`, vom Branch
+> `release/1.0.1` per Fast-Forward; `fix/1.0.1` ebenfalls gepusht). Zehn Pakete, neun auf einer
+> Maschine ihrer Architektur gestartet (macOS x64 nicht), alle mit App-Version 1.0.1, Node 24.18.1,
+> npm 11.17.0 und git 2.53.0. Die Digests der Release-Seite stimmen mit `shasum` über `release/`
+> überein. Veröffentlicht wurde nur die App-Website (die Fixes ändern weder Vorlagen noch
+> Plugin-Handbücher), durch die gebaute App mit Wegwerf-Profil: 139 geänderte Dateien, nichts neu,
+> nichts entfernt; danach alle 36 Pfade aus `handbookPages.ts` mit 200. Zwei Dinge für das nächste
+> Mal: Der x86_64-Flatpak brauchte diesmal rund 30 statt 46 Minuten, weil flatpak-builder das
+> git-Modul aus dem Cache des vorigen Baus nahm — die meiste Zeit war `flatpak build-bundle`. Und
+> ein lokaler Klon von `quartzcontrol-templates` existiert nicht; `latest.json` geht über einen
+> Wegwerf-Klon (`gh repo clone`).
+>
+> Davor **1.0.0 am 2026-09-24/25** (Tag `v1.0.0` auf `f98a991`, vom Branch
 > `release/1.0.0` per Fast-Forward). Zehn Pakete, neun auf einer Maschine ihrer Architektur
 > gestartet (macOS x64 nicht, kein Intel-Mac), alle mit App-Version 1.0.0, Node 24.18.1 und npm
 > 11.17.0 gelesen, git 2.53.0 im macOS-Paket und in beiden Flatpaks. Die Digests der Release-Seite

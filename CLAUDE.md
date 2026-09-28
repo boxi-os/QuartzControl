@@ -249,7 +249,9 @@ Chronik. Die Chronik nachzulesen lohnt für zwei Fragen: *warum* eine Regel so l
 Absatz in `docs/decisions/` sie nicht beantwortet, und *was gerade ungelesen ist* — die Serie ist
 so gebaut, dass jede Runde liest, was die vorige gebaut hat.
 
-**Release:** `1.0.0` ist am 2026-09-25 veröffentlicht (Tag `v1.0.0` auf `f98a991`, Release-Seite
+**Release:** `1.0.1` ist am 2026-09-28 veröffentlicht (Tag `v1.0.1` auf `1653dc0`, zehn Pakete,
+`latest.json`, die App-Website) — die Fehlerbehebung nach 1.0.0 samt den Fixes des
+achtunddreißigsten Reviews. Davor `1.0.0` am 2026-09-25 (Tag `v1.0.0` auf `f98a991`, Release-Seite
 mit zehn Paketen, `latest.json`, die App-Website, die drei Plugin-Handbücher und die
 Example-Website); Ablauf und Funde oben in [`docs/release.md`](docs/release.md). Davor
 `1.0.0-rc.1` am 2026-09-21.
@@ -259,7 +261,7 @@ Example-Website); Ablauf und Funde oben in [`docs/release.md`](docs/release.md).
 Fehlerbehebung für 1.0.1 auf `fix/1.0.1`. Die Google-Schriften holen jetzt, was die eigenen Regeln
 eines Projekts nicht decken, statt die ganze Familie auszulassen; „In beiden Modi gleich“ tut, was
 es sagt; das Schloss der Stylesheets sagt, wo es endet, und die Bau-Tür hält es selbst. Neun Commits
-auf `fix/1.0.1`, nicht gepusht, 1.0.1 noch nicht veröffentlicht; was daraus geworden ist, steht am
+auf `fix/1.0.1`, mit 1.0.1 am 2026-09-28 veröffentlicht; was daraus geworden ist, steht am
 Ende von [`docs/reviews.md`](docs/reviews.md). **Keinen dieser Fixes hat ein Review gelesen.**
 
 Das siebenunddreißigste Review ist abgearbeitet (gelesen 2026-09-24,

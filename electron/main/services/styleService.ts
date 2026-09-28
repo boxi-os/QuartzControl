@@ -143,13 +143,27 @@ function findManagedBlock(content: string, markerId: string, names: readonly str
   return null
 }
 
+// Every copy under one name, not just the first. Two copies under the *same* name come from two
+// machines that each appended the section and a merge that kept both - and reading the first only
+// left the second out of the page and in the file, where it stood later and won: measured (1.0.1)
+// with two css-vars blocks, the page read one variable of two, and after a save the site still
+// showed the old value of the other one.
+function managedCopies(content: string, markerId: string, name: string): ManagedSpan[] {
+  const spans: ManagedSpan[] = []
+  let from = 0
+  for (;;) {
+    const span = findManagedBlock(content.slice(from), markerId, [name])
+    if (!span) return spans
+    spans.push({ from: from + span.from, to: from + span.to, body: span.body })
+    from += span.to
+  }
+}
+
 // Every copy of a section, in the order they stand in the file. A copy nested inside another is
 // part of that one's body rather than a copy of its own - which is where beta.2 puts its imports
 // block when ours is there (see MARKER_NAMES), and reading through it is what lists the files.
 function findManagedBlocks(content: string, markerId: string): ManagedSpan[] {
-  const spans = MARKER_NAMES.map((name) => findManagedBlock(content, markerId, [name])).filter(
-    (span): span is ManagedSpan => span !== null
-  )
+  const spans = MARKER_NAMES.flatMap((name) => managedCopies(content, markerId, name))
   return spans
     .filter((span) => !spans.some((other) => other !== span && other.from < span.from && span.to <= other.to))
     .sort((a, b) => a.from - b.from)
@@ -190,8 +204,9 @@ function renameLegacyMarkers(content: string): string {
       if (!findManagedBlock(next, id, [name]) || findManagedBlock(next, id, [current])) continue
       const old = managedBlockMarkers(id, name)
       const renamed = managedBlockMarkers(id, current)
-      next = next.replace(old.start, renamed.start)
-      next = next.replace(old.end, renamed.end)
+      // Every copy, not the first: see managedCopies.
+      next = next.replaceAll(old.start, renamed.start)
+      next = next.replaceAll(old.end, renamed.end)
     }
   }
   return next
@@ -674,9 +689,7 @@ export async function checkStyles(projectPath: string): Promise<ScssCheckResult>
 
 // Whether one copy of a section stands inside another - the shape findManagedBlocks reads through.
 function hasNestedManagedCopy(content: string, markerId: string): boolean {
-  const spans = MARKER_NAMES.map((name) => findManagedBlock(content, markerId, [name])).filter(
-    (span): span is ManagedSpan => span !== null
-  )
+  const spans = MARKER_NAMES.flatMap((name) => managedCopies(content, markerId, name))
   return spans.some((span) => spans.some((other) => other !== span && other.from < span.from && span.to <= other.to))
 }
 

@@ -211,7 +211,13 @@ Projektwurzel.
   Schreiber von `custom.scss` lasen die Datei, änderten ihren Abschnitt und schrieben alles
   zurück, am Schloss vorbei — ein Schriftabruf dazwischen war danach weg, oder umgekehrt
   (gemessen für 1.0.1: 44 von 300 Läufen verloren die Variable, 27 den Google-Block). Weil sich
-  die Schreiber gegenseitig rufen, ist es wiedereintrittsfähig. Messungen in
+  die Schreiber gegenseitig rufen, ist es wiedereintrittsfähig. **Wo es endet, steht am Schloss:**
+  Es gilt für die Schreiber der beiden Dienste und die drei Teile des Imports, nicht für die vier
+  Wege, die die Datei als Teil eines Repositorys schreiben (Restore, `quartz sync --pull`,
+  Core-Update, der Editor des Nutzers), und nicht für einen Entwurf, der älter ist als die Datei —
+  den deckt das Band auf dem CSS-Reiter. Und unter dem Schloss stößt nichts etwas an, das es
+  überlebt: Ein Timer, der nach der Freigabe feuert, erbt den Wiedereintritt und läuft am nächsten
+  Wartenden vorbei (achtunddreißigstes Review, Befund 3 und Abwägung 1). Messungen in
   [`styles-and-fonts.md`](decisions/styles-and-fonts.md).
 - **Ein Vorgang, der ein Repository schreibt, wird im Hauptprozess gesperrt, nicht im Renderer.**
   `coreBusy` war ein `useState`: das Gedächtnis eines Fensters an das, was es selbst gestartet hat,

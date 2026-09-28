@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ExternalLink, RefreshCw, ServerCog } from 'lucide-react'
 import type { DiscoveredServer, ServerDiscovery } from '@shared/ipc-contract'
@@ -32,15 +32,23 @@ export function DiscoveredServers({ ports, onChanged }: { ports: number[]; onCha
   // on every render - joined, so a re-render with the same two ports does not rescan.
   const portKey = ports.join(',')
 
+  // Only the latest scan writes. A stop starts two - at once and a second later - and one that
+  // runs into the half-dead child's port waits up to 1.5 s in probeHttp, so it can end after the
+  // later one and put the server back into a list that had just lost it (thirty-eighth review,
+  // finding 6; not hit on this machine, where the first scan takes 35 ms).
+  const latestScan = useRef(0)
   const scan = useCallback(async () => {
+    const mine = ++latestScan.current
     setScanning(true)
     try {
-      setDiscovery(await window.quartzGui.server.discover({ ports: portKey ? portKey.split(',').map(Number) : [] }))
+      const found = await window.quartzGui.server.discover({ ports: portKey ? portKey.split(',').map(Number) : [] })
+      if (mine !== latestScan.current) return
+      setDiscovery(found)
       setError(null)
     } catch (err) {
-      setError(formatIpcError(err))
+      if (mine === latestScan.current) setError(formatIpcError(err))
     } finally {
-      setScanning(false)
+      if (mine === latestScan.current) setScanning(false)
     }
   }, [portKey])
 

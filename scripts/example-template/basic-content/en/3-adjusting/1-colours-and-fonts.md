@@ -23,7 +23,8 @@ keeps them, “Template wins” resets all five rows to the template's state.
 ## Two groups in the variables tab worth knowing
 
 **The side columns.** Whether a column stays put while the page scrolls is decided by three
-variables per column, and they belong together — whoever switches one switches all three:
+variables per column, and they belong together — whoever switches the right one switches all
+three:
 
 | Variable                  | stays put                                                      | scrolls along |
 | ------------------------- | -------------------------------------------------------------- | ------------- |
@@ -34,6 +35,10 @@ variables per column, and they belong together — whoever switches one switches
 `…` stands for `left` or `right`. Default: the right one stays put, the left one scrolls along. A
 half state looks like a bug — a column that stops in the middle of the text and scrolls inside
 itself.
+
+On the left, the position is enough: when `--tpl-col-left-position` is `sticky` and height and mask
+are still `none`, the template fills in the two values itself. A height of your own stays. The page
+keeps scrolling even with the pointer over the navigation.
 
 **The callout colours** (`--tpl-callout-…`) are measured, not chosen: each holds 4.5:1 on the page
 ground and on the tinted surface of its box. Whoever changes one can put it below that threshold,

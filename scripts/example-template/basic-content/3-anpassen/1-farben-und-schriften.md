@@ -23,7 +23,7 @@ Vorlage zurück.
 ## Zwei Gruppen im Variablen-Tab, die man kennen sollte
 
 **Die Seitenspalten.** Ob eine Spalte beim Rollen stehen bleibt, entscheiden drei Variablen je
-Spalte, und sie gehören zusammen — wer umstellt, stellt alle drei um:
+Spalte, und sie gehören zusammen — wer die rechte umstellt, stellt alle drei um:
 
 | Variable                  | stehen bleiben                                                 | mitlaufen |
 | ------------------------- | -------------------------------------------------------------- | --------- |
@@ -34,6 +34,10 @@ Spalte, und sie gehören zusammen — wer umstellt, stellt alle drei um:
 Für `…` steht `left` oder `right`. Vorgabe: rechts bleibt stehen, links läuft mit. Ein halber
 Zustand sieht aus wie ein Fehler — eine Spalte, die mitten im Text aufhört und in sich selbst
 rollt.
+
+Links genügt die Position: Steht `--tpl-col-left-position` auf `sticky` und stehen Höhe und Maske
+noch auf `none`, setzt die Vorlage die zwei Werte selbst ein. Eine eigene Höhe bleibt. Die Seite
+rollt auch dann weiter, wenn der Mauszeiger über der Navigation steht.
 
 **Die Callout-Farben** (`--tpl-callout-…`) sind gemessen, nicht gewählt: Jede hält 4,5:1 auf dem
 Seitengrund und auf der getönten Fläche ihres Kastens. Wer eine ändert, kann sie unter diese

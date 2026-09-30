@@ -268,7 +268,9 @@ export const VARIABLE_OVERRIDES = [
      Die Vorgaben sind der Stand vom 2026-09-20 und ändern nichts: rechts bleibt stehen, links
      nicht. Wer eine Spalte umstellt, stellt alle drei ihrer Zeilen um — ein halber Zustand ist
      möglich und sieht aus wie ein Fehler: `static` mit Höhendeckel ist eine Spalte, die mitten im
-     Text aufhört und in sich selbst rollt.
+     Text aufhört und in sich selbst rollt. Für die linke Spalte gilt seit dem 2026-09-30 eine
+     Ausnahme: Steht nur die Position auf `sticky` und Höhe und Maske auf `none`, setzt base.scss
+     die Werte der rechten Spalte selbst ein (Style-Query, in Engines ohne sie wie vorher).
 
      **Die Höhe der linken Spalte ist der Grund, das nicht leichtfertig umzulegen.** Gemessen bei
      900px Fensterhöhe: Der Example hat links 1637px mit offenem Kapitel und 2555px auf der

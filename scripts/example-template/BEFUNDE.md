@@ -2097,3 +2097,31 @@ kannte die Navigation nicht (3); zwei Löschstellen hingen an keinem Pfad (4, 6)
 war nie leer (5); ein Import ließ alte Schriftdateien liegen (7); `--check-sync` prüfte ohne Wort
 nichts (8); die Suche lag unter dem Graphen (9a). Alles in `docs/REVIEW-2026-10-09.md` und den
 Commits danach.
+
+### 98. Kein Kasten in der Seite hält das Rad fest — behoben am 2026-09-30
+
+Gemeldet an gui-test: Steht die Maus über der Navigation, rollt die Seite nicht, auch wenn die
+linke Spalte `static` ist; und wer die Spalte auf `sticky` stellt, erreicht in der aufgeklappten
+Navigation nie ihr Ende.
+
+- **`overscroll-behavior: contain` wirkt auch ohne Überlauf.** Chrome gibt das Rad von einem
+  Rollcontainer mit `contain` nie an die Seite weiter, auch wenn er gar nicht rollen kann. Die
+  linke Spalte (447 px, kein Überlauf) hielt vier Raddrehungen fest, die rechte (139 px) ebenso;
+  mit `auto` rollte die Seite. Dasselbe traf die Ordnerliste des Explorers (das Plugin setzt
+  `contain` selbst, die Vorlage setzt jetzt ausdrücklich `auto`), die Spalten des Bases-Boards und
+  die Rückverweise (Plugin, 313 px in 306 — sieben Pixel, dann stand das Rad). `contain` bleibt nur,
+  wo ein Kasten *über* der Seite liegt: die Schublade und Quartz' Link-Vorschau. Das
+  Inhaltsverzeichnis ist durch `overflow: visible` kein Rollcontainer.
+- **`sticky` allein war ein halber Zustand.** Ohne Höhendeckel läuft die Spalte nicht über, also
+  rollt sie nicht; aufgeklappt stand ihre Unterkante bei 946 px in einem 800-px-Fenster. Die linke
+  Spalte leitet Deckel und Kante jetzt per Style-Query aus der Position ab, solange Höhe bzw.
+  Maske auf `none` stehen (`base.scss`). Eine eigene Höhe bleibt.
+
+Gemessen an der gebauten gui-test-Website mit den neu kompilierten Stylesheets darüber, in Chrome
+und WebKit, 1400×800; Explorer und Bases-Board als eingesetzte Elemente, weil beide in gui-test
+fehlen. Firefox 155 (Playwrights Build in der aarch64-VM, dieselbe Website und dieselben
+Stylesheets) hatte den ersten Fehler nie — dort hält `contain` nur einen Kasten fest, der wirklich
+rollt, wie es die Spezifikation meint — und versteht die Style-Query: `sticky` allein ergibt
+683 px Deckel und Kante wie in Chrome und WebKit. Was dort anders aussieht, ist Firefox' eigene
+Wheel-Transaktion: Eine Folge von Raddrehungen, die in der Spalte beginnt, bleibt an ihr, bis eine
+Pause kommt; danach rollt die Seite. Ein nackter Rollkasten ohne diese Vorlage tut dasselbe.

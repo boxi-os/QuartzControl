@@ -200,9 +200,15 @@ html {
 // height cap is a box that scrolls inside a page that scrolls. That is why the tablet number is in
 // this file now as well.
 @media (min-width: 901px) {
+  // Kein `overscroll-behavior: contain` an einem Kasten, der in der Seite steht — nicht hier, nicht
+  // an den Spalten, nicht am Bases-Board. Chrome gibt das Rad von einem Rollcontainer mit
+  // `contain` nie an die Seite weiter, auch wenn er gar nicht überläuft: Über einer kurzen
+  // Ordnerliste stand die Seite still. Gemessen am 2026-09-30, siehe `.qgframe-area-left` unten.
+  // `contain` bleibt nur, wo ein Kasten *über* der Seite liegt: die Schublade (nav-explorer.scss)
+  // und Quartz' Link-Vorschau.
   ul.explorer-ul {
     overflow-y: auto;
-    overscroll-behavior: contain;
+    overscroll-behavior: auto;
     mask-image: var(--tpl-fade-mask);
     -webkit-mask-image: var(--tpl-fade-mask);
 
@@ -226,8 +232,8 @@ html {
       // nichts über, und dann rollt auch nichts.
       // Beschnitten wird trotzdem, an der Polsterkante - warum das den Fokusring trifft und wie die
       // Kante nach außen rückt, steht bei `.qgframe-area-left` weiter unten.
+      // Kein `overscroll-behavior: contain`, siehe `.qgframe-area-left` weiter unten.
       overflow-y: auto;
-      overscroll-behavior: contain;
       mask-image: var(--tpl-col-right-mask);
       -webkit-mask-image: var(--tpl-col-right-mask);
       padding-block: var(--tpl-fade);
@@ -959,11 +965,41 @@ h6 {
     padding-inline: var(--col-ring-reach);
     max-height: var(--tpl-col-left-height);
     // Wie rechts: ohne Deckel läuft nichts über, also rollt ohne ihn auch nichts.
+    //
+    // Hier stand bis 1.0.1 `overscroll-behavior: contain`, und das ist nicht „wirkt erst, wenn die
+    // Spalte rollt“: Chrome gibt das Rad von einem Rollcontainer mit `contain` nie an die Seite
+    // weiter, auch wenn er gar nicht überläuft. Gemessen am 2026-09-30 in gui-test, 1400x800:
+    // Spalte 447px ohne Überlauf, vier Raddrehungen über der Navigation, Seite bei 0 — mit `auto`
+    // bei 1600, rechts genauso (139px ohne Überlauf, 0 gegen 1200). Ohne `contain` rollt eine
+    // Spalte mit Deckel erst sich selbst und am Ende die Seite weiter, wie jeder andere Kasten.
     overflow-y: auto;
-    overscroll-behavior: contain;
     mask-image: var(--tpl-col-left-mask);
     -webkit-mask-image: var(--tpl-col-left-mask);
     padding-block: var(--col-ring-reach) var(--tpl-fade);
+  }
+
+  // Wer nur die Position auf `sticky` stellt, bekommt Deckel und Kante mit. Gemessen am
+  // 2026-09-30 in gui-test, das genau das getan hatte: Die aufgeklappte Navigation war 829px
+  // hoch, ihre Unterkante stand bei 946px in einem Fenster von 800 — eine Spalte ohne Deckel
+  // läuft nicht über, rollt also nicht, und was unter dem Fensterrand liegt, erreicht man nie.
+  // Ein halber Zustand, der wie ein Fehler aussieht, und der naheliegende Handgriff führt hinein.
+  //
+  // Die Style-Query fragt den Elternknoten, der die Variablen von `:root` erbt. Sie greift nur,
+  // solange Höhe bzw. Maske auf ihrer Vorgabe `none` stehen: Wer eine eigene Höhe setzt, behält
+  // sie. Die Werte sind die der rechten Spalte. Gemessen in Chrome, WebKit und Firefox 155; eine
+  // ältere Engine ohne Style-Queries für Custom Properties überspringt den Block und verhält sich
+  // wie vorher — dort braucht es weiter alle drei Variablen.
+  @container style(--tpl-col-left-position: sticky) and style(--tpl-col-left-height: none) {
+    .qgframe-area-left {
+      max-height: calc(100dvh - var(--tpl-header-h) - 2 * var(--tpl-space-lg));
+    }
+  }
+
+  @container style(--tpl-col-left-position: sticky) and style(--tpl-col-left-mask: none) {
+    .qgframe-area-left {
+      mask-image: var(--tpl-fade-mask-end);
+      -webkit-mask-image: var(--tpl-fade-mask-end);
+    }
   }
 }
 

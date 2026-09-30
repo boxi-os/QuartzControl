@@ -20,6 +20,13 @@
     font-size: var(--tpl-text-sm);
   }
 
+  // Das Plugin gibt der Liste `overflow-y: auto` und `overscroll-behavior: contain`. Gemessen am
+  // 2026-09-30 in gui-test: 313px Inhalt in 306px — das Rad rollte über der Liste 7px und blieb
+  // dann stehen, die Seite nicht. Begründung bei `ul.explorer-ul` in base.scss.
+  > ul {
+    overscroll-behavior: auto;
+  }
+
   li {
     margin-block: 0;
     border-block-end: var(--tpl-rule-width) solid var(--tpl-rule);

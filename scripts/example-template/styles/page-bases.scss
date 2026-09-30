@@ -325,7 +325,8 @@ a.bases-card {
   // A column with forty cards scrolls on its own rather than stretching the page.
   max-height: 32rem;
   overflow-y: auto;
-  overscroll-behavior: contain;
+  // Kein `contain`: Eine Spalte mit drei Karten läuft nicht über und hielt das Rad trotzdem fest
+  // (Chrome, gemessen am 2026-09-30) — Begründung bei `ul.explorer-ul` in base.scss.
 }
 
 .bases-board-card {

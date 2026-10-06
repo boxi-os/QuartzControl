@@ -274,6 +274,13 @@ export default function GitSync(): JSX.Element {
     window.quartzGui.github.originRepo(project.path).then(setRepo).catch(() => setRepo(null))
   }, [project.path, refreshStatus])
 
+  // All three directions end in `git pull origin` or `git push origin` inside `quartz sync`, so
+  // without an origin each click only produced git's error. Asked of origin, not of a GitHub
+  // account: a remote can live on any host, and an account without one has nowhere to push.
+  // Unknown (status not read yet, or the read failed) leaves the buttons alone - "cannot tell"
+  // is not "no".
+  const noOrigin = status != null && (!status.isRepo || !status.remoteUrl)
+
   // See abortNote in RepoStatus.
   const [noteEpoch, setNoteEpoch] = useState(0)
 
@@ -379,16 +386,21 @@ export default function GitSync(): JSX.Element {
           </p>
         )}
 
-        <div className="mb-4 flex gap-2">
-          <Button onClick={() => run('pull')} disabled={busy !== null}>
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <Button onClick={() => run('pull')} disabled={busy !== null || noOrigin}>
             {busy === 'pull' ? t('gitSync.pullRunning') : t('gitSync.pull')}
           </Button>
-          <Button onClick={() => run('push')} disabled={busy !== null}>
+          <Button onClick={() => run('push')} disabled={busy !== null || noOrigin}>
             {busy === 'push' ? t('gitSync.pushRunning') : t('gitSync.push')}
           </Button>
-          <Button variant="ghost" onClick={() => run('both')} disabled={busy !== null}>
+          <Button variant="ghost" onClick={() => run('both')} disabled={busy !== null || noOrigin}>
             {busy === 'both' ? t('gitSync.bothRunning') : t('gitSync.both')}
           </Button>
+          {noOrigin && (
+            <p className="text-xs text-text-muted">
+              {status.isRepo ? t('gitSync.needsOrigin') : t('gitSync.needsRepo')}
+            </p>
+          )}
         </div>
         {output != null && (
           <div>

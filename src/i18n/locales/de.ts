@@ -518,6 +518,8 @@ export default {
     },
     statusTitle: 'Stand des Repositorys',
     notARepo: 'Dieses Projekt ist kein Git-Repository — Sync ist hier nicht möglich.',
+    needsOrigin: 'Pull und Push brauchen einen „origin“-Remote. Ohne ihn bleibt das Projekt ein lokales Repository.',
+    needsRepo: 'Pull und Push brauchen ein Git-Repository mit einem „origin“-Remote.',
     noRemote: 'Kein „origin“-Remote konfiguriert. Push und Pull haben kein Ziel.',
     detached: 'Kein Branch ausgecheckt',
     detachedHint:

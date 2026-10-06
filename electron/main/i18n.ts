@@ -78,6 +78,9 @@ const STRINGS = {
       'Der Dev-Server schreibt gerade in „{{dir}}“. Beende ihn unter „Vorschau & Build“ oder wähle einen anderen Ausgabeordner.',
     serverWaitsForBuild: 'Es läuft ein Build nach „{{dir}}“. Der Server startet, sobald er fertig ist.',
     serverPortTaken: 'Port {{from}} ist belegt — der Server nimmt {{to}}.',
+    serverWsPortIsHttpPort: 'Port {{from}} nimmt jetzt der Server selbst für die Seite — die automatische Aktualisierung nimmt {{to}}.',
+    serverPortTakenBehindTunnel:
+      'Belegte Ports: {{ports}}. Mit Remote-Dev-Host ({{host}}) weicht der Server nicht auf andere aus, weil der Tunnel genau diese Ports weiterreicht — gib sie frei oder stell in den Server-Einstellungen andere ein.',
     serverAlreadyRunningOutside:
       'Für dieses Projekt läuft schon ein Server, der nicht aus dieser App gestartet wurde (Port {{port}}, Prozess {{pid}}). Ein zweiter würde in denselben Ausgabeordner bauen — die Karte „Laufende Server auf diesem Rechner“ zeigt ihn und kann ihn beenden.',
 
@@ -520,6 +523,9 @@ const STRINGS = {
       'The dev server is writing into “{{dir}}” right now. Stop it under “Preview & build” or pick a different output folder.',
     serverWaitsForBuild: 'A build into “{{dir}}” is running. The server starts as soon as it has finished.',
     serverPortTaken: 'Port {{from}} is in use — the server takes {{to}} instead.',
+    serverWsPortIsHttpPort: 'Port {{from}} is now the server’s own page port — live reload takes {{to}} instead.',
+    serverPortTakenBehindTunnel:
+      'Ports in use: {{ports}}. With a remote dev host ({{host}}) the server does not move to others, because the tunnel forwards exactly these ports — free them or set others in the server settings.',
     serverAlreadyRunningOutside:
       'A server for this project is already running that was not started from this app (port {{port}}, process {{pid}}). A second one would build into the same output folder — the card “Servers running on this machine” shows it and can stop it.',
 

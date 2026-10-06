@@ -415,6 +415,7 @@ export default {
     serverOptions: 'Server settings',
     optionsLocked: 'Stop the server to change these.',
     portsAuto: 'If a port is in use, the server takes the next free one when it starts.',
+    portsFixedBehindTunnel: 'With a remote dev host the server does not move: if a port is in use, it does not start.',
     autoReload: 'reloads automatically',
     startedAgo: 'Started {{since}}',
     exitedWithCode: 'The server exited unexpectedly (code {{code}}).',

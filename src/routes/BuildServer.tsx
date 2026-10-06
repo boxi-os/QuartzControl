@@ -358,7 +358,11 @@ export default function BuildServer(): JSX.Element {
               </Field>
             </div>
             <p className="mt-2 text-xs text-text-muted">
-              {serverActive ? t('buildServer.optionsLocked') : t('buildServer.portsAuto')}
+              {serverActive
+                ? t('buildServer.optionsLocked')
+                : options.host
+                  ? t('buildServer.portsFixedBehindTunnel')
+                  : t('buildServer.portsAuto')}
             </p>
           </div>
         )}

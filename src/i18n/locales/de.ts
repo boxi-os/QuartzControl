@@ -418,6 +418,7 @@ export default {
     serverOptions: 'Server-Einstellungen',
     optionsLocked: 'Zum Ändern zuerst den Server stoppen.',
     portsAuto: 'Ist ein Port belegt, nimmt der Server beim Start den nächsten freien.',
+    portsFixedBehindTunnel: 'Mit Remote-Dev-Host weicht der Server nicht aus: Ist ein Port belegt, startet er nicht.',
     autoReload: 'lädt automatisch neu',
     startedAgo: 'Gestartet {{since}}',
     exitedWithCode: 'Der Server wurde unerwartet beendet (Code {{code}}).',

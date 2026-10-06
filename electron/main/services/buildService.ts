@@ -547,13 +547,37 @@ export async function startServer(
         emitStatus(projectId)
         return getServerStatus(projectId)
       }
+      // Behind a tunnel the two ports are the ones the tunnel forwards, so a server that moves is
+      // one the browser no longer reaches - the page would link :8081 while the tunnel still sends
+      // 8080, and live reload would knock on a port nobody holds. With a remote dev host set the
+      // start therefore refuses instead of moving, as every start did before the port fix
+      // (review 2026-10-13, finding 5).
+      if (options.host) {
+        const busy = [options.port, options.wsPort].filter((port) => portIsTakenBy(projectId, port))
+        for (const port of [options.port, options.wsPort]) {
+          if (!busy.includes(port) && (await portState(port)) === 'taken') busy.push(port)
+        }
+        if (pending.aborted) return getServerStatus(projectId)
+        if (busy.length > 0) {
+          const error = mainT('serverPortTakenBehindTunnel', { ports: busy.join(', '), host: options.host })
+          emitLog(projectId, 'warn', `${error}\n`)
+          lastTerminalStatus.set(projectId, { state: 'error', error })
+          pendingStarts.delete(projectId)
+          emitStatus(projectId)
+          return getServerStatus(projectId)
+        }
+        return spawnServer(projectId, projectPath, status, outputDir)
+      }
       const chosen = await choosePorts(projectId, options)
       if (pending.aborted) return getServerStatus(projectId)
-      for (const [from, to] of [
-        [options.port, chosen.port],
-        [options.wsPort, chosen.wsPort]
-      ]) {
-        if (from !== to) emitLog(projectId, 'stdout', `${mainT('serverPortTaken', { from, to })}\n`)
+      if (options.port !== chosen.port) {
+        emitLog(projectId, 'stdout', `${mainT('serverPortTaken', { from: options.port, to: chosen.port })}\n`)
+      }
+      if (options.wsPort !== chosen.wsPort) {
+        // The http port may have moved onto the very port asked for as the websocket one - then
+        // it is not "in use" by anything else, and saying so sends the user looking for a holder.
+        const key = options.wsPort === chosen.port ? 'serverWsPortIsHttpPort' : 'serverPortTaken'
+        emitLog(projectId, 'stdout', `${mainT(key, { from: options.wsPort, to: chosen.wsPort })}\n`)
       }
       status.options = chosen
       return spawnServer(projectId, projectPath, status, outputDir)
@@ -661,14 +685,23 @@ function inPortQueue<T>(fn: () => Promise<T>): Promise<T> {
   return run
 }
 
-async function choosePorts(projectId: string, requested: ServerOptions): Promise<ServerOptions> {
-  // Our own servers count as taken without asking: one spawned a moment ago may not have bound yet.
+// Our own servers count as taken without asking: one spawned a moment ago may not have bound yet.
+function portsOfOtherServers(projectId: string): Set<number> {
   const taken = new Set<number>()
   for (const [id, entry] of runningServers) {
     if (id === projectId || !entry.status.options) continue
     taken.add(entry.status.options.port)
     taken.add(entry.status.options.wsPort)
   }
+  return taken
+}
+
+function portIsTakenBy(projectId: string, port: number): boolean {
+  return portsOfOtherServers(projectId).has(port)
+}
+
+async function choosePorts(projectId: string, requested: ServerOptions): Promise<ServerOptions> {
+  const taken = portsOfOtherServers(projectId)
   const port = (await nextFreePort(requested.port, taken)) ?? requested.port
   taken.add(port)
   const wsPort = (await nextFreePort(requested.wsPort, taken)) ?? requested.wsPort
@@ -677,7 +710,13 @@ async function choosePorts(projectId: string, requested: ServerOptions): Promise
 
 async function nextFreePort(start: number, taken: Set<number>): Promise<number | null> {
   for (let port = start; port < start + PORT_SEARCH_SPAN && port <= 65535; port++) {
-    if (!taken.has(port) && (await portIsFree(port))) return port
+    if (taken.has(port)) continue
+    const state = await portState(port)
+    if (state === 'free') return port
+    // Not "in use" but unusable - a port below 1024 without the right to bind it (EACCES on
+    // Linux). Moving on would name a holder that does not exist; keeping the requested port lets
+    // the spawn fail with the error the system gave.
+    if (state === 'unusable') return null
   }
   return null
 }
@@ -687,15 +726,22 @@ async function nextFreePort(start: number, taken: Set<number>): Promise<number |
 // under BSD rules that lets the wildcard bind succeed next to a server that holds the same port on
 // 127.0.0.1 alone - the browser, asking for localhost, would then reach the other one. So a port is
 // free only if the bind works and nothing answers on loopback.
-async function portIsFree(port: number): Promise<boolean> {
-  const bindable = await new Promise<boolean>((resolve) => {
+//
+// Only EADDRINUSE means taken; any other bind error (EACCES, EADDRNOTAVAIL) is 'unusable', which is
+// not a reason to move to the next port (review 2026-10-13, finding 5).
+async function portState(port: number): Promise<'free' | 'taken' | 'unusable'> {
+  const bind = await new Promise<'ok' | 'taken' | 'unusable'>((resolve) => {
     const probe = createServer()
-    probe.once('error', () => resolve(false))
-    probe.listen(port, () => probe.close(() => resolve(true)))
+    probe.once('error', (error: NodeJS.ErrnoException) => resolve(error.code === 'EADDRINUSE' ? 'taken' : 'unusable'))
+    probe.listen(port, () => probe.close(() => resolve('ok')))
   })
-  if (!bindable) return false
+  if (bind !== 'ok') return bind
   const answers = await Promise.all(['127.0.0.1', '::1'].map((host) => answersOn(host, port)))
-  return !answers.includes(true)
+  return answers.includes(true) ? 'taken' : 'free'
+}
+
+async function portIsFree(port: number): Promise<boolean> {
+  return (await portState(port)) === 'free'
 }
 
 function answersOn(host: string, port: number): Promise<boolean> {

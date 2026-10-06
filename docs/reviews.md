@@ -2038,3 +2038,44 @@ Kommentar-Commits Typcheck; Build und Smoke liefen mit dem nächsten Code-Commit
   Karte (harmlos) und das Hashen von `icon.png` je Auffrischung (nichts).
 
 **Keinen dieser Fixes hat ein Review gelesen.**
+
+**Nach 1.0.1: die Fehlerbehebung für 1.0.2** (2026-10-06/07, auf `fix/1.0.2`, nicht gepusht):
+vier Befunde des Nutzers — `fb8bb3c` die Variable an der Cursorposition einfügen, `f610bae` ein
+geleertes Plugin-Optionsfeld entfernt den Schlüssel, `827043a` der Dev-Server weicht einem belegten
+Port aus, `ba3ddaa` Git-Sync ohne `origin` gesperrt —, dazu `79f00aa` (der Satz der Server-Karte)
+und `941bfc9` (`docs/plan-1.1.md`).
+
+**Das neununddreißigste Review** ([`REVIEW-2026-10-13.md`](REVIEW-2026-10-13.md), gelesen am
+2026-10-06, `f0886d9..fix/1.0.2` und die neun Fixes des achtunddreißigsten): **vom selben Modell
+wie die gelesenen Commits** (Claude Opus 5.5, in einem eigenen Agenten ohne den Kontext der
+Sitzung) — Fable stand nicht mehr zur Verfügung. 0 Hoch, 2 Mittel, 5 Niedrig. Seine Antwort: nicht
+ganz — Befund 1 ist mit diesem Branch neu und gehört vorher behoben.
+
+Abgearbeitet am 2026-10-07 auf `fix/1.0.2`, je Commit Typcheck, Build und Smoke, je mit Vorher- und
+Nachher-Messung an der gebauten App (APFS-Klone von `gui-test`):
+
+- **1 (Mittel)** `c7f962e` — „Starten“ liest vor der Port-Wahl die Prozessliste und lehnt ab, wenn
+  ein Quartz-Server außerhalb der App dieses Projekt als Arbeitsordner hat; ausgewichen wird nur
+  vor allem anderen. Vorher lief neben einem Terminal-Server auf 8080 ein zweiter auf 8081 im selben
+  `public/`. `conventions.md` sagt jetzt, dass „Starten“ solche Server sieht und „Jetzt bauen“ nicht.
+- **2 (Mittel)** `6d7e106` — der Cursor gilt nur nach einer Transaktion des Nutzers als gesetzt, eine
+  Dokumentänderung ohne Nutzerereignis nimmt das zurück. Vorher landete die Variable nach „Nach
+  unten“ und nach einem Fokus ohne Klick (gemessen, im Review nur gelesen) vor dem ersten `@use`.
+- **3** `6e87bff` — der Nutzer hat entschieden: geleert entfernt weiter; „Leer setzen“ und
+  „Zurücksetzen“ an leeren Textfeldern der Plugin-Optionen, nicht an den Layout-Feldern.
+- **4** `b143afa` — das Formular übernimmt beim Mount nichts mehr; nach Routenwechsel und Stopp
+  fragte der nächste Start den ausgewichenen Port an.
+- **5** `bbcea24` — mit Remote-Dev-Host wird abgelehnt statt ausgewichen; eigene Meldung, wenn der
+  eigene http-Port den gewünschten WebSocket-Port belegt; nur `EADDRINUSE` zählt als belegt
+  (der `EACCES`-Zweig gelesen, nicht gemessen — macOS bindet niedrige Ports ohne Rechte).
+- **6** `0376145` — `getGitStatus` trennt „not a git repository“ (unter `gitTextEnv`, dafür nach
+  `runCommand.ts` gezogen) von jedem anderen Fehler (`readError`); Git-Sync zeigt git's Text und
+  lässt die Knöpfe frei, die Übersicht sagt „Stand nicht lesbar“. Nicht gemessen: ein übersetztes git.
+- **7** `f3a638e` — der Satz im Plan; dazu Befund 7 des achtunddreißigsten in denselben Abschnitt.
+- **Nebenbei, nicht angefasst:** Springt man ohne die Startseite direkt von der Git-Sync-Seite eines
+  Projekts in die eines anderen (in der Messung per `location.hash`), zeigte die Seite einmal den
+  Stand des vorigen Projekts; einzeln gemessen stimmt sie. Ob die Oberfläche diesen Weg überhaupt
+  anbietet, ist nicht geprüft. Ebenso offen: Die Übersicht sagt „Kein Git-Repository“ auch, wenn
+  das Lesen des Status über IPC scheitert (`catch(() => setGit(null))`).
+
+**Keinen dieser Fixes hat ein Review gelesen.**

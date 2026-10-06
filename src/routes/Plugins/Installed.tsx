@@ -1071,7 +1071,7 @@ function PluginOptions({
             )
             .join(', ')}
         </p>
-        <FieldGroup fields={schema.filter((f) => f.kind !== 'unsupported')} values={options} onChange={onChange} />
+        <FieldGroup fields={schema.filter((f) => f.kind !== 'unsupported')} values={options} onChange={onChange} explicitEmpty />
       </div>
     )
   }
@@ -1153,16 +1153,25 @@ function AddOptionRow({
 function FieldGroup({
   fields,
   values,
-  onChange
+  onChange,
+  explicitEmpty = false
 }: {
   fields: PluginOptionField[]
   values: Record<string, unknown>
   onChange: (name: string, value: unknown) => void
+  /** Offer "set empty" on text fields - a plugin's own options only; see FieldRow. */
+  explicitEmpty?: boolean
 }): JSX.Element {
   return (
     <div className="flex flex-col gap-2">
       {fields.map((field) => (
-        <FieldRow key={field.name} field={field} value={values[field.name]} onChange={(v) => onChange(field.name, v)} />
+        <FieldRow
+          key={field.name}
+          field={field}
+          value={values[field.name]}
+          onChange={(v) => onChange(field.name, v)}
+          explicitEmpty={explicitEmpty}
+        />
       ))}
     </div>
   )
@@ -1171,11 +1180,13 @@ function FieldGroup({
 function FieldRow({
   field,
   value,
-  onChange
+  onChange,
+  explicitEmpty
 }: {
   field: PluginOptionField
   value: unknown
   onChange: (value: unknown) => void
+  explicitEmpty: boolean
 }): JSX.Element {
   const { t } = useTranslation()
   const currentText = value == null ? '' : String(value)
@@ -1242,6 +1253,7 @@ function FieldRow({
             id={id}
             type="text"
             defaultValue={currentText}
+            placeholder={value === '' ? t('pluginsInstalled.explicitlyEmpty') : undefined}
             onBlur={(e) => {
               if (e.target.value !== currentText) onChange(e.target.value === '' ? undefined : e.target.value)
             }}
@@ -1249,6 +1261,27 @@ function FieldRow({
           />
         )}
       </div>
+      {/* A cleared field removes the key (setDeep), so "deliberately empty" - an empty string the
+          plugin reads as "show nothing", e.g. recent-notes' title - needs a way of its own (review
+          2026-10-13, finding 3). Only for a plugin's own options: the layout fields (condition,
+          group) have no meaning for an empty string. Offered only while the field is empty, so a
+          list of filled fields does not grow a control per row, and as a quiet text button rather
+          than a filled one because it is rarely needed. The slot is there in every row of the
+          group, empty or not, so the descriptions to the right start at one edge. */}
+      {explicitEmpty && (
+        <div className="w-28 shrink-0">
+          {field.kind === 'string' && (value === '' || value == null) && (
+            <button
+              type="button"
+              className="text-xs font-medium text-text-secondary hover:text-text hover:underline"
+              title={value === '' ? t('pluginsInstalled.unsetEmptyHint') : t('pluginsInstalled.setEmptyHint')}
+              onClick={() => onChange(value === '' ? undefined : '')}
+            >
+              {value === '' ? t('pluginsInstalled.unsetEmpty') : t('pluginsInstalled.setEmpty')}
+            </button>
+          )}
+        </div>
+      )}
       {/* uses the free space to the right of the control to briefly explain the possible values,
           instead of cramming it under the (already narrow) label column */}
       {field.description && <p className="flex-1 text-micro text-text-muted">{field.description}</p>}
@@ -1312,6 +1345,7 @@ function InferredFieldRow({
         key={initial}
         id={id}
         defaultValue={initial}
+        placeholder={value === '' ? t('pluginsInstalled.explicitlyEmpty') : undefined}
         onBlur={(e) => {
           if (e.target.value === initial) return
           // cleared is "not set", as in FieldRow - the key goes, and the row with it

@@ -414,6 +414,7 @@ export default {
     stop: 'Stop',
     serverOptions: 'Server settings',
     optionsLocked: 'Stop the server to change these.',
+    portsAuto: 'If a port is in use, the server takes the next free one when it starts.',
     autoReload: 'reloads automatically',
     startedAgo: 'Started {{since}}',
     exitedWithCode: 'The server exited unexpectedly (code {{code}}).',

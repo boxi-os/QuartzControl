@@ -146,6 +146,9 @@ export default function BuildServer(): JSX.Element {
   // there left the only usable answer out of reach.
   const serverActive = status.state === 'starting' || status.state === 'running' || status.state === 'stopping'
   const liveOptions = running && status.options ? status.options : options
+  // The locked fields show what the server really took, which is not what was typed once a port
+  // was in use (buildService moves to the next free one). Unlocked, they are the form again.
+  const formOptions = serverActive && status.options ? status.options : options
   const url = urlFor(liveOptions)
   // The iframe only ever points at this machine - that is the single source frame-src allows (see
   // index.html). A remoteDevHost preview is somewhere else entirely and keeps the external link.
@@ -332,7 +335,7 @@ export default function BuildServer(): JSX.Element {
               <Field label={t('buildServer.port')} className="w-28">
                 <TextInput
                   type="number"
-                  value={options.port}
+                  value={formOptions.port}
                   onChange={(e) => setOptions({ ...options, port: Number(e.target.value) })}
                   disabled={serverActive}
                 />
@@ -340,7 +343,7 @@ export default function BuildServer(): JSX.Element {
               <Field label={t('buildServer.wsPort')} className="w-28">
                 <TextInput
                   type="number"
-                  value={options.wsPort}
+                  value={formOptions.wsPort}
                   onChange={(e) => setOptions({ ...options, wsPort: Number(e.target.value) })}
                   disabled={serverActive}
                 />
@@ -354,9 +357,9 @@ export default function BuildServer(): JSX.Element {
                 />
               </Field>
             </div>
-            {serverActive && (
-              <p className="mt-2 text-xs text-text-muted">{t('buildServer.optionsLocked')}</p>
-            )}
+            <p className="mt-2 text-xs text-text-muted">
+              {serverActive ? t('buildServer.optionsLocked') : t('buildServer.portsAuto')}
+            </p>
           </div>
         )}
 

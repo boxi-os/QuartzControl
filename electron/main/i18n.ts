@@ -77,6 +77,7 @@ const STRINGS = {
     buildDirServerRunning:
       'Der Dev-Server schreibt gerade in „{{dir}}“. Beende ihn unter „Vorschau & Build“ oder wähle einen anderen Ausgabeordner.',
     serverWaitsForBuild: 'Es läuft ein Build nach „{{dir}}“. Der Server startet, sobald er fertig ist.',
+    serverPortTaken: 'Port {{from}} ist belegt — der Server nimmt {{to}}.',
 
     ipcInvalidArguments:
       'QuartzControl hat „{{channel}}“ mit unerwarteten Daten aufgerufen — das ist ein Fehler in der App und keine Folge deiner Eingabe. Technische Details:',
@@ -516,6 +517,7 @@ const STRINGS = {
     buildDirServerRunning:
       'The dev server is writing into “{{dir}}” right now. Stop it under “Preview & build” or pick a different output folder.',
     serverWaitsForBuild: 'A build into “{{dir}}” is running. The server starts as soon as it has finished.',
+    serverPortTaken: 'Port {{from}} is in use — the server takes {{to}} instead.',
 
     ipcInvalidArguments:
       'QuartzControl called “{{channel}}” with unexpected data — that is a bug in the app, not a result of what you entered. Technical details:',

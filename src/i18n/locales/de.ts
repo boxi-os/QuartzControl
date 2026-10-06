@@ -417,6 +417,7 @@ export default {
     stop: 'Stoppen',
     serverOptions: 'Server-Einstellungen',
     optionsLocked: 'Zum Ändern zuerst den Server stoppen.',
+    portsAuto: 'Ist ein Port belegt, nimmt der Server beim Start den nächsten freien.',
     autoReload: 'lädt automatisch neu',
     startedAgo: 'Gestartet {{since}}',
     exitedWithCode: 'Der Server wurde unerwartet beendet (Code {{code}}).',

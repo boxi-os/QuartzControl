@@ -1,5 +1,5 @@
 import { spawn, execFileSync, type ChildProcess } from 'child_process'
-import { createConnection } from 'net'
+import { createConnection, createServer } from 'net'
 import { closeSync, openSync, readSync, readdirSync, renameSync, unlinkSync } from 'fs'
 import { readdir, stat } from 'fs/promises'
 import { StringDecoder } from 'string_decoder'
@@ -527,7 +527,21 @@ export async function startServer(
     await refreshGoogleFonts(projectPath, (stream, text) => emitLog(projectId, stream, text))
     if (pending.aborted) return getServerStatus(projectId)
 
-    return spawnServer(projectId, projectPath, status, outputDir)
+    // Choosing and spawning in one turn of the queue: the spawn puts the server into
+    // runningServers synchronously, so the next start in line sees its ports as taken even
+    // before the process has bound them.
+    return await inPortQueue(async () => {
+      const chosen = await choosePorts(projectId, options)
+      if (pending.aborted) return getServerStatus(projectId)
+      for (const [from, to] of [
+        [options.port, chosen.port],
+        [options.wsPort, chosen.wsPort]
+      ]) {
+        if (from !== to) emitLog(projectId, 'stdout', `${mainT('serverPortTaken', { from, to })}\n`)
+      }
+      status.options = chosen
+      return spawnServer(projectId, projectPath, status, outputDir)
+    })
   } finally {
     // Either the entry has handed over to runningServers or the start was called off; in both
     // cases it must not outlive this call, or the next start would return a status nothing moves.
@@ -614,6 +628,83 @@ function spawnServer(
   return status
 }
 
+// A port the server asks for and finds taken moves to the next free one, rather than the start
+// dying on EADDRINUSE: a second project's server used to need the options opened and both ports
+// changed by hand, every time. Both ports move, the http one and the live-reload websocket, and
+// the log says where to - the link on the page reads status.options, so it follows by itself.
+// Gives up after PORT_SEARCH_SPAN and keeps the requested port; the spawn then fails with the
+// real error, as it always did.
+const PORT_SEARCH_SPAN = 100
+const RESTART_PORT_WAIT_MS = 3000
+
+let portQueue: Promise<unknown> = Promise.resolve()
+
+function inPortQueue<T>(fn: () => Promise<T>): Promise<T> {
+  const run = portQueue.then(fn, fn)
+  portQueue = run.catch(() => undefined)
+  return run
+}
+
+async function choosePorts(projectId: string, requested: ServerOptions): Promise<ServerOptions> {
+  // Our own servers count as taken without asking: one spawned a moment ago may not have bound yet.
+  const taken = new Set<number>()
+  for (const [id, entry] of runningServers) {
+    if (id === projectId || !entry.status.options) continue
+    taken.add(entry.status.options.port)
+    taken.add(entry.status.options.wsPort)
+  }
+  const port = (await nextFreePort(requested.port, taken)) ?? requested.port
+  taken.add(port)
+  const wsPort = (await nextFreePort(requested.wsPort, taken)) ?? requested.wsPort
+  return { ...requested, port, wsPort }
+}
+
+async function nextFreePort(start: number, taken: Set<number>): Promise<number | null> {
+  for (let port = start; port < start + PORT_SEARCH_SPAN && port <= 65535; port++) {
+    if (!taken.has(port) && (await portIsFree(port))) return port
+  }
+  return null
+}
+
+// Two questions, because one is not enough on macOS: binding the wildcard address is what Quartz
+// does (`server.listen(port)`, `new WebSocketServer({ port })`), but Node sets SO_REUSEADDR, and
+// under BSD rules that lets the wildcard bind succeed next to a server that holds the same port on
+// 127.0.0.1 alone - the browser, asking for localhost, would then reach the other one. So a port is
+// free only if the bind works and nothing answers on loopback.
+async function portIsFree(port: number): Promise<boolean> {
+  const bindable = await new Promise<boolean>((resolve) => {
+    const probe = createServer()
+    probe.once('error', () => resolve(false))
+    probe.listen(port, () => probe.close(() => resolve(true)))
+  })
+  if (!bindable) return false
+  const answers = await Promise.all(['127.0.0.1', '::1'].map((host) => answersOn(host, port)))
+  return !answers.includes(true)
+}
+
+function answersOn(host: string, port: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const socket = createConnection({ port, host })
+    const done = (answer: boolean): void => {
+      socket.destroy()
+      resolve(answer)
+    }
+    socket.setTimeout(300)
+    socket.once('connect', () => done(true))
+    socket.once('error', () => done(false))
+    socket.once('timeout', () => done(false))
+  })
+}
+
+async function waitUntilFree(ports: number[], timeoutMs: number): Promise<void> {
+  const deadline = Date.now() + timeoutMs
+  while (Date.now() < deadline) {
+    const free = await Promise.all(ports.map(portIsFree))
+    if (free.every(Boolean)) return
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
+}
+
 // Retries a TCP connect to 127.0.0.1:<port> until it succeeds or the deadline passes, then calls
 // back once. 127.0.0.1 regardless of --remoteDevHost: that flag only rewrites the live-reload
 // websocket URL handed to the browser, the server itself always binds locally. Giving up silently
@@ -681,6 +772,9 @@ export async function restartServer(
 ): Promise<ServerStatus> {
   const previousOptions = runningServers.get(projectId)?.status.options ?? options ?? DEFAULT_OPTIONS
   await stopServer(projectId)
+  // The 'exit' stopServer waits for is npx's; the node process below it can hold its sockets a
+  // moment longer, and a restart that finds its own port still taken would move to the next one.
+  await waitUntilFree([previousOptions.port, previousOptions.wsPort], RESTART_PORT_WAIT_MS)
   return startServer(projectId, projectPath, previousOptions)
 }
 

@@ -597,7 +597,14 @@ export default function ProjectDashboard(): JSX.Element {
           to="sync"
           linkLabel={t('projectLayout.tabs.sync')}
         >
-          {!git?.isRepo ? (
+          {git?.readError ? (
+            <>
+              <Metric tone="muted">{t('dashboard.git.unreadable')}</Metric>
+              <Facts>
+                <span className="text-text-muted">{t('dashboard.git.unreadableHint')}</span>
+              </Facts>
+            </>
+          ) : !git?.isRepo ? (
             <>
               <Metric tone="muted">{t('dashboard.git.noRepo')}</Metric>
               <Facts>

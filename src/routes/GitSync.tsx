@@ -80,6 +80,14 @@ function RepoStatus({
     onChanged()
   })
 
+  if (status.readError) {
+    return (
+      <div className="flex flex-col gap-1 text-xs">
+        <p className="text-red-600 dark:text-red-400">{t('gitSync.readError')}</p>
+        <p className="whitespace-pre-wrap break-words font-mono text-text-secondary">{status.readError}</p>
+      </div>
+    )
+  }
   if (!status.isRepo) {
     return <p className="text-xs text-text-muted">{t('gitSync.notARepo')}</p>
   }
@@ -264,8 +272,16 @@ export default function GitSync(): JSX.Element {
   const [commit, setCommit] = useStickyState('sync.commit', true)
   const [message, setMessage] = useStickyState('sync.message', '')
 
+  // A refresh that throws clears the status rather than leaving the last good one standing: the
+  // disabled buttons would otherwise describe a state from before, while the error says the read
+  // failed (review 2026-10-13, finding 6).
   const refresh = useAsyncAction(async () => {
-    setStatus(await window.quartzGui.sync.status(project.path))
+    try {
+      setStatus(await window.quartzGui.sync.status(project.path))
+    } catch (err) {
+      setStatus(null)
+      throw err
+    }
   })
   const refreshStatus = refresh.run
 
@@ -277,9 +293,10 @@ export default function GitSync(): JSX.Element {
   // All three directions end in `git pull origin` or `git push origin` inside `quartz sync`, so
   // without an origin each click only produced git's error. Asked of origin, not of a GitHub
   // account: a remote can live on any host, and an account without one has nowhere to push.
-  // Unknown (status not read yet, or the read failed) leaves the buttons alone - "cannot tell"
-  // is not "no".
-  const noOrigin = status != null && (!status.isRepo || !status.remoteUrl)
+  // Unknown - not read yet, a refresh that threw (the status is cleared then, see refresh), or a
+  // `git status` that failed for another reason than "not a repository" (readError) - leaves the
+  // buttons alone: "cannot tell" is not "no".
+  const noOrigin = status != null && !status.readError && (!status.isRepo || !status.remoteUrl)
 
   // See abortNote in RepoStatus.
   const [noteEpoch, setNoteEpoch] = useState(0)

@@ -624,6 +624,12 @@ export interface GitFileChange {
 // not the same as "in sync".
 export interface GitStatus {
   isRepo: boolean
+  /**
+   * Set when `git status` failed for a reason other than "not a git repository" - no git, a
+   * directory git refuses (safe.directory), a broken index. `isRepo` is false then too, but the
+   * project may well be one: "could not read" is its own answer (review 2026-10-13, finding 6).
+   */
+  readError: string | null
   /** null while HEAD is detached - see `detached`. */
   branch: string | null
   detached: boolean

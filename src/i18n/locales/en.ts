@@ -291,6 +291,8 @@ export default {
     git: {
       inProgress: '{{operation}} in progress',
       noRepo: 'Not a git repository',
+      unreadable: 'Status unreadable',
+      unreadableHint: 'git could not read the state of this project — what git says about it is under Git sync.',
       noRepoHint: 'This project is not under version control.',
       noUpstream: 'no remote branch',
       conflicts: '{{count}} file in conflict',
@@ -514,6 +516,7 @@ export default {
     },
     statusTitle: 'Repository state',
     notARepo: 'This project is not a git repository — syncing is not possible here.',
+    readError: 'git could not read the state of this project, so whether it is a repository cannot be told. This is what git says:',
     needsOrigin: 'Pull and push need an “origin” remote. Without one, the project stays a local repository.',
     needsRepo: 'Pull and push need a git repository with an “origin” remote.',
     noRemote: 'No “origin” remote configured. Push and pull have no target.',

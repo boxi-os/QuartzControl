@@ -72,3 +72,30 @@ export function runCommand(
     child.on('error', (err) => settle({ success: false, output: String(err) }))
   })
 }
+
+// The environment for a git call whose *text* the app reads - explainGitFailure in updateService,
+// and getGitStatus telling "not a git repository" from every other failure. git translates three of
+// the four sentences matched there - its po/de.po (v2.53.0) has "Could not reset index file to
+// revision '%s'." as "Konnte Index-Datei nicht zu Commit '%s' setzen.", likewise "Your local
+// changes ... would be overwritten by merge" and "You have not concluded your merge (MERGE_HEAD
+// exists)" - and no spawn of this app pinned the language. With the system's git on a German Linux
+// desktop (Debian ships git.mo) the app's sentence would silently go missing, and with it the
+// announcement. "Entry '%s' not uptodate. Cannot merge." is not in the catalogue, but its prefix
+// is: "error: " becomes "Fehler: ", and the pattern that takes the file name out of that line
+// (`^error: Entry`) missed it - the sentence came without the name.
+//
+// LC_MESSAGES and nothing wider, so that names and encodings stay the user's; LANGUAGE emptied,
+// because gettext asks it before LC_MESSAGES; and an LC_ALL the user has set moves to LC_CTYPE,
+// because it would override both. Only for these calls: everywhere else git's text is only shown
+// and may stay in the user's language. Here it is read *and* shown, so a user with a German git
+// reads English git text in the box of these two calls - the price, taken knowingly.
+//
+// Measured (thirty-second review, finding 6) with git 2.53.0 built with translations against GNU
+// libintl on macOS, old state against new, "would be overwritten" and the refused abort: under
+// LANG=de the old state showed git's German text and no sentence of the app's; the new one had the
+// sentence under LANG=de, LC_ALL=de, LANGUAGE=de:en and all three at once. Not measured: glibc,
+// where an empty LC_ALL is read as unset - by the documentation it behaves the same.
+export function gitTextEnv(): Record<string, string> {
+  const all = process.env.LC_ALL
+  return { LC_MESSAGES: 'C', LANGUAGE: '', ...(all ? { LC_ALL: '', LC_CTYPE: all } : {}) }
+}

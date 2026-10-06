@@ -294,6 +294,8 @@ export default {
     git: {
       inProgress: '{{operation}} läuft',
       noRepo: 'Kein Git-Repository',
+      unreadable: 'Stand nicht lesbar',
+      unreadableHint: 'git konnte den Stand dieses Projekts nicht lesen — was git dazu sagt, steht unter Git-Sync.',
       noRepoHint: 'Dieses Projekt ist nicht unter Versionskontrolle.',
       noUpstream: 'ohne Remote-Branch',
       conflicts: '{{count}} Datei im Konflikt',
@@ -519,6 +521,7 @@ export default {
     },
     statusTitle: 'Stand des Repositorys',
     notARepo: 'Dieses Projekt ist kein Git-Repository — Sync ist hier nicht möglich.',
+    readError: 'git konnte den Stand dieses Projekts nicht lesen. Ob es ein Repository ist, lässt sich damit nicht sagen. Das sagt git:',
     needsOrigin: 'Pull und Push brauchen einen „origin“-Remote. Ohne ihn bleibt das Projekt ein lokales Repository.',
     needsRepo: 'Pull und Push brauchen ein Git-Repository mit einem „origin“-Remote.',
     noRemote: 'Kein „origin“-Remote konfiguriert. Push und Pull haben kein Ziel.',

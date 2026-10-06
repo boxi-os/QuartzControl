@@ -1,6 +1,6 @@
 import { existsSync } from 'fs'
 import { isAbsolute, resolve } from 'path'
-import { runCommand as run } from './runCommand'
+import { gitTextEnv, runCommand as run } from './runCommand'
 import type { GitFileChange, GitStatus, GitOperationInProgress } from '@shared/ipc-contract'
 
 // A content folder can hold thousands of files, and a fresh symlink swap or a `quartz create` run
@@ -10,6 +10,7 @@ const MAX_LISTED_CHANGES = 500
 
 const EMPTY: GitStatus = {
   isRepo: false,
+  readError: null,
   branch: null,
   detached: false,
   upstream: null,
@@ -146,10 +147,16 @@ async function readLastCommit(projectPath: string): Promise<GitStatus['lastCommi
 }
 
 export async function getGitStatus(projectPath: string): Promise<GitStatus> {
-  const statusResult = await run('git', ['status', '--porcelain=v2', '--branch', '-z'], projectPath)
-  // Covers both "not a git repository" and a git that isn't installed at all; either way there is
-  // no status to show and the UI says so instead of rendering an empty, healthy-looking panel.
-  if (!statusResult.success) return { ...EMPTY }
+  // gitTextEnv because the one sentence read here - "not a git repository" - is translated
+  // ("Kein Git-Repository" with a German git); only git's messages change, not the porcelain.
+  const statusResult = await run('git', ['status', '--porcelain=v2', '--branch', '-z'], projectPath, gitTextEnv())
+  // Two different answers. "Not a git repository" is a state the page can act on (Git-Sync offers
+  // to create one, Pull and Push are disabled); every other failure - no git, a directory git
+  // refuses, a broken index - is "could not read", and the project may be a repository after all.
+  if (!statusResult.success) {
+    if (/not a git repository/i.test(statusResult.output)) return { ...EMPTY }
+    return { ...EMPTY, readError: statusResult.output.trim() || 'git status failed' }
+  }
 
   const status: GitStatus = { ...EMPTY, isRepo: true, changes: [] }
   parseStatus(statusResult.output, status)

@@ -194,9 +194,17 @@ function sourceLabel(source: PluginEntry['source']): string {
 }
 
 // Immutable nested set, e.g. setDeep(plugin, ['layout', 'groupOptions', 'grow'], true)
+// `undefined` removes the key instead of writing it: left in the object, the YAML writer turns it
+// into an explicit null, and a plugin reads `html: null` (or `html: ""`, which the string fields
+// sent before) as a value that is set - the layout-box then rendered the empty HTML and never
+// read its file. A cleared field means "not set", and "not set" is a missing key.
 function setDeep(obj: Record<string, unknown>, path: string[], value: unknown): Record<string, unknown> {
   const [head, ...rest] = path
-  if (rest.length === 0) return { ...obj, [head]: value }
+  if (rest.length === 0) {
+    if (value !== undefined) return { ...obj, [head]: value }
+    const { [head]: _removed, ...without } = obj
+    return without
+  }
   const child = (obj[head] as Record<string, unknown> | undefined) ?? {}
   return { ...obj, [head]: setDeep(child, rest, value) }
 }
@@ -314,20 +322,9 @@ export default function PluginsInstalled(): JSX.Element {
     await reload()
   }
 
-  // Dropping a key needs its own path: setDeep can only ever *write* a value, and writing
-  // `undefined` leaves the key in the object, where the YAML writer turns it into an explicit null
-  // rather than removing it.
+  // setDeep removes a key it is handed `undefined` for - see there.
   async function removeOptionKey(index: number, key: string): Promise<void> {
-    if (!config) return
-    const plugins = config.plugins.map((p, i) => {
-      if (i !== index) return p
-      const rest = { ...(p.options ?? {}) }
-      delete rest[key]
-      return { ...p, options: rest }
-    })
-    await window.quartzGui.config.save(project.path, { ...config, plugins })
-    flagSaved(index)
-    await reload()
+    await updateField(index, ['options', key], undefined)
   }
 
   async function toggleEnabled(index: number): Promise<void> {
@@ -1246,7 +1243,7 @@ function FieldRow({
             type="text"
             defaultValue={currentText}
             onBlur={(e) => {
-              if (e.target.value !== currentText) onChange(e.target.value)
+              if (e.target.value !== currentText) onChange(e.target.value === '' ? undefined : e.target.value)
             }}
             className="w-40"
           />
@@ -1299,7 +1296,7 @@ function InferredFieldRow({
           id={id}
           type="number"
           defaultValue={String(value)}
-          onBlur={(e) => onChange(Number(e.target.value))}
+          onBlur={(e) => onChange(e.target.value === '' ? undefined : Number(e.target.value))}
           className="w-40"
         />
         {remove}
@@ -1317,7 +1314,9 @@ function InferredFieldRow({
         defaultValue={initial}
         onBlur={(e) => {
           if (e.target.value === initial) return
-          if (typeof value === 'string') onChange(e.target.value)
+          // cleared is "not set", as in FieldRow - the key goes, and the row with it
+          if (e.target.value === '') onChange(undefined)
+          else if (typeof value === 'string') onChange(e.target.value)
           else {
             try {
               onChange(JSON.parse(e.target.value))

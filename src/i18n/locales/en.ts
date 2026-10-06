@@ -474,7 +474,7 @@ export default {
       stopped: 'The server on port {{port}} was stopped.',
       stopFailed:
         'The server on port {{port}} could not be stopped. It may already be gone, or the process may now belong to someone else.',
-      portTaken: 'Port {{ports}} is taken, but not by anything recognisable as a Quartz server. Starting on it will fail.',
+      portTaken: 'Port {{ports}} is taken, but not by anything recognisable as a Quartz server. A start moves on to the next free port.',
       warning:
         'Servers started outside this app belong to someone else — a terminal, a second window, a session that was force-quit. The app never stops them on its own; stopping one is a decision made here, every time.'
     }

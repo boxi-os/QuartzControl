@@ -479,7 +479,7 @@ export default {
       stopFailed:
         'Der Server auf Port {{port}} konnte nicht beendet werden. Vielleicht war er schon weg, oder der Prozess gehört inzwischen jemand anderem.',
       portTaken:
-        'Port {{ports}} ist belegt, aber von keinem erkennbaren Quartz-Server. Ein Start auf diesem Port wird scheitern.',
+        'Port {{ports}} ist belegt, aber von keinem erkennbaren Quartz-Server. Ein Start weicht auf den nächsten freien Port aus.',
       warning:
         'Server, die außerhalb dieser App gestartet wurden, gehören jemand anderem — einem Terminal, einem zweiten Fenster, einer Sitzung, die hart beendet wurde. Die App beendet sie nie von sich aus; das Beenden ist hier jedes Mal eine Entscheidung.'
     }

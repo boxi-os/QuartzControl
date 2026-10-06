@@ -48,10 +48,22 @@ allen anderen Regeln.
 Moduls steht im Ergebnis vor dem CSS von `custom.scss`, und relative `url(static/fonts/…)` bleiben
 unverändert — die Schriften laden also weiter.
 
-**Was sich dadurch ändert:** Heute steht `css-vars` am Ende der Datei und schlägt eigene Regeln davor,
-aber nicht danach. Ausgelagert steht alles Verwaltete vorn: Wer in `custom.scss` dieselbe Variable setzt,
-gewinnt immer gegen die Variablen-Seite. Das ist die klarere Regel, aber eine Verhaltensänderung, die in
-die Release-Notizen gehört.
+**Was sich dadurch ändert:** Heute steht `css-vars` am Ende der Datei und schlägt eigene Regeln
+gleicher Spezifität davor, aber nicht danach. Ausgelagert steht alles Verwaltete vorn: Eine eigene
+Regel in `custom.scss` gewinnt dann gegen die Variablen-Seite, **wo sie mindestens so spezifisch
+ist**. Für die helle Hälfte genügt `:root { --x: … }`. Die dunkle Hälfte schreibt die App unter
+`:root[saved-theme="dark"]` (Spezifität 0,2,0) — dort gewinnt nur eine eigene Regel mit
+mindestens diesem Selektor, unabhängig von der Reihenfolge (Review 2026-10-13, Befund 7). Das ist
+eine Verhaltensänderung, die in die Release-Notizen gehört; vor dem Satz dort wird die
+`sass`-Messung um den dunklen Fall ergänzt.
+
+Dazu gehört der verschobene Befund 7 des 38. Reviews: Die helle Überschreibung als
+`:root:not([saved-theme="dark"])` zu schreiben, damit die dunkle Hälfte leer bleiben kann, wo sie
+leer sein soll. Er ändert die Form desselben Blocks und braucht denselben Leser für alte und neue
+Form — also einmal mit dem Umzug, nicht getrennt davon. Und er ändert den Satz oben: Mit
+`:root:not(…)` hat auch die helle Hälfte die Spezifität 0,2,0, und ein eigenes `:root { --x: … }`
+gewinnt dann in keinem der beiden Modi mehr. Welche Form gilt, wird zusammen entschieden ([`REVIEW-2026-10-12.md`](REVIEW-2026-10-12.md),
+Befund 7).
 
 **Was es kostet:**
 

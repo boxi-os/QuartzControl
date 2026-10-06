@@ -63,9 +63,8 @@ export default function BuildServer(): JSX.Element {
   const project = useProject()
   const [status, setStatus] = useState<ServerStatus>({ state: 'stopped' })
   // The options the *form* holds. Sticky, because a route fully unmounts on a sidebar switch and a
-  // port typed a moment ago should still be there - and because plain useState made the fields
-  // contradict the page: with a server running on 9000, coming back from another area showed 8080
-  // next to a link to :9000 (reproduced in the running app).
+  // port typed a moment ago should still be there. That the fields agree with a running server's
+  // link (a server on 9000 once showed 8080 beside a link to :9000) is formOptions' job below.
   const [options, setOptions] = useStickyState<ServerOptions>('server.options', DEFAULT_OPTIONS)
   const [optionsOpen, setOptionsOpen] = useStickyState('server.optionsOpen', false)
   const [previewOpen, setPreviewOpen] = useStickyState('server.previewOpen', true)
@@ -92,11 +91,12 @@ export default function BuildServer(): JSX.Element {
 
   useEffect(() => {
     window.quartzGui.server.status(project.id).then((initial) => {
+      // The form keeps what was asked for, not what the server took. Showing the real ports of a
+      // running server is formOptions' job; copying them in here turned a port the server moved to
+      // into the one the next start asks for - after any route change, so the same page answered
+      // 8080 or 8081 depending on whether the user had looked elsewhere meanwhile (review
+      // 2026-10-13, finding 4).
       setStatus(initial)
-      // A running server's real options win over whatever the form remembered: they are what the
-      // process was actually started with, and the fields are disabled while it runs, so leaving
-      // them at their old values would print a port nobody is listening on.
-      if (initial.options) setOptions(initial.options)
     })
     const offStatus = window.quartzGui.server.onStatus((projectId, s) => {
       if (projectId === project.id) setStatus(s)
@@ -104,7 +104,7 @@ export default function BuildServer(): JSX.Element {
     return () => {
       offStatus()
     }
-  }, [project.id, setOptions])
+  }, [project.id])
 
   // True only once the content folder was read and has no index.md - a failed read says nothing.
   const [missingIndex, setMissingIndex] = useState(false)

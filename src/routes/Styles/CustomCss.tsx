@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import CodeMirror from '@uiw/react-codemirror'
+import CodeMirror, { Transaction } from '@uiw/react-codemirror'
 import { css } from '@codemirror/lang-css'
 import type { EditorView } from '@codemirror/view'
 import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronRight, FileCode, FileWarning, Palette, Pencil, Plus, Trash2, X } from 'lucide-react'
@@ -80,7 +80,13 @@ export default function CustomCss(): JSX.Element {
   const [pendingJump, setPendingJump] = useState<{ tab: string; line: number } | null>(null)
   const viewRef = useRef<EditorView | null>(null)
   // Whether the cursor in the current editor was put there by the user (or a diagnostic jump),
-  // as opposed to CodeMirror's default at position 0. Reset with every editor instance.
+  // as opposed to CodeMirror's default at position 0. Set by a transaction the user made - a click,
+  // an arrow key, typing - and taken back by any change to the document that the user did not make:
+  // a reload of the content from outside (every change to the load order rewrites the imports
+  // block and swaps the whole document) puts the cursor at 0 while the user's click is long gone.
+  // Focus alone does not count: tabbing into the editor leaves the cursor at 0 as well. Before both
+  // were measured, an insert after either landed in front of the first `@use` (review 2026-10-13,
+  // finding 2). Reset with every editor instance.
   const cursorPlacedRef = useRef(false)
   const scheme = useColorScheme()
 
@@ -182,6 +188,7 @@ export default function CustomCss(): JSX.Element {
     if (!pendingJump || !view || pendingJump.tab !== activeTab || !activeContentReady) return
     const pos = view.state.doc.line(Math.min(Math.max(pendingJump.line, 1), view.state.doc.lines)).from
     view.dispatch({ selection: { anchor: pos }, scrollIntoView: true })
+    cursorPlacedRef.current = true
     view.focus()
     setPendingJump(null)
   }, [pendingJump, activeTab, activeContent, activeContentReady])
@@ -254,10 +261,12 @@ export default function CustomCss(): JSX.Element {
   function insertAtCursor(text: string): void {
     const view = viewRef.current
     if (view && cursorPlacedRef.current) {
-      view.dispatch(view.state.replaceSelection(text))
+      // Marked as the user's input, so the cursor stays placed and the next insert follows this one.
+      view.dispatch({ ...view.state.replaceSelection(text), userEvent: 'input' })
     } else if (view) {
-      // The cursor follows the text: the focus() below counts as placing it, and left at 0 the
-      // next insert would land in front of the imports after all.
+      // Not the user's input: the cursor was never placed, and appending does not place it - the
+      // next insert goes to the end again. The selection follows the text only so that the editor,
+      // focused below, shows where the text went.
       const end = view.state.doc.length
       view.dispatch({ changes: { from: end, insert: text }, selection: { anchor: end + text.length } })
     } else {
@@ -380,8 +389,10 @@ export default function CustomCss(): JSX.Element {
                 cursorPlacedRef.current = false
               }}
               onUpdate={(update) => {
-                if (update.view.hasFocus && (update.focusChanged || update.selectionSet)) {
+                if (update.transactions.some((tr) => tr.annotation(Transaction.userEvent) !== undefined)) {
                   cursorPlacedRef.current = true
+                } else if (update.docChanged) {
+                  cursorPlacedRef.current = false
                 }
               }}
             />

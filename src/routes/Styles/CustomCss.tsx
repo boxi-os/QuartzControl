@@ -79,6 +79,9 @@ export default function CustomCss(): JSX.Element {
   // an area switch would scroll the editor for a click made minutes ago.
   const [pendingJump, setPendingJump] = useState<{ tab: string; line: number } | null>(null)
   const viewRef = useRef<EditorView | null>(null)
+  // Whether the cursor in the current editor was put there by the user (or a diagnostic jump),
+  // as opposed to CodeMirror's default at position 0. Reset with every editor instance.
+  const cursorPlacedRef = useRef(false)
   const scheme = useColorScheme()
 
   const files = fileSet?.files ?? []
@@ -242,16 +245,21 @@ export default function CustomCss(): JSX.Element {
     void applyOrder(order)
   }
 
-  // Inserts at the cursor only when the editor actually has focus (the user clicked into it and
-  // placed the cursor deliberately) - otherwise the cursor defaults to position 0, and inserting
-  // there would shove the snippet in front of the file's leading `@use` imports. Unfocused (the
-  // common case, since this is triggered from a toolbar button) appends at the end instead.
+  // Inserts at the cursor once the user has placed one in this editor - otherwise the cursor
+  // defaults to position 0, and inserting there would shove the snippet in front of the file's
+  // leading `@use` imports, so it appends at the end instead. The question is "was a cursor
+  // placed", not "has the editor focus": every caller is a button or a row outside the editor,
+  // and clicking it takes the focus away, so `hasFocus` was false on every real click and each
+  // insert landed at the end. CodeMirror keeps the selection across a blur.
   function insertAtCursor(text: string): void {
     const view = viewRef.current
-    if (view?.hasFocus) {
+    if (view && cursorPlacedRef.current) {
       view.dispatch(view.state.replaceSelection(text))
     } else if (view) {
-      view.dispatch({ changes: { from: view.state.doc.length, insert: text } })
+      // The cursor follows the text: the focus() below counts as placing it, and left at 0 the
+      // next insert would land in front of the imports after all.
+      const end = view.state.doc.length
+      view.dispatch({ changes: { from: end, insert: text }, selection: { anchor: end + text.length } })
     } else {
       setContent(contentOf(activeTab) + text)
     }
@@ -369,6 +377,12 @@ export default function CustomCss(): JSX.Element {
               onChange={setContent}
               onCreateEditor={(view) => {
                 viewRef.current = view
+                cursorPlacedRef.current = false
+              }}
+              onUpdate={(update) => {
+                if (update.view.hasFocus && (update.focusChanged || update.selectionSet)) {
+                  cursorPlacedRef.current = true
+                }
               }}
             />
           </Card>

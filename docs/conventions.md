@@ -196,7 +196,12 @@ Projektwurzel.
   `starting` „Stoppen“ an. `startedAt` entsteht beim Spawn, nicht beim Klick — dazwischen liegt
   jetzt ein ganzer Build, und „Gestartet vor …“ liest die Zeit.
   `stopping` zählt weiter als Schreiber, ein wartender Start auch. Ein Server aus einer früheren Sitzung gehört
-  keinem Eintrag und wird nicht gesehen; ihn zu finden hieße, bei jedem Klick Ports abzusuchen.
+  keinem Eintrag und wird von „Jetzt bauen“ nicht gesehen; ihn dort zu finden hieße, bei jedem Klick
+  die Prozessliste zu lesen. **„Starten“ liest sie**, seit ein belegter Port nicht mehr scheitert,
+  sondern ausweicht (1.0.2): Vorher machte `EADDRINUSE` einen Server desselben Projekts von außen
+  laut, danach lief still ein zweiter in denselben Ordner. Ein Quartz-Server, dessen Arbeitsordner
+  dieses Projekt ist und den die App nicht gestartet hat, lehnt den Start ab; ausgewichen wird nur
+  vor allem anderen (Review 2026-10-13, Befund 1).
   Messungen in [`navigation-and-pages.md`](decisions/navigation-and-pages.md).
 - **Zwei Türen auf denselben Ordner brauchen ein Schloss, und ein Schloss, das keinen Klick
   abweist, wartet.** Der Schriftordner hat zwei Schreiber — das Speichern der Stile-Seite und die

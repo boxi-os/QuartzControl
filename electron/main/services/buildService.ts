@@ -1,7 +1,7 @@
 import { spawn, execFileSync, type ChildProcess } from 'child_process'
 import { createConnection, createServer } from 'net'
 import { closeSync, openSync, readSync, readdirSync, renameSync, unlinkSync } from 'fs'
-import { readdir, stat } from 'fs/promises'
+import { readdir, realpath, stat } from 'fs/promises'
 import { StringDecoder } from 'string_decoder'
 import { join, relative } from 'path'
 import treeKill from 'tree-kill'
@@ -14,6 +14,7 @@ import * as styleService from './styleService'
 import { looksLikeQuartzBuild } from './buildOutputGuard'
 import { quartzGuiDir, resolveBuildDir } from './projectDirs'
 import * as runningServersStore from './runningServersStore'
+import { discoverServers } from './serverDiscovery'
 import { mainT } from '../i18n'
 
 interface RunningServer {
@@ -531,6 +532,21 @@ export async function startServer(
     // runningServers synchronously, so the next start in line sees its ports as taken even
     // before the process has bound them.
     return await inPortQueue(async () => {
+      // Before the ports, because moving to a free one is exactly the wrong answer here: a server
+      // of this project that the app did not start - a terminal, or one left running after a
+      // force-quit, which the app offers on launch - already writes into the same `public/`, and a
+      // second one would empty it and then build into it alongside (review 2026-10-13, finding 1).
+      // Before the port fix the start died on EADDRINUSE and the card below said who held it.
+      const holder = await sameProjectServer(projectPath)
+      if (pending.aborted) return getServerStatus(projectId)
+      if (holder) {
+        const error = mainT('serverAlreadyRunningOutside', { port: holder.port, pid: holder.pid })
+        emitLog(projectId, 'warn', `${error}\n`)
+        lastTerminalStatus.set(projectId, { state: 'error', error })
+        pendingStarts.delete(projectId)
+        emitStatus(projectId)
+        return getServerStatus(projectId)
+      }
       const chosen = await choosePorts(projectId, options)
       if (pending.aborted) return getServerStatus(projectId)
       for (const [from, to] of [
@@ -703,6 +719,23 @@ async function waitUntilFree(ports: number[], timeoutMs: number): Promise<void> 
     if (free.every(Boolean)) return
     await new Promise((resolve) => setTimeout(resolve, 100))
   }
+}
+
+// A Quartz server whose working directory is this project and which this app did not start.
+// Compared through realpath on both sides, the same key the other per-project locks use: a project
+// added as `p/` or through a symlink is still this one. A scan that cannot read the process table
+// finds nothing and lets the start go ahead, as every start did before - "cannot tell" here only
+// means "no stronger guard than before", not a refusal.
+async function sameProjectServer(projectPath: string): Promise<{ port: number; pid: number } | null> {
+  const discovery = await discoverServers()
+  const owned = ownedServerPids()
+  const project = await realpath(projectPath).catch(() => projectPath)
+  for (const server of discovery.servers) {
+    if (owned.has(server.pid) || !server.cwd) continue
+    const cwd = await realpath(server.cwd).catch(() => server.cwd!)
+    if (cwd === project) return { port: server.port, pid: server.pid }
+  }
+  return null
 }
 
 // Retries a TCP connect to 127.0.0.1:<port> until it succeeds or the deadline passes, then calls

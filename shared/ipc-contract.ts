@@ -405,7 +405,10 @@ export interface ServerStatus {
   options?: ServerOptions
   pid?: number
   startedAt?: string
-  /** A failure the OS reported verbatim (a failed spawn), so it is not translatable. */
+  /**
+   * A failure the OS reported verbatim (a failed spawn), or a refusal the main process words in the
+   * user's language (a server of this project already running outside the app). Shown as it is.
+   */
   error?: string
   /**
    * Set when the process died on its own: how it ended, as a number rather than as a sentence, so

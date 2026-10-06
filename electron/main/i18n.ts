@@ -78,6 +78,8 @@ const STRINGS = {
       'Der Dev-Server schreibt gerade in „{{dir}}“. Beende ihn unter „Vorschau & Build“ oder wähle einen anderen Ausgabeordner.',
     serverWaitsForBuild: 'Es läuft ein Build nach „{{dir}}“. Der Server startet, sobald er fertig ist.',
     serverPortTaken: 'Port {{from}} ist belegt — der Server nimmt {{to}}.',
+    serverAlreadyRunningOutside:
+      'Für dieses Projekt läuft schon ein Server, der nicht aus dieser App gestartet wurde (Port {{port}}, Prozess {{pid}}). Ein zweiter würde in denselben Ausgabeordner bauen — die Karte „Laufende Server auf diesem Rechner“ zeigt ihn und kann ihn beenden.',
 
     ipcInvalidArguments:
       'QuartzControl hat „{{channel}}“ mit unerwarteten Daten aufgerufen — das ist ein Fehler in der App und keine Folge deiner Eingabe. Technische Details:',
@@ -518,6 +520,8 @@ const STRINGS = {
       'The dev server is writing into “{{dir}}” right now. Stop it under “Preview & build” or pick a different output folder.',
     serverWaitsForBuild: 'A build into “{{dir}}” is running. The server starts as soon as it has finished.',
     serverPortTaken: 'Port {{from}} is in use — the server takes {{to}} instead.',
+    serverAlreadyRunningOutside:
+      'A server for this project is already running that was not started from this app (port {{port}}, process {{pid}}). A second one would build into the same output folder — the card “Servers running on this machine” shows it and can stop it.',
 
     ipcInvalidArguments:
       'QuartzControl called “{{channel}}” with unexpected data — that is a bug in the app, not a result of what you entered. Technical details:',

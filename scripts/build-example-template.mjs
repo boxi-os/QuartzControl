@@ -974,6 +974,26 @@ async function buildTemplate() {
         order: files.map((name) => `custom/${name}`)
       })
       done()
+
+      // A workshop built before 1.1 still holds the 31 stylesheets the twelve were put together
+      // from. They are no longer loaded after the step above, but the part `styles` packs what is in
+      // the folder and --sync/--check-sync would stop at them - so they go, through the app's own
+      // door (it takes a file out of the load order before it unlinks it). Only `custom/`: that
+      // folder is the template's, anything else in quartz/styles is not this run's to touch.
+      step('alte Stylesheets entfernen')
+      const removed = await ipc(
+        page,
+        async (a) => {
+          const set = await window.quartzGui.styles.listFiles(a.path)
+          const stale = set.files
+            .map((f) => f.relativePath)
+            .filter((p) => p.startsWith('custom/') && p.endsWith('.scss') && !a.keep.includes(p))
+          for (const p of stale) await window.quartzGui.styles.deleteFile(a.path, p)
+          return stale.length
+        },
+        { path: WORKSHOP, keep: files.map((name) => `custom/${name}`) }
+      )
+      done(removed ? `${removed} entfernt` : 'keine')
     }
 
     /* ----------------------------------------------------------------- 6 · fonts */

@@ -162,7 +162,8 @@ sein. P4 migriert Nutzerdateien und soll am längsten auf dem Branch liegen.
   Zusammenfügen, je Abschnitt Kopfkommentar mit altem Namen; `base.scss` nach gemessenen Zeilen
   zerlegt (`foundation`, `layout`, `content`).
 - Mitziehen: `style-order.mjs`, `palette.mjs` (Syntax-Block), `variable-docs.mjs`, README/BEFUNDE,
-  Texte im Example-Vault; Werkstatt räumt die 19 alten Dateien über `styles.deleteFile`.
+  Texte im Example-Vault; Werkstatt räumt die 29 alten Dateien über `styles.deleteFile` (31 ohne
+  die zwei, die ihren Namen behalten).
 - Messung: Site-Diff vorher/nachher an Example und Basis leer (besonders Footer, Brotkrumen,
   Link-Vorschau); `--check-contrast` (93 Paare); `check:tokens` gleiche Zahl lebender Tokens.
 

@@ -40,6 +40,7 @@ export default function Inspector({
   groupNames,
   isDuplicate,
   rank,
+  pageType,
   onChange
 }: {
   plugins: PluginEntry[]
@@ -49,6 +50,10 @@ export default function Inspector({
   groupNames: string[]
   isDuplicate: boolean
   rank: number
+  /** Set while the stage shows one page type: whether that type hides this component (its
+   *  `exclude`, pageTypeOverride.ts). The only field here that is about one page type - every other
+   *  one changes the component on all pages. */
+  pageType?: { label: string; excluded: boolean; instances: number; onChange: (excluded: boolean) => void }
   /** The new plugin list, and which entry the panel shows afterwards (null: none). */
   onChange: (next: PluginEntry[], select?: number | null) => void
 }): JSX.Element {
@@ -111,6 +116,31 @@ export default function Inspector({
           <Button variant="ghost" onClick={enable}>
             {t('layoutEditor.inspector.enable')}
           </Button>
+        </div>
+      )}
+
+      {pageType && (
+        <div className="flex flex-col gap-1 rounded-md border border-ink/[0.06] p-2.5 dark:border-ink/10">
+          <Toggle
+            label={t('layoutEditor.pageType.hideOnType', { type: pageType.label })}
+            checked={pageType.excluded}
+            onChange={(hidden) => {
+              pageType.onChange(hidden)
+              announce(
+                t(hidden ? 'layoutEditor.pageType.hiddenAnnounce' : 'layoutEditor.pageType.shownAnnounce', {
+                  name: plugin.name,
+                  type: pageType.label
+                })
+              )
+            }}
+          />
+          {/* Quartz excludes by name, so the switch reaches every instance - said here, where the
+              one instance in the panel would otherwise look like the only one affected. */}
+          {pageType.instances > 1 && (
+            <p className="text-micro text-amber-600 dark:text-amber-400">
+              {t('layoutEditor.excludeDuplicateHint', { count: pageType.instances, name: plugin.name })}
+            </p>
+          )}
         </div>
       )}
 

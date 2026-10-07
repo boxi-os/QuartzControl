@@ -28,8 +28,9 @@ import type {
   QuartzConfig
 } from '@shared/ipc-contract'
 import { DEFAULT_FRAME_BREAKPOINT_WIDTHS, FRAME_BREAKPOINTS, buildGridStyle } from '@shared/gridFrameCss'
-import { Button, Card, CardHeading, SegmentedControl, Select } from '../../components/ui'
-import { LayoutGrid, SlidersHorizontal } from 'lucide-react'
+import { Button, Card, CardHeading, IconButton, SegmentedControl, Select } from '../../components/ui'
+import { Eraser, LayoutGrid, RotateCcw, SlidersHorizontal } from 'lucide-react'
+import { announce } from '../../state/announcer'
 import { useStickyState } from '../../state/uiState'
 import { ComponentChip, PaletteChip } from './ComponentChip'
 import { ComponentPalette, PALETTE_DROP_ID, PALETTE_PREFIX } from './Palette'
@@ -58,6 +59,19 @@ import {
   type ComponentRef
 } from './utils'
 import { QUARTZ_MOBILE_MAX, STAGE_REFERENCE_WIDTH, shownInView, stageFrame, stageTracks } from './stageGeometry'
+import {
+  BUILTIN_FRAMES,
+  deadExcludes,
+  hasPageTypeOverride,
+  isExcluded,
+  isPositionCleared,
+  overrideOf,
+  resolvedFrame,
+  withExcluded,
+  withPositionCleared,
+  withTemplate,
+  withoutOverride
+} from './pageTypeOverride'
 
 // Plain closestCenter compares the *dragged rect's* center (not the cursor) against each
 // droppable's center - grabbing a wide card by its left-edge handle offsets that rect's center
@@ -122,12 +136,11 @@ export default function GlobalBoard({
   // Sticky like any other "where was I": a trip to Stile and back keeps the panel on it.
   const [selected, setSelected] = useStickyState<ComponentRef | null>('layout.selected', null)
   const [frames, setFrames] = useState<GridFrameDefinition[]>([])
-  // Which page type's assigned template the grid mockup below illustrates - purely a display
-  // choice (see the comment below), defaults to "content" since that's Quartz's de-facto
-  // site-wide default (ordinary notes). Not necessarily present in `pageTypes` on the very first
-  // render (plugins may still be loading), which is fine - the byPageType lookup below just comes
-  // back empty until it is.
-  const [previewPageType, setPreviewPageType] = useState('content')
+  // Which page the stage shows: null is "Alle Seiten", the layout every page type starts from; a
+  // page type shows that type's frame and what its `layout.byPageType` entry hides or clears, and
+  // offers to change exactly that (pageTypeOverride.ts). Until 1.1 this was a tab of its own with
+  // switches and no page. Sticky, like the tab it replaces.
+  const [storedPageType, setPageType] = useStickyState<string | null>('layout.pageType', null)
   // Read here to label the views and to compare the frames' mobile switch with Quartz's own; they
   // are edited on the Frames tab (FrameBreakpoints), which unmounts this board, so a read on mount
   // is always the current one.
@@ -155,6 +168,13 @@ export default function GlobalBoard({
   const nameCounts = duplicateNameCounts(config.plugins)
   const ranks = duplicateRanks(config.plugins)
   const pageTypes = derivePageTypes(config)
+  // A type that is gone - its override removed, its plugin uninstalled - falls back to all pages
+  // rather than to a selector showing nothing.
+  const pageType = storedPageType && pageTypes.includes(storedPageType) ? storedPageType : null
+  const pageTypeName = (pt: string): string => t(`layoutEditor.pageTypes.${pt}`, pt)
+  const override = pageType ? overrideOf(config, pageType) : null
+  const typeLabel = pageType ? pageTypeName(pageType) : ''
+  const dead = override ? deadExcludes(config, override) : new Set<string>()
 
   // Every change the board and its panel make is a new plugin list, and some of them move the
   // panel along: a new duplicate is shown at once, a removed one closes the panel. The reference is
@@ -173,13 +193,12 @@ export default function GlobalBoard({
     window.quartzGui.layoutFrames.list(projectPath).then(setFrames)
   }, [projectPath])
 
-  // Global's board doesn't carry a page-type context of its own - it edits the one component
-  // list that feeds every page type, and this switcher doesn't change that: it only picks which
-  // page type's assigned template the grid mockup illustrates (and, as a side effect, which
-  // positions that template leaves "unassigned" below) - it does NOT apply that page type's own
-  // exclude/positions overrides (that stays a Seitentypen-tab concern, PageTypeOverrides.tsx).
-  const activeFrameName = config.layout?.byPageType?.[previewPageType]?.template
-  const activeFrame = activeFrameName ? (frames.find((f) => f.frameName === activeFrameName) ?? null) : null
+  // The frame the stage is drawn in, by quartz's rule (resolvedFrame). "Alle Seiten" has no frame
+  // of its own - every page type picks one - so it is drawn in the frame of content pages, the
+  // pages a site mostly consists of, and the head says so.
+  const frameChoice = resolvedFrame(config, pageType ?? 'content', builtinPageTypeFrames)
+  const activeFrameName = frameChoice.name
+  const activeFrame = activeFrameName !== 'default' ? (frames.find((f) => f.frameName === activeFrameName) ?? null) : null
   const activeLayout = activeFrame?.breakpoints[breakpoint] ?? null
   const activeAreas =
     activeFrame && activeLayout
@@ -217,20 +236,93 @@ export default function GlobalBoard({
   // DEFAULT_FRAME_GRID depicts) - real, fixed single-column shapes, not a custom authored frame, so
   // they're looked up in BUILTIN_FRAME_LAYOUT rather than the `frames` list.
   const builtinFrame =
-    activeFrameName && activeFrameName in BUILTIN_FRAME_LAYOUT ? BUILTIN_FRAME_LAYOUT[activeFrameName as 'full-width' | 'minimal'] : null
+    !activeFrame && activeFrameName in BUILTIN_FRAME_LAYOUT ? BUILTIN_FRAME_LAYOUT[activeFrameName as 'full-width' | 'minimal'] : null
 
   const visibleSlots = activeUsedSlots ?? (builtinFrame ? new Set(builtinFrame.visibleSlots) : null)
   const activeUnassignedSlots = visibleSlots ? POSITIONS.filter((p) => !visibleSlots.has(p)) : []
 
-  // Quartz resolves the frame as `override.template ?? pageType.frame ?? "default"` (dispatcher.ts)
-  // - so when there's no explicit override AND this page type's own plugin declares its own default
-  // frame (e.g. canvas-page -> "canvas"), the real rendered layout is that plugin's frame, not the
-  // literal 3-column default this mockup otherwise falls back to. We have no declarative shape for
-  // an arbitrary plugin-rendered frame (unlike our own authored GridFrameDefinitions or the two
-  // other built-ins above), so the best honest answer here is a placeholder, not a mockup that's
-  // simply wrong.
-  const builtinDefaultFrame = builtinPageTypeFrames[`${previewPageType}-page`]
-  const unknownPluginFrame = !activeFrameName && !activeFrame && builtinDefaultFrame != null && builtinDefaultFrame !== 'default'
+  // A frame a page type plugin brings (canvas-page brings "canvas") has no declarative shape the
+  // app could draw, unlike an authored frame or the built-ins above, so the honest answer is a
+  // placeholder rather than a mockup that is simply wrong. A name that is neither - a deleted
+  // authored frame, a typo in the file - quartz renders with the default frame (resolveFrame), and
+  // the stage draws that one and says why.
+  const otherFrame = !activeFrame && !builtinFrame && activeFrameName !== 'default'
+  const unknownPluginFrame = otherFrame && Object.values(builtinPageTypeFrames).includes(activeFrameName)
+  const unknownFrame = otherFrame && !unknownPluginFrame
+  const builtinDefaultFrame = pageType ? builtinPageTypeFrames[`${pageType}-page`] : undefined
+  const frameLabel = (name: string): string =>
+    name === 'default'
+      ? t('layoutEditor.templateDefault')
+      : name === 'full-width'
+        ? t('layoutEditor.templateFullWidth')
+        : name === 'minimal'
+          ? t('layoutEditor.templateMinimal')
+          : name
+
+  // Why a component is not on the page the stage shows, or nothing when it is. The page type's own
+  // answers come first: they hold in every view, the view's only in this one.
+  function hiddenReason(index: number): string | undefined {
+    const plugin = config.plugins[index]
+    if (!plugin) return undefined
+    if (override && isExcluded(override, plugin)) return t('layoutEditor.pageType.excludedHere', { type: typeLabel })
+    const position = getLayout(plugin)?.position
+    if (override && position && isPositionCleared(override, position)) return t('layoutEditor.pageType.clearedHere', { type: typeLabel })
+    if (!shownInView(getLayout(plugin)?.display, breakpoint)) return t('layoutEditor.stage.hiddenInView')
+    return undefined
+  }
+
+  function togglePositionCleared(position: LayoutPosition): void {
+    if (!pageType || !override) return
+    const cleared = !isPositionCleared(override, position)
+    onChange(withPositionCleared(config, pageType, position, cleared))
+    announce(
+      t(cleared ? 'layoutEditor.pageType.clearedAnnounce' : 'layoutEditor.pageType.restoredAnnounce', {
+        position: t(`positions.${position}`, position),
+        type: typeLabel
+      })
+    )
+  }
+
+  // The eraser in an area's head, while a page type is shown. It clears the position, so where a
+  // frame gives one position several areas, each of them carries it and all of them follow.
+  function clearAction(position: LayoutPosition): React.ReactNode {
+    if (!pageType || !override) return undefined
+    const cleared = isPositionCleared(override, position)
+    const params = { position: t(`positions.${position}`, position), type: typeLabel }
+    return (
+      <IconButton
+        tone="neutral"
+        icon={cleared ? RotateCcw : Eraser}
+        title={t(cleared ? 'layoutEditor.pageType.restoreArea' : 'layoutEditor.pageType.clearArea', params)}
+        onClick={() => togglePositionCleared(position)}
+      />
+    )
+  }
+  const clearedNoteFor = (position: LayoutPosition): string | undefined =>
+    override && isPositionCleared(override, position) ? t('layoutEditor.pageType.areaCleared', { type: typeLabel }) : undefined
+
+  function removeOverride(): void {
+    if (!pageType) return
+    onChange(withoutOverride(config, pageType))
+    announce(t('layoutEditor.pageType.removedAnnounce', { type: typeLabel }))
+    // The button just pressed is gone with the customization; the keyboard goes back to the
+    // selector it was reached from, not to <body>.
+    requestAnimationFrame(() => document.getElementById('layout-page-type')?.focus())
+  }
+
+  // The frame select of a page type. Leaving `template` unset is not "the default frame" when the
+  // type's plugin brings its own, so that option stands for the plugin's frame, and the plain
+  // default gets an entry that writes `template: default`. A value that is none of the offered
+  // ones - a deleted authored frame, a name written by hand - stays visible as itself.
+  const hasPluginDefault = builtinDefaultFrame != null && builtinDefaultFrame !== 'default'
+  const noOverrideValue = hasPluginDefault ? builtinDefaultFrame! : 'default'
+  const authoredNames = frames.map((f) => f.frameName)
+  const unknownTemplate =
+    override?.template != null &&
+    !(BUILTIN_FRAMES as readonly string[]).includes(override.template) &&
+    !authoredNames.includes(override.template) &&
+    override.template !== builtinDefaultFrame
+  const customizedTypes = new Set(pageTypes.filter((pt) => hasPageTypeOverride(config.layout?.byPageType?.[pt])))
 
   // What a drag id means here, in words: a palette chip about to be placed, the palette itself as
   // a drop target, one of the six layout positions, or - a bare number - the plugin at that index
@@ -437,7 +529,8 @@ export default function GlobalBoard({
     nameCounts,
     ranks,
     selectedIndex,
-    breakpoint,
+    hiddenReason,
+    clearedNoteFor,
     onSelect: (index: number) => setSelected(componentRef(config.plugins, index))
   }
   // What a drop on the tray would do with the thing being dragged right now, for the tray's caption.
@@ -445,62 +538,102 @@ export default function GlobalBoard({
 
   return (
     <div className="flex flex-col gap-6">
-      {/* The stage's head: which view, which page type it is drawn for, and the frame that gives it
-          its shape - with the way into that frame's editor, since the frame is where the shape of
-          a view changes (docs/plan-1.1.md, "Eigene Frames bleiben ein eigener Bereich"). */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <SegmentedControl
-          label={t('layoutEditor.stage.viewLabel')}
-          value={breakpoint}
-          onChange={setBreakpoint}
-          options={FRAME_BREAKPOINTS.map((bp) => ({
-            value: bp,
-            // Only an authored frame follows the configured widths - a page on a built-in frame
-            // reflows at Quartz's own, so printing ours next to it would be a claim this preview
-            // cannot keep.
-            label: activeFrame
-              ? `${t(`layoutEditor.frameBuilder.breakpoint.${bp}`)} · ${breakpointRangeLabel(bp, breakpointWidths)}`
-              : t(`layoutEditor.frameBuilder.breakpoint.${bp}`)
-          }))}
-        />
-        <div className="flex flex-wrap items-center gap-2">
+      {/* The stage's head: which page and which view it shows, and the frame that gives it its
+          shape - with the way into that frame's editor, since the frame is where the shape of a
+          view changes (docs/plan-1.1.md, "Eigene Frames bleiben ein eigener Bereich"). */}
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           <label className="flex items-center gap-2 text-xs font-medium text-text-muted">
-            {t('layoutEditor.previewPageTypeLabel')}
-            <Select value={previewPageType} onChange={(e) => setPreviewPageType(e.target.value)} className="w-40">
+            {t('layoutEditor.pageType.label')}
+            <Select id="layout-page-type" value={pageType ?? ''} onChange={(e) => setPageType(e.target.value || null)} className="w-52">
+              <option value="">{t('layoutEditor.pageType.all')}</option>
               {pageTypes.map((pt) => (
                 <option key={pt} value={pt}>
-                  {t(`layoutEditor.pageTypes.${pt}`, pt)}
+                  {customizedTypes.has(pt) ? t('layoutEditor.pageType.customized', { type: pageTypeName(pt) }) : pageTypeName(pt)}
                 </option>
               ))}
             </Select>
           </label>
-          <p className="text-xs text-text-muted">
-            {t('layoutEditor.activeFrameLabel', {
-              name: activeFrame
-                ? activeFrame.frameName
-                : builtinFrame
-                  ? t(activeFrameName === 'full-width' ? 'layoutEditor.templateFullWidth' : 'layoutEditor.templateMinimal')
-                  : unknownPluginFrame
-                    ? builtinDefaultFrame
-                    : t('layoutEditor.activeFrameDefault')
-            })}
-          </p>
+          <SegmentedControl
+            label={t('layoutEditor.stage.viewLabel')}
+            value={breakpoint}
+            onChange={setBreakpoint}
+            options={FRAME_BREAKPOINTS.map((bp) => ({
+              value: bp,
+              // Only an authored frame follows the configured widths - a page on a built-in frame
+              // reflows at Quartz's own, so printing ours next to it would be a claim this preview
+              // cannot keep.
+              label: activeFrame
+                ? `${t(`layoutEditor.frameBuilder.breakpoint.${bp}`)} · ${breakpointRangeLabel(bp, breakpointWidths)}`
+                : t(`layoutEditor.frameBuilder.breakpoint.${bp}`)
+            }))}
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {pageType ? (
+            <label className="flex items-center gap-2 text-xs font-medium text-text-muted">
+              {t('layoutEditor.template')}
+              <Select
+                value={override?.template ?? noOverrideValue}
+                onChange={(e) => onChange(withTemplate(config, pageType, e.target.value === noOverrideValue ? undefined : e.target.value))}
+                className="w-52"
+              >
+                {hasPluginDefault && (
+                  <option value={builtinDefaultFrame}>{t('layoutEditor.templatePluginDefault', { frame: builtinDefaultFrame })}</option>
+                )}
+                <option value="default">{t('layoutEditor.templateDefault')}</option>
+                <option value="full-width">{t('layoutEditor.templateFullWidth')}</option>
+                <option value="minimal">{t('layoutEditor.templateMinimal')}</option>
+                {authoredNames.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+                {unknownTemplate && (
+                  <option value={override!.template}>{t('layoutEditor.pageType.unknownOption', { frame: override!.template })}</option>
+                )}
+              </Select>
+            </label>
+          ) : (
+            <p className="text-xs text-text-muted">{t('layoutEditor.pageType.allPagesFrame', { name: frameLabel(activeFrameName) })}</p>
+          )}
           {activeFrame && (
             <Button variant="ghost" onClick={() => onEditFrame(activeFrame, breakpoint)}>
               <LayoutGrid size={14} aria-hidden />
               {t('layoutEditor.stage.editFrame')}
             </Button>
           )}
+          {pageType && config.layout?.byPageType?.[pageType] && (
+            <Button variant="ghost" onClick={removeOverride}>
+              <RotateCcw size={14} aria-hidden />
+              {t('layoutEditor.pageType.removeOverride')}
+            </Button>
+          )}
+        </div>
+        <div className="flex max-w-[95ch] flex-col gap-1 text-micro text-text-muted empty:hidden">
+          {/* What a change does where: the selector suggests that everything below is about this
+              page type, and only hiding and clearing are. */}
+          {pageType && <p>{t('layoutEditor.pageType.scopeHint', { type: typeLabel })}</p>}
+          {/* "Never excluded" and "excluded under a name that does nothing" look the same on the
+              stage, so the difference is said where it is known. */}
+          {dead.size > 0 && (
+            <p className="text-amber-600 dark:text-amber-400">
+              {t('layoutEditor.excludeDeadHint', { count: dead.size, names: [...dead].join(', ') })}
+            </p>
+          )}
+          {unknownFrame && (
+            <p className="text-amber-600 dark:text-amber-400">{t('layoutEditor.pageType.unknownFrame', { frame: activeFrameName })}</p>
+          )}
+          {thresholdMismatch !== null && (
+            <p>
+              {t(thresholdMismatch < QUARTZ_MOBILE_MAX ? 'layoutEditor.stage.mobileBelowQuartz' : 'layoutEditor.stage.mobileAboveQuartz', {
+                frame: thresholdMismatch,
+                quartz: QUARTZ_MOBILE_MAX
+              })}
+            </p>
+          )}
         </div>
       </div>
-      {thresholdMismatch !== null && (
-        <p className="-mt-3 max-w-[95ch] text-micro text-text-muted">
-          {t(thresholdMismatch < QUARTZ_MOBILE_MAX ? 'layoutEditor.stage.mobileBelowQuartz' : 'layoutEditor.stage.mobileAboveQuartz', {
-            frame: thresholdMismatch,
-            quartz: QUARTZ_MOBILE_MAX
-          })}
-        </p>
-      )}
 
       {/* useDraggable/useDroppable only register with the nearest ancestor DndContext, so the
           palette has to be a child of it, not a sibling - otherwise its chips are inert. */}
@@ -554,6 +687,7 @@ export default function GlobalBoard({
                       <AreaBox
                         label={area.name}
                         slotLabel={area.slot ? t(`positions.${area.slot}`, area.slot) : t('layoutEditor.frameBuilder.slotNone')}
+                        action={area.slot && area.slot !== 'pageBody' ? clearAction(area.slot) : undefined}
                       >
                         {!area.slot ? (
                           // An area with no slot is an empty cell in the built page too, so the board
@@ -589,14 +723,14 @@ export default function GlobalBoard({
                 >
                   {builtinFrame.visibleSlots.includes('header') && (
                     <div className="min-w-0" style={{ gridArea: 'header' }}>
-                      <AreaBox label={t('positions.header')}>
+                      <AreaBox label={t('positions.header')} action={clearAction('header')}>
                         <PositionSlot position="header" indices={positions.header} direction="column" {...slotProps} />
                       </AreaBox>
                     </div>
                   )}
                   {builtinFrame.visibleSlots.includes('beforeBody') && (
                     <div style={{ gridArea: 'beforeBody' }}>
-                      <AreaBox label={t('positions.beforeBody')}>
+                      <AreaBox label={t('positions.beforeBody')} action={clearAction('beforeBody')}>
                         <PositionSlot position="beforeBody" indices={positions.beforeBody} direction="column" {...slotProps} />
                       </AreaBox>
                     </div>
@@ -609,14 +743,14 @@ export default function GlobalBoard({
                   </div>
                   {builtinFrame.visibleSlots.includes('afterBody') && (
                     <div style={{ gridArea: 'afterBody' }}>
-                      <AreaBox label={t('positions.afterBody')}>
+                      <AreaBox label={t('positions.afterBody')} action={clearAction('afterBody')}>
                         <PositionSlot position="afterBody" indices={positions.afterBody} direction="column" {...slotProps} />
                       </AreaBox>
                     </div>
                   )}
                   {builtinFrame.visibleSlots.includes('footer') && (
                     <div className="min-w-0" style={{ gridArea: 'footer' }}>
-                      <AreaBox label={t('positions.footer')}>
+                      <AreaBox label={t('positions.footer')} action={clearAction('footer')}>
                         <PositionSlot position="footer" indices={positions.footer} direction="column" {...slotProps} />
                       </AreaBox>
                     </div>
@@ -624,7 +758,7 @@ export default function GlobalBoard({
                 </div>
               ) : unknownPluginFrame ? (
                 <div className="rounded-[6px] border border-dashed border-amber-400/50 bg-amber-50/50 px-4 py-6 text-center text-sm text-amber-700 dark:border-amber-400/30 dark:bg-amber-950/20 dark:text-amber-400">
-                  {t('layoutEditor.pluginFrameUnknownLayout', { frame: builtinDefaultFrame })}
+                  {t('layoutEditor.pluginFrameUnknownLayout', { frame: activeFrameName })}
                 </div>
               ) : (
                 <div
@@ -632,33 +766,33 @@ export default function GlobalBoard({
                   style={{ gridTemplateColumns: defaultColumns, gridTemplateRows: grid.rows, gridTemplateAreas: grid.areas }}
                 >
                   <div className="min-w-0" style={{ gridArea: 'sidebar-left' }}>
-                    <AreaBox label={t('positions.left')}>
+                    <AreaBox label={t('positions.left')} action={clearAction('left')}>
                       <PositionSlot position="left" indices={positions.left} direction={sidebarDirection('left', breakpoint)} {...slotProps} />
                     </AreaBox>
                   </div>
                   <div style={{ gridArea: 'header' }}>
-                    <AreaBox label={t('positions.header')}>
+                    <AreaBox label={t('positions.header')} action={clearAction('header')}>
                       <PositionSlot position="header" indices={positions.header} direction="column" {...slotProps} />
                     </AreaBox>
                   </div>
                   <div style={{ gridArea: 'center' }} className="flex min-w-0 flex-col gap-3">
-                    <AreaBox label={t('positions.beforeBody')}>
+                    <AreaBox label={t('positions.beforeBody')} action={clearAction('beforeBody')}>
                       <PositionSlot position="beforeBody" indices={positions.beforeBody} direction="column" {...slotProps} />
                     </AreaBox>
                     <div className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10">
                       {t('layoutEditor.frameBuilder.preview.pageContent')}
                     </div>
-                    <AreaBox label={t('positions.afterBody')}>
+                    <AreaBox label={t('positions.afterBody')} action={clearAction('afterBody')}>
                       <PositionSlot position="afterBody" indices={positions.afterBody} direction="column" {...slotProps} />
                     </AreaBox>
                   </div>
                   <div className="min-w-0" style={{ gridArea: 'sidebar-right' }}>
-                    <AreaBox label={t('positions.right')}>
+                    <AreaBox label={t('positions.right')} action={clearAction('right')}>
                       <PositionSlot position="right" indices={positions.right} direction={sidebarDirection('right', breakpoint)} {...slotProps} />
                     </AreaBox>
                   </div>
                   <div style={{ gridArea: 'footer' }}>
-                    <AreaBox label={t('positions.footer')}>
+                    <AreaBox label={t('positions.footer')} action={clearAction('footer')}>
                       <PositionSlot position="footer" indices={positions.footer} direction="column" {...slotProps} />
                     </AreaBox>
                   </div>
@@ -685,6 +819,16 @@ export default function GlobalBoard({
             {selectedIndex !== null && config.plugins[selectedIndex] ? (
               <Inspector
                 key={`${selected?.name}#${selected?.occurrence}`}
+                pageType={
+                  pageType && override
+                    ? {
+                        label: typeLabel,
+                        excluded: isExcluded(override, config.plugins[selectedIndex]),
+                        instances: nameCounts.get(config.plugins[selectedIndex].name) ?? 1,
+                        onChange: (excluded) => onChange(withExcluded(config, pageType, config.plugins[selectedIndex], excluded))
+                      }
+                    : undefined
+                }
                 plugins={config.plugins}
                 index={selectedIndex}
                 positions={positions}
@@ -713,7 +857,7 @@ export default function GlobalBoard({
               groupNames={groupNames}
               rank={ranks.get(Number(activeId))}
               isDuplicate={(nameCounts.get(activeItem.name) ?? 0) > 1}
-              hiddenInView={!shownInView(getLayout(activeItem)?.display, breakpoint)}
+              hiddenReason={hiddenReason(Number(activeId))}
             />
           ) : null}
           {activePaletteSource ? (
@@ -728,7 +872,18 @@ export default function GlobalBoard({
 // The card look every area gets on the board - name + slot badge header, bordered/shadowed body -
 // mirrors FrameBuilder's own area boxes so a slot reads the same whether it's being assigned a
 // grid position there or having components arranged into it here.
-function AreaBox({ label, slotLabel, children }: { label: string; slotLabel?: string; children: React.ReactNode }): JSX.Element {
+function AreaBox({
+  label,
+  slotLabel,
+  action,
+  children
+}: {
+  label: string
+  slotLabel?: string
+  // A control for the area as a whole, at the end of its head (the eraser of a page type).
+  action?: React.ReactNode
+  children: React.ReactNode
+}): JSX.Element {
   return (
     <div className="flex h-full min-w-0 flex-col gap-1.5 rounded-[6px] border border-slate-300 bg-surface p-1.5 shadow-sm dark:border-ink/15 dark:bg-ink/[0.03]">
       {/* Wraps instead of pushing: on the stage a side column can be 120px, and the area's name and
@@ -738,6 +893,7 @@ function AreaBox({ label, slotLabel, children }: { label: string; slotLabel?: st
         {slotLabel && slotLabel !== label && (
           <span className="min-w-0 truncate rounded-full bg-ink/[0.06] px-1.5 text-micro text-text-secondary dark:bg-ink/10">{slotLabel}</span>
         )}
+        {action && <span className="ml-auto">{action}</span>}
       </div>
       {children}
     </div>
@@ -754,7 +910,8 @@ function PositionSlot({
   nameCounts,
   ranks,
   selectedIndex,
-  breakpoint,
+  hiddenReason,
+  clearedNoteFor,
   onSelect
 }: {
   position: LayoutPosition
@@ -768,10 +925,12 @@ function PositionSlot({
   nameCounts: Map<string, number>
   ranks: Map<number, number>
   selectedIndex: number | null
-  breakpoint: FrameBreakpoint
+  hiddenReason: (index: number) => string | undefined
+  clearedNoteFor: (position: LayoutPosition) => string | undefined
   onSelect: (index: number) => void
 }): JSX.Element {
   const { t } = useTranslation()
+  const clearedNote = clearedNoteFor(position)
   const { setNodeRef } = useDroppable({ id: dropId(position, group) })
   const ids = indices.map(String)
 
@@ -786,6 +945,9 @@ function PositionSlot({
         // the body.
         className={`flex min-h-[40px] min-w-0 flex-1 gap-1.5 rounded-md bg-ink/[0.02] p-1 dark:bg-ink/[0.03] ${direction === 'row' ? 'flex-row flex-wrap content-start' : 'flex-col'}`}
       >
+        {/* Still a drop target: what is placed here is placed for every page, and shows on the
+            ones that do not clear it. */}
+        {clearedNote && <p className="w-full px-1 text-micro font-medium text-text-secondary">{clearedNote}</p>}
         {indices.length === 0 && <p className="px-2 py-2 text-center text-xs text-text-muted">{t('layoutEditor.emptySlot')}</p>}
         {indices.map((index) => (
           <SortableItem
@@ -798,7 +960,7 @@ function PositionSlot({
             selected={selectedIndex === index}
             onSelect={() => onSelect(index)}
             isDuplicate={(nameCounts.get(config.plugins[index].name) ?? 0) > 1}
-            hiddenInView={!shownInView(getLayout(config.plugins[index])?.display, breakpoint)}
+            hiddenReason={hiddenReason(index)}
           />
         ))}
       </div>
@@ -815,7 +977,7 @@ function SortableItem({
   selected,
   onSelect,
   isDuplicate,
-  hiddenInView
+  hiddenReason
 }: {
   id: string
   plugin: PluginEntry
@@ -825,7 +987,7 @@ function SortableItem({
   selected: boolean
   onSelect: () => void
   isDuplicate: boolean
-  hiddenInView: boolean
+  hiddenReason?: string
 }): JSX.Element {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id
@@ -839,7 +1001,7 @@ function SortableItem({
         groupNames={groupNames}
         rank={rank}
         isDuplicate={isDuplicate}
-        hiddenInView={hiddenInView}
+        hiddenReason={hiddenReason}
         selected={selected}
         onSelect={onSelect}
         // The handle is the activator node, as at the two other @dnd-kit places. Without it

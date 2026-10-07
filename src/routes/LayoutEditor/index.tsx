@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useSearchParams } from 'react-router-dom'
-import { SlidersHorizontal } from 'lucide-react'
 import { useProject } from '../ProjectLayout'
 import type { FrameBreakpoint, GridFrameDefinition, QuartzConfig } from '@shared/ipc-contract'
 import { Button, PageHeader, SegmentedControl } from '../../components/ui'
@@ -12,17 +11,18 @@ import { useSaveCommand } from '../../state/saveCommand'
 import { UnsavedBadge, useUnsavedChanges } from '../../state/unsavedGuard'
 import { TAB_ICONS } from '../navConfig'
 import GlobalBoard from './GlobalBoard'
-import PageTypeOverrides from './PageTypeOverrides'
 import FrameBuilder from './FrameBuilder'
-import { derivePageTypes, hasPageTypeOverride } from './utils'
 import HandbookLink from '../../components/HandbookLink'
 
-// Zwei der drei Reiter teilen sich ein Kapitel: "Global" und "Seitentypen" beantworten dieselbe
-// Frage (was erscheint wo), die eigenen Frames die andere (wie ist die Seite aufgeteilt).
-const HANDBOOK = { global: 'layoutGlobal', pagetypes: 'layoutGlobal', frames: 'layoutFrames' } as const
+// Ein Kapitel je Frage: was erscheint wo (die Bühne, mit den Seitentypen seit 1.1), und wie ist die
+// Seite aufgeteilt (die eigenen Frames).
+const HANDBOOK = { global: 'layoutGlobal', frames: 'layoutFrames' } as const
 
-type Tab = 'global' | 'pagetypes' | 'frames'
-const TAB_ORDER: Tab[] = ['global', 'pagetypes', 'frames']
+type Tab = 'global' | 'frames'
+const TAB_ORDER: Tab[] = ['global', 'frames']
+// The page types were a tab of their own until 1.1 and are the stage's selector now. A link or a
+// remembered tab that still says so opens the stage rather than nothing.
+const RETIRED_TABS = ['pagetypes']
 
 function isTab(value: string | null): value is Tab {
   return value !== null && (TAB_ORDER as string[]).includes(value)
@@ -40,13 +40,12 @@ export default function LayoutEditor(): JSX.Element {
   // parameter is what makes "open this frame in the layout editor" a link rather than a store
   // write, and what lets a sub-tab be deep-linked at all; the sticky half is still needed because
   // the sidebar's NavLink carries no search string, so a trip to another area and back would
-  // otherwise always reset to Global. Which page type is open stays sticky-only: it is a value out
-  // of the project's own data, not one of three fixed names.
+  // otherwise always reset to Global. Which page type the stage shows stays sticky-only (GlobalBoard):
+  // it is a value out of the project's own data, not one of two fixed names.
   const [searchParams, setSearchParams] = useSearchParams()
   const rawTab = searchParams.get('tab')
   const [lastTab, setLastTab] = useStickyState<Tab>('layout.tab', 'global')
-  const tab: Tab = isTab(rawTab) ? rawTab : lastTab
-  const [activePageType, setActivePageType] = useStickyState<string | null>('layout.pageType', null)
+  const tab: Tab = isTab(rawTab) ? rawTab : isTab(lastTab) ? lastTab : 'global'
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [error, setError] = useState<string | null>(null)
   const [customFrames, setCustomFrames] = useState<GridFrameDefinition[]>([])
@@ -61,7 +60,11 @@ export default function LayoutEditor(): JSX.Element {
   // which carries no search string - would drop the user somewhere they never chose.
   useEffect(() => {
     if (isTab(rawTab)) setLastTab(rawTab)
-  }, [rawTab, setLastTab])
+    else if (rawTab && RETIRED_TABS.includes(rawTab)) {
+      setSearchParams({}, { replace: true })
+      setLastTab('global')
+    }
+  }, [rawTab, setLastTab, setSearchParams])
 
   const goToTab = useCallback(
     (next: Tab) => {
@@ -161,32 +164,6 @@ export default function LayoutEditor(): JSX.Element {
   // shortcut stays quiet rather than rewriting an unchanged file.
   useSaveCommand(tab !== 'frames' && dirty && status !== 'saving' ? save : null)
 
-  const availablePageTypes = useMemo(() => (config ? derivePageTypes(config) : []), [config])
-  // Raw keys present under layout.byPageType, regardless of whether they actually customize
-  // anything - still lets "Override entfernen" clean up a stray empty entry left over from before
-  // the selectPageType fix below, or from every individual toggle for a type being undone one at a
-  // time (see PageTypeOverrides.update()).
-  const overrideTypes = Object.keys(config?.layout?.byPageType ?? {})
-  // Which of those are worth flagging to the user - see hasPageTypeOverride's doc comment.
-  const customizedTypes = overrideTypes.filter((pt) => hasPageTypeOverride(config?.layout?.byPageType?.[pt]))
-
-  // Just switches which page type's override panel is shown - does NOT write anything to
-  // config.layout.byPageType. Merely viewing a page type must not count as customizing it; the
-  // override entry is created lazily by PageTypeOverrides.update() the moment the user actually
-  // changes a field (reproduced by hand: every page type ever clicked once got permanently marked
-  // "Angepasst" and, on save, wrote an empty `{}` override into quartz.config.yaml).
-  function selectPageType(pageType: string): void {
-    setActivePageType(pageType)
-  }
-
-  function removeOverride(pageType: string): void {
-    if (!config) return
-    const byPageType = { ...(config.layout?.byPageType ?? {}) }
-    delete byPageType[pageType]
-    setConfig({ ...config, layout: { ...config.layout, byPageType } })
-    setActivePageType(null)
-  }
-
   if (loadError) {
     return (
       <div className="max-w-xl">
@@ -240,38 +217,10 @@ export default function LayoutEditor(): JSX.Element {
           onChange={goToTab}
           options={TAB_ORDER.map((key) => ({
             value: key,
-            label: t(key === 'global' ? 'layoutEditor.tabGlobal' : key === 'pagetypes' ? 'layoutEditor.tabPageTypes' : 'layoutEditor.tabFrames')
+            label: t(key === 'global' ? 'layoutEditor.tabGlobal' : 'layoutEditor.tabFrames')
           }))}
         />
       </div>
-
-      {tab === 'pagetypes' && (
-        <div className="mb-6 flex flex-wrap items-center gap-1.5 border-b border-ink/[0.06] pb-4 dark:border-ink/10">
-          {availablePageTypes.map((pt) => (
-            <button
-              key={pt}
-              onClick={() => selectPageType(pt)}
-              className={`flex items-center gap-1.5 rounded-[6px] px-2.5 py-1 text-ui font-medium transition-colors ${
-                activePageType === pt
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-ink/[0.04] text-text-secondary hover:bg-ink/[0.08] dark:bg-ink/10 dark:hover:bg-ink/15'
-              }`}
-            >
-              {t(`layoutEditor.pageTypes.${pt}`, pt)}
-              {customizedTypes.includes(pt) && activePageType !== pt && (
-                <span title={t('layoutEditor.pageTypeHasOverride')} className="shrink-0 opacity-70">
-                  <SlidersHorizontal size={12} aria-hidden="true" />
-                </span>
-              )}
-            </button>
-          ))}
-          {activePageType && overrideTypes.includes(activePageType) && (
-            <button type="button" onClick={() => removeOverride(activePageType)} className="ml-auto text-xs text-text-muted underline">
-              {t('layoutEditor.removeOverride')}
-            </button>
-          )}
-        </div>
-      )}
 
       {tab === 'global' && (
         <GlobalBoard
@@ -284,19 +233,6 @@ export default function LayoutEditor(): JSX.Element {
       )}
 
       {tab === 'frames' && <FrameBuilder projectPath={project.path} onFramesChanged={syncPluginsFromDisk} />}
-
-      {tab === 'pagetypes' &&
-        (activePageType ? (
-          <PageTypeOverrides
-            config={config}
-            pageType={activePageType}
-            onChange={setConfig}
-            customTemplates={customFrames.map((f) => f.frameName)}
-            builtinFrameName={builtinPageTypeFrames[`${activePageType}-page`]}
-          />
-        ) : (
-          <p className="text-sm text-text-muted">{t('layoutEditor.pageTypesHint')}</p>
-        ))}
     </div>
   )
 }

@@ -1226,15 +1226,9 @@ export default {
     title: 'Layout Editor',
     templateCustomPlaceholder: 'e.g. Home page with sidebar',
     tabGlobal: 'Global',
-    tabPageTypes: 'Page types',
     tabFrames: 'Custom frames',
-    pageTypesHint: 'Choose a page type to customize it.',
-    pageTypeHasOverride: 'Customized',
     loading: 'Loading layout…',
     emptySlot: 'Empty — drag here',
-    activeFrameLabel: 'Frame: {{name}}',
-    activeFrameDefault: 'Default',
-    previewPageTypeLabel: 'Shown for',
     breakpoints: {
       title: 'Breakpoints',
       tablet: 'Tablet up to (px)',
@@ -1274,9 +1268,6 @@ export default {
       canvas: 'Canvas pages',
       bases: 'Bases pages'
     },
-    removeOverride: 'Remove override',
-    excludeHeading: 'Visible components',
-    excludeDescription: 'Turn off a component to hide it on pages of this type.',
     excludeDuplicateHint: 'Affects all {{count}} instances of “{{name}}” — Quartz cannot exclude individual duplicates here separately.',
     excludeDeadHint_one: 'The file still holds the exclusion “{{names}}” from an earlier version. It has no effect and disappears once you change something about this page type and save.',
     excludeDeadHint_other: 'The file still holds {{count}} exclusions from an earlier version ({{names}}). They have no effect and disappear once you change something about this page type and save.',
@@ -1287,8 +1278,6 @@ export default {
     templatePluginDefault: '“{{frame}}” (plugin default, active)',
     pluginFrameUnknownLayout:
       'This page type automatically uses the “{{frame}}” frame from its plugin. Only the plugin knows how that frame is built, so there is no preview here.',
-    clearSlotsHeading: 'Clear slots for this page type',
-    clearSlotsDescription: 'Enabled slots always stay empty for this page type, regardless of the global layout.',
     frameBuilder: {
       whatIsAFrame:
         'A frame is a page’s grid: it decides which areas exist — header, sidebars, content, footer —, where they sit and how wide they are. What appears inside those areas is set on the “Global” tab; which page type uses which frame, on the “Page types” tab. Quartz ships three frames (Default, Full width, Minimal). Here you build your own.',
@@ -1411,6 +1400,29 @@ export default {
       off: 'off',
       disabledHint: 'Switched off, not built. Switch it on in the side panel.',
       parkedHint: 'Switched off. Drag the component onto a slot to switch it back on there.'
+    },
+    pageType: {
+      label: 'Page type',
+      all: 'All pages',
+      customized: '{{type}} (customized)',
+      allPagesFrame: 'Drawn in the frame of content pages: {{name}}',
+      scopeHint:
+        'Hiding and clearing apply to {{type}} only. What you move or set in the side panel applies to all pages.',
+      removeOverride: 'Remove customization',
+      removedAnnounce: 'The customization for {{type}} is removed.',
+      excludedHere: 'Hidden on {{type}}',
+      clearedHere: 'Area cleared on {{type}}',
+      hideOnType: 'Hide on {{type}}',
+      hiddenAnnounce: '{{name}} is hidden on {{type}}.',
+      shownAnnounce: '{{name}} shows on {{type}} again.',
+      clearArea: 'Clear {{position}} on {{type}}',
+      restoreArea: 'Fill {{position}} on {{type}} again',
+      clearedAnnounce: '{{position}} is cleared on {{type}}.',
+      restoredAnnounce: '{{position}} is filled again on {{type}}.',
+      areaCleared: 'Empty on {{type}}',
+      unknownOption: '“{{frame}}” (unknown)',
+      unknownFrame:
+        'QuartzControl does not know a frame “{{frame}}”. Unless a plugin brings one by that name, Quartz builds these pages with the default frame — which is how the stage is drawn.'
     },
     stage: {
       viewLabel: 'View',

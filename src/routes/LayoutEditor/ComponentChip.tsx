@@ -87,7 +87,7 @@ export function ComponentChip({
   isDuplicate,
   selected,
   onSelect,
-  hiddenInView,
+  hiddenReason,
   dragHandleProps,
   dragHandleRef
 }: {
@@ -97,8 +97,9 @@ export function ComponentChip({
   isDuplicate?: boolean
   selected?: boolean
   onSelect?: () => void
-  /** Its `display` keeps it off the page in the view the stage shows (stageGeometry.shownInView). */
-  hiddenInView?: boolean
+  /** Why it is not on the page the stage shows: its `display` in this view (stageGeometry.shownInView),
+   *  or the selected page type excludes it or clears its position (pageTypeOverride.ts). */
+  hiddenReason?: string
   dragHandleProps?: Record<string, unknown>
   /** dnd-kit's setActivatorNodeRef, as its own prop: React 18 cannot carry a ref through a props
    *  spread, and the handle is what the activator node has to be - see the drag handle below. */
@@ -112,10 +113,10 @@ export function ComponentChip({
   return (
     <div
       onClick={onSelect}
-      // Not in this view: still there to drag and select, so not faded - grounded and dashed, with
+      // Not on this page: still there to drag and select, so not faded - grounded and dashed, with
       // the name in the muted colour, the way a disabled control stays readable (conventions.md).
-      title={hiddenInView ? t('layoutEditor.stage.hiddenInView') : undefined}
-      className={`flex min-w-0 items-center gap-1 rounded-[6px] border px-1 py-1 ${hiddenInView ? 'border-dashed bg-ground' : 'bg-surface shadow-sm'} ${
+      title={hiddenReason}
+      className={`flex min-w-0 items-center gap-1 rounded-[6px] border px-1 py-1 ${hiddenReason ? 'border-dashed bg-ground' : 'bg-surface shadow-sm'} ${
         color ? `border-l-[3px] ${color.ring}` : 'border-ink/[0.08] dark:border-ink/15'
       } ${selected ? 'outline outline-2 outline-offset-1 outline-blue-500' : ''} ${onSelect ? 'cursor-pointer' : ''}`}
     >
@@ -144,11 +145,11 @@ export function ComponentChip({
         }}
         // flex-auto rather than flex-1: with a zero basis the name gave up all its room to the marks
         // first, and in a 120px side column of the stage it was gone entirely.
-        className={`min-w-[1.5rem] flex-auto truncate text-left text-ui font-medium ${plugin.enabled && !hiddenInView ? '' : 'text-text-muted'}`}
+        className={`min-w-[1.5rem] flex-auto truncate text-left text-ui font-medium ${plugin.enabled && !hiddenReason ? '' : 'text-text-muted'}`}
       >
         {plugin.name}
         {isDuplicate && rank !== undefined && <span className="ml-1 text-micro font-normal text-text-muted">#{rank}</span>}
-        {hiddenInView && <span className="sr-only"> ({t('layoutEditor.stage.hiddenInView')})</span>}
+        {hiddenReason && <span className="sr-only"> ({hiddenReason})</span>}
       </button>
       <span className="flex min-w-0 shrink items-center gap-1 overflow-hidden text-text-muted">
         {/* Quartz drops a disabled entry before it builds the layout, so it keeps its place in the

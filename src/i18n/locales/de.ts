@@ -1231,15 +1231,9 @@ export default {
     title: 'Layout-Editor',
     templateCustomPlaceholder: 'z. B. Startseite mit Seitenleiste',
     tabGlobal: 'Global',
-    tabPageTypes: 'Seitentypen',
     tabFrames: 'Eigene Frames',
-    pageTypesHint: 'Wähle einen Seitentyp, um ihn anzupassen.',
-    pageTypeHasOverride: 'Angepasst',
     loading: 'Lade Layout…',
     emptySlot: 'Leer — hierher ziehen',
-    activeFrameLabel: 'Frame: {{name}}',
-    activeFrameDefault: 'Standard',
-    previewPageTypeLabel: 'Gezeigt für',
     breakpoints: {
       title: 'Breakpoints',
       tablet: 'Tablet bis (px)',
@@ -1279,9 +1273,6 @@ export default {
       canvas: 'Canvas-Seiten',
       bases: 'Bases-Seiten'
     },
-    removeOverride: 'Override entfernen',
-    excludeHeading: 'Sichtbare Komponenten',
-    excludeDescription: 'Schalte eine Komponente aus, um sie auf Seiten dieses Typs auszublenden.',
     excludeDuplicateHint: 'Betrifft alle {{count}} Instanzen von „{{name}}“ — Quartz kann einzelne Duplikate hier nicht getrennt ausschließen.',
     excludeDeadHint_one: 'In der Datei steht noch der Ausschluss „{{names}}“ aus einer früheren Fassung. Er wirkt nicht und verschwindet, sobald du an diesem Seitentyp etwas umlegst und speicherst.',
     excludeDeadHint_other: 'In der Datei stehen noch {{count}} Ausschlüsse aus einer früheren Fassung ({{names}}). Sie wirken nicht und verschwinden, sobald du an diesem Seitentyp etwas umlegst und speicherst.',
@@ -1292,8 +1283,6 @@ export default {
     templatePluginDefault: '„{{frame}}“ (Plugin-Standard, aktiv)',
     pluginFrameUnknownLayout:
       'Dieser Seitentyp benutzt automatisch das Frame „{{frame}}“ aus dem zugehörigen Plugin. Wie es aufgebaut ist, weiß nur das Plugin selbst — deshalb gibt es hier keine Vorschau.',
-    clearSlotsHeading: 'Bereiche für diesen Seitentyp leeren',
-    clearSlotsDescription: 'Aktivierte Bereiche bleiben für diesen Seitentyp immer leer, unabhängig von der globalen Belegung.',
     frameBuilder: {
       whatIsAFrame:
         'Ein Frame ist das Raster einer Seite: Es legt fest, welche Bereiche es gibt — Kopfbereich, Seitenleisten, Inhalt, Fußzeile —, wo sie liegen und wie breit sie sind. Was in diesen Bereichen erscheint, entscheidest du im Tab „Global“; welcher Seitentyp welchen Frame benutzt, im Tab „Seitentypen“. Quartz bringt drei Frames mit (Standard, Volle Breite, Minimal). Hier baust du eigene.',
@@ -1416,6 +1405,29 @@ export default {
       off: 'aus',
       disabledHint: 'Ausgeschaltet, wird nicht gebaut. Einschalten in der Seitenleiste.',
       parkedHint: 'Ausgeschaltet. Ziehe die Komponente auf einen Bereich, um sie dort wieder einzuschalten.'
+    },
+    pageType: {
+      label: 'Seitentyp',
+      all: 'Alle Seiten',
+      customized: '{{type}} (angepasst)',
+      allPagesFrame: 'Gezeichnet im Frame der Inhaltsseiten: {{name}}',
+      scopeHint:
+        'Ausblenden und Leeren gelten nur für {{type}}. Was du verschiebst oder in der Seitenleiste einstellst, gilt für alle Seiten.',
+      removeOverride: 'Anpassung entfernen',
+      removedAnnounce: 'Die Anpassung für {{type}} ist entfernt.',
+      excludedHere: 'Auf {{type}} ausgeblendet',
+      clearedHere: 'Bereich auf {{type}} geleert',
+      hideOnType: 'Auf {{type}} ausblenden',
+      hiddenAnnounce: '{{name}} ist auf {{type}} ausgeblendet.',
+      shownAnnounce: '{{name}} erscheint wieder auf {{type}}.',
+      clearArea: '{{position}} auf {{type}} leeren',
+      restoreArea: '{{position}} auf {{type}} wieder füllen',
+      clearedAnnounce: '{{position}} ist auf {{type}} geleert.',
+      restoredAnnounce: '{{position}} ist auf {{type}} wieder gefüllt.',
+      areaCleared: 'Auf {{type}} leer',
+      unknownOption: '„{{frame}}“ (unbekannt)',
+      unknownFrame:
+        'Ein Frame „{{frame}}“ kennt QuartzControl nicht. Bringt kein Plugin eines mit diesem Namen mit, baut Quartz diese Seiten mit dem Standard-Frame — so ist die Bühne gezeichnet.'
     },
     stage: {
       viewLabel: 'Ansicht',

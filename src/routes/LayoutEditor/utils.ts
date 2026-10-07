@@ -2,7 +2,6 @@ import type {
   FrameBreakpoint,
   FrameBreakpointWidths,
   LayoutPosition,
-  PageTypeLayoutOverride,
   PluginEntry,
   PluginLayoutDeclaration,
   QuartzConfig
@@ -19,20 +18,6 @@ export function breakpointRangeLabel(breakpoint: FrameBreakpoint, widths: FrameB
 }
 
 export const POSITIONS: LayoutPosition[] = ['header', 'left', 'right', 'beforeBody', 'afterBody', 'footer']
-
-// A page type can have a key under layout.byPageType without actually customizing anything - e.g.
-// `{}` (an empty object; historically written just by clicking a page type pill, before that got
-// fixed) or `{ exclude: [], positions: {} }` (every individual toggle undone one at a time, leaving
-// the empty containers behind instead of deleting the key). `positions` is the one exception where
-// an empty *value* still counts: `{ beforeBody: [] }` is toggleClearSlot's deliberate "force this
-// slot empty" state, so it's the key's presence, not its array length, that matters there.
-export function hasPageTypeOverride(override: PageTypeLayoutOverride | undefined): boolean {
-  if (!override) return false
-  if (override.template) return true
-  if (override.exclude && override.exclude.length > 0) return true
-  if (override.positions && Object.keys(override.positions).length > 0) return true
-  return false
-}
 
 // Real per-breakpoint grid shape of Quartz's own DefaultFrame, verified against
 // quartz/styles/variables.scss's $mobileGrid/$tabletGrid/$desktopGrid ($sidePanelWidth: 320px) and
@@ -91,7 +76,7 @@ export function sidebarDirection(position: 'left' | 'right', breakpoint: FrameBr
 // Counts, by derived display name, how many component entries share it - i.e. duplicated
 // instances (two entries with the same `source` always derive the same name, see
 // configService.deriveName). Used both to disambiguate identical names in the UI and to warn
-// where Quartz's own `exclude` can't target one specific instance - see PageTypeOverrides.
+// where Quartz's own `exclude` can't target one specific instance - see the side panel (Inspector).
 //
 // Quartz matches `exclude` by a name derived from the source too, but not by *this* name: its
 // `extractPluginName` leaves an npm source with a scope whole. So the display name is right for

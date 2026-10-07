@@ -1401,3 +1401,40 @@ zwischen 800 und 900 px die Mobil-Anordnung mit den Komponenten für Desktop gil
 umgekehrte Satz. „Frame bearbeiten“ aus der Mobil-Ansicht öffnet `editorial` im Frame-Editor auf
 „Mobil · ≤ 700 px“. Ein ungespeicherter Entwurf eines *anderen* Frames im Editor wird dabei nicht
 überschrieben, sondern angesagt (`peekStickyState`).
+
+## Seitentypen auf der Bühne (2026-10-07, 1.1 P7.3)
+
+Der Reiter „Seitentypen“ ist weg; sein Inhalt ist ein Wähler über der Bühne. „Alle Seiten“ bearbeitet
+das allgemeine Layout und zeichnet es im Frame der Inhaltsseiten (einen eigenen Frame hat „alle
+Seiten“ nicht, jeder Seitentyp wählt einen). Ein bestimmter Typ zeichnet die Bühne mit *seinem* Frame,
+graut aus, was sein `exclude` ausblendet oder ein geleerter Bereich wegnimmt, und bietet genau das an,
+was `layout.byPageType.<typ>` kann: die Frame-Wahl im Kopf, „Auf <Typ> ausblenden“ in der
+Seitenleiste, einen Radierer im Kopf jedes Bereichs und „Anpassung entfernen“. Was man dabei zieht
+oder in der Seitenleiste sonst einstellt, gilt weiter für alle Seiten — das steht als Satz unter dem
+Kopf, weil der Wähler das Gegenteil nahelegt. Die Logik steht als reine Funktionen in
+`LayoutEditor/pageTypeOverride.ts`; die Regel „ein Seitentyp, der nichts mehr anpasst, verschwindet
+aus der Datei, statt als `{}` stehen zu bleiben“ und das Wegräumen toter Ausschlüsse (Anzeigename
+statt Quartz-Name, siehe `plugins-and-config.md`) sind von dort übernommen, nicht neu geschrieben.
+
+Nachgelesen in Quartz (`config-loader.ts`, `frames/index.ts`): Nur ein *leeres* Array unter
+`positions.<pos>` leert einen Bereich, jeder andere Wert wird übergangen; ein `template`, unter dem
+kein Frame registriert ist, rendert das Standard-Frame. Die Bühne zeichnet ein unbekanntes Template
+deshalb als Standard-Frame und sagt das, statt — wie bis 1.1 — kommentarlos das Standard-Raster zu
+zeigen.
+
+**Gegenprobe an der gebauten App gegen den Stand davor** (`ef208be` aus einem eigenen Arbeitsordner,
+Klon von gui-test mit einer `byPageType` wie aus 1.0.2: Ausschluss, geleerter Bereich, toter
+Ausschluss `search`, Template `gibtsnicht`, leerer Eintrag `bases: {}`). Dieselben neun Handgriffe am
+alten Reiter und am Wähler — Komponente aus- und wieder einblenden, Bereich leeren und wieder füllen,
+Frame wechseln, eine Komponente mit sieben Instanzen ausblenden, zwei Anpassungen entfernen —, nach
+jedem Speichern `byPageType` aus der Datei: **alle neun gleich**, auch das Wegräumen von `search`.
+Bühne mit Ordnerseiten bei 1280 und 1728 px in allen drei Ansichten ohne waagerechten Bildlauf.
+Tastatur: Enter auf dem Radierer leert und sagt es an, der Fokus bleibt auf dem Knopf (jetzt „wieder
+füllen“); Leertaste auf dem Schalter der Seitenleiste blendet aus; ein Tastatur-Drag mit gewähltem
+Seitentyp bewegt wie vorher; nach „Anpassung entfernen“ steht der Fokus auf dem Wähler statt auf
+`<body>`. `?tab=pagetypes` öffnet die Bühne.
+
+**Eine Lücke, bewusst offen:** Eine ausgeschaltete Komponente liegt im Vorrat und ist dort nicht
+wählbar, ihr Ausschluss für einen Seitentyp also nicht einzeln umzuschalten (der alte Reiter hatte
+für jede Komponente einen Schalter). Auf der Website ändert das nichts, solange sie aus ist; wird sie
+zurückgezogen, steht sie ausgegraut mit dem Grund auf der Bühne und der Schalter ist da.

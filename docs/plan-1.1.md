@@ -9,6 +9,25 @@ beiden Stellen benutzt.
 
 Nichts davon ist begonnen. Was hier „gemessen“ heißt, ist es; alles andere ist Plan.
 
+**Entschieden am 2026-10-07** — die Reihenfolge, die Phasen und die Messwege stehen in
+[`plan-1.1-umsetzung.md`](plan-1.1-umsetzung.md):
+
+- Alle fünf Vorhaben in **einer** Fassung 1.1.
+- Die App liest `quartz.configSchema` → `quartz.optionSchema` → `.d.ts` (Rückfall); die drei eigenen
+  Plugins tragen ein vollständiges **`configSchema`** mit Bedingungen (`x-quartz-when`) und bekommen
+  je ein Release. Der multilanguage-Fehler (die App liest `SeoOptions` statt `MultilanguageOptions`)
+  wird mit 1.1 behoben, nicht vorab.
+- Variablen in **Form C**: wie heute plus `:root:not([saved-theme="dark"])` für „nur hell“ — das
+  löst Befund 7 des 38. Reviews (Abschnitt 2).
+- `_quartzcontrol.scss` ist im Reiter „Eigenes CSS“ bearbeitbar (eigener Reiter mit Warnband);
+  `imported-styles` bleibt in `custom.scss`.
+- Der Bereich heißt weiter **„Layout“**, die Teile **„Komponenten“** — „Baustein“ ist ein Teil eines
+  Vorlagenpakets. Die Breakpoint-Breiten ziehen in den Reiter „Frames“.
+- Die einzige Instanz einer Komponente in den Vorrat ziehen schaltet das Plugin aus
+  (`enabled: false`), zurückziehen wieder ein (Nutzerbefund 4 aus 1.0.1).
+- Außerhalb von 1.1: VoiceOver, Schlüsselbund-Hänger unter Linux, Smoke-Abbruch, git < 2.38 /
+  glibc < 2.34, macOS x64.
+
 ## 1. Plugin-Optionen vollständig und verständlich
 
 **Wunsch:** Plugins sollen sich möglichst vollständig in der App konfigurieren lassen, ohne die YAML von

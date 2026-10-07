@@ -78,7 +78,7 @@ sein. P4 migriert Nutzerdateien und soll am längsten auf dem Branch liegen.
   Helfer `setAtPath` (verallgemeinert `setDeep`, `undefined` entfernt), `pruneEmptyObjects`,
   `evaluateCondition`.
 - **`electron/main/services/pluginSchemaService.ts`** umbauen: `getPluginOptionSchema(projectPath,
-  source, name)`; Paketordner wie Quartz' `readManifestFromPackageJson` (npm → `node_modules`, git →
+  source)`; Paketordner wie Quartz' `readManifestFromPackageJson` (npm → `node_modules`, git →
   `.quartz/plugins/<quartzPluginName(source)>`); `package.json` mit Größendecke, `JSON.parse` im
   `try`, kein Fremdcode.
 - Commits je Fehler, je mit Vorher-Messung an einer Kopie von gui-test:
@@ -88,7 +88,8 @@ sein. P4 migriert Nutzerdateien und soll am längsten auf dem Branch liegen.
   3. Plugins unter `node_modules` (explorer: vier Felder statt „kein Schema“).
   4. Vorhandene, unbekannte Schlüssel werden mitgeliefert.
 - **IPC** (Vertrag → zod → Handler → Preload): `plugin:optionSchema`,
-  `plugins.optionSchema({ projectPath, source, name })` →
+  `plugins.optionSchema({ projectPath, source })` (ohne `name`: der Hauptprozess leitet ihn aus der
+  Quelle ab wie Quartz, ein zweiter Name vom Renderer könnte nur widersprechen) →
   `{ schema: NormalizedOptionSchema | null; packageVersion?; unreadable? }`. Alter Positionskanal
   `plugin:optionsSchema` entfällt mit dem letzten P3-Commit. `attachDefaults` (schreibt heute ein
   hartes deutsches „Standard: …“ in die Beschreibung) entfällt.

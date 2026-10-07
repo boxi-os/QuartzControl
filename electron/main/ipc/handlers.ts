@@ -22,6 +22,7 @@ import * as projectStore from '../services/projectStore'
 import { repointProjectPaths } from '../services/projectPaths'
 import * as projectOverviewService from '../services/projectOverviewService'
 import * as projectIconService from '../services/projectIconService'
+import * as snippetService from '../services/snippetService'
 import * as configService from '../services/configService'
 import * as pluginService from '../services/pluginService'
 import * as pluginSchemaService from '../services/pluginSchemaService'
@@ -156,6 +157,18 @@ export function registerIpcHandlers(): void {
   )
   handle(IPC.projectIconClearDark, t([s.projectIconTarget]), ({ projectPath }) =>
     projectIconService.clearProjectIconDark(projectPath)
+  )
+
+  handle(IPC.snippetsList, t([s.snippetsListArgs]), ({ projectPath, dir }) => snippetService.listSnippets(projectPath, dir))
+  handle(IPC.snippetsRead, t([s.snippetsReadArgs]), ({ projectPath, dir, file }) => snippetService.readSnippet(projectPath, dir, file))
+  handle(IPC.snippetsWrite, t([s.snippetsWriteArgs]), ({ projectPath, dir, file, content, overwrite }) =>
+    snippetService.writeSnippet(projectPath, dir, file, content, overwrite === true)
+  )
+  handle(IPC.snippetsImport, t([s.snippetsImportArgs]), ({ projectPath, dir, sourcePath, name, overwrite }) =>
+    snippetService.importSnippet(projectPath, dir, sourcePath, name, overwrite === true)
+  )
+  handle(IPC.staticImageImport, t([s.staticImageImportArgs]), ({ projectPath, sourcePath, name, overwrite }) =>
+    snippetService.importStaticImage(projectPath, sourcePath, name, overwrite === true)
   )
 
   handle(IPC.projectCreate, t([s.createProjectOptions]), async (options) => {

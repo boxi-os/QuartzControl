@@ -284,6 +284,13 @@ const STRINGS = {
     createCloneFailed: 'Quartz konnte nicht von GitHub geladen werden:',
     templateContentTooLarge:
       'Der Inhalt dieses Projekts ist größer als {{limit}} MB. Eine Vorlage ist eine Gestaltung, keine Sicherung — nimm den Baustein „Inhalt“ heraus.',
+    snippetNameInvalid: '„{{name}}“ ist kein brauchbarer Dateiname. Erlaubt ist ein Name ohne Schrägstrich, der nicht mit einem Punkt beginnt.',
+    snippetExtensionInvalid: '„{{name}}“ hat eine Endung, die hier nicht passt. Erlaubt: {{allowed}}.',
+    snippetTooLarge: '„{{name}}“ ist größer als {{limit}} MB.',
+    snippetDirOutside: '„{{dir}}“ führt aus dem Projektordner hinaus. QuartzControl liest und schreibt dort nicht.',
+    snippetDirReserved:
+      '„{{dir}}“ liegt in einem Ordner, der einem Werkzeug gehört (.git, node_modules, .quartz, .quartz-gui oder der Ausgabeordner). Wähle einen Ordner unter quartz/static.',
+    snippetDirLink: 'Der Weg nach „{{dir}}“ führt über eine Verknüpfung. Lesen geht, schreiben tut QuartzControl dort nicht.',
     templateStaticTooLarge:
       'Die Dateien unter quartz/static sind zusammen größer als {{limit}} MB. Eine Vorlage trägt Schnipsel, Logos und Bilder mit — keine Mediathek; nimm den Baustein „Statische Dateien“ heraus.',
     duplicateSourceNotAProject:
@@ -638,6 +645,13 @@ const STRINGS = {
     createCloneFailed: 'Quartz could not be downloaded from GitHub:',
     templateContentTooLarge:
       'This project\'s content is larger than {{limit}} MB. A template is a design, not a backup — leave the “content” part out.',
+    snippetNameInvalid: '“{{name}}” is not a usable file name. Use a name without a slash that does not start with a dot.',
+    snippetExtensionInvalid: '“{{name}}” has an extension that does not fit here. Allowed: {{allowed}}.',
+    snippetTooLarge: '“{{name}}” is larger than {{limit}} MB.',
+    snippetDirOutside: '“{{dir}}” leads out of the project folder. QuartzControl does not read or write there.',
+    snippetDirReserved:
+      '“{{dir}}” is inside a folder that belongs to a tool (.git, node_modules, .quartz, .quartz-gui or the output folder). Choose a folder under quartz/static.',
+    snippetDirLink: 'The way to “{{dir}}” leads through a link. Reading works; QuartzControl does not write there.',
     templateStaticTooLarge:
       'The files under quartz/static add up to more than {{limit}} MB. A template carries snippets, logos and images — not a media library; leave the “Static files” part out.',
     duplicateSourceNotAProject: 'There is no quartz.config.yaml in “{{path}}” — that is not a Quartz project.',

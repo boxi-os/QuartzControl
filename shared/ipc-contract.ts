@@ -1314,6 +1314,32 @@ export interface ProjectOverview extends Project {
   icon?: string
 }
 
+/**
+ * A layout box's snippet folder as the main process sees it (snippetService). `ok` and `link` list
+ * the files; `link` says the way there leads through a symlink, so the folder can be read but not
+ * written. `missing` is a folder that does not exist yet - writing creates it. `outside` leaves the
+ * project, `reserved` is a folder that belongs to a tool (.git, node_modules, .quartz, .quartz-gui,
+ * the build output); neither is listed.
+ */
+export interface SnippetDirInfo {
+  state: 'ok' | 'link' | 'missing' | 'outside' | 'reserved'
+  /** File names in the folder with an extension layout-box reads (.html, .htm, .md), not recursive. */
+  files: string[]
+}
+
+/** `exists`: nothing was written because the file is there and `overwrite` was not set - ask, then call again. */
+export interface SnippetFileResult {
+  status: 'written' | 'exists'
+  /** The name as written (or as it would have been), trimmed. */
+  file: string
+}
+
+export interface StaticImageResult {
+  status: 'written' | 'exists'
+  /** Relative to quartz/static, e.g. `images/logo.png` - published as `static/images/logo.png`. */
+  relativePath: string
+}
+
 /** The project's picture, which is also the source the favicon emitter reads. */
 export interface ProjectIconInfo {
   /** quartz/static/icon.png scaled down for display, or null when there is no readable icon. */
@@ -1448,6 +1474,12 @@ export const IPC = {
   projectIconClear: 'projectIcon:clear',
   projectIconSetDark: 'projectIcon:setDark',
   projectIconClearDark: 'projectIcon:clearDark',
+
+  snippetsList: 'snippets:list',
+  snippetsRead: 'snippets:read',
+  snippetsWrite: 'snippets:write',
+  snippetsImport: 'snippets:import',
+  staticImageImport: 'staticImage:import',
 
   configGet: 'config:get',
   configSave: 'config:save',
@@ -1770,6 +1802,23 @@ export interface QuartzGuiApi {
     /** The optional dark-scheme picture, quartz/static/icon-dark.png - used by the header image only. */
     setDark(args: { projectPath: string; sourcePath: string }): Promise<ProjectIconInfo>
     clearDark(args: { projectPath: string }): Promise<ProjectIconInfo>
+  }
+  /**
+   * The files a layout box renders: `dir` is the plugin's option, relative to the project, exactly
+   * as quartz-layout-box resolves it. Every name is checked in the main process (snippetService);
+   * nothing is written outside the project, through a link or into a tool's folder.
+   */
+  snippets: {
+    list(args: { projectPath: string; dir: string }): Promise<SnippetDirInfo>
+    read(args: { projectPath: string; dir: string; file: string }): Promise<string>
+    /** Without `overwrite` an existing file is left alone and the answer is `exists`. */
+    write(args: { projectPath: string; dir: string; file: string; content: string; overwrite?: boolean }): Promise<SnippetFileResult>
+    /** Copies `sourcePath` into `dir`, under `name` or its own name. */
+    import(args: { projectPath: string; dir: string; sourcePath: string; name?: string; overwrite?: boolean }): Promise<SnippetFileResult>
+  }
+  /** Copies a picture to quartz/static/images, which the build publishes as static/images. */
+  staticImage: {
+    import(args: { projectPath: string; sourcePath: string; name?: string; overwrite?: boolean }): Promise<StaticImageResult>
   }
   config: {
     get(projectPath: string): Promise<QuartzConfig>

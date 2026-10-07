@@ -76,6 +76,18 @@ const api: QuartzGuiApi = {
     setDark: (args: { projectPath: string; sourcePath: string }) => ipcRenderer.invoke(IPC.projectIconSetDark, args),
     clearDark: (args: { projectPath: string }) => ipcRenderer.invoke(IPC.projectIconClearDark, args)
   },
+  snippets: {
+    list: (args: { projectPath: string; dir: string }) => ipcRenderer.invoke(IPC.snippetsList, args),
+    read: (args: { projectPath: string; dir: string; file: string }) => ipcRenderer.invoke(IPC.snippetsRead, args),
+    write: (args: { projectPath: string; dir: string; file: string; content: string; overwrite?: boolean }) =>
+      ipcRenderer.invoke(IPC.snippetsWrite, args),
+    import: (args: { projectPath: string; dir: string; sourcePath: string; name?: string; overwrite?: boolean }) =>
+      ipcRenderer.invoke(IPC.snippetsImport, args)
+  },
+  staticImage: {
+    import: (args: { projectPath: string; sourcePath: string; name?: string; overwrite?: boolean }) =>
+      ipcRenderer.invoke(IPC.staticImageImport, args)
+  },
   config: {
     get: (projectPath: string) => ipcRenderer.invoke(IPC.configGet, projectPath),
     save: (projectPath: string, config: QuartzConfig) => ipcRenderer.invoke(IPC.configSave, projectPath, config)

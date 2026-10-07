@@ -179,6 +179,34 @@ export const syncDirection = z.enum(['push', 'pull', 'both'])
 // where the accepted extensions live next to the reason for them.
 export const projectIconTarget = z.looseObject({ projectPath: absolutePath })
 
+// snippets.* and staticImage.import. `dir` and `file` are names the renderer took from a plugin's
+// options, so they are bounded here and resolved against the project in snippetService - which is
+// where "inside the project, not through a link, not into a tool's folder" is decided.
+const snippetDir = z.string().min(1).max(1024)
+const snippetName = z.string().min(1).max(255)
+export const snippetsListArgs = z.looseObject({ projectPath: absolutePath, dir: snippetDir })
+export const snippetsReadArgs = z.looseObject({ projectPath: absolutePath, dir: snippetDir, file: snippetName })
+export const snippetsWriteArgs = z.looseObject({
+  projectPath: absolutePath,
+  dir: snippetDir,
+  file: snippetName,
+  content: z.string().max(4 * 1024 * 1024),
+  overwrite: z.boolean().optional()
+})
+export const snippetsImportArgs = z.looseObject({
+  projectPath: absolutePath,
+  dir: snippetDir,
+  sourcePath: absolutePath,
+  name: snippetName.optional(),
+  overwrite: z.boolean().optional()
+})
+export const staticImageImportArgs = z.looseObject({
+  projectPath: absolutePath,
+  sourcePath: absolutePath,
+  name: snippetName.optional(),
+  overwrite: z.boolean().optional()
+})
+
 // update.coreStatus's optional second argument. A flag rather than a channel of its own (CLAUDE.md:
 // no new channel for what an existing one can do with a flag); an object so a later key is one line.
 export const coreStatusOptions = z.looseObject({ resolveInstalled: z.boolean().optional() })

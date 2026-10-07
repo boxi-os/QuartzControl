@@ -601,3 +601,42 @@ Vorher (nur Chrome gemessen): links 8/9 und 22/23, rechts 4/5 und 3/4; am Suchfe
 des Graphen, am Burger sein Icon. Die drei Engines sind sich Zeile für Zeile einig, auch in der
 Frage, an der sie am ehesten auseinandergehen könnten — `:has()` auf dem Kopfbereich und ein
 Stapelkontext aus `position: sticky`.
+
+**Wer gewinnt, wenn die Variablen nach vorn ziehen — gemessen für 1.1 (2026-10-07, P0).** Der
+verwaltete Variablenblock steht heute am *Ende* von `custom.scss`; mit 1.1 zieht er in
+`_quartzcontrol.scss`, das `custom.scss` per `@use` vor allen eigenen Regeln lädt, und „nur hell“
+bekommt eine eigene Regel `:root:not([saved-theme="dark"])` (Form C, Befund 7 des 38. Reviews).
+`scripts/measure-variable-rules.mjs <projekt>` kompiliert drei Lagen mit dem `sass` des Projekts
+(gui-test, 1.104.1), legt Quartz' Theme-Variablen wie `componentResources.ts:347` davor in
+`@layer quartz-base` und liest die Werte in Chrome ohne `saved-theme`, hell und dunkel.
+M = die Stile-Seite, U = eigene Regel des Nutzers in `custom.scss`, Q = Quartz:
+
+| Variable | 1.0.x hell / dunkel | 1.1 nur Umzug | 1.1 Form C |
+| --- | --- | --- | --- |
+| M beide Modi + U `:root` | M / M | **U / U** | U / U |
+| M hell + dunkel, U `:root` | M / M | **U** / M | U / M |
+| M hell + dunkel, U `[saved-theme="dark"]` | M / M | M / **U** | M / U |
+| M „nur hell“, kein U | M / **M** | M / M | M / **Q** |
+| M „nur hell“, U `:root` | M / M | U / U | **M** / U |
+| M „nur hell“, U `[saved-theme="dark"]` | M / U | M / U | M / U |
+
+Ohne `saved-theme` (bevor das Skript des Darkmode-Plugins läuft) gilt in allen Lagen die helle
+Spalte. Gelesen heißt das:
+
+- **Sass gibt das CSS eines per `@use` geladenen Moduls vor dem CSS der ladenden Datei aus**,
+  auch die Module, die es selbst per `@use` lädt (der `imports`-Block): Import-Regel, verwaltete
+  Variablen, dann die eigenen Regeln. Die Messung vom 2026-10-06 ist damit für den Fall mit
+  verschachteltem `@use` bestätigt.
+- **Der Umzug allein kehrt die Rangfolge bei gleicher Spezifität um**: Eine eigene `:root`-Regel
+  gewinnt jetzt gegen die helle Hälfte, eine eigene `[saved-theme="dark"]`-Regel gegen die dunkle.
+  Die Variablen-Seite zeigt dann einen Wert, den die Website nicht hat. Das gehört in die
+  Release-Notizen und in den Hinweis, den P4 beim ersten Umzug gibt.
+- **Form C tut, wofür sie da ist**: „nur hell“ lässt die dunkle Hälfte bei Quartz (Q), statt den
+  hellen Wert in den dunklen Modus zu tragen — das ist Befund 7.
+- **Und sie hat einen Preis, der in der Tabelle fett steht**: `:root:not(…)` hat die Spezifität
+  0,2,0 und schlägt im hellen Modus eine eigene `:root`-Regel (0,1,0) unabhängig von der
+  Reihenfolge. Wer eine „nur hell“-Variable selbst setzen will, braucht
+  `:root[saved-theme="light"]` oder denselben `:not`-Selektor. Derselbe Satz für die Notizen.
+- **Sass schreibt den Attributwert ohne Anführungszeichen** (`[saved-theme=dark]`). Für die App
+  egal, weil sie die `.scss`-Quelle liest und nicht das CSS; wer je das gebaute CSS liest, muss
+  beide Schreibweisen kennen.

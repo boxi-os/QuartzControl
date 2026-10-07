@@ -1,8 +1,11 @@
 # Plan für 1.1
 
-Stand: 2026-10-06. Drei Vorhaben, die zusammen 1.1 ausmachen. Die beiden CSS-Vorhaben gehören
+Stand: 2026-10-07. Fünf Vorhaben, die zusammen 1.1 ausmachen. Die beiden CSS-Vorhaben (2, 3) gehören
 zusammen, weil beide ändern, wie eine Website ihre Stylesheets lädt, und beide einen Umzug bestehender
-Projekte nach sich ziehen — einmal statt zweimal. Die Plugin-Optionen stehen für sich.
+Projekte nach sich ziehen — einmal statt zweimal. Die Plugin-Optionen (1), der Layout-Baukasten (4) und
+die Werkzeuge der Layout-Box (5) gehören ebenfalls zusammen: Die Optionen eines Plugins erscheinen im
+Baukasten direkt in der Seitenleiste, also wird die neue Darstellung der Optionen einmal gebaut und an
+beiden Stellen benutzt.
 
 Nichts davon ist begonnen. Was hier „gemessen“ heißt, ist es; alles andere ist Plan.
 
@@ -29,7 +32,11 @@ Darstellung wirkt, steht erst dann da).
   die gar nicht in den Typen stehen? Das ist an den installierten Plugins zu zählen, bevor gebaut wird.
 - Verschachtelte Optionen (`byLang`, Listen von Objekten) — heute werden sie als JSON-Text bearbeitet.
 
-Seit 1.0.2 gilt bereits: Ein geleertes Feld entfernt den Schlüssel, statt `""` oder `null` zu schreiben.
+Seit 1.0.2 gilt bereits: Ein geleertes Feld entfernt den Schlüssel, statt `""` oder `null` zu schreiben;
+„Leer setzen“ schreibt ausdrücklich `""`.
+
+Die Darstellung wird als eigene Komponente gebaut, die nicht an die Plugins-Seite gebunden ist: Der
+Layout-Baukasten (4) zeigt dieselben Optionen in seiner Seitenleiste.
 
 ## 2. Verwaltete Blöcke aus `custom.scss` in eine eigene Datei
 
@@ -142,3 +149,76 @@ nachher aufnehmen, `--diff`. Erwartet ist kein Unterschied; jeder Unterschied is
 
 **Was nicht passiert:** Bestehende Projekte behalten ihre 31 Dateien. Nur neue Vorlagen-Pakete bekommen
 die neue Struktur. `minimal-lesbar.qtpl` bleibt eingefroren, wie es ist.
+
+## 4. Layout als Baukasten
+
+**Wunsch:** Der Layout-Bereich soll einfacher werden — ein Baukasten: kleine, ziehbare Bausteine auf
+einer verkleinerten Seite, die Optionen eines Bausteins in einer Seitenleiste rechts, ohne waagerechten
+Bildlauf. Seitentypen und die Ansichten Mobil und Tablet gehören hinein.
+
+**Heute:** drei Reiter in `src/routes/LayoutEditor/` — „Global“ (`GlobalBoard.tsx`, das Board mit den
+Positionen und dem Vorrat), „Seitentypen“ (`PageTypeOverrides.tsx`, Frame und Ausschlüsse je Typ) und
+„Frames“ (`FrameBuilder.tsx`, der Editor eigener Frames); zusammen rund 3400 Zeilen.
+
+**Plan — Bühne mit Seitenleiste:**
+
+- **Die Bühne:** eine schematische Seite — Kopf, linke Spalte, Mitte (über dem Text, Text, unter dem
+  Text), rechte Spalte, Fußzeile —, gezeichnet nach dem Frame, der für die Auswahl gilt. Sie passt sich
+  der verfügbaren Breite an. **Verkleinert über die Proportionen des Rasters, nicht über
+  `transform: scale`**: dnd-kit misst Rechtecke, und eine skalierte Ebene verfälscht diese Messung —
+  dieselbe Art Fehler wie die in [`conventions.md`](conventions.md) unter „Kein natives HTML5-Drag“.
+- **Die Bausteine:** kompakt — Name, Griff, kleine Markierungen (nur mobil / nur Desktop, Gruppe,
+  Bedingung). Ziehbar mit Maus und Tastatur nach den Regeln, die für das Board heute gelten. Nicht
+  platzierte Komponenten liegen in einem Vorrat neben der Bühne.
+- **Die Seitenleiste rechts:** Ein Klick auf einen Baustein öffnet dort zuerst die Layout-Angaben
+  (Position, Reihenfolge, Anzeige, Bedingung, Gruppe; bei gewähltem Seitentyp „auf diesem Seitentyp
+  ausblenden“), darunter **die vollständige Konfiguration des Plugins** in der Darstellung aus
+  Abschnitt 1 — nicht nur ein Verweis darauf. Ein Panel, kein Modal.
+- **Oben zwei Wähler:**
+  - **Seitentyp:** „Alle Seiten“ bearbeitet das allgemeine Layout; ein bestimmter Typ (Ordner, Tag,
+    Canvas, 404, …) zeigt die Bühne mit dessen Frame, graut ausgeblendete Komponenten aus und bietet die
+    Frame-Wahl für diesen Typ an. Der Reiter „Seitentypen“ fällt damit weg.
+  - **Ansicht:** Desktop, Tablet, Mobil — zeigt, wie der Frame die Bereiche bei dieser Breite anordnet,
+    und graut aus, was dort nicht erscheint.
+- **Gemessene Grenze beim Tablet:** Quartz kennt für eine Komponente nur `display: all | mobile-only |
+  desktop-only`, und die Grenze ist die Mobil-Breite: `.desktop-only` wird nur unter `$mobile` (800 px)
+  versteckt (`quartz/styles/base.scss`, `variables.scss` in gui-test), gilt also auch auf dem Tablet. In
+  der Tablet-Ansicht lässt sich deshalb nichts eigens für das Tablet ein- oder ausschalten; sie zeigt die
+  Anordnung des Frames, und die ändert man im Frame.
+
+**Eigene Frames bleiben ein eigener Bereich.** Ein Frame ist Geometrie — welche Bereiche es bei welcher
+Breite gibt —, der Baukasten ist Belegung — was in diesen Bereichen steht. Beides auf einer Fläche
+überlädt den Baukasten. Verbunden werden sie über die Bühne: Dort steht der Name des geltenden Frames mit
+„Frame bearbeiten“, das den Frame-Builder mit genau diesem Frame öffnet (`primeStickyState`).
+
+**Reihenfolge:**
+
+1. Kompakte Bausteine und die Seitenleiste auf dem heutigen Board.
+2. Die verkleinerte Bühne nach Frame und Ansicht.
+3. Der Seitentyp-Wähler; danach fällt der Reiter „Seitentypen“ weg.
+4. Die Plugin-Optionen in der Seitenleiste, sobald Abschnitt 1 steht.
+
+Jeder Schritt bleibt für sich benutzbar und wird an der gebauten App gemessen, das Ziehen auch mit der
+Tastatur. Handbuch: Kapitel zum Layout neu, Screenshots neu.
+
+## 5. Layout-Box: Snippets und Bilder in der App
+
+**Wunsch:** In der Konfiguration der Layout-Box Snippets anlegen und importieren und Bilder hochladen,
+die im `static`-Ordner abgelegt werden.
+
+**Heute:** Die Layout-Box liest ein Snippet aus `dir` (Vorgabe `quartz/static/snippets`) über `file`,
+oder nimmt `html` direkt. Die App bietet beides als freie Textfelder an.
+
+**Plan:**
+
+- **Snippets, HTML und Markdown:** `file` wird eine Auswahl aus den Dateien in `dir`, mit „Neu“,
+  „Importieren“ (Datei wählen, wird in den Ordner kopiert) und „Bearbeiten“ (ein Editor wie beim eigenen
+  CSS). Beide Formate, die die Layout-Box liest — gui-test nutzt schon eine `sidebar-note.md`.
+- **Bilder nach `quartz/static/images`:** „Bild hochladen“ kopiert ein Bild dorthin und fügt an der
+  Cursorposition des Snippets oder des `html`-Felds einen Verweis ein — als `<img src="{{root}}/static/images/…">`
+  in HTML, als Markdown-Bild in Markdown. Ob die Layout-Box `{{root}}` in einem Markdown-Snippet
+  ersetzt, ist vor dem Bauen an ihrem Code zu prüfen, sonst braucht Markdown einen anderen Pfad.
+- **Namen werden geprüft**, wie beim Vorlagen-Import (`containedPath()`): nichts landet außerhalb von
+  `dir` bzw. `static/images`, kein Überschreiben ohne Rückfrage.
+- **Zu klären:** ob `static/images` in den Vorlagen-Baustein `static` einfließt, damit ein exportiertes
+  Paket die Bilder seiner Snippets mitnimmt.

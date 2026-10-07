@@ -23,6 +23,7 @@
     "docs:variables": "node scripts/variable-docs.mjs",
     "check:semver": "node scripts/check-semver.mjs",
     "check:plugin-names": "node scripts/check-plugin-names.mjs",
+    "check:option-schema": "node scripts/check-option-schema.mjs",
     "check:i18n": "node scripts/check-i18n-keys.mjs",
     "check:core-update": "node scripts/check-core-update.mjs",
     "check:handbook": "node scripts/check-handbook-quotes.mjs",

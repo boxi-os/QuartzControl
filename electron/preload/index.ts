@@ -83,7 +83,6 @@ const api: QuartzGuiApi = {
   plugins: {
     add: (projectPath: string, source: string) => ipcRenderer.invoke(IPC.pluginAdd, projectPath, source),
     remove: (projectPath: string, name: string) => ipcRenderer.invoke(IPC.pluginRemove, projectPath, name),
-    optionsSchema: (projectPath: string, name: string) => ipcRenderer.invoke(IPC.pluginOptionsSchema, projectPath, name),
     optionSchema: (args: { projectPath: string; source: PluginSource }) => ipcRenderer.invoke(IPC.pluginOptionSchema, args),
     themeStyleSettingsInfo: (projectPath: string, themeId: string) =>
       ipcRenderer.invoke(IPC.pluginThemeStyleSettingsInfo, projectPath, themeId),

@@ -185,9 +185,6 @@ export function registerIpcHandlers(): void {
   handle(IPC.pluginRemove, t([s.absolutePath, s.pluginName]), (projectPath, name) =>
     pluginService.removePlugin(projectPath, name)
   )
-  handle(IPC.pluginOptionsSchema, t([s.absolutePath, s.pluginName]), (projectPath, name) =>
-    pluginSchemaService.getPluginOptionsSchema(projectPath, name)
-  )
   handle(IPC.pluginOptionSchema, t([s.pluginOptionSchemaArgs]), ({ projectPath, source }) =>
     pluginSchemaService.getPluginOptionSchema(projectPath, source as PluginSource)
   )

@@ -214,11 +214,10 @@ export type {
 } from './pluginOptionSchema'
 import type { PluginOptionSchemaResult } from './pluginOptionSchema'
 
-// The schema of the plugins page until 1.0.x, replaced by optionSchema above when the page moves
-// to the new form (P3 of docs/plan-1.1-umsetzung.md), and removed with it.
-// Extracted from an installed plugin's compiled .d.ts (see pluginSchemaService in main) so the
-// options editor can offer only the fields/values a plugin actually supports, instead of free
-// text. Not available for built-in config entries - see optionsSchema() for details.
+// One field of the fixed forms on the plugins page - a component's layout (position, priority,
+// display, condition, group) and its groupOptions (Plugins/Installed.tsx, buildLayoutFields). Until
+// 1.1 it was also the schema read from a plugin's .d.ts; a plugin's own options are described by
+// NormalizedOptionSchema since then.
 export interface PluginOptionField {
   name: string
   description?: string
@@ -1455,7 +1454,6 @@ export const IPC = {
 
   pluginAdd: 'plugin:add',
   pluginRemove: 'plugin:remove',
-  pluginOptionsSchema: 'plugin:optionsSchema',
   pluginOptionSchema: 'plugin:optionSchema',
   pluginThemeStyleSettingsInfo: 'plugin:themeStyleSettingsInfo',
   themeMarketplaceList: 'themeMarketplace:list',
@@ -1780,7 +1778,6 @@ export interface QuartzGuiApi {
   plugins: {
     add(projectPath: string, source: string): Promise<PluginActionResult>
     remove(projectPath: string, name: string): Promise<PluginActionResult>
-    optionsSchema(projectPath: string, name: string): Promise<PluginOptionField[] | null>
     /**
      * What the plugin says about its options, normalized (shared/pluginOptionSchema.ts). The
      * package is found from `source` the way quartz finds it, so no name travels alongside: the

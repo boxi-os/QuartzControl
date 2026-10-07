@@ -292,18 +292,22 @@ function findManagedBlock(text, marker) {
 }
 
 /**
- * The project's custom.scss minus the three blocks the app owns (imports, fonts, css-vars).
- * Phase 5 puts fonts and css-vars back from the project itself and rewrites imports through
- * setImportOrder, so what belongs in the repo is exactly the remainder.
+ * The project's custom.scss minus what the app owns: the managed blocks (imports, fonts,
+ * google-fonts, css-vars) and, since 1.1, the line that loads them from _quartzcontrol.scss.
+ * Phase 5 moves the blocks there and rewrites imports through setImportOrder, and the app puts the
+ * line back on save, so what belongs in the repo is exactly the remainder - for a workshop moved
+ * already and for one that still carries the blocks in custom.scss alike. Until 1.1 this required
+ * the three blocks to be in custom.scss and threw otherwise.
  */
 function readCustomBody() {
   const source = path.join(WORKSHOP, 'quartz/styles/custom.scss')
   let text = fs.readFileSync(source, 'utf-8')
-  for (const marker of ['imports', 'fonts', 'css-vars']) {
-    const span = findManagedBlock(text, marker)
-    if (!span) throw new Error(`Block ${marker} fehlt in ${source}`)
-    text = text.slice(0, span.from) + text.slice(span.to)
+  for (const marker of ['imports', 'fonts', 'google-fonts', 'css-vars']) {
+    for (let span = findManagedBlock(text, marker); span; span = findManagedBlock(text, marker)) {
+      text = text.slice(0, span.from) + text.slice(span.to)
+    }
   }
+  text = text.replace(/^[ \t]*@use\s+(["'])\.\/_?quartzcontrol(?:\.scss)?\1(?:\s+as\s+[\w*-]+)?\s*;[ \t]*\n?/m, '')
   // Collapse the gaps the removed blocks left, so the result is stable across runs.
   return text.replace(/\n{3,}/g, '\n\n').trim() + '\n'
 }
@@ -926,34 +930,20 @@ async function buildTemplate() {
       if (absent.length) throw new Error(`in STYLE_ORDER, aber nicht auf der Platte: ${absent.join(', ')}`)
 
       step('custom.scss')
-      // styles.save replaces the whole file, and three parts of the package own a managed block
-      // inside it (imports, fonts, css-vars). Writing the body alone would therefore delete the
-      // @font-face rules and every CSS variable - which is exactly what happened the first time
-      // this phase was re-run on its own, and the export then reported nine parts instead of ten.
-      // So the existing blocks are lifted out and put back; `imports` is left behind because
-      // setImportOrder rewrites it a few lines below.
+      // styles.save replaces the whole file. Until 1.1 three parts of the package owned a managed
+      // block inside it, and writing the body alone deleted the @font-face rules and every CSS
+      // variable - so they were lifted out and put back. Since 1.1 the blocks live in
+      // _quartzcontrol.scss: the load order is written once first, which moves a workshop that
+      // still has them in custom.scss (styleService.writeManagedBlocks), and the save of the body
+      // gets the line that loads them put back by the app.
       await ipc(
         page,
         async (a) => {
-          const info = await window.quartzGui.styles.get(a.path)
-          const kept = []
-          // Runs in the renderer, so findManagedBlock is out of reach - the names come along.
-          for (const marker of ['fonts', 'css-vars']) {
-            for (const name of a.names) {
-              const start = `/* --- ${name}:managed:${marker}:start --- */`
-              const end = `/* --- ${name}:managed:${marker}:end --- */`
-              const from = info.content.indexOf(start)
-              const to = from === -1 ? -1 : info.content.indexOf(end, from)
-              if (from !== -1 && to !== -1) {
-                kept.push(info.content.slice(from, to + end.length))
-                break
-              }
-            }
-          }
-          await window.quartzGui.styles.save(a.path, [a.body, ...kept].join('\n\n'))
-          return kept.length
+          const set = await window.quartzGui.styles.listFiles(a.path)
+          await window.quartzGui.styles.setImportOrder(a.path, set.files.filter((f) => f.imported).map((f) => f.relativePath))
+          await window.quartzGui.styles.save(a.path, a.body)
         },
-        { path: WORKSHOP, body: fs.readFileSync(path.join(DATA_DIR, 'custom-scss-body.scss'), 'utf-8'), names: MARKER_NAMES }
+        { path: WORKSHOP, body: fs.readFileSync(path.join(DATA_DIR, 'custom-scss-body.scss'), 'utf-8') }
       )
       done()
 
@@ -1018,22 +1008,27 @@ async function buildTemplate() {
         page,
         async (a) => {
           const info = await window.quartzGui.styles.get(a.path)
-          // Same two names as findManagedBlock; this runs in the renderer.
-          const found = a.names.find((name) => info.content.includes(`/* --- ${name}:managed:fonts:start --- */`))
-          if (!found) return false
-          const start = `/* --- ${found}:managed:fonts:start --- */`
-          const end = `/* --- ${found}:managed:fonts:end --- */`
-          const from = info.content.indexOf(start)
-          const to = info.content.indexOf(end, from)
-          if (to === -1) return false
-          const next = info.content.slice(0, from + start.length) + '\n' + a.css + '\n' + info.content.slice(to)
-          await window.quartzGui.styles.save(a.path, next)
-          return true
+          // In _quartzcontrol.scss since 1.1 (the font import just wrote it there), in custom.scss
+          // in an app before that. Same two names as findManagedBlock; this runs in the renderer.
+          for (const [file, content] of [['_quartzcontrol.scss', info.managed?.content ?? ''], ['custom.scss', info.content]]) {
+            const found = a.names.find((name) => content.includes(`/* --- ${name}:managed:fonts:start --- */`))
+            if (!found) continue
+            const start = `/* --- ${found}:managed:fonts:start --- */`
+            const end = `/* --- ${found}:managed:fonts:end --- */`
+            const from = content.indexOf(start)
+            const to = content.indexOf(end, from)
+            if (to === -1) return false
+            const next = content.slice(0, from + start.length) + '\n' + a.css + '\n' + content.slice(to)
+            if (file === 'custom.scss') await window.quartzGui.styles.save(a.path, next)
+            else await window.quartzGui.styles.saveFile(a.path, file, next)
+            return true
+          }
+          return false
         },
         { path: WORKSHOP, css: fontFaceCss(), names: MARKER_NAMES }
       )
       done(fixed ? `${FONTS.length} Regeln mit font-weight` : 'Block nicht gefunden!')
-      if (!fixed) throw new Error('der fonts-Block in custom.scss wurde nicht gefunden')
+      if (!fixed) throw new Error('der fonts-Block wurde weder in _quartzcontrol.scss noch in custom.scss gefunden')
 
       retireOldFontFiles()
     }

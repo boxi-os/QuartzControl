@@ -78,7 +78,7 @@ export interface OptionField {
   l10n?: Record<string, OptionFieldText>
   /**
    * Where the field came from: the plugin's schema, only its `defaultOptions`, or only the user's
-   * config (a key nobody describes - shown so it is not lost).
+   * config (a key nobody describes - shown so it is not lost, see withPresentKeys).
    */
   origin: 'schema' | 'defaults' | 'config'
 }
@@ -375,6 +375,18 @@ export function applyDefaults(schema: NormalizedOptionSchema, defaults: unknown)
 export function schemaFromDefaults(defaults: unknown): NormalizedOptionSchema | null {
   if (!isPlainObject(defaults) || Object.keys(defaults).length === 0) return null
   return applyDefaults({ source: 'defaults', fields: [], notes: [] }, defaults)
+}
+
+/**
+ * Add a field for every key in one plugin entry's options that the schema does not describe, and
+ * widen a field whose value the schema does not accept. Without this a key in quartz.config.yaml
+ * that no schema names was simply not on screen, and neither was the fact that it is set -
+ * `parseArrows` of obsidian-flavored-markdown on gui-test, which its optionSchema leaves out.
+ * Per entry, not per plugin: two instances of the same plugin set different keys.
+ */
+export function withPresentKeys(schema: NormalizedOptionSchema, values: unknown): NormalizedOptionSchema {
+  if (!isPlainObject(values)) return schema
+  return { ...schema, fields: mergeValues(schema.fields, values, 'config') }
 }
 
 // ── reading and writing values ──────────────────────────────────────────────────────────────────

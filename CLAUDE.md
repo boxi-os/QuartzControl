@@ -76,15 +76,16 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   und ausgeführt. Existiert, weil ein Fehler darin wie ein Schalter aussieht, der nichts tut — genau
   das war er für jedes `@quartz-community/*`-Plugin —, und weil die Gegenprobe sofort einen Rand fand,
   der beim Lesen richtig aussah (`path.basename` trennt am Backslash nur auf win32)
-- `npm run check:option-schema -- <projektpfad> [--plugin <name>]` — je Plugin eines echten
-  Projekts, wie viele Optionen die App als Feld, nur als JSON-Text oder gar nicht zeigt, gezählt
-  gegen die Vereinigung aus Config, `quartz.defaultOptions`, `quartz.optionSchema`,
-  `quartz.configSchema` und dem, was die App aus den `.d.ts` liest (den Dienst lädt es, statt ihn
-  abzuschreiben). Meldet ein Typen-Interface, das keine Option mit den anderen Quellen teilt — der
-  Fingerabdruck des multilanguage-Fehlers. Vorher-Stand am 2026-10-07 an gui-test: 280 Optionen,
-  131 als Feld, 6 als Text, 143 unsichtbar; quartz-navigations 26 von 46 unsichtbar,
-  quartz-multilanguage 15 von 18. Existiert, weil ein fehlendes Feld auf keinem Bildschirm als
-  Fehler erscheint; nach P2 von 1.1 muss es für die drei eigenen Plugins 0 unsichtbar sagen
+- `npm run check:option-schema -- <projektpfad> [--plugin <name>] [--dump]` — je Plugin eines
+  echten Projekts, wie viele Optionen der Schema-Leser der App (`getPluginOptionSchema`,
+  `shared/pluginOptionSchema.ts`, per esbuild geladen statt abgeschrieben) als Bedienelement, nur
+  als JSON-Text oder gar nicht liefert, gezählt gegen die Vereinigung aus Config,
+  `quartz.defaultOptions`, `quartz.optionSchema` und `quartz.configSchema`; dazu, was der Leser
+  nicht lesen konnte, und ein Schema, das keine Option mit Config und Vorgaben teilt — der
+  Fingerabdruck des alten multilanguage-Fehlers. `--dump` gibt das normalisierte Schema aus.
+  Vorher-Stand am 2026-10-07 an gui-test (alte Plugins-Seite): 280 Optionen, 131 als Feld, 6 als
+  Text, 143 unsichtbar; nach P1 von 1.1: 277, 267 / 10 / 0. Existiert, weil ein fehlendes Feld auf
+  keinem Bildschirm als Fehler erscheint
 - `npm run check:core-update` — der Plan, nach dem das Core-Update `package.json` und
   `package-lock.json` behandelt: vierzehn Fälle gegen `shared/packageJsonDeps.ts` (das Skript lädt die
   Datei, statt sie abzuschreiben), dazu die npm-Aufrufe, die daraus entstehen, und seit dem

@@ -60,6 +60,15 @@ await esbuild.build({
 const service = await import(`file://${bundle}`)
 fs.unlinkSync(bundle)
 const { getPluginOptionSchema, pluginPackageDir } = service
+const { withPresentKeys } = await (async () => {
+  const shared = path.join(CACHE, `shared-${process.pid}.mjs`)
+  await esbuild.build({ entryPoints: [path.join(APP_DIR, 'shared/pluginOptionSchema.ts')], bundle: true, platform: 'neutral', format: 'esm', outfile: shared, logLevel: 'error' })
+  try {
+    return await import(`file://${shared}`)
+  } finally {
+    fs.unlinkSync(shared)
+  }
+})()
 
 // deriveName steht in configService.ts, das den halben Hauptprozess importiert; die Funktion selbst
 // ist vier Zeilen ohne Abhängigkeit. Herausgeschnitten statt abgeschrieben, damit sie nicht driftet.
@@ -127,8 +136,10 @@ for (const entry of entries) {
   const options = isObject(entry.options) ? entry.options : {}
   const result = getPluginOptionSchema(projekt, entry.source)
   if (result.unreadable) unreadable += 1
-  const fields = result.schema?.fields ?? []
-  if (dump) console.log(`--- ${name}\n${JSON.stringify(result, null, 1)}`)
+  // Wie die Seite: die Werte dieses Eintrags dazu, damit ein Schlüssel, den kein Schema nennt,
+  // trotzdem dasteht.
+  const fields = withPresentKeys(result.schema ?? { source: 'defaults', fields: [], notes: [] }, options).fields
+  if (dump) console.log(`--- ${name}\n${JSON.stringify({ ...result, schema: result.schema && { ...result.schema, fields } }, null, 1)}`)
 
   const sources = {
     config: keysOf(options),

@@ -460,6 +460,9 @@ async function refreshGoogleFonts(projectPath: string, report: (stream: 'stdout'
   // Each of the two calls takes the stylesheets' lock for itself (styleLock.ts), so a template
   // import or a save still writing custom.scss is waited for whatever the order here.
   try {
+    // First, because the two below read the managed blocks through the line it restores.
+    const repaired = await styleService.repairManagedUse(projectPath)
+    if (repaired) report('stdout', `${mainT(repaired === 'lineRestored' ? 'managedUseRestored' : 'managedFileCreated')}\n`)
     if (await styleService.migrateFontUrls(projectPath)) report('stdout', `${mainT('fontUrlsMigrated')}\n`)
   } catch (error) {
     report('warn', `${error instanceof Error ? error.message : String(error)}\n`)

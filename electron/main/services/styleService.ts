@@ -600,6 +600,31 @@ export function ensureManagedUse(customScss: string): string {
   return hasManagedUse(customScss) ? customScss : insertBeforeRules(customScss, MANAGED_USE_LINE)
 }
 
+/**
+ * The build door's repair for a project that has been moved: the line back when someone deleted it
+ * from custom.scss (the CSS tab allows it, so does any editor), an empty managed file when the line
+ * is there and the file is not. Either half alone breaks or empties the build - without the line
+ * the site loses every managed block without an error, without the file Sass stops on the `@use`.
+ * A project that has neither has not been moved and is left alone; the move happens on its first
+ * write. Says what it did, for the build log.
+ */
+export function repairManagedUse(projectPath: string): Promise<'lineRestored' | 'fileCreated' | null> {
+  return whileHoldingStyles(projectPath, async () => {
+    const info = await readCustomScss(projectPath)
+    if (!existsSync(info.path)) return null
+    const line = hasManagedUse(info.content)
+    if (info.managed && !line) {
+      await writeCustomScss(projectPath, ensureManagedUse(info.content))
+      return 'lineRestored'
+    }
+    if (!info.managed && line) {
+      await writeFileAtomic(managedScssPath(projectPath), MANAGED_FILE_HEADER)
+      return 'fileCreated'
+    }
+    return null
+  })
+}
+
 /** Both stylesheets the app writes into, as text; the managed one empty when it does not exist. */
 export interface StyleSources {
   custom: string

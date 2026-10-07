@@ -173,6 +173,11 @@ const STRINGS = {
     configMissing:
       'quartz.config.yaml liegt nicht im Projektordner. Ein neu erstelltes Projekt braucht dafür einen erfolgreich durchgelaufenen Setup-Assistenten.',
     // Die Optionen eines Plugins (plugin.optionSchema): das Paket ist da, lässt sich aber nicht lesen.
+    // Bau-Tür: die verwaltete Datei der Stile-Seite und die Zeile in custom.scss, die sie lädt.
+    managedUseRestored:
+      'In custom.scss fehlte die Zeile @use "./quartzcontrol"; – sie ist wieder eingesetzt, sonst fehlten der Website Ladereihenfolge, Schriften und Variablen.',
+    managedFileCreated:
+      'quartz/styles/_quartzcontrol.scss fehlte, custom.scss lädt sie aber – sie ist leer neu angelegt. Ladereihenfolge, Schriften und Variablen der Stile-Seite sind damit leer; ein Snapshot unter Wartung bringt den alten Stand zurück.',
     pluginSchemaOutsideProject: 'Die Quelle dieses Plugins führt aus dem Projektordner hinaus; seine Optionen werden nicht gelesen.',
     pluginSchemaPackageTooLarge: 'Die package.json dieses Plugins ist {{size}} Bytes groß, mehr als das 1 MiB, das gelesen wird.',
     pluginSchemaPackageUnreadable: 'Die package.json dieses Plugins lässt sich nicht lesen: {{reason}}',
@@ -581,6 +586,10 @@ const STRINGS = {
       'quartz.config.yaml cannot be read as YAML: {{reason}}. Fix it in an editor or use a restore point.',
     configMissing:
       'quartz.config.yaml is not in the project folder. A newly created project needs the setup assistant to have run through successfully.',
+    managedUseRestored:
+      'custom.scss was missing the line @use "./quartzcontrol"; – it has been put back, without it the site would lose its load order, fonts and variables.',
+    managedFileCreated:
+      'quartz/styles/_quartzcontrol.scss was missing although custom.scss loads it – it has been created empty. The Styles page’s load order, fonts and variables are therefore empty; a snapshot under Maintenance brings the old state back.',
     pluginSchemaOutsideProject: 'This plugin’s source leads outside the project folder; its options are not read.',
     pluginSchemaPackageTooLarge: 'This plugin’s package.json is {{size}} bytes, more than the 1 MiB that is read.',
     pluginSchemaPackageUnreadable: 'This plugin’s package.json cannot be read: {{reason}}',

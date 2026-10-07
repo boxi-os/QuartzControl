@@ -640,3 +640,43 @@ Spalte. Gelesen heißt das:
 - **Sass schreibt den Attributwert ohne Anführungszeichen** (`[saved-theme=dark]`). Für die App
   egal, weil sie die `.scss`-Quelle liest und nicht das CSS; wer je das gebaute CSS liest, muss
   beide Schreibweisen kennen.
+
+**Die verwalteten Blöcke ziehen nach `_quartzcontrol.scss` (2026-10-07, 1.1, P4).** Ladereihenfolge,
+eigene Schriften, Google-Schriften und Variablen stehen seit 1.1 in `quartz/styles/_quartzcontrol.scss`;
+`custom.scss` trägt dafür vor der ersten Regel `@use "./quartzcontrol";` und sonst nur den Rumpf des
+Nutzers (`imported-styles` bleibt dort, es ist der Rumpf eines Vorlagenpakets). Umgezogen wird beim
+ersten Schreiben eines der vier Blöcke, alle vier auf einmal (`writeManagedBlocks`); gelesen wird aus
+beiden Dateien, die verwaltete zuerst, damit eine Kopie, die eine ältere App in `custom.scss`
+hinterlässt, gewinnt wie im Browser. Gemessen an APFS-Klonen von gui-test und Example:
+
+- **Umzug:** `custom.scss` 657 → 29 Zeilen, `_quartzcontrol.scss` 635; alle vier Blöcke byte-gleich;
+  Variablen, Ladereihenfolge, Google-Block, Schriften und Sass-Prüfung lesen sich vorher und nachher
+  gleich. Der Bau davor und danach: alle 19 CSS-Dateien byte-gleich, `index-03d4bfa9.css` samt Hash.
+  gui-test hat in `custom.scss` keine eigenen Regeln, der Rangwechsel aus P0 trifft dort nichts.
+- **Über die Versionsgrenze:** Der `styleService` von 1.0.2 liest ein umgezogenes Projekt mit 0
+  Variablen und 0 Stylesheets und hängt beim Speichern einen eigenen Block an `custom.scss`; Sass
+  bleibt grün. 1.1 liest danach beide, der Wert von 1.0.2 gewinnt, und das nächste Speichern zieht ihn
+  um. Ein Vorlagenpaket aus 1.1 trägt weder die Zeile noch einen Block noch die Datei — sonst zeigte
+  es in 1.0.x auf eine Datei, die dort nie entsteht. „Nur hell“ (Form C) liest 1.0.x aus einem Paket
+  als beide Modi, weil es `lightOnly` nicht kennt.
+- **Ohne die Zeile ist der Verlust still:** Sass meldet ok und die Seite liest weiter alle Variablen,
+  während die Website keine hat. Deshalb setzt die Bau-Tür (`repairManagedUse`) die Zeile zurück und
+  legt eine fehlende Datei leer an, und `styles.save` setzt sie beim Speichern aus dem CSS-Reiter
+  zurück und sagt es.
+- **Schloss:** drei Schreiber gleichzeitig (Variable, Ladereihenfolge, Schrift-Import), 300 Läufe ab
+  einem nicht umgezogenen Projekt: 0 verloren. Dasselbe Bündel mit einem Schloss, das nichts sperrt:
+  245 Variablen und 150 Ladereihenfolgen verloren — die Messung sieht also, was sie suchen soll.
+- **Dev-Server:** eine Variable gespeichert, ausgeliefert nach 5 s, gleiche PID. Quartz' Watcher
+  beobachtet `**/*.scss` aus einer Liste, die er beim Start bildet; eine atomar ersetzte Datei sieht er
+  trotzdem (von Hand gegengeprüft: angehängt, per `mv` ersetzt, `custom.scss` — je nach 1 s).
+- **Form C im Reiter:** `--tertiary` (ohne Überschreibung, Grundwerte verschieden) nur hell geändert →
+  nur die `:not`-Regel, das dunkle Feld zeigt den Wert des Themes. Die eingefrorene Form aus 1.0.1
+  (`--gray`, dunkel = Grundwert) heilt beim nächsten hellen Bearbeiten — erst, seit als CSS-Text
+  verglichen wird: der Graph liefert den Grundwert klein (`#a1a1a1`), die Datei hält, was getippt
+  wurde (`#A1A1A1`).
+
+Drei Fallen des Messgeschirrs, damit sie keiner zweimal tritt: Playwrights Tastendruck erreicht das
+Kürzel des nativen Menüs nicht (Cmd+S speichert nicht, der Knopf schon); CodeMirror rendert nur die
+sichtbaren Zeilen, `textContent` des Editors ist nicht die Datei; und Quartz minifiziert die
+ausgelieferte CSS — `rgb(203, 203, 203)` kommt als `#cbcbcb` an, ein Vergleich auf den getippten Wert
+meldet dann „nicht übernommen“, obwohl er nach einer Sekunde da war.

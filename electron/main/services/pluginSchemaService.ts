@@ -416,6 +416,8 @@ type JsonSchema = Record<string, unknown>
 interface DtsIndex {
   decls: Map<string, Decl[]>
   order: Decl[]
+  /** Type names the plugin's own constructors are parameterised with, and how often. */
+  votes: Map<string, number>
 }
 
 function indexDts(distDir: string): DtsIndex | null {
@@ -423,6 +425,7 @@ function indexDts(distDir: string): DtsIndex | null {
   const files = walkFiles(distDir, '.d.ts').slice(0, MAX_DTS_FILES)
   const decls = new Map<string, Decl[]>()
   const order: Decl[] = []
+  const votes = new Map<string, number>()
   let total = 0
   for (const file of files) {
     let text: string
@@ -441,18 +444,60 @@ function indexDts(distDir: string): DtsIndex | null {
         decls.set(node.name.text, list)
         order.push(node)
       }
+      if (ts.isVariableStatement(node)) {
+        for (const d of node.declarationList.declarations) {
+          const name = constructorOptionsType(d.type)
+          if (name) votes.set(name, (votes.get(name) ?? 0) + 1)
+        }
+      }
     })
   }
-  return decls.size > 0 ? { decls, order } : null
+  return decls.size > 0 ? { decls, order, votes } : null
 }
 
-// The interface the options object is typed as. Until the root-interface fix this is the old
-// rule: the first interface whose name ends in "Options".
-function pickOptionsRoot(index: DtsIndex): ts.InterfaceDeclaration | null {
-  for (const decl of index.order) {
-    if (ts.isInterfaceDeclaration(decl) && /options$/i.test(decl.name.text) && decl.members.some(ts.isPropertySignature)) return decl
+// `declare const X: QuartzTransformerPlugin<MultilanguageOptions>` - the type quartz hands the
+// options to, as the plugin itself declares it. `Partial<Options>` counts as `Options`
+// (alias-redirects writes it that way).
+function constructorOptionsType(type: ts.TypeNode | undefined): string | null {
+  if (!type || !ts.isTypeReferenceNode(type) || !ts.isIdentifier(type.typeName)) return null
+  if (!/^Quartz\w*(Plugin|Constructor)$/.test(type.typeName.text)) return null
+  let arg = type.typeArguments?.[0]
+  while (arg && ts.isTypeReferenceNode(arg) && ts.isIdentifier(arg.typeName) && /^(Partial|Required|Readonly)$/.test(arg.typeName.text)) {
+    arg = arg.typeArguments?.[0]
   }
-  return null
+  return arg && ts.isTypeReferenceNode(arg) && ts.isIdentifier(arg.typeName) ? arg.typeName.text : null
+}
+
+// The declaration the options object is typed as.
+//
+// It used to be the first interface whose name ends in "Options", in file order. For
+// quartz-multilanguage that is `SeoOptions`, a nested part of the real one - the page offered
+// `hreflang`, `ogLocale` and `xDefault` as top-level options, and a switch written there landed at
+// `options.hreflang`, where the plugin never looks; the 15 keys gui-test actually sets were
+// invisible. Now, in this order:
+//
+//   1. what the plugin's constructors are parameterised with (`QuartzTransformerPlugin<T>`,
+//      `QuartzComponentConstructor<T>`, ...) - the plugin's own statement, and the most votes win;
+//   2. otherwise an `…Options` interface that no other one refers to - the outermost - leaving
+//      out `Resolved…`, which is the shape after defaults, not what the user writes. Several left:
+//      the one with the most members.
+function pickOptionsRoot(index: DtsIndex): Decl | null {
+  const voted = [...index.votes].sort((a, b) => b[1] - a[1]).find(([name]) => index.decls.has(name))
+  if (voted) return index.decls.get(voted[0])![0]
+
+  const candidates = index.order.filter(
+    (d): d is ts.InterfaceDeclaration =>
+      ts.isInterfaceDeclaration(d) && /options$/i.test(d.name.text) && !/^Resolved/.test(d.name.text) && d.members.some(ts.isPropertySignature)
+  )
+  const referenced = new Set<string>()
+  const collect = (node: ts.Node): void => {
+    if (ts.isTypeReferenceNode(node) && ts.isIdentifier(node.typeName)) referenced.add(node.typeName.text)
+    ts.forEachChild(node, collect)
+  }
+  for (const c of candidates) c.members.forEach(collect)
+  const outermost = candidates.filter((c) => !referenced.has(c.name.text))
+  const pool = outermost.length > 0 ? outermost : candidates
+  return pool.sort((a, b) => b.members.length - a.members.length)[0] ?? null
 }
 
 function optionsJsonSchemaFromDts(distDir: string): JsonSchema | null {

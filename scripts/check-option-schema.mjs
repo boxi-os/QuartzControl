@@ -1,6 +1,9 @@
 // Wie viele Optionen eines Plugins die App darstellen kann — je Plugin eines echten Projekts.
 //
-//   npm run check:option-schema -- <projektpfad> [--plugin <name>]
+//   npm run check:option-schema -- <projektpfad> [--plugin <name>] [--dump]
+//
+// `--dump` gibt zusätzlich das normalisierte Schema jedes gezählten Plugins als JSON aus — mit
+// `--plugin` der Weg, eine einzelne Struktur nachzusehen (wohin schreibt `seo.hreflang`?).
 //
 // Existiert, weil ein fehlendes Feld auf keinem Bildschirm als Fehler erscheint: Die Plugins-Seite
 // zeigt, was sie kennt, und schweigt über den Rest. Bei quartz-navigations fielen so alle
@@ -75,9 +78,10 @@ const deriveName = await (async () => {
 
 const args = process.argv.slice(2)
 const only = args.includes('--plugin') ? args[args.indexOf('--plugin') + 1] : null
+const dump = args.includes('--dump')
 const projekt = args.find((a, i) => !a.startsWith('--') && args[i - 1] !== '--plugin')
 if (!projekt) {
-  console.error('Aufruf: npm run check:option-schema -- <projektpfad> [--plugin <name>]')
+  console.error('Aufruf: npm run check:option-schema -- <projektpfad> [--plugin <name>] [--dump]')
   process.exit(2)
 }
 const configFile = path.join(projekt, 'quartz.config.yaml')
@@ -124,6 +128,7 @@ for (const entry of entries) {
   const result = getPluginOptionSchema(projekt, entry.source)
   if (result.unreadable) unreadable += 1
   const fields = result.schema?.fields ?? []
+  if (dump) console.log(`--- ${name}\n${JSON.stringify(result, null, 1)}`)
 
   const sources = {
     config: keysOf(options),

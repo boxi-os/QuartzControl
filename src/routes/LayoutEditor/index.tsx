@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useSearchParams } from 'react-router-dom'
 import { useProject } from '../ProjectLayout'
@@ -136,8 +136,25 @@ export default function LayoutEditor(): JSX.Element {
     goToTab('frames')
   }
 
+  // Read by save() after it has let a pending field commit - the closure's `config` is the one from
+  // before that.
+  const configRef = useRef(config)
+  configRef.current = config
+
   // Returns whether it worked - see the leave guard in ProjectLayout.
   async function save(): Promise<boolean> {
+    // The text and number fields of a component's options take their value on blur. A click on Save
+    // blurs them first; Cmd+S and the leave dialog's "Speichern" do not, and saved the draft without
+    // what was just typed while the badge went away (P7.4, measured: minEntries typed, Cmd+S, file
+    // unchanged). So the field is let go here, React renders its value into the draft, and the focus
+    // goes back to it - by id, because a number field is remounted with its new value.
+    const field = document.activeElement
+    if (field instanceof HTMLElement && field.matches('input, textarea')) {
+      field.blur()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      if (field.id) document.getElementById(field.id)?.focus()
+    }
+    const config = configRef.current
     if (!config) return false
     setStatus('saving')
     setError(null)

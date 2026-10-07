@@ -1438,3 +1438,34 @@ Seitentyp bewegt wie vorher; nach „Anpassung entfernen“ steht der Fokus auf 
 wählbar, ihr Ausschluss für einen Seitentyp also nicht einzeln umzuschalten (der alte Reiter hatte
 für jede Komponente einen Schalter). Auf der Website ändert das nichts, solange sie aus ist; wird sie
 zurückgezogen, steht sie ausgegraut mit dem Grund auf der Bühne und der Schalter ist da.
+
+## Optionen in der Seitenleiste (2026-10-07, 1.1 P7.4)
+
+Unter den Feldern einer gewählten Komponente steht ihr eigenes Optionen-Formular — dasselbe
+`PluginOptionsForm` wie auf der Plugins-Seite, aber es schreibt in den Entwurf der Seite statt in die
+Datei: gespeichert wird mit dem Knopf im Kopf, und `dirty` sieht es, weil es die ganze Config
+vergleicht. Das Schema liest `LayoutEditor/ComponentOptions.tsx` über `useIpcQuery`, weil jeder Klick
+auf einen anderen Chip die Frage ändert.
+
+**Drei Funde beim Messen, alle behoben:**
+
+- **Waagerechter Bildlauf.** Die Felder waren für die Plugins-Seite gebaut: 14rem fest, Knopf
+  daneben, nicht schrumpfbar. In der 20rem-Seitenleiste lief `<main>` bei navigations 60 px und bei
+  layout-box 2 px quer. Die Zeilen brechen jetzt um und die Felder tragen `max-w-full`. Gegenprobe
+  auf der Plugins-Seite gegen `aa3beb2` (alle 56 Optionen-Blöcke von gui-test aufgeklappt): 8467
+  Elemente, **jedes an derselben Stelle in derselben Größe**, bei 1280 und 1728 px.
+- **Eine klebende Leiste, höher als das Fenster.** Mit den Optionen von navigations war die
+  Seitenleiste 7300 px hoch; ihr Ende war erst zu sehen, wenn die Bühne daneben zu Ende gerollt war.
+  Sie rollt jetzt selbst (`max-h` unter dem Fensterrand, Unterkante 784 von 800 px).
+- **Cmd+S verlor das gerade Getippte.** Text- und Zahlfelder übernehmen ihren Wert beim Verlassen.
+  Ein Klick auf „Speichern“ verlässt das Feld vorher, Cmd+S und das „Speichern“ des
+  Verlassen-Dialogs nicht: `minEntries` getippt, Cmd+S, Datei ohne den Wert, Badge weg. `save()`
+  lässt das Feld jetzt los, wartet einen Takt, liest den Entwurf über einen Ref und gibt den Fokus
+  zurück. Nachher: Wert in der Datei, Fokus im selben Feld.
+
+Gemessen an der gebauten App mit einem Klon von gui-test: maxDepth, ein Schalter, ein Titel in
+einer der sieben layout-box-Instanzen, ein Zurücksetzen und `variant` von navigations, dann
+Speichern. Die Datei bleibt bis zum Speichern unverändert, danach ändern sich genau diese fünf
+Zeilen. **Offen:** Ist das getippte Feld die einzige Änderung, ist Cmd+S nicht registriert (es gibt
+noch nichts, was `dirty` zählt) und tut nichts. Der Wert geht dabei nicht verloren, er kommt beim
+Verlassen des Felds in den Entwurf.

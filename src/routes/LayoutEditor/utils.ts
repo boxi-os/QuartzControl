@@ -391,3 +391,14 @@ export function withGroupOption<K extends keyof GroupOptions>(
     return { ...p, layout }
   })
 }
+
+// The plugin's own options, as PluginOptionsForm hands them back: the whole object, or undefined
+// when nothing is left - then the key goes, as on the plugins page (Installed.tsx, setDeep).
+export function withOptions(plugins: PluginEntry[], index: number, options: Record<string, unknown> | undefined): PluginEntry[] {
+  return plugins.map((p, i) => {
+    if (i !== index) return p
+    if (options !== undefined) return { ...p, options }
+    const { options: _removed, ...without } = p
+    return without as PluginEntry
+  })
+}

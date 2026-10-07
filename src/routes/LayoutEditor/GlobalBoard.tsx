@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   DndContext,
@@ -36,6 +36,7 @@ import { ComponentChip, PaletteChip } from './ComponentChip'
 import { ComponentPalette, PALETTE_DROP_ID, PALETTE_PREFIX } from './Palette'
 import GroupsPanel from './GroupsPanel'
 import Inspector from './Inspector'
+import { siteLanguages } from '../../components/PluginOptionsForm/siteLanguages'
 import { useDndAccessibility } from '../../utils/dndAnnouncements'
 import { nearestDroppableCoordinates } from '../../utils/dndKeyboard'
 import {
@@ -165,6 +166,10 @@ export default function GlobalBoard({
       ...config.plugins.map((p) => p.layout?.group).filter((g): g is string => !!g)
     ])
   ]
+  // Keyed by its own result, so the list keeps its identity across the edits that do not touch it -
+  // the form's context is memoized on it.
+  const languagesKey = siteLanguages(config).join(',')
+  const languages = useMemo(() => (languagesKey ? languagesKey.split(',') : []), [languagesKey])
   const nameCounts = duplicateNameCounts(config.plugins)
   const ranks = duplicateRanks(config.plugins)
   const pageTypes = derivePageTypes(config)
@@ -815,10 +820,18 @@ export default function GlobalBoard({
             <GroupsPanel groups={config.layout?.groups ?? {}} onAdd={addGroup} onUpdate={updateGroup} onDelete={deleteGroup} />
           </div>
 
-          <aside aria-label={t('layoutEditor.inspector.title')} className="xl:sticky xl:top-4">
+          {/* Its own scroller while it sticks: with a component's options the panel is taller than the
+              window (navigations: 7300 px), and a sticky block that tall only shows its end once the
+              board beside it has been scrolled to its own end. */}
+          <aside
+            aria-label={t('layoutEditor.inspector.title')}
+            className="xl:sticky xl:top-4 xl:max-h-[calc(100vh-5rem)] xl:overflow-y-auto xl:overscroll-contain"
+          >
             {selectedIndex !== null && config.plugins[selectedIndex] ? (
               <Inspector
                 key={`${selected?.name}#${selected?.occurrence}`}
+                projectPath={projectPath}
+                languages={languages}
                 pageType={
                   pageType && override
                     ? {

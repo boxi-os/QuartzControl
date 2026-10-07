@@ -28,7 +28,9 @@ interface Inherited {
   fields: readonly OptionField[]
 }
 
-const INPUT_WIDTH = 'w-56'
+// max-w-full and the wrapping row below: the layout board's side panel is 20rem wide, and a
+// fixed 14rem field with its reset button ran past it (P7.4, measured: 25 px at navigations).
+const INPUT_WIDTH = 'w-56 max-w-full'
 
 // ── one object: its fields in order, by group, the advanced ones folded, the inactive ones apart ──
 
@@ -165,7 +167,7 @@ function FieldRow({
   // hidden label), so its visible key is not a <label> of a second control.
   const Key = field.node.kind === 'boolean' ? 'span' : 'label'
   const label = (
-    <Key {...(field.node.kind === 'boolean' ? {} : { htmlFor: id })} className="w-48 shrink-0 break-all font-mono text-xs text-text-secondary">
+    <Key {...(field.node.kind === 'boolean' ? {} : { htmlFor: id })} className="w-48 max-w-full shrink-0 break-all font-mono text-xs text-text-secondary">
       {field.key}
       {text.title && <span className="ml-1 font-sans text-text-muted">{text.title}</span>}
     </Key>
@@ -203,9 +205,9 @@ function FieldRow({
   if (block) {
     return (
       <div className="flex flex-col gap-1.5">
-        <div className="flex items-start gap-2">
+        <div className="flex flex-wrap items-start gap-x-2 gap-y-1">
           {label}
-          {text.description && <p className="flex-1 text-micro text-text-muted">{text.description}</p>}
+          {text.description && <p className="min-w-[8rem] flex-1 text-micro text-text-muted">{text.description}</p>}
           {reset}
         </div>
         <div className="ml-4 border-l border-ink/10 pl-3 dark:border-ink/10">{editor}</div>
@@ -215,7 +217,7 @@ function FieldRow({
   return (
     <div className="flex flex-wrap items-start gap-x-3 gap-y-1">
       {label}
-      <div className="flex shrink-0 items-center gap-1.5">
+      <div className="flex min-w-0 max-w-full flex-wrap items-center gap-1.5">
         {editor}
         {reset}
       </div>
@@ -419,7 +421,7 @@ function StringEditor({
     commit(el.value.slice(0, at) + text + el.value.slice(to))
   }
   return (
-    <span className="flex items-start gap-2">
+    <span className="flex max-w-full flex-wrap items-start gap-x-2">
       {multiline ? (
         <span className="flex flex-col gap-1.5">
           <textarea

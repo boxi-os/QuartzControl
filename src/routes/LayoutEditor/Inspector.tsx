@@ -5,6 +5,7 @@ import type { LayoutPosition, PluginEntry, PluginLayoutDeclaration } from '@shar
 import { Button, Card, CardHeading, Field, FieldGroup, Select, TextInput, Toggle } from '../../components/ui'
 import { announce } from '../../state/announcer'
 import { conditionLabel } from './ComponentChip'
+import ComponentOptions from './ComponentOptions'
 import {
   BUILTIN_CONDITIONS,
   GROUP_OPTION_DEFAULTS,
@@ -16,14 +17,16 @@ import {
   withDisplay,
   withEnabled,
   withGroup,
-  withGroupOption
+  withGroupOption,
+  withOptions
 } from './utils'
 
 type Align = NonNullable<NonNullable<PluginLayoutDeclaration['groupOptions']>['align']>
 
 /**
  * The side panel of the layout board: everything about the selected component's place on the
- * page. It writes into the page's config draft like a drop does; the header's Save writes the file.
+ * page, and below that its own options (ComponentOptions). It writes into the page's config draft
+ * like a drop does; the header's Save writes the file.
  *
  * It is also the keyboard's way to do what the board does by dragging - a position select and
  * earlier/later answer every direction a drag can go, and "In den Vorrat legen" is the drop on the
@@ -33,6 +36,8 @@ type Align = NonNullable<NonNullable<PluginLayoutDeclaration['groupOptions']>['a
  * and does not carry over to the next one selected.
  */
 export default function Inspector({
+  projectPath,
+  languages,
   plugins,
   index,
   positions,
@@ -43,6 +48,9 @@ export default function Inspector({
   pageType,
   onChange
 }: {
+  projectPath: string
+  /** The site's language codes, for an option keyed by language (PluginOptionsForm). */
+  languages: string[]
   plugins: PluginEntry[]
   index: number
   positions: Record<LayoutPosition, number[]>
@@ -312,6 +320,17 @@ export default function Inspector({
         </div>
         {!isDuplicate && plugin.enabled && <span className="text-micro text-text-muted">{t('layoutEditor.inspector.parkHint')}</span>}
       </FieldGroup>
+
+      {/* Last, because it is the long part: a component like navigations has dozens of options,
+          and the fields above are what the stage itself is about. */}
+      <div className="border-t border-ink/10 pt-4 dark:border-ink/10">
+        <ComponentOptions
+          projectPath={projectPath}
+          plugin={plugin}
+          languages={languages}
+          onChange={(options) => onChange(withOptions(plugins, index, options))}
+        />
+      </div>
     </Card>
   )
 }

@@ -24,7 +24,7 @@ import { primeStickyState, useStickyState } from '../../state/uiState'
 import { useDndAccessibility } from '../../utils/dndAnnouncements'
 import { repoUrl } from './pluginSource'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
-import { quartzPluginName } from '@shared/quartzPluginName'
+import { siteLanguages } from '../../components/PluginOptionsForm/siteLanguages'
 
 // A row is one line of text plus two fixed-width controls, so it no longer needs the ~710px the
 // old wrap-or-squeeze layout did - the name/source/description column shrinks freely (min-w-0)
@@ -175,21 +175,6 @@ function displayName(item: IndexedPlugin): string {
 // construction (they are directory names under authored-frames/).
 function stickyKey(item: IndexedPlugin): string {
   return item.frame || item.occurrence === 1 ? item.plugin.name : `${item.plugin.name}#${item.occurrence}`
-}
-
-// The site's language codes: quartz-multilanguage's `languages` (strings or `{ code }`) if it is in
-// the config, otherwise the primary subtag of `configuration.locale`. For the keys of an option
-// keyed by language, such as layout-box's byLang.
-function siteLanguages(config: QuartzConfig | null): string[] {
-  const entry = config?.plugins.find((p) => quartzPluginName(p.source) === 'quartz-multilanguage')
-  const list = entry?.options?.languages
-  const codes = Array.isArray(list)
-    ? list.map((l) => (typeof l === 'string' ? l : l && typeof l === 'object' && typeof (l as { code?: unknown }).code === 'string' ? (l as { code: string }).code : null))
-    : []
-  const own = codes.filter((c): c is string => typeof c === 'string' && c.trim() !== '').map((c) => c.trim().toLowerCase())
-  if (own.length > 0) return [...new Set(own)]
-  const locale = (config?.configuration as { locale?: unknown } | undefined)?.locale
-  return typeof locale === 'string' && locale ? [locale.split('-')[0].toLowerCase()] : []
 }
 
 function getLayout(plugin: PluginEntry): PluginLayout | null {

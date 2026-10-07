@@ -1438,6 +1438,9 @@ export default {
     inspector: {
       title: 'Component',
       empty: 'Select a component. Its settings will appear here.',
+      options: 'Options',
+      optionsLoading: 'Reading options…',
+      optionsError: 'The options could not be read: {{reason}}',
       parked: 'Switched off — it lies in the component tray and is not built.',
       disabled: 'Switched off — not built.',
       enable: 'Switch on',

@@ -1443,6 +1443,9 @@ export default {
     inspector: {
       title: 'Komponente',
       empty: 'Wähle eine Komponente aus. Ihre Einstellungen erscheinen dann hier.',
+      options: 'Optionen',
+      optionsLoading: 'Lese Optionen…',
+      optionsError: 'Die Optionen ließen sich nicht lesen: {{reason}}',
       parked: 'Ausgeschaltet — liegt im Komponentenvorrat und wird nicht gebaut.',
       disabled: 'Ausgeschaltet — wird nicht gebaut.',
       enable: 'Einschalten',

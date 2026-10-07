@@ -10,17 +10,18 @@ import { readConfig } from './configService'
 import {
   customScssPath,
   fontFileIn,
-  getManagedBlock,
   joinUniqueRules,
+  managedBody,
+  managedScssPath,
   parseFontFaces,
   type ParsedFace,
   projectFontsDir,
   allStylesheets,
-  readCustomScss,
+  readStyleSources,
+  sourcesWithout,
   splitRules,
-  stripManagedBlock,
-  upsertManagedBlock,
-  writeCustomScss
+  type StyleSources,
+  writeManagedBlocks
 } from './styleService'
 import { MAX_FONT_FILE_BYTES, readFontFace } from './fontFile'
 import { whileHoldingStyles } from './styleLock'
@@ -79,12 +80,11 @@ async function importFontFileNow(
   ]
   const cssBlock = `@font-face {\n${declarations.join('\n')}\n}`
 
-  const info = await readCustomScss(projectPath)
-  const existingBody = getManagedBlock(info.content, FONTS_MARKER)
+  const existingBody = managedBody(await readStyleSources(projectPath), FONTS_MARKER)
   // Joined rule by rule: the same file imported twice is the same face, and so is a font that two
-  // copies of the section (old and new marker name) both held - see joinUniqueRules.
+  // copies of the section (old and new marker name, or both files) held - see joinUniqueRules.
   const nextBody = joinUniqueRules([existingBody ?? '', cssBlock])
-  await writeCustomScss(projectPath, upsertManagedBlock(info.content, FONTS_MARKER, nextBody))
+  await writeManagedBlocks(projectPath, { [FONTS_MARKER]: nextBody })
 
   return { fileName, weight: face?.weight, italic: face?.italic }
 }
@@ -126,17 +126,18 @@ function mentions(text: string, family: string): boolean {
  * code. The card says where it looked, so the answer can be read for what it is.
  */
 export async function unusedImportedFonts(projectPath: string, draftFamilies: string[]): Promise<UnusedImportedFont[]> {
-  const info = await readCustomScss(projectPath)
-  const body = getManagedBlock(info.content, FONTS_MARKER)
+  const sources = await readStyleSources(projectPath)
+  const body = managedBody(sources, FONTS_MARKER)
   if (!body) return []
 
   // Every stylesheet under quartz/styles (and the two other roots allStylesheets walks), at any depth: a `body { font-family: "Alt" }` in a file
   // the user wrote there and loads with @use is a use of the family, and offering it for removal
   // because a flat two-directory list did not see it costs the file it points at (thirty-third
   // review, finding 6).
-  const texts = [withoutComments(upsertManagedBlock(info.content, FONTS_MARKER, ''))]
+  // The two files the block can stand in are read without it; every other stylesheet whole.
+  const texts = [withoutComments(sourcesWithout(sources, FONTS_MARKER))]
   for (const path of await allStylesheets(projectPath)) {
-    if (path !== customScssPath(projectPath)) texts.push(withoutComments(await readFile(path, 'utf-8')))
+    if (path !== customScssPath(projectPath) && path !== managedScssPath(projectPath)) texts.push(withoutComments(await readFile(path, 'utf-8')))
   }
   const typography = await readConfig(projectPath)
     .then((config) => Object.values((config.theme.typography ?? {}) as Record<string, unknown>))
@@ -182,14 +183,13 @@ export function removeImportedFont(projectPath: string, family: string): ReturnT
 }
 
 async function removeImportedFontNow(projectPath: string, family: string): Promise<{ removedFiles: string[] }> {
-  const info = await readCustomScss(projectPath)
-  const body = getManagedBlock(info.content, FONTS_MARKER) ?? ''
+  const body = managedBody(await readStyleSources(projectPath), FONTS_MARKER) ?? ''
   const rules = splitRules(body)
   const isFamily = (rule: string): boolean => parseFontFaces(rule).some((f) => f.family.toLowerCase() === family.toLowerCase())
   const removed = rules.filter(isFamily)
   if (removed.length === 0) return { removedFiles: [] }
 
-  await writeCustomScss(projectPath, upsertManagedBlock(info.content, FONTS_MARKER, joinUniqueRules(rules.filter((r) => !isFamily(r)))))
+  await writeManagedBlocks(projectPath, { [FONTS_MARKER]: joinUniqueRules(rules.filter((r) => !isFamily(r))) })
   return { removedFiles: await deleteUnreferencedFontFiles(projectPath, removed.join('\n')) }
 }
 
@@ -223,7 +223,7 @@ function fontFilesNamedBy(projectPath: string, css: string, protecting: boolean)
 
 /**
  * Every file any stylesheet of the project still points at. `except` are rules taken out of
- * custom.scss first - the ones that are about to go, when the question is asked before they do.
+ * custom.scss and _quartzcontrol.scss first - the ones that are about to go, when the question is asked before they do.
  * Rule by rule, because splitRules() returns them trimmed and separately: their concatenation is
  * not a string the file contains.
  */
@@ -231,7 +231,8 @@ async function fontFilesStillNamed(projectPath: string, except: string[] = []): 
   const stillNamed = new Set<string>()
   for (const path of await allStylesheets(projectPath)) {
     let css = await readFile(path, 'utf-8')
-    if (path === customScssPath(projectPath)) for (const rule of except) css = css.split(rule).join('')
+    // The rules about to go stand in the managed block, in whichever of the two files holds it.
+    if (path === customScssPath(projectPath) || path === managedScssPath(projectPath)) for (const rule of except) css = css.split(rule).join('')
     for (const file of fontFilesNamedBy(projectPath, css, true)) stillNamed.add(file)
   }
   return stillNamed
@@ -275,7 +276,7 @@ async function deleteUnreferencedFontFiles(projectPath: string, css: string): Pr
 // 'fonts' because that one is the user's imports: removing an unused import must not touch a
 // Google font, and replacing the Google fonts must not touch an import. Its first line is the
 // request it came from, which is how a later call knows whether anything changed.
-const GOOGLE_MARKER = 'google-fonts'
+const GOOGLE_MARKER = 'google-fonts' as const
 const GOOGLE_TIMEOUT_MS = 20_000
 // Electron's `net.fetch` rather than node's global fetch, like the update check and the bundled
 // template: it goes through Chromium's stack, so the machine's proxy configuration and its
@@ -311,8 +312,8 @@ const FONT_FILE_NAME = /^[\w-]+(?:\.[\w-]+)*\.(?:woff2|woff|ttf|otf)$/
 const MAX_FONT_FILES = 800
 const MAX_FONT_TOTAL_BYTES = 128 * 1024 * 1024
 
-export function hasGoogleFontsBlock(content: string): boolean {
-  return getManagedBlock(content, GOOGLE_MARKER) !== null
+export function hasGoogleFontsBlock(sources: StyleSources): boolean {
+  return managedBody(sources, GOOGLE_MARKER) !== null
 }
 
 function requestOf(body: string | null): string | null {
@@ -393,7 +394,7 @@ async function fetchGoogleFontsNow(
   coveredFamilies: string[]
 }> {
   if (!googleFontsCss2Url(typography)) throw new Error(mainT('googleFontsNoFamily'))
-  const current = (await readCustomScss(projectPath)).content
+  const current = await readStyleSources(projectPath)
   // What the project declares itself - an imported font, the 'fonts' block a template brings - is
   // not asked of Google a second time. Asked anyway, the same family stood in custom.scss twice:
   // the Basis template's three Noto Sans rules in 'fonts' and Google's 54 in this block, with a
@@ -407,10 +408,10 @@ async function fetchGoogleFontsNow(
   // any other family is asked, and out of the answer go only the rules an own rule already covers
   // - same style, weight inside its range, characters inside its unicode-range (coveredByOwn).
   //
-  // custom.scss only, like notDelivered(), while unusedImportedFonts reads every stylesheet: a
-  // family declared in quartz/styles/custom/*.scss is still fetched. That is the safe side - one
+  // custom.scss and _quartzcontrol.scss only, like notDelivered(), while unusedImportedFonts reads
+  // every stylesheet: a family declared in quartz/styles/custom/*.scss is still fetched. That is the safe side - one
   // fetch too many costs duplicate files, one too few costs the site its characters.
-  const ownFaces = parseFontFaces(stripManagedBlock(current, GOOGLE_MARKER))
+  const ownFaces = parseFontFaces(sourcesWithout(current, GOOGLE_MARKER))
   const own = new Set(ownFaces.map((face) => face.family.toLowerCase()))
   const ownFamiliesAsked: string[] = []
   const wanted: Record<string, unknown> = { ...typography }
@@ -422,16 +423,15 @@ async function fetchGoogleFontsNow(
     }
   }
   const request = googleFontsCss2Url(wanted)
-  const before = getManagedBlock(current, GOOGLE_MARKER)
+  const before = managedBody(current, GOOGLE_MARKER)
   // Nothing left to ask: the block stays, empty, because it is the mark that the project holds its
   // Google fonts (the build door asks for it), and a later font chosen from Google fills it again.
   if (!request) {
     if (before !== null && before.trim() === NOTHING_FROM_GOOGLE) {
       return { changed: false, files: [], removedFiles: [], removedFamilies: [], missingFamilies: [], ownFamilies: ownFamiliesAsked, coveredFamilies: [] }
     }
-    const info = await readCustomScss(projectPath)
-    const previous = getManagedBlock(info.content, GOOGLE_MARKER) ?? ''
-    await writeCustomScss(projectPath, upsertManagedBlock(info.content, GOOGLE_MARKER, NOTHING_FROM_GOOGLE))
+    const previous = managedBody(await readStyleSources(projectPath), GOOGLE_MARKER) ?? ''
+    await writeManagedBlocks(projectPath, { [GOOGLE_MARKER]: NOTHING_FROM_GOOGLE })
     return {
       changed: true,
       files: [],
@@ -456,7 +456,7 @@ async function fetchGoogleFontsNow(
       files: [],
       removedFiles: [],
       removedFamilies: [],
-      missingFamilies: notDelivered(typography, before, current),
+      missingFamilies: notDelivered(typography, before, sourcesWithout(current, GOOGLE_MARKER)),
       ownFamilies: ownFamiliesAsked,
       coveredFamilies: []
     }
@@ -526,10 +526,10 @@ async function fetchGoogleFontsNow(
   for (const [url, name] of urls) body = body.split(url).join(`static/fonts/${name}`)
   const head = ownPrint ? `/* ${request} */\n/* ${OWN_RULES_NOTE} ${ownPrint} */` : `/* ${request} */`
   const block = body.trim() ? `${head}\n${body.trim()}` : head
-  // Read again: the downloads took a while, and custom.scss may have been written meanwhile.
-  const info = await readCustomScss(projectPath)
-  const previous = getManagedBlock(info.content, GOOGLE_MARKER) ?? ''
-  await writeCustomScss(projectPath, upsertManagedBlock(info.content, GOOGLE_MARKER, block))
+  // Read again: the downloads took a while, and the stylesheets may have been written meanwhile.
+  const latest = await readStyleSources(projectPath)
+  const previous = managedBody(latest, GOOGLE_MARKER) ?? ''
+  await writeManagedBlocks(projectPath, { [GOOGLE_MARKER]: block })
   // Said by name after the save: the files of a font chosen away go without a question, and the
   // "unused fonts" card never sees them - it lists the 'fonts' block only.
   // A family that moved from this block to the project's own rules is not "removed": the site
@@ -540,7 +540,7 @@ async function fetchGoogleFontsNow(
     files: [...urls.values()],
     removedFiles: await deleteUnreferencedFontFiles(projectPath, previous),
     removedFamilies: familiesOf(previous).filter((f) => !kept.has(f.toLowerCase())),
-    missingFamilies: notDelivered(typography, block, info.content),
+    missingFamilies: notDelivered(typography, block, sourcesWithout(latest, GOOGLE_MARKER)),
     ownFamilies: ownFamiliesAsked,
     coveredFamilies
   }
@@ -638,7 +638,7 @@ function familiesOf(css: string): string[] {
  * sentence that would have named it, "a font name is usually misspelt", is the one that does not
  * come (thirty-third review, finding 5).
  */
-function notDelivered(typography: Record<string, unknown>, block: string, wholeCss: string): string[] {
+function notDelivered(typography: Record<string, unknown>, block: string, ownCss: string): string[] {
   const delivered = new Set(familiesOf(block).map((f) => f.toLowerCase()))
   // Plus whatever the rest of custom.scss declares itself: a slot may hold a font the user
   // imported, and mixing the two is what the page offers. Asking the block alone warned "Google
@@ -647,10 +647,10 @@ function notDelivered(typography: Record<string, unknown>, block: string, wholeC
   // request (thirty-fourth review, finding 4). Same question as `declaredHere` on Basis, which
   // 77d143b taught the hint under the field and not this list.
   //
-  // Without the Google block, and deliberately: `wholeCss` is the file as it was before this run
-  // wrote, so its old block can still name a family this answer left out - counting that would
-  // hide exactly the omission the sentence is for.
-  for (const family of familiesOf(stripManagedBlock(wholeCss, GOOGLE_MARKER))) delivered.add(family.toLowerCase())
+  // Without the Google block, and deliberately: `ownCss` is both files as they were before this
+  // run wrote, without that block - its old copy can still name a family this answer left out, and
+  // counting that would hide exactly the omission the sentence is for.
+  for (const family of familiesOf(ownCss)) delivered.add(family.toLowerCase())
   const asked = (['header', 'body', 'code', 'title'] as const)
     .map((role) => googleFontRequest(role, typography[role])?.family.trim())
     .filter((family): family is string => Boolean(family))
@@ -665,10 +665,9 @@ export function dropGoogleFonts(projectPath: string): ReturnType<typeof dropGoog
 async function dropGoogleFontsNow(
   projectPath: string
 ): Promise<{ dropped: boolean; removedFiles: string[]; removedFamilies: string[] }> {
-  const info = await readCustomScss(projectPath)
-  const body = getManagedBlock(info.content, GOOGLE_MARKER)
+  const body = managedBody(await readStyleSources(projectPath), GOOGLE_MARKER)
   if (body === null) return { dropped: false, removedFiles: [], removedFamilies: [] }
-  await writeCustomScss(projectPath, stripManagedBlock(info.content, GOOGLE_MARKER))
+  await writeManagedBlocks(projectPath, { [GOOGLE_MARKER]: null })
   return { dropped: true, removedFiles: await deleteUnreferencedFontFiles(projectPath, body), removedFamilies: familiesOf(body) }
 }
 
@@ -691,8 +690,7 @@ export function refreshGoogleFonts(projectPath: string): Promise<{ failed: boole
 
 async function refreshGoogleFontsNow(projectPath: string): Promise<{ failed: boolean; text: string } | null> {
   try {
-    const info = await readCustomScss(projectPath)
-    if (!hasGoogleFontsBlock(info.content)) return null
+    if (!hasGoogleFontsBlock(await readStyleSources(projectPath))) return null
     const config = await readConfig(projectPath)
     if (config.theme.fontOrigin !== 'local') return null
     const result = await fetchGoogleFonts(projectPath, (config.theme.typography ?? {}) as Record<string, unknown>)

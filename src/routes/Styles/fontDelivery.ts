@@ -123,7 +123,8 @@ export function withSelfHostedFonts(config: QuartzConfig, selfHosted: boolean): 
 // Quartz's `cdnCaching: false`, which downloads at build time into the build output and points at
 // `https://<baseUrl>/static/fonts/…` - so the local preview loaded the fonts from the published
 // site, or not at all. Now the app fetches them into the project (fontService.fetchGoogleFonts):
-// the files go to quartz/static/fonts, their rules into custom.scss's "google-fonts" block, and the
+// the files go to quartz/static/fonts, their rules into the "google-fonts" block (custom.scss until
+// 1.0.x, _quartzcontrol.scss since 1.1 - the caller passes both), and the
 // config says `fontOrigin: local`, so Quartz fetches nothing. On this page the draft keeps the old
 // spelling - `googleFonts` with `cdnCaching: false` - because that is what the switch and the
 // font fields mean: the fields offer Google's list, the switch is on. The two functions below

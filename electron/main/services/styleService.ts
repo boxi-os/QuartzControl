@@ -31,7 +31,9 @@ export function customScssPath(projectPath: string): string {
 export async function readCustomScss(projectPath: string): Promise<StylesInfo> {
   const path = customScssPath(projectPath)
   const content = existsSync(path) ? await readFile(path, 'utf-8') : ''
-  return { path, content }
+  const managedPath = managedScssPath(projectPath)
+  const managed = existsSync(managedPath) ? { path: managedPath, content: await readFile(managedPath, 'utf-8') } : null
+  return { path, content, managed }
 }
 
 // Atomically, like every other file this app writes that something else reads: a plain writeFile
@@ -305,18 +307,24 @@ export function migrateFontUrls(projectPath: string): Promise<boolean> {
   return whileHoldingStyles(projectPath, () => migrateFontUrlsNow(projectPath))
 }
 
+// Both files: a project moved to _quartzcontrol.scss carries the block there, one that was not yet
+// still in custom.scss - and this door does not move anything, it only rewrites URLs in place.
 async function migrateFontUrlsNow(projectPath: string): Promise<boolean> {
-  const info = await readCustomScss(projectPath)
-  if (!info.content) return false
-  const spans = findManagedBlocks(info.content, 'fonts')
-  let out = info.content
-  for (let i = spans.length - 1; i >= 0; i--) {
-    const span = spans[i]
-    out = out.slice(0, span.from) + relativeFontUrls(out.slice(span.from, span.to)) + out.slice(span.to)
+  let changed = false
+  for (const path of [customScssPath(projectPath), managedScssPath(projectPath)]) {
+    const content = existsSync(path) ? await readFile(path, 'utf-8') : ''
+    if (!content) continue
+    const spans = findManagedBlocks(content, 'fonts')
+    let out = content
+    for (let i = spans.length - 1; i >= 0; i--) {
+      const span = spans[i]
+      out = out.slice(0, span.from) + relativeFontUrls(out.slice(span.from, span.to)) + out.slice(span.to)
+    }
+    if (out === content) continue
+    await writeFileAtomic(path, out)
+    changed = true
   }
-  if (out === info.content) return false
-  await writeCustomScss(projectPath, out)
-  return true
+  return changed
 }
 
 // What every write of custom.scss does on the way: the marker's new name, and relative font URLs
@@ -361,7 +369,7 @@ export function upsertManagedBlock(content: string, markerId: string, body: stri
 
 // Managed section for Phase-3a's CSS variable overrides - separate marker from fonts' so both
 // sections can coexist and be regenerated independently.
-const CSS_VARS_MARKER = 'css-vars'
+const CSS_VARS_MARKER = 'css-vars' satisfies MovedMarker
 
 function cssValue(raw: string): string {
   return raw.trim()
@@ -406,8 +414,7 @@ function renderVariableOverrides(overrides: CssVariableOverride[]): string {
 }
 
 export async function getVariableOverrides(projectPath: string): Promise<CssVariableOverride[]> {
-  const info = await readCustomScss(projectPath)
-  const body = getManagedBlock(info.content, CSS_VARS_MARKER)
+  const body = managedBody(await readStyleSources(projectPath), CSS_VARS_MARKER)
   return body ? parseVariableOverrides(body) : []
 }
 
@@ -416,17 +423,10 @@ export function saveVariableOverrides(projectPath: string, overrides: CssVariabl
 }
 
 async function saveVariableOverridesNow(projectPath: string, overrides: CssVariableOverride[]): Promise<void> {
-  const info = await readCustomScss(projectPath)
-  // Asked of the rendered body, not of the list: a list of emptied values renders nothing.
+  // Asked of the rendered body, not of the list: a list of emptied values renders nothing, and an
+  // empty override list clears the block rather than leaving stale rules behind.
   const body = renderVariableOverrides(overrides)
-  const next =
-    body === ''
-      ? // an empty override list still clears a previously-written block rather than leaving stale
-        // rules behind - upsertManagedBlock always needs a non-empty body, so remove the markers
-        // outright by upserting an intentionally-empty :root rule then stripping it back out.
-        migrateOnWrite(stripManagedBlock(info.content, CSS_VARS_MARKER))
-      : upsertManagedBlock(info.content, CSS_VARS_MARKER, body)
-  await writeCustomScss(projectPath, next)
+  await writeManagedBlocks(projectPath, { [CSS_VARS_MARKER]: body === '' ? null : body })
 }
 
 export function stripManagedBlock(content: string, markerId: string): string {
@@ -442,7 +442,7 @@ export function stripManagedBlock(content: string, markerId: string): string {
   return stripManagedBlock(cutSpan(content, span), markerId)
 }
 
-const IMPORTS_MARKER = 'imports'
+const IMPORTS_MARKER = 'imports' satisfies MovedMarker
 const STYLE_DIRS = ['custom', 'imported'] as const
 
 function stylesDir(projectPath: string): string {
@@ -476,8 +476,8 @@ function relativePathForSpecifier(projectPath: string, specifier: string): strin
 // An entry whose file no longer exists is dropped rather than kept: the block is written only by
 // this app and restricted to custom/ and imported/, so an unresolvable `@use` there means the file
 // was deleted outside the app - and leaving it in would break the next build.
-function parseImportOrder(projectPath: string, content: string): string[] {
-  const body = getManagedBlock(content, IMPORTS_MARKER)
+function parseImportOrder(projectPath: string, sources: StyleSources): string[] {
+  const body = managedBody(sources, IMPORTS_MARKER)
   if (!body) return []
   const out: string[] = []
   const re = /@use\s+["']([^"']+)["']/g
@@ -502,11 +502,15 @@ function upsertImportBlock(content: string, body: string): string {
     return migrateOnWrite(replaceManagedBlocks(content, spans, `${start}\n${body}\n${end}`))
   }
   if (!body) return content
+  return migrateOnWrite(insertBeforeRules(content, `${start}\n${body}\n${end}`))
+}
 
-  // Placed directly after the leading @charset/@use/@forward lines (Quartz's own
-  // `@use "./variables.scss" as *;` among them) - *not* after the leading comments, which would
-  // push the block past a "// put your custom CSS here!" line and, in a file that has one, all
-  // the way to the end where a later hand-written rule could end up above it.
+// Placed directly after the leading @charset/@use/@forward lines (Quartz's own
+// `@use "./variables.scss" as *;` among them) - *not* after the leading comments, which would
+// push the block past a "// put your custom CSS here!" line and, in a file that has one, all
+// the way to the end where a later hand-written rule could end up above it. In a file without
+// such lines, after the leading comments.
+function insertBeforeRules(content: string, text: string): string {
   const lines = content.split('\n')
   let cursor = 0
   let insertAt = 0
@@ -535,13 +539,133 @@ function upsertImportBlock(content: string, body: string): string {
     break
   }
   if (insertAt === 0) insertAt = cursor
-  lines.splice(insertAt, 0, '', `${start}\n${body}\n${end}`)
-  return migrateOnWrite(lines.join('\n').replace(/\n{3,}/g, '\n\n'))
+  lines.splice(insertAt, 0, '', text)
+  return lines.join('\n').replace(/\n{3,}/g, '\n\n')
+}
+
+// ── the managed file (1.1) ──────────────────────────────────────────────────
+//
+// Until 1.0.x the app kept four blocks in custom.scss - the load order, imported fonts, the Google
+// fonts it fetched and the variable overrides - and in gui-test they were about 600 of its 657
+// lines; the user wrote in the gaps. Since 1.1 they live in quartz/styles/_quartzcontrol.scss, and
+// custom.scss carries one line for them, `@use "./quartzcontrol";`, before its first rule: Quartz
+// loads custom.scss only (plugins/emitters/componentResources.ts), and Sass wants every `@use`
+// ahead of the rules.
+//
+// What that changes, measured with the project's sass and Chrome (docs/decisions/styles-and-fonts.md,
+// scripts/measure-variable-rules.mjs): Sass puts a module's CSS before the CSS of the file that
+// loads it, so the managed blocks now come *first*, and a rule of the user's own at the same
+// specificity beats a variable the Styles page set - where until 1.0.x the variables came last and
+// won. That is said in the release notes and on the Variables tab, not undone here.
+//
+// The move happens on the first write of any of the four blocks, and takes all four at once
+// (writeManagedBlocks). Reading looks in both files, the managed one first: a copy still in
+// custom.scss can only come from an older app on another machine (a project travelling through
+// Git-Sync), and it stands later in the CSS, so it is the one the site shows - the same "later
+// wins" rule as for the two marker names above. `imported-styles` stays in custom.scss: it is the
+// free body of a template package, the user's text and not the app's.
+export const MANAGED_SCSS_FILE = '_quartzcontrol.scss'
+const MOVED_MARKERS = ['imports', 'fonts', 'google-fonts', 'css-vars'] as const
+export type MovedMarker = (typeof MOVED_MARKERS)[number]
+const MANAGED_USE_LINE = '@use "./quartzcontrol";'
+// Any spelling Sass reads as the same module: with or without the underscore and the extension,
+// either quote, with an `as` of its own.
+const MANAGED_USE_RE = /^[ \t]*@use\s+(["'])\.\/_?quartzcontrol(?:\.scss)?\1(?:\s+as\s+[\w*-]+)?\s*;/m
+const MANAGED_FILE_HEADER = `// Maintained by QuartzControl and loaded by custom.scss with \`${MANAGED_USE_LINE}\`.
+// The blocks between QuartzControl markers are rewritten by the app (Styles page: load order,
+// fonts, variables). Text outside them is kept.
+`
+
+export function managedScssPath(projectPath: string): string {
+  return join(stylesDir(projectPath), MANAGED_SCSS_FILE)
+}
+
+export function hasManagedUse(customScss: string): boolean {
+  return MANAGED_USE_RE.test(customScss)
+}
+
+/**
+ * custom.scss without the line that loads the managed file - for a template package, which carries
+ * the free body: a package made here and imported by a 1.0.x app would otherwise point at a file
+ * that app never writes, and the build there breaks on it.
+ */
+export function stripManagedUse(customScss: string): string {
+  const match = MANAGED_USE_RE.exec(customScss)
+  if (!match) return customScss
+  return cutSpan(customScss, { from: match.index, to: match.index + match[0].length })
+}
+
+/** custom.scss with the line that loads the managed file, set before the first rule if missing. */
+export function ensureManagedUse(customScss: string): string {
+  return hasManagedUse(customScss) ? customScss : insertBeforeRules(customScss, MANAGED_USE_LINE)
+}
+
+/** Both stylesheets the app writes into, as text; the managed one empty when it does not exist. */
+export interface StyleSources {
+  custom: string
+  managed: string
+  managedExists: boolean
+}
+
+export async function readStyleSources(projectPath: string): Promise<StyleSources> {
+  const info = await readCustomScss(projectPath)
+  return { custom: info.content, managed: info.managed?.content ?? '', managedExists: info.managed !== null }
+}
+
+/**
+ * The body of a block across both files, the managed one first (see above), or null if neither
+ * has it. Like getManagedBlock: every copy's body, trimmed, joined.
+ */
+export function managedBody(sources: StyleSources, markerId: MovedMarker): string | null {
+  const bodies = [sources.managed, sources.custom].flatMap((content) => findManagedBlocks(content, markerId).map((span) => span.body.trim()))
+  if (bodies.length === 0) return null
+  return bodies.filter(Boolean).join('\n\n')
+}
+
+/** Both files' text without one block, for "everything except this block" questions. */
+export function sourcesWithout(sources: StyleSources, markerId: MovedMarker): string {
+  return `${stripManagedBlock(sources.managed, markerId)}\n${stripManagedBlock(sources.custom, markerId)}`
+}
+
+/**
+ * Writes the managed blocks. `changes` names the blocks this write is about - a string is the new
+ * body, null removes the block - and every other block is carried over as it reads now, from
+ * either file. The caller holds the styles lock.
+ *
+ * The managed file first, then custom.scss without the blocks and with the `@use` line: a write
+ * that breaks off in between leaves a block in both files, read twice and deduplicated by the next
+ * write, never in neither. Both files are written atomically (writeFileAtomic), because the dev
+ * server rebuilds on each of them.
+ */
+export async function writeManagedBlocks(projectPath: string, changes: Partial<Record<MovedMarker, string | null>>): Promise<void> {
+  const sources = await readStyleSources(projectPath)
+  const bodies = MOVED_MARKERS.map((marker) => [marker, marker in changes ? (changes[marker] ?? null) : managedBody(sources, marker)] as const)
+  // All four out first, then each back once in the fixed order: the imports before any rule
+  // because Sass requires it, the variables last so they still come after the stylesheets they
+  // override. Stripping and re-adding one at a time would move each block behind the next.
+  let managed = sources.managedExists ? sources.managed : MANAGED_FILE_HEADER
+  for (const marker of MOVED_MARKERS) managed = stripManagedBlock(managed, marker)
+  for (const [marker, body] of bodies) {
+    if (body === null) continue
+    if (marker === IMPORTS_MARKER) {
+      managed = upsertImportBlock(managed, body)
+    } else {
+      const { start, end } = managedBlockMarkers(marker)
+      managed = `${managed.replace(/\s+$/, '')}\n\n${start}\n${body}\n${end}\n`
+    }
+  }
+  managed = migrateOnWrite(managed)
+  if (!sources.managedExists || managed !== sources.managed) await writeFileAtomic(managedScssPath(projectPath), managed)
+
+  let custom = sources.custom
+  for (const marker of MOVED_MARKERS) custom = stripManagedBlock(custom, marker)
+  custom = ensureManagedUse(migrateOnWrite(custom))
+  if (custom !== sources.custom) await writeCustomScss(projectPath, custom)
 }
 
 export async function listStyleFiles(projectPath: string): Promise<StyleFileSet> {
   const main = await readCustomScss(projectPath)
-  const order = parseImportOrder(projectPath, main.content)
+  const order = parseImportOrder(projectPath, { custom: main.content, managed: main.managed?.content ?? '', managedExists: main.managed !== null })
 
   const onDisk: string[] = []
   for (const dir of STYLE_DIRS) {
@@ -638,8 +762,7 @@ async function deleteStyleFileNow(projectPath: string, relativePath: string): Pr
 }
 
 async function currentOrder(projectPath: string): Promise<string[]> {
-  const main = await readCustomScss(projectPath)
-  return parseImportOrder(projectPath, main.content)
+  return parseImportOrder(projectPath, await readStyleSources(projectPath))
 }
 
 // The namespace Sass derives when a `@use` has no `as`: the last path component, without its
@@ -688,10 +811,9 @@ export function setImportOrder(projectPath: string, relativePaths: string[]): Pr
 }
 
 async function setImportOrderNow(projectPath: string, relativePaths: string[]): Promise<void> {
-  const main = await readCustomScss(projectPath)
   const taken = new Set<string>()
   const body = relativePaths.map((p) => useLineFor(p, taken)).join('\n')
-  await writeCustomScss(projectPath, upsertImportBlock(main.content, body))
+  await writeManagedBlocks(projectPath, { [IMPORTS_MARKER]: body === '' ? null : body })
 }
 
 // Compiles custom.scss with the *project's own* Sass - the same dart-sass version
@@ -908,7 +1030,7 @@ export async function allStylesheets(projectPath: string): Promise<string[]> {
 }
 
 export async function projectStylesheets(projectPath: string): Promise<string[]> {
-  const files = [customScssPath(projectPath)]
+  const files = [customScssPath(projectPath), managedScssPath(projectPath)]
   for (const dir of STYLE_DIRS) {
     const full = join(stylesDir(projectPath), dir)
     if (!existsSync(full)) continue

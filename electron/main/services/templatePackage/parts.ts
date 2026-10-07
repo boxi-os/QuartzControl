@@ -27,19 +27,24 @@ import type { ZipEntry } from '../zipArchive'
 import { emptyPlan, hasNodeModule, installedVersion, listFilesFlat, writableTarget, type ApplyContext, type TemplatePart } from './shared'
 type Strategy = ApplyContext['strategy']
 
-// custom.scss's managed sections, split across three parts so each travels with what it describes:
-// 'imports' (the load order) and the file's own free-form body belong to `styles`, 'fonts' to
+// The managed sections, split across three parts so each travels with what it describes:
+// 'imports' (the load order) and custom.scss's own free-form body belong to `styles`, 'fonts' to
 // `fonts` (the @font-face rules and the files they point at are one thing), 'css-vars' to
-// `cssVariables`. 'imported-styles' is written by an import under 'projectWins' and is stripped
-// out on export like any other managed section, so packages never nest inside one another.
-// 'google-fonts' (the Google fonts the app fetched into the project, fontService.ts) travels with
-// `fonts` as well, beside the files it points at.
+// `cssVariables`. 'google-fonts' (the Google fonts the app fetched into the project,
+// fontService.ts) travels with `fonts` as well, beside the files it points at. Since 1.1 those four
+// live in _quartzcontrol.scss (styleService.writeManagedBlocks); 'imported-styles' stays in
+// custom.scss - it is written by an import under 'projectWins' and stripped on export like the
+// rest, so packages never nest inside one another.
+//
+// The body a package carries is custom.scss without all five and without the line that loads the
+// managed file: a package is read by older apps too, and one that pointed at a file they never
+// write would break their build.
 const MANAGED_MARKERS = ['imports', 'css-vars', 'fonts', 'google-fonts', 'imported-styles'] as const
-const FONTS_MARKER = 'fonts'
-const GOOGLE_FONTS_MARKER = 'google-fonts'
+const FONTS_MARKER = 'fonts' as const
+const GOOGLE_FONTS_MARKER = 'google-fonts' as const
 
 function stripAllManaged(content: string): string {
-  return MANAGED_MARKERS.reduce((acc, marker) => styleService.stripManagedBlock(acc, marker), content).trim()
+  return styleService.stripManagedUse(MANAGED_MARKERS.reduce((acc, marker) => styleService.stripManagedBlock(acc, marker), content)).trim()
 }
 
 function stylesDir(projectPath: string): string {
@@ -306,11 +311,11 @@ const styles: TemplatePart<StylesPayload> = {
     return plan
   },
   /**
-   * Rebuilds custom.scss instead of patching it, because the file's managed sections are owned by
-   * *other* parts that may or may not be running: everything is stripped down to the free body,
-   * the body is replaced (or merged), and each section is then rewritten through the service
-   * function that owns it - which is also the only way the 'imports' block ends up back at the top
-   * of the file, where Sass requires it.
+   * Rebuilds custom.scss's free body. The project is moved to _quartzcontrol.scss first, so the
+   * sections other parts own are out of the way and stay where they are whatever this writes; the
+   * body is replaced (or merged) and the load order rewritten through the service that owns it.
+   * Until 1.1 the sections stood in custom.scss and had to be taken out and put back one by one -
+   * and a section left off that list was lost (thirty-third review, finding 3).
    */
   async apply(payload, { projectPath, strategy, files, warn }) {
     for (const relativePath of payload.files) {
@@ -329,16 +334,8 @@ const styles: TemplatePart<StylesPayload> = {
       await writeFile(target, data)
     }
 
+    await styleService.writeManagedBlocks(projectPath, {})
     const before = await styleService.readCustomScss(projectPath)
-    const keptFonts = styleService.getManagedBlock(before.content, FONTS_MARKER)
-    // Like keptFonts, and for the same reason: the section belongs to the `fonts` part, which may
-    // or may not be running, and stripAllManaged takes it out along with the rest. Left out, an
-    // import of the `styles` part alone took the Google fonts off a site that serves them itself -
-    // every slot fell back to a substitute, and nothing said so, because both the build door
-    // (refreshGoogleFonts) and the Basis tab read "this project holds its own Google fonts" off
-    // the very block that was gone (thirty-third review, finding 3).
-    const keptGoogleFonts = styleService.getManagedBlock(before.content, GOOGLE_FONTS_MARKER)
-    const keptVariables = await styleService.getVariableOverrides(projectPath)
     const existingOrder = (await styleService.listStyleFiles(projectPath)).files.filter((f) => f.imported).map((f) => f.relativePath)
 
     let body: string
@@ -357,25 +354,7 @@ const styles: TemplatePart<StylesPayload> = {
       const incoming = rest.trim()
       body = incoming === '' || own.includes(incoming) ? withUses : styleService.upsertManagedBlock(withUses, 'imported-styles', incoming)
     }
-    await styleService.writeCustomScss(projectPath, body)
-
-    if (keptFonts) {
-      const restored = await styleService.readCustomScss(projectPath)
-      await styleService.writeCustomScss(projectPath, styleService.upsertManagedBlock(restored.content, FONTS_MARKER, keptFonts))
-    }
-    // `fonts` runs after `styles` (see PARTS), so a package that brings its own Google fonts still
-    // has the last word: applyGoogleFontsCss replaces this under 'packageWins' and leaves it under
-    // 'projectWins'.
-    // `!== null`, not truthy: an empty block is the project's mark that it holds its own Google
-    // fonts, and both the build door and the Basis tab read that mark off the block's presence.
-    if (keptGoogleFonts !== null) {
-      const restored = await styleService.readCustomScss(projectPath)
-      await styleService.writeCustomScss(
-        projectPath,
-        styleService.upsertManagedBlock(restored.content, GOOGLE_FONTS_MARKER, keptGoogleFonts)
-      )
-    }
-    if (keptVariables.length > 0) await styleService.saveVariableOverrides(projectPath, keptVariables)
+    await styleService.writeCustomScss(projectPath, styleService.ensureManagedUse(body))
 
     // The order the package brings, restricted to files that exist here, with anything the target
     // already imported and the package does not know appended after it.
@@ -409,8 +388,8 @@ function incomingFontFaceCss(payload: FontsPayload): string | null {
 }
 
 // The project's side of the same comparison: a block not yet migrated is the same block.
-function currentFontFaceCss(content: string): string | null {
-  const body = styleService.getManagedBlock(content, FONTS_MARKER)
+function currentFontFaceCss(sources: styleService.StyleSources): string | null {
+  const body = styleService.managedBody(sources, FONTS_MARKER)
   return body && styleService.relativeFontUrls(body)
 }
 
@@ -421,10 +400,9 @@ function currentFontFaceCss(content: string): string | null {
 // Returns the block it replaced, so the caller can take away the files only that one named.
 async function applyGoogleFontsCss(projectPath: string, css: string | null, strategy: Strategy): Promise<string | null> {
   if (!css) return null
-  const info = await styleService.readCustomScss(projectPath)
-  const current = styleService.getManagedBlock(info.content, GOOGLE_FONTS_MARKER)
+  const current = styleService.managedBody(await styleService.readStyleSources(projectPath), GOOGLE_FONTS_MARKER)
   if (current === css || (current && strategy === 'projectWins')) return null
-  await styleService.writeCustomScss(projectPath, styleService.upsertManagedBlock(info.content, GOOGLE_FONTS_MARKER, css))
+  await styleService.writeManagedBlocks(projectPath, { [GOOGLE_FONTS_MARKER]: css })
   return current
 }
 
@@ -432,9 +410,9 @@ const fonts: TemplatePart<FontsPayload> = {
   id: 'fonts',
   async collect({ projectPath }) {
     const names = await listFilesFlat(fontsDir(projectPath))
-    const content = (await styleService.readCustomScss(projectPath)).content
-    const fontFaceCss = styleService.getManagedBlock(content, FONTS_MARKER)
-    const googleFontsCss = styleService.getManagedBlock(content, GOOGLE_FONTS_MARKER)
+    const sources = await styleService.readStyleSources(projectPath)
+    const fontFaceCss = styleService.managedBody(sources, FONTS_MARKER)
+    const googleFontsCss = styleService.managedBody(sources, GOOGLE_FONTS_MARKER)
     if (names.length === 0 && !fontFaceCss && !googleFontsCss) return null
     const entries: ZipEntry[] = []
     for (const name of names) entries.push({ name: `files/fonts/${name}`, data: await readFile(join(fontsDir(projectPath), name)) })
@@ -460,12 +438,12 @@ const fonts: TemplatePart<FontsPayload> = {
       else plan.conflicts.push(name)
     }
     if (faceCss) {
-      const current = currentFontFaceCss((await styleService.readCustomScss(projectPath)).content)
+      const current = currentFontFaceCss(await styleService.readStyleSources(projectPath))
       if (current && current !== faceCss) plan.conflicts.push('@font-face')
       else if (!current) plan.additions.push('@font-face')
     }
     if (payload.googleFontsCss) {
-      const current = styleService.getManagedBlock((await styleService.readCustomScss(projectPath)).content, GOOGLE_FONTS_MARKER)
+      const current = styleService.managedBody(await styleService.readStyleSources(projectPath), GOOGLE_FONTS_MARKER)
       if (current && current !== payload.googleFontsCss) plan.conflicts.push('@font-face (Google)')
       else if (!current) plan.additions.push('@font-face (Google)')
     }
@@ -499,8 +477,7 @@ const fonts: TemplatePart<FontsPayload> = {
     const replacedGoogle = await applyGoogleFontsCss(projectPath, payload.googleFontsCss ?? null, strategy)
     if (replacedGoogle) replaced.push(replacedGoogle)
     if (faceCss) {
-      const info = await styleService.readCustomScss(projectPath)
-      const previous = await writeFontFaceBlock(projectPath, info.content, faceCss, strategy)
+      const previous = await writeFontFaceBlock(projectPath, await styleService.readStyleSources(projectPath), faceCss, strategy)
       if (previous) replaced.push(previous)
     }
     for (const css of replaced) {
@@ -511,8 +488,13 @@ const fonts: TemplatePart<FontsPayload> = {
 
 // Writes the package's @font-face rules and returns the block they replaced - under 'packageWins'
 // only, because under 'projectWins' the project's rules stay in the block.
-async function writeFontFaceBlock(projectPath: string, content: string, faceCss: string, strategy: Strategy): Promise<string | null> {
-  const current = currentFontFaceCss(content)
+async function writeFontFaceBlock(
+  projectPath: string,
+  sources: styleService.StyleSources,
+  faceCss: string,
+  strategy: Strategy
+): Promise<string | null> {
+  const current = currentFontFaceCss(sources)
   // Under 'projectWins' the target's own rules stay, but the package's are still appended - a
   // @font-face that is dropped leaves the font files it shipped unreferenced and useless. Only
   // the ones that are not there yet, though: appended whole, every repeated import of the same
@@ -524,9 +506,9 @@ async function writeFontFaceBlock(projectPath: string, content: string, faceCss:
       : current === faceCss
         ? current
         : faceCss
-  await styleService.writeCustomScss(projectPath, styleService.upsertManagedBlock(content, FONTS_MARKER, body))
+  await styleService.writeManagedBlocks(projectPath, { [FONTS_MARKER]: body })
   // The raw block, not the relative-URL reading of it: fontService resolves both URL forms.
-  return strategy === 'packageWins' && current && current !== body ? styleService.getManagedBlock(content, FONTS_MARKER) : null
+  return strategy === 'packageWins' && current && current !== body ? styleService.managedBody(sources, FONTS_MARKER) : null
 }
 
 /* --------------------------------------------------------------------- static */

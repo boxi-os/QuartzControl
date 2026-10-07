@@ -157,11 +157,12 @@ export default function Styles(): JSX.Element {
   )
 
   useEffect(() => {
-    // Together, because the config is only read right with custom.scss beside it: whether the
-    // Google fonts live in the project is the block there (presentFontDelivery).
+    // Together, because the config is only read right with the stylesheets beside it: whether the
+    // Google fonts live in the project is the block there (presentFontDelivery) - in
+    // _quartzcontrol.scss since 1.1, in custom.scss in a project not yet moved.
     Promise.all([window.quartzGui.config.get(project.path), window.quartzGui.styles.get(project.path)])
       .then(([loaded, info]) => {
-        const presented = presentFontDelivery(loaded, info.content)
+        const presented = presentFontDelivery(loaded, `${info.managed?.content ?? ''}\n${info.content}`)
         setConfig(presented)
         setSavedConfig(JSON.stringify(presented))
         setQuartzStillDownloadsFonts(fetchesGoogleFonts(loaded) && presented === loaded)

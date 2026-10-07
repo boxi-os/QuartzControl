@@ -670,6 +670,12 @@ export interface GitStatus {
 export interface StylesInfo {
   path: string
   content: string
+  /**
+   * quartz/styles/_quartzcontrol.scss, where the app keeps its managed blocks since 1.1 (load
+   * order, fonts, variables), or null while the project has not been moved yet - see
+   * styleService.writeManagedBlocks.
+   */
+  managed: { path: string; content: string } | null
 }
 
 // An additional stylesheet the user keeps alongside custom.scss. Quartz only ever imports

@@ -204,6 +204,7 @@ export interface LegacyGridFrameDefinition {
 export type {
   NormalizedOptionSchema,
   OptionCondition,
+  OptionEnumValue,
   OptionField,
   OptionFieldText,
   OptionNode,

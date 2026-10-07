@@ -13,7 +13,9 @@ import type {
   PluginEntry,
   PluginLayoutDeclaration,
   PluginOptionField,
-  QuartzConfig
+  QuartzConfig,
+  PluginOptionSchemaResult,
+  PluginSource
 } from '@shared/ipc-contract'
 import { Badge, Button, Card, CardHeading, IconButton, Select, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
@@ -21,6 +23,8 @@ import { announce } from '../../state/announcer'
 import { primeStickyState, useStickyState } from '../../state/uiState'
 import { useDndAccessibility } from '../../utils/dndAnnouncements'
 import { repoUrl } from './pluginSource'
+import PluginOptionsForm from '../../components/PluginOptionsForm'
+import { quartzPluginName } from '@shared/quartzPluginName'
 
 // A row is one line of text plus two fixed-width controls, so it no longer needs the ~710px the
 // old wrap-or-squeeze layout did - the name/source/description column shrinks freely (min-w-0)
@@ -173,6 +177,21 @@ function stickyKey(item: IndexedPlugin): string {
   return item.frame || item.occurrence === 1 ? item.plugin.name : `${item.plugin.name}#${item.occurrence}`
 }
 
+// The site's language codes: quartz-multilanguage's `languages` (strings or `{ code }`) if it is in
+// the config, otherwise the primary subtag of `configuration.locale`. For the keys of an option
+// keyed by language, such as layout-box's byLang.
+function siteLanguages(config: QuartzConfig | null): string[] {
+  const entry = config?.plugins.find((p) => quartzPluginName(p.source) === 'quartz-multilanguage')
+  const list = entry?.options?.languages
+  const codes = Array.isArray(list)
+    ? list.map((l) => (typeof l === 'string' ? l : l && typeof l === 'object' && typeof (l as { code?: unknown }).code === 'string' ? (l as { code: string }).code : null))
+    : []
+  const own = codes.filter((c): c is string => typeof c === 'string' && c.trim() !== '').map((c) => c.trim().toLowerCase())
+  if (own.length > 0) return [...new Set(own)]
+  const locale = (config?.configuration as { locale?: unknown } | undefined)?.locale
+  return typeof locale === 'string' && locale ? [locale.split('-')[0].toLowerCase()] : []
+}
+
 function getLayout(plugin: PluginEntry): PluginLayout | null {
   const layout = plugin.layout
   return layout && typeof layout === 'object' ? (layout as PluginLayout) : null
@@ -207,24 +226,6 @@ function setDeep(obj: Record<string, unknown>, path: string[], value: unknown): 
   }
   const child = (obj[head] as Record<string, unknown> | undefined) ?? {}
   return { ...obj, [head]: setDeep(child, rest, value) }
-}
-
-// A hand-typed option value arrives as a string but the config is typed YAML, so "true" has to
-// become a boolean and "3" a number - otherwise the plugin reads a string where it expects
-// neither. JSON covers arrays/objects; anything else stays the literal string it was typed as.
-function parseOptionValue(raw: string): unknown {
-  const text = raw.trim()
-  if (text === 'true') return true
-  if (text === 'false') return false
-  if (text !== '' && !Number.isNaN(Number(text))) return Number(text)
-  if (/^[[{"]/.test(text)) {
-    try {
-      return JSON.parse(text)
-    } catch {
-      return raw
-    }
-  }
-  return raw
 }
 
 interface IndexedPlugin {
@@ -320,11 +321,6 @@ export default function PluginsInstalled(): JSX.Element {
     await window.quartzGui.config.save(project.path, { ...config, plugins })
     flagSaved(index)
     await reload()
-  }
-
-  // setDeep removes a key it is handed `undefined` for - see there.
-  async function removeOptionKey(index: number, key: string): Promise<void> {
-    await updateField(index, ['options', key], undefined)
   }
 
   async function toggleEnabled(index: number): Promise<void> {
@@ -515,7 +511,7 @@ export default function PluginsInstalled(): JSX.Element {
     toggleEnabled,
     removePlugin,
     updateField,
-    removeOptionKey,
+    languages: siteLanguages(config),
     openFrameInLayoutEditor
   }
 
@@ -720,7 +716,8 @@ interface PluginRowProps {
   toggleEnabled: (index: number) => void
   removePlugin: (item: IndexedPlugin) => void
   updateField: (index: number, path: string[], value: unknown) => void
-  removeOptionKey: (index: number, key: string) => void
+  /** The site's language codes, for option keys that are languages (layout-box's byLang). */
+  languages: string[]
   openFrameInLayoutEditor: (frame: GridFrameDefinition) => void
   /** Where this entry sits in its own (unfiltered) group, and how long that group is. */
   position?: number
@@ -828,7 +825,7 @@ function PluginRow({
   toggleEnabled,
   removePlugin,
   updateField,
-  removeOptionKey,
+  languages,
   openFrameInLayoutEditor,
   position,
   groupSize,
@@ -858,12 +855,13 @@ function PluginRow({
   // whether the button is worth showing at all - and passed down to avoid re-fetching it there.
   // A frame is skipped entirely: its "plugin" is generated JS with no .d.ts to read, and it is
   // configured in the Layout editor, not here.
-  const [processingSchema, setProcessingSchema] = useState<PluginOptionField[] | null | 'loading'>('loading')
+  const sourceKey = JSON.stringify(plugin.source)
+  const [processingSchema, setProcessingSchema] = useState<PluginOptionSchemaResult | 'loading'>('loading')
   useEffect(() => {
     if (layout || frame) return
     setProcessingSchema('loading')
-    window.quartzGui.plugins.optionsSchema(project.path, plugin.name).then(setProcessingSchema)
-  }, [project.path, plugin.name, layout, frame])
+    window.quartzGui.plugins.optionSchema({ projectPath: project.path, source: JSON.parse(sourceKey) as PluginSource }).then(setProcessingSchema)
+  }, [project.path, sourceKey, layout, frame])
 
   const hasOptions = frame
     ? false
@@ -871,9 +869,9 @@ function PluginRow({
       ? true
       : processingSchema === 'loading'
         ? false
-        : processingSchema
-          ? processingSchema.some((f) => f.kind !== 'unsupported')
-          : true // no schema: the editor still offers the existing keys plus a way to add one
+        : processingSchema.schema
+          ? processingSchema.schema.fields.length > 0 || Object.keys(plugin.options ?? {}).length > 0
+          : true // no schema: the form still offers the existing keys plus a way to add one
 
   const summary = layout
     ? t('pluginsInstalled.summaryPosPriority', { position: layout.position ?? '–', priority: layout.priority ?? '–' })
@@ -1017,7 +1015,7 @@ function PluginRow({
           plugin={plugin}
           index={index}
           updateField={updateField}
-          removeOptionKey={removeOptionKey}
+          languages={languages}
           preloadedSchema={layout ? undefined : processingSchema}
         />
       )}
@@ -1025,127 +1023,45 @@ function PluginRow({
   )
 }
 
+// The plugin's own options, as the form the schema describes (components/PluginOptionsForm). The
+// whole options object goes back through updateField, which removes `options` when nothing is left.
 function PluginOptions({
   plugin,
   index,
   updateField,
-  removeOptionKey,
+  languages,
   preloadedSchema
 }: {
   plugin: PluginEntry
   index: number
   updateField: (index: number, path: string[], value: unknown) => void
-  removeOptionKey: (index: number, key: string) => void
-  // Processing rows already fetched this in PluginRow (to decide whether to show the "Optionen
-  // anzeigen" button at all) - reuse it here instead of fetching a second time. Components don't
-  // fetch eagerly (their button is always shown), so this stays undefined for them and this
-  // component fetches its own copy, same as before.
-  preloadedSchema?: PluginOptionField[] | null | 'loading'
+  languages: string[]
+  // A processing plugin's row already fetched the schema to decide whether to show the button at
+  // all - reused here instead of fetching a second time. Components fetch their own copy.
+  preloadedSchema?: PluginOptionSchemaResult | 'loading'
 }): JSX.Element | null {
   const { t } = useTranslation()
   const project = useProject()
-  const [fetchedSchema, setFetchedSchema] = useState<PluginOptionField[] | null | 'loading'>('loading')
-
+  const sourceKey = JSON.stringify(plugin.source)
+  const [fetched, setFetched] = useState<PluginOptionSchemaResult | 'loading'>('loading')
   useEffect(() => {
     if (preloadedSchema !== undefined) return
-    setFetchedSchema('loading')
-    window.quartzGui.plugins.optionsSchema(project.path, plugin.name).then(setFetchedSchema)
-  }, [project.path, plugin.name, preloadedSchema])
+    setFetched('loading')
+    window.quartzGui.plugins.optionSchema({ projectPath: project.path, source: JSON.parse(sourceKey) as PluginSource }).then(setFetched)
+  }, [project.path, sourceKey, preloadedSchema])
 
-  const schema = preloadedSchema !== undefined ? preloadedSchema : fetchedSchema
-
-  if (schema === 'loading') return null
-
-  const options = plugin.options ?? {}
-  const onChange = (key: string, value: unknown): void => updateField(index, ['options', key], value)
-
-  if (schema) {
-    return (
-      <div className="mt-3 border-t border-ink/10 pt-3 dark:border-ink/10">
-        <p className="mb-2 text-micro text-text-muted">
-          <span className="font-medium">{t('pluginsInstalled.availableOptions')}</span>{' '}
-          {schema
-            .map(
-              (f) =>
-                `${f.name} (${f.kind === 'enum' ? f.enumValues?.join('|') : f.kind}${f.kind === 'unsupported' ? t('pluginsInstalled.onlyViaYaml') : ''})`
-            )
-            .join(', ')}
-        </p>
-        <FieldGroup fields={schema.filter((f) => f.kind !== 'unsupported')} values={options} onChange={onChange} explicitEmpty />
-      </div>
-    )
-  }
-
-  // No compiled type declarations found - true for every built-in config entry, which ships no
-  // discoverable dist/*.d.ts (see pluginSchemaService). Those plugins do have options upstream, so
-  // showing only the keys that happen to be in the config already would mean a plugin like
-  // `explorer` offers nothing at all to set. The key/value adder below is the way in; the control
-  // type of an existing key is inferred from its current value.
-  const keys = Object.keys(options)
+  const result = preloadedSchema !== undefined ? preloadedSchema : fetched
+  if (result === 'loading') return null
   return (
     <div className="mt-3 border-t border-ink/10 pt-3 dark:border-ink/10">
-      <p className="mb-2 text-micro text-text-muted">{t('pluginsInstalled.noSchemaInfo')}</p>
-      <div className="flex flex-col gap-2">
-        {keys.map((key) => (
-          <InferredFieldRow
-            key={key}
-            name={key}
-            value={options[key]}
-            onChange={(v) => onChange(key, v)}
-            onRemove={() => removeOptionKey(index, key)}
-          />
-        ))}
-      </div>
-      <AddOptionRow existingKeys={keys} onAdd={(key, value) => onChange(key, value)} />
-    </div>
-  )
-}
-
-function AddOptionRow({
-  existingKeys,
-  onAdd
-}: {
-  existingKeys: string[]
-  onAdd: (key: string, value: unknown) => void
-}): JSX.Element {
-  const { t } = useTranslation()
-  const [key, setKey] = useState('')
-  const [value, setValue] = useState('')
-  const trimmed = key.trim()
-  const duplicate = existingKeys.includes(trimmed)
-
-  return (
-    <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-dashed border-ink/10 pt-3 dark:border-ink/10">
-      {/* aria-label rather than a visible label: the row is one line of controls with no column to
-          put a label in, and a placeholder is not a name - it disappears the moment anyone types. */}
-      <TextInput
-        value={key}
-        onChange={(e) => setKey(e.target.value)}
-        placeholder={t('pluginsInstalled.optionKeyPlaceholder')}
-        aria-label={t('pluginsInstalled.optionKeyPlaceholder')}
-        className="w-40 font-mono"
+      {result.unreadable && <p className="mb-2 text-micro text-amber-700 dark:text-amber-300">{t('pluginOptions.unreadable', { reason: result.unreadable })}</p>}
+      <PluginOptionsForm
+        schema={result.schema}
+        values={plugin.options ?? {}}
+        onChange={(next) => updateField(index, ['options'], next)}
+        explicitEmpty
+        languages={languages}
       />
-      <TextInput
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        placeholder={t('pluginsInstalled.optionValuePlaceholder')}
-        aria-label={t('pluginsInstalled.optionValuePlaceholder')}
-        className="w-56 font-mono"
-      />
-      <Button
-        variant="ghost"
-        disabled={trimmed === '' || duplicate}
-        onClick={() => {
-          onAdd(trimmed, parseOptionValue(value))
-          setKey('')
-          setValue('')
-        }}
-      >
-        {t('pluginsInstalled.addOption')}
-      </Button>
-      <p className="text-micro text-text-muted">
-        {duplicate ? t('pluginsInstalled.optionKeyExists') : t('pluginsInstalled.optionValueHint')}
-      </p>
     </div>
   )
 }
@@ -1285,83 +1201,6 @@ function FieldRow({
       {/* uses the free space to the right of the control to briefly explain the possible values,
           instead of cramming it under the (already narrow) label column */}
       {field.description && <p className="flex-1 text-micro text-text-muted">{field.description}</p>}
-    </div>
-  )
-}
-
-function InferredFieldRow({
-  name,
-  value,
-  onChange,
-  onRemove
-}: {
-  name: string
-  value: unknown
-  onChange: (value: unknown) => void
-  onRemove: () => void
-}): JSX.Element {
-  const { t } = useTranslation()
-  const id = useId()
-  // Same as FieldRow: the key is the control's label, except for the switch, which brings its own -
-  // see the comment there.
-  const remove = <IconButton icon={Trash2} title={t('pluginsInstalled.removeOption', { name })} onClick={onRemove} />
-  const keyLabel = (
-    <label htmlFor={id} className="w-40 shrink-0 font-mono text-xs text-text-secondary">
-      {name}
-    </label>
-  )
-
-  if (typeof value === 'boolean') {
-    return (
-      <div className="flex items-center gap-3">
-        <span className="w-40 shrink-0 font-mono text-xs text-text-secondary">{name}</span>
-        <Toggle label={name} hideLabel checked={value} onChange={onChange} />
-        {remove}
-      </div>
-    )
-  }
-  if (typeof value === 'number') {
-    return (
-      <div className="flex items-center gap-3">
-        {keyLabel}
-        <TextInput
-          key={String(value)}
-          id={id}
-          type="number"
-          defaultValue={String(value)}
-          onBlur={(e) => onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-          className="w-40"
-        />
-        {remove}
-      </div>
-    )
-  }
-  // strings, arrays and objects: edited as text (JSON-encoded for arrays/objects), same as before
-  const initial = typeof value === 'string' ? value : JSON.stringify(value)
-  return (
-    <div className="flex items-center gap-3">
-      {keyLabel}
-      <TextInput
-        key={initial}
-        id={id}
-        defaultValue={initial}
-        placeholder={value === '' ? t('pluginsInstalled.explicitlyEmpty') : undefined}
-        onBlur={(e) => {
-          if (e.target.value === initial) return
-          // cleared is "not set", as in FieldRow - the key goes, and the row with it
-          if (e.target.value === '') onChange(undefined)
-          else if (typeof value === 'string') onChange(e.target.value)
-          else {
-            try {
-              onChange(JSON.parse(e.target.value))
-            } catch {
-              onChange(e.target.value)
-            }
-          }
-        }}
-        className="w-56 font-mono"
-      />
-      {remove}
     </div>
   )
 }

@@ -197,6 +197,24 @@ export interface LegacyGridFrameDefinition {
   areas: Array<{ id: string; name: string; slot: FrameSlot; row: number; col: number; rowSpan: number; colSpan: number }>
 }
 
+// The option schema of 1.1 (plugin.optionSchema): one normalized shape whatever the plugin brings -
+// quartz.configSchema, quartz.optionSchema, its .d.ts or only its defaultOptions. The shape and
+// the helpers that read it live in shared/pluginOptionSchema.ts; re-exported here because this file
+// is the one place a channel's payload is looked up.
+export type {
+  NormalizedOptionSchema,
+  OptionCondition,
+  OptionField,
+  OptionFieldText,
+  OptionNode,
+  OptionSchemaNote,
+  OptionWidget,
+  PluginOptionSchemaResult
+} from './pluginOptionSchema'
+import type { PluginOptionSchemaResult } from './pluginOptionSchema'
+
+// The schema of the plugins page until 1.0.x, replaced by optionSchema above when the page moves
+// to the new form (P3 of docs/plan-1.1-umsetzung.md), and removed with it.
 // Extracted from an installed plugin's compiled .d.ts (see pluginSchemaService in main) so the
 // options editor can offer only the fields/values a plugin actually supports, instead of free
 // text. Not available for built-in config entries - see optionsSchema() for details.
@@ -1422,6 +1440,7 @@ export const IPC = {
   pluginAdd: 'plugin:add',
   pluginRemove: 'plugin:remove',
   pluginOptionsSchema: 'plugin:optionsSchema',
+  pluginOptionSchema: 'plugin:optionSchema',
   pluginThemeStyleSettingsInfo: 'plugin:themeStyleSettingsInfo',
   themeMarketplaceList: 'themeMarketplace:list',
   themeMarketplaceInstall: 'themeMarketplace:install',
@@ -1745,6 +1764,13 @@ export interface QuartzGuiApi {
     add(projectPath: string, source: string): Promise<PluginActionResult>
     remove(projectPath: string, name: string): Promise<PluginActionResult>
     optionsSchema(projectPath: string, name: string): Promise<PluginOptionField[] | null>
+    /**
+     * What the plugin says about its options, normalized (shared/pluginOptionSchema.ts). The
+     * package is found from `source` the way quartz finds it, so no name travels alongside: the
+     * main process derives it, and a second, caller-supplied name could only disagree with the
+     * source. Per plugin, not per entry - the renderer adds an entry's own keys (withPresentKeys).
+     */
+    optionSchema(args: { projectPath: string; source: PluginSource }): Promise<PluginOptionSchemaResult>
     themeStyleSettingsInfo(projectPath: string, themeId: string): Promise<ThemeStyleSettingsInfo | null>
     installFromLock(projectPath: string): Promise<PluginActionResult>
     prune(projectPath: string): Promise<PluginActionResult>

@@ -182,6 +182,23 @@ export const coreStatusOptions = z.looseObject({ resolveInstalled: z.boolean().o
 export const createIndexArgs = z.looseObject({ projectPath: absolutePath, title: z.string().trim().min(1).max(200) })
 export const projectIconSource = z.looseObject({ projectPath: absolutePath, sourcePath: absolutePath })
 
+// plugin.optionSchema's argument. A source as quartz.config.yaml writes it: the string form
+// (refused with a leading "-" like every other source) or the object form with `repo`. Where it
+// leads is decided in pluginSchemaService.pluginPackageDir, which refuses anything outside the
+// project's node_modules and .quartz/plugins.
+export const pluginOptionSchemaArgs = z.looseObject({
+  projectPath: absolutePath,
+  source: z.union([
+    pluginSource,
+    z.looseObject({
+      repo: z.string().min(1).max(2048),
+      name: z.string().min(1).max(214).optional(),
+      subdir: z.string().max(1024).optional(),
+      ref: z.string().max(255).optional()
+    })
+  ])
+})
+
 export const confirmDialog = z.looseObject({
   message: z.string().min(1).max(2000),
   detail: z.string().max(4000).optional(),

@@ -11,6 +11,7 @@ import {
   type PluginOptionSchemaResult
 } from '@shared/pluginOptionSchema'
 import { quartzPluginName } from '@shared/quartzPluginName'
+import { mainT } from '../i18n'
 
 // Only plugins actually installed under .quartz/plugins/<name> (via `quartz plugin add`) ship
 // compiled .d.ts/.js files we can introspect. Built-in "@quartz-community/x" config entries live
@@ -393,7 +394,7 @@ function fingerprint(dir: string): string {
 
 export function getPluginOptionSchema(projectPath: string, source: PluginSource): PluginOptionSchemaResult {
   const dir = pluginPackageDir(projectPath, source)
-  if (!dir) return { schema: null, unreadable: 'The plugin source does not name a directory inside the project.' }
+  if (!dir) return { schema: null, unreadable: mainT('pluginSchemaOutsideProject') }
   const key = fingerprint(dir)
   const cached = optionSchemaCache.get(dir)
   if (cached && cached.fingerprint === key) return cached.result
@@ -408,15 +409,15 @@ function readPluginOptionSchema(dir: string): PluginOptionSchemaResult {
   let pkg: unknown
   try {
     const size = statSync(pkgPath).size
-    if (size > MAX_PACKAGE_JSON_BYTES) return { schema: null, unreadable: `package.json is ${size} bytes, more than the 1 MiB this reads.` }
+    if (size > MAX_PACKAGE_JSON_BYTES) return { schema: null, unreadable: mainT('pluginSchemaPackageTooLarge', { size }) }
     pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'))
   } catch (err) {
     // Not installed (yet) is the ordinary case for a plugin that was just added - no schema, no
     // complaint. Anything else is a package that is there and broken, and says so.
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') return { schema: null }
-    return { schema: null, unreadable: `package.json could not be read: ${(err as Error).message}` }
+    return { schema: null, unreadable: mainT('pluginSchemaPackageUnreadable', { reason: (err as Error).message }) }
   }
-  if (!isPlainObject(pkg)) return { schema: null, unreadable: 'package.json is not a JSON object.' }
+  if (!isPlainObject(pkg)) return { schema: null, unreadable: mainT('pluginSchemaPackageNotObject') }
 
   const q = isPlainObject(pkg.quartz) ? pkg.quartz : {}
   const version = typeof q.version === 'string' ? q.version : typeof pkg.version === 'string' ? pkg.version : undefined

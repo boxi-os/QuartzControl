@@ -55,7 +55,25 @@ await esbuild.build({
   outfile: bundle,
   alias: { '@shared': path.join(APP_DIR, 'shared') },
   external: ['typescript'],
-  logLevel: 'error'
+  logLevel: 'error',
+  // Was der Hauptprozess über settingsService mitbringt, ist teils CommonJS und `require`t Node-
+  // Module; in einem ESM-Bündel gibt es `require` nur so.
+  banner: { js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);" },
+  // Der Dienst sagt seine Fehlersätze über mainT (electron/main/i18n.ts), und das liest die
+  // Sprache aus Electrons `app`. Hier läuft kein Electron; der Stub muss nur das Laden überstehen,
+  // ein Satz käme in der Vorgabesprache.
+  plugins: [
+    {
+      name: 'electron-stub',
+      setup(build) {
+        build.onResolve({ filter: /^electron$/ }, () => ({ path: 'electron', namespace: 'stub' }))
+        build.onLoad({ filter: /.*/, namespace: 'stub' }, () => ({
+          contents: `export const app = { getLocale: () => 'de', getPreferredSystemLanguages: () => ['de'], getPath: () => ${JSON.stringify(os.tmpdir())}, isReady: () => false, on() {} }; export const safeStorage = {}; export default { app }`,
+          loader: 'js'
+        }))
+      }
+    }
+  ]
 })
 const service = await import(`file://${bundle}`)
 fs.unlinkSync(bundle)

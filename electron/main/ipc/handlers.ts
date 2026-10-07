@@ -15,7 +15,8 @@ import type {
   Settings,
   SyncOptions,
   TemplateExportOptions,
-  ThemePreset
+  ThemePreset,
+  PluginSource
 } from '@shared/ipc-contract'
 import * as projectStore from '../services/projectStore'
 import { repointProjectPaths } from '../services/projectPaths'
@@ -186,6 +187,9 @@ export function registerIpcHandlers(): void {
   )
   handle(IPC.pluginOptionsSchema, t([s.absolutePath, s.pluginName]), (projectPath, name) =>
     pluginSchemaService.getPluginOptionsSchema(projectPath, name)
+  )
+  handle(IPC.pluginOptionSchema, t([s.pluginOptionSchemaArgs]), ({ projectPath, source }) =>
+    pluginSchemaService.getPluginOptionSchema(projectPath, source as PluginSource)
   )
   handle(IPC.pluginThemeStyleSettingsInfo, t([s.absolutePath, s.themeId]), (projectPath, themeId) =>
     pluginSchemaService.getThemeStyleSettingsInfo(projectPath, themeId)

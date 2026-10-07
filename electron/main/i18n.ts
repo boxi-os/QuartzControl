@@ -172,6 +172,11 @@ const STRINGS = {
       'quartz.config.yaml lässt sich nicht als YAML lesen: {{reason}}. Repariere sie in einem Editor oder nimm einen Wiederherstellungspunkt.',
     configMissing:
       'quartz.config.yaml liegt nicht im Projektordner. Ein neu erstelltes Projekt braucht dafür einen erfolgreich durchgelaufenen Setup-Assistenten.',
+    // Die Optionen eines Plugins (plugin.optionSchema): das Paket ist da, lässt sich aber nicht lesen.
+    pluginSchemaOutsideProject: 'Die Quelle dieses Plugins führt aus dem Projektordner hinaus; seine Optionen werden nicht gelesen.',
+    pluginSchemaPackageTooLarge: 'Die package.json dieses Plugins ist {{size}} Bytes groß, mehr als das 1 MiB, das gelesen wird.',
+    pluginSchemaPackageUnreadable: 'Die package.json dieses Plugins lässt sich nicht lesen: {{reason}}',
+    pluginSchemaPackageNotObject: 'Die package.json dieses Plugins enthält kein JSON-Objekt.',
     // Die Zeile, die über der Ignore-Regel in der .gitignore des Nutzers steht.
     gitignoreComment: 'Arbeitsverzeichnis von QuartzControl (Backups, Presets, Deploy-Manifest)',
     // Beim Duplizieren ist die unlesbare Datei die des *Originals*, und der Satz darüber sagt das
@@ -576,6 +581,10 @@ const STRINGS = {
       'quartz.config.yaml cannot be read as YAML: {{reason}}. Fix it in an editor or use a restore point.',
     configMissing:
       'quartz.config.yaml is not in the project folder. A newly created project needs the setup assistant to have run through successfully.',
+    pluginSchemaOutsideProject: 'This plugin’s source leads outside the project folder; its options are not read.',
+    pluginSchemaPackageTooLarge: 'This plugin’s package.json is {{size}} bytes, more than the 1 MiB that is read.',
+    pluginSchemaPackageUnreadable: 'This plugin’s package.json cannot be read: {{reason}}',
+    pluginSchemaPackageNotObject: 'This plugin’s package.json does not contain a JSON object.',
     gitignoreComment: 'QuartzControl working directory (backups, presets, deploy manifest)',
     duplicateSourceConfigUnreadable:
       '“{{path}}” cannot be duplicated because its configuration cannot be read. {{reason}}',

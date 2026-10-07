@@ -1044,6 +1044,44 @@ export default {
     none: 'This plugin has no options.',
     unreadable: 'The description of the options could not be read: {{reason}}'
   },
+  snippets: {
+    imageFilter: 'Images',
+    snippetFilter: 'Snippets',
+    insertImage: 'Insert image…',
+    imageExists:
+      '“{{name}}” already exists under quartz/static. Replace it?\n\nReplacing overwrites the file, and every snippet that shows it shows the new image afterwards. “Use existing” inserts a reference to the file that is already there.',
+    fileExists:
+      '“{{name}}” already exists in {{dir}}. Replace it?\n\nReplacing overwrites the file. “Use existing” selects the file that is already there.',
+    useExisting: 'Use existing',
+    replace: 'Replace',
+    placeholdersOff:
+      'Placeholders are switched off: {{token}} stays as it is and the image does not load. Switch “placeholders” on.',
+    notInDir: '{{name}} (not in the folder)',
+    missingFile: '“{{name}}” is not in {{dir}}. The box stays empty on the website.',
+    new: 'New',
+    import: 'Import…',
+    edit: 'Edit',
+    newName: 'Name of the new snippet',
+    newNamePlaceholder: 'e.g. notice',
+    newFormat: 'Format of the new snippet',
+    formatMarkdown: 'Markdown',
+    formatHtml: 'HTML',
+    create: 'Create',
+    saved: '“{{name}}” is saved.',
+    unsaved: 'Unsaved',
+    saveHint: 'The snippet is a file of its own. It is saved with “Save snippet”, not with “Save” at the top.',
+    save: 'Save snippet',
+    close: 'Close',
+    discard: 'Discard',
+    discardConfirm: 'Discard the changes to “{{name}}”?\n\nThe file stays as it was last saved.',
+    dir: {
+      missing: 'The folder {{dir}} does not exist yet. “New” or “Import” creates it.',
+      link: 'The folder {{dir}} is behind a link. Snippets can be selected, but not created or edited here.',
+      outside: 'The folder {{dir}} is outside the project. QuartzControl does not read there, so there is nothing to choose from.',
+      reserved:
+        'The folder {{dir}} belongs to a tool (.git, node_modules, .quartz, .quartz-gui or the output folder), so there is nothing to choose from.'
+    }
+  },
   pluginsInstalled: {
     searchPlaceholder: 'Filter plugins…',
     filters: {

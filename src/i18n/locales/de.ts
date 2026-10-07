@@ -1049,6 +1049,44 @@ export default {
     none: 'Dieses Plugin hat keine Optionen.',
     unreadable: 'Die Beschreibung der Optionen ließ sich nicht lesen: {{reason}}'
   },
+  snippets: {
+    imageFilter: 'Bilder',
+    snippetFilter: 'Snippets',
+    insertImage: 'Bild einfügen…',
+    imageExists:
+      '„{{name}}“ gibt es unter quartz/static schon. Ersetzen?\n\nErsetzen überschreibt die Datei, und jedes Snippet, das sie zeigt, zeigt danach das neue Bild. „Vorhandenes verwenden“ fügt einen Verweis auf die Datei ein, die schon da ist.',
+    fileExists:
+      '„{{name}}“ gibt es in {{dir}} schon. Ersetzen?\n\nErsetzen überschreibt die Datei. „Vorhandene verwenden“ wählt die Datei, die schon da ist.',
+    useExisting: 'Vorhandene verwenden',
+    replace: 'Ersetzen',
+    placeholdersOff:
+      'Platzhalter sind ausgeschaltet: {{token}} bleibt stehen, wie es ist, und das Bild lädt nicht. Schalte „placeholders“ ein.',
+    notInDir: '{{name}} (nicht im Ordner)',
+    missingFile: '„{{name}}“ liegt nicht in {{dir}}. Die Box bleibt auf der Website leer.',
+    new: 'Neu',
+    import: 'Importieren…',
+    edit: 'Bearbeiten',
+    newName: 'Name des neuen Snippets',
+    newNamePlaceholder: 'z. B. hinweis',
+    newFormat: 'Format des neuen Snippets',
+    formatMarkdown: 'Markdown',
+    formatHtml: 'HTML',
+    create: 'Anlegen',
+    saved: '„{{name}}“ ist gespeichert.',
+    unsaved: 'Ungespeichert',
+    saveHint: 'Das Snippet ist eine eigene Datei. Es wird mit „Snippet speichern“ gespeichert, nicht mit „Speichern“ oben.',
+    save: 'Snippet speichern',
+    close: 'Schließen',
+    discard: 'Verwerfen',
+    discardConfirm: 'Änderungen an „{{name}}“ verwerfen?\n\nDie Datei bleibt, wie sie zuletzt gespeichert wurde.',
+    dir: {
+      missing: 'Den Ordner {{dir}} gibt es noch nicht. „Neu“ oder „Importieren“ legt ihn an.',
+      link: 'Der Ordner {{dir}} liegt hinter einer Verknüpfung. Snippets lassen sich wählen, aber hier nicht anlegen oder bearbeiten.',
+      outside: 'Der Ordner {{dir}} liegt außerhalb des Projekts. QuartzControl liest dort nicht, deshalb gibt es keine Auswahl.',
+      reserved:
+        'Der Ordner {{dir}} gehört einem Werkzeug (.git, node_modules, .quartz, .quartz-gui oder der Ausgabeordner). Deshalb gibt es keine Auswahl.'
+    }
+  },
   pluginsInstalled: {
     searchPlaceholder: 'Plugins filtern…',
     filters: {

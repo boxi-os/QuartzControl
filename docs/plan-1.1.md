@@ -246,3 +246,7 @@ oder nimmt `html` direkt. Die App bietet beides als freie Textfelder an.
   `dir` bzw. `static/images`, kein Überschreiben ohne Rückfrage.
 - **Zu klären:** ob `static/images` in den Vorlagen-Baustein `static` einfließt, damit ein exportiertes
   Paket die Bilder seiner Snippets mitnimmt.
+
+**Gebaut (2026-10-07, P6):** wie geplant; `static/images` reist im Teil `static` schon mit, die
+Layout-Box ersetzt `{{root}}` auch in Markdown. Messungen in
+[`decisions/plugins-and-config.md`](decisions/plugins-and-config.md).

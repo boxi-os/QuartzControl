@@ -25,7 +25,8 @@ export default function PluginOptionsForm({
   values,
   onChange,
   explicitEmpty = false,
-  languages = []
+  languages = [],
+  projectPath
 }: {
   schema: NormalizedOptionSchema | null
   values: Record<string, unknown>
@@ -33,10 +34,12 @@ export default function PluginOptionsForm({
   explicitEmpty?: boolean
   /** The site's language codes, for keys of a record such as layout-box's `byLang`. */
   languages?: string[]
+  /** Turns on the editors that read and write files - the snippet picker and the image button. */
+  projectPath?: string
 }): JSX.Element {
   const { t, i18n } = useTranslation()
   const lang = i18n.resolvedLanguage?.startsWith('en') ? 'en' : 'de'
-  const ctx: FormContext = useMemo(() => ({ lang, explicitEmpty, languages }), [lang, explicitEmpty, languages])
+  const ctx: FormContext = useMemo(() => ({ lang, explicitEmpty, languages, projectPath }), [lang, explicitEmpty, languages, projectPath])
   // The entry's own keys join the schema here, per entry: two instances of one plugin set
   // different keys, and a key no schema names is still shown (withPresentKeys).
   const merged = useMemo(() => withPresentKeys(schema ?? { source: 'defaults', fields: [], notes: [] }, values), [schema, values])

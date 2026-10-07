@@ -1,10 +1,11 @@
-import { useId, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ArrowDown, ArrowUp, RotateCcw, Trash2 } from 'lucide-react'
 import type { OptionEnumValue, OptionField, OptionNode } from '@shared/ipc-contract'
 import { evaluateCondition, nodeAccepts, setAtPath } from '@shared/pluginOptionSchema'
 import { Button, IconButton, Select, TextInput, Toggle } from '../ui'
 import { enumLabel, fieldText, inlineValue, isEmptyObject, isPlainObject, type FormLanguage } from './text'
+import { ImageButton, SnippetFileField, siblingValue } from './snippets'
 
 export interface FormContext {
   lang: FormLanguage
@@ -12,6 +13,8 @@ export interface FormContext {
   explicitEmpty: boolean
   /** The site's language codes, for a record whose keys are languages (layout-box's byLang). */
   languages: string[]
+  /** The project the options belong to, for the editors that read and write files (snippets.tsx). Without it they are text fields. */
+  projectPath?: string
 }
 
 /**
@@ -286,7 +289,9 @@ function NodeEditor({
         />
       )
     case 'string':
-      return <StringEditor id={id} field={field} value={value} defaultValue={defaultValue} hasDefault={hasDefault} onValue={onValue} ctx={ctx} />
+      return (
+        <StringEditor id={id} field={field} value={value} defaultValue={defaultValue} hasDefault={hasDefault} onValue={onValue} ctx={ctx} inherit={inherit} />
+      )
     case 'object': {
       const values = isPlainObject(value) ? value : {}
       return <ObjectBlock fields={node.fields} values={values} onValue={onValue} ctx={ctx} />
@@ -360,7 +365,8 @@ function StringEditor({
   defaultValue,
   hasDefault,
   onValue,
-  ctx
+  ctx,
+  inherit
 }: {
   id?: string
   field?: OptionField
@@ -369,8 +375,33 @@ function StringEditor({
   hasDefault: boolean
   onValue: (v: unknown) => void
   ctx: FormContext
+  inherit?: Inherited
 }): JSX.Element {
   const { t } = useTranslation()
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const widget = field?.widget
+  // layout-box's `placeholders`: off, `{{root}}` stays as written and an inserted picture does not
+  // load. Read by its key, because that is the option layout-box names in its schema; a plugin
+  // without it never turns the hint on.
+  const placeholdersOff = inherit ? siblingValue('placeholders', inherit.values, inherit.fields) === false : false
+  if (widget?.kind === 'snippetFile' && ctx.projectPath && inherit) {
+    // The folder is a sibling option (`x-quartz-dir-option`); in a byLang entry, the one above.
+    const dir = widget.dirOption ? siblingValue(widget.dirOption, inherit.values, inherit.fields) : undefined
+    if (typeof dir === 'string' && dir !== '') {
+      return (
+        <SnippetFileField
+          id={id}
+          projectPath={ctx.projectPath}
+          dir={dir}
+          value={value}
+          defaultValue={defaultValue}
+          hasDefault={hasDefault}
+          placeholdersOff={placeholdersOff}
+          onValue={onValue}
+        />
+      )
+    }
+  }
   const current = typeof value === 'string' ? value : ''
   const placeholder = value === '' ? t('pluginsInstalled.explicitlyEmpty') : hasDefault ? inlineValue(defaultValue) : undefined
   // A cleared field removes the key - "not set" - and an empty string the plugin reads as "show
@@ -378,19 +409,38 @@ function StringEditor({
   const commit = (raw: string): void => {
     if (raw !== current) onValue(raw === '' ? undefined : raw)
   }
-  const multiline = field?.widget?.kind === 'html' || field?.widget?.kind === 'markdown'
+  const multiline = widget?.kind === 'html' || widget?.kind === 'markdown'
+  // A picture goes in at the textarea's cursor, which the textarea keeps across the click.
+  const insertImage = (text: string): void => {
+    const el = textareaRef.current
+    if (!el) return
+    const at = el.selectionStart ?? el.value.length
+    const to = el.selectionEnd ?? at
+    commit(el.value.slice(0, at) + text + el.value.slice(to))
+  }
   return (
     <span className="flex items-start gap-2">
       {multiline ? (
-        <textarea
-          key={current}
-          id={id}
-          defaultValue={current}
-          placeholder={placeholder}
-          rows={4}
-          onBlur={(e) => commit(e.target.value)}
-          className="w-[28rem] max-w-full rounded-[7px] border border-ink/10 bg-surface px-2.5 py-1.5 font-mono text-xs text-text shadow-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
-        />
+        <span className="flex flex-col gap-1.5">
+          <textarea
+            ref={textareaRef}
+            key={current}
+            id={id}
+            defaultValue={current}
+            placeholder={placeholder}
+            rows={4}
+            onBlur={(e) => commit(e.target.value)}
+            className="w-[28rem] max-w-full rounded-[7px] border border-ink/10 bg-surface px-2.5 py-1.5 font-mono text-xs text-text shadow-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+          />
+          {ctx.projectPath && (
+            <ImageButton
+              projectPath={ctx.projectPath}
+              format={widget?.kind === 'markdown' ? 'markdown' : 'html'}
+              placeholdersOff={placeholdersOff}
+              onInsert={insertImage}
+            />
+          )}
+        </span>
       ) : (
         <TextInput key={current} id={id} type="text" defaultValue={current} placeholder={placeholder} onBlur={(e) => commit(e.target.value)} className={INPUT_WIDTH} />
       )}

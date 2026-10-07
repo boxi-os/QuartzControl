@@ -1061,6 +1061,7 @@ function PluginOptions({
         onChange={(next) => updateField(index, ['options'], next)}
         explicitEmpty
         languages={languages}
+        projectPath={project.path}
       />
     </div>
   )

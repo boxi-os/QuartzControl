@@ -270,3 +270,41 @@ sie gegen die fremde Funktion, nicht gegen die eigene Vorstellung von ihr.
 **Und der Weg, auf dem der Befund gefunden wurde, hatte einen eigenen.** `repointProjectPaths` liest die Konfiguration *nach* dem Kopieren und *vor* `git remote remove origin`, also warf `duplicateProject` mitten in der Kopie, statt `{ success: false }` zu antworten. Gemessen am Bündel, drei Quellen: mit einer Liste als Config und mit einem Syntaxfehler wirft es vorher, das Ziel trägt die kopierten Dateien und `origin` zeigt auf das Remote des Originals — genau das, was der Kommentar am Kopf von `duplicateService.ts` ausschließt („a later Git-Sync push must never land in the original's remote“) —, und der zweite Versuch antwortet „… enthält bereits Dateien“. Nachher wird die Quelle geprüft, bevor kopiert wird: `success: false`, das Zielverzeichnis entsteht gar nicht, die heile Quelle antwortet unverändert. Der Satz dazu ist ein eigener (`duplicateSourceConfigUnreadable`), weil die unlesbare Datei hier dem **Original** gehört — `configNotAMapping` und `configNotParseable` stehen sonst immer über dem Projekt, das gerade offen ist; der Grund darin ist der von `readConfig`, Wiederherstellungspunkt eingeschlossen, und den hat die Quelle.
 
 **Nachtrag (2026-09-17): „readConfig wirft vorher, also ist der Fall nicht erreichbar“ trägt nicht.** `config.save` schreibt, was der Renderer geladen hat, und zwischen dem Laden und dem Klick kann die Datei auf der Platte etwas anderes geworden sein — ein Handedit in einem zweiten Editor ist der gewöhnliche Weg dorthin. `writeConfig` las sie mit `parseDocument` ohne Fehlerprüfung und starb dann in `doc.toString()` an yamls eigenem „Document with errors cannot be stringified“. Gemessen am Bündel, fünf kaputte Dateien: vorher vier verschiedene rohe yaml-Meldungen, nachher fünfmal der Satz, den auch das Lesen gibt. Verloren ging dabei nie etwas — die Datei blieb in allen zehn Fällen byte-gleich —, aber es sagte auch nichts, was zu tun ist. Gegenprobe: eine leere Datei, eine mit nur einem Kommentar, eine heile und eine, die es nicht gibt, werden weiter geschrieben; die leere ist der Grund für die Bedingung `contents !== null`, denn `setIn` macht daraus ein Mapping, und genau das braucht ein Projekt mit leerer Config.
+
+## Snippets und Bilder der Layout-Box (2026-10-07, 1.1 P6)
+
+Das Feld `file` der Layout-Box ist eine Auswahl aus den Dateien in `dir`, mit „Neu“, „Importieren…“
+und „Bearbeiten“; `html` und der Snippet-Editor tragen „Bild einfügen…“. Gewählt wird das
+Bedienelement am Schema (`x-quartz-widget: snippetFile`, `html`, `markdown`), nicht am Namen des
+Plugins. Alles, was eine Datei liest oder schreibt, geht durch `snippetService.ts`, weil der
+Renderer keine Vertrauensgrenze ist:
+
+- `dir` wird gegen das Projekt aufgelöst. Hinaus (`../`, absolut) und in einen Ordner eines Werkzeugs
+  (`.git`, `node_modules`, `.quartz`, `.quartz-gui`, der Ausgabeordner) gibt es keine Liste; das Feld
+  bleibt ein Textfeld mit einem Satz darunter. Ein Name ist ein Segment ohne Punkt am Anfang, mit
+  einer Endung aus der Liste (`.html/.htm/.md` bzw. sieben Bildformate), Decken 2 MB und 20 MB.
+- **Lesen geht durch eine Verknüpfung, schreiben nicht.** Die Layout-Box liest einen verlinkten
+  Snippet-Ordner selbst (`resolveSnippetPath` prüft nur, dass die Datei im aufgelösten Ordner
+  bleibt), also listet die App ihn auch, mit derselben Prüfung beim Lesen. Geschrieben wird über
+  `writableTarget()` wie beim Vorlagen-Import. Gemessen: eine Datei im echten Ordner, die hinaus
+  zeigt, steht in der Liste, lässt sich aber weder lesen noch überschreiben, und ihr Ziel blieb
+  byte-gleich.
+- Eine vorhandene Datei wird nicht still überschrieben: Der Kanal antwortet `exists`, die Seite
+  fragt mit drei Antworten (Abbrechen, Vorhandene verwenden, Ersetzen).
+- Ein Bild landet in `quartz/static/images` und wird als `{{root}}/static/images/<name>` eingefügt,
+  in Markdown als `![](<…>)` — Quartz' Static-Emitter veröffentlicht den Ordner als `static/`, und
+  die Layout-Box ersetzt `{{root}}` auch in der prozentkodierten Form, die der Markdown-Renderer in
+  eine URL schreibt. Gemessen an einem gebauten Klon von gui-test, ausgeliefert unter `/sub/`: beide
+  Bilder (eines mit Leerzeichen im Namen) laden auf der Startseite und zwei Ebenen tief. Ist
+  `placeholders` aus, sagt der Knopf, dass das Bild nicht laden wird. Der Vorlagenteil `static`
+  nimmt den Ordner schon mit.
+- **Welcher Editor offen ist, gehört dem Feld, nicht dem Ordner.** Der erste Bau hielt es als
+  Sticky-State je Ordner — der Editor stand damit in jeder Box mit demselben `dir` offen, auch im
+  `byLang`-Eintrag, und „Bild einfügen…“ der zweiten Box schrieb in die Kopie der ersten. Nur der
+  Entwurf bleibt sticky, je Datei, damit ein Routenwechsel ihn nicht verliert.
+- Der Editor speichert mit „Snippet speichern“, nicht über die Seite: Die Plugins-Seite schreibt
+  jede Option sofort, das Snippet ist eine eigene Datei, und ein Knopf, der einen Teil schreibt,
+  trägt seine Reichweite im Namen.
+
+Native Dialoge (Dateiwahl, Rückfrage) sind in der Messung im Hauptprozess gespiegelt, also nicht am
+OS gemessen.

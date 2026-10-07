@@ -183,7 +183,10 @@ export default function ProjectDashboard(): JSX.Element {
   // swallows its own failure into a null, so one unreadable file cannot blank the whole page.
   const [config, setConfig] = useState<QuartzConfig | null>(null)
   const [content, setContent] = useState<ContentStatus | null>(null)
-  const [git, setGit] = useState<GitStatus | null>(null)
+  // undefined = not read yet, null = the read failed. Both used to be null, and `!git?.isRepo` made
+  // each of them "Kein Git-Repository" - a flash on every visit, and a wrong answer after a failed
+  // read (review 2026-10-13, nebenbei).
+  const [git, setGit] = useState<GitStatus | null | undefined>(undefined)
   const [snapshots, setSnapshots] = useState<Snapshot[] | null>(null)
   const [frames, setFrames] = useState<GridFrameDefinition[] | null>(null)
   const [styleFiles, setStyleFiles] = useState<StyleFileSet | null>(null)
@@ -597,7 +600,9 @@ export default function ProjectDashboard(): JSX.Element {
           to="sync"
           linkLabel={t('projectLayout.tabs.sync')}
         >
-          {git?.readError ? (
+          {git === undefined ? (
+            <Metric tone="muted">–</Metric>
+          ) : git === null || git.readError ? (
             <>
               <Metric tone="muted">{t('dashboard.git.unreadable')}</Metric>
               <Facts>

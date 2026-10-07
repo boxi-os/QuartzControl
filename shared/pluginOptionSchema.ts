@@ -29,7 +29,9 @@
 //   x-quartz-order       sort key within the object (lower first; unordered fields keep their place)
 //   x-quartz-advanced    true: shown folded away
 //   x-quartz-widget      "snippetFile" | "html" | "markdown" | "glob" - a richer editor for a string
-//   x-quartz-dir-option  for snippetFile: the sibling option that names the snippet directory
+//   x-quartz-dir-option  for snippetFile: the option that names the snippet directory - looked up
+//                        in the field's own object first, then in each enclosing one (an entry
+//                        of layout-box's `byLang` has no `dir`; the one at the top applies)
 //   x-quartz-keys        for a record: "languages" - its keys are the site's language codes
 //   x-quartz-l10n        { "<lang>": { title?, description?, group?, enum?: { "<value>": label } } }
 
@@ -219,8 +221,19 @@ function unionOf(variants: OptionNode[]): OptionNode {
   return unique.length === 1 ? unique[0] : { kind: 'union', variants: unique }
 }
 
+// A property written as `{ "$ref": "#/$defs/title" }` carries its description, translation and
+// widget in the target, because that is the point of sharing it (layout-box's top level and each
+// `byLang` entry name the same fields). Keywords beside the `$ref` win - they are the more specific
+// statement, as in JSON Schema 2019-09 and later.
+function annotationsOf(raw: unknown, ctx: Ctx): Json {
+  if (!isPlainObject(raw)) return {}
+  if (typeof raw.$ref !== 'string') return raw
+  const target = resolveRef(ctx, raw.$ref)
+  return target ? { ...annotationsOf(target, ctx), ...raw } : raw
+}
+
 function fieldFromSchema(key: string, raw: unknown, path: string[], ctx: Ctx, depth: number): OptionField {
-  const s = isPlainObject(raw) ? raw : {}
+  const s = annotationsOf(raw, ctx)
   const field: OptionField = { key, node: nodeFromSchema(raw, path, ctx, depth), hasDefault: false, origin: 'schema' }
   if (typeof s.title === 'string') field.title = s.title
   if (typeof s.description === 'string') field.description = s.description

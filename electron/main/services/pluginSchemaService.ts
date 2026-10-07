@@ -1,7 +1,16 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs'
-import { join } from 'path'
+import { isAbsolute, join, relative, resolve } from 'path'
 import ts from 'typescript'
-import type { PluginOptionField, ThemeDetail, ThemeStyleSettingsInfo } from '@shared/ipc-contract'
+import type { PluginOptionField, PluginSource, ThemeDetail, ThemeStyleSettingsInfo } from '@shared/ipc-contract'
+import {
+  applyDefaults,
+  normalizeJsonSchema,
+  normalizeOptionSchema,
+  schemaFromDefaults,
+  type NormalizedOptionSchema,
+  type PluginOptionSchemaResult
+} from '@shared/pluginOptionSchema'
+import { quartzPluginName } from '@shared/quartzPluginName'
 
 // Only plugins actually installed under .quartz/plugins/<name> (via `quartz plugin add`) ship
 // compiled .d.ts/.js files we can introspect. Built-in "@quartz-community/x" config entries live
@@ -307,4 +316,308 @@ function toLiteralValue(node: ts.Expression): unknown {
   if (node.kind === ts.SyntaxKind.TrueKeyword) return true
   if (node.kind === ts.SyntaxKind.FalseKeyword) return false
   return undefined
+}
+
+// ── The option schema (1.1) ─────────────────────────────────────────────────────────────────────
+//
+// Replaces getPluginOptionsSchema above once the plugins page moves to the new form (P3 of
+// docs/plan-1.1-umsetzung.md); until then both exist and the page still reads the old one.
+//
+// Where the package lives is quartz's answer, not ours: `readManifestFromPackageJson`
+// (plugins/loader/config-loader.ts) resolves an npm source under node_modules and everything else
+// under `.quartz/plugins/<extractPluginName(source)>`. The old lookup only knew the second place,
+// so every @quartz-community plugin - explorer, graph, search, the lot - had no schema at all,
+// although 33 of them ship one in their package.json (counted 2026-10-07 on gui-test).
+//
+// The order of the sources is the order of how much they say: a JSON Schema that the plugin
+// wrote for this purpose, the flat optionSchema, the type declarations, and finally the defaults
+// alone. A source that yields no field at all does not count - `unlisted-pages` ships an empty
+// optionSchema - and the next one is asked. The defaults are laid over whichever wins.
+//
+// Nothing here runs plugin code. package.json is parsed as JSON under a size cap; the .d.ts are
+// parsed by typescript as text, never evaluated.
+
+const MAX_PACKAGE_JSON_BYTES = 1024 * 1024
+const MAX_DTS_FILES = 200
+const MAX_DTS_BYTES = 4 * 1024 * 1024
+
+// quartz's parsePluginSource (plugins/loader/gitLoader.ts): whatever is not a local path, github:,
+// git+ or https:// is an npm package.
+function isNpmSource(source: PluginSource): boolean {
+  const repo = typeof source === 'object' && source !== null ? source.repo : source
+  if (typeof repo !== 'string') return false
+  if (/^[A-Za-z]:[\\/]/.test(repo) || repo.startsWith('./') || repo.startsWith('../') || repo.startsWith('/')) return false
+  return !(repo.startsWith('github:') || repo.startsWith('git+') || repo.startsWith('https://'))
+}
+
+/** The plugin's package directory as quartz resolves it, or null if that would leave its base. */
+export function pluginPackageDir(projectPath: string, source: PluginSource): string | null {
+  const name = quartzPluginName(source)
+  const base = isNpmSource(source) ? join(projectPath, 'node_modules') : join(projectPath, '.quartz', 'plugins')
+  const dir = resolve(base, name)
+  const rel = relative(base, dir)
+  if (!name || rel === '' || rel.startsWith('..') || isAbsolute(rel)) return null
+  return dir
+}
+
+const isPlainObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
+
+export function getPluginOptionSchema(projectPath: string, source: PluginSource): PluginOptionSchemaResult {
+  const dir = pluginPackageDir(projectPath, source)
+  if (!dir) return { schema: null, unreadable: 'The plugin source does not name a directory inside the project.' }
+  const pkgPath = join(dir, 'package.json')
+
+  let pkg: unknown
+  try {
+    const size = statSync(pkgPath).size
+    if (size > MAX_PACKAGE_JSON_BYTES) return { schema: null, unreadable: `package.json is ${size} bytes, more than the 1 MiB this reads.` }
+    pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'))
+  } catch (err) {
+    // Not installed (yet) is the ordinary case for a plugin that was just added - no schema, no
+    // complaint. Anything else is a package that is there and broken, and says so.
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return { schema: null }
+    return { schema: null, unreadable: `package.json could not be read: ${(err as Error).message}` }
+  }
+  if (!isPlainObject(pkg)) return { schema: null, unreadable: 'package.json is not a JSON object.' }
+
+  const q = isPlainObject(pkg.quartz) ? pkg.quartz : {}
+  const version = typeof q.version === 'string' ? q.version : typeof pkg.version === 'string' ? pkg.version : undefined
+
+  const candidates: (() => NormalizedOptionSchema | null)[] = [
+    () => (q.configSchema !== undefined ? normalizeJsonSchema(q.configSchema, 'configSchema') : null),
+    () => (q.optionSchema !== undefined ? normalizeOptionSchema(q.optionSchema) : null),
+    () => {
+      const fromTypes = optionsJsonSchemaFromDts(join(dir, 'dist'))
+      return fromTypes ? normalizeJsonSchema(fromTypes, 'dts') : null
+    }
+  ]
+  let schema: NormalizedOptionSchema | null = null
+  for (const candidate of candidates) {
+    const found = candidate()
+    if (found && found.fields.length > 0) {
+      schema = applyDefaults(found, q.defaultOptions)
+      break
+    }
+  }
+  schema ??= schemaFromDefaults(q.defaultOptions)
+  return { schema, ...(version ? { packageVersion: version } : {}) }
+}
+
+// ── .d.ts → JSON Schema ──
+//
+// Translated to JSON Schema rather than straight to the normalized form, so that one normalizer
+// (shared/pluginOptionSchema.ts) handles all three schema sources. What the translation cannot
+// express becomes `{ "x-quartz-note": reason }`, which the normalizer turns into a text field and
+// a counted note.
+
+type Decl = ts.InterfaceDeclaration | ts.TypeAliasDeclaration
+type JsonSchema = Record<string, unknown>
+
+interface DtsIndex {
+  decls: Map<string, Decl[]>
+  order: Decl[]
+}
+
+function indexDts(distDir: string): DtsIndex | null {
+  if (!existsSync(distDir)) return null
+  const files = walkFiles(distDir, '.d.ts').slice(0, MAX_DTS_FILES)
+  const decls = new Map<string, Decl[]>()
+  const order: Decl[] = []
+  let total = 0
+  for (const file of files) {
+    let text: string
+    try {
+      total += statSync(file).size
+      if (total > MAX_DTS_BYTES) break
+      text = readFileSync(file, 'utf-8')
+    } catch {
+      continue
+    }
+    const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true)
+    ts.forEachChild(source, (node) => {
+      if (ts.isInterfaceDeclaration(node) || ts.isTypeAliasDeclaration(node)) {
+        const list = decls.get(node.name.text) ?? []
+        list.push(node)
+        decls.set(node.name.text, list)
+        order.push(node)
+      }
+    })
+  }
+  return decls.size > 0 ? { decls, order } : null
+}
+
+// The interface the options object is typed as. Until the root-interface fix this is the old
+// rule: the first interface whose name ends in "Options".
+function pickOptionsRoot(index: DtsIndex): ts.InterfaceDeclaration | null {
+  for (const decl of index.order) {
+    if (ts.isInterfaceDeclaration(decl) && /options$/i.test(decl.name.text) && decl.members.some(ts.isPropertySignature)) return decl
+  }
+  return null
+}
+
+function optionsJsonSchemaFromDts(distDir: string): JsonSchema | null {
+  const index = indexDts(distDir)
+  if (!index) return null
+  const root = pickOptionsRoot(index)
+  if (!root) return null
+  return declToSchema(root, index, new Set(), 0, null)
+}
+
+const note = (reason: string): JsonSchema => ({ 'x-quartz-note': reason })
+const MAX_TYPE_DEPTH = 12
+
+function docOf(node: ts.Node): string | undefined {
+  for (const doc of ts.getJSDocCommentsAndTags(node)) {
+    if (ts.isJSDoc(doc) && doc.comment) return ts.getTextOfJSDocComment(doc.comment)
+  }
+  return undefined
+}
+
+function memberName(name: ts.PropertyName): string | null {
+  return ts.isIdentifier(name) || ts.isStringLiteral(name) || ts.isNumericLiteral(name) ? name.text : null
+}
+
+// `keep` narrows the members (Pick/Omit): null keeps all, otherwise a predicate on the name.
+function membersToSchema(
+  members: ts.NodeArray<ts.TypeElement>,
+  index: DtsIndex,
+  seen: Set<string>,
+  depth: number,
+  keep: ((name: string) => boolean) | null
+): JsonSchema {
+  const properties: Record<string, JsonSchema> = {}
+  let additional: JsonSchema | undefined
+  for (const member of members) {
+    if (ts.isPropertySignature(member) || ts.isMethodSignature(member)) {
+      const name = memberName(member.name)
+      if (name === null || (keep && !keep(name))) continue
+      const schema: JsonSchema = ts.isMethodSignature(member)
+        ? note('a function cannot be written in YAML')
+        : member.type
+          ? typeToSchema(member.type, index, seen, depth + 1)
+          : note('no type')
+      const description = docOf(member)
+      properties[name] = description ? { ...schema, description } : schema
+    } else if (ts.isIndexSignatureDeclaration(member) && member.type) {
+      additional = typeToSchema(member.type, index, seen, depth + 1)
+    }
+  }
+  return { type: 'object', properties, ...(additional ? { additionalProperties: additional } : {}) }
+}
+
+function declToSchema(decl: Decl, index: DtsIndex, seen: Set<string>, depth: number, keep: ((name: string) => boolean) | null): JsonSchema {
+  if (ts.isTypeAliasDeclaration(decl)) return typeToSchema(decl.type, index, seen, depth + 1, keep)
+  let schema = membersToSchema(decl.members, index, seen, depth, keep)
+  // `interface A extends B` - B's members first, A's override.
+  for (const clause of decl.heritageClauses ?? []) {
+    for (const base of clause.types) {
+      if (!ts.isIdentifier(base.expression)) continue
+      const inherited = typeToSchema(ts.factory.createTypeReferenceNode(base.expression.text), index, seen, depth + 1, keep)
+      if (isPlainObject(inherited.properties)) {
+        schema = { ...schema, properties: { ...inherited.properties, ...(schema.properties as object) } }
+      }
+    }
+  }
+  return schema
+}
+
+function literalKeys(node: ts.TypeNode | undefined): string[] | null {
+  if (!node) return null
+  if (ts.isLiteralTypeNode(node) && ts.isStringLiteral(node.literal)) return [node.literal.text]
+  if (ts.isUnionTypeNode(node)) {
+    const all = node.types.map(literalKeys)
+    return all.every((k): k is string[] => k !== null) ? all.flat() : null
+  }
+  return null
+}
+
+function typeToSchema(
+  node: ts.TypeNode,
+  index: DtsIndex,
+  seen: Set<string>,
+  depth: number,
+  keep: ((name: string) => boolean) | null = null
+): JsonSchema {
+  if (depth > MAX_TYPE_DEPTH) return note('types nested too deeply')
+  switch (node.kind) {
+    case ts.SyntaxKind.BooleanKeyword:
+      return { type: 'boolean' }
+    case ts.SyntaxKind.StringKeyword:
+      return { type: 'string' }
+    case ts.SyntaxKind.NumberKeyword:
+      return { type: 'number' }
+    case ts.SyntaxKind.AnyKeyword:
+    case ts.SyntaxKind.UnknownKeyword:
+      return {}
+  }
+  if (ts.isParenthesizedTypeNode(node)) return typeToSchema(node.type, index, seen, depth, keep)
+  if (ts.isTypeOperatorNode(node)) return typeToSchema(node.type, index, seen, depth, keep)
+  if (ts.isLiteralTypeNode(node)) {
+    const lit = node.literal
+    if (ts.isStringLiteral(lit)) return { const: lit.text }
+    if (ts.isNumericLiteral(lit)) return { const: Number(lit.text) }
+    if (lit.kind === ts.SyntaxKind.TrueKeyword) return { const: true }
+    if (lit.kind === ts.SyntaxKind.FalseKeyword) return { const: false }
+    return note('a null literal')
+  }
+  if (ts.isUnionTypeNode(node)) {
+    const members = node.types.filter(
+      (t) => t.kind !== ts.SyntaxKind.UndefinedKeyword && !(ts.isLiteralTypeNode(t) && t.literal.kind === ts.SyntaxKind.NullKeyword)
+    )
+    const schemas = members.map((t) => typeToSchema(t, index, seen, depth + 1))
+    if (schemas.length === 1) return schemas[0]
+    if (schemas.every((s) => 'const' in s)) return { enum: schemas.map((s) => s.const) }
+    return { anyOf: schemas }
+  }
+  if (ts.isArrayTypeNode(node)) return { type: 'array', items: typeToSchema(node.elementType, index, seen, depth + 1) }
+  if (ts.isTypeLiteralNode(node)) return membersToSchema(node.members, index, seen, depth, keep)
+  if (ts.isFunctionTypeNode(node)) return note('a function cannot be written in YAML')
+  if (ts.isIntersectionTypeNode(node)) {
+    const parts = node.types.map((t) => typeToSchema(t, index, seen, depth + 1, keep))
+    if (parts.every((p) => p.type === 'object' && isPlainObject(p.properties))) {
+      return { type: 'object', properties: Object.assign({}, ...parts.map((p) => p.properties)) }
+    }
+    return note('an intersection of non-object types')
+  }
+  if (ts.isTypeReferenceNode(node)) {
+    const name = ts.isIdentifier(node.typeName) ? node.typeName.text : node.typeName.right.text
+    const args = node.typeArguments ?? []
+    switch (name) {
+      case 'Array':
+      case 'ReadonlyArray':
+        return { type: 'array', items: args[0] ? typeToSchema(args[0], index, seen, depth + 1) : {} }
+      case 'Record':
+        return { type: 'object', additionalProperties: args[1] ? typeToSchema(args[1], index, seen, depth + 1) : {} }
+      case 'Partial':
+      case 'Required':
+      case 'Readonly':
+        return args[0] ? typeToSchema(args[0], index, seen, depth + 1, keep) : note(`${name} without an argument`)
+      case 'Omit':
+      case 'Pick': {
+        const keys = literalKeys(args[1])
+        if (!args[0] || !keys) return note(`${name} with keys that are not string literals`)
+        const narrowed = name === 'Omit' ? (k: string) => !keys.includes(k) : (k: string) => keys.includes(k)
+        const combined = keep ? (k: string) => keep(k) && narrowed(k) : narrowed
+        return typeToSchema(args[0], index, seen, depth + 1, combined)
+      }
+    }
+    const decls = index.decls.get(name)
+    if (!decls) return note(`type ${name} is not declared in the package`)
+    // Seen per shape, not per name: `Omit<LayoutBoxOptions, "byLang">` inside LayoutBoxOptions is
+    // not a cycle, because the member that would recurse is the one it leaves out.
+    const shape = keep ? `${name}|${[...membersOf(decls[0])].filter(keep).join(',')}` : name
+    if (seen.has(shape)) return note(`type ${name} refers to itself`)
+    seen.add(shape)
+    try {
+      return declToSchema(decls[0], index, seen, depth + 1, keep)
+    } finally {
+      seen.delete(shape)
+    }
+  }
+  return note(`type syntax ${ts.SyntaxKind[node.kind]} is not supported`)
+}
+
+function membersOf(decl: Decl): string[] {
+  if (!ts.isInterfaceDeclaration(decl)) return []
+  return decl.members.map((m) => (m.name ? memberName(m.name) : null)).filter((n): n is string => n !== null)
 }

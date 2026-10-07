@@ -17,53 +17,60 @@
 //   configSchema  `quartz.configSchema` (JSON Schema, die Form, die Quartz' Typen vorsehen)
 //   d.ts          was die App heute aus den Typdeklarationen liest
 //
-// Und eingeteilt danach, wie die App sie heute zeigt:
+// Und eingeteilt danach, was der Leser der App daraus macht (`getPluginOptionSchema` im
+// Hauptprozess, `shared/pluginOptionSchema.ts`):
 //
-//   Feld          ein Bedienelement (Schalter, Auswahl, Zahl, Text)
-//   Text          nur als freies Textfeld mit JSON darin (ohne Schema, Wert ist Objekt/Liste)
-//   unsichtbar    gar nicht — das ist „ohne Darstellung“ und die Zahl, die für die drei eigenen
-//                 Plugins nach P2 null sein muss
+//   Feld          ein Bedienelement (Schalter, Auswahl, Zahl, Text, Liste, Abschnitt)
+//   Text          nur als freies Textfeld mit JSON darin — der Leser hat die Form nicht verstanden
+//   unsichtbar    gar nicht im Schema — das ist „ohne Darstellung“ und die Zahl, die für die drei
+//                 eigenen Plugins nach P2 null sein muss
 //
-// Die Darstellung wird nicht nachgebaut, sondern geladen: `pluginSchemaService.ts` aus dem
-// Hauptprozess, als .mts kopiert (Regel „ein Prüfskript lädt, statt abzuschreiben“). Wie die Seite
-// daraus Felder macht, steht in `src/routes/Plugins/Installed.tsx` (`PluginOptionsEditor`): mit
-// Schema nur die Felder außer `unsupported`, ohne Schema jeder vorhandene Schlüssel nach seinem Wert.
-// Diese zwei Zeilen sind die einzige Nachbildung hier, und sie fallen mit P3 weg.
+// Gezählt werden die Schlüssel der obersten Ebene. Bis zum 2026-10-07 zählte das Skript, was die
+// *alte* Plugins-Seite zeigte (Vorher-Stand an gui-test: 280 Optionen, 131 Feld, 6 Text,
+// 143 unsichtbar); seit P1 zählt es den Leser, den die neue Seite benutzt.
 //
-// Wo die package.json liegt, entscheidet Quartz' `readManifestFromPackageJson`
-// (plugins/loader/config-loader.ts): npm-Quellen unter node_modules, alles andere unter
-// `.quartz/plugins/<name>`. Was das Skript nicht lesen kann, zählt es und sagt es.
+// Der Dienst wird nicht nachgebaut, sondern geladen: esbuild bündelt ihn samt `@shared` nach
+// node_modules/.cache, von wo aus er `typescript` findet (Regel „ein Prüfskript lädt, statt
+// abzuschreiben“). Die Notizen des Lesers — was er nicht lesen konnte — zählt das Skript mit.
+
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import esbuild from 'esbuild'
 import { parse as parseYaml } from 'yaml'
 
 const APP_DIR = path.dirname(import.meta.dirname)
 
-// Ins Systemtemp, weil node unter node_modules keine Typen entfernt. Der Dienst importiert
-// `typescript`, und von dort aus fände node es nicht; der eine Import wird deshalb auf die Datei im
-// Repo umgeschrieben.
-const TS_ENTRY = `file://${path.join(APP_DIR, 'node_modules/typescript/lib/typescript.js')}`
+const CACHE = path.join(APP_DIR, 'node_modules/.cache/check-option-schema')
+fs.mkdirSync(CACHE, { recursive: true })
+const bundle = path.join(CACHE, `service-${process.pid}.mjs`)
+await esbuild.build({
+  entryPoints: [path.join(APP_DIR, 'electron/main/services/pluginSchemaService.ts')],
+  bundle: true,
+  platform: 'node',
+  format: 'esm',
+  outfile: bundle,
+  alias: { '@shared': path.join(APP_DIR, 'shared') },
+  external: ['typescript'],
+  logLevel: 'error'
+})
+const service = await import(`file://${bundle}`)
+fs.unlinkSync(bundle)
+const { getPluginOptionSchema, pluginPackageDir } = service
 
-async function loadTs(rel, tmpName, source = fs.readFileSync(path.join(APP_DIR, rel), 'utf-8')) {
-  const tmp = path.join(os.tmpdir(), `check-option-schema-${tmpName}-${process.pid}.mts`)
-  fs.writeFileSync(tmp, source.replace(/from 'typescript'/g, `from '${TS_ENTRY}'`))
-  try {
-    return await import(`file://${tmp}`)
-  } finally {
-    fs.unlinkSync(tmp)
-  }
-}
-
-const { getPluginOptionsSchema } = await loadTs('electron/main/services/pluginSchemaService.ts', 'pluginSchemaService')
-const { quartzPluginName } = await loadTs('shared/quartzPluginName.ts', 'quartzPluginName')
 // deriveName steht in configService.ts, das den halben Hauptprozess importiert; die Funktion selbst
 // ist vier Zeilen ohne Abhängigkeit. Herausgeschnitten statt abgeschrieben, damit sie nicht driftet.
 const deriveName = await (async () => {
   const src = fs.readFileSync(path.join(APP_DIR, 'electron/main/services/configService.ts'), 'utf-8')
   const m = src.match(/export function deriveName\(source: PluginSource\): string \{[\s\S]*?\n\}/)
   if (!m) throw new Error('deriveName nicht in configService.ts gefunden — das Skript muss nachgezogen werden')
-  return (await loadTs(null, 'deriveName', `type PluginSource = string | { repo: string; name?: string }\n${m[0]}\n`)).deriveName
+  const tmp = path.join(os.tmpdir(), `check-option-schema-deriveName-${process.pid}.mts`)
+  fs.writeFileSync(tmp, `type PluginSource = string | { repo: string; name?: string }\n${m[0]}\n`)
+  try {
+    return (await import(`file://${tmp}`)).deriveName
+  } finally {
+    fs.unlinkSync(tmp)
+  }
 })()
 
 const args = process.argv.slice(2)
@@ -81,23 +88,13 @@ if (!fs.existsSync(configFile)) {
 const config = parseYaml(fs.readFileSync(configFile, 'utf-8')) ?? {}
 const entries = Array.isArray(config.plugins) ? config.plugins : []
 
-// Quartz' Unterscheidung in parsePluginSource: was weder lokal noch github:/git+/https:// ist, ist npm.
-function isNpm(source) {
-  const repo = typeof source === 'object' && source !== null ? source.repo : source
-  if (typeof repo !== 'string') return false
-  if (/^[A-Za-z]:[\\/]/.test(repo) || repo.startsWith('./') || repo.startsWith('../') || repo.startsWith('/')) return false
-  return !(repo.startsWith('github:') || repo.startsWith('git+') || repo.startsWith('https://'))
-}
-
 function readManifest(source) {
-  const name = quartzPluginName(source)
-  const pkgPath = isNpm(source)
-    ? path.join(projekt, 'node_modules', name, 'package.json')
-    : path.join(projekt, '.quartz', 'plugins', name, 'package.json')
-  if (!fs.existsSync(pkgPath)) return { where: 'keine package.json', quartz: null }
+  const dir = pluginPackageDir(projekt, source)
+  const pkgPath = dir && path.join(dir, 'package.json')
+  if (!pkgPath || !fs.existsSync(pkgPath)) return { where: 'keine package.json', quartz: null }
   try {
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
-    return { where: path.relative(projekt, path.dirname(pkgPath)), quartz: pkg.quartz ?? null }
+    return { where: path.relative(projekt, dir), quartz: pkg.quartz ?? null }
   } catch (e) {
     return { where: `unlesbar: ${e.message}`, quartz: null }
   }
@@ -124,49 +121,61 @@ for (const entry of entries) {
   if (manifest.where.startsWith('unlesbar')) unreadable += 1
   const q = manifest.quartz ?? {}
   const options = isObject(entry.options) ? entry.options : {}
-  const dts = getPluginOptionsSchema(projekt, base)
+  const result = getPluginOptionSchema(projekt, entry.source)
+  if (result.unreadable) unreadable += 1
+  const fields = result.schema?.fields ?? []
 
   const sources = {
     config: keysOf(options),
     vorgaben: keysOf(q.defaultOptions),
     optionSchema: keysOf(q.optionSchema),
     configSchema: keysOf(q.configSchema?.properties),
-    'd.ts': dts ? dts.map((f) => f.name) : []
+    // Was der Leser aus seiner gewählten Quelle hat — ohne die Felder, die erst die Vorgaben
+    // ergänzt haben, sonst sähe man nicht, ob die Quelle selbst trägt.
+    schema: fields.filter((f) => f.origin === 'schema').map((f) => f.key)
   }
   const all = [...new Set(Object.values(sources).flat())]
 
-  // Die zwei Zeilen aus Installed.tsx (PluginOptionsEditor), sonst nichts.
   const shownAs = (key) => {
-    if (dts) return dts.some((f) => f.name === key && f.kind !== 'unsupported') ? 'Feld' : 'unsichtbar'
-    if (!(key in options)) return 'unsichtbar'
-    const v = options[key]
-    return typeof v === 'object' && v !== null ? 'Text' : 'Feld'
+    const field = fields.find((f) => f.key === key)
+    if (!field) return 'unsichtbar'
+    return field.node.kind === 'json' ? 'Text' : 'Feld'
   }
   const by = { Feld: [], Text: [], unsichtbar: [] }
   for (const key of all) by[shownAs(key)].push(key)
 
-  // Typen, von denen keine einzige Option eine andere Quelle kennt: der Fingerabdruck eines falsch
-  // gewählten Interfaces (multilanguage las `SeoOptions` — `hreflang`, `ogLocale`, `xDefault` —,
-  // während die Config 15 ganz andere Schlüssel trägt). Eine *teilweise* Überschneidung ist
-  // gewöhnlich: Eine optionale Option ohne Vorgabe (`title` der Layout-Box) steht nur in den Typen.
-  const known = new Set([...sources.config, ...sources.vorgaben, ...sources.optionSchema, ...sources.configSchema])
-  const wrongInterface = known.size > 0 && sources['d.ts'].length > 0 && !sources['d.ts'].some((k) => known.has(k))
-  const strangers = wrongInterface ? sources['d.ts'] : []
+  // Eine Quelle, von der keine einzige Option Config oder Vorgaben kennt: der Fingerabdruck eines
+  // falsch gewählten Interfaces (multilanguage las `SeoOptions` — `hreflang`, `ogLocale`,
+  // `xDefault` —, während die Config 15 ganz andere Schlüssel trägt). Eine *teilweise*
+  // Überschneidung ist gewöhnlich: eine optionale Option ohne Vorgabe (`title` der Layout-Box).
+  const known = new Set([...sources.config, ...sources.vorgaben])
+  const wrongInterface = known.size > 0 && sources.schema.length > 0 && !sources.schema.some((k) => known.has(k))
+  const strangers = wrongInterface ? sources.schema : []
 
-  rows.push({ name, enabled: entry.enabled !== false, where: manifest.where, sources, all, by, strangers })
+  rows.push({
+    name,
+    enabled: entry.enabled !== false,
+    where: manifest.where,
+    source: result.schema?.source ?? (result.unreadable ? 'unlesbar' : '–'),
+    notes: result.schema?.notes ?? [],
+    sources,
+    all,
+    by,
+    strangers
+  })
 }
 
 const pad = (s, n) => String(s).padEnd(n)
 const num = (n) => String(n).padStart(5)
 console.log(`${configFile}\n`)
 console.log(
-  `${pad('Plugin', 32)}${['config', 'vorg.', 'optS.', 'confS.', 'd.ts', 'alle', 'Feld', 'Text', 'unsi.'].map((h) => h.padStart(7)).join('')}`
+  `${pad('Plugin', 32)}${pad('Quelle', 13)}${['config', 'vorg.', 'optS.', 'confS.', 'Schema', 'alle', 'Feld', 'Text', 'unsi.'].map((h) => h.padStart(7)).join('')}`
 )
 for (const r of rows) {
   const s = r.sources
   console.log(
-    `${pad(r.name + (r.enabled ? '' : ' (aus)'), 32)}` +
-      [s.config.length, s.vorgaben.length, s.optionSchema.length, s.configSchema.length, s['d.ts'].length, r.all.length, r.by.Feld.length, r.by.Text.length, r.by.unsichtbar.length]
+    `${pad(r.name + (r.enabled ? '' : ' (aus)'), 32)}${pad(r.source, 13)}` +
+      [s.config.length, s.vorgaben.length, s.optionSchema.length, s.configSchema.length, s.schema.length, r.all.length, r.by.Feld.length, r.by.Text.length, r.by.unsichtbar.length]
         .map((n) => `  ${num(n)}`)
         .join('')
   )
@@ -177,16 +186,17 @@ console.log(
   `\n${rows.length} Plugins, ${sum((r) => r.all.length)} Optionen: ${sum((r) => r.by.Feld.length)} als Feld, ` +
     `${sum((r) => r.by.Text.length)} nur als Text, ${sum((r) => r.by.unsichtbar.length)} unsichtbar.`
 )
-const withConfigSchema = rows.filter((r) => r.sources.configSchema.length > 0).length
-const withOptionSchema = rows.filter((r) => r.sources.optionSchema.length > 0).length
-const withDts = rows.filter((r) => r.sources['d.ts'].length > 0).length
-console.log(`Schema-Quellen: configSchema ${withConfigSchema}, optionSchema ${withOptionSchema}, d.ts ${withDts} (die App liest heute nur d.ts).`)
+const bySource = new Map()
+for (const r of rows) bySource.set(r.source, (bySource.get(r.source) ?? 0) + 1)
+console.log(`Gelesen aus: ${[...bySource].map(([k, n]) => `${k} ${n}`).join(', ')}.`)
+const noteCount = sum((r) => r.notes.length)
+if (noteCount) console.log(`${noteCount} Stellen konnte der Leser nicht lesen (als Text angeboten) — Liste unten.`)
 if (unreadable) console.log(`${unreadable} Einträge nicht lesbar (Eintrag ohne source oder package.json kaputt) — nicht gezählt.`)
 
-console.log('\nUnsichtbar je Plugin:')
+console.log('\nUnsichtbar oder nicht lesbar, je Plugin:')
 let any = false
 for (const r of rows) {
-  if (r.by.unsichtbar.length === 0 && r.strangers.length === 0) continue
+  if (r.by.unsichtbar.length === 0 && r.strangers.length === 0 && r.notes.length === 0) continue
   any = true
   console.log(`  ${r.name} [${r.where}]`)
   if (r.by.unsichtbar.length) {
@@ -194,6 +204,7 @@ for (const r of rows) {
     console.log(`    unsichtbar: ${r.by.unsichtbar.join(', ')}`)
     if (inConfig.length) console.log(`    davon in der Config gesetzt: ${inConfig.join(', ')}`)
   }
-  if (r.strangers.length) console.log(`    d.ts teilt keine Option mit den anderen Quellen (falsches Interface?): ${r.strangers.join(', ')}`)
+  if (r.strangers.length) console.log(`    Schema teilt keine Option mit Config und Vorgaben (falsches Interface?): ${r.strangers.join(', ')}`)
+  for (const n of r.notes) console.log(`    nicht lesbar: ${n.path.join('.') || '(Wurzel)'} — ${n.reason}`)
 }
 if (!any) console.log('  keine')

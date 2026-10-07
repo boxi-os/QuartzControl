@@ -680,3 +680,27 @@ Kürzel des nativen Menüs nicht (Cmd+S speichert nicht, der Knopf schon); CodeM
 sichtbaren Zeilen, `textContent` des Editors ist nicht die Datei; und Quartz minifiziert die
 ausgelieferte CSS — `rgb(203, 203, 203)` kommt als `#cbcbcb` an, ein Vergleich auf den getippten Wert
 meldet dann „nicht übernommen“, obwohl er nach einer Sekunde da war.
+
+**Zwölf Stylesheets statt 31 im Basis-Template (2026-10-07, 1.1, P5).** Die 31 Dateien unter
+`scripts/example-template/styles/` sind zu zwölf zusammengefügt: `foundation`, `layout`, je eine
+Datei für Kopf, Navigation und Notiz, `content`, `callouts`, `pages`, je eine je eigenem Plugin,
+`a11y` zuletzt. Jeder Abschnitt beginnt mit einer Markierung, die seine alte Datei nennt
+(`// ====… nav-explorer`); `variable-docs.mjs` liest die Abschnitte und schreibt die Tabellen im
+Example-Vault weiter je Komponente — die „gilt außerdem für“-Spalten sind vorher und nachher gleich,
+nur die Dateinamen haben sich geändert. Gemessen:
+
+- **Website:** Example und Basis, je ein Klon vorher und nachher gebaut, `styles-snapshot.mjs --site
+  --serve` (drei Breiten, hell und dunkel): 135 170 und 51 930 Elemente, kein berechneter Wert
+  verändert. `--check-contrast` 93 Paare, keines unter der Schwelle.
+- **Was die Aufnahme nicht sieht, ist die Link-Vorschau**, weil sie erst beim Überfahren entsteht.
+  Eigens gemessen fand sich dort der eine Befund: Die Vorschau formt mit gleicher Spezifität um, was
+  die Seitentypen rendern, und lud bis dahin hinter ihnen. Vor ihnen hatte der Zählsatz einer
+  Ordner-Vorschau 12 statt 8 px Abstand. Sie steht deshalb in `pages` und nicht in `content`.
+- **Die Werkstatt** räumt in Phase 5 die alten Dateien über `styles.deleteFile` (29 — die zwei, die
+  ihren Namen behalten, bleiben). An einem Klon des Example mit Wegwerf-Profil: gebautes CSS
+  byte-gleich mit dem Handumbau, `--check-sync` deckungsgleich.
+
+Eine Falle der Messung: `check:tokens` wartet 0,25 s, bevor es das Rauschen einer Seite misst, und
+eine Seite, die sich erst danach setzt, schreibt jedem Token dieselbe Zahl gut. Vorher sah das wie
+„jedes Token lebt“ aus und nachher wie fünf tote; mit 2,5 s waren beide Stände gleich, die fünf in
+beiden ohne Wirkung (`scripts/example-template/BEFUNDE.md`, 99).

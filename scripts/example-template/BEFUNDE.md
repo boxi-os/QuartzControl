@@ -2125,3 +2125,30 @@ rollt, wie es die Spezifikation meint — und versteht die Style-Query: `sticky`
 683 px Deckel und Kante wie in Chrome und WebKit. Was dort anders aussieht, ist Firefox' eigene
 Wheel-Transaktion: Eine Folge von Raddrehungen, die in der Spalte beginnt, bleibt an ihr, bis eine
 Pause kommt; danach rollt die Seite. Ein nackter Rollkasten ohne diese Vorlage tut dasselbe.
+
+### 99. Aus 31 Stylesheets werden zwölf, und die Link-Vorschau verliert dabei — 2026-10-07
+
+Für 1.1 sind die 31 Stylesheets zu zwölf zusammengefügt (`style-order.mjs` nennt sie und die
+Gründe der Reihenfolge). Reines Zusammenfügen, jeder Abschnitt nennt seine alte Datei; geprüft ist,
+dass keine Zeile verloren ging (die sortierten Zeilen vorher und nachher, bis auf 102 neue
+Kommentarzeilen gleich). Dabei sind mehrere Abschnitte in der Ladereihenfolge gewandert: Fußzeile,
+Brotkrumen, Suchergebnisse, Sprachumschalter, Titel und Datum, Zeilenabstände, Callouts.
+
+- **Gemessen an der gebauten Website**, Example und Basis je in einem Klon gebaut, vorher und
+  nachher (`styles-snapshot.mjs --site --serve`, drei Breiten, hell und dunkel): 135 170 und 51 930
+  Elemente, kein berechneter Wert verändert.
+- **Die Link-Vorschau sieht diese Messung nicht** — sie entsteht erst beim Überfahren eines Links.
+  Eigens gemessen (Maus über die ersten vier internen Links von fünf Seiten, jeder berechnete Wert
+  in der Vorschau): Sechs von sechzehn Vorschauen wichen ab, alle mit einer Ordnerliste darin. Der
+  Zählsatz über der Liste bekam unten 12 statt 8 px. `.popover > .popover-inner p` und
+  `.page-listing > p:first-child` sind gleich spezifisch (0,2,1), und die Vorschau lud bis dahin
+  *hinter* den Seitentypen. Sie steht deshalb jetzt in `pages`, hinter ihnen, und nicht in
+  `content`, wie der Plan es vorsah; danach 16 von 16 gleich, in der Basis 8 von 8.
+- **`check:tokens` war zwischen den beiden Ständen nicht vergleichbar**, und zwar wegen der
+  Messung, nicht wegen der Stylesheets: Vorher meldete es „jedes Token bewegt etwas“, nachher fünf
+  ohne Wirkung. 42 der 66 Tokens hatten nachher genau 18 Elemente weniger — eine Seite, die sich
+  erst nach der Rauschmessung setzte, schrieb jedem Token 18 gut. Mit 2,5 statt 0,25 s Wartezeit
+  sind alle 66 Zahlen vorher und nachher gleich, und dieselben fünf (`--tpl-space-2xl`,
+  `--tpl-col-left-position`, `--tpl-col-left-height`, `--tpl-col-left-mask`,
+  `--tpl-col-right-position`) sind in **beiden** Ständen ohne Wirkung auf den besuchten Seiten.
+  Offen und nicht Teil dieses Umbaus.

@@ -1454,6 +1454,10 @@ export default {
       chipHint: 'Zu dieser Variable springen',
       themeNote:
         'Deine Werte hier gewinnen gegen das Theme „{{themeId}}“, auch wo es dieselbe Variable setzt. Die Ausnahme sind Farben, die ein Theme nur für eine Art von Element setzt — Callouts etwa; die änderst du unter „Eigenes CSS“.',
+      collisionNote_one:
+        'custom.scss setzt {{names}} auch selbst. Seit 1.1 steht seine Regel nach denen dieser Seite und gewinnt, wo beide gleich spezifisch sind – die Website zeigt dann den Wert aus custom.scss, nicht den hier.',
+      collisionNote_other:
+        'custom.scss setzt {{count}} dieser Variablen auch selbst: {{names}}. Seit 1.1 steht seine Regel nach denen dieser Seite und gewinnt, wo beide gleich spezifisch sind – die Website zeigt dann die Werte aus custom.scss, nicht die hier.',
       section: {
         current: 'Aktueller Wert',
         origin: 'Herkunft',

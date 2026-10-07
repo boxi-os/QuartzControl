@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { Button, Card, InfoNote, SegmentedControl, TextInput } from '../../components/ui'
@@ -35,7 +35,7 @@ const SINGLES_GROUP = 'singles'
 // (index.tsx), which also re-reads the file afterwards so the CSS tab's draft stays in sync.
 export default function Variables(): JSX.Element {
   const { t } = useTranslation()
-  const { config, overrides, setOverrides, graph, graphLoading, reloadGraph, registerSave } = useStyles()
+  const { project, config, overrides, setOverrides, graph, graphLoading, reloadGraph, registerSave } = useStyles()
 
   // Which rows are open, which query is active: kept across a trip to another area, since with
   // nothing rendered until a query is typed, losing it means losing the whole result list.
@@ -60,8 +60,16 @@ export default function Variables(): JSX.Element {
   // coming back from another area would yank the page around for no reason.
   const [pendingScroll, setPendingScroll] = useState<string | null>(null)
 
-  // Nothing follows a save here; the page writes the overrides itself.
-  useEffect(() => registerSave(async () => {}))
+  // Variables custom.scss sets itself and wins with since 1.1 (styleService.variableCollisions):
+  // asked on arrival and after a save on this tab, the one save that can change the answer here.
+  const [collisions, setCollisions] = useState<string[]>([])
+  const loadCollisions = useCallback(() => {
+    window.quartzGui.styles.variableCollisions({ projectPath: project.path }).then(setCollisions, () => setCollisions([]))
+  }, [project.path])
+  useEffect(loadCollisions, [loadCollisions])
+
+  // The page writes the overrides itself; what follows here is the question above.
+  useEffect(() => registerSave(async () => loadCollisions()))
 
   // Memoized so a row can tell "the overrides changed" from "everything changed" (see sameRow in
   // VariableRow): a context rebuilt on every render made each row look new to it.
@@ -189,6 +197,11 @@ export default function Variables(): JSX.Element {
           + an override on --background-primary, both modes). The caveat is the honest half. */}
       {themeId && (
         <InfoNote>{t('styles.variables.themeNote', { themeId })}</InfoNote>
+      )}
+      {collisions.length > 0 && (
+        <InfoNote>
+          {t('styles.variables.collisionNote', { count: collisions.length, names: collisions.map((k) => `--${k}`).join(', ') })}
+        </InfoNote>
       )}
 
       <Card>

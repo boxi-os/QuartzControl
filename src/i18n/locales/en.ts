@@ -1446,6 +1446,10 @@ export default {
       chipHint: 'Jump to this variable',
       themeNote:
         'Your values here beat the theme “{{themeId}}”, even where it sets the same variable. The exception is colours a theme sets for one kind of element only — callouts, for instance; change those under “Custom CSS”.',
+      collisionNote_one:
+        'custom.scss sets {{names}} itself as well. Since 1.1 its rule comes after this page’s and wins where both are equally specific – the site then shows the value from custom.scss, not the one here.',
+      collisionNote_other:
+        'custom.scss sets {{count}} of these variables itself as well: {{names}}. Since 1.1 its rule comes after this page’s and wins where both are equally specific – the site then shows the values from custom.scss, not the ones here.',
       section: {
         current: 'Current value',
         origin: 'Origin',

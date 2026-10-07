@@ -451,6 +451,31 @@ export async function getVariableOverrides(projectPath: string): Promise<CssVari
   return body ? parseVariableOverrides(body) : []
 }
 
+/**
+ * The variables this page sets that custom.scss also sets itself, in a `:root` rule of its own
+ * body. Since 1.1 that body comes after the managed blocks (see writeManagedBlocks), so where both
+ * have the same specificity the user's own rule wins - and the page would show a value the site
+ * does not have. Measured in docs/decisions/styles-and-fonts.md; only custom.scss, because the
+ * stylesheets of the load order still come before the variables. Empty for a project not moved
+ * yet: there the variables still come last.
+ */
+export async function variableCollisions(projectPath: string): Promise<string[]> {
+  const sources = await readStyleSources(projectPath)
+  if (!sources.managedExists) return []
+  const body = managedBody(sources, CSS_VARS_MARKER)
+  if (!body) return []
+  const managed = new Set(parseVariableOverrides(body).map((o) => o.key))
+  let own = sources.custom
+  for (const marker of MOVED_MARKERS) own = stripManagedBlock(own, marker)
+  // Comments out, so a rule quoted in a note does not count.
+  own = own.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/[^\n]*/g, '$1')
+  const hits = new Set<string>()
+  for (const match of own.matchAll(/:root[^{};]*\{([^}]*)\}/g)) {
+    for (const key of Object.keys(parseDeclarations(match[1]))) if (managed.has(key)) hits.add(key)
+  }
+  return [...hits].sort()
+}
+
 export function saveVariableOverrides(projectPath: string, overrides: CssVariableOverride[]): Promise<void> {
   return whileHoldingStyles(projectPath, () => saveVariableOverridesNow(projectPath, overrides))
 }

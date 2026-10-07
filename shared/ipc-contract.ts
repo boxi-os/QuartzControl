@@ -1492,6 +1492,7 @@ export const IPC = {
   stylesFontFaces: 'styles:fontFaces',
   stylesPreviewFonts: 'styles:previewFonts',
   stylesGetVariableOverrides: 'styles:getVariableOverrides',
+  stylesVariableCollisions: 'styles:variableCollisions',
   stylesSaveVariableOverrides: 'styles:saveVariableOverrides',
   stylesVariableGraph: 'styles:variableGraph',
 
@@ -1830,6 +1831,8 @@ export interface QuartzGuiApi {
      */
     previewFonts(input: PreviewFontsInput): Promise<PreviewFonts>
     getVariableOverrides(projectPath: string): Promise<CssVariableOverride[]>
+    /** Variables this page sets that custom.scss's own body sets as well - there the own rule wins. */
+    variableCollisions(args: { projectPath: string }): Promise<string[]>
     saveVariableOverrides(projectPath: string, overrides: CssVariableOverride[]): Promise<void>
     variableGraph(projectPath: string, themeId?: string, outputDir?: string): Promise<CssVariableGraph>
   }

@@ -288,6 +288,7 @@ export function registerIpcHandlers(): void {
   handle(IPC.stylesPreviewFonts, t([s.previewFontsInput]), (input) =>
     styleService.readPreviewFonts(input.projectPath, input.families)
   )
+  handle(IPC.stylesVariableCollisions, t([s.projectPathArgs]), ({ projectPath }) => styleService.variableCollisions(projectPath))
   handle(IPC.stylesGetVariableOverrides, t([s.absolutePath]), (projectPath) =>
     styleService.getVariableOverrides(projectPath)
   )

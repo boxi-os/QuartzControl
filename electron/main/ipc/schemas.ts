@@ -233,6 +233,8 @@ export const fetchGoogleFontsInput = z.looseObject({
   typography: z.record(z.string().max(20), z.union([z.string().max(200), z.looseObject({ name: z.string().max(200) })]))
 })
 export const dropGoogleFontsInput = z.looseObject({ projectPath: absolutePath })
+// A read that needs nothing but the project - styles.variableCollisions and whatever follows it.
+export const projectPathArgs = z.looseObject({ projectPath: absolutePath })
 
 export const logHistoryInput = z.looseObject({ projectId: uuid })
 export const logClearInput = z.looseObject({ projectId: uuid, stream: z.enum(['server', 'build']) })

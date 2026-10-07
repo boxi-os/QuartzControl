@@ -123,6 +123,7 @@ const api: QuartzGuiApi = {
     fontFaces: (projectPath: string, themeId?: string) => ipcRenderer.invoke(IPC.stylesFontFaces, projectPath, themeId),
     previewFonts: (input: PreviewFontsInput) => ipcRenderer.invoke(IPC.stylesPreviewFonts, input),
     getVariableOverrides: (projectPath: string) => ipcRenderer.invoke(IPC.stylesGetVariableOverrides, projectPath),
+    variableCollisions: (args: { projectPath: string }) => ipcRenderer.invoke(IPC.stylesVariableCollisions, args),
     saveVariableOverrides: (projectPath: string, overrides: CssVariableOverride[]) =>
       ipcRenderer.invoke(IPC.stylesSaveVariableOverrides, projectPath, overrides),
     variableGraph: (projectPath: string, themeId?: string, outputDir?: string) =>

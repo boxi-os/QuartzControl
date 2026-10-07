@@ -362,9 +362,47 @@ export function pluginPackageDir(projectPath: string, source: PluginSource): str
 
 const isPlainObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
 
+// Cached per package directory, and the key is what the answer depends on: size and mtime of
+// package.json and of every .d.ts under dist/. The old cache was keyed by name only and nothing
+// ever cleared it (`invalidatePluginSchemaCache` had no caller), so after `quartz plugin update`
+// the page kept the previous version's options until the app restarted. Stat-ing the files costs
+// a directory walk; parsing them is what the cache saves.
+const optionSchemaCache = new Map<string, { fingerprint: string; result: PluginOptionSchemaResult }>()
+
+function fingerprint(dir: string): string {
+  const parts: string[] = []
+  const add = (file: string): void => {
+    try {
+      const st = statSync(file)
+      parts.push(`${file}:${st.size}:${st.mtimeMs}`)
+    } catch {
+      parts.push(`${file}:-`)
+    }
+  }
+  add(join(dir, 'package.json'))
+  const dist = join(dir, 'dist')
+  if (existsSync(dist)) {
+    try {
+      walkFiles(dist, '.d.ts').slice(0, MAX_DTS_FILES).forEach(add)
+    } catch {
+      parts.push('dist:unreadable')
+    }
+  }
+  return parts.join('|')
+}
+
 export function getPluginOptionSchema(projectPath: string, source: PluginSource): PluginOptionSchemaResult {
   const dir = pluginPackageDir(projectPath, source)
   if (!dir) return { schema: null, unreadable: 'The plugin source does not name a directory inside the project.' }
+  const key = fingerprint(dir)
+  const cached = optionSchemaCache.get(dir)
+  if (cached && cached.fingerprint === key) return cached.result
+  const result = readPluginOptionSchema(dir)
+  optionSchemaCache.set(dir, { fingerprint: key, result })
+  return result
+}
+
+function readPluginOptionSchema(dir: string): PluginOptionSchemaResult {
   const pkgPath = join(dir, 'package.json')
 
   let pkg: unknown

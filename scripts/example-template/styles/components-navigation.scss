@@ -1,3 +1,14 @@
+// Components that navigate: Quartz's explorer and the breadcrumbs.
+//
+// Until 1.1 the template had 31 stylesheets; each section below names the one it came from. A
+// comment that names one of them (`see nav-search.scss`, `base.scss says`) means that section - the
+// old name is what to search for. Where a comment means Quartz's file of the same name, it says so
+// ("Quartz's own base.scss", "base.scss:650 in quartz").
+
+// ==================================================================================== nav-explorer
+// Until 1.1 its own stylesheet, nav-explorer.scss. The rule for the current-folder box moved to
+// plugin-layout-box.
+
 // Explorer — the folder tree.
 //
 // Depth is the whole problem here, and the markup is not what it looks like from the class names.
@@ -467,15 +478,6 @@ a.nav-file-title {
 
 /* --------------------------------------------------------------- the current page */
 
-// Der Kasten, der die Regel für die aktuelle Ordnerseite mitbringt, rendert nichts als ein
-// `<style>` (plugins.mjs). `display: none` nimmt ihn aus dem Fluss - ein Stylesheet wirkt
-// unabhängig davon, ob sein Element gerendert wird -, sonst stünde im Footer-Bereich eine leere
-// Rinne unter dem Kolophon.
-.layout-box-current-folder {
-  display: none;
-}
-
-
 // Colour *and* weight *and* a marker: colour alone is not a state for everyone who reads this.
 .explorer a.active {
   background: var(--tpl-surface-tint);
@@ -762,5 +764,67 @@ html[lang^="en"] {
     border-inline-start: none;
     margin-inline-start: 0;
     padding-inline-start: 0;
+  }
+}
+
+// ================================================================================ meta-breadcrumbs
+// Until 1.1 its own stylesheet, meta-breadcrumbs.scss.
+
+// Breadcrumbs — the path down to this page.
+//
+// The trail is orientation, not content: it says where you are, and the page's own title says what
+// you are looking at. So it is set below the body size and above the body colour's lightness, and
+// the separator - a `❯` the plugin writes into a `<p>` between the links - is set smaller again
+// and given room on both sides. Measured before: at --tpl-text-sm with a 2px gap the arrows sat
+// tight against the words and read as part of them.
+
+.breadcrumb-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0;
+  margin: 0;
+  font-size: var(--tpl-text-xs);
+  color: var(--gray);
+}
+
+.breadcrumb-element {
+  display: flex;
+  align-items: center;
+
+  a {
+    color: var(--gray);
+    text-decoration: none;
+    // A trail four levels deep on a phone needs targets that are not 14px tall.
+    padding-block: var(--tpl-space-3xs);
+
+    &:hover {
+      color: var(--secondary);
+      text-decoration: underline;
+      text-underline-offset: var(--tpl-underline-offset);
+    }
+  }
+
+  // The separator is decoration and must not be read out as content or picked up by a selection.
+  //
+  // The `em` is deliberate: it shrinks with the trail rather than against it, so raising the
+  // breadcrumb size later keeps the arrow in the same proportion. The margin is the "more space"
+  // half - it sits on the arrow rather than on the container's gap so the two words on either side
+  // of it are equally far away and the links keep their own hit areas touching nothing.
+  > p {
+    margin: 0 0.65em;
+    font-size: 0.75em;
+    line-height: 1;
+    user-select: none;
+    color: var(--tpl-rule-control);
+  }
+
+  // The last crumb is this page: not a link, and a shade darker than the trail leading to it.
+  // Not bold any more - the `<h1>` two lines below says the same word at four times the size, and
+  // two emphatic copies of one title is one too many.
+  &:last-child a {
+    color: var(--darkgray);
+    font-weight: 500;
+    pointer-events: none;
   }
 }

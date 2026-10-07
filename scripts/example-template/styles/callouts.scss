@@ -1,3 +1,13 @@
+// Callouts — every callout type, its colours and its fold.
+//
+// Until 1.1 the template had 31 stylesheets; each section below names the one it came from. A
+// comment that names one of them (`see nav-search.scss`, `base.scss says`) means that section - the
+// old name is what to search for. Where a comment means Quartz's file of the same name, it says so
+// ("Quartz's own base.scss", "base.scss:650 in quartz").
+
+// =================================================================================== body-callouts
+// Until 1.1 its own stylesheet, body-callouts.scss.
+
 // Callouts.
 //
 // Quartz ships twelve colours for these, and eleven of them fail AA against a light ground:

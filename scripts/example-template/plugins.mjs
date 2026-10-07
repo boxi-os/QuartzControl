@@ -120,15 +120,15 @@ export const LAYOUT_BOXES = [
       // syntax, and CSS cannot test what an element's text says.
       //
       // It can test an attribute. `[data-section^="{{"]` is exactly "this page had no frontmatter",
-      // independent of page type, and it hides the box - see nav-header.scss.
+      // independent of page type, and it hides the box - see components-header.scss.
       html: '<span class="bar-page-name" aria-hidden="true" data-section="{{frontmatter.section}}"></span>',
       className: 'layout-box-page-name',
       placeholders: true,
       frontmatterKey: 'layoutBoxPageName'
     },
     // Priority 30: the brand group is mark, site name, chapter, in that order in the document and
-    // in three grid columns (nav-header.scss). A page without `section` - the generated listings,
-    // the 404 - renders the span empty, and `:empty` removes it and its separator.
+    // in three grid columns (components-header.scss). A page without `section` - the generated
+    // listings, the 404 - renders the span empty, and `:empty` removes it and its separator.
     layout: { position: 'header', priority: 30, group: 'brand' }
   },
   {
@@ -218,7 +218,7 @@ export const LAYOUT_BOXES = [
     // Also wird die Regel gebaut statt gesucht: `{{slug}}` steht beim Rendern der Seite zur
     // Verfügung, und der Platzhalter füllt genau den einen Wert, den der Selektor braucht. Der
     // Kasten rendert nichts als dieses `<style>` und ist selbst ausgeblendet
-    // (`nav-explorer.scss`); ein `display: none` nimmt ihn aus dem Fluss, also kostet er auch
+    // (`plugin-layout-box.scss`); ein `display: none` nimmt ihn aus dem Fluss, also kostet er auch
     // keine Rinne im Footer-Bereich.
     //
     // Die Grenze dazu: `applyPlaceholders` escaped den Wert als HTML, und ein `<style>` ist ein
@@ -254,12 +254,12 @@ export const PLUGIN_PATCHES = {
   // was right, in a header row it would push the two icon buttons to the far edge of a 1440px page.
   //
   // What replaced it was `basis: '15rem'` here, and that is gone again since 2026-09-06: the width
-  // is now `width: 15rem` on `.search` in nav-header.scss. A flex-basis sizes the item correctly in
-  // every engine - measured 240px in all three - but Gecko and WebKit do not count it towards the
-  // *group's* max-content contribution; they use the item's content width, 110px. The group came
-  // out 322px wide instead of 452 in Firefox and Safari and its own children hung 130px out of the
-  // window. A width on the component makes the wrapper's content size 240px, which every engine
-  // agrees on. See nav-header.scss for the full measurement.
+  // is now `width: 15rem` on `.search` in components-header.scss. A flex-basis sizes the item
+  // correctly in every engine - measured 240px in all three - but Gecko and WebKit do not count it
+  // towards the *group's* max-content contribution; they use the item's content width, 110px. The
+  // group came out 322px wide instead of 452 in Firefox and Safari and its own children hung 130px
+  // out of the window. A width on the component makes the wrapper's content size 240px, which every
+  // engine agrees on. See components-header.scss for the full measurement.
   //
   // `shrink: false` stays: without it the field gives up its width to the two icon buttons long
   // before the bar is full.
@@ -289,9 +289,9 @@ export const PLUGIN_PATCHES = {
   // `enabled: false` statt eines gestrichenen Eintrags, aus dem Grund, den doku.mjs für seine
   // vier nennt: Ein Patch kann einen Eintrag überschreiben, nicht entfernen - und eine Vorlage,
   // die ihn stehen lässt, erlaubt der App, ihn mit einem Häkchen wiederzubekommen. Sein
-  // Stylesheet (nav-explorer.scss, 32 KB, bis zur untersten Ebene gestaltet) reist deshalb
-  // unverändert mit; wer den Haken setzt, bekommt den Explorer, der hier am 2026-09-19 noch
-  // stand, und nicht einen ungestalteten.
+  // Stylesheet (der Abschnitt nav-explorer in components-navigation.scss, 32 KB, bis zur untersten
+  // Ebene gestaltet) reist deshalb unverändert mit; wer den Haken setzt, bekommt den Explorer, der
+  // hier am 2026-09-19 noch stand, und nicht einen ungestalteten.
   //
   // Die Optionen und der Platz bleiben ebenfalls stehen, damit das Häkchen nicht nur die
   // Komponente zurückholt, sondern auch ihre Einstellung.
@@ -343,8 +343,8 @@ export const PLUGIN_PATCHES = {
     enabled: true,
     // The plugin stops at `maxDepth: 3` by default, so a document with h4/h5/h6 gets a truncated
     // outline - measured: only `depth-0` and `depth-1` ever appeared in the markup, and the five
-    // depth rules in aside-toc.scss matched nothing. 6 is the whole range, which is the point of
-    // styling all seven levels.
+    // depth rules in components-note.scss matched nothing. 6 is the whole range, which is the point
+    // of styling all seven levels.
     options: { maxDepth: 6, minEntries: 1, showByDefault: true, collapseByDefault: false },
     layout: { position: 'right', priority: 10, display: 'all' }
   },
@@ -437,7 +437,7 @@ export const PLUGIN_PATCHES = {
     // The projects this site stands on: the generator, the app that configures it, this template's
     // own published site, and the plugins from the same hands - two of which the template uses
     // (layout-box, multilanguage); Navigations is listed because the family is, not because the
-    // template loads it. site-footer.scss lays them out as one wrapping row. The boxi-os links point
+    // template loads it. layout.scss lays them out as one wrapping row. The boxi-os links point
     // at the published sites, not the repositories - a reader of a handbook wants the next handbook,
     // and each site links its repository itself. The Example project carried these by hand until
     // 2026-09-14, and every run of phase 4 wrote the repository links back over them. When the
@@ -570,7 +570,7 @@ export const MULTILANGUAGE_ENTRY = {
     seo: { hreflang: true, ogLocale: true, xDefault: 'default' },
     // Of the three shapes, the collapsible one is the only one that fits a toolbar next to a
     // search field and does not grow with a third language. All three are styled in
-    // styles/nav-language-switcher.scss.
+    // styles/plugin-multilanguage.scss.
     switcher: {
       style: 'dropdown',
       label: 'native',
@@ -599,10 +599,10 @@ export const MULTILANGUAGE_ENTRY = {
 //
 // quartz-navigations hat *eine* Komponente; ihre zehn Darstellungen liegen auf der Option
 // `variant`. Diese Website setzt zwei davon ein - mehr wäre eine Vorführung an einer Stelle, an
-// der ein Leser navigieren will. Gestaltet sind trotzdem alle zehn (nav-navigations.scss): wer
+// der ein Leser navigieren will. Gestaltet sind trotzdem alle zehn (plugin-navigations.scss): wer
 // eine der acht anderen einschaltet, bekommt sie fertig, so wie es beim Explorer der Fall ist.
 //
-// **Die Vorlage setzt 0.3.1 voraus, und nichts sorgt dafür.** nav-navigations.scss hat seit
+// **Die Vorlage setzt 0.3.1 voraus, und nichts sorgt dafür.** plugin-navigations.scss hat seit
 // `b785f8a` keine Übergangsregeln mehr für den leeren Pager-Platz und die Knöpfe am Telefon, weil
 // das Plugin beides seit 0.3.1 selbst tut. Wer das Plugin nicht hat, bekommt beim Import `main`;
 // wer es schon hat, behält seine Fassung (parts.ts installiert eine github:-Quelle nur, wenn

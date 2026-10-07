@@ -88,7 +88,7 @@ Messung an der gebauten Website ist das der erste Aufruf.
 | `translations.mjs` | Geänderte Formulierungen in Quartz' deutscher Sprachdatei |
 | `presets.mjs` | Zwei gespeicherte Theme-Zusammenstellungen |
 | `style-order.mjs` | Die Ladereihenfolge der Stylesheets — Liste **und** Reihenfolge in einem |
-| `styles/*.scss` | 31 Stylesheets, eines je Komponente — die Kopie des Projekts, gepflegt über `--sync` |
+| `styles/*.scss` | Zwölf Stylesheets (bis 1.1: 31, eines je Komponente) — die Kopie des Projekts, gepflegt über `--sync` |
 | `site/content/**` | der ursprüngliche Beispielinhalt — **überholt**, gepflegt wird im Vault |
 | `site/snippets/` | Die zwei Snippet-Dateien, die nicht im Paket mitreisen (deutsch und englisch) |
 | *(im Vault)* `assets/` | Dummy-Medien: PNG, JPEG, WebP, GIF, SVG, ein dreiseitiges PDF, eine WAV-Datei |
@@ -161,9 +161,9 @@ die fünf korrigierten Farben des Syntax-Themas gegen die Fläche des Codeblocks
 Misch-Ton `--tpl-rule-control`, aus dem jedes Bedienelement seinen Rand zieht. Unter der
 Schwelle bricht der Lauf ab.
 
-Die vier Teile lesen aus vier Dateien — `palette.mjs`, `styles/body-callouts.scss`,
-`styles/body-code.scss`, `styles/base.scss` — und immer aus dem, was ausgeliefert wird, nie aus
-einer zweiten Liste.
+Die vier Teile lesen aus vier Dateien — `palette.mjs`, `variables.mjs`, `styles/callouts.scss`,
+`styles/content.scss` (der Syntax-Block) — und immer aus dem, was ausgeliefert wird, nie aus einer
+zweiten Liste.
 
 > **Warum `lightgray` nicht 3:1 erreichen muss:** Es ist Trennlinie *und* Fläche zugleich. WCAG
 > 1.4.11 verlangt 3:1 von *Bedienelementen*, nicht von einer Zierlinie. Die Pflicht verschwindet
@@ -183,7 +183,7 @@ einer zweiten Liste.
 > angefasst oder gerade aktiv ist. Als Helligkeitsstufe von `secondary` sieht man dem Ergebnis nicht
 > an, welche der beiden Rollen greift; als eigener Farbton schon.
 
-**Callout-Farben** stehen nicht hier, sondern in `styles/body-callouts.scss`, je Modus einmal. Die
+**Callout-Farben** stehen nicht hier, sondern in `styles/callouts.scss`, je Modus einmal. Die
 Prüfung liest sie aus der Datei, damit sie nie an einer veralteten Kopie misst. Quartz' eigene
 Farben scheitern übrigens zu elf Zwölfteln im hellen Modus — deshalb sind sie neu gesetzt.
 
@@ -223,14 +223,14 @@ hat keinen eigenen Token mehr.
 sich die Vorlage nach dem Import in der App unter *Stile → Variablen* weiterdrehen, ohne SCSS
 anzufassen. Wer eine Regel ergänzt, hält sich daran, sonst bröckelt genau diese Eigenschaft.
 
-> **Was hier stehen darf, und was in `styles/base.scss` gehört.** Das Schema
+> **Was hier stehen darf, und was in `styles/foundation.scss` gehört.** Das Schema
 > (`cssVariableOverride`, `schemas.ts`) verbietet einer Überschreibung genau sechs Dinge: `{`, `}`,
 > `;`, `\`, `/*` und `*/`. Ein **Komma ist erlaubt** — `--tpl-shadow` trägt drei davon. Das
 > Komma-Verbot aus 3.5 gilt für *Frame*-Werte, ein anderes Schema für einen anderen Baustein; bis
 > zum 2026-09-06 stand es an fünf Stellen fälschlich auch hier und hat zwei Farben ihren Platz in
 > der App gekostet. Die Frage ist also nicht, welche Zeichen ein Wert benutzt, sondern ob jemand
 > ihn je ändern wollen würde: Farbe, Länge, Schriftstapel — ja. Ein vierzeiliger Verlauf oder eine
-> 400 Zeichen lange Data-URI — nein, die bleiben in `styles/base.scss`.
+> 400 Zeichen lange Data-URI — nein, die bleiben in `styles/foundation.scss`.
 
 ### 3.3 Schriften — `fonts.mjs`
 
@@ -260,19 +260,29 @@ Phase 4 `fontOrigin` auf `googleFonts` setzen. Dann sind Phase 6 und der Baustei
 
 ### 3.4 Eine Komponente umgestalten — `styles/*.scss`
 
-Eine Datei je Komponente. Die Namen sagen, wozu sie gehören:
+Zwölf Dateien, in Ladereihenfolge: eine fürs Layout, eine für den Inhalt, eine für die Callouts,
+eine je Komponenten-Art und eine je eigenem Plugin.
 
-    base            Typografie, Lesemaß, Fokus, Bewegung
-    nav-*           Kopfzeile, Werkzeugleiste, Suche, Farbschema, Lesemodus, Explorer
-                    (abgeschaltet, gestaltet), Navigation (alle zehn Darstellungen; im Einsatz
-                    das Akkordeon links und der Pager unter dem Text), Sprachumschalter
-    meta-*          Brotkrumen, Titel, Datum, Eigenschaften, Tags
-    aside-*         Inhaltsverzeichnis, Rückverweise, Graph, zuletzt geändert
-    body-*          Fließtext, Callouts, Code, Mathematik, Diagramme, Medien
-    page-*          Ordner- und Tag-Listen, Vorschau, Suchergebnisse, 404
-    plugin-*        quartz-layout-box: jede Form des Plugins, fünf der sieben Instanzen
-    site-*          Fußzeile, Kommentare
-    a11y            Zielgrößen, Systemeinstellungen, Druck
+    foundation             Box-Modell, Symbole, Aufklapp-Pfeil, Fokus, Sprunglink, Bewegung
+    layout                 klebender Kopf, Spalten und ihr Bildlauf, Panels, Breakpoints, Fußzeile
+    components-header      Kopfzeile, Suche und Suchergebnisse, Farbschema, Lesemodus
+    plugin-multilanguage   Sprachumschalter
+    components-navigation  Explorer (abgeschaltet, gestaltet), Brotkrumen
+    plugin-navigations     alle zehn Darstellungen; im Einsatz das Akkordeon links und der Pager
+    components-note        Eigenschaften, Tags, Inhaltsverzeichnis, Rückverweise, Graph,
+                           zuletzt geändert
+    content                Titel und Datum, Zeilenabstände, Fließtext, Code, Mathematik,
+                           Diagramme, Medien
+    callouts               alle Callout-Typen
+    pages                  Ordner- und Tag-Listen, Bases, Canvas, Link-Vorschau, 404
+    plugin-layout-box      jede Form des Plugins, fünf der sieben Instanzen
+    a11y                   Zielgrößen, Systemeinstellungen, Druck — zuletzt, damit es gewinnt
+
+Bis 1.1 waren es 31 Dateien, eine je Komponente. Jede der zwölf ist aus ihnen zusammengefügt und
+nennt Abschnitt für Abschnitt die alte Datei (`// ====… nav-explorer`); ein Kommentar, der einen
+alten Namen nennt, meint diesen Abschnitt. Gemessen an Example und Basis: kein berechneter Wert hat
+sich geändert. Einmal musste dafür die Reihenfolge nachgeben — die Link-Vorschau formt Ordnerlisten
+mit gleicher Spezifität um und lädt deshalb hinter ihnen, in `pages` statt in `content`.
 
 **Neue Datei anlegen:** Datei in `styles/` ablegen **und** den Namen in `style-order.mjs`
 eintragen. Fehlt einer von beiden, bricht Phase 5 mit einer Meldung ab — absichtlich, denn eine
@@ -313,7 +323,7 @@ Ein Wert darf **kein Komma** enthalten (`cssTrackValue` in `schemas.ts`), `calc(
 CSS-Variable darf sehr wohl ein Komma tragen, siehe *Variablen* weiter unten.
 
 672 px sind bei 1 rem rund 70 Zeichen — deshalb deckelt kein Stylesheet mehr die Zeilenlänge
-(`styles/base.scss` sagt das an der Stelle, wo die Regel früher stand). Wer den Text breiter will,
+(`styles/layout.scss` sagt das an der Stelle, wo die Regel früher stand). Wer den Text breiter will,
 ändert die 300 px hier, nicht eine `max-width` an einem Absatz.
 
 **Am Tablet sind nur die linken drei Spuren fest.** Dort ist die rechte Spalte keine Spalte mehr —
@@ -345,7 +355,7 @@ dieselben drei Werte** benutzen; vorher hatte nur `editorial` die 4 rem.
 
 Der `drawing`-Frame ist am 2026-09-06 dazugekommen, weil die beiden Zeichnungs-Seitentypen sonst
 den Frame ihres eigenen Plugins bekommen — und beide damit unbrauchbar waren (BEFUNDE 48).
-Die Höhe der Zeichnung ist keine Rasterfrage und steht in `styles/page-canvas.scss`.
+Die Höhe der Zeichnung ist keine Rasterfrage und steht in `styles/pages.scss`.
 
 Dass die rechte Spalte auch dort steht, wo nichts darin ist, ist die eigentliche Entscheidung: Der
 Text beginnt damit auf jeder Seite an derselben Stelle. Seit dem 2026-09-09 steht sie nicht mehr
@@ -438,9 +448,9 @@ Die letzte hat keinen Frontmatter-Schlüssel, weil sie keinen Text trägt: Das E
 vergleicht kein Selektor — also baut der Platzhalter die Regel für jede Seite selbst.
 
 Gestaltet in `styles/plugin-layout-box.scss` — jede Form des Plugins inklusive
-`.layout-box-missing`, dem Zustand für ein fehlendes Snippet, und fünf der Instanzen. Zwei gehören
-dem Bereich, in dem sie wirken: der Seitenname `nav-header.scss`, die Ordnermarke
-`nav-explorer.scss`, die den Kasten selbst ausblendet.
+`.layout-box-missing`, dem Zustand für ein fehlendes Snippet, und fünf der Instanzen; dazu seit 1.1
+die Regel, die den Kasten der Ordnermarke ausblendet (vorher beim Explorer). Der Seitenname gehört
+dem Bereich, in dem er wirkt, und steht in `components-header.scss`.
 
 > **Warum sechs von sieben `html:` statt `file:` nutzen:** Ein Vorlagen-Paket transportierte bis zum
 > 2026-09-06 nur `quartz/styles/` und `quartz/static/fonts/`; Snippet-Dateien und Bilder blieben
@@ -473,7 +483,7 @@ gegeneinander, der Übriggebliebene nimmt die Zeile, und eine Regel in `base.scs
 Wrapper ohne Inhalt ganz aus (`:not(:has(> div > *))`, denn `:empty` greift nicht — der Wrapper
 *hat* ein Kind, das Kind ist leer).
 
-### 3.8 Zwei Sprachen — `plugins.mjs`, `styles/nav-language-switcher.scss`
+### 3.8 Zwei Sprachen — `plugins.mjs`, `styles/plugin-multilanguage.scss`
 
 Quartz kennt ein `locale` je Website. `quartz-multilanguage` fügt die Sprache der **Seite** hinzu:
 Erkennung, Verknüpfung mit der Übersetzung, Umschalter, `<html lang>`, `hreflang` und die Hinweise.
@@ -578,7 +588,7 @@ Alle gemessen, nicht vermutet. Wer die Vorlage erweitert, spart sich damit diese
 | Eine feste Spur im Raster | Ist nicht stauchbar und hebt die Mindestbreite, auch an einem Breakpoint, an dem sie nichts trägt (BEFUNDE 56) |
 | Eine klebende Überschrift in einem Roller | Braucht einen deckenden Grund *und* einen kurzen Verlauf darunter. Die deckende Kante allein schneidet die durchlaufende Zeile quer durch die Buchstaben (BEFUNDE 55) |
 | Der Titel einer Galerie-Kachel | Liegt beim Plugin absolut **über** dem Bild und zählt nicht zur Höhe der Kachel. Mit echten Titelbildern ist er unlesbar und zweizeilig abgeschnitten (BEFUNDE 52) |
-| Ein `<img>` in einer fremden Komponente | Erbt die 16 px Absatzabstand aus `body-media.scss`. In einer randlosen Karte ist das ein Streifen Kartengrund über dem Bild |
+| Ein `<img>` in einer fremden Komponente | Erbt die 16 px Absatzabstand aus `content.scss` (Abschnitt `body-media`). In einer randlosen Karte ist das ein Streifen Kartengrund über dem Bild |
 | Ein erzeugtes SVG mit doppeltem Attribut | Ist ein XML-Parse-Fehler, kein nachsichtiges HTML: Die Datei rendert als kaputtes Bild. Acht von vierzehn Kacheln waren so leer |
 
 ---

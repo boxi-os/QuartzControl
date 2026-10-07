@@ -3,6 +3,10 @@
 // Loaded last on purpose: several of these have to win over a decision made earlier in the
 // cascade (a hover-only affordance, a colour-only state), and putting them at the end means they
 // do so by order rather than by specificity games.
+//
+// Until 1.1 the template had 31 stylesheets, now twelve. A comment below that names one of the old
+// ones (`body-mermaid.scss`, `base.scss`) means the section of that name in one of the twelve - the
+// old name is what to search for.
 
 /* ------------------------------------------------------------------ target sizes */
 

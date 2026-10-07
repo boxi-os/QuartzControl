@@ -20,7 +20,7 @@
 // values (`cssTrackValue` / `cssGapValue`), which is a different schema for a different part.
 // So the test for whether something belongs here is not what characters it uses: it is whether a
 // person would ever want to change it. A colour, a length, a font stack - yes. A four-line
-// gradient or a 400-character data URI - no, and those stay in base.scss.
+// gradient or a 400-character data URI - no, and those stay in foundation.scss.
 
 export const VARIABLE_OVERRIDES = [
   /* ---- no fonts here, and why (BEFUNDE 94) ---------------------------------------------
@@ -38,7 +38,7 @@ export const VARIABLE_OVERRIDES = [
      the built CSS: each of the three is *declared* twice - once by quartz's own theme block, once
      by this override - and read by no `var()` anywhere, in quartz or in any component plugin.
      Three knobs in the app's Variables tab that could not change a pixel.
-     The obligation they were carrying is real and is carried by `--tpl-rule-control` (base.scss),
+     The obligation they were carrying is real and is carried by `--tpl-rule-control` (layout.scss),
      which is measured. */
 
   /* ---- our own tokens ---------------------------------------------------------------- */
@@ -123,9 +123,9 @@ export const VARIABLE_OVERRIDES = [
   // it; anything that wants its own leading back says so (the headings do, via
   // --tpl-leading-tight).
   //
-  // It only reaches the text at all because base.scss hands `p`, `li`, `tbody`, `thead`, `tfoot`
-  // and `a.internal` back to their inherited value - quartz gives each of them a leading of its
-  // own, and an inherited one cannot reach an element that has been given one directly
+  // It only reaches the text at all because content.scss hands `p`, `li`, `tbody`, `thead`,
+  // `tfoot` and `a.internal` back to their inherited value - quartz gives each of them a leading of
+  // its own, and an inherited one cannot reach an element that has been given one directly
   // (BEFUNDE 59).
   { key: 'tpl-leading-snug', light: '1.4rem' },
 
@@ -177,16 +177,16 @@ export const VARIABLE_OVERRIDES = [
   // glyphs in the explorer tree. Smaller than --tpl-icon, which is for a control.
   { key: 'tpl-icon-sm', light: '0.95rem' },
 
-  // How far a scrolling panel fades out at each end. See --tpl-fade-mask in base.scss, which is
-  // the mask itself - it stays there because a four-line gradient is not something anyone edits in
-  // a text field, not because of the comma rule that used to be given as the reason (below).
+  // How far a scrolling panel fades out at each end. See --tpl-fade-mask in foundation.scss, which
+  // is the mask itself - it stays there because a four-line gradient is not something anyone edits
+  // in a text field, not because of the comma rule that used to be given as the reason (below).
   //
   // It is also the panel's own top and bottom padding, and therefore the gap between the heading
   // of a panel and its first row: the padding is what keeps that row from being read through the
   // gradient. At 20px, plus a 16px sentinel the explorer plugin leaves at the *top* of its list,
   // the tree began 36px under the word "Explorer" - measured, and too far. The sentinel gives up
-  // its height in nav-explorer.scss and this drops to 14, which is still a soft edge and a third
-  // of the gap.
+  // its height (components-navigation.scss) and this drops to 14, which is still a soft edge and a
+  // third of the gap.
   { key: 'tpl-fade', light: '14px' },
 
   // How far the page itself dissolves before it goes under the sticky bar - the same gesture the
@@ -269,7 +269,7 @@ export const VARIABLE_OVERRIDES = [
      nicht. Wer eine Spalte umstellt, stellt alle drei ihrer Zeilen um — ein halber Zustand ist
      möglich und sieht aus wie ein Fehler: `static` mit Höhendeckel ist eine Spalte, die mitten im
      Text aufhört und in sich selbst rollt. Für die linke Spalte gilt seit dem 2026-09-30 eine
-     Ausnahme: Steht nur die Position auf `sticky` und Höhe und Maske auf `none`, setzt base.scss
+     Ausnahme: Steht nur die Position auf `sticky` und Höhe und Maske auf `none`, setzt layout.scss
      die Werte der rechten Spalte selbst ein (Style-Query, in Engines ohne sie wie vorher).
 
      **Die Höhe der linken Spalte ist der Grund, das nicht leichtfertig umzulegen.** Gemessen bei
@@ -278,7 +278,7 @@ export const VARIABLE_OVERRIDES = [
      für Rad und Tastatur bedeutet. Das Basis-Template kommt auf 696px und stünde einfach still.
 
      Und eine klebende Spalte ist ein Stapelkontext: Die Vollansicht des Graphen hängt daran
-     (aside-graph.scss). Wer die linke Spalte klebrig macht, legt dort einen neuen an.
+     (components-note.scss). Wer die linke Spalte klebrig macht, legt dort einen neuen an.
 
      Die zwei Spalten schalten an verschiedenen Breiten um, und das ist gemessen, nicht gewählt:
      Links ist ab 901px eine Spalte, rechts erst ab 1201px — darunter legt das Frame den Bereich

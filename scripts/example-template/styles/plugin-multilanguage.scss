@@ -1,3 +1,13 @@
+// quartz-multilanguage — the language switcher.
+//
+// Until 1.1 the template had 31 stylesheets; each section below names the one it came from. A
+// comment that names one of them (`see nav-search.scss`, `base.scss says`) means that section - the
+// old name is what to search for. Where a comment means Quartz's file of the same name, it says so
+// ("Quartz's own base.scss", "base.scss:650 in quartz").
+
+// =========================================================================== nav-language-switcher
+// Until 1.1 its own stylesheet, nav-language-switcher.scss.
+
 // The language switcher of `quartz-multilanguage`.
 //
 // The plugin can render three shapes and this file styles all three, although only one is ever

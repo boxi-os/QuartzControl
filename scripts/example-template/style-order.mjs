@@ -15,59 +15,47 @@
 // from the UI: create a stylesheet named "01-typography" and the whole site stops building.
 // Reported as a finding; worked around here by giving every file a name that starts with a letter.
 //
-// The second is that ordering *is* a decision. Base before components, components before the
-// long tail of pages, and accessibility last so its rules win over anything earlier that used a
-// hover-only affordance or a colour-only state. A numeric prefix would encode that decision in a
-// place where it cannot carry its reason.
+// The second is that ordering *is* a decision. The foundation and the page layout before the
+// components, the components before the article, the article before the generated pages, and
+// accessibility last so its rules win over anything earlier that used a hover-only affordance or a
+// colour-only state. A numeric prefix would encode that decision in a place where it cannot carry
+// its reason.
+//
+// Twelve files since 1.1, 31 before: one for the layout, one for the content, one per category of
+// component, one for the callouts and one for each of the three plugins this template brings.
+// Every file names, section by section, the old stylesheet its rules came from. Putting them
+// together moved several sections in the load order - the footer now loads with the layout, the
+// breadcrumbs with the navigation, the search results with the header, the language switcher
+// before the explorer, title and date and the typographic rhythm after the note's components - and
+// the built Example and Basis sites were measured unchanged across all of it
+// (scripts/styles-snapshot.mjs --site, docs/decisions/styles-and-fonts.md). One move did not hold:
+// the link preview restyles what the page types render, at their specificity, so it stays behind
+// them in `pages` rather than going to `content` (pages.scss says how it showed).
 export const STYLE_ORDER = [
-  // the ground everything else assumes
-  'base',
+  // what every other file assumes, then the page around the text
+  'foundation',
+  'layout',
 
-  // navigation and controls, in the order they appear down the sidebar
-  'nav-header',
-  'nav-search',
-  'nav-darkmode',
-  'nav-reader-mode',
-  'nav-explorer',
-  // Nach dem Explorer, weil beide denselben Platz in der linken Spalte belegen: Wer den Explorer
-  // wieder einschaltet, liest die zwei Dateien nebeneinander. Seit dem 2026-09-20 ist die
-  // Navigation die, die dort steht.
-  'nav-navigations',
-  'nav-language-switcher',
-
-  // the apparatus above the article
-  'meta-breadcrumbs',
-  'meta-title-and-date',
-  'meta-note-properties',
-  'meta-tag-list',
-
-  // the apparatus beside it
-  'aside-toc',
-  'aside-backlinks',
-  'aside-graph',
-  'aside-recent-notes',
+  // the components, in the order they appear down the page: the header, then the navigation
+  // beside the text, then what sits above and beside the note
+  'components-header',
+  'plugin-multilanguage',
+  'components-navigation',
+  // After the explorer, because both take the same place in the left column: whoever turns the
+  // explorer back on reads the two files next to each other. Since 2026-09-20 the navigation is
+  // the one that stands there.
+  'plugin-navigations',
+  'components-note',
 
   // the article itself
-  'body-content',
-  'body-callouts',
-  'body-code',
-  'body-math',
-  'body-mermaid',
-  'body-media',
+  'content',
+  'callouts',
 
   // whole page types
-  'page-listing',
-  'page-bases',
-  'page-canvas',
-  'page-popover',
-  'page-search-results',
-  'page-404',
+  'pages',
 
   // the plugin this template brings with it
   'plugin-layout-box',
-
-  // the bottom of every page
-  'site-footer',
 
   // last on purpose: several of these have to beat a decision made further up
   'a11y'

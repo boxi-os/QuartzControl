@@ -13,6 +13,19 @@
 // plus the five `className` variants this template's instances declare (plugins.mjs). Each
 // variant is one instance in one position, so the position's needs decide the treatment: a box in
 // the header is a masthead, the same component after the body is a call to action.
+//
+// Until 1.1 the template had 31 stylesheets, now twelve. A comment below that names one of the old
+// ones (`body-mermaid.scss`, `base.scss`) means the section of that name in one of the twelve - the
+// old name is what to search for.
+
+// Moved here from nav-explorer.scss in 1.1.
+// Der Kasten, der die Regel für die aktuelle Ordnerseite mitbringt, rendert nichts als ein
+// `<style>` (plugins.mjs). `display: none` nimmt ihn aus dem Fluss - ein Stylesheet wirkt
+// unabhängig davon, ob sein Element gerendert wird -, sonst stünde im Footer-Bereich eine leere
+// Rinne unter dem Kolophon.
+.layout-box-current-folder {
+  display: none;
+}
 
 .layout-box {
   min-width: 0;

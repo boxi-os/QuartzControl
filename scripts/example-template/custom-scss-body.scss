@@ -3,15 +3,17 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Example
 //
-// Everything this template styles lives in quartz/styles/custom/, one file per
-// component, loaded in the order listed in the block above. Nothing is styled
-// here directly - this file only holds the import order and this note.
+// Everything this template styles lives in quartz/styles/custom/: one file for
+// the layout, one for the content, one for the callouts, one per kind of
+// component and one per plugin. The app loads them in the order it keeps in
+// quartz/styles/_quartzcontrol.scss. Nothing is styled here directly - this
+// file only holds this note and whatever you add below it.
 //
 // Two things are worth knowing before changing anything:
 //
 //   • No colour and no measure of the design is written literally in those
 //     files. Both come from CSS variables, which the app manages under
-//     "Stile → Variablen" (the `css-vars` block further down this file). Change
+//     "Stile → Variablen" (the `css-vars` block in _quartzcontrol.scss). Change
 //     --tpl-space-md there and every gap in the site follows. What does stand
 //     literally is named and accounted for: the callout and syntax colours,
 //     because they mean status rather than palette; hairlines; and the
@@ -21,6 +23,6 @@
 //     in this template, including all thirteen callout types, meets WCAG AA in
 //     both light and dark mode. Quartz's own callout colours do not - eleven of
 //     its thirteen fail against a light ground and four against a dark one -
-//     which is why body-callouts.scss restates them.
+//     which is why callouts.scss restates them.
 //
 // ─────────────────────────────────────────────────────────────────────────────

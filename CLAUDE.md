@@ -138,7 +138,7 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   Gelöscht wird dagegen nach Pfad, nicht nach Variante: `removeDisposable()` löscht nur unter
   `<Projektwurzel>/werkstatt/`, also nie das Example-Projekt, auch nicht ohne `--fresh`, wenn ihm
   die Config fehlt (bis zum 35. Review tat das die zweite Löschstelle in `bootstrap()`).
-  Den Rückweg geht `--sync`: Es holt die 31 Stylesheets und die Schnipsel aus dem Projekt
+  Den Rückweg geht `--sync`: Es holt die zwölf Stylesheets und die Schnipsel aus dem Projekt
   zurück ins Repo, denn dort wird gearbeitet und die Kopie hier driftet sonst still (gemessen am
   2026-09-05). `--check-sync` vergleicht nur und schreibt nichts — der Aufruf für den Fall, dass
   noch nicht feststeht, welche Seite vorn ist. Er existiert, weil die Drift auch andersherum
@@ -338,8 +338,8 @@ hat.
   fremdes Handbuch mit 301 Inhaltsdateien oder — ohne das Häkchen — eine Gestaltung ohne einen
   einzigen Satz. `qc-basic.qtpl` („Basis-Template") ist die vierte Variante und seither das, was
   `builtinTemplateService.ts` holt: dieselbe Gestaltung, je eigenem Plugin ein oder zwei
-  Komponenten, zwanzig Seiten in zwei Sprachen, **trotzdem alle 31 Stylesheets** — wer eine
-  abgeschaltete Komponente einschaltet, bekommt sie fertig. Das Example heißt jetzt
+  Komponenten, zwanzig Seiten in zwei Sprachen, **trotzdem alle Stylesheets** (31, seit 1.1 zu
+  zwölf zusammengefügt) — wer eine abgeschaltete Komponente einschaltet, bekommt sie fertig. Das Example heißt jetzt
   `qc-example.qtpl`; `minimal-lesbar.qtpl` bleibt im Vorlagen-Repo **eingefroren** liegen, weil
   jede vor diesem Tag ausgelieferte App genau diese Adresse fragt.
 - **Die Example-Website navigiert über quartz-navigations** (Akkordeon links mit Schublade, Pager

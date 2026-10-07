@@ -13,12 +13,13 @@ export const LAYOUT_CONFIG = {
     // the toolbar pushed everything else to the far end. That worked and said nothing. The header
     // was three children with a margin trick holding them apart, so the app's layout board listed
     // the mark and the title as two unrelated components in a column, and every rule about how the
-    // header behaves when it runs out of room lived in nav-header.scss rather than in the layout.
+    // header behaves when it runs out of room lived in components-header.scss rather than in the
+    // layout.
     //
     // As a group it is one flex item, the header is two of them, and `justify-content:
     // space-between` is then the whole arrangement - no margin, no assumption about how many
     // children there are. `nowrap` because a logotype that breaks between its mark and its name is
-    // not a logotype; the name truncates instead (nav-header.scss).
+    // not a logotype; the name truncates instead (components-header.scss).
     brand: {
       priority: 10,
       direction: 'row',
@@ -31,7 +32,7 @@ export const LAYOUT_CONFIG = {
     //
     // The fourth arrived with the multilanguage plugin and cost the site name its place in the
     // app bar: measured at 390px, the title had 84px with three controls and 24px with four,
-    // which renders as "M…". nav-header.scss drops it below 480px; the word mark next to it
+    // which renders as "M…". components-header.scss drops it below 480px; the word mark next to it
     // is a link home and carries the same name.
     //
     // `nowrap`, and it is the whole reason the bar behaves the same in three engines.
@@ -63,7 +64,7 @@ export const LAYOUT_CONFIG = {
     //
     // `wrap` because this row is the full width of the text at every breakpoint - on a phone that
     // is 350px for two boxes, and they belong under each other there. The basis that decides when
-    // it breaks is in aside-backlinks.scss, not here: it is a length in the design system, and
+    // it breaks is in components-note.scss, not here: it is a length in the design system, and
     // this file has no access to the tokens.
     'custom-8': {
       priority: 40,

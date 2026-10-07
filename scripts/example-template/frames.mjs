@@ -35,7 +35,7 @@
 //
 // The middle six tracks stay `1fr` and take whatever is left: 1400 - 300 - 300 - 2 x 64 = 672px of
 // text on a 1440px page, about 70 characters at 1rem. That is why no stylesheet caps the measure
-// any more (base.scss says so at length): the grid decides it, in one place.
+// any more (layout.scss says so at length): the grid decides it, in one place.
 //
 // The right column is present on *every* page type on desktop - listing pages and the error page
 // included, where it stays empty. That is deliberate: the content column then starts at the same x
@@ -220,7 +220,7 @@ const readingBreakpoints = () => ({
     // as missing rather than as last.
     // `left` keeps a row of its own, and it is the row of a component that occupies no space: on a
     // phone the explorer is a fixed trigger plus an absolutely positioned drawer, and the sidebar
-    // note is desktop-only. The row is therefore `0` rather than `auto`, and base.scss takes the
+    // note is desktop-only. The row is therefore `0` rather than `auto`, and layout.scss takes the
     // gap under it back with a negative margin on `beforeBody`.
     //
     // Sharing row 1 with the header was tried first and is not expressible: the generated CSS is
@@ -296,7 +296,7 @@ const index = {
  *
  * The vertical breathing room a 404 wants is *not* set here: the frame's paddingBlock also moves
  * the header, and a site whose logo sits 60px lower on the error page looks broken rather than
- * calm. It lives in page-404.scss, inside the body area, where it belongs.
+ * calm. It lives in pages.scss, inside the body area, where it belongs.
  */
 const focus = {
   id: 'frame-focus',
@@ -371,7 +371,7 @@ const focus = {
  * columns: the bar at the top, the breadcrumb trail and the title, the drawing, whatever comes after
  * it, the footer - each in its own row, at the same 1440px width as every other page, so the header
  * lines up with the one on the page you arrived from. The drawing's height is not a grid question
- * and is not set here; `page-canvas.scss` gives both containers a definite one, because `1fr` in a
+ * and is not set here; `pages.scss` gives both containers a definite one, because `1fr` in a
  * grid whose own height is auto is just the content's height, and the content's height is the thing
  * that was missing.
  *

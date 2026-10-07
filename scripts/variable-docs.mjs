@@ -21,6 +21,7 @@ import os from 'node:os'
 
 import { PALETTE, TYPOGRAPHY } from './example-template/palette.mjs'
 import { VARIABLE_OVERRIDES } from './example-template/variables.mjs'
+import { STYLE_ORDER } from './example-template/style-order.mjs'
 
 const APP_DIR = path.resolve(import.meta.dirname, '..')
 const STYLE_DIR = path.join(APP_DIR, 'scripts/example-template/styles')
@@ -30,68 +31,76 @@ const START = '<!-- QuartzControl:variables:start -->'
 const END = '<!-- QuartzControl:variables:end -->'
 
 /**
- * Which stylesheets belong to which page, and what the component is called in the sentence that
- * introduces the table. A page may own several stylesheets - the header is a toolbar and a page
- * title, a folder listing is the folder page and the tag page - and that is the whole reason this
- * is a table rather than a filename convention.
+ * Which sections of the stylesheets belong to which page. A page may own several - the header is a
+ * toolbar and a page title, a folder listing is the folder page and the tag page - and that is the
+ * whole reason this is a table rather than a filename convention.
+ *
+ * A section is what was a stylesheet of its own until 1.1: the twelve files of the template are the
+ * old 31 put together, and each part starts with a marker line naming the file it came from
+ * (`// ====… nav-explorer`). The pages describe components, not categories, so they keep reading
+ * at that grain; a file without markers is one section of its own name.
  */
 const SEITEN = [
-  { de: '5-gestaltung/01-navigation/explorer', en: 'en/5-design/01-navigation/explorer', files: ['nav-explorer.scss'] },
-  { de: '5-gestaltung/01-navigation/navigation', en: 'en/5-design/01-navigation/navigation', files: ['nav-navigations.scss'] },
-  { de: '5-gestaltung/01-navigation/suche', en: 'en/5-design/01-navigation/search', files: ['nav-search.scss'] },
-  { de: '5-gestaltung/01-navigation/farbschema', en: 'en/5-design/01-navigation/colour-scheme', files: ['nav-darkmode.scss'] },
-  { de: '5-gestaltung/01-navigation/lesemodus', en: 'en/5-design/01-navigation/reader-mode', files: ['nav-reader-mode.scss'] },
-  { de: '5-gestaltung/01-navigation/kopfbereich', en: 'en/5-design/01-navigation/header', files: ['nav-header.scss'] },
-  { de: '5-gestaltung/01-navigation/fusszeile', en: 'en/5-design/01-navigation/footer', files: ['site-footer.scss'] },
-  { de: '5-gestaltung/04-neben-dem-inhalt/inhaltsverzeichnis', en: 'en/5-design/04-beside-the-content/table-of-contents', files: ['aside-toc.scss'] },
-  { de: '5-gestaltung/04-neben-dem-inhalt/rueckverweise', en: 'en/5-design/04-beside-the-content/backlinks', files: ['aside-backlinks.scss'] },
-  { de: '5-gestaltung/04-neben-dem-inhalt/graph', en: 'en/5-design/04-beside-the-content/graph', files: ['aside-graph.scss'] },
-  { de: '5-gestaltung/04-neben-dem-inhalt/zuletzt-geaendert', en: 'en/5-design/04-beside-the-content/recent-notes', files: ['aside-recent-notes.scss'] },
-  { de: '5-gestaltung/02-ueber-dem-inhalt/brotkrumen', en: 'en/5-design/02-above-the-content/breadcrumbs', files: ['meta-breadcrumbs.scss'] },
-  { de: '5-gestaltung/02-ueber-dem-inhalt/titel-und-datum', en: 'en/5-design/02-above-the-content/title-and-date', files: ['meta-title-and-date.scss'] },
-  { de: '5-gestaltung/02-ueber-dem-inhalt/eigenschaften', en: 'en/5-design/02-above-the-content/properties', files: ['meta-note-properties.scss'] },
-  { de: '5-gestaltung/02-ueber-dem-inhalt/tags', en: 'en/5-design/02-above-the-content/tags', files: ['meta-tag-list.scss'] },
-  { de: '5-gestaltung/03-im-inhalt/fliesstext', en: 'en/5-design/03-in-the-content/body-text', files: ['body-content.scss'] },
-  { de: '5-gestaltung/03-im-inhalt/callouts', en: 'en/5-design/03-in-the-content/callouts', files: ['body-callouts.scss'] },
-  { de: '5-gestaltung/03-im-inhalt/code', en: 'en/5-design/03-in-the-content/code', files: ['body-code.scss'] },
-  { de: '5-gestaltung/03-im-inhalt/tabellen-und-medien', en: 'en/5-design/03-in-the-content/tables-and-media', files: ['body-media.scss'] },
-  { de: '5-gestaltung/06-erzeugte-seiten/ordner-und-tags', en: 'en/5-design/06-generated-pages/folders-and-tags', files: ['page-listing.scss'] },
-  { de: '5-gestaltung/06-erzeugte-seiten/vorschau', en: 'en/5-design/06-generated-pages/link-preview', files: ['page-popover.scss'] },
-  { de: '5-gestaltung/06-erzeugte-seiten/suchergebnisse', en: 'en/5-design/06-generated-pages/search-results', files: ['page-search-results.scss'] },
-  { de: '5-gestaltung/06-erzeugte-seiten/fehlerseite', en: 'en/5-design/06-generated-pages/error-page', files: ['page-404.scss'] },
-  { de: '6-anpassen/06-barrierefreiheit', en: 'en/6-adapting/06-accessibility', files: ['a11y.scss'] },
-  { de: '6-anpassen/04-variablen', en: 'en/6-adapting/04-variables', files: ['base.scss'] },
-  { de: '5-gestaltung/05-layout-boxen/die-instanzen', en: 'en/5-design/05-layout-boxes/the-instances', files: ['plugin-layout-box.scss'] },
-  { de: '5-gestaltung/01-navigation/sprachumschalter', en: 'en/5-design/01-navigation/language-switcher', files: ['nav-language-switcher.scss'] },
-  { de: '3-obsidian-formate/01-bases/index', en: 'en/3-obsidian-formats/01-bases/index', files: ['page-bases.scss'] },
-  { de: '3-obsidian-formate/02-canvas/index', en: 'en/3-obsidian-formats/02-canvas/index', files: ['page-canvas.scss'] },
-  { de: '2-formatierung/09-diagramme/index', en: 'en/2-formatting/09-diagrams/index', files: ['body-mermaid.scss'] },
-  { de: '2-formatierung/08-mathematik/index', en: 'en/2-formatting/08-math/index', files: ['body-math.scss'] }
+  { de: '5-gestaltung/01-navigation/explorer', en: 'en/5-design/01-navigation/explorer', sections: ['nav-explorer'] },
+  { de: '5-gestaltung/01-navigation/navigation', en: 'en/5-design/01-navigation/navigation', sections: ['nav-navigations'] },
+  { de: '5-gestaltung/01-navigation/suche', en: 'en/5-design/01-navigation/search', sections: ['nav-search'] },
+  { de: '5-gestaltung/01-navigation/farbschema', en: 'en/5-design/01-navigation/colour-scheme', sections: ['nav-darkmode'] },
+  { de: '5-gestaltung/01-navigation/lesemodus', en: 'en/5-design/01-navigation/reader-mode', sections: ['nav-reader-mode'] },
+  { de: '5-gestaltung/01-navigation/kopfbereich', en: 'en/5-design/01-navigation/header', sections: ['nav-header'] },
+  { de: '5-gestaltung/01-navigation/fusszeile', en: 'en/5-design/01-navigation/footer', sections: ['site-footer'] },
+  { de: '5-gestaltung/04-neben-dem-inhalt/inhaltsverzeichnis', en: 'en/5-design/04-beside-the-content/table-of-contents', sections: ['aside-toc'] },
+  { de: '5-gestaltung/04-neben-dem-inhalt/rueckverweise', en: 'en/5-design/04-beside-the-content/backlinks', sections: ['aside-backlinks'] },
+  { de: '5-gestaltung/04-neben-dem-inhalt/graph', en: 'en/5-design/04-beside-the-content/graph', sections: ['aside-graph'] },
+  { de: '5-gestaltung/04-neben-dem-inhalt/zuletzt-geaendert', en: 'en/5-design/04-beside-the-content/recent-notes', sections: ['aside-recent-notes'] },
+  { de: '5-gestaltung/02-ueber-dem-inhalt/brotkrumen', en: 'en/5-design/02-above-the-content/breadcrumbs', sections: ['meta-breadcrumbs'] },
+  { de: '5-gestaltung/02-ueber-dem-inhalt/titel-und-datum', en: 'en/5-design/02-above-the-content/title-and-date', sections: ['meta-title-and-date'] },
+  { de: '5-gestaltung/02-ueber-dem-inhalt/eigenschaften', en: 'en/5-design/02-above-the-content/properties', sections: ['meta-note-properties'] },
+  { de: '5-gestaltung/02-ueber-dem-inhalt/tags', en: 'en/5-design/02-above-the-content/tags', sections: ['meta-tag-list'] },
+  { de: '5-gestaltung/03-im-inhalt/fliesstext', en: 'en/5-design/03-in-the-content/body-text', sections: ['body-content'] },
+  { de: '5-gestaltung/03-im-inhalt/callouts', en: 'en/5-design/03-in-the-content/callouts', sections: ['body-callouts'] },
+  { de: '5-gestaltung/03-im-inhalt/code', en: 'en/5-design/03-in-the-content/code', sections: ['body-code'] },
+  { de: '5-gestaltung/03-im-inhalt/tabellen-und-medien', en: 'en/5-design/03-in-the-content/tables-and-media', sections: ['body-media'] },
+  { de: '5-gestaltung/06-erzeugte-seiten/ordner-und-tags', en: 'en/5-design/06-generated-pages/folders-and-tags', sections: ['page-listing'] },
+  { de: '5-gestaltung/06-erzeugte-seiten/vorschau', en: 'en/5-design/06-generated-pages/link-preview', sections: ['page-popover'] },
+  { de: '5-gestaltung/06-erzeugte-seiten/suchergebnisse', en: 'en/5-design/06-generated-pages/search-results', sections: ['page-search-results'] },
+  { de: '5-gestaltung/06-erzeugte-seiten/fehlerseite', en: 'en/5-design/06-generated-pages/error-page', sections: ['page-404'] },
+  { de: '6-anpassen/06-barrierefreiheit', en: 'en/6-adapting/06-accessibility', sections: ['a11y'] },
+  { de: '6-anpassen/04-variablen', en: 'en/6-adapting/04-variables', sections: ['base'] },
+  { de: '5-gestaltung/05-layout-boxen/die-instanzen', en: 'en/5-design/05-layout-boxes/the-instances', sections: ['plugin-layout-box'] },
+  { de: '5-gestaltung/01-navigation/sprachumschalter', en: 'en/5-design/01-navigation/language-switcher', sections: ['nav-language-switcher'] },
+  { de: '3-obsidian-formate/01-bases/index', en: 'en/3-obsidian-formats/01-bases/index', sections: ['page-bases'] },
+  { de: '3-obsidian-formate/02-canvas/index', en: 'en/3-obsidian-formats/02-canvas/index', sections: ['page-canvas'] },
+  { de: '2-formatierung/09-diagramme/index', en: 'en/2-formatting/09-diagrams/index', sections: ['body-mermaid'] },
+  { de: '2-formatierung/08-mathematik/index', en: 'en/2-formatting/08-math/index', sections: ['body-math'] }
 ]
 
 const TEXTE = {
   de: {
     heading: '## Welche Variablen hier greifen',
-    intro: (n, files) =>
-      `Diese ${n === 1 ? 'Variable liest' : n + ' Variablen liest'} ${files}. Ändern lassen sie sich in ` +
+    intro: (n, where) =>
+      `Diese ${n === 1 ? 'Variable liest' : n + ' Variablen liest'} ${where}. Ändern lassen sie sich in ` +
       'der App unter *Stile → Variablen* — ohne eine Zeile CSS.',
     cols: ['Variable', 'Wert', 'gilt außerdem für'],
     alone: 'nur hier',
     many: (n) => `${n} weitere Komponenten`,
     darkWord: 'dunkel',
     local: (f) => `im Stylesheet gesetzt (\`${f}\`)`,
+    and: ' und ',
+    section: (n, names, files) => `${n === 1 ? 'der Abschnitt' : 'die Abschnitte'} ${names} in ${files}`,
     generated: 'Diese Tabelle ist erzeugt: Sie wird aus den Stylesheets gelesen, nicht von Hand gepflegt.'
   },
   en: {
     heading: '## Which variables apply here',
-    intro: (n, files) =>
-      `${n === 1 ? 'This variable is read' : `These ${n} variables are read`} by ${files}. They can be ` +
+    intro: (n, where) =>
+      `${n === 1 ? 'This variable is read' : `These ${n} variables are read`} by ${where}. They can be ` +
       'changed in the app under *Styles → Variables* — without a line of CSS.',
     cols: ['Variable', 'Value', 'also applies to'],
     alone: 'only here',
     many: (n) => `${n} other components`,
     darkWord: 'dark',
     local: (f) => `set in the stylesheet (\`${f}\`)`,
+    and: ' and ',
+    section: (n, names, files) => `the ${n === 1 ? 'section' : 'sections'} ${names} in ${files}`,
     generated: 'This table is generated: it is read out of the stylesheets rather than kept by hand.'
   }
 }
@@ -102,14 +111,38 @@ function ohneKommentare(text) {
   return text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1')
 }
 
-/** Variable -> Set der Stylesheets, die sie lesen. */
+/**
+ * Die Abschnitte aller Stylesheets: `{ name, file, text }`. Ein Abschnitt beginnt mit einer
+ * Markierungszeile (`// ====… name`) und reicht bis zur nächsten; was davor steht, ist der Kopf
+ * der Datei und gehört keinem. Eine Datei ohne Markierung ist ein Abschnitt ihres Namens.
+ * `base` steht in drei Dateien und zählt als *ein* Abschnitt: `ABSCHNITTE` führt ihn je Datei,
+ * `textVon()` setzt ihn zusammen.
+ */
+const ABSCHNITTE = (() => {
+  const out = []
+  for (const file of fs.readdirSync(STYLE_DIR).filter((n) => n.endsWith('.scss')).sort()) {
+    const text = fs.readFileSync(path.join(STYLE_DIR, file), 'utf-8')
+    const teile = text.split(/^\/\/ =+ ([a-z0-9-]+)$/m)
+    if (teile.length === 1) {
+      out.push({ name: file.replace(/\.scss$/, ''), file, text })
+      continue
+    }
+    for (let i = 1; i < teile.length; i += 2) out.push({ name: teile[i], file, text: teile[i + 1] })
+  }
+  return out
+})()
+
+const textVon = (name) => ABSCHNITTE.filter((a) => a.name === name).map((a) => a.text).join('\n')
+const dateienVon = (name) => [...new Set(ABSCHNITTE.filter((a) => a.name === name).map((a) => a.file))]
+
+/** Variable -> Set der Abschnitte, die sie lesen. */
 function leserProVariable() {
   const map = new Map()
-  for (const file of fs.readdirSync(STYLE_DIR).filter((n) => n.endsWith('.scss'))) {
-    const src = ohneKommentare(fs.readFileSync(path.join(STYLE_DIR, file), 'utf-8'))
+  for (const { name: file, text } of ABSCHNITTE) {
+    const src = ohneKommentare(text)
     for (const m of src.matchAll(/var\(\s*(--[\w-]+)/g)) {
       // Die Variablen von quartz-navigations deklariert das Plugin auf seinem eigenen Element; ein
-      // Wert aus dem Variablen-Tab käme dort nie an (nav-navigations.scss, Kopf). Die Tabelle
+      // Wert aus dem Variablen-Tab käme dort nie an (Abschnitt `nav-navigations`, Kopf). Die Tabelle
       // verspricht aber genau das, also stehen sie nicht darin.
       if (m[1].startsWith('--quartz-nav-')) continue
       if (!map.has(m[1])) map.set(m[1], new Set())
@@ -209,25 +242,38 @@ function titelVon(datei) {
   return name
 }
 
-/** Aus `nav-explorer.scss` wird „Explorer“ - der Titel, unter dem die Seite darüber spricht. */
-function komponente(file, sprache) {
-  const eintrag = SEITEN.find((s) => s.files.includes(file))
-  if (!eintrag) return file.replace(/\.scss$/, '')
+/** Aus dem Abschnitt `nav-explorer` wird „Explorer“ - der Titel, unter dem die Seite darüber spricht. */
+function komponente(abschnitt, sprache) {
+  const eintrag = SEITEN.find((s) => s.sections.includes(abschnitt))
+  if (!eintrag) return abschnitt
   return titelVon(eintrag[sprache])
+}
+
+/** „der Abschnitt `nav-explorer` in `components-navigation.scss`“, oder nur die Datei, wenn sie der Abschnitt ist. */
+function woGelesen(seite, sprache) {
+  const t = TEXTE[sprache]
+  const liste = (xs) => {
+    const q = xs.map((x) => `\`${x}\``)
+    return q.length < 2 ? q.join('') : `${q.slice(0, -1).join(', ')}${t.and}${q.at(-1)}`
+  }
+  const rang = (f) => STYLE_ORDER.indexOf(f.replace(/\.scss$/, ''))
+  const dateien = [...new Set(seite.sections.flatMap(dateienVon))].sort((a, b) => rang(a) - rang(b))
+  if (seite.sections.every((s) => dateienVon(s).length === 1 && dateienVon(s)[0] === `${s}.scss`)) return liste(dateien)
+  return t.section(seite.sections.length, liste(seite.sections), liste(dateien))
 }
 
 function tabelle(seite, sprache, leser) {
   const t = TEXTE[sprache]
   const eigene = new Set()
-  for (const file of seite.files) {
-    const src = ohneKommentare(fs.readFileSync(path.join(STYLE_DIR, file), 'utf-8'))
+  for (const abschnitt of seite.sections) {
+    const src = ohneKommentare(textVon(abschnitt))
     for (const m of src.matchAll(/var\(\s*(--[\w-]+)/g)) if (!m[1].startsWith('--quartz-nav-')) eigene.add(m[1])
   }
   const namen = [...eigene].sort()
   if (namen.length === 0) return null
 
   const zeilen = namen.map((name) => {
-    const andere = [...(leser.get(name) ?? [])].filter((f) => !seite.files.includes(f))
+    const andere = [...(leser.get(name) ?? [])].filter((f) => !seite.sections.includes(f))
     const reichweite =
       andere.length === 0
         ? t.alone
@@ -237,11 +283,10 @@ function tabelle(seite, sprache, leser) {
     return `| \`${name}\` | ${wert(name, sprache)} | ${reichweite} |`
   })
 
-  const dateien = seite.files.map((f) => `\`${f}\``).join(sprache === 'de' ? ' und ' : ' and ')
   return [
     t.heading,
     '',
-    t.intro(namen.length, dateien),
+    t.intro(namen.length, woGelesen(seite, sprache)),
     '',
     `| ${t.cols.join(' | ')} |`,
     '| --- | --- | --- |',
@@ -287,14 +332,11 @@ function main() {
     }
   }
 
-  const zugeordnet = new Set(SEITEN.flatMap((s) => s.files))
-  const ohneSeite = fs
-    .readdirSync(STYLE_DIR)
-    .filter((n) => n.endsWith('.scss') && !zugeordnet.has(n))
-    .sort()
+  const zugeordnet = new Set(SEITEN.flatMap((s) => s.sections))
+  const ohneSeite = [...new Set(ABSCHNITTE.map((a) => a.name))].filter((n) => !zugeordnet.has(n)).sort()
 
   console.log(`\n${zaehler.ergänzt} ergänzt, ${zaehler.aktualisiert} aktualisiert, ${zaehler.unverändert} unverändert`)
-  if (ohneSeite.length) console.log(`Stylesheets ohne Doku-Seite: ${ohneSeite.join(', ')}`)
+  if (ohneSeite.length) console.log(`Abschnitte ohne Doku-Seite: ${ohneSeite.join(', ')}`)
   if (check && (zaehler.ergänzt || zaehler.aktualisiert)) {
     console.log('\n--check: Es gäbe etwas zu schreiben.')
     process.exit(1)

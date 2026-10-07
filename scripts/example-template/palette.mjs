@@ -61,7 +61,7 @@ export const PALETTE = {
 // Bis zum 2026-09-20 waren es drei Familien (Instrument Sans für Überschriften, Inter für den
 // Text, JetBrains Mono für Code) und vier Dateien. Noto Sans trägt beide Rollen: Der Unterschied
 // zwischen Überschrift und Text entsteht hier über Größe und Gewicht — Überschriften stehen auf
-// 600 (base.scss) —, nicht über einen Wechsel der Schriftfamilie. Das spart der Website eine
+// 600 (content.scss) —, nicht über einen Wechsel der Schriftfamilie. Das spart der Website eine
 // Datei und nimmt ihr nichts, was ein Leser benennen könnte.
 //
 // `title` steht nicht hier: Quartz leitet `--titleFont` aus `typography.title` ab und, wenn das
@@ -126,7 +126,7 @@ const PAIRS = [
   // from *user interface components and their states*, not from a decorative rule or a surface.
   // Raising it to 3:1 would turn every code block mid-grey and take the design with it. The
   // obligation does not vanish, it moves: anything a user operates draws its edge from `gray`,
-  // and those are the two rows below. The stylesheet has to honour that - see 00-base.scss.
+  // and those are the two rows below. The stylesheet has to honour that - see `--tpl-rule-control` in variables.mjs.
   { fg: 'gray', bg: 'light', min: 3.0, what: 'edge of a control on the page' },
   { fg: 'gray', bg: 'lightgray', min: 3.0, what: 'edge of a control on a card' },
   { fg: 'darkgray', bg: 'lightgray', min: 4.5, what: 'body text on a card or code block' },
@@ -158,7 +158,7 @@ export function checkContrast() {
 /* -------------------------------------------------------- callout colours, read from the file */
 
 /**
- * Callout colours are checked by reading body-callouts.scss, not by keeping a copy of them here.
+ * Callout colours are checked by reading callouts.scss, not by keeping a copy of them here.
  *
  * The stylesheet is what ships, so it is what gets measured: a value edited there is measured
  * there, and there is no second list to forget to update. The file states every colour twice -
@@ -166,7 +166,7 @@ export function checkContrast() {
  * split point is that selector.
  */
 export function calloutPairs() {
-  const source = readFileSync(join(import.meta.dirname, 'styles', 'body-callouts.scss'), 'utf-8')
+  const source = readFileSync(join(import.meta.dirname, 'styles', 'callouts.scss'), 'utf-8')
 
   // Gelesen wird die *Zuordnung* aus dem Stylesheet, der *Wert* aus den Tokens.
   //
@@ -183,7 +183,7 @@ export function calloutPairs() {
   // zweite Paar, das jeder andere Callout bekommt. Dreizehn stehen in der Datei, dreizehn werden
   // gemessen.
   const declared = [...source.matchAll(/\.callout\[data-callout="([a-z]+)"\]\s*\{\s*--color:\s*([^;]+);/g)]
-  if (!declared.length) throw new Error('body-callouts.scss no longer states a colour per callout')
+  if (!declared.length) throw new Error('callouts.scss no longer states a colour per callout')
 
   const read = (mode) => {
     const out = {}
@@ -219,20 +219,20 @@ export function calloutPairs() {
 /**
  * The five token colours this template corrects, measured against the code block's own surface.
  *
- * Read out of body-code.scss for the same reason the callout colours are read out of their file:
- * the stylesheet is what ships. What is *not* here is the rest of github-light - a theme's other
- * colours only exist in the built HTML, on inline styles, so they were audited once by counting
- * every `--shiki-light` value across the built site. The four light corrections and the one dark
+ * Read out of content.scss (its body-code section) for the same reason the callout colours are
+ * read out of their file: the stylesheet is what ships. What is *not* here is the rest of
+ * github-light - a theme's other colours only exist in the built HTML, on inline styles, so they
+ * were audited once by counting every `--shiki-light` value across the built site. The four light corrections and the one dark
  * one are what that audit turned up; the numbers are in the comment above the block.
  *
  * The surface is not `light`: a code block has a ground of its own (`tpl-surface-code`), which is
  * lighter than the page tint in light mode and `lightgray` in dark.
  */
 export function syntaxPairs() {
-  const source = readFileSync(join(import.meta.dirname, 'styles', 'body-code.scss'), 'utf-8')
+  const source = readFileSync(join(import.meta.dirname, 'styles', 'content.scss'), 'utf-8')
   const start = source.indexOf('/* --- QuartzControl:syntax:start --- */')
   const end = source.indexOf('/* --- QuartzControl:syntax:end --- */')
-  if (start === -1 || end === -1) throw new Error('body-code.scss no longer marks its syntax block')
+  if (start === -1 || end === -1) throw new Error('content.scss no longer marks its syntax block')
   const block = source.slice(start, end)
 
   const surface = codeSurface()
@@ -250,7 +250,7 @@ export function syntaxPairs() {
       ratio: contrast(now, surface[mode])
     })
   }
-  if (rows.length === 0) throw new Error('body-code.scss marks a syntax block but it is empty')
+  if (rows.length === 0) throw new Error('content.scss marks a syntax block but it is empty')
   return rows.map((row) => ({ ...row, ok: row.ratio >= row.min }))
 }
 

@@ -59,7 +59,7 @@ const NAVIGATIONS = ['quartz-navigations', NAVIGATIONS_SOURCE]
  *                 { patches, boxes, navigations } und gibt dieselbe Form zurück.
  *   describe      Der Beschreibungstext des Pakets, gegen die wirklichen Zahlen gebildet.
  *
- * `stylesSource` ist keine Vorliebe, sondern eine Aussage über den Beweiswert. Die 31 Stylesheets
+ * `stylesSource` ist keine Vorliebe, sondern eine Aussage über den Beweiswert. Die Stylesheets
  * werden in *einer* Werkstatt bearbeitet - der des Example - und von dort mit `--sync` ins Repo
  * zurückgeholt. Für jede andere Variante ist die Werkstatt eine frisch beschriebene Kopie des
  * Repos, ein Vergleich sagt also immer „deckungsgleich". Das ist keine Auskunft, sondern eine

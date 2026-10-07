@@ -126,9 +126,9 @@ eine für die Callouts und je eine für die drei eigenen Plugins. In Ladereihenf
 | `components-navigation` | `nav-explorer`, `meta-breadcrumbs` | 825 |
 | `plugin-navigations` | `nav-navigations` | 360 |
 | `components-note` | `meta-note-properties`, `meta-tag-list`, `aside-toc`, `aside-backlinks`, `aside-graph`, `aside-recent-notes` | 700 |
-| `content` | `meta-title-and-date`; aus `base.scss` Z. 507–591 (Zeilenabstände); `body-content`, `body-code`, `body-math`, `body-mermaid`, `body-media`, `page-popover` | 1430 |
+| `content` | `meta-title-and-date`; aus `base.scss` Z. 493–589 (Zeilenabstände); `body-content`, `body-code`, `body-math`, `body-mermaid`, `body-media` | 1380 |
 | `callouts` | `body-callouts` | 175 |
-| `pages` | `page-listing`, `page-bases`, `page-canvas`, `page-404` | 770 |
+| `pages` | `page-listing`, `page-bases`, `page-canvas`, `page-popover`, `page-404` | 820 |
 | `plugin-layout-box` | `plugin-layout-box` | 250 |
 | `a11y` | `a11y` — zuletzt, damit diese Regeln gewinnen | 150 |
 
@@ -165,6 +165,11 @@ Gestaltung weiter fertig — die Regeln bleiben alle drin.
 Brotkrumen mit der Navigation, die Link-Vorschau vor den Seitentypen. Ob dabei eine Regel eine andere
 überholt, zeigt `scripts/styles-snapshot.mjs` an der gebauten Website: vorher aufnehmen, umbauen,
 nachher aufnehmen, `--diff`. Erwartet ist kein Unterschied; jeder Unterschied ist ein Befund.
+
+**Gemessen (2026-10-07, P5):** Example und Basis ohne einen geänderten berechneten Wert (135 170 und
+51 930 Elemente). Ein Befund, und zwar genau dort: Die Link-Vorschau formt mit gleicher Spezifität um,
+was die Seitentypen rendern, und lud vor ihnen — der Zählsatz einer Ordner-Vorschau bekam 4 px mehr
+Abstand. Sie steht deshalb in `pages`, hinter den Seitentypen, statt in `content`.
 
 **Was nicht passiert:** Bestehende Projekte behalten ihre 31 Dateien. Nur neue Vorlagen-Pakete bekommen
 die neue Struktur. `minimal-lesbar.qtpl` bleibt eingefroren, wie es ist.

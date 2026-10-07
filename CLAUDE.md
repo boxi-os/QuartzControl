@@ -249,15 +249,15 @@ Chronik. Die Chronik nachzulesen lohnt für zwei Fragen: *warum* eine Regel so l
 Absatz in `docs/decisions/` sie nicht beantwortet, und *was gerade ungelesen ist* — die Serie ist
 so gebaut, dass jede Runde liest, was die vorige gebaut hat.
 
-**Release:** `1.0.1` ist am 2026-09-28 veröffentlicht (Tag `v1.0.1` auf `1653dc0`, zehn Pakete,
-`latest.json`, die App-Website) — die Fehlerbehebung nach 1.0.0 samt den Fixes des
-achtunddreißigsten Reviews. Davor `1.0.0` am 2026-09-25 (Tag `v1.0.0` auf `f98a991`, Release-Seite
+**Release:** `1.0.2` ist am 2026-10-07 veröffentlicht (Tag `v1.0.2` auf `985fbde`, zehn Pakete,
+`latest.json`, die App-Website) — die Fehlerbehebung nach 1.0.1 samt den Fixes des
+neununddreißigsten Reviews. Davor `1.0.1` am 2026-09-28 (Tag `v1.0.1` auf `1653dc0`). Davor `1.0.0` am 2026-09-25 (Tag `v1.0.0` auf `f98a991`, Release-Seite
 mit zehn Paketen, `latest.json`, die App-Website, die drei Plugin-Handbücher und die
 Example-Website); Ablauf und Funde oben in [`docs/release.md`](docs/release.md). Davor
 `1.0.0-rc.1` am 2026-09-21.
 
-**Die Fehlerbehebung für 1.0.2 liegt auf `fix/1.0.2`** (2026-10-06/07, nicht gepusht, nicht
-veröffentlicht — der Nutzer gibt das Wort): vier Befunde des Nutzers (Variable an der
+**Die Fehlerbehebung für 1.0.2** (2026-10-06/07, `fix/1.0.2`, mit 1.0.2 am 2026-10-07
+veröffentlicht): vier Befunde des Nutzers (Variable an der
 Cursorposition, geleerte Plugin-Option entfernt den Schlüssel, Dev-Server weicht belegten Ports
 aus, Git-Sync ohne `origin` gesperrt) und [`docs/plan-1.1.md`](docs/plan-1.1.md), der Plan für 1.1.
 **Das neununddreißigste Review ist abgearbeitet** ([`docs/REVIEW-2026-10-13.md`](docs/REVIEW-2026-10-13.md);

@@ -1,6 +1,21 @@
 # Vor einem Release
 
-> **Zuletzt durchlaufen für 1.0.1 am 2026-09-28** (Tag `v1.0.1` auf `1653dc0`, vom Branch
+> **Zuletzt durchlaufen für 1.0.2 am 2026-10-07** (Tag `v1.0.2` auf `985fbde`, vom Branch
+> `release/1.0.2` per Fast-Forward; `fix/1.0.2` ebenfalls gepusht). Zehn Pakete, neun auf einer
+> Maschine ihrer Architektur gestartet (macOS x64 nicht), alle mit App-Version 1.0.2, Node 24.18.1
+> und npm 11.17.0; das mitgelieferte git ist 2.53.0. Die Digests der Release-Seite stimmen mit
+> `shasum` über `release/` überein, die kopierten Linux-Pakete mit `sha256sum` auf den VMs.
+> Veröffentlicht wurde nur die App-Website, durch die gebaute App mit Wegwerf-Profil: 155 geänderte
+> Dateien, nichts neu, nichts entfernt; danach alle 36 Pfade aus `handbookPages.ts` mit 200. Drei
+> Dinge für das nächste Mal: **Je VM ein eigener ssh-Aufruf** — zwei mit `;` in einem Bash-Aufruf
+> ließen den zweiten erst laufen, als der erste nach dem Bau zurückkehrte, und der startete einen
+> zweiten Flatpak-Bau auf debian-vm (gescheitert, das Paket des ersten blieb heil). **Ein gesperrter
+> `login`-Schlüsselbund hält die App beim Start an** — nach einem Neustart der VM startete keines
+> der drei arm64-Pakete bis zur Seite; geprüft mit `--password-store=basic`, oder den Schlüsselbund
+> vorher am Bildschirm der VM entsperren. Und die Release-Notizen haben zwei Kopfzeilen
+> (`tail -n +3`, nicht `+4`).
+>
+> Davor **1.0.1 am 2026-09-28** (Tag `v1.0.1` auf `1653dc0`, vom Branch
 > `release/1.0.1` per Fast-Forward; `fix/1.0.1` ebenfalls gepusht). Zehn Pakete, neun auf einer
 > Maschine ihrer Architektur gestartet (macOS x64 nicht), alle mit App-Version 1.0.1, Node 24.18.1,
 > npm 11.17.0 und git 2.53.0. Die Digests der Release-Seite stimmen mit `shasum` über `release/`

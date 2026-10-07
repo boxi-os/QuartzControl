@@ -2072,10 +2072,12 @@ Nachher-Messung an der gebauten App (APFS-Klone von `gui-test`):
   `runCommand.ts` gezogen) von jedem anderen Fehler (`readError`); Git-Sync zeigt git's Text und
   lässt die Knöpfe frei, die Übersicht sagt „Stand nicht lesbar“. Nicht gemessen: ein übersetztes git.
 - **7** `f3a638e` — der Satz im Plan; dazu Befund 7 des achtunddreißigsten in denselben Abschnitt.
-- **Nebenbei, nicht angefasst:** Springt man ohne die Startseite direkt von der Git-Sync-Seite eines
-  Projekts in die eines anderen (in der Messung per `location.hash`), zeigte die Seite einmal den
-  Stand des vorigen Projekts; einzeln gemessen stimmt sie. Ob die Oberfläche diesen Weg überhaupt
-  anbietet, ist nicht geprüft. Ebenso offen: Die Übersicht sagt „Kein Git-Repository“ auch, wenn
-  das Lesen des Status über IPC scheitert (`catch(() => setGit(null))`).
+- **Nebenbei** `5282baa` — `ProjectLayout` rendert keine Seite, solange es das vorige Projekt hält,
+  und verwirft die Antwort für eine verlassene ID: Beim Sprung per `location.hash` von der
+  Git-Sync-Seite eines Projekts in die eines anderen zeigte die Seite den Stand des vorigen. Die
+  Oberfläche selbst geht immer über die Startseite (gemessen nur über den Hash); `cbab1dc` — die
+  Git-Karte der Übersicht trennt „noch nicht gelesen“ (Strich) von „Lesen gescheitert“ („Stand
+  nicht lesbar“); vorher sagte sie in beiden Fällen „Kein Git-Repository“, gemessen mit ersetztem
+  `sync:status` im Hauptprozess.
 
 **Keinen dieser Fixes hat ein Review gelesen.**

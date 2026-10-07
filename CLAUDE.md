@@ -236,9 +236,9 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 
 ## Die Reviews
 
-Alle fünfunddreißig Listen sind abgearbeitet (die fünfunddreißigste am 2026-09-21,
-[`docs/REVIEW-2026-10-09.md`](docs/REVIEW-2026-10-09.md); was daraus geworden ist und was nebenbei
-offen blieb, steht am Ende der Chronik — **keinen dieser Fixes hat ein Review gelesen**). Die
+Alle neununddreißig Listen sind abgearbeitet (die neununddreißigste am 2026-10-07,
+[`docs/REVIEW-2026-10-13.md`](docs/REVIEW-2026-10-13.md); was daraus geworden ist, steht am Ende
+der Chronik — **keinen dieser Fixes hat ein Review gelesen**). Die
 Chronik steht in [`docs/reviews.md`](docs/reviews.md) — welches Review welchen Stand gelesen hat,
 mit welchen Zahlen, was es gefunden hat und welche Fixes noch niemand gelesen hat. Sie stand bis zum
 2026-09-17 hier und ist wörtlich dorthin gewandert; die Review-Dokumente selbst liegen als
@@ -256,13 +256,27 @@ mit zehn Paketen, `latest.json`, die App-Website, die drei Plugin-Handbücher un
 Example-Website); Ablauf und Funde oben in [`docs/release.md`](docs/release.md). Davor
 `1.0.0-rc.1` am 2026-09-21.
 
-**Das achtunddreißigste Review ist abgearbeitet** (gelesen 2026-09-28,
+**Die Fehlerbehebung für 1.0.2 liegt auf `fix/1.0.2`** (2026-10-06/07, nicht gepusht, nicht
+veröffentlicht — der Nutzer gibt das Wort): vier Befunde des Nutzers (Variable an der
+Cursorposition, geleerte Plugin-Option entfernt den Schlüssel, Dev-Server weicht belegten Ports
+aus, Git-Sync ohne `origin` gesperrt) und [`docs/plan-1.1.md`](docs/plan-1.1.md), der Plan für 1.1.
+**Das neununddreißigste Review ist abgearbeitet** ([`docs/REVIEW-2026-10-13.md`](docs/REVIEW-2026-10-13.md);
+0 Hoch, 2 Mittel, 5 Niedrig) — **gelesen vom selben Modell, das die Commits geschrieben hat**
+(Claude Opus 5.5 in einem eigenen Agenten; Fable stand nicht mehr zur Verfügung). Ein Start lehnt
+jetzt ab, wenn ein Server desselben Projekts außerhalb der App läuft, statt still einen zweiten in
+dasselbe `public/` zu setzen; der Cursor im CSS-Editor gilt nur nach einer Aktion des Nutzers als
+gesetzt; Git-Sync trennt „kein Repository“ von „konnte nicht lesen“; ein Plugin-Feld lässt sich
+ausdrücklich leer setzen. Was daraus geworden ist, steht am Ende von
+[`docs/reviews.md`](docs/reviews.md). **Keinen dieser Fixes hat ein Review gelesen, und kein
+anderes Modell die Commits davor.**
+
+Das achtunddreißigste Review ist abgearbeitet (gelesen 2026-09-28,
 [`docs/REVIEW-2026-10-12.md`](docs/REVIEW-2026-10-12.md); 0 Hoch, 2 Mittel, 7 Niedrig): Es las die
 Fehlerbehebung für 1.0.1 auf `fix/1.0.1`. Die Google-Schriften holen jetzt, was die eigenen Regeln
 eines Projekts nicht decken, statt die ganze Familie auszulassen; „In beiden Modi gleich“ tut, was
 es sagt; das Schloss der Stylesheets sagt, wo es endet, und die Bau-Tür hält es selbst. Neun Commits
-auf `fix/1.0.1`, mit 1.0.1 am 2026-09-28 veröffentlicht; was daraus geworden ist, steht am
-Ende von [`docs/reviews.md`](docs/reviews.md). **Keinen dieser Fixes hat ein Review gelesen.**
+auf `fix/1.0.1`, mit 1.0.1 am 2026-09-28 veröffentlicht. Das neununddreißigste hat diese Fixes
+gelesen und nicht neu gemessen.
 
 Das siebenunddreißigste Review ist abgearbeitet (gelesen 2026-09-24,
 [`docs/REVIEW-2026-10-11.md`](docs/REVIEW-2026-10-11.md), Auftrag

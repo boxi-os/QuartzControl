@@ -174,7 +174,12 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   Palette-Klasse durch das richtige Token ersetzt wurde, sieht weder der Typcheck noch der Build,
   und ein Diff der Klassennamen beantwortet die einzige Frage nicht — sieht es hinterher genauso
   aus. Indiziert wird über die Position im DOM, nicht über die Klasse, und genau deshalb trägt der
-  Vergleich über die Umstellung hinweg
+  Vergleich über die Umstellung hinweg. Mit `--site (<baseUrl> | --serve <public-ordner>)` misst
+  es stattdessen eine gebaute **Website** (seit 1.1, P0): die Seiten aus
+  `scripts/example-template/site-pages.mjs` (dieselben wie `check:tokens`, eigene über `--pages`),
+  drei Breiten, hell und dunkel, und neben Farben und Schrift auch die Geometrie — der Messweg für
+  den Umbau der Vorlagen-Stylesheets, bei dem nicht die Farbe wandert, sondern wer gewinnt.
+  `--serve` antwortet wie Quartz' Dev-Server (hübsche URLs, eigene 404-Seite)
 
 - `npm run dmg:background` — zeichnet `build/background.png` und `background@2x.png`, den Grund des
   DMG-Fensters. Muss existieren, weil „kein Hintergrund gesetzt“ bei electron-builder nicht heißt

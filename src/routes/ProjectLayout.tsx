@@ -189,10 +189,24 @@ export default function ProjectLayout(): JSX.Element {
     // `open` answering null is not an error: it is a project the list no longer has, which is what
     // a removed one looks like from a bookmarked route. Not a renamed or moved one - that keeps
     // its id, which is what `relocateProject` exists for.
+    //
+    // When the id changes under a mounted layout, the answer for the previous id may still be on
+    // its way; `current` drops it, and the error of the previous id goes with the id.
+    let current = true
+    setLoadError(null)
     window.quartzGui.projects
       .open(id)
-      .then((p) => (p ? setProject(p) : setLoadError(t('projectLayout.notFound'))))
-      .catch((error) => setLoadError(formatIpcError(error)))
+      .then((p) => {
+        if (!current) return
+        if (p) setProject(p)
+        else setLoadError(t('projectLayout.notFound'))
+      })
+      .catch((error) => {
+        if (current) setLoadError(formatIpcError(error))
+      })
+    return () => {
+      current = false
+    }
   }, [id, t])
 
   // Only a picture the user assigned; a project still carrying the icon Quartz ships gets its
@@ -222,7 +236,11 @@ export default function ProjectLayout(): JSX.Element {
       </div>
     )
   }
-  if (!project) {
+  // `project.id !== id` as well: while the next project loads, the previous one is still in state,
+  // and a page mounted now would read the previous project's files under the new address - Git-Sync
+  // showed one project's status on another's page that way (measured by changing the hash
+  // directly; the UI itself always passes through the start page, which unmounts this layout).
+  if (!project || project.id !== id) {
     return (
       <div className="titlebar-drag flex h-screen items-center justify-center text-sm text-text-muted">
         {t('projectLayout.loading')}

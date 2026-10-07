@@ -759,6 +759,9 @@ export interface ScssDiagnostic {
   /** custom.scss holds an imports block of an older build *inside* this app's - two `@use` of the
    *  same namespace, and rewriting the load order once is the way out (see styleService). */
   nestedImportBlock?: boolean
+  /** custom.scss loads _quartzcontrol.scss and the file is not there; the build door creates it
+   *  empty, a snapshot brings the content back (see styleService.repairManagedUse). */
+  managedFileMissing?: boolean
 }
 
 // "unavailable" is not a failure: a project that has never had `npm install` run in it has no
@@ -1797,7 +1800,11 @@ export interface QuartzGuiApi {
   }
   styles: {
     get(projectPath: string): Promise<StylesInfo>
-    save(projectPath: string, content: string): Promise<void>
+    /**
+     * The whole of custom.scss, from the CSS tab. In a project moved to _quartzcontrol.scss a
+     * content without the line that loads it gets the line back, and the answer says so.
+     */
+    save(projectPath: string, content: string): Promise<{ managedUseRestored: boolean }>
     reference(projectPath: string, pluginName: string): Promise<StyleReferenceFile[]>
     importFile(projectPath: string, sourcePath: string): Promise<{ importLine: string; relativePath: string }>
     listFiles(projectPath: string): Promise<StyleFileSet>

@@ -252,12 +252,12 @@ export function registerIpcHandlers(): void {
     styleService.importStyleFile(projectPath, sourcePath)
   )
   handle(IPC.stylesListFiles, t([s.absolutePath]), (projectPath) => styleService.listStyleFiles(projectPath))
-  handle(IPC.stylesReadFile, t([s.absolutePath, s.styleFileSubPath]), (projectPath, relativePath) =>
+  handle(IPC.stylesReadFile, t([s.absolutePath, s.styleEditablePath]), (projectPath, relativePath) =>
     styleService.readStyleFile(projectPath, relativePath)
   )
   handle(
     IPC.stylesSaveFile,
-    t([s.absolutePath, s.styleFileSubPath, s.longText]),
+    t([s.absolutePath, s.styleEditablePath, s.longText]),
     (projectPath, relativePath, content) => styleService.writeStyleFile(projectPath, relativePath, content)
   )
   handle(IPC.stylesCreateFile, t([s.absolutePath, s.styleFileName]), (projectPath, name) =>

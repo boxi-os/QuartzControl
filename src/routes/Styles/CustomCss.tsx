@@ -16,7 +16,8 @@ import { pageGround, swatchStyle } from './swatch'
 import { fontIsAvailable, googleFontRequest, primaryFamily, summarizeFaces, type TypographySlot } from './fontSpec'
 import { fontLoaders } from './fontDelivery'
 import { fontBuildState, loadPreviewFonts } from './previewFonts'
-import { activeThemeIdOf, useStyles } from './index'
+import { activeThemeIdOf, useStyles, type ScssWriter } from './index'
+import { MANAGED_STYLESHEET } from './managedStylesheet'
 
 // What this file is writing on top of, as it actually looks right now - resolved through the same
 // chain the Variablen tab uses, so an active community theme's values show here rather than the
@@ -54,6 +55,8 @@ export default function CustomCss(): JSX.Element {
     project,
     config,
     scss,
+    managedStale,
+    discardManagedDraft,
     setScssContent,
     reloadScss,
     registerSave,
@@ -109,7 +112,9 @@ export default function CustomCss(): JSX.Element {
   }, [runCheck])
 
   useEffect(() => {
-    const missing = openTabs.filter((tab) => tab !== MAIN_TAB && loaded[tab] === undefined)
+    // _quartzcontrol.scss is read with custom.scss (scss.managed) and re-read after every writer, so
+    // it is never in `loaded`: a copy here would show the state from before the last variable save.
+    const missing = openTabs.filter((tab) => tab !== MAIN_TAB && tab !== MANAGED_STYLESHEET && loaded[tab] === undefined)
     if (missing.length === 0) return
     let cancelled = false
     Promise.all(missing.map((tab) => window.quartzGui.styles.readFile(project.path, tab).then((c) => [tab, c] as const))).then(
@@ -156,7 +161,7 @@ export default function CustomCss(): JSX.Element {
   // A tab whose file was deleted (or renamed) must not stay open pointing at nothing.
   useEffect(() => {
     if (!fileSet) return
-    const known = new Set([MAIN_TAB, ...files.map((f) => f.relativePath)])
+    const known = new Set([MAIN_TAB, ...(scss.managed ? [MANAGED_STYLESHEET] : []), ...files.map((f) => f.relativePath)])
     setOpenTabs((prev) => (prev.every((tab) => known.has(tab)) ? prev : prev.filter((tab) => known.has(tab))))
     setActiveTab((prev) => (known.has(prev) ? prev : MAIN_TAB))
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -175,14 +180,19 @@ export default function CustomCss(): JSX.Element {
   }
 
   const contentOf = (tab: string): string =>
-    tab === MAIN_TAB ? scss.content : (fileDrafts[tab] ?? loaded[tab] ?? '')
+    tab === MAIN_TAB
+      ? scss.content
+      : tab === MANAGED_STYLESHEET
+        ? (fileDrafts[tab] ?? scss.managed?.content ?? '')
+        : (fileDrafts[tab] ?? loaded[tab] ?? '')
+  const onDisk = (tab: string): string | undefined => (tab === MANAGED_STYLESHEET ? scss.managed?.content : loaded[tab])
 
   // Opening the file a diagnostic points at is only half of "jump there" - this puts the cursor on
   // the line. It waits for the file's content, since an extra file is read asynchronously after its
   // tab opens and an empty document has no line to scroll to; the line is clamped because the
   // diagnostic can be older than the text in front of it.
   const activeContent = contentOf(activeTab)
-  const activeContentReady = activeTab === MAIN_TAB || fileDrafts[activeTab] !== undefined || loaded[activeTab] !== undefined
+  const activeContentReady = activeTab === MAIN_TAB || fileDrafts[activeTab] !== undefined || onDisk(activeTab) !== undefined
   useEffect(() => {
     const view = viewRef.current
     if (!pendingJump || !view || pendingJump.tab !== activeTab || !activeContentReady) return
@@ -198,7 +208,7 @@ export default function CustomCss(): JSX.Element {
     // Typing the file's own content back drops the draft rather than keeping an identical one -
     // otherwise the tab keeps its modified dot, and the page keeps warning about unsaved changes
     // that are not changes.
-    else if (value === loaded[activeTab]) clearFileDrafts([activeTab])
+    else if (value === onDisk(activeTab)) clearFileDrafts([activeTab])
     else setFileDraft(activeTab, value)
   }
 
@@ -213,6 +223,7 @@ export default function CustomCss(): JSX.Element {
   // banner print the location as plain text instead of a link that opens an empty editor.
   function tabForFile(relativePath: string): string | null {
     if (relativePath === 'custom.scss') return MAIN_TAB
+    if (relativePath === MANAGED_STYLESHEET) return scss.managed ? MANAGED_STYLESHEET : null
     return files.some((f) => f.relativePath === relativePath) ? relativePath : null
   }
 
@@ -297,9 +308,18 @@ export default function CustomCss(): JSX.Element {
   // for a third of the components is not `.<name>` (see componentSelectors).
   const components = useMemo(() => componentSelectors(config.plugins), [config.plugins])
   const activeFile = files.find((f) => f.relativePath === activeTab)
-  const activePath = activeTab === MAIN_TAB ? scss.path : (activeFile?.path ?? '')
+  const activePath =
+    activeTab === MAIN_TAB ? scss.path : activeTab === MANAGED_STYLESHEET ? (scss.managed?.path ?? '') : (activeFile?.path ?? '')
   const isDirty = (tab: string): boolean =>
-    tab === MAIN_TAB ? scss.dirty : fileDrafts[tab] !== undefined && fileDrafts[tab] !== loaded[tab]
+    tab === MAIN_TAB ? scss.dirty : fileDrafts[tab] !== undefined && fileDrafts[tab] !== onDisk(tab)
+  const staleSentence = (writer: ScssWriter, file: string): string =>
+    ({
+      variables: t('styles.scssStaleBy.variables', { file }),
+      fontImport: t('styles.scssStaleBy.fontImport', { file }),
+      fontRemoval: t('styles.scssStaleBy.fontRemoval', { file }),
+      googleFonts: t('styles.scssStaleBy.googleFonts', { file }),
+      stylesheets: t('styles.scssStaleBy.stylesheets', { file })
+    })[writer]
 
   return (
     <div className="flex flex-col gap-4">
@@ -320,18 +340,16 @@ export default function CustomCss(): JSX.Element {
 
       {scss.staleBy && (
         <div className="flex flex-wrap items-center gap-3 rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
-          <span>
-            {
-              {
-                variables: t('styles.scssStaleBy.variables'),
-                fontImport: t('styles.scssStaleBy.fontImport'),
-                fontRemoval: t('styles.scssStaleBy.fontRemoval'),
-                googleFonts: t('styles.scssStaleBy.googleFonts'),
-                stylesheets: t('styles.scssStaleBy.stylesheets')
-              }[scss.staleBy]
-            }
-          </span>
+          <span>{staleSentence(scss.staleBy, 'custom.scss')}</span>
           <button type="button" className="underline" onClick={() => reloadScss('force')}>
+            {t('styles.scssStaleReload')}
+          </button>
+        </div>
+      )}
+      {managedStale && fileDrafts[MANAGED_STYLESHEET] !== undefined && (
+        <div className="flex flex-wrap items-center gap-3 rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+          <span>{staleSentence(managedStale, MANAGED_STYLESHEET)}</span>
+          <button type="button" className="underline" onClick={discardManagedDraft}>
             {t('styles.scssStaleReload')}
           </button>
         </div>
@@ -376,6 +394,13 @@ export default function CustomCss(): JSX.Element {
             onSelect={setActiveTab}
             onClose={closeTab}
           />
+          {/* Above the editor rather than in the page header: it is about this one file, and about
+              what happens to it the next time any tab of this page writes. */}
+          {activeTab === MANAGED_STYLESHEET && (
+            <p className="border-x border-ink/10 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-ink/10 dark:bg-amber-500/10 dark:text-amber-300">
+              {t('styleEditor.managedFile.warning')}
+            </p>
+          )}
           <Card className="!rounded-t-none !p-0 overflow-hidden">
             <CodeMirror
               key={activeTab}
@@ -408,6 +433,7 @@ export default function CustomCss(): JSX.Element {
             onMove={move}
             onSetOrder={applyOrder}
             onChanged={afterFileOp}
+            managedExists={scss.managed !== null}
           />
 
           <CssVariableReference onInsert={insertAtCursor} />
@@ -504,11 +530,14 @@ function FileOrder({
   onOpen,
   onMove,
   onSetOrder,
-  onChanged
+  onChanged,
+  managedExists
 }: {
   files: StyleFile[]
   activeTab: string
   projectPath: string
+  /** Whether _quartzcontrol.scss exists - it loads between these files and custom.scss. */
+  managedExists: boolean
   onOpen: (tab: string) => void
   onMove: (relativePath: string, delta: number) => void
   onSetOrder: (next: string[]) => Promise<void>
@@ -615,6 +644,21 @@ function FileOrder({
           </div>
         ))}
 
+        {/* Where it really loads: its imports block pulls in the files above, and its fonts and
+            variables come after them and before custom.scss. */}
+        {managedExists && (
+          <button
+            type="button"
+            onClick={() => onOpen(MANAGED_STYLESHEET)}
+            className={`flex items-center gap-1.5 rounded-md border-t border-dashed border-ink/10 px-1.5 pt-1.5 text-left text-xs text-text-muted hover:text-text dark:border-ink/10 ${
+              activeTab === MANAGED_STYLESHEET ? 'bg-blue-50 dark:bg-blue-500/10' : ''
+            }`}
+          >
+            <span className="w-4 shrink-0" />
+            <span className="min-w-0 flex-1 truncate font-mono">{MANAGED_STYLESHEET}</span>
+            <span className="shrink-0 text-micro text-text-muted">{t('styleEditor.files.managedRow')}</span>
+          </button>
+        )}
         <div className="flex items-center gap-1.5 rounded-md border-t border-dashed border-ink/10 px-1.5 pt-1.5 text-xs text-text-muted dark:border-ink/10">
           <span className="w-4 shrink-0" />
           <span className="min-w-0 flex-1 truncate font-mono">custom.scss</span>
@@ -704,7 +748,7 @@ function CheckBanner({
   if (!result) return null
 
   if (result.status === 'error') {
-    const { message, relativePath, line, nestedImportBlock } = result.diagnostic
+    const { message, relativePath, line, nestedImportBlock, managedFileMissing } = result.diagnostic
     return (
       <div className="flex flex-wrap items-start gap-x-3 gap-y-1 rounded-md border border-red-300 bg-red-50 p-2.5 text-xs text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
         <FileWarning size={14} className="mt-0.5 shrink-0" aria-hidden />
@@ -721,6 +765,8 @@ function CheckBanner({
               // node_modules): the location is still worth printing, but there is nothing to open.
               <p className="mt-1">{t('styleEditor.check.locationExternal', { file: relativePath, line: line ?? '?' })}</p>
             ))}
+          {/* The way out is the build door, which recreates the file; what was in it, a snapshot. */}
+          {managedFileMissing && <p className="mt-1.5">{t('styleEditor.check.managedFileMissing')}</p>}
           {/* The one error the page knows the way out of - see checkStyles. */}
           {nestedImportBlock && (
             <p className="mt-1.5">

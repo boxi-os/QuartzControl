@@ -1382,19 +1382,23 @@ export default {
     // Font-Import)“ stand auch nach der Ladereihenfolge und dem Reparaturknopf dieses Reiters.
     scssStaleBy: {
       variables:
-        'custom.scss wurde inzwischen beim Speichern der Variablen geändert. Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
+        '{{file}} wurde inzwischen beim Speichern der Variablen geändert. Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
       fontImport:
-        'custom.scss wurde inzwischen beim Import einer Schrift geändert. Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
+        '{{file}} wurde inzwischen beim Import einer Schrift geändert. Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
       fontRemoval:
-        'custom.scss wurde inzwischen beim Entfernen einer ungenutzten Schrift geändert. Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
+        '{{file}} wurde inzwischen beim Entfernen einer ungenutzten Schrift geändert. Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
       googleFonts:
-        'custom.scss wurde inzwischen geändert, weil die Google-Schriften ins Projekt geholt oder entfernt wurden. Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
+        '{{file}} wurde inzwischen geändert, weil die Google-Schriften ins Projekt geholt oder entfernt wurden. Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.',
       stylesheets:
-        'custom.scss wurde inzwischen geändert, weil sich die Stylesheets geändert haben (Ladereihenfolge, Import oder neue Datei). Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.'
+        '{{file}} wurde inzwischen geändert, weil sich die Stylesheets geändert haben (Ladereihenfolge, Import oder neue Datei). Dein Entwurf hier ist noch ungespeichert — Speichern würde diese Änderung überschreiben.'
     },
     scssStaleNotSaved:
       'custom.scss hat sich geändert, seit du im Reiter „Eigenes CSS“ getippt hast — dein Entwurf dort wurde nicht gespeichert. Alles andere ist gespeichert; im Reiter „Eigenes CSS“ kannst du neu laden oder bewusst überschreiben.',
     scssStaleReload: 'Von Festplatte neu laden (Entwurf verwerfen)',
+    managedStaleNotSaved:
+      '_quartzcontrol.scss hat sich geändert, seit du die Datei im Reiter „Eigenes CSS“ bearbeitet hast — dein Entwurf dort wurde nicht gespeichert. Alles andere ist gespeichert; im Reiter „Eigenes CSS“ kannst du neu laden oder bewusst überschreiben.',
+    managedUseRestored:
+      'In custom.scss fehlte die Zeile @use "./quartzcontrol"; – sie ist wieder eingesetzt. Ohne sie fehlten der Website Ladereihenfolge, Schriften und Variablen dieser Seite.',
     styleSettings: {
       sourceNote:
         'Beschreibungen aus dem Original-Theme „{{theme}}“ von {{author}} — {{count}} Optionen.',
@@ -1488,11 +1492,16 @@ export default {
     componentHint: 'Fügt einen Selektor für die gewählte Komponente an der Cursor-Position ein.',
     insertSelector: 'Selektor einfügen',
     referenceHeading: 'Original-Styles (nur lesend)',
+    managedFile: {
+      warning:
+        'Diese Datei schreibt die App selbst. Was zwischen den QuartzControl-Markern steht, schreibt jede Änderung an Ladereihenfolge, Schriften oder Variablen auf dieser Seite neu; Text außerhalb der Marker bleibt.'
+    },
     files: {
       heading: 'Ladereihenfolge',
       description:
         'Quartz bindet nur custom.scss ein — alles andere wird von dort aus geladen, und zwar in dieser Reihenfolge. Später geladene Dateien überschreiben frühere; custom.scss selbst kommt immer zuletzt.',
       alwaysLast: 'immer zuletzt',
+      managedRow: 'Schriften und Variablen dieser Seite',
       moveUp: 'Nach oben',
       moveDown: 'Nach unten',
       rename: 'Umbenennen',
@@ -1517,6 +1526,8 @@ export default {
       nestedImports:
         'Eine ältere Fassung von QuartzControl hat ihren Import-Block in den dieser App geschrieben. Die Ladereihenfolge einmal neu zu schreiben, macht daraus wieder einen Block; die Reihenfolge bleibt, wie sie ist.',
       nestedImportsRepair: 'Ladereihenfolge neu schreiben',
+      managedFileMissing:
+        'custom.scss lädt _quartzcontrol.scss, aber die Datei fehlt. Der nächste Bau legt sie leer an; ihren Inhalt bringt ein Snapshot unter Wartung zurück.',
       recheck: 'Erneut prüfen',
       checkActive: 'Code prüfen',
       running: 'Prüfe…',

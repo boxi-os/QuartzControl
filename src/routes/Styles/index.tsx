@@ -10,6 +10,7 @@ import { UnsavedBadge, useUnsavedChanges } from '../../state/unsavedGuard'
 import { TAB_ICONS } from '../navConfig'
 import { useProject } from '../ProjectLayout'
 import { fetchesGoogleFonts, persistFontDelivery, presentFontDelivery } from './fontDelivery'
+import { MANAGED_STYLESHEET } from './managedStylesheet'
 import Basics from './Basics'
 import Theme from './Theme'
 import Variables from './Variables'
@@ -51,8 +52,15 @@ export interface StylesContextValue {
   quartzStillDownloadsFonts: boolean
   overrides: Record<string, { light: string; dark: string }>
   setOverrides: React.Dispatch<React.SetStateAction<Record<string, { light: string; dark: string }>>>
-  /** `staleBy`: what rewrote custom.scss under an unsaved draft, or null - see reloadScss. */
-  scss: { path: string; content: string; dirty: boolean; staleBy: ScssWriter | null }
+  /**
+   * `staleBy`: what rewrote custom.scss under an unsaved draft, or null - see reloadScss. `managed`
+   * is _quartzcontrol.scss on disk, null while the project has not been moved yet.
+   */
+  scss: { path: string; content: string; dirty: boolean; staleBy: ScssWriter | null; managed: { path: string; content: string } | null }
+  /** What rewrote _quartzcontrol.scss under its unsaved draft, or null - the same as `staleBy`. */
+  managedStale: ScssWriter | null
+  /** Drops the draft of _quartzcontrol.scss and its stale flag - the banner's "reload". */
+  discardManagedDraft: () => void
   /** True while anything on this page differs from what is on disk. */
   dirty: boolean
   setScssContent: (content: string) => void
@@ -116,19 +124,29 @@ export default function Styles(): JSX.Element {
     original: string
     dirty: boolean
     staleBy: ScssWriter | null
+    /** _quartzcontrol.scss as it is on disk; its draft lives in fileDrafts like any stylesheet's. */
+    managed: { path: string; content: string } | null
   } | null>(null)
+  // The draft of _quartzcontrol.scss that a writer on this page has written under - the same banner
+  // and the same refusal as for custom.scss (staleBy), for the file those writers write since 1.1.
+  const [managedStale, setManagedStale] = useState<ScssWriter | null>(null)
   const [savedConfig, setSavedConfig] = useState<string | null>(null)
   const [quartzStillDownloadsFonts, setQuartzStillDownloadsFonts] = useState(false)
   const [savedOverrides, setSavedOverrides] = useState<string | null>(null)
   const [fileSet, setFileSet] = useState<StyleFileSet | null>(null)
   const [fileDrafts, setFileDrafts] = useState<Record<string, string>>({})
+  // Read by reloadScss, which is a stable callback and must not see a draft one render old.
+  const fileDraftsRef = useRef(fileDrafts)
+  fileDraftsRef.current = fileDrafts
+  const scssRef = useRef(scss)
+  scssRef.current = scss
   const [graph, setGraph] = useState<CssVariableGraph | null>(null)
   const [graphLoading, setGraphLoading] = useState(true)
   const [graphNonce, setGraphNonce] = useState(0)
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [message, setMessage] = useState<string | null>(null)
-  // What the last save deleted without asking - the Google fonts chosen away. Stays until the next
-  // save, unlike "Saved", because it names files that are gone.
+  // What the last save did without asking - the Google fonts chosen away, the line put back into
+  // custom.scss. Stays until the next save, unlike "Saved", because it names something that changed.
   const [fontNote, setFontNote] = useState<string | null>(null)
   // The two reads this page cannot do without. Unhandled, a rejection left the page on "Lade…" for
   // ever - no heading, no tabs - and only the toast in the corner said why (twenty-first review,
@@ -269,13 +287,23 @@ export default function Styles(): JSX.Element {
   // banner used to say "another tab (variable override or font import)" for every one of them,
   // including the load order, the arrows and the repair button on the CSS tab itself (twenty-ninth
   // review, "nebenbei" 1).
+  //
+  // Since 1.1 those writers write _quartzcontrol.scss, and custom.scss only on the first write that
+  // moves the blocks out of it. So a draft is flagged stale when *its* file changed on disk, not
+  // whenever a writer ran - otherwise every variable save put the banner over a custom.scss draft
+  // nothing had touched, and none over the file that had been written.
   const reloadScss = useCallback(
     async (after: 'force' | ScssWriter) => {
       const info = await window.quartzGui.styles.get(project.path)
       setScss((prev) => {
-        if (prev?.dirty && after !== 'force') return { ...prev, original: info.content, staleBy: after }
+        if (prev?.dirty && after !== 'force') {
+          return { ...prev, original: info.content, managed: info.managed, staleBy: info.content !== prev.original ? after : prev.staleBy }
+        }
         return { ...info, original: info.content, dirty: false, staleBy: null }
       })
+      const managedDraft = fileDraftsRef.current[MANAGED_STYLESHEET]
+      if (after === 'force') setManagedStale(null)
+      else if (managedDraft !== undefined && info.managed?.content !== scssRef.current?.managed?.content) setManagedStale(after)
     },
     [project.path]
   )
@@ -371,10 +399,19 @@ export default function Styles(): JSX.Element {
       // writes every tab's drafts it was reachable from all of them - "type CSS, import a font,
       // save" cost the @font-face rule of the font just imported (thirty-third review, finding 2).
       const scssRefused = scss.dirty && scss.staleBy !== null && tab !== 'customCss'
-      if (scss.dirty && !scssRefused) await window.quartzGui.styles.save(project.path, scss.content)
+      // The same for the draft of _quartzcontrol.scss, the file every block writer on this page
+      // writes since 1.1: under its banner, from the CSS tab only.
+      const managedRefused = fileDrafts[MANAGED_STYLESHEET] !== undefined && managedStale !== null && tab !== 'customCss'
+      if (scss.dirty && !scssRefused) {
+        const result = await window.quartzGui.styles.save(project.path, scss.content)
+        // Said, because the editor shows a line after the save that the user had just deleted.
+        if (result.managedUseRestored) setFontNote(t('styles.managedUseRestored'))
+      }
       for (const [relativePath, draft] of drafts) {
+        if (relativePath === MANAGED_STYLESHEET && managedRefused) continue
         await window.quartzGui.styles.saveFile(project.path, relativePath, draft)
         draftsWritten[relativePath] = draft
+        if (relativePath === MANAGED_STYLESHEET) setManagedStale(null)
       }
       if (configDirty) {
         await saveConfig(() => {
@@ -394,7 +431,7 @@ export default function Styles(): JSX.Element {
       }
       // 'force' drops the draft, which is exactly wrong for the refused one: it is re-read under
       // its own name so the banner stays and the draft survives.
-      if (scssRefused) {
+      if (scssRefused || managedRefused) {
         if (configDirty) await reloadScss('googleFonts')
         else if (overridesDirty) await reloadScss('variables')
       } else if (scss.dirty || configDirty || overridesDirty) {
@@ -419,11 +456,11 @@ export default function Styles(): JSX.Element {
       // of the last keystroke, i.e. Cmd+S out of typing). Batched, the value goes draft to draft
       // and no pendingUpdate arises at all.
       await commitDrafts()
-      if (scssRefused) {
+      if (scssRefused || managedRefused) {
         // Not "saved": the page stays dirty, and the leave dialog has to keep the user here, where
         // the sentence is.
         setStatus('error')
-        setMessage(t('styles.scssStaleNotSaved'))
+        setMessage(t(scssRefused ? 'styles.scssStaleNotSaved' : 'styles.managedStaleNotSaved'))
         return false
       }
       setStatus('saved')
@@ -479,6 +516,11 @@ export default function Styles(): JSX.Element {
     overrides,
     setOverrides,
     scss,
+    managedStale,
+    discardManagedDraft: () => {
+      clearFileDrafts([MANAGED_STYLESHEET])
+      setManagedStale(null)
+    },
     setScssContent,
     reloadScss,
     fileSet,

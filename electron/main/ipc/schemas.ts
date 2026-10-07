@@ -146,8 +146,14 @@ export const styleFileSubPath = z
   // and a TypeError thrown here replaces the readable validation error with a crash.
   .refine((p) => !(p.split('/')[1] ?? '').startsWith('.'), { message: 'Dateiname darf nicht mit "." beginnen' })
 
+// A stylesheet the editor may read and write that is not part of the order: the additional files,
+// plus quartz/styles/_quartzcontrol.scss, where the app keeps its managed blocks since 1.1 and
+// which the CSS tab shows as a tab of its own. Only for reading and saving - renaming, deleting
+// and ordering stay on styleFileSubPath, so this one name cannot be moved or dropped from here.
+export const styleEditablePath = z.union([z.literal('_quartzcontrol.scss'), styleFileSubPath])
+
 // The same, plus custom.scss itself - the one file that is edited but is not part of the order.
-export const styleEntryPath = z.union([z.literal('custom.scss'), styleFileSubPath])
+export const styleEntryPath = z.union([z.literal('custom.scss'), styleEditablePath])
 
 // The name for a newly created or renamed stylesheet - one segment, the service appends ".scss".
 export const styleFileName = z

@@ -47,8 +47,17 @@ export async function writeCustomScss(projectPath: string, content: string): Pro
 
 // The whole file, from the CSS tab. writeCustomScss above is the step every writer here takes
 // while holding the lock; this is the door from outside, and it takes the lock itself.
-export function saveCustomScss(projectPath: string, content: string): Promise<void> {
-  return whileHoldingStyles(projectPath, () => writeCustomScss(projectPath, content))
+//
+// In a moved project the line that loads _quartzcontrol.scss is put back if the content lacks it:
+// without it the site loses every managed block and the Sass check still passes, so nothing else
+// would say so before the next build (measured, see repairManagedUse). The caller is told, so the
+// page can say it - the editor shows the line again after the save.
+export function saveCustomScss(projectPath: string, content: string): Promise<{ managedUseRestored: boolean }> {
+  return whileHoldingStyles(projectPath, async () => {
+    const restore = existsSync(managedScssPath(projectPath)) && !hasManagedUse(content)
+    await writeCustomScss(projectPath, restore ? ensureManagedUse(content) : content)
+    return { managedUseRestored: restore }
+  })
 }
 
 const IGNORED_DIRS = new Set(['node_modules', '.git', 'dist', '.changeset'])
@@ -880,7 +889,15 @@ export async function checkStyles(projectPath: string): Promise<ScssCheckResult>
     // twenty-eighth review, "nebenbei" 5). Asked of the file, not of the message: the message is
     // Sass's wording and the same for a namespace the user doubled by hand.
     const content = await readFile(entry, 'utf-8').catch(() => '')
-    return { status: 'error', diagnostic: hasNestedManagedCopy(content, 'imports') ? { ...diagnostic, nestedImportBlock: true } : diagnostic }
+    const managedFileMissing = hasManagedUse(content) && !existsSync(managedScssPath(projectPath))
+    return {
+      status: 'error',
+      diagnostic: {
+        ...diagnostic,
+        ...(hasNestedManagedCopy(content, 'imports') ? { nestedImportBlock: true } : {}),
+        ...(managedFileMissing ? { managedFileMissing: true } : {})
+      }
+    }
   }
 }
 

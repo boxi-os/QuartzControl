@@ -1375,19 +1375,23 @@ export default {
     },
     scssStaleBy: {
       variables:
-        'custom.scss has since been changed by saving the variables. Your draft here is still unsaved — saving it would overwrite that change.',
+        '{{file}} has since been changed by saving the variables. Your draft here is still unsaved — saving it would overwrite that change.',
       fontImport:
-        'custom.scss has since been changed by importing a font. Your draft here is still unsaved — saving it would overwrite that change.',
+        '{{file}} has since been changed by importing a font. Your draft here is still unsaved — saving it would overwrite that change.',
       fontRemoval:
-        'custom.scss has since been changed by removing an unused font. Your draft here is still unsaved — saving it would overwrite that change.',
+        '{{file}} has since been changed by removing an unused font. Your draft here is still unsaved — saving it would overwrite that change.',
       googleFonts:
-        'custom.scss has since been changed because the Google fonts were fetched into the project or removed. Your draft here is still unsaved — saving it would overwrite that change.',
+        '{{file}} has since been changed because the Google fonts were fetched into the project or removed. Your draft here is still unsaved — saving it would overwrite that change.',
       stylesheets:
-        'custom.scss has since been changed because the stylesheets changed (load order, an import or a new file). Your draft here is still unsaved — saving it would overwrite that change.'
+        '{{file}} has since been changed because the stylesheets changed (load order, an import or a new file). Your draft here is still unsaved — saving it would overwrite that change.'
     },
     scssStaleNotSaved:
       'custom.scss has changed since you typed in the “Custom CSS” tab, so your draft there was not saved. Everything else was; the “Custom CSS” tab lets you reload it or deliberately overwrite.',
     scssStaleReload: 'Reload from disk (discard draft)',
+    managedStaleNotSaved:
+      '_quartzcontrol.scss has changed since you edited it on the “Custom CSS” tab — your draft there was not saved. Everything else is saved; on the “Custom CSS” tab you can reload or deliberately overwrite.',
+    managedUseRestored:
+      'custom.scss was missing the line @use "./quartzcontrol"; – it has been put back. Without it the site would lose this page’s load order, fonts and variables.',
     styleSettings: {
       sourceNote: 'Descriptions from the original theme “{{theme}}” by {{author}} — {{count}} options.',
       searchPlaceholder: 'Search option…',
@@ -1480,11 +1484,16 @@ export default {
     componentHint: 'Inserts a selector for the chosen component at the cursor position.',
     insertSelector: 'Insert selector',
     referenceHeading: 'Original styles (read-only)',
+    managedFile: {
+      warning:
+        'The app writes this file itself. What stands between the QuartzControl markers is rewritten by every change to the load order, fonts or variables on this page; text outside the markers is kept.'
+    },
     files: {
       heading: 'Load order',
       description:
         'Quartz only ever imports custom.scss — everything else is loaded from there, in this order. Later files override earlier ones; custom.scss itself always comes last.',
       alwaysLast: 'always last',
+      managedRow: 'fonts and variables of this page',
       moveUp: 'Move up',
       moveDown: 'Move down',
       rename: 'Rename',
@@ -1507,6 +1516,8 @@ export default {
       nestedImports:
         'An older version of QuartzControl wrote its import block inside this app’s. Writing the load order once turns them back into one block; the order stays as it is.',
       nestedImportsRepair: 'Rewrite load order',
+      managedFileMissing:
+        'custom.scss loads _quartzcontrol.scss, but the file is missing. The next build creates it empty; a snapshot under Maintenance brings its content back.',
       recheck: 'Check again',
       checkActive: 'Check code',
       running: 'Checking…',

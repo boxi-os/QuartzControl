@@ -398,27 +398,51 @@ function parseDeclarations(block: string): Record<string, string> {
 
 // Every rule of each kind, the later one winning per variable: a body read from two copies of the
 // section (see MARKER_NAMES) carries two of each, and the browser applies them the same way.
+//
+// Three kinds since 1.1 (Form C): `:root` for both modes, `:root[saved-theme="dark"]` for dark, and
+// `:root:not([saved-theme="dark"])` for light only. The attribute value is read with or without
+// quotes, because Sass drops them in its output and a rule copied back from the browser has none.
+const DARK_RULE = /:root\[saved-theme=["']?dark["']?\]\s*\{([^}]*)\}/g
+const LIGHT_ONLY_RULE = /:root:not\(\[saved-theme=["']?dark["']?\]\)\s*\{([^}]*)\}/g
+const LIGHT_ONLY_SELECTOR = ':root:not([saved-theme="dark"])'
+
 function parseVariableOverrides(body: string): CssVariableOverride[] {
   const light: Record<string, string> = {}
   const dark: Record<string, string> = {}
+  const lightOnly: Record<string, string> = {}
   for (const match of body.matchAll(/:root\s*\{([^}]*)\}/g)) Object.assign(light, parseDeclarations(match[1]))
-  for (const match of body.matchAll(/:root\[saved-theme=["']dark["']\]\s*\{([^}]*)\}/g)) Object.assign(dark, parseDeclarations(match[1]))
+  for (const match of body.matchAll(DARK_RULE)) Object.assign(dark, parseDeclarations(match[1]))
+  for (const match of body.matchAll(LIGHT_ONLY_RULE)) Object.assign(lightOnly, parseDeclarations(match[1]))
   // A key with only a dark declaration is one whose light half was left empty (see below).
-  const keys = new Set([...Object.keys(light), ...Object.keys(dark)])
-  return Array.from(keys, (key) => ({ key, light: light[key] ?? '', dark: dark[key] }))
+  const keys = new Set([...Object.keys(light), ...Object.keys(dark), ...Object.keys(lightOnly)])
+  return Array.from(keys, (key): CssVariableOverride => {
+    if (!(key in lightOnly)) return { key, light: light[key] ?? '', dark: dark[key] }
+    // The light-only rule wins in light mode whatever stands in `:root` (0,2,0 against 0,1,0). A
+    // `:root` value beside it is then what the dark mode gets, unless a dark rule says otherwise -
+    // which is an ordinary override with a dark half, not a light-only one.
+    const darkValue = dark[key] ?? light[key]
+    return darkValue !== undefined ? { key, light: lightOnly[key], dark: darkValue } : { key, light: lightOnly[key], lightOnly: true }
+  })
 }
 
 // An empty half is no declaration. `--x: ;` is valid CSS and Dart Sass passes it through, and in
 // the browser it is an empty custom property: every `var(--x)` resolves to nothing. The Variables
 // tab left one after an emptied field (thirty-seventh review, finding 6).
 function renderVariableOverrides(overrides: CssVariableOverride[]): string {
-  const lightOverrides = overrides.filter((o) => o.light.trim() !== '')
-  const lightLines = lightOverrides.map((o) => `  --${o.key}: ${o.light};`).join('\n')
-  const darkOverrides = overrides.filter((o) => o.dark !== undefined && o.dark.trim() !== '')
-  const darkLines = darkOverrides.map((o) => `  --${o.key}: ${o.dark};`).join('\n')
+  const hasDark = (o: CssVariableOverride): boolean => o.dark !== undefined && o.dark.trim() !== ''
+  // Light-only only where it can mean something: with a dark half the two ordinary rules say the
+  // same, and they are what every older reader understands.
+  const isLightOnly = (o: CssVariableOverride): boolean => o.lightOnly === true && !hasDark(o)
+  const lines = (list: CssVariableOverride[], value: (o: CssVariableOverride) => string | undefined): string =>
+    list.map((o) => `  --${o.key}: ${value(o)};`).join('\n')
+  const withLight = overrides.filter((o) => o.light.trim() !== '')
+  const both = withLight.filter((o) => !isLightOnly(o))
+  const lightOnly = withLight.filter(isLightOnly)
+  const darkOverrides = overrides.filter(hasDark)
   const rules: string[] = []
-  if (lightOverrides.length > 0) rules.push(`:root {\n${lightLines}\n}`)
-  if (darkOverrides.length > 0) rules.push(`:root[saved-theme="dark"] {\n${darkLines}\n}`)
+  if (both.length > 0) rules.push(`:root {\n${lines(both, (o) => o.light)}\n}`)
+  if (darkOverrides.length > 0) rules.push(`:root[saved-theme="dark"] {\n${lines(darkOverrides, (o) => o.dark)}\n}`)
+  if (lightOnly.length > 0) rules.push(`${LIGHT_ONLY_SELECTOR} {\n${lines(lightOnly, (o) => o.light)}\n}`)
   return rules.join('\n\n')
 }
 

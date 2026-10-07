@@ -365,10 +365,14 @@ const cssValue = z
     message: 'unerlaubtes Zeichen im CSS-Wert'
   })
 
+// `lightOnly` is named here because z.object() strips what it does not name: without it every
+// "light mode only" variable reached the main process as an ordinary one and was written for both
+// modes.
 export const cssVariableOverride = z.object({
   key: z.string().regex(/^[A-Za-z0-9_-]{1,128}$/, 'not a valid CSS variable name'),
   light: cssValue,
-  dark: cssValue.optional()
+  dark: cssValue.optional(),
+  lightOnly: z.literal(true).optional()
 })
 
 // A remote directory on the target server. Absolute, and never bare "/": a target whose path is

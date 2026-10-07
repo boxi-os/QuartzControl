@@ -778,11 +778,17 @@ export type ScssCheckResult =
 // `:root { --x: ... }` rule always wins regardless of selector specificity or source order - a
 // `dark` override is therefore only written when explicitly set; omitting it means the light
 // value applies in both modes (there is no unlayered rule left to defer back to the theme's own
-// per-mode derivation).
+// per-mode derivation) - unless `lightOnly` says otherwise (since 1.1, "Form C"): the light value
+// is then written as `:root:not([saved-theme="dark"])` and the dark mode keeps what the theme
+// says. Without it a light-only edit had to write the theme's dark value of the day as an explicit
+// override, and a template carried that to projects with another theme (thirty-eighth review,
+// finding 7). Measured in docs/decisions/styles-and-fonts.md.
 export interface CssVariableOverride {
   key: string
   light: string
   dark?: string
+  /** The light value applies in light mode only; ignored when `dark` is set. */
+  lightOnly?: true
 }
 
 // One entry of the variable table the Styles page's "Variablen" tab renders. Values are kept

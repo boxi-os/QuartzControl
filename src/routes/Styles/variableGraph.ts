@@ -1,12 +1,17 @@
 import type { CssVariableGraph } from '@shared/ipc-contract'
 import { CSS_VARIABLES, defaultValueFor, type CssVariableDef } from '../../data/cssVariables'
 
+// One variable's override as the page holds it. An empty `dark` is "no dark declaration"; with
+// `lightOnly` the light value applies in light mode only and the dark mode keeps the theme's value
+// (Form C since 1.1, see CssVariableOverride in the IPC contract).
+export type OverrideValue = { light: string; dark: string; lightOnly?: boolean }
+
 export type Mode = 'light' | 'dark'
 export type VariableOrigin = 'core' | 'theme' | 'build' | 'user'
 
 export interface ResolveContext {
   graph: CssVariableGraph | null
-  overrides: Record<string, { light: string; dark: string }>
+  overrides: Record<string, OverrideValue>
   colors: { lightMode?: Record<string, string>; darkMode?: Record<string, string> }
   typography: Record<string, string> | undefined
 }
@@ -56,7 +61,8 @@ export function catalogDef(key: string): CssVariableDef | undefined {
 export function effectiveValue(key: string, mode: Mode, ctx: ResolveContext): string | undefined {
   const override = ctx.overrides[key]
   if (override) {
-    const value = mode === 'dark' ? override.dark || override.light : override.light
+    // A light-only override says nothing about the dark mode: there the base applies.
+    const value = mode === 'dark' ? override.dark || (override.lightOnly ? '' : override.light) : override.light
     if (value) return value
   }
   const info = ctx.graph?.vars[key]

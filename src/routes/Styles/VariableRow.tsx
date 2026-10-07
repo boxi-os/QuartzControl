@@ -16,7 +16,8 @@ import {
   resolveValueLiteral,
   type Mode,
   type ResolveContext,
-  type VariableOrigin
+  type VariableOrigin,
+  type OverrideValue
 } from './variableGraph'
 import ColorPicker from './ColorPicker'
 import { pageGround, swatchStyle, swatchTitle } from './swatch'
@@ -28,7 +29,7 @@ const ORIGIN_TONE: Record<VariableOrigin, 'slate' | 'green' | 'amber'> = {
   user: 'green'
 }
 
-export type OverrideValue = { light: string; dark: string }
+export type { OverrideValue } from './variableGraph'
 
 // One variable, in both the curated "Hauptvariablen" list and the searchable full table - the two
 // differ in which keys they show, not in how a row behaves. A row is inert until expanded: the
@@ -141,7 +142,8 @@ function VariableRow({
   // layered dark colour. It showed base.dark there, a value written nowhere (1.0.1, gui-test).
   const draft: OverrideValue = {
     light: override ? override.light : base.light,
-    dark: override ? override.dark || override.light || base.dark : base.dark
+    // A light-only override leaves the dark mode to the theme, so the field shows the theme's value.
+    dark: override ? override.dark || (override.lightOnly ? base.dark : override.light) || base.dark : base.dark
   }
 
   // Light and dark are two fields from the start only where that is the usual case: a colour, or a
@@ -160,8 +162,22 @@ function VariableRow({
   // when only the light one is edited - until 1.0.1 it got '' and the site showed the new light
   // colour in dark mode too (--secondary in gui-test). A variable that is the same in both modes
   // stays one declaration, which is what kept one edit from writing forty.
+  //
+  // Since 1.1 a light edit of a variable whose base differs between the modes is written for light
+  // mode only (Form C, `lightOnly`): the dark mode keeps what the theme says instead of the theme's
+  // dark value of the day, frozen into an explicit override - the form 1.0.1 wrote, and one a
+  // template carried to projects with another theme (thirty-eighth review, finding 7). A dark half
+  // that only repeats the base is that frozen form and counts as unset, so it heals on the next edit.
   function setMode(mode: Mode, value: string): void {
     const lightValue = mode === 'light' ? value : override?.light || base.light
+    // Compared as CSS text, not byte for byte: the graph hands the base over as `#a1a1a1`, the file
+    // holds what was typed, `#A1A1A1` - measured on gui-test's --gray, where the frozen half stayed.
+    const sameCss = (a: string, b: string): boolean => a.replace(/\s+/g, '').toLowerCase() === b.replace(/\s+/g, '').toLowerCase()
+    const ownDark = override?.dark && !sameCss(override.dark, base.dark) ? override.dark : ''
+    if (mode === 'light' && baseDiffers && !ownDark) {
+      onChange(lightValue === base.light ? null : { light: lightValue, dark: '', lightOnly: true })
+      return
+    }
     const darkValue = mode === 'dark' ? value : override?.dark || (baseDiffers ? base.dark : lightValue)
     const next: OverrideValue = { light: lightValue, dark: darkValue === lightValue ? '' : darkValue }
     // Back where it started in both modes: no override at all.

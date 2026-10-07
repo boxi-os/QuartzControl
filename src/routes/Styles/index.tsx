@@ -11,6 +11,7 @@ import { TAB_ICONS } from '../navConfig'
 import { useProject } from '../ProjectLayout'
 import { fetchesGoogleFonts, persistFontDelivery, presentFontDelivery } from './fontDelivery'
 import { MANAGED_STYLESHEET } from './managedStylesheet'
+import type { OverrideValue } from './variableGraph'
 import Basics from './Basics'
 import Theme from './Theme'
 import Variables from './Variables'
@@ -50,8 +51,8 @@ export interface StylesContextValue {
    * them into the project - see fontDelivery.ts.
    */
   quartzStillDownloadsFonts: boolean
-  overrides: Record<string, { light: string; dark: string }>
-  setOverrides: React.Dispatch<React.SetStateAction<Record<string, { light: string; dark: string }>>>
+  overrides: Record<string, OverrideValue>
+  setOverrides: React.Dispatch<React.SetStateAction<Record<string, OverrideValue>>>
   /**
    * `staleBy`: what rewrote custom.scss under an unsaved draft, or null - see reloadScss. `managed`
    * is _quartzcontrol.scss on disk, null while the project has not been moved yet.
@@ -115,7 +116,7 @@ export default function Styles(): JSX.Element {
   const tab: StylesTab = isTab(rawTab) ? rawTab : lastTab
 
   const [config, setConfig] = useState<QuartzConfig | null>(null)
-  const [overrides, setOverrides] = useState<Record<string, { light: string; dark: string }>>({})
+  const [overrides, setOverrides] = useState<Record<string, OverrideValue>>({})
   // `original` is what the file held when it was last read, so `dirty` stays a comparison rather
   // than a flag that survives typing an edit and undoing it again.
   const [scss, setScss] = useState<{
@@ -189,7 +190,7 @@ export default function Styles(): JSX.Element {
       .catch(failed)
     window.quartzGui.styles.listFiles(project.path).then(setFileSet)
     window.quartzGui.styles.getVariableOverrides(project.path).then((list) => {
-      const next: Record<string, { light: string; dark: string }> = {}
+      const next: Record<string, OverrideValue> = {}
       // An empty `dark`, not a copy of `light`. The dark half of an override is optional - a
       // variable that only differs in light mode has no declaration in the file's dark block, and
       // effectiveValue() already falls back to the light value for it. Filling it in here looked
@@ -203,7 +204,9 @@ export default function Styles(): JSX.Element {
       // a variable with no dark declaration resolves to its light value anyway - so the only
       // thing lost is a deliberate "pin dark to exactly this value", which would have to survive
       // a change to the light value to be worth anything, and cannot.
-      for (const o of list) next[o.key] = { light: o.light, dark: o.dark === o.light ? '' : (o.dark ?? '') }
+      for (const o of list) {
+        next[o.key] = { light: o.light, dark: o.dark === o.light ? '' : (o.dark ?? ''), ...(o.lightOnly ? { lightOnly: true } : {}) }
+      }
       setOverrides(next)
       setSavedOverrides(JSON.stringify(next))
     })
@@ -423,7 +426,7 @@ export default function Styles(): JSX.Element {
         // A row whose fields were both emptied is no override; the file gets nothing for it, and
         // the page drops it too, so after the save it reads what the file holds.
         const kept = Object.fromEntries(Object.entries(overrides).filter(([, v]) => v.light.trim() !== '' || !!v.dark?.trim()))
-        const list = Object.entries(kept).map(([key, v]) => ({ key, light: v.light, dark: v.dark }))
+        const list = Object.entries(kept).map(([key, v]) => ({ key, light: v.light, dark: v.dark, ...(v.lightOnly ? { lightOnly: true as const } : {}) }))
         await window.quartzGui.styles.saveVariableOverrides(project.path, list)
         blocksWritten = 'variables'
         setOverrides(kept)

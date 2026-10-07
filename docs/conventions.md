@@ -651,7 +651,11 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   `enabled: false` und liegt dort als Chip „aus“; zurückgezogen ist sie wieder eingeschaltet, an der
   Ablagestelle (`parkedIndices` in `LayoutEditor/utils.ts`, Ansagen `dnd.disabled`/`dnd.reenabled`
   über `dropOutcome`). Weil das gezogene Element dabei verschwindet, setzt das Board den Fokus selbst
-  auf das, was es jetzt ist — sonst fiel er auf `<body>`. **Und über einem Drag steht nie ein `stopPropagation()`:**
+  auf das, was es jetzt ist — sonst fiel er auf `<body>`. **Eine Fläche, auf die gezogen wird, wird
+  nicht skaliert:** Die Bühne des Layout-Boards verkleinert ein Frame über seine Proportionen
+  (`fr`-Spuren, Abstände in `cqw`, `LayoutEditor/stageGeometry.ts`), nie über `transform: scale` —
+  dnd-kit misst Rechtecke, und eine skalierte Ebene gibt ihm welche, die nicht dort liegen, wo sie
+  gezeichnet sind. Eine Ablagefläche füllt ihren Bereich, nicht nur die Höhe ihrer Einträge. **Und über einem Drag steht nie ein `stopPropagation()`:**
   Der `KeyboardSensor` hört, sobald ein Drag läuft, auf dem *Dokument*, und React ruft für ein
   `stopPropagation()` im Renderer auch das native an der Wurzel — ein Guard, der ein Zeichen vom
   Elternknoten fernhalten soll, nimmt damit dem laufenden Drag Pfeile und Escape ab. Wer zu viel

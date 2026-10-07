@@ -48,6 +48,7 @@ import {
 import { formatIpcError } from '../../components/ErrorSurface'
 import DevServerRestartHint from '../../components/DevServerRestartHint'
 import { breakpointRangeLabel } from './utils'
+import FrameBreakpoints from './FrameBreakpoints'
 import { useStickyState } from '../../state/uiState'
 import { announce } from '../../state/announcer'
 import { useDndAccessibility } from '../../utils/dndAnnouncements'
@@ -346,8 +347,8 @@ export default function FrameBuilder({
   // `--serve` run; see DevServerRestartHint.
   const [savedWasEdit, setSavedWasEdit] = useState(false)
   const [dragAreaId, setDragAreaId] = useState<string | null>(null)
-  // Read-only here - edited on the Global tab, because they apply to every frame. Used only to
-  // label the three breakpoint tabs with the width band each one actually covers.
+  // Edited below the frame list (FrameBreakpoints), because they apply to every frame; the editor
+  // reads them to label its three breakpoint tabs with the width band each one actually covers.
   const [breakpointWidths, setBreakpointWidths] = useState<FrameBreakpointWidths>(DEFAULT_FRAME_BREAKPOINT_WIDTHS)
 
   function refresh(): void {
@@ -958,6 +959,7 @@ export default function FrameBuilder({
             </Card>
           ))}
         </div>
+        <FrameBreakpoints projectPath={projectPath} widths={breakpointWidths} onSaved={setBreakpointWidths} hasFrames={frames.length > 0} />
       </div>
     )
   }

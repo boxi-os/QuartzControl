@@ -27,22 +27,9 @@ import type {
   PluginLayoutDeclaration,
   QuartzConfig
 } from '@shared/ipc-contract'
-import { DEFAULT_FRAME_BREAKPOINT_WIDTHS, FRAME_BREAKPOINTS, buildFrameBox, buildGridStyle } from '@shared/gridFrameCss'
-import {
-  Badge,
-  Button,
-  Card,
-  CardHeading,
-  Field,
-  FormActions,
-  SegmentedControl,
-  Select,
-  SettingsSection,
-  TextInput
-} from '../../components/ui'
-import { SlidersHorizontal } from 'lucide-react'
-import { formatIpcError } from '../../components/ErrorSurface'
-import DevServerRestartHint from '../../components/DevServerRestartHint'
+import { DEFAULT_FRAME_BREAKPOINT_WIDTHS, FRAME_BREAKPOINTS, buildGridStyle } from '@shared/gridFrameCss'
+import { Button, Card, CardHeading, SegmentedControl, Select } from '../../components/ui'
+import { LayoutGrid, SlidersHorizontal } from 'lucide-react'
 import { useStickyState } from '../../state/uiState'
 import { ComponentChip, PaletteChip } from './ComponentChip'
 import { ComponentPalette, PALETTE_DROP_ID, PALETTE_PREFIX } from './Palette'
@@ -59,6 +46,7 @@ import {
   buildBoardPositionMap,
   componentRef,
   derivePageTypes,
+  getLayout,
   duplicateNameCounts,
   duplicateRanks,
   parkedIndices,
@@ -69,6 +57,7 @@ import {
   withGroup,
   type ComponentRef
 } from './utils'
+import { QUARTZ_MOBILE_MAX, STAGE_REFERENCE_WIDTH, shownInView, stageFrame, stageTracks } from './stageGeometry'
 
 // Plain closestCenter compares the *dragged rect's* center (not the cursor) against each
 // droppable's center - grabbing a wide card by its left-edge handle offsets that rect's center
@@ -113,11 +102,14 @@ export default function GlobalBoard({
   projectPath,
   config,
   onChange,
+  onEditFrame,
   builtinPageTypeFrames = {}
 }: {
   projectPath: string
   config: QuartzConfig
   onChange: (next: QuartzConfig) => void
+  // Opens the frame builder on this frame, in this view (LayoutEditor/index.tsx).
+  onEditFrame: (frame: GridFrameDefinition, breakpoint: FrameBreakpoint) => void
   // Frame names built-in pageType plugins (e.g. canvas-page) default to, keyed by plugin display
   // name - see LayoutEditor/index.tsx. Needed so the mockup below doesn't claim the literal
   // 3-column default frame for a page type whose plugin actually renders something else.
@@ -136,8 +128,9 @@ export default function GlobalBoard({
   // render (plugins may still be loading), which is fine - the byPageType lookup below just comes
   // back empty until it is.
   const [previewPageType, setPreviewPageType] = useState('content')
-  // Only used to label the breakpoint tabs below; the editing state lives in FrameBreakpoints,
-  // which reports back here so the labels follow a save without a remount.
+  // Read here to label the views and to compare the frames' mobile switch with Quartz's own; they
+  // are edited on the Frames tab (FrameBreakpoints), which unmounts this board, so a read on mount
+  // is always the current one.
   const [breakpointWidths, setBreakpointWidths] = useState<FrameBreakpointWidths>(DEFAULT_FRAME_BREAKPOINT_WIDTHS)
   const parked = parkedIndices(config.plugins)
   const positions = buildBoardPositionMap(config.plugins, parked)
@@ -201,9 +194,9 @@ export default function GlobalBoard({
   // nothing and drew the next one over its cards. Every row sizes to what it holds here.
   const activeGridStyle =
     activeFrame && activeLayout ? buildGridStyle({ ...activeLayout, rowSizes: undefined }, activeFrame.areas) : null
-  // A custom frame's width cap, alignment and padding belong on this board too - it is the page as
-  // it will be built, and leaving them out would show a full-width layout for a frame that is not.
-  const activeBox = activeLayout ? buildFrameBox(activeLayout) : null
+  // The columns, gaps and the frame's own box (width cap, alignment, paddings - the page as it will
+  // be built) as shares of the stage, so the grid fits whatever width the board has (stageGeometry).
+  const activeStage = activeLayout ? stageFrame(activeLayout, breakpoint) : null
   // Which of a position's components each area of the active frame shows. It is the renderer's
   // half of the frame's own contentsFor(): a group area holds its group, and the area without one
   // holds everything the frame's group areas did not claim - including groups this frame gave no
@@ -427,7 +420,16 @@ export default function GlobalBoard({
   const activeItem = activeId && !activeId.startsWith(PALETTE_PREFIX) ? config.plugins[Number(activeId)] : null
   const activePaletteSource = activeId?.startsWith(PALETTE_PREFIX) ? config.plugins[Number(activeId.slice(PALETTE_PREFIX.length))] : null
   const grid = DEFAULT_FRAME_GRID[breakpoint]
-  const narrow = breakpoint !== 'desktop'
+  // Quartz's own frame at the stage's scale. Its gap stays the board's 12px (gap-3): Quartz's real
+  // 5px is too tight to tell two areas apart at this size, and twelve pixels in 1456 bend no track.
+  const defaultColumns = stageTracks(grid.columns.split(' '), {
+    inner: STAGE_REFERENCE_WIDTH[breakpoint],
+    gap: 12,
+    viewport: STAGE_REFERENCE_WIDTH[breakpoint]
+  }).columns
+  // Where the project's frames switch to mobile somewhere else than Quartz switches its components
+  // (stageGeometry, shownInView). Only an authored frame follows the project's widths.
+  const thresholdMismatch = activeFrame && breakpointWidths.mobile !== QUARTZ_MOBILE_MAX ? breakpointWidths.mobile : null
 
   const slotProps = {
     config,
@@ -435,6 +437,7 @@ export default function GlobalBoard({
     nameCounts,
     ranks,
     selectedIndex,
+    breakpoint,
     onSelect: (index: number) => setSelected(componentRef(config.plugins, index))
   }
   // What a drop on the tray would do with the thing being dragged right now, for the tray's caption.
@@ -442,9 +445,12 @@ export default function GlobalBoard({
 
   return (
     <div className="flex flex-col gap-6">
+      {/* The stage's head: which view, which page type it is drawn for, and the frame that gives it
+          its shape - with the way into that frame's editor, since the frame is where the shape of
+          a view changes (docs/plan-1.1.md, "Eigene Frames bleiben ein eigener Bereich"). */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <SegmentedControl
-          label={t('layoutEditor.frameBuilder.breakpointLabel')}
+          label={t('layoutEditor.stage.viewLabel')}
           value={breakpoint}
           onChange={setBreakpoint}
           options={FRAME_BREAKPOINTS.map((bp) => ({
@@ -457,35 +463,44 @@ export default function GlobalBoard({
               : t(`layoutEditor.frameBuilder.breakpoint.${bp}`)
           }))}
         />
-        <div className="flex items-center gap-2">
-          <label className="text-xs font-medium text-text-muted">{t('layoutEditor.previewPageTypeLabel')}</label>
-          <Select value={previewPageType} onChange={(e) => setPreviewPageType(e.target.value)} className="w-40">
-            {pageTypes.map((pt) => (
-              <option key={pt} value={pt}>
-                {t(`layoutEditor.pageTypes.${pt}`, pt)}
-              </option>
-            ))}
-          </Select>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="flex items-center gap-2 text-xs font-medium text-text-muted">
+            {t('layoutEditor.previewPageTypeLabel')}
+            <Select value={previewPageType} onChange={(e) => setPreviewPageType(e.target.value)} className="w-40">
+              {pageTypes.map((pt) => (
+                <option key={pt} value={pt}>
+                  {t(`layoutEditor.pageTypes.${pt}`, pt)}
+                </option>
+              ))}
+            </Select>
+          </label>
           <p className="text-xs text-text-muted">
-            {activeFrame
-              ? t('layoutEditor.activeFrameLabel', { name: activeFrame.frameName })
-              : builtinFrame
-                ? t('layoutEditor.activeFrameLabel', {
-                    name: t(activeFrameName === 'full-width' ? 'layoutEditor.templateFullWidth' : 'layoutEditor.templateMinimal')
-                  })
-                : unknownPluginFrame
-                  ? t('layoutEditor.activeFrameLabel', { name: builtinDefaultFrame })
-                  : t('layoutEditor.activeFrameDefault')}
+            {t('layoutEditor.activeFrameLabel', {
+              name: activeFrame
+                ? activeFrame.frameName
+                : builtinFrame
+                  ? t(activeFrameName === 'full-width' ? 'layoutEditor.templateFullWidth' : 'layoutEditor.templateMinimal')
+                  : unknownPluginFrame
+                    ? builtinDefaultFrame
+                    : t('layoutEditor.activeFrameDefault')
+            })}
           </p>
+          {activeFrame && (
+            <Button variant="ghost" onClick={() => onEditFrame(activeFrame, breakpoint)}>
+              <LayoutGrid size={14} aria-hidden />
+              {t('layoutEditor.stage.editFrame')}
+            </Button>
+          )}
         </div>
       </div>
-
-      <FrameBreakpoints
-        projectPath={projectPath}
-        widths={breakpointWidths}
-        onSaved={setBreakpointWidths}
-        hasFrames={frames.length > 0}
-      />
+      {thresholdMismatch !== null && (
+        <p className="-mt-3 max-w-[95ch] text-micro text-text-muted">
+          {t(thresholdMismatch < QUARTZ_MOBILE_MAX ? 'layoutEditor.stage.mobileBelowQuartz' : 'layoutEditor.stage.mobileAboveQuartz', {
+            frame: thresholdMismatch,
+            quartz: QUARTZ_MOBILE_MAX
+          })}
+        </p>
+      )}
 
       {/* useDraggable/useDroppable only register with the nearest ancestor DndContext, so the
           palette has to be a child of it, not a sibling - otherwise its chips are inert. */}
@@ -508,35 +523,34 @@ export default function GlobalBoard({
               dropHint={trayDropHint}
             />
 
-            {/* Scrolls sideways rather than pushing the page out: the board renders the project's own
-                frame geometry, and a frame whose fixed columns and gaps add up to more than the window
-                (1048px for the twelve-column example at 1280px wide) is a fact about the frame, not
-                about this app - it says so by not fitting. The scroller sits at the panel's edge, which
-                is where the rule "Wer rollt, ist nicht wer die Breite deckelt" puts a panel's own one.
-                See docs/decisions/layout-frames.md for the measurement, including the keyboard drag
-                through it. */}
+            {/* The stage: the page in miniature, never wider than the board and never wider than the
+                window the view stands for (a phone is drawn phone-wide, not stretched). Until 1.1
+                this scrolled sideways, because the frame was drawn at its real pixel sizes - 1068px
+                for the editorial frame in a 622px column at 1280px. stageGeometry reduces it through
+                the proportions instead; a scaled layer would hand dnd-kit rectangles that are not
+                where they appear. It is the container its `cqw` gaps refer to. */}
             <div
-              className={`overflow-x-auto ${narrow ? 'mx-auto w-full' : 'w-full'}`}
-              style={{ maxWidth: breakpoint === 'mobile' ? '22rem' : undefined }}
+              data-stage
+              className="mx-auto w-full"
+              style={{ maxWidth: STAGE_REFERENCE_WIDTH[breakpoint], containerType: 'inline-size' }}
             >
-              {activeFrame && activeAreas && activeGridStyle ? (
+              {activeFrame && activeAreas && activeGridStyle && activeStage ? (
                 <div
-                  className="grid gap-3"
+                  className="grid"
                   style={{
-                    gridTemplateColumns: activeGridStyle.gridTemplateColumns,
+                    gridTemplateColumns: activeStage.gridTemplateColumns,
                     gridTemplateRows: activeGridStyle.gridTemplateRows,
                     gridTemplateAreas: activeGridStyle.gridTemplateAreas,
-                    rowGap: activeGridStyle.rowGap,
-                    columnGap: activeGridStyle.columnGap,
-                    width: activeBox?.width,
-                    maxWidth: activeBox?.maxWidth,
-                    marginInline: activeBox?.marginInline,
-                    paddingBlock: activeBox?.paddingBlock,
-                    paddingInline: activeBox?.paddingInline
+                    rowGap: activeStage.rowGap,
+                    columnGap: activeStage.columnGap,
+                    width: activeStage.width,
+                    marginInline: activeStage.marginInline,
+                    paddingBlock: activeStage.paddingBlock,
+                    paddingInline: activeStage.paddingInline
                   }}
                 >
                   {activeAreas.map((area) => (
-                    <div key={area.id} style={{ gridArea: area.name }}>
+                    <div key={area.id} className="min-w-0" style={{ gridArea: area.name }}>
                       <AreaBox
                         label={area.name}
                         slotLabel={area.slot ? t(`positions.${area.slot}`, area.slot) : t('layoutEditor.frameBuilder.slotNone')}
@@ -574,7 +588,7 @@ export default function GlobalBoard({
                   }}
                 >
                   {builtinFrame.visibleSlots.includes('header') && (
-                    <div style={{ gridArea: 'header' }}>
+                    <div className="min-w-0" style={{ gridArea: 'header' }}>
                       <AreaBox label={t('positions.header')}>
                         <PositionSlot position="header" indices={positions.header} direction="column" {...slotProps} />
                       </AreaBox>
@@ -601,7 +615,7 @@ export default function GlobalBoard({
                     </div>
                   )}
                   {builtinFrame.visibleSlots.includes('footer') && (
-                    <div style={{ gridArea: 'footer' }}>
+                    <div className="min-w-0" style={{ gridArea: 'footer' }}>
                       <AreaBox label={t('positions.footer')}>
                         <PositionSlot position="footer" indices={positions.footer} direction="column" {...slotProps} />
                       </AreaBox>
@@ -615,9 +629,9 @@ export default function GlobalBoard({
               ) : (
                 <div
                   className="grid gap-3"
-                  style={{ gridTemplateColumns: grid.columns, gridTemplateRows: grid.rows, gridTemplateAreas: grid.areas }}
+                  style={{ gridTemplateColumns: defaultColumns, gridTemplateRows: grid.rows, gridTemplateAreas: grid.areas }}
                 >
-                  <div style={{ gridArea: 'sidebar-left' }}>
+                  <div className="min-w-0" style={{ gridArea: 'sidebar-left' }}>
                     <AreaBox label={t('positions.left')}>
                       <PositionSlot position="left" indices={positions.left} direction={sidebarDirection('left', breakpoint)} {...slotProps} />
                     </AreaBox>
@@ -627,7 +641,7 @@ export default function GlobalBoard({
                       <PositionSlot position="header" indices={positions.header} direction="column" {...slotProps} />
                     </AreaBox>
                   </div>
-                  <div style={{ gridArea: 'center' }} className="flex flex-col gap-3">
+                  <div style={{ gridArea: 'center' }} className="flex min-w-0 flex-col gap-3">
                     <AreaBox label={t('positions.beforeBody')}>
                       <PositionSlot position="beforeBody" indices={positions.beforeBody} direction="column" {...slotProps} />
                     </AreaBox>
@@ -638,7 +652,7 @@ export default function GlobalBoard({
                       <PositionSlot position="afterBody" indices={positions.afterBody} direction="column" {...slotProps} />
                     </AreaBox>
                   </div>
-                  <div style={{ gridArea: 'sidebar-right' }}>
+                  <div className="min-w-0" style={{ gridArea: 'sidebar-right' }}>
                     <AreaBox label={t('positions.right')}>
                       <PositionSlot position="right" indices={positions.right} direction={sidebarDirection('right', breakpoint)} {...slotProps} />
                     </AreaBox>
@@ -649,6 +663,11 @@ export default function GlobalBoard({
                     </AreaBox>
                   </div>
                 </div>
+              )}
+              {activeStage && activeStage.approximate.length > 0 && (
+                <p className="mt-3 text-xs text-text-muted">
+                  {t('layoutEditor.stage.approximate', { sizes: [...new Set(activeStage.approximate)].join(', ') })}
+                </p>
               )}
               {(activeFrame || builtinFrame) && activeUnassignedSlots.length > 0 && (
                 <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
@@ -685,15 +704,17 @@ export default function GlobalBoard({
         </div>
 
         <DragOverlay>
+          {/* No width of its own: dnd-kit sizes the overlay to the chip that was picked up and
+              measures this one child, so a fixed width here would be a rectangle the stage does not
+              have - a 256px chip centred on a 120px column. The chip is a block and fills it. */}
           {activeItem ? (
-            <div className="w-64">
-              <ComponentChip
-                plugin={activeItem}
-                groupNames={groupNames}
-                rank={ranks.get(Number(activeId))}
-                isDuplicate={(nameCounts.get(activeItem.name) ?? 0) > 1}
-              />
-            </div>
+            <ComponentChip
+              plugin={activeItem}
+              groupNames={groupNames}
+              rank={ranks.get(Number(activeId))}
+              isDuplicate={(nameCounts.get(activeItem.name) ?? 0) > 1}
+              hiddenInView={!shownInView(getLayout(activeItem)?.display, breakpoint)}
+            />
           ) : null}
           {activePaletteSource ? (
             <PaletteChip plugin={activePaletteSource} off={parked.has(Number(activeId?.slice(PALETTE_PREFIX.length)))} />
@@ -709,10 +730,14 @@ export default function GlobalBoard({
 // grid position there or having components arranged into it here.
 function AreaBox({ label, slotLabel, children }: { label: string; slotLabel?: string; children: React.ReactNode }): JSX.Element {
   return (
-    <div className="flex h-full flex-col gap-1.5 rounded-[6px] border border-slate-300 bg-surface p-2 shadow-sm dark:border-ink/15 dark:bg-ink/[0.03]">
-      <div className="flex items-center justify-between gap-1">
-        <span className="truncate text-micro font-semibold uppercase tracking-wide text-text-secondary">{label}</span>
-        {slotLabel && slotLabel !== label && <Badge>{slotLabel}</Badge>}
+    <div className="flex h-full min-w-0 flex-col gap-1.5 rounded-[6px] border border-slate-300 bg-surface p-1.5 shadow-sm dark:border-ink/15 dark:bg-ink/[0.03]">
+      {/* Wraps instead of pushing: on the stage a side column can be 120px, and the area's name and
+          its position's name together are wider than that. */}
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-1">
+        <span className="min-w-0 truncate text-micro font-semibold uppercase tracking-wide text-text-secondary">{label}</span>
+        {slotLabel && slotLabel !== label && (
+          <span className="min-w-0 truncate rounded-full bg-ink/[0.06] px-1.5 text-micro text-text-secondary dark:bg-ink/10">{slotLabel}</span>
+        )}
       </div>
       {children}
     </div>
@@ -729,6 +754,7 @@ function PositionSlot({
   nameCounts,
   ranks,
   selectedIndex,
+  breakpoint,
   onSelect
 }: {
   position: LayoutPosition
@@ -742,6 +768,7 @@ function PositionSlot({
   nameCounts: Map<string, number>
   ranks: Map<number, number>
   selectedIndex: number | null
+  breakpoint: FrameBreakpoint
   onSelect: (index: number) => void
 }): JSX.Element {
   const { t } = useTranslation()
@@ -752,7 +779,12 @@ function PositionSlot({
     <SortableContext items={ids} strategy={verticalListSortingStrategy}>
       <div
         ref={setNodeRef}
-        className={`flex min-h-[40px] gap-1.5 rounded-md bg-ink/[0.02] p-1.5 dark:bg-ink/[0.03] ${direction === 'row' ? 'flex-row flex-wrap' : 'flex-col'}`}
+        // flex-1: the drop target is the whole area below the area's name, not just the height of
+        // its chips. On the stage a row is as tall as its tallest area, so a short list sat at the
+        // top of a 500px box, and a drop in the empty rest of it hit no target at all and went to
+        // whatever closestCenter found - measured: a chip aimed at the right column landed after
+        // the body.
+        className={`flex min-h-[40px] min-w-0 flex-1 gap-1.5 rounded-md bg-ink/[0.02] p-1 dark:bg-ink/[0.03] ${direction === 'row' ? 'flex-row flex-wrap content-start' : 'flex-col'}`}
       >
         {indices.length === 0 && <p className="px-2 py-2 text-center text-xs text-text-muted">{t('layoutEditor.emptySlot')}</p>}
         {indices.map((index) => (
@@ -766,6 +798,7 @@ function PositionSlot({
             selected={selectedIndex === index}
             onSelect={() => onSelect(index)}
             isDuplicate={(nameCounts.get(config.plugins[index].name) ?? 0) > 1}
+            hiddenInView={!shownInView(getLayout(config.plugins[index])?.display, breakpoint)}
           />
         ))}
       </div>
@@ -781,7 +814,8 @@ function SortableItem({
   direction,
   selected,
   onSelect,
-  isDuplicate
+  isDuplicate,
+  hiddenInView
 }: {
   id: string
   plugin: PluginEntry
@@ -791,6 +825,7 @@ function SortableItem({
   selected: boolean
   onSelect: () => void
   isDuplicate: boolean
+  hiddenInView: boolean
 }): JSX.Element {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id
@@ -798,12 +833,13 @@ function SortableItem({
   const style = { transform: CSS.Transform.toString(transform), transition }
 
   return (
-    <div ref={setNodeRef} style={style} className={`${direction === 'row' ? 'min-w-[8rem] flex-1' : ''} ${isDragging ? 'opacity-40' : ''}`}>
+    <div ref={setNodeRef} style={style} className={`min-w-0 ${direction === 'row' ? 'min-w-[6rem] flex-1' : ''} ${isDragging ? 'opacity-40' : ''}`}>
       <ComponentChip
         plugin={plugin}
         groupNames={groupNames}
         rank={rank}
         isDuplicate={isDuplicate}
+        hiddenInView={hiddenInView}
         selected={selected}
         onSelect={onSelect}
         // The handle is the activator node, as at the two other @dnd-kit places. Without it
@@ -815,99 +851,5 @@ function SortableItem({
         dragHandleProps={{ ...attributes, ...listeners, 'data-board-focus': `placed:${id}` }}
       />
     </div>
-  )
-}
-
-/**
- * The two thresholds an authored frame's media queries are generated from, edited here because
- * they are a property of the site rather than of one frame (see FrameBreakpointWidths).
- *
- * It carries its own Save rather than joining the page header's: that button writes
- * quartz.config.yaml, this one writes .quartz-gui/layout-breakpoints.json *and* regenerates every
- * frame's CSS. Two different pieces of work behind one button would make a config save silently
- * rewrite frames.
- */
-function FrameBreakpoints({
-  projectPath,
-  widths,
-  onSaved,
-  hasFrames
-}: {
-  projectPath: string
-  widths: FrameBreakpointWidths
-  onSaved: (widths: FrameBreakpointWidths) => void
-  // A save rewrites every authored frame's CSS, so it needs a dev-server restart for the same
-  // reason a frame edit does - but with no frames there is nothing it could have changed.
-  hasFrames: boolean
-}): JSX.Element {
-  const { t } = useTranslation()
-  // Held as text, not as numbers: a number input the user is clearing mid-edit is briefly "", and
-  // coercing that to 0 on every keystroke fights the typing.
-  const [draft, setDraft] = useState({ tablet: String(widths.tablet), mobile: String(widths.mobile) })
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [saved, setSaved] = useState(false)
-
-  // Seeded from the loaded values once they arrive, and again whenever a save changes them.
-  useEffect(() => {
-    setDraft({ tablet: String(widths.tablet), mobile: String(widths.mobile) })
-  }, [widths.tablet, widths.mobile])
-
-  const tablet = Number(draft.tablet)
-  const mobile = Number(draft.mobile)
-  // Mirrors the IPC schema's bounds, so the form refuses what main would reject anyway rather than
-  // letting the user find out through an error toast.
-  const valid =
-    Number.isInteger(tablet) && Number.isInteger(mobile) && mobile >= 240 && tablet <= 3840 && mobile < tablet
-  const changed = tablet !== widths.tablet || mobile !== widths.mobile
-
-  async function save(): Promise<void> {
-    if (!valid) return
-    setSaving(true)
-    setError(null)
-    try {
-      const next = { tablet, mobile }
-      await window.quartzGui.layoutFrames.saveBreakpoints(projectPath, next)
-      onSaved(next)
-      setSaved(true)
-    } catch (err) {
-      setError(formatIpcError(err))
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  function edit(key: 'tablet' | 'mobile', value: string): void {
-    setDraft((prev) => ({ ...prev, [key]: value }))
-    setSaved(false)
-  }
-
-  return (
-    <SettingsSection title={t('layoutEditor.breakpoints.title')} hint={t('layoutEditor.breakpoints.hint')} collapsible>
-      <div className="flex flex-wrap items-end gap-3">
-        <Field label={t('layoutEditor.breakpoints.tablet')} className="w-40">
-          <TextInput type="number" min={240} max={3840} value={draft.tablet} onChange={(e) => edit('tablet', e.target.value)} />
-        </Field>
-        <Field label={t('layoutEditor.breakpoints.mobile')} className="w-40">
-          <TextInput type="number" min={240} max={3840} value={draft.mobile} onChange={(e) => edit('mobile', e.target.value)} />
-        </Field>
-      </div>
-      <FormActions
-        secondary={
-          <>
-            {saved && !changed && (
-              <span className="text-xs text-emerald-600 dark:text-emerald-400">{t('layoutEditor.breakpoints.saved')}</span>
-            )}
-            <DevServerRestartHint show={saved && !changed && hasFrames} />
-            {!valid && <span className="text-xs text-red-600 dark:text-red-400">{t('layoutEditor.breakpoints.invalid')}</span>}
-            {error && <span className="text-xs text-red-600 dark:text-red-400">{error}</span>}
-          </>
-        }
-      >
-        <Button onClick={save} disabled={saving || !valid || !changed}>
-          {saving ? t('common.saving') : t('common.save')}
-        </Button>
-      </FormActions>
-    </SettingsSection>
   )
 }

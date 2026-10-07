@@ -727,6 +727,8 @@ keine“. Gemessen an der gebauten App, `right` des `editorial`-Frames auf Deskt
 
 ## Das Board rollt seitwärts in sich selbst, und der Tastatur-Drag hat gefehlt (2026-09-16)
 
+*Seit 1.1 (P7.2) rollt das Board nicht mehr, siehe „Die Bühne nach Proportionen“ am Ende.*
+
 `npm run smoke` meldete auf 1280×800 „Layout · layout: Inhalt scrollt horizontal“, und zwar bei
 jedem Lauf. Gemessen an der gebauten App mit Wegwerf-Profil gegen eine Kopie von
 `navigations-testprojekt` hatte `main` dort `scrollWidth` 1100 gegen `clientWidth` 1030, das Board
@@ -1354,6 +1356,48 @@ und „Immer“ (Schlüssel fällt weg), Position per Auswahl (Gruppe bleibt), D
 (Panel folgt dem neuen bzw. schließt), Auswahl über einen Wechsel zu Stile und zurück: alle wie
 erwartet.
 
-**Offen bis 7.2:** Bei 1280 px rollt das Board seitlich, jetzt auf 622 statt 966 px Breite
+**Offen bis 7.2** (erledigt, siehe den nächsten Abschnitt): Bei 1280 px rollt das Board seitlich, jetzt auf 622 statt 966 px Breite
 (`editorial` braucht 1068 px), weil die Seitenleiste daneben steht. Das Raster hat feste Spalten;
 die Bühne nach Proportionen ist Schritt 7.2. Bei 1728 px rollt nichts.
+
+## Die Bühne nach Proportionen (2026-10-07, 1.1 P7.2)
+
+Das Board zeichnet das Frame jetzt verkleinert statt in echten Pixeln (`stageGeometry.ts`): Jede
+Spur wird bei einer Bezugsbreite in Pixel aufgelöst (Desktop 1456, Tablet 1000, Mobil 390 px, auch
+`calc()`, `min()`, `max()`, `clamp()` über px/rem/%/vw) und als `minmax(0, <px>fr)` zurückgeschrieben,
+Abstände und Innenränder als `cqw` der Bühne, die ein Inline-Size-Container ist. Kein
+`transform: scale`: dnd-kit misst Rechtecke, und eine skalierte Ebene gäbe ihm Rechtecke, die nicht
+dort liegen, wo sie gezeichnet sind. Die Bühne ist nie breiter als die Ansicht, für die sie steht —
+Mobil wird telefonbreit gezeichnet, nicht gestreckt. Was sich nicht auflösen lässt (`auto` neben
+einer anderen fr-Spur, `min-content`, `var()`), zählt als `1fr` und wird unter der Bühne genannt.
+Die Grenzen 1200/800 bzw. die des Projekts bleiben Sache der Frames; sie stehen jetzt im Reiter
+„Eigene Frames“ unter der Liste.
+
+Gemessen an einem Klon von gui-test (gebaute App, Wegwerf-Profil, `scratchpad/p72/stage.mjs`),
+vorher am Build von `1af6db7` aus einem Worktree, nachher am neuen:
+
+    1280 Desktop   vorher Roller 1068/622        nachher Bühne 622, Raster 615/615, kein Roller
+    1280 Tablet    vorher Roller 752/622         nachher Bühne 622, Raster 622/622
+    1280 Mobil     vorher kein Roller (352 px)   nachher Bühne 390
+    1728 alle      vorher und nachher kein Roller; nachher Bühne 1070 / 1000 / 390
+    Chips, die über ihren Bereich hinausragen: in allen sechs Fällen 0
+
+Der Preis: Bei 1280 px Desktop sind die Seitenspalten von `editorial` 128 px breit, vier Namen sind
+gekürzt, der schmalste sichtbare Name hat 64 px. Bei 1728 px ist keiner gekürzt.
+
+Zwei Befunde dabei. **Ein Mausziehen in die rechte Spalte landete nach dem Inhalt**: Auf der Bühne
+ist eine Zeile so hoch wie ihr höchster Bereich, die Ablagefläche einer Position war aber nur so hoch
+wie ihre Chips — unten in einem 529 px hohen Kasten traf der Zeiger kein Ziel, und `closestCenter`
+nahm `quartz-layout-box #4` nach dem Inhalt. Die Fläche füllt jetzt den Bereich (`flex-1`); derselbe
+Zug legt bei der rechten Seitenleiste ab. **Das DragOverlay hatte eine feste Breite** (`w-64`), auf
+einer 128-px-Spalte also ein doppelt so breites Rechteck für jede Pfeilrechnung; es nimmt jetzt die
+Größe des aufgenommenen Chips.
+
+Tastatur: `footer` aufgenommen, drei Pfeile hoch („liegt über quartz-layout-box #6“, „#4“,
+„note-properties“), abgelegt: `position: afterBody` in der Datei, Fokus auf dem Griff. Ansicht Mobil:
+zwei Komponenten „Nur Desktop“ gestrichelt und mit Satz für den Screenreader, Desktop eine „Nur
+Mobil“. Weil gui-test selbst mit einer Mobil-Grenze von 900 px läuft, steht dort der Hinweis, dass
+zwischen 800 und 900 px die Mobil-Anordnung mit den Komponenten für Desktop gilt; mit 700 px der
+umgekehrte Satz. „Frame bearbeiten“ aus der Mobil-Ansicht öffnet `editorial` im Frame-Editor auf
+„Mobil · ≤ 700 px“. Ein ungespeicherter Entwurf eines *anderen* Frames im Editor wird dabei nicht
+überschrieben, sondern angesagt (`peekStickyState`).

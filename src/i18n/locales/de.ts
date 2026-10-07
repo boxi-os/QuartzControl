@@ -1237,9 +1237,9 @@ export default {
     pageTypeHasOverride: 'Angepasst',
     loading: 'Lade Layout…',
     emptySlot: 'Leer — hierher ziehen',
-    activeFrameLabel: 'Zeigt Grid-Struktur von: {{name}}',
-    activeFrameDefault: '(Standard-Raster)',
-    previewPageTypeLabel: 'Grid-Vorschau für:',
+    activeFrameLabel: 'Frame: {{name}}',
+    activeFrameDefault: 'Standard',
+    previewPageTypeLabel: 'Gezeigt für',
     breakpoints: {
       title: 'Breakpoints',
       tablet: 'Tablet bis (px)',
@@ -1416,6 +1416,17 @@ export default {
       off: 'aus',
       disabledHint: 'Ausgeschaltet, wird nicht gebaut. Einschalten in der Seitenleiste.',
       parkedHint: 'Ausgeschaltet. Ziehe die Komponente auf einen Bereich, um sie dort wieder einzuschalten.'
+    },
+    stage: {
+      viewLabel: 'Ansicht',
+      editFrame: 'Frame bearbeiten',
+      hiddenInView: 'In dieser Ansicht nicht auf der Seite',
+      approximate: 'Ungefähr gezeichnet: Spaltenbreiten wie {{sizes}} kennt erst der Browser, hier zählen sie als gleiche Anteile.',
+      mobileBelowQuartz:
+        'Deine Frames schalten bei {{frame}} px auf Mobil, Quartz blendet „Nur Desktop“ und „Nur Mobil“ aber bei {{quartz}} px um. Dazwischen zeigt die Seite die Tablet-Anordnung mit den Komponenten für Mobil.',
+      mobileAboveQuartz:
+        'Deine Frames schalten bei {{frame}} px auf Mobil, Quartz blendet „Nur Desktop“ und „Nur Mobil“ aber erst bei {{quartz}} px um. Dazwischen zeigt die Seite die Mobil-Anordnung mit den Komponenten für Desktop.',
+      otherDraftOpen: 'Im Frame-Editor ist noch „{{name}}“ mit ungespeicherten Änderungen offen. Speichere oder schließe es, bevor du ein anderes Frame öffnest.'
     },
     inspector: {
       title: 'Komponente',

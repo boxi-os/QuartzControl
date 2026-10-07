@@ -1232,9 +1232,9 @@ export default {
     pageTypeHasOverride: 'Customized',
     loading: 'Loading layout…',
     emptySlot: 'Empty — drag here',
-    activeFrameLabel: 'Showing grid structure from: {{name}}',
-    activeFrameDefault: '(default grid)',
-    previewPageTypeLabel: 'Grid preview for:',
+    activeFrameLabel: 'Frame: {{name}}',
+    activeFrameDefault: 'Default',
+    previewPageTypeLabel: 'Shown for',
     breakpoints: {
       title: 'Breakpoints',
       tablet: 'Tablet up to (px)',
@@ -1411,6 +1411,17 @@ export default {
       off: 'off',
       disabledHint: 'Switched off, not built. Switch it on in the side panel.',
       parkedHint: 'Switched off. Drag the component onto a slot to switch it back on there.'
+    },
+    stage: {
+      viewLabel: 'View',
+      editFrame: 'Edit frame',
+      hiddenInView: 'Not on the page in this view',
+      approximate: 'Drawn approximately: column widths like {{sizes}} are only known to the browser and count as equal shares here.',
+      mobileBelowQuartz:
+        'Your frames switch to mobile at {{frame}} px, but Quartz switches “Desktop only” and “Mobile only” at {{quartz}} px. In between, the page shows the tablet arrangement with the mobile components.',
+      mobileAboveQuartz:
+        'Your frames switch to mobile at {{frame}} px, but Quartz only switches “Desktop only” and “Mobile only” at {{quartz}} px. In between, the page shows the mobile arrangement with the desktop components.',
+      otherDraftOpen: 'The frame editor still has “{{name}}” open with unsaved changes. Save or close it before opening another frame.'
     },
     inspector: {
       title: 'Component',

@@ -87,6 +87,7 @@ export function ComponentChip({
   isDuplicate,
   selected,
   onSelect,
+  hiddenInView,
   dragHandleProps,
   dragHandleRef
 }: {
@@ -96,6 +97,8 @@ export function ComponentChip({
   isDuplicate?: boolean
   selected?: boolean
   onSelect?: () => void
+  /** Its `display` keeps it off the page in the view the stage shows (stageGeometry.shownInView). */
+  hiddenInView?: boolean
   dragHandleProps?: Record<string, unknown>
   /** dnd-kit's setActivatorNodeRef, as its own prop: React 18 cannot carry a ref through a props
    *  spread, and the handle is what the activator node has to be - see the drag handle below. */
@@ -109,7 +112,10 @@ export function ComponentChip({
   return (
     <div
       onClick={onSelect}
-      className={`flex min-w-0 items-center gap-1.5 rounded-[6px] border bg-surface px-1.5 py-1 shadow-sm ${
+      // Not in this view: still there to drag and select, so not faded - grounded and dashed, with
+      // the name in the muted colour, the way a disabled control stays readable (conventions.md).
+      title={hiddenInView ? t('layoutEditor.stage.hiddenInView') : undefined}
+      className={`flex min-w-0 items-center gap-1 rounded-[6px] border px-1 py-1 ${hiddenInView ? 'border-dashed bg-ground' : 'bg-surface shadow-sm'} ${
         color ? `border-l-[3px] ${color.ring}` : 'border-ink/[0.08] dark:border-ink/15'
       } ${selected ? 'outline outline-2 outline-offset-1 outline-blue-500' : ''} ${onSelect ? 'cursor-pointer' : ''}`}
     >
@@ -136,40 +142,43 @@ export function ComponentChip({
           e.stopPropagation()
           onSelect?.()
         }}
-        className={`min-w-0 flex-1 truncate text-left text-ui font-medium ${plugin.enabled ? '' : 'text-text-muted'}`}
+        // flex-auto rather than flex-1: with a zero basis the name gave up all its room to the marks
+        // first, and in a 120px side column of the stage it was gone entirely.
+        className={`min-w-[1.5rem] flex-auto truncate text-left text-ui font-medium ${plugin.enabled && !hiddenInView ? '' : 'text-text-muted'}`}
       >
         {plugin.name}
         {isDuplicate && rank !== undefined && <span className="ml-1 text-micro font-normal text-text-muted">#{rank}</span>}
+        {hiddenInView && <span className="sr-only"> ({t('layoutEditor.stage.hiddenInView')})</span>}
       </button>
-      <span className="flex shrink-0 items-center gap-1 text-text-muted">
+      <span className="flex min-w-0 shrink items-center gap-1 overflow-hidden text-text-muted">
         {/* Quartz drops a disabled entry before it builds the layout, so it keeps its place in the
             config but renders nowhere. A sole instance that is off lives in the tray instead; this
             mark is for a switched-off duplicate, which stays where it was. */}
         {!plugin.enabled && (
           <span
             title={t('layoutEditor.componentPill.disabledHint')}
-            className="rounded-full bg-ink/[0.06] px-1.5 text-micro font-medium dark:bg-ink/10"
+            className="shrink-0 rounded-full bg-ink/[0.06] px-1.5 text-micro font-medium dark:bg-ink/10"
           >
             {t('layoutEditor.componentPill.off')}
           </span>
         )}
         {layout?.group && (
-          <span className={`max-w-[6rem] truncate rounded-full px-1.5 text-micro font-medium ${color?.bg ?? ''} ${color?.text ?? ''}`}>
+          <span className={`min-w-0 max-w-[6rem] truncate rounded-full px-1.5 text-micro font-medium ${color?.bg ?? ''} ${color?.text ?? ''}`}>
             {layout.group}
           </span>
         )}
         {layout?.display === 'desktop-only' && (
-          <span title={t('layoutEditor.displayDesktopOnly')}>
+          <span className="shrink-0" title={t('layoutEditor.displayDesktopOnly')}>
             <Monitor size={13} aria-label={t('layoutEditor.displayDesktopOnly')} />
           </span>
         )}
         {layout?.display === 'mobile-only' && (
-          <span title={t('layoutEditor.displayMobileOnly')}>
+          <span className="shrink-0" title={t('layoutEditor.displayMobileOnly')}>
             <Smartphone size={13} aria-label={t('layoutEditor.displayMobileOnly')} />
           </span>
         )}
         {layout?.condition && (
-          <span title={conditionLabel(t, layout.condition)}>
+          <span className="shrink-0" title={conditionLabel(t, layout.condition)}>
             <Filter size={13} aria-label={conditionLabel(t, layout.condition)} />
           </span>
         )}

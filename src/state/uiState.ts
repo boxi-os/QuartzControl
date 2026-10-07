@@ -58,3 +58,12 @@ export function useStickyState<T>(key: string, initial: T | (() => T)): [T, Reac
 export function primeStickyState(pathname: string, key: string, value: unknown): void {
   store.set(`${pathname}::${key}`, value)
 }
+
+/**
+ * Reads what a route's sticky store holds without mounting it - for a link that primes the store
+ * (primeStickyState) and must not overwrite a draft the user left there. `undefined` means nothing
+ * has been stored under the key yet.
+ */
+export function peekStickyState<T>(pathname: string, key: string): T | undefined {
+  return store.get(`${pathname}::${key}`) as T | undefined
+}

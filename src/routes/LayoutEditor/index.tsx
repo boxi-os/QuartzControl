@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useSearchParams } from 'react-router-dom'
+import { useLocation, useSearchParams } from 'react-router-dom'
 import { SlidersHorizontal } from 'lucide-react'
 import { useProject } from '../ProjectLayout'
-import type { GridFrameDefinition, QuartzConfig } from '@shared/ipc-contract'
+import type { FrameBreakpoint, GridFrameDefinition, QuartzConfig } from '@shared/ipc-contract'
 import { Button, PageHeader, SegmentedControl } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
-import { useStickyState } from '../../state/uiState'
+import { peekStickyState, primeStickyState, useStickyState } from '../../state/uiState'
+import { announce } from '../../state/announcer'
 import { useSaveCommand } from '../../state/saveCommand'
 import { UnsavedBadge, useUnsavedChanges } from '../../state/unsavedGuard'
 import { TAB_ICONS } from '../navConfig'
@@ -106,6 +107,30 @@ export default function LayoutEditor(): JSX.Element {
     // The snapshot is what is on disk, which `fresh` now is - so unsaved layout edits elsewhere in
     // the config still count as unsaved, while the plugin entry the CLI just wrote does not.
     setSavedSnapshot(JSON.stringify(fresh))
+  }
+
+  // "Frame bearbeiten" on the stage: the frame builder on this frame and in the view the stage
+  // showed, the same hand-over as Plugins' openFrameInLayoutEditor, only within this route - the
+  // builder is not mounted while the board is, so it reads the primed values when the tab opens.
+  // What the builder still holds wins over the link: a draft of this very frame is newer than the
+  // file, and a draft of another frame with unsaved changes would otherwise be thrown away by a
+  // click that only meant to look somewhere else.
+  const { pathname } = useLocation()
+  function editFrame(frame: GridFrameDefinition, breakpoint: FrameBreakpoint): void {
+    const open = peekStickyState<GridFrameDefinition | null>(pathname, 'frames.editing') ?? null
+    const saved = open && customFrames.find((f) => f.id === open.id)
+    const openIsDirty = !!open && open.id !== frame.id && (!saved || JSON.stringify(saved) !== JSON.stringify(open))
+    if (openIsDirty) {
+      announce(t('layoutEditor.stage.otherDraftOpen', { name: open.frameName }))
+    } else {
+      if (open?.id !== frame.id) {
+        primeStickyState(pathname, 'frames.editing', frame)
+        primeStickyState(pathname, 'frames.isNewDraft', false)
+        primeStickyState(pathname, 'frames.selectedArea', null)
+      }
+      primeStickyState(pathname, 'frames.breakpoint', breakpoint)
+    }
+    goToTab('frames')
   }
 
   // Returns whether it worked - see the leave guard in ProjectLayout.
@@ -249,7 +274,13 @@ export default function LayoutEditor(): JSX.Element {
       )}
 
       {tab === 'global' && (
-        <GlobalBoard projectPath={project.path} config={config} onChange={setConfig} builtinPageTypeFrames={builtinPageTypeFrames} />
+        <GlobalBoard
+          projectPath={project.path}
+          config={config}
+          onChange={setConfig}
+          onEditFrame={editFrame}
+          builtinPageTypeFrames={builtinPageTypeFrames}
+        />
       )}
 
       {tab === 'frames' && <FrameBuilder projectPath={project.path} onFramesChanged={syncPluginsFromDisk} />}

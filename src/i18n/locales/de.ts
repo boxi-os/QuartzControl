@@ -1407,12 +1407,54 @@ export default {
       paletteLabel: 'Komponente hinzufügen',
       paletteDropToRemove: 'Hier ablegen zum Entfernen',
       paletteDragName: 'Komponentenvorrat',
-      paletteHint: 'Ziehe eine Komponente auf einen Bereich, um eine weitere Instanz mit eigenen Einstellungen einzufügen.',
+      paletteDropToDisable: 'Hier ablegen zum Ausschalten',
+      paletteHint:
+        'Ziehe eine Komponente auf einen Bereich, um eine weitere Instanz einzufügen. Was „aus“ trägt, ist ausgeschaltet und wird beim Hineinziehen wieder eingeschaltet.',
       dragHandle: '{{name}} verschieben',
       duplicate: 'Duplizieren',
       removeDuplicate: 'Duplikat entfernen',
-      disabled: 'Deaktiviert',
-      disabledHint: 'Wird nicht gebaut. Einschalten unter Plugins.'
+      off: 'aus',
+      disabledHint: 'Ausgeschaltet, wird nicht gebaut. Einschalten in der Seitenleiste.',
+      parkedHint: 'Ausgeschaltet. Ziehe die Komponente auf einen Bereich, um sie dort wieder einzuschalten.'
+    },
+    inspector: {
+      title: 'Komponente',
+      empty: 'Wähle eine Komponente aus. Ihre Einstellungen erscheinen dann hier.',
+      parked: 'Ausgeschaltet — liegt im Komponentenvorrat und wird nicht gebaut.',
+      disabled: 'Ausgeschaltet — wird nicht gebaut.',
+      enable: 'Einschalten',
+      enabledAnnounce: '{{name}} eingeschaltet, steht in {{position}}.',
+      position: 'Position',
+      order: 'Reihenfolge',
+      orderOf: 'Stelle {{n}} von {{count}}',
+      earlier: 'Früher',
+      later: 'Später',
+      moved: '{{name}} steht jetzt an Stelle {{n}} von {{count}} in {{position}}.',
+      displayHint: '„Nur Desktop“ gilt auch auf dem Tablet: Quartz schaltet erst an der Mobil-Grenze um.',
+      condition: 'Bedingung',
+      conditionAlways: 'Immer',
+      conditionNotIndex: 'Nicht auf der Startseite',
+      conditionHasTags: 'Nur auf Seiten mit Tags',
+      conditionHasBacklinks: 'Nur auf Seiten mit Rückverweisen',
+      conditionHasToc: 'Nur auf Seiten mit Inhaltsverzeichnis',
+      conditionCustom: 'Eigene…',
+      conditionCustomLabel: 'Name der Bedingung',
+      conditionCustomHint: 'Eine Bedingung, die ein Plugin mitbringt. Kennt Quartz den Namen nicht, erscheint die Komponente immer.',
+      groupOptions: 'In der Gruppe',
+      grow: 'Freien Platz einnehmen',
+      shrink: 'Darf schmaler werden',
+      basis: 'Grundbreite',
+      basisHint: 'Eine CSS-Länge, z. B. 12rem. Leer: so breit wie der Inhalt.',
+      itemOrder: 'Reihenfolge in der Gruppe',
+      itemOrderHint: 'Kleinere Zahlen stehen weiter vorn. Leer: 0.',
+      align: 'Ausrichtung',
+      alignStart: 'Anfang',
+      alignCenter: 'Mitte',
+      alignEnd: 'Ende',
+      alignStretch: 'Strecken',
+      actions: 'Aktionen',
+      park: 'In den Vorrat legen',
+      parkHint: 'Schaltet die Komponente aus. Aus dem Vorrat zurückgezogen, ist sie wieder eingeschaltet.'
     }
   },
   styles: {
@@ -2126,7 +2168,8 @@ export default {
     // Zwei Ausgänge, die „abgelegt“ falsch beschreibt: Auf dem Komponentenvorrat wird ein
     // Duplikat gelöscht, und eine einzelne Instanz bleibt, wo sie ist.
     removed: 'Ein Duplikat von {{name}} aus dem Layout entfernt.',
-    notRemovable: '{{name}} bleibt, wo es war — nur ein Duplikat lässt sich in den Komponentenvorrat zurücklegen.',
+    disabled: '{{name}} ausgeschaltet und in den Komponentenvorrat gelegt.',
+    reenabled: '{{name}} eingeschaltet und bei {{target}} abgelegt.',
     cancelled: '{{name}} abgebrochen, nichts verschoben.'
   },
   logConsole: {

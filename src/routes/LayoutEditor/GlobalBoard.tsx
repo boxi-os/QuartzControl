@@ -7,7 +7,6 @@ import {
   PointerSensor,
   closestCenter,
   pointerWithin,
-  useDraggable,
   useDroppable,
   useSensor,
   useSensors,
@@ -29,11 +28,26 @@ import type {
   QuartzConfig
 } from '@shared/ipc-contract'
 import { DEFAULT_FRAME_BREAKPOINT_WIDTHS, FRAME_BREAKPOINTS, buildFrameBox, buildGridStyle } from '@shared/gridFrameCss'
-import { Badge, Button, Card, Field, FormActions, IconButton, SegmentedControl, Select, SettingsSection, TextInput } from '../../components/ui'
-import { Trash2 } from 'lucide-react'
+import {
+  Badge,
+  Button,
+  Card,
+  CardHeading,
+  Field,
+  FormActions,
+  SegmentedControl,
+  Select,
+  SettingsSection,
+  TextInput
+} from '../../components/ui'
+import { SlidersHorizontal } from 'lucide-react'
 import { formatIpcError } from '../../components/ErrorSurface'
 import DevServerRestartHint from '../../components/DevServerRestartHint'
-import { ItemCard, PaletteChip, GROUP_COLORS } from './ComponentPill'
+import { useStickyState } from '../../state/uiState'
+import { ComponentChip, PaletteChip } from './ComponentChip'
+import { ComponentPalette, PALETTE_DROP_ID, PALETTE_PREFIX } from './Palette'
+import GroupsPanel from './GroupsPanel'
+import Inspector from './Inspector'
 import { useDndAccessibility } from '../../utils/dndAnnouncements'
 import { nearestDroppableCoordinates } from '../../utils/dndKeyboard'
 import {
@@ -42,25 +56,19 @@ import {
   POSITIONS,
   breakpointRangeLabel,
   appendDuplicateToPosition,
-  buildPositionMap,
+  buildBoardPositionMap,
+  componentRef,
   derivePageTypes,
-  distinctComponentChips,
-  duplicateAfter,
   duplicateNameCounts,
   duplicateRanks,
-  renumberPriorities,
+  parkedIndices,
+  placeComponent,
+  resolveComponentRef,
   sidebarDirection,
-  withDisplay,
-  withGroup
+  withEnabled,
+  withGroup,
+  type ComponentRef
 } from './utils'
-
-// A palette chip's drag id is namespaced so handleDragEnd can tell "create a new instance here"
-// apart from "move this existing instance here" without a second DnD implementation.
-const PALETTE_PREFIX = 'palette:'
-
-// Dropping a placed instance back onto the palette removes it - the reverse of dragging a palette
-// chip out. Fixed id, distinct from any LayoutPosition or plugin index string.
-const PALETTE_DROP_ID = 'palette-drop-zone'
 
 // Plain closestCenter compares the *dragged rect's* center (not the cursor) against each
 // droppable's center - grabbing a wide card by its left-edge handle offsets that rect's center
@@ -118,7 +126,9 @@ export default function GlobalBoard({
   const { t } = useTranslation()
   const [activeId, setActiveId] = useState<string | null>(null)
   const [breakpoint, setBreakpoint] = useState<FrameBreakpoint>('desktop')
-  const [expandedIndex, setExpandedIndex] = useState<number | null>(null)
+  // Which component the side panel shows - by name and occurrence, not by index (componentRef).
+  // Sticky like any other "where was I": a trip to Stile and back keeps the panel on it.
+  const [selected, setSelected] = useStickyState<ComponentRef | null>('layout.selected', null)
   const [frames, setFrames] = useState<GridFrameDefinition[]>([])
   // Which page type's assigned template the grid mockup below illustrates - purely a display
   // choice (see the comment below), defaults to "content" since that's Quartz's de-facto
@@ -129,7 +139,9 @@ export default function GlobalBoard({
   // Only used to label the breakpoint tabs below; the editing state lives in FrameBreakpoints,
   // which reports back here so the labels follow a save without a remount.
   const [breakpointWidths, setBreakpointWidths] = useState<FrameBreakpointWidths>(DEFAULT_FRAME_BREAKPOINT_WIDTHS)
-  const positions = buildPositionMap(config.plugins)
+  const parked = parkedIndices(config.plugins)
+  const positions = buildBoardPositionMap(config.plugins, parked)
+  const selectedIndex = resolveComponentRef(config.plugins, selected)
   // Declared groups plus the ones the frames' areas name. A group exists as soon as a component
   // names it - `layout.groups` only holds direction and gap - so an area's group is missing from
   // that object until someone gives it those, and until then the component's own "Gruppe" select
@@ -150,6 +162,15 @@ export default function GlobalBoard({
   const nameCounts = duplicateNameCounts(config.plugins)
   const ranks = duplicateRanks(config.plugins)
   const pageTypes = derivePageTypes(config)
+
+  // Every change the board and its panel make is a new plugin list, and some of them move the
+  // panel along: a new duplicate is shown at once, a removed one closes the panel. The reference is
+  // taken from the *new* list, because a removal renumbers the occurrences after it.
+  function applyPlugins(plugins: PluginEntry[], select?: number | null): void {
+    onChange({ ...config, plugins })
+    if (select === null) setSelected(null)
+    else if (select !== undefined) setSelected(componentRef(plugins, select))
+  }
 
   useEffect(() => {
     window.quartzGui.layoutFrames.getBreakpoints(projectPath).then(setBreakpointWidths)
@@ -263,18 +284,20 @@ export default function GlobalBoard({
   // would be as untrue as "abgelegt" - that one needs a sentence of its own, not this question.
   const isHomeOnBoard = (activeId: string, overId: string): boolean =>
     activeId === overId || (overId === PALETTE_DROP_ID && activeId.startsWith(PALETTE_PREFIX))
-  // The two drops the ordinary "X bei Y abgelegt" describes wrongly, both of them onto the tray:
-  // a placed duplicate is *deleted* there (handleDragEnd calls removeDuplicate), and a placed sole
-  // instance is refused and stays where it is. Measured (twenty-fifth review, finding 6): the
-  // deletion took a row out of the configuration - 33 rows became 32 - under the word "abgelegt",
-  // and the refusal said the same thing with nothing having happened at all.
+  // The drops the ordinary "X bei Y abgelegt" describes wrongly. Onto the tray: a placed duplicate
+  // is *deleted* there, a placed sole instance switched off (twenty-fifth review, finding 6: the
+  // deletion took a row out of the configuration under the word "abgelegt"). Out of the tray: the
+  // chip of a switched-off component switches that one back on instead of adding another.
   const describeBoardDrop = (activeId: string, overId: string): string | undefined => {
-    if (overId !== PALETTE_DROP_ID || activeId.startsWith(PALETTE_PREFIX)) return undefined
+    if (activeId.startsWith(PALETTE_PREFIX)) {
+      const index = Number(activeId.slice(PALETTE_PREFIX.length))
+      if (overId === PALETTE_DROP_ID || !parked.has(index)) return undefined
+      return t('dnd.reenabled', { name: config.plugins[index]?.name ?? activeId, target: describeDragId(overId) })
+    }
+    if (overId !== PALETTE_DROP_ID) return undefined
     const plugin = config.plugins[Number(activeId)]
     if (!plugin) return undefined
-    return (nameCounts.get(plugin.name) ?? 0) > 1
-      ? t('dnd.removed', { name: plugin.name })
-      : t('dnd.notRemovable', { name: plugin.name })
+    return (nameCounts.get(plugin.name) ?? 0) > 1 ? t('dnd.removed', { name: plugin.name }) : t('dnd.disabled', { name: plugin.name })
   }
   const { announcements, screenReaderInstructions } = useDndAccessibility(t, describeDragId, isHomeOnBoard, describeBoardDrop)
 
@@ -302,104 +325,81 @@ export default function GlobalBoard({
     setActiveId(String(event.active.id))
   }
 
+  // Where the keyboard goes after a drop that changes what the dragged thing *is*: a component put
+  // in the tray is a tray chip afterwards, and a tray chip dragged back is a placed component.
+  // dnd-kit hands the focus back to the element it picked up, and in both cases that element is
+  // gone - the focus fell to <body>, and the next Tab started at the top of the page (measured on
+  // the built app while building this). Asked for after the render that mounts the new element.
+  const [focusAfterDrop, setFocusAfterDrop] = useState<string | null>(null)
+  useEffect(() => {
+    if (!focusAfterDrop) return
+    const frame = requestAnimationFrame(() => {
+      document.querySelector<HTMLElement>(`[data-board-focus="${focusAfterDrop}"]`)?.focus()
+      setFocusAfterDrop(null)
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [focusAfterDrop])
+
   function handleDragEnd(event: DragEndEvent): void {
     setActiveId(null)
     const { active, over } = event
     if (!over) return
     const activeId = String(active.id)
 
-    // Dropping a placed duplicate back onto the palette removes it - mirrors the "Duplikat
-    // entfernen" button in its expand panel, and only applies to duplicates for the same reason
-    // that button is hidden for a sole instance (see removeDuplicate below).
-    if (String(over.id) === PALETTE_DROP_ID && !activeId.startsWith(PALETTE_PREFIX)) {
+    // Dropping a placed component back onto the palette: a duplicate is removed (the panel's
+    // "Duplikat entfernen"), the only instance of its name switched off - it then lies in the tray
+    // (parkedIndices) until it is dragged out again.
+    if (String(over.id) === PALETTE_DROP_ID) {
+      if (activeId.startsWith(PALETTE_PREFIX)) return
       const index = Number(activeId)
       const plugin = config.plugins[index]
-      if (plugin && (nameCounts.get(plugin.name) ?? 0) > 1) removeDuplicate(index)
+      if (!plugin) return
+      if ((nameCounts.get(plugin.name) ?? 0) > 1) {
+        // The panel stays on the entry it showed: a removal further up renumbers the occurrences
+        // after it, so the reference is taken again from the shifted index.
+        const keep = selectedIndex === null || selectedIndex === index ? null : selectedIndex > index ? selectedIndex - 1 : selectedIndex
+        applyPlugins(
+          config.plugins.filter((_, i) => i !== index),
+          keep
+        )
+      } else {
+        applyPlugins(withEnabled(config.plugins, index, false))
+        setFocusAfterDrop(`palette:${index}`)
+      }
       return
     }
 
     const target = findContainer(positions, config.plugins, String(over.id))
     if (!target) return
     const toContainer = target.position
+    const overIndex = positions[toContainer].indexOf(Number(over.id))
+    const insertAt = overIndex === -1 ? undefined : overIndex
 
     if (activeId.startsWith(PALETTE_PREFIX)) {
       const sourceIndex = Number(activeId.slice(PALETTE_PREFIX.length))
-      const overIndex = positions[toContainer].indexOf(Number(over.id))
-      const result = appendDuplicateToPosition(config.plugins, sourceIndex, toContainer, overIndex === -1 ? undefined : overIndex)
+      // The chip of a parked component stands for that one entry: it comes back on, at the drop,
+      // with its options as they were - not as a second instance next to a switched-off first.
+      if (parked.has(sourceIndex)) {
+        const on = withEnabled(config.plugins, sourceIndex, true)
+        applyPlugins(placeComponent(on, positions, sourceIndex, toContainer, insertAt, target.group ?? null), sourceIndex)
+        setFocusAfterDrop(`placed:${sourceIndex}`)
+        return
+      }
+      const result = appendDuplicateToPosition(config.plugins, sourceIndex, toContainer, insertAt)
       if (!result) return
-      onChange({ ...config, plugins: withGroup(result.plugins, result.newIndex, target.group ?? '') })
-      setExpandedIndex(result.newIndex)
+      applyPlugins(withGroup(result.plugins, result.newIndex, target.group ?? ''), result.newIndex)
       return
     }
 
     const source = findContainer(positions, config.plugins, activeId)
     if (!source) return
-    const fromContainer = source.position
-
-    const sourceIndex = positions[fromContainer].indexOf(Number(activeId))
-    const next: Record<LayoutPosition, number[]> = { ...positions }
-    next[fromContainer] = [...positions[fromContainer]]
-    next[fromContainer].splice(sourceIndex, 1)
-
-    if (fromContainer === toContainer) {
-      const overIndex = positions[toContainer].indexOf(Number(over.id))
-      const targetIndex = overIndex === -1 ? next[toContainer].length : overIndex
-      next[toContainer].splice(targetIndex, 0, Number(activeId))
-    } else {
-      next[toContainer] = [...positions[toContainer]]
-      const overIndex = positions[toContainer].indexOf(Number(over.id))
-      const targetIndex = overIndex === -1 ? next[toContainer].length : overIndex
-      next[toContainer].splice(targetIndex, 0, Number(activeId))
-    }
-
-    const groupChanged = source.group !== target.group
-    if (!groupChanged && next[fromContainer].join(',') === positions[fromContainer].join(',') && fromContainer === toContainer) return
-
-    const renumbered = new Map<number, { position: LayoutPosition; priority: number }>()
-    for (const pos of fromContainer === toContainer ? [fromContainer] : [fromContainer, toContainer]) {
-      for (const [index, priority] of renumberPriorities(next[pos])) {
-        renumbered.set(index, { position: pos, priority })
-      }
-    }
-
     const moved = Number(activeId)
-    const plugins: PluginEntry[] = config.plugins.map((plugin, index) => {
-      const update = renumbered.get(index)
-      if (!update || !plugin.layout) return plugin
-      const layout = { ...plugin.layout, position: update.position, priority: update.priority }
-      // Which area of a position a component lands in is its group, and the drop decided it - a
-      // move into a group area joins that group, a move into the plain area leaves whatever group
-      // it was in. Only the dragged one: the others are being renumbered, not re-homed.
-      if (index === moved) {
-        if (target.group) layout.group = target.group
-        else delete layout.group
-      }
-      return { ...plugin, layout }
-    })
-    onChange({ ...config, plugins })
-  }
-
-  function setGroup(index: number, group: string): void {
-    onChange({ ...config, plugins: withGroup(config.plugins, index, group) })
-  }
-
-  function setDisplay(index: number, display: PluginLayoutDeclaration['display']): void {
-    onChange({ ...config, plugins: withDisplay(config.plugins, index, display) })
-  }
-
-  function duplicate(index: number): void {
-    const result = duplicateAfter(config.plugins, index)
-    if (!result) return
-    onChange({ ...config, plugins: result.plugins })
-    setExpandedIndex(result.newIndex)
-  }
-
-  // Only offered for the 2nd+ instance of a source - deletes just this array entry, no CLI call.
-  // The sole/original instance stays a Plugins -> Installed concern (uninstalling the plugin).
-  function removeDuplicate(index: number): void {
-    const plugins = config.plugins.filter((_, i) => i !== index)
-    onChange({ ...config, plugins })
-    setExpandedIndex(null)
+    // Which area of a position a component lands in is its group, and the drop decided it - a move
+    // into a group area joins that group, a move into the plain area leaves whatever group it was
+    // in (placeComponent, `group`).
+    const plugins = placeComponent(config.plugins, positions, moved, toContainer, insertAt, target.group ?? null)
+    if (JSON.stringify(plugins) === JSON.stringify(config.plugins)) return
+    applyPlugins(plugins)
   }
 
   function setGroups(groups: Record<string, FlexGroupConfig>): void {
@@ -429,7 +429,16 @@ export default function GlobalBoard({
   const grid = DEFAULT_FRAME_GRID[breakpoint]
   const narrow = breakpoint !== 'desktop'
 
-  const slotProps = { config, groupNames, nameCounts, ranks, expandedIndex, onExpand: setExpandedIndex, onSetGroup: setGroup, onSetDisplay: setDisplay, onDuplicate: duplicate, onRemove: removeDuplicate }
+  const slotProps = {
+    config,
+    groupNames,
+    nameCounts,
+    ranks,
+    selectedIndex,
+    onSelect: (index: number) => setSelected(componentRef(config.plugins, index))
+  }
+  // What a drop on the tray would do with the thing being dragged right now, for the tray's caption.
+  const trayDropHint = activeItem ? ((nameCounts.get(activeItem.name) ?? 0) > 1 ? 'remove' : 'disable') : null
 
   return (
     <div className="flex flex-col gap-6">
@@ -487,239 +496,210 @@ export default function GlobalBoard({
         onDragEnd={handleDragEnd}
         accessibility={{ announcements, screenReaderInstructions }}
       >
-        <ComponentPalette
-          plugins={config.plugins}
-          activePaletteSource={activePaletteSource !== null}
-          removableActive={activeItem !== null && (nameCounts.get(activeItem.name) ?? 0) > 1}
-        />
+        {/* Board on the left, the selected component's panel on the right. The panel sticks while
+            the board scrolls under it, so the place a component is being given and the component
+            itself stay on screen together. */}
+        <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+          <div className="flex min-w-0 flex-col gap-6">
+            <ComponentPalette
+              plugins={config.plugins}
+              parked={parked}
+              activePaletteSource={activePaletteSource !== null}
+              dropHint={trayDropHint}
+            />
 
-        {/* Scrolls sideways rather than pushing the page out: the board renders the project's own
-            frame geometry, and a frame whose fixed columns and gaps add up to more than the window
-            (1048px for the twelve-column example at 1280px wide) is a fact about the frame, not
-            about this app - it says so by not fitting. The scroller sits at the panel's edge, which
-            is where the rule "Wer rollt, ist nicht wer die Breite deckelt" puts a panel's own one.
-            See docs/decisions/layout-frames.md for the measurement, including the keyboard drag
-            through it. */}
-        <div
-          className={`overflow-x-auto ${narrow ? 'mx-auto w-full' : 'w-full'}`}
-          style={{ maxWidth: breakpoint === 'mobile' ? '22rem' : undefined }}
-        >
-          {activeFrame && activeAreas && activeGridStyle ? (
+            {/* Scrolls sideways rather than pushing the page out: the board renders the project's own
+                frame geometry, and a frame whose fixed columns and gaps add up to more than the window
+                (1048px for the twelve-column example at 1280px wide) is a fact about the frame, not
+                about this app - it says so by not fitting. The scroller sits at the panel's edge, which
+                is where the rule "Wer rollt, ist nicht wer die Breite deckelt" puts a panel's own one.
+                See docs/decisions/layout-frames.md for the measurement, including the keyboard drag
+                through it. */}
             <div
-              className="grid gap-3"
-              style={{
-                gridTemplateColumns: activeGridStyle.gridTemplateColumns,
-                gridTemplateRows: activeGridStyle.gridTemplateRows,
-                gridTemplateAreas: activeGridStyle.gridTemplateAreas,
-                rowGap: activeGridStyle.rowGap,
-                columnGap: activeGridStyle.columnGap,
-                width: activeBox?.width,
-                maxWidth: activeBox?.maxWidth,
-                marginInline: activeBox?.marginInline,
-                paddingBlock: activeBox?.paddingBlock,
-                paddingInline: activeBox?.paddingInline
-              }}
+              className={`overflow-x-auto ${narrow ? 'mx-auto w-full' : 'w-full'}`}
+              style={{ maxWidth: breakpoint === 'mobile' ? '22rem' : undefined }}
             >
-              {activeAreas.map((area) => (
-                <div key={area.id} style={{ gridArea: area.name }}>
-                  <AreaBox
-                    label={area.name}
-                    slotLabel={area.slot ? t(`positions.${area.slot}`, area.slot) : t('layoutEditor.frameBuilder.slotNone')}
+              {activeFrame && activeAreas && activeGridStyle ? (
+                <div
+                  className="grid gap-3"
+                  style={{
+                    gridTemplateColumns: activeGridStyle.gridTemplateColumns,
+                    gridTemplateRows: activeGridStyle.gridTemplateRows,
+                    gridTemplateAreas: activeGridStyle.gridTemplateAreas,
+                    rowGap: activeGridStyle.rowGap,
+                    columnGap: activeGridStyle.columnGap,
+                    width: activeBox?.width,
+                    maxWidth: activeBox?.maxWidth,
+                    marginInline: activeBox?.marginInline,
+                    paddingBlock: activeBox?.paddingBlock,
+                    paddingInline: activeBox?.paddingInline
+                  }}
+                >
+                  {activeAreas.map((area) => (
+                    <div key={area.id} style={{ gridArea: area.name }}>
+                      <AreaBox
+                        label={area.name}
+                        slotLabel={area.slot ? t(`positions.${area.slot}`, area.slot) : t('layoutEditor.frameBuilder.slotNone')}
+                      >
+                        {!area.slot ? (
+                          // An area with no slot is an empty cell in the built page too, so the board
+                          // shows it as one rather than as a drop target that would not hold anything.
+                          <div className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10">
+                            {t('layoutEditor.frameBuilder.slotNone')}
+                          </div>
+                        ) : area.slot === 'pageBody' ? (
+                          <div className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10">
+                            {t('layoutEditor.frameBuilder.preview.pageContent')}
+                          </div>
+                        ) : (
+                          <PositionSlot
+                            position={area.slot}
+                            group={area.group}
+                            indices={indicesForArea(area)}
+                            direction="column"
+                            {...slotProps}
+                          />
+                        )}
+                      </AreaBox>
+                    </div>
+                  ))}
+                </div>
+              ) : builtinFrame ? (
+                <div
+                  className="grid gap-3"
+                  style={{
+                    gridTemplateColumns: 'auto',
+                    gridTemplateRows: `repeat(${builtinFrame.visibleSlots.length + 1}, auto)`,
+                    gridTemplateAreas: builtinFrame.areas
+                  }}
+                >
+                  {builtinFrame.visibleSlots.includes('header') && (
+                    <div style={{ gridArea: 'header' }}>
+                      <AreaBox label={t('positions.header')}>
+                        <PositionSlot position="header" indices={positions.header} direction="column" {...slotProps} />
+                      </AreaBox>
+                    </div>
+                  )}
+                  {builtinFrame.visibleSlots.includes('beforeBody') && (
+                    <div style={{ gridArea: 'beforeBody' }}>
+                      <AreaBox label={t('positions.beforeBody')}>
+                        <PositionSlot position="beforeBody" indices={positions.beforeBody} direction="column" {...slotProps} />
+                      </AreaBox>
+                    </div>
+                  )}
+                  <div
+                    style={{ gridArea: 'center' }}
+                    className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10"
                   >
-                    {!area.slot ? (
-                      // An area with no slot is an empty cell in the built page too, so the board
-                      // shows it as one rather than as a drop target that would not hold anything.
-                      <div className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10">
-                        {t('layoutEditor.frameBuilder.slotNone')}
-                      </div>
-                    ) : area.slot === 'pageBody' ? (
-                      <div className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10">
-                        {t('layoutEditor.frameBuilder.preview.pageContent')}
-                      </div>
-                    ) : (
-                      <PositionSlot
-                        position={area.slot}
-                        group={area.group}
-                        indices={indicesForArea(area)}
-                        direction="column"
-                        {...slotProps}
-                      />
-                    )}
-                  </AreaBox>
+                    {t('layoutEditor.frameBuilder.preview.pageContent')}
+                  </div>
+                  {builtinFrame.visibleSlots.includes('afterBody') && (
+                    <div style={{ gridArea: 'afterBody' }}>
+                      <AreaBox label={t('positions.afterBody')}>
+                        <PositionSlot position="afterBody" indices={positions.afterBody} direction="column" {...slotProps} />
+                      </AreaBox>
+                    </div>
+                  )}
+                  {builtinFrame.visibleSlots.includes('footer') && (
+                    <div style={{ gridArea: 'footer' }}>
+                      <AreaBox label={t('positions.footer')}>
+                        <PositionSlot position="footer" indices={positions.footer} direction="column" {...slotProps} />
+                      </AreaBox>
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
-          ) : builtinFrame ? (
-            <div
-              className="grid gap-3"
-              style={{
-                gridTemplateColumns: 'auto',
-                gridTemplateRows: `repeat(${builtinFrame.visibleSlots.length + 1}, auto)`,
-                gridTemplateAreas: builtinFrame.areas
-              }}
-            >
-              {builtinFrame.visibleSlots.includes('header') && (
-                <div style={{ gridArea: 'header' }}>
-                  <AreaBox label={t('positions.header')}>
-                    <PositionSlot position="header" indices={positions.header} direction="column" {...slotProps} />
-                  </AreaBox>
+              ) : unknownPluginFrame ? (
+                <div className="rounded-[6px] border border-dashed border-amber-400/50 bg-amber-50/50 px-4 py-6 text-center text-sm text-amber-700 dark:border-amber-400/30 dark:bg-amber-950/20 dark:text-amber-400">
+                  {t('layoutEditor.pluginFrameUnknownLayout', { frame: builtinDefaultFrame })}
                 </div>
-              )}
-              {builtinFrame.visibleSlots.includes('beforeBody') && (
-                <div style={{ gridArea: 'beforeBody' }}>
-                  <AreaBox label={t('positions.beforeBody')}>
-                    <PositionSlot position="beforeBody" indices={positions.beforeBody} direction="column" {...slotProps} />
-                  </AreaBox>
-                </div>
-              )}
-              <div
-                style={{ gridArea: 'center' }}
-                className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10"
-              >
-                {t('layoutEditor.frameBuilder.preview.pageContent')}
-              </div>
-              {builtinFrame.visibleSlots.includes('afterBody') && (
-                <div style={{ gridArea: 'afterBody' }}>
-                  <AreaBox label={t('positions.afterBody')}>
-                    <PositionSlot position="afterBody" indices={positions.afterBody} direction="column" {...slotProps} />
-                  </AreaBox>
-                </div>
-              )}
-              {builtinFrame.visibleSlots.includes('footer') && (
-                <div style={{ gridArea: 'footer' }}>
-                  <AreaBox label={t('positions.footer')}>
-                    <PositionSlot position="footer" indices={positions.footer} direction="column" {...slotProps} />
-                  </AreaBox>
+              ) : (
+                <div
+                  className="grid gap-3"
+                  style={{ gridTemplateColumns: grid.columns, gridTemplateRows: grid.rows, gridTemplateAreas: grid.areas }}
+                >
+                  <div style={{ gridArea: 'sidebar-left' }}>
+                    <AreaBox label={t('positions.left')}>
+                      <PositionSlot position="left" indices={positions.left} direction={sidebarDirection('left', breakpoint)} {...slotProps} />
+                    </AreaBox>
+                  </div>
+                  <div style={{ gridArea: 'header' }}>
+                    <AreaBox label={t('positions.header')}>
+                      <PositionSlot position="header" indices={positions.header} direction="column" {...slotProps} />
+                    </AreaBox>
+                  </div>
+                  <div style={{ gridArea: 'center' }} className="flex flex-col gap-3">
+                    <AreaBox label={t('positions.beforeBody')}>
+                      <PositionSlot position="beforeBody" indices={positions.beforeBody} direction="column" {...slotProps} />
+                    </AreaBox>
+                    <div className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10">
+                      {t('layoutEditor.frameBuilder.preview.pageContent')}
+                    </div>
+                    <AreaBox label={t('positions.afterBody')}>
+                      <PositionSlot position="afterBody" indices={positions.afterBody} direction="column" {...slotProps} />
+                    </AreaBox>
+                  </div>
+                  <div style={{ gridArea: 'sidebar-right' }}>
+                    <AreaBox label={t('positions.right')}>
+                      <PositionSlot position="right" indices={positions.right} direction={sidebarDirection('right', breakpoint)} {...slotProps} />
+                    </AreaBox>
+                  </div>
+                  <div style={{ gridArea: 'footer' }}>
+                    <AreaBox label={t('positions.footer')}>
+                      <PositionSlot position="footer" indices={positions.footer} direction="column" {...slotProps} />
+                    </AreaBox>
+                  </div>
                 </div>
               )}
+              {(activeFrame || builtinFrame) && activeUnassignedSlots.length > 0 && (
+                <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
+                  {t('layoutEditor.frameBuilder.unassignedWarning', {
+                    slots: activeUnassignedSlots.map((s) => t(`positions.${s}`, s)).join(', ')
+                  })}
+                </p>
+              )}
             </div>
-          ) : unknownPluginFrame ? (
-            <div className="rounded-[6px] border border-dashed border-amber-400/50 bg-amber-50/50 px-4 py-6 text-center text-sm text-amber-700 dark:border-amber-400/30 dark:bg-amber-950/20 dark:text-amber-400">
-              {t('layoutEditor.pluginFrameUnknownLayout', { frame: builtinDefaultFrame })}
-            </div>
-          ) : (
-            <div
-              className="grid gap-3"
-              style={{ gridTemplateColumns: grid.columns, gridTemplateRows: grid.rows, gridTemplateAreas: grid.areas }}
-            >
-              <div style={{ gridArea: 'sidebar-left' }}>
-                <AreaBox label={t('positions.left')}>
-                  <PositionSlot position="left" indices={positions.left} direction={sidebarDirection('left', breakpoint)} {...slotProps} />
-                </AreaBox>
-              </div>
-              <div style={{ gridArea: 'header' }}>
-                <AreaBox label={t('positions.header')}>
-                  <PositionSlot position="header" indices={positions.header} direction="column" {...slotProps} />
-                </AreaBox>
-              </div>
-              <div style={{ gridArea: 'center' }} className="flex flex-col gap-3">
-                <AreaBox label={t('positions.beforeBody')}>
-                  <PositionSlot position="beforeBody" indices={positions.beforeBody} direction="column" {...slotProps} />
-                </AreaBox>
-                <div className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10">
-                  {t('layoutEditor.frameBuilder.preview.pageContent')}
-                </div>
-                <AreaBox label={t('positions.afterBody')}>
-                  <PositionSlot position="afterBody" indices={positions.afterBody} direction="column" {...slotProps} />
-                </AreaBox>
-              </div>
-              <div style={{ gridArea: 'sidebar-right' }}>
-                <AreaBox label={t('positions.right')}>
-                  <PositionSlot position="right" indices={positions.right} direction={sidebarDirection('right', breakpoint)} {...slotProps} />
-                </AreaBox>
-              </div>
-              <div style={{ gridArea: 'footer' }}>
-                <AreaBox label={t('positions.footer')}>
-                  <PositionSlot position="footer" indices={positions.footer} direction="column" {...slotProps} />
-                </AreaBox>
-              </div>
-            </div>
-          )}
-          {(activeFrame || builtinFrame) && activeUnassignedSlots.length > 0 && (
-            <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
-              {t('layoutEditor.frameBuilder.unassignedWarning', {
-                slots: activeUnassignedSlots.map((s) => t(`positions.${s}`, s)).join(', ')
-              })}
-            </p>
-          )}
+
+            <GroupsPanel groups={config.layout?.groups ?? {}} onAdd={addGroup} onUpdate={updateGroup} onDelete={deleteGroup} />
+          </div>
+
+          <aside aria-label={t('layoutEditor.inspector.title')} className="xl:sticky xl:top-4">
+            {selectedIndex !== null && config.plugins[selectedIndex] ? (
+              <Inspector
+                key={`${selected?.name}#${selected?.occurrence}`}
+                plugins={config.plugins}
+                index={selectedIndex}
+                positions={positions}
+                parked={parked.has(selectedIndex)}
+                groupNames={groupNames}
+                isDuplicate={(nameCounts.get(config.plugins[selectedIndex].name) ?? 0) > 1}
+                rank={ranks.get(selectedIndex) ?? 1}
+                onChange={applyPlugins}
+              />
+            ) : (
+              <Card className="flex flex-col gap-2">
+                <CardHeading icon={SlidersHorizontal}>{t('layoutEditor.inspector.title')}</CardHeading>
+                <p className="text-ui text-text-muted">{t('layoutEditor.inspector.empty')}</p>
+              </Card>
+            )}
+          </aside>
         </div>
 
         <DragOverlay>
           {activeItem ? (
-            <ItemCard
-              plugin={activeItem}
-              groupNames={groupNames}
-              rank={ranks.get(Number(activeId))}
-              isDuplicate={(nameCounts.get(activeItem.name) ?? 0) > 1}
-              collapsed
-            />
+            <div className="w-64">
+              <ComponentChip
+                plugin={activeItem}
+                groupNames={groupNames}
+                rank={ranks.get(Number(activeId))}
+                isDuplicate={(nameCounts.get(activeItem.name) ?? 0) > 1}
+              />
+            </div>
           ) : null}
-          {activePaletteSource ? <PaletteChip plugin={activePaletteSource} /> : null}
+          {activePaletteSource ? (
+            <PaletteChip plugin={activePaletteSource} off={parked.has(Number(activeId?.slice(PALETTE_PREFIX.length)))} />
+          ) : null}
         </DragOverlay>
       </DndContext>
-
-      <GroupsPanel groups={config.layout?.groups ?? {}} onAdd={addGroup} onUpdate={updateGroup} onDelete={deleteGroup} />
-    </div>
-  )
-}
-
-// One draggable chip per distinct component source already present in the board - dropping it
-// onto a slot spawns a new duplicate instance there (see handleDragEnd's PALETTE_PREFIX branch).
-// Existing instances aren't removed from here when dragged; the chip is a spawn source, not a
-// placed item, so it stays put after the drop. The same area also doubles as a drop target: a
-// placed *duplicate* dragged back here is removed (see handleDragEnd's PALETTE_DROP_ID branch) -
-// `removableActive` is true while such a duplicate is the thing currently being dragged, so the
-// zone can visually invite the drop instead of only reacting after the fact.
-function ComponentPalette({
-  plugins,
-  activePaletteSource,
-  removableActive
-}: {
-  plugins: PluginEntry[]
-  activePaletteSource: boolean
-  removableActive: boolean
-}): JSX.Element {
-  const { t } = useTranslation()
-  const chips = distinctComponentChips(plugins)
-  const { setNodeRef, isOver } = useDroppable({ id: PALETTE_DROP_ID })
-
-  return (
-    // The droppable hit area covers this whole block (label + chips + hint), not just the chip
-    // box - a duplicate dragged back from elsewhere on the board only needs to land generally in
-    // this region, not thread a needle into the narrower box below.
-    <div ref={setNodeRef} className="flex flex-col gap-1.5">
-      <p className="text-micro font-medium text-text-muted">
-        {removableActive ? t('layoutEditor.componentPill.paletteDropToRemove') : t('layoutEditor.componentPill.paletteLabel')}
-      </p>
-      <div
-        className={`flex flex-wrap gap-2 rounded-[8px] border border-dashed p-2 transition-colors ${
-          removableActive && isOver
-            ? 'border-red-400 bg-red-50/50 dark:border-red-500/40 dark:bg-red-500/5'
-            : activePaletteSource
-              ? 'border-blue-400 bg-blue-50/50 dark:border-blue-500/40 dark:bg-blue-500/5'
-              : 'border-ink/[0.08] dark:border-ink/10'
-        }`}
-      >
-        {chips.map(({ index, plugin }) => (
-          <DraggablePaletteChip key={index} index={index} plugin={plugin} />
-        ))}
-      </div>
-      <p className="text-micro text-text-muted">{t('layoutEditor.componentPill.paletteHint')}</p>
-    </div>
-  )
-}
-
-function DraggablePaletteChip({ index, plugin }: { index: number; plugin: PluginEntry }): JSX.Element {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: `${PALETTE_PREFIX}${index}` })
-  return (
-    <div
-      ref={setNodeRef}
-      {...listeners}
-      {...attributes}
-      style={{ transform: CSS.Translate.toString(transform) }}
-      className={isDragging ? 'opacity-30' : ''}
-    >
-      <PaletteChip plugin={plugin} />
     </div>
   )
 }
@@ -748,12 +728,8 @@ function PositionSlot({
   groupNames,
   nameCounts,
   ranks,
-  expandedIndex,
-  onExpand,
-  onSetGroup,
-  onSetDisplay,
-  onDuplicate,
-  onRemove
+  selectedIndex,
+  onSelect
 }: {
   position: LayoutPosition
   // Set when this box is a frame area bound to one quartz group; it makes the box its own drop
@@ -765,12 +741,8 @@ function PositionSlot({
   groupNames: string[]
   nameCounts: Map<string, number>
   ranks: Map<number, number>
-  expandedIndex: number | null
-  onExpand: (index: number | null) => void
-  onSetGroup: (index: number, group: string) => void
-  onSetDisplay: (index: number, display: PluginLayoutDeclaration['display']) => void
-  onDuplicate: (index: number) => void
-  onRemove: (index: number) => void
+  selectedIndex: number | null
+  onSelect: (index: number) => void
 }): JSX.Element {
   const { t } = useTranslation()
   const { setNodeRef } = useDroppable({ id: dropId(position, group) })
@@ -780,9 +752,9 @@ function PositionSlot({
     <SortableContext items={ids} strategy={verticalListSortingStrategy}>
       <div
         ref={setNodeRef}
-        className={`flex min-h-[52px] gap-2 rounded-md bg-ink/[0.02] p-2 dark:bg-ink/[0.03] ${direction === 'row' ? 'flex-row flex-wrap' : 'flex-col'}`}
+        className={`flex min-h-[40px] gap-1.5 rounded-md bg-ink/[0.02] p-1.5 dark:bg-ink/[0.03] ${direction === 'row' ? 'flex-row flex-wrap' : 'flex-col'}`}
       >
-        {indices.length === 0 && <p className="px-2 py-3 text-center text-xs text-text-muted">{t('layoutEditor.emptySlot')}</p>}
+        {indices.length === 0 && <p className="px-2 py-2 text-center text-xs text-text-muted">{t('layoutEditor.emptySlot')}</p>}
         {indices.map((index) => (
           <SortableItem
             key={index}
@@ -791,12 +763,8 @@ function PositionSlot({
             groupNames={groupNames}
             rank={ranks.get(index) ?? 1}
             direction={direction}
-            expanded={expandedIndex === index}
-            onToggleExpand={() => onExpand(expandedIndex === index ? null : index)}
-            onSetGroup={(group) => onSetGroup(index, group)}
-            onSetDisplay={(display) => onSetDisplay(index, display)}
-            onDuplicate={() => onDuplicate(index)}
-            onRemove={() => onRemove(index)}
+            selected={selectedIndex === index}
+            onSelect={() => onSelect(index)}
             isDuplicate={(nameCounts.get(config.plugins[index].name) ?? 0) > 1}
           />
         ))}
@@ -811,12 +779,8 @@ function SortableItem({
   groupNames,
   rank,
   direction,
-  expanded,
-  onToggleExpand,
-  onSetGroup,
-  onSetDisplay,
-  onDuplicate,
-  onRemove,
+  selected,
+  onSelect,
   isDuplicate
 }: {
   id: string
@@ -824,12 +788,8 @@ function SortableItem({
   groupNames: string[]
   rank: number
   direction: 'row' | 'column'
-  expanded: boolean
-  onToggleExpand: () => void
-  onSetGroup: (group: string) => void
-  onSetDisplay: (display: PluginLayoutDeclaration['display']) => void
-  onDuplicate: () => void
-  onRemove: () => void
+  selected: boolean
+  onSelect: () => void
   isDuplicate: boolean
 }): JSX.Element {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
@@ -838,116 +798,23 @@ function SortableItem({
   const style = { transform: CSS.Transform.toString(transform), transition }
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`${direction === 'row' ? 'min-w-[10rem] flex-1' : ''} ${isDragging ? 'opacity-40' : ''}`}
-    >
-      <ItemCard
+    <div ref={setNodeRef} style={style} className={`${direction === 'row' ? 'min-w-[8rem] flex-1' : ''} ${isDragging ? 'opacity-40' : ''}`}>
+      <ComponentChip
         plugin={plugin}
         groupNames={groupNames}
         rank={rank}
         isDuplicate={isDuplicate}
-        expanded={expanded}
-        onToggleExpand={onToggleExpand}
-        onSetGroup={onSetGroup}
-        onSetDisplay={onSetDisplay}
-        onDuplicate={onDuplicate}
-        onRemove={onRemove}
+        selected={selected}
+        onSelect={onSelect}
         // The handle is the activator node, as at the two other @dnd-kit places. Without it
         // dnd-kit's restoreFocus takes the first focusable element of the *drag* node, which here
-        // is the card - and after a drop into another zone the element is re-mounted in another
-        // PositionSlot, so the old handle is gone. Measured (nineteenth review, finding 2):
-        // `footer` out of custom-13 into the footer left document.activeElement on the card.
+        // would be the handle by luck and the name button after any reordering of the chip -
+        // and after a drop into another zone the element is re-mounted in another PositionSlot,
+        // so the old handle is gone (nineteenth review, finding 2).
         dragHandleRef={setActivatorNodeRef}
-        dragHandleProps={{ ...attributes, ...listeners }}
+        dragHandleProps={{ ...attributes, ...listeners, 'data-board-focus': `placed:${id}` }}
       />
     </div>
-  )
-}
-
-function GroupsPanel({
-  groups,
-  onAdd,
-  onUpdate,
-  onDelete
-}: {
-  groups: Record<string, FlexGroupConfig>
-  onAdd: (name: string) => void
-  onUpdate: (name: string, patch: Partial<FlexGroupConfig>) => void
-  onDelete: (name: string) => void
-}): JSX.Element {
-  const { t } = useTranslation()
-  const [newName, setNewName] = useState('')
-  const names = Object.keys(groups)
-
-  return (
-    <Card>
-      <h3 className="mb-1 text-sm font-semibold">{t('layoutEditor.groupsPanel.title')}</h3>
-      <p className="mb-3 text-xs text-text-muted">{t('layoutEditor.groupsPanel.description')}</p>
-
-      {names.length === 0 && <p className="mb-3 text-xs text-text-muted">{t('layoutEditor.groupsPanel.none')}</p>}
-
-      <div className="mb-3 flex flex-col gap-2">
-        {names.map((name, i) => {
-          const group = groups[name]
-          const color = GROUP_COLORS[i % GROUP_COLORS.length]
-          return (
-            // items-end, not items-center: every control below now carries a label above it, so
-            // aligning on the boxes rather than on the whole column keeps the row one line high.
-            <div key={name} className="flex flex-wrap items-end gap-3 rounded-md border border-ink/[0.06] p-2 dark:border-ink/10">
-              <span className={`mb-2.5 h-2 w-2 shrink-0 rounded-full ${color.dot}`} />
-              <span className="mb-2 w-32 shrink-0 truncate text-sm font-medium">{name}</span>
-              {/* Three unlabelled controls in a row, one of them offering bare CSS keywords, is
-                  not a form - the direction values say what they do on the page now, and each
-                  field carries its own label. */}
-              <Field label={t('layoutEditor.groupsPanel.direction')} className="w-44">
-                <Select
-                  value={group.direction ?? 'row'}
-                  onChange={(e) => onUpdate(name, { direction: e.target.value as FlexGroupConfig['direction'] })}
-                >
-                  <option value="row">{t('layoutEditor.groupsPanel.directionRow')}</option>
-                  <option value="row-reverse">{t('layoutEditor.groupsPanel.directionRowReverse')}</option>
-                  <option value="column">{t('layoutEditor.groupsPanel.directionColumn')}</option>
-                  <option value="column-reverse">{t('layoutEditor.groupsPanel.directionColumnReverse')}</option>
-                </Select>
-              </Field>
-              <Field label={t('layoutEditor.groupsPanel.gap')} className="w-28">
-                <TextInput value={group.gap ?? ''} onChange={(e) => onUpdate(name, { gap: e.target.value })} placeholder="0.5rem" />
-              </Field>
-              <Field label={t('layoutEditor.groupsPanel.priority')} className="w-28">
-                <TextInput
-                  type="number"
-                  value={group.priority ?? ''}
-                  onChange={(e) => onUpdate(name, { priority: e.target.value === '' ? undefined : Number(e.target.value) })}
-                  placeholder={t('layoutEditor.groupsPanel.priorityPlaceholder')}
-                />
-              </Field>
-              <IconButton icon={Trash2} title={t('common.deleteNamed', { name })} onClick={() => onDelete(name)} className="mb-1.5 ml-auto" />
-            </div>
-          )
-        })}
-      </div>
-
-      <div className="flex items-center gap-2">
-        <TextInput
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          placeholder={t('layoutEditor.groupsPanel.newGroupPlaceholder')}
-          className="w-56"
-        />
-        <Button
-          variant="ghost"
-          onClick={() => {
-            onAdd(newName.trim())
-            setNewName('')
-          }}
-          disabled={!newName.trim()}
-        >
-          {t('layoutEditor.groupsPanel.add')}
-        </Button>
-      </div>
-    </Card>
   )
 }
 

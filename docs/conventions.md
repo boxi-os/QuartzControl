@@ -640,11 +640,18 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   gab seinem `DndContext` gar keine mit (achtzehntes Review, Befund 3; gemessen: ein Chip landete
   nach drei Pfeilen wieder auf der Palette). Zwei der drei sortierbaren Listen tragen zusätzlich „nach oben /
   nach unten“ (`Plugins/Installed`, und die Ladereihenfolge in `Styles/CustomCss`, die nie ein Drag
-  hatte): die Tastatur-Aufnahme ist eine Geste, die man kennen muss. **Das Layout-Board ist die
-  Ausnahme, und zwar mit Grund:** Eine seiner Zeilen kann nicht nur innerhalb ihrer Liste steigen
-  und fallen, sondern in sechs andere Zonen und auf die Palette — ein Pfeilpaar beantwortet davon
-  eine Richtung von sieben und sähe aus, als beantworte es alle. Was die Geste ersetzt, sind
-  dnd-kits `screenReaderInstructions` aus `dndAccessibility` (neunzehntes Review, Befund 6). **Und über einem Drag steht nie ein `stopPropagation()`:**
+  hatte): die Tastatur-Aufnahme ist eine Geste, die man kennen muss. **Das Layout-Board trägt
+  das Pfeilpaar nicht an der Zeile, sondern in der Seitenleiste:** Eine seiner Zeilen kann nicht nur
+  innerhalb ihrer Liste steigen und fallen, sondern in sechs andere Zonen und auf die Palette — ein
+  Pfeilpaar an der Zeile beantwortete davon eine Richtung von sieben und sähe aus, als beantworte es
+  alle. Die Seitenleiste (`LayoutEditor/Inspector.tsx`, seit 1.1) beantwortet alle: „Früher“ und
+  „Später“ für die Liste, eine Auswahl für die Position, „In den Vorrat legen“ für die Palette;
+  dazu dnd-kits `screenReaderInstructions` aus `dndAccessibility` (neunzehntes Review, Befund 6).
+  **Der Vorrat schaltet aus:** Eine einzelne Komponente, auf dem Vorrat abgelegt, wird
+  `enabled: false` und liegt dort als Chip „aus“; zurückgezogen ist sie wieder eingeschaltet, an der
+  Ablagestelle (`parkedIndices` in `LayoutEditor/utils.ts`, Ansagen `dnd.disabled`/`dnd.reenabled`
+  über `dropOutcome`). Weil das gezogene Element dabei verschwindet, setzt das Board den Fokus selbst
+  auf das, was es jetzt ist — sonst fiel er auf `<body>`. **Und über einem Drag steht nie ein `stopPropagation()`:**
   Der `KeyboardSensor` hört, sobald ein Drag läuft, auf dem *Dokument*, und React ruft für ein
   `stopPropagation()` im Renderer auch das native an der Wurzel — ein Guard, der ein Zeichen vom
   Elternknoten fernhalten soll, nimmt damit dem laufenden Drag Pfeile und Escape ab. Wer zu viel

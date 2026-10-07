@@ -1301,3 +1301,59 @@ Ablage. Gebaute App, Testprojekt, elf Szenen des Reviews mit echten Tastendrück
 
 Was wegfällt: Ein Paletten-Chip erreichte bei 1280 px das Board mit →; jetzt mit ↓, wie bei 1470 px
 schon vorher. Die senkrechten Rundwege und die drei Spalten antworten wie zuvor.
+
+## Seitenleiste und Vorrat auf dem Board (2026-10-07, 1.1 P7.1)
+
+Das Board aus „Global“ hat seine aufklappbaren Karten verloren. Eine Komponente ist jetzt ein
+einzeiliger Baustein (`ComponentChip.tsx`: Griff, Name, Markierungen für aus, Gruppe, nur Desktop/
+Mobil, Bedingung), und alles, was man an ihr ändert, steht in einer Seitenleiste rechts
+(`Inspector.tsx`): Position, früher/später, Sichtbarkeit, Bedingung, Gruppe mit `groupOptions`,
+Duplizieren, Duplikat entfernen, In den Vorrat legen. Vorrat und Gruppen sind eigene Dateien
+(`Palette.tsx`, `GroupsPanel.tsx`); die Ids (`pos#group`, `palette:<index>`, `palette-drop-zone`),
+`useDndAccessibility`, `isHome` und `nearestDroppableCoordinates` sind unverändert.
+
+**Die Auswahl hängt an Name und Vorkommen, nicht am Index** (`componentRef`): Ein Duplikat, das
+weiter oben entfernt wird, verschiebt jeden Index dahinter, und das Panel zeigte sonst den Nachbarn.
+Wo die App selbst einen Eintrag entfernt, wird die Auswahl aus dem verschobenen Index neu gebildet,
+weil sich mit dem Index auch die Vorkommensnummer der folgenden ändert. Sticky (`layout.selected`).
+
+**Bedingung:** Quartz kennt vier eingebaute (`quartz/plugins/loader/conditions.ts`: `not-index`,
+`has-tags`, `has-backlinks`, `has-toc`), ein Plugin kann weitere registrieren; ein unbekannter Name
+lässt die Komponente immer erscheinen (Warnung im Log). Die Auswahl bietet die vier und „Eigene…“
+als Text.
+
+**`groupOptions`:** gelesen in `quartz/components/Flex.tsx`. Angeboten werden `grow`, `shrink`,
+`basis`, `order` und `align`; ein Wert gleich Quartz' Vorgabe wird als „nicht gesetzt“ geschrieben,
+damit An-und-wieder-aus die Datei lässt, wie sie war. **`justify` wird nicht angeboten:** Flex
+schreibt es als `justify-self`, das ein Flex-Element ignoriert, und `between`/`around` sind gar keine
+Werte dieser Eigenschaft. Ein vorhandener Wert bleibt unangetastet in der Datei.
+
+**Der Vorrat schaltet aus** (Entscheidung des Nutzers zu Befund 4 aus 1.0.1): Eine Komponente, die
+die einzige ihres Namens und ausgeschaltet ist, steht nicht mehr auf dem Board, sondern als Chip
+„aus“ im Vorrat (`parkedIndices`); ein ausgeschaltetes *Duplikat* bleibt mit Markierung auf dem
+Board, weil der Chip seines Namens schon für die eingeschaltete Instanz steht. Gemessen an einem
+Klon von gui-test (gebaute App, Wegwerf-Profil, `scratchpad/p7/board2.mjs`):
+
+    vorher   footer (einzeln) per Tastatur auf den Vorrat: „footer bleibt, wo es war — nur ein
+             Duplikat lässt sich in den Komponentenvorrat zurücklegen.“, Datei unverändert;
+             27 Griffe auf dem Board, davon 8 ausgeschaltete Einzelinstanzen
+    nachher  „footer ausgeschaltet und in den Komponentenvorrat gelegt.“, `enabled: false`,
+             Position und Priorität bleiben; Chip „footer aus“ im Vorrat, Fokus darauf.
+             Zurück per Tastatur (14 Pfeile): „footer eingeschaltet und bei quartz-layout-box #7
+             abgelegt.“, `enabled: true`, Fokus auf dem Griff in der Fußzeile.
+             19 Griffe auf dem Board, die 8 ausgeschalteten Einzelinstanzen als „aus“ im Vorrat
+
+Der Fokus war dabei der eine Befund: Beide Ablagen nehmen das gezogene Element aus dem Dokument, und
+dnd-kit gibt den Fokus an genau dieses zurück — er fiel auf `<body>`. Das Board setzt ihn jetzt nach
+dem Rendern auf das neue Element (`data-board-focus`).
+
+Seitenleiste, gemessen am selben Klon: „Später“ an search → „search steht jetzt an Stelle 4 von 5 in
+Kopfbereich.“, Reihenfolge in der Datei entsprechend; am Listenende springt der Fokus vom
+deaktivierten Knopf auf „Früher“ (vorher wäre er auf `<body>` gefallen). Bedingung, eigene Bedingung
+und „Immer“ (Schlüssel fällt weg), Position per Auswahl (Gruppe bleibt), Duplizieren und Entfernen
+(Panel folgt dem neuen bzw. schließt), Auswahl über einen Wechsel zu Stile und zurück: alle wie
+erwartet.
+
+**Offen bis 7.2:** Bei 1280 px rollt das Board seitlich, jetzt auf 622 statt 966 px Breite
+(`editorial` braucht 1068 px), weil die Seitenleiste daneben steht. Das Raster hat feste Spalten;
+die Bühne nach Proportionen ist Schritt 7.2. Bei 1728 px rollt nichts.

@@ -275,3 +275,134 @@ export function appendDuplicateToPosition(
   })
   return { plugins: next, newIndex }
 }
+
+// A component that is switched off and is the only one of its name lives in the component tray, not
+// on the board: Quartz drops a disabled entry before it builds the layout, so it renders nowhere,
+// and the tray is where the board keeps what is not on the page (1.0.1, user finding 4). Dragging it
+// back switches it on again. A disabled *duplicate* stays on the board with its badge - the tray
+// holds one chip per name, and that chip already stands for the enabled instance.
+export function parkedIndices(plugins: PluginEntry[]): Set<number> {
+  const counts = duplicateNameCounts(plugins)
+  const parked = new Set<number>()
+  for (const { plugin, index } of componentItems(plugins)) {
+    if (!plugin.enabled && (counts.get(plugin.name) ?? 0) === 1) parked.add(index)
+  }
+  return parked
+}
+
+// The board's position lists without the parked entries - see parkedIndices.
+export function buildBoardPositionMap(plugins: PluginEntry[], parked: Set<number>): Record<LayoutPosition, number[]> {
+  const map = buildPositionMap(plugins)
+  for (const position of POSITIONS) map[position] = map[position].filter((i) => !parked.has(i))
+  return map
+}
+
+// Which component the side panel shows, by name and its n-th occurrence among entries of that name
+// - not by array index. An index belongs to whatever sits at that place after a removal, and a
+// duplicate removed further up would hand the panel to its neighbour (conventions.md: "Schlüssel
+// sind stabile Kennungen, nie Listenindizes").
+export interface ComponentRef {
+  name: string
+  occurrence: number
+}
+
+export function componentRef(plugins: PluginEntry[], index: number): ComponentRef | null {
+  const plugin = plugins[index]
+  if (!plugin || !getLayout(plugin)) return null
+  return { name: plugin.name, occurrence: duplicateRanks(plugins).get(index) ?? 1 }
+}
+
+export function resolveComponentRef(plugins: PluginEntry[], ref: ComponentRef | null): number | null {
+  if (!ref) return null
+  const ranks = duplicateRanks(plugins)
+  for (const { plugin, index } of componentItems(plugins)) {
+    if (plugin.name === ref.name && ranks.get(index) === ref.occurrence) return index
+  }
+  return null
+}
+
+/**
+ * Puts the entry at `index` into `position` at `insertIndex` of that position's list (the end when
+ * left out) and renumbers the lists it left and joined - the one move behind a drop, the position
+ * select and "früher/später". `positions` are the lists as the board shows them; an entry that is
+ * in none of them (a parked one) simply joins. `group` is the area it lands in: a group area makes
+ * it a member, the plain area takes it out of any group, and `undefined` leaves the group alone.
+ */
+export function placeComponent(
+  plugins: PluginEntry[],
+  positions: Record<LayoutPosition, number[]>,
+  index: number,
+  position: LayoutPosition,
+  insertIndex?: number,
+  group?: string | null
+): PluginEntry[] {
+  const next: Record<LayoutPosition, number[]> = { ...positions }
+  const touched = new Set<LayoutPosition>([position])
+  for (const pos of POSITIONS) {
+    if (!positions[pos].includes(index)) continue
+    next[pos] = positions[pos].filter((i) => i !== index)
+    touched.add(pos)
+  }
+  const target = [...next[position]]
+  target.splice(Math.min(insertIndex ?? target.length, target.length), 0, index)
+  next[position] = target
+  const renumbered = new Map<number, { position: LayoutPosition; priority: number }>()
+  for (const pos of touched) {
+    for (const [i, priority] of renumberPriorities(next[pos])) renumbered.set(i, { position: pos, priority })
+  }
+  return plugins.map((plugin, i) => {
+    const update = renumbered.get(i)
+    if (!update || !plugin.layout) return plugin
+    const layout = { ...plugin.layout, position: update.position, priority: update.priority }
+    if (i === index && group !== undefined) {
+      if (group) layout.group = group
+      else delete layout.group
+    }
+    return { ...plugin, layout }
+  })
+}
+
+export function withEnabled(plugins: PluginEntry[], index: number, enabled: boolean): PluginEntry[] {
+  return plugins.map((p, i) => (i === index ? { ...p, enabled } : p))
+}
+
+// Quartz's four built-in conditions (quartz/plugins/loader/conditions.ts). A plugin can register
+// more under its own names; those go through "Eigene…" as text. An unknown name does not fail the
+// build - Quartz warns and renders the component always.
+export const BUILTIN_CONDITIONS = ['not-index', 'has-tags', 'has-backlinks', 'has-toc'] as const
+
+export function withCondition(plugins: PluginEntry[], index: number, condition: string): PluginEntry[] {
+  return plugins.map((p, i) => {
+    if (i !== index || !p.layout) return p
+    const layout = { ...p.layout }
+    if (condition.trim()) layout.condition = condition.trim()
+    else delete layout.condition
+    return { ...p, layout }
+  })
+}
+
+type GroupOptions = NonNullable<PluginLayoutDeclaration['groupOptions']>
+
+// What Quartz's Flex fills in for a key that is not there (quartz/components/Flex.tsx). A value
+// equal to it is written as "not there", so switching something on and off again leaves the file
+// as it was.
+export const GROUP_OPTION_DEFAULTS = { grow: false, shrink: true, basis: 'auto', order: 0, align: 'center' } as const
+
+export function withGroupOption<K extends keyof GroupOptions>(
+  plugins: PluginEntry[],
+  index: number,
+  key: K,
+  value: GroupOptions[K] | undefined
+): PluginEntry[] {
+  return plugins.map((p, i) => {
+    if (i !== index || !p.layout) return p
+    const options: GroupOptions = { ...(p.layout.groupOptions ?? {}) }
+    const fallback = (GROUP_OPTION_DEFAULTS as Partial<GroupOptions>)[key]
+    if (value === undefined || value === '' || value === fallback) delete options[key]
+    else options[key] = value
+    const layout = { ...p.layout }
+    if (Object.keys(options).length > 0) layout.groupOptions = options
+    else delete layout.groupOptions
+    return { ...p, layout }
+  })
+}

@@ -1,0 +1,199 @@
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
+import { Filter, GripVertical, Monitor, Smartphone } from 'lucide-react'
+import type { PluginEntry } from '@shared/ipc-contract'
+import { BUILTIN_CONDITIONS, getLayout } from './utils'
+
+// Fixed hue palette for flex-group color coding, cycled by the group's position in `groupNames` -
+// purely a visual aid (not persisted), so a stable hash isn't needed, just a stable order. Shared
+// by GlobalBoard and FrameBuilder so a group reads as the same color everywhere it appears.
+export const GROUP_COLORS = [
+  {
+    dot: 'bg-blue-500',
+    ring: 'border-blue-300 dark:border-blue-500/40',
+    bg: 'bg-blue-50 dark:bg-blue-500/10',
+    text: 'text-blue-700 dark:text-blue-300'
+  },
+  {
+    dot: 'bg-purple-500',
+    ring: 'border-purple-300 dark:border-purple-500/40',
+    bg: 'bg-purple-50 dark:bg-purple-500/10',
+    text: 'text-purple-700 dark:text-purple-300'
+  },
+  {
+    dot: 'bg-emerald-500',
+    ring: 'border-emerald-300 dark:border-emerald-500/40',
+    bg: 'bg-emerald-50 dark:bg-emerald-500/10',
+    text: 'text-emerald-700 dark:text-emerald-300'
+  },
+  {
+    dot: 'bg-amber-500',
+    ring: 'border-amber-300 dark:border-amber-500/40',
+    bg: 'bg-amber-50 dark:bg-amber-500/10',
+    text: 'text-amber-700 dark:text-amber-300'
+  },
+  {
+    dot: 'bg-pink-500',
+    ring: 'border-pink-300 dark:border-pink-500/40',
+    bg: 'bg-pink-50 dark:bg-pink-500/10',
+    text: 'text-pink-700 dark:text-pink-300'
+  },
+  {
+    dot: 'bg-cyan-500',
+    ring: 'border-cyan-300 dark:border-cyan-500/40',
+    bg: 'bg-cyan-50 dark:bg-cyan-500/10',
+    text: 'text-cyan-700 dark:text-cyan-300'
+  }
+]
+
+export function groupColor(group: string | undefined, groupNames: string[]): (typeof GROUP_COLORS)[number] | null {
+  if (!group) return null
+  const idx = groupNames.indexOf(group)
+  if (idx === -1) return null
+  return GROUP_COLORS[idx % GROUP_COLORS.length]
+}
+
+// The words for a condition, on the chip's mark and in the side panel's select. A name Quartz does
+// not ship stays as it is written - it is a plugin's own, and only that plugin knows what it means.
+export function conditionLabel(t: TFunction, condition: string): string {
+  switch (condition as (typeof BUILTIN_CONDITIONS)[number]) {
+    case 'not-index':
+      return t('layoutEditor.inspector.conditionNotIndex')
+    case 'has-tags':
+      return t('layoutEditor.inspector.conditionHasTags')
+    case 'has-backlinks':
+      return t('layoutEditor.inspector.conditionHasBacklinks')
+    case 'has-toc':
+      return t('layoutEditor.inspector.conditionHasToc')
+    default:
+      return condition
+  }
+}
+
+/**
+ * One placed component on the board: grip, name, and small marks for what its layout says beyond
+ * the place it sits in - switched off, a group, desktop or mobile only, a condition. Everything you
+ * change about it happens in the side panel (Inspector), so the chip stays one line high and the
+ * board stays small enough to read as a page.
+ *
+ * The name is a real button that selects the component; the rest of the chip forwards a click to
+ * the same thing for the mouse. Not `role="button"` on the whole chip, as the expanding card before
+ * it had: that put the drag handle - itself a button - inside a button.
+ */
+export function ComponentChip({
+  plugin,
+  groupNames,
+  rank,
+  isDuplicate,
+  selected,
+  onSelect,
+  dragHandleProps,
+  dragHandleRef
+}: {
+  plugin: PluginEntry
+  groupNames: string[]
+  rank?: number
+  isDuplicate?: boolean
+  selected?: boolean
+  onSelect?: () => void
+  dragHandleProps?: Record<string, unknown>
+  /** dnd-kit's setActivatorNodeRef, as its own prop: React 18 cannot carry a ref through a props
+   *  spread, and the handle is what the activator node has to be - see the drag handle below. */
+  dragHandleRef?: (node: HTMLElement | null) => void
+}): JSX.Element {
+  const { t } = useTranslation()
+  const layout = getLayout(plugin)
+  const color = groupColor(layout?.group, groupNames)
+  const label = isDuplicate && rank !== undefined ? `${plugin.name} #${rank}` : plugin.name
+
+  return (
+    <div
+      onClick={onSelect}
+      className={`flex min-w-0 items-center gap-1.5 rounded-[6px] border bg-surface px-1.5 py-1 shadow-sm ${
+        color ? `border-l-[3px] ${color.ring}` : 'border-ink/[0.08] dark:border-ink/15'
+      } ${selected ? 'outline outline-2 outline-offset-1 outline-blue-500' : ''} ${onSelect ? 'cursor-pointer' : ''}`}
+    >
+      {dragHandleProps && (
+        <span
+          ref={dragHandleRef}
+          {...dragHandleProps}
+          // Picking up is not selecting: the click a pointer drag ends with would otherwise reach
+          // the chip and open the panel for whatever was just moved.
+          onClick={(e) => e.stopPropagation()}
+          // With the component's name, and its number where it is one of several: the board has
+          // one handle per row, and all 33 of the test project's read "Zum Verschieben ziehen" in a
+          // screen reader's list of controls (thirty-first review, "nebenbei" 2).
+          aria-label={t('layoutEditor.componentPill.dragHandle', { name: label })}
+          className="flex shrink-0 cursor-grab select-none items-center rounded-[4px] p-0.5 text-text-muted transition-colors hover:bg-ink/[0.08] hover:text-text active:cursor-grabbing"
+        >
+          <GripVertical size={14} />
+        </span>
+      )}
+      <button
+        type="button"
+        aria-pressed={onSelect ? !!selected : undefined}
+        onClick={(e) => {
+          e.stopPropagation()
+          onSelect?.()
+        }}
+        className={`min-w-0 flex-1 truncate text-left text-ui font-medium ${plugin.enabled ? '' : 'text-text-muted'}`}
+      >
+        {plugin.name}
+        {isDuplicate && rank !== undefined && <span className="ml-1 text-micro font-normal text-text-muted">#{rank}</span>}
+      </button>
+      <span className="flex shrink-0 items-center gap-1 text-text-muted">
+        {/* Quartz drops a disabled entry before it builds the layout, so it keeps its place in the
+            config but renders nowhere. A sole instance that is off lives in the tray instead; this
+            mark is for a switched-off duplicate, which stays where it was. */}
+        {!plugin.enabled && (
+          <span
+            title={t('layoutEditor.componentPill.disabledHint')}
+            className="rounded-full bg-ink/[0.06] px-1.5 text-micro font-medium dark:bg-ink/10"
+          >
+            {t('layoutEditor.componentPill.off')}
+          </span>
+        )}
+        {layout?.group && (
+          <span className={`max-w-[6rem] truncate rounded-full px-1.5 text-micro font-medium ${color?.bg ?? ''} ${color?.text ?? ''}`}>
+            {layout.group}
+          </span>
+        )}
+        {layout?.display === 'desktop-only' && (
+          <span title={t('layoutEditor.displayDesktopOnly')}>
+            <Monitor size={13} aria-label={t('layoutEditor.displayDesktopOnly')} />
+          </span>
+        )}
+        {layout?.display === 'mobile-only' && (
+          <span title={t('layoutEditor.displayMobileOnly')}>
+            <Smartphone size={13} aria-label={t('layoutEditor.displayMobileOnly')} />
+          </span>
+        )}
+        {layout?.condition && (
+          <span title={conditionLabel(t, layout.condition)}>
+            <Filter size={13} aria-label={conditionLabel(t, layout.condition)} />
+          </span>
+        )}
+      </span>
+    </div>
+  )
+}
+
+// The chip in the component tray and the drag overlay of one taken from there. `off` marks the one
+// instance of a component that is switched off and therefore lies in the tray (parkedIndices).
+export function PaletteChip({ plugin, off }: { plugin: PluginEntry; off?: boolean }): JSX.Element {
+  const { t } = useTranslation()
+  return (
+    <div
+      className={`flex w-fit cursor-grab items-center gap-1.5 rounded-[6px] border border-dashed px-2 py-1 text-micro font-medium active:cursor-grabbing ${
+        off ? 'border-ink/20 bg-ground text-text-secondary' : 'border-blue-300 bg-blue-50/60 dark:border-blue-500/40 dark:bg-blue-500/10'
+      }`}
+    >
+      {plugin.name}
+      {off && (
+        <span title={t('layoutEditor.componentPill.parkedHint')} className="rounded-full bg-ink/[0.08] px-1.5 dark:bg-ink/15">
+          {t('layoutEditor.componentPill.off')}
+        </span>
+      )}
+    </div>
+  )
+}

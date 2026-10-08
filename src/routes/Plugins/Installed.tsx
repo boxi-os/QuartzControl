@@ -300,12 +300,35 @@ export default function PluginsInstalled(): JSX.Element {
   // alongside a separately `plugin add`ed "github:quartz-community/explorer"), so every mutation
   // that writes the config array directly targets the array index, not the derived name, to avoid
   // touching the wrong (or both) entries.
+  //
+  // Against the newest state, not the render's, and one write after the other. Every option is
+  // written on its own blur, and the form hands up the whole options object built from what it
+  // was rendered with: a second field committed before the first save's re-read had arrived wrote
+  // the state from before the first plus its own value, and the first was gone - at 0 and 300 ms
+  // apart, i.e. typing and tabbing on (fortieth review, finding 3, measured). So the edit goes into
+  // the page's state at once (the next field renders from it), the saves queue up, and only the
+  // last of a run re-reads the file - an earlier re-read would put an older state back on screen.
+  const configRef = useRef(config)
+  configRef.current = config
+  const writes = useRef<Promise<unknown>>(Promise.resolve())
   async function updateField(index: number, path: string[], value: unknown): Promise<void> {
-    if (!config) return
-    const plugins = config.plugins.map((p, i) => (i === index ? (setDeep(p, path, value) as PluginEntry) : p))
-    await window.quartzGui.config.save(project.path, { ...config, plugins })
+    const current = configRef.current
+    if (!current) return
+    const plugins = current.plugins.map((p, i) => (i === index ? (setDeep(p, path, value) as PluginEntry) : p))
+    const next = { ...current, plugins }
+    configRef.current = next
+    setConfig(next)
+    const write = writes.current.then(() => window.quartzGui.config.save(project.path, next))
+    writes.current = write.catch(() => {})
+    try {
+      await write
+    } catch (err) {
+      // What the file holds, back on screen, and the failure to the toast as before.
+      await reload()
+      throw err
+    }
     flagSaved(index)
-    await reload()
+    if (configRef.current === next) await reload()
   }
 
   async function toggleEnabled(index: number): Promise<void> {

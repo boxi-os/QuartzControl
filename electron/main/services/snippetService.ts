@@ -1,7 +1,8 @@
 import { copyFile, lstat, mkdir, open, readdir, readFile, realpath, rename, rm, stat } from 'fs/promises'
 import { randomUUID } from 'crypto'
+import { shell } from 'electron'
 import { basename, dirname, extname, isAbsolute, join, relative, sep } from 'path'
-import type { SnippetDirInfo, SnippetFileResult, StaticImageResult } from '@shared/ipc-contract'
+import type { SnippetDirInfo, SnippetFileResult, StaticFileKind, StaticImageResult } from '@shared/ipc-contract'
 import { containedPath, writableTarget } from './templatePackage/shared'
 import { writeFileAtomic } from './jsonStore'
 import { resolveBuildDir } from './projectDirs'
@@ -77,7 +78,7 @@ async function sizeOf(path: string): Promise<number> {
   return (await stat(path)).size
 }
 
-export async function listSnippets(projectPath: string, dir: string): Promise<SnippetDirInfo> {
+async function listFiles(projectPath: string, dir: string, allowed: Set<string>): Promise<SnippetDirInfo> {
   const checked = await checkDir(projectPath, dir)
   if (!checked.ok) return { state: checked.state, files: [] }
   let entries
@@ -90,11 +91,20 @@ export async function listSnippets(projectPath: string, dir: string): Promise<Sn
   // A link to a file counts as a file: readdir's Dirent does not follow it (conventions.md).
   const files: string[] = []
   for (const e of entries) {
-    if (!SNIPPET_EXTENSIONS.has(extname(e.name).toLowerCase()) || e.name.startsWith('.')) continue
+    if (!allowed.has(extname(e.name).toLowerCase()) || e.name.startsWith('.')) continue
     if (e.isFile() || (e.isSymbolicLink() && (await stat(join(checked.abs, e.name)).catch(() => null))?.isFile())) files.push(e.name)
   }
   files.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
   return { state: checked.viaLink ? 'link' : 'ok', files }
+}
+
+export function listSnippets(projectPath: string, dir: string): Promise<SnippetDirInfo> {
+  return listFiles(projectPath, dir, SNIPPET_EXTENSIONS)
+}
+
+/** The pictures in quartz/static/images - the folder "Bild einfügen…" copies into. */
+export function listStaticImages(projectPath: string): Promise<SnippetDirInfo> {
+  return listFiles(projectPath, IMAGES_DIR, IMAGE_EXTENSIONS)
 }
 
 export async function readSnippet(projectPath: string, dir: string, file: string): Promise<string> {
@@ -207,4 +217,54 @@ export async function importStaticImage(
 ): Promise<StaticImageResult> {
   const r = await importFile(projectPath, IMAGES_DIR, sourcePath, name, overwrite, IMAGE_EXTENSIONS, IMAGE_MAX_BYTES)
   return { status: r.status, relativePath: `images/${r.name}` }
+}
+
+/** The folder and the names a kind of static file may have: a snippet in its box's `dir`, a picture in quartz/static/images. */
+function placeOf(kind: StaticFileKind, dir: string | undefined): { dir: string; allowed: Set<string> } {
+  if (kind === 'image') return { dir: IMAGES_DIR, allowed: IMAGE_EXTENSIONS }
+  if (!dir) throw new Error(mainT('snippetDirOutside', { dir: '' }))
+  return { dir, allowed: SNIPPET_EXTENSIONS }
+}
+
+/** A file that is there, as a file of this kind, and not reached through a link - the one rename and trash act on. */
+async function existingFile(projectPath: string, dir: string, name: string, allowed: Set<string>): Promise<{ abs: string; name: string }> {
+  const target = await writablePath(projectPath, dir, name, allowed)
+  const info = await lstat(target.abs).catch(() => null)
+  if (!info?.isFile()) throw new Error(mainT('staticFileMissing', { name: target.name }))
+  return target
+}
+
+/**
+ * Renames a snippet or a picture inside its folder. A name already taken is not overwritten - the
+ * answer is `exists`, and the renderer says so; renaming over another file is a delete in disguise.
+ * References are the renderer's to update: it knows the config, and only the config.
+ */
+export async function renameStaticFile(
+  projectPath: string,
+  kind: StaticFileKind,
+  dir: string | undefined,
+  from: string,
+  to: string
+): Promise<SnippetFileResult> {
+  const place = placeOf(kind, dir)
+  const source = await existingFile(projectPath, place.dir, from, place.allowed)
+  const target = await writablePath(projectPath, place.dir, to, place.allowed)
+  if (target.abs === source.abs) return { status: 'written', file: target.name }
+  // A rename that only changes case finds itself under lstat on APFS: that is not "taken".
+  const taken = await lstat(target.abs).catch(() => null)
+  const sameFile = taken !== null && (await realpath(target.abs)) === (await realpath(source.abs))
+  if (taken !== null && !sameFile) return { status: 'exists', file: target.name }
+  await rename(source.abs, target.abs)
+  return { status: 'written', file: target.name }
+}
+
+/**
+ * Moves a snippet or a picture to the system's trash rather than deleting it: a file in
+ * quartz/static is in no snapshot unless one was made before, and the trash is the way back that
+ * needs no foresight.
+ */
+export async function trashStaticFile(projectPath: string, kind: StaticFileKind, dir: string | undefined, file: string): Promise<void> {
+  const place = placeOf(kind, dir)
+  const { abs } = await existingFile(projectPath, place.dir, file, place.allowed)
+  await shell.trashItem(abs)
 }

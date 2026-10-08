@@ -85,7 +85,8 @@ export function IconButton({
   onClick,
   disabled,
   tone = 'danger',
-  className = ''
+  className = '',
+  expanded
 }: {
   icon: LucideIcon
   title: string
@@ -93,12 +94,15 @@ export function IconButton({
   disabled?: boolean
   tone?: 'danger' | 'neutral'
   className?: string
+  /** For a button that opens something below it (an editor in a list row). */
+  expanded?: boolean
 }): JSX.Element {
   return (
     <button
       type="button"
       title={title}
       aria-label={title}
+      aria-expanded={expanded}
       onClick={onClick}
       disabled={disabled}
       className={`shrink-0 rounded-[7px] p-1.5 text-text-secondary transition-colors disabled:cursor-not-allowed disabled:text-text-muted ${

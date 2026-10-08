@@ -1348,6 +1348,9 @@ export interface SnippetFileResult {
   file: string
 }
 
+/** The two kinds of file the Zusätzliche-Inhalte editor manages: a box's snippet, and a picture in quartz/static/images. */
+export type StaticFileKind = 'snippet' | 'image'
+
 export interface StaticImageResult {
   status: 'written' | 'exists'
   /** Relative to quartz/static, e.g. `images/logo.png` - published as `static/images/logo.png`. */
@@ -1494,6 +1497,9 @@ export const IPC = {
   snippetsWrite: 'snippets:write',
   snippetsImport: 'snippets:import',
   staticImageImport: 'staticImage:import',
+  staticFilesListImages: 'staticFiles:listImages',
+  staticFilesRename: 'staticFiles:rename',
+  staticFilesTrash: 'staticFiles:trash',
 
   configGet: 'config:get',
   configSave: 'config:save',
@@ -1834,6 +1840,18 @@ export interface QuartzGuiApi {
   /** Copies a picture to quartz/static/images, which the build publishes as static/images. */
   staticImage: {
     import(args: { projectPath: string; sourcePath: string; name?: string; overwrite?: boolean }): Promise<StaticImageResult>
+  }
+  /**
+   * The files behind the layout boxes, as a list to manage (Plugins -> Zusätzliche Inhalte). `dir`
+   * is the box's folder for a snippet and ignored for a picture, which always lives in
+   * quartz/static/images. Checked in snippetService like snippets.*.
+   */
+  staticFiles: {
+    listImages(args: { projectPath: string }): Promise<SnippetDirInfo>
+    /** A name already taken is left alone and the answer is `exists`. */
+    rename(args: { projectPath: string; kind: StaticFileKind; dir?: string; from: string; to: string }): Promise<SnippetFileResult>
+    /** To the system's trash, not deleted. */
+    trash(args: { projectPath: string; kind: StaticFileKind; dir?: string; file: string }): Promise<void>
   }
   config: {
     get(projectPath: string): Promise<QuartzConfig>

@@ -287,6 +287,7 @@ const STRINGS = {
     snippetNameInvalid: '„{{name}}“ ist kein brauchbarer Dateiname. Erlaubt ist ein Name ohne Schrägstrich, der nicht mit einem Punkt beginnt.',
     snippetExtensionInvalid: '„{{name}}“ hat eine Endung, die hier nicht passt. Erlaubt: {{allowed}}.',
     snippetTooLarge: '„{{name}}“ ist größer als {{limit}} MB.',
+    staticFileMissing: '„{{name}}“ liegt nicht (mehr) in diesem Ordner.',
     snippetDirOutside: '„{{dir}}“ führt aus dem Projektordner hinaus. QuartzControl liest und schreibt dort nicht.',
     snippetDirReserved:
       '„{{dir}}“ liegt in einem Ordner, der einem Werkzeug gehört (.git, node_modules, .quartz, .quartz-gui oder der Ausgabeordner). Wähle einen Ordner unter quartz/static.',
@@ -648,6 +649,7 @@ const STRINGS = {
     snippetNameInvalid: '“{{name}}” is not a usable file name. Use a name without a slash that does not start with a dot.',
     snippetExtensionInvalid: '“{{name}}” has an extension that does not fit here. Allowed: {{allowed}}.',
     snippetTooLarge: '“{{name}}” is larger than {{limit}} MB.',
+    staticFileMissing: '“{{name}}” is not (or no longer) in this folder.',
     snippetDirOutside: '“{{dir}}” leads out of the project folder. QuartzControl does not read or write there.',
     snippetDirReserved:
       '“{{dir}}” is inside a folder that belongs to a tool (.git, node_modules, .quartz, .quartz-gui or the output folder). Choose a folder under quartz/static.',

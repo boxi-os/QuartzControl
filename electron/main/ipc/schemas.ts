@@ -208,6 +208,18 @@ export const staticImageImportArgs = z.looseObject({
   overwrite: z.boolean().optional()
 })
 
+// staticFiles.*: the same bounds as snippets.*; `dir` only means something for a snippet.
+const staticFileKind = z.enum(['snippet', 'image'])
+export const staticFilesListArgs = z.looseObject({ projectPath: absolutePath })
+export const staticFilesRenameArgs = z.looseObject({
+  projectPath: absolutePath,
+  kind: staticFileKind,
+  dir: snippetDir.optional(),
+  from: snippetName,
+  to: snippetName
+})
+export const staticFilesTrashArgs = z.looseObject({ projectPath: absolutePath, kind: staticFileKind, dir: snippetDir.optional(), file: snippetName })
+
 // update.coreStatus's optional second argument. A flag rather than a channel of its own (CLAUDE.md:
 // no new channel for what an existing one can do with a flag); an object so a later key is one line.
 export const coreStatusOptions = z.looseObject({ resolveInstalled: z.boolean().optional() })

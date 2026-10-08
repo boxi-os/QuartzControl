@@ -170,6 +170,13 @@ export function registerIpcHandlers(): void {
   handle(IPC.staticImageImport, t([s.staticImageImportArgs]), ({ projectPath, sourcePath, name, overwrite }) =>
     snippetService.importStaticImage(projectPath, sourcePath, name, overwrite === true)
   )
+  handle(IPC.staticFilesListImages, t([s.staticFilesListArgs]), ({ projectPath }) => snippetService.listStaticImages(projectPath))
+  handle(IPC.staticFilesRename, t([s.staticFilesRenameArgs]), ({ projectPath, kind, dir, from, to }) =>
+    snippetService.renameStaticFile(projectPath, kind, dir, from, to)
+  )
+  handle(IPC.staticFilesTrash, t([s.staticFilesTrashArgs]), ({ projectPath, kind, dir, file }) =>
+    snippetService.trashStaticFile(projectPath, kind, dir, file)
+  )
 
   handle(IPC.projectCreate, t([s.createProjectOptions]), async (options) => {
     const result = await createService.createProject(options as CreateProjectOptions)

@@ -18,6 +18,7 @@ export const PROJECT_ROUTES = [
   ['Vorlagen', '/templates'],
   ['Plugins', '/plugins'],
   ['Plugins · Navigationen', '/plugins?tab=navigations'],
+  ['Plugins · Zusätzliche Inhalte', '/plugins?tab=extras'],
   ['Plugins · Marktplatz', '/plugins?tab=marketplace'],
   ['Vorschau & Build', '/server'],
   ['Git-Sync', '/sync'],

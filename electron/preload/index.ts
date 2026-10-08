@@ -31,7 +31,8 @@ import type {
   TemplatePartId,
   ConfirmDialogOptions,
   PreviewFontsInput,
-  PluginSource
+  PluginSource,
+  StaticFileKind
 } from '@shared/ipc-contract'
 
 function onEvent<Args extends unknown[]>(channel: string, cb: (...args: Args) => void): () => void {
@@ -87,6 +88,12 @@ const api: QuartzGuiApi = {
   staticImage: {
     import: (args: { projectPath: string; sourcePath: string; name?: string; overwrite?: boolean }) =>
       ipcRenderer.invoke(IPC.staticImageImport, args)
+  },
+  staticFiles: {
+    listImages: (args: { projectPath: string }) => ipcRenderer.invoke(IPC.staticFilesListImages, args),
+    rename: (args: { projectPath: string; kind: StaticFileKind; dir?: string; from: string; to: string }) =>
+      ipcRenderer.invoke(IPC.staticFilesRename, args),
+    trash: (args: { projectPath: string; kind: StaticFileKind; dir?: string; file: string }) => ipcRenderer.invoke(IPC.staticFilesTrash, args)
   },
   config: {
     get: (projectPath: string) => ipcRenderer.invoke(IPC.configGet, projectPath),

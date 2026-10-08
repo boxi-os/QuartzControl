@@ -380,18 +380,21 @@ function useScheme(): 'light' | 'dark' {
  * its reach in its name (conventions.md). The draft survives a change of route (sticky state), so
  * leaving the page does not lose it, and closing with unsaved changes asks.
  */
-function SnippetEditor({
+export function SnippetEditor({
   projectPath,
   dir,
   file,
   placeholdersOff,
-  onClose
+  onClose,
+  onSaved
 }: {
   projectPath: string
   dir: string
   file: string
   placeholdersOff: boolean
   onClose: () => void
+  /** After the file is written - for a list that shows what the file contains (which pictures it uses). */
+  onSaved?: () => void
 }): JSX.Element {
   const { t } = useTranslation()
   const scheme = useScheme()
@@ -433,6 +436,7 @@ function SnippetEditor({
       setSaved(draft)
       setDraft(null)
       setStatus(t('snippets.saved', { name: file }))
+      onSaved?.()
     } catch (err) {
       setError(formatIpcError(err))
     }

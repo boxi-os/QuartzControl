@@ -145,10 +145,14 @@ export function ComponentChip({
         }}
         // flex-auto rather than flex-1: with a zero basis the name gave up all its room to the marks
         // first, and in a 120px side column of the stage it was gone entirely.
-        className={`min-w-[1.5rem] flex-auto truncate text-left text-ui font-medium ${plugin.enabled && !hiddenReason ? '' : 'text-text-muted'}`}
+        // The name shrinks, the instance number does not: cut as one line, the number went first,
+        // and at 1280 px three quartz-layout-box chips read the same (fortieth review, finding 9).
+        // The whole label as a title, for the name that is cut.
+        title={hiddenReason ? `${label} (${hiddenReason})` : label}
+        className={`flex min-w-[1.5rem] flex-auto items-baseline text-left text-ui font-medium ${plugin.enabled && !hiddenReason ? '' : 'text-text-muted'}`}
       >
-        {plugin.name}
-        {isDuplicate && rank !== undefined && <span className="ml-1 text-micro font-normal text-text-muted">#{rank}</span>}
+        <span className="min-w-0 truncate">{plugin.name}</span>
+        {isDuplicate && rank !== undefined && <span className="ml-1 shrink-0 text-micro font-normal text-text-muted">#{rank}</span>}
         {hiddenReason && <span className="sr-only"> ({hiddenReason})</span>}
       </button>
       <span className="flex min-w-0 shrink items-center gap-1 overflow-hidden text-text-muted">

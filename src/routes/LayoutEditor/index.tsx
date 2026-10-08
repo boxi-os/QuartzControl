@@ -156,6 +156,9 @@ export default function LayoutEditor(): JSX.Element {
     }
     const config = configRef.current
     if (!config) return false
+    // Registered even with nothing dirty (below), so the shortcut can reach a typed value - which
+    // means it is also called when there is nothing to write, and then writes nothing.
+    if (savedSnapshot !== null && JSON.stringify(config) === savedSnapshot) return true
     setStatus('saving')
     setError(null)
     try {
@@ -176,10 +179,13 @@ export default function LayoutEditor(): JSX.Element {
     [config, savedSnapshot]
   )
   useUnsavedChanges(dirty)
-  // Cmd+S saves the same thing the button does, and is registered only while that button would do
-  // something: no edits, a save already running, or a sub-tab that saves elsewhere means the
-  // shortcut stays quiet rather than rewriting an unchanged file.
-  useSaveCommand(tab !== 'frames' && dirty && status !== 'saving' ? save : null)
+  // Cmd+S saves the same thing the button does. Registered without asking `dirty`: the side panel's
+  // text and number fields take their value on blur, so a value typed and not yet left is no edit
+  // the page knows of, and with `dirty` as the condition Cmd+S did nothing at all in exactly that
+  // case (fortieth review, finding 6). save() lets the field go first and writes nothing when there
+  // is nothing to write. A save already running, or the Frames tab, which saves elsewhere, still
+  // keeps the shortcut quiet.
+  useSaveCommand(tab !== 'frames' && status !== 'saving' ? save : null)
 
   if (loadError) {
     return (

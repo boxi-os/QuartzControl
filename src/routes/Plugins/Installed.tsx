@@ -6,7 +6,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { confirmDialog } from '../../utils/confirm'
 import type { TFunction } from 'i18next'
 import { useNavigate } from 'react-router-dom'
-import { ArrowDown, ArrowUp, Blocks, ExternalLink, GripVertical, LayoutGrid, Puzzle, Search, SlidersHorizontal, Trash2, Workflow, Wrench } from 'lucide-react'
+import { ArrowDown, ArrowUp, Blocks, ChevronRight, ExternalLink, GripVertical, LayoutGrid, Puzzle, Search, SlidersHorizontal, Trash2, Workflow, Wrench } from 'lucide-react'
 import { useProject } from '../ProjectLayout'
 import type {
   GridFrameDefinition,
@@ -1070,6 +1070,9 @@ function PluginPanel({
   const description = getPluginDescription(t, plugin.name)
   const url = repoUrl(plugin.source)
   const sourceKey = JSON.stringify(plugin.source)
+  // One choice for every plugin, not one per plugin: whoever opens it wants to see placements.
+  const [placementOpen, setPlacementOpen] = useStickyState('plugins.placementOpen', false)
+  const placementId = useId()
   // A frame's "plugin" is generated JS with no schema to read; it is configured in the layout editor.
   const schemaQuery = useIpcQuery(
     () => (frame ? Promise.resolve(null) : window.quartzGui.plugins.optionSchema({ projectPath: project.path, source: plugin.source })),
@@ -1123,26 +1126,53 @@ function PluginPanel({
       {layout && (
         <section className="flex flex-col gap-3 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-micro font-semibold uppercase tracking-wide text-text-secondary">{t('pluginsInstalled.placementHeading')}</h3>
+            {/* Folded by default: the stage is where placement is set, and with a group the fields
+                here pushed the options far down. Folded, one line says where it stands. */}
+            <h3 className="min-w-0 flex-1">
+              <button
+                type="button"
+                aria-expanded={placementOpen}
+                aria-controls={placementId}
+                onClick={() => setPlacementOpen(!placementOpen)}
+                className="flex w-full items-center gap-1.5 text-left text-micro font-semibold uppercase tracking-wide text-text-secondary hover:text-text"
+              >
+                <ChevronRight size={13} aria-hidden className={`shrink-0 transition-transform ${placementOpen ? 'rotate-90' : ''}`} />
+                {t('pluginsInstalled.placementHeading')}
+              </button>
+            </h3>
             <Button variant="ghost" onClick={() => openComponentOnStage(index)}>
               {t('pluginsInstalled.showOnStage')}
             </Button>
           </div>
-          <FieldGroup
-            fields={buildLayoutFields(t)}
-            values={layout as unknown as Record<string, unknown>}
-            onChange={(field, value) => updateField(index, ['layout', field], value)}
-          />
-          {/* groupOptions only makes sense once the plugin is actually placed in a group */}
-          {layout.group && (
-            <div className="flex flex-col gap-3 border-t border-dashed border-ink/10 pt-3 dark:border-ink/10">
-              <p className="font-mono text-micro text-text-muted">groupOptions</p>
+          {placementOpen ? (
+            <div id={placementId} className="flex flex-col gap-3">
               <FieldGroup
-                fields={buildGroupOptionsFields(t)}
-                values={layout.groupOptions ?? {}}
-                onChange={(field, value) => updateField(index, ['layout', 'groupOptions', field], value)}
+                fields={buildLayoutFields(t)}
+                values={layout as unknown as Record<string, unknown>}
+                onChange={(field, value) => updateField(index, ['layout', field], value)}
               />
+              {/* groupOptions only makes sense once the plugin is actually placed in a group */}
+              {layout.group && (
+                <div className="flex flex-col gap-3 border-t border-dashed border-ink/10 pt-3 dark:border-ink/10">
+                  <p className="font-mono text-micro text-text-muted">groupOptions</p>
+                  <FieldGroup
+                    fields={buildGroupOptionsFields(t)}
+                    values={layout.groupOptions ?? {}}
+                    onChange={(field, value) => updateField(index, ['layout', 'groupOptions', field], value)}
+                  />
+                </div>
+              )}
             </div>
+          ) : (
+            <p className="text-ui text-text-secondary">
+              {[
+                t(`positions.${layout.position}`, layout.position),
+                t('pluginsInstalled.placementPriority', { priority: layout.priority }),
+                layout.group ? t('pluginsInstalled.placementGroup', { group: layout.group }) : null
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            </p>
           )}
         </section>
       )}

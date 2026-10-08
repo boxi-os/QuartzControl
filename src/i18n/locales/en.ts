@@ -1119,6 +1119,8 @@ export default {
     panelEnabled: 'Plugin enabled',
     placementHeading: 'Placement',
     showOnStage: 'Show on the stage',
+    placementPriority: 'priority {{priority}}',
+    placementGroup: 'group {{group}}',
     optionsHeading: 'Options',
     componentsHeading: 'Visible components',
     componentsDescription: 'These plugins are visible on the page — e.g. in the header, sidebar, or footer.',

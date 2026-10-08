@@ -1124,6 +1124,8 @@ export default {
     panelEnabled: 'Plugin aktiv',
     placementHeading: 'Platzierung',
     showOnStage: 'Auf der Bühne zeigen',
+    placementPriority: 'Priorität {{priority}}',
+    placementGroup: 'Gruppe {{group}}',
     optionsHeading: 'Optionen',
     componentsHeading: 'Sichtbare Komponenten',
     componentsDescription: 'Diese Plugins sind sichtbar auf der Seite — z. B. im Kopfbereich, in der Seitenleiste oder im Footer.',

@@ -251,9 +251,11 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 
 ## Die Reviews
 
-Alle neununddreißig Listen sind abgearbeitet (die neununddreißigste am 2026-10-07,
-[`docs/REVIEW-2026-10-13.md`](docs/REVIEW-2026-10-13.md); was daraus geworden ist, steht am Ende
-der Chronik — **keinen dieser Fixes hat ein Review gelesen**). Die
+Alle vierzig Listen sind abgearbeitet (die vierzigste am 2026-10-08, über P0–P7.4 von 1.1 auf
+`feat/1.1`, [`docs/REVIEW-2026-10-14.md`](docs/REVIEW-2026-10-14.md); was daraus geworden ist,
+steht am Ende der Chronik — **keinen dieser Fixes hat ein Review gelesen**). Seitdem zieht kein
+Schreiber ein Projekt nach `_quartzcontrol.scss` um; das tut nur „Jetzt umstellen“ auf der
+Stile-Seite, mit Snapshot. Die
 Chronik steht in [`docs/reviews.md`](docs/reviews.md) — welches Review welchen Stand gelesen hat,
 mit welchen Zahlen, was es gefunden hat und welche Fixes noch niemand gelesen hat. Sie stand bis zum
 2026-09-17 hier und ist wörtlich dorthin gewandert; die Review-Dokumente selbst liegen als

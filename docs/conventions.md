@@ -223,7 +223,10 @@ Projektwurzel.
   Core-Update, der Editor des Nutzers), und nicht für einen Entwurf, der älter ist als die Datei —
   den deckt das Band auf dem CSS-Reiter. Und unter dem Schloss stößt nichts etwas an, das es
   überlebt: Ein Timer, der nach der Freigabe feuert, erbt den Wiedereintritt und läuft am nächsten
-  Wartenden vorbei (achtunddreißigstes Review, Befund 3 und Abwägung 1). Messungen in
+  Wartenden vorbei (achtunddreißigstes Review, Befund 3 und Abwägung 1). **Seit 1.1 schreibt ein
+  Schreiber zwei Dateien** (`writeManagedBlocks`: erst `_quartzcontrol.scss`, dann `custom.scss`),
+  und beide unter demselben Schloss; dazwischen sieht nur der Dev-Server einen Zwischenstand, und
+  der baut in beiden Reihenfolgen. Messungen in
   [`styles-and-fonts.md`](decisions/styles-and-fonts.md).
 - **Ein Vorgang, der ein Repository schreibt, wird im Hauptprozess gesperrt, nicht im Renderer.**
   `coreBusy` war ein `useState`: das Gedächtnis eines Fensters an das, was es selbst gestartet hat,
@@ -975,6 +978,15 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   `quartzcontrol`, also auch deb-Paket und Linux-Binärdatei), die Repo-URLs, eine DOM-Id. Die
   Review- und Entscheidungsdokumente behalten den alten Namen, wo sie eine Messung protokollieren —
   sie festzuhalten ist ihr Zweck.
+  **`_quartzcontrol.scss` ist ab 1.1 ein solches Format** — der Dateiname, die Zeile
+  `@use "./quartzcontrol";` in `custom.scss` und dass die vier verwalteten Blöcke dort stehen. Eine
+  ältere Fassung liest ein umgezogenes Projekt mit 0 Variablen und 0 Stylesheets, und was sie dort
+  einschaltet, steht als zweite Kopie in `custom.scss`. Deshalb **zieht kein Schreiber ein Projekt
+  um**: Umgezogen wird nur auf „Jetzt umstellen“ der Stile-Seite, mit einem Snapshot der Art
+  `styleMigration` davor (den die Ausdünnung behält), oder beim Anlegen eines Projekts in der App;
+  bis dahin schreibt jeder Schreiber die Form von 1.0. Und wo zwei Kopien zusammenkommen, wird die
+  Ladereihenfolge neu gebildet, nicht aneinandergehängt — zwei `@use` desselben Moduls brechen den
+  Bau (vierzigstes Review, Befund 2 und Schlussfrage).
 - **JSON-Stores nur über `jsonStore.ts`**: atomar schreiben, Unlesbares beiseitelegen statt
   überschreiben.
 - **Eine Datei, die leer ist, ist nicht dasselbe wie eine, die etwas anderes enthält — und „etwas

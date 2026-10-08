@@ -2081,3 +2081,40 @@ Nachher-Messung an der gebauten App (APFS-Klone von `gui-test`):
   `sync:status` im Hauptprozess.
 
 **Keinen dieser Fixes hat ein Review gelesen.**
+
+**Das vierzigste Review** ([`REVIEW-2026-10-14.md`](REVIEW-2026-10-14.md), Auftrag
+[`REVIEW-2026-10-14-auftrag.md`](REVIEW-2026-10-14-auftrag.md), Tag `review-2026-10-15`, gelesen am
+2026-10-08, `main..feat/1.1` = P0–P7.4 von 1.1): **vom selben Modell wie die gelesenen Commits**
+(Claude Opus 5.5, eigener Agent ohne den Kontext der Sitzung). 0 Hoch, 4 Mittel, 6 Niedrig. Seine
+Antwort auf die Schlussfrage: P4 nicht in dieser Form — der Umzug nach `_quartzcontrol.scss` soll
+ein ausdrücklicher Schritt mit Snapshot sein. **Der Nutzer hat so entschieden.**
+
+Abgearbeitet am 2026-10-08 auf `feat/1.1`, je Commit Typcheck, Build und Smoke, je mit Vorher- und
+Nachher-Messung (gebündelte Dienste oder gebaute App mit Wegwerf-Profil, Klone von gui-test):
+
+- **2 (Mittel)** `fbdfa32` — eine weitergetragene Ladereihenfolge wird aus `parseImportOrder` neu
+  gebildet, wenn sie aus zwei Kopien kommt oder doppelte Zeilen hat; vorher 35 bzw. 67 `@use` und Sass
+  brach ab, nachher 33 und grün.
+- **Schlussfrage und 5** `8552f53` — kein Schreiber zieht mehr um; „Jetzt umstellen“ auf der
+  Stile-Seite (`styles.migrate`) mit Snapshot `styleMigration`, neue Projekte ziehen beim Anlegen um,
+  der Vorlagen-Import nicht. 1.0.2 liest ein Projekt nach einer gespeicherten Variable mit 68 statt 0
+  Variablen. Nicht gemessen: der Assistent zum Anlegen (braucht `quartz create`).
+- **1 (Mittel)** `c3964a3` — ein gespeicherter Entwurf von `_quartzcontrol.scss` bleibt im Editor;
+  vorher verlor das zweite Speichern das erste.
+- **3 (Mittel)** `413fa0d` — Plugin-Optionen gegen den neuesten Stand, hintereinander; bei 0 und
+  300 ms Abstand ging vorher die erste verloren.
+- **4 (Mittel)** `a084ca4` — `plugins.optionSchema` liefert `quartz.category`; Seitenleiste und
+  Ansage nennen, was beim Ausschalten mitgeht. Die Ablage im Vorrat wählt den Eintrag aus (gelesen,
+  nicht gemessen).
+- **6** `0eecdbb` — Cmd+S ist auf der Bühne immer registriert, `save()` schreibt nichts, wenn nichts
+  zu schreiben ist.
+- **7** `9ffa4f5` — unbekannte `x-quartz-*`-Angaben werden Notizen, das Formular nennt ihre Zahl;
+  `docs/plugin-config-schema.md` beschreibt das Format.
+- **8** `4e7ec59` — Kollisionen nur bei gleichem Selektor; die P0-Tabelle nennt den gemessenen
+  Selektor.
+- **9** `2350428` — die Instanznummer eines Chips wird nicht mehr abgeschnitten.
+- **10** `6d0ab55` — beim Import wird auch die Endung der Quelle geprüft; Werkzeugordner ohne
+  Rücksicht auf Groß-/Kleinschreibung.
+- Abwägung 8 (`union` aus `withPresentKeys`) blieb ohne Befund und ohne Änderung.
+
+**Keinen dieser Fixes hat ein Review gelesen.**

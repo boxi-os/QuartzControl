@@ -36,7 +36,10 @@ export default function ExtraContentFiles({
   // What each snippet says, for the question which pictures it shows. Keyed `dir/file`.
   const [contents, setContents] = useState<Record<string, string>>({})
   const [images, setImages] = useState<SnippetDirInfo | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  // Two errors, because the list is read again after every action: one shared state let the
+  // successful reload clear the action's message in the same breath (41st review, finding 3).
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const reload = useCallback(async (): Promise<void> => {
     try {
@@ -54,9 +57,9 @@ export default function ExtraContentFiles({
       setSnippetDirs(Object.fromEntries(listed))
       setContents(texts)
       setImages(await window.quartzGui.staticFiles.listImages({ projectPath }))
-      setError(null)
+      setLoadError(null)
     } catch (err) {
-      setError(formatIpcError(err))
+      setLoadError(formatIpcError(err))
     }
   }, [projectPath, dirsKey])
 
@@ -82,11 +85,11 @@ export default function ExtraContentFiles({
   ]
 
   async function run(action: () => Promise<void>): Promise<void> {
-    setError(null)
+    setActionError(null)
     try {
       await action()
     } catch (err) {
-      setError(formatIpcError(err))
+      setActionError(formatIpcError(err))
     }
     await reload()
   }
@@ -178,11 +181,11 @@ export default function ExtraContentFiles({
     <Card className="flex flex-col gap-4">
       <CardHeading icon={FolderOpen}>{t('extraContent.files.title')}</CardHeading>
       <p className="max-w-[95ch] text-micro text-text-muted">{t('extraContent.files.intro')}</p>
-      {error && (
-        <p role="alert" className="text-ui text-red-600 dark:text-red-400">
-          {error}
+      {[actionError, loadError].filter(Boolean).map((message) => (
+        <p key={message} role="alert" className="text-ui text-red-600 dark:text-red-400">
+          {message}
         </p>
-      )}
+      ))}
       {dirs.map((dir) => (
         <FileSection
           key={dir}

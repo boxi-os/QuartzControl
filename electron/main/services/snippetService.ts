@@ -266,5 +266,12 @@ export async function renameStaticFile(
 export async function trashStaticFile(projectPath: string, kind: StaticFileKind, dir: string | undefined, file: string): Promise<void> {
   const place = placeOf(kind, dir)
   const { abs } = await existingFile(projectPath, place.dir, file, place.allowed)
-  await shell.trashItem(abs)
+  // Electron's message is English and differs per platform (no trash on a Linux without a desktop,
+  // none inside the Flatpak sandbox, none on some network drives), so the user gets a sentence that
+  // says the file is untouched, with the system's reason after it.
+  try {
+    await shell.trashItem(abs)
+  } catch (err) {
+    throw new Error(mainT('staticFileTrashFailed', { name: file, reason: err instanceof Error ? err.message : String(err) }))
+  }
 }

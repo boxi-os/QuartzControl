@@ -113,6 +113,8 @@ export function ComponentChip({
   return (
     <div
       onClick={onSelect}
+      // Tells the board's DetailLayout that a click here selects rather than lets go.
+      data-selectable={onSelect ? '' : undefined}
       // Not on this page: still there to drag and select, so not faded - grounded and dashed, with
       // the name in the muted colour, the way a disabled control stays readable (conventions.md).
       title={hiddenReason}

@@ -1446,6 +1446,20 @@ export default {
       approximate: 'Ungefähr gezeichnet: Spaltenbreiten wie {{sizes}} kennt erst der Browser, hier zählen sie als gleiche Anteile.',
       otherDraftOpen: 'Im Frame-Editor ist noch „{{name}}“ mit ungespeicherten Änderungen offen. Speichere oder schließe es, bevor du ein anderes Frame öffnest.'
     },
+    summary: {
+      title: 'Übersicht',
+      frame: 'Frame',
+      frameAllPages: 'Jeder Seitentyp wählt sein eigenes; gezeichnet ist das der Inhaltsseiten.',
+      frameFrom: {
+        override: 'Für diesen Seitentyp gewählt.',
+        plugin: 'Bringt das Plugin des Seitentyps mit.',
+        default: 'Nichts gewählt — Quartz baut mit dem Standard-Frame.'
+      },
+      empty: 'leer',
+      notInFrame: 'Dieses Frame hat dafür keinen Bereich — was hier steht, erscheint nicht.',
+      parked_one: '{{count}} Komponente ist ausgeschaltet und liegt im Vorrat.',
+      parked_other: '{{count}} Komponenten sind ausgeschaltet und liegen im Vorrat.'
+    },
     inspector: {
       title: 'Komponente',
       empty: 'Wähle eine Komponente aus. Ihre Einstellungen erscheinen dann hier.',

@@ -44,7 +44,8 @@ import {
   Select,
   SettingsSection,
   TextInput,
-  Toggle
+  Toggle,
+  DetailLayout
 } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import DevServerRestartHint from '../../components/DevServerRestartHint'
@@ -1256,8 +1257,165 @@ export default function FrameBuilder({
       {/* The board on the left, the panel of whatever is selected on the right - the shape of the
           "Global" tab. With no area selected the panel holds the frame's own settings for this
           breakpoint; until 1.1 those stood above the board and pushed it a screen down. */}
-      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex min-w-0 flex-col gap-4">
+      <DetailLayout
+        mainClassName="gap-4"
+        panelLabel={
+          selectedArea
+            ? t('layoutEditor.frameBuilder.areaPanelTitle', { name: selectedArea.name })
+            : t('layoutEditor.frameBuilder.framePanelTitle')
+        }
+        onDismiss={() => setSelectedAreaId(null)}
+        busy={dragAreaId !== null || resizePreview !== null}
+        panel={
+          selectedArea ? (
+            <Card key={selectedArea.id} className="flex flex-col gap-3">
+              <div className="flex items-start justify-between gap-2">
+                <CardHeading icon={SlidersHorizontal} className="min-w-0 break-all">
+                  {t('layoutEditor.frameBuilder.areaPanelTitle', { name: selectedArea.name })}
+                </CardHeading>
+                <Button variant="ghost" onClick={() => setSelectedAreaId(null)}>
+                  {t('layoutEditor.frameBuilder.backToFrame')}
+                </Button>
+              </div>
+              {areaForm(selectedArea, layout.placements[selectedArea.id])}
+            </Card>
+          ) : (
+            <Card className="flex flex-col gap-3">
+              <CardHeading icon={LayoutGrid}>{t('layoutEditor.frameBuilder.framePanelTitle')}</CardHeading>
+              <Field label={t('layoutEditor.frameBuilder.frameName')}>
+                <TextInput
+                  value={editing.frameName}
+                  onChange={(e) => setEditing({ ...editing, frameName: e.target.value })}
+                  placeholder={t('layoutEditor.templateCustomPlaceholder')}
+                />
+              </Field>
+              <p className="text-micro text-text-muted">{t('layoutEditor.frameBuilder.framePanelHint')}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-micro text-text-muted">
+                  {t('layoutEditor.frameBuilder.appliesTo', {
+                    breakpoint: t(`layoutEditor.frameBuilder.breakpoint.${activeBreakpoint}`)
+                  })}
+                </span>
+                {FRAME_BREAKPOINTS.filter((bp) => bp !== activeBreakpoint).map((bp) => (
+                  <Button key={bp} variant="ghost" onClick={() => copyLayoutTo(bp)}>
+                    {t('layoutEditor.frameBuilder.copyLayoutTo', { target: t(`layoutEditor.frameBuilder.breakpoint.${bp}`) })}
+                  </Button>
+                ))}
+              </div>
+              <SettingsSection
+                title={t('layoutEditor.frameBuilder.gridSection')}
+                actions={
+                  <button
+                    type="button"
+                    className="text-micro text-text-muted underline hover:text-text"
+                    onClick={() => updateLayout({ columnSizes: undefined, rowSizes: undefined })}
+                  >
+                    {t('layoutEditor.frameBuilder.resetTracks')}
+                  </button>
+                }
+              >
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label={t('layoutEditor.frameBuilder.rows')}>
+                    <NumberInput max={12} value={layout.rows} onValue={(rows) => updateLayout({ rows })} />
+                  </Field>
+                  <Field label={t('layoutEditor.frameBuilder.cols')}>
+                    <NumberInput max={12} value={layout.cols} onValue={(cols) => updateLayout({ cols })} />
+                  </Field>
+                  <Field label={t('layoutEditor.frameBuilder.rowGap')}>
+                    <TextInput value={layout.rowGap} onChange={(e) => updateLayout({ rowGap: e.target.value })} />
+                  </Field>
+                  <Field label={t('layoutEditor.frameBuilder.columnGap')}>
+                    <TextInput value={layout.columnGap} onChange={(e) => updateLayout({ columnGap: e.target.value })} />
+                  </Field>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <TrackInputs
+                    label={t('layoutEditor.frameBuilder.columnSizesLabel')}
+                    count={layout.cols}
+                    firstIndex={1}
+                    placeholder="1fr"
+                    valueAt={(i) => layout.columnSizes?.[i] ?? ''}
+                    onChange={setColumnSize}
+                  />
+                  <TrackInputs
+                    label={t('layoutEditor.frameBuilder.rowSizesLabel')}
+                    count={layout.rows}
+                    firstIndex={1}
+                    placeholder="auto"
+                    valueAt={(i) => layout.rowSizes?.[i] ?? ''}
+                    onChange={setRowSize}
+                  />
+                </div>
+              </SettingsSection>
+
+              <SettingsSection
+                title={t('layoutEditor.frameBuilder.boxSection')}
+                hint={t(hasMaxWidth ? 'layoutEditor.frameBuilder.boxHint' : 'layoutEditor.frameBuilder.boxHintNoMaxWidth')}
+              >
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label={t('layoutEditor.frameBuilder.maxWidth')} className="col-span-2">
+                    <TextInput
+                      value={layout.maxWidth ?? ''}
+                      placeholder={t('layoutEditor.frameBuilder.maxWidthPlaceholder')}
+                      onChange={(e) => updateLayout({ maxWidth: e.target.value })}
+                    />
+                  </Field>
+                  {/* Three options side by side need the panel's whole width. */}
+                  {/* FieldGroup, not Field - see ui.tsx: a <label> around buttons steals the click. */}
+                  <FieldGroup label={t('layoutEditor.frameBuilder.align')} className="col-span-2">
+                    <SegmentedControl
+                      label={t('layoutEditor.frameBuilder.align')}
+                      value={layout.align ?? 'left'}
+                      onChange={(align: FrameAlign) => updateLayout({ align })}
+                      options={ALIGNMENTS.map((value) => ({ value, label: t(`layoutEditor.frameBuilder.alignOption.${value}`) }))}
+                    />
+                  </FieldGroup>
+                  <Field label={t('layoutEditor.frameBuilder.paddingBlock')}>
+                    <TextInput
+                      value={layout.paddingBlock ?? ''}
+                      placeholder="0"
+                      onChange={(e) => updateLayout({ paddingBlock: e.target.value })}
+                    />
+                  </Field>
+                  <Field label={t('layoutEditor.frameBuilder.paddingInline')}>
+                    <TextInput
+                      value={layout.paddingInline ?? ''}
+                      placeholder="0"
+                      onChange={(e) => updateLayout({ paddingInline: e.target.value })}
+                    />
+                  </Field>
+                </div>
+              </SettingsSection>
+
+              <SettingsSection
+                title={t('layoutEditor.frameBuilder.lineNamesLabel')}
+                hint={t('layoutEditor.frameBuilder.lineNamesHint')}
+                collapsible
+              >
+                <div className="flex flex-col gap-3">
+                  <TrackInputs
+                    label={t('layoutEditor.frameBuilder.columnLinesLabel')}
+                    count={layout.cols + 1}
+                    firstIndex={0}
+                    placeholder=""
+                    valueAt={(i) => layout.columnLineNames?.[i]?.[0] ?? ''}
+                    onChange={setColumnLineName}
+                  />
+                  <TrackInputs
+                    label={t('layoutEditor.frameBuilder.rowLinesLabel')}
+                    count={layout.rows + 1}
+                    firstIndex={0}
+                    placeholder=""
+                    valueAt={(i) => layout.rowLineNames?.[i]?.[0] ?? ''}
+                    onChange={setRowLineName}
+                  />
+                </div>
+              </SettingsSection>
+            </Card>
+          )
+        }
+      >
           <Card>
             <div className="mb-3 flex items-center justify-between gap-2">
               <p className="text-micro font-medium text-text-muted">{t('layoutEditor.frameBuilder.availableAreasLabel')}</p>
@@ -1481,167 +1639,7 @@ export default function FrameBuilder({
               </button>
             </p>
           )}
-        </div>
-
-        {/* Its own scroller while it sticks, as on the "Global" tab: with the grid section open the
-            panel is taller than the window. */}
-        <aside
-          aria-label={
-            selectedArea
-              ? t('layoutEditor.frameBuilder.areaPanelTitle', { name: selectedArea.name })
-              : t('layoutEditor.frameBuilder.framePanelTitle')
-          }
-          className="xl:sticky xl:top-4 xl:max-h-[calc(100vh-5rem)] xl:overflow-y-auto xl:overscroll-contain"
-        >
-          {selectedArea ? (
-            <Card key={selectedArea.id} className="flex flex-col gap-3">
-              <div className="flex items-start justify-between gap-2">
-                <CardHeading icon={SlidersHorizontal} className="min-w-0 break-all">
-                  {t('layoutEditor.frameBuilder.areaPanelTitle', { name: selectedArea.name })}
-                </CardHeading>
-                <Button variant="ghost" onClick={() => setSelectedAreaId(null)}>
-                  {t('layoutEditor.frameBuilder.backToFrame')}
-                </Button>
-              </div>
-              {areaForm(selectedArea, layout.placements[selectedArea.id])}
-            </Card>
-          ) : (
-            <Card className="flex flex-col gap-3">
-              <CardHeading icon={LayoutGrid}>{t('layoutEditor.frameBuilder.framePanelTitle')}</CardHeading>
-              <Field label={t('layoutEditor.frameBuilder.frameName')}>
-                <TextInput
-                  value={editing.frameName}
-                  onChange={(e) => setEditing({ ...editing, frameName: e.target.value })}
-                  placeholder={t('layoutEditor.templateCustomPlaceholder')}
-                />
-              </Field>
-              <p className="text-micro text-text-muted">{t('layoutEditor.frameBuilder.framePanelHint')}</p>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-micro text-text-muted">
-                  {t('layoutEditor.frameBuilder.appliesTo', {
-                    breakpoint: t(`layoutEditor.frameBuilder.breakpoint.${activeBreakpoint}`)
-                  })}
-                </span>
-                {FRAME_BREAKPOINTS.filter((bp) => bp !== activeBreakpoint).map((bp) => (
-                  <Button key={bp} variant="ghost" onClick={() => copyLayoutTo(bp)}>
-                    {t('layoutEditor.frameBuilder.copyLayoutTo', { target: t(`layoutEditor.frameBuilder.breakpoint.${bp}`) })}
-                  </Button>
-                ))}
-              </div>
-              <SettingsSection
-                title={t('layoutEditor.frameBuilder.gridSection')}
-                actions={
-                  <button
-                    type="button"
-                    className="text-micro text-text-muted underline hover:text-text"
-                    onClick={() => updateLayout({ columnSizes: undefined, rowSizes: undefined })}
-                  >
-                    {t('layoutEditor.frameBuilder.resetTracks')}
-                  </button>
-                }
-              >
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label={t('layoutEditor.frameBuilder.rows')}>
-                    <NumberInput max={12} value={layout.rows} onValue={(rows) => updateLayout({ rows })} />
-                  </Field>
-                  <Field label={t('layoutEditor.frameBuilder.cols')}>
-                    <NumberInput max={12} value={layout.cols} onValue={(cols) => updateLayout({ cols })} />
-                  </Field>
-                  <Field label={t('layoutEditor.frameBuilder.rowGap')}>
-                    <TextInput value={layout.rowGap} onChange={(e) => updateLayout({ rowGap: e.target.value })} />
-                  </Field>
-                  <Field label={t('layoutEditor.frameBuilder.columnGap')}>
-                    <TextInput value={layout.columnGap} onChange={(e) => updateLayout({ columnGap: e.target.value })} />
-                  </Field>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                  <TrackInputs
-                    label={t('layoutEditor.frameBuilder.columnSizesLabel')}
-                    count={layout.cols}
-                    firstIndex={1}
-                    placeholder="1fr"
-                    valueAt={(i) => layout.columnSizes?.[i] ?? ''}
-                    onChange={setColumnSize}
-                  />
-                  <TrackInputs
-                    label={t('layoutEditor.frameBuilder.rowSizesLabel')}
-                    count={layout.rows}
-                    firstIndex={1}
-                    placeholder="auto"
-                    valueAt={(i) => layout.rowSizes?.[i] ?? ''}
-                    onChange={setRowSize}
-                  />
-                </div>
-              </SettingsSection>
-
-              <SettingsSection
-                title={t('layoutEditor.frameBuilder.boxSection')}
-                hint={t(hasMaxWidth ? 'layoutEditor.frameBuilder.boxHint' : 'layoutEditor.frameBuilder.boxHintNoMaxWidth')}
-              >
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label={t('layoutEditor.frameBuilder.maxWidth')} className="col-span-2">
-                    <TextInput
-                      value={layout.maxWidth ?? ''}
-                      placeholder={t('layoutEditor.frameBuilder.maxWidthPlaceholder')}
-                      onChange={(e) => updateLayout({ maxWidth: e.target.value })}
-                    />
-                  </Field>
-                  {/* Three options side by side need the panel's whole width. */}
-                  {/* FieldGroup, not Field - see ui.tsx: a <label> around buttons steals the click. */}
-                  <FieldGroup label={t('layoutEditor.frameBuilder.align')} className="col-span-2">
-                    <SegmentedControl
-                      label={t('layoutEditor.frameBuilder.align')}
-                      value={layout.align ?? 'left'}
-                      onChange={(align: FrameAlign) => updateLayout({ align })}
-                      options={ALIGNMENTS.map((value) => ({ value, label: t(`layoutEditor.frameBuilder.alignOption.${value}`) }))}
-                    />
-                  </FieldGroup>
-                  <Field label={t('layoutEditor.frameBuilder.paddingBlock')}>
-                    <TextInput
-                      value={layout.paddingBlock ?? ''}
-                      placeholder="0"
-                      onChange={(e) => updateLayout({ paddingBlock: e.target.value })}
-                    />
-                  </Field>
-                  <Field label={t('layoutEditor.frameBuilder.paddingInline')}>
-                    <TextInput
-                      value={layout.paddingInline ?? ''}
-                      placeholder="0"
-                      onChange={(e) => updateLayout({ paddingInline: e.target.value })}
-                    />
-                  </Field>
-                </div>
-              </SettingsSection>
-
-              <SettingsSection
-                title={t('layoutEditor.frameBuilder.lineNamesLabel')}
-                hint={t('layoutEditor.frameBuilder.lineNamesHint')}
-                collapsible
-              >
-                <div className="flex flex-col gap-3">
-                  <TrackInputs
-                    label={t('layoutEditor.frameBuilder.columnLinesLabel')}
-                    count={layout.cols + 1}
-                    firstIndex={0}
-                    placeholder=""
-                    valueAt={(i) => layout.columnLineNames?.[i]?.[0] ?? ''}
-                    onChange={setColumnLineName}
-                  />
-                  <TrackInputs
-                    label={t('layoutEditor.frameBuilder.rowLinesLabel')}
-                    count={layout.rows + 1}
-                    firstIndex={0}
-                    placeholder=""
-                    valueAt={(i) => layout.rowLineNames?.[i]?.[0] ?? ''}
-                    onChange={setRowLineName}
-                  />
-                </div>
-              </SettingsSection>
-            </Card>
-          )}
-        </aside>
-      </div>
+      </DetailLayout>
     </div>
   )
 }

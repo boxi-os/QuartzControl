@@ -1031,3 +1031,92 @@ export function SettingsSection({
     </section>
   )
 }
+
+// What a click may land on without meaning "nothing": a control, or an element that selects
+// something itself and says so with data-selectable (a component chip, an area box).
+const SELECTING = 'button, a, input, select, textarea, label, summary, dialog, [role], [contenteditable], [data-selectable], [data-area-box]'
+// Further than this between pointerdown and click, and the click is the end of a drag or a resize
+// rather than a click - the browser sends it to the common ancestor of where the gesture began and
+// ended, which is usually the empty board.
+const CLICK_SLOP = 4
+
+/**
+ * A list or board on the left, the panel of whatever is selected on the right - the shape the
+ * layout editor introduced in 1.1 and every page that used to fold an entry open to edit it takes
+ * over. Below xl the panel follows the board instead of standing beside it.
+ *
+ * The panel sticks while the board scrolls and is its own scroller then: a plugin's options make
+ * it taller than the window (navigations: 7300 px), and a sticky block that tall only shows its end
+ * once the board beside it has been scrolled to its own end.
+ *
+ * `onDismiss` is how a selection is let go of: a click on an empty part of the board (anything
+ * that is not a control or a selectable element, see SELECTING) and Escape anywhere in the two
+ * columns, except in a field that uses the key itself, a dialog, or while `busy` - a running drag
+ * listens for Escape itself, on the document, and this handler would see the key first. The click is heard at the
+ * board and asked about its target rather than stopped at the chips: a `stopPropagation()` above a
+ * drag takes the keys away from dnd-kit (conventions.md). When Escape is pressed inside the panel,
+ * whose content goes with the selection, the focus moves to the panel itself instead of falling to
+ * <body>.
+ */
+export function DetailLayout({
+  children,
+  panel,
+  panelLabel,
+  onDismiss,
+  busy = false,
+  mainClassName = 'gap-6'
+}: {
+  children: ReactNode
+  panel: ReactNode
+  /** The gap between the blocks of the board column. */
+  mainClassName?: string
+  panelLabel: string
+  /** Absent: nothing on this page can be selected away. */
+  onDismiss?: () => void
+  busy?: boolean
+}): JSX.Element {
+  const panelRef = useRef<HTMLElement>(null)
+  const down = useRef<{ x: number; y: number } | null>(null)
+
+  return (
+    <div
+      className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]"
+      onKeyDown={(e) => {
+        if (!onDismiss || busy || e.key !== 'Escape' || e.defaultPrevented) return
+        const target = e.target as HTMLElement
+        // A single-line field has no use for Escape, and what was typed is in the draft already -
+        // the frame editor even puts the focus into the area's name on selecting it. A field that
+        // does use the key (a select's popup, a textarea, an open combobox) keeps it.
+        if (target.closest('textarea, select, dialog, [contenteditable], [aria-expanded="true"]')) return
+        const inPanel = panelRef.current?.contains(target) ?? false
+        onDismiss()
+        if (inPanel) requestAnimationFrame(() => panelRef.current?.focus())
+      }}
+    >
+      <div
+        className={`flex min-w-0 flex-col ${mainClassName}`}
+        onPointerDownCapture={(e) => {
+          down.current = { x: e.clientX, y: e.clientY }
+        }}
+        onClick={(e) => {
+          if (!onDismiss || busy || e.defaultPrevented) return
+          const start = down.current
+          down.current = null
+          if (start && Math.hypot(e.clientX - start.x, e.clientY - start.y) > CLICK_SLOP) return
+          if ((e.target as HTMLElement).closest(SELECTING)) return
+          onDismiss()
+        }}
+      >
+        {children}
+      </div>
+      <aside
+        ref={panelRef}
+        tabIndex={-1}
+        aria-label={panelLabel}
+        className="outline-none xl:sticky xl:top-4 xl:max-h-[calc(100vh-5rem)] xl:overflow-y-auto xl:overscroll-contain"
+      >
+        {panel}
+      </aside>
+    </div>
+  )
+}

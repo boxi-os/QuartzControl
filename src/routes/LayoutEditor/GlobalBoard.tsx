@@ -28,14 +28,15 @@ import type {
   QuartzConfig
 } from '@shared/ipc-contract'
 import { DEFAULT_FRAME_BREAKPOINT_WIDTHS, FRAME_BREAKPOINTS, buildGridStyle } from '@shared/gridFrameCss'
-import { Button, Card, CardHeading, IconButton, SegmentedControl, Select } from '../../components/ui'
-import { Eraser, LayoutGrid, RotateCcw, SlidersHorizontal } from 'lucide-react'
+import { Button, DetailLayout, IconButton, SegmentedControl, Select } from '../../components/ui'
+import { Eraser, LayoutGrid, RotateCcw } from 'lucide-react'
 import { announce } from '../../state/announcer'
 import { useStickyState } from '../../state/uiState'
 import { ComponentChip, PaletteChip } from './ComponentChip'
 import { ComponentPalette, PALETTE_DROP_ID, PALETTE_PREFIX } from './Palette'
 import GroupsPanel from './GroupsPanel'
 import Inspector from './Inspector'
+import LayoutSummary from './LayoutSummary'
 import { siteLanguages } from '../../components/PluginOptionsForm/siteLanguages'
 import { useDndAccessibility } from '../../utils/dndAnnouncements'
 import { nearestDroppableCoordinates } from '../../utils/dndKeyboard'
@@ -273,6 +274,17 @@ export default function GlobalBoard({
     const position = getLayout(plugin)?.position
     if (override && position && isPositionCleared(override, position)) return t('layoutEditor.pageType.clearedHere', { type: typeLabel })
     if (!shownInView(getLayout(plugin)?.display, breakpoint)) return t('layoutEditor.stage.hiddenInView')
+    return undefined
+  }
+
+  // The page type's half of hiddenReason, for the summary: it answers for the page type, not for
+  // the view the stage happens to show.
+  function pageTypeHidden(index: number): string | undefined {
+    const plugin = config.plugins[index]
+    if (!plugin || !override) return undefined
+    if (isExcluded(override, plugin)) return t('layoutEditor.pageType.excludedHere', { type: typeLabel })
+    const position = getLayout(plugin)?.position
+    if (position && isPositionCleared(override, position)) return t('layoutEditor.pageType.clearedHere', { type: typeLabel })
     return undefined
   }
 
@@ -640,185 +652,15 @@ export default function GlobalBoard({
         onDragEnd={handleDragEnd}
         accessibility={{ announcements, screenReaderInstructions }}
       >
-        {/* Board on the left, the selected component's panel on the right. The panel sticks while
-            the board scrolls under it, so the place a component is being given and the component
-            itself stay on screen together. */}
-        <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
-          <div className="flex min-w-0 flex-col gap-6">
-            <ComponentPalette
-              plugins={config.plugins}
-              parked={parked}
-              activePaletteSource={activePaletteSource !== null}
-              dropHint={trayDropHint}
-            />
-
-            {/* The stage: the page in miniature, never wider than the board and never wider than the
-                window the view stands for (a phone is drawn phone-wide, not stretched). Until 1.1
-                this scrolled sideways, because the frame was drawn at its real pixel sizes - 1068px
-                for the editorial frame in a 622px column at 1280px. stageGeometry reduces it through
-                the proportions instead; a scaled layer would hand dnd-kit rectangles that are not
-                where they appear. It is the container its `cqw` gaps refer to. */}
-            <div
-              data-stage
-              className="mx-auto w-full"
-              style={{ maxWidth: STAGE_REFERENCE_WIDTH[breakpoint], containerType: 'inline-size' }}
-            >
-              {activeFrame && activeAreas && activeGridStyle && activeStage ? (
-                <div
-                  className="grid"
-                  style={{
-                    gridTemplateColumns: activeStage.gridTemplateColumns,
-                    gridTemplateRows: activeGridStyle.gridTemplateRows,
-                    gridTemplateAreas: activeGridStyle.gridTemplateAreas,
-                    rowGap: activeStage.rowGap,
-                    columnGap: activeStage.columnGap,
-                    width: activeStage.width,
-                    marginInline: activeStage.marginInline,
-                    paddingBlock: activeStage.paddingBlock,
-                    paddingInline: activeStage.paddingInline
-                  }}
-                >
-                  {activeAreas.map((area) => (
-                    <div key={area.id} className="min-w-0" style={{ gridArea: area.name }}>
-                      <AreaBox
-                        label={area.name}
-                        slotLabel={area.slot ? t(`positions.${area.slot}`, area.slot) : t('layoutEditor.frameBuilder.slotNone')}
-                        action={area.slot && area.slot !== 'pageBody' ? clearAction(area.slot) : undefined}
-                      >
-                        {!area.slot ? (
-                          // An area with no slot is an empty cell in the built page too, so the board
-                          // shows it as one rather than as a drop target that would not hold anything.
-                          <div className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10">
-                            {t('layoutEditor.frameBuilder.slotNone')}
-                          </div>
-                        ) : area.slot === 'pageBody' ? (
-                          <div className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10">
-                            {t('layoutEditor.frameBuilder.preview.pageContent')}
-                          </div>
-                        ) : (
-                          <PositionSlot
-                            position={area.slot}
-                            group={area.group}
-                            indices={indicesForArea(area)}
-                            direction="column"
-                            {...slotProps}
-                          />
-                        )}
-                      </AreaBox>
-                    </div>
-                  ))}
-                </div>
-              ) : builtinFrame ? (
-                <div
-                  className="grid gap-3"
-                  style={{
-                    gridTemplateColumns: 'auto',
-                    gridTemplateRows: `repeat(${builtinFrame.visibleSlots.length + 1}, auto)`,
-                    gridTemplateAreas: builtinFrame.areas
-                  }}
-                >
-                  {builtinFrame.visibleSlots.includes('header') && (
-                    <div className="min-w-0" style={{ gridArea: 'header' }}>
-                      <AreaBox label={t('positions.header')} action={clearAction('header')}>
-                        <PositionSlot position="header" indices={positions.header} direction="column" {...slotProps} />
-                      </AreaBox>
-                    </div>
-                  )}
-                  {builtinFrame.visibleSlots.includes('beforeBody') && (
-                    <div style={{ gridArea: 'beforeBody' }}>
-                      <AreaBox label={t('positions.beforeBody')} action={clearAction('beforeBody')}>
-                        <PositionSlot position="beforeBody" indices={positions.beforeBody} direction="column" {...slotProps} />
-                      </AreaBox>
-                    </div>
-                  )}
-                  <div
-                    style={{ gridArea: 'center' }}
-                    className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10"
-                  >
-                    {t('layoutEditor.frameBuilder.preview.pageContent')}
-                  </div>
-                  {builtinFrame.visibleSlots.includes('afterBody') && (
-                    <div style={{ gridArea: 'afterBody' }}>
-                      <AreaBox label={t('positions.afterBody')} action={clearAction('afterBody')}>
-                        <PositionSlot position="afterBody" indices={positions.afterBody} direction="column" {...slotProps} />
-                      </AreaBox>
-                    </div>
-                  )}
-                  {builtinFrame.visibleSlots.includes('footer') && (
-                    <div className="min-w-0" style={{ gridArea: 'footer' }}>
-                      <AreaBox label={t('positions.footer')} action={clearAction('footer')}>
-                        <PositionSlot position="footer" indices={positions.footer} direction="column" {...slotProps} />
-                      </AreaBox>
-                    </div>
-                  )}
-                </div>
-              ) : unknownPluginFrame ? (
-                <div className="rounded-[6px] border border-dashed border-amber-400/50 bg-amber-50/50 px-4 py-6 text-center text-sm text-amber-700 dark:border-amber-400/30 dark:bg-amber-950/20 dark:text-amber-400">
-                  {t('layoutEditor.pluginFrameUnknownLayout', { frame: activeFrameName })}
-                </div>
-              ) : (
-                <div
-                  className="grid gap-3"
-                  style={{ gridTemplateColumns: defaultColumns, gridTemplateRows: grid.rows, gridTemplateAreas: grid.areas }}
-                >
-                  <div className="min-w-0" style={{ gridArea: 'sidebar-left' }}>
-                    <AreaBox label={t('positions.left')} action={clearAction('left')}>
-                      <PositionSlot position="left" indices={positions.left} direction={sidebarDirection('left', breakpoint)} {...slotProps} />
-                    </AreaBox>
-                  </div>
-                  <div style={{ gridArea: 'header' }}>
-                    <AreaBox label={t('positions.header')} action={clearAction('header')}>
-                      <PositionSlot position="header" indices={positions.header} direction="column" {...slotProps} />
-                    </AreaBox>
-                  </div>
-                  <div style={{ gridArea: 'center' }} className="flex min-w-0 flex-col gap-3">
-                    <AreaBox label={t('positions.beforeBody')} action={clearAction('beforeBody')}>
-                      <PositionSlot position="beforeBody" indices={positions.beforeBody} direction="column" {...slotProps} />
-                    </AreaBox>
-                    <div className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10">
-                      {t('layoutEditor.frameBuilder.preview.pageContent')}
-                    </div>
-                    <AreaBox label={t('positions.afterBody')} action={clearAction('afterBody')}>
-                      <PositionSlot position="afterBody" indices={positions.afterBody} direction="column" {...slotProps} />
-                    </AreaBox>
-                  </div>
-                  <div className="min-w-0" style={{ gridArea: 'sidebar-right' }}>
-                    <AreaBox label={t('positions.right')} action={clearAction('right')}>
-                      <PositionSlot position="right" indices={positions.right} direction={sidebarDirection('right', breakpoint)} {...slotProps} />
-                    </AreaBox>
-                  </div>
-                  <div style={{ gridArea: 'footer' }}>
-                    <AreaBox label={t('positions.footer')} action={clearAction('footer')}>
-                      <PositionSlot position="footer" indices={positions.footer} direction="column" {...slotProps} />
-                    </AreaBox>
-                  </div>
-                </div>
-              )}
-              {activeStage && activeStage.approximate.length > 0 && (
-                <p className="mt-3 text-xs text-text-muted">
-                  {t('layoutEditor.stage.approximate', { sizes: [...new Set(activeStage.approximate)].join(', ') })}
-                </p>
-              )}
-              {(activeFrame || builtinFrame) && activeUnassignedSlots.length > 0 && (
-                <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
-                  {t('layoutEditor.frameBuilder.unassignedWarning', {
-                    slots: activeUnassignedSlots.map((s) => t(`positions.${s}`, s)).join(', ')
-                  })}
-                </p>
-              )}
-            </div>
-
-            <GroupsPanel groups={config.layout?.groups ?? {}} onAdd={addGroup} onUpdate={updateGroup} onDelete={deleteGroup} />
-          </div>
-
-          {/* Its own scroller while it sticks: with a component's options the panel is taller than the
-              window (navigations: 7300 px), and a sticky block that tall only shows its end once the
-              board beside it has been scrolled to its own end. */}
-          <aside
-            aria-label={t('layoutEditor.inspector.title')}
-            className="xl:sticky xl:top-4 xl:max-h-[calc(100vh-5rem)] xl:overflow-y-auto xl:overscroll-contain"
-          >
-            {selectedIndex !== null && config.plugins[selectedIndex] ? (
+        {/* Board on the left, the selected component's panel on the right (DetailLayout). With
+            nothing selected the panel sums up the page the stage shows (LayoutSummary), and a
+            click on the empty board or Escape gets back there. */}
+        <DetailLayout
+          panelLabel={selectedIndex !== null ? t('layoutEditor.inspector.title') : t('layoutEditor.summary.title')}
+          onDismiss={() => setSelected(null)}
+          busy={activeId !== null}
+          panel={
+            selectedIndex !== null && config.plugins[selectedIndex] ? (
               <Inspector
                 key={`${selected?.name}#${selected?.occurrence}`}
                 projectPath={projectPath}
@@ -843,13 +685,186 @@ export default function GlobalBoard({
                 onChange={applyPlugins}
               />
             ) : (
-              <Card className="flex flex-col gap-2">
-                <CardHeading icon={SlidersHorizontal}>{t('layoutEditor.inspector.title')}</CardHeading>
-                <p className="text-ui text-text-muted">{t('layoutEditor.inspector.empty')}</p>
-              </Card>
+              <LayoutSummary
+                config={config}
+                positions={positions}
+                parked={parked}
+                pageTypeLabel={pageType ? typeLabel : null}
+                frameLabel={frameLabel(activeFrameName)}
+                frameFrom={frameChoice.from}
+                missingSlots={visibleSlots ? activeUnassignedSlots : []}
+                pageTypeHidden={pageTypeHidden}
+                componentLabel={(i) => ((nameCounts.get(config.plugins[i].name) ?? 0) > 1 ? `${config.plugins[i].name} #${ranks.get(i) ?? 1}` : config.plugins[i].name)}
+                onSelect={(i) => setSelected(componentRef(config.plugins, i))}
+              />
+            )
+          }
+        >
+          <ComponentPalette
+            plugins={config.plugins}
+            parked={parked}
+            activePaletteSource={activePaletteSource !== null}
+            dropHint={trayDropHint}
+          />
+
+          {/* The stage: the page in miniature, never wider than the board and never wider than the
+              window the view stands for (a phone is drawn phone-wide, not stretched). Until 1.1
+              this scrolled sideways, because the frame was drawn at its real pixel sizes - 1068px
+              for the editorial frame in a 622px column at 1280px. stageGeometry reduces it through
+              the proportions instead; a scaled layer would hand dnd-kit rectangles that are not
+              where they appear. It is the container its `cqw` gaps refer to. */}
+          <div
+            data-stage
+            className="mx-auto w-full"
+            style={{ maxWidth: STAGE_REFERENCE_WIDTH[breakpoint], containerType: 'inline-size' }}
+          >
+            {activeFrame && activeAreas && activeGridStyle && activeStage ? (
+              <div
+                className="grid"
+                style={{
+                  gridTemplateColumns: activeStage.gridTemplateColumns,
+                  gridTemplateRows: activeGridStyle.gridTemplateRows,
+                  gridTemplateAreas: activeGridStyle.gridTemplateAreas,
+                  rowGap: activeStage.rowGap,
+                  columnGap: activeStage.columnGap,
+                  width: activeStage.width,
+                  marginInline: activeStage.marginInline,
+                  paddingBlock: activeStage.paddingBlock,
+                  paddingInline: activeStage.paddingInline
+                }}
+              >
+                {activeAreas.map((area) => (
+                  <div key={area.id} className="min-w-0" style={{ gridArea: area.name }}>
+                    <AreaBox
+                      label={area.name}
+                      slotLabel={area.slot ? t(`positions.${area.slot}`, area.slot) : t('layoutEditor.frameBuilder.slotNone')}
+                      action={area.slot && area.slot !== 'pageBody' ? clearAction(area.slot) : undefined}
+                    >
+                      {!area.slot ? (
+                        // An area with no slot is an empty cell in the built page too, so the board
+                        // shows it as one rather than as a drop target that would not hold anything.
+                        <div className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10">
+                          {t('layoutEditor.frameBuilder.slotNone')}
+                        </div>
+                      ) : area.slot === 'pageBody' ? (
+                        <div className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10">
+                          {t('layoutEditor.frameBuilder.preview.pageContent')}
+                        </div>
+                      ) : (
+                        <PositionSlot
+                          position={area.slot}
+                          group={area.group}
+                          indices={indicesForArea(area)}
+                          direction="column"
+                          {...slotProps}
+                        />
+                      )}
+                    </AreaBox>
+                  </div>
+                ))}
+              </div>
+            ) : builtinFrame ? (
+              <div
+                className="grid gap-3"
+                style={{
+                  gridTemplateColumns: 'auto',
+                  gridTemplateRows: `repeat(${builtinFrame.visibleSlots.length + 1}, auto)`,
+                  gridTemplateAreas: builtinFrame.areas
+                }}
+              >
+                {builtinFrame.visibleSlots.includes('header') && (
+                  <div className="min-w-0" style={{ gridArea: 'header' }}>
+                    <AreaBox label={t('positions.header')} action={clearAction('header')}>
+                      <PositionSlot position="header" indices={positions.header} direction="column" {...slotProps} />
+                    </AreaBox>
+                  </div>
+                )}
+                {builtinFrame.visibleSlots.includes('beforeBody') && (
+                  <div style={{ gridArea: 'beforeBody' }}>
+                    <AreaBox label={t('positions.beforeBody')} action={clearAction('beforeBody')}>
+                      <PositionSlot position="beforeBody" indices={positions.beforeBody} direction="column" {...slotProps} />
+                    </AreaBox>
+                  </div>
+                )}
+                <div
+                  style={{ gridArea: 'center' }}
+                  className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10"
+                >
+                  {t('layoutEditor.frameBuilder.preview.pageContent')}
+                </div>
+                {builtinFrame.visibleSlots.includes('afterBody') && (
+                  <div style={{ gridArea: 'afterBody' }}>
+                    <AreaBox label={t('positions.afterBody')} action={clearAction('afterBody')}>
+                      <PositionSlot position="afterBody" indices={positions.afterBody} direction="column" {...slotProps} />
+                    </AreaBox>
+                  </div>
+                )}
+                {builtinFrame.visibleSlots.includes('footer') && (
+                  <div className="min-w-0" style={{ gridArea: 'footer' }}>
+                    <AreaBox label={t('positions.footer')} action={clearAction('footer')}>
+                      <PositionSlot position="footer" indices={positions.footer} direction="column" {...slotProps} />
+                    </AreaBox>
+                  </div>
+                )}
+              </div>
+            ) : unknownPluginFrame ? (
+              <div className="rounded-[6px] border border-dashed border-amber-400/50 bg-amber-50/50 px-4 py-6 text-center text-sm text-amber-700 dark:border-amber-400/30 dark:bg-amber-950/20 dark:text-amber-400">
+                {t('layoutEditor.pluginFrameUnknownLayout', { frame: activeFrameName })}
+              </div>
+            ) : (
+              <div
+                className="grid gap-3"
+                style={{ gridTemplateColumns: defaultColumns, gridTemplateRows: grid.rows, gridTemplateAreas: grid.areas }}
+              >
+                <div className="min-w-0" style={{ gridArea: 'sidebar-left' }}>
+                  <AreaBox label={t('positions.left')} action={clearAction('left')}>
+                    <PositionSlot position="left" indices={positions.left} direction={sidebarDirection('left', breakpoint)} {...slotProps} />
+                  </AreaBox>
+                </div>
+                <div style={{ gridArea: 'header' }}>
+                  <AreaBox label={t('positions.header')} action={clearAction('header')}>
+                    <PositionSlot position="header" indices={positions.header} direction="column" {...slotProps} />
+                  </AreaBox>
+                </div>
+                <div style={{ gridArea: 'center' }} className="flex min-w-0 flex-col gap-3">
+                  <AreaBox label={t('positions.beforeBody')} action={clearAction('beforeBody')}>
+                    <PositionSlot position="beforeBody" indices={positions.beforeBody} direction="column" {...slotProps} />
+                  </AreaBox>
+                  <div className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10">
+                    {t('layoutEditor.frameBuilder.preview.pageContent')}
+                  </div>
+                  <AreaBox label={t('positions.afterBody')} action={clearAction('afterBody')}>
+                    <PositionSlot position="afterBody" indices={positions.afterBody} direction="column" {...slotProps} />
+                  </AreaBox>
+                </div>
+                <div className="min-w-0" style={{ gridArea: 'sidebar-right' }}>
+                  <AreaBox label={t('positions.right')} action={clearAction('right')}>
+                    <PositionSlot position="right" indices={positions.right} direction={sidebarDirection('right', breakpoint)} {...slotProps} />
+                  </AreaBox>
+                </div>
+                <div style={{ gridArea: 'footer' }}>
+                  <AreaBox label={t('positions.footer')} action={clearAction('footer')}>
+                    <PositionSlot position="footer" indices={positions.footer} direction="column" {...slotProps} />
+                  </AreaBox>
+                </div>
+              </div>
             )}
-          </aside>
-        </div>
+            {activeStage && activeStage.approximate.length > 0 && (
+              <p className="mt-3 text-xs text-text-muted">
+                {t('layoutEditor.stage.approximate', { sizes: [...new Set(activeStage.approximate)].join(', ') })}
+              </p>
+            )}
+            {(activeFrame || builtinFrame) && activeUnassignedSlots.length > 0 && (
+              <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
+                {t('layoutEditor.frameBuilder.unassignedWarning', {
+                  slots: activeUnassignedSlots.map((s) => t(`positions.${s}`, s)).join(', ')
+                })}
+              </p>
+            )}
+          </div>
+
+          <GroupsPanel groups={config.layout?.groups ?? {}} onAdd={addGroup} onUpdate={updateGroup} onDelete={deleteGroup} />
+        </DetailLayout>
 
         <DragOverlay>
           {/* No width of its own: dnd-kit sizes the overlay to the chip that was picked up and

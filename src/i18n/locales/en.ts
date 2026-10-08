@@ -1441,6 +1441,20 @@ export default {
       approximate: 'Drawn approximately: column widths like {{sizes}} are only known to the browser and count as equal shares here.',
       otherDraftOpen: 'The frame editor still has “{{name}}” open with unsaved changes. Save or close it before opening another frame.'
     },
+    summary: {
+      title: 'Overview',
+      frame: 'Frame',
+      frameAllPages: 'Each page type picks its own; the one drawn is that of content pages.',
+      frameFrom: {
+        override: 'Chosen for this page type.',
+        plugin: 'Brought by the page type’s plugin.',
+        default: 'Nothing chosen — Quartz builds with the default frame.'
+      },
+      empty: 'empty',
+      notInFrame: 'This frame has no area for it — what is placed here does not appear.',
+      parked_one: '{{count}} component is switched off and lies in the tray.',
+      parked_other: '{{count}} components are switched off and lie in the tray.'
+    },
     inspector: {
       title: 'Component',
       empty: 'Select a component. Its settings will appear here.',

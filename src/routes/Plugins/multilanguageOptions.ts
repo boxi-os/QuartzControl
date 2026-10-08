@@ -97,6 +97,18 @@ export function renameLanguage(options: Options, languages: LanguageEntry[], fro
   return next
 }
 
+/**
+ * The languages that removing `code` would publish without anyone turning them on: when it is the
+ * only published one, `publishLanguages` is left empty, and empty means every language. The plugin
+ * would land there too if the code stayed in the list (it drops codes that are no language), so
+ * this is not a choice removeLanguage can make differently - only one the user has to see first.
+ */
+export function publishedByRemoving(options: Options | undefined, languages: LanguageEntry[], code: string): LanguageEntry[] {
+  const published = publishedOf(options, languages)
+  if (published.length === 0 || published.some((c) => c !== code)) return []
+  return languages.filter((l) => l.code !== code)
+}
+
 /** The options after removing a language, and what named it: a default on it moves to the first one left. */
 export function removeLanguage(options: Options, languages: LanguageEntry[], code: string): Options {
   const rest = languages.filter((l) => l.code !== code)

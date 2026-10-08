@@ -1124,6 +1124,8 @@ export default {
     addHint: 'The code folders, file names and frontmatter use for the language, e.g. “fr”.',
     addedAnnounce: 'Language “{{code}}” added.',
     removeConfirm: 'Remove the language “{{name}}”?\n\nIt leaves the configuration, also as default language and from the published ones. Its pages stay and then count as pages of the default language.',
+    removeOnlyPublishedConfirm: 'Remove the language “{{name}}” and publish {{others}}?\n\n“{{name}}” is the only published language. Without it the list counts as empty, and an empty list publishes every language — the next build and the next publish then include the ones you have held back so far. If that is not what you want, switch another language to “Publish” first.',
+    removeAndPublish: 'Remove and publish',
     removedAnnounce: '“{{name}}” removed.',
     renamedAnnounce: 'Language code “{{from}}” is now “{{to}}”.',
     defaultAnnounce: '{{name}} is now the default language.',

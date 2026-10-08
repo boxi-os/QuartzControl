@@ -23,6 +23,7 @@ import {
   languagesOf,
   multilanguageEntries,
   normalizeCode,
+  publishedByRemoving,
   publishedOf,
   removeLanguage,
   renameLanguage,
@@ -219,7 +220,16 @@ export default function Multilanguage({ onShowAllOptions }: { onShowAllOptions: 
 
   async function remove(l: LanguageEntry): Promise<void> {
     const name = nameOf(l)
-    if (!(await confirmDialog({ text: t('multilanguageEditor.removeConfirm', { name }), confirmLabel: t('common.remove'), danger: true }))) return
+    // Removing the one published language publishes all the others, which were held back on
+    // purpose - so the question says which, and the button is named after it.
+    const others = publishedByRemoving(options, languages, l.code)
+    const question = others.length
+      ? {
+          text: t('multilanguageEditor.removeOnlyPublishedConfirm', { name, others: others.map(nameOf).join(', ') }),
+          confirmLabel: t('multilanguageEditor.removeAndPublish')
+        }
+      : { text: t('multilanguageEditor.removeConfirm', { name }), confirmLabel: t('common.remove') }
+    if (!(await confirmDialog({ ...question, danger: true }))) return
     if (selected === `lang:${l.code}`) setSelected(null)
     updateOptions((o) => removeLanguage(o, languagesOf(o), l.code), t('multilanguageEditor.removedAnnounce', { name }))
   }

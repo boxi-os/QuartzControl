@@ -1129,6 +1129,8 @@ export default {
     addHint: 'Der Code, mit dem Ordner, Dateinamen und Frontmatter die Sprache nennen, z. B. „fr“.',
     addedAnnounce: 'Sprache „{{code}}“ hinzugefügt.',
     removeConfirm: 'Sprache „{{name}}“ entfernen?\n\nSie verschwindet aus der Konfiguration, auch als Standardsprache und aus der Liste der veröffentlichten. Ihre Seiten bleiben liegen und gelten danach als Seiten der Standardsprache.',
+    removeOnlyPublishedConfirm: 'Sprache „{{name}}“ entfernen und {{others}} veröffentlichen?\n\n„{{name}}“ ist die einzige veröffentlichte Sprache. Ohne sie gilt die Liste als leer, und eine leere Liste veröffentlicht alle Sprachen — der nächste Build und das nächste Veröffentlichen nehmen dann auch die mit, die du bisher zurückgehalten hast. Wer das nicht will, schaltet vorher eine andere Sprache auf „Veröffentlichen“.',
+    removeAndPublish: 'Entfernen und veröffentlichen',
     removedAnnounce: '„{{name}}“ entfernt.',
     renamedAnnounce: 'Sprachcode „{{from}}“ heißt jetzt „{{to}}“.',
     defaultAnnounce: '{{name}} ist jetzt die Standardsprache.',

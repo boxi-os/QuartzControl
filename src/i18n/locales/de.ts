@@ -1050,7 +1050,12 @@ export default {
     jsonHint: 'Als JSON bearbeiten; leer heißt „nicht gesetzt“.',
     fromDefaults: 'Das Plugin beschreibt seine Optionen nicht. Die Felder kommen aus seinen Vorgaben.',
     none: 'Dieses Plugin hat keine Optionen.',
-    unreadable: 'Die Beschreibung der Optionen ließ sich nicht lesen: {{reason}}'
+    unreadable: 'Die Beschreibung der Optionen ließ sich nicht lesen: {{reason}}',
+    changed: 'geändert',
+    changedCount: '{{count}} geändert',
+    groupCountChanged: '{{count}} · {{changed}} geändert',
+    searchPlaceholder: 'Optionen durchsuchen…',
+    noMatch: 'Keine Option passt zur Suche.'
   },
   snippets: {
     imageFilter: 'Bilder',
@@ -1111,6 +1116,15 @@ export default {
     frameSource: 'Eigener Frame aus dem Layout-Editor',
     frameSummary: '{{count}} Bereiche',
     openInLayoutEditor: 'Im Layout-Editor',
+    panelLabel: 'Plugin-Einstellungen',
+    panelEmptyTitle: 'Plugin-Einstellungen',
+    panelEmptyText: 'Wähle links ein Plugin, um es hier einzustellen. Escape oder ein Klick ins Leere hebt die Auswahl wieder auf.',
+    summaryActive: 'Aktiv',
+    summaryOf: '{{count}} von {{total}}',
+    panelEnabled: 'Plugin aktiv',
+    placementHeading: 'Platzierung',
+    showOnStage: 'Auf der Bühne zeigen',
+    optionsHeading: 'Optionen',
     componentsHeading: 'Sichtbare Komponenten',
     componentsDescription: 'Diese Plugins sind sichtbar auf der Seite — z. B. im Kopfbereich, in der Seitenleiste oder im Footer.',
     processingHeading: 'Verarbeitung',
@@ -1139,8 +1153,6 @@ export default {
     pruneConfirm:
       'Entfernt alle gebauten Plugin-Ordner, auf die keine Konfiguration mehr zeigt. Die Konfiguration selbst bleibt unverändert. Fortfahren?',
     openRepo: 'Repository auf GitHub öffnen',
-    showOptions: 'Optionen anzeigen',
-    hideOptions: 'Optionen einklappen',
     removeConfirm: 'Plugin „{{name}}“ wirklich entfernen? Vorher wird automatisch ein Snapshot angelegt, über den du es zurückholen kannst.',
     removeFrameConfirm:
       'Frame „{{name}}“ wirklich löschen? Das entfernt ihn aus der Konfiguration und von der Festplatte. Vorher wird automatisch ein Snapshot angelegt.',

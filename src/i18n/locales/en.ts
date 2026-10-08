@@ -1045,7 +1045,12 @@ export default {
     jsonHint: 'Edit as JSON; empty means “not set”.',
     fromDefaults: 'The plugin does not describe its options. The fields come from its defaults.',
     none: 'This plugin has no options.',
-    unreadable: 'The description of the options could not be read: {{reason}}'
+    unreadable: 'The description of the options could not be read: {{reason}}',
+    changed: 'changed',
+    changedCount: '{{count}} changed',
+    groupCountChanged: '{{count}} · {{changed}} changed',
+    searchPlaceholder: 'Search options…',
+    noMatch: 'No option matches the search.'
   },
   snippets: {
     imageFilter: 'Images',
@@ -1106,6 +1111,15 @@ export default {
     frameSource: 'Your own frame from the Layout editor',
     frameSummary: '{{count}} areas',
     openInLayoutEditor: 'Open in Layout',
+    panelLabel: 'Plugin settings',
+    panelEmptyTitle: 'Plugin settings',
+    panelEmptyText: 'Pick a plugin on the left to set it up here. Escape or a click on an empty spot lets go of the selection.',
+    summaryActive: 'Active',
+    summaryOf: '{{count}} of {{total}}',
+    panelEnabled: 'Plugin enabled',
+    placementHeading: 'Placement',
+    showOnStage: 'Show on the stage',
+    optionsHeading: 'Options',
     componentsHeading: 'Visible components',
     componentsDescription: 'These plugins are visible on the page — e.g. in the header, sidebar, or footer.',
     processingHeading: 'Processing',
@@ -1134,8 +1148,6 @@ export default {
     pruneConfirm:
       'Removes every built plugin folder no config entry points at any more. The configuration itself is left untouched. Continue?',
     openRepo: 'Open repository on GitHub',
-    showOptions: 'Show options',
-    hideOptions: 'Hide options',
     removeConfirm: 'Really remove plugin “{{name}}”? A snapshot is taken first, so you can bring it back.',
     removeFrameConfirm:
       'Really delete frame “{{name}}”? This removes it from the configuration and from disk. A snapshot is taken first.',

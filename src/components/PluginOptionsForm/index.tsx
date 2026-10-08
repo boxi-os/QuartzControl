@@ -1,10 +1,15 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Search } from 'lucide-react'
 import type { NormalizedOptionSchema } from '@shared/ipc-contract'
 import { withPresentKeys } from '@shared/pluginOptionSchema'
 import { ObjectBlock, type FormContext } from './editors'
 import { AddOptionRow } from './AddOptionRow'
-import { isEmptyObject } from './text'
+import { fieldMatch, isEmptyObject } from './text'
+import { TextInput } from '../ui'
+
+// Below this many options the form is short enough to read; a search field would be one more thing.
+const SEARCH_FROM = 8
 
 /**
  * A plugin entry's `options`, as a form built from what the plugin says about them
@@ -15,6 +20,7 @@ import { isEmptyObject } from './text'
  * - a field whose condition (`x-quartz-when`) does not hold is hidden, unless it is set - then it
  *   stands under "has no effect with this setting", so no value is lost from sight
  * - keys the config sets and no schema names stand under "more keys", beside a free key/value row
+ * - named groups fold; above SEARCH_FROM options a search field narrows the form to what matches
  *
  * `onChange` gets the whole new options object, or undefined when nothing is left - the caller
  * writes it in one place. Every editor below works on values, not paths, because the items of a
@@ -39,14 +45,34 @@ export default function PluginOptionsForm({
 }): JSX.Element {
   const { t, i18n } = useTranslation()
   const lang = i18n.resolvedLanguage?.startsWith('en') ? 'en' : 'de'
-  const ctx: FormContext = useMemo(() => ({ lang, explicitEmpty, languages, projectPath }), [lang, explicitEmpty, languages, projectPath])
+  const [search, setSearch] = useState('')
+  const query = search.trim().toLowerCase()
+  const ctx: FormContext = useMemo(
+    () => ({ lang, explicitEmpty, languages, projectPath, query }),
+    [lang, explicitEmpty, languages, projectPath, query]
+  )
   // The entry's own keys join the schema here, per entry: two instances of one plugin set
   // different keys, and a key no schema names is still shown (withPresentKeys).
   const merged = useMemo(() => withPresentKeys(schema ?? { source: 'defaults', fields: [], notes: [] }, values), [schema, values])
   const emit = (next: Record<string, unknown>): void => onChange(isEmptyObject(next) ? undefined : next)
+  const noMatch = query !== '' && !merged.fields.some((f) => fieldMatch(f, query, lang) !== 'none')
 
   return (
     <div className="flex flex-col gap-3">
+      {merged.fields.length >= SEARCH_FROM && (
+        <div className="relative">
+          <Search size={14} aria-hidden className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted" />
+          <TextInput
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t('pluginOptions.searchPlaceholder')}
+            aria-label={t('pluginOptions.searchPlaceholder')}
+            className="w-full pl-8"
+          />
+        </div>
+      )}
+      {noMatch && <p className="text-micro text-text-muted">{t('pluginOptions.noMatch')}</p>}
       {schema?.source === 'defaults' && <p className="text-micro text-text-muted">{t('pluginOptions.fromDefaults')}</p>}
       {merged.fields.length === 0 && <p className="text-micro text-text-muted">{t('pluginOptions.none')}</p>}
       {/* What the reader could not read, counted rather than passed over: the field is then a JSON

@@ -1,10 +1,10 @@
 import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowDown, ArrowUp, RotateCcw, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, ChevronRight, RotateCcw, Trash2 } from 'lucide-react'
 import type { OptionEnumValue, OptionField, OptionNode } from '@shared/ipc-contract'
 import { evaluateCondition, nodeAccepts, setAtPath } from '@shared/pluginOptionSchema'
 import { Button, IconButton, Select, TextInput, Toggle } from '../ui'
-import { enumLabel, fieldText, inlineValue, isEmptyObject, isPlainObject, type FormLanguage } from './text'
+import { enumLabel, fieldMatch, fieldText, inlineValue, isEmptyObject, isPlainObject, type FormLanguage } from './text'
 import { ImageButton, SnippetFileField, siblingValue } from './snippets'
 
 export interface FormContext {
@@ -15,6 +15,8 @@ export interface FormContext {
   languages: string[]
   /** The project the options belong to, for the editors that read and write files (snippets.tsx). Without it they are text fields. */
   projectPath?: string
+  /** The form's search, lower-cased; empty: no search. See fieldMatch. */
+  query: string
 }
 
 /**
@@ -63,8 +65,13 @@ export function ObjectBlock({
   const conditionFields = inherit ? inherit.fields : fields
   const applies = (f: OptionField): boolean => evaluateCondition(f.when, conditionValues, conditionFields)
 
-  const described = ordered.filter((f) => f.origin !== 'config')
-  const unknown = ordered.filter((f) => f.origin === 'config')
+  // While searching, a field stays when it or something inside it matches - and one that matched
+  // by its own words hands its children an empty search, so they are all there under it.
+  const searching = ctx.query !== ''
+  const match = (f: OptionField): 'self' | 'child' | 'none' => fieldMatch(f, ctx.query, ctx.lang)
+  const found = ordered.filter((f) => match(f) !== 'none')
+  const described = found.filter((f) => f.origin !== 'config')
+  const unknown = found.filter((f) => f.origin === 'config')
   const active = described.filter(applies)
   // Set but switched off by its condition: kept on screen rather than hidden with its block, so
   // a value that does nothing is not also a value nobody can see.
@@ -87,7 +94,7 @@ export function ObjectBlock({
       field={f}
       value={values[f.key]}
       onValue={(v) => set(f.key, v)}
-      ctx={ctx}
+      ctx={searching && match(f) === 'self' ? { ...ctx, query: '' } : ctx}
       inherit={{ values: conditionValues, fields: conditionFields }}
       inherited={fallbackOf(f)}
     />
@@ -95,19 +102,37 @@ export function ObjectBlock({
 
   return (
     <div className="flex flex-col gap-3">
-      {groupsOf(main, ctx.lang).map(([group, list]) => (
-        <section key={group ?? ''} className="flex flex-col gap-2.5">
-          {group && <h4 className="text-micro font-semibold uppercase tracking-wide text-text-secondary">{group}</h4>}
-          {list.map(row)}
-        </section>
-      ))}
+      {groupsOf(main, ctx.lang).map(([group, list], i) =>
+        group ? (
+          // Folded unless it is the first group or holds a value someone set: navigations has 46
+          // options in seven groups, and all of them open is the list this form was meant to end.
+          <GroupSection
+            key={group}
+            title={group}
+            count={list.length}
+            changed={list.filter((f) => values[f.key] !== undefined).length}
+            defaultOpen={i === 0 || list.some((f) => values[f.key] !== undefined)}
+            forceOpen={searching}
+          >
+            {list.map(row)}
+          </GroupSection>
+        ) : (
+          <section key="" className="flex flex-col gap-3.5">
+            {list.map(row)}
+          </section>
+        )
+      )}
       {advanced.length > 0 && (
-        <details className="group rounded-md border border-ink/10 px-2.5 py-1.5 dark:border-ink/10">
-          <summary className="cursor-pointer text-xs font-medium text-text-secondary">
-            {t('pluginOptions.advanced', { count: advanced.length })}
-          </summary>
-          <div className="mt-2.5 flex flex-col gap-2.5">{advanced.map(row)}</div>
-        </details>
+        <GroupSection
+          title={t('pluginOptions.advanced', { count: advanced.length })}
+          count={advanced.length}
+          changed={advanced.filter((f) => values[f.key] !== undefined).length}
+          defaultOpen={false}
+          forceOpen={searching}
+          framed
+        >
+          {advanced.map(row)}
+        </GroupSection>
       )}
       {inactive.length > 0 && (
         <section className="flex flex-col gap-2.5 rounded-md border border-dashed border-ink/15 p-2.5 dark:border-ink/15">
@@ -116,15 +141,71 @@ export function ObjectBlock({
           {inactive.map(row)}
         </section>
       )}
-      {(unknown.length > 0 || extra) && (
+      {(unknown.length > 0 || (extra && !searching)) && (
         <section className="flex flex-col gap-2.5 border-t border-dashed border-ink/10 pt-2.5 dark:border-ink/10">
           <h4 className="text-micro font-semibold uppercase tracking-wide text-text-secondary">{t('pluginOptions.moreKeys')}</h4>
           {unknown.length > 0 && <p className="text-micro text-text-muted">{t('pluginOptions.moreKeysHint')}</p>}
           {unknown.map(row)}
-          {extra}
+          {!searching && extra}
         </section>
       )}
     </div>
+  )
+}
+
+/**
+ * A group of options that folds. A button rather than <details>: while the form is searched every
+ * group is open whatever was clicked before, and a <details> keeps its own state against that.
+ */
+function GroupSection({
+  title,
+  count,
+  changed,
+  defaultOpen,
+  forceOpen,
+  framed = false,
+  children
+}: {
+  title: string
+  count: number
+  changed: number
+  defaultOpen: boolean
+  forceOpen: boolean
+  /** The advanced options: set apart by a frame, as they were as a <details>. Their title carries
+   *  the count already, so the right-hand side says only how many are changed. */
+  framed?: boolean
+  children: React.ReactNode
+}): JSX.Element {
+  const { t } = useTranslation()
+  const [open, setOpen] = useState(defaultOpen)
+  const shown = open || forceOpen
+  const bodyId = useId()
+  return (
+    <section className={`flex flex-col gap-3.5 ${framed ? 'rounded-md border border-ink/10 px-2.5 py-2 dark:border-ink/10' : ''}`}>
+      <button
+        type="button"
+        aria-expanded={shown}
+        aria-controls={bodyId}
+        disabled={forceOpen}
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1.5 text-left text-micro font-semibold uppercase tracking-wide text-text-secondary hover:text-text disabled:hover:text-text-secondary"
+      >
+        <ChevronRight size={13} aria-hidden className={`shrink-0 transition-transform ${shown ? 'rotate-90' : ''}`} />
+        <span className="min-w-0 flex-1">{title}</span>
+        <span className="shrink-0 font-normal normal-case tracking-normal text-text-muted">
+          {framed
+            ? changed > 0 && t('pluginOptions.changedCount', { count: changed })
+            : changed > 0
+              ? t('pluginOptions.groupCountChanged', { count, changed })
+              : count}
+        </span>
+      </button>
+      {shown && (
+        <div id={bodyId} className="flex flex-col gap-3.5">
+          {children}
+        </div>
+      )}
+    </section>
   )
 }
 
@@ -165,11 +246,16 @@ function FieldRow({
   const block = BLOCK_KINDS.has(field.node.kind)
   // The key is the control's label, as on the rest of the page; a switch names itself (Toggle's
   // hidden label), so its visible key is not a <label> of a second control.
+  // The plugin's own words first where it has any, the key beside them - the key is what stands in
+  // quartz.config.yaml, the title what one reads. A set value says so: the reset button alone is a
+  // grey arrow at the end of the row, and "which of these did I change" is the question a long form
+  // gets asked most.
   const Key = field.node.kind === 'boolean' ? 'span' : 'label'
   const label = (
-    <Key {...(field.node.kind === 'boolean' ? {} : { htmlFor: id })} className="w-48 max-w-full shrink-0 break-all font-mono text-xs text-text-secondary">
-      {field.key}
-      {text.title && <span className="ml-1 font-sans text-text-muted">{text.title}</span>}
+    <Key {...(field.node.kind === 'boolean' ? {} : { htmlFor: id })} className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
+      {text.title && <span className="text-ui font-medium text-text">{text.title}</span>}
+      <span className={`break-all font-mono ${text.title ? 'text-micro text-text-muted' : 'text-xs font-medium text-text-secondary'}`}>{field.key}</span>
+      {isSet && <span className="text-micro font-medium text-accent-text">{t('pluginOptions.changed')}</span>}
     </Key>
   )
   // "Back to what the plugin does without me": the key goes. Named after what it does - with a
@@ -205,23 +291,25 @@ function FieldRow({
   if (block) {
     return (
       <div className="flex flex-col gap-1.5">
-        <div className="flex flex-wrap items-start gap-x-2 gap-y-1">
-          {label}
-          {text.description && <p className="min-w-[8rem] flex-1 text-micro text-text-muted">{text.description}</p>}
+        <div className="flex items-start gap-2">
+          <div className="min-w-0 flex-1">{label}</div>
           {reset}
         </div>
-        <div className="ml-4 border-l border-ink/10 pl-3 dark:border-ink/10">{editor}</div>
+        {text.description && <p className="text-micro text-text-muted">{text.description}</p>}
+        <div className="ml-1 border-l border-ink/10 pl-3 dark:border-ink/10">{editor}</div>
       </div>
     )
   }
+  // One under the other: name, control, explanation. Side by side, the three wrapped differently
+  // in every row of a side panel, and the explanation stood beside some controls and under others.
   return (
-    <div className="flex flex-wrap items-start gap-x-3 gap-y-1">
+    <div className="flex flex-col gap-1">
       {label}
       <div className="flex min-w-0 max-w-full flex-wrap items-center gap-1.5">
         {editor}
         {reset}
       </div>
-      {text.description && <p className="min-w-[12rem] flex-1 text-micro text-text-muted">{text.description}</p>}
+      {text.description && <p className="text-micro text-text-muted">{text.description}</p>}
     </div>
   )
 }

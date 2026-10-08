@@ -1064,10 +1064,14 @@ export function DetailLayout({
   panelLabel,
   onDismiss,
   busy = false,
-  mainClassName = 'gap-6'
+  mainClassName = 'gap-6',
+  panelWidth = 'narrow'
 }: {
   children: ReactNode
   panel: ReactNode
+  /** narrow: 20rem, beside a board that needs the width. wide: for a panel that is the page's
+   *  form - a plugin's options, whose labels, fields and explanations do not fit 20rem. */
+  panelWidth?: 'narrow' | 'wide'
   /** The gap between the blocks of the board column. */
   mainClassName?: string
   panelLabel: string
@@ -1080,14 +1084,19 @@ export function DetailLayout({
 
   return (
     <div
-      className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]"
+      className={`grid items-start gap-6 ${
+        panelWidth === 'wide'
+          ? 'xl:grid-cols-[minmax(0,1fr)_28rem] 2xl:grid-cols-[minmax(0,1fr)_34rem]'
+          : 'xl:grid-cols-[minmax(0,1fr)_20rem]'
+      }`}
       onKeyDown={(e) => {
         if (!onDismiss || busy || e.key !== 'Escape' || e.defaultPrevented) return
         const target = e.target as HTMLElement
         // A single-line field has no use for Escape, and what was typed is in the draft already -
         // the frame editor even puts the focus into the area's name on selecting it. A field that
-        // does use the key (a select's popup, a textarea, an open combobox) keeps it.
-        if (target.closest('textarea, select, dialog, [contenteditable], [aria-expanded="true"]')) return
+        // does use the key (a select's popup, a textarea, an open combobox, a search field that
+        // empties itself on Escape) keeps it.
+        if (target.closest('textarea, select, dialog, [contenteditable], [aria-expanded="true"], input[type="search"]')) return
         const inPanel = panelRef.current?.contains(target) ?? false
         onDismiss()
         if (inPanel) requestAnimationFrame(() => panelRef.current?.focus())

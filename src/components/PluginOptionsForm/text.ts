@@ -27,3 +27,32 @@ export function inlineValue(value: unknown): string {
 
 export const isPlainObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v)
 export const isEmptyObject = (v: unknown): boolean => isPlainObject(v) && Object.keys(v).length === 0
+
+/**
+ * Whether a field answers the form's search: by its own words ('self' - key, title, explanation,
+ * group), through a field inside it ('child' - an object's, a record entry's or a list item's), or
+ * not at all. A field found by its own words is shown whole; one found through a child shows only
+ * the children that match, so a hit three levels down is not buried under the rest of its block.
+ */
+export function fieldMatch(field: OptionField, query: string, lang: FormLanguage): 'self' | 'child' | 'none' {
+  if (!query) return 'self'
+  const text = fieldText(field, lang)
+  const own = [field.key, text.title, text.description, text.group]
+  if (own.some((s) => s?.toLowerCase().includes(query))) return 'self'
+  return nestedFields(field.node).some((f) => fieldMatch(f, query, lang) !== 'none') ? 'child' : 'none'
+}
+
+function nestedFields(node: OptionField['node']): OptionField[] {
+  switch (node.kind) {
+    case 'object':
+      return node.fields
+    case 'record':
+      return nestedFields(node.value)
+    case 'array':
+      return nestedFields(node.items)
+    case 'union':
+      return node.variants.flatMap(nestedFields)
+    default:
+      return []
+  }
+}

@@ -1,47 +1,37 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
-import { SortableContext, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
+import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { confirmDialog } from '../../utils/confirm'
 import type { TFunction } from 'i18next'
 import { useNavigate } from 'react-router-dom'
-import { ArrowDown, ArrowUp, Blocks, ExternalLink, GripVertical, LayoutGrid, Search, Trash2, Workflow, Wrench } from 'lucide-react'
+import { ArrowDown, ArrowUp, Blocks, ExternalLink, GripVertical, LayoutGrid, Puzzle, Search, SlidersHorizontal, Trash2, Workflow, Wrench } from 'lucide-react'
 import { useProject } from '../ProjectLayout'
 import type {
   GridFrameDefinition,
   PluginEntry,
   PluginLayoutDeclaration,
   PluginOptionField,
-  QuartzConfig,
-  PluginOptionSchemaResult,
-  PluginSource
+  QuartzConfig
 } from '@shared/ipc-contract'
-import { Badge, Button, Card, CardHeading, IconButton, Select, TextInput, Toggle } from '../../components/ui'
+import { Badge, Button, Card, CardHeading, DetailLayout, IconButton, Select, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { announce } from '../../state/announcer'
 import { primeStickyState, useStickyState } from '../../state/uiState'
 import { useDndAccessibility } from '../../utils/dndAnnouncements'
+import { useIpcQuery } from '../../state/useIpcQuery'
+import { componentRef } from '../LayoutEditor/utils'
 import { repoUrl } from './pluginSource'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { siteLanguages } from '../../components/PluginOptionsForm/siteLanguages'
 
-// A row is one line of text plus two fixed-width controls, so it no longer needs the ~710px the
-// old wrap-or-squeeze layout did - the name/source/description column shrinks freely (min-w-0)
-// and only the action group is pinned. The breakpoint below is measured in the running app, not
-// picked off Tailwind's scale: two columns need enough width that the plugin name still reads at
-// a glance, which is where a second column stops being a gain.
-// `items-start`, and that is the fix for a card that looked like it opened on its own. A grid row
-// is as tall as its tallest cell and stretches the other to match, so expanding one plugin gave
-// its neighbour an empty frame the same height - which reads as "both opened". The equal heights
-// were deliberate (they were said to make calmer drop targets while dragging), but they cost more
-// than they bought: the list is expanded far more often than it is reordered.
-//
-// What they bought was never measured, and when it was, it was the opposite: equal heights were
-// the only thing holding `rectSortingStrategy`'s scale factor at 1, and without them every drag
-// stretched the neighbours. That is answered where it happens, by dropping the scale out of the
-// drag transform - see SortableRow.
-const PLUGIN_LIST = 'grid items-start gap-2 min-[1500px]:grid-cols-2'
+// One column since 1.1: a plugin's options moved out of its row into the side panel (DetailLayout),
+// so a row is one line of text and a few controls and no longer grows when it is configured. The
+// two-column grid this replaced had a history of its own - rows of unequal height beside each other
+// read as "both opened", and rectSortingStrategy's scale factor stretched cards while dragging -
+// and both went with it.
+const PLUGIN_LIST = 'flex flex-col gap-1.5'
 
 // Quartz plugins fall into distinct kinds - transformers, filters, page types, emitters,
 // components (see https://quartz.jzhao.xyz/plugins/) - but that exact category isn't stored
@@ -167,8 +157,8 @@ function displayName(item: IndexedPlugin): string {
 }
 
 // The name alone is not an identity: one plugin can be installed several times, and a real project
-// has six `quartz-layout-box` entries - opening one row's options opened all six, closing one
-// closed all six. The occurrence number separates them. It is not perfect either: removing the
+// has six `quartz-layout-box` entries - when rows folded open, opening one opened all six. The key
+// is now what the side panel remembers as selected. The occurrence number separates them. It is not perfect either: removing the
 // second of six renumbers the four behind it, so their panels shift by one - but those entries are
 // indistinguishable to the reader anyway, whereas the shared panel was visible in every project
 // that uses a layout box more than once. A frame keeps the plain name; frame ids are unique by
@@ -252,6 +242,10 @@ export default function PluginsInstalled(): JSX.Element {
   // Search and filter are "where the user was", not a draft - see useStickyState.
   const [query, setQuery] = useStickyState('plugins.query', '')
   const [enabledFilter, setEnabledFilter] = useStickyState<EnabledFilter>('plugins.filter', 'all')
+  // Which entry the side panel shows, by stickyKey() - a name, never an index (conventions.md).
+  const [selectedKey, setSelectedKey] = useStickyState<string | null>('plugins.selected', null)
+  // A drag listens for Escape on the document; the panel must not take it as "let go" meanwhile.
+  const [dragging, setDragging] = useState(false)
 
   async function reload(): Promise<void> {
     try {
@@ -431,9 +425,26 @@ export default function PluginsInstalled(): JSX.Element {
   // before navigating there.
   function openFrameInLayoutEditor(frame: GridFrameDefinition): void {
     const target = `/project/${project.id}/layout`
+    // The same five keys the layout page primes itself (primeFrame in LayoutEditor/index.tsx): the
+    // frames tab opens a frame without asking only when its baseline says it is unchanged.
     primeStickyState(target, 'frames.editing', frame)
+    primeStickyState(target, 'frames.baseline', JSON.stringify(frame))
     primeStickyState(target, 'frames.isNewDraft', false)
+    primeStickyState(target, 'frames.standardChosen', false)
+    primeStickyState(target, 'frames.selectedArea', null)
     navigate(`${target}?tab=frames`)
+  }
+
+  // The stage on all pages with this component selected - where it is placed, by dragging.
+  function openComponentOnStage(index: number): void {
+    if (!config) return
+    const target = `/project/${project.id}/layout`
+    primeStickyState(target, 'layout.pageType', null)
+    primeStickyState(target, 'layout.selected', componentRef(config.plugins, index))
+    // The components tab is the default and so has no `?tab=`; without this the layout page would
+    // open on whichever tab it was left on.
+    primeStickyState(target, 'layout.tab', 'global')
+    navigate(target)
   }
 
   const frameById = useMemo(() => new Map(frames.map((f) => [f.id, f])), [frames])
@@ -503,6 +514,7 @@ export default function PluginsInstalled(): JSX.Element {
     ...[...byPosition.keys()].filter((p) => !knownPositionOrder.includes(p))
   ]
 
+  const selected = selectedKey === null ? undefined : items.find((item) => stickyKey(item) === selectedKey)
   const activeCount = items.filter((item) => item.plugin.enabled).length
   const visibleCount = items.filter(matches).length
 
@@ -516,15 +528,62 @@ export default function PluginsInstalled(): JSX.Element {
     canReorder: !filtering,
     outdated,
     savedIndex,
+    selectedKey: selected ? selectedKey : null,
+    onSelect: (item: IndexedPlugin) => setSelectedKey(stickyKey(item)),
     toggleEnabled,
-    removePlugin,
-    updateField,
-    languages: siteLanguages(config),
-    openFrameInLayoutEditor
+    removePlugin
   }
 
   return (
-    <div>
+    <DetailLayout
+      panelWidth="wide"
+      mainClassName="gap-0"
+      panelLabel={t('pluginsInstalled.panelLabel')}
+      onDismiss={() => setSelectedKey(null)}
+      busy={dragging}
+      panel={
+        selected ? (
+          <PluginPanel
+            // Per entry: the options form keeps its search and folded groups, which belong to one plugin.
+            key={stickyKey(selected)}
+            item={selected}
+            saved={savedIndex === selected.index}
+            outdated={outdated.has(selected.plugin.name)}
+            busy={busy}
+            languages={siteLanguages(config)}
+            toggleEnabled={toggleEnabled}
+            updateField={updateField}
+            openFrameInLayoutEditor={openFrameInLayoutEditor}
+            openComponentOnStage={openComponentOnStage}
+          />
+        ) : (
+          <Card className="flex flex-col gap-3">
+            <CardHeading icon={SlidersHorizontal}>{t('pluginsInstalled.panelEmptyTitle')}</CardHeading>
+            <p className="text-ui text-text-secondary">{t('pluginsInstalled.panelEmptyText')}</p>
+            <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-ui">
+              <dt className="text-text-secondary">{t('pluginsInstalled.summaryActive')}</dt>
+              <dd className="text-right tabular-nums">{t('pluginsInstalled.summaryOf', { count: activeCount, total: items.length })}</dd>
+              <dt className="text-text-secondary">{t('pluginsInstalled.componentsHeading')}</dt>
+              <dd className="text-right tabular-nums">{componentItems.length}</dd>
+              <dt className="text-text-secondary">{t('pluginsInstalled.processingHeading')}</dt>
+              <dd className="text-right tabular-nums">{processingItems.length}</dd>
+              {frameItems.length > 0 && (
+                <>
+                  <dt className="text-text-secondary">{t('pluginsInstalled.framesHeading')}</dt>
+                  <dd className="text-right tabular-nums">{frameItems.length}</dd>
+                </>
+              )}
+              {outdated.size > 0 && (
+                <>
+                  <dt className="text-text-secondary">{t('pluginsInstalled.updateAvailable')}</dt>
+                  <dd className="text-right tabular-nums">{outdated.size}</dd>
+                </>
+              )}
+            </dl>
+          </Card>
+        )
+      }
+    >
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <div className="relative w-full max-w-xs">
           <Search
@@ -595,6 +654,7 @@ export default function PluginsInstalled(): JSX.Element {
                 <div key={position}>
                   <GroupHeading label={t(`positions.${position}`, position)} rawKey={position} count={shown.length} />
                   <ReorderableList
+                    onDragState={setDragging}
                     ids={group.map((item) => String(item.index))}
                     names={new Map(group.map((item) => [String(item.index), displayName(item)]))}
                     canReorder={cardProps.canReorder}
@@ -627,6 +687,7 @@ export default function PluginsInstalled(): JSX.Element {
               <div>
                 <GroupHeading label={t('pluginsInstalled.pageTypesGroup')} count={pageTypeItems.filter(matches).length} />
                 <ReorderableList
+                  onDragState={setDragging}
                   ids={pageTypeItems.map((item) => String(item.index))}
                   names={new Map(pageTypeItems.map((item) => [String(item.index), displayName(item)]))}
                   canReorder={cardProps.canReorder}
@@ -654,6 +715,7 @@ export default function PluginsInstalled(): JSX.Element {
                   count={otherProcessingItems.filter(matches).length}
                 />
                 <ReorderableList
+                  onDragState={setDragging}
                   ids={otherProcessingItems.map((item) => String(item.index))}
                   names={new Map(otherProcessingItems.map((item) => [String(item.index), displayName(item)]))}
                   canReorder={cardProps.canReorder}
@@ -698,7 +760,7 @@ export default function PluginsInstalled(): JSX.Element {
           <p className="mt-3 text-sm text-green-700 dark:text-green-400">{maintenanceNotice}</p>
         )}
       </section>
-    </div>
+    </DetailLayout>
   )
 }
 
@@ -721,12 +783,10 @@ interface PluginRowProps {
   canReorder: boolean
   outdated: Set<string>
   savedIndex: number | null
+  selectedKey: string | null
+  onSelect: (item: IndexedPlugin) => void
   toggleEnabled: (index: number) => void
   removePlugin: (item: IndexedPlugin) => void
-  updateField: (index: number, path: string[], value: unknown) => void
-  /** The site's language codes, for option keys that are languages (layout-box's byLang). */
-  languages: string[]
-  openFrameInLayoutEditor: (frame: GridFrameDefinition) => void
   /** Where this entry sits in its own (unfiltered) group, and how long that group is. */
   position?: number
   groupSize?: number
@@ -745,8 +805,10 @@ function ReorderableList({
   names,
   canReorder,
   onReorder,
+  onDragState,
   children
 }: {
+  onDragState: (dragging: boolean) => void
   ids: string[]
   /** Display name per id, so the drag can be narrated with the names on screen. */
   names: Map<string, string>
@@ -758,12 +820,13 @@ function ReorderableList({
   const { announcements, screenReaderInstructions } = useDndAccessibility(t, (id) => names.get(id) ?? '')
   // The keyboard sensor is a default of DndContext, but its default coordinate getter is not:
   // it moves the picked-up item by a fixed 25px per arrow press, which in this list (cards ~130px
-  // tall, two columns above 1500px) never reaches the next card - measured in the running app,
+  // tall when this was measured, two columns then) never reaches the next card - measured in the running app,
   // where space picked the row up and every arrow press left it over itself. sortableKeyboardCoordinates
   // walks to the neighbouring *item* instead, which is what "nach oben" means here.
   const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }))
 
   function handleDragEnd(event: DragEndEvent): void {
+    onDragState(false)
     const { active, over } = event
     if (!over || active.id === over.id) return
     const from = ids.indexOf(String(active.id))
@@ -778,12 +841,12 @@ function ReorderableList({
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
+      onDragStart={() => onDragState(true)}
       onDragEnd={handleDragEnd}
+      onDragCancel={() => onDragState(false)}
       accessibility={{ announcements, screenReaderInstructions }}
     >
-      {/* rect, not vertical list: above 1500px this list is two columns wide (PLUGIN_LIST), and
-          the vertical strategy assumes a single column. */}
-      <SortableContext items={ids} strategy={rectSortingStrategy}>
+      <SortableContext items={ids} strategy={verticalListSortingStrategy}>
         <div className={PLUGIN_LIST}>{children}</div>
       </SortableContext>
     </DndContext>
@@ -802,10 +865,9 @@ function SortableRow(props: PluginRowProps): JSX.Element {
     id: String(props.item.index)
   })
   // The wrapper carries the transform because Card is a plain div component with no ref of its
-  // own. It used to carry `h-full` too, matching the one on Card, so that the two elements did not
-  // break the grid's equal-height rows - see PLUGIN_LIST for why those rows are gone.
+  // own.
   //
-  // `Translate`, not `Transform`: `rectSortingStrategy` swaps *rectangles*, and its transform
+  // `Translate`, not `Transform`, kept from the two-column grid: `rectSortingStrategy` swapped *rectangles*, and its transform
   // carries the scale factor that squeezes each card into the rectangle it moves into. With the
   // equal-height rows gone that factor stopped being 1 - measured in the built app at 1728x1000,
   // two columns: dragging one closed card past its neighbours scaled them to 0.86 and 0.81, and
@@ -830,11 +892,10 @@ function PluginRow({
   canReorder,
   outdated,
   savedIndex,
+  selectedKey,
+  onSelect,
   toggleEnabled,
   removePlugin,
-  updateField,
-  languages,
-  openFrameInLayoutEditor,
   position,
   groupSize,
   onMove,
@@ -842,44 +903,12 @@ function PluginRow({
   handleProps
 }: PluginRowProps): JSX.Element {
   const { t } = useTranslation()
-  const project = useProject()
   const { plugin, index, frame } = item
   const layout = getLayout(plugin)
   const rowName = displayName(item)
-  // Keyed by the plugin's *name* and which occurrence of it this row is, not by its position in
-  // the config array. The index is what the list's React key uses, and it was what this key used
-  // too - but removing a plugin shortens that array, so every entry behind it moves up one and the
-  // open options panel was left on whichever plugin inherited the index. (Reordering is safe by
-  // comparison: reorderGroup rewrites the `order`/`layout.priority` numbers in place and never
-  // moves an entry within the array.) Names are what quartz addresses a plugin by (`quartz plugin
-  // remove <name>`) and survive both - see stickyKey for why the name alone is still not enough.
-  const [expanded, setExpanded] = useStickyState(`plugins.expanded.${stickyKey(item)}`, false)
+  const selected = selectedKey === stickyKey(item)
   const description = getPluginDescription(t, plugin.name)
   const url = repoUrl(plugin.source)
-
-  // Components always have layout fields (position/priority/...) to edit, so their button is
-  // always shown. Processing plugins (no layout) may genuinely have nothing to configure, so the
-  // schema is fetched eagerly here (not lazily on expand, like PluginOptions used to) to decide
-  // whether the button is worth showing at all - and passed down to avoid re-fetching it there.
-  // A frame is skipped entirely: its "plugin" is generated JS with no .d.ts to read, and it is
-  // configured in the Layout editor, not here.
-  const sourceKey = JSON.stringify(plugin.source)
-  const [processingSchema, setProcessingSchema] = useState<PluginOptionSchemaResult | 'loading'>('loading')
-  useEffect(() => {
-    if (layout || frame) return
-    setProcessingSchema('loading')
-    window.quartzGui.plugins.optionSchema({ projectPath: project.path, source: JSON.parse(sourceKey) as PluginSource }).then(setProcessingSchema)
-  }, [project.path, sourceKey, layout, frame])
-
-  const hasOptions = frame
-    ? false
-    : layout
-      ? true
-      : processingSchema === 'loading'
-        ? false
-        : processingSchema.schema
-          ? processingSchema.schema.fields.length > 0 || Object.keys(plugin.options ?? {}).length > 0
-          : true // no schema: the form still offers the existing keys plus a way to add one
 
   const summary = layout
     ? t('pluginsInstalled.summaryPosPriority', { position: layout.position ?? '–', priority: layout.priority ?? '–' })
@@ -889,11 +918,25 @@ function PluginRow({
         ? t('pluginsInstalled.summaryOrder', { order: String(plugin.order) })
         : null
 
+  // The whole row selects, except where a click means its own control - the switch, the handle,
+  // the arrows, the bin, the repository link. The name is the button that does it for the
+  // keyboard; the row's click is the larger target for the pointer.
+  function onRowClick(e: MouseEvent<HTMLDivElement>): void {
+    if ((e.target as HTMLElement).closest('button, a, input, label')) return
+    onSelect(item)
+  }
+
   return (
-    <Card className={`px-3 py-2.5 ${plugin.enabled ? '' : 'bg-ink/[0.02] dark:bg-ink/[0.02]'}`}>
+    <Card
+      data-selectable
+      onClick={onRowClick}
+      className={`cursor-pointer px-3 py-2 ${plugin.enabled ? '' : 'bg-ink/[0.02] dark:bg-ink/[0.02]'} ${
+        selected ? 'outline outline-2 outline-offset-1 outline-blue-500' : ''
+      }`}
+    >
       <div className="flex items-start gap-2.5">
         {/* Only the handle is the drag activator. With the whole card as one, any drag gesture -
-            selecting the description, dragging inside an option field - started a reorder.
+            selecting the description, a click to select the row - started a reorder.
             A real <button>, not the span this used to be: dnd-kit's keyboard sensor needs a
             focusable activator, and the attributes it hands over (tabIndex, role, the
             aria-describedby pointing at its instructions) belong on something that can take focus.
@@ -926,7 +969,14 @@ function PluginRow({
 
         <div className={`min-w-0 flex-1 ${plugin.enabled ? '' : 'opacity-60'}`}>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <p className="break-words font-medium leading-tight">{rowName}</p>
+            <button
+              type="button"
+              aria-pressed={selected}
+              onClick={() => onSelect(item)}
+              className="break-words text-left font-medium leading-tight hover:underline"
+            >
+              {rowName}
+            </button>
             {frame && <Badge>{t('pluginsInstalled.frameBadge')}</Badge>}
             {outdated.has(plugin.name) && <Badge tone="amber">{t('pluginsInstalled.updateAvailable')}</Badge>}
             {savedIndex === index && <span className="text-micro text-green-600 dark:text-green-400">{t('pluginsInstalled.savedFlash')}</span>}
@@ -945,29 +995,11 @@ function PluginRow({
               </a>
             )}
           </p>
-          {description && <p className="mt-0.5 text-xs text-text-muted">{description}</p>}
-          {!expanded && summary && <p className="mt-0.5 font-mono text-micro text-text-muted">{summary}</p>}
+          {description && <p className="mt-0.5 line-clamp-1 text-xs text-text-muted" title={description}>{description}</p>}
+          {summary && <p className="mt-0.5 font-mono text-micro text-text-muted">{summary}</p>}
         </div>
 
-        {/* Fixed widths, not content-sized: across ~50 rows a button group that grew with the
-            longest label produced three different right edges down the page. */}
         <div className="ml-auto flex shrink-0 items-center gap-1">
-          {/* Wide enough for the longest label in either language and nowrap on top of it:
-              at 150px "Optionen einklappen" wrapped onto two lines, so a row grew taller the
-              moment it was expanded. */}
-          <div className="w-[164px] text-right">
-            {frame ? (
-              <Button variant="ghost" className="w-full whitespace-nowrap" onClick={() => openFrameInLayoutEditor(frame)}>
-                {t('pluginsInstalled.openInLayoutEditor')}
-              </Button>
-            ) : (
-              hasOptions && (
-                <Button variant="ghost" className="w-full whitespace-nowrap" onClick={() => setExpanded((v) => !v)}>
-                  {expanded ? t('pluginsInstalled.hideOptions') : t('pluginsInstalled.showOptions')}
-                </Button>
-              )
-            )}
-          </div>
           {/* The keyboard alternative to the handle. dnd-kit's keyboard sensor can do the same
               thing (space, arrows, space), but it is a modal gesture one has to know about;
               two arrows are one keystroke each and are the same control the CSS load order uses.
@@ -993,110 +1025,171 @@ function PluginRow({
               />
             </>
           )}
-          <IconButton icon={Trash2} title={t('common.remove')} onClick={() => removePlugin(item)} disabled={busy} />
+          <IconButton icon={Trash2} title={t('common.removeNamed', { name: rowName })} onClick={() => removePlugin(item)} disabled={busy} />
         </div>
       </div>
+    </Card>
+  )
+}
 
-      {expanded && layout && (
-        <div className="mt-3 border-t border-ink/10 pt-3 dark:border-ink/10">
-          <FieldGroup
-            fields={buildLayoutFields(t)}
-            values={layout as unknown as Record<string, unknown>}
-            onChange={(name, value) => updateField(index, ['layout', name], value)}
-          />
-          {/* groupOptions only makes sense once the plugin is actually placed in a group */}
-          {layout.group && (
-            <div className="mt-2 border-t border-dashed border-ink/10 pt-2 dark:border-ink/10">
-              <p className="mb-1 font-mono text-micro text-text-muted">groupOptions</p>
-              <FieldGroup
-                fields={buildGroupOptionsFields(t)}
-                values={layout.groupOptions ?? {}}
-                onChange={(name, value) => updateField(index, ['layout', 'groupOptions', name], value)}
-              />
-            </div>
+/**
+ * The selected entry in the side panel: what it is, where it sits, and its options. A component's
+ * placement (`layout`) is the same five fields the row used to fold open, with a way to the stage
+ * where it is placed by dragging; a frame is configured in the layout editor and only says so.
+ *
+ * Every field writes on its own (updateField, through the page's write queue) - there is no Save on
+ * this page, and the green word beside the name is the sign that it happened.
+ */
+function PluginPanel({
+  item,
+  saved,
+  outdated,
+  busy,
+  languages,
+  toggleEnabled,
+  updateField,
+  openFrameInLayoutEditor,
+  openComponentOnStage
+}: {
+  item: IndexedPlugin
+  saved: boolean
+  outdated: boolean
+  busy: boolean
+  /** The site's language codes, for option keys that are languages (layout-box's byLang). */
+  languages: string[]
+  toggleEnabled: (index: number) => void
+  updateField: (index: number, path: string[], value: unknown) => void
+  openFrameInLayoutEditor: (frame: GridFrameDefinition) => void
+  openComponentOnStage: (index: number) => void
+}): JSX.Element {
+  const { t } = useTranslation()
+  const project = useProject()
+  const { plugin, index, frame } = item
+  const layout = getLayout(plugin)
+  const name = displayName(item)
+  const description = getPluginDescription(t, plugin.name)
+  const url = repoUrl(plugin.source)
+  const sourceKey = JSON.stringify(plugin.source)
+  // A frame's "plugin" is generated JS with no schema to read; it is configured in the layout editor.
+  const schemaQuery = useIpcQuery(
+    () => (frame ? Promise.resolve(null) : window.quartzGui.plugins.optionSchema({ projectPath: project.path, source: plugin.source })),
+    [project.path, sourceKey, frame?.id]
+  )
+
+  return (
+    <Card className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <CardHeading icon={frame ? LayoutGrid : layout ? Blocks : Puzzle}>
+          <span className="break-words">{name}</span>
+        </CardHeading>
+        <div className="flex flex-wrap items-center gap-2">
+          {frame && <Badge>{t('pluginsInstalled.frameBadge')}</Badge>}
+          {outdated && <Badge tone="amber">{t('pluginsInstalled.updateAvailable')}</Badge>}
+          {saved && <span className="text-micro text-green-600 dark:text-green-400">{t('pluginsInstalled.savedFlash')}</span>}
+        </div>
+        <p className="break-all text-xs text-text-muted">
+          {frame ? t('pluginsInstalled.frameSource') : sourceLabel(plugin.source)}
+          {url && (
+            <a
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              title={t('pluginsInstalled.openRepo')}
+              className="ml-1 inline-flex translate-y-[2px] text-text-muted hover:text-blue-600 dark:hover:text-blue-400"
+            >
+              <ExternalLink size={11} aria-hidden />
+            </a>
           )}
+        </p>
+        {description && <p className="text-ui text-text-secondary">{description}</p>}
+      </div>
+
+      <Toggle
+        label={t('pluginsInstalled.panelEnabled')}
+        checked={plugin.enabled}
+        onChange={() => toggleEnabled(index)}
+        disabled={busy}
+      />
+
+      {frame && (
+        <div className="flex flex-col items-start gap-2">
+          <p className="text-ui text-text-secondary">{t('pluginsInstalled.framesDescription')}</p>
+          <Button variant="ghost" onClick={() => openFrameInLayoutEditor(frame)}>
+            {t('pluginsInstalled.openInLayoutEditor')}
+          </Button>
         </div>
       )}
 
-      {expanded && (
-        <PluginOptions
-          plugin={plugin}
-          index={index}
-          updateField={updateField}
-          languages={languages}
-          preloadedSchema={layout ? undefined : processingSchema}
-        />
+      {layout && (
+        <section className="flex flex-col gap-3 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-micro font-semibold uppercase tracking-wide text-text-secondary">{t('pluginsInstalled.placementHeading')}</h3>
+            <Button variant="ghost" onClick={() => openComponentOnStage(index)}>
+              {t('pluginsInstalled.showOnStage')}
+            </Button>
+          </div>
+          <FieldGroup
+            fields={buildLayoutFields(t)}
+            values={layout as unknown as Record<string, unknown>}
+            onChange={(field, value) => updateField(index, ['layout', field], value)}
+          />
+          {/* groupOptions only makes sense once the plugin is actually placed in a group */}
+          {layout.group && (
+            <div className="flex flex-col gap-3 border-t border-dashed border-ink/10 pt-3 dark:border-ink/10">
+              <p className="font-mono text-micro text-text-muted">groupOptions</p>
+              <FieldGroup
+                fields={buildGroupOptionsFields(t)}
+                values={layout.groupOptions ?? {}}
+                onChange={(field, value) => updateField(index, ['layout', 'groupOptions', field], value)}
+              />
+            </div>
+          )}
+        </section>
+      )}
+
+      {!frame && (
+        <section className="flex flex-col gap-3 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
+          <h3 className="text-micro font-semibold uppercase tracking-wide text-text-secondary">{t('pluginsInstalled.optionsHeading')}</h3>
+          {schemaQuery.loading ? (
+            <p className="text-micro text-text-muted">{t('layoutEditor.inspector.optionsLoading')}</p>
+          ) : schemaQuery.error || !schemaQuery.data ? (
+            <p className="text-micro text-red-600 dark:text-red-400">{t('layoutEditor.inspector.optionsError', { reason: schemaQuery.error ?? '' })}</p>
+          ) : (
+            <>
+              {schemaQuery.data.unreadable && (
+                <p className="text-micro text-amber-700 dark:text-amber-300">{t('pluginOptions.unreadable', { reason: schemaQuery.data.unreadable })}</p>
+              )}
+              <PluginOptionsForm
+                schema={schemaQuery.data.schema}
+                values={plugin.options ?? {}}
+                onChange={(next) => updateField(index, ['options'], next)}
+                explicitEmpty
+                languages={languages}
+                projectPath={project.path}
+              />
+            </>
+          )}
+        </section>
       )}
     </Card>
   )
 }
 
-// The plugin's own options, as the form the schema describes (components/PluginOptionsForm). The
-// whole options object goes back through updateField, which removes `options` when nothing is left.
-function PluginOptions({
-  plugin,
-  index,
-  updateField,
-  languages,
-  preloadedSchema
-}: {
-  plugin: PluginEntry
-  index: number
-  updateField: (index: number, path: string[], value: unknown) => void
-  languages: string[]
-  // A processing plugin's row already fetched the schema to decide whether to show the button at
-  // all - reused here instead of fetching a second time. Components fetch their own copy.
-  preloadedSchema?: PluginOptionSchemaResult | 'loading'
-}): JSX.Element | null {
-  const { t } = useTranslation()
-  const project = useProject()
-  const sourceKey = JSON.stringify(plugin.source)
-  const [fetched, setFetched] = useState<PluginOptionSchemaResult | 'loading'>('loading')
-  useEffect(() => {
-    if (preloadedSchema !== undefined) return
-    setFetched('loading')
-    window.quartzGui.plugins.optionSchema({ projectPath: project.path, source: JSON.parse(sourceKey) as PluginSource }).then(setFetched)
-  }, [project.path, sourceKey, preloadedSchema])
-
-  const result = preloadedSchema !== undefined ? preloadedSchema : fetched
-  if (result === 'loading') return null
-  return (
-    <div className="mt-3 border-t border-ink/10 pt-3 dark:border-ink/10">
-      {result.unreadable && <p className="mb-2 text-micro text-amber-700 dark:text-amber-300">{t('pluginOptions.unreadable', { reason: result.unreadable })}</p>}
-      <PluginOptionsForm
-        schema={result.schema}
-        values={plugin.options ?? {}}
-        onChange={(next) => updateField(index, ['options'], next)}
-        explicitEmpty
-        languages={languages}
-        projectPath={project.path}
-      />
-    </div>
-  )
-}
-
+// The placement fields of a component - quartz's own five, the same for every plugin, and
+// groupOptions. One under the other like the plugin's options below them in the panel.
 function FieldGroup({
   fields,
   values,
-  onChange,
-  explicitEmpty = false
+  onChange
 }: {
   fields: PluginOptionField[]
   values: Record<string, unknown>
   onChange: (name: string, value: unknown) => void
-  /** Offer "set empty" on text fields - a plugin's own options only; see FieldRow. */
-  explicitEmpty?: boolean
 }): JSX.Element {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-3">
       {fields.map((field) => (
-        <FieldRow
-          key={field.name}
-          field={field}
-          value={values[field.name]}
-          onChange={(v) => onChange(field.name, v)}
-          explicitEmpty={explicitEmpty}
-        />
+        <FieldRow key={field.name} field={field} value={values[field.name]} onChange={(v) => onChange(field.name, v)} />
       ))}
     </div>
   )
@@ -1105,37 +1198,29 @@ function FieldGroup({
 function FieldRow({
   field,
   value,
-  onChange,
-  explicitEmpty
+  onChange
 }: {
   field: PluginOptionField
   value: unknown
   onChange: (value: unknown) => void
-  explicitEmpty: boolean
 }): JSX.Element {
   const { t } = useTranslation()
   const currentText = value == null ? '' : String(value)
   const id = useId()
-  // The key in the left column is the control's label, not decoration next to it: a select, a
-  // number field and a text field had no accessible name at all here - the name was a <span> the
-  // control knew nothing about, so a screen reader announced "combobox" and nothing else. It is a
-  // real <label htmlFor> now (Select and TextInput pass `id` straight through to their element).
+  // The key is the control's label, not decoration next to it: a select, a number field and a text
+  // field had no accessible name at all here once - the name was a <span> the control knew nothing
+  // about. It is a real <label htmlFor> (Select and TextInput pass `id` straight through).
   //
   // The switch is the exception and keeps its own hidden label (see Toggle's hideLabel): its input
-  // sits inside a <label> of its own, so the name would end up announced twice. The visible key
-  // therefore stays a <span> in that one row - the name is in the DOM twice there, which is untidy
-  // rather than wrong, and fixing it means teaching Toggle to be named from outside.
+  // sits inside a <label> of its own, so the name would end up announced twice.
   const Key = field.kind === 'boolean' ? 'span' : 'label'
   return (
-    <div className="flex items-center gap-3">
-      <Key
-        {...(field.kind === 'boolean' ? {} : { htmlFor: id })}
-        className="w-40 shrink-0 font-mono text-xs text-text-secondary"
-      >
+    <div className="flex flex-col gap-1">
+      <Key {...(field.kind === 'boolean' ? {} : { htmlFor: id })} className="font-mono text-xs font-medium text-text-secondary">
         {field.name}
         {!field.optional && <span className="text-red-500"> *</span>}
       </Key>
-      <div className="w-40 shrink-0">
+      <div>
         {field.kind === 'boolean' && (
           <Toggle label={field.name} hideLabel checked={value === true || value === 'true'} onChange={(checked) => onChange(checked)} />
         )}
@@ -1144,7 +1229,7 @@ function FieldRow({
             id={id}
             value={typeof value === 'string' && field.enumValues?.includes(value) ? value : ''}
             onChange={(e) => onChange(e.target.value)}
-            className="w-40"
+            className="w-56 max-w-full"
           >
             <option value="" disabled>
               {t('pluginsInstalled.notSet')}
@@ -1169,7 +1254,7 @@ function FieldRow({
             onBlur={(e) => {
               if (e.target.value !== currentText) onChange(e.target.value === '' ? undefined : Number(e.target.value))
             }}
-            className="w-40"
+            className="w-32"
           />
         )}
         {field.kind === 'string' && (
@@ -1178,38 +1263,14 @@ function FieldRow({
             id={id}
             type="text"
             defaultValue={currentText}
-            placeholder={value === '' ? t('pluginsInstalled.explicitlyEmpty') : undefined}
             onBlur={(e) => {
               if (e.target.value !== currentText) onChange(e.target.value === '' ? undefined : e.target.value)
             }}
-            className="w-40"
+            className="w-56 max-w-full"
           />
         )}
       </div>
-      {/* A cleared field removes the key (setDeep), so "deliberately empty" - an empty string the
-          plugin reads as "show nothing", e.g. recent-notes' title - needs a way of its own (review
-          2026-10-13, finding 3). Only for a plugin's own options: the layout fields (condition,
-          group) have no meaning for an empty string. Offered only while the field is empty, so a
-          list of filled fields does not grow a control per row, and as a quiet text button rather
-          than a filled one because it is rarely needed. The slot is there in every row of the
-          group, empty or not, so the descriptions to the right start at one edge. */}
-      {explicitEmpty && (
-        <div className="w-28 shrink-0">
-          {field.kind === 'string' && (value === '' || value == null) && (
-            <button
-              type="button"
-              className="text-xs font-medium text-text-secondary hover:text-text hover:underline"
-              title={value === '' ? t('pluginsInstalled.unsetEmptyHint') : t('pluginsInstalled.setEmptyHint')}
-              onClick={() => onChange(value === '' ? undefined : '')}
-            >
-              {value === '' ? t('pluginsInstalled.unsetEmpty') : t('pluginsInstalled.setEmpty')}
-            </button>
-          )}
-        </div>
-      )}
-      {/* uses the free space to the right of the control to briefly explain the possible values,
-          instead of cramming it under the (already narrow) label column */}
-      {field.description && <p className="flex-1 text-micro text-text-muted">{field.description}</p>}
+      {field.description && <p className="text-micro text-text-muted">{field.description}</p>}
     </div>
   )
 }

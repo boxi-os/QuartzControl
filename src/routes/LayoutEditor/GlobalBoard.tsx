@@ -453,7 +453,9 @@ export default function GlobalBoard({
           keep
         )
       } else {
-        applyPlugins(withEnabled(config.plugins, index, false))
+        // Selected, so the panel says what is off now - for a plugin that is more than a component,
+        // that is more than the chip (Inspector, alsoOff).
+        applyPlugins(withEnabled(config.plugins, index, false), index)
         setFocusAfterDrop(`palette:${index}`)
       }
       return

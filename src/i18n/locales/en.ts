@@ -1476,6 +1476,10 @@ export default {
       alignStretch: 'Stretch',
       actions: 'Actions',
       park: 'Put in the tray',
+      parkHintWhole:
+        'Switches off the whole plugin, not just the component – its {{kinds}} as well. Dragged back out of the tray, it is on again.',
+      offWhole: 'The whole plugin is off, its {{kinds}} as well.',
+      categories: { transformer: 'transformer', filter: 'filter', emitter: 'emitter', pageType: 'page type' },
       parkHint: 'Switches the component off. Dragged back out of the tray, it is switched on again.'
     }
   },
@@ -2185,6 +2189,7 @@ export default {
     dropped: '{{name}} dropped on {{target}}.',
     droppedHome: '{{name}} stayed where it was.',
     removed: 'A duplicate of {{name}} removed from the layout.',
+    disabledWhole: '{{name}} switched off and put in the component tray – the whole plugin, its {{kinds}} as well.',
     disabled: '{{name}} switched off and put in the component tray.',
     reenabled: '{{name}} switched on and dropped on {{target}}.',
     cancelled: '{{name}} cancelled, nothing moved.'

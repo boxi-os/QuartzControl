@@ -2,34 +2,31 @@ import { useTranslation } from 'react-i18next'
 import type { PluginEntry } from '@shared/ipc-contract'
 import { FieldGroup } from '../../components/ui'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
-import { useIpcQuery } from '../../state/useIpcQuery'
+import type { PluginOptionSchemaResult } from '@shared/ipc-contract'
 
 /**
  * The selected component's own options in the side panel - the same form the plugins page shows,
  * but writing into the board's config draft instead of the file: the header's Save writes it along
  * with every move on the stage, and `dirty` sees it because it compares the whole config.
  *
- * The schema is read per source, and the source changes with every click on another chip, so the
- * read goes through useIpcQuery's guard - and nothing is shown while it runs, because the hook
- * keeps the previous component's answer until the new one lands.
+ * The schema comes from the panel (Inspector), which reads it per source through useIpcQuery's
+ * guard and needs its categories itself; nothing is shown while it runs, because the hook keeps the
+ * previous component's answer until the new one lands.
  */
 export default function ComponentOptions({
   projectPath,
   plugin,
   languages,
+  schemaQuery: { data, loading, error },
   onChange
 }: {
   projectPath: string
   plugin: PluginEntry
   languages: string[]
+  schemaQuery: { data: PluginOptionSchemaResult | null; loading: boolean; error: string | null }
   onChange: (next: Record<string, unknown> | undefined) => void
 }): JSX.Element {
   const { t } = useTranslation()
-  const sourceKey = JSON.stringify(plugin.source)
-  const { data, loading, error } = useIpcQuery(
-    () => window.quartzGui.plugins.optionSchema({ projectPath, source: plugin.source }),
-    [projectPath, sourceKey]
-  )
 
   return (
     <FieldGroup label={t('layoutEditor.inspector.options')} className="gap-2">

@@ -1481,6 +1481,10 @@ export default {
       alignStretch: 'Strecken',
       actions: 'Aktionen',
       park: 'In den Vorrat legen',
+      parkHintWhole:
+        'Schaltet das ganze Plugin aus, nicht nur die Komponente – auch {{kinds}}. Aus dem Vorrat zurückgezogen, ist es wieder eingeschaltet.',
+      offWhole: 'Damit ist das ganze Plugin aus, auch {{kinds}}.',
+      categories: { transformer: 'seine Transformer', filter: 'sein Filter', emitter: 'sein Emitter', pageType: 'sein Seitentyp' },
       parkHint: 'Schaltet die Komponente aus. Aus dem Vorrat zurückgezogen, ist sie wieder eingeschaltet.'
     }
   },
@@ -2202,6 +2206,7 @@ export default {
     // Zwei Ausgänge, die „abgelegt“ falsch beschreibt: Auf dem Komponentenvorrat wird ein
     // Duplikat gelöscht, und eine einzelne Instanz bleibt, wo sie ist.
     removed: 'Ein Duplikat von {{name}} aus dem Layout entfernt.',
+    disabledWhole: '{{name}} ausgeschaltet und in den Komponentenvorrat gelegt – das ganze Plugin, auch {{kinds}}.',
     disabled: '{{name}} ausgeschaltet und in den Komponentenvorrat gelegt.',
     reenabled: '{{name}} eingeschaltet und bei {{target}} abgelegt.',
     cancelled: '{{name}} abgebrochen, nichts verschoben.'

@@ -487,4 +487,10 @@ export interface PluginOptionSchemaResult {
   packageVersion?: string
   /** Set when the package is there but could not be read - a reason, not a schema. */
   unreadable?: string
+  /**
+   * `quartz.category` of the package, as a list ("component", "transformer", "emitter", ...).
+   * The layout board says with it what switching a component off takes along: `enabled: false`
+   * switches off the whole plugin, not just what it draws.
+   */
+  categories?: string[]
 }

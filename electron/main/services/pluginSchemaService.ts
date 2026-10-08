@@ -302,7 +302,9 @@ function readPluginOptionSchema(dir: string): PluginOptionSchemaResult {
     }
   }
   schema ??= schemaFromDefaults(q.defaultOptions)
-  return { schema, ...(version ? { packageVersion: version } : {}) }
+  // A string or a list in the wild; quartz itself reads both.
+  const categories = (Array.isArray(q.category) ? q.category : [q.category]).filter((c): c is string => typeof c === 'string')
+  return { schema, ...(version ? { packageVersion: version } : {}), ...(categories.length > 0 ? { categories } : {}) }
 }
 
 // ── .d.ts → JSON Schema ──

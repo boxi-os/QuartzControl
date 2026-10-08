@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp, SlidersHorizontal } from 'lucide-react'
 import type { LayoutPosition, PluginEntry, PluginLayoutDeclaration } from '@shared/ipc-contract'
 import { Button, Card, CardHeading, Field, FieldGroup, Select, TextInput, Toggle } from '../../components/ui'
 import { announce } from '../../state/announcer'
+import { useIpcQuery } from '../../state/useIpcQuery'
 import { conditionLabel } from './ComponentChip'
 import ComponentOptions from './ComponentOptions'
 import {
@@ -80,6 +81,14 @@ export default function Inspector({
   const orderRow = useRef<HTMLDivElement>(null)
   const focusOrderButton = (which: 0 | 1): void => orderRow.current?.querySelectorAll('button')[which]?.focus()
   const positionName = (position: LayoutPosition): string => t(`positions.${position}`, position)
+  const sourceKey = JSON.stringify(plugin.source)
+  const schemaQuery = useIpcQuery(() => window.quartzGui.plugins.optionSchema({ projectPath, source: plugin.source }), [projectPath, sourceKey])
+  // What the plugin does besides drawing a component. Switching the component off is
+  // `enabled: false`, which Quartz reads for the whole plugin: for quartz-multilanguage that is its
+  // transformer, filter and emitter too, and "switches the component off" said none of it (fortieth
+  // review, finding 4). Empty while unknown - the ordinary sentence is then the one that stays.
+  const alsoOff = (schemaQuery.data?.categories ?? []).filter((c) => c !== 'component')
+  const kinds = alsoOff.map((c) => t(`layoutEditor.inspector.categories.${c}`, c)).join(', ')
 
   function move(delta: -1 | 1): void {
     const target = place + delta
@@ -109,7 +118,7 @@ export default function Inspector({
 
   function park(): void {
     onChange(withEnabled(plugins, index, false))
-    announce(t('dnd.disabled', { name }))
+    announce(alsoOff.length > 0 ? t('dnd.disabledWhole', { name, kinds }) : t('dnd.disabled', { name }))
   }
 
   return (
@@ -121,6 +130,7 @@ export default function Inspector({
       {!plugin.enabled && (
         <div className="flex flex-col items-start gap-2 rounded-md bg-ink/[0.04] p-2.5 text-ui text-text-secondary dark:bg-ink/10">
           <p>{t(parked ? 'layoutEditor.inspector.parked' : 'layoutEditor.inspector.disabled')}</p>
+          {alsoOff.length > 0 && <p>{t('layoutEditor.inspector.offWhole', { kinds })}</p>}
           <Button variant="ghost" onClick={enable}>
             {t('layoutEditor.inspector.enable')}
           </Button>
@@ -318,7 +328,11 @@ export default function Inspector({
             )
           )}
         </div>
-        {!isDuplicate && plugin.enabled && <span className="text-micro text-text-muted">{t('layoutEditor.inspector.parkHint')}</span>}
+        {!isDuplicate && plugin.enabled && (
+          <span className="text-micro text-text-muted">
+            {alsoOff.length > 0 ? t('layoutEditor.inspector.parkHintWhole', { kinds }) : t('layoutEditor.inspector.parkHint')}
+          </span>
+        )}
       </FieldGroup>
 
       {/* Last, because it is the long part: a component like navigations has dozens of options,
@@ -328,6 +342,7 @@ export default function Inspector({
           projectPath={projectPath}
           plugin={plugin}
           languages={languages}
+          schemaQuery={schemaQuery}
           onChange={(options) => onChange(withOptions(plugins, index, options))}
         />
       </div>

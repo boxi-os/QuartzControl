@@ -32,7 +32,9 @@ export default function PluginOptionsForm({
   onChange,
   explicitEmpty = false,
   languages = [],
-  projectPath
+  projectPath,
+  pick,
+  freeKeys = true
 }: {
   schema: NormalizedOptionSchema | null
   values: Record<string, unknown>
@@ -42,6 +44,12 @@ export default function PluginOptionsForm({
   languages?: string[]
   /** Turns on the editors that read and write files - the snippet picker and the image button. */
   projectPath?: string
+  /** Only the options this accepts, for a caller that shows the rest elsewhere (the navigations
+   *  editor's variant tiles and its "no effect" section). Applied after the entry's own keys have
+   *  joined the schema, so a set key that is picked away does not come back as "more keys". */
+  pick?: (key: string) => boolean
+  /** The free key/value row; off where a second form on the same entry already offers it. */
+  freeKeys?: boolean
 }): JSX.Element {
   const { t, i18n } = useTranslation()
   const lang = i18n.resolvedLanguage?.startsWith('en') ? 'en' : 'de'
@@ -53,7 +61,10 @@ export default function PluginOptionsForm({
   )
   // The entry's own keys join the schema here, per entry: two instances of one plugin set
   // different keys, and a key no schema names is still shown (withPresentKeys).
-  const merged = useMemo(() => withPresentKeys(schema ?? { source: 'defaults', fields: [], notes: [] }, values), [schema, values])
+  const merged = useMemo(() => {
+    const all = withPresentKeys(schema ?? { source: 'defaults', fields: [], notes: [] }, values)
+    return pick ? { ...all, fields: all.fields.filter((f) => pick(f.key)) } : all
+  }, [schema, values, pick])
   const emit = (next: Record<string, unknown>): void => onChange(isEmptyObject(next) ? undefined : next)
   const noMatch = query !== '' && !merged.fields.some((f) => fieldMatch(f, query, lang) !== 'none')
 
@@ -96,7 +107,7 @@ export default function PluginOptionsForm({
         values={values}
         onValue={emit}
         ctx={ctx}
-        extra={<AddOptionRow existingKeys={Object.keys(values)} onAdd={(key, value) => emit({ ...values, [key]: value })} />}
+        extra={freeKeys ? <AddOptionRow existingKeys={Object.keys(values)} onAdd={(key, value) => emit({ ...values, [key]: value })} /> : undefined}
       />
     </div>
   )

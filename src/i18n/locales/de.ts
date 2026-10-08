@@ -998,11 +998,61 @@ export default {
   plugins: {
     tabs: {
       installed: 'Installiert',
+      navigations: 'Navigationen',
       marketplace: 'Marktplatz'
     },
     descriptions: {
       installed: 'Erweitert Quartz um zusätzliche Funktionen — hier siehst du, was aktiv ist, und stellst es ein.',
+      navigations: 'Menüs, Seitenleisten und „Zurück / Weiter“ aus quartz-navigations: jede Navigation ist ein Eintrag des Plugins, mit der Website daneben.',
       marketplace: 'Der Plugin-Katalog der quartz-community-Organisation, inklusive der mitgelieferten. Plugins von anderswo fügst du über „owner/repo“ hinzu.'
+    }
+  },
+  sitePreview: {
+    title: 'Vorschau',
+    notRunning: 'Die Vorschau zeigt die echte Website über den Dev-Server, und der läuft gerade nicht.',
+    starting: 'Der Dev-Server startet…',
+    start: 'Vorschau starten',
+    remote: 'Der Dev-Server läuft über einen entfernten Host und lässt sich hier nicht einbetten. Öffne ihn auf der Seite „Vorschau & Build“.',
+    page: 'Seite',
+    pagePlaceholder: 'Startseite – oder z. B. ordner/seite',
+    scaled: 'Gerendert mit {{width}} px Breite, gezeigt mit {{percent}} %.'
+  },
+  navigationsEditor: {
+    intro: 'Jede Navigation ist ein eigener Eintrag von quartz-navigations. Wähle eine aus, um ihre Art und Optionen einzustellen; wo sie steht, legst du auf der Layout-Bühne fest. Jede Änderung wird sofort gespeichert, und die Vorschau lädt nach dem Neubau von selbst.',
+    listTitle_one: 'Eine Navigation',
+    listTitle_other: '{{count}} Navigationen',
+    add: 'Neue Navigation',
+    addQuestion: 'Welche Art von Navigation? Sie kommt dorthin, wo diese Art üblicherweise steht, und lässt sich auf der Bühne verschieben.',
+    addedAnnounce: 'Navigation „{{variant}}“ angelegt, im Bereich {{position}}.',
+    duplicatedAnnounce: '„{{name}}“ dupliziert.',
+    duplicateNamed: '„{{name}}“ duplizieren',
+    removeConfirm: 'Navigation „{{name}}“ entfernen?\n\nIhr Eintrag mit allen Optionen verschwindet aus der Konfiguration, das Plugin bleibt installiert. Zurück kommt sie nur über einen Snapshot, den du vorher angelegt hast.',
+    removedAnnounce: '„{{name}}“ entfernt.',
+    notPlaced: 'nicht platziert',
+    off: 'aus',
+    panelLabel: 'Einstellungen der Navigation',
+    panelEmptyTitle: 'Keine Navigation gewählt',
+    panelEmptyText: 'Wähle links eine Navigation, um ihre Art und Optionen einzustellen.',
+    enabled: 'Navigation aktiv',
+    variantHeading: 'Art',
+    allOptions: 'Alle Optionen in der Plugin-Liste',
+    optionsHeading: 'Optionen dieser Art',
+    noEffectHeading: 'Ohne Wirkung bei „{{variant}}“',
+    noEffectText: 'Diese Optionen liest das Plugin bei dieser Art nicht. Sie stehen hier, damit ein gesetzter Wert sichtbar bleibt.',
+    notInstalledTitle: 'quartz-navigations ist nicht installiert',
+    notInstalledText: 'Dieser Reiter stellt die Navigationen des Plugins quartz-navigations ein. Installiere es im Marktplatz über „boxi-os/quartz-navigations“.',
+    previewHint: 'Die Website, wie der Dev-Server sie gerade baut. Für „Zurück / Weiter“ eine Inhaltsseite wählen, die Startseite hat keinen Vorgänger.',
+    variants: {
+      tree: { label: 'Baum', text: 'Verschachtelte Liste, alles offen. Für Seitenleisten.' },
+      accordion: { label: 'Akkordeon', text: 'Ordner klappen auf, der Pfad zur Seite ist offen.' },
+      flyout: { label: 'Seitliche Panels', text: 'Ordner öffnen ein Panel daneben.' },
+      bar: { label: 'Leiste', text: 'Erste Ebene in einer Zeile. Kopf oder Fuß.' },
+      dropdown: { label: 'Aufklappmenü', text: 'Zeile, Ordner öffnen ein Panel darunter.' },
+      mega: { label: 'Mega-Menü', text: 'Panel mit der zweiten Ebene als Spalten.' },
+      tabs: { label: 'Reiter', text: 'Erste Ebene als Reiter, Kinder in einer zweiten Zeile.' },
+      columns: { label: 'Spalten', text: 'Überschriften mit Kindern darunter. Sitemap im Fuß.' },
+      select: { label: 'Auswahlliste', text: 'Ein Sprungmenü, Ordner als Gruppen.' },
+      pager: { label: 'Zurück / Weiter', text: 'Vorige und nächste Seite. Unter den Text.' }
     }
   },
   pluginOptions: {

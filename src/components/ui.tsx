@@ -575,10 +575,12 @@ export function SegmentedControl<T extends string>({
   // `badge` ist die Art der Sache, nicht ihr Name - die Zielart neben dem Zielnamen. In der
   // `chips`-Haut steht sie als eigene kleine Fläche in der Pille; in der Leiste ist dafür kein
   // Platz, dort hängt sie in Klammern hinten dran, damit die Angabe nirgends verlorengeht.
-  options: { value: T; label: string; badge?: string }[]
+  options: { value: T; label: string; badge?: string; icon?: LucideIcon; description?: string }[]
   onChange: (value: T) => void
   label: string
-  variant?: 'track' | 'chips'
+  /** `tiles`: a grid of cards with icon and one line of text, for a choice that needs explaining
+   *  before it is made (the navigation variants). Same keys and roles as the other two. */
+  variant?: 'track' | 'chips' | 'tiles'
 }): JSX.Element {
   const segments = useRef<(HTMLButtonElement | null)[]>([])
   // Roving tabindex: the group is one tab stop, not one per option. `Math.max(0, …)` so a value that
@@ -599,6 +601,7 @@ export function SegmentedControl<T extends string>({
   }
 
   const chips = variant === 'chips'
+  const tiles = variant === 'tiles'
   // self-start matters now that pages fill the window: as a flex item, `inline-flex` alone still
   // stretches to the container's full width, which turned this into a 1600px-wide bar.
   return (
@@ -608,7 +611,9 @@ export function SegmentedControl<T extends string>({
       // flex-wrap in beiden Häuten: eine umgebrochene Gruppe ist immer noch eine Gruppe, eine
       // überlaufende lässt Optionen rechts aus der Karte fallen.
       className={
-        chips
+        tiles
+          ? 'grid grid-cols-2 gap-1.5'
+          : chips
           ? 'flex flex-wrap gap-1.5'
           : 'inline-flex w-fit flex-wrap self-start gap-0.5 rounded-[8px] bg-ink/[0.05] p-0.5 dark:bg-ink/10'
       }
@@ -636,7 +641,13 @@ export function SegmentedControl<T extends string>({
             }
           }}
           className={
-            chips
+            tiles
+              ? `flex flex-col items-start gap-0.5 rounded-[7px] border px-2.5 py-2 text-left transition-colors ${
+                  value === option.value
+                    ? 'border-accent bg-accent/[0.06] ring-1 ring-accent'
+                    : 'border-ink/10 bg-surface hover:border-ink/25'
+                }`
+              : chips
               ? `rounded-[7px] border px-2.5 py-1 text-ui font-medium shadow-sm transition-colors ${
                   value === option.value
                     ? 'border-accent bg-accent text-accent-fg'
@@ -649,7 +660,15 @@ export function SegmentedControl<T extends string>({
                 }`
           }
         >
-          {chips ? (
+          {tiles ? (
+            <>
+              <span className="flex items-center gap-1.5 text-ui font-medium text-text">
+                {option.icon && <option.icon size={15} aria-hidden className="shrink-0 text-text-secondary" />}
+                {option.label}
+              </span>
+              {option.description && <span className="text-micro text-text-muted">{option.description}</span>}
+            </>
+          ) : chips ? (
             <span className="flex items-center gap-1.5">
               {option.label}
               {option.badge && (

@@ -993,11 +993,61 @@ export default {
   plugins: {
     tabs: {
       installed: 'Installed',
+      navigations: 'Navigations',
       marketplace: 'Marketplace'
     },
     descriptions: {
       installed: 'Extends Quartz with extra functionality — this is what is active, and where you configure it.',
+      navigations: 'Menus, sidebars and “previous / next” from quartz-navigations: each navigation is an entry of the plugin, with the site beside it.',
       marketplace: 'The plugin catalog of the quartz-community organisation, built-in ones included. Add plugins from anywhere else via “owner/repo”.'
+    }
+  },
+  sitePreview: {
+    title: 'Preview',
+    notRunning: 'The preview shows the real site through the dev server, which is not running.',
+    starting: 'The dev server is starting…',
+    start: 'Start preview',
+    remote: 'The dev server runs through a remote host and cannot be embedded here. Open it on the “Preview & Build” page.',
+    page: 'Page',
+    pagePlaceholder: 'Home page – or e.g. folder/page',
+    scaled: 'Rendered {{width}} px wide, shown at {{percent}}%.'
+  },
+  navigationsEditor: {
+    intro: 'Each navigation is an entry of its own of quartz-navigations. Pick one to set its kind and options; where it stands is set on the layout stage. Every change is saved at once, and the preview reloads by itself after the rebuild.',
+    listTitle_one: 'One navigation',
+    listTitle_other: '{{count}} navigations',
+    add: 'New navigation',
+    addQuestion: 'Which kind of navigation? It goes where that kind usually stands and can be moved on the stage.',
+    addedAnnounce: 'Navigation “{{variant}}” added, in the {{position}} area.',
+    duplicatedAnnounce: '“{{name}}” duplicated.',
+    duplicateNamed: 'Duplicate “{{name}}”',
+    removeConfirm: 'Remove the navigation “{{name}}”?\n\nIts entry and all its options leave the configuration, the plugin stays installed. Only a snapshot taken beforehand brings it back.',
+    removedAnnounce: '“{{name}}” removed.',
+    notPlaced: 'not placed',
+    off: 'off',
+    panelLabel: 'Navigation settings',
+    panelEmptyTitle: 'No navigation selected',
+    panelEmptyText: 'Pick a navigation on the left to set its kind and options.',
+    enabled: 'Navigation active',
+    variantHeading: 'Kind',
+    allOptions: 'All options in the plugin list',
+    optionsHeading: 'Options of this kind',
+    noEffectHeading: 'No effect with “{{variant}}”',
+    noEffectText: 'The plugin does not read these options with this kind. They stand here so a value that is set stays in sight.',
+    notInstalledTitle: 'quartz-navigations is not installed',
+    notInstalledText: 'This tab sets up the navigations of the quartz-navigations plugin. Install it in the marketplace via “boxi-os/quartz-navigations”.',
+    previewHint: 'The site as the dev server is building it. For “previous / next”, pick a content page – the home page has nothing before it.',
+    variants: {
+      tree: { label: 'Tree', text: 'Nested list, all open. For sidebars.' },
+      accordion: { label: 'Accordion', text: 'Folders fold, the path to the page is open.' },
+      flyout: { label: 'Side panels', text: 'Folders open a panel beside them.' },
+      bar: { label: 'Bar', text: 'First level in one row. Header or footer.' },
+      dropdown: { label: 'Dropdown', text: 'A row, folders open a panel below.' },
+      mega: { label: 'Mega menu', text: 'Panel with the second level as columns.' },
+      tabs: { label: 'Tabs', text: 'First level as tabs, children in a second row.' },
+      columns: { label: 'Columns', text: 'Headings with children below. Footer sitemap.' },
+      select: { label: 'Select list', text: 'A jump menu, folders as groups.' },
+      pager: { label: 'Previous / next', text: 'The page before and after. Below the text.' }
     }
   },
   pluginOptions: {

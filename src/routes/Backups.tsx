@@ -1,56 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Camera, FolderClock, Trash2 } from 'lucide-react'
+import { Camera, FolderClock, History, Trash2 } from 'lucide-react'
 import { confirmDialog } from '../utils/confirm'
 import { useProject } from './ProjectLayout'
 import type { BackupEntry, Snapshot, SnapshotFileChange, SnapshotSettings } from '@shared/ipc-contract'
-import { Badge, Button, Card, CardHeading, IconButton, InfoNote, PageHeader, TextInput, Toggle } from '../components/ui'
+import { Badge, Button, Card, CardHeading, DetailLayout, IconButton, InfoNote, PageHeader, SelectableRow, TextInput, Toggle } from '../components/ui'
 import { useAsyncAction } from '../hooks/useAsyncAction'
 import { formatBytes } from '../utils/format'
 import { useStickyState } from '../state/uiState'
 import { TAB_ICONS } from './navConfig'
 import HandbookLink from '../components/HandbookLink'
-
-function SnapshotRow({
-  snapshot,
-  expanded,
-  onToggle,
-  onDelete,
-  deleting,
-  children
-}: {
-  snapshot: Snapshot
-  expanded: boolean
-  onToggle: () => void
-  onDelete: () => void
-  deleting: boolean
-  children?: React.ReactNode
-}): JSX.Element {
-  const { t, i18n } = useTranslation()
-  const when = new Date(snapshot.createdAt).toLocaleString(i18n.language)
-  return (
-    <Card className={expanded ? 'col-span-full' : ''}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge tone={snapshot.kind === 'manual' ? 'green' : 'slate'}>{t(`backups.kinds.${snapshot.kind}`)}</Badge>
-            <span className="text-sm">{when}</span>
-          </div>
-          {snapshot.label && <p className="mt-1 break-words text-sm text-text-secondary">{snapshot.label}</p>}
-        </div>
-        <div className="flex shrink-0 items-center gap-1">
-          <Button variant="ghost" className="whitespace-nowrap" onClick={onToggle}>
-            {expanded ? t('backups.close') : t('backups.compare')}
-          </Button>
-          {/* On the tile rather than inside it: until 2026-09-24 deleting a snapshot meant opening
-              it with "Vergleichen" first, and the red button sat at the bottom of the comparison. */}
-          <IconButton icon={Trash2} title={t('common.deleteNamed', { name: snapshot.label || when })} onClick={onDelete} disabled={deleting} />
-        </div>
-      </div>
-      {children}
-    </Card>
-  )
-}
 
 export default function Backups(): JSX.Element {
   const { t, i18n } = useTranslation()
@@ -178,6 +137,118 @@ export default function Backups(): JSX.Element {
     })
   }
 
+  const whenOf = (snapshot: Snapshot): string => new Date(snapshot.createdAt).toLocaleString(i18n.language)
+
+  const panel = openSnapshot ? (
+    <Card key={openSnapshot.id} className="flex flex-col gap-3">
+      <CardHeading icon={History}>{openSnapshot.label || whenOf(openSnapshot)}</CardHeading>
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge tone={openSnapshot.kind === 'manual' ? 'green' : 'slate'}>{t(`backups.kinds.${openSnapshot.kind}`)}</Badge>
+        {openSnapshot.label && <span className="text-ui text-text-secondary">{whenOf(openSnapshot)}</span>}
+      </div>
+
+      {changes === null && <p className="text-xs text-text-muted">{t('backups.comparing')}</p>}
+      {changes?.length === 0 && <p className="text-xs text-text-muted">{t('backups.identical')}</p>}
+      {/* Genau hier ist der Irrtum entstanden, über den der Alpha-Test stolperte: eine geänderte
+          Notiz im Vault taucht im Vergleich nie auf, und ohne diese Zeile liest sich das als
+          "nichts hat sich geändert". */}
+      {changes !== null && settings?.contentIsSymlink && <p className="text-xs text-text-muted">{t('backups.vaultNotCompared')}</p>}
+      {changes && changes.length > 0 && (
+        <>
+          <p className="text-xs text-text-muted">{t('backups.changeCount', { count: changes.length })}</p>
+          <div className="max-h-80 overflow-y-auto rounded-md border border-ink/[0.06] dark:border-ink/10">
+            {changes.map((change) => (
+              <div
+                key={change.path}
+                className="flex items-center gap-2 border-b border-ink/[0.04] px-2.5 py-1 last:border-b-0 dark:border-ink/5"
+              >
+                <input type="checkbox" checked={selected.has(change.path)} onChange={() => toggleFile(change.path)} aria-label={change.path} />
+                <span className="w-24 shrink-0 text-xs text-text-muted">{t(`backups.status.${change.status}`)}</span>
+                <button
+                  type="button"
+                  className={`min-w-0 flex-1 truncate text-left font-mono text-xs hover:underline ${
+                    fileDiff?.path === change.path ? 'font-semibold' : ''
+                  }`}
+                  onClick={() => fileDiffAction.run(change.path)}
+                  disabled={change.status !== 'modified'}
+                  title={change.path}
+                >
+                  {change.path}
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {fileDiff && (
+            <pre className="max-h-80 overflow-auto rounded-md bg-slate-950 p-3 font-mono text-xs text-slate-200">
+              {fileDiff.text || t('backups.noDiff')}
+            </pre>
+          )}
+
+          {/* Moving the project's own branch back is its own decision, off by default: it
+              rewrites git history rather than files, which is not what pressing "restore" in a
+              backup list means anywhere else. */}
+          {headDiffers && (
+            <div>
+              <Toggle
+                checked={resetHead}
+                onChange={setResetHead}
+                label={t('backups.resetProjectHead', { commit: openSnapshot.projectHead?.slice(0, 7) })}
+              />
+              <p className="mt-1 text-xs text-text-muted">{t('backups.resetProjectHeadHint')}</p>
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => restoreAction.run('all')} disabled={restoreAction.pending}>
+              {t('backups.restoreAll')}
+            </Button>
+            <Button variant="ghost" onClick={() => restoreAction.run('selected')} disabled={restoreAction.pending || selected.size === 0}>
+              {t('backups.restoreSelected', { count: selected.size })}
+            </Button>
+          </div>
+        </>
+      )}
+
+      <div className="flex flex-wrap gap-2 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
+        <Button variant="ghost" onClick={() => exportAction.run(openSnapshot.id)} disabled={exportAction.pending}>
+          {t('backups.export')}
+        </Button>
+      </div>
+    </Card>
+  ) : (
+    <Card className="flex flex-col gap-3">
+      <CardHeading icon={History}>{t('backups.panelEmptyTitle')}</CardHeading>
+      <p className="text-ui text-text-secondary">{t('backups.panelEmptyText')}</p>
+      {snapshots && snapshots.length > 0 && (
+        <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-ui">
+          <dt className="text-text-secondary">{t('backups.summaryCount')}</dt>
+          <dd className="text-text">
+            {t('backups.summaryCountValue', { count: snapshots.length, manual: snapshots.filter((s) => s.kind === 'manual').length })}
+          </dd>
+          <dt className="text-text-secondary">{t('backups.summaryNewest')}</dt>
+          <dd className="text-text">{whenOf(snapshots[0])}</dd>
+          <dt className="text-text-secondary">{t('backups.summaryOldest')}</dt>
+          <dd className="text-text">{whenOf(snapshots[snapshots.length - 1])}</dd>
+          {settings && (
+            <>
+              <dt className="text-text-secondary">{t('backups.summaryContent')}</dt>
+              <dd className="text-text">
+                {!settings.contentExists
+                  ? t('backups.summaryContentMissing')
+                  : settings.contentIsSymlink
+                    ? t('backups.summaryContentVault')
+                    : settings.includeContent
+                      ? t('backups.summaryContentIncluded')
+                      : t('backups.summaryContentExcluded')}
+              </dd>
+            </>
+          )}
+        </dl>
+      )}
+    </Card>
+  )
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -187,204 +258,137 @@ export default function Backups(): JSX.Element {
         description={t('projectLayout.descriptions.backups')}
       />
 
-      {/* Both this page and Git-Sync keep old versions of the project, and nothing said how they
-          differ. They are not alternatives: one is private to this machine, the other is what
-          leaves it. */}
-      <InfoNote>{t('backups.vsGitSync')}</InfoNote>
+      <DetailLayout panelWidth="wide" panel={panel} panelLabel={t('backups.panelLabel')} onDismiss={() => setOpenId(null)}>
 
-      <Card>
-        <CardHeading icon={Camera}>{t('backups.newHeading')}</CardHeading>
-        <p className="mt-1 text-xs text-text-muted">{t('backups.newHint')}</p>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <TextInput
-            value={newLabel}
-            onChange={(e) => setNewLabel(e.target.value)}
-            placeholder={t('backups.labelPlaceholder')}
-            className="w-full max-w-sm"
-          />
-          <Button onClick={() => createAction.run()} disabled={createAction.pending}>
-            {createAction.pending ? t('common.saving') : t('backups.create')}
-          </Button>
-        </div>
+        {/* Both this page and Git-Sync keep old versions of the project, and nothing said how they
+            differ. They are not alternatives: one is private to this machine, the other is what
+            leaves it. */}
+        <InfoNote>{t('backups.vsGitSync')}</InfoNote>
 
-        {settings && (
-          <div className="mt-4 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
-            {/* Bei einem Symlink ist das kein Vorgabewert, sondern eine Tatsache: git folgt keinem
-                Symlink, im Snapshot landet die Verknüpfung statt der Notizen. Der Schalter ist
-                deshalb aus und deaktiviert - lesbar, nicht ausgegraut (siehe CLAUDE.md), und der
-                Satz darunter sagt den Grund. */}
-            <Toggle
-              checked={settings.includeContent}
-              onChange={(checked) => settingsAction.run(checked)}
-              label={t('backups.includeContent')}
-              disabled={settingsAction.pending || !settings.contentExists || settings.contentIsSymlink}
-            />
-            <p className="mt-1 text-xs text-text-muted">
-              {!settings.contentExists
-                ? t('backups.contentMissing')
-                : settings.contentIsSymlink
-                  ? t('backups.contentSymlinkHint')
-                  : t('backups.contentFolderHint')}
-            </p>
-          </div>
-        )}
-      </Card>
-
-      {message && <p className="whitespace-pre-wrap break-words text-sm text-text-secondary">{message}</p>}
-      {error && <p className="whitespace-pre-wrap break-words text-sm text-red-600 dark:text-red-400">{error}</p>}
-
-      {/* A snapshot is a date, a category and two buttons - a full-width row per entry would be
-          almost entirely empty space. The one that is open is the exception: its file list and
-          diff want the whole window. */}
-      <div className="grid grid-cols-1 items-start gap-3 md:grid-cols-2 2xl:grid-cols-3">
-        {snapshots === null && <p className="text-sm text-text-muted">{t('common.loading')}</p>}
-        {snapshots?.length === 0 && <p className="text-sm text-text-muted">{t('backups.none')}</p>}
-        {snapshots?.map((snapshot) => (
-          <SnapshotRow
-            key={snapshot.id}
-            snapshot={snapshot}
-            expanded={openId === snapshot.id}
-            onToggle={() => setOpenId(openId === snapshot.id ? null : snapshot.id)}
-            onDelete={() => deleteAction.run(snapshot.id)}
-            deleting={deleteAction.pending}
-          >
-            {openId === snapshot.id && (
-              <div className="mt-4 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
-                {changes === null && <p className="text-xs text-text-muted">{t('backups.comparing')}</p>}
-                {changes?.length === 0 && <p className="text-xs text-text-muted">{t('backups.identical')}</p>}
-                {/* Genau hier ist der Irrtum entstanden, über den der Alpha-Test stolperte: eine
-                    geänderte Notiz im Vault taucht im Vergleich nie auf, und ohne diese Zeile
-                    liest sich das als "nichts hat sich geändert". */}
-                {changes !== null && settings?.contentIsSymlink && (
-                  <p className="mt-1 text-xs text-text-muted">{t('backups.vaultNotCompared')}</p>
-                )}
-                {changes && changes.length > 0 && (
-                  <>
-                    <p className="mb-2 text-xs text-text-muted">
-                      {t('backups.changeCount', { count: changes.length })}
-                    </p>
-                    <div className="max-h-72 overflow-y-auto rounded-md border border-ink/[0.06] dark:border-ink/10">
-                      {changes.map((change) => (
-                        <div
-                          key={change.path}
-                          className="flex items-center gap-2 border-b border-ink/[0.04] px-2.5 py-1 last:border-b-0 dark:border-ink/5"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selected.has(change.path)}
-                            onChange={() => toggleFile(change.path)}
-                            aria-label={change.path}
-                          />
-                          <span className="w-32 shrink-0 text-xs text-text-muted">
-                            {t(`backups.status.${change.status}`)}
-                          </span>
-                          <button
-                            type="button"
-                            className="min-w-0 flex-1 truncate text-left font-mono text-xs hover:underline"
-                            onClick={() => fileDiffAction.run(change.path)}
-                            disabled={change.status !== 'modified'}
-                          >
-                            {change.path}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-
-                    {fileDiff && (
-                      <pre className="mt-3 max-h-72 overflow-auto rounded-md bg-slate-950 p-3 font-mono text-xs text-slate-200">
-                        {fileDiff.text || t('backups.noDiff')}
-                      </pre>
-                    )}
-
-                    {/* Moving the project's own branch back is its own decision, off by default:
-                        it rewrites git history rather than files, which is not what pressing
-                        "restore" in a backup list means anywhere else. */}
-                    {headDiffers && (
-                      <div className="mt-3">
-                        <Toggle
-                          checked={resetHead}
-                          onChange={setResetHead}
-                          label={t('backups.resetProjectHead', { commit: snapshot.projectHead?.slice(0, 7) })}
-                        />
-                        <p className="mt-1 text-xs text-text-muted">{t('backups.resetProjectHeadHint')}</p>
-                      </div>
-                    )}
-
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <Button onClick={() => restoreAction.run('all')} disabled={restoreAction.pending}>
-                        {t('backups.restoreAll')}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        onClick={() => restoreAction.run('selected')}
-                        disabled={restoreAction.pending || selected.size === 0}
-                      >
-                        {t('backups.restoreSelected', { count: selected.size })}
-                      </Button>
-                    </div>
-                  </>
-                )}
-
-                <div className="mt-3 flex flex-wrap gap-2 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
-                  <Button variant="ghost" onClick={() => exportAction.run(snapshot.id)} disabled={exportAction.pending}>
-                    {t('backups.export')}
-                  </Button>
-                </div>
-              </div>
-            )}
-          </SnapshotRow>
-        ))}
-      </div>
-
-      {/* Not a backup and no longer presented as one: these are the content folders that were
-          moved aside when the content source was switched. Keeping them reachable matters - it is
-          the only way back to a folder the user replaced - but a symlinked vault was never copied
-          here, which is exactly what the old "Backups -> Inhalte" tab implied. */}
-      {contentFolders.length > 0 && (
         <Card>
-          <CardHeading icon={FolderClock}>{t('backups.movedFoldersHeading')}</CardHeading>
-          <p className="mt-1 text-xs text-text-muted">{t('backups.movedFoldersHint')}</p>
-          <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2 2xl:grid-cols-3">
-            {contentFolders.map((entry) => (
-              <div
-                key={entry.id}
-                className="flex items-center justify-between gap-2 rounded-md border border-ink/[0.06] px-2.5 py-1.5 dark:border-ink/10"
-              >
-                {/* A recorded symlink and a real copy of a folder are worlds apart on disk, and
-                    the row now has a delete button - so it says which one this is and what it
-                    costs rather than leaving that to a timestamp. */}
-                <div className="min-w-0">
-                  <p className="truncate text-sm">{new Date(entry.createdAt).toLocaleString(i18n.language)}</p>
-                  <p className="truncate text-xs text-text-muted">
-                    {entry.kind === 'link'
-                      ? t('backups.folderLink', { target: entry.target ?? '?' })
-                      : t('backups.folderSize', {
-                          count: entry.fileCount,
-                          size: formatBytes(entry.sizeBytes, i18n.language)
-                        })}
-                  </p>
-                </div>
-                <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
-                  <Button variant="ghost" onClick={() => restoreFolderAction.run(entry)} disabled={restoreFolderAction.pending}>
-                    {t('backups.restore')}
-                  </Button>
-                  <IconButton
-                    icon={Trash2}
-                    title={t('common.deleteNamed', { name: new Date(entry.createdAt).toLocaleString(i18n.language) })}
-                    onClick={() => deleteFolderAction.run(entry)}
-                    disabled={deleteFolderAction.pending}
-                  />
-                </div>
-              </div>
-            ))}
+          <CardHeading icon={Camera}>{t('backups.newHeading')}</CardHeading>
+          <p className="mt-1 text-xs text-text-muted">{t('backups.newHint')}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <TextInput
+              value={newLabel}
+              onChange={(e) => setNewLabel(e.target.value)}
+              placeholder={t('backups.labelPlaceholder')}
+              className="w-full max-w-sm"
+            />
+            <Button onClick={() => createAction.run()} disabled={createAction.pending}>
+              {createAction.pending ? t('common.saving') : t('backups.create')}
+            </Button>
           </div>
-          {(restoreFolderAction.error ?? deleteFolderAction.error) && (
-            <p className="mt-2 whitespace-pre-wrap break-words text-sm text-red-600 dark:text-red-400">
-              {restoreFolderAction.error ?? deleteFolderAction.error}
-            </p>
+
+          {settings && (
+            <div className="mt-4 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
+              {/* Bei einem Symlink ist das kein Vorgabewert, sondern eine Tatsache: git folgt keinem
+                  Symlink, im Snapshot landet die Verknüpfung statt der Notizen. Der Schalter ist
+                  deshalb aus und deaktiviert - lesbar, nicht ausgegraut (siehe CLAUDE.md), und der
+                  Satz darunter sagt den Grund. */}
+              <Toggle
+                checked={settings.includeContent}
+                onChange={(checked) => settingsAction.run(checked)}
+                label={t('backups.includeContent')}
+                disabled={settingsAction.pending || !settings.contentExists || settings.contentIsSymlink}
+              />
+              <p className="mt-1 text-xs text-text-muted">
+                {!settings.contentExists
+                  ? t('backups.contentMissing')
+                  : settings.contentIsSymlink
+                    ? t('backups.contentSymlinkHint')
+                    : t('backups.contentFolderHint')}
+              </p>
+            </div>
           )}
         </Card>
-      )}
+
+        {message && <p className="whitespace-pre-wrap break-words text-sm text-text-secondary">{message}</p>}
+        {error && <p className="whitespace-pre-wrap break-words text-sm text-red-600 dark:text-red-400">{error}</p>}
+
+        <Card className="flex flex-col gap-3">
+          <CardHeading icon={History}>{t('backups.listTitle', { count: snapshots?.length ?? 0 })}</CardHeading>
+          {snapshots === null && <p className="text-sm text-text-muted">{t('common.loading')}</p>}
+          {snapshots?.length === 0 && <p className="text-sm text-text-muted">{t('backups.none')}</p>}
+          {!!snapshots?.length && (
+            <ul className="flex flex-col gap-1.5">
+              {snapshots.map((snapshot) => {
+                const when = whenOf(snapshot)
+                return (
+                  <SelectableRow
+                    key={snapshot.id}
+                    selected={openId === snapshot.id}
+                    onSelect={() => setOpenId(snapshot.id)}
+                    title={snapshot.label || when}
+                    subtitle={snapshot.label ? when : undefined}
+                    trailing={
+                      <>
+                        <Badge tone={snapshot.kind === 'manual' ? 'green' : 'slate'}>{t(`backups.kinds.${snapshot.kind}`)}</Badge>
+                        <IconButton
+                          icon={Trash2}
+                          title={t('common.deleteNamed', { name: snapshot.label || when })}
+                          onClick={() => deleteAction.run(snapshot.id)}
+                          disabled={deleteAction.pending}
+                        />
+                      </>
+                    }
+                  />
+                )
+              })}
+            </ul>
+          )}
+        </Card>
+
+        {/* Not a backup and no longer presented as one: these are the content folders that were
+            moved aside when the content source was switched. Keeping them reachable matters - it is
+            the only way back to a folder the user replaced - but a symlinked vault was never copied
+            here, which is exactly what the old "Backups -> Inhalte" tab implied. */}
+        {contentFolders.length > 0 && (
+          <Card>
+            <CardHeading icon={FolderClock}>{t('backups.movedFoldersHeading')}</CardHeading>
+            <p className="mt-1 text-xs text-text-muted">{t('backups.movedFoldersHint')}</p>
+            <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2 2xl:grid-cols-3">
+              {contentFolders.map((entry) => (
+                <div
+                  key={entry.id}
+                  className="flex items-center justify-between gap-2 rounded-md border border-ink/[0.06] px-2.5 py-1.5 dark:border-ink/10"
+                >
+                  {/* A recorded symlink and a real copy of a folder are worlds apart on disk, and
+                      the row now has a delete button - so it says which one this is and what it
+                      costs rather than leaving that to a timestamp. */}
+                  <div className="min-w-0">
+                    <p className="truncate text-sm">{new Date(entry.createdAt).toLocaleString(i18n.language)}</p>
+                    <p className="truncate text-xs text-text-muted">
+                      {entry.kind === 'link'
+                        ? t('backups.folderLink', { target: entry.target ?? '?' })
+                        : t('backups.folderSize', {
+                            count: entry.fileCount,
+                            size: formatBytes(entry.sizeBytes, i18n.language)
+                          })}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
+                    <Button variant="ghost" onClick={() => restoreFolderAction.run(entry)} disabled={restoreFolderAction.pending}>
+                      {t('backups.restore')}
+                    </Button>
+                    <IconButton
+                      icon={Trash2}
+                      title={t('common.deleteNamed', { name: new Date(entry.createdAt).toLocaleString(i18n.language) })}
+                      onClick={() => deleteFolderAction.run(entry)}
+                      disabled={deleteFolderAction.pending}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            {(restoreFolderAction.error ?? deleteFolderAction.error) && (
+              <p className="mt-2 whitespace-pre-wrap break-words text-sm text-red-600 dark:text-red-400">
+                {restoreFolderAction.error ?? deleteFolderAction.error}
+              </p>
+            )}
+          </Card>
+        )}
+      </DetailLayout>
     </div>
   )
 }

@@ -1152,3 +1152,58 @@ export function DetailLayout({
     </div>
   )
 }
+
+/**
+ * One entry of the list beside a DetailLayout panel: the name is the button that selects it (so
+ * the row is reachable by Tab and says `aria-pressed`), a click anywhere else on the row that is
+ * not a control selects it too, and `data-selectable` keeps that click from counting as one on the
+ * empty board. `trailing` holds the badges and the row's own buttons - the trash can.
+ */
+export function SelectableRow({
+  selected,
+  onSelect,
+  title,
+  subtitle,
+  leading,
+  trailing,
+  dimmed = false
+}: {
+  selected: boolean
+  onSelect: () => void
+  title: ReactNode
+  subtitle?: ReactNode
+  leading?: ReactNode
+  trailing?: ReactNode
+  /** An entry that is there but off: its name is muted, not the whole row. */
+  dimmed?: boolean
+}): JSX.Element {
+  return (
+    <li
+      data-selectable
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest('button, a, input, label')) return
+        // The focus goes where a click on the name would have put it: left on <body>, Escape
+        // never reaches the DetailLayout and the selection cannot be let go of by key.
+        e.currentTarget.querySelector<HTMLElement>('button[aria-pressed]')?.focus()
+        onSelect()
+      }}
+      className={`flex items-center gap-3 rounded-md border px-3 py-2 ${
+        selected ? 'border-transparent outline outline-2 outline-blue-500' : 'border-ink/10 dark:border-ink/10'
+      }`}
+    >
+      {leading}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <button
+          type="button"
+          aria-pressed={selected}
+          onClick={onSelect}
+          className={`truncate text-left text-ui font-medium hover:underline ${dimmed ? 'text-text-muted' : 'text-text'}`}
+        >
+          {title}
+        </button>
+        {subtitle && <span className="truncate text-micro text-text-muted">{subtitle}</span>}
+      </div>
+      {trailing}
+    </li>
+  )
+}

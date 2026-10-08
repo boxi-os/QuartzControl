@@ -12,14 +12,25 @@ import { UnsavedBadge, useUnsavedChanges } from '../../state/unsavedGuard'
 import { TAB_ICONS } from '../navConfig'
 import GlobalBoard from './GlobalBoard'
 import FrameBuilder from './FrameBuilder'
+import PageTypeOverview from './PageTypeOverview'
+import { componentRef } from './utils'
 import HandbookLink from '../../components/HandbookLink'
 
 // Ein Kapitel je Frage: was erscheint wo (die Bühne, mit den Seitentypen seit 1.1), und wie ist die
-// Seite aufgeteilt (die eigenen Frames).
-const HANDBOOK = { global: 'layoutGlobal', frames: 'layoutFrames' } as const
+// Seite aufgeteilt (die eigenen Frames). Die Übersicht vergleicht die Seitentypen und gehört damit
+// zum Kapitel der Bühne.
+const HANDBOOK = { overview: 'layoutGlobal', global: 'layoutGlobal', frames: 'layoutFrames' } as const
 
-type Tab = 'global' | 'frames'
-const TAB_ORDER: Tab[] = ['global', 'frames']
+// The three levels of a layout, in the order they are read: how the page types differ (overview),
+// which component sits where (the stage, still called 'global' in the URL), how a page is divided
+// (frames). The stage stays the default - it is where the work is done.
+type Tab = 'overview' | 'global' | 'frames'
+const TAB_ORDER: Tab[] = ['overview', 'global', 'frames']
+const TAB_LABELS: Record<Tab, string> = {
+  overview: 'layoutEditor.tabOverview',
+  global: 'layoutEditor.tabGlobal',
+  frames: 'layoutEditor.tabFrames'
+}
 // The page types were a tab of their own until 1.1 and are the stage's selector now. A link or a
 // remembered tab that still says so opens the stage rather than nothing.
 const RETIRED_TABS = ['pagetypes']
@@ -119,21 +130,56 @@ export default function LayoutEditor(): JSX.Element {
   // file, and a draft of another frame with unsaved changes would otherwise be thrown away by a
   // click that only meant to look somewhere else.
   const { pathname } = useLocation()
+  // The draft the frame builder still holds, when it holds unsaved changes - compared with what it
+  // was opened as (FrameBuilder's `baseline`), or with the file for a draft from before that.
+  function dirtyDraft(): GridFrameDefinition | null {
+    const open = peekStickyState<GridFrameDefinition | null>(pathname, 'frames.editing') ?? null
+    if (!open) return null
+    const baseline = peekStickyState<string | null>(pathname, 'frames.baseline') ?? null
+    if (baseline !== null) return baseline !== JSON.stringify(open) ? open : null
+    const saved = customFrames.find((f) => f.id === open.id)
+    return !saved || JSON.stringify(saved) !== JSON.stringify(open) ? open : null
+  }
+  function primeFrame(frame: GridFrameDefinition | null): void {
+    primeStickyState(pathname, 'frames.editing', frame)
+    primeStickyState(pathname, 'frames.baseline', frame ? JSON.stringify(frame) : null)
+    primeStickyState(pathname, 'frames.isNewDraft', false)
+    primeStickyState(pathname, 'frames.standardChosen', frame === null)
+    primeStickyState(pathname, 'frames.selectedArea', null)
+  }
   function editFrame(frame: GridFrameDefinition, breakpoint: FrameBreakpoint): void {
     const open = peekStickyState<GridFrameDefinition | null>(pathname, 'frames.editing') ?? null
-    const saved = open && customFrames.find((f) => f.id === open.id)
-    const openIsDirty = !!open && open.id !== frame.id && (!saved || JSON.stringify(saved) !== JSON.stringify(open))
-    if (openIsDirty) {
-      announce(t('layoutEditor.stage.otherDraftOpen', { name: open.frameName }))
+    const dirty = dirtyDraft()
+    if (dirty && dirty.id !== frame.id) {
+      announce(t('layoutEditor.stage.otherDraftOpen', { name: dirty.frameName }))
     } else {
-      if (open?.id !== frame.id) {
-        primeStickyState(pathname, 'frames.editing', frame)
-        primeStickyState(pathname, 'frames.isNewDraft', false)
-        primeStickyState(pathname, 'frames.selectedArea', null)
-      }
+      if (open?.id !== frame.id) primeFrame(frame)
       primeStickyState(pathname, 'frames.breakpoint', breakpoint)
     }
     goToTab('frames')
+  }
+
+  // From the overview: a frame by name - an own one, or "default" for Quartz's, which the frame
+  // builder shows read-only. The same rule as editFrame about a draft with unsaved changes.
+  function openFrameByName(name: string): void {
+    if (name !== 'default') {
+      const frame = customFrames.find((f) => f.frameName === name)
+      if (frame) editFrame(frame, 'desktop')
+      return
+    }
+    const dirty = dirtyDraft()
+    if (dirty) announce(t('layoutEditor.stage.otherDraftOpen', { name: dirty.frameName }))
+    else primeFrame(null)
+    goToTab('frames')
+  }
+
+  // From the overview: the stage on a page type (null: all pages), with a component selected when
+  // the click was on one. The board is not mounted while the overview is, so it reads these once.
+  function openPageType(pageType: string | null, componentIndex?: number): void {
+    if (!config) return
+    primeStickyState(pathname, 'layout.pageType', pageType)
+    primeStickyState(pathname, 'layout.selected', componentIndex === undefined ? null : componentRef(config.plugins, componentIndex))
+    goToTab('global')
   }
 
   // Read by save() after it has let a pending field commit - the closure's `config` is the one from
@@ -238,12 +284,19 @@ export default function LayoutEditor(): JSX.Element {
           label={t('common.viewSwitcher')}
           value={tab}
           onChange={goToTab}
-          options={TAB_ORDER.map((key) => ({
-            value: key,
-            label: t(key === 'global' ? 'layoutEditor.tabGlobal' : 'layoutEditor.tabFrames')
-          }))}
+          options={TAB_ORDER.map((key) => ({ value: key, label: t(TAB_LABELS[key]) }))}
         />
       </div>
+
+      {tab === 'overview' && (
+        <PageTypeOverview
+          config={config}
+          frames={customFrames}
+          builtinPageTypeFrames={builtinPageTypeFrames}
+          onOpenPageType={openPageType}
+          onOpenFrame={openFrameByName}
+        />
+      )}
 
       {tab === 'global' && (
         <GlobalBoard

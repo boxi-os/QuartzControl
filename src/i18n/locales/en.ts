@@ -1228,8 +1228,9 @@ export default {
   layoutEditor: {
     title: 'Layout Editor',
     templateCustomPlaceholder: 'e.g. Home page with sidebar',
-    tabGlobal: 'Global',
-    tabFrames: 'Custom frames',
+    tabOverview: 'Overview',
+    tabGlobal: 'Components',
+    tabFrames: 'Frames',
     loading: 'Loading layout…',
     emptySlot: 'Empty — drag here',
     breakpoints: {
@@ -1283,11 +1284,24 @@ export default {
       'This page type automatically uses the “{{frame}}” frame from its plugin. Only the plugin knows how that frame is built, so there is no preview here.',
     frameBuilder: {
       whatIsAFrame:
-        'A frame is a page’s grid: it decides which areas exist — header, sidebars, content, footer —, where they sit and how wide they are. What appears inside those areas is set on the “Global” tab; which page type uses which frame, on the “Page types” tab. Quartz ships three frames (Default, Full width, Minimal). Here you build your own.',
-      description: 'This project’s own frames.',
+        'A frame is a page’s grid: which areas exist — header, sidebars, content, footer —, where they sit and how wide they are. What appears in those areas is set on the “Components” tab, and that is also where each page type picks its frame.',
       newFrame: 'New frame',
-      none: 'No custom frames created yet.',
-      gridSummary: '{{rows}}×{{cols}} grid, {{areas}} area(s)',
+      newEmptyFrame: 'Create an empty frame',
+      frameLabel: 'Frame',
+      standardOption: 'Quartz default (view only)',
+      ownFrames: 'Own frames',
+      newDraftOption: '{{name}} (new, not saved)',
+      unnamed: 'Unnamed',
+      duplicate: 'Duplicate',
+      duplicated: 'Copy “{{name}}” created. It is written when you save.',
+      standardTitle: 'Quartz default',
+      standardText:
+        'This is how Quartz divides a page while no frame of your own is chosen: sidebars left and right, with the header, content and footer between them. It switches at Quartz’s own widths (1200 / 800 px).',
+      standardCopyHint:
+        'A copy follows your breakpoints. Its sidebars behave like any other area: they do not stick, and they do not turn into a row on narrow widths.',
+      customizeStandard: 'Customize as your own frame',
+      discardConfirm: 'Discard unsaved changes to “{{name}}”?\n\nThe frame stays as it was last saved.',
+      discardConfirmAction: 'Discard changes',
       frameName: 'Frame name',
       rows: 'Rows',
       cols: 'Columns',
@@ -1311,7 +1325,6 @@ export default {
       boxHintNoMaxWidth:
         'Applies to this breakpoint only. Without a maximum width the frame uses the full window width. Alignment needs a maximum width to do anything — before that there is nothing left to distribute.',
       saved: 'Saved',
-      closeEditor: 'Close editor',
       resetTracks: 'Reset track sizes',
       columnSizesLabel: 'Column widths (blank = 1fr)',
       rowSizesLabel: 'Row heights (blank = auto)',
@@ -1350,9 +1363,9 @@ export default {
       ownGroupShort: 'own',
       hiddenShort: 'hidden',
       ownGroupHint:
-        'Shows only the components dragged here on the “Global” tab. Without it the area shows everything else the slot holds.',
+        'Shows only the components dragged here on the “Components” tab. Without it the area shows everything else the slot holds.',
       ownGroupRenamed:
-        'Holds the group “{{group}}”. Renaming the area leaves the group name alone, so the components assigned on the “Global” tab stay here.',
+        'Holds the group “{{group}}”. Renaming the area leaves the group name alone, so the components assigned on the “Components” tab stay here.',
       rowSpanLabel: 'Row span',
       colSpanLabel: 'Column span',
       removeArea: 'Remove area',
@@ -1390,7 +1403,6 @@ export default {
       areaGroupCollision:
         'Two areas on the same slot hold the group “{{names}}”. Both would show the same components, so they would appear twice on every page.',
       nameCollision: 'This name is already taken (a built-in frame, or another custom one).',
-      deleteFrame: 'Delete this frame',
       deleteConfirmAction: 'Delete frame',
       deleteConfirm: 'Really delete frame “{{name}}”? Page types using it fall back to the default frame.',
       preview: {
@@ -1442,7 +1454,7 @@ export default {
       otherDraftOpen: 'The frame editor still has “{{name}}” open with unsaved changes. Save or close it before opening another frame.'
     },
     summary: {
-      title: 'Overview',
+      title: 'Summary',
       frame: 'Frame',
       frameAllPages: 'Each page type picks its own; the one drawn is that of content pages.',
       frameFrom: {
@@ -1454,6 +1466,22 @@ export default {
       notInFrame: 'This frame has no area for it — what is placed here does not appear.',
       parked_one: '{{count}} component is switched off and lies in the tray.',
       parked_other: '{{count}} components are switched off and lie in the tray.'
+    },
+    overview: {
+      title: 'Page types compared',
+      intro:
+        'You place components once, for all pages. Each page type picks its frame and can hide single components or whole areas; the frame decides which areas exist at all. The table shows, per page type, only what differs.',
+      framePerType: 'per page type',
+      frameFrom: {
+        override: 'chosen',
+        plugin: 'from the plugin',
+        default: 'default'
+      },
+      same: 'as all',
+      without: 'without',
+      cleared: 'cleared',
+      notInFrame: 'no area in the frame',
+      unknown: 'unknown (plugin’s frame)'
     },
     inspector: {
       title: 'Component',

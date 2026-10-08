@@ -1233,8 +1233,9 @@ export default {
   layoutEditor: {
     title: 'Layout-Editor',
     templateCustomPlaceholder: 'z. B. Startseite mit Seitenleiste',
-    tabGlobal: 'Global',
-    tabFrames: 'Eigene Frames',
+    tabOverview: 'Übersicht',
+    tabGlobal: 'Komponenten',
+    tabFrames: 'Frames',
     loading: 'Lade Layout…',
     emptySlot: 'Leer — hierher ziehen',
     breakpoints: {
@@ -1288,11 +1289,24 @@ export default {
       'Dieser Seitentyp benutzt automatisch das Frame „{{frame}}“ aus dem zugehörigen Plugin. Wie es aufgebaut ist, weiß nur das Plugin selbst — deshalb gibt es hier keine Vorschau.',
     frameBuilder: {
       whatIsAFrame:
-        'Ein Frame ist das Raster einer Seite: Es legt fest, welche Bereiche es gibt — Kopfbereich, Seitenleisten, Inhalt, Fußzeile —, wo sie liegen und wie breit sie sind. Was in diesen Bereichen erscheint, entscheidest du im Tab „Global“; welcher Seitentyp welchen Frame benutzt, im Tab „Seitentypen“. Quartz bringt drei Frames mit (Standard, Volle Breite, Minimal). Hier baust du eigene.',
-      description: 'Die eigenen Frames dieses Projekts.',
-      newFrame: 'Neuer Frame',
-      none: 'Noch keine eigenen Frames erstellt.',
-      gridSummary: '{{rows}}×{{cols}}-Raster, {{areas}} Bereich(e)',
+        'Ein Frame ist das Raster einer Seite: welche Bereiche es gibt — Kopfbereich, Seitenleisten, Inhalt, Fußzeile —, wo sie liegen und wie breit sie sind. Was in den Bereichen erscheint, legst du im Reiter „Komponenten“ fest, und dort wählst du auch je Seitentyp das Frame.',
+      newFrame: 'Neues Frame',
+      newEmptyFrame: 'Leeres Frame anlegen',
+      frameLabel: 'Frame',
+      standardOption: 'Quartz-Standard (nur ansehen)',
+      ownFrames: 'Eigene Frames',
+      newDraftOption: '{{name}} (neu, nicht gespeichert)',
+      unnamed: 'Ohne Namen',
+      duplicate: 'Duplizieren',
+      duplicated: 'Kopie „{{name}}“ angelegt. Sie wird erst beim Speichern geschrieben.',
+      standardTitle: 'Quartz-Standard',
+      standardText:
+        'So teilt Quartz eine Seite auf, solange kein eigenes Frame gewählt ist: Seitenleisten links und rechts, dazwischen Kopfbereich, Inhalt und Fußzeile. Es schaltet bei Quartz’ eigenen Breiten um (1200 / 800 px).',
+      standardCopyHint:
+        'Eine Kopie folgt deinen Breakpoints. Die Seitenleisten verhalten sich darin wie jeder andere Bereich: Sie kleben nicht und werden auf schmalen Breiten nicht zur Zeile.',
+      customizeStandard: 'Als eigenes Frame anpassen',
+      discardConfirm: 'Ungespeicherte Änderungen an „{{name}}“ verwerfen?\n\nDas Frame bleibt, wie es zuletzt gespeichert wurde.',
+      discardConfirmAction: 'Änderungen verwerfen',
       frameName: 'Frame-Name',
       rows: 'Zeilen',
       cols: 'Spalten',
@@ -1316,7 +1330,6 @@ export default {
       boxHintNoMaxWidth:
         'Gilt nur für diesen Breakpoint. Ohne Maximalbreite nutzt der Rahmen die volle Fensterbreite. Die Ausrichtung wirkt erst mit einer Maximalbreite — vorher bleibt nichts zu verteilen.',
       saved: 'Gespeichert',
-      closeEditor: 'Editor schließen',
       resetTracks: 'Spurgrößen zurücksetzen',
       columnSizesLabel: 'Spaltenbreiten (leer = 1fr)',
       rowSizesLabel: 'Zeilenhöhen (leer = auto)',
@@ -1355,9 +1368,9 @@ export default {
       ownGroupShort: 'eigen',
       hiddenShort: 'ausgeblendet',
       ownGroupHint:
-        'Zeigt nur die Komponenten, die im Reiter „Global“ hierher gezogen werden. Ohne das zeigt der Bereich alles, was die Belegung sonst noch hat.',
+        'Zeigt nur die Komponenten, die im Reiter „Komponenten“ hierher gezogen werden. Ohne das zeigt der Bereich alles, was die Belegung sonst noch hat.',
       ownGroupRenamed:
-        'Hält die Gruppe „{{group}}“. Beim Umbenennen bleibt der Gruppenname stehen, damit die im Reiter „Global“ zugeordneten Komponenten hier bleiben.',
+        'Hält die Gruppe „{{group}}“. Beim Umbenennen bleibt der Gruppenname stehen, damit die im Reiter „Komponenten“ zugeordneten Komponenten hier bleiben.',
       rowSpanLabel: 'Zeilen-Spanne',
       colSpanLabel: 'Spalten-Spanne',
       removeArea: 'Bereich löschen',
@@ -1395,7 +1408,6 @@ export default {
       areaGroupCollision:
         'Zwei Bereiche derselben Belegung halten die Gruppe „{{names}}“. Beide zeigten dann dieselben Komponenten, also doppelt auf jeder Seite.',
       nameCollision: 'Dieser Name ist bereits vergeben (ein eingebautes Frame oder ein anderes eigenes).',
-      deleteFrame: 'Diesen Frame löschen',
       deleteConfirmAction: 'Frame löschen',
       deleteConfirm: 'Frame „{{name}}“ wirklich löschen? Seitentypen, die ihn benutzen, fallen dann auf das Standard-Frame zurück.',
       preview: {
@@ -1447,7 +1459,7 @@ export default {
       otherDraftOpen: 'Im Frame-Editor ist noch „{{name}}“ mit ungespeicherten Änderungen offen. Speichere oder schließe es, bevor du ein anderes Frame öffnest.'
     },
     summary: {
-      title: 'Übersicht',
+      title: 'Zusammenfassung',
       frame: 'Frame',
       frameAllPages: 'Jeder Seitentyp wählt sein eigenes; gezeichnet ist das der Inhaltsseiten.',
       frameFrom: {
@@ -1459,6 +1471,22 @@ export default {
       notInFrame: 'Dieses Frame hat dafür keinen Bereich — was hier steht, erscheint nicht.',
       parked_one: '{{count}} Komponente ist ausgeschaltet und liegt im Vorrat.',
       parked_other: '{{count}} Komponenten sind ausgeschaltet und liegen im Vorrat.'
+    },
+    overview: {
+      title: 'Seitentypen im Vergleich',
+      intro:
+        'Komponenten platzierst du einmal, für alle Seiten. Jeder Seitentyp wählt sein Frame und kann einzelne Komponenten oder ganze Bereiche ausblenden; das Frame entscheidet, welche Bereiche es überhaupt gibt. Die Tabelle zeigt je Seitentyp nur, was davon abweicht.',
+      framePerType: 'je Seitentyp',
+      frameFrom: {
+        override: 'gewählt',
+        plugin: 'vom Plugin',
+        default: 'Vorgabe'
+      },
+      same: 'wie alle',
+      without: 'ohne',
+      cleared: 'geleert',
+      notInFrame: 'kein Bereich im Frame',
+      unknown: 'unbekannt (Frame des Plugins)'
     },
     inspector: {
       title: 'Komponente',

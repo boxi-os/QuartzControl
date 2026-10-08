@@ -67,8 +67,8 @@ export const SCENES = [
     // Zeiger und den Zielen darunter. @dnd-kit startet erst nach 4 px (PointerSensor distance),
     // deshalb die Bewegung in Schritten statt in einem Sprung.
     name: 'frame-editor-ziehen',
+    // Kein Klick davor: Seit 1.1 öffnet der Reiter gleich das erste eigene Frame.
     route: '/layout?tab=frames',
-    click: 'common.edit',
     wait: 1500,
     act: async (page, t) => {
       const handle = page.getByRole('button', { name: labelPattern(t('layoutEditor.frameBuilder.placeArea')) }).first()
@@ -94,18 +94,11 @@ export const SCENES = [
       await page.waitForTimeout(600)
       return true
     },
-    after: async (page, t) => {
+    after: async (page) => {
       // Escape statt Loslassen: Ein Loslassen würde den Bereich wirklich platzieren, und der
       // Editor stünde mit einer ungespeicherten Änderung da. @dnd-kit bricht auf Escape ab.
       await page.keyboard.press('Escape')
       await page.mouse.up()
-      await page.waitForTimeout(400)
-      // Der offene Frame-Editor überlebt einen Routenwechsel (sticky per Pathname), und die
-      // nächste Szene auf dieser Route fände ihre Knöpfe sonst nicht.
-      await page
-        .getByRole('button', { name: t('layoutEditor.frameBuilder.closeEditor'), exact: true })
-        .click({ timeout: 3000 })
-        .catch(() => {})
       await page.waitForTimeout(400)
     },
     caption: 'Ein Bereich wird auf eine freie Zelle gezogen; dasselbe geht mit der Tastatur.'
@@ -171,13 +164,16 @@ export async function captureScenes(ctx) {
     // Die Beschriftung kommt aus der Sprachdatei, nicht aus dieser Datei: Sie stand hier zehnmal
     // auf Deutsch, und auf einer englischen App fand das Skript deshalb nichts - gemessen am
     // 2026-09-08 an 65 englischen Bildern im Handbuch-Vault, die alle deutsch waren.
-    const label = t(scene.click)
-    const button = page.getByRole('button', { name: label, exact: true }).first()
-    try {
-      await button.click({ timeout: 8000 })
-    } catch {
-      console.log(`  ✗ ${scene.name}: „${label}" nicht gefunden`)
-      continue
+    // Eine Szene ohne `click` zeigt die Route so, wie sie aufgeht.
+    if (scene.click) {
+      const label = t(scene.click)
+      const button = page.getByRole('button', { name: label, exact: true }).first()
+      try {
+        await button.click({ timeout: 8000 })
+      } catch {
+        console.log(`  ✗ ${scene.name}: „${label}" nicht gefunden`)
+        continue
+      }
     }
     await page.waitForTimeout(scene.wait ?? 900)
 

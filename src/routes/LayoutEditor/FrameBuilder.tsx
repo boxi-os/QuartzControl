@@ -17,7 +17,7 @@ import {
   type DragStartEvent
 } from '@dnd-kit/core'
 import { confirmDialog } from '../../utils/confirm'
-import { GripVertical, LayoutGrid, SlidersHorizontal, Trash2 } from 'lucide-react'
+import { Copy, GripVertical, LayoutGrid, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
 import type {
   FrameAlign,
   FrameBreakpoint,
@@ -52,6 +52,8 @@ import DevServerRestartHint from '../../components/DevServerRestartHint'
 import { breakpointRangeLabel } from './utils'
 import { STAGE_REFERENCE_WIDTH, stageFrame } from './stageGeometry'
 import FrameBreakpoints from './FrameBreakpoints'
+import FramePreview from './FramePreview'
+import { quartzDefaultFrame } from './defaultFrame'
 import { useStickyState } from '../../state/uiState'
 import { announce } from '../../state/announcer'
 import { useDndAccessibility } from '../../utils/dndAnnouncements'
@@ -60,6 +62,8 @@ import { nearestDroppableCoordinatesFrom } from '../../utils/dndKeyboard'
 const RESERVED_FRAME_NAMES = ['default', 'full-width', 'minimal']
 const SLOTS: FrameSlot[] = ['header', 'left', 'right', 'beforeBody', 'pageBody', 'afterBody', 'footer']
 const ALIGNMENTS: FrameAlign[] = ['left', 'center', 'right']
+// The frame select's entry for Quartz's standard frame - no id a frame of the project can have.
+const STANDARD_VALUE = '__quartz-standard__'
 
 function slugify(text: string): string {
   return (
@@ -426,29 +430,98 @@ export default function FrameBuilder({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeBreakpoint])
 
-  function startNewFrame(): void {
-    setEditing(emptyDraft())
-    setIsNewDraft(true)
-    setActiveBreakpoint('desktop')
-    setSelectedAreaId(null)
-    setMessage(null)
-    setSavedSnapshot(null)
-  }
+  // Since 1.1 the tab has no list in front of the editor: the frame is chosen in the editor's head,
+  // and "nothing open" is Quartz's standard frame, drawn read-only (FramePreview). Opening the tab
+  // opens the first own frame - unless the standard frame was the last thing chosen here, which is
+  // what this remembers.
+  const [standardChosen, setStandardChosen] = useStickyState('frames.standardChosen', false)
+  // The draft as it was opened or last saved, serialized - what "would switching lose something"
+  // compares against. Sticky with the draft, and primed with it by the stage's "Frame bearbeiten"
+  // (LayoutEditor/index.tsx). Null for a draft from before this existed: then the file is asked.
+  const [baseline, setBaseline] = useStickyState<string | null>('frames.baseline', null)
 
-  function startEditFrame(def: GridFrameDefinition): void {
+  function open(def: GridFrameDefinition | null, isNew: boolean): void {
     setEditing(def)
-    setIsNewDraft(false)
+    setIsNewDraft(isNew)
+    setBaseline(def ? JSON.stringify(def) : null)
+    setStandardChosen(def === null)
     setActiveBreakpoint('desktop')
-    setSelectedAreaId(null)
-    setMessage(null)
-    setSavedSnapshot(null)
-  }
-
-  function closeEditor(): void {
-    setEditing(null)
     setSelectedAreaId(null)
     setDragAreaId(null)
+    setMessage(null)
+    setSavedSnapshot(null)
   }
+
+  function draftIsDirty(): boolean {
+    if (!editing) return false
+    if (baseline !== null) return baseline !== JSON.stringify(editing)
+    const saved = (frames ?? []).find((f) => f.id === editing.id)
+    return !saved || JSON.stringify(saved) !== JSON.stringify(editing)
+  }
+
+  // Every way away from the open draft asks first when it holds something unsaved - until 1.1 the
+  // one way was "Editor schließen", which threw the draft away without a word.
+  async function leaveDraft(): Promise<boolean> {
+    if (!editing || !draftIsDirty()) return true
+    return confirmDialog({
+      text: t('layoutEditor.frameBuilder.discardConfirm', { name: editing.frameName || t('layoutEditor.frameBuilder.unnamed') }),
+      confirmLabel: t('layoutEditor.frameBuilder.discardConfirmAction'),
+      danger: true
+    })
+  }
+
+  // A name nobody has: the reserved three, the project's frames and the open draft are taken.
+  function freeName(base: string): string {
+    const taken = new Set([...RESERVED_FRAME_NAMES, ...(frames ?? []).map((f) => f.frameName)])
+    if (!taken.has(base)) return base
+    let n = 2
+    while (taken.has(`${base}-${n}`)) n++
+    return `${base}-${n}`
+  }
+
+  async function startNewFrame(): Promise<void> {
+    if (await leaveDraft()) open(emptyDraft(), true)
+  }
+
+  async function startEditFrame(def: GridFrameDefinition): Promise<void> {
+    if (await leaveDraft()) open(def, false)
+  }
+
+  async function showStandard(): Promise<void> {
+    if (await leaveDraft()) open(null, false)
+  }
+
+  // The standard frame as a draft of the project's own, which is the way in for anyone who wants
+  // Quartz's layout with one thing changed. Nothing is written until Save.
+  async function customizeStandard(): Promise<void> {
+    if (await leaveDraft()) open(quartzDefaultFrame(freeName('standard')), true)
+  }
+
+  // A copy of what the editor shows, unsaved changes included - they are what is in front of the
+  // user. The original stays as it is on disk.
+  function duplicateFrame(): void {
+    if (!editing) return
+    const copy: GridFrameDefinition = {
+      ...structuredClone(editing),
+      id: `frame-${Date.now()}`,
+      frameName: freeName(`${editing.frameName || 'frame'}-kopie`)
+    }
+    open(copy, true)
+    announce(t('layoutEditor.frameBuilder.duplicated', { name: copy.frameName }))
+  }
+
+  // First visit, or the remembered frame is gone: the first own frame, or the standard frame when
+  // there is none. Runs when the list arrives, not on every edit.
+  useEffect(() => {
+    if (!frames) return
+    if (editing) {
+      // A remembered draft of a frame deleted elsewhere is no draft any more.
+      if (!isNewDraft && !frames.some((f) => f.id === editing.id)) open(frames[0] ?? null, false)
+      return
+    }
+    if (!standardChosen && frames.length > 0) open(frames[0], false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [frames])
 
   function nameCollision(def: GridFrameDefinition): boolean {
     if (RESERVED_FRAME_NAMES.includes(def.frameName)) return true
@@ -1015,13 +1088,15 @@ export default function FrameBuilder({
       }
       refresh()
       onFramesChanged()
-      // Deliberately no closeEditor() here - see savedNotice. `isNewDraft` flips because the frame
+      // The editor stays open - see savedNotice. `isNewDraft` flips because the frame
       // now exists on disk: saveFrame() only registers the companion plugin the first time, and the
       // delete link belongs to a frame that is real.
       setSavedWasEdit(!isNewDraft)
       setIsNewDraft(false)
+      setStandardChosen(false)
       setMessage(null)
       setSavedSnapshot(JSON.stringify(editing))
+      setBaseline(JSON.stringify(editing))
     } catch (err) {
       // e.g. an area name the validation layer refuses because it would break the generated CSS
       setMessage(formatIpcError(err))
@@ -1043,46 +1118,107 @@ export default function FrameBuilder({
     setMessage(result.success ? null : result.output)
     refresh()
     onFramesChanged()
-    if (editing?.id === def.id) closeEditor()
+    if (result.success && editing?.id === def.id) {
+      // Straight to the next frame rather than to an empty editor - and to the standard frame when
+      // this was the last one. Not through leaveDraft: the user has just said what to do with it.
+      open((frames ?? []).find((f) => f.id !== def.id) ?? null, false)
+    }
   }
 
   if (!frames) return <p className="text-sm text-text-muted">{t('layoutEditor.loading')}</p>
 
+  // The head of the tab: which frame is open, and the four things done to frames as a whole. Until
+  // 1.1 these stood on a list page in front of the editor, one click away from every frame.
+  const draftLabel = editing?.frameName || t('layoutEditor.frameBuilder.unnamed')
+  const frameBar = (
+    <div className="flex flex-wrap items-end gap-2">
+      <Field label={t('layoutEditor.frameBuilder.frameLabel')} className="w-72 max-w-full">
+        <Select
+          value={editing ? editing.id : STANDARD_VALUE}
+          onChange={(e) => {
+            const value = e.target.value
+            if (value === STANDARD_VALUE) void showStandard()
+            else {
+              const def = frames.find((f) => f.id === value)
+              if (def && def.id !== editing?.id) void startEditFrame(def)
+            }
+          }}
+        >
+          <option value={STANDARD_VALUE}>{t('layoutEditor.frameBuilder.standardOption')}</option>
+          {frames.length > 0 && (
+            <optgroup label={t('layoutEditor.frameBuilder.ownFrames')}>
+              {frames.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {editing?.id === f.id ? draftLabel : f.frameName}
+                </option>
+              ))}
+            </optgroup>
+          )}
+          {editing && isNewDraft && (
+            <option value={editing.id}>{t('layoutEditor.frameBuilder.newDraftOption', { name: draftLabel })}</option>
+          )}
+        </Select>
+      </Field>
+      <Button variant="ghost" onClick={() => void startNewFrame()}>
+        <Plus size={14} />
+        {t('layoutEditor.frameBuilder.newFrame')}
+      </Button>
+      {editing && (
+        <Button variant="ghost" onClick={duplicateFrame}>
+          <Copy size={14} />
+          {t('layoutEditor.frameBuilder.duplicate')}
+        </Button>
+      )}
+      {editing && !isNewDraft && (
+        <IconButton icon={Trash2} title={t('common.deleteNamed', { name: editing.frameName })} onClick={() => void remove(editing)} />
+      )}
+    </div>
+  )
+
   if (!editing) {
+    const standard = quartzDefaultFrame('standard')
+    // Quartz's own frames switch at Quartz's widths, not at the project's (see the breakpoint hint).
+    const quartzBreakpointOptions = FRAME_BREAKPOINTS.map((bp) => ({
+      value: bp,
+      label: `${t(`layoutEditor.frameBuilder.breakpoint.${bp}`)} · ${breakpointRangeLabel(bp, DEFAULT_FRAME_BREAKPOINT_WIDTHS)}`
+    }))
     return (
       <div className="flex flex-col gap-4">
         {message && <p className="text-sm text-red-600 dark:text-red-400">{message}</p>}
-        {/* The whole app says "Frame" and no screen said what one is. It belongs here, on the
-            list that is the first thing anyone opens who wants to build one. */}
-        <InfoNote>{t('layoutEditor.frameBuilder.whatIsAFrame')}</InfoNote>
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-text-muted">{t('layoutEditor.frameBuilder.description')}</p>
-          <Button onClick={startNewFrame}>{t('layoutEditor.frameBuilder.newFrame')}</Button>
-        </div>
-        {frames.length === 0 && <p className="text-sm text-text-muted">{t('layoutEditor.frameBuilder.none')}</p>}
-        <div className="flex flex-col gap-2">
-          {frames.map((def) => (
-            <Card key={def.id} className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">{def.frameName}</p>
-                <p className="text-xs text-text-muted">
-                  {t('layoutEditor.frameBuilder.gridSummary', {
-                    rows: def.breakpoints.desktop.rows,
-                    cols: def.breakpoints.desktop.cols,
-                    areas: def.areas.length
-                  })}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="ghost" onClick={() => startEditFrame(def)}>
-                  {t('common.edit')}
-                </Button>
-                <IconButton icon={Trash2} title={t('common.deleteNamed', { name: def.frameName })} onClick={() => void remove(def)} />
-              </div>
-            </Card>
-          ))}
-        </div>
-        <FrameBreakpoints projectPath={projectPath} widths={breakpointWidths} onSaved={setBreakpointWidths} hasFrames={frames.length > 0} />
+        {frameBar}
+        <SegmentedControl
+          label={t('layoutEditor.frameBuilder.breakpointLabel')}
+          value={activeBreakpoint}
+          onChange={switchBreakpoint}
+          options={quartzBreakpointOptions}
+        />
+        <DetailLayout
+          mainClassName="gap-4"
+          panelLabel={t('layoutEditor.frameBuilder.standardTitle')}
+          panel={
+            <div className="flex flex-col gap-4">
+              <Card className="flex flex-col gap-3">
+                <CardHeading icon={LayoutGrid}>{t('layoutEditor.frameBuilder.standardTitle')}</CardHeading>
+                <p className="text-ui">{t('layoutEditor.frameBuilder.standardText')}</p>
+                <p className="text-micro text-text-muted">{t('layoutEditor.frameBuilder.standardCopyHint')}</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button onClick={() => void customizeStandard()}>{t('layoutEditor.frameBuilder.customizeStandard')}</Button>
+                  <Button variant="ghost" onClick={() => void startNewFrame()}>
+                    {t('layoutEditor.frameBuilder.newEmptyFrame')}
+                  </Button>
+                </div>
+              </Card>
+              <FrameBreakpoints projectPath={projectPath} widths={breakpointWidths} onSaved={setBreakpointWidths} hasFrames={frames.length > 0} />
+            </div>
+          }
+        >
+          {/* The whole app says "Frame" and no screen said what one is. It belongs here, on the
+              view that is the first thing anyone opens who wants to build one. */}
+          <InfoNote>{t('layoutEditor.frameBuilder.whatIsAFrame')}</InfoNote>
+          <Card>
+            <FramePreview frame={standard} breakpoint={activeBreakpoint} />
+          </Card>
+        </DetailLayout>
       </div>
     )
   }
@@ -1246,6 +1382,7 @@ export default function FrameBuilder({
   return (
     <div className="flex flex-col gap-4">
       {message && <p className="text-sm text-red-600 dark:text-red-400">{message}</p>}
+      {frameBar}
 
       <SegmentedControl
         label={t('layoutEditor.frameBuilder.breakpointLabel')}
@@ -1412,6 +1549,15 @@ export default function FrameBuilder({
                   />
                 </div>
               </SettingsSection>
+
+              {/* The widths every frame switches at - here, with no area chosen, because they are a
+                  property of all frames rather than of one; they used to stand below the list. */}
+              <FrameBreakpoints
+                projectPath={projectPath}
+                widths={breakpointWidths}
+                onSaved={setBreakpointWidths}
+                hasFrames={frames.length > 0}
+              />
             </Card>
           )
         }
@@ -1625,20 +1771,10 @@ export default function FrameBuilder({
               </>
             }
           >
-            <Button variant="ghost" onClick={closeEditor}>
-              {t('layoutEditor.frameBuilder.closeEditor')}
-            </Button>
             <Button onClick={save} disabled={saving}>
               {saving ? t('common.saving') : t('common.save')}
             </Button>
           </FormActions>
-          {!isNewDraft && (
-            <p className="text-right">
-              <button type="button" onClick={() => remove(editing)} className="text-xs text-red-600 underline dark:text-red-400">
-                {t('layoutEditor.frameBuilder.deleteFrame')}
-              </button>
-            </p>
-          )}
       </DetailLayout>
     </div>
   )

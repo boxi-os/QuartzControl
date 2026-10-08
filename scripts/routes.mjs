@@ -9,6 +9,7 @@ export const PROJECT_ROUTES = [
   ['Konfiguration', '/config'],
   ['Konfiguration · Übersetzungen', '/config?tab=localization'],
   ['Layout', '/layout'],
+  ['Layout · Übersicht', '/layout?tab=overview'],
   ['Layout · Eigene Frames', '/layout?tab=frames'],
   ['Stile · Basis', '/styles'],
   ['Stile · Community-Themes', '/styles?tab=theme'],

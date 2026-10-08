@@ -224,7 +224,7 @@ const bySource = new Map()
 for (const r of rows) bySource.set(r.source, (bySource.get(r.source) ?? 0) + 1)
 console.log(`Gelesen aus: ${[...bySource].map(([k, n]) => `${k} ${n}`).join(', ')}.`)
 const noteCount = sum((r) => r.notes.length)
-if (noteCount) console.log(`${noteCount} Stellen konnte der Leser nicht lesen (als Text angeboten) — Liste unten.`)
+if (noteCount) console.log(`${noteCount} Stellen konnte der Leser nicht lesen oder nicht verstehen (als Text angeboten oder fürs Formular übergangen) — Liste unten.`)
 if (unreadable) console.log(`${unreadable} Einträge nicht lesbar (Eintrag ohne source oder package.json kaputt) — nicht gezählt.`)
 
 console.log('\nUnsichtbar oder nicht lesbar, je Plugin:')

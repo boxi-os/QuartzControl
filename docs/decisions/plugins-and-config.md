@@ -308,3 +308,16 @@ Renderer keine Vertrauensgrenze ist:
 
 Native Dialoge (Dateiwahl, Rückfrage) sind in der Messung im Hauptprozess gespiegelt, also nicht am
 OS gemessen.
+
+**Was der Schema-Leser nicht versteht, sagt das Formular (2026-10-08, vierzigstes Review, Befund 7).**
+Ein unbekanntes `x-quartz-*`-Schlüsselwort ging still durch, ein unbekanntes Widget wurde ein
+Textfeld, und die Notizen, die der Leser schon führte, zeigte nur `check:option-schema`. Jetzt wird
+beides eine Notiz, wie ein unlesbarer Teil, und das Formular nennt die Zahl über den Feldern, mit der
+Liste zum Aufklappen — im Wortlaut des Lesers, weil sie den Autor des Plugins anspricht. Das Format
+selbst steht für Plugin-Autoren in [`docs/plugin-config-schema.md`](../plugin-config-schema.md).
+Gemessen mit einem Probe-Paket (`notes-probe`, ein unbekanntes Schlüsselwort, ein unbekanntes
+Widget, ein unbekanntes `x-quartz-keys`) in einem Klon von gui-test: `check:option-schema` vorher 0
+Notizen, nachher 3; die gebaute App zeigt auf der Plugins-Seite „3 Angaben im Schema dieses Plugins
+versteht die App nicht“ mit den drei Zeilen, ohne waagerechten Bildlauf bei 1280 px. Die Zahl
+„267 als Feld“ an gui-test deckt die `x-quartz-*`-Erweiterungen nicht: Dort sind die drei eigenen
+Plugins in Fassungen vor `configSchema` installiert, gelesen wird ihr `.d.ts`.

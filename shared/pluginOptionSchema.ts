@@ -34,6 +34,11 @@
 //                        of layout-box's `byLang` has no `dir`; the one at the top applies)
 //   x-quartz-keys        for a record: "languages" - its keys are the site's language codes
 //   x-quartz-l10n        { "<lang>": { title?, description?, group?, enum?: { "<value>": label } } }
+//   x-quartz-note        on a schema the app cannot draw: why, shown with the JSON field
+//
+// The same list, with an example, for plugin authors: docs/plugin-config-schema.md. A keyword not
+// on it, a widget or `keys` value the app does not know, becomes a note like anything else it
+// cannot read - the form says how many there are (fortieth review, finding 7).
 
 export type OptionEnumValue = string | number | boolean
 
@@ -204,6 +209,9 @@ function objectNode(s: Json, path: string[], ctx: Ctx, depth: number): OptionNod
       ? undefined
       : nodeFromSchema(additional === true ? {} : additional, [...path, '*'], ctx, depth + 1)
   if (fields.length === 0 && rest) {
+    if (s['x-quartz-keys'] !== undefined && s['x-quartz-keys'] !== 'languages') {
+      ctx.notes.push({ path, reason: `unknown x-quartz-keys ${JSON.stringify(s['x-quartz-keys'])}` })
+    }
     return { kind: 'record', value: rest, ...(s['x-quartz-keys'] === 'languages' ? { keys: 'languages' as const } : {}) }
   }
   // An object nobody describes ({ type: "object" } and nothing else - `graph.localGraph` in the
@@ -232,8 +240,17 @@ function annotationsOf(raw: unknown, ctx: Ctx): Json {
   return target ? { ...annotationsOf(target, ctx), ...raw } : raw
 }
 
+const KNOWN_KEYWORDS = new Set(['when', 'group', 'order', 'advanced', 'widget', 'dir-option', 'keys', 'l10n', 'note'].map((k) => `x-quartz-${k}`))
+const KNOWN_WIDGETS = new Set(['snippetFile', 'html', 'markdown', 'glob'])
+
 function fieldFromSchema(key: string, raw: unknown, path: string[], ctx: Ctx, depth: number): OptionField {
   const s = annotationsOf(raw, ctx)
+  for (const keyword of Object.keys(s)) {
+    if (keyword.startsWith('x-quartz-') && !KNOWN_KEYWORDS.has(keyword)) ctx.notes.push({ path, reason: `unknown keyword ${keyword}` })
+  }
+  if (s['x-quartz-widget'] !== undefined && !KNOWN_WIDGETS.has(s['x-quartz-widget'] as string)) {
+    ctx.notes.push({ path, reason: `unknown x-quartz-widget ${JSON.stringify(s['x-quartz-widget'])}, edited as plain text` })
+  }
   const field: OptionField = { key, node: nodeFromSchema(raw, path, ctx, depth), hasDefault: false, origin: 'schema' }
   if (typeof s.title === 'string') field.title = s.title
   if (typeof s.description === 'string') field.description = s.description

@@ -49,6 +49,22 @@ export default function PluginOptionsForm({
     <div className="flex flex-col gap-3">
       {schema?.source === 'defaults' && <p className="text-micro text-text-muted">{t('pluginOptions.fromDefaults')}</p>}
       {merged.fields.length === 0 && <p className="text-micro text-text-muted">{t('pluginOptions.none')}</p>}
+      {/* What the reader could not read, counted rather than passed over: the field is then a JSON
+          text or plain text, and the note says which and why - in the reader's own words, which are
+          for whoever wrote the plugin's schema (fortieth review, finding 7). */}
+      {schema && schema.notes.length > 0 && (
+        <details className="text-micro text-text-muted">
+          <summary className="cursor-pointer">{t('pluginOptions.notes', { count: schema.notes.length })}</summary>
+          <ul className="mt-1 list-disc pl-5 font-mono">
+            {schema.notes.map((note, i) => (
+              <li key={i}>
+                {note.path.length > 0 ? `${note.path.join('.')}: ` : ''}
+                {note.reason}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
       <ObjectBlock
         fields={merged.fields}
         values={values}

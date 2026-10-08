@@ -1006,6 +1006,8 @@ export default {
     }
   },
   pluginOptions: {
+    notes_one: 'Eine Angabe im Schema dieses Plugins versteht die App nicht (für die Autoren des Plugins)',
+    notes_other: '{{count}} Angaben im Schema dieses Plugins versteht die App nicht (für die Autoren des Plugins)',
     advanced_one: 'Eine weitere Einstellung',
     advanced_other: '{{count}} weitere Einstellungen',
     inactiveHeading: 'Wirkt bei dieser Einstellung nicht',

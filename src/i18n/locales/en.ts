@@ -1001,6 +1001,8 @@ export default {
     }
   },
   pluginOptions: {
+    notes_one: 'One statement in this plugin’s schema is not understood by the app (for the plugin’s authors)',
+    notes_other: '{{count}} statements in this plugin’s schema are not understood by the app (for the plugin’s authors)',
     advanced_one: 'One more setting',
     advanced_other: '{{count}} more settings',
     inactiveHeading: 'Has no effect with this setting',

@@ -398,8 +398,20 @@ export default function Styles(): JSX.Element {
     // Both state updates in one tick: clearFileDrafts here, and the `loaded` the sub-tab pulls up
     // from `written` - saveRef's body runs synchronously up to its first await, so React 18
     // batches the pair and the editor never sees a value in between.
+    //
+    // _quartzcontrol.scss is the one draft whose saved state the sub-tab does not hold in `loaded`:
+    // its tab reads `scss.managed`, which only reloadScss refreshes. A save of that draft alone ran
+    // no reload, so the editor fell back to the file from before the edit and the next save wrote
+    // that over it (fortieth review, finding 1, measured). Its written text goes into `scss.managed`
+    // in the same tick - unless a reload after it has already read the file, which then also holds
+    // what the block writers put there since.
+    let managedReloaded = false
     const commitDrafts = async (): Promise<void> => {
       if (Object.keys(draftsWritten).length > 0) clearFileDrafts(Object.keys(draftsWritten))
+      const managedWritten = draftsWritten[MANAGED_STYLESHEET]
+      if (managedWritten !== undefined && !managedReloaded) {
+        setScss((prev) => (prev?.managed ? { ...prev, managed: { ...prev.managed, content: managedWritten } } : prev))
+      }
       await saveRef.current(draftsWritten)
     }
     try {
@@ -448,8 +460,10 @@ export default function Styles(): JSX.Element {
       if (scssRefused || managedRefused) {
         if (configDirty) await reloadScss('googleFonts')
         else if (overridesDirty) await reloadScss('variables')
+        managedReloaded = configDirty || overridesDirty
       } else if (scss.dirty || configDirty || overridesDirty) {
         await reloadScss('force')
+        managedReloaded = true
       }
       // The drafts go along rather than being read from the registered callback's closure. That
       // closure is the one from the render in which it was registered, and registerSave runs in an

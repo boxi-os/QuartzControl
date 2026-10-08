@@ -1122,6 +1122,11 @@ export function DetailLayout({
         // empties itself on Escape) keeps it.
         if (target.closest('textarea, select, dialog, [contenteditable], [aria-expanded="true"], input[type="search"]')) return
         const inPanel = panelRef.current?.contains(target) ?? false
+        // "In the draft already" holds where a field writes on every keystroke. The plugin tabs'
+        // fields write when they are left, and a panel that goes away takes its field with it
+        // without a blur - so the field is left first, which writes what was typed (41st review,
+        // finding 1: the config stayed byte-identical after typing and Escape).
+        if (inPanel && target instanceof HTMLInputElement) target.blur()
         onDismiss()
         if (inPanel) requestAnimationFrame(() => panelRef.current?.focus())
       }}

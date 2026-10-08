@@ -454,8 +454,8 @@ export async function getVariableOverrides(projectPath: string): Promise<CssVari
 }
 
 /**
- * The variables this page sets that custom.scss also sets itself, in a `:root` rule of its own
- * body. Since 1.1 that body comes after the managed blocks (see writeManagedBlocks), so where both
+ * The variables this page sets that custom.scss also sets itself, in a rule of its own body with
+ * the same selector as the page's rule for them. Since 1.1 that body comes after the managed blocks (see writeManagedBlocks), so where both
  * have the same specificity the user's own rule wins - and the page would show a value the site
  * does not have. Measured in docs/decisions/styles-and-fonts.md; only custom.scss, because the
  * stylesheets of the load order still come before the variables. Empty for a project not moved
@@ -466,14 +466,34 @@ export async function variableCollisions(projectPath: string): Promise<string[]>
   if (!sources.managedExists) return []
   const body = managedBody(sources, CSS_VARS_MARKER)
   if (!body) return []
-  const managed = new Set(parseVariableOverrides(body).map((o) => o.key))
+  // Per rule the page writes, which of its variables stand in it - a collision is a user rule with
+  // the same selector, i.e. the same specificity, coming later. A light-only value sits in the
+  // :not() rule (0,2,0) and beats a user's plain :root (0,1,0) in either order, so it was named
+  // wrongly as long as any :root counted (fortieth review, finding 8, read against the P0 table).
+  const overrides = parseVariableOverrides(body)
+  const hasDark = (o: CssVariableOverride): boolean => o.dark !== undefined && o.dark.trim() !== ''
+  const inRule = {
+    root: new Set(overrides.filter((o) => o.light.trim() !== '' && !(o.lightOnly && !hasDark(o))).map((o) => o.key)),
+    dark: new Set(overrides.filter(hasDark).map((o) => o.key)),
+    lightOnly: new Set(overrides.filter((o) => o.light.trim() !== '' && o.lightOnly && !hasDark(o)).map((o) => o.key))
+  }
   let own = sources.custom
   for (const marker of MOVED_MARKERS) own = stripManagedBlock(own, marker)
   // Comments out, so a rule quoted in a note does not count.
   own = own.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/[^\n]*/g, '$1')
   const hits = new Set<string>()
-  for (const match of own.matchAll(/:root[^{};]*\{([^}]*)\}/g)) {
-    for (const key of Object.keys(parseDeclarations(match[1]))) if (managed.has(key)) hits.add(key)
+  for (const match of own.matchAll(/(^|[}\s;])(:root[^{};]*)\{([^}]*)\}/g)) {
+    const selector = match[2].replace(/\s+/g, '').replace(/'/g, '"')
+    const managed =
+      selector === ':root'
+        ? inRule.root
+        : selector === ':root[saved-theme="dark"]' || selector === ':root[saved-theme=dark]'
+          ? inRule.dark
+          : selector === LIGHT_ONLY_SELECTOR || selector === ':root:not([saved-theme=dark])'
+            ? inRule.lightOnly
+            : null
+    if (!managed) continue
+    for (const key of Object.keys(parseDeclarations(match[3]))) if (managed.has(key)) hits.add(key)
   }
   return [...hits].sort()
 }

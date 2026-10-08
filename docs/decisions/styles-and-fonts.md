@@ -615,10 +615,10 @@ M = die Stile-Seite, U = eigene Regel des Nutzers in `custom.scss`, Q = Quartz:
 | --- | --- | --- | --- |
 | M beide Modi + U `:root` | M / M | **U / U** | U / U |
 | M hell + dunkel, U `:root` | M / M | **U** / M | U / M |
-| M hell + dunkel, U `[saved-theme="dark"]` | M / M | M / **U** | M / U |
+| M hell + dunkel, U `:root[saved-theme="dark"]` | M / M | M / **U** | M / U |
 | M „nur hell“, kein U | M / **M** | M / M | M / **Q** |
 | M „nur hell“, U `:root` | M / M | U / U | **M** / U |
-| M „nur hell“, U `[saved-theme="dark"]` | M / U | M / U | M / U |
+| M „nur hell“, U `:root[saved-theme="dark"]` | M / U | M / U | M / U |
 
 Ohne `saved-theme` (bevor das Skript des Darkmode-Plugins läuft) gilt in allen Lagen die helle
 Spalte. Gelesen heißt das:
@@ -628,7 +628,10 @@ Spalte. Gelesen heißt das:
   Variablen, dann die eigenen Regeln. Die Messung vom 2026-10-06 ist damit für den Fall mit
   verschachteltem `@use` bestätigt.
 - **Der Umzug allein kehrt die Rangfolge bei gleicher Spezifität um**: Eine eigene `:root`-Regel
-  gewinnt jetzt gegen die helle Hälfte, eine eigene `[saved-theme="dark"]`-Regel gegen die dunkle.
+  gewinnt jetzt gegen die helle Hälfte, eine eigene `:root[saved-theme="dark"]`-Regel gegen die
+  dunkle. (U heißt in der Tabelle genau dieser Selektor, so steht er im Messskript; ein blankes
+  `[saved-theme="dark"]` hat 0,1,0 und verliert gegen die verwaltete dunkle Regel mit 0,2,0 — so
+  gelesen im vierzigsten Review, nicht eigens gemessen.)
   Die Variablen-Seite zeigt dann einen Wert, den die Website nicht hat. Das gehört in die
   Release-Notizen und in den Hinweis, den P4 beim ersten Umzug gibt.
 - **Form C tut, wofür sie da ist**: „nur hell“ lässt die dunkle Hälfte bei Quartz (Q), statt den

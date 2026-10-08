@@ -705,6 +705,26 @@ export function managedBody(sources: StyleSources, markerId: MovedMarker): strin
   return bodies.filter(Boolean).join('\n\n')
 }
 
+/**
+ * The load order a write carries over without changing it. The raw text of every copy joined, as
+ * for the other blocks, is the one thing that breaks the build here: two copies name the same
+ * stylesheets, and two `@use` of one module stop Sass ("There's already a module with namespace").
+ * Two copies are the ordinary case after a 1.0.x app turned a stylesheet on in a moved project, or
+ * after only custom.scss came back from a snapshot (fortieth review, finding 2: measured, every one
+ * of 33 lines twice and `quartz build` aborting). So it is rebuilt from the order as it reads -
+ * deduplicated and without files that are gone, the list setImportOrder would write - whenever the
+ * text would not already be that. One copy without a duplicate stays byte for byte.
+ */
+function carriedImports(projectPath: string, sources: StyleSources): string | null {
+  const body = managedBody(sources, IMPORTS_MARKER)
+  if (body === null) return null
+  const copies = [sources.managed, sources.custom].reduce((n, content) => n + findManagedBlocks(content, IMPORTS_MARKER).length, 0)
+  const order = parseImportOrder(projectPath, sources)
+  if (copies === 1 && (body.match(/@use\s/g) ?? []).length === order.length) return body
+  const taken = new Set<string>()
+  return order.length === 0 ? null : order.map((p) => useLineFor(p, taken)).join('\n')
+}
+
 /** Both files' text without one block, for "everything except this block" questions. */
 export function sourcesWithout(sources: StyleSources, markerId: MovedMarker): string {
   return `${stripManagedBlock(sources.managed, markerId)}\n${stripManagedBlock(sources.custom, markerId)}`
@@ -722,7 +742,13 @@ export function sourcesWithout(sources: StyleSources, markerId: MovedMarker): st
  */
 export async function writeManagedBlocks(projectPath: string, changes: Partial<Record<MovedMarker, string | null>>): Promise<void> {
   const sources = await readStyleSources(projectPath)
-  const bodies = MOVED_MARKERS.map((marker) => [marker, marker in changes ? (changes[marker] ?? null) : managedBody(sources, marker)] as const)
+  const bodies = MOVED_MARKERS.map(
+    (marker) =>
+      [
+        marker,
+        marker in changes ? (changes[marker] ?? null) : marker === IMPORTS_MARKER ? carriedImports(projectPath, sources) : managedBody(sources, marker)
+      ] as const
+  )
   // All four out first, then each back once in the fixed order: the imports before any rule
   // because Sass requires it, the variables last so they still come after the stylesheets they
   // override. Stripping and re-adding one at a time would move each block behind the next.

@@ -13,10 +13,20 @@ function resolveHref(href: string, repoUrl: string): string | null {
   return `${repoUrl.replace(/\/$/, '')}/blob/HEAD/${href.replace(/^\.?\//, '')}`
 }
 
+// Longer than this, a paragraph is shown as plain text. Each `[` can make the link pattern read to
+// the end of the paragraph, so a paragraph of nothing but unclosed links costs its length squared:
+// 120 KB of `[a](b ` held the window for over a second, and a README may be 256 KB. Below the limit,
+// the worst a whole README of such paragraphs costs is about 160 ms (measured in Node); a real
+// paragraph is far shorter, and one that is not loses only its links and bold, not its words.
+const INLINE_LIMIT = 4000
+
 function inline(text: string, repoUrl: string, key: string): ReactNode[] {
+  if (text.length > INLINE_LIMIT) return [text]
   const out: ReactNode[] = []
-  // Images first (their alt text stays), then code, links and bold, left to right.
-  const pattern = /!\[([^\]]*)\]\([^)]*\)|`([^`]+)`|\[([^\]]+)\]\(([^)\s]+)[^)]*\)|\*\*([^*]+)\*\*|__([^_]+)__/g
+  // Images first (their alt text stays), then code, links and bold, left to right. A link's title
+  // starts after whitespace: `[^)\s]+[^)]*` let the two parts split the same run of characters every
+  // way there is, and one unclosed link of 128 KB took 7.5 s (41st review, finding 4).
+  const pattern = /!\[([^\]]*)\]\([^)]*\)|`([^`]+)`|\[([^\]]+)\]\(([^)\s]+)(?:\s[^)]*)?\)|\*\*([^*]+)\*\*|__([^_]+)__/g
   let last = 0
   let m: RegExpExecArray | null
   let n = 0
@@ -55,12 +65,54 @@ function inline(text: string, repoUrl: string, key: string): ReactNode[] {
   return out
 }
 
+// The two HTML strippers below are what `.replace(/<!--[\s\S]*?-->/g, '')` and
+// `.replace(/<[^>\n]+>/g, '')` did, but in one pass: each regex read to the end of the text (or
+// line) once per unclosed `<!--` or `<`, and 256 KB of either held the window for 5 and 13 s.
+// Checked against both regexes on 200 000 random strings, no difference.
+/** `text.replace(/<!--[\s\S]*?-->/g, '')`, without reading to the end once per unclosed `<!--`. */
+function stripComments(text: string): string {
+  let out = ''
+  let i = 0
+  for (;;) {
+    const open = text.indexOf('<!--', i)
+    if (open < 0) break
+    const close = text.indexOf('-->', open + 4)
+    if (close < 0) break
+    out += text.slice(i, open)
+    i = close + 3
+  }
+  return out + text.slice(i)
+}
+
+/** `text.replace(/<[^>\n]+>/g, '')`, the same way: a `<` whose line has no `>` after it skips the line. */
+function stripTags(text: string): string {
+  let out = ''
+  let i = 0
+  let close = -1
+  for (;;) {
+    const open = text.indexOf('<', i)
+    if (open < 0) break
+    if (close <= open) close = text.indexOf('>', open + 1)
+    if (close < 0) break
+    const eol = text.indexOf('\n', open + 1)
+    if (eol >= 0 && eol < close) {
+      out += text.slice(i, eol + 1)
+      i = eol + 1
+    } else if (close === open + 1) {
+      out += text.slice(i, open + 1)
+      i = open + 1
+    } else {
+      out += text.slice(i, open)
+      i = close + 1
+    }
+  }
+  return out + text.slice(i)
+}
+
 export default function ReadmeText({ text, repoUrl }: { text: string; repoUrl: string }): JSX.Element {
   const blocks: ReactNode[] = []
   // HTML comments and tags go before anything is read; what was between the tags stays.
-  const lines = text
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .replace(/<[^>\n]+>/g, '')
+  const lines = stripTags(stripComments(text))
     .replace(/\r\n?/g, '\n')
     .split('\n')
   let i = 0

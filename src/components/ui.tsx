@@ -558,7 +558,8 @@ export function Toggle({
 // "Design, radio group"); that is redundant, not wrong, and the alternative - FieldGroup handing an
 // id down to whatever it wraps - is a wiring between two primitives for two call sites.
 // Zwei Häute, eine Bedienung. `track` ist die Leiste für „eine von wenigen festen Ansichten"; sie
-// setzt voraus, dass die Optionen in eine Zeile passen. `chips` ist für den einen Aufrufer, dessen
+// setzt voraus, dass die Optionen in eine Zeile passen. `chips` war für den einen Aufrufer (seit 1.1
+// sind die Ziele eine Liste mit Seitenleiste, die Haut hat keinen mehr), dessen
 // Optionen *Daten* sind: die Veröffentlichungsziele heißen, wie der Nutzer sie genannt hat, und es
 // können sieben sein. Gemessen an einem Projekt mit sieben: die Leiste wurde 1390 px breit (bei
 // 1280 px Fenster 942 px), brach in zwei Zeilen um und ließ 508 px graue Fläche neben der zweiten

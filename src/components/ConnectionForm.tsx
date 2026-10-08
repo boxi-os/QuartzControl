@@ -107,7 +107,7 @@ export function ConnectionFormFields({
 
   return (
     <>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         <Field label={t('publish.connectionForm.name')}>
           <TextInput value={draft.name} onChange={(e) => onChange({ ...draft, name: e.target.value })} />
         </Field>
@@ -179,7 +179,7 @@ export function ConnectionFormFields({
           </Field>
         )}
         {draft.kind === 'ssh' && draft.authMethod === 'agent' ? (
-          <p className="text-xs text-text-muted sm:col-span-2 xl:col-span-3">
+          <p className="text-xs text-text-muted sm:col-span-2">
             {t('publish.connectionForm.agentHint')}
           </p>
         ) : draft.kind === 'webhook' ? (

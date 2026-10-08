@@ -471,7 +471,9 @@ Projektwurzel.
   *umgebrochene* Zeile schrumpfen - bei sieben Zielen stand neben der zweiten Zeile eine halbe
   Kartenbreite leere Fläche. Ohne gemeinsame Fläche ist ein Umbruch eine zweite Reihe statt einer
   Lücke. Die Bedienung ist in beiden Häuten dieselbe; alle elf anderen Aufrufstellen sind einzeilig
-  (nachgemessen: 0-2 px Spiel bei 1728 wie bei 1280 px) und bleiben `track`. Messungen in
+  (nachgemessen: 0-2 px Spiel bei 1728 wie bei 1280 px) und bleiben `track`. **Seit 1.1 sind die
+  Ziele eine Liste mit Seitenleiste** (`SelectableRow` in `DetailLayout`), `chips` hat damit keinen
+  Aufrufer mehr und bleibt für die nächste Gruppe, deren Optionen Daten sind. Messungen in
   [`navigation-and-pages.md`](decisions/navigation-and-pages.md) und
   [`publishing-and-credentials.md`](decisions/publishing-and-credentials.md).
 - **Eine Karte hat eine Überschrift, und die hat ein Icon.** `CardHeading` (`ui.tsx`) ist das

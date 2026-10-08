@@ -2105,7 +2105,10 @@ export default {
       'Die Art des Zugangs ergibt sich aus der Art des Ziels: dieses Ziel braucht einen {{kind}}-Zugang. Andere Arten legst du in den Einstellungen an.',
     manageConnections: 'Zugänge verwalten',
     manageConnectionsHere: 'Zugänge in den Einstellungen verwalten →',
-    newTarget: '+ Neues Ziel',
+    newTarget: 'Neues Ziel',
+    panelLabel: 'Ziel',
+    panelEmptyTitle: 'Noch kein Ziel',
+    panelEmptyText: 'Ein Ziel sagt, wohin die gebaute Website geht: ein Server, ein Ordner, ein Branch oder ein Webhook. Lege eins an, dann stehen hier seine Angaben.',
     confirmDiscardTargetDraftAction: 'Änderungen verwerfen',
     confirmDiscardTargetDraft:
       'Am geöffneten Ziel gibt es ungespeicherte Änderungen. Wer jetzt wechselt, verliert sie.',

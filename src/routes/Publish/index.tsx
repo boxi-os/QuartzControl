@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CloudUpload, FileDiff, Key, SquarePen, Target, Trash2 } from 'lucide-react'
+import { CloudUpload, FileDiff, Key, Plus, SquarePen, Target, Trash2 } from 'lucide-react'
 import { confirmDialog } from '../../utils/confirm'
 import type { TFunction } from 'i18next'
 import { Link } from 'react-router-dom'
@@ -20,13 +20,14 @@ import {
   Button,
   Card,
   CardHeading,
+  DetailLayout,
   Field,
   FormActions,
   IconButton,
   InfoNote,
   PageHeader,
-  SegmentedControl,
   Select,
+  SelectableRow,
   TextInput,
   Toggle
 } from '../../components/ui'
@@ -70,6 +71,20 @@ function destinationTypeLabel(t: TFunction, type: PublishTarget['destination']['
 
 /** Which connection kind a destination needs, or null when it needs none - a folder is reached
  *  through the filesystem, and a git branch through the repo's own origin remote. */
+// Where a target sends the site, in one line: the row under its name and the panel say it alike.
+function destinationLine(t: TFunction, target: PublishTarget, connections: Connection[]): string {
+  const connection = target.connectionId ? connections.find((c) => c.id === target.connectionId) : undefined
+  const destination = target.destination
+  if (destination.type === 'folder') return destination.path
+  if (destination.type === 'git-branch') return `origin → ${destination.branch}`
+  if (destination.type === 'webhook')
+    return connection?.kind === 'webhook' && connection.displayOrigin ? `POST → ${connection.displayOrigin}` : t('publish.webhookNoUrl')
+  const remotePath = 'remotePath' in destination ? destination.remotePath : ''
+  return connection && connection.kind !== 'github' && connection.kind !== 'webhook'
+    ? `${connection.username}@${connection.host}:${connection.port} → ${remotePath}`
+    : remotePath
+}
+
 function requiredKind(destination: SavePublishTargetInput['destination']): 'ssh' | 'ftp' | 'webhook' | null {
   if (destination.type === 'sftp') return 'ssh'
   if (destination.type === 'ftp') return 'ftp'
@@ -210,7 +225,9 @@ export default function Publish(): JSX.Element {
   // host, path and excludes, and a Save from there would have written them back to *that* target
   // while the page around it talked about the newly selected one.
   async function selectTarget(id: string): Promise<void> {
-    if (id === selectedId) return
+    // A click on the row that is already selected closes an open form - the panel then shows the
+    // target again, the way a click on any other row does.
+    if (id === selectedId && !targetDraft) return
     if (!(await mayDiscardDraft())) return
     closeTargetDraft()
     setSelectedId(id)
@@ -404,105 +421,13 @@ export default function Publish(): JSX.Element {
   const canExclude = !!activeTarget && activeTarget.destination.type !== 'git-branch'
   const canDeploy = !!activeTarget && (!hasFileDiff || !!diff)
 
-  return (
-    <div className="flex flex-col gap-6">
-      <PageHeader icon={TAB_ICONS.publish} title={t('publish.title')} description={t('publish.description')} handbook={<HandbookLink page="publish" />} />
-
-      {/* The Zugang/Ziel split was only explained inside the target form, i.e. after the user had
-          already had to pick one of the two. The link belongs in the same paragraph: connections
-          live in the Einstellungen, and until this was here the only route to them was to click
-          "Neues Ziel" first - so the page named a second concept and led nowhere near it. */}
-      <InfoNote>
-        {t('publish.connectionVsTarget')}{' '}
-        <Link to="/settings" className="font-medium underline underline-offset-2 hover:no-underline">
-          {t('publish.manageConnectionsHere')}
-        </Link>
-      </InfoNote>
-
-      {baseUrlWarning && (
-        <p className="rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
-          {t('publish.baseUrlWarning', { baseUrl: baseUrl || '—' })}
-        </p>
-      )}
-
-      <Card>
-        <CardHeading icon={Target} className="mb-2">{t('publish.targetHeading')}</CardHeading>
-        {/* One of N, which is what SegmentedControl already is - this used to be a hand-rolled row
-            of buttons where the selected one was blue and nothing said it was a choice: no
-            radiogroup, no arrow keys, and every chip its own tab stop. "Neues Ziel" stays outside
-            the group, because adding a target is not one of the options. */}
-        <div className="flex flex-wrap items-center gap-2">
-          {targets.length > 0 && (
-            <SegmentedControl
-              variant="chips"
-              label={t('publish.targetHeading')}
-              value={selectedId ?? ''}
-              options={targets.map((target) => ({
-                value: target.id,
-                label: target.name,
-                badge: destinationTypeLabel(t, target.destination.type)
-              }))}
-              onChange={(id) => void selectTarget(id)}
-            />
-          )}
-          <Button variant="ghost" onClick={newTarget}>
-            {t('publish.newTarget')}
-          </Button>
-        </div>
-
-        {targets.length === 0 && <p className="mt-3 text-xs text-text-muted">{t('publish.noTargets')}</p>}
-
-        {activeTarget && (
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-ink/[0.06] p-2.5 text-xs dark:border-ink/10">
-            <span className="min-w-0">
-              {activeConnection && activeConnection.kind !== 'github' && activeConnection.kind !== 'webhook' && (
-                <>
-                  {activeConnection.username}@{activeConnection.host}:{activeConnection.port}
-                  {' → '}
-                </>
-              )}
-              {'remotePath' in activeTarget.destination && activeTarget.destination.remotePath}
-              {activeTarget.destination.type === 'folder' && activeTarget.destination.path}
-              {activeTarget.destination.type === 'git-branch' && `origin → ${activeTarget.destination.branch}`}
-              {activeTarget.destination.type === 'webhook' &&
-                (activeConnection?.kind === 'webhook' && activeConnection.displayOrigin
-                  ? `POST → ${activeConnection.displayOrigin}`
-                  : t('publish.webhookNoUrl'))}
-              {activeConnection && connectionMissingCredential(activeConnection) && (
-                <span className="ml-2 text-amber-600 dark:text-amber-400">{t('publish.noSecretWarning')}</span>
-              )}
-              {activeConnection?.kind === 'ssh' && (
-                <span className="mt-1 block font-mono text-micro text-text-muted">
-                  {activeConnection.hostKey
-                    ? `${t('publish.hostKeyPinned')}: ${activeConnection.hostKey.fingerprint}`
-                    : t('publish.hostKeyUnknown')}
-                </span>
-              )}
-            </span>
-            <div className="flex shrink-0 items-center gap-2 whitespace-nowrap">
-              <button
-                type="button"
-                className="text-text-muted underline"
-                onClick={() => openTargetDraft(draftOf(activeTarget))}
-              >
-                {t('common.edit')}
-              </button>
-              {activeConnection?.kind === 'ssh' && activeConnection.hostKey && (
-                <button type="button" className="text-text-muted underline" onClick={() => forgetHostKey(activeConnection)}>
-                  {t('publish.forgetHostKey')}
-                </button>
-              )}
-              <IconButton icon={Trash2} title={t('common.deleteNamed', { name: activeTarget.name })} onClick={() => void deleteTarget(activeTarget.id)} />
-            </div>
-          </div>
-        )}
-      </Card>
-
+  const panel = targetDraft ? (
+    <div className="flex flex-col gap-4">
       {targetDraft && (
         <Card>
           <CardHeading icon={SquarePen} className="mb-2">{t('publish.targetForm.heading')}</CardHeading>
           <p className="mb-3 text-xs text-text-muted">{t('publish.targetForm.explainer')}</p>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Field label={t('publish.targetForm.name')}>
               <TextInput value={targetDraft.name} onChange={(e) => setTargetDraft({ ...targetDraft, name: e.target.value })} />
             </Field>
@@ -678,7 +603,7 @@ export default function Publish(): JSX.Element {
                 per-run checkboxes in the diff below, which only skip one deploy. Not offered for a
                 branch target: there, leaving a file out deletes it from the live site. */}
             {targetDraft.destination.type !== 'git-branch' && (
-              <Field label={t('publish.targetForm.excludes')} className="sm:col-span-2 xl:col-span-1">
+              <Field label={t('publish.targetForm.excludes')} className="sm:col-span-2">
                 <textarea
                   className="min-h-20 rounded-[7px] border border-ink/10 bg-surface px-2.5 py-1.5 font-mono text-ui text-text shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-ink/10 dark:bg-ink/5"
                   value={(targetDraft.excludes ?? []).join('\n')}
@@ -790,137 +715,237 @@ export default function Publish(): JSX.Element {
           )}
         </Card>
       )}
-
-      {activeTarget?.destination.type === 'git-branch' && activeTarget.destination.provider === 'github' && (
-        <GithubPages projectPath={project.path} branch={activeTarget.destination.branch} />
+    </div>
+  ) : activeTarget ? (
+    <Card className="flex flex-col gap-3">
+      <CardHeading icon={Target}>{activeTarget.name}</CardHeading>
+      <div className="flex flex-wrap items-center gap-2">
+        <Badge>{destinationTypeLabel(t, activeTarget.destination.type)}</Badge>
+      </div>
+      <p className="break-words text-ui">{destinationLine(t, activeTarget, connections)}</p>
+      {activeConnection && connectionMissingCredential(activeConnection) && (
+        <p className="text-xs text-amber-600 dark:text-amber-400">{t('publish.noSecretWarning')}</p>
       )}
-
-      {activeTarget && !hasFileDiff && (
-        <Card>
-          <p className="text-xs text-text-muted">{t('publish.webhookExplainer')}</p>
-        </Card>
+      {activeConnection?.kind === 'ssh' && (
+        <p className="break-all font-mono text-micro text-text-muted">
+          {activeConnection.hostKey ? `${t('publish.hostKeyPinned')}: ${activeConnection.hostKey.fingerprint}` : t('publish.hostKeyUnknown')}
+        </p>
       )}
-
-      {hasFileDiff && (
-        <Card>
-          <div className="flex items-center justify-between">
-            <CardHeading icon={FileDiff}>{t('publish.diffHeading')}</CardHeading>
-            <div className="flex gap-2">
-              <Button variant="ghost" onClick={() => buildAction.run()} disabled={buildAction.pending}>
-                {buildAction.pending ? t('common.saving') : t('publish.buildNow')}
-              </Button>
-              <Button variant="ghost" onClick={() => refreshDiff()} disabled={diffAction.pending || !activeTarget}>
-                {diffAction.pending ? t('common.saving') : t('publish.refreshDiff')}
-              </Button>
-              {hasFileDiff && activeTarget.destination.type !== 'git-branch' && (
-                <Button
-                  variant="ghost"
-                  onClick={() => forgetManifestAction.run()}
-                  disabled={forgetManifestAction.pending || diffAction.pending}
-                  title={t('publish.uploadEverythingHint')}
-                >
-                  {forgetManifestAction.pending ? t('common.saving') : t('publish.uploadEverything')}
-                </Button>
-              )}
-            </div>
-          </div>
-          {forgetManifestAction.error && (
-            <p className="mt-2 whitespace-pre-wrap break-words text-xs text-red-600 dark:text-red-400">
-              {forgetManifestAction.error}
-            </p>
-          )}
-
-          <div className="mt-3">
-            <Field label={t('publish.outputDir')}>
-              <TextInput
-                value={outputDir}
-                onChange={(e) => setOutputDir(e.target.value)}
-                // Written when the value is settled, not per keystroke - same as on Vorschau & Build,
-                // where the other half of this shared setting lives.
-                onBlur={(e) => void window.quartzGui.projectPrefs.save(project.path, { outputDir: e.target.value })}
-                placeholder={t('publish.outputDirPlaceholder')}
-                className="max-w-md"
-              />
-            </Field>
-            <p className="mt-1 text-xs text-text-muted">{t('publish.outputDirShared')}</p>
-          </div>
-
-          {(diffAction.error || buildAction.error) && (
-            <p className="mt-2 whitespace-pre-wrap break-words text-xs text-red-600 dark:text-red-400">
-              {diffAction.error ?? buildAction.error}
-            </p>
-          )}
-
-          {diff === null && !diffAction.error && <p className="mt-2 text-xs text-text-muted">{t('publish.noDiffYet')}</p>}
-          {diff && diff.length === 0 && <p className="mt-2 text-xs text-text-muted">{t('publish.noChanges')}</p>}
-
-          {diff && diff.length > 0 && (
-            <div className="mt-2 flex flex-col gap-3">
-              {(['added', 'changed', 'removed'] as const).map(
-                (status) =>
-                  grouped[status].length > 0 && (
-                    <div key={status}>
-                      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                        {t(`publish.status.${status}`)} ({grouped[status].length})
-                      </p>
-                      <div className="columns-1 gap-x-6 sm:columns-2 xl:columns-3">
-                        {grouped[status].map((entry) =>
-                          canExclude ? (
-                            <label key={entry.path} className="flex break-inside-avoid items-center gap-2 font-mono text-xs">
-                              <input
-                                type="checkbox"
-                                checked={!excluded.has(entry.path)}
-                                onChange={() => toggleExclude(entry.path)}
-                              />
-                              <span className={excluded.has(entry.path) ? 'text-text-muted line-through' : ''}>{entry.path}</span>
-                            </label>
-                          ) : (
-                            <p key={entry.path} className="break-inside-avoid font-mono text-xs text-text-secondary">
-                              {entry.path}
-                            </p>
-                          )
-                        )}
-                      </div>
-                    </div>
-                  )
-              )}
-            </div>
-          )}
-        </Card>
+      {activeTarget.excludes.length > 0 && (
+        <p className="break-words text-xs text-text-muted">
+          {t('publish.targetForm.excludes')}: {activeTarget.excludes.join(', ')}
+        </p>
       )}
+      <div className="flex flex-wrap gap-2">
+        <Button variant="ghost" onClick={() => openTargetDraft(draftOf(activeTarget))}>
+          <SquarePen size={14} aria-hidden />
+          {t('common.edit')}
+        </Button>
+        {activeConnection?.kind === 'ssh' && activeConnection.hostKey && (
+          <Button variant="ghost" onClick={() => void forgetHostKey(activeConnection)}>
+            {t('publish.forgetHostKey')}
+          </Button>
+        )}
+      </div>
+    </Card>
+  ) : (
+    <Card className="flex flex-col gap-3">
+      <CardHeading icon={Target}>{t('publish.panelEmptyTitle')}</CardHeading>
+      <p className="text-ui text-text-secondary">{t('publish.panelEmptyText')}</p>
+      <div>
+        <Button onClick={newTarget}>
+          <Plus size={14} aria-hidden />
+          {t('publish.newTarget')}
+        </Button>
+      </div>
+    </Card>
+  )
 
-      {/* Every other card here already appears only once a target is picked. This one
-          rendered regardless, so a project with no target opened on an empty-state sentence
-          saying there is nothing to publish to, right above a "Jetzt veröffentlichen" button. */}
-      {activeTarget && (
-        <Card>
-          <div className="flex items-center justify-between">
-            <CardHeading icon={CloudUpload}>{t('publish.deployHeading')}</CardHeading>
-            <Button onClick={deploy} disabled={deployAction.pending || !canDeploy}>
-              {deployAction.pending ? t('common.saving') : t('publish.deployButton')}
+  return (
+    <div className="flex flex-col gap-6">
+      <PageHeader icon={TAB_ICONS.publish} title={t('publish.title')} description={t('publish.description')} handbook={<HandbookLink page="publish" />} />
+
+      <DetailLayout panelWidth="wide" panel={panel} panelLabel={t('publish.panelLabel')}>
+
+        {/* The Zugang/Ziel split was only explained inside the target form, i.e. after the user had
+            already had to pick one of the two. The link belongs in the same paragraph: connections
+            live in the Einstellungen, and until this was here the only route to them was to click
+            "Neues Ziel" first - so the page named a second concept and led nowhere near it. */}
+        <InfoNote>
+          {t('publish.connectionVsTarget')}{' '}
+          <Link to="/settings" className="font-medium underline underline-offset-2 hover:no-underline">
+            {t('publish.manageConnectionsHere')}
+          </Link>
+        </InfoNote>
+
+        {baseUrlWarning && (
+          <p className="rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+            {t('publish.baseUrlWarning', { baseUrl: baseUrl || '—' })}
+          </p>
+        )}
+
+        <Card className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardHeading icon={Target}>{t('publish.targetHeading')}</CardHeading>
+            <Button variant="ghost" onClick={newTarget}>
+              <Plus size={14} aria-hidden />
+              {t('publish.newTarget')}
             </Button>
           </div>
-          {activeTarget && 'deleteRemoved' in activeTarget.destination && !activeTarget.destination.deleteRemoved && (
-            <Badge tone="slate">{t('publish.deleteDisabledHint')}</Badge>
-          )}
-          {deployAction.error && (
-            <p className="mt-2 whitespace-pre-wrap break-words text-xs text-red-600 dark:text-red-400">{deployAction.error}</p>
-          )}
-          {progress && (
-            <p className="mt-2 text-xs text-text-muted">
-              {t('publish.progress', { processed: progress.processed, total: progress.total, file: progress.currentFile ?? '' })}
-            </p>
-          )}
-          {deployResult && (
-            <>
-              <p className={`mt-2 text-xs ${deployResult.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                {deployResult.success ? t('publish.deploySuccess') : t('publish.deployFailed')}
-              </p>
-              <pre className="mt-2 max-h-56 overflow-y-auto rounded-md bg-slate-950 p-3 font-mono text-xs text-slate-200">{deployResult.output}</pre>
-            </>
+          {targets.length === 0 && <p className="text-xs text-text-muted">{t('publish.noTargets')}</p>}
+          {targets.length > 0 && (
+            <ul className="flex flex-col gap-1.5">
+              {targets.map((target) => (
+                <SelectableRow
+                  key={target.id}
+                  // A form for a new target describes none of the rows.
+                  selected={target.id === selectedId && (!targetDraft || targetDraft.id === target.id)}
+                  onSelect={() => void selectTarget(target.id)}
+                  title={target.name}
+                  subtitle={destinationLine(t, target, connections)}
+                  trailing={
+                    <>
+                      <Badge>{destinationTypeLabel(t, target.destination.type)}</Badge>
+                      <IconButton icon={Trash2} title={t('common.deleteNamed', { name: target.name })} onClick={() => void deleteTarget(target.id)} />
+                    </>
+                  }
+                />
+              ))}
+            </ul>
           )}
         </Card>
-      )}
+
+        {activeTarget?.destination.type === 'git-branch' && activeTarget.destination.provider === 'github' && (
+          <GithubPages projectPath={project.path} branch={activeTarget.destination.branch} />
+        )}
+
+        {activeTarget && !hasFileDiff && (
+          <Card>
+            <p className="text-xs text-text-muted">{t('publish.webhookExplainer')}</p>
+          </Card>
+        )}
+
+        {hasFileDiff && (
+          <Card>
+            <div className="flex items-center justify-between">
+              <CardHeading icon={FileDiff}>{t('publish.diffHeading')}</CardHeading>
+              <div className="flex gap-2">
+                <Button variant="ghost" onClick={() => buildAction.run()} disabled={buildAction.pending}>
+                  {buildAction.pending ? t('common.saving') : t('publish.buildNow')}
+                </Button>
+                <Button variant="ghost" onClick={() => refreshDiff()} disabled={diffAction.pending || !activeTarget}>
+                  {diffAction.pending ? t('common.saving') : t('publish.refreshDiff')}
+                </Button>
+                {hasFileDiff && activeTarget.destination.type !== 'git-branch' && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => forgetManifestAction.run()}
+                    disabled={forgetManifestAction.pending || diffAction.pending}
+                    title={t('publish.uploadEverythingHint')}
+                  >
+                    {forgetManifestAction.pending ? t('common.saving') : t('publish.uploadEverything')}
+                  </Button>
+                )}
+              </div>
+            </div>
+            {forgetManifestAction.error && (
+              <p className="mt-2 whitespace-pre-wrap break-words text-xs text-red-600 dark:text-red-400">
+                {forgetManifestAction.error}
+              </p>
+            )}
+
+            <div className="mt-3">
+              <Field label={t('publish.outputDir')}>
+                <TextInput
+                  value={outputDir}
+                  onChange={(e) => setOutputDir(e.target.value)}
+                  // Written when the value is settled, not per keystroke - same as on Vorschau & Build,
+                  // where the other half of this shared setting lives.
+                  onBlur={(e) => void window.quartzGui.projectPrefs.save(project.path, { outputDir: e.target.value })}
+                  placeholder={t('publish.outputDirPlaceholder')}
+                  className="max-w-md"
+                />
+              </Field>
+              <p className="mt-1 text-xs text-text-muted">{t('publish.outputDirShared')}</p>
+            </div>
+
+            {(diffAction.error || buildAction.error) && (
+              <p className="mt-2 whitespace-pre-wrap break-words text-xs text-red-600 dark:text-red-400">
+                {diffAction.error ?? buildAction.error}
+              </p>
+            )}
+
+            {diff === null && !diffAction.error && <p className="mt-2 text-xs text-text-muted">{t('publish.noDiffYet')}</p>}
+            {diff && diff.length === 0 && <p className="mt-2 text-xs text-text-muted">{t('publish.noChanges')}</p>}
+
+            {diff && diff.length > 0 && (
+              <div className="mt-2 flex flex-col gap-3">
+                {(['added', 'changed', 'removed'] as const).map(
+                  (status) =>
+                    grouped[status].length > 0 && (
+                      <div key={status}>
+                        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                          {t(`publish.status.${status}`)} ({grouped[status].length})
+                        </p>
+                        <div className="columns-1 gap-x-6 sm:columns-2 2xl:columns-3">
+                          {grouped[status].map((entry) =>
+                            canExclude ? (
+                              <label key={entry.path} className="flex break-inside-avoid items-center gap-2 font-mono text-xs">
+                                <input
+                                  type="checkbox"
+                                  checked={!excluded.has(entry.path)}
+                                  onChange={() => toggleExclude(entry.path)}
+                                />
+                                <span className={excluded.has(entry.path) ? 'text-text-muted line-through' : ''}>{entry.path}</span>
+                              </label>
+                            ) : (
+                              <p key={entry.path} className="break-inside-avoid font-mono text-xs text-text-secondary">
+                                {entry.path}
+                              </p>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )
+                )}
+              </div>
+            )}
+          </Card>
+        )}
+
+        {/* Every other card here already appears only once a target is picked. This one
+            rendered regardless, so a project with no target opened on an empty-state sentence
+            saying there is nothing to publish to, right above a "Jetzt veröffentlichen" button. */}
+        {activeTarget && (
+          <Card>
+            <div className="flex items-center justify-between">
+              <CardHeading icon={CloudUpload}>{t('publish.deployHeading')}</CardHeading>
+              <Button onClick={deploy} disabled={deployAction.pending || !canDeploy}>
+                {deployAction.pending ? t('common.saving') : t('publish.deployButton')}
+              </Button>
+            </div>
+            {activeTarget && 'deleteRemoved' in activeTarget.destination && !activeTarget.destination.deleteRemoved && (
+              <Badge tone="slate">{t('publish.deleteDisabledHint')}</Badge>
+            )}
+            {deployAction.error && (
+              <p className="mt-2 whitespace-pre-wrap break-words text-xs text-red-600 dark:text-red-400">{deployAction.error}</p>
+            )}
+            {progress && (
+              <p className="mt-2 text-xs text-text-muted">
+                {t('publish.progress', { processed: progress.processed, total: progress.total, file: progress.currentFile ?? '' })}
+              </p>
+            )}
+            {deployResult && (
+              <>
+                <p className={`mt-2 text-xs ${deployResult.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {deployResult.success ? t('publish.deploySuccess') : t('publish.deployFailed')}
+                </p>
+                <pre className="mt-2 max-h-56 overflow-y-auto rounded-md bg-slate-950 p-3 font-mono text-xs text-slate-200">{deployResult.output}</pre>
+              </>
+            )}
+          </Card>
+        )}
+      </DetailLayout>
     </div>
   )
 }

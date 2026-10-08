@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { confirmDialog } from '../utils/confirm'
 import { expandHome, isAbsolutePath, titlebarStripClass } from '../utils/platform'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Database, Key, Monitor, Moon, FolderOpen, Plug, PowerOff, RefreshCw, Sun, Terminal, Trash2, TriangleAlert } from 'lucide-react'
+import { Database, Key, Monitor, Moon, FolderOpen, Plug, Plus, PowerOff, RefreshCw, Sun, Terminal, Trash2, TriangleAlert } from 'lucide-react'
 import type {
   AppInfo,
   Connection,
@@ -13,7 +13,8 @@ import type {
   Settings as AppSettings
 } from '@shared/ipc-contract'
 import { useAppStore } from '../state/store'
-import { Badge, Button, Card, Field, FieldGroup, FormActions, IconButton, SegmentedControl, Select, TextInput } from '../components/ui'
+import { Badge, Button, Card, DetailLayout, Field, FieldGroup, FormActions, IconButton, SegmentedControl, Select, SelectableRow, TextInput } from '../components/ui'
+import { useStickyState } from '../state/uiState'
 import {
   CONNECTION_KIND_LABEL,
   ConnectionFormFields,
@@ -494,7 +495,12 @@ function GithubSection(): JSX.Element {
 function ConnectionsSection(): JSX.Element {
   const { t } = useTranslation()
   const [connections, setConnections] = useState<Connection[]>([])
+  // What the panel shows: a connection's id, or `new:<kind>` while one is being added. The draft
+  // belongs to it, and `draftSnapshot` is the draft as it was opened - only a changed one asks
+  // before it is let go of.
+  const [selected, setSelected] = useStickyState<string | null>('settings.connections.selected', null)
   const [draft, setDraft] = useState<SaveConnectionInput | null>(null)
+  const [draftSnapshot, setDraftSnapshot] = useState<string | null>(null)
   const [usage, setUsage] = useState<Record<string, number>>({})
 
   const reload = useCallback(async () => {
@@ -504,17 +510,46 @@ function ConnectionsSection(): JSX.Element {
     // rather than at delete time so the number is visible before the button is even considered.
     const counts = await Promise.all(list.map(async (c) => [c.id, (await window.quartzGui.connections.usage(c.id)).length] as const))
     setUsage(Object.fromEntries(counts))
+    return list
   }, [])
 
+  // GitHub has its own section above - it is the same store, but a token with an account check is
+  // a different thing to look at than a server login.
+  const listed = connections.filter((c) => c.kind !== 'github')
+  const selectedConnection = listed.find((c) => c.id === selected) ?? null
+
+  function open(next: string | null, list: Connection[] = connections): void {
+    const connection = list.find((c) => c.id === next)
+    const kind = next?.startsWith('new:') ? (next.slice(4) as 'ssh' | 'ftp' | 'webhook') : null
+    const nextDraft = connection ? draftFromConnection(connection) : kind ? emptyConnectionDraft(kind) : null
+    setSelected(connection || kind ? next : null)
+    setDraft(nextDraft)
+    setDraftSnapshot(nextDraft ? JSON.stringify(nextDraft) : null)
+  }
+
   useEffect(() => {
-    void reload()
+    // A selection kept across a trip elsewhere opens again with its form; one that points at a
+    // deleted connection, or at a new one that was never saved, is let go of.
+    void reload().then((list) => open(selected?.startsWith('new:') ? null : selected, list))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reload])
+
+  async function select(next: string | null): Promise<void> {
+    if (next === selected) return
+    if (draft && JSON.stringify(draft) !== draftSnapshot) {
+      const discard = await confirmDialog({
+        text: t('settings.connections.confirmDiscard'),
+        confirmLabel: t('settings.connections.confirmDiscardAction')
+      })
+      if (!discard) return
+    }
+    open(next)
+  }
 
   const save = useAsyncAction(async () => {
     if (!draft) return
-    await window.quartzGui.connections.save(normalizeConnectionDraft(draft))
-    setDraft(null)
-    await reload()
+    const saved = await window.quartzGui.connections.save(normalizeConnectionDraft(draft))
+    open(saved.id, await reload())
   })
 
   // Confirmed either way: even an unused connection holds a password or key that only exists
@@ -525,7 +560,8 @@ function ConnectionsSection(): JSX.Element {
       used.length > 0 ? t('settings.connections.confirmDeleteInUse', { count: used.length }) : t('settings.connections.confirmDelete')
     if (!(await confirmDialog({ text: message, confirmLabel: t('settings.connections.confirmDeleteAction'), danger: true }))) return
     await window.quartzGui.connections.delete(id)
-    await reload()
+    const list = await reload()
+    if (selected === id) open(null, list)
   })
 
   // Deliberately a separate, confirmed action rather than an option in the mismatch dialog - see
@@ -538,88 +574,95 @@ function ConnectionsSection(): JSX.Element {
     await reload()
   })
 
-  // GitHub has its own section above - it is the same store, but a token with an account check is
-  // a different thing to look at than a server login.
-  const listed = connections.filter((c) => c.kind !== 'github')
+  const addButtons = (
+    <div className="flex flex-wrap gap-2">
+      <Button variant="ghost" onClick={() => void select('new:ssh')}>
+        <Plus size={14} aria-hidden />
+        {t('settings.connections.addSsh')}
+      </Button>
+      <Button variant="ghost" onClick={() => void select('new:ftp')}>
+        <Plus size={14} aria-hidden />
+        {t('settings.connections.addFtp')}
+      </Button>
+      <Button variant="ghost" onClick={() => void select('new:webhook')}>
+        <Plus size={14} aria-hidden />
+        {t('settings.connections.addWebhook')}
+      </Button>
+    </div>
+  )
+
+  const panel = draft ? (
+    <div className="flex flex-col gap-3 rounded-[8px] border border-ink/[0.06] p-3 dark:border-ink/10">
+      <h3 className="text-heading font-semibold">
+        {selectedConnection ? selectedConnection.name : t('settings.connections.newHeading', { kind: CONNECTION_KIND_LABEL[draft.kind] })}
+      </h3>
+      {selectedConnection && usage[selectedConnection.id] > 0 && (
+        <p className="text-xs text-text-muted">{t('settings.connections.usedBy', { count: usage[selectedConnection.id] })}</p>
+      )}
+      {selectedConnection?.kind === 'ssh' && (
+        <div className="flex flex-col items-start gap-1.5">
+          <p className="break-all font-mono text-micro text-text-muted">
+            {selectedConnection.hostKey
+              ? `${t('publish.hostKeyPinned')}: ${selectedConnection.hostKey.fingerprint}`
+              : t('publish.hostKeyUnknown')}
+          </p>
+          {selectedConnection.hostKey && (
+            <Button variant="ghost" onClick={() => forgetHostKey.run(selectedConnection)} disabled={forgetHostKey.pending}>
+              {t('publish.forgetHostKey')}
+            </Button>
+          )}
+        </div>
+      )}
+      <ConnectionFormFields draft={draft} onChange={setDraft} />
+      <FormActions>
+        <Button variant="ghost" onClick={() => open(null)}>
+          {t('common.cancel')}
+        </Button>
+        <Button onClick={() => save.run()} disabled={save.pending || connectionDraftIncomplete(draft)}>
+          {save.pending ? t('common.saving') : t('common.save')}
+        </Button>
+      </FormActions>
+      {save.error && <p className="whitespace-pre-wrap break-words text-xs text-red-600 dark:text-red-400">{save.error}</p>}
+    </div>
+  ) : (
+    <div className="flex flex-col gap-3 rounded-[8px] border border-ink/[0.06] p-3 dark:border-ink/10">
+      <h3 className="text-heading font-semibold">{t('settings.connections.panelEmptyTitle')}</h3>
+      <p className="text-ui text-text-secondary">{t('settings.connections.panelEmptyText')}</p>
+      {addButtons}
+    </div>
+  )
 
   return (
     <Section icon={Plug} title={t('settings.connections.title')} description={t('settings.connections.description')}>
-      {listed.length === 0 && !draft && (
-        <p className="mb-3 text-ui text-text-muted">{t('settings.connections.empty')}</p>
-      )}
+      <DetailLayout panelWidth="wide" panel={panel} panelLabel={t('settings.connections.panelLabel')} mainClassName="gap-3" onDismiss={() => void select(null)}>
+        {listed.length === 0 && <p className="text-ui text-text-muted">{t('settings.connections.empty')}</p>}
 
-      <div className="flex flex-col gap-2">
-        {listed.map((connection) => (
-          <div
-            key={connection.id}
-            className="grid grid-cols-1 items-center gap-2 rounded-[8px] border border-ink/[0.06] px-3 py-2.5 sm:grid-cols-[1fr_auto] dark:border-ink/10"
-          >
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[14px] font-medium">{connection.name}</span>
-                <Badge>{CONNECTION_KIND_LABEL[connection.kind]}</Badge>
-                {connectionMissingCredential(connection) && (
-                  <Badge tone="amber">{t('settings.connections.noSecret')}</Badge>
-                )}
-                {connection.kind === 'ftp' && !connection.secure && <Badge tone="amber">{t('settings.connections.plaintext')}</Badge>}
-              </div>
-              <p className="mt-0.5 truncate text-xs text-text-muted">
-                {connectionSummary(connection)}
-                {usage[connection.id] > 0 && ` · ${t('settings.connections.usedBy', { count: usage[connection.id] })}`}
-              </p>
-              {connection.kind === 'ssh' && (
-                <p className="mt-0.5 truncate text-xs text-text-muted" title={connection.hostKey?.fingerprint}>
-                  {connection.hostKey
-                    ? `${t('publish.hostKeyPinned')}: ${connection.hostKey.fingerprint}`
-                    : t('publish.hostKeyUnknown')}
-                </p>
-              )}
-            </div>
-            <div className="flex shrink-0 flex-wrap items-center gap-2 whitespace-nowrap sm:ml-auto">
-              {connection.kind === 'ssh' && connection.hostKey && (
-                <Button variant="ghost" onClick={() => forgetHostKey.run(connection)} disabled={forgetHostKey.pending}>
-                  {t('publish.forgetHostKey')}
-                </Button>
-              )}
-              <Button variant="ghost" onClick={() => setDraft(draftFromConnection(connection))}>
-                {t('common.edit')}
-              </Button>
-              <IconButton icon={Trash2} title={t('common.deleteNamed', { name: connection.name })} onClick={() => remove.run(connection.id)} disabled={remove.pending} />
-            </div>
-          </div>
-        ))}
-      </div>
+        {listed.length > 0 && (
+          <ul className="flex flex-col gap-1.5">
+            {listed.map((connection) => (
+              <SelectableRow
+                key={connection.id}
+                selected={connection.id === selected}
+                onSelect={() => void select(connection.id)}
+                title={connection.name}
+                subtitle={[connectionSummary(connection), ...(usage[connection.id] > 0 ? [t('settings.connections.usedBy', { count: usage[connection.id] })] : [])].join(' · ')}
+                trailing={
+                  <>
+                    <Badge>{CONNECTION_KIND_LABEL[connection.kind]}</Badge>
+                    {connectionMissingCredential(connection) && <Badge tone="amber">{t('settings.connections.noSecret')}</Badge>}
+                    {connection.kind === 'ftp' && !connection.secure && <Badge tone="amber">{t('settings.connections.plaintext')}</Badge>}
+                    <IconButton icon={Trash2} title={t('common.deleteNamed', { name: connection.name })} onClick={() => remove.run(connection.id)} disabled={remove.pending} />
+                  </>
+                }
+              />
+            ))}
+          </ul>
+        )}
 
-      {remove.error && <p className="mt-2 text-ui text-red-600 dark:text-red-400">{remove.error}</p>}
-
-      {draft ? (
-        <div className="mt-4 rounded-[8px] border border-ink/[0.06] p-3 dark:border-ink/10">
-          <ConnectionFormFields draft={draft} onChange={setDraft} />
-          <FormActions>
-            <Button variant="ghost" onClick={() => setDraft(null)}>
-              {t('common.cancel')}
-            </Button>
-            <Button onClick={() => save.run()} disabled={save.pending || connectionDraftIncomplete(draft)}>
-              {save.pending ? t('common.saving') : t('common.save')}
-            </Button>
-          </FormActions>
-          {save.error && <p className="mt-2 whitespace-pre-wrap break-words text-xs text-red-600 dark:text-red-400">{save.error}</p>}
-        </div>
-      ) : (
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Button variant="ghost" onClick={() => setDraft(emptyConnectionDraft('ssh'))}>
-            {t('settings.connections.addSsh')}
-          </Button>
-          <Button variant="ghost" onClick={() => setDraft(emptyConnectionDraft('ftp'))}>
-            {t('settings.connections.addFtp')}
-          </Button>
-          <Button variant="ghost" onClick={() => setDraft(emptyConnectionDraft('webhook'))}>
-            {t('settings.connections.addWebhook')}
-          </Button>
-        </div>
-      )}
-
-      <p className="mt-3 text-xs text-text-muted">{t('settings.connections.targetHint')}</p>
+        {remove.error && <p className="text-ui text-red-600 dark:text-red-400">{remove.error}</p>}
+        {addButtons}
+        <p className="text-xs text-text-muted">{t('settings.connections.targetHint')}</p>
+      </DetailLayout>
     </Section>
   )
 }

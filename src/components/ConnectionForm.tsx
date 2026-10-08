@@ -163,7 +163,7 @@ export function ConnectionFormFields({
               <TextInput
                 value={draft.keyPath ?? ''}
                 onChange={(e) => onChange({ ...draft, keyPath: e.target.value || undefined })}
-                className="flex-1"
+                className="min-w-0 flex-1"
                 placeholder="~/.ssh/id_ed25519"
               />
               <Button

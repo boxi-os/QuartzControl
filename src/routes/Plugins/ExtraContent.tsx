@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Code2, Copy, FileText, PanelTop, Plus, Trash2 } from 'lucide-react'
 import type { LayoutPosition, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
-import { Badge, Button, Card, CardHeading, DetailLayout, IconButton, InfoNote, SegmentedControl, Toggle } from '../../components/ui'
+import { Badge, Button, Card, CardHeading, DetailLayout, IconButton, InfoNote, SegmentedControl, SelectableRow, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { siteLanguages } from '../../components/PluginOptionsForm/siteLanguages'
@@ -249,39 +249,25 @@ export default function ExtraContent({ onShowAllOptions }: { onShowAllOptions: (
               ? [t(`positions.${layout.position}`, layout.position), ...(layout.display === 'desktop-only' ? [t('layoutEditor.displayDesktopOnly')] : layout.display === 'mobile-only' ? [t('layoutEditor.displayMobileOnly')] : [])]
               : [t('extraContent.notPlaced')]
             return (
-              <li
+              <SelectableRow
                 key={box.index}
-                data-selectable
-                onClick={(e) => {
-                  if ((e.target as HTMLElement).closest('button, a, input, label')) return
-                  setSelected(box.occurrence)
-                }}
-                className={`flex items-center gap-3 rounded-md border px-3 py-2 ${
-                  isSelected ? 'border-transparent outline outline-2 outline-blue-500' : 'border-ink/10 dark:border-ink/10'
-                }`}
-              >
-                <Icon size={16} aria-hidden className="shrink-0 text-text-secondary" />
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <button
-                    type="button"
-                    aria-pressed={isSelected}
-                    onClick={() => setSelected(box.occurrence)}
-                    className="truncate text-left text-ui font-medium text-text hover:underline"
-                  >
-                    {name}
-                  </button>
-                  <span className="truncate text-micro text-text-muted">
-                    {[
-                      kind === 'html' ? t('extraContent.kindText') : t('extraContent.kindFile', { file: `${boxDir(options)}/${snippetRefs(options)[0]?.file ?? ''}` }),
-                      ...where
-                    ].join(' · ')}
-                  </span>
-                </div>
-                {!box.plugin.enabled && <Badge>{t('extraContent.off')}</Badge>}
-                <IconButton icon={Copy} tone="neutral" title={t('extraContent.duplicateNamed', { name })} onClick={() => void duplicate(box)} />
-                {/* The last one is the plugin itself; removing that is the plugin list's job. */}
-                {boxes.length > 1 && <IconButton icon={Trash2} title={t('common.removeNamed', { name })} onClick={() => void remove(box)} />}
-              </li>
+                selected={isSelected}
+                onSelect={() => setSelected(box.occurrence)}
+                leading={<Icon size={16} aria-hidden className="shrink-0 text-text-secondary" />}
+                title={name}
+                subtitle={[
+                  kind === 'html' ? t('extraContent.kindText') : t('extraContent.kindFile', { file: `${boxDir(options)}/${snippetRefs(options)[0]?.file ?? ''}` }),
+                  ...where
+                ].join(' · ')}
+                trailing={
+                  <>
+                    {!box.plugin.enabled && <Badge>{t('extraContent.off')}</Badge>}
+                    <IconButton icon={Copy} tone="neutral" title={t('extraContent.duplicateNamed', { name })} onClick={() => void duplicate(box)} />
+                    {/* The last one is the plugin itself; removing that is the plugin list's job. */}
+                    {boxes.length > 1 && <IconButton icon={Trash2} title={t('common.removeNamed', { name })} onClick={() => void remove(box)} />}
+                  </>
+                }
+              />
             )
           })}
         </ul>

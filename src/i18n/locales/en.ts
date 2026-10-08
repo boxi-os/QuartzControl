@@ -2098,7 +2098,7 @@ export default {
     baseUrlWarning: 'configuration.baseUrl is still set to “{{baseUrl}}” — set it to the real domain before publishing.',
     connectionVsTarget:
       'A credential is the login at a provider and belongs to the app; a target belongs to this project and says where the result goes.',
-    targetHeading: 'Target',
+    targetHeading: 'Targets',
     newConnectionOfKind: '+ New {{kind}} credential',
     connectionKindFixed:
       'The kind of credential follows from the kind of target: this one needs a {{kind}} credential. Other kinds are created in the settings.',

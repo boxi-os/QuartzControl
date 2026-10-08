@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Copy, Navigation, Plus, Trash2, type LucideIcon } from 'lucide-react'
 import { quartzPluginName } from '@shared/quartzPluginName'
 import type { LayoutPosition, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
-import { Badge, Button, Card, CardHeading, DetailLayout, IconButton, InfoNote, SegmentedControl, Toggle } from '../../components/ui'
+import { Badge, Button, Card, CardHeading, DetailLayout, IconButton, InfoNote, SegmentedControl, SelectableRow, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { siteLanguages } from '../../components/PluginOptionsForm/siteLanguages'
@@ -272,48 +272,34 @@ export default function Navigations({ onShowAllOptions }: { onShowAllOptions: (s
             const layout = getLayout(item.plugin)
             const isSelected = item.occurrence === selected
             return (
-              <li
+              <SelectableRow
                 key={item.index}
-                data-selectable
-                onClick={(e) => {
-                  if ((e.target as HTMLElement).closest('button, a, input, label')) return
-                  setSelected(item.occurrence)
-                }}
-                className={`flex items-center gap-3 rounded-md border px-3 py-2 ${
-                  isSelected ? 'border-transparent outline outline-2 outline-blue-500' : 'border-ink/10 dark:border-ink/10'
-                }`}
-              >
-                <Icon size={16} aria-hidden className="shrink-0 text-text-secondary" />
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <button
-                    type="button"
-                    aria-pressed={isSelected}
-                    onClick={() => setSelected(item.occurrence)}
-                    className="truncate text-left text-ui font-medium text-text hover:underline"
-                  >
-                    {instanceLabel(item)}
-                  </button>
-                  <span className="truncate text-micro text-text-muted">
-                    {[variantLabel(variant), layout ? t(`positions.${layout.position}`, layout.position) : t('navigationsEditor.notPlaced')].join(' · ')}
-                  </span>
-                </div>
-                {!item.plugin.enabled && <Badge>{t('navigationsEditor.off')}</Badge>}
-                <IconButton
-                  icon={Copy}
-                  tone="neutral"
-                  title={t('navigationsEditor.duplicateNamed', { name: instanceLabel(item) })}
-                  onClick={() => void duplicate(item)}
-                />
-                {/* The last one is the plugin itself; removing that is the plugin list's job,
-                    where it says what it does to the installed package. */}
-                {instances.length > 1 && (
-                  <IconButton
-                    icon={Trash2}
-                    title={t('common.removeNamed', { name: instanceLabel(item) })}
-                    onClick={() => void remove(item)}
-                  />
-                )}
-              </li>
+                selected={isSelected}
+                onSelect={() => setSelected(item.occurrence)}
+                leading={<Icon size={16} aria-hidden className="shrink-0 text-text-secondary" />}
+                title={instanceLabel(item)}
+                subtitle={[variantLabel(variant), layout ? t(`positions.${layout.position}`, layout.position) : t('navigationsEditor.notPlaced')].join(' · ')}
+                trailing={
+                  <>
+                    {!item.plugin.enabled && <Badge>{t('navigationsEditor.off')}</Badge>}
+                    <IconButton
+                      icon={Copy}
+                      tone="neutral"
+                      title={t('navigationsEditor.duplicateNamed', { name: instanceLabel(item) })}
+                      onClick={() => void duplicate(item)}
+                    />
+                    {/* The last one is the plugin itself; removing that is the plugin list's job,
+                        where it says what it does to the installed package. */}
+                    {instances.length > 1 && (
+                      <IconButton
+                        icon={Trash2}
+                        title={t('common.removeNamed', { name: instanceLabel(item) })}
+                        onClick={() => void remove(item)}
+                      />
+                    )}
+                  </>
+                }
+              />
             )
           })}
         </ul>

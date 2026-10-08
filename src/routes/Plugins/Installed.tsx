@@ -923,6 +923,8 @@ function PluginRow({
   // keyboard; the row's click is the larger target for the pointer.
   function onRowClick(e: MouseEvent<HTMLDivElement>): void {
     if ((e.target as HTMLElement).closest('button, a, input, label')) return
+    // As in SelectableRow: left on <body>, the focus never lets Escape reach the DetailLayout.
+    e.currentTarget.querySelector<HTMLElement>('button[aria-pressed]')?.focus()
     onSelect(item)
   }
 

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { ArrowDown, ArrowUp, ChevronRight, Languages, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
 import type { NormalizedOptionSchema, OptionField, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
-import { Badge, Button, Card, CardHeading, DetailLayout, Field, IconButton, InfoNote, TextInput, Toggle } from '../../components/ui'
+import { Badge, Button, Card, CardHeading, DetailLayout, Field, IconButton, InfoNote, SelectableRow, TextInput, Toggle } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { enumLabel, fieldText, type FormLanguage } from '../../components/PluginOptionsForm/text'
@@ -374,34 +374,22 @@ export default function Multilanguage({ onShowAllOptions }: { onShowAllOptions: 
             const name = nameOf(l)
             const sublines = [l.code, ...(typeof l.locale === 'string' && l.locale ? [l.locale] : [])]
             return (
-              <li
+              <SelectableRow
                 key={l.code}
-                data-selectable
-                onClick={(e) => {
-                  if ((e.target as HTMLElement).closest('button, a, input, label')) return
-                  setSelected(key)
-                }}
-                className={`flex items-center gap-3 rounded-md border px-3 py-2 ${
-                  isSelected ? 'border-transparent outline outline-2 outline-blue-500' : 'border-ink/10 dark:border-ink/10'
-                }`}
-              >
-                <span className="w-8 shrink-0 text-center text-micro font-semibold uppercase text-text-secondary">{l.code}</span>
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <button
-                    type="button"
-                    aria-pressed={isSelected}
-                    onClick={() => setSelected(key)}
-                    className="truncate text-left text-ui font-medium text-text hover:underline"
-                  >
-                    {name}
-                  </button>
-                  <span className="truncate text-micro text-text-muted">{sublines.join(' · ')}</span>
-                </div>
-                {l.code === defaultCode && <Badge tone="green">{t('multilanguageEditor.defaultBadge')}</Badge>}
-                {!isPublished(l.code, published) && <Badge tone="amber">{t('multilanguageEditor.unpublishedBadge')}</Badge>}
-                {/* The last language cannot go: without one the plugin falls back to `en`. */}
-                {languages.length > 1 && <IconButton icon={Trash2} title={t('common.removeNamed', { name })} onClick={() => void remove(l)} />}
-              </li>
+                selected={isSelected}
+                onSelect={() => setSelected(key)}
+                leading={<span className="w-8 shrink-0 text-center text-micro font-semibold uppercase text-text-secondary">{l.code}</span>}
+                title={name}
+                subtitle={sublines.join(' · ')}
+                trailing={
+                  <>
+                    {l.code === defaultCode && <Badge tone="green">{t('multilanguageEditor.defaultBadge')}</Badge>}
+                    {!isPublished(l.code, published) && <Badge tone="amber">{t('multilanguageEditor.unpublishedBadge')}</Badge>}
+                    {/* The last language cannot go: without one the plugin falls back to `en`. */}
+                    {languages.length > 1 && <IconButton icon={Trash2} title={t('common.removeNamed', { name })} onClick={() => void remove(l)} />}
+                  </>
+                }
+              />
             )
           })}
         </ul>
@@ -415,30 +403,14 @@ export default function Multilanguage({ onShowAllOptions }: { onShowAllOptions: 
             const isSelected = selected === key
             const line = summary(id)
             return (
-              <li
+              <SelectableRow
                 key={id}
-                data-selectable
-                onClick={(e) => {
-                  if ((e.target as HTMLElement).closest('button, a, input, label')) return
-                  setSelected(key)
-                }}
-                className={`flex items-center gap-3 rounded-md border px-3 py-2 ${
-                  isSelected ? 'border-transparent outline outline-2 outline-blue-500' : 'border-ink/10 dark:border-ink/10'
-                }`}
-              >
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <button
-                    type="button"
-                    aria-pressed={isSelected}
-                    onClick={() => setSelected(key)}
-                    className="truncate text-left text-ui font-medium text-text hover:underline"
-                  >
-                    {t(`multilanguageEditor.sections.${id}.title`)}
-                  </button>
-                  {line && <span className="truncate text-micro text-text-muted">{line}</span>}
-                </div>
-                <ChevronRight size={14} aria-hidden className="shrink-0 text-text-muted" />
-              </li>
+                selected={isSelected}
+                onSelect={() => setSelected(key)}
+                title={t(`multilanguageEditor.sections.${id}.title`)}
+                subtitle={line || undefined}
+                trailing={<ChevronRight size={14} aria-hidden className="shrink-0 text-text-muted" />}
+              />
             )
           })}
         </ul>

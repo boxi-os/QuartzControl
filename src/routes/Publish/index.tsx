@@ -233,6 +233,13 @@ export default function Publish(): JSX.Element {
     setSelectedId(id)
   }
 
+  // Escape and a click on the empty page close an open form, asking first as everything else that
+  // takes it away does. The selection itself stays: the diff and the deploy below are about it.
+  async function dismissTargetDraft(): Promise<void> {
+    if (!(await mayDiscardDraft())) return
+    closeTargetDraft()
+  }
+
   async function newTarget(): Promise<void> {
     if (!(await mayDiscardDraft())) return
     openTargetDraft(emptyTargetDraft())
@@ -765,7 +772,12 @@ export default function Publish(): JSX.Element {
     <div className="flex flex-col gap-6">
       <PageHeader icon={TAB_ICONS.publish} title={t('publish.title')} description={t('publish.description')} handbook={<HandbookLink page="publish" />} />
 
-      <DetailLayout panelWidth="wide" panel={panel} panelLabel={t('publish.panelLabel')}>
+      <DetailLayout
+        panelWidth="wide"
+        panel={panel}
+        panelLabel={t('publish.panelLabel')}
+        onDismiss={targetDraft ? () => void dismissTargetDraft() : undefined}
+      >
 
         {/* The Zugang/Ziel split was only explained inside the target form, i.e. after the user had
             already had to pick one of the two. The link belongs in the same paragraph: connections

@@ -2110,7 +2110,7 @@ export default {
     baseUrlWarning: 'configuration.baseUrl steht noch auf „{{baseUrl}}“ — vor dem Veröffentlichen auf die echte Domain setzen.',
     connectionVsTarget:
       'Ein Zugang ist die Anmeldung bei einem Anbieter und gehört der App; ein Ziel gehört zu diesem Projekt und sagt, wohin das Ergebnis soll.',
-    targetHeading: 'Ziel',
+    targetHeading: 'Ziele',
     newConnectionOfKind: '+ Neuer {{kind}}-Zugang',
     connectionKindFixed:
       'Die Art des Zugangs ergibt sich aus der Art des Ziels: dieses Ziel braucht einen {{kind}}-Zugang. Andere Arten legst du in den Einstellungen an.',

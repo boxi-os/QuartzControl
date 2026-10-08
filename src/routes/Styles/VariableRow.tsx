@@ -1,6 +1,5 @@
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronDown, ChevronRight } from 'lucide-react'
 import { Badge, TextInput } from '../../components/ui'
 import {
   baseValue,
@@ -43,14 +42,19 @@ export type VariableRowProps = {
   varKey: string
   ctx: ResolveContext
   dependents: string[]
-  expanded: boolean
-  onToggle: () => void
+  /** row: the line in a list, which selects the variable. panel: the same variable in the page's
+   *  side panel, with the derivation, the two dependency lists and the editors. */
+  variant: 'row' | 'panel'
+  selected: boolean
+  onSelect: () => void
   /** "Im Dunkelmodus abweichend" was clicked - held by the page, like `expanded`. */
   darkOpen: boolean
   onDarkOpen: (open: boolean) => void
   onChange: (next: OverrideValue | null) => void
   onNavigate?: (key: string) => void
-  /** Which override keys each row read while it last rendered - owned by the page, one per key. */
+  /** Which override keys each row read while it last rendered - owned by the page, one per key.
+   *  The panel gets a map of its own: it renders the same key, and a shared entry would let the
+   *  row's shorter list stand for what the panel read, or the other way round. */
   readLog: Map<string, Set<string>>
 }
 
@@ -66,7 +70,7 @@ export type VariableRowProps = {
 // would be a second copy of it that drifts. The callbacks are left out of the comparison: all
 // four the page passes close over the key and state setters only.
 function sameRow(prev: VariableRowProps, next: VariableRowProps): boolean {
-  if (prev.varKey !== next.varKey || prev.expanded !== next.expanded || prev.darkOpen !== next.darkOpen) return false
+  if (prev.varKey !== next.varKey || prev.selected !== next.selected || prev.variant !== next.variant || prev.darkOpen !== next.darkOpen) return false
   if (prev.readLog !== next.readLog) return false
   if (prev.dependents !== next.dependents && (prev.dependents.length > 0 || next.dependents.length > 0)) return false
   const a = prev.ctx
@@ -99,8 +103,9 @@ function VariableRow({
   varKey,
   ctx: pageCtx,
   dependents,
-  expanded,
-  onToggle,
+  variant,
+  selected,
+  onSelect,
   darkOpen,
   onDarkOpen,
   onChange,
@@ -109,7 +114,7 @@ function VariableRow({
 }: VariableRowProps): JSX.Element {
   const { t } = useTranslation()
   // A fresh set per render, handed on to the parts below: they resolve through the same context,
-  // and a part that renders later (the expanded panel) adds to the set this render logged.
+  // and a part that renders later (CurrentValues, Chain, ValueInput) adds to the set this render logged.
   const read = new Set<string>()
   readLog.set(varKey, read)
   const ctx = trackReads(pageCtx, read)
@@ -198,155 +203,159 @@ function VariableRow({
   // was missing: the expanded row said what depends on this variable but never what it depends on.
   const uses = Array.from(new Set([...referencedVariables(light ?? ''), ...referencedVariables(dark ?? '')]))
 
+  const swatches = (
+    // Kept as an empty slot for a value that is no colour, so the names still line up. The slot
+    // does not ask for the page's ground: that reads --light, and a row that reads it re-renders
+    // with every keystroke in --light and in whatever a theme derives it from - 703 rows without a
+    // swatch did, under the minimal theme (thirty-seventh review, finding 3).
+    <span className={`flex shrink-0 gap-0.5 ${showsColor ? '' : 'invisible'}`} aria-hidden={!showsColor}>
+      {showsColor ? (
+        <>
+          <Swatch value={lightResolved} ground={pageGround('light', ctx)} />
+          <Swatch value={darkResolved} ground={pageGround('dark', ctx)} />
+        </>
+      ) : (
+        <>
+          <span className="h-3 w-3 shrink-0 rounded-sm border border-transparent" />
+          <span className="h-3 w-3 shrink-0 rounded-sm border border-transparent" />
+        </>
+      )}
+    </span>
+  )
+  // Only the deviation. "Letzter Build" was on 60 of 64 rows, identical every time, sitting at the
+  // far right of a 1380px row with nothing between it and the name - which is what made the list
+  // read as wide and empty. The origin is named in the panel for every variable.
+  const originBadge = (origin === 'user' || origin === 'theme') && <Badge tone={ORIGIN_TONE[origin]}>{t(`styles.variables.origin.${origin}`)}</Badge>
+
   // data-var-key is what the page's "jump to this variable" scroll looks for - the row has to be
-  // findable from outside, since the chip that navigates here lives in a different row entirely.
-  return (
-    <div
-      data-var-key={varKey}
-      className={`rounded-md px-1.5 py-1 ${
-        expanded ? 'border border-blue-300 bg-blue-50/40 shadow-sm dark:border-blue-500/40 dark:bg-blue-500/[0.06]' : ''
-      } ${override && !expanded ? 'bg-green-50/60 dark:bg-green-500/[0.07]' : ''} ${
-        override && expanded ? 'border-green-400 bg-green-50/60 dark:border-green-500/40 dark:bg-green-500/[0.07]' : ''
-      }`}
-    >
-      <div className="flex items-center gap-2 text-xs">
-        <button
-          type="button"
-          onClick={onToggle}
-          className="flex min-w-0 flex-1 items-center gap-2 text-left hover:underline"
-          title={t('styles.variables.chainToggle')}
-        >
-          {expanded ? <ChevronDown size={12} className="shrink-0" /> : <ChevronRight size={12} className="shrink-0" />}
-          {/* Kept as an empty slot for a value that is no colour, so the names still line up. The
-              slot does not ask for the page's ground: that reads --light, and a row that reads it
-              re-renders with every keystroke in --light and in whatever a theme derives it from -
-              703 rows without a swatch did, under the minimal theme (thirty-seventh review, finding 3). */}
-          <span className={`flex shrink-0 gap-0.5 ${showsColor ? '' : 'invisible'}`} aria-hidden={!showsColor}>
-            {showsColor ? (
-              <>
-                <Swatch value={lightResolved} ground={pageGround('light', ctx)} />
-                <Swatch value={darkResolved} ground={pageGround('dark', ctx)} />
-              </>
-            ) : (
-              <>
-                <span className="h-3 w-3 shrink-0 rounded-sm border border-transparent" />
-                <span className="h-3 w-3 shrink-0 rounded-sm border border-transparent" />
-              </>
-            )}
-          </span>
-          <code className="shrink-0 font-mono">--{varKey}</code>
-          <span className="truncate text-text-muted">{light ?? '—'}</span>
-        </button>
-        {dependents.length > 0 && (
-          <span className="shrink-0 text-micro text-text-muted">{t('styles.variables.dependents', { count: dependents.length })}</span>
-        )}
-        {/* Only the deviation. "Letzter Build" was on 60 of 64 rows, identical every time, sitting
-            at the far right of a 1380px row with nothing between it and the name - which is what
-            made the list read as wide and empty. The origin is named in the panel below for every
-            row, so nothing is lost by dropping the repetition. */}
-        {(origin === 'user' || origin === 'theme') && (
-          <Badge tone={ORIGIN_TONE[origin]}>{t(`styles.variables.origin.${origin}`)}</Badge>
-        )}
-        {override && (
-          <button type="button" onClick={() => onChange(null)} className="shrink-0 text-micro text-text-muted underline">
-            {t('styles.variables.reset')}
+  // findable from outside, since the chip that navigates here lives in the panel.
+  if (variant === 'row') {
+    return (
+      <div
+        data-var-key={varKey}
+        data-selectable
+        className={`rounded-md px-1.5 py-1 ${selected ? 'outline outline-2 outline-blue-500' : ''} ${
+          override ? 'bg-green-50/60 dark:bg-green-500/[0.07]' : ''
+        }`}
+      >
+        <div className="flex items-center gap-2 text-xs">
+          <button
+            type="button"
+            aria-pressed={selected}
+            onClick={onSelect}
+            className="flex min-w-0 flex-1 items-center gap-2 text-left hover:underline"
+          >
+            {swatches}
+            <code className="shrink-0 font-mono">--{varKey}</code>
+            <span className="truncate text-text-muted">{light ?? '—'}</span>
           </button>
+          {dependents.length > 0 && (
+            <span className="shrink-0 text-micro text-text-muted">{t('styles.variables.dependents', { count: dependents.length })}</span>
+          )}
+          {originBadge}
+          {override && (
+            <button type="button" onClick={() => onChange(null)} className="shrink-0 text-micro text-text-muted underline">
+              {t('styles.variables.reset')}
+            </button>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex min-w-0 flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-2">
+        {swatches}
+        <code className="min-w-0 break-all font-mono text-heading font-semibold">--{varKey}</code>
+        {originBadge}
+      </div>
+      <CurrentValues varKey={varKey} ctx={ctx} split={isColor || lightResolved !== darkResolved} />
+
+      <section>
+        <SectionLabel>{t('styles.variables.section.origin')}</SectionLabel>
+        <p className="mb-1 text-micro text-text-muted">
+          {t(`styles.variables.origin.${origin}`)}
+        </p>
+        <Chain varKey={varKey} mode="light" ctx={ctx} label={t('styles.variables.light')} />
+        {(dark !== light || darkResolved !== lightResolved) && (
+          <Chain varKey={varKey} mode="dark" ctx={ctx} label={t('styles.variables.dark')} />
         )}
+      </section>
+
+      {/* The two directions of the dependency graph, one above the other and named - "N
+          abhängig" in the row answers neither question on its own. */}
+      <div className="flex flex-col gap-3">
+        <section>
+          <SectionLabel>{t('styles.variables.section.uses')}</SectionLabel>
+          {uses.length === 0 ? (
+            <p className="text-micro text-text-muted">{t('styles.variables.usesNone')}</p>
+          ) : (
+            <KeyChips keys={uses} onNavigate={onNavigate} />
+          )}
+        </section>
+        <section>
+          <SectionLabel>{t('styles.variables.section.dependents')}</SectionLabel>
+          {dependents.length === 0 ? (
+            <p className="text-micro text-text-muted">{t('styles.variables.dependentsNone')}</p>
+          ) : (
+            <>
+              <p className="mb-1 text-micro text-text-muted">
+                {t('styles.variables.dependentsWarning', { count: dependents.length })}
+              </p>
+              <KeyChips keys={dependents} onNavigate={onNavigate} />
+            </>
+          )}
+        </section>
       </div>
 
-      {/* The panel is capped on purpose, unlike the page around it: it is short labelled text and
-          a pair of inputs, and stretched across a maximized window its two dependency columns end
-          up a screen apart from the row they belong to. */}
-      {expanded && (
-        <div className="ml-[18px] mt-1.5 flex max-w-5xl flex-col gap-3 border-l-2 border-ink/[0.08] pl-3 dark:border-ink/10">
-          <CurrentValues varKey={varKey} ctx={ctx} split={isColor || lightResolved !== darkResolved} />
-
-          <section>
-            <SectionLabel>{t('styles.variables.section.origin')}</SectionLabel>
-            <p className="mb-1 text-micro text-text-muted">
-              {t(`styles.variables.origin.${origin}`)}
-            </p>
-            <Chain varKey={varKey} mode="light" ctx={ctx} label={t('styles.variables.light')} />
-            {(dark !== light || darkResolved !== lightResolved) && (
-              <Chain varKey={varKey} mode="dark" ctx={ctx} label={t('styles.variables.dark')} />
-            )}
-          </section>
-
-          {/* The two directions of the dependency graph, side by side and named - "N abhängig" in
-              the header answers neither question on its own. */}
-          <div className="grid gap-3 md:grid-cols-2">
-            <section>
-              <SectionLabel>{t('styles.variables.section.uses')}</SectionLabel>
-              {uses.length === 0 ? (
-                <p className="text-micro text-text-muted">{t('styles.variables.usesNone')}</p>
-              ) : (
-                <KeyChips keys={uses} onNavigate={onNavigate} />
-              )}
-            </section>
-            <section>
-              <SectionLabel>{t('styles.variables.section.dependents')}</SectionLabel>
-              {dependents.length === 0 ? (
-                <p className="text-micro text-text-muted">{t('styles.variables.dependentsNone')}</p>
-              ) : (
-                <>
-                  <p className="mb-1 text-micro text-text-muted">
-                    {t('styles.variables.dependentsWarning', { count: dependents.length })}
-                  </p>
-                  <KeyChips keys={dependents} onNavigate={onNavigate} />
-                </>
-              )}
-            </section>
-          </div>
-
-          <section>
-            <SectionLabel>{t('styles.variables.section.edit')}</SectionLabel>
-            <div className="flex flex-wrap items-center gap-4">
-              <ValueInput
-                varKey={varKey}
-                ctx={ctx}
-                mode="light"
-                label={splitModes ? t('styles.variables.light') : t('styles.variables.bothModes')}
-                value={draft.light}
-                onChange={(v) => setMode('light', v)}
-              />
-              {splitModes && (
-                <ValueInput
-                  varKey={varKey}
-                  ctx={ctx}
-                  mode="dark"
-                  label={t('styles.variables.dark')}
-                  value={draft.dark}
-                  onChange={(v) => setMode('dark', v)}
-                />
-              )}
-              {!splitModes && (
-                <button type="button" onClick={() => onDarkOpen(true)} className="text-micro text-text-muted underline">
-                  {t('styles.variables.splitDark')}
-                </button>
-              )}
-              {/* The way back, where there is one: only the user's own dark value can be taken away,
-                  a theme's stays and keeps the two fields. */}
-              {splitModes && !isColor && !baseDiffers && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    followLight()
-                    onDarkOpen(false)
-                  }}
-                  className="text-micro text-text-muted underline"
-                >
-                  {t('styles.variables.unsplitDark')}
-                </button>
-              )}
-              {override && (
-                <button type="button" onClick={() => onChange(null)} className="text-micro text-text-muted underline">
-                  {t('styles.variables.resetToOriginal')}
-                </button>
-              )}
-            </div>
-          </section>
+      <section>
+        <SectionLabel>{t('styles.variables.section.edit')}</SectionLabel>
+        <div className="flex flex-wrap items-center gap-4">
+          <ValueInput
+            varKey={varKey}
+            ctx={ctx}
+            mode="light"
+            label={splitModes ? t('styles.variables.light') : t('styles.variables.bothModes')}
+            value={draft.light}
+            onChange={(v) => setMode('light', v)}
+          />
+          {splitModes && (
+            <ValueInput
+              varKey={varKey}
+              ctx={ctx}
+              mode="dark"
+              label={t('styles.variables.dark')}
+              value={draft.dark}
+              onChange={(v) => setMode('dark', v)}
+            />
+          )}
+          {!splitModes && (
+            <button type="button" onClick={() => onDarkOpen(true)} className="text-micro text-text-muted underline">
+              {t('styles.variables.splitDark')}
+            </button>
+          )}
+          {/* The way back, where there is one: only the user's own dark value can be taken away,
+              a theme's stays and keeps the two fields. */}
+          {splitModes && !isColor && !baseDiffers && (
+            <button
+              type="button"
+              onClick={() => {
+                followLight()
+                onDarkOpen(false)
+              }}
+              className="text-micro text-text-muted underline"
+            >
+              {t('styles.variables.unsplitDark')}
+            </button>
+          )}
+          {override && (
+            <button type="button" onClick={() => onChange(null)} className="text-micro text-text-muted underline">
+              {t('styles.variables.resetToOriginal')}
+            </button>
+          )}
         </div>
-      )}
+      </section>
     </div>
   )
 }
@@ -394,7 +403,7 @@ function CurrentValues({ varKey, ctx, split }: { varKey: string; ctx: ResolveCon
   )
 }
 
-function KeyChips({ keys, onNavigate }: { keys: string[]; onNavigate?: (key: string) => void }): JSX.Element {
+export function KeyChips({ keys, onNavigate }: { keys: string[]; onNavigate?: (key: string) => void }): JSX.Element {
   const { t } = useTranslation()
   const visible = keys.slice(0, 24)
   return (

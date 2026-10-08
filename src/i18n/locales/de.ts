@@ -1860,7 +1860,7 @@ export default {
     variables: {
       mainHeading: 'Hauptvariablen',
       mainDescription:
-        'Die Variablen, die Quartz selbst aus den Grundfarben ableitet. Zeile aufklappen zeigt, woher der Wert kommt und was daran hängt.',
+        'Die Variablen, die Quartz selbst aus den Grundfarben ableitet. Eine Zeile wählen zeigt rechts, woher der Wert kommt und was daran hängt.',
       allHeading: 'Alle Theme- und Build-Variablen',
       allDescription:
         'Alles, was das aktive Theme, Plugins oder der letzte Build an Variablen mitbringen — getrennt von den Hauptvariablen, weil es sehr viele werden können.',
@@ -1888,7 +1888,12 @@ export default {
       bothModes: 'Hell und dunkel',
       splitDark: 'Im Dunkelmodus abweichend',
       unsplitDark: 'In beiden Modi gleich',
-      chainToggle: 'Herkunft und Abhängigkeiten anzeigen',
+      panelLabel: 'Variable',
+      panelEmptyTitle: 'Variable wählen',
+      panelEmptyText: 'Wähle links eine Variable: Hier stehen dann ihr Wert in beiden Modi, woher sie ihn hat, wer sie benutzt, und die Felder zum Ändern.',
+      summaryMain: 'Hauptvariablen',
+      summaryAll: 'Weitere Variablen',
+      summaryChanged: 'Von dir geändert',
       unresolved: 'nicht auflösbar (nur in einem Selektor gesetzt)',
       unresolvedReference: 'nicht auflösbar (eine Variable darin hat hier keinen Wert)',
       swatchOver: '{{value}} über {{ground}}, dem Seitengrund der Website',

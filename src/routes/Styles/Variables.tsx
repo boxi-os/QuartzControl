@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronDown, ChevronRight } from 'lucide-react'
-import { Button, Card, InfoNote, SegmentedControl, TextInput } from '../../components/ui'
+import { ChevronDown, ChevronRight, Variable } from 'lucide-react'
+import { Button, Card, CardHeading, DetailLayout, InfoNote, SegmentedControl, TextInput } from '../../components/ui'
 import { useStickyState } from '../../state/uiState'
 import { CSS_VARIABLES } from '../../data/cssVariables'
-import VariableRow, { type OverrideValue, type VariableRowProps } from './VariableRow'
+import VariableRow, { KeyChips, type OverrideValue, type VariableRowProps } from './VariableRow'
 import VariableGroup from './VariableGroup'
 import { allKnownKeys, groupLabel, groupOf, isColorVariable, normalizeVarQuery, type ResolveContext } from './variableGraph'
 import { activeThemeIdOf, useStyles } from './index'
@@ -37,9 +37,10 @@ export default function Variables(): JSX.Element {
   const { t } = useTranslation()
   const { project, config, overrides, setOverrides, graph, graphLoading, reloadGraph, registerSave, scss } = useStyles()
 
-  // Which rows are open, which query is active: kept across a trip to another area, since with
-  // nothing rendered until a query is typed, losing it means losing the whole result list.
-  const [expandedKeys, setExpandedKeys] = useStickyState<string[]>('styles.vars.expanded', [])
+  // Which variable the side panel shows, which query is active: kept across a trip to another
+  // area, since with nothing rendered until a query is typed, losing it means losing the whole
+  // result list. One variable at a time since 1.1 - rows used to fold open in place, several at once.
+  const [selectedKey, setSelectedKey] = useStickyState<string | null>('styles.vars.selected', null)
   // Rows whose second field was opened with "Im Dunkelmodus abweichend". Held here rather than in
   // the row, which a closed group unmounts: the row came back expanded and the field was gone
   // (thirty-sixth review, finding 6). An empty dark field loses nothing, but it is a choice the
@@ -86,6 +87,8 @@ export default function Variables(): JSX.Element {
   const readLogRef = useRef<Map<string, Set<string>> | null>(null)
   readLogRef.current ??= new Map()
   const readLog = readLogRef.current
+  const panelReadLogRef = useRef<Map<string, Set<string>> | null>(null)
+  panelReadLogRef.current ??= new Map()
 
   function setOverride(key: string, next: OverrideValue | null): void {
     setOverrides((prev) => {
@@ -102,15 +105,11 @@ export default function Variables(): JSX.Element {
     setOpenGroups((prev) => (prev.includes(group) ? prev.filter((g) => g !== group) : [...prev, group]))
   }
 
-  function toggleExpanded(key: string): void {
-    setExpandedKeys((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]))
-  }
-
-  // Clicking a variable in either dependency list jumps to it: opens the searchable table, puts the
-  // name in the query, expands that row - and actually scrolls to it, which is the half that makes
+  // Clicking a variable in either dependency list jumps to it: selects it, opens the searchable
+  // table, puts the name in the query - and scrolls its row into view, which is the half that makes
   // it a jump rather than a state change somewhere off screen.
   function navigateTo(key: string): void {
-    setExpandedKeys((prev) => (prev.includes(key) ? prev : [...prev, key]))
+    setSelectedKey(key)
     // A chip can point at a curated variable, which lives in the card above rather than in the
     // searchable table - and since the categories collapse, its row may not exist to scroll to.
     // Opening its category is what makes the jump land; for a discovered key there is none.
@@ -131,6 +130,9 @@ export default function Variables(): JSX.Element {
     const el = document.querySelector(`[data-var-key="${CSS.escape(pendingScroll)}"]`)
     if (!el) return
     el.scrollIntoView({ block: 'center' })
+    // The chip that was clicked lives in the panel, which remounts for the new variable: the focus
+    // went to <body> with it, and Escape no longer reached the DetailLayout.
+    el.querySelector<HTMLElement>('button[aria-pressed]')?.focus({ preventScroll: true })
     setPendingScroll(null)
   })
 
@@ -139,8 +141,9 @@ export default function Variables(): JSX.Element {
     ctx,
     readLog,
     dependents: graph?.dependents[key] ?? NO_DEPENDENTS,
-    expanded: expandedKeys.includes(key),
-    onToggle: () => toggleExpanded(key),
+    variant: 'row',
+    selected: key === selectedKey,
+    onSelect: () => setSelectedKey(key),
     darkOpen: darkOpenKeys.includes(key),
     onDarkOpen: (open) =>
       setDarkOpenKeys((prev) => (open ? (prev.includes(key) ? prev : [...prev, key]) : prev.filter((k) => k !== key))),
@@ -192,8 +195,29 @@ export default function Variables(): JSX.Element {
 
   const themeId = activeThemeIdOf(config)
 
+  const overriddenKeys = Object.keys(overrides).sort()
+  const panel = selectedKey ? (
+    <Card>
+      <VariableRow key={selectedKey} {...rowProps(selectedKey)} variant="panel" readLog={panelReadLogRef.current} />
+    </Card>
+  ) : (
+    <Card className="flex flex-col gap-3">
+      <CardHeading icon={Variable}>{t('styles.variables.panelEmptyTitle')}</CardHeading>
+      <p className="text-ui text-text-secondary">{t('styles.variables.panelEmptyText')}</p>
+      <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 text-ui">
+        <dt className="text-text-secondary">{t('styles.variables.summaryMain')}</dt>
+        <dd className="text-text">{CSS_VARIABLES.length}</dd>
+        <dt className="text-text-secondary">{t('styles.variables.summaryAll')}</dt>
+        <dd className="text-text">{extraKeys.length}</dd>
+        <dt className="text-text-secondary">{t('styles.variables.summaryChanged')}</dt>
+        <dd className="text-text">{overriddenKeys.length}</dd>
+      </dl>
+      {overriddenKeys.length > 0 && <KeyChips keys={overriddenKeys} onNavigate={navigateTo} />}
+    </Card>
+  )
+
   return (
-    <div className="flex flex-col gap-4">
+    <DetailLayout panelWidth="wide" panel={panel} panelLabel={t('styles.variables.panelLabel')} onDismiss={() => setSelectedKey(null)} mainClassName="gap-4">
       {/* Answers the question the tab order raises on its own: a community theme injects its CSS
           inside @layer, this file's :root block is unlayered, and unlayered declarations outrank
           every layered one regardless of load order - verified against a real build (ultra-lobster
@@ -250,7 +274,7 @@ export default function Variables(): JSX.Element {
         }
         renderRow={(key) => <VariableRow key={key} {...rowProps(key)} />}
       />
-    </div>
+    </DetailLayout>
   )
 }
 

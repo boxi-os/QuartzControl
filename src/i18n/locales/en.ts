@@ -1852,7 +1852,7 @@ export default {
     variables: {
       mainHeading: 'Main variables',
       mainDescription:
-        'The variables Quartz itself derives from the base colors. Expand a row to see where its value comes from and what depends on it.',
+        'The variables Quartz itself derives from the base colors. Pick a row to see on the right where its value comes from and what depends on it.',
       allHeading: 'All theme and build variables',
       allDescription:
         'Everything the active theme, plugins, or the last build bring along — kept separate from the main variables, because there can be a great many.',
@@ -1880,7 +1880,12 @@ export default {
       bothModes: 'Light and dark',
       splitDark: 'Different in dark mode',
       unsplitDark: 'Same in both modes',
-      chainToggle: 'Show origin and dependencies',
+      panelLabel: 'Variable',
+      panelEmptyTitle: 'Pick a variable',
+      panelEmptyText: 'Pick a variable on the left: this panel then shows its value in both modes, where it comes from, what uses it, and the fields to change it.',
+      summaryMain: 'Main variables',
+      summaryAll: 'Other variables',
+      summaryChanged: 'Changed by you',
       unresolved: 'not resolvable (only set inside a selector)',
       unresolvedReference: 'not resolvable (a variable it uses has no value here)',
       swatchOver: '{{value}} over {{ground}}, the website’s page background',

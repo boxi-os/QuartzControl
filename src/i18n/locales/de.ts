@@ -1444,10 +1444,6 @@ export default {
       editFrame: 'Frame bearbeiten',
       hiddenInView: 'In dieser Ansicht nicht auf der Seite',
       approximate: 'Ungefähr gezeichnet: Spaltenbreiten wie {{sizes}} kennt erst der Browser, hier zählen sie als gleiche Anteile.',
-      mobileBelowQuartz:
-        'Deine Frames schalten bei {{frame}} px auf Mobil, Quartz blendet „Nur Desktop“ und „Nur Mobil“ aber bei {{quartz}} px um. Dazwischen zeigt die Seite die Tablet-Anordnung mit den Komponenten für Mobil.',
-      mobileAboveQuartz:
-        'Deine Frames schalten bei {{frame}} px auf Mobil, Quartz blendet „Nur Desktop“ und „Nur Mobil“ aber erst bei {{quartz}} px um. Dazwischen zeigt die Seite die Mobil-Anordnung mit den Komponenten für Desktop.',
       otherDraftOpen: 'Im Frame-Editor ist noch „{{name}}“ mit ungespeicherten Änderungen offen. Speichere oder schließe es, bevor du ein anderes Frame öffnest.'
     },
     inspector: {

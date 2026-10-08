@@ -19,13 +19,8 @@ import type { FrameBreakpoint, GridBreakpointLayout, PluginLayoutDeclaration } f
 
 // The window width each view stands for: a common laptop at desktop, a tablet held upright, a
 // phone. They are reference points for the proportions, not breakpoints - those belong to the
-// project (FrameBreakpointWidths) and to Quartz (800px).
+// project (FrameBreakpointWidths).
 export const STAGE_REFERENCE_WIDTH: Record<FrameBreakpoint, number> = { desktop: 1456, tablet: 1000, mobile: 390 }
-
-// Quartz's own mobile threshold (`$mobile` in quartz/styles/variables.scss, `max-width: 800px`):
-// below it `.desktop-only` is hidden and `.mobile-only` shown. A component's `display` follows this
-// number whatever the project's frames do.
-export const QUARTZ_MOBILE_MAX = 800
 
 const ROOT_FONT_SIZE = 16
 
@@ -241,10 +236,11 @@ export function stageFrame(layout: GridBreakpointLayout, breakpoint: FrameBreakp
 }
 
 /**
- * Whether a component with this `display` is on the page in this view. Quartz switches at its own
- * 800px, and every view of the stage lies clearly on one side of it - tablet above, mobile below.
- * Where a project's frames switch to mobile somewhere else, the two disagree in between; the board
- * says so next to the views (mobileThresholdNote).
+ * Whether a component with this `display` is on the page in this view. On a page with an authored
+ * frame, `.desktop-only`/`.mobile-only` switch at the project's own mobile width, not at Quartz's
+ * 800px - buildQuartzBreakpointCompat in shared/gridFrameCss.ts restates them per frame - so the
+ * views and the switch always agree. Measured on the built Example (mobile width 900) in Chrome:
+ * at 850px the desktop-only components are `display: none` and the mobile-only one `contents`.
  */
 export function shownInView(display: PluginLayoutDeclaration['display'], breakpoint: FrameBreakpoint): boolean {
   if (display === 'desktop-only') return breakpoint !== 'mobile'

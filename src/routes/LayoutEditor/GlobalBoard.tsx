@@ -59,7 +59,7 @@ import {
   withGroup,
   type ComponentRef
 } from './utils'
-import { QUARTZ_MOBILE_MAX, STAGE_REFERENCE_WIDTH, shownInView, stageFrame, stageTracks } from './stageGeometry'
+import { STAGE_REFERENCE_WIDTH, shownInView, stageFrame, stageTracks } from './stageGeometry'
 import {
   BUILTIN_FRAMES,
   deadExcludes,
@@ -526,9 +526,6 @@ export default function GlobalBoard({
     gap: 12,
     viewport: STAGE_REFERENCE_WIDTH[breakpoint]
   }).columns
-  // Where the project's frames switch to mobile somewhere else than Quartz switches its components
-  // (stageGeometry, shownInView). Only an authored frame follows the project's widths.
-  const thresholdMismatch = activeFrame && breakpointWidths.mobile !== QUARTZ_MOBILE_MAX ? breakpointWidths.mobile : null
 
   const slotProps = {
     config,
@@ -630,14 +627,6 @@ export default function GlobalBoard({
           )}
           {unknownFrame && (
             <p className="text-amber-600 dark:text-amber-400">{t('layoutEditor.pageType.unknownFrame', { frame: activeFrameName })}</p>
-          )}
-          {thresholdMismatch !== null && (
-            <p>
-              {t(thresholdMismatch < QUARTZ_MOBILE_MAX ? 'layoutEditor.stage.mobileBelowQuartz' : 'layoutEditor.stage.mobileAboveQuartz', {
-                frame: thresholdMismatch,
-                quartz: QUARTZ_MOBILE_MAX
-              })}
-            </p>
           )}
         </div>
       </div>

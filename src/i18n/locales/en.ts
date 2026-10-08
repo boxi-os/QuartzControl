@@ -1439,10 +1439,6 @@ export default {
       editFrame: 'Edit frame',
       hiddenInView: 'Not on the page in this view',
       approximate: 'Drawn approximately: column widths like {{sizes}} are only known to the browser and count as equal shares here.',
-      mobileBelowQuartz:
-        'Your frames switch to mobile at {{frame}} px, but Quartz switches “Desktop only” and “Mobile only” at {{quartz}} px. In between, the page shows the tablet arrangement with the mobile components.',
-      mobileAboveQuartz:
-        'Your frames switch to mobile at {{frame}} px, but Quartz only switches “Desktop only” and “Mobile only” at {{quartz}} px. In between, the page shows the mobile arrangement with the desktop components.',
       otherDraftOpen: 'The frame editor still has “{{name}}” open with unsaved changes. Save or close it before opening another frame.'
     },
     inspector: {

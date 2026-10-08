@@ -1469,3 +1469,38 @@ Speichern. Die Datei bleibt bis zum Speichern unverändert, danach ändern sich 
 Zeilen. **Offen:** Ist das getippte Feld die einzige Änderung, ist Cmd+S nicht registriert (es gibt
 noch nichts, was `dirty` zählt) und tut nichts. Der Wert geht dabei nicht verloren, er kommt beim
 Verlassen des Felds in den Entwurf.
+
+## Der Frame-Editor mit Seitenleiste und ziehbaren Kanten (2026-10-08, 1.1)
+
+Auf Wunsch des Nutzers ist der Frame-Editor wie der Reiter „Global“ gebaut: links das Raster, rechts
+eine mitlaufende Leiste. Ist kein Bereich gewählt, zeigt die Leiste Name, Raster, Rahmen und
+Linien-Namen des Frames. Ist einer gewählt, zeigt sie sein Formular. Bis dahin klappte das Formular
+im Kasten des Bereichs auf, und der Kasten wuchs mit. Gemessen bei 1280 px an den fünf Frames von
+gui-test: alle 33 Kästen wurden bei der Auswahl höher, 48 px wurden zu 176–280 px, und die linke
+Spalte von `boxi-test` (160 px breit) wurde von 247 auf 600 px gestreckt. Nachher ändert die
+Auswahl an keinem der 33 Kästen etwas.
+
+**Das Raster ist jetzt die Bühne aus P7.2, mit Mindestbreite.** Mit der Leiste daneben brauchte
+`editorial` in Echtgröße (4rem-Abstände, sechs feste Spalten) 1242 px in einer Spalte von 596 px
+bei 1280 px, und auch bei 1728 px passte es nicht. Spalten, Abstände und Rahmen werden deshalb wie
+auf der Bühne über `stageFrame` verkleinert. Nur die Spalten behalten ihre 24 px Mindestbreite
+(neunundzwanzigstes Review). Gemessen: Alle fünf Frames passen bei 1440 und 1728 px. Bei 1280 px
+steht `editorial` 2 px über, weil seine Mindestbreite (12 × 24 px plus Abstände) genau so viel
+größer ist.
+
+**Kanten ziehen.** Ein gewählter Kasten hat acht Griffe: vier Kanten, vier Ecken. Eine Kante
+rastet auf der nächsten Rasterlinie ein, gemessen an den Zellen des Boards selbst. Wächst sie in
+einen anderen Bereich, hält sie an der letzten freien Linie davor, denn eine Überlappung macht
+`grid-template-areas` im Ganzen ungültig. Links und oben verschieben die Startzelle. Escape bricht
+ab. Geschrieben wird einmal, beim Loslassen, und `announce()` sagt die neue Lage und die Spannen.
+Die Griffe nutzen Pointer-Events mit Pointer-Capture, nicht dnd-kit: Es wird nichts auf ein Ziel
+abgelegt, und der Kasten ist schon über seinen Griff ein Draggable. Vor Screenreadern sind sie
+verborgen. Derselbe Weg liegt als zwei Zahlenfelder in der Leiste und als Verschieben über den
+Griff des Bereichs. Gemessen an der gebauten App mit echten Mausbewegungen in `editorial`:
+- Schrumpfen von 12 auf 6 Spalten und zurück.
+- Start von Spalte 1 auf 4 über die linke Kante, zurück über die Ecke.
+- `left` wächst nach oben in die frei gewordene Zeile 1, danach blockiert er `header` an dieser
+  Stelle.
+- Ziehen in `right`, `left` und `page-body` hinein ändert nichts.
+- Escape lässt die Spanne stehen.
+- Die Auswahl bleibt nach jedem Ziehen bestehen.

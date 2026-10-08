@@ -17,7 +17,7 @@ import {
   type DragStartEvent
 } from '@dnd-kit/core'
 import { confirmDialog } from '../../utils/confirm'
-import { GripVertical, Trash2 } from 'lucide-react'
+import { GripVertical, LayoutGrid, SlidersHorizontal, Trash2 } from 'lucide-react'
 import type {
   FrameAlign,
   FrameBreakpoint,
@@ -28,11 +28,12 @@ import type {
   GridFrameArea,
   GridFrameDefinition
 } from '@shared/ipc-contract'
-import { DEFAULT_FRAME_BREAKPOINT_WIDTHS, FRAME_BREAKPOINTS, buildFrameBox, buildGridStyle, buildTrackList } from '@shared/gridFrameCss'
+import { DEFAULT_FRAME_BREAKPOINT_WIDTHS, FRAME_BREAKPOINTS, buildFrameBox, buildGridStyle } from '@shared/gridFrameCss'
 import {
   Badge,
   Button,
   Card,
+  CardHeading,
   Field,
   FieldGroup,
   FormActions,
@@ -48,6 +49,7 @@ import {
 import { formatIpcError } from '../../components/ErrorSurface'
 import DevServerRestartHint from '../../components/DevServerRestartHint'
 import { breakpointRangeLabel } from './utils'
+import { STAGE_REFERENCE_WIDTH, stageFrame } from './stageGeometry'
 import FrameBreakpoints from './FrameBreakpoints'
 import { useStickyState } from '../../state/uiState'
 import { announce } from '../../state/announcer'
@@ -146,6 +148,9 @@ function withPlacement(def: GridFrameDefinition, breakpoint: FrameBreakpoint, ar
 // nothing else to identify it by; a placed box is its own target (dropping onto it means "this
 // area's cell", the same as before) and is prefixed so it cannot collide with an area id; the tray
 // is the one fixed target that unplaces.
+// Which edges of a placed box a resize handle moves.
+type ResizeSides = { top?: boolean; bottom?: boolean; left?: boolean; right?: boolean }
+
 const cellId = (row: number, col: number): string => `cell:${row}:${col}`
 const BOX_PREFIX = 'box:'
 const TRAY_ID = 'unplaced-tray'
@@ -382,8 +387,10 @@ export default function FrameBuilder({
   }, [formRefusal])
 
   // The selection survives a breakpoint switch on purpose - one area is often tuned across all
-  // three - but its form does not stay put: on one breakpoint it sits inside the area's grid box,
-  // on the next in the tray above the grid, and switching mounts it anew.
+  // three. Until 1.1 its form did not stay put: on one breakpoint it sat inside the area's grid
+  // box, on the next in the tray above the grid, and switching mounted it anew. It lives in the
+  // side panel now and is keyed by the area, so a switch no longer remounts it; what follows is
+  // kept because the area itself still moves between grid and tray.
   //
   // Until 2026-09-13 the name field's `autoFocus` answered that, by accident: a new mount focuses
   // the field and the browser scrolls it into view. It also took the focus off the breakpoint
@@ -409,8 +416,9 @@ export default function FrameBuilder({
     if (previousBreakpoint.current === activeBreakpoint) return
     previousBreakpoint.current = activeBreakpoint
     if (!selectedAreaId) return
-    const form = document.querySelector(`[data-area-form="${CSS.escape(selectedAreaId)}"]`)
-    const box = form?.parentElement
+    // The form stays in the side panel since 1.1; what moves is the area itself, from a grid box
+    // on one breakpoint to a tray chip on the next.
+    const box = document.querySelector(`[data-area-box="${CSS.escape(selectedAreaId)}"]`)
     if (!box) return
     const { top } = box.getBoundingClientRect()
     if (top < 0 || top > window.innerHeight - 120) box.scrollIntoView({ block: 'start' })
@@ -790,6 +798,120 @@ export default function FrameBuilder({
     setMessage(null)
   }
 
+  // Dragging an edge of a placed box. The number fields above set a span from the start cell only,
+  // and on a twelve-column grid that meant typing a count while working out where it would end;
+  // an edge says where it ends. Plain pointer events rather than dnd-kit: this is not something
+  // dropped onto a target, and the box is already one of dnd-kit's draggables, through its grip.
+  // The preview lives here until the pointer is let go, so the draft (and its sticky copy) gets one
+  // write per gesture rather than one per pixel.
+  const boardRef = useRef<HTMLDivElement>(null)
+  const resizeFrom = useRef<{ areaId: string; start: GridAreaPlacement; sides: ResizeSides } | null>(null)
+  const [resizePreview, setResizePreview] = useState<{ areaId: string; placement: GridAreaPlacement } | null>(null)
+
+  function startResize(areaId: string, sides: ResizeSides): void {
+    const start = editing?.breakpoints[activeBreakpoint].placements[areaId]
+    if (!start) return
+    resizeFrom.current = { areaId, start, sides }
+    setResizePreview({ areaId, placement: start })
+    if (selectedAreaId !== areaId) setSelectedAreaId(areaId)
+  }
+
+  // Where the moved edges land for a pointer at (x, y): on the grid line nearest to it, measured on
+  // the board's own cells, since rows are `auto` and columns may be anything a track size allows.
+  // An edge that would grow into another area stops at the last free line before it - an overlap
+  // makes the frame's `grid-template-areas` invalid as a whole, so a drag cannot produce one.
+  function moveResize(x: number, y: number): void {
+    const from = resizeFrom.current
+    const board = boardRef.current
+    if (!from || !editing || !board) return
+    const layout = editing.breakpoints[activeBreakpoint]
+    const cell = (r: number, c: number): DOMRect | undefined =>
+      board.querySelector(`[data-cell="${r}:${c}"]`)?.getBoundingClientRect()
+    const nearest = (candidates: number[], edge: (i: number) => number | undefined, at: number): number => {
+      let best = candidates[0]
+      let distance = Infinity
+      for (const i of candidates) {
+        const e = edge(i)
+        if (e === undefined) continue
+        if (Math.abs(e - at) < distance) {
+          distance = Math.abs(e - at)
+          best = i
+        }
+      }
+      return best
+    }
+    const range = (a: number, b: number): number[] => Array.from({ length: b - a + 1 }, (_, i) => a + i)
+    const blocked = (r0: number, r1: number, c0: number, c1: number): boolean =>
+      overlaps(layout, editing.areas, r0, c0, r1 - r0 + 1, c1 - c0 + 1, from.areaId)
+
+    const { start, sides } = from
+    let r0 = start.row
+    let r1 = start.row + start.rowSpan - 1
+    let c0 = start.col
+    let c1 = start.col + start.colSpan - 1
+    // Columns first, against the area's own rows; then rows, against the columns just found.
+    if (sides.right) {
+      const target = nearest(range(c0, layout.cols), (c) => cell(1, c)?.right, x)
+      let end = Math.min(target, c1)
+      for (let c = c1 + 1; c <= target && !blocked(r0, r1, c, c); c++) end = c
+      c1 = end
+    }
+    if (sides.left) {
+      const target = nearest(range(1, c1), (c) => cell(1, c)?.left, x)
+      let begin = Math.max(target, c0)
+      for (let c = c0 - 1; c >= target && !blocked(r0, r1, c, c); c--) begin = c
+      c0 = begin
+    }
+    if (sides.bottom) {
+      const target = nearest(range(r0, layout.rows), (r) => cell(r, 1)?.bottom, y)
+      let end = Math.min(target, r1)
+      for (let r = r1 + 1; r <= target && !blocked(r, r, c0, c1); r++) end = r
+      r1 = end
+    }
+    if (sides.top) {
+      const target = nearest(range(1, r1), (r) => cell(r, 1)?.top, y)
+      let begin = Math.max(target, r0)
+      for (let r = r0 - 1; r >= target && !blocked(r, r, c0, c1); r--) begin = r
+      r0 = begin
+    }
+    const placement = { ...start, row: r0, col: c0, rowSpan: r1 - r0 + 1, colSpan: c1 - c0 + 1 }
+    setResizePreview((prev) =>
+      prev &&
+      prev.placement.row === placement.row &&
+      prev.placement.col === placement.col &&
+      prev.placement.rowSpan === placement.rowSpan &&
+      prev.placement.colSpan === placement.colSpan
+        ? prev
+        : { areaId: from.areaId, placement }
+    )
+  }
+
+  function endResize(commit: boolean): void {
+    const from = resizeFrom.current
+    resizeFrom.current = null
+    const preview = resizePreview
+    setResizePreview(null)
+    if (!commit || !from || !preview || preview.areaId !== from.areaId) return
+    const p = preview.placement
+    const s = from.start
+    if (p.row === s.row && p.col === s.col && p.rowSpan === s.rowSpan && p.colSpan === s.colSpan) return
+    setEditing((prev) => (prev ? withPlacement(prev, activeBreakpoint, from.areaId, p) : prev))
+    setMessage(null)
+    const name = areaName(from.areaId)
+    announce(t('layoutEditor.frameBuilder.resized', { name, row: p.row, col: p.col, rowSpan: p.rowSpan, colSpan: p.colSpan }))
+  }
+
+  // Escape takes the gesture back, as it does for a drag.
+  useEffect(() => {
+    if (!resizePreview) return
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') endResize(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resizePreview !== null])
+
   function updateAreaHidden(id: string, hidden: boolean): void {
     if (!editing) return
     const layout = editing.breakpoints[activeBreakpoint]
@@ -966,18 +1088,14 @@ export default function FrameBuilder({
 
   const savedNotice = savedSnapshot !== null && savedSnapshot === JSON.stringify(editing)
   const layout = editing.breakpoints[activeBreakpoint]
+  // A selection the sticky store kept for an area that is gone (deleted, or another frame opened
+  // since) is no selection.
+  const selectedArea = selectedAreaId ? (editing.areas.find((a) => a.id === selectedAreaId) ?? null) : null
   const gridStyle = buildGridStyle(layout, editing.areas)
-  // The drop board's columns - the frame's own, with a floor under every flexible one (see the
-  // board below). Only a bare `<n>fr` is touched: anything else already says how wide it is.
-  const boardColumns = buildTrackList(
-    Array.from({ length: layout.cols }, (_, i) => {
-      const size = layout.columnSizes?.[i]?.trim() || '1fr'
-      return /^\d*\.?\d+fr$/.test(size) ? `minmax(24px, ${size})` : size
-    }),
-    layout.cols,
-    '1fr',
-    layout.columnLineNames
-  )
+  // The drop board is the frame in miniature, reduced through its proportions as on the "Global"
+  // tab (stageGeometry), with one departure: every column keeps a floor of 24px, see the board.
+  const stage = stageFrame(layout, activeBreakpoint)
+  const boardColumns = stage.gridTemplateColumns.replace(/minmax\(0, /g, 'minmax(24px, ')
   const box = buildFrameBox(layout)
   const hasMaxWidth = !!layout.maxWidth?.trim()
   const hasBox = hasMaxWidth || box.paddingBlock !== '0' || box.paddingInline !== '0'
@@ -1010,7 +1128,12 @@ export default function FrameBuilder({
     (bp) => bp !== activeBreakpoint && warningKeys(bp).some((key) => !shownHere.has(key))
   )
   /**
-   * The one form for an area, wherever it currently lies.
+   * The one form for an area, wherever it currently lies - in the side panel since 1.1.
+   *
+   * Until then it opened inside the area's own box on the grid, and the box grew around it: on a
+   * twelve-column grid a box one column wide became a strip 600px tall, and the grid it was meant
+   * to be judged against was pushed out of sight. Measured at 1280px on the test project's five
+   * frames: 33 boxes, every one of them taller when selected (48 -> 176 to 280px, 247 -> 600px).
    *
    * It used to live inside `PlacedBox` only - and `PlacedBox` renders nothing for an area without a
    * placement on this breakpoint, so an area in the tray had no name field, no slot picker and, the
@@ -1023,36 +1146,19 @@ export default function FrameBuilder({
    * Name, slot, group and deleting the area belong to the area itself and are always there.
    *
    * The two cases are *not* "on the grid" and "in the tray": an area that is placed but hidden sits
-   * in the tray and has a placement, so the tray passes it on. It was the caller that decided this,
-   * not the form, and the caller decided wrong - the switch that had just hidden the area was then
-   * missing from the only form the area had, and the sole way back was a drag, which assigns a new
-   * cell rather than restoring the old one.
+   * in the tray and has a placement, so it is passed on for that one too. It was once the tray that
+   * decided this, and it decided wrong - the switch that had just hidden the area was then missing
+   * from the only form the area had, and the sole way back was a drag, which assigns a new cell
+   * rather than restoring the old one.
    */
   function areaForm(area: GridFrameArea, placement?: GridAreaPlacement): JSX.Element {
     return (
-      <div
-        data-area-form={area.id}
-        onClick={(e) => e.stopPropagation()}
-        // No keyboard guard here on purpose. The box above this form listens only for keystrokes
-        // aimed at itself (PlacedBox), so a character typed in a field never reaches it - and a
-        // guard that stopped the bubbling would stop it for @dnd-kit too, whose keyboard sensor
-        // listens on the document while a drag runs.
-        className="flex flex-wrap items-end gap-2 border-t border-ink/[0.06] pt-2 dark:border-ink/10"
-      >
+      <div data-area-form={area.id} className="flex flex-col gap-3">
         <Field label={t('layoutEditor.frameBuilder.areaName')}>
-          <TextInput
-            value={nameDraft}
-            onChange={(e) => updateAreaName(area.id, e.target.value)}
-            autoFocus={focusNameOnMount.current}
-            className="w-32"
-          />
+          <TextInput value={nameDraft} onChange={(e) => updateAreaName(area.id, e.target.value)} autoFocus={focusNameOnMount.current} />
         </Field>
         <Field label={t('layoutEditor.frameBuilder.areaSlot')}>
-          <Select
-            value={area.slot ?? ''}
-            onChange={(e) => updateAreaSlot(area.id, (e.target.value || undefined) as FrameSlot | undefined)}
-            className="w-32"
-          >
+          <Select value={area.slot ?? ''} onChange={(e) => updateAreaSlot(area.id, (e.target.value || undefined) as FrameSlot | undefined)}>
             <option value="">{t('layoutEditor.frameBuilder.slotNone')}</option>
             {SLOTS.map((slot) => (
               <option key={slot} value={slot}>
@@ -1075,22 +1181,17 @@ export default function FrameBuilder({
         )}
         {placement && (
           <>
-            <Field label={t('layoutEditor.frameBuilder.rowSpanLabel')}>
-              <NumberInput
-                max={layout.rows}
-                value={placement.rowSpan}
-                onValue={(rowSpan) => updateAreaSpan(area.id, { rowSpan })}
-                className="w-16"
-              />
-            </Field>
-            <Field label={t('layoutEditor.frameBuilder.colSpanLabel')}>
-              <NumberInput
-                max={layout.cols}
-                value={placement.colSpan}
-                onValue={(colSpan) => updateAreaSpan(area.id, { colSpan })}
-                className="w-16"
-              />
-            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label={t('layoutEditor.frameBuilder.rowSpanLabel')}>
+                <NumberInput max={layout.rows} value={placement.rowSpan} onValue={(rowSpan) => updateAreaSpan(area.id, { rowSpan })} />
+              </Field>
+              <Field label={t('layoutEditor.frameBuilder.colSpanLabel')}>
+                <NumberInput max={layout.cols} value={placement.colSpan} onValue={(colSpan) => updateAreaSpan(area.id, { colSpan })} />
+              </Field>
+            </div>
+            <p className="-mt-1 text-micro text-text-muted">
+              {t('layoutEditor.frameBuilder.placementSummary', { row: placement.row, col: placement.col })}
+            </p>
             <Toggle
               label={t('layoutEditor.frameBuilder.visibleOnBreakpoint', {
                 breakpoint: t(`layoutEditor.frameBuilder.breakpoint.${activeBreakpoint}`)
@@ -1098,18 +1199,22 @@ export default function FrameBuilder({
               checked={!placement.hidden}
               onChange={(checked) => updateAreaHidden(area.id, !checked)}
             />
+          </>
+        )}
+        <div className="flex flex-wrap gap-2">
+          {placement && (
             <Button variant="ghost" onClick={() => unplaceAreaById(area.id)}>
               {t('layoutEditor.frameBuilder.unplace')}
             </Button>
-          </>
-        )}
-        <Button variant="danger" onClick={() => void requestDeleteArea(area)}>
-          {t('layoutEditor.frameBuilder.removeArea')}
-        </Button>
+          )}
+          <Button variant="danger" onClick={() => void requestDeleteArea(area)}>
+            {t('layoutEditor.frameBuilder.removeArea')}
+          </Button>
+        </div>
         {/* Not a live region: refuseInForm says the sentence through announce(), and a second
             region would say it twice. */}
         {formRefusal?.areaId === area.id && (
-          <p data-form-refusal className="basis-full text-sm text-red-600 dark:text-red-400">
+          <p data-form-refusal className="text-sm text-red-600 dark:text-red-400">
             {formRefusal.text}
           </p>
         )}
@@ -1148,369 +1253,395 @@ export default function FrameBuilder({
         options={breakpointOptions}
       />
 
-      <Card>
-        {/* Everything above the board is one breakpoint's settings, so it reads as such: the frame's
-            identity once at the top, then the grid, then the frame's own box - each with the actions
-            that belong to it rather than in one long row of controls. */}
-        <div className="mb-4 flex flex-col gap-3">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <Field label={t('layoutEditor.frameBuilder.frameName')} className="w-full max-w-xs">
-              <TextInput
-                value={editing.frameName}
-                onChange={(e) => setEditing({ ...editing, frameName: e.target.value })}
-                placeholder={t('layoutEditor.templateCustomPlaceholder')}
-              />
-            </Field>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-micro text-text-muted">
-                {t('layoutEditor.frameBuilder.appliesTo', {
-                  breakpoint: t(`layoutEditor.frameBuilder.breakpoint.${activeBreakpoint}`)
-                })}
-              </span>
-              {FRAME_BREAKPOINTS.filter((bp) => bp !== activeBreakpoint).map((bp) => (
-                <Button key={bp} variant="ghost" onClick={() => copyLayoutTo(bp)}>
-                  {t('layoutEditor.frameBuilder.copyLayoutTo', { target: t(`layoutEditor.frameBuilder.breakpoint.${bp}`) })}
-                </Button>
-              ))}
+      {/* The board on the left, the panel of whatever is selected on the right - the shape of the
+          "Global" tab. With no area selected the panel holds the frame's own settings for this
+          breakpoint; until 1.1 those stood above the board and pushed it a screen down. */}
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="flex min-w-0 flex-col gap-4">
+          <Card>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <p className="text-micro font-medium text-text-muted">{t('layoutEditor.frameBuilder.availableAreasLabel')}</p>
+              <Button variant="ghost" onClick={addNewArea}>
+                {t('layoutEditor.frameBuilder.newArea')}
+              </Button>
             </div>
-          </div>
+            {/* Tray and board are one drag context: a chip goes from the tray onto a cell, and a placed
+                box goes back to the tray. Two contexts could not see each other's targets. */}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={collisionDetection}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+              onDragCancel={() => setDragAreaId(null)}
+              accessibility={{ announcements, screenReaderInstructions }}
+            >
+            <UnplacedTray dragging={dragAreaId !== null}>
+              {unplacedAreas.length === 0 && <span className="px-1 text-micro text-text-muted">{t('layoutEditor.frameBuilder.allPlaced')}</span>}
+              {unplacedAreas.map((a) => (
+                <TrayChip
+                  key={a.id}
+                  area={a}
+                  selected={selectedAreaId === a.id}
+                  dragging={dragAreaId === a.id}
+                  hidden={!!layout.placements[a.id]}
+                  onSelect={() => setSelectedAreaId(selectedAreaId === a.id ? null : a.id)}
+                />
+              ))}
+            </UnplacedTray>
 
-          <SettingsSection
-            title={t('layoutEditor.frameBuilder.gridSection')}
-            actions={
-              <button
-                type="button"
-                className="text-micro text-text-muted underline hover:text-text"
-                onClick={() => updateLayout({ columnSizes: undefined, rowSizes: undefined })}
-              >
-                {t('layoutEditor.frameBuilder.resetTracks')}
-              </button>
+            <p className="mb-2 text-xs text-text-muted">{t('layoutEditor.frameBuilder.hintDragToPlace')}</p>
+
+            {/* The drop board carries the frame's own box, so a cap, an alignment or a padding is
+                something you can see rather than a value you have to imagine.
+
+                Since 1.1 it is drawn as the "Global" tab draws its stage: the frame at the width of
+                the view it stands for, reduced through its proportions (stageGeometry) and never
+                wider than that view, so a phone is drawn phone-wide. Until then it was drawn at the
+                frame's real pixel sizes, and with the side panel beside it the editorial frame's
+                4rem gaps and fixed columns needed 1242px in a column of 596 at 1280px - and still
+                did not fit at 1728px.
+
+                One departure, in the columns only: a track gets at least 24px (WCAG 2.2's minimum
+                target size), because it is a drop target and not a picture of the site - six `1fr`
+                columns once came out 5px wide, under spanning boxes a mouse could not aim at
+                (twenty-ninth review, "nebenbei" 3). Where the minimum does not fit, the board grows
+                past the panel and scrolls sideways, instead of squeezing it back to nothing. The
+                scroller has a few pixels of room that its negative margin gives back:
+                `overflow-x: auto` clips on both axes, and a ring is a shadow outside its box - in a
+                frame without padding, which is every new one, the selected box lost its ring on the
+                left and top (thirtieth review, finding 3). */}
+            <div className="-m-1 overflow-x-auto p-1">
+            <div className="mx-auto w-full" style={{ maxWidth: STAGE_REFERENCE_WIDTH[activeBreakpoint], containerType: 'inline-size' }}>
+            <div
+              ref={boardRef}
+              className={`relative grid gap-1 ${
+                hasBox ? 'rounded-[8px] border border-dashed border-blue-400/50 dark:border-blue-400/40' : ''
+              }`}
+              style={{
+                gridTemplateColumns: boardColumns,
+                gridTemplateRows: gridStyle.gridTemplateRows,
+                rowGap: stage.rowGap,
+                columnGap: stage.columnGap,
+                width: stage.width,
+                minWidth: 'min-content',
+                marginInline: stage.marginInline,
+                paddingBlock: stage.paddingBlock,
+                paddingInline: stage.paddingInline
+              }}
+            >
+              {Array.from({ length: layout.rows }, (_, r) =>
+                Array.from({ length: layout.cols }, (_, c) => <DropCell key={`${r + 1}-${c + 1}`} row={r + 1} col={c + 1} />)
+              )}
+              {editing.areas.map((area) => {
+                const placement = layout.placements[area.id]
+                if (!placement || placement.hidden) return null
+                const isSelected = selectedAreaId === area.id
+                return (
+                  <PlacedBox
+                    key={area.id}
+                    areaId={area.id}
+                    placement={resizePreview?.areaId === area.id ? resizePreview.placement : placement}
+                    selected={isSelected}
+                    dragging={dragAreaId === area.id}
+                    resizing={resizePreview?.areaId === area.id}
+                    label={t('layoutEditor.frameBuilder.selectArea', { name: area.name })}
+                    resizeLabel={t('layoutEditor.frameBuilder.resizeHandle')}
+                    onToggle={() => setSelectedAreaId(isSelected ? null : area.id)}
+                    onResizeStart={(sides) => startResize(area.id, sides)}
+                    onResizeMove={moveResize}
+                    onResizeEnd={endResize}
+                  >
+                    {/* Wraps, and the badge truncates: a box can be one 57px column wide (a span cut
+                        at the grid's edge), and a header that did not fit ran out of the box - at the
+                        last column past the board, lengthening the scroller by 59px (thirtieth review,
+                        "nebenbei" 4). Where it fits, nothing changes. */}
+                    <div className="flex flex-wrap items-center justify-between gap-1">
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <AreaDragHandle label={t('layoutEditor.frameBuilder.moveArea', { name: area.name })} />
+                        <span className="truncate font-medium">{area.name}</span>
+                      </div>
+                      <div className="flex min-w-0 max-w-full items-center gap-1">
+                        <Badge truncate>
+                          {area.slot ? t(`positions.${area.slot}`, area.slot) : t('layoutEditor.frameBuilder.slotNone')}
+                          {area.group ? ` · ${t('layoutEditor.frameBuilder.ownGroupShort')}` : ''}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {area.slot === 'pageBody' && (
+                      <div className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10">
+                        {t('layoutEditor.frameBuilder.preview.pageContent')}
+                      </div>
+                    )}
+                  </PlacedBox>
+                )
+              })}
+            </div>
+            </div>
+            </div>
+
+            {/* What follows the cursor - without it a dnd-kit drag moves nothing visible, since the
+                source keeps its place in the grid until the drop. */}
+            <DragOverlay>
+              {draggedArea && (
+                // `w-fit`, because this chip *is* the dragged rect: dnd-kit sizes the overlay from the
+                // dragged node - a twelve-column area's box - and then measures its only child
+                // (core.esm.js:2413), so a block-level chip came out 1060px wide. Every arrow press
+                // centres that rect on the target cell, which put its left edge at -70 and made the
+                // KeyboardSensor scroll instead of move: measured, the first ArrowRight out of `header`
+                // reached cell 1/7 (half the area away) and the second one 1/8. See the area chips in
+                // the tray, which this now matches.
+                <div className="w-fit rounded-[6px] border border-blue-500 bg-blue-100 px-2 py-1 text-micro font-medium shadow-md dark:border-blue-400 dark:bg-blue-500/30">
+                  {draggedArea.name}
+                </div>
+              )}
+            </DragOverlay>
+            </DndContext>
+
+            {/* First, because these two break the built page rather than leave something off it. */}
+            {overlappingAreas.length > 0 && (
+              <p className="mt-4 text-xs text-amber-600 dark:text-amber-400">
+                {t('layoutEditor.frameBuilder.overlapWarning', {
+                  pairs: overlappingAreas.map(([a, b]) => `${a.name} + ${b.name}`).join(', ')
+                })}
+              </p>
+            )}
+            {outsideAreas.length > 0 && (
+              <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                {t('layoutEditor.frameBuilder.outsideWarning', { areas: outsideAreas.map((a) => a.name).join(', ') })}
+              </p>
+            )}
+            {unassignedSlots.length > 0 && (
+              <p className="mt-4 text-xs text-amber-600 dark:text-amber-400">
+                {t('layoutEditor.frameBuilder.unassignedWarning', {
+                  slots: unassignedSlots.map((s) => t(`positions.${s}`, s)).join(', ')
+                })}
+              </p>
+            )}
+            {homelessSlots.length > 0 && (
+              <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                {t('layoutEditor.frameBuilder.homelessWarning', {
+                  slots: homelessSlots.map((s) => t(`positions.${s}`, s)).join(', ')
+                })}
+              </p>
+            )}
+            {doubledSlots.length > 0 && (
+              <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                {t('layoutEditor.frameBuilder.doubledWarning', {
+                  slots: doubledSlots.map((s) => t(`positions.${s}`, s)).join(', ')
+                })}
+              </p>
+            )}
+            {hiddenGroupAreas.length > 0 && (
+              <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                {t('layoutEditor.frameBuilder.hiddenGroupsWarning', {
+                  breakpoint: t(`layoutEditor.frameBuilder.breakpoint.${activeBreakpoint}`),
+                  areas: hiddenGroupAreas.map((a) => a.name).join(', ')
+                })}
+              </p>
+            )}
+            {otherWarningBreakpoints.length > 0 && (
+              <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                {t('layoutEditor.frameBuilder.otherBreakpointsWarning', {
+                  breakpoints: otherWarningBreakpoints.map((bp) => t(`layoutEditor.frameBuilder.breakpoint.${bp}`)).join(', ')
+                })}
+              </p>
+            )}
+            {neverVisibleAreas.length > 0 && (
+              <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                {t('layoutEditor.frameBuilder.neverVisibleWarning', {
+                  areas: neverVisibleAreas.map((a) => a.name).join(', ')
+                })}
+              </p>
+            )}
+          </Card>
+
+          <FormActions
+            className="mt-0"
+            secondary={
+              <>
+                {savedNotice && (
+                  <span className="text-xs text-emerald-600 dark:text-emerald-400">{t('layoutEditor.frameBuilder.saved')}</span>
+                )}
+                <DevServerRestartHint show={savedNotice && savedWasEdit} />
+              </>
             }
           >
-            <div className="grid max-w-3xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <Field label={t('layoutEditor.frameBuilder.rows')}>
-                <NumberInput max={12} value={layout.rows} onValue={(rows) => updateLayout({ rows })} />
-              </Field>
-              <Field label={t('layoutEditor.frameBuilder.cols')}>
-                <NumberInput max={12} value={layout.cols} onValue={(cols) => updateLayout({ cols })} />
-              </Field>
-              <Field label={t('layoutEditor.frameBuilder.rowGap')}>
-                <TextInput value={layout.rowGap} onChange={(e) => updateLayout({ rowGap: e.target.value })} />
-              </Field>
-              <Field label={t('layoutEditor.frameBuilder.columnGap')}>
-                <TextInput value={layout.columnGap} onChange={(e) => updateLayout({ columnGap: e.target.value })} />
-              </Field>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <TrackInputs
-                label={t('layoutEditor.frameBuilder.columnSizesLabel')}
-                count={layout.cols}
-                firstIndex={1}
-                placeholder="1fr"
-                valueAt={(i) => layout.columnSizes?.[i] ?? ''}
-                onChange={setColumnSize}
-              />
-              <TrackInputs
-                label={t('layoutEditor.frameBuilder.rowSizesLabel')}
-                count={layout.rows}
-                firstIndex={1}
-                placeholder="auto"
-                valueAt={(i) => layout.rowSizes?.[i] ?? ''}
-                onChange={setRowSize}
-              />
-            </div>
-          </SettingsSection>
-
-          <SettingsSection
-            title={t('layoutEditor.frameBuilder.boxSection')}
-            hint={t(hasMaxWidth ? 'layoutEditor.frameBuilder.boxHint' : 'layoutEditor.frameBuilder.boxHintNoMaxWidth')}
-          >
-            <div className="grid max-w-4xl gap-3 sm:grid-cols-2 lg:grid-cols-5">
-              <Field label={t('layoutEditor.frameBuilder.maxWidth')}>
-                <TextInput
-                  value={layout.maxWidth ?? ''}
-                  placeholder={t('layoutEditor.frameBuilder.maxWidthPlaceholder')}
-                  onChange={(e) => updateLayout({ maxWidth: e.target.value })}
-                />
-              </Field>
-              {/* Three options side by side need more than one column's worth of width. */}
-              {/* FieldGroup, not Field - see ui.tsx: a <label> around buttons steals the click. */}
-              <FieldGroup label={t('layoutEditor.frameBuilder.align')} className="sm:col-span-2">
-                <SegmentedControl
-                  label={t('layoutEditor.frameBuilder.align')}
-                  value={layout.align ?? 'left'}
-                  onChange={(align: FrameAlign) => updateLayout({ align })}
-                  options={ALIGNMENTS.map((value) => ({ value, label: t(`layoutEditor.frameBuilder.alignOption.${value}`) }))}
-                />
-              </FieldGroup>
-              <Field label={t('layoutEditor.frameBuilder.paddingBlock')}>
-                <TextInput
-                  value={layout.paddingBlock ?? ''}
-                  placeholder="0"
-                  onChange={(e) => updateLayout({ paddingBlock: e.target.value })}
-                />
-              </Field>
-              <Field label={t('layoutEditor.frameBuilder.paddingInline')}>
-                <TextInput
-                  value={layout.paddingInline ?? ''}
-                  placeholder="0"
-                  onChange={(e) => updateLayout({ paddingInline: e.target.value })}
-                />
-              </Field>
-            </div>
-          </SettingsSection>
-
-          <SettingsSection
-            title={t('layoutEditor.frameBuilder.lineNamesLabel')}
-            hint={t('layoutEditor.frameBuilder.lineNamesHint')}
-            collapsible
-          >
-            <div className="grid gap-3 sm:grid-cols-2">
-              <TrackInputs
-                label={t('layoutEditor.frameBuilder.columnLinesLabel')}
-                count={layout.cols + 1}
-                firstIndex={0}
-                placeholder=""
-                valueAt={(i) => layout.columnLineNames?.[i]?.[0] ?? ''}
-                onChange={setColumnLineName}
-              />
-              <TrackInputs
-                label={t('layoutEditor.frameBuilder.rowLinesLabel')}
-                count={layout.rows + 1}
-                firstIndex={0}
-                placeholder=""
-                valueAt={(i) => layout.rowLineNames?.[i]?.[0] ?? ''}
-                onChange={setRowLineName}
-              />
-            </div>
-          </SettingsSection>
-        </div>
-
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <p className="text-micro font-medium text-text-muted">{t('layoutEditor.frameBuilder.availableAreasLabel')}</p>
-          <Button variant="ghost" onClick={addNewArea}>
-            {t('layoutEditor.frameBuilder.newArea')}
-          </Button>
-        </div>
-        {/* Tray and board are one drag context: a chip goes from the tray onto a cell, and a placed
-            box goes back to the tray. Two contexts could not see each other's targets. */}
-        <DndContext
-          sensors={sensors}
-          collisionDetection={collisionDetection}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-          onDragCancel={() => setDragAreaId(null)}
-          accessibility={{ announcements, screenReaderInstructions }}
-        >
-        <UnplacedTray dragging={dragAreaId !== null}>
-          {unplacedAreas.length === 0 && <span className="px-1 text-micro text-text-muted">{t('layoutEditor.frameBuilder.allPlaced')}</span>}
-          {unplacedAreas.map((a) => (
-            <TrayChip
-              key={a.id}
-              area={a}
-              selected={selectedAreaId === a.id}
-              dragging={dragAreaId === a.id}
-              hidden={!!layout.placements[a.id]}
-              onSelect={() => setSelectedAreaId(selectedAreaId === a.id ? null : a.id)}
-            >
-              {/* With its placement where it has one: a chip is in the tray for two reasons, and a
-                  hidden area still has row, column and spans - it is just not drawn on this
-                  breakpoint. Without them the one switch that put it here ("visible on ...") was
-                  not in its form, so the only way back was a drag, which hands out a new cell. */}
-              {areaForm(a, layout.placements[a.id])}
-            </TrayChip>
-          ))}
-        </UnplacedTray>
-
-        <p className="mb-2 text-xs text-text-muted">{t('layoutEditor.frameBuilder.hintDragToPlace')}</p>
-
-        {/* The drop board carries the frame's own box, so a cap, an alignment or a padding is
-            something you can see rather than a value you have to imagine. It is the same box the
-            codegen writes - both come out of buildFrameBox - but at panel width, so a cap wider
-            than this panel legitimately looks like nothing happened.
-
-            One departure, in the columns only: a flexible track gets at least 24px (WCAG 2.2's
-            minimum target size), because it is a drop target and not a picture of the site. At
-            panel width the gaps of a real frame can eat all of it - this project's frames have
-            4rem gaps and six fixed columns, and at a 1470px window their six `1fr` columns came
-            out 5px wide, under spanning boxes a mouse could not aim at (twenty-ninth review,
-            "nebenbei" 3). Where the minimum does not fit, the board grows past the panel and
-            scrolls sideways, instead of squeezing it back to nothing. The scroller has a few
-            pixels of room that its negative margin gives back: `overflow-x: auto` clips on both
-            axes, and a ring is a shadow outside its box - in a frame without padding, which is
-            every new one, the selected box lost its ring on the left and top (thirtieth review,
-            finding 3). The room is the scroller's, not the board's: the board's box is the
-            frame's. */}
-        <div className="-m-1 overflow-x-auto p-1">
-        <div
-          className={`relative grid gap-1 ${
-            hasBox ? 'rounded-[8px] border border-dashed border-blue-400/50 dark:border-blue-400/40' : ''
-          }`}
-          style={{
-            gridTemplateColumns: boardColumns,
-            gridTemplateRows: gridStyle.gridTemplateRows,
-            rowGap: gridStyle.rowGap,
-            columnGap: gridStyle.columnGap,
-            width: box.width,
-            minWidth: 'min-content',
-            maxWidth: box.maxWidth,
-            marginInline: box.marginInline,
-            paddingBlock: box.paddingBlock,
-            paddingInline: box.paddingInline
-          }}
-        >
-          {Array.from({ length: layout.rows }, (_, r) =>
-            Array.from({ length: layout.cols }, (_, c) => <DropCell key={`${r + 1}-${c + 1}`} row={r + 1} col={c + 1} />)
+            <Button variant="ghost" onClick={closeEditor}>
+              {t('layoutEditor.frameBuilder.closeEditor')}
+            </Button>
+            <Button onClick={save} disabled={saving}>
+              {saving ? t('common.saving') : t('common.save')}
+            </Button>
+          </FormActions>
+          {!isNewDraft && (
+            <p className="text-right">
+              <button type="button" onClick={() => remove(editing)} className="text-xs text-red-600 underline dark:text-red-400">
+                {t('layoutEditor.frameBuilder.deleteFrame')}
+              </button>
+            </p>
           )}
-          {editing.areas.map((area) => {
-            const placement = layout.placements[area.id]
-            if (!placement || placement.hidden) return null
-            const isSelected = selectedAreaId === area.id
-            return (
-              <PlacedBox
-                key={area.id}
-                areaId={area.id}
-                placement={placement}
-                selected={isSelected}
-                dragging={dragAreaId === area.id}
-                label={t('layoutEditor.frameBuilder.expandArea')}
-                onToggle={() => setSelectedAreaId(isSelected ? null : area.id)}
+        </div>
+
+        {/* Its own scroller while it sticks, as on the "Global" tab: with the grid section open the
+            panel is taller than the window. */}
+        <aside
+          aria-label={
+            selectedArea
+              ? t('layoutEditor.frameBuilder.areaPanelTitle', { name: selectedArea.name })
+              : t('layoutEditor.frameBuilder.framePanelTitle')
+          }
+          className="xl:sticky xl:top-4 xl:max-h-[calc(100vh-5rem)] xl:overflow-y-auto xl:overscroll-contain"
+        >
+          {selectedArea ? (
+            <Card key={selectedArea.id} className="flex flex-col gap-3">
+              <div className="flex items-start justify-between gap-2">
+                <CardHeading icon={SlidersHorizontal} className="min-w-0 break-all">
+                  {t('layoutEditor.frameBuilder.areaPanelTitle', { name: selectedArea.name })}
+                </CardHeading>
+                <Button variant="ghost" onClick={() => setSelectedAreaId(null)}>
+                  {t('layoutEditor.frameBuilder.backToFrame')}
+                </Button>
+              </div>
+              {areaForm(selectedArea, layout.placements[selectedArea.id])}
+            </Card>
+          ) : (
+            <Card className="flex flex-col gap-3">
+              <CardHeading icon={LayoutGrid}>{t('layoutEditor.frameBuilder.framePanelTitle')}</CardHeading>
+              <Field label={t('layoutEditor.frameBuilder.frameName')}>
+                <TextInput
+                  value={editing.frameName}
+                  onChange={(e) => setEditing({ ...editing, frameName: e.target.value })}
+                  placeholder={t('layoutEditor.templateCustomPlaceholder')}
+                />
+              </Field>
+              <p className="text-micro text-text-muted">{t('layoutEditor.frameBuilder.framePanelHint')}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-micro text-text-muted">
+                  {t('layoutEditor.frameBuilder.appliesTo', {
+                    breakpoint: t(`layoutEditor.frameBuilder.breakpoint.${activeBreakpoint}`)
+                  })}
+                </span>
+                {FRAME_BREAKPOINTS.filter((bp) => bp !== activeBreakpoint).map((bp) => (
+                  <Button key={bp} variant="ghost" onClick={() => copyLayoutTo(bp)}>
+                    {t('layoutEditor.frameBuilder.copyLayoutTo', { target: t(`layoutEditor.frameBuilder.breakpoint.${bp}`) })}
+                  </Button>
+                ))}
+              </div>
+              <SettingsSection
+                title={t('layoutEditor.frameBuilder.gridSection')}
+                actions={
+                  <button
+                    type="button"
+                    className="text-micro text-text-muted underline hover:text-text"
+                    onClick={() => updateLayout({ columnSizes: undefined, rowSizes: undefined })}
+                  >
+                    {t('layoutEditor.frameBuilder.resetTracks')}
+                  </button>
+                }
               >
-                {/* Wraps, and the badge truncates: a box can be one 57px column wide (a span cut
-                    at the grid's edge), and a header that did not fit ran out of the box - at the
-                    last column past the board, lengthening the scroller by 59px (thirtieth review,
-                    "nebenbei" 4). Where it fits, nothing changes. */}
-                <div className="flex flex-wrap items-center justify-between gap-1">
-                  <div className="flex min-w-0 items-center gap-1.5">
-                    <AreaDragHandle label={t('layoutEditor.frameBuilder.moveArea', { name: area.name })} />
-                    <span className="truncate font-medium">{area.name}</span>
-                  </div>
-                  <div className="flex min-w-0 max-w-full items-center gap-1">
-                    <Badge truncate>
-                      {area.slot ? t(`positions.${area.slot}`, area.slot) : t('layoutEditor.frameBuilder.slotNone')}
-                      {area.group ? ` · ${t('layoutEditor.frameBuilder.ownGroupShort')}` : ''}
-                    </Badge>
-                    <span aria-hidden="true" className="rounded-[4px] p-0.5 text-text-muted">
-                      {isSelected ? '▲' : '▼'}
-                    </span>
-                  </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label={t('layoutEditor.frameBuilder.rows')}>
+                    <NumberInput max={12} value={layout.rows} onValue={(rows) => updateLayout({ rows })} />
+                  </Field>
+                  <Field label={t('layoutEditor.frameBuilder.cols')}>
+                    <NumberInput max={12} value={layout.cols} onValue={(cols) => updateLayout({ cols })} />
+                  </Field>
+                  <Field label={t('layoutEditor.frameBuilder.rowGap')}>
+                    <TextInput value={layout.rowGap} onChange={(e) => updateLayout({ rowGap: e.target.value })} />
+                  </Field>
+                  <Field label={t('layoutEditor.frameBuilder.columnGap')}>
+                    <TextInput value={layout.columnGap} onChange={(e) => updateLayout({ columnGap: e.target.value })} />
+                  </Field>
                 </div>
 
-                {isSelected && areaForm(area, placement)}
+                <div className="flex flex-col gap-3">
+                  <TrackInputs
+                    label={t('layoutEditor.frameBuilder.columnSizesLabel')}
+                    count={layout.cols}
+                    firstIndex={1}
+                    placeholder="1fr"
+                    valueAt={(i) => layout.columnSizes?.[i] ?? ''}
+                    onChange={setColumnSize}
+                  />
+                  <TrackInputs
+                    label={t('layoutEditor.frameBuilder.rowSizesLabel')}
+                    count={layout.rows}
+                    firstIndex={1}
+                    placeholder="auto"
+                    valueAt={(i) => layout.rowSizes?.[i] ?? ''}
+                    onChange={setRowSize}
+                  />
+                </div>
+              </SettingsSection>
 
-                {area.slot === 'pageBody' && (
-                  <div className="rounded-[4px] border border-dashed border-ink/10 px-2 py-3 text-center text-text-muted dark:border-ink/10">
-                    {t('layoutEditor.frameBuilder.preview.pageContent')}
-                  </div>
-                )}
-              </PlacedBox>
-            )
-          })}
-        </div>
-        </div>
+              <SettingsSection
+                title={t('layoutEditor.frameBuilder.boxSection')}
+                hint={t(hasMaxWidth ? 'layoutEditor.frameBuilder.boxHint' : 'layoutEditor.frameBuilder.boxHintNoMaxWidth')}
+              >
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label={t('layoutEditor.frameBuilder.maxWidth')} className="col-span-2">
+                    <TextInput
+                      value={layout.maxWidth ?? ''}
+                      placeholder={t('layoutEditor.frameBuilder.maxWidthPlaceholder')}
+                      onChange={(e) => updateLayout({ maxWidth: e.target.value })}
+                    />
+                  </Field>
+                  {/* Three options side by side need the panel's whole width. */}
+                  {/* FieldGroup, not Field - see ui.tsx: a <label> around buttons steals the click. */}
+                  <FieldGroup label={t('layoutEditor.frameBuilder.align')} className="col-span-2">
+                    <SegmentedControl
+                      label={t('layoutEditor.frameBuilder.align')}
+                      value={layout.align ?? 'left'}
+                      onChange={(align: FrameAlign) => updateLayout({ align })}
+                      options={ALIGNMENTS.map((value) => ({ value, label: t(`layoutEditor.frameBuilder.alignOption.${value}`) }))}
+                    />
+                  </FieldGroup>
+                  <Field label={t('layoutEditor.frameBuilder.paddingBlock')}>
+                    <TextInput
+                      value={layout.paddingBlock ?? ''}
+                      placeholder="0"
+                      onChange={(e) => updateLayout({ paddingBlock: e.target.value })}
+                    />
+                  </Field>
+                  <Field label={t('layoutEditor.frameBuilder.paddingInline')}>
+                    <TextInput
+                      value={layout.paddingInline ?? ''}
+                      placeholder="0"
+                      onChange={(e) => updateLayout({ paddingInline: e.target.value })}
+                    />
+                  </Field>
+                </div>
+              </SettingsSection>
 
-        {/* What follows the cursor - without it a dnd-kit drag moves nothing visible, since the
-            source keeps its place in the grid until the drop. */}
-        <DragOverlay>
-          {draggedArea && (
-            // `w-fit`, because this chip *is* the dragged rect: dnd-kit sizes the overlay from the
-            // dragged node - a twelve-column area's box - and then measures its only child
-            // (core.esm.js:2413), so a block-level chip came out 1060px wide. Every arrow press
-            // centres that rect on the target cell, which put its left edge at -70 and made the
-            // KeyboardSensor scroll instead of move: measured, the first ArrowRight out of `header`
-            // reached cell 1/7 (half the area away) and the second one 1/8. See the area chips in
-            // the tray, which this now matches.
-            <div className="w-fit rounded-[6px] border border-blue-500 bg-blue-100 px-2 py-1 text-micro font-medium shadow-md dark:border-blue-400 dark:bg-blue-500/30">
-              {draggedArea.name}
-            </div>
+              <SettingsSection
+                title={t('layoutEditor.frameBuilder.lineNamesLabel')}
+                hint={t('layoutEditor.frameBuilder.lineNamesHint')}
+                collapsible
+              >
+                <div className="flex flex-col gap-3">
+                  <TrackInputs
+                    label={t('layoutEditor.frameBuilder.columnLinesLabel')}
+                    count={layout.cols + 1}
+                    firstIndex={0}
+                    placeholder=""
+                    valueAt={(i) => layout.columnLineNames?.[i]?.[0] ?? ''}
+                    onChange={setColumnLineName}
+                  />
+                  <TrackInputs
+                    label={t('layoutEditor.frameBuilder.rowLinesLabel')}
+                    count={layout.rows + 1}
+                    firstIndex={0}
+                    placeholder=""
+                    valueAt={(i) => layout.rowLineNames?.[i]?.[0] ?? ''}
+                    onChange={setRowLineName}
+                  />
+                </div>
+              </SettingsSection>
+            </Card>
           )}
-        </DragOverlay>
-        </DndContext>
-
-        {/* First, because these two break the built page rather than leave something off it. */}
-        {overlappingAreas.length > 0 && (
-          <p className="mt-4 text-xs text-amber-600 dark:text-amber-400">
-            {t('layoutEditor.frameBuilder.overlapWarning', {
-              pairs: overlappingAreas.map(([a, b]) => `${a.name} + ${b.name}`).join(', ')
-            })}
-          </p>
-        )}
-        {outsideAreas.length > 0 && (
-          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-            {t('layoutEditor.frameBuilder.outsideWarning', { areas: outsideAreas.map((a) => a.name).join(', ') })}
-          </p>
-        )}
-        {unassignedSlots.length > 0 && (
-          <p className="mt-4 text-xs text-amber-600 dark:text-amber-400">
-            {t('layoutEditor.frameBuilder.unassignedWarning', {
-              slots: unassignedSlots.map((s) => t(`positions.${s}`, s)).join(', ')
-            })}
-          </p>
-        )}
-        {homelessSlots.length > 0 && (
-          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-            {t('layoutEditor.frameBuilder.homelessWarning', {
-              slots: homelessSlots.map((s) => t(`positions.${s}`, s)).join(', ')
-            })}
-          </p>
-        )}
-        {doubledSlots.length > 0 && (
-          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-            {t('layoutEditor.frameBuilder.doubledWarning', {
-              slots: doubledSlots.map((s) => t(`positions.${s}`, s)).join(', ')
-            })}
-          </p>
-        )}
-        {hiddenGroupAreas.length > 0 && (
-          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-            {t('layoutEditor.frameBuilder.hiddenGroupsWarning', {
-              breakpoint: t(`layoutEditor.frameBuilder.breakpoint.${activeBreakpoint}`),
-              areas: hiddenGroupAreas.map((a) => a.name).join(', ')
-            })}
-          </p>
-        )}
-        {otherWarningBreakpoints.length > 0 && (
-          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-            {t('layoutEditor.frameBuilder.otherBreakpointsWarning', {
-              breakpoints: otherWarningBreakpoints.map((bp) => t(`layoutEditor.frameBuilder.breakpoint.${bp}`)).join(', ')
-            })}
-          </p>
-        )}
-        {neverVisibleAreas.length > 0 && (
-          <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-            {t('layoutEditor.frameBuilder.neverVisibleWarning', {
-              areas: neverVisibleAreas.map((a) => a.name).join(', ')
-            })}
-          </p>
-        )}
-      </Card>
-
-      <FormActions
-        className="mt-0"
-        secondary={
-          <>
-            {savedNotice && (
-              <span className="text-xs text-emerald-600 dark:text-emerald-400">{t('layoutEditor.frameBuilder.saved')}</span>
-            )}
-            <DevServerRestartHint show={savedNotice && savedWasEdit} />
-          </>
-        }
-      >
-        <Button variant="ghost" onClick={closeEditor}>
-          {t('layoutEditor.frameBuilder.closeEditor')}
-        </Button>
-        <Button onClick={save} disabled={saving}>
-          {saving ? t('common.saving') : t('common.save')}
-        </Button>
-      </FormActions>
-      {!isNewDraft && (
-        <p className="text-right">
-          <button type="button" onClick={() => remove(editing)} className="text-xs text-red-600 underline dark:text-red-400">
-            {t('layoutEditor.frameBuilder.deleteFrame')}
-          </button>
-        </p>
-      )}
+        </aside>
+      </div>
     </div>
   )
 }
@@ -1596,8 +1727,7 @@ function TrayChip({
   selected,
   dragging,
   hidden,
-  onSelect,
-  children
+  onSelect
 }: {
   area: GridFrameArea
   selected: boolean
@@ -1605,20 +1735,16 @@ function TrayChip({
   onSelect: () => void
   // Placed on this breakpoint but hidden, rather than not placed at all.
   hidden: boolean
-  // The area's form, same as a placed box gets - rendered only while this chip is the selected one.
-  // A selected chip takes a whole row of the wrapping tray rather than staying chip-sized, because
-  // the form is a row of fields and squeezing it between two other chips would leave neither
-  // readable.
-  children?: React.ReactNode
 }): JSX.Element {
   const { t } = useTranslation()
   const { attributes, listeners, setNodeRef, setActivatorNodeRef } = useDraggable({ id: area.id })
   return (
     <div
       ref={setNodeRef}
+      data-area-box={area.id}
       className={`rounded-[6px] border border-dashed px-1.5 py-1 text-micro ${
         selected
-          ? 'w-full border-blue-500 bg-blue-100 ring-2 ring-blue-500/40 dark:border-blue-400 dark:bg-blue-500/20'
+          ? 'border-blue-500 bg-blue-100 ring-2 ring-blue-500/40 dark:border-blue-400 dark:bg-blue-500/20'
           : 'border-blue-300 bg-blue-50/60 dark:border-blue-500/40 dark:bg-blue-500/10'
       } ${dragging ? 'opacity-30' : ''}`}
     >
@@ -1626,7 +1752,7 @@ function TrayChip({
         <ActivatorContext.Provider value={{ attributes, listeners, setActivatorNodeRef }}>
           <AreaDragHandle label={t('layoutEditor.frameBuilder.placeArea', { name: area.name })} />
         </ActivatorContext.Provider>
-        <button type="button" onClick={onSelect} className="flex flex-col items-center gap-0.5 text-center">
+        <button type="button" onClick={onSelect} aria-pressed={selected} className="flex flex-col items-center gap-0.5 text-center">
           <span className="font-medium">{area.name}</span>
           <span className="text-text-muted">
             {area.slot ? t(`positions.${area.slot}`, area.slot) : t('layoutEditor.frameBuilder.slotNone')}
@@ -1635,7 +1761,6 @@ function TrayChip({
           </span>
         </button>
       </div>
-      {selected && children}
     </div>
   )
 }
@@ -1647,6 +1772,7 @@ function DropCell({ row, col }: { row: number; col: number }): JSX.Element {
   return (
     <div
       ref={setNodeRef}
+      data-cell={`${row}:${col}`}
       className={`min-h-[40px] rounded-[6px] border transition-colors ${
         isOver ? 'border-blue-500 bg-blue-100 dark:bg-blue-900/40' : 'border-dashed border-ink/15 bg-ink/[0.02] dark:border-ink/15 dark:bg-ink/[0.02]'
       }`}
@@ -1655,24 +1781,35 @@ function DropCell({ row, col }: { row: number; col: number }): JSX.Element {
   )
 }
 
-// A placed area: a drop target of its own (dropping onto it means "this cell") and the container
-// for the area's form. The box is not the drag activator - the handle inside it is - so a click
-// anywhere on it still opens and closes the form.
+// A placed area: a drop target of its own (dropping onto it means "this cell"), what the drag
+// handle inside it moves, and since 1.1 what its edges resize. The box is not the drag activator -
+// the handle inside it is - so a click anywhere on it still selects it, and its settings open in
+// the side panel rather than inside it.
 function PlacedBox({
   areaId,
   placement,
   selected,
   dragging,
+  resizing,
   label,
+  resizeLabel,
   onToggle,
+  onResizeStart,
+  onResizeMove,
+  onResizeEnd,
   children
 }: {
   areaId: string
   placement: GridAreaPlacement
   selected: boolean
   dragging: boolean
+  resizing: boolean
   label: string
+  resizeLabel: string
   onToggle: () => void
+  onResizeStart: (sides: ResizeSides) => void
+  onResizeMove: (x: number, y: number) => void
+  onResizeEnd: (commit: boolean) => void
   children: React.ReactNode
 }): JSX.Element {
   const { setNodeRef: setDropRef, isOver } = useDroppable({ id: `${BOX_PREFIX}${areaId}` })
@@ -1687,24 +1824,24 @@ function PlacedBox({
         setDropRef(node)
         setDragRef(node)
       }}
+      data-area-box={areaId}
       role="button"
       tabIndex={0}
       aria-label={label}
+      aria-pressed={selected}
       onClick={onToggle}
       onKeyDown={(e) => {
-        // Only what was aimed at the box itself. Everything inside it - the fields of the area
-        // form, and above all the drag handle, whose Space starts a keyboard drag - keeps its
-        // keystroke: the alternative, stopping the bubbling down in the form, takes the arrows and
-        // Escape away from @dnd-kit's keyboard sensor, which listens on the document once a drag
-        // runs. A drag that cannot be steered and cannot be cancelled then ends on whatever cell it
-        // started over, at the first keystroke outside the form.
+        // Only what was aimed at the box itself. Everything inside it - above all the drag handle,
+        // whose Space starts a keyboard drag - keeps its keystroke: stopping the bubbling instead
+        // takes the arrows and Escape away from @dnd-kit's keyboard sensor, which listens on the
+        // document once a drag runs.
         if (e.target !== e.currentTarget) return
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
           onToggle()
         }
       }}
-      className={`flex min-h-[48px] cursor-pointer flex-col gap-1.5 rounded-[6px] border p-2 text-micro ${
+      className={`group relative flex min-h-[48px] min-w-0 cursor-pointer flex-col gap-1.5 rounded-[6px] border p-2 text-micro ${
         selected
           ? 'border-blue-600 bg-blue-50 shadow-md ring-2 ring-blue-500/40 dark:border-blue-400 dark:bg-blue-500/10'
           : 'border-slate-300 bg-surface shadow-sm hover:border-blue-300 dark:border-ink/15 dark:bg-ink/[0.03] dark:hover:border-blue-500/30'
@@ -1712,6 +1849,85 @@ function PlacedBox({
       style={{ gridRow: `${placement.row} / span ${placement.rowSpan}`, gridColumn: `${placement.col} / span ${placement.colSpan}` }}
     >
       <ActivatorContext.Provider value={{ attributes, listeners, setActivatorNodeRef }}>{children}</ActivatorContext.Provider>
+      {!dragging &&
+        RESIZE_HANDLES.map((h) => (
+          <ResizeHandle
+            key={h.key}
+            handle={h}
+            visible={selected || resizing}
+            title={resizeLabel}
+            onStart={() => onResizeStart(h.sides)}
+            onMove={onResizeMove}
+            onEnd={onResizeEnd}
+          />
+        ))}
+    </div>
+  )
+}
+
+// The eight grips of a placed box: four edges, four corners. Edges leave the corners free, and the
+// corners sit above the edges, so a corner is a corner wherever it is grabbed.
+type ResizeHandleSpec = { key: string; sides: ResizeSides; className: string; cursor: string; bar?: string }
+const RESIZE_HANDLES: ResizeHandleSpec[] = [
+  { key: 'top', sides: { top: true }, className: 'inset-x-2.5 -top-1 h-2', cursor: 'ns-resize', bar: 'h-[3px] w-5' },
+  { key: 'bottom', sides: { bottom: true }, className: 'inset-x-2.5 -bottom-1 h-2', cursor: 'ns-resize', bar: 'h-[3px] w-5' },
+  { key: 'left', sides: { left: true }, className: 'inset-y-2.5 -left-1 w-2', cursor: 'ew-resize', bar: 'h-5 w-[3px]' },
+  { key: 'right', sides: { right: true }, className: 'inset-y-2.5 -right-1 w-2', cursor: 'ew-resize', bar: 'h-5 w-[3px]' },
+  { key: 'top-left', sides: { top: true, left: true }, className: '-left-1 -top-1 z-[1] h-3 w-3', cursor: 'nwse-resize' },
+  { key: 'top-right', sides: { top: true, right: true }, className: '-right-1 -top-1 z-[1] h-3 w-3', cursor: 'nesw-resize' },
+  { key: 'bottom-left', sides: { bottom: true, left: true }, className: '-bottom-1 -left-1 z-[1] h-3 w-3', cursor: 'nesw-resize' },
+  { key: 'bottom-right', sides: { bottom: true, right: true }, className: '-bottom-1 -right-1 z-[1] h-3 w-3', cursor: 'nwse-resize' }
+]
+
+// A grip is pointer-only and hidden from assistive technology on purpose: the same change is in
+// the side panel as two number fields and a drag of the area's own handle, and eight more tab stops
+// per box would bury the board. The pointer is captured, so the gesture keeps going over other
+// boxes and outside the board, and the click that ends it lands on the grip, not on the box.
+function ResizeHandle({
+  handle,
+  visible,
+  title,
+  onStart,
+  onMove,
+  onEnd
+}: {
+  handle: ResizeHandleSpec
+  visible: boolean
+  title: string
+  onStart: () => void
+  onMove: (x: number, y: number) => void
+  onEnd: (commit: boolean) => void
+}): JSX.Element {
+  return (
+    <div
+      aria-hidden="true"
+      data-resize-handle={handle.key}
+      title={title}
+      className={`absolute flex touch-none items-center justify-center ${handle.className}`}
+      style={{ cursor: handle.cursor }}
+      onPointerDown={(e) => {
+        if (e.button !== 0) return
+        e.preventDefault()
+        e.stopPropagation()
+        e.currentTarget.setPointerCapture(e.pointerId)
+        onStart()
+      }}
+      onPointerMove={(e) => {
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) onMove(e.clientX, e.clientY)
+      }}
+      onPointerUp={(e) => {
+        if (!e.currentTarget.hasPointerCapture(e.pointerId)) return
+        e.currentTarget.releasePointerCapture(e.pointerId)
+        onEnd(true)
+      }}
+      onPointerCancel={() => onEnd(false)}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <span
+        className={`rounded-full bg-blue-500 transition-opacity dark:bg-blue-400 ${handle.bar ?? 'h-2 w-2'} ${
+          visible ? 'opacity-100' : 'opacity-0 group-hover:opacity-60'
+        }`}
+      />
     </div>
   )
 }

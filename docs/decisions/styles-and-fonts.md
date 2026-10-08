@@ -644,8 +644,9 @@ Spalte. Gelesen heißt das:
 **Die verwalteten Blöcke ziehen nach `_quartzcontrol.scss` (2026-10-07, 1.1, P4).** Ladereihenfolge,
 eigene Schriften, Google-Schriften und Variablen stehen seit 1.1 in `quartz/styles/_quartzcontrol.scss`;
 `custom.scss` trägt dafür vor der ersten Regel `@use "./quartzcontrol";` und sonst nur den Rumpf des
-Nutzers (`imported-styles` bleibt dort, es ist der Rumpf eines Vorlagenpakets). Umgezogen wird beim
-ersten Schreiben eines der vier Blöcke, alle vier auf einmal (`writeManagedBlocks`); gelesen wird aus
+Nutzers (`imported-styles` bleibt dort, es ist der Rumpf eines Vorlagenpakets). Umgezogen wurde
+zunächst beim ersten Schreiben eines der vier Blöcke, alle vier auf einmal (`writeManagedBlocks`) —
+seit dem vierzigsten Review ist der Umzug ein eigener Schritt, siehe den Absatz darunter; gelesen wird aus
 beiden Dateien, die verwaltete zuerst, damit eine Kopie, die eine ältere App in `custom.scss`
 hinterlässt, gewinnt wie im Browser. Gemessen an APFS-Klonen von gui-test und Example:
 
@@ -680,6 +681,35 @@ Kürzel des nativen Menüs nicht (Cmd+S speichert nicht, der Knopf schon); CodeM
 sichtbaren Zeilen, `textContent` des Editors ist nicht die Datei; und Quartz minifiziert die
 ausgelieferte CSS — `rgb(203, 203, 203)` kommt als `#cbcbcb` an, ein Vergleich auf den getippten Wert
 meldet dann „nicht übernommen“, obwohl er nach einer Sekunde da war.
+
+**Der Umzug ist ein eigener Schritt, mit Snapshot davor (2026-10-08, vierzigstes Review).** Das Review
+fand neun Schreiber, die den Umzug auslösten — Variable, Ladereihenfolge, Schrift-Import und
+-Entfernen, der Google-Abruf auch an der Bau-Tür, der Vorlagen-Import —, keinen, der es sagte, und
+keinen Snapshot davor. Ein umgezogenes Projekt liest 1.0.x mit 0 Variablen und 0 Stylesheets; wer
+dort vor der leeren Liste ein Stylesheet einschaltet, hinterlässt eine zweite Ladereihenfolge (die
+dann den Bau brach, bis `fbdfa32` sie beim Zusammenführen neu bildet). Der Nutzer hat entschieden:
+umgezogen wird nur noch auf ausdrücklichen Wunsch. Ein nicht umgezogenes Projekt schreibt jeder
+Schreiber wie 1.0.x — den genannten Block an seiner Stelle in `custom.scss`, sonst nichts; die
+Stile-Seite zeigt darüber einen Hinweis mit „Jetzt umstellen“ (gesperrt, solange die Seite Entwürfe
+hält), und `styles.migrate` legt vorher einen Snapshot der neuen Art `styleMigration` an, die die
+Ausdünnung behält wie einen eigenen. Ohne Snapshot zieht nur ein Projekt um, das die App gerade
+angelegt hat. Ein Vorlagen-Import zieht nicht um; sein Teil `styles` setzt die Blöcke über
+`replaceCustomBody` in den neuen Rumpf zurück. Gemessen mit dem gebündelten Dienst an Klonen von
+gui-test, vorher (`fbdfa32`) gegen nachher:
+
+- **Eine Variable gespeichert:** vorher `custom.scss` 29 Zeilen und `_quartzcontrol.scss` 636, 1.0.2
+  liest 0 von 68 Variablen; nachher 659 Zeilen, keine verwaltete Datei, 1.0.2 liest 68 von 68. Die
+  Ladereihenfolge ebenso: vorher liest 1.0.2 0 Stylesheets, nachher 32.
+- **Vorlagen-Import** (`qc-basic.qtpl`, Teile `styles`, `fonts`, `cssVariables`): vorher umgezogen,
+  1.0.2 liest 0 Variablen; nachher bleibt das Projekt in der Form von 1.0, 67 Variablen in beiden
+  Fassungen, Sass grün.
+- **Umstellen:** 657 → 29 Zeilen, 635 in der verwalteten Datei, 67 Variablen und 33 Stylesheets vorher
+  und nachher, Sass grün; ein zweiter Aufruf schreibt nichts. Im Snapshot steht `custom.scss` mit 657
+  Zeilen und keine `_quartzcontrol.scss`.
+- **Gebaute App** (Wegwerf-Profil, 1280 px): der Hinweis steht über den Reitern, kein waagerechter
+  Bildlauf; mit einem Entwurf im CSS-Reiter ist der Knopf gesperrt und sagt warum; geklickt
+  verschwindet der Hinweis, der Satz mit dem Snapshot steht unter dem Kopf, der Reiter
+  `_quartzcontrol.scss` erscheint, und unter Snapshots steht „Vor Umstellung der Stile“.
 
 **Zwölf Stylesheets statt 31 im Basis-Template (2026-10-07, 1.1, P5).** Die 31 Dateien unter
 `scripts/example-template/styles/` sind zu zwölf zusammengefügt: `foundation`, `layout`, je eine

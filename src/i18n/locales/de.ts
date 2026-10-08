@@ -615,6 +615,7 @@ export default {
       contentChange: 'Vor Content-Wechsel',
       restore: 'Vor Wiederherstellung',
       styleChange: 'Vor Gestaltungs-Import',
+      styleMigration: 'Vor Umstellung der Stile',
       imported: 'Altes Config-Backup'
     },
     movedFoldersHeading: 'Beiseitegelegte Content-Ordner',
@@ -1521,6 +1522,13 @@ export default {
       theme: 'Community-Themes',
       variables: 'Variablen',
       customCss: 'Eigenes CSS'
+    },
+    migrate: {
+      note: 'Dieses Projekt hält Ladereihenfolge, Schriften und Variablen noch in custom.scss, wie QuartzControl 1.0. Umstellen legt sie in eine eigene Datei, quartz/styles/_quartzcontrol.scss, und vorher einen Snapshot an; ältere Fassungen der App lesen das Projekt danach ohne Variablen und Stylesheets – arbeitest du auf mehreren Rechnern, stelle erst alle auf 1.1 um.',
+      action: 'Jetzt umstellen',
+      running: 'Stelle um…',
+      saveFirst: 'Erst speichern oder verwerfen.',
+      done: 'Umgestellt. Der Snapshot „Vor Umstellung der Stile“ unter Wartung bringt den alten Stand zurück.'
     },
     cascade: {
       themeActive:

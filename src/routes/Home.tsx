@@ -301,6 +301,15 @@ export default function Home(): JSX.Element {
                 setShowWizard(false)
                 if (created) navigate(`/project/${created.id}`)
               }
+              // A project created here starts in 1.1's form of the Styles page's blocks (their own
+              // file, _quartzcontrol.scss): there is no older state to go back to, so no snapshot,
+              // and no older app has seen it. A project opened from elsewhere moves only when the
+              // user says so on the Styles page. A failure leaves the 1.0 form, which works too.
+              try {
+                await window.quartzGui.styles.migrate({ projectPath: options.targetDirectory, snapshot: false })
+              } catch (err) {
+                warnings.push(formatIpcError(err))
+              }
               if (template) {
                 try {
                   const plan = await window.quartzGui.templatePackage.plan(options.targetDirectory, template.path)
@@ -324,7 +333,7 @@ export default function Home(): JSX.Element {
                   // only half applied - offline, so no plugin could be installed, or a part that
                   // failed - produced a project that simply looked wrong, with the explanation
                   // available on the Vorlagen page and nowhere near the person who just clicked.
-                  warnings = imported.warnings
+                  warnings = [...warnings, ...imported.warnings]
                   // The one setting the template deliberately does not carry, set here because
                   // leaving it would be worse than either: `configuration` is a site's own
                   // identity and no part touches it, but `quartz create` writes en-US and the

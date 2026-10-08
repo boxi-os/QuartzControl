@@ -676,6 +676,18 @@ export interface StylesInfo {
    * styleService.writeManagedBlocks.
    */
   managed: { path: string; content: string } | null
+  /**
+   * Whether the project keeps its managed blocks in _quartzcontrol.scss - true as well when only
+   * custom.scss's line for it is there, which the build door repairs. The move is a step of its own
+   * (styles.migrate).
+   */
+  moved: boolean
+}
+
+export interface StyleMigrationResult {
+  /** False when the project had been moved already and nothing was written. */
+  moved: boolean
+  snapshotId: string | null
 }
 
 // An additional stylesheet the user keeps alongside custom.scss. Quartz only ever imports
@@ -919,6 +931,8 @@ export type SnapshotKind =
   | 'contentChange'
   | 'restore'
   | 'styleChange'
+  /** Before the Styles page moved its blocks to _quartzcontrol.scss (1.1); kept like a manual one. */
+  | 'styleMigration'
   /** Carried over from the per-save config backups this store replaced. */
   | 'imported'
 
@@ -1524,6 +1538,7 @@ export const IPC = {
   stylesPreviewFonts: 'styles:previewFonts',
   stylesGetVariableOverrides: 'styles:getVariableOverrides',
   stylesVariableCollisions: 'styles:variableCollisions',
+  stylesMigrate: 'styles:migrate',
   stylesSaveVariableOverrides: 'styles:saveVariableOverrides',
   stylesVariableGraph: 'styles:variableGraph',
 
@@ -1880,6 +1895,11 @@ export interface QuartzGuiApi {
     getVariableOverrides(projectPath: string): Promise<CssVariableOverride[]>
     /** Variables this page sets that custom.scss's own body sets as well - there the own rule wins. */
     variableCollisions(args: { projectPath: string }): Promise<string[]>
+    /**
+     * Moves the managed blocks out of custom.scss into _quartzcontrol.scss, with a snapshot before
+     * it unless `snapshot` is false (a project created here a moment ago).
+     */
+    migrate(args: { projectPath: string; snapshot: boolean }): Promise<StyleMigrationResult>
     saveVariableOverrides(projectPath: string, overrides: CssVariableOverride[]): Promise<void>
     variableGraph(projectPath: string, themeId?: string, outputDir?: string): Promise<CssVariableGraph>
   }

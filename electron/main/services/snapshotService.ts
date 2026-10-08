@@ -46,6 +46,11 @@ const COALESCE_WINDOW = 15 * 60 * 1000
 // though its only caller is the template import, which is precisely a one-shot act.
 const COALESCING_KINDS = new Set<SnapshotKind>(['configChange'])
 
+// Kept like a manual one - never skipped because nothing changed since the last, never thinned:
+// the snapshot before the Styles page's move to _quartzcontrol.scss is the way back for a project
+// that has to stay readable by 1.0.x, and that need does not fade with age.
+const KEPT_KINDS = new Set<SnapshotKind>(['manual', 'styleMigration'])
+
 // Every operation below shares one git index, and git guards that index with an index.lock that
 // a second process cannot take: measured, six concurrent `git add -A` runs leave five failing with
 // "Unable to create index.lock". React's StrictMode makes that the normal case, not an edge case -
@@ -231,7 +236,7 @@ async function createSnapshotUnlocked(projectPath: string, kind: SnapshotKind, r
   const tree = (await git(projectPath, ['write-tree'])).output.trim()
   if (!tree) throw new Error(mainT('snapshotWriteTreeFailed'))
 
-  if (kind !== 'manual') {
+  if (!KEPT_KINDS.has(kind)) {
     const existing = await listSnapshots(projectPath)
     const [newest] = existing
     if (newest) {
@@ -272,7 +277,7 @@ async function createSnapshotUnlocked(projectPath: string, kind: SnapshotKind, r
   // no matter how small it is - which is most of what an unpacked store takes up. `--auto` only
   // does the work once git's own threshold is crossed, so this is a cheap check on the common path.
   await git(projectPath, ['gc', '--auto', '--quiet'])
-  if (kind !== 'manual') await pruneAutomaticUnlocked(projectPath)
+  if (!KEPT_KINDS.has(kind)) await pruneAutomaticUnlocked(projectPath)
   return { id, commit, createdAt: new Date().toISOString(), kind, label, projectHead: head || undefined }
 }
 
@@ -613,7 +618,7 @@ async function pruneAutomaticUnlocked(projectPath: string): Promise<number> {
   const doomed: string[] = []
   // newest first, so the first entry to claim a bucket is the one that survives it
   for (const snapshot of snapshots) {
-    if (snapshot.kind === 'manual') continue
+    if (KEPT_KINDS.has(snapshot.kind)) continue
     const createdAt = new Date(snapshot.createdAt)
     const bucket = retentionBucket(now - createdAt.getTime(), createdAt)
     if (bucket === null) continue

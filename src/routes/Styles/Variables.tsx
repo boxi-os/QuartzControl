@@ -35,7 +35,7 @@ const SINGLES_GROUP = 'singles'
 // (index.tsx), which also re-reads the file afterwards so the CSS tab's draft stays in sync.
 export default function Variables(): JSX.Element {
   const { t } = useTranslation()
-  const { project, config, overrides, setOverrides, graph, graphLoading, reloadGraph, registerSave } = useStyles()
+  const { project, config, overrides, setOverrides, graph, graphLoading, reloadGraph, registerSave, scss } = useStyles()
 
   // Which rows are open, which query is active: kept across a trip to another area, since with
   // nothing rendered until a query is typed, losing it means losing the whole result list.
@@ -61,11 +61,14 @@ export default function Variables(): JSX.Element {
   const [pendingScroll, setPendingScroll] = useState<string | null>(null)
 
   // Variables custom.scss sets itself and wins with since 1.1 (styleService.variableCollisions):
-  // asked on arrival and after a save on this tab, the one save that can change the answer here.
+  // asked on arrival, after a save on this tab, and after the move to _quartzcontrol.scss - before
+  // it there are none.
   const [collisions, setCollisions] = useState<string[]>([])
+  const moved = scss.moved
   const loadCollisions = useCallback(() => {
-    window.quartzGui.styles.variableCollisions({ projectPath: project.path }).then(setCollisions, () => setCollisions([]))
-  }, [project.path])
+    if (moved) window.quartzGui.styles.variableCollisions({ projectPath: project.path }).then(setCollisions, () => setCollisions([]))
+    else setCollisions([])
+  }, [project.path, moved])
   useEffect(loadCollisions, [loadCollisions])
 
   // The page writes the overrides itself; what follows here is the question above.

@@ -67,6 +67,7 @@ export const snapshotKind = z.enum([
   'contentChange',
   'restore',
   'styleChange',
+  'styleMigration',
   'imported'
 ])
 
@@ -263,6 +264,7 @@ export const fetchGoogleFontsInput = z.looseObject({
 export const dropGoogleFontsInput = z.looseObject({ projectPath: absolutePath })
 // A read that needs nothing but the project - styles.variableCollisions and whatever follows it.
 export const projectPathArgs = z.looseObject({ projectPath: absolutePath })
+export const stylesMigrateInput = z.looseObject({ projectPath: absolutePath, snapshot: z.boolean() })
 
 export const logHistoryInput = z.looseObject({ projectId: uuid })
 export const logClearInput = z.looseObject({ projectId: uuid, stream: z.enum(['server', 'build']) })

@@ -933,12 +933,14 @@ async function buildTemplate() {
       // styles.save replaces the whole file. Until 1.1 three parts of the package owned a managed
       // block inside it, and writing the body alone deleted the @font-face rules and every CSS
       // variable - so they were lifted out and put back. Since 1.1 the blocks live in
-      // _quartzcontrol.scss: the load order is written once first, which moves a workshop that
-      // still has them in custom.scss (styleService.writeManagedBlocks), and the save of the body
-      // gets the line that loads them put back by the app.
+      // _quartzcontrol.scss: a workshop that still has them in custom.scss is moved first - the
+      // step the Styles page offers, without its snapshot, since the workshop is rebuilt from this
+      // repo anyway - then the load order is written once, and the save of the body gets the line
+      // that loads them put back by the app.
       await ipc(
         page,
         async (a) => {
+          await window.quartzGui.styles.migrate({ projectPath: a.path, snapshot: false })
           const set = await window.quartzGui.styles.listFiles(a.path)
           await window.quartzGui.styles.setImportOrder(a.path, set.files.filter((f) => f.imported).map((f) => f.relativePath))
           await window.quartzGui.styles.save(a.path, a.body)

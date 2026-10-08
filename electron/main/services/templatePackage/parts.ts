@@ -311,11 +311,11 @@ const styles: TemplatePart<StylesPayload> = {
     return plan
   },
   /**
-   * Rebuilds custom.scss's free body. The project is moved to _quartzcontrol.scss first, so the
-   * sections other parts own are out of the way and stay where they are whatever this writes; the
-   * body is replaced (or merged) and the load order rewritten through the service that owns it.
-   * Until 1.1 the sections stood in custom.scss and had to be taken out and put back one by one -
-   * and a section left off that list was lost (thirty-third review, finding 3).
+   * Rebuilds custom.scss's free body: replaced (or merged), the sections other parts own kept where
+   * they are by replaceCustomBody - in _quartzcontrol.scss for a moved project, put back into the
+   * body for one that is not (an import does not move a project; see migrateManagedStyles) - and
+   * the load order rewritten through the service that owns it. A section left off that list was
+   * once lost (thirty-third review, finding 3); the service now carries all four.
    */
   async apply(payload, { projectPath, strategy, files, warn }) {
     for (const relativePath of payload.files) {
@@ -334,7 +334,6 @@ const styles: TemplatePart<StylesPayload> = {
       await writeFile(target, data)
     }
 
-    await styleService.writeManagedBlocks(projectPath, {})
     const before = await styleService.readCustomScss(projectPath)
     const existingOrder = (await styleService.listStyleFiles(projectPath)).files.filter((f) => f.imported).map((f) => f.relativePath)
 
@@ -354,7 +353,7 @@ const styles: TemplatePart<StylesPayload> = {
       const incoming = rest.trim()
       body = incoming === '' || own.includes(incoming) ? withUses : styleService.upsertManagedBlock(withUses, 'imported-styles', incoming)
     }
-    await styleService.writeCustomScss(projectPath, styleService.ensureManagedUse(body))
+    await styleService.replaceCustomBody(projectPath, body)
 
     // The order the package brings, restricted to files that exist here, with anything the target
     // already imported and the package does not know appended after it.

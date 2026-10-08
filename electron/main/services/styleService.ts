@@ -11,12 +11,14 @@ import type {
   ScssCheckResult,
   ScssDiagnostic,
   StyleFile,
+  StyleMigrationResult,
   StyleFileSet,
   StyleReferenceFile,
   StylesInfo
 } from '@shared/ipc-contract'
 import { writeFileAtomic } from './jsonStore'
 import { whileHoldingStyles } from './styleLock'
+import { createSnapshot } from './snapshotService'
 import { resolveBuildDir } from './projectDirs'
 import { mainT } from '../i18n'
 import { MAX_FONT_FILE_BYTES } from './fontFile'
@@ -33,7 +35,7 @@ export async function readCustomScss(projectPath: string): Promise<StylesInfo> {
   const content = existsSync(path) ? await readFile(path, 'utf-8') : ''
   const managedPath = managedScssPath(projectPath)
   const managed = existsSync(managedPath) ? { path: managedPath, content: await readFile(managedPath, 'utf-8') } : null
-  return { path, content, managed }
+  return { path, content, managed, moved: managed !== null || hasManagedUse(content) }
 }
 
 // Atomically, like every other file this app writes that something else reads: a plain writeFile
@@ -616,8 +618,13 @@ function insertBeforeRules(content: string, text: string): string {
 // specificity beats a variable the Styles page set - where until 1.0.x the variables came last and
 // won. That is said in the release notes and on the Variables tab, not undone here.
 //
-// The move happens on the first write of any of the four blocks, and takes all four at once
-// (writeManagedBlocks). Reading looks in both files, the managed one first: a copy still in
+// The move is a step of its own (migrateManagedStyles), taken on the Styles page with a snapshot
+// before it, or when a project is created here - not on the first write of a block. A moved
+// project is one an older app reads with no variables and no stylesheets, and one that then turns
+// a stylesheet on there leaves a second load order behind; that is the user's decision, on the
+// machine where they know whether a second one exists (fortieth review, closing question). Until
+// then every writer keeps the blocks in custom.scss, the form 1.0.x reads. Reading looks in both
+// files, the managed one first: a copy still in
 // custom.scss can only come from an older app on another machine (a project travelling through
 // Git-Sync), and it stands later in the CSS, so it is the one the site shows - the same "later
 // wins" rule as for the two marker names above. `imported-styles` stays in custom.scss: it is the
@@ -730,18 +737,41 @@ export function sourcesWithout(sources: StyleSources, markerId: MovedMarker): st
   return `${stripManagedBlock(sources.managed, markerId)}\n${stripManagedBlock(sources.custom, markerId)}`
 }
 
+/** Whether the project keeps its managed blocks in _quartzcontrol.scss (see above). */
+export function isMoved(sources: StyleSources): boolean {
+  return sources.managedExists || hasManagedUse(sources.custom)
+}
+
 /**
  * Writes the managed blocks. `changes` names the blocks this write is about - a string is the new
- * body, null removes the block - and every other block is carried over as it reads now, from
- * either file. The caller holds the styles lock.
+ * body, null removes the block. The caller holds the styles lock.
  *
- * The managed file first, then custom.scss without the blocks and with the `@use` line: a write
- * that breaks off in between leaves a block in both files, read twice and deduplicated by the next
- * write, never in neither. Both files are written atomically (writeFileAtomic), because the dev
- * server rebuilds on each of them.
+ * In a project that has not been moved, each named block is replaced where it stands in custom.scss
+ * (or appended, the load order before the first rule), as 1.0.x did, and nothing else is touched.
+ *
+ * In a moved one - or with `move`, which is how a project gets moved - every other block is carried
+ * over as it reads now, from either file. The managed file first, then custom.scss without the
+ * blocks and with the `@use` line: a write that breaks off in between leaves a block in both files,
+ * read twice and deduplicated by the next write, never in neither. Both files are written
+ * atomically (writeFileAtomic), because the dev server rebuilds on each of them.
  */
-export async function writeManagedBlocks(projectPath: string, changes: Partial<Record<MovedMarker, string | null>>): Promise<void> {
+export async function writeManagedBlocks(
+  projectPath: string,
+  changes: Partial<Record<MovedMarker, string | null>>,
+  options: { move?: boolean } = {}
+): Promise<void> {
   const sources = await readStyleSources(projectPath)
+  if (!options.move && !isMoved(sources)) {
+    let custom = sources.custom
+    for (const marker of MOVED_MARKERS) {
+      if (!(marker in changes)) continue
+      const body = changes[marker] ?? null
+      if (marker === IMPORTS_MARKER) custom = upsertImportBlock(custom, body ?? '')
+      else custom = body === null ? migrateOnWrite(stripManagedBlock(custom, marker)) : upsertManagedBlock(custom, marker, body)
+    }
+    if (custom !== sources.custom) await writeCustomScss(projectPath, custom)
+    return
+  }
   const bodies = MOVED_MARKERS.map(
     (marker) =>
       [
@@ -770,6 +800,39 @@ export async function writeManagedBlocks(projectPath: string, changes: Partial<R
   for (const marker of MOVED_MARKERS) custom = stripManagedBlock(custom, marker)
   custom = ensureManagedUse(migrateOnWrite(custom))
   if (custom !== sources.custom) await writeCustomScss(projectPath, custom)
+}
+
+/**
+ * custom.scss with a new free body - for the template import, which replaces the body and leaves
+ * the blocks other parts own where they are. In a moved project the blocks are in the other file
+ * and the body gets the `@use` line; in one that is not, they are put back into the new body in
+ * the order the writer above keeps. The caller holds the styles lock.
+ */
+export async function replaceCustomBody(projectPath: string, body: string): Promise<void> {
+  const sources = await readStyleSources(projectPath)
+  if (isMoved(sources)) {
+    await writeCustomScss(projectPath, ensureManagedUse(body))
+    return
+  }
+  const kept = Object.fromEntries(MOVED_MARKERS.map((marker) => [marker, managedBody(sources, marker)]))
+  await writeCustomScss(projectPath, body)
+  await writeManagedBlocks(projectPath, kept)
+}
+
+/**
+ * Moves a project's managed blocks to _quartzcontrol.scss - the one step that does (see the top of
+ * this section). With `snapshot`, a snapshot of the project comes first, of its own kind so the
+ * thinning keeps it: it is the one way back for a machine that has to stay on 1.0.x. Without, for a
+ * project this app has just created, where there is nothing older to go back to. A project that
+ * has been moved already is left as it is.
+ */
+export function migrateManagedStyles(projectPath: string, options: { snapshot: boolean }): Promise<StyleMigrationResult> {
+  return whileHoldingStyles(projectPath, async () => {
+    if (isMoved(await readStyleSources(projectPath))) return { moved: false, snapshotId: null }
+    const snapshot = options.snapshot ? await createSnapshot(projectPath, 'styleMigration') : null
+    await writeManagedBlocks(projectPath, {}, { move: true })
+    return { moved: true, snapshotId: snapshot?.id ?? null }
+  })
 }
 
 export async function listStyleFiles(projectPath: string): Promise<StyleFileSet> {

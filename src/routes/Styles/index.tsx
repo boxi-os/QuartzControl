@@ -16,6 +16,7 @@ import Basics from './Basics'
 import Theme from './Theme'
 import Variables from './Variables'
 import CustomCss from './CustomCss'
+import MoveStylesNote from './MoveStylesNote'
 import HandbookLink from '../../components/HandbookLink'
 
 // Ein Kapitel je Reiter, und sie stehen im Handbuch in derselben Reihenfolge wie hier: Basis,
@@ -55,9 +56,17 @@ export interface StylesContextValue {
   setOverrides: React.Dispatch<React.SetStateAction<Record<string, OverrideValue>>>
   /**
    * `staleBy`: what rewrote custom.scss under an unsaved draft, or null - see reloadScss. `managed`
-   * is _quartzcontrol.scss on disk, null while the project has not been moved yet.
+   * is _quartzcontrol.scss on disk, null while the project has not been moved yet; `moved` says
+   * whether it has (MoveStylesNote).
    */
-  scss: { path: string; content: string; dirty: boolean; staleBy: ScssWriter | null; managed: { path: string; content: string } | null }
+  scss: {
+    path: string
+    content: string
+    dirty: boolean
+    staleBy: ScssWriter | null
+    managed: { path: string; content: string } | null
+    moved: boolean
+  }
   /** What rewrote _quartzcontrol.scss under its unsaved draft, or null - the same as `staleBy`. */
   managedStale: ScssWriter | null
   /** Drops the draft of _quartzcontrol.scss and its stale flag - the banner's "reload". */
@@ -127,6 +136,8 @@ export default function Styles(): JSX.Element {
     staleBy: ScssWriter | null
     /** _quartzcontrol.scss as it is on disk; its draft lives in fileDrafts like any stylesheet's. */
     managed: { path: string; content: string } | null
+    /** Whether the blocks live in _quartzcontrol.scss yet - see MoveStylesNote. */
+    moved: boolean
   } | null>(null)
   // The draft of _quartzcontrol.scss that a writer on this page has written under - the same banner
   // and the same refusal as for custom.scss (staleBy), for the file those writers write since 1.1.
@@ -300,7 +311,7 @@ export default function Styles(): JSX.Element {
       const info = await window.quartzGui.styles.get(project.path)
       setScss((prev) => {
         if (prev?.dirty && after !== 'force') {
-          return { ...prev, original: info.content, managed: info.managed, staleBy: info.content !== prev.original ? after : prev.staleBy }
+          return { ...prev, original: info.content, managed: info.managed, moved: info.moved, staleBy: info.content !== prev.original ? after : prev.staleBy }
         }
         return { ...info, original: info.content, dirty: false, staleBy: null }
       })
@@ -580,6 +591,18 @@ export default function Styles(): JSX.Element {
         <p role="status" className="mb-3 text-sm text-text-secondary empty:mb-0">
           {fontNote}
         </p>
+
+        {!scss.moved && (
+          <MoveStylesNote
+            projectPath={project.path}
+            dirty={dirty}
+            onMoved={async () => {
+              await reloadScss('force')
+              await reloadFiles()
+              setFontNote(t('styles.migrate.done'))
+            }}
+          />
+        )}
 
         <div className="mb-2 flex flex-wrap items-center gap-3">
           <SegmentedControl

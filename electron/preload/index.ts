@@ -246,7 +246,8 @@ const api: QuartzGuiApi = {
   },
   marketplace: {
     list: () => ipcRenderer.invoke(IPC.marketplaceList),
-    refresh: () => ipcRenderer.invoke(IPC.marketplaceRefresh)
+    refresh: () => ipcRenderer.invoke(IPC.marketplaceRefresh),
+    readme: (args: { fullName: string }) => ipcRenderer.invoke(IPC.marketplaceReadme, args)
   },
   server: {
     start: (projectId: string, projectPath: string, options?: ServerOptions) =>

@@ -1,4 +1,4 @@
-import type { MarketplacePlugin, MarketplaceResult } from '@shared/ipc-contract'
+import type { MarketplacePlugin, MarketplaceReadme, MarketplaceResult } from '@shared/ipc-contract'
 import * as connectionsService from './connectionsService'
 
 const CACHE_TTL_MS = 15 * 60 * 1000
@@ -90,4 +90,53 @@ export async function listPlugins(): Promise<MarketplaceResult> {
 
 export function invalidateCache(): void {
   cache = null
+  readmeCache.clear()
+}
+
+// A README is shown, not stored, so a cap on what is read keeps a pathological one from being
+// held in memory whole: the largest in quartz-community is a few kilobytes.
+const README_MAX_BYTES = 256 * 1024
+const readmeCache = new Map<string, { at: number; readme: MarketplaceReadme }>()
+
+/**
+ * The README of one repository, as raw text (`application/vnd.github.raw`). A 404 is the
+ * repository having none; anything else that is not a 200 - a rate limit, no network - is
+ * `unavailable` and, like a failed catalog fetch, not cached.
+ */
+export async function readme(fullName: string): Promise<MarketplaceReadme> {
+  const cached = readmeCache.get(fullName)
+  if (cached && Date.now() - cached.at <= CACHE_TTL_MS) return cached.readme
+  const githubToken = await connectionsService.getGithubToken().catch(() => undefined)
+  try {
+    const headers: Record<string, string> = { Accept: 'application/vnd.github.raw' }
+    if (githubToken) headers.Authorization = `Bearer ${githubToken}`
+    const res = await fetch(`https://api.github.com/repos/${fullName}/readme`, { headers, signal: AbortSignal.timeout(TIMEOUT_MS) })
+    if (res.status === 404) {
+      const missing: MarketplaceReadme = { status: 'missing' }
+      readmeCache.set(fullName, { at: Date.now(), readme: missing })
+      return missing
+    }
+    if (!res.ok || !res.body) return { status: 'unavailable' }
+    const chunks: Uint8Array[] = []
+    let size = 0
+    let truncated = false
+    const reader = res.body.getReader()
+    for (;;) {
+      const { done, value } = await reader.read()
+      if (done) break
+      chunks.push(value)
+      size += value.byteLength
+      if (size > README_MAX_BYTES) {
+        truncated = true
+        await reader.cancel()
+        break
+      }
+    }
+    const text = Buffer.concat(chunks).subarray(0, README_MAX_BYTES).toString('utf-8')
+    const result: MarketplaceReadme = { status: 'ok', text, truncated }
+    readmeCache.set(fullName, { at: Date.now(), readme: result })
+    return result
+  } catch {
+    return { status: 'unavailable' }
+  }
 }

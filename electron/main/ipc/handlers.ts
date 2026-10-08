@@ -451,6 +451,7 @@ export function registerIpcHandlers(): void {
   handleNoArgs(IPC.marketplaceRefresh, () => {
     marketplaceService.invalidateCache()
   })
+  handle(IPC.marketplaceReadme, t([s.marketplaceReadmeArgs]), ({ fullName }) => marketplaceService.readme(fullName))
 
   handle(IPC.serverStart, t([s.uuid, s.absolutePath, s.serverOptions.optional()]), (projectId, projectPath, options) =>
     buildService.startServer(projectId, projectPath, options as ServerOptions | undefined)

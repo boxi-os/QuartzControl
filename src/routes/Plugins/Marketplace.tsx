@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ExternalLink, RefreshCw, Search } from 'lucide-react'
+import { ExternalLink, RefreshCw, Search, Store } from 'lucide-react'
 import { useProject } from '../ProjectLayout'
 import { useStickyState } from '../../state/uiState'
-import type { MarketplacePlugin } from '@shared/ipc-contract'
-import { Badge, Button, Card, TextInput } from '../../components/ui'
+import type { MarketplacePlugin, MarketplaceReadme } from '@shared/ipc-contract'
+import { Badge, Button, Card, CardHeading, DetailLayout, SelectableRow, TextInput } from '../../components/ui'
+import ReadmeText from '../../components/ReadmeText'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { normalizedRepoId } from './pluginSource'
 
@@ -36,6 +37,7 @@ export default function PluginsMarketplace(): JSX.Element {
   const [installing, setInstalling] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [showOther, setShowOther] = useStickyState('marketplace.showOther', false)
+  const [selected, setSelected] = useStickyState<string | null>('marketplace.selected', null)
   // Installing by hand used to live on the Installed tab, unlabelled, in the spot where a search
   // box belongs. It is the same job as the catalog below - find a plugin and add it - and it is
   // the only way to reach a plugin outside this one organisation, which the catalog cannot show.
@@ -129,9 +131,51 @@ export default function PluginsMarketplace(): JSX.Element {
     return [[...pluginResults].sort(byStars), [...rest].sort(byStars)]
   }, [results, query])
 
+  const selectedPlugin = (results ?? []).find((p) => p.fullName === selected) ?? null
+
+  const row = (plugin: MarketplacePlugin): JSX.Element => {
+    const installed = installedIds.has(plugin.fullName.toLowerCase())
+    return (
+      <SelectableRow
+        key={plugin.fullName}
+        selected={plugin.fullName === selected}
+        onSelect={() => setSelected(plugin.fullName)}
+        title={plugin.name}
+        subtitle={plugin.description}
+        trailing={
+          <>
+            {installed && <Badge tone="green">{t('pluginsMarketplace.installed')}</Badge>}
+            {!installed && plugin.archived && <Badge tone="amber">{t('pluginsMarketplace.archived')}</Badge>}
+            <span className="w-10 shrink-0 text-right text-xs text-text-muted">★ {plugin.stars ?? 0}</span>
+          </>
+        }
+      />
+    )
+  }
+
   return (
-    <div>
-      <div className="mb-5 flex flex-wrap items-end gap-x-6 gap-y-3">
+    <DetailLayout panelWidth="wide" panelLabel={t('pluginsMarketplace.panelLabel')} onDismiss={() => setSelected(null)} mainClassName="gap-4" panel={
+      selectedPlugin ? (
+        <MarketplacePanel
+          key={selectedPlugin.fullName}
+          plugin={selectedPlugin}
+          installed={installedIds.has(selectedPlugin.fullName.toLowerCase())}
+          installing={installing === selectedPlugin.fullName}
+          onInstall={() => install(selectedPlugin)}
+        />
+      ) : (
+        <Card className="flex flex-col gap-3">
+          <CardHeading icon={Store}>{t('pluginsMarketplace.panelEmptyTitle')}</CardHeading>
+          <p className="text-ui text-text-secondary">{t('pluginsMarketplace.panelEmptyText')}</p>
+          {results !== null && (
+            <p className="text-ui text-text-secondary">
+              {t('pluginsMarketplace.panelEmptyCount', { count: plugins.length, installed: plugins.filter((p) => installedIds.has(p.fullName.toLowerCase())).length })}
+            </p>
+          )}
+        </Card>
+      )
+    }>
+      <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
         <div className="relative w-full max-w-xs">
           <Search
             size={14}
@@ -168,31 +212,20 @@ export default function PluginsMarketplace(): JSX.Element {
       </div>
 
       {unavailable && (
-        <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
+        <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
           {t('pluginsMarketplace.unavailable')}
         </p>
       )}
-      {message && <p className="mb-4 text-sm text-text-secondary">{message}</p>}
+      {message && <p className="text-sm text-text-secondary">{message}</p>}
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-        {plugins.map((plugin) => (
-          <ResultCard
-            key={plugin.fullName}
-            plugin={plugin}
-            installed={installedIds.has(plugin.fullName.toLowerCase())}
-            installing={installing === plugin.fullName}
-            onInstall={() => install(plugin)}
-          />
-        ))}
-      </div>
       {results === null && <p className="text-sm text-text-muted">{t('pluginsMarketplace.loading')}</p>}
-      {results !== null && plugins.length === 0 && (
-        <p className="text-sm text-text-muted">{t('pluginsMarketplace.noResults')}</p>
-      )}
+      {results !== null && plugins.length === 0 && <p className="text-sm text-text-muted">{t('pluginsMarketplace.noResults')}</p>}
+      {plugins.length > 0 && <ul className="flex flex-col gap-1.5">{plugins.map(row)}</ul>}
 
       {other.length > 0 && (
-        <div className="mt-8">
+        <div>
           <button
+            type="button"
             onClick={() => setShowOther((v) => !v)}
             className="text-ui font-medium text-text-muted hover:text-text"
           >
@@ -201,26 +234,14 @@ export default function PluginsMarketplace(): JSX.Element {
               : t('pluginsMarketplace.showOther', { count: other.length })}
           </button>
           <p className="mt-1 max-w-3xl text-xs text-text-muted">{t('pluginsMarketplace.otherDescription')}</p>
-          {showOther && (
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-              {other.map((plugin) => (
-                <ResultCard
-                  key={plugin.fullName}
-                  plugin={plugin}
-                  installed={installedIds.has(plugin.fullName.toLowerCase())}
-                  installing={installing === plugin.fullName}
-                  onInstall={() => install(plugin)}
-                />
-              ))}
-            </div>
-          )}
+          {showOther && <ul className="mt-3 flex flex-col gap-1.5">{other.map(row)}</ul>}
         </div>
       )}
-    </div>
+    </DetailLayout>
   )
 }
 
-function ResultCard({
+function MarketplacePanel({
   plugin,
   installed,
   installing,
@@ -232,12 +253,23 @@ function ResultCard({
   onInstall: () => void
 }): JSX.Element {
   const { t } = useTranslation()
+  const [readme, setReadme] = useState<MarketplaceReadme | null>(null)
+
+  useEffect(() => {
+    let current = true
+    window.quartzGui.marketplace
+      .readme({ fullName: plugin.fullName })
+      .then((result) => current && setReadme(result))
+      .catch(() => current && setReadme({ status: 'unavailable' }))
+    return () => {
+      current = false
+    }
+  }, [plugin.fullName])
+
   return (
-    // flex-col + mt-auto on the footer: without it the install button sat directly under a
-    // description of whatever length, so no two buttons in a row lined up.
-    <Card className="flex flex-col">
-      <div className="flex items-start justify-between gap-2">
-        <p className="font-medium">{plugin.name}</p>
+    <Card className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <CardHeading icon={Store}>{plugin.name}</CardHeading>
         {installed && <Badge tone="green">{t('pluginsMarketplace.installed')}</Badge>}
         {!installed && plugin.archived && <Badge tone="amber">{t('pluginsMarketplace.archived')}</Badge>}
       </div>
@@ -251,15 +283,25 @@ function ResultCard({
         {plugin.fullName}
         <ExternalLink size={11} aria-hidden />
       </a>
-      {plugin.description && <p className="mt-1 text-sm text-text-secondary">{plugin.description}</p>}
-      <div className="mt-3 flex items-center justify-between pt-1">
+      {plugin.description && <p className="text-ui text-text-secondary">{plugin.description}</p>}
+      <div className="flex items-center justify-between gap-2">
         <span className="text-xs text-text-muted">★ {plugin.stars ?? 0}</span>
-        {/* An installed plugin says so once, in the badge at the top. The disabled button that used
-            to sit here repeated the same word a second time in every card of a full catalog. */}
+        {/* An installed plugin says so once, in the badge at the top. */}
         {!installed && (
-          <Button variant="ghost" onClick={onInstall} disabled={installing}>
+          <Button onClick={onInstall} disabled={installing}>
             {installing ? t('pluginsMarketplace.installing') : t('pluginsMarketplace.install')}
           </Button>
+        )}
+      </div>
+      <div className="border-t border-ink/[0.06] pt-3 dark:border-ink/10">
+        {readme === null && <p className="text-xs text-text-muted">{t('pluginsMarketplace.readmeLoading')}</p>}
+        {readme?.status === 'missing' && <p className="text-xs text-text-muted">{t('pluginsMarketplace.readmeMissing')}</p>}
+        {readme?.status === 'unavailable' && <p className="text-xs text-text-muted">{t('pluginsMarketplace.readmeUnavailable')}</p>}
+        {readme?.status === 'ok' && (
+          <>
+            <ReadmeText text={readme.text} repoUrl={plugin.url} />
+            {readme.truncated && <p className="mt-2 text-xs text-text-muted">{t('pluginsMarketplace.readmeTruncated')}</p>}
+          </>
         )}
       </div>
     </Card>

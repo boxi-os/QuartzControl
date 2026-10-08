@@ -569,6 +569,13 @@ export interface MarketplaceResult {
   unavailable: boolean
 }
 
+/**
+ * A catalog entry's README, for the Marktplatz side panel. Three answers, because "this
+ * repository has none" and "GitHub did not answer" are different things to say; `truncated` when
+ * the text was cut at the service's cap.
+ */
+export type MarketplaceReadme = { status: 'ok'; text: string; truncated: boolean } | { status: 'missing' } | { status: 'unavailable' }
+
 // A content directory that was moved aside when the content source was switched - see
 // backupService. Not a snapshot; those are Snapshot/snapshotService.
 export interface BackupEntry {
@@ -1607,6 +1614,7 @@ export const IPC = {
 
   marketplaceList: 'marketplace:list',
   marketplaceRefresh: 'marketplace:refresh',
+  marketplaceReadme: 'marketplace:readme',
 
   serverStart: 'server:start',
   serverStop: 'server:stop',
@@ -2060,6 +2068,8 @@ export interface QuartzGuiApi {
      */
     list(): Promise<MarketplaceResult>
     refresh(): Promise<void>
+    /** The README of one catalog entry (`owner/repo`), as text - the renderer shows it without HTML. */
+    readme(args: { fullName: string }): Promise<MarketplaceReadme>
   }
   server: {
     start(projectId: string, projectPath: string, options?: ServerOptions): Promise<ServerStatus>

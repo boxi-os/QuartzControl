@@ -2444,6 +2444,14 @@ export default {
     }
   },
   pluginsMarketplace: {
+    panelLabel: 'Plugin',
+    panelEmptyTitle: 'Pick a plugin',
+    panelEmptyText: 'Pick a plugin on the left: this panel then shows the description from its repository and the button to install it.',
+    panelEmptyCount: '{{count}} plugins in the catalog, {{installed}} of them in this project.',
+    readmeLoading: 'Loading the description…',
+    readmeMissing: 'This repository has no README.',
+    readmeUnavailable: 'GitHub did not deliver the README just now. The link above opens it on GitHub.',
+    readmeTruncated: 'The README goes on; the rest is on GitHub.',
     searchPlaceholder: 'Search plugins…',
     addFromGithub: 'Add a plugin from GitHub',
     addPlaceholder: 'github:owner/repo',

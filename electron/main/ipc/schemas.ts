@@ -180,6 +180,12 @@ export const syncDirection = z.enum(['push', 'pull', 'both'])
 // where the accepted extensions live next to the reason for them.
 export const projectIconTarget = z.looseObject({ projectPath: absolutePath })
 
+// marketplace.readme. The name goes into an api.github.com path, so it is one owner and one
+// repository in GitHub's own alphabet and nothing that could climb out of /repos/.
+export const marketplaceReadmeArgs = z.looseObject({
+  fullName: z.string().max(200).regex(/^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/, 'not an owner/repo name').refine((v) => !v.includes('..'), 'not an owner/repo name')
+})
+
 // snippets.* and staticImage.import. `dir` and `file` are names the renderer took from a plugin's
 // options, so they are bounded here and resolved against the project in snippetService - which is
 // where "inside the project, not through a link, not into a tool's folder" is decided.

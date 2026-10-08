@@ -38,7 +38,8 @@ async function checkDir(projectPath: string, dir: string): Promise<DirCheck> {
   const abs = relative(projectPath, join(projectPath, dir)) === '' ? projectPath : containedPath(projectPath, dir)
   if (abs === null) return { ok: false, state: 'outside' }
   const segments = relative(projectPath, abs).split(sep)
-  if (segments.some((s) => RESERVED_SEGMENTS.has(s))) return { ok: false, state: 'reserved' }
+  // Without regard to case: APFS and NTFS take `.GIT` for `.git`.
+  if (segments.some((s) => RESERVED_SEGMENTS.has(s.toLowerCase()))) return { ok: false, state: 'reserved' }
   // The build output is emptied by every build; a snippet written there is gone with the next one.
   const output = resolveBuildDir(projectPath, (await getPrefs(projectPath)).outputDir || undefined)
   const rel = relative(output, abs)
@@ -167,6 +168,12 @@ async function importFile(
   maxBytes: number
 ): Promise<{ status: 'written' | 'exists'; name: string }> {
   const { abs, name: clean } = await writablePath(projectPath, dir, name ?? basename(sourcePath), allowed)
+  // The source too, not only the name it gets: with `name` from the renderer - which is no trust
+  // boundary - any file could be copied in under an allowed name, ~/.ssh/id_ed25519 as key.md, and
+  // travel on with the next sync or deploy (fortieth review, finding 10).
+  if (!allowed.has(extname(sourcePath).toLowerCase())) {
+    throw new Error(mainT('snippetExtensionInvalid', { name: basename(sourcePath), allowed: [...allowed].join(', ') }))
+  }
   const info = await stat(sourcePath)
   if (!info.isFile()) throw new Error(mainT('snippetNameInvalid', { name: basename(sourcePath) }))
   if (info.size > maxBytes) throw new Error(mainT('snippetTooLarge', { name: clean, limit: Math.round(maxBytes / 1024 / 1024) }))

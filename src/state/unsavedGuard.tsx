@@ -1,5 +1,8 @@
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
+import { askDialog } from '../utils/confirm'
+import { hasSaveCommand, runSaveCommand } from './saveCommand'
 
 /**
  * "This page has edits that are not on disk", so leaving it can ask first.
@@ -28,6 +31,36 @@ export function useUnsavedChanges(isDirty: boolean): void {
 
 export function hasUnsavedChanges(): boolean {
   return dirty
+}
+
+/**
+ * Asks whether to leave a page with unsaved changes and says whether to go on: `true` without a
+ * question when there is nothing unsaved, after "Verwerfen", and after a "Speichern" that worked.
+ *
+ * Two doors ask it: the sidebar (ProjectLayout) and the menu's way into a route (`app:navigate`,
+ * Cmd+, from any page, App.tsx). The menu used to navigate straight away, so an edited
+ * Konfiguration went without a word on Cmd+, while the same move through the sidebar asked.
+ */
+export async function confirmLeave(t: TFunction): Promise<boolean> {
+  if (!dirty) return true
+  // Three answers where the page has a save to offer (Konfiguration, Layout, Stile), two where
+  // it has not - see saveCommand. "Verwerfen" stays the confirming button, so the answer that
+  // loses work keeps the place it always had and nobody hits it by muscle memory.
+  // Two questions, because the wording has to match the answers: with a Save button the
+  // question is what should happen, without one it is whether to leave at all.
+  const canSave = hasSaveCommand()
+  const answer = await askDialog({
+    text: canSave ? t('projectLayout.unsavedWarningWithSave') : t('projectLayout.unsavedWarning'),
+    altLabel: canSave ? t('projectLayout.unsavedSave') : undefined,
+    confirmLabel: t('projectLayout.unsavedLeave'),
+    danger: true
+  })
+  if (answer === 'cancel') return false
+  if (answer === 'confirm') return true
+  // A page's save catches its own errors and reports them in its header rather than throwing,
+  // so it says in its return value whether it worked. A failed save stays on the page, where
+  // the message is - navigating away would drop the changes the user just asked to keep.
+  return runSaveCommand()
 }
 
 /**

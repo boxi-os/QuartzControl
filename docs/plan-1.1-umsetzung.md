@@ -317,8 +317,16 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
 
 **Lücken, die das 41. Review stehen ließ:**
 
-- Ein Menüpunkt, der die Route wechselt (`app:navigate`), fragt nicht nach ungespeicherten
-  Änderungen.
+- ~~Ein Menüpunkt, der die Route wechselt (`app:navigate`), fragt nicht nach ungespeicherten
+  Änderungen~~ — behoben (2026-10-09): Die Frage der Sidebar steht jetzt als `confirmLeave()` in
+  `unsavedGuard.tsx`, und der Hörer in `App.tsx` stellt sie vor jedem Menü-Sprung; wer schon am
+  Ziel ist (Cmd+, auf den Einstellungen), wird nicht gefragt. Gemessen an der gebauten App (1280
+  und 1600, Wegwerf-Profil, `cp -Rc`-Kopie von `gui-test`, Menüpunkt über `MenuItem.click()`,
+  Dialog im Hauptprozess gespiegelt): vorher landete Cmd+, mit geändertem Seitentitel auf
+  Konfiguration in allen drei Antworten ohne Dialog auf den Einstellungen, die Änderung war weg;
+  nachher drei Knöpfe, Abbrechen bleibt, Speichern schreibt den Titel und geht, Verwerfen geht
+  ohne zu schreiben. Die Sidebar antwortet nach dem Umzug wie vorher (dieselben drei Fälle).
+  Nicht verändert: „Zurück“ der Einstellungen fragt weiter mit eigenem Zwei-Knopf-Dialog.
 - Die Leisten der Plugin-Reiter sagen nur in der `InfoNote` über der Liste, dass sie sofort
   schreiben (`conventions.md`, Regel zur Liste mit Leiste).
 - Kein Prüfskript lädt die Funktionen der installierten Plugins gegen ihre Abschriften

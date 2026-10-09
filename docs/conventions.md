@@ -343,8 +343,9 @@ Projektwurzel.
   weil immer nur eine Route gemountet ist. Wer nichts zu tun hat, registriert `null` - ein Kommando
   ohne Registrierung tut nichts, und genau deshalb muss der Menüpunkt nicht ausgegraut werden.
 - **Verlassen mit ungespeicherten Änderungen fragt.** Modul-Flag in `unsavedGuard.tsx`, gesetzt von
-  der Seite, abgefragt von der Sidebar; `UnsavedBadge` neben dem Save. Nur Sidebar-Links sind
-  geguardet — und „Zurück“ der Einstellungen, die keine Sidebar haben. Die Frage ist ein nativer Dialog und damit asynchron: der Klick wird gestoppt und die
+  der Seite, abgefragt von der Sidebar; `UnsavedBadge` neben dem Save. Geguardet sind die
+  Sidebar-Links, „Zurück“ der Einstellungen, die keine Sidebar haben, und seit 2026-10-09 der
+  Menü-Sprung (`app:navigate`, Cmd+,) — Sidebar und Menü über dieselbe `confirmLeave()`. Die Frage ist ein nativer Dialog und damit asynchron: der Klick wird gestoppt und die
   Navigation von Hand ausgelöst. Drei Antworten, wenn die Seite ein Save registriert hat
   (`saveCommand.ts`): Abbrechen, Speichern, Verwerfen - bei einem gescheiterten Speichern bleibt der
   Guard auf der Seite, weil dort die Fehlermeldung steht.

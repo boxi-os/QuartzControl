@@ -1,8 +1,10 @@
-import { useEffect } from 'react'
-import { Route, Routes, Navigate, useNavigate } from 'react-router-dom'
+import { useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Route, Routes, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { ErrorToasts, RouteErrorBoundary } from './components/ErrorSurface'
 import { Announcer } from './state/announcer'
 import { runSaveCommand } from './state/saveCommand'
+import { confirmLeave } from './state/unsavedGuard'
 import { useLogStore } from './state/store'
 import Home from './routes/Home'
 import Settings from './routes/Settings'
@@ -23,11 +25,27 @@ export default function App(): JSX.Element {
   const appendServerLog = useLogStore((s) => s.appendServerLog)
   const appendBuildLog = useLogStore((s) => s.appendBuildLog)
   const navigate = useNavigate()
+  const { t } = useTranslation()
+  const { pathname } = useLocation()
+  const here = useRef(pathname)
+  here.current = pathname
 
   // The native menu's Settings item (Cmd+, / Ctrl+,) lives in the main process and cannot reach
   // the HashRouter on its own. One listener for the app's lifetime, same reasoning as the log
-  // subscriptions below.
-  useEffect(() => window.quartzGui.menu.onNavigate((hashPath) => navigate(hashPath)), [navigate])
+  // subscriptions below. It leaves the page like a sidebar link does, so it asks like one
+  // (confirmLeave) - measured in the built app before: an edited Konfiguration was gone on Cmd+,
+  // with no question, whichever answer the dialog would have had. Already there is not leaving:
+  // Cmd+, on Settings asks nothing. The ref, not `pathname` in the deps, keeps it one listener.
+  useEffect(
+    () =>
+      window.quartzGui.menu.onNavigate((hashPath) => {
+        if (hashPath === here.current) return
+        void confirmLeave(t).then((leave) => {
+          if (leave) navigate(hashPath)
+        })
+      }),
+    [navigate, t]
+  )
 
   // The other menu direction: Speichern (Cmd+S) asks the mounted page to act, and which page that
   // is changes with every route - so the listener is here and the answer is in saveCommand's

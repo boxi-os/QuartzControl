@@ -281,8 +281,14 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
    Lockfile byte-gleich, Bau grün (267 Dateien, kein `toc`). An der gebauten App (1280 und 1600,
    Wegwerf-Profil): vorher 1 → 1 Eintrag, die Zeile bleibt, keine Meldung; nachher 1 → 0, die Zeile
    ist weg; `obsidian-plugin-excalidraw` (git-Quelle, zwei Instanzen) als Gegenprobe vorher wie
-   nachher 2 → 0. Nebenbei gesehen, nicht angefasst: Jede CLI-Plugin-Aktion bricht lange
-   Zeichenketten in `quartz.config.yaml` neu um (inhaltsgleich), und ~~das Lockfile verliert nach
+   nachher 2 → 0. Nebenbei gesehen: ~~Jede CLI-Plugin-Aktion bricht lange Zeichenketten in
+   `quartz.config.yaml` neu um (inhaltsgleich)~~ — behoben (2026-10-09): Es war ein Hin und Her.
+   Die CLI schreibt mit `lineWidth: 120` (`writeDataToFile` in `quartz/cli/plugin-data.js`), die
+   App schrieb mit der Vorgabe von `yaml` (80); jetzt `doc.toString({ lineWidth: 120 })`. Gemessen
+   an der gebauten App (Wegwerf-Profil, `cp -Rc`-Kopie von `gui-test`, CLI-Schreiber wörtlich
+   nachgespielt mit dem `yaml` des Projekts, dazwischen `config.save` der App): vorher wechselten
+   je Richtung 218 von 547 Zeilen, nachher 0; Inhalt gleich. Ein Projekt, das zuletzt die App
+   geschrieben hat, wird beim ersten Speichern einmal auf 120 umgebrochen. ~~Das Lockfile verliert nach
    der Reparatur aus Punkt 5 seinen Zeilenumbruch am Ende (`writeJsonFile`), den die CLI beim
    nächsten Schreiben wieder setzt~~ — behoben (2026-10-09): `repointProjectPaths` schreibt das
    Lockfile in der Form der CLI (`JSON.stringify(…, null, 2) + "\n"`, `writeLockfile` in

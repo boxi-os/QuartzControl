@@ -197,7 +197,10 @@ export async function writeConfig(
     doc.setIn(['layout', 'byPageType'], config.layout.byPageType ?? {})
   }
 
-  const serialized = doc.toString()
+  // The Quartz CLI writes this file with lineWidth 120 (writeDataToFile in
+  // quartz/cli/plugin-data.js); with yaml's default of 80 every switch between the app and a CLI
+  // plugin action folded the same long strings the other way (218 of 547 lines in gui-test).
+  const serialized = doc.toString({ lineWidth: 120 })
   // A snapshot rather than the old per-save copy of this one file: the store covers the whole
   // project, and its coalescing window means a session of edits leaves the state from *before*
   // the session as one entry instead of one entry per save - which is what made the old backup

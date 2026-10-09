@@ -275,40 +275,31 @@ export default function LayoutOverview({
         {ungrouped.map(componentRow)}
         {groups.map((g) => {
           const color = groupColor(g, groupNames)
-          const areaNames = [...new Set(frames.flatMap((f) => f.areas.filter((a) => a.slot === p && a.group === g).map((a) => a.name)))]
+          // A group that some frame gives an area of its own is that area to the user - the frame
+          // builder makes the group only to bind the area - and not a flex group they arranged.
+          const ownIn = frames.filter((f) => f.areas.some((a) => a.slot === p && a.group === g))
+          const areaNames = [...new Set(ownIn.flatMap((f) => f.areas.filter((a) => a.slot === p && a.group === g).map((a) => a.name)))]
           return [
             <tr key={`g:${g}`}>
-              <th scope="rowgroup" className={`${rowHead} pl-3`}>
-                <span className="flex items-center gap-1.5 text-micro">
-                  <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${color?.dot ?? 'bg-ink/30'}`} />
-                  <span className="font-medium text-text">
-                    {areaNames.length > 0 ? t('layoutEditor.overview.groupArea', { name: areaNames.join(', ') }) : t('layoutEditor.overview.groupName', { name: g })}
-                  </span>
-                  {areaNames.length > 0 && !(areaNames.length === 1 && areaNames[0] === g) && <span className="font-mono text-text-muted">{g}</span>}
+              <th scope="rowgroup" colSpan={pageTypes.length + 1} className={`${rowHead} pl-3`}>
+                <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-micro">
+                  {areaNames.length > 0 ? (
+                    <>
+                      <span aria-hidden className={`h-2.5 w-2.5 shrink-0 rounded-[3px] border-2 ${color?.ring ?? 'border-ink/30'}`} />
+                      <span className="font-medium text-text">{t('layoutEditor.overview.ownArea', { name: areaNames.join(', ') })}</span>
+                      <span className="text-text-muted">{t('layoutEditor.overview.ownAreaIn')}</span>
+                      {ownIn.map((f) => (
+                        <span key={f.frameName}>{framePill(f.frameName)}</span>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${color?.dot ?? 'bg-ink/30'}`} />
+                      <span className="font-medium text-text">{t('layoutEditor.overview.flexGroup', { name: g })}</span>
+                    </>
+                  )}
                 </span>
               </th>
-              {pageTypes.map((pt) => {
-                const shape = shapes.get(pt)
-                const own = shape ? shape.groups.get(`${p}#${g}`) : undefined
-                const label = shape === null || shape === undefined
-                  ? t('layoutEditor.overview.state.unknown')
-                  : own !== undefined
-                    ? t('layoutEditor.overview.groupOwn', { name: own })
-                    : t('layoutEditor.overview.groupShared')
-                return (
-                  <td key={pt} className={cell}>
-                    {own !== undefined ? (
-                      <span role="img" aria-label={label} title={label} className={`inline-flex ${color?.text ?? 'text-text-secondary'}`}>
-                        <LayoutGrid size={14} aria-hidden />
-                      </span>
-                    ) : (
-                      <span role="img" aria-label={label} title={label} className="text-text-muted">
-                        –
-                      </span>
-                    )}
-                  </td>
-                )
-              })}
             </tr>,
             ...items.filter((i) => getLayout(config.plugins[i])?.group === g).map((i) => componentRow(i))
           ]
@@ -323,7 +314,6 @@ export default function LayoutOverview({
       const { icon: Icon, tone } = STATE_ICON[s]
       return { mark: <Icon size={14} className={tone} />, text: t(`layoutEditor.overview.state.${s}`) }
     }),
-    { mark: <LayoutGrid size={14} className="text-text-secondary" />, text: t('layoutEditor.overview.legendOwnArea') },
     { mark: <Monitor size={13} className="text-text-secondary" />, text: t('layoutEditor.displayDesktopOnly') },
     { mark: <Smartphone size={13} className="text-text-secondary" />, text: t('layoutEditor.displayMobileOnly') },
     { mark: <Filter size={13} className="text-text-secondary" />, text: t('layoutEditor.overview.legendCondition') },
@@ -387,8 +377,9 @@ export default function LayoutOverview({
           <table className="w-full min-w-[44rem] border-collapse text-ui">
             <thead>
               <tr>
-                <th scope="col" className="pb-1 text-left align-bottom text-micro font-semibold uppercase tracking-wide text-text-secondary">
-                  {t('layoutEditor.overview.componentColumn')}
+                {/* No word in the corner: it would stand over "assigned frame" below it. */}
+                <th scope="col" className="pb-1">
+                  <span className="sr-only">{t('layoutEditor.overview.componentColumn')}</span>
                 </th>
                 {pageTypes.map((pt) => (
                   <th key={pt} scope="col" className="px-2 pb-1 text-center align-bottom">
@@ -463,7 +454,7 @@ export default function LayoutOverview({
                   <div className="flex flex-wrap items-center gap-2">
                     {framePill(name)}
                     <span className="text-micro text-text-muted">{t(`layoutEditor.overview.frameKind.${kind}`)}</span>
-                    {users.length === 0 && (kind === 'own' ? <Badge tone="amber">{t('layoutEditor.overview.unassigned')}</Badge> : <Badge>{t('layoutEditor.overview.unassigned')}</Badge>)}
+                    {users.length === 0 && <Badge>{t('layoutEditor.overview.unassigned')}</Badge>}
                   </div>
                   {users.length > 0 && (
                     <div className="flex flex-wrap items-center gap-1.5 pl-1">

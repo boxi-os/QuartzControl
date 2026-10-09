@@ -172,8 +172,17 @@ export function derivePageTypes(config: QuartzConfig): string[] {
     .filter((p) => p.enabled && p.name.endsWith('-page'))
     .map((p) => p.name.slice(0, -'-page'.length))
   const fromConfig = Object.keys(config.layout?.byPageType ?? {})
-  return [...new Set(['404', ...fromPlugins, ...fromConfig])]
+  const found = [...new Set(['404', ...fromPlugins, ...fromConfig])]
+  // The order a reader meets them: the notes first, the 404 page last. A type this list does not
+  // know goes before the 404 page, in the order it was found.
+  const rank = (pt: string): number => {
+    const k = PAGE_TYPE_ORDER.indexOf(pt)
+    return k === -1 ? (pt === '404' ? 1001 : 1000) : k
+  }
+  return found.map((pt, k) => ({ pt, k })).sort((a, b) => rank(a.pt) - rank(b.pt) || a.k - b.k).map(({ pt }) => pt)
 }
+
+const PAGE_TYPE_ORDER = ['content', 'folder', 'tag', 'bases', 'canvas', 'excalidraw']
 
 export function renumberPriorities(indices: number[]): Map<number, number> {
   const result = new Map<number, number>()

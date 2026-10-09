@@ -268,7 +268,14 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
    streicht das Segment `.`, `owner/.` fragte also `/repos/owner/readme`. Gemessen an der gebauten
    App mit gestubbtem `fetch` im Hauptprozess: vorher angenommen und dorthin gefragt, nachher
    abgewiesen; `owner/.github`, `owner/repo.js` und `owner/repo` gehen weiter durch.
-3. Jede Änderung der Sprachliste (Mehrsprachigkeit) schreibt alle Codes neu, auch unveränderte.
+3. ~~Jede Änderung der Sprachliste (Mehrsprachigkeit) schreibt alle Codes neu, auch unveränderte~~
+   — behoben (2026-10-09): `writeLanguages` legt die Sprachen in die Liste zurück, aus der sie
+   gelesen sind. Eine unveränderte Sprache bleibt, wie sie dasteht; ein Eintrag ohne Code bleibt
+   an seinem Platz; ein doppelter Code bleibt, solange seine Sprache noch da ist und vor ihm steht,
+   sonst brächte Entfernen oder Umbenennen ihn unter dem alten Code zurück. Gemessen an der
+   gebauten App (1280 und 1600) mit `['DE', {code: ' En '}, {code: 'fr'}, {label: 'kaputt'}, 'de']`
+   und „Früher“ auf `fr`: vorher `["de","fr",{"code":"en",…}]`, nachher
+   `["DE",{"code":"fr"},{"code":" En ",…},{"label":"kaputt"},"de"]`.
 4. `npm run smoke` startet mit dem echten Profil des Nutzers, nicht mit einem Wegwerf-Profil.
 5. Eine `cp -Rc`-Kopie eines Projekts nennt die Frames des Originals mit absolutem Pfad.
 

@@ -31,18 +31,35 @@ export function normalizeCode(code: string): string {
   return code.trim().toLowerCase()
 }
 
-/** The languages as the plugin reads them, each as an object - a plain string becomes `{ code }`. */
-export function languagesOf(options: Options | undefined): LanguageEntry[] {
-  const raw = options?.languages
-  const list = Array.isArray(raw) ? raw : ['en']
+// Each entry languagesOf hands out remembers the item it was read from, so that writing the list
+// back leaves an entry nobody changed as it was written - `DE` stays `DE`, not the `de` the plugin
+// reads it as. An entry the editor changed is a new object and is not in here.
+const READ_FROM = new WeakMap<LanguageEntry, unknown>()
+
+type RawItem = { kind: 'language'; code: string; item: unknown } | { kind: 'duplicate'; code: string; item: unknown } | { kind: 'other'; item: unknown }
+
+/** The written list item by item, as the plugin sorts it: a language, a second one with a code it already has, or neither. */
+function classify(raw: unknown): RawItem[] {
+  if (!Array.isArray(raw)) return []
   const seen = new Set<string>()
-  const out: LanguageEntry[] = []
-  for (const item of list) {
+  return raw.map((item): RawItem => {
     const entry = typeof item === 'string' ? { code: item } : item && typeof item === 'object' ? (item as Record<string, unknown>) : null
     const code = typeof entry?.code === 'string' ? normalizeCode(entry.code) : ''
-    if (!entry || !code || seen.has(code)) continue
+    if (!entry || !code) return { kind: 'other', item }
+    if (seen.has(code)) return { kind: 'duplicate', code, item }
     seen.add(code)
-    out.push({ ...entry, code })
+    return { kind: 'language', code, item }
+  })
+}
+
+/** The languages as the plugin reads them, each as an object - a plain string becomes `{ code }`. */
+export function languagesOf(options: Options | undefined): LanguageEntry[] {
+  const out: LanguageEntry[] = []
+  for (const raw of classify(options?.languages)) {
+    if (raw.kind !== 'language') continue
+    const entry: LanguageEntry = { ...(typeof raw.item === 'string' ? {} : (raw.item as Record<string, unknown>)), code: raw.code }
+    READ_FROM.set(entry, raw.item)
+    out.push(entry)
   }
   return out.length ? out : [{ code: 'en' }]
 }
@@ -64,9 +81,33 @@ export function isPublished(code: string, published: string[]): boolean {
   return published.length === 0 || published.includes(code)
 }
 
-/** Writes the languages back - a language with nothing but its code stays the plain string it can be. */
-function writeLanguages(languages: LanguageEntry[]): unknown[] {
-  return languages.map((l) => (Object.keys(l).length === 1 ? l.code : l))
+/**
+ * Writes the languages back into the list they were read from, touching only what changed. An
+ * entry nobody changed keeps its written form; a changed or new one is written with its code as
+ * the plugin reads it, and as the plain string it can be when the code is all it has. The
+ * languages fill the places languages had, in their new order, and new ones go at the end; an
+ * item that is no language stays where it is. A second entry with a code the list already has
+ * stays only while that code is still a language and comes first - otherwise removing or renaming
+ * a language would bring it back under its old code.
+ */
+function writeLanguages(written: unknown, languages: LanguageEntry[]): unknown[] {
+  const asWritten = (l: LanguageEntry): unknown => (READ_FROM.has(l) ? READ_FROM.get(l) : Object.keys(l).length === 1 ? l.code : l)
+  const queue = [...languages]
+  const out: unknown[] = []
+  const placed = new Set<string>()
+  for (const raw of classify(written)) {
+    if (raw.kind === 'other') out.push(raw.item)
+    else if (raw.kind === 'duplicate') {
+      if (placed.has(raw.code) && languages.some((l) => l.code === raw.code)) out.push(raw.item)
+    } else {
+      const next = queue.shift()
+      if (!next) continue
+      placed.add(next.code)
+      out.push(asWritten(next))
+    }
+  }
+  for (const l of queue) out.push(asWritten(l))
+  return out
 }
 
 /** `publishLanguages` after turning one language on or off; all of them on is the empty list again. */
@@ -86,7 +127,7 @@ export function withPublished(options: Options, languages: LanguageEntry[], code
  * code are content, not configuration, and stay as they are.
  */
 export function renameLanguage(options: Options, languages: LanguageEntry[], from: string, to: string): Options {
-  const next: Options = { ...options, languages: writeLanguages(languages.map((l) => (l.code === from ? { ...l, code: to } : l))) }
+  const next: Options = { ...options, languages: writeLanguages(options.languages, languages.map((l) => (l.code === from ? { ...l, code: to } : l))) }
   if (typeof options.defaultLanguage === 'string' && normalizeCode(options.defaultLanguage) === from) next.defaultLanguage = to
   if (Array.isArray(options.publishLanguages)) {
     next.publishLanguages = options.publishLanguages.map((c) => (typeof c === 'string' && normalizeCode(c) === from ? to : c))
@@ -114,7 +155,7 @@ export function publishedByRemoving(options: Options | undefined, languages: Lan
 /** The options after removing a language, and what named it: a default on it moves to the first one left. */
 export function removeLanguage(options: Options, languages: LanguageEntry[], code: string): Options {
   const rest = languages.filter((l) => l.code !== code)
-  const next: Options = { ...options, languages: writeLanguages(rest) }
+  const next: Options = { ...options, languages: writeLanguages(options.languages, rest) }
   if (typeof options.defaultLanguage === 'string' && normalizeCode(options.defaultLanguage) === code) next.defaultLanguage = rest[0]?.code
   if (Array.isArray(options.publishLanguages)) {
     next.publishLanguages = options.publishLanguages.filter((c) => !(typeof c === 'string' && normalizeCode(c) === code))
@@ -128,7 +169,7 @@ export function removeLanguage(options: Options, languages: LanguageEntry[], cod
 }
 
 export function withLanguages(options: Options, languages: LanguageEntry[]): Options {
-  return { ...options, languages: writeLanguages(languages) }
+  return { ...options, languages: writeLanguages(options.languages, languages) }
 }
 
 /** Why a code cannot be used, or null. Loose on purpose: the plugin itself only asks for one. */

@@ -31,6 +31,17 @@ Projektwurzel.
   nie ungeprüft auf ein Verzeichnis gelegt - `containedPath()` (`templatePackage/shared.ts`)
   entscheidet per `resolve()`+`relative()`, in `plan` wie in `apply`. Messungen in
   [`templates-and-localization.md`](decisions/templates-and-localization.md).
+- **Fremdes Markup, das auf die Website geht, wird neu geschrieben, nicht durchgereicht — und
+  geprüft wird mit dem Parser, der es dort liest.** Eine SVG-Datei, als Code in ein Snippet
+  eingefügt, steht auf jeder Seite. Der erste Bereiniger parste sie als XML, strich nach einer
+  Sperrliste und serialisierte den Rest; die Website liest das Ergebnis als HTML, und zwischen den
+  beiden Parsern lief eine Processing Instruction oder ein Kommentar, den HTML früher beendet, mit
+  einem `<img onerror>` hindurch — ohne Klick, und die App meldete „0 entfernt“ (zweiundvierzigstes
+  Review, Befund 1). `inlineSvg.ts` schreibt die Ausgabe deshalb selbst, aus einer Erlaubnisliste:
+  nur SVG-Elemente, keines, mit dem HTML aus dem SVG ausbricht, Text maskiert, Verweise nur auf
+  `#…` und wenige Schemata, geprüft nach dem Entfernen aller Zeichen, die der URL-Parser ignoriert.
+  `npm run check:inline-svg` setzt jedes Ergebnis in Chrome als HTML in eine Box. Messungen in
+  [`plugins-and-config.md`](decisions/plugins-and-config.md).
 - **Neue Kanäle nehmen ein Objekt-Argument**, kein Positions-Tupel (`dialog.confirm` ist das Muster):
   ein späterer optionaler Key ist dann eine Zeile im Vertrag und eine im Schema, nicht ein vierter
   Slot in vier Dateien. Bestehende Kanäle bleiben, wie sie sind (123 mit Positions-Argumenten,

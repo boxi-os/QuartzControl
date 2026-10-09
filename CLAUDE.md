@@ -104,6 +104,13 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   der gelesenen Version) wichen 20 von 637 Antworten ab, alle seither in den Abschriften behoben
   (641 Fälle; seit quartz-layout-box 0.4.1 645, die Abschrift fragt dort die installierte
   Version). Ein fehlendes Plugin zählt als „nicht geprüft“
+- `npm run check:inline-svg` — der SVG-Bereiniger (`src/utils/inlineSvg.ts`, „Als Code einfügen“
+  im Snippet-Editor) gegen 22 böse Eingaben und ein gewöhnliches Icon: jedes Ergebnis in Chrome als
+  HTML in eine Box, wie die Website es rendert, gefragt nach Elementen außerhalb des SVG,
+  Ereignis-Attributen, Verweisen, Animationen auf `href`, `<style>`, und ob beim Laden oder nach
+  einem Klick Skript läuft. Braucht Google Chrome. Existiert, weil die erste Fassung eine Sperrliste
+  auf dem XML-Parser war und die Website HTML liest: an ihr liefen 14 der 22 durch, zwei davon ohne
+  Klick (zweiundvierzigstes Review)
 - `npm run check:core-update` — der Plan, nach dem das Core-Update `package.json` und
   `package-lock.json` behandelt: vierzehn Fälle gegen `shared/packageJsonDeps.ts` (das Skript lädt die
   Datei, statt sie abzuschreiben), dazu die npm-Aufrufe, die daraus entstehen, und seit dem

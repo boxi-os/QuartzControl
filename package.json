@@ -26,6 +26,7 @@
     "check:plugin-names": "node scripts/check-plugin-names.mjs",
     "check:option-schema": "node scripts/check-option-schema.mjs",
     "check:plugin-copies": "node scripts/check-plugin-copies.mjs",
+    "check:inline-svg": "node scripts/check-inline-svg.mjs",
     "check:i18n": "node scripts/check-i18n-keys.mjs",
     "check:core-update": "node scripts/check-core-update.mjs",
     "check:handbook": "node scripts/check-handbook-quotes.mjs",

@@ -1295,8 +1295,8 @@ export default {
     svgInline: 'Als Code einfügen',
     svgAsImage: 'Als Bild einbinden',
     svgInvalid: '„{{name}}“ lässt sich nicht als SVG lesen.',
-    svgCleaned_one: '{{count}} Stelle mit Skript entfernt (etwa <script> oder onload) — eingebettet liefe sie auf jeder Seite.',
-    svgCleaned_other: '{{count}} Stellen mit Skript entfernt (etwa <script> oder onload) — eingebettet liefen sie auf jeder Seite.',
+    svgCleaned_one: '{{count}} Stelle entfernt, die eingebettet auf jeder Seite Skript ausführen, sie gestalten oder etwas von außen laden könnte (etwa <script>, onload, <style>).',
+    svgCleaned_other: '{{count}} Stellen entfernt, die eingebettet auf jeder Seite Skript ausführen, sie gestalten oder etwas von außen laden könnten (etwa <script>, onload, <style>).',
     imageExists:
       '„{{name}}“ gibt es unter quartz/static schon. Ersetzen?\n\nErsetzen überschreibt die Datei, und jedes Snippet, das sie zeigt, zeigt danach das neue Bild. „Vorhandenes verwenden“ fügt einen Verweis auf die Datei ein, die schon da ist.',
     fileExists:

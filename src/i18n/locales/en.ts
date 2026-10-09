@@ -1290,8 +1290,8 @@ export default {
     svgInline: 'Insert as code',
     svgAsImage: 'Insert as image',
     svgInvalid: '“{{name}}” cannot be read as SVG.',
-    svgCleaned_one: 'Removed {{count}} piece of script (such as <script> or onload) — inlined, it would run on every page.',
-    svgCleaned_other: 'Removed {{count}} pieces of script (such as <script> or onload) — inlined, they would run on every page.',
+    svgCleaned_one: 'Removed {{count}} part that, inlined, could run script on every page, style it or load something from elsewhere (such as <script>, onload, <style>).',
+    svgCleaned_other: 'Removed {{count}} parts that, inlined, could run script on every page, style it or load something from elsewhere (such as <script>, onload, <style>).',
     imageExists:
       '“{{name}}” already exists under quartz/static. Replace it?\n\nReplacing overwrites the file, and every snippet that shows it shows the new image afterwards. “Use existing” inserts a reference to the file that is already there.',
     fileExists:

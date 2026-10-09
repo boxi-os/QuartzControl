@@ -321,3 +321,30 @@ Notizen, nachher 3; die gebaute App zeigt auf der Plugins-Seite „3 Angaben im 
 versteht die App nicht“ mit den drei Zeilen, ohne waagerechten Bildlauf bei 1280 px. Die Zahl
 „267 als Feld“ an gui-test deckt die `x-quartz-*`-Erweiterungen nicht: Dort sind die drei eigenen
 Plugins in Fassungen vor `configSchema` installiert, gelesen wird ihr `.d.ts`.
+
+**Eine SVG als Code: Erlaubnisliste statt Sperrliste (2026-10-09, zweiundvierzigstes Review,
+Befund 1).** `06c05e9` parste die Datei als XML, nahm `script`, `foreignObject`, `on*` und
+`javascript:`/`data:`-Verweise heraus und gab den Rest mit `XMLSerializer` aus. Die Website liest
+das als HTML (quartz-layout-box über `dangerouslySetInnerHTML`, ein Markdown-Schnipsel über
+rehype-raw). Gemessen mit `npm run check:inline-svg` (das Ergebnis in Chrome als HTML in einer
+`.layout-box-content`, dazu ein Klick auf jedes Element und die Animationen auf `t = 1`), an der
+alten Fassung 14 von 22 bösen Eingaben durch: ohne Klick lief Skript aus einer Processing
+Instruction `<?x ><img onerror>?>` und — vom Review nicht genannt — aus einem Kommentar `<!--><img
+onerror>-->`, den HTML nach `<!-->` beendet; beim Klick über einen Tab oder Zeilenumbruch im Schema
+und über `<set>`/`<animate>` auf `href`; ein XHTML-`<meta refresh>`, ein `<iframe>`, ein `<style>`
+für die ganze Seite, ein `<img>` im SVG-Namensraum (HTML lässt es ausbrechen), `<use>` und `url()`
+auf fremde Adressen blieben stehen, meist mit „0 entfernt“. Die neue Fassung schreibt die Ausgabe
+selbst: eine Erlaubnisliste von SVG-Elementen ohne die Namen, mit denen HTML aus fremdem Inhalt
+ausbricht, Attribute ohne Namensraum (`xlink:href` wird `href`), keine `on*`, keine Animation auf
+`href` oder `on*`, kein Wert mit `url()` außer auf `#…`, `href` nur auf `#…` (ein Link auch auf
+https/mailto, ein Bild auch auf https und Raster-`data:`), geprüft nach dem Entfernen aller Zeichen
+bis U+0020; Text und CDATA maskiert, Kommentare und Processing Instructions weg. Nachher 0 von 22;
+die neun Prüfungen eines gewöhnlichen Icons (Klasse, `viewBox`, `<use href="#…">`, Verläufe,
+`url(#…)`, Text, Animation auf `opacity`, https-Link, keine Leerzeile) wie vorher. Was Editoren
+hinterlassen (Inkscape-, Sodipodi-, RDF-Namensräume, `<metadata>`), fällt ohne Zählung weg, damit
+die Meldung „N Stellen entfernt“ nicht bei jeder Inkscape-Datei erscheint. Die HTML Sanitizer API
+von Chromium, die das Review nannte, wäre die andere Richtung; sie streicht in der Vorgabe `class`,
+`id` und `<use>`, und die eigene Konfiguration dafür hätte wieder vermessen werden müssen — die
+Erlaubnisliste ist kürzer und mit demselben Skript geprüft. **Nicht gemessen:** ein echter
+`quartz build` mit einem solchen Schnipsel; geprüft ist das Ergebnis im HTML-Parser von Chrome, den
+parse5 (rehype-raw) nach derselben Spezifikation nachbaut.

@@ -54,7 +54,10 @@ export const whileHoldingStyles = projectLock()
 
 /**
  * A lock of this kind - per project, waiting, reentrant - with its own queue. The config has one
- * as well (configService.whileHoldingConfig); the two are independent.
+ * as well (configService.whileHoldingConfig); no holder of either takes the other. The third
+ * queue per project is the snapshot store's (snapshotService.serialize), and that one is ordered:
+ * a restore holds it and takes the config lock at its end, so nothing holding the config lock
+ * waits on it (forty-third review, finding 2).
  */
 export function projectLock(): <T>(projectPath: string, run: () => Promise<T>) => Promise<T> {
   const running = new Map<string, Promise<unknown>>()

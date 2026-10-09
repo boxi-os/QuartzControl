@@ -1,5 +1,5 @@
 import { existsSync } from 'fs'
-import { readFile, writeFile, rename } from 'fs/promises'
+import { readFile, writeFile, rename, stat } from 'fs/promises'
 import { join } from 'path'
 import { parseDocument, Document, isMap } from 'yaml'
 import type { QuartzConfig, PluginEntry, PluginSource, LayoutConfig } from '@shared/ipc-contract'
@@ -157,18 +157,43 @@ function syncMapping(doc: Document, nodePath: string[], next: Record<string, unk
  * One writer of quartz.config.yaml at a time per project, for the writers that read and write in
  * one go - today the repair of frame paths at the build door (projectPaths.ts). writeConfig holds
  * it, so a save waits for a repair instead of landing between its read and its write.
+ *
+ * Nothing that holds it may wait on the snapshot queue (snapshotService.serialize): a restore
+ * holds the queue and takes this lock at its end, so the order is queue first, then this lock.
  */
 export const whileHoldingConfig = projectLock()
 
-export function writeConfig(projectPath: string, config: QuartzConfig, options?: { snapshot?: boolean }): Promise<void> {
-  return whileHoldingConfig(projectPath, () => writeConfigNow(projectPath, config, options))
-}
-
-async function writeConfigNow(
+export async function writeConfig(
   projectPath: string,
   config: QuartzConfig,
   options?: { snapshot?: boolean }
 ): Promise<void> {
+  // A snapshot rather than the old per-save copy of this one file: the store covers the whole
+  // project, and its coalescing window means a session of edits leaves the state from *before*
+  // the session as one entry instead of one entry per save - which is what made the old backup
+  // list fifty unreadable timestamps.
+  //
+  // The snapshot comes before the lock, never under it. The order is snapshot queue, then config
+  // lock: a restore runs inside the queue and ends in repointAuthoredFrames, which takes the
+  // config lock - so a holder of the config lock that waited on the queue closed a circle, and a
+  // save during a restore hung both, and with them every later save, snapshot and build of the
+  // project until the app restarted (forty-third review, finding 2). A repair that lands between
+  // this snapshot and the write is not in it; the snapshot is the state before the edit, which is
+  // what it was taken for.
+  if (options?.snapshot !== false && (await hasContent(configPath(projectPath)))) {
+    await createSnapshot(projectPath, 'configChange', '')
+  }
+  return whileHoldingConfig(projectPath, () => writeConfigNow(projectPath, config))
+}
+
+async function hasContent(path: string): Promise<boolean> {
+  return stat(path).then(
+    (s) => s.size > 0,
+    () => false
+  )
+}
+
+async function writeConfigNow(projectPath: string, config: QuartzConfig): Promise<void> {
   const path = configPath(projectPath)
   const existingRaw = existsSync(path) ? await readFile(path, 'utf-8') : ''
   // field-level setIn (rather than replacing whole subtrees) keeps existing YAML comments intact
@@ -221,10 +246,5 @@ async function writeConfigNow(
   // quartz/cli/plugin-data.js); with yaml's default of 80 every switch between the app and a CLI
   // plugin action folded the same long strings the other way (218 of 547 lines in gui-test).
   const serialized = doc.toString({ lineWidth: 120 })
-  // A snapshot rather than the old per-save copy of this one file: the store covers the whole
-  // project, and its coalescing window means a session of edits leaves the state from *before*
-  // the session as one entry instead of one entry per save - which is what made the old backup
-  // list fifty unreadable timestamps.
-  if (existingRaw && options?.snapshot !== false) await createSnapshot(projectPath, 'configChange', '')
   await atomicWrite(path, serialized)
 }

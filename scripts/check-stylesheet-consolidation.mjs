@@ -6,6 +6,9 @@
 // Zusammenlegung beim Explorer lässt (der Kopf der Datei sagt, warum). Dazu die zwei Ränder, an
 // denen die erste Fassung scheiterte: a11y und plugin-layout-box heißen alt und neu gleich — sie
 // wurden geschrieben und gleich danach gelöscht, und ein zweiter Lauf packte sie noch einmal ein.
+// Und der Lauf nach einem ersten, bei dem eine der 31 abgeschaltet war und danach eingeschaltet
+// wird: Der packte beide ein zweites Mal ein und schob components-header als eigene Datei beiseite
+// (zweiundvierzigstes Review, Befund 4).
 // Braucht weder App noch Projekt noch Netz, nur die git-Geschichte dieses Repos.
 //
 //   npm run check:stylesheet-consolidation
@@ -18,7 +21,7 @@ const repo = path.join(import.meta.dirname, '..')
 const quelle = fs.readFileSync(path.join(repo, 'shared/stylesheetConsolidation.ts'), 'utf-8')
 const tmp = path.join(os.tmpdir(), `consolidation-${process.pid}.mts`)
 fs.writeFileSync(tmp, quelle)
-const { planConsolidation, canConsolidate, CONSOLIDATED_ORDER } = await import(`file://${tmp}`)
+const { planConsolidation, canConsolidate, wasConsolidated, CONSOLIDATED_ORDER } = await import(`file://${tmp}`)
 fs.unlinkSync(tmp)
 
 const show = (rev, p) => execFileSync('git', ['-C', repo, 'show', `${rev}:${p}`], { encoding: 'utf8', maxBuffer: 1e8 })
@@ -52,8 +55,25 @@ pruefe(
   'eigene Dateien behalten ihren Platz vor und hinter den Vorlagen-Stylesheets'
 )
 const danach = plan.order
-pruefe(!canConsolidate(danach), 'ein zusammengelegtes Projekt bietet nichts mehr an (a11y und plugin-layout-box zählen nicht)')
-pruefe(Object.keys(planConsolidation(danach, {}, danach).write).length === 0, 'ein zweiter Lauf schreibt nichts')
+pruefe(!canConsolidate(danach, false), 'ein zusammengelegtes Projekt bietet nichts mehr an (a11y und plugin-layout-box zählen nicht)')
+pruefe(Object.keys(planConsolidation(danach, plan.write, danach).write).length === 0, 'ein zweiter Lauf schreibt nichts')
+pruefe(!wasConsolidated(files) && canConsolidate(order, wasConsolidated(files)), 'die 31 gelten als nicht zusammengelegt, auch mit einer eigenen callouts.scss daneben')
+
+// Erster Lauf ohne nav-search, danach nav-search eingeschaltet (es landet am Ende der Reihenfolge).
+const ohneSuche = order.filter((p) => p !== 'custom/nav-search.scss')
+const erster = planConsolidation(ohneSuche, files, order)
+const platte = { ...files }
+for (const [von, nach] of Object.entries(erster.rename)) platte[nach] = platte[von]
+for (const p of erster.remove) delete platte[p]
+Object.assign(platte, erster.write)
+const eingeschaltet = [...erster.order, 'custom/nav-search.scss']
+pruefe('custom/nav-search.scss' in platte && !erster.order.includes('custom/nav-search.scss'), 'eine abgeschaltete der 31 bleibt beim ersten Lauf liegen und wird nicht geladen')
+pruefe(!canConsolidate(eingeschaltet, wasConsolidated(platte)), 'nach dem Einschalten wird nicht noch einmal angeboten')
+const zweiter = planConsolidation(eingeschaltet, platte, Object.keys(platte))
+pruefe(
+  Object.keys(zweiter.write).length === 0 && Object.keys(zweiter.rename).length === 0 && zweiter.order.join(' ') === eingeschaltet.join(' '),
+  'ein zweiter Lauf schreibt, benennt und ordnet nichts — nav-search bleibt eine eigene Datei am Ende'
+)
 
 console.log(fehler ? `\n✗ ${fehler} Prüfung(en) fehlgeschlagen` : '\n✓ alle Prüfungen bestanden')
 process.exit(fehler ? 1 : 0)

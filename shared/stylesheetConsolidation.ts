@@ -18,7 +18,12 @@
  *   into a file that loads, it would be switched on;
  * - every stylesheet that is not one of the 31: the user's own, the app's CSS fixes. They keep
  *   their place after the template file they followed. One whose name is taken by one of the
- *   twelve (a user's own `callouts.scss`) is renamed with a number, in the same place.
+ *   twelve (a user's own `callouts.scss`) is renamed with a number, in the same place;
+ * - a project that has been put together once. One of the 31 left out then (switched off) and
+ *   switched on later is a stylesheet of its own from there on: a second run wrapped a11y and
+ *   plugin-layout-box into themselves again, moved the first components-header aside as a user's
+ *   file and put the new one in front of both (forty-second review, finding 4). Told apart by the
+ *   header line each of the twelve gets, not by the name - a user's own `callouts.scss` has one.
  *
  * Pure, so `shared/` can hold it and a check can load it: the caller reads the files and writes
  * the result (styleService.consolidateStylesheets).
@@ -73,17 +78,27 @@ const isLegacy = (relativePath: string): boolean => relativePath.startsWith(DIR)
 const CONSOLIDATED_NAMES: ReadonlySet<string> = new Set(CONSOLIDATED_ORDER)
 const isLegacyOnly = (relativePath: string): boolean => isLegacy(relativePath) && !CONSOLIDATED_NAMES.has(stem(relativePath))
 
+const header = (target: string): string => `// ${target} - put together by QuartzControl; each section is named after its former stylesheet.`
+
+/**
+ * Whether one of the twelve was written by a run before: `files` maps `custom/<name>.scss` to its
+ * content, for every one of the twelve names that is on disk, loaded or not.
+ */
+export function wasConsolidated(files: Record<string, string>): boolean {
+  return CONSOLIDATED_ORDER.some((t) => (files[`${DIR}${t}.scss`] ?? '').startsWith(header(t)))
+}
+
 /**
  * Whether there is anything to put together: a stylesheet in the load order that only the 31
- * have. A project that only has its own files, or has been put together already, has none.
+ * have, in a project that has not been put together yet (`consolidated`, from wasConsolidated).
  */
-export function canConsolidate(order: string[]): boolean {
-  return order.some(isLegacyOnly)
+export function canConsolidate(order: string[], consolidated: boolean): boolean {
+  return !consolidated && order.some(isLegacyOnly)
 }
 
 /** How many of the 31 the load order names, or 0 when there is nothing to put together. */
-export function legacyCount(order: string[]): number {
-  return canConsolidate(order) ? order.filter(isLegacy).length : 0
+export function legacyCount(order: string[], consolidated: boolean): number {
+  return canConsolidate(order, consolidated) ? order.filter(isLegacy).length : 0
 }
 
 /** f2cdb69's marker line: `// ===… name`, 100 characters wide. */
@@ -126,11 +141,12 @@ export interface ConsolidationPlan {
 
 /**
  * The plan for one project. `order` is its load order (relative to quartz/styles, as
- * styleService keeps it), `files` the content of every stylesheet in it and `onDisk` every
- * stylesheet in the folder, loaded or not - a name is only free when no file has it.
+ * styleService keeps it), `files` the content of every stylesheet in it and of every one on disk
+ * with one of the twelve names, and `onDisk` every stylesheet in the folder, loaded or not - a
+ * name is only free when no file has it.
  */
 export function planConsolidation(order: string[], files: Record<string, string>, onDisk: string[]): ConsolidationPlan {
-  if (!canConsolidate(order)) return { write: {}, remove: [], rename: {}, order }
+  if (!canConsolidate(order, wasConsolidated(files))) return { write: {}, remove: [], rename: {}, order }
   const loaded = new Set(order.filter(isLegacy).map(stem))
   const read = (name: string): string => (files[`${DIR}${name}.scss`] ?? '').replace(/^\n+|\n+$/g, '')
   const base = loaded.has('base') ? splitBase(read('base')) : null
@@ -148,8 +164,7 @@ export function planConsolidation(order: string[], files: Record<string, string>
       }
     }
     if (sections.length === 0) continue
-    const header = `// ${target} - put together by QuartzControl; each section is named after its former stylesheet.`
-    write[`${DIR}${target}.scss`] = `${header}\n\n${sections.join('\n\n')}\n`
+    write[`${DIR}${target}.scss`] = `${header(target)}\n\n${sections.join('\n\n')}\n`
   }
 
   // A user's file that has one of the new names moves aside, keeping its place in the order.

@@ -25,7 +25,7 @@ import { createSnapshot } from './snapshotService'
 import { resolveBuildDir } from './projectDirs'
 import { mainT } from '../i18n'
 import { MAX_FONT_FILE_BYTES } from './fontFile'
-import { canConsolidate, legacyCount, planConsolidation } from '@shared/stylesheetConsolidation'
+import { CONSOLIDATED_ORDER, canConsolidate, legacyCount, planConsolidation, wasConsolidated } from '@shared/stylesheetConsolidation'
 
 // The file Quartz's build imports directly (quartz/plugins/emitters/componentResources.ts) -
 // verified against a real clone. Already inside the dev server's esbuild watch graph, so saving
@@ -874,12 +874,13 @@ export function migrateManagedStyles(projectPath: string, options: { snapshot: b
 export function consolidateStylesheets(projectPath: string): Promise<StyleConsolidationResult> {
   return whileHoldingStyles(projectPath, async () => {
     const order = await currentOrder(projectPath)
-    if (!canConsolidate(order)) return { consolidated: false, snapshotId: null, written: [], merged: 0, renamed: [] }
+    const done = await consolidatedFiles(projectPath)
+    if (!canConsolidate(order, wasConsolidated(done))) return { consolidated: false, snapshotId: null, written: [], merged: 0, renamed: [] }
     const customDir = join(stylesDir(projectPath), 'custom')
     const onDisk = (await readdir(customDir, { withFileTypes: true }))
       .filter((e) => e.isFile() && /\.(scss|css)$/.test(e.name))
       .map((e) => `custom/${e.name}`)
-    const files: Record<string, string> = {}
+    const files: Record<string, string> = { ...done }
     for (const relativePath of order) {
       if (onDisk.includes(relativePath)) files[relativePath] = await readFile(styleFilePath(projectPath, relativePath), 'utf-8')
     }
@@ -897,10 +898,21 @@ export function consolidateStylesheets(projectPath: string): Promise<StyleConsol
       consolidated: true,
       snapshotId: snapshot?.id ?? null,
       written: Object.keys(plan.write).map((p) => p.slice('custom/'.length)),
-      merged: legacyCount(order),
+      merged: legacyCount(order, false),
       renamed: Object.entries(plan.rename).map(([from, to]) => ({ from: from.slice('custom/'.length), to: to.slice('custom/'.length) }))
     }
   })
+}
+
+// The twelve names of 1.1 that are on disk, with their content - wasConsolidated reads the header
+// line a consolidation wrote, loaded or not.
+async function consolidatedFiles(projectPath: string): Promise<Record<string, string>> {
+  const files: Record<string, string> = {}
+  for (const name of CONSOLIDATED_ORDER) {
+    const path = styleFilePath(projectPath, `custom/${name}.scss`)
+    if (existsSync(path)) files[`custom/${name}.scss`] = await readFile(path, 'utf-8')
+  }
+  return files
 }
 
 export async function listStyleFiles(projectPath: string): Promise<StyleFileSet> {
@@ -929,7 +941,8 @@ export async function listStyleFiles(projectPath: string): Promise<StyleFileSet>
   })
   return {
     main,
-    files: [...ordered.map((p) => toFile(p, true)), ...orphans.map((p) => toFile(p, false))]
+    files: [...ordered.map((p) => toFile(p, true)), ...orphans.map((p) => toFile(p, false))],
+    consolidated: wasConsolidated(await consolidatedFiles(projectPath))
   }
 }
 

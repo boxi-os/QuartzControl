@@ -770,3 +770,21 @@ anders. Example im ersten Paar mit 8 Abweichungen auf einer Aufnahme (ein Bild 4
 2 × 2 px, eine Mermaid-Seite mit anderer Elementzahl), im zweiten Paar 135 182 Elemente ohne eine —
 Ladezeit, nicht Kaskade; zwei Vorher-Aufnahmen gegeneinander waren ebenfalls leer.
 
+**Ein zweiter Lauf nach einem Einschalten** (zweiundvierzigstes Review, Befund 4): Was beim ersten
+Lauf abgeschaltet war, bleibt als Datei liegen; schaltet der Nutzer es danach ein, steht wieder einer
+der 29 Namen in der Ladereihenfolge, und das Angebot kam zurück. Der zweite Lauf packte `a11y` und
+`plugin-layout-box` ein zweites Mal ein (Kopfzeile zweimal), schob das zusammengelegte
+`components-header.scss` als „eigene Datei mit einem der neuen Namen“ nach `components-header-2.scss`
+und setzte ein neues mit nur `nav-search` *vor* beide — die Kaskade bewegte sich. Am Namen lässt sich
+„schon zusammengelegt“ nicht erkennen, weil ein Projekt eine eigene `callouts.scss` haben kann;
+erkannt wird es seither an der Kopfzeile, die jeder der zwölf beim Zusammenlegen bekommt
+(`wasConsolidated`, auch an Dateien, die nicht geladen werden). Danach wird nicht mehr angeboten, und
+die eingeschaltete Altdatei ist eine eigene: Sie bleibt, wo das Einschalten sie hingestellt hat.
+Gemessen an der gebauten App mit einer Kopie von navigations-testprojekt, über den IPC-Weg
+(`nav-search` aus der Reihenfolge, zusammenlegen, wieder ans Ende, Reiter „Eigenes CSS“ öffnen,
+zweiter Aufruf): vorher Angebot da, zweiter Lauf schreibt drei Dateien und benennt eine um, `a11y.scss`
+trägt die Kopfzeile zweimal; nachher kein Angebot, der zweite Aufruf antwortet `consolidated: false`,
+`nav-search.scss` bleibt am Ende. Eine unberührte Kopie bekommt das Angebot weiter.
+`check:stylesheet-consolidation` spielt denselben Ablauf an der reinen Funktion nach und fällt mit
+der alten Fassung an zwei Prüfungen durch.
+

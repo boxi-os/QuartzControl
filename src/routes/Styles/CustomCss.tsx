@@ -99,7 +99,7 @@ export default function CustomCss(): JSX.Element {
 
   const files = fileSet?.files ?? []
   const imported = files.filter((f) => f.imported)
-  const legacy = legacyCount(imported.map((f) => f.relativePath))
+  const legacy = legacyCount(imported.map((f) => f.relativePath), fileSet?.consolidated ?? false)
   // What merging the template's stylesheets did - said after the note that offered it is gone.
   const [consolidated, setConsolidated] = useState<string | null>(null)
 

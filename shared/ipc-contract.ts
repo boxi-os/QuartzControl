@@ -746,6 +746,8 @@ export interface StyleFile {
 export interface StyleFileSet {
   main: StylesInfo
   files: StyleFile[]
+  /** The template's stylesheets have been put together once (shared/stylesheetConsolidation.ts). */
+  consolidated: boolean
 }
 
 // One @font-face the site really has: what family it declares, at which weight(s) and in which

@@ -367,3 +367,27 @@ von Chromium, die das Review nannte, wäre die andere Richtung; sie streicht in 
 Erlaubnisliste ist kürzer und mit demselben Skript geprüft. **Nicht gemessen:** ein echter
 `quartz build` mit einem solchen Schnipsel; geprüft ist das Ergebnis im HTML-Parser von Chrome, den
 parse5 (rehype-raw) nach derselben Spezifikation nachbaut.
+
+**Ein Markdown-Schnipsel liest den Text im SVG als Markdown (2026-10-10, dreiundvierzigstes
+Review, Befund 1).** Genau dort lag es, wo der Absatz darüber „nicht gemessen“ sagt. Die Kette von
+quartz-layout-box ist `remark-parse` → `remark-gfm` → `remark-rehype` (`allowDangerousHtml`) →
+`rehype-raw` → `rehype-stringify`, ohne Bereiniger. Steht das SVG in einer Zeile mit Text oder
+direkt unter einer Textzeile — wohin „Bild einfügen…“ am Cursor einfügt —, ist es für CommonMark
+kein HTML-Block (Typ 7 verlangt das Tag allein auf der Zeile und unterbricht keinen Absatz), und
+der Text zwischen den Tags ist Markdown: `<text>[KLICK](javascript:…)</text>` wurde ein `<a
+href="javascript:…">` im SVG, ein Klick führte das Skript aus. Ebenso wurden `![x](…)` ein `<img>`
+außerhalb des SVG und ein Zeilenanfang `# …`/`- …` in einem Text *oder einem Attributwert* eine
+Überschrift oder Liste, die das Tag mitten durchschnitt. Jetzt schreibt der Bereiniger im Text jedes
+Zeichen, aus dem Markdown Struktur baut, als numerische Referenz (`[ ] ( ) ! * _ \` ~ \ | : # + = .
+@ -` und `& < >`), in Attributwerten zusätzlich Zeilenumbrüche (`&#10;`), damit ein Tag auf seiner
+Zeile bleibt. remark liest eine Referenz als das Zeichen und baut nichts daraus; in einem HTML-Block
+und in der HTML-Box dekodiert parse5 sie genauso. Was das nicht verhindert: remark-gfm findet
+Adressen und E-Mail-Adressen im schon dekodierten Text und macht daraus `https:`- bzw.
+`mailto:`-Links — beides Schemata, die der Bereiniger für `<a>` selbst erlaubt. Ein Umbruch nach der
+Wurzel als Lösung trägt nicht, sobald unter einer Textzeile eingefügt wird. Gemessen mit
+`check:inline-svg`, das jedes Ergebnis seit diesem Durchgang zusätzlich durch dieselbe Kette
+schickt (als devDependencies in den Bereichen des Plugins) und in drei Lagen rendert — eigener
+Block, in einer Zeile, unter einer Textzeile: an der alten Fassung fielen 5 der 7 neuen Eingaben
+durch, an der neuen keine, die 22 alten und die neun Icon-Prüfungen wie vorher. Und an einem echten
+`quartz build` einer Kopie von gui-test, das Ergebnis unter „Zeile davor“ in `sidebar-note.md`:
+im gebauten `index.html` kein `href="javascript`, der Text steht als Text im `<text>`.

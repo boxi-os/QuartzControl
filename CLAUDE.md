@@ -106,8 +106,9 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   (641 Fälle; seit quartz-layout-box 0.4.1 645, die Abschrift fragt dort die installierte
   Version). Ein fehlendes Plugin zählt als „nicht geprüft“
 - `npm run check:inline-svg` — der SVG-Bereiniger (`src/utils/inlineSvg.ts`, „Als Code einfügen“
-  im Snippet-Editor) gegen 22 böse Eingaben und ein gewöhnliches Icon: jedes Ergebnis in Chrome als
-  HTML in eine Box, wie die Website es rendert, gefragt nach Elementen außerhalb des SVG,
+  im Snippet-Editor) gegen 29 böse Eingaben und ein gewöhnliches Icon: jedes Ergebnis in Chrome als
+  HTML in eine Box, wie die Website es rendert — und seit dem dreiundvierzigsten Review auch durch
+  die Markdown-Kette von quartz-layout-box, in drei Lagen eines Markdown-Schnipsels —, gefragt nach Elementen außerhalb des SVG,
   Ereignis-Attributen, Verweisen, Animationen auf `href`, `<style>`, und ob beim Laden oder nach
   einem Klick Skript läuft. Braucht Google Chrome. Existiert, weil die erste Fassung eine Sperrliste
   auf dem XML-Parser war und die Website HTML liest: an ihr liefen 14 der 22 durch, zwei davon ohne

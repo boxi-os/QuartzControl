@@ -7,12 +7,35 @@
 // Element der Box? Dazu die Fälle, die durchkommen müssen (Klassen, <use href="#…">, viewBox).
 // Existiert, weil die erste Fassung eine Sperrliste auf dem anderen Parser war: Eine Processing
 // Instruction ließ ohne Klick Skript laufen und meldete „0 entfernt“ (42. Review, Befund 1).
+// Ein Markdown-Schnipsel liest erst remark, dann parse5: Text im SVG, das in einem Absatz steht,
+// ist für remark Markdown, und `[x](javascript:…)` wurde dort ein Link (43. Review, Befund 1).
+// Deshalb geht jedes Ergebnis zusätzlich durch die Kette von quartz-layout-box (src/markdown.ts,
+// hier als devDependencies in denselben Bereichen) — als eigener Block, in einer Zeile mit Text
+// davor und direkt unter einer Textzeile, wo „Bild einfügen…“ am Cursor einfügt.
 // Braucht Google Chrome, weder App noch Projekt.
 //
 //   npm run check:inline-svg
 import { build } from 'esbuild'
 import path from 'node:path'
 import { chromium } from 'playwright-core'
+import { unified } from 'unified'
+import remarkParse from 'remark-parse'
+import remarkGfm from 'remark-gfm'
+import remarkRehype from 'remark-rehype'
+import rehypeRaw from 'rehype-raw'
+import rehypeStringify from 'rehype-stringify'
+
+// Wörtlich die Kette aus quartz-layout-box/src/markdown.ts.
+const markdown = unified().use(remarkParse).use(remarkGfm).use(remarkRehype, { allowDangerousHtml: true }).use(rehypeRaw).use(rehypeStringify)
+const renderMarkdown = (md) => String(markdown.processSync(md))
+// Die drei Lagen, in denen ein eingefügtes SVG in einem Schnipsel stehen kann.
+const LAGEN = [
+  ['HTML', (m) => m],
+  ['Markdown, eigener Block', (m) => `Text davor\n\n${m}\n\nText danach\n`],
+  ['Markdown, in einer Zeile', (m) => `Text davor ${m} danach\n`],
+  ['Markdown, unter einer Textzeile', (m) => `Text davor\n${m}\n`]
+]
+const lagen = (markup) => LAGEN.map(([name, f]) => [name, name === 'HTML' ? markup : renderMarkdown(f(markup))])
 
 const repo = path.join(import.meta.dirname, '..')
 const bundle = await build({
@@ -53,7 +76,16 @@ const boese = [
   ['<use> auf eine fremde Datei', svg('<use href="https://example.com/sprite.svg#a"/>')],
   ['<image> mit SVG-Daten', svg(`<image href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' onload='${RUN}'/>"/>`)],
   ['style-Attribut mit fremder url()', svg('<path style="fill:url(https://example.com/x)" d="M0 0"/>')],
-  ['Element eines fremden Namensraums', svg('<x:script xmlns:x="http://www.w3.org/2000/svg">' + RUN + '</x:script>')]
+  ['Element eines fremden Namensraums', svg('<x:script xmlns:x="http://www.w3.org/2000/svg">' + RUN + '</x:script>')],
+  // Für remark ist Text im SVG Markdown, sobald das SVG in einem Absatz steht (43. Review,
+  // Befund 1). Zu entfernen gibt es nichts; auf der Seite darf trotzdem kein Link stehen.
+  ['Markdown-Link mit javascript: im Text', svg(`<text>[KLICK](javascript:${RUN})</text>`), 0],
+  ['Markdown-Link in CDATA', svg(`<text><![CDATA[[KLICK](javascript:${RUN})]]></text>`), 0],
+  ['Markdown-Bild mit fremder Adresse im Text', svg('<text>![x](https://example.com/p.png)</text>'), 0],
+  ['Autolink im Text', svg(`<text>&lt;javascript:${RUN}&gt; www.example.com a@example.com</text>`), 0],
+  ['Zeilenanfang mit Markdown in einem Attribut', svg('<path aria-label="x&#10;# Titel&#10;- Punkt" d="M0 0&#10;- 1 2"/>'), 0],
+  ['Zeilenanfang mit Markdown im Text', svg('<text>x\n# Titel\n- Punkt\n1. Eins</text>'), 0],
+  ['Markdown-Link über Escapes im Text', svg(`<text>\\[KLICK\\](javascript:${RUN})</text>`), 0]
 ]
 
 const browser = await chromium.launch({ channel: 'chrome' }).catch((err) => {
@@ -70,8 +102,10 @@ const render = async (markup) => {
   const site = await browser.newPage()
   let navigated = false
   site.on('framenavigated', (f) => {
-    // Ein Sprung zu „#“ ist keine Navigation weg von der Seite.
-    if (f === site.mainFrame() && f.url().replace(/#.*$/, '') !== 'about:blank') navigated = true
+    // Ein Sprung zu „#“ ist keine Navigation weg von der Seite, und einer nach http(s) ist ein Link,
+    // den der Bereiniger erlaubt — und den remark-gfm aus einer Adresse im Text macht, auch wenn
+    // jedes Zeichen als Referenz dasteht: Es sucht Adressen im schon dekodierten Text.
+    if (f === site.mainFrame() && !/^(about:blank|https?:)/.test(f.url().replace(/#.*$/, ''))) navigated = true
   })
   await site.setContent(`<!doctype html><title>s</title><body><div class="layout-box-content">${markup}</div></body>`)
   await site.waitForTimeout(150)
@@ -80,11 +114,13 @@ const render = async (markup) => {
     const out = []
     const svgNs = 'http://www.w3.org/2000/svg'
     for (const el of box ? box.querySelectorAll('*') : []) {
-      if (el.namespaceURI !== svgNs) out.push(`<${el.localName}> außerhalb des SVG`)
+      // Die Absätze, in die Markdown das SVG setzt, gehören zur Box, nicht zum SVG.
+      const absatz = el.localName === 'p' && el.parentElement === box
+      if (el.namespaceURI !== svgNs && !absatz) out.push(`<${el.localName}> außerhalb des SVG`)
       if (el.localName === 'style' || el.localName === 'script' || el.localName === 'foreignObject') out.push(`<${el.localName}>`)
       for (const a of el.attributes) {
         if (/^on/i.test(a.localName)) out.push(`${a.name} an <${el.localName}>`)
-        if (a.localName === 'href' && !/^#/.test(a.value) && !/^data:image\/(png|jpe?g|gif|webp|avif);/i.test(a.value) && !(el.localName === 'image' && /^https?:/i.test(a.value)) && !(el.localName === 'a' && /^https?:/i.test(a.value)))
+        if (a.localName === 'href' && !/^#/.test(a.value) && !/^data:image\/(png|jpe?g|gif|webp|avif);/i.test(a.value) && !(el.localName === 'image' && /^https?:/i.test(a.value)) && !(el.localName === 'a' && /^(https?|mailto):/i.test(a.value)))
           out.push(`${a.name}=${JSON.stringify(a.value.slice(0, 30))} an <${el.localName}>`)
         if (a.localName === 'style' && /url\(\s*['"]?(?!#)/i.test(a.value)) out.push(`style mit url() an <${el.localName}>`)
       }
@@ -104,7 +140,8 @@ const render = async (markup) => {
       } catch {}
     }
   })
-  for (const a of await site.$$('.layout-box-content a')) await a.click({ force: true, timeout: 500 }).catch(() => {})
+  // Ein Klick, der die Seite verlässt, nimmt ihr den Kontext; das ist dann die Antwort.
+  for (const a of await site.$$('.layout-box-content a').catch(() => [])) await a.click({ force: true, timeout: 500 }).catch(() => {})
   await site.waitForTimeout(150)
   const ran = await site.evaluate(() => window.__ran ?? 0).catch(() => 0)
   await site.close()
@@ -123,11 +160,15 @@ for (const [name, input, zaehlt = 1] of boese) {
     pruefe(true, `${name}: abgelehnt`)
     continue
   }
-  const s = await render(r.markup)
-  const probleme = [...s.befund]
-  if (s.ranOnLoad) probleme.push('Skript lief beim Laden')
-  if (s.ranOnClick) probleme.push('Skript lief beim Klick')
-  if (s.navigated) probleme.push('die Seite navigierte')
+  const probleme = []
+  for (const [lage, html] of lagen(r.markup)) {
+    const s = await render(html)
+    const hier = [...s.befund]
+    if (s.ranOnLoad) hier.push('Skript lief beim Laden')
+    if (s.ranOnClick) hier.push('Skript lief beim Klick')
+    if (s.navigated) hier.push('die Seite navigierte')
+    if (hier.length) probleme.push(`${lage}: ${hier.join(', ')}`)
+  }
   if (zaehlt && r.removed === 0) probleme.push('„0 entfernt“ gemeldet')
   pruefe(probleme.length === 0, `${name}: ${probleme.length ? probleme.join('; ') : `${r.removed} entfernt, auf der Seite nichts`}`)
 }

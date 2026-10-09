@@ -11,7 +11,8 @@
  * `href` (forty-second review, finding 1). So nothing is passed through: the markup is written
  * anew from an allow list - SVG elements only, none that HTML lets break out of the SVG,
  * attributes without a namespace, text escaped, no comments, no processing instructions, no
- * `<style>` (it would style the whole page). A link may go to `#…`, `https:` or `mailto:`, a
+ * `<style>` (it would style the whole page). Text is escaped for Markdown as well, since a
+ * Markdown snippet reads it as Markdown before HTML ever sees it. A link may go to `#…`, `https:` or `mailto:`, a
  * picture also to a raster `data:` URL; everything else that points somewhere points into the file
  * itself. The caller says how many things were taken out; editor leftovers (Inkscape's namespaces,
  * `<metadata>`) go without counting. `npm run check:inline-svg` renders the result as HTML in Chrome.
@@ -53,8 +54,18 @@ const safeHref = (element: string, value: string): boolean => {
 // `fill="url(https://…)"`, a `style` with an `@import`: anything in a value that leaves the file.
 const leavesFile = (value: string): boolean => /url\(\s*(?!['"]?\s*#)/i.test(value) || /@import|expression\s*\(|javascript:/i.test(compact(value))
 
-const escapeText = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-const escapeAttr = (s: string): string => escapeText(s).replace(/"/g, '&quot;')
+// A Markdown snippet is read twice: by remark, then by parse5. Whether remark reads the text
+// inside the SVG as Markdown depends on the line form - an SVG in one line, or right under a line
+// of text where "Insert image…" puts it at the cursor, is a paragraph with inline HTML, and
+// `[x](javascript:…)` between the tags became a link on the site (forty-third review, finding 1).
+// So text is written with every character Markdown builds structure from, inline or at the start
+// of a line, as a numeric reference: remark reads a reference as the character and builds nothing
+// from it, and in an HTML block or a layout box parse5 decodes it the same way.
+const escapeText = (s: string): string => s.replace(/[&<>[\]()!*_`~\\|:#+=.@-]/g, (c) => `&#${c.charCodeAt(0)};`)
+// A value stays on the line of its tag: a line break in it is a line of the Markdown source, and
+// one that starts with `#` or `-` would cut the tag in half before remark looked at it as HTML.
+const escapeAttr = (s: string): string =>
+  s.replace(/[&<>"\n\r]/g, (c) => `&#${c.charCodeAt(0)};`)
 
 export function inlineSvg(text: string, fileName: string): InlineSvgResult {
   const doc = new DOMParser().parseFromString(text, 'image/svg+xml')

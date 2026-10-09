@@ -142,15 +142,13 @@ export function planConsolidation(order: string[], files: Record<string, string>
       if (!loaded.has(part)) continue
       if (part === 'base') {
         const share = base![target as 'foundation' | 'layout' | 'content']
-        if (share) sections.push(`${sectionMarker('base')}\n// Until 1.1 part of base.scss.\n\n${share}`)
+        if (share) sections.push(`${sectionMarker('base')}\n\n${share}`)
       } else {
-        sections.push(`${sectionMarker(part)}\n// Until 1.1 its own stylesheet, ${part}.scss.\n\n${read(part)}`)
+        sections.push(`${sectionMarker(part)}\n\n${read(part)}`)
       }
     }
     if (sections.length === 0) continue
-    const header =
-      `// ${target} - put together by QuartzControl from the stylesheets named in the sections below.\n` +
-      `// Until 1.1 each of them was a file of its own; a comment that names one of them means that section.`
+    const header = `// ${target} - put together by QuartzControl; each section is named after its former stylesheet.`
     write[`${DIR}${target}.scss`] = `${header}\n\n${sections.join('\n\n')}\n`
   }
 

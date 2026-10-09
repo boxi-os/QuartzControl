@@ -434,7 +434,12 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
 **Ältere aus der 1.1-Arbeit:**
 
 - `SegmentedControl` `variant="chips"` hat seit der Ziel-Liste keinen Aufrufer.
-- Die Einstellungen setzen ein eigenes `max-w-5xl` (`Settings.tsx`).
+- ~~Die Einstellungen setzen ein eigenes `max-w-5xl` (`Settings.tsx`)~~ — bleibt, und sagt jetzt
+  am Block, warum (die Regel „Eine Stelle bestimmt die Seitenbreite“ verlangt genau das). Gemessen
+  an der gebauten App (Wegwerf-Profil): mit `max-w-5xl` bei 1280 und 1728 eine Spalte von 1024 px,
+  längste Erklärzeile 139 Zeichen, breitestes Feld 891 px; mit der Kappung von `ProjectLayout`
+  (1800 px) bei 1728 1670 px, 240 Zeichen und ein Feld von 1537 px. Die Seite ist eine Spalte
+  Formulare und hat keine zweite, in die die Breite gehen könnte.
 - Eine Variable hat zwei Rücksetz-Knöpfe mit zwei Wörtern für dieselbe Handlung
   (`styles.variables.reset` in der Zeile, `resetToOriginal` im Panel).
 - `check:i18n` meldet keine Schlüssel, die kein Aufruf mehr nennt.

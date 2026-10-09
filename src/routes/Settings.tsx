@@ -64,7 +64,10 @@ export default function Settings(): JSX.Element {
       {/* Two boxes, and the split is the point: the scroller is the full width of the window, the
           width cap sits inside it. When one element did both, its scrollbar sat at the right edge
           of the centred column - which on a wide window is the middle of the screen. Same shape
-          as ProjectLayout, where <main> scrolls and the inner div caps. */}
+          as ProjectLayout, where <main> scrolls and the inner div caps. Narrower than
+          ProjectLayout's 1800px on purpose: this page is one column of forms, not a page that can
+          put its width into columns, and at ProjectLayout's cap a 1728px window gave it a
+          1537px-wide text field and explanations of 240 characters a line (139 and 891px here). */}
       <div className="flex-1 overflow-y-auto px-6 pb-12">
         <div className="mx-auto w-full max-w-5xl">
           {/* This page is reached from three places - the start screen, Cmd+, from anywhere, and the

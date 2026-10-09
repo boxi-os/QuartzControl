@@ -789,9 +789,10 @@ export function CardHeading({
 export function InfoNote({ children, className = '' }: { children: ReactNode; className?: string }): JSX.Element {
   return (
     <p
-      // Capped rather than full width: this is a paragraph to read, and at 1800px a line of it
-      // runs past 200 characters. The cap is on the block, not on the page - see CLAUDE.md.
-      className={`max-w-[95ch] rounded-md border border-blue-200 bg-blue-50 p-2.5 text-xs leading-relaxed text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300 ${className}`}
+      // Full width of its column: capped at 95ch it stood shorter than the card under it, which
+      // read as a mistake on every page with a list below (user, 2026-10-09). Lines this long are
+      // rare - a note is two sentences.
+      className={`rounded-md border border-blue-200 bg-blue-50 p-2.5 text-xs leading-relaxed text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300 ${className}`}
     >
       {children}
     </p>

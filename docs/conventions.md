@@ -703,7 +703,7 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   (Schlüssel-Parität) oder `electron/main/i18n.ts`; zod- und `console.error`-Texte
   bleiben Englisch, weil sie Bugs beschreiben, nicht Eingaben.
 - **Ein Fachbegriff bekommt eine Zeile darunter** (`Field`/`Toggle` `hint`); ein Begriff, auf dem
-  eine Seite ruht, eine `InfoNote` oben, gedeckelt auf 95ch.
+  eine Seite ruht, eine `InfoNote` oben, über die ganze Breite ihrer Spalte (bis 2026-10-09 auf 95ch gedeckelt; sie stand damit kürzer als die Karte darunter).
 - **Ein Rat gehört zu dem Zustand, den er meint, und wird dort gesagt, wo der Zustand bekannt
   ist.** „Existiert die Datei im Projektordner?“ stand im Renderer unter *jedem* Lesefehler der
   Config, auch unter einem, der gerade gesagt hatte, dass die Datei da ist und was in ihr steht.

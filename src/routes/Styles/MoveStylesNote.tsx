@@ -35,7 +35,7 @@ export default function MoveStylesNote({
   }
 
   return (
-    <div className="mb-4 max-w-[95ch] rounded-md border border-blue-200 bg-blue-50 p-2.5 text-xs leading-relaxed text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300">
+    <div className="mb-4 rounded-md border border-blue-200 bg-blue-50 p-2.5 text-xs leading-relaxed text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300">
       <p>{t('styles.migrate.note')}</p>
       <div className="mt-2 flex flex-wrap items-center gap-3">
         <Button onClick={move} disabled={busy || dirty}>

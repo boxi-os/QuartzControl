@@ -282,9 +282,13 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
    Wegwerf-Profil): vorher 1 → 1 Eintrag, die Zeile bleibt, keine Meldung; nachher 1 → 0, die Zeile
    ist weg; `obsidian-plugin-excalidraw` (git-Quelle, zwei Instanzen) als Gegenprobe vorher wie
    nachher 2 → 0. Nebenbei gesehen, nicht angefasst: Jede CLI-Plugin-Aktion bricht lange
-   Zeichenketten in `quartz.config.yaml` neu um (inhaltsgleich), und das Lockfile verliert nach
+   Zeichenketten in `quartz.config.yaml` neu um (inhaltsgleich), und ~~das Lockfile verliert nach
    der Reparatur aus Punkt 5 seinen Zeilenumbruch am Ende (`writeJsonFile`), den die CLI beim
-   nächsten Schreiben wieder setzt.
+   nächsten Schreiben wieder setzt~~ — behoben (2026-10-09): `repointProjectPaths` schreibt das
+   Lockfile in der Form der CLI (`JSON.stringify(…, null, 2) + "\n"`, `writeLockfile` in
+   `quartz/cli/plugin-data.js`). Gemessen an der gebauten App (Wegwerf-Profil, `cp -Rc`-Kopie von
+   `gui-test`, `projects.add`): vorher 10 → 0 Pfade des Originals und kein Zeilenumbruch am Ende,
+   nachher 10 → 0 und die Datei byte-gleich bis auf die Pfade.
 2. ~~`marketplaceReadmeArgs` lässt `owner/.` als Repo-Angabe zu~~ — behoben (2026-10-09): `fetch`
    streicht das Segment `.`, `owner/.` fragte also `/repos/owner/readme`. Gemessen an der gebauten
    App mit gestubbtem `fetch` im Hauptprozess: vorher angenommen und dorthin gefragt, nachher

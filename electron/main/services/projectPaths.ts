@@ -4,7 +4,7 @@ import { isAbsolute, join, relative, resolve, sep } from 'path'
 import type { PluginEntry } from '@shared/ipc-contract'
 import { readConfig, writeConfig } from './configService'
 import { readLockfile } from './pluginService'
-import { writeJsonFile } from './jsonStore'
+import { writeFileAtomic } from './jsonStore'
 
 // An authored frame is a plugin whose source is an absolute path into the project it was authored
 // in (see layoutFrameService), and three places record that path: the plugin entry's `source` in
@@ -121,7 +121,9 @@ async function rewriteRecordedPaths(
         lockChanged = true
       }
     }
-    if (lockChanged) await writeJsonFile(join(to, 'quartz.lock.json'), lock)
+    // In the CLI's own form (writeLockfile in quartz/cli/plugin-data.js), trailing newline included -
+    // without it the next CLI write shows up as a change to a file nobody edited.
+    if (lockChanged) await writeFileAtomic(join(to, 'quartz.lock.json'), JSON.stringify(lock, null, 2) + '\n')
   }
 
   const pluginsDir = join(to, '.quartz', 'plugins')

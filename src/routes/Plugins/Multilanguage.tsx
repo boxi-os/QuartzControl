@@ -2,9 +2,9 @@ import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 're
 import { flushSync } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { ArrowDown, ArrowUp, Blocks, ChevronRight, Languages, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, ArrowUpDown, Blocks, ChevronRight, Languages, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
 import type { NormalizedOptionSchema, OptionField, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
-import { Badge, Button, Card, CardHeading, DetailLayout, Field, IconButton, InfoNote, SelectableRow, TextInput, Toggle, focusRowAt } from '../../components/ui'
+import { Badge, Button, Card, CardHeading, DetailLayout, Field, FoldBox, IconButton, InfoNote, PanelSection, SelectableRow, TextInput, Toggle, focusRowAt } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { enumLabel, fieldText, type FormLanguage } from '../../components/PluginOptionsForm/text'
@@ -640,8 +640,7 @@ function LanguagePanel({
         />
       </div>
 
-      <div className="flex flex-col gap-1.5 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
-        <h3 className="text-micro font-semibold uppercase tracking-wide text-text-secondary">{t('multilanguageEditor.order')}</h3>
+      <PanelSection icon={ArrowUpDown} title={t('multilanguageEditor.order')} className="gap-1.5">
         <p className="text-micro text-text-muted">{t('multilanguageEditor.orderHint')}</p>
         <div className="flex gap-2">
           <Button variant="ghost" disabled={position === 0} onClick={() => onMove(-1)}>
@@ -653,20 +652,11 @@ function LanguagePanel({
             {t('layoutEditor.inspector.later')}
           </Button>
         </div>
-      </div>
+      </PanelSection>
 
-      <div className="flex flex-col gap-3 rounded-md border border-ink/10 px-2.5 py-2 dark:border-ink/10">
-        <button
-          type="button"
-          aria-expanded={advancedOpen}
-          onClick={() => setAdvancedOpen(!advancedOpen)}
-          className="flex items-center gap-1.5 text-left text-micro font-semibold uppercase tracking-wide text-text-secondary hover:text-text"
-        >
-          <ChevronRight size={13} aria-hidden className={`shrink-0 transition-transform ${advancedOpen ? 'rotate-90' : ''}`} />
-          <span className="min-w-0 flex-1">{t('multilanguageEditor.advanced')}</span>
-        </button>
-        {advancedOpen && LANGUAGE_ADVANCED.map(textField)}
-      </div>
+      <FoldBox title={t('multilanguageEditor.advanced')} open={advancedOpen} onToggle={() => setAdvancedOpen(!advancedOpen)}>
+        {LANGUAGE_ADVANCED.map(textField)}
+      </FoldBox>
     </Card>
   )
 }

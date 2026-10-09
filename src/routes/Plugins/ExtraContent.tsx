@@ -2,9 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, Code2, Copy, FileText, PanelTop, Plus, Trash2 } from 'lucide-react'
+import { Code2, Copy, FileText, PanelTop, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
 import type { LayoutPosition, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
-import { Badge, Button, Card, CardHeading, DetailLayout, IconButton, InfoNote, SegmentedControl, SelectableRow, Toggle, focusRowAt } from '../../components/ui'
+import { Badge, Button, Card, CardHeading, DetailLayout, FoldBox, IconButton, InfoNote, PanelSection, SegmentedControl, SelectableRow, Toggle, focusRowAt } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { siteLanguages } from '../../components/PluginOptionsForm/siteLanguages'
@@ -384,8 +384,7 @@ function BoxPanel({
 
       <Toggle label={t('extraContent.enabled')} checked={plugin.enabled} onChange={onToggle} />
 
-      <section className="flex flex-col gap-2 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
-        <h3 className="text-micro font-semibold uppercase tracking-wide text-text-secondary">{t('extraContent.contentHeading')}</h3>
+      <PanelSection icon={FileText} title={t('extraContent.contentHeading')} className="gap-2">
         <SegmentedControl
           variant="tiles"
           label={t('extraContent.contentHeading')}
@@ -402,7 +401,7 @@ function BoxPanel({
             {b.lang === undefined ? t('extraContent.broken', { key: b.key }) : t('extraContent.brokenLang', { key: b.key, lang: b.lang })}
           </p>
         ))}
-      </section>
+      </PanelSection>
 
       <div className="flex flex-wrap gap-2">
         <Button variant="ghost" onClick={onOpenOnStage}>
@@ -413,8 +412,7 @@ function BoxPanel({
         </Button>
       </div>
 
-      <section className="flex flex-col gap-3 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
-        <h3 className="text-micro font-semibold uppercase tracking-wide text-text-secondary">{t('extraContent.optionsHeading')}</h3>
+      <PanelSection icon={SlidersHorizontal} title={t('extraContent.optionsHeading')}>
         {schemaQuery.loading ? (
           <p className="text-micro text-text-muted">{t('layoutEditor.inspector.optionsLoading')}</p>
         ) : schemaQuery.error || !schemaQuery.data ? (
@@ -431,37 +429,29 @@ function BoxPanel({
               pick={pickMain}
             />
             {restKeys.length > 0 && (
-              <div className="flex flex-col gap-3 rounded-md border border-ink/10 px-2.5 py-2 dark:border-ink/10">
-                <button
-                  type="button"
-                  aria-expanded={restOpen}
-                  onClick={() => setRestOpen(!restOpen)}
-                  className="flex items-center gap-1.5 text-left text-micro font-semibold uppercase tracking-wide text-text-secondary hover:text-text"
-                >
-                  <ChevronRight size={13} aria-hidden className={`shrink-0 transition-transform ${restOpen ? 'rotate-90' : ''}`} />
-                  <span className="min-w-0 flex-1">{kind === 'html' ? t('extraContent.noEffectHeading') : t('extraContent.noEffectEmptyHeading')}</span>
-                  <span className="shrink-0 font-normal normal-case tracking-normal text-text-muted">{restKeys.length}</span>
-                </button>
-                {restOpen && (
-                  <>
-                    <p className="text-micro text-text-muted">{kind === 'html' ? t('extraContent.noEffectText') : t('extraContent.noEffectEmptyText')}</p>
-                    <PluginOptionsForm
-                      schema={schemaQuery.data.schema}
-                      values={values}
-                      onChange={onOptions}
-                      explicitEmpty
-                      languages={languages}
-                      projectPath={project.path}
-                      pick={(key) => restKeys.includes(key)}
-                      freeKeys={false}
-                    />
-                  </>
-                )}
-              </div>
+              <FoldBox
+                title={kind === 'html' ? t('extraContent.noEffectHeading') : t('extraContent.noEffectEmptyHeading')}
+                aside={restKeys.length}
+                open={restOpen}
+                onToggle={() => setRestOpen(!restOpen)}
+                bodyClassName="gap-3"
+              >
+                <p className="text-micro text-text-muted">{kind === 'html' ? t('extraContent.noEffectText') : t('extraContent.noEffectEmptyText')}</p>
+                <PluginOptionsForm
+                  schema={schemaQuery.data.schema}
+                  values={values}
+                  onChange={onOptions}
+                  explicitEmpty
+                  languages={languages}
+                  projectPath={project.path}
+                  pick={(key) => restKeys.includes(key)}
+                  freeKeys={false}
+                />
+              </FoldBox>
             )}
           </>
         )}
-      </section>
+      </PanelSection>
     </Card>
   )
 }

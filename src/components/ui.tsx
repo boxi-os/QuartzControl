@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import type { ButtonHTMLAttributes, HTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react'
+import { ChevronRight } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 // Colours in this file are the semantic tokens from src/index.css (`text-text-muted`, `bg-surface`,
@@ -780,6 +781,87 @@ export function CardHeading({
     </h2>
   )
 }
+
+// One part of a side panel (DetailLayout) - "Art", "Inhalt", "Optionen": a line above, an icon and
+// the micro label. The icon is what sets the parts of a long panel apart at a glance; the label
+// alone, one of many in the same size and colour, did not (user, 2026-10-09).
+export function PanelSection({
+  icon: Icon,
+  title,
+  children,
+  className = 'gap-3'
+}: {
+  icon: LucideIcon
+  title: ReactNode
+  children: ReactNode
+  /** The gap between the blocks of the section. */
+  className?: string
+}): JSX.Element {
+  return (
+    <section className={`flex flex-col border-t border-ink/[0.06] pt-4 dark:border-ink/10 ${className}`}>
+      <h3 className="flex items-center gap-1.5 text-micro font-semibold uppercase tracking-wide text-text-secondary">
+        <Icon size={13} aria-hidden className="shrink-0" />
+        {title}
+      </h3>
+      {children}
+    </section>
+  )
+}
+
+// A box that folds: a tinted band with the title, and what it holds under a line. The option
+// groups of a plugin and the folded parts of the plugin panels use it, so a group reads as one
+// thing with an edge instead of a heading among the fields. A button rather than <details>: the
+// options form opens every group while it is searched, and a <details> keeps its own state.
+export function FoldBox({
+  title,
+  aside,
+  open,
+  onToggle,
+  locked = false,
+  bodyClassName = 'gap-3.5',
+  children
+}: {
+  title: ReactNode
+  /** Right of the title: a count, "2 geändert". */
+  aside?: ReactNode
+  open: boolean
+  onToggle: () => void
+  /** Held open from outside (the form's search); the band does not fold then. */
+  locked?: boolean
+  bodyClassName?: string
+  children: ReactNode
+}): JSX.Element {
+  const bodyId = useId()
+  return (
+    <section className="rounded-md border border-ink/10 dark:border-ink/10">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={bodyId}
+        disabled={locked}
+        onClick={onToggle}
+        className={`flex w-full items-center gap-1.5 bg-ink/[0.03] px-3 py-2 text-left text-micro font-semibold uppercase tracking-wide text-text-secondary hover:bg-ink/[0.05] hover:text-text disabled:hover:bg-ink/[0.03] disabled:hover:text-text-secondary ${
+          open ? 'rounded-t-md' : 'rounded-md'
+        }`}
+      >
+        <ChevronRight size={13} aria-hidden className={`shrink-0 transition-transform ${open ? 'rotate-90' : ''}`} />
+        <span className="min-w-0 flex-1">{title}</span>
+        {aside !== undefined && aside !== null && aside !== false && (
+          <span className="shrink-0 font-normal normal-case tracking-normal text-text-muted">{aside}</span>
+        )}
+      </button>
+      {open && (
+        <div id={bodyId} className={`flex flex-col border-t border-ink/[0.06] px-3 py-3 dark:border-ink/10 ${bodyClassName}`}>
+          {children}
+        </div>
+      )}
+    </section>
+  )
+}
+
+// Between the rows of a list of options: a hairline, so where one option ends and the next begins
+// does not have to be read from the spacing. On the container; each row is one element.
+export const DIVIDED_ROWS = '[&>*+*]:border-t [&>*+*]:border-ink/[0.06] [&>*+*]:pt-3.5 dark:[&>*+*]:border-ink/10'
 
 // A short explanation of a word the app uses, shown once at the top of the page that word belongs
 // to - what a snapshot is and how it differs from Git-Sync, what a Frame is, what separates a

@@ -1,9 +1,9 @@
 import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowDown, ArrowUp, ChevronRight, RotateCcw, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, RotateCcw, Trash2 } from 'lucide-react'
 import type { OptionEnumValue, OptionField, OptionNode } from '@shared/ipc-contract'
 import { evaluateCondition, nodeAccepts, setAtPath } from '@shared/pluginOptionSchema'
-import { Button, IconButton, Select, TextInput, Toggle } from '../ui'
+import { Button, DIVIDED_ROWS, FoldBox, IconButton, Select, TextInput, Toggle } from '../ui'
 import { enumLabel, fieldMatch, fieldText, inlineValue, isEmptyObject, isPlainObject, type FormLanguage } from './text'
 import { ImageButton, SnippetFileField, siblingValue } from './snippets'
 
@@ -117,7 +117,7 @@ export function ObjectBlock({
             {list.map(row)}
           </GroupSection>
         ) : (
-          <section key="" className="flex flex-col gap-3.5">
+          <section key="" className={`flex flex-col gap-3.5 ${DIVIDED_ROWS}`}>
             {list.map(row)}
           </section>
         )
@@ -153,10 +153,7 @@ export function ObjectBlock({
   )
 }
 
-/**
- * A group of options that folds. A button rather than <details>: while the form is searched every
- * group is open whatever was clicked before, and a <details> keeps its own state against that.
- */
+/** A group of options that folds - FoldBox, with the count on the right. */
 function GroupSection({
   title,
   count,
@@ -171,41 +168,30 @@ function GroupSection({
   changed: number
   defaultOpen: boolean
   forceOpen: boolean
-  /** The advanced options: set apart by a frame, as they were as a <details>. Their title carries
-   *  the count already, so the right-hand side says only how many are changed. */
+  /** The advanced options: their title carries the count already, so the right-hand side says
+   *  only how many are changed. */
   framed?: boolean
   children: React.ReactNode
 }): JSX.Element {
   const { t } = useTranslation()
   const [open, setOpen] = useState(defaultOpen)
-  const shown = open || forceOpen
-  const bodyId = useId()
   return (
-    <section className={`flex flex-col gap-3.5 ${framed ? 'rounded-md border border-ink/10 px-2.5 py-2 dark:border-ink/10' : ''}`}>
-      <button
-        type="button"
-        aria-expanded={shown}
-        aria-controls={bodyId}
-        disabled={forceOpen}
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 text-left text-micro font-semibold uppercase tracking-wide text-text-secondary hover:text-text disabled:hover:text-text-secondary"
-      >
-        <ChevronRight size={13} aria-hidden className={`shrink-0 transition-transform ${shown ? 'rotate-90' : ''}`} />
-        <span className="min-w-0 flex-1">{title}</span>
-        <span className="shrink-0 font-normal normal-case tracking-normal text-text-muted">
-          {framed
-            ? changed > 0 && t('pluginOptions.changedCount', { count: changed })
-            : changed > 0
-              ? t('pluginOptions.groupCountChanged', { count, changed })
-              : count}
-        </span>
-      </button>
-      {shown && (
-        <div id={bodyId} className="flex flex-col gap-3.5">
-          {children}
-        </div>
-      )}
-    </section>
+    <FoldBox
+      title={title}
+      aside={
+        framed
+          ? changed > 0 && t('pluginOptions.changedCount', { count: changed })
+          : changed > 0
+            ? t('pluginOptions.groupCountChanged', { count, changed })
+            : count
+      }
+      open={open || forceOpen}
+      locked={forceOpen}
+      onToggle={() => setOpen((v) => !v)}
+      bodyClassName={`gap-3.5 ${DIVIDED_ROWS}`}
+    >
+      {children}
+    </FoldBox>
   )
 }
 
@@ -304,13 +290,15 @@ function FieldRow({
   // in every row of a side panel, and the explanation stood beside some controls and under others.
   // The control may shrink below its content: a flex item does not by default, and a 28rem
   // textarea in it stood 44 px over a 404 px row of the side panel (max-w-full had nothing to bind).
+  // The reset sits beside the name, as in a block row: beside the control it wrapped under a
+  // textarea and its image button once the option groups became boxes with their own padding.
   return (
     <div className="flex flex-col gap-1">
-      {label}
-      <div className="flex min-w-0 max-w-full flex-wrap items-center gap-1.5 [&>*]:min-w-0">
-        {editor}
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">{label}</div>
         {reset}
       </div>
+      <div className="flex min-w-0 max-w-full flex-wrap items-center gap-1.5 [&>*]:min-w-0">{editor}</div>
       {text.description && <p className="text-micro text-text-muted">{text.description}</p>}
     </div>
   )

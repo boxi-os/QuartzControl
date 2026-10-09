@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Badge, TextInput } from '../../components/ui'
+import { RotateCcw } from 'lucide-react'
+import { Badge, IconButton, TextInput } from '../../components/ui'
 import {
   baseValue,
   catalogDef,
@@ -253,10 +254,10 @@ function VariableRow({
             <span className="shrink-0 text-micro text-text-muted">{t('styles.variables.dependents', { count: dependents.length })}</span>
           )}
           {originBadge}
+          {/* The same action as "Auf Originalwert zurücksetzen" in the panel, and named the same: in
+              a row it is the icon the plugin options use, in the panel the word (conventions.md). */}
           {override && (
-            <button type="button" onClick={() => onChange(null)} className="shrink-0 text-micro text-text-muted underline">
-              {t('styles.variables.reset')}
-            </button>
+            <IconButton icon={RotateCcw} tone="neutral" title={t('styles.variables.resetNamed', { name: `--${varKey}` })} onClick={() => onChange(null)} />
           )}
         </div>
       </div>

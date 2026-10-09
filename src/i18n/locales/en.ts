@@ -1891,7 +1891,7 @@ export default {
       noTheme: 'No community theme is installed.',
       noBuild: 'There is no build output yet — build once, then reload here.',
       reload: 'Reload',
-      reset: 'Reset',
+      resetNamed: 'Reset {{name}} to original value',
       resetToOriginal: 'Reset to original value',
       light: 'Light',
       dark: 'Dark',

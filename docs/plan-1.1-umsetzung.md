@@ -440,8 +440,14 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
   längste Erklärzeile 139 Zeichen, breitestes Feld 891 px; mit der Kappung von `ProjectLayout`
   (1800 px) bei 1728 1670 px, 240 Zeichen und ein Feld von 1537 px. Die Seite ist eine Spalte
   Formulare und hat keine zweite, in die die Breite gehen könnte.
-- Eine Variable hat zwei Rücksetz-Knöpfe mit zwei Wörtern für dieselbe Handlung
-  (`styles.variables.reset` in der Zeile, `resetToOriginal` im Panel).
+- ~~Eine Variable hat zwei Rücksetz-Knöpfe mit zwei Wörtern für dieselbe Handlung
+  (`styles.variables.reset` in der Zeile, `resetToOriginal` im Panel)~~ — behoben (2026-10-09):
+  Die Zeile trägt das Symbol der Plugin-Optionen (`RotateCcw`) mit dem Titel „--name auf
+  Originalwert zurücksetzen“, die Leiste behält das Wort, das auch das Handbuch nennt (Kapitel 4.4).
+  Gemessen an der gebauten App (1280 und 1600, Wegwerf-Profil, `cp -Rc`-Kopie von `gui-test`,
+  `--secondary` mit eigenem Wert): vorher Zeile „Zurücksetzen“ (72 px), Leiste „Auf Originalwert
+  zurücksetzen“; nachher Zeile ein Symbol (27 px) mit diesem Titel, Leiste unverändert; der Klick
+  in der Zeile nimmt den eigenen Wert weg wie vorher.
 - `check:i18n` meldet keine Schlüssel, die kein Aufruf mehr nennt.
 - Die Mehrsprachigkeit-Seite trägt den Namen zweimal (Reiter und Karte `multilanguageEditor.title`).
 - Ein umbenannter Sprachcode zieht Seiten und Ordner mit dem alten Code nicht mit (bewusst, siehe

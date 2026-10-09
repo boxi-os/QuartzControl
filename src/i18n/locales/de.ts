@@ -1899,7 +1899,7 @@ export default {
       noTheme: 'Es ist kein Community-Theme installiert.',
       noBuild: 'Es gibt noch keinen Build-Output — einmal bauen, dann hier neu einlesen.',
       reload: 'Neu einlesen',
-      reset: 'Zurücksetzen',
+      resetNamed: '{{name}} auf Originalwert zurücksetzen',
       resetToOriginal: 'Auf Originalwert zurücksetzen',
       light: 'Hell',
       dark: 'Dunkel',

@@ -1693,6 +1693,13 @@ export default {
       unknownFrame:
         'QuartzControl does not know a frame “{{frame}}”. Unless a plugin brings one by that name, Quartz builds these pages with the default frame — which is how the stage is drawn.'
     },
+    context: {
+      customized: 'customized',
+      ownFrame: 'Own frame',
+      builtinFrame: 'Built-in frame',
+      viewOnly: 'view only',
+      newDraft: 'new'
+    },
     stage: {
       viewLabel: 'View',
       editFrame: 'Edit frame',

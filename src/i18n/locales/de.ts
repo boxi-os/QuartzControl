@@ -1698,6 +1698,13 @@ export default {
       unknownFrame:
         'Ein Frame „{{frame}}“ kennt QuartzControl nicht. Bringt kein Plugin eines mit diesem Namen mit, baut Quartz diese Seiten mit dem Standard-Frame — so ist die Bühne gezeichnet.'
     },
+    context: {
+      customized: 'angepasst',
+      ownFrame: 'Eigenes Frame',
+      builtinFrame: 'Eingebautes Frame',
+      viewOnly: 'nur ansehen',
+      newDraft: 'neu'
+    },
     stage: {
       viewLabel: 'Ansicht',
       editFrame: 'Frame bearbeiten',

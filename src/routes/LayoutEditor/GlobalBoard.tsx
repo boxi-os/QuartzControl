@@ -30,7 +30,8 @@ import type {
 } from '@shared/ipc-contract'
 import { DEFAULT_FRAME_BREAKPOINT_WIDTHS, FRAME_BREAKPOINTS, buildGridStyle } from '@shared/gridFrameCss'
 import { Button, DetailLayout, IconButton, SegmentedControl, Select } from '../../components/ui'
-import { Eraser, LayoutGrid, RotateCcw } from 'lucide-react'
+import { Eraser, FileText, Files, LayoutGrid, RotateCcw, SlidersHorizontal } from 'lucide-react'
+import EditingContext, { BREAKPOINT_ICON, ContextFact } from './EditingContext'
 import { announce } from '../../state/announcer'
 import { useStickyState } from '../../state/uiState'
 import { ComponentChip, PaletteChip } from './ComponentChip'
@@ -567,7 +568,20 @@ export default function GlobalBoard({
       {/* The stage's head: which page and which view it shows, and the frame that gives it its
           shape - with the way into that frame's editor, since the frame is where the shape of a
           view changes (docs/plan-1.1.md, "Eigene Frames bleiben ein eigener Bereich"). */}
-      <div className="flex flex-col gap-2">
+      <EditingContext
+        icon={pageType ? FileText : Files}
+        kind={t('layoutEditor.pageType.label')}
+        name={pageType ? typeLabel : t('layoutEditor.pageType.all')}
+        meta={
+          <>
+            <ContextFact icon={LayoutGrid} label={t('layoutEditor.summary.frame')} value={frameLabel(activeFrameName)} />
+            <ContextFact icon={BREAKPOINT_ICON[breakpoint]} value={t(`layoutEditor.frameBuilder.breakpoint.${breakpoint}`)} />
+            {pageType && customizedTypes.has(pageType) && (
+              <ContextFact icon={SlidersHorizontal} value={t('layoutEditor.context.customized')} tone="accent" />
+            )}
+          </>
+        }
+      >
         <div className="flex flex-wrap items-center gap-3">
           <label className="flex items-center gap-2 text-xs font-medium text-text-muted">
             {t('layoutEditor.pageType.label')}
@@ -651,7 +665,7 @@ export default function GlobalBoard({
             <p className="text-amber-600 dark:text-amber-400">{t('layoutEditor.pageType.unknownFrame', { frame: activeFrameName })}</p>
           )}
         </div>
-      </div>
+      </EditingContext>
 
       {/* useDraggable/useDroppable only register with the nearest ancestor DndContext, so the
           palette has to be a child of it, not a sibling - otherwise its chips are inert. */}

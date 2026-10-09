@@ -17,7 +17,8 @@ import {
   type DragStartEvent
 } from '@dnd-kit/core'
 import { confirmDialog } from '../../utils/confirm'
-import { Copy, GripVertical, LayoutGrid, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
+import { CircleDot, Copy, Eye, GripVertical, LayoutGrid, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
+import EditingContext, { BREAKPOINT_ICON, ContextFact } from './EditingContext'
 import type {
   FrameAlign,
   FrameBreakpoint,
@@ -1180,6 +1181,32 @@ export default function FrameBuilder({
     </div>
   )
 
+  // The head of both views: which frame is open, big enough to be read at a glance, with the
+  // controls that switch frame and view inside it (EditingContext).
+  const frameHead = (options: { value: FrameBreakpoint; label: string }[]): JSX.Element => (
+    <EditingContext
+      icon={LayoutGrid}
+      kind={editing ? t('layoutEditor.context.ownFrame') : t('layoutEditor.context.builtinFrame')}
+      name={editing ? draftLabel : t('layoutEditor.frameBuilder.standardTitle')}
+      meta={
+        <>
+          <ContextFact icon={BREAKPOINT_ICON[activeBreakpoint]} value={t(`layoutEditor.frameBuilder.breakpoint.${activeBreakpoint}`)} />
+          {!editing && <ContextFact icon={Eye} value={t('layoutEditor.context.viewOnly')} />}
+          {editing && isNewDraft && <ContextFact icon={Plus} value={t('layoutEditor.context.newDraft')} tone="accent" />}
+          {editing && !isNewDraft && draftIsDirty() && <ContextFact icon={CircleDot} value={t('projectLayout.unsavedBadge')} tone="amber" />}
+        </>
+      }
+    >
+      {frameBar}
+      <SegmentedControl
+        label={t('layoutEditor.frameBuilder.breakpointLabel')}
+        value={activeBreakpoint}
+        onChange={switchBreakpoint}
+        options={options}
+      />
+    </EditingContext>
+  )
+
   if (!editing) {
     const standard = quartzDefaultFrame('standard', standardMeasures)
     // Quartz's own frame switches at the widths of the project's variables.scss, not at the ones
@@ -1201,13 +1228,7 @@ export default function FrameBuilder({
     return (
       <div className="flex flex-col gap-4">
         {message && <p className="text-sm text-red-600 dark:text-red-400">{message}</p>}
-        {frameBar}
-        <SegmentedControl
-          label={t('layoutEditor.frameBuilder.breakpointLabel')}
-          value={activeBreakpoint}
-          onChange={switchBreakpoint}
-          options={quartzBreakpointOptions}
-        />
+        {frameHead(quartzBreakpointOptions)}
         <DetailLayout
           mainClassName="gap-4"
           panelLabel={t('layoutEditor.frameBuilder.standardTitle')}
@@ -1409,14 +1430,7 @@ export default function FrameBuilder({
   return (
     <div className="flex flex-col gap-4">
       {message && <p className="text-sm text-red-600 dark:text-red-400">{message}</p>}
-      {frameBar}
-
-      <SegmentedControl
-        label={t('layoutEditor.frameBuilder.breakpointLabel')}
-        value={activeBreakpoint}
-        onChange={switchBreakpoint}
-        options={breakpointOptions}
-      />
+      {frameHead(breakpointOptions)}
 
       {/* The board on the left, the panel of whatever is selected on the right - the shape of the
           "Global" tab. With no area selected the panel holds the frame's own settings for this

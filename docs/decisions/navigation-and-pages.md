@@ -694,3 +694,39 @@ Und die Stile-Seite blieb bei einem gescheiterten `config:get` für immer auf �
              laden.“ samt zod-Satz, 0 Zeilen; Wechsel auf en-US: Fehler weg, 8 Zeilen
 
 Geräumt wird der Zustand bei jedem Versuch, nicht nur beim Wechsel — damit ist auch der Besuch nach dem Entfernen der Datei wieder eine frische Frage. **Und die Datei kommt gar nicht mehr in den Wähler:** `listLocales` führte jede `*.ts`, der Kanal daneben wies alles ab, was kein Locale-Code ist, und der Satz dazu schrieb den Fehlschlag der App zu statt der Datei. Beide Seiten fragen jetzt dieselbe Funktion (`isLocaleCode` in `shared/ipc-contract.ts`); das zod-Schema ist ihr `refine`. Gemessen: vorher 31 Optionen einschließlich „de-DE Kopie“, nachher 30 ohne sie.
+
+## Eine Liste mit Leiste (2026-10-09, einundvierzigstes Review)
+
+Mit der Rückmeldung zu 1.1 trug das Muster des Layout-Editors — Liste links, klebende Leiste
+rechts — neun Seiten mit Liste neben den zwei Layout-Boards: Installiert, Navigationen,
+Zusätzliche Inhalte, Mehrsprachigkeit, Marktplatz, Variablen, Snapshots, Veröffentlichen und die
+Zugänge der Einstellungen (`DetailLayout`, `SelectableRow` in `ui.tsx`; der Auftrag zählte acht). Das einundvierzigste Review las sie gegeneinander
+und fand keine gewollten Varianten, sondern Stellen, an denen eine Seite eine Frage nicht
+beantwortet hatte, die eine andere beantwortet. Gemessen an der gebauten App gegen gui-test, bei
+1280 und 1600 px:
+
+- **Escape verwarf, was getippt war.** `DetailLayout` ließ Escape aus einem einzeiligen Feld durch,
+  mit der Begründung, das Getippte stehe schon im Entwurf. Auf den vier Plugin-Reitern stimmt das
+  nicht: Ihre Felder schreiben beim Verlassen, und Chromium schickt einem Element, das mit der
+  Leiste abgebaut wird, kein `blur`. `maxDepth` 6 → 7 getippt, Escape: die Config byte-gleich;
+  ein Klick auf eine andere Zeile dagegen speicherte, weil `mousedown` vorher das `blur` auslöst.
+  Seit `00ddb72` lässt `DetailLayout` ein Feld der Leiste vorher los: `maxDepth: 7` steht in der
+  Datei.
+- **Der Fokus fiel nach dem Entfernen auf `<body>`** (Mehrsprachigkeit) oder blieb auf dem
+  Mülleimer der nachgerückten Box (Zusätzliche Inhalte, Schlüssel = Config-Index; ein zweites
+  Enter fragte nach der nächsten). Ein Fokus aus einem `requestAnimationFrame` reichte nicht: Ein
+  Entfernen nach einer abgewarteten Rückfrage war in diesem Frame noch nicht gerendert, und der
+  Fokus landete auf dem Namen der entfernten Sprache, der dann mit ihr verschwand — bei den Boxen
+  sah es nur richtig aus, weil derselbe Knopf an derselben Stelle blieb. `focusRowAt` fokussiert
+  synchron nach einem `flushSync` des Entfernens (`94a5d0e`).
+- **Die Sidebar fragte nicht**, während jeder Weg innerhalb von Veröffentlichen und Zugängen
+  fragte; „Zurück“ der Einstellungen ebenso wenig (`8512daf`).
+- **`[role]` in `SELECTING`** ließ einen Klick auf jedes Element mit Rolle die Auswahl behalten. Mit
+  einem eingesetzten `<p role="note">` gemessen: vorher behalten, nachher gelöst; ein Name und ein
+  Kantengriff ohne Bewegung behalten sie weiter (`97f944b`). Heute steht in den linken Spalten
+  kein anklickbares Element mit Rolle außer den Bedienelementen — die 8 `role="status"` auf
+  Installiert sind dnd-kits unsichtbare Live-Regionen.
+
+Daraus die Regel in `conventions.md`. Offen bleibt ihr letzter Satz: Die Leisten der
+Plugin-Reiter sagen nicht selbst, dass sie sofort schreiben.
+

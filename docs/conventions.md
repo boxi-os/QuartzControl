@@ -344,10 +344,26 @@ Projektwurzel.
   ohne Registrierung tut nichts, und genau deshalb muss der Menüpunkt nicht ausgegraut werden.
 - **Verlassen mit ungespeicherten Änderungen fragt.** Modul-Flag in `unsavedGuard.tsx`, gesetzt von
   der Seite, abgefragt von der Sidebar; `UnsavedBadge` neben dem Save. Nur Sidebar-Links sind
-  geguardet. Die Frage ist ein nativer Dialog und damit asynchron: der Klick wird gestoppt und die
+  geguardet — und „Zurück“ der Einstellungen, die keine Sidebar haben. Die Frage ist ein nativer Dialog und damit asynchron: der Klick wird gestoppt und die
   Navigation von Hand ausgelöst. Drei Antworten, wenn die Seite ein Save registriert hat
   (`saveCommand.ts`): Abbrechen, Speichern, Verwerfen - bei einem gescheiterten Speichern bleibt der
   Guard auf der Seite, weil dort die Fehlermeldung steht.
+- **Eine Liste mit Leiste ist `DetailLayout` mit `SelectableRow`, und die Leiste zu verlassen ist
+  ein Verlassen wie jedes andere.** Die Auswahl ist eine stabile Kennung im Sticky-State. Lösen —
+  Escape, Klick ins Leere, eine andere Zeile, die Sidebar — übernimmt vorher, was in der Leiste
+  getippt ist (Seiten, die sofort schreiben), oder fragt (Seiten mit Formular); still verworfen wird
+  nie, und alle vier Wege antworten gleich. `DetailLayout` lässt dafür ein fokussiertes Feld der
+  Leiste los, bevor es `onDismiss` ruft: Die Felder der Plugin-Reiter schreiben beim Verlassen, und
+  eine Leiste, die abgebaut wird, nimmt ihr Feld ohne `blur` mit. Eine Seite, deren Auswahl Pflicht
+  ist (Veröffentlichen), gibt kein `onDismiss`. „Ins Leere“ ist, was kein Bedienelement ist: In
+  `SELECTING` stehen Bedienelemente, keine Rollen überhaupt. Nach Auswahl, Lösen und Entfernen
+  steht der Fokus auf der Zeile, ihrer Nachbarin (`focusRowAt`, nach einem `flushSync` des
+  Entfernens) oder der Leiste, nie auf `<body>` — dort erreicht Escape nichts mehr. Eine Leiste
+  sagt, ob sie sofort schreibt oder einen Speichern-Knopf hat; **heute sagen das die Plugin-Reiter
+  nur in der `InfoNote` über der Liste**, nicht in der Leiste. Elf Stellen tragen das Muster (die
+  zwei Layout-Boards und neun Seiten mit Liste), und jede Abweichung, die das einundvierzigste Review fand, war eine Frage, die eine Seite nicht
+  beantwortet hatte, während eine andere es tat. Messungen in
+  [`navigation-and-pages.md`](decisions/navigation-and-pages.md).
 - **Das registrierte Speichern schreibt alles, was `dirty` zählt.** Badge, Cmd+S und der
   Verlassen-Dialog lesen dasselbe Flag; ein Save, der weniger schreibt, macht aus der dritten Tür
   einen Datenverlust - „Speichern" gesagt, `true` zurückgemeldet, navigiert, und die Entwürfe der

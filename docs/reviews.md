@@ -2118,3 +2118,52 @@ Nachher-Messung (gebündelte Dienste oder gebaute App mit Wegwerf-Profil, Klone 
 - Abwägung 8 (`union` aus `withPresentKeys`) blieb ohne Befund und ohne Änderung.
 
 **Keinen dieser Fixes hat ein Review gelesen.**
+
+**Das einundvierzigste Review** ([`REVIEW-2026-10-15.md`](REVIEW-2026-10-15.md), Auftrag
+[`REVIEW-2026-10-15-auftrag.md`](REVIEW-2026-10-15-auftrag.md), Tag `review-2026-10-16`, gelesen am
+2026-10-09, `review-2026-10-15..review-2026-10-16` = die Fixes des vierzigsten und die Runde nach
+der Rückmeldung des Nutzers zu 1.1: Seitenleiste auf neun Seiten, Layout mit Seitentyp-Tabelle und
+Frame-Editor, eigene Editoren für die drei eigenen Plugins): **vom selben Modell wie die gelesenen
+Commits** (Claude Opus 5.5, eigener Agent; einmal am Nutzungslimit unterbrochen und fortgesetzt).
+0 Hoch, 3 Mittel, 7 Niedrig. Teil A trägt, Teil B hat keinen der Fixes wieder aufgemacht. Seine
+Antwort auf die Schlussfrage — das Seitenleisten-Muster ist eine Regel — steht in
+`conventions.md`, die Messungen in `decisions/navigation-and-pages.md`. **Der Nutzer hat beides so
+entschieden.** Zwei Messwege des Reviews: eine `cp -Rc`-Kopie von gui-test nennt die Frames des
+Originals mit absolutem Pfad, und `npm run smoke` startet mit dem echten Profil.
+
+Abgearbeitet am 2026-10-09 auf `feat/1.1`, je Commit Typcheck, Build, `check:i18n` und Smoke, an
+der gebauten App bei 1280 und 1600 px gegen gui-test (Config gesichert und byte-gleich
+zurückgelegt, die vier Snapshots, die schreibende Messungen anlegten, über die App wieder
+gelöscht):
+
+- **2 (Mittel)** `8ea21a5` — die einzige veröffentlichte Sprache zu entfernen fragt, welche
+  Sprachen dadurch online gehen („Entfernen und veröffentlichen“). Gemessen ist die Frage, nicht
+  das Schreiben.
+- **1 (Mittel)** `00ddb72` — `DetailLayout` lässt ein Feld der Leiste vor `onDismiss` los; vorher
+  blieb die Config nach Tippen und Escape byte-gleich.
+- **3 (Mittel)** `c284ef4` — Lade- und Aktionsfehler der Dateien-Karte getrennt; ein gescheiterter
+  Papierkorb hat einen eigenen Satz. Gemessen mit ersetztem `shell.trashItem`; der echte
+  Papierkorb auf Linux und im Flatpak bleibt ungemessen.
+- **4** `a1861bf` — Link-Regex ohne überlappende Teile, Absätze über 4000 Zeichen als Text; dazu,
+  vom Review nicht genannt, die zwei HTML-Entferner davor, die ebenso quadratisch waren (256 KB:
+  13,3 und 5,4 s in Node), als Schleifen, gegen die Regexes an 200 000 Zufallstexten ohne
+  Unterschied. In der App 71–141 ms für fünf feindliche READMEs von 256 KB.
+- **5** `a6cd398` — scheitert die Config nach dem Umbenennen, heißt das Snippet wieder wie vorher;
+  `renameSnippetRefs` je Leseort und Ordner (zehn Fälle im Bündel); die Bilder sagen, wo „benutzt
+  von“ sucht.
+- **6** `94a5d0e` — `focusRowAt` nach `flushSync`; der erste Versuch mit `requestAnimationFrame`
+  fiel an den Sprachen durch und hatte an den Boxen nur zufällig getragen.
+- **7** `2d108a2` — die Fassung, gegen die jede Plugin-Abschrift gelesen ist, und eine Zeile, wenn
+  eine andere installiert ist; das Standard-Frame nennt seine abgeschriebenen Maße. **Nicht
+  gebaut:** ein Prüfskript, das die Funktionen der installierten Plugins lädt, und ein Lesen der
+  `variables.scss` des Projekts.
+- **8** `8512daf` — `useUnsavedChanges` auf Veröffentlichen und den Zugängen, „Zurück“ der
+  Einstellungen fragt. Ein Menüpunkt, der die Route wechselt, fragt weiter nicht.
+- **9** `79bee11` — der erste Layout-Reiter heißt „Seitentypen“ (URL-Wert bleibt `overview`).
+- **10** `97f944b` — `SELECTING` nennt Bedienelemente statt `[role]`, dazu die Kantengriffe.
+- Nebenbei, nicht behoben: `toggleEnabled` und `reorderGroup` in `Installed.tsx` schreiben an der
+  Warteschlange vorbei; `marketplaceReadmeArgs` lässt `owner/.` zu; jede Änderung der Sprachliste
+  schreibt alle Codes neu.
+
+**Keinen dieser Fixes hat ein Review gelesen.**
+

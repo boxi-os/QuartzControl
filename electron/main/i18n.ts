@@ -347,7 +347,6 @@ const STRINGS = {
     zipTooLarge: 'Das Paket entpackt sich auf mehr als {{limit}} MB und wird nicht gelesen.',
 
     // Publishing
-    ftpWrongTarget: 'Falscher Zieltyp für den FTP-Adapter.',
     ftpNoConnection: 'Für dieses Ziel ist kein FTP-Zugang hinterlegt.',
     hostKeyChanged:
       'Der Host-Key von {{host}} hat sich geändert!\n\nerwartet:  {{expected}}\nempfangen: {{received}}\n\nDie Verbindung wurde abgebrochen. Das kann ein neu aufgesetzter Server sein — oder ein Angriff. Prüfe den Fingerprint beim Anbieter und setze ihn erst danach über „Host-Key vergessen“ zurück.',
@@ -707,7 +706,6 @@ const STRINGS = {
     zipEntryUnsafeName: 'The file “{{name}}” in the package would be written outside the project.',
     zipTooLarge: 'The package unpacks to more than {{limit}} MB and is not read.',
 
-    ftpWrongTarget: 'Wrong destination type for the FTP adapter.',
     ftpNoConnection: 'No FTP credential is set for this target.',
     hostKeyChanged:
       'The host key of {{host}} has changed!\n\nexpected: {{expected}}\nreceived: {{received}}\n\nThe connection was aborted. This can be a rebuilt server — or an attack. Check the fingerprint with your provider and only then clear it via “Forget host key”.',

@@ -448,7 +448,16 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
   `--secondary` mit eigenem Wert): vorher Zeile „Zurücksetzen“ (72 px), Leiste „Auf Originalwert
   zurücksetzen“; nachher Zeile ein Symbol (27 px) mit diesem Titel, Leiste unverändert; der Klick
   in der Zeile nimmt den eigenen Wert weg wie vorher.
-- `check:i18n` meldet keine Schlüssel, die kein Aufruf mehr nennt.
+- ~~`check:i18n` meldet keine Schlüssel, die kein Aufruf mehr nennt~~ — erledigt (2026-10-09):
+  Ein Schlüssel gilt als ungenutzt, wenn ihn kein Literal im Code, kein Template-Literal (dessen
+  feste Teile wie ein Schlüssel aussehen, im Renderer mit Punkt) und kein Präfix-Literal
+  (`'a.b.' + x`) bilden kann; die Antwort trägt nur in diese Richtung, weil 99 berechnete Aufrufe
+  alles erreichen können, was ein Template buchstabiert. Erster Lauf: 15 Schlüssel in `de.ts`/
+  `en.ts` und `ftpWrongTarget` in `i18n.ts`, jeder per `grep` gegengeprüft und entfernt. Zwei
+  Ränder beim Bauen gefunden: `` `${key}Mac` `` (flache Schlüssel des Hauptprozesses haben keinen
+  Punkt) und React-Schlüssel wie `` `h${blocks.length}` ``, die sonst für jeden Schlüssel mit „h“
+  bürgten. Gegenprobe: ein Schlüssel unter `backups` wird gemeldet, einer unter `styles.variables`
+  nicht (`styles.variables.${mode}`).
 - Die Mehrsprachigkeit-Seite trägt den Namen zweimal (Reiter und Karte `multilanguageEditor.title`).
 - Ein umbenannter Sprachcode zieht Seiten und Ordner mit dem alten Code nicht mit (bewusst, siehe
   `renameLanguage`, aber nirgends gesagt).

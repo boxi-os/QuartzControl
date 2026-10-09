@@ -191,7 +191,6 @@ export default {
         'Not available: the notes come from the folder you chose. The example pages would overwrite files of the same name in it — the template brings an index.md of its own.',
       templateContentHintSymlink:
         'Not available: the content folder becomes a link into the folder you chose. A template never writes there, so its notes cannot end up in your vault.',
-      templateFailed: 'The project was created, but the template could not be applied: {{detail}}',
       templateUnreadable: 'The package could not be read.',
       doneTitle: 'Project created',
       doneWithWarnings: 'The project is there. Applying the template had something to report, though:',
@@ -598,7 +597,6 @@ export default {
     restored: 'Restored.',
     export: 'Export as ZIP',
     exported: 'Snapshot exported.',
-    delete: 'Delete',
     confirmDeleteAction: 'Delete snapshot',
     confirmDelete: 'Delete this snapshot permanently?',
     confirmRestoreAction: 'Restore',
@@ -920,7 +918,6 @@ export default {
       description:
         'custom.scss declares these fonts, but no font setting, no variable and no stylesheet under quartz/styles, quartz/components/styles or quartz/static names them. Their files are still published with every build.',
       noFile: 'no file in the project',
-      remove: 'Remove',
       removing: 'Removing…',
       confirm_one:
         'Remove “{{family}}”?\n\nIts @font-face rules leave custom.scss and one file leaves quartz/static/fonts. The only way back is a snapshot or git.',
@@ -937,7 +934,6 @@ export default {
     localFontSlot: 'Use directly for',
     localFontNoSlot: '— none —',
     localFontConfirm: 'Import',
-    fontImportSuccess: '“{{family}}” imported.',
     fontImportDetected: '“{{family}}” imported — weight {{weight}}, read from the file.',
     fontImportDetectedItalic: '“{{family}}” imported — weight {{weight}}, italic, read from the file.',
     fontImportUndetected:
@@ -976,8 +972,6 @@ export default {
       basisLabel: '(base: {{base}})',
       active: 'Active',
       apply: 'Apply',
-      saveSettings: 'Save settings',
-      delete: 'Delete',
       confirmDelete: 'Delete preset “{{name}}”?\n\nThe theme as set stays as it is; only the saved entry goes. It cannot be brought back.',
       confirmDeleteAction: 'Delete preset'
     },
@@ -1092,9 +1086,7 @@ export default {
       newSnippet: 'New file',
       addSnippet: 'Add file',
       addImage: 'Add picture',
-      edit: 'Edit',
       editNamed: 'Edit “{{name}}”',
-      rename: 'Rename',
       renameNamed: 'Rename “{{name}}”',
       renameLabel: 'New name for “{{name}}”',
       renameSubmit: 'Rename',
@@ -1388,16 +1380,11 @@ export default {
     removeConfirm: 'Really remove plugin “{{name}}”? A snapshot is taken first, so you can bring it back.',
     removeFrameConfirm:
       'Really delete frame “{{name}}”? This removes it from the configuration and from disk. A snapshot is taken first.',
-    availableOptions: 'Available options:',
-    onlyViaYaml: ', YAML only',
-    noSchemaInfo:
-      'Quartz ships no options description for its built-in plugins, so the known options can’t be listed. Existing values can be edited here; add further ones by hand below (see the plugin’s repository for names).',
     optionKeyPlaceholder: 'Option',
     optionValuePlaceholder: 'Value',
     addOption: 'Add',
     optionKeyExists: 'That option is already set.',
     optionValueHint: 'true/false and numbers are stored as such, [..] and {..} as JSON, anything else as text.',
-    removeOption: 'Remove option “{{name}}”',
     explicitlyEmpty: 'set to empty',
     setEmpty: 'Set empty',
     setEmptyHint: 'Writes an empty text into the configuration instead of leaving the option out — for a plugin that reads “empty” differently from “not set”.',
@@ -1475,7 +1462,6 @@ export default {
     'component-resources': 'Includes the CSS and JS resources that the theme and components need.'
   },
   layoutEditor: {
-    title: 'Layout Editor',
     templateCustomPlaceholder: 'e.g. Home page with sidebar',
     tabOverview: 'Page types',
     tabGlobal: 'Components',
@@ -1511,7 +1497,6 @@ export default {
       gap: 'Gap',
       priority: 'Priority',
       priorityPlaceholder: 'optional',
-      delete: 'Delete'
     },
     pageTypes: {
       '404': '404 page',
@@ -1971,7 +1956,6 @@ export default {
       moveUp: 'Move up',
       moveDown: 'Move down',
       rename: 'Rename',
-      delete: 'Delete',
       confirmDelete: 'Delete file “{{name}}”?\n\nIt is taken out of the load order and deleted from the project. Only a snapshot from before brings it back.',
       confirmDeleteAction: 'Delete file',
       create: 'New file',

@@ -121,7 +121,10 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   variable cannot be checked, and the script prints how many calls that leaves out. Static and instant; it exists because
   i18next renders a missing key *as the key* rather than failing, so a gap is invisible until someone
   opens the one screen state that uses it (`publish.pages.saveSettings`, found in the alpha test, was
-  missing from both files and therefore in perfect parity)
+  missing from both files and therefore in perfect parity). Since 2026-10-09 also the other direction: a key no
+  literal, no template literal and no key prefix in the code can spell is reported as unused - only
+  that direction, because a computed call may reach anything a template can spell (16 keys on the
+  first run, all removed)
 - `npm run check:handbook` — die Blockzitate des Benutzerhandbuchs gegen das, was die App wirklich
   sagt. Existiert aus demselben Grund wie `check:i18n`, nur eine Ebene weiter: Ein Zitat, das die
   App so nicht mehr sagt, sieht aus wie ein Beleg, und kein anderer Test sieht es, weil das

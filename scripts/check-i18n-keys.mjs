@@ -12,6 +12,13 @@
 // after `d077648` had written one). A key built from a variable (`t(\`plugins.${kind}.title\`)`)
 // cannot be resolved statically, and guessing at the possible values would report failures that are
 // not real - so those calls are counted and the count is printed: "cannot check" is not "all good".
+//
+// The other direction - a key no call names any more - is answered only where it can be proven
+// (unusedKeys below): a key counts as possibly used when any string literal in the code is that key,
+// when a template literal's fixed parts can spell it, or when a literal prefix ('a.b.' + x) can.
+// What is left is a key nothing can reach: 15 in de.ts/en.ts and one in i18n.ts when this was
+// added, all removed. Counter-check: a key added under `backups` is reported; one added under
+// `styles.variables` is not, because `styles.variables.${mode}` can spell it.
 import { readFileSync, readdirSync } from 'fs'
 import { join } from 'path'
 
@@ -106,6 +113,40 @@ function collect(dir, extension, name, keyShape) {
   return { used, computed }
 }
 
+// Every key a piece of code could name: the literals of all files, plus a pattern for each template
+// literal whose fixed parts look like a key (`pluginsInstalled.${kind}Done`, `${key}Mac`) and each literal that is
+// a key prefix ('layoutEditor.frameBuilder.breakpoint.' + bp). A template with no key-shaped text
+// (`${a}`, `${a}.${b}`) would match everything, so it is left out - it cannot name a key on its own,
+// it can only pass one along, and the literal it passes along is counted where it is written. The
+// renderer's keys are dotted, so there a template must carry a dot in its fixed text: React keys
+// such as `h${blocks.length}` (ReadmeText.tsx) otherwise vouched for every key starting with h.
+function reachable(files, { dotted }) {
+  const literals = new Set()
+  const patterns = []
+  for (const file of files) {
+    const source = readFileSync(file, 'utf-8')
+    for (const m of source.matchAll(/'((?:[^'\\\n]|\\.)*)'|"((?:[^"\\\n]|\\.)*)"/g)) literals.add(m[1] ?? m[2])
+    for (const m of source.matchAll(/`((?:[^`\\]|\\.)*)`/g)) {
+      const parts = m[1].split(/\$\{(?:[^{}]|\{[^{}]*\})*\}/)
+      if (parts.length === 1) {
+        literals.add(m[1])
+        continue
+      }
+      if (!parts.every((part) => /^[A-Za-z0-9_.]*$/.test(part)) || !/[A-Za-z0-9_]/.test(parts.join('')) || (dotted && !parts.join('').includes('.'))) continue
+      patterns.push(new RegExp(`^${parts.map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.+')}$`))
+    }
+  }
+  const prefixes = [...literals].filter((l) => /^[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)*\.$/.test(l))
+  return (key) => literals.has(key) || patterns.some((r) => r.test(key)) || prefixes.some((prefix) => key.startsWith(prefix))
+}
+
+function unusedKeys(defined, isReachable) {
+  return [...defined].filter((key) => {
+    const base = key.replace(/_(zero|one|two|few|many|other)$/, '')
+    return !isReachable(key) && !isReachable(base)
+  })
+}
+
 const de = flatten(loadLocale('src/i18n/locales/de.ts'))
 const en = flatten(loadLocale('src/i18n/locales/en.ts'))
 const { used: rendererKeys, computed: rendererComputed } = collect('src', /\.tsx?$/, 't', /^[A-Za-z0-9_.]+$/)
@@ -114,6 +155,13 @@ const { used: rendererKeys, computed: rendererComputed } = collect('src', /\.tsx
 const mainSource = readFileSync('electron/main/i18n.ts', 'utf-8')
 const mainDefined = new Set([...mainSource.matchAll(/^\s{2,}([A-Za-z0-9_]+):/gm)].map((m) => m[1]))
 const { used: mainKeys, computed: mainComputed } = collect('electron', /\.ts$/, 'mainT', /^[A-Za-z0-9_]+$/)
+
+// i18next nests with $t(key) inside a string; such a key is named by the language file itself.
+const nested = [...readFileSync('src/i18n/locales/de.ts', 'utf-8').matchAll(/\$t\(([A-Za-z0-9_.]+)/g)].map((m) => m[1])
+const rendererReach = reachable([...walk('src', /\.tsx?$/), ...walk('shared', /\.ts$/)].filter((f) => !f.includes(join('i18n', 'locales'))), { dotted: true })
+const rendererUnused = unusedKeys(de, (key) => nested.includes(key) || rendererReach(key))
+const mainReach = reachable(walk('electron', /\.ts$/).filter((f) => f !== join('electron', 'main', 'i18n.ts')), { dotted: false })
+const mainUnused = unusedKeys(mainDefined, mainReach)
 
 const problems = []
 for (const [key, file] of rendererKeys) {
@@ -125,13 +173,15 @@ for (const key of en) if (!de.has(key)) problems.push(`nur in en.ts: ${key}`)
 for (const [key, file] of mainKeys) {
   if (!mainDefined.has(key)) problems.push(`i18n.ts fehlt ${key} (benutzt in ${file})`)
 }
+for (const key of rendererUnused) problems.push(`de.ts/en.ts: ${key} nennt kein Aufruf`)
+for (const key of mainUnused) problems.push(`i18n.ts: ${key} nennt kein Aufruf`)
 
 console.log(`${rendererKeys.size} Schlüssel im Renderer, ${mainKeys.size} im Hauptprozess geprüft.`)
 console.log(
   `Nicht prüfbar, weil der Schlüssel berechnet oder durchgereicht wird: ${rendererComputed} Aufrufe im Renderer, ${mainComputed} im Hauptprozess.`
 )
 if (problems.length === 0) {
-  console.log('✓ keine fehlenden Schlüssel.')
+  console.log('✓ keine fehlenden und keine ungenutzten Schlüssel.')
   process.exit(0)
 }
 for (const problem of problems) console.log(`✗ ${problem}`)

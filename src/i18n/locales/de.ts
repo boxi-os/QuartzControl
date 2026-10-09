@@ -193,7 +193,6 @@ export default {
         'Nicht verfügbar: Die Notizen kommen aus dem gewählten Ordner. Die Beispielseiten würden gleichnamige Dateien daraus überschreiben — die Vorlage bringt eine eigene index.md mit.',
       templateContentHintSymlink:
         'Nicht verfügbar: Der Content-Ordner wird ein Link in den gewählten Ordner. Dorthin schreibt eine Vorlage nichts, damit fremde Notizen nicht in deinem Vault landen.',
-      templateFailed: 'Das Projekt wurde angelegt, aber die Vorlage ließ sich nicht anwenden: {{detail}}',
       templateUnreadable: 'Das Paket ließ sich nicht lesen.',
       doneTitle: 'Projekt angelegt',
       doneWithWarnings: 'Das Projekt ist da. Beim Anwenden der Vorlage gab es aber etwas zu melden:',
@@ -603,7 +602,6 @@ export default {
     restored: 'Wiederhergestellt.',
     export: 'Als ZIP exportieren',
     exported: 'Snapshot exportiert.',
-    delete: 'Löschen',
     confirmDeleteAction: 'Snapshot löschen',
     confirmDelete: 'Diesen Snapshot endgültig löschen?',
     confirmRestoreAction: 'Wiederherstellen',
@@ -925,7 +923,6 @@ export default {
       description:
         'custom.scss deklariert diese Schriften, aber weder eine Schriftart-Einstellung noch eine Variable noch ein Stylesheet unter quartz/styles, quartz/components/styles oder quartz/static nennt sie. Ihre Dateien werden trotzdem mit jedem Build veröffentlicht.',
       noFile: 'keine Datei im Projekt',
-      remove: 'Entfernen',
       removing: 'Entferne…',
       confirm_one:
         '„{{family}}“ entfernen?\n\nDie @font-face-Regeln verschwinden aus custom.scss und eine Datei aus quartz/static/fonts. Zurück geht es nur über einen Snapshot oder git.',
@@ -942,7 +939,6 @@ export default {
     localFontSlot: 'Direkt verwenden für',
     localFontNoSlot: '— keins —',
     localFontConfirm: 'Importieren',
-    fontImportSuccess: '„{{family}}“ importiert.',
     fontImportDetected: '„{{family}}“ importiert — Gewicht {{weight}} aus der Datei gelesen.',
     fontImportDetectedItalic: '„{{family}}“ importiert — Gewicht {{weight}}, kursiv, aus der Datei gelesen.',
     fontImportUndetected:
@@ -981,8 +977,6 @@ export default {
       basisLabel: '(Basis: {{base}})',
       active: 'Aktiv',
       apply: 'Anwenden',
-      saveSettings: 'Einstellungen speichern',
-      delete: 'Löschen',
       confirmDelete: 'Preset „{{name}}“ löschen?\n\nDas eingestellte Theme bleibt, wie es ist; nur der gespeicherte Eintrag verschwindet. Zurückholen lässt er sich nicht.',
       confirmDeleteAction: 'Preset löschen'
     },
@@ -1097,9 +1091,7 @@ export default {
       newSnippet: 'Neue Datei',
       addSnippet: 'Datei hinzufügen',
       addImage: 'Bild hinzufügen',
-      edit: 'Bearbeiten',
       editNamed: '„{{name}}“ bearbeiten',
-      rename: 'Umbenennen',
       renameNamed: '„{{name}}“ umbenennen',
       renameLabel: 'Neuer Name für „{{name}}“',
       renameSubmit: 'Umbenennen',
@@ -1393,16 +1385,11 @@ export default {
     removeConfirm: 'Plugin „{{name}}“ wirklich entfernen? Vorher wird automatisch ein Snapshot angelegt, über den du es zurückholen kannst.',
     removeFrameConfirm:
       'Frame „{{name}}“ wirklich löschen? Das entfernt ihn aus der Konfiguration und von der Festplatte. Vorher wird automatisch ein Snapshot angelegt.',
-    availableOptions: 'Verfügbare Optionen:',
-    onlyViaYaml: ', nur per YAML',
-    noSchemaInfo:
-      'Für mitgelieferte Plugins liefert Quartz keine Options-Beschreibung mit — bekannte Optionen lassen sich deshalb nicht auflisten. Vorhandene Werte kannst du hier ändern, weitere unten von Hand anlegen (Namen siehe Plugin-Repository).',
     optionKeyPlaceholder: 'Option',
     optionValuePlaceholder: 'Wert',
     addOption: 'Anlegen',
     optionKeyExists: 'Diese Option ist bereits gesetzt.',
     optionValueHint: 'true/false und Zahlen werden als solche gespeichert, [..] und {..} als JSON, alles andere als Text.',
-    removeOption: 'Option „{{name}}“ entfernen',
     explicitlyEmpty: 'leer gesetzt',
     setEmpty: 'Leer setzen',
     setEmptyHint: 'Schreibt einen leeren Text in die Konfiguration, statt die Option wegzulassen — für ein Plugin, das „leer“ anders liest als „nicht gesetzt“.',
@@ -1480,7 +1467,6 @@ export default {
     'component-resources': 'Bindet die CSS- und JS-Ressourcen ein, die Theme und Components benötigen.'
   },
   layoutEditor: {
-    title: 'Layout-Editor',
     templateCustomPlaceholder: 'z. B. Startseite mit Seitenleiste',
     tabOverview: 'Seitentypen',
     tabGlobal: 'Komponenten',
@@ -1516,7 +1502,6 @@ export default {
       gap: 'Abstand',
       priority: 'Priorität',
       priorityPlaceholder: 'optional',
-      delete: 'Löschen'
     },
     pageTypes: {
       '404': '404-Seite',
@@ -1979,7 +1964,6 @@ export default {
       moveUp: 'Nach oben',
       moveDown: 'Nach unten',
       rename: 'Umbenennen',
-      delete: 'Löschen',
       confirmDelete: 'Datei „{{name}}“ löschen?\n\nSie wird aus der Ladereihenfolge genommen und aus dem Projekt gelöscht. Zurück kommt sie nur über einen Snapshot von vorher.',
       confirmDeleteAction: 'Datei löschen',
       create: 'Neue Datei',

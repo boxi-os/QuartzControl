@@ -271,12 +271,20 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
    Lockfile keiner; nachher 0, der Wert des ersten Felds gespeichert, das zweite Feld während des
    Entfernens gesperrt und danach wieder frei. Ohne Feld (Gegenprobe) vorher wie nachher 0. Die
    Leiste ist an beiden Breiten pixelgleich (16 Rechtecke).
-6. **Neu, beim Messen von 1 gefunden:** Der Mülleimer an einem eingebauten Plugin
-   (`@quartz-community/…`) tut nichts. Die App gibt `quartz plugin remove` den Anzeigenamen
-   (`table-of-contents`); die CLI findet ihn nicht im Lockfile („is not installed“, Exit 0) und
-   filtert die Config gegen `extractPluginName(source)`, für eine Quelle mit Scope also gegen
-   `@quartz-community/table-of-contents`. Der Eintrag bleibt, und die Seite meldet keinen Fehler
-   (gemessen an einer Kopie von `gui-test`, in der App und mit der CLI direkt).
+6. ~~Der Mülleimer an einem eingebauten Plugin (`@quartz-community/…`) tut nichts~~ — behoben
+   (2026-10-09; beim Messen von 1 gefunden): Die App gab `quartz plugin remove` den Anzeigenamen
+   (`table-of-contents`); die CLI findet ein eingebautes Plugin nie im Lockfile (es ist ein
+   npm-Paket, „is not installed“, Exit 0) und nimmt den Eintrag nur über ihren Config-Filter
+   heraus, der gegen `extractPluginName(source)` vergleicht — für eine Quelle mit Scope die ganze
+   Quelle. Jetzt bekommt sie `quartzPluginName(source)`. Mit der CLI an einer Kopie von
+   `gui-test`: Kurzname → Eintrag bleibt, voller Name → Eintrag weg, die übrigen 60 inhaltsgleich,
+   Lockfile byte-gleich, Bau grün (267 Dateien, kein `toc`). An der gebauten App (1280 und 1600,
+   Wegwerf-Profil): vorher 1 → 1 Eintrag, die Zeile bleibt, keine Meldung; nachher 1 → 0, die Zeile
+   ist weg; `obsidian-plugin-excalidraw` (git-Quelle, zwei Instanzen) als Gegenprobe vorher wie
+   nachher 2 → 0. Nebenbei gesehen, nicht angefasst: Jede CLI-Plugin-Aktion bricht lange
+   Zeichenketten in `quartz.config.yaml` neu um (inhaltsgleich), und das Lockfile verliert nach
+   der Reparatur aus Punkt 5 seinen Zeilenumbruch am Ende (`writeJsonFile`), den die CLI beim
+   nächsten Schreiben wieder setzt.
 2. ~~`marketplaceReadmeArgs` lässt `owner/.` als Repo-Angabe zu~~ — behoben (2026-10-09): `fetch`
    streicht das Segment `.`, `owner/.` fragte also `/repos/owner/readme`. Gemessen an der gebauten
    App mit gestubbtem `fetch` im Hauptprozess: vorher angenommen und dorthin gefragt, nachher

@@ -23,6 +23,7 @@ import { useDndAccessibility } from '../../utils/dndAnnouncements'
 import { useIpcQuery } from '../../state/useIpcQuery'
 import { componentRef } from '../LayoutEditor/utils'
 import { repoUrl } from './pluginSource'
+import { quartzPluginName } from '@shared/quartzPluginName'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { siteLanguages } from '../../components/PluginOptionsForm/siteLanguages'
 
@@ -358,7 +359,16 @@ export default function PluginsInstalled(): JSX.Element {
       // but leaves .quartz-gui/authored-frames/<id> behind, which keeps the frame in the Layout
       // editor's list while it is no longer part of any build - and saveFrame() only re-registers
       // a frame whose directory is *new*, so it could never come back.
-      frame ? window.quartzGui.layoutFrames.delete(project.path, frame.id) : window.quartzGui.plugins.remove(project.path, plugin.name)
+      //
+      // The CLI is given quartz's name for the entry, not the one on screen: a plugin that ships
+      // with quartz is an npm package with a scope and no lockfile entry, so the CLI says "is not
+      // installed" and only its config filter can take it out - and that compares against
+      // extractPluginName(source), the whole `@quartz-community/table-of-contents`. Given the
+      // short name, the bin did nothing and reported nothing (measured with the CLI on a copy of
+      // gui-test). For a git or local source both names are the same.
+      frame
+        ? window.quartzGui.layoutFrames.delete(project.path, frame.id)
+        : window.quartzGui.plugins.remove(project.path, quartzPluginName(plugin.source))
     )
     writes.current = removal.catch(() => {})
     try {

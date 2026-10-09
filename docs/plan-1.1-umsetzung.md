@@ -464,8 +464,12 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
   `navConfig`; der Schlüssel ist entfernt. Gemessen an der gebauten App (1280 und 1600,
   Wegwerf-Profil, `cp -Rc`-Kopie von `gui-test`): vorher Reiter „Mehrsprachigkeit“ und H2
   „Mehrsprachigkeit“, nachher H2 „quartz-multilanguage“, kein Seitenüberlauf.
-- Ein umbenannter Sprachcode zieht Seiten und Ordner mit dem alten Code nicht mit (bewusst, siehe
-  `renameLanguage`, aber nirgends gesagt).
+- ~~Ein umbenannter Sprachcode zieht Seiten und Ordner mit dem alten Code nicht mit (bewusst, siehe
+  `renameLanguage`, aber nirgends gesagt)~~ — war schon gesagt: Das Code-Feld der Sprachleiste
+  trägt seit `577dd2c` (2026-10-08) den Hinweis „Ordner und Dateinamen im Inhalt ändert ein neuer
+  Code nicht; Standardsprache und Veröffentlichen ziehen mit.“ (`multilanguageEditor.codeHint`).
+  Nachgesehen an der gebauten App (1280, Wegwerf-Profil, `cp -Rc`-Kopie von `gui-test`, erste
+  Sprache gewählt): Der Satz steht unter dem Feld. Der Eintrag hier war beim Schreiben überholt.
 - Die Chips der Bühne haben kein Kennzeichen für eine Abweichung je Seitentyp.
 - Handbuch-Kapitel und Screenshots für die neuen Seiten (gehört zu P8).
 - Die Messwege der Runde nach der Rückmeldung (Seitenleiste, Plugin-Editoren) stehen nicht in

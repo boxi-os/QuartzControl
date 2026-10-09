@@ -94,8 +94,8 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   jedes „ohne Wirkung“ von `hasNoEffect`, für quartz-layout-box die echte Komponente, die aus einem
   Wegwerf-Ordner liest. Existiert, weil `*_READ_AGAINST` nur sagt, *gegen welche* Version gelesen
   wurde, nicht ob die Abschrift stimmt — und beim ersten Lauf am 2026-10-09 (gui-test, alle drei in
-  der gelesenen Version) wichen 20 von 637 Antworten ab. Ein fehlendes Plugin zählt als „nicht
-  geprüft“
+  der gelesenen Version) wichen 20 von 637 Antworten ab, alle seither in den Abschriften behoben
+  (641 Fälle). Ein fehlendes Plugin zählt als „nicht geprüft“
 - `npm run check:core-update` — der Plan, nach dem das Core-Update `package.json` und
   `package-lock.json` behandelt: vierzehn Fälle gegen `shared/packageJsonDeps.ts` (das Skript lädt die
   Datei, statt sie abzuschreiben), dazu die npm-Aufrufe, die daraus entstehen, und seit dem

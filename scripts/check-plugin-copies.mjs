@@ -327,7 +327,8 @@ function tally(label, cases, diffs) {
 
     // Every snippet holds its own path, so the rendered text says which file was read.
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'check-plugin-copies-'))
-    const files = ['quartz/static/snippets/snippet.html', 'quartz/static/snippets/a.html', 'quartz/static/snippets/b.html', 'other/snippet.html', 'other/b.html']
+    // One at the root as well: `dir: ""` is the project itself.
+    const files = ['snippet.html', 'quartz/static/snippets/snippet.html', 'quartz/static/snippets/a.html', 'quartz/static/snippets/b.html', 'other/snippet.html', 'other/b.html']
     for (const f of files) {
       fs.mkdirSync(path.join(root, path.dirname(f)), { recursive: true })
       fs.writeFileSync(path.join(root, f), `FILE:${f}`)
@@ -345,6 +346,9 @@ function tally(label, cases, diffs) {
       { html: '<p>inline</p>' },
       { html: '' },
       { html: null },
+      { file: null },
+      { dir: null },
+      { file: 'a.html', byLang: { de: { html: null } } },
       { file: 'a.html', byLang: { de: { file: 'b.html' } } },
       { file: 'a.html', byLang: { DE: { file: 'b.html' } } },
       { byLang: { de: { html: 'nur deutsch' } } },
@@ -378,12 +382,16 @@ function tally(label, cases, diffs) {
           const base = options
           const merged = lang === undefined ? base : { ...base, ...base.byLang[lang] }
           let ours
-          if (copy.boxContentKind(merged) === 'html') ours = merged.html.trim() === '' ? 'nichts' : 'Text aus der Konfiguration'
+          if (copy.brokenOptions(base).some((b) => b.lang === lang)) ours = 'Fehler'
+          else if (copy.boxContentKind(merged) === 'html') ours = String(merged.html).trim() === '' ? 'nichts' : 'Text aus der Konfiguration'
           else {
             const ref = copy.snippetRefs(base).find((r) => r.lang === lang)
-            ours = ref ? `Datei ${copy.normalizeDir(ref.dir)}/${ref.file}` : 'keine Datei genannt'
+            // A path that is a folder (`file: ""`) cannot be read, and the build renders nothing.
+            const named = ref && path.posix.normalize(`${copy.normalizeDir(ref.dir)}/${ref.file}`)
+            ours = !ref ? 'keine Datei genannt' : fs.statSync(path.join(root, named), { throwIfNoEntry: false })?.isDirectory() ? 'nichts' : `Datei ${named}`
           }
-          if (ours !== theirs) diffs.push(`${show(options)}${lang ? `, Seite ${pageLang}` : ''}: App ${ours}, Plugin ${theirs}`)
+          // The plugin's message is printed with the difference; that it threw is what is compared.
+          if (ours === 'Fehler' ? !theirs.startsWith('Fehler') : ours !== theirs) diffs.push(`${show(options)}${lang ? `, Seite ${pageLang}` : ''}: App ${ours}, Plugin ${theirs}`)
         }
       }
     } finally {

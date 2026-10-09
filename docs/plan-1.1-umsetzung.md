@@ -354,6 +354,28 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
     nichts (leerer Name verweigert, leerer Ordner ist die Projektwurzel); `html: null` (ein leeres
     `html:` in YAML) liest die App als Datei, das Plugin stürzt mit `TypeError` ab — das ist auch
     ein Befund für quartz-layout-box.
+- ~~Die 20 Abweichungen~~ — behoben (2026-10-09), in den Abschriften, nicht im Plugin:
+  `variantOf` kennt die alten Namen (`vertical`, `horizontal`); `mobile` hat bei keiner Art „keine
+  Wirkung“ mehr; `chevrons`, `folderDefaultState` und `expandActive` fragen bei `mobile:
+  accordion` nur noch das, was das Plugin für einen nur mobil faltenden Ordner liest (immer offen,
+  immer getrennte Zeile mit Pfeil, `expandActive` nur neben einem gemerkten Zustand, den ein Popup
+  nie hat). Bei layout-box gilt `html` als gesetzt, sobald der Schlüssel da ist, ein leerer `dir`
+  ist das Projekt (`.`), ein leerer `file` der Ordner selbst, und ein Wert, der kein Text ist,
+  heißt jetzt so: `brokenOptions()` nennt ihn, die Zeile sagt „Fehler: „html“ ohne Wert“, die
+  Leiste sagt den Satz mit Ausweg. Das Prüfskript hat dafür vier Fälle mehr (`file: null`,
+  `dir: null`, `html: null` je Sprache, eine Schnipseldatei in der Wurzel) und zählt einen Ordner
+  als Pfad als „nichts“: 641 Fälle, keine Abweichung; Gegenprobe je Fix (sieben Rückbauten, jeder
+  schlägt an). Gemessen an der gebauten App (1280 und 1600, Wegwerf-Profil, `cp -Rc`-Kopie von
+  `gui-test` mit je drei Einträgen der Fälle), vorher → nachher: `horizontal` als „Baum“ →
+  „Leiste“; `mobile` bei der Auswahlliste weggefaltet → oben; `chevrons` beim Baum mit
+  Mobil-Akkordeon oben → weggefaltet; die drei Kästen alle „Datei quartz/static/snippets/
+  snippet.html“ → „Fehler: „html“ ohne Wert“, „Datei quartz/static/snippets/“, „Datei
+  ./snippet.html“. Der Ausweg der Meldung ist an der Oberfläche gemessen: Zurücksetzen an `html`
+  lässt in der YAML nur `title` stehen, der Kasten zeigt „Datei“, der Satz ist weg. Offen: der
+  `TypeError` an `null` in quartz-layout-box selbst (ein leeres `html:` sollte wie ein fehlendes
+  gelten) — ein Fix dort ist ein Plugin-Release. Nebenbefund, nicht angefasst: Das JSON-Textfeld
+  des allgemeinen Formulars (`w-[28rem] max-w-full`) steht in der 448-px-Leiste bei 1280 um 17 px
+  über — vermutlich auch die Ursache des Überlaufs von „Zusätzliche Inhalte“ oben.
 - ~~Das Standard-Frame liest nicht die `variables.scss` des Projekts, sondern nennt Quartz' Maße~~
   — behoben (2026-10-09): `layoutFrames.quartzMeasures` (neuer Kanal mit Objekt-Argument)
   kompiliert mit dem sass des Projekts ein Stück SCSS gegen `quartz/styles/variables.scss` —

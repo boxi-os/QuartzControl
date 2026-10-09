@@ -2,10 +2,14 @@ import { quartzPluginName } from '@shared/quartzPluginName'
 import type { PluginEntry, QuartzConfig } from '@shared/ipc-contract'
 
 // What the Zusätzliche-Inhalte editor needs to know about quartz-layout-box 0.4.0, read from its
-// LayoutBox.tsx rather than its README: `html` wins over `file` as soon as it is a string (an empty
-// one included - `inline !== undefined`), a byLang entry is merged over the base options
-// (`{ ...opts, ...hit }`), and a box without either reads `snippet.html` from
-// `quartz/static/snippets` (its defaultOptions).
+// LayoutBox.tsx rather than its README: `html` wins over `file` as soon as it is set at all
+// (`inline !== undefined` - an empty string included, and `null` too), a byLang entry is merged over
+// the base options (`{ ...opts, ...hit }`), and a box without either reads `snippet.html` from
+// `quartz/static/snippets` (its defaultOptions). Only a missing key falls back to the default: an
+// empty `dir` is the project itself (`path.resolve(cwd, '')`), an empty `file` the folder, which
+// cannot be read, and a value that is no string at all - `html:` or `file:` left empty in the YAML
+// is `null` - makes the component throw (`html.trim`, `path.resolve`).
+// `npm run check:plugin-copies` holds these rules against the installed plugin.
 
 export const LAYOUT_BOX_PLUGIN = 'quartz-layout-box'
 /** The version whose LayoutBox.tsx the rules below are read from. */
@@ -32,20 +36,54 @@ export function boxesOf(config: QuartzConfig | null): BoxInstance[] {
   return boxes
 }
 
-/** A folder as the config may write it - `./quartz/static/snippets/` and `quartz/static/snippets` are one. */
+/**
+ * A folder as the config may write it - `./quartz/static/snippets/` and `quartz/static/snippets` are
+ * one, and `''`, `.` and `./` are all the project itself, written `.`.
+ */
 export function normalizeDir(dir: string): string {
-  return dir.trim().replace(/\\/g, '/').replace(/^\.\//, '').replace(/\/+$/, '')
+  return dir.trim().replace(/\\/g, '/').replace(/^\.\//, '').replace(/\/+$/, '') || '.'
 }
 
 export function boxDir(options: Options | undefined): string {
   const dir = options?.dir
-  return normalizeDir(typeof dir === 'string' && dir.trim() ? dir : DEFAULT_SNIPPET_DIR)
+  return normalizeDir(typeof dir === 'string' ? dir : DEFAULT_SNIPPET_DIR)
 }
 
 export type BoxContentKind = 'html' | 'file'
 
 export function boxContentKind(options: Options | undefined): BoxContentKind {
-  return typeof options?.html === 'string' ? 'html' : 'file'
+  return options?.html !== undefined ? 'html' : 'file'
+}
+
+/** The file a box reads with these (merged) options - `''` names the folder itself. */
+function fileOf(merged: Options): string {
+  return typeof merged.file === 'string' ? merged.file : DEFAULT_SNIPPET_FILE
+}
+
+/** The option the plugin throws on with these (merged) options: a key that is set, but not to text. */
+function brokenKey(merged: Options): 'html' | 'file' | 'dir' | null {
+  if (merged.html !== undefined) return typeof merged.html === 'string' ? null : 'html'
+  for (const key of ['file', 'dir'] as const) if (merged[key] !== undefined && typeof merged[key] !== 'string') return key
+  return null
+}
+
+export interface BrokenOption {
+  key: 'html' | 'file' | 'dir'
+  /** The language whose entry breaks; undefined for the base options. */
+  lang?: string
+}
+
+/** Where a box makes the plugin throw - the base options, and each language entry merged over them. */
+export function brokenOptions(options: Options | undefined): BrokenOption[] {
+  const base = options ?? {}
+  const out: BrokenOption[] = []
+  const key = brokenKey(base)
+  if (key) out.push({ key })
+  for (const [lang, entry] of byLangEntries(base)) {
+    const k = brokenKey({ ...base, ...entry })
+    if (k) out.push({ key: k, lang })
+  }
+  return out
 }
 
 function byLangEntries(options: Options | undefined): [string, Options][] {
@@ -69,9 +107,8 @@ export function snippetRefs(options: Options | undefined): SnippetRef[] {
   const base = options ?? {}
   const refs: SnippetRef[] = []
   const add = (merged: Options, lang?: string): void => {
-    if (typeof merged.html === 'string') return
-    const file = typeof merged.file === 'string' && merged.file ? merged.file : undefined
-    refs.push({ file: file ?? DEFAULT_SNIPPET_FILE, dir: boxDir(merged), lang, inherited: file === undefined })
+    if (merged.html !== undefined || brokenKey(merged)) return
+    refs.push({ file: fileOf(merged), dir: boxDir(merged), lang, inherited: merged.file === undefined })
   }
   add(base)
   for (const [lang, entry] of byLangEntries(base)) add({ ...base, ...entry }, lang)
@@ -109,8 +146,7 @@ export function mentionsImage(text: string, name: string): boolean {
  */
 export function renameSnippetRefs(plugins: PluginEntry[], dir: string, from: string, to: string): { plugins: PluginEntry[]; count: number } {
   let count = 0
-  const fileOf = (merged: Options): string => (typeof merged.file === 'string' && merged.file ? merged.file : DEFAULT_SNIPPET_FILE)
-  const reads = (merged: Options): boolean => typeof merged.html !== 'string' && boxDir(merged) === dir && fileOf(merged) === from
+  const reads = (merged: Options): boolean => merged.html === undefined && !brokenKey(merged) && boxDir(merged) === dir && fileOf(merged) === from
   const next = plugins.map((p) => {
     if (quartzPluginName(p.source) !== LAYOUT_BOX_PLUGIN) return p
     const old: Options = p.options ?? {}
@@ -124,7 +160,7 @@ export function renameSnippetRefs(plugins: PluginEntry[], dir: string, from: str
     if (entries.length) {
       const nextEntries = entries.map(([lang, entry]): [string, Options] => {
         const before = { ...old, ...entry }
-        if (typeof before.html === 'string') return [lang, entry]
+        if (before.html !== undefined) return [lang, entry]
         const wanted = reads(before) ? to : fileOf(before)
         if (fileOf({ ...options, ...entry }) === wanted) return [lang, entry]
         changed = true

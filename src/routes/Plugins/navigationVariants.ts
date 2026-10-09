@@ -38,8 +38,12 @@ export const NAV_VARIANTS: { value: NavVariant; icon: LucideIcon; position: Layo
   { value: 'pager', icon: ArrowLeftRight, position: 'afterBody' }
 ]
 
+// The names before 0.4 (LEGACY_VARIANTS in the plugin's options.ts): still read, with a warning.
+const LEGACY_VARIANTS: Record<string, NavVariant> = { vertical: 'tree', horizontal: 'bar' }
+
 export function variantOf(options: Record<string, unknown> | undefined): NavVariant {
   const v = options?.variant
+  if (typeof v === 'string' && Object.hasOwn(LEGACY_VARIANTS, v)) return LEGACY_VARIANTS[v]
   return NAV_VARIANTS.some((x) => x.value === v) ? (v as NavVariant) : 'tree'
 }
 
@@ -48,7 +52,8 @@ export function variantOf(options: Record<string, unknown> | undefined): NavVari
 const COLLAPSIBLE = new Set<NavVariant>(['accordion', 'flyout', 'dropdown', 'mega'])
 const POPUP = new Set<NavVariant>(['dropdown', 'mega', 'flyout'])
 // These two are rendered by their own functions (renderSelect, renderPager) that never look at
-// folder rows or at `mobile` - Navigation.tsx returns before renderNavigation.
+// folder rows - Navigation.tsx returns before renderNavigation. `mobile` still reaches them as the
+// root class `quartz-nav--mobile-<value>`, and `hidden` hides them below the breakpoint.
 const OWN_RENDERER = new Set<NavVariant>(['select', 'pager'])
 
 /**
@@ -62,22 +67,27 @@ const OWN_RENDERER = new Set<NavVariant>(['select', 'pager'])
  */
 export function hasNoEffect(key: string, variant: NavVariant, mobile: unknown): boolean {
   const own = OWN_RENDERER.has(variant)
-  // A folder that folds only below the mobile breakpoint (renderItem's `byMobile`).
+  // A folder that folds only below the mobile breakpoint (renderItem's `byMobile`). It is rendered
+  // open, always as a split row with its chevron, and the client script decides from the viewport,
+  // the trail and a remembered state - never from folderDefaultState or chevrons.
   const mobileFolds = !own && mobile === 'accordion'
   switch (key) {
     case 'mobile':
-      return own
-    // Only drawn inside a collapsible folder row.
+      return false
+    // Only drawn inside a collapsible folder row - and a split row draws one anyway.
     case 'chevrons':
-    case 'exclusive':
-      return !COLLAPSIBLE.has(variant) && !mobileFolds
-    // A folder that folds only on mobile always uses the split row, so this asks the variant.
     case 'folderClick':
       return !COLLAPSIBLE.has(variant)
+    // The `name` of a <details>, mobile-only ones included.
+    case 'exclusive':
+      return !COLLAPSIBLE.has(variant) && !mobileFolds
     // `open = !popup && (folderDefaultState === 'open' || expandActive && onTrail)`.
     case 'folderDefaultState':
+      return variant !== 'accordion'
+    // For a mobile-only folder the script reads expandActive only beside a remembered state
+    // (trailClaimedGroups), and a popup variant remembers nothing.
     case 'expandActive':
-      return variant !== 'accordion' && !mobileFolds
+      return variant !== 'accordion' && !(mobileFolds && !POPUP.has(variant))
     // `data-persist` is never set for a popup variant.
     case 'persistState':
       return variant !== 'accordion' && !(mobileFolds && !POPUP.has(variant))

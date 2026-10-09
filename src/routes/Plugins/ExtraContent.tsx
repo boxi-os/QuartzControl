@@ -22,6 +22,7 @@ import {
   boxContentKind,
   boxDir,
   boxesOf,
+  brokenOptions,
   langsWithOwnText,
   renameSnippetRefs,
   snippetRefs,
@@ -81,7 +82,7 @@ export default function ExtraContent({ onShowAllOptions }: { onShowAllOptions: (
   const baseLabel = (box: BoxInstance): string => {
     const o = box.plugin.options ?? {}
     if (typeof o.title === 'string' && o.title.trim()) return o.title.trim()
-    if (boxContentKind(o) === 'file') return snippetRefs(o)[0]?.file ?? t('extraContent.unnamed')
+    if (boxContentKind(o) === 'file') return snippetRefs(o)[0]?.file || t('extraContent.unnamed')
     if (typeof o.className === 'string' && o.className.trim()) return o.className.trim().split(/\s+/)[0].replace(/^layout-box-/, '')
     return t('extraContent.unnamed')
   }
@@ -266,6 +267,7 @@ export default function ExtraContent({ onShowAllOptions }: { onShowAllOptions: (
                 leading={<Icon size={16} aria-hidden className="shrink-0 text-text-secondary" />}
                 title={name}
                 subtitle={[
+                  ...brokenOptions(options).slice(0, 1).map((b) => t('extraContent.brokenRow', { key: b.key })),
                   kind === 'html' ? t('extraContent.kindText') : t('extraContent.kindFile', { file: `${boxDir(options)}/${snippetRefs(options)[0]?.file ?? ''}` }),
                   ...where
                 ].join(' · ')}
@@ -326,6 +328,7 @@ function BoxPanel({
   const pickMain = useCallback((key: string) => !silenced(key) && !(kind === 'file' && key === 'html'), [kind, silenced])
   const restKeys = ['file', 'dir'].filter((k) => silenced(k) && k in values)
   const ownText = kind === 'file' ? langsWithOwnText(values) : []
+  const broken = brokenOptions(values)
 
   async function switchTo(next: BoxContentKind): Promise<void> {
     if (next === kind) return
@@ -380,6 +383,11 @@ function BoxPanel({
           ]}
         />
         {ownText.length > 0 && <p className="text-micro text-text-muted">{t('extraContent.langOverride', { langs: ownText.join(', ') })}</p>}
+        {broken.map((b) => (
+          <p key={`${b.lang ?? ''}:${b.key}`} className="text-micro text-red-600 dark:text-red-400">
+            {b.lang === undefined ? t('extraContent.broken', { key: b.key }) : t('extraContent.brokenLang', { key: b.key, lang: b.lang })}
+          </p>
+        ))}
       </section>
 
       <div className="flex flex-wrap gap-2">

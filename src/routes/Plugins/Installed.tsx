@@ -347,14 +347,22 @@ export default function PluginsInstalled(): JSX.Element {
     const question = t(frame ? 'pluginsInstalled.removeFrameConfirm' : 'pluginsInstalled.removeConfirm', { name })
     if (!(await confirmDialog({ text: question, confirmLabel: t('common.remove'), danger: true }))) return
     setBusy(true)
-    try {
+    // In the write queue like every edit: a save still pending - the field the click on the bin
+    // just blurred - wrote the whole config as it was rendered, entry included, after the CLI had
+    // taken the entry out, and the entry was back in the config with nothing in the lockfile
+    // (measured in the built app with a 3 s save; with an 800 ms save, a field changed during the
+    // removal did the same). The panel's fields are locked by `busy` until the re-read below, so
+    // nothing queues behind this with the entry still in it.
+    const removal = writes.current.then(() =>
       // A frame has to go through layoutFrames.delete: `quartz plugin remove` alone unregisters it
       // but leaves .quartz-gui/authored-frames/<id> behind, which keeps the frame in the Layout
       // editor's list while it is no longer part of any build - and saveFrame() only re-registers
       // a frame whose directory is *new*, so it could never come back.
-      const result = frame
-        ? await window.quartzGui.layoutFrames.delete(project.path, frame.id)
-        : await window.quartzGui.plugins.remove(project.path, plugin.name)
+      frame ? window.quartzGui.layoutFrames.delete(project.path, frame.id) : window.quartzGui.plugins.remove(project.path, plugin.name)
+    )
+    writes.current = removal.catch(() => {})
+    try {
+      const result = await removal
       setMessage(result.success ? null : result.output)
     } catch (err) {
       setMessage(formatIpcError(err))
@@ -1129,84 +1137,88 @@ function PluginPanel({
         </div>
       )}
 
-      {layout && (
-        <section className="flex flex-col gap-3 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            {/* Folded by default: the stage is where placement is set, and with a group the fields
-                here pushed the options far down. Folded, one line says where it stands. */}
-            <h3 className="min-w-0 flex-1">
-              <button
-                type="button"
-                aria-expanded={placementOpen}
-                aria-controls={placementId}
-                onClick={() => setPlacementOpen(!placementOpen)}
-                className="flex w-full items-center gap-1.5 text-left text-micro font-semibold uppercase tracking-wide text-text-secondary hover:text-text"
-              >
-                <ChevronRight size={13} aria-hidden className={`shrink-0 transition-transform ${placementOpen ? 'rotate-90' : ''}`} />
-                {t('pluginsInstalled.placementHeading')}
-              </button>
-            </h3>
-            <Button variant="ghost" onClick={() => openComponentOnStage(index)}>
-              {t('pluginsInstalled.showOnStage')}
-            </Button>
-          </div>
-          {placementOpen ? (
-            <div id={placementId} className="flex flex-col gap-3">
-              <FieldGroup
-                fields={buildLayoutFields(t)}
-                values={layout as unknown as Record<string, unknown>}
-                onChange={(field, value) => updateField(index, ['layout', field], value)}
-              />
-              {/* groupOptions only makes sense once the plugin is actually placed in a group */}
-              {layout.group && (
-                <div className="flex flex-col gap-3 border-t border-dashed border-ink/10 pt-3 dark:border-ink/10">
-                  <p className="font-mono text-micro text-text-muted">groupOptions</p>
-                  <FieldGroup
-                    fields={buildGroupOptionsFields(t)}
-                    values={layout.groupOptions ?? {}}
-                    onChange={(field, value) => updateField(index, ['layout', 'groupOptions', field], value)}
-                  />
-                </div>
-              )}
+      {/* Locked while an entry is being removed: a field that wrote now would queue the config as
+          rendered, the removed entry still in it, behind the removal (see removePlugin). */}
+      <fieldset disabled={busy} className="flex min-w-0 flex-col gap-4">
+        {layout && (
+          <section className="flex flex-col gap-3 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              {/* Folded by default: the stage is where placement is set, and with a group the fields
+                  here pushed the options far down. Folded, one line says where it stands. */}
+              <h3 className="min-w-0 flex-1">
+                <button
+                  type="button"
+                  aria-expanded={placementOpen}
+                  aria-controls={placementId}
+                  onClick={() => setPlacementOpen(!placementOpen)}
+                  className="flex w-full items-center gap-1.5 text-left text-micro font-semibold uppercase tracking-wide text-text-secondary hover:text-text"
+                >
+                  <ChevronRight size={13} aria-hidden className={`shrink-0 transition-transform ${placementOpen ? 'rotate-90' : ''}`} />
+                  {t('pluginsInstalled.placementHeading')}
+                </button>
+              </h3>
+              <Button variant="ghost" onClick={() => openComponentOnStage(index)}>
+                {t('pluginsInstalled.showOnStage')}
+              </Button>
             </div>
-          ) : (
-            <p className="text-ui text-text-secondary">
-              {[
-                t(`positions.${layout.position}`, layout.position),
-                t('pluginsInstalled.placementPriority', { priority: layout.priority }),
-                layout.group ? t('pluginsInstalled.placementGroup', { group: layout.group }) : null
-              ]
-                .filter(Boolean)
-                .join(' · ')}
-            </p>
-          )}
-        </section>
-      )}
+            {placementOpen ? (
+              <div id={placementId} className="flex flex-col gap-3">
+                <FieldGroup
+                  fields={buildLayoutFields(t)}
+                  values={layout as unknown as Record<string, unknown>}
+                  onChange={(field, value) => updateField(index, ['layout', field], value)}
+                />
+                {/* groupOptions only makes sense once the plugin is actually placed in a group */}
+                {layout.group && (
+                  <div className="flex flex-col gap-3 border-t border-dashed border-ink/10 pt-3 dark:border-ink/10">
+                    <p className="font-mono text-micro text-text-muted">groupOptions</p>
+                    <FieldGroup
+                      fields={buildGroupOptionsFields(t)}
+                      values={layout.groupOptions ?? {}}
+                      onChange={(field, value) => updateField(index, ['layout', 'groupOptions', field], value)}
+                    />
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-ui text-text-secondary">
+                {[
+                  t(`positions.${layout.position}`, layout.position),
+                  t('pluginsInstalled.placementPriority', { priority: layout.priority }),
+                  layout.group ? t('pluginsInstalled.placementGroup', { group: layout.group }) : null
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </p>
+            )}
+          </section>
+        )}
 
-      {!frame && (
-        <section className="flex flex-col gap-3 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
-          <h3 className="text-micro font-semibold uppercase tracking-wide text-text-secondary">{t('pluginsInstalled.optionsHeading')}</h3>
-          {schemaQuery.loading ? (
-            <p className="text-micro text-text-muted">{t('layoutEditor.inspector.optionsLoading')}</p>
-          ) : schemaQuery.error || !schemaQuery.data ? (
-            <p className="text-micro text-red-600 dark:text-red-400">{t('layoutEditor.inspector.optionsError', { reason: schemaQuery.error ?? '' })}</p>
-          ) : (
-            <>
-              {schemaQuery.data.unreadable && (
-                <p className="text-micro text-amber-700 dark:text-amber-300">{t('pluginOptions.unreadable', { reason: schemaQuery.data.unreadable })}</p>
-              )}
-              <PluginOptionsForm
-                schema={schemaQuery.data.schema}
-                values={plugin.options ?? {}}
-                onChange={(next) => updateField(index, ['options'], next)}
-                explicitEmpty
-                languages={languages}
-                projectPath={project.path}
-              />
-            </>
-          )}
-        </section>
-      )}
+        {!frame && (
+          <section className="flex flex-col gap-3 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
+            <h3 className="text-micro font-semibold uppercase tracking-wide text-text-secondary">{t('pluginsInstalled.optionsHeading')}</h3>
+            {schemaQuery.loading ? (
+              <p className="text-micro text-text-muted">{t('layoutEditor.inspector.optionsLoading')}</p>
+            ) : schemaQuery.error || !schemaQuery.data ? (
+              <p className="text-micro text-red-600 dark:text-red-400">{t('layoutEditor.inspector.optionsError', { reason: schemaQuery.error ?? '' })}</p>
+            ) : (
+              <>
+                {schemaQuery.data.unreadable && (
+                  <p className="text-micro text-amber-700 dark:text-amber-300">{t('pluginOptions.unreadable', { reason: schemaQuery.data.unreadable })}</p>
+                )}
+                <PluginOptionsForm
+                  schema={schemaQuery.data.schema}
+                  values={plugin.options ?? {}}
+                  onChange={(next) => updateField(index, ['options'], next)}
+                  explicitEmpty
+                  languages={languages}
+                  projectPath={project.path}
+                />
+              </>
+            )}
+          </section>
+        )}
+      </fieldset>
     </Card>
   )
 }

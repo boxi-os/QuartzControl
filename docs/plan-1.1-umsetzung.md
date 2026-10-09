@@ -261,9 +261,22 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
    vorbei~~ — behoben (2026-10-09): alle drei Schreiber gehen über `commit()`. Vorher gingen an der
    gebauten App ohne künstliche Verzögerung 5 von 5 Schaltern verloren, wenn direkt danach ein Feld
    verlassen wurde, ein zweiter schneller Pfeilklick und ein Pfeil vor einem Feld; nachher keiner
-   (1280 und 1600 px, 0 und 400 ms Speicherdauer). Noch offen daneben: `removePlugin` wartet nicht
-   auf die Warteschlange, ein noch ausstehendes Speichern könnte den entfernten Eintrag
-   zurückschreiben (gelesen, nicht gemessen).
+   (1280 und 1600 px, 0 und 400 ms Speicherdauer). ~~Daneben: `removePlugin` wartet nicht auf die
+   Warteschlange~~ — behoben (2026-10-09): Das Entfernen steht in derselben Warteschlange, und die
+   Felder der Leiste sind gesperrt, bis die Seite danach neu gelesen hat. Gemessen an der gebauten
+   App (1280 und 1600, Wegwerf-Profil, `cp -Rc`-Kopie von `gui-test`, entfernt wird
+   `obsidian-plugin-excalidraw` mit zwei Instanzen): vorher standen nach einem Feld in `toc`, das
+   der Klick auf den Mülleimer verließ (3 s Speicherdauer), und nach einem Feld, das 800 ms nach
+   dem Klick geändert wurde (800 ms Speicherdauer), beide Einträge wieder in der Config, im
+   Lockfile keiner; nachher 0, der Wert des ersten Felds gespeichert, das zweite Feld während des
+   Entfernens gesperrt und danach wieder frei. Ohne Feld (Gegenprobe) vorher wie nachher 0. Die
+   Leiste ist an beiden Breiten pixelgleich (16 Rechtecke).
+6. **Neu, beim Messen von 1 gefunden:** Der Mülleimer an einem eingebauten Plugin
+   (`@quartz-community/…`) tut nichts. Die App gibt `quartz plugin remove` den Anzeigenamen
+   (`table-of-contents`); die CLI findet ihn nicht im Lockfile („is not installed“, Exit 0) und
+   filtert die Config gegen `extractPluginName(source)`, für eine Quelle mit Scope also gegen
+   `@quartz-community/table-of-contents`. Der Eintrag bleibt, und die Seite meldet keinen Fehler
+   (gemessen an einer Kopie von `gui-test`, in der App und mit der CLI direkt).
 2. ~~`marketplaceReadmeArgs` lässt `owner/.` als Repo-Angabe zu~~ — behoben (2026-10-09): `fetch`
    streicht das Segment `.`, `owner/.` fragte also `/repos/owner/readme`. Gemessen an der gebauten
    App mit gestubbtem `fetch` im Hauptprozess: vorher angenommen und dorthin gefragt, nachher

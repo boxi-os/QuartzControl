@@ -54,6 +54,8 @@ function byLangEntries(options: Options | undefined): [string, Options][] {
 
 export interface SnippetRef {
   file: string
+  /** The folder it is read from - a language entry may bring its own `dir`, merged like the rest. */
+  dir: string
   /** The language whose entry names it; undefined for the base options. */
   lang?: string
   /** Named by nobody - the plugin's default file. */
@@ -67,7 +69,7 @@ export function snippetRefs(options: Options | undefined): SnippetRef[] {
   const add = (merged: Options, lang?: string): void => {
     if (typeof merged.html === 'string') return
     const file = typeof merged.file === 'string' && merged.file ? merged.file : undefined
-    refs.push({ file: file ?? DEFAULT_SNIPPET_FILE, lang, inherited: file === undefined })
+    refs.push({ file: file ?? DEFAULT_SNIPPET_FILE, dir: boxDir(merged), lang, inherited: file === undefined })
   }
   add(base)
   for (const [lang, entry] of byLangEntries(base)) add({ ...base, ...entry }, lang)
@@ -95,24 +97,38 @@ export function mentionsImage(text: string, name: string): boolean {
 }
 
 /**
- * The plugins after renaming a snippet: every box in `dir` that names `from` names `to`, and a box
- * that read it as the plugin's default names it explicitly - otherwise it would go on asking for
- * the old name. Returns how many boxes changed.
+ * The plugins after renaming a snippet in `dir`: every place of a box that renders `from` from
+ * that folder - the base options or a language entry, each with its options merged as the plugin
+ * merges them - renders `to`, and every other place goes on rendering what it did. That is more
+ * than "replace `file: from`": a box that read `from` as the plugin's default names `to`
+ * explicitly, a language entry with a folder of its own is left alone even when its file has the
+ * same name (41st review, finding 5), and a language entry that inherited the base file keeps the
+ * old name when only the base changes. Returns how many boxes changed.
  */
 export function renameSnippetRefs(plugins: PluginEntry[], dir: string, from: string, to: string): { plugins: PluginEntry[]; count: number } {
   let count = 0
+  const fileOf = (merged: Options): string => (typeof merged.file === 'string' && merged.file ? merged.file : DEFAULT_SNIPPET_FILE)
+  const reads = (merged: Options): boolean => typeof merged.html !== 'string' && boxDir(merged) === dir && fileOf(merged) === from
   const next = plugins.map((p) => {
-    if (quartzPluginName(p.source) !== LAYOUT_BOX_PLUGIN || boxDir(p.options) !== dir) return p
-    const options: Options = { ...(p.options ?? {}) }
+    if (quartzPluginName(p.source) !== LAYOUT_BOX_PLUGIN) return p
+    const old: Options = p.options ?? {}
+    const options: Options = { ...old }
     let changed = false
-    if (options.file === from || (from === DEFAULT_SNIPPET_FILE && options.file === undefined && typeof options.html !== 'string')) {
+    if (reads(old)) {
       options.file = to
       changed = true
     }
-    const entries = byLangEntries(options)
-    if (entries.some(([, e]) => e.file === from)) {
-      options.byLang = Object.fromEntries(entries.map(([lang, e]) => [lang, e.file === from ? { ...e, file: to } : e]))
-      changed = true
+    const entries = byLangEntries(old)
+    if (entries.length) {
+      const nextEntries = entries.map(([lang, entry]): [string, Options] => {
+        const before = { ...old, ...entry }
+        if (typeof before.html === 'string') return [lang, entry]
+        const wanted = reads(before) ? to : fileOf(before)
+        if (fileOf({ ...options, ...entry }) === wanted) return [lang, entry]
+        changed = true
+        return [lang, { ...entry, file: wanted }]
+      })
+      if (nextEntries.some(([, e], i) => e !== entries[i][1])) options.byLang = { ...(old.byLang as Options), ...Object.fromEntries(nextEntries) }
     }
     if (!changed) return p
     count++

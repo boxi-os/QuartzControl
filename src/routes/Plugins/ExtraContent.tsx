@@ -89,7 +89,8 @@ export default function ExtraContent({ onShowAllOptions }: { onShowAllOptions: (
   const configRef = useRef(config)
   configRef.current = config
   const writes = useRef<Promise<unknown>>(Promise.resolve())
-  async function write(next: QuartzConfig, said?: string): Promise<void> {
+  /** False when the config could not be written; the page has said why and shows the file again. */
+  async function write(next: QuartzConfig, said?: string): Promise<boolean> {
     configRef.current = next
     setConfig(next)
     const pending = writes.current.then(() => window.quartzGui.config.save(project.path, next))
@@ -99,7 +100,7 @@ export default function ExtraContent({ onShowAllOptions }: { onShowAllOptions: (
     } catch (err) {
       await reload()
       setMessage(formatIpcError(err))
-      return
+      return false
     }
     setMessage(null)
     setSavedFlash(true)
@@ -107,6 +108,7 @@ export default function ExtraContent({ onShowAllOptions }: { onShowAllOptions: (
     savedTimer.current = setTimeout(() => setSavedFlash(false), 2000)
     if (said) announce(said)
     if (configRef.current === next) await reload()
+    return true
   }
 
   function updateEntry(index: number, change: (p: PluginEntry) => PluginEntry): void {
@@ -163,15 +165,16 @@ export default function ExtraContent({ onShowAllOptions }: { onShowAllOptions: (
     await write({ ...base, plugins: base.plugins.filter((_, i) => i !== box.index) }, t('extraContent.removedAnnounce', { name }))
   }
 
-  async function snippetRenamed(dir: string, from: string, to: string): Promise<void> {
+  /** False when the boxes that name the file could not be updated - the caller renames it back. */
+  async function snippetRenamed(dir: string, from: string, to: string): Promise<boolean> {
     const base = configRef.current
-    if (!base) return
+    if (!base) return false
     const { plugins, count } = renameSnippetRefs(base.plugins, dir, from, to)
     if (count === 0) {
       announce(t('extraContent.files.renamedAnnounce', { from, to }))
-      return
+      return true
     }
-    await write({ ...base, plugins }, t('extraContent.files.renamedWithBoxes', { from, to, count }))
+    return write({ ...base, plugins }, t('extraContent.files.renamedWithBoxes', { from, to, count }))
   }
 
   function openOnStage(box: BoxInstance): void {

@@ -27,10 +27,11 @@ export default function ExtraContentFiles({
   projectPath: string
   boxes: BoxInstance[]
   labelOf: (box: BoxInstance) => string
-  onSnippetRenamed: (dir: string, from: string, to: string) => Promise<void>
+  /** False when the config could not follow; the file is then renamed back. */
+  onSnippetRenamed: (dir: string, from: string, to: string) => Promise<boolean>
 }): JSX.Element {
   const { t } = useTranslation()
-  const dirs = [...new Set(boxes.map((b) => boxDir(b.plugin.options)))].sort()
+  const dirs = [...new Set(boxes.flatMap((b) => [boxDir(b.plugin.options), ...snippetRefs(b.plugin.options).map((r) => r.dir)]))].sort()
   const dirsKey = dirs.join('\n')
   const [snippetDirs, setSnippetDirs] = useState<Record<string, SnippetDirInfo>>({})
   // What each snippet says, for the question which pictures it shows. Keyed `dir/file`.
@@ -69,9 +70,8 @@ export default function ExtraContentFiles({
 
   const snippetUsers = (dir: string, file: string): string[] =>
     boxes
-      .filter((b) => boxDir(b.plugin.options) === dir)
       .flatMap((b) => {
-        const refs = snippetRefs(b.plugin.options).filter((r) => r.file === file)
+        const refs = snippetRefs(b.plugin.options).filter((r) => r.dir === dir && r.file === file)
         if (refs.length === 0) return []
         const label = labelOf(b)
         return [refs.every((r) => r.inherited) ? t('extraContent.files.inherited', { name: label }) : label]
@@ -157,8 +157,19 @@ export default function ExtraContentFiles({
         taken = t('extraContent.files.renameTaken', { name: r.file })
         return
       }
-      if (kind === 'snippet') await onSnippetRenamed(dir, from, r.file)
-      else announce(t('extraContent.files.renamedAnnounce', { from, to: r.file }))
+      if (kind !== 'snippet') {
+        announce(t('extraContent.files.renamedAnnounce', { from, to: r.file }))
+        return
+      }
+      if (await onSnippetRenamed(dir, from, r.file)) return
+      // The file has its new name and the boxes still the old one: put the name back, so the site
+      // shows what it showed. The page already says why the config could not be written.
+      const back = await window.quartzGui.staticFiles.rename({ projectPath, kind, dir, from: r.file, to: from })
+      throw new Error(
+        back.status === 'written'
+          ? t('extraContent.files.renameReverted', { from, to: r.file })
+          : t('extraContent.files.renameStuck', { from, to: r.file })
+      )
     })
     return taken
   }
@@ -208,6 +219,7 @@ export default function ExtraContentFiles({
         heading={t('extraContent.files.images', { dir: IMAGES_DIR })}
         info={images}
         usersOf={imageUsers}
+        note={t('extraContent.files.imagesSearched')}
         projectPath={projectPath}
         onAdd={() => void addImage()}
         onRename={(from, to) => rename('image', IMAGES_DIR, from, to)}
@@ -221,6 +233,7 @@ function FileSection({
   kind,
   dir,
   heading,
+  note,
   info,
   usersOf,
   projectPath,
@@ -233,6 +246,8 @@ function FileSection({
   kind: StaticFileKind
   dir: string
   heading: string
+  /** Where "benutzt von" was looked for, when that is narrower than the file's reach. */
+  note?: string
   info: SnippetDirInfo | null
   usersOf: (file: string) => string[]
   projectPath: string
@@ -270,6 +285,7 @@ function FileSection({
           </div>
         )}
       </div>
+      {note && <p className="text-micro text-text-muted">{note}</p>}
       {info?.state === 'missing' && <p className="text-micro text-text-muted">{t('extraContent.files.dirMissing')}</p>}
       {info?.state === 'link' && <p className="text-micro text-text-muted">{t('extraContent.files.dirLink')}</p>}
       {(info?.state === 'outside' || info?.state === 'reserved') && (

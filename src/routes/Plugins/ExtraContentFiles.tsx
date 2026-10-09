@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FilePlus2, FileUp, FolderOpen, ImagePlus, Pencil, TextCursorInput, Trash2 } from 'lucide-react'
-import type { SnippetDirInfo, StaticFileKind } from '@shared/ipc-contract'
+import { FilePlus2, FileUp, FolderOpen, ImagePlus, Lock, Pencil, TextCursorInput, Trash2 } from 'lucide-react'
+import type { ProjectIconInfo, SnippetDirInfo, StaticFileKind } from '@shared/ipc-contract'
 import { Button, Card, CardHeading, IconButton, Select, TextInput } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import { SnippetEditor } from '../../components/PluginOptionsForm/snippets'
@@ -37,6 +37,7 @@ export default function ExtraContentFiles({
   // What each snippet says, for the question which pictures it shows. Keyed `dir/file`.
   const [contents, setContents] = useState<Record<string, string>>({})
   const [images, setImages] = useState<SnippetDirInfo | null>(null)
+  const [icon, setIcon] = useState<ProjectIconInfo | null>(null)
   // Two errors, because the list is read again after every action: one shared state let the
   // successful reload clear the action's message in the same breath (41st review, finding 3).
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -58,6 +59,7 @@ export default function ExtraContentFiles({
       setSnippetDirs(Object.fromEntries(listed))
       setContents(texts)
       setImages(await window.quartzGui.staticFiles.listImages({ projectPath }))
+      setIcon(await window.quartzGui.projectIcon.get({ projectPath }))
       setLoadError(null)
     } catch (err) {
       setLoadError(formatIpcError(err))
@@ -81,6 +83,15 @@ export default function ExtraContentFiles({
     ...boxes.filter((b) => boxHtmls(b.plugin.options).some((h) => mentionsImage(h, name))).map(labelOf),
     ...Object.entries(contents)
       .filter(([, text]) => mentionsImage(text, name))
+      .map(([key]) => key.slice(key.lastIndexOf('/') + 1))
+  ]
+
+  // The project picture lies in quartz/static itself, not in images/ - Quartz's favicon emitter
+  // reads it from there and nowhere else - so a snippet names it as static/icon.png.
+  const iconUsers = (name: string): string[] => [
+    ...boxes.filter((b) => boxHtmls(b.plugin.options).some((h) => h.includes(`static/${name}`))).map(labelOf),
+    ...Object.entries(contents)
+      .filter(([, text]) => text.includes(`static/${name}`))
       .map(([key]) => key.slice(key.lastIndexOf('/') + 1))
   ]
 
@@ -225,7 +236,48 @@ export default function ExtraContentFiles({
         onRename={(from, to) => rename('image', IMAGES_DIR, from, to)}
         onTrash={(file, users) => void trash('image', IMAGES_DIR, file, users)}
       />
+      <ProjectIconSection icon={icon} usersOf={iconUsers} />
     </Card>
+  )
+}
+
+/**
+ * The project picture and its dark twin, listed beside the pictures because a snippet uses them the
+ * same way - but read only: they belong to "Projektbild" in the configuration, and the favicon is
+ * built from icon.png, so renaming or trashing it here would take the favicon with it.
+ */
+function ProjectIconSection({ icon, usersOf }: { icon: ProjectIconInfo | null; usersOf: (file: string) => string[] }): JSX.Element | null {
+  const { t } = useTranslation()
+  const files = [
+    { file: 'icon.png', src: icon?.dataUrl ?? null },
+    { file: 'icon-dark.png', src: icon?.darkDataUrl ?? null }
+  ].filter((f) => f.src !== null)
+  if (files.length === 0) return null
+  return (
+    <section className="flex flex-col gap-2 border-t border-ink/[0.06] pt-3 dark:border-ink/10">
+      <h3 className="break-all font-mono text-micro font-semibold text-text-secondary">{t('extraContent.files.projectIcon', { dir: 'quartz/static' })}</h3>
+      <p className="text-micro text-text-muted">{t('extraContent.files.projectIconNote')}</p>
+      <ul className="flex flex-col gap-1">
+        {files.map(({ file, src }) => {
+          const users = usersOf(file)
+          return (
+            <li key={file} className="flex items-center gap-3 rounded-md border border-ink/10 px-3 py-1.5 dark:border-ink/10">
+              <img src={src!} alt="" className="h-8 w-8 shrink-0 rounded object-contain" />
+              <div className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate font-mono text-xs text-text">{file}</span>
+                <span className="truncate font-mono text-micro text-text-secondary">{`{{root}}/static/${file}`}</span>
+                <span className="truncate text-micro text-text-muted">
+                  {users.length ? t('extraContent.files.usedBy', { names: users.join(', ') }) : t('extraContent.files.unused')}
+                </span>
+              </div>
+              <span className="shrink-0 text-text-muted" role="img" title={t('extraContent.files.projectIconLocked')} aria-label={t('extraContent.files.projectIconLocked')}>
+                <Lock size={14} aria-hidden />
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+    </section>
   )
 }
 

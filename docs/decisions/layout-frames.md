@@ -1509,6 +1509,9 @@ Griff des Bereichs. Gemessen an der gebauten App mit echten Mausbewegungen in `e
 
 Der Reiter, der seit P7.3 „Seitentypen“ hieß und eine Tabelle Seitentyp × Position zeigte, heißt
 „Übersicht“ und ist eine Matrix **Komponente × Seitentyp** (`LayoutEditor/LayoutOverview.tsx`).
+Der Name ist eine Entscheidung des Nutzers und steht als Ausnahme bei „Ein Wort, ein Name“ in
+`docs/conventions.md`: Die Statusseite der Sidebar heißt ebenso; „Seitentypen“ (`79bee11`, der Fix
+des einundvierzigsten Reviews) passte nicht mehr, weil der Reiter jetzt das ganze Layout zeigt.
 Rückmeldung des Nutzers zur alten Tabelle: Die Zellen sagten „wie alle“, „ohne“, „kein Bereich im
 Frame“, jede Frame-Zelle „gewählt“ — Wörter, wo ein Zeichen genügt, und die eigenen Bereiche einer
 Gruppe fehlten ganz. Jetzt:

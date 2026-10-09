@@ -709,7 +709,13 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   (Quartz-Startvorlage / `.qtpl`), „Frame/Template“ und „Ausgabeverzeichnis“ neben
   „Ausgabeordner“. Der Tell war jedes Mal derselbe: Das Handbuch musste eine Warnung schreiben
   („nicht zu verwechseln mit…“). Eine solche Warnung ist der Hinweis auf den Fehler, nicht seine
-  Lösung. Deutsch „…“,
+  Lösung. **Eine Ausnahme, entschieden vom Nutzer am 2026-10-09:** „Übersicht“ ist die Statusseite
+  der Sidebar *und* der erste Reiter des Layouts. Das einundvierzigste Review hatte den Reiter nach
+  „Seitentypen“ umbenannt (`79bee11`); seit er das ganze Layout als Matrix zeigt (`796c359`), heißt
+  er auf Wunsch des Nutzers wieder „Übersicht“. Das Handbuch nennt ihn deshalb immer mit seiner
+  Seite („der Reiter ‚Übersicht‘ im Layout“), so wie der Smoke-Test („Layout · Übersicht“). Eine
+  zweite solche Ausnahme wird hier eingetragen, nicht mit dieser begründet (zweiundvierzigstes
+  Review, Befund 5). Deutsch „…“,
   Englisch “…”, Gedankenstrich als Em-Dash. Jeder Nutzertext steht in `de.ts`/`en.ts`
   (Schlüssel-Parität) oder `electron/main/i18n.ts`; zod- und `console.error`-Texte
   bleiben Englisch, weil sie Bugs beschreiben, nicht Eingaben.

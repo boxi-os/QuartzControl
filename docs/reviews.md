@@ -2160,6 +2160,9 @@ gelöscht):
 - **8** `8512daf` — `useUnsavedChanges` auf Veröffentlichen und den Zugängen, „Zurück“ der
   Einstellungen fragt. Ein Menüpunkt, der die Route wechselt, fragt weiter nicht.
 - **9** `79bee11` — der erste Layout-Reiter heißt „Seitentypen“ (URL-Wert bleibt `overview`).
+  **Zurückgenommen** mit `796c359` am selben Tag: Der Reiter zeigt seither das ganze Layout und
+  heißt auf Wunsch des Nutzers wieder „Übersicht“ — als Ausnahme in `conventions.md` eingetragen
+  (zweiundvierzigstes Review, Befund 5).
 - **10** `97f944b` — `SELECTING` nennt Bedienelemente statt `[role]`, dazu die Kantengriffe.
 - Nebenbei, nicht behoben: `toggleEnabled` und `reorderGroup` in `Installed.tsx` schreiben an der
   Warteschlange vorbei; `marketplaceReadmeArgs` lässt `owner/.` zu; jede Änderung der Sprachliste

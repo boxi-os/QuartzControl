@@ -174,6 +174,14 @@ Abstand. Sie steht deshalb in `pages`, hinter den Seitentypen, statt in `content
 **Was nicht passiert:** Bestehende Projekte behalten ihre 31 Dateien. Nur neue Vorlagen-Pakete bekommen
 die neue Struktur. `minimal-lesbar.qtpl` bleibt eingefroren, wie es ist.
 
+**Nachtrag (2026-10-09, Wunsch des Nutzers):** Bestehende Projekte behalten ihre 31 Dateien, solange
+niemand etwas tut — aber die Stile-Seite bietet im Reiter „Eigenes CSS“ „Zusammenlegen“ an
+(`styles.consolidate`, `shared/stylesheetConsolidation.ts`). Es legt die Dateien des Projekts
+zusammen, nicht die der Vorlage, behält also, was darin geändert wurde, und legt vorher einen
+Snapshot der Art `styleMigration` an. Gemessen an Kopien von Example und gui-test, je vorher und
+nachher gebaut (`styles-snapshot --site --serve`): 135 182 und 44 918 Elemente, kein berechneter
+Wert anders. Messungen in `decisions/styles-and-fonts.md`.
+
 ## 4. Layout als Baukasten
 
 **Wunsch:** Der Layout-Bereich soll einfacher werden — ein Baukasten: kleine, ziehbare Bausteine auf

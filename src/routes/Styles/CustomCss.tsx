@@ -18,6 +18,9 @@ import { fontLoaders } from './fontDelivery'
 import { fontBuildState, loadPreviewFonts } from './previewFonts'
 import { activeThemeIdOf, useStyles, type ScssWriter } from './index'
 import { MANAGED_STYLESHEET } from './managedStylesheet'
+import ConsolidateStylesNote from './ConsolidateStylesNote'
+import { legacyCount } from '@shared/stylesheetConsolidation'
+import { announce } from '../../state/announcer'
 
 // What this file is writing on top of, as it actually looks right now - resolved through the same
 // chain the Variablen tab uses, so an active community theme's values show here rather than the
@@ -64,7 +67,8 @@ export default function CustomCss(): JSX.Element {
     fileDrafts,
     setFileDraft,
     clearFileDrafts,
-    reloadFiles
+    reloadFiles,
+    dirty
   } = useStyles()
   const [selectedComponent, setSelectedComponent] = useState('')
   const [references, setReferences] = useState<StyleReferenceFile[]>([])
@@ -95,6 +99,9 @@ export default function CustomCss(): JSX.Element {
 
   const files = fileSet?.files ?? []
   const imported = files.filter((f) => f.imported)
+  const legacy = legacyCount(imported.map((f) => f.relativePath))
+  // What merging the template's stylesheets did - said after the note that offered it is gone.
+  const [consolidated, setConsolidated] = useState<string | null>(null)
 
   const runCheck = useCallback(async () => {
     setChecking(true)
@@ -337,6 +344,21 @@ export default function CustomCss(): JSX.Element {
           </Button>
         </div>
       </div>
+
+      {legacy > 0 && (
+        <ConsolidateStylesNote
+          projectPath={project.path}
+          dirty={dirty}
+          count={legacy}
+          onDone={async (sentence) => {
+            await reloadFiles()
+            await reloadScss('stylesheets')
+            setConsolidated(sentence)
+            announce(sentence)
+          }}
+        />
+      )}
+      {consolidated && <p className="text-xs text-text-secondary">{consolidated}</p>}
 
       {scss.staleBy && (
         <div className="flex flex-wrap items-center gap-3 rounded-md border border-amber-300 bg-amber-50 p-2.5 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">

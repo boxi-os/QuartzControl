@@ -14,6 +14,7 @@ import type {
   ScssDiagnostic,
   StyleFile,
   StyleMigrationResult,
+  StyleConsolidationResult,
   StyleFileSet,
   StyleReferenceFile,
   StylesInfo
@@ -24,6 +25,7 @@ import { createSnapshot } from './snapshotService'
 import { resolveBuildDir } from './projectDirs'
 import { mainT } from '../i18n'
 import { MAX_FONT_FILE_BYTES } from './fontFile'
+import { canConsolidate, legacyCount, planConsolidation } from '@shared/stylesheetConsolidation'
 
 // The file Quartz's build imports directly (quartz/plugins/emitters/componentResources.ts) -
 // verified against a real clone. Already inside the dev server's esbuild watch graph, so saving
@@ -854,6 +856,50 @@ export function migrateManagedStyles(projectPath: string, options: { snapshot: b
     const snapshot = options.snapshot ? await createSnapshot(projectPath, 'styleMigration') : null
     await writeManagedBlocks(projectPath, {}, { move: true })
     return { moved: true, snapshotId: snapshot?.id ?? null }
+  })
+}
+
+/**
+ * Puts the template's 31 stylesheets of a project together into the twelve of 1.1
+ * (shared/stylesheetConsolidation.ts says how, and what it leaves alone). Asked for on the Styles
+ * page, never done by a writer: the user may have reasons to keep the files as they are, and the
+ * step renames and removes files they may have open in an editor. A snapshot comes first, of the
+ * kind the thinning keeps - it is the way back. An older app reads the result as twelve ordinary
+ * stylesheets, so unlike the move to _quartzcontrol.scss this one has no version barrier.
+ *
+ * The order is read before anything moves (parseImportOrder resolves each line against the disk),
+ * the new files are written before the order names them, and the old ones go last, so every state
+ * in between builds.
+ */
+export function consolidateStylesheets(projectPath: string): Promise<StyleConsolidationResult> {
+  return whileHoldingStyles(projectPath, async () => {
+    const order = await currentOrder(projectPath)
+    if (!canConsolidate(order)) return { consolidated: false, snapshotId: null, written: [], merged: 0, renamed: [] }
+    const customDir = join(stylesDir(projectPath), 'custom')
+    const onDisk = (await readdir(customDir, { withFileTypes: true }))
+      .filter((e) => e.isFile() && /\.(scss|css)$/.test(e.name))
+      .map((e) => `custom/${e.name}`)
+    const files: Record<string, string> = {}
+    for (const relativePath of order) {
+      if (onDisk.includes(relativePath)) files[relativePath] = await readFile(styleFilePath(projectPath, relativePath), 'utf-8')
+    }
+    const plan = planConsolidation(order, files, onDisk)
+
+    const snapshot = await createSnapshot(projectPath, 'styleMigration')
+    for (const [from, to] of Object.entries(plan.rename)) await rename(styleFilePath(projectPath, from), styleFilePath(projectPath, to))
+    for (const [relativePath, content] of Object.entries(plan.write)) await writeStyleFileNow(projectPath, relativePath, content)
+    await setImportOrderNow(projectPath, plan.order)
+    for (const relativePath of plan.remove) {
+      const path = styleFilePath(projectPath, relativePath)
+      if (existsSync(path)) await rm(path)
+    }
+    return {
+      consolidated: true,
+      snapshotId: snapshot?.id ?? null,
+      written: Object.keys(plan.write).map((p) => p.slice('custom/'.length)),
+      merged: legacyCount(order),
+      renamed: Object.entries(plan.rename).map(([from, to]) => ({ from: from.slice('custom/'.length), to: to.slice('custom/'.length) }))
+    }
   })
 }
 

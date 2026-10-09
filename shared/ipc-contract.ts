@@ -710,6 +710,19 @@ export interface StylesInfo {
   moved: boolean
 }
 
+/** styles.consolidate: the 31 template stylesheets put together into twelve. */
+export interface StyleConsolidationResult {
+  /** False when there was nothing to put together and nothing was written. */
+  consolidated: boolean
+  snapshotId: string | null
+  /** The new files, by name. */
+  written: string[]
+  /** How many template stylesheets went into them. */
+  merged: number
+  /** User files moved aside because one of the twelve has their name. */
+  renamed: { from: string; to: string }[]
+}
+
 export interface StyleMigrationResult {
   /** False when the project had been moved already and nothing was written. */
   moved: boolean
@@ -1573,6 +1586,7 @@ export const IPC = {
   stylesGetVariableOverrides: 'styles:getVariableOverrides',
   stylesVariableCollisions: 'styles:variableCollisions',
   stylesMigrate: 'styles:migrate',
+  stylesConsolidate: 'styles:consolidate',
   stylesSaveVariableOverrides: 'styles:saveVariableOverrides',
   stylesVariableGraph: 'styles:variableGraph',
 
@@ -1952,6 +1966,8 @@ export interface QuartzGuiApi {
      * it unless `snapshot` is false (a project created here a moment ago).
      */
     migrate(args: { projectPath: string; snapshot: boolean }): Promise<StyleMigrationResult>
+    /** Puts the 31 template stylesheets together into the twelve of 1.1, after a snapshot. */
+    consolidate(args: { projectPath: string }): Promise<StyleConsolidationResult>
     saveVariableOverrides(projectPath: string, overrides: CssVariableOverride[]): Promise<void>
     variableGraph(projectPath: string, themeId?: string, outputDir?: string): Promise<CssVariableGraph>
   }

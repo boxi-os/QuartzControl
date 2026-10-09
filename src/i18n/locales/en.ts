@@ -1870,6 +1870,15 @@ export default {
       variables: 'Variables',
       customCss: 'Custom CSS'
     },
+    consolidate: {
+      note: 'This project still loads the template stylesheets as they were split up to 1.0, {{count}} files; since 1.1 there are twelve, ordered by area. Merging keeps every rule and takes a snapshot first — your own stylesheets stay as they are.',
+      action: 'Merge',
+      running: 'Merging…',
+      confirm:
+        'Merge {{count}} stylesheets into the twelve of 1.1?\n\nThe old files are removed; their content then stands section by section in the new ones. The snapshot “Before the styles moved” under Maintenance brings back the previous state.',
+      done: '{{merged}} stylesheets now stand in {{written}} files. The snapshot “Before the styles moved” under Maintenance brings back the previous state.',
+      renamed: 'Your file {{from}} is now called {{to}}, because one of the new ones has its name.'
+    },
     migrate: {
       note: 'This project still keeps its load order, fonts and variables in custom.scss, as QuartzControl 1.0 did. Moving puts them into a file of their own, quartz/styles/_quartzcontrol.scss, and takes a snapshot first; older versions of the app then read the project without variables and stylesheets – if you work on several machines, move all of them to 1.1 first.',
       action: 'Move now',

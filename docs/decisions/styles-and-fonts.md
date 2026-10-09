@@ -737,3 +737,36 @@ Eine Falle der Messung: `check:tokens` wartet 0,25 s, bevor es das Rauschen eine
 eine Seite, die sich erst danach setzt, schreibt jedem Token dieselbe Zahl gut. Vorher sah das wie
 „jedes Token lebt“ aus und nachher wie fünf tote; mit 2,5 s waren beide Stände gleich, die fünf in
 beiden ohne Wirkung (`scripts/example-template/BEFUNDE.md`, 99).
+
+## Bestehende Projekte zusammenlegen (2026-10-09, 1.1)
+
+Die Vorlage hat ihre 31 Stylesheets in `f2cdb69` zu zwölf zusammengelegt; bestehende Projekte
+behielten sie, und wer „Jetzt umstellen“ drückte, erwartete die zwölf und bekam weiter 31 (der
+Knopf zieht nur die verwalteten Blöcke um). „Zusammenlegen“ im Reiter „Eigenes CSS“ tut für ein
+Projekt, was `f2cdb69` für die Vorlage tat — mit den Dateien des Projekts, also mit allem, was der
+Nutzer darin geändert hat. Reine Verkettung: jeder Abschnitt beginnt mit der Markierungszeile von
+`f2cdb69`, `base.scss` wird an seinen eigenen Überschriften geteilt, eine unbekannte Überschrift
+geht ins Layout. Eine Abweichung von `f2cdb69`: Die Regel `.layout-box-current-folder` bleibt beim
+Explorer — sie aus einer Datei zu schneiden, die der Nutzer geändert haben kann, wäre keine
+Verkettung, und beide Orte laden vor jeder Layout-Box-Regel.
+
+Was liegen bleibt: ein Vorlagen-Stylesheet, das nicht geladen wird (zusammengelegt wäre es
+eingeschaltet), und jede Datei, die keine der 31 ist. Diese behalten ihren Platz hinter der
+Vorlagen-Datei, der sie folgten. Eine eigene Datei mit dem Namen einer der zwölf weicht aus
+(`callouts.scss` → `callouts-2.scss`) — gui-test hatte genau eine.
+
+Zwei Fehler der ersten Fassung, beide an den zwei Namen, die alt und neu gleich sind (`a11y`,
+`plugin-layout-box`), beide erst an einer Kopie über den echten IPC-Weg gesehen: Die Dateien wurden
+geschrieben und als „alt“ gleich wieder gelöscht (der SCSS-Check meldete „Can't find stylesheet to
+import“), und ein zweiter Aufruf erkannte an ihnen ein noch nicht zusammengelegtes Projekt und packte
+beide noch einmal ein. Erkannt wird die alte Form seither nur an den 29 Namen, die es nur dort gibt.
+`npm run check:stylesheet-consolidation` hält beides fest und fällt mit jedem der zwei Fehler
+zurückgesetzt durch.
+
+Gemessen an Kopien (`cp -Rc`) von Example (1.0-Form) und gui-test (verwaltete Blöcke schon in
+`_quartzcontrol.scss`, eigene `callouts.scss`), je mit `quartz build` vorher und nachher gebaut und
+mit `styles-snapshot --site --serve` aufgenommen: gui-test 44 918 Elemente auf acht Seiten, kein Wert
+anders. Example im ersten Paar mit 8 Abweichungen auf einer Aufnahme (ein Bild 482 × 242 gegen
+2 × 2 px, eine Mermaid-Seite mit anderer Elementzahl), im zweiten Paar 135 182 Elemente ohne eine —
+Ladezeit, nicht Kaskade; zwei Vorher-Aufnahmen gegeneinander waren ebenfalls leer.
+

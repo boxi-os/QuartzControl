@@ -70,6 +70,13 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
 - `npm run check:semver` — die 18 Versionsvergleiche, die der Update-Hinweis trifft. Braucht weder
   App noch Netz; existiert, weil die interessanten Fälle Vorabversionen sind (`beta.10` ist neuer
   als `beta.9`, `1.0.0` neuer als beide) und ein Zeichenkettenvergleich beide falsch beantwortet
+- `npm run check:stylesheet-consolidation` — „Zusammenlegen“ auf der Stile-Seite
+  (`shared/stylesheetConsolidation.ts`) gegen das, was die Vorlage selbst in `f2cdb69` bekam: die
+  31 Dateien von davor durch die Funktion, das Ergebnis je Datei gegen die zwölf von danach, dazu
+  ein zweiter Lauf und eine eigene Datei mit dem Namen einer der zwölf. Braucht nur die
+  git-Geschichte. Existiert, weil die erste Fassung an den zwei Namen scheiterte, die alt und neu
+  gleich sind (`a11y`, `plugin-layout-box`): geschrieben und gleich wieder gelöscht, und beim
+  zweiten Lauf noch einmal eingepackt
 - `npm run check:plugin-names -- [projektpfad]` — die 18 Quellen, aus denen der Name entsteht, gegen
   den Quartz `layout.byPageType.<typ>.exclude` vergleicht. Ohne Pfad nur gegen eine Tabelle; mit Pfad
   zusätzlich gegen Quartz' **eigene** `extractPluginName`, aus `config-loader.ts` herausgeschnitten

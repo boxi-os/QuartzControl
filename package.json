@@ -22,6 +22,7 @@
     "build:handbook-pdf": "node scripts/build-handbook-pdf.mjs",
     "docs:variables": "node scripts/variable-docs.mjs",
     "check:semver": "node scripts/check-semver.mjs",
+    "check:stylesheet-consolidation": "node scripts/check-stylesheet-consolidation.mjs",
     "check:plugin-names": "node scripts/check-plugin-names.mjs",
     "check:option-schema": "node scripts/check-option-schema.mjs",
     "check:plugin-copies": "node scripts/check-plugin-copies.mjs",

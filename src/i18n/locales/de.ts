@@ -1875,6 +1875,15 @@ export default {
       variables: 'Variablen',
       customCss: 'Eigenes CSS'
     },
+    consolidate: {
+      note: 'Dieses Projekt lädt noch die Stylesheets der Vorlagen in der Aufteilung bis 1.0, {{count}} Dateien; seit 1.1 sind es zwölf, nach Bereichen geordnet. Zusammenlegen behält jede Regel und legt vorher einen Snapshot an — eigene Stylesheets bleiben, wie sie sind.',
+      action: 'Zusammenlegen',
+      running: 'Lege zusammen…',
+      confirm:
+        '{{count}} Stylesheets zu den zwölf von 1.1 zusammenlegen?\n\nDie alten Dateien werden entfernt; ihr Inhalt steht danach abschnittsweise in den neuen. Der Snapshot „Vor Umstellung der Stile“ unter Wartung bringt den alten Stand zurück.',
+      done: '{{merged}} Stylesheets stehen jetzt in {{written}} Dateien. Der Snapshot „Vor Umstellung der Stile“ unter Wartung bringt den alten Stand zurück.',
+      renamed: 'Deine Datei {{from}} heißt jetzt {{to}}, weil eine der neuen so heißt.'
+    },
     migrate: {
       note: 'Dieses Projekt hält Ladereihenfolge, Schriften und Variablen noch in custom.scss, wie QuartzControl 1.0. Umstellen legt sie in eine eigene Datei, quartz/styles/_quartzcontrol.scss, und vorher einen Snapshot an; ältere Fassungen der App lesen das Projekt danach ohne Variablen und Stylesheets – arbeitest du auf mehreren Rechnern, stelle erst alle auf 1.1 um.',
       action: 'Jetzt umstellen',

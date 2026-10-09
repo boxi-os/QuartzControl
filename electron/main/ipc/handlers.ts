@@ -319,6 +319,7 @@ export function registerIpcHandlers(): void {
   handle(IPC.stylesMigrate, t([s.stylesMigrateInput]), ({ projectPath, snapshot }) =>
     styleService.migrateManagedStyles(projectPath, { snapshot })
   )
+  handle(IPC.stylesConsolidate, t([s.projectPathArgs]), ({ projectPath }) => styleService.consolidateStylesheets(projectPath))
   handle(IPC.stylesGetVariableOverrides, t([s.absolutePath]), (projectPath) =>
     styleService.getVariableOverrides(projectPath)
   )

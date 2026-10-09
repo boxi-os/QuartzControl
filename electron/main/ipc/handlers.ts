@@ -263,6 +263,9 @@ export function registerIpcHandlers(): void {
   handle(IPC.layoutFrameSaveBreakpoints, t([s.absolutePath, s.frameBreakpointWidths]), (projectPath, widths) =>
     layoutFrameService.saveBreakpointWidths(projectPath, widths)
   )
+  handle(IPC.layoutFrameQuartzMeasures, t([s.quartzMeasuresArgs]), ({ projectPath }) =>
+    styleService.readQuartzFrameMeasures(projectPath)
+  )
 
   handle(IPC.stylesGet, t([s.absolutePath]), (projectPath) => styleService.readCustomScss(projectPath))
   handle(IPC.stylesSave, t([s.absolutePath, s.longText]), (projectPath, content) =>

@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync } from 'fs'
 import { copyFile, lstat, readFile, readdir, rename, rm, stat, writeFile } from 'fs/promises'
 import { createRequire } from 'module'
 import { basename, dirname, join, relative, sep } from 'path'
@@ -8,6 +8,8 @@ import type {
   FontFaceInfo,
   PreviewFontFace,
   PreviewFonts,
+  QuartzFrameMeasures,
+  QuartzFrameMeasuresResult,
   ScssCheckResult,
   ScssDiagnostic,
   StyleFile,
@@ -1090,6 +1092,99 @@ export async function checkStyleSource(
   } catch (err) {
     return { status: 'error', diagnostic: toDiagnostic(projectPath, err) }
   }
+}
+
+// Quartz's own frame as this project measures it, for the Frames tab's standard frame and its copy.
+// Until 2026-10-09 the tab named Quartz's numbers (320 px, 5 px, 1500 px) and said a changed
+// variables.scss would show other ones (41st review, finding 7). Read with the project's own sass,
+// like the SCSS check above, because the values are Sass: `#{$sidePanelWidth}` inside a map, a
+// `calc()` over a map lookup in base.scss - a regex would be a second Sass, and wrong at the first
+// expression. Only the measures are read; which area sits where stays Quartz's arrangement.
+const GRIDS = { desktop: 'desktopGrid', tablet: 'tabletGrid', mobile: 'mobileGrid' } as const
+
+export function readQuartzFrameMeasures(projectPath: string): QuartzFrameMeasuresResult {
+  const dir = stylesDir(projectPath)
+  if (!existsSync(join(dir, 'variables.scss'))) return { status: 'unavailable', reason: mainT('quartzMeasuresNoVariables') }
+  const sass = loadProjectSass(projectPath)
+  if (!sass) return { status: 'unavailable', reason: mainT('styleSassMissing') }
+
+  // `.page`'s own max-width in base.scss - the declaration before the block's first nested rule -
+  // evaluated in the same scope, since base.scss writes it over `$breakpoints`. An interpolation
+  // `#{…}` is part of the declaration, not the start of a nested rule. Wrapped in one itself, because
+  // Sass passes a custom property's value through as text: `calc(1200px + 300px)` instead of 1500px.
+  let pageExpr: string | null = null
+  try {
+    const base = readFileSync(join(dir, 'base.scss'), 'utf-8')
+    const block = base.match(/(?:^|\n)\.page\s*\{((?:#\{[^{}]*\}|[^{}])*)/)?.[1]
+    pageExpr = block?.match(/(?:^|[;\s])max-width\s*:\s*([^;]+);/)?.[1]?.trim() ?? null
+  } catch {
+    // No base.scss: the cap is reported as unknown below, the rest still holds.
+  }
+
+  const lines = Object.entries(GRIDS).flatMap(([bp, grid]) => [
+    `--qc-${bp}-columns: #{map.get($${grid}, templateColumns)};`,
+    `--qc-${bp}-rowgap: #{map.get($${grid}, rowGap)};`,
+    `--qc-${bp}-columngap: #{map.get($${grid}, columnGap)};`
+  ])
+  lines.push('--qc-bp-mobile: #{map.get($breakpoints, mobile)};', '--qc-bp-desktop: #{map.get($breakpoints, desktop)};')
+  const compile = (extra: string[]): Record<string, string> => {
+    const source = `@use "sass:map";\n@use "variables" as *;\n:root {\n${[...lines, ...extra].join('\n')}\n}\n`
+    const { css } = sass.compileString(source, { url: pathToFileURL(join(dir, '_quartzcontrol-measures.scss')), loadPaths: [dir], quietDeps: true }) as { css: string }
+    return Object.fromEntries([...css.matchAll(/--qc-([a-z-]+):\s*([^;]*);/g)].map((m) => [m[1], m[2].trim()]))
+  }
+
+  let values: Record<string, string>
+  let pageMaxWidth: string | null = null
+  try {
+    try {
+      values = pageExpr ? compile([`--qc-page: #{${pageExpr}};`]) : compile([])
+      pageMaxWidth = values.page ? sumPx(values.page) : null
+    } catch {
+      // A cap in a form this cannot evaluate on its own is not a reason to lose the grids.
+      values = compile([])
+    }
+  } catch (err) {
+    return { status: 'unavailable', reason: mainT('quartzMeasuresFailed', { message: toDiagnostic(projectPath, err).message }) }
+  }
+
+  const px = (v: string | undefined): number => (v && /^\d+(\.\d+)?px$/.test(v) ? Number.parseFloat(v) : Number.NaN)
+  const breakpoints = { mobile: px(values['bp-mobile']), desktop: px(values['bp-desktop']) }
+  const grids = {} as QuartzFrameMeasures['grids']
+  for (const bp of Object.keys(GRIDS) as (keyof typeof GRIDS)[]) {
+    const columns = splitTrackList(values[`${bp}-columns`] ?? '')
+    const rowGap = values[`${bp}-rowgap`]
+    const columnGap = values[`${bp}-columngap`]
+    if (!columns.length || !rowGap || !columnGap) return { status: 'unavailable', reason: mainT('quartzMeasuresIncomplete', { name: `$${GRIDS[bp]}` }) }
+    grids[bp] = { columns, rowGap, columnGap }
+  }
+  if (Number.isNaN(breakpoints.mobile) || Number.isNaN(breakpoints.desktop)) return { status: 'unavailable', reason: mainT('quartzMeasuresIncomplete', { name: '$breakpoints' }) }
+  return { status: 'ok', measures: { grids, breakpoints, pageMaxWidth } }
+}
+
+// base.scss interpolates inside `calc()`, which leaves Sass a string it does not simplify:
+// `calc(1200px + 300px)`. A sum of px terms is added up; anything else is shown as Sass wrote it.
+function sumPx(value: string): string {
+  const inner = value.match(/^calc\((.*)\)$/)?.[1]
+  if (!inner || !/^\s*\d+(\.\d+)?px(\s*[+-]\s*\d+(\.\d+)?px)*\s*$/.test(inner)) return value
+  const terms = inner.replace(/\s+/g, '').match(/[+-]?\d+(\.\d+)?px/g) ?? []
+  return `${terms.reduce((sum, term) => sum + Number.parseFloat(term), 0)}px`
+}
+
+// "320px minmax(0, 1fr) 320px" as three tracks: split on spaces outside parentheses.
+function splitTrackList(value: string): string[] {
+  const out: string[] = []
+  let depth = 0
+  let current = ''
+  for (const ch of value.replace(/^["']|["']$/g, '')) {
+    if (ch === '(') depth++
+    if (ch === ')') depth--
+    if (/\s/.test(ch) && depth === 0) {
+      if (current) out.push(current)
+      current = ''
+    } else current += ch
+  }
+  if (current) out.push(current)
+  return out
 }
 
 // Sass throws an Exception carrying a `span` with the file URL and a 0-based line/column. The URL

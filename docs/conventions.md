@@ -75,7 +75,8 @@ Projektwurzel.
   Anforderung garantiert erfüllt.** Damit kann kein Werkzeug mehr „fehlen, aber nachinstallierbar"
   sein — fehlt eines, ist die Installation unvollständig, und genau das sagt das Warnband.
 - **Code aus dem `node_modules` eines Projekts läuft an genau zwei Stellen im Hauptprozess**:
-  `sass` für den SCSS-Check (`styleService`) und `globby` für die Liste der Startseite
+  `sass` für den SCSS-Check und, seit 2026-10-09, für die Maße des Standard-Frames aus
+  `variables.scss` (beides `styleService`), und `globby` für die Liste der Startseite
   (`contentService`). Beides fragt das Modul des Builds, statt eines mitzubringen oder
   nachzubauen — und beides läuft damit neben `safeStorage`, das die Zugangsdaten entschlüsselt;
   ein Kindprozess bekommt höchstens das eine Geheimnis seiner Aktion. Hingenommen, weil es Quartz'

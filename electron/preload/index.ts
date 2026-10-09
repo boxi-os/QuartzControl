@@ -116,7 +116,8 @@ const api: QuartzGuiApi = {
       ipcRenderer.invoke(IPC.layoutFrameBuiltinPageTypeFrames, projectPath, plugins),
     getBreakpoints: (projectPath: string) => ipcRenderer.invoke(IPC.layoutFrameGetBreakpoints, projectPath),
     saveBreakpoints: (projectPath: string, widths: FrameBreakpointWidths) =>
-      ipcRenderer.invoke(IPC.layoutFrameSaveBreakpoints, projectPath, widths)
+      ipcRenderer.invoke(IPC.layoutFrameSaveBreakpoints, projectPath, widths),
+    quartzMeasures: (args: { projectPath: string }) => ipcRenderer.invoke(IPC.layoutFrameQuartzMeasures, args)
   },
   styles: {
     get: (projectPath: string) => ipcRenderer.invoke(IPC.stylesGet, projectPath),

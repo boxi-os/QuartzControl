@@ -379,6 +379,9 @@ const STRINGS = {
     styleFileExists: 'Es gibt bereits eine Datei {{name}}.',
     styleCustomScssMissing: 'custom.scss gibt es nicht.',
     styleSassMissing: 'Im Projekt ist kein sass installiert (npm install).',
+    quartzMeasuresNoVariables: 'quartz/styles/variables.scss gibt es in diesem Projekt nicht.',
+    quartzMeasuresFailed: 'quartz/styles/variables.scss ließ sich nicht lesen: {{message}}',
+    quartzMeasuresIncomplete: 'In quartz/styles/variables.scss fehlt {{name}} in der Form, die Quartz schreibt.',
 
     zipNotAPackage: 'Die Datei ist kein lesbares Paket (kein ZIP-Verzeichnis gefunden).',
     zipFileMissing: 'Die Datei gibt es nicht.',
@@ -734,6 +737,9 @@ const STRINGS = {
     styleFileExists: 'A file {{name}} already exists.',
     styleCustomScssMissing: 'custom.scss does not exist.',
     styleSassMissing: 'The project has no sass installed (npm install).',
+    quartzMeasuresNoVariables: 'This project has no quartz/styles/variables.scss.',
+    quartzMeasuresFailed: 'quartz/styles/variables.scss could not be read: {{message}}',
+    quartzMeasuresIncomplete: 'quartz/styles/variables.scss lacks {{name}} in the form Quartz writes it.',
 
     zipNotAPackage: 'The file is not a readable package (no ZIP directory found).',
     zipFileMissing: 'The file does not exist.',

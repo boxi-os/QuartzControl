@@ -22,6 +22,7 @@ import type {
   FrameAlign,
   FrameBreakpoint,
   FrameBreakpointWidths,
+  QuartzFrameMeasuresResult,
   FrameSlot,
   GridAreaPlacement,
   GridBreakpointLayout,
@@ -53,7 +54,7 @@ import { breakpointRangeLabel } from './utils'
 import { STAGE_REFERENCE_WIDTH, stageFrame } from './stageGeometry'
 import FrameBreakpoints from './FrameBreakpoints'
 import FramePreview from './FramePreview'
-import { quartzDefaultFrame } from './defaultFrame'
+import { QUARTZ_MEASURES, columnsFit, quartzDefaultFrame } from './defaultFrame'
 import { useStickyState } from '../../state/uiState'
 import { announce } from '../../state/announcer'
 import { useDndAccessibility } from '../../utils/dndAnnouncements'
@@ -360,6 +361,9 @@ export default function FrameBuilder({
   // Edited below the frame list (FrameBreakpoints), because they apply to every frame; the editor
   // reads them to label its three breakpoint tabs with the width band each one actually covers.
   const [breakpointWidths, setBreakpointWidths] = useState<FrameBreakpointWidths>(DEFAULT_FRAME_BREAKPOINT_WIDTHS)
+  // Quartz's own frame as this project's variables.scss and base.scss measure it - null until read.
+  const [quartzMeasures, setQuartzMeasures] = useState<QuartzFrameMeasuresResult | null>(null)
+  const standardMeasures = quartzMeasures?.status === 'ok' ? quartzMeasures.measures : QUARTZ_MEASURES
 
   function refresh(): void {
     window.quartzGui.layoutFrames.list(projectPath).then(setFrames)
@@ -368,6 +372,7 @@ export default function FrameBuilder({
   useEffect(() => {
     refresh()
     window.quartzGui.layoutFrames.getBreakpoints(projectPath).then(setBreakpointWidths)
+    window.quartzGui.layoutFrames.quartzMeasures({ projectPath }).then(setQuartzMeasures)
   }, [projectPath])
 
   useEffect(() => {
@@ -494,7 +499,7 @@ export default function FrameBuilder({
   // The standard frame as a draft of the project's own, which is the way in for anyone who wants
   // Quartz's layout with one thing changed. Nothing is written until Save.
   async function customizeStandard(): Promise<void> {
-    if (await leaveDraft()) open(quartzDefaultFrame(freeName('standard')), true)
+    if (await leaveDraft()) open(quartzDefaultFrame(freeName('standard'), standardMeasures), true)
   }
 
   // A copy of what the editor shows, unsaved changes included - they are what is in front of the
@@ -1176,12 +1181,23 @@ export default function FrameBuilder({
   )
 
   if (!editing) {
-    const standard = quartzDefaultFrame('standard')
-    // Quartz's own frames switch at Quartz's widths, not at the project's (see the breakpoint hint).
+    const standard = quartzDefaultFrame('standard', standardMeasures)
+    // Quartz's own frame switches at the widths of the project's variables.scss, not at the ones
+    // its authored frames use (see the breakpoint hint).
+    const quartzWidths: FrameBreakpointWidths = { tablet: standardMeasures.breakpoints.desktop, mobile: standardMeasures.breakpoints.mobile }
     const quartzBreakpointOptions = FRAME_BREAKPOINTS.map((bp) => ({
       value: bp,
-      label: `${t(`layoutEditor.frameBuilder.breakpoint.${bp}`)} · ${breakpointRangeLabel(bp, DEFAULT_FRAME_BREAKPOINT_WIDTHS)}`
+      label: `${t(`layoutEditor.frameBuilder.breakpoint.${bp}`)} · ${breakpointRangeLabel(bp, quartzWidths)}`
     }))
+    const desktopGrid = standardMeasures.grids.desktop
+    const sourceValues = {
+      columns: desktopGrid.columns.join(' '),
+      gap: desktopGrid.rowGap === desktopGrid.columnGap ? desktopGrid.rowGap : `${desktopGrid.rowGap} / ${desktopGrid.columnGap}`,
+      max: standardMeasures.pageMaxWidth ?? t('layoutEditor.frameBuilder.standardCapUnread', { max: QUARTZ_MEASURES.pageMaxWidth }),
+      desktop: standardMeasures.breakpoints.desktop,
+      mobile: standardMeasures.breakpoints.mobile
+    }
+    const shapeDiffers = FRAME_BREAKPOINTS.filter((bp) => !columnsFit(standardMeasures, bp))
     return (
       <div className="flex flex-col gap-4">
         {message && <p className="text-sm text-red-600 dark:text-red-400">{message}</p>}
@@ -1201,9 +1217,17 @@ export default function FrameBuilder({
                 <CardHeading icon={LayoutGrid}>{t('layoutEditor.frameBuilder.standardTitle')}</CardHeading>
                 <p className="text-ui">{t('layoutEditor.frameBuilder.standardText')}</p>
                 <p className="text-micro text-text-muted">{t('layoutEditor.frameBuilder.standardCopyHint')}</p>
-                {/* A copy of Quartz's SCSS (defaultFrame.ts), not a reading of the project's: there
-                    is no channel that reads quartz/styles/variables.scss (41st review, finding 7). */}
-                <p className="text-micro text-text-muted">{t('layoutEditor.frameBuilder.standardSource')}</p>
+                {/* Read from the project's quartz/styles (layoutFrames.quartzMeasures); until
+                    2026-10-09 this named Quartz's numbers whatever the project said (41st review). */}
+                {quartzMeasures && (
+                  <p className="text-micro text-text-muted">
+                    {quartzMeasures.status === 'ok'
+                      ? t('layoutEditor.frameBuilder.standardSource', sourceValues)
+                      : t('layoutEditor.frameBuilder.standardSourceUnavailable', { ...sourceValues, reason: quartzMeasures.reason })}
+                    {shapeDiffers.length > 0 &&
+                      ` ${t('layoutEditor.frameBuilder.standardShapeDiffers', { breakpoints: shapeDiffers.map((bp) => t(`layoutEditor.frameBuilder.breakpoint.${bp}`)).join(', ') })}`}
+                  </p>
+                )}
                 <div className="flex flex-wrap gap-2">
                   <Button onClick={() => void customizeStandard()}>{t('layoutEditor.frameBuilder.customizeStandard')}</Button>
                   <Button variant="ghost" onClick={() => void startNewFrame()}>

@@ -223,6 +223,7 @@ export const staticImageImportArgs = z.looseObject({
 // staticFiles.*: the same bounds as snippets.*; `dir` only means something for a snippet.
 const staticFileKind = z.enum(['snippet', 'image'])
 export const staticFilesListArgs = z.looseObject({ projectPath: absolutePath })
+export const quartzMeasuresArgs = z.looseObject({ projectPath: absolutePath })
 export const staticFilesRenameArgs = z.looseObject({
   projectPath: absolutePath,
   kind: staticFileKind,

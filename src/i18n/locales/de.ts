@@ -1545,9 +1545,13 @@ export default {
       duplicated: 'Kopie „{{name}}“ angelegt. Sie wird erst beim Speichern geschrieben.',
       standardTitle: 'Quartz-Standard',
       standardText:
-        'So teilt Quartz eine Seite auf, solange kein eigenes Frame gewählt ist: Seitenleisten links und rechts, dazwischen Kopfbereich, Inhalt und Fußzeile. Es schaltet bei Quartz’ eigenen Breiten um (1200 / 800 px).',
+        'So teilt Quartz eine Seite auf, solange kein eigenes Frame gewählt ist: Seitenleisten links und rechts, dazwischen Kopfbereich, Inhalt und Fußzeile. Es schaltet um, wo quartz/styles/variables.scss es sagt.',
       standardSource:
-        'Die Maße stehen so in Quartz’ variables.scss und base.scss: Seitenleisten 320 px, Abstände 5 px, Seite höchstens 1500 px. Hat dieses Projekt die Datei geändert, zeigt seine Website andere Werte als diese Vorschau und die Kopie.',
+        'Die Maße stammen aus quartz/styles/variables.scss und base.scss dieses Projekts: Spalten {{columns}}, Abstände {{gap}}, Seite höchstens {{max}}, Umschalten bei {{desktop}} / {{mobile}} px.',
+      standardSourceUnavailable:
+        'Die Maße dieses Projekts ließen sich nicht lesen: {{reason}} Gezeigt sind Quartz’ eigene: Spalten {{columns}}, Abstände {{gap}}, Seite höchstens {{max}}, Umschalten bei {{desktop}} / {{mobile}} px.',
+      standardCapUnread: '{{max}} (aus base.scss nicht gelesen, Quartz’ Wert)',
+      standardShapeDiffers: 'Die Spaltenzahl in variables.scss weicht hier von Quartz’ Anordnung ab ({{breakpoints}}); Vorschau und Kopie zeigen dort Quartz’ Spalten.',
       standardCopyHint:
         'Eine Kopie folgt deinen Breakpoints. Die Seitenleisten verhalten sich darin wie jeder andere Bereich: Sie kleben nicht und werden auf schmalen Breiten nicht zur Zeile.',
       customizeStandard: 'Als eigenes Frame anpassen',

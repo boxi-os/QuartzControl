@@ -103,6 +103,25 @@ export interface FrameBreakpointWidths {
   mobile: number
 }
 
+/**
+ * The measures of Quartz's own frame as the project's quartz/styles states them: the column sizes
+ * and gaps of `$desktopGrid`/`$tabletGrid`/`$mobileGrid`, the two `$breakpoints`, and the cap
+ * base.scss puts on `.page`. Compiled with the project's own sass (styleService), so a value
+ * written as an expression (`#{$sidePanelWidth}`, `calc(… + 300px)`) is read as the build reads it.
+ * Each grid's `templateColumns` keeps Sass's spelling (`auto`, not `1fr`).
+ */
+export interface QuartzFrameMeasures {
+  grids: Record<FrameBreakpoint, { columns: string[]; rowGap: string; columnGap: string }>
+  breakpoints: { mobile: number; desktop: number }
+  /** `.page`'s max-width; null when base.scss does not cap it in the form Quartz writes. */
+  pageMaxWidth: string | null
+}
+
+/** Read, or why not - "kann nicht lesen" is its own answer, not Quartz's numbers in silence. */
+export type QuartzFrameMeasuresResult =
+  | { status: 'ok'; measures: QuartzFrameMeasures }
+  | { status: 'unavailable'; reason: string }
+
 // Where a width-capped frame sits in the space its container leaves it.
 export type FrameAlign = 'left' | 'center' | 'right'
 
@@ -1533,6 +1552,7 @@ export const IPC = {
   layoutFrameBuiltinPageTypeFrames: 'layoutFrame:builtinPageTypeFrames',
   layoutFrameGetBreakpoints: 'layoutFrame:getBreakpoints',
   layoutFrameSaveBreakpoints: 'layoutFrame:saveBreakpoints',
+  layoutFrameQuartzMeasures: 'layoutFrame:quartzMeasures',
 
   stylesGet: 'styles:get',
   stylesSave: 'styles:save',
@@ -1892,6 +1912,8 @@ export interface QuartzGuiApi {
     // Rewrites every authored frame's generated CSS as well - the widths are baked into each
     // frame's media queries at codegen time, so a frame not rewritten here would keep the old ones.
     saveBreakpoints(projectPath: string, widths: FrameBreakpointWidths): Promise<void>
+    /** Quartz's own frame as this project's variables.scss and base.scss measure it. */
+    quartzMeasures(args: { projectPath: string }): Promise<QuartzFrameMeasuresResult>
   }
   styles: {
     get(projectPath: string): Promise<StylesInfo>

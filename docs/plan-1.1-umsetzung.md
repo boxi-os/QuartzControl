@@ -354,7 +354,22 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
     nichts (leerer Name verweigert, leerer Ordner ist die Projektwurzel); `html: null` (ein leeres
     `html:` in YAML) liest die App als Datei, das Plugin stürzt mit `TypeError` ab — das ist auch
     ein Befund für quartz-layout-box.
-- Das Standard-Frame liest nicht die `variables.scss` des Projekts, sondern nennt Quartz' Maße.
+- ~~Das Standard-Frame liest nicht die `variables.scss` des Projekts, sondern nennt Quartz' Maße~~
+  — behoben (2026-10-09): `layoutFrames.quartzMeasures` (neuer Kanal mit Objekt-Argument)
+  kompiliert mit dem sass des Projekts ein Stück SCSS gegen `quartz/styles/variables.scss` —
+  Spalten und Abstände der drei `$…Grid`, `$breakpoints` — und wertet die `max-width` von `.page`
+  aus base.scss im selben Gültigkeitsbereich aus. Vorschau, Breakpoint-Reiter, Hinweis und „Als
+  eigenes Frame anpassen“ nehmen diese Werte; nicht lesbar heißt „nicht lesbar“, mit Grund, und
+  dann Quartz' Zahlen. Übernommen werden Maße, nicht die Anordnung: Eine abweichende Spaltenzahl
+  behält Quartz' Spalten und sagt es. Gemessen an der gebauten App (1280 und 1600, Wegwerf-Profil,
+  drei `cp -Rc`-Kopien von `gui-test`: unverändert; Seitenleisten 280 px, Spaltenabstand 2rem,
+  Grenzen 700/1400, `+ 200px` in base.scss; ohne variables.scss): vorher zeigten alle drei
+  320/806/320, 5 px, „> 1200 / ≤ 800“ und eine Kopie mit 1500px; nachher die geänderte Kopie
+  280/832/280, Spaltenabstand 2rem, „> 1400 / 701–1400 / ≤ 700“ und eine Kopie mit 1600px, die
+  unveränderte wie vorher, die ohne Datei Quartz' Werte mit dem Satz, dass die Datei fehlt. Original
+  unverändert (Prüfsummen von Config, Lockfile, variables.scss, base.scss). Nicht angefasst: Die
+  Bühne des Layout-Boards zeichnet das Standard-Frame weiter aus `DEFAULT_FRAME_GRID`
+  (`LayoutEditor/utils.ts`), also mit Quartz' Proportionen.
 
 **Ältere aus der 1.1-Arbeit:**
 

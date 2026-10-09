@@ -1540,9 +1540,13 @@ export default {
       duplicated: 'Copy “{{name}}” created. It is written when you save.',
       standardTitle: 'Quartz default',
       standardText:
-        'This is how Quartz divides a page while no frame of your own is chosen: sidebars left and right, with the header, content and footer between them. It switches at Quartz’s own widths (1200 / 800 px).',
+        'This is how Quartz divides a page while no frame of your own is chosen: sidebars left and right, with the header, content and footer between them. It switches where quartz/styles/variables.scss says.',
       standardSource:
-        'The sizes are those of Quartz’s variables.scss and base.scss: 320 px sidebars, 5 px gaps, a page of at most 1500 px. If this project changed that file, its site shows other values than this preview and the copy.',
+        'The sizes come from this project’s quartz/styles/variables.scss and base.scss: columns {{columns}}, gaps {{gap}}, a page of at most {{max}}, switching at {{desktop}} / {{mobile}} px.',
+      standardSourceUnavailable:
+        'This project’s sizes could not be read: {{reason}} Shown are Quartz’s own: columns {{columns}}, gaps {{gap}}, a page of at most {{max}}, switching at {{desktop}} / {{mobile}} px.',
+      standardCapUnread: '{{max}} (not read from base.scss, Quartz’s value)',
+      standardShapeDiffers: 'The number of columns in variables.scss differs from Quartz’s arrangement here ({{breakpoints}}); preview and copy show Quartz’s columns there.',
       standardCopyHint:
         'A copy follows your breakpoints. Its sidebars behave like any other area: they do not stick, and they do not turn into a row on narrow widths.',
       customizeStandard: 'Customize as your own frame',

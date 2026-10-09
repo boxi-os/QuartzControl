@@ -52,6 +52,7 @@ import {
   componentRef,
   derivePageTypes,
   getLayout,
+  groupNamesOf,
   duplicateNameCounts,
   duplicateRanks,
   parkedIndices,
@@ -155,23 +156,7 @@ export default function GlobalBoard({
   const parked = parkedIndices(config.plugins)
   const positions = buildBoardPositionMap(config.plugins, parked)
   const selectedIndex = resolveComponentRef(config.plugins, selected)
-  // Declared groups plus the ones the frames' areas name. A group exists as soon as a component
-  // names it - `layout.groups` only holds direction and gap - so an area's group is missing from
-  // that object until someone gives it those, and until then the component's own "Gruppe" select
-  // could not offer it. Drag-and-drop would have been the only way in, which is no way at all for
-  // anyone working by keyboard.
-  const groupNames = [
-    ...new Set([
-      ...Object.keys(config.layout?.groups ?? {}),
-      ...frames.flatMap((f) => f.areas.map((a) => a.group).filter((g): g is string => !!g)),
-      // …and every group a component actually names. Without this last source a group can become
-      // invisible while still being in force: delete the area that carried it (or the entry under
-      // `layout.groups`) and the member keeps `layout.group`, but the select has no option for it,
-      // so it displays as "no group" and cannot be cleared. Measured while tidying up a test
-      // project - the yaml still said `group: custom-8` after the area was gone.
-      ...config.plugins.map((p) => p.layout?.group).filter((g): g is string => !!g)
-    ])
-  ]
+  const groupNames = groupNamesOf(config, frames)
   // Keyed by its own result, so the list keeps its identity across the edits that do not touch it -
   // the form's context is memoized on it.
   const languagesKey = siteLanguages(config).join(',')

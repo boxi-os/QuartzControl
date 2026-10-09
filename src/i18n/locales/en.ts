@@ -1469,7 +1469,7 @@ export default {
   },
   layoutEditor: {
     templateCustomPlaceholder: 'e.g. Home page with sidebar',
-    tabOverview: 'Page types',
+    tabOverview: 'Overview',
     tabGlobal: 'Components',
     tabFrames: 'Frames',
     loading: 'Loading layout…',
@@ -1715,20 +1715,60 @@ export default {
       parked_other: '{{count}} components are switched off and lie in the tray.'
     },
     overview: {
-      title: 'Page types compared',
+      title: 'Where each component appears',
       intro:
-        'You place components once, for all pages. Each page type picks its frame and can hide single components or whole areas; the frame decides which areas exist at all. The table shows, per page type, only what differs.',
-      framePerType: 'per page type',
+        'You place components once, for all pages. Each page type is built in its assigned frame and can hide single components or whole areas; the frame decides which areas it has room for at all. The table shows what reaches each page type.',
+      componentColumn: 'Component',
+      assignedFrame: 'Assigned frame',
+      customized: 'Differs from “All pages”',
       frameFrom: {
-        override: 'chosen',
-        plugin: 'from the plugin',
-        default: 'default'
+        override: 'Frame chosen for the page type',
+        plugin: 'Frame comes with the page type’s plugin',
+        default: 'Nothing chosen — Quartz builds with the standard frame'
       },
-      same: 'as all',
-      without: 'without',
-      cleared: 'cleared',
-      notInFrame: 'no area in the frame',
-      unknown: 'unknown (plugin’s frame)'
+      state: {
+        shown: 'Appears',
+        excluded: 'Hidden on this page type',
+        cleared: 'Area cleared on this page type',
+        noArea: 'The frame has no room for this area',
+        unknown: 'Unknown — the frame comes from the plugin'
+      },
+      cellTitle: '{{component}} on {{pageType}}: {{state}}',
+      empty: 'empty',
+      groupArea: 'Own area “{{name}}”',
+      groupName: 'Group {{name}}',
+      groupOwn: 'Own area “{{name}}” in the frame',
+      groupShared: 'No own area in the frame — shares the area of the position',
+      legend: 'Legend',
+      legendOwnArea: 'Group has its own area in the frame',
+      legendCondition: 'With a condition',
+      statPlaced_one: 'component placed',
+      statPlaced_other: 'components placed',
+      statAlways_one: '{{count}} always',
+      statAlways_other: '{{count}} always',
+      statConditioned_one: 'with a condition',
+      statConditioned_other: 'with a condition',
+      statDisabled_one: 'switched off',
+      statDisabled_other: 'switched off',
+      statPageTypes_one: 'page type',
+      statPageTypes_other: 'page types',
+      statCustomized_one: '{{count}} differs',
+      statCustomized_other: '{{count}} differ',
+      statFrames_one: 'own frame',
+      statFrames_other: 'own frames',
+      statUnused_one: '{{count}} without a page type',
+      statUnused_other: '{{count}} without a page type',
+      disabledTitle: 'Switched off',
+      disabledText: 'They lie in the component pool and are not built. A click shows them on the stage.',
+      disabledNone: 'None — all components are switched on.',
+      framesTitle: 'Frames and their page types',
+      frameKind: {
+        builtin: 'from Quartz',
+        own: 'own',
+        plugin: 'from the plugin'
+      },
+      unassigned: 'not assigned to any page type',
+      customAreas: 'Own areas:'
     },
     inspector: {
       title: 'Component',

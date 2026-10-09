@@ -12,7 +12,7 @@ import { UnsavedBadge, useUnsavedChanges } from '../../state/unsavedGuard'
 import { TAB_ICONS } from '../navConfig'
 import GlobalBoard from './GlobalBoard'
 import FrameBuilder from './FrameBuilder'
-import PageTypeOverview from './PageTypeOverview'
+import LayoutOverview from './LayoutOverview'
 import { componentRef } from './utils'
 import HandbookLink from '../../components/HandbookLink'
 
@@ -289,7 +289,7 @@ export default function LayoutEditor(): JSX.Element {
       </div>
 
       {tab === 'overview' && (
-        <PageTypeOverview
+        <LayoutOverview
           config={config}
           frames={customFrames}
           builtinPageTypeFrames={builtinPageTypeFrames}

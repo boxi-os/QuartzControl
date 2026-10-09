@@ -1474,7 +1474,7 @@ export default {
   },
   layoutEditor: {
     templateCustomPlaceholder: 'z. B. Startseite mit Seitenleiste',
-    tabOverview: 'Seitentypen',
+    tabOverview: 'Übersicht',
     tabGlobal: 'Komponenten',
     tabFrames: 'Frames',
     loading: 'Lade Layout…',
@@ -1720,20 +1720,60 @@ export default {
       parked_other: '{{count}} Komponenten sind ausgeschaltet und liegen im Vorrat.'
     },
     overview: {
-      title: 'Seitentypen im Vergleich',
+      title: 'Wo welche Komponente erscheint',
       intro:
-        'Komponenten platzierst du einmal, für alle Seiten. Jeder Seitentyp wählt sein Frame und kann einzelne Komponenten oder ganze Bereiche ausblenden; das Frame entscheidet, welche Bereiche es überhaupt gibt. Die Tabelle zeigt je Seitentyp nur, was davon abweicht.',
-      framePerType: 'je Seitentyp',
+        'Komponenten platzierst du einmal, für alle Seiten. Jeder Seitentyp wird in seinem zugeordneten Frame gebaut und kann einzelne Komponenten oder ganze Bereiche ausblenden; das Frame entscheidet, für welche Bereiche es überhaupt Platz hat. Die Tabelle zeigt, was davon auf jedem Seitentyp ankommt.',
+      componentColumn: 'Komponente',
+      assignedFrame: 'Zugeordneter Frame',
+      customized: 'Weicht von „Alle Seiten“ ab',
       frameFrom: {
-        override: 'gewählt',
-        plugin: 'vom Plugin',
-        default: 'Vorgabe'
+        override: 'Frame für den Seitentyp gewählt',
+        plugin: 'Frame bringt das Plugin des Seitentyps mit',
+        default: 'Nichts gewählt — Quartz baut mit dem Standard-Frame'
       },
-      same: 'wie alle',
-      without: 'ohne',
-      cleared: 'geleert',
-      notInFrame: 'kein Bereich im Frame',
-      unknown: 'unbekannt (Frame des Plugins)'
+      state: {
+        shown: 'Erscheint',
+        excluded: 'Auf diesem Seitentyp ausgeblendet',
+        cleared: 'Bereich auf diesem Seitentyp geleert',
+        noArea: 'Das Frame hat für diesen Bereich keinen Platz',
+        unknown: 'Unbekannt — das Frame kommt vom Plugin'
+      },
+      cellTitle: '{{component}} auf {{pageType}}: {{state}}',
+      empty: 'leer',
+      groupArea: 'Eigener Bereich „{{name}}“',
+      groupName: 'Gruppe {{name}}',
+      groupOwn: 'Eigener Bereich „{{name}}“ im Frame',
+      groupShared: 'Kein eigener Bereich im Frame — steht mit im Bereich der Position',
+      legend: 'Legende',
+      legendOwnArea: 'Gruppe hat einen eigenen Bereich im Frame',
+      legendCondition: 'Mit Bedingung',
+      statPlaced_one: 'Komponente platziert',
+      statPlaced_other: 'Komponenten platziert',
+      statAlways_one: '{{count}} immer',
+      statAlways_other: '{{count}} immer',
+      statConditioned_one: 'mit Bedingung',
+      statConditioned_other: 'mit Bedingung',
+      statDisabled_one: 'ausgeschaltet',
+      statDisabled_other: 'ausgeschaltet',
+      statPageTypes_one: 'Seitentyp',
+      statPageTypes_other: 'Seitentypen',
+      statCustomized_one: '{{count}} weicht ab',
+      statCustomized_other: '{{count}} weichen ab',
+      statFrames_one: 'eigenes Frame',
+      statFrames_other: 'eigene Frames',
+      statUnused_one: '{{count}} ohne Seitentyp',
+      statUnused_other: '{{count}} ohne Seitentyp',
+      disabledTitle: 'Ausgeschaltet',
+      disabledText: 'Liegen im Komponentenvorrat und werden nicht gebaut. Ein Klick zeigt sie auf der Bühne.',
+      disabledNone: 'Keine — alle Komponenten sind eingeschaltet.',
+      framesTitle: 'Frames und ihre Seitentypen',
+      frameKind: {
+        builtin: 'von Quartz',
+        own: 'eigenes',
+        plugin: 'vom Plugin'
+      },
+      unassigned: 'keinem Seitentyp zugeordnet',
+      customAreas: 'Eigene Bereiche:'
     },
     inspector: {
       title: 'Komponente',

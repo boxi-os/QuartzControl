@@ -1,6 +1,7 @@
 import type {
   FrameBreakpoint,
   FrameBreakpointWidths,
+  GridFrameDefinition,
   LayoutPosition,
   PluginEntry,
   PluginLayoutDeclaration,
@@ -399,4 +400,27 @@ export function withOptions(plugins: PluginEntry[], index: number, options: Reco
     const { options: _removed, ...without } = p
     return without as PluginEntry
   })
+}
+
+/**
+ * Every group name of a layout, in a stable order - the order the group colours are taken from
+ * (ComponentChip.groupColor), so the stage and the overview colour a group alike. Declared groups
+ * plus the ones the frames' areas name: a group exists as soon as a component names it -
+ * `layout.groups` only holds direction and gap - so an area's group is missing from that object
+ * until someone gives it those, and until then the component's own "Gruppe" select could not offer
+ * it. Drag-and-drop would have been the only way in, which is no way at all for anyone working by
+ * keyboard. And every group a component actually names: without this last source a group can
+ * become invisible while still being in force - delete the area that carried it (or the entry
+ * under `layout.groups`) and the member keeps `layout.group`, but the select has no option for it,
+ * so it displays as "no group" and cannot be cleared. Measured while tidying up a test project -
+ * the yaml still said `group: custom-8` after the area was gone.
+ */
+export function groupNamesOf(config: QuartzConfig, frames: GridFrameDefinition[]): string[] {
+  return [
+    ...new Set([
+      ...Object.keys(config.layout?.groups ?? {}),
+      ...frames.flatMap((f) => f.areas.map((a) => a.group).filter((g): g is string => !!g)),
+      ...config.plugins.map((p) => p.layout?.group).filter((g): g is string => !!g)
+    ])
+  ]
 }

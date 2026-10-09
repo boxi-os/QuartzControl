@@ -1504,3 +1504,36 @@ Griff des Bereichs. Gemessen an der gebauten App mit echten Mausbewegungen in `e
 - Ziehen in `right`, `left` und `page-body` hinein ändert nichts.
 - Escape lässt die Spanne stehen.
 - Die Auswahl bleibt nach jedem Ziehen bestehen.
+
+## Die Übersicht als Matrix (2026-10-09, 1.1)
+
+Der Reiter, der seit P7.3 „Seitentypen“ hieß und eine Tabelle Seitentyp × Position zeigte, heißt
+„Übersicht“ und ist eine Matrix **Komponente × Seitentyp** (`LayoutEditor/LayoutOverview.tsx`).
+Rückmeldung des Nutzers zur alten Tabelle: Die Zellen sagten „wie alle“, „ohne“, „kein Bereich im
+Frame“, jede Frame-Zelle „gewählt“ — Wörter, wo ein Zeichen genügt, und die eigenen Bereiche einer
+Gruppe fehlten ganz. Jetzt:
+
+- **Zeilen** sind die platzierten Komponenten als Pills (Gruppenfarbe wie auf der Bühne, über
+  `groupNamesOf()` in `utils.ts`, das die Bühne seither auch benutzt), nach Position und darin nach
+  Gruppe. Was auf jedem Seitentyp gleich gilt — nur Desktop, nur mobil, eine Bedingung — ist ein
+  Zeichen an der Pill, nicht eine Zelle.
+- **Spalten** sind die Seitentypen, im Kopf der zugeordnete Frame; ob er gewählt ist oder vom Plugin
+  kommt, sagt ein Zeichen (Pin / Puzzle) mit Tooltip.
+- **Zellen** sind eines von fünf Zeichen: erscheint, ausgeblendet (`exclude`), Bereich geleert,
+  das Frame hat keinen Platz, unbekannt (Frame eines Plugins). Die Rangfolge ist die alte:
+  unbekannt vor kein Platz vor geleert vor ausgeblendet.
+- **Eine Gruppe** hat eine eigene Zeile, die je Seitentyp sagt, ob dessen Frame ihr einen eigenen
+  Bereich gibt. „Kein Platz“ fragt jetzt auch die Gruppe: Eine Komponente in Gruppe G auf Position P
+  erscheint, wenn das Frame einen Bereich P#G *oder* einen Bereich P ohne Gruppe hat — dieselbe
+  Regel, nach der die Bühne einen Bereich füllt. Die alte Tabelle fragte nur die Position.
+
+Darüber fünf Kennzahlen (platziert mit immer/Desktop/mobil, mit Bedingung, ausgeschaltet,
+Seitentypen mit Abweichung, eigene Frames ohne Seitentyp), darunter die ausgeschalteten Komponenten
+(die die Matrix auslässt) und die Frames mit den Seitentypen, die sie nutzen, samt ihren eigenen
+Bereichen; ein eigenes Frame ohne Seitentyp ist gelb markiert.
+
+Gemessen an der gebauten App mit gui-test (1728×1000 dunkel, 1280×800 hell): kein waagerechter
+Bildlauf, sieben Seitentyp-Spalten passen bei 1280 px; die drei Wege heraus landen richtig (Pill →
+Bühne „Alle Seiten“ mit der Komponente in der Leiste, Spaltenkopf → Bühne auf dem Seitentyp, Frame →
+Frame-Editor auf diesem Frame). Die Zellen stimmen mit der alten Tabelle überein, wo diese etwas
+sagte (404-Seite/focus: linke Seitenleiste geleert, „Vor dem Inhalt“ ohne Platz).

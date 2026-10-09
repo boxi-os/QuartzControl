@@ -1078,7 +1078,9 @@ const CLICK_SLOP = 4
  *
  * The panel sticks while the board scrolls and is its own scroller then: a plugin's options make
  * it taller than the window (navigations: 7300 px), and a sticky block that tall only shows its end
- * once the board beside it has been scrolled to its own end.
+ * once the board beside it has been scrolled to its own end. Without `overscroll-contain`: Chromium
+ * keeps the wheel in a contained scroller even when it has nothing to scroll, so over a short panel
+ * the page stood still (measured on the layout stage: 874 px to scroll, 0 moved).
  *
  * `onDismiss` is how a selection is let go of: a click on an empty part of the board (anything
  * that is not a control or a selectable element, see SELECTING) and Escape anywhere in the two
@@ -1158,7 +1160,7 @@ export function DetailLayout({
         ref={panelRef}
         tabIndex={-1}
         aria-label={panelLabel}
-        className="outline-none xl:sticky xl:top-4 xl:max-h-[calc(100vh-5rem)] xl:overflow-y-auto xl:overscroll-contain"
+        className="outline-none xl:sticky xl:top-4 xl:max-h-[calc(100vh-5rem)] xl:overflow-y-auto"
       >
         {panel}
       </aside>

@@ -20,26 +20,24 @@ export function breakpointRangeLabel(breakpoint: FrameBreakpoint, widths: FrameB
 export const POSITIONS: LayoutPosition[] = ['header', 'left', 'right', 'beforeBody', 'afterBody', 'footer']
 
 // Real per-breakpoint grid shape of Quartz's own DefaultFrame, verified against
-// quartz/styles/variables.scss's $mobileGrid/$tabletGrid/$desktopGrid ($sidePanelWidth: 320px) and
+// quartz/styles/variables.scss's $mobileGrid/$tabletGrid/$desktopGrid and
 // quartz/components/frames/DefaultFrame.tsx - used to render Global's board as a truthful mockup
-// instead of an equal-width approximation. Unlike the "eigene Frames" grid, this shape is fixed
-// (not user-editable): header/footer are confined to the center column (not full page width), and
+// instead of an equal-width approximation. The column sizes are not here: they come from the
+// project's variables.scss (layoutFrames.quartzMeasures, QUARTZ_MEASURES in defaultFrame.ts).
+// Unlike the "eigene Frames" grid, this shape is fixed (not user-editable): header/footer are confined to the center column (not full page width), and
 // the right sidebar collapses from its own column into a horizontal row once desktop is left -
 // see `sidebarDirection` below, mirroring `.sidebar.right`'s `@media all and not ($desktop)`
 // override in base.scss. Gap is an editorial choice (quartz's own 5px is too tight to read here).
-export const DEFAULT_FRAME_GRID: Record<FrameBreakpoint, { columns: string; rows: string; areas: string }> = {
+export const DEFAULT_FRAME_GRID: Record<FrameBreakpoint, { rows: string; areas: string }> = {
   desktop: {
-    columns: '320px auto 320px',
     rows: 'auto auto auto',
     areas: '"sidebar-left header sidebar-right" "sidebar-left center sidebar-right" "sidebar-left footer sidebar-right"'
   },
   tablet: {
-    columns: '320px auto',
     rows: 'auto auto auto auto',
     areas: '"sidebar-left header" "sidebar-left center" "sidebar-left sidebar-right" "sidebar-left footer"'
   },
   mobile: {
-    columns: 'auto',
     rows: 'auto auto auto auto auto',
     areas: '"sidebar-left" "header" "center" "sidebar-right" "footer"'
   }

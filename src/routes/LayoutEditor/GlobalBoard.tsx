@@ -25,7 +25,8 @@ import type {
   LayoutPosition,
   PluginEntry,
   PluginLayoutDeclaration,
-  QuartzConfig
+  QuartzConfig,
+  QuartzFrameMeasures
 } from '@shared/ipc-contract'
 import { DEFAULT_FRAME_BREAKPOINT_WIDTHS, FRAME_BREAKPOINTS, buildGridStyle } from '@shared/gridFrameCss'
 import { Button, DetailLayout, IconButton, SegmentedControl, Select } from '../../components/ui'
@@ -37,6 +38,7 @@ import { ComponentPalette, PALETTE_DROP_ID, PALETTE_PREFIX } from './Palette'
 import GroupsPanel from './GroupsPanel'
 import Inspector from './Inspector'
 import LayoutSummary from './LayoutSummary'
+import { QUARTZ_MEASURES, columnsFit } from './defaultFrame'
 import { siteLanguages } from '../../components/PluginOptionsForm/siteLanguages'
 import { useDndAccessibility } from '../../utils/dndAnnouncements'
 import { nearestDroppableCoordinates } from '../../utils/dndKeyboard'
@@ -147,6 +149,9 @@ export default function GlobalBoard({
   // are edited on the Frames tab (FrameBreakpoints), which unmounts this board, so a read on mount
   // is always the current one.
   const [breakpointWidths, setBreakpointWidths] = useState<FrameBreakpointWidths>(DEFAULT_FRAME_BREAKPOINT_WIDTHS)
+  // Quartz's own frame as this project's variables.scss measures it, the same read the Frames tab
+  // makes (layoutFrames.quartzMeasures); Quartz's numbers until then and when it cannot be read.
+  const [standardMeasures, setStandardMeasures] = useState<QuartzFrameMeasures>(QUARTZ_MEASURES)
   const parked = parkedIndices(config.plugins)
   const positions = buildBoardPositionMap(config.plugins, parked)
   const selectedIndex = resolveComponentRef(config.plugins, selected)
@@ -193,6 +198,9 @@ export default function GlobalBoard({
 
   useEffect(() => {
     window.quartzGui.layoutFrames.getBreakpoints(projectPath).then(setBreakpointWidths)
+    window.quartzGui.layoutFrames
+      .quartzMeasures({ projectPath })
+      .then((r) => setStandardMeasures(r.status === 'ok' ? r.measures : QUARTZ_MEASURES))
   }, [projectPath])
 
   useEffect(() => {
@@ -531,9 +539,11 @@ export default function GlobalBoard({
   const activeItem = activeId && !activeId.startsWith(PALETTE_PREFIX) ? config.plugins[Number(activeId)] : null
   const activePaletteSource = activeId?.startsWith(PALETTE_PREFIX) ? config.plugins[Number(activeId.slice(PALETTE_PREFIX.length))] : null
   const grid = DEFAULT_FRAME_GRID[breakpoint]
-  // Quartz's own frame at the stage's scale. Its gap stays the board's 12px (gap-3): Quartz's real
-  // 5px is too tight to tell two areas apart at this size, and twelve pixels in 1456 bend no track.
-  const defaultColumns = stageTracks(grid.columns.split(' '), {
+  // Quartz's own frame at the stage's scale, with the project's column sizes - only sizes, as on the
+  // Frames tab: a grid whose column count differs from Quartz's keeps Quartz's, because the areas
+  // below are Quartz's. Its gap stays the board's 12px (gap-3): Quartz's real 5px is too tight to
+  // tell two areas apart at this size, and twelve pixels in 1456 bend no track.
+  const defaultColumns = stageTracks((columnsFit(standardMeasures, breakpoint) ? standardMeasures : QUARTZ_MEASURES).grids[breakpoint].columns, {
     inner: STAGE_REFERENCE_WIDTH[breakpoint],
     gap: 12,
     viewport: STAGE_REFERENCE_WIDTH[breakpoint]

@@ -421,9 +421,15 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
   320/806/320, 5 px, „> 1200 / ≤ 800“ und eine Kopie mit 1500px; nachher die geänderte Kopie
   280/832/280, Spaltenabstand 2rem, „> 1400 / 701–1400 / ≤ 700“ und eine Kopie mit 1600px, die
   unveränderte wie vorher, die ohne Datei Quartz' Werte mit dem Satz, dass die Datei fehlt. Original
-  unverändert (Prüfsummen von Config, Lockfile, variables.scss, base.scss). Nicht angefasst: Die
-  Bühne des Layout-Boards zeichnet das Standard-Frame weiter aus `DEFAULT_FRAME_GRID`
-  (`LayoutEditor/utils.ts`), also mit Quartz' Proportionen.
+  unverändert (Prüfsummen von Config, Lockfile, variables.scss, base.scss). ~~Die Bühne des
+  Layout-Boards zeichnet das Standard-Frame weiter aus `DEFAULT_FRAME_GRID`
+  (`LayoutEditor/utils.ts`), also mit Quartz' Proportionen~~ — behoben (2026-10-09): Das Board
+  liest dieselben Maße (`quartzMeasures`, Spaltengrößen nur, wenn die Spaltenzahl zu Quartz'
+  Anordnung passt), `DEFAULT_FRAME_GRID` führt nur noch Zeilen und Bereiche. Gemessen an der
+  gebauten App (1280 und 1600, Wegwerf-Profil, zwei `cp -Rc`-Kopien von `gui-test`, in beiden
+  Tag-Seiten auf dem Standard-Frame, eine mit `$sidePanelWidth: 280px`): vorher beide 320/792/320
+  (Tablet 320/668), nachher die unveränderte wie vorher und die geänderte 280/872/280 (Tablet
+  280/708); Mobil unverändert eine Spalte.
 
 **Ältere aus der 1.1-Arbeit:**
 

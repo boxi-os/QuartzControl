@@ -32,42 +32,56 @@ export default function GroupsPanel({
           const group = groups[name]
           const color = GROUP_COLORS[i % GROUP_COLORS.length]
           return (
-            // items-end, not items-center: every control below now carries a label above it, so
-            // aligning on the boxes rather than on the whole column keeps the row one line high.
-            <div key={name} className="flex flex-wrap items-end gap-3 rounded-md border border-ink/[0.06] p-2 dark:border-ink/10">
-              <span className={`mb-2.5 h-2 w-2 shrink-0 rounded-full ${color.dot}`} />
-              <span className="mb-2 w-32 shrink-0 truncate text-sm font-medium">{name}</span>
-              {/* Three unlabelled controls in a row, one of them offering bare CSS keywords, is
-                  not a form - the direction values say what they do on the page now, and each
-                  field carries its own label. */}
-              <Field label={t('layoutEditor.groupsPanel.direction')} className="w-44">
-                <Select
-                  value={group.direction ?? 'row'}
-                  onChange={(e) => onUpdate(name, { direction: e.target.value as FlexGroupConfig['direction'] })}
-                >
-                  <option value="row">{t('layoutEditor.groupsPanel.directionRow')}</option>
-                  <option value="row-reverse">{t('layoutEditor.groupsPanel.directionRowReverse')}</option>
-                  <option value="column">{t('layoutEditor.groupsPanel.directionColumn')}</option>
-                  <option value="column-reverse">{t('layoutEditor.groupsPanel.directionColumnReverse')}</option>
-                </Select>
-              </Field>
-              <Field label={t('layoutEditor.groupsPanel.gap')} className="w-28">
-                <TextInput value={group.gap ?? ''} onChange={(e) => onUpdate(name, { gap: e.target.value })} placeholder="0.5rem" />
-              </Field>
-              <Field label={t('layoutEditor.groupsPanel.priority')} className="w-28">
-                <TextInput
-                  type="number"
-                  value={group.priority ?? ''}
-                  onChange={(e) => onUpdate(name, { priority: e.target.value === '' ? undefined : Number(e.target.value) })}
-                  placeholder={t('layoutEditor.groupsPanel.priorityPlaceholder')}
-                />
-              </Field>
-              <IconButton
-                icon={Trash2}
-                title={t('common.deleteNamed', { name })}
-                onClick={() => onDelete(name)}
-                className="mb-1.5 ml-auto"
-              />
+            <div key={name} className="flex flex-col gap-2 rounded-md border border-ink/[0.06] p-2 dark:border-ink/10">
+              <div className="flex items-center gap-2">
+                <span className={`h-2 w-2 shrink-0 rounded-full ${color.dot}`} />
+                <span className="min-w-0 flex-1 truncate text-sm font-medium">{name}</span>
+                <IconButton icon={Trash2} title={t('common.deleteNamed', { name })} onClick={() => onDelete(name)} />
+              </div>
+              {/* Four settings in a grid under the name rather than in one row beside it: with
+                  wrapping as the fourth, the row broke at the board's width and left the priority
+                  alone on a second line. Each field carries its own label; the direction values
+                  say what they do on the page. */}
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <Field label={t('layoutEditor.groupsPanel.direction')}>
+                  <Select
+                    value={group.direction ?? 'row'}
+                    onChange={(e) => onUpdate(name, { direction: e.target.value as FlexGroupConfig['direction'] })}
+                  >
+                    <option value="row">{t('layoutEditor.groupsPanel.directionRow')}</option>
+                    <option value="row-reverse">{t('layoutEditor.groupsPanel.directionRowReverse')}</option>
+                    <option value="column">{t('layoutEditor.groupsPanel.directionColumn')}</option>
+                    <option value="column-reverse">{t('layoutEditor.groupsPanel.directionColumnReverse')}</option>
+                  </Select>
+                </Field>
+                {/* Quartz's third container setting beside direction and gap (FlexGroupConfig.wrap);
+                    without it a row of wide components overflows its area instead of breaking. The
+                    default writes no key, as Quartz reads a missing one as "nowrap". */}
+                <Field label={t('layoutEditor.groupsPanel.wrap')}>
+                  <Select
+                    value={group.wrap ?? 'nowrap'}
+                    onChange={(e) => {
+                      const wrap = e.target.value as NonNullable<FlexGroupConfig['wrap']>
+                      onUpdate(name, { wrap: wrap === 'nowrap' ? undefined : wrap })
+                    }}
+                  >
+                    <option value="nowrap">{t('layoutEditor.groupsPanel.wrapNone')}</option>
+                    <option value="wrap">{t('layoutEditor.groupsPanel.wrapWrap')}</option>
+                    <option value="wrap-reverse">{t('layoutEditor.groupsPanel.wrapReverse')}</option>
+                  </Select>
+                </Field>
+                <Field label={t('layoutEditor.groupsPanel.gap')}>
+                  <TextInput value={group.gap ?? ''} onChange={(e) => onUpdate(name, { gap: e.target.value })} placeholder="0.5rem" />
+                </Field>
+                <Field label={t('layoutEditor.groupsPanel.priority')}>
+                  <TextInput
+                    type="number"
+                    value={group.priority ?? ''}
+                    onChange={(e) => onUpdate(name, { priority: e.target.value === '' ? undefined : Number(e.target.value) })}
+                    placeholder={t('layoutEditor.groupsPanel.priorityPlaceholder')}
+                  />
+                </Field>
+              </div>
             </div>
           )
         })}

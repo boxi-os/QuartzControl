@@ -1744,12 +1744,15 @@ export default {
       },
       state: {
         shown: 'Appears',
+        someWidths: 'Appears at some widths only',
         excluded: 'Hidden on this page type',
         cleared: 'Area cleared on this page type',
         noArea: 'Area not assigned in this frame',
+        hiddenArea: 'Area shown at no width in this frame',
         unknown: 'Unknown — the frame comes from the plugin'
       },
       cellTitle: '{{component}} on {{pageType}}: {{state}}',
+      someWidthsOn: 'Appears on {{breakpoints}} only',
       empty: 'empty',
       ownArea: 'Own area “{{name}}”',
       ownAreaIn: 'in frame',

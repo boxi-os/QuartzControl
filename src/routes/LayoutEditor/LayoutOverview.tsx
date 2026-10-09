@@ -2,6 +2,8 @@ import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Ban,
+  CircleDashed,
+  CircleOff,
   EyeOff,
   Filter,
   HelpCircle,
@@ -15,7 +17,7 @@ import {
   Table2,
   type LucideIcon
 } from 'lucide-react'
-import type { GridFrameDefinition, LayoutPosition, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
+import type { FrameBreakpoint, GridFrameDefinition, LayoutPosition, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
 import { FRAME_BREAKPOINTS } from '@shared/gridFrameCss'
 import { Badge, Card, CardHeading, InfoNote } from '../../components/ui'
 import { conditionLabel, groupColor } from './ComponentChip'
@@ -52,51 +54,68 @@ import { hasPageTypeOverride, isExcluded, isPositionCleared, overrideOf, resolve
  * frame the frame editor.
  */
 
-type CellState = 'shown' | 'excluded' | 'cleared' | 'noArea' | 'unknown'
+type CellState = 'shown' | 'someWidths' | 'excluded' | 'cleared' | 'noArea' | 'hiddenArea' | 'unknown'
+
+/** Where an area is placed; `all` for a built-in frame, which has no breakpoints of its own here. */
+type Placed = FrameBreakpoint[] | 'all'
 
 /** The areas a frame builds: positions with a plain area, and `<position>#<group>` with an own one. */
 interface FrameShape {
-  plain: Set<LayoutPosition>
-  /** `<position>#<group>` → the area's name in the frame. */
-  groups: Map<string, string>
+  plain: Map<LayoutPosition, Placed>
+  /** `<position>#<group>` → the breakpoints that place the group's area. */
+  groups: Map<string, Placed>
 }
 
 /**
- * What a frame builds, or null when the app cannot know (a page type plugin's own frame). An
- * authored frame counts an area when some breakpoint places it; a name that is no frame at all is
- * rendered by quartz with the default frame (resolveFrame). A group area holds its group, the
- * plain area of a position everything no group area of this frame claims - the frame's own
- * contentsFor(), as GlobalBoard reads it.
+ * What a frame builds, or null when the app cannot know (a page type plugin's own frame); a name
+ * that is no frame at all is rendered by quartz with the default frame (resolveFrame). A group area
+ * holds its group and the plain area of a position everything no group area of this frame claims -
+ * the frame's own contentsFor(). It claims over **every** area, placed or not: a group whose area
+ * is hidden on all breakpoints is in that area, which is display: none, and not in the plain one
+ * (forty-second review, finding 3: the overview said "Erscheint" for a component the built page
+ * showed at no width). So the breakpoints that place an area are kept, not only whether one does.
  */
 function frameShape(name: string, frames: GridFrameDefinition[], pluginFrames: Set<string>): FrameShape | null {
   const authored = name !== 'default' ? frames.find((f) => f.frameName === name) : undefined
   if (authored) {
-    const shape: FrameShape = { plain: new Set(), groups: new Map() }
+    const shape: FrameShape = { plain: new Map(), groups: new Map() }
     for (const area of authored.areas) {
       if (!area.slot || area.slot === 'pageBody') continue
-      const placed = FRAME_BREAKPOINTS.some((bp) => {
+      const placed = FRAME_BREAKPOINTS.filter((bp) => {
         const p = authored.breakpoints[bp].placements[area.id]
         return p && !p.hidden
       })
-      if (!placed) continue
-      if (area.group) shape.groups.set(`${area.slot}#${area.group}`, area.name)
-      else shape.plain.add(area.slot as LayoutPosition)
+      // Two areas for the same content (a doubled slot) show it wherever either is placed.
+      const union = (before: Placed | undefined): FrameBreakpoint[] =>
+        FRAME_BREAKPOINTS.filter((bp) => placed.includes(bp) || (Array.isArray(before) && before.includes(bp)))
+      if (area.group) {
+        const key = `${area.slot}#${area.group}`
+        shape.groups.set(key, union(shape.groups.get(key)))
+      } else {
+        const slot = area.slot as LayoutPosition
+        shape.plain.set(slot, union(shape.plain.get(slot)))
+      }
     }
     return shape
   }
-  if (name in BUILTIN_FRAME_LAYOUT) return { plain: new Set(BUILTIN_FRAME_LAYOUT[name as 'full-width' | 'minimal'].visibleSlots), groups: new Map() }
+  const all = (positions: readonly LayoutPosition[]): FrameShape => ({ plain: new Map(positions.map((p) => [p, 'all' as const])), groups: new Map() })
+  if (name in BUILTIN_FRAME_LAYOUT) return all(BUILTIN_FRAME_LAYOUT[name as 'full-width' | 'minimal'].visibleSlots)
   if (pluginFrames.has(name)) return null
-  return { plain: new Set(POSITIONS), groups: new Map() }
+  return all(POSITIONS)
 }
 
-function hasRoom(shape: FrameShape, position: LayoutPosition, group: string | undefined): boolean {
-  return (group !== undefined && shape.groups.has(`${position}#${group}`)) || shape.plain.has(position)
+/** Where the frame shows this component's area, or null when it builds none for it. */
+function roomOf(shape: FrameShape, position: LayoutPosition, group: string | undefined): Placed | null {
+  if (group !== undefined && shape.groups.has(`${position}#${group}`)) return shape.groups.get(`${position}#${group}`)!
+  return shape.plain.get(position) ?? null
 }
 
 const STATE_ICON: Record<Exclude<CellState, 'shown'>, { icon: LucideIcon; tone: string }> = {
+  someWidths: { icon: CircleDashed, tone: 'text-emerald-600 dark:text-emerald-400' },
   excluded: { icon: EyeOff, tone: 'text-text-secondary' },
   cleared: { icon: Ban, tone: 'text-text-secondary' },
   noArea: { icon: SquareDashed, tone: 'text-amber-600 dark:text-amber-400' },
+  hiddenArea: { icon: CircleOff, tone: 'text-amber-600 dark:text-amber-400' },
   unknown: { icon: HelpCircle, tone: 'text-text-muted' }
 }
 
@@ -155,15 +174,18 @@ export default function LayoutOverview({
   const chosen = new Map(pageTypes.map((pt) => [pt, resolvedFrame(config, pt, builtinPageTypeFrames)]))
   const shapes = new Map(pageTypes.map((pt) => [pt, frameShape(chosen.get(pt)!.name, frames, pluginFrames)]))
 
-  function stateOf(i: number, pt: string): CellState {
+  function stateOf(i: number, pt: string): { state: CellState; on?: FrameBreakpoint[] } {
     const layout = getLayout(config.plugins[i])!
     const shape = shapes.get(pt)
-    if (shape === null || shape === undefined) return 'unknown'
-    if (!hasRoom(shape, layout.position, layout.group)) return 'noArea'
+    if (shape === null || shape === undefined) return { state: 'unknown' }
+    const room = roomOf(shape, layout.position, layout.group)
+    if (room === null) return { state: 'noArea' }
+    if (room !== 'all' && room.length === 0) return { state: 'hiddenArea' }
     const override = overrideOf(config, pt)
-    if (isPositionCleared(override, layout.position)) return 'cleared'
-    if (isExcluded(override, config.plugins[i])) return 'excluded'
-    return 'shown'
+    if (isPositionCleared(override, layout.position)) return { state: 'cleared' }
+    if (isExcluded(override, config.plugins[i])) return { state: 'excluded' }
+    if (room !== 'all' && room.length < FRAME_BREAKPOINTS.length) return { state: 'someWidths', on: room }
+    return { state: 'shown' }
   }
 
   // ── figures for the strip on top ──
@@ -244,11 +266,13 @@ export default function LayoutOverview({
           {componentPill(i)}
         </th>
         {pageTypes.map((pt) => {
-          const state = stateOf(i, pt)
+          const { state, on } = stateOf(i, pt)
           const label = t('layoutEditor.overview.cellTitle', {
             component: componentLabel(i),
             pageType: pageTypeName(pt),
-            state: t(`layoutEditor.overview.state.${state}`)
+            state: on
+              ? t('layoutEditor.overview.someWidthsOn', { breakpoints: on.map((bp) => t(`layoutEditor.frameBuilder.breakpoint.${bp}`)).join(', ') })
+              : t(`layoutEditor.overview.state.${state}`)
           })
           return (
             <td key={pt} className={cell}>
@@ -310,7 +334,7 @@ export default function LayoutOverview({
 
   const legend: { mark: ReactNode; text: string }[] = [
     { mark: <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />, text: t('layoutEditor.overview.state.shown') },
-    ...(['excluded', 'cleared', 'noArea', 'unknown'] as const).map((s) => {
+    ...(['someWidths', 'excluded', 'cleared', 'noArea', 'hiddenArea', 'unknown'] as const).map((s) => {
       const { icon: Icon, tone } = STATE_ICON[s]
       return { mark: <Icon size={14} className={tone} />, text: t(`layoutEditor.overview.state.${s}`) }
     }),

@@ -1749,12 +1749,15 @@ export default {
       },
       state: {
         shown: 'Erscheint',
+        someWidths: 'Erscheint nur auf manchen Breiten',
         excluded: 'Auf diesem Seitentyp ausgeblendet',
         cleared: 'Bereich auf diesem Seitentyp geleert',
         noArea: 'Bereich in diesem Frame nicht zugewiesen',
+        hiddenArea: 'Bereich in diesem Frame auf keiner Breite gezeigt',
         unknown: 'Unbekannt — der Frame kommt vom Plugin'
       },
       cellTitle: '{{component}} auf {{pageType}}: {{state}}',
+      someWidthsOn: 'Erscheint nur auf {{breakpoints}}',
       empty: 'leer',
       ownArea: 'Eigener Bereich „{{name}}“',
       ownAreaIn: 'im Frame',

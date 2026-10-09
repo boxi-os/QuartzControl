@@ -219,12 +219,15 @@ export default function GlobalBoard({
   // Which of a position's components each area of the active frame shows. It is the renderer's
   // half of the frame's own contentsFor(): a group area holds its group, and the area without one
   // holds everything the frame's group areas did not claim - including groups this frame gave no
-  // area, which quartz would otherwise render nowhere.
+  // area, which quartz would otherwise render nowhere. Claimed by every area of the frame, not only
+  // those placed on this breakpoint: contentsFor() reads them all, so a group whose area is hidden
+  // here is in that hidden area and shown nowhere on this width - the stage drew it in the plain
+  // area instead (forty-second review, finding 3).
   function indicesForArea(area: GridFrameArea): number[] {
     const position = area.slot as LayoutPosition
     const all = positions[position] ?? []
     if (area.group) return all.filter((i) => config.plugins[i]?.layout?.group === area.group)
-    const claimed = new Set((activeAreas ?? []).filter((a) => a.slot === position && a.group).map((a) => a.group))
+    const claimed = new Set((activeFrame?.areas ?? []).filter((a) => a.slot === position && a.group).map((a) => a.group))
     return all.filter((i) => !claimed.has(config.plugins[i]?.layout?.group))
   }
 

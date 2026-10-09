@@ -391,3 +391,24 @@ Block, in einer Zeile, unter einer Textzeile: an der alten Fassung fielen 5 der 
 durch, an der neuen keine, die 22 alten und die neun Icon-Prüfungen wie vorher. Und an einem echten
 `quartz build` einer Kopie von gui-test, das Ergebnis unter „Zeile davor“ in `sidebar-note.md`:
 im gebauten `index.html` kein `href="javascript`, der Text steht als Text im `<text>`.
+
+**Namen, wie HTML sie liest, Werte, wie CSS sie liest (2026-10-10, dreiundvierzigstes Review,
+Befund 3).** Der XML-Parser unterscheidet `HREF` und `href`, HTML schreibt Attributnamen klein und
+gibt einer festen Liste von SVG-Namen ihre Großbuchstaben zurück (`attributename` →
+`attributeName`). Ein `HREF` war für die Prüfung also kein `href`, ein `ATTRIBUTENAME` für
+`getAttribute('attributeName')` nicht da, und ausgegeben wurde der Name, wie er kam — auf der Seite
+ein `href`. Ebenso fragte `leavesFile` nach `url(` wörtlich, CSS liest aber `u\72 l(` als `url(`
+und lädt aus `image-set("…")` ohne `url(`. Gemessen mit `check:inline-svg`, dem dafür acht
+Eingaben aus der Tabelle des Reviews und eine Frage nach Anfragen an fremde Hosts zugekommen sind
+(dazu, ob ein `<a>` nach dem Start der Animationen woandershin zeigt als in seinem Attribut): an der
+alten Fassung alle acht durch, jede mit „0 entfernt“ — `<use HREF>` und `<feImage HREF>` luden von
+example.com, `<set ATTRIBUTENAME="href">` lenkte einen Link auf `#` nach außen, `<use HREF="data:…">`
+blieb stehen, die drei CSS-Werte luden. An der neuen keine. Jetzt werden die Attribute zuerst so
+gelesen, wie die Website sie sieht — Name klein bzw. nach der Tabelle des HTML-Parsers, von zwei
+gleichen Namen der erste (den behält HTML), ein eigenes `href` vor `xlink:href` —, dann geprüft und
+unter diesem Namen geschrieben; ein Wert wird vor der Prüfung CSS-entmaskiert, und `image-set(`,
+`image(`, `cross-fade(` und `src(` gelten wie ein fremdes `url(`. Dazu stimmt die Erlaubnis jetzt
+mit dem überein, was der Absatz oben schon immer sagte: ein Link auf `https:` oder `mailto:`, ein
+Bild auf `https:` oder Raster-`data:` — der Code ließ für beide auch `http:` durch. Einmal auch in WebKit
+gefahren (das Skript mit `webkit` statt Chrome, Playwrights Build): alle Prüfungen bestanden.
+Firefox ist nicht gemessen (er startet auf diesem Mac nicht).

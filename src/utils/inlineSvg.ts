@@ -11,11 +11,14 @@
  * `href` (forty-second review, finding 1). So nothing is passed through: the markup is written
  * anew from an allow list - SVG elements only, none that HTML lets break out of the SVG,
  * attributes without a namespace, text escaped, no comments, no processing instructions, no
- * `<style>` (it would style the whole page). Text is escaped for Markdown as well, since a
- * Markdown snippet reads it as Markdown before HTML ever sees it. A link may go to `#…`, `https:` or `mailto:`, a
- * picture also to a raster `data:` URL; everything else that points somewhere points into the file
- * itself. The caller says how many things were taken out; editor leftovers (Inkscape's namespaces,
- * `<metadata>`) go without counting. `npm run check:inline-svg` renders the result as HTML in Chrome.
+ * `<style>` (it would style the whole page). Attribute names are read the way HTML reads them,
+ * values the way CSS reads them, escapes included, and text is escaped for Markdown as well,
+ * since a Markdown snippet reads it as Markdown before HTML ever sees it. A link may go to `#…`,
+ * `https:` or `mailto:`, a picture to `#…`, `https:` or a raster `data:` URL; every other `href`
+ * and every value CSS reads points into the file itself. The caller says how many things were
+ * taken out; editor leftovers (Inkscape's namespaces, `<metadata>`) go without counting.
+ * `npm run check:inline-svg` renders the result as HTML in Chrome, directly and through the
+ * Markdown chain of quartz-layout-box.
  *
  * The root gets a class after the file name (`logo.svg` → `svg-logo`), the handle a stylesheet
  * needs; a class it already has stays. Blank lines go, because in a Markdown snippet a blank line
@@ -47,12 +50,50 @@ const compact = (value: string): string => value.replace(/[\u0000- ]/g, '')
 const safeHref = (element: string, value: string): boolean => {
   const v = compact(value)
   if (v.startsWith('#')) return true
-  if (element === 'a') return /^(https?|mailto):/i.test(v)
-  if (element === 'image') return /^https?:/i.test(v) || /^data:image\/(png|jpe?g|gif|webp|avif)[;,]/i.test(v)
+  if (element === 'a') return /^(https|mailto):/i.test(v)
+  if (element === 'image') return /^https:/i.test(v) || /^data:image\/(png|jpe?g|gif|webp|avif)[;,]/i.test(v)
   return false
 }
+// CSS reads `u\72 l(` as `url(`: an escape is a backslash and one to six hex digits with one
+// optional space after them, or a backslash and any other character. Decoded before the question,
+// so the question sees the value the way the style engine will.
+const cssUnescape = (value: string): string =>
+  value.replace(/\\(?:([0-9a-f]{1,6})[ \t\n\r\f]?|([^\n\r\f0-9a-f]))/gi, (_, hex: string | undefined, ch: string | undefined) =>
+    hex ? String.fromCodePoint(Math.min(parseInt(hex, 16) || 0xfffd, 0x10ffff)) : (ch ?? '')
+  )
 // `fill="url(https://…)"`, a `style` with an `@import`: anything in a value that leaves the file.
-const leavesFile = (value: string): boolean => /url\(\s*(?!['"]?\s*#)/i.test(value) || /@import|expression\s*\(|javascript:/i.test(compact(value))
+// `image-set("…")` and its relatives load from a bare string, without any `url(`.
+const leavesFile = (raw: string): boolean => {
+  const value = cssUnescape(raw)
+  return (
+    /url\(\s*(?!['"]?\s*#)/i.test(value) ||
+    /image-set\(|image\(|cross-fade\(|\bsrc\(/i.test(value) ||
+    /@import|expression\s*\(|javascript:/i.test(compact(value))
+  )
+}
+
+// HTML writes attribute names in lower case and gives these SVG names their capitals back
+// ("adjust SVG attributes" in the HTML parser); XML takes every name as written. A name is checked
+// and written the way the site will read it - `HREF` is an `href` there, `ATTRIBUTENAME` an
+// `attributeName` (forty-third review, finding 3).
+const SVG_CAMEL = new Map(
+  [
+    'attributeName', 'attributeType', 'baseFrequency', 'baseProfile', 'calcMode', 'clipPathUnits',
+    'diffuseConstant', 'edgeMode', 'filterUnits', 'glyphRef', 'gradientTransform', 'gradientUnits',
+    'kernelMatrix', 'kernelUnitLength', 'keyPoints', 'keySplines', 'keyTimes', 'lengthAdjust',
+    'limitingConeAngle', 'markerHeight', 'markerUnits', 'markerWidth', 'maskContentUnits', 'maskUnits',
+    'numOctaves', 'pathLength', 'patternContentUnits', 'patternTransform', 'patternUnits', 'pointsAtX',
+    'pointsAtY', 'pointsAtZ', 'preserveAlpha', 'preserveAspectRatio', 'primitiveUnits', 'refX', 'refY',
+    'repeatCount', 'repeatDur', 'requiredExtensions', 'requiredFeatures', 'specularConstant',
+    'specularExponent', 'spreadMethod', 'startOffset', 'stdDeviation', 'stitchTiles', 'surfaceScale',
+    'systemLanguage', 'tableValues', 'targetX', 'targetY', 'textLength', 'viewBox', 'viewTarget',
+    'xChannelSelector', 'yChannelSelector', 'zoomAndPan'
+  ].map((name) => [name.toLowerCase(), name])
+)
+const htmlName = (name: string): string => {
+  const lower = name.toLowerCase()
+  return SVG_CAMEL.get(lower) ?? lower
+}
 
 // A Markdown snippet is read twice: by remark, then by parse5. Whether remark reads the text
 // inside the SVG as Markdown depends on the line form - an SVG in one line, or right under a line
@@ -92,8 +133,37 @@ export function inlineSvg(text: string, fileName: string): InlineSvgResult {
       if (!(name === 'metadata' && el.namespaceURI === SVG_NS) && !EDITOR_NS.test(el.namespaceURI ?? '')) removed++
       return ''
     }
+    // The attributes as the site will see them: names the HTML way, the first of two that end up
+    // with the same name, since HTML keeps the first and drops the rest. An own `href` wins over
+    // `xlink:href`, which is written as plain `href`.
+    const seen = new Map<string, string>()
+    let xlinkHref: string | null = null
+    for (const attr of el.attributes) {
+      const ns = attr.namespaceURI
+      if (ns === XLINK_NS && attr.localName === 'href') {
+        xlinkHref ??= attr.value
+        continue
+      }
+      if (ns !== null) {
+        // xmlns declarations, xml:space, editor attributes - no meaning on the page.
+        if (ns !== 'http://www.w3.org/2000/xmlns/' && ns !== 'http://www.w3.org/XML/1998/namespace' && !EDITOR_NS.test(ns)) removed++
+        continue
+      }
+      if (!/^[A-Za-z][\w.-]*$/.test(attr.localName)) {
+        removed++
+        continue
+      }
+      const html = htmlName(attr.localName)
+      if (seen.has(html)) {
+        removed++
+        continue
+      }
+      seen.set(html, attr.value)
+    }
+    if (xlinkHref !== null && !seen.has('href')) seen.set('href', xlinkHref)
+
     if (ANIMATIONS.has(name)) {
-      const target = compact(el.getAttribute('attributeName') ?? '').replace(/^.*:/, '').toLowerCase()
+      const target = compact(seen.get('attributeName') ?? '').replace(/^.*:/, '').toLowerCase()
       if (target === 'href' || target.startsWith('on')) {
         removed++
         return ''
@@ -102,30 +172,20 @@ export function inlineSvg(text: string, fileName: string): InlineSvgResult {
 
     const attrs: string[] = []
     let ownClass: string | null = null
-    for (const attr of el.attributes) {
-      const ns = attr.namespaceURI
-      const local = attr.localName
-      if (ns === XLINK_NS && local === 'href') {
-        // Written as plain `href` below, unless the element has one of its own.
-        if (el.hasAttribute('href')) continue
-      } else if (ns !== null) {
-        // xmlns declarations, xml:space, editor attributes - no meaning on the page.
-        if (ns !== 'http://www.w3.org/2000/xmlns/' && ns !== 'http://www.w3.org/XML/1998/namespace' && !EDITOR_NS.test(ns)) removed++
-        continue
-      }
-      if (!/^[A-Za-z][\w.-]*$/.test(local) || /^on/i.test(local)) {
+    for (const [attrName, value] of seen) {
+      if (attrName.startsWith('on')) {
         removed++
         continue
       }
-      if (local === 'href' ? !safeHref(name, attr.value) : leavesFile(attr.value)) {
+      if (attrName === 'href' ? !safeHref(name, value) : leavesFile(value)) {
         removed++
         continue
       }
-      if (el === root && local === 'class') {
-        ownClass = attr.value
+      if (el === root && attrName === 'class') {
+        ownClass = value
         continue
       }
-      attrs.push(`${local}="${escapeAttr(attr.value)}"`)
+      attrs.push(`${attrName}="${escapeAttr(value)}"`)
     }
     if (el === root) {
       const own = ownClass?.trim() ?? ''

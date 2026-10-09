@@ -83,6 +83,18 @@ const boese = [
   ['Markdown-Link in CDATA', svg(`<text><![CDATA[[KLICK](javascript:${RUN})]]></text>`), 0],
   ['Markdown-Bild mit fremder Adresse im Text', svg('<text>![x](https://example.com/p.png)</text>'), 0],
   ['Autolink im Text', svg(`<text>&lt;javascript:${RUN}&gt; www.example.com a@example.com</text>`), 0],
+  // XML unterscheidet HREF und href, HTML schreibt Attributnamen klein und passt SVG-Namen an
+  // (attributename → attributeName); CSS liest u\72 l( als url( und lädt aus image-set("…") ohne
+  // url( (43. Review, Befund 3). Hier zählt auch eine Anfrage an einen fremden Host.
+  ['<use HREF> auf eine fremde Datei', svg('<use HREF="https://example.com/sprite.svg#a"/>')],
+  ['<feImage HREF> auf eine fremde Datei', svg('<filter id="f"><feImage HREF="https://example.com/f.png"/></filter><rect width="9" height="9" filter="url(#f)"/>')],
+  ['<image HREF> über http', svg('<image HREF="http://example.com/i.png" width="9" height="9"/>')],
+  ['<set ATTRIBUTENAME="href"> nach außen', svg('<a href="#"><set ATTRIBUTENAME="href" to="https://example.com/phish"/><rect width="24" height="24"/></a>')],
+  ['<use HREF> mit SVG-Daten', svg(`<use HREF="data:image/svg+xml;base64,${Buffer.from(`<svg xmlns='http://www.w3.org/2000/svg' id='x'><image href='x' onerror='${RUN}'/></svg>`).toString('base64')}#x"/>`)],
+  ['CSS-Escape in url() im style', svg('<rect width="9" height="9" style="background-image:u\\72 l(https://example.com/b.png)"/>')],
+  ['image-set() im style', svg('<rect width="9" height="9" style="mask-image:image-set(&quot;https://example.com/m.png&quot; 1x)"/>')],
+  ['CSS-Escape in url() in fill', svg('<rect width="9" height="9" fill="u\\72 l(https://example.com/p.svg#p)"/>')],
+  ['href und HREF zugleich', svg('<use href="#s" HREF="https://example.com/s.svg#a"/>'), 0],
   ['Zeilenanfang mit Markdown in einem Attribut', svg('<path aria-label="x&#10;# Titel&#10;- Punkt" d="M0 0&#10;- 1 2"/>'), 0],
   ['Zeilenanfang mit Markdown im Text', svg('<text>x\n# Titel\n- Punkt\n1. Eins</text>'), 0],
   ['Markdown-Link über Escapes im Text', svg(`<text>\\[KLICK\\](javascript:${RUN})</text>`), 0]
@@ -101,6 +113,10 @@ const clean = (text, name = 'test-icon.svg') => page.evaluate(([t, n]) => Inline
 const render = async (markup) => {
   const site = await browser.newPage()
   let navigated = false
+  const fremd = []
+  site.on('request', (r) => {
+    if (/^https?:/.test(r.url())) fremd.push(r.url())
+  })
   site.on('framenavigated', (f) => {
     // Ein Sprung zu „#“ ist keine Navigation weg von der Seite, und einer nach http(s) ist ein Link,
     // den der Bereiniger erlaubt — und den remark-gfm aus einer Adresse im Text macht, auch wenn
@@ -118,9 +134,12 @@ const render = async (markup) => {
       const absatz = el.localName === 'p' && el.parentElement === box
       if (el.namespaceURI !== svgNs && !absatz) out.push(`<${el.localName}> außerhalb des SVG`)
       if (el.localName === 'style' || el.localName === 'script' || el.localName === 'foreignObject') out.push(`<${el.localName}>`)
+      // Ein <a> nach http, https oder mailto ist erlaubt, auch wenn der Bereiniger selbst nur https und
+      // mailto schreibt: remark-gfm macht aus „www.…“ im dekodierten Text einen http-Link, und das ist
+      // das Verhalten jedes Markdown-Schnipsels, nicht des SVG.
       for (const a of el.attributes) {
         if (/^on/i.test(a.localName)) out.push(`${a.name} an <${el.localName}>`)
-        if (a.localName === 'href' && !/^#/.test(a.value) && !/^data:image\/(png|jpe?g|gif|webp|avif);/i.test(a.value) && !(el.localName === 'image' && /^https?:/i.test(a.value)) && !(el.localName === 'a' && /^(https?|mailto):/i.test(a.value)))
+        if (a.localName === 'href' && !/^#/.test(a.value) && !/^data:image\/(png|jpe?g|gif|webp|avif);/i.test(a.value) && !(el.localName === 'image' && /^https:/i.test(a.value)) && !(el.localName === 'a' && /^(https?|mailto):/i.test(a.value)))
           out.push(`${a.name}=${JSON.stringify(a.value.slice(0, 30))} an <${el.localName}>`)
         if (a.localName === 'style' && /url\(\s*['"]?(?!#)/i.test(a.value)) out.push(`style mit url() an <${el.localName}>`)
       }
@@ -131,9 +150,20 @@ const render = async (markup) => {
     return out
   })
   const before = await site.evaluate(() => window.__ran ?? 0)
-  // Ein Klick auf jedes Element der Box, die <set>-Animationen gestartet.
-  await site.evaluate(() => {
+  const geladen = [...fremd]
+  // Die Animationen gestartet, und gefragt, ob ein Link danach woandershin zeigt als in seinem
+  // Attribut — ein <a href="#"> darf nicht nach außen führen.
+  const nachAussen = await site.evaluate(async () => {
     for (const el of document.querySelectorAll('svg')) el.setCurrentTime?.(1)
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)))
+    for (const a of document.querySelectorAll('.layout-box-content a')) {
+      const h = a.href
+      if (h && typeof h === 'object' && h.animVal !== h.baseVal) return h.animVal
+    }
+    return null
+  })
+  // Ein Klick auf jedes Element der Box.
+  await site.evaluate(() => {
     for (const el of document.querySelectorAll('.layout-box-content *')) {
       try {
         el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
@@ -145,7 +175,8 @@ const render = async (markup) => {
   await site.waitForTimeout(150)
   const ran = await site.evaluate(() => window.__ran ?? 0).catch(() => 0)
   await site.close()
-  return { befund, ranOnLoad: before, ranOnClick: ran - before, navigated }
+  // Nur, was ohne Klick geladen wurde; ein Klick auf einen erlaubten https-Link lädt auch.
+  return { befund, ranOnLoad: before, ranOnClick: ran - before, navigated, fremd: geladen, nachAussen }
 }
 
 let fehler = 0
@@ -167,6 +198,8 @@ for (const [name, input, zaehlt = 1] of boese) {
     if (s.ranOnLoad) hier.push('Skript lief beim Laden')
     if (s.ranOnClick) hier.push('Skript lief beim Klick')
     if (s.navigated) hier.push('die Seite navigierte')
+    if (s.fremd.length) hier.push(`lädt von außen (${s.fremd[0]})`)
+    if (s.nachAussen) hier.push(`ein Link führt nach ${s.nachAussen}`)
     if (hier.length) probleme.push(`${lage}: ${hier.join(', ')}`)
   }
   if (zaehlt && r.removed === 0) probleme.push('„0 entfernt“ gemeldet')

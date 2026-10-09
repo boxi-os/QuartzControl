@@ -40,7 +40,13 @@ Projektwurzel.
   Review, Befund 1). `inlineSvg.ts` schreibt die Ausgabe deshalb selbst, aus einer Erlaubnisliste:
   nur SVG-Elemente, keines, mit dem HTML aus dem SVG ausbricht, Text maskiert, Verweise nur auf
   `#…` und wenige Schemata, geprüft nach dem Entfernen aller Zeichen, die der URL-Parser ignoriert.
-  `npm run check:inline-svg` setzt jedes Ergebnis in Chrome als HTML in eine Box. Messungen in
+  **Jeder Leser zählt, nicht nur der letzte**: Ein Markdown-Schnipsel liest den Text erst als
+  Markdown, also steht jedes Zeichen, aus dem Markdown Struktur baut, als Referenz da; ein
+  Attributname wird geprüft und geschrieben, wie HTML ihn liest (`HREF` ist `href`), ein Wert, wie
+  CSS ihn liest (`u\72 l(` ist `url(`) — an allen drei Stellen hatte die erste Fassung den Namen
+  des einen Parsers gegen die Lesart des anderen geprüft (dreiundvierzigstes Review, Befunde 1 und 3).
+  `npm run check:inline-svg` setzt jedes Ergebnis in Chrome als HTML in eine Box, direkt und durch
+  die Markdown-Kette von quartz-layout-box, und zählt Anfragen nach außen. Messungen in
   [`plugins-and-config.md`](decisions/plugins-and-config.md).
 - **Neue Kanäle nehmen ein Objekt-Argument**, kein Positions-Tupel (`dialog.confirm` ist das Muster):
   ein späterer optionaler Key ist dann eine Zeile im Vertrag und eine im Schema, nicht ein vierter

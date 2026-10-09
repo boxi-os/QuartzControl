@@ -312,9 +312,20 @@ export default function PluginsInstalled(): JSX.Element {
   // beside the queue: a switch and a field tabbed out of right after it lost the switch, and two
   // quick clicks on an arrow moved the row once (measured in the built app, five of five, with no
   // delay added to the save).
-  async function commit(mutate: (plugins: PluginEntry[]) => PluginEntry[]): Promise<void> {
+  //
+  // Nothing is committed while a removal is queued: the state it would mutate still holds the entry
+  // being removed, and its save would put it back after the CLI had taken it out. The controls are
+  // locked by `busy`, but a keyboard drag picked up before the bin was clicked ends after it - the
+  // handle was the one control `busy` did not reach, and one drag 0.5 s into the removal kept the
+  // entry (forty-second review, finding 2, measured in the built app).
+  const removing = useRef(false)
+  async function commit(mutate: (plugins: PluginEntry[]) => PluginEntry[]): Promise<boolean> {
+    if (removing.current) {
+      setMessage(t('pluginsInstalled.busyRemoving'))
+      return false
+    }
     const current = configRef.current
-    if (!current) return
+    if (!current) return false
     const next = { ...current, plugins: mutate(current.plugins) }
     configRef.current = next
     setConfig(next)
@@ -328,11 +339,11 @@ export default function PluginsInstalled(): JSX.Element {
       throw err
     }
     if (configRef.current === next) await reload()
+    return true
   }
 
   async function updateField(index: number, path: string[], value: unknown): Promise<void> {
-    await commit((plugins) => plugins.map((p, i) => (i === index ? (setDeep(p, path, value) as PluginEntry) : p)))
-    flagSaved(index)
+    if (await commit((plugins) => plugins.map((p, i) => (i === index ? (setDeep(p, path, value) as PluginEntry) : p)))) flagSaved(index)
   }
 
   async function toggleEnabled(index: number): Promise<void> {
@@ -349,6 +360,8 @@ export default function PluginsInstalled(): JSX.Element {
     const question = t(frame ? 'pluginsInstalled.removeFrameConfirm' : 'pluginsInstalled.removeConfirm', { name })
     if (!(await confirmDialog({ text: question, confirmLabel: t('common.remove'), danger: true }))) return
     setBusy(true)
+    setMessage(null)
+    removing.current = true
     // In the write queue like every edit: a save still pending - the field the click on the bin
     // just blurred - wrote the whole config as it was rendered, entry included, after the CLI had
     // taken the entry out, and the entry was back in the config with nothing in the lockfile
@@ -374,12 +387,14 @@ export default function PluginsInstalled(): JSX.Element {
     writes.current = removal.catch(() => {})
     try {
       const result = await removal
-      setMessage(result.success ? null : result.output)
+      // Only a failure is said here; a change refused meanwhile keeps its sentence (see commit).
+      if (!result.success) setMessage(result.output)
     } catch (err) {
       setMessage(formatIpcError(err))
     } finally {
-      setBusy(false)
       await reload()
+      removing.current = false
+      setBusy(false)
       await reloadFrames()
     }
   }
@@ -420,7 +435,7 @@ export default function PluginsInstalled(): JSX.Element {
 
     // The group says which entries and in what order; the entries themselves are the newest ones,
     // so a field saved a moment ago is not written back to what this render held.
-    await commit((plugins) => {
+    const committed = await commit((plugins) => {
       const next = [...plugins]
       reordered.forEach((item, i) => {
         const value = (i + 1) * 10
@@ -430,6 +445,7 @@ export default function PluginsInstalled(): JSX.Element {
       })
       return next
     })
+    if (!committed) return
     // The one sentence that says what actually happened, for every way of getting here - drag,
     // keyboard drag, and the two arrows. The drag's own commentary stops at "abgelegt bei X";
     // this is the result.
@@ -885,7 +901,8 @@ function Row(props: PluginRowProps): JSX.Element {
 
 function SortableRow(props: PluginRowProps): JSX.Element {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
-    id: String(props.item.index)
+    id: String(props.item.index),
+    disabled: props.busy
   })
   // The wrapper carries the transform because Card is a plain div component with no ref of its
   // own.
@@ -971,7 +988,7 @@ function PluginRow({
           type="button"
           ref={handleRef}
           {...handleProps}
-          disabled={!canReorder}
+          disabled={!canReorder || busy}
           title={canReorder ? t('pluginsInstalled.dragHint') : undefined}
           aria-label={t('pluginsInstalled.dragHandle', { name: rowName })}
           className={`mt-px flex shrink-0 select-none items-center rounded-[6px] border p-1 transition-colors ${

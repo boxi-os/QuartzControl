@@ -1371,6 +1371,7 @@ export default {
     pageTypesGroup: 'Seitentypen',
     otherProcessingGroup: 'Transformer, Filter & Emitter',
     dragHint: 'Ziehen zum Umsortieren',
+    busyRemoving: 'Während ein Plugin entfernt wird, bleibt die Liste, wie sie ist — die Änderung ist nicht gespeichert. Versuche es danach noch einmal.',
     dragHandle: 'Umsortieren: {{name}}',
     savedAnnounce: 'Einstellungen von {{name}} gespeichert.',
     reorderedAnnounce: '{{name}} ist jetzt an Position {{position}} von {{total}}.',

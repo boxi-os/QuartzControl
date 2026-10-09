@@ -1366,6 +1366,7 @@ export default {
     pageTypesGroup: 'Page types',
     otherProcessingGroup: 'Transformers, filters & emitters',
     dragHint: 'Drag to reorder',
+    busyRemoving: 'While a plugin is being removed, the list stays as it is — the change was not saved. Try again afterwards.',
     dragHandle: 'Reorder: {{name}}',
     savedAnnounce: 'Settings for {{name}} saved.',
     reorderedAnnounce: '{{name}} is now at position {{position}} of {{total}}.',

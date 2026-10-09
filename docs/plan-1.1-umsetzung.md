@@ -212,6 +212,60 @@ sein. P4 migriert Nutzerdateien und soll am längsten auf dem Branch liegen.
   und 1728 ohne waagerechten Bildlauf, Gegenprobe gegen eine `byPageType`-YAML aus 1.0.2 (Ausschlüsse,
   geleerte Bereiche, unbekanntes Template), neue Screenshot-Szenen.
 
+## Runde nach der Rückmeldung (2026-10-08) — Seitenleiste und Plugin-Editoren
+
+Gebaut nach `~/.claude/plans/starry-painting-abelson.md`, fünfzehn Commits von `d3fa14e` bis
+`96a1bb5`; hier stehen ihre Messwege, damit eine spätere Änderung an denselben Seiten sie
+wiederholen kann. Gemeinsam für alle: die **gebaute** App unter Playwright, 1280 und 1600 px,
+Wegwerf-Profil, eine `cp -Rc`-Kopie von `gui-test` (seit `8b01477` nicht mehr das echte Profil;
+einige Läufe dieser Runde schrieben noch in `gui-test` selbst und stellten Config und Ziele danach
+byte-gleich her), native Dialoge im Hauptprozess gestubbt, kein waagerechter Bildlauf, danach
+`cmp` der berührten Projektdateien gegen das Original. Dazu `npm run smoke` und, wo Optionen
+berührt sind, `npm run check:option-schema -- <gui-test>` (277/267/10/0).
+
+- **Bühne, 800-px-Satz** (`d3fa14e`): gebautes Example mit Mobil-Breite 900 in Chrome bei 750, 850
+  und 950 px — bei 850 sind Desktop-only-Komponenten `display: none`, Mobile-only
+  `display: contents`.
+- **Auswahl lösen, Zusammenfassung** (`600d886`): Chip → Klick auf leere Bühne → Zusammenfassung;
+  Escape auf Chip, im Textfeld der Leiste und auf einem Knopf der Leiste → Zusammenfassung, Fokus auf
+  Chip bzw. Leiste; ein Zeiger-Drag, der über leerer Bühne endet, behält die Auswahl; im
+  Frame-Editor dasselbe für Bereiche.
+- **Frames ohne Vorschaltseite, Seitentypen** (`ddb7143`): Reiter öffnet das erste eigene Frame;
+  Standard-Frame ohne Frage und über einen Routenwechsel; „Als eigenes Frame anpassen“ → Entwurf,
+  unverändert verlassen fragt nicht, umbenannt fragt einmal; Seitentypen-Tabelle mit 8 Typen, jeder
+  Sprung landet am richtigen Ort.
+- **Installiert** (`b1f2cbc`, `cd0df7e`): Auswahl → Leiste mit Platzierung und Optionen, Gruppen
+  falten, Suche ab acht Optionen, Escape im Suchfeld leert nur die Suche; Platzierung gefaltet
+  (vorher begannen die Optionen bei y 1242 statt 285).
+- **Navigationen** (`ee2f73e`): Server aus dem Reiter gestartet, Kachelwechsel schreibt `variant` und
+  der Rahmen zeigt nach dem Neubau `quartz-nav--<art>`; Pfeiltaste auf den Kacheln schreibt; Pager
+  landet in `afterBody`; Duplikat ohne zweite `id`; Viewport des Rahmens 1280/901/390.
+- **Zusätzliche Inhalte** (`8ac6921`): beide Inhaltswechsel in der Datei, neuer Schnipsel,
+  Umbenennen schreibt `file:` in jedem Kasten um und zurück, belegter Name abgelehnt, Bild
+  hinzugefügt/umbenannt/in den Papierkorb (`shell.trashItem` gestubbt, in den Scratchpad verschoben),
+  Kasten anlegen/duplizieren/entfernen, Vorschau zeigt alle sieben Kästen.
+- **Mehrsprachigkeit** (`577dd2c`): ein/aus, Name auf Return, belegter Code abgelehnt, en → fr → en
+  mit nachziehender Standardsprache, Veröffentlichen aus/an mit gesperrter letzter Sprache,
+  Reihenfolge, Sprache anlegen/entfernen, Umschalter-Stil über das Abschnittsformular.
+- **Snapshots** (`365e299`): 14 Zeilen, Zusammenfassung, Auswahl zeigt „1 Datei unterscheidet sich“
+  mit Diff, Escape und Klick auf Text der Liste leeren die Leiste. Nichts wiederhergestellt.
+- **Veröffentlichen** (`02a1400`, `96a1bb5`): sieben echte Ziele; Bearbeiten öffnet das Formular in
+  der Leiste, Zeilenwechsel mit geändertem Namen fragt; „Neues Ziel“ markiert keine Zeile und legt
+  das Formular zweispaltig (249/201 px); Escape ohne Formular behält die Auswahl, schließt ein
+  unberührtes ohne Frage, fragt bei einem geänderten. `publish-targets.json` danach `cmp`-gleich.
+- **Zugänge in den Einstellungen** (`7f34418`): die drei Zugänge dieses Rechners (nur lesen, keine
+  Screenshots); Leiste 544/448 px, Escape mit geändertem Namen fragt, „+ FTP“ ohne markierte Zeile,
+  Auswahl übersteht den Weg zur Startseite, Schlüsseldatei-Knopf 13 px innerhalb der Leiste.
+  `connections.json` unberührt (mtime).
+- **Marktplatz** (`c9e52de`): gegen die echte GitHub-API, 47 Zeilen; die READMEs von explorer und
+  graph (4/5 Codeblöcke, 12/23 Listenpunkte, kein Tag-Text, kein Überlauf); installierte Plugins
+  ohne Installieren-Knopf. Nichts installiert.
+- **Variablen** (`ad49cbc`): Zusammenfassung 64/151/67; `--secondary` zeigt fünf Abschnitte, Tippen
+  in der Leiste ändert den Wert der Zeile sofort, ein Chip springt mit Fokus auf die Zielzeile,
+  Escape leert. `custom.scss` `cmp`-gleich. Nicht neu gemessen: Tastendruck-Kosten bei großem Theme.
+- **Zeilen der drei Plugin-Editoren** (`96a1bb5`): Klick auf die Unterzeile lässt den Fokus auf dem
+  Namen, Escape löst danach die Auswahl, in allen vier Plugin-Reitern.
+
 ## P8 — Vorlagen, Handbuch, Release
 
 - Vorlagen: alle vier Varianten neu bauen; `--variant basic --check-sync` und `--variant example
@@ -433,7 +487,9 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
 
 **Ältere aus der 1.1-Arbeit:**
 
-- `SegmentedControl` `variant="chips"` hat seit der Ziel-Liste keinen Aufrufer.
+- `SegmentedControl` `variant="chips"` hat seit der Ziel-Liste keinen Aufrufer — bleibt bewusst:
+  `docs/conventions.md` hält die Haut „für die nächste Gruppe, deren Optionen Daten sind“, und der
+  Kommentar am Primitive sagt dasselbe. Wer sie entfernen will, ändert zuerst die Regel.
 - ~~Die Einstellungen setzen ein eigenes `max-w-5xl` (`Settings.tsx`)~~ — bleibt, und sagt jetzt
   am Block, warum (die Regel „Eine Stelle bestimmt die Seitenbreite“ verlangt genau das). Gemessen
   an der gebauten App (Wegwerf-Profil): mit `max-w-5xl` bei 1280 und 1728 eine Spalte von 1024 px,
@@ -481,8 +537,9 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
   läuft über. Nebenbei gesehen, nicht angefasst: Der Seitentyp `excalidraw` hat keinen Namen in
   `layoutEditor.pageTypes` und erscheint roh.
 - Handbuch-Kapitel und Screenshots für die neuen Seiten (gehört zu P8).
-- Die Messwege der Runde nach der Rückmeldung (Seitenleiste, Plugin-Editoren) stehen nicht in
-  diesem Plan.
+- ~~Die Messwege der Runde nach der Rückmeldung (Seitenleiste, Plugin-Editoren) stehen nicht in
+  diesem Plan~~ — nachgetragen (2026-10-09), Abschnitt „Runde nach der Rückmeldung“ vor P8, aus
+  den Nachrichten der fünfzehn Commits.
 
 ## Rückstand außerhalb von 1.1
 

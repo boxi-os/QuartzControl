@@ -3,26 +3,10 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Example
 //
-// Everything this template styles lives in quartz/styles/custom/: one file for
-// the layout, one for the content, one for the callouts, one per kind of
-// component and one per plugin. The app loads them in the order it keeps in
-// quartz/styles/_quartzcontrol.scss. Nothing is styled here directly - this
-// file only holds this note and whatever you add below it.
+// The template's styles live in quartz/styles/custom/ (layout, content,
+// callouts, one file per kind of component and per plugin), loaded in the
+// order kept in quartz/styles/_quartzcontrol.scss. Add your own rules below.
 //
-// Two things are worth knowing before changing anything:
-//
-//   • No colour and no measure of the design is written literally in those
-//     files. Both come from CSS variables, which the app manages under
-//     "Stile → Variablen" (the `css-vars` block in _quartzcontrol.scss). Change
-//     --tpl-space-md there and every gap in the site follows. What does stand
-//     literally is named and accounted for: the callout and syntax colours,
-//     because they mean status rather than palette; hairlines; and the
-//     breakpoints, since a media query cannot read a variable.
-//
-//   • The colours were measured, not chosen by eye: every text/background pair
-//     in this template, including all thirteen callout types, meets WCAG AA in
-//     both light and dark mode. Quartz's own callout colours do not - eleven of
-//     its thirteen fail against a light ground and four against a dark one -
-//     which is why callouts.scss restates them.
-//
+// Colours and sizes come from CSS variables, editable under "Stile →
+// Variablen". All text/background pairs meet WCAG AA in light and dark mode.
 // ─────────────────────────────────────────────────────────────────────────────

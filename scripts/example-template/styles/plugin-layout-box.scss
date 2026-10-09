@@ -1,28 +1,7 @@
-// quartz-layout-box — every shape the plugin can take.
-//
-// The plugin ships deliberately colourless styles (width, image swapping, a dashed placeholder),
-// which is the right call for a component plugin: it leaves the look to the site. This file is
-// that look, one block per capability, so nothing the plugin offers is left unstyled:
-//
-//   .layout-box            the container, in either form
-//   .layout-box-title      an <h3>, or a <summary> when `collapsible` is set
-//   .layout-box-content    the snippet, HTML or rendered Markdown
-//   .layout-box-missing    the dev-server placeholder for a snippet file that is not there
-//   .img-light/.img-dark   the theme-dependent image pair
-//
-// plus the five `className` variants this template's instances declare (plugins.mjs). Each
-// variant is one instance in one position, so the position's needs decide the treatment: a box in
-// the header is a masthead, the same component after the body is a call to action.
-//
-// Until 1.1 the template had 31 stylesheets, now twelve. A comment below that names one of the old
-// ones (`body-mermaid.scss`, `base.scss`) means the section of that name in one of the twelve - the
-// old name is what to search for.
+// quartz-layout-box: container, title, content, missing-file placeholder, light/dark images,
+// and the className variants of this template's instances.
 
-// Moved here from nav-explorer.scss in 1.1.
-// Der Kasten, der die Regel für die aktuelle Ordnerseite mitbringt, rendert nichts als ein
-// `<style>` (plugins.mjs). `display: none` nimmt ihn aus dem Fluss - ein Stylesheet wirkt
-// unabhängig davon, ob sein Element gerendert wird -, sonst stünde im Footer-Bereich eine leere
-// Rinne unter dem Kolophon.
+// The box that only carries a <style> for the current folder page: take it out of the flow.
 .layout-box-current-folder {
   display: none;
 }
@@ -39,9 +18,7 @@
   color: var(--darkgray);
   line-height: var(--tpl-leading-snug);
 
-  // The article's rhythm at small-type scale: 12px against a 22.4px line is 0.54 of a line, where
-  // the article uses 0.94 of its own. A sidebar box is meant to be read at a glance and stays
-  // tighter than the page - but 8px was 0.36, and two paragraphs at that distance are one.
+  // Paragraph spacing, a bit tighter than the article.
   p { margin-block: 0 var(--tpl-space-sm); }
   p:last-child { margin-block-end: 0; }
 
@@ -53,15 +30,13 @@
     &:hover { color: var(--tertiary); }
   }
 
-  // Markdown snippets bring lists; they are rendered by the plugin's own pipeline, outside
-  // <article>, so 40-content.scss does not reach them.
+  // Lists in Markdown snippets (outside <article>).
   ul, ol {
     margin-block: 0 var(--tpl-space-sm);
     padding-inline-start: var(--tpl-space-md);
   }
 
-  // 4px, not 2: two pixels between two items is a rounding error, not a separation. Half the
-  // article's step, because everything in this box is.
+  // Space between list items.
   li { margin-block: var(--tpl-space-2xs); }
 
   code {
@@ -85,20 +60,14 @@
 
 /* ------------------------------------------------------------------- collapsible form */
 
-// `collapsible: true` renders <details>/<summary>. The marker, the chevron and its rotation all
-// come from the one `summary` rule in base.scss now - this box used to build its own triangle out
-// of two CSS borders, which was a fourth drawing of the site's one disclosure arrow. What is left
-// here is the part that is about this box and not about disclosure: a summary that is 17px tall is
-// not a usable control.
+// Collapsible box: chevron comes from the global summary rule; this only sets a usable height.
 details.layout-box > summary.layout-box-title {
   min-height: 32px;
 }
 
 /* --------------------------------------------------------------- the missing-file state */
 
-// Only ever rendered by `quartz build --serve`. Styled rather than left to the plugin's default
-// because an unstyled warning in a designed sidebar reads as a broken page instead of a message
-// to the person editing it.
+// Placeholder for a missing snippet file (dev server only).
 .layout-box-missing {
   padding: var(--tpl-space-xs);
   border: var(--tpl-rule-width) dashed var(--tpl-rule-strong);
@@ -117,9 +86,7 @@ details.layout-box > summary.layout-box-title {
 /* ------------------------------------------------------- variant: the masthead (header) */
 
 .layout-box-mark {
-  // The plugin's own `.layout-box { width: 100% }` applies here too, and in a flex row that made
-  // the mark 1376px wide and pushed the site title onto a second line. `flex` does not undo a
-  // declared width, so the width has to be undone explicitly.
+  // Undo the plugin's width: 100% inside the header row.
   width: auto;
   flex: 0 0 auto;
 }
@@ -129,45 +96,25 @@ details.layout-box > summary.layout-box-title {
   align-items: center;
   gap: var(--tpl-space-xs);
   text-decoration: none;
-  // The whole mark is one link, so it needs one target and one ring around both halves.
+  // One link, one focus ring around both halves.
   border-radius: var(--tpl-radius-md);
   padding: var(--tpl-space-3xs);
   margin: calc(var(--tpl-space-3xs) * -1);
 
-  // Nothing here may set `display` on an svg. Quartz emits component CSS inside
-  // `@layer quartz-base` and appends custom.scss unlayered, and an unlayered declaration beats
-  // every layered one regardless of specificity (docs/decisions/styles-and-fonts.md, finding 6) -
-  // a plain `svg { display: block }` in this file silently switched both marks on, measured, side
-  // by side. Since 2026-09-05 the plugin sets `display` on both .img-light and .img-dark itself
-  // and owns the swap; the restatement that used to stand here is gone, because a second copy of
-  // a rule only drifts.
+  // No display here: the plugin switches .img-light/.img-dark itself.
   svg {
     flex: 0 0 auto;
     border-radius: var(--tpl-radius-sm);
   }
 
-  // Dasselbe für ein Bild. Seit dem 2026-09-24 ist die Marke in allen Vorlagen das Projektbild
-  // (`quartz/static/icon.png`, `icon-dark.png`), das die App unter „Konfiguration → Projektbild“
-  // ersetzt; bis dahin stand sie im Example als Inline-SVG in der Konfiguration. Die Regel für das
-  // SVG oben bleibt für jeden, der seine Marke so einsetzt, und ist sonst wirkungslos statt falsch.
-  //
-  // `display` steht auch hier nicht: Der Umschalter des Plugins hängt an den Klassen
-  // `.img-light`/`.img-dark` und nicht am Element, er trägt ein `<img>` also genauso wie ein
-  // `<svg>`. Eine Wiederholung hier schaltete beide ein, gemessen am 2026-09-05 für das SVG.
-  //
-  // `margin: 0`, weil Quartz' base.scss jedem `<img>` der Website `margin: 1rem 0` gibt - richtig im
-  // Artikel, im Kopf aber machte es aus der 26-px-Marke einen 58 px hohen Kasten und den Kopf 32 px
-  // höher als mit dem Inline-SVG (gemessen am 2026-09-24, dem Tag, an dem die Marke ein Bild wurde).
+  // Project image as mark. No display (see above); margin: 0 against Quartz's img margin.
   img {
     flex: 0 0 auto;
     margin: 0;
     border-radius: var(--tpl-radius-sm);
   }
 
-  // The link's accessible name. page-title already prints the site title right next to this, so
-  // showing it again would say everything twice - but `display: none` was the wrong way to stop
-  // that: the anchor contains nothing else but an SVG with an empty alt, so hiding this span left
-  // the link with no accessible name at all. Visually hidden, still announced.
+  // Link name for screen readers; the site title is already visible next to it.
   .site-mark-text {
     position: absolute;
     width: 1px;
@@ -183,7 +130,7 @@ details.layout-box > summary.layout-box-title {
 
 /* -------------------------------------------------- variant: the sidebar note (left) */
 
-// The one instance that loads from a file, and the only Markdown snippet.
+// Note box: loaded from a Markdown file.
 .layout-box-note {
   padding: var(--tpl-space-sm);
   border: var(--tpl-rule-width) solid var(--tpl-rule);
@@ -201,8 +148,7 @@ details.layout-box > summary.layout-box-title {
 
 /* ------------------------------------------------ variant: the narrow-screen hint (left) */
 
-// `display: mobile-only`, its own frontmatterKey. Quiet by design: it explains the layout, it is
-// not part of the content.
+// Mobile-only hint, kept quiet.
 .layout-box-hint {
   font-size: var(--tpl-text-xs);
   color: var(--gray);
@@ -217,7 +163,7 @@ details.layout-box > summary.layout-box-title {
 
 /* ------------------------------------------------------ variant: call to action (afterBody) */
 
-// Full column width, below the article. The one box that is allowed to be a surface.
+// Call to action below the article, full column width.
 .layout-box-cta {
   margin-block-start: var(--tpl-space-xl);
   padding: var(--tpl-space-md) var(--tpl-space-lg);

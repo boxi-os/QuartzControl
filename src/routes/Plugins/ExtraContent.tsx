@@ -18,6 +18,7 @@ import { useProject } from '../ProjectLayout'
 import ExtraContentFiles from './ExtraContentFiles'
 import {
   LAYOUT_BOX_PLUGIN,
+  LAYOUT_BOX_READ_AGAINST,
   boxContentKind,
   boxDir,
   boxesOf,
@@ -27,6 +28,7 @@ import {
   type BoxContentKind,
   type BoxInstance
 } from './layoutBoxes'
+import { ReadAgainstNote } from './ReadAgainstNote'
 
 /**
  * The editor for quartz-layout-box (plan 1.1, phase 6): one box is one config entry of the plugin.
@@ -359,6 +361,7 @@ function BoxPanel({
           <span className="text-micro text-text-secondary">{layout ? t(`positions.${layout.position}`, layout.position) : t('extraContent.notPlaced')}</span>
           {saved && <span className="text-micro text-green-600 dark:text-green-400">{t('pluginsInstalled.savedFlash')}</span>}
         </div>
+        <ReadAgainstNote plugin={LAYOUT_BOX_PLUGIN} readAgainst={LAYOUT_BOX_READ_AGAINST} installed={schemaQuery.data?.packageVersion} />
       </div>
 
       <Toggle label={t('extraContent.enabled')} checked={plugin.enabled} onChange={onToggle} />

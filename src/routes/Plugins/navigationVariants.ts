@@ -15,6 +15,8 @@ import type { LayoutPosition } from '@shared/ipc-contract'
 
 /** The plugin's name as the config loader derives it from github:boxi-os/quartz-navigations. */
 export const NAVIGATIONS_PLUGIN = 'quartz-navigations'
+/** The version whose render.tsx the tables below are read from. */
+export const NAVIGATIONS_READ_AGAINST = '0.4.1'
 
 export type NavVariant = 'tree' | 'accordion' | 'flyout' | 'bar' | 'dropdown' | 'mega' | 'tabs' | 'columns' | 'select' | 'pager'
 

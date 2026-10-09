@@ -1009,6 +1009,7 @@ export default {
     }
   },
   plugins: {
+    readAgainst: 'This editor knows {{plugin}} {{read}}, {{installed}} is installed. What it calls “no effect” or assumes as a default may therefore differ; “All options” shows every option the plugin describes itself.',
     tabs: {
       installed: 'Installed',
       navigations: 'Navigations',
@@ -1539,6 +1540,8 @@ export default {
       standardTitle: 'Quartz default',
       standardText:
         'This is how Quartz divides a page while no frame of your own is chosen: sidebars left and right, with the header, content and footer between them. It switches at Quartz’s own widths (1200 / 800 px).',
+      standardSource:
+        'The sizes are those of Quartz’s variables.scss and base.scss: 320 px sidebars, 5 px gaps, a page of at most 1500 px. If this project changed that file, its site shows other values than this preview and the copy.',
       standardCopyHint:
         'A copy follows your breakpoints. Its sidebars behave like any other area: they do not stick, and they do not turn into a row on narrow widths.',
       customizeStandard: 'Customize as your own frame',

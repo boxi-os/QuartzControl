@@ -1201,6 +1201,9 @@ export default function FrameBuilder({
                 <CardHeading icon={LayoutGrid}>{t('layoutEditor.frameBuilder.standardTitle')}</CardHeading>
                 <p className="text-ui">{t('layoutEditor.frameBuilder.standardText')}</p>
                 <p className="text-micro text-text-muted">{t('layoutEditor.frameBuilder.standardCopyHint')}</p>
+                {/* A copy of Quartz's SCSS (defaultFrame.ts), not a reading of the project's: there
+                    is no channel that reads quartz/styles/variables.scss (41st review, finding 7). */}
+                <p className="text-micro text-text-muted">{t('layoutEditor.frameBuilder.standardSource')}</p>
                 <div className="flex flex-wrap gap-2">
                   <Button onClick={() => void customizeStandard()}>{t('layoutEditor.frameBuilder.customizeStandard')}</Button>
                   <Button variant="ghost" onClick={() => void startNewFrame()}>

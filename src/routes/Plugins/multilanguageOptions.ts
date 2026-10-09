@@ -8,6 +8,8 @@ import type { PluginEntry, QuartzConfig } from '@shared/ipc-contract'
 // them, and `QUARTZ_LANGS` replaces it at build time.
 
 export const MULTILANGUAGE_PLUGIN = 'quartz-multilanguage'
+/** The version whose options.ts the defaults below are read from. */
+export const MULTILANGUAGE_READ_AGAINST = '0.2.0'
 
 type Options = Record<string, unknown>
 export type LanguageEntry = Record<string, unknown> & { code: string }

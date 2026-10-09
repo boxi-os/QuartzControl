@@ -17,6 +17,8 @@ import { componentRef, getLayout } from '../LayoutEditor/utils'
 import { useProject } from '../ProjectLayout'
 import {
   LANGUAGE_KEYS,
+  MULTILANGUAGE_PLUGIN,
+  MULTILANGUAGE_READ_AGAINST,
   SECTIONS,
   codeProblem,
   defaultLanguageOf,
@@ -34,6 +36,7 @@ import {
   type LanguageEntry,
   type SectionId
 } from './multilanguageOptions'
+import { ReadAgainstNote } from './ReadAgainstNote'
 
 type Options = Record<string, unknown>
 
@@ -340,6 +343,7 @@ export default function Multilanguage({ onShowAllOptions }: { onShowAllOptions: 
       }
     >
       <InfoNote>{t('multilanguageEditor.intro')}</InfoNote>
+      <ReadAgainstNote plugin={MULTILANGUAGE_PLUGIN} readAgainst={MULTILANGUAGE_READ_AGAINST} installed={schemaQuery.data?.packageVersion} />
       {message && (
         <p role="alert" className="text-ui text-red-600 dark:text-red-400">
           {message}

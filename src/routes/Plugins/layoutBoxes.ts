@@ -8,6 +8,8 @@ import type { PluginEntry, QuartzConfig } from '@shared/ipc-contract'
 // `quartz/static/snippets` (its defaultOptions).
 
 export const LAYOUT_BOX_PLUGIN = 'quartz-layout-box'
+/** The version whose LayoutBox.tsx the rules below are read from. */
+export const LAYOUT_BOX_READ_AGAINST = '0.4.0'
 export const DEFAULT_SNIPPET_DIR = 'quartz/static/snippets'
 export const DEFAULT_SNIPPET_FILE = 'snippet.html'
 /** Where "Bild einfügen…" copies a picture to (snippetService.IMAGES_DIR). */

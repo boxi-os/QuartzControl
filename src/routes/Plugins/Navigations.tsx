@@ -15,7 +15,8 @@ import { useIpcQuery } from '../../state/useIpcQuery'
 import { confirmDialog } from '../../utils/confirm'
 import { componentRef, duplicateAfter, getLayout } from '../LayoutEditor/utils'
 import { useProject } from '../ProjectLayout'
-import { NAVIGATIONS_PLUGIN, NAV_VARIANTS, hasNoEffect, variantOf, type NavVariant } from './navigationVariants'
+import { ReadAgainstNote } from './ReadAgainstNote'
+import { NAVIGATIONS_PLUGIN, NAVIGATIONS_READ_AGAINST, NAV_VARIANTS, hasNoEffect, variantOf, type NavVariant } from './navigationVariants'
 
 interface NavInstance {
   plugin: PluginEntry
@@ -368,6 +369,7 @@ function NavigationPanel({
           )}
           {saved && <span className="text-micro text-green-600 dark:text-green-400">{t('pluginsInstalled.savedFlash')}</span>}
         </div>
+        <ReadAgainstNote plugin={NAVIGATIONS_PLUGIN} readAgainst={NAVIGATIONS_READ_AGAINST} installed={schemaQuery.data?.packageVersion} />
       </div>
 
       <Toggle label={t('navigationsEditor.enabled')} checked={plugin.enabled} onChange={onToggle} />

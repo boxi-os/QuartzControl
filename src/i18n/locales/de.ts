@@ -1014,6 +1014,7 @@ export default {
     }
   },
   plugins: {
+    readAgainst: 'Dieser Editor kennt {{plugin}} {{read}}, installiert ist {{installed}}. Was er „ohne Wirkung“ nennt oder als Vorgabe annimmt, kann deshalb abweichen; „Alle Optionen“ zeigt jede Option, die das Plugin selbst beschreibt.',
     tabs: {
       installed: 'Installiert',
       navigations: 'Navigationen',
@@ -1544,6 +1545,8 @@ export default {
       standardTitle: 'Quartz-Standard',
       standardText:
         'So teilt Quartz eine Seite auf, solange kein eigenes Frame gewählt ist: Seitenleisten links und rechts, dazwischen Kopfbereich, Inhalt und Fußzeile. Es schaltet bei Quartz’ eigenen Breiten um (1200 / 800 px).',
+      standardSource:
+        'Die Maße stehen so in Quartz’ variables.scss und base.scss: Seitenleisten 320 px, Abstände 5 px, Seite höchstens 1500 px. Hat dieses Projekt die Datei geändert, zeigt seine Website andere Werte als diese Vorschau und die Kopie.',
       standardCopyHint:
         'Eine Kopie folgt deinen Breakpoints. Die Seitenleisten verhalten sich darin wie jeder andere Bereich: Sie kleben nicht und werden auf schmalen Breiten nicht zur Zeile.',
       customizeStandard: 'Als eigenes Frame anpassen',

@@ -23,6 +23,7 @@ import { useDndAccessibility } from '../../utils/dndAnnouncements'
 import { useIpcQuery } from '../../state/useIpcQuery'
 import { componentRef } from '../LayoutEditor/utils'
 import { repoUrl } from './pluginSource'
+import { SavesImmediately } from './SavesImmediately'
 import { quartzPluginName } from '@shared/quartzPluginName'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { siteLanguages } from '../../components/PluginOptionsForm/siteLanguages'
@@ -1112,7 +1113,7 @@ function PluginPanel({
         <div className="flex flex-wrap items-center gap-2">
           {frame && <Badge>{t('pluginsInstalled.frameBadge')}</Badge>}
           {outdated && <Badge tone="amber">{t('pluginsInstalled.updateAvailable')}</Badge>}
-          {saved && <span className="text-micro text-green-600 dark:text-green-400">{t('pluginsInstalled.savedFlash')}</span>}
+          <SavesImmediately saved={saved} />
         </div>
         <p className="break-all text-xs text-text-muted">
           {frame ? t('pluginsInstalled.frameSource') : sourceLabel(plugin.source)}

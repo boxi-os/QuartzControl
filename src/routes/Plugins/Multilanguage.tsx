@@ -37,6 +37,7 @@ import {
   type SectionId
 } from './multilanguageOptions'
 import { ReadAgainstNote } from './ReadAgainstNote'
+import { SavesImmediately } from './SavesImmediately'
 
 type Options = Record<string, unknown>
 
@@ -596,7 +597,7 @@ function LanguagePanel({
         </CardHeading>
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-micro text-text-secondary">{t('multilanguageEditor.positionOf', { n: position + 1, count: languages.length })}</span>
-          {saved && <span className="text-micro text-green-600 dark:text-green-400">{t('pluginsInstalled.savedFlash')}</span>}
+          <SavesImmediately saved={saved} />
         </div>
       </div>
 
@@ -699,7 +700,9 @@ function SectionPanel({
       <div className="flex flex-col gap-1">
         <CardHeading icon={SlidersHorizontal}>{t(`multilanguageEditor.sections.${id}.title`)}</CardHeading>
         <p className="text-micro text-text-secondary">{t(`multilanguageEditor.sections.${id}.text`)}</p>
-        {saved && <span className="text-micro text-green-600 dark:text-green-400">{t('pluginsInstalled.savedFlash')}</span>}
+        <div className="flex flex-wrap items-center gap-2">
+          <SavesImmediately saved={saved} />
+        </div>
       </div>
 
       {id === 'switcher' && (

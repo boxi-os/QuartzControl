@@ -1014,6 +1014,7 @@ export default {
     }
   },
   plugins: {
+    savesImmediately: 'Speichert ohne Knopf — ein Schalter sofort, ein Textfeld beim Verlassen.',
     readAgainst: 'Dieser Editor kennt {{plugin}} {{read}}, installiert ist {{installed}}. Was er „ohne Wirkung“ nennt oder als Vorgabe annimmt, kann deshalb abweichen; „Alle Optionen“ zeigt jede Option, die das Plugin selbst beschreibt.',
     tabs: {
       installed: 'Installiert',

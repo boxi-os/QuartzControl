@@ -327,8 +327,15 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
   nachher drei Knöpfe, Abbrechen bleibt, Speichern schreibt den Titel und geht, Verwerfen geht
   ohne zu schreiben. Die Sidebar antwortet nach dem Umzug wie vorher (dieselben drei Fälle).
   Nicht verändert: „Zurück“ der Einstellungen fragt weiter mit eigenem Zwei-Knopf-Dialog.
-- Die Leisten der Plugin-Reiter sagen nur in der `InfoNote` über der Liste, dass sie sofort
-  schreiben (`conventions.md`, Regel zur Liste mit Leiste).
+- ~~Die Leisten der Plugin-Reiter sagen nur in der `InfoNote` über der Liste, dass sie sofort
+  schreiben~~ — behoben (2026-10-09): `SavesImmediately` (`src/routes/Plugins/`) steht im Kopf
+  jeder Leiste neben dem „Gespeichert“ und sagt „Speichert ohne Knopf — ein Schalter sofort, ein
+  Textfeld beim Verlassen.“ Gemessen an der gebauten App (1280 und 1600, Wegwerf-Profil,
+  `cp -Rc`-Kopie von `gui-test`), je erste Zeile von Installiert, Navigationen, Zusätzliche Inhalte,
+  Mehrsprachigkeit und dort zusätzlich ein Abschnitt: vorher stand der Satz in 0 von 5 Leisten
+  (Installiert sagte es auch über der Liste nicht), nachher in 5 von 5, eine Zeile, kein
+  Seiten-Überlauf. Nebenbefund, nicht angefasst: Die Leiste von „Zusätzliche Inhalte“ rollt bei
+  1280 waagerecht (`scrollWidth > clientWidth`), vorher wie nachher; bei 1600 nicht.
 - Kein Prüfskript lädt die Funktionen der installierten Plugins gegen ihre Abschriften
   (`*_READ_AGAINST`).
 - Das Standard-Frame liest nicht die `variables.scss` des Projekts, sondern nennt Quartz' Maße.

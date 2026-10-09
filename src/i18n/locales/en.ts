@@ -1009,6 +1009,7 @@ export default {
     }
   },
   plugins: {
+    savesImmediately: 'Saves without a button — a switch right away, a text field when you leave it.',
     readAgainst: 'This editor knows {{plugin}} {{read}}, {{installed}} is installed. What it calls “no effect” or assumes as a default may therefore differ; “All options” shows every option the plugin describes itself.',
     tabs: {
       installed: 'Installed',

@@ -16,6 +16,7 @@ import { confirmDialog } from '../../utils/confirm'
 import { componentRef, duplicateAfter, getLayout } from '../LayoutEditor/utils'
 import { useProject } from '../ProjectLayout'
 import { ReadAgainstNote } from './ReadAgainstNote'
+import { SavesImmediately } from './SavesImmediately'
 import { NAVIGATIONS_PLUGIN, NAVIGATIONS_READ_AGAINST, NAV_VARIANTS, hasNoEffect, variantOf, type NavVariant } from './navigationVariants'
 
 interface NavInstance {
@@ -367,7 +368,7 @@ function NavigationPanel({
           ) : (
             <span className="text-micro text-text-secondary">{t('navigationsEditor.notPlaced')}</span>
           )}
-          {saved && <span className="text-micro text-green-600 dark:text-green-400">{t('pluginsInstalled.savedFlash')}</span>}
+          <SavesImmediately saved={saved} />
         </div>
         <ReadAgainstNote plugin={NAVIGATIONS_PLUGIN} readAgainst={NAVIGATIONS_READ_AGAINST} installed={schemaQuery.data?.packageVersion} />
       </div>

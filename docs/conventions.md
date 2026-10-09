@@ -360,8 +360,9 @@ Projektwurzel.
   `SELECTING` stehen Bedienelemente, keine Rollen überhaupt. Nach Auswahl, Lösen und Entfernen
   steht der Fokus auf der Zeile, ihrer Nachbarin (`focusRowAt`, nach einem `flushSync` des
   Entfernens) oder der Leiste, nie auf `<body>` — dort erreicht Escape nichts mehr. Eine Leiste
-  sagt, ob sie sofort schreibt oder einen Speichern-Knopf hat; **heute sagen das die Plugin-Reiter
-  nur in der `InfoNote` über der Liste**, nicht in der Leiste. Elf Stellen tragen das Muster (die
+  sagt, ob sie sofort schreibt oder einen Speichern-Knopf hat — in der Leiste selbst, nicht nur in
+  der `InfoNote` über der Liste; die Plugin-Reiter tun das seit 2026-10-09 über
+  `SavesImmediately` neben ihrem „Gespeichert“. Elf Stellen tragen das Muster (die
   zwei Layout-Boards und neun Seiten mit Liste), und jede Abweichung, die das einundvierzigste Review fand, war eine Frage, die eine Seite nicht
   beantwortet hatte, während eine andere es tat. Messungen in
   [`navigation-and-pages.md`](decisions/navigation-and-pages.md).

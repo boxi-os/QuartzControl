@@ -1754,6 +1754,7 @@ export default {
         cleared: 'Bereich auf diesem Seitentyp geleert',
         noArea: 'Bereich in diesem Frame nicht zugewiesen',
         hiddenArea: 'Bereich in diesem Frame auf keiner Breite gezeigt',
+        noWidth: 'Auf keiner Breite — Komponente und Bereich gelten für verschiedene Breiten',
         unknown: 'Unbekannt — der Frame kommt vom Plugin'
       },
       cellTitle: '{{component}} auf {{pageType}}: {{state}}',

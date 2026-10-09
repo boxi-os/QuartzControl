@@ -1749,6 +1749,7 @@ export default {
         cleared: 'Area cleared on this page type',
         noArea: 'Area not assigned in this frame',
         hiddenArea: 'Area shown at no width in this frame',
+        noWidth: 'At no width — component and area are set for different widths',
         unknown: 'Unknown — the frame comes from the plugin'
       },
       cellTitle: '{{component}} on {{pageType}}: {{state}}',

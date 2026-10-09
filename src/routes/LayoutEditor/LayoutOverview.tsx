@@ -54,7 +54,7 @@ import { hasPageTypeOverride, isExcluded, isPositionCleared, overrideOf, resolve
  * frame the frame editor.
  */
 
-type CellState = 'shown' | 'someWidths' | 'excluded' | 'cleared' | 'noArea' | 'hiddenArea' | 'unknown'
+type CellState = 'shown' | 'someWidths' | 'excluded' | 'cleared' | 'noArea' | 'hiddenArea' | 'noWidth' | 'unknown'
 
 /** Where an area is placed; `all` for a built-in frame, which has no breakpoints of its own here. */
 type Placed = FrameBreakpoint[] | 'all'
@@ -104,6 +104,13 @@ function frameShape(name: string, frames: GridFrameDefinition[], pluginFrames: S
   return all(POSITIONS)
 }
 
+/** Whether a component with this `display` shows at this breakpoint of a frame. */
+function showsOn(display: string | undefined, bp: FrameBreakpoint): boolean {
+  if (display === 'mobile-only') return bp === 'mobile'
+  if (display === 'desktop-only') return bp !== 'mobile'
+  return true
+}
+
 /** Where the frame shows this component's area, or null when it builds none for it. */
 function roomOf(shape: FrameShape, position: LayoutPosition, group: string | undefined): Placed | null {
   if (group !== undefined && shape.groups.has(`${position}#${group}`)) return shape.groups.get(`${position}#${group}`)!
@@ -116,6 +123,7 @@ const STATE_ICON: Record<Exclude<CellState, 'shown'>, { icon: LucideIcon; tone: 
   cleared: { icon: Ban, tone: 'text-text-secondary' },
   noArea: { icon: SquareDashed, tone: 'text-amber-600 dark:text-amber-400' },
   hiddenArea: { icon: CircleOff, tone: 'text-amber-600 dark:text-amber-400' },
+  noWidth: { icon: CircleOff, tone: 'text-amber-600 dark:text-amber-400' },
   unknown: { icon: HelpCircle, tone: 'text-text-muted' }
 }
 
@@ -188,7 +196,16 @@ export default function LayoutOverview({
     const room = roomOf(shape, layout.position, layout.group)
     if (room === null) return { state: 'noArea' }
     if (room !== 'all' && room.length === 0) return { state: 'hiddenArea' }
-    if (room !== 'all' && room.length < FRAME_BREAKPOINTS.length) return { state: 'someWidths', on: room }
+    if (room !== 'all' && room.length < FRAME_BREAKPOINTS.length) {
+      // The widths the frame places the area on, cut with the ones the component shows on itself:
+      // a mobile-only component in an area placed on desktop and tablet appears nowhere, and the
+      // cell said "only on desktop, tablet" (forty-third review, finding 4). The two agree on the
+      // threshold - a frame on its own widths restates .desktop-only/.mobile-only at its mobile
+      // width (gridFrameCss, buildQuartzBreakpointCompat). Where the frame places the area
+      // everywhere, the cell stays a dot: the mark on the pill says it, for every page type alike.
+      const on = room.filter((bp) => showsOn(layout.display, bp))
+      return on.length === 0 ? { state: 'noWidth' } : { state: 'someWidths', on }
+    }
     return { state: 'shown' }
   }
 
@@ -351,7 +368,7 @@ export default function LayoutOverview({
 
   const legend: { mark: ReactNode; text: string }[] = [
     { mark: <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />, text: t('layoutEditor.overview.state.shown') },
-    ...(['someWidths', 'excluded', 'cleared', 'noArea', 'hiddenArea', 'unknown'] as const).map((s) => {
+    ...(['someWidths', 'excluded', 'cleared', 'noArea', 'hiddenArea', 'noWidth', 'unknown'] as const).map((s) => {
       const { icon: Icon, tone } = STATE_ICON[s]
       return { mark: <Icon size={14} className={tone} />, text: t(`layoutEditor.overview.state.${s}`) }
     }),

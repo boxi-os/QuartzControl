@@ -1532,7 +1532,21 @@ Gruppe fehlten ganz. Jetzt:
   stand bis zum dreiundvierzigsten Review (Befund 5) vorn, also vor der Regel, die es gerade
   eingeführt hatte: `exclude` und eine geleerte Position wirken in Quartz vor jedem Frame, auch vor
   dem eines Plugins, und die Zelle sagte „der Frame kommt vom Plugin“ für eine Komponente, die der
-  Nutzer dort ausgeblendet hatte (gelesen; gui-test hat keinen Seitentyp mit Plugin-Frame). Die alte Tabelle
+  Nutzer dort ausgeblendet hatte (gelesen; gui-test hat keinen Seitentyp mit Plugin-Frame).
+  **Seit dem dreiundvierzigsten Review (Befund 4) sind es acht:** „auf manchen Breiten“ rechnete
+  mit den Breiten, auf denen der Frame den Bereich platziert, nicht mit `layout.display` der
+  Komponente. Eine `mobile-only`-Komponente in einem Bereich, der auf Mobil versteckt ist, hieß
+  „Erscheint nur auf Desktop, Tablet“ und war auf der gebauten Seite 0×0 bei 1456, 1000 und 390 px.
+  Jetzt werden beide geschnitten (`mobile-only` → mobil, `desktop-only` → Desktop und Tablet), und
+  bleibt nichts, heißt die Zelle „auf keiner Breite — Komponente und Bereich gelten für verschiedene
+  Breiten“. Die Grenzen decken sich auch bei projekteigenen Breiten, weil ein solches Frame
+  `.desktop-only`/`.mobile-only` an seiner eigenen Mobilbreite neu setzt
+  (`buildQuartzBreakpointCompat`). Wo der Frame den Bereich auf allen Breiten platziert, bleibt die
+  Zelle ein Punkt — das Zeichen an der Pill sagt dann, was für jeden Seitentyp gleich gilt.
+  Gemessen an einer Kopie von gui-test in der gebauten App (`backlinks` auf `mobile-only`, im Frame
+  `editorial` der Bereich `custom-8` auf Mobil versteckt): die Zelle für Inhaltsseiten sagt „Auf
+  keiner Breite“, die übrigen wie vorher; die unveränderte Kopie zeigt weiter 114 „Erscheint“ und
+  19 „geleert“. Die alte Tabelle
   hatte keine Zeile je Komponente und damit kein `exclude` je Zelle; in der Matrix sagte die
   404-Seite von gui-test für eine Position, die dort ausdrücklich geleert ist, eine Warnung in Amber.
   Gemessen an einer Kopie von gui-test in der gebauten App: vorher 15 Zellen „auf keiner Breite“ und

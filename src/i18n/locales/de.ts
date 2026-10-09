@@ -1287,6 +1287,13 @@ export default {
     imageFilter: 'Bilder',
     snippetFilter: 'Snippets',
     insertImage: 'Bild einfügen…',
+    svgHow:
+      'Die SVG-Datei als Code einfügen?\n\nAls Code wird die Grafik Teil der Seite, und dein CSS kann sie gestalten, etwa mit fill: currentColor. Als Bild wird sie nach quartz/static/images kopiert und verlinkt; CSS erreicht dann nur ihren Rahmen.',
+    svgInline: 'Als Code einfügen',
+    svgAsImage: 'Als Bild einbinden',
+    svgInvalid: '„{{name}}“ lässt sich nicht als SVG lesen.',
+    svgCleaned_one: '{{count}} Stelle mit Skript entfernt (etwa <script> oder onload) — eingebettet liefe sie auf jeder Seite.',
+    svgCleaned_other: '{{count}} Stellen mit Skript entfernt (etwa <script> oder onload) — eingebettet liefen sie auf jeder Seite.',
     imageExists:
       '„{{name}}“ gibt es unter quartz/static schon. Ersetzen?\n\nErsetzen überschreibt die Datei, und jedes Snippet, das sie zeigt, zeigt danach das neue Bild. „Vorhandenes verwenden“ fügt einen Verweis auf die Datei ein, die schon da ist.',
     fileExists:

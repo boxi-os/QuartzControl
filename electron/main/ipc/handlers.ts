@@ -176,6 +176,7 @@ export function registerIpcHandlers(): void {
   handle(IPC.staticImageImport, t([s.staticImageImportArgs]), ({ projectPath, sourcePath, name, overwrite }) =>
     snippetService.importStaticImage(projectPath, sourcePath, name, overwrite === true)
   )
+  handle(IPC.staticImageReadSvg, t([s.staticImageReadSvgArgs]), ({ sourcePath }) => snippetService.readSvgSource(sourcePath))
   handle(IPC.staticFilesListImages, t([s.staticFilesListArgs]), ({ projectPath }) => snippetService.listStaticImages(projectPath))
   handle(IPC.staticFilesRename, t([s.staticFilesRenameArgs]), ({ projectPath, kind, dir, from, to }) =>
     snippetService.renameStaticFile(projectPath, kind, dir, from, to)

@@ -219,6 +219,20 @@ export async function importStaticImage(
   return { status: r.status, relativePath: `images/${r.name}` }
 }
 
+/**
+ * An SVG file's text, for "Bild einfügen" as code. The path comes from the open dialog, but over a
+ * channel the renderer could call with any path - so only a regular file named `.svg`, and no more
+ * than a snippet may hold, since the text ends up in one (or in the config). What the markup may
+ * not contain is the renderer's to take out: it has a parser, this process does not.
+ */
+export async function readSvgSource(sourcePath: string): Promise<string> {
+  const name = checkName(basename(sourcePath), new Set(['.svg']))
+  const info = await stat(sourcePath)
+  if (!info.isFile()) throw new Error(mainT('snippetNameInvalid', { name }))
+  if (info.size > SNIPPET_MAX_BYTES) throw new Error(mainT('snippetTooLarge', { name, limit: 2 }))
+  return readFile(sourcePath, 'utf-8')
+}
+
 /** The folder and the names a kind of static file may have: a snippet in its box's `dir`, a picture in quartz/static/images. */
 function placeOf(kind: StaticFileKind, dir: string | undefined): { dir: string; allowed: Set<string> } {
   if (kind === 'image') return { dir: IMAGES_DIR, allowed: IMAGE_EXTENSIONS }

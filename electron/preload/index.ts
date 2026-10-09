@@ -87,7 +87,8 @@ const api: QuartzGuiApi = {
   },
   staticImage: {
     import: (args: { projectPath: string; sourcePath: string; name?: string; overwrite?: boolean }) =>
-      ipcRenderer.invoke(IPC.staticImageImport, args)
+      ipcRenderer.invoke(IPC.staticImageImport, args),
+    readSvg: (args: { sourcePath: string }) => ipcRenderer.invoke(IPC.staticImageReadSvg, args)
   },
   staticFiles: {
     listImages: (args: { projectPath: string }) => ipcRenderer.invoke(IPC.staticFilesListImages, args),

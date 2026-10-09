@@ -1523,6 +1523,7 @@ export const IPC = {
   snippetsWrite: 'snippets:write',
   snippetsImport: 'snippets:import',
   staticImageImport: 'staticImage:import',
+  staticImageReadSvg: 'staticImage:readSvg',
   staticFilesListImages: 'staticFiles:listImages',
   staticFilesRename: 'staticFiles:rename',
   staticFilesTrash: 'staticFiles:trash',
@@ -1868,6 +1869,9 @@ export interface QuartzGuiApi {
   /** Copies a picture to quartz/static/images, which the build publishes as static/images. */
   staticImage: {
     import(args: { projectPath: string; sourcePath: string; name?: string; overwrite?: boolean }): Promise<StaticImageResult>
+    /** The text of an SVG file the user picked, to paste into a snippet as markup - the one form of
+     *  a picture CSS can style inside (fill, stroke). Only `.svg`, at most 2 MB; nothing is copied. */
+    readSvg(args: { sourcePath: string }): Promise<string>
   }
   /**
    * The files behind the layout boxes, as a list to manage (Plugins -> Zusätzliche Inhalte). `dir`

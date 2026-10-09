@@ -220,6 +220,8 @@ export const staticImageImportArgs = z.looseObject({
   overwrite: z.boolean().optional()
 })
 
+export const staticImageReadSvgArgs = z.looseObject({ sourcePath: absolutePath })
+
 // staticFiles.*: the same bounds as snippets.*; `dir` only means something for a snippet.
 const staticFileKind = z.enum(['snippet', 'image'])
 export const staticFilesListArgs = z.looseObject({ projectPath: absolutePath })

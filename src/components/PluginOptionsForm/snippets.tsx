@@ -11,6 +11,7 @@ import { askDialog, confirmDialog } from '../../utils/confirm'
 import { formatIpcError } from '../ErrorSurface'
 import { useStickyState } from '../../state/uiState'
 import { inlineValue } from './text'
+import { inlineSvg } from '../../utils/inlineSvg'
 
 // The editors behind `x-quartz-widget: snippetFile` and the image button of `html`/`markdown`
 // (shared/pluginOptionSchema.ts). Picked by the schema's widget, not by the plugin's name: any
@@ -44,6 +45,7 @@ export function siblingValue(key: string, values: Record<string, unknown>, field
 /**
  * "Bild einfügen…": copies a picture into quartz/static/images and hands back the reference.
  * A picture of the same name already there is a question - replace it, or use the one there.
+ * An SVG may instead go in as its own markup (utils/inlineSvg.ts), so the site's CSS can style it.
  */
 export function ImageButton({
   projectPath,
@@ -60,6 +62,7 @@ export function ImageButton({
   const { t } = useTranslation()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [note, setNote] = useState<string | null>(null)
   const pick = async (): Promise<void> => {
     const sourcePath = await window.quartzGui.dialog.pickFile([
       {
@@ -68,8 +71,32 @@ export function ImageButton({
       }
     ])
     if (!sourcePath) return
-    setBusy(true)
     setError(null)
+    setNote(null)
+    // An SVG can go in as code, which CSS can style inside - or as a picture like any other.
+    if (/\.svg$/i.test(sourcePath)) {
+      const how = await askDialog({ text: t('snippets.svgHow'), altLabel: t('snippets.svgAsImage'), confirmLabel: t('snippets.svgInline') })
+      if (how === 'cancel') return
+      if (how === 'confirm') {
+        setBusy(true)
+        try {
+          const fileName = sourcePath.split(/[\\/]/).pop() ?? ''
+          const result = inlineSvg(await window.quartzGui.staticImage.readSvg({ sourcePath }), fileName)
+          if (!result.ok) {
+            setError(t('snippets.svgInvalid', { name: fileName }))
+            return
+          }
+          onInsert(result.markup)
+          if (result.removed > 0) setNote(t('snippets.svgCleaned', { count: result.removed }))
+        } catch (err) {
+          setError(formatIpcError(err))
+        } finally {
+          setBusy(false)
+        }
+        return
+      }
+    }
+    setBusy(true)
     try {
       let result = await window.quartzGui.staticImage.import({
         projectPath,
@@ -106,6 +133,7 @@ export function ImageButton({
         </Button>
       </span>
       {placeholdersOff && <span className="text-micro text-amber-700 dark:text-amber-300">{t('snippets.placeholdersOff', { token: '{{root}}' })}</span>}
+      {note && <span className="text-micro text-amber-700 dark:text-amber-300">{note}</span>}
       {error && <span className="text-micro text-red-600 dark:text-red-400">{error}</span>}
     </span>
   )

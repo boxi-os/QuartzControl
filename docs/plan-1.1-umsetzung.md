@@ -251,6 +251,44 @@ sein. P4 migriert Nutzerdateien und soll am längsten auf dem Branch liegen.
 - Plugins: `check:option-schema` 0 Schlüssel ohne Darstellung für die drei eigenen.
 - Release: zehn Pakete wie bei 1.0.2, neun gestartet; Website und Vorlagen nach `docs/release.md`.
 
+## Offen auf `feat/1.1` (Stand 2026-10-09, nach dem 41. Review)
+
+Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
+
+**Nebenbei-Befunde des 41. Reviews:**
+
+1. `toggleEnabled` und `reorderGroup` in `Plugins/Installed.tsx` schreiben an der Warteschlange
+   vorbei, die Befund 3 des 40. Reviews für die Optionen eingeführt hat.
+2. `marketplaceReadmeArgs` lässt `owner/.` als Repo-Angabe zu.
+3. Jede Änderung der Sprachliste (Mehrsprachigkeit) schreibt alle Codes neu, auch unveränderte.
+4. `npm run smoke` startet mit dem echten Profil des Nutzers, nicht mit einem Wegwerf-Profil.
+5. Eine `cp -Rc`-Kopie eines Projekts nennt die Frames des Originals mit absolutem Pfad.
+
+**Lücken, die das 41. Review stehen ließ:**
+
+- Ein Menüpunkt, der die Route wechselt (`app:navigate`), fragt nicht nach ungespeicherten
+  Änderungen.
+- Die Leisten der Plugin-Reiter sagen nur in der `InfoNote` über der Liste, dass sie sofort
+  schreiben (`conventions.md`, Regel zur Liste mit Leiste).
+- Kein Prüfskript lädt die Funktionen der installierten Plugins gegen ihre Abschriften
+  (`*_READ_AGAINST`).
+- Das Standard-Frame liest nicht die `variables.scss` des Projekts, sondern nennt Quartz' Maße.
+
+**Ältere aus der 1.1-Arbeit:**
+
+- `SegmentedControl` `variant="chips"` hat seit der Ziel-Liste keinen Aufrufer.
+- Die Einstellungen setzen ein eigenes `max-w-5xl` (`Settings.tsx`).
+- Eine Variable hat zwei Rücksetz-Knöpfe mit zwei Wörtern für dieselbe Handlung
+  (`styles.variables.reset` in der Zeile, `resetToOriginal` im Panel).
+- `check:i18n` meldet keine Schlüssel, die kein Aufruf mehr nennt.
+- Die Mehrsprachigkeit-Seite trägt den Namen zweimal (Reiter und Karte `multilanguageEditor.title`).
+- Ein umbenannter Sprachcode zieht Seiten und Ordner mit dem alten Code nicht mit (bewusst, siehe
+  `renameLanguage`, aber nirgends gesagt).
+- Die Chips der Bühne haben kein Kennzeichen für eine Abweichung je Seitentyp.
+- Handbuch-Kapitel und Screenshots für die neuen Seiten (gehört zu P8).
+- Die Messwege der Runde nach der Rückmeldung (Seitenleiste, Plugin-Editoren) stehen nicht in
+  diesem Plan.
+
 ## Rückstand außerhalb von 1.1
 
 VoiceOver-Durchgang (Git-Sync, Board, Frame-Builder, Schriftliste), Schlüsselbund-Hänger beim Start

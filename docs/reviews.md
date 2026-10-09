@@ -2163,7 +2163,8 @@ gelöscht):
 - **10** `97f944b` — `SELECTING` nennt Bedienelemente statt `[role]`, dazu die Kantengriffe.
 - Nebenbei, nicht behoben: `toggleEnabled` und `reorderGroup` in `Installed.tsx` schreiben an der
   Warteschlange vorbei; `marketplaceReadmeArgs` lässt `owner/.` zu; jede Änderung der Sprachliste
-  schreibt alle Codes neu.
+  schreibt alle Codes neu. Alle offenen Punkte der Runde stehen in
+  [`plan-1.1-umsetzung.md`](plan-1.1-umsetzung.md), Abschnitt „Offen auf `feat/1.1`“.
 
 **Keinen dieser Fixes hat ein Review gelesen.**
 

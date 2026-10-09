@@ -305,11 +305,15 @@ export default function PluginsInstalled(): JSX.Element {
   const configRef = useRef(config)
   configRef.current = config
   const writes = useRef<Promise<unknown>>(Promise.resolve())
-  async function updateField(index: number, path: string[], value: unknown): Promise<void> {
+  // The one way an edit on this page reaches the file - fields, the enabled switch and both kinds
+  // of reordering. The switch and the arrows used to save the config they were rendered with,
+  // beside the queue: a switch and a field tabbed out of right after it lost the switch, and two
+  // quick clicks on an arrow moved the row once (measured in the built app, five of five, with no
+  // delay added to the save).
+  async function commit(mutate: (plugins: PluginEntry[]) => PluginEntry[]): Promise<void> {
     const current = configRef.current
     if (!current) return
-    const plugins = current.plugins.map((p, i) => (i === index ? (setDeep(p, path, value) as PluginEntry) : p))
-    const next = { ...current, plugins }
+    const next = { ...current, plugins: mutate(current.plugins) }
     configRef.current = next
     setConfig(next)
     const write = writes.current.then(() => window.quartzGui.config.save(project.path, next))
@@ -321,21 +325,19 @@ export default function PluginsInstalled(): JSX.Element {
       await reload()
       throw err
     }
-    flagSaved(index)
     if (configRef.current === next) await reload()
   }
 
+  async function updateField(index: number, path: string[], value: unknown): Promise<void> {
+    await commit((plugins) => plugins.map((p, i) => (i === index ? (setDeep(p, path, value) as PluginEntry) : p)))
+    flagSaved(index)
+  }
+
   async function toggleEnabled(index: number): Promise<void> {
-    if (!config) return
-    setBusy(true)
-    const plugins = config.plugins.map((p, i) => (i === index ? { ...p, enabled: !p.enabled } : p))
     try {
-      await window.quartzGui.config.save(project.path, { ...config, plugins })
+      await commit((plugins) => plugins.map((p, i) => (i === index ? { ...p, enabled: !p.enabled } : p)))
     } catch (err) {
       setMessage(formatIpcError(err))
-    } finally {
-      setBusy(false)
-      await reload()
     }
   }
 
@@ -392,20 +394,23 @@ export default function PluginsInstalled(): JSX.Element {
   // `layout.priority`); everything else is reordered against the top-level `order` field -
   // these are separate concepts in quartz.config.yaml, not one shared sequence.
   async function reorderGroup(group: IndexedPlugin[], from: number, to: number, field: 'order' | 'layoutPriority'): Promise<void> {
-    if (!config || from === to) return
+    if (from === to) return
     const reordered = [...group]
     const [moved] = reordered.splice(from, 1)
     reordered.splice(to, 0, moved)
 
-    const plugins = [...config.plugins]
-    reordered.forEach((item, i) => {
-      const value = (i + 1) * 10
-      plugins[item.index] =
-        field === 'order'
-          ? { ...item.plugin, order: value }
-          : { ...item.plugin, layout: { ...getLayout(item.plugin)!, priority: value } }
+    // The group says which entries and in what order; the entries themselves are the newest ones,
+    // so a field saved a moment ago is not written back to what this render held.
+    await commit((plugins) => {
+      const next = [...plugins]
+      reordered.forEach((item, i) => {
+        const value = (i + 1) * 10
+        const plugin = next[item.index]
+        next[item.index] =
+          field === 'order' ? { ...plugin, order: value } : { ...plugin, layout: { ...getLayout(plugin)!, priority: value } }
+      })
+      return next
     })
-    await window.quartzGui.config.save(project.path, { ...config, plugins })
     // The one sentence that says what actually happened, for every way of getting here - drag,
     // keyboard drag, and the two arrows. The drag's own commentary stops at "abgelegt bei X";
     // this is the result.
@@ -416,7 +421,6 @@ export default function PluginsInstalled(): JSX.Element {
         total: reordered.length
       })
     )
-    await reload()
   }
 
   // Opens the Layout editor on the frames tab with this frame already loaded. The tab travels in

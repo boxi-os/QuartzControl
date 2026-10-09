@@ -257,8 +257,13 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
 
 **Nebenbei-Befunde des 41. Reviews:**
 
-1. `toggleEnabled` und `reorderGroup` in `Plugins/Installed.tsx` schreiben an der Warteschlange
-   vorbei, die Befund 3 des 40. Reviews für die Optionen eingeführt hat.
+1. ~~`toggleEnabled` und `reorderGroup` in `Plugins/Installed.tsx` schreiben an der Warteschlange
+   vorbei~~ — behoben (2026-10-09): alle drei Schreiber gehen über `commit()`. Vorher gingen an der
+   gebauten App ohne künstliche Verzögerung 5 von 5 Schaltern verloren, wenn direkt danach ein Feld
+   verlassen wurde, ein zweiter schneller Pfeilklick und ein Pfeil vor einem Feld; nachher keiner
+   (1280 und 1600 px, 0 und 400 ms Speicherdauer). Noch offen daneben: `removePlugin` wartet nicht
+   auf die Warteschlange, ein noch ausstehendes Speichern könnte den entfernten Eintrag
+   zurückschreiben (gelesen, nicht gemessen).
 2. `marketplaceReadmeArgs` lässt `owner/.` als Repo-Angabe zu.
 3. Jede Änderung der Sprachliste (Mehrsprachigkeit) schreibt alle Codes neu, auch unveränderte.
 4. `npm run smoke` startet mit dem echten Profil des Nutzers, nicht mit einem Wegwerf-Profil.

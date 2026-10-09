@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Code2, Copy, FileText, PanelTop, Plus, Trash2 } from 'lucide-react'
 import type { LayoutPosition, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
-import { Badge, Button, Card, CardHeading, DetailLayout, IconButton, InfoNote, SegmentedControl, SelectableRow, Toggle } from '../../components/ui'
+import { Badge, Button, Card, CardHeading, DetailLayout, IconButton, InfoNote, SegmentedControl, SelectableRow, Toggle, focusRowAt } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { siteLanguages } from '../../components/PluginOptionsForm/siteLanguages'
@@ -88,6 +89,7 @@ export default function ExtraContent({ onShowAllOptions }: { onShowAllOptions: (
 
   const configRef = useRef(config)
   configRef.current = config
+  const listRef = useRef<HTMLUListElement>(null)
   const writes = useRef<Promise<unknown>>(Promise.resolve())
   /** False when the config could not be written; the page has said why and shows the file again. */
   async function write(next: QuartzConfig, said?: string): Promise<boolean> {
@@ -162,7 +164,9 @@ export default function ExtraContent({ onShowAllOptions }: { onShowAllOptions: (
     if (!(await confirmDialog({ text: t('extraContent.removeConfirm', { name }), confirmLabel: t('common.remove'), danger: true }))) return
     if (selected === box.occurrence) setSelected(null)
     else if (selected !== null && selected > box.occurrence) setSelected(selected - 1)
-    await write({ ...base, plugins: base.plugins.filter((_, i) => i !== box.index) }, t('extraContent.removedAnnounce', { name }))
+    const written = flushSync(() => write({ ...base, plugins: base.plugins.filter((_, i) => i !== box.index) }, t('extraContent.removedAnnounce', { name })))
+    focusRowAt(listRef.current, box.occurrence - 1)
+    await written
   }
 
   /** False when the boxes that name the file could not be updated - the caller renames it back. */
@@ -240,7 +244,7 @@ export default function ExtraContent({ onShowAllOptions }: { onShowAllOptions: (
             {t('extraContent.add')}
           </Button>
         </div>
-        <ul className="flex flex-col gap-1.5">
+        <ul ref={listRef} className="flex flex-col gap-1.5">
           {boxes.map((box) => {
             const options = box.plugin.options ?? {}
             const kind = boxContentKind(options)

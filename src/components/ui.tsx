@@ -1160,6 +1160,21 @@ export function DetailLayout({
 }
 
 /**
+ * After a row of a SelectableRow list is removed: the focus goes to the name of the row that now
+ * stands in its place, or the last one. Without it the focus fell to <body> (where Escape reaches
+ * nothing), or - in a list keyed by position - stayed on the trash can of the row that moved up,
+ * so a second Enter asked about the next one (41st review, finding 6).
+ *
+ * Call it after the removal is rendered: wrap the state change in `flushSync`. A removal after an
+ * awaited confirmation is not rendered before the next frame, and a focus set in that frame landed
+ * on the removed row's own name, which then went away with it (measured on Mehrsprachigkeit).
+ */
+export function focusRowAt(list: HTMLElement | null, index: number): void {
+  const names = list?.querySelectorAll<HTMLElement>(':scope > li button[aria-pressed]')
+  if (names?.length) names[Math.min(index, names.length - 1)].focus()
+}
+
+/**
  * One entry of the list beside a DetailLayout panel: the name is the button that selects it (so
  * the row is reachable by Tab and says `aria-pressed`), a click anywhere else on the row that is
  * not a control selects it too, and `data-selectable` keeps that click from counting as one on the

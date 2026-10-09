@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { flushSync } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { ArrowDown, ArrowUp, ChevronRight, Languages, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
 import type { NormalizedOptionSchema, OptionField, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
-import { Badge, Button, Card, CardHeading, DetailLayout, Field, IconButton, InfoNote, SelectableRow, TextInput, Toggle } from '../../components/ui'
+import { Badge, Button, Card, CardHeading, DetailLayout, Field, IconButton, InfoNote, SelectableRow, TextInput, Toggle, focusRowAt } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
 import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { enumLabel, fieldText, type FormLanguage } from '../../components/PluginOptionsForm/text'
@@ -57,6 +58,7 @@ export default function Multilanguage({ onShowAllOptions }: { onShowAllOptions: 
   // `lang:<code>` or `section:<id>` - a code and a section id are stable, a row's position is not.
   const [selected, setSelected] = useStickyState<string | null>('multilanguage.selected', null)
   const [adding, setAdding] = useState(false)
+  const listRef = useRef<HTMLUListElement>(null)
   const [savedFlash, setSavedFlash] = useState(false)
   const savedTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -231,7 +233,8 @@ export default function Multilanguage({ onShowAllOptions }: { onShowAllOptions: 
       : { text: t('multilanguageEditor.removeConfirm', { name }), confirmLabel: t('common.remove') }
     if (!(await confirmDialog({ ...question, danger: true }))) return
     if (selected === `lang:${l.code}`) setSelected(null)
-    updateOptions((o) => removeLanguage(o, languagesOf(o), l.code), t('multilanguageEditor.removedAnnounce', { name }))
+    flushSync(() => updateOptions((o) => removeLanguage(o, languagesOf(o), l.code), t('multilanguageEditor.removedAnnounce', { name })))
+    focusRowAt(listRef.current, languages.findIndex((x) => x.code === l.code))
   }
 
   function move(l: LanguageEntry, by: -1 | 1): void {
@@ -377,7 +380,7 @@ export default function Multilanguage({ onShowAllOptions }: { onShowAllOptions: 
           )}
         </div>
         {adding && <AddLanguageForm languages={languages} onAdd={addLanguage} onCancel={() => setAdding(false)} />}
-        <ul className="flex flex-col gap-1.5">
+        <ul ref={listRef} className="flex flex-col gap-1.5">
           {languages.map((l) => {
             const key = `lang:${l.code}`
             const isSelected = selected === key

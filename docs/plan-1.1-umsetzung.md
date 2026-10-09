@@ -376,6 +376,24 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
   gelten) — ein Fix dort ist ein Plugin-Release. Nebenbefund, nicht angefasst: Das JSON-Textfeld
   des allgemeinen Formulars (`w-[28rem] max-w-full`) steht in der 448-px-Leiste bei 1280 um 17 px
   über — vermutlich auch die Ursache des Überlaufs von „Zusätzliche Inhalte“ oben.
+- ~~Ein leeres `html:` bricht quartz-layout-box ab~~ — behoben im Plugin (2026-10-09,
+  quartz-layout-box **0.4.1**, Tag `v0.4.1` auf `5a21a5b`, CI grün): Schlüssel mit `null` werden vor
+  dem Zusammenführen verworfen, in den Grundoptionen und je `byLang`-Eintrag. Vier neue Tests, alle
+  vier am alten Code mit `TypeError`. Gegenprobe am echten `quartz build` einer Kopie von gui-test
+  mit drei solchen Kästen: 0.4.0 bricht in `applyPlaceholders` ab, 0.4.1 baut, und alle drei zeigen
+  den Inhalt der Vorgabe. Die App liest jetzt gegen 0.4.1 (`withoutNulls`, `mergedVariants`) und
+  sagt den Fehler nur noch, wenn das Projekt eine Version davor installiert hat (`nullBreaks`, die
+  Version aus `optionSchema`); in 0.4.1 klappt ein leeres `html` unter „Ohne Wirkung, weil ohne
+  Wert“ weg. `check:plugin-copies` hat zwei Fälle mehr (645) und ist gegen beide Versionen gleich;
+  Gegenproben: Version ignoriert → 6 Abweichungen gegen 0.4.0, `null` nicht verworfen → 6 gegen
+  0.4.1. Gemessen an der gebauten App bei 1280 und 1600 mit beiden Versionen, Zurücksetzen lässt
+  in beiden nur `title` stehen. Kein Projekt ist auf 0.4.1 gehoben; gui-test bleibt auf 0.4.0.
+- ~~Das Textfeld des Optionsformulars steht über die Leiste~~ — behoben (2026-10-09): Gemessen war
+  es nicht das Feld selbst, sondern sein Flex-Element — `max-w-full` hatte nichts zu binden, weil
+  ein Flex-Element nicht unter seinen Inhalt schrumpft (Textfeld 448 px in einer 404-px-Zeile). Die
+  Zeile des Formulars gibt ihren Kindern `min-w-0`, das mehrzeilige Textfeld seiner Spalte auch.
+  Vorher bei 1280 an allen drei Null-Kästen `scrollWidth > clientWidth`, nachher bei 1280 und 1600
+  kein Element mehr über dem Rand der Leiste.
 - ~~Das Standard-Frame liest nicht die `variables.scss` des Projekts, sondern nennt Quartz' Maße~~
   — behoben (2026-10-09): `layoutFrames.quartzMeasures` (neuer Kanal mit Objekt-Argument)
   kompiliert mit dem sass des Projekts ein Stück SCSS gegen `quartz/styles/variables.scss` —

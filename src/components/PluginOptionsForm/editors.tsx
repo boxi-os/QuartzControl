@@ -302,10 +302,12 @@ function FieldRow({
   }
   // One under the other: name, control, explanation. Side by side, the three wrapped differently
   // in every row of a side panel, and the explanation stood beside some controls and under others.
+  // The control may shrink below its content: a flex item does not by default, and a 28rem
+  // textarea in it stood 44 px over a 404 px row of the side panel (max-w-full had nothing to bind).
   return (
     <div className="flex flex-col gap-1">
       {label}
-      <div className="flex min-w-0 max-w-full flex-wrap items-center gap-1.5">
+      <div className="flex min-w-0 max-w-full flex-wrap items-center gap-1.5 [&>*]:min-w-0">
         {editor}
         {reset}
       </div>
@@ -511,7 +513,7 @@ function StringEditor({
   return (
     <span className="flex max-w-full flex-wrap items-start gap-x-2">
       {multiline ? (
-        <span className="flex flex-col gap-1.5">
+        <span className="flex min-w-0 flex-col gap-1.5">
           <textarea
             ref={textareaRef}
             key={current}

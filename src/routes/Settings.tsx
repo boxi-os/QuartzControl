@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { confirmDialog } from '../utils/confirm'
+import { askDialog, confirmDialog } from '../utils/confirm'
+import { hasUnsavedChanges, useUnsavedChanges } from '../state/unsavedGuard'
 import { expandHome, isAbsolutePath, titlebarStripClass } from '../utils/platform'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Database, Key, Monitor, Moon, FolderOpen, Plug, Plus, PowerOff, RefreshCw, Sun, Terminal, Trash2, TriangleAlert } from 'lucide-react'
@@ -74,7 +75,16 @@ export default function Settings(): JSX.Element {
               case that still needs a destination of its own. */}
           <button
             type="button"
-            onClick={() => (location.key === 'default' ? navigate('/') : navigate(-1))}
+            onClick={async () => {
+              // This page has no sidebar, so its way back asks what ProjectLayout's sidebar asks:
+              // a changed connection form would otherwise go without a word.
+              if (hasUnsavedChanges()) {
+                const answer = await askDialog({ text: t('projectLayout.unsavedWarning'), confirmLabel: t('projectLayout.unsavedLeave'), danger: true })
+                if (answer !== 'confirm') return
+              }
+              if (location.key === 'default') navigate('/')
+              else navigate(-1)
+            }}
             className="text-ui text-text-muted hover:text-text"
           >
             ← {t('common.back')}
@@ -502,6 +512,8 @@ function ConnectionsSection(): JSX.Element {
   const [draft, setDraft] = useState<SaveConnectionInput | null>(null)
   const [draftSnapshot, setDraftSnapshot] = useState<string | null>(null)
   const [usage, setUsage] = useState<Record<string, number>>({})
+  // For the one way out this page has besides its rows: "Zurück" (41st review, finding 8).
+  useUnsavedChanges(draft !== null && JSON.stringify(draft) !== draftSnapshot)
 
   const reload = useCallback(async () => {
     const list = await window.quartzGui.connections.list()

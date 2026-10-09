@@ -41,6 +41,7 @@ import {
 } from '../../components/ConnectionForm'
 import { useAsyncAction } from '../../hooks/useAsyncAction'
 import { useStickyState } from '../../state/uiState'
+import { useUnsavedChanges } from '../../state/unsavedGuard'
 import { rsyncBlockReason } from '@shared/rsyncSupport'
 import { remotePathProblem } from '@shared/remotePath'
 import { TAB_ICONS } from '../navConfig'
@@ -211,8 +212,15 @@ export default function Publish(): JSX.Element {
   // to lose: the form has an explicit Save, so a discarded draft is gone for good. An untouched
   // form closes silently - opening "Bearbeiten" and clicking elsewhere is not a decision worth a
   // dialog.
+  // A changed target form, or a connection begun under it - the sidebar asks about both too (41st
+  // review, finding 8: every way out inside the page asked, the sidebar let them go).
+  const formChanged =
+    (targetDraft !== null && JSON.stringify(targetDraft) !== draftSnapshot) ||
+    (connectionDraft !== null && JSON.stringify(connectionDraft) !== JSON.stringify(emptyConnectionDraft(connectionDraft.kind)))
+  useUnsavedChanges(formChanged)
+
   async function mayDiscardDraft(): Promise<boolean> {
-    if (!targetDraft || JSON.stringify(targetDraft) === draftSnapshot) return true
+    if (!formChanged) return true
     return confirmDialog({
       text: t('publish.confirmDiscardTargetDraft'),
       confirmLabel: t('publish.confirmDiscardTargetDraftAction')

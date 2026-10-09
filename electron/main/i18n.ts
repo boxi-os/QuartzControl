@@ -330,7 +330,7 @@ const STRINGS = {
     frameRefreshFailed:
       'Die Frames konnten vor diesem Lauf nicht aufgefrischt werden ({{error}}). Gebaut wird mit dem Stand, der auf der Platte liegt.',
     frameAreaNameDuplicate:
-      'Zwei Bereiche heißen „{{name}}“. Ein Bereichsname darf nur einmal vorkommen — sonst verliert das Frame sein ganzes Raster.',
+      'Zwei Bereiche heißen „{{name}}“. Ein Bereichsname darf nur einmal vorkommen — sonst verliert der Frame sein ganzes Raster.',
     frameAreaGroupDuplicate:
       'Zwei Bereiche derselben Belegung halten die Gruppe „{{name}}“. Beide zeigten dieselben Komponenten, also doppelt auf jeder Seite.',
 

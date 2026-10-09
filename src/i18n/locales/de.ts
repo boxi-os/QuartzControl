@@ -1534,12 +1534,12 @@ export default {
     templateMinimal: 'Minimal',
     templatePluginDefault: '„{{frame}}“ (Plugin-Standard, aktiv)',
     pluginFrameUnknownLayout:
-      'Dieser Seitentyp benutzt automatisch das Frame „{{frame}}“ aus dem zugehörigen Plugin. Wie es aufgebaut ist, weiß nur das Plugin selbst — deshalb gibt es hier keine Vorschau.',
+      'Dieser Seitentyp benutzt automatisch den Frame „{{frame}}“ aus dem zugehörigen Plugin. Wie er aufgebaut ist, weiß nur das Plugin selbst — deshalb gibt es hier keine Vorschau.',
     frameBuilder: {
       whatIsAFrame:
-        'Ein Frame ist das Raster einer Seite: welche Bereiche es gibt — Kopfbereich, Seitenleisten, Inhalt, Fußzeile —, wo sie liegen und wie breit sie sind. Was in den Bereichen erscheint, legst du im Reiter „Komponenten“ fest, und dort wählst du auch je Seitentyp das Frame.',
-      newFrame: 'Neues Frame',
-      newEmptyFrame: 'Leeres Frame anlegen',
+        'Ein Frame ist das Raster einer Seite: welche Bereiche es gibt — Kopfbereich, Seitenleisten, Inhalt, Fußzeile —, wo sie liegen und wie breit sie sind. Was in den Bereichen erscheint, legst du im Reiter „Komponenten“ fest, und dort wählst du auch je Seitentyp den Frame.',
+      newFrame: 'Neuer Frame',
+      newEmptyFrame: 'Leeren Frame anlegen',
       frameLabel: 'Frame',
       standardOption: 'Quartz-Standard (nur ansehen)',
       ownFrames: 'Eigene Frames',
@@ -1549,7 +1549,7 @@ export default {
       duplicated: 'Kopie „{{name}}“ angelegt. Sie wird erst beim Speichern geschrieben.',
       standardTitle: 'Quartz-Standard',
       standardText:
-        'So teilt Quartz eine Seite auf, solange kein eigenes Frame gewählt ist: Seitenleisten links und rechts, dazwischen Kopfbereich, Inhalt und Fußzeile. Es schaltet um, wo quartz/styles/variables.scss es sagt.',
+        'So teilt Quartz eine Seite auf, solange kein eigener Frame gewählt ist: Seitenleisten links und rechts, dazwischen Kopfbereich, Inhalt und Fußzeile. Umgeschaltet wird, wo quartz/styles/variables.scss es sagt.',
       standardSource:
         'Die Maße stammen aus quartz/styles/variables.scss und base.scss dieses Projekts: Spalten {{columns}}, Abstände {{gap}}, Seite höchstens {{max}}, Umschalten bei {{desktop}} / {{mobile}} px.',
       standardSourceUnavailable:
@@ -1558,8 +1558,8 @@ export default {
       standardShapeDiffers: 'Die Spaltenzahl in variables.scss weicht hier von Quartz’ Anordnung ab ({{breakpoints}}); Vorschau und Kopie zeigen dort Quartz’ Spalten.',
       standardCopyHint:
         'Eine Kopie folgt deinen Breakpoints. Die Seitenleisten verhalten sich darin wie jeder andere Bereich: Sie kleben nicht und werden auf schmalen Breiten nicht zur Zeile.',
-      customizeStandard: 'Als eigenes Frame anpassen',
-      discardConfirm: 'Ungespeicherte Änderungen an „{{name}}“ verwerfen?\n\nDas Frame bleibt, wie es zuletzt gespeichert wurde.',
+      customizeStandard: 'Als eigenen Frame anpassen',
+      discardConfirm: 'Ungespeicherte Änderungen an „{{name}}“ verwerfen?\n\nDer Frame bleibt, wie er zuletzt gespeichert wurde.',
       discardConfirmAction: 'Änderungen verwerfen',
       frameName: 'Frame-Name',
       rows: 'Zeilen',
@@ -1658,12 +1658,12 @@ export default {
       neverVisibleWarning: 'Auf keinem Breakpoint sichtbar: {{areas}}. Diese Bereiche werden nirgends gerendert.',
       nameRequired: 'Bitte einen Frame-Namen vergeben.',
       areaNameCollision:
-        'Zwei Bereiche heißen „{{names}}“. Ein Bereichsname darf nur einmal vorkommen — sonst verliert das Frame sein ganzes Raster, nicht nur einen Bereich.',
+        'Zwei Bereiche heißen „{{names}}“. Ein Bereichsname darf nur einmal vorkommen — sonst verliert der Frame sein ganzes Raster, nicht nur einen Bereich.',
       areaGroupCollision:
         'Zwei Bereiche derselben Belegung halten die Gruppe „{{names}}“. Beide zeigten dann dieselben Komponenten, also doppelt auf jeder Seite.',
-      nameCollision: 'Dieser Name ist bereits vergeben (ein eingebautes Frame oder ein anderes eigenes).',
+      nameCollision: 'Dieser Name ist bereits vergeben (ein eingebauter Frame oder ein anderer eigener).',
       deleteConfirmAction: 'Frame löschen',
-      deleteConfirm: 'Frame „{{name}}“ wirklich löschen? Seitentypen, die ihn benutzen, fallen dann auf das Standard-Frame zurück.',
+      deleteConfirm: 'Frame „{{name}}“ wirklich löschen? Seitentypen, die ihn benutzen, fallen dann auf den Standard-Frame zurück.',
       preview: {
         pageContent: 'Seiteninhalt'
       }
@@ -1704,12 +1704,12 @@ export default {
       areaCleared: 'Auf {{type}} leer',
       unknownOption: '„{{frame}}“ (unbekannt)',
       unknownFrame:
-        'Ein Frame „{{frame}}“ kennt QuartzControl nicht. Bringt kein Plugin eines mit diesem Namen mit, baut Quartz diese Seiten mit dem Standard-Frame — so ist die Bühne gezeichnet.'
+        'Einen Frame „{{frame}}“ kennt QuartzControl nicht. Bringt kein Plugin einen mit diesem Namen mit, baut Quartz diese Seiten mit dem Standard-Frame — so ist die Bühne gezeichnet.'
     },
     context: {
       customized: 'angepasst',
-      ownFrame: 'Eigenes Frame',
-      builtinFrame: 'Eingebautes Frame',
+      ownFrame: 'Eigener Frame',
+      builtinFrame: 'Eingebauter Frame',
       viewOnly: 'nur ansehen',
       newDraft: 'neu'
     },
@@ -1718,7 +1718,7 @@ export default {
       editFrame: 'Frame bearbeiten',
       hiddenInView: 'In dieser Ansicht nicht auf der Seite',
       approximate: 'Ungefähr gezeichnet: Spaltenbreiten wie {{sizes}} kennt erst der Browser, hier zählen sie als gleiche Anteile.',
-      otherDraftOpen: 'Im Frame-Editor ist noch „{{name}}“ mit ungespeicherten Änderungen offen. Speichere oder schließe es, bevor du ein anderes Frame öffnest.'
+      otherDraftOpen: 'Im Frame-Editor ist noch „{{name}}“ mit ungespeicherten Änderungen offen. Speichere oder schließe es, bevor du einen anderen Frame öffnest.'
     },
     summary: {
       title: 'Zusammenfassung',
@@ -1730,14 +1730,14 @@ export default {
         default: 'Nichts gewählt — Quartz baut mit dem Standard-Frame.'
       },
       empty: 'leer',
-      notInFrame: 'Dieses Frame hat dafür keinen Bereich — was hier steht, erscheint nicht.',
+      notInFrame: 'Dieser Frame hat dafür keinen Bereich — was hier steht, erscheint nicht.',
       parked_one: '{{count}} Komponente ist ausgeschaltet und liegt im Vorrat.',
       parked_other: '{{count}} Komponenten sind ausgeschaltet und liegen im Vorrat.'
     },
     overview: {
       title: 'Wo welche Komponente erscheint',
       intro:
-        'Komponenten platzierst du einmal, für alle Seiten. Jeder Seitentyp wird in seinem zugeordneten Frame gebaut und kann einzelne Komponenten oder ganze Bereiche ausblenden; das Frame entscheidet, für welche Bereiche es überhaupt Platz hat. Die Tabelle zeigt, was davon auf jedem Seitentyp ankommt.',
+        'Komponenten platzierst du einmal, für alle Seiten. Jeder Seitentyp wird in seinem zugeordneten Frame gebaut und kann einzelne Komponenten oder ganze Bereiche ausblenden; der Frame entscheidet, für welche Bereiche es überhaupt Platz hat. Die Tabelle zeigt, was davon auf jedem Seitentyp ankommt.',
       componentColumn: 'Komponente',
       assignedFrame: 'Zugeordneter Frame',
       customized: 'Weicht von „Alle Seiten“ ab',
@@ -1751,7 +1751,7 @@ export default {
         excluded: 'Auf diesem Seitentyp ausgeblendet',
         cleared: 'Bereich auf diesem Seitentyp geleert',
         noArea: 'Bereich in diesem Frame nicht zugewiesen',
-        unknown: 'Unbekannt — das Frame kommt vom Plugin'
+        unknown: 'Unbekannt — der Frame kommt vom Plugin'
       },
       cellTitle: '{{component}} auf {{pageType}}: {{state}}',
       empty: 'leer',
@@ -1772,7 +1772,7 @@ export default {
       statPageTypes_other: 'Seitentypen',
       statCustomized_one: '{{count}} weicht ab',
       statCustomized_other: '{{count}} weichen ab',
-      statFrames_one: 'eigenes Frame',
+      statFrames_one: 'eigener Frame',
       statFrames_other: 'eigene Frames',
       statUnused_one: '{{count}} ohne Seitentyp',
       statUnused_other: '{{count}} ohne Seitentyp',

@@ -6,7 +6,7 @@ import { STAGE_REFERENCE_WIDTH, stageFrame } from './stageGeometry'
 /**
  * A frame drawn and not edited: the Frames tab's picture of Quartz's standard frame, which is no
  * file of this project and so has nothing to drag, resize or save. Drawn by the same geometry as
- * the editor's board (stageFrame), so "Als eigenes Frame anpassen" opens the picture it showed.
+ * the editor's board (stageFrame), so "Als eigenen Frame anpassen" opens the picture it showed.
  */
 export default function FramePreview({ frame, breakpoint }: { frame: GridFrameDefinition; breakpoint: FrameBreakpoint }): JSX.Element {
   const { t } = useTranslation()

@@ -2,7 +2,7 @@ import type { FrameBreakpoint, FrameSlot, GridAreaPlacement, GridBreakpointLayou
 
 /**
  * Quartz's own DefaultFrame as an authored frame - what the Frames tab shows when the project has
- * none of its own, and what "Als eigenes Frame anpassen" copies.
+ * none of its own, and what "Als eigenen Frame anpassen" copies.
  *
  * Read from quartz/styles/variables.scss ($desktopGrid/$tabletGrid/$mobileGrid, $sidePanelWidth
  * 320px, 5px gaps) and base.scss (`.page` capped at desktop + 300px = 1500px and centred). Quartz

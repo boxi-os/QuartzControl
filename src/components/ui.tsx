@@ -1056,9 +1056,16 @@ export function SettingsSection({
   )
 }
 
-// What a click may land on without meaning "nothing": a control, or an element that selects
-// something itself and says so with data-selectable (a component chip, an area box).
-const SELECTING = 'button, a, input, select, textarea, label, summary, dialog, [role], [contenteditable], [data-selectable], [data-area-box]'
+// What a click may land on without meaning "nothing": a control - native, or one of the
+// interactive roles this app gives an element -, or an element that selects something itself and
+// says so with data-selectable (a component chip, an area box) or is one of an area's resize grips.
+// Only controls: `[role]` stood here and made any element with a role count - a status line, a
+// live region, a note - while the paragraph beside it let go (41st review, finding 10).
+const SELECTING = [
+  'button, a, input, select, textarea, label, summary, dialog, [contenteditable]',
+  '[role="button"], [role="radio"], [role="switch"], [role="tab"], [role="combobox"], [role="listbox"], [role="option"]',
+  '[data-selectable], [data-area-box], [data-resize-handle]'
+].join(', ')
 // Further than this between pointerdown and click, and the click is the end of a drag or a resize
 // rather than a click - the browser sends it to the common ancestor of where the gesture began and
 // ended, which is usually the empty board.

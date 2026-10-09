@@ -264,7 +264,10 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
    (1280 und 1600 px, 0 und 400 ms Speicherdauer). Noch offen daneben: `removePlugin` wartet nicht
    auf die Warteschlange, ein noch ausstehendes Speichern könnte den entfernten Eintrag
    zurückschreiben (gelesen, nicht gemessen).
-2. `marketplaceReadmeArgs` lässt `owner/.` als Repo-Angabe zu.
+2. ~~`marketplaceReadmeArgs` lässt `owner/.` als Repo-Angabe zu~~ — behoben (2026-10-09): `fetch`
+   streicht das Segment `.`, `owner/.` fragte also `/repos/owner/readme`. Gemessen an der gebauten
+   App mit gestubbtem `fetch` im Hauptprozess: vorher angenommen und dorthin gefragt, nachher
+   abgewiesen; `owner/.github`, `owner/repo.js` und `owner/repo` gehen weiter durch.
 3. Jede Änderung der Sprachliste (Mehrsprachigkeit) schreibt alle Codes neu, auch unveränderte.
 4. `npm run smoke` startet mit dem echten Profil des Nutzers, nicht mit einem Wegwerf-Profil.
 5. Eine `cp -Rc`-Kopie eines Projekts nennt die Frames des Originals mit absolutem Pfad.

@@ -181,9 +181,15 @@ export const syncDirection = z.enum(['push', 'pull', 'both'])
 export const projectIconTarget = z.looseObject({ projectPath: absolutePath })
 
 // marketplace.readme. The name goes into an api.github.com path, so it is one owner and one
-// repository in GitHub's own alphabet and nothing that could climb out of /repos/.
+// repository in GitHub's own alphabet and nothing that could climb out of /repos/. A repository
+// named `.` passes the alphabet and is not one: fetch drops the segment, and `owner/.` asked
+// /repos/owner/readme.
 export const marketplaceReadmeArgs = z.looseObject({
-  fullName: z.string().max(200).regex(/^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/, 'not an owner/repo name').refine((v) => !v.includes('..'), 'not an owner/repo name')
+  fullName: z
+    .string()
+    .max(200)
+    .regex(/^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/, 'not an owner/repo name')
+    .refine((v) => !v.includes('..') && !v.endsWith('/.'), 'not an owner/repo name')
 })
 
 // snippets.* and staticImage.import. `dir` and `file` are names the renderer took from a plugin's

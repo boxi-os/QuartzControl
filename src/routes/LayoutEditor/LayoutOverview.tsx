@@ -178,12 +178,14 @@ export default function LayoutOverview({
     const layout = getLayout(config.plugins[i])!
     const shape = shapes.get(pt)
     if (shape === null || shape === undefined) return { state: 'unknown' }
-    const room = roomOf(shape, layout.position, layout.group)
-    if (room === null) return { state: 'noArea' }
-    if (room !== 'all' && room.length === 0) return { state: 'hiddenArea' }
+    // What the user set on purpose comes before what follows from the frame: a position cleared on
+    // the 404 page is not a warning about a frame without room (forty-second review, finding 8).
     const override = overrideOf(config, pt)
     if (isPositionCleared(override, layout.position)) return { state: 'cleared' }
     if (isExcluded(override, config.plugins[i])) return { state: 'excluded' }
+    const room = roomOf(shape, layout.position, layout.group)
+    if (room === null) return { state: 'noArea' }
+    if (room !== 'all' && room.length === 0) return { state: 'hiddenArea' }
     if (room !== 'all' && room.length < FRAME_BREAKPOINTS.length) return { state: 'someWidths', on: room }
     return { state: 'shown' }
   }
@@ -282,7 +284,10 @@ export default function LayoutOverview({
         })}
       </tr>
     )
-    return (
+    // One rowgroup head per tbody: the position heads its ungrouped rows, and every group is a tbody
+    // of its own whose head names the position too - two rowgroup heads in one tbody made a group
+    // the head of the rows before it as well (forty-second review, finding 8).
+    return [
       <tbody key={p}>
         <tr>
           <th
@@ -292,21 +297,31 @@ export default function LayoutOverview({
           >
             {positionName(p)}
             <span className="ml-2 font-normal normal-case tracking-normal text-text-muted">
-              {items.length === 0 ? t('layoutEditor.overview.empty') : items.length}
+              {items.length === 0 ? (
+                t('layoutEditor.overview.empty')
+              ) : (
+                <>
+                  <span aria-hidden>{items.length}</span>
+                  <span className="sr-only">{t('layoutEditor.overview.componentCount', { count: items.length })}</span>
+                </>
+              )}
             </span>
           </th>
         </tr>
         {ungrouped.map(componentRow)}
-        {groups.map((g) => {
-          const color = groupColor(g, groupNames)
-          // A group that some frame gives an area of its own is that area to the user - the frame
-          // builder makes the group only to bind the area - and not a flex group they arranged.
-          const ownIn = frames.filter((f) => f.areas.some((a) => a.slot === p && a.group === g))
-          const areaNames = [...new Set(ownIn.flatMap((f) => f.areas.filter((a) => a.slot === p && a.group === g).map((a) => a.name)))]
-          return [
-            <tr key={`g:${g}`}>
+      </tbody>,
+      ...groups.map((g) => {
+        const color = groupColor(g, groupNames)
+        // A group that some frame gives an area of its own is that area to the user - the frame
+        // builder makes the group only to bind the area - and not a flex group they arranged.
+        const ownIn = frames.filter((f) => f.areas.some((a) => a.slot === p && a.group === g))
+        const areaNames = [...new Set(ownIn.flatMap((f) => f.areas.filter((a) => a.slot === p && a.group === g).map((a) => a.name)))]
+        return (
+          <tbody key={`${p}:${g}`}>
+            <tr>
               <th scope="rowgroup" colSpan={pageTypes.length + 1} className={`${rowHead} pl-3`}>
                 <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-micro">
+                  <span className="sr-only">{positionName(p)}: </span>
                   {areaNames.length > 0 ? (
                     <>
                       <span aria-hidden className={`h-2.5 w-2.5 shrink-0 rounded-[3px] border-2 ${color?.ring ?? 'border-ink/30'}`} />
@@ -324,12 +339,12 @@ export default function LayoutOverview({
                   )}
                 </span>
               </th>
-            </tr>,
-            ...items.filter((i) => getLayout(config.plugins[i])?.group === g).map((i) => componentRow(i))
-          ]
-        })}
-      </tbody>
-    )
+            </tr>
+            {items.filter((i) => getLayout(config.plugins[i])?.group === g).map((i) => componentRow(i))}
+          </tbody>
+        )
+      })
+    ]
   }
 
   const legend: { mark: ReactNode; text: string }[] = [

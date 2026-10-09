@@ -1761,6 +1761,8 @@ export default {
       empty: 'leer',
       ownArea: 'Eigener Bereich „{{name}}“',
       ownAreaIn: 'im Frame',
+      componentCount_one: '{{count}} Komponente',
+      componentCount_other: '{{count}} Komponenten',
       flexGroup: 'Flex-Gruppe „{{name}}“',
       legend: 'Legende',
       legendCondition: 'Mit Bedingung',

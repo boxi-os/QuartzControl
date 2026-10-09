@@ -1756,6 +1756,8 @@ export default {
       empty: 'empty',
       ownArea: 'Own area “{{name}}”',
       ownAreaIn: 'in frame',
+      componentCount_one: '{{count}} component',
+      componentCount_other: '{{count}} components',
       flexGroup: 'Flex group “{{name}}”',
       legend: 'Legend',
       legendCondition: 'With a condition',

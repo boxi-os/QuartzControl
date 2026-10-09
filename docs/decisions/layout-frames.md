@@ -1523,8 +1523,21 @@ Gruppe fehlten ganz. Jetzt:
 - **Spalten** sind die Seitentypen, im Kopf der zugeordnete Frame; ob er gewählt ist oder vom Plugin
   kommt, sagt ein Zeichen (Pin / Puzzle) mit Tooltip.
 - **Zellen** sind eines von fünf Zeichen: erscheint, ausgeblendet (`exclude`), Bereich geleert,
-  das Frame hat keinen Platz, unbekannt (Frame eines Plugins). Die Rangfolge ist die alte:
-  unbekannt vor kein Platz vor geleert vor ausgeblendet.
+  das Frame hat keinen Platz, unbekannt (Frame eines Plugins). Die Rangfolge war die alte:
+  unbekannt vor kein Platz vor geleert vor ausgeblendet. **Seit dem zweiundvierzigsten Review**
+  (Befunde 3 und 8) sind es sieben: dazu „Bereich auf keiner Breite gezeigt“ und „erscheint nur
+  auf manchen Breiten“, weil der Frame jeden Bereich zählt, auch einen versteckten. Und was der
+  Nutzer ausdrücklich eingestellt hat, kommt vor dem, was aus dem Frame folgt: unbekannt, geleert,
+  ausgeblendet, kein Platz, auf keiner Breite, auf manchen Breiten, erscheint. Die alte Tabelle
+  hatte keine Zeile je Komponente und damit kein `exclude` je Zelle; in der Matrix sagte die
+  404-Seite von gui-test für eine Position, die dort ausdrücklich geleert ist, eine Warnung in Amber.
+  Gemessen an einer Kopie von gui-test in der gebauten App: vorher 15 Zellen „auf keiner Breite“ und
+  4 „geleert“, nachher 0 und 19 — alle 15 lagen in geleerten Positionen; 114 „Erscheint“ unverändert.
+  Im selben Durchgang: Die Zahl im Positionskopf wird als Satz gelesen („Kopfbereich 5
+  Komponenten“ statt „Kopfbereich5“), und jede Gruppe ist ein eigenes `tbody` mit einem
+  `rowgroup`-Kopf, der die Position mitnennt — zwei `rowgroup`-Köpfe in einem `tbody` machten die
+  Gruppe zum Kopf auch der Zeilen davor (am Barrierebaum mit `ariaSnapshot()` gemessen, mit
+  VoiceOver nicht).
 - **Eine Gruppe** hat eine eigene Zeile, die je Seitentyp sagt, ob dessen Frame ihr einen eigenen
   Bereich gibt. „Kein Platz“ fragt jetzt auch die Gruppe: Eine Komponente in Gruppe G auf Position P
   erscheint, wenn das Frame einen Bereich P#G *oder* einen Bereich P ohne Gruppe hat — dieselbe

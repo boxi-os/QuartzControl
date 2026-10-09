@@ -157,6 +157,25 @@ außerhalb liegt, bedeutet in beiden Projekten dasselbe und bleibt. `writeConfig
 `snapshot: false`-Ausnahme, die `saveFrame` schon hatte - die Kopie hat bewusst keinen
 Snapshot-Store und darf hier keinen anfangen.
 
+**Die Bau-Tür als Schreiber der Config (zweiundvierzigstes Review, Befund 6).** Seit `c448709` läuft
+dieselbe Reparatur, nach Muster statt nach Präfix (`repointAuthoredFrames`), beim Eintragen eines
+Ordners und vor jedem Bau — damit schreibt die Bau-Tür die Config, und zwei Fragen kamen dazu. Eine
+Seite, die die Config beim Mount gelesen hat (Layout-Editor, Plugin-Reiter), schrieb beim nächsten
+Speichern die Pfade des Originals zurück; gemessen an der gebauten App mit einer `cp -Rc`-Kopie von
+gui-test über den IPC-Weg (Config von außen auf die Pfade des Originals zurückgelegt, `config.get`,
+Reparatur, `config.save` des Gelesenen): vorher danach 5 fremde und 0 eigene Frame-Pfade, nachher 0
+und 5. `writeConfig` nimmt dafür dieselbe Regel (`framePaths.ownFramePath`) auf jede Quelle, die ein
+Schreiber übergibt. Und die Reparatur liest und schreibt in einem Zug, also konnte ein Speichern
+dazwischen verloren gehen; sie läuft jetzt unter einem Schloss für die Config
+(`configService.whileHoldingConfig`, gebaut wie `whileHoldingStyles`), an dem `writeConfig` wartet.
+Dieses Fenster ist nicht getroffen worden: 40 Läufe mit Reparatur und Speichern nebeneinander, 0 bis
+7 ms versetzt, verloren vorher wie nachher keinen Titel — das Schloss ist gelesen, nicht gemessen.
+Nicht darunter: die Schreibvorgänge der CLI (`quartz plugin add` u. a.) im Kindprozess. Die Grenze
+der Regel steht an `ownFramePath`: Ein Projekt, das den Frame eines anderen absichtlich nennt und
+selbst einen Frame derselben ID hat, wird auf den eigenen gelenkt; `frame-<name>` kann sich zwischen
+Projekten wiederholen. Ein echter Bau der Kopie mit den Pfaden des Originals in der Config: 8,8 s,
+`success: true`, danach Config und alle fünf Symlinks auf der Kopie.
+
 Zwei weitere Einträge fehlten in derselben Liste. `.quartz-gui/project-prefs.json` hält als einzigen
 Schlüssel den *absoluten* Ausgabepfad des Originals; geerbt, hätte der erste Klick auf „Bauen“ in der
 Kopie den Export des Originals gelöscht und sich hineingeschrieben, ohne Rückfrage - `quartz build

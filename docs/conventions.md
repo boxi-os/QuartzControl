@@ -951,7 +951,11 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   das Präfix davor Rauschen. Umgeschrieben wird nur, was hier auch existiert. Dieselbe Reparatur
   läuft beim Eintragen eines Ordners und an der Bau-Tür, weil eine Kopie, die außerhalb der App
   entstand (Finder, `cp -R`, eine Sicherung), die Pfade des Originals ohne einen Schritt der App
-  dazwischen mitbringt — ihr Bau las bis zum 2026-10-09 die Frames des Originals.
+  dazwischen mitbringt — ihr Bau las bis zum 2026-10-09 die Frames des Originals. Damit schreibt
+  die Bau-Tür die Config, und eine Seite, die sie vorher gelesen hat, schrieb beim Speichern die
+  alten Pfade zurück: `writeConfig` nimmt deshalb dieselbe Regel auf alles, was ein Schreiber
+  übergibt, und die Reparatur liest und schreibt unter dem Schloss der Config
+  (`whileHoldingConfig`), an dem `writeConfig` wartet (zweiundvierzigstes Review, Befund 6).
 - **Ein Symlink-Schutz prüft jedes Segment, nicht das oberste Verzeichnis** — und fragt mit
   `lstat`, nicht mit `existsSync`. Letzteres folgt dem Link, also meldet ein hängender Link „ist
   nicht da“ statt „ist ein Link“, und die Sperre geht auf. Ein Link *innerhalb* des geschützten

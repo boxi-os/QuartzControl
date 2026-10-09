@@ -1,8 +1,9 @@
 import { readdir, readlink, rm, symlink } from 'fs/promises'
 import { existsSync } from 'fs'
-import { isAbsolute, join, relative, resolve, sep } from 'path'
+import { isAbsolute, join, relative, resolve } from 'path'
 import type { PluginEntry } from '@shared/ipc-contract'
-import { readConfig, writeConfig } from './configService'
+import { readConfig, whileHoldingConfig, writeConfig } from './configService'
+import { ownFramePath } from './framePaths'
 import { readLockfile } from './pluginService'
 import { writeFileAtomic } from './jsonStore'
 
@@ -66,18 +67,12 @@ export async function repointProjectPaths(from: string, to: string): Promise<voi
 // The same holds for a project copied outside the app (Finder, `cp -R`, a backup), which carries
 // the original's paths without any operation of ours in between: so this also runs when a folder
 // is added and at the build door (buildService.refreshAuthoredFrames).
-const FRAME_MARKER = `${sep}${join('.quartz-gui', 'authored-frames')}${sep}`
-
+//
+// The rule, and where it stops, is framePaths.ownFramePath. writeConfig applies it as well, to
+// whatever a writer hands over: a page holding the config from before a repair wrote the
+// original's paths back (forty-second review, finding 6).
 export async function repointAuthoredFrames(projectPath: string): Promise<void> {
-  await rewriteRecordedPaths(projectPath, (path) => {
-    if (!isAbsolute(path)) return null
-    const abs = resolve(path)
-    const at = abs.indexOf(FRAME_MARKER)
-    if (at === -1) return null
-    if (resolve(abs.slice(0, at)) === resolve(projectPath)) return null // already ours
-    const next = join(projectPath, abs.slice(at + 1))
-    return existsSync(next) ? next : null
-  })
+  await rewriteRecordedPaths(projectPath, (path) => ownFramePath(projectPath, path))
 }
 
 // The three places that record an absolute path into a project: the plugin entry's `source` in
@@ -91,18 +86,23 @@ async function rewriteRecordedPaths(
   // business, and there is nothing here to repair.
   if (!existsSync(join(to, 'quartz.config.yaml'))) return
 
-  const config = await readConfig(to)
-  let configChanged = false
-  const plugins: PluginEntry[] = config.plugins.map((entry) => {
-    if (typeof entry.source !== 'string') return entry
-    const next = rewrite(entry.source)
-    if (next === null) return entry
-    configChanged = true
-    return { ...entry, source: next }
+  // Read and write under the config's lock: a save in between (a page, a plugin tab writing at
+  // once) was otherwise undone by this write. The CLI's own writes (`quartz plugin add` and the
+  // like run as a child process) are not under it; they rewrite the file themselves.
+  await whileHoldingConfig(to, async () => {
+    const config = await readConfig(to)
+    let configChanged = false
+    const plugins: PluginEntry[] = config.plugins.map((entry) => {
+      if (typeof entry.source !== 'string') return entry
+      const next = rewrite(entry.source)
+      if (next === null) return entry
+      configChanged = true
+      return { ...entry, source: next }
+    })
+    // No snapshot: this is a repair that makes the project buildable again, not an edit anyone
+    // would want to undo - and for a duplicate there is no snapshot store to write into yet.
+    if (configChanged) await writeConfig(to, { ...config, plugins }, { snapshot: false })
   })
-  // No snapshot: this is a repair that makes the project buildable again, not an edit anyone would
-  // want to undo - and for a duplicate there is no snapshot store to write into yet.
-  if (configChanged) await writeConfig(to, { ...config, plugins }, { snapshot: false })
 
   // A lockfile that cannot be read is not this operation's problem to solve - the project is no
   // worse off than before, and `quartz plugin install` is what reports it.

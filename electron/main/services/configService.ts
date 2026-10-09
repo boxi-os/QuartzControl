@@ -4,6 +4,8 @@ import { join } from 'path'
 import { parseDocument, Document, isMap } from 'yaml'
 import type { QuartzConfig, PluginEntry, PluginSource, LayoutConfig } from '@shared/ipc-contract'
 import { createSnapshot } from './snapshotService'
+import { ownFramePath } from './framePaths'
+import { projectLock } from './styleLock'
 import { mainT } from '../i18n'
 
 /**
@@ -151,7 +153,18 @@ function syncMapping(doc: Document, nodePath: string[], next: Record<string, unk
 // `snapshot: false` for a write that is part of a larger operation which takes its own snapshot,
 // or - as in duplicateService - happens inside a project that has no history yet and must not
 // start one: the same escape hatch layoutFrameService.saveFrame offers for the same reason.
-export async function writeConfig(
+/**
+ * One writer of quartz.config.yaml at a time per project, for the writers that read and write in
+ * one go - today the repair of frame paths at the build door (projectPaths.ts). writeConfig holds
+ * it, so a save waits for a repair instead of landing between its read and its write.
+ */
+export const whileHoldingConfig = projectLock()
+
+export function writeConfig(projectPath: string, config: QuartzConfig, options?: { snapshot?: boolean }): Promise<void> {
+  return whileHoldingConfig(projectPath, () => writeConfigNow(projectPath, config, options))
+}
+
+async function writeConfigNow(
   projectPath: string,
   config: QuartzConfig,
   options?: { snapshot?: boolean }
@@ -184,9 +197,16 @@ export async function writeConfig(
   if (isMap(doc.getIn(['configuration', 'theme'])) || Object.keys(config.theme).length > 0) {
     syncMapping(doc, ['configuration', 'theme'], config.theme)
   }
+  // A page holds the config it read when it mounted, and the build door may have pointed a frame
+  // path at this project since (projectPaths.repointAuthoredFrames) - the save wrote the original's
+  // paths back, and until the next build the dev server built from the original's frames
+  // (forty-second review, finding 6). So whatever a writer hands over names this project's frames.
   doc.set(
     'plugins',
-    config.plugins.map(({ name: _name, ...rest }) => rest)
+    config.plugins.map(({ name: _name, ...rest }) => {
+      const own = typeof rest.source === 'string' ? ownFramePath(projectPath, rest.source) : null
+      return own === null ? rest : { ...rest, source: own }
+    })
   )
   // Only touch the top-level `layout:` node when the in-memory config actually carries one -
   // every tab's save() round-trips whatever it loaded unchanged, so this only creates a new

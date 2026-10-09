@@ -50,10 +50,24 @@ import { resolve } from 'path'
  * it is still this run's, the way forgetServer() does it - a later caller has already chained onto
  * it and owns the key.
  */
-const running = new Map<string, Promise<unknown>>()
-const held = new AsyncLocalStorage<ReadonlySet<string>>()
+export const whileHoldingStyles = projectLock()
 
-export async function whileHoldingStyles<T>(projectPath: string, run: () => Promise<T>): Promise<T> {
+/**
+ * A lock of this kind - per project, waiting, reentrant - with its own queue. The config has one
+ * as well (configService.whileHoldingConfig); the two are independent.
+ */
+export function projectLock(): <T>(projectPath: string, run: () => Promise<T>) => Promise<T> {
+  const running = new Map<string, Promise<unknown>>()
+  const held = new AsyncLocalStorage<ReadonlySet<string>>()
+  return (projectPath, run) => holding(running, held, projectPath, run)
+}
+
+async function holding<T>(
+  running: Map<string, Promise<unknown>>,
+  held: AsyncLocalStorage<ReadonlySet<string>>,
+  projectPath: string,
+  run: () => Promise<T>
+): Promise<T> {
   const key = await realpath(projectPath).catch(() => resolve(projectPath))
   const mine = held.getStore()
   if (mine?.has(key)) return run()

@@ -928,7 +928,10 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   repariert beim Umbenennen und Duplizieren gegen ein bekanntes Vorher; `repointAuthoredFrames()`
   repariert nach jedem Restore, der Config oder Lockfile berührt, und braucht dafür kein Vorher: Ein
   Frame liegt unter `<projekt>/.quartz-gui/authored-frames/<id>`, also ist die ID die Identität und
-  das Präfix davor Rauschen. Umgeschrieben wird nur, was hier auch existiert.
+  das Präfix davor Rauschen. Umgeschrieben wird nur, was hier auch existiert. Dieselbe Reparatur
+  läuft beim Eintragen eines Ordners und an der Bau-Tür, weil eine Kopie, die außerhalb der App
+  entstand (Finder, `cp -R`, eine Sicherung), die Pfade des Originals ohne einen Schritt der App
+  dazwischen mitbringt — ihr Bau las bis zum 2026-10-09 die Frames des Originals.
 - **Ein Symlink-Schutz prüft jedes Segment, nicht das oberste Verzeichnis** — und fragt mit
   `lstat`, nicht mit `existsSync`. Letzteres folgt dem Link, also meldet ein hängender Link „ist
   nicht da“ statt „ist ein Link“, und die Sperre geht auf. Ein Link *innerhalb* des geschützten

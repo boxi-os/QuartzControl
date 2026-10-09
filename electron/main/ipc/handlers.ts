@@ -19,7 +19,7 @@ import type {
   PluginSource
 } from '@shared/ipc-contract'
 import * as projectStore from '../services/projectStore'
-import { repointProjectPaths } from '../services/projectPaths'
+import { repointAuthoredFrames, repointProjectPaths } from '../services/projectPaths'
 import * as projectOverviewService from '../services/projectOverviewService'
 import * as projectIconService from '../services/projectIconService'
 import * as snippetService from '../services/snippetService'
@@ -123,7 +123,13 @@ export function registerIpcHandlers(): void {
 
   handleNoArgs(IPC.projectList, () => projectStore.listProjects())
   handleNoArgs(IPC.projectOverview, () => projectOverviewService.getProjectOverviews())
-  handle(IPC.projectAdd, t([s.absolutePath]), (path) => projectStore.addProject(path))
+  handle(IPC.projectAdd, t([s.absolutePath]), async (path) => {
+    // A folder copied outside the app names the original's frames by absolute path (see
+    // projectPaths.ts). The build door repairs that too; here it happens before anything else of
+    // the copy is read. A repair that fails is no reason to refuse the folder - the build says it.
+    await repointAuthoredFrames(path).catch((err) => console.error(`[projects] could not repoint the frames of ${path}: ${String(err)}`))
+    return projectStore.addProject(path)
+  })
   handle(IPC.projectRelocate, t([s.uuid, s.absolutePath]), async (id, path) => {
     // Before the row moves, not after: an authored frame records its absolute path in three
     // places inside the project (see projectPaths.ts), and a renamed folder leaves all three

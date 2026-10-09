@@ -62,6 +62,10 @@ export async function repointProjectPaths(from: string, to: string): Promise<voi
 // source ending in that and starting somewhere else is a source that means this project's frame.
 // Only rewritten when the frame is actually here - a path this cannot back up is left alone
 // rather than pointed at nothing.
+//
+// The same holds for a project copied outside the app (Finder, `cp -R`, a backup), which carries
+// the original's paths without any operation of ours in between: so this also runs when a folder
+// is added and at the build door (buildService.refreshAuthoredFrames).
 const FRAME_MARKER = `${sep}${join('.quartz-gui', 'authored-frames')}${sep}`
 
 export async function repointAuthoredFrames(projectPath: string): Promise<void> {

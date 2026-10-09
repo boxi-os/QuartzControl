@@ -284,7 +284,15 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
    ändert sich dort keine Datei (Größe und mtime aller 3643 Dateien vor und nach dem Lauf
    verglichen). Die Zugänge-Karte zeigt im Wegwerf-Profil keine Einträge — der Smoke besucht sie
    damit leer.
-5. Eine `cp -Rc`-Kopie eines Projekts nennt die Frames des Originals mit absolutem Pfad.
+5. ~~Eine `cp -Rc`-Kopie eines Projekts nennt die Frames des Originals mit absolutem Pfad~~ —
+   behoben (2026-10-09): `repointAuthoredFrames`, bisher nur nach einem Restore, läuft jetzt auch
+   bei `projects.add` und an der Bau-Tür (`refreshAuthoredFrames`). Gemessen an der gebauten App
+   (1280 und 1600, Wegwerf-Profil) mit einer `cp -Rc`-Kopie von `gui-test` im Scratchpad: vorher
+   nannten nach Eintragen und Bauen alle 5 Config-Einträge, 10 Lockfile-Pfade und 5 Symlinks unter
+   `.quartz/plugins/` das Original; nachher nach dem Eintragen 0, und ebenso nach einem Bau, vor
+   dem die alten Pfade wieder eingesetzt wurden (die Kopie, die vor dem Fix eingetragen war). In
+   der Config ändern sich nur diese fünf Zeilen, das Lockfile nur in diesen Pfaden; Config,
+   Lockfile, Frames und Symlinks des Originals unverändert (Prüfsumme und mtimes).
 
 **Lücken, die das 41. Review stehen ließ:**
 

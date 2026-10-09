@@ -12,6 +12,7 @@ import * as layoutFrameService from './layoutFrameService'
 import * as fontService from './fontService'
 import * as styleService from './styleService'
 import { looksLikeQuartzBuild } from './buildOutputGuard'
+import { repointAuthoredFrames } from './projectPaths'
 import { quartzGuiDir, resolveBuildDir } from './projectDirs'
 import * as runningServersStore from './runningServersStore'
 import { discoverServers } from './serverDiscovery'
@@ -445,6 +446,16 @@ function openServerLog(projectId: string, projectPath: string): ServerLog | null
  * and says which one.
  */
 async function refreshAuthoredFrames(projectPath: string, report: (text: string) => void): Promise<void> {
+  // First the paths the build follows to the frames, then the frames. A project copied outside the
+  // app (Finder, `cp -R`, a backup) names the original's frame directories with their absolute
+  // path in the config, the lockfile and .quartz/plugins/, so its build read the original's
+  // frames and an edit made in the copy appeared in none (41st review, aside 5). Pattern-driven
+  // like the repair after a restore, and only onto frames that exist here.
+  try {
+    await repointAuthoredFrames(projectPath)
+  } catch (err) {
+    report(`${mainT('frameRefreshFailed', { error: String(err) })}\n`)
+  }
   // Whatever went wrong goes where the user is already looking. A repair that fails quietly is a
   // build with the previous state of the frames, and nothing on screen says so.
   for (const problem of await layoutFrameService.writeAllFrames(projectPath)) report(`${problem}\n`)

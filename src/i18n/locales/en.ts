@@ -1471,7 +1471,7 @@ export default {
   layoutEditor: {
     title: 'Layout Editor',
     templateCustomPlaceholder: 'e.g. Home page with sidebar',
-    tabOverview: 'Overview',
+    tabOverview: 'Page types',
     tabGlobal: 'Components',
     tabFrames: 'Frames',
     loading: 'Loading layout…',

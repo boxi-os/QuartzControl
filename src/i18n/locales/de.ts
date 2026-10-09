@@ -1476,7 +1476,7 @@ export default {
   layoutEditor: {
     title: 'Layout-Editor',
     templateCustomPlaceholder: 'z. B. Startseite mit Seitenleiste',
-    tabOverview: 'Übersicht',
+    tabOverview: 'Seitentypen',
     tabGlobal: 'Komponenten',
     tabFrames: 'Frames',
     loading: 'Lade Layout…',

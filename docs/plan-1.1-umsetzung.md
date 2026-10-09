@@ -334,8 +334,12 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
   `cp -Rc`-Kopie von `gui-test`), je erste Zeile von Installiert, Navigationen, Zusätzliche Inhalte,
   Mehrsprachigkeit und dort zusätzlich ein Abschnitt: vorher stand der Satz in 0 von 5 Leisten
   (Installiert sagte es auch über der Liste nicht), nachher in 5 von 5, eine Zeile, kein
-  Seiten-Überlauf. Nebenbefund, nicht angefasst: Die Leiste von „Zusätzliche Inhalte“ rollt bei
-  1280 waagerecht (`scrollWidth > clientWidth`), vorher wie nachher; bei 1600 nicht.
+  Seiten-Überlauf. Nebenbefund: ~~Die Leiste von „Zusätzliche Inhalte“ rollt bei 1280
+  waagerecht (`scrollWidth > clientWidth`), vorher wie nachher; bei 1600 nicht~~ — erledigt mit
+  `001a8ee` (Textfeld des Optionsformulars, unten). Nachgemessen an der gebauten App (Wegwerf-
+  Profil, `cp -Rc`-Kopie von `gui-test`, alle sieben echten Kästen, jeder eingeklappte Abschnitt
+  geöffnet): mit `editors.tsx` von vor `001a8ee` liefen bei 1280 alle sieben über (das Textfeld
+  17 px, bei der Datei-Box 43 px über den Rand), mit dem Fix bei 1280 und 1600 keiner.
 - ~~Kein Prüfskript lädt die Funktionen der installierten Plugins gegen ihre Abschriften
   (`*_READ_AGAINST`)~~ — erledigt (2026-10-09): `npm run check:plugin-copies -- <projekt>`.
   Gegenprobe: `normalizeCode` ohne `toLowerCase()` ergibt 129 von 240 Abweichungen bei

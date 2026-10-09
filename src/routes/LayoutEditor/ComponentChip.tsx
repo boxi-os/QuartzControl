@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
-import { Filter, GripVertical, Monitor, Smartphone } from 'lucide-react'
+import { EyeOff, Filter, GripVertical, Monitor, Smartphone } from 'lucide-react'
 import type { PluginEntry } from '@shared/ipc-contract'
 import { BUILTIN_CONDITIONS, getLayout } from './utils'
 
@@ -88,6 +88,7 @@ export function ComponentChip({
   selected,
   onSelect,
   hiddenReason,
+  hiddenOnTypes,
   dragHandleProps,
   dragHandleRef
 }: {
@@ -100,6 +101,8 @@ export function ComponentChip({
   /** Why it is not on the page the stage shows: its `display` in this view (stageGeometry.shownInView),
    *  or the selected page type excludes it or clears its position (pageTypeOverride.ts). */
   hiddenReason?: string
+  /** On the "Alle Seiten" view: the page types that exclude it or clear its position, as a sentence. */
+  hiddenOnTypes?: string
   dragHandleProps?: Record<string, unknown>
   /** dnd-kit's setActivatorNodeRef, as its own prop: React 18 cannot carry a ref through a props
    *  spread, and the handle is what the activator node has to be - see the drag handle below. */
@@ -182,6 +185,11 @@ export function ComponentChip({
         {layout?.display === 'mobile-only' && (
           <span className="shrink-0" title={t('layoutEditor.displayMobileOnly')}>
             <Smartphone size={13} aria-label={t('layoutEditor.displayMobileOnly')} />
+          </span>
+        )}
+        {hiddenOnTypes && (
+          <span className="shrink-0" title={hiddenOnTypes}>
+            <EyeOff size={13} aria-label={hiddenOnTypes} />
           </span>
         )}
         {layout?.condition && (

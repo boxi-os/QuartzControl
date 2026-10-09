@@ -1660,7 +1660,8 @@ export default {
       removeDuplicate: 'Remove duplicate',
       off: 'off',
       disabledHint: 'Switched off, not built. Switch it on in the side panel.',
-      parkedHint: 'Switched off. Drag the component onto a slot to switch it back on there.'
+      parkedHint: 'Switched off. Drag the component onto a slot to switch it back on there.',
+      hiddenOnTypes: 'Hidden on: {{types}}'
     },
     pageType: {
       label: 'Page type',

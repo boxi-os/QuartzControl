@@ -470,7 +470,16 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
   Code nicht; Standardsprache und Veröffentlichen ziehen mit.“ (`multilanguageEditor.codeHint`).
   Nachgesehen an der gebauten App (1280, Wegwerf-Profil, `cp -Rc`-Kopie von `gui-test`, erste
   Sprache gewählt): Der Satz steht unter dem Feld. Der Eintrag hier war beim Schreiben überholt.
-- Die Chips der Bühne haben kein Kennzeichen für eine Abweichung je Seitentyp.
+- ~~Die Chips der Bühne haben kein Kennzeichen für eine Abweichung je Seitentyp~~ — behoben
+  (2026-10-09): In der Ansicht „Alle Seiten“ trägt ein Chip ein Auge (`EyeOff`), wenn ein
+  Seitentyp die Komponente ausschließt oder ihren Bereich leert; der Titel nennt die Seitentypen
+  („Ausgeblendet auf: 404-Seite, Canvas-Seiten, …“). In der Ansicht eines Seitentyps bleibt die
+  gestrichelte Darstellung mit Grund (`hiddenReason`), dort steht kein Auge. Gemessen an der
+  gebauten App (1280 und 1600, Wegwerf-Profil, `cp -Rc`-Kopie von `gui-test`, deren 404 vier
+  Bereiche leert und Canvas/Excalidraw je zwei): vorher 0 von 19 Chips gekennzeichnet, nachher 11
+  mit zwei verschiedenen Titeln; in den Ansichten 404 und Inhalt 0; kein Chip und keine Seite
+  läuft über. Nebenbei gesehen, nicht angefasst: Der Seitentyp `excalidraw` hat keinen Namen in
+  `layoutEditor.pageTypes` und erscheint roh.
 - Handbuch-Kapitel und Screenshots für die neuen Seiten (gehört zu P8).
 - Die Messwege der Runde nach der Rückmeldung (Seitenleiste, Plugin-Editoren) stehen nicht in
   diesem Plan.

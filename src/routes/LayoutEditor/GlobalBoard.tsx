@@ -296,6 +296,20 @@ export default function GlobalBoard({
     return undefined
   }
 
+  // The "Alle Seiten" view's half: a component that is on every page here but excluded, or whose
+  // position is cleared, on some page types. Nothing while a page type is shown - hiddenReason
+  // answers there, for that one type.
+  function hiddenOnTypes(index: number): string | undefined {
+    const plugin = config.plugins[index]
+    if (pageType || !plugin) return undefined
+    const position = getLayout(plugin)?.position
+    const types = pageTypes.filter((pt) => {
+      const o = overrideOf(config, pt)
+      return isExcluded(o, plugin) || (!!position && isPositionCleared(o, position))
+    })
+    return types.length > 0 ? t('layoutEditor.componentPill.hiddenOnTypes', { types: types.map(pageTypeName).join(', ') }) : undefined
+  }
+
   function togglePositionCleared(position: LayoutPosition): void {
     if (!pageType || !override) return
     const cleared = !isPositionCleared(override, position)
@@ -556,6 +570,7 @@ export default function GlobalBoard({
     ranks,
     selectedIndex,
     hiddenReason,
+    hiddenOnTypes,
     clearedNoteFor,
     onSelect: (index: number) => setSelected(componentRef(config.plugins, index))
   }
@@ -887,6 +902,7 @@ export default function GlobalBoard({
               rank={ranks.get(Number(activeId))}
               isDuplicate={(nameCounts.get(activeItem.name) ?? 0) > 1}
               hiddenReason={hiddenReason(Number(activeId))}
+              hiddenOnTypes={hiddenOnTypes(Number(activeId))}
             />
           ) : null}
           {activePaletteSource ? (
@@ -940,6 +956,7 @@ function PositionSlot({
   ranks,
   selectedIndex,
   hiddenReason,
+  hiddenOnTypes,
   clearedNoteFor,
   onSelect
 }: {
@@ -955,6 +972,7 @@ function PositionSlot({
   ranks: Map<number, number>
   selectedIndex: number | null
   hiddenReason: (index: number) => string | undefined
+  hiddenOnTypes: (index: number) => string | undefined
   clearedNoteFor: (position: LayoutPosition) => string | undefined
   onSelect: (index: number) => void
 }): JSX.Element {
@@ -990,6 +1008,7 @@ function PositionSlot({
             onSelect={() => onSelect(index)}
             isDuplicate={(nameCounts.get(config.plugins[index].name) ?? 0) > 1}
             hiddenReason={hiddenReason(index)}
+            hiddenOnTypes={hiddenOnTypes(index)}
           />
         ))}
       </div>
@@ -1006,7 +1025,8 @@ function SortableItem({
   selected,
   onSelect,
   isDuplicate,
-  hiddenReason
+  hiddenReason,
+  hiddenOnTypes
 }: {
   id: string
   plugin: PluginEntry
@@ -1017,6 +1037,7 @@ function SortableItem({
   onSelect: () => void
   isDuplicate: boolean
   hiddenReason?: string
+  hiddenOnTypes?: string
 }): JSX.Element {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
     id
@@ -1031,6 +1052,7 @@ function SortableItem({
         rank={rank}
         isDuplicate={isDuplicate}
         hiddenReason={hiddenReason}
+        hiddenOnTypes={hiddenOnTypes}
         selected={selected}
         onSelect={onSelect}
         // The handle is the activator node, as at the two other @dnd-kit places. Without it

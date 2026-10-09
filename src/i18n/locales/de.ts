@@ -1665,7 +1665,8 @@ export default {
       removeDuplicate: 'Duplikat entfernen',
       off: 'aus',
       disabledHint: 'Ausgeschaltet, wird nicht gebaut. Einschalten in der Seitenleiste.',
-      parkedHint: 'Ausgeschaltet. Ziehe die Komponente auf einen Bereich, um sie dort wieder einzuschalten.'
+      parkedHint: 'Ausgeschaltet. Ziehe die Komponente auf einen Bereich, um sie dort wieder einzuschalten.',
+      hiddenOnTypes: 'Ausgeblendet auf: {{types}}'
     },
     pageType: {
       label: 'Seitentyp',

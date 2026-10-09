@@ -336,8 +336,24 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
   (Installiert sagte es auch über der Liste nicht), nachher in 5 von 5, eine Zeile, kein
   Seiten-Überlauf. Nebenbefund, nicht angefasst: Die Leiste von „Zusätzliche Inhalte“ rollt bei
   1280 waagerecht (`scrollWidth > clientWidth`), vorher wie nachher; bei 1600 nicht.
-- Kein Prüfskript lädt die Funktionen der installierten Plugins gegen ihre Abschriften
-  (`*_READ_AGAINST`).
+- ~~Kein Prüfskript lädt die Funktionen der installierten Plugins gegen ihre Abschriften
+  (`*_READ_AGAINST`)~~ — erledigt (2026-10-09): `npm run check:plugin-copies -- <projekt>`.
+  Gegenprobe: `normalizeCode` ohne `toLowerCase()` ergibt 129 von 240 Abweichungen bei
+  Mehrsprachigkeit. Erster Lauf an `gui-test` (alle drei Plugins in der gelesenen Version):
+  637 Fälle, **20 Abweichungen, nicht behoben** —
+  - Mehrsprachigkeit: 240 Fälle, alle gleich.
+  - Navigationen, `variantOf`: `variant: horizontal` liest das Plugin als `bar` (alter Name aus
+    0.1.x), die App als `tree`.
+  - Navigationen, `hasNoEffect`: `mobile` bei `select` und `pager` heißt „ohne Wirkung“, aber die
+    Wurzel trägt `quartz-nav--mobile-<wert>`, und `hidden` blendet sie per CSS aus — die eine
+    Richtung, in der die App eine wirksame Option wegfaltet. Dazu 14 in der anderen Richtung, alle
+    mit `mobile: accordion`: `folderDefaultState` (sechs Arten; ein nur mobil faltender Ordner ist
+    immer offen gerendert, Popups nie), `chevrons` (vier; dort steht der Pfeil wegen des getrennten
+    Links immer), `expandActive` bei flyout/dropdown/mega (Popups bekommen nie `data-persist`).
+  - Zusätzliche Inhalte: `file: ""` und `dir: ""` liest die App als Vorgabe, das Plugin rendert
+    nichts (leerer Name verweigert, leerer Ordner ist die Projektwurzel); `html: null` (ein leeres
+    `html:` in YAML) liest die App als Datei, das Plugin stürzt mit `TypeError` ab — das ist auch
+    ein Befund für quartz-layout-box.
 - Das Standard-Frame liest nicht die `variables.scss` des Projekts, sondern nennt Quartz' Maße.
 
 **Ältere aus der 1.1-Arbeit:**

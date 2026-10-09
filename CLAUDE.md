@@ -86,6 +86,16 @@ An Electron + React + TypeScript desktop GUI for managing [Quartz 5](https://qua
   Vorher-Stand am 2026-10-07 an gui-test (alte Plugins-Seite): 280 Optionen, 131 als Feld, 6 als
   Text, 143 unsichtbar; nach P1 von 1.1: 277, 267 / 10 / 0. Existiert, weil ein fehlendes Feld auf
   keinem Bildschirm als Fehler erscheint
+- `npm run check:plugin-copies -- <projektpfad> [--alle]` — die Abschriften der drei
+  Plugin-Editoren (`navigationVariants.ts`, `layoutBoxes.ts`, `multilanguageOptions.ts`) gegen die
+  Plugins, die ein Projekt installiert hat: lädt deren Funktionen aus `.quartz/plugins/<name>/src`
+  und die der App, beide per esbuild, und gibt beiden dieselben Eingaben — `resolveOptions` gegen
+  die Leser der App, für quartz-navigations die echte Komponente je Art und Mobil-Darstellung gegen
+  jedes „ohne Wirkung“ von `hasNoEffect`, für quartz-layout-box die echte Komponente, die aus einem
+  Wegwerf-Ordner liest. Existiert, weil `*_READ_AGAINST` nur sagt, *gegen welche* Version gelesen
+  wurde, nicht ob die Abschrift stimmt — und beim ersten Lauf am 2026-10-09 (gui-test, alle drei in
+  der gelesenen Version) wichen 20 von 637 Antworten ab. Ein fehlendes Plugin zählt als „nicht
+  geprüft“
 - `npm run check:core-update` — der Plan, nach dem das Core-Update `package.json` und
   `package-lock.json` behandelt: vierzehn Fälle gegen `shared/packageJsonDeps.ts` (das Skript lädt die
   Datei, statt sie abzuschreiben), dazu die npm-Aufrufe, die daraus entstehen, und seit dem

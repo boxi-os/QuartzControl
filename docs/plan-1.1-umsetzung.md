@@ -455,7 +455,13 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
   Wert“ weg. `check:plugin-copies` hat zwei Fälle mehr (645) und ist gegen beide Versionen gleich;
   Gegenproben: Version ignoriert → 6 Abweichungen gegen 0.4.0, `null` nicht verworfen → 6 gegen
   0.4.1. Gemessen an der gebauten App bei 1280 und 1600 mit beiden Versionen, Zurücksetzen lässt
-  in beiden nur `title` stehen. Kein Projekt ist auf 0.4.1 gehoben; gui-test bleibt auf 0.4.0.
+  in beiden nur `title` stehen. ~~Kein Projekt ist auf 0.4.1 gehoben; gui-test bleibt auf 0.4.0.~~
+  Stimmte nur bis zum Mittag (zweiundvierzigstes Review, Befund 7): gui-test steht seit
+  2026-10-09 12:59 auf 0.4.1 (Lockfile: `5a21a5b`), testmitcss seit 20:15; alle anderen Projekte
+  dieses Rechners stehen auf **0.3.1**, keines auf 0.4.0 (nachgesehen am 2026-10-10 in
+  `.quartz/plugins/quartz-layout-box/package.json`). Die Messungen gegen 0.4.0 liefen davor, an
+  Kopien von gui-test; wer sie wiederholt, braucht eine Kopie mit dem Lockfile-Eintrag von 0.4.0
+  und `quartz plugin install` darin.
 - ~~Das Textfeld des Optionsformulars steht über die Leiste~~ — behoben (2026-10-09): Gemessen war
   es nicht das Feld selbst, sondern sein Flex-Element — `max-w-full` hatte nichts zu binden, weil
   ein Flex-Element nicht unter seinen Inhalt schrumpft (Textfeld 448 px in einer 404-px-Zeile). Die
@@ -507,8 +513,10 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
 - ~~`check:i18n` meldet keine Schlüssel, die kein Aufruf mehr nennt~~ — erledigt (2026-10-09):
   Ein Schlüssel gilt als ungenutzt, wenn ihn kein Literal im Code, kein Template-Literal (dessen
   feste Teile wie ein Schlüssel aussehen, im Renderer mit Punkt) und kein Präfix-Literal
-  (`'a.b.' + x`) bilden kann; die Antwort trägt nur in diese Richtung, weil 99 berechnete Aufrufe
-  alles erreichen können, was ein Template buchstabiert. Erster Lauf: 15 Schlüssel in `de.ts`/
+  (`'a.b.' + x`) bilden kann; die Antwort trägt nur in diese Richtung, weil berechnete Aufrufe
+  alles erreichen können, was ein Template buchstabiert — damals 99, am 2026-10-10 105 im Renderer
+  und 2 im Hauptprozess (die Abendrunde brachte fünf, Befund 3 des zweiundvierzigsten Reviews einen;
+  die Zahl stand hier als Stand und war keiner, Befund 7). Erster Lauf: 15 Schlüssel in `de.ts`/
   `en.ts` und `ftpWrongTarget` in `i18n.ts`, jeder per `grep` gegengeprüft und entfernt. Zwei
   Ränder beim Bauen gefunden: `` `${key}Mac` `` (flache Schlüssel des Hauptprozesses haben keinen
   Punkt) und React-Schlüssel wie `` `h${blocks.length}` ``, die sonst für jeden Schlüssel mit „h“

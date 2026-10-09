@@ -276,7 +276,14 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
    gebauten App (1280 und 1600) mit `['DE', {code: ' En '}, {code: 'fr'}, {label: 'kaputt'}, 'de']`
    und „Früher“ auf `fr`: vorher `["de","fr",{"code":"en",…}]`, nachher
    `["DE",{"code":"fr"},{"code":" En ",…},{"label":"kaputt"},"de"]`.
-4. `npm run smoke` startet mit dem echten Profil des Nutzers, nicht mit einem Wegwerf-Profil.
+4. ~~`npm run smoke` startet mit dem echten Profil des Nutzers, nicht mit einem Wegwerf-Profil~~
+   — behoben (2026-10-09): ein Profil unter `os.tmpdir()`, am Ende gelöscht, darin das erste
+   Projekt der Liste (oder `--project <pfad>`) über `projects.add` eingetragen. Vorher schrieb ein
+   Lauf `window-state.json` (das Fenster stand danach auf 1728×1000), `projects.json`,
+   `running-servers.json`, `Preferences` und den Sitzungsspeicher des echten Profils; nachher
+   ändert sich dort keine Datei (Größe und mtime aller 3643 Dateien vor und nach dem Lauf
+   verglichen). Die Zugänge-Karte zeigt im Wegwerf-Profil keine Einträge — der Smoke besucht sie
+   damit leer.
 5. Eine `cp -Rc`-Kopie eines Projekts nennt die Frames des Originals mit absolutem Pfad.
 
 **Lücken, die das 41. Review stehen ließ:**

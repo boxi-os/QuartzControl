@@ -11,7 +11,16 @@
 // BrowserWindow, and the layout problems worth catching (a grid item pushing <main> sideways) only
 // appear at a real window size.
 //
-//   node scripts/smoke.mjs [--project <id>] [--keep-going]
+// It runs in a throwaway profile (`--user-data-dir` in a temp folder, removed at the end) with one
+// project registered in it. Until 2026-10-09 it ran in the user's own: every run wrote the
+// window size into window-state.json, the last-opened time into projects.json, and the session
+// storage of the real app - measured by comparing the profile's files before and after a run. The
+// project's own folder is still the real one, and only read from: the screens load on mount, the
+// smoke clicks nothing.
+//
+//   node scripts/smoke.mjs [--project <path>] [--keep-going]
+//
+// Without --project the project is the first one in the user's project list, read and not written.
 //
 // Exit code 1 if anything was reported.
 import { _electron as electron } from 'playwright-core'
@@ -38,11 +47,11 @@ function userDataDir() {
   return path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'QuartzControl')
 }
 
-function firstProjectId() {
+function firstProjectPath() {
   const file = path.join(userDataDir(), 'projects.json')
   if (!fs.existsSync(file)) return null
   const list = JSON.parse(fs.readFileSync(file, 'utf-8'))
-  return Array.isArray(list) && list[0] ? list[0].id : null
+  return Array.isArray(list) && list[0] ? list[0].path : null
 }
 
 function electronBinPath() {
@@ -51,7 +60,8 @@ function electronBinPath() {
 }
 
 const argv = process.argv.slice(2)
-const projectId = argv.includes('--project') ? argv[argv.indexOf('--project') + 1] : firstProjectId()
+const projectPath = argv.includes('--project') ? path.resolve(argv[argv.indexOf('--project') + 1]) : firstProjectPath()
+const PROFILE = fs.mkdtempSync(path.join(os.tmpdir(), 'quartzcontrol-smoke-'))
 
 const findings = []
 function report(size, route, kind, detail) {
@@ -115,18 +125,19 @@ async function visit(page, size, label, hash) {
 async function run() {
   if (!fs.existsSync(path.join(APP_DIR, 'out/main/index.js'))) {
     console.error('out/main/index.js fehlt - bitte zuerst `npm run build`')
+    fs.rmSync(PROFILE, { recursive: true, force: true })
     process.exit(2)
   }
-  if (!projectId) console.warn('Kein registriertes Projekt gefunden - nur Startseite und Einstellungen werden geprüft.')
+  if (!projectPath) console.warn('Kein registriertes Projekt gefunden - nur Startseite und Einstellungen werden geprüft.')
+  else console.log(`Projekt: ${projectPath}\nProfil:  ${PROFILE} (wird am Ende gelöscht)`)
 
-  const routes = [
-    ...APP_ROUTES,
-    ...(projectId ? PROJECT_ROUTES.map(([l, r]) => [l, `/project/${projectId}${r}`]) : [])
-  ]
+  // The id exists once the first launch has registered the project; both sizes share the profile.
+  let projectId = null
+  let routes = APP_ROUTES
 
   for (const size of SIZES) {
     console.log(`\n── ${size.label} ─────────────────────────────`)
-    const app = await electron.launch({ executablePath: electronBinPath(), args: [APP_DIR], timeout: 30_000 })
+    const app = await electron.launch({ executablePath: electronBinPath(), args: [APP_DIR, `--user-data-dir=${PROFILE}`], timeout: 30_000 })
     const page = app.windows().find((w) => !w.url().startsWith('devtools://')) ?? (await app.firstWindow())
     // Generous, because the *first* launch of a freshly downloaded Electron binary is slow on
     // macOS - the OS verifies the signature of a ~300MB bundle before it runs, which measured over
@@ -147,6 +158,11 @@ async function run() {
     }, { w: size.w, h: size.h })
     if (actual[0] !== size.w) console.warn(`Fenster ist ${actual.join('x')} statt ${size.w}x${size.h}.`)
 
+    if (projectPath && !projectId) {
+      projectId = await page.evaluate((p) => window.quartzGui.projects.add(p).then((r) => r.id), projectPath)
+      routes = [...APP_ROUTES, ...PROJECT_ROUTES.map(([l, r]) => [l, `/project/${projectId}${r}`])]
+    }
+
     for (const [label, hash] of routes) await visit(page, size.label, label, hash)
     await app.close().catch(() => {})
   }
@@ -161,7 +177,9 @@ async function run() {
   process.exitCode = 1
 }
 
-run().catch((err) => {
-  console.error(err)
-  process.exit(2)
-})
+run()
+  .catch((err) => {
+    console.error(err)
+    process.exitCode = 2
+  })
+  .finally(() => fs.rmSync(PROFILE, { recursive: true, force: true }))

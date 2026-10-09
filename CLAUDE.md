@@ -280,10 +280,12 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 
 ## Die Reviews
 
-Alle einundvierzig Listen sind abgearbeitet (die einundvierzigste am 2026-10-09, über die Fixes
-des vierzigsten und die Seitenleisten-Runde von 1.1 auf `feat/1.1`,
-[`docs/REVIEW-2026-10-15.md`](docs/REVIEW-2026-10-15.md); was daraus geworden ist, steht am Ende
-der Chronik — **keinen dieser Fixes hat ein Review gelesen**). Seit der vierzigsten zieht kein
+Alle zweiundvierzig Listen sind abgearbeitet (die zweiundvierzigste am 2026-10-10, über die Fixes
+des einundvierzigsten, die Offen-Liste und die Abendrunde von 1.1 auf `feat/1.1`,
+[`docs/REVIEW-2026-10-16.md`](docs/REVIEW-2026-10-16.md); was daraus geworden ist, steht am Ende
+der Chronik — **keinen dieser Fixes hat ein Review gelesen**). Seit der zweiundvierzigsten wird
+fremdes Markup für die Website neu geschrieben und am Parser der Website geprüft
+(`check:inline-svg`). Seit der vierzigsten zieht kein
 Schreiber ein Projekt nach `_quartzcontrol.scss` um; das tut nur „Jetzt umstellen“ auf der
 Stile-Seite, mit Snapshot. Seit der einundvierzigsten ist die Liste mit Leiste (`DetailLayout`)
 eine Regel in `docs/conventions.md`. Die

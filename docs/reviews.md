@@ -2171,3 +2171,36 @@ gelöscht):
 
 **Keinen dieser Fixes hat ein Review gelesen.**
 
+
+**Das zweiundvierzigste Review** ([`REVIEW-2026-10-16.md`](REVIEW-2026-10-16.md), Auftrag
+[`REVIEW-2026-10-16-auftrag.md`](REVIEW-2026-10-16-auftrag.md), Tag `review-2026-10-17`,
+`review-2026-10-16..review-2026-10-17` = die Fixes des einundvierzigsten, die Offen-Liste von 1.1
+und die Abendrunde, 52 Commits): **vom selben Modell wie die gelesenen Commits** (Claude Opus 5.5,
+eigener Agent). 1 Hoch, 2 Mittel, 5 Niedrig. Das Hoch fand das Review in einem Bereiniger, den
+vorher niemand am Parser der Website gemessen hatte.
+
+Abgearbeitet am 2026-10-10 auf `feat/1.1`, je Commit Typcheck, Build, `check:i18n` und Smoke (46
+Aufrufe), gemessen an der gebauten App mit Wegwerf-Profil und `cp -Rc`-Kopien, jeweils vorher
+gegen den alten Build:
+
+- **1 (Hoch)** `d3d511a` — `inlineSvg.ts` schreibt neu aus einer Erlaubnisliste;
+  `npm run check:inline-svg` setzt jedes Ergebnis in Chrome als HTML: vorher 14 von 22 durch,
+  nachher 0. Ein `quartz build` mit einem solchen Schnipsel ist nicht gemessen.
+- **2 (Mittel)** `bcabf1e` — solange ein Plugin entfernt wird, lehnt „Installiert“ jede Änderung
+  an der Liste mit einem Satz ab; der Griff ist gesperrt.
+- **3 (Mittel)** `5437b48` — Übersicht und Bühne zählen jeden Bereich des Frames, auch einen
+  versteckten; zwei neue Zustände (auf keiner Breite / auf manchen Breiten).
+- **4** `b2fd158` — zusammengelegt wird einmal; erkannt an der Kopfzeile der zwölf, eine danach
+  eingeschaltete Altdatei ist eine eigene.
+- **5** `2a620a1` — „Übersicht“ für den Layout-Reiter ist die Entscheidung des Nutzers und steht
+  als Ausnahme in `conventions.md`; nichts am Code.
+- **6** `df74116` — `writeConfig` schreibt die eigenen Frame-Pfade, egal was die Seite hält; die
+  Reparatur an der Bau-Tür liest und schreibt unter `whileHoldingConfig`. Das Schloss ist
+  gelesen, nicht gemessen: 40 Läufe ohne Verlust schon vorher.
+- **7** `5e33ac1` — der Plan nennt den echten Stand von quartz-layout-box (gui-test und
+  testmitcss 0.4.1, alle anderen 0.3.1) und 105 statt 99 berechnete Aufrufe.
+- **8** `660e8e5` — „geleert“ und „ausgeblendet“ vor „kein Platz“; die 15 Zellen „auf keiner
+  Breite“ aus Befund 3 waren alle geleerte Positionen. Gruppen als eigenes `tbody`, die Zahl im
+  Kopf als Satz. Mit VoiceOver nicht gehört.
+
+**Keinen dieser Fixes hat ein Review gelesen.**

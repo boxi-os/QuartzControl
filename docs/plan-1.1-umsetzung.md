@@ -458,7 +458,12 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
   Punkt) und React-Schlüssel wie `` `h${blocks.length}` ``, die sonst für jeden Schlüssel mit „h“
   bürgten. Gegenprobe: ein Schlüssel unter `backups` wird gemeldet, einer unter `styles.variables`
   nicht (`styles.variables.${mode}`).
-- Die Mehrsprachigkeit-Seite trägt den Namen zweimal (Reiter und Karte `multilanguageEditor.title`).
+- ~~Die Mehrsprachigkeit-Seite trägt den Namen zweimal (Reiter und Karte `multilanguageEditor.title`)~~
+  — behoben (2026-10-09): Die erste Karte heißt nach dem, was sie bearbeitet — dem Plugin-Eintrag
+  (Schalter, „Alle Optionen“) —, mit seinem Namen aus der Config und dem Icon der Plugins aus
+  `navConfig`; der Schlüssel ist entfernt. Gemessen an der gebauten App (1280 und 1600,
+  Wegwerf-Profil, `cp -Rc`-Kopie von `gui-test`): vorher Reiter „Mehrsprachigkeit“ und H2
+  „Mehrsprachigkeit“, nachher H2 „quartz-multilanguage“, kein Seitenüberlauf.
 - Ein umbenannter Sprachcode zieht Seiten und Ordner mit dem alten Code nicht mit (bewusst, siehe
   `renameLanguage`, aber nirgends gesagt).
 - Die Chips der Bühne haben kein Kennzeichen für eine Abweichung je Seitentyp.

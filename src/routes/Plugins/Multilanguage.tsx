@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 're
 import { flushSync } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { ArrowDown, ArrowUp, ChevronRight, Languages, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowUp, Blocks, ChevronRight, Languages, Plus, SlidersHorizontal, Trash2 } from 'lucide-react'
 import type { NormalizedOptionSchema, OptionField, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
 import { Badge, Button, Card, CardHeading, DetailLayout, Field, IconButton, InfoNote, SelectableRow, TextInput, Toggle, focusRowAt } from '../../components/ui'
 import { formatIpcError } from '../../components/ErrorSurface'
@@ -359,7 +359,9 @@ export default function Multilanguage({ onShowAllOptions }: { onShowAllOptions: 
 
       <Card className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardHeading icon={Languages}>{t('multilanguageEditor.title')}</CardHeading>
+          {/* The plugin entry, named as it stands in the config: the tab above already says
+              "Mehrsprachigkeit", and a card under the same name read as the page twice. */}
+          <CardHeading icon={Blocks}>{entry.plugin.name}</CardHeading>
           <Button variant="ghost" onClick={() => onShowAllOptions(entry.plugin.name)}>
             {t('multilanguageEditor.allOptions')}
           </Button>

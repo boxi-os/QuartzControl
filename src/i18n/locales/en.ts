@@ -1113,7 +1113,6 @@ export default {
     notInstalledText: 'This tab edits the languages of a site with quartz-multilanguage. Install the plugin from the marketplace and they appear here.',
     severalEntries: 'The configuration names quartz-multilanguage {{count}} times. This is the first entry; edit the others under “Installed”.',
     defaultUnknown: 'The default language “{{code}}” is not one of the languages, so the plugin takes the first one, {{name}}.',
-    title: 'Multiple languages',
     enabled: 'On',
     enabledHint: 'When off, the site is built without language detection, switcher and redirects.',
     enabledAnnounce: 'Multiple languages turned on.',

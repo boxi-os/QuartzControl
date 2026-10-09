@@ -1118,7 +1118,6 @@ export default {
     notInstalledText: 'Dieser Reiter bearbeitet die Sprachen einer Website mit quartz-multilanguage. Installiere das Plugin im Marktplatz, dann erscheinen sie hier.',
     severalEntries: 'Die Konfiguration nennt quartz-multilanguage {{count}}-mal. Hier steht der erste Eintrag; die übrigen bearbeitest du unter „Installiert“.',
     defaultUnknown: 'Die Standardsprache „{{code}}“ ist keine der Sprachen. Das Plugin nimmt deshalb die erste, {{name}}.',
-    title: 'Mehrsprachigkeit',
     enabled: 'Eingeschaltet',
     enabledHint: 'Ausgeschaltet baut die Website ohne Spracherkennung, Sprachwechsler und Weiterleitungen.',
     enabledAnnounce: 'Mehrsprachigkeit eingeschaltet.',

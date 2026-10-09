@@ -324,6 +324,8 @@ function tally(label, cases, diffs) {
   if (dir) {
     const plugin = await load(path.join(dir, 'src/components/LayoutBox.tsx'), 'plugin-layout-box')
     const LayoutBox = plugin.default
+    // Before 0.4.1 a key left empty (null) throws; the copy asks which version it is talking about.
+    const installed = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf-8')).version
 
     // Every snippet holds its own path, so the rendered text says which file was read.
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'check-plugin-copies-'))
@@ -349,6 +351,8 @@ function tally(label, cases, diffs) {
       { file: null },
       { dir: null },
       { file: 'a.html', byLang: { de: { html: null } } },
+      { html: 'überall', byLang: { de: { html: null, file: null } } },
+      { file: 'a.html', byLang: { de: { dir: null } } },
       { file: 'a.html', byLang: { de: { file: 'b.html' } } },
       { file: 'a.html', byLang: { DE: { file: 'b.html' } } },
       { byLang: { de: { html: 'nur deutsch' } } },
@@ -380,9 +384,10 @@ function tally(label, cases, diffs) {
           const theirs = html == null ? 'nichts' : html.startsWith('FILE:') ? `Datei ${html.slice(5)}` : html.startsWith('Type') || html.includes('Error') ? `Fehler (${html})` : 'Text aus der Konfiguration'
 
           const base = options
-          const merged = lang === undefined ? base : { ...base, ...base.byLang[lang] }
+          // Merged as the app merges - since 0.4.1 a null in a language entry leaves the base value.
+          const merged = copy.mergedVariants(base).find(([l]) => l === lang)[1]
           let ours
-          if (copy.brokenOptions(base).some((b) => b.lang === lang)) ours = 'Fehler'
+          if (copy.brokenOptions(base, installed).some((b) => b.lang === lang)) ours = 'Fehler'
           else if (copy.boxContentKind(merged) === 'html') ours = String(merged.html).trim() === '' ? 'nichts' : 'Text aus der Konfiguration'
           else {
             const ref = copy.snippetRefs(base).find((r) => r.lang === lang)

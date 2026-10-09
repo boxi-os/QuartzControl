@@ -1077,6 +1077,8 @@ export default {
     optionsHeading: 'Optionen',
     noEffectHeading: 'Ohne Wirkung, solange Text gesetzt ist',
     noEffectText: 'Text in der Konfiguration geht einer Datei vor. Die Angabe bleibt stehen, damit du zurückwechseln kannst.',
+    noEffectEmptyHeading: 'Ohne Wirkung, weil ohne Wert',
+    noEffectEmptyText: '„html“ steht ohne Wert in der Konfiguration und gilt deshalb als nicht gesetzt. Setze es zurück, um die Angabe zu entfernen.',
     notInstalledTitle: 'quartz-layout-box ist nicht installiert',
     notInstalledText: 'Installiere das Plugin über den Marktplatz; danach erscheinen seine Kästen hier.',
     previewHint: 'Die Website mit allen Kästen. Ein Kasten, der nur auf dem Desktop oder nur mobil erscheint, braucht die passende Ansicht.',

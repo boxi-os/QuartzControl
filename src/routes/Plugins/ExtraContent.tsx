@@ -24,6 +24,7 @@ import {
   boxesOf,
   brokenOptions,
   langsWithOwnText,
+  nullBreaks,
   renameSnippetRefs,
   snippetRefs,
   type BoxContentKind,
@@ -76,6 +77,13 @@ export default function ExtraContent({ onShowAllOptions }: { onShowAllOptions: (
 
   const boxes = boxesOf(config)
   const current = boxes.find((b) => b.occurrence === selected) ?? null
+  // The installed version, for the one rule that changed with it: a key left empty throws before 0.4.1.
+  const firstSource = boxes[0]?.plugin.source
+  const versionQuery = useIpcQuery(
+    () => (firstSource === undefined ? Promise.resolve(null) : window.quartzGui.plugins.optionSchema({ projectPath: project.path, source: firstSource })),
+    [project.path, JSON.stringify(firstSource)]
+  )
+  const installed = versionQuery.data?.packageVersion
 
   // A box has no name of its own. Its title says most; without one, the file it shows or the class
   // a stylesheet knows it by. The #n only where two would read the same.
@@ -267,7 +275,7 @@ export default function ExtraContent({ onShowAllOptions }: { onShowAllOptions: (
                 leading={<Icon size={16} aria-hidden className="shrink-0 text-text-secondary" />}
                 title={name}
                 subtitle={[
-                  ...brokenOptions(options).slice(0, 1).map((b) => t('extraContent.brokenRow', { key: b.key })),
+                  ...brokenOptions(options, installed).slice(0, 1).map((b) => t('extraContent.brokenRow', { key: b.key })),
                   kind === 'html' ? t('extraContent.kindText') : t('extraContent.kindFile', { file: `${boxDir(options)}/${snippetRefs(options)[0]?.file ?? ''}` }),
                   ...where
                 ].join(' · ')}
@@ -323,12 +331,18 @@ function BoxPanel({
   const [restOpen, setRestOpen] = useStickyState('extraContent.noEffectOpen', false)
 
   // While text is set, `file` (and the folder it is read from) does nothing - the only pair of
-  // options in this plugin where one silences the other.
-  const silenced = useCallback((key: string) => kind === 'html' && (key === 'file' || key === 'dir'), [kind])
-  const pickMain = useCallback((key: string) => !silenced(key) && !(kind === 'file' && key === 'html'), [kind, silenced])
-  const restKeys = ['file', 'dir'].filter((k) => silenced(k) && k in values)
+  // options in this plugin where one silences the other. An `html:` left empty is no text: since
+  // 0.4.1 it does nothing either, before that it is the error and stays in sight above.
+  const installed = schemaQuery.data?.packageVersion
+  const emptyHtmlBreaks = values.html === null && nullBreaks(installed)
+  const silenced = useCallback(
+    (key: string) => (kind === 'html' ? key === 'file' || key === 'dir' : key === 'html' && values.html === null && !emptyHtmlBreaks),
+    [kind, values.html, emptyHtmlBreaks]
+  )
+  const pickMain = useCallback((key: string) => !silenced(key) && !(kind === 'file' && key === 'html' && !emptyHtmlBreaks), [kind, silenced, emptyHtmlBreaks])
+  const restKeys = ['file', 'dir', 'html'].filter((k) => silenced(k) && k in values)
   const ownText = kind === 'file' ? langsWithOwnText(values) : []
-  const broken = brokenOptions(values)
+  const broken = brokenOptions(values, installed)
 
   async function switchTo(next: BoxContentKind): Promise<void> {
     if (next === kind) return
@@ -425,12 +439,12 @@ function BoxPanel({
                   className="flex items-center gap-1.5 text-left text-micro font-semibold uppercase tracking-wide text-text-secondary hover:text-text"
                 >
                   <ChevronRight size={13} aria-hidden className={`shrink-0 transition-transform ${restOpen ? 'rotate-90' : ''}`} />
-                  <span className="min-w-0 flex-1">{t('extraContent.noEffectHeading')}</span>
+                  <span className="min-w-0 flex-1">{kind === 'html' ? t('extraContent.noEffectHeading') : t('extraContent.noEffectEmptyHeading')}</span>
                   <span className="shrink-0 font-normal normal-case tracking-normal text-text-muted">{restKeys.length}</span>
                 </button>
                 {restOpen && (
                   <>
-                    <p className="text-micro text-text-muted">{t('extraContent.noEffectText')}</p>
+                    <p className="text-micro text-text-muted">{kind === 'html' ? t('extraContent.noEffectText') : t('extraContent.noEffectEmptyText')}</p>
                     <PluginOptionsForm
                       schema={schemaQuery.data.schema}
                       values={values}

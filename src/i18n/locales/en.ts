@@ -1072,6 +1072,8 @@ export default {
     optionsHeading: 'Options',
     noEffectHeading: 'No effect while text is set',
     noEffectText: 'Text in the configuration comes before a file. The setting stays so you can switch back.',
+    noEffectEmptyHeading: 'No effect without a value',
+    noEffectEmptyText: '“html” stands in the configuration without a value and therefore counts as not set. Reset it to remove the entry.',
     notInstalledTitle: 'quartz-layout-box is not installed',
     notInstalledText: 'Install the plugin from the marketplace; its boxes then show up here.',
     previewHint: 'The site with every box. A box shown only on desktop or only on mobile needs the matching view.',

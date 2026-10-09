@@ -1527,8 +1527,12 @@ Gruppe fehlten ganz. Jetzt:
   unbekannt vor kein Platz vor geleert vor ausgeblendet. **Seit dem zweiundvierzigsten Review**
   (Befunde 3 und 8) sind es sieben: dazu „Bereich auf keiner Breite gezeigt“ und „erscheint nur
   auf manchen Breiten“, weil der Frame jeden Bereich zählt, auch einen versteckten. Und was der
-  Nutzer ausdrücklich eingestellt hat, kommt vor dem, was aus dem Frame folgt: unbekannt, geleert,
-  ausgeblendet, kein Platz, auf keiner Breite, auf manchen Breiten, erscheint. Die alte Tabelle
+  Nutzer ausdrücklich eingestellt hat, kommt vor dem, was aus dem Frame folgt: geleert,
+  ausgeblendet, unbekannt, kein Platz, auf keiner Breite, auf manchen Breiten, erscheint. „Unbekannt“
+  stand bis zum dreiundvierzigsten Review (Befund 5) vorn, also vor der Regel, die es gerade
+  eingeführt hatte: `exclude` und eine geleerte Position wirken in Quartz vor jedem Frame, auch vor
+  dem eines Plugins, und die Zelle sagte „der Frame kommt vom Plugin“ für eine Komponente, die der
+  Nutzer dort ausgeblendet hatte (gelesen; gui-test hat keinen Seitentyp mit Plugin-Frame). Die alte Tabelle
   hatte keine Zeile je Komponente und damit kein `exclude` je Zelle; in der Matrix sagte die
   404-Seite von gui-test für eine Position, die dort ausdrücklich geleert ist, eine Warnung in Amber.
   Gemessen an einer Kopie von gui-test in der gebauten App: vorher 15 Zellen „auf keiner Breite“ und

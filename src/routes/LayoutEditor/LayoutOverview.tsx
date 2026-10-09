@@ -176,13 +176,15 @@ export default function LayoutOverview({
 
   function stateOf(i: number, pt: string): { state: CellState; on?: FrameBreakpoint[] } {
     const layout = getLayout(config.plugins[i])!
-    const shape = shapes.get(pt)
-    if (shape === null || shape === undefined) return { state: 'unknown' }
     // What the user set on purpose comes before what follows from the frame: a position cleared on
     // the 404 page is not a warning about a frame without room (forty-second review, finding 8).
+    // That includes a frame the app cannot read - `exclude` and a cleared position act in Quartz
+    // before any frame, a plugin's as well (forty-third review, finding 5).
     const override = overrideOf(config, pt)
     if (isPositionCleared(override, layout.position)) return { state: 'cleared' }
     if (isExcluded(override, config.plugins[i])) return { state: 'excluded' }
+    const shape = shapes.get(pt)
+    if (shape === null || shape === undefined) return { state: 'unknown' }
     const room = roomOf(shape, layout.position, layout.group)
     if (room === null) return { state: 'noArea' }
     if (room !== 'all' && room.length === 0) return { state: 'hiddenArea' }

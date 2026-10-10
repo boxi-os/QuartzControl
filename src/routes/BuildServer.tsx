@@ -392,6 +392,10 @@ export default function BuildServer(): JSX.Element {
                   sandbox="allow-scripts allow-same-origin allow-forms"
                   style={{ width: previewWidth === null ? '100%' : `${previewWidth}px` }}
                   className="mx-auto block h-[560px] bg-white"
+                  // The preview script without marks: it bounds the site's scrollIntoView to the
+                  // frame, so a jump from the table of contents does not scroll this page as well
+                  // (review 2026-10-18, Niedrig 5; services/previewHighlight.ts).
+                  onLoad={() => void window.quartzGui.sitePreview.highlight({ projectId: project.id, selector: null, focus: false })}
                 />
               </div>
             )}

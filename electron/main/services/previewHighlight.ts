@@ -8,6 +8,9 @@ import { getServerStatus } from './buildService'
 // (measured 2026-10-10 on the built app, Electron 43: the sandboxed iframe answered, and its
 // postMessage reached the page with the frame as source).
 //
+// "Vorschau & Build" installs the same script without a selector, for its replaced scrollIntoView
+// alone.
+//
 // Which frame: the one whose origin is this project's running dev server, and nothing else. The
 // script is fixed; only the selector varies, and that has passed the schema's shape before it is
 // quoted here.

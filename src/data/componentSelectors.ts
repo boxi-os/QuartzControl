@@ -52,12 +52,20 @@ export interface ComponentSelector {
   selector: string
   /** False when the plugin is not in the table and the selector is its name, unchecked. */
   measured: boolean
+  /** For an instance's own class that copies carry too: 'all' reaches the copies, 'only' does not. */
+  reach?: { kind: 'all' | 'only'; copies: number }
 }
 
 /**
  * One entry per selector, in the order the components are placed: the plugin's root selector, and
  * for each instance that carries a class of its own, that class as a second entry - the one that
  * styles *this* box rather than all seven.
+ *
+ * A copy carries the original's class in front of its own, so for an original with copies the
+ * class alone styles the copies too - while the preview, through entrySelector, marks the original
+ * only. Both are offered then, each saying its reach: the class as it is ("also n copies") and the
+ * class without the copies' own (review 2026-10-18, Mittel 2). Inheriting is wanted - a copy looks
+ * like its original - so the plain class stays; what was wrong was saying nothing about it.
  */
 export function componentSelectors(plugins: PluginEntry[]): ComponentSelector[] {
   const out: ComponentSelector[] = []
@@ -73,12 +81,25 @@ export function componentSelectors(plugins: PluginEntry[]): ComponentSelector[] 
     // The last class of className is the instance's own (instanceClass.ts); a duplicate carries
     // the original's in front of it.
     const own = INSTANCE_CLASS.has(plugin.name) ? ownClass(plugin) : null
-    if (own) {
-      add({ plugin: plugin.name, name: `${plugin.name} · ${own}`, selector: `.${own}`, measured: true })
+    if (!own) continue
+    const name = `${plugin.name} · ${own}`
+    const copies = copyClasses(own, plugins.filter((e) => e.name === plugin.name))
+    if (copies.length === 0) {
+      add({ plugin: plugin.name, name, selector: `.${own}`, measured: true })
+      continue
     }
+    add({ plugin: plugin.name, name, selector: `.${own}`, measured: true, reach: { kind: 'all', copies: copies.length } })
+    add({ plugin: plugin.name, name, selector: `.${own}${notClasses(copies)}`, measured: true, reach: { kind: 'only', copies: copies.length } })
   }
   return out
 }
+
+// The own classes of the entries that carry `own` without it being theirs - its copies, and theirs.
+function copyClasses(own: string, same: PluginEntry[]): string[] {
+  return [...new Set(same.filter((e) => classTokens(e).includes(own)).map(ownClass).filter((c): c is string => !!c && c !== own))]
+}
+
+const notClasses = (classes: string[]): string => classes.map((c) => `:not(.${c})`).join('')
 
 /**
  * The selector that finds one entry of a plugin on the built page, for the preview's marks: the
@@ -98,10 +119,10 @@ export function entrySelector(entry: PluginEntry, siblings: PluginEntry[]): { se
   const own = INSTANCE_CLASS.has(entry.name) ? ownClass(entry) : null
   const same = siblings.filter((e) => e.name === entry.name)
   if (!own) return { selector: root, matches: Math.max(1, same.length) }
-  const excluded = [...new Set(same.filter((e) => classTokens(e).includes(own)).map(ownClass).filter((c): c is string => !!c && c !== own))]
+  const excluded = copyClasses(own, same)
   const hits = same.filter((e) => {
     const tokens = classTokens(e)
     return tokens.includes(own) && !excluded.some((c) => tokens.includes(c))
   })
-  return { selector: `${root}.${own}${excluded.map((c) => `:not(.${c})`).join('')}`, matches: Math.max(1, hits.length) }
+  return { selector: `${root}.${own}${notClasses(excluded)}`, matches: Math.max(1, hits.length) }
 }

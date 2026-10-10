@@ -392,11 +392,17 @@ export default function CustomCss(): JSX.Element {
       <Card className="flex flex-wrap items-center gap-2">
         <Select value={selectedComponent} onChange={(e) => setSelectedComponent(e.target.value)} className="w-80">
           <option value="">{t('styleEditor.componentPlaceholder')}</option>
-          {components.map(({ name, selector, measured }) => (
+          {components.map(({ name, selector, measured, reach }) => (
             <option key={selector} value={selector}>
-              {measured
-                ? t('styleEditor.componentOption', { name, selector })
-                : t('styleEditor.componentOptionUnverified', { name, selector })}
+              {reach
+                ? t(reach.kind === 'all' ? 'styleEditor.componentOptionWithCopies' : 'styleEditor.componentOptionOnly', {
+                    name,
+                    selector,
+                    count: reach.copies
+                  })
+                : measured
+                  ? t('styleEditor.componentOption', { name, selector })
+                  : t('styleEditor.componentOptionUnverified', { name, selector })}
             </option>
           ))}
         </Select>

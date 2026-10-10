@@ -412,3 +412,16 @@ mit dem überein, was der Absatz oben schon immer sagte: ein Link auf `https:` o
 Bild auf `https:` oder Raster-`data:` — der Code ließ für beide auch `http:` durch. Einmal auch in WebKit
 gefahren (das Skript mit `webkit` statt Chrome, Playwrights Build): alle Prüfungen bestanden.
 Firefox ist nicht gemessen (er startet auf diesem Mac nicht).
+
+**Ids gehören der Seite, nicht der Datei (2026-10-10, dreiundvierzigstes Review, nebenbei).** Zwei
+eingefügte Icons aus Figma nennen ihren Clip-Pfad beide `clip0_1_2`, aus Illustrator ihre Wurzel
+beide `Ebene_1`, und `url(#…)` nimmt das erste Element der Seite mit dieser Id — das zweite Icon trug
+Verlauf und Clip-Pfad des ersten. Der Bereiniger gibt jetzt jeder Id, die die Datei definiert, ein
+Präfix aus Dateiname und einem Hash des Inhalts (`logo-1amte-g`) und zieht jeden Verweis darauf
+nach: `href="#…"`, `url(#…)` in jedem Wert (auch in `style`), `begin`/`end` einer Animation
+(`id.click`) und die ARIA-Attribute, die Ids auflisten. Ein Verweis auf eine Id, die die Datei nicht
+definiert, bleibt, wie er ist. Gemessen mit `check:inline-svg`: zwei Dateien mit denselben fünf Ids
+auf einer Seite — vorher 5 doppelte Ids und 6 Verweise ins andere SVG, nachher 0 und 0. Die
+Prüfungen des gewöhnlichen Icons fragen seither, ob ein Verweis im eigenen SVG auf das richtige
+Element zeigt, statt den Namen wörtlich zu vergleichen. Der Preis: Wer eine Id der Datei in seinem
+CSS ansprach, muss jetzt die Klasse der Wurzel nehmen (`svg-<name>`), die genau dafür da ist.

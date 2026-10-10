@@ -223,9 +223,11 @@ if (r.ok) {
     return {
       cls: root?.getAttribute('class'),
       viewBox: root?.viewBox?.baseVal?.width,
-      uses: [...document.querySelectorAll('use')].map((u) => u.getAttribute('href') ?? u.getAttributeNS('http://www.w3.org/1999/xlink', 'href')),
+      // Die Ids tragen seit dem 43. Review ein Präfix je Datei; gefragt wird, ob der Verweis im
+      // eigenen SVG auf das richtige Element zeigt.
+      uses: [...document.querySelectorAll('use')].map((u) => document.getElementById((u.getAttribute('href') ?? '').slice(1))?.localName ?? 'nichts'),
       title: document.querySelector('title:not(head > title)')?.textContent ?? document.querySelectorAll('title')[1]?.textContent,
-      gradient: !!document.querySelector('linearGradient#g'),
+      gradient: document.getElementById((document.querySelector('g.a')?.getAttribute('fill') ?? '').replace(/^url\(#|\)$/g, ''))?.localName === 'linearGradient',
       fill: document.querySelector('g.a')?.getAttribute('fill'),
       style: document.querySelector('g.a')?.getAttribute('style'),
       animate: document.querySelector('animate')?.getAttribute('attributeName'),
@@ -236,9 +238,9 @@ if (r.ok) {
   await site.close()
   pruefe(info.cls === 'eigen svg-mein-logo', `die Wurzel trägt ihre Klasse und svg-mein-logo (${info.cls})`)
   pruefe(info.viewBox === 24, 'viewBox wird gelesen')
-  pruefe(info.uses.length === 2 && info.uses.every((h) => h === '#s'), `<use> auf ein Symbol der Datei bleibt (${info.uses.join(', ')})`)
+  pruefe(info.uses.length === 2 && info.uses.every((h) => h === 'symbol'), `<use> auf ein Symbol der Datei bleibt (${info.uses.join(', ')})`)
   pruefe(info.title === 'Logo & Name', `Text bleibt Text (${info.title})`)
-  pruefe(info.gradient && info.fill === 'url(#g)' && /url\(#g\)/.test(info.style ?? ''), 'Verläufe und url(#…) bleiben')
+  pruefe(info.gradient && /url\(#[\w-]*-g\)/.test(info.style ?? ''), `Verläufe und url(#…) bleiben (${info.fill})`)
   pruefe(info.animate === 'opacity', 'eine Animation auf etwas anderes als einen Verweis bleibt')
   pruefe(info.link === 'https://example.com/', 'ein Link nach https bleibt')
   pruefe(!info.blank, 'keine Leerzeile, die einen Markdown-Block beendet')
@@ -251,6 +253,37 @@ const illustrator = await clean(
 pruefe(illustrator.ok && illustrator.removed === 1 && illustrator.styled, `ein <style> aus Illustrator wird als solcher gemeldet (${illustrator.removed} entfernt, styled ${illustrator.styled})`)
 const nurSkript = await clean(svg(`<script>${RUN}</script><path d="M0 0"/>`))
 pruefe(nurSkript.ok && !nurSkript.styled && r.ok && !r.styled, 'ohne <style> kein Satz über Farben')
+// Zwei Dateien auf einer Seite mit derselben Id (Figma: clip0_1_2, Illustrator: Ebene_1): url(#…)
+// greift das erste Element der Seite, das zweite Icon trug also den Verlauf des ersten (43. Review,
+// nebenbei). Jede Referenz muss in ihrem eigenen SVG landen, und keine Id doppelt dastehen.
+const zwei = (farbe) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" id="Ebene_1" viewBox="0 0 24 24" aria-labelledby="t"><title id="t">${farbe}</title><defs><linearGradient id="g"><stop stop-color="${farbe}"/></linearGradient><clipPath id="clip0_1_2"><rect width="24" height="24"/></clipPath><path id="p" d="M0 0h9"/></defs><g clip-path="url(#clip0_1_2)" style="fill:url(#g)"><rect width="24" height="24" fill="url(&quot;#g&quot;)"/><use href="#p"/><animate attributeName="opacity" begin="p.click" values="0;1"/></g></svg>`
+const rot = await clean(zwei('red'), 'rot.svg')
+const blau = await clean(zwei('blue'), 'blau.svg')
+if (rot.ok && blau.ok) {
+  const site = await browser.newPage()
+  await site.setContent(`<!doctype html><title>s</title><body><div class="layout-box-content">${rot.markup}${blau.markup}</div></body>`)
+  const ids = await site.evaluate(() => {
+    const all = [...document.querySelectorAll('.layout-box-content [id]')].map((e) => e.id)
+    const doppelt = all.filter((id, i) => all.indexOf(id) !== i)
+    const fremd = []
+    for (const svg of document.querySelectorAll('.layout-box-content > svg')) {
+      for (const el of svg.querySelectorAll('*')) {
+        for (const a of el.attributes) {
+          const refs = [...a.value.matchAll(/url\(\s*['"]?#([^'")\s]+)/g)].map((m) => m[1])
+          if (a.localName === 'href' && a.value.startsWith('#')) refs.push(a.value.slice(1))
+          if (a.localName === 'begin') refs.push(a.value.split('.')[0])
+          if (a.localName === 'aria-labelledby') refs.push(...a.value.split(/\s+/))
+          for (const r of refs) if (!svg.contains(document.getElementById(r))) fremd.push(`${a.localName}→${r}`)
+        }
+      }
+      for (const r of (svg.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean)) if (!svg.contains(document.getElementById(r))) fremd.push(`aria-labelledby→${r}`)
+    }
+    return { doppelt, fremd }
+  })
+  await site.close()
+  pruefe(ids.doppelt.length === 0 && ids.fremd.length === 0, `zwei Dateien mit denselben Ids auf einer Seite: ${ids.doppelt.length} doppelt, ${ids.fremd.length} Verweise ins andere SVG${ids.fremd.length ? ` (${ids.fremd.slice(0, 3).join(', ')})` : ''}`)
+} else pruefe(false, 'zwei Dateien mit denselben Ids: abgelehnt')
 pruefe(!(await clean('<html/>')).ok && !(await clean('kein xml')).ok, 'was kein SVG ist, wird abgelehnt')
 
 await browser.close()

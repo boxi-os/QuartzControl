@@ -106,6 +106,30 @@ const htmlName = (name: string): string => {
 // So text is written with every character Markdown builds structure from, inline or at the start
 // of a line, as a numeric reference: remark reads a reference as the character and builds nothing
 // from it, and in an HTML block or a layout box parse5 decodes it the same way.
+// Ids are the page's, not the file's: two pasted icons from Figma both name a clip path
+// `clip0_1_2`, from Illustrator both roots `Ebene_1`, and `url(#…)` takes the first element of the
+// page with that id - the second icon wore the first one's gradient (forty-third review, nebenbei).
+// So every id the file defines gets a prefix from its name and content, and every reference to one
+// of them follows: `href="#…"`, `url(#…)` in any value, an animation's `begin`/`end` (`id.click`),
+// and the ARIA attributes that list ids. A reference to an id the file does not define stays as
+// it is.
+const hash = (text: string): string => {
+  let h = 0x811c9dc5
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193)
+  return (h >>> 0).toString(36).slice(0, 5)
+}
+const ID_LISTS = new Set(['aria-labelledby', 'aria-describedby', 'aria-controls', 'aria-owns', 'aria-flowto', 'aria-details'])
+function rewriteIds(attrName: string, value: string, ids: ReadonlySet<string>, prefix: string): string {
+  const own = (id: string): string => (ids.has(id) ? prefix + id : id)
+  if (attrName === 'id') return own(value)
+  if (attrName === 'href') return value.startsWith('#') ? `#${own(value.slice(1))}` : value
+  if (ID_LISTS.has(attrName)) return value.split(/(\s+)/).map((part) => (/\s/.test(part) ? part : own(part))).join('')
+  if (attrName === 'begin' || attrName === 'end') {
+    return value.replace(/(^|;)(\s*)([A-Za-z_][\w-]*)(?=\.)/g, (_, sep: string, ws: string, id: string) => sep + ws + own(id))
+  }
+  return value.replace(/url\(\s*(['"]?)#([^'")\s]+)/gi, (_, quote: string, id: string) => `url(${quote}#${own(id)}`)
+}
+
 const escapeText = (s: string): string => s.replace(/[&<>[\]()!*_`~\\|:#+=.@-]/g, (c) => `&#${c.charCodeAt(0)};`)
 // A value stays on the line of its tag: a line break in it is a line of the Markdown source, and
 // one that starts with `#` or `-` would cut the tag in half before remark looked at it as HTML.
@@ -125,6 +149,8 @@ export function inlineSvg(text: string, fileName: string): InlineSvgResult {
 
   let removed = 0
   let styled = false
+  const ids = new Set([...doc.querySelectorAll('[id]')].map((el) => el.getAttribute('id') ?? '').filter(Boolean))
+  const idPrefix = `${slug || 'svg'}-${hash(text)}-`
   const write = (node: Node): string => {
     if (node.nodeType === Node.TEXT_NODE || node.nodeType === Node.CDATA_SECTION_NODE) return escapeText(node.nodeValue ?? '')
     if (node.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
@@ -191,7 +217,7 @@ export function inlineSvg(text: string, fileName: string): InlineSvgResult {
         ownClass = value
         continue
       }
-      attrs.push(`${attrName}="${escapeAttr(value)}"`)
+      attrs.push(`${attrName}="${escapeAttr(rewriteIds(attrName, value, ids, idPrefix))}"`)
     }
     if (el === root) {
       const own = ownClass?.trim() ?? ''

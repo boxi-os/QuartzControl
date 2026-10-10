@@ -261,3 +261,12 @@ der gewöhnliche Weg:
                 „areas“ fehlt oder hat den falschen Typ.
              2. Frame konnte nicht angelegt werden: „b“ — Der Frame ist nicht lesbar: Der Wert bei
                 „areas.0.slot“ ist keine der erlaubten Angaben (…).
+
+**Ein Import, ein Snapshot (2026-10-10, dreiundvierzigstes Review, nebenbei).** Der Import legt vor
+dem ersten Teil einen Snapshot `styleChange` an; die Teile Aussehen, Theme, Frames und Plugins
+schrieben die Config danach ohne `snapshot: false` und legten dabei zusätzlich einen `configChange`
+an — einen Wiederherstellungspunkt mitten im Import, nach den Frames und vor dem Theme. Jetzt
+schreibt jeder Teil ohne eigenen Snapshot (`PART_WRITE` in `parts.ts`). Gemessen an der gebauten
+App mit Wegwerf-Profil, `qc-basic.qtpl` in eine Kopie von gui-test über
+`templatePackage.import`: vorher mit den Teilen Aussehen, Theme, Frames und Layout zwei neue
+Snapshots (`configChange`, `styleChange`), nachher einer (`styleChange`), auch mit Plugins dazu.

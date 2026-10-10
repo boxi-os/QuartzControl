@@ -89,9 +89,14 @@ function npmPackageName(source: PluginEntry['source']): string | null {
   return /^(@[^/]+\/)?[^@/][^/]*$/.test(source) ? source : null
 }
 
+// Every config write of a part goes without a snapshot of its own: the import takes one before the
+// first part (index.ts), and four parts each adding a `configChange` left a restore point holding
+// the project half imported - after the frames, before the theme (forty-third review, nebenbei).
+const PART_WRITE = { snapshot: false } as const
+
 async function writeConfigPatch(projectPath: string, patch: (config: Awaited<ReturnType<typeof configService.readConfig>>) => unknown): Promise<void> {
   const config = await configService.readConfig(projectPath)
-  await configService.writeConfig(projectPath, patch(config) as typeof config)
+  await configService.writeConfig(projectPath, patch(config) as typeof config, PART_WRITE)
 }
 
 /* ------------------------------------------------------------------ appearance */
@@ -245,7 +250,7 @@ const theme: TemplatePart<ThemePayload> = {
     const next = [...config.plugins]
     if (index === -1) next.push(payload.entry)
     else next[index] = { ...payload.entry, order: next[index].order ?? payload.entry.order }
-    await configService.writeConfig(projectPath, { ...config, plugins: next })
+    await configService.writeConfig(projectPath, { ...config, plugins: next }, PART_WRITE)
   }
 }
 
@@ -732,7 +737,7 @@ const frames: TemplatePart<FramesPayload> = {
         await configService.writeConfig(projectPath, {
           ...config,
           plugins: [...config.plugins, { name: frame.id, source: layoutFrameService.authoredFrameDir(projectPath, frame.id), enabled: true }]
-        })
+        }, PART_WRITE)
       }
     }
   }
@@ -872,7 +877,7 @@ const plugins: TemplatePart<PluginsPayload> = {
     const merged = after.plugins.map((entry, index) => written.get(afterKeys[index]) ?? entry)
     const covered = new Set(afterKeys)
     for (const [index, entry] of next.entries()) if (!covered.has(nextKeys[index])) merged.push(entry)
-    await configService.writeConfig(projectPath, { ...after, plugins: merged })
+    await configService.writeConfig(projectPath, { ...after, plugins: merged }, PART_WRITE)
   }
 }
 

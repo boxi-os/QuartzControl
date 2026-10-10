@@ -111,7 +111,8 @@ export function duplicateRanks(plugins: PluginEntry[]): Map<number, number> {
 // can be told from the original by a stylesheet and by the preview's marks. A navigation's `id`
 // stays behind: two with the same one share element ids and their localStorage key - the plugin
 // README's reason to set one at all. Until 2026-10-10 only the Navigations page left it behind, and
-// a duplicate made on the board carried it along.
+// a duplicate made on the board carried it along. What a copy does not inherit is listed here and
+// nowhere else (CLAUDE.md): the next exception goes into this function, not onto a page.
 export function duplicateEntry(
   source: PluginEntry,
   layout: PluginLayoutDeclaration,

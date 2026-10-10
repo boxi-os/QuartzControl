@@ -2329,8 +2329,11 @@ Die **Nebenbei-Liste** auf Wunsch des Nutzers, ein Punkt je Commit:
 - Die Markierung auf der Seite Mehrsprachigkeit fehlt nur in der Liste des Auftrags; am Code ist
   nichts zu tun.
 
-Offen aus dieser Runde: die **zwei Regelvorschläge** für `conventions.md` und der Vorschlag einer
-Zehn-Zeilen-Notiz vor Änderungen an einer Vertrauensgrenze oder einer gemeinsamen Funktion — beide
-warten auf den Nutzer.
+Die **zwei Regelvorschläge** stehen auf Wunsch des Nutzers in `conventions.md` („Code, den die App
+in die Website setzt …“ unter Prozessgrenze, „Was eine Kopie nicht erbt …“ unter Arbeitsweise),
+mit je einem Satz am Code (`previewHighlight.ts`, `duplicateEntry`).
+
+Offen aus dieser Runde: der Vorschlag einer Zehn-Zeilen-Notiz vor Änderungen an einer
+Vertrauensgrenze oder einer gemeinsamen Funktion — er wartet auf den Nutzer.
 
 **Keinen dieser Fixes hat ein Review gelesen.**

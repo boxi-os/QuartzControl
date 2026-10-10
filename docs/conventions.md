@@ -48,6 +48,18 @@ Projektwurzel.
   `npm run check:inline-svg` setzt jedes Ergebnis in Chrome als HTML in eine Box, direkt und durch
   die Markdown-Kette von quartz-layout-box, und zählt Anfragen nach außen. Messungen in
   [`plugins-and-config.md`](decisions/plugins-and-config.md).
+- **Code, den die App in die Website setzt, ändert deren Verhalten nur dort, wo die Einbettung es
+  verlangt — und gemessen wird er gegen die Website ohne Einbettung.** Das Skript der Vorschau
+  (`previewHighlight.ts`) ersetzt `scrollIntoView`, damit ein Ankersprung nicht die App mitrollt;
+  die erste Fassung rechnete den Sprung dafür selbst nach und ließ `scroll-margin`,
+  `scroll-padding` und `scroll-behavior` der Website fallen. Gemessen war sie an der Frage „rollt
+  `<main>` noch?“ (0 px, also gut), nicht an „landet die Überschrift wie auf der Website?“ — auf
+  dem Tablet lag sie bei 48 statt 93 px, unter dem klebenden Kopf. Und eine Markierung, die nur
+  zeigen sollte, scrollte das Telefon um 1319 px. Beides hätte die Gegenprobe gezeigt
+  (vierundvierzigstes Review, Mittel 1 und Niedrig 1). Der Nutzen einer Einbettung ist das, was
+  sie verhindert; ihr Preis ist jede Stelle, an der die Vorschau anders ist als die Website, und
+  der wird an der Website gemessen. Messungen in
+  [`navigation-and-pages.md`](decisions/navigation-and-pages.md).
 - **Neue Kanäle nehmen ein Objekt-Argument**, kein Positions-Tupel (`dialog.confirm` ist das Muster):
   ein späterer optionaler Key ist dann eine Zeile im Vertrag und eine im Schema, nicht ein vierter
   Slot in vier Dateien. Bestehende Kanäle bleiben, wie sie sind (123 mit Positions-Argumenten,
@@ -984,6 +996,17 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   liest die Konfiguration und läuft *vor* `git remote remove origin`, also blieb ein Wurf dort als
   halbe Kopie mit dem Remote des Originals liegen — das eine, was der Kommentar am Kopf der Datei
   ausschließt (einundzwanzigstes Review).
+- **Was eine Kopie nicht erbt, steht an einer Stelle mit Grund — und die nächste Ausnahme kommt
+  dorthin, nicht auf eine Seite.** Für ein Projekt ist das `duplicateService.ts` mit seinen zwei
+  Listen, für einen Eintrag der Config `duplicateEntry` (`LayoutEditor/utils.ts`): Dort bleibt die
+  `id` einer Navigation zurück, dort bekommen Navigation und Kasten eine eigene Klasse, und durch
+  diese Funktion gehen beide Editoren, der Inspektor und ein auf die Bühne gezogener Vorrats-Chip.
+  Vorher strich nur die Seite Navigationen die `id`, und ein Duplikat von der Bühne nahm sie mit —
+  zwei Navigationen teilten Element-Ids und ihren localStorage-Schlüssel. Eine Ausnahme auf einer
+  Seite deckt genau die eine Tür, an der sie steht. Dasselbe gilt für den Namen dessen, was die
+  Kopie bekommt: `classSource()` ist die eine Quelle, sonst benennen Bühne und Editor dieselbe
+  Kopie verschieden (vierundvierzigstes Review, nebenbei). Messungen in
+  [`navigation-and-pages.md`](decisions/navigation-and-pages.md).
 - **Eine PID trägt nicht über die Zeit.** Wer eine Prozessnummer aus einer Liste, einer Datei oder
   einem früheren Scan bekommt, prüft direkt vor dem Signal noch einmal, dass sie dasselbe Programm
   meint — das Betriebssystem vergibt Nummern wieder, und dazwischen liegt bei einer Liste in der

@@ -11,6 +11,10 @@ import { getServerStatus } from './buildService'
 // "Vorschau & Build" installs the same script without a selector, for its replaced scrollIntoView
 // alone.
 //
+// Whatever this script changes in the site is measured against the site without the embedding
+// (CLAUDE.md): the first scrollIntoView kept the app still and landed the heading 45 px off where
+// the site puts it (review 2026-10-18, Mittel 1).
+//
 // Which frame: the one whose origin is this project's running dev server, and nothing else. The
 // script is fixed; only the selector varies, and that has passed the schema's shape before it is
 // quoted here.

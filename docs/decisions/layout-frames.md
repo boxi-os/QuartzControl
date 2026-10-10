@@ -1556,10 +1556,14 @@ Gruppe fehlten ganz. Jetzt:
   `rowgroup`-Kopf, der die Position mitnennt — zwei `rowgroup`-Köpfe in einem `tbody` machten die
   Gruppe zum Kopf auch der Zeilen davor (am Barrierebaum mit `ariaSnapshot()` gemessen, mit
   VoiceOver nicht).
-- **Eine Gruppe** hat eine eigene Zeile, die je Seitentyp sagt, ob dessen Frame ihr einen eigenen
-  Bereich gibt. „Kein Platz“ fragt jetzt auch die Gruppe: Eine Komponente in Gruppe G auf Position P
-  erscheint, wenn das Frame einen Bereich P#G *oder* einen Bereich P ohne Gruppe hat — dieselbe
-  Regel, nach der die Bühne einen Bereich füllt. Die alte Tabelle fragte nur die Position.
+- **Eine Gruppe** hat eine eigene Kopfzeile über alle Spalten (seit `a744db5` ein einziger
+  `rowgroup`-Kopf, keine Zelle je Seitentyp), die sagt, in welchen Frames sie einen eigenen Bereich
+  hat. „Kein Platz“ fragt auch die Gruppe: Eine Komponente in Gruppe G auf Position P steht im
+  Bereich P#G, *wenn das Frame einen hat* — ob er platziert ist oder nicht —, und sonst im Bereich P
+  ohne Gruppe. Hat das Frame P#G, bekommt der Bereich P die Gruppe nie, auch wenn P#G versteckt ist
+  (seit `5437b48`, zweiundvierzigstes Review, Befund 3; bis zum dreiundvierzigsten stand hier noch
+  „P#G *oder* P“). Dieselbe Regel, nach der die Bühne einen Bereich füllt. Die alte Tabelle fragte
+  nur die Position.
 
 Darüber fünf Kennzahlen (platziert mit immer/Desktop/mobil, mit Bedingung, ausgeschaltet,
 Seitentypen mit Abweichung, eigene Frames ohne Seitentyp), darunter die ausgeschalteten Komponenten

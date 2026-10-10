@@ -457,11 +457,13 @@ Gesammelt, nicht nebenbei erledigt. Jeder Punkt ist ein eigener Durchgang.
   0.4.1. Gemessen an der gebauten App bei 1280 und 1600 mit beiden Versionen, Zurücksetzen lässt
   in beiden nur `title` stehen. ~~Kein Projekt ist auf 0.4.1 gehoben; gui-test bleibt auf 0.4.0.~~
   Stimmte nur bis zum Mittag (zweiundvierzigstes Review, Befund 7): gui-test steht seit
-  2026-10-09 12:59 auf 0.4.1 (Lockfile: `5a21a5b`), testmitcss seit 20:15; alle anderen Projekte
-  dieses Rechners stehen auf **0.3.1**, keines auf 0.4.0 (nachgesehen am 2026-10-10 in
-  `.quartz/plugins/quartz-layout-box/package.json`). Die Messungen gegen 0.4.0 liefen davor, an
-  Kopien von gui-test; wer sie wiederholt, braucht eine Kopie mit dem Lockfile-Eintrag von 0.4.0
-  und `quartz plugin install` darin.
+  2026-10-09 12:59 auf 0.4.1 (Lockfile: `5a21a5b`), testmitcss seit 20:15;
+  ~~alle anderen Projekte dieses Rechners stehen auf **0.3.1**, keines auf 0.4.0~~ — eines steht
+  auf 0.4.0: `werkstatt/basic-vorlage` (Lockfile `7f7474e`, installiert 2026-10-07 12:57 UTC), die
+  übrigen auf 0.3.1 (dreiundvierzigstes Review, Befund 9; nachgezählt am 2026-10-10 über
+  `.quartz/plugins/quartz-layout-box/package.json` aller Projekte und Werkstätten). Die Messungen
+  gegen 0.4.0 liefen an Kopien von gui-test; wer sie wiederholt, kopiert `werkstatt/basic-vorlage`
+  statt ein Lockfile zurückzusetzen.
 - ~~Das Textfeld des Optionsformulars steht über die Leiste~~ — behoben (2026-10-09): Gemessen war
   es nicht das Feld selbst, sondern sein Flex-Element — `max-w-full` hatte nichts zu binden, weil
   ein Flex-Element nicht unter seinen Inhalt schrumpft (Textfeld 448 px in einer 404-px-Zeile). Die

@@ -776,5 +776,9 @@ die letzte, und der Selektor des Originals schließt die eigenen seiner Kopien a
 Pager ohne Klasse: vorher `.quartz-nav`, 2 Treffer, Knopf da; danach `nav-zurueck-weiter`, 1
 Treffer. Akkordeon dupliziert: `nav-menue nav-menue-2`, Original und Kopie je 1 Treffer. Kasten
 „mark“ dupliziert: `layout-box-mark layout-box-mark-2`, Listenname „mark-2“.
-Was das nicht abdeckt: Ein Duplikat auf der Layout-Bühne oder in der Plugin-Liste bekommt keine
-eigene Klasse.
+Seit dem Nachzug am selben Tag gilt das für jedes Duplikat: Die Klasse entsteht in
+`duplicateEntry` (`LayoutEditor/utils.ts`), durch das die beiden Editoren, „Duplizieren“ im
+Inspektor der Bühne und ein auf die Bühne gezogener Vorrats-Chip gehen; die Plugin-Liste
+dupliziert nicht. Gemessen: Bühne → `nav-menue nav-menue-2`, danach Seite → `nav-menue
+nav-menue-3`. Offen und älter als dieser Durchgang: Die Bühne kopiert die `id` einer Navigation
+mit, die Seite Navigationen nicht.

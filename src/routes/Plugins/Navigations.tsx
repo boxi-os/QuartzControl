@@ -10,7 +10,7 @@ import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { siteLanguages } from '../../components/PluginOptionsForm/siteLanguages'
 import SitePreview, { type PreviewHighlight } from '../../components/SitePreview'
 import { entrySelector } from '../../data/componentSelectors'
-import { NAV_CLASS_PREFIX, classForCopy, suggestClass, withClass } from './instanceClass'
+import { NAV_CLASS_PREFIX, suggestClass, withClass } from './instanceClass'
 import { announce } from '../../state/announcer'
 import { primeStickyState, useStickyState } from '../../state/uiState'
 import { useIpcQuery } from '../../state/useIpcQuery'
@@ -165,16 +165,15 @@ export default function Navigations({ onShowAllOptions }: { onShowAllOptions: (s
   async function duplicate(item: NavInstance): Promise<void> {
     const base = configRef.current
     if (!base) return
-    const result = duplicateAfter(base.plugins, item.index)
+    // The copy gets a class of its own on the way (instanceClass.ts), named like this list names it.
+    const result = duplicateAfter(base.plugins, item.index, baseName(item.plugin))
     if (!result) return
     // A copied `id` would give both navigations the same element ids and localStorage key - the
     // README's reason to set one at all. The copy goes without it.
-    // It keeps the original's classes, so it is styled the same, and gets one of its own after them.
-    const own = classForCopy(item.plugin, NAV_CLASS_PREFIX, baseName(item.plugin), 'navigation', result.plugins)
     const plugins = result.plugins.map((p, i) => {
-      if (i !== result.newIndex) return p
-      const { id: _id, ...rest } = p.options ?? {}
-      return { ...p, options: withClass(rest, own) }
+      if (i !== result.newIndex || !p.options || !('id' in p.options)) return p
+      const { id: _id, ...rest } = p.options
+      return { ...p, options: rest }
     })
     setSelected(instances.length + 1)
     await write({ ...base, plugins }, t('navigationsEditor.duplicatedAnnounce', { name: instanceLabel(item) }))

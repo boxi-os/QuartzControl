@@ -10,7 +10,7 @@ import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { siteLanguages } from '../../components/PluginOptionsForm/siteLanguages'
 import SitePreview, { type PreviewHighlight } from '../../components/SitePreview'
 import { entrySelector } from '../../data/componentSelectors'
-import { BOX_CLASS_PREFIX, classForCopy, ownClass, suggestClass, withClass } from './instanceClass'
+import { BOX_CLASS_PREFIX, ownClass, suggestClass, withClass } from './instanceClass'
 import { announce } from '../../state/announcer'
 import { primeStickyState, useStickyState } from '../../state/uiState'
 import { useIpcQuery } from '../../state/useIpcQuery'
@@ -171,14 +171,12 @@ export default function ExtraContent({ onShowAllOptions }: { onShowAllOptions: (
   async function duplicate(box: BoxInstance): Promise<void> {
     const base = configRef.current
     if (!base) return
-    const result = duplicateAfter(base.plugins, box.index)
+    // The copy gets a class of its own on the way (instanceClass.ts), named like this list names it.
+    const result = duplicateAfter(base.plugins, box.index, baseLabel(box))
     if (!result) return
-    // It keeps the original's classes, so it is styled the same, and gets one of its own after them.
-    const own = classForCopy(box.plugin, BOX_CLASS_PREFIX, baseLabel(box), 'box', result.plugins)
-    const plugins = result.plugins.map((p, i) => (i === result.newIndex ? { ...p, options: withClass(p.options, own) } : p))
     // The copy lands right after the original, so it is the next box by number.
     setSelected(box.occurrence + 1)
-    await write({ ...base, plugins }, t('extraContent.duplicatedAnnounce', { name: labelOf(box) }))
+    await write({ ...base, plugins: result.plugins }, t('extraContent.duplicatedAnnounce', { name: labelOf(box) }))
   }
 
   async function assignClass(box: BoxInstance): Promise<void> {

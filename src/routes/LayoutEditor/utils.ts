@@ -7,6 +7,7 @@ import type {
   PluginLayoutDeclaration,
   QuartzConfig
 } from '@shared/ipc-contract'
+import { withOwnClassForCopy } from '../Plugins/instanceClass'
 
 // The width band a breakpoint actually covers, for the tab labels - three reiters called
 // "Desktop/Tablet/Mobil" say nothing about where they switch, and once the thresholds are the
@@ -104,8 +105,11 @@ export function duplicateRanks(plugins: PluginEntry[]): Map<number, number> {
 
 // A new entry duplicating `source`, carrying over `options` as a starting point but with its own
 // `layout` (position/priority set by the caller) so it doesn't collide with the original's slot.
-export function duplicateEntry(source: PluginEntry, layout: PluginLayoutDeclaration): PluginEntry {
-  return { ...source, layout, options: source.options ? { ...source.options } : undefined }
+// A navigation or a layout box gets a CSS class of its own on the way (instanceClass.ts), so the copy
+// can be told from the original by a stylesheet and by the preview's marks.
+export function duplicateEntry(source: PluginEntry, layout: PluginLayoutDeclaration, plugins: PluginEntry[], name?: string): PluginEntry {
+  const copy = { ...source, layout, options: source.options ? { ...source.options } : undefined }
+  return withOwnClassForCopy(copy, source, plugins, name)
 }
 
 export function getLayout(plugin: PluginEntry): PluginLayoutDeclaration | null {
@@ -228,7 +232,7 @@ export function withDisplay(plugins: PluginEntry[], index: number, display: Plug
 // Duplicates the entry at `sourceIndex`, inserting the copy immediately after it in the same slot
 // and renumbering that slot's priorities - the "Duplizieren" button on a placed component's expand
 // panel in GlobalBoard.
-export function duplicateAfter(plugins: PluginEntry[], sourceIndex: number): MutationResult | null {
+export function duplicateAfter(plugins: PluginEntry[], sourceIndex: number, name?: string): MutationResult | null {
   const source = plugins[sourceIndex]
   const layout = getLayout(source)
   if (!layout) return null
@@ -236,7 +240,7 @@ export function duplicateAfter(plugins: PluginEntry[], sourceIndex: number): Mut
   const order = insertAt(positions[layout.position], positions[layout.position].indexOf(sourceIndex) + 1, -1)
   const priorities = renumberPriorities(order)
   const newIndex = plugins.length
-  const newEntry = duplicateEntry(source, { ...layout, priority: priorities.get(-1) ?? layout.priority + 1 })
+  const newEntry = duplicateEntry(source, { ...layout, priority: priorities.get(-1) ?? layout.priority + 1 }, plugins, name)
   const next: PluginEntry[] = [...plugins, newEntry].map((plugin, i) => {
     const priority = priorities.get(i)
     if (priority === undefined || !plugin.layout || plugin.layout.position !== layout.position) return plugin
@@ -260,7 +264,7 @@ export function appendDuplicateToPosition(
   const order = insertAt(positions[position], insertIndex ?? positions[position].length, -1)
   const priorities = renumberPriorities(order)
   const newIndex = plugins.length
-  const newEntry = duplicateEntry(source, { position, priority: priorities.get(-1) ?? 10 })
+  const newEntry = duplicateEntry(source, { position, priority: priorities.get(-1) ?? 10 }, plugins)
   const next: PluginEntry[] = [...plugins, newEntry].map((plugin, i) => {
     const priority = priorities.get(i)
     if (priority === undefined || !plugin.layout || plugin.layout.position !== position) return plugin

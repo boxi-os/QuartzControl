@@ -72,3 +72,31 @@ export function classForCopy(entry: PluginEntry, prefix: string, name: string, f
   const own = ownClass(entry)
   return own ? uniqueClass(own, plugins) : suggestClass(prefix, name, fallback, plugins)
 }
+
+const PREFIX: Record<string, string> = { 'quartz-navigations': NAV_CLASS_PREFIX, 'quartz-layout-box': BOX_CLASS_PREFIX }
+const FALLBACK: Record<string, string> = { 'quartz-navigations': 'navigation', 'quartz-layout-box': 'box' }
+
+// A name for the class when the caller has none to offer (the layout board): the title, else the
+// navigation's variant or the box's file - the same things the two editors name an entry by, only
+// untranslated.
+function nameOf(entry: PluginEntry): string {
+  const o = entry.options ?? {}
+  if (typeof o.title === 'string' && o.title.trim()) return o.title
+  if (typeof o.variant === 'string') return o.variant
+  if (typeof o.file === 'string') return o.file.replace(/^.*[\\/]/, '').replace(/\.[^.]*$/, '')
+  return ''
+}
+
+/**
+ * `copy` of `source` with a class of its own appended, for the two plugins whose class lands on the
+ * rendered root - every other plugin's copy comes back as it is. Every duplicate in the app goes
+ * through here (LayoutEditor/utils.ts duplicateEntry): the editors' "duplizieren", the board's
+ * "Duplizieren" and a palette chip dropped on the board. `name` is what the editor calls the entry;
+ * without it, nameOf().
+ */
+export function withOwnClassForCopy(copy: PluginEntry, source: PluginEntry, plugins: PluginEntry[], name?: string): PluginEntry {
+  const prefix = PREFIX[source.name]
+  if (!prefix) return copy
+  const cls = classForCopy(source, prefix, name ?? nameOf(source), FALLBACK[source.name], plugins)
+  return { ...copy, options: withClass(copy.options, cls) }
+}

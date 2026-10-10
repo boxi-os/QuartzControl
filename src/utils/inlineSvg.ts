@@ -24,7 +24,11 @@
  * needs; a class it already has stays. Blank lines go, because in a Markdown snippet a blank line
  * ends the HTML block and the rest of the SVG would be read as text.
  */
-export type InlineSvgResult = { ok: true; markup: string; removed: number } | { ok: false }
+// `styled`: one of the removed parts was a `<style>`. Illustrator's default export ("internal CSS")
+// keeps every colour in one, as `.st0{fill:#E30613}`, so without it the icon turns black and a line
+// with only a stroke disappears - the count alone gives no hint of that (forty-third review,
+// finding 7).
+export type InlineSvgResult = { ok: true; markup: string; removed: number; styled: boolean } | { ok: false }
 
 const SVG_NS = 'http://www.w3.org/2000/svg'
 const XLINK_NS = 'http://www.w3.org/1999/xlink'
@@ -120,6 +124,7 @@ export function inlineSvg(text: string, fileName: string): InlineSvgResult {
     .replace(/^-+|-+$/g, '')
 
   let removed = 0
+  let styled = false
   const write = (node: Node): string => {
     if (node.nodeType === Node.TEXT_NODE || node.nodeType === Node.CDATA_SECTION_NODE) return escapeText(node.nodeValue ?? '')
     if (node.nodeType === Node.PROCESSING_INSTRUCTION_NODE) {
@@ -130,6 +135,7 @@ export function inlineSvg(text: string, fileName: string): InlineSvgResult {
     const el = node as Element
     const name = el.localName
     if (el.namespaceURI !== SVG_NS || !ELEMENTS.has(name)) {
+      if (name === 'style' && el.namespaceURI === SVG_NS && (el.textContent ?? '').trim()) styled = true
       if (!(name === 'metadata' && el.namespaceURI === SVG_NS) && !EDITOR_NS.test(el.namespaceURI ?? '')) removed++
       return ''
     }
@@ -200,5 +206,5 @@ export function inlineSvg(text: string, fileName: string): InlineSvgResult {
   const markup = write(root)
     .replace(/\n\s*\n/g, '\n')
     .trim()
-  return { ok: true, markup, removed }
+  return { ok: true, markup, removed, styled }
 }

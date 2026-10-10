@@ -243,6 +243,14 @@ if (r.ok) {
   pruefe(info.link === 'https://example.com/', 'ein Link nach https bleibt')
   pruefe(!info.blank, 'keine Leerzeile, die einen Markdown-Block beendet')
 }
+// Ein Export aus Illustrator mit der Vorgabe „Internes CSS“: Ohne sein <style> wird das Icon
+// schwarz, und das sagt die Meldung jetzt eigens (43. Review, Befund 7).
+const illustrator = await clean(
+  '<svg xmlns="http://www.w3.org/2000/svg" id="Ebene_1" viewBox="0 0 24 24"><defs><style>.st0{fill:#E30613}.st1{fill:none;stroke:#1D1D1B;stroke-width:2}</style></defs><circle class="st0" cx="12" cy="12" r="8"/><line class="st1" x1="0" y1="0" x2="24" y2="24"/></svg>'
+)
+pruefe(illustrator.ok && illustrator.removed === 1 && illustrator.styled, `ein <style> aus Illustrator wird als solcher gemeldet (${illustrator.removed} entfernt, styled ${illustrator.styled})`)
+const nurSkript = await clean(svg(`<script>${RUN}</script><path d="M0 0"/>`))
+pruefe(nurSkript.ok && !nurSkript.styled && r.ok && !r.styled, 'ohne <style> kein Satz über Farben')
 pruefe(!(await clean('<html/>')).ok && !(await clean('kein xml')).ok, 'was kein SVG ist, wird abgelehnt')
 
 await browser.close()

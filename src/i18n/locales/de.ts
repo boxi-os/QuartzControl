@@ -1297,6 +1297,8 @@ export default {
     svgInvalid: '„{{name}}“ lässt sich nicht als SVG lesen.',
     svgCleaned_one: '{{count}} Stelle entfernt, die eingebettet auf jeder Seite Skript ausführen, sie gestalten oder etwas von außen laden könnte (etwa <script>, onload, <style>).',
     svgCleaned_other: '{{count}} Stellen entfernt, die eingebettet auf jeder Seite Skript ausführen, sie gestalten oder etwas von außen laden könnten (etwa <script>, onload, <style>).',
+    svgStyleRemoved:
+      'Die Farben dieser Datei standen in einem <style>-Block, der auf der Website alle Seiten gestalten würde; sie fehlen jetzt. Exportiere mit „Präsentationsattributen“ oder setze die Farben im CSS der Website.',
     imageExists:
       '„{{name}}“ gibt es unter quartz/static schon. Ersetzen?\n\nErsetzen überschreibt die Datei, und jedes Snippet, das sie zeigt, zeigt danach das neue Bild. „Vorhandenes verwenden“ fügt einen Verweis auf die Datei ein, die schon da ist.',
     fileExists:

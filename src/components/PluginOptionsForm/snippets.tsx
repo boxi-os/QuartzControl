@@ -87,7 +87,12 @@ export function ImageButton({
             return
           }
           onInsert(result.markup)
-          if (result.removed > 0) setNote(t('snippets.svgCleaned', { count: result.removed }))
+          if (result.removed > 0)
+            setNote(
+              result.styled
+                ? `${t('snippets.svgCleaned', { count: result.removed })} ${t('snippets.svgStyleRemoved')}`
+                : t('snippets.svgCleaned', { count: result.removed })
+            )
         } catch (err) {
           setError(formatIpcError(err))
         } finally {

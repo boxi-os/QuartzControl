@@ -231,6 +231,10 @@ export default function PluginsInstalled(): JSX.Element {
   const [outdated, setOutdated] = useState<Set<string>>(new Set())
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  // A change refused while a removal ran. Apart from `message`, so the next change that does get
+  // saved can take it away again without taking a failure with it - it stood there, red, over the
+  // retry that worked (forty-third review, finding 8).
+  const [refused, setRefused] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
   // Which row last had a field written. Layout and option fields save on blur with no Save button,
   // so without this the config changes with no sign that anything happened.
@@ -319,9 +323,13 @@ export default function PluginsInstalled(): JSX.Element {
   // handle was the one control `busy` did not reach, and one drag 0.5 s into the removal kept the
   // entry (forty-second review, finding 2, measured in the built app).
   const removing = useRef(false)
-  async function commit(mutate: (plugins: PluginEntry[]) => PluginEntry[]): Promise<boolean> {
+  // The refusal is also said: it appears without anyone looking. Not here for a drag, which says it
+  // in dnd-kit's own region at the drop (`dropRefused` on ReorderableList) - two regions at once
+  // would say it twice.
+  async function commit(mutate: (plugins: PluginEntry[]) => PluginEntry[], sayRefusal = true): Promise<boolean> {
     if (removing.current) {
-      setMessage(t('pluginsInstalled.busyRemoving'))
+      setRefused(true)
+      if (sayRefusal) announce(t('pluginsInstalled.busyRemoving'))
       return false
     }
     const current = configRef.current
@@ -339,6 +347,7 @@ export default function PluginsInstalled(): JSX.Element {
       throw err
     }
     if (configRef.current === next) await reload()
+    setRefused(false)
     return true
   }
 
@@ -361,6 +370,7 @@ export default function PluginsInstalled(): JSX.Element {
     if (!(await confirmDialog({ text: question, confirmLabel: t('common.remove'), danger: true }))) return
     setBusy(true)
     setMessage(null)
+    setRefused(false)
     removing.current = true
     // In the write queue like every edit: a save still pending - the field the click on the bin
     // just blurred - wrote the whole config as it was rendered, entry included, after the CLI had
@@ -427,7 +437,13 @@ export default function PluginsInstalled(): JSX.Element {
   // Components are only reordered against siblings in the same layout position (their
   // `layout.priority`); everything else is reordered against the top-level `order` field -
   // these are separate concepts in quartz.config.yaml, not one shared sequence.
-  async function reorderGroup(group: IndexedPlugin[], from: number, to: number, field: 'order' | 'layoutPriority'): Promise<void> {
+  async function reorderGroup(
+    group: IndexedPlugin[],
+    from: number,
+    to: number,
+    field: 'order' | 'layoutPriority',
+    viaDrag = false
+  ): Promise<void> {
     if (from === to) return
     const reordered = [...group]
     const [moved] = reordered.splice(from, 1)
@@ -444,7 +460,7 @@ export default function PluginsInstalled(): JSX.Element {
           field === 'order' ? { ...plugin, order: value } : { ...plugin, layout: { ...getLayout(plugin)!, priority: value } }
       })
       return next
-    })
+    }, !viaDrag)
     if (!committed) return
     // The one sentence that says what actually happened, for every way of getting here - drag,
     // keyboard drag, and the two arrows. The drag's own commentary stops at "abgelegt bei X";
@@ -457,6 +473,10 @@ export default function PluginsInstalled(): JSX.Element {
       })
     )
   }
+
+  // What a drop ends in while a removal runs: refused by commit, so dnd-kit's "abgelegt bei X"
+  // would be the wrong sentence - and the one that was said, followed by nothing.
+  const dropRefused = (): string | undefined => (removing.current ? t('pluginsInstalled.busyRemoving') : undefined)
 
   // Opens the Layout editor on the frames tab with this frame already loaded. The tab travels in
   // the URL, like every other sub-tab; which frame is open cannot - it is a whole frame object, not
@@ -558,7 +578,9 @@ export default function PluginsInstalled(): JSX.Element {
   const visibleCount = items.filter(matches).length
 
   const cardProps = {
-    busy,
+    // A maintenance run rewrites .quartz/plugins; the rows wait for it like the two buttons wait
+    // for a removal - before, a removal could start in the middle of a prune.
+    busy: busy || maintenance !== null,
     // Reordering renumbers a whole group in steps of ten. With a filter on, the rendered group is
     // a subset, so those new numbers would be assigned as though the hidden entries weren't there
     // - which silently reshuffles them too. Reordering is therefore off while filtering (the
@@ -662,6 +684,7 @@ export default function PluginsInstalled(): JSX.Element {
       {filtering && <p className="mb-3 text-xs text-text-muted">{t('pluginsInstalled.reorderDisabledByFilter')}</p>}
 
       {message && <p className="mb-4 text-sm text-red-600 dark:text-red-400">{message}</p>}
+      {refused && !message && <p className="mb-4 text-sm text-red-600 dark:text-red-400">{t('pluginsInstalled.busyRemoving')}</p>}
 
       {items.length === 0 && <p className="text-sm text-text-muted">{t('pluginsInstalled.none')}</p>}
       {items.length > 0 && visibleCount === 0 && <p className="text-sm text-text-muted">{t('pluginsInstalled.noMatches')}</p>}
@@ -697,7 +720,8 @@ export default function PluginsInstalled(): JSX.Element {
                     ids={group.map((item) => String(item.index))}
                     names={new Map(group.map((item) => [String(item.index), displayName(item)]))}
                     canReorder={cardProps.canReorder}
-                    onReorder={(from, to) => reorderGroup(group, from, to, 'layoutPriority')}
+                    onReorder={(from, to) => reorderGroup(group, from, to, 'layoutPriority', true)}
+                    dropRefused={dropRefused}
                   >
                     {shown.map((item) => (
                       <Row
@@ -730,7 +754,8 @@ export default function PluginsInstalled(): JSX.Element {
                   ids={pageTypeItems.map((item) => String(item.index))}
                   names={new Map(pageTypeItems.map((item) => [String(item.index), displayName(item)]))}
                   canReorder={cardProps.canReorder}
-                  onReorder={(from, to) => reorderGroup(pageTypeItems, from, to, 'order')}
+                  onReorder={(from, to) => reorderGroup(pageTypeItems, from, to, 'order', true)}
+                  dropRefused={dropRefused}
                 >
                   {pageTypeItems.filter(matches).map((item) => (
                     <Row
@@ -758,7 +783,8 @@ export default function PluginsInstalled(): JSX.Element {
                   ids={otherProcessingItems.map((item) => String(item.index))}
                   names={new Map(otherProcessingItems.map((item) => [String(item.index), displayName(item)]))}
                   canReorder={cardProps.canReorder}
-                  onReorder={(from, to) => reorderGroup(otherProcessingItems, from, to, 'order')}
+                  onReorder={(from, to) => reorderGroup(otherProcessingItems, from, to, 'order', true)}
+                  dropRefused={dropRefused}
                 >
                   {otherProcessingItems.filter(matches).map((item) => (
                     <Row
@@ -844,10 +870,13 @@ function ReorderableList({
   names,
   canReorder,
   onReorder,
+  dropRefused,
   onDragState,
   children
 }: {
   onDragState: (dragging: boolean) => void
+  /** The sentence for a drop that will not be saved, or nothing - asked at the drop. */
+  dropRefused: () => string | undefined
   ids: string[]
   /** Display name per id, so the drag can be narrated with the names on screen. */
   names: Map<string, string>
@@ -856,7 +885,7 @@ function ReorderableList({
   children: React.ReactNode
 }): JSX.Element {
   const { t } = useTranslation()
-  const { announcements, screenReaderInstructions } = useDndAccessibility(t, (id) => names.get(id) ?? '')
+  const { announcements, screenReaderInstructions } = useDndAccessibility(t, (id) => names.get(id) ?? '', undefined, () => dropRefused())
   // The keyboard sensor is a default of DndContext, but its default coordinate getter is not:
   // it moves the picked-up item by a fixed 25px per arrow press, which in this list (cards ~130px
   // tall when this was measured, two columns then) never reaches the next card - measured in the running app,

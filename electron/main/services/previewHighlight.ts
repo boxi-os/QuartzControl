@@ -111,11 +111,17 @@ function previewScript(selector: string | null, focus: boolean): void {
     // One mark dims the rest of the page; several only get outlines, because overlapping dims
     // would darken each other's element.
     const dim = rects.length === 1 ? 'box-shadow:0 0 0 100vmax rgba(0,0,0,0.4);' : ''
+    // Written only when it changed: per frame, the rewrite alone cost 3.3% of a core with one
+    // navigation marked (review 2026-10-18, Niedrig 4). The last value stands on the element, so a
+    // mark that was removed and recreated is written again.
     rects.forEach((r, i) => {
-      const box = layer.children[i] as HTMLElement
-      box.style.cssText =
+      const box = layer.children[i] as HTMLElement & { qcStyle?: string }
+      const css =
         `position:fixed;left:${r.left - 4}px;top:${r.top - 4}px;width:${r.width + 8}px;height:${r.height + 8}px;` +
         `outline:2px solid ${ACCENT};outline-offset:0;border-radius:6px;${dim}`
+      if (box.qcStyle === css) return
+      box.qcStyle = css
+      box.style.cssText = css
     })
     state.raf = requestAnimationFrame(draw)
   }

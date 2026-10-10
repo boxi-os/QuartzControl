@@ -2246,8 +2246,9 @@ Aus der Nebenbei-Liste danach auf `fix/review-2026-10-17-nebenbei`: `290b710` �
 Vorlagen-Imports schreiben die Config ohne eigenen Snapshot (vorher ein zusätzlicher `configChange`
 mitten im Import, nachher nur der `styleChange` davor); `58d8f5c` — die Ids eines eingefügten SVG
 bekommen ein Präfix je Datei, alle Verweise ziehen mit (vorher 5 doppelte Ids und 6 Verweise ins
-andere SVG, nachher 0). Weiter offen: ein Restore je Datei kann die zwölf mit Kopfzeile ungeladen
-neben den 31 stehen lassen; `projectLock()` steht in `styleLock.ts`. Der Regelvorschlag des Reviews („eine Zahl, die einen Fix belegen soll, nennt
+andere SVG, nachher 0). Danach auf `fix/review-2026-10-17-nebenbei-2` die letzten zwei: `8670cd8` — eine
+Kopfzeile zählt nur an einer geladenen Datei, nach einem Restore je Datei kommt das Angebot zurück;
+und `projectLock()` hat eine eigene Datei. Aus der Nebenbei-Liste ist damit nichts mehr offen. Der Regelvorschlag des Reviews („eine Zahl, die einen Fix belegen soll, nennt
 mindestens einen ihrer Fälle mit seiner Ursache“) steht auf Wunsch des Nutzers in `conventions.md`.
 
 **Keinen dieser Fixes hat ein Review gelesen.**

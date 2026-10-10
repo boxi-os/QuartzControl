@@ -2252,3 +2252,58 @@ und `projectLock()` hat eine eigene Datei. Aus der Nebenbei-Liste ist damit nich
 mindestens einen ihrer Fälle mit seiner Ursache“) steht auf Wunsch des Nutzers in `conventions.md`.
 
 **Keinen dieser Fixes hat ein Review gelesen.**
+
+
+**Das vierundvierzigste Review** ([`REVIEW-2026-10-18.md`](REVIEW-2026-10-18.md), Auftrag
+[`REVIEW-2026-10-18-auftrag.md`](REVIEW-2026-10-18-auftrag.md),
+`review-2026-10-18..review-2026-10-19`: Block A die Fixes des dreiundvierzigsten, Block B sechs
+Commits aus der Bedienung — Vorschau-Markierung, eigene Klassen je Instanz): **vom selben Modell
+wie die gelesenen Commits und wie der Auftrag** (Claude Opus 5.5). 0 Hoch, 2 Mittel, 9 Niedrig.
+Beide Mittel lagen in Block B und waren Fälle von „die App zeigt anders als die Website“.
+
+Abgearbeitet am 2026-10-10 direkt auf `feat/1.1`, je Commit Typcheck, Build und Smoke (46 Aufrufe).
+Gemessen wurde an dem Nachbau der zwei Einbettungen, den das Review gebaut hatte (Electron 43,
+statischer Server, Kopie von `basic-gegenprobe/public` — nicht die gebaute App), wo nicht anders
+gesagt:
+
+- **Mittel 1** `755dc54` — der Ersatz für `scrollIntoView` ruft die native Fassung mit
+  `container: 'nearest'`. Tablet 48 → 93 px (Website 93), Telefon 0 → 157 px (Website 157),
+  `<main>` und Kasten 0.
+- **Mittel 2** `3074372` — „Eigenes CSS“ bietet für ein Original mit Kopien beide Reichweiten an,
+  `.layout-box-mark` („trifft auch die Kopie“) und `.layout-box-mark:not(.layout-box-mark-2)`.
+  An der Funktion geprüft.
+- **Niedrig 1** `028b8cb` — gescrollt wird nur für den Zoom, nach `nav` erst nach `scrollend`.
+  Pager auf dem Telefon, Zoom aus: 0 statt 1319 px.
+- **Niedrig 4** `12f1100` — ein Rahmen schreibt sein `cssText` nur, wenn es sich ändert. 4,4 → 3,1 %
+  eines Kerns; die leere rAF-Schleife allein kostet 2,6 %, und die braucht das Mitlaufen.
+- **Niedrig 6** `10b6306` — `mainFrame.frames` statt `framesInSubtree`. Gemessen mit einem Frame
+  derselben Origin in der Website: vorher beide, nachher nur die Website.
+- **Niedrig 5** `55f4f54` — „Vorschau & Build“ setzt das Skript ohne Markierung. **An der gebauten
+  App** (basic-gegenprobe, eigener Dev-Server, 1280×800): `<main>` 432 → 0 px.
+- **Niedrig 3** `d8986ed` — der Satz nimmt die Zahl von der Seite (`report.visible`), ob der Eintrag
+  unterscheidbar ist aus der Config, und sagt „keine Klasse“ und „geteilte Klasse“ verschieden.
+  An der Funktion geprüft, nicht in der App.
+- **Niedrig 2** `72ab29e` — neuer Kanal `styles.takenClasses`: jede Klasse mit `nav-`/`layout-box-`
+  aus `allStylesheets` und `.quartz/plugins/*/dist`; alle vier Wege, die eine Klasse vergeben,
+  meiden sie. An der gebauten App: 32 Namen, alle neun des Reviews darunter; „Title“ →
+  `layout-box-title-2`.
+- **Niedrig 7** `9f28595` — die Vorlage von 1.1 wird an der ersten Zeile ihrer zehn neuen
+  Stylesheets erkannt (`TEMPLATE_FIRST_LINES`), nicht an einer Zahl; ausgeliefert ist sie noch
+  nirgends (die mitgelieferte `qc-basic.qtpl` hat 31). Das Prüfskript hält die Tabelle gegen die
+  Vorlage; beide Ränder des Reviews fallen mit der alten Funktion durch, mit der neuen nicht.
+- **Niedrig 8** `57fd2b4` — das Präfix der Ids zieht in den vier Schreibweisen mit;
+  `check:inline-svg` fragt Chrome, wohin jeder Verweis zeigt (alter Stand: keiner der fünf am
+  Ziel).
+- **Niedrig 9** `281531a` — `check:inline-svg -- <projekt>` lädt die Markdown-Kette aus dem Bündel
+  von quartz-layout-box; die sechs devDependencies sind weg (91 Pakete aus der Lockfile, keins dazu).
+
+Dazu auf Wunsch des Nutzers `8f86799`: „Verfügbare Platzhalter“ unter dem Schalter `placeholders`
+und an den Texteditoren eines Kastens, dort mit Einfügen am Cursor; die Liste ist eine Abschrift aus
+`placeholders.ts`, und `check:plugin-copies` hält sie in beide Richtungen gegen das Plugin.
+
+Offen aus dieser Runde: die **Nebenbei-Liste** des Reviews (sieben Punkte, nichts davon angefasst),
+die **zwei Regelvorschläge** für `conventions.md` und der Vorschlag einer Zehn-Zeilen-Notiz vor
+Änderungen an einer Vertrauensgrenze oder einer gemeinsamen Funktion — alle drei warten auf den
+Nutzer.
+
+**Keinen dieser Fixes hat ein Review gelesen.**

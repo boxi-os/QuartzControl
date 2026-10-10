@@ -288,9 +288,10 @@ Alles, was früher hier stand, liegt wortgleich unter `docs/decisions/`:
 
 ## Die Reviews
 
-Alle dreiundvierzig Listen sind abgearbeitet (die dreiundvierzigste am 2026-10-10, über die Fixes
-des zweiundvierzigsten auf `feat/1.1`, [`docs/REVIEW-2026-10-17.md`](docs/REVIEW-2026-10-17.md);
-was daraus geworden ist, steht am Ende der Chronik — **keinen dieser Fixes hat ein Review
+Alle vierundvierzig Listen sind abgearbeitet (die vierundvierzigste am 2026-10-10, über die Fixes
+des dreiundvierzigsten und sechs Commits aus der Bedienung auf `feat/1.1`,
+[`docs/REVIEW-2026-10-18.md`](docs/REVIEW-2026-10-18.md); was daraus geworden ist und was aus ihr
+noch auf den Nutzer wartet, steht am Ende der Chronik — **keinen dieser Fixes hat ein Review
 gelesen**). Seit der zweiundvierzigsten wird fremdes Markup für die Website neu geschrieben und am
 Parser der Website geprüft (`check:inline-svg`), seit der dreiundvierzigsten an *jedem* Leser:
 auch an der Markdown-Kette eines Schnipsels, mit Attributnamen wie HTML und Werten wie CSS. Seit

@@ -2204,3 +2204,49 @@ gegen den alten Build:
   Kopf als Satz. Mit VoiceOver nicht gehört.
 
 **Keinen dieser Fixes hat ein Review gelesen.**
+
+
+**Das dreiundvierzigste Review** ([`REVIEW-2026-10-17.md`](REVIEW-2026-10-17.md), Auftrag
+[`REVIEW-2026-10-17-auftrag.md`](REVIEW-2026-10-17-auftrag.md),
+`review-2026-10-17..review-2026-10-18` = die Fixes des zweiundvierzigsten): **vom selben Modell wie
+die gelesenen Commits und wie der Auftrag** (Claude Opus 5.5). 1 Hoch, 2 Mittel, 6 Niedrig. Das Hoch
+lag genau dort, wo der Fix der Runde davor „nicht gemessen“ geschrieben hatte: in einem echten
+`quartz build` mit einem Markdown-Schnipsel. Das Mittel 2 hatte das Schloss gebaut, das die Runde
+davor als „gelesen, nicht gemessen“ eingeführt hatte.
+
+Abgearbeitet am 2026-10-10 auf `fix/review-2026-10-17` (von `feat/1.1`), je Commit Typcheck, Build
+und Smoke (46 Aufrufe, Kopie von gui-test), gemessen jeweils vorher gegen den alten Stand:
+
+- **2 (Mittel)** `631cd9c` — der Snapshot vor `writeConfig` kommt vor dem Config-Schloss, nicht
+  darunter; Reihenfolge Warteschlange vor Schloss, an beiden Schlössern genannt. Bündel: vorher
+  Restore und Speichern nach 30 s nicht fertig, nachher 378–392 / 488–501 ms.
+- **1 (Hoch)** `3628e39` — Text im SVG trägt jedes Strukturzeichen von Markdown als Referenz,
+  Attributwerte ihre Zeilenumbrüche; `check:inline-svg` schickt jedes Ergebnis zusätzlich durch die
+  Kette von quartz-layout-box (neu als devDependencies) in drei Lagen. Vorher 5 von 7 neuen
+  Eingaben durch, nachher 0; ein echter `quartz build` ohne `href="javascript`. remark-gfm macht aus
+  Adressen im Text weiter https-/mailto-Links.
+- **3 (Mittel)** `c576a8f` — Attributnamen wie HTML (klein, SVG-Tabelle, erster gewinnt), Werte
+  CSS-entmaskiert, `image-set(` und Verwandte wie `url(`; Links nur https/mailto, Bilder nur https
+  und Raster-`data:`. Vorher 8 von 8 neuen Eingaben durch, nachher 0; einmal auch in WebKit.
+- **5** `81bc6a7` — geleert und ausgeblendet vor „unbekannt“. Gelesen; gui-test hat keinen
+  Plugin-Frame.
+- **4** `05db5bc` — „auf manchen Breiten“ schneidet mit `layout.display`; neuer Zustand „auf keiner
+  Breite“. An der gebauten App mit dem Aufbau des Reviews gemessen.
+- **6** `c567acc` — zusammengelegt heißt auch: mindestens die Hälfte der zehn neuen Namen geladen.
+  Die Vorlage mit Kopfzeile zu bauen bleibt P8.
+- **7** `45628eb` — ein eigener Satz, wenn ein `<style>` die Farben trug. Nicht durch den
+  Dateidialog geklickt.
+- **8** `adc5917` — die Ablehnung beim Entfernen wird angesagt (beim Zug als `dropOutcome`), der
+  Satz geht nach einem gelungenen Speichern weg, die Zeilen warten auf eine Wartung. An der
+  gebauten App mit gestubbtem Dialog und verzögertem Entfernen gemessen.
+- **9** `5671b0b` — Plan (basic-vorlage auf 0.4.0) und `layout-frames.md` (Gruppenzeile,
+  P#G-Regel); die Sätze über den Bereiniger stimmen seit `c576a8f`.
+
+Nicht erledigt, nur gesammelt (die Nebenbei-Liste des Reviews): vier `configChange`-Snapshots je
+Vorlagen-Import; geteilte Ids mehrerer eingefügter SVGs auf einer Seite; ein Restore je Datei kann
+die zwölf mit Kopfzeile ungeladen neben den 31 stehen lassen; `projectLock()` steht in
+`styleLock.ts`. Der Regelvorschlag des Reviews („eine Zahl, die einen Fix belegen soll, nennt
+mindestens einen ihrer Fälle mit seiner Ursache“) ist nicht in `conventions.md` übernommen — das
+entscheidet der Nutzer.
+
+**Keinen dieser Fixes hat ein Review gelesen.**

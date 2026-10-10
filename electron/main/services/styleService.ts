@@ -875,7 +875,7 @@ export function consolidateStylesheets(projectPath: string): Promise<StyleConsol
   return whileHoldingStyles(projectPath, async () => {
     const order = await currentOrder(projectPath)
     const done = await consolidatedFiles(projectPath)
-    if (!canConsolidate(order, wasConsolidated(done))) return { consolidated: false, snapshotId: null, written: [], merged: 0, renamed: [] }
+    if (!canConsolidate(order, wasConsolidated(done, order))) return { consolidated: false, snapshotId: null, written: [], merged: 0, renamed: [] }
     const customDir = join(stylesDir(projectPath), 'custom')
     const onDisk = (await readdir(customDir, { withFileTypes: true }))
       .filter((e) => e.isFile() && /\.(scss|css)$/.test(e.name))
@@ -942,7 +942,7 @@ export async function listStyleFiles(projectPath: string): Promise<StyleFileSet>
   return {
     main,
     files: [...ordered.map((p) => toFile(p, true)), ...orphans.map((p) => toFile(p, false))],
-    consolidated: wasConsolidated(await consolidatedFiles(projectPath))
+    consolidated: wasConsolidated(await consolidatedFiles(projectPath), order)
   }
 }
 

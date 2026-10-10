@@ -788,3 +788,16 @@ trägt die Kopfzeile zweimal; nachher kein Angebot, der zweite Aufruf antwortet 
 `check:stylesheet-consolidation` spielt denselben Ablauf an der reinen Funktion nach und fällt mit
 der alten Fassung an zwei Prüfungen durch.
 
+**Ein Projekt aus der Vorlage hat keine Kopfzeile** (dreiundvierzigstes Review, Befund 6): Die zwölf
+Stylesheets der Vorlage tragen ihre eigene erste Zeile, nicht die der Zusammenlegung. Ein Projekt aus
+der Vorlage von 1.1 galt damit nie als zusammengelegt, und kam eine der 31 dazu, wurde das
+Zusammenlegen angeboten und tat, was Befund 4 behoben hatte. `wasConsolidated` fragt deshalb
+zusätzlich die Ladereihenfolge: Steht mindestens die Hälfte der zehn Namen, die nur die zwölf haben,
+darin, ist das Projekt in der Form der zwölf. Die Hälfte, damit eine eigene `callouts.scss` oder
+`layout.scss` neben den 31 nichts ändert. Die andere Richtung des Reviews — die Vorlage mit derselben
+Kopfzeile bauen und die Zeile damit zum Format machen — bleibt P8 überlassen; diese Regel trägt
+unabhängig davon. Gemessen an der reinen Funktion (`check:stylesheet-consolidation`, zwei neue
+Prüfungen: die zwölf aus `scripts/example-template/styles` mit `nav-search.scss` aus `f2cdb69~1` am
+Ende — vorher angeboten, nachher nicht, und der Plan schreibt nichts; und die 31 mit einer eigenen
+`callouts.scss` gelten weiter als nicht zusammengelegt).
+

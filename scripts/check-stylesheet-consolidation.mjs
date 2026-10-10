@@ -57,7 +57,7 @@ pruefe(
 const danach = plan.order
 pruefe(!canConsolidate(danach, false), 'ein zusammengelegtes Projekt bietet nichts mehr an (a11y und plugin-layout-box zählen nicht)')
 pruefe(Object.keys(planConsolidation(danach, plan.write, danach).write).length === 0, 'ein zweiter Lauf schreibt nichts')
-pruefe(!wasConsolidated(files) && canConsolidate(order, wasConsolidated(files)), 'die 31 gelten als nicht zusammengelegt, auch mit einer eigenen callouts.scss daneben')
+pruefe(!wasConsolidated(files, order) && canConsolidate(order, wasConsolidated(files, order)), 'die 31 gelten als nicht zusammengelegt, auch mit einer eigenen callouts.scss daneben')
 
 // Erster Lauf ohne nav-search, danach nav-search eingeschaltet (es landet am Ende der Reihenfolge).
 const ohneSuche = order.filter((p) => p !== 'custom/nav-search.scss')
@@ -68,12 +68,25 @@ for (const p of erster.remove) delete platte[p]
 Object.assign(platte, erster.write)
 const eingeschaltet = [...erster.order, 'custom/nav-search.scss']
 pruefe('custom/nav-search.scss' in platte && !erster.order.includes('custom/nav-search.scss'), 'eine abgeschaltete der 31 bleibt beim ersten Lauf liegen und wird nicht geladen')
-pruefe(!canConsolidate(eingeschaltet, wasConsolidated(platte)), 'nach dem Einschalten wird nicht noch einmal angeboten')
+pruefe(!canConsolidate(eingeschaltet, wasConsolidated(platte, eingeschaltet)), 'nach dem Einschalten wird nicht noch einmal angeboten')
 const zweiter = planConsolidation(eingeschaltet, platte, Object.keys(platte))
 pruefe(
   Object.keys(zweiter.write).length === 0 && Object.keys(zweiter.rename).length === 0 && zweiter.order.join(' ') === eingeschaltet.join(' '),
   'ein zweiter Lauf schreibt, benennt und ordnet nichts — nav-search bleibt eine eigene Datei am Ende'
 )
+
+// Ein Projekt aus der Vorlage von 1.1: Ihre zwölf tragen ihre eigene erste Zeile, nicht die Kopfzeile
+// der Zusammenlegung. Kommt eine der 31 dazu, darf nichts angeboten werden — sonst packte der Lauf
+// a11y und plugin-layout-box in sich selbst und schob components-header beiseite (43. Review,
+// Befund 6). Gegenprobe: eine einzelne eigene callouts.scss neben den 31 zählt nicht.
+const vorlage = Object.fromEntries(CONSOLIDATED_ORDER.map((t) => [`custom/${t}.scss`, show('HEAD', `scripts/example-template/styles/${t}.scss`)]))
+const ausVorlage = [...CONSOLIDATED_ORDER.map((t) => `custom/${t}.scss`), 'custom/nav-search.scss']
+const vorlagePlatte = { ...vorlage, 'custom/nav-search.scss': files['custom/nav-search.scss'] }
+pruefe(
+  !canConsolidate(ausVorlage, wasConsolidated(vorlage, ausVorlage)) && Object.keys(planConsolidation(ausVorlage, vorlagePlatte, ausVorlage).write).length === 0,
+  'ein Projekt aus der Vorlage von 1.1 mit einer der 31 dazu bietet nichts an und schreibt nichts'
+)
+pruefe(!wasConsolidated({}, ['custom/callouts.scss', ...order]), 'eine eigene callouts.scss in der Reihenfolge macht die 31 nicht zu zusammengelegten')
 
 console.log(fehler ? `\n✗ ${fehler} Prüfung(en) fehlgeschlagen` : '\n✓ alle Prüfungen bestanden')
 process.exit(fehler ? 1 : 0)

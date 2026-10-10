@@ -23,7 +23,8 @@
  *   switched on later is a stylesheet of its own from there on: a second run wrapped a11y and
  *   plugin-layout-box into themselves again, moved the first components-header aside as a user's
  *   file and put the new one in front of both (forty-second review, finding 4). Told apart by the
- *   header line each of the twelve gets, not by the name - a user's own `callouts.scss` has one.
+ *   header line each of the twelve gets, or by most of the new names loaded at once - not by one
+ *   name, since a user's own `callouts.scss` has one (wasConsolidated).
  *
  * Pure, so `shared/` can hold it and a check can load it: the caller reads the files and writes
  * the result (styleService.consolidateStylesheets).
@@ -80,12 +81,22 @@ const isLegacyOnly = (relativePath: string): boolean => isLegacy(relativePath) &
 
 const header = (target: string): string => `// ${target} - put together by QuartzControl; each section is named after its former stylesheet.`
 
+/** The ten names only the twelve have - a11y and plugin-layout-box were already there before. */
+const NEW_NAMES = CONSOLIDATED_ORDER.filter((t) => !LEGACY_STYLESHEETS.has(t))
+
 /**
- * Whether one of the twelve was written by a run before: `files` maps `custom/<name>.scss` to its
- * content, for every one of the twelve names that is on disk, loaded or not.
+ * Whether the project is in the form of the twelve already: one of them was written by a run
+ * before (its header line; `files` maps `custom/<name>.scss` to its content, for every one of the
+ * twelve names that is on disk, loaded or not), or most of the ten new names are in the load order.
+ * The second half is the project made from the 1.1 template, whose twelve carry their own first
+ * lines and no header: with one of the 31 added later it was offered the run, and the run did what
+ * finding 4 of the forty-second review fixed (forty-third review, finding 6). Half of the ten, so
+ * that a user's own `callouts.scss` or `layout.scss` next to the 31 does not count.
  */
-export function wasConsolidated(files: Record<string, string>): boolean {
-  return CONSOLIDATED_ORDER.some((t) => (files[`${DIR}${t}.scss`] ?? '').startsWith(header(t)))
+export function wasConsolidated(files: Record<string, string>, order: string[]): boolean {
+  if (CONSOLIDATED_ORDER.some((t) => (files[`${DIR}${t}.scss`] ?? '').startsWith(header(t)))) return true
+  const loaded = new Set(order)
+  return NEW_NAMES.filter((t) => loaded.has(`${DIR}${t}.scss`)).length * 2 >= NEW_NAMES.length
 }
 
 /**
@@ -146,7 +157,7 @@ export interface ConsolidationPlan {
  * name is only free when no file has it.
  */
 export function planConsolidation(order: string[], files: Record<string, string>, onDisk: string[]): ConsolidationPlan {
-  if (!canConsolidate(order, wasConsolidated(files))) return { write: {}, remove: [], rename: {}, order }
+  if (!canConsolidate(order, wasConsolidated(files, order))) return { write: {}, remove: [], rename: {}, order }
   const loaded = new Set(order.filter(isLegacy).map(stem))
   const read = (name: string): string => (files[`${DIR}${name}.scss`] ?? '').replace(/^\n+|\n+$/g, '')
   const base = loaded.has('base') ? splitBase(read('base')) : null

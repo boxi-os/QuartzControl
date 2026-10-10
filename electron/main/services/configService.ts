@@ -5,7 +5,7 @@ import { parseDocument, Document, isMap } from 'yaml'
 import type { QuartzConfig, PluginEntry, PluginSource, LayoutConfig } from '@shared/ipc-contract'
 import { createSnapshot } from './snapshotService'
 import { ownFramePath } from './framePaths'
-import { projectLock } from './styleLock'
+import { projectLock } from './projectLock'
 import { mainT } from '../i18n'
 
 /**

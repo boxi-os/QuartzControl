@@ -1,6 +1,4 @@
-import { AsyncLocalStorage } from 'async_hooks'
-import { realpath } from 'fs/promises'
-import { resolve } from 'path'
+import { projectLock } from './projectLock'
 
 /**
  * One writer at a time per project for the project's stylesheets and its font folder, and a
@@ -41,53 +39,6 @@ import { resolve } from 'path'
  * A start, A end, B start, the late one starts, B end). None of the writers does that today - the
  * only timers are AbortSignal.timeout, and progress events are a synchronous broadcast.
  *
- * Reentrant, because the writers call one another - a template import saves the variables, a
- * rename sets the import order - and a lock that waited for itself would hang the import for
- * good. A caller already holding it for the same project just runs.
- *
- * Per project path through `realpath`, for the reason spelled out at coreUpdatesRunning in
- * updateService: two spellings of one folder must not be two keys. The entry is cleared only when
- * it is still this run's, the way forgetServer() does it - a later caller has already chained onto
- * it and owns the key.
+ * Per project, waiting and reentrant - see projectLock.ts, which builds it.
  */
 export const whileHoldingStyles = projectLock()
-
-/**
- * A lock of this kind - per project, waiting, reentrant - with its own queue. The config has one
- * as well (configService.whileHoldingConfig); no holder of either takes the other. The third
- * queue per project is the snapshot store's (snapshotService.serialize), and that one is ordered:
- * a restore holds it and takes the config lock at its end, so nothing holding the config lock
- * waits on it (forty-third review, finding 2).
- */
-export function projectLock(): <T>(projectPath: string, run: () => Promise<T>) => Promise<T> {
-  const running = new Map<string, Promise<unknown>>()
-  const held = new AsyncLocalStorage<ReadonlySet<string>>()
-  return (projectPath, run) => holding(running, held, projectPath, run)
-}
-
-async function holding<T>(
-  running: Map<string, Promise<unknown>>,
-  held: AsyncLocalStorage<ReadonlySet<string>>,
-  projectPath: string,
-  run: () => Promise<T>
-): Promise<T> {
-  const key = await realpath(projectPath).catch(() => resolve(projectPath))
-  const mine = held.getStore()
-  if (mine?.has(key)) return run()
-  const inside = (): Promise<T> => held.run(new Set([...(mine ?? []), key]), run)
-  const previous = running.get(key)
-  // The predecessor's failure is not this run's business, hence the swallowing catch on both
-  // sides: one that stays would reject every later caller in the chain.
-  const result = (previous ?? Promise.resolve()).then(inside, inside)
-  const queued = result.then(
-    () => undefined,
-    () => undefined
-  )
-  running.set(key, queued)
-  try {
-    return await result
-  } finally {
-    await queued
-    if (running.get(key) === queued) running.delete(key)
-  }
-}

@@ -85,17 +85,22 @@ const header = (target: string): string => `// ${target} - put together by Quart
 const NEW_NAMES = CONSOLIDATED_ORDER.filter((t) => !LEGACY_STYLESHEETS.has(t))
 
 /**
- * Whether the project is in the form of the twelve already: one of them was written by a run
- * before (its header line; `files` maps `custom/<name>.scss` to its content, for every one of the
- * twelve names that is on disk, loaded or not), or most of the ten new names are in the load order.
+ * Whether the project is in the form of the twelve already: a loaded one of them was written by a
+ * run before (its header line; `files` maps `custom/<name>.scss` to its content, for every one of
+ * the twelve names that is on disk, loaded or not), or most of the ten new names are in the load
+ * order.
  * The second half is the project made from the 1.1 template, whose twelve carry their own first
  * lines and no header: with one of the 31 added later it was offered the run, and the run did what
  * finding 4 of the forty-second review fixed (forty-third review, finding 6). Half of the ten, so
  * that a user's own `callouts.scss` or `layout.scss` next to the 31 does not count.
  */
 export function wasConsolidated(files: Record<string, string>, order: string[]): boolean {
-  if (CONSOLIDATED_ORDER.some((t) => (files[`${DIR}${t}.scss`] ?? '').startsWith(header(t)))) return true
   const loaded = new Set(order)
+  // Only a loaded one counts: a restore of single files can bring back the 31 and their order and
+  // leave the twelve lying there unloaded, and the project, back in the form of the 31, was never
+  // offered the run again (forty-third review, nebenbei). The forty-second's case is unaffected -
+  // after one of the 31 is switched on, the twelve are still loaded.
+  if (CONSOLIDATED_ORDER.some((t) => loaded.has(`${DIR}${t}.scss`) && (files[`${DIR}${t}.scss`] ?? '').startsWith(header(t)))) return true
   return NEW_NAMES.filter((t) => loaded.has(`${DIR}${t}.scss`)).length * 2 >= NEW_NAMES.length
 }
 

@@ -778,7 +778,8 @@ der 29 Namen in der Ladereihenfolge, und das Angebot kam zurück. Der zweite Lau
 und setzte ein neues mit nur `nav-search` *vor* beide — die Kaskade bewegte sich. Am Namen lässt sich
 „schon zusammengelegt“ nicht erkennen, weil ein Projekt eine eigene `callouts.scss` haben kann;
 erkannt wird es seither an der Kopfzeile, die jeder der zwölf beim Zusammenlegen bekommt
-(`wasConsolidated`, auch an Dateien, die nicht geladen werden). Danach wird nicht mehr angeboten, und
+(`wasConsolidated`; seit dem dreiundvierzigsten Review nur an Dateien, die geladen werden, siehe
+unten). Danach wird nicht mehr angeboten, und
 die eingeschaltete Altdatei ist eine eigene: Sie bleibt, wo das Einschalten sie hingestellt hat.
 Gemessen an der gebauten App mit einer Kopie von navigations-testprojekt, über den IPC-Weg
 (`nav-search` aus der Reihenfolge, zusammenlegen, wieder ans Ende, Reiter „Eigenes CSS“ öffnen,
@@ -801,3 +802,13 @@ Prüfungen: die zwölf aus `scripts/example-template/styles` mit `nav-search.scs
 Ende — vorher angeboten, nachher nicht, und der Plan schreibt nichts; und die 31 mit einer eigenen
 `callouts.scss` gelten weiter als nicht zusammengelegt).
 
+
+**Eine Kopfzeile zählt nur, wo die Datei geladen wird** (dreiundvierzigstes Review, nebenbei). Ein
+Restore einzelner Dateien kann die 31 samt Ladereihenfolge zurückholen und die zwölf mit Kopfzeile
+ungeladen liegen lassen. Weil `wasConsolidated` auch ungeladene Dateien las, kam das Angebot danach
+nie wieder, obwohl das Projekt in der Form der 31 war. Jetzt zählt die Kopfzeile nur an einer Datei
+in der Ladereihenfolge; der Fall des zweiundvierzigsten Reviews bleibt gedeckt, weil dort die zwölf
+geladen sind. Ein Lauf danach schreibt die zwölf neu, und die zehn liegengebliebenen mit neuem Namen
+weichen wie jede fremde Datei mit einem dieser Namen nach `-2` aus, ungeladen — überschrieben wird
+nichts. Gemessen an der reinen Funktion (`check:stylesheet-consolidation`, zwei neue Prüfungen):
+vorher kein Angebot und kein Plan, nachher Angebot, zwölf geschrieben, zehn umbenannt.

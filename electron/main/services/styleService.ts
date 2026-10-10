@@ -905,7 +905,7 @@ export function consolidateStylesheets(projectPath: string): Promise<StyleConsol
 }
 
 // The twelve names of 1.1 that are on disk, with their content - wasConsolidated reads the header
-// line a consolidation wrote, loaded or not.
+// line a consolidation wrote, and counts it only where the load order names the file.
 async function consolidatedFiles(projectPath: string): Promise<Record<string, string>> {
   const files: Record<string, string> = {}
   for (const name of CONSOLIDATED_ORDER) {

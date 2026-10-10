@@ -88,5 +88,21 @@ pruefe(
 )
 pruefe(!wasConsolidated({}, ['custom/callouts.scss', ...order]), 'eine eigene callouts.scss in der Reihenfolge macht die 31 nicht zu zusammengelegten')
 
+// Ein Restore je Datei kann die 31 samt Reihenfolge zurückholen und die zwölf mit Kopfzeile
+// ungeladen liegen lassen. Dann ist das Projekt wieder in der Form der 31, und das Angebot muss
+// zurückkommen; die liegengebliebenen zwölf weichen aus, statt überschrieben zu werden (43. Review,
+// nebenbei).
+const nur31 = alt.map((n) => `custom/${n}.scss`)
+const zwoelf = planConsolidation(nur31, files, nur31).write
+// a11y und plugin-layout-box heißen alt und neu gleich: der Restore holt ihren alten Inhalt zurück.
+const zurueck = { ...zwoelf, ...files }
+pruefe(canConsolidate(nur31, wasConsolidated(zurueck, nur31)), 'nach einem Restore je Datei (die 31 geladen, die zwölf ungeladen daneben) wird wieder angeboten')
+const nachRestore = planConsolidation(nur31, zurueck, [...nur31, ...Object.keys(zwoelf)])
+const neuBenannt = Object.keys(nachRestore.rename).filter((p) => !nur31.includes(p))
+pruefe(
+  Object.keys(nachRestore.write).length === 12 && neuBenannt.length === 10 && nachRestore.order.every((p) => !p.endsWith('-2.scss')),
+  `ein Lauf danach schreibt die zwölf neu, die zehn liegengebliebenen mit neuem Namen weichen aus und werden nicht geladen (${neuBenannt.length} umbenannt)`
+)
+
 console.log(fehler ? `\n✗ ${fehler} Prüfung(en) fehlgeschlagen` : '\n✓ alle Prüfungen bestanden')
 process.exit(fehler ? 1 : 0)

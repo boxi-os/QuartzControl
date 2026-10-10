@@ -60,6 +60,7 @@ import * as environmentService from '../services/environmentService'
 import * as nodeRuntime from '../services/nodeRuntime'
 import * as gitRuntime from '../services/gitRuntime'
 import * as settingsService from '../services/settingsService'
+import { dialogStartDirectory, rememberDialogResult } from '../services/dialogDirectory'
 import * as templatePackageService from '../services/templatePackage'
 import { applyTheme } from '../theme'
 import { applyAppMenu, openHandbook } from '../menu'
@@ -431,9 +432,12 @@ export function registerIpcHandlers(): void {
   handleNoArgs(IPC.templatePackagePick, async () => {
     const result = await dialog.showOpenDialog({
       properties: ['openFile', 'openDirectory'],
+      defaultPath: await dialogStartDirectory(),
       filters: [{ name: 'QuartzControl-Vorlage', extensions: [TEMPLATE_PACKAGE_EXTENSION.slice(1)] }]
     })
-    return result.canceled || result.filePaths.length === 0 ? null : result.filePaths[0]
+    if (result.canceled || result.filePaths.length === 0) return null
+    rememberDialogResult(result.filePaths[0])
+    return result.filePaths[0]
   })
   handle(IPC.templatePackageInspect, t([s.absolutePath]), (projectPath) => templatePackageService.inspectProject(projectPath))
   handleNoArgs(IPC.templatePackageBuiltin, () => builtinTemplateService.getBuiltinTemplate())
@@ -442,10 +446,11 @@ export function registerIpcHandlers(): void {
   // export follows: an arbitrary path from there would let a page write a file anywhere on disk.
   handle(IPC.templatePackageExport, t([s.absolutePath, s.templateExportOptions]), async (projectPath, options) => {
     const result = await dialog.showSaveDialog({
-      defaultPath: `${templatePackageService.slugifyFileName(options.name)}${TEMPLATE_PACKAGE_EXTENSION}`,
+      defaultPath: join(await dialogStartDirectory(), `${templatePackageService.slugifyFileName(options.name)}${TEMPLATE_PACKAGE_EXTENSION}`),
       filters: [{ name: 'QuartzControl-Vorlage', extensions: [TEMPLATE_PACKAGE_EXTENSION.slice(1)] }]
     })
     if (result.canceled || !result.filePath) return null
+    rememberDialogResult(result.filePath)
     return templatePackageService.exportPackage(projectPath, result.filePath, options as TemplateExportOptions)
   })
   handle(IPC.templatePackagePlan, t([s.absolutePath, s.absolutePath]), (projectPath, packagePath) =>
@@ -590,10 +595,11 @@ export function registerIpcHandlers(): void {
   // there would let a page write a zip anywhere on disk.
   handle(IPC.snapshotExport, t([s.absolutePath, s.snapshotId]), async (projectPath, id) => {
     const result = await dialog.showSaveDialog({
-      defaultPath: `${id}.zip`,
+      defaultPath: join(await dialogStartDirectory(), `${id}.zip`),
       filters: [{ name: 'ZIP', extensions: ['zip'] }]
     })
     if (result.canceled || !result.filePath) return false
+    rememberDialogResult(result.filePath)
     await snapshotService.exportSnapshot(projectPath, id, result.filePath)
     return true
   })
@@ -652,11 +658,12 @@ export function registerIpcHandlers(): void {
   handle(IPC.dialogPickFolder, t([s.absolutePath.optional()]), async (defaultPath) => {
     const result = await dialog.showOpenDialog({
       properties: ['openDirectory', 'createDirectory'],
-      // Only honoured when it still exists - Electron shows the last-used folder otherwise, and
-      // a stale default project directory must not make the dialog open somewhere surprising.
-      defaultPath: defaultPath && existsSync(defaultPath) ? defaultPath : undefined
+      // Only honoured when it still exists - the last-used folder otherwise, and a stale default
+      // project directory must not make the dialog open somewhere surprising.
+      defaultPath: defaultPath && existsSync(defaultPath) ? defaultPath : await dialogStartDirectory()
     })
     if (result.canceled || result.filePaths.length === 0) return null
+    rememberDialogResult(result.filePaths[0])
     return result.filePaths[0]
   })
 
@@ -680,8 +687,9 @@ export function registerIpcHandlers(): void {
   })
 
   handle(IPC.dialogPickFile, t([s.dialogFileFilters.optional()]), async (filters) => {
-    const result = await dialog.showOpenDialog({ properties: ['openFile'], filters })
+    const result = await dialog.showOpenDialog({ properties: ['openFile'], defaultPath: await dialogStartDirectory(), filters })
     if (result.canceled || result.filePaths.length === 0) return null
+    rememberDialogResult(result.filePaths[0])
     return result.filePaths[0]
   })
 

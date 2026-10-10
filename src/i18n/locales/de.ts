@@ -1030,6 +1030,8 @@ export default {
     notRunning: 'Die Vorschau zeigt die echte Website über den Dev-Server, und der läuft gerade nicht.',
     starting: 'Der Dev-Server startet…',
     start: 'Vorschau starten',
+    stop: 'Vorschau beenden',
+    stopHint: 'Stoppt den Dev-Server dieses Projekts — auch für die Seite „Vorschau & Build“.',
     remote: 'Der Dev-Server läuft über einen entfernten Host und lässt sich hier nicht einbetten. Öffne ihn auf der Seite „Vorschau & Build“.',
     page: 'Seite',
     pagePlaceholder: 'Startseite – oder z. B. ordner/seite',

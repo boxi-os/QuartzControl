@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { MonitorPlay, Play, RefreshCw } from 'lucide-react'
+import { MonitorPlay, Play, RefreshCw, Square } from 'lucide-react'
 import type { FrameBreakpoint, FrameBreakpointWidths, ServerOptions, ServerStatus } from '@shared/ipc-contract'
 import { DEFAULT_FRAME_BREAKPOINT_WIDTHS } from '@shared/gridFrameCss'
 import { Button, Card, CardHeading, SegmentedControl, TextInput } from './ui'
@@ -101,12 +101,23 @@ export default function SitePreview({
     <Card className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <CardHeading icon={MonitorPlay}>{t('sitePreview.title')}</CardHeading>
-        {running && !remote && (
-          <Button variant="ghost" onClick={() => setNonce((n) => n + 1)}>
-            <RefreshCw size={13} aria-hidden />
-            {t('buildServer.reloadPreview')}
-          </Button>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {running && !remote && (
+            <Button variant="ghost" onClick={() => setNonce((n) => n + 1)}>
+              <RefreshCw size={13} aria-hidden />
+              {t('buildServer.reloadPreview')}
+            </Button>
+          )}
+          {/* The same dev server the Vorschau & Build page runs - there is only one per project -
+              so the button says so on hover rather than pretending to close just this frame.
+              Offered while starting too, like both other places that stop a server. */}
+          {(running || status.state === 'starting') && (
+            <Button variant="ghost" onClick={() => void window.quartzGui.server.stop(projectId)} title={t('sitePreview.stopHint')}>
+              <Square size={13} aria-hidden />
+              {t('sitePreview.stop')}
+            </Button>
+          )}
+        </div>
       </div>
       {hint && <p className="text-micro text-text-muted">{hint}</p>}
 
@@ -155,7 +166,11 @@ export default function SitePreview({
           </div>
           <div
             ref={boxRef}
-            className="overflow-hidden rounded-md border border-ink/[0.08] dark:border-ink/10"
+            // `clip`, not `hidden`: an overflow-hidden box is still a scroll container, and a jump
+            // to an anchor inside the site (a click in its table of contents) scrolled it along -
+            // measured 116.5px, the site's header gone above the edge. Nobody can scroll a hidden
+            // box back, and a reload or another page only replaces the iframe, not this box.
+            className="overflow-clip rounded-md border border-ink/[0.08] dark:border-ink/10"
             style={{ height: FRAME_HEIGHT }}
           >
             <iframe

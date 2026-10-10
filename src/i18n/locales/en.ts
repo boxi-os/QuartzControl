@@ -1025,6 +1025,8 @@ export default {
     notRunning: 'The preview shows the real site through the dev server, which is not running.',
     starting: 'The dev server is starting…',
     start: 'Start preview',
+    stop: 'Stop preview',
+    stopHint: 'Stops this project’s dev server — for the “Preview & Build” page as well.',
     remote: 'The dev server runs through a remote host and cannot be embedded here. Open it on the “Preview & Build” page.',
     page: 'Page',
     pagePlaceholder: 'Home page – or e.g. folder/page',

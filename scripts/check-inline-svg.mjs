@@ -299,6 +299,37 @@ if (rot.ok && blau.ok) {
   await site.close()
   pruefe(ids.doppelt.length === 0 && ids.fremd.length === 0, `zwei Dateien mit denselben Ids auf einer Seite: ${ids.doppelt.length} doppelt, ${ids.fremd.length} Verweise ins andere SVG${ids.fremd.length ? ` (${ids.fremd.slice(0, 3).join(', ')})` : ''}`)
 } else pruefe(false, 'zwei Dateien mit denselben Ids: abgelehnt')
+// Vier Schreibweisen eines Verweises, die beim Präfix nicht mitzogen (44. Review, Niedrig 8): zwei
+// ARIA-Namen, ein href mit Leerzeichen davor (der URL-Parser streicht es), ein url() mit
+// CSS-Escape und eine Id mit Punkt in `begin`. Gefragt wird der Browser, wohin jeder zeigt.
+const formen = await clean(
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><defs><linearGradient id="g1"><stop stop-color="red"/></linearGradient><path id="s" d="M0 0h9"/></defs><g id="liste" aria-activedescendant="eins" aria-errormessage="fehler"><title id="eins">a</title><desc id="fehler">b</desc></g><rect id="r" width="9" height="9" style="fill:url(#g\\31)"/><use id="u" href=" #s"/><animate id="anim.1" attributeName="opacity" values="0;1" dur="1s"/><animate id="b" attributeName="opacity" begin="anim.1.end" values="1;0"/></svg>`,
+  'formen.svg'
+)
+if (formen.ok) {
+  const site = await browser.newPage()
+  await site.setContent(`<!doctype html><title>s</title><body>${formen.markup}</body>`)
+  const ziele = await site.evaluate(() => {
+    const svg = document.querySelector('svg')
+    const by = (suffix) => [...svg.querySelectorAll('[id]')].find((e) => e.id.endsWith(`-${suffix}`))
+    const da = (id) => !!id && svg.contains(document.getElementById(id))
+    const g = by('liste')
+    // Chrome gibt den Verweis aufgelöst zurück (`url("about:blank#…")`), gefragt wird das Fragment.
+    const fill = getComputedStyle(by('r')).fill.match(/url\("?[^#"]*#([^")]+)"?\)/)?.[1]
+    const href = by('u').getAttribute('href').replace(/^[\u0000- ]+/, '').slice(1)
+    const begin = by('b').getAttribute('begin')
+    return {
+      'aria-activedescendant': da(g.getAttribute('aria-activedescendant')),
+      'aria-errormessage': da(g.getAttribute('aria-errormessage')),
+      'href mit Leerzeichen': da(href),
+      'url() mit Escape': da(fill),
+      'begin mit Punkt in der Id': da(begin.slice(0, begin.lastIndexOf('.')))
+    }
+  })
+  await site.close()
+  const daneben = Object.entries(ziele).filter(([, ok]) => !ok).map(([k]) => k)
+  pruefe(daneben.length === 0, `vier Schreibweisen eines Verweises zeigen nach dem Präfix auf ihr Ziel${daneben.length ? ` (daneben: ${daneben.join(', ')})` : ''}`)
+} else pruefe(false, 'vier Schreibweisen eines Verweises: abgelehnt')
 pruefe(!(await clean('<html/>')).ok && !(await clean('kein xml')).ok, 'was kein SVG ist, wird abgelehnt')
 
 await browser.close()

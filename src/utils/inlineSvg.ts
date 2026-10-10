@@ -118,16 +118,42 @@ const hash = (text: string): string => {
   for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193)
   return (h >>> 0).toString(36).slice(0, 5)
 }
-const ID_LISTS = new Set(['aria-labelledby', 'aria-describedby', 'aria-controls', 'aria-owns', 'aria-flowto', 'aria-details'])
+const ID_LISTS = new Set([
+  'aria-labelledby', 'aria-describedby', 'aria-controls', 'aria-owns', 'aria-flowto', 'aria-details',
+  'aria-activedescendant', 'aria-errormessage'
+])
+// A reference is read the way its reader reads it, as the checks above are: `href` the way the URL
+// parser does (` #s` is `#s`), a `url()` the way CSS does (`#g\31` is `#g1`), and an animation's
+// `anim.1.end` with the dot belonging to the id where the file defines one with it. In each of the
+// four forms the reference kept its old id and pointed nowhere (forty-fourth review, Niedrig 8).
+// Written in the read form only when it is one of the file's ids, and only an id that needs no
+// escaping in CSS - anything else stays as it was written.
+const PLAIN_ID = /^[\w.:-]+$/
+const URL_REF = /url\(\s*(['"]?)((?:\\[0-9a-f]{1,6}[ \t\n\r\f]?|\\[^\n\r\f0-9a-f]|[^'")\s\\])+)/gi
 function rewriteIds(attrName: string, value: string, ids: ReadonlySet<string>, prefix: string): string {
   const own = (id: string): string => (ids.has(id) ? prefix + id : id)
   if (attrName === 'id') return own(value)
-  if (attrName === 'href') return value.startsWith('#') ? `#${own(value.slice(1))}` : value
+  if (attrName === 'href') {
+    const v = compact(value)
+    return v.startsWith('#') && ids.has(v.slice(1)) ? `#${own(v.slice(1))}` : value
+  }
   if (ID_LISTS.has(attrName)) return value.split(/(\s+)/).map((part) => (/\s/.test(part) ? part : own(part))).join('')
   if (attrName === 'begin' || attrName === 'end') {
-    return value.replace(/(^|;)(\s*)([A-Za-z_][\w-]*)(?=\.)/g, (_, sep: string, ws: string, id: string) => sep + ws + own(id))
+    return value.replace(/(^|;)(\s*)([^;\s]+)/g, (whole: string, sep: string, ws: string, token: string) => {
+      const parts = token.split('.')
+      for (let k = parts.length - 1; k >= 1; k--) {
+        const id = parts.slice(0, k).join('.')
+        if (ids.has(id)) return `${sep}${ws}${own(id)}.${parts.slice(k).join('.')}`
+      }
+      return whole
+    })
   }
-  return value.replace(/url\(\s*(['"]?)#([^'")\s]+)/gi, (_, quote: string, id: string) => `url(${quote}#${own(id)}`)
+  return value.replace(URL_REF, (whole: string, quote: string, raw: string) => {
+    const ref = cssUnescape(raw)
+    if (!ref.startsWith('#')) return whole
+    const id = ref.slice(1)
+    return ids.has(id) && PLAIN_ID.test(id) ? `url(${quote}#${own(id)}` : whole
+  })
 }
 
 const escapeText = (s: string): string => s.replace(/[&<>[\]()!*_`~\\|:#+=.@-]/g, (c) => `&#${c.charCodeAt(0)};`)

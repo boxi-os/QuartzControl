@@ -1717,7 +1717,10 @@ export type AppCommand = 'save'
  */
 export interface SitePreviewHighlightInput {
   projectId: string
-  /** One class, optionally narrowed by a second: `.quartz-nav` or `.quartz-nav.nav-menue`. */
+  /**
+   * One class, optionally narrowed by a second and by excluded ones: `.quartz-nav`,
+   * `.quartz-nav.nav-menue`, `.layout-box.layout-box-mark:not(.layout-box-mark-2)`.
+   */
   selector: string | null
   focus: boolean
 }

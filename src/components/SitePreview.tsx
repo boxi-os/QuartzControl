@@ -238,11 +238,19 @@ export default function SitePreview({
               className="block bg-white motion-safe:transition-transform motion-safe:duration-200"
             />
           </div>
-          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-            {/* Rendered empty, so the sentence is announced when it appears (conventions.md). */}
-            <p role="status" className="text-micro text-text-secondary">
-              {highlight && report ? markSentence(report, highlight, t) : null}
-            </p>
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              {/* Rendered empty, so the sentence is announced when it appears (conventions.md). The
+                  button stays outside: it changes because the selection did, not on its own. */}
+              <p role="status" className="text-micro text-text-secondary">
+                {highlight && report ? markSentence(report, highlight, t) : null}
+              </p>
+              {highlight && highlight.matches > 1 && highlight.onAssignClass && (
+                <Button variant="ghost" onClick={highlight.onAssignClass}>
+                  {t('sitePreview.assignClass')}
+                </Button>
+              )}
+            </div>
             <p className="text-micro text-text-muted">{t('sitePreview.scaled', { width, percent: Math.round(shownScale * 100) })}</p>
           </div>
         </>
@@ -257,6 +265,11 @@ export interface PreviewHighlight {
   name: string
   /** How many entries of the editor the selector matches; above one, it has no class of its own. */
   matches: number
+  /**
+   * Gives the entry a class of its own (instanceClass.ts). Offered beside the sentence that says
+   * it has none; a page without the option leaves it out.
+   */
+  onAssignClass?: () => void
 }
 
 function markSentence(report: SitePreviewReport, highlight: PreviewHighlight, t: TFunction): string {

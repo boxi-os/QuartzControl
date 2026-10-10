@@ -761,3 +761,20 @@ Was das Skript nicht kann: Eine Instanz ohne eigene `className` ist von ihren Ge
 zu unterscheiden. Und Chromium hält `requestAnimationFrame` in einem fremden Frame außerhalb des
 Fensters an — die Rahmen erscheinen also erst, wenn die Karte in Sicht kommt; die Meldung an die
 Seite kommt trotzdem (gemessen auf „Zusätzliche Inhalte“: Satz da, 0 Rahmen, nach dem Scrollen 1).
+
+**Eine eigene Klasse je Navigation und Kasten (2026-10-10, Wunsch des Nutzers).** Ohne
+`className` ist eine Instanz auf der Website nicht von ihren Geschwistern zu unterscheiden — für die
+Vorschau nicht und für ein Stylesheet auch nicht. „Neue Navigation“, „Neuer Kasten“ und Duplizieren
+vergeben deshalb eine (`routes/Plugins/instanceClass.ts`), aus dem Namen, den die Liste zeigt,
+immer mit Präfix (`nav-`, `layout-box-` wie in der Basis-Vorlage): ohne Präfix wäre eine Navigation
+„Explorer“ `.explorer` und bekäme alle Explorer-Regeln. Umbenannt wird die Klasse nie mit dem
+Titel, weil ein Stylesheet auf sie zielt. Bestehende Einträge bekommen sie nur auf Klick („Eigene
+Klasse vergeben“ unter der Vorschau), nicht beim Anwählen. Eine Kopie behält die Klassen des
+Originals, damit sie gleich aussieht, und bekommt ihre eigene dahinter — „die eigene“ ist deshalb
+die letzte, und der Selektor des Originals schließt die eigenen seiner Kopien aus
+(`.layout-box-mark:not(.layout-box-mark-2)`). Gemessen an der gebauten App mit einem zusätzlichen
+Pager ohne Klasse: vorher `.quartz-nav`, 2 Treffer, Knopf da; danach `nav-zurueck-weiter`, 1
+Treffer. Akkordeon dupliziert: `nav-menue nav-menue-2`, Original und Kopie je 1 Treffer. Kasten
+„mark“ dupliziert: `layout-box-mark layout-box-mark-2`, Listenname „mark-2“.
+Was das nicht abdeckt: Ein Duplikat auf der Layout-Bühne oder in der Plugin-Liste bekommt keine
+eigene Klasse.

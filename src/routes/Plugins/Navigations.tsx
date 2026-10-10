@@ -10,6 +10,7 @@ import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { siteLanguages } from '../../components/PluginOptionsForm/siteLanguages'
 import SitePreview, { type PreviewHighlight } from '../../components/SitePreview'
 import { entrySelector } from '../../data/componentSelectors'
+import { NAV_CLASS_PREFIX, classForCopy, suggestClass, withClass } from './instanceClass'
 import { announce } from '../../state/announcer'
 import { primeStickyState, useStickyState } from '../../state/uiState'
 import { useIpcQuery } from '../../state/useIpcQuery'
@@ -79,9 +80,13 @@ export default function Navigations({ onShowAllOptions }: { onShowAllOptions: (s
   const current = instances.find((i) => i.occurrence === selected) ?? null
 
   const variantLabel = (v: NavVariant): string => t(`navigationsEditor.variants.${v}.label`)
+  // What the navigation is called without its #n - also what a class of its own is made from.
+  const baseName = (plugin: PluginEntry): string => {
+    const title = plugin.options?.title
+    return typeof title === 'string' && title.trim() ? title.trim() : variantLabel(variantOf(plugin.options))
+  }
   const instanceLabel = (item: NavInstance): string => {
-    const title = item.plugin.options?.title
-    const base = typeof title === 'string' && title.trim() ? title.trim() : variantLabel(variantOf(item.plugin.options))
+    const base = baseName(item.plugin)
     return instances.length > 1 ? `${base} #${item.occurrence}` : base
   }
 
@@ -137,7 +142,8 @@ export default function Navigations({ onShowAllOptions }: { onShowAllOptions: (s
       source: first.plugin.source,
       enabled: true,
       ...(first.plugin.order !== undefined ? { order: first.plugin.order } : {}),
-      options: { variant },
+      // A class of its own from the start, so a stylesheet and the preview can tell it apart.
+      options: { variant, className: suggestClass(NAV_CLASS_PREFIX, variantLabel(variant), 'navigation', base.plugins) },
       layout: { position, priority: (priorities.length ? Math.max(...priorities) : 0) + 10 }
     }
     setAdding(false)
@@ -148,6 +154,14 @@ export default function Navigations({ onShowAllOptions }: { onShowAllOptions: (s
     )
   }
 
+  async function assignClass(item: NavInstance): Promise<void> {
+    const base = configRef.current
+    if (!base) return
+    const cls = suggestClass(NAV_CLASS_PREFIX, baseName(item.plugin), 'navigation', base.plugins)
+    const plugins = base.plugins.map((p, i) => (i === item.index ? { ...p, options: withClass(p.options, cls) } : p))
+    await write({ ...base, plugins }, t('sitePreview.classAssigned', { name: instanceLabel(item), cls }))
+  }
+
   async function duplicate(item: NavInstance): Promise<void> {
     const base = configRef.current
     if (!base) return
@@ -155,10 +169,12 @@ export default function Navigations({ onShowAllOptions }: { onShowAllOptions: (s
     if (!result) return
     // A copied `id` would give both navigations the same element ids and localStorage key - the
     // README's reason to set one at all. The copy goes without it.
+    // It keeps the original's classes, so it is styled the same, and gets one of its own after them.
+    const own = classForCopy(item.plugin, NAV_CLASS_PREFIX, baseName(item.plugin), 'navigation', result.plugins)
     const plugins = result.plugins.map((p, i) => {
-      if (i !== result.newIndex || !p.options || !('id' in p.options)) return p
-      const { id: _id, ...rest } = p.options
-      return { ...p, options: rest }
+      if (i !== result.newIndex) return p
+      const { id: _id, ...rest } = p.options ?? {}
+      return { ...p, options: withClass(rest, own) }
     })
     setSelected(instances.length + 1)
     await write({ ...base, plugins }, t('navigationsEditor.duplicatedAnnounce', { name: instanceLabel(item) }))
@@ -312,7 +328,7 @@ export default function Navigations({ onShowAllOptions }: { onShowAllOptions: (s
         projectPath={project.path}
         stickyPrefix="navigations"
         hint={t('navigationsEditor.previewHint')}
-        highlight={previewHighlight(current, instances, instanceLabel)}
+        highlight={previewHighlight(current, instances, instanceLabel, assignClass)}
       />
     </DetailLayout>
   )
@@ -441,8 +457,13 @@ function NavigationPanel({
 }
 
 // The selected navigation, for the marks in the preview.
-function previewHighlight(current: NavInstance | null, all: NavInstance[], label: (item: NavInstance) => string): PreviewHighlight | null {
+function previewHighlight(
+  current: NavInstance | null,
+  all: NavInstance[],
+  label: (item: NavInstance) => string,
+  assign: (item: NavInstance) => Promise<void>
+): PreviewHighlight | null {
   if (!current) return null
   const found = entrySelector(current.plugin, all.map((i) => i.plugin))
-  return found && { ...found, name: label(current) }
+  return found && { ...found, name: label(current), onAssignClass: () => void assign(current) }
 }

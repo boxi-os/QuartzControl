@@ -1,5 +1,6 @@
 import type { PluginEntry } from '@shared/ipc-contract'
 import { componentItems } from '../routes/LayoutEditor/utils'
+import { classTokens, ownClass } from '../routes/Plugins/instanceClass'
 
 // The selector "Komponente wählen" inserts on the custom CSS tab. It used to be `.<plugin name>`,
 // and for a third of the components that is no class the site ever renders: tag-list renders
@@ -69,8 +70,10 @@ export function componentSelectors(plugins: PluginEntry[]): ComponentSelector[] 
   for (const { plugin } of componentItems(plugins)) {
     const root = ROOT_SELECTOR[plugin.name]
     add({ plugin: plugin.name, name: plugin.name, selector: root ?? `.${plugin.name}`, measured: root !== undefined })
-    const own = plugin.options?.className
-    if (INSTANCE_CLASS.has(plugin.name) && typeof own === 'string' && /^[\w-]+$/.test(own)) {
+    // The last class of className is the instance's own (instanceClass.ts); a duplicate carries
+    // the original's in front of it.
+    const own = INSTANCE_CLASS.has(plugin.name) ? ownClass(plugin) : null
+    if (own) {
       add({ plugin: plugin.name, name: `${plugin.name} · ${own}`, selector: `.${own}`, measured: true })
     }
   }
@@ -79,19 +82,26 @@ export function componentSelectors(plugins: PluginEntry[]): ComponentSelector[] 
 
 /**
  * The selector that finds one entry of a plugin on the built page, for the preview's marks: the
- * plugin's root, narrowed by the entry's own class where the plugin puts it on the root. Null for a
- * plugin whose root has not been measured - marking the guess `.<name>` would mark nothing and look
- * like "not on this page". `matches` counts the entries that share the selector, so a page can say
- * "all of them" when an entry has no class of its own.
+ * plugin's root, narrowed by the entry's own class (the last of its className, instanceClass.ts)
+ * where the plugin puts it on the root. Null for a plugin whose root has not been measured -
+ * marking the guess `.<name>` would mark nothing and look like "not on this page".
+ *
+ * A copy carries the original's classes in front of its own, so `.layout-box-mark` alone finds the
+ * original *and* its copies: the copies' own classes are excluded with `:not()`.
+ *
+ * `matches` is how many entries the selector finds, counted the way the page finds them; without a
+ * class of its own that is every entry of the plugin.
  */
 export function entrySelector(entry: PluginEntry, siblings: PluginEntry[]): { selector: string; matches: number } | null {
-  const of = (e: PluginEntry): string | null => {
-    const root = ROOT_SELECTOR[e.name]
-    if (!root) return null
-    const own = e.options?.className
-    return INSTANCE_CLASS.has(e.name) && typeof own === 'string' && /^[A-Za-z_][\w-]*$/.test(own) ? `${root}.${own}` : root
-  }
-  const selector = of(entry)
-  if (!selector) return null
-  return { selector, matches: siblings.filter((e) => of(e) === selector).length || 1 }
+  const root = ROOT_SELECTOR[entry.name]
+  if (!root) return null
+  const own = INSTANCE_CLASS.has(entry.name) ? ownClass(entry) : null
+  const same = siblings.filter((e) => e.name === entry.name)
+  if (!own) return { selector: root, matches: Math.max(1, same.length) }
+  const excluded = [...new Set(same.filter((e) => classTokens(e).includes(own)).map(ownClass).filter((c): c is string => !!c && c !== own))]
+  const hits = same.filter((e) => {
+    const tokens = classTokens(e)
+    return tokens.includes(own) && !excluded.some((c) => tokens.includes(c))
+  })
+  return { selector: `${root}.${own}${excluded.map((c) => `:not(.${c})`).join('')}`, matches: Math.max(1, hits.length) }
 }

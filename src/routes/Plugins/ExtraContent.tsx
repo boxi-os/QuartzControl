@@ -10,6 +10,7 @@ import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { siteLanguages } from '../../components/PluginOptionsForm/siteLanguages'
 import SitePreview, { type PreviewHighlight } from '../../components/SitePreview'
 import { entrySelector } from '../../data/componentSelectors'
+import { BOX_CLASS_PREFIX, classForCopy, ownClass, suggestClass, withClass } from './instanceClass'
 import { announce } from '../../state/announcer'
 import { primeStickyState, useStickyState } from '../../state/uiState'
 import { useIpcQuery } from '../../state/useIpcQuery'
@@ -92,7 +93,9 @@ export default function ExtraContent({ onShowAllOptions }: { onShowAllOptions: (
     const o = box.plugin.options ?? {}
     if (typeof o.title === 'string' && o.title.trim()) return o.title.trim()
     if (boxContentKind(o) === 'file') return snippetRefs(o)[0]?.file || t('extraContent.unnamed')
-    if (typeof o.className === 'string' && o.className.trim()) return o.className.trim().split(/\s+/)[0].replace(/^layout-box-/, '')
+    // Its own class, which is the last one: a copy carries the original's in front (instanceClass.ts).
+    const own = ownClass(box.plugin)
+    if (own) return own.replace(/^layout-box-/, '')
     return t('extraContent.unnamed')
   }
   const labelOf = (box: BoxInstance): string => {
@@ -153,7 +156,12 @@ export default function ExtraContent({ onShowAllOptions }: { onShowAllOptions: (
       source: first.plugin.source,
       enabled: true,
       ...(first.plugin.order !== undefined ? { order: first.plugin.order } : {}),
-      options: { title: t('extraContent.newTitle'), html: t('extraContent.newHtml') },
+      // A class of its own from the start, so a stylesheet and the preview can tell it apart.
+      options: {
+        title: t('extraContent.newTitle'),
+        html: t('extraContent.newHtml'),
+        className: suggestClass(BOX_CLASS_PREFIX, t('extraContent.newTitle'), 'box', base.plugins)
+      },
       layout: { position, priority: (priorities.length ? Math.max(...priorities) : 0) + 10 }
     }
     setSelected(boxes.length + 1)
@@ -165,9 +173,20 @@ export default function ExtraContent({ onShowAllOptions }: { onShowAllOptions: (
     if (!base) return
     const result = duplicateAfter(base.plugins, box.index)
     if (!result) return
+    // It keeps the original's classes, so it is styled the same, and gets one of its own after them.
+    const own = classForCopy(box.plugin, BOX_CLASS_PREFIX, baseLabel(box), 'box', result.plugins)
+    const plugins = result.plugins.map((p, i) => (i === result.newIndex ? { ...p, options: withClass(p.options, own) } : p))
     // The copy lands right after the original, so it is the next box by number.
     setSelected(box.occurrence + 1)
-    await write({ ...base, plugins: result.plugins }, t('extraContent.duplicatedAnnounce', { name: labelOf(box) }))
+    await write({ ...base, plugins }, t('extraContent.duplicatedAnnounce', { name: labelOf(box) }))
+  }
+
+  async function assignClass(box: BoxInstance): Promise<void> {
+    const base = configRef.current
+    if (!base) return
+    const cls = suggestClass(BOX_CLASS_PREFIX, baseLabel(box), 'box', base.plugins)
+    const plugins = base.plugins.map((p, i) => (i === box.index ? { ...p, options: withClass(p.options, cls) } : p))
+    await write({ ...base, plugins }, t('sitePreview.classAssigned', { name: labelOf(box), cls }))
   }
 
   async function remove(box: BoxInstance): Promise<void> {
@@ -299,7 +318,7 @@ export default function ExtraContent({ onShowAllOptions }: { onShowAllOptions: (
         projectPath={project.path}
         stickyPrefix="extraContent"
         hint={t('extraContent.previewHint')}
-        highlight={previewHighlight(current, boxes, labelOf)}
+        highlight={previewHighlight(current, boxes, labelOf, assignClass)}
       />
     </DetailLayout>
   )
@@ -464,8 +483,13 @@ function BoxPanel({
 }
 
 // The selected box, for the marks in the preview.
-function previewHighlight(current: BoxInstance | null, all: BoxInstance[], label: (box: BoxInstance) => string): PreviewHighlight | null {
+function previewHighlight(
+  current: BoxInstance | null,
+  all: BoxInstance[],
+  label: (box: BoxInstance) => string,
+  assign: (box: BoxInstance) => Promise<void>
+): PreviewHighlight | null {
   if (!current) return null
   const found = entrySelector(current.plugin, all.map((b) => b.plugin))
-  return found && { ...found, name: label(current) }
+  return found && { ...found, name: label(current), onAssignClass: () => void assign(current) }
 }

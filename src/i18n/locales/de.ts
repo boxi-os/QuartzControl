@@ -1037,6 +1037,8 @@ export default {
     pagePlaceholder: 'Startseite – oder z. B. ordner/seite',
     scaled: 'Gerendert mit {{width}} px Breite, gezeigt mit {{percent}} %.',
     zoom: 'Auf Element zoomen',
+    assignClass: 'Eigene Klasse vergeben',
+    classAssigned: '„{{name}}“ hat jetzt die Klasse {{cls}}.',
     marked: 'Markiert: „{{name}}“.',
     markShared: '„{{name}}“ hat keine eigene CSS-Klasse — markiert sind alle {{count}}, die sich diese Klasse teilen.',
     markNotFound: '„{{name}}“ kommt auf dieser Seite nicht vor.',

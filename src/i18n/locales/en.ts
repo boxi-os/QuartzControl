@@ -1032,6 +1032,8 @@ export default {
     pagePlaceholder: 'Home page – or e.g. folder/page',
     scaled: 'Rendered {{width}} px wide, shown at {{percent}}%.',
     zoom: 'Zoom onto element',
+    assignClass: 'Give it a class of its own',
+    classAssigned: '“{{name}}” now has the class {{cls}}.',
     marked: 'Marked: “{{name}}”.',
     markShared: '“{{name}}” has no CSS class of its own — all {{count}} that share this class are marked.',
     markNotFound: '“{{name}}” does not appear on this page.',

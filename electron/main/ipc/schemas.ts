@@ -562,11 +562,15 @@ export const serverKillInput = z.looseObject({
 })
 
 // The selector goes into a script that runs in the preview frame, so it is a shape, not a string:
-// one or two class names, nothing a CSS parser or the script around it could read differently.
-// The script quotes it with JSON.stringify as well; this is the line before that one.
+// one or two class names, then any number of excluded ones (`:not(.x)`, for the copies of an entry
+// that carry its class - componentSelectors.ts), nothing a CSS parser or the script around it could
+// read differently. The script quotes it with JSON.stringify as well; this is the line before that.
 export const sitePreviewHighlightInput = z.looseObject({
   projectId: uuid,
-  selector: z.string().regex(/^\.[A-Za-z_][\w-]{0,80}(\.[A-Za-z_][\w-]{0,80})?$/).nullable(),
+  selector: z
+    .string()
+    .regex(/^\.[A-Za-z_][\w-]{0,80}(\.[A-Za-z_][\w-]{0,80})?(:not\(\.[A-Za-z_][\w-]{0,80}\)){0,20}$/)
+    .nullable(),
   focus: z.boolean()
 })
 

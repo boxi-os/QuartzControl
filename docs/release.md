@@ -281,6 +281,14 @@ die drei Kopien gegeneinander, nicht das Repo gegen die Kopien — eine Drift, d
 Hand: die `key:`-Liste aus `variables.mjs` gegen den `css-vars`-Block der Werkstatt (am 2026-09-20
 vor dem Ausrollen 45 gegen 50, Differenz genau die fünf Schriften).
 
+**Offen für das nächste Release (Stand 2026-10-10): der Pfeil an externen Links.** Im Repo steht
+seither nur noch Quartz' eigenes Symbol (crawl-links, `externalLinkIcon`), gedämpft — vorher
+setzte `content.scss` ein zweites `↗` per `::after` daneben. Die Werkstatt (Example), die vier
+Pakete und die Websites tragen noch beide Pfeile; das Repo ist hier also *vorn*, und ein
+`--sync` vor dem Ausrollen würde die Änderung zurücknehmen. Ausrollen mit `--only 5`, dann wie
+oben. Gemessen an der gebauten Example-Website, Regel im Browser getauscht (nicht am Bau): das
+`::after` ist `none`, das Symbol `rgb(95, 95, 95)` statt `rgb(23, 23, 26)`.
+
 ## 4b. Die Liste der Google-Schriften ist nicht älter als das Release
 
     npm run fetch:google-fonts

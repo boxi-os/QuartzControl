@@ -136,14 +136,10 @@ article {
       text-decoration-color: currentColor;
     }
 
-    // Mark on external links.
-    &.external::after {
-      content: "↗";
-      display: inline-block;
-      margin-inline-start: 0.15em;
-      font-size: 0.85em;
-      text-decoration: none;
-      color: var(--gray);
+    // Mark on external links: crawl-links' own icon (`externalLinkIcon`, on by default), muted.
+    // Not a second mark of our own - that stood next to it as a double arrow.
+    &.external .external-icon > path {
+      fill: var(--gray);
     }
 
     // Link to a missing page: dotted, muted.

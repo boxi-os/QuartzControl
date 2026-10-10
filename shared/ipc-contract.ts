@@ -1716,6 +1716,13 @@ export type AppCommand = 'save'
  * answer (see `altLabel`); `confirmDialog()` in the renderer still hands the two-answer callers a
  * boolean, so the eighteen existing questions are unchanged.
  */
+export type ConfirmAnswer = 'cancel' | 'alt' | 'confirm'
+
+/**
+ * Which entry the preview frame should outline, and whether to scroll it into view. `selector:
+ * null` installs the script without outlining anything (it still keeps an anchor jump inside the
+ * frame).
+ */
 export interface SitePreviewHighlightInput {
   projectId: string
   /**
@@ -1739,8 +1746,6 @@ export interface SitePreviewReport {
   rect: { x: number; y: number; width: number; height: number } | null
   viewport: { width: number; height: number }
 }
-
-export type ConfirmAnswer = 'cancel' | 'alt' | 'confirm'
 
 /** One object argument on purpose (new-channel rule): an optional field later is one key here
  *  and one in the schema, not a fourth positional slot in four files. */

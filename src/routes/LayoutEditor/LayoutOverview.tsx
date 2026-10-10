@@ -15,6 +15,7 @@ import {
   Smartphone,
   SquareDashed,
   Table2,
+  Unlink2,
   type LucideIcon
 } from 'lucide-react'
 import type { FrameBreakpoint, GridFrameDefinition, LayoutPosition, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
@@ -123,7 +124,9 @@ const STATE_ICON: Record<Exclude<CellState, 'shown'>, { icon: LucideIcon; tone: 
   cleared: { icon: Ban, tone: 'text-text-secondary' },
   noArea: { icon: SquareDashed, tone: 'text-amber-600 dark:text-amber-400' },
   hiddenArea: { icon: CircleOff, tone: 'text-amber-600 dark:text-amber-400' },
-  noWidth: { icon: CircleOff, tone: 'text-amber-600 dark:text-amber-400' },
+  // Not CircleOff like hiddenArea: in the table the two were told apart only by title and legend
+  // (review 2026-10-18, nebenbei). Here the area is shown, just never where the component is.
+  noWidth: { icon: Unlink2, tone: 'text-amber-600 dark:text-amber-400' },
   unknown: { icon: HelpCircle, tone: 'text-text-muted' }
 }
 

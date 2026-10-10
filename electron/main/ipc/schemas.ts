@@ -573,9 +573,15 @@ export const serverKillInput = z.looseObject({
 // read differently. The script quotes it with JSON.stringify as well; this is the line before that.
 export const sitePreviewHighlightInput = z.looseObject({
   projectId: uuid,
+  // The grammar entrySelector() writes, and nothing else: a root (a class, or a bare tag like
+  // `footer`), optionally the entry's own class, then one `:not()` per copy. Classes have the shape
+  // instanceClass.ts accepts and no length of their own; a cap on the whole string bounds it. Until
+  // review 2026-10-18 (nebenbei) each class was capped at 81 characters and the copies at 20, and a
+  // longer hand-written class or a 21st copy ended every selection in an error toast.
   selector: z
     .string()
-    .regex(/^\.[A-Za-z_][\w-]{0,80}(\.[A-Za-z_][\w-]{0,80})?(:not\(\.[A-Za-z_][\w-]{0,80}\)){0,20}$/)
+    .max(4096)
+    .regex(/^(\.[A-Za-z_][\w-]*|[a-z][a-z0-9]*)(\.[A-Za-z_][\w-]*)?(:not\(\.[A-Za-z_][\w-]*\))*$/)
     .nullable(),
   focus: z.boolean()
 })

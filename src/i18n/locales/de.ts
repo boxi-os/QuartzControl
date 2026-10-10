@@ -1040,7 +1040,10 @@ export default {
     assignClass: 'Eigene Klasse vergeben',
     classAssigned: '„{{name}}“ hat jetzt die Klasse {{cls}}.',
     marked: 'Markiert: „{{name}}“.',
-    markShared: '„{{name}}“ hat keine eigene CSS-Klasse — markiert sind alle {{count}}, die sich diese Klasse teilen.',
+    markShared_one: '„{{name}}“ teilt seine CSS-Klasse mit anderen Einträgen — markiert ist jeder davon, auf dieser Seite einer.',
+    markShared_other: '„{{name}}“ teilt seine CSS-Klasse mit anderen Einträgen — markiert ist jeder davon, auf dieser Seite {{count}}.',
+    markNoClass_one: '„{{name}}“ hat keine CSS-Klasse — markiert ist jeder Eintrag dieses Plugins, auf dieser Seite einer.',
+    markNoClass_other: '„{{name}}“ hat keine CSS-Klasse — markiert ist jeder Eintrag dieses Plugins, auf dieser Seite {{count}}.',
     markNotFound: '„{{name}}“ kommt auf dieser Seite nicht vor.',
     markHidden: '„{{name}}“ steht auf dieser Seite, ist in dieser Ansicht aber nicht zu sehen — etwa ausgeblendet oder in einer Schublade.'
   },

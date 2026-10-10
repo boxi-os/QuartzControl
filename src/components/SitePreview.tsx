@@ -263,8 +263,10 @@ export interface PreviewHighlight {
   selector: string
   /** The entry as the editor's list names it. */
   name: string
-  /** How many entries of the editor the selector matches; above one, it has no class of its own. */
+  /** How many entries of the config the selector matches; above one, the entry cannot be told apart. */
   matches: number
+  /** Whether the entry has a class of its own - false: the selector is the plugin's root. */
+  ownClass: boolean
   /**
    * Gives the entry a class of its own (instanceClass.ts). Offered beside the sentence that says
    * it has none; a page without the option leaves it out.
@@ -275,6 +277,9 @@ export interface PreviewHighlight {
 function markSentence(report: SitePreviewReport, highlight: PreviewHighlight, t: TFunction): string {
   if (report.found === 0) return t('sitePreview.markNotFound', { name: highlight.name })
   if (report.visible === 0) return t('sitePreview.markHidden', { name: highlight.name })
-  if (highlight.matches > 1) return t('sitePreview.markShared', { name: highlight.name, count: highlight.matches })
+  // Whether it can be told apart comes from the config; how many marks there are, from the page.
+  if (highlight.matches > 1) {
+    return t(highlight.ownClass ? 'sitePreview.markShared' : 'sitePreview.markNoClass', { name: highlight.name, count: report.visible })
+  }
   return t('sitePreview.marked', { name: highlight.name })
 }

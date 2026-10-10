@@ -110,19 +110,25 @@ const notClasses = (classes: string[]): string => classes.map((c) => `:not(.${c}
  * A copy carries the original's classes in front of its own, so `.layout-box-mark` alone finds the
  * original *and* its copies: the copies' own classes are excluded with `:not()`.
  *
- * `matches` is how many entries the selector finds, counted the way the page finds them; without a
- * class of its own that is every entry of the plugin.
+ * `matches` is how many entries of the config the selector finds - every entry of the plugin
+ * without a class of its own, the entries that share it with one. It says whether the entry can be
+ * told apart, not how many marks the page shows: an entry switched off or excluded by a page type
+ * counts here and is not on the page (review 2026-10-18, Niedrig 3). `ownClass` tells the two
+ * reasons for more than one apart.
  */
-export function entrySelector(entry: PluginEntry, siblings: PluginEntry[]): { selector: string; matches: number } | null {
+export function entrySelector(
+  entry: PluginEntry,
+  siblings: PluginEntry[]
+): { selector: string; matches: number; ownClass: boolean } | null {
   const root = ROOT_SELECTOR[entry.name]
   if (!root) return null
   const own = INSTANCE_CLASS.has(entry.name) ? ownClass(entry) : null
   const same = siblings.filter((e) => e.name === entry.name)
-  if (!own) return { selector: root, matches: Math.max(1, same.length) }
+  if (!own) return { selector: root, matches: Math.max(1, same.length), ownClass: false }
   const excluded = copyClasses(own, same)
   const hits = same.filter((e) => {
     const tokens = classTokens(e)
     return tokens.includes(own) && !excluded.some((c) => tokens.includes(c))
   })
-  return { selector: `${root}.${own}${notClasses(excluded)}`, matches: Math.max(1, hits.length) }
+  return { selector: `${root}.${own}${notClasses(excluded)}`, matches: Math.max(1, hits.length), ownClass: true }
 }

@@ -2246,7 +2246,6 @@ Nicht erledigt, nur gesammelt (die Nebenbei-Liste des Reviews): vier `configChan
 Vorlagen-Import; geteilte Ids mehrerer eingefügter SVGs auf einer Seite; ein Restore je Datei kann
 die zwölf mit Kopfzeile ungeladen neben den 31 stehen lassen; `projectLock()` steht in
 `styleLock.ts`. Der Regelvorschlag des Reviews („eine Zahl, die einen Fix belegen soll, nennt
-mindestens einen ihrer Fälle mit seiner Ursache“) ist nicht in `conventions.md` übernommen — das
-entscheidet der Nutzer.
+mindestens einen ihrer Fälle mit seiner Ursache“) steht auf Wunsch des Nutzers in `conventions.md`.
 
 **Keinen dieser Fixes hat ein Review gelesen.**

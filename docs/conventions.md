@@ -885,6 +885,16 @@ sie aus dem Raster in die Ablage kommt. **Wer beides mischt, nimmt den Raster-Ge
   erreicht, statt ihn je Vorlage zu umgehen.
 - **Gemessen, nicht angenommen.** Jede Regel hier steht in `docs/decisions/` mit dem Experiment, das
   sie erzwungen hat. Neue Regeln genauso.
+- **Eine Zahl, die einen Fix belegen soll, nennt mindestens einen ihrer Fälle mit seiner
+  Ursache.** „15 Zellen jetzt X, eine davon: 404-Seite, Nach dem Inhalt, Frame focus, Position
+  geleert“ — am zweiten Halbsatz sieht man, ob X die richtige Antwort ist. Die Nachricht von
+  `5437b48` zählte 15 Zellen in einem neuen Zustand und schrieb dazu, *was sie sind*, ohne eine zu
+  öffnen; alle 15 waren geleerte Positionen. Die Zahl war gemessen, der Satz dahinter geraten.
+  Dieselbe Form hatte die Zelle „nur auf Desktop, Tablet“: gegen das Board gemessen, nicht gegen
+  eine Seite, auf der die Komponente selbst eine Breite hat. Berühren zwei Befunde einer Liste
+  dieselbe Funktion, wiederholt der spätere Durchgang die Messung des früheren und berichtigt die
+  Deutung in der Chronik, nicht in der alten Commit-Nachricht (dreiundvierzigstes Review, Frage
+  über den Code hinaus).
 - **Wer einen Nutzen misst, misst auch den Preis.** „Die gleichen Höhen machen ruhigere
   Ablageziele" war die Begründung dafür, sie aufzugeben — und niemand hatte nachgesehen, was sie
   wirklich taten: `rectSortingStrategy` skaliert jede Karte in das Rechteck, in das sie rückt, und

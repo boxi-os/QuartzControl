@@ -784,7 +784,7 @@ Seite kommt trotzdem (gemessen auf „Zusätzliche Inhalte“: Satz da, 0 Rahmen
 **Eine eigene Klasse je Navigation und Kasten (2026-10-10, Wunsch des Nutzers).** Ohne
 `className` ist eine Instanz auf der Website nicht von ihren Geschwistern zu unterscheiden — für die
 Vorschau nicht und für ein Stylesheet auch nicht. „Neue Navigation“, „Neuer Kasten“ und Duplizieren
-vergeben deshalb eine (`routes/Plugins/instanceClass.ts`), aus dem Namen, den die Liste zeigt,
+vergeben deshalb eine (`routes/Plugins/instanceClass.ts`), aus Titel, Variante oder Dateiname,
 immer mit Präfix (`nav-`, `layout-box-` wie in der Basis-Vorlage): ohne Präfix wäre eine Navigation
 „Explorer“ `.explorer` und bekäme alle Explorer-Regeln. Umbenannt wird die Klasse nie mit dem
 Titel, weil ein Stylesheet auf sie zielt. Bestehende Einträge bekommen sie nur auf Klick („Eigene
@@ -813,3 +813,9 @@ ein `-2`, einer zu wenig ein fremdes Aussehen. Gemessen an `werkstatt/basic-gege
 11 ms, darunter alle neun, die das Review nennt; „Title“ wird `layout-box-title-2`, „File title“
 `nav-file-title-2`. Gelesen wird einmal je Seite; was die Seite selbst vergibt, steht danach in der
 Config.
+**Unübersetzt, an jeder Stelle gleich** (vierundvierzigstes Review, nebenbei): Bis dahin reichten
+die Editoren ihre Beschriftung durch, die Bühne nahm die Variante — dieselbe Navigation wurde
+auf der Seite `nav-akkordeon`, auf der Bühne `nav-accordion`, und in einem englischen Fenster auch
+auf der Seite `nav-accordion`. Eine Klasse steht in der Config, also darf sie nicht von der Sprache
+des Fensters abhängen; `classSource()` ist die eine Quelle. Und eine Endzahl zählt nur weiter, wenn
+der Name ohne sie auch belegt ist — sonst wurde die Kopie von `nav-2024` zu `nav-2`.

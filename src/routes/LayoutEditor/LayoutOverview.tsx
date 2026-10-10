@@ -18,10 +18,10 @@ import {
   Unlink2,
   type LucideIcon
 } from 'lucide-react'
-import type { FrameBreakpoint, GridFrameDefinition, LayoutPosition, PluginEntry, QuartzConfig } from '@shared/ipc-contract'
+import type { FrameBreakpoint, GridFrameDefinition, LayoutPosition, QuartzConfig } from '@shared/ipc-contract'
 import { FRAME_BREAKPOINTS } from '@shared/gridFrameCss'
 import { Badge, Card, CardHeading, InfoNote } from '../../components/ui'
-import { conditionLabel, groupColor } from './ComponentChip'
+import { ComponentPill, groupColor } from './ComponentChip'
 import {
   BUILTIN_FRAME_LAYOUT,
   POSITIONS,
@@ -224,31 +224,16 @@ export default function LayoutOverview({
 
   // ── pieces ── (plain functions rather than components declared in here: those would be a new
   // type on every render and remount)
-  const mark = (Icon: LucideIcon, label: string): JSX.Element => (
-    <span role="img" aria-label={label} title={label} className="inline-flex shrink-0 text-text-secondary">
-      <Icon size={12} aria-hidden />
-    </span>
+  const componentPill = (index: number, muted = false): JSX.Element => (
+    <ComponentPill
+      key={index}
+      plugin={config.plugins[index]}
+      label={componentLabel(index)}
+      groupNames={groupNames}
+      muted={muted}
+      onClick={() => onOpenPageType(null, index)}
+    />
   )
-  function componentPill(index: number, muted = false): JSX.Element {
-    const plugin: PluginEntry = config.plugins[index]
-    const layout = getLayout(plugin)
-    const color = groupColor(layout?.group, groupNames)
-    return (
-      <button
-        key={index}
-        type="button"
-        onClick={() => onOpenPageType(null, index)}
-        className={`inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-ui hover:border-ink/30 ${
-          color ? `${color.ring} ${color.bg} ${color.text}` : 'border-ink/10 bg-surface text-text dark:border-ink/15'
-        } ${muted ? 'opacity-70' : ''}`}
-      >
-        <span className="truncate">{componentLabel(index)}</span>
-        {layout?.display === 'desktop-only' && mark(Monitor, t('layoutEditor.displayDesktopOnly'))}
-        {layout?.display === 'mobile-only' && mark(Smartphone, t('layoutEditor.displayMobileOnly'))}
-        {layout?.condition && mark(Filter, conditionLabel(t, layout.condition))}
-      </button>
-    )
-  }
 
   function framePill(name: string, from?: 'override' | 'plugin' | 'default'): JSX.Element {
     const label = frameName(name)

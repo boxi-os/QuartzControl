@@ -725,6 +725,8 @@ export default function GlobalBoard({
                 missingSlots={visibleSlots ? activeUnassignedSlots : []}
                 pageTypeHidden={pageTypeHidden}
                 componentLabel={(i) => ((nameCounts.get(config.plugins[i].name) ?? 0) > 1 ? `${config.plugins[i].name} #${ranks.get(i) ?? 1}` : config.plugins[i].name)}
+                frame={activeFrame}
+                groupNames={groupNames}
                 onSelect={(i) => setSelected(componentRef(config.plugins, i))}
               />
             )

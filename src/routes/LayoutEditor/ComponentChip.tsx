@@ -221,3 +221,53 @@ export function PaletteChip({ plugin, off }: { plugin: PluginEntry; off?: boolea
     </div>
   )
 }
+
+/**
+ * A placed component as a pill: its name in its group's color, with the marks for what holds on
+ * every page alike - desktop or mobile only, a condition. The layout overview's rows and the
+ * board's summary list both show it, so a component reads the same in both (reported 2026-10-11:
+ * the summary was a plain list, without the colors).
+ *
+ * `struckReason` is the summary's "not on this page type": the pill is struck through and the
+ * reason is part of its name, for those who cannot see the stroke.
+ */
+export function ComponentPill({
+  plugin,
+  label,
+  groupNames,
+  muted = false,
+  struckReason,
+  onClick
+}: {
+  plugin: PluginEntry
+  label: string
+  groupNames: string[]
+  muted?: boolean
+  struckReason?: string
+  onClick: () => void
+}): JSX.Element {
+  const { t } = useTranslation()
+  const layout = getLayout(plugin)
+  const color = groupColor(layout?.group, groupNames)
+  const mark = (Icon: typeof Monitor, text: string): JSX.Element => (
+    <span role="img" aria-label={text} title={text} className="inline-flex shrink-0 text-text-secondary">
+      <Icon size={12} aria-hidden />
+    </span>
+  )
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={struckReason}
+      className={`inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-ui hover:border-ink/30 ${
+        color ? `${color.ring} ${color.bg} ${color.text}` : 'border-ink/10 bg-surface text-text dark:border-ink/15'
+      } ${muted || struckReason ? 'opacity-70' : ''}`}
+    >
+      <span className={`truncate ${struckReason ? 'line-through' : ''}`}>{label}</span>
+      {struckReason && <span className="sr-only"> — {struckReason}</span>}
+      {layout?.display === 'desktop-only' && mark(Monitor, t('layoutEditor.displayDesktopOnly'))}
+      {layout?.display === 'mobile-only' && mark(Smartphone, t('layoutEditor.displayMobileOnly'))}
+      {layout?.condition && mark(Filter, conditionLabel(t, layout.condition))}
+    </button>
+  )
+}

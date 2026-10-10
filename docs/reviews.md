@@ -2301,9 +2301,36 @@ Dazu auf Wunsch des Nutzers `8f86799`: „Verfügbare Platzhalter“ unter dem S
 und an den Texteditoren eines Kastens, dort mit Einfügen am Cursor; die Liste ist eine Abschrift aus
 `placeholders.ts`, und `check:plugin-copies` hält sie in beide Richtungen gegen das Plugin.
 
-Offen aus dieser Runde: die **Nebenbei-Liste** des Reviews (sieben Punkte, nichts davon angefasst),
-die **zwei Regelvorschläge** für `conventions.md` und der Vorschlag einer Zehn-Zeilen-Notiz vor
-Änderungen an einer Vertrauensgrenze oder einer gemeinsamen Funktion — alle drei warten auf den
-Nutzer.
+Die **Nebenbei-Liste** auf Wunsch des Nutzers, ein Punkt je Commit:
+
+- `f78179d` — `ConfirmAnswer` hat seinen Doc-Kommentar zurück, `SitePreviewHighlightInput` einen
+  eigenen.
+- `190413c` — das Schema des Selektors schreibt die Grammatik von `entrySelector` nach (Wurzel als
+  Klasse oder Tag, eigene Klasse, beliebig viele `:not()`), ohne Länge je Klasse, mit 4096 Zeichen
+  fürs Ganze. Gegen die Regex: eine Klasse mit 120 Zeichen, 25 Kopien und `footer` fielen vorher
+  durch und gehen jetzt; `.a b`, `.a,body`, `*` werden weiter abgelehnt.
+- `0ca0538` — eine Endzahl zählt nur weiter, wenn der Name ohne sie auch belegt ist: `nav-2024` →
+  `nav-2024-2` (vorher `nav-2`), `layout-box-mark-2` neben `layout-box-mark` → `-3` wie bisher.
+  Preis: die Kopie von `nav-menue-2`, deren Original gelöscht ist, heißt `nav-menue-2-2`.
+- `536aca5` — Bühne und Editoren bilden die Klasse aus derselben, unübersetzten Quelle
+  (`classSource()`: Titel, sonst Variante, sonst Datei); der Parameter, über den die Editoren ihre
+  übersetzte Beschriftung reichten, ist aus der Kette entfernt. Eine neue Navigation heißt damit
+  `nav-<variante>` in jeder Sprache. Am Bündel von `utils.ts` geprüft.
+- `2bdeb1a` — „Auf keiner Breite“ hat in der Übersicht ein eigenes Icon (`Unlink2`). Nicht am
+  Bildschirm angesehen.
+- `Installed.tsx`/`dropRefused` — **nicht nachvollziehbar, nichts geändert**: Die Ansage fragt
+  `isHome` vor `dropOutcome` (seit `aea4cad`), ein Drop auf den eigenen Platz sagt
+  `dnd.droppedHome`, und `reorderGroup` kehrt bei `from === to` vor `commit` zurück. Am Bündel von
+  `dndAnnouncements.ts` mit einer Ablehnung, die immer antwortet: eigener Platz → `droppedHome`,
+  anderer Platz → die Ablehnung.
+- `basic-gegenprobe/public/` — erledigt, ohne Commit: Der Dev-Server der Messung zu Niedrig 5 hat
+  die Website am 2026-10-10 um 23:10 neu gebaut; alle 32 Seiten sind jünger als die Config, keine
+  trägt eine der vier Klassen.
+- Die Markierung auf der Seite Mehrsprachigkeit fehlt nur in der Liste des Auftrags; am Code ist
+  nichts zu tun.
+
+Offen aus dieser Runde: die **zwei Regelvorschläge** für `conventions.md` und der Vorschlag einer
+Zehn-Zeilen-Notiz vor Änderungen an einer Vertrauensgrenze oder einer gemeinsamen Funktion — beide
+warten auf den Nutzer.
 
 **Keinen dieser Fixes hat ein Review gelesen.**

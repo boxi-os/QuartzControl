@@ -10,7 +10,7 @@ import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { siteLanguages } from '../../components/PluginOptionsForm/siteLanguages'
 import SitePreview, { type PreviewHighlight } from '../../components/SitePreview'
 import { entrySelector } from '../../data/componentSelectors'
-import { NAV_CLASS_PREFIX, suggestClass, withClass } from './instanceClass'
+import { NAV_CLASS_PREFIX, classSource, suggestClass, withClass } from './instanceClass'
 import { announce } from '../../state/announcer'
 import { primeStickyState, useStickyState } from '../../state/uiState'
 import { useIpcQuery } from '../../state/useIpcQuery'
@@ -82,7 +82,7 @@ export default function Navigations({ onShowAllOptions }: { onShowAllOptions: (s
   const current = instances.find((i) => i.occurrence === selected) ?? null
 
   const variantLabel = (v: NavVariant): string => t(`navigationsEditor.variants.${v}.label`)
-  // What the navigation is called without its #n - also what a class of its own is made from.
+  // What the navigation is called without its #n.
   const baseName = (plugin: PluginEntry): string => {
     const title = plugin.options?.title
     return typeof title === 'string' && title.trim() ? title.trim() : variantLabel(variantOf(plugin.options))
@@ -145,7 +145,7 @@ export default function Navigations({ onShowAllOptions }: { onShowAllOptions: (s
       enabled: true,
       ...(first.plugin.order !== undefined ? { order: first.plugin.order } : {}),
       // A class of its own from the start, so a stylesheet and the preview can tell it apart.
-      options: { variant, className: suggestClass(NAV_CLASS_PREFIX, variantLabel(variant), 'navigation', base.plugins, styled) },
+      options: { variant, className: suggestClass(NAV_CLASS_PREFIX, variant, 'navigation', base.plugins, styled) },
       layout: { position, priority: (priorities.length ? Math.max(...priorities) : 0) + 10 }
     }
     setAdding(false)
@@ -159,7 +159,7 @@ export default function Navigations({ onShowAllOptions }: { onShowAllOptions: (s
   async function assignClass(item: NavInstance): Promise<void> {
     const base = configRef.current
     if (!base) return
-    const cls = suggestClass(NAV_CLASS_PREFIX, baseName(item.plugin), 'navigation', base.plugins, styled)
+    const cls = suggestClass(NAV_CLASS_PREFIX, classSource(item.plugin), 'navigation', base.plugins, styled)
     const plugins = base.plugins.map((p, i) => (i === item.index ? { ...p, options: withClass(p.options, cls) } : p))
     await write({ ...base, plugins }, t('sitePreview.classAssigned', { name: instanceLabel(item), cls }))
   }
@@ -167,9 +167,8 @@ export default function Navigations({ onShowAllOptions }: { onShowAllOptions: (s
   async function duplicate(item: NavInstance): Promise<void> {
     const base = configRef.current
     if (!base) return
-    // The copy gets a class of its own on the way and leaves the `id` behind (duplicateEntry),
-    // its class named like this list names it.
-    const result = duplicateAfter(base.plugins, item.index, baseName(item.plugin), styled)
+    // The copy gets a class of its own on the way and leaves the `id` behind (duplicateEntry).
+    const result = duplicateAfter(base.plugins, item.index, styled)
     if (!result) return
     setSelected(instances.length + 1)
     await write({ ...base, plugins: result.plugins }, t('navigationsEditor.duplicatedAnnounce', { name: instanceLabel(item) }))

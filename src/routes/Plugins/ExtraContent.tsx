@@ -10,7 +10,7 @@ import PluginOptionsForm from '../../components/PluginOptionsForm'
 import { siteLanguages } from '../../components/PluginOptionsForm/siteLanguages'
 import SitePreview, { type PreviewHighlight } from '../../components/SitePreview'
 import { entrySelector } from '../../data/componentSelectors'
-import { BOX_CLASS_PREFIX, ownClass, suggestClass, withClass } from './instanceClass'
+import { BOX_CLASS_PREFIX, classSource, ownClass, suggestClass, withClass } from './instanceClass'
 import { announce } from '../../state/announcer'
 import { primeStickyState, useStickyState } from '../../state/uiState'
 import { useIpcQuery } from '../../state/useIpcQuery'
@@ -173,8 +173,8 @@ export default function ExtraContent({ onShowAllOptions }: { onShowAllOptions: (
   async function duplicate(box: BoxInstance): Promise<void> {
     const base = configRef.current
     if (!base) return
-    // The copy gets a class of its own on the way (instanceClass.ts), named like this list names it.
-    const result = duplicateAfter(base.plugins, box.index, baseLabel(box), styled)
+    // The copy gets a class of its own on the way (instanceClass.ts).
+    const result = duplicateAfter(base.plugins, box.index, styled)
     if (!result) return
     // The copy lands right after the original, so it is the next box by number.
     setSelected(box.occurrence + 1)
@@ -184,7 +184,7 @@ export default function ExtraContent({ onShowAllOptions }: { onShowAllOptions: (
   async function assignClass(box: BoxInstance): Promise<void> {
     const base = configRef.current
     if (!base) return
-    const cls = suggestClass(BOX_CLASS_PREFIX, baseLabel(box), 'box', base.plugins, styled)
+    const cls = suggestClass(BOX_CLASS_PREFIX, classSource(box.plugin), 'box', base.plugins, styled)
     const plugins = base.plugins.map((p, i) => (i === box.index ? { ...p, options: withClass(p.options, cls) } : p))
     await write({ ...base, plugins }, t('sitePreview.classAssigned', { name: labelOf(box), cls }))
   }

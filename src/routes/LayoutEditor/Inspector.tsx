@@ -304,7 +304,7 @@ export default function Inspector({
           <Button
             variant="ghost"
             onClick={() => {
-              const result = duplicateAfter(plugins, index, undefined, styledClasses)
+              const result = duplicateAfter(plugins, index, styledClasses)
               if (result) onChange(result.plugins, result.newIndex)
             }}
           >

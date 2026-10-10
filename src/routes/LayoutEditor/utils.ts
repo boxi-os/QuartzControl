@@ -116,7 +116,6 @@ export function duplicateEntry(
   source: PluginEntry,
   layout: PluginLayoutDeclaration,
   plugins: PluginEntry[],
-  name?: string,
   styled?: ReadonlySet<string>
 ): PluginEntry {
   let options = source.options ? { ...source.options } : undefined
@@ -124,7 +123,7 @@ export function duplicateEntry(
     const { id: _id, ...rest } = options
     options = rest
   }
-  return withOwnClassForCopy({ ...source, layout, options }, source, plugins, name, styled)
+  return withOwnClassForCopy({ ...source, layout, options }, source, plugins, styled)
 }
 
 export function getLayout(plugin: PluginEntry): PluginLayoutDeclaration | null {
@@ -247,7 +246,7 @@ export function withDisplay(plugins: PluginEntry[], index: number, display: Plug
 // Duplicates the entry at `sourceIndex`, inserting the copy immediately after it in the same slot
 // and renumbering that slot's priorities - the "Duplizieren" button on a placed component's expand
 // panel in GlobalBoard.
-export function duplicateAfter(plugins: PluginEntry[], sourceIndex: number, name?: string, styled?: ReadonlySet<string>): MutationResult | null {
+export function duplicateAfter(plugins: PluginEntry[], sourceIndex: number, styled?: ReadonlySet<string>): MutationResult | null {
   const source = plugins[sourceIndex]
   const layout = getLayout(source)
   if (!layout) return null
@@ -255,7 +254,7 @@ export function duplicateAfter(plugins: PluginEntry[], sourceIndex: number, name
   const order = insertAt(positions[layout.position], positions[layout.position].indexOf(sourceIndex) + 1, -1)
   const priorities = renumberPriorities(order)
   const newIndex = plugins.length
-  const newEntry = duplicateEntry(source, { ...layout, priority: priorities.get(-1) ?? layout.priority + 1 }, plugins, name, styled)
+  const newEntry = duplicateEntry(source, { ...layout, priority: priorities.get(-1) ?? layout.priority + 1 }, plugins, styled)
   const next: PluginEntry[] = [...plugins, newEntry].map((plugin, i) => {
     const priority = priorities.get(i)
     if (priority === undefined || !plugin.layout || plugin.layout.position !== layout.position) return plugin
@@ -280,7 +279,7 @@ export function appendDuplicateToPosition(
   const order = insertAt(positions[position], insertIndex ?? positions[position].length, -1)
   const priorities = renumberPriorities(order)
   const newIndex = plugins.length
-  const newEntry = duplicateEntry(source, { position, priority: priorities.get(-1) ?? 10 }, plugins, undefined, styled)
+  const newEntry = duplicateEntry(source, { position, priority: priorities.get(-1) ?? 10 }, plugins, styled)
   const next: PluginEntry[] = [...plugins, newEntry].map((plugin, i) => {
     const priority = priorities.get(i)
     if (priority === undefined || !plugin.layout || plugin.layout.position !== position) return plugin

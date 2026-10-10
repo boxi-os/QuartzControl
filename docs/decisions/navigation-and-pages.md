@@ -754,8 +754,15 @@ sagt daraus „nicht auf dieser Seite“, „nicht zu sehen“ (gemessen: das Ak
 „keine eigene Klasse, alle markiert“. „Auf Element zoomen“ verschiebt und skaliert nur das
 `transform` — die Größe des iframes bleibt, sonst wäre es ein neuer Viewport, und die Website
 legte sich darunter neu aus. Höchstens 150 %: bei 200 % füllten vier Einträge eines Akkordeons den
-Kasten. Gescrollt wird nur, wenn das Element nicht ganz zu sehen ist, und dann in die Mitte —
-oben an den Rand gestellt, lag der klebende Header der Basis-Vorlage über dem ersten Eintrag.
+Kasten. Gescrollt wird die Website nur für den Zoom und nur, wenn das Element nicht ganz zu sehen
+ist, und dann in die Mitte — oben an den Rand gestellt, lag der klebende Header der Basis-Vorlage
+über dem ersten Eintrag. Eine Markierung allein bewegt nichts: Bis zum vierundvierzigsten Review
+(Niedrig 1) scrollte schon die Auswahl des Pagers ein Telefon um 1319 px, und nach einem
+Seitenwechsel entschied das Skript mitten in Quartz' weichem Sprung nach oben (`nav` kam bei
+`scrollY` 1207). Nach `nav` folgen die Rahmen sofort, und das Heranholen für den Zoom wartet auf
+`scrollend` (höchstens 800 ms). Gemessen am Nachbau, Telefon, Pager: Zoom aus 0 nach der Auswahl
+und 0 nach dem Seitenwechsel; Zoom an 1320 nach der Auswahl, nach dem Seitenwechsel steht der Pager
+bei 239–401 von 640 px.
 
 **Die erste Fassung rechnete den Sprung selbst nach** (`r.top - top`, sofort) und übersprang dabei
 `scroll-margin` des Ziels, `scroll-padding` der Seite und Quartz' `scroll-behavior: smooth`: `<main>`

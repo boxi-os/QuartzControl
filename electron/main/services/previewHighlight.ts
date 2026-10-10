@@ -142,11 +142,11 @@ function previewScript(selector: string | null, focus: boolean): void {
     )
   }
 
-  // Brings the first visible match into the frame's viewport when it is not fully there: centred
-  // if it fits, else its top a little below the edge. Centred rather than at the top, because a
-  // sticky header covers the top - measured on the basic template, where scrolling a navigation
-  // that was already in view put the header over its first entry. A fixed or sticky element does
-  // not move either way.
+  // Brings the first visible match into the frame's viewport when it is not fully there, for the
+  // zoom (`focus`) only: centred if it fits, else its top a little below the edge. Centred rather
+  // than at the top, because a sticky header covers the top - measured on the basic template,
+  // where scrolling a navigation that was already in view put the header over its first entry. A
+  // fixed or sticky element does not move either way.
   function reveal(): void {
     const first = state.elements.map(visibleRect).find((r): r is DOMRect => r !== null)
     if (!first) return
@@ -182,7 +182,22 @@ function previewScript(selector: string | null, focus: boolean): void {
       // `container` is newer than the DOM types here; Electron 43 honours it (measured).
       native.call(this, { ...options, container: 'nearest' } as ScrollIntoViewOptions)
     }
-    document.addEventListener('nav', () => look(true))
+    // After a navigation, Quartz scrolls the new page to the top, smoothly - the event comes in the
+    // middle of that (measured: `nav` at scrollY 1207, landed at 0). Bringing the element into view
+    // then decided on a position that was still moving and could cancel the scroll to the top; so
+    // the marks follow at once, and the zoom's scroll waits until the page has settled.
+    document.addEventListener('nav', () => {
+      look(false)
+      if (!state.focus) return
+      let done = false
+      const settle = (): void => {
+        if (done) return
+        done = true
+        look(state.focus)
+      }
+      addEventListener('scrollend', settle, { once: true })
+      setTimeout(settle, 800)
+    })
     addEventListener('resize', () => look(false))
     // An element that grows or shrinks (an accordion, a box whose content loads late) changes what
     // a zoom should frame; checked twice a second rather than per frame.
@@ -196,5 +211,7 @@ function previewScript(selector: string | null, focus: boolean): void {
       }
     }, 500)
   }
-  look(fresh || changed)
+  // Only the zoom brings an element into view; a mark alone does not move the page
+  // (review 2026-10-18, Niedrig 1: selecting the pager scrolled a phone view by 1319px).
+  look(state.focus && (fresh || changed))
 }

@@ -747,7 +747,7 @@ Seither setzt der Hauptprozess bei jedem Laden des Frames ein Skript ein
 (`services/previewHighlight.ts`, über `WebFrameMain.executeJavaScript` — am cross-origin,
 sandboxten Unterframe gemessen: Er antwortet, und sein `postMessage` kommt mit dem Frame als
 `source` an). Das Skript ersetzt `scrollIntoView` durch eine Fassung, die nur innerhalb der Seite
-scrollt (danach: `<main>` 0, Kasten 0, Website 355), und markiert, was der Editor gewählt hat: der
+scrollt, und markiert, was der Editor gewählt hat: der
 Selektor aus `componentSelectors.ts` (Wurzel des Plugins, mit der eigenen `className` der Instanz),
 ein Rahmen, der Rest abgedunkelt. Es meldet Anzahl, Sichtbarkeit und Rechteck zurück; die Seite
 sagt daraus „nicht auf dieser Seite“, „nicht zu sehen“ (gemessen: das Akkordeon in „Mobil“) oder
@@ -756,6 +756,18 @@ sagt daraus „nicht auf dieser Seite“, „nicht zu sehen“ (gemessen: das Ak
 legte sich darunter neu aus. Höchstens 150 %: bei 200 % füllten vier Einträge eines Akkordeons den
 Kasten. Gescrollt wird nur, wenn das Element nicht ganz zu sehen ist, und dann in die Mitte —
 oben an den Rand gestellt, lag der klebende Header der Basis-Vorlage über dem ersten Eintrag.
+
+**Die erste Fassung rechnete den Sprung selbst nach** (`r.top - top`, sofort) und übersprang dabei
+`scroll-margin` des Ziels, `scroll-padding` der Seite und Quartz' `scroll-behavior: smooth`: `<main>`
+und Kasten blieben bei 0, aber die Überschrift landete anders als auf der Website — auf dem Tablet
+bei 48 statt 93 px, also unter dem klebenden Kopf (Unterkante 116), auf dem Telefon bei 0 statt 157
+(vierundvierzigstes Review, Mittel 1). Seither ruft der Ersatz die native Fassung mit
+`container: 'nearest'`. Gemessen in Electron 43 an einem Nachbau der zwei Einbettungen
+(`overflow: clip` in rollendem `<main>`, Tablet 820 bei 600/820 und Telefon 390; nicht die gebaute
+App) mit der Seite `1-einstieg/1-erste-schritte` und dem Anker `#2--die-marke`: Website allein
+93 / 535 und 157 / 798 (Überschrift oben / `scrollY`), in der Vorschau dieselben Zahlen, `<main>` 0,
+Kasten 0. Der eine Unterschied zur Website: Ein Element in einem inneren Roller (der aktive Eintrag
+einer Navigationsliste) scrollt nur diesen Roller, nicht zusätzlich das Fenster.
 
 Was das Skript nicht kann: Eine Instanz ohne eigene `className` ist von ihren Geschwistern nicht
 zu unterscheiden. Und Chromium hält `requestAnimationFrame` in einem fremden Frame außerhalb des

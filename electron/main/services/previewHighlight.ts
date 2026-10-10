@@ -54,8 +54,8 @@ export async function highlightInPreview(input: SitePreviewHighlightInput): Prom
  *   drawer moves it without a scroll event. The report to the page does *not*: it is sent when the
  *   script has looked (installed, selector changed, Quartz's `nav`, a resize), so a zoom does not
  *   chase the element while someone scrolls.
- * - Bringing an element into view uses window.scrollTo, never scrollIntoView: the latter scrolls
- *   the app's own containers around the frame as well (the anchor bug of a1575d8).
+ * - Bringing an element into view uses window.scrollTo, never the site's scrollIntoView: that one
+ *   is replaced below by one that stops at the frame (the anchor bug of a1575d8).
  */
 function previewScript(selector: string | null, focus: boolean): void {
   type State = {
@@ -169,22 +169,18 @@ function previewScript(selector: string | null, focus: boolean): void {
     // the active entry. That scrolled the preview's box first, which hid the site's header
     // (a1575d8), and after that fix the app's page - measured 307.5px on the Plugins page; a click
     // handler of our own did not help, because Quartz's router does not ask defaultPrevented.
-    // This one scrolls the scrollable containers inside the page and the window, vertically,
-    // with the same `block` answers; inline alignment is left out, the site does not use it.
+    // So the native call, limited to the nearest scroll container: everything else - the target's
+    // scroll-margin, the site's scroll-padding, `scroll-behavior: smooth`, the inline axis - stays
+    // the browser's. A rebuilt calculation of our own skipped all three, and a jump from the table
+    // of contents landed under the sticky header (review 2026-10-18, Mittel 1). The one difference
+    // to the site: an element inside an inner scroller (the active entry of a navigation list)
+    // scrolls that scroller only, not the window as well.
+    const native = Element.prototype.scrollIntoView
     Element.prototype.scrollIntoView = function (this: Element, arg?: boolean | ScrollIntoViewOptions): void {
-      const block = typeof arg === 'object' && arg !== null ? (arg.block ?? 'start') : arg === false ? 'end' : 'start'
-      const delta = (r: DOMRect, top: number, height: number): number => {
-        if (block === 'center') return r.top - top - (height - r.height) / 2
-        if (block === 'end') return r.bottom - top - height
-        if (block === 'nearest') return r.top < top ? r.top - top : r.bottom > top + height ? r.bottom - top - height : 0
-        return r.top - top
-      }
-      for (let p = this.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement) {
-        if (/(auto|scroll|overlay)/.test(getComputedStyle(p).overflowY) && p.scrollHeight > p.clientHeight) {
-          p.scrollTop += delta(this.getBoundingClientRect(), p.getBoundingClientRect().top + p.clientTop, p.clientHeight)
-        }
-      }
-      scrollBy({ top: delta(this.getBoundingClientRect(), 0, innerHeight), behavior: 'instant' as ScrollBehavior })
+      const options: ScrollIntoViewOptions =
+        typeof arg === 'object' && arg !== null ? arg : { block: arg === false ? 'end' : 'start', inline: 'nearest' }
+      // `container` is newer than the DOM types here; Electron 43 honours it (measured).
+      native.call(this, { ...options, container: 'nearest' } as ScrollIntoViewOptions)
     }
     document.addEventListener('nav', () => look(true))
     addEventListener('resize', () => look(false))
